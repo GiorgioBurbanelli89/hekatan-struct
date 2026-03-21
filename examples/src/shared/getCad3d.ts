@@ -8259,6 +8259,7 @@ Util:     cad.info()  cad.clear()  cad.help()
           <option value="HSS">Perfil HSS</option>
           <option value="I-param">I Paramétrica</option>
           <option value="tubular">Tubular Hueca</option>
+          <option value="CFT">CFT (Tubo relleno concreto)</option>
         </select>
       </div>
       <div id="asgn-params" style="margin-bottom:10px;"></div>

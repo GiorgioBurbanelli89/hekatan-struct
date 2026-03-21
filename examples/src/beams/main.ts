@@ -163,3 +163,9 @@ document.body.append(
   })
 );
 document.body.appendChild(modalPanel.div);
+
+// Auto-start with Edificio example
+setTimeout(() => {
+  const btn = document.querySelector('[data-ex="edificio"]') as HTMLElement;
+  if (btn) btn.click();
+}, 200);
