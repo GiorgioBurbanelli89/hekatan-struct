@@ -13,8 +13,6 @@ export function elementsIndexes(
   derivedDisplayScale: State<number>
 ): THREE.Group {
   const group = new THREE.Group();
-  const size = 0.05 * settings.gridSize.rawVal * 0.6;
-
   // on settings.elementsIndexes & deformedShape, and model clear and create visuals
   van.derive(() => {
     settings.deformedShape.val; // triggers update
@@ -24,6 +22,7 @@ export function elementsIndexes(
     group.children.forEach((c) => (c as Text).dispose());
     group.clear();
 
+    const size = 0.05 * settings.gridSize.val * 0.6;
     structure.elements?.val.forEach((element, index) => {
       const text = new Text(`${index}`, undefined, "#001219");
 
@@ -36,12 +35,13 @@ export function elementsIndexes(
     });
   });
 
-  // on derivedDisplayScale update scale
+  // on derivedDisplayScale or gridSize update scale
   van.derive(() => {
     derivedDisplayScale.val; // trigger updates
 
     if (!settings.elementsIndexes.rawVal) return;
 
+    const size = 0.05 * settings.gridSize.val * 0.6;
     group.children.forEach((c) =>
       (c as Text).updateScale(size * derivedDisplayScale.rawVal)
     );

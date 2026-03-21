@@ -10,8 +10,6 @@ export function nodesIndexes(
   derivedDisplayScale: State<number>
 ): THREE.Group {
   const group = new THREE.Group();
-  const size = 0.05 * settings.gridSize.rawVal * 0.6;
-
   // on settings.nodesIndexes, and derivedNodes clear and create visuals
   van.derive(() => {
     if (!settings.nodesIndexes.val) return;
@@ -19,6 +17,7 @@ export function nodesIndexes(
     group.children.forEach((c) => (c as Text).dispose());
     group.clear();
 
+    const size = 0.05 * settings.gridSize.val * 0.6;
     derivedNodes.val.forEach((node, index) => {
       const text = new Text(`${index}`);
 
@@ -29,12 +28,13 @@ export function nodesIndexes(
     });
   });
 
-  // on settings.nodesIndexes and setting.displayScale change
+  // on settings.nodesIndexes and setting.displayScale or gridSize change
   van.derive(() => {
     derivedDisplayScale.val; // triggers update
 
     if (!settings.nodesIndexes.rawVal) return;
 
+    const size = 0.05 * settings.gridSize.val * 0.6;
     group.children.forEach((c) =>
       (c as Text).updateScale(size * derivedDisplayScale.rawVal)
     );

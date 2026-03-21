@@ -17,13 +17,29 @@ import { nodesIndexes } from "./objects/nodesIndexes";
 import { elementsIndexes } from "./objects/elementsIndexes";
 import { axes } from "./objects/axes";
 import { orientations } from "./objects/orientations";
+import { sections } from "./objects/sections";
 import { frameResults } from "./objects/frameResults";
 import { nodeResults } from "./objects/nodeResults";
 import { drawing, Drawing } from "./drawing/drawing";
 import { shellResults } from "./objects/shellResults";
+import { frameColorMap } from "./objects/frameColorMap";
 
 import "./styles.css";
 import { getLegend } from "../color-map/getLegend";
+import { getTheme, onThemeChange, ThemeColors } from "../theme";
+
+export interface ViewerContext3D {
+  scene: THREE.Scene;
+  perspCamera: THREE.PerspectiveCamera;
+  orthoCamera: THREE.OrthographicCamera;
+  camera: THREE.Camera;
+  controls: OrbitControls;
+  renderer: THREE.WebGLRenderer;
+  rendererElm: HTMLCanvasElement;
+  render: () => void;
+  setActiveCamera: (cam: THREE.Camera) => void;
+  settings: Settings;
+}
 
 export function getViewer({
   mesh,
@@ -49,7 +65,10 @@ export function getViewer({
     0.1,
     2 * 1e6 // supported view till 1e6
   );
+  const orthoCamera = new THREE.OrthographicCamera(-10, 10, 10, -10, -1000, 2e6);
+  let activeCamera: THREE.Camera = camera;
   const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.localClippingEnabled = true;
   const controls = new OrbitControls(camera, renderer.domElement);
 
   const settings = getDefaultSettings(settingsObj);
@@ -61,7 +80,7 @@ export function getViewer({
       : -1 / settings.displayScale.val
   );
   const derivedNodes = deriveNodes(mesh, settings);
-  const gridObj = grid(settings.gridSize.rawVal);
+  let gridObj = grid(settings.gridSize.rawVal);
 
   // update
   viewerElm.appendChild(getSettings(settings, mesh, solids));
@@ -70,7 +89,8 @@ export function getViewer({
   viewerElm.appendChild(renderer.domElement);
 
   renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setClearColor(0x000000, 1);
+  const theme0 = getTheme();
+  renderer.setClearColor(theme0.background, 1);
 
   const gridSize = settings.gridSize.rawVal;
   const z2fit = gridSize * 0.5 + (gridSize * 0.5) / Math.tan(45 * 0.5);
@@ -89,9 +109,16 @@ export function getViewer({
     for (const entry of entries) {
       const width = entry.target?.clientWidth;
       const height = entry.target?.clientHeight;
+      if (width === 0 || height === 0) continue;
 
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+
+      const aspect = width / height;
+      const frustumHalf = orthoCamera.top;
+      orthoCamera.left = -frustumHalf * aspect;
+      orthoCamera.right = frustumHalf * aspect;
+      orthoCamera.updateProjectionMatrix();
 
       renderer.setSize(width, height);
       viewerRender();
@@ -114,9 +141,15 @@ export function getViewer({
     settings.displayScale.val;
     settings.nodes.val;
     settings.elements.val;
+    settings.elemColumns.val;
+    settings.elemBeams.val;
     settings.nodesIndexes.val;
     settings.elementsIndexes.val;
     settings.orientations.val;
+    settings.sections.val;
+    settings.secColumns.val;
+    settings.secBeams.val;
+    settings.secFloor.val;
     settings.supports.val;
     settings.loads.val;
     settings.deformedShape.val;
@@ -129,7 +162,14 @@ export function getViewer({
 
   // Object's functions (Actions)
   function viewerRender() {
-    renderer.render(scene, camera);
+    renderer.render(scene, activeCamera);
+  }
+
+  function setActiveCamera(cam: THREE.Camera) {
+    activeCamera = cam;
+    controls.object = cam;
+    controls.update();
+    viewerRender();
   }
 
   // Optional inputs
@@ -143,11 +183,12 @@ export function getViewer({
       supports(mesh, settings, derivedNodes, derivedDisplayScale),
       loads(mesh, settings, derivedNodes, derivedDisplayScale),
       orientations(mesh, settings, derivedNodes, derivedDisplayScale),
+      sections(mesh, settings, derivedNodes, derivedDisplayScale),
       nodeResults(mesh, settings, derivedNodes, derivedDisplayScale),
       frameResults(mesh, settings, derivedNodes, derivedDisplayScale)
     );
 
-    // Color map
+    // Color map (shells)
     const colorMapValues = getColorMapValues(mesh, settings);
     const shellResultsObj = shellResults(
       mesh,
@@ -160,9 +201,22 @@ export function getViewer({
     scene.add(shellResultsObj);
     viewerElm.appendChild(legend);
 
+    // Frame contour colors
+    const frameColorMapObj = frameColorMap(mesh, settings, derivedNodes, derivedDisplayScale);
+    scene.add(frameColorMapObj);
+
+    // Frame contour legend (reuse getLegend)
+    const frameColorValues = (frameColorMapObj as any).__colorMapValues as State<number[]>;
+    const frameLegend = getLegend(frameColorValues);
+    frameLegend.id = "frame-legend"; // unique ID to avoid CSS collision
+    viewerElm.appendChild(frameLegend);
+
     van.derive(() => {
-      legend.hidden = settings.shellResults.val == "none";
-      shellResultsObj.visible = settings.shellResults.val != "none";
+      const shellActive = settings.shellResults.val != "none";
+      const frameContourActive = settings.frameResults.val.startsWith("contour:");
+      legend.hidden = !shellActive;
+      shellResultsObj.visible = shellActive;
+      frameLegend.hidden = !frameContourActive;
     });
   }
 
@@ -233,6 +287,35 @@ export function getViewer({
       viewerRender,
     });
 
+  // Theme change: update renderer, recreate grid, CSS vars, and re-render
+  onThemeChange((_name, colors) => {
+    renderer.setClearColor(colors.background, 1);
+    // Recreate grid (GridHelper bakes colors into vertex buffer)
+    scene.remove(gridObj);
+    gridObj.geometry.dispose();
+    (gridObj.material as THREE.Material).dispose();
+    gridObj = grid(settings.gridSize.rawVal);
+    scene.add(gridObj);
+    // Update CSS custom properties for legend etc.
+    viewerElm.style.setProperty("--awatif-legend-color", colors.legendMarker);
+    viewerRender();
+  });
+
+  // Expose Three.js context for external use (view switching, etc.)
+  const ctx: any = {
+    scene,
+    perspCamera: camera,
+    orthoCamera,
+    get camera() { return activeCamera; },
+    controls,
+    renderer,
+    rendererElm: renderer.domElement,
+    render: viewerRender,
+    setActiveCamera,
+    settings,
+  };
+  (viewerElm as any).__ctx = ctx as ViewerContext3D;
+
   return viewerElm;
 }
 
@@ -244,9 +327,10 @@ function deriveNodes(
   return van.derive(() => {
     if (!settings.deformedShape.val) return mesh?.nodes?.val ?? [];
 
+    // Same as original awatif v2: node + deformation directly (no artificial scaling)
     return (
       mesh?.nodes?.val.map((node, index) => {
-        const d = mesh?.deformOutputs?.val.deformations
+        const d = mesh?.deformOutputs?.val?.deformations
           ?.get(index)
           ?.slice(0, 3) ?? [0, 0, 0];
         return node.map((n, i) => n + d[i]) as Node;
@@ -263,6 +347,8 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
     bendingXX = "bendingXX",
     bendingYY = "bendingYY",
     bendingXY = "bendingXY",
+    displacementX = "displacementX",
+    displacementY = "displacementY",
     displacementZ = "displacementZ",
   }
 
@@ -273,40 +359,45 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
     const nodeBendingYY = new Map<number, number[]>();
     const nodeBendingXY = new Map<number, number[]>();
 
-    mesh.analyzeOutputs?.val.bendingXX.forEach((vals, elementIndex) => {
-      nodeBendingXX.set(mesh.elements.val[elementIndex][0], [vals[0]]);
-      nodeBendingXX.set(mesh.elements.val[elementIndex][1], [vals[1]]);
-      nodeBendingXX.set(mesh.elements.val[elementIndex][2], [vals[2]]);
-    });
+    // Map element bending results to node values.
+    // Supports 3-node (triangle) and 4-node (quad) elements.
+    // For quads: vals may have 3 entries (element-center); assign to all 4 nodes.
+    const mapBendingToNodes = (
+      bendingMap: Map<number, [number, number, number]> | undefined,
+      nodeMap: Map<number, number[]>
+    ) => {
+      bendingMap?.forEach((vals, elementIndex) => {
+        const elem = mesh.elements.val[elementIndex];
+        if (!elem) return;
+        for (let i = 0; i < elem.length; i++) {
+          nodeMap.set(elem[i], [vals[i] ?? vals[0]]);
+        }
+      });
+    };
 
-    mesh.analyzeOutputs?.val.bendingYY.forEach((vals, elementIndex) => {
-      nodeBendingYY.set(mesh.elements.val[elementIndex][0], [vals[0]]);
-      nodeBendingYY.set(mesh.elements.val[elementIndex][1], [vals[1]]);
-      nodeBendingYY.set(mesh.elements.val[elementIndex][2], [vals[2]]);
-    });
-
-    mesh.analyzeOutputs?.val.bendingXY.forEach((vals, elementIndex) => {
-      nodeBendingXY.set(mesh.elements.val[elementIndex][0], [vals[0]]);
-      nodeBendingXY.set(mesh.elements.val[elementIndex][1], [vals[1]]);
-      nodeBendingXY.set(mesh.elements.val[elementIndex][2], [vals[2]]);
-    });
+    mapBendingToNodes(mesh.analyzeOutputs?.val?.bendingXX, nodeBendingXX);
+    mapBendingToNodes(mesh.analyzeOutputs?.val?.bendingYY, nodeBendingYY);
+    mapBendingToNodes(mesh.analyzeOutputs?.val?.bendingXY, nodeBendingXY);
 
     const resultMapper = {
       [ResultType.bendingXX]: [nodeBendingXX, 0],
       [ResultType.bendingYY]: [nodeBendingYY, 0],
       [ResultType.bendingXY]: [nodeBendingXY, 0],
-      [ResultType.displacementZ]: [mesh.deformOutputs?.val.deformations, 2],
+      [ResultType.displacementX]: [mesh.deformOutputs?.val?.deformations, 0],
+      [ResultType.displacementY]: [mesh.deformOutputs?.val?.deformations, 1],
+      [ResultType.displacementZ]: [mesh.deformOutputs?.val?.deformations, 2],
     };
 
-    const values = [];
+    const values: number[] = [];
     mesh.nodes.val.forEach((_, i) => {
       const resultMap = resultMapper[settings.shellResults.val];
-      if (!resultMap) return;
+      if (!resultMap || !resultMap[0] || typeof resultMap[0].has !== 'function') return;
       if (!resultMap[0].has(i)) {
         values.push(0);
         return;
       }
-      values.push(resultMap[0].get(i)[resultMap[1]]);
+      const entry = resultMap[0].get(i);
+      values.push(entry ? entry[resultMap[1] as number] ?? 0 : 0);
     });
 
     colorMapValues.val = values;
@@ -314,3 +405,4 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
 
   return colorMapValues;
 }
+

@@ -8,7 +8,32 @@
 
 // Declarations
 Eigen::MatrixXd getTransformationMatrixFrame(const Node &n0, const Node &n1);
-Eigen::MatrixXd getTransformationMatrixShell(const Node &n0, const Node &n1, const Node &n2); // Changed node names to match TS array indexing
+Eigen::MatrixXd getTransformationMatrixShell(const Node &n0, const Node &n1, const Node &n2);
+
+// Shell Q4 transformation — defined in shellQ4.cpp
+Eigen::MatrixXd getTransformationMatrixShellQ4(
+    const Node &n0, const Node &n1, const Node &n2, const Node &n3);
+
+// Forward: check if 4-node element is shell Q4 (has thickness)
+// We need elementInputs and index to decide, but the transformation dispatch
+// doesn't have them. So for 4-node elements, we check if nodes are coplanar
+// and non-coincident to decide shell vs interface.
+// Simple heuristic: interface elements have coincident node pairs (0≈3, 1≈2).
+static bool isShellQ4(const std::vector<Node> &nodes)
+{
+    // Interface: node 0 ≈ node 3, node 1 ≈ node 2 (zero-thickness)
+    double d03 = std::sqrt(
+        std::pow(nodes[0][0]-nodes[3][0], 2) +
+        std::pow(nodes[0][1]-nodes[3][1], 2) +
+        std::pow(nodes[0][2]-nodes[3][2], 2));
+    double d12 = std::sqrt(
+        std::pow(nodes[1][0]-nodes[2][0], 2) +
+        std::pow(nodes[1][1]-nodes[2][1], 2) +
+        std::pow(nodes[1][2]-nodes[2][2], 2));
+    // If both pairs are nearly coincident → interface (zero-thickness)
+    if (d03 < 1e-6 && d12 < 1e-6) return false;
+    return true; // Otherwise → shell Q4
+}
 
 // Main dispatch function based on number of nodes
 Eigen::MatrixXd getTransformationMatrix(const std::vector<Node> &nodes)
@@ -23,7 +48,17 @@ Eigen::MatrixXd getTransformationMatrix(const std::vector<Node> &nodes)
         return getTransformationMatrixShell(nodes[0], nodes[1], nodes[2]);
     }
 
-    throw std::runtime_error("Unsupported element type in getTransformationMatrix (must have 2 or 3 nodes).");
+    if (nodes.size() == 4)
+    {
+        if (isShellQ4(nodes))
+        {
+            return getTransformationMatrixShellQ4(nodes[0], nodes[1], nodes[2], nodes[3]);
+        }
+        // Interface element: K is computed directly in global coordinates
+        return Eigen::MatrixXd::Identity(24, 24);
+    }
+
+    throw std::runtime_error("Unsupported element type in getTransformationMatrix (must have 2, 3, or 4 nodes).");
 }
 
 // Transformation matrix for 2-node frame/truss elements

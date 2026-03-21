@@ -30,13 +30,17 @@ export function getLegend(
     legendElm.append(markerElem);
   });
 
+  // Collect text elements for direct reference (avoid getElementById collisions)
+  const textElements: HTMLElement[] = [];
+  legendElm.querySelectorAll("p").forEach((p) => textElements.push(p as HTMLElement));
+
   // update marker values
   setTimeout(() => {
     van.derive(() => {
       // ensure update is done after all DOM elements are created
       markerRatios.forEach((ratio, i) => {
-        markerText = document.getElementById(`marker-text-${i}`);
-        markerText.innerText = getMarkerValue(values.val, ratio).toString();
+        const el = textElements[i];
+        if (el) el.innerText = getMarkerValue(values.val, ratio).toString();
       });
     });
   });

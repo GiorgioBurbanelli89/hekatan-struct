@@ -11,7 +11,22 @@ export function loads(
   derivedDisplayScale: State<number>
 ): THREE.Group {
   const group = new THREE.Group();
-  const size = 0.05 * settings.gridSize.rawVal;
+  group.name = "loadsGroup";
+
+  /** Compute arrow size based on actual model extent (5% of bounding box diagonal) */
+  function getArrowSize(nodes: Node[]): number {
+    if (nodes.length < 2) return 0.12 * settings.gridSize.rawVal;
+    const mins = [Infinity, Infinity, Infinity];
+    const maxs = [-Infinity, -Infinity, -Infinity];
+    for (const n of nodes) {
+      for (let i = 0; i < 3; i++) {
+        mins[i] = Math.min(mins[i], n[i]);
+        maxs[i] = Math.max(maxs[i], n[i]);
+      }
+    }
+    const extent = Math.max(maxs[0] - mins[0], maxs[1] - mins[1], maxs[2] - mins[2], 0.1);
+    return 0.08 * extent;
+  }
 
   // on settings.loads & deformedShape, and model clear and create visuals
   van.derive(() => {
@@ -22,12 +37,19 @@ export function loads(
     group.children.forEach((o) => (o as THREE.ArrowHelper).dispose());
     group.clear();
 
-    structure.nodeInputs?.val.loads?.forEach((load, index) => {
-      const position = derivedNodes.val[index];
-      if (!position) return; // do not create if node does not exist
+    const nodes = derivedNodes.val;
+    const size = getArrowSize(nodes);
+
+    structure.nodeInputs?.val?.loads?.forEach((load, index) => {
+      const position = nodes[index];
+      if (!position) return;
+
+      const dir = new THREE.Vector3(...load.slice(0, 3));
+      if (dir.lengthSq() < 1e-30) return; // skip zero loads
+      dir.normalize();
 
       const arrow = new THREE.ArrowHelper(
-        new THREE.Vector3(...load.slice(0, 3)).normalize(),
+        dir,
         new THREE.Vector3(...position),
         1,
         0xee9b00,
@@ -48,6 +70,7 @@ export function loads(
 
     if (!settings.loads.rawVal) return;
 
+    const size = getArrowSize(derivedNodes.rawVal);
     const scale = size * derivedDisplayScale.rawVal;
     group.children.forEach((c) => c.scale.set(scale, scale, scale));
   });

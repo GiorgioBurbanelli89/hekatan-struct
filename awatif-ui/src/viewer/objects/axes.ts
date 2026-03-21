@@ -1,10 +1,12 @@
 import * as THREE from "three";
 import { Text } from "./Text";
+import { getTheme } from "../../theme";
 
 export function axes(gridSize: number, flipAxes: boolean): THREE.Group {
   // init
   const axes = new THREE.Group();
   const size = 0.05 * gridSize * 1; // 0.05 to convert to unit size based on grid size of 20
+  const t = getTheme();
 
   const xText = new Text("X", "red", "transparent");
   const yText = new Text(flipAxes ? "Z" : "Y", "green", "transparent");
@@ -14,7 +16,7 @@ export function axes(gridSize: number, flipAxes: boolean): THREE.Group {
     new THREE.Vector3(1, 0, 0),
     new THREE.Vector3(0, 0, 0),
     1,
-    0x666666,
+    t.axisArrow,
     0.2,
     0.2
   );
@@ -22,7 +24,7 @@ export function axes(gridSize: number, flipAxes: boolean): THREE.Group {
     new THREE.Vector3(0, 1, 0),
     new THREE.Vector3(0, 0, 0),
     1,
-    0x666666,
+    t.axisArrow,
     0.2,
     0.2
   );
@@ -30,7 +32,7 @@ export function axes(gridSize: number, flipAxes: boolean): THREE.Group {
     new THREE.Vector3(0, 0, 1),
     new THREE.Vector3(0, 0, 0),
     1,
-    0x666666,
+    t.axisArrow,
     0.2,
     0.2
   );

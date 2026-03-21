@@ -9,6 +9,7 @@ import {
 } from "awatif-fem";
 import { analyze, deform } from "awatif-fem";
 import { getToolbar, getParameters, Parameters, getViewer } from "awatif-ui";
+import { getCad3d } from "../shared/getCad3d";
 
 // Init
 const parameters: Parameters = {
@@ -137,6 +138,12 @@ van.derive(() => {
 });
 
 document.body.append(
+  getCad3d({
+    nodes: nodesState,
+    elements: elementsState,
+    nodeInputs: nodeInputsState,
+    elementInputs: elementInputsState,
+  }),
   getParameters(parameters),
   getViewer({
     mesh: {

@@ -20,8 +20,6 @@ export function nodeResults(
 ): THREE.Group {
   // init
   const group = new THREE.Group();
-  const size = 0.05 * settings.gridSize.rawVal;
-
   // on settings.nodeResults & deformedShape, and model clear and update visuals
   van.derive(() => {
     settings.deformedShape.val; // triggers update
@@ -34,6 +32,7 @@ export function nodeResults(
     const resultType =
       ResultType[settings.nodeResults.rawVal as keyof typeof ResultType];
 
+    const size = 0.05 * settings.gridSize.val;
     structure.deformOutputs?.val[resultType]?.forEach((output, index) => {
       const nodeResult = new NodeResult(
         derivedNodes.rawVal[index],
@@ -47,12 +46,13 @@ export function nodeResults(
     });
   });
 
-  // on derivedDisplayScale update scale
+  // on derivedDisplayScale or gridSize update scale
   van.derive(() => {
     derivedDisplayScale.val;
 
     if (settings.nodeResults.rawVal == "none") return;
 
+    const size = 0.05 * settings.gridSize.val;
     group.children.forEach((c) =>
       (c as IResultObject).updateScale(size * derivedDisplayScale.rawVal)
     );

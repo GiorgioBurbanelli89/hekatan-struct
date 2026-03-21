@@ -17,6 +17,17 @@ Eigen::MatrixXd getLocalStiffnessMatrixShell(
     const ElementInputs &elementInputs,
     int index);
 
+Eigen::MatrixXd getLocalStiffnessMatrixInterface(
+    const std::vector<Node> &nodes,
+    const ElementInputs &elementInputs,
+    int index);
+
+// Shell Q4 (4-node) for shear walls — defined in shellQ4.cpp
+Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
+    const std::vector<Node> &nodes,
+    const ElementInputs &elementInputs,
+    int index);
+
 Eigen::MatrixXd getLocalStiffnessMatrix(
     const std::vector<Node> &elementNodes,
     const ElementInputs &elementInputs,
@@ -30,8 +41,18 @@ Eigen::MatrixXd getLocalStiffnessMatrix(
     {
         return getLocalStiffnessMatrixShell(elementNodes, elementInputs, elementIndex);
     }
+    if (elementNodes.size() == 4)
+    {
+        // Dispatch: if element has thickness → Shell Q4, otherwise → Interface
+        auto itT = elementInputs.thicknesses.find(elementIndex);
+        if (itT != elementInputs.thicknesses.end() && itT->second > 1e-12)
+        {
+            return getLocalStiffnessMatrixShellQ4(elementNodes, elementInputs, elementIndex);
+        }
+        return getLocalStiffnessMatrixInterface(elementNodes, elementInputs, elementIndex);
+    }
 
-    throw std::runtime_error("Unsupported element type in getLocalStiffnessMatrix (must have 2 or 3 nodes).");
+    throw std::runtime_error("Unsupported element type in getLocalStiffnessMatrix (must have 2, 3, or 4 nodes).");
 }
 
 template <typename K, typename V>
@@ -646,4 +667,90 @@ Eigen::MatrixXd getLocalStiffnessMatrixShell(
     }
 
     return localStiffnessMatrix;
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// 4-node zero-thickness interface element (Goodman, 1968)
+//
+// Nodes: 0,1 = bottom side (wall), 2,3 = top side (soil)
+// Pairs: (0,3) coincident, (1,2) coincident
+// Interface direction: from pair(0,3) to pair(1,2)
+//
+// Properties via existing maps:
+//   elasticities[i]  → kn (normal stiffness, force/length³)
+//   shearModuli[i]   → ks (tangential stiffness, force/length³)
+//
+// Returns 24×24 matrix (4 nodes × 6 DOFs) in GLOBAL coordinates.
+// Transformation matrix should be Identity for this element type.
+// ──────────────────────────────────────────────────────────────────────
+Eigen::MatrixXd getLocalStiffnessMatrixInterface(
+    const std::vector<Node> &nodes,
+    const ElementInputs &elementInputs,
+    int index)
+{
+    double kn = getMapValueOrDefault(elementInputs.elasticities, index, 0.0);
+    double ks = getMapValueOrDefault(elementInputs.shearModuli, index, 0.0);
+
+    // Interface direction: from node 0 to node 1 (bottom edge)
+    double dx = nodes[1][0] - nodes[0][0];
+    double dy = nodes[1][1] - nodes[0][1];
+    double L = std::sqrt(dx * dx + dy * dy);
+
+    if (L < 1e-12)
+    {
+        std::cerr << "Warning: Zero-length interface element. Returning zero matrix." << std::endl;
+        return Eigen::MatrixXd::Zero(24, 24);
+    }
+
+    // Unit tangent (s) and normal (n) vectors
+    double sx = dx / L;
+    double sy = dy / L;
+    double nx = -sy; // normal pointing from bottom to top (CCW 90°)
+    double ny = sx;
+
+    // 8 active DOFs: [u0x, u0y, u1x, u1y, u2x, u2y, u3x, u3y]
+    // Sign: -1 for bottom nodes (0,1), +1 for top nodes (2,3)
+    // Shape function index: 0=N1 for pairs at (0,3), 1=N2 for pairs at (1,2)
+    // Direction components for s and n per DOF
+    double signs[8] = {-1, -1, -1, -1, 1, 1, 1, 1};
+    int    shapes[8] = {0, 0, 1, 1, 1, 1, 0, 0};
+    double s_dirs[8] = {sx, sy, sx, sy, sx, sy, sx, sy};
+    double n_dirs[8] = {nx, ny, nx, ny, nx, ny, nx, ny};
+
+    // Analytical integration: ∫₀ᴸ N_a(s)*N_b(s) ds
+    // N1 = 1-s/L, N2 = s/L
+    // ∫ N1² = L/3, ∫ N2² = L/3, ∫ N1·N2 = L/6
+    double integ[2][2] = {{L / 3.0, L / 6.0}, {L / 6.0, L / 3.0}};
+
+    // Build 8×8 stiffness in global coordinates
+    // K(i,j) = (ks · si_s · sj_s + kn · si_n · sj_n) · sign_i · sign_j · integral(shape_i, shape_j)
+    Eigen::MatrixXd K8 = Eigen::MatrixXd::Zero(8, 8);
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            double val = 0;
+            val += ks * s_dirs[i] * s_dirs[j];
+            val += kn * n_dirs[i] * n_dirs[j];
+            val *= signs[i] * signs[j] * integ[shapes[i]][shapes[j]];
+            K8(i, j) = val;
+        }
+    }
+
+    // Embed 8×8 into 24×24 (4 nodes × 6 DOFs each)
+    // DOF mapping: 8×8 index → 24×24 index
+    //   u0x=0→0, u0y=1→1, u1x=2→6, u1y=3→7,
+    //   u2x=4→12, u2y=5→13, u3x=6→18, u3y=7→19
+    int map8to24[8] = {0, 1, 6, 7, 12, 13, 18, 19};
+
+    Eigen::MatrixXd K24 = Eigen::MatrixXd::Zero(24, 24);
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = 0; j < 8; j++)
+        {
+            K24(map8to24[i], map8to24[j]) = K8(i, j);
+        }
+    }
+
+    return K24;
 }

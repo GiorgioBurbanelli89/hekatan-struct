@@ -29,6 +29,11 @@
   background-color: #bbb;
 }
 
+#toolbar .btn-theme {
+  font-size: 16px;
+  padding: 3px 10px;
+}
+
 #toolbar .btn-icon {
   background-color: rgb(0 95 115);
   fill: rgb(255, 255, 255);

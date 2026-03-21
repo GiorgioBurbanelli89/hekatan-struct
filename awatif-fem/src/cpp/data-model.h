@@ -22,6 +22,8 @@ struct ElementInputs
     std::map<int, double> torsionalConstants;
     std::map<int, double> thicknesses;
     std::map<int, double> poissonsRatios;
+    std::map<int, double> densities; // mass density per element (rho)
+    std::map<int, double> polarMomentsOfInertia; // I0 (polar moment of inertia, for Paz formulation)
 };
 
 struct NodeInputs
@@ -36,6 +38,27 @@ struct DeformOutputs
     std::map<int, std::vector<double>> reactions;    // Map<node_index, [fx, fy, fz, mx, my, mz]>
 };
 
+struct ModalOutputs
+{
+    std::vector<double> frequencies;                 // natural frequencies [Hz]
+    std::vector<std::vector<double>> modeShapes;     // mode shapes [num_modes][total_dof]
+    std::vector<std::vector<double>> massParticipation; // [num_modes][6] ratios (ux,uy,uz,rx,ry,rz)
+};
+
+// Shared FEA helpers (feHelpers.cpp)
+std::map<int, double> parseMapFromFlat(int *keys, double *values, int count);
+std::map<int, std::vector<double>> parseMapVecFromFlat(int *keys, double *values, int count, int vecSize);
+std::map<int, std::vector<bool>> parseMapBoolVecFromFlat(int *keys, bool *values, int count, int vecSize);
+Eigen::VectorXd getForces(const NodeInputs &nodeInputs, int dof);
+std::vector<int> getFreeIndices(const NodeInputs &nodeInputs, int dof);
+std::vector<int> getZerosIndices(const Eigen::SparseMatrix<double> &matrix);
+Eigen::SparseMatrix<double> getReducedMatrix(
+    const Eigen::SparseMatrix<double> &matrix,
+    const std::vector<int> &reducedIndices);
+Eigen::VectorXd getReducedVector(
+    const Eigen::VectorXd &vector,
+    const std::vector<int> &reducedIndices);
+
 // Utils
 Eigen::MatrixXd getLocalStiffnessMatrix(
     const std::vector<Node> &elementNodes,
@@ -49,5 +72,30 @@ Eigen::SparseMatrix<double> getGlobalStiffnessMatrix(
     const std::vector<Node> &nodes,
     const std::vector<unsigned int> &element_indices, // Flat list of indices
     const std::vector<unsigned int> &elementSizes,    // Size of each element
+    const ElementInputs &elementInputs,
+    int dof);
+
+Eigen::MatrixXd getLocalMassMatrix(
+    const std::vector<Node> &elementNodes,
+    const ElementInputs &elementInputs,
+    int elementIndex);
+
+Eigen::SparseMatrix<double> getGlobalMassMatrix(
+    const std::vector<Node> &nodes,
+    const std::vector<unsigned int> &element_indices,
+    const std::vector<unsigned int> &elementSizes,
+    const ElementInputs &elementInputs,
+    int dof);
+
+// Paz formulation (uses explicit I0 for torsional mass if provided)
+Eigen::MatrixXd getLocalMassMatrixPaz(
+    const std::vector<Node> &elementNodes,
+    const ElementInputs &elementInputs,
+    int elementIndex);
+
+Eigen::SparseMatrix<double> getGlobalMassMatrixPaz(
+    const std::vector<Node> &nodes,
+    const std::vector<unsigned int> &element_indices,
+    const std::vector<unsigned int> &elementSizes,
     const ElementInputs &elementInputs,
     int dof);

@@ -10,9 +10,15 @@ export type Settings = {
   displayScale: State<number>;
   nodes: State<boolean>;
   elements: State<boolean>;
+  elemColumns: State<boolean>;
+  elemBeams: State<boolean>;
   nodesIndexes: State<boolean>;
   elementsIndexes: State<boolean>;
   orientations: State<boolean>;
+  sections: State<boolean>;
+  secColumns: State<boolean>;
+  secBeams: State<boolean>;
+  secFloor: State<number>;  // -1=all, 0=piso1, 1=piso2...
   supports: State<boolean>;
   loads: State<boolean>;
   deformedShape: State<boolean>;
@@ -28,9 +34,15 @@ export type SettingsObj = {
   displayScale?: number;
   nodes?: boolean;
   elements?: boolean;
+  elemColumns?: boolean;
+  elemBeams?: boolean;
   nodesIndexes?: boolean;
   elementsIndexes?: boolean;
   orientations?: boolean;
+  sections?: boolean;
+  secColumns?: boolean;
+  secBeams?: boolean;
+  secFloor?: number;
   supports?: boolean;
   loads?: boolean;
   deformedShape?: boolean;
@@ -50,7 +62,7 @@ export function getSettings(
   const container = document.createElement("div");
   const pane = new Pane({
     title: "Settings",
-    expanded: false,
+    expanded: true,
     container,
   });
 
@@ -68,6 +80,12 @@ export function getSettings(
     pane.addBinding(settings.elements, "val", {
       label: "Elements",
     });
+    pane.addBinding(settings.elemColumns, "val", {
+      label: "  Columnas",
+    });
+    pane.addBinding(settings.elemBeams, "val", {
+      label: "  Vigas",
+    });
     pane.addBinding(settings.nodesIndexes, "val", {
       label: "Nodes indexes",
     });
@@ -76,6 +94,19 @@ export function getSettings(
     });
     pane.addBinding(settings.orientations, "val", {
       label: "Orientations",
+    });
+    pane.addBinding(settings.sections, "val", {
+      label: "Sections",
+    });
+    pane.addBinding(settings.secColumns, "val", {
+      label: "  Sec. Columnas",
+    });
+    pane.addBinding(settings.secBeams, "val", {
+      label: "  Sec. Vigas",
+    });
+    pane.addBinding(settings.secFloor, "val", {
+      label: "  Sec. Piso",
+      options: { 'Todos': -1, 'Piso 1': 0, 'Piso 2': 1, 'Piso 3': 2, 'Piso 4': 3, 'Piso 5': 4 },
     });
   }
 
@@ -107,6 +138,12 @@ export function getSettings(
         torsions: "torsions",
         bendingsY: "bendingsY",
         bendingsZ: "bendingsZ",
+        "contour:normals": "contour:normals",
+        "contour:shearsY": "contour:shearsY",
+        "contour:shearsZ": "contour:shearsZ",
+        "contour:torsions": "contour:torsions",
+        "contour:bendingsY": "contour:bendingsY",
+        "contour:bendingsZ": "contour:bendingsZ",
       },
       label: "Frame results",
     });
@@ -117,6 +154,8 @@ export function getSettings(
         bendingXX: "bendingXX",
         bendingYY: "bendingYY",
         bendingXY: "bendingXY",
+        displacementX: "displacementX",
+        displacementY: "displacementY",
         displacementZ: "displacementZ",
       },
       label: "Shell results",
@@ -139,11 +178,17 @@ export function getDefaultSettings(settingsObj: SettingsObj): Settings {
     displayScale: van.state(settingsObj?.displayScale ?? 1),
     nodes: van.state(settingsObj?.nodes ?? true),
     elements: van.state(settingsObj?.elements ?? true),
+    elemColumns: van.state(settingsObj?.elemColumns ?? true),
+    elemBeams: van.state(settingsObj?.elemBeams ?? true),
     nodesIndexes: van.state(settingsObj?.nodesIndexes ?? false),
     elementsIndexes: van.state(settingsObj?.elementsIndexes ?? false),
     orientations: van.state(settingsObj?.orientations ?? false),
+    sections: van.state(settingsObj?.sections ?? true),
+    secColumns: van.state(settingsObj?.secColumns ?? true),
+    secBeams: van.state(settingsObj?.secBeams ?? true),
+    secFloor: van.state(settingsObj?.secFloor ?? -1),
     supports: van.state(settingsObj?.supports ?? true),
-    loads: van.state(settingsObj?.loads ?? true),
+    loads: van.state(settingsObj?.loads ?? false),
     deformedShape: van.state(settingsObj?.deformedShape ?? false),
     nodeResults: van.state(settingsObj?.nodeResults ?? "none"),
     frameResults: van.state(settingsObj?.frameResults ?? "none"),

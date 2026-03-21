@@ -1,5 +1,6 @@
 import { State } from "vanjs-core";
 import { html, render, TemplateResult } from "lit-html";
+import { getThemeName, toggleTheme, onThemeChange } from "../theme";
 
 import "./styles.css";
 
@@ -17,6 +18,10 @@ export function getToolbar({
   // Init
   const element = document.createElement("div");
 
+  function themeLabel() {
+    return getThemeName() === "dark" ? "\u2600" : "\u263E"; // sun / moon
+  }
+
   const template = html`
     <div class="buttons-container">
       ${buttons?.map(
@@ -25,6 +30,9 @@ export function getToolbar({
             ${button}
           </button>`
       )}
+      <button class="btn btn-text btn-theme" @click=${onThemeClick} title="Toggle light/dark theme">
+        ${themeLabel()}
+      </button>
       <button class="btn btn-icon" @click=${onIconClick}>
         ${getAwatifSvg()}
       </button>
@@ -50,12 +58,23 @@ export function getToolbar({
 
   render(template, element);
 
+  // Keep theme button label in sync
+  onThemeChange((name) => {
+    const btn = element.querySelector(".btn-theme") as HTMLButtonElement;
+    if (btn) btn.textContent = name === "dark" ? "\u2600" : "\u263E";
+  });
+
   // Events
   // On button click set clickedButton value
   function onButtonClick(e: Event) {
     const button = e.target as HTMLButtonElement;
     clickedButton.val = ""; // A hack to trigger vanjs update
     setTimeout(() => (clickedButton.val = button.innerText));
+  }
+
+  // onThemeClick toggle dark/light
+  function onThemeClick() {
+    toggleTheme();
   }
 
   // onIconClick toggle dropdown menu

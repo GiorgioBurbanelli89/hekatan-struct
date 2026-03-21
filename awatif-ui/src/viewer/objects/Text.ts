@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { getTheme } from "../../theme";
 
 export class Text extends THREE.Sprite {
   private fontHeightPx: number;
@@ -41,6 +42,7 @@ function createTexture(
   color?: string,
   background?: string
 ) {
+  const t = getTheme();
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (ctx) {
@@ -49,12 +51,12 @@ function createTexture(
     canvas.width = ctx.measureText(text).width;
     canvas.height = fontHeightPx;
 
-    if (background != "transparent") ctx.fillStyle = background ?? "#0d0d0d";
+    if (background != "transparent") ctx.fillStyle = background ?? t.textBackground;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = color ?? "#bbbcc4";
+    ctx.fillStyle = color ?? t.textColor;
     const toMargin = 0.9;
     ctx.font = `${fontHeightPx * toMargin}px Arial`;
     const toCenterTextV = 0.08 * canvas.height;

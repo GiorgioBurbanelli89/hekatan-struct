@@ -48,11 +48,17 @@ export function analyze(
   };
 
   elements.forEach((e, i) => {
+    // Skip Q4 shells (4 nodes) — analyze only supports frames (2) and triangles (3)
+    if (e.length === 4) return;
+
     const elmNodes = e.map((e) => nodes[e]);
 
     const dxGlobal = e.reduce(
-      (a, b) => a.concat(deformOutputs.deformations.get(b)),
-      []
+      (a, b) => {
+        const d = deformOutputs.deformations?.get(b);
+        return a.concat(d ?? [0, 0, 0, 0, 0, 0]);
+      },
+      [] as number[]
     );
     const T = getTransformationMatrix(elmNodes);
     const dxLocal = multiply(T, dxGlobal);

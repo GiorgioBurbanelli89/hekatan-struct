@@ -17,6 +17,7 @@ import {
   getParameters,
   getViewer,
 } from "awatif-ui";
+import { getCad3d } from "../shared/getCad3d";
 import { template } from "./template";
 
 // Init
@@ -97,6 +98,12 @@ van.derive(() => {
 });
 
 document.body.append(
+  getCad3d({
+    nodes,
+    elements,
+    nodeInputs,
+    elementInputs,
+  }),
   getToolbar({
     clickedButton,
     buttons: ["Report"],

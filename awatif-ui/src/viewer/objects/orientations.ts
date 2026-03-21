@@ -19,8 +19,6 @@ export function orientations(
   const group = new THREE.Group();
   const geometry = new THREE.BufferGeometry();
   const material = new THREE.LineBasicMaterial({ vertexColors: true });
-  const size = 0.05 * settings.gridSize.rawVal * 0.75;
-
   // update
   const o = [0, 0, 0];
   const x = [1, 0, 0];
@@ -73,6 +71,7 @@ export function orientations(
         );
       }
 
+      const size = 0.05 * settings.gridSize.rawVal * 0.75;
       const scale = size * derivedDisplayScale.rawVal;
       axes.scale.set(scale, scale, scale);
 
@@ -80,12 +79,13 @@ export function orientations(
     });
   });
 
-  // on derivedDisplayScale update scale
+  // on derivedDisplayScale or gridSize update scale
   van.derive(() => {
     derivedDisplayScale.val;
 
     if (!settings.orientations.rawVal) return;
 
+    const size = 0.05 * settings.gridSize.val * 0.75;
     const scale = size * derivedDisplayScale.rawVal;
     group.children.forEach((c) => c.scale.set(scale, scale, scale));
   });

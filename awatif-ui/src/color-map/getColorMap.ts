@@ -34,11 +34,20 @@ export function getColorMap(
       "position",
       new THREE.Float32BufferAttribute(nodes.val.flat(), 3)
     );
+    // Triangulate: Three.js only supports triangle faces in indexed geometry.
+    // Triangles (3-node) pass through. Quads (4-node) → 2 triangles: [n1,n2,n3] + [n1,n3,n4].
+    const triIndices: number[] = [];
+    for (const e of elements.val) {
+      if (e.length === 3) {
+        triIndices.push(e[0], e[1], e[2]);
+      } else if (e.length === 4) {
+        triIndices.push(e[0], e[1], e[2]);  // triangle 1
+        triIndices.push(e[0], e[2], e[3]);  // triangle 2
+      }
+      // skip 2-node (frame) elements
+    }
     colorMap.geometry.setIndex(
-      new THREE.Uint16BufferAttribute(
-        elements.val.filter((e) => e.length != 2).flat(), // we only want triangles and quads
-        1
-      )
+      new THREE.Uint32BufferAttribute(triIndices, 1) // Uint32 for meshes > 65535 nodes
     );
 
     colorMap.geometry.setAttribute(

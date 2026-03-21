@@ -2,17 +2,19 @@ import * as THREE from "three";
 import van, { State } from "vanjs-core";
 import { Node } from "awatif-fem";
 import { Settings } from "../settings/getSettings";
+import { getTheme, onThemeChange } from "../../theme";
 
 export function nodes(
   settings: Settings,
   derivedNodes: State<Node[]>,
   derivedDisplayScale: State<number>
 ): THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial> {
+  const t = getTheme();
   const points = new THREE.Points(
     new THREE.BufferGeometry(),
-    new THREE.PointsMaterial()
+    new THREE.PointsMaterial({ color: t.nodePoint })
   );
-  const size = 0.05 * settings.gridSize.rawVal * 0.5;
+  onThemeChange((_n, c) => { points.material.color.setHex(c.nodePoint); });
   points.frustumCulled = false;
 
   // on settings.nodes, and derivedNodes update visuals
@@ -25,9 +27,10 @@ export function nodes(
     );
   });
 
-  // on derivedDisplayScale update scale
+  // on derivedDisplayScale or gridSize update scale
   van.derive(() => {
     derivedDisplayScale.val; // trigger update
+    const size = 0.05 * settings.gridSize.val * 0.5;
 
     if (!settings.nodes.rawVal) return;
 

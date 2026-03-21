@@ -1,7 +1,8 @@
 import van, { State } from "vanjs-core";
 import * as THREE from "three";
-import { Node, Element, NodeInputs } from "awatif-fem";
+import { Node, Element, NodeInputs, ElementInputs, DeformOutputs, AnalyzeOutputs } from "awatif-fem";
 import { getToolbar, getParameters, Parameters, getViewer } from "awatif-ui";
+import { getCad3d, cadActive } from "../shared/getCad3d";
 
 // Init
 const parameters: Parameters = {
@@ -51,9 +52,22 @@ const parameters: Parameters = {
 const nodesState: State<Node[]> = van.state([]);
 const elementsState: State<Element[]> = van.state([]);
 const nodeInputsState: State<NodeInputs> = van.state({});
+const elementInputsState: State<ElementInputs> = van.state({});
+const deformOutputsState: State<DeformOutputs> = van.state({
+  deformations: new Map(),
+  reactions: new Map(),
+});
+const analyzeOutputsState: State<AnalyzeOutputs> = van.state({
+  normals: new Map(), shearsY: new Map(), shearsZ: new Map(),
+  torsions: new Map(), bendingsY: new Map(), bendingsZ: new Map(),
+  bendingXX: new Map(), bendingYY: new Map(), bendingXY: new Map(),
+  membraneXX: new Map(), membraneYY: new Map(), membraneXY: new Map(),
+  tranverseShearX: new Map(), tranverseShearY: new Map(),
+} as AnalyzeOutputs);
 
-// Events: on parameter change
+// Events: on parameter change (skip when getCad3d has active example)
 van.derive(() => {
+  if (cadActive.val) return; // getCad3d controls the model
   const xSpan = parameters.xSpan.value.val;
   const xDivisions = parameters.xDivisions.value.val;
   const ySpan = parameters.ySpan.value.val;
@@ -121,12 +135,23 @@ van.derive(() => {
 });
 
 document.body.append(
+  getCad3d({
+    nodes: nodesState,
+    elements: elementsState,
+    nodeInputs: nodeInputsState,
+    elementInputs: elementInputsState,
+    deformOutputs: deformOutputsState,
+    analyzeOutputs: analyzeOutputsState,
+  }),
   getParameters(parameters),
   getViewer({
     mesh: {
       nodes: nodesState,
       elements: elementsState,
       nodeInputs: nodeInputsState,
+      elementInputs: elementInputsState,
+      deformOutputs: deformOutputsState,
+      analyzeOutputs: analyzeOutputsState,
     },
   }),
   getToolbar({

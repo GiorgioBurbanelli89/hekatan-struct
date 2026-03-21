@@ -26,7 +26,6 @@ export function frameResults(
 ): THREE.Group {
   // init
   const group = new THREE.Group();
-  const size = 0.05 * settings.gridSize.rawVal;
   const resultObjects = {
     [ResultType.normals]: ConstantResult,
     [ResultType.shearsY]: ConstantResult,
@@ -78,6 +77,7 @@ export function frameResults(
           : false
       );
 
+      const size = 0.05 * settings.gridSize.rawVal;
       resultObject.updateScale(size * deridedDisplayScale.rawVal);
 
       group.add(resultObject);
@@ -90,6 +90,7 @@ export function frameResults(
 
     if (settings.frameResults.rawVal == "none") return;
 
+    const size = 0.05 * settings.gridSize.val;
     group.children.forEach((c) =>
       (c as IResultObject).updateScale(size * deridedDisplayScale.rawVal)
     );

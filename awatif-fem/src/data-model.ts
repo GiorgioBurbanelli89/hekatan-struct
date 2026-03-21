@@ -22,6 +22,16 @@ export type NodeInputs = {
   loads?: Map<number, [number, number, number, number, number, number]>;
 };
 
+export type SectionShape = {
+  type: "rect" | "circ" | "I" | "HSS" | "CFT";  // rectangular, circular, I-beam, hollow rectangular, concrete-filled tube
+  b?: number;   // width (rect) or flange width (I) or outer width (HSS)
+  h?: number;   // height (rect) or depth (I) or outer height (HSS)
+  d?: number;   // diameter (circ)
+  tw?: number;  // web thickness (I) or wall thickness (HSS)
+  tf?: number;  // flange thickness (I)
+  name?: string; // profile name e.g. "W14x82", or dimension label
+};
+
 export type ElementInputs = {
   elasticities?: Map<number, number>;
   elasticitiesOrthogonal?: Map<number, number>;
@@ -32,6 +42,9 @@ export type ElementInputs = {
   torsionalConstants?: Map<number, number>;
   thicknesses?: Map<number, number>;
   poissonsRatios?: Map<number, number>;
+  densities?: Map<number, number>; // mass density per element (rho)
+  polarMomentsOfInertia?: Map<number, number>; // I0 (polar moment of inertia, Paz formulation)
+  sectionShapes?: Map<number, SectionShape>; // visual section data for rendering
 };
 
 export type DeformOutputs = {
@@ -54,4 +67,10 @@ export type AnalyzeOutputs = {
   membraneXY?: Map<number, [number, number, number]>;
   tranverseShearX?: Map<number, [number, number, number]>;
   tranverseShearY?: Map<number, [number, number, number]>;
+};
+
+export type ModalOutputs = {
+  frequencies?: number[];    // natural frequencies [Hz]
+  modeShapes?: number[][];   // mode shapes [mode_index][dof_index]
+  massParticipation?: number[][]; // [mode_index][6] ratios (ux,uy,uz,rx,ry,rz)
 };

@@ -10,3 +10,5 @@ export { getColorMap } from "./color-map/getColorMap";
 export { getToolbar } from "./toolbar/getToolbar";
 export { getDialog } from "./dialog/getDialog";
 export { getReport } from "./report/getReport";
+export { getTheme, getThemeName, setTheme, toggleTheme, onThemeChange } from "./theme";
+export type { ThemeName, ThemeColors } from "./theme";

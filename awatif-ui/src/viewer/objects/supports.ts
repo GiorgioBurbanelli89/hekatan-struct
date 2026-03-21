@@ -13,8 +13,6 @@ export function supports(
   const group = new THREE.Group();
   const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
   const material = new THREE.MeshBasicMaterial({ color: 0x9b2226 });
-  const size = 0.05 * settings.gridSize.rawVal * 0.6;
-
   // on settings.support & deformedShape, and model clear and create visuals
   van.derive(() => {
     settings.deformedShape.val; // triggers update
@@ -23,6 +21,7 @@ export function supports(
 
     group.clear();
 
+    const size = 0.05 * settings.gridSize.val * 0.6;
     structure.nodeInputs?.val.supports?.forEach((_, index) => {
       const position = derivedNodes.val[index];
       if (!position) return; // do not create if node does not exist
@@ -37,12 +36,13 @@ export function supports(
     });
   });
 
-  // on derivedDisplayScale update scale
+  // on derivedDisplayScale or gridSize update scale
   van.derive(() => {
     derivedDisplayScale.val; // triggers update
 
     if (!settings.supports.rawVal) return;
 
+    const size = 0.05 * settings.gridSize.val * 0.6;
     const scale = size * derivedDisplayScale.rawVal;
     group.children.forEach((c) => c.scale.set(scale, scale, scale));
   });

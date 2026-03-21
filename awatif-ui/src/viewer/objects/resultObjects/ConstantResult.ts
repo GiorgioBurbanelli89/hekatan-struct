@@ -3,6 +3,7 @@ import { Node } from "awatif-fem";
 import { Text } from "../Text";
 import { getAverage } from "../utils/getAverage";
 import { IResultObject } from "./IResultObject";
+import { getTheme } from "../../../theme";
 
 export class ConstantResult extends THREE.Group implements IResultObject {
   private lines: THREE.Line;
@@ -34,7 +35,7 @@ export class ConstantResult extends THREE.Group implements IResultObject {
     const geometryPoints = new THREE.BufferGeometry().setFromPoints(points);
     this.lines = new THREE.Line(
       geometryPoints,
-      new THREE.LineBasicMaterial({ color: "white" })
+      new THREE.LineBasicMaterial({ color: getTheme().resultOutline })
     );
 
     this.lines.position.set(...node1);

@@ -1,13 +1,22 @@
 import { defineConfig } from "vite";
 import topLevelAwait from "vite-plugin-top-level-await";
+import path from "path";
 
 export default defineConfig({
   server: {
     port: 4600,
-    open: "slab-designer/index.html",
+    open: "workspace/index.html",
   },
-  base: "./", // to resolve assets
+  base: process.env.DEPLOY_BASE || "./", // to resolve assets
   root: "./src",
+  resolve: {
+    // Force single instance of vanjs-core (avoids symlink duplication)
+    alias: [
+      { find: /^vanjs-core$/, replacement: path.resolve(__dirname, "../node_modules/vanjs-core") },
+    ],
+    dedupe: ["vanjs-core", "three"],
+    preserveSymlinks: false,
+  },
   build: {
     outDir: "../../website/src/examples",
     emptyOutDir: true,
@@ -16,6 +25,7 @@ export default defineConfig({
         "3d-structure": "src/3d-structure/index.html",
         "advanced-truss": "src/advanced-truss/index.html",
         beams: "src/beams/index.html",
+        workspace: "src/workspace/index.html",
         curves: "src/curves/index.html",
         "1d-mesh": "src/1d-mesh/index.html",
         truss: "src/truss/index.html",
@@ -27,6 +37,10 @@ export default defineConfig({
         building: "src/building/index.html",
         "slab-designer": "src/slab-designer/index.html",
         "color-map": "src/color-map/index.html",
+        "cad-editor": "src/cad-editor/index.html",
+        "axial-bar": "src/axial-bar/index.html",
+        "plate-q4": "src/plate-q4/index.html",
+        "plate-q4-report": "src/plate-q4/report.html",
       },
     },
   },

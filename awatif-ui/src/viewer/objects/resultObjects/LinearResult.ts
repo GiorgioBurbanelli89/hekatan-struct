@@ -3,6 +3,7 @@ import { Node } from "awatif-fem";
 import { Text } from "../Text";
 import { get10thFromFirstPoint } from "../utils/get5thFromFirstPoint";
 import { IResultObject } from "./IResultObject";
+import { getTheme } from "../../../theme";
 
 export class LinearResult extends THREE.Group implements IResultObject {
   private lines: THREE.Line;
@@ -60,7 +61,7 @@ export class LinearResult extends THREE.Group implements IResultObject {
       const points2 = shape2.getPoints();
       const geometryPoints = new THREE.BufferGeometry().setFromPoints(points);
       const geometryPoints2 = new THREE.BufferGeometry().setFromPoints(points2);
-      const lineMaterial = new THREE.LineBasicMaterial({ color: "white" });
+      const lineMaterial = new THREE.LineBasicMaterial({ color: getTheme().resultOutline });
       this.lines = new THREE.Line(geometryPoints, lineMaterial);
       this.lines2 = new THREE.Line(geometryPoints2, lineMaterial);
 
@@ -109,7 +110,7 @@ export class LinearResult extends THREE.Group implements IResultObject {
       const geometryPoints = new THREE.BufferGeometry().setFromPoints(points);
       this.lines = new THREE.Line(
         geometryPoints,
-        new THREE.LineBasicMaterial({ color: "white" })
+        new THREE.LineBasicMaterial({ color: getTheme().resultOutline })
       );
 
       this.lines.position.set(...node1);
