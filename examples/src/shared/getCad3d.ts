@@ -26,6 +26,7 @@ import { getTheme, getThemeName, onThemeChange } from "awatif-ui/src/theme";
 import { UNIT_SYSTEMS, buildUnitSystem, FORCE_UNITS, LENGTH_UNITS, getGeneratorParams, getLoadParams, getSupportOptions, type UnitSystemId, type UnitSystem, type ForceUnitId, type LengthUnitId } from "./units";
 import { createModalPanel } from "./renderModalTable";
 import { STEEL_PROFILES, getWProfileOptions, getHSSProfileOptions } from "./steelProfiles";
+import { buildReportExplained } from "./reportExplained";
 
 export interface Cad3dMesh {
   nodes: State<Node[]>;
@@ -4079,6 +4080,26 @@ Util:     cad.info()  cad.clear()  cad.help()
     .fem-full-sections td.hdr { color: var(--fem-section-title); font-weight: bold; background: var(--fem-header-bg); text-align: center; }
     .fem-full-sections td.diag { background: var(--fem-diag-bg); }
     .fem-full-sections .coeff-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+
+    /* Report Explained (FEM Solver) overlay */
+    .fem-solver-overlay { position: fixed; inset: 0; background: #0d1117; z-index: 9999999; overflow: auto; padding: 20px 30px; color: #c9d1d9; font-family: 'Segoe UI', monospace, sans-serif; font-size: 13px; }
+    .fem-solver-overlay h2 { color: #58a6ff; margin: 0 0 12px 0; font-size: 20px; }
+    .fem-solver-overlay h3 { color: #f0883e; margin: 16px 0 6px 0; font-size: 15px; cursor: pointer; border-bottom: 1px solid #30363d; padding-bottom: 4px; }
+    .fem-solver-overlay h3:hover { color: #ffa657; }
+    .fem-solver-overlay h4 { color: #7ee787; margin: 8px 0 4px 0; font-size: 13px; cursor: pointer; }
+    .fem-solver-overlay h4:hover { color: #a5f3c0; }
+    .fem-rpt-close { position: fixed; top: 12px; right: 20px; background: #21262d; color: #c9d1d9; border: 1px solid #30363d; border-radius: 4px; padding: 6px 14px; cursor: pointer; font-size: 14px; z-index: 10000000; }
+    .fem-rpt-close:hover { background: #30363d; }
+    .fem-rpt-summary { display: flex; gap: 20px; margin-bottom: 12px; color: #8b949e; font-size: 13px; }
+    .fem-rpt-summary b { color: #58a6ff; }
+    .fem-rpt-body { margin-left: 8px; }
+    .fem-rpt-elem { margin: 4px 0; border-left: 2px solid #21262d; padding-left: 8px; }
+    .fem-rpt-elem-body { margin: 4px 0 8px 0; }
+    .fem-rpt-props { color: #8b949e; font-size: 11px; margin: 2px 0; }
+    .fem-rpt-mtx-title { color: #f78166; font-size: 11px; font-weight: bold; margin: 6px 0 2px 0; }
+    .fem-rpt-matrix { border-collapse: collapse; font-family: 'Consolas', monospace; font-size: 10px; }
+    .fem-rpt-matrix td { padding: 1px 5px; text-align: right; border: 1px solid #21262d; white-space: nowrap; }
+    .fem-rpt-matrix .fem-hdr { color: #58a6ff; font-weight: bold; text-align: center; background: #161b22; font-size: 9px; }
     .fem-full-sections .coeff-item { background: var(--fem-coeff-item-bg); border: 1px solid var(--fem-eq-box-border); border-radius: 4px; padding: 8px 12px; font-family: 'STIX Two Math','Cambria Math','Times New Roman',serif; font-size: 13px; color: var(--fem-eq-text); line-height: 1.6; }
     .fem-full-sections .coeff-item .var { color: var(--fem-eq-var); font-style: italic; }
     .fem-full-sections .coeff-item .frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; margin: 0 2px; }
@@ -4200,6 +4221,7 @@ Util:     cad.info()  cad.clear()  cad.help()
       <div class="btn-row" style="margin-top:2px">
         <button id="cad3d-nonlinear" title="Análisis no-lineal dinámico (BRB + sismo)">🔥 Nonlinear</button>
         <button id="cad3d-pushover" title="Pushover cíclico con histéresis">📊 Pushover</button>
+        <button id="cad3d-fem-solver" title="Report Explained: derivación FEM paso a paso de todos los elementos">📐 Report Explained</button>
         <button id="cad3d-log" title="Ver log del solver">📋 Log</button>
       </div>
       <input class="cmd-input" id="cad3d-cmd" placeholder="cad.galpon(12,20,6,3)" />
@@ -5325,6 +5347,12 @@ Util:     cad.info()  cad.clear()  cad.help()
     panel.querySelector("#cad3d-nonlinear")?.addEventListener("click", (ev) => {
       ev.stopPropagation();
       showNonlinearPanel();
+    });
+
+    // === FEM Solver / Report Explained ===
+    panel.querySelector("#cad3d-fem-solver")?.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      showFemSolverReport();
     });
 
     panel.querySelector("#cad3d-modal")?.addEventListener("click", (ev) => {
@@ -8229,6 +8257,309 @@ Util:     cad.info()  cad.clear()  cad.help()
 
     const info = div.querySelector("#nl-info") as HTMLElement;
     info.textContent = `Steel02: Fy=${(Fy/1000).toFixed(0)} MPa, E₀=${(E0/1e6).toFixed(0)} GPa, b=${b}, R₀=${R0} — ${cycles} ciclos, amp=${(amp*100).toFixed(1)}%`;
+  }
+
+  /** ═══════════════════════════════════════════════════════════
+   *  Report Explained — Full FEM solver step-by-step for ALL elements
+   *  ═══════════════════════════════════════════════════════════ */
+  function showFemSolverReport() {
+    const existing = document.querySelector(".rpt-overlay");
+    if (existing) { existing.remove(); return; }
+
+    const nodes_arr = mesh.nodes.val;
+    const elements_arr = mesh.elements.val;
+    const ei = mesh.elementInputs?.val || {};
+    const ni = mesh.nodeInputs?.val || {};
+    const dOut = mesh.deformOutputs?.val;
+    const aOut = mesh.analyzeOutputs?.val;
+
+    if (!nodes_arr.length || !elements_arr.length) {
+      alert("No hay modelo cargado"); return;
+    }
+
+    // Use the academic-style report builder
+    const reportDiv = buildReportExplained({
+      nodes: nodes_arr,
+      elements: elements_arr,
+      nodeInputs: ni,
+      elementInputs: ei,
+      deformOutputs: dOut,
+      analyzeOutputs: aOut,
+    });
+    document.body.appendChild(reportDiv);
+    return;
+
+    // --- Legacy code below (kept for reference, never reached) ---
+
+    const totalDof = nodes_arr.length * 6;
+    const nElem = elements_arr.length;
+
+    // ── Build report HTML ──
+    let html = `<button class="fem-rpt-close" id="fem-rpt-close">✕</button>`;
+    html += `<h2>📐 Report Explained — FEM Solver Step-by-Step</h2>`;
+    html += `<div class="fem-rpt-summary">
+      <span>Nodos: <b>${nodes_arr.length}</b></span>
+      <span>Elementos: <b>${nElem}</b></span>
+      <span>DOFs totales: <b>${totalDof}</b></span>
+    </div>`;
+
+    // ── Step 1: Element Loop — K local, T, K global for each ──
+    html += `<h3 class="fem-rpt-section" data-toggle="s1">▼ Paso 1 — Matrices por elemento (K local → T → K global)</h3>`;
+    html += `<div id="fem-rpt-s1" class="fem-rpt-body">`;
+
+    for (let e = 0; e < nElem; e++) {
+      const elem = elements_arr[e];
+      const elmNodes = elem.map(n => nodes_arr[n]) as Node[];
+      const isFrame = elem.length === 2;
+
+      let kLocal: number[][] | null = null, T: number[][] | null = null, kGlobal: number[][] | null = null;
+      try {
+        kLocal = getLocalStiffnessMatrix(elmNodes, ei, e);
+        T = getTransformationMatrix(elmNodes);
+        kGlobal = multiply(transpose(T), multiply(kLocal, T)) as number[][];
+      } catch { /* skip */ }
+
+      const L = isFrame ? (norm(subtract(elmNodes[1], elmNodes[0])) as number) : 0;
+      const E = ei.elasticities?.get(e) ?? 0;
+      const A = ei.areas?.get(e) ?? 0;
+      const Iz = ei.momentsOfInertiaZ?.get(e) ?? 0;
+      const Iy = ei.momentsOfInertiaY?.get(e) ?? 0;
+
+      html += `<div class="fem-rpt-elem">`;
+      html += `<h4 class="fem-rpt-elem-header" data-toggle="e${e}">▶ Elemento ${e} — ${isFrame ? "Frame" : "Shell"} [${elem.join("→")}] L=${fmt(L)}</h4>`;
+      html += `<div id="fem-rpt-e${e}" class="fem-rpt-elem-body" style="display:none">`;
+
+      // Properties
+      html += `<div class="fem-rpt-props">E=${fmt(E)}, A=${fmt(A)}, Iz=${fmt(Iz)}, Iy=${fmt(Iy)}</div>`;
+
+      // K local
+      if (kLocal) {
+        html += `<div class="fem-rpt-mtx-title">k_local (${kLocal.length}×${kLocal.length})</div>`;
+        html += femMatrixHTML(kLocal, isFrame ? 12 : 18);
+      }
+
+      // T
+      if (T) {
+        html += `<div class="fem-rpt-mtx-title">T — Transformación</div>`;
+        html += femMatrixHTML(T as number[][], isFrame ? 12 : 18);
+      }
+
+      // K global
+      if (kGlobal) {
+        html += `<div class="fem-rpt-mtx-title">K_global = T<sup>T</sup> · k · T</div>`;
+        html += femMatrixHTML(kGlobal as number[][], isFrame ? 12 : 18);
+      }
+
+      // Assembly DOFs
+      const dofs = elem.map(n => `nodo ${n}: DOFs ${n*6}..${n*6+5}`).join(", ");
+      html += `<div class="fem-rpt-props" style="margin-top:4px">Ensamblaje: ${dofs}</div>`;
+
+      html += `</div></div>`;
+    }
+    html += `</div>`;
+
+    // ── Step 2: Assembly K total ──
+    html += `<h3 class="fem-rpt-section" data-toggle="s2">▼ Paso 2 — Ensamblaje K total (${totalDof}×${totalDof})</h3>`;
+    html += `<div id="fem-rpt-s2" class="fem-rpt-body">`;
+    html += `<div class="fem-rpt-props">K_total = Σ (T<sub>e</sub><sup>T</sup> · k<sub>e</sub> · T<sub>e</sub>) para e = 0..${nElem-1}</div>`;
+    // Assembly map showing which elements contribute to which DOFs
+    const maxShowDof = Math.min(totalDof, 36);
+    html += `<div class="fem-rpt-mtx-title">Mapa de ensamblaje (${maxShowDof}×${maxShowDof} de ${totalDof}×${totalDof})</div>`;
+    html += `<div style="overflow-x:auto"><table class="fem-rpt-matrix" style="font-size:9px">`;
+    html += `<tr><td></td>`;
+    for (let j = 0; j < maxShowDof; j++) html += `<td class="fem-hdr">${j}</td>`;
+    html += `</tr>`;
+    // Build element contribution map
+    const contribMap: Set<number>[][] = Array.from({length: maxShowDof}, () => Array.from({length: maxShowDof}, () => new Set()));
+    for (let e = 0; e < nElem; e++) {
+      const elem = elements_arr[e];
+      const offsets = elem.map(n => n * 6);
+      for (const oi of offsets) {
+        for (const oj of offsets) {
+          for (let di = 0; di < 6; di++) {
+            for (let dj = 0; dj < 6; dj++) {
+              const gi = oi + di, gj = oj + dj;
+              if (gi < maxShowDof && gj < maxShowDof) contribMap[gi][gj].add(e);
+            }
+          }
+        }
+      }
+    }
+    for (let i = 0; i < maxShowDof; i++) {
+      html += `<tr><td class="fem-hdr">${i}</td>`;
+      for (let j = 0; j < maxShowDof; j++) {
+        const s = contribMap[i][j];
+        const n = s.size;
+        const bg = n === 0 ? "transparent" : n === 1 ? "#0a2a4a" : n === 2 ? "#0f3460" : "#1a4a7a";
+        const txt = n === 0 ? "." : n.toString();
+        const clr = n === 0 ? "#333" : "#00d4ff";
+        html += `<td style="background:${bg};color:${clr};text-align:center;width:18px;height:18px;padding:0" title="elem: ${[...s].join(",")}">${txt}</td>`;
+      }
+      html += `</tr>`;
+    }
+    html += `</table></div>`;
+    html += `</div>`;
+
+    // ── Step 3: Boundary Conditions ──
+    html += `<h3 class="fem-rpt-section" data-toggle="s3">▼ Paso 3 — Condiciones de borde</h3>`;
+    html += `<div id="fem-rpt-s3" class="fem-rpt-body">`;
+    const dofNames = ["ux","uy","uz","θx","θy","θz"];
+    const fixedDofs: number[] = [];
+    ni.supports?.forEach((sup, nodeIdx) => {
+      sup.forEach((fixed, d) => { if (fixed) fixedDofs.push(nodeIdx * 6 + d); });
+    });
+    html += `<div class="fem-rpt-props"><b>Apoyos fijos:</b></div>`;
+    ni.supports?.forEach((sup, nodeIdx) => {
+      const fixedLabels = sup.map((f, d) => f ? `<span style="color:#e94560">${dofNames[d]}</span>` : `<span style="color:#333">${dofNames[d]}</span>`).join(" ");
+      html += `<div class="fem-rpt-props">Nodo ${nodeIdx}: ${fixedLabels}</div>`;
+    });
+    html += `<div class="fem-rpt-props" style="margin-top:4px">DOFs fijos: [${fixedDofs.join(", ")}]</div>`;
+    html += `<div class="fem-rpt-props">DOFs libres: ${totalDof - fixedDofs.length} de ${totalDof}</div>`;
+
+    // Loads
+    html += `<div class="fem-rpt-props" style="margin-top:8px"><b>Cargas aplicadas:</b></div>`;
+    ni.loads?.forEach((load, nodeIdx) => {
+      const vals = load.map((v, d) => Math.abs(v) > 1e-10 ? `${dofNames[d]}=${fmt(v)}` : "").filter(Boolean).join(", ");
+      if (vals) html += `<div class="fem-rpt-props">Nodo ${nodeIdx}: ${vals}</div>`;
+    });
+    html += `</div>`;
+
+    // ── Step 4: Solution ──
+    html += `<h3 class="fem-rpt-section" data-toggle="s4">▼ Paso 4 — Solución u = K<sup>-1</sup>·F</h3>`;
+    html += `<div id="fem-rpt-s4" class="fem-rpt-body">`;
+    html += `<div class="fem-rpt-props">K<sub>free</sub> · u<sub>free</sub> = F<sub>free</sub> → LU decomposition → u</div>`;
+    if (dOut?.deformations) {
+      html += `<div class="fem-rpt-mtx-title">Desplazamientos por nodo</div>`;
+      html += `<table class="fem-rpt-matrix"><tr><td class="fem-hdr">Nodo</td>`;
+      for (const dn of dofNames) html += `<td class="fem-hdr">${dn}</td>`;
+      html += `</tr>`;
+      dOut.deformations.forEach((d, nodeIdx) => {
+        html += `<tr><td class="fem-hdr">${nodeIdx}</td>`;
+        d.forEach(v => {
+          const nz = Math.abs(v) > 1e-10;
+          html += `<td style="color:${nz ? "#7bed9f" : "#444"}">${fmt(v, 6)}</td>`;
+        });
+        html += `</tr>`;
+      });
+      html += `</table>`;
+    }
+    if (dOut?.reactions) {
+      html += `<div class="fem-rpt-mtx-title" style="margin-top:8px">Reacciones</div>`;
+      html += `<table class="fem-rpt-matrix"><tr><td class="fem-hdr">Nodo</td>`;
+      for (const dn of dofNames) html += `<td class="fem-hdr">${dn}</td>`;
+      html += `</tr>`;
+      dOut.reactions.forEach((r, nodeIdx) => {
+        html += `<tr><td class="fem-hdr">${nodeIdx}</td>`;
+        r.forEach(v => {
+          const nz = Math.abs(v) > 1e-10;
+          html += `<td style="color:${nz ? "#ffd700" : "#444"}">${fmt(v, 4)}</td>`;
+        });
+        html += `</tr>`;
+      });
+      html += `</table>`;
+    }
+    html += `</div>`;
+
+    // ── Step 5: Internal Forces per element ──
+    html += `<h3 class="fem-rpt-section" data-toggle="s5">▼ Paso 5 — Fuerzas internas por elemento</h3>`;
+    html += `<div id="fem-rpt-s5" class="fem-rpt-body">`;
+    if (aOut && dOut?.deformations) {
+      const fLabels = ["N","Vy","Vz","Mx","My","Mz"];
+      html += `<table class="fem-rpt-matrix"><tr><td class="fem-hdr">Elem</td><td class="fem-hdr">Nodos</td>`;
+      for (const fl of fLabels) html += `<td class="fem-hdr">${fl}<sub>i</sub></td>`;
+      for (const fl of fLabels) html += `<td class="fem-hdr">${fl}<sub>j</sub></td>`;
+      html += `</tr>`;
+      for (let e = 0; e < nElem; e++) {
+        const elem = elements_arr[e];
+        if (elem.length !== 2) continue; // frames only
+        const elmNodes = elem.map(n => nodes_arr[n]) as Node[];
+        try {
+          const kL = getLocalStiffnessMatrix(elmNodes, ei, e);
+          const T2 = getTransformationMatrix(elmNodes);
+          const uG: number[] = [];
+          for (const n of elem) {
+            const d = dOut.deformations?.get(n) || [0,0,0,0,0,0];
+            uG.push(...d);
+          }
+          const uL = multiply(T2, uG) as number[];
+          const fL = multiply(kL, uL) as number[];
+          html += `<tr><td class="fem-hdr">${e}</td><td style="color:#888">${elem.join("→")}</td>`;
+          for (let i = 0; i < 12; i++) {
+            const nz = Math.abs(fL[i]) > 1e-10;
+            html += `<td style="color:${nz ? "#7bed9f" : "#444"}">${fmt(fL[i], 2)}</td>`;
+          }
+          html += `</tr>`;
+        } catch { /* skip */ }
+      }
+      html += `</table>`;
+    } else {
+      html += `<div class="fem-rpt-props" style="color:#888">Ejecute el análisis primero</div>`;
+    }
+    html += `</div>`;
+
+    // ── Create overlay ──
+    const overlay = document.createElement("div");
+    overlay.className = "fem-solver-overlay";
+    overlay.innerHTML = html;
+    document.body.appendChild(overlay);
+
+    // Event handlers
+    overlay.querySelector("#fem-rpt-close")?.addEventListener("click", () => overlay.remove());
+
+    // Collapsible sections
+    overlay.querySelectorAll("[data-toggle]").forEach(el => {
+      el.addEventListener("click", () => {
+        const id = (el as HTMLElement).dataset.toggle!;
+        const body = overlay.querySelector(`#fem-rpt-${id}`) as HTMLElement;
+        if (body) {
+          const visible = body.style.display !== "none";
+          body.style.display = visible ? "none" : "";
+          (el as HTMLElement).textContent = (el as HTMLElement).textContent!.replace(/^[▼▶]/, visible ? "▶" : "▼");
+        }
+      });
+    });
+
+    // Collapsible elements
+    overlay.querySelectorAll(".fem-rpt-elem-header").forEach(el => {
+      el.addEventListener("click", () => {
+        const id = (el as HTMLElement).dataset.toggle!;
+        const body = overlay.querySelector(`#fem-rpt-${id}`) as HTMLElement;
+        if (body) {
+          const visible = body.style.display !== "none";
+          body.style.display = visible ? "none" : "";
+          (el as HTMLElement).textContent = (el as HTMLElement).textContent!.replace(/^[▼▶]/, visible ? "▶" : "▼");
+        }
+      });
+    });
+  }
+
+  /** Render a matrix as compact HTML table */
+  function femMatrixHTML(mat: number[][], size: number): string {
+    const show = Math.min(size, 12);
+    let h = `<div style="overflow-x:auto;margin:4px 0"><table class="fem-rpt-matrix">`;
+    for (let i = 0; i < show; i++) {
+      h += `<tr>`;
+      for (let j = 0; j < show; j++) {
+        const v = mat[i]?.[j] ?? 0;
+        const z = Math.abs(v) < 1e-10;
+        const diag = i === j;
+        const bg = diag && !z ? "#0a2a4a" : "";
+        const clr = z ? "#333" : diag ? "#00d4ff" : "#aaa";
+        h += `<td style="color:${clr};${bg ? "background:"+bg+";" : ""}text-align:right;padding:1px 4px;font-size:9px;white-space:nowrap">${z ? "0" : fmtM(v)}</td>`;
+      }
+      h += `</tr>`;
+    }
+    h += `</table>`;
+    if (size > show) h += `<div style="color:#555;font-size:9px">(mostrando ${show}×${show} de ${size}×${size})</div>`;
+    h += `</div>`;
+    return h;
+  }
+
+  function fmtM(v: number): string {
+    if (Math.abs(v) >= 1e6) return v.toExponential(1);
+    if (Math.abs(v) < 0.01 && v !== 0) return v.toExponential(1);
+    if (Math.abs(v) >= 100) return v.toFixed(0);
+    return v.toFixed(2);
   }
 
   /** Show section assignment panel for selected elements */
