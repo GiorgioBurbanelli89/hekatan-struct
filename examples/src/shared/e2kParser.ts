@@ -10,9 +10,16 @@
  */
 import type { Node, Element, NodeInputs, ElementInputs, SectionShape } from "awatif-fem";
 
+export interface E2kGrid {
+  label: string;   // "A", "B", "1", "2", etc.
+  dir: "X" | "Y";
+  coord: number;
+}
+
 export interface E2kModel {
   units: { force: string; length: string };
   stories: { name: string; height: number; elev: number }[];
+  grids: E2kGrid[];
   materials: Map<string, { type: string; E: number; G: number; nu: number; fy?: number; fc?: number; density?: number }>;
   frameSections: Map<string, { material: string; shape: string; D: number; B: number; TF: number; TW: number; R?: number; fillMaterial?: string; modI2?: number; modI3?: number }>;
   nodes: Node[];
@@ -43,6 +50,7 @@ export function parseE2k(text: string): E2kModel {
   const restraints = new Map<string, string[]>(); // pointName+story → restrained DOFs
   const lineAssigns = new Map<string, { story: string; section: string }>(); // lineName+story → section
   const frameLoads: { line: string; story: string; type: string; dir: string; val: number }[] = [];
+  const grids: E2kGrid[] = [];
   let title = "";
 
   let currentSection = "";
@@ -147,95 +155,80 @@ export function parseE2k(text: string): E2kModel {
       const lam = line.match(/LINEASSIGN\s+"([^"]+)"\s+"([^"]+)".*SECTION\s+"([^"]+)"/);
       if (lam) lineAssigns.set(`${lam[1]}@${lam[2]}`, { story: lam[2], section: lam[3] });
     }
-  }
 
-  // ── Compute story elevations ──
-  // Stories are listed top to bottom; compute elevations bottom-up
-  const storyElevs = new Map<string, number>();
-  if (stories.length > 0) {
-    // Last story has ELEV
-    let elev = stories[stories.length - 1].elev;
-    storyElevs.set(stories[stories.length - 1].name, elev);
-    for (let i = stories.length - 2; i >= 0; i--) {
-      elev += stories[i + 1].height;
-      stories[i].elev = elev;
-      storyElevs.set(stories[i].name, elev);
+    // ── GRIDS ──
+    if (currentSection === "GRIDS") {
+      const gm = line.match(/^\s*GRID\s+"[^"]+"\s+LABEL\s+"([^"]+)"\s+DIR\s+"([XY])"\s+COORD\s+([-\d.eE+]+)/);
+      if (gm) {
+        grids.push({ label: gm[1], dir: gm[2] as "X" | "Y", coord: parseFloat(gm[3]) });
+      }
     }
-    // Top story
-    const topElev = stories[0].elev + stories[0].height;
-    // Recalculate: stories go top-down, heights are from below
-    // Actually in ETABS: story "Base" ELEV -1, then each story HEIGHT is the height of that story
-    // Elev of story = elev of story below + height of current story
-    // Let me recalculate properly
-    let runElev = stories[stories.length - 1].elev; // Base elev
-    storyElevs.set(stories[stories.length - 1].name, runElev);
-    for (let i = stories.length - 2; i >= 0; i--) {
-      runElev += stories[i + 1].height;
-      storyElevs.set(stories[i].name, runElev);
-      stories[i].elev = runElev;
-    }
-  }
 
-  // ── Build 3D nodes ──
-  // In ETABS, POINT COORDINATES are 2D plan (X, Y). Each point exists at multiple stories.
-  // For columns: same XY at different Z (story elevations)
-  // For beams: same Z within a story
-  const nodes: Node[] = [];
-  const nodeNames: string[] = [];
-  const nodeNameToIdx = new Map<string, number>();
-
-  // Create nodes for each point at each story it appears
-  // First, find which stories each point appears at from LINE CONNECTIVITIES
-  const pointStories = new Map<string, Set<string>>();
-
-  for (const lc of lineConns) {
-    // A column spans nStories stories starting from bottom
-    // Columns: pt1=pt2 (same plan point), connect vertically
-    // Beams: different plan points at same story
-    if (lc.type === "COLUMN") {
-      // Column connects pt at story N to pt at story N+1, spanning nStories
-      // We need to figure out which stories
-      for (const [storyName] of storyElevs) {
-        const key = `${lc.name}@${storyName}`;
-        if (lineAssigns.has(key)) {
-          if (!pointStories.has(lc.pt1)) pointStories.set(lc.pt1, new Set());
-          pointStories.get(lc.pt1)!.add(storyName);
-          // Column top is at the story above
-          const stIdx = stories.findIndex(s => s.name === storyName);
-          if (stIdx > 0) {
-            pointStories.get(lc.pt1)!.add(stories[stIdx - 1].name);
-          }
-        }
+    // ── AREA CONNECTIVITIES ──
+    if (currentSection === "AREA CONNECTIVITIES") {
+      const am = line.match(/AREA\s+"([^"]+)"\s+\d+\s+(.+)/);
+      if (am) {
+        const pts = am[2].match(/"([^"]+)"/g)?.map(s => s.replace(/"/g, "")) || [];
+        areaConns.push({ name: am[1], pts, nStories: 0 });
       }
     }
   }
 
-  // Simpler approach: create a node for every (point, story) combination that's referenced
-  // First pass: collect all unique (point, story) pairs
+  // ── Compute story elevations ──
+  // Stories are listed top-to-bottom in the file. Each story's HEIGHT is
+  // the floor-to-floor distance from the story below to this story.
+  // The last story ("Base") has an absolute ELEV.
+  // Elevation of story[i] = elevation of story[i+1] + height of story[i]
+  const storyElevs = new Map<string, number>();
+  if (stories.length > 0) {
+    // Base story has its absolute elevation
+    const baseIdx = stories.length - 1;
+    storyElevs.set(stories[baseIdx].name, stories[baseIdx].elev);
+    // Accumulate upward: each story's elev = story_below.elev + this_story.height
+    for (let i = baseIdx - 1; i >= 0; i--) {
+      const belowElev = storyElevs.get(stories[i + 1].name)!;
+      const thisElev = belowElev + stories[i].height;
+      stories[i].elev = thisElev;
+      storyElevs.set(stories[i].name, thisElev);
+    }
+  }
+
+  // ── Build 3D nodes & elements ──
+  // ETABS POINT COORDINATES are 2D plan (X, Y). 3D position depends on story.
+  // For COLUMN/BRACE at story S with nStories N:
+  //   bottom node (pt1) at elevation of story N levels below S
+  //   top node (pt2) at elevation of story S
+  // For BEAM at story S: both nodes at elevation of story S
+  const nodes: Node[] = [];
+  const nodeNames: string[] = [];
+  const nodeNameToIdx = new Map<string, number>();
+
   const nodeKey = (pt: string, story: string) => `${pt}@${story}`;
   const allNodeKeys = new Set<string>();
 
-  // From line assigns, determine which stories each line exists at
+  // Build a lookup: line name → lineConn (for nStories access)
+  const lineConnMap = new Map<string, typeof lineConns[0]>();
+  for (const lc of lineConns) lineConnMap.set(lc.name, lc);
+
+  // Collect all unique (point, story) pairs needed
   for (const lc of lineConns) {
     for (const [key, la] of lineAssigns) {
-      if (key.startsWith(lc.name + "@")) {
-        const story = la.story;
-        const storyIdx = stories.findIndex(s => s.name === story);
-        if (storyIdx < 0) continue;
+      if (!key.startsWith(lc.name + "@")) continue;
+      const story = la.story;
+      const storyIdx = stories.findIndex(s => s.name === story);
+      if (storyIdx < 0) continue;
 
-        if (lc.type === "COLUMN") {
-          // Column bottom at this story, top at story above
-          allNodeKeys.add(nodeKey(lc.pt1, story));
-          if (storyIdx > 0) allNodeKeys.add(nodeKey(lc.pt1, stories[storyIdx - 1].name));
-          if (lc.pt2 !== lc.pt1) {
-            allNodeKeys.add(nodeKey(lc.pt2, story));
-            if (storyIdx > 0) allNodeKeys.add(nodeKey(lc.pt2, stories[storyIdx - 1].name));
-          }
-        } else {
-          // Beam/Brace at this story elevation
-          allNodeKeys.add(nodeKey(lc.pt1, story));
-          allNodeKeys.add(nodeKey(lc.pt2, story));
-        }
+      if (lc.type === "COLUMN" || lc.type === "BRACE") {
+        // Top node at this story's elevation
+        allNodeKeys.add(nodeKey(lc.pt2, story));
+        // Bottom node at nStories levels below this story
+        const nSt = Math.max(lc.nStories, 1);
+        const bottomIdx = Math.min(storyIdx + nSt, stories.length - 1);
+        allNodeKeys.add(nodeKey(lc.pt1, stories[bottomIdx].name));
+      } else {
+        // BEAM: both nodes at this story's elevation
+        allNodeKeys.add(nodeKey(lc.pt1, story));
+        allNodeKeys.add(nodeKey(lc.pt2, story));
       }
     }
   }
@@ -245,18 +238,15 @@ export function parseE2k(text: string): E2kModel {
     allNodeKeys.add(key);
   }
 
-  // Create nodes
+  // Create nodes — deduplicate by (point, story) key
   for (const nk of allNodeKeys) {
     const [pt, story] = nk.split("@");
     const xy = pointCoords.get(pt);
     const elev = storyElevs.get(story);
     if (xy === undefined || elev === undefined) continue;
-    const idx = nodes.length;
-    // ETABS: X=plan-X, Y=plan-Y. In awatif Y-up: X=plan-X, Z=plan-Y, Y=elev (vertical)
-    // Actually awatif uses Z-up for buildings: X=plan-X, Y=plan-Y, Z=elev
     nodes.push([xy[0], xy[1], elev]);
     nodeNames.push(nk);
-    nodeNameToIdx.set(nk, idx);
+    nodeNameToIdx.set(nk, nodes.length - 1);
   }
 
   // ── Build elements ──
@@ -274,14 +264,14 @@ export function parseE2k(text: string): E2kModel {
       if (storyIdx < 0) continue;
 
       let n1key: string, n2key: string;
-      if (lc.type === "COLUMN") {
-        n1key = nodeKey(lc.pt1, story);
-        n2key = storyIdx > 0 ? nodeKey(lc.pt1, stories[storyIdx - 1].name) : nodeKey(lc.pt1, story);
-        if (lc.pt2 !== lc.pt1) {
-          n1key = nodeKey(lc.pt1, story);
-          n2key = nodeKey(lc.pt2, storyIdx > 0 ? stories[storyIdx - 1].name : story);
-        }
+      if (lc.type === "COLUMN" || lc.type === "BRACE") {
+        // Top at this story, bottom at nStories below
+        const nSt = Math.max(lc.nStories, 1);
+        const bottomIdx = Math.min(storyIdx + nSt, stories.length - 1);
+        n1key = nodeKey(lc.pt1, stories[bottomIdx].name); // bottom
+        n2key = nodeKey(lc.pt2, story);                    // top
       } else {
+        // BEAM: both at this story level
         n1key = nodeKey(lc.pt1, story);
         n2key = nodeKey(lc.pt2, story);
       }
@@ -453,6 +443,7 @@ export function parseE2k(text: string): E2kModel {
       sectionShapes,
     },
     sectionShapes,
+    grids,
     info: {
       nNodes: nodes.length,
       nFrames: elements.length,

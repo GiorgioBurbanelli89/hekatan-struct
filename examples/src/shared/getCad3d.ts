@@ -29,7 +29,7 @@ import { STEEL_PROFILES, getWProfileOptions, getHSSProfileOptions } from "./stee
 import { buildReportExplained } from "./reportExplained";
 import { buildElementReport } from "./elementReport";
 import { createHelpButton } from "./helpTour";
-import { parseE2k } from "./e2kParser";
+import { parseE2k, type E2kModel } from "./e2kParser";
 import { exportE2k } from "./e2kExporter";
 import { exportOpenSeesPy, exportOpenSeesTcl, importOpenSeesPy, importOpenSeesTcl } from "./openseesIO";
 
@@ -349,6 +349,134 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
     ctx.render();
   }
 
+  /** Story level group (horizontal lines + labels at each floor elevation) */
+  let storyLevelGroup: THREE.Group | null = null;
+
+  function clearStoryLevels() {
+    if (!storyLevelGroup) return;
+    const ctx = getViewerCtx();
+    if (ctx) ctx.scene.remove(storyLevelGroup);
+    storyLevelGroup.traverse((obj) => {
+      if ((obj as any).geometry) (obj as any).geometry.dispose();
+      if ((obj as any).material) {
+        const mat = (obj as any).material;
+        if (mat.map) mat.map.dispose();
+        mat.dispose();
+      }
+    });
+    storyLevelGroup = null;
+  }
+
+  /**
+   * Draw horizontal dashed lines at each story elevation + labels
+   * Like ETABS elevation view: thin dashed rectangles at each floor
+   */
+  function createStoryLevelLines(
+    stories: { name: string; height: number; elev: number }[],
+    xCoords: number[],
+    yCoords: number[],
+  ) {
+    clearStoryLevels();
+    if (stories.length === 0) return;
+    const ctx = getViewerCtx();
+    if (!ctx) return;
+
+    storyLevelGroup = new THREE.Group();
+    storyLevelGroup.name = "storyLevels";
+
+    const xMin = Math.min(...xCoords), xMax = Math.max(...xCoords);
+    const yMin = Math.min(...yCoords), yMax = Math.max(...yCoords);
+    const extentX = xMax - xMin || 1;
+    const extentY = yMax - yMin || 1;
+    const extent = Math.max(extentX, extentY);
+    const overshoot = extent * 0.06;
+    const is2D = yCoords.length <= 1;
+
+    const lineColor = 0x4488ff;
+    const labelSize = extent * 0.015;
+
+    for (const story of stories) {
+      const z = story.elev;
+
+      if (is2D) {
+        // 2D: horizontal line at Z across X range
+        addStoryLine(xMin - overshoot, 0, z, xMax + overshoot, 0, z, lineColor, storyLevelGroup);
+        // Label at right side
+        addStoryLabel(story.name, xMax + overshoot * 1.5, 0, z, labelSize, storyLevelGroup);
+      } else {
+        // 3D: dashed rectangle at elevation Z (plan outline)
+        addStoryLine(xMin, yMin, z, xMax, yMin, z, lineColor, storyLevelGroup);
+        addStoryLine(xMax, yMin, z, xMax, yMax, z, lineColor, storyLevelGroup);
+        addStoryLine(xMax, yMax, z, xMin, yMax, z, lineColor, storyLevelGroup);
+        addStoryLine(xMin, yMax, z, xMin, yMin, z, lineColor, storyLevelGroup);
+        // Label at one corner
+        addStoryLabel(story.name, xMin - overshoot * 1.5, yMin, z, labelSize, storyLevelGroup);
+      }
+    }
+
+    // Make immune to clipping planes
+    storyLevelGroup.traverse((obj: any) => {
+      if (obj.material) {
+        if (Array.isArray(obj.material)) {
+          obj.material.forEach((m: any) => { m.clippingPlanes = []; });
+        } else {
+          obj.material.clippingPlanes = [];
+        }
+      }
+    });
+
+    ctx.scene.add(storyLevelGroup);
+    ctx.render();
+  }
+
+  function addStoryLine(x1: number, y1: number, z1: number, x2: number, y2: number, z2: number, color: number, group: THREE.Group) {
+    const len = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2) || 1;
+    const geom = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(x1, y1, z1),
+      new THREE.Vector3(x2, y2, z2),
+    ]);
+    const mat = new THREE.LineDashedMaterial({
+      color,
+      dashSize: len * 0.02,
+      gapSize: len * 0.01,
+      transparent: true,
+      opacity: 0.5,
+    });
+    const line = new THREE.Line(geom, mat);
+    line.computeLineDistances();
+    line.renderOrder = 50;
+    group.add(line);
+  }
+
+  function addStoryLabel(text: string, x: number, y: number, z: number, size: number, group: THREE.Group) {
+    const canvas = document.createElement("canvas");
+    const cw = 512, ch = 64;
+    canvas.width = cw; canvas.height = ch;
+    const c = canvas.getContext("2d")!;
+    c.fillStyle = "rgba(30,60,120,0.8)";
+    const r = 8;
+    c.beginPath();
+    c.moveTo(r, 0); c.lineTo(cw - r, 0); c.quadraticCurveTo(cw, 0, cw, r);
+    c.lineTo(cw, ch - r); c.quadraticCurveTo(cw, ch, cw - r, ch);
+    c.lineTo(r, ch); c.quadraticCurveTo(0, ch, 0, ch - r);
+    c.lineTo(0, r); c.quadraticCurveTo(0, 0, r, 0);
+    c.closePath(); c.fill();
+    c.fillStyle = "#88bbff";
+    c.font = "bold 38px monospace";
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    c.fillText(text, cw / 2, ch / 2);
+
+    const texture = new THREE.Texture(canvas);
+    texture.needsUpdate = true;
+    const mat = new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true });
+    const sprite = new THREE.Sprite(mat);
+    sprite.position.set(x, y, z);
+    sprite.scale.set(size * 8, size, 1);
+    sprite.renderOrder = 101;
+    group.add(sprite);
+  }
+
   /** Add a dimension label (text sprite with background) */
   function addDimensionLabel(text: string, x: number, y: number, z: number, size: number, group: THREE.Group) {
     const canvas = document.createElement("canvas");
@@ -558,6 +686,7 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
       colElementIndices = new Set(); beamElementIndices = new Set(); elementFloor = new Map(); elementBay = new Map();
       currentGridX = []; currentGridY = []; currentGridZmax = 0;
       clearGridAxes();
+      clearStoryLevels();
       const axBtnContainer = panel.querySelector("#cad3d-axis-buttons");
       if (axBtnContainer) { (axBtnContainer as HTMLElement).style.display = "none"; axBtnContainer.innerHTML = ""; }
       console.log("Model cleared"); updatePanel();
@@ -5317,6 +5446,87 @@ Util:     cad.info()  cad.clear()  cad.help()
       console.log(`${label}: ${model.nodes.length} nodes, ${model.elements.length} elements`);
     }
 
+    function applyE2kGridsAndStories(model: E2kModel) {
+      // ── Populate element classification (columns/beams, floors, bays) ──
+      colElementIndices = new Set();
+      beamElementIndices = new Set();
+      elementFloor = new Map();
+      elementBay = new Map();
+
+      // Build story→floor index mapping (bottom=0)
+      const storyFloorMap = new Map<string, number>();
+      for (let i = 0; i < model.stories.length; i++) {
+        storyFloorMap.set(model.stories[i].name, i);
+      }
+
+      for (let ei = 0; ei < model.elementTypes.length; ei++) {
+        const etype = model.elementTypes[ei];
+        const estory = model.elementStories[ei];
+        const floor = storyFloorMap.get(estory) ?? 0;
+        elementFloor.set(ei, floor);
+
+        if (etype === "COLUMN" || etype === "BRACE") {
+          colElementIndices.add(ei);
+        } else {
+          beamElementIndices.add(ei);
+        }
+      }
+
+      // ── Set active generator to "edificio" for Settings/Parameters panels ──
+      activeGenerator = "edificio";
+
+      // Extract grid X/Y coords and labels from e2k GRIDS section
+      const xGrids = model.grids.filter(g => g.dir === "X").sort((a, b) => a.coord - b.coord);
+      const yGrids = model.grids.filter(g => g.dir === "Y").sort((a, b) => a.coord - b.coord);
+
+      // If no grids parsed, derive from node coordinates
+      let xCoords: number[], yCoords: number[];
+      let labelsX: string[], labelsY: string[];
+
+      if (xGrids.length > 0 || yGrids.length > 0) {
+        xCoords = xGrids.map(g => g.coord);
+        yCoords = yGrids.map(g => g.coord);
+        labelsX = xGrids.map(g => g.label);
+        labelsY = yGrids.map(g => g.label);
+      } else {
+        // Fallback: unique X and Y from nodes
+        const xs = new Set(model.nodes.map(n => n[0]));
+        const ys = new Set(model.nodes.map(n => n[1]));
+        xCoords = [...xs].sort((a, b) => a - b);
+        yCoords = [...ys].sort((a, b) => a - b);
+        labelsX = xCoords.map((_, i) => String(i + 1));
+        labelsY = yCoords.map((_, i) => String.fromCharCode(65 + i));
+      }
+
+      // Get max elevation from stories
+      const zMax = model.stories.length > 0
+        ? Math.max(...model.stories.map(s => s.elev))
+        : Math.max(...model.nodes.map(n => n[2]));
+
+      // Store grid state for per-axis views
+      currentGridX = xCoords;
+      currentGridY = yCoords;
+      currentGridZmax = zMax;
+
+      // Render grid axes + story level lines
+      setTimeout(() => {
+        autoFitGridSize();
+        createGridAxes(xCoords, yCoords, zMax, labelsX, labelsY);
+        createStoryLevelLines(model.stories, xCoords, yCoords);
+        updateAxisButtons();
+        updateFloorButtons();
+      }, 100);
+
+      // Log summary
+      const typeCount = { COLUMN: 0, BEAM: 0, BRACE: 0 };
+      for (const t of model.elementTypes) typeCount[t as keyof typeof typeCount]++;
+      console.log(`E2K grids: X=[${labelsX.join(",")}] Y=[${labelsY.join(",")}]`);
+      console.log(`E2K stories: ${model.stories.map(s => `${s.name}@${s.elev.toFixed(2)}`).join(", ")}`);
+      console.log(`E2K elements: ${typeCount.COLUMN} columns, ${typeCount.BEAM} beams, ${typeCount.BRACE} braces`);
+
+      updatePanel();
+    }
+
     function downloadText(text: string, filename: string) {
       const blob = new Blob([text], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
@@ -5364,6 +5574,7 @@ Util:     cad.info()  cad.clear()  cad.help()
           if (ioAction === "import-e2k") {
             const model = parseE2k(text);
             applyImportedModel(model, "E2K imported");
+            applyE2kGridsAndStories(model);
           } else if (ioAction === "import-py") {
             const model = importOpenSeesPy(text);
             applyImportedModel(model, "OpenSeesPy imported");
