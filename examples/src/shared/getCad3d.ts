@@ -27,6 +27,7 @@ import { UNIT_SYSTEMS, buildUnitSystem, FORCE_UNITS, LENGTH_UNITS, getGeneratorP
 import { createModalPanel } from "./renderModalTable";
 import { STEEL_PROFILES, getWProfileOptions, getHSSProfileOptions } from "./steelProfiles";
 import { buildReportExplained } from "./reportExplained";
+import { buildElementReport } from "./elementReport";
 
 export interface Cad3dMesh {
   nodes: State<Node[]>;
@@ -7188,35 +7189,17 @@ Util:     cad.info()  cad.clear()  cad.help()
       <div class="prop-row"><span class="prop-key">K global total</span><span class="prop-val">${nodes_arr.length * 6} × ${nodes_arr.length * 6}</span></div>
     `;
 
-    // Build panel
-    inspectPanel = document.createElement("div");
+    // Build panel using new 3-tab element report
+    inspectPanel = buildElementReport(
+      elemIdx, nodes_arr, elements, ei,
+      dOut, aOut
+    );
     inspectPanel.id = "fem-inspect-panel";
-    inspectPanel.innerHTML = `
-      <h3>Elemento ${elemIdx} <button class="close-btn" id="fem-close">✕</button></h3>
-      <div class="section"><div class="section-title">1. Propiedades</div>${propsHTML}</div>
-      <div class="section"><div class="section-title">2. Rigidez Local</div>${formulaStiffHTML}${kLocalHTML}</div>
-      <div class="section"><div class="section-title">3. Transformación</div>${formulaTransHTML}${tMatrixHTML}</div>
-      <div class="section"><div class="section-title">4. Rigidez Global</div>${formulaGlobalHTML}${kGlobalHTML}</div>
-      <div class="section"><div class="section-title">5. Ensamblaje</div>${formulaAssemblyHTML}${assemblyHTML}</div>
-      <div class="section"><div class="section-title">6. Desplazamientos</div>${dispHTML || "<span style='color:var(--fem-label)'>Sin análisis</span>"}</div>
-      <div class="section"><div class="section-title">7. Fuerzas Internas</div>${formulaForceHTML}${resultsHTML || "<span style='color:var(--fem-label)'>Sin análisis</span>"}</div>
-      ${isFrame ? `<div class="section"><div class="section-title">8. Funciones de Forma</div>
-        <div style="color:var(--fem-label);font-size:11px;margin-bottom:6px;">
-          <div><b>Axial:</b> N₁(ξ) = 1−ξ &nbsp; N₂(ξ) = ξ</div>
-          <div style="margin-top:4px"><b>Flexión (Hermite):</b></div>
-          <div>H₁(ξ) = 1 − 3ξ² + 2ξ³</div>
-          <div>H₂(ξ) = Lξ(1−ξ)²</div>
-          <div>H₃(ξ) = 3ξ² − 2ξ³</div>
-          <div>H₄(ξ) = Lξ²(ξ−1)</div>
-        </div>
-        <canvas id="fem-shape-funcs" width="400" height="220" style="width:100%;border:1px solid var(--fem-border);border-radius:4px;margin-top:4px;"></canvas>
-      </div>` : ""}
-    `;
     document.body.appendChild(inspectPanel);
-    inspectPanel.querySelector("#fem-close")?.addEventListener("click", () => cleanupInspect());
+    inspectPanel.querySelector("#er-close")?.addEventListener("click", () => cleanupInspect());
 
-    // Draw shape functions on canvas
-    const sfCanvas = inspectPanel.querySelector("#fem-shape-funcs") as HTMLCanvasElement;
+    // Legacy shape function canvas code — now handled by elementReport.ts
+    const sfCanvas = null as HTMLCanvasElement | null;
     if (sfCanvas) {
       const ctx2d = sfCanvas.getContext("2d")!;
       const W = sfCanvas.width, H = sfCanvas.height;
