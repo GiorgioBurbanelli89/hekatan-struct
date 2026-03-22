@@ -44,6 +44,8 @@ export type ElementInputs = {
   poissonsRatios?: Map<number, number>;
   densities?: Map<number, number>; // mass density per element (rho)
   polarMomentsOfInertia?: Map<number, number>; // I0 (polar moment of inertia, Paz formulation)
+  shearAreasY?: Map<number, number>; // shear area in Y direction (Timoshenko beam)
+  shearAreasZ?: Map<number, number>; // shear area in Z direction (Timoshenko beam)
   sectionShapes?: Map<number, SectionShape>; // visual section data for rendering
 };
 

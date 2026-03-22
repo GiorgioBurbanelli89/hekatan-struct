@@ -35,76 +35,45 @@ function getLocalStiffnessMatrixFrame(
   const J = elementInputs?.torsionalConstants?.get(index) ?? 0;
   const L = norm(subtract(nodes[0], nodes[1])) as number;
 
+  // Timoshenko shear deformation parameter φ
+  // φ = 12EI / (G·As·L²) — when As > 0 (Timoshenko)
+  // φ = 0 — when As = 0 or not provided (Euler-Bernoulli)
+  const AsY = elementInputs?.shearAreasY?.get(index) ?? 0;
+  const AsZ = elementInputs?.shearAreasZ?.get(index) ?? 0;
+  const phiZ = (AsZ > 0 && G > 0) ? (12 * E * Iz) / (G * AsZ * L ** 2) : 0;
+  const phiY = (AsY > 0 && G > 0) ? (12 * E * Iy) / (G * AsY * L ** 2) : 0;
+
   const EA = (E * A) / L;
-  const EIz = (E * Iz) / L ** 3;
-  const EIy = (E * Iy) / L ** 3;
   const GJ = (G * J) / L;
 
+  // Timoshenko coefficients (reduce to Euler-Bernoulli when φ=0)
+  // t = 12EI/L³ · 1/(1+φ)       → shear stiffness
+  // b = 6EI/L²  · 1/(1+φ)       → coupling
+  // k = 4EI/L   · (1+φ/4)/(1+φ) → bending (diagonal)
+  // a = 2EI/L   · (1-φ/2)/(1+φ) → bending (off-diagonal)
+  const tz = (12 * E * Iz / L ** 3) / (1 + phiZ);
+  const bz = (6 * E * Iz / L ** 2) / (1 + phiZ);
+  const kz = (4 * E * Iz / L) * (1 + phiZ / 4) / (1 + phiZ);
+  const az = (2 * E * Iz / L) * (1 - phiZ / 2) / (1 + phiZ);
+
+  const ty = (12 * E * Iy / L ** 3) / (1 + phiY);
+  const by = (6 * E * Iy / L ** 2) / (1 + phiY);
+  const ky = (4 * E * Iy / L) * (1 + phiY / 4) / (1 + phiY);
+  const ay = (2 * E * Iy / L) * (1 - phiY / 2) / (1 + phiY);
+
   return [
-    [EA, 0, 0, 0, 0, 0, -EA, 0, 0, 0, 0, 0],
-    [0, 12 * EIz, 0, 0, 0, 6 * L * EIz, 0, -12 * EIz, 0, 0, 0, 6 * L * EIz],
-    [0, 0, 12 * EIy, 0, -6 * L * EIy, 0, 0, 0, -12 * EIy, 0, -6 * L * EIy, 0],
-    [0, 0, 0, GJ, 0, 0, 0, 0, 0, -GJ, 0, 0],
-    [
-      0,
-      0,
-      -6 * L * EIy,
-      0,
-      4 * EIy * L ** 2,
-      0,
-      0,
-      0,
-      6 * L * EIy,
-      0,
-      2 * EIy * L ** 2,
-      0,
-    ],
-    [
-      0,
-      6 * L * EIz,
-      0,
-      0,
-      0,
-      4 * EIz * L ** 2,
-      0,
-      -6 * L * EIz,
-      0,
-      0,
-      0,
-      2 * EIz * L ** 2,
-    ],
-    [-EA, 0, 0, 0, 0, 0, EA, 0, 0, 0, 0, 0],
-    [0, -12 * EIz, 0, 0, 0, -6 * EIz * L, 0, 12 * EIz, 0, 0, 0, -6 * EIz * L],
-    [0, 0, -12 * EIy, 0, 6 * L * EIy, 0, 0, 0, 12 * EIy, 0, 6 * L * EIy, 0],
-    [0, 0, 0, -GJ, 0, 0, 0, 0, 0, GJ, 0, 0],
-    [
-      0,
-      0,
-      -6 * L * EIy,
-      0,
-      2 * EIy * L ** 2,
-      0,
-      0,
-      0,
-      6 * L * EIy,
-      0,
-      4 * EIy * L ** 2,
-      0,
-    ],
-    [
-      0,
-      6 * L * EIz,
-      0,
-      0,
-      0,
-      2 * EIz * L ** 2,
-      0,
-      -6 * L * EIz,
-      0,
-      0,
-      0,
-      4 * EIz * L ** 2,
-    ],
+    [ EA,  0,    0,    0,    0,    0,   -EA,  0,    0,    0,    0,    0  ],
+    [ 0,   tz,   0,    0,    0,    bz,   0,  -tz,   0,    0,    0,    bz ],
+    [ 0,   0,    ty,   0,   -by,   0,    0,   0,   -ty,   0,   -by,   0  ],
+    [ 0,   0,    0,    GJ,   0,    0,    0,   0,    0,   -GJ,   0,    0  ],
+    [ 0,   0,   -by,   0,    ky,   0,    0,   0,    by,   0,    ay,   0  ],
+    [ 0,   bz,   0,    0,    0,    kz,   0,  -bz,   0,    0,    0,    az ],
+    [-EA,  0,    0,    0,    0,    0,    EA,   0,    0,    0,    0,    0  ],
+    [ 0,  -tz,   0,    0,    0,   -bz,   0,   tz,   0,    0,    0,   -bz],
+    [ 0,   0,   -ty,   0,    by,   0,    0,   0,    ty,   0,    by,   0  ],
+    [ 0,   0,    0,   -GJ,   0,    0,    0,   0,    0,    GJ,   0,    0  ],
+    [ 0,   0,   -by,   0,    ay,   0,    0,   0,    by,   0,    ky,   0  ],
+    [ 0,   bz,   0,    0,    0,    az,   0,  -bz,   0,    0,    0,    kz ],
   ];
 }
 
