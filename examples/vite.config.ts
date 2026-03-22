@@ -41,6 +41,7 @@ export default defineConfig({
         "axial-bar": "src/axial-bar/index.html",
         "plate-q4": "src/plate-q4/index.html",
         "plate-q4-report": "src/plate-q4/report.html",
+        "fem-explained": "src/fem-explained/index.html",
       },
     },
   },
