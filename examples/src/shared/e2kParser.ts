@@ -48,7 +48,7 @@ export function parseE2k(text: string): E2kModel {
   const lineConns: { name: string; type: string; pt1: string; pt2: string; nStories: number }[] = [];
   const areaConns: { name: string; pts: string[]; nStories: number }[] = [];
   const restraints = new Map<string, string[]>(); // pointName+story → restrained DOFs
-  const lineAssigns = new Map<string, { story: string; section: string }>(); // lineName+story → section
+  const lineAssigns = new Map<string, { story: string; section: string; rigidZone: number; releases: string[]; angle: number }>(); // lineName+story → assignment
   const frameLoads: { line: string; story: string; type: string; dir: string; lc: string; val: number }[] = [];
   const grids: E2kGrid[] = [];
   let title = "";
@@ -153,7 +153,18 @@ export function parseE2k(text: string): E2kModel {
     // ── LINE ASSIGNS ──
     if (currentSection === "LINE ASSIGNS") {
       const lam = line.match(/LINEASSIGN\s+"([^"]+)"\s+"([^"]+)".*SECTION\s+"([^"]+)"/);
-      if (lam) lineAssigns.set(`${lam[1]}@${lam[2]}`, { story: lam[2], section: lam[3] });
+      if (lam) {
+        const entry: typeof lineAssigns extends Map<string, infer V> ? V : never = {
+          story: lam[2], section: lam[3], rigidZone: 0, releases: [], angle: 0,
+        };
+        const rzm = line.match(/RIGIDZONE\s+([\d.eE+-]+)/);
+        if (rzm) entry.rigidZone = parseFloat(rzm[1]);
+        const relm = line.match(/RELEASE\s+"([^"]+)"/);
+        if (relm) entry.releases = relm[1].split(/\s+/);
+        const angm = line.match(/ANG\s+([-\d.eE+]+)/);
+        if (angm) entry.angle = parseFloat(angm[1]);
+        lineAssigns.set(`${lam[1]}@${lam[2]}`, entry);
+      }
     }
 
     // ── GRIDS ──
@@ -304,6 +315,8 @@ export function parseE2k(text: string): E2kModel {
   const elasticities = new Map<number, number>();
   const shearModuli = new Map<number, number>();
   const areas = new Map<number, number>();
+  const shearAreasY = new Map<number, number>();
+  const shearAreasZ = new Map<number, number>();
   const momentsOfInertiaZ = new Map<number, number>();
   const momentsOfInertiaY = new Map<number, number>();
   const torsionalConstants = new Map<number, number>();
@@ -320,7 +333,7 @@ export function parseE2k(text: string): E2kModel {
 
     // Compute section properties from dimensions
     const D = sec.D, B = sec.B, tf = sec.TF, tw = sec.TW;
-    let A = 0, Iz = 0, Iy = 0, J = 0;
+    let A = 0, Iz = 0, Iy = 0, J = 0, AsY = 0, AsZ = 0;
     let shapeType: SectionShape["type"] = "rect";
 
     switch (sec.shape) {
@@ -329,12 +342,14 @@ export function parseE2k(text: string): E2kModel {
         Iz = B * D ** 3 / 12;
         Iy = D * B ** 3 / 12;
         J = (B * D ** 3) * (1/3 - 0.21 * (D/B) * (1 - D**4 / (12 * B**4)));
+        AsY = AsZ = 5 / 6 * A; // rectangular shear area factor
         shapeType = "rect";
         break;
       case "Concrete Circle":
         A = Math.PI * D ** 2 / 4;
         Iz = Iy = Math.PI * D ** 4 / 64;
         J = Math.PI * D ** 4 / 32;
+        AsY = AsZ = 0.9 * A; // circular shear area factor ~0.9
         shapeType = "circ";
         break;
       case "Steel I/Wide Flange":
@@ -342,6 +357,8 @@ export function parseE2k(text: string): E2kModel {
         Iz = (B * D ** 3 - (B - tw) * (D - 2 * tf) ** 3) / 12;
         Iy = (2 * tf * B ** 3 + (D - 2 * tf) * tw ** 3) / 12;
         J = (2 * B * tf ** 3 + (D - 2 * tf) * tw ** 3) / 3;
+        AsY = (D - 2 * tf) * tw; // web area (shear in Y = strong axis bending)
+        AsZ = 2 * B * tf * 5/6; // flange area (shear in Z = weak axis bending)
         shapeType = "I";
         break;
       case "Steel Tube":
@@ -349,31 +366,38 @@ export function parseE2k(text: string): E2kModel {
         Iz = (B * D ** 3 - (B - 2 * tw) * (D - 2 * tw) ** 3) / 12;
         Iy = (D * B ** 3 - (D - 2 * tw) * (B - 2 * tw) ** 3) / 12;
         J = 2 * tw * (D - tw) * (B - tw) * ((D - tw) * (B - tw)) / ((D - tw) + (B - tw));
+        AsY = 2 * D * tw; // two webs
+        AsZ = 2 * B * tw; // two flanges
         shapeType = "HSS";
         break;
       case "Filled Steel Tube":
-        A = D * B; // total area including concrete
+        A = D * B;
         Iz = B * D ** 3 / 12;
         Iy = D * B ** 3 / 12;
         J = 2 * tw * (D - tw) * (B - tw) * ((D - tw) * (B - tw)) / ((D - tw) + (B - tw));
+        AsY = 2 * D * tw + 5/6 * (D - 2*tw) * (B - 2*tw); // steel webs + concrete core
+        AsZ = 2 * B * tw + 5/6 * (D - 2*tw) * (B - 2*tw);
         shapeType = "CFT";
         break;
       case "Steel Angle": {
         const t = tf || tw;
         A = t * (D + B - t);
-        // Approximate for equal leg
         Iz = t * (D ** 3 + B * t ** 2 + t ** 2 * (D - t)) / 12;
         Iy = t * (B ** 3 + D * t ** 2 + t ** 2 * (B - t)) / 12;
         J = (D + B - t) * t ** 3 / 3;
+        AsY = D * t; // vertical leg
+        AsZ = B * t; // horizontal leg
         shapeType = "L";
         break;
       }
       case "Steel Channel":
       case "Cold Formed C":
         A = 2 * B * tf + (D - 2 * tf) * tw;
-        Iz = (tw * D ** 3 + 2 * B * tf * (D - tf) ** 2) / 12; // approximate
+        Iz = (tw * D ** 3 + 2 * B * tf * (D - tf) ** 2) / 12;
         Iy = (2 * tf * B ** 3 + (D - 2 * tf) * tw ** 3) / 12;
         J = (2 * B * tf ** 3 + (D - 2 * tf) * tw ** 3) / 3;
+        AsY = (D - 2 * tf) * tw; // web
+        AsZ = 2 * B * tf * 5/6; // flanges
         shapeType = sec.shape === "Cold Formed C" ? "coldC" : "C";
         break;
       case "Steel Double Channel":
@@ -381,13 +405,15 @@ export function parseE2k(text: string): E2kModel {
         Iz = 2 * (tw * D ** 3 + 2 * B * tf * (D - tf) ** 2) / 12;
         Iy = 2 * (2 * tf * B ** 3 + (D - 2 * tf) * tw ** 3) / 12;
         J = 2 * (2 * B * tf ** 3 + (D - 2 * tf) * tw ** 3) / 3;
+        AsY = 2 * (D - 2 * tf) * tw; // two webs
+        AsZ = 4 * B * tf * 5/6; // four flanges
         shapeType = "2C";
         break;
       default:
-        // Unknown shape — use rectangular approximation
         if (D > 0 && B > 0) {
           A = D * B; Iz = B * D ** 3 / 12; Iy = D * B ** 3 / 12;
           J = Math.min(D, B) * Math.max(D, B) ** 3 / 3 * 0.3;
+          AsY = AsZ = 5 / 6 * A;
         }
         break;
     }
@@ -400,6 +426,8 @@ export function parseE2k(text: string): E2kModel {
     momentsOfInertiaZ.set(elemIdx, Iz);
     momentsOfInertiaY.set(elemIdx, Iy);
     torsionalConstants.set(elemIdx, J);
+    if (AsY > 0) shearAreasY.set(elemIdx, AsY);
+    if (AsZ > 0) shearAreasZ.set(elemIdx, AsZ);
 
     sectionShapes.set(elemIdx, {
       type: shapeType,
@@ -505,6 +533,8 @@ export function parseE2k(text: string): E2kModel {
       momentsOfInertiaZ,
       momentsOfInertiaY,
       torsionalConstants,
+      shearAreasY,
+      shearAreasZ,
       densities,
       sectionShapes,
     },
