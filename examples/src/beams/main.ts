@@ -164,8 +164,10 @@ document.body.append(
 );
 document.body.appendChild(modalPanel.div);
 
-// Auto-start with Edificio example
+// Auto-start with Edificio example and hide modal panel
 setTimeout(() => {
   const btn = document.querySelector('[data-ex="edificio"]') as HTMLElement;
   if (btn) btn.click();
+  // Hide the modal analysis panel (Example 6.3 is not the default anymore)
+  if (modalPanel.div) modalPanel.div.style.display = "none";
 }, 200);
