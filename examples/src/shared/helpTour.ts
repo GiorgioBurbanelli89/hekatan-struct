@@ -111,7 +111,7 @@ export function createHelpButton(): HTMLButtonElement {
   helpBtn.innerHTML = "?";
   helpBtn.title = "Ayuda interactiva — Tour guiado";
   helpBtn.style.cssText = `
-    position: fixed; bottom: 20px; right: 20px; z-index: 99999;
+    position: fixed; bottom: 20px; right: 20px; z-index: 9999999;
     width: 48px; height: 48px; border-radius: 50%;
     background: linear-gradient(135deg, #0066cc, #0099ff);
     color: white; border: 3px solid rgba(255,255,255,0.3);
@@ -183,7 +183,7 @@ function startTour() {
   overlay = document.createElement("div");
   overlay.id = "tour-overlay";
   overlay.style.cssText = `
-    position: fixed; inset: 0; z-index: 99990;
+    position: fixed; inset: 0; z-index: 9999990;
     pointer-events: none;
   `;
   document.body.appendChild(overlay);
@@ -205,7 +205,6 @@ function endTour() {
 
 function showStep(stepIndex: number) {
   if (stepIndex >= TOUR_STEPS.length) {
-    // Tour complete — show final message
     showFinalMessage();
     return;
   }
@@ -213,49 +212,84 @@ function showStep(stepIndex: number) {
   currentStep = stepIndex;
   const step = TOUR_STEPS[stepIndex];
 
-  // Find target element
   const target = document.querySelector(step.selector) as HTMLElement;
   if (!target) {
-    // Skip missing elements
     showStep(stepIndex + 1);
     return;
   }
 
-  // Remove old spotlight and tooltip
+  // Scroll target into view if needed
+  target.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
   if (spotlight) spotlight.remove();
   if (tooltip) tooltip.remove();
 
   const rect = target.getBoundingClientRect();
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const tooltipWidth = 320;
+  const tooltipHeight = 180; // estimated
 
-  // Create spotlight (highlight around target)
+  // Create spotlight
   spotlight = document.createElement("div");
   spotlight.style.cssText = `
     position: fixed;
     left: ${rect.left - 6}px; top: ${rect.top - 6}px;
     width: ${rect.width + 12}px; height: ${rect.height + 12}px;
     border-radius: 8px;
-    z-index: 99991;
+    z-index: 9999991;
     pointer-events: none;
     animation: spotlightPulse 1.5s ease-in-out infinite;
+    transition: all 0.3s ease;
   `;
   document.body.appendChild(spotlight);
 
-  // Create tooltip
+  // ── Dynamic tooltip positioning ──
+  // Calculate available space in each direction
+  const spaceRight = vw - rect.right;
+  const spaceLeft = rect.left;
+  const spaceBelow = vh - rect.bottom;
+  const spaceAbove = rect.top;
+
+  // Pick best position automatically (override hint if not enough space)
+  let bestPos = step.position || "bottom";
+  if (bestPos === "bottom" && spaceBelow < tooltipHeight + 20) bestPos = "top";
+  if (bestPos === "top" && spaceAbove < tooltipHeight + 20) bestPos = "right";
+  if (bestPos === "right" && spaceRight < tooltipWidth + 20) bestPos = "left";
+  if (bestPos === "left" && spaceLeft < tooltipWidth + 20) bestPos = "bottom";
+
+  let tooltipLeft: number, tooltipTop: number;
+  let arrowCSS = "";
+
+  switch (bestPos) {
+    case "bottom":
+      tooltipLeft = rect.left + rect.width / 2 - tooltipWidth / 2;
+      tooltipTop = rect.bottom + 14;
+      arrowCSS = `position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:8px solid #0099ff;`;
+      break;
+    case "top":
+      tooltipLeft = rect.left + rect.width / 2 - tooltipWidth / 2;
+      tooltipTop = rect.top - tooltipHeight - 14;
+      arrowCSS = `position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:8px solid #0099ff;`;
+      break;
+    case "right":
+      tooltipLeft = rect.right + 14;
+      tooltipTop = rect.top + rect.height / 2 - tooltipHeight / 2;
+      arrowCSS = `position:absolute;left:-8px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:8px solid #0099ff;`;
+      break;
+    case "left":
+      tooltipLeft = rect.left - tooltipWidth - 14;
+      tooltipTop = rect.top + rect.height / 2 - tooltipHeight / 2;
+      arrowCSS = `position:absolute;right:-8px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;border-left:8px solid #0099ff;`;
+      break;
+  }
+
+  // Clamp within viewport
+  tooltipLeft = Math.max(10, Math.min(tooltipLeft, vw - tooltipWidth - 10));
+  tooltipTop = Math.max(10, Math.min(tooltipTop, vh - tooltipHeight - 10));
+
+  // Create tooltip div
   tooltip = document.createElement("div");
-  const pos = step.position || "bottom";
-  let tooltipLeft = rect.left;
-  let tooltipTop = rect.bottom + 16;
-  const tooltipWidth = 320;
-
-  if (pos === "top") { tooltipTop = rect.top - 16; } // will adjust below
-  if (pos === "left") { tooltipLeft = rect.left - tooltipWidth - 16; tooltipTop = rect.top; }
-  if (pos === "right") { tooltipLeft = rect.right + 16; tooltipTop = rect.top; }
-
-  // Keep within viewport
-  if (tooltipLeft + tooltipWidth > window.innerWidth - 20) tooltipLeft = window.innerWidth - tooltipWidth - 20;
-  if (tooltipLeft < 10) tooltipLeft = 10;
-  if (tooltipTop + 200 > window.innerHeight - 20) tooltipTop = rect.top - 180;
-
   tooltip.style.cssText = `
     position: fixed;
     left: ${tooltipLeft}px; top: ${tooltipTop}px;
@@ -265,7 +299,7 @@ function showStep(stepIndex: number) {
     border: 2px solid #0099ff;
     border-radius: 12px;
     padding: 16px 18px;
-    z-index: 99992;
+    z-index: 9999992;
     pointer-events: auto;
     animation: tooltipSlideIn 0.3s ease-out;
     box-shadow: 0 8px 30px rgba(0,0,0,0.5);
@@ -273,6 +307,7 @@ function showStep(stepIndex: number) {
   `;
 
   tooltip.innerHTML = `
+    <div style="${arrowCSS}"></div>
     <div style="display:flex;align-items:center;margin-bottom:8px;">
       <span class="tour-hand">👆</span>
       <span style="color:#0099ff;font-weight:bold;font-size:15px;">${step.title}</span>
@@ -324,7 +359,7 @@ function showFinalMessage() {
     border: 2px solid #00cc66;
     border-radius: 16px;
     padding: 30px;
-    z-index: 99992;
+    z-index: 9999992;
     pointer-events: auto;
     animation: tooltipSlideIn 0.3s ease-out;
     box-shadow: 0 8px 40px rgba(0,0,0,0.6);
