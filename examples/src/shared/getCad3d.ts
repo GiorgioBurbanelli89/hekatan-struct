@@ -30,6 +30,8 @@ import { buildReportExplained } from "./reportExplained";
 import { buildElementReport } from "./elementReport";
 import { createHelpButton } from "./helpTour";
 import { parseE2k } from "./e2kParser";
+import { exportE2k } from "./e2kExporter";
+import { exportOpenSeesPy, exportOpenSeesTcl, importOpenSeesPy, importOpenSeesTcl } from "./openseesIO";
 
 export interface Cad3dMesh {
   nodes: State<Node[]>;
@@ -4204,8 +4206,16 @@ Util:     cad.info()  cad.clear()  cad.help()
       <div class="btn-row" id="cad3d-floor-buttons" style="margin-top:2px;display:none"></div>
       <div class="btn-row" style="margin-top:2px">
         <button id="cad3d-export" title="Exportar coordenadas y datos del modelo">📋 Export</button>
-        <button id="cad3d-import-e2k" title="Importar modelo ETABS (.e2k)">📂 Import E2K</button>
-        <input type="file" id="cad3d-e2k-file" accept=".e2k,.E2K" style="display:none">
+        <select id="cad3d-io-menu" title="Import/Export modelos" style="background:var(--cad-btn-bg);color:var(--cad-btn-text);border:1px solid var(--cad-btn-border);padding:2px 4px;font-size:11px;cursor:pointer;">
+          <option value="">📂 I/O</option>
+          <option value="import-e2k">📥 Import E2K (ETABS)</option>
+          <option value="export-e2k">📤 Export E2K (ETABS)</option>
+          <option value="import-py">📥 Import OpenSeesPy</option>
+          <option value="export-py">📤 Export OpenSeesPy</option>
+          <option value="import-tcl">📥 Import OpenSees Tcl</option>
+          <option value="export-tcl">📤 Export OpenSees Tcl</option>
+        </select>
+        <input type="file" id="cad3d-io-file" accept=".e2k,.E2K,.py,.tcl" style="display:none">
         <select id="cad3d-force-unit" title="Unidad de fuerza" style="background:var(--cad-btn-bg);color:var(--cad-btn-text);border:1px solid var(--cad-btn-border);padding:2px 4px;font-size:11px;cursor:pointer;">
           <option value="tonf">tonf</option><option value="kN">kN</option><option value="kgf">kgf</option>
           <option value="kip">kip</option><option value="lb">lb</option><option value="N">N</option>
@@ -5292,44 +5302,79 @@ Util:     cad.info()  cad.clear()  cad.help()
       showExportPanel();
     });
 
-    // === Import E2K ===
-    panel.querySelector("#cad3d-import-e2k")?.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-      (panel.querySelector("#cad3d-e2k-file") as HTMLInputElement)?.click();
+    // === Import/Export Menu ===
+    let ioAction = "";
+    const ioMenu = panel.querySelector("#cad3d-io-menu") as HTMLSelectElement;
+    const ioFile = panel.querySelector("#cad3d-io-file") as HTMLInputElement;
+
+    function applyImportedModel(model: { nodes: any[]; elements: any[]; nodeInputs: any; elementInputs: any }, label: string) {
+      mesh.nodes.val = model.nodes;
+      mesh.elements!.val = model.elements;
+      mesh.nodeInputs!.val = model.nodeInputs;
+      mesh.elementInputs!.val = model.elementInputs;
+      mesh.deformOutputs!.val = {};
+      mesh.analyzeOutputs!.val = {};
+      console.log(`${label}: ${model.nodes.length} nodes, ${model.elements.length} elements`);
+    }
+
+    function downloadText(text: string, filename: string) {
+      const blob = new Blob([text], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    if (ioMenu) ioMenu.addEventListener("change", () => {
+      ioAction = ioMenu.value;
+      ioMenu.value = ""; // reset
+
+      if (ioAction.startsWith("import")) {
+        // Set file accept filter
+        if (ioAction === "import-e2k") ioFile.accept = ".e2k,.E2K";
+        else if (ioAction === "import-py") ioFile.accept = ".py";
+        else if (ioAction === "import-tcl") ioFile.accept = ".tcl";
+        ioFile.click();
+      } else if (ioAction.startsWith("export")) {
+        const input = {
+          nodes: mesh.nodes.val,
+          elements: mesh.elements!.val,
+          nodeInputs: mesh.nodeInputs!.val,
+          elementInputs: mesh.elementInputs!.val,
+        };
+        try {
+          if (ioAction === "export-e2k") {
+            downloadText(exportE2k({ ...input, title: "Awatif Model" }), "model.e2k");
+          } else if (ioAction === "export-py") {
+            downloadText(exportOpenSeesPy(input), "model_opensees.py");
+          } else if (ioAction === "export-tcl") {
+            downloadText(exportOpenSeesTcl(input), "model_opensees.tcl");
+          }
+        } catch (err: any) { alert("Export error: " + err.message); }
+      }
     });
-    panel.querySelector("#cad3d-e2k-file")?.addEventListener("change", (ev) => {
-      const file = (ev.target as HTMLInputElement).files?.[0];
+
+    if (ioFile) ioFile.addEventListener("change", () => {
+      const file = ioFile.files?.[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
         const text = reader.result as string;
         try {
-          const model = parseE2k(text);
-          // Apply to mesh
-          mesh.nodes.val = model.nodes;
-          mesh.elements!.val = model.elements;
-          mesh.nodeInputs!.val = model.nodeInputs;
-          mesh.elementInputs!.val = model.elementInputs;
-          mesh.deformOutputs!.val = {};
-          mesh.analyzeOutputs!.val = {};
-          // Update info
-          const info = panel.querySelector("#cad3d-info") as HTMLElement;
-          if (info) info.innerHTML = `<span style="color:#0f0">E2K imported: ${model.info.nNodes}n ${model.info.nFrames}e</span>`;
-          // Update title
-          const title = panel.querySelector("h1") as HTMLElement;
-          if (title) {
-            const titleSpan = title.querySelector("span:first-child") || title;
-            titleSpan.textContent = `FEM Studio`;
-            const statsSpan = title.querySelector("span:nth-child(2)");
-            if (statsSpan) statsSpan.textContent = `${model.info.nNodes}n ${model.info.nFrames}e`;
+          if (ioAction === "import-e2k") {
+            const model = parseE2k(text);
+            applyImportedModel(model, "E2K imported");
+          } else if (ioAction === "import-py") {
+            const model = importOpenSeesPy(text);
+            applyImportedModel(model, "OpenSeesPy imported");
+          } else if (ioAction === "import-tcl") {
+            const model = importOpenSeesTcl(text);
+            applyImportedModel(model, "OpenSees Tcl imported");
           }
-          console.log(`E2K imported: ${model.info.nNodes} nodes, ${model.info.nFrames} frames, ${model.materials.size} materials, ${model.frameSections.size} sections`);
-        } catch (err: any) {
-          alert("Error parsing E2K: " + err.message);
-          console.error(err);
-        }
+        } catch (err: any) { alert("Import error: " + err.message); console.error(err); }
       };
       reader.readAsText(file);
+      ioFile.value = ""; // reset
     });
 
     // === Force unit dropdown ===
