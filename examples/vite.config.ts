@@ -13,8 +13,9 @@ export default defineConfig({
     // Force single instance of vanjs-core (avoids symlink duplication)
     alias: [
       { find: /^vanjs-core$/, replacement: path.resolve(__dirname, "../node_modules/vanjs-core") },
+      { find: /^mathjs$/, replacement: path.resolve(__dirname, "../awatif-fem/node_modules/mathjs") },
     ],
-    dedupe: ["vanjs-core", "three"],
+    dedupe: ["vanjs-core", "three", "mathjs"],
     preserveSymlinks: false,
   },
   build: {
