@@ -23,13 +23,21 @@ export type NodeInputs = {
 };
 
 export type SectionShape = {
-  type: "rect" | "circ" | "I" | "HSS" | "CFT";  // rectangular, circular, I-beam, hollow rectangular, concrete-filled tube
-  b?: number;   // width (rect) or flange width (I) or outer width (HSS)
-  h?: number;   // height (rect) or depth (I) or outer height (HSS)
-  d?: number;   // diameter (circ)
-  tw?: number;  // web thickness (I) or wall thickness (HSS)
-  tf?: number;  // flange thickness (I)
-  name?: string; // profile name e.g. "W14x82", or dimension label
+  type: "rect" | "circ" | "I" | "HSS" | "CFT" | "L" | "2L" | "C" | "2C" | "T" | "pipe" | "coldC";
+  // rect: rectangular | circ: circular | I: I/W beam | HSS: hollow rect tube
+  // CFT: concrete-filled tube | L: angle | 2L: double angle
+  // C: channel | 2C: double channel | T: tee | pipe: circular hollow
+  // coldC: cold-formed C/Z
+  b?: number;   // width (rect) or flange width (I/C/T) or leg width (L) or outer width (HSS)
+  h?: number;   // height (rect) or depth (I/C/T) or leg height (L) or outer height (HSS)
+  d?: number;   // diameter (circ/pipe)
+  tw?: number;  // web thickness (I/C/T) or wall thickness (HSS/pipe) or leg thickness (L)
+  tf?: number;  // flange thickness (I/C/T)
+  t?: number;   // uniform thickness (L/coldC)
+  r?: number;   // corner radius (HSS/CFT/coldC)
+  lip?: number; // lip length (coldC)
+  dis?: number; // separation between shapes (2L/2C)
+  name?: string; // profile name e.g. "W14x82", "L50x3", "C100x50x2"
 };
 
 export type ElementInputs = {

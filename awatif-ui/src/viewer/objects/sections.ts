@@ -202,6 +202,183 @@ export function sections(
     return { concFill, steelFillGeom, outline };
   }
 
+  // ── L (angle) ──
+  function makeL(b: number, h: number, t: number) {
+    // L-shape: vertical leg (h) + horizontal leg (b), thickness t
+    const pts: number[] = [];
+    // 6 vertices of L-shape (CCW)
+    const v = [
+      [0, -b/2, -h/2],    // bottom-left
+      [0, -b/2+t, -h/2],  // bottom inner
+      [0, -b/2+t, h/2-t], // inner corner
+      [0, b/2, h/2-t],    // right of top flange
+      [0, b/2, h/2],      // top-right
+      [0, -b/2, h/2],     // top-left
+    ];
+    // Triangulate L (4 triangles)
+    const tri = [0,1,2, 0,2,5, 2,3,4, 2,4,5];
+    for (const i of tri) pts.push(...v[i]);
+    const fill = new THREE.BufferGeometry();
+    fill.setAttribute("position", new THREE.BufferAttribute(new Float32Array(pts), 3));
+    // Outline
+    const ol: number[] = [];
+    for (let i = 0; i < v.length; i++) {
+      const j = (i + 1) % v.length;
+      ol.push(...v[i], ...v[j]);
+    }
+    const outline = new THREE.BufferGeometry();
+    outline.setAttribute("position", new THREE.BufferAttribute(new Float32Array(ol), 3));
+    return { fill, outline };
+  }
+
+  // ── 2L (double angle) ──
+  function make2L(b: number, h: number, t: number, gap: number) {
+    const g2 = gap / 2;
+    const pts: number[] = [];
+    // Left L (mirrored)
+    const vL = [
+      [0, -b-g2, -h/2], [0, -t-g2, -h/2], [0, -t-g2, h/2-t],
+      [0, -g2, h/2-t], [0, -g2, h/2], [0, -b-g2, h/2],
+    ];
+    // Right L
+    const vR = [
+      [0, g2, -h/2], [0, g2+t, -h/2], [0, g2+t, h/2-t],
+      [0, b+g2, h/2-t], [0, b+g2, h/2], [0, g2, h/2],
+    ];
+    const triIdx = [0,1,2, 0,2,5, 2,3,4, 2,4,5];
+    for (const i of triIdx) pts.push(...vL[i]);
+    for (const i of triIdx) pts.push(...vR[i]);
+    const fill = new THREE.BufferGeometry();
+    fill.setAttribute("position", new THREE.BufferAttribute(new Float32Array(pts), 3));
+    const ol: number[] = [];
+    for (const v of [vL, vR]) {
+      for (let i = 0; i < v.length; i++) {
+        const j = (i + 1) % v.length;
+        ol.push(...v[i], ...v[j]);
+      }
+    }
+    const outline = new THREE.BufferGeometry();
+    outline.setAttribute("position", new THREE.BufferAttribute(new Float32Array(ol), 3));
+    return { fill, outline };
+  }
+
+  // ── C (channel) ──
+  function makeC(bf: number, d: number, tf: number, tw: number) {
+    const hd = d / 2, hb = bf;
+    // U-shape: web on left, flanges top/bottom extending right
+    const v = [
+      [0, -hb, -hd],     // bottom-right of bottom flange
+      [0, -hb, -hd+tf],  // inner bottom flange
+      [0, -tw, -hd+tf],  // web inner bottom
+      [0, -tw, hd-tf],   // web inner top
+      [0, -hb, hd-tf],   // inner top flange
+      [0, -hb, hd],      // top-right of top flange
+      [0, 0, hd],         // top-left
+      [0, 0, -hd],        // bottom-left
+    ];
+    const tri = [0,1,7, 1,6,7, 1,2,6, 2,5,6, 2,3,5, 3,4,5];
+    const pts: number[] = [];
+    for (const i of tri) pts.push(...v[i]);
+    const fill = new THREE.BufferGeometry();
+    fill.setAttribute("position", new THREE.BufferAttribute(new Float32Array(pts), 3));
+    const ol: number[] = [];
+    for (let i = 0; i < v.length; i++) {
+      const j = (i + 1) % v.length;
+      ol.push(...v[i], ...v[j]);
+    }
+    const outline = new THREE.BufferGeometry();
+    outline.setAttribute("position", new THREE.BufferAttribute(new Float32Array(ol), 3));
+    return { fill, outline };
+  }
+
+  // ── 2C (double channel) ──
+  function make2C(bf: number, d: number, tf: number, tw: number, gap: number) {
+    const hd = d / 2, g2 = gap / 2;
+    // Two C-channels back to back
+    const pts: number[] = [];
+    // Left C (webs facing each other)
+    const vL = [
+      [0, -bf, -hd], [0, -bf, -hd+tf], [0, -g2-tw, -hd+tf],
+      [0, -g2-tw, hd-tf], [0, -bf, hd-tf], [0, -bf, hd],
+      [0, -g2, hd], [0, -g2, -hd],
+    ];
+    const vR = vL.map(p => [p[0], -p[1], p[2]]); // mirror
+    const tri = [0,1,7, 1,6,7, 1,2,6, 2,5,6, 2,3,5, 3,4,5];
+    for (const i of tri) pts.push(...vL[i]);
+    for (const i of tri) pts.push(...vR[i]);
+    const fill = new THREE.BufferGeometry();
+    fill.setAttribute("position", new THREE.BufferAttribute(new Float32Array(pts), 3));
+    const ol: number[] = [];
+    for (const v of [vL, vR]) {
+      for (let i = 0; i < v.length; i++) {
+        const j = (i + 1) % v.length;
+        ol.push(...v[i], ...v[j]);
+      }
+    }
+    const outline = new THREE.BufferGeometry();
+    outline.setAttribute("position", new THREE.BufferAttribute(new Float32Array(ol), 3));
+    return { fill, outline };
+  }
+
+  // ── T (tee) ──
+  function makeT(bf: number, d: number, tf: number, tw: number) {
+    const hb = bf / 2, hd = d / 2;
+    const htw = tw / 2;
+    // T-shape: flange on top, stem going down
+    const v = [
+      [0, -htw, -hd],  // stem bottom-left
+      [0, htw, -hd],   // stem bottom-right
+      [0, htw, hd-tf], // stem top-right
+      [0, hb, hd-tf],  // flange right bottom
+      [0, hb, hd],     // flange right top
+      [0, -hb, hd],    // flange left top
+      [0, -hb, hd-tf], // flange left bottom
+      [0, -htw, hd-tf],// stem top-left
+    ];
+    const tri = [0,1,7, 1,2,7, 6,7,5, 2,3,4, 2,4,5, 2,5,7];
+    const pts: number[] = [];
+    for (const i of tri) pts.push(...v[i]);
+    const fill = new THREE.BufferGeometry();
+    fill.setAttribute("position", new THREE.BufferAttribute(new Float32Array(pts), 3));
+    const ol: number[] = [];
+    for (let i = 0; i < v.length; i++) {
+      const j = (i + 1) % v.length;
+      ol.push(...v[i], ...v[j]);
+    }
+    const outline = new THREE.BufferGeometry();
+    outline.setAttribute("position", new THREE.BufferAttribute(new Float32Array(ol), 3));
+    return { fill, outline };
+  }
+
+  // ── Pipe (circular hollow section) ──
+  function makePipe(d: number, t: number, seg = 24) {
+    const ro = d / 2, ri = ro - t;
+    // Outer and inner circles as triangle strip
+    const pts: number[] = [];
+    for (let i = 0; i < seg; i++) {
+      const a1 = (i / seg) * Math.PI * 2;
+      const a2 = ((i + 1) / seg) * Math.PI * 2;
+      const co1 = Math.cos(a1), si1 = Math.sin(a1);
+      const co2 = Math.cos(a2), si2 = Math.sin(a2);
+      // Quad between outer and inner
+      pts.push(0, ro*co1, ro*si1, 0, ro*co2, ro*si2, 0, ri*co2, ri*si2);
+      pts.push(0, ro*co1, ro*si1, 0, ri*co2, ri*si2, 0, ri*co1, ri*si1);
+    }
+    const fill = new THREE.BufferGeometry();
+    fill.setAttribute("position", new THREE.BufferAttribute(new Float32Array(pts), 3));
+    // Outline: outer + inner circles
+    const ol: number[] = [];
+    for (let i = 0; i < seg; i++) {
+      const a1 = (i / seg) * Math.PI * 2;
+      const a2 = ((i + 1) / seg) * Math.PI * 2;
+      ol.push(0, ro*Math.cos(a1), ro*Math.sin(a1), 0, ro*Math.cos(a2), ro*Math.sin(a2));
+      ol.push(0, ri*Math.cos(a1), ri*Math.sin(a1), 0, ri*Math.cos(a2), ri*Math.sin(a2));
+    }
+    const outline = new THREE.BufferGeometry();
+    outline.setAttribute("position", new THREE.BufferAttribute(new Float32Array(ol), 3));
+    return { fill, outline };
+  }
+
   // ── Materials ──
   const concreteFill = new THREE.MeshBasicMaterial({
     color: 0x00ccff, transparent: true, opacity: 0.35,
@@ -318,6 +495,35 @@ export function sections(
             geom = makeHSS(shape.b!, shape.h!, shape.tw ?? shape.b! * 0.05);
             fillMat = steelFill; lineMat = steelLine;
             break;
+          case "CFT":
+            geom = makeCFT(shape.b!, shape.h!, shape.tw ?? shape.b! * 0.05);
+            fillMat = steelFill; lineMat = steelLine;
+            break;
+          case "L":
+            geom = makeL(shape.b ?? shape.h!, shape.h!, shape.t ?? shape.tw ?? 0.003);
+            fillMat = steelFill; lineMat = steelLine;
+            break;
+          case "2L":
+            geom = make2L(shape.b ?? shape.h!, shape.h!, shape.t ?? shape.tw ?? 0.003, shape.dis ?? 0.01);
+            fillMat = steelFill; lineMat = steelLine;
+            break;
+          case "C":
+          case "coldC":
+            geom = makeC(shape.b!, shape.h!, shape.tf ?? shape.t ?? 0.003, shape.tw ?? shape.t ?? 0.003);
+            fillMat = steelFill; lineMat = steelLine;
+            break;
+          case "2C":
+            geom = make2C(shape.b!, shape.h!, shape.tf ?? 0.005, shape.tw ?? 0.005, shape.dis ?? 0.01);
+            fillMat = steelFill; lineMat = steelLine;
+            break;
+          case "T":
+            geom = makeT(shape.b!, shape.h!, shape.tf ?? 0.01, shape.tw ?? 0.006);
+            fillMat = steelFill; lineMat = steelLine;
+            break;
+          case "pipe":
+            geom = makePipe(shape.d!, shape.tw ?? shape.d! * 0.05);
+            fillMat = steelFill; lineMat = steelLine;
+            break;
           default:
             return;
         }
@@ -338,7 +544,8 @@ export function sections(
       // Label
       const label = getSectionLabel(shape);
       if (label) {
-        const color = (shape.type === "I" || shape.type === "HSS" || shape.type === "CFT") ? "#ff9900" : "#00ccff";
+        const steelTypes = ["I", "HSS", "CFT", "L", "2L", "C", "2C", "T", "pipe", "coldC"];
+        const color = steelTypes.includes(shape.type) ? "#ff9900" : "#00ccff";
         const text = new Text(label, color, "transparent");
         text.position.set(mid[0], mid[1], mid[2]);
         const size = 0.05 * settings.gridSize.rawVal * 0.5;
