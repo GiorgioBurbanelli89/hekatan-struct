@@ -122,6 +122,7 @@ export function buildElementReport(
     <div class="er-header">
       <span class="er-badge">Element ${elemIdx}</span>
       <span class="er-type">${d.isFrame ? "Frame" : "Shell"} — Nodes ${d.elem.join(" → ")} — L = ${f(d.L)}</span>
+      <button class="er-fullscreen" id="er-fullscreen" title="Pantalla completa">⛶</button>
       <button class="er-close" id="er-close">✕</button>
     </div>
     <div class="er-tabs">
@@ -147,6 +148,13 @@ export function buildElementReport(
 
   div.querySelector("#er-close")?.addEventListener("click", () => div.remove());
 
+  // Fullscreen toggle
+  div.querySelector("#er-fullscreen")?.addEventListener("click", () => {
+    const isFullscreen = div.classList.toggle("er-fullscreen-mode");
+    const btn = div.querySelector("#er-fullscreen") as HTMLElement;
+    if (btn) btn.textContent = isFullscreen ? "⊡" : "⛶";
+  });
+
   // Load KaTeX + draw shape functions after DOM insertion
   setTimeout(() => {
     const canvas = div.querySelector("#er-sf-canvas") as HTMLCanvasElement;
@@ -163,6 +171,14 @@ export function buildElementReport(
       const c = div.querySelector("#er-sf-canvas-math") as HTMLCanvasElement;
       if (c) drawShapeFunctions(c);
     }, 50);
+    // Register derivation block toggles
+    div.querySelectorAll(".er-deriv-header").forEach(el => {
+      el.addEventListener("click", () => {
+        const id = (el as HTMLElement).dataset.toggle!;
+        const body = div.querySelector(`#er-${id}`) as HTMLElement;
+        if (body) body.style.display = body.style.display === "none" ? "" : "none";
+      });
+    });
   });
 
   return div;
@@ -295,20 +311,69 @@ function buildMath(d: ElementData): string {
   h += `<div class="er-section-title">5. Integracion → ${K(`\\mathbf{K}_{local}`)}</div>`;
   h += `<p>La matriz de rigidez local se obtiene integrando analiticamente:</p>`;
   h += `<div class="er-eq er-eq-main">${KD(`\\mathbf{K}_{local} = \\int_0^L \\mathbf{B}^T \\cdot \\mathbf{D} \\cdot \\mathbf{B} \\; dx`)}</div>`;
-  h += `<p>Coeficientes resultantes (sustitucion numerica):</p>`;
 
   const EA_L = d.E * d.A / d.L;
   const EIz_L3 = d.E * d.Iz / d.L ** 3;
   const EIy_L3 = d.E * d.Iy / d.L ** 3;
   const GJ_L = d.G * d.J / d.L;
 
-  h += `<div class="er-eq">${KD(`\\frac{EA}{L} = \\frac{${f(d.E)} \\times ${f(d.A)}}{${f(d.L)}} = \\mathbf{${f(EA_L)}} \\quad \\rightarrow K[0,0],\\, K[6,6]`)}</div>`;
-  h += `<div class="er-eq">${KD(`\\frac{12EI_z}{L^3} = \\frac{12 \\times ${f(d.E)} \\times ${f(d.Iz)}}{${f(d.L)}^3} = \\mathbf{${f(12 * EIz_L3)}} \\quad \\rightarrow K[1,1],\\, K[7,7]`)}</div>`;
-  h += `<div class="er-eq">${KD(`\\frac{12EI_y}{L^3} = \\frac{12 \\times ${f(d.E)} \\times ${f(d.Iy)}}{${f(d.L)}^3} = \\mathbf{${f(12 * EIy_L3)}} \\quad \\rightarrow K[2,2],\\, K[8,8]`)}</div>`;
-  h += `<div class="er-eq">${KD(`\\frac{GJ}{L} = \\frac{${f(d.G)} \\times ${f(d.J)}}{${f(d.L)}} = \\mathbf{${f(GJ_L)}} \\quad \\rightarrow K[3,3],\\, K[9,9]`)}</div>`;
-  h += `<div class="er-eq">${KD(`\\frac{4EI_y}{L} = \\frac{4 \\times ${f(d.E)} \\times ${f(d.Iy)}}{${f(d.L)}} = \\mathbf{${f(4 * d.E * d.Iy / d.L)}} \\quad \\rightarrow K[4,4],\\, K[10,10]`)}</div>`;
-  h += `<div class="er-eq">${KD(`\\frac{4EI_z}{L} = \\frac{4 \\times ${f(d.E)} \\times ${f(d.Iz)}}{${f(d.L)}} = \\mathbf{${f(4 * d.E * d.Iz / d.L)}} \\quad \\rightarrow K[5,5],\\, K[11,11]`)}</div>`;
-  h += `<div class="er-eq">${KD(`\\frac{6EI_z}{L^2} = \\mathbf{${f(6 * d.E * d.Iz / d.L ** 2)}} \\quad \\rightarrow K[1,5] \\text{ (acoplamiento corte-momento)}`)}</div>`;
+  // ── 5.1 Axial: K[0,0] derivation ──
+  h += `<div class="er-deriv-block">`;
+  h += `<div class="er-deriv-header" data-toggle="deriv-axial">📖 K[0,0] = EA/L — <i>click para ver derivacion completa</i></div>`;
+  h += `<div id="er-deriv-axial" class="er-deriv-body" style="display:none">`;
+  h += `<p><b>Paso 1:</b> Funcion de forma axial</p>`;
+  h += `<div class="er-eq">${KD(`u(\\xi) = N_1 \\cdot u_i + N_2 \\cdot u_j = (1-\\xi)\\,u_i + \\xi\\,u_j`)}</div>`;
+  h += `<p><b>Paso 2:</b> Derivada (deformacion)</p>`;
+  h += `<div class="er-eq">${KD(`\\varepsilon = \\frac{du}{dx} = \\frac{1}{L}\\frac{du}{d\\xi} = \\frac{1}{L}(-u_i + u_j)`)}</div>`;
+  h += `<div class="er-eq">${KD(`\\mathbf{B}_{ax} = \\frac{1}{L}\\begin{bmatrix} -1 & 1 \\end{bmatrix}`)}</div>`;
+  h += `<p><b>Paso 3:</b> Integracion ${K(`K = \\int_0^L B^T \\cdot EA \\cdot B \\; dx`)}</p>`;
+  h += `<div class="er-eq">${KD(`K_{ax} = \\int_0^L \\frac{1}{L}\\begin{bmatrix}-1\\\\1\\end{bmatrix} \\cdot EA \\cdot \\frac{1}{L}\\begin{bmatrix}-1 & 1\\end{bmatrix} dx`)}</div>`;
+  h += `<div class="er-eq">${KD(`= \\frac{EA}{L^2} \\begin{bmatrix}1 & -1\\\\-1 & 1\\end{bmatrix} \\int_0^L dx = \\frac{EA}{L^2} \\cdot L \\begin{bmatrix}1 & -1\\\\-1 & 1\\end{bmatrix}`)}</div>`;
+  h += `<div class="er-eq er-eq-main">${KD(`K_{ax} = \\frac{EA}{L}\\begin{bmatrix}1 & -1\\\\-1 & 1\\end{bmatrix} = \\frac{${f(d.E)}\\times${f(d.A)}}{${f(d.L)}}\\begin{bmatrix}1 & -1\\\\-1 & 1\\end{bmatrix}`)}</div>`;
+  h += `<div class="er-eq">${KD(`K[0,0] = K[6,6] = \\frac{EA}{L} = \\mathbf{${f(EA_L)}}`)}</div>`;
+  h += `</div></div>`;
+
+  // ── 5.2 Bending: K[1,1] = 12EI/L³ derivation ──
+  h += `<div class="er-deriv-block">`;
+  h += `<div class="er-deriv-header" data-toggle="deriv-bend">📖 K[1,1] = 12EI<sub>z</sub>/L³ — <i>click para ver derivacion completa</i></div>`;
+  h += `<div id="er-deriv-bend" class="er-deriv-body" style="display:none">`;
+  h += `<p><b>Paso 1:</b> Funcion de forma Hermite para ${K(`v(\\xi)`)}</p>`;
+  h += `<div class="er-eq">${KD(`v(\\xi) = H_1 v_i + H_2 \\theta_i + H_3 v_j + H_4 \\theta_j`)}</div>`;
+  h += `<p><b>Paso 2:</b> Segunda derivada (curvatura)</p>`;
+  h += `<div class="er-eq">${KD(`\\kappa = \\frac{d^2v}{dx^2} = \\frac{1}{L^2}\\frac{d^2v}{d\\xi^2}`)}</div>`;
+  h += `<div class="er-eq">${KD(`H_1'' = -6+12\\xi, \\quad H_2'' = L(-4+6\\xi), \\quad H_3'' = 6-12\\xi, \\quad H_4'' = L(-2+6\\xi)`)}</div>`;
+  h += `<div class="er-eq">${KD(`\\mathbf{B}_b = \\frac{1}{L^2}\\begin{bmatrix} H_1'' & H_2'' & H_3'' & H_4'' \\end{bmatrix}`)}</div>`;
+  h += `<p><b>Paso 3:</b> Integracion para K[1,1] (termino ${K(`v_i \\cdot v_i`)})</p>`;
+  h += `<div class="er-eq">${KD(`K[1,1] = \\int_0^L \\frac{(H_1'')^2}{L^4} \\cdot EI_z \\; dx = \\frac{EI_z}{L^4} \\int_0^L (-6+12\\xi)^2 \\; dx`)}</div>`;
+  h += `<p>Expandimos: ${K(`(-6+12\\xi)^2 = 36 - 144\\xi + 144\\xi^2`)}</p>`;
+  h += `<div class="er-eq">${KD(`\\int_0^L (36-144\\xi+144\\xi^2)\\,dx = 36L - 72L + 48L = 12L`)}</div>`;
+  h += `<div class="er-eq er-eq-main">${KD(`K[1,1] = \\frac{EI_z}{L^4} \\cdot 12L = \\frac{12EI_z}{L^3} = \\frac{12 \\times ${f(d.E)} \\times ${f(d.Iz)}}{${f(d.L)}^3} = \\mathbf{${f(12 * EIz_L3)}}`)}</div>`;
+  h += `</div></div>`;
+
+  // ── 5.3 Torsion: K[3,3] = GJ/L ──
+  h += `<div class="er-deriv-block">`;
+  h += `<div class="er-deriv-header" data-toggle="deriv-tors">📖 K[3,3] = GJ/L — <i>click para ver derivacion</i></div>`;
+  h += `<div id="er-deriv-tors" class="er-deriv-body" style="display:none">`;
+  h += `<p>Mismo proceso que axial pero con ${K(`\\theta_x`)} y ${K(`GJ`)}:</p>`;
+  h += `<div class="er-eq">${KD(`K_{torsion} = \\frac{GJ}{L}\\begin{bmatrix}1 & -1\\\\-1 & 1\\end{bmatrix} = \\frac{${f(d.G)}\\times${f(d.J)}}{${f(d.L)}} = \\mathbf{${f(GJ_L)}}`)}</div>`;
+  h += `</div></div>`;
+
+  // ── 5.4 Bending-rotation coupling: K[1,5] = 6EI/L² ──
+  h += `<div class="er-deriv-block">`;
+  h += `<div class="er-deriv-header" data-toggle="deriv-coup">📖 K[1,5] = 6EI<sub>z</sub>/L² — <i>acoplamiento corte-momento</i></div>`;
+  h += `<div id="er-deriv-coup" class="er-deriv-body" style="display:none">`;
+  h += `<p>Termino cruzado ${K(`v_i \\cdot \\theta_{zi}`)} (acoplamiento corte-momento):</p>`;
+  h += `<div class="er-eq">${KD(`K[1,5] = \\frac{EI_z}{L^4} \\int_0^L H_1'' \\cdot H_2'' \\; dx`)}</div>`;
+  h += `<div class="er-eq">${KD(`= \\frac{EI_z}{L^4} \\int_0^L (-6+12\\xi) \\cdot L(-4+6\\xi) \\; dx`)}</div>`;
+  h += `<div class="er-eq">${KD(`= \\frac{EI_z}{L^3} \\int_0^L (24-36\\xi-48\\xi+72\\xi^2) \\; dx = \\frac{EI_z}{L^3} \\cdot 6L`)}</div>`;
+  h += `<div class="er-eq er-eq-main">${KD(`K[1,5] = \\frac{6EI_z}{L^2} = \\mathbf{${f(6 * d.E * d.Iz / d.L ** 2)}}`)}</div>`;
+  h += `</div></div>`;
+
+  // Summary of all coefficients
+  h += `<div class="er-subsec">Resumen de coeficientes:</div>`;
+  h += `<div class="er-eq">${KD(`\\frac{EA}{L} = \\mathbf{${f(EA_L)}} \\qquad \\frac{12EI_z}{L^3} = \\mathbf{${f(12 * EIz_L3)}} \\qquad \\frac{12EI_y}{L^3} = \\mathbf{${f(12 * EIy_L3)}}`)}</div>`;
+  h += `<div class="er-eq">${KD(`\\frac{GJ}{L} = \\mathbf{${f(GJ_L)}} \\qquad \\frac{4EI_y}{L} = \\mathbf{${f(4 * d.E * d.Iy / d.L)}} \\qquad \\frac{4EI_z}{L} = \\mathbf{${f(4 * d.E * d.Iz / d.L)}}`)}</div>`;
+  h += `<div class="er-eq">${KD(`\\frac{6EI_z}{L^2} = \\mathbf{${f(6 * d.E * d.Iz / d.L ** 2)}} \\qquad \\frac{6EI_y}{L^2} = \\mathbf{${f(6 * d.E * d.Iy / d.L ** 2)}}`)}</div>`;
 
   if (d.kLocal) {
     h += `<div class="er-subsec">Resultado: ${K(`\\mathbf{K}_{local}`)} (12x12)</div>`;
@@ -504,8 +569,20 @@ const STYLES = `<style>
   .er-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
   .er-badge { background: var(--fem-section-title, #e94560); color: #fff; padding: 2px 10px; border-radius: 12px; font-weight: bold; font-size: 13px; }
   .er-type { color: var(--fem-label, #888); font-size: 12px; }
-  .er-close { margin-left: auto; background: transparent; border: 1px solid var(--fem-border, #333); color: var(--fem-text, #ddd); padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+  .er-fullscreen { background: transparent; border: 1px solid var(--fem-border, #333); color: var(--fem-text, #ddd); padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 16px; margin-left: auto; }
+  .er-fullscreen:hover { background: var(--fem-btn-hover, #222); }
+  .er-close { background: transparent; border: 1px solid var(--fem-border, #333); color: var(--fem-text, #ddd); padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 14px; }
   .er-close:hover { background: var(--fem-btn-hover, #222); }
+
+  /* Fullscreen mode */
+  .er-panel.er-fullscreen-mode {
+    width: 100vw !important; left: 0 !important; right: 0 !important;
+    max-width: none !important; border-left: none !important;
+    padding: 20px 40px !important;
+  }
+  .er-panel.er-fullscreen-mode .er-matrix td { min-width: 65px; font-size: 10px; }
+  .er-panel.er-fullscreen-mode .er-eq { font-size: 14px; }
+  .er-panel.er-fullscreen-mode .katex { font-size: 1.1em; }
 
   .er-tabs { display: flex; gap: 0; margin-bottom: 10px; border-bottom: 2px solid var(--fem-border, #333); }
   .er-tab { background: transparent; border: none; color: var(--fem-label, #888); padding: 6px 16px; cursor: pointer; font-size: 12px; font-weight: bold; border-bottom: 2px solid transparent; margin-bottom: -2px; }
@@ -545,6 +622,13 @@ const STYLES = `<style>
   .er-matrix td.diag { background: var(--fem-diag-bg, #0a1a30); color: var(--fem-eq-var, #58a6ff); font-weight: bold; }
 
   .er-panel p { margin: 4px 0; color: var(--fem-text, #bbb); font-size: 11px; }
+
+  /* Derivation blocks (expandible) */
+  .er-deriv-block { margin: 6px 0; border: 1px solid var(--fem-border, #333); border-radius: 4px; overflow: hidden; }
+  .er-deriv-header { padding: 6px 10px; cursor: pointer; color: var(--fem-eq-var, #58a6ff); font-size: 12px; background: var(--fem-section-bg, #161b22); }
+  .er-deriv-header:hover { background: var(--fem-diag-bg, #0a2a4a); }
+  .er-deriv-header i { color: var(--fem-label, #666); font-size: 10px; }
+  .er-deriv-body { padding: 8px 12px; background: var(--fem-bg, #0d1117); border-top: 1px solid var(--fem-border, #333); }
 
   .er-panel::-webkit-scrollbar { width: 6px; }
   .er-panel::-webkit-scrollbar-track { background: var(--fem-bg, #111); }
