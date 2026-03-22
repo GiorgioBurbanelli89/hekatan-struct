@@ -49,7 +49,7 @@ export function parseE2k(text: string): E2kModel {
   const areaConns: { name: string; pts: string[]; nStories: number }[] = [];
   const restraints = new Map<string, string[]>(); // pointName+story → restrained DOFs
   const lineAssigns = new Map<string, { story: string; section: string }>(); // lineName+story → section
-  const frameLoads: { line: string; story: string; type: string; dir: string; val: number }[] = [];
+  const frameLoads: { line: string; story: string; type: string; dir: string; lc: string; val: number }[] = [];
   const grids: E2kGrid[] = [];
   let title = "";
 
@@ -161,6 +161,17 @@ export function parseE2k(text: string): E2kModel {
       const gm = line.match(/^\s*GRID\s+"[^"]+"\s+LABEL\s+"([^"]+)"\s+DIR\s+"([XY])"\s+COORD\s+([-\d.eE+]+)/);
       if (gm) {
         grids.push({ label: gm[1], dir: gm[2] as "X" | "Y", coord: parseFloat(gm[3]) });
+      }
+    }
+
+    // ── FRAME OBJECT LOADS ──
+    if (currentSection === "FRAME OBJECT LOADS") {
+      const flm = line.match(/LINELOAD\s+"([^"]+)"\s+"([^"]+)"\s+TYPE\s+"([^"]+)"\s+DIR\s+"([^"]+)"\s+LC\s+"([^"]+)"\s+FVAL\s+([-\d.eE+]+)/);
+      if (flm) {
+        frameLoads.push({
+          line: flm[1], story: flm[2], type: flm[3], dir: flm[4],
+          lc: flm[5], val: parseFloat(flm[6]),
+        });
       }
     }
 
@@ -419,6 +430,60 @@ export function parseE2k(text: string): E2kModel {
     supports.set(nodeIdx, fix);
   }
 
+  // ── Convert LINELOAD to equivalent nodal loads ──
+  // LINELOAD "B120" "N+13.00m" TYPE "UNIFF" DIR "GRAV" LC "SCP" FVAL 0.0148
+  // UNIFF = uniform full length, w (force/length)
+  // Equivalent nodal: F = w*L/2 at each end node, applied in gravity direction (-Z)
+  // Combine all load cases (SCP + CV = total service load)
+  const loads = new Map<number, [number, number, number, number, number, number]>();
+
+  // Build element lookup: "lineName@story" → element index
+  const elemLookup = new Map<string, number>();
+  for (let ei = 0; ei < elementNames.length; ei++) {
+    elemLookup.set(`${elementNames[ei]}@${elementStoriesArr[ei]}`, ei);
+  }
+
+  for (const fl of frameLoads) {
+    const elemIdx = elemLookup.get(`${fl.line}@${fl.story}`);
+    if (elemIdx === undefined) continue;
+
+    const [n1, n2] = elements[elemIdx];
+    const p1 = nodes[n1], p2 = nodes[n2];
+    const L = Math.sqrt((p2[0]-p1[0])**2 + (p2[1]-p1[1])**2 + (p2[2]-p1[2])**2);
+    if (L < 1e-10) continue;
+
+    // Equivalent nodal force = w * L / 2 at each node
+    const F = fl.val * L / 2;
+
+    // Direction: GRAV = -Z, GRAVITY = -Z
+    let fx = 0, fy = 0, fz = 0;
+    if (fl.dir === "GRAV" || fl.dir === "GRAVITY") {
+      fz = -F; // gravity = downward
+    } else if (fl.dir === "X") {
+      fx = F;
+    } else if (fl.dir === "Y") {
+      fy = F;
+    } else if (fl.dir === "Z") {
+      fz = -F;
+    }
+
+    // Accumulate on both nodes
+    for (const ni of [n1, n2]) {
+      const prev = loads.get(ni) || [0, 0, 0, 0, 0, 0] as [number, number, number, number, number, number];
+      prev[0] += fx; prev[1] += fy; prev[2] += fz;
+      loads.set(ni, prev);
+    }
+  }
+
+  // ── Add material densities to element inputs ──
+  const densities = new Map<number, number>();
+  for (const [elemIdx, secName] of elementSections) {
+    const sec = frameSections.get(secName);
+    if (!sec) continue;
+    const mat = materials.get(sec.material);
+    if (mat?.density) densities.set(elemIdx, mat.density);
+  }
+
   return {
     units,
     stories: stories.reverse(), // bottom to top
@@ -432,7 +497,7 @@ export function parseE2k(text: string): E2kModel {
     elementTypes: elementTypes,
     elementStories: elementStoriesArr,
     elementSections,
-    nodeInputs: { supports, loads: new Map() },
+    nodeInputs: { supports, loads },
     elementInputs: {
       elasticities,
       shearModuli,
@@ -440,6 +505,7 @@ export function parseE2k(text: string): E2kModel {
       momentsOfInertiaZ,
       momentsOfInertiaY,
       torsionalConstants,
+      densities,
       sectionShapes,
     },
     sectionShapes,

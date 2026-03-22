@@ -5575,6 +5575,8 @@ Util:     cad.info()  cad.clear()  cad.help()
             const model = parseE2k(text);
             applyImportedModel(model, "E2K imported");
             applyE2kGridsAndStories(model);
+            // Auto-run analysis with imported loads
+            setTimeout(() => runAnalysis(), 200);
           } else if (ioAction === "import-py") {
             const model = importOpenSeesPy(text);
             applyImportedModel(model, "OpenSeesPy imported");
