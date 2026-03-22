@@ -29,6 +29,7 @@ import { STEEL_PROFILES, getWProfileOptions, getHSSProfileOptions } from "./stee
 import { buildReportExplained } from "./reportExplained";
 import { buildElementReport } from "./elementReport";
 import { createHelpButton } from "./helpTour";
+import { parseE2k } from "./e2kParser";
 
 export interface Cad3dMesh {
   nodes: State<Node[]>;
@@ -4203,6 +4204,8 @@ Util:     cad.info()  cad.clear()  cad.help()
       <div class="btn-row" id="cad3d-floor-buttons" style="margin-top:2px;display:none"></div>
       <div class="btn-row" style="margin-top:2px">
         <button id="cad3d-export" title="Exportar coordenadas y datos del modelo">📋 Export</button>
+        <button id="cad3d-import-e2k" title="Importar modelo ETABS (.e2k)">📂 Import E2K</button>
+        <input type="file" id="cad3d-e2k-file" accept=".e2k,.E2K" style="display:none">
         <select id="cad3d-force-unit" title="Unidad de fuerza" style="background:var(--cad-btn-bg);color:var(--cad-btn-text);border:1px solid var(--cad-btn-border);padding:2px 4px;font-size:11px;cursor:pointer;">
           <option value="tonf">tonf</option><option value="kN">kN</option><option value="kgf">kgf</option>
           <option value="kip">kip</option><option value="lb">lb</option><option value="N">N</option>
@@ -5287,6 +5290,46 @@ Util:     cad.info()  cad.clear()  cad.help()
     panel.querySelector("#cad3d-export")?.addEventListener("click", (ev) => {
       ev.stopPropagation();
       showExportPanel();
+    });
+
+    // === Import E2K ===
+    panel.querySelector("#cad3d-import-e2k")?.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      (panel.querySelector("#cad3d-e2k-file") as HTMLInputElement)?.click();
+    });
+    panel.querySelector("#cad3d-e2k-file")?.addEventListener("change", (ev) => {
+      const file = (ev.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = reader.result as string;
+        try {
+          const model = parseE2k(text);
+          // Apply to mesh
+          mesh.nodes.val = model.nodes;
+          mesh.elements!.val = model.elements;
+          mesh.nodeInputs!.val = model.nodeInputs;
+          mesh.elementInputs!.val = model.elementInputs;
+          mesh.deformOutputs!.val = {};
+          mesh.analyzeOutputs!.val = {};
+          // Update info
+          const info = panel.querySelector("#cad3d-info") as HTMLElement;
+          if (info) info.innerHTML = `<span style="color:#0f0">E2K imported: ${model.info.nNodes}n ${model.info.nFrames}e</span>`;
+          // Update title
+          const title = panel.querySelector("h1") as HTMLElement;
+          if (title) {
+            const titleSpan = title.querySelector("span:first-child") || title;
+            titleSpan.textContent = `FEM Studio`;
+            const statsSpan = title.querySelector("span:nth-child(2)");
+            if (statsSpan) statsSpan.textContent = `${model.info.nNodes}n ${model.info.nFrames}e`;
+          }
+          console.log(`E2K imported: ${model.info.nNodes} nodes, ${model.info.nFrames} frames, ${model.materials.size} materials, ${model.frameSections.size} sections`);
+        } catch (err: any) {
+          alert("Error parsing E2K: " + err.message);
+          console.error(err);
+        }
+      };
+      reader.readAsText(file);
     });
 
     // === Force unit dropdown ===
