@@ -81,10 +81,15 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
     releaseRotEnd?: boolean;    // Rótula fin (M=0 en end)
     releaseAxial?: boolean;     // Libre axial (no transmite N)
     releaseTorsion?: boolean;   // Libre torsión (no transmite T)
-    // Modifiers (factor multiplicador, default = 1)
-    modI?: number;     // Factor inercia (I_eff = modI × I)
-    modA?: number;     // Factor área (A_eff = modA × A)
-    modJ?: number;     // Factor torsión (J_eff = modJ × J)
+    // Property/Stiffness Modification Factors (default = 1)
+    modA?: number;      // Cross-section (axial) Area
+    modAs2?: number;    // Shear Area dir 2 (0=Euler-Bernoulli, 1=Timoshenko)
+    modAs3?: number;    // Shear Area dir 3 (0=Euler-Bernoulli, 1=Timoshenko)
+    modJ?: number;      // Torsional Constant
+    modI?: number;      // Moment of Inertia about 2 axis
+    modI3?: number;     // Moment of Inertia about 3 axis
+    modMass?: number;   // Mass modifier
+    modWeight?: number; // Weight modifier
   };
   const deletedElements = new Set<number>();
   const hiddenElements = new Set<number>();
@@ -8590,13 +8595,31 @@ Util:     cad.info()  cad.clear()  cad.help()
       </div>
 
       <div style="border-top:1px solid #444;padding-top:8px;margin-bottom:10px;">
-        <b style="color:#33ff33;font-size:11px;">Modifiers (factores de rigidez)</b>
-        <div style="margin-top:4px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-size:11px;">
-          <label>Inercia:<input id="asgn-mod-i" type="number" value="1.0" step="0.05" min="0" max="2" style="width:50px;background:#333;color:#fff;border:1px solid #555;padding:2px;"></label>
-          <label>Área:<input id="asgn-mod-a" type="number" value="1.0" step="0.1" min="0" max="2" style="width:50px;background:#333;color:#fff;border:1px solid #555;padding:2px;"></label>
-          <label>Torsión:<input id="asgn-mod-j" type="number" value="1.0" step="0.1" min="0" max="2" style="width:50px;background:#333;color:#fff;border:1px solid #555;padding:2px;"></label>
+        <b style="color:#33ff33;font-size:11px;">Property/Stiffness Modification Factors</b>
+        <div style="margin-top:6px;font-size:11px;">
+          <div style="display:grid;grid-template-columns:160px 60px;gap:2px 8px;align-items:center;">
+            <span style="color:#aaa">Cross-section (axial) Area</span>
+            <input id="asgn-mod-a" type="number" value="1.0" step="0.1" min="0" max="2" style="width:55px;background:#333;color:#fff;border:1px solid #555;padding:2px;text-align:center;">
+            <span style="color:#aaa">Shear Area dir 2 <span style="color:#666;font-size:9px">(Vy)</span></span>
+            <input id="asgn-mod-as2" type="number" value="1.0" step="0.1" min="0" max="2" style="width:55px;background:#333;color:#fff;border:1px solid #555;padding:2px;text-align:center;">
+            <span style="color:#aaa">Shear Area dir 3 <span style="color:#666;font-size:9px">(Vz)</span></span>
+            <input id="asgn-mod-as3" type="number" value="1.0" step="0.1" min="0" max="2" style="width:55px;background:#333;color:#fff;border:1px solid #555;padding:2px;text-align:center;">
+            <span style="color:#aaa">Torsional Constant</span>
+            <input id="asgn-mod-j" type="number" value="1.0" step="0.1" min="0" max="2" style="width:55px;background:#333;color:#fff;border:1px solid #555;padding:2px;text-align:center;">
+            <span style="color:#aaa">Moment of Inertia 2</span>
+            <input id="asgn-mod-i" type="number" value="1.0" step="0.05" min="0" max="2" style="width:55px;background:#333;color:#fff;border:1px solid #555;padding:2px;text-align:center;">
+            <span style="color:#aaa">Moment of Inertia 3</span>
+            <input id="asgn-mod-i3" type="number" value="1.0" step="0.05" min="0" max="2" style="width:55px;background:#333;color:#fff;border:1px solid #555;padding:2px;text-align:center;">
+            <span style="color:#aaa">Mass</span>
+            <input id="asgn-mod-mass" type="number" value="1.0" step="0.1" min="0" max="2" style="width:55px;background:#333;color:#fff;border:1px solid #555;padding:2px;text-align:center;">
+            <span style="color:#aaa">Weight</span>
+            <input id="asgn-mod-weight" type="number" value="1.0" step="0.1" min="0" max="2" style="width:55px;background:#333;color:#fff;border:1px solid #555;padding:2px;text-align:center;">
+          </div>
         </div>
-        <div style="color:#888;font-size:9px;margin-top:2px;">Factor 1.0 = sin cambio, 0.35 = sección agrietada (ACI 318)</div>
+        <div style="color:#888;font-size:9px;margin-top:4px;line-height:1.4;">
+          1.0 = sin cambio &nbsp;|&nbsp; 0.35 = seccion agrietada (ACI 318)<br>
+          <span style="color:#ffaa00">Shear Area:</span> 1 = <b>Timoshenko</b> (incluye corte) &nbsp;|&nbsp; 0 = <b>Euler-Bernoulli</b> (ignora corte)
+        </div>
       </div>
 
       <div style="display:flex;gap:8px;">
@@ -8677,6 +8700,11 @@ Util:     cad.info()  cad.clear()  cad.help()
       override.modI = parseFloat((div.querySelector("#asgn-mod-i") as HTMLInputElement)?.value) || 1;
       override.modA = parseFloat((div.querySelector("#asgn-mod-a") as HTMLInputElement)?.value) || 1;
       override.modJ = parseFloat((div.querySelector("#asgn-mod-j") as HTMLInputElement)?.value) || 1;
+      override.modAs2 = parseFloat((div.querySelector("#asgn-mod-as2") as HTMLInputElement)?.value) ?? 1;
+      override.modAs3 = parseFloat((div.querySelector("#asgn-mod-as3") as HTMLInputElement)?.value) ?? 1;
+      override.modI3 = parseFloat((div.querySelector("#asgn-mod-i3") as HTMLInputElement)?.value) || 1;
+      override.modMass = parseFloat((div.querySelector("#asgn-mod-mass") as HTMLInputElement)?.value) || 1;
+      override.modWeight = parseFloat((div.querySelector("#asgn-mod-weight") as HTMLInputElement)?.value) || 1;
 
       elemIndices.forEach(idx => elementOverrides.set(idx, { ...override }));
       div.remove(); assignPanel = null;
