@@ -46,6 +46,38 @@ Eigen::SparseMatrix<double> getGlobalStiffnessMatrix(
         // Transform the local stiffness matrix to global coordinates: K_global_element = T^T * kLocal * T
         Eigen::MatrixXd kGlobalElement = T.transpose() * kLocal * T;
 
+        // Apply rigid end offsets: K_offset = R^T * K * R
+        if (numElementNodes == 2)
+        {
+            auto itOff = elementInputs.rigidOffsets.find(i);
+            if (itOff != elementInputs.rigidOffsets.end() && itOff->second.size() >= 2)
+            {
+                double factI = itOff->second[0];
+                double factJ = itOff->second[1];
+                if (factI > 1e-12 || factJ > 1e-12)
+                {
+                    Eigen::Vector3d n0(elmNodes[0][0], elmNodes[0][1], elmNodes[0][2]);
+                    Eigen::Vector3d n1(elmNodes[1][0], elmNodes[1][1], elmNodes[1][2]);
+                    double L = (n1 - n0).norm();
+                    double oI = factI * L;
+                    double oJ = factJ * L;
+
+                    // Build 12x12 rigid offset matrix R
+                    Eigen::MatrixXd R = Eigen::MatrixXd::Identity(12, 12);
+                    if (std::abs(oI) > 1e-12) {
+                        R(1, 5) = -oI;  // uy couples with -oI * rz
+                        R(2, 4) =  oI;  // uz couples with +oI * ry
+                    }
+                    if (std::abs(oJ) > 1e-12) {
+                        R(7, 11) =  oJ; // uy_J couples with +oJ * rz_J
+                        R(8, 10) = -oJ; // uz_J couples with -oJ * ry_J
+                    }
+
+                    kGlobalElement = R.transpose() * kGlobalElement * R;
+                }
+            }
+        }
+
         // Assemble the element's global stiffness matrix into the overall global stiffness matrix (triplet list)
         for (unsigned int rowNodeIdx = 0; rowNodeIdx < numElementNodes; ++rowNodeIdx) // Iterate over element's nodes (rows)
         {

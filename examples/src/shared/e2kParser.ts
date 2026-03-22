@@ -308,6 +308,25 @@ export function parseE2k(text: string): E2kModel {
       elementTypes.push(lc.type);
       elementStoriesArr.push(story);
       elementSections.set(elemIdx, la.section);
+
+      // Store rigid zone factor for this element
+      if (la.rigidZone > 0) {
+        rigidOffsets.set(elemIdx, [la.rigidZone, la.rigidZone]);
+      }
+      // Store moment releases
+      if (la.releases.length > 0) {
+        // ETABS releases: TI, M2I, M3I, TJ, M2J, M3J
+        const rel: [boolean, boolean, boolean, boolean, boolean, boolean] = [false, false, false, false, false, false];
+        for (const r of la.releases) {
+          if (r === "TI") rel[0] = true;
+          if (r === "M2I") rel[1] = true;
+          if (r === "M3I") rel[2] = true;
+          if (r === "TJ") rel[3] = true;
+          if (r === "M2J") rel[4] = true;
+          if (r === "M3J") rel[5] = true;
+        }
+        momentReleases.set(elemIdx, rel);
+      }
     }
   }
 
@@ -317,6 +336,8 @@ export function parseE2k(text: string): E2kModel {
   const areas = new Map<number, number>();
   const shearAreasY = new Map<number, number>();
   const shearAreasZ = new Map<number, number>();
+  const rigidOffsets = new Map<number, [number, number]>();
+  const momentReleases = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
   const momentsOfInertiaZ = new Map<number, number>();
   const momentsOfInertiaY = new Map<number, number>();
   const torsionalConstants = new Map<number, number>();
@@ -535,6 +556,8 @@ export function parseE2k(text: string): E2kModel {
       torsionalConstants,
       shearAreasY,
       shearAreasZ,
+      rigidOffsets,
+      momentReleases,
       densities,
       sectionShapes,
     },

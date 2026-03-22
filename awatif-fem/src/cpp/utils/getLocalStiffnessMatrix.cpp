@@ -28,6 +28,50 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     const ElementInputs &elementInputs,
     int index);
 
+// Static condensation for moment releases
+Eigen::MatrixXd applyReleases(const Eigen::MatrixXd &K, const std::vector<bool> &releases)
+{
+    // releases = [TI, M2I, M3I, TJ, M2J, M3J]
+    // Maps to local DOFs: TI→3, M2I→4, M3I→5, TJ→9, M2J→10, M3J→11
+    const int relDofs[] = {3, 4, 5, 9, 10, 11};
+    std::vector<int> freed, retained;
+    for (int i = 0; i < 6 && i < (int)releases.size(); i++)
+    {
+        if (releases[i]) freed.push_back(relDofs[i]);
+    }
+    if (freed.empty()) return K;
+
+    for (int i = 0; i < 12; i++)
+    {
+        bool isFree = false;
+        for (int f : freed) if (f == i) { isFree = true; break; }
+        if (!isFree) retained.push_back(i);
+    }
+
+    int nr = retained.size(), nf = freed.size();
+    Eigen::MatrixXd Kff(nf, nf), Krf(nr, nf), Kfr(nf, nr);
+    for (int i = 0; i < nf; i++)
+        for (int j = 0; j < nf; j++)
+            Kff(i, j) = K(freed[i], freed[j]);
+    for (int i = 0; i < nr; i++)
+        for (int j = 0; j < nf; j++)
+            Krf(i, j) = K(retained[i], freed[j]);
+    for (int i = 0; i < nf; i++)
+        for (int j = 0; j < nr; j++)
+            Kfr(i, j) = K(freed[i], retained[j]);
+
+    // Krr_condensed = Krr - Krf * inv(Kff) * Kfr
+    Eigen::MatrixXd KffInv = Kff.inverse();
+    Eigen::MatrixXd correction = Krf * KffInv * Kfr;
+
+    Eigen::MatrixXd Kc = Eigen::MatrixXd::Zero(12, 12);
+    for (int i = 0; i < nr; i++)
+        for (int j = 0; j < nr; j++)
+            Kc(retained[i], retained[j]) = K(retained[i], retained[j]) - correction(i, j);
+
+    return Kc;
+}
+
 Eigen::MatrixXd getLocalStiffnessMatrix(
     const std::vector<Node> &elementNodes,
     const ElementInputs &elementInputs,
@@ -35,7 +79,14 @@ Eigen::MatrixXd getLocalStiffnessMatrix(
 {
     if (elementNodes.size() == 2)
     {
-        return getLocalStiffnessMatrixFrame(elementNodes, elementInputs, elementIndex);
+        Eigen::MatrixXd K = getLocalStiffnessMatrixFrame(elementNodes, elementInputs, elementIndex);
+        // Apply moment releases
+        auto it = elementInputs.momentReleases.find(elementIndex);
+        if (it != elementInputs.momentReleases.end())
+        {
+            K = applyReleases(K, it->second);
+        }
+        return K;
     }
     if (elementNodes.size() == 3)
     {
@@ -88,28 +139,39 @@ Eigen::MatrixXd getLocalStiffnessMatrixFrame(
         return Eigen::MatrixXd::Zero(12, 12);
     }
 
+    // Timoshenko shear deformation: phi = 12EI/(G*As*L^2)
+    double AsY = getMapValueOrDefault(elementInputs.shearAreasY, index, 0.0);
+    double AsZ = getMapValueOrDefault(elementInputs.shearAreasZ, index, 0.0);
+    double phiZ = (AsZ > 0 && G > 0) ? (12.0 * E * Iz) / (G * AsZ * L * L) : 0.0;
+    double phiY = (AsY > 0 && G > 0) ? (12.0 * E * Iy) / (G * AsY * L * L) : 0.0;
+
     const double EA_L = E * A / L;
-    const double EIz_L3 = E * Iz / (L * L * L);
-    const double EIy_L3 = E * Iy / (L * L * L);
     const double GJ_L = G * J / L;
-    const double EIz_L2 = E * Iz / (L * L);
-    const double EIy_L2 = E * Iy / (L * L);
-    const double EIz_L = E * Iz / L;
-    const double EIy_L = E * Iy / L;
+
+    // Timoshenko coefficients (Euler-Bernoulli when phi=0)
+    const double tz = (12.0 * E * Iz / (L * L * L)) / (1.0 + phiZ);
+    const double bz = (6.0 * E * Iz / (L * L)) / (1.0 + phiZ);
+    const double kz = (4.0 * E * Iz / L) * (1.0 + phiZ / 4.0) / (1.0 + phiZ);
+    const double az = (2.0 * E * Iz / L) * (1.0 - phiZ / 2.0) / (1.0 + phiZ);
+
+    const double ty = (12.0 * E * Iy / (L * L * L)) / (1.0 + phiY);
+    const double by = (6.0 * E * Iy / (L * L)) / (1.0 + phiY);
+    const double ky = (4.0 * E * Iy / L) * (1.0 + phiY / 4.0) / (1.0 + phiY);
+    const double ay = (2.0 * E * Iy / L) * (1.0 - phiY / 2.0) / (1.0 + phiY);
 
     Eigen::MatrixXd kLocal(12, 12);
     kLocal << EA_L, 0, 0, 0, 0, 0, -EA_L, 0, 0, 0, 0, 0,
-        0, 12 * EIz_L3, 0, 0, 0, 6 * EIz_L2, 0, -12 * EIz_L3, 0, 0, 0, 6 * EIz_L2,
-        0, 0, 12 * EIy_L3, 0, -6 * EIy_L2, 0, 0, 0, -12 * EIy_L3, 0, -6 * EIy_L2, 0,
+        0, tz, 0, 0, 0, bz, 0, -tz, 0, 0, 0, bz,
+        0, 0, ty, 0, -by, 0, 0, 0, -ty, 0, -by, 0,
         0, 0, 0, GJ_L, 0, 0, 0, 0, 0, -GJ_L, 0, 0,
-        0, 0, -6 * EIy_L2, 0, 4 * EIy_L, 0, 0, 0, 6 * EIy_L2, 0, 2 * EIy_L, 0,
-        0, 6 * EIz_L2, 0, 0, 0, 4 * EIz_L, 0, -6 * EIz_L2, 0, 0, 0, 2 * EIz_L,
+        0, 0, -by, 0, ky, 0, 0, 0, by, 0, ay, 0,
+        0, bz, 0, 0, 0, kz, 0, -bz, 0, 0, 0, az,
         -EA_L, 0, 0, 0, 0, 0, EA_L, 0, 0, 0, 0, 0,
-        0, -12 * EIz_L3, 0, 0, 0, -6 * EIz_L2, 0, 12 * EIz_L3, 0, 0, 0, -6 * EIz_L2,
-        0, 0, -12 * EIy_L3, 0, 6 * EIy_L2, 0, 0, 0, 12 * EIy_L3, 0, 6 * EIy_L2, 0,
+        0, -tz, 0, 0, 0, -bz, 0, tz, 0, 0, 0, -bz,
+        0, 0, -ty, 0, by, 0, 0, 0, ty, 0, by, 0,
         0, 0, 0, -GJ_L, 0, 0, 0, 0, 0, GJ_L, 0, 0,
-        0, 0, -6 * EIy_L2, 0, 2 * EIy_L, 0, 0, 0, 6 * EIy_L2, 0, 4 * EIy_L, 0,
-        0, 6 * EIz_L2, 0, 0, 0, 2 * EIz_L, 0, -6 * EIz_L2, 0, 0, 0, 4 * EIz_L;
+        0, 0, -by, 0, ay, 0, 0, 0, by, 0, ky, 0,
+        0, bz, 0, 0, 0, az, 0, -bz, 0, 0, 0, kz;
 
     return kLocal;
 }

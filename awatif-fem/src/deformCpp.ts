@@ -84,6 +84,20 @@ export function deformCpp(
   const torsion = processElementInput(elementInputs.torsionalConstants);
   const thickness = processElementInput(elementInputs.thicknesses);
   const poisson = processElementInput(elementInputs.poissonsRatios);
+  const shearAreasY = processElementInput(elementInputs.shearAreasY);
+  const shearAreasZ = processElementInput(elementInputs.shearAreasZ);
+
+  // Rigid offsets: Map<number, [factorI, factorJ]> → flat [factI, factJ, factI, factJ, ...]
+  const rigidOffsetKeys = elementInputs.rigidOffsets ? Array.from(elementInputs.rigidOffsets.keys()) : [];
+  const rigidOffsetValues = elementInputs.rigidOffsets ? Array.from(elementInputs.rigidOffsets.values()).flat() : [];
+  const rigidOffsetKeysPtr = allocate(rigidOffsetKeys, Uint32Array, mod.HEAPU32); gc.push(rigidOffsetKeysPtr);
+  const rigidOffsetValuesPtr = allocate(rigidOffsetValues, Float64Array, mod.HEAPF64); gc.push(rigidOffsetValuesPtr);
+
+  // Moment releases: Map<number, [TI,M2I,M3I,TJ,M2J,M3J]> → flat booleans
+  const releaseKeys = elementInputs.momentReleases ? Array.from(elementInputs.momentReleases.keys()) : [];
+  const releaseValues = elementInputs.momentReleases ? Array.from(elementInputs.momentReleases.values()).flat().map(b => b ? 1 : 0) : [];
+  const releaseKeysPtr = allocate(releaseKeys, Uint32Array, mod.HEAPU32); gc.push(releaseKeysPtr);
+  const releaseValuesPtr = allocate(releaseValues, Uint8Array, mod.HEAPU8); gc.push(releaseValuesPtr);
 
   // Allocate memory for the pointers that C++ will write the results pointers to
   const deformationsDataPtrOutPtr = mod._malloc(4); // Pointer to a pointer (size 4 for 32-bit WASM)
@@ -136,6 +150,18 @@ export function deformCpp(
     elasticitiesOrthogonal.keysPtr,
     elasticitiesOrthogonal.valuesPtr,
     elasticitiesOrthogonal.size,
+    shearAreasY.keysPtr,
+    shearAreasY.valuesPtr,
+    shearAreasY.size,
+    shearAreasZ.keysPtr,
+    shearAreasZ.valuesPtr,
+    shearAreasZ.size,
+    rigidOffsetKeysPtr,
+    rigidOffsetValuesPtr,
+    rigidOffsetKeys.length,
+    releaseKeysPtr,
+    releaseValuesPtr,
+    releaseKeys.length,
     // Output pointers
     deformationsDataPtrOutPtr,
     deformationsSizeOutPtr,

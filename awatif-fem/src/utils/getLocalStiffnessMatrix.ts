@@ -15,11 +15,103 @@ export function getLocalStiffnessMatrix(
   elementInputs: ElementInputs,
   index: number
 ): number[][] {
-  if (nodes.length === 2)
-    return getLocalStiffnessMatrixFrame(nodes, elementInputs, index);
+  if (nodes.length === 2) {
+    let K = getLocalStiffnessMatrixFrame(nodes, elementInputs, index);
+    // Apply moment releases via static condensation
+    const rel = elementInputs?.momentReleases?.get(index);
+    if (rel) K = applyReleases(K, rel);
+    return K;
+  }
 
   if (nodes.length === 3)
     return getLocalStiffnessMatrixShell(nodes, elementInputs, index);
+}
+
+/**
+ * Static condensation for moment releases.
+ * releases = [TI, M2I, M3I, TJ, M2J, M3J]
+ * TI=torsion@I, M2I=My@I, M3I=Mz@I, TJ=torsion@J, M2J=My@J, M3J=Mz@J
+ * Maps to local DOFs: TI→3, M2I→4, M3I→5, TJ→9, M2J→10, M3J→11
+ */
+function applyReleases(K: number[][], releases: [boolean, boolean, boolean, boolean, boolean, boolean]): number[][] {
+  const relDofs = [3, 4, 5, 9, 10, 11]; // DOFs corresponding to [TI,M2I,M3I,TJ,M2J,M3J]
+  const freed: number[] = [];
+  for (let i = 0; i < 6; i++) {
+    if (releases[i]) freed.push(relDofs[i]);
+  }
+  if (freed.length === 0) return K;
+
+  const n = K.length; // 12
+  const retained = [];
+  for (let i = 0; i < n; i++) {
+    if (!freed.includes(i)) retained.push(i);
+  }
+
+  // Partition: K = [Krr Krf; Kfr Kff]
+  // K_condensed(retained) = Krr - Krf * inv(Kff) * Kfr
+  const nr = retained.length, nf = freed.length;
+  const Kff: number[][] = Array.from({ length: nf }, (_, i) =>
+    Array.from({ length: nf }, (_, j) => K[freed[i]][freed[j]])
+  );
+  const Krf: number[][] = Array.from({ length: nr }, (_, i) =>
+    Array.from({ length: nf }, (_, j) => K[retained[i]][freed[j]])
+  );
+  const Kfr: number[][] = Array.from({ length: nf }, (_, i) =>
+    Array.from({ length: nr }, (_, j) => K[freed[i]][retained[j]])
+  );
+
+  // Invert Kff (small matrix, direct)
+  const KffInv = invertSmall(Kff);
+  if (!KffInv) return K; // if singular, skip
+
+  // Krr_cond = Krr - Krf * KffInv * Kfr
+  const KrfKffInv = matMul(Krf, KffInv);
+  const correction = matMul(KrfKffInv, Kfr);
+
+  // Build condensed full matrix (freed DOFs get zero rows/cols)
+  const Kc: number[][] = Array.from({ length: n }, () => Array(n).fill(0));
+  for (let i = 0; i < nr; i++) {
+    for (let j = 0; j < nr; j++) {
+      Kc[retained[i]][retained[j]] = K[retained[i]][retained[j]] - correction[i][j];
+    }
+  }
+  return Kc;
+}
+
+function matMul(A: number[][], B: number[][]): number[][] {
+  const m = A.length, n = B[0].length, p = B.length;
+  const C: number[][] = Array.from({ length: m }, () => Array(n).fill(0));
+  for (let i = 0; i < m; i++)
+    for (let j = 0; j < n; j++)
+      for (let k = 0; k < p; k++)
+        C[i][j] += A[i][k] * B[k][j];
+  return C;
+}
+
+function invertSmall(M: number[][]): number[][] | null {
+  const n = M.length;
+  // Gauss-Jordan elimination
+  const aug: number[][] = M.map((row, i) => {
+    const r = [...row];
+    for (let j = 0; j < n; j++) r.push(i === j ? 1 : 0);
+    return r;
+  });
+  for (let col = 0; col < n; col++) {
+    let pivot = col;
+    for (let row = col + 1; row < n; row++) {
+      if (Math.abs(aug[row][col]) > Math.abs(aug[pivot][col])) pivot = row;
+    }
+    [aug[col], aug[pivot]] = [aug[pivot], aug[col]];
+    if (Math.abs(aug[col][col]) < 1e-15) return null;
+    const d = aug[col][col];
+    for (let j = 0; j < 2 * n; j++) aug[col][j] /= d;
+    for (let row = 0; row < n; row++) {
+      if (row === col) continue;
+      const f = aug[row][col];
+      for (let j = 0; j < 2 * n; j++) aug[row][j] -= f * aug[col][j];
+    }
+  }
+  return aug.map(row => row.slice(n));
 }
 
 function getLocalStiffnessMatrixFrame(

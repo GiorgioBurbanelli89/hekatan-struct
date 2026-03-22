@@ -54,6 +54,9 @@ export type ElementInputs = {
   polarMomentsOfInertia?: Map<number, number>; // I0 (polar moment of inertia, Paz formulation)
   shearAreasY?: Map<number, number>; // shear area in Y direction (Timoshenko beam)
   shearAreasZ?: Map<number, number>; // shear area in Z direction (Timoshenko beam)
+  rigidOffsets?: Map<number, [number, number]>; // [offsetI, offsetJ] rigid zone factors (0-1) at each end
+  momentReleases?: Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>; // [TI,M2I,M3I,TJ,M2J,M3J] release flags
+  insertionPoints?: Map<number, [number, number]>; // [dy, dz] offset from centroid in local coords
   sectionShapes?: Map<number, SectionShape>; // visual section data for rendering
 };
 

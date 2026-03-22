@@ -24,6 +24,10 @@ struct ElementInputs
     std::map<int, double> poissonsRatios;
     std::map<int, double> densities; // mass density per element (rho)
     std::map<int, double> polarMomentsOfInertia; // I0 (polar moment of inertia, for Paz formulation)
+    std::map<int, double> shearAreasY; // As_y for Timoshenko beams
+    std::map<int, double> shearAreasZ; // As_z for Timoshenko beams
+    std::map<int, std::vector<double>> rigidOffsets; // [factorI, factorJ] rigid zone factors
+    std::map<int, std::vector<bool>> momentReleases; // [TI,M2I,M3I,TJ,M2J,M3J]
 };
 
 struct NodeInputs
