@@ -12,6 +12,29 @@ import {
 } from "awatif-fem";
 import { multiply, transpose, norm, subtract } from "mathjs";
 
+// ── KaTeX dynamic loader ──
+let katexLoaded = false;
+function ensureKatex(callback: () => void) {
+  if (katexLoaded || (window as any).katex) { katexLoaded = true; callback(); return; }
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css";
+  document.head.appendChild(link);
+  const script = document.createElement("script");
+  script.src = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js";
+  script.onload = () => { katexLoaded = true; callback(); };
+  document.head.appendChild(script);
+}
+
+function tex(latex: string, display = false): string {
+  try {
+    if ((window as any).katex) {
+      return (window as any).katex.renderToString(latex, { displayMode: display, throwOnError: false });
+    }
+  } catch { /* fallback */ }
+  return `<code class="er-tex-fallback">${latex}</code>`;
+}
+
 interface ElementData {
   elemIdx: number;
   elem: number[];
@@ -124,13 +147,23 @@ export function buildElementReport(
 
   div.querySelector("#er-close")?.addEventListener("click", () => div.remove());
 
-  // Draw shape functions canvas after DOM insertion
+  // Load KaTeX + draw shape functions after DOM insertion
   setTimeout(() => {
     const canvas = div.querySelector("#er-sf-canvas") as HTMLCanvasElement;
     if (canvas) drawShapeFunctions(canvas);
     const canvas2 = div.querySelector("#er-sf-canvas-math") as HTMLCanvasElement;
     if (canvas2) drawShapeFunctions(canvas2);
   }, 50);
+
+  // Load KaTeX and re-render math tab with formatted equations
+  ensureKatex(() => {
+    const mathBody = div.querySelector("#er-body-math");
+    if (mathBody) mathBody.innerHTML = buildMath(d);
+    setTimeout(() => {
+      const c = div.querySelector("#er-sf-canvas-math") as HTMLCanvasElement;
+      if (c) drawShapeFunctions(c);
+    }, 50);
+  });
 
   return div;
 }
@@ -197,136 +230,125 @@ function buildMath(d: ElementData): string {
   if (!d.isFrame) return `<div class="er-sub">Shell element math: coming soon</div>`;
 
   let h = "";
+  const K = (s: string) => tex(s);       // inline
+  const KD = (s: string) => tex(s, true); // display (centered, larger)
 
   // ── 1. Geometría ──
-  h += `<div class="er-section-title">1. Geometría del elemento</div>`;
+  h += `<div class="er-section-title">1. Geometria del elemento</div>`;
   h += `<p>Viga Euler-Bernoulli con 2 nodos y 6 GDL por nodo:</p>`;
-  h += `<div class="er-eq">[u<sub>x</sub>, u<sub>y</sub>, u<sub>z</sub>, θ<sub>x</sub>, θ<sub>y</sub>, θ<sub>z</sub>]  →  12 GDL totales</div>`;
+  h += `<div class="er-eq">${KD(`\\text{DOFs} = [u_x,\\, u_y,\\, u_z,\\, \\theta_x,\\, \\theta_y,\\, \\theta_z] \\quad \\Rightarrow \\quad 12 \\text{ GDL totales}`)}</div>`;
   h += `<div class="er-eq-num">`;
-  h += `Nodo i = (${d.elmNodes[0].map(v => f(v)).join(", ")})<br/>`;
-  h += `Nodo j = (${d.elmNodes[1].map(v => f(v)).join(", ")})<br/>`;
-  h += `L = √[(x<sub>j</sub>−x<sub>i</sub>)² + (y<sub>j</sub>−y<sub>i</sub>)² + (z<sub>j</sub>−z<sub>i</sub>)²] = <b>${f(d.L)}</b>`;
+  h += `${K(`\\text{Nodo } i`)} = (${d.elmNodes[0].map(v => f(v)).join(", ")})<br/>`;
+  h += `${K(`\\text{Nodo } j`)} = (${d.elmNodes[1].map(v => f(v)).join(", ")})<br/>`;
+  h += `${KD(`L = \\sqrt{(x_j - x_i)^2 + (y_j - y_i)^2 + (z_j - z_i)^2} = \\mathbf{${f(d.L)}}`)}`;
   h += `</div>`;
 
   // ── 2. Funciones de forma ──
   h += `<div class="er-section-title">2. Funciones de forma</div>`;
-  h += `<p>La viga usa <b>interpolación lineal</b> para axial/torsión y <b>polinomios cúbicos de Hermite</b> para flexión.</p>`;
+  h += `<p>La viga usa <b>interpolacion lineal</b> para axial/torsion y <b>polinomios cubicos de Hermite</b> para flexion.</p>`;
 
-  h += `<div class="er-subsec">2.1 Axial y Torsión (lineal)</div>`;
-  h += `<div class="er-eq">N₁(ξ) = 1 − ξ &nbsp;&nbsp;&nbsp; N₂(ξ) = ξ &nbsp;&nbsp;&nbsp; donde ξ = x/L ∈ [0, 1]</div>`;
-  h += `<p>Primera derivada: dN₁/dξ = −1, &nbsp; dN₂/dξ = 1</p>`;
+  h += `<div class="er-subsec">2.1 Axial y Torsion (lineal)</div>`;
+  h += `<div class="er-eq">${KD(`N_1(\\xi) = 1 - \\xi \\qquad N_2(\\xi) = \\xi \\qquad \\text{donde } \\xi = \\frac{x}{L} \\in [0,1]`)}</div>`;
+  h += `<p>Primera derivada:</p>`;
+  h += `<div class="er-eq">${KD(`\\frac{dN_1}{d\\xi} = -1 \\qquad \\frac{dN_2}{d\\xi} = 1`)}</div>`;
 
-  h += `<div class="er-subsec">2.2 Flexión (Hermite cúbicos)</div>`;
-  h += `<p>Las funciones de Hermite garantizan continuidad C¹ (desplazamiento y pendiente continuos):</p>`;
-  h += `<table class="er-eq-table">`;
-  h += `<tr><td class="fn-name">H₁(ξ)</td><td>= 1 − 3ξ² + 2ξ³</td><td class="fn-desc">desplazamiento en nodo i</td></tr>`;
-  h += `<tr><td class="fn-name">H₂(ξ)</td><td>= Lξ(1 − ξ)²</td><td class="fn-desc">rotación en nodo i</td></tr>`;
-  h += `<tr><td class="fn-name">H₃(ξ)</td><td>= 3ξ² − 2ξ³</td><td class="fn-desc">desplazamiento en nodo j</td></tr>`;
-  h += `<tr><td class="fn-name">H₄(ξ)</td><td>= Lξ²(ξ − 1)</td><td class="fn-desc">rotación en nodo j</td></tr>`;
-  h += `</table>`;
+  h += `<div class="er-subsec">2.2 Flexion (Hermite cubicos)</div>`;
+  h += `<p>Las funciones de Hermite garantizan continuidad ${K(`C^1`)} (desplazamiento y pendiente continuos):</p>`;
+  h += `<div class="er-eq">${KD(`H_1(\\xi) = 1 - 3\\xi^2 + 2\\xi^3 \\qquad \\text{(desplazamiento nodo } i\\text{)}`)}</div>`;
+  h += `<div class="er-eq">${KD(`H_2(\\xi) = L\\,\\xi\\,(1-\\xi)^2 \\qquad \\text{(rotacion nodo } i\\text{)}`)}</div>`;
+  h += `<div class="er-eq">${KD(`H_3(\\xi) = 3\\xi^2 - 2\\xi^3 \\qquad \\text{(desplazamiento nodo } j\\text{)}`)}</div>`;
+  h += `<div class="er-eq">${KD(`H_4(\\xi) = L\\,\\xi^2(\\xi - 1) \\qquad \\text{(rotacion nodo } j\\text{)}`)}</div>`;
 
-  h += `<div class="er-subsec">Derivadas segunda (curvatura κ = d²v/dx²):</div>`;
-  h += `<table class="er-eq-table">`;
-  h += `<tr><td class="fn-name">H₁″(ξ)</td><td>= (−6/L²)(1 − 2ξ)</td></tr>`;
-  h += `<tr><td class="fn-name">H₂″(ξ)</td><td>= (−2/L)(2 − 3ξ)</td></tr>`;
-  h += `<tr><td class="fn-name">H₃″(ξ)</td><td>= (6/L²)(1 − 2ξ)</td></tr>`;
-  h += `<tr><td class="fn-name">H₄″(ξ)</td><td>= (−2/L)(1 − 3ξ)</td></tr>`;
-  h += `</table>`;
+  h += `<div class="er-subsec">Derivadas segunda (curvatura ${K(`\\kappa = \\frac{d^2v}{dx^2}`)}):</div>`;
+  h += `<div class="er-eq">${KD(`H_1'' = \\frac{-6}{L^2}(1-2\\xi) \\qquad H_2'' = \\frac{-2}{L}(2-3\\xi)`)}</div>`;
+  h += `<div class="er-eq">${KD(`H_3'' = \\frac{6}{L^2}(1-2\\xi) \\qquad H_4'' = \\frac{-2}{L}(1-3\\xi)`)}</div>`;
 
   h += `<canvas id="er-sf-canvas-math" width="500" height="250" style="width:100%;border:1px solid var(--fem-border);border-radius:4px;margin:8px 0;"></canvas>`;
 
   // ── 3. Matriz B ──
   h += `<div class="er-section-title">3. Matriz B (strain-displacement)</div>`;
   h += `<p>La matriz B relaciona desplazamientos nodales con deformaciones internas:</p>`;
-  h += `<div class="er-eq">ε = B · u</div>`;
+  h += `<div class="er-eq">${KD(`\\boldsymbol{\\varepsilon} = \\mathbf{B} \\cdot \\mathbf{u}`)}</div>`;
 
-  h += `<div class="er-subsec">3.1 Deformación axial</div>`;
-  h += `<div class="er-eq">ε<sub>axial</sub> = du/dx = (1/L)·[−1, 1]·{u<sub>i</sub>, u<sub>j</sub>}</div>`;
+  h += `<div class="er-subsec">3.1 Deformacion axial</div>`;
+  h += `<div class="er-eq">${KD(`\\varepsilon_{axial} = \\frac{du}{dx} = \\frac{1}{L} \\begin{bmatrix} -1 & 1 \\end{bmatrix} \\begin{Bmatrix} u_i \\\\ u_j \\end{Bmatrix}`)}</div>`;
 
-  h += `<div class="er-subsec">3.2 Curvatura por flexión (plano XY → I<sub>z</sub>)</div>`;
-  h += `<div class="er-eq">κ<sub>z</sub> = d²v/dx² = B<sub>bz</sub> · {v<sub>i</sub>, θ<sub>zi</sub>, v<sub>j</sub>, θ<sub>zj</sub>}</div>`;
-  h += `<div class="er-eq">B<sub>bz</sub>(ξ) = (1/L²)·[H₁″, H₂″, H₃″, H₄″]</div>`;
+  h += `<div class="er-subsec">3.2 Curvatura por flexion (plano XY → ${K(`I_z`)})</div>`;
+  h += `<div class="er-eq">${KD(`\\kappa_z = \\frac{d^2 v}{dx^2} = \\mathbf{B}_{bz} \\cdot \\begin{Bmatrix} v_i \\\\ \\theta_{zi} \\\\ v_j \\\\ \\theta_{zj} \\end{Bmatrix}`)}</div>`;
+  h += `<div class="er-eq">${KD(`\\mathbf{B}_{bz}(\\xi) = \\frac{1}{L^2} \\begin{bmatrix} H_1'' & H_2'' & H_3'' & H_4'' \\end{bmatrix}`)}</div>`;
 
-  h += `<div class="er-subsec">3.3 Curvatura (plano XZ → I<sub>y</sub>)</div>`;
-  h += `<div class="er-eq">κ<sub>y</sub> = d²w/dx² = B<sub>by</sub> · {w<sub>i</sub>, θ<sub>yi</sub>, w<sub>j</sub>, θ<sub>yj</sub>}</div>`;
+  h += `<div class="er-subsec">3.3 Curvatura (plano XZ → ${K(`I_y`)})</div>`;
+  h += `<div class="er-eq">${KD(`\\kappa_y = \\frac{d^2 w}{dx^2} = \\mathbf{B}_{by} \\cdot \\begin{Bmatrix} w_i \\\\ \\theta_{yi} \\\\ w_j \\\\ \\theta_{yj} \\end{Bmatrix}`)}</div>`;
 
-  h += `<div class="er-subsec">3.4 Torsión</div>`;
-  h += `<div class="er-eq">φ′ = dθ<sub>x</sub>/dx = (1/L)·[−1, 1]·{θ<sub>xi</sub>, θ<sub>xj</sub>}</div>`;
+  h += `<div class="er-subsec">3.4 Torsion</div>`;
+  h += `<div class="er-eq">${KD(`\\phi' = \\frac{d\\theta_x}{dx} = \\frac{1}{L} \\begin{bmatrix} -1 & 1 \\end{bmatrix} \\begin{Bmatrix} \\theta_{xi} \\\\ \\theta_{xj} \\end{Bmatrix}`)}</div>`;
 
   // ── 4. Relaciones constitutivas D ──
   h += `<div class="er-section-title">4. Relaciones constitutivas D</div>`;
-  h += `<p>Cada modo de deformación tiene su rigidez material:</p>`;
-  h += `<table class="er-eq-table">`;
-  h += `<tr><td class="fn-name">Axial:</td><td>σ = E·ε → D<sub>ax</sub> = E·A</td><td class="fn-desc">= ${f(d.E)}·${f(d.A)} = <b>${f(d.E * d.A)}</b></td></tr>`;
-  h += `<tr><td class="fn-name">Flex Z:</td><td>M<sub>z</sub> = EI<sub>z</sub>·κ → D<sub>bz</sub> = E·I<sub>z</sub></td><td class="fn-desc">= ${f(d.E)}·${f(d.Iz)} = <b>${f(d.E * d.Iz)}</b></td></tr>`;
-  h += `<tr><td class="fn-name">Flex Y:</td><td>M<sub>y</sub> = EI<sub>y</sub>·κ → D<sub>by</sub> = E·I<sub>y</sub></td><td class="fn-desc">= ${f(d.E)}·${f(d.Iy)} = <b>${f(d.E * d.Iy)}</b></td></tr>`;
-  h += `<tr><td class="fn-name">Torsión:</td><td>T = GJ·φ′ → D<sub>t</sub> = G·J</td><td class="fn-desc">= ${f(d.G)}·${f(d.J)} = <b>${f(d.G * d.J)}</b></td></tr>`;
-  h += `</table>`;
+  h += `<p>Cada modo de deformacion tiene su rigidez material:</p>`;
+  h += `<div class="er-eq">${KD(`\\text{Axial: } \\sigma = E \\cdot \\varepsilon \\;\\Rightarrow\\; D_{ax} = EA = ${f(d.E)} \\times ${f(d.A)} = \\mathbf{${f(d.E * d.A)}}`)}</div>`;
+  h += `<div class="er-eq">${KD(`\\text{Flex Z: } M_z = EI_z \\cdot \\kappa \\;\\Rightarrow\\; D_{bz} = EI_z = ${f(d.E)} \\times ${f(d.Iz)} = \\mathbf{${f(d.E * d.Iz)}}`)}</div>`;
+  h += `<div class="er-eq">${KD(`\\text{Flex Y: } M_y = EI_y \\cdot \\kappa \\;\\Rightarrow\\; D_{by} = EI_y = ${f(d.E)} \\times ${f(d.Iy)} = \\mathbf{${f(d.E * d.Iy)}}`)}</div>`;
+  h += `<div class="er-eq">${KD(`\\text{Torsion: } T = GJ \\cdot \\phi' \\;\\Rightarrow\\; D_t = GJ = ${f(d.G)} \\times ${f(d.J)} = \\mathbf{${f(d.G * d.J)}}`)}</div>`;
 
   // ── 5. K local = ∫ B^T D B dx ──
-  h += `<div class="er-section-title">5. Integración → K<sub>local</sub></div>`;
-  h += `<p>La matriz de rigidez local se obtiene integrando analíticamente:</p>`;
-  h += `<div class="er-eq er-eq-main">K<sub>local</sub> = ∫₀ᴸ Bᵀ · D · B  dx</div>`;
-  h += `<p>Para la viga Euler-Bernoulli, la integración se hace por partes para cada combinación de GDL. Los coeficientes resultantes son:</p>`;
+  h += `<div class="er-section-title">5. Integracion → ${K(`\\mathbf{K}_{local}`)}</div>`;
+  h += `<p>La matriz de rigidez local se obtiene integrando analiticamente:</p>`;
+  h += `<div class="er-eq er-eq-main">${KD(`\\mathbf{K}_{local} = \\int_0^L \\mathbf{B}^T \\cdot \\mathbf{D} \\cdot \\mathbf{B} \\; dx`)}</div>`;
+  h += `<p>Coeficientes resultantes (sustitucion numerica):</p>`;
 
   const EA_L = d.E * d.A / d.L;
   const EIz_L3 = d.E * d.Iz / d.L ** 3;
   const EIy_L3 = d.E * d.Iy / d.L ** 3;
   const GJ_L = d.G * d.J / d.L;
 
-  h += `<table class="er-coeff">`;
-  h += `<tr><td>EA/L</td><td>= ${f(d.E)}·${f(d.A)}/${f(d.L)}</td><td>= <b>${f(EA_L)}</b></td><td class="fn-desc">→ K[0,0], K[6,6]</td></tr>`;
-  h += `<tr><td>12EI<sub>z</sub>/L³</td><td>= 12·${f(d.E)}·${f(d.Iz)}/${f(d.L)}³</td><td>= <b>${f(12 * EIz_L3)}</b></td><td class="fn-desc">→ K[1,1], K[7,7]</td></tr>`;
-  h += `<tr><td>12EI<sub>y</sub>/L³</td><td>= 12·${f(d.E)}·${f(d.Iy)}/${f(d.L)}³</td><td>= <b>${f(12 * EIy_L3)}</b></td><td class="fn-desc">→ K[2,2], K[8,8]</td></tr>`;
-  h += `<tr><td>GJ/L</td><td>= ${f(d.G)}·${f(d.J)}/${f(d.L)}</td><td>= <b>${f(GJ_L)}</b></td><td class="fn-desc">→ K[3,3], K[9,9]</td></tr>`;
-  h += `<tr><td>4EI<sub>y</sub>/L</td><td>= 4·${f(d.E)}·${f(d.Iy)}/${f(d.L)}</td><td>= <b>${f(4 * d.E * d.Iy / d.L)}</b></td><td class="fn-desc">→ K[4,4], K[10,10]</td></tr>`;
-  h += `<tr><td>4EI<sub>z</sub>/L</td><td>= 4·${f(d.E)}·${f(d.Iz)}/${f(d.L)}</td><td>= <b>${f(4 * d.E * d.Iz / d.L)}</b></td><td class="fn-desc">→ K[5,5], K[11,11]</td></tr>`;
-  h += `<tr><td>6EI<sub>z</sub>/L²</td><td>= 6·${f(d.E)}·${f(d.Iz)}/${f(d.L)}²</td><td>= <b>${f(6 * d.E * d.Iz / d.L ** 2)}</b></td><td class="fn-desc">→ K[1,5] acoplamiento</td></tr>`;
-  h += `<tr><td>6EI<sub>y</sub>/L²</td><td>= 6·${f(d.E)}·${f(d.Iy)}/${f(d.L)}²</td><td>= <b>${f(6 * d.E * d.Iy / d.L ** 2)}</b></td><td class="fn-desc">→ K[2,4] acoplamiento</td></tr>`;
-  h += `</table>`;
+  h += `<div class="er-eq">${KD(`\\frac{EA}{L} = \\frac{${f(d.E)} \\times ${f(d.A)}}{${f(d.L)}} = \\mathbf{${f(EA_L)}} \\quad \\rightarrow K[0,0],\\, K[6,6]`)}</div>`;
+  h += `<div class="er-eq">${KD(`\\frac{12EI_z}{L^3} = \\frac{12 \\times ${f(d.E)} \\times ${f(d.Iz)}}{${f(d.L)}^3} = \\mathbf{${f(12 * EIz_L3)}} \\quad \\rightarrow K[1,1],\\, K[7,7]`)}</div>`;
+  h += `<div class="er-eq">${KD(`\\frac{12EI_y}{L^3} = \\frac{12 \\times ${f(d.E)} \\times ${f(d.Iy)}}{${f(d.L)}^3} = \\mathbf{${f(12 * EIy_L3)}} \\quad \\rightarrow K[2,2],\\, K[8,8]`)}</div>`;
+  h += `<div class="er-eq">${KD(`\\frac{GJ}{L} = \\frac{${f(d.G)} \\times ${f(d.J)}}{${f(d.L)}} = \\mathbf{${f(GJ_L)}} \\quad \\rightarrow K[3,3],\\, K[9,9]`)}</div>`;
+  h += `<div class="er-eq">${KD(`\\frac{4EI_y}{L} = \\frac{4 \\times ${f(d.E)} \\times ${f(d.Iy)}}{${f(d.L)}} = \\mathbf{${f(4 * d.E * d.Iy / d.L)}} \\quad \\rightarrow K[4,4],\\, K[10,10]`)}</div>`;
+  h += `<div class="er-eq">${KD(`\\frac{4EI_z}{L} = \\frac{4 \\times ${f(d.E)} \\times ${f(d.Iz)}}{${f(d.L)}} = \\mathbf{${f(4 * d.E * d.Iz / d.L)}} \\quad \\rightarrow K[5,5],\\, K[11,11]`)}</div>`;
+  h += `<div class="er-eq">${KD(`\\frac{6EI_z}{L^2} = \\mathbf{${f(6 * d.E * d.Iz / d.L ** 2)}} \\quad \\rightarrow K[1,5] \\text{ (acoplamiento corte-momento)}`)}</div>`;
 
   if (d.kLocal) {
-    h += `<div class="er-subsec">Resultado: K<sub>local</sub> (12×12)</div>`;
+    h += `<div class="er-subsec">Resultado: ${K(`\\mathbf{K}_{local}`)} (12x12)</div>`;
     h += matrixHTML(d.kLocal);
   }
 
   // ── 6. Transformación ──
-  h += `<div class="er-section-title">6. Transformación de coordenadas</div>`;
+  h += `<div class="er-section-title">6. Transformacion de coordenadas</div>`;
   h += `<p>Los cosenos directores del eje del elemento:</p>`;
-  h += `<div class="er-eq-num">`;
-  h += `l = (x<sub>j</sub>−x<sub>i</sub>)/L = ${f4(d.l)}<br/>`;
-  h += `m = (y<sub>j</sub>−y<sub>i</sub>)/L = ${f4(d.m)}<br/>`;
-  h += `n = (z<sub>j</sub>−z<sub>i</sub>)/L = ${f4(d.n)}<br/>`;
-  h += `D = √(l²+m²) = ${f4(d.D)}`;
-  h += `</div>`;
+  h += `<div class="er-eq">${KD(`l = \\frac{x_j - x_i}{L} = ${f4(d.l)} \\qquad m = \\frac{y_j - y_i}{L} = ${f4(d.m)} \\qquad n = \\frac{z_j - z_i}{L} = ${f4(d.n)}`)}</div>`;
+  h += `<div class="er-eq">${KD(`D = \\sqrt{l^2 + m^2} = ${f4(d.D)}`)}</div>`;
 
   if (Math.abs(d.n) > 0.999) {
-    h += `<p>Caso especial: elemento vertical (n ≈ ${d.n > 0 ? "+1" : "−1"}):</p>`;
-    h += `<div class="er-eq">λ = ${d.n > 0 ? "[[0,0,1],[0,1,0],[−1,0,0]]" : "[[0,0,−1],[0,1,0],[1,0,0]]"}</div>`;
+    h += `<p>Caso especial: elemento vertical (${K(`n \\approx ${d.n > 0 ? "+1" : "-1"}`)}):</p>`;
+    const lam = d.n > 0
+      ? `\\boldsymbol{\\lambda} = \\begin{bmatrix} 0 & 0 & 1 \\\\ 0 & 1 & 0 \\\\ -1 & 0 & 0 \\end{bmatrix}`
+      : `\\boldsymbol{\\lambda} = \\begin{bmatrix} 0 & 0 & -1 \\\\ 0 & 1 & 0 \\\\ 1 & 0 & 0 \\end{bmatrix}`;
+    h += `<div class="er-eq">${KD(lam)}</div>`;
   } else {
-    h += `<div class="er-eq">λ = [[l, m, n], [−m/D, l/D, 0], [−ln/D, −mn/D, D]]</div>`;
+    h += `<div class="er-eq">${KD(`\\boldsymbol{\\lambda} = \\begin{bmatrix} l & m & n \\\\ -m/D & l/D & 0 \\\\ -ln/D & -mn/D & D \\end{bmatrix}`)}</div>`;
   }
-  h += `<div class="er-eq er-eq-main">T = I₄ ⊗ λ &nbsp; (producto de Kronecker → 12×12 bloque-diagonal)</div>`;
+  h += `<div class="er-eq er-eq-main">${KD(`\\mathbf{T} = \\mathbf{I}_4 \\otimes \\boldsymbol{\\lambda} \\quad \\text{(Kronecker product} \\rightarrow 12 \\times 12 \\text{ bloque-diagonal)}`)}</div>`;
 
   // ── 7. K global ──
-  h += `<div class="er-section-title">7. K<sub>global</sub> = T<sup>T</sup> · K<sub>local</sub> · T</div>`;
+  h += `<div class="er-section-title">7. ${K(`\\mathbf{K}_{global}`)} = ${K(`\\mathbf{T}^T \\cdot \\mathbf{K}_{local} \\cdot \\mathbf{T}`)}</div>`;
   h += `<p>Transformar la rigidez local al sistema global de coordenadas:</p>`;
-  h += `<div class="er-eq er-eq-main">K<sub>global</sub> = T<sup>T</sup> · K<sub>local</sub> · T</div>`;
+  h += `<div class="er-eq er-eq-main">${KD(`\\mathbf{K}_{global} = \\mathbf{T}^T \\cdot \\mathbf{K}_{local} \\cdot \\mathbf{T}`)}</div>`;
   if (d.kGlobal) h += matrixHTML(d.kGlobal as number[][]);
 
   // ── 8. Ensamblaje ──
   h += `<div class="er-section-title">8. Ensamblaje</div>`;
   const dofs0 = d.elem[0] * 6, dofs1 = d.elem[1] * 6;
-  h += `<div class="er-eq-num">`;
-  h += `Nodo ${d.elem[0]} → DOFs globales [${dofs0}..${dofs0 + 5}]<br/>`;
-  h += `Nodo ${d.elem[1]} → DOFs globales [${dofs1}..${dofs1 + 5}]<br/>`;
-  h += `K<sub>total</sub>[DOFs<sub>i</sub>, DOFs<sub>j</sub>] += K<sub>global</sub>[i, j]`;
-  h += `</div>`;
+  h += `<div class="er-eq">${KD(`\\text{Nodo } ${d.elem[0]} \\rightarrow \\text{DOFs } [${dofs0} \\ldots ${dofs0 + 5}]`)}</div>`;
+  h += `<div class="er-eq">${KD(`\\text{Nodo } ${d.elem[1]} \\rightarrow \\text{DOFs } [${dofs1} \\ldots ${dofs1 + 5}]`)}</div>`;
+  h += `<div class="er-eq">${KD(`\\mathbf{K}_{total}[\\text{DOFs}_i, \\text{DOFs}_j] \\mathrel{+}= \\mathbf{K}_{global}[i, j]`)}</div>`;
 
   // ── 9. Fuerzas internas ──
-  h += `<div class="er-section-title">9. Recuperación de fuerzas internas</div>`;
-  h += `<div class="er-eq">u<sub>local</sub> = T · u<sub>global</sub></div>`;
-  h += `<div class="er-eq er-eq-main">f<sub>local</sub> = K<sub>local</sub> · u<sub>local</sub></div>`;
+  h += `<div class="er-section-title">9. Recuperacion de fuerzas internas</div>`;
+  h += `<div class="er-eq">${KD(`\\mathbf{u}_{local} = \\mathbf{T} \\cdot \\mathbf{u}_{global}`)}</div>`;
+  h += `<div class="er-eq er-eq-main">${KD(`\\mathbf{f}_{local} = \\mathbf{K}_{local} \\cdot \\mathbf{u}_{local}`)}</div>`;
   if (d.fLocal.length > 0 && d.fLocal.some(v => v !== 0)) {
     const labels = ["N","V<sub>y</sub>","V<sub>z</sub>","M<sub>x</sub>","M<sub>y</sub>","M<sub>z</sub>"];
     h += `<table class="er-forces"><tr><th></th>`;
