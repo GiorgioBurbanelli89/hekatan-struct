@@ -28,6 +28,7 @@ import { createModalPanel } from "./renderModalTable";
 import { STEEL_PROFILES, getWProfileOptions, getHSSProfileOptions } from "./steelProfiles";
 import { buildReportExplained } from "./reportExplained";
 import { buildElementReport } from "./elementReport";
+import { createHelpButton } from "./helpTour";
 
 export interface Cad3dMesh {
   nodes: State<Node[]>;
@@ -9090,6 +9091,9 @@ Util:     cad.info()  cad.clear()  cad.help()
       highlightExButton("edificio");
     }
   }, 100);
+
+  // Add help tour button
+  document.body.appendChild(createHelpButton());
 
   const placeholder = document.createElement("span");
   placeholder.style.display = "none";
