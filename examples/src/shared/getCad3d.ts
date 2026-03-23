@@ -940,8 +940,12 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
      *   cad.refgrid([5,5], [4,4], [3,3,3])
      *   cad.build()                                    // default sections
      *   cad.build({ col: "40x40", viga: "25x40", fc: 210 })
+     *   cad.build({ col: "40x40", viga: "25x40", braces: "perimeter" })  // braces on perimeter
+     *   cad.build({ braces: "all" })    // braces on all bays
+     *   cad.build({ braces: "x" })      // braces only in X direction
+     *   cad.build({ braces: "y" })      // braces only in Y direction
      */
-    build(cfg?: { col?: string; viga?: string; fc?: number }) {
+    build(cfg?: { col?: string; viga?: string; fc?: number; braces?: string }) {
       if (currentGridX.length === 0 || currentGridLevels.length < 2) {
         console.log("Error: call cad.refgrid() first to define axes and levels");
         return;
@@ -1007,6 +1011,42 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
             newElementFloor.set(ei, iy - 1);
           }
 
+      // Braces (diagonals)
+      const braceMode = cfg?.braces?.toLowerCase() || "";
+      const newBraceIndices = new Set<number>();
+      if (braceMode) {
+        const addBraceX = braceMode === "all" || braceMode === "x" || braceMode === "perimeter";
+        const addBraceZ = braceMode === "all" || braceMode === "y" || braceMode === "perimeter";
+
+        for (let iy = 0; iy < nFloors; iy++) {
+          // X-direction braces
+          if (addBraceX) {
+            for (let iz = 0; iz < nZ; iz++) {
+              // Perimeter: only first and last Z axis; all: every axis
+              if (braceMode === "perimeter" && iz !== 0 && iz !== nZ - 1) continue;
+              for (let ix = 0; ix < nX - 1; ix++) {
+                const ei = elements.length;
+                elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix + 1},${iy + 1},${iz}`]]);
+                newBraceIndices.add(ei);
+                newElementFloor.set(ei, iy);
+              }
+            }
+          }
+          // Z-direction braces
+          if (addBraceZ) {
+            for (let ix = 0; ix < nX; ix++) {
+              if (braceMode === "perimeter" && ix !== 0 && ix !== nX - 1) continue;
+              for (let iz = 0; iz < nZ - 1; iz++) {
+                const ei = elements.length;
+                elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix},${iy + 1},${iz + 1}`]]);
+                newBraceIndices.add(ei);
+                newElementFloor.set(ei, iy);
+              }
+            }
+          }
+        }
+      }
+
       // Material
       const E_tonfm2 = 15100 * Math.sqrt(fc) * 10;
       const G = E_tonfm2 / (2 * (1 + 0.2));
@@ -1031,6 +1071,9 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
         if (newColIndices.has(i)) {
           areas.set(i, colA); moiZ.set(i, colIz); moiY.set(i, colIy); torsion.set(i, colJ);
           sectionShapes.set(i, { type: "rect" as const, b: colB, h: colH, name: `COL${colStr}` });
+        } else if (newBraceIndices.has(i)) {
+          areas.set(i, colA); moiZ.set(i, colIz); moiY.set(i, colIy); torsion.set(i, colJ);
+          sectionShapes.set(i, { type: "rect" as const, b: colB, h: colH, name: `BR${colStr}` });
         } else {
           areas.set(i, vigaA); moiZ.set(i, vigaIz); moiY.set(i, vigaIy); torsion.set(i, vigaJ);
           sectionShapes.set(i, { type: "rect" as const, b: vigaB, h: vigaH, name: `V${vigaStr}` });
@@ -1052,8 +1095,8 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
       beamElementIndices = newBeamIndices;
       elementFloor = newElementFloor;
 
-      console.log(`Built: ${nodes.length} nodes, ${elements.length} elements (${newColIndices.size} cols, ${newBeamIndices.size} beams)`);
-      console.log(`  Col: ${colStr} (${colB}x${colH}m), Viga: ${vigaStr} (${vigaB}x${vigaH}m), f'c=${fc}`);
+      console.log(`Built: ${nodes.length} nodes, ${elements.length} elements (${newColIndices.size} cols, ${newBeamIndices.size} beams, ${newBraceIndices.size} braces)`);
+      console.log(`  Col: ${colStr}, Viga: ${vigaStr}, f'c=${fc}${braceMode ? `, braces=${braceMode}` : ""}`);
       return { nodes: nodes.length, elements: elements.length };
     },
 
