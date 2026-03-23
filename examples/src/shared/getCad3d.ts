@@ -6501,8 +6501,8 @@ Util:     cad.info()  cad.clear()  cad.help()
           name: "Portal 2-Story", formulation: "Frame Timoshenko",
           nodes, elements,
           results: [
-            { label: "Ux Z=3m (cm)", awatif: r.deformations.get(2)[0] * 100, reference: 2.5188, refSource: "ETABS 22.6" },
-            { label: "Ux Z=6m (cm)", awatif: r.deformations.get(4)[0] * 100, reference: 5.6424, refSource: "ETABS 22.6" },
+            { label: "Ux h=3m (cm)", awatif: r.deformations.get(2)[0] * 100, reference: 2.5188, refSource: "ETABS 22.6" },
+            { label: "Ux h=6m (cm)", awatif: r.deformations.get(4)[0] * 100, reference: 5.6424, refSource: "ETABS 22.6" },
           ]
         });
       }
@@ -6541,8 +6541,8 @@ Util:     cad.info()  cad.clear()  cad.help()
           name: "Portal 2-Story + Wall Q4", formulation: "Frame Timoshenko + Shell Q4 (Hughes-Brezzi drilling)",
           nodes, elements,
           results: [
-            { label: "Ux Z=3m (cm)", awatif: r.deformations.get(2)[0] * 100, reference: 0.0195, refSource: "ETABS 22.6" },
-            { label: "Ux Z=6m (cm)", awatif: r.deformations.get(4)[0] * 100, reference: 2.1133, refSource: "ETABS 22.6" },
+            { label: "Ux h=3m (cm)", awatif: r.deformations.get(2)[0] * 100, reference: 0.0195, refSource: "ETABS 22.6" },
+            { label: "Ux h=6m (cm)", awatif: r.deformations.get(4)[0] * 100, reference: 2.1133, refSource: "ETABS 22.6" },
           ]
         });
       }
