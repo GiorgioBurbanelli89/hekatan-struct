@@ -9,6 +9,7 @@ import {
   zeros,
   Matrix,
 } from "mathjs";
+import { getLocalStiffnessMatrixShellQ4 } from "./shellQ4";
 
 export function getLocalStiffnessMatrix(
   nodes: Node[],
@@ -25,6 +26,9 @@ export function getLocalStiffnessMatrix(
 
   if (nodes.length === 3)
     return getLocalStiffnessMatrixShell(nodes, elementInputs, index);
+
+  if (nodes.length === 4)
+    return getLocalStiffnessMatrixShellQ4(nodes, elementInputs, index);
 }
 
 /**

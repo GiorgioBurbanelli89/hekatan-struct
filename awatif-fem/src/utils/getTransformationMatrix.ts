@@ -10,11 +10,13 @@ import {
   subtract,
   zeros,
 } from "mathjs";
+import { getTransformationMatrixShellQ4 } from "./shellQ4";
 
 // from global to local
 export function getTransformationMatrix(nodes: Node[]): number[][] {
   if (nodes.length === 2) return getTransformationMatrixFrame(nodes);
   if (nodes.length === 3) return getTransformationMatrixShell(nodes);
+  if (nodes.length === 4) return getTransformationMatrixShellQ4(nodes);
 }
 
 function getTransformationMatrixFrame(nodes: Node[]): number[][] {
