@@ -5311,6 +5311,15 @@ Util:     cad.info()  cad.clear()  cad.help()
           <option value="export-tcl">📤 Export OpenSees Tcl</option>
         </select>
         <input type="file" id="cad3d-io-file" accept=".e2k,.E2K,.py,.tcl" style="display:none">
+        <select id="cad3d-tests-menu" title="Validation tests vs ETABS" style="background:var(--cad-btn-bg);color:var(--cad-btn-text);border:1px solid var(--cad-btn-border);padding:2px 4px;font-size:11px;cursor:pointer;">
+          <option value="">🧪 Tests</option>
+          <option value="test-cantilever">1. Cantilever (Exact)</option>
+          <option value="test-portal-1p">2. Portal 1-Story (ETABS)</option>
+          <option value="test-portal-2p">3. Portal 2-Story (ETABS)</option>
+          <option value="test-wall-only">4. Wall Q4 Only (ETABS)</option>
+          <option value="test-portal-wall">5. Portal + Wall (ETABS)</option>
+          <option value="test-all">▶ Run All Tests</option>
+        </select>
         <select id="cad3d-force-unit" title="Unidad de fuerza" style="background:var(--cad-btn-bg);color:var(--cad-btn-text);border:1px solid var(--cad-btn-border);padding:2px 4px;font-size:11px;cursor:pointer;">
           <option value="tonf">tonf</option><option value="kN">kN</option><option value="kgf">kgf</option>
           <option value="kip">kip</option><option value="lb">lb</option><option value="N">N</option>
@@ -6403,6 +6412,204 @@ Util:     cad.info()  cad.clear()  cad.help()
       cli.clear();
       lastImportedE2k = null;
     });
+
+    // === Validation Tests ===
+    const testsMenu = panel.querySelector("#cad3d-tests-menu") as HTMLSelectElement;
+    if (testsMenu) testsMenu.addEventListener("change", () => {
+      const testId = testsMenu.value;
+      testsMenu.value = "";
+      if (!testId) return;
+      runValidationTest(testId);
+    });
+
+    function runValidationTest(testId: string) {
+      // deform is already imported at top of file
+      const H = 3, W = 4;
+      const E_conc = 15000 * Math.sqrt(210) * 10; // tonf/m²
+      const nu = 0.2, G = E_conc / (2 * (1 + nu));
+      const Ac = 0.09, Ic = 0.3 ** 4 / 12, Jc = 0.141 * 0.3 ** 4;
+      const Ab = 0.25 * 0.4, Izb = 0.25 * 0.4 ** 3 / 12, Iyb = 0.4 * 0.25 ** 3 / 12, Jb = 0.001;
+      const AsC = 5 / 6 * Ac, AsB = 5 / 6 * Ab;
+
+      const tests: { name: string; formulation: string; nodes: number[][]; elements: number[][]; results: { label: string; awatif: number; reference: number; refSource: string }[] }[] = [];
+
+      function makeFrameInputs(nElms: number, colIdx: number[], beamIdx: number[]) {
+        const ei: any = {
+          elasticities: new Map(), shearModuli: new Map(), areas: new Map(),
+          momentsOfInertiaZ: new Map(), momentsOfInertiaY: new Map(),
+          torsionalConstants: new Map(), shearAreasY: new Map(), shearAreasZ: new Map(),
+        };
+        for (const i of colIdx) {
+          ei.elasticities.set(i, E_conc); ei.shearModuli.set(i, G); ei.areas.set(i, Ac);
+          ei.momentsOfInertiaZ.set(i, Ic); ei.momentsOfInertiaY.set(i, Ic);
+          ei.torsionalConstants.set(i, Jc); ei.shearAreasY.set(i, AsC); ei.shearAreasZ.set(i, AsC);
+        }
+        for (const i of beamIdx) {
+          ei.elasticities.set(i, E_conc); ei.shearModuli.set(i, G); ei.areas.set(i, Ab);
+          ei.momentsOfInertiaZ.set(i, Izb); ei.momentsOfInertiaY.set(i, Iyb);
+          ei.torsionalConstants.set(i, Jb); ei.shearAreasY.set(i, AsB); ei.shearAreasZ.set(i, AsB);
+        }
+        return ei;
+      }
+
+      // ── Test 1: Cantilever (Euler-Bernoulli exact) ──
+      if (testId === "test-cantilever" || testId === "test-all") {
+        const L = 3, P = 10;
+        const exact = P * L ** 3 / (3 * E_conc * Ic);
+        const nodes = [[0, 0, 0], [L, 0, 0]];
+        const elements = [[0, 1]];
+        const ei = makeFrameInputs(1, [], []);
+        ei.elasticities.set(0, E_conc); ei.shearModuli.set(0, G); ei.areas.set(0, Ac);
+        ei.momentsOfInertiaZ.set(0, Ic); ei.momentsOfInertiaY.set(0, Ic); ei.torsionalConstants.set(0, Jc);
+        const r = deform(nodes, elements, {
+          supports: new Map([[0, [true, true, true, true, true, true]]]),
+          loads: new Map([[1, [0, P, 0, 0, 0, 0]]]),
+        }, ei);
+        tests.push({
+          name: "Cantilever Beam", formulation: "Euler-Bernoulli (PL³/3EI)",
+          nodes, elements,
+          results: [{ label: "Uy tip (cm)", awatif: r.deformations.get(1)[1] * 100, reference: exact * 100, refSource: "Analytical" }]
+        });
+      }
+
+      // ── Test 2: Portal 1-Story (Timoshenko) ──
+      if (testId === "test-portal-1p" || testId === "test-all") {
+        const nodes = [[0, 0, 0], [W, 0, 0], [0, H, 0], [W, H, 0]];
+        const elements = [[0, 2], [1, 3], [2, 3]];
+        const ei = makeFrameInputs(3, [0, 1], [2]);
+        const r = deform(nodes, elements, {
+          supports: new Map([[0, [true, true, true, true, true, true]], [1, [true, true, true, true, true, true]]]),
+          loads: new Map([[2, [10, 0, 0, 0, 0, 0]], [3, [10, 0, 0, 0, 0, 0]]]),
+        }, ei);
+        tests.push({
+          name: "Portal 1-Story (Timoshenko)", formulation: "Frame Timoshenko (As=5/6·A)",
+          nodes, elements,
+          results: [{ label: "Ux top (cm)", awatif: r.deformations.get(2)[0] * 100, reference: 2.0618, refSource: "ETABS 22.6" }]
+        });
+      }
+
+      // ── Test 3: Portal 2-Story ──
+      if (testId === "test-portal-2p" || testId === "test-all") {
+        const nodes = [[0, 0, 0], [W, 0, 0], [0, H, 0], [W, H, 0], [0, 2 * H, 0], [W, 2 * H, 0]];
+        const elements = [[0, 2], [1, 3], [2, 4], [3, 5], [2, 3], [4, 5]];
+        const ei = makeFrameInputs(6, [0, 1, 2, 3], [4, 5]);
+        const r = deform(nodes, elements, {
+          supports: new Map([[0, [true, true, true, true, true, true]], [1, [true, true, true, true, true, true]]]),
+          loads: new Map([[4, [10, 0, 0, 0, 0, 0]], [5, [10, 0, 0, 0, 0, 0]]]),
+        }, ei);
+        tests.push({
+          name: "Portal 2-Story", formulation: "Frame Timoshenko",
+          nodes, elements,
+          results: [
+            { label: "Ux Z=3m (cm)", awatif: r.deformations.get(2)[0] * 100, reference: 2.5188, refSource: "ETABS 22.6" },
+            { label: "Ux Z=6m (cm)", awatif: r.deformations.get(4)[0] * 100, reference: 5.6424, refSource: "ETABS 22.6" },
+          ]
+        });
+      }
+
+      // ── Test 4: Wall Q4 Only (Membrane + Mindlin-Reissner + Drilling) ──
+      if (testId === "test-wall-only" || testId === "test-all") {
+        const nodes = [[0, 0, 0], [W, 0, 0], [W, H, 0], [0, H, 0]];
+        const elements = [[0, 1, 2, 3]];
+        const ei: any = {
+          elasticities: new Map([[0, E_conc]]), shearModuli: new Map([[0, G]]),
+          thicknesses: new Map([[0, 0.2]]), poissonsRatios: new Map([[0, nu]]),
+        };
+        const r = deform(nodes, elements, {
+          supports: new Map([[0, [true, true, true, true, true, true]], [1, [true, true, true, true, true, true]]]),
+          loads: new Map([[2, [10, 0, 0, 0, 0, 0]], [3, [10, 0, 0, 0, 0, 0]]]),
+        }, ei);
+        tests.push({
+          name: "Wall Q4 Only", formulation: "Membrane (incompatible modes) + Mindlin-Reissner + Hughes-Brezzi drilling",
+          nodes, elements,
+          results: [{ label: "Ux top (cm)", awatif: r.deformations.get(2)[0] * 100, reference: 0.013519, refSource: "ETABS 22.6" }]
+        });
+      }
+
+      // ── Test 5: Portal + Wall (Frame-Shell coupling) ──
+      if (testId === "test-portal-wall" || testId === "test-all") {
+        const nodes = [[0, 0, 0], [W, 0, 0], [0, H, 0], [W, H, 0], [0, 2 * H, 0], [W, 2 * H, 0]];
+        const elements = [[0, 2], [1, 3], [2, 4], [3, 5], [2, 3], [4, 5], [0, 1, 3, 2]];
+        const ei = makeFrameInputs(6, [0, 1, 2, 3], [4, 5]);
+        ei.elasticities.set(6, E_conc); ei.shearModuli.set(6, G);
+        ei.thicknesses = new Map([[6, 0.2]]); ei.poissonsRatios = new Map([[6, nu]]);
+        const r = deform(nodes, elements, {
+          supports: new Map([[0, [true, true, true, true, true, true]], [1, [true, true, true, true, true, true]]]),
+          loads: new Map([[4, [10, 0, 0, 0, 0, 0]], [5, [10, 0, 0, 0, 0, 0]]]),
+        }, ei);
+        tests.push({
+          name: "Portal 2-Story + Wall Q4", formulation: "Frame Timoshenko + Shell Q4 (Hughes-Brezzi drilling)",
+          nodes, elements,
+          results: [
+            { label: "Ux Z=3m (cm)", awatif: r.deformations.get(2)[0] * 100, reference: 0.0195, refSource: "ETABS 22.6" },
+            { label: "Ux Z=6m (cm)", awatif: r.deformations.get(4)[0] * 100, reference: 2.1133, refSource: "ETABS 22.6" },
+          ]
+        });
+      }
+
+      // Display results
+      showTestResults(tests);
+
+      // Load model into viewport (last test)
+      if (tests.length > 0) {
+        const last = tests[tests.length - 1];
+        const ei = makeFrameInputs(last.elements.length, [], []);
+        // Simple: just apply the model to the viewport
+        mesh.nodes.val = last.nodes as any;
+        mesh.elements!.val = last.elements as any;
+      }
+    }
+
+    function showTestResults(tests: any[]) {
+      // Create overlay panel
+      let overlay = document.getElementById("test-results-overlay");
+      if (overlay) overlay.remove();
+
+      overlay = document.createElement("div");
+      overlay.id = "test-results-overlay";
+      overlay.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+        background:#1a1a2e;color:#eee;border:2px solid #16213e;border-radius:8px;padding:20px;
+        z-index:10000;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;font-family:monospace;font-size:13px;
+        box-shadow:0 10px 40px rgba(0,0,0,0.5);`;
+
+      let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0;color:#00d4ff">🧪 Awatif FEM Validation</h3>
+        <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#888;font-size:18px;cursor:pointer">✕</button>
+      </div>`;
+
+      let allPass = true;
+
+      for (const test of tests) {
+        html += `<div style="margin-bottom:16px;border:1px solid #333;border-radius:6px;padding:10px">`;
+        html += `<div style="font-weight:bold;color:#00d4ff;margin-bottom:4px">${test.name}</div>`;
+        html += `<div style="color:#888;font-size:11px;margin-bottom:8px">${test.formulation}</div>`;
+        html += `<table style="width:100%;border-collapse:collapse;font-size:12px">
+          <tr style="color:#888"><td style="padding:3px 6px">Measure</td><td style="text-align:right">Awatif</td><td style="text-align:right">Reference</td><td style="text-align:right">Ratio</td><td style="text-align:right">Source</td><td style="text-align:center">Status</td></tr>`;
+
+        for (const r of test.results) {
+          const ratio = r.reference !== 0 ? r.awatif / r.reference : 1;
+          const pass = Math.abs(ratio - 1) < 0.05; // 5% tolerance
+          if (!pass) allPass = false;
+          const color = pass ? "#4caf50" : "#f44336";
+          const icon = pass ? "✅" : "❌";
+          html += `<tr style="border-top:1px solid #333">
+            <td style="padding:3px 6px">${r.label}</td>
+            <td style="text-align:right;color:#fff">${r.awatif.toFixed(4)}</td>
+            <td style="text-align:right;color:#aaa">${r.reference.toFixed(4)}</td>
+            <td style="text-align:right;color:${color};font-weight:bold">${ratio.toFixed(4)}</td>
+            <td style="text-align:right;color:#888;font-size:11px">${r.refSource}</td>
+            <td style="text-align:center">${icon}</td></tr>`;
+        }
+        html += `</table></div>`;
+      }
+
+      const summary = allPass ? `<div style="color:#4caf50;font-weight:bold;text-align:center;margin-top:8px">✅ ALL TESTS PASSED (< 5% error vs ETABS)</div>`
+        : `<div style="color:#f44336;font-weight:bold;text-align:center;margin-top:8px">⚠ Some tests exceeded 5% tolerance</div>`;
+      html += summary;
+
+      overlay.innerHTML = html;
+      document.body.appendChild(overlay);
+    }
 
     // === Export panel ===
     panel.querySelector("#cad3d-export")?.addEventListener("click", (ev) => {
