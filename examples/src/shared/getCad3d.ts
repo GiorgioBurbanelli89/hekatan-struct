@@ -6560,8 +6560,214 @@ Util:     cad.info()  cad.clear()  cad.help()
       }
     }
 
+    function generateTestE2k(test: any): string {
+      const E = 15000 * Math.sqrt(210) * 10;
+      const lines: string[] = [];
+      lines.push(`$ File exported from Awatif FEM Validation: ${test.name}`);
+      lines.push(` `);
+      lines.push(`$ PROGRAM INFORMATION`);
+      lines.push(`  PROGRAM  "ETABS"  VERSION "22.6.0"  `);
+      lines.push(``);
+      lines.push(`$ CONTROLS`);
+      lines.push(`  UNITS  "TONF"  "M"  "C"  `);
+      lines.push(``);
+      // Stories from Y coords
+      const ySet = new Set<number>();
+      test.nodes.forEach((n: number[]) => ySet.add(Math.round(n[1] * 1e4) / 1e4));
+      const sortedY = [...ySet].sort((a: number, b: number) => a - b);
+      const storyNames = sortedY.map((y: number, i: number) => i === 0 ? "Base" : `Level_${i}`);
+      const yToStory = new Map<number, string>();
+      sortedY.forEach((y: number, i: number) => yToStory.set(y, storyNames[i]));
+      lines.push(`$ STORIES - IN SEQUENCE FROM TOP`);
+      for (let i = sortedY.length - 1; i >= 1; i--)
+        lines.push(`  STORY "${storyNames[i]}"  HEIGHT ${sortedY[i] - sortedY[i - 1]} MASTERSTORY "Yes"  `);
+      lines.push(`  STORY "Base"  ELEV ${sortedY[0]} `);
+      lines.push(``);
+      lines.push(`$ MATERIAL PROPERTIES`);
+      lines.push(`  MATERIAL  "CONC"    TYPE "Concrete"    WEIGHTPERVOLUME 2.4`);
+      lines.push(`  MATERIAL  "CONC"    SYMTYPE "Isotropic"  E ${E}  U 0.2  A 1E-05`);
+      lines.push(``);
+      lines.push(`$ FRAME SECTIONS`);
+      lines.push(`  FRAMESECTION  "COL30"  MATERIAL "CONC"  SHAPE "Concrete Rectangular"  D 0.3 B 0.3 `);
+      lines.push(`  FRAMESECTION  "VIGA"  MATERIAL "CONC"  SHAPE "Concrete Rectangular"  D 0.4 B 0.25 `);
+      lines.push(``);
+      const hasQ4 = test.elements.some((el: number[]) => el.length === 4);
+      if (hasQ4) {
+        lines.push(`$ WALL/SLAB/DECK SECTIONS`);
+        lines.push(`  SHELLPROP  "Muro20"  PROPTYPE  "Wall"  MATERIAL "CONC"  MODELINGTYPE "ShellThick"  WALLTHICKNESS 0.2 `);
+        lines.push(``);
+      }
+      // Points
+      const xyToPoint = new Map<string, string>();
+      let pi = 0;
+      test.nodes.forEach((n: number[]) => {
+        const key = `${n[0]},${n[2]}`;
+        if (!xyToPoint.has(key)) xyToPoint.set(key, `${++pi}`);
+      });
+      lines.push(`$ POINT COORDINATES`);
+      for (const [key, ptName] of xyToPoint) {
+        const [x, z] = key.split(",").map(Number);
+        lines.push(`  POINT "${ptName}"  ${x} ${z} `);
+      }
+      lines.push(``);
+      const nToPS = (ni: number) => {
+        const n = test.nodes[ni];
+        const key = `${n[0]},${n[2]}`;
+        return { pt: xyToPoint.get(key) || "1", story: yToStory.get(Math.round(n[1] * 1e4) / 1e4) || "Base" };
+      };
+      lines.push(`$ LINE CONNECTIVITIES`);
+      const laEntries: string[] = [];
+      test.elements.forEach((el: number[], i: number) => {
+        if (el.length !== 2) return;
+        const n0 = test.nodes[el[0]], n1 = test.nodes[el[1]];
+        const dy = Math.abs(n1[1] - n0[1]);
+        const dxz = Math.sqrt((n1[0] - n0[0]) ** 2 + (n1[2] - n0[2]) ** 2);
+        const isCol = dy > dxz * 0.5;
+        const ps0 = nToPS(el[0]), ps1 = nToPS(el[1]);
+        const sec = isCol ? "COL30" : "VIGA";
+        if (isCol) {
+          lines.push(`  LINE  "E${i + 1}"  COLUMN  "${ps0.pt}"  "${ps0.pt}"  1`);
+          laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${ps1.story}"  SECTION "${sec}"  `);
+        } else {
+          lines.push(`  LINE  "E${i + 1}"  BEAM  "${ps0.pt}"  "${ps1.pt}"  0`);
+          laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${ps0.story}"  SECTION "${sec}"  `);
+        }
+      });
+      lines.push(``);
+      if (hasQ4) {
+        lines.push(`$ AREA CONNECTIVITIES`);
+        const aaEntries: string[] = [];
+        test.elements.forEach((el: number[], i: number) => {
+          if (el.length !== 4) return;
+          const ps = el.map((ni: number) => nToPS(ni));
+          lines.push(`  AREA "W${i + 1}"  PANEL  4  "${ps[0].pt}"  "${ps[1].pt}"  "${ps[2].pt}"  "${ps[3].pt}"  1  1  0  0  `);
+          aaEntries.push(`  AREAASSIGN  "W${i + 1}"  "${ps[2].story}"  SECTION "Muro20"  `);
+        });
+        lines.push(``);
+        lines.push(`$ AREA ASSIGNS`);
+        aaEntries.forEach(aa => lines.push(aa));
+        lines.push(``);
+      }
+      lines.push(`$ POINT ASSIGNS`);
+      test.nodes.forEach((n: number[], ni: number) => {
+        if (Math.abs(n[1]) < 0.01) {
+          const ps = nToPS(ni);
+          lines.push(`  POINTASSIGN  "${ps.pt}"  "${ps.story}"  RESTRAINT "UX UY UZ RX RY RZ"  `);
+        }
+      });
+      lines.push(``);
+      lines.push(`$ LINE ASSIGNS`);
+      laEntries.forEach(la => lines.push(la));
+      lines.push(``);
+      lines.push(`$ LOAD PATTERNS`);
+      lines.push(`  LOADPATTERN "Lat"  TYPE  "Other"  SELFWEIGHT  0`);
+      lines.push(``);
+      lines.push(`$ POINT OBJECT LOADS`);
+      const maxY = Math.max(...test.nodes.map((n: number[]) => n[1]));
+      test.nodes.forEach((n: number[], ni: number) => {
+        if (Math.abs(n[1] - maxY) < 0.01) {
+          const ps = nToPS(ni);
+          lines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  "Lat"  TYPE "FORCE"  FX 10`);
+        }
+      });
+      lines.push(``);
+      lines.push(`  END`);
+      lines.push(`$ END OF MODEL FILE`);
+      return lines.join("\r\n");
+    }
+
+    function generateTestPy(test: any): string {
+      const E = 15000 * Math.sqrt(210) * 10;
+      const py: string[] = [];
+      py.push(`"""ETABS API Validation: ${test.name}`);
+      py.push(`Generated by Awatif FEM Studio"""`);
+      py.push(`import comtypes.client, time, math`);
+      py.push(``);
+      py.push(`helper = comtypes.client.CreateObject('ETABSv1.Helper')`);
+      py.push(`helper = helper.QueryInterface(comtypes.gen.ETABSv1.cHelper)`);
+      py.push(`myETABS = helper.CreateObjectProgID("CSI.ETABS.API.ETABSObject")`);
+      py.push(`myETABS.ApplicationStart()`);
+      py.push(`time.sleep(10)`);
+      py.push(`SapModel = myETABS.SapModel`);
+      py.push(`SapModel.InitializeNewModel()`);
+      py.push(`SapModel.File.NewBlank()`);
+      py.push(`SapModel.SetPresentUnits(12)  # tonf_m_C`);
+      py.push(``);
+      py.push(`E = ${E}`);
+      py.push(`SapModel.PropMaterial.SetMaterial("CONC", 2)`);
+      py.push(`SapModel.PropMaterial.SetMPIsotropic("CONC", E, 0.2, 5.5e-6)`);
+      py.push(`SapModel.PropFrame.SetRectangle("COL30", "CONC", 0.30, 0.30)`);
+      py.push(`SapModel.PropFrame.SetRectangle("VIGA", "CONC", 0.40, 0.25)`);
+      const hasQ4 = test.elements.some((el: number[]) => el.length === 4);
+      if (hasQ4) py.push(`SapModel.PropArea.SetWall("Muro20", 6, False, "CONC", 0.20)`);
+      py.push(``);
+      py.push(`# Add elements`);
+      py.push(`FN = ' '`);
+      test.elements.forEach((el: number[], i: number) => {
+        if (el.length === 2) {
+          const n0 = test.nodes[el[0]], n1 = test.nodes[el[1]];
+          const dy = Math.abs(n1[1] - n0[1]);
+          const dxz = Math.sqrt((n1[0] - n0[0]) ** 2 + (n1[2] - n0[2]) ** 2);
+          const sec = dy > dxz * 0.5 ? "COL30" : "VIGA";
+          // ETABS: Z = height, Y = plan depth
+          py.push(`[FN,r]=SapModel.FrameObj.AddByCoord(${n0[0]},${n0[2]},${n0[1]}, ${n1[0]},${n1[2]},${n1[1]}, FN,"${sec}","E${i + 1}","Global")`);
+        } else if (el.length === 4) {
+          const coords = el.map((ni: number) => test.nodes[ni]);
+          py.push(`SapModel.AreaObj.AddByCoord(4, [${coords.map((c: number[]) => c[0]).join(",")}], [${coords.map((c: number[]) => c[2]).join(",")}], [${coords.map((c: number[]) => c[1]).join(",")}], "", "Muro20")`);
+        }
+      });
+      py.push(``);
+      py.push(`# Supports at Z=0`);
+      py.push(`names = SapModel.PointObj.GetNameList()`);
+      py.push(`for i in range(int(names[0])):`);
+      py.push(`    c = SapModel.PointObj.GetCoordCartesian(names[1][i])`);
+      py.push(`    if abs(float(c[2])) < 0.01:`);
+      py.push(`        SapModel.PointObj.SetRestraint(names[1][i], [True]*6)`);
+      py.push(``);
+      py.push(`# Load at top`);
+      py.push(`SapModel.LoadPatterns.Add("Lat", 8, 0, True)`);
+      const maxY = Math.max(...test.nodes.map((n: number[]) => n[1]));
+      py.push(`names = SapModel.PointObj.GetNameList()`);
+      py.push(`for i in range(int(names[0])):`);
+      py.push(`    c = SapModel.PointObj.GetCoordCartesian(names[1][i])`);
+      py.push(`    if abs(float(c[2]) - ${maxY}) < 0.01:`);
+      py.push(`        SapModel.PointObj.SetLoadForce(names[1][i], "Lat", [10,0,0,0,0,0])`);
+      py.push(``);
+      py.push(`SapModel.File.Save(r"C:\\Users\\j-b-j\\Downloads\\validation_${test.name.replace(/[^a-zA-Z0-9]/g, '_')}.EDB")`);
+      py.push(`time.sleep(1)`);
+      py.push(`SapModel.Analyze.RunAnalysis()`);
+      py.push(`time.sleep(5)`);
+      py.push(``);
+      py.push(`# Results`);
+      py.push(`SapModel.Results.Setup.DeselectAllCasesAndCombosForOutput()`);
+      py.push(`SapModel.Results.Setup.SetCaseSelectedForOutput("Lat")`);
+      py.push(`print(f"\\n=== ETABS: ${test.name} ===")`);
+      py.push(`names = SapModel.PointObj.GetNameList()`);
+      py.push(`for i in range(int(names[0])):`);
+      py.push(`    name = names[1][i]`);
+      py.push(`    c = SapModel.PointObj.GetCoordCartesian(name)`);
+      py.push(`    NR=0;Obj=[];Elm=[];AC=[];ST=[];SN=[];U1=[];U2=[];U3=[];R1=[];R2=[];R3=[]`);
+      py.push(`    [NR,Obj,Elm,AC,ST,SN,U1,U2,U3,R1,R2,R3,ret]=SapModel.Results.JointDispl(name,0,NR,Obj,Elm,AC,ST,SN,U1,U2,U3,R1,R2,R3)`);
+      py.push(`    if NR > 0:`);
+      py.push(`        print(f"  {name} Z={float(c[2]):.1f}: Ux={U1[0]*100:.4f} cm")`);
+      py.push(``);
+      py.push(`print("\\nAwatif results:")`);
+      for (const r of test.results) {
+        py.push(`print(f"  ${r.label}: Awatif=${r.awatif.toFixed(4)}, ETABS=${r.reference.toFixed(4)}, Ratio={${r.awatif.toFixed(4)}/${r.reference.toFixed(4)}:.4f}")`);
+      }
+      py.push(`SapModel.View.RefreshView(0, False)`);
+      return py.join("\n");
+    }
+
+    function downloadText2(text: string, filename: string) {
+      const blob = new Blob([text], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+    }
+
     function showTestResults(tests: any[]) {
-      // Create overlay panel
       let overlay = document.getElementById("test-results-overlay");
       if (overlay) overlay.remove();
 
@@ -6569,46 +6775,68 @@ Util:     cad.info()  cad.clear()  cad.help()
       overlay.id = "test-results-overlay";
       overlay.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
         background:#1a1a2e;color:#eee;border:2px solid #16213e;border-radius:8px;padding:20px;
-        z-index:10000;max-width:700px;width:90%;max-height:80vh;overflow-y:auto;font-family:monospace;font-size:13px;
+        z-index:10000;max-width:750px;width:90%;max-height:80vh;overflow-y:auto;font-family:monospace;font-size:13px;
         box-shadow:0 10px 40px rgba(0,0,0,0.5);`;
 
       let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <h3 style="margin:0;color:#00d4ff">🧪 Awatif FEM Validation</h3>
-        <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#888;font-size:18px;cursor:pointer">✕</button>
+        <h3 style="margin:0;color:#00d4ff">Awatif FEM Validation</h3>
+        <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#888;font-size:18px;cursor:pointer">X</button>
       </div>`;
 
       let allPass = true;
 
-      for (const test of tests) {
+      // Store tests on window for download buttons
+      (window as any).__awatifTests = tests;
+
+      for (let ti = 0; ti < tests.length; ti++) {
+        const test = tests[ti];
         html += `<div style="margin-bottom:16px;border:1px solid #333;border-radius:6px;padding:10px">`;
-        html += `<div style="font-weight:bold;color:#00d4ff;margin-bottom:4px">${test.name}</div>`;
+        html += `<div style="display:flex;justify-content:space-between;align-items:center">`;
+        html += `<div style="font-weight:bold;color:#00d4ff">${test.name}</div>`;
+        html += `<div>`;
+        html += `<button onclick="window.__awatifDownloadE2k(${ti})" style="background:#1e3a5f;color:#aaa;border:1px solid #444;padding:2px 6px;font-size:10px;cursor:pointer;margin-right:4px;border-radius:3px">e2k</button>`;
+        html += `<button onclick="window.__awatifDownloadPy(${ti})" style="background:#2a1e3a;color:#aaa;border:1px solid #444;padding:2px 6px;font-size:10px;cursor:pointer;border-radius:3px">py</button>`;
+        html += `</div></div>`;
         html += `<div style="color:#888;font-size:11px;margin-bottom:8px">${test.formulation}</div>`;
         html += `<table style="width:100%;border-collapse:collapse;font-size:12px">
-          <tr style="color:#888"><td style="padding:3px 6px">Measure</td><td style="text-align:right">Awatif</td><td style="text-align:right">Reference</td><td style="text-align:right">Ratio</td><td style="text-align:right">Source</td><td style="text-align:center">Status</td></tr>`;
+          <tr style="color:#888"><td style="padding:3px 6px">Measure</td><td style="text-align:right">Awatif</td><td style="text-align:right">Reference</td><td style="text-align:right">Ratio</td><td style="text-align:right">Source</td><td style="text-align:center"></td></tr>`;
 
         for (const r of test.results) {
           const ratio = r.reference !== 0 ? r.awatif / r.reference : 1;
-          const pass = Math.abs(ratio - 1) < 0.05; // 5% tolerance
+          const pass = Math.abs(ratio - 1) < 0.05;
           if (!pass) allPass = false;
           const color = pass ? "#4caf50" : "#f44336";
-          const icon = pass ? "✅" : "❌";
+          const icon = pass ? "PASS" : "FAIL";
           html += `<tr style="border-top:1px solid #333">
             <td style="padding:3px 6px">${r.label}</td>
             <td style="text-align:right;color:#fff">${r.awatif.toFixed(4)}</td>
             <td style="text-align:right;color:#aaa">${r.reference.toFixed(4)}</td>
             <td style="text-align:right;color:${color};font-weight:bold">${ratio.toFixed(4)}</td>
             <td style="text-align:right;color:#888;font-size:11px">${r.refSource}</td>
-            <td style="text-align:center">${icon}</td></tr>`;
+            <td style="text-align:center;color:${color};font-size:10px;font-weight:bold">${icon}</td></tr>`;
         }
         html += `</table></div>`;
       }
 
-      const summary = allPass ? `<div style="color:#4caf50;font-weight:bold;text-align:center;margin-top:8px">✅ ALL TESTS PASSED (< 5% error vs ETABS)</div>`
-        : `<div style="color:#f44336;font-weight:bold;text-align:center;margin-top:8px">⚠ Some tests exceeded 5% tolerance</div>`;
+      const summary = allPass
+        ? `<div style="color:#4caf50;font-weight:bold;text-align:center;margin-top:8px">ALL TESTS PASSED (< 5% error vs ETABS)</div>`
+        : `<div style="color:#f44336;font-weight:bold;text-align:center;margin-top:8px">Some tests exceeded 5% tolerance</div>`;
       html += summary;
 
       overlay.innerHTML = html;
       document.body.appendChild(overlay);
+
+      // Download handlers
+      (window as any).__awatifDownloadE2k = (idx: number) => {
+        const t = (window as any).__awatifTests[idx];
+        const fname = t.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        downloadText2(generateTestE2k(t), `${fname}.e2k`);
+      };
+      (window as any).__awatifDownloadPy = (idx: number) => {
+        const t = (window as any).__awatifTests[idx];
+        const fname = t.name.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        downloadText2(generateTestPy(t), `${fname}_etabs.py`);
+      };
     }
 
     // === Export panel ===
