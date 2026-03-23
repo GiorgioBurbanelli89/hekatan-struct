@@ -179,6 +179,44 @@ function invert4x4(M: number[][]): number[][] | null {
   return aug.map(row => row.slice(n));
 }
 
+/**
+ * 12x12 drilling stiffness (Hughes & Brezzi 1989)
+ * DOFs: [u0, v0, θz0, u1, v1, θz1, u2, v2, θz2, u3, v3, θz3]
+ * The drilling DOF θz is the in-plane rotation:
+ *   θz = 0.5 * (∂v/∂x - ∂u/∂y)
+ * Penalty formulation: Kd = α * G * t * ∫ Bd^T * Bd dA
+ * where Bd relates the drilling strain γd = θz - 0.5*(∂v/∂x - ∂u/∂y)
+ */
+function getDrillingK(x: number[], y: number[], G: number, t: number, alpha: number): number[][] {
+  const Kd = zeros(12, 12);
+  const gpCoords: [number, number][] = [[-GP, -GP], [GP, -GP], [GP, GP], [-GP, GP]];
+
+  for (const [xi, eta] of gpCoords) {
+    const { N, dNdxi, dNdeta } = shapeFunctionsQ4(xi, eta);
+    const { dNdx, dNdy, detJ } = jacobian2D(dNdxi, dNdeta, x, y);
+
+    // Bd (1 × 12): drilling strain = θz_i * N_i - 0.5*(∂v/∂x - ∂u/∂y)
+    // For node i: Bd = [-0.5*dNdy[i], 0.5*dNdx[i], N[i]]
+    // DOF order: [u_i, v_i, θz_i]
+    const Bd: number[] = new Array(12).fill(0);
+    for (let i = 0; i < 4; i++) {
+      Bd[i * 3]     = 0.5 * dNdy[i];   // -(-0.5*dN/dy) → +0.5*dN/dy (from ∂u/∂y)
+      Bd[i * 3 + 1] = -0.5 * dNdx[i];  // 0.5*dN/dx → but with minus from ∂v/∂x sign
+      Bd[i * 3 + 2] = N[i];             // θz contribution
+    }
+
+    // Kd += α * G * t * Bd^T * Bd * detJ
+    const factor = alpha * G * t * Math.abs(detJ);
+    for (let i = 0; i < 12; i++) {
+      for (let j = 0; j < 12; j++) {
+        Kd[i][j] += factor * Bd[i] * Bd[j];
+      }
+    }
+  }
+
+  return Kd;
+}
+
 /** 12x12 bending + shear stiffness (Mindlin-Reissner + MITC4) */
 function getBendingK(x: number[], y: number[], E: number, nu: number, t: number): number[][] {
   const Kb = zeros(12, 12);
@@ -285,16 +323,21 @@ export function getLocalStiffnessMatrixShellQ4(
   const Km = getMembraneK(x, y, E, nu, t);
   const Kb = getBendingK(x, y, E, nu, t);
 
-  // Drilling stiffness: small fraction of average membrane diagonal
-  let diagSum = 0;
-  for (let i = 0; i < 8; i++) diagSum += Math.abs(Km[i][i]);
-  const drill = 1e-6 * diagSum / 8;
+  // Drilling stiffness — Hughes & Brezzi (1989) / Ibrahimbegovic & Wilson (1991)
+  // Full drilling formulation: Kd = α * G * t * ∫ Nd^T * Nd dA
+  // where Nd relates θz to in-plane displacements via the skew-symmetric gradient
+  // Nd[i] = 0.5 * (∂N[i]/∂x_local2 - ∂N[i]/∂x_local1) for each node
+  // This couples θz with u,v — not just diagonal stabilization
+  const G = E / (2 * (1 + nu));
+  const alpha = 0.5; // Hughes & Brezzi recommend α ∈ [0.1, 1.0]
+  const Kd = getDrillingK(x, y, G, t, alpha);
 
   // Assemble 24x24
   // DOF mapping per node i:
   //   u = 6i+0, v = 6i+1, w = 6i+2, θx = 6i+3, θy = 6i+4, θz = 6i+5
   // Membrane Km uses [u0,v0,u1,v1,u2,v2,u3,v3]
   // Bending Kb uses [w0,θx0,θy0,w1,θx1,θy1,w2,θx2,θy2,w3,θx3,θy3]
+  // Drilling Kd uses [u0,v0,θz0,u1,v1,θz1,u2,v2,θz2,u3,v3,θz3]
   const K = zeros(24, 24);
 
   // Membrane → K
@@ -313,9 +356,12 @@ export function getLocalStiffnessMatrixShellQ4(
     }
   }
 
-  // Drilling → K (θz DOFs)
-  for (let i = 0; i < 4; i++) {
-    K[6 * i + 5][6 * i + 5] += drill;
+  // Drilling → K (couples u, v, θz)
+  const drillDof = [0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23]; // u,v,θz per node
+  for (let i = 0; i < 12; i++) {
+    for (let j = 0; j < 12; j++) {
+      K[drillDof[i]][drillDof[j]] += Kd[i][j];
+    }
   }
 
   return K;
