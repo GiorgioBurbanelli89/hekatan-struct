@@ -147,6 +147,10 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
   let slabSubdivY = 2;              // subdivisions per bay in Y
   let slabElementIndices: Set<number> = new Set();
 
+  // ── Braces state (for generator-based buildings) ──
+  let bracesEnabled = false;
+  let bracesMode: string = "perimeter"; // "perimeter", "all", "x", "y"
+
   // ── Section state (persists across rebuilds) ──
   // secType: 0=rect(concrete), 1=circ(concrete), 2=W-profile, 3=HSS-profile, 4=I-param, 5=tubular-hueca, 6=CFT
   type BeamSec = {
@@ -1827,6 +1831,46 @@ VIEW:
         }
       }
 
+      // ── Braces (diagonal elements in vertical planes) ──
+      if (bracesEnabled && bracesMode) {
+        const addBrX = bracesMode === "all" || bracesMode === "x" || bracesMode === "perimeter";
+        const addBrY = bracesMode === "all" || bracesMode === "y" || bracesMode === "perimeter";
+        const nfBr = zCoords.length - 1;
+
+        for (let iz = 0; iz < nfBr; iz++) {
+          // X-direction braces (in XZ vertical plane, constant iy)
+          if (addBrX) {
+            for (let iy = 0; iy < yCoords.length; iy++) {
+              if (bracesMode === "perimeter" && iy !== 0 && iy !== yCoords.length - 1) continue;
+              const midBay = Math.floor((xCoords.length - 1) / 2);
+              for (let ix = 0; ix < xCoords.length - 1; ix++) {
+                if (bracesMode === "perimeter" && ix !== midBay) continue;
+                if (isCantTip(ix, iy) || isCantTip(ix+1, iy)) continue;
+                const n0 = nid[`${ix},${iy},${iz}`], n1 = nid[`${ix + 1},${iy},${iz + 1}`];
+                const n2 = nid[`${ix + 1},${iy},${iz}`], n3 = nid[`${ix},${iy},${iz + 1}`];
+                if (n0 !== undefined && n1 !== undefined) { elements.push([n0, n1]); elementFloor.set(elements.length - 1, iz); }
+                if (n2 !== undefined && n3 !== undefined) { elements.push([n2, n3]); elementFloor.set(elements.length - 1, iz); }
+              }
+            }
+          }
+          // Y-direction braces (in YZ vertical plane, constant ix)
+          if (addBrY) {
+            for (let ix = 0; ix < xCoords.length; ix++) {
+              if (bracesMode === "perimeter" && ix !== 0 && ix !== xCoords.length - 1) continue;
+              const midBay = Math.floor((yCoords.length - 1) / 2);
+              for (let iy = 0; iy < yCoords.length - 1; iy++) {
+                if (bracesMode === "perimeter" && iy !== midBay) continue;
+                if (isCantTip(ix, iy) || isCantTip(ix, iy+1)) continue;
+                const n0 = nid[`${ix},${iy},${iz}`], n1 = nid[`${ix},${iy + 1},${iz + 1}`];
+                const n2 = nid[`${ix},${iy + 1},${iz}`], n3 = nid[`${ix},${iy},${iz + 1}`];
+                if (n0 !== undefined && n1 !== undefined) { elements.push([n0, n1]); elementFloor.set(elements.length - 1, iz); }
+                if (n2 !== undefined && n3 !== undefined) { elements.push([n2, n3]); elementFloor.set(elements.length - 1, iz); }
+              }
+            }
+          }
+        }
+      }
+
       mesh.nodes.val = nodes; mesh.elements.val = elements;
       if (mesh.nodeInputs) mesh.nodeInputs.val = { supports };
 
@@ -1885,7 +1929,7 @@ VIEW:
           setGenerator("edificio");
           sectionState.colMat = 0; sectionState.vigaMat = 0;
           sectionState.colShape = 0;
-          wallPlacements = []; slabEnabled = false; secondaryBeamsEnabled = false;
+          wallPlacements = []; slabEnabled = false; secondaryBeamsEnabled = false; bracesEnabled = false;
           regenerateFromParams(); break;
         }
         case "edif-acero": case "edificio-acero": {
@@ -1899,23 +1943,22 @@ VIEW:
           const avgLx_a = edifSvx.reduce((a,b) => a+b, 0) / edifSvx.length;
           const avgLy_a = edifSvy.reduce((a,b) => a+b, 0) / edifSvy.length;
           secondaryBeamDir = avgLx_a >= avgLy_a ? 'y' : 'x'; // corren en la dir corta
-          slabEnabled = true; slabThickness = 0.08;
+          slabEnabled = true; slabThickness = 0.08; bracesEnabled = false;
           regenerateFromParams(); break;
         }
         case "edif-acero-diag": case "edificio-acero-diag": {
-          // Edificio de acero con diagonales (X-braces en perimetro)
-          // Usa cad.build() con braces en vez del generador "Edificio"
-          cli.clear();
-          const nVxD = Math.round(generatorParams["nVanosX"]?.val ?? 2);
-          const nVyD = Math.round(generatorParams["nVanosY"]?.val ?? 2);
-          const nPisD = Math.round(generatorParams["nPisos"]?.val ?? 3);
-          const hPisD = generatorParams["hPiso"]?.val ?? 3.5;
-          const bxD = Array(nVxD).fill(6);
-          const byD = Array(nVyD).fill(5);
-          const hD = Array(nPisD).fill(hPisD);
-          cli.refgrid(bxD, byD, hD);
-          cli.build({ col: "40x40", viga: "30x50", braces: "perimeter", fc: 280 });
-          break;
+          // Edificio de acero con diagonales: columnas W, vigas W, secundarias, deck + braces
+          setGenerator("edificio");
+          sectionState.colMat = 1; sectionState.vigaMat = 1;
+          sectionState.steelColType = 0; sectionState.steelVigaType = 0;
+          wallPlacements = [];
+          secondaryBeamsEnabled = true; nSecondaryBeams = 2;
+          const avgLx_d = edifSvx.reduce((a,b) => a+b, 0) / edifSvx.length;
+          const avgLy_d = edifSvy.reduce((a,b) => a+b, 0) / edifSvy.length;
+          secondaryBeamDir = avgLx_d >= avgLy_d ? 'y' : 'x';
+          slabEnabled = true; slabThickness = 0.08;
+          bracesEnabled = true; bracesMode = "perimeter";
+          regenerateFromParams(); break;
         }
         case "edif-muros": case "edificio-muros": {
           // Edificio aporticado con muros de corte + losas
