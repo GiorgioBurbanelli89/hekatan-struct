@@ -56,39 +56,127 @@ function jacobian2D(
   return { dNdx, dNdy, detJ };
 }
 
-/** 8x8 membrane stiffness (plane stress Q4, 2x2 Gauss) */
+/**
+ * 8x8 membrane stiffness with incompatible modes (Wilson & Taylor 1973)
+ * Adds 4 internal DOFs (2 modes × 2 directions) then statically condenses.
+ * This eliminates parasitic shear locking and dramatically improves bending
+ * accuracy with coarse meshes — matching ETABS Q4 behavior.
+ */
 function getMembraneK(x: number[], y: number[], E: number, nu: number, t: number): number[][] {
-  const Km = zeros(8, 8);
+  // Total DOFs: 8 external (u,v per node) + 4 internal (incompatible modes)
+  const nExt = 8, nInc = 4, nTotal = nExt + nInc;
+  const K_full = zeros(nTotal, nTotal);
   const f = E * t / (1 - nu * nu);
-  // Constitutive: Dm = f * [[1,nu,0],[nu,1,0],[0,0,(1-nu)/2]]
 
   const gpCoords: [number, number][] = [[-GP, -GP], [GP, -GP], [GP, GP], [-GP, GP]];
+
+  // Jacobian at center (for incompatible mode derivatives)
+  const { dNdxi: dN0xi, dNdeta: dN0eta } = shapeFunctionsQ4(0, 0);
+  const { detJ: detJ0 } = jacobian2D(dN0xi, dN0eta, x, y);
 
   for (const [xi, eta] of gpCoords) {
     const { dNdxi, dNdeta } = shapeFunctionsQ4(xi, eta);
     const { dNdx, dNdy, detJ } = jacobian2D(dNdxi, dNdeta, x, y);
 
-    // B matrix (3x8): [du/dx, dv/dy, du/dy+dv/dx]
+    // Incompatible mode shape functions: M1 = 1-ξ², M2 = 1-η²
+    // Derivatives in natural coords: dM1/dξ = -2ξ, dM2/dη = -2η
+    // Transform to physical using Jacobian at CENTER (Wilson's correction)
+    const { dNdx: dNdx0, dNdy: dNdy0 } = jacobian2D(dN0xi, dN0eta, x, y);
+    // Use center Jacobian inverse for incompatible modes
+    const J0_11 = dN0xi.reduce((s, d, i) => s + d * x[i], 0);
+    const J0_12 = dN0xi.reduce((s, d, i) => s + d * y[i], 0);
+    const J0_21 = dN0eta.reduce((s, d, i) => s + d * x[i], 0);
+    const J0_22 = dN0eta.reduce((s, d, i) => s + d * y[i], 0);
+    const invDet0 = 1 / detJ0;
+    // dM1/dx, dM1/dy (mode 1: 1-ξ², derivative dM1/dξ = -2ξ, dM1/dη = 0)
+    const dM1dx = invDet0 * J0_22 * (-2 * xi);
+    const dM1dy = invDet0 * (-J0_21) * (-2 * xi);
+    // dM2/dx, dM2/dy (mode 2: 1-η², derivative dM2/dξ = 0, dM2/dη = -2η)
+    const dM2dx = invDet0 * (-J0_12) * (-2 * eta);
+    const dM2dy = invDet0 * J0_11 * (-2 * eta);
+
+    // Extended B matrix (3 × 12): [8 standard + 4 incompatible]
+    // Standard part: B_std (3×8) as before
+    // Incompatible part: B_inc (3×4) for [u_inc1, v_inc1, u_inc2, v_inc2]
     const B: number[][] = [[], [], []];
     for (let i = 0; i < 4; i++) {
       B[0].push(dNdx[i], 0);
       B[1].push(0, dNdy[i]);
       B[2].push(dNdy[i], dNdx[i]);
     }
+    // Incompatible modes: mode1 adds to u,v; mode2 adds to u,v
+    B[0].push(dM1dx, 0, dM2dx, 0);      // du_inc/dx
+    B[1].push(0, dM1dy, 0, dM2dy);      // dv_inc/dy
+    B[2].push(dM1dy, dM1dx, dM2dy, dM2dx); // du_inc/dy + dv_inc/dx
 
-    // Km += B^T * Dm * B * detJ (weight=1 for 2x2 Gauss)
-    for (let i = 0; i < 8; i++) {
-      for (let j = 0; j < 8; j++) {
-        // Compute (B^T * Dm * B)[i][j]
+    // K_full += B^T * Dm * B * detJ
+    for (let i = 0; i < nTotal; i++) {
+      for (let j = 0; j < nTotal; j++) {
         let sum = 0;
-        // Dm[0][0]*B[0][i]*B[0][j] + Dm[0][1]*B[0][i]*B[1][j] + ...
         sum += f * (B[0][i] * B[0][j] + nu * B[0][i] * B[1][j] + nu * B[1][i] * B[0][j] + B[1][i] * B[1][j]);
         sum += f * (1 - nu) / 2 * B[2][i] * B[2][j];
-        Km[i][j] += sum * Math.abs(detJ);
+        K_full[i][j] += sum * Math.abs(detJ);
       }
     }
   }
+
+  // Static condensation: K_condensed = Kee - Kei * Kii^-1 * Kie
+  // e = external (0..7), i = internal (8..11)
+  const Kee = zeros(nExt, nExt);
+  const Kei = zeros(nExt, nInc);
+  const Kie = zeros(nInc, nExt);
+  const Kii = zeros(nInc, nInc);
+
+  for (let i = 0; i < nExt; i++)
+    for (let j = 0; j < nExt; j++) Kee[i][j] = K_full[i][j];
+  for (let i = 0; i < nExt; i++)
+    for (let j = 0; j < nInc; j++) Kei[i][j] = K_full[i][nExt + j];
+  for (let i = 0; i < nInc; i++)
+    for (let j = 0; j < nExt; j++) Kie[i][j] = K_full[nExt + i][j];
+  for (let i = 0; i < nInc; i++)
+    for (let j = 0; j < nInc; j++) Kii[i][j] = K_full[nExt + i][nExt + j];
+
+  // Invert Kii (4x4)
+  const KiiInv = invert4x4(Kii);
+  if (!KiiInv) return Kee; // fallback if singular
+
+  // Km = Kee - Kei * KiiInv * Kie
+  const Km = zeros(nExt, nExt);
+  for (let i = 0; i < nExt; i++) {
+    for (let j = 0; j < nExt; j++) {
+      let correction = 0;
+      for (let p = 0; p < nInc; p++)
+        for (let q = 0; q < nInc; q++)
+          correction += Kei[i][p] * KiiInv[p][q] * Kie[q][j];
+      Km[i][j] = Kee[i][j] - correction;
+    }
+  }
   return Km;
+}
+
+/** Invert a small NxN matrix via Gauss-Jordan */
+function invert4x4(M: number[][]): number[][] | null {
+  const n = M.length;
+  const aug: number[][] = M.map((row, i) => {
+    const r = [...row];
+    for (let j = 0; j < n; j++) r.push(i === j ? 1 : 0);
+    return r;
+  });
+  for (let col = 0; col < n; col++) {
+    let pivot = col;
+    for (let row = col + 1; row < n; row++)
+      if (Math.abs(aug[row][col]) > Math.abs(aug[pivot][col])) pivot = row;
+    [aug[col], aug[pivot]] = [aug[pivot], aug[col]];
+    if (Math.abs(aug[col][col]) < 1e-15) return null;
+    const d = aug[col][col];
+    for (let j = 0; j < 2 * n; j++) aug[col][j] /= d;
+    for (let row = 0; row < n; row++) {
+      if (row === col) continue;
+      const fac = aug[row][col];
+      for (let j = 0; j < 2 * n; j++) aug[row][j] -= fac * aug[col][j];
+    }
+  }
+  return aug.map(row => row.slice(n));
 }
 
 /** 12x12 bending + shear stiffness (Mindlin-Reissner + MITC4) */
