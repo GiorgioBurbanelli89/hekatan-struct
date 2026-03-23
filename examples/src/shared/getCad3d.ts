@@ -1085,6 +1085,13 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
         ? [currentGridLevels.findIndex(g => g.label === story)]
         : Array.from({ length: currentGridLevels.length - 1 }, (_, i) => i + 1);
 
+      // Auto-add support at base level
+      const supports = new Map(mesh.nodeInputs?.val?.supports || []);
+      const baseNode = findOrAddNode(currentGridLevels[0].elev);
+      if (!supports.has(baseNode)) {
+        supports.set(baseNode, [true, true, true, true, true, true]);
+      }
+
       let added = 0;
       for (const fi of floors) {
         if (fi < 1 || fi >= currentGridLevels.length) continue;
@@ -1098,6 +1105,7 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
 
       mesh.nodes.val = nodes;
       mesh.elements!.val = elements;
+      mesh.nodeInputs!.val = { ...mesh.nodeInputs!.val, supports, loads: mesh.nodeInputs?.val?.loads || new Map() };
       console.log(`Added ${added} column(s) at ${axisX}-${axisY}${story ? ` story ${story}` : ""}`);
       return added;
     },
@@ -1139,6 +1147,48 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
       mesh.nodes.val = nodes;
       mesh.elements!.val = elements;
       console.log(`Added beam ${ax1}-${ay1} → ${ax2}-${ay2} at ${story}`);
+      return elements.length - 1;
+    },
+
+    /**
+     * Add a diagonal brace between two axis intersections across stories.
+     *   cad.addBrace("A","1","P1", "B","2","P2")  → brace from A-1@P1 to B-2@P2
+     *   cad.addBrace("A","1","Base", "A","1","P1") → vertical brace (same point, diff story)
+     *   cad.addBrace("A","1","Base", "B","1","P1") → X-brace in frame A-B at axis 1
+     */
+    addBrace(ax1: string, ay1: string, story1: string, ax2: string, ay2: string, story2: string) {
+      const xi1 = currentGridX.findIndex(g => g.label === ax1);
+      const zi1 = currentGridY.findIndex(g => g.label === ay1);
+      const li1 = currentGridLevels.findIndex(g => g.label === story1);
+      const xi2 = currentGridX.findIndex(g => g.label === ax2);
+      const zi2 = currentGridY.findIndex(g => g.label === ay2);
+      const li2 = currentGridLevels.findIndex(g => g.label === story2);
+
+      if (xi1 < 0 || zi1 < 0 || li1 < 0) { console.log(`Point 1 not found: ${ax1}-${ay1}@${story1}`); return; }
+      if (xi2 < 0 || zi2 < 0 || li2 < 0) { console.log(`Point 2 not found: ${ax2}-${ay2}@${story2}`); return; }
+
+      const x1 = currentGridX[xi1].coord, z1 = currentGridY[zi1].coord, y1 = currentGridLevels[li1].elev;
+      const x2 = currentGridX[xi2].coord, z2 = currentGridY[zi2].coord, y2 = currentGridLevels[li2].elev;
+
+      const nodes = [...mesh.nodes.val];
+      const elements = [...(mesh.elements?.val || [])];
+
+      const findOrAddNode = (x: number, y: number, z: number): number => {
+        const idx = nodes.findIndex(n => Math.abs(n[0] - x) < 0.001 && Math.abs(n[1] - y) < 0.001 && Math.abs(n[2] - z) < 0.001);
+        if (idx >= 0) return idx;
+        nodes.push([x, y, z]);
+        return nodes.length - 1;
+      };
+
+      const n1 = findOrAddNode(x1, y1, z1);
+      const n2 = findOrAddNode(x2, y2, z2);
+      elements.push([n1, n2]);
+      // Braces are neither col nor beam — they stay unclassified (rendered as generic frame)
+      elementFloor.set(elements.length - 1, Math.min(li1, li2));
+
+      mesh.nodes.val = nodes;
+      mesh.elements!.val = elements;
+      console.log(`Added brace ${ax1}-${ay1}@${story1} → ${ax2}-${ay2}@${story2}`);
       return elements.length - 1;
     },
 
