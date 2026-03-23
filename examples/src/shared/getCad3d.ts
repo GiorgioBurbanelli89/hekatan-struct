@@ -225,6 +225,132 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
   let currentGridY: number[] = [];  // Y-axis positions (ejes 1, 2, 3...)
   let currentGridZmax = 0;
 
+  // ── Construction/Reference grid (imaginary lines) ──
+  let refGridGroup: THREE.Group | null = null;
+
+  function clearRefGrid() {
+    if (!refGridGroup) return;
+    const ctx = getViewerCtx();
+    if (ctx) ctx.scene.remove(refGridGroup);
+    refGridGroup.traverse((obj) => {
+      if ((obj as any).geometry) (obj as any).geometry.dispose();
+      if ((obj as any).material) {
+        const mat = (obj as any).material;
+        if (mat.map) mat.map.dispose();
+        mat.dispose();
+      }
+    });
+    refGridGroup = null;
+  }
+
+  /**
+   * Draw construction/reference grid lines in 3D.
+   * Shows:
+   *  - Floor grids (XZ lines at each Y level) — thin dashed lines at every floor
+   *  - Vertical guide lines at each grid intersection (for column placement)
+   *  - Works in 3D, Plan, EX, EY views
+   */
+  function createRefGrid(
+    xCoords: number[], zCoords: number[], yLevels: number[],
+    labelsX?: string[], labelsZ?: string[]
+  ) {
+    clearRefGrid();
+    const ctx = getViewerCtx();
+    if (!ctx) return;
+
+    refGridGroup = new THREE.Group();
+    refGridGroup.name = "refGrid";
+
+    const xMin = Math.min(...xCoords), xMax = Math.max(...xCoords);
+    const zMin = Math.min(...zCoords), zMax = Math.max(...zCoords);
+    const yMax = Math.max(...yLevels);
+    const extX = xMax - xMin || 1, extZ = zMax - zMin || 1;
+    const gridColor = 0x334455;
+    const vertColor = 0x223344;
+
+    // Floor grids at each Y level
+    for (const y of yLevels) {
+      // X-parallel lines (one per Z coord)
+      for (const z of zCoords) {
+        const geom = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(xMin, y, z), new THREE.Vector3(xMax, y, z)
+        ]);
+        const mat = new THREE.LineDashedMaterial({
+          color: gridColor, dashSize: extX * 0.015, gapSize: extX * 0.01,
+          transparent: true, opacity: 0.25,
+        });
+        const line = new THREE.Line(geom, mat);
+        line.computeLineDistances();
+        line.renderOrder = -10;
+        refGridGroup.add(line);
+      }
+      // Z-parallel lines (one per X coord)
+      for (const x of xCoords) {
+        const geom = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(x, y, zMin), new THREE.Vector3(x, y, zMax)
+        ]);
+        const mat = new THREE.LineDashedMaterial({
+          color: gridColor, dashSize: extZ * 0.015, gapSize: extZ * 0.01,
+          transparent: true, opacity: 0.25,
+        });
+        const line = new THREE.Line(geom, mat);
+        line.computeLineDistances();
+        line.renderOrder = -10;
+        refGridGroup.add(line);
+      }
+    }
+
+    // Vertical guide lines at each grid intersection (from base to top)
+    for (const x of xCoords) {
+      for (const z of zCoords) {
+        const geom = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(x, 0, z), new THREE.Vector3(x, yMax, z)
+        ]);
+        const mat = new THREE.LineDashedMaterial({
+          color: vertColor, dashSize: yMax * 0.01, gapSize: yMax * 0.008,
+          transparent: true, opacity: 0.15,
+        });
+        const line = new THREE.Line(geom, mat);
+        line.computeLineDistances();
+        line.renderOrder = -10;
+        refGridGroup.add(line);
+      }
+    }
+
+    // Small cross markers at grid intersections on each floor
+    const crossSize = Math.min(extX, extZ) * 0.015;
+    for (const y of yLevels) {
+      for (const x of xCoords) {
+        for (const z of zCoords) {
+          // + shaped cross
+          const pts = [
+            new THREE.Vector3(x - crossSize, y, z), new THREE.Vector3(x + crossSize, y, z),
+            new THREE.Vector3(x, y, z - crossSize), new THREE.Vector3(x, y, z + crossSize),
+          ];
+          const geom = new THREE.BufferGeometry().setFromPoints(pts);
+          const mat = new THREE.LineBasicMaterial({ color: 0x556677, transparent: true, opacity: 0.4 });
+          const cross = new THREE.LineSegments(geom, mat);
+          cross.renderOrder = -5;
+          refGridGroup.add(cross);
+        }
+      }
+    }
+
+    // Make immune to clipping planes
+    refGridGroup.traverse((obj: any) => {
+      if (obj.material) {
+        if (Array.isArray(obj.material)) {
+          obj.material.forEach((m: any) => { m.clippingPlanes = []; });
+        } else {
+          obj.material.clippingPlanes = [];
+        }
+      }
+    });
+
+    ctx.scene.add(refGridGroup);
+    ctx.render();
+  }
+
   // ── Grid axes state (ETABS-style axis labels) ──
   let gridAxesGroup: THREE.Group | null = null;
 
@@ -740,6 +866,34 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
       if (cad?.setGenerator) { cad.setGenerator(name); console.log(`Generator: ${name}`); return name; }
     },
 
+    /**
+     * Create reference/construction grid (imaginary lines).
+     * These guide lines appear in 3D, Plan, EX, EY views.
+     *
+     * Usage:
+     *   cad.refgrid([5,5], [4,4], [3.5,3,3])   // baysX, baysZ, floorHeights
+     *   cad.refgrid([6], [4], [3])              // single bay, single floor
+     *   cad.refgrid()                           // clear reference grid
+     */
+    refgrid(baysX?: number[], baysZ?: number[], floorH?: number[]) {
+      if (!baysX) { clearRefGrid(); console.log("Reference grid cleared"); return; }
+      const xCoords = [0]; for (const s of baysX) xCoords.push(xCoords[xCoords.length - 1] + s);
+      const zCoords = [0]; for (const s of (baysZ || [0])) zCoords.push(zCoords[zCoords.length - 1] + s);
+      const yLevels = [0]; for (const h of (floorH || [3])) yLevels.push(yLevels[yLevels.length - 1] + h);
+
+      createRefGrid(xCoords, zCoords, yLevels);
+
+      // Also draw axis labels
+      currentGridX = xCoords.map((x, i) => ({ label: String.fromCharCode(65 + i), coord: x }));
+      currentGridY = zCoords.map((z, i) => ({ label: `${i + 1}`, coord: z }));
+      currentGridZmax = yLevels[yLevels.length - 1];
+      createGridAxes(currentGridX.map(g => g.coord), currentGridY.map(g => g.coord), currentGridZmax, currentGridX.map(g => g.label), currentGridY.map(g => g.label));
+      { const stories = yLevels.map((e, i) => ({ name: i === 0 ? "Base" : `P${i}`, height: i > 0 ? e - yLevels[i-1] : 0, elev: e })); createStoryLevelLines(stories, currentGridX.map(g => g.coord), currentGridY.map(g => g.coord)); }
+
+      console.log(`RefGrid: X=[${xCoords}] Z=[${zCoords}] Y=[${yLevels}]`);
+      return { xCoords, zCoords, yLevels };
+    },
+
     /** Show available commands */
     help() {
       return `=== CLI Commands ===
@@ -763,10 +917,16 @@ BOUNDARY:
   cad.listLoads()               List loads
 
 GENERATORS:
-  cad.use("Edificio")           Switch generator
+  cad.model3d()                 3D building (default 2x2, 3 floors)
+  cad.model3d({bx:[5,6], bz:[4], h:[3.5,3], col:"40x40", viga:"25x30", fc:210})
+  cad.use("Edificio")           Switch to parametric generator
   cad.frame([5,5], [3,3])       2D portal frame
-  cad.building([5,5],[4],[3])   3D building
+  cad.building([5,5],[4],[3])   3D building (parametric)
   cad.galpon(12, 20, 6, 3)     Galpon/warehouse
+
+REFERENCE GRID:
+  cad.refgrid([5,5],[4,4],[3.5,3])  Construction grid lines
+  cad.refgrid()                     Clear reference grid
 
 SETTINGS & PARAMS:
   cad.settings()                List all settings
@@ -783,6 +943,180 @@ VIEW:
 `;
     },
 
+    /**
+     * Create a full 3D building model from scratch with axes, floors, materials, sections.
+     * Works with 3D view and Plan/EX/EY views by floor.
+     *
+     * Usage:
+     *   cad.model3d()                              // default 2x2 bays, 3 floors
+     *   cad.model3d({ bx:[5,6], bz:[4,4,4], h:[3.5,3,3] })  // custom
+     *   cad.model3d({ bx:[5], bz:[4], h:[3], col:"40x40", viga:"25x30" })
+     */
+    model3d(cfg?: { bx?: number[]; bz?: number[]; h?: number[]; col?: string; viga?: string; fc?: number }) {
+      cli.clear();
+      const bx = cfg?.bx || [5, 5];        // bay spans in X
+      const bz = cfg?.bz || [4, 4];        // bay spans in Z
+      const heights = cfg?.h || [3.5, 3, 3]; // floor heights
+      const colStr = cfg?.col || "40x40";
+      const vigaStr = cfg?.viga || "30x40";
+      const fc = cfg?.fc || 210; // f'c in kgf/cm2
+
+      // Parse section dims
+      const [colB, colH] = colStr.split("x").map(v => parseFloat(v) / 100);
+      const [vigaB, vigaH] = vigaStr.split("x").map(v => parseFloat(v) / 100);
+
+      // Grid coordinates
+      const xCoords = [0]; for (const s of bx) xCoords.push(xCoords[xCoords.length - 1] + s);
+      const zCoords = [0]; for (const s of bz) zCoords.push(zCoords[zCoords.length - 1] + s);
+      const yCoords = [0]; for (const s of heights) yCoords.push(yCoords[yCoords.length - 1] + s);
+
+      const nX = xCoords.length, nZ = zCoords.length, nY = yCoords.length;
+      const nFloors = heights.length;
+
+      // Create nodes [x, y_vertical, z]
+      const nodes: Node[] = [];
+      const nid: Record<string, number> = {};
+      for (let iy = 0; iy < nY; iy++) {
+        for (let iz = 0; iz < nZ; iz++) {
+          for (let ix = 0; ix < nX; ix++) {
+            nid[`${ix},${iy},${iz}`] = nodes.length;
+            nodes.push([xCoords[ix], yCoords[iy], zCoords[iz]]);
+          }
+        }
+      }
+
+      // Create elements
+      const elements: Element[] = [];
+      const newColIndices = new Set<number>();
+      const newBeamIndices = new Set<number>();
+      const newElementFloor = new Map<number, number>();
+
+      // Columns
+      for (let iy = 0; iy < nFloors; iy++) {
+        for (let iz = 0; iz < nZ; iz++) {
+          for (let ix = 0; ix < nX; ix++) {
+            const ei = elements.length;
+            elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix},${iy + 1},${iz}`]]);
+            newColIndices.add(ei);
+            newElementFloor.set(ei, iy);
+          }
+        }
+      }
+
+      // Beams X
+      for (let iy = 1; iy < nY; iy++) {
+        for (let iz = 0; iz < nZ; iz++) {
+          for (let ix = 0; ix < nX - 1; ix++) {
+            const ei = elements.length;
+            elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix + 1},${iy},${iz}`]]);
+            newBeamIndices.add(ei);
+            newElementFloor.set(ei, iy - 1);
+          }
+        }
+      }
+
+      // Beams Z
+      for (let iy = 1; iy < nY; iy++) {
+        for (let ix = 0; ix < nX; ix++) {
+          for (let iz = 0; iz < nZ - 1; iz++) {
+            const ei = elements.length;
+            elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix},${iy},${iz + 1}`]]);
+            newBeamIndices.add(ei);
+            newElementFloor.set(ei, iy - 1);
+          }
+        }
+      }
+
+      // Material: E = 15100 * sqrt(f'c) in kgf/cm2, convert to tonf/m2
+      const E_kgcm2 = 15100 * Math.sqrt(fc);
+      const E_tonfm2 = E_kgcm2 * 10; // 1 kgf/cm2 = 10 tonf/m2
+      const G = E_tonfm2 / (2 * (1 + 0.2));
+
+      // Section properties
+      const colA = colB * colH, colIz = colB * colH ** 3 / 12, colIy = colH * colB ** 3 / 12;
+      const colJ = colB * colH * (colB ** 2 + colH ** 2) / 12;
+      const vigaA = vigaB * vigaH, vigaIz = vigaB * vigaH ** 3 / 12, vigaIy = vigaH * vigaB ** 3 / 12;
+      const vigaJ = vigaB * vigaH * (vigaB ** 2 + vigaH ** 2) / 12;
+
+      // Build elementInputs
+      const elasticities = new Map<number, number>();
+      const shearModuli = new Map<number, number>();
+      const areas = new Map<number, number>();
+      const moiZ = new Map<number, number>();
+      const moiY = new Map<number, number>();
+      const torsion = new Map<number, number>();
+      const sectionShapes = new Map<number, SectionShape>();
+
+      for (let i = 0; i < elements.length; i++) {
+        elasticities.set(i, E_tonfm2);
+        shearModuli.set(i, G);
+        if (newColIndices.has(i)) {
+          areas.set(i, colA); moiZ.set(i, colIz); moiY.set(i, colIy); torsion.set(i, colJ);
+          sectionShapes.set(i, { type: "rect" as const, b: colB, h: colH, name: `COL${colStr}` });
+        } else {
+          areas.set(i, vigaA); moiZ.set(i, vigaIz); moiY.set(i, vigaIy); torsion.set(i, vigaJ);
+          sectionShapes.set(i, { type: "rect" as const, b: vigaB, h: vigaH, name: `V${vigaStr}` });
+        }
+      }
+
+      // Supports at base (y=0)
+      const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
+      for (let iz = 0; iz < nZ; iz++) {
+        for (let ix = 0; ix < nX; ix++) {
+          supports.set(nid[`${ix},0,${iz}`], [true, true, true, true, true, true]);
+        }
+      }
+
+      // Apply to mesh
+      mesh.nodes.val = nodes;
+      mesh.elements!.val = elements;
+      mesh.nodeInputs!.val = { supports, loads: new Map() };
+      mesh.elementInputs!.val = { elasticities, shearModuli, areas, momentsOfInertiaZ: moiZ, momentsOfInertiaY: moiY, torsionalConstants: torsion, sectionShapes };
+
+      // Set up grid axes and floor buttons
+      colElementIndices = newColIndices;
+      beamElementIndices = newBeamIndices;
+      elementFloor = newElementFloor;
+
+      // Grid labels
+      currentGridX = xCoords.map((x, i) => ({ label: String.fromCharCode(65 + i), coord: x })); // A, B, C...
+      currentGridY = zCoords.map((z, i) => ({ label: `${i + 1}`, coord: z })); // 1, 2, 3...
+      currentGridZmax = yCoords[yCoords.length - 1];
+      createGridAxes(currentGridX.map(g => g.coord), currentGridY.map(g => g.coord), currentGridZmax, currentGridX.map(g => g.label), currentGridY.map(g => g.label));
+      { const stories = yCoords.map((e, i) => ({ name: i === 0 ? "Base" : `P${i}`, height: i > 0 ? e - yCoords[i-1] : 0, elev: e })); createStoryLevelLines(stories, xCoords, zCoords); }
+
+      // Create axis and floor buttons
+      const axBtnContainer = panel.querySelector("#cad3d-axis-buttons") as HTMLElement;
+      if (axBtnContainer) {
+        axBtnContainer.style.display = "flex";
+        const xLabels = currentGridX.map(g => g.label);
+        const yLabels = currentGridY.map(g => g.label);
+        axBtnContainer.innerHTML = `<span style="font-size:10px;color:var(--cad-heading);margin-right:4px">Ejes:</span>`;
+        for (const l of xLabels) {
+          axBtnContainer.innerHTML += `<button class="axis-btn" data-axis="x" data-label="${l}">${l}</button>`;
+        }
+        axBtnContainer.innerHTML += `<span style="margin:0 2px">|</span>`;
+        for (const l of yLabels) {
+          axBtnContainer.innerHTML += `<button class="axis-btn" data-axis="y" data-label="${l}">${l}</button>`;
+        }
+      }
+      const floorBtnContainer = panel.querySelector("#cad3d-floor-buttons") as HTMLElement;
+      if (floorBtnContainer) {
+        floorBtnContainer.style.display = "flex";
+        floorBtnContainer.innerHTML = `<span style="font-size:10px;color:var(--cad-heading);margin-right:4px">Planta:</span>`;
+        for (let i = 0; i < nFloors; i++) {
+          floorBtnContainer.innerHTML += `<button class="floor-btn" data-floor="${i}">P${i + 1}</button>`;
+        }
+      }
+
+      // Draw reference grid
+      createRefGrid(xCoords, zCoords, yCoords);
+
+      updatePanel();
+      console.log(`Model3D: ${nodes.length}n ${elements.length}e | ${nX}x${nZ} grid, ${nFloors} floors | COL${colStr} V${vigaStr} f'c=${fc}`);
+      return { nodes: nodes.length, elements: elements.length, columns: newColIndices.size, beams: newBeamIndices.size };
+    },
+
     clear() {
       mesh.nodes.val = []; mesh.elements.val = [];
       if (mesh.nodeInputs) mesh.nodeInputs.val = {};
@@ -791,6 +1125,7 @@ VIEW:
       currentGridX = []; currentGridY = []; currentGridZmax = 0;
       clearGridAxes();
       clearStoryLevels();
+      clearRefGrid();
       const axBtnContainer = panel.querySelector("#cad3d-axis-buttons");
       if (axBtnContainer) { (axBtnContainer as HTMLElement).style.display = "none"; axBtnContainer.innerHTML = ""; }
       console.log("Model cleared"); updatePanel();
