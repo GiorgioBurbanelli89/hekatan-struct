@@ -957,17 +957,17 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
       const [colB, colH] = colStr.split("x").map(v => parseFloat(v) / 100);
       const [vigaB, vigaH] = vigaStr.split("x").map(v => parseFloat(v) / 100);
 
-      const xc = currentGridX.map(g => g.coord);
-      const zc = currentGridY.map(g => g.coord);
-      const yc = currentGridLevels.map(g => g.elev);
-      const nX = xc.length, nZ = zc.length, nY = yc.length;
-      const nFloors = nY - 1;
+      const xc = currentGridX.map(g => g.coord);  // plan X coords
+      const yc = currentGridY.map(g => g.coord);  // plan Y coords
+      const zc = currentGridLevels.map(g => g.elev); // Z = elevation (height)
+      const nX = xc.length, nY = yc.length, nZ = zc.length;
+      const nFloors = nZ - 1;
 
-      // Create nodes
+      // Create nodes [x_plan, y_plan, z_elevation]
       const nodes: Node[] = [];
       const nid: Record<string, number> = {};
-      for (let iy = 0; iy < nY; iy++) {
-        for (let iz = 0; iz < nZ; iz++) {
+      for (let iz = 0; iz < nZ; iz++) {
+        for (let iy = 0; iy < nY; iy++) {
           for (let ix = 0; ix < nX; ix++) {
             nid[`${ix},${iy},${iz}`] = nodes.length;
             nodes.push([xc[ix], yc[iy], zc[iz]]);
@@ -981,79 +981,78 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
       const newBeamIndices = new Set<number>();
       const newElementFloor = new Map<number, number>();
 
-      // Columns
-      for (let iy = 0; iy < nFloors; iy++)
-        for (let iz = 0; iz < nZ; iz++)
+      // Columns (vertical: same ix,iy, different iz = elevation)
+      for (let iz = 0; iz < nFloors; iz++)
+        for (let iy = 0; iy < nY; iy++)
           for (let ix = 0; ix < nX; ix++) {
             const ei = elements.length;
-            elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix},${iy + 1},${iz}`]]);
+            elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix},${iy},${iz + 1}`]]);
             newColIndices.add(ei);
-            newElementFloor.set(ei, iy);
+            newElementFloor.set(ei, iz);
           }
 
-      // Beams X
-      for (let iy = 1; iy < nY; iy++)
-        for (let iz = 0; iz < nZ; iz++)
+      // Beams X (horizontal: same iy,iz, different ix)
+      for (let iz = 1; iz < nZ; iz++)
+        for (let iy = 0; iy < nY; iy++)
           for (let ix = 0; ix < nX - 1; ix++) {
             const ei = elements.length;
             elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix + 1},${iy},${iz}`]]);
             newBeamIndices.add(ei);
-            newElementFloor.set(ei, iy - 1);
+            newElementFloor.set(ei, iz - 1);
           }
 
-      // Beams Z
-      for (let iy = 1; iy < nY; iy++)
+      // Beams Y (horizontal: same ix,iz, different iy)
+      for (let iz = 1; iz < nZ; iz++)
         for (let ix = 0; ix < nX; ix++)
-          for (let iz = 0; iz < nZ - 1; iz++) {
+          for (let iy = 0; iy < nY - 1; iy++) {
             const ei = elements.length;
-            elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix},${iy},${iz + 1}`]]);
+            elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix},${iy + 1},${iz}`]]);
             newBeamIndices.add(ei);
-            newElementFloor.set(ei, iy - 1);
+            newElementFloor.set(ei, iz - 1);
           }
 
-      // Braces (diagonals)
+      // Braces (diagonals in vertical planes, Z=height)
       const braceMode = cfg?.braces?.toLowerCase() || "";
       const newBraceIndices = new Set<number>();
       if (braceMode) {
         const addBraceX = braceMode === "all" || braceMode === "x" || braceMode === "perimeter";
-        const addBraceZ = braceMode === "all" || braceMode === "y" || braceMode === "perimeter";
+        const addBraceY = braceMode === "all" || braceMode === "y" || braceMode === "perimeter";
 
-        for (let iy = 0; iy < nFloors; iy++) {
-          // X-direction braces (in XY plane, constant Z)
+        for (let iz = 0; iz < nFloors; iz++) {
+          // X-direction braces (in XZ vertical plane, constant iy)
           if (addBraceX) {
-            for (let iz = 0; iz < nZ; iz++) {
-              if (braceMode === "perimeter" && iz !== 0 && iz !== nZ - 1) continue;
-              // For perimeter: only middle bay; for all: every bay
+            for (let iy = 0; iy < nY; iy++) {
+              if (braceMode === "perimeter" && iy !== 0 && iy !== nY - 1) continue;
               const midBay = Math.floor((nX - 1) / 2);
               for (let ix = 0; ix < nX - 1; ix++) {
                 if (braceMode === "perimeter" && ix !== midBay) continue;
-                // V-brace (chevron): two diagonals meeting at mid-span top
+                // X-brace: two diagonals crossing
                 const ei1 = elements.length;
-                elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix + 1},${iy + 1},${iz}`]]);
+                elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix + 1},${iy},${iz + 1}`]]);
                 newBraceIndices.add(ei1);
-                newElementFloor.set(ei1, iy);
+                newElementFloor.set(ei1, iz);
                 const ei2 = elements.length;
-                elements.push([nid[`${ix + 1},${iy},${iz}`], nid[`${ix},${iy + 1},${iz}`]]);
+                elements.push([nid[`${ix + 1},${iy},${iz}`], nid[`${ix},${iy},${iz + 1}`]]);
                 newBraceIndices.add(ei2);
-                newElementFloor.set(ei2, iy);
+                newElementFloor.set(ei2, iz);
               }
             }
           }
-          // Z-direction braces (in ZY plane, constant X)
-          if (addBraceZ) {
+          // Y-direction braces (in YZ vertical plane, constant ix)
+          if (addBraceY) {
             for (let ix = 0; ix < nX; ix++) {
               if (braceMode === "perimeter" && ix !== 0 && ix !== nX - 1) continue;
-              const midBay = Math.floor((nZ - 1) / 2);
-              for (let iz = 0; iz < nZ - 1; iz++) {
-                if (braceMode === "perimeter" && iz !== midBay) continue;
+              const midBay = Math.floor((nY - 1) / 2);
+              for (let iy = 0; iy < nY - 1; iy++) {
+                if (braceMode === "perimeter" && iy !== midBay) continue;
                 const ei1 = elements.length;
                 elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix},${iy + 1},${iz + 1}`]]);
                 newBraceIndices.add(ei1);
-                newElementFloor.set(ei1, iy);
+                newElementFloor.set(ei1, iz);
                 const ei2 = elements.length;
-                elements.push([nid[`${ix},${iy},${iz + 1}`], nid[`${ix},${iy + 1},${iz}`]]);
+                elements.push([nid[`${ix},${iy + 1},${iz}`], nid[`${ix},${iy},${iz + 1}`]]);
                 newBraceIndices.add(ei2);
-                newElementFloor.set(ei2, iy);
+                newElementFloor.set(ei2, iz);
               }
             }
           }
@@ -1093,11 +1092,11 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
         }
       }
 
-      // Supports at base
+      // Supports at base (iz=0, Z=0 = ground level)
       const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
-      for (let iz = 0; iz < nZ; iz++)
+      for (let iy = 0; iy < nY; iy++)
         for (let ix = 0; ix < nX; ix++)
-          supports.set(nid[`${ix},0,${iz}`], [true, true, true, true, true, true]);
+          supports.set(nid[`${ix},${iy},0`], [true, true, true, true, true, true]);
 
       // Apply
       mesh.nodes.val = nodes;
@@ -1129,11 +1128,11 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
       const elements = [...(mesh.elements?.val || [])];
       const ei = mesh.elementInputs?.val || {};
 
-      // Find or create nodes at this XZ for all levels
-      const findOrAddNode = (y: number): number => {
-        const idx = nodes.findIndex(n => Math.abs(n[0] - x) < 0.001 && Math.abs(n[1] - y) < 0.001 && Math.abs(n[2] - z) < 0.001);
+      // Find or create nodes at this XY plan position, varying Z (elevation)
+      const findOrAddNode = (elev: number): number => {
+        const idx = nodes.findIndex(n => Math.abs(n[0] - x) < 0.001 && Math.abs(n[1] - z) < 0.001 && Math.abs(n[2] - elev) < 0.001);
         if (idx >= 0) return idx;
-        nodes.push([x, y, z]);
+        nodes.push([x, z, elev]);  // [x_plan, y_plan, z_elevation]
         return nodes.length - 1;
       };
 
@@ -1180,22 +1179,22 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
       if (xi1 < 0 || zi1 < 0 || xi2 < 0 || zi2 < 0) { console.log("Axis not found"); return; }
       if (li < 1) { console.log(`Story "${story}" not found. Available: ${currentGridLevels.filter(g => g.label !== "Base").map(g => g.label)}`); return; }
 
-      const x1 = currentGridX[xi1].coord, z1 = currentGridY[zi1].coord;
-      const x2 = currentGridX[xi2].coord, z2 = currentGridY[zi2].coord;
-      const y = currentGridLevels[li].elev;
+      const x1 = currentGridX[xi1].coord, y1 = currentGridY[zi1].coord;
+      const x2 = currentGridX[xi2].coord, y2 = currentGridY[zi2].coord;
+      const elev = currentGridLevels[li].elev;  // Z = elevation
 
       const nodes = [...mesh.nodes.val];
       const elements = [...(mesh.elements?.val || [])];
 
-      const findOrAddNode = (x: number, y: number, z: number): number => {
-        const idx = nodes.findIndex(n => Math.abs(n[0] - x) < 0.001 && Math.abs(n[1] - y) < 0.001 && Math.abs(n[2] - z) < 0.001);
+      const findOrAddNode = (px: number, py: number, pz: number): number => {
+        const idx = nodes.findIndex(n => Math.abs(n[0] - px) < 0.001 && Math.abs(n[1] - py) < 0.001 && Math.abs(n[2] - pz) < 0.001);
         if (idx >= 0) return idx;
-        nodes.push([x, y, z]);
+        nodes.push([px, py, pz]);  // [x_plan, y_plan, z_elevation]
         return nodes.length - 1;
       };
 
-      const n1 = findOrAddNode(x1, y, z1);
-      const n2 = findOrAddNode(x2, y, z2);
+      const n1 = findOrAddNode(x1, y1, elev);
+      const n2 = findOrAddNode(x2, y2, elev);
       elements.push([n1, n2]);
       beamElementIndices.add(elements.length - 1);
       elementFloor.set(elements.length - 1, li - 1);
@@ -1223,8 +1222,8 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
       if (xi1 < 0 || zi1 < 0 || li1 < 0) { console.log(`Point 1 not found: ${ax1}-${ay1}@${story1}`); return; }
       if (xi2 < 0 || zi2 < 0 || li2 < 0) { console.log(`Point 2 not found: ${ax2}-${ay2}@${story2}`); return; }
 
-      const x1 = currentGridX[xi1].coord, z1 = currentGridY[zi1].coord, y1 = currentGridLevels[li1].elev;
-      const x2 = currentGridX[xi2].coord, z2 = currentGridY[zi2].coord, y2 = currentGridLevels[li2].elev;
+      const px1 = currentGridX[xi1].coord, py1 = currentGridY[zi1].coord, elev1 = currentGridLevels[li1].elev;
+      const px2 = currentGridX[xi2].coord, py2 = currentGridY[zi2].coord, elev2 = currentGridLevels[li2].elev;
 
       const nodes = [...mesh.nodes.val];
       const elements = [...(mesh.elements?.val || [])];
@@ -1232,12 +1231,12 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
       const findOrAddNode = (x: number, y: number, z: number): number => {
         const idx = nodes.findIndex(n => Math.abs(n[0] - x) < 0.001 && Math.abs(n[1] - y) < 0.001 && Math.abs(n[2] - z) < 0.001);
         if (idx >= 0) return idx;
-        nodes.push([x, y, z]);
+        nodes.push([x, y, z]);  // [x_plan, y_plan, z_elevation]
         return nodes.length - 1;
       };
 
-      const n1 = findOrAddNode(x1, y1, z1);
-      const n2 = findOrAddNode(x2, y2, z2);
+      const n1 = findOrAddNode(px1, py1, elev1);
+      const n2 = findOrAddNode(px2, py2, elev2);
       elements.push([n1, n2]);
       // Braces are neither col nor beam — they stay unclassified (rendered as generic frame)
       elementFloor.set(elements.length - 1, Math.min(li1, li2));
