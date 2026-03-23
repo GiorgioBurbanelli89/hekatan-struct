@@ -221,9 +221,10 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
   }
 
   // ── Grid coordinates (for per-axis elevation views) ──
-  let currentGridX: number[] = [];  // X-axis positions (ejes A, B, C...)
-  let currentGridY: number[] = [];  // Y-axis positions (ejes 1, 2, 3...)
+  let currentGridX: { label: string; coord: number }[] = [];  // X-axis positions (ejes A, B, C...)
+  let currentGridY: { label: string; coord: number }[] = [];  // Y-axis positions (ejes 1, 2, 3...)
   let currentGridZmax = 0;
+  let currentGridLevels: { label: string; elev: number }[] = [];  // Y-levels (Base, P1, P2...)
 
   // ── Construction/Reference grid (imaginary lines) ──
   let refGridGroup: THREE.Group | null = null;
@@ -923,11 +924,222 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
       currentGridX = xCoords.map((x, i) => ({ label: String.fromCharCode(65 + i), coord: x }));
       currentGridY = zCoords.map((z, i) => ({ label: `${i + 1}`, coord: z }));
       currentGridZmax = yLevels[yLevels.length - 1];
+      currentGridLevels = yLevels.map((e, i) => ({ label: i === 0 ? "Base" : `P${i}`, elev: e }));
       createGridAxes(currentGridX.map(g => g.coord), currentGridY.map(g => g.coord), currentGridZmax, currentGridX.map(g => g.label), currentGridY.map(g => g.label));
       { const stories = yLevels.map((e, i) => ({ name: i === 0 ? "Base" : `P${i}`, height: i > 0 ? e - yLevels[i-1] : 0, elev: e })); createStoryLevelLines(stories, currentGridX.map(g => g.coord), currentGridY.map(g => g.coord)); }
 
       console.log(`RefGrid: X=[${xCoords}] Z=[${zCoords}] Y=[${yLevels}]`);
       return { xCoords, zCoords, yLevels };
+    },
+
+    /**
+     * Build model on existing refgrid — columns at every intersection, beams on every axis.
+     * Must call cad.refgrid() first.
+     *
+     * Usage:
+     *   cad.refgrid([5,5], [4,4], [3,3,3])
+     *   cad.build()                                    // default sections
+     *   cad.build({ col: "40x40", viga: "25x40", fc: 210 })
+     */
+    build(cfg?: { col?: string; viga?: string; fc?: number }) {
+      if (currentGridX.length === 0 || currentGridLevels.length < 2) {
+        console.log("Error: call cad.refgrid() first to define axes and levels");
+        return;
+      }
+      const colStr = cfg?.col || "40x40";
+      const vigaStr = cfg?.viga || "30x40";
+      const fc = cfg?.fc || 210;
+
+      const [colB, colH] = colStr.split("x").map(v => parseFloat(v) / 100);
+      const [vigaB, vigaH] = vigaStr.split("x").map(v => parseFloat(v) / 100);
+
+      const xc = currentGridX.map(g => g.coord);
+      const zc = currentGridY.map(g => g.coord);
+      const yc = currentGridLevels.map(g => g.elev);
+      const nX = xc.length, nZ = zc.length, nY = yc.length;
+      const nFloors = nY - 1;
+
+      // Create nodes
+      const nodes: Node[] = [];
+      const nid: Record<string, number> = {};
+      for (let iy = 0; iy < nY; iy++) {
+        for (let iz = 0; iz < nZ; iz++) {
+          for (let ix = 0; ix < nX; ix++) {
+            nid[`${ix},${iy},${iz}`] = nodes.length;
+            nodes.push([xc[ix], yc[iy], zc[iz]]);
+          }
+        }
+      }
+
+      // Create elements
+      const elements: Element[] = [];
+      const newColIndices = new Set<number>();
+      const newBeamIndices = new Set<number>();
+      const newElementFloor = new Map<number, number>();
+
+      // Columns
+      for (let iy = 0; iy < nFloors; iy++)
+        for (let iz = 0; iz < nZ; iz++)
+          for (let ix = 0; ix < nX; ix++) {
+            const ei = elements.length;
+            elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix},${iy + 1},${iz}`]]);
+            newColIndices.add(ei);
+            newElementFloor.set(ei, iy);
+          }
+
+      // Beams X
+      for (let iy = 1; iy < nY; iy++)
+        for (let iz = 0; iz < nZ; iz++)
+          for (let ix = 0; ix < nX - 1; ix++) {
+            const ei = elements.length;
+            elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix + 1},${iy},${iz}`]]);
+            newBeamIndices.add(ei);
+            newElementFloor.set(ei, iy - 1);
+          }
+
+      // Beams Z
+      for (let iy = 1; iy < nY; iy++)
+        for (let ix = 0; ix < nX; ix++)
+          for (let iz = 0; iz < nZ - 1; iz++) {
+            const ei = elements.length;
+            elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix},${iy},${iz + 1}`]]);
+            newBeamIndices.add(ei);
+            newElementFloor.set(ei, iy - 1);
+          }
+
+      // Material
+      const E_tonfm2 = 15100 * Math.sqrt(fc) * 10;
+      const G = E_tonfm2 / (2 * (1 + 0.2));
+
+      // Section properties
+      const colA = colB * colH, colIz = colB * colH ** 3 / 12, colIy = colH * colB ** 3 / 12;
+      const colJ = colB * colH * (colB ** 2 + colH ** 2) / 12;
+      const vigaA = vigaB * vigaH, vigaIz = vigaB * vigaH ** 3 / 12, vigaIy = vigaH * vigaB ** 3 / 12;
+      const vigaJ = vigaB * vigaH * (vigaB ** 2 + vigaH ** 2) / 12;
+
+      const elasticities = new Map<number, number>();
+      const shearModuli = new Map<number, number>();
+      const areas = new Map<number, number>();
+      const moiZ = new Map<number, number>();
+      const moiY = new Map<number, number>();
+      const torsion = new Map<number, number>();
+      const sectionShapes = new Map<number, SectionShape>();
+
+      for (let i = 0; i < elements.length; i++) {
+        elasticities.set(i, E_tonfm2);
+        shearModuli.set(i, G);
+        if (newColIndices.has(i)) {
+          areas.set(i, colA); moiZ.set(i, colIz); moiY.set(i, colIy); torsion.set(i, colJ);
+          sectionShapes.set(i, { type: "rect" as const, b: colB, h: colH, name: `COL${colStr}` });
+        } else {
+          areas.set(i, vigaA); moiZ.set(i, vigaIz); moiY.set(i, vigaIy); torsion.set(i, vigaJ);
+          sectionShapes.set(i, { type: "rect" as const, b: vigaB, h: vigaH, name: `V${vigaStr}` });
+        }
+      }
+
+      // Supports at base
+      const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
+      for (let iz = 0; iz < nZ; iz++)
+        for (let ix = 0; ix < nX; ix++)
+          supports.set(nid[`${ix},0,${iz}`], [true, true, true, true, true, true]);
+
+      // Apply
+      mesh.nodes.val = nodes;
+      mesh.elements!.val = elements;
+      mesh.nodeInputs!.val = { supports, loads: new Map() };
+      mesh.elementInputs!.val = { elasticities, shearModuli, areas, momentsOfInertiaZ: moiZ, momentsOfInertiaY: moiY, torsionalConstants: torsion, sectionShapes };
+      colElementIndices = newColIndices;
+      beamElementIndices = newBeamIndices;
+      elementFloor = newElementFloor;
+
+      console.log(`Built: ${nodes.length} nodes, ${elements.length} elements (${newColIndices.size} cols, ${newBeamIndices.size} beams)`);
+      console.log(`  Col: ${colStr} (${colB}x${colH}m), Viga: ${vigaStr} (${vigaB}x${vigaH}m), f'c=${fc}`);
+      return { nodes: nodes.length, elements: elements.length };
+    },
+
+    /**
+     * Add a single column by axis names and story.
+     *   cad.addCol("A", "1", "P1")   → column at axis A, axis 1, story P1
+     *   cad.addCol("B", "2")         → column at B-2, all stories
+     */
+    addCol(axisX: string, axisY: string, story?: string) {
+      const xi = currentGridX.findIndex(g => g.label === axisX);
+      const zi = currentGridY.findIndex(g => g.label === axisY);
+      if (xi < 0) { console.log(`Axis "${axisX}" not found. Available: ${currentGridX.map(g => g.label)}`); return; }
+      if (zi < 0) { console.log(`Axis "${axisY}" not found. Available: ${currentGridY.map(g => g.label)}`); return; }
+      const x = currentGridX[xi].coord, z = currentGridY[zi].coord;
+
+      const nodes = [...mesh.nodes.val];
+      const elements = [...(mesh.elements?.val || [])];
+      const ei = mesh.elementInputs?.val || {};
+
+      // Find or create nodes at this XZ for all levels
+      const findOrAddNode = (y: number): number => {
+        const idx = nodes.findIndex(n => Math.abs(n[0] - x) < 0.001 && Math.abs(n[1] - y) < 0.001 && Math.abs(n[2] - z) < 0.001);
+        if (idx >= 0) return idx;
+        nodes.push([x, y, z]);
+        return nodes.length - 1;
+      };
+
+      const floors = story
+        ? [currentGridLevels.findIndex(g => g.label === story)]
+        : Array.from({ length: currentGridLevels.length - 1 }, (_, i) => i + 1);
+
+      let added = 0;
+      for (const fi of floors) {
+        if (fi < 1 || fi >= currentGridLevels.length) continue;
+        const nBot = findOrAddNode(currentGridLevels[fi - 1].elev);
+        const nTop = findOrAddNode(currentGridLevels[fi].elev);
+        elements.push([nBot, nTop]);
+        colElementIndices.add(elements.length - 1);
+        elementFloor.set(elements.length - 1, fi - 1);
+        added++;
+      }
+
+      mesh.nodes.val = nodes;
+      mesh.elements!.val = elements;
+      console.log(`Added ${added} column(s) at ${axisX}-${axisY}${story ? ` story ${story}` : ""}`);
+      return added;
+    },
+
+    /**
+     * Add a beam between two axis intersections at a given story.
+     *   cad.addBeam("A","1", "B","1", "P1")  → beam from A-1 to B-1 at P1
+     *   cad.addBeam("A","1", "A","2", "P2")  → beam from A-1 to A-2 at P2
+     */
+    addBeam(ax1: string, ay1: string, ax2: string, ay2: string, story: string) {
+      const xi1 = currentGridX.findIndex(g => g.label === ax1);
+      const zi1 = currentGridY.findIndex(g => g.label === ay1);
+      const xi2 = currentGridX.findIndex(g => g.label === ax2);
+      const zi2 = currentGridY.findIndex(g => g.label === ay2);
+      const li = currentGridLevels.findIndex(g => g.label === story);
+      if (xi1 < 0 || zi1 < 0 || xi2 < 0 || zi2 < 0) { console.log("Axis not found"); return; }
+      if (li < 1) { console.log(`Story "${story}" not found. Available: ${currentGridLevels.filter(g => g.label !== "Base").map(g => g.label)}`); return; }
+
+      const x1 = currentGridX[xi1].coord, z1 = currentGridY[zi1].coord;
+      const x2 = currentGridX[xi2].coord, z2 = currentGridY[zi2].coord;
+      const y = currentGridLevels[li].elev;
+
+      const nodes = [...mesh.nodes.val];
+      const elements = [...(mesh.elements?.val || [])];
+
+      const findOrAddNode = (x: number, y: number, z: number): number => {
+        const idx = nodes.findIndex(n => Math.abs(n[0] - x) < 0.001 && Math.abs(n[1] - y) < 0.001 && Math.abs(n[2] - z) < 0.001);
+        if (idx >= 0) return idx;
+        nodes.push([x, y, z]);
+        return nodes.length - 1;
+      };
+
+      const n1 = findOrAddNode(x1, y, z1);
+      const n2 = findOrAddNode(x2, y, z2);
+      elements.push([n1, n2]);
+      beamElementIndices.add(elements.length - 1);
+      elementFloor.set(elements.length - 1, li - 1);
+
+      mesh.nodes.val = nodes;
+      mesh.elements!.val = elements;
+      console.log(`Added beam ${ax1}-${ay1} → ${ax2}-${ay2} at ${story}`);
+      return elements.length - 1;
     },
 
     /** Show available commands */
