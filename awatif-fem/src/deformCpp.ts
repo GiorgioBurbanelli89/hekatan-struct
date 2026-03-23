@@ -150,18 +150,9 @@ export function deformCpp(
     elasticitiesOrthogonal.keysPtr,
     elasticitiesOrthogonal.valuesPtr,
     elasticitiesOrthogonal.size,
-    shearAreasY.keysPtr,
-    shearAreasY.valuesPtr,
-    shearAreasY.size,
-    shearAreasZ.keysPtr,
-    shearAreasZ.valuesPtr,
-    shearAreasZ.size,
-    rigidOffsetKeysPtr,
-    rigidOffsetValuesPtr,
-    rigidOffsetKeys.length,
-    releaseKeysPtr,
-    releaseValuesPtr,
-    releaseKeys.length,
+    // NOTE: shearAreasY/Z, rigidOffsets, releases are handled by the TS solver
+    // The WASM binary needs recompilation to accept these params
+    // shearAreasY, shearAreasZ, rigidOffsets, releases — skipped for now
     // Output pointers
     deformationsDataPtrOutPtr,
     deformationsSizeOutPtr,

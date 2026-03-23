@@ -680,6 +680,109 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
       return { nodes: n, elements: e, supports: s, loads: l };
     },
 
+    /** Toggle or set a setting: cad.set("nodes", true) or cad.set("deform") to toggle */
+    set(name: string, value?: boolean) {
+      const checkboxes = panel.querySelectorAll("input[type=checkbox]");
+      for (const cb of checkboxes) {
+        const label = (cb as HTMLInputElement).closest("label")?.textContent?.trim()
+          || (cb as HTMLInputElement).parentElement?.textContent?.trim() || "";
+        const id = (cb as HTMLInputElement).id || "";
+        if (label.toLowerCase().includes(name.toLowerCase()) || id.toLowerCase().includes(name.toLowerCase())) {
+          const input = cb as HTMLInputElement;
+          input.checked = value !== undefined ? value : !input.checked;
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+          console.log(`${label || id}: ${input.checked}`);
+          return input.checked;
+        }
+      }
+      console.log(`Setting "${name}" not found. Use cad.settings() to list.`);
+    },
+
+    /** List all settings (checkboxes) */
+    settings() {
+      const checkboxes = panel.querySelectorAll("input[type=checkbox]");
+      const result: Record<string, boolean> = {};
+      checkboxes.forEach(cb => {
+        const input = cb as HTMLInputElement;
+        const label = input.closest("label")?.textContent?.trim()
+          || input.parentElement?.textContent?.trim() || input.id || "?";
+        result[label] = input.checked;
+      });
+      console.table(result);
+      return result;
+    },
+
+    /** Set a parameter: cad.param("Vanos X", 3) */
+    param(name: string, value: number) {
+      const cad = window.__cad;
+      if (cad?.setParam) {
+        cad.setParam(name, value);
+        console.log(`${name} = ${value}`);
+        return value;
+      }
+      console.log("Parameters not available");
+    },
+
+    /** List all current parameters */
+    params() {
+      const cad = window.__cad;
+      if (cad?.getParams) {
+        const p = cad.getParams();
+        console.table(p);
+        return p;
+      }
+      console.log("Parameters not available");
+    },
+
+    /** Switch generator: cad.use("Edificio") */
+    use(name: string) {
+      const cad = window.__cad;
+      if (cad?.setGenerator) { cad.setGenerator(name); console.log(`Generator: ${name}`); return name; }
+    },
+
+    /** Show available commands */
+    help() {
+      return `=== CLI Commands ===
+MODEL:
+  cad.clear()                    New empty model
+  cad.info()                     Model summary
+  cad.addNode(x, y, z)          Add node (Y-up)
+  cad.addFrame(i, j)            Add frame element
+  cad.removeNode(i)             Remove node
+  cad.removeFrame(i)            Remove element
+  cad.listNodes()               List all nodes
+  cad.listFrames()              List all elements
+
+BOUNDARY:
+  cad.addSupport(n)             Fixed support at node n
+  cad.addSupport(n, [1,1,1,0,0,0])  Custom DOFs
+  cad.removeSupport(n)          Remove support
+  cad.addLoad(n, [fx,fy,fz,mx,my,mz])
+  cad.removeLoad(n)
+  cad.listSupports()            List supports
+  cad.listLoads()               List loads
+
+GENERATORS:
+  cad.use("Edificio")           Switch generator
+  cad.frame([5,5], [3,3])       2D portal frame
+  cad.building([5,5],[4],[3])   3D building
+  cad.galpon(12, 20, 6, 3)     Galpon/warehouse
+
+SETTINGS & PARAMS:
+  cad.settings()                List all settings
+  cad.set("nodes", true)        Toggle setting on/off
+  cad.set("deform")             Toggle setting
+  cad.params()                  List all parameters
+  cad.param("Vanos X", 3)       Set parameter value
+
+VIEW:
+  cad.view("3d")                3D view
+  cad.view("plan")              Plan view
+  cad.view("ex")                X elevation
+  cad.view("ey")                Y elevation
+`;
+    },
+
     clear() {
       mesh.nodes.val = []; mesh.elements.val = [];
       if (mesh.nodeInputs) mesh.nodeInputs.val = {};
@@ -4335,6 +4438,7 @@ Util:     cad.info()  cad.clear()  cad.help()
       <div class="btn-row" id="cad3d-axis-buttons" style="margin-top:2px;display:none"></div>
       <div class="btn-row" id="cad3d-floor-buttons" style="margin-top:2px;display:none"></div>
       <div class="btn-row" style="margin-top:2px">
+        <button id="cad3d-new-model" title="Nuevo modelo vacío">🆕 New</button>
         <button id="cad3d-export" title="Exportar coordenadas y datos del modelo">📋 Export</button>
         <select id="cad3d-io-menu" title="Import/Export modelos" style="background:var(--cad-btn-bg);color:var(--cad-btn-text);border:1px solid var(--cad-btn-border);padding:2px 4px;font-size:11px;cursor:pointer;">
           <option value="">📂 I/O</option>
@@ -4374,7 +4478,13 @@ Util:     cad.info()  cad.clear()  cad.help()
         <button id="cad3d-fem-solver" title="Report Explained: derivación FEM paso a paso de todos los elementos">📐 Report Explained</button>
         <button id="cad3d-log" title="Ver log del solver">📋 Log</button>
       </div>
-      <input class="cmd-input" id="cad3d-cmd" placeholder="cad.galpon(12,20,6,3)" />
+      <div class="btn-row" style="margin-top:2px">
+        <button id="cad3d-cli-toggle" title="Abrir/cerrar consola CLI">⌨ CLI</button>
+      </div>
+      <div id="cad3d-cli-panel" style="display:none;margin-top:2px;background:rgba(0,0,0,0.8);border:1px solid #444;border-radius:4px;padding:4px;max-height:200px;overflow-y:auto">
+        <div id="cad3d-cli-output" style="font-family:monospace;font-size:10px;color:#0f0;white-space:pre-wrap;max-height:140px;overflow-y:auto;margin-bottom:4px"></div>
+        <input class="cmd-input" id="cad3d-cmd" placeholder="cad.addNode(0,0,0) | cad.building([5,5],[4],3) | cad.info()" style="width:100%;font-family:monospace" />
+      </div>
     </div>
   `;
 
@@ -5426,6 +5536,14 @@ Util:     cad.info()  cad.clear()  cad.help()
       if (!inspectMode) cleanupInspect();
     });
 
+    // === New Model button ===
+    panel.querySelector("#cad3d-new-model")?.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      cli.clear();
+      lastImportedE2k = null;
+      console.log("New empty model");
+    });
+
     // === Export panel ===
     panel.querySelector("#cad3d-export")?.addEventListener("click", (ev) => {
       ev.stopPropagation();
@@ -5763,8 +5881,29 @@ Util:     cad.info()  cad.clear()  cad.help()
       }
     });
 
+    // === CLI Panel ===
+    const cliToggle = panel.querySelector("#cad3d-cli-toggle");
+    const cliPanel = panel.querySelector("#cad3d-cli-panel") as HTMLDivElement;
+    const cliOutput = panel.querySelector("#cad3d-cli-output") as HTMLDivElement;
     const cmdInput = panel.querySelector("#cad3d-cmd") as HTMLInputElement;
+    const cmdHistory: string[] = [];
+    let cmdHistIdx = -1;
+
+    cliToggle?.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      if (cliPanel) {
+        const visible = cliPanel.style.display !== "none";
+        cliPanel.style.display = visible ? "none" : "block";
+        if (!visible) {
+          cmdInput?.focus();
+          if (cliOutput && !cliOutput.textContent) {
+            cliOutput.textContent = `CLI ready. Commands:\n  cad.addNode(x, y, z)     cad.addFrame(i, j)\n  cad.addSupport(n)        cad.addLoad(n, [fx,fy,fz,0,0,0])\n  cad.frame([5,5],[3,3])   cad.building([5],[4],[3])\n  cad.galpon(12,20,6,3)    cad.clear()\n  cad.info()               cad.listNodes()\n`;
+          }
+        }
+      }
+    });
     cmdInput?.addEventListener("mousedown", (ev) => ev.stopPropagation());
+
     // Keyboard shortcuts
     document.addEventListener("keydown", (ev) => {
       // Ctrl+Z = Undo, Ctrl+Y or Ctrl+Shift+Z = Redo
@@ -5803,9 +5942,35 @@ Util:     cad.info()  cad.clear()  cad.help()
       }
     });
     cmdInput?.addEventListener("keydown", (ev) => {
+      ev.stopPropagation();
       if (ev.key === "Enter") {
         const cmd = cmdInput.value.trim();
-        if (cmd) { try { const result = new Function("cad", `return ${cmd}`)(cli); if (result !== undefined) console.log(result); } catch (err: any) { console.error(err.message); } cmdInput.value = ""; }
+        if (cmd) {
+          cmdHistory.unshift(cmd);
+          cmdHistIdx = -1;
+          if (cliOutput) cliOutput.textContent += `> ${cmd}\n`;
+          try {
+            const result = new Function("cad", `return ${cmd}`)(cli);
+            if (result !== undefined && cliOutput) {
+              const str = typeof result === "object" ? JSON.stringify(result, null, 2) : String(result);
+              cliOutput.textContent += `${str}\n`;
+            }
+          } catch (err: any) {
+            if (cliOutput) cliOutput.textContent += `ERROR: ${err.message}\n`;
+          }
+          if (cliOutput) cliOutput.scrollTop = cliOutput.scrollHeight;
+          cmdInput.value = "";
+        }
+      } else if (ev.key === "ArrowUp") {
+        ev.preventDefault();
+        if (cmdHistory.length > 0 && cmdHistIdx < cmdHistory.length - 1) {
+          cmdHistIdx++;
+          cmdInput.value = cmdHistory[cmdHistIdx];
+        }
+      } else if (ev.key === "ArrowDown") {
+        ev.preventDefault();
+        if (cmdHistIdx > 0) { cmdHistIdx--; cmdInput.value = cmdHistory[cmdHistIdx]; }
+        else { cmdHistIdx = -1; cmdInput.value = ""; }
       }
     });
 
