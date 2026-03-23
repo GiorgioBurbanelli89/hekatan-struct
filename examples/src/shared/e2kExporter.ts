@@ -121,9 +121,10 @@ function exportFromScratch(input: ExportE2kInput): string {
   if (title) lines.push(`  TITLE2  "${title}"  `);
   lines.push(``);
 
-  // Stories from Z elevations
+  // Stories from Y elevations (Three.js Y-up convention)
+  // Node = [x, y_vertical, z_horizontal]
   const zSet = new Set<number>();
-  nodes.forEach(n => zSet.add(rd(n[2])));
+  nodes.forEach(n => zSet.add(rd(n[1]))); // Y = elevation
   const sortedZ = [...zSet].sort((a, b) => a - b);
   const storyNames: string[] = [];
   const zToStory = new Map<number, string>();
@@ -189,24 +190,24 @@ function exportFromScratch(input: ExportE2kInput): string {
   });
   lines.push(``);
 
-  // Plan Points
+  // Plan Points (X, Z in Three.js Y-up; Y = elevation)
   const xyToPoint = new Map<string, string>();
   let ptIdx = 0;
   nodes.forEach(n => {
-    const key = `${rd(n[0])},${rd(n[1])}`;
+    const key = `${rd(n[0])},${rd(n[2])}`; // X, Z = plan coords
     if (!xyToPoint.has(key)) xyToPoint.set(key, `${++ptIdx}`);
   });
   lines.push(`$ POINT COORDINATES`);
   for (const [key, ptName] of xyToPoint) {
-    const [x, y] = key.split(",").map(Number);
-    lines.push(`  POINT "${ptName}"  ${x} ${y} `);
+    const [x, z] = key.split(",").map(Number);
+    lines.push(`  POINT "${ptName}"  ${x} ${z} `);
   }
   lines.push(``);
 
   const nodeToPS = (ni: number): { pt: string; story: string } => {
     const n = nodes[ni];
-    const key = `${rd(n[0])},${rd(n[1])}`;
-    return { pt: xyToPoint.get(key) || "1", story: zToStory.get(rd(n[2])) || "Base" };
+    const key = `${rd(n[0])},${rd(n[2])}`; // X, Z = plan coords
+    return { pt: xyToPoint.get(key) || "1", story: zToStory.get(rd(n[1])) || "Base" }; // Y = elevation
   };
 
   // Lines
@@ -222,10 +223,11 @@ function exportFromScratch(input: ExportE2kInput): string {
       lines.push(`  LINE  "E${i + 1}"  BEAM  "${ps0.pt}"  "${ps1.pt}"  0`);
       laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${ps0.story}"  SECTION "${secName}"  MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
     } else {
-      const bot = nodes[el[0]][2] <= nodes[el[1]][2] ? el[0] : el[1];
-      const top = nodes[el[0]][2] <= nodes[el[1]][2] ? el[1] : el[0];
+      // Y-up: Y = elevation
+      const bot = nodes[el[0]][1] <= nodes[el[1]][1] ? el[0] : el[1];
+      const top = nodes[el[0]][1] <= nodes[el[1]][1] ? el[1] : el[0];
       const psBot = nodeToPS(bot), psTop = nodeToPS(top);
-      const zBot = rd(nodes[bot][2]), zTop = rd(nodes[top][2]);
+      const zBot = rd(nodes[bot][1]), zTop = rd(nodes[top][1]);
       const botIdx = sortedZ.indexOf(zBot), topIdx = sortedZ.indexOf(zTop);
       const nStories = Math.max(1, topIdx >= 0 && botIdx >= 0 ? topIdx - botIdx : 1);
       lines.push(`  LINE  "E${i + 1}"  ${type}  "${psBot.pt}"  "${psTop.pt}"  ${nStories}`);
@@ -274,11 +276,12 @@ function exportFromScratch(input: ExportE2kInput): string {
   return lines.join("\r\n");
 }
 
+/** Guess element type from geometry (Y-up convention: Y = vertical) */
 function guessElementType(nodes: Node[], el: number[]): string {
   const n0 = nodes[el[0]], n1 = nodes[el[1]];
-  const dz = Math.abs(n1[2] - n0[2]);
-  const dxy = Math.sqrt((n1[0] - n0[0]) ** 2 + (n1[1] - n0[1]) ** 2);
-  const isCol = dz > dxy * 0.5;
-  const isBrace = isCol && dxy > 0.01;
+  const dy = Math.abs(n1[1] - n0[1]); // Y = vertical
+  const dxz = Math.sqrt((n1[0] - n0[0]) ** 2 + (n1[2] - n0[2]) ** 2); // XZ = horizontal
+  const isCol = dy > dxz * 0.5;
+  const isBrace = isCol && dxz > 0.01;
   return isBrace ? "BRACE" : isCol ? "COLUMN" : "BEAM";
 }
