@@ -97,6 +97,7 @@ function exportFromRaw(raw: Map<string, string[]>, model: E2kModel): string {
     out.push(``);
   }
 
+  out.push(`  END`);
   out.push(`$ END OF MODEL FILE`);
   return out.join("\r\n");
 }
@@ -272,6 +273,7 @@ function exportFromScratch(input: ExportE2kInput): string {
     lines.push(``);
   }
 
+  lines.push(`  END`);
   lines.push(`$ END OF MODEL FILE`);
   return lines.join("\r\n");
 }
