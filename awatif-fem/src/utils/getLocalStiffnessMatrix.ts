@@ -133,9 +133,13 @@ function getLocalStiffnessMatrixFrame(
 
   // Timoshenko shear deformation parameter φ
   // φ = 12EI / (G·As·L²) — when As > 0 (Timoshenko)
-  // φ = 0 — when As = 0 or not provided (Euler-Bernoulli)
-  const AsY = elementInputs?.shearAreasY?.get(index) ?? 0;
-  const AsZ = elementInputs?.shearAreasZ?.get(index) ?? 0;
+  // Default: As = 5/6·A for rectangular sections (like ETABS default)
+  // If shearAreas not provided, use 5/6·A automatically
+  let AsY = elementInputs?.shearAreasY?.get(index) ?? 0;
+  let AsZ = elementInputs?.shearAreasZ?.get(index) ?? 0;
+  if (AsY === 0 && AsZ === 0 && A > 0 && G > 0) {
+    AsY = AsZ = (5 / 6) * A; // rectangular default, same as ETABS
+  }
   const phiZ = (AsZ > 0 && G > 0) ? (12 * E * Iz) / (G * AsZ * L ** 2) : 0;
   const phiY = (AsY > 0 && G > 0) ? (12 * E * Iy) / (G * AsY * L ** 2) : 0;
 

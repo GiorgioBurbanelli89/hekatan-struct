@@ -140,8 +140,13 @@ Eigen::MatrixXd getLocalStiffnessMatrixFrame(
     }
 
     // Timoshenko shear deformation: phi = 12EI/(G*As*L^2)
+    // Default: As = 5/6·A for rectangular sections (like ETABS default)
     double AsY = getMapValueOrDefault(elementInputs.shearAreasY, index, 0.0);
     double AsZ = getMapValueOrDefault(elementInputs.shearAreasZ, index, 0.0);
+    if (AsY < 1e-15 && AsZ < 1e-15 && A > 1e-15 && G > 1e-15)
+    {
+        AsY = AsZ = (5.0 / 6.0) * A; // rectangular default
+    }
     double phiZ = (AsZ > 0 && G > 0) ? (12.0 * E * Iz) / (G * AsZ * L * L) : 0.0;
     double phiY = (AsY > 0 && G > 0) ? (12.0 * E * Iy) / (G * AsY * L * L) : 0.0;
 
