@@ -34,6 +34,8 @@ export interface E2kModel {
   elementInputs: ElementInputs;
   sectionShapes: Map<number, SectionShape>;
   info: { nNodes: number; nFrames: number; nAreas: number; title: string };
+  /** Raw text blocks from original e2k for round-trip export */
+  rawSections?: Map<string, string[]>;
 }
 
 export function parseE2k(text: string): E2kModel {
@@ -55,11 +57,30 @@ export function parseE2k(text: string): E2kModel {
 
   let currentSection = "";
 
+  // Capture raw lines for sections we can't reconstruct perfectly
+  const rawSections = new Map<string, string[]>();
+  const capturedSectionNames = [
+    "PROGRAM INFORMATION", "CONTROLS", "STORIES - IN SEQUENCE FROM TOP",
+    "GRIDS", "DIAPHRAGM NAMES", "MATERIAL PROPERTIES", "REBAR DEFINITIONS",
+    "FRAME SECTIONS", "AUTO SELECT SECTION LISTS", "CONCRETE SECTIONS",
+    "WALL/SLAB/DECK SECTIONS", "POINT COORDINATES",
+    "LINE CONNECTIVITIES", "AREA CONNECTIVITIES",
+    "POINT ASSIGNS", "LINE ASSIGNS", "AREA ASSIGNS",
+    "LOAD PATTERNS", "POINT OBJECT LOADS", "FRAME OBJECT LOADS",
+    "SHELL OBJECT LOADS", "ANALYSIS OPTIONS", "MASS SOURCE",
+    "FUNCTIONS", "LOAD CASES", "LOAD COMBINATIONS",
+  ];
+
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line || line.startsWith("$")) {
       if (line.startsWith("$ ")) currentSection = line.substring(2).trim();
       continue;
+    }
+    // Capture raw line for current section
+    if (currentSection) {
+      if (!rawSections.has(currentSection)) rawSections.set(currentSection, []);
+      rawSections.get(currentSection)!.push(rawLine);
     }
 
     // ── CONTROLS ──
@@ -569,5 +590,6 @@ export function parseE2k(text: string): E2kModel {
       nAreas: areaConns.length,
       title,
     },
+    rawSections,
   };
 }
