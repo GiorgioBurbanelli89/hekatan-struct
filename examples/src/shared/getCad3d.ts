@@ -117,6 +117,7 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
   let wallElementIndices: Set<number> = new Set(); // shell Q4 elements (shear walls)
   let elementFloor: Map<number, number> = new Map(); // element index -> floor (0-based)
   let elementBay: Map<number, { dir: 'x' | 'y'; bay: number }> = new Map(); // beam element -> bay info
+  let lastImportedE2k: E2kModel | null = null; // preserved for round-trip export
 
   // ── Shear wall state ──
   // wallPlacements: list of {dir, bay, axisIdx, floors} — which bays have walls
@@ -5554,7 +5555,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         };
         try {
           if (ioAction === "export-e2k") {
-            downloadText(exportE2k({ ...input, title: "Awatif Model" }), "model.e2k");
+            downloadText(exportE2k({ ...input, title: "Awatif Model", e2kModel: lastImportedE2k ?? undefined }), "model.e2k");
           } else if (ioAction === "export-py") {
             downloadText(exportOpenSeesPy(input), "model_opensees.py");
           } else if (ioAction === "export-tcl") {
@@ -5573,6 +5574,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         try {
           if (ioAction === "import-e2k") {
             const model = parseE2k(text);
+            lastImportedE2k = model; // preserve for round-trip export
             applyImportedModel(model, "E2K imported");
             applyE2kGridsAndStories(model);
           } else if (ioAction === "import-py") {
