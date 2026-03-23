@@ -143,6 +143,14 @@ function exportFromScratch(input: ExportE2kInput): string {
   if (sortedZ.length > 0) lines.push(`  STORY "Base"  ELEV ${sortedZ[0]} `);
   lines.push(``);
 
+  // Check if model has Q4 area elements (walls/slabs)
+  const hasQ4 = elements.some(el => el.length === 4);
+  if (hasQ4) {
+    lines.push(`$ DIAPHRAGM NAMES`);
+    lines.push(`  DIAPHRAGM "D1"    TYPE RIGID`);
+    lines.push(``);
+  }
+
   // Materials
   lines.push(`$ MATERIAL PROPERTIES`);
   const uniqueE = new Set<number>();
@@ -282,6 +290,68 @@ function exportFromScratch(input: ExportE2kInput): string {
   lines.push(`$ LINE ASSIGNS`);
   laEntries.forEach(la => lines.push(la));
   lines.push(``);
+
+  // ═══════════════════════════════════════════
+  // AREA ELEMENTS (Q4 shells: walls + slabs)
+  // ═══════════════════════════════════════════
+  const areaElements: { idx: number; el: number[]; isWall: boolean }[] = [];
+  elements.forEach((el, i) => {
+    if (el.length === 4) {
+      // Determine if wall (vertical) or slab (horizontal) by checking normal direction
+      const p0 = nodes[el[0]], p1 = nodes[el[1]], p2 = nodes[el[2]];
+      // Cross product of edges to get normal
+      const v1 = [p1[0]-p0[0], p1[1]-p0[1], p1[2]-p0[2]];
+      const v2 = [p2[0]-p0[0], p2[1]-p0[1], p2[2]-p0[2]];
+      const ny = Math.abs(v1[2]*v2[0] - v1[0]*v2[2]); // Y component of normal
+      const nLen = Math.sqrt((v1[1]*v2[2]-v1[2]*v2[1])**2 + ny**2 + (v1[0]*v2[1]-v1[1]*v2[0])**2);
+      const isWall = nLen > 1e-10 && (ny / nLen) < 0.5; // normal is mostly horizontal → wall
+      areaElements.push({ idx: i, el, isWall });
+    }
+  });
+
+  if (areaElements.some(a => !a.isWall)) {
+    lines.push(`$ SLAB PROPERTIES`);
+    const t_slab = elementInputs.thicknesses?.values().next().value ?? 0.15;
+    lines.push(`  SHELLPROP  "Losa"  PROPTYPE  "Slab"  MATERIAL "${matNames.values().next().value || 'Mat_1'}"  MODELINGTYPE "ShellThin"  SLABTYPE "Slab"  SLABTHICKNESS ${t_slab} `);
+    lines.push(``);
+  }
+  if (areaElements.some(a => a.isWall)) {
+    lines.push(`$ WALL PROPERTIES`);
+    const t_wall = elementInputs.thicknesses?.values().next().value ?? 0.2;
+    lines.push(`  SHELLPROP  "Muro"  PROPTYPE  "Wall"  MATERIAL "${matNames.values().next().value || 'Mat_1'}"  MODELINGTYPE "ShellThick"  WALLTHICKNESS ${t_wall} `);
+    lines.push(``);
+  }
+
+  if (areaElements.length > 0) {
+    lines.push(`$ AREA CONNECTIVITIES`);
+    const aaEntries: string[] = [];
+    areaElements.forEach((ae, ai) => {
+      const { el, isWall } = ae;
+      const aName = isWall ? `W${ai + 1}` : `F${ai + 1}`;
+      const aType = isWall ? "PANEL" : "FLOOR";
+      // Get plan points for 4 nodes
+      const ps = el.map(ni => nodeToPS(ni));
+      if (isWall) {
+        // PANEL: pt1 pt2 pt2 pt1 nStories nStories 0 0
+        // Use bottom-left and bottom-right points
+        const bot0 = nodes[el[0]][1] <= nodes[el[2]][1] ? 0 : 2;
+        const bot1 = nodes[el[1]][1] <= nodes[el[3]][1] ? 1 : 3;
+        lines.push(`  AREA "${aName}"  ${aType}  4  "${ps[bot0].pt}"  "${ps[bot1].pt}"  "${ps[bot1].pt}"  "${ps[bot0].pt}"  1  1  0  0  `);
+        // Assign at story of top nodes
+        const topStory = ps[bot0 === 0 ? 2 : 0].story;
+        aaEntries.push(`  AREAASSIGN  "${aName}"  "${topStory}"  SECTION "Muro"  OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "MIDDLE"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
+      } else {
+        // FLOOR: pt1 pt2 pt3 pt4 0 0 0 0
+        lines.push(`  AREA "${aName}"  ${aType}  4  "${ps[0].pt}"  "${ps[1].pt}"  "${ps[2].pt}"  "${ps[3].pt}"  0  0  0  0  `);
+        aaEntries.push(`  AREAASSIGN  "${aName}"  "${ps[0].story}"  SECTION "Losa"  DIAPH  "D1"  OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "TOP"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
+      }
+    });
+    lines.push(``);
+
+    lines.push(`$ AREA ASSIGNS`);
+    aaEntries.forEach(aa => lines.push(aa));
+    lines.push(``);
+  }
 
   // Loads
   lines.push(`$ LOAD PATTERNS`);
