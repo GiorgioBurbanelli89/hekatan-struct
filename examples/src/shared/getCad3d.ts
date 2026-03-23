@@ -867,6 +867,42 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
     },
 
     /**
+     * Create a custom Tweakpane panel from CLI.
+     * Returns an object with live values that update when sliders change.
+     *
+     * Usage:
+     *   const p = cad.panel("Mi Estructura", {
+     *     svx: { value: [2, 3, 4], label: "Vanos X (m)" },
+     *     svy: { value: [3.44, 4, 5], label: "Vanos Y (m)" },
+     *     sp:  { value: [3.5, 3, 3], label: "Alturas piso (m)" },
+     *     fc:  { value: 210, min: 100, max: 500, label: "f'c (kgf/cm2)" },
+     *     col: { value: "40x40", options: ["30x30","40x40","50x50"], label: "Columna" },
+     *   })
+     *   // p.svx, p.svy, p.sp, p.fc, p.col → live values
+     *
+     *   cad.panel("Grilla", {
+     *     bx: { value: 5, min: 1, max: 20, step: 0.5, label: "Vano X" },
+     *     nv: { value: 3, min: 1, max: 10, step: 1, label: "N. Vanos" },
+     *   }, (params) => { cad.refgrid(...) })  // callback on change
+     */
+    panel(title: string, defs: Record<string, any>, onChange?: (params: any) => void) {
+      const cad = window.__cad;
+      if (cad?.createCustomPanel) {
+        return cad.createCustomPanel(title, defs, onChange);
+      }
+      console.log("Custom panels not available");
+    },
+
+    /** Remove a custom panel by title */
+    removePanel(title: string) {
+      const cad = window.__cad;
+      if (cad?.removeCustomPanel) {
+        cad.removeCustomPanel(title);
+        console.log(`Panel "${title}" removed`);
+      }
+    },
+
+    /**
      * Create reference/construction grid (imaginary lines).
      * These guide lines appear in 3D, Plan, EX, EY views.
      *
@@ -934,6 +970,16 @@ SETTINGS & PARAMS:
   cad.set("deform")             Toggle setting
   cad.params()                  List all parameters
   cad.param("Vanos X", 3)       Set parameter value
+
+CUSTOM PANELS (create your own Tweakpane):
+  cad.panel("Grilla", {
+    svx: { value: [2,3,4], label: "Vanos X" },
+    svy: { value: [3.44,4,5], label: "Vanos Y" },
+    sp:  { value: [3.5,3,3], label: "Alturas" },
+    fc:  { value: 210, min:100, max:500, label: "f'c" },
+    col: { value: "40x40", options:["30x30","40x40"], label: "Col" },
+  }, (p) => { cad.refgrid(p.svx, p.svy, p.sp); })
+  cad.removePanel("Grilla")     Remove custom panel
 
 VIEW:
   cad.view("3d")                3D view
@@ -4412,7 +4458,111 @@ Util:     cad.info()  cad.clear()  cad.help()
         return out;
       },
       setGenerator,
+      createCustomPanel: (title: string, defs: Record<string, any>, onChange?: (params: any) => void) => {
+        return createCustomCliPanel(title, defs, onChange);
+      },
+      removeCustomPanel: (title: string) => {
+        removeCustomCliPanel(title);
+      },
     };
+  }
+
+  // ── Custom CLI Panels (user-created Tweakpane) ──
+  const customPanels = new Map<string, { pane: Pane; values: Record<string, any> }>();
+
+  function createCustomCliPanel(title: string, defs: Record<string, any>, onChange?: (params: any) => void): Record<string, any> {
+    // Remove existing panel with same title
+    removeCustomCliPanel(title);
+
+    // Find or create container
+    let container = document.querySelector("#cad3d-custom-panels") as HTMLDivElement;
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "cad3d-custom-panels";
+      // Insert after parameters panel
+      const paramsEl = document.querySelector("#parameters");
+      if (paramsEl) paramsEl.parentElement?.insertBefore(container, paramsEl.nextSibling);
+      else document.body.appendChild(container);
+    }
+
+    const panelDiv = document.createElement("div");
+    panelDiv.className = "cad3d-custom-panel";
+    panelDiv.style.marginBottom = "4px";
+    container.appendChild(panelDiv);
+
+    const pane = new Pane({ title, container: panelDiv });
+    const values: Record<string, any> = {};
+
+    for (const [key, def] of Object.entries(defs)) {
+      const label = def.label || key;
+
+      if (Array.isArray(def.value)) {
+        // Array param → text input showing comma-separated values
+        values[key] = def.value;
+        const obj = { [key]: def.value.join(", ") };
+        pane.addBinding(obj, key, { label }).on("change", (ev: any) => {
+          values[key] = ev.value.split(",").map((s: string) => parseFloat(s.trim())).filter((n: number) => !isNaN(n));
+          if (onChange) onChange({ ...values });
+        });
+      } else if (def.options) {
+        // Dropdown
+        values[key] = def.value;
+        const obj = { [key]: def.value };
+        const opts: Record<string, string> = {};
+        for (const o of def.options) opts[o] = o;
+        pane.addBinding(obj, key, { label, options: opts }).on("change", (ev: any) => {
+          values[key] = ev.value;
+          if (onChange) onChange({ ...values });
+        });
+      } else if (typeof def.value === "boolean") {
+        // Checkbox
+        values[key] = def.value;
+        const obj = { [key]: def.value };
+        pane.addBinding(obj, key, { label }).on("change", (ev: any) => {
+          values[key] = ev.value;
+          if (onChange) onChange({ ...values });
+        });
+      } else if (typeof def.value === "string") {
+        // Text input
+        values[key] = def.value;
+        const obj = { [key]: def.value };
+        pane.addBinding(obj, key, { label }).on("change", (ev: any) => {
+          values[key] = ev.value;
+          if (onChange) onChange({ ...values });
+        });
+      } else {
+        // Number slider
+        values[key] = def.value;
+        const obj = { [key]: def.value };
+        const opts: any = { label };
+        if (def.min !== undefined) opts.min = def.min;
+        if (def.max !== undefined) opts.max = def.max;
+        if (def.step !== undefined) opts.step = def.step;
+        pane.addBinding(obj, key, opts).on("change", (ev: any) => {
+          values[key] = ev.value;
+          if (onChange) onChange({ ...values });
+        });
+      }
+    }
+
+    // Add "Apply" button if onChange is provided
+    if (onChange) {
+      pane.addButton({ title: "Aplicar" }).on("click", () => {
+        onChange({ ...values });
+      });
+    }
+
+    customPanels.set(title, { pane, values });
+    console.log(`Panel "${title}" created with ${Object.keys(defs).length} params`);
+    return values;
+  }
+
+  function removeCustomCliPanel(title: string) {
+    const existing = customPanels.get(title);
+    if (existing) {
+      try { existing.pane.dispose(); } catch {}
+      customPanels.delete(title);
+    }
   }
 
   /** Restore original #parameters Tweakpane */
@@ -5876,7 +6026,6 @@ Util:     cad.info()  cad.clear()  cad.help()
       ev.stopPropagation();
       cli.clear();
       lastImportedE2k = null;
-      console.log("New empty model");
     });
 
     // === Export panel ===
