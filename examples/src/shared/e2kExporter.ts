@@ -157,37 +157,57 @@ function exportFromScratch(input: ExportE2kInput): string {
   }
   lines.push(``);
 
-  // Frame Sections
+  // Frame Sections — deduplicate by shape key (type+dimensions)
   lines.push(`$ FRAME SECTIONS`);
   const writtenSections = new Set<string>();
+  const elemToSecName = new Map<number, string>(); // element index → section name
+  const shapeKeyToSecName = new Map<string, string>(); // "type_h_b_tf_tw" → name
+
   elements.forEach((el, i) => {
     if (el.length !== 2) return;
     const shape = elementInputs.sectionShapes?.get(i);
     const E = elementInputs.elasticities?.get(i) ?? 0;
     const matName = matNames.get(E) || "Mat_1";
-    const secName = shape?.name || `Sec_${i}`;
+
+    const h = shape?.h ?? 0, b = shape?.b ?? 0, d = shape?.d ?? 0;
+    const tfw = shape?.tf ?? 0, tww = shape?.tw ?? 0;
+    const stype = shape?.type || "rect";
+
+    // Build unique key from shape content
+    const shapeKey = `${stype}_${h}_${b}_${d}_${tfw}_${tww}`;
+
+    if (shape?.name && !shapeKeyToSecName.has(shapeKey)) {
+      shapeKeyToSecName.set(shapeKey, shape.name);
+    }
+
+    let secName = shapeKeyToSecName.get(shapeKey);
+    if (!secName) {
+      // Auto-generate name from dimensions
+      if (stype === "rect") secName = `R${rd(b*100)}x${rd(h*100)}`;
+      else if (stype === "circ") secName = `C_D${rd(d*100)}`;
+      else if (stype === "I") secName = `I_${rd(h*100)}`;
+      else secName = `Sec_${writtenSections.size + 1}`;
+      shapeKeyToSecName.set(shapeKey, secName);
+    }
+
+    elemToSecName.set(i, secName);
+
     if (writtenSections.has(secName)) return;
     writtenSections.add(secName);
 
-    if (shape) {
-      const h = shape.h ?? 0, b = shape.b ?? 0, d = shape.d ?? 0;
-      const tfw = shape.tf ?? 0, tww = shape.tw ?? 0;
-      const shapeMap: Record<string, string> = {
-        rect: "Concrete Rectangular", circ: "Concrete Circle",
-        I: "Steel I/Wide Flange", HSS: "Steel Tube", pipe: "Steel Pipe",
-        L: "Steel Angle", C: "Steel Channel", "2C": "Steel Double Channel",
-      };
-      const etabsShape = shapeMap[shape.type] || "Concrete Rectangular";
-      let line = `  FRAMESECTION  "${secName}"  MATERIAL "${matName}"  SHAPE "${etabsShape}"`;
-      if (h) line += `  D ${h}`;
-      if (b) line += `  B ${b}`;
-      if (d && !h) line += `  D ${d}`;
-      if (tfw) line += `  TF ${tfw}`;
-      if (tww) line += `  TW ${tww}`;
-      lines.push(line);
-    } else {
-      lines.push(`  FRAMESECTION  "${secName}"  MATERIAL "${matName}"  SHAPE "Concrete Rectangular"  D 0.5 B 0.3 `);
-    }
+    const shapeMap: Record<string, string> = {
+      rect: "Concrete Rectangular", circ: "Concrete Circle",
+      I: "Steel I/Wide Flange", HSS: "Steel Tube", pipe: "Steel Pipe",
+      L: "Steel Angle", C: "Steel Channel", "2C": "Steel Double Channel",
+    };
+    const etabsShape = shapeMap[stype] || "Concrete Rectangular";
+    let line = `  FRAMESECTION  "${secName}"  MATERIAL "${matName}"  SHAPE "${etabsShape}"`;
+    if (h) line += `  D ${h}`;
+    if (b) line += `  B ${b}`;
+    if (d && !h) line += `  D ${d}`;
+    if (tfw) line += `  TF ${tfw}`;
+    if (tww) line += `  TW ${tww}`;
+    lines.push(line);
   });
   lines.push(``);
 
@@ -217,22 +237,30 @@ function exportFromScratch(input: ExportE2kInput): string {
   elements.forEach((el, i) => {
     if (el.length !== 2) return;
     const type = guessElementType(nodes, el);
-    const secName = elementInputs.sectionShapes?.get(i)?.name || `Sec_${i}`;
+    const secName = elemToSecName.get(i) || `Sec_${i}`;
 
     if (type === "BEAM") {
       const ps0 = nodeToPS(el[0]), ps1 = nodeToPS(el[1]);
       lines.push(`  LINE  "E${i + 1}"  BEAM  "${ps0.pt}"  "${ps1.pt}"  0`);
       laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${ps0.story}"  SECTION "${secName}"  MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
     } else {
-      // Y-up: Y = elevation
+      // COLUMN/BRACE: Y-up: Y = elevation
+      // In e2k format, columns use the SAME plan point at both ends
       const bot = nodes[el[0]][1] <= nodes[el[1]][1] ? el[0] : el[1];
       const top = nodes[el[0]][1] <= nodes[el[1]][1] ? el[1] : el[0];
       const psBot = nodeToPS(bot), psTop = nodeToPS(top);
       const zBot = rd(nodes[bot][1]), zTop = rd(nodes[top][1]);
       const botIdx = sortedZ.indexOf(zBot), topIdx = sortedZ.indexOf(zTop);
       const nStories = Math.max(1, topIdx >= 0 && botIdx >= 0 ? topIdx - botIdx : 1);
-      lines.push(`  LINE  "E${i + 1}"  ${type}  "${psBot.pt}"  "${psTop.pt}"  ${nStories}`);
-      laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${psTop.story}"  SECTION "${secName}"  MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
+      // Column: same point at top and bottom, nStories determines height
+      lines.push(`  LINE  "E${i + 1}"  ${type}  "${psTop.pt}"  "${psTop.pt}"  ${nStories}`);
+      // Need LINEASSIGN for EACH story the column spans
+      for (let s = 0; s < nStories; s++) {
+        const storyIdx = topIdx - s;
+        if (storyIdx >= 0 && storyIdx < storyNames.length) {
+          laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${storyNames[storyIdx]}"  SECTION "${secName}"  MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
+        }
+      }
     }
   });
   lines.push(``);
