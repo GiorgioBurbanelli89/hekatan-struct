@@ -1019,28 +1019,41 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
         const addBraceZ = braceMode === "all" || braceMode === "y" || braceMode === "perimeter";
 
         for (let iy = 0; iy < nFloors; iy++) {
-          // X-direction braces
+          // X-direction braces (in XY plane, constant Z)
           if (addBraceX) {
             for (let iz = 0; iz < nZ; iz++) {
-              // Perimeter: only first and last Z axis; all: every axis
               if (braceMode === "perimeter" && iz !== 0 && iz !== nZ - 1) continue;
+              // For perimeter: only middle bay; for all: every bay
+              const midBay = Math.floor((nX - 1) / 2);
               for (let ix = 0; ix < nX - 1; ix++) {
-                const ei = elements.length;
+                if (braceMode === "perimeter" && ix !== midBay) continue;
+                // V-brace (chevron): two diagonals meeting at mid-span top
+                const ei1 = elements.length;
                 elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix + 1},${iy + 1},${iz}`]]);
-                newBraceIndices.add(ei);
-                newElementFloor.set(ei, iy);
+                newBraceIndices.add(ei1);
+                newElementFloor.set(ei1, iy);
+                const ei2 = elements.length;
+                elements.push([nid[`${ix + 1},${iy},${iz}`], nid[`${ix},${iy + 1},${iz}`]]);
+                newBraceIndices.add(ei2);
+                newElementFloor.set(ei2, iy);
               }
             }
           }
-          // Z-direction braces
+          // Z-direction braces (in ZY plane, constant X)
           if (addBraceZ) {
             for (let ix = 0; ix < nX; ix++) {
               if (braceMode === "perimeter" && ix !== 0 && ix !== nX - 1) continue;
+              const midBay = Math.floor((nZ - 1) / 2);
               for (let iz = 0; iz < nZ - 1; iz++) {
-                const ei = elements.length;
+                if (braceMode === "perimeter" && iz !== midBay) continue;
+                const ei1 = elements.length;
                 elements.push([nid[`${ix},${iy},${iz}`], nid[`${ix},${iy + 1},${iz + 1}`]]);
-                newBraceIndices.add(ei);
-                newElementFloor.set(ei, iy);
+                newBraceIndices.add(ei1);
+                newElementFloor.set(ei1, iy);
+                const ei2 = elements.length;
+                elements.push([nid[`${ix},${iy},${iz + 1}`], nid[`${ix},${iy + 1},${iz}`]]);
+                newBraceIndices.add(ei2);
+                newElementFloor.set(ei2, iy);
               }
             }
           }
@@ -1889,6 +1902,21 @@ VIEW:
           secondaryBeamDir = avgLx_a >= avgLy_a ? 'y' : 'x'; // corren en la dir corta
           slabEnabled = true; slabThickness = 0.08;
           regenerateFromParams(); break;
+        }
+        case "edif-acero-diag": case "edificio-acero-diag": {
+          // Edificio de acero con diagonales (X-braces en perimetro)
+          // Usa cad.build() con braces en vez del generador "Edificio"
+          cli.clear();
+          const nVxD = Math.round(generatorParams["nVanosX"]?.val ?? 2);
+          const nVyD = Math.round(generatorParams["nVanosY"]?.val ?? 2);
+          const nPisD = Math.round(generatorParams["nPisos"]?.val ?? 3);
+          const hPisD = generatorParams["hPiso"]?.val ?? 3.5;
+          const bxD = Array(nVxD).fill(6);
+          const byD = Array(nVyD).fill(5);
+          const hD = Array(nPisD).fill(hPisD);
+          cli.refgrid(bxD, byD, hD);
+          cli.build({ col: "40x40", viga: "30x50", braces: "perimeter", fc: 280 });
+          break;
         }
         case "edif-muros": case "edificio-muros": {
           // Edificio aporticado con muros de corte + losas
@@ -5189,6 +5217,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         <button data-ex="edificio">Edificio</button>
         <button data-ex="edif-muros">Edif. Muros</button>
         <button data-ex="edif-acero">Edif. Acero</button>
+        <button data-ex="edif-acero-diag">Acero+Diag</button>
         <button data-ex="edif-mixto">Edif. Mixto</button>
         <button data-ex="mezanine">Mezanine</button>
         <button data-ex="barra">Barra</button>
