@@ -11,6 +11,7 @@ export interface ModelData {
   elements: Element[];
   nodeInputs: NodeInputs;
   elementInputs: ElementInputs;
+  modelName?: string; // e.g. "Edificio 2x2x3", "Eiffel", "Portico"
 }
 
 // ═══════════════════════════════════════════════════════
@@ -544,8 +545,9 @@ function templateModelData(data: ModelData): string {
     shellPropLines.push(`nu = ${nu0}`);
   }
 
+  const name = data.modelName || "Modelo";
   return `% ═══════════════════════════════════════════
-% Datos del modelo actual
+% ${name} — Datos del modelo
 % ═══════════════════════════════════════════
 
 nnodes = ${data.nodes.length}

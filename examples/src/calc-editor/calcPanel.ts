@@ -114,6 +114,8 @@ function createPanel() {
         </select>
       </div>
       <div class="calc-toolbar-right">
+        <button id="calc-help" class="calc-btn" title="Funciones disponibles">❓ Funciones</button>
+        <button id="calc-fullscreen" class="calc-btn" title="Pantalla completa">⛶</button>
         <span class="calc-title">📐 Calculadora FEM</span>
         <button id="calc-close" class="calc-btn calc-btn-close" title="Cerrar">✕</button>
       </div>
@@ -170,6 +172,39 @@ function createPanel() {
 
   // Close
   closeBtn.addEventListener("click", closeCalcPanel);
+
+  // Help — show available functions
+  const helpBtn = panelElement.querySelector("#calc-help") as HTMLButtonElement;
+  helpBtn.addEventListener("click", () => showFunctionsHelp(output));
+
+  // Fullscreen toggle
+  const fullscreenBtn = panelElement.querySelector("#calc-fullscreen") as HTMLButtonElement;
+  let isFullscreen = false;
+  fullscreenBtn.addEventListener("click", () => {
+    isFullscreen = !isFullscreen;
+    if (isFullscreen) {
+      panelElement!.style.position = "fixed";
+      panelElement!.style.top = "0";
+      panelElement!.style.left = "0";
+      panelElement!.style.width = "100vw";
+      panelElement!.style.height = "100vh";
+      panelElement!.style.zIndex = "10000";
+      fullscreenBtn.textContent = "⛶ Salir";
+      // Hide 3D viewer area
+      const calcBody = panelElement!.querySelector(".calc-body") as HTMLElement;
+      if (calcBody) calcBody.style.height = "calc(100vh - 40px)";
+    } else {
+      panelElement!.style.position = "";
+      panelElement!.style.top = "";
+      panelElement!.style.left = "";
+      panelElement!.style.width = "";
+      panelElement!.style.height = "";
+      panelElement!.style.zIndex = "";
+      fullscreenBtn.textContent = "⛶";
+      const calcBody = panelElement!.querySelector(".calc-body") as HTMLElement;
+      if (calcBody) calcBody.style.height = "";
+    }
+  });
 
   // Export format selector
   const langSelect = panelElement.querySelector("#calc-lang") as HTMLSelectElement;
@@ -549,4 +584,98 @@ function getPanelStyles(): string {
       .calc-lang-select { max-width: 110px; }
     }
   `;
+}
+
+// ═══════════════════════════════════════════════════════
+// HELP — LIST ALL AVAILABLE FUNCTIONS
+// ═══════════════════════════════════════════════════════
+
+function showFunctionsHelp(output: HTMLDivElement) {
+  output.innerHTML = `
+  <div style="padding: 16px; color: #ccc; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.8;">
+    <h2 style="color: #61afef; margin: 0 0 12px;">📐 Funciones disponibles</h2>
+
+    <h3 style="color: #e5c07b; margin: 12px 0 6px;">🔢 Álgebra Lineal</h3>
+    <table style="border-collapse: collapse; width: 100%;">
+    <tr><td style="color:#98c379;padding:2px 12px 2px 0">det(A)</td><td>Determinante</td></tr>
+    <tr><td style="color:#98c379">inv(A)</td><td>Inversa</td></tr>
+    <tr><td style="color:#98c379">transpose(A) / A'</td><td>Transpuesta</td></tr>
+    <tr><td style="color:#98c379">trace(A)</td><td>Traza (suma diagonal)</td></tr>
+    <tr><td style="color:#98c379">rank(A)</td><td>Rango de matriz</td></tr>
+    <tr><td style="color:#98c379">cond(A)</td><td>Número de condición</td></tr>
+    <tr><td style="color:#98c379">norm(A)</td><td>Norma (vector o matriz)</td></tr>
+    <tr><td style="color:#98c379">rref(A)</td><td>Forma escalonada reducida</td></tr>
+    <tr><td style="color:#98c379">lup(A)</td><td>Descomposición LU con pivoteo</td></tr>
+    <tr><td style="color:#98c379">qr(A)</td><td>Descomposición QR</td></tr>
+    <tr><td style="color:#98c379">eigs(A)</td><td>Eigenvalores y eigenvectores</td></tr>
+    <tr><td style="color:#98c379">lusolve(A, b)</td><td>Resolver Ax=b via LU</td></tr>
+    <tr><td style="color:#98c379">A \\ b</td><td>Resolver Ax=b (backslash)</td></tr>
+    </table>
+
+    <h3 style="color: #e5c07b; margin: 12px 0 6px;">📐 Construcción de Matrices</h3>
+    <table style="border-collapse: collapse; width: 100%;">
+    <tr><td style="color:#98c379;padding:2px 12px 2px 0">eye(n)</td><td>Matriz identidad n×n</td></tr>
+    <tr><td style="color:#98c379">zeros(n,m)</td><td>Matriz de ceros</td></tr>
+    <tr><td style="color:#98c379">ones(n,m)</td><td>Matriz de unos</td></tr>
+    <tr><td style="color:#98c379">diag(v)</td><td>Matriz diagonal desde vector</td></tr>
+    <tr><td style="color:#98c379">triu(A)</td><td>Triangular superior</td></tr>
+    <tr><td style="color:#98c379">tril(A)</td><td>Triangular inferior</td></tr>
+    <tr><td style="color:#98c379">kron(A,B)</td><td>Producto de Kronecker</td></tr>
+    <tr><td style="color:#98c379">linspace(a,b,n)</td><td>Vector de n puntos entre a y b</td></tr>
+    <tr><td style="color:#98c379">size(A)</td><td>Dimensiones [filas, columnas]</td></tr>
+    <tr><td style="color:#98c379">length(v)</td><td>Longitud máxima</td></tr>
+    </table>
+
+    <h3 style="color: #e5c07b; margin: 12px 0 6px;">➕ Operaciones</h3>
+    <table style="border-collapse: collapse; width: 100%;">
+    <tr><td style="color:#98c379;padding:2px 12px 2px 0">A + B, A - B</td><td>Suma/resta</td></tr>
+    <tr><td style="color:#98c379">A * B</td><td>Multiplicación de matrices</td></tr>
+    <tr><td style="color:#98c379">A .* B</td><td>Multiplicación elemento a elemento</td></tr>
+    <tr><td style="color:#98c379">A ^ n</td><td>Potencia de matriz</td></tr>
+    <tr><td style="color:#98c379">cross(a,b)</td><td>Producto cruz</td></tr>
+    <tr><td style="color:#98c379">dot(a,b)</td><td>Producto punto</td></tr>
+    </table>
+
+    <h3 style="color: #e5c07b; margin: 12px 0 6px;">📊 Estadística</h3>
+    <table style="border-collapse: collapse; width: 100%;">
+    <tr><td style="color:#98c379;padding:2px 12px 2px 0">max(v), min(v)</td><td>Máximo/mínimo</td></tr>
+    <tr><td style="color:#98c379">sum(v), prod(v)</td><td>Suma/producto</td></tr>
+    <tr><td style="color:#98c379">mean(v), median(v)</td><td>Media/mediana</td></tr>
+    <tr><td style="color:#98c379">std(v), variance(v)</td><td>Desviación/varianza</td></tr>
+    <tr><td style="color:#98c379">sort(v)</td><td>Ordenar</td></tr>
+    </table>
+
+    <h3 style="color: #e5c07b; margin: 12px 0 6px;">📈 Matemáticas</h3>
+    <table style="border-collapse: collapse; width: 100%;">
+    <tr><td style="color:#98c379;padding:2px 12px 2px 0">sin, cos, tan</td><td>Trigonométricas</td></tr>
+    <tr><td style="color:#98c379">asin, acos, atan, atan2</td><td>Inversas</td></tr>
+    <tr><td style="color:#98c379">exp, log, log10</td><td>Exponencial/logaritmo</td></tr>
+    <tr><td style="color:#98c379">sqrt, abs, ceil, floor</td><td>Raíz, absoluto, redondeo</td></tr>
+    <tr><td style="color:#98c379">pi, e, i</td><td>Constantes</td></tr>
+    <tr><td style="color:#98c379">polyval(p,x)</td><td>Evaluar polinomio</td></tr>
+    </table>
+
+    <h3 style="color: #e5c07b; margin: 12px 0 6px;">🏗️ FEM (awatif)</h3>
+    <table style="border-collapse: collapse; width: 100%;">
+    <tr><td style="color:#98c379;padding:2px 12px 2px 0">stiffness(i)</td><td>K local del elemento i (12×12)</td></tr>
+    <tr><td style="color:#98c379">transform(i)</td><td>Matriz T de transformación (12×12)</td></tr>
+    <tr><td style="color:#98c379">kglobal(i)</td><td>K global = T'·K·T (12×12)</td></tr>
+    <tr><td style="color:#98c379">elem_length(i)</td><td>Longitud del elemento i</td></tr>
+    <tr><td style="color:#98c379">assemble_dofs(i)</td><td>DOFs globales del elemento i</td></tr>
+    <tr><td style="color:#98c379">solve_model()</td><td>Resolver modelo completo (WASM C++/Eigen)</td></tr>
+    <tr><td style="color:#98c379">unode(n)</td><td>Desplazamientos del nodo n [ux,uy,uz,rx,ry,rz]</td></tr>
+    <tr><td style="color:#98c379">rnode(n)</td><td>Reacciones del nodo n [Fx,Fy,Fz,Mx,My,Mz]</td></tr>
+    </table>
+
+    <h3 style="color: #e5c07b; margin: 12px 0 6px;">🔁 Control de flujo</h3>
+    <table style="border-collapse: collapse; width: 100%;">
+    <tr><td style="color:#98c379;padding:2px 12px 2px 0">for i = 1:n ... end</td><td>Ciclo for</td></tr>
+    <tr><td style="color:#98c379">if cond ... else ... end</td><td>Condicional</td></tr>
+    <tr><td style="color:#98c379">% comentario</td><td>Comentario (usa \$...\$ para KaTeX)</td></tr>
+    </table>
+
+    <h3 style="color: #e5c07b; margin: 12px 0 6px;">📖 Referencia</h3>
+    <p style="color:#888; font-size:11px;">Basado en math.js + WASM C++/Eigen. Compatible con sintaxis MATLAB.<br>
+    Ref: Ferreira "MATLAB Codes for FEA" (Springer 2009)</p>
+  </div>`;
 }

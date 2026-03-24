@@ -159,6 +159,21 @@ math.import({
 // Store model data for solve_model() to use
 let _currentModelData: ModelData | null = null;
 
+// Pre-register unode/rnode as math.js functions so parser treats them as functions, not indexing
+let _solveResult: any = null;
+math.import({
+  unode: function(n: number) {
+    if (!_solveResult) throw new Error("unode: primero ejecuta solve_model()");
+    const idx = (n - 1) * 6;
+    return math.matrix(_solveResult.U_full.slice(idx, idx + 6));
+  },
+  rnode: function(n: number) {
+    if (!_solveResult) throw new Error("rnode: primero ejecuta solve_model()");
+    const idx = (n - 1) * 6;
+    return math.matrix(_solveResult.R_full.slice(idx, idx + 6));
+  },
+}, { override: true });
+
 /** Build FEM helper functions that use the current model data from scope */
 function buildFemHelpers(scope: Record<string, any>) {
   // stiffness(i) — returns K_local 12x12 for element i (1-based)
@@ -244,20 +259,8 @@ function buildFemHelpers(scope: Record<string, any>) {
       scope.nDOF_free = result.freeDOFs.length;
       scope.nDOF_fixed = result.fixedDOFs.length;
 
-      // Per-node displacement extraction: unode(n) → [ux,uy,uz,rx,ry,rz]
-      // Use math.import to register as proper function (avoids subset interpretation)
-      try {
-        math.import({
-          unode: function(n: number) {
-            const idx = (n - 1) * 6;
-            return math.matrix(result.U_full.slice(idx, idx + 6));
-          },
-          rnode: function(n: number) {
-            const idx = (n - 1) * 6;
-            return math.matrix(result.R_full.slice(idx, idx + 6));
-          }
-        }, { override: true });
-      } catch { /* already imported */ }
+      // Update global _solveResult so pre-registered unode/rnode can access it
+      _solveResult = result;
 
       // Return summary string
       return `Resuelto: ${result.nDOF} DOFs (${result.freeDOFs.length} libres, ${result.fixedDOFs.length} fijos), max|U| = ${Math.max(...result.U_full.map(Math.abs)).toExponential(4)}`;
@@ -443,6 +446,30 @@ export function evaluate(code: string, initialScope?: Record<string, any>, model
         resultType: getResultType(result.value),
         error: result.error,
       });
+      i++;
+      continue;
+    }
+
+    // function block: function [out] = name(args) ... end
+    // or: function name(args) ... end
+    if (blockLines && trimmed.match(/^function\s+/i)) {
+      try {
+        const fnResult = registerMatlabFunction(cleanLine, blockLines, scope);
+        lines.push({
+          lineNum: originalLineNum,
+          input: line,
+          isControl: true,
+          result: `function ${fnResult.name}(${fnResult.args.join(", ")}) definida`,
+          resultType: "string",
+        });
+      } catch (err: any) {
+        lines.push({
+          lineNum: originalLineNum,
+          input: line,
+          isControl: true,
+          error: err.message,
+        });
+      }
       i++;
       continue;
     }
@@ -711,6 +738,65 @@ function evaluateIfBlock(
   } catch (err: any) {
     return { error: err.message };
   }
+}
+
+// ═══════════════════════════════════════════════════════
+// MATLAB function DEFINITION: function [out] = name(a, b, ...)
+// ═══════════════════════════════════════════════════════
+
+function registerMatlabFunction(
+  header: string, bodyLines: string[], parentScope: Record<string, any>
+): { name: string; args: string[] } {
+  // Parse: function y = name(a, b) or function name(a, b)
+  const match = header.match(
+    /^function\s+(?:(\w+)\s*=\s*)?(\w+)\s*\(([^)]*)\)/i
+  );
+  if (!match) throw new Error("Sintaxis: function [out] = nombre(args)");
+
+  const outVar = match[1] || null; // output variable name (optional)
+  const fnName = match[2];
+  const argNames = match[3].split(",").map(s => s.trim()).filter(Boolean);
+
+  // Create a closure that evaluates the body with the arguments
+  const fnBody = bodyLines
+    .filter(l => !l.trim().match(/^end$/i))
+    .map(l => l.trim())
+    .filter(l => l !== "" && !l.startsWith("%"));
+
+  // Register as a math.js function
+  const fn = (...args: any[]) => {
+    // Create local scope with parent scope + arguments
+    const localScope: Record<string, any> = { ...parentScope };
+    argNames.forEach((name, i) => { localScope[name] = args[i]; });
+
+    // Evaluate body lines
+    let lastResult: any = undefined;
+    for (const line of fnBody) {
+      try {
+        const converted = matlabToMathjs(line);
+        lastResult = math.evaluate(converted, localScope);
+        // Check for assignment to detect output
+        const assignMatch = line.match(/^(\w+)\s*=/);
+        if (assignMatch) {
+          localScope[assignMatch[1]] = lastResult;
+        }
+      } catch { /* skip errors in function body */ }
+    }
+
+    // Return the output variable if specified, otherwise last result
+    if (outVar && localScope[outVar] !== undefined) return localScope[outVar];
+    return lastResult;
+  };
+
+  // Register in math.js so parser recognizes it as a function
+  try {
+    math.import({ [fnName]: fn }, { override: true });
+  } catch {
+    // Fallback: add to parent scope
+    parentScope[fnName] = fn;
+  }
+
+  return { name: fnName, args: argNames };
 }
 
 // ═══════════════════════════════════════════════════════

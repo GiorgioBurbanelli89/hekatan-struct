@@ -7306,6 +7306,7 @@ Util:     cad.info()  cad.clear()  cad.help()
           elements: mesh.elements.val,
           nodeInputs: mesh.nodeInputs?.val ?? {},
           elementInputs: mesh.elementInputs?.val ?? {},
+          modelName: activeGenerator ? activeGenerator.charAt(0).toUpperCase() + activeGenerator.slice(1) : "Modelo",
         };
         openCalcPanel(modelData);
       });
