@@ -8,11 +8,13 @@
 import { evaluate } from "./calcEngine";
 import { renderCalcOutput, getCalcStyles } from "./calcRenderer";
 import { getTemplate, templateList, ModelData } from "./calcTemplates";
-import { exportStandalone } from "./calcExportStandalone";
+import { exportStandalone, generateMatlabScript, generatePythonScript, generateHekatanScript, downloadFile } from "./calcExportStandalone";
 
 let panelElement: HTMLDivElement | null = null;
 let currentModelData: ModelData | null = null;
 let katexLoaded = false;
+let currentLang: "mathjs" | "matlab" | "python" | "hekatan" = "mathjs";
+let currentTemplateId = "fem_auto";
 
 /** Ensure KaTeX CSS + JS are loaded */
 function ensureKatex(callback: () => void) {
@@ -79,9 +81,14 @@ function createPanel() {
   panelElement.innerHTML = `
     <div class="calc-toolbar">
       <div class="calc-toolbar-left">
+        <select id="calc-lang" class="calc-select calc-lang-select" title="Lenguaje">
+          <option value="mathjs">awatif (math.js)</option>
+          <option value="matlab">MATLAB / Octave</option>
+          <option value="python">Python / NumPy</option>
+          <option value="hekatan">Hekatan (.hcalc)</option>
+        </select>
         <button id="calc-run" class="calc-btn calc-btn-run" title="Ejecutar (Ctrl+Enter)">▶ Ejecutar</button>
-        <button id="calc-export-m" class="calc-btn" title="Exportar a MATLAB .m">📋 .m</button>
-        <button id="calc-export-py" class="calc-btn" title="Exportar a Python">🐍 .py</button>
+        <button id="calc-export" class="calc-btn" title="Descargar archivo">💾 Descargar</button>
         <select id="calc-template" class="calc-select">
           ${templateList.map(t => `<option value="${t.id}">${t.name}</option>`).join("")}
         </select>
@@ -144,23 +151,24 @@ function createPanel() {
   // Close
   closeBtn.addEventListener("click", closeCalcPanel);
 
-  // Export MATLAB — standalone with all FEM functions + current model data
-  const exportMBtn = panelElement.querySelector("#calc-export-m") as HTMLButtonElement;
-  exportMBtn.addEventListener("click", () => {
-    if (currentModelData) {
-      exportStandalone(currentModelData, editor.value, "matlab");
-    } else {
-      exportAs(editor.value, "matlab");
-    }
+  // Language selector — regenerates template in chosen language
+  const langSelect = panelElement.querySelector("#calc-lang") as HTMLSelectElement;
+  langSelect.addEventListener("change", () => {
+    currentLang = langSelect.value as any;
+    loadTemplate(currentTemplateId);
   });
 
-  // Export Python — standalone with all FEM functions + current model data
-  const exportPyBtn = panelElement.querySelector("#calc-export-py") as HTMLButtonElement;
-  exportPyBtn.addEventListener("click", () => {
-    if (currentModelData) {
+  // Download button — saves current editor content as file
+  const exportBtn = panelElement.querySelector("#calc-export") as HTMLButtonElement;
+  exportBtn.addEventListener("click", () => {
+    if (currentLang === "matlab" && currentModelData) {
+      exportStandalone(currentModelData, editor.value, "matlab");
+    } else if (currentLang === "python" && currentModelData) {
       exportStandalone(currentModelData, editor.value, "python");
+    } else if (currentLang === "hekatan") {
+      downloadFile(editor.value, "modelo.hcalc", "text/plain");
     } else {
-      exportAs(editor.value, "python");
+      downloadFile(editor.value, "calc_script.txt", "text/plain");
     }
   });
 
@@ -172,16 +180,34 @@ function createPanel() {
 
 function loadTemplate(templateId: string) {
   if (!panelElement || !currentModelData) return;
+  currentTemplateId = templateId;
   const editor = panelElement.querySelector("#calc-editor") as HTMLTextAreaElement;
   const lineNums = panelElement.querySelector("#calc-line-nums") as HTMLDivElement;
-
-  const code = getTemplate(templateId, currentModelData);
-  editor.value = code;
-  updateLineNumbers(editor, lineNums);
-
-  // Auto-run
   const output = panelElement.querySelector("#calc-output") as HTMLDivElement;
-  runCode(editor, output);
+
+  if (currentLang === "mathjs") {
+    // Interactive math.js — evaluable in browser
+    const code = getTemplate(templateId, currentModelData);
+    editor.value = code;
+    updateLineNumbers(editor, lineNums);
+    runCode(editor, output);
+  } else if (currentLang === "matlab") {
+    // Full standalone MATLAB script
+    const code = generateMatlabScript(currentModelData);
+    editor.value = code;
+    updateLineNumbers(editor, lineNums);
+    output.innerHTML = '<div style="color:#8b949e;padding:12px;">📋 Script MATLAB/Octave — usar 💾 para descargar .m<br>No ejecutable en browser.</div>';
+  } else if (currentLang === "python") {
+    const code = generatePythonScript(currentModelData);
+    editor.value = code;
+    updateLineNumbers(editor, lineNums);
+    output.innerHTML = '<div style="color:#8b949e;padding:12px;">🐍 Script Python/NumPy — usar 💾 para descargar .py<br>No ejecutable en browser.</div>';
+  } else if (currentLang === "hekatan") {
+    const code = generateHekatanScript(currentModelData);
+    editor.value = code;
+    updateLineNumbers(editor, lineNums);
+    output.innerHTML = '<div style="color:#8b949e;padding:12px;">📐 Script Hekatan .hcalc — usar 💾 para descargar<br>Abrir en Hekatan Calc.</div>';
+  }
 }
 
 function runCode(editor: HTMLTextAreaElement, output: HTMLDivElement) {
@@ -398,6 +424,11 @@ function getPanelStyles(): string {
       background: #21262d;
       color: #d4d4d4;
       font-size: 12px;
+    }
+    .calc-lang-select {
+      background: #1a3a5c;
+      border-color: #58a6ff;
+      font-weight: 600;
     }
 
     .calc-body {

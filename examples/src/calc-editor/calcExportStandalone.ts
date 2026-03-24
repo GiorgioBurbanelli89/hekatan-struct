@@ -34,6 +34,21 @@ export function exportStandalone(
   URL.revokeObjectURL(url);
 }
 
+/** Generate standalone MATLAB script string (for editor display) */
+export function generateMatlabScript(md: ModelData): string {
+  return generateMatlab(md, "");
+}
+
+/** Generate standalone Python script string (for editor display) */
+export function generatePythonScript(md: ModelData): string {
+  return generatePython(md, "");
+}
+
+/** Generate Hekatan .hcalc script string */
+export function generateHekatanScript(md: ModelData): string {
+  return generateHekatan(md);
+}
+
 // ═══════════════════════════════════════════════════════
 // MATLAB / OCTAVE GENERATOR
 // ═══════════════════════════════════════════════════════
@@ -535,4 +550,103 @@ function emitPythonPropArray(
   } else {
     lines.push(`${name} = np.array([${vals.join(", ")}])`);
   }
+}
+
+// ═══════════════════════════════════════════════════════
+// HEKATAN .hcalc GENERATOR
+// ═══════════════════════════════════════════════════════
+
+function generateHekatan(md: ModelData): string {
+  const lines: string[] = [];
+  const L = (s: string) => lines.push(s);
+
+  L("# Análisis FEM — Generado por awatif-clone");
+  L("# Abrir en Hekatan Calc 1.0.0");
+  L("");
+  L("## Datos del modelo");
+  L("");
+  L(`n_nodos = ${md.nodes.length}`);
+  L(`n_elem = ${md.elements.length}`);
+  L(`n_gdl = n_nodos*6`);
+  L("");
+
+  // Properties as scalars or first value
+  const E0 = md.elementInputs.elasticities?.values().next().value || 0;
+  const A0 = md.elementInputs.areas?.values().next().value || 0;
+  const Iz0 = md.elementInputs.momentsOfInertiaZ?.values().next().value || 0;
+  const Iy0 = md.elementInputs.momentsOfInertiaY?.values().next().value || 0;
+  const G0 = md.elementInputs.shearModuli?.values().next().value || 0;
+  const J0 = md.elementInputs.torsionalConstants?.values().next().value || 0;
+
+  L("> Propiedades de la sección");
+  L(`E = ${E0}`);
+  L(`A = ${A0}`);
+  L(`I_z = ${Iz0}`);
+  L(`I_y = ${Iy0}`);
+  L(`G = ${G0}`);
+  L(`J = ${J0}`);
+  L("");
+
+  // Example element calculation
+  L("## Rigidez local — Timoshenko");
+  L("");
+  L("> Elemento 1 (columna vertical, L = 3 m)");
+  L("L = 3");
+  L("");
+
+  L("> Áreas de corte (rectangular 5/6·A)");
+  L("A_s = 5/6*A");
+  L("");
+
+  L("> Parámetro de Timoshenko");
+  L("φ_z = 12*E*I_z/(G*A_s*L^2)");
+  L("φ_y = 12*E*I_y/(G*A_s*L^2)");
+  L("");
+
+  L("> Coeficientes de rigidez");
+  L("t_z = 12*E*I_z/(L^3*(1 + φ_z))");
+  L("b_z = 6*E*I_z/(L^2*(1 + φ_z))");
+  L("k_z = 4*E*I_z/L*(1 + φ_z/4)/(1 + φ_z)");
+  L("a_z = 2*E*I_z/L*(1 - φ_z/2)/(1 + φ_z)");
+  L("");
+
+  L("t_y = 12*E*I_y/(L^3*(1 + φ_y))");
+  L("b_y = 6*E*I_y/(L^2*(1 + φ_y))");
+  L("k_y = 4*E*I_y/L*(1 + φ_y/4)/(1 + φ_y)");
+  L("a_y = 2*E*I_y/L*(1 - φ_y/2)/(1 + φ_y)");
+  L("");
+
+  L("@{eq}");
+  L("K_{local} = [EA/L, 0, 0, 0, 0, 0; 0, t_z, 0, 0, 0, b_z; 0, 0, t_y, 0, -b_y, 0; 0, 0, 0, GJ/L, 0, 0; 0, 0, -b_y, 0, k_y, 0; 0, b_z, 0, 0, 0, k_z]");
+  L("@{eq}");
+  L("");
+
+  L("## Verificación");
+  L("");
+  L("> Rigidez axial");
+  L("k_axial = E*A/L");
+  L("");
+  L("> Rigidez a torsión");
+  L("k_torsion = G*J/L");
+  L("");
+  L("> Rigidez a flexión (Euler-Bernoulli, φ=0)");
+  L("k_flex_z = 12*E*I_z/L^3");
+  L("k_flex_y = 12*E*I_y/L^3");
+  L("");
+
+  return lines.join("\n");
+}
+
+// ═══════════════════════════════════════════════════════
+// DOWNLOAD HELPER
+// ═══════════════════════════════════════════════════════
+
+export function downloadFile(content: string, filename: string, mimeType: string): void {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
