@@ -31,6 +31,128 @@ const math = create(all, {
 }) as any; // full math.js instance with evaluate, subset, etc.
 
 // ═══════════════════════════════════════════════════════
+// MATLAB COMPATIBILITY — register missing functions
+// ═══════════════════════════════════════════════════════
+math.import({
+  // eye(n) → identity(n)
+  eye: function(n: number, m?: number) { return math.identity(m ? [n, m] : n); },
+
+  // linspace(a, b, n) — MATLAB linspace
+  linspace: function(a: number, b: number, n?: number) {
+    const N = n || 100;
+    const step = (b - a) / (N - 1);
+    const arr: number[] = [];
+    for (let i = 0; i < N; i++) arr.push(a + i * step);
+    return math.matrix(arr);
+  },
+
+  // rank(A) — matrix rank via SVD tolerance
+  rank: function(A: any) {
+    const m = math.matrix(A);
+    const s = m.size();
+    if (s.length < 2) return s[0] > 0 ? 1 : 0;
+    // Use LU to estimate rank
+    try {
+      const lu = math.lup(m);
+      const U = lu.U;
+      const uArr = U.toArray();
+      const tol = 1e-10 * Math.max(s[0], s[1]);
+      let r = 0;
+      for (let i = 0; i < Math.min(s[0], s[1]); i++) {
+        if (Math.abs(uArr[i][i]) > tol) r++;
+      }
+      return r;
+    } catch { return 0; }
+  },
+
+  // cond(A) — condition number (norm(A) * norm(inv(A)))
+  cond: function(A: any) {
+    try {
+      const nA = math.norm(A);
+      const nAi = math.norm(math.inv(A));
+      return math.multiply(nA, nAi);
+    } catch { return Infinity; }
+  },
+
+  // rref(A) — reduced row echelon form
+  rref: function(A: any) {
+    const m = math.matrix(A).toArray() as number[][];
+    const rows = m.length, cols = m[0].length;
+    let lead = 0;
+    for (let r = 0; r < rows; r++) {
+      if (lead >= cols) break;
+      let i = r;
+      while (Math.abs(m[i][lead]) < 1e-12) {
+        i++;
+        if (i === rows) { i = r; lead++; if (lead === cols) return math.matrix(m); }
+      }
+      [m[i], m[r]] = [m[r], m[i]]; // swap
+      const lv = m[r][lead];
+      m[r] = m[r].map(v => v / lv);
+      for (let j = 0; j < rows; j++) {
+        if (j !== r) {
+          const f = m[j][lead];
+          m[j] = m[j].map((v, k) => v - f * m[r][k]);
+        }
+      }
+      lead++;
+    }
+    return math.matrix(m);
+  },
+
+  // null(A) — null space (simplified: returns zero vector for full rank)
+  nullspace: function(A: any) {
+    // Simplified: for educational purposes
+    return math.zeros(math.size(A).valueOf()[1], 1);
+  },
+
+  // triu(A) — upper triangular
+  triu: function(A: any) {
+    const arr = math.matrix(A).toArray() as number[][];
+    const rows = arr.length, cols = arr[0].length;
+    for (let i = 0; i < rows; i++)
+      for (let j = 0; j < Math.min(i, cols); j++)
+        arr[i][j] = 0;
+    return math.matrix(arr);
+  },
+
+  // tril(A) — lower triangular
+  tril: function(A: any) {
+    const arr = math.matrix(A).toArray() as number[][];
+    const rows = arr.length, cols = arr[0].length;
+    for (let i = 0; i < rows; i++)
+      for (let j = i + 1; j < cols; j++)
+        arr[i][j] = 0;
+    return math.matrix(arr);
+  },
+
+  // polyval(p, x) — evaluate polynomial
+  polyval: function(p: any, x: number) {
+    const coeffs = (p.toArray ? p.toArray() : p) as number[];
+    let result = 0;
+    for (let i = 0; i < coeffs.length; i++) {
+      result = result * x + coeffs[i];
+    }
+    return result;
+  },
+
+  // length(v) — MATLAB length (max dimension)
+  length: function(v: any) {
+    const s = math.size(v).valueOf() as number[];
+    return Math.max(...s);
+  },
+
+  // num2str / format helpers
+  num2str: function(n: number) { return String(n); },
+
+  // colon(a,b) or colon(a,step,b) — MATLAB a:b or a:step:b
+  colon: function(a: number, b: number, c?: number) {
+    if (c !== undefined) return math.range(a, c, b, true); // a:b:c in MATLAB = start:step:end
+    return math.range(a, b, true);
+  },
+}, { override: true });
+
+// ═══════════════════════════════════════════════════════
 // FEM HELPER FUNCTIONS (injected into math scope)
 // ═══════════════════════════════════════════════════════
 

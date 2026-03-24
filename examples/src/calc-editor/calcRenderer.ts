@@ -152,11 +152,9 @@ function matrixToKatex(val: any, varName?: string): string {
   }
   tex += "\\end{bmatrix}";
 
-  // Add size annotation — wrap varName in braces to avoid double subscript
-  const sizeStr = `_{${rows}\\times${cols}}`;
-
+  // Add size annotation as part of the variable display (no double subscript)
   if (varName) {
-    return `{${texVar(varName)}}${sizeStr} = ${tex}`;
+    return `\\underset{${rows}\\times${cols}}{${texVar(varName)}} = ${tex}`;
   }
   return tex;
 }
@@ -181,10 +179,8 @@ function vectorToKatex(val: any, varName?: string): string {
   }
   tex += "\\end{bmatrix}";
 
-  const sizeStr = `_{${n}\\times 1}`;
-
   if (varName) {
-    return `{${texVar(varName)}}${sizeStr} = ${tex}`;
+    return `\\underset{${n}\\times 1}{${texVar(varName)}} = ${tex}`;
   }
   return tex;
 }
@@ -195,10 +191,11 @@ function vectorToKatex(val: any, varName?: string): string {
 
 /** Format variable name for KaTeX (handle subscripts) */
 function texVar(name: string): string {
-  // K_local → K_{local}
+  // K_loc_1 → K_{\text{loc\_1}}
   const parts = name.split("_");
   if (parts.length > 1) {
-    return `${parts[0]}_{${parts.slice(1).join("\\_")}}`;
+    const sub = parts.slice(1).join("\\_");
+    return `${parts[0]}_{\\text{${sub}}}`;
   }
   // Greek letters
   const greek: Record<string, string> = {
