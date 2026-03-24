@@ -1165,9 +1165,13 @@ B_mat = (1/L) * [-1, 1]
 % Numérico:
 K = (E * A / L) * [1, -1; -1, 1]
 
-% ─── Verificar con integración numérica ───
+% ─── Verificar con integración simbólica ───
 EA = E * A
-K_11 = integrate('210000*0.01*(1/2)^2', 0, 2, 4)
+% $\\int_0^L B_1^2 \\cdot EA \\, dx = \\frac{EA}{L}$
+K_11_sym = sdefint('EA*(1/L)^2', 'x', 0, 2)
+
+% Integración numérica con Gauss:
+K_11_num = integrate('2100*(0.5)^2', 0, 2, 4)
 
 % ═══ PARTE 6: VECTOR DE CARGAS ═══
 

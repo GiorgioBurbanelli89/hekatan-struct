@@ -396,20 +396,47 @@ math.import({
   },
 
   // ─── Numerical integration (1D) ───
-  // integrate(f, a, b, n) — Gauss quadrature
-  integrate: function(f: any, a: number, b: number, n?: number) {
-    const npts = n || 4;
+  // integrate(expr, a, b, n) — numerical Gauss quadrature
+  // expr can be: string 'x^2' (variable x), function, or constant number
+  // Also: integrate(expr, var, a, b) — symbolic string with named variable
+  integrate: function(f: any, a: any, b?: any, n?: any) {
+    // If string with 4 args: integrate('x^2', 'x', 0, 1) → symbolic defint
+    if (typeof f === "string" && typeof a === "string" && typeof b === "number") {
+      try {
+        const result = nerdamer.defint(f, b, n, a);
+        const num = parseFloat(result.text("decimals"));
+        return isNaN(num) ? result.toString() : num;
+      } catch { /* fall through to numeric */ }
+    }
+
+    // Numeric integration
+    const lo = typeof a === "number" ? a : 0;
+    const hi = typeof b === "number" ? b : 1;
+    const npts = (typeof n === "number") ? n : 4;
+
     const pts: Record<number, number[][]> = {
       1: [[0, 2]], 2: [[-0.5773502691896258, 1], [0.5773502691896258, 1]],
       3: [[-0.7745966692414834, 0.5555555555555556], [0, 0.8888888888888888], [0.7745966692414834, 0.5555555555555556]],
       4: [[-0.8611363115940526, 0.3478548451374538], [-0.3399810435848563, 0.6521451548625461], [0.3399810435848563, 0.6521451548625461], [0.8611363115940526, 0.3478548451374538]],
     };
     const gp = pts[npts] || pts[4];
-    const half = (b - a) / 2;
-    const mid = (a + b) / 2;
+    const half = (hi - lo) / 2;
+    const mid = (lo + hi) / 2;
     let sum = 0;
-    for (const [xi, w] of gp) {
-      sum += w * f(mid + half * xi);
+
+    if (typeof f === "function") {
+      for (const [xi, w] of gp) sum += w * f(mid + half * xi);
+    } else if (typeof f === "string") {
+      // Evaluate string expression with x as variable
+      for (const [xi, w] of gp) {
+        try {
+          const val = parseFloat(nerdamer(f, { x: String(mid + half * xi) }).text("decimals"));
+          sum += w * val;
+        } catch { sum += 0; }
+      }
+    } else if (typeof f === "number") {
+      // Constant
+      return f * (hi - lo);
     }
     return sum * half;
   },
@@ -934,6 +961,10 @@ function matlabToMathjs(line: string): string {
 
   // Strip trailing semicolon (MATLAB suppress output — we always show)
   if (s.endsWith(";")) s = s.slice(0, -1).trim();
+
+  // Convert MATLAB single-quoted strings to double quotes for math.js
+  // 'x^2 + y' → "x^2 + y"
+  s = s.replace(/'([^']*?)'/g, '"$1"');
 
   // Backslash solve: A \ b → lusolve(A, b)
   // Must handle: u = K \ F
