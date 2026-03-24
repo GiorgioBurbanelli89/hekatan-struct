@@ -85,11 +85,11 @@ dofs_1 = assemble_dofs(1)
 resultado = solve_model()
 
 % ─── Paso 3: Desplazamientos por nodo ───
-u1 = u_node(1)
-u2 = u_node(2)
+u1 = unode(1)
+u2 = unode(2)
 
 % ─── Paso 4: Reacciones en apoyos ───
-r1 = r_node(1)
+r1 = rnode(1)
 
 % ─── Paso 5: Desplazamiento máximo ───
 U_max = max(abs(U))

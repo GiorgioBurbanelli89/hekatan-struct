@@ -122,16 +122,20 @@ function buildFemHelpers(scope: Record<string, any>) {
       scope.nDOF_free = result.freeDOFs.length;
       scope.nDOF_fixed = result.fixedDOFs.length;
 
-      // Per-node displacement extraction helper: u_node(n) → [ux,uy,uz,rx,ry,rz]
-      scope.u_node = (n: number) => {
-        const idx = (n - 1) * 6; // 1-based node
-        return math.matrix(result.U_full.slice(idx, idx + 6));
-      };
-      // Reaction at node: r_node(n) → [Fx,Fy,Fz,Mx,My,Mz]
-      scope.r_node = (n: number) => {
-        const idx = (n - 1) * 6;
-        return math.matrix(result.R_full.slice(idx, idx + 6));
-      };
+      // Per-node displacement extraction: unode(n) → [ux,uy,uz,rx,ry,rz]
+      // Use math.import to register as proper function (avoids subset interpretation)
+      try {
+        math.import({
+          unode: function(n: number) {
+            const idx = (n - 1) * 6;
+            return math.matrix(result.U_full.slice(idx, idx + 6));
+          },
+          rnode: function(n: number) {
+            const idx = (n - 1) * 6;
+            return math.matrix(result.R_full.slice(idx, idx + 6));
+          }
+        }, { override: true });
+      } catch { /* already imported */ }
 
       // Return summary string
       return `Resuelto: ${result.nDOF} DOFs (${result.freeDOFs.length} libres, ${result.fixedDOFs.length} fijos), max|U| = ${Math.max(...result.U_full.map(Math.abs)).toExponential(4)}`;

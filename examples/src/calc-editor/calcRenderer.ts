@@ -152,11 +152,11 @@ function matrixToKatex(val: any, varName?: string): string {
   }
   tex += "\\end{bmatrix}";
 
-  // Add size annotation
+  // Add size annotation — wrap varName in braces to avoid double subscript
   const sizeStr = `_{${rows}\\times${cols}}`;
 
   if (varName) {
-    return `${texVar(varName)}${sizeStr} = ${tex}`;
+    return `{${texVar(varName)}}${sizeStr} = ${tex}`;
   }
   return tex;
 }
@@ -184,7 +184,7 @@ function vectorToKatex(val: any, varName?: string): string {
   const sizeStr = `_{${n}\\times 1}`;
 
   if (varName) {
-    return `${texVar(varName)}${sizeStr} = ${tex}`;
+    return `{${texVar(varName)}}${sizeStr} = ${tex}`;
   }
   return tex;
 }
