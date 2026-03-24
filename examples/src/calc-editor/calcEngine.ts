@@ -378,6 +378,8 @@ export function evaluate(code: string, initialScope?: Record<string, any>, model
   const scope: Record<string, any> = { ...initialScope };
   // Inject FEM helper functions into scope
   buildFemHelpers(scope);
+  // Load saved library functions (persistent across sessions)
+  loadLibraryFunctions(scope);
   const rawLines = code.split("\n");
   const lines: CalcLine[] = [];
   const errors: string[] = [];
@@ -796,7 +798,87 @@ function registerMatlabFunction(
     parentScope[fnName] = fn;
   }
 
+  // Save to library (localStorage) for persistence across sessions
+  saveFunctionToLibrary(fnName, argNames, outVar, fnBody);
+
   return { name: fnName, args: argNames };
+}
+
+// ═══════════════════════════════════════════════════════
+// FUNCTION LIBRARY — persistent storage (localStorage)
+// ═══════════════════════════════════════════════════════
+
+const LIBRARY_KEY = "awatif_calc_functions";
+
+interface StoredFunction {
+  name: string;
+  args: string[];
+  outVar: string | null;
+  body: string[];
+}
+
+function saveFunctionToLibrary(name: string, args: string[], outVar: string | null, body: string[]) {
+  try {
+    const lib = getLibrary();
+    lib[name] = { name, args, outVar, body };
+    localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib));
+  } catch { /* localStorage not available */ }
+}
+
+export function getLibrary(): Record<string, StoredFunction> {
+  try {
+    const raw = localStorage.getItem(LIBRARY_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+export function deleteFromLibrary(name: string) {
+  try {
+    const lib = getLibrary();
+    delete lib[name];
+    localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib));
+    // Also unregister from math.js
+    // (can't truly unregister, but next session won't load it)
+  } catch { /* ignore */ }
+}
+
+export function getLibraryFunctionCode(name: string): string {
+  const lib = getLibrary();
+  const fn = lib[name];
+  if (!fn) return "";
+  const header = fn.outVar
+    ? `function ${fn.outVar} = ${fn.name}(${fn.args.join(", ")})`
+    : `function ${fn.name}(${fn.args.join(", ")})`;
+  return [header, ...fn.body.map(l => "  " + l), "end"].join("\n");
+}
+
+function loadLibraryFunctions(scope: Record<string, any>) {
+  const lib = getLibrary();
+  for (const [name, stored] of Object.entries(lib)) {
+    try {
+      const fnBody = stored.body;
+      const argNames = stored.args;
+      const outVar = stored.outVar;
+
+      const fn = (...args: any[]) => {
+        const localScope: Record<string, any> = { ...scope };
+        argNames.forEach((n, i) => { localScope[n] = args[i]; });
+        let lastResult: any = undefined;
+        for (const line of fnBody) {
+          try {
+            const converted = matlabToMathjs(line);
+            lastResult = math.evaluate(converted, localScope);
+            const assignMatch = line.match(/^(\w+)\s*=/);
+            if (assignMatch) localScope[assignMatch[1]] = lastResult;
+          } catch { /* skip */ }
+        }
+        if (outVar && localScope[outVar] !== undefined) return localScope[outVar];
+        return lastResult;
+      };
+
+      math.import({ [name]: fn }, { override: true });
+    } catch { /* skip broken functions */ }
+  }
 }
 
 // ═══════════════════════════════════════════════════════

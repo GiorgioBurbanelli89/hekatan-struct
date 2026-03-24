@@ -5,7 +5,7 @@
  * Templates seleccionables. Ctrl+Enter ejecuta.
  */
 
-import { evaluate } from "./calcEngine";
+import { evaluate, getLibrary, deleteFromLibrary, getLibraryFunctionCode } from "./calcEngine";
 import { renderCalcOutput, getCalcStyles } from "./calcRenderer";
 import { getTemplate, templateList, ModelData } from "./calcTemplates";
 import { exportStandalone, generateMatlabScript, generatePythonScript, generateHekatanScript, downloadFile } from "./calcExportStandalone";
@@ -115,6 +115,7 @@ function createPanel() {
       </div>
       <div class="calc-toolbar-right">
         <button id="calc-help" class="calc-btn" title="Funciones disponibles">❓ Funciones</button>
+        <button id="calc-library" class="calc-btn" title="Funciones guardadas (persistentes)">📚 Librería</button>
         <button id="calc-fullscreen" class="calc-btn" title="Pantalla completa">⛶</button>
         <span class="calc-title">📐 Calculadora FEM</span>
         <button id="calc-close" class="calc-btn calc-btn-close" title="Cerrar">✕</button>
@@ -176,6 +177,10 @@ function createPanel() {
   // Help — show available functions
   const helpBtn = panelElement.querySelector("#calc-help") as HTMLButtonElement;
   helpBtn.addEventListener("click", () => showFunctionsHelp(output));
+
+  // Library — show/manage saved functions
+  const libBtn = panelElement.querySelector("#calc-library") as HTMLButtonElement;
+  libBtn.addEventListener("click", () => showLibrary(output, editor));
 
   // Fullscreen toggle
   const fullscreenBtn = panelElement.querySelector("#calc-fullscreen") as HTMLButtonElement;
@@ -589,6 +594,74 @@ function getPanelStyles(): string {
 // ═══════════════════════════════════════════════════════
 // HELP — LIST ALL AVAILABLE FUNCTIONS
 // ═══════════════════════════════════════════════════════
+
+function showLibrary(output: HTMLDivElement, editor: HTMLTextAreaElement) {
+  const lib = getLibrary();
+  const names = Object.keys(lib);
+
+  if (names.length === 0) {
+    output.innerHTML = `
+    <div style="padding: 16px; color: #ccc; font-family: 'JetBrains Mono', monospace;">
+      <h2 style="color: #61afef; margin: 0 0 12px;">📚 Librería de funciones</h2>
+      <p style="color: #888;">No hay funciones guardadas todavía.</p>
+      <p style="color: #aaa;">Define una función en el editor:</p>
+      <pre style="color: #98c379; background: #1e1e2e; padding: 12px; border-radius: 6px;">function K = rigidez_axial(E, A, L)
+  K = (E * A / L) * [1, -1; -1, 1]
+end</pre>
+      <p style="color: #aaa;">Al ejecutar, se guarda automáticamente en la librería.<br>
+      Después puedes llamarla desde cualquier script:</p>
+      <pre style="color: #98c379; background: #1e1e2e; padding: 12px; border-radius: 6px;">K1 = rigidez_axial(210000, 0.01, 2)</pre>
+    </div>`;
+    return;
+  }
+
+  let html = `
+  <div style="padding: 16px; color: #ccc; font-family: 'JetBrains Mono', monospace; font-size: 13px;">
+    <h2 style="color: #61afef; margin: 0 0 12px;">📚 Librería de funciones (${names.length})</h2>
+    <p style="color: #888; font-size: 11px; margin-bottom: 12px;">
+      Estas funciones están guardadas y disponibles en cualquier script.
+    </p>`;
+
+  for (const name of names) {
+    const fn = lib[name];
+    const sig = fn.outVar
+      ? `${fn.outVar} = ${fn.name}(${fn.args.join(", ")})`
+      : `${fn.name}(${fn.args.join(", ")})`;
+    const code = getLibraryFunctionCode(name);
+
+    html += `
+    <div style="background: #1e1e2e; border: 1px solid #333; border-radius: 6px; padding: 10px; margin-bottom: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <span style="color: #e5c07b; font-weight: bold;">function ${sig}</span>
+        <div>
+          <button class="lib-insert-btn" data-fn="${name}" style="background: #2d5a27; color: #98c379; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; margin-right: 4px; font-size: 11px;">📋 Insertar</button>
+          <button class="lib-delete-btn" data-fn="${name}" style="background: #5a2727; color: #ff6b6b; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 11px;">🗑 Eliminar</button>
+        </div>
+      </div>
+      <pre style="color: #9cdcfe; margin: 0; font-size: 12px; white-space: pre-wrap;">${code}</pre>
+    </div>`;
+  }
+
+  html += `</div>`;
+  output.innerHTML = html;
+
+  // Event delegation for insert/delete buttons
+  output.querySelectorAll(".lib-insert-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const fnName = (btn as HTMLElement).dataset.fn!;
+      const code = getLibraryFunctionCode(fnName);
+      editor.value = code + "\n\n" + editor.value;
+    });
+  });
+
+  output.querySelectorAll(".lib-delete-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const fnName = (btn as HTMLElement).dataset.fn!;
+      deleteFromLibrary(fnName);
+      showLibrary(output, editor); // refresh
+    });
+  });
+}
 
 function showFunctionsHelp(output: HTMLDivElement) {
   output.innerHTML = `
