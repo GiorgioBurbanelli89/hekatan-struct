@@ -45,11 +45,11 @@ export function getTemplate(templateId: string, data: ModelData): string {
 // ═══════════════════════════════════════════════════════
 
 function templateFemAuto(data: ModelData): string {
-  const nelem = data.elements.length;
-  const showMax = Math.min(nelem, 3); // mostrar máximo 3 elementos detallados
+  const nframes = data.elements.filter(e => e.length === 2).length;
+  const showMax = Math.min(nframes, 3);
   return templateModelData(data) + `
 % ═══════════════════════════════════════════
-% FEM paso a paso del modelo actual
+% FEM paso a paso (frames)
 % Funciones: stiffness(i), transform(i), kglobal(i)
 % ═══════════════════════════════════════════
 
@@ -62,10 +62,8 @@ T_1 = transform(1)
 % ─── Elemento 1: K global = T' * K_local * T ───
 K_glob_1 = kglobal(1)
 
-% ─── Longitud elemento 1 ───
+% ─── Longitud y DOFs ───
 L_1 = elem_length(1)
-
-% ─── DOFs globales del elemento 1 ───
 dofs_1 = assemble_dofs(1)
 ${showMax >= 2 ? `
 % ─── Elemento 2 ───
@@ -79,12 +77,6 @@ K_loc_3 = stiffness(3)
 K_glob_3 = kglobal(3)
 L_3 = elem_length(3)
 ` : ""}
-% ─── Para ver todos los elementos: ───
-% for i = 1:nelem
-%   K_i = stiffness(i)
-%   T_i = transform(i)
-%   L_i = elem_length(i)
-% end
 `;
 }
 
@@ -438,12 +430,64 @@ function fmtPropValue(map: Map<number, number> | undefined, name: string): strin
 }
 
 function templateModelData(data: ModelData): string {
+  // Separate frames (2-node) and shells (3+ nodes)
+  const frameIdx: number[] = [];
+  const shellIdx: number[] = [];
+  data.elements.forEach((el, i) => {
+    if (el.length === 2) frameIdx.push(i);
+    else shellIdx.push(i);
+  });
+
+  // Build frame-only property maps
+  const framePropLines: string[] = [];
+  const addFrameProp = (map: Map<number, number> | undefined, name: string) => {
+    if (!map || map.size === 0) return;
+    const vals = frameIdx.map(i => map.get(i)).filter(v => v !== undefined) as number[];
+    if (vals.length === 0) return;
+    if (vals.every(v => v === vals[0])) {
+      framePropLines.push(`${name} = ${vals[0]}`);
+    } else {
+      framePropLines.push(`${name} = [${vals.join(", ")}]`);
+    }
+  };
+  addFrameProp(data.elementInputs.elasticities, "E");
+  addFrameProp(data.elementInputs.areas, "A");
+  addFrameProp(data.elementInputs.momentsOfInertiaZ, "Iz");
+  addFrameProp(data.elementInputs.momentsOfInertiaY, "Iy");
+  addFrameProp(data.elementInputs.shearModuli, "G");
+  addFrameProp(data.elementInputs.torsionalConstants, "J");
+
+  // Build shell property lines
+  const shellPropLines: string[] = [];
+  if (shellIdx.length > 0) {
+    const addShellProp = (map: Map<number, number> | undefined, name: string) => {
+      if (!map || map.size === 0) return;
+      const vals = shellIdx.map(i => map.get(i)).filter(v => v !== undefined) as number[];
+      if (vals.length === 0) return;
+      if (vals.every(v => v === vals[0])) {
+        shellPropLines.push(`${name}_shell = ${vals[0]}`);
+      } else {
+        shellPropLines.push(`${name}_shell = [${vals.join(", ")}]`);
+      }
+    };
+    addShellProp(data.elementInputs.elasticities, "E");
+    addShellProp(data.elementInputs.thicknesses, "t");
+    addShellProp(data.elementInputs.poissonsRatios, "nu");
+  }
+
+  const shellSection = shellIdx.length > 0 ? `
+% Shells (${shellIdx.length} elementos de ${shellIdx[0]+1}..${shellIdx[shellIdx.length-1]+1})
+nshells = ${shellIdx.length}
+${shellPropLines.join("\n")}
+` : "";
+
   return `% ═══════════════════════════════════════════
 % Datos del modelo actual
 % ═══════════════════════════════════════════
 
 nnodes = ${data.nodes.length}
 nelem = ${data.elements.length}
+nframes = ${frameIdx.length}
 ndof = nnodes * 6
 
 % Coordenadas [x,y,z]
@@ -452,12 +496,7 @@ nodes = ${fmtNodesCompact(data.nodes)}
 % Conectividad
 elem = ${fmtElementsCompact(data.elements)}
 
-% Propiedades
-${fmtPropValue(data.elementInputs.elasticities, "E")}
-${fmtPropValue(data.elementInputs.areas, "A")}
-${fmtPropValue(data.elementInputs.momentsOfInertiaZ, "Iz")}
-${fmtPropValue(data.elementInputs.momentsOfInertiaY, "Iy")}
-${fmtPropValue(data.elementInputs.shearModuli, "G")}
-${fmtPropValue(data.elementInputs.torsionalConstants, "J")}
-`;
+% Propiedades frames (${frameIdx.length} elementos)
+${framePropLines.join("\n")}
+${shellSection}`;
 }

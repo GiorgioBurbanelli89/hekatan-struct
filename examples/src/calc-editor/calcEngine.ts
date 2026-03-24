@@ -122,30 +122,50 @@ function getElementInputsFromScope(scope: Record<string, any>): ElementInputs {
   const nelem = scope.nelem || 0;
   const ei: ElementInputs = {};
 
-  const mapProp = (name: string): Map<number, number> | undefined => {
+  // Get elements to know which are frames (2-node) vs shells
+  const elements = getElementsFromScope(scope);
+  const frameIndices: number[] = [];
+  if (elements) {
+    elements.forEach((el, i) => { if (el.length === 2) frameIndices.push(i); });
+  }
+
+  const mapProp = (name: string, isFrameProp: boolean): Map<number, number> | undefined => {
     const val = scope[name];
     if (val === undefined || val === null) return undefined;
     const m = new Map<number, number>();
     if (typeof val === "number") {
-      for (let i = 0; i < nelem; i++) m.set(i, val);
+      // Scalar → broadcast to all elements (or only frames if frame prop)
+      const indices = isFrameProp ? frameIndices : Array.from({length: nelem}, (_, i) => i);
+      for (const i of indices) m.set(i, val);
     } else {
       const arr = typeof val.toArray === "function" ? val.toArray() : val;
       if (Array.isArray(arr)) {
         const flat = arr.flat();
-        for (let i = 0; i < flat.length && i < nelem; i++) m.set(i, flat[i]);
+        // Array values map to frame indices (for frame props) or all elements
+        const indices = isFrameProp ? frameIndices : Array.from({length: nelem}, (_, i) => i);
+        for (let j = 0; j < flat.length && j < indices.length; j++) {
+          m.set(indices[j], flat[j]);
+        }
       }
     }
     return m.size > 0 ? m : undefined;
   };
 
-  ei.elasticities = mapProp("E");
-  ei.areas = mapProp("A");
-  ei.momentsOfInertiaZ = mapProp("Iz");
-  ei.momentsOfInertiaY = mapProp("Iy");
-  ei.shearModuli = mapProp("G");
-  ei.torsionalConstants = mapProp("J");
-  ei.thicknesses = mapProp("t");
-  ei.poissonsRatios = mapProp("nu");
+  ei.elasticities = mapProp("E", true);  // E applies to frames; shells use E_shell
+  ei.areas = mapProp("A", true);
+  ei.momentsOfInertiaZ = mapProp("Iz", true);
+  ei.momentsOfInertiaY = mapProp("Iy", true);
+  ei.shearModuli = mapProp("G", true);
+  ei.torsionalConstants = mapProp("J", true);
+  ei.thicknesses = mapProp("t", false);   // shell property
+  ei.poissonsRatios = mapProp("nu", false); // shell property
+
+  // Also check shell-specific E
+  const eShell = mapProp("E_shell", false);
+  if (eShell) {
+    if (!ei.elasticities) ei.elasticities = new Map();
+    eShell.forEach((v, k) => ei.elasticities!.set(k, v));
+  }
 
   return ei;
 }
