@@ -984,17 +984,39 @@ function matlabToMathjs(line: string): string {
   s = s.replace(/(\w+)'/g, "transpose($1)");
 
   // MATLAB 1-based indexing: A(i,j) → subset(A, index(i, j))
-  // But NOT function calls like inv(K) or zeros(3,3)
+  // But NOT function calls — build set dynamically from all math.js registered functions
   const knownFunctions = new Set([
+    // Core math.js
     "inv", "det", "transpose", "norm", "zeros", "ones", "eye",
-    "lusolve", "lup", "sqrt", "abs", "sin", "cos", "tan",
-    "stiffness", "transform", "kglobal", "assemble_dofs", "elem_length",
-    "exp", "log", "log10", "ceil", "floor", "round", "mod",
-    "max", "min", "sum", "prod", "size", "length",
-    "stiffness", "transform", "assemble", "diag", "trace",
-    "cross", "dot", "kron", "reshape", "flatten", "squeeze",
+    "lusolve", "lup", "sqrt", "abs", "sin", "cos", "tan", "asin", "acos", "atan", "atan2",
+    "exp", "log", "log2", "log10", "ceil", "floor", "round", "mod", "sign", "pow",
+    "max", "min", "sum", "prod", "size", "length", "mean", "median", "std", "variance",
+    "diag", "trace", "cross", "dot", "kron", "reshape", "flatten", "squeeze",
     "eigs", "svd", "rank", "subset", "index", "range",
-    "matrix", "number", "print", "format",
+    "matrix", "number", "print", "format", "string", "boolean", "complex",
+    "real", "im", "conj", "arg",
+    "sinh", "cosh", "tanh", "sec", "csc", "cot",
+    "factorial", "gamma", "combinations", "permutations",
+    "gcd", "lcm", "nthRoot", "cbrt",
+    "random", "randomInt", "pickRandom",
+    "sort", "map", "filter", "forEach", "concat", "column", "row",
+    "sparse", "identity", "typeOf", "isInteger", "isPositive", "isNegative",
+    // FEM helpers
+    "stiffness", "transform", "kglobal", "assemble_dofs", "elem_length",
+    "solve_model", "unode", "rnode",
+    // Symbolic (nerdamer)
+    "syms", "sym", "sdiff", "sdiff2", "sint", "sdefint",
+    "sexpand", "sfactor", "ssolve", "ssimplify", "ssubs", "seval", "stex",
+    // FEM shape functions
+    "N_bar2", "dN_bar2", "N_T3", "dN_T3", "N_Q4", "dN_Q4",
+    "N_Q8", "dN_Q8", "N_T6", "dN_T6",
+    "jacobian2d", "B_plane", "D_planestress", "D_planestrain", "D_plate",
+    "gauss1d", "gauss2d",
+    "beam_stiffness_2d", "beam_stiffness_3d",
+    // Numerical calculus
+    "integrate", "diff_num",
+    // Linspace, colon
+    "linspace", "colon",
   ]);
 
   // Match: varName(args) where varName is NOT a known function
