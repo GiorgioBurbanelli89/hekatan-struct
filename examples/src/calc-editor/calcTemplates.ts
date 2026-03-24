@@ -419,13 +419,22 @@ function fmtElementsCompact(elements: Element[]): string {
 function fmtPropValue(map: Map<number, number> | undefined, name: string): string {
   if (!map || map.size === 0) return `% ${name}: no definido`;
   const vals = Array.from(map.values());
+  // All same → scalar (works with stiffness() which broadcasts)
   if (vals.every(v => v === vals[0])) {
     return `${name} = ${vals[0]}`;
   }
-  if (vals.length <= 10) {
-    return `${name} = [${vals.join(", ")}]`;
+  // Group unique values: if only 2-3 groups, show as comment + array
+  const unique = [...new Set(vals.map(v => v.toPrecision(8)))];
+  if (unique.length <= 3) {
+    // Show groups as comment, full array for math.js
+    const groups = unique.map(u => {
+      const count = vals.filter(v => v.toPrecision(8) === u).length;
+      return `${parseFloat(u)}(×${count})`;
+    }).join(", ");
+    return `${name} = [${vals.join(", ")}] % ${groups}`;
   }
-  return `${name} = [${vals.slice(0, 5).join(", ")}, ...] % ${vals.length} valores`;
+  // Many different values — full array (math.js needs it)
+  return `${name} = [${vals.join(", ")}]`;
 }
 
 function templateModelData(data: ModelData): string {
