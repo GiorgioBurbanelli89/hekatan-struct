@@ -102,13 +102,12 @@ function createPanel() {
   panelElement.innerHTML = `
     <div class="calc-toolbar">
       <div class="calc-toolbar-left">
-        <select id="calc-lang" class="calc-select calc-lang-select" title="Lenguaje">
-          <option value="mathjs">awatif (math.js)</option>
-          <option value="matlab">MATLAB / Octave</option>
-          <option value="python">Python / NumPy</option>
-          <option value="hekatan">Hekatan (.hcalc)</option>
-        </select>
         <button id="calc-run" class="calc-btn calc-btn-run" title="Ejecutar (Ctrl+Enter)">▶ Ejecutar</button>
+        <select id="calc-lang" class="calc-select calc-lang-select" title="Exportar como">
+          <option value="matlab">💾 MATLAB .m</option>
+          <option value="python">💾 Python .py</option>
+          <option value="hekatan">💾 Hekatan .hcalc</option>
+        </select>
         <button id="calc-export" class="calc-btn" title="Descargar archivo">💾 Descargar</button>
         <select id="calc-template" class="calc-select">
           ${templateList.map(t => `<option value="${t.id}">${t.name}</option>`).join("")}
@@ -172,11 +171,10 @@ function createPanel() {
   // Close
   closeBtn.addEventListener("click", closeCalcPanel);
 
-  // Language selector — regenerates template in chosen language
+  // Export format selector
   const langSelect = panelElement.querySelector("#calc-lang") as HTMLSelectElement;
   langSelect.addEventListener("change", () => {
     currentLang = langSelect.value as any;
-    loadTemplate(currentTemplateId);
   });
 
   // Download button — saves current editor content as file
@@ -206,29 +204,12 @@ function loadTemplate(templateId: string) {
   const lineNums = panelElement.querySelector("#calc-line-nums") as HTMLDivElement;
   const output = panelElement.querySelector("#calc-output") as HTMLDivElement;
 
-  if (currentLang === "mathjs") {
-    // Interactive math.js — evaluable in browser
-    const code = getTemplate(templateId, currentModelData);
-    editor.value = code;
-    updateLineNumbers(editor, lineNums);
-    runCode(editor, output);
-  } else if (currentLang === "matlab") {
-    // Full standalone MATLAB script
-    const code = generateMatlabScript(currentModelData);
-    editor.value = code;
-    updateLineNumbers(editor, lineNums);
-    output.innerHTML = '<div style="color:#8b949e;padding:12px;">📋 Script MATLAB/Octave — usar 💾 para descargar .m<br>No ejecutable en browser.</div>';
-  } else if (currentLang === "python") {
-    const code = generatePythonScript(currentModelData);
-    editor.value = code;
-    updateLineNumbers(editor, lineNums);
-    output.innerHTML = '<div style="color:#8b949e;padding:12px;">🐍 Script Python/NumPy — usar 💾 para descargar .py<br>No ejecutable en browser.</div>';
-  } else if (currentLang === "hekatan") {
-    const code = generateHekatanScript(currentModelData);
-    editor.value = code;
-    updateLineNumbers(editor, lineNums);
-    output.innerHTML = '<div style="color:#8b949e;padding:12px;">📐 Script Hekatan .hcalc — usar 💾 para descargar<br>Abrir en Hekatan Calc.</div>';
-  }
+  // All modes use the same evaluable math.js template (syntax ≈ MATLAB)
+  // The language selector only changes what 💾 Download produces
+  const code = getTemplate(templateId, currentModelData);
+  editor.value = code;
+  updateLineNumbers(editor, lineNums);
+  runCode(editor, output);
 }
 
 function runCode(editor: HTMLTextAreaElement, output: HTMLDivElement) {
@@ -532,10 +513,10 @@ function getPanelStyles(): string {
       background: #0d1117;
     }
 
-    /* Responsive: en móvil editor arriba, output abajo */
-    @media (max-width: 768px) {
+    /* Responsive: en móvil todo stacked */
+    @media (max-width: 900px) {
       #calc-panel {
-        height: 70vh;
+        height: 60vh;
       }
       .calc-body {
         flex-direction: column;
@@ -554,12 +535,18 @@ function getPanelStyles(): string {
       }
       .calc-toolbar {
         flex-wrap: wrap;
-        gap: 4px;
+        gap: 3px;
+        padding: 4px 6px;
+        min-height: 32px;
       }
       .calc-toolbar-left, .calc-toolbar-right {
         flex-wrap: wrap;
+        gap: 3px;
       }
-      .calc-title { font-size: 12px; }
+      .calc-title { font-size: 11px; }
+      .calc-btn { padding: 3px 6px; font-size: 11px; }
+      .calc-select { font-size: 11px; padding: 3px 4px; max-width: 140px; }
+      .calc-lang-select { max-width: 110px; }
     }
   `;
 }
