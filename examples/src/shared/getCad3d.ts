@@ -5348,6 +5348,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         <button id="cad3d-nonlinear" title="Análisis no-lineal dinámico (BRB + sismo)">🔥 Nonlinear</button>
         <button id="cad3d-pushover" title="Pushover cíclico con histéresis">📊 Pushover</button>
         <button id="cad3d-fem-solver" title="Report Explained: derivación FEM paso a paso de todos los elementos">📐 Report Explained</button>
+        <button id="cad3d-calc" title="Calculadora FEM: editor MATLAB + output KaTeX">🧮 Cálculo</button>
         <button id="cad3d-log" title="Ver log del solver">📋 Log</button>
       </div>
       <div class="btn-row" style="margin-top:2px">
@@ -7294,6 +7295,20 @@ Util:     cad.info()  cad.clear()  cad.help()
     panel.querySelector("#cad3d-fem-solver")?.addEventListener("click", (ev) => {
       ev.stopPropagation();
       showFemSolverReport();
+    });
+
+    // === Calculadora FEM ===
+    panel.querySelector("#cad3d-calc")?.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      import("../calc-editor/calcPanel").then(({ openCalcPanel }) => {
+        const modelData = {
+          nodes: mesh.nodes.val,
+          elements: mesh.elements.val,
+          nodeInputs: mesh.nodeInputs?.val ?? {},
+          elementInputs: mesh.elementInputs?.val ?? {},
+        };
+        openCalcPanel(modelData);
+      });
     });
 
     panel.querySelector("#cad3d-modal")?.addEventListener("click", (ev) => {
