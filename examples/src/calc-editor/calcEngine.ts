@@ -243,11 +243,41 @@ interface ProcessedLine {
 }
 
 function preprocessBlocks(rawLines: string[]): ProcessedLine[] {
-  const result: ProcessedLine[] = [];
+  // Phase 1: Join multi-line brackets [ ... ] into single lines
+  const joinedLines: { line: string; startLine: number }[] = [];
   let i = 0;
-
   while (i < rawLines.length) {
     const trimmed = rawLines[i].trim();
+    // Count unmatched brackets
+    const opens = (trimmed.match(/\[/g) || []).length;
+    const closes = (trimmed.match(/\]/g) || []).length;
+    if (opens > closes) {
+      // Multi-line matrix/vector — join until brackets balance
+      let combined = trimmed;
+      const startLine = i;
+      let depth = opens - closes;
+      i++;
+      while (i < rawLines.length && depth > 0) {
+        const next = rawLines[i].trim();
+        combined += " " + next;
+        depth += (next.match(/\[/g) || []).length;
+        depth -= (next.match(/\]/g) || []).length;
+        i++;
+      }
+      joinedLines.push({ line: combined, startLine: startLine });
+    } else {
+      joinedLines.push({ line: rawLines[i], startLine: i });
+      i++;
+    }
+  }
+
+  // Phase 2: Process for/if/while blocks
+  const result: ProcessedLine[] = [];
+  i = 0;
+
+  while (i < joinedLines.length) {
+    const trimmed = joinedLines[i].line.trim();
+    const origLine = joinedLines[i].startLine + 1;
 
     // Detect block start: for, if, while
     if (trimmed.match(/^(for|if|while)\s+/i)) {
@@ -256,23 +286,23 @@ function preprocessBlocks(rawLines: string[]): ProcessedLine[] {
       let depth = 1;
       i++;
 
-      while (i < rawLines.length && depth > 0) {
-        const inner = rawLines[i].trim();
+      while (i < joinedLines.length && depth > 0) {
+        const inner = joinedLines[i].line.trim();
         if (inner.match(/^(for|if|while)\s+/i)) depth++;
         if (inner === "end") depth--;
-        if (depth > 0) blockLines.push(rawLines[i]);
+        if (depth > 0) blockLines.push(joinedLines[i].line);
         i++;
       }
 
       result.push({
-        line: rawLines[blockStart],
-        originalLineNum: blockStart + 1,
+        line: joinedLines[blockStart].line,
+        originalLineNum: origLine,
         blockLines,
       });
     } else {
       result.push({
-        line: rawLines[i],
-        originalLineNum: i + 1,
+        line: joinedLines[i].line,
+        originalLineNum: origLine,
       });
       i++;
     }
