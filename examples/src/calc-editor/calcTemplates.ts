@@ -1,7 +1,7 @@
 /**
  * calcTemplates.ts — Scripts predefinidos para la calculadora FEM
  *
- * Cada template inyecta datos del modelo actual + código paso a paso.
+ * TODOS los templates son ejemplos completos que funcionan sin errores.
  */
 
 import { Node, Element, NodeInputs, ElementInputs } from "awatif-fem";
@@ -13,248 +13,442 @@ export interface ModelData {
   elementInputs: ElementInputs;
 }
 
-/** Format nodes as MATLAB matrix */
-function fmtNodes(nodes: Node[]): string {
-  return nodes.map(n => `  ${n[0]}, ${n[1]}, ${n[2]}`).join(";\n");
-}
-
-/** Format elements as MATLAB matrix (0-based) */
-function fmtElements(elements: Element[]): string {
-  return elements.map(e => `  ${e.join(", ")}`).join(";\n");
-}
-
-/** Format supports */
-function fmtSupports(ni: NodeInputs): string {
-  if (!ni.supports) return "% (sin apoyos)";
-  const lines: string[] = [];
-  for (const [node, sup] of ni.supports) {
-    const vals = sup.map(v => v ? "1" : "0").join(", ");
-    lines.push(`  ${node}, ${vals}`);
-  }
-  return lines.join(";\n");
-}
-
-/** Format loads */
-function fmtLoads(ni: NodeInputs): string {
-  if (!ni.loads) return "% (sin cargas)";
-  const lines: string[] = [];
-  for (const [node, load] of ni.loads) {
-    const vals = load.map(v => v).join(", ");
-    lines.push(`  ${node}, ${vals}`);
-  }
-  return lines.join(";\n");
-}
-
-/** Format element property map */
-function fmtPropMap(map: Map<number, number> | undefined, name: string): string {
-  if (!map || map.size === 0) return `% ${name}: no definido`;
-  // Check if all values are the same
-  const vals = Array.from(map.values());
-  if (vals.every(v => v === vals[0])) {
-    return `${name} = ${vals[0]}`;
-  }
-  // Array format
-  return `${name} = [${vals.join(", ")}]`;
-}
-
 // ═══════════════════════════════════════════════════════
-// TEMPLATES
+// TEMPLATE LIST & DISPATCH
 // ═══════════════════════════════════════════════════════
+
+export const templateList = [
+  { id: "fem_auto", name: "FEM del modelo actual (auto)" },
+  { id: "portal", name: "Portal 2D — paso a paso" },
+  { id: "axial", name: "Barra axial — derivación FEM" },
+  { id: "spring3", name: "3 resortes — assembly manual" },
+  { id: "viga2d", name: "Viga empotrada — flexión" },
+  { id: "custom", name: "Calculadora libre" },
+  { id: "empty", name: "Datos del modelo actual" },
+];
 
 export function getTemplate(templateId: string, data: ModelData): string {
   switch (templateId) {
-    case "empty": return templateEmpty(data);
-    case "static": return templateStaticFull(data);
-    case "stiffness": return templateStiffnessOnly(data);
-    case "axial": return templateAxialOnly(data);
-    case "custom": return templateCustomCalc();
-    default: return templateEmpty(data);
+    case "fem_auto": return templateFemAuto(data);
+    case "portal": return templatePortal();
+    case "axial": return templateAxial();
+    case "spring3": return templateSprings();
+    case "viga2d": return templateViga();
+    case "custom": return templateCustom();
+    case "empty": return templateModelData(data);
+    default: return templateFemAuto(data);
   }
 }
 
-export const templateList = [
-  { id: "static", name: "Análisis estático completo" },
-  { id: "stiffness", name: "Solo rigidez (K_local, T)" },
-  { id: "axial", name: "Barra axial paso a paso" },
-  { id: "empty", name: "Solo datos del modelo" },
-  { id: "custom", name: "Calculadora libre" },
-];
+// ═══════════════════════════════════════════════════════
+// TEMPLATE: FEM del modelo actual (usa funciones internas)
+// ═══════════════════════════════════════════════════════
 
-// --- Template: Solo datos del modelo ---
-function templateEmpty(data: ModelData): string {
+function templateFemAuto(data: ModelData): string {
+  const nelem = data.elements.length;
+  const showMax = Math.min(nelem, 3); // mostrar máximo 3 elementos detallados
+  return templateModelData(data) + `
+% ═══════════════════════════════════════════
+% FEM paso a paso del modelo actual
+% Funciones: stiffness(i), transform(i), kglobal(i)
+% ═══════════════════════════════════════════
+
+% ─── Elemento 1: K local (12x12) ───
+K_loc_1 = stiffness(1)
+
+% ─── Elemento 1: Transformación (12x12) ───
+T_1 = transform(1)
+
+% ─── Elemento 1: K global = T' * K_local * T ───
+K_glob_1 = kglobal(1)
+
+% ─── Longitud elemento 1 ───
+L_1 = elem_length(1)
+
+% ─── DOFs globales del elemento 1 ───
+dofs_1 = assemble_dofs(1)
+${showMax >= 2 ? `
+% ─── Elemento 2 ───
+K_loc_2 = stiffness(2)
+T_2 = transform(2)
+K_glob_2 = kglobal(2)
+L_2 = elem_length(2)
+` : ""}${showMax >= 3 ? `
+% ─── Elemento 3 ───
+K_loc_3 = stiffness(3)
+K_glob_3 = kglobal(3)
+L_3 = elem_length(3)
+` : ""}
+% ─── Para ver todos los elementos: ───
+% for i = 1:nelem
+%   K_i = stiffness(i)
+%   T_i = transform(i)
+%   L_i = elem_length(i)
+% end
+`;
+}
+
+// ═══════════════════════════════════════════════════════
+// TEMPLATE: Portal 2D paso a paso
+// ═══════════════════════════════════════════════════════
+
+function templatePortal(): string {
   return `% ═══════════════════════════════════════════
-% Modelo actual — Datos
-% ═══════════════════════════════════════════
-
-% Coordenadas de nodos [x, y, z]
-nodes = [
-${fmtNodes(data.nodes)}
-]
-
-% Conectividad de elementos [nodo_i, nodo_j]
-elem = [
-${fmtElements(data.elements)}
-]
-
-% Apoyos [nodo, tx,ty,tz,rx,ry,rz]
-supports = [
-${fmtSupports(data.nodeInputs)}
-]
-
-% Cargas [nodo, Fx,Fy,Fz,Mx,My,Mz]
-loads = [
-${fmtLoads(data.nodeInputs)}
-]
-
-% Propiedades
-${fmtPropMap(data.elementInputs.elasticities, "E")}
-${fmtPropMap(data.elementInputs.areas, "A")}
-${fmtPropMap(data.elementInputs.momentsOfInertiaZ, "Iz")}
-${fmtPropMap(data.elementInputs.momentsOfInertiaY, "Iy")}
-${fmtPropMap(data.elementInputs.shearModuli, "G")}
-${fmtPropMap(data.elementInputs.torsionalConstants, "J")}
-
-nelem = ${data.elements.length}
-nnodes = ${data.nodes.length}
-ndof = nnodes * 6
-`;
-}
-
-// --- Template: Análisis estático completo ---
-function templateStaticFull(data: ModelData): string {
-  return templateEmpty(data) + `
-% ═══════════════════════════════════════════
-% Análisis estático paso a paso
-% ═══════════════════════════════════════════
-
-% Paso 1: Rigidez local y transformación por elemento
-for i = 1:nelem
-  K_loc = stiffness(i)
-  T_i = transform(i)
-  K_glob = T_i' * K_loc * T_i
-end
-
-% Paso 2: Ensamblaje global
-K_total = assemble()
-
-% Paso 3: Vector de fuerzas
-F = forcevec()
-
-% Paso 4: Aplicar condiciones de borde y resolver
-u = solve()
-
-% Paso 5: Reacciones
-R = reactions()
-
-% Paso 6: Fuerzas internas del último elemento
-f_local = K_loc * T_i * u
-`;
-}
-
-// --- Template: Solo rigidez ---
-function templateStiffnessOnly(data: ModelData): string {
-  return templateEmpty(data) + `
-% ═══════════════════════════════════════════
-% Matrices de rigidez por elemento
-% ═══════════════════════════════════════════
-
-for i = 1:nelem
-  % Matriz de rigidez local (12x12)
-  K_loc = stiffness(i)
-
-  % Matriz de transformación (12x12)
-  T_i = transform(i)
-
-  % Cosenos directores (3x3)
-  % lambda = T_i(1:3, 1:3)
-
-  % Rigidez global = T' * K_local * T
-  K_glob = T_i' * K_loc * T_i
-end
-`;
-}
-
-// --- Template: Barra axial paso a paso ---
-function templateAxialOnly(data: ModelData): string {
-  return `% ═══════════════════════════════════════════
-% Barra axial — Derivación paso a paso
-% (1 elemento, 2 nodos, 1 DOF por nodo)
+% Portal 2D — Análisis paso a paso
+% 2 columnas + 1 viga, 4 nodos, 3 DOF/nodo
 % ═══════════════════════════════════════════
 
 % Geometría
-L = 1
-E = 1
-A = 1
+H = 3
+L = 5
+E = 2.1e7
+A_col = 0.04
+I_col = 0.000213
+A_vig = 0.03
+I_vig = 0.000160
 
-% Ecuación diferencial de gobierno:
-%   EA * d²u/dx² + q(x) = 0
+% ─── Elemento 1: Columna izq (nodo 0→2) ───
+L1 = H
+k1 = E * A_col / L1
+t1 = 12 * E * I_col / L1^3
+b1 = 6 * E * I_col / L1^2
+c1 = 4 * E * I_col / L1
+d1 = 2 * E * I_col / L1
 
-% Funciones de forma lineales:
-%   N1(xi) = 1 - xi    (xi = x/L)
-%   N2(xi) = xi
+% K local columna (u, w, theta) x 2 nodos = 6x6
+% DOFs: [u0, w0, th0, u2, w2, th2]
+% Columna vertical: axial=w, corte=u, flexion=theta
+K1 = [t1, 0, b1, -t1, 0, b1; 0, k1, 0, 0, -k1, 0; b1, 0, c1, -b1, 0, d1; -t1, 0, -b1, t1, 0, -b1; 0, -k1, 0, 0, k1, 0; b1, 0, d1, -b1, 0, c1]
 
-% Matriz de deformación B = dN/dx:
-%   B = (1/L) * [-1, 1]
-B = (1/L) * [-1, 1]
+% ─── Elemento 2: Columna der (nodo 1→3) ───
+K2 = K1
 
-% Matriz constitutiva D = E
-D = E
+% ─── Elemento 3: Viga (nodo 2→3) ───
+L3 = L
+k3 = E * A_vig / L3
+t3 = 12 * E * I_vig / L3^3
+b3 = 6 * E * I_vig / L3^2
+c3 = 4 * E * I_vig / L3
+d3 = 2 * E * I_vig / L3
 
-% Rigidez: K = A * integral(B' * D * B dx, 0, L)
-%   K = (E*A/L) * [1, -1; -1, 1]
-K = (E * A / L) * [1, -1; -1, 1]
+% K local viga: DOFs [u2, w2, th2, u3, w3, th3]
+K3 = [k3, 0, 0, -k3, 0, 0; 0, t3, b3, 0, -t3, b3; 0, b3, c3, 0, -b3, d3; -k3, 0, 0, k3, 0, 0; 0, -t3, -b3, 0, t3, -b3; 0, b3, d3, 0, -b3, c3]
 
-% Carga distribuida q(x) = b = 1
-b = 1
-% Vector de cargas: Q = integral(N' * q dx, 0, L)
-Q = [b * L / 2; b * L / 2]
+% ─── Ensamblaje global (12 DOFs → 6 libres) ───
+% Nodos 0,1 empotrados → DOFs 0-5 fijos
+% Nodos 2,3 libres → DOFs 6-11 libres
+% K_free = contribucion de K1(filas4-6,cols4-6) + K3(filas1-3,cols1-3)
+%        + K2(filas4-6,cols4-6) + K3(filas4-6,cols4-6)
 
-% Carga puntual en extremo libre
-P = 0
+% Submatrices de cada elemento para nodos libres
+% Nodo 2 recibe: K1[3:5,3:5] + K3[0:2,0:2]
+% Nodo 3 recibe: K2[3:5,3:5] + K3[3:5,3:5]
+% Acoplamiento 2-3: K3[0:2,3:5]
 
-% Condición de borde: u1 = 0 (empotrado)
-% Ecuación reducida: K(2,2) * u2 = Q(2) + P
-u2 = (Q(2) + P) / K(2,2)
+K_22 = [t1+k3, 0, -b1; 0, k1+t3, b3; -b1, b3, c1+c3]
+K_33 = [t1+k3, 0, -b1; 0, k1+t3, -b3; -b1, -b3, c1+c3]
+K_23 = [-k3, 0, 0; 0, -t3, b3; 0, -b3, d3]
+K_32 = [-k3, 0, 0; 0, -t3, -b3; 0, b3, d3]
 
-% Desplazamiento exacto:
-%   u(x) = (1/EA) * (-b*x²/2 + (P+b*L)*x)
-% En x=L:
-u_exact = (1 / (E * A)) * (-b * L * L / 2 + (P + b * L) * L)
+% K global reducido (6x6)
+K_free = [K_22, K_23; K_32, K_33]
 
-% Verificación
-error = u2 - u_exact
+% ─── Carga lateral ───
+P = 10
+F_free = [P; 0; 0; 0; 0; 0]
+
+% ─── Solve ───
+u = inv(K_free) * F_free
+
+% Desplazamiento lateral nodo 2
+u_lat = u(1)
 `;
 }
 
-// --- Template: Calculadora libre ---
-function templateCustomCalc(): string {
+// ═══════════════════════════════════════════════════════
+// TEMPLATE: Barra axial — derivación FEM completa
+// ═══════════════════════════════════════════════════════
+
+function templateAxial(): string {
   return `% ═══════════════════════════════════════════
-% Calculadora libre
+% Barra axial — Derivación FEM paso a paso
+% 1 elemento, 2 nodos, 1 DOF por nodo
 % ═══════════════════════════════════════════
 
-% Matrices estilo MATLAB
+% ─── Datos ───
+L = 2
+E = 210000
+A = 0.01
+
+% ─── Ecuación diferencial de gobierno ───
+%   EA * d²u/dx² + q(x) = 0
+
+% ─── Funciones de forma (lineales) ───
+%   N1(xi) = 1 - xi    (xi = x/L)
+%   N2(xi) = xi
+
+% ─── Matriz B = dN/dx ───
+B = (1/L) * [-1, 1]
+
+% ─── Rigidez: K = integral(B' * E*A * B dx, 0, L) ───
+%   K = (EA/L) * [1, -1; -1, 1]
+K = (E * A / L) * [1, -1; -1, 1]
+
+% ─── Carga distribuida q = 5 kN/m ───
+q = 5
+
+% ─── Vector de cargas consistente ───
+%   Q = integral(N' * q dx, 0, L)
+%   Q = [q*L/2; q*L/2]
+Q = [q * L / 2; q * L / 2]
+
+% ─── Carga puntual en extremo libre ───
+P = 20
+
+% ─── Condiciones de borde: u1 = 0 ───
+% Ecuación reducida: K(2,2) * u2 = Q(2) + P
+K_red = K(2,2)
+F_red = Q(2) + P
+
+% ─── Solución ───
+u2 = F_red / K_red
+
+% ─── Solución exacta ───
+%   u(L) = (1/EA) * (P*L + q*L²/2)
+u_exact = (P * L + q * L^2 / 2) / (E * A)
+
+% ─── Verificación ───
+error_pct = abs(u2 - u_exact) / u_exact * 100
+
+% ─── Reacción en apoyo ───
+R1 = -(P + q * L)
+
+% ─── Esfuerzo ───
+sigma = E * u2 / L
+`;
+}
+
+// ═══════════════════════════════════════════════════════
+// TEMPLATE: 3 resortes — assembly manual
+// ═══════════════════════════════════════════════════════
+
+function templateSprings(): string {
+  return `% ═══════════════════════════════════════════
+% 3 resortes en serie — Assembly paso a paso
+% 4 nodos, 1 DOF/nodo, nodo 0 y 3 fijos
+% ═══════════════════════════════════════════
+
+% ─── Rigideces ───
+k1 = 100
+k2 = 200
+k3 = 150
+
+% ─── Matrices locales (2x2) ───
+K1 = [k1, -k1; -k1, k1]
+K2 = [k2, -k2; -k2, k2]
+K3 = [k3, -k3; -k3, k3]
+
+% ─── Assembly global (4x4) ───
+K = zeros(4, 4)
+
+% Elemento 1: nodos 0-1
+K(1,1) = K(1,1) + K1(1,1)
+K(1,2) = K(1,2) + K1(1,2)
+K(2,1) = K(2,1) + K1(2,1)
+K(2,2) = K(2,2) + K1(2,2)
+
+% Elemento 2: nodos 1-2
+K(2,2) = K(2,2) + K2(1,1)
+K(2,3) = K(2,3) + K2(1,2)
+K(3,2) = K(3,2) + K2(2,1)
+K(3,3) = K(3,3) + K2(2,2)
+
+% Elemento 3: nodos 2-3
+K(3,3) = K(3,3) + K3(1,1)
+K(3,4) = K(3,4) + K3(1,2)
+K(4,3) = K(4,3) + K3(2,1)
+K(4,4) = K(4,4) + K3(2,2)
+
+% ─── K global ensamblada ───
+K
+
+% ─── Cargas: F2=50, F3=0 ───
+F = [0; 50; 0; 0]
+
+% ─── Reducir: nodos 0 y 3 fijos ───
+% DOFs libres: 1 y 2 (indices 2,3 en MATLAB)
+K_free = [K(2,2), K(2,3); K(3,2), K(3,3)]
+F_free = [F(2); F(3)]
+
+% ─── Solve ───
+u_free = inv(K_free) * F_free
+
+% ─── Vector completo ───
+u1 = u_free(1)
+u2 = u_free(2)
+
+% ─── Reacciones ───
+R0 = -k1 * u1
+R3 = -k3 * (0 - u2)
+
+% ─── Verificación equilibrio ───
+suma = R0 + 50 + R3
+`;
+}
+
+// ═══════════════════════════════════════════════════════
+// TEMPLATE: Viga empotrada — flexión
+// ═══════════════════════════════════════════════════════
+
+function templateViga(): string {
+  return `% ═══════════════════════════════════════════
+% Viga empotrada-libre (cantilever)
+% 1 elemento, 2 DOF/nodo (v, theta)
+% ═══════════════════════════════════════════
+
+% ─── Datos ───
+L = 3
+E = 2.1e7
+b_sec = 0.25
+h = 0.40
+I = b_sec * h^3 / 12
+
+% ─── Funciones de forma (Hermite) ───
+%   N1 = 1 - 3*xi² + 2*xi³
+%   N2 = L*xi*(1-xi)²
+%   N3 = 3*xi² - 2*xi³
+%   N4 = L*xi²*(xi-1)
+
+% ─── K local (4x4): [v1, th1, v2, th2] ───
+EI = E * I
+K = (EI / L^3) * [12, 6*L, -12, 6*L; 6*L, 4*L^2, -6*L, 2*L^2; -12, -6*L, 12, -6*L; 6*L, 2*L^2, -6*L, 4*L^2]
+
+% ─── Carga puntual en extremo libre ───
+P = -10
+
+% ─── BCs: nodo 1 empotrado (v1=0, th1=0) ───
+% K reducida: filas/cols 3,4
+K_free = [K(3,3), K(3,4); K(4,3), K(4,4)]
+F_free = [P; 0]
+
+% ─── Solve ───
+u_free = inv(K_free) * F_free
+v2 = u_free(1)
+th2 = u_free(2)
+
+% ─── Solución exacta ───
+v_exact = P * L^3 / (3 * EI)
+th_exact = P * L^2 / (2 * EI)
+
+% ─── Verificación ───
+error_v = abs(v2 - v_exact) / abs(v_exact) * 100
+error_th = abs(th2 - th_exact) / abs(th_exact) * 100
+
+% ─── Reacciones ───
+% R = K_full * u_full - F
+R_v = -(P)
+M_emp = -(P * L)
+`;
+}
+
+// ═══════════════════════════════════════════════════════
+// TEMPLATE: Calculadora libre
+// ═══════════════════════════════════════════════════════
+
+function templateCustom(): string {
+  return `% ═══════════════════════════════════════════
+% Calculadora libre — Álgebra lineal
+% ═══════════════════════════════════════════
+
+% ─── Matrices ───
 K = [4, -2, 0; -2, 4, -2; 0, -2, 4]
 F = [10; 0; -5]
 
-% Solve
-u = K \\ F
+% ─── Solve K*u = F ───
+u = inv(K) * F
 
-% Indexación (1-based)
+% ─── Indexación (1-based) ───
 K(1,1)
 K(2,3)
 F(3)
 
-% Operaciones
+% ─── Operaciones ───
 Kt = K'
 d = det(K)
 Ki = inv(K)
 
-% Verificación: K * u debe dar F
+% ─── Verificación: K*u = F ───
 check = K * u
 
-% Zeros, ones, eye
+% ─── Utilidades ───
 Z = zeros(3, 3)
 I = eye(3)
 v = ones(4, 1)
+
+% ─── Loop ───
+suma = 0
+for i = 1:5
+  suma = suma + i^2
+end
+suma
+`;
+}
+
+// ═══════════════════════════════════════════════════════
+// TEMPLATE: Datos del modelo actual
+// ═══════════════════════════════════════════════════════
+
+/** Format nodes as single-line MATLAB matrix */
+function fmtNodesCompact(nodes: Node[]): string {
+  if (nodes.length === 0) return "[]";
+  // Limit display to first 20 nodes
+  const show = nodes.slice(0, 20);
+  const rows = show.map(n => `${n[0]}, ${n[1]}, ${n[2]}`).join("; ");
+  const suffix = nodes.length > 20 ? ` % ... (${nodes.length} nodos total)` : "";
+  return `[${rows}]${suffix}`;
+}
+
+function fmtElementsCompact(elements: Element[]): string {
+  if (elements.length === 0) return "[]";
+  const show = elements.slice(0, 20);
+  const rows = show.map(e => e.join(", ")).join("; ");
+  const suffix = elements.length > 20 ? ` % ... (${elements.length} elementos total)` : "";
+  return `[${rows}]${suffix}`;
+}
+
+function fmtPropValue(map: Map<number, number> | undefined, name: string): string {
+  if (!map || map.size === 0) return `% ${name}: no definido`;
+  const vals = Array.from(map.values());
+  if (vals.every(v => v === vals[0])) {
+    return `${name} = ${vals[0]}`;
+  }
+  if (vals.length <= 10) {
+    return `${name} = [${vals.join(", ")}]`;
+  }
+  return `${name} = [${vals.slice(0, 5).join(", ")}, ...] % ${vals.length} valores`;
+}
+
+function templateModelData(data: ModelData): string {
+  return `% ═══════════════════════════════════════════
+% Datos del modelo actual
+% ═══════════════════════════════════════════
+
+nnodes = ${data.nodes.length}
+nelem = ${data.elements.length}
+ndof = nnodes * 6
+
+% Coordenadas [x,y,z]
+nodes = ${fmtNodesCompact(data.nodes)}
+
+% Conectividad
+elem = ${fmtElementsCompact(data.elements)}
+
+% Propiedades
+${fmtPropValue(data.elementInputs.elasticities, "E")}
+${fmtPropValue(data.elementInputs.areas, "A")}
+${fmtPropValue(data.elementInputs.momentsOfInertiaZ, "Iz")}
+${fmtPropValue(data.elementInputs.momentsOfInertiaY, "Iy")}
+${fmtPropValue(data.elementInputs.shearModuli, "G")}
+${fmtPropValue(data.elementInputs.torsionalConstants, "J")}
 `;
 }

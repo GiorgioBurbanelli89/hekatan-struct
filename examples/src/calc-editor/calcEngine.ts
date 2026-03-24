@@ -16,12 +16,139 @@
  */
 
 import { create, all } from "mathjs";
+import {
+  getLocalStiffnessMatrix,
+  getTransformationMatrix,
+} from "awatif-fem";
+import type { Node, ElementInputs } from "awatif-fem";
 
 // Create math.js instance with all functions
 const math = create(all, {
   number: "number",
   matrix: "Matrix",
 }) as any; // full math.js instance with evaluate, subset, etc.
+
+// ═══════════════════════════════════════════════════════
+// FEM HELPER FUNCTIONS (injected into math scope)
+// ═══════════════════════════════════════════════════════
+
+/** Build FEM helper functions that use the current model data from scope */
+function buildFemHelpers(scope: Record<string, any>) {
+  // stiffness(i) — returns K_local 12x12 for element i (1-based)
+  scope.stiffness = (i: number) => {
+    const idx = i - 1; // 1-based → 0-based
+    const nodes = getNodesFromScope(scope);
+    const elements = getElementsFromScope(scope);
+    const ei = getElementInputsFromScope(scope);
+    if (!nodes || !elements || idx < 0 || idx >= elements.length) {
+      throw new Error(`stiffness(${i}): elemento no existe`);
+    }
+    const el = elements[idx];
+    const elNodes: Node[] = el.map((n: number) => nodes[n]);
+    const K = getLocalStiffnessMatrix(elNodes, ei, idx);
+    return math.matrix(K);
+  };
+
+  // transform(i) — returns T 12x12 for element i (1-based)
+  scope.transform = (i: number) => {
+    const idx = i - 1;
+    const nodes = getNodesFromScope(scope);
+    const elements = getElementsFromScope(scope);
+    if (!nodes || !elements || idx < 0 || idx >= elements.length) {
+      throw new Error(`transform(${i}): elemento no existe`);
+    }
+    const el = elements[idx];
+    const elNodes: Node[] = el.map((n: number) => nodes[n]);
+    const T = getTransformationMatrix(elNodes);
+    return math.matrix(T);
+  };
+
+  // kglobal(i) — returns T' * K_local * T for element i
+  scope.kglobal = (i: number) => {
+    const K = scope.stiffness(i);
+    const T = scope.transform(i);
+    return math.multiply(math.transpose(T), math.multiply(K, T));
+  };
+
+  // assemble_dofs(i) — returns global DOF indices for element i
+  scope.assemble_dofs = (i: number) => {
+    const idx = i - 1;
+    const elements = getElementsFromScope(scope);
+    if (!elements || idx < 0 || idx >= elements.length) {
+      throw new Error(`assemble_dofs(${i}): elemento no existe`);
+    }
+    const el = elements[idx];
+    const dofs: number[] = [];
+    for (const n of el) {
+      for (let d = 0; d < 6; d++) dofs.push(n * 6 + d + 1); // 1-based
+    }
+    return math.matrix(dofs);
+  };
+
+  // elem_length(i) — returns length of element i
+  scope.elem_length = (i: number) => {
+    const idx = i - 1;
+    const nodes = getNodesFromScope(scope);
+    const elements = getElementsFromScope(scope);
+    if (!nodes || !elements || idx < 0 || idx >= elements.length) {
+      throw new Error(`elem_length(${i}): elemento no existe`);
+    }
+    const el = elements[idx];
+    const n0 = nodes[el[0]], n1 = nodes[el[1]];
+    return Math.sqrt((n1[0]-n0[0])**2 + (n1[1]-n0[1])**2 + (n1[2]-n0[2])**2);
+  };
+}
+
+/** Extract nodes array from scope (handles math.js Matrix or plain array) */
+function getNodesFromScope(scope: Record<string, any>): number[][] | null {
+  const n = scope.nodes;
+  if (!n) return null;
+  const arr = typeof n.toArray === "function" ? n.toArray() : n;
+  if (!Array.isArray(arr)) return null;
+  return arr;
+}
+
+/** Extract elements connectivity from scope */
+function getElementsFromScope(scope: Record<string, any>): number[][] | null {
+  const e = scope.elem || scope.elements;
+  if (!e) return null;
+  const arr = typeof e.toArray === "function" ? e.toArray() : e;
+  if (!Array.isArray(arr)) return null;
+  return arr;
+}
+
+/** Build ElementInputs from scope variables */
+function getElementInputsFromScope(scope: Record<string, any>): ElementInputs {
+  const nelem = scope.nelem || 0;
+  const ei: ElementInputs = {};
+
+  const mapProp = (name: string): Map<number, number> | undefined => {
+    const val = scope[name];
+    if (val === undefined || val === null) return undefined;
+    const m = new Map<number, number>();
+    if (typeof val === "number") {
+      for (let i = 0; i < nelem; i++) m.set(i, val);
+    } else {
+      const arr = typeof val.toArray === "function" ? val.toArray() : val;
+      if (Array.isArray(arr)) {
+        const flat = arr.flat();
+        for (let i = 0; i < flat.length && i < nelem; i++) m.set(i, flat[i]);
+      }
+    }
+    return m.size > 0 ? m : undefined;
+  };
+
+  ei.elasticities = mapProp("E");
+  ei.areas = mapProp("A");
+  ei.momentsOfInertiaZ = mapProp("Iz");
+  ei.momentsOfInertiaY = mapProp("Iy");
+  ei.shearModuli = mapProp("G");
+  ei.torsionalConstants = mapProp("J");
+  ei.thicknesses = mapProp("t");
+  ei.poissonsRatios = mapProp("nu");
+
+  return ei;
+}
 
 export interface CalcLine {
   lineNum: number;
@@ -48,6 +175,8 @@ export interface CalcResult {
  */
 export function evaluate(code: string, initialScope?: Record<string, any>): CalcResult {
   const scope: Record<string, any> = { ...initialScope };
+  // Inject FEM helper functions into scope
+  buildFemHelpers(scope);
   const rawLines = code.split("\n");
   const lines: CalcLine[] = [];
   const errors: string[] = [];
@@ -205,6 +334,7 @@ function matlabToMathjs(line: string): string {
   const knownFunctions = new Set([
     "inv", "det", "transpose", "norm", "zeros", "ones", "eye",
     "lusolve", "lup", "sqrt", "abs", "sin", "cos", "tan",
+    "stiffness", "transform", "kglobal", "assemble_dofs", "elem_length",
     "exp", "log", "log10", "ceil", "floor", "round", "mod",
     "max", "min", "sum", "prod", "size", "length",
     "stiffness", "transform", "assemble", "diag", "trace",
