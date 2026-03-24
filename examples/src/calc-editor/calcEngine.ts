@@ -153,6 +153,268 @@ math.import({
 }, { override: true });
 
 // ═══════════════════════════════════════════════════════
+// FEM SHAPE FUNCTIONS, DERIVATIVES, JACOBIAN, B MATRIX
+// ═══════════════════════════════════════════════════════
+math.import({
+  // ─── Shape functions: N_XX(xi, eta) → vector of shape function values ───
+
+  // T3: Linear triangle (3 nodes)
+  N_T3: function(xi: number, eta: number) {
+    return math.matrix([1 - xi - eta, xi, eta]);
+  },
+  dN_T3: function(_xi: number, _eta: number) {
+    // Returns 2×3 matrix: [dN/dxi; dN/deta]
+    return math.matrix([[-1, 1, 0], [-1, 0, 1]]);
+  },
+
+  // T6: Quadratic triangle (6 nodes)
+  N_T6: function(xi: number, eta: number) {
+    const L1 = 1 - xi - eta, L2 = xi, L3 = eta;
+    return math.matrix([
+      L1*(2*L1-1), L2*(2*L2-1), L3*(2*L3-1),
+      4*L1*L2, 4*L2*L3, 4*L3*L1
+    ]);
+  },
+  dN_T6: function(xi: number, eta: number) {
+    const L1 = 1 - xi - eta, L2 = xi, L3 = eta;
+    return math.matrix([
+      [4*xi+4*eta-3, 4*xi-1, 0, 4-8*xi-4*eta, 4*eta, -4*eta],
+      [4*xi+4*eta-3, 0, 4*eta-1, -4*xi, 4*xi, 4-4*xi-8*eta]
+    ]);
+  },
+
+  // Q4: Bilinear quadrilateral (4 nodes)
+  N_Q4: function(xi: number, eta: number) {
+    return math.matrix([
+      0.25*(1-xi)*(1-eta), 0.25*(1+xi)*(1-eta),
+      0.25*(1+xi)*(1+eta), 0.25*(1-xi)*(1+eta)
+    ]);
+  },
+  dN_Q4: function(xi: number, eta: number) {
+    // 2×4: [dN/dxi; dN/deta]
+    return math.matrix([
+      [-0.25*(1-eta), 0.25*(1-eta), 0.25*(1+eta), -0.25*(1+eta)],
+      [-0.25*(1-xi), -0.25*(1+xi), 0.25*(1+xi), 0.25*(1-xi)]
+    ]);
+  },
+
+  // Q8: Serendipity quadrilateral (8 nodes)
+  N_Q8: function(xi: number, eta: number) {
+    return math.matrix([
+      0.25*(1-xi)*(1-eta)*(-xi-eta-1),
+      0.25*(1+xi)*(1-eta)*(xi-eta-1),
+      0.25*(1+xi)*(1+eta)*(xi+eta-1),
+      0.25*(1-xi)*(1+eta)*(-xi+eta-1),
+      0.5*(1-xi*xi)*(1-eta),
+      0.5*(1+xi)*(1-eta*eta),
+      0.5*(1-xi*xi)*(1+eta),
+      0.5*(1-xi)*(1-eta*eta)
+    ]);
+  },
+  dN_Q8: function(xi: number, eta: number) {
+    return math.matrix([
+      [ // dN/dxi
+        0.25*(1-eta)*(2*xi+eta), 0.25*(1-eta)*(2*xi-eta),
+        0.25*(1+eta)*(2*xi+eta), 0.25*(1+eta)*(2*xi-eta),
+        -xi*(1-eta), 0.5*(1-eta*eta),
+        -xi*(1+eta), -0.5*(1-eta*eta)
+      ],
+      [ // dN/deta
+        0.25*(1-xi)*(xi+2*eta), -0.25*(1+xi)*(-xi+2*eta),
+        0.25*(1+xi)*(xi+2*eta), 0.25*(1-xi)*(-xi+2*eta),
+        -0.5*(1-xi*xi), -eta*(1+xi),
+        0.5*(1-xi*xi), -eta*(1-xi)
+      ]
+    ]);
+  },
+
+  // Q9: Lagrangian quadrilateral (9 nodes)
+  N_Q9: function(xi: number, eta: number) {
+    const x = [xi*(xi-1)/2, 1-xi*xi, xi*(xi+1)/2];
+    const e = [eta*(eta-1)/2, 1-eta*eta, eta*(eta+1)/2];
+    return math.matrix([
+      x[0]*e[0], x[2]*e[0], x[2]*e[2], x[0]*e[2],
+      x[1]*e[0], x[2]*e[1], x[1]*e[2], x[0]*e[1], x[1]*e[1]
+    ]);
+  },
+
+  // ─── Jacobian: J = dN * nodeCoords ───
+  // nodeCoords: n×2 matrix of [x,y] for each node
+  // dN: 2×n matrix from dN_XX functions
+  jacobian2d: function(dN: any, nodeCoords: any) {
+    // J = dN * nodeCoords → 2×2
+    return math.multiply(dN, nodeCoords);
+  },
+
+  // ─── B matrix for plane stress/strain (2D) ───
+  // Returns 3×(2n) strain-displacement matrix
+  B_plane: function(dN: any, nodeCoords: any) {
+    const J = math.multiply(dN, nodeCoords) as any;
+    const Jinv = math.inv(J);
+    const dNxy = math.multiply(Jinv, dN) as any; // 2×n: [dN/dx; dN/dy]
+    const dNarr = (dNxy.toArray ? dNxy.toArray() : dNxy) as number[][];
+    const n = dNarr[0].length;
+    const B: number[][] = [[], [], []];
+    for (let i = 0; i < n; i++) {
+      // Row 0: dNi/dx, 0
+      B[0].push(dNarr[0][i]); B[0].push(0);
+      // Row 1: 0, dNi/dy
+      B[1].push(0); B[1].push(dNarr[1][i]);
+      // Row 2: dNi/dy, dNi/dx
+      B[2].push(dNarr[1][i]); B[2].push(dNarr[0][i]);
+    }
+    return math.matrix(B);
+  },
+
+  // ─── B matrix for plate bending (Mindlin) ───
+  // 3 DOF/node: w, theta_x, theta_y
+  B_bending: function(dN: any, nodeCoords: any) {
+    const J = math.multiply(dN, nodeCoords) as any;
+    const Jinv = math.inv(J);
+    const dNxy = math.multiply(Jinv, dN) as any;
+    const dNarr = (dNxy.toArray ? dNxy.toArray() : dNxy) as number[][];
+    const n = dNarr[0].length;
+    const Bb: number[][] = [[], [], []];
+    for (let i = 0; i < n; i++) {
+      // [0, dNi/dx, 0]
+      Bb[0].push(0); Bb[0].push(dNarr[0][i]); Bb[0].push(0);
+      // [0, 0, dNi/dy]
+      Bb[1].push(0); Bb[1].push(0); Bb[1].push(dNarr[1][i]);
+      // [0, dNi/dy, dNi/dx]
+      Bb[2].push(0); Bb[2].push(dNarr[1][i]); Bb[2].push(dNarr[0][i]);
+    }
+    return math.matrix(Bb);
+  },
+
+  // ─── B matrix shear (Mindlin plate) ───
+  B_shear: function(dN: any, N: any, nodeCoords: any) {
+    const J = math.multiply(dN, nodeCoords) as any;
+    const Jinv = math.inv(J);
+    const dNxy = math.multiply(Jinv, dN) as any;
+    const dNarr = (dNxy.toArray ? dNxy.toArray() : dNxy) as number[][];
+    const Narr = (N.toArray ? N.toArray() : N) as number[];
+    const n = Narr.length;
+    const Bs: number[][] = [[], []];
+    for (let i = 0; i < n; i++) {
+      // [dNi/dx, Ni, 0]
+      Bs[0].push(dNarr[0][i]); Bs[0].push(Narr[i]); Bs[0].push(0);
+      // [dNi/dy, 0, Ni]
+      Bs[1].push(dNarr[1][i]); Bs[1].push(0); Bs[1].push(Narr[i]);
+    }
+    return math.matrix(Bs);
+  },
+
+  // ─── Gauss quadrature points and weights ───
+  gauss1d: function(n: number) {
+    const pts: Record<number, number[][]> = {
+      1: [[0, 2]],
+      2: [[-0.577350269189626, 1], [0.577350269189626, 1]],
+      3: [[-0.774596669241483, 0.555555555555556], [0, 0.888888888888889], [0.774596669241483, 0.555555555555556]],
+      4: [[-0.861136311594953, 0.347854845137454], [-0.339981043584856, 0.652145154862546], [0.339981043584856, 0.652145154862546], [0.861136311594953, 0.347854845137454]],
+    };
+    const p = pts[n] || pts[2];
+    return math.matrix(p);
+  },
+
+  gauss2d: function(n: number) {
+    // n×n Gauss points for quad elements
+    // Returns matrix [xi, eta, weight] per row
+    const g1 = (n === 1) ? [[0, 2]] :
+               (n === 2) ? [[-0.577350269189626, 1], [0.577350269189626, 1]] :
+               [[-0.774596669241483, 0.555555555555556], [0, 0.888888888888889], [0.774596669241483, 0.555555555555556]];
+    const pts: number[][] = [];
+    for (const [xi, wi] of g1) {
+      for (const [eta, wj] of g1) {
+        pts.push([xi, eta, wi * wj]);
+      }
+    }
+    return math.matrix(pts);
+  },
+
+  gauss_tri: function(n: number) {
+    // Gauss points for triangular elements
+    if (n === 1) return math.matrix([[1/3, 1/3, 0.5]]);
+    if (n === 3) return math.matrix([
+      [1/6, 1/6, 1/6], [2/3, 1/6, 1/6], [1/6, 2/3, 1/6]
+    ]);
+    // 4 points
+    return math.matrix([
+      [1/3, 1/3, -27/96], [0.6, 0.2, 25/96],
+      [0.2, 0.6, 25/96], [0.2, 0.2, 25/96]
+    ]);
+  },
+
+  // ─── Constitutive matrices ───
+  // Plane stress: D = E/(1-nu²) * [1 nu 0; nu 1 0; 0 0 (1-nu)/2]
+  D_planestress: function(E: number, nu: number) {
+    const c = E / (1 - nu * nu);
+    return math.matrix([
+      [c, c*nu, 0],
+      [c*nu, c, 0],
+      [0, 0, c*(1-nu)/2]
+    ]);
+  },
+
+  // Plane strain: D = E/((1+nu)(1-2nu)) * [1-nu nu 0; nu 1-nu 0; 0 0 (1-2nu)/2]
+  D_planestrain: function(E: number, nu: number) {
+    const c = E / ((1+nu) * (1-2*nu));
+    return math.matrix([
+      [c*(1-nu), c*nu, 0],
+      [c*nu, c*(1-nu), 0],
+      [0, 0, c*(1-2*nu)/2]
+    ]);
+  },
+
+  // Mindlin bending: Db = Eh³/12 * D_planestress / E
+  D_bending: function(E: number, nu: number, h: number) {
+    const c = E * h*h*h / (12 * (1 - nu*nu));
+    return math.matrix([
+      [c, c*nu, 0],
+      [c*nu, c, 0],
+      [0, 0, c*(1-nu)/2]
+    ]);
+  },
+
+  // Mindlin shear: Ds = kappa * G * h * I2
+  D_shear: function(E: number, nu: number, h: number, kapa?: number) {
+    const k = kapa || 5/6;
+    const G = E / (2 * (1 + nu));
+    const c = k * G * h;
+    return math.matrix([[c, 0], [0, c]]);
+  },
+
+  // ─── Numerical differentiation ───
+  // diff_num(f, x, h) — central difference df/dx
+  diff_num: function(f: any, x: number, h?: number) {
+    const dx = h || 1e-8;
+    if (typeof f === "function") {
+      return (f(x + dx) - f(x - dx)) / (2 * dx);
+    }
+    throw new Error("diff_num: primer argumento debe ser una función");
+  },
+
+  // ─── Numerical integration (1D) ───
+  // integrate(f, a, b, n) — Gauss quadrature
+  integrate: function(f: any, a: number, b: number, n?: number) {
+    const npts = n || 4;
+    const pts: Record<number, number[][]> = {
+      1: [[0, 2]], 2: [[-0.5773502691896258, 1], [0.5773502691896258, 1]],
+      3: [[-0.7745966692414834, 0.5555555555555556], [0, 0.8888888888888888], [0.7745966692414834, 0.5555555555555556]],
+      4: [[-0.8611363115940526, 0.3478548451374538], [-0.3399810435848563, 0.6521451548625461], [0.3399810435848563, 0.6521451548625461], [0.8611363115940526, 0.3478548451374538]],
+    };
+    const gp = pts[npts] || pts[4];
+    const half = (b - a) / 2;
+    const mid = (a + b) / 2;
+    let sum = 0;
+    for (const [xi, w] of gp) {
+      sum += w * f(mid + half * xi);
+    }
+    return sum * half;
+  },
+
+}, { override: true });
+
+// ═══════════════════════════════════════════════════════
 // FEM HELPER FUNCTIONS (injected into math scope)
 // ═══════════════════════════════════════════════════════
 
