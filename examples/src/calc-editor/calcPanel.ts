@@ -163,7 +163,7 @@ function loadTemplate(templateId: string) {
 
 function runCode(editor: HTMLTextAreaElement, output: HTMLDivElement) {
   const code = editor.value;
-  const result = evaluate(code);
+  const result = evaluate(code, undefined, currentModelData || undefined);
   output.innerHTML = renderCalcOutput(result);
 
   // Scroll output to top

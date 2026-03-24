@@ -19,8 +19,10 @@ import { create, all } from "mathjs";
 import {
   getLocalStiffnessMatrix,
   getTransformationMatrix,
+  didacticSolveCpp,
 } from "awatif-fem";
-import type { Node, ElementInputs } from "awatif-fem";
+import type { Node, ElementInputs, NodeInputs } from "awatif-fem";
+import type { ModelData } from "./calcTemplates";
 
 // Create math.js instance with all functions
 const math = create(all, {
@@ -31,6 +33,9 @@ const math = create(all, {
 // ═══════════════════════════════════════════════════════
 // FEM HELPER FUNCTIONS (injected into math scope)
 // ═══════════════════════════════════════════════════════
+
+// Store model data for solve_model() to use
+let _currentModelData: ModelData | null = null;
 
 /** Build FEM helper functions that use the current model data from scope */
 function buildFemHelpers(scope: Record<string, any>) {
@@ -96,6 +101,52 @@ function buildFemHelpers(scope: Record<string, any>) {
     const el = elements[idx];
     const n0 = nodes[el[0]], n1 = nodes[el[1]];
     return Math.sqrt((n1[0]-n0[0])**2 + (n1[1]-n0[1])**2 + (n1[2]-n0[2])**2);
+  };
+
+  // ═══════════════════════════════════════════════
+  // solve_model() — WASM solver, returns all results to scope
+  // ═══════════════════════════════════════════════
+  scope.solve_model = () => {
+    if (!_currentModelData) throw new Error("solve_model: no hay modelo cargado");
+    const md = _currentModelData;
+    try {
+      const result = didacticSolveCpp(
+        md.nodes, md.elements, md.nodeInputs, md.elementInputs
+      );
+      // Inject results into scope
+      scope._solve_result = result;
+      scope.U = math.matrix(result.U_full);
+      scope.F = math.matrix(result.F_applied);
+      scope.R = math.matrix(result.R_full);
+      scope.nDOF_total = result.nDOF;
+      scope.nDOF_free = result.freeDOFs.length;
+      scope.nDOF_fixed = result.fixedDOFs.length;
+
+      // Per-node displacement extraction helper: u_node(n) → [ux,uy,uz,rx,ry,rz]
+      scope.u_node = (n: number) => {
+        const idx = (n - 1) * 6; // 1-based node
+        return math.matrix(result.U_full.slice(idx, idx + 6));
+      };
+      // Reaction at node: r_node(n) → [Fx,Fy,Fz,Mx,My,Mz]
+      scope.r_node = (n: number) => {
+        const idx = (n - 1) * 6;
+        return math.matrix(result.R_full.slice(idx, idx + 6));
+      };
+
+      // Return summary string
+      return `Resuelto: ${result.nDOF} DOFs (${result.freeDOFs.length} libres, ${result.fixedDOFs.length} fijos), max|U| = ${Math.max(...result.U_full.map(Math.abs)).toExponential(4)}`;
+    } catch (err: any) {
+      throw new Error(`solve_model: ${err.message}`);
+    }
+  };
+
+  // K_element(i) — returns K_global from WASM result (after solve_model)
+  scope.K_element = (i: number) => {
+    const r = scope._solve_result;
+    if (!r) throw new Error("K_element: primero ejecuta solve_model()");
+    const idx = i - 1;
+    if (idx < 0 || idx >= r.elements.length) throw new Error(`K_element(${i}): no existe`);
+    return math.matrix(r.elements[idx].K_global);
   };
 }
 
@@ -193,7 +244,8 @@ export interface CalcResult {
  * Evaluate a multi-line MATLAB-style script.
  * Returns per-line results for rendering.
  */
-export function evaluate(code: string, initialScope?: Record<string, any>): CalcResult {
+export function evaluate(code: string, initialScope?: Record<string, any>, modelData?: ModelData): CalcResult {
+  _currentModelData = modelData || null;
   const scope: Record<string, any> = { ...initialScope };
   // Inject FEM helper functions into scope
   buildFemHelpers(scope);

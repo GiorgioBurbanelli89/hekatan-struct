@@ -11,6 +11,8 @@ export { slopeSRM } from "./slopeCpp";
 export type { SlopeInput, SlopeOutput } from "./slopeCpp";
 
 export { plateQ4Solve } from "./plateQ4Cpp";
+export { didacticSolveCpp } from "./didacticCpp";
+export type { DidacticSolverResult, DidacticElementData } from "./didacticCpp";
 export type {
   PlateQ4Input,
   PlateQ4Output,

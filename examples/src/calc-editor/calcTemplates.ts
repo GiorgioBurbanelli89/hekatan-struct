@@ -45,38 +45,38 @@ export function getTemplate(templateId: string, data: ModelData): string {
 // ═══════════════════════════════════════════════════════
 
 function templateFemAuto(data: ModelData): string {
-  const nframes = data.elements.filter(e => e.length === 2).length;
-  const showMax = Math.min(nframes, 3);
   return templateModelData(data) + `
 % ═══════════════════════════════════════════
-% FEM paso a paso (frames)
-% Funciones: stiffness(i), transform(i), kglobal(i)
+% FEM paso a paso
 % ═══════════════════════════════════════════
 
-% ─── Elemento 1: K local (12x12) ───
+% ─── Paso 1: Matrices por elemento ───
 K_loc_1 = stiffness(1)
-
-% ─── Elemento 1: Transformación (12x12) ───
 T_1 = transform(1)
-
-% ─── Elemento 1: K global = T' * K_local * T ───
 K_glob_1 = kglobal(1)
-
-% ─── Longitud y DOFs ───
 L_1 = elem_length(1)
 dofs_1 = assemble_dofs(1)
-${showMax >= 2 ? `
-% ─── Elemento 2 ───
-K_loc_2 = stiffness(2)
-T_2 = transform(2)
-K_glob_2 = kglobal(2)
-L_2 = elem_length(2)
-` : ""}${showMax >= 3 ? `
-% ─── Elemento 3 ───
-K_loc_3 = stiffness(3)
-K_glob_3 = kglobal(3)
-L_3 = elem_length(3)
-` : ""}
+
+% ─── Paso 2: Resolver (WASM C++/Eigen) ───
+% Ensambla K global sparse, aplica BCs, SparseLU solve
+resultado = solve_model()
+
+% ─── Paso 3: Desplazamientos por nodo ───
+u1 = u_node(1)
+u2 = u_node(2)
+
+% ─── Paso 4: Reacciones en apoyos ───
+r1 = r_node(1)
+
+% ─── Paso 5: Desplazamiento máximo ───
+U_max = max(abs(U))
+
+% ─── Para inspeccionar cualquier elemento: ───
+% K_loc_i = stiffness(i)
+% T_i = transform(i)
+% K_glob_i = kglobal(i)
+% L_i = elem_length(i)
+% dofs_i = assemble_dofs(i)
 `;
 }
 
