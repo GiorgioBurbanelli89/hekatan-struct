@@ -37,19 +37,21 @@ function ensureKatex(callback: () => void) {
   document.head.appendChild(script);
 }
 
-/** Open the calc panel */
+/** Open the calc panel — shows as bottom panel, viewer stays on top */
 export function openCalcPanel(modelData: ModelData) {
   currentModelData = modelData;
 
   if (panelElement) {
     panelElement.style.display = "flex";
+    resizeAwatifViewer(true);
     return;
   }
 
   ensureKatex(() => {
     createPanel();
+    resizeAwatifViewer(true);
     // Load default template
-    loadTemplate("static");
+    loadTemplate("fem_auto");
   });
 }
 
@@ -57,6 +59,25 @@ export function openCalcPanel(modelData: ModelData) {
 export function closeCalcPanel() {
   if (panelElement) {
     panelElement.style.display = "none";
+    resizeAwatifViewer(false);
+  }
+}
+
+/** Resize the awatif 3D viewer when calc panel opens/closes */
+function resizeAwatifViewer(calcOpen: boolean) {
+  // Find the awatif viewer container (canvas parent)
+  const canvas = document.querySelector("canvas");
+  if (canvas && canvas.parentElement) {
+    const container = canvas.parentElement;
+    if (calcOpen) {
+      container.style.height = "45vh";
+      container.style.transition = "height 0.2s ease";
+    } else {
+      container.style.height = "";
+      container.style.transition = "height 0.2s ease";
+    }
+    // Trigger Three.js resize
+    window.dispatchEvent(new Event("resize"));
   }
 }
 
@@ -361,14 +382,16 @@ function getPanelStyles(): string {
   return `
     #calc-panel {
       position: fixed;
-      top: 0; left: 0;
-      width: 100vw; height: 100vh;
+      bottom: 0; left: 0;
+      width: 100vw; height: 55vh;
       background: #0d1117;
       z-index: 100000;
       display: flex;
       flex-direction: column;
       color: #d4d4d4;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      border-top: 2px solid #58a6ff;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
     }
 
     .calc-toolbar {
@@ -511,12 +534,15 @@ function getPanelStyles(): string {
 
     /* Responsive: en móvil editor arriba, output abajo */
     @media (max-width: 768px) {
+      #calc-panel {
+        height: 70vh;
+      }
       .calc-body {
         flex-direction: column;
       }
       .calc-editor-wrap {
         flex: none;
-        height: 45vh;
+        height: 40%;
       }
       .calc-output-wrap {
         flex: 1;
