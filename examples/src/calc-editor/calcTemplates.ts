@@ -33,6 +33,11 @@ export const templateList = [
   { id: "fer_timoshenko", name: "Ferreira Cap10: Timoshenko (problem16)" },
   { id: "fer_planestress", name: "Ferreira Cap11: Plane stress Q4 (problem17)" },
   { id: "fer_mindlin", name: "Ferreira Cap12: Mindlin plate Q4 (problem19)" },
+  // ── Curso FEM completo (simbólico + numérico) ──
+  { id: "fem_course_1d", name: "📖 Curso FEM 1: Barra 1D (simbólico+numérico)" },
+  { id: "fem_course_beam", name: "📖 Curso FEM 2: Viga Euler-Bernoulli" },
+  { id: "fem_course_q4", name: "📖 Curso FEM 3: Elemento Q4 — Plane Stress" },
+  { id: "fem_course_mindlin", name: "📖 Curso FEM 4: Placa Mindlin Q4" },
   // ── Derivaciones didácticas ──
   { id: "axial", name: "Derivación: Barra axial paso a paso" },
   { id: "spring3", name: "Derivación: 3 resortes — assembly" },
@@ -49,6 +54,11 @@ export function getTemplate(templateId: string, data: ModelData): string {
     case "viga2d": return templateViga();
     case "custom": return templateCustom();
     case "empty": return templateModelData(data);
+    // Curso FEM completo
+    case "fem_course_1d": return femCourse1D();
+    case "fem_course_beam": return femCourseBeam();
+    case "fem_course_q4": return femCourseQ4();
+    case "fem_course_mindlin": return femCourseMindlin();
     // Ferreira templates
     case "fer_springs": return ferSprings();
     case "fer_bar": return ferBar();
@@ -1092,5 +1102,329 @@ w_CCCC = w_bar_exact_CCCC * P * a^4 / D_flex
 % Mesh 20×20: SSSS=0.004270  CCCC=0.001503
 % Mesh 30×30: SSSS=0.004271  CCCC=0.001503
 % Exacto:     SSSS=0.004270  CCCC=—
+`;
+}
+
+// ═══════════════════════════════════════════════════════
+// CURSO FEM COMPLETO — Simbólico + Numérico
+// ═══════════════════════════════════════════════════════
+
+function femCourse1D(): string {
+  return `% ═══════════════════════════════════════════
+% 📖 CURSO FEM 1: Barra 1D — De la ecuación diferencial al resultado
+% Simbólico (sdiff, sint) + Numérico (matrices, solve)
+% ═══════════════════════════════════════════
+
+% ═══ PARTE 1: FORMULACIÓN FUERTE (Ecuación Diferencial) ═══
+
+% Ecuación de gobierno (barra axial):
+% $-EA \\frac{d^2u}{dx^2} = q(x)$
+
+% Verificar simbólicamente:
+% Si $u(x) = x^2$, entonces $u'' = 2$
+u_sym = sdiff('x^2', 'x')
+u_sym2 = sdiff2('x^2', 'x')
+
+% ═══ PARTE 2: FORMULACIÓN DÉBIL (Forma Integral) ═══
+
+% Multiplicar por función de prueba $v$ e integrar:
+% $\\int_0^L EA \\frac{du}{dx}\\frac{dv}{dx} dx = \\int_0^L q v dx$
+
+% Integral simbólica de $x^2$ (ejemplo):
+F_sym = sint('x^2', 'x')
+
+% Integral definida $\\int_0^1 x^2 dx = 1/3$:
+area = sdefint('x^2', 'x', 0, 1)
+
+% ═══ PARTE 3: DISCRETIZACIÓN — Funciones de Forma ═══
+
+% Elemento lineal: 2 nodos, $\\xi \\in [0, 1]$
+% $N_1(\\xi) = 1 - \\xi$
+% $N_2(\\xi) = \\xi$
+
+% Simbólico: derivadas de N
+dN1 = sdiff('1-x', 'x')
+dN2 = sdiff('x', 'x')
+
+% ═══ PARTE 4: MATRIZ B (strain-displacement) ═══
+
+% $B = \\frac{dN}{dx} = \\frac{1}{L}[-1, 1]$
+L = 2
+E = 210000
+A = 0.01
+B_mat = (1/L) * [-1, 1]
+
+% ═══ PARTE 5: MATRIZ K (rigidez) ═══
+
+% $K = \\int_0^L B^T \\cdot EA \\cdot B \\, dx$
+
+% Simbólico: $B^T EA B = \\frac{EA}{L^2}[1,-1;-1,1]$
+% Integrando sobre L:
+% $K = \\frac{EA}{L}[1,-1;-1,1]$
+
+% Numérico:
+K = (E * A / L) * [1, -1; -1, 1]
+
+% ─── Verificar con integración numérica ───
+EA = E * A
+K_11 = integrate('210000*0.01*(1/2)^2', 0, 2, 4)
+
+% ═══ PARTE 6: VECTOR DE CARGAS ═══
+
+% Carga distribuida $q = 5$ kN/m
+q = 5
+% $f = \\int_0^L N^T q \\, dx = [qL/2; qL/2]$
+f = [q * L / 2; q * L / 2]
+
+% Carga puntual P = 20 kN en extremo
+P = 20
+
+% ═══ PARTE 7: CONDICIONES DE BORDE ═══
+
+% Nodo 1 fijo: $u_1 = 0$
+% Reducción: $K_{22} u_2 = f_2 + P$
+K_red = EA / L
+F_red = q * L / 2 + P
+
+% ═══ PARTE 8: SOLUCIÓN ═══
+
+u2 = F_red / K_red
+
+% ═══ PARTE 9: VERIFICACIÓN ═══
+
+% Solución exacta: $u(L) = \\frac{1}{EA}(PL + \\frac{qL^2}{2})$
+u_exact = (P * L + q * L^2 / 2) / (E * A)
+error_pct = abs(u2 - u_exact) / u_exact * 100
+
+% Reacción: $R = -(P + qL)$
+R = -(P + q * L)
+
+% Esfuerzo: $\\sigma = E \\varepsilon = E \\frac{u_2}{L}$
+sigma = E * u2 / L
+`;
+}
+
+function femCourseBeam(): string {
+  return `% ═══════════════════════════════════════════
+% 📖 CURSO FEM 2: Viga Euler-Bernoulli
+% Flexión — funciones de forma cúbicas (Hermite)
+% ═══════════════════════════════════════════
+
+% ═══ PARTE 1: ECUACIÓN DIFERENCIAL ═══
+
+% $EI \\frac{d^4w}{dx^4} = q(x)$
+
+% Derivada simbólica de función cúbica:
+w = sdiff('a*x^3 + b*x^2 + c*x + d', 'x')
+w2 = sdiff2('a*x^3 + b*x^2 + c*x + d', 'x')
+
+% Cuarta derivada de cúbica = 0 (polinomio Hermite)
+
+% ═══ PARTE 2: FUNCIONES DE FORMA HERMITE ═══
+
+% 2 DOF/nodo: $w$ (deflexión) y $\\theta = dw/dx$ (rotación)
+% 4 funciones de forma (cúbicas):
+% $N_1 = 1 - 3\\xi^2 + 2\\xi^3$
+% $N_2 = L(\\xi - 2\\xi^2 + \\xi^3)$
+% $N_3 = 3\\xi^2 - 2\\xi^3$
+% $N_4 = L(-\\xi^2 + \\xi^3)$
+
+% Verificar que $N_1(0) = 1$, $N_1(1) = 0$:
+N1_0 = ssubs('1 - 3*x^2 + 2*x^3', 'x', '0')
+N1_1 = ssubs('1 - 3*x^2 + 2*x^3', 'x', '1')
+
+% Derivadas (para matriz B):
+dN1 = sdiff('1 - 3*x^2 + 2*x^3', 'x')
+d2N1 = sdiff2('1 - 3*x^2 + 2*x^3', 'x')
+
+% ═══ PARTE 3: MATRIZ K (rigidez) ═══
+
+% $K = \\int_0^L EI (N'')^T (N'') dx$
+
+E = 210000
+I_v = 0.0001
+L = 3
+
+coeff = E * I_v / L^3
+K_beam = coeff * [12, 6*L, -12, 6*L; 6*L, 4*L^2, -6*L, 2*L^2; -12, -6*L, 12, -6*L; 6*L, 2*L^2, -6*L, 4*L^2]
+
+% ═══ PARTE 4: CARGAS CONSISTENTES ═══
+
+q = 10
+f_beam = q * L / 2 * [1; L/6; 1; -L/6]
+
+% ═══ PARTE 5: SOLUCIÓN (viga en voladizo) ═══
+
+% BC: $w_1 = 0$, $\\theta_1 = 0$ → DOFs libres: 3, 4
+% $K_{22} u = f_{22}$
+K_red_beam = [K_beam(3,3), K_beam(3,4); K_beam(4,3), K_beam(4,4)]
+F_red_beam = [f_beam(3); f_beam(4)]
+
+% Solución exacta voladizo: $w_{max} = \\frac{qL^4}{8EI}$
+w_exact = q * L^4 / (8 * E * I_v)
+`;
+}
+
+function femCourseQ4(): string {
+  return `% ═══════════════════════════════════════════
+% 📖 CURSO FEM 3: Elemento Q4 — Plane Stress
+% Cuadrilátero bilineal completo paso a paso
+% ═══════════════════════════════════════════
+
+% ═══ PARTE 1: FUNCIONES DE FORMA Q4 ═══
+
+% 4 nodos, coordenadas naturales $\\xi, \\eta \\in [-1, 1]$
+% $N_i = \\frac{1}{4}(1 \\pm \\xi)(1 \\pm \\eta)$
+
+% Evaluar en centro ($\\xi=0, \\eta=0$):
+N_centro = N_Q4(0, 0)
+
+% Evaluar en nodo 1 ($\\xi=-1, \\eta=-1$):
+N_nodo1 = N_Q4(-1, -1)
+
+% Derivadas en centro:
+dN_centro = dN_Q4(0, 0)
+
+% ═══ PARTE 2: JACOBIANO ═══
+
+% Nodos de un cuadrilátero 2×1:
+coords = [0, 0; 2, 0; 2, 1; 0, 1]
+
+% $J = \\frac{\\partial(x,y)}{\\partial(\\xi,\\eta)} = dN \\cdot coords$
+J = jacobian2d(dN_Q4(0, 0), coords)
+detJ = det(J)
+
+% Para rectángulo: $det(J) = \\frac{a \\cdot b}{4}$
+% $a=2, b=1 \\rightarrow det(J) = 0.5$ ✓
+
+% ═══ PARTE 3: MATRIZ B (strain-displacement) ═══
+
+% $\\varepsilon = B \\cdot d$ donde $d = [u_1,v_1,u_2,v_2,...,u_4,v_4]$
+% $B = \\begin{bmatrix} dN/dx & 0 \\\\ 0 & dN/dy \\\\ dN/dy & dN/dx \\end{bmatrix}$
+
+B = B_plane(dN_Q4(0, 0), coords)
+
+% ═══ PARTE 4: CONSTITUTIVA D ═══
+
+% Plane stress: $\\sigma = D \\varepsilon$
+E = 210000
+nu = 0.3
+D = D_planestress(E, nu)
+
+% ═══ PARTE 5: RIGIDEZ — Integración Gauss 2×2 ═══
+
+t = 1
+% $K = \\int \\int B^T D B \\, t \\, det(J) \\, d\\xi \\, d\\eta$
+
+% Punto de Gauss 1: $\\xi=-0.577, \\eta=-0.577$
+gp = gauss2d(2)
+xi_1 = -0.577350269189626
+eta_1 = -0.577350269189626
+
+dN_1 = dN_Q4(xi_1, eta_1)
+J_1 = jacobian2d(dN_1, coords)
+B_1 = B_plane(dN_1, coords)
+Ke_1 = transpose(B_1) * D * B_1 * det(J_1) * t * 1
+
+% ═══ PARTE 6: COMPARAR SIMBÓLICO ═══
+
+% Integral simbólica de $\\xi^2$ sobre [-1,1]:
+int_xi2 = sdefint('x^2', 'x', -1, 1)
+
+% Debe dar 2/3:
+int_check = seval(int_xi2)
+`;
+}
+
+function femCourseMindlin(): string {
+  return `% ═══════════════════════════════════════════
+% 📖 CURSO FEM 4: Placa Mindlin-Reissner Q4
+% Flexión de placas con corte transversal
+% ═══════════════════════════════════════════
+
+% ═══ PARTE 1: TEORÍA ═══
+
+% 3 DOF/nodo: $w$ (deflexión), $\\theta_x$, $\\theta_y$ (rotaciones)
+% Desplazamientos: $u = z\\theta_x$, $v = z\\theta_y$, $w = w_0$
+
+% Deformaciones flexión:
+% $\\kappa_x = \\partial\\theta_x/\\partial x$
+% $\\kappa_y = \\partial\\theta_y/\\partial y$
+% $\\kappa_{xy} = \\partial\\theta_y/\\partial x + \\partial\\theta_x/\\partial y$
+
+% Deformaciones corte:
+% $\\gamma_{xz} = \\partial w/\\partial x + \\theta_x$
+% $\\gamma_{yz} = \\partial w/\\partial y + \\theta_y$
+
+% ═══ PARTE 2: CONSTITUTIVAS ═══
+
+E = 10920
+nu = 0.3
+h = 0.1
+kapa = 5/6
+
+% Flexión: $D_b = \\frac{Eh^3}{12(1-\\nu^2)} \\begin{bmatrix} 1 & \\nu & 0 \\\\ \\nu & 1 & 0 \\\\ 0 & 0 & \\frac{1-\\nu}{2} \\end{bmatrix}$
+Db = D_bending(E, nu, h)
+
+% Corte: $D_s = \\kappa \\frac{Eh}{2(1+\\nu)} I_2$
+Ds = D_shear(E, nu, h, kapa)
+
+% ═══ PARTE 3: FUNCIONES DE FORMA ═══
+
+% Evaluar N y dN en punto de Gauss
+xi = 0.577350269189626
+eta = 0.577350269189626
+N = N_Q4(xi, eta)
+dN = dN_Q4(xi, eta)
+
+% Placa cuadrada unitaria
+coords = [0, 0; 1, 0; 1, 1; 0, 1]
+J = jacobian2d(dN, coords)
+
+% ═══ PARTE 4: MATRICES B ═══
+
+% B_bending (3×12): curvatures from rotations
+Bb = B_bending(dN, coords)
+
+% B_shear (2×12): shear from w + rotations
+Bs = B_shear(dN, N, coords)
+
+% ═══ PARTE 5: INTEGRACIÓN SELECTIVA ═══
+
+% CLAVE: evitar shear locking
+% Flexión: 2×2 Gauss (completa)
+% Corte: 1×1 Gauss (reducida)
+
+% K_bending en punto de Gauss (2×2):
+Kb_gp = transpose(Bb) * Db * Bb * det(J)
+
+% K_shear en centro (1×1):
+N_c = N_Q4(0, 0)
+dN_c = dN_Q4(0, 0)
+Bs_c = B_shear(dN_c, N_c, coords)
+J_c = jacobian2d(dN_c, coords)
+Ks_center = transpose(Bs_c) * Ds * Bs_c * det(J_c) * 4
+
+% K total = sum(Kb_gp) + Ks_center
+
+% ═══ PARTE 6: BENCHMARK ═══
+
+% Placa cuadrada $a=1$, carga uniforme $P=1$
+% Solución exacta (Ferreira Table 12.1):
+D_flex = E * h^3 / (12 * (1 - nu^2))
+% $\\bar{w} = w \\cdot D / (P \\cdot a^4)$
+% SSSS: $\\bar{w} = 0.004270$ (a/h=10)
+% CCCC: $\\bar{w} = 0.001503$ (a/h=10)
+
+w_SSSS = 0.004270 * 1 * 1^4 / D_flex
+w_CCCC = 0.001503 * 1 * 1^4 / D_flex
+
+% ═══ PARTE 7: SIMBÓLICO — Verificar D ═══
+
+% Rigidez flexural:
+D_sym = ssubs('E*h^3/(12*(1-nu^2))', 'E', '10920')
+D_sym2 = ssubs(D_sym, 'nu', '0.3')
+D_sym3 = ssubs(D_sym2, 'h', '0.1')
+D_num = seval(D_sym3)
 `;
 }
