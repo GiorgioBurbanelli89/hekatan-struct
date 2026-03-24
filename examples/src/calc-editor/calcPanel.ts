@@ -8,6 +8,7 @@
 import { evaluate } from "./calcEngine";
 import { renderCalcOutput, getCalcStyles } from "./calcRenderer";
 import { getTemplate, templateList, ModelData } from "./calcTemplates";
+import { exportStandalone } from "./calcExportStandalone";
 
 let panelElement: HTMLDivElement | null = null;
 let currentModelData: ModelData | null = null;
@@ -143,13 +144,25 @@ function createPanel() {
   // Close
   closeBtn.addEventListener("click", closeCalcPanel);
 
-  // Export MATLAB
+  // Export MATLAB — standalone with all FEM functions + current model data
   const exportMBtn = panelElement.querySelector("#calc-export-m") as HTMLButtonElement;
-  exportMBtn.addEventListener("click", () => exportAs(editor.value, "matlab"));
+  exportMBtn.addEventListener("click", () => {
+    if (currentModelData) {
+      exportStandalone(currentModelData, editor.value, "matlab");
+    } else {
+      exportAs(editor.value, "matlab");
+    }
+  });
 
-  // Export Python
+  // Export Python — standalone with all FEM functions + current model data
   const exportPyBtn = panelElement.querySelector("#calc-export-py") as HTMLButtonElement;
-  exportPyBtn.addEventListener("click", () => exportAs(editor.value, "python"));
+  exportPyBtn.addEventListener("click", () => {
+    if (currentModelData) {
+      exportStandalone(currentModelData, editor.value, "python");
+    } else {
+      exportAs(editor.value, "python");
+    }
+  });
 
   // Template
   templateSelect.addEventListener("change", () => {
