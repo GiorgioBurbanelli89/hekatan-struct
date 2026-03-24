@@ -32,12 +32,29 @@ function renderLine(line: CalcLine): string {
     return `<div class="calc-line calc-blank">&nbsp;</div>`;
   }
 
-  // Comment
+  // Comment — supports $...$ for inline KaTeX math
   if (line.isComment) {
     const text = line.input.trim().replace(/^%\s*/, "");
+    // Detect separator lines (═══, ───, etc.)
+    if (/^[═─━─\-=]{3,}/.test(text)) {
+      return `<div class="calc-line calc-separator">
+        <span class="calc-ln">${line.lineNum}</span>
+        <hr class="calc-hr" />
+      </div>`;
+    }
+    // Detect heading-style comments (e.g. "─── Datos ───")
+    const headingMatch = text.match(/^─+\s*(.+?)\s*─+$/);
+    if (headingMatch) {
+      return `<div class="calc-line calc-heading">
+        <span class="calc-ln">${line.lineNum}</span>
+        <span class="calc-heading-text">${renderCommentMath(headingMatch[1])}</span>
+      </div>`;
+    }
+    // Render $...$ inline math within comments
+    const rendered = renderCommentMath(text);
     return `<div class="calc-line calc-comment">
       <span class="calc-ln">${line.lineNum}</span>
-      <span class="calc-comment-text">${escapeHtml(text)}</span>
+      <span class="calc-comment-text">${rendered}</span>
     </div>`;
   }
 
@@ -260,6 +277,37 @@ function toArray1D(val: any): number[] | null {
   return null;
 }
 
+/** Render $...$ inline math within comment text */
+function renderCommentMath(text: string): string {
+  // If text contains $...$, replace each occurrence with KaTeX
+  if (text.includes("$")) {
+    const parts: string[] = [];
+    let remaining = text;
+    while (remaining.includes("$")) {
+      const start = remaining.indexOf("$");
+      const end = remaining.indexOf("$", start + 1);
+      if (end === -1) break; // unmatched $
+      parts.push(escapeHtml(remaining.slice(0, start)));
+      parts.push(renderKatexInline(remaining.slice(start + 1, end)));
+      remaining = remaining.slice(end + 1);
+    }
+    parts.push(escapeHtml(remaining));
+    return parts.join("");
+  }
+  // No $ markers — return as plain text
+  return escapeHtml(text);
+}
+
+/** Render KaTeX inline (not display mode) */
+function renderKatexInline(tex: string): string {
+  try {
+    if (typeof katex !== "undefined") {
+      return katex.renderToString(tex, { displayMode: false, throwOnError: false });
+    }
+  } catch { /* fallback */ }
+  return `<code class="calc-tex-fallback">${escapeHtml(tex)}</code>`;
+}
+
 /** Render KaTeX with fallback */
 function renderKatex(tex: string): string {
   try {
@@ -300,6 +348,21 @@ export function getCalcStyles(): string {
       color: #6a9955;
       font-style: italic;
     }
+    .calc-comment-text .katex { font-style: normal; color: #d4d4d4; }
+    .calc-separator { padding: 0; }
+    .calc-hr {
+      border: none;
+      border-top: 2px solid #444;
+      width: 100%;
+      margin: 8px 0;
+    }
+    .calc-heading { padding: 8px 8px 4px; }
+    .calc-heading-text {
+      color: #61afef;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .calc-heading-text .katex { color: #61afef; }
     .calc-error { background: #1a0000; }
     .calc-error-msg {
       color: #ff6b6b;
