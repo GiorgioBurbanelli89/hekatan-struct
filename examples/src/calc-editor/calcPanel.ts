@@ -79,6 +79,8 @@ function createPanel() {
     <div class="calc-toolbar">
       <div class="calc-toolbar-left">
         <button id="calc-run" class="calc-btn calc-btn-run" title="Ejecutar (Ctrl+Enter)">▶ Ejecutar</button>
+        <button id="calc-export-m" class="calc-btn" title="Exportar a MATLAB .m">📋 .m</button>
+        <button id="calc-export-py" class="calc-btn" title="Exportar a Python">🐍 .py</button>
         <select id="calc-template" class="calc-select">
           ${templateList.map(t => `<option value="${t.id}">${t.name}</option>`).join("")}
         </select>
@@ -141,6 +143,14 @@ function createPanel() {
   // Close
   closeBtn.addEventListener("click", closeCalcPanel);
 
+  // Export MATLAB
+  const exportMBtn = panelElement.querySelector("#calc-export-m") as HTMLButtonElement;
+  exportMBtn.addEventListener("click", () => exportAs(editor.value, "matlab"));
+
+  // Export Python
+  const exportPyBtn = panelElement.querySelector("#calc-export-py") as HTMLButtonElement;
+  exportPyBtn.addEventListener("click", () => exportAs(editor.value, "python"));
+
   // Template
   templateSelect.addEventListener("change", () => {
     loadTemplate(templateSelect.value);
@@ -175,6 +185,133 @@ function updateLineNumbers(editor: HTMLTextAreaElement, lineNums: HTMLDivElement
   lineNums.innerHTML = lines.map((_, i) =>
     `<div class="calc-ln-num">${i + 1}</div>`
   ).join("");
+}
+
+// ═══════════════════════════════════════════════════════
+// EXPORT TO MATLAB / PYTHON
+// ═══════════════════════════════════════════════════════
+
+function exportAs(code: string, target: "matlab" | "python") {
+  const lines = code.split("\n");
+  const converted: string[] = [];
+
+  if (target === "python") {
+    converted.push("import numpy as np");
+    converted.push("from numpy.linalg import inv, det, solve, norm, eig");
+    converted.push("");
+  }
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Comments: % → % (MATLAB) or # (Python)
+    if (trimmed.startsWith("%")) {
+      converted.push(target === "python" ? trimmed.replace(/^%/, "#") : trimmed);
+      continue;
+    }
+    if (trimmed === "") { converted.push(""); continue; }
+
+    let out = trimmed;
+
+    // Strip inline comments
+    const cIdx = out.indexOf("%");
+    const comment = cIdx >= 0 ? out.substring(cIdx) : "";
+    if (cIdx >= 0) out = out.substring(0, cIdx).trim();
+
+    // Replace awatif-specific functions with pure math equivalents
+    // stiffness(i), transform(i), kglobal(i) → comment explaining manual implementation
+    if (/^(\w+)\s*=\s*(stiffness|transform|kglobal|solve_model|u_node|r_node)\(/.test(out)) {
+      const commentStr = target === "python" ? "#" : "%";
+      converted.push(`${commentStr} ${out}  → implementar manualmente (ver abajo)`);
+      continue;
+    }
+    if (/^(resultado|solve_model)\b/.test(out)) {
+      if (target === "matlab") {
+        converted.push("U = K_global \\ F_global;  % Resolver sistema");
+        converted.push("R = K_global * U - F_global;  % Reacciones");
+      } else {
+        converted.push("U = np.linalg.solve(K_global, F_global)  # Resolver sistema");
+        converted.push("R = K_global @ U - F_global  # Reacciones");
+      }
+      continue;
+    }
+
+    if (target === "matlab") {
+      // MATLAB syntax is almost identical to our calc panel
+      // Matrices: [a, b; c, d] — same in MATLAB
+      // Transpose: A' — same in MATLAB
+      // Backslash: K \ F — same in MATLAB
+      out = out
+        .replace(/\beye\((\d+)\)/g, "eye($1)")
+        .replace(/\bzeros\((\d+),\s*(\d+)\)/g, "zeros($1,$2)")
+        .replace(/\bones\((\d+),\s*(\d+)\)/g, "ones($1,$2)");
+      converted.push(out + (comment ? "  " + comment : "") + ";");
+    } else {
+      // Python/NumPy conversion
+      out = out
+        // Matrix definition: [1,2;3,4] → np.array([[1,2],[3,4]])
+        .replace(/\[([^\]]*;[^\]]*)\]/g, (_, inner) => {
+          const rows = inner.split(";").map((r: string) => `[${r.trim()}]`).join(",");
+          return `np.array([${rows}])`;
+        })
+        // Transpose: A' → A.T
+        .replace(/(\w+)'/g, "$1.T")
+        // Matrix multiply: A * B → A @ B (for matrices)
+        .replace(/\s*\*\s*/g, " @ ")
+        // Backslash solve: K \ F → np.linalg.solve(K, F)
+        .replace(/(\w+)\s*\\\s*(\w+)/g, "np.linalg.solve($1, $2)")
+        // eye, zeros, ones
+        .replace(/\beye\((\d+)\)/g, "np.eye($1)")
+        .replace(/\bzeros\((\d+),\s*(\d+)\)/g, "np.zeros(($1,$2))")
+        .replace(/\bones\((\d+),\s*(\d+)\)/g, "np.ones(($1,$2))")
+        .replace(/\binv\(/g, "np.linalg.inv(")
+        .replace(/\bdet\(/g, "np.linalg.det(")
+        .replace(/\bnorm\(/g, "np.linalg.norm(")
+        .replace(/\babs\(/g, "np.abs(")
+        .replace(/\bmax\(/g, "np.max(")
+        .replace(/\bmin\(/g, "np.min(")
+        .replace(/\bsqrt\(/g, "np.sqrt(");
+
+      // for loop: for i = 1:n → for i in range(1, n+1):
+      if (/^for\s+(\w+)\s*=\s*(\d+):(\w+)/.test(out)) {
+        out = out.replace(/^for\s+(\w+)\s*=\s*(\d+):(\w+)/, "for $1 in range($2, $3+1):");
+      }
+      // end → (remove, Python uses indentation)
+      if (out === "end") { continue; }
+
+      converted.push(out + (comment ? "  " + comment.replace("%", "#") : ""));
+    }
+  }
+
+  // Add FEM helper functions at the bottom
+  if (target === "matlab") {
+    converted.push("");
+    converted.push("% ═══════════════════════════════════════════");
+    converted.push("% Funciones FEM (implementar según necesidad)");
+    converted.push("% ═══════════════════════════════════════════");
+    converted.push("% function K = beam_stiffness_3d(E, A, Iz, Iy, G, J, L)");
+    converted.push("%   % Timoshenko beam 12x12 stiffness matrix");
+    converted.push("%   % Ver: Dr. Aguiar, Análisis Matricial de Estructuras");
+    converted.push("% end");
+  } else {
+    converted.push("");
+    converted.push("# ═══════════════════════════════════════════");
+    converted.push("# Funciones FEM (implementar según necesidad)");
+    converted.push("# ═══════════════════════════════════════════");
+    converted.push("# def beam_stiffness_3d(E, A, Iz, Iy, G, J, L):");
+    converted.push("#     # Timoshenko beam 12x12 stiffness matrix");
+    converted.push("#     pass");
+  }
+
+  const ext = target === "matlab" ? "m" : "py";
+  const filename = `fem_model.${ext}`;
+  const blob = new Blob([converted.join("\n")], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ═══════════════════════════════════════════════════════
