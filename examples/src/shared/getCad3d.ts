@@ -6568,13 +6568,23 @@ Util:     cad.info()  cad.clear()  cad.help()
       // Display results
       showTestResults(tests);
 
-      // Load model into viewport (last test)
+      // Load model into viewport (last test) — include supports + loads
       if (tests.length > 0) {
         const last = tests[tests.length - 1];
-        const ei = makeFrameInputs(last.elements.length, [], []);
-        // Simple: just apply the model to the viewport
         mesh.nodes.val = last.nodes as any;
         mesh.elements!.val = last.elements as any;
+        // Build supports (nodes at Z=0) and loads (nodes at max Z)
+        const supports = new Map<number, boolean[]>();
+        const loads = new Map<number, number[]>();
+        const maxZ = Math.max(...last.nodes.map((n: any) => n[2]));
+        last.nodes.forEach((n: any, i: number) => {
+          if (Math.abs(n[2]) < 0.01) supports.set(i, [true, true, true, true, true, true]);
+          if (Math.abs(n[2] - maxZ) < 0.01) loads.set(i, [10, 0, 0, 0, 0, 0]);
+        });
+        mesh.nodeInputs!.val = { supports, loads };
+        mesh.elementInputs!.val = {};
+        mesh.deformOutputs!.val = {};
+        mesh.analyzeOutputs!.val = {};
       }
     }
 
