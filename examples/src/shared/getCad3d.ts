@@ -5318,6 +5318,8 @@ Util:     cad.info()  cad.clear()  cad.help()
           <option value="test-portal-2p">3. Portal 2-Story (ETABS)</option>
           <option value="test-wall-only">4. Wall Q4 Only (ETABS)</option>
           <option value="test-portal-wall">5. Portal + Wall (ETABS)</option>
+          <!-- Scordelis-Lo requires MITC4 for curved shells - not yet implemented -->
+          <!-- <option value="test-scordelis">6. Scordelis-Lo Barrel (Wilson)</option> -->
           <option value="test-all">▶ Run All Tests</option>
         </select>
         <select id="cad3d-force-unit" title="Unidad de fuerza" style="background:var(--cad-btn-bg);color:var(--cad-btn-text);border:1px solid var(--cad-btn-border);padding:2px 4px;font-size:11px;cursor:pointer;">
@@ -6559,10 +6561,123 @@ Util:     cad.info()  cad.clear()  cad.help()
           name: "Portal 2-Story + Wall Q4", formulation: "Frame Timoshenko + Shell Q4 (Hughes-Brezzi drilling)",
           nodes, elements,
           results: [
-            { label: "Ux Z=3m (cm)", awatif: r.deformations.get(2)[0] * 100, reference: 0.0195, refSource: "ETABS 22.6" },
-            { label: "Ux Z=6m (cm)", awatif: r.deformations.get(4)[0] * 100, reference: 2.1133, refSource: "ETABS 22.6" },
+            { label: "Ux h=3m (cm)", awatif: r.deformations.get(2)[0] * 100, reference: 0.0195, refSource: "ETABS 22.6" },
+            { label: "Ux h=6m (cm)", awatif: r.deformations.get(4)[0] * 100, reference: 2.1133, refSource: "ETABS 22.6" },
           ]
         });
+      }
+
+      // ── Test 6: Scordelis-Lo Barrel Vault (Classic shell benchmark) ──
+      if (testId === "test-scordelis" || testId === "test-all") {
+        // Scordelis & Lo (1964), Wilson (2004) — barrel vault under self-weight
+        // R=25, L=50, theta=40deg, t=0.25, E=4.32e8, nu=0.0, w=360 (weight/vol)
+        // 1/4 model with symmetry BCs
+        // Reference: Uz_max = 0.3086 at midspan free edge
+        const R_sl = 25, L_sl = 50, theta_deg = 40;
+        const t_sl = 0.25, E_sl = 4.32e8, nu_sl = 0.0;
+        const w_sl = 360 * t_sl; // surface weight = vol_weight * thickness = 90 psf
+        const theta_rad = theta_deg * Math.PI / 180;
+        const nL = 8, nT = 8; // mesh density
+
+        // Generate 1/4 cylindrical mesh
+        const sl_nodes: Node[] = [];
+        for (let i = 0; i <= nL; i++) {
+          for (let j = 0; j <= nT; j++) {
+            const x = (L_sl / 2) * i / nL;
+            const th = theta_rad * j / nT;
+            const y = R_sl * Math.sin(th);
+            const z = R_sl * Math.cos(th) - R_sl * Math.cos(theta_rad);
+            sl_nodes.push([x, y, z]);
+          }
+        }
+
+        const sl_elements: Element[] = [];
+        for (let i = 0; i < nL; i++) {
+          for (let j = 0; j < nT; j++) {
+            const n0 = i * (nT + 1) + j;
+            const n1 = (i + 1) * (nT + 1) + j;
+            const n2 = (i + 1) * (nT + 1) + (j + 1);
+            const n3 = i * (nT + 1) + (j + 1);
+            sl_elements.push([n0, n1, n2, n3]);
+          }
+        }
+
+        // Element properties
+        const sl_ei: ElementInputs = {
+          elasticities: new Map(), shearModuli: new Map(),
+          thicknesses: new Map(), poissonsRatios: new Map(),
+        };
+        const G_sl = E_sl / (2 * (1 + nu_sl));
+        for (let i = 0; i < sl_elements.length; i++) {
+          sl_ei.elasticities!.set(i, E_sl);
+          sl_ei.shearModuli!.set(i, G_sl);
+          sl_ei.thicknesses!.set(i, t_sl);
+          sl_ei.poissonsRatios!.set(i, nu_sl);
+        }
+
+        // Boundary conditions
+        const sl_supports = new Map<number, [boolean,boolean,boolean,boolean,boolean,boolean]>();
+        for (let i = 0; i <= nL; i++) {
+          for (let j = 0; j <= nT; j++) {
+            const ni = i * (nT + 1) + j;
+            const fix: [boolean,boolean,boolean,boolean,boolean,boolean] = [false,false,false,false,false,false];
+            // x=0 symmetry: ux=0, ry=0, rz=0
+            if (i === 0) { fix[0] = true; fix[4] = true; fix[5] = true; }
+            // x=L/2 diaphragm: uy=0, uz=0, rx=0
+            if (i === nL) { fix[1] = true; fix[2] = true; fix[3] = true; }
+            // theta=0 symmetry: uy=0, rx=0, rz=0
+            if (j === 0) { fix[1] = true; fix[3] = true; fix[5] = true; }
+            if (fix.some(f => f)) sl_supports.set(ni, fix);
+          }
+        }
+
+        // Gravity loads: w * element_area / 4 per node in -Z direction
+        const sl_loads = new Map<number, [number,number,number,number,number,number]>();
+        for (const el of sl_elements) {
+          // Compute element area (approximate as flat quad)
+          const p0 = sl_nodes[el[0]], p1 = sl_nodes[el[1]], p2 = sl_nodes[el[2]], p3 = sl_nodes[el[3]];
+          const d1 = [p2[0]-p0[0], p2[1]-p0[1], p2[2]-p0[2]];
+          const d2 = [p3[0]-p1[0], p3[1]-p1[1], p3[2]-p1[2]];
+          const cx = d1[1]*d2[2] - d1[2]*d2[1];
+          const cy = d1[2]*d2[0] - d1[0]*d2[2];
+          const cz = d1[0]*d2[1] - d1[1]*d2[0];
+          const area = 0.5 * Math.sqrt(cx*cx + cy*cy + cz*cz);
+          const fz = -w_sl * area / 4; // gravity load per node
+
+          for (const ni of el) {
+            const prev = sl_loads.get(ni) || [0,0,0,0,0,0] as [number,number,number,number,number,number];
+            prev[2] += fz;
+            sl_loads.set(ni, prev);
+          }
+        }
+
+        try {
+          const r = deform(sl_nodes, sl_elements,
+            { supports: sl_supports, loads: sl_loads }, sl_ei);
+
+          // Find max Uz at midspan free edge (x=0, theta=theta_max → node index nT)
+          const midFreeIdx = nT; // x=0, j=nT
+          const uz = r.deformations?.get(midFreeIdx)?.[2] ?? 0;
+
+          tests.push({
+            name: "Scordelis-Lo Barrel Vault",
+            formulation: `Shell Q4 (${nL}x${nT} mesh), Mindlin-Reissner + incompatible modes`,
+            nodes: sl_nodes, elements: sl_elements,
+            results: [{
+              label: "Uz midspan free edge (ft)",
+              awatif: Math.abs(uz),
+              reference: 0.3086,
+              refSource: "Wilson (2004) / MacNeal-Harder"
+            }]
+          });
+        } catch (e: any) {
+          tests.push({
+            name: "Scordelis-Lo Barrel Vault",
+            formulation: "ERROR: " + e.message,
+            nodes: sl_nodes, elements: sl_elements,
+            results: [{ label: "Error", awatif: 0, reference: 0.3086, refSource: "Wilson" }]
+          });
+        }
       }
 
       // Display results
