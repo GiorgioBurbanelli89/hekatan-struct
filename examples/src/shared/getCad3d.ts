@@ -8661,30 +8661,62 @@ Util:     cad.info()  cad.clear()  cad.help()
 
   /** Generate symbolic formula HTML for the frame local stiffness matrix */
   function frameStiffnessFormula(E: number, A: number, Iz: number, Iy: number, G: number, J: number, L: number): string {
-    const ea_l = `${frac(v("E")+"·"+v("A"), v("L"))}`;
-    const eiz = `${frac("12·"+v("E")+"·"+v("I","z"), v("L")+"³")}`;
-    const eiy = `${frac("12·"+v("E")+"·"+v("I","y"), v("L")+"³")}`;
-    const gj_l = `${frac(v("G")+"·"+v("J"), v("L"))}`;
-    const eiy4 = `${frac("4·"+v("E")+"·"+v("I","y"), v("L"))}`;
-    const eiz4 = `${frac("4·"+v("E")+"·"+v("I","z"), v("L"))}`;
+    // Timoshenko shear deformation parameters
+    const AsY = (5/6) * A, AsZ = (5/6) * A; // rectangular default
+    const phiZ = (AsZ > 0 && G > 0) ? (12 * E * Iz) / (G * AsZ * L ** 2) : 0;
+    const phiY = (AsY > 0 && G > 0) ? (12 * E * Iy) / (G * AsY * L ** 2) : 0;
+
+    const EA_L = E * A / L;
+    const GJ_L = G * J / L;
+    const tz = (12 * E * Iz / L ** 3) / (1 + phiZ);
+    const bz = (6 * E * Iz / L ** 2) / (1 + phiZ);
+    const kz = (4 * E * Iz / L) * (1 + phiZ / 4) / (1 + phiZ);
+    const az = (2 * E * Iz / L) * (1 - phiZ / 2) / (1 + phiZ);
+    const ty = (12 * E * Iy / L ** 3) / (1 + phiY);
+    const by = (6 * E * Iy / L ** 2) / (1 + phiY);
+    const ky = (4 * E * Iy / L) * (1 + phiY / 4) / (1 + phiY);
+    const ay = (2 * E * Iy / L) * (1 - phiY / 2) / (1 + phiY);
+
+    const hasTimoshenko = phiZ > 1e-10 || phiY > 1e-10;
+
     return `<div class="fem-eq eq-box">
+      <div style="text-align:left;margin-bottom:4px"><strong style="color:var(--fem-section-title)">Formulación: ${hasTimoshenko ? "Timoshenko (con deformación por cortante)" : "Euler-Bernoulli"}</strong></div>
+      ${hasTimoshenko ? `
+      <div style="text-align:left;margin-bottom:6px;color:var(--fem-eq-sub)">
+        ${v("A","s")} = ${frac("5","6")} · ${v("A")} = <span class="highlight">${fmt(AsY)}</span>
+        &nbsp;&nbsp; φ<sub>z</sub> = ${frac("12·"+v("E")+"·"+v("I","z"), v("G")+"·"+v("A","s")+"·"+v("L")+"²")} = <span class="highlight">${fmt(phiZ)}</span>
+        &nbsp;&nbsp; φ<sub>y</sub> = <span class="highlight">${fmt(phiY)}</span>
+      </div>
+      <div style="text-align:left;margin-bottom:4px"><strong style="color:var(--fem-section-title)">Coeficientes Timoshenko (Dr. Aguiar):</strong></div>
+      <div>${v("t","z")} = ${frac("12·"+v("E")+"·"+v("I","z"), v("L")+"³·(1+φ<sub>z</sub>)")} = <span class="highlight">${fmt(tz)}</span> &nbsp;(cortante)</div>
+      <div>${v("b","z")} = ${frac("6·"+v("E")+"·"+v("I","z"), v("L")+"²·(1+φ<sub>z</sub>)")} = <span class="highlight">${fmt(bz)}</span> &nbsp;(acoplamiento)</div>
+      <div>${v("k","z")} = ${frac("4·"+v("E")+"·"+v("I","z")+"·(1+φ/4)", v("L")+"·(1+φ<sub>z</sub>)")} = <span class="highlight">${fmt(kz)}</span> &nbsp;(flexión diagonal)</div>
+      <div>${v("a","z")} = ${frac("2·"+v("E")+"·"+v("I","z")+"·(1−φ/2)", v("L")+"·(1+φ<sub>z</sub>)")} = <span class="highlight">${fmt(az)}</span> &nbsp;(flexión off-diag)</div>
+      ` : `
       <div style="text-align:left;margin-bottom:4px"><strong style="color:var(--fem-section-title)">Coeficientes de rigidez:</strong></div>
-      <div>${ea_l} = ${frac(fmt(E)+"·"+fmt(A), fmt(L))} = <span class="highlight">${fmt(E*A/L)}</span></div>
-      <div>${eiz} = ${frac("12·"+fmt(E)+"·"+fmt(Iz), fmt(L)+"³")} = <span class="highlight">${fmt(12*E*Iz/(L**3))}</span></div>
-      <div>${eiy} = ${frac("12·"+fmt(E)+"·"+fmt(Iy), fmt(L)+"³")} = <span class="highlight">${fmt(12*E*Iy/(L**3))}</span></div>
-      <div>${gj_l} = ${frac(fmt(G)+"·"+fmt(J), fmt(L))} = <span class="highlight">${fmt(G*J/L)}</span></div>
-      <div>${eiy4} = ${frac("4·"+fmt(E)+"·"+fmt(Iy), fmt(L))} = <span class="highlight">${fmt(4*E*Iy/L)}</span></div>
-      <div>${eiz4} = ${frac("4·"+fmt(E)+"·"+fmt(Iz), fmt(L))} = <span class="highlight">${fmt(4*E*Iz/L)}</span></div>
+      `}
+      <div>${frac(v("E")+"·"+v("A"),v("L"))} = <span class="highlight">${fmt(EA_L)}</span> &nbsp;(axial)</div>
+      <div>${frac(v("G")+"·"+v("J"),v("L"))} = <span class="highlight">${fmt(GJ_L)}</span> &nbsp;(torsión)</div>
+      ${!hasTimoshenko ? `
+      <div>${frac("12·"+v("E")+"·"+v("I","z"),v("L")+"³")} = <span class="highlight">${fmt(tz)}</span></div>
+      <div>${frac("4·"+v("E")+"·"+v("I","z"),v("L"))} = <span class="highlight">${fmt(kz)}</span></div>
+      ` : ""}
     </div>
     <div class="fem-eq">
       ${v("k","local")} = <span class="mat-sym" style="grid-template-columns:repeat(4,auto)">
         <span class="cell">${frac(v("EA"),v("L"))}</span><span class="cell">0</span><span class="cell dots">⋯</span><span class="cell">${frac("−"+v("EA"),v("L"))}</span>
-        <span class="cell">0</span><span class="cell">${frac("12"+v("EI","z"),v("L")+"³")}</span><span class="cell dots">⋯</span><span class="cell">0</span>
+        <span class="cell">0</span><span class="cell">${v("t","z")}</span><span class="cell dots">⋯</span><span class="cell">${v("b","z")}</span>
         <span class="cell dots">⋮</span><span class="cell dots">⋮</span><span class="cell dots">⋱</span><span class="cell dots">⋮</span>
-        <span class="cell">${frac("−"+v("EA"),v("L"))}</span><span class="cell">0</span><span class="cell dots">⋯</span><span class="cell">${frac(v("EA"),v("L"))}</span>
+        <span class="cell">0</span><span class="cell">${v("b","z")}</span><span class="cell dots">⋯</span><span class="cell">${v("k","z")}</span>
       </span>
-      <sub style="color:var(--fem-label)">12×12</sub>
-    </div>`;
+      <sub style="color:var(--fem-label)">12×12 ${hasTimoshenko ? "(Timoshenko)" : "(Euler-Bernoulli)"}</sub>
+    </div>
+    ${hasTimoshenko ? `<div class="fem-eq eq-box" style="margin-top:6px">
+      <div style="text-align:left"><strong style="color:var(--fem-section-title)">Matrices de rigidez (Dr. Aguiar, Fig 7.9):</strong></div>
+      <div style="margin-top:4px">${v("K","f")} = ${v("B","f")}${`<sup>T</sup>`} · ${v("E")}·${v("I")} · ${v("B","f")} · ${v("J")} &nbsp;<sub style="color:var(--fem-label)">(flexión, 1 pt Gauss)</sub></div>
+      <div>${v("K","c")} = ${v("B","c")}${`<sup>T</sup>`} · ${v("G")}·${v("A'")} · ${v("B","c")} · ${v("J")} &nbsp;<sub style="color:var(--fem-label)">(cortante, 2 pts Gauss)</sub></div>
+      <div>${v("K","total")} = ${v("K","f")} + ${v("K","c")}</div>
+    </div>` : ""}`;
   }
 
   /** Generate symbolic formula for transformation */
