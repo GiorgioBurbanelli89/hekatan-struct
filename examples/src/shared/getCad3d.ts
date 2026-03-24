@@ -6452,34 +6452,43 @@ Util:     cad.info()  cad.clear()  cad.help()
         return ei;
       }
 
+      // ══════════════════════════════════════════════════════════════
+      // ALL TESTS USE Z-UP CONVENTION (engineering convention, like ETABS)
+      // Node = [X_plan, Y_plan, Z_elevation]
+      // Load = [Fx, Fy, Fz, Mx, My, Mz]  → lateral = Fx
+      // Columns: vertical along Z; Beams: horizontal in XY
+      // ══════════════════════════════════════════════════════════════
+
       // ── Test 1: Cantilever (Euler-Bernoulli exact) ──
       if (testId === "test-cantilever" || testId === "test-all") {
         const L = 3, P = 10;
         const exact = P * L ** 3 / (3 * E_conc * Ic);
-        const nodes = [[0, 0, 0], [L, 0, 0]];
-        const elements = [[0, 1]];
+        // Horizontal cantilever along X, load in Z (vertical)
+        const nodes: Node[] = [[0, 0, 0], [L, 0, 0]];
+        const elements: Element[] = [[0, 1]];
         const ei = makeFrameInputs(1, [], []);
         ei.elasticities.set(0, E_conc); ei.shearModuli.set(0, G); ei.areas.set(0, Ac);
         ei.momentsOfInertiaZ.set(0, Ic); ei.momentsOfInertiaY.set(0, Ic); ei.torsionalConstants.set(0, Jc);
         const r = deform(nodes, elements, {
           supports: new Map([[0, [true, true, true, true, true, true]]]),
-          loads: new Map([[1, [0, P, 0, 0, 0, 0]]]),
+          loads: new Map([[1, [0, 0, P, 0, 0, 0]]]),  // Fz = P (vertical)
         }, ei);
         tests.push({
           name: "Cantilever Beam", formulation: "Euler-Bernoulli (PL³/3EI)",
           nodes, elements,
-          results: [{ label: "Uy tip (cm)", awatif: r.deformations.get(1)[1] * 100, reference: exact * 100, refSource: "Analytical" }]
+          results: [{ label: "Uz tip (cm)", awatif: r.deformations.get(1)[2] * 100, reference: exact * 100, refSource: "Analytical" }]
         });
       }
 
       // ── Test 2: Portal 1-Story (Timoshenko) ──
       if (testId === "test-portal-1p" || testId === "test-all") {
-        const nodes = [[0, 0, 0], [W, 0, 0], [0, H, 0], [W, H, 0]];
-        const elements = [[0, 2], [1, 3], [2, 3]];
+        // Z-up: columns along Z, beam along X at Z=H
+        const nodes: Node[] = [[0, 0, 0], [W, 0, 0], [0, 0, H], [W, 0, H]];
+        const elements: Element[] = [[0, 2], [1, 3], [2, 3]]; // 2 cols + 1 beam
         const ei = makeFrameInputs(3, [0, 1], [2]);
         const r = deform(nodes, elements, {
           supports: new Map([[0, [true, true, true, true, true, true]], [1, [true, true, true, true, true, true]]]),
-          loads: new Map([[2, [10, 0, 0, 0, 0, 0]], [3, [10, 0, 0, 0, 0, 0]]]),
+          loads: new Map([[2, [10, 0, 0, 0, 0, 0]], [3, [10, 0, 0, 0, 0, 0]]]),  // Fx = lateral
         }, ei);
         tests.push({
           name: "Portal 1-Story (Timoshenko)", formulation: "Frame Timoshenko (As=5/6·A)",
@@ -6490,8 +6499,12 @@ Util:     cad.info()  cad.clear()  cad.help()
 
       // ── Test 3: Portal 2-Story ──
       if (testId === "test-portal-2p" || testId === "test-all") {
-        const nodes = [[0, 0, 0], [W, 0, 0], [0, H, 0], [W, H, 0], [0, 2 * H, 0], [W, 2 * H, 0]];
-        const elements = [[0, 2], [1, 3], [2, 4], [3, 5], [2, 3], [4, 5]];
+        const nodes: Node[] = [
+          [0, 0, 0], [W, 0, 0],       // base
+          [0, 0, H], [W, 0, H],       // Z=3m
+          [0, 0, 2*H], [W, 0, 2*H],   // Z=6m
+        ];
+        const elements: Element[] = [[0, 2], [1, 3], [2, 4], [3, 5], [2, 3], [4, 5]];
         const ei = makeFrameInputs(6, [0, 1, 2, 3], [4, 5]);
         const r = deform(nodes, elements, {
           supports: new Map([[0, [true, true, true, true, true, true]], [1, [true, true, true, true, true, true]]]),
@@ -6501,16 +6514,17 @@ Util:     cad.info()  cad.clear()  cad.help()
           name: "Portal 2-Story", formulation: "Frame Timoshenko",
           nodes, elements,
           results: [
-            { label: "Ux h=3m (cm)", awatif: r.deformations.get(2)[0] * 100, reference: 2.5188, refSource: "ETABS 22.6" },
-            { label: "Ux h=6m (cm)", awatif: r.deformations.get(4)[0] * 100, reference: 5.6424, refSource: "ETABS 22.6" },
+            { label: "Ux Z=3m (cm)", awatif: r.deformations.get(2)[0] * 100, reference: 2.5188, refSource: "ETABS 22.6" },
+            { label: "Ux Z=6m (cm)", awatif: r.deformations.get(4)[0] * 100, reference: 5.6424, refSource: "ETABS 22.6" },
           ]
         });
       }
 
-      // ── Test 4: Wall Q4 Only (Membrane + Mindlin-Reissner + Drilling) ──
+      // ── Test 4: Wall Q4 Only ──
       if (testId === "test-wall-only" || testId === "test-all") {
-        const nodes = [[0, 0, 0], [W, 0, 0], [W, H, 0], [0, H, 0]];
-        const elements = [[0, 1, 2, 3]];
+        // Z-up: wall in XZ plane (X=width, Z=height)
+        const nodes: Node[] = [[0, 0, 0], [W, 0, 0], [W, 0, H], [0, 0, H]];
+        const elements: Element[] = [[0, 1, 2, 3]];
         const ei: any = {
           elasticities: new Map([[0, E_conc]]), shearModuli: new Map([[0, G]]),
           thicknesses: new Map([[0, 0.2]]), poissonsRatios: new Map([[0, nu]]),
@@ -6528,8 +6542,12 @@ Util:     cad.info()  cad.clear()  cad.help()
 
       // ── Test 5: Portal + Wall (Frame-Shell coupling) ──
       if (testId === "test-portal-wall" || testId === "test-all") {
-        const nodes = [[0, 0, 0], [W, 0, 0], [0, H, 0], [W, H, 0], [0, 2 * H, 0], [W, 2 * H, 0]];
-        const elements = [[0, 2], [1, 3], [2, 4], [3, 5], [2, 3], [4, 5], [0, 1, 3, 2]];
+        const nodes: Node[] = [
+          [0, 0, 0], [W, 0, 0],       // base
+          [0, 0, H], [W, 0, H],       // Z=3m
+          [0, 0, 2*H], [W, 0, 2*H],   // Z=6m
+        ];
+        const elements: Element[] = [[0, 2], [1, 3], [2, 4], [3, 5], [2, 3], [4, 5], [0, 1, 3, 2]];
         const ei = makeFrameInputs(6, [0, 1, 2, 3], [4, 5]);
         ei.elasticities.set(6, E_conc); ei.shearModuli.set(6, G);
         ei.thicknesses = new Map([[6, 0.2]]); ei.poissonsRatios = new Map([[6, nu]]);
@@ -6541,8 +6559,8 @@ Util:     cad.info()  cad.clear()  cad.help()
           name: "Portal 2-Story + Wall Q4", formulation: "Frame Timoshenko + Shell Q4 (Hughes-Brezzi drilling)",
           nodes, elements,
           results: [
-            { label: "Ux h=3m (cm)", awatif: r.deformations.get(2)[0] * 100, reference: 0.0195, refSource: "ETABS 22.6" },
-            { label: "Ux h=6m (cm)", awatif: r.deformations.get(4)[0] * 100, reference: 2.1133, refSource: "ETABS 22.6" },
+            { label: "Ux Z=3m (cm)", awatif: r.deformations.get(2)[0] * 100, reference: 0.0195, refSource: "ETABS 22.6" },
+            { label: "Ux Z=6m (cm)", awatif: r.deformations.get(4)[0] * 100, reference: 2.1133, refSource: "ETABS 22.6" },
           ]
         });
       }
