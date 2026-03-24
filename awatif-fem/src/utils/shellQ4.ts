@@ -329,7 +329,7 @@ export function getLocalStiffnessMatrixShellQ4(
   // Nd[i] = 0.5 * (∂N[i]/∂x_local2 - ∂N[i]/∂x_local1) for each node
   // This couples θz with u,v — not just diagonal stabilization
   const G = E / (2 * (1 + nu));
-  const alpha = 0.5; // Hughes & Brezzi recommend α ∈ [0.1, 1.0]
+  const alpha = 0.5; // Hughes-Brezzi (1989) standard value; ETABS uses similar formulation
   const Kd = getDrillingK(x, y, G, t, alpha);
 
   // Assemble 24x24
