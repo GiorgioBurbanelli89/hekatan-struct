@@ -6448,7 +6448,13 @@ Util:     cad.info()  cad.clear()  cad.help()
         }
         for (const i of beamIdx) {
           ei.elasticities.set(i, E_conc); ei.shearModuli.set(i, G); ei.areas.set(i, Ab);
-          ei.momentsOfInertiaZ.set(i, Izb); ei.momentsOfInertiaY.set(i, Iyb);
+          // Z-up convention: beam along X in XZ plane
+          // local_y = global_Y (out of plane), local_z = global_Z (vertical)
+          // Iz controls bending in local_z → deflection in global_Y (out of plane, weak)
+          // Iy controls bending in local_y → deflection in global_Z (vertical, strong)
+          // For portal in XZ plane: Iy = strong axis (D=0.4), Iz = weak axis (B=0.25)
+          ei.momentsOfInertiaZ.set(i, Iyb); // weak axis → out-of-plane
+          ei.momentsOfInertiaY.set(i, Izb); // strong axis → in-plane (XZ portal)
           ei.torsionalConstants.set(i, Jb); ei.shearAreasY.set(i, AsB); ei.shearAreasZ.set(i, AsB);
         }
         return ei;
