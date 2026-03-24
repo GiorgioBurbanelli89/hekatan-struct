@@ -16,6 +16,8 @@
  */
 
 import { create, all } from "mathjs";
+// @ts-ignore — nerdamer is UMD, import as default
+import nerdamer from "nerdamer/all.min.js";
 import {
   getLocalStiffnessMatrix,
   getTransformationMatrix,
@@ -410,6 +412,138 @@ math.import({
       sum += w * f(mid + half * xi);
     }
     return sum * half;
+  },
+
+}, { override: true });
+
+// ═══════════════════════════════════════════════════════
+// SYMBOLIC MATH (nerdamer) — diff, integrate, expand, factor, solve, simplify
+// ═══════════════════════════════════════════════════════
+math.import({
+  // syms('x y z') — declare symbolic variables (returns string confirmation)
+  syms: function(...names: string[]) {
+    // nerdamer auto-creates symbols, just return confirmation
+    return `Variables simbólicas: ${names.join(", ")}`;
+  },
+
+  // sym(expr) — create symbolic expression, returns LaTeX string
+  sym: function(expr: string) {
+    try {
+      const result = nerdamer(expr);
+      return result.toTeX();
+    } catch (e: any) {
+      return `Error simbólico: ${e.message}`;
+    }
+  },
+
+  // sdiff(expr, var) — symbolic differentiation
+  // sdiff('x^3 + 3*x*y', 'x') → '3*x^2 + 3*y'
+  sdiff: function(expr: string, variable: string) {
+    try {
+      const result = nerdamer.diff(expr, variable);
+      return result.toString();
+    } catch (e: any) {
+      return `Error: ${e.message}`;
+    }
+  },
+
+  // sdiff2(expr, var) — second derivative
+  sdiff2: function(expr: string, variable: string) {
+    try {
+      const r1 = nerdamer.diff(expr, variable);
+      const r2 = nerdamer.diff(r1.toString(), variable);
+      return r2.toString();
+    } catch (e: any) {
+      return `Error: ${e.message}`;
+    }
+  },
+
+  // sint(expr, var) — symbolic integration
+  // sint('x^2', 'x') → '(1/3)*x^3'
+  sint: function(expr: string, variable: string) {
+    try {
+      const result = nerdamer.integrate(expr, variable);
+      return result.toString();
+    } catch (e: any) {
+      return `Error: ${e.message}`;
+    }
+  },
+
+  // sdefint(expr, var, a, b) — definite integral
+  sdefint: function(expr: string, variable: string, a: number, b: number) {
+    try {
+      const result = nerdamer.defint(expr, a, b, variable);
+      return result.toString();
+    } catch (e: any) {
+      return `Error: ${e.message}`;
+    }
+  },
+
+  // sexpand(expr) — expand expression
+  sexpand: function(expr: string) {
+    try {
+      return nerdamer.expand(expr).toString();
+    } catch (e: any) {
+      return `Error: ${e.message}`;
+    }
+  },
+
+  // sfactor(expr) — factor expression
+  sfactor: function(expr: string) {
+    try {
+      return nerdamer.factor(expr).toString();
+    } catch (e: any) {
+      return `Error: ${e.message}`;
+    }
+  },
+
+  // ssolve(expr, var) — solve equation for variable
+  // ssolve('x^2 - 4', 'x') → '[2, -2]'
+  ssolve: function(expr: string, variable: string) {
+    try {
+      const result = nerdamer.solveEquations(expr, variable);
+      return result.toString();
+    } catch (e: any) {
+      return `Error: ${e.message}`;
+    }
+  },
+
+  // ssimplify(expr) — simplify expression
+  ssimplify: function(expr: string) {
+    try {
+      return nerdamer(expr).toString();
+    } catch (e: any) {
+      return `Error: ${e.message}`;
+    }
+  },
+
+  // ssubs(expr, var, val) — substitute value into expression
+  // ssubs('x^2 + y', 'x', '3') → '9 + y'
+  ssubs: function(expr: string, variable: string, value: string | number) {
+    try {
+      const result = nerdamer(expr, { [variable]: String(value) });
+      return result.toString();
+    } catch (e: any) {
+      return `Error: ${e.message}`;
+    }
+  },
+
+  // seval(expr) — evaluate symbolic expression to number
+  seval: function(expr: string) {
+    try {
+      return nerdamer(expr).evaluate().text("decimals");
+    } catch (e: any) {
+      return `Error: ${e.message}`;
+    }
+  },
+
+  // stex(expr) — convert expression to LaTeX
+  stex: function(expr: string) {
+    try {
+      return nerdamer(expr).toTeX();
+    } catch (e: any) {
+      return expr;
+    }
   },
 
 }, { override: true });
