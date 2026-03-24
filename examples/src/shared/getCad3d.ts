@@ -5318,8 +5318,8 @@ Util:     cad.info()  cad.clear()  cad.help()
           <option value="test-portal-2p">3. Portal 2-Story (ETABS)</option>
           <option value="test-wall-only">4. Wall Q4 Only (ETABS)</option>
           <option value="test-portal-wall">5. Portal + Wall (ETABS)</option>
+          <option value="test-wilson-beam">6. Wilson Cantilever Q4 (incomp.)</option>
           <!-- Scordelis-Lo requires MITC4 for curved shells - not yet implemented -->
-          <!-- <option value="test-scordelis">6. Scordelis-Lo Barrel (Wilson)</option> -->
           <option value="test-all">▶ Run All Tests</option>
         </select>
         <select id="cad3d-force-unit" title="Unidad de fuerza" style="background:var(--cad-btn-bg);color:var(--cad-btn-text);border:1px solid var(--cad-btn-border);padding:2px 4px;font-size:11px;cursor:pointer;">
@@ -6567,7 +6567,78 @@ Util:     cad.info()  cad.clear()  cad.help()
         });
       }
 
-      // ── Test 6: Scordelis-Lo Barrel Vault (Classic shell benchmark) ──
+      // ── Test 6: Wilson Fig 6.2 — Cantilever beam with Q4 membrane elements ──
+      if (testId === "test-wilson-beam" || testId === "test-all") {
+        // Wilson (2004) Table 6.1: Cantilever beam L=5, d=2, E=1500, nu=0.25
+        // 2 Q4 elements (rectangular, no distortion, a=0)
+        // Load case 1: Moment M at free end → exact normalized disp = 1.000 (with 4 incomp modes)
+        // Load case 2: Shear V at free end → exact normalized disp = 0.932 (with 4 incomp modes)
+        const Lw = 5, dw = 2, Ew = 1500, nuw = 0.25, tw = 1;
+        const Gw = Ew / (2 * (1 + nuw));
+        const Iw = tw * dw ** 3 / 12; // = 0.6667
+
+        // 2 rectangular Q4 elements side by side
+        // Nodes: 0=(0,0), 1=(2.5,0), 2=(5,0), 3=(5,1), 4=(2.5,1), 5=(0,1), 6=(5,-1), 7=(2.5,-1), 8=(0,-1)
+        // Actually simpler: 6 nodes for 2 elements in a row
+        // Bottom: y=-1, Mid: y=0 (but for plane stress, use full depth d=2)
+        // Nodes: 0=(0,-1), 1=(2.5,-1), 2=(5,-1), 3=(5,1), 4=(2.5,1), 5=(0,1)
+        const wn: Node[] = [
+          [0, -1, 0], [2.5, -1, 0], [5, -1, 0],
+          [5,  1, 0], [2.5,  1, 0], [0,  1, 0],
+        ];
+        const we: Element[] = [[0, 1, 4, 5], [1, 2, 3, 4]]; // 2 Q4 elements
+
+        const wei: ElementInputs = {
+          elasticities: new Map([[0, Ew], [1, Ew]]),
+          shearModuli: new Map([[0, Gw], [1, Gw]]),
+          thicknesses: new Map([[0, tw], [1, tw]]),
+          poissonsRatios: new Map([[0, nuw], [1, nuw]]),
+        };
+
+        // BCs: left edge (nodes 0, 5) fully fixed
+        const wsup = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
+        wsup.set(0, [true, true, true, true, true, true]);
+        wsup.set(5, [true, true, true, true, true, true]);
+
+        // Load case: Shear V=1 at free end (nodes 2, 3)
+        // Parabolic shear distribution: F_top = 0.5, F_bottom = 0.5
+        const wloads = new Map<number, [number, number, number, number, number, number]>();
+        wloads.set(2, [0, 0.5, 0, 0, 0, 0]); // V at bottom-right (upward)
+        wloads.set(3, [0, 0.5, 0, 0, 0, 0]); // V at top-right (upward)
+
+        // Exact solution: delta_exact = VL^3/(3EI) + 6VL/(5GA) [with shear correction]
+        // For plane stress thin beam: delta = VL^3/(3EI) = 1*125/(3*1500*0.6667) = 0.04167
+        // Wilson normalizes by this
+        const delta_exact = Lw ** 3 / (3 * Ew * Iw); // = 0.04167
+
+        try {
+          const wr = deform(wn, we, { supports: wsup, loads: wloads }, wei);
+          // Max displacement at free end (average of nodes 2 and 3)
+          const uy2 = Math.abs(wr.deformations?.get(2)?.[1] ?? 0);
+          const uy3 = Math.abs(wr.deformations?.get(3)?.[1] ?? 0);
+          const uy_max = (uy2 + uy3) / 2;
+          const normalized = uy_max / delta_exact;
+
+          tests.push({
+            name: "Wilson Fig 6.2 — Cantilever Q4",
+            formulation: "2 Q4 elements + incompatible modes (Wilson 1971, Table 6.1)",
+            nodes: wn, elements: we,
+            results: [
+              { label: "Uy/Uy_exact (cortante)", awatif: normalized, reference: 0.932, refSource: "Wilson Table 6.1" },
+              { label: "Uy free end", awatif: uy_max, reference: delta_exact * 0.932, refSource: "Wilson" },
+            ]
+          });
+        } catch (e: any) {
+          tests.push({
+            name: "Wilson Fig 6.2 — Cantilever Q4",
+            formulation: "ERROR: " + e.message,
+            nodes: wn, elements: we,
+            results: [{ label: "Error", awatif: 0, reference: 0.932, refSource: "Wilson" }]
+          });
+        }
+      }
+
+      // ── Test 7: Scordelis-Lo Barrel Vault (Classic shell benchmark) ──
       if (testId === "test-scordelis" || testId === "test-all") {
         // Scordelis & Lo (1964), Wilson (2004) — barrel vault under self-weight
         // R=25, L=50, theta=40deg, t=0.25, E=4.32e8, nu=0.0, w=360 (weight/vol)
@@ -8950,16 +9021,72 @@ Util:     cad.info()  cad.clear()  cad.help()
         <div class="prop-row"><span class="prop-key">J</span><span class="prop-val">${fmt(J)}</span></div>
       `;
     } else {
-      const E = ei.elasticities?.get(elemIdx) ?? 0;
-      const t = ei.thicknesses?.get(elemIdx) ?? 0;
-      const nu = ei.poissonsRatios?.get(elemIdx) ?? 0;
+      const E_sh = ei.elasticities?.get(elemIdx) ?? 0;
+      const t_sh = ei.thicknesses?.get(elemIdx) ?? 0;
+      const nu_sh = ei.poissonsRatios?.get(elemIdx) ?? 0;
+      const G_sh = E_sh / (2 * (1 + nu_sh));
+      const isQ4 = elem.length === 4;
+      const Dval = E_sh / (1 - nu_sh * nu_sh);
+
       propsHTML = `
-        <div class="prop-row"><span class="prop-key">Tipo</span><span class="prop-val">Shell (3 nodos)</span></div>
+        <div class="prop-row"><span class="prop-key">Tipo</span><span class="prop-val">Shell Q${isQ4 ? "4" : "3"} (${elem.length} nodos)</span></div>
         <div class="prop-row"><span class="prop-key">Nodos</span><span class="prop-val">${elem.join(", ")}</span></div>
-        <div class="prop-row"><span class="prop-key">E</span><span class="prop-val">${fmt(E)}</span></div>
-        <div class="prop-row"><span class="prop-key">t</span><span class="prop-val">${fmt(t)} m</span></div>
-        <div class="prop-row"><span class="prop-key">ν</span><span class="prop-val">${fmt(nu)}</span></div>
+        <div class="prop-row"><span class="prop-key">E</span><span class="prop-val">${fmt(E_sh)}</span></div>
+        <div class="prop-row"><span class="prop-key">G</span><span class="prop-val">${fmt(G_sh)}</span></div>
+        <div class="prop-row"><span class="prop-key">t</span><span class="prop-val">${fmt(t_sh)}</span></div>
+        <div class="prop-row"><span class="prop-key">ν</span><span class="prop-val">${fmt(nu_sh)}</span></div>
       `;
+
+      if (isQ4) {
+        // Wilson (2004) Cap 6 formulas for incompatible modes
+        formulaStiffHTML = `<div class="fem-eq eq-box">
+          <div style="text-align:left;margin-bottom:6px"><strong style="color:var(--fem-section-title)">Formulación Q4: Membrana + Mindlin-Reissner + Drilling</strong></div>
+
+          <div style="text-align:left;margin-bottom:4px"><strong style="color:var(--fem-section-title)">1. Matriz constitutiva (esfuerzo plano):</strong></div>
+          <div>${v("D")} = ${frac(v("E"), "1−ν²")} · <span class="mat-sym" style="grid-template-columns:repeat(3,auto)">
+            <span class="cell">1</span><span class="cell">ν</span><span class="cell">0</span>
+            <span class="cell">ν</span><span class="cell">1</span><span class="cell">0</span>
+            <span class="cell">0</span><span class="cell">0</span><span class="cell">${frac("1−ν","2")}</span>
+          </span> = ${frac(fmt(E_sh), "1−"+fmt(nu_sh)+"²")} = <span class="highlight">${fmt(Dval)}</span></div>
+
+          <div style="text-align:left;margin-top:8px;margin-bottom:4px"><strong style="color:var(--fem-section-title)">2. Funciones de forma (Ec. 6.2, Wilson):</strong></div>
+          <div>${v("N","i")} = ¼·(1±ξ)·(1±η) &nbsp;&nbsp; <sub style="color:var(--fem-label)">i = 1..4 (bilineal)</sub></div>
+
+          <div style="text-align:left;margin-top:8px;margin-bottom:4px"><strong style="color:var(--fem-section-title)">3. Modos incompatibles (Ec. 6.13, Wilson 1971):</strong></div>
+          <div>${v("N","5")} = 1 − ξ² &nbsp;&nbsp; ${v("N","6")} = 1 − η²</div>
+          <div style="margin-top:4px">${v("u","x")} = Σ${v("N","i")}·${v("u","xi")} + α₁·${v("N","5")} + α₂·${v("N","6")} &nbsp;<sub style="color:var(--fem-label)">(Ec. 6.12)</sub></div>
+          <div>${v("u","y")} = Σ${v("N","i")}·${v("u","yi")} + α₃·${v("N","5")} + α₄·${v("N","6")}</div>
+
+          <div style="text-align:left;margin-top:8px;margin-bottom:4px"><strong style="color:var(--fem-section-title)">4. Deformación-desplazamiento (Ec. 6.3):</strong></div>
+          <div>${v("d")} = [${v("B","C")} &nbsp; ${v("B","I")}] · [${v("u")} &nbsp; α]${`<sup>T</sup>`}</div>
+
+          <div style="text-align:left;margin-top:8px;margin-bottom:4px"><strong style="color:var(--fem-section-title)">5. Submatrices de rigidez (Ec. 6.9):</strong></div>
+          <div>${v("k","CC")} = ∫${v("B","C")}${`<sup>T</sup>`}·${v("E")}·${v("B","C")} dV &nbsp;<sub style="color:var(--fem-label)">(8×8 estándar)</sub></div>
+          <div>${v("k","CI")} = ∫${v("B","C")}${`<sup>T</sup>`}·${v("E")}·${v("B̄","I")} dV &nbsp;<sub style="color:var(--fem-label)">(8×4 acoplamiento)</sub></div>
+          <div>${v("k","II")} = ∫${v("B̄","I")}${`<sup>T</sup>`}·${v("E")}·${v("B̄","I")} dV &nbsp;<sub style="color:var(--fem-label)">(4×4 modos internos)</sub></div>
+
+          <div style="text-align:left;margin-top:8px;margin-bottom:4px"><strong style="color:var(--fem-section-title)">6. Condensación estática (Ec. 6.11):</strong></div>
+          <div style="font-size:13px"><span class="highlight">${v("k","C")} = ${v("k","CC")} − ${v("k","CI")} · ${v("k","II")}⁻¹ · ${v("k","IC")}</span></div>
+          <div style="margin-top:4px;color:var(--fem-eq-sub)">Los 4 modos incompatibles α se eliminan antes del ensamblaje global</div>
+
+          <div style="text-align:left;margin-top:8px;margin-bottom:4px"><strong style="color:var(--fem-section-title)">7. Corrección de Taylor (Ec. 6.7):</strong></div>
+          <div>${v("B̄","I")} = ${v("B","I")} + ${v("B","IC")} &nbsp; donde &nbsp; ${v("B","IC")} = −${frac("1","V")}∫${v("B","I")} dV</div>
+          <div style="color:var(--fem-eq-sub)">Jacobiano del centro para modos incompatibles → pasa patch test</div>
+
+          <div style="text-align:left;margin-top:8px;margin-bottom:4px"><strong style="color:var(--fem-section-title)">8. Drilling DOF (Hughes-Brezzi 1989):</strong></div>
+          <div>${v("K","drill")} = α·${v("G")}·${v("t")} · ∫${v("B","d")}${`<sup>T</sup>`}·${v("B","d")} dA &nbsp; donde α = 0.5</div>
+          <div>${v("B","d")}[i] = θ<sub>z,i</sub> − ½·(∂v/∂x − ∂u/∂y) &nbsp;<sub style="color:var(--fem-label)">(rotación antisimétrica)</sub></div>
+
+          <div style="text-align:left;margin-top:8px;margin-bottom:4px"><strong style="color:var(--fem-section-title)">9. Placa Mindlin-Reissner + MITC4:</strong></div>
+          <div>${v("D","b")} = ${frac(v("E")+"·"+v("t")+"³", "12·(1−ν²)")} = <span class="highlight">${fmt(E_sh * t_sh**3 / (12*(1-nu_sh**2)))}</span></div>
+          <div>${v("D","s")} = κ·${v("G")}·${v("t")} = <span class="highlight">${fmt(5/6 * G_sh * t_sh)}</span> &nbsp; <sub style="color:var(--fem-label)">κ = 5/6</sub></div>
+          <div style="color:var(--fem-eq-sub)">MITC4: interpolación de cortante en puntos de atado (tying points)</div>
+
+          <div style="text-align:left;margin-top:8px;margin-bottom:4px"><strong style="color:var(--fem-section-title)">10. Ensamblaje final:</strong></div>
+          <div>${v("K","24×24")} = ${v("K","membrana")}(8×8) + ${v("K","flexión")}(12×12) + ${v("K","drilling")}(12×12)</div>
+          <div style="color:var(--fem-eq-sub)">DOFs por nodo: [u, v, w, θx, θy, θz]</div>
+        </div>`;
+      }
     }
 
     // Compute matrices
