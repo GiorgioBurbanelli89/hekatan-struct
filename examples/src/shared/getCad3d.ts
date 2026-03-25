@@ -1915,15 +1915,27 @@ VIEW:
       if (!name) { console.log(`Ejemplos: truss, beams, 3d, portico, edificio, galpon`); return; }
       switch (name) {
         case "truss": {
+          // Cercha de acero: 2L 25×25×3mm
+          sectionState.colMat = 1; sectionState.vigaMat = 1;
           cli.clear(); setGenerator("truss"); generateTruss(); break;
         }
         case "beams": {
+          // Pórtico de hormigón: col 40×40, vigas 30×40
+          sectionState.colMat = 0; sectionState.vigaMat = 0;
+          sectionState.colShape = 0; // rectangular
           cli.clear(); setGenerator("beams"); generateBeams(); break;
         }
         case "3d": case "3d-structure": case "torre": {
+          // Torre de acero: perfiles metálicos
+          sectionState.colMat = 1; sectionState.vigaMat = 1;
           cli.clear(); setGenerator("3d"); generate3d(); break;
         }
-        case "portico": { setGenerator("frame"); regenerateFromParams(); break; }
+        case "portico": {
+          // Pórtico de hormigón
+          sectionState.colMat = 0; sectionState.vigaMat = 0;
+          sectionState.colShape = 0;
+          setGenerator("frame"); regenerateFromParams(); break;
+        }
         case "edificio": {
           // Edificio aporticado puro: hormigon, sin muros, sin losas, sin vigas sec
           setGenerator("edificio");
@@ -2012,7 +2024,13 @@ VIEW:
           slabSubdivX = 3; slabSubdivY = 3;
           regenerateFromParams(); break;
         }
-        case "galpon": { setGenerator("galpon"); regenerateFromParams(); break; }
+        case "galpon": {
+          setGenerator("galpon");
+          // Galpón de acero: 2L 25×25×3mm (columnas/cerchas) + G 80×50×15×3mm (correas)
+          sectionState.colMat = 1; // acero
+          sectionState.vigaMat = 1; // acero
+          regenerateFromParams(); break;
+        }
         case "barra": { setGenerator("barra"); regenerateFromParams(); break; }
         case "placa3q": case "plate3q": case "placa-3q": {
           cli.clear(); setGenerator("placa-3q"); generatePlate3Q(); break;
@@ -5128,6 +5146,19 @@ Util:     cad.info()  cad.clear()  cad.help()
     #cad3d-panel .toggle-btn-collapsed:hover { background: #ffb300; }
     #cad3d-panel .toggle-btn { background: none; border: none; color: var(--cad-toggle-text); cursor: pointer; font-size: 14px; padding: 0; line-height: 1; }
     #cad3d-panel .toggle-btn:hover { color: var(--cad-toggle-hover); }
+    /* ── Mobile: FEM Studio panel ── */
+    @media (max-width: 600px) {
+      #cad3d-panel {
+        width: 160px; padding: 8px 10px; font-size: 11px;
+        max-height: 55vh; bottom: 5px; left: 5px;
+      }
+      #cad3d-panel button { padding: 2px 5px; font-size: 10px; }
+      #cad3d-panel .btn-row { gap: 2px; margin-top: 2px; }
+      #cad3d-panel h3 { font-size: 11px; margin-bottom: 4px; }
+      #cad3d-panel .cmd-input { font-size: 10px; padding: 3px 4px; margin-top: 4px; }
+      #cad3d-panel .section-label { font-size: 9px; margin-top: 4px; }
+      #fem-inspect-panel { width: calc(100% - 10px) !important; right: 5px !important; left: 5px !important; top: auto !important; bottom: 5px !important; max-height: 50vh; }
+    }
     #fem-inspect-panel {
       position: fixed; top: 10px; right: 10px;
       background: var(--fem-bg); color: var(--fem-text);
@@ -6340,6 +6371,11 @@ Util:     cad.info()  cad.clear()  cad.help()
     panel.querySelectorAll("[data-ex]").forEach((btn) => {
       (btn as HTMLElement).classList.toggle("active", (btn as HTMLElement).dataset.ex === name);
     });
+  }
+
+  // Auto-collapse on mobile
+  if (window.innerWidth <= 600) {
+    panel.classList.add("collapsed");
   }
 
   setTimeout(() => {

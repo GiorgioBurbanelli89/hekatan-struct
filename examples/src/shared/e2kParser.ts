@@ -334,17 +334,17 @@ export function parseE2k(text: string): E2kModel {
       if (la.rigidZone > 0) {
         rigidOffsets.set(elemIdx, [la.rigidZone, la.rigidZone]);
       }
-      // Store moment releases
+      // Store releases (12-flag: FxI,FyI,FzI,TI,M2I,M3I, FxJ,FyJ,FzJ,TJ,M2J,M3J)
       if (la.releases.length > 0) {
-        // ETABS releases: TI, M2I, M3I, TJ, M2J, M3J
-        const rel: [boolean, boolean, boolean, boolean, boolean, boolean] = [false, false, false, false, false, false];
+        const rel: boolean[] = new Array(12).fill(false);
+        // ETABS release names → 12-flag index
+        const releaseMap: Record<string, number> = {
+          "PI": 0,  "V2I": 1,  "V3I": 2,  "TI": 3,  "M2I": 4,  "M3I": 5,
+          "PJ": 6,  "V2J": 7,  "V3J": 8,  "TJ": 9,  "M2J": 10, "M3J": 11,
+        };
         for (const r of la.releases) {
-          if (r === "TI") rel[0] = true;
-          if (r === "M2I") rel[1] = true;
-          if (r === "M3I") rel[2] = true;
-          if (r === "TJ") rel[3] = true;
-          if (r === "M2J") rel[4] = true;
-          if (r === "M3J") rel[5] = true;
+          const idx = releaseMap[r];
+          if (idx !== undefined) rel[idx] = true;
         }
         momentReleases.set(elemIdx, rel);
       }
@@ -358,7 +358,7 @@ export function parseE2k(text: string): E2kModel {
   const shearAreasY = new Map<number, number>();
   const shearAreasZ = new Map<number, number>();
   const rigidOffsets = new Map<number, [number, number]>();
-  const momentReleases = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
+  const momentReleases = new Map<number, boolean[]>();
   const momentsOfInertiaZ = new Map<number, number>();
   const momentsOfInertiaY = new Map<number, number>();
   const torsionalConstants = new Map<number, number>();

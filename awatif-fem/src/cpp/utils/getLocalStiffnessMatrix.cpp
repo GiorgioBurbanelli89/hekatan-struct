@@ -28,16 +28,25 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     const ElementInputs &elementInputs,
     int index);
 
-// Static condensation for moment releases
+// Static condensation for releases (any DOF at node I or J)
+// Supports two formats:
+//   6 flags: [TI, M2I, M3I, TJ, M2J, M3J]  (legacy, rotational only)
+//  12 flags: [FxI, FyI, FzI, TI, M2I, M3I, FxJ, FyJ, FzJ, TJ, M2J, M3J]  (all DOFs)
 Eigen::MatrixXd applyReleases(const Eigen::MatrixXd &K, const std::vector<bool> &releases)
 {
-    // releases = [TI, M2I, M3I, TJ, M2J, M3J]
-    // Maps to local DOFs: TI→3, M2I→4, M3I→5, TJ→9, M2J→10, M3J→11
-    const int relDofs[] = {3, 4, 5, 9, 10, 11};
     std::vector<int> freed, retained;
-    for (int i = 0; i < 6 && i < (int)releases.size(); i++)
-    {
-        if (releases[i]) freed.push_back(relDofs[i]);
+    if (releases.size() >= 12) {
+        // Full 12-flag format: maps directly to local DOFs 0-11
+        for (int i = 0; i < 12; i++) {
+            if (releases[i]) freed.push_back(i);
+        }
+    } else {
+        // Legacy 6-flag format: [TI, M2I, M3I, TJ, M2J, M3J]
+        // Maps to local DOFs: TI→3, M2I→4, M3I→5, TJ→9, M2J→10, M3J→11
+        const int relDofs[] = {3, 4, 5, 9, 10, 11};
+        for (int i = 0; i < 6 && i < (int)releases.size(); i++) {
+            if (releases[i]) freed.push_back(relDofs[i]);
+        }
     }
     if (freed.empty()) return K;
 
@@ -72,6 +81,21 @@ Eigen::MatrixXd applyReleases(const Eigen::MatrixXd &K, const std::vector<bool> 
     return Kc;
 }
 
+// Apply partial fixity springs: add spring stiffness to diagonal of K
+// springs = [kFxI,kFyI,kFzI,kTI,kM2I,kM3I, kFxJ,kFyJ,kFzJ,kTJ,kM2J,kM3J]
+// A spring value > 0 adds that stiffness to the diagonal entry for that DOF
+Eigen::MatrixXd applyPartialFixitySprings(const Eigen::MatrixXd &K, const std::vector<double> &springs)
+{
+    Eigen::MatrixXd Ks = K;
+    int n = std::min((int)springs.size(), 12);
+    for (int i = 0; i < n; i++) {
+        if (springs[i] > 1e-12) {
+            Ks(i, i) += springs[i];
+        }
+    }
+    return Ks;
+}
+
 Eigen::MatrixXd getLocalStiffnessMatrix(
     const std::vector<Node> &elementNodes,
     const ElementInputs &elementInputs,
@@ -80,10 +104,14 @@ Eigen::MatrixXd getLocalStiffnessMatrix(
     if (elementNodes.size() == 2)
     {
         Eigen::MatrixXd K = getLocalStiffnessMatrixFrame(elementNodes, elementInputs, elementIndex);
-        // Apply moment releases
+        // Apply partial fixity springs (before releases)
+        auto itSp = elementInputs.partialFixitySprings.find(elementIndex);
+        if (itSp != elementInputs.partialFixitySprings.end()) {
+            K = applyPartialFixitySprings(K, itSp->second);
+        }
+        // Apply releases (static condensation)
         auto it = elementInputs.momentReleases.find(elementIndex);
-        if (it != elementInputs.momentReleases.end())
-        {
+        if (it != elementInputs.momentReleases.end()) {
             K = applyReleases(K, it->second);
         }
         return K;

@@ -27,7 +27,13 @@ struct ElementInputs
     std::map<int, double> shearAreasY; // As_y for Timoshenko beams
     std::map<int, double> shearAreasZ; // As_z for Timoshenko beams
     std::map<int, std::vector<double>> rigidOffsets; // [factorI, factorJ] rigid zone factors
-    std::map<int, std::vector<bool>> momentReleases; // [TI,M2I,M3I,TJ,M2J,M3J]
+    // Releases via static condensation. Two formats:
+    //  6 flags: [TI,M2I,M3I, TJ,M2J,M3J]  (rotational only, legacy)
+    // 12 flags: [FxI,FyI,FzI,TI,M2I,M3I, FxJ,FyJ,FzJ,TJ,M2J,M3J] (all DOFs)
+    std::map<int, std::vector<bool>> momentReleases;
+    // Partial fixity springs (semi-rigid connections)
+    // 12 values: [kFxI,kFyI,kFzI,kTI,kM2I,kM3I, kFxJ,kFyJ,kFzJ,kTJ,kM2J,kM3J]
+    std::map<int, std::vector<double>> partialFixitySprings;
 };
 
 struct NodeInputs

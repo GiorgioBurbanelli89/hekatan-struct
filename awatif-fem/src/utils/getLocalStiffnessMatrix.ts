@@ -18,7 +18,10 @@ export function getLocalStiffnessMatrix(
 ): number[][] {
   if (nodes.length === 2) {
     let K = getLocalStiffnessMatrixFrame(nodes, elementInputs, index);
-    // Apply moment releases via static condensation
+    // Apply partial fixity springs (before releases)
+    const springs = elementInputs?.partialFixitySprings?.get(index);
+    if (springs) K = applyPartialFixitySprings(K, springs);
+    // Apply releases via static condensation
     const rel = elementInputs?.momentReleases?.get(index);
     if (rel) K = applyReleases(K, rel);
     return K;
@@ -37,11 +40,27 @@ export function getLocalStiffnessMatrix(
  * TI=torsion@I, M2I=My@I, M3I=Mz@I, TJ=torsion@J, M2J=My@J, M3J=Mz@J
  * Maps to local DOFs: TI→3, M2I→4, M3I→5, TJ→9, M2J→10, M3J→11
  */
-function applyReleases(K: number[][], releases: [boolean, boolean, boolean, boolean, boolean, boolean]): number[][] {
-  const relDofs = [3, 4, 5, 9, 10, 11]; // DOFs corresponding to [TI,M2I,M3I,TJ,M2J,M3J]
+// Add partial fixity springs to K diagonal
+function applyPartialFixitySprings(K: number[][], springs: number[]): number[][] {
+  const Ks = K.map(r => [...r]);
+  const n = Math.min(springs.length, 12);
+  for (let i = 0; i < n; i++) {
+    if (springs[i] > 1e-12) Ks[i][i] += springs[i];
+  }
+  return Ks;
+}
+
+// Static condensation for releases
+// 6 flags: [TI,M2I,M3I,TJ,M2J,M3J] (legacy) or 12 flags: all DOFs
+function applyReleases(K: number[][], releases: boolean[]): number[][] {
   const freed: number[] = [];
-  for (let i = 0; i < 6; i++) {
-    if (releases[i]) freed.push(relDofs[i]);
+  if (releases.length >= 12) {
+    for (let i = 0; i < 12; i++) { if (releases[i]) freed.push(i); }
+  } else {
+    const relDofs = [3, 4, 5, 9, 10, 11];
+    for (let i = 0; i < Math.min(releases.length, 6); i++) {
+      if (releases[i]) freed.push(relDofs[i]);
+    }
   }
   if (freed.length === 0) return K;
 

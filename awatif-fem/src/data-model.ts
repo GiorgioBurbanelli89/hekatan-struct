@@ -55,7 +55,15 @@ export type ElementInputs = {
   shearAreasY?: Map<number, number>; // shear area in Y direction (Timoshenko beam)
   shearAreasZ?: Map<number, number>; // shear area in Z direction (Timoshenko beam)
   rigidOffsets?: Map<number, [number, number]>; // [offsetI, offsetJ] rigid zone factors (0-1) at each end
-  momentReleases?: Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>; // [TI,M2I,M3I,TJ,M2J,M3J] release flags
+  // Frame releases via static condensation. Two formats:
+  //  6 flags: [TI,M2I,M3I, TJ,M2J,M3J]  (rotational only, legacy)
+  // 12 flags: [FxI,FyI,FzI,TI,M2I,M3I, FxJ,FyJ,FzJ,TJ,M2J,M3J] (all DOFs, like ETABS)
+  momentReleases?: Map<number, boolean[]>;
+  // Partial fixity springs (semi-rigid connections), kip/in or kN/m, kip-in/rad or kN-m/rad
+  // 12 values: [kFxI,kFyI,kFzI,kTI,kM2I,kM3I, kFxJ,kFyJ,kFzJ,kTJ,kM2J,kM3J]
+  // 0 = no spring (fully released if release=true, fully fixed if release=false)
+  // >0 = partial fixity spring stiffness
+  partialFixitySprings?: Map<number, number[]>;
   insertionPoints?: Map<number, [number, number]>; // [dy, dz] offset from centroid in local coords
   sectionShapes?: Map<number, SectionShape>; // visual section data for rendering
 };

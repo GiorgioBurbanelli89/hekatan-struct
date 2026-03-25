@@ -20,6 +20,7 @@ export interface ModelData {
 
 export const templateList = [
   { id: "fem_auto", name: "FEM del modelo actual (auto)" },
+  { id: "matlab_full", name: "MATLAB standalone — modelo actual" },
   { id: "empty", name: "Datos del modelo actual" },
   { id: "custom", name: "── Calculadora libre ──" },
   // ── Ferreira: MATLAB Codes for FEA ──
@@ -54,6 +55,7 @@ export function getTemplate(templateId: string, data: ModelData): string {
     case "viga2d": return templateViga();
     case "custom": return templateCustom();
     case "empty": return templateModelData(data);
+    case "matlab_full": return templateMatlabStandalone(data);
     // Curso FEM completo
     case "fem_course_1d": return femCourse1D();
     case "fem_course_beam": return femCourseBeam();
@@ -577,6 +579,238 @@ G = ${G0}
 % ─── Secciones (${sectionGroups.size} tipos, ${frameIdx.length} frames) ───
 ${sectionLines.join("\n")}
 ${shellPropLines.join("\n")}`;
+}
+
+// ═══════════════════════════════════════════════════════
+// MATLAB STANDALONE — Script completo para el modelo actual
+// Ejecutable en MATLAB/Octave sin dependencias
+// ═══════════════════════════════════════════════════════
+
+function templateMatlabStandalone(data: ModelData): string {
+  const ei = data.elementInputs;
+  const ni = data.nodeInputs;
+  const name = data.modelName || "Modelo";
+  const nn = data.nodes.length;
+  const ne = data.elements.length;
+
+  // Separate frames and shells
+  const frameIdx: number[] = [];
+  const shellIdx: number[] = [];
+  data.elements.forEach((el, i) => {
+    if (el.length === 2) frameIdx.push(i);
+    else shellIdx.push(i);
+  });
+
+  // Nodes matrix
+  const nodeLines = data.nodes.map(n => `  ${n[0]}, ${n[1]}, ${n[2]}`).join(";\n");
+
+  // Elements matrix (1-indexed for MATLAB)
+  const elemLines = data.elements
+    .filter(el => el.length === 2)
+    .map(el => `  ${el[0]+1}, ${el[1]+1}`).join(";\n");
+
+  // Property arrays for frames
+  const propArrays: string[] = [];
+  if (frameIdx.length > 0) {
+    const props = ["areas", "momentsOfInertiaZ", "momentsOfInertiaY", "torsionalConstants"] as const;
+    const matlabNames = ["A_elem", "Iz_elem", "Iy_elem", "J_elem"];
+    props.forEach((p, idx) => {
+      const map = (ei as any)[p] as Map<number, number> | undefined;
+      if (map && map.size > 0) {
+        const vals = frameIdx.map(i => map.get(i) || 0);
+        propArrays.push(`${matlabNames[idx]} = [${vals.join("; ")}];`);
+      }
+    });
+  }
+
+  // Supports (fixed DOFs)
+  const fixedDofs: number[] = [];
+  if (ni.supports) {
+    ni.supports.forEach((sup, nodeIdx) => {
+      sup.forEach((fixed, dofIdx) => {
+        if (fixed) fixedDofs.push(nodeIdx * 6 + dofIdx + 1); // 1-indexed
+      });
+    });
+  }
+
+  // Loads
+  const loadLines: string[] = [];
+  if (ni.forces) {
+    ni.forces.forEach((force, nodeIdx) => {
+      force.forEach((val, dofIdx) => {
+        if (Math.abs(val) > 1e-12) {
+          loadLines.push(`F(${nodeIdx * 6 + dofIdx + 1}) = ${val};`);
+        }
+      });
+    });
+  }
+
+  const E0 = ei.elasticities?.get(frameIdx[0] || 0) || 0;
+  const G0 = ei.shearModuli?.get(frameIdx[0] || 0) || 0;
+
+  return `%% ═══════════════════════════════════════════════════════
+%% ${name} — Script MATLAB/Octave standalone
+%% Generado por awatif-clone FEM Studio
+%% Ejecutar: octave ${name.replace(/\s/g,"_")}.m
+%% ═══════════════════════════════════════════════════════
+clear; clc;
+
+%% ─── 1. DATOS DEL MODELO ───
+nn = ${nn};  % nodos
+ne = ${frameIdx.length};  % elementos frame
+ndof = nn * 6;
+
+% Coordenadas [x, y, z]
+nodes = [
+${nodeLines}
+];
+
+% Conectividad [nodo_i, nodo_j] (1-indexed)
+elem = [
+${elemLines}
+];
+
+% Material
+E = ${E0};
+G = ${G0};
+
+% Propiedades por elemento
+${propArrays.join("\n")}
+
+%% ─── 2. FUNCIÓN: K local 12×12 Timoshenko ───
+% Ref: Dr. Aguiar, Dinámica de Estructuras
+function K = beam_stiffness_3d(E, G, A, Iz, Iy, J, L)
+    % Áreas de corte (rectangular 5/6)
+    Asy = A * 5/6;
+    Asz = A * 5/6;
+    % Factores Timoshenko
+    phiy = 12 * E * Iz / (G * Asy * L^2);
+    phiz = 12 * E * Iy / (G * Asz * L^2);
+
+    EA_L = E * A / L;
+    GJ_L = G * J / L;
+
+    % Flexión en plano XY (usa Iz)
+    c1z = 12*E*Iz / (L^3 * (1+phiy));
+    c2z = 6*E*Iz / (L^2 * (1+phiy));
+    c3z = (4+phiy)*E*Iz / (L*(1+phiy));
+    c4z = (2-phiy)*E*Iz / (L*(1+phiy));
+
+    % Flexión en plano XZ (usa Iy)
+    c1y = 12*E*Iy / (L^3 * (1+phiz));
+    c2y = 6*E*Iy / (L^2 * (1+phiz));
+    c3y = (4+phiz)*E*Iy / (L*(1+phiz));
+    c4y = (2-phiz)*E*Iy / (L*(1+phiz));
+
+    K = zeros(12,12);
+    % Axial
+    K(1,1) = EA_L; K(7,7) = EA_L; K(1,7) = -EA_L; K(7,1) = -EA_L;
+    % Torsión
+    K(4,4) = GJ_L; K(10,10) = GJ_L; K(4,10) = -GJ_L; K(10,4) = -GJ_L;
+    % Flexión XY
+    K(2,2) = c1z; K(8,8) = c1z; K(2,8) = -c1z; K(8,2) = -c1z;
+    K(2,6) = c2z; K(6,2) = c2z; K(2,12) = c2z; K(12,2) = c2z;
+    K(8,6) = -c2z; K(6,8) = -c2z; K(8,12) = -c2z; K(12,8) = -c2z;
+    K(6,6) = c3z; K(12,12) = c3z; K(6,12) = c4z; K(12,6) = c4z;
+    % Flexión XZ
+    K(3,3) = c1y; K(9,9) = c1y; K(3,9) = -c1y; K(9,3) = -c1y;
+    K(3,5) = -c2y; K(5,3) = -c2y; K(3,11) = -c2y; K(11,3) = -c2y;
+    K(9,5) = c2y; K(5,9) = c2y; K(9,11) = c2y; K(11,9) = c2y;
+    K(5,5) = c3y; K(11,11) = c3y; K(5,11) = c4y; K(11,5) = c4y;
+end
+
+%% ─── 3. FUNCIÓN: Matriz de transformación 3D ───
+function T = transform_3d(n1, n2)
+    dx = n2 - n1;
+    L = norm(dx);
+    lx = dx / L;
+
+    % Vector auxiliar para definir plano local
+    if abs(lx(1)) < 0.9 && abs(lx(2)) < 0.9
+        vup = [0, 0, 1];
+    else
+        vup = [1, 0, 0];
+    end
+
+    lz = cross(lx, vup);
+    lz = lz / norm(lz);
+    ly = cross(lz, lx);
+
+    R = [lx; ly; lz];  % 3×3 rotation
+    T = zeros(12,12);
+    T(1:3, 1:3) = R;
+    T(4:6, 4:6) = R;
+    T(7:9, 7:9) = R;
+    T(10:12, 10:12) = R;
+end
+
+%% ─── 4. ENSAMBLAJE ───
+K_global = zeros(ndof, ndof);
+
+for e = 1:ne
+    ni = elem(e, 1);
+    nj = elem(e, 2);
+    n1 = nodes(ni, :);
+    n2 = nodes(nj, :);
+    L = norm(n2 - n1);
+
+    % K local Timoshenko
+    Ke = beam_stiffness_3d(E, G, A_elem(e), Iz_elem(e), Iy_elem(e), J_elem(e), L);
+
+    % Transformación
+    Te = transform_3d(n1, n2);
+
+    % K global del elemento
+    Kg = Te' * Ke * Te;
+
+    % DOFs globales (1-indexed)
+    dofs = [(ni-1)*6+1 : ni*6, (nj-1)*6+1 : nj*6];
+
+    % Ensamblar
+    K_global(dofs, dofs) = K_global(dofs, dofs) + Kg;
+end
+
+fprintf('K global: %dx%d, nnz=%d\\n', ndof, ndof, nnz(sparse(K_global)));
+
+%% ─── 5. VECTOR DE CARGAS ───
+F = zeros(ndof, 1);
+${loadLines.length > 0 ? loadLines.join("\n") : "% Sin cargas definidas"}
+
+%% ─── 6. CONDICIONES DE BORDE ───
+fixed_dofs = [${fixedDofs.join(", ")}];
+free_dofs = setdiff(1:ndof, fixed_dofs);
+
+%% ─── 7. RESOLVER Ku = F ───
+K_red = K_global(free_dofs, free_dofs);
+F_red = F(free_dofs);
+
+U = zeros(ndof, 1);
+U(free_dofs) = K_red \\ F_red;
+
+fprintf('\\n=== DESPLAZAMIENTOS ===\\n');
+for i = 1:nn
+    d = U((i-1)*6+1 : i*6);
+    if norm(d) > 1e-12
+        fprintf('Nodo %d: ux=%.6f uy=%.6f uz=%.6f rx=%.6f ry=%.6f rz=%.6f\\n', i, d(1), d(2), d(3), d(4), d(5), d(6));
+    end
+end
+
+%% ─── 8. REACCIONES ───
+R = K_global * U - F;
+fprintf('\\n=== REACCIONES EN APOYOS ===\\n');
+for i = 1:length(fixed_dofs)
+    d = fixed_dofs(i);
+    node = ceil(d/6);
+    dof_local = mod(d-1,6)+1;
+    dof_names = {'Fx','Fy','Fz','Mx','My','Mz'};
+    if abs(R(d)) > 1e-6
+        fprintf('Nodo %d %s: %.4f\\n', node, dof_names{dof_local}, R(d));
+    end
+end
+
+U_max = max(abs(U));
+fprintf('\\nDesplazamiento máximo: %.6f\\n', U_max);
+`;
 }
 
 // ═══════════════════════════════════════════════════════
