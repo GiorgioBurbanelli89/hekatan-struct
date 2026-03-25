@@ -582,20 +582,8 @@ math.import({
 // Store model data for solve_model() to use
 let _currentModelData: ModelData | null = null;
 
-// Pre-register unode/rnode as math.js functions so parser treats them as functions, not indexing
+// Store solve results for unode/rnode access
 let _solveResult: any = null;
-math.import({
-  unode: function(n: number) {
-    if (!_solveResult) throw new Error("unode: primero ejecuta solve_model()");
-    const idx = (n - 1) * 6;
-    return math.matrix(_solveResult.U_full.slice(idx, idx + 6));
-  },
-  rnode: function(n: number) {
-    if (!_solveResult) throw new Error("rnode: primero ejecuta solve_model()");
-    const idx = (n - 1) * 6;
-    return math.matrix(_solveResult.R_full.slice(idx, idx + 6));
-  },
-}, { override: true });
 
 /** Build FEM helper functions that use the current model data from scope */
 function buildFemHelpers(scope: Record<string, any>) {
@@ -699,6 +687,20 @@ function buildFemHelpers(scope: Record<string, any>) {
     const idx = i - 1;
     if (idx < 0 || idx >= r.elements.length) throw new Error(`K_element(${i}): no existe`);
     return math.matrix(r.elements[idx].K_global);
+  };
+
+  // unode(n) — desplazamientos del nodo n (1-based) → vector 6×1
+  scope.unode = (n: number) => {
+    if (!_solveResult) throw new Error("unode: primero ejecuta solve_model()");
+    const idx = (n - 1) * 6;
+    return math.matrix(_solveResult.U_full.slice(idx, idx + 6));
+  };
+
+  // rnode(n) — reacciones del nodo n (1-based) → vector 6×1
+  scope.rnode = (n: number) => {
+    if (!_solveResult) throw new Error("rnode: primero ejecuta solve_model()");
+    const idx = (n - 1) * 6;
+    return math.matrix(_solveResult.R_full.slice(idx, idx + 6));
   };
 }
 

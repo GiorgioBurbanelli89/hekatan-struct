@@ -30,6 +30,7 @@ import { buildReportExplained } from "./reportExplained";
 import { buildElementReport } from "./elementReport";
 import { createHelpButton } from "./helpTour";
 import { parseE2k, type E2kModel } from "./e2kParser";
+import { parseS2k } from "./s2kParser";
 import { exportE2k } from "./e2kExporter";
 import { exportOpenSeesPy, exportOpenSeesTcl, importOpenSeesPy, importOpenSeesTcl } from "./openseesIO";
 
@@ -80,11 +81,14 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
     bf?: number; hf?: number; tf?: number; tw?: number; // I-param
     bc?: number; hc?: number; t?: number;  // tubular/CFT
     fc?: number; Es?: number; nuS?: number; nuC?: number; // CFT
-    // Releases (true = liberado / articulado en ese extremo)
-    releaseRotStart?: boolean;  // Rótula inicio (M=0 en start)
-    releaseRotEnd?: boolean;    // Rótula fin (M=0 en end)
-    releaseAxial?: boolean;     // Libre axial (no transmite N)
-    releaseTorsion?: boolean;   // Libre torsión (no transmite T)
+    // Releases — full 12-DOF [FxI,FyI,FzI,TI,M2I,M3I, FxJ,FyJ,FzJ,TJ,M2J,M3J]
+    releases12?: boolean[];
+    springs12?: number[];  // partial fixity spring stiffnesses
+    // Legacy compat
+    releaseRotStart?: boolean;
+    releaseRotEnd?: boolean;
+    releaseAxial?: boolean;
+    releaseTorsion?: boolean;
     // Property/Stiffness Modification Factors (default = 1)
     modA?: number;      // Cross-section (axial) Area
     modAs2?: number;    // Shear Area dir 2 (0=Euler-Bernoulli, 1=Timoshenko)
@@ -5335,6 +5339,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         <select id="cad3d-io-menu" title="Import/Export modelos" style="background:var(--cad-btn-bg);color:var(--cad-btn-text);border:1px solid var(--cad-btn-border);padding:2px 4px;font-size:11px;cursor:pointer;">
           <option value="">📂 I/O</option>
           <option value="import-e2k">📥 Import E2K (ETABS)</option>
+          <option value="import-s2k">📥 Import S2K (SAP2000)</option>
           <option value="export-e2k">📤 Export E2K (ETABS)</option>
           <option value="import-py">📥 Import OpenSeesPy</option>
           <option value="export-py">📤 Export OpenSeesPy</option>
@@ -6351,6 +6356,15 @@ Util:     cad.info()  cad.clear()  cad.help()
         ei.momentsOfInertiaY!.set(i, sec.Iz);
         ei.torsionalConstants!.set(i, sec.J);
         ei.densities!.set(i, elemRho);
+        // Apply 12-DOF releases from override
+        if (ov && ov.releases12 && ov.releases12.some((r: boolean) => r)) {
+          if (!ei.momentReleases) (ei as any).momentReleases = new Map();
+          ei.momentReleases!.set(i, ov.releases12);
+        }
+        if (ov && ov.springs12 && ov.springs12.some((s: number) => s > 0)) {
+          if (!(ei as any).partialFixitySprings) (ei as any).partialFixitySprings = new Map();
+          (ei as any).partialFixitySprings.set(i, ov.springs12);
+        }
       }
     } else {
       // Default: same properties for all elements
@@ -7107,14 +7121,19 @@ Util:     cad.info()  cad.clear()  cad.help()
     const ioMenu = panel.querySelector("#cad3d-io-menu") as HTMLSelectElement;
     const ioFile = panel.querySelector("#cad3d-io-file") as HTMLInputElement;
 
-    function applyImportedModel(model: { nodes: any[]; elements: any[]; nodeInputs: any; elementInputs: any }, label: string) {
+    function applyImportedModel(model: { nodes: any[]; elements: any[]; nodeInputs: any; elementInputs: any; sectionShapes?: Map<number, any>; info?: any }, label: string) {
       mesh.nodes.val = model.nodes;
       mesh.elements!.val = model.elements;
       mesh.nodeInputs!.val = model.nodeInputs;
       mesh.elementInputs!.val = model.elementInputs;
+      if (model.sectionShapes && model.elementInputs) {
+        (model.elementInputs as any).sectionShapes = model.sectionShapes;
+      }
       mesh.deformOutputs!.val = {};
       mesh.analyzeOutputs!.val = {};
-      console.log(`${label}: ${model.nodes.length} nodes, ${model.elements.length} elements`);
+      const info = model.info;
+      const infoStr = info ? ` (${info.nNodes ?? model.nodes.length} nodos, ${info.nFrames ?? 0} frames, ${info.nShells ?? info.nAreas ?? 0} shells)` : "";
+      console.log(`${label}${infoStr}: ${model.nodes.length} nodes, ${model.elements.length} elements`);
     }
 
     function applyE2kGridsAndStories(model: E2kModel) {
@@ -7213,6 +7232,7 @@ Util:     cad.info()  cad.clear()  cad.help()
       if (ioAction.startsWith("import")) {
         // Set file accept filter
         if (ioAction === "import-e2k") ioFile.accept = ".e2k,.E2K";
+        else if (ioAction === "import-s2k") ioFile.accept = ".s2k,.S2K,.$2k";
         else if (ioAction === "import-py") ioFile.accept = ".py";
         else if (ioAction === "import-tcl") ioFile.accept = ".tcl";
         ioFile.click();
@@ -7247,6 +7267,16 @@ Util:     cad.info()  cad.clear()  cad.help()
             lastImportedE2k = model; // preserve for round-trip export
             applyImportedModel(model, "E2K imported");
             applyE2kGridsAndStories(model);
+          } else if (ioAction === "import-s2k") {
+            const model = parseS2k(text);
+            applyImportedModel({
+              nodes: model.nodes,
+              elements: model.elements,
+              nodeInputs: model.nodeInputs,
+              elementInputs: model.elementInputs,
+              sectionShapes: model.sectionShapes,
+              info: model.info,
+            }, "S2K imported");
           } else if (ioAction === "import-py") {
             const model = importOpenSeesPy(text);
             applyImportedModel(model, "OpenSeesPy imported");
@@ -9067,6 +9097,29 @@ Util:     cad.info()  cad.clear()  cad.help()
       const Iy = ei.momentsOfInertiaY?.get(elemIdx) ?? 0;
       const G = ei.shearModuli?.get(elemIdx) ?? 0;
       const J = ei.torsionalConstants?.get(elemIdx) ?? 0;
+      // Get current releases for this element
+      const curRel = ei.momentReleases?.get(elemIdx) || [];
+      const curSpr = (ei as any).partialFixitySprings?.get(elemIdx) || [];
+      const relLabels = ["P (Axial)", "V2 (Corte)", "V3 (Corte)", "T (Torsión)", "M22 (Momento)", "M33 (Momento)"];
+      const relIds = ["FxI","FyI","FzI","TI","M2I","M3I","FxJ","FyJ","FzJ","TJ","M2J","M3J"];
+
+      // Build releases table
+      let relRows = "";
+      for (let d = 0; d < 6; d++) {
+        const idxI = d, idxJ = d + 6;
+        const chkI = (curRel.length >= 12 ? curRel[idxI] : (d >= 3 && curRel.length >= 6 ? curRel[d - 3] : false)) ? "checked" : "";
+        const chkJ = (curRel.length >= 12 ? curRel[idxJ] : (d >= 3 && curRel.length >= 6 ? curRel[d] : false)) ? "checked" : "";
+        const sprI = curSpr.length >= 12 && curSpr[idxI] > 0 ? curSpr[idxI].toFixed(1) : "";
+        const sprJ = curSpr.length >= 12 && curSpr[idxJ] > 0 ? curSpr[idxJ].toFixed(1) : "";
+        relRows += `<tr>
+          <td style="text-align:left;color:var(--fem-key)">${relLabels[d]}</td>
+          <td style="text-align:center"><input type="checkbox" data-rel="${idxI}" ${chkI}></td>
+          <td style="text-align:center"><input type="checkbox" data-rel="${idxJ}" ${chkJ}></td>
+          <td><input type="number" data-spr="${idxI}" value="${sprI}" placeholder="0" style="width:50px;background:var(--fem-bg);color:var(--fem-val);border:1px solid var(--fem-border);font-size:10px;text-align:right"></td>
+          <td><input type="number" data-spr="${idxJ}" value="${sprJ}" placeholder="0" style="width:50px;background:var(--fem-bg);color:var(--fem-val);border:1px solid var(--fem-border);font-size:10px;text-align:right"></td>
+        </tr>`;
+      }
+
       propsHTML = `
         <div class="prop-row"><span class="prop-key">Tipo</span><span class="prop-val">Frame (2 nodos)</span></div>
         <div class="prop-row"><span class="prop-key">Nodos</span><span class="prop-val">${elem[0]} → ${elem[1]}</span></div>
@@ -9077,6 +9130,23 @@ Util:     cad.info()  cad.clear()  cad.help()
         <div class="prop-row"><span class="prop-key">Iy</span><span class="prop-val">${fmt(Iy)}</span></div>
         <div class="prop-row"><span class="prop-key">G</span><span class="prop-val">${fmt(G)}</span></div>
         <div class="prop-row"><span class="prop-key">J</span><span class="prop-val">${fmt(J)}</span></div>
+        <div class="section">
+          <div class="section-title">Frame Releases</div>
+          <table style="font-size:10px">
+            <tr>
+              <td class="header"></td>
+              <td class="header" colspan="2">Release</td>
+              <td class="header" colspan="2">Partial Fixity Springs</td>
+            </tr>
+            <tr>
+              <td class="header"></td>
+              <td class="header">Start</td><td class="header">End</td>
+              <td class="header">Start</td><td class="header">End</td>
+            </tr>
+            ${relRows}
+          </table>
+          <button id="rel-apply" style="margin-top:4px;background:var(--fem-heading);color:#000;border:none;border-radius:3px;padding:3px 10px;font-size:10px;cursor:pointer;font-family:monospace">Aplicar</button>
+        </div>
       `;
     } else {
       const E_sh = ei.elasticities?.get(elemIdx) ?? 0;
@@ -9324,6 +9394,32 @@ Util:     cad.info()  cad.clear()  cad.help()
     inspectPanel.id = "fem-inspect-panel";
     document.body.appendChild(inspectPanel);
     inspectPanel.querySelector("#er-close")?.addEventListener("click", () => cleanupInspect());
+
+    // Releases apply button
+    inspectPanel.querySelector("#rel-apply")?.addEventListener("click", () => {
+      const relChecks = inspectPanel!.querySelectorAll<HTMLInputElement>("input[data-rel]");
+      const sprInputs = inspectPanel!.querySelectorAll<HTMLInputElement>("input[data-spr]");
+      const releases: boolean[] = new Array(12).fill(false);
+      const springs: number[] = new Array(12).fill(0);
+      relChecks.forEach(cb => { releases[parseInt(cb.dataset.rel!)] = cb.checked; });
+      sprInputs.forEach(inp => { const v = parseFloat(inp.value); if (v > 0) springs[parseInt(inp.dataset.spr!)] = v; });
+
+      // Store in elementInputs
+      if (!ei.momentReleases) (ei as any).momentReleases = new Map();
+      if (!ei.partialFixitySprings) (ei as any).partialFixitySprings = new Map();
+      if (releases.some(r => r)) ei.momentReleases!.set(elemIdx, releases);
+      else ei.momentReleases!.delete(elemIdx);
+      if (springs.some(s => s > 0)) (ei as any).partialFixitySprings.set(elemIdx, springs);
+      else (ei as any).partialFixitySprings.delete(elemIdx);
+
+      console.log(`Releases elem ${elemIdx}:`, releases.map((r,i) => r ? relIds[i] : "").filter(Boolean).join(" ") || "none");
+      console.log(`Springs elem ${elemIdx}:`, springs);
+      // Re-run analysis if available
+      const btn = inspectPanel!.querySelector("#rel-apply") as HTMLButtonElement;
+      btn.textContent = "✓ Aplicado";
+      btn.style.background = "#4caf50";
+      setTimeout(() => { btn.textContent = "Aplicar"; btn.style.background = "var(--fem-heading)"; }, 1500);
+    });
 
     // Legacy shape function canvas code — now handled by elementReport.ts
     const sfCanvas = null as HTMLCanvasElement | null;
@@ -10706,14 +10802,28 @@ Util:     cad.info()  cad.clear()  cad.help()
       <div id="asgn-params" style="margin-bottom:10px;"></div>
 
       <div style="border-top:1px solid #444;padding-top:8px;margin-bottom:8px;">
-        <b style="color:#ff6666;font-size:11px;">Releases (articulaciones)</b>
-        <div style="margin-top:4px;display:grid;grid-template-columns:1fr 1fr;gap:3px;font-size:11px;">
-          <label style="display:flex;align-items:center;gap:4px;"><input type="checkbox" id="asgn-rel-rot-start"> Rótula Inicio</label>
-          <label style="display:flex;align-items:center;gap:4px;"><input type="checkbox" id="asgn-rel-rot-end"> Rótula Fin</label>
-          <label style="display:flex;align-items:center;gap:4px;"><input type="checkbox" id="asgn-rel-axial"> Libre Axial</label>
-          <label style="display:flex;align-items:center;gap:4px;"><input type="checkbox" id="asgn-rel-torsion"> Libre Torsión</label>
-        </div>
-        <div style="color:#888;font-size:9px;margin-top:2px;">Rótula = el momento en ese extremo es 0 (pin)</div>
+        <b style="color:#ff6666;font-size:11px;">Frame Releases</b>
+        <table style="width:100%;border-collapse:collapse;font-size:10px;margin-top:4px;">
+          <tr>
+            <td style="color:#888"></td>
+            <td colspan="2" style="text-align:center;color:#ff6666;font-weight:bold;font-size:9px">Release</td>
+            <td colspan="2" style="text-align:center;color:#00ccff;font-weight:bold;font-size:9px">Partial Fixity Springs</td>
+          </tr>
+          <tr>
+            <td style="color:#888"></td>
+            <td style="text-align:center;color:#aaa;font-size:9px">Start</td>
+            <td style="text-align:center;color:#aaa;font-size:9px">End</td>
+            <td style="text-align:center;color:#aaa;font-size:9px">Start</td>
+            <td style="text-align:center;color:#aaa;font-size:9px">End</td>
+          </tr>
+          <tr><td style="color:#ccc">Axial Load</td><td style="text-align:center"><input type="checkbox" data-asgn-rel="0"></td><td style="text-align:center"><input type="checkbox" data-asgn-rel="6"></td><td><input type="number" data-asgn-spr="0" placeholder="0" style="width:45px;background:#333;color:#fff;border:1px solid #555;font-size:9px;text-align:right"></td><td><input type="number" data-asgn-spr="6" placeholder="0" style="width:45px;background:#333;color:#fff;border:1px solid #555;font-size:9px;text-align:right"></td></tr>
+          <tr><td style="color:#ccc">Shear V2</td><td style="text-align:center"><input type="checkbox" data-asgn-rel="1"></td><td style="text-align:center"><input type="checkbox" data-asgn-rel="7"></td><td><input type="number" data-asgn-spr="1" placeholder="0" style="width:45px;background:#333;color:#fff;border:1px solid #555;font-size:9px;text-align:right"></td><td><input type="number" data-asgn-spr="7" placeholder="0" style="width:45px;background:#333;color:#fff;border:1px solid #555;font-size:9px;text-align:right"></td></tr>
+          <tr><td style="color:#ccc">Shear V3</td><td style="text-align:center"><input type="checkbox" data-asgn-rel="2"></td><td style="text-align:center"><input type="checkbox" data-asgn-rel="8"></td><td><input type="number" data-asgn-spr="2" placeholder="0" style="width:45px;background:#333;color:#fff;border:1px solid #555;font-size:9px;text-align:right"></td><td><input type="number" data-asgn-spr="8" placeholder="0" style="width:45px;background:#333;color:#fff;border:1px solid #555;font-size:9px;text-align:right"></td></tr>
+          <tr><td style="color:#ccc">Torsion</td><td style="text-align:center"><input type="checkbox" data-asgn-rel="3"></td><td style="text-align:center"><input type="checkbox" data-asgn-rel="9"></td><td><input type="number" data-asgn-spr="3" placeholder="0" style="width:45px;background:#333;color:#fff;border:1px solid #555;font-size:9px;text-align:right"></td><td><input type="number" data-asgn-spr="9" placeholder="0" style="width:45px;background:#333;color:#fff;border:1px solid #555;font-size:9px;text-align:right"></td></tr>
+          <tr><td style="color:#ccc">Moment 22</td><td style="text-align:center"><input type="checkbox" data-asgn-rel="4"></td><td style="text-align:center"><input type="checkbox" data-asgn-rel="10"></td><td><input type="number" data-asgn-spr="4" placeholder="0" style="width:45px;background:#333;color:#fff;border:1px solid #555;font-size:9px;text-align:right"></td><td><input type="number" data-asgn-spr="10" placeholder="0" style="width:45px;background:#333;color:#fff;border:1px solid #555;font-size:9px;text-align:right"></td></tr>
+          <tr><td style="color:#ccc">Moment 33</td><td style="text-align:center"><input type="checkbox" data-asgn-rel="5"></td><td style="text-align:center"><input type="checkbox" data-asgn-rel="11"></td><td><input type="number" data-asgn-spr="5" placeholder="0" style="width:45px;background:#333;color:#fff;border:1px solid #555;font-size:9px;text-align:right"></td><td><input type="number" data-asgn-spr="11" placeholder="0" style="width:45px;background:#333;color:#fff;border:1px solid #555;font-size:9px;text-align:right"></td></tr>
+        </table>
+        <div style="color:#888;font-size:9px;margin-top:2px;">Release = condensación estática (DOF libre). Spring = conexión semi-rígida.</div>
       </div>
 
       <div style="border-top:1px solid #444;padding-top:8px;margin-bottom:10px;">
@@ -10813,11 +10923,22 @@ Util:     cad.info()  cad.clear()  cad.help()
         override.t = parseFloat((div.querySelector("#ap-t") as HTMLInputElement).value);
         override.material = 1;
       }
-      // Releases
-      override.releaseRotStart = (div.querySelector("#asgn-rel-rot-start") as HTMLInputElement)?.checked;
-      override.releaseRotEnd = (div.querySelector("#asgn-rel-rot-end") as HTMLInputElement)?.checked;
-      override.releaseAxial = (div.querySelector("#asgn-rel-axial") as HTMLInputElement)?.checked;
-      override.releaseTorsion = (div.querySelector("#asgn-rel-torsion") as HTMLInputElement)?.checked;
+      // Releases (12 DOFs: FxI,FyI,FzI,TI,M2I,M3I, FxJ,FyJ,FzJ,TJ,M2J,M3J)
+      const releases12: boolean[] = new Array(12).fill(false);
+      const springs12: number[] = new Array(12).fill(0);
+      div.querySelectorAll<HTMLInputElement>("input[data-asgn-rel]").forEach(cb => {
+        releases12[parseInt(cb.dataset.asgnRel!)] = cb.checked;
+      });
+      div.querySelectorAll<HTMLInputElement>("input[data-asgn-spr]").forEach(inp => {
+        const v = parseFloat(inp.value); if (v > 0) springs12[parseInt(inp.dataset.asgnSpr!)] = v;
+      });
+      override.releases12 = releases12;
+      override.springs12 = springs12;
+      // Legacy compat
+      override.releaseRotStart = releases12[4] || releases12[5]; // M2I or M3I
+      override.releaseRotEnd = releases12[10] || releases12[11]; // M2J or M3J
+      override.releaseAxial = releases12[0]; // FxI
+      override.releaseTorsion = releases12[3]; // TI
       // Modifiers
       override.modI = parseFloat((div.querySelector("#asgn-mod-i") as HTMLInputElement)?.value) || 1;
       override.modA = parseFloat((div.querySelector("#asgn-mod-a") as HTMLInputElement)?.value) || 1;
