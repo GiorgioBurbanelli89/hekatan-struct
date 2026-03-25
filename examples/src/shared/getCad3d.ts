@@ -31,6 +31,7 @@ import { buildElementReport } from "./elementReport";
 import { createHelpButton } from "./helpTour";
 import { parseE2k, type E2kModel } from "./e2kParser";
 import { parseS2k } from "./s2kParser";
+import { exportS2k } from "./s2kExporter";
 import { exportE2k } from "./e2kExporter";
 import { exportOpenSeesPy, exportOpenSeesTcl, importOpenSeesPy, importOpenSeesTcl } from "./openseesIO";
 
@@ -5341,6 +5342,7 @@ Util:     cad.info()  cad.clear()  cad.help()
           <option value="import-e2k">📥 Import E2K (ETABS)</option>
           <option value="import-s2k">📥 Import S2K (SAP2000)</option>
           <option value="export-e2k">📤 Export E2K (ETABS)</option>
+          <option value="export-s2k">📤 Export S2K (SAP2000)</option>
           <option value="import-py">📥 Import OpenSeesPy</option>
           <option value="export-py">📤 Export OpenSeesPy</option>
           <option value="import-tcl">📥 Import OpenSees Tcl</option>
@@ -7246,6 +7248,8 @@ Util:     cad.info()  cad.clear()  cad.help()
         try {
           if (ioAction === "export-e2k") {
             downloadText(exportE2k({ ...input, title: "Awatif Model", e2kModel: lastImportedE2k ?? undefined }), "model.e2k");
+          } else if (ioAction === "export-s2k") {
+            downloadText(exportS2k({ ...input, title: "Awatif Model" }), "model.s2k");
           } else if (ioAction === "export-py") {
             downloadText(exportOpenSeesPy(input), "model_opensees.py");
           } else if (ioAction === "export-tcl") {
