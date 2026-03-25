@@ -5,3 +5,15 @@
   width: 300px;
   z-index: 3; /* On top of the viewer and drawingToolBar */
 }
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  #parameters {
+    width: 100%;
+    right: 0;
+    bottom: 0;
+    max-height: 40vh;
+    overflow-y: auto;
+    font-size: 11px;
+  }
+}

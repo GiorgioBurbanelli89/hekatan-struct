@@ -51,3 +51,20 @@ html, body {
   z-index: 10;
   pointer-events: none;
 }
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  #cad-panel {
+    right: 4px;
+    top: 4px;
+    max-width: calc(100% - 8px);
+  }
+  #cad-panel .tp-dfwv {
+    width: 200px;
+  }
+  #cad-info {
+    bottom: 4px;
+    left: 4px;
+    font-size: 10px;
+  }
+}

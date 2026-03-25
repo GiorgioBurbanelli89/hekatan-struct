@@ -5,3 +5,15 @@
   width: 300px;
   z-index: 3;
 }
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  #settings {
+    width: calc(100% - 16px);
+    left: 8px;
+    top: 0;
+    max-height: 35vh;
+    overflow-y: auto;
+    font-size: 11px;
+  }
+}

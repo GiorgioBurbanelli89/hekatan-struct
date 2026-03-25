@@ -62,3 +62,14 @@
   background-color: #f1f1f1;
   transition: background 0.3s;
 }
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  #toolbar { top: 2px; right: 2px; }
+  #toolbar .buttons-container { gap: 2px; flex-wrap: wrap; justify-content: flex-end; }
+  #toolbar .btn { padding: 4px 6px; font-size: 10px; border-radius: 10px; }
+  #toolbar .btn-theme { font-size: 14px; padding: 2px 6px; }
+  #toolbar .btn-text span { display: none; } /* hide text, keep icon */
+  #toolbar #dropdown-menu { width: 130px; right: 0; }
+  #toolbar .dropdown-link { font-size: 11px; padding: 6px 10px; }
+}

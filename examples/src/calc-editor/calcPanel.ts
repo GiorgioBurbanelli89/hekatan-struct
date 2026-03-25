@@ -588,6 +588,42 @@ function getPanelStyles(): string {
       .calc-select { font-size: 11px; padding: 3px 4px; max-width: 140px; }
       .calc-lang-select { max-width: 110px; }
     }
+    @media (max-width: 480px) {
+      #calc-panel {
+        height: 75vh;
+        bottom: 0;
+        border-radius: 8px 8px 0 0;
+      }
+      .calc-body {
+        flex-direction: column;
+      }
+      .calc-editor-wrap {
+        flex: none;
+        height: 35%;
+      }
+      .calc-output-wrap {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .calc-toolbar {
+        flex-wrap: wrap;
+        gap: 2px;
+        padding: 3px 4px;
+        min-height: 28px;
+      }
+      .calc-toolbar-left, .calc-toolbar-right {
+        flex-wrap: wrap;
+        gap: 2px;
+      }
+      .calc-title { font-size: 10px; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
+      .calc-btn { padding: 2px 5px; font-size: 10px; }
+      .calc-select { font-size: 10px; padding: 2px 3px; max-width: 100px; }
+      .calc-lang-select { max-width: 80px; }
+      .calc-editor textarea { font-size: 11px !important; }
+      .calc-output { font-size: 11px; }
+      .calc-output .katex { font-size: 0.85em; }
+    }
   `;
 }
 
