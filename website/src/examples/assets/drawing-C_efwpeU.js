@@ -1,8 +1,8 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { v as o } from "./theme-CzzIlc4y.js";
-import { g as k } from "./getViewer-D52TFjEd.js";
-import { g as x } from "./getParameters-DchIdZM1.js";
-import { w as C, g as P } from "./styles-DPHn_eE4.js";
+import { g as k } from "./getViewer-Ccm3iNll.js";
+import { g as x } from "./getParameters-D_F_vOn_.js";
+import { w as C, g as P } from "./styles-B8h3dtQW.js";
 import "./Text-CBH-tcJP.js";
 function T({ onToolbarClick: t }) {
   const n = document.createElement("div");

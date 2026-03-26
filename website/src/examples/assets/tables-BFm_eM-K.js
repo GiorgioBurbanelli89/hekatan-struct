@@ -1,10 +1,10 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { v as t } from "./theme-CzzIlc4y.js";
 import { L as n, B as r, a as d, F as m } from "./Text-CBH-tcJP.js";
-import { g as f } from "./getViewer-D52TFjEd.js";
-import { g as p } from "./styles-DPHn_eE4.js";
-import { g as c } from "./getTables-WK47k5m8.js";
-import { g as b } from "./getDialog-Bojo3ukf.js";
+import { g as f } from "./getViewer-Ccm3iNll.js";
+import { g as p } from "./styles-B8h3dtQW.js";
+import { g as c } from "./getTables-BHDF66xt.js";
+import { g as b } from "./getDialog-PPft_MKZ.js";
 const a = t.state([[0, 0, 0], [5, 0, 5], [10, 0, 0]]), i = new n(new r(), new d()), e = t.state([i]), o = /* @__PURE__ */ new Map();
 o.set("polyline", { text: "Polyline", fields: [{ field: "A", text: "X-coordinate", min: "25", editable: { type: "float" } }, { field: "B", text: "Y-coordinate", editable: { type: "float" } }, { field: "C", text: "Z-coordinate", editable: { type: "float" } }], data: a });
 t.derive(() => a.val = o.get("polyline").data.val);

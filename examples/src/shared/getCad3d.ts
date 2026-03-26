@@ -2306,12 +2306,14 @@ Util:     cad.info()  cad.clear()  cad.help()
         cli.frame(Array(nv).fill(sv), Array(np).fill(hp)); break;
       }
       case "edificio": {
-        const np = Math.round(gp("nPisos")), hp = gp("hPiso");
         const lvix = gp("Lvix") || 0, lvdx = gp("Lvdx") || 0;
         const lviy = gp("Lviy") || 0, lvdy = gp("Lvdy") || 0;
         const nSubV = Math.max(1, Math.round(gp("nSubViga") || 3));
         const nSubC = Math.max(1, Math.round(gp("nSubCol") || 1));
-        cli.building([...edifSvx], [...edifSvy], Array(np).fill(hp), nSubV, lvix, lvdx, lviy, lvdy, nSubC); break;
+        // Use individual floor heights if available, otherwise global hPiso
+        const hp = gp("hPiso");
+        const heights = edifHpisos.length > 0 ? [...edifHpisos] : Array(Math.round(gp("nPisos"))).fill(hp);
+        cli.building([...edifSvx], [...edifSvy], heights, nSubV, lvix, lvdx, lviy, lvdy, nSubC); break;
       }
       case "galpon":
         cli.galpon(gp("span"), gp("length"), gp("height"), gp("archRise"), Math.round(gp("xDiv")), Math.round(gp("yDiv"))); break;
@@ -4738,54 +4740,87 @@ Util:     cad.info()  cad.clear()  cad.help()
       if (lucesContainer) {
         lucesContainer.innerHTML = "";
         const u = activeUnits;
-        lucesPane = new Pane({ title: `Luces (${u.length})`, container: lucesContainer });
-        // Luces X
-        const fxFolder = lucesPane.addFolder({ title: `Luces X`, expanded: true });
-        const fxObj: Record<string, number> = {};
-        for (let i = 0; i < edifSvx.length; i++) fxObj[`svx_${i + 1}`] = edifSvx[i];
-        for (let i = 0; i < edifSvx.length; i++) {
-          fxFolder.addBinding(fxObj, `svx_${i + 1}`, {
-            min: u.spanRange[0], max: u.spanRange[1], step: u.spanRange[2],
-            label: `svx${i + 1}`,
-          });
-        }
-        fxFolder.on("change", (e: any) => {
-          const k = e.target?.key as string;
-          const m = k?.match(/^svx_(\d+)$/);
-          if (m) { edifSvx[parseInt(m[1]) - 1] = e.value as number; regenerateFromParams(); }
-        });
-        // Luces Y
-        const fyFolder = lucesPane.addFolder({ title: `Luces Y`, expanded: true });
-        const fyObj: Record<string, number> = {};
-        for (let i = 0; i < edifSvy.length; i++) fyObj[`svy_${i + 1}`] = edifSvy[i];
-        for (let i = 0; i < edifSvy.length; i++) {
-          fyFolder.addBinding(fyObj, `svy_${i + 1}`, {
-            min: u.spanRange[0], max: u.spanRange[1], step: u.spanRange[2],
-            label: `svy${i + 1}`,
-          });
-        }
-        fyFolder.on("change", (e: any) => {
-          const k = e.target?.key as string;
-          const m = k?.match(/^svy_(\d+)$/);
-          if (m) { edifSvy[parseInt(m[1]) - 1] = e.value as number; regenerateFromParams(); }
-        });
-        // Alturas por piso (Dr. Aguiar style)
-        if (edifHpisos.length > 0) {
-          const fhFolder = lucesPane.addFolder({ title: `Alturas por Piso`, expanded: true });
-          const fhObj: Record<string, number> = {};
-          for (let i = 0; i < edifHpisos.length; i++) fhObj[`hp_${i + 1}`] = edifHpisos[i];
-          for (let i = 0; i < edifHpisos.length; i++) {
-            fhFolder.addBinding(fhObj, `hp_${i + 1}`, {
-              min: u.heightRange[0], max: u.heightRange[1], step: u.heightRange[2],
-              label: `Piso ${i + 1}`,
+        try {
+          lucesPane = new Pane({ title: `Luces (${u.length})`, container: lucesContainer });
+          // Luces X — per-binding change handler
+          const fxFolder = lucesPane.addFolder({ title: `Luces X`, expanded: true });
+          for (let i = 0; i < edifSvx.length; i++) {
+            const idx = i;
+            const obj = { v: edifSvx[i] };
+            fxFolder.addBinding(obj, 'v', {
+              min: u.spanRange[0], max: u.spanRange[1], step: u.spanRange[2],
+              label: `svx${i + 1}`,
+            }).on("change", (e: any) => {
+              edifSvx[idx] = e.value; regenerateFromParams();
             });
           }
-          fhFolder.on("change", (e: any) => {
-            const k = e.target?.key as string;
-            const m = k?.match(/^hp_(\d+)$/);
-            if (m) { edifHpisos[parseInt(m[1]) - 1] = e.value as number; regenerateFromParams(); }
-          });
+          // Luces Y — per-binding change handler
+          const fyFolder = lucesPane.addFolder({ title: `Luces Y`, expanded: true });
+          for (let i = 0; i < edifSvy.length; i++) {
+            const idx = i;
+            const obj = { v: edifSvy[i] };
+            fyFolder.addBinding(obj, 'v', {
+              min: u.spanRange[0], max: u.spanRange[1], step: u.spanRange[2],
+              label: `svy${i + 1}`,
+            }).on("change", (e: any) => {
+              edifSvy[idx] = e.value; regenerateFromParams();
+            });
+          }
+          // Alturas por piso — per-binding change handler
+          if (edifHpisos.length > 0) {
+            const fhFolder = lucesPane.addFolder({ title: `Alturas por Piso`, expanded: true });
+            for (let i = 0; i < edifHpisos.length; i++) {
+              const idx = i;
+              const obj = { v: edifHpisos[i] };
+              fhFolder.addBinding(obj, 'v', {
+                min: u.heightRange[0], max: u.heightRange[1], step: u.heightRange[2],
+                label: `Piso ${i + 1}`,
+              }).on("change", (e: any) => {
+                edifHpisos[idx] = e.value; regenerateFromParams();
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Luces Tweakpane error:", err);
+          // Fallback: show axis diagram only
         }
+        // ── Axis diagram (visual summary) ──
+        const diagDiv = document.createElement("div");
+        diagDiv.style.cssText = "font-family:monospace;font-size:10px;color:#aaa;padding:6px;background:#1a1a2e;border-radius:4px;margin-top:6px;line-height:1.6;white-space:pre;overflow-x:auto;";
+        function updateAxisDiagram() {
+          const axLabelsX = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+          const lvix = generatorParams["Lvix"]?.val || 0;
+          const lvdx = generatorParams["Lvdx"]?.val || 0;
+          const lviy = generatorParams["Lviy"]?.val || 0;
+          const lvdy = generatorParams["Lvdy"]?.val || 0;
+          // Ejes X
+          let lineX = "X: ";
+          if (lvix > 0) lineX += `├${lvix.toFixed(1)}┤`;
+          for (let i = 0; i < edifSvx.length; i++) {
+            lineX += `[${axLabelsX[i + (lvix > 0 ? 1 : 0)]}]──${edifSvx[i].toFixed(1)}──`;
+          }
+          lineX += `[${axLabelsX[edifSvx.length + (lvix > 0 ? 1 : 0)]}]`;
+          if (lvdx > 0) lineX += `├${lvdx.toFixed(1)}┤`;
+          // Ejes Y
+          let lineY = "Y: ";
+          if (lviy > 0) lineY += `├${lviy.toFixed(1)}┤`;
+          for (let i = 0; i < edifSvy.length; i++) {
+            lineY += `[${i + 1 + (lviy > 0 ? 1 : 0)}]──${edifSvy[i].toFixed(1)}──`;
+          }
+          lineY += `[${edifSvy.length + 1 + (lviy > 0 ? 1 : 0)}]`;
+          if (lvdy > 0) lineY += `├${lvdy.toFixed(1)}┤`;
+          // Pisos
+          let lineH = "Z: ";
+          for (let i = 0; i < edifHpisos.length; i++) {
+            lineH += `P${i + 1}=${edifHpisos[i].toFixed(1)} `;
+          }
+          diagDiv.textContent = lineX + "\n" + lineY + "\n" + lineH;
+        }
+        updateAxisDiagram();
+        lucesContainer.appendChild(diagDiv);
+        // Update diagram when any value changes (observe via MutationObserver fallback)
+        const origRegen = regenerateFromParams;
+        // We hook into the pane change events above — diagram updates on next rebuild
       }
     }
 
@@ -11623,6 +11658,8 @@ Util:     cad.info()  cad.clear()  cad.help()
       setGenerator("edificio");
       regenerateFromParams();
       highlightExButton("edificio");
+      // Rebuild Luces pane after DOM is fully mounted
+      setTimeout(() => { if (activeGenerator === "edificio") rebuildTweakpane(); }, 200);
     }
   }, 100);
 

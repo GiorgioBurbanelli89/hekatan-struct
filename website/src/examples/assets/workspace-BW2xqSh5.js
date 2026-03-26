@@ -1,9 +1,9 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { v as t } from "./theme-CzzIlc4y.js";
-import { g as i } from "./getViewer-D52TFjEd.js";
-import { g as n } from "./getParameters-DchIdZM1.js";
-import { g as p } from "./styles-DPHn_eE4.js";
-import { g as d, __tla as __tla_0 } from "./getCad3d-B66hHMw_.js";
+import { g as n } from "./getViewer-Ccm3iNll.js";
+import { g as i } from "./getParameters-D_F_vOn_.js";
+import { g as p } from "./styles-B8h3dtQW.js";
+import { g as c, __tla as __tla_0 } from "./getCad3d-D43Flyx2.js";
 import "./Text-CBH-tcJP.js";
 import "./analyze-C33Jzs7t.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
@@ -29,30 +29,30 @@ Promise.all([
     }
   })()
 ]).then(async () => {
-  const c = {}, e = t.state([]), s = t.state([]), o = t.state({}), m = t.state({}), a = t.state({}), r = t.state({}), l = {
+  const d = {}, e = t.state([]), o = t.state([]), s = t.state({}), r = t.state({}), a = t.state({}), m = t.state({}), u = {
     deformedShape: true,
     shellResults: "displacementZ",
     gridSize: 15
   };
-  document.body.append(d({
+  document.body.append(c({
     nodes: e,
-    elements: s,
-    nodeInputs: o,
-    elementInputs: m,
+    elements: o,
+    nodeInputs: s,
+    elementInputs: r,
     deformOutputs: a,
-    analyzeOutputs: r
-  }), n(c), i({
+    analyzeOutputs: m
+  }), i(d), n({
     mesh: {
       nodes: e,
-      elements: s,
-      nodeInputs: o,
-      elementInputs: m,
+      elements: o,
+      nodeInputs: s,
+      elementInputs: r,
       deformOutputs: a,
-      analyzeOutputs: r
+      analyzeOutputs: m
     },
-    settingsObj: l
+    settingsObj: u
   }), p({
-    sourceCode: "https://github.com/madil4/awatif/blob/main/examples/src/beams/main.ts",
-    author: "https://www.linkedin.com/in/madil4/"
+    sourceCode: "https://github.com/GiorgioBurbanelli89/awatif-workspace",
+    author: "https://www.linkedin.com/in/jorge-burbano-213741138/"
   }));
 });

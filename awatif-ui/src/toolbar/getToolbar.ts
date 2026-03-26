@@ -40,15 +40,15 @@ export function getToolbar({
 
     <div id="dropdown-menu" style="display: none;">
       <a
-        href="${sourceCode ? sourceCode : "https://github.com/madil4/awatif"}"
+        href="${sourceCode ? sourceCode : "https://github.com/GiorgioBurbanelli89/awatif-workspace"}"
         class="dropdown-link"
-        >Source Code</a
+        >Hekatan Struct — Source Code</a
       >
       ${author
-        ? html`<a href="${author}" class="dropdown-link">Message Author</a>`
+        ? html`<a href="${author}" class="dropdown-link">Contact Author</a>`
         : ""}
-      <a href="https://awatif.co/examples" class="dropdown-link"
-        >More Examples</a
+      <a href="https://github.com/madil4/awatif/tree/v2.0.0" class="dropdown-link"
+        >Based on awatif v2.0.0</a
       >
     </div>
   `;

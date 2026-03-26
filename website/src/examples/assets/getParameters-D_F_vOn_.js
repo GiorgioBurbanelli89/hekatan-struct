@@ -1,5 +1,5 @@
 import { P as r } from "./theme-CzzIlc4y.js";
-import "./styles-DPHn_eE4.js";
+import "./styles-B8h3dtQW.js";
 function f(o) {
   const t = document.createElement("div"), n = new r({ title: "Parameters", container: t }), d = c(o), s = /* @__PURE__ */ new Map();
   return t.setAttribute("id", "parameters"), s.set("root", n), Object.entries(o).forEach(([l, e]) => {
