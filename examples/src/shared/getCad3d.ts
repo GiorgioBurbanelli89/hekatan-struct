@@ -34,6 +34,8 @@ import { parseS2k } from "./s2kParser";
 import { exportS2k } from "./s2kExporter";
 import { exportE2k } from "./e2kExporter";
 import { exportOpenSeesPy, exportOpenSeesTcl, importOpenSeesPy, importOpenSeesTcl } from "./openseesIO";
+import { parseIfcToAnalytical } from "./ifcAnalyticalParser";
+import { loadIfcToScene, filterIfcByPreset, type IfcLoadResult, type IfcDetailCategory } from "./Draw3DIfc";
 
 export interface Cad3dMesh {
   nodes: State<Node[]>;
@@ -112,9 +114,10 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
   let cadPane: Pane | null = null; // Tweakpane instance for generator params
   let savedOriginalHTML = ""; // Original #parameters innerHTML to restore on Clear
 
-  // ── Edificio: individual span arrays svx=[s1,s2,...], svy=[s1,s2,...] ──
+  // ── Edificio: individual span arrays svx=[s1,s2,...], svy=[s1,s2,...], hpisos=[h1,h2,...] ──
   let edifSvx: number[] = [];  // individual span lengths in X
   let edifSvy: number[] = [];  // individual span lengths in Y
+  let edifHpisos: number[] = []; // individual floor heights (Dr. Aguiar style)
 
   // ── Section tracking: which element indices are columns vs beams, floor, and bay ──
   let colElementIndices: Set<number> = new Set();
@@ -2275,6 +2278,9 @@ Util:     cad.info()  cad.clear()  cad.help()
       const nvy = Math.round(generatorParams["nVanosY"]?.val ?? 2);
       edifSvx = Array(nvx).fill(activeUnits.defaultSpan);
       edifSvy = Array(nvy).fill(activeUnits.defaultSpan * 0.8);
+      const np = Math.round(generatorParams["nPisos"]?.val ?? 3);
+      const hp = generatorParams["hPiso"]?.val ?? 3.0;
+      edifHpisos = Array(np).fill(hp);
       // No walls by default (aporticado puro). Use "Edif. Muros" for walls.
       // wallPlacements and slabEnabled are set per-example in cli.example().
     }
@@ -4712,6 +4718,12 @@ Util:     cad.info()  cad.clear()  cad.help()
               while (edifSvy.length < nvy) edifSvy.push(edifSvy[edifSvy.length - 1] ?? activeUnits.defaultSpan * 0.8);
               if (edifSvy.length > nvy) edifSvy.length = nvy;
             }
+            if (key === "nPisos" || key === "hPiso") {
+              const np = Math.round(generatorParams["nPisos"].val);
+              const hp = generatorParams["hPiso"]?.val ?? 3.0;
+              while (edifHpisos.length < np) edifHpisos.push(edifHpisos[edifHpisos.length - 1] ?? hp);
+              if (edifHpisos.length > np) edifHpisos.length = np;
+            }
             rebuildTweakpane();
           }
           regenerateFromParams();
@@ -4757,6 +4769,23 @@ Util:     cad.info()  cad.clear()  cad.help()
           const m = k?.match(/^svy_(\d+)$/);
           if (m) { edifSvy[parseInt(m[1]) - 1] = e.value as number; regenerateFromParams(); }
         });
+        // Alturas por piso (Dr. Aguiar style)
+        if (edifHpisos.length > 0) {
+          const fhFolder = lucesPane.addFolder({ title: `Alturas por Piso`, expanded: true });
+          const fhObj: Record<string, number> = {};
+          for (let i = 0; i < edifHpisos.length; i++) fhObj[`hp_${i + 1}`] = edifHpisos[i];
+          for (let i = 0; i < edifHpisos.length; i++) {
+            fhFolder.addBinding(fhObj, `hp_${i + 1}`, {
+              min: u.heightRange[0], max: u.heightRange[1], step: u.heightRange[2],
+              label: `Piso ${i + 1}`,
+            });
+          }
+          fhFolder.on("change", (e: any) => {
+            const k = e.target?.key as string;
+            const m = k?.match(/^hp_(\d+)$/);
+            if (m) { edifHpisos[parseInt(m[1]) - 1] = e.value as number; regenerateFromParams(); }
+          });
+        }
       }
     }
 
@@ -5151,18 +5180,58 @@ Util:     cad.info()  cad.clear()  cad.help()
     #cad3d-panel .toggle-btn-collapsed:hover { background: #ffb300; }
     #cad3d-panel .toggle-btn { background: none; border: none; color: var(--cad-toggle-text); cursor: pointer; font-size: 14px; padding: 0; line-height: 1; }
     #cad3d-panel .toggle-btn:hover { color: var(--cad-toggle-hover); }
-    /* ── Mobile: FEM Studio panel ── */
+    /* ── Mobile: hamburger toggle ── */
+    #mobile-menu-btn {
+      display: none;
+      position: fixed; top: 10px; left: 10px; z-index: 1000001;
+      width: 40px; height: 40px; border-radius: 8px;
+      background: rgba(30,30,30,0.9); color: #fff; border: 1px solid #555;
+      font-size: 22px; cursor: pointer;
+      align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    /* ── Mobile portrait: FEM Studio panel ── */
     @media (max-width: 600px) {
+      #mobile-menu-btn { display: flex; }
       #cad3d-panel {
-        width: 160px; padding: 8px 10px; font-size: 11px;
-        max-height: 55vh; bottom: 5px; left: 5px;
+        width: 170px; padding: 8px 10px; font-size: 11px;
+        max-height: calc(100vh - 20px); top: 10px; bottom: auto; left: 5px;
+        overflow-y: auto;
+        display: none;
       }
+      #cad3d-panel.mobile-open { display: block; }
       #cad3d-panel button { padding: 2px 5px; font-size: 10px; }
       #cad3d-panel .btn-row { gap: 2px; margin-top: 2px; }
       #cad3d-panel h3 { font-size: 11px; margin-bottom: 4px; }
       #cad3d-panel .cmd-input { font-size: 10px; padding: 3px 4px; margin-top: 4px; }
       #cad3d-panel .section-label { font-size: 9px; margin-top: 4px; }
       #fem-inspect-panel { width: calc(100% - 10px) !important; right: 5px !important; left: 5px !important; top: auto !important; bottom: 5px !important; max-height: 50vh; }
+    }
+    /* ── Mobile landscape: short height ── */
+    @media (max-height: 500px) and (orientation: landscape) {
+      #cad3d-panel {
+        width: 140px; padding: 4px 6px; font-size: 10px;
+        max-height: calc(100vh - 10px); bottom: 5px; left: 5px;
+        top: 5px; overflow-y: auto;
+      }
+      #cad3d-panel h3 { font-size: 10px; margin-bottom: 2px; }
+      #cad3d-panel button { padding: 1px 4px; font-size: 9px; }
+      #cad3d-panel .btn-row { gap: 1px; margin-top: 1px; }
+      #cad3d-panel .section-label { font-size: 8px; margin-top: 2px; }
+      #cad3d-panel .cmd-input { font-size: 9px; padding: 2px 3px; margin-top: 2px; }
+      /* Collapse sections panel on landscape mobile */
+      .cad3d-sections-panel { display: none !important; }
+      .cad3d-params-panel { display: none !important; }
+      /* Make 3D viewer use full width minus CLI panel */
+      canvas { position: fixed !important; top: 0 !important; left: 150px !important; width: calc(100vw - 150px) !important; height: 100vh !important; }
+    }
+    /* ── Small mobile (< 400px width) ── */
+    @media (max-width: 400px) {
+      #cad3d-panel {
+        width: 130px; padding: 4px 6px; font-size: 9px;
+        max-height: 50vh;
+      }
+      #cad3d-panel button { padding: 1px 3px; font-size: 8px; min-width: 0; }
     }
     #fem-inspect-panel {
       position: fixed; top: 10px; right: 10px;
@@ -5341,6 +5410,7 @@ Util:     cad.info()  cad.clear()  cad.help()
           <option value="">📂 I/O</option>
           <option value="import-e2k">📥 Import E2K (ETABS)</option>
           <option value="import-s2k">📥 Import S2K (SAP2000)</option>
+          <option value="import-ifc">📥 Import IFC (Revit/ArchiCAD)</option>
           <option value="export-e2k">📤 Export E2K (ETABS)</option>
           <option value="export-s2k">📤 Export S2K (SAP2000)</option>
           <option value="import-py">📥 Import OpenSeesPy</option>
@@ -5348,7 +5418,7 @@ Util:     cad.info()  cad.clear()  cad.help()
           <option value="import-tcl">📥 Import OpenSees Tcl</option>
           <option value="export-tcl">📤 Export OpenSees Tcl</option>
         </select>
-        <input type="file" id="cad3d-io-file" accept=".e2k,.E2K,.py,.tcl" style="display:none">
+        <input type="file" id="cad3d-io-file" accept=".e2k,.E2K,.s2k,.S2K,.py,.tcl,.ifc,.IFC" style="display:none">
         <select id="cad3d-tests-menu" title="Validation tests vs ETABS" style="background:var(--cad-btn-bg);color:var(--cad-btn-text);border:1px solid var(--cad-btn-border);padding:2px 4px;font-size:11px;cursor:pointer;">
           <option value="">🧪 Tests</option>
           <option value="test-cantilever">1. Cantilever (Exact)</option>
@@ -7133,9 +7203,168 @@ Util:     cad.info()  cad.clear()  cad.help()
       }
       mesh.deformOutputs!.val = {};
       mesh.analyzeOutputs!.val = {};
-      const info = model.info;
-      const infoStr = info ? ` (${info.nNodes ?? model.nodes.length} nodos, ${info.nFrames ?? 0} frames, ${info.nShells ?? info.nAreas ?? 0} shells)` : "";
-      console.log(`${label}${infoStr}: ${model.nodes.length} nodes, ${model.elements.length} elements`);
+      const nFrames = model.elements.filter((e: any) => e.length === 2).length;
+      const nShells = model.elements.filter((e: any) => e.length >= 3).length;
+      console.log(`${label} (${model.nodes.length} nodos, ${nFrames} frames, ${nShells} shells): ${model.nodes.length} nodes, ${model.elements.length} elements`);
+      // Rebuild scene and fit camera to new model
+      setTimeout(() => autoFitGridSize(), 50);
+    }
+
+    function showIfcFilterPanel(ifcResult: IfcLoadResult, ifcAnalytical: any) {
+      // Count elements per category from web-ifc geometry
+      const cats: Record<string, number> = {};
+      ifcResult.elementInfo.forEach(info => cats[info.category] = (cats[info.category] || 0) + 1);
+
+      // Remove existing panel
+      document.getElementById("ifc-filter-panel")?.remove();
+
+      const panel = document.createElement("div");
+      panel.id = "ifc-filter-panel";
+      panel.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+        background:#1e1e2e;border:2px solid #00ccff;border-radius:12px;padding:20px;
+        z-index:1000010;color:#eee;font-family:monospace;font-size:12px;min-width:320px;
+        box-shadow:0 8px 32px rgba(0,0,0,0.6);`;
+
+      const structural: IfcDetailCategory[] = ["column", "beam", "slab", "footing", "member", "wall"];
+      const nonStructural: IfcDetailCategory[] = ["opening", "rebar", "plate", "fastener", "other"];
+      const labels: Record<string, string> = {
+        column: "Columnas", beam: "Vigas", slab: "Losas", footing: "Zapatas",
+        member: "Diagonales", wall: "Muros", opening: "Aberturas", rebar: "Refuerzo",
+        plate: "Placas", fastener: "Pernos", other: "Otros",
+      };
+
+      let html = `<h3 style="color:#00ccff;margin:0 0 12px">IFC → Modelo Analítico</h3>
+        <div style="color:#888;margin-bottom:10px">Selecciona qué convertir a FEM:</div>
+        <div style="border:1px solid #444;border-radius:6px;padding:8px;margin-bottom:8px">
+          <div style="color:#33ff33;font-weight:bold;margin-bottom:4px">Estructural</div>`;
+
+      for (const cat of structural) {
+        const count = cats[cat] || 0;
+        if (count === 0) continue;
+        const checked = ["column", "beam", "slab"].includes(cat) ? "checked" : "";
+        html += `<label style="display:flex;align-items:center;gap:6px;padding:2px 0">
+          <input type="checkbox" data-ifc-cat="${cat}" ${checked}>
+          <span>${labels[cat] || cat}</span>
+          <span style="color:#888;margin-left:auto">(${count})</span>
+        </label>`;
+      }
+
+      html += `</div><div style="border:1px solid #333;border-radius:6px;padding:8px;margin-bottom:12px">
+        <div style="color:#ff6666;font-weight:bold;margin-bottom:4px">No estructural (solo visual)</div>`;
+
+      for (const cat of nonStructural) {
+        const count = cats[cat] || 0;
+        if (count === 0) continue;
+        html += `<label style="display:flex;align-items:center;gap:6px;padding:2px 0;color:#888">
+          <input type="checkbox" data-ifc-cat="${cat}" disabled>
+          <span>${labels[cat] || cat}</span>
+          <span style="margin-left:auto">(${count})</span>
+        </label>`;
+      }
+
+      html += `</div>
+        <div style="display:flex;gap:8px">
+          <button id="ifc-gen-analytical" style="flex:1;padding:8px;background:#0f3460;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:bold">
+            🔧 Generar Modelo Analítico
+          </button>
+          <button id="ifc-cancel" style="padding:8px 12px;background:#333;color:#aaa;border:1px solid #555;border-radius:6px;cursor:pointer">✕</button>
+        </div>`;
+
+      panel.innerHTML = html;
+      document.body.appendChild(panel);
+
+      // Filter 3D view when checkboxes change
+      panel.querySelectorAll<HTMLInputElement>("input[data-ifc-cat]").forEach(cb => {
+        cb.addEventListener("change", () => {
+          const cat = cb.dataset.ifcCat as IfcDetailCategory;
+          const group = ifcResult.detailCategories.get(cat);
+          if (group) {
+            group.visible = cb.checked;
+            const ctx = getViewerCtx();
+            if (ctx) ctx.render();
+          }
+        });
+      });
+
+      // Generate analytical model
+      panel.querySelector("#ifc-gen-analytical")?.addEventListener("click", () => {
+        const selectedCats = new Set<string>();
+        panel.querySelectorAll<HTMLInputElement>("input[data-ifc-cat]:checked").forEach(cb => {
+          selectedCats.add(cb.dataset.ifcCat!);
+        });
+
+        // Build analytical model from selected categories
+        const ifcNodes: [number, number, number][] = ifcAnalytical.nodes.map((n: any) => [n.x, n.y, n.z]);
+        const ifcElements: number[][] = [];
+        const ifcEI: any = {
+          elasticities: new Map(), shearModuli: new Map(), areas: new Map(),
+          momentsOfInertiaZ: new Map(), momentsOfInertiaY: new Map(),
+          torsionalConstants: new Map(), densities: new Map(),
+          sectionShapes: new Map(),
+        };
+        const ifcNI: any = { supports: new Map(), loads: new Map() };
+
+        let ei = 0;
+        for (const elem of ifcAnalytical.elements) {
+          if (!selectedCats.has(elem.category)) continue;
+          if (elem.type === "frame" && elem.nodeIds.length >= 2) {
+            ifcElements.push(elem.nodeIds);
+            const mat = ifcAnalytical.materials?.get(elem.material) || { E: 21328887.92, nu: 0.2, rho: 2.4 };
+            const b = elem.b || 0.3, h = elem.h || 0.3;
+            const A = b * h;
+            const Iz = b * h * h * h / 12;
+            const Iy = h * b * b * b / 12;
+            const J = b * h * (b * b + h * h) / 12;
+            const G = mat.E / (2 * (1 + mat.nu));
+            ifcEI.elasticities.set(ei, mat.E);
+            ifcEI.shearModuli.set(ei, G);
+            ifcEI.areas.set(ei, A);
+            ifcEI.momentsOfInertiaZ.set(ei, Iy);
+            ifcEI.momentsOfInertiaY.set(ei, Iz);
+            ifcEI.torsionalConstants.set(ei, J);
+            ifcEI.densities.set(ei, mat.rho);
+            ifcEI.sectionShapes.set(ei, { type: "rect", b, h, name: elem.sectionName });
+            ei++;
+          }
+        }
+
+        // Supports at base level
+        const baseZ = Math.min(...ifcNodes.map(n => n[2]));
+        ifcNodes.forEach((n, idx) => {
+          if (Math.abs(n[2] - baseZ) < 0.05) {
+            ifcNI.supports.set(idx, [true, true, true, true, true, true]);
+          }
+        });
+
+        // Remove IFC 3D geometry from scene (keep only analytical)
+        for (const [, group] of ifcResult.detailCategories) {
+          const ctx = getViewerCtx();
+          if (ctx) ctx.scene.remove(group);
+        }
+
+        applyImportedModel({
+          nodes: ifcNodes,
+          elements: ifcElements,
+          nodeInputs: ifcNI,
+          elementInputs: ifcEI,
+          sectionShapes: ifcEI.sectionShapes,
+          info: { nNodes: ifcNodes.length, nFrames: ifcElements.length, nShells: 0 },
+        }, "IFC analytical");
+
+        panel.remove();
+      });
+
+      // Cancel
+      panel.querySelector("#ifc-cancel")?.addEventListener("click", () => {
+        // Remove IFC geometry from scene
+        for (const [, group] of ifcResult.detailCategories) {
+          const ctx = getViewerCtx();
+          if (ctx) ctx.scene.remove(group);
+        }
+        const ctx = getViewerCtx();
+        if (ctx) ctx.render();
+        panel.remove();
+      });
     }
 
     function applyE2kGridsAndStories(model: E2kModel) {
@@ -7235,6 +7464,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         // Set file accept filter
         if (ioAction === "import-e2k") ioFile.accept = ".e2k,.E2K";
         else if (ioAction === "import-s2k") ioFile.accept = ".s2k,.S2K,.$2k";
+        else if (ioAction === "import-ifc") ioFile.accept = ".ifc,.IFC";
         else if (ioAction === "import-py") ioFile.accept = ".py";
         else if (ioAction === "import-tcl") ioFile.accept = ".tcl";
         ioFile.click();
@@ -7262,6 +7492,64 @@ Util:     cad.info()  cad.clear()  cad.help()
     if (ioFile) ioFile.addEventListener("change", () => {
       const file = ioFile.files?.[0];
       if (!file) return;
+
+      // IFC needs ArrayBuffer for web-ifc geometry + text for analytical parser
+      if (ioAction === "import-ifc") {
+        const readerBuf = new FileReader();
+        readerBuf.onload = async () => {
+          const arrayBuf = readerBuf.result as ArrayBuffer;
+          try {
+            // Step 1: Load full 3D geometry with web-ifc
+            const ctx = getViewerCtx();
+            if (!ctx) { alert("Viewer not ready"); return; }
+            console.log("IFC: Loading 3D geometry...");
+            const ifcResult = await loadIfcToScene(ctx.scene, arrayBuf);
+            console.log(`IFC: ${ifcResult.meshCount} meshes loaded, bbox:`, ifcResult.bbox);
+
+            // Adjust camera to fit IFC model
+            const center = new THREE.Vector3();
+            ifcResult.bbox.getCenter(center);
+            const size = new THREE.Vector3();
+            ifcResult.bbox.getSize(size);
+            const maxDim = Math.max(size.x, size.y, size.z);
+            ctx.controls.target.copy(center);
+            ctx.camera.position.set(center.x + maxDim, center.y + maxDim * 0.5, center.z + maxDim);
+            ctx.camera.lookAt(center);
+            ctx.controls.maxDistance = maxDim * 5;
+            ctx.controls.update();
+            ctx.render();
+
+            // Store IFC result for later analytical conversion
+            (window as any).__ifcLoadResult = ifcResult;
+            (window as any).__ifcArrayBuffer = arrayBuf;
+
+            // Step 2: Also parse analytical model (text-based) for FEM
+            const textReader = new FileReader();
+            textReader.onload = () => {
+              const text = textReader.result as string;
+              const ifcModel = parseIfcToAnalytical(text);
+              (window as any).__ifcAnalytical = ifcModel;
+
+              // Show summary in console
+              const cats: Record<string, number> = {};
+              ifcResult.elementInfo.forEach(info => cats[info.category] = (cats[info.category] || 0) + 1);
+              console.log("IFC categories:", cats);
+              console.log(`IFC: ${ifcResult.elementInfo.size} geometric elements, ${ifcModel.elements.length} analytical elements`);
+
+              // Show IFC filter panel
+              showIfcFilterPanel(ifcResult, ifcModel);
+            };
+            textReader.readAsText(file);
+          } catch (err: any) {
+            alert("IFC error: " + err.message);
+            console.error(err);
+          }
+        };
+        readerBuf.readAsArrayBuffer(file);
+        ioFile.value = "";
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = () => {
         const text = reader.result as string;
@@ -7287,7 +7575,7 @@ Util:     cad.info()  cad.clear()  cad.help()
           } else if (ioAction === "import-tcl") {
             const model = importOpenSeesTcl(text);
             applyImportedModel(model, "OpenSees Tcl imported");
-          }
+          } // IFC handled above with ArrayBuffer reader
         } catch (err: any) { alert("Import error: " + err.message); console.error(err); }
       };
       reader.readAsText(file);
@@ -11337,6 +11625,45 @@ Util:     cad.info()  cad.clear()  cad.help()
       highlightExButton("edificio");
     }
   }, 100);
+
+  // Add mobile hamburger menu button
+  const mobileMenuBtn = document.createElement("button");
+  mobileMenuBtn.id = "mobile-menu-btn";
+  mobileMenuBtn.innerHTML = "☰";
+  mobileMenuBtn.addEventListener("click", () => {
+    const p = document.getElementById("cad3d-panel");
+    if (p) {
+      p.classList.toggle("mobile-open");
+      mobileMenuBtn.innerHTML = p.classList.contains("mobile-open") ? "✕" : "☰";
+    }
+  });
+  document.body.appendChild(mobileMenuBtn);
+
+  // Add fullscreen button (to the left of help)
+  const fsBtn = document.createElement("button");
+  fsBtn.id = "fullscreen-btn";
+  fsBtn.innerHTML = "⛶";
+  fsBtn.title = "Pantalla completa";
+  fsBtn.style.cssText = `
+    position: fixed; bottom: 20px; right: 78px; z-index: 9999999;
+    width: 48px; height: 48px; border-radius: 50%;
+    background: linear-gradient(135deg, #333, #555);
+    color: white; border: 3px solid rgba(255,255,255,0.2);
+    font-size: 22px; cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  `;
+  fsBtn.addEventListener("mouseenter", () => { fsBtn.style.transform = "scale(1.15)"; });
+  fsBtn.addEventListener("mouseleave", () => { fsBtn.style.transform = "scale(1)"; });
+  fsBtn.addEventListener("click", () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  });
+  document.body.appendChild(fsBtn);
 
   // Add help tour button
   document.body.appendChild(createHelpButton());

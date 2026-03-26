@@ -2,9 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="icon" href="/img/favicon.ico" type="image/x-icon" />
-    <title>Awatif - Workspace</title>
+    <title>Hekatan Struct</title>
+    <style>
+      /* Safe area for mobile browsers with URL bar / notch */
+      :root {
+        --safe-top: env(safe-area-inset-top, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      body {
+        padding-top: var(--safe-top);
+        padding-bottom: var(--safe-bottom);
+      }
+    </style>
     <!-- Google tag (gtag.js) -->
     <script
       async
@@ -19,6 +30,8 @@
 
       gtag("config", "G-1X49GCVEK9");
     </script>
+    <!-- web-ifc WASM for IFC geometry loading -->
+    <script src="/awatif-workspace/workspace/web-ifc-api-iife.js"></script>
   </head>
   <body>
     <script type="module" src="./main.ts"></script>

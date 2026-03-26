@@ -658,8 +658,27 @@ function buildFemHelpers(scope: Record<string, any>) {
     if (!_currentModelData) throw new Error("solve_model: no hay modelo cargado");
     const md = _currentModelData;
     try {
+      // Ensure all Maps exist (WASM crashes on undefined)
+      const ei = md.elementInputs;
+      if (!ei.elasticities) ei.elasticities = new Map();
+      if (!ei.areas) ei.areas = new Map();
+      if (!ei.momentsOfInertiaZ) ei.momentsOfInertiaZ = new Map();
+      if (!ei.momentsOfInertiaY) ei.momentsOfInertiaY = new Map();
+      if (!ei.shearModuli) ei.shearModuli = new Map();
+      if (!ei.torsionalConstants) ei.torsionalConstants = new Map();
+      if (!ei.thicknesses) ei.thicknesses = new Map();
+      if (!ei.poissonsRatios) ei.poissonsRatios = new Map();
+      if (!ei.shearAreasY) ei.shearAreasY = new Map();
+      if (!ei.shearAreasZ) ei.shearAreasZ = new Map();
+      const ni = md.nodeInputs;
+      if (!ni.supports) ni.supports = new Map();
+      if (!ni.loads) ni.loads = new Map();
+      // Copy forces → loads if needed (compat)
+      if ((ni as any).forces && (!ni.loads || ni.loads.size === 0)) {
+        ni.loads = (ni as any).forces;
+      }
       const result = didacticSolveCpp(
-        md.nodes, md.elements, md.nodeInputs, md.elementInputs
+        md.nodes, md.elements, ni, ei
       );
       // Inject results into scope
       scope._solve_result = result;

@@ -2,9 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="icon" href="/img/favicon.ico" type="image/x-icon" />
-    <title>Awatif - Workspace</title>
+    <title>Hekatan Struct</title>
+    <style>
+      /* Safe area for mobile browsers with URL bar / notch */
+      :root {
+        --safe-top: env(safe-area-inset-top, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      body {
+        padding-top: var(--safe-top);
+        padding-bottom: var(--safe-bottom);
+      }
+    </style>
     <!-- Google tag (gtag.js) -->
     <script
       async
@@ -19,21 +30,21 @@
 
       gtag("config", "G-1X49GCVEK9");
     </script>
-    <script type="module" crossorigin src="/awatif-workspace/assets/workspace-DhKYg1tU.js"></script>
+    <!-- web-ifc WASM for IFC geometry loading -->
+    <script src="/awatif-workspace/workspace/web-ifc-api-iife.js"></script>
+    <script type="module" crossorigin src="/awatif-workspace/assets/workspace-CFl-ULRk.js"></script>
     <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/modulepreload-polyfill-B5Qt9EMX.js">
-    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/theme-DNr3SX9M.js">
-    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/Text-BJMxMB48.js">
-    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/styles-kwcqhtUA.js">
-    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/getViewer-C-DuwBFX.js">
-    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/getParameters-DuavtsRL.js">
-    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/complex-i8qiIvCl.js">
-    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/analyze-C6GU_3Il.js">
-    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/plateQ4Cpp-keaLMavB.js">
-    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/__vite-browser-external-D7Ct-6yo.js">
-    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/getMesh-C8P43tpY.js">
-    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/pureFunctionsAny.generated-BKcodEQ5.js">
-    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/getCad3d-jzFDKl8A.js">
-    <link rel="stylesheet" crossorigin href="/awatif-workspace/assets/styles-BAljICPl.css">
+    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/theme-CzzIlc4y.js">
+    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/Text-CBH-tcJP.js">
+    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/styles-DPHn_eE4.js">
+    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/getViewer-D52TFjEd.js">
+    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/getParameters-DchIdZM1.js">
+    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/pureFunctionsAny.generated-JAcEVsJ7.js">
+    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/analyze-C33Jzs7t.js">
+    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/didacticCpp-CaRzrnvk.js">
+    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/getMesh-DMDY1xW7.js">
+    <link rel="modulepreload" crossorigin href="/awatif-workspace/assets/getCad3d-B66hHMw_.js">
+    <link rel="stylesheet" crossorigin href="/awatif-workspace/assets/styles-D_ZOrzDq.css">
   </head>
   <body>
   </body>

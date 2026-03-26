@@ -1,6 +1,6 @@
 /**
- * SAP2000 .s2k File Exporter
- * Generates SAP2000-compatible text model files from awatif data.
+ * SAP2000 .s2k File Exporter (v24 TABLE format)
+ * Format matches SAP2000 v24.1.0 native .$2k export exactly
  */
 import type { Node, Element, NodeInputs, ElementInputs } from "awatif-fem";
 
@@ -17,58 +17,21 @@ export function exportS2k(input: S2kExportInput): string {
   const { nodes, elements, nodeInputs, elementInputs } = input;
   const units = input.units || { force: "KN", length: "m" };
   const title = input.title || "Awatif Model";
-  const lines: string[] = [];
+  const L: string[] = [];
 
-  // Header
-  lines.push("");
-  lines.push(`; File ${title}.s2k exported by awatif-clone`);
-  lines.push("");
+  const push = (s: string) => L.push(s);
+  const blank = () => L.push(" ");
 
-  // SYSTEM
-  lines.push("SYSTEM");
-  lines.push(`  DOF=UX,UY,UZ,RX,RY,RZ  LENGTH=${units.length}  FORCE=${units.force}`);
-  lines.push("");
+  // Header (same as SAP2000)
+  push(`File ${title}.$2k was saved on m/d/yy at h:mm:ss`);
+  blank();
 
-  // JOINT
-  lines.push("JOINT");
-  for (let i = 0; i < nodes.length; i++) {
-    const n = nodes[i];
-    lines.push(`  ${i + 1}  X=${fmt(n[0])}  Y=${fmt(n[1])}  Z=${fmt(n[2])}`);
-  }
-  lines.push("");
+  // ── ACTIVE DEGREES OF FREEDOM ──
+  push(`TABLE:  "ACTIVE DEGREES OF FREEDOM"`);
+  push(`   UX=Yes   UY=Yes   UZ=Yes   RX=Yes   RY=Yes   RZ=Yes`);
+  blank();
 
-  // RESTRAINT
-  if (nodeInputs.supports && nodeInputs.supports.size > 0) {
-    lines.push("RESTRAINT");
-    for (const [idx, sup] of nodeInputs.supports) {
-      if (!sup.some(s => s)) continue;
-      const dofNames = ["U1", "U2", "U3", "R1", "R2", "R3"];
-      const active = sup.map((s, i) => s ? dofNames[i] : null).filter(Boolean);
-      lines.push(`  ADD=${idx + 1}  DOF=${active.join(",")}`);
-    }
-    lines.push("");
-  }
-
-  // Collect unique materials
-  const matSet = new Map<string, { E: number; nu: number; G: number }>();
-  for (let i = 0; i < elements.length; i++) {
-    const E = elementInputs.elasticities?.get(i) || 0;
-    const G = elementInputs.shearModuli?.get(i) || 0;
-    const nu = E > 0 && G > 0 ? (E / (2 * G) - 1) : 0.2;
-    const key = `MAT_E${E.toPrecision(6)}`;
-    if (!matSet.has(key)) matSet.set(key, { E, nu, G });
-  }
-
-  // MATERIAL
-  lines.push("MATERIAL");
-  for (const [name, mat] of matSet) {
-    const rho = elementInputs.densities?.get(0) || 0;
-    lines.push(`  NAME=${name}  IDES=C  M=${fmt(rho)}  W=${fmt(rho * 9.81)}`);
-    lines.push(`    T=0  E=${mat.E}  U=${fmt(mat.nu)}  A=0.0000099`);
-  }
-  lines.push("");
-
-  // Separate frames and shells
+  // ── Separate frames and shells ──
   const frameIdx: number[] = [];
   const shellIdx: number[] = [];
   elements.forEach((el, i) => {
@@ -76,132 +39,202 @@ export function exportS2k(input: S2kExportInput): string {
     else shellIdx.push(i);
   });
 
-  // Collect unique frame sections
-  const frameSecs = new Map<string, { A: number; Iz: number; Iy: number; J: number; matName: string }>();
+  // ── CONNECTIVITY - FRAME ──
+  if (frameIdx.length > 0) {
+    push(`TABLE:  "CONNECTIVITY - FRAME"`);
+    for (const i of frameIdx) {
+      const el = elements[i];
+      push(`   Frame=${i + 1}   JointI=${el[0] + 1}   JointJ=${el[1] + 1}   IsCurved=No`);
+    }
+    blank();
+  }
+
+  // ── CONNECTIVITY - AREA ──
+  if (shellIdx.length > 0) {
+    push(`TABLE:  "CONNECTIVITY - AREA"`);
+    for (const i of shellIdx) {
+      const el = elements[i];
+      const jParts = el.map((n, j) => `Joint${j + 1}=${n + 1}`).join("   ");
+      push(`   Area=${i + 1}   NumJoints=${el.length}   ${jParts}`);
+    }
+    blank();
+  }
+
+  // ── COORDINATE SYSTEMS ──
+  push(`TABLE:  "COORDINATE SYSTEMS"`);
+  push(`   Name=GLOBAL   Type=Cartesian   X=0   Y=0   Z=0   AboutZ=0   AboutY=0   AboutX=0`);
+  blank();
+
+  // ── DATABASE FORMAT TYPES ──
+  push(`TABLE:  "DATABASE FORMAT TYPES"`);
+  push(`   UnitsCurr=Yes   OverrideE=No`);
+  blank();
+
+  // ── Collect unique frame sections ──
+  const frameSecs = new Map<string, { A: number; Iz: number; Iy: number; J: number; b: number; h: number; matKey: string }>();
+  const elemToFrameSec = new Map<number, string>();
   for (const i of frameIdx) {
     const A = elementInputs.areas?.get(i) || 0;
     const Iz = elementInputs.momentsOfInertiaZ?.get(i) || 0;
     const Iy = elementInputs.momentsOfInertiaY?.get(i) || 0;
     const J = elementInputs.torsionalConstants?.get(i) || 0;
+    const E = elementInputs.elasticities?.get(i) || 0;
+    const matKey = `MAT_${Math.round(E)}`;
     const key = `A${A.toPrecision(6)}_Iz${Iz.toPrecision(6)}`;
     if (!frameSecs.has(key)) {
-      const E = elementInputs.elasticities?.get(i) || 0;
-      const matName = `MAT_E${E.toPrecision(6)}`;
-      frameSecs.set(key, { A, Iz, Iy, J, matName });
-    }
-  }
-
-  // FRAME SECTION
-  if (frameSecs.size > 0) {
-    lines.push("FRAME SECTION");
-    let secIdx = 0;
-    const frameSecMap = new Map<string, string>(); // key → secName
-    for (const [key, sec] of frameSecs) {
-      secIdx++;
-      const secName = `FSEC${secIdx}`;
-      frameSecMap.set(key, secName);
-      // Estimate b,h from A and Iz (assuming rectangular)
-      // Iz = b*h³/12, A = b*h → h = sqrt(12*Iz/A), b = A/h
       let h = 0.3, b = 0.3;
-      if (sec.A > 0 && sec.Iz > 0) {
-        h = Math.sqrt(12 * sec.Iz / sec.A);
-        b = sec.A / h;
-      }
-      lines.push(`  NAME=${secName}  MAT=${sec.matName}  SH=R  D=${fmt(h)}  B=${fmt(b)}`);
+      if (A > 0 && Iz > 0) { h = Math.sqrt(12 * Iz / A); b = A / h; }
+      frameSecs.set(key, { A, Iz, Iy, J, b, h, matKey });
     }
-    lines.push("");
-
-    // Map each frame element to its section key
-    const elemToSecName = new Map<number, string>();
-    for (const i of frameIdx) {
-      const A = elementInputs.areas?.get(i) || 0;
-      const Iz = elementInputs.momentsOfInertiaZ?.get(i) || 0;
-      const key = `A${A.toPrecision(6)}_Iz${Iz.toPrecision(6)}`;
-      elemToSecName.set(i, frameSecMap.get(key) || "FSEC1");
-    }
-
-    // FRAME
-    lines.push("FRAME");
-    for (const i of frameIdx) {
-      const el = elements[i];
-      const secName = elemToSecName.get(i) || "FSEC1";
-      lines.push(`  ${i + 1}  J=${el[0] + 1},${el[1] + 1}  SEC=${secName}`);
-    }
-    lines.push("");
+    const secIdx = [...frameSecs.keys()].indexOf(key) + 1;
+    elemToFrameSec.set(i, `SEC${secIdx}`);
   }
 
-  // Collect unique shell sections
-  const shellSecs = new Map<string, { t: number; nu: number; matName: string }>();
+  // ── FRAME SECTION ASSIGNMENTS ──
+  if (frameIdx.length > 0) {
+    push(`TABLE:  "FRAME SECTION ASSIGNMENTS"`);
+    for (const i of frameIdx) {
+      const sec = elemToFrameSec.get(i) || "SEC1";
+      push(`   Frame=${i + 1}   AutoSelect=N.A.   AnalSect=${sec}   MatProp=Default`);
+    }
+    blank();
+  }
+
+  // ── FRAME SECTION PROPERTIES 01 - GENERAL ──
+  if (frameSecs.size > 0) {
+    push(`TABLE:  "FRAME SECTION PROPERTIES 01 - GENERAL"`);
+    let idx = 0;
+    for (const [, sec] of frameSecs) {
+      idx++;
+      const As = sec.A * 5 / 6;
+      push(`   SectionName=SEC${idx}   Material=${sec.matKey}   Shape=Rectangular   t3=${fmt(sec.h)}   t2=${fmt(sec.b)}   Area=${fmt(sec.A)}   TorsConst=${fmt(sec.J)}   I33=${fmt(sec.Iz)}   I22=${fmt(sec.Iy)}   I23=0   AS2=${fmt(As)}   AS3=${fmt(As)} _`);
+      push(`        Color=Blue   FromFile=No   AMod=1   A2Mod=1   A3Mod=1   JMod=1   I2Mod=1   I3Mod=1   MMod=1   WMod=1`);
+    }
+    blank();
+  }
+
+  // ── Collect unique shell sections ──
+  const shellSecs = new Map<string, { t: number; matKey: string }>();
+  const elemToShellSec = new Map<number, string>();
   for (const i of shellIdx) {
     const t = elementInputs.thicknesses?.get(i) || 0.1;
-    const nu = elementInputs.poissonsRatios?.get(i) || 0.2;
+    const E = elementInputs.elasticities?.get(i) || 0;
+    const matKey = `MAT_${Math.round(E)}`;
     const key = `t${t.toPrecision(6)}`;
-    if (!shellSecs.has(key)) {
-      const E = elementInputs.elasticities?.get(i) || 0;
-      const matName = `MAT_E${E.toPrecision(6)}`;
-      shellSecs.set(key, { t, nu, matName });
-    }
+    if (!shellSecs.has(key)) shellSecs.set(key, { t, matKey });
+    const secIdx = [...shellSecs.keys()].indexOf(key) + 1;
+    elemToShellSec.set(i, `SSEC${secIdx}`);
   }
 
-  // SHELL SECTION
-  if (shellSecs.size > 0) {
-    lines.push("SHELL SECTION");
-    let secIdx = 0;
-    const shellSecMap = new Map<string, string>();
-    for (const [key, sec] of shellSecs) {
-      secIdx++;
-      const secName = `SSEC${secIdx}`;
-      shellSecMap.set(key, secName);
-      lines.push(`  NAME=${secName}  MAT=${sec.matName}  TYPE=Shell  TH=${fmt(sec.t)}`);
-    }
-    lines.push("");
-
-    const elemToShellSec = new Map<number, string>();
+  // ── AREA SECTION ASSIGNMENTS ──
+  if (shellIdx.length > 0) {
+    push(`TABLE:  "AREA SECTION ASSIGNMENTS"`);
     for (const i of shellIdx) {
-      const t = elementInputs.thicknesses?.get(i) || 0.1;
-      const key = `t${t.toPrecision(6)}`;
-      elemToShellSec.set(i, shellSecMap.get(key) || "SSEC1");
+      const sec = elemToShellSec.get(i) || "SSEC1";
+      push(`   Area=${i + 1}   Section=${sec}   MatProp=Default`);
     }
+    blank();
 
-    // SHELL
-    lines.push("SHELL");
-    for (const i of shellIdx) {
-      const el = elements[i];
-      const secName = elemToShellSec.get(i) || "SSEC1";
-      const jStr = el.map(n => n + 1).join(",");
-      lines.push(`  ${i + 1}  J=${jStr}  SEC=${secName}`);
+    push(`TABLE:  "AREA SECTION PROPERTIES"`);
+    let idx = 0;
+    for (const [, sec] of shellSecs) {
+      idx++;
+      push(`   Section=SSEC${idx}   Material=${sec.matKey}   MatAngle=0   AreaType=Shell   Type=ShellThin   DrillDOF=Yes   Thickness=${fmt(sec.t)}   BendThick=${fmt(sec.t)}   Color=Cyan`);
     }
-    lines.push("");
+    blank();
   }
 
-  // LOAD
+  // ── JOINT COORDINATES ──
+  push(`TABLE:  "JOINT COORDINATES"`);
+  for (let i = 0; i < nodes.length; i++) {
+    const n = nodes[i];
+    push(`   Joint=${i + 1}   CoordSys=GLOBAL   CoordType=Cartesian   XorR=${fmt(n[0])}   Y=${fmt(n[1])}   Z=${fmt(n[2])}   SpecialJt=No`);
+  }
+  blank();
+
+  // ── JOINT RESTRAINT ASSIGNMENTS ──
+  if (nodeInputs.supports && nodeInputs.supports.size > 0) {
+    push(`TABLE:  "JOINT RESTRAINT ASSIGNMENTS"`);
+    for (const [idx, sup] of nodeInputs.supports) {
+      if (!sup.some(s => s)) continue;
+      const yn = (b: boolean) => b ? "Yes" : "No";
+      push(`   Joint=${idx + 1}   U1=${yn(sup[0])}   U2=${yn(sup[1])}   U3=${yn(sup[2])}   R1=${yn(sup[3])}   R2=${yn(sup[4])}   R3=${yn(sup[5])}`);
+    }
+    blank();
+  }
+
+  // ── LOAD PATTERN DEFINITIONS ──
+  push(`TABLE:  "LOAD PATTERN DEFINITIONS"`);
+  push(`   LoadPat=DEAD   DesignType=Dead   SelfWtMult=0`);
+  blank();
+
+  // ── LOAD CASE DEFINITIONS ──
+  push(`TABLE:  "LOAD CASE DEFINITIONS"`);
+  push(`   Case=DEAD   Type=LinStatic   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Dead   DesActOpt="Prog Det"   DesignAct=Non-Composite   AutoType=None   RunCase=Yes`);
+  blank();
+
+  // ── CASE - STATIC 1 - LOAD ASSIGNMENTS ──
+  push(`TABLE:  "CASE - STATIC 1 - LOAD ASSIGNMENTS"`);
+  push(`   Case=DEAD   LoadType="Load pattern"   LoadName=DEAD   LoadSF=1`);
+  blank();
+
+  // ── JOINT LOADS - FORCE ──
   if (nodeInputs.forces && nodeInputs.forces.size > 0) {
-    lines.push("LOAD");
-    lines.push("  NAME=LOAD1  CSYS=0");
+    push(`TABLE:  "JOINT LOADS - FORCE"`);
     for (const [idx, force] of nodeInputs.forces) {
-      const labels = ["UX", "UY", "UZ", "MX", "MY", "MZ"];
-      const parts: string[] = [];
-      force.forEach((v, d) => {
-        if (Math.abs(v) > 1e-12) parts.push(`${labels[d]}=${fmt(v)}`);
-      });
-      if (parts.length > 0) {
-        lines.push(`    ADD=${idx + 1}  ${parts.join("  ")}`);
-      }
+      if (!force.some(v => Math.abs(v) > 1e-12)) continue;
+      push(`   Joint=${idx + 1}   LoadPat=DEAD   CoordSys=GLOBAL   F1=${fmt(force[0])}   F2=${fmt(force[1])}   F3=${fmt(force[2])}   M1=${fmt(force[3])}   M2=${fmt(force[4])}   M3=${fmt(force[5])}`);
     }
-    lines.push("");
+    blank();
   }
 
-  lines.push("END");
-  lines.push("");
+  // ── Collect unique materials ──
+  const matSet = new Map<string, { E: number; nu: number; G: number; rho: number }>();
+  for (let i = 0; i < elements.length; i++) {
+    const E = elementInputs.elasticities?.get(i) || 0;
+    const G = elementInputs.shearModuli?.get(i) || 0;
+    const nu = E > 0 && G > 0 ? Math.max(0, Math.min(0.5, E / (2 * G) - 1)) : 0.2;
+    const rho = elementInputs.densities?.get(i) || 0;
+    const key = `MAT_${Math.round(E)}`;
+    if (!matSet.has(key)) matSet.set(key, { E, nu, G, rho });
+  }
 
-  return lines.join("\r\n");
+  // ── MATERIAL PROPERTIES 01 ──
+  push(`TABLE:  "MATERIAL PROPERTIES 01 - GENERAL"`);
+  for (const [name] of matSet) {
+    push(`   Material=${name}   Type=Concrete   SymType=Isotropic   TempDepend=No   Color=Green`);
+  }
+  blank();
+
+  // ── MATERIAL PROPERTIES 02 ──
+  push(`TABLE:  "MATERIAL PROPERTIES 02 - BASIC MECHANICAL PROPERTIES"`);
+  for (const [name, mat] of matSet) {
+    push(`   Material=${name}   UnitWeight=${fmt(mat.rho * 9.81)}   UnitMass=${fmt(mat.rho)}   E1=${fmt(mat.E)}   G12=${fmt(mat.G)}   U12=${fmt(mat.nu)}   A1=9.9E-06`);
+  }
+  blank();
+
+  // ── MATERIAL PROPERTIES 03B ──
+  push(`TABLE:  "MATERIAL PROPERTIES 03B - CONCRETE DATA"`);
+  for (const [name] of matSet) {
+    push(`   Material=${name}   Fc=27579   eFc=27579   LtWtConc=No   SSCurveOpt=Mander   SSHysType=Takeda   SFc=0.00222   SCap=0.005   FinalSlope=-0.1   FAngle=0   DAngle=0`);
+  }
+  blank();
+
+  // ── PROGRAM CONTROL (at end, like SAP2000 does) ──
+  push(`TABLE:  "PROGRAM CONTROL"`);
+  push(`   ProgramName=SAP2000   Version=24.1.0   CurrUnits="${units.force}, ${units.length}, C"   SteelCode="AISC 360-16"   ConcCode="ACI 318-19"   AlumCode="AA 2015"   ColdCode=AISI-16   RegenHinge=Yes`);
+  blank();
+
+  push(`END TABLE DATA`);
+  push("");
+
+  return L.join("\r\n");
 }
 
 function fmt(v: number): string {
-  if (Math.abs(v) < 1e-15) return "0";
+  if (v === 0 || Math.abs(v) < 1e-15) return "0";
   if (Math.abs(v) >= 1e6 || (Math.abs(v) < 1e-3 && Math.abs(v) > 0)) {
-    return v.toExponential(6);
+    return v.toExponential(8);
   }
-  // Remove trailing zeros
-  return parseFloat(v.toPrecision(8)).toString();
+  return parseFloat(v.toPrecision(10)).toString();
 }

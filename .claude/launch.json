@@ -2,11 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "examples",
+      "name": "workspace-dev",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["vite", "--port", "4640"],
-      "port": 4640,
-      "cwd": "examples"
+      "port": 4640
     }
   ]
 }

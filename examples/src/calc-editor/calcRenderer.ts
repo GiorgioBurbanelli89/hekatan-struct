@@ -1,11 +1,13 @@
 /**
- * calcRenderer.ts — Convierte resultados evaluados a HTML+KaTeX
+ * calcRenderer.ts — Hekatan CSS renderer (primary) + KaTeX (fallback for comments)
  *
- * Cada línea genera output formateado:
- *   Escalar: x = 42
- *   Vector: F = [10; 5] → columna KaTeX
- *   Matriz: K = [...] → bmatrix KaTeX
- *   Indexación: K(1,2) → K_{1,2} = valor
+ * Uses the Hekatan MathCanvas renderer for:
+ *   - Variable names with subscripts: K_loc → K<sub>loc</sub>
+ *   - Fracciones CSS verticales: E*A/L → fraction
+ *   - Matrices con bordes CSS: [1,2;3,4] → table with brackets
+ *   - Greek letters: phi → φ, alpha → α
+ *
+ * KaTeX only for @$...$@ in comments (integrals, complex LaTeX)
  */
 
 import type { CalcLine, CalcResult } from "./calcEngine";
@@ -14,315 +16,271 @@ declare const katex: {
   renderToString(tex: string, opts?: { displayMode?: boolean; throwOnError?: boolean }): string;
 };
 
-/** Render full CalcResult to HTML string */
-export function renderCalcOutput(result: CalcResult): string {
-  let html = "";
+// ═══════════════════════════════════════════════════════
+// HEKATAN CSS RENDERER (from hekatan-web/hekatan-math)
+// ═══════════════════════════════════════════════════════
 
-  for (const line of result.lines) {
-    html += renderLine(line);
+const GREEK: Record<string, string> = {
+  alpha: "α", beta: "β", gamma: "γ", delta: "δ", epsilon: "ε", zeta: "ζ",
+  eta: "η", theta: "θ", iota: "ι", kappa: "κ", lambda: "λ", mu: "μ",
+  nu: "ν", xi: "ξ", pi: "π", rho: "ρ", sigma: "σ", tau: "τ",
+  upsilon: "υ", phi: "φ", chi: "χ", psi: "ψ", omega: "ω",
+  Alpha: "Α", Beta: "Β", Gamma: "Γ", Delta: "Δ", Epsilon: "Ε",
+  Theta: "Θ", Lambda: "Λ", Xi: "Ξ", Pi: "Π", Sigma: "Σ", Phi: "Φ",
+  Psi: "Ψ", Omega: "Ω",
+};
+
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Render variable name with subscript + Greek: K_loc → K<sub>loc</sub>, phi → φ */
+function hkVarName(name: string): string {
+  const idx = name.indexOf("_");
+  if (idx > 0 && idx < name.length - 1) {
+    const base = GREEK[name.slice(0, idx)] ?? esc(name.slice(0, idx));
+    const sub = GREEK[name.slice(idx + 1)] ?? esc(name.slice(idx + 1));
+    return `<var>${base}<sub>${sub}</sub></var>`;
+  }
+  return `<var>${GREEK[name] ?? esc(name)}</var>`;
+}
+
+/** Format number smartly */
+function hkNum(v: number): string {
+  if (v === undefined || v === null || isNaN(v)) return "NaN";
+  if (!isFinite(v)) return v > 0 ? "∞" : "−∞";
+  if (Math.abs(v) < 1e-12) return "0";
+
+  // Scientific notation for large/small
+  if (Math.abs(v) >= 1e6 || (Math.abs(v) < 0.01 && v !== 0)) {
+    const exp = Math.floor(Math.log10(Math.abs(v)));
+    const mantissa = v / Math.pow(10, exp);
+    const mantStr = mantissa.toFixed(4).replace(/\.?0+$/, "");
+    return `${mantStr} × 10<sup>${exp}</sup>`;
   }
 
+  return v.toFixed(6).replace(/\.?0+$/, "");
+}
+
+/** Render matrix with CSS brackets (Hekatan style) */
+function hkMatrix(m: number[][], varName?: string): string {
+  const rows = m.length;
+  const cols = m[0]?.length ?? 0;
+  const maxShow = 8;
+  const showR = Math.min(rows, maxShow);
+  const showC = Math.min(cols, maxShow);
+
+  let html = '<span class="mat-wrap"><span class="mat-bkt left"></span><table class="mat"><tbody>';
+  for (let i = 0; i < showR; i++) {
+    html += "<tr>";
+    for (let j = 0; j < showC; j++) {
+      html += `<td>${hkNum(m[i][j])}</td>`;
+    }
+    if (cols > maxShow) html += `<td>⋯</td>`;
+    html += "</tr>";
+  }
+  if (rows > maxShow) {
+    html += "<tr>";
+    for (let j = 0; j < showC; j++) html += `<td>⋮</td>`;
+    if (cols > maxShow) html += `<td>⋱</td>`;
+    html += "</tr>";
+  }
+  html += '</tbody></table><span class="mat-bkt right"></span></span>';
+
+  const sizeTag = `<span class="mat-size">${rows}×${cols}</span>`;
+
+  if (varName) {
+    return `<div class="hk-result">${hkVarName(varName)}${sizeTag} = ${html}</div>`;
+  }
   return html;
 }
 
-/** Render a single line */
+/** Render column vector */
+function hkVector(v: number[], varName?: string): string {
+  const n = v.length;
+  const maxShow = 12;
+  const showN = Math.min(n, maxShow);
+
+  let html = '<span class="mat-wrap"><span class="mat-bkt left"></span><table class="mat"><tbody>';
+  for (let i = 0; i < showN; i++) {
+    html += `<tr><td>${hkNum(v[i])}</td></tr>`;
+  }
+  if (n > maxShow) html += `<tr><td>⋮</td></tr>`;
+  html += '</tbody></table><span class="mat-bkt right"></span></span>';
+
+  const sizeTag = `<span class="mat-size">${n}×1</span>`;
+
+  if (varName) {
+    return `<div class="hk-result">${hkVarName(varName)}${sizeTag} = ${html}</div>`;
+  }
+  return html;
+}
+
+/** Render scalar */
+function hkScalar(v: number, varName?: string): string {
+  const formatted = hkNum(v);
+  if (varName) {
+    return `<div class="hk-result">${hkVarName(varName)} = ${formatted}</div>`;
+  }
+  return formatted;
+}
+
+// ═══════════════════════════════════════════════════════
+// MAIN RENDER
+// ═══════════════════════════════════════════════════════
+
+export function renderCalcOutput(result: CalcResult): string {
+  let html = "";
+  for (const line of result.lines) html += renderLine(line);
+  return html;
+}
+
 function renderLine(line: CalcLine): string {
-  // Blank
   if (line.isBlank) {
     return `<div class="calc-line calc-blank">&nbsp;</div>`;
   }
 
-  // Comment — supports $...$ for inline KaTeX math
   if (line.isComment) {
     const text = line.input.trim().replace(/^%\s*/, "");
-    // Detect separator lines (═══, ───, etc.)
-    if (/^[═─━─\-=]{3,}/.test(text)) {
-      return `<div class="calc-line calc-separator">
-        <span class="calc-ln">${line.lineNum}</span>
-        <hr class="calc-hr" />
-      </div>`;
+    if (/^[═─━\-=]{3,}/.test(text)) {
+      return `<div class="calc-line calc-separator"><span class="calc-ln">${line.lineNum}</span><hr class="calc-hr" /></div>`;
     }
-    // Detect heading-style comments (e.g. "─── Datos ───")
     const headingMatch = text.match(/^─+\s*(.+?)\s*─+$/);
     if (headingMatch) {
-      return `<div class="calc-line calc-heading">
-        <span class="calc-ln">${line.lineNum}</span>
-        <span class="calc-heading-text">${renderCommentMath(headingMatch[1])}</span>
-      </div>`;
+      return `<div class="calc-line calc-heading"><span class="calc-ln">${line.lineNum}</span><span class="calc-heading-text">${renderCommentMath(headingMatch[1])}</span></div>`;
     }
-    // Render $...$ inline math within comments
-    const rendered = renderCommentMath(text);
-    return `<div class="calc-line calc-comment">
-      <span class="calc-ln">${line.lineNum}</span>
-      <span class="calc-comment-text">${rendered}</span>
-    </div>`;
+    return `<div class="calc-line calc-comment"><span class="calc-ln">${line.lineNum}</span><span class="calc-comment-text">${renderCommentMath(text)}</span></div>`;
   }
 
-  // Error
   if (line.error) {
-    return `<div class="calc-line calc-error">
-      <span class="calc-ln">${line.lineNum}</span>
-      <span class="calc-input">${escapeHtml(line.input)}</span>
-      <div class="calc-error-msg">Error: ${escapeHtml(line.error)}</div>
-    </div>`;
+    return `<div class="calc-line calc-error"><span class="calc-ln">${line.lineNum}</span><span class="calc-input">${esc(line.input)}</span><div class="calc-error-msg">Error: ${esc(line.error)}</div></div>`;
   }
 
-  // Control flow header (for/if)
   if (line.isControl) {
-    return `<div class="calc-line calc-control">
-      <span class="calc-ln">${line.lineNum}</span>
-      <span class="calc-keyword">${escapeHtml(line.input.trim())}</span>
-    </div>`;
+    return `<div class="calc-line calc-control"><span class="calc-ln">${line.lineNum}</span><span class="calc-keyword">${esc(line.input.trim())}</span></div>`;
   }
 
-  // Result line
-  const inputDisplay = escapeHtml(line.input.trim());
-  const katexOutput = resultToKatex(line);
+  // Result line — Hekatan CSS renderer
+  const inputDisplay = esc(line.input.trim());
+  const hkOutput = resultToHekatan(line);
 
   return `<div class="calc-line calc-result">
     <span class="calc-ln">${line.lineNum}</span>
     <div class="calc-content">
       <div class="calc-input-line">${inputDisplay}</div>
-      <div class="calc-output">${katexOutput}</div>
+      <div class="calc-output">${hkOutput}</div>
     </div>
   </div>`;
 }
 
-// ═══════════════════════════════════════════════════════
-// RESULT → KATEX
-// ═══════════════════════════════════════════════════════
-
-function resultToKatex(line: CalcLine): string {
+function resultToHekatan(line: CalcLine): string {
   if (line.result === undefined || line.result === null) return "";
 
   const varName = line.varName;
   const val = line.result;
 
   try {
-    let tex = "";
-
     if (line.resultType === "matrix") {
-      tex = matrixToKatex(val, varName);
+      const data = toArray2D(val);
+      if (data) return hkMatrix(data, varName);
     } else if (line.resultType === "vector") {
-      tex = vectorToKatex(val, varName);
+      const data = toArray1D(val);
+      if (data) return hkVector(data, varName);
     } else if (line.resultType === "scalar") {
-      const formatted = formatNumber(val as number);
-      tex = varName ? `${texVar(varName)} = ${formatted}` : formatted;
+      return hkScalar(val as number, varName);
     } else if (line.resultType === "boolean") {
-      tex = varName ? `${texVar(varName)} = ${val}` : String(val);
+      return varName
+        ? `<div class="hk-result">${hkVarName(varName)} = <b>${val}</b></div>`
+        : `<b>${val}</b>`;
     } else if (line.resultType === "string") {
-      return `<span class="calc-string">${escapeHtml(String(val))}</span>`;
+      return `<span class="calc-string">${esc(String(val))}</span>`;
     } else {
-      tex = varName ? `${texVar(varName)} = ${String(val)}` : String(val);
+      return varName
+        ? `<div class="hk-result">${hkVarName(varName)} = ${esc(String(val))}</div>`
+        : esc(String(val));
     }
+  } catch { /* fallback */ }
 
-    return renderKatex(tex);
-  } catch {
-    return `<code>${escapeHtml(String(val))}</code>`;
-  }
-}
-
-/** Matrix → KaTeX bmatrix */
-function matrixToKatex(val: any, varName?: string): string {
-  const data = toArray2D(val);
-  if (!data || data.length === 0) return varName ? `${texVar(varName!)} = []` : "[]";
-
-  const rows = data.length;
-  const cols = data[0].length;
-
-  // Truncate large matrices
-  const maxShow = 8;
-  const showRows = Math.min(rows, maxShow);
-  const showCols = Math.min(cols, maxShow);
-
-  let tex = "\\begin{bmatrix}\n";
-  for (let i = 0; i < showRows; i++) {
-    const rowVals: string[] = [];
-    for (let j = 0; j < showCols; j++) {
-      rowVals.push(formatNumber(data[i][j]));
-    }
-    if (cols > maxShow) rowVals.push("\\cdots");
-    tex += rowVals.join(" & ");
-    if (i < showRows - 1 || rows > maxShow) tex += " \\\\";
-    tex += "\n";
-  }
-  if (rows > maxShow) {
-    const dots = Array(Math.min(showCols + (cols > maxShow ? 1 : 0), showCols + 1)).fill("\\vdots").join(" & ");
-    tex += dots + "\n";
-  }
-  tex += "\\end{bmatrix}";
-
-  // Add size annotation as part of the variable display (no double subscript)
-  if (varName) {
-    return `\\underset{${rows}\\times${cols}}{${texVar(varName)}} = ${tex}`;
-  }
-  return tex;
-}
-
-/** Vector → KaTeX column vector */
-function vectorToKatex(val: any, varName?: string): string {
-  const data = toArray1D(val);
-  if (!data || data.length === 0) return varName ? `${texVar(varName!)} = []` : "[]";
-
-  const maxShow = 12;
-  const n = data.length;
-
-  let tex = "\\begin{bmatrix}\n";
-  const showN = Math.min(n, maxShow);
-  for (let i = 0; i < showN; i++) {
-    tex += formatNumber(data[i]);
-    if (i < showN - 1 || n > maxShow) tex += " \\\\";
-    tex += "\n";
-  }
-  if (n > maxShow) {
-    tex += "\\vdots\n";
-  }
-  tex += "\\end{bmatrix}";
-
-  if (varName) {
-    return `\\underset{${n}\\times 1}{${texVar(varName)}} = ${tex}`;
-  }
-  return tex;
+  return `<code>${esc(String(val))}</code>`;
 }
 
 // ═══════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════
 
-/** Format variable name for KaTeX (handle subscripts) */
-function texVar(name: string): string {
-  // K_loc_1 → K_{\text{loc\_1}}
-  const parts = name.split("_");
-  if (parts.length > 1) {
-    const sub = parts.slice(1).join("\\_");
-    return `${parts[0]}_{\\text{${sub}}}`;
-  }
-  // Greek letters
-  const greek: Record<string, string> = {
-    alpha: "\\alpha", beta: "\\beta", gamma: "\\gamma", delta: "\\delta",
-    phi: "\\phi", psi: "\\psi", theta: "\\theta", lambda: "\\lambda",
-    mu: "\\mu", nu: "\\nu", sigma: "\\sigma", tau: "\\tau", omega: "\\omega",
-  };
-  if (greek[name]) return greek[name];
-
-  return `\\mathrm{${name}}`;
-}
-
-/** Format number for display */
-function formatNumber(v: number): string {
-  if (v === undefined || v === null || isNaN(v)) return "\\text{NaN}";
-  if (!isFinite(v)) return v > 0 ? "\\infty" : "-\\infty";
-  if (Math.abs(v) < 1e-12) return "0";
-
-  // Scientific notation for large/small numbers
-  if (Math.abs(v) >= 1e6 || (Math.abs(v) < 0.01 && v !== 0)) {
-    const exp = Math.floor(Math.log10(Math.abs(v)));
-    const mantissa = v / Math.pow(10, exp);
-    const mantStr = mantissa.toFixed(4).replace(/\.?0+$/, "");
-    return `${mantStr} \\times 10^{${exp}}`;
-  }
-
-  // Regular number
-  const str = v.toFixed(6).replace(/\.?0+$/, "");
-  return str;
-}
-
-/** Convert math.js Matrix or array to 2D array */
 function toArray2D(val: any): number[][] | null {
   if (!val) return null;
-
-  // math.js Matrix
   if (typeof val.toArray === "function") {
     const arr = val.toArray();
     if (Array.isArray(arr) && arr.length > 0) {
-      if (Array.isArray(arr[0])) return arr as number[][];
-      // 1D → wrap as row
-      return [arr as number[]];
+      if (Array.isArray(arr[0])) return arr;
+      return [arr];
     }
   }
-
-  // Plain 2D array
-  if (Array.isArray(val) && Array.isArray(val[0])) return val as number[][];
-
+  if (Array.isArray(val) && Array.isArray(val[0])) return val;
   return null;
 }
 
-/** Convert math.js Matrix or array to 1D array */
 function toArray1D(val: any): number[] | null {
   if (!val) return null;
-
-  // math.js Matrix
   if (typeof val.toArray === "function") {
     const arr = val.toArray();
     if (Array.isArray(arr)) {
-      // If nested (column vector [[1],[2],[3]]) → flatten
-      if (arr.length > 0 && Array.isArray(arr[0])) {
-        return arr.map((row: any) => Array.isArray(row) ? row[0] : row);
-      }
-      return arr as number[];
+      if (arr.length > 0 && Array.isArray(arr[0])) return arr.map((r: any) => Array.isArray(r) ? r[0] : r);
+      return arr;
     }
   }
-
-  // Plain array
   if (Array.isArray(val)) {
-    if (val.length > 0 && Array.isArray(val[0])) {
-      return val.map((row: any) => Array.isArray(row) ? row[0] : row);
-    }
-    return val as number[];
+    if (val.length > 0 && Array.isArray(val[0])) return val.map((r: any) => Array.isArray(r) ? r[0] : r);
+    return val;
   }
-
   return null;
 }
 
-/** Render $...$ inline math within comment text */
+/** Render @$...$@ in comments with KaTeX (fallback for complex LaTeX) */
 function renderCommentMath(text: string): string {
-  // If text contains $...$, replace each occurrence with KaTeX
+  // @$...$@ → KaTeX
+  if (text.includes("@$")) {
+    return text.replace(/@\$(.*?)\$@/g, (_m, tex) => {
+      try {
+        if (typeof katex !== "undefined") {
+          return katex.renderToString(tex, { displayMode: false, throwOnError: false });
+        }
+      } catch { /* fallback */ }
+      return `<code>${esc(tex)}</code>`;
+    });
+  }
+  // $...$ → KaTeX
   if (text.includes("$")) {
     const parts: string[] = [];
     let remaining = text;
     while (remaining.includes("$")) {
       const start = remaining.indexOf("$");
       const end = remaining.indexOf("$", start + 1);
-      if (end === -1) break; // unmatched $
-      parts.push(escapeHtml(remaining.slice(0, start)));
-      parts.push(renderKatexInline(remaining.slice(start + 1, end)));
+      if (end === -1) break;
+      parts.push(esc(remaining.slice(0, start)));
+      try {
+        if (typeof katex !== "undefined") {
+          parts.push(katex.renderToString(remaining.slice(start + 1, end), { displayMode: false, throwOnError: false }));
+        } else {
+          parts.push(`<code>${esc(remaining.slice(start + 1, end))}</code>`);
+        }
+      } catch { parts.push(`<code>${esc(remaining.slice(start + 1, end))}</code>`); }
       remaining = remaining.slice(end + 1);
     }
-    parts.push(escapeHtml(remaining));
+    parts.push(esc(remaining));
     return parts.join("");
   }
-  // No $ markers — return as plain text
-  return escapeHtml(text);
+  return esc(text);
 }
 
-/** Render KaTeX inline (not display mode) */
-function renderKatexInline(tex: string): string {
-  try {
-    if (typeof katex !== "undefined") {
-      return katex.renderToString(tex, { displayMode: false, throwOnError: false });
-    }
-  } catch { /* fallback */ }
-  return `<code class="calc-tex-fallback">${escapeHtml(tex)}</code>`;
-}
+// ═══════════════════════════════════════════════════════
+// CSS STYLES (Hekatan MathCanvas + calc panel)
+// ═══════════════════════════════════════════════════════
 
-/** Render KaTeX with fallback */
-function renderKatex(tex: string): string {
-  try {
-    if (typeof katex !== "undefined") {
-      return katex.renderToString(tex, { displayMode: true, throwOnError: false });
-    }
-  } catch { /* fallback */ }
-  return `<code class="calc-tex-fallback">${escapeHtml(tex)}</code>`;
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-/** Get CSS styles for the calc output panel */
 export function getCalcStyles(): string {
   return `
+    /* ─── Calc panel base ─── */
     .calc-line {
       padding: 4px 8px;
       border-bottom: 1px solid #1a1a2e;
@@ -377,9 +335,97 @@ export function getCalcStyles(): string {
       font-size: 12px;
       opacity: 0.6;
     }
+    .calc-string { color: #ce9178; }
+
+    /* ─── Hekatan CSS Math Renderer ─── */
+    .hk-result {
+      font-family: 'Cambria Math', 'STIX Two Math', 'Latin Modern Math', serif;
+      font-size: 14px;
+      color: #d4d4d4;
+      margin: 4px 0;
+    }
+    .hk-result var {
+      font-style: italic;
+      color: #e0e0e0;
+    }
+    .hk-result var sub {
+      font-size: 0.75em;
+      vertical-align: sub;
+      font-style: normal;
+    }
+    .hk-result sup {
+      font-size: 0.7em;
+      vertical-align: super;
+    }
+
+    /* Matrix brackets (Hekatan style) */
+    .mat-wrap {
+      display: inline-flex;
+      align-items: center;
+      vertical-align: middle;
+      gap: 0;
+    }
+    .mat-bkt {
+      display: flex;
+      flex-direction: column;
+      align-self: stretch;
+      width: 5px;
+      min-height: 1em;
+    }
+    .mat-bkt.left {
+      border-left: 1.5pt solid #d4d4d4;
+      border-top: 1.5pt solid #d4d4d4;
+      border-bottom: 1.5pt solid #d4d4d4;
+      border-radius: 3pt 0 0 3pt;
+      margin-right: 2pt;
+    }
+    .mat-bkt.right {
+      border-right: 1.5pt solid #d4d4d4;
+      border-top: 1.5pt solid #d4d4d4;
+      border-bottom: 1.5pt solid #d4d4d4;
+      border-radius: 0 3pt 3pt 0;
+      margin-left: 2pt;
+    }
+    table.mat {
+      border-collapse: collapse;
+      border-spacing: 0;
+      display: inline-table;
+    }
+    table.mat td {
+      padding: 1px 4px;
+      text-align: right;
+      font-size: 11px;
+      min-width: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #d4d4d4;
+      white-space: nowrap;
+    }
+    .mat-size {
+      font-size: 9px;
+      color: #666;
+      vertical-align: sub;
+      margin-left: 1px;
+      margin-right: 4px;
+    }
+
+    /* Fraction (Hekatan dvc/dvl) */
+    .dvc {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      vertical-align: middle;
+      margin: 0 2px;
+    }
+    .dvl {
+      border-bottom: solid 1pt #d4d4d4;
+      min-width: 1em;
+      text-align: center;
+      padding: 0 3px;
+    }
+
+    /* KaTeX fallback in comments */
     .calc-output .katex { font-size: 0.95em; }
     .calc-output .katex-display { margin: 4px 0; }
-    .calc-string { color: #ce9178; }
     .calc-tex-fallback {
       color: #d4d4d4;
       background: #1e1e2e;

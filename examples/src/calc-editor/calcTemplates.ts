@@ -39,6 +39,8 @@ export const templateList = [
   { id: "fem_course_beam", name: "📖 Curso FEM 2: Viga Euler-Bernoulli" },
   { id: "fem_course_q4", name: "📖 Curso FEM 3: Elemento Q4 — Plane Stress" },
   { id: "fem_course_mindlin", name: "📖 Curso FEM 4: Placa Mindlin Q4" },
+  // ── Modelos mixtos ──
+  { id: "zapata_pedestal", name: "🏗️ Zapata + Pedestal (shell+frame)" },
   // ── Derivaciones didácticas ──
   { id: "axial", name: "Derivación: Barra axial paso a paso" },
   { id: "spring3", name: "Derivación: 3 resortes — assembly" },
@@ -72,6 +74,7 @@ export function getTemplate(templateId: string, data: ModelData): string {
     case "fer_timoshenko": return ferTimoshenko();
     case "fer_planestress": return ferPlaneStressQ4();
     case "fer_mindlin": return ferMindlinQ4();
+    case "zapata_pedestal": return templateZapataPedestal();
     default: return templateFemAuto(data);
   }
 }
@@ -81,38 +84,104 @@ export function getTemplate(templateId: string, data: ModelData): string {
 // ═══════════════════════════════════════════════════════
 
 function templateFemAuto(data: ModelData): string {
+  const nn = data.nodes.length;
+  const ne = data.elements.length;
+  const ndof = nn * 6;
+
+  // Detect first element properties for formulas
+  const ei = data.elementInputs;
+  const E0 = ei.elasticities?.get(0) ?? 21e6;
+  const G0 = ei.shearModuli?.get(0) ?? 8.75e6;
+  const A0 = ei.areas?.get(0) ?? 0.16;
+  const Iz0 = ei.momentsOfInertiaZ?.get(0) ?? 0.00213;
+  const Iy0 = ei.momentsOfInertiaY?.get(0) ?? 0.00213;
+  const J0 = ei.torsionalConstants?.get(0) ?? 0.00361;
+
+  // First element nodes
+  const e0 = data.elements[0];
+  const n0 = data.nodes[e0[0]];
+  const n1 = data.nodes[e0[1]];
+  const dx = n1[0]-n0[0], dy = n1[1]-n0[1], dz = n1[2]-n0[2];
+  const L0 = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
   return templateModelData(data) + `
 % ═══════════════════════════════════════════
-% FEM paso a paso
+% FEM paso a paso — MATLAB puro
 % ═══════════════════════════════════════════
 
-% ─── Paso 1: Matrices por elemento ───
-K_loc_1 = stiffness(1)
-T_1 = transform(1)
-K_glob_1 = kglobal(1)
-L_1 = elem_length(1)
-dofs_1 = assemble_dofs(1)
+% ─── Paso 1: K local frame Timoshenko (elemento 1) ───
 
-% ─── Paso 2: Resolver (WASM C++/Eigen) ───
-% Ensambla K global sparse, aplica BCs, SparseLU solve
-resultado = solve_model()
+% @$\\textbf{Coeficientes simbólicos:}$@
+% @$k_a = \\frac{EA}{L}, \\quad k_t = \\frac{GJ}{L}$@
+% @$b_z = \\frac{12EI_z}{L^3}, \\quad c_z = \\frac{6EI_z}{L^2}, \\quad d_z = \\frac{4EI_z}{L}, \\quad e_z = \\frac{2EI_z}{L}$@
+% @$b_y = \\frac{12EI_y}{L^3}, \\quad c_y = \\frac{6EI_y}{L^2}, \\quad d_y = \\frac{4EI_y}{L}, \\quad e_y = \\frac{2EI_y}{L}$@
 
-% ─── Paso 3: Desplazamientos por nodo ───
-u1 = unode(1)
-u2 = unode(2)
+% @$K_{local}^{12\\times12} = \\begin{bmatrix} k_a & 0 & 0 & 0 & 0 & 0 & -k_a & 0 & 0 & 0 & 0 & 0 \\\\ 0 & b_z & 0 & 0 & 0 & c_z & 0 & -b_z & 0 & 0 & 0 & c_z \\\\ 0 & 0 & b_y & 0 & -c_y & 0 & 0 & 0 & -b_y & 0 & -c_y & 0 \\\\ 0 & 0 & 0 & k_t & 0 & 0 & 0 & 0 & 0 & -k_t & 0 & 0 \\\\ 0 & 0 & -c_y & 0 & d_y & 0 & 0 & 0 & c_y & 0 & e_y & 0 \\\\ 0 & c_z & 0 & 0 & 0 & d_z & 0 & -c_z & 0 & 0 & 0 & e_z \\\\ -k_a & 0 & 0 & 0 & 0 & 0 & k_a & 0 & 0 & 0 & 0 & 0 \\\\ 0 & -b_z & 0 & 0 & 0 & -c_z & 0 & b_z & 0 & 0 & 0 & -c_z \\\\ 0 & 0 & -b_y & 0 & c_y & 0 & 0 & 0 & b_y & 0 & c_y & 0 \\\\ 0 & 0 & 0 & -k_t & 0 & 0 & 0 & 0 & 0 & k_t & 0 & 0 \\\\ 0 & 0 & -c_y & 0 & e_y & 0 & 0 & 0 & c_y & 0 & d_y & 0 \\\\ 0 & c_z & 0 & 0 & 0 & e_z & 0 & -c_z & 0 & 0 & 0 & d_z \\end{bmatrix}$@
 
-% ─── Paso 4: Reacciones en apoyos ───
-r1 = rnode(1)
+% @$\\textbf{Evaluación numérica:}$@
 
-% ─── Paso 5: Desplazamiento máximo ───
-U_max = max(abs(U))
+E1 = ${E0}
+A1 = ${A0}
+Iz1 = ${Iz0}
+Iy1 = ${Iy0}
+G1 = ${G0}
+J1 = ${J0}
+L1 = ${L0.toFixed(4)}
 
-% ─── Para inspeccionar cualquier elemento: ───
-% K_loc_i = stiffness(i)
-% T_i = transform(i)
-% K_glob_i = kglobal(i)
-% L_i = elem_length(i)
-% dofs_i = assemble_dofs(i)
+% Coeficientes axial y torsión
+ka = E1 * A1 / L1
+kt = G1 * J1 / L1
+
+% Coeficientes flexión plano XY (usa Iz)
+bz = 12 * E1 * Iz1 / L1^3
+cz = 6 * E1 * Iz1 / L1^2
+dz = 4 * E1 * Iz1 / L1
+ez = 2 * E1 * Iz1 / L1
+
+% Coeficientes flexión plano XZ (usa Iy)
+by = 12 * E1 * Iy1 / L1^3
+cy = 6 * E1 * Iy1 / L1^2
+dy1 = 4 * E1 * Iy1 / L1
+ey = 2 * E1 * Iy1 / L1
+
+% @$K_{local}^{num} =$@ evaluada con los datos del modelo:
+K_loc_1 = [ka  0   0   0   0   0  -ka  0   0   0   0   0;
+           0   bz  0   0   0   cz  0  -bz  0   0   0   cz;
+           0   0   by  0  -cy  0   0   0  -by  0  -cy  0;
+           0   0   0   kt  0   0   0   0   0  -kt  0   0;
+           0   0  -cy  0   dy1 0   0   0   cy  0   ey  0;
+           0   cz  0   0   0   dz  0  -cz  0   0   0   ez;
+          -ka  0   0   0   0   0   ka  0   0   0   0   0;
+           0  -bz  0   0   0  -cz  0   bz  0   0   0  -cz;
+           0   0  -by  0   cy  0   0   0   by  0   cy  0;
+           0   0   0  -kt  0   0   0   0   0   kt  0   0;
+           0   0  -cy  0   ey  0   0   0   cy  0   dy1 0;
+           0   cz  0   0   0   ez  0  -cz  0   0   0   dz]
+
+% ─── Paso 2: Matriz de transformación T (elemento 1) ───
+% Cosenos directores del elemento
+dx1 = ${dx.toFixed(4)}
+dy1t = ${dy.toFixed(4)}
+dz1 = ${dz.toFixed(4)}
+
+lx = dx1/L1
+ly = dy1t/L1
+lz = dz1/L1
+
+% Submatriz de rotación 3x3 (lambda)
+% @$\\lambda = \\begin{bmatrix} l_x & l_y & l_z \\\\ \\cdots \\end{bmatrix}$@
+
+% ─── Paso 3: Ensamblaje ───
+% @$K_{global} = \\sum_{e=1}^{${ne}} T_e^T \\cdot K_e \\cdot T_e$@
+% En MATLAB: K_global = zeros(${ndof});
+% for e = 1:${ne}
+%   dofs = [(elem(e,1)-1)*6+1 : elem(e,1)*6, (elem(e,2)-1)*6+1 : elem(e,2)*6];
+%   K_global(dofs,dofs) = K_global(dofs,dofs) + T'*Ke*T;
+% end
+
+% ─── Paso 4: Resolver ───
+% @$K_{ff} \\cdot U_f = F_f$@
+% En MATLAB: U(free) = K(free,free) \\ F(free)
 `;
 }
 
@@ -1664,5 +1733,140 @@ D_sym = ssubs('E*h^3/(12*(1-nu^2))', 'E', '10920')
 D_sym2 = ssubs(D_sym, 'nu', '0.3')
 D_sym3 = ssubs(D_sym2, 'h', '0.1')
 D_num = seval(D_sym3)
+`;
+}
+
+// ═══════════════════════════════════════════════════════
+// TEMPLATE: Zapata + Pedestal (shell Q4 + frame)
+// Fórmulas MATLAB explícitas — NO funciones opacas
+// ═══════════════════════════════════════════════════════
+
+function templateZapataPedestal(): string {
+  return `% ═══════════════════════════════════════════
+% Zapata + Pedestal — Shell Q4 + Frame 3D
+% Verificable en MATLAB/Octave (copiar y pegar)
+% ═══════════════════════════════════════════
+
+% ─── Datos geométricos ───
+Bz = 1.5              % ancho zapata (m)
+Lz = 1.5              % largo zapata (m)
+hz = 0.40              % espesor zapata (m)
+bc = 0.30              % ancho columna (m)
+hc = 0.30              % peralte columna (m)
+Hped = 0.50            % altura pedestal (m)
+Hcol = 3.0             % altura columna (m)
+
+% ─── Material: hormigón f'c=210 ───
+fc = 210               % kg/cm² → tonf/m²
+E = 15100 * sqrt(fc) * 100  % E en tonf/m²
+nu = 0.2
+G = E / (2*(1+nu))
+
+% ─── Malla zapata: 4x4 = 16 shells Q4 ───
+nx = 4
+ny = 4
+dx = Bz / nx
+dy = Lz / ny
+
+% Generar nodos de zapata (z=0)
+n_zap = (nx+1) * (ny+1)   % 25 nodos
+nodes_zap = zeros(n_zap, 3)
+k = 1
+for j = 0:ny
+  for i = 0:nx
+    nodes_zap(k,:) = [i*dx, j*dy, 0]
+    k = k + 1
+  end
+end
+
+% Nodo central zapata (para conectar pedestal)
+ix_center = round(nx/2)
+iy_center = round(ny/2)
+nodo_centro = iy_center*(nx+1) + ix_center + 1
+
+% Nodo top pedestal
+n_ped = n_zap + 1
+nodes_ped = [Bz/2, Lz/2, Hped]
+
+% Nodo top columna
+n_col = n_ped + 1
+nodes_col = [Bz/2, Lz/2, Hped + Hcol]
+
+% Total nodos
+nnodes = n_zap + 2
+ndof = nnodes * 6
+
+% ─── Conectividad shells (zapata) ───
+elem_shell = zeros(nx*ny, 4)
+e = 1
+for j = 0:ny-1
+  for i = 0:nx-1
+    n1 = j*(nx+1) + i + 1
+    n2 = n1 + 1
+    n3 = n2 + (nx+1)
+    n4 = n1 + (nx+1)
+    elem_shell(e,:) = [n1, n2, n3, n4]
+    e = e + 1
+  end
+end
+n_shells = nx * ny     % 16 shells
+
+% ─── Conectividad frames ───
+% Pedestal: nodo_centro → n_ped
+% Columna:  n_ped → n_col
+elem_frame = [nodo_centro, n_ped; n_ped, n_col]
+n_frames = 2
+
+% ─── Secciones ───
+% Columna/pedestal
+Ac = bc * hc
+Izc = bc * hc^3 / 12
+Iyc = hc * bc^3 / 12
+Jc = bc * hc * (bc^2 + hc^2) / 12
+
+% ─── K local frame Timoshenko (12x12) ───
+% @$K_{local} = \\begin{bmatrix} \\frac{EA}{L} & \\cdots \\\\ \\vdots & \\ddots \\end{bmatrix}$@
+
+Lped = Hped
+a1 = E * Ac / Lped
+b1 = 12 * E * Izc / Lped^3
+c1 = 6 * E * Izc / Lped^2
+d1 = 4 * E * Izc / Lped
+e1 = 2 * E * Izc / Lped
+f1 = 12 * E * Iyc / Lped^3
+g1 = 6 * E * Iyc / Lped^2
+h1 = 4 * E * Iyc / Lped
+p1 = 2 * E * Iyc / Lped
+t1 = G * Jc / Lped
+
+K_ped = [a1  0   0   0   0   0  -a1  0   0   0   0   0;
+         0   b1  0   0   0   c1  0  -b1  0   0   0   c1;
+         0   0   f1  0  -g1  0   0   0  -f1  0  -g1  0;
+         0   0   0   t1  0   0   0   0   0  -t1  0   0;
+         0   0  -g1  0   h1  0   0   0   g1  0   p1  0;
+         0   c1  0   0   0   d1  0  -c1  0   0   0   e1;
+        -a1  0   0   0   0   0   a1  0   0   0   0   0;
+         0  -b1  0   0   0  -c1  0   b1  0   0   0  -c1;
+         0   0  -f1  0   g1  0   0   0   f1  0   g1  0;
+         0   0   0  -t1  0   0   0   0   0   t1  0   0;
+         0   0  -g1  0   p1  0   0   0   g1  0   h1  0;
+         0   c1  0   0   0   e1  0  -c1  0   0   0   d1]
+
+% ─── K local Shell Q4 (Mindlin-Reissner) ───
+% @$D_{flex} = \\frac{Eh^3}{12(1-\\nu^2)}$@
+D_flex = E * hz^3 / (12 * (1 - nu^2))
+
+% @$D_m = \\frac{Eh}{1-\\nu^2} \\begin{bmatrix} 1 & \\nu & 0 \\\\ \\nu & 1 & 0 \\\\ 0 & 0 & \\frac{1-\\nu}{2} \\end{bmatrix}$@
+Dm = E * hz / (1 - nu^2) * [1, nu, 0; nu, 1, 0; 0, 0, (1-nu)/2]
+
+% ─── Cargas ───
+P = -50                % carga vertical (tonf) en top columna
+
+% ─── Apoyos: todos los nodos de zapata restringidos en Z ───
+% (suelo rígido — simplificación)
+% En realidad usaríamos springs de Winkler: ks = 3000 tonf/m³
+
+% ─── Resumen ───
+n_total_elem = n_shells + n_frames
 `;
 }
