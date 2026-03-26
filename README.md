@@ -1,64 +1,165 @@
-Awatif.co helps you build parametric structural engineering apps that run on the web or offline, featuring real-time FEM analysis and design. 
+# Hekatan Struct
 
-- For more information, check our website: https://awatif.co/
-- To understand the vision, watch this video: https://www.youtube.com/watch?v=QkoFJGfD7rc
-- To understand the architecture, watch this video: https://www.youtube.com/watch?v=4NdFQGouIjU
+**Structural FEM analysis platform that runs entirely in the browser.** No installation, no server — C++/Eigen solver compiled to WebAssembly, Three.js 3D visualization, reactive UI with VanJS.
+
+Based on [awatif v2.0.0](https://github.com/madil4/awatif/tree/v2.0.0) by Mohamed Adil.
+
+🌐 **Live:** [giorgioburbanelli89.github.io/awatif-workspace/workspace/](https://giorgioburbanelli89.github.io/awatif-workspace/workspace/)
+
+## What's Different from Awatif
+
+| Feature | Awatif v2.0.0 | Hekatan Struct |
+|---------|:---:|:---:|
+| Timoshenko beams | ❌ Euler-Bernoulli only | ✅ φ = 12EI/GA_sL² |
+| Shell Q4 incompatible modes | ❌ | ✅ Wilson + drilling DOF |
+| Mindlin-Reissner plates | ❌ | ✅ MITC4 shear tying |
+| Modal analysis | ❌ | ✅ Eigen C++/WASM |
+| Nonlinear pushover | ❌ | ✅ Newton-Raphson |
+| Rigid end offsets | ❌ | ✅ R^T·K·R |
+| Moment releases | ❌ | ✅ Static condensation |
+| Import E2K (ETABS) | ❌ | ✅ |
+| Import S2K (SAP2000) | ❌ | ✅ |
+| Import IFC (Revit/ArchiCAD) | ❌ | ✅ web-ifc WASM |
+| Export E2K / S2K | ❌ | ✅ |
+| Export OpenSees (Py/Tcl) | ❌ | ✅ |
+| Didactic FEM solver | ❌ | ✅ K_local, T, K_global per element |
+| Calc panel (math.js + KaTeX) | ❌ | ✅ MATLAB-like with symbolic math |
+| Parametric building generator | Basic | ✅ Per-axis spans, per-floor heights, overhangs |
+| ETABS-style releases UI | ❌ | ✅ 6 DOFs × 2 ends + springs |
+| Section assignment dialog | ❌ | ✅ Rect, circular, I-shape, HSS, CFT |
+| Mobile responsive | ❌ | ✅ Hamburger menu |
+| Validated vs ETABS 22.6 | ❌ | ✅ Frames 1.0000, Shells 0.99-1.003 |
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────┐
+│                    Browser                            │
+│                                                      │
+│  ┌─────────────┐  ┌──────────────┐  ┌─────────────┐ │
+│  │  awatif-ui   │  │  awatif-fem   │  │  examples   │ │
+│  │  (Three.js)  │  │  (C++/WASM)  │  │  (getCad3d) │ │
+│  │  VanJS       │  │  Eigen 3.4   │  │  FEM Studio │ │
+│  │  Tweakpane   │  │  SparseLU    │  │  Calc Panel │ │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬──────┘ │
+│         │    signals       │                 │        │
+│         └─────────────────┼─────────────────┘        │
+│                           │                          │
+│                    ┌──────┴───────┐                   │
+│                    │  deform.wasm │ 334 KB            │
+│                    │  (Eigen C++) │                   │
+│                    └──────────────┘                   │
+└──────────────────────────────────────────────────────┘
+```
+
+### Packages
+
+| Package | Description |
+|---------|-------------|
+| `awatif-fem` | FEM solver: `deform()`, `modal()`, `analyze()`, C++/WASM bindings |
+| `awatif-ui` | UI: `getViewer()` (Three.js), `getParameters()` (Tweakpane), `getToolbar()` |
+| `examples` | All examples + `getCad3d.ts` (FEM Studio with 25+ parametric models) |
+
+### C++ Solver (awatif-fem/src/cpp/)
+
+| File | Description |
+|------|-------------|
+| `deform.cpp` | Static analysis entry point |
+| `modal.cpp` | Eigenvalue analysis (K·φ = ω²·M·φ) |
+| `didactic.cpp` | Didactic solver — returns all intermediate steps |
+| `nonlinear.cpp` | Newton-Raphson nonlinear static |
+| `cyclic_pushover.cpp` | Cyclic pushover analysis |
+| `utils/getLocalStiffnessMatrix.cpp` | K_local 12×12 (Timoshenko) + Q4 shell |
+| `utils/getTransformationMatrix.cpp` | T matrix (3D rotation) |
+| `utils/getGlobalStiffnessMatrix.cpp` | Assembly with rigid offsets + releases |
+| `utils/shellQ4.cpp` | Shell Q4: membrane (incompatible modes) + Mindlin plate + drilling DOF |
+
+### Import/Export
+
+| Format | Import | Export | Software |
+|--------|:---:|:---:|----------|
+| E2K | ✅ | ✅ | ETABS |
+| S2K | ✅ | ✅ | SAP2000 |
+| IFC | ✅ | — | Revit, ArchiCAD |
+| OpenSeesPy | ✅ | ✅ | OpenSees |
+| OpenSees Tcl | ✅ | ✅ | OpenSees |
 
 ## Getting Started
-To get started with Awatif, follow these steps:
+
 ```bash
-git clone https://github.com/madil4/awatif.git
-cd awatif
+git clone https://github.com/GiorgioBurbanelli89/awatif-workspace.git
+cd awatif-workspace
 npm install
-npm run dev:examples
-```
-The default example will open in your browser. To view a different example, change the URL accordingly.
-
-## Roadmap
-- [x] FEM: Bar & beam elements [Example](https://awatif.co/examples/1d-mesh/)
-- [x] FEM: Plate & shell elements [Example](https://awatif.co/examples/plate/)
-- [x] FEM: Static simulations [Example](https://awatif.co/examples/3d-structure/)
-- [ ] FEM: Dynamic simulations
-- [ ] FEM: Nonlinear analysis
-- [x] FEM: Meshing [Example](https://awatif.co/examples/2d-mesh/)
-- [ ] Design: Member checks (coming soon)
-- [ ] Design: Connection checks
-- [x] UI: Tabular editing [Example](https://awatif.co/examples/tables/)
-- [x] UI: Drawing [Example](https://awatif.co/examples/drawing/)
-- [x] UI: Reporting [Example](https://awatif.co/examples/report/)
-- [ ] UI: Element selection
-- [x] Structural Systems: Truss design [Example](https://awatif.co/examples/advanced-truss/)
-- [ ] Structural Systems: Slab Design (coming soon)
-
-## Stack 
-1. **VanJS**: for handling reactive state [Docs](https://vanjs.org/)
-2. **Three.js**: for 3D rendering and math operations [Docs](https://threejs.org/)
-3. **Lit-html**: for templating [Docs](https://lit.dev/docs/libraries/standalone-templates/)
-4. **W2UI**: for UI components [Docs](https://w2ui.com/web/home)
-
-## Coding style
-Here is a typical function with structure and style in mind:
-```ts
-function mesh({ polygon }: { polygon: number[] }): { elements: number[][] } {
-  // Init
-  const elements = [];
-
-  // Update
-  elements.push([1, 2, 3]);
-
-  // Events
-  van.drive(() => {
-    render(elements.val);
-  });
-
-  return { elements };
-}
+cd examples && npm install
+npm run dev    # opens localhost:4600
 ```
 
-- Focus on simplicity and stick to core features. Prioritize the minimum viable product by identifying essential elements. The system is already complex, and additional complexity will naturally arise, so maintaining simplicity is crucial.
-- Functions should fully describe their inputs and outputs using types to improve interfacing with other functions.
-- To organize the logic and improves readability, divide it into three blocks, as shown above:
-  - Init: Initializes all variables.
-  - Update: Updates variables.
-  - Events: Handles event listeners.
-- If a function has no return value, it modifies a global state, which is generally not recommended as it can lead to more bugs over time. However, if unavoidable due to legacy code, consider using reactive objects and handling changes as events using the signal approach.
+### Compile WASM (requires emsdk)
+
+```bash
+# Install emsdk (one time)
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk && ./emsdk install latest && ./emsdk activate latest
+
+# Compile solver
+cd awatif-fem/src/cpp
+em++ -O2 -Ieigen -I. \
+  didactic.cpp utils/*.cpp \
+  -sEXPORTED_FUNCTIONS=[_didactic_solve,_malloc,_free] \
+  -sALLOW_MEMORY_GROWTH=1 -sMODULARIZE=1 -sEXPORT_ES6=1 \
+  --no-entry -o built/deform.js
+```
+
+### Deploy to GitHub Pages
+
+```bash
+cd examples
+DEPLOY_BASE="/awatif-workspace/" npx vite build --emptyOutDir
+# Copy build output to deploy-gh-pages/ and push to gh-pages branch
+```
+
+## Validation
+
+Solver validated against ETABS 22.6 via Python API (comtypes):
+
+| Test | awatif/ETABS Ratio |
+|------|:---:|
+| Cantilever Timoshenko | 1.0000 |
+| Portal frame | 1.0000 |
+| 3D Space frame | 1.0000 |
+| Shell Q4 membrane | 0.99–1.003 |
+| Shell Q4 plate bending | 0.99–1.01 |
+| Modal analysis (6 modes) | 1.0000 |
+
+## Stack
+
+| Technology | Purpose |
+|-----------|---------|
+| **C++ / Eigen 3.4** | FEM solver (SparseLU, eigenvalues) |
+| **Emscripten** | C++ → WebAssembly compiler |
+| **Three.js** | 3D rendering (WebGL) |
+| **VanJS** | Reactive state management (1.5 KB) |
+| **Tweakpane** | Parameter sliders UI |
+| **math.js** | Matrix operations in calc panel |
+| **KaTeX** | LaTeX equation rendering |
+| **nerdamer** | Symbolic math (derivatives, integrals) |
+| **web-ifc** | IFC geometry parser (WASM) |
+| **Vite** | Build tool / dev server |
+
+## Author
+
+**Jorge Burbano** — Structural Engineer, Ecuador
+- LinkedIn: [jorge-burbano-213741138](https://www.linkedin.com/in/jorge-burbano-213741138/)
+- Also creator of [Hekatan Calc](https://github.com/GiorgioBurbanelli89) — math/engineering desktop app (.NET/WPF)
+
+## Credits
+
+- [awatif v2.0.0](https://github.com/madil4/awatif/tree/v2.0.0) by Mohamed Adil — original UI framework and viewer
+- [Eigen 3.4](https://eigen.tuxfamily.org/) — C++ linear algebra
+- [web-ifc](https://github.com/ThatOpen/engine_web-ifc) — IFC parser by That Open Company
+- Dr. Roberto Aguiar — Timoshenko beam formulation and parametric building methodology
+- Edward Wilson — Shell element formulation (incompatible modes, drilling DOF)
+
+## License
+
+Based on awatif (MIT License). See [LICENSE](LICENSE) for details.
