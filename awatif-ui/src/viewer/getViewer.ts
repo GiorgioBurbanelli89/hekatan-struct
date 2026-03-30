@@ -347,6 +347,12 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
     bendingXX = "bendingXX",
     bendingYY = "bendingYY",
     bendingXY = "bendingXY",
+    membraneXX = "membraneXX",
+    membraneYY = "membraneYY",
+    membraneXY = "membraneXY",
+    tranverseShearX = "tranverseShearX",
+    tranverseShearY = "tranverseShearY",
+    vonMises = "vonMises",
     displacementX = "displacementX",
     displacementY = "displacementY",
     displacementZ = "displacementZ",
@@ -358,15 +364,20 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
     const nodeBendingXX = new Map<number, number[]>();
     const nodeBendingYY = new Map<number, number[]>();
     const nodeBendingXY = new Map<number, number[]>();
+    const nodeMembraneXX = new Map<number, number[]>();
+    const nodeMembraneYY = new Map<number, number[]>();
+    const nodeMembraneXY = new Map<number, number[]>();
+    const nodeShearX = new Map<number, number[]>();
+    const nodeShearY = new Map<number, number[]>();
+    const nodeVonMises = new Map<number, number[]>();
 
-    // Map element bending results to node values.
+    // Map element results to node values.
     // Supports 3-node (triangle) and 4-node (quad) elements.
-    // For quads: vals may have 3 entries (element-center); assign to all 4 nodes.
-    const mapBendingToNodes = (
-      bendingMap: Map<number, [number, number, number]> | undefined,
+    const mapResultToNodes = (
+      resultMap: Map<number, number[]> | undefined,
       nodeMap: Map<number, number[]>
     ) => {
-      bendingMap?.forEach((vals, elementIndex) => {
+      resultMap?.forEach((vals, elementIndex) => {
         const elem = mesh.elements.val[elementIndex];
         if (!elem) return;
         for (let i = 0; i < elem.length; i++) {
@@ -375,14 +386,26 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
       });
     };
 
-    mapBendingToNodes(mesh.analyzeOutputs?.val?.bendingXX, nodeBendingXX);
-    mapBendingToNodes(mesh.analyzeOutputs?.val?.bendingYY, nodeBendingYY);
-    mapBendingToNodes(mesh.analyzeOutputs?.val?.bendingXY, nodeBendingXY);
+    mapResultToNodes(mesh.analyzeOutputs?.val?.bendingXX, nodeBendingXX);
+    mapResultToNodes(mesh.analyzeOutputs?.val?.bendingYY, nodeBendingYY);
+    mapResultToNodes(mesh.analyzeOutputs?.val?.bendingXY, nodeBendingXY);
+    mapResultToNodes(mesh.analyzeOutputs?.val?.membraneXX, nodeMembraneXX);
+    mapResultToNodes(mesh.analyzeOutputs?.val?.membraneYY, nodeMembraneYY);
+    mapResultToNodes(mesh.analyzeOutputs?.val?.membraneXY, nodeMembraneXY);
+    mapResultToNodes(mesh.analyzeOutputs?.val?.tranverseShearX, nodeShearX);
+    mapResultToNodes(mesh.analyzeOutputs?.val?.tranverseShearY, nodeShearY);
+    mapResultToNodes(mesh.analyzeOutputs?.val?.vonMises, nodeVonMises);
 
     const resultMapper = {
       [ResultType.bendingXX]: [nodeBendingXX, 0],
       [ResultType.bendingYY]: [nodeBendingYY, 0],
       [ResultType.bendingXY]: [nodeBendingXY, 0],
+      [ResultType.membraneXX]: [nodeMembraneXX, 0],
+      [ResultType.membraneYY]: [nodeMembraneYY, 0],
+      [ResultType.membraneXY]: [nodeMembraneXY, 0],
+      [ResultType.tranverseShearX]: [nodeShearX, 0],
+      [ResultType.tranverseShearY]: [nodeShearY, 0],
+      [ResultType.vonMises]: [nodeVonMises, 0],
       [ResultType.displacementX]: [mesh.deformOutputs?.val?.deformations, 0],
       [ResultType.displacementY]: [mesh.deformOutputs?.val?.deformations, 1],
       [ResultType.displacementZ]: [mesh.deformOutputs?.val?.deformations, 2],

@@ -10436,16 +10436,14 @@ Util:     cad.info()  cad.clear()  cad.help()
 
   /** Muro de corte cantilever Q4 — validacion vs OpenSees/SAP2000/ETABS */
   function generateShearWallQ4() {
-    const gp = geoDefs["muro-q4"] || [];
-    const getD = (k: string, def: number) => { const p = gp.find((p: any) => p.key === k); return p ? p.val : def; };
-    const W  = paramState["W"]  ?? getD("W", 5);
-    const H  = paramState["H"]  ?? getD("H", 3);
-    const t  = paramState["t"]  ?? getD("t", 0.2);
-    const nx = Math.round(paramState["nx"] ?? getD("nx", 8));
-    const ny = Math.round(paramState["ny"] ?? getD("ny", 6));
-    const E  = paramState["E"]  ?? getD("E", 25e6);
-    const nu = paramState["nu"] ?? getD("nu", 0.2);
-    const P  = paramState["P"]  ?? getD("P", 100);
+    const W  = generatorParams["W"]?.val ?? 5;
+    const H  = generatorParams["H"]?.val ?? 3;
+    const t  = generatorParams["t"]?.val ?? 0.2;
+    const nx = Math.round(generatorParams["nx"]?.val ?? 8);
+    const ny = Math.round(generatorParams["ny"]?.val ?? 6);
+    const E  = generatorParams["E"]?.val ?? 25e6;
+    const nu = generatorParams["nu"]?.val ?? 0.2;
+    const P  = generatorParams["P"]?.val ?? 100;
     const G  = E / (2*(1+nu));
     const dx = W/nx, dz = H/ny;
 

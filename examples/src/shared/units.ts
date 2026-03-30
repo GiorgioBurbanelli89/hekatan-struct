@@ -392,6 +392,16 @@ export function getGeneratorParams(u: UnitSystem) {
       { key: "nu",       val: 0.30, min: 0.0, max: 0.49, step: 0.01, label: `v` },
       { key: "P",        val: -300, min: -3000, max: 0, step: 25,   label: `P axial (${u.force})` },
     ],
+    "muro-q4": [
+      { key: "W",  val: 5.0,  min: 1,  max: 20,  step: 0.5, label: `Ancho W (${u.length})` },
+      { key: "H",  val: 3.0,  min: 1,  max: 15,  step: 0.5, label: `Alto H (${u.length})` },
+      { key: "t",  val: 0.2,  min: 0.05, max: 1.0, step: 0.05, label: `Espesor t (${u.length})` },
+      { key: "nx", val: 8,    min: 2,  max: 20,  step: 1,   label: `Mesh nx` },
+      { key: "ny", val: 6,    min: 2,  max: 20,  step: 1,   label: `Mesh ny` },
+      { key: "E",  val: 25e6, min: 1e4, max: 1e9, step: 1e5, label: `E (${u.stress})` },
+      { key: "nu", val: 0.2,  min: 0.0, max: 0.49, step: 0.01, label: `v` },
+      { key: "P",  val: 100,  min: 1,  max: 5000, step: 10,  label: `P lateral (${u.force})` },
+    ],
     "eiffel": [], "arco": [], "puente": [], "twisted": [],
     "burj": [], "opera": [], "diagrid": [],
     "talud": [
@@ -461,6 +471,7 @@ export function getLoadParams(u: UnitSystem) {
     "placa-orificios": [],
     "col-placa": [],
     "talud": [],
+    "muro-q4": [],
     "eiffel": [], "arco": [], "puente": [], "twisted": [],
     "burj": [], "opera": [], "diagrid": [],
   };

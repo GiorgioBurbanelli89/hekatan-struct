@@ -80,14 +80,15 @@ export type AnalyzeOutputs = {
   torsions?: Map<number, [number, number]>;
   bendingsY?: Map<number, [number, number]>;
   bendingsZ?: Map<number, [number, number]>;
-  bendingXX?: Map<number, [number, number, number]>;
-  bendingYY?: Map<number, [number, number, number]>;
-  bendingXY?: Map<number, [number, number, number]>;
-  membraneXX?: Map<number, [number, number, number]>;
-  membraneYY?: Map<number, [number, number, number]>;
-  membraneXY?: Map<number, [number, number, number]>;
-  tranverseShearX?: Map<number, [number, number, number]>;
-  tranverseShearY?: Map<number, [number, number, number]>;
+  bendingXX?: Map<number, number[]>;
+  bendingYY?: Map<number, number[]>;
+  bendingXY?: Map<number, number[]>;
+  membraneXX?: Map<number, number[]>;
+  membraneYY?: Map<number, number[]>;
+  membraneXY?: Map<number, number[]>;
+  tranverseShearX?: Map<number, number[]>;
+  tranverseShearY?: Map<number, number[]>;
+  vonMises?: Map<number, number[]>;
 };
 
 export type ModalOutputs = {
