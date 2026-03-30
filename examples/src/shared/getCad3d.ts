@@ -2091,6 +2091,9 @@ VIEW:
         case "diagrid": case "gherkin": {
           cli.clear(); setGenerator("diagrid"); generateDiagrid(); break;
         }
+        case "muro-q4": case "shear-wall": case "muro-cantilever": {
+          cli.clear(); setGenerator("muro-q4"); generateShearWallQ4(); break;
+        }
         default: console.error(`Ejemplo desconocido: "${name}".`);
       }
     },
@@ -2335,6 +2338,7 @@ Util:     cad.info()  cad.clear()  cad.help()
       case "burj": generateBurjKhalifa(); break;
       case "opera": generateSydneyOpera(); break;
       case "diagrid": generateDiagrid(); break;
+      case "muro-q4": generateShearWallQ4(); break;
     }
     // For generators that build their own loads (beams, 3d, truss, placa-q4), keep them.
     // For frame/edificio/galpon (use cli.frame/building/galpon), clear loads so runAnalysis creates them.
@@ -5426,6 +5430,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         <button data-ex="burj">Burj</button>
         <button data-ex="opera">Opera</button>
         <button data-ex="diagrid">Diagrid</button>
+        <button data-ex="muro-q4">Muro Q4</button>
       </div>
       <div class="btn-row" style="margin-top:4px">
         <button data-view="3d" class="view-active">3D</button>
@@ -10427,6 +10432,72 @@ Util:     cad.info()  cad.clear()  cad.help()
     try { const dOut = deform(nodes, elements, { supports, loads } as any, ei); if (dOut && mesh.deformOutputs) mesh.deformOutputs.val = dOut; } catch (e: any) { console.warn("Diagrid:", e.message); }
     setTimeout(() => autoFitGridSize(), 50); updatePanel();
     console.log(`Diagrid Tower: ${nodes.length} nodos, ${elements.length} elem, ${nFloors} pisos, H=${nFloors*H_floor}m`);
+  }
+
+  /** Muro de corte cantilever Q4 — validacion vs OpenSees/SAP2000/ETABS */
+  function generateShearWallQ4() {
+    const gp = geoDefs["muro-q4"] || [];
+    const getD = (k: string, def: number) => { const p = gp.find((p: any) => p.key === k); return p ? p.val : def; };
+    const W  = paramState["W"]  ?? getD("W", 5);
+    const H  = paramState["H"]  ?? getD("H", 3);
+    const t  = paramState["t"]  ?? getD("t", 0.2);
+    const nx = Math.round(paramState["nx"] ?? getD("nx", 8));
+    const ny = Math.round(paramState["ny"] ?? getD("ny", 6));
+    const E  = paramState["E"]  ?? getD("E", 25e6);
+    const nu = paramState["nu"] ?? getD("nu", 0.2);
+    const P  = paramState["P"]  ?? getD("P", 100);
+    const G  = E / (2*(1+nu));
+    const dx = W/nx, dz = H/ny;
+
+    const nodes: Node[] = [];
+    const elements: Element[] = [];
+    const supports = new Map<number, boolean[]>();
+    const loads = new Map<number, number[]>();
+
+    for (let j = 0; j <= ny; j++)
+      for (let i = 0; i <= nx; i++)
+        nodes.push([i*dx, 0, j*dz]);
+
+    const nNx = nx + 1;
+    for (let j = 0; j < ny; j++)
+      for (let i = 0; i < nx; i++)
+        elements.push([j*nNx+i, j*nNx+i+1, (j+1)*nNx+i+1, (j+1)*nNx+i]);
+
+    for (let i = 0; i <= nx; i++)
+      supports.set(i, [true,true,true,true,true,true]);
+
+    const topNodes: number[] = [];
+    for (let i = 0; i <= nx; i++) topNodes.push(ny*nNx + i);
+    const pn = P / topNodes.length;
+    for (const n of topNodes) loads.set(n, [pn, 0, 0, 0, 0, 0]);
+
+    mesh.nodes.val = nodes;
+    mesh.elements.val = elements;
+    if (mesh.nodeInputs) mesh.nodeInputs.val = { supports, loads } as any;
+
+    const ei: any = {
+      elasticities: new Map(elements.map((_,i) => [i, E])),
+      poissonsRatios: new Map(elements.map((_,i) => [i, nu])),
+      thicknesses: new Map(elements.map((_,i) => [i, t])),
+      shearModuli: new Map(elements.map((_,i) => [i, G])),
+      densities: new Map(elements.map((_,i) => [i, 24/9.80665])),
+    };
+    if (mesh.elementInputs) mesh.elementInputs.val = ei;
+
+    try {
+      const dOut = deform(nodes, elements, { supports, loads } as any, ei);
+      if (dOut && mesh.deformOutputs) {
+        mesh.deformOutputs.val = dOut;
+        const aOut = analyze(nodes, elements, ei, dOut);
+        if (mesh.analyzeOutputs) mesh.analyzeOutputs.val = aOut;
+        const topCenter = ny*nNx + Math.floor(nx/2);
+        const def = dOut.deformations.get(topCenter);
+        const ux = def ? def[0] : 0;
+        console.log(`Muro Q4: Ux=${ux.toExponential(4)} m | OS:4.602e-5 | SAP:4.629e-5 | ETABS:4.582e-5`);
+      }
+    } catch (e: any) { console.warn("MuroQ4:", e.message); }
+    setTimeout(() => autoFitGridSize(), 50);
+    updatePanel();
   }
 
   /** Solver Log panel — formatted with math notation */
