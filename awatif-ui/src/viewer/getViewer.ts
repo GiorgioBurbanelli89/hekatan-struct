@@ -327,15 +327,38 @@ function deriveNodes(
   return van.derive(() => {
     if (!settings.deformedShape.val) return mesh?.nodes?.val ?? [];
 
-    // Same as original awatif v2: node + deformation directly (no artificial scaling)
-    return (
-      mesh?.nodes?.val.map((node, index) => {
-        const d = mesh?.deformOutputs?.val?.deformations
-          ?.get(index)
-          ?.slice(0, 3) ?? [0, 0, 0];
-        return node.map((n, i) => n + d[i]) as Node;
-      }) ?? []
-    );
+    const nodes = mesh?.nodes?.val ?? [];
+    const deforms = mesh?.deformOutputs?.val?.deformations;
+    if (!deforms || nodes.length === 0) return nodes;
+
+    // Auto-scale: deformed shape should be ~5-10% of model size
+    // 1. Compute model bounding box diagonal
+    let minX = Infinity, minY = Infinity, minZ = Infinity;
+    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+    for (const n of nodes) {
+      if (n[0] < minX) minX = n[0]; if (n[0] > maxX) maxX = n[0];
+      if (n[1] < minY) minY = n[1]; if (n[1] > maxY) maxY = n[1];
+      if (n[2] < minZ) minZ = n[2]; if (n[2] > maxZ) maxZ = n[2];
+    }
+    const diag = Math.sqrt((maxX-minX)**2 + (maxY-minY)**2 + (maxZ-minZ)**2);
+
+    // 2. Find max deformation magnitude
+    let maxDeform = 0;
+    deforms.forEach((d) => {
+      const mag = Math.sqrt(d[0]**2 + d[1]**2 + d[2]**2);
+      if (mag > maxDeform) maxDeform = mag;
+    });
+
+    // 3. Scale factor: deformation should be ~7% of diagonal
+    const targetRatio = 0.07;
+    const scale = (maxDeform > 1e-30 && diag > 1e-30)
+      ? (targetRatio * diag) / maxDeform
+      : 1;
+
+    return nodes.map((node, index) => {
+      const d = deforms.get(index)?.slice(0, 3) ?? [0, 0, 0];
+      return node.map((n, i) => n + d[i] * scale) as Node;
+    });
   });
 }
 

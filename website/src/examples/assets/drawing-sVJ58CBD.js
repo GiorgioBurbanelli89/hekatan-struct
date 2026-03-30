@@ -1,6 +1,6 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { v as o } from "./theme-CzzIlc4y.js";
-import { g as k } from "./getViewer-CXJ9v-Sw.js";
+import { g as k } from "./getViewer-DAYUXN9p.js";
 import { g as x } from "./getParameters-D_F_vOn_.js";
 import { w as C, g as P } from "./styles-B8h3dtQW.js";
 import "./Text-CBH-tcJP.js";

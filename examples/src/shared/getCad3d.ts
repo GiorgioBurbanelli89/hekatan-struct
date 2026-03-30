@@ -2094,6 +2094,9 @@ VIEW:
         case "muro-q4": case "shear-wall": case "muro-cantilever": {
           cli.clear(); setGenerator("muro-q4"); generateShearWallQ4(); break;
         }
+        case "viga-q4": case "cantilever-beam": case "viga-cantilever": {
+          cli.clear(); setGenerator("viga-q4"); generateCantileverBeamQ4(); break;
+        }
         default: console.error(`Ejemplo desconocido: "${name}".`);
       }
     },
@@ -2339,6 +2342,7 @@ Util:     cad.info()  cad.clear()  cad.help()
       case "opera": generateSydneyOpera(); break;
       case "diagrid": generateDiagrid(); break;
       case "muro-q4": generateShearWallQ4(); break;
+      case "viga-q4": generateCantileverBeamQ4(); break;
     }
     // For generators that build their own loads (beams, 3d, truss, placa-q4), keep them.
     // For frame/edificio/galpon (use cli.frame/building/galpon), clear loads so runAnalysis creates them.
@@ -2351,7 +2355,7 @@ Util:     cad.info()  cad.clear()  cad.help()
       }
     }
     // Re-run analysis after regeneration (skip for plate solvers — they run their own)
-    const skipAnalysis = ["placa-q4", "placa-3q", "losa-rect", "losa-plana", "viga-alta", "muro-contencion", "zapata", "placa-orificios", "col-placa", "talud", "eiffel", "arco", "puente", "twisted", "burj", "opera", "diagrid", "muro-q4"];
+    const skipAnalysis = ["placa-q4", "placa-3q", "losa-rect", "losa-plana", "viga-alta", "muro-contencion", "zapata", "placa-orificios", "col-placa", "talud", "eiffel", "arco", "puente", "twisted", "burj", "opera", "diagrid", "muro-q4", "viga-q4"];
     if (!skipAnalysis.includes(activeGenerator)) {
       // Apply element deletions + visibility
       if (deletedElements.size > 0 || hiddenElements.size > 0 || isolateMode) {
@@ -5431,6 +5435,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         <button data-ex="opera">Opera</button>
         <button data-ex="diagrid">Diagrid</button>
         <button data-ex="muro-q4">Muro Q4</button>
+        <button data-ex="viga-q4">Viga Q4</button>
       </div>
       <div class="btn-row" style="margin-top:4px">
         <button data-view="3d" class="view-active">3D</button>
@@ -10498,6 +10503,73 @@ Util:     cad.info()  cad.clear()  cad.help()
     updatePanel();
   }
 
+  /** Viga cantilever discretizada con Q4 — placa horizontal empotrada un extremo, carga puntual */
+  function generateCantileverBeamQ4() {
+    const L  = generatorParams["L"]?.val ?? 6;
+    const h  = generatorParams["h"]?.val ?? 0.5;
+    const t  = generatorParams["t"]?.val ?? 0.2;
+    const nx = Math.round(generatorParams["nx"]?.val ?? 12);
+    const ny = Math.round(generatorParams["ny"]?.val ?? 4);
+    const E  = generatorParams["E"]?.val ?? 25e6;
+    const nu = generatorParams["nu"]?.val ?? 0.2;
+    const P  = generatorParams["P"]?.val ?? 50;
+    const G  = E / (2*(1+nu));
+    const dx = L/nx, dy = h/ny;
+
+    const nodes: Node[] = [];
+    const elements: Element[] = [];
+    const supports = new Map<number, boolean[]>();
+    const loads = new Map<number, number[]>();
+
+    // Nodes in XZ plane (horizontal beam: X=length, Z=height, Y=0)
+    for (let j = 0; j <= ny; j++)
+      for (let i = 0; i <= nx; i++)
+        nodes.push([i*dx, 0, j*dy]);
+
+    const nNx = nx + 1;
+    for (let j = 0; j < ny; j++)
+      for (let i = 0; i < nx; i++)
+        elements.push([j*nNx+i, j*nNx+i+1, (j+1)*nNx+i+1, (j+1)*nNx+i]);
+
+    // Fixed left edge (x=0)
+    for (let j = 0; j <= ny; j++)
+      supports.set(j * nNx, [true,true,true,true,true,true]);
+
+    // Load at tip (right edge, mid-height) — downward in Z
+    const tipMid = Math.floor(ny/2) * nNx + nx;
+    loads.set(tipMid, [0, 0, -P, 0, 0, 0]);
+
+    mesh.nodes.val = nodes;
+    mesh.elements.val = elements;
+    if (mesh.nodeInputs) mesh.nodeInputs.val = { supports, loads } as any;
+
+    const ei: any = {
+      elasticities: new Map(elements.map((_,i) => [i, E])),
+      poissonsRatios: new Map(elements.map((_,i) => [i, nu])),
+      thicknesses: new Map(elements.map((_,i) => [i, t])),
+      shearModuli: new Map(elements.map((_,i) => [i, G])),
+      densities: new Map(elements.map((_,i) => [i, 24/9.80665])),
+    };
+    if (mesh.elementInputs) mesh.elementInputs.val = ei;
+
+    try {
+      const dOut = deform(nodes, elements, { supports, loads } as any, ei);
+      if (dOut && mesh.deformOutputs) {
+        mesh.deformOutputs.val = dOut;
+        const aOut = analyze(nodes, elements, ei, dOut);
+        if (mesh.analyzeOutputs) mesh.analyzeOutputs.val = aOut;
+        const tipDef = dOut.deformations.get(tipMid);
+        const uz = tipDef ? tipDef[2] : 0;
+        // Analytical: delta = PL^3/(3EI) where I = t*h^3/12
+        const I_beam = t * h*h*h / 12;
+        const delta_ana = P * L*L*L / (3 * E * I_beam);
+        console.log(`Viga Q4: Uz_tip=${uz.toExponential(4)} | Analitico=${delta_ana.toExponential(4)} | ratio=${(Math.abs(uz)/delta_ana).toFixed(4)}`);
+      }
+    } catch (e: any) { console.warn("VigaQ4:", e.message); }
+    setTimeout(() => autoFitGridSize(), 50);
+    updatePanel();
+  }
+
   /** Solver Log panel — formatted with math notation */
   function showLogPanel() {
     document.getElementById("fem-log-panel")?.remove();
@@ -11724,11 +11796,10 @@ Util:     cad.info()  cad.clear()  cad.help()
   // Auto-start: generate default edificio so grid axes are visible on load
   setTimeout(() => {
     if (mesh.nodes.val.length === 0) {
-      setGenerator("edificio");
-      regenerateFromParams();
-      highlightExButton("edificio");
-      // Rebuild Luces pane after DOM is fully mounted
-      setTimeout(() => { if (activeGenerator === "edificio") rebuildTweakpane(); }, 200);
+      setGenerator("muro-q4");
+      generateShearWallQ4();
+      highlightExButton("muro-q4");
+      setTimeout(() => { if (activeGenerator === "muro-q4") rebuildTweakpane(); }, 200);
     }
   }, 100);
 

@@ -110,17 +110,21 @@ export function createHelpButton(): HTMLButtonElement {
   helpBtn.id = "help-tour-btn";
   helpBtn.innerHTML = "?";
   helpBtn.title = "Ayuda interactiva — Tour guiado";
-  helpBtn.style.cssText = `
-    position: fixed; bottom: 20px; right: 20px; z-index: 9999999;
-    width: 48px; height: 48px; border-radius: 50%;
-    background: linear-gradient(135deg, #0066cc, #0099ff);
-    color: white; border: 3px solid rgba(255,255,255,0.3);
-    font-size: 24px; font-weight: bold; cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0,102,204,0.4);
-    transition: transform 0.2s, box-shadow 0.2s;
-    font-family: 'Arial Nova', sans-serif;
-    animation: helpPulse 2s infinite;
-  `;
+  let minimized = false;
+  const setStyle = (min: boolean) => {
+    helpBtn!.style.cssText = min
+      ? `position:fixed;bottom:5px;right:5px;z-index:9999999;width:20px;height:20px;border-radius:50%;background:#555;color:#aaa;border:1px solid #777;font-size:10px;cursor:pointer;opacity:0.5;transition:all 0.2s;`
+      : `position:fixed;bottom:20px;right:20px;z-index:9999999;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0066cc,#0099ff);color:white;border:2px solid rgba(255,255,255,0.3);font-size:18px;font-weight:bold;cursor:pointer;box-shadow:0 2px 10px rgba(0,102,204,0.3);transition:all 0.2s;font-family:'Arial Nova',sans-serif;`;
+  };
+  setStyle(false);
+
+  // Right-click to minimize/restore
+  helpBtn.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    minimized = !minimized;
+    setStyle(minimized);
+    helpBtn!.innerHTML = minimized ? "?" : "?";
+  });
 
   helpBtn.addEventListener("mouseenter", () => {
     helpBtn!.style.transform = "scale(1.15)";
