@@ -231,11 +231,37 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
         return Eigen::MatrixXd::Zero(24, 24);
     }
 
-    // Use node coordinates directly (will be in local frame after transformation)
+    // Project global 3D node coordinates to local 2D shell frame
+    // This is critical for non-horizontal shells (e.g., vertical walls in XZ plane)
+    Eigen::Vector3d p0(nodes[0][0], nodes[0][1], nodes[0][2]);
+    Eigen::Vector3d p1(nodes[1][0], nodes[1][1], nodes[1][2]);
+    Eigen::Vector3d p2(nodes[2][0], nodes[2][1], nodes[2][2]);
+    Eigen::Vector3d p3(nodes[3][0], nodes[3][1], nodes[3][2]);
+
+    Eigen::Vector3d v01 = p1 - p0, v32 = p2 - p3;
+    Eigen::Vector3d localX = (v01 + v32);
+    double lenX = localX.norm();
+    if (lenX < 1e-12) return Eigen::MatrixXd::Zero(24, 24);
+    localX /= lenX;
+
+    Eigen::Vector3d d02 = p2 - p0, d13 = p3 - p1;
+    Eigen::Vector3d localZ = d02.cross(d13);
+    double lenZ = localZ.norm();
+    if (lenZ < 1e-12) return Eigen::MatrixXd::Zero(24, 24);
+    localZ /= lenZ;
+
+    Eigen::Vector3d localY = localZ.cross(localX);
+    localY.normalize();
+    localX = localY.cross(localZ);
+    localX.normalize();
+
+    Eigen::Vector3d center = 0.25 * (p0 + p1 + p2 + p3);
     double x[4], y[4];
+    Eigen::Vector3d pts[4] = {p0, p1, p2, p3};
     for (int i = 0; i < 4; i++) {
-        x[i] = nodes[i][0];
-        y[i] = nodes[i][1];
+        Eigen::Vector3d d = pts[i] - center;
+        x[i] = d.dot(localX);
+        y[i] = d.dot(localY);
     }
 
     Eigen::MatrixXd Km = getMembraneK(x, y, E, nu, t);   // 8×8
