@@ -1,16 +1,17 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { a as w } from "./analyze-ClLKGn9k.js";
-import { d as $, __tla as __tla_0 } from "./didacticCpp-37CtYHoI.js";
+import { d as $, __tla as __tla_0 } from "./didacticCpp-B1l_4wjL.js";
 import { v as e } from "./theme-CzzIlc4y.js";
 import { g as x } from "./getViewer-CXJ9v-Sw.js";
 import { g as y } from "./getParameters-D_F_vOn_.js";
-import { x as s, g as z } from "./styles-B8h3dtQW.js";
+import { x as o, g as z } from "./styles-B8h3dtQW.js";
 import { g as T } from "./getDialog-PPft_MKZ.js";
 import { g as S } from "./getReport-Cjz2ijBq.js";
-import { g as F, __tla as __tla_1 } from "./getCad3d-C5Y0s2wi.js";
+import { g as F, __tla as __tla_1 } from "./getCad3d-KSE0BYG1.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
 import "./Text-CBH-tcJP.js";
-import { __tla as __tla_2 } from "./getMesh-DLItsoq9.js";
+import { __tla as __tla_2 } from "./getMesh-B1dmlgUt.js";
+import "./__vite-browser-external-D7Ct-6yo.js";
 Promise.all([
   (() => {
     try {
@@ -32,7 +33,7 @@ Promise.all([
   })()
 ]).then(async () => {
   function C({ nodes: p, nodeInputs: u, elementInputs: b, deformOutputs: g, analyzeOutputs: f }) {
-    return s`
+    return o`
     <br />
     <header class="header">
       <div class="header-left">
@@ -85,7 +86,7 @@ Promise.all([
         <th>yCoord</th>
         <th>zCoord</th>
       </tr>
-      ${p.val.map((a, t) => s`
+      ${p.val.map((a, t) => o`
           <tr>
             <td><div class="custom-cell-content">${t}</div></td>
             <td>
@@ -121,7 +122,7 @@ Promise.all([
       </tr>
       ${[
       ...u.val.supports
-    ].map(([a, t]) => s`
+    ].map(([a, t]) => o`
           <tr>
             <td><div class="custom-cell-content">${a}</div></td>
             <td>
@@ -163,7 +164,7 @@ Promise.all([
       </tr>
       ${[
       ...g.val.reactions
-    ].map(([a, t]) => s`
+    ].map(([a, t]) => o`
           <tr>
             <td><div class="custom-cell-content">${a}</div></td>
             <td>
@@ -195,7 +196,7 @@ Promise.all([
       </tr>
       ${[
       ...f.val.normals
-    ].map(([a, t]) => s`
+    ].map(([a, t]) => o`
           <tr>
             <td><div class="custom-cell-content">${a}</div></td>
             <td>
@@ -223,8 +224,8 @@ Promise.all([
       min: 0,
       max: 500
     }
-  }, o = e.state([]), l = e.state([]), i = e.state({}), d = e.state({}), c = e.state({}), n = e.state({}), v = {
-    nodes: o,
+  }, s = e.state([]), l = e.state([]), i = e.state({}), d = e.state({}), c = e.state({}), n = e.state({}), v = {
+    nodes: s,
     elements: l,
     nodeInputs: i,
     elementInputs: d,
@@ -232,7 +233,7 @@ Promise.all([
     analyzeOutputs: n
   };
   e.derive(() => {
-    o.val = [
+    s.val = [
       [
         250,
         0,
@@ -316,7 +317,7 @@ Promise.all([
           100
         ]
       ])
-    }, c.val = $(o.val, l.val, i.val, d.val), n.val = w(o.val, l.val, d.val, c.val);
+    }, c.val = $(s.val, l.val, i.val, d.val), n.val = w(s.val, l.val, d.val, c.val);
   });
   const h = e.state(""), m = e.state(void 0);
   e.derive(() => {
@@ -326,7 +327,7 @@ Promise.all([
     }));
   });
   document.body.append(F({
-    nodes: o,
+    nodes: s,
     elements: l,
     nodeInputs: i,
     elementInputs: d

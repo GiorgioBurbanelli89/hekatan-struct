@@ -1,13 +1,14 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { v as t } from "./theme-CzzIlc4y.js";
-import { a as p } from "./analyze-ClLKGn9k.js";
-import { d as i, __tla as __tla_0 } from "./didacticCpp-37CtYHoI.js";
+import { a as l } from "./analyze-ClLKGn9k.js";
+import { d as i, __tla as __tla_0 } from "./didacticCpp-B1l_4wjL.js";
 import { g as r } from "./getViewer-CXJ9v-Sw.js";
 import { g as u } from "./getParameters-D_F_vOn_.js";
 import { g as d } from "./styles-B8h3dtQW.js";
-import { g as v, __tla as __tla_1 } from "./getMesh-DLItsoq9.js";
+import { g as v, __tla as __tla_1 } from "./getMesh-B1dmlgUt.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
 import "./Text-CBH-tcJP.js";
+import "./__vite-browser-external-D7Ct-6yo.js";
 Promise.all([
   (() => {
     try {
@@ -53,7 +54,7 @@ Promise.all([
     analyzeOutputs: t.state({})
   };
   t.derive(() => {
-    const { nodes: n, elements: s, boundaryIndices: l } = v({
+    const { nodes: n, elements: s, boundaryIndices: p } = v({
       points: [
         [
           0,
@@ -85,7 +86,7 @@ Promise.all([
       maxMeshSize: 0.5
     });
     a.nodeInputs.val = {
-      supports: new Map(l.map((o) => [
+      supports: new Map(p.map((o) => [
         o,
         [
           true,
@@ -128,7 +129,7 @@ Promise.all([
         e,
         100
       ]))
-    }, a.deformOutputs.val = i(n, s, a.nodeInputs.val, a.elementInputs.val), a.analyzeOutputs.val = p(n, s, a.elementInputs.val, a.deformOutputs.val);
+    }, a.deformOutputs.val = i(n, s, a.nodeInputs.val, a.elementInputs.val), a.analyzeOutputs.val = l(n, s, a.elementInputs.val, a.deformOutputs.val);
   });
   document.body.append(u(m), r({
     mesh: a,

@@ -1,5 +1,5 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { p as L, __tla as __tla_0 } from "./didacticCpp-37CtYHoI.js";
+import { p as L, __tla as __tla_0 } from "./didacticCpp-B1l_4wjL.js";
 Promise.all([
   (() => {
     try {

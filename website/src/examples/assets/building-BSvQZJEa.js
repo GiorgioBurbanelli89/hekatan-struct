@@ -3,9 +3,10 @@ import { v as a } from "./theme-CzzIlc4y.js";
 import { g as D } from "./getViewer-CXJ9v-Sw.js";
 import { g as O } from "./getParameters-D_F_vOn_.js";
 import { g as L } from "./styles-B8h3dtQW.js";
-import { g as x, a as G, b as H, c as j, d as C, __tla as __tla_0 } from "./getSolids-D0kQmDYb.js";
+import { g as x, a as G, b as H, c as j, d as C, __tla as __tla_0 } from "./getSolids-QejqrwEn.js";
 import "./Text-CBH-tcJP.js";
-import { __tla as __tla_1 } from "./getMesh-DLItsoq9.js";
+import { __tla as __tla_1 } from "./getMesh-B1dmlgUt.js";
+import "./__vite-browser-external-D7Ct-6yo.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
 Promise.all([
   (() => {

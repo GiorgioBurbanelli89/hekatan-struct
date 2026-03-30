@@ -1,14 +1,15 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { v as e } from "./theme-CzzIlc4y.js";
 import { a as y } from "./analyze-ClLKGn9k.js";
-import { d as z, __tla as __tla_0 } from "./didacticCpp-37CtYHoI.js";
+import { d as z, __tla as __tla_0 } from "./didacticCpp-B1l_4wjL.js";
 import { g as I } from "./getViewer-CXJ9v-Sw.js";
 import { g as S } from "./getParameters-D_F_vOn_.js";
 import { g as O } from "./styles-B8h3dtQW.js";
-import { g as M, __tla as __tla_1 } from "./getCad3d-C5Y0s2wi.js";
+import { g as M, __tla as __tla_1 } from "./getCad3d-KSE0BYG1.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
 import "./Text-CBH-tcJP.js";
-import { __tla as __tla_2 } from "./getMesh-DLItsoq9.js";
+import { __tla as __tla_2 } from "./getMesh-B1dmlgUt.js";
+import "./__vite-browser-external-D7Ct-6yo.js";
 Promise.all([
   (() => {
     try {
@@ -64,7 +65,7 @@ Promise.all([
       step: 0.5,
       label: "load (kN)"
     }
-  }, r = e.state([]), d = e.state([]), i = e.state({}), v = e.state({}), x = e.state({}), b = e.state({});
+  }, u = e.state([]), i = e.state([]), d = e.state({}), v = e.state({}), x = e.state({}), b = e.state({});
   e.derive(() => {
     const c = o.dx.value.val, f = o.dy.value.val, n = o.dz.value.val, l = o.divisions.value.val;
     let s = [], a = [];
@@ -163,27 +164,27 @@ Promise.all([
         ]
       ])
     }, p = {
-      elasticities: new Map(a.map((t, u) => [
-        u,
+      elasticities: new Map(a.map((t, r) => [
+        r,
         100
       ])),
-      areas: new Map(a.map((t, u) => [
-        u,
+      areas: new Map(a.map((t, r) => [
+        r,
         10
       ]))
     }, g = z(s, a, h, p), w = y(s, a, p, g);
-    r.val = s, d.val = a, i.val = h, v.val = p, x.val = g, b.val = w;
+    u.val = s, i.val = a, d.val = h, v.val = p, x.val = g, b.val = w;
   });
   document.body.append(M({
-    nodes: r,
-    elements: d,
-    nodeInputs: i,
+    nodes: u,
+    elements: i,
+    nodeInputs: d,
     elementInputs: v
   }), S(o), I({
     mesh: {
-      nodes: r,
-      elements: d,
-      nodeInputs: i,
+      nodes: u,
+      elements: i,
+      nodeInputs: d,
       elementInputs: v,
       deformOutputs: x,
       analyzeOutputs: b

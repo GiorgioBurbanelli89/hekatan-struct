@@ -1,20 +1,86 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-let De, Dr, Mr, zr, Ur, Rr;
+let Te, Nr, Yr, Br, Lr, jr, xr;
 let __tla = (async () => {
-  De = async function(f = {}) {
-    var v, c = f, u = "./this.program", m = import.meta.url, k = "";
-    function oe(e) {
-      return c.locateFile ? c.locateFile(e, k) : k + e;
+  let Dr, Hr, or;
+  Dr = "modulepreload";
+  Hr = function(f, m) {
+    return new URL(f, m).href;
+  };
+  or = {};
+  Nr = function(m, c, u) {
+    let h = Promise.resolve();
+    if (c && c.length > 0) {
+      const H = document.getElementsByTagName("link"), D = document.querySelector("meta[property=csp-nonce]"), G = (D == null ? void 0 : D.nonce) || (D == null ? void 0 : D.getAttribute("nonce"));
+      h = Promise.allSettled(c.map((z) => {
+        if (z = Hr(z, u), z in or) return;
+        or[z] = true;
+        const X = z.endsWith(".css"), J = X ? '[rel="stylesheet"]' : "";
+        if (!!u) for (let p = H.length - 1; p >= 0; p--) {
+          const w = H[p];
+          if (w.href === z && (!X || w.rel === "stylesheet")) return;
+        }
+        else if (document.querySelector(`link[href="${z}"]${J}`)) return;
+        const N = document.createElement("link");
+        if (N.rel = X ? "stylesheet" : Dr, X || (N.as = "script"), N.crossOrigin = "", N.href = z, G && N.setAttribute("nonce", G), document.head.appendChild(N), X) return new Promise((p, w) => {
+          N.addEventListener("load", p), N.addEventListener("error", () => w(new Error(`Unable to preload CSS for ${z}`)));
+        });
+      }));
     }
-    var Q, ne;
-    {
+    function _(H) {
+      const D = new Event("vite:preloadError", {
+        cancelable: true
+      });
+      if (D.payload = H, window.dispatchEvent(D), !D.defaultPrevented) throw H;
+    }
+    return h.then((H) => {
+      for (const D of H || []) D.status === "rejected" && _(D.reason);
+      return m().catch(_);
+    });
+  };
+  Te = async function(f = {}) {
+    var _a, _b, _c;
+    var m, c = f, u = !!globalThis.window, h = !!globalThis.WorkerGlobalScope, _ = ((_b = (_a = globalThis.process) == null ? void 0 : _a.versions) == null ? void 0 : _b.node) && ((_c = globalThis.process) == null ? void 0 : _c.type) != "renderer";
+    if (_) {
+      const { createRequire: e } = await Nr(() => import("./__vite-browser-external-D7Ct-6yo.js").then((r) => r._), [], import.meta.url);
+      var H = e(import.meta.url);
+    }
+    var D = "./this.program", G = import.meta.url, z = "";
+    function X(e) {
+      return c.locateFile ? c.locateFile(e, z) : z + e;
+    }
+    var J, L;
+    if (_) {
+      var N = H("fs");
+      G.startsWith("file:") && (z = H("path").dirname(H("url").fileURLToPath(G)) + "/"), L = (e) => {
+        e = b(e) ? new URL(e) : e;
+        var r = N.readFileSync(e);
+        return r;
+      }, J = async (e, r = true) => {
+        e = b(e) ? new URL(e) : e;
+        var t = N.readFileSync(e, r ? void 0 : "utf8");
+        return t;
+      }, process.argv.length > 1 && (D = process.argv[1].replace(/\\/g, "/")), process.argv.slice(2);
+    } else if (u || h) {
       try {
-        k = new URL(".", m).href;
+        z = new URL(".", G).href;
       } catch {
       }
-      Q = async (e) => {
+      h && (L = (e) => {
+        var r = new XMLHttpRequest();
+        return r.open("GET", e, false), r.responseType = "arraybuffer", r.send(null), new Uint8Array(r.response);
+      }), J = async (e) => {
+        if (b(e)) return new Promise((t, n) => {
+          var s = new XMLHttpRequest();
+          s.open("GET", e, true), s.responseType = "arraybuffer", s.onload = () => {
+            if (s.status == 200 || s.status == 0 && s.response) {
+              t(s.response);
+              return;
+            }
+            n(s.status);
+          }, s.onerror = n, s.send(null);
+        });
         var r = await fetch(e, {
           credentials: "same-origin"
         });
@@ -22,99 +88,100 @@ let __tla = (async () => {
         throw new Error(r.status + " : " + r.url);
       };
     }
-    var X = console.log.bind(console), j = console.error.bind(console), Z, K = false, re, E, g, z, p, h, M, T = false;
-    function U() {
-      var e = je.buffer;
-      g = new Int8Array(e), c.HEAPU8 = z = new Uint8Array(e), c.HEAP32 = p = new Int32Array(e), c.HEAPU32 = h = new Uint32Array(e), c.HEAPF64 = new Float64Array(e), M = new BigInt64Array(e), new BigUint64Array(e);
+    var p = console.log.bind(console), w = console.error.bind(console), U, y = false, b = (e) => e.startsWith("file://"), ee, x, k, j, I, v, M, S = false;
+    function oe() {
+      var e = Ye.buffer;
+      k = new Int8Array(e), c.HEAPU8 = j = new Uint8Array(e), I = new Int32Array(e), c.HEAPU32 = v = new Uint32Array(e), c.HEAPF64 = new Float64Array(e), M = new BigInt64Array(e), new BigUint64Array(e);
     }
-    function $() {
+    function le() {
       if (c.preRun) for (typeof c.preRun == "function" && (c.preRun = [
         c.preRun
-      ]); c.preRun.length; ) he(c.preRun.shift());
-      de(Y);
+      ]); c.preRun.length; ) ne(c.preRun.shift());
+      he(Z);
     }
-    function G() {
-      T = true, !c.noFSInit && !o.initialized && o.init(), Ne.__wasm_call_ctors(), o.ignorePermissions = false;
+    function me() {
+      S = true, !c.noFSInit && !o.initialized && o.init(), Be.__wasm_call_ctors(), o.ignorePermissions = false;
     }
-    function W() {
+    function ce() {
       if (c.postRun) for (typeof c.postRun == "function" && (c.postRun = [
         c.postRun
-      ]); c.postRun.length; ) se(c.postRun.shift());
-      de(J);
+      ]); c.postRun.length; ) C(c.postRun.shift());
+      he(ye);
     }
-    function F(e) {
-      var _a;
-      (_a = c.onAbort) == null ? void 0 : _a.call(c, e), e = "Aborted(" + e + ")", j(e), K = true, e += ". Build with -sASSERTIONS for more info.";
+    function Y(e) {
+      var _a2;
+      (_a2 = c.onAbort) == null ? void 0 : _a2.call(c, e), e = "Aborted(" + e + ")", w(e), y = true, e += ". Build with -sASSERTIONS for more info.";
       var r = new WebAssembly.RuntimeError(e);
-      throw E == null ? void 0 : E(r), r;
+      throw x == null ? void 0 : x(r), r;
     }
-    var A;
-    function te() {
-      return c.locateFile ? oe("deform.wasm") : new URL("" + new URL("deform-yC5jykRs.wasm", import.meta.url).href, import.meta.url).href;
+    var re;
+    function ve() {
+      return c.locateFile ? X("deform.wasm") : new URL("" + new URL("deform-C8-DD1Fe.wasm", import.meta.url).href, import.meta.url).href;
     }
-    function ce(e) {
-      if (e == A && Z) return new Uint8Array(Z);
+    function pe(e) {
+      if (e == re && U) return new Uint8Array(U);
+      if (L) return L(e);
       throw "both async and sync fetching of the wasm failed";
     }
-    async function me(e) {
-      if (!Z) try {
-        var r = await Q(e);
+    async function se(e) {
+      if (!U) try {
+        var r = await J(e);
         return new Uint8Array(r);
       } catch {
       }
-      return ce(e);
+      return pe(e);
     }
-    async function fe(e, r) {
+    async function ae(e, r) {
       try {
-        var t = await me(e), n = await WebAssembly.instantiate(t, r);
+        var t = await se(e), n = await WebAssembly.instantiate(t, r);
         return n;
       } catch (s) {
-        j(`failed to asynchronously prepare wasm: ${s}`), F(s);
+        w(`failed to asynchronously prepare wasm: ${s}`), Y(s);
       }
     }
-    async function ve(e, r, t) {
-      if (!e) try {
+    async function Q(e, r, t) {
+      if (!e && !b(r) && !_) try {
         var n = fetch(r, {
           credentials: "same-origin"
         }), s = await WebAssembly.instantiateStreaming(n, t);
         return s;
       } catch (a) {
-        j(`wasm streaming compile failed: ${a}`), j("falling back to ArrayBuffer instantiation");
+        w(`wasm streaming compile failed: ${a}`), w("falling back to ArrayBuffer instantiation");
       }
-      return fe(r, t);
+      return ae(r, t);
     }
-    function I() {
+    function de() {
       var e = {
-        env: er,
-        wasi_snapshot_preview1: er
+        env: tr,
+        wasi_snapshot_preview1: tr
       };
       return e;
     }
-    async function pe() {
+    async function fe() {
       function e(a, i) {
-        return Ne = a.exports, br(Ne), U(), Ne;
+        return Be = a.exports, Tr(Be), oe(), Be;
       }
       function r(a) {
         return e(a.instance);
       }
-      var t = I();
+      var t = de();
       if (c.instantiateWasm) return new Promise((a, i) => {
         c.instantiateWasm(t, (l, d) => {
           a(e(l));
         });
       });
-      A ?? (A = te());
-      var n = await ve(Z, A, t), s = r(n);
+      re ?? (re = ve());
+      var n = await Q(U, re, t), s = r(n);
       return s;
     }
-    var de = (e) => {
+    var he = (e) => {
       for (; e.length > 0; ) e.shift()(c);
-    }, J = [], se = (e) => J.push(e), Y = [], he = (e) => Y.push(e), ae = globalThis.TextDecoder && new TextDecoder(), ye = (e, r, t, n) => {
+    }, ye = [], C = (e) => ye.push(e), Z = [], ne = (e) => Z.push(e), R = globalThis.TextDecoder && new TextDecoder(), $ = (e, r, t, n) => {
       for (var s = r + t; e[r] && !(r >= s); ) ++r;
       return r;
-    }, ie = (e, r = 0, t, n) => {
-      var s = ye(e, r, t);
-      if (s - r > 16 && e.buffer && ae) return ae.decode(e.subarray(r, s));
+    }, T = (e, r = 0, t, n) => {
+      var s = $(e, r, t);
+      if (s - r > 16 && e.buffer && R) return R.decode(e.subarray(r, s));
       for (var a = ""; r < s; ) {
         var i = e[r++];
         if (!(i & 128)) {
@@ -129,58 +196,58 @@ let __tla = (async () => {
         var d = e[r++] & 63;
         if ((i & 240) == 224 ? i = (i & 15) << 12 | l << 6 | d : i = (i & 7) << 18 | l << 12 | d << 6 | e[r++] & 63, i < 65536) a += String.fromCharCode(i);
         else {
-          var _ = i - 65536;
-          a += String.fromCharCode(55296 | _ >> 10, 56320 | _ & 1023);
+          var P = i - 65536;
+          a += String.fromCharCode(55296 | P >> 10, 56320 | P & 1023);
         }
       }
       return a;
-    }, R = (e, r, t) => e ? ie(z, e, r) : "", V = (e, r, t, n) => F(`Assertion failed: ${R(e)}, at: ` + [
-      r ? R(r) : "unknown filename",
+    }, F = (e, r, t) => e ? T(j, e, r) : "", Pe = (e, r, t, n) => Y(`Assertion failed: ${F(e)}, at: ` + [
+      r ? F(r) : "unknown filename",
       t,
-      n ? R(n) : "unknown function"
+      n ? F(n) : "unknown function"
     ]);
-    class ee {
+    class Ke {
       constructor(r) {
         this.excPtr = r, this.ptr = r - 24;
       }
       set_type(r) {
-        h[this.ptr + 4 >> 2] = r;
+        v[this.ptr + 4 >> 2] = r;
       }
       get_type() {
-        return h[this.ptr + 4 >> 2];
+        return v[this.ptr + 4 >> 2];
       }
       set_destructor(r) {
-        h[this.ptr + 8 >> 2] = r;
+        v[this.ptr + 8 >> 2] = r;
       }
       get_destructor() {
-        return h[this.ptr + 8 >> 2];
+        return v[this.ptr + 8 >> 2];
       }
       set_caught(r) {
-        r = r ? 1 : 0, g[this.ptr + 12] = r;
+        r = r ? 1 : 0, k[this.ptr + 12] = r;
       }
       get_caught() {
-        return g[this.ptr + 12] != 0;
+        return k[this.ptr + 12] != 0;
       }
       set_rethrown(r) {
-        r = r ? 1 : 0, g[this.ptr + 13] = r;
+        r = r ? 1 : 0, k[this.ptr + 13] = r;
       }
       get_rethrown() {
-        return g[this.ptr + 13] != 0;
+        return k[this.ptr + 13] != 0;
       }
       init(r, t) {
         this.set_adjusted_ptr(0), this.set_type(r), this.set_destructor(t);
       }
       set_adjusted_ptr(r) {
-        h[this.ptr + 16 >> 2] = r;
+        v[this.ptr + 16 >> 2] = r;
       }
       get_adjusted_ptr() {
-        return h[this.ptr + 16 >> 2];
+        return v[this.ptr + 16 >> 2];
       }
     }
-    var b = 0, O = (e, r, t) => {
-      var n = new ee(e);
-      throw n.init(r, t), b = e, b;
-    }, C = () => F(""), S = (e, r, t, n) => {
+    var De = 0, je = (e, r, t) => {
+      var n = new Ke(e);
+      throw n.init(r, t), De = e, De;
+    }, sr = () => Y(""), Ze = (e, r, t, n) => {
       if (!(n > 0)) return 0;
       for (var s = t, a = t + n - 1, i = 0; i < e.length; ++i) {
         var l = e.codePointAt(i);
@@ -199,70 +266,70 @@ let __tla = (async () => {
         }
       }
       return r[t] = 0, t - s;
-    }, we = (e, r, t) => S(e, z, r, t), Ke = (e, r, t, n) => {
-      var s = (/* @__PURE__ */ new Date()).getFullYear(), a = new Date(s, 0, 1), i = new Date(s, 6, 1), l = a.getTimezoneOffset(), d = i.getTimezoneOffset(), _ = Math.max(l, d);
-      h[e >> 2] = _ * 60, p[r >> 2] = +(l != d);
-      var B = (P) => {
-        var q = P >= 0 ? "-" : "+", Ee = Math.abs(P), ge = String(Math.floor(Ee / 60)).padStart(2, "0"), _e = String(Ee % 60).padStart(2, "0");
-        return `UTC${q}${ge}${_e}`;
-      }, N = B(l), w = B(d);
-      d < l ? (we(N, t, 17), we(w, n, 17)) : (we(N, n, 17), we(w, t, 17));
-    }, Be = () => 2147483648, Le = (e, r) => Math.ceil(e / r) * r, tr = (e) => {
-      var r = je.buffer.byteLength, t = (e - r + 65535) / 65536 | 0;
+    }, He = (e, r, t) => Ze(e, j, r, t), ar = (e, r, t, n) => {
+      var s = (/* @__PURE__ */ new Date()).getFullYear(), a = new Date(s, 0, 1), i = new Date(s, 6, 1), l = a.getTimezoneOffset(), d = i.getTimezoneOffset(), P = Math.max(l, d);
+      v[e >> 2] = P * 60, I[r >> 2] = +(l != d);
+      var V = (A) => {
+        var te = A >= 0 ? "-" : "+", we = Math.abs(A), Ee = String(Math.floor(we / 60)).padStart(2, "0"), ge = String(we % 60).padStart(2, "0");
+        return `UTC${te}${Ee}${ge}`;
+      }, K = V(l), g = V(d);
+      d < l ? (He(K, t, 17), He(g, n, 17)) : (He(K, n, 17), He(g, t, 17));
+    }, ir = () => 2147483648, lr = (e, r) => Math.ceil(e / r) * r, cr = (e) => {
+      var r = Ye.buffer.byteLength, t = (e - r + 65535) / 65536 | 0;
       try {
-        return je.grow(t), U(), 1;
+        return Ye.grow(t), oe(), 1;
       } catch {
       }
-    }, or = (e) => {
-      var r = z.length;
+    }, fr = (e) => {
+      var r = j.length;
       e >>>= 0;
-      var t = Be();
+      var t = ir();
       if (e > t) return false;
       for (var n = 1; n <= 4; n *= 2) {
         var s = r * (1 + 0.2 / n);
         s = Math.min(s, e + 100663296);
-        var a = Math.min(t, Le(Math.max(e, s), 65536)), i = tr(a);
+        var a = Math.min(t, lr(Math.max(e, s), 65536)), i = cr(a);
         if (i) return true;
       }
       return false;
-    }, $e = {}, nr = () => u || "./this.program", He = () => {
-      var _a;
-      if (!He.strings) {
-        var e = (((_a = globalThis.navigator) == null ? void 0 : _a.language) ?? "C").replace("-", "_") + ".UTF-8", r = {
+    }, We = {}, ur = () => D || "./this.program", Ne = () => {
+      var _a2;
+      if (!Ne.strings) {
+        var e = (((_a2 = globalThis.navigator) == null ? void 0 : _a2.language) ?? "C").replace("-", "_") + ".UTF-8", r = {
           USER: "web_user",
           LOGNAME: "web_user",
           PATH: "/",
           PWD: "/",
           HOME: "/home/web_user",
           LANG: e,
-          _: nr()
+          _: ur()
         };
-        for (var t in $e) $e[t] === void 0 ? delete r[t] : r[t] = $e[t];
+        for (var t in We) We[t] === void 0 ? delete r[t] : r[t] = We[t];
         var n = [];
         for (var t in r) n.push(`${t}=${r[t]}`);
-        He.strings = n;
+        Ne.strings = n;
       }
-      return He.strings;
-    }, sr = (e, r) => {
+      return Ne.strings;
+    }, dr = (e, r) => {
       var t = 0, n = 0;
-      for (var s of He()) {
+      for (var s of Ne()) {
         var a = r + t;
-        h[e + n >> 2] = a, t += we(s, a, 1 / 0) + 1, n += 4;
+        v[e + n >> 2] = a, t += He(s, a, 1 / 0) + 1, n += 4;
       }
       return 0;
-    }, Ze = (e) => {
+    }, Ge = (e) => {
       for (var r = 0, t = 0; t < e.length; ++t) {
         var n = e.charCodeAt(t);
         n <= 127 ? r++ : n <= 2047 ? r += 2 : n >= 55296 && n <= 57343 ? (r += 4, ++t) : r += 3;
       }
       return r;
-    }, ar = (e, r) => {
-      var t = He();
-      h[e >> 2] = t.length;
+    }, hr = (e, r) => {
+      var t = Ne();
+      v[e >> 2] = t.length;
       var n = 0;
-      for (var s of t) n += Ze(s) + 1;
-      return h[r >> 2] = n, 0;
-    }, H = {
+      for (var s of t) n += Ge(s) + 1;
+      return v[r >> 2] = n, 0;
+    }, B = {
       isAbs: (e) => e.charAt(0) === "/",
       splitPath: (e) => {
         var r = /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
@@ -277,34 +344,40 @@ let __tla = (async () => {
         return e;
       },
       normalize: (e) => {
-        var r = H.isAbs(e), t = e.slice(-1) === "/";
-        return e = H.normalizeArray(e.split("/").filter((n) => !!n), !r).join("/"), !e && !r && (e = "."), e && t && (e += "/"), (r ? "/" : "") + e;
+        var r = B.isAbs(e), t = e.slice(-1) === "/";
+        return e = B.normalizeArray(e.split("/").filter((n) => !!n), !r).join("/"), !e && !r && (e = "."), e && t && (e += "/"), (r ? "/" : "") + e;
       },
       dirname: (e) => {
-        var r = H.splitPath(e), t = r[0], n = r[1];
+        var r = B.splitPath(e), t = r[0], n = r[1];
         return !t && !n ? "." : (n && (n = n.slice(0, -1)), t + n);
       },
       basename: (e) => e && e.match(/([^\/]+|\/)\/*$/)[1],
-      join: (...e) => H.normalize(e.join("/")),
-      join2: (e, r) => H.normalize(e + "/" + r)
-    }, ir = () => (e) => crypto.getRandomValues(e), Qe = (e) => {
-      (Qe = ir())(e);
-    }, Re = {
+      join: (...e) => B.normalize(e.join("/")),
+      join2: (e, r) => B.normalize(e + "/" + r)
+    }, mr = () => {
+      if (_) {
+        var e = H("crypto");
+        return (r) => e.randomFillSync(r);
+      }
+      return (r) => crypto.getRandomValues(r);
+    }, Ie = (e) => {
+      (Ie = mr())(e);
+    }, ze = {
       resolve: (...e) => {
         for (var r = "", t = false, n = e.length - 1; n >= -1 && !t; n--) {
           var s = n >= 0 ? e[n] : o.cwd();
           if (typeof s != "string") throw new TypeError("Arguments to path.resolve must be strings");
           if (!s) return "";
-          r = s + "/" + r, t = H.isAbs(s);
+          r = s + "/" + r, t = B.isAbs(s);
         }
-        return r = H.normalizeArray(r.split("/").filter((a) => !!a), !t).join("/"), (t ? "/" : "") + r || ".";
+        return r = B.normalizeArray(r.split("/").filter((a) => !!a), !t).join("/"), (t ? "/" : "") + r || ".";
       },
       relative: (e, r) => {
-        e = Re.resolve(e).slice(1), r = Re.resolve(r).slice(1);
-        function t(_) {
-          for (var B = 0; B < _.length && _[B] === ""; B++) ;
-          for (var N = _.length - 1; N >= 0 && _[N] === ""; N--) ;
-          return B > N ? [] : _.slice(B, N - B + 1);
+        e = ze.resolve(e).slice(1), r = ze.resolve(r).slice(1);
+        function t(P) {
+          for (var V = 0; V < P.length && P[V] === ""; V++) ;
+          for (var K = P.length - 1; K >= 0 && P[K] === ""; K--) ;
+          return V > K ? [] : P.slice(V, K - V + 1);
         }
         for (var n = t(e.split("/")), s = t(r.split("/")), a = Math.min(n.length, s.length), i = a, l = 0; l < a; l++) if (n[l] !== s[l]) {
           i = l;
@@ -313,16 +386,26 @@ let __tla = (async () => {
         for (var d = [], l = i; l < n.length; l++) d.push("..");
         return d = d.concat(s.slice(i)), d.join("/");
       }
-    }, Ve = [], We = (e, r, t) => {
-      var n = Ze(e) + 1, s = new Array(n), a = S(e, s, 0, s.length);
+    }, Ve = [], qe = (e, r, t) => {
+      var n = Ge(e) + 1, s = new Array(n), a = Ze(e, s, 0, s.length);
       return s.length = a, s;
-    }, lr = () => {
-      var _a;
+    }, vr = () => {
+      var _a2;
       if (!Ve.length) {
         var e = null;
-        if (((_a = globalThis.window) == null ? void 0 : _a.prompt) && (e = window.prompt("Input: "), e !== null && (e += `
-`)), !e) return null;
-        Ve = We(e);
+        if (_) {
+          var r = 256, t = Buffer.alloc(r), n = 0, s = process.stdin.fd;
+          try {
+            n = N.readSync(s, t, 0, r);
+          } catch (a) {
+            if (a.toString().includes("EOF")) n = 0;
+            else throw a;
+          }
+          n > 0 && (e = t.slice(0, n).toString("utf-8"));
+        } else ((_a2 = globalThis.window) == null ? void 0 : _a2.prompt) && (e = window.prompt("Input: "), e !== null && (e += `
+`));
+        if (!e) return null;
+        Ve = qe(e);
       }
       return Ve.shift();
     }, Se = {
@@ -377,14 +460,14 @@ let __tla = (async () => {
       },
       default_tty_ops: {
         get_char(e) {
-          return lr();
+          return vr();
         },
         put_char(e, r) {
-          r === null || r === 10 ? (X(ie(e.output)), e.output = []) : r != 0 && e.output.push(r);
+          r === null || r === 10 ? (p(T(e.output)), e.output = []) : r != 0 && e.output.push(r);
         },
         fsync(e) {
-          var _a;
-          ((_a = e.output) == null ? void 0 : _a.length) > 0 && (X(ie(e.output)), e.output = []);
+          var _a2;
+          ((_a2 = e.output) == null ? void 0 : _a2.length) > 0 && (p(T(e.output)), e.output = []);
         },
         ioctl_tcgets(e) {
           return {
@@ -440,70 +523,70 @@ let __tla = (async () => {
       },
       default_tty1_ops: {
         put_char(e, r) {
-          r === null || r === 10 ? (j(ie(e.output)), e.output = []) : r != 0 && e.output.push(r);
+          r === null || r === 10 ? (w(T(e.output)), e.output = []) : r != 0 && e.output.push(r);
         },
         fsync(e) {
-          var _a;
-          ((_a = e.output) == null ? void 0 : _a.length) > 0 && (j(ie(e.output)), e.output = []);
+          var _a2;
+          ((_a2 = e.output) == null ? void 0 : _a2.length) > 0 && (w(T(e.output)), e.output = []);
         }
       }
-    }, Ge = (e) => {
-      F();
-    }, y = {
+    }, Je = (e) => {
+      Y();
+    }, E = {
       ops_table: null,
       mount(e) {
-        return y.createNode(null, "/", 16895, 0);
+        return E.createNode(null, "/", 16895, 0);
       },
       createNode(e, r, t, n) {
         if (o.isBlkdev(t) || o.isFIFO(t)) throw new o.ErrnoError(63);
-        y.ops_table || (y.ops_table = {
+        E.ops_table || (E.ops_table = {
           dir: {
             node: {
-              getattr: y.node_ops.getattr,
-              setattr: y.node_ops.setattr,
-              lookup: y.node_ops.lookup,
-              mknod: y.node_ops.mknod,
-              rename: y.node_ops.rename,
-              unlink: y.node_ops.unlink,
-              rmdir: y.node_ops.rmdir,
-              readdir: y.node_ops.readdir,
-              symlink: y.node_ops.symlink
+              getattr: E.node_ops.getattr,
+              setattr: E.node_ops.setattr,
+              lookup: E.node_ops.lookup,
+              mknod: E.node_ops.mknod,
+              rename: E.node_ops.rename,
+              unlink: E.node_ops.unlink,
+              rmdir: E.node_ops.rmdir,
+              readdir: E.node_ops.readdir,
+              symlink: E.node_ops.symlink
             },
             stream: {
-              llseek: y.stream_ops.llseek
+              llseek: E.stream_ops.llseek
             }
           },
           file: {
             node: {
-              getattr: y.node_ops.getattr,
-              setattr: y.node_ops.setattr
+              getattr: E.node_ops.getattr,
+              setattr: E.node_ops.setattr
             },
             stream: {
-              llseek: y.stream_ops.llseek,
-              read: y.stream_ops.read,
-              write: y.stream_ops.write,
-              mmap: y.stream_ops.mmap,
-              msync: y.stream_ops.msync
+              llseek: E.stream_ops.llseek,
+              read: E.stream_ops.read,
+              write: E.stream_ops.write,
+              mmap: E.stream_ops.mmap,
+              msync: E.stream_ops.msync
             }
           },
           link: {
             node: {
-              getattr: y.node_ops.getattr,
-              setattr: y.node_ops.setattr,
-              readlink: y.node_ops.readlink
+              getattr: E.node_ops.getattr,
+              setattr: E.node_ops.setattr,
+              readlink: E.node_ops.readlink
             },
             stream: {}
           },
           chrdev: {
             node: {
-              getattr: y.node_ops.getattr,
-              setattr: y.node_ops.setattr
+              getattr: E.node_ops.getattr,
+              setattr: E.node_ops.setattr
             },
             stream: o.chrdev_stream_ops
           }
         });
         var s = o.createNode(e, r, t, n);
-        return o.isDir(s.mode) ? (s.node_ops = y.ops_table.dir.node, s.stream_ops = y.ops_table.dir.stream, s.contents = {}) : o.isFile(s.mode) ? (s.node_ops = y.ops_table.file.node, s.stream_ops = y.ops_table.file.stream, s.usedBytes = 0, s.contents = null) : o.isLink(s.mode) ? (s.node_ops = y.ops_table.link.node, s.stream_ops = y.ops_table.link.stream) : o.isChrdev(s.mode) && (s.node_ops = y.ops_table.chrdev.node, s.stream_ops = y.ops_table.chrdev.stream), s.atime = s.mtime = s.ctime = Date.now(), e && (e.contents[r] = s, e.atime = e.mtime = e.ctime = s.atime), s;
+        return o.isDir(s.mode) ? (s.node_ops = E.ops_table.dir.node, s.stream_ops = E.ops_table.dir.stream, s.contents = {}) : o.isFile(s.mode) ? (s.node_ops = E.ops_table.file.node, s.stream_ops = E.ops_table.file.stream, s.usedBytes = 0, s.contents = null) : o.isLink(s.mode) ? (s.node_ops = E.ops_table.link.node, s.stream_ops = E.ops_table.link.stream) : o.isChrdev(s.mode) && (s.node_ops = E.ops_table.chrdev.node, s.stream_ops = E.ops_table.chrdev.stream), s.atime = s.mtime = s.ctime = Date.now(), e && (e.contents[r] = s, e.atime = e.mtime = e.ctime = s.atime), s;
       },
       getFileDataAsTypedArray(e) {
         return e.contents ? e.contents.subarray ? e.contents.subarray(0, e.usedBytes) : new Uint8Array(e.contents) : new Uint8Array(0);
@@ -536,13 +619,13 @@ let __tla = (async () => {
             "mtime",
             "ctime"
           ]) r[t] != null && (e[t] = r[t]);
-          r.size !== void 0 && y.resizeFileStorage(e, r.size);
+          r.size !== void 0 && E.resizeFileStorage(e, r.size);
         },
         lookup(e, r) {
-          throw y.doesNotExistError || (y.doesNotExistError = new o.ErrnoError(44), y.doesNotExistError.stack = "<generic error, no stack>"), y.doesNotExistError;
+          throw E.doesNotExistError || (E.doesNotExistError = new o.ErrnoError(44), E.doesNotExistError.stack = "<generic error, no stack>"), E.doesNotExistError;
         },
         mknod(e, r, t, n) {
-          return y.createNode(e, r, t, n);
+          return E.createNode(e, r, t, n);
         },
         rename(e, r, t) {
           var n;
@@ -572,7 +655,7 @@ let __tla = (async () => {
           ];
         },
         symlink(e, r, t) {
-          var n = y.createNode(e, r, 41471, 0);
+          var n = E.createNode(e, r, 41471, 0);
           return n.link = t, n;
         },
         readlink(e) {
@@ -590,14 +673,14 @@ let __tla = (async () => {
           return i;
         },
         write(e, r, t, n, s, a) {
-          if (r.buffer === g.buffer && (a = false), !n) return 0;
+          if (r.buffer === k.buffer && (a = false), !n) return 0;
           var i = e.node;
           if (i.mtime = i.ctime = Date.now(), r.subarray && (!i.contents || i.contents.subarray)) {
             if (a) return i.contents = r.subarray(t, t + n), i.usedBytes = n, n;
             if (i.usedBytes === 0 && s === 0) return i.contents = r.slice(t, t + n), i.usedBytes = n, n;
             if (s + n <= i.usedBytes) return i.contents.set(r.subarray(t, t + n), s), n;
           }
-          if (y.expandFileStorage(i, s + n), i.contents.subarray && r.subarray) i.contents.set(r.subarray(t, t + n), s);
+          if (E.expandFileStorage(i, s + n), i.contents.subarray && r.subarray) i.contents.set(r.subarray(t, t + n), s);
           else for (var l = 0; l < n; l++) i.contents[s + l] = r[t + l];
           return i.usedBytes = Math.max(i.usedBytes, s + n), n;
         },
@@ -609,10 +692,10 @@ let __tla = (async () => {
         mmap(e, r, t, n, s) {
           if (!o.isFile(e.node.mode)) throw new o.ErrnoError(43);
           var a, i, l = e.node.contents;
-          if (!(s & 2) && l && l.buffer === g.buffer) i = false, a = l.byteOffset;
+          if (!(s & 2) && l && l.buffer === k.buffer) i = false, a = l.byteOffset;
           else {
-            if (i = true, a = Ge(), !a) throw new o.ErrnoError(48);
-            l && ((t > 0 || t + r < l.length) && (l.subarray ? l = l.subarray(t, t + r) : l = Array.prototype.slice.call(l, t, t + r)), g.set(l, a));
+            if (i = true, a = Je(), !a) throw new o.ErrnoError(48);
+            l && ((t > 0 || t + r < l.length) && (l.subarray ? l = l.subarray(t, t + r) : l = Array.prototype.slice.call(l, t, t + r)), k.set(l, a));
           }
           return {
             ptr: a,
@@ -620,10 +703,10 @@ let __tla = (async () => {
           };
         },
         msync(e, r, t, n, s) {
-          return y.stream_ops.write(e, r, 0, n, t, false), 0;
+          return E.stream_ops.write(e, r, 0, n, t, false), 0;
         }
       }
-    }, cr = (e) => {
+    }, pr = (e) => {
       var r = {
         r: 0,
         "r+": 2,
@@ -634,36 +717,36 @@ let __tla = (async () => {
       }, t = r[e];
       if (typeof t > "u") throw new Error(`Unknown file open mode: ${e}`);
       return t;
-    }, qe = (e, r) => {
+    }, Xe = (e, r) => {
       var t = 0;
       return e && (t |= 365), r && (t |= 146), t;
-    }, fr = async (e) => {
-      var r = await Q(e);
+    }, yr = async (e) => {
+      var r = await J(e);
       return new Uint8Array(r);
-    }, ur = (...e) => o.createDataFile(...e), Me = 0, Te = null, dr = (e) => {
-      var _a;
-      if (Me--, (_a = c.monitorRunDependencies) == null ? void 0 : _a.call(c, Me), Me == 0 && Te) {
-        var r = Te;
-        Te = null, r();
+    }, wr = (...e) => o.createDataFile(...e), Re = 0, Oe = null, Er = (e) => {
+      var _a2;
+      if (Re--, (_a2 = c.monitorRunDependencies) == null ? void 0 : _a2.call(c, Re), Re == 0 && Oe) {
+        var r = Oe;
+        Oe = null, r();
       }
-    }, hr = (e) => {
-      var _a;
-      Me++, (_a = c.monitorRunDependencies) == null ? void 0 : _a.call(c, Me);
-    }, Ie = [], mr = async (e, r) => {
+    }, gr = (e) => {
+      var _a2;
+      Re++, (_a2 = c.monitorRunDependencies) == null ? void 0 : _a2.call(c, Re);
+    }, er = [], _r = async (e, r) => {
       typeof Browser < "u" && Browser.init();
-      for (var t of Ie) if (t.canHandle(r)) return t.handle(e, r);
+      for (var t of er) if (t.canHandle(r)) return t.handle(e, r);
       return e;
-    }, Je = async (e, r, t, n, s, a, i, l) => {
-      var d = r ? Re.resolve(H.join2(e, r)) : e;
-      hr();
+    }, rr = async (e, r, t, n, s, a, i, l) => {
+      var d = r ? ze.resolve(B.join2(e, r)) : e;
+      gr();
       try {
-        var _ = t;
-        typeof t == "string" && (_ = await fr(t)), _ = await mr(_, d), l == null ? void 0 : l(), a || ur(e, r, _, n, s, i);
+        var P = t;
+        typeof t == "string" && (P = await yr(t)), P = await _r(P, d), l == null ? void 0 : l(), a || wr(e, r, P, n, s, i);
       } finally {
-        dr();
+        Er();
       }
-    }, vr = (e, r, t, n, s, a, i, l, d, _) => {
-      Je(e, r, t, n, s, l, d, _).then(a).catch(i);
+    }, Pr = (e, r, t, n, s, a, i, l, d, P) => {
+      rr(e, r, t, n, s, l, d, P).then(a).catch(i);
     }, o = {
       root: null,
       mounts: [],
@@ -676,6 +759,7 @@ let __tla = (async () => {
       ignorePermissions: true,
       filesystems: null,
       syncFSRequests: 0,
+      readFiles: {},
       ErrnoError: class {
         constructor(e) {
           __publicField(this, "name", "ErrnoError");
@@ -744,32 +828,32 @@ let __tla = (async () => {
       },
       lookupPath(e, r = {}) {
         if (!e) throw new o.ErrnoError(44);
-        r.follow_mount ?? (r.follow_mount = true), H.isAbs(e) || (e = o.cwd() + "/" + e);
+        r.follow_mount ?? (r.follow_mount = true), B.isAbs(e) || (e = o.cwd() + "/" + e);
         e: for (var t = 0; t < 40; t++) {
-          for (var n = e.split("/").filter((_) => !!_), s = o.root, a = "/", i = 0; i < n.length; i++) {
+          for (var n = e.split("/").filter((P) => !!P), s = o.root, a = "/", i = 0; i < n.length; i++) {
             var l = i === n.length - 1;
             if (l && r.parent) break;
             if (n[i] !== ".") {
               if (n[i] === "..") {
-                if (a = H.dirname(a), o.isRoot(s)) {
+                if (a = B.dirname(a), o.isRoot(s)) {
                   e = a + "/" + n.slice(i + 1).join("/"), t--;
                   continue e;
                 } else s = s.parent;
                 continue;
               }
-              a = H.join2(a, n[i]);
+              a = B.join2(a, n[i]);
               try {
                 s = o.lookupNode(s, n[i]);
-              } catch (_) {
-                if ((_ == null ? void 0 : _.errno) === 44 && l && r.noent_okay) return {
+              } catch (P) {
+                if ((P == null ? void 0 : P.errno) === 44 && l && r.noent_okay) return {
                   path: a
                 };
-                throw _;
+                throw P;
               }
               if (o.isMountpoint(s) && (!l || r.follow_mount) && (s = s.mounted.root), o.isLink(s.mode) && (!l || r.follow)) {
                 if (!s.node_ops.readlink) throw new o.ErrnoError(52);
                 var d = s.node_ops.readlink(s);
-                H.isAbs(d) || (d = H.dirname(a) + "/" + d), e = d + "/" + n.slice(i + 1).join("/");
+                B.isAbs(d) || (d = B.dirname(a) + "/" + d), e = d + "/" + n.slice(i + 1).join("/");
                 continue e;
               }
             }
@@ -893,10 +977,7 @@ let __tla = (async () => {
         return 0;
       },
       mayOpen(e, r) {
-        if (!e) return 44;
-        if (o.isLink(e.mode)) return 32;
-        var t = o.flagsToPermissionString(r);
-        return o.isDir(e.mode) && (t !== "r" || r & 576) ? 31 : o.nodePermissions(e, t);
+        return e ? o.isLink(e.mode) ? 32 : o.isDir(e.mode) && (o.flagsToPermissionString(r) !== "r" || r & 576) ? 31 : o.nodePermissions(e, o.flagsToPermissionString(r)) : 44;
       },
       checkOpExists(e, r) {
         if (!e) throw new o.ErrnoError(r);
@@ -920,9 +1001,9 @@ let __tla = (async () => {
         o.streams[e] = null;
       },
       dupStream(e, r = -1) {
-        var _a, _b;
+        var _a2, _b2;
         var t = o.createStream(e, r);
-        return (_b = (_a = t.stream_ops) == null ? void 0 : _a.dup) == null ? void 0 : _b.call(_a, t), t;
+        return (_b2 = (_a2 = t.stream_ops) == null ? void 0 : _a2.dup) == null ? void 0 : _b2.call(_a2, t), t;
       },
       doSetAttr(e, r, t) {
         var n = e == null ? void 0 : e.stream_ops.setattr, s = n ? e : r;
@@ -930,9 +1011,9 @@ let __tla = (async () => {
       },
       chrdev_stream_ops: {
         open(e) {
-          var _a, _b;
+          var _a2, _b2;
           var r = o.getDevice(e.node.rdev);
-          e.stream_ops = r.stream_ops, (_b = (_a = e.stream_ops).open) == null ? void 0 : _b.call(_a, e);
+          e.stream_ops = r.stream_ops, (_b2 = (_a2 = e.stream_ops).open) == null ? void 0 : _b2.call(_a2, e);
         },
         llseek() {
           throw new o.ErrnoError(70);
@@ -957,7 +1038,7 @@ let __tla = (async () => {
         return r;
       },
       syncfs(e, r) {
-        typeof e == "function" && (r = e, e = false), o.syncFSRequests++, o.syncFSRequests > 1 && j(`warning: ${o.syncFSRequests} FS.syncfs operations in flight at once, probably just doing extra work`);
+        typeof e == "function" && (r = e, e = false), o.syncFSRequests++, o.syncFSRequests > 1 && w(`warning: ${o.syncFSRequests} FS.syncfs operations in flight at once, probably just doing extra work`);
         var t = o.getMounts(o.root.mount), n = 0;
         function s(l) {
           return o.syncFSRequests--, r(l);
@@ -1006,7 +1087,7 @@ let __tla = (async () => {
       mknod(e, r, t) {
         var n = o.lookupPath(e, {
           parent: true
-        }), s = n.node, a = H.basename(e);
+        }), s = n.node, a = B.basename(e);
         if (!a) throw new o.ErrnoError(28);
         if (a === "." || a === "..") throw new o.ErrnoError(20);
         var i = o.mayCreate(s, a);
@@ -1046,7 +1127,7 @@ let __tla = (async () => {
       mkdirTree(e, r) {
         var t = e.split("/"), n = "";
         for (var s of t) if (s) {
-          (n || H.isAbs(e)) && (n += "/"), n += s;
+          (n || B.isAbs(e)) && (n += "/"), n += s;
           try {
             o.mkdir(n, r);
           } catch (a) {
@@ -1058,53 +1139,53 @@ let __tla = (async () => {
         return typeof t > "u" && (t = r, r = 438), r |= 8192, o.mknod(e, r, t);
       },
       symlink(e, r) {
-        if (!Re.resolve(e)) throw new o.ErrnoError(44);
+        if (!ze.resolve(e)) throw new o.ErrnoError(44);
         var t = o.lookupPath(r, {
           parent: true
         }), n = t.node;
         if (!n) throw new o.ErrnoError(44);
-        var s = H.basename(r), a = o.mayCreate(n, s);
+        var s = B.basename(r), a = o.mayCreate(n, s);
         if (a) throw new o.ErrnoError(a);
         if (!n.node_ops.symlink) throw new o.ErrnoError(63);
         return n.node_ops.symlink(n, s, e);
       },
       rename(e, r) {
-        var t = H.dirname(e), n = H.dirname(r), s = H.basename(e), a = H.basename(r), i, l, d;
+        var t = B.dirname(e), n = B.dirname(r), s = B.basename(e), a = B.basename(r), i, l, d;
         if (i = o.lookupPath(e, {
           parent: true
         }), l = i.node, i = o.lookupPath(r, {
           parent: true
         }), d = i.node, !l || !d) throw new o.ErrnoError(44);
         if (l.mount !== d.mount) throw new o.ErrnoError(75);
-        var _ = o.lookupNode(l, s), B = Re.relative(e, n);
-        if (B.charAt(0) !== ".") throw new o.ErrnoError(28);
-        if (B = Re.relative(r, t), B.charAt(0) !== ".") throw new o.ErrnoError(55);
-        var N;
+        var P = o.lookupNode(l, s), V = ze.relative(e, n);
+        if (V.charAt(0) !== ".") throw new o.ErrnoError(28);
+        if (V = ze.relative(r, t), V.charAt(0) !== ".") throw new o.ErrnoError(55);
+        var K;
         try {
-          N = o.lookupNode(d, a);
+          K = o.lookupNode(d, a);
         } catch {
         }
-        if (_ !== N) {
-          var w = o.isDir(_.mode), P = o.mayDelete(l, s, w);
-          if (P) throw new o.ErrnoError(P);
-          if (P = N ? o.mayDelete(d, a, w) : o.mayCreate(d, a), P) throw new o.ErrnoError(P);
+        if (P !== K) {
+          var g = o.isDir(P.mode), A = o.mayDelete(l, s, g);
+          if (A) throw new o.ErrnoError(A);
+          if (A = K ? o.mayDelete(d, a, g) : o.mayCreate(d, a), A) throw new o.ErrnoError(A);
           if (!l.node_ops.rename) throw new o.ErrnoError(63);
-          if (o.isMountpoint(_) || N && o.isMountpoint(N)) throw new o.ErrnoError(10);
-          if (d !== l && (P = o.nodePermissions(l, "w"), P)) throw new o.ErrnoError(P);
-          o.hashRemoveNode(_);
+          if (o.isMountpoint(P) || K && o.isMountpoint(K)) throw new o.ErrnoError(10);
+          if (d !== l && (A = o.nodePermissions(l, "w"), A)) throw new o.ErrnoError(A);
+          o.hashRemoveNode(P);
           try {
-            l.node_ops.rename(_, d, a), _.parent = d;
-          } catch (q) {
-            throw q;
+            l.node_ops.rename(P, d, a), P.parent = d;
+          } catch (te) {
+            throw te;
           } finally {
-            o.hashAddNode(_);
+            o.hashAddNode(P);
           }
         }
       },
       rmdir(e) {
         var r = o.lookupPath(e, {
           parent: true
-        }), t = r.node, n = H.basename(e), s = o.lookupNode(t, n), a = o.mayDelete(t, n, true);
+        }), t = r.node, n = B.basename(e), s = o.lookupNode(t, n), a = o.mayDelete(t, n, true);
         if (a) throw new o.ErrnoError(a);
         if (!t.node_ops.rmdir) throw new o.ErrnoError(63);
         if (o.isMountpoint(s)) throw new o.ErrnoError(10);
@@ -1121,7 +1202,7 @@ let __tla = (async () => {
           parent: true
         }), t = r.node;
         if (!t) throw new o.ErrnoError(44);
-        var n = H.basename(e), s = o.lookupNode(t, n), a = o.mayDelete(t, n, false);
+        var n = B.basename(e), s = o.lookupNode(t, n), a = o.mayDelete(t, n, false);
         if (a) throw new o.ErrnoError(a);
         if (!t.node_ops.unlink) throw new o.ErrnoError(63);
         if (o.isMountpoint(s)) throw new o.ErrnoError(10);
@@ -1230,7 +1311,7 @@ let __tla = (async () => {
       },
       open(e, r, t = 438) {
         if (e === "") throw new o.ErrnoError(44);
-        r = typeof r == "string" ? cr(r) : r, r & 64 ? t = t & 4095 | 32768 : t = 0;
+        r = typeof r == "string" ? pr(r) : r, r & 64 ? t = t & 4095 | 32768 : t = 0;
         var n, s;
         if (typeof e == "object") n = e;
         else {
@@ -1265,7 +1346,7 @@ let __tla = (async () => {
           ungotten: [],
           error: false
         });
-        return d.stream_ops.open && d.stream_ops.open(d), i && o.chmod(n, t & 511), d;
+        return d.stream_ops.open && d.stream_ops.open(d), i && o.chmod(n, t & 511), c.logReadFiles && !(r & 1) && (e in o.readFiles || (o.readFiles[e] = 1)), d;
       },
       close(e) {
         if (o.isClosed(e)) throw new o.ErrnoError(8);
@@ -1328,14 +1409,14 @@ let __tla = (async () => {
         return e.stream_ops.ioctl(e, r, t);
       },
       readFile(e, r = {}) {
-        r.flags = r.flags || 0, r.encoding = r.encoding || "binary", r.encoding !== "utf8" && r.encoding !== "binary" && F(`Invalid encoding type "${r.encoding}"`);
+        r.flags = r.flags || 0, r.encoding = r.encoding || "binary", r.encoding !== "utf8" && r.encoding !== "binary" && Y(`Invalid encoding type "${r.encoding}"`);
         var t = o.open(e, r.flags), n = o.stat(e), s = n.size, a = new Uint8Array(s);
-        return o.read(t, a, 0, s, 0), r.encoding === "utf8" && (a = ie(a)), o.close(t), a;
+        return o.read(t, a, 0, s, 0), r.encoding === "utf8" && (a = T(a)), o.close(t), a;
       },
       writeFile(e, r, t = {}) {
         t.flags = t.flags || 577;
         var n = o.open(e, t.flags, t.mode);
-        typeof r == "string" && (r = new Uint8Array(We(r))), ArrayBuffer.isView(r) ? o.write(n, r, 0, r.byteLength, void 0, t.canOwn) : F("Unsupported data type"), o.close(n);
+        typeof r == "string" && (r = new Uint8Array(qe(r))), ArrayBuffer.isView(r) ? o.write(n, r, 0, r.byteLength, void 0, t.canOwn) : Y("Unsupported data type"), o.close(n);
       },
       cwd: () => o.currentPath,
       chdir(e) {
@@ -1357,7 +1438,7 @@ let __tla = (async () => {
           write: (n, s, a, i, l) => i,
           llseek: () => 0
         }), o.mkdev("/dev/null", o.makedev(1, 3)), Se.register(o.makedev(5, 0), Se.default_tty_ops), Se.register(o.makedev(6, 0), Se.default_tty1_ops), o.mkdev("/dev/tty", o.makedev(5, 0)), o.mkdev("/dev/tty1", o.makedev(6, 0));
-        var e = new Uint8Array(1024), r = 0, t = () => (r === 0 && (Qe(e), r = e.byteLength), e[--r]);
+        var e = new Uint8Array(1024), r = 0, t = () => (r === 0 && (Ie(e), r = e.byteLength), e[--r]);
         o.createDevice("/dev", "random", t), o.createDevice("/dev", "urandom", t), o.mkdir("/dev/shm"), o.mkdir("/dev/shm/tmp");
       },
       createSpecialDirectories() {
@@ -1367,7 +1448,7 @@ let __tla = (async () => {
           mount() {
             var r = o.createNode(e, "fd", 16895, 73);
             return r.stream_ops = {
-              llseek: y.stream_ops.llseek
+              llseek: E.stream_ops.llseek
             }, r.node_ops = {
               lookup(t, n) {
                 var s = +n, a = o.getStreamChecked(s), i = {
@@ -1393,8 +1474,8 @@ let __tla = (async () => {
         e ? o.createDevice("/dev", "stdin", e) : o.symlink("/dev/tty", "/dev/stdin"), r ? o.createDevice("/dev", "stdout", null, r) : o.symlink("/dev/tty", "/dev/stdout"), t ? o.createDevice("/dev", "stderr", null, t) : o.symlink("/dev/tty1", "/dev/stderr"), o.open("/dev/stdin", 0), o.open("/dev/stdout", 1), o.open("/dev/stderr", 1);
       },
       staticInit() {
-        o.nameTable = new Array(4096), o.mount(y, {}, "/"), o.createDefaultDirectories(), o.createDefaultDevices(), o.createSpecialDirectories(), o.filesystems = {
-          MEMFS: y
+        o.nameTable = new Array(4096), o.mount(E, {}, "/"), o.createDefaultDirectories(), o.createDefaultDevices(), o.createSpecialDirectories(), o.filesystems = {
+          MEMFS: E
         };
       },
       init(e, r, t) {
@@ -1431,7 +1512,7 @@ let __tla = (async () => {
           var t = o.lookupPath(e, {
             parent: true
           });
-          n.parentExists = true, n.parentPath = t.path, n.parentObject = t.node, n.name = H.basename(e), t = o.lookupPath(e, {
+          n.parentExists = true, n.parentPath = t.path, n.parentObject = t.node, n.name = B.basename(e), t = o.lookupPath(e, {
             follow: !r
           }), n.exists = true, n.path = t.path, n.object = t.node, n.name = t.node.name, n.isRoot = t.path === "/";
         } catch (s) {
@@ -1444,7 +1525,7 @@ let __tla = (async () => {
         for (var s = r.split("/").reverse(); s.length; ) {
           var a = s.pop();
           if (a) {
-            var i = H.join2(e, a);
+            var i = B.join2(e, a);
             try {
               o.mkdir(i);
             } catch (l) {
@@ -1456,65 +1537,65 @@ let __tla = (async () => {
         return i;
       },
       createFile(e, r, t, n, s) {
-        var a = H.join2(typeof e == "string" ? e : o.getPath(e), r), i = qe(n, s);
+        var a = B.join2(typeof e == "string" ? e : o.getPath(e), r), i = Xe(n, s);
         return o.create(a, i);
       },
       createDataFile(e, r, t, n, s, a) {
         var i = r;
-        e && (e = typeof e == "string" ? e : o.getPath(e), i = r ? H.join2(e, r) : e);
-        var l = qe(n, s), d = o.create(i, l);
+        e && (e = typeof e == "string" ? e : o.getPath(e), i = r ? B.join2(e, r) : e);
+        var l = Xe(n, s), d = o.create(i, l);
         if (t) {
           if (typeof t == "string") {
-            for (var _ = new Array(t.length), B = 0, N = t.length; B < N; ++B) _[B] = t.charCodeAt(B);
-            t = _;
+            for (var P = new Array(t.length), V = 0, K = t.length; V < K; ++V) P[V] = t.charCodeAt(V);
+            t = P;
           }
           o.chmod(d, l | 146);
-          var w = o.open(d, 577);
-          o.write(w, t, 0, t.length, 0, a), o.close(w), o.chmod(d, l);
+          var g = o.open(d, 577);
+          o.write(g, t, 0, t.length, 0, a), o.close(g), o.chmod(d, l);
         }
       },
       createDevice(e, r, t, n) {
-        var _a;
-        var s = H.join2(typeof e == "string" ? e : o.getPath(e), r), a = qe(!!t, !!n);
-        (_a = o.createDevice).major ?? (_a.major = 64);
+        var _a2;
+        var s = B.join2(typeof e == "string" ? e : o.getPath(e), r), a = Xe(!!t, !!n);
+        (_a2 = o.createDevice).major ?? (_a2.major = 64);
         var i = o.makedev(o.createDevice.major++, 0);
         return o.registerDevice(i, {
           open(l) {
             l.seekable = false;
           },
           close(l) {
-            var _a2;
-            ((_a2 = n == null ? void 0 : n.buffer) == null ? void 0 : _a2.length) && n(10);
+            var _a3;
+            ((_a3 = n == null ? void 0 : n.buffer) == null ? void 0 : _a3.length) && n(10);
           },
-          read(l, d, _, B, N) {
-            for (var w = 0, P = 0; P < B; P++) {
-              var q;
+          read(l, d, P, V, K) {
+            for (var g = 0, A = 0; A < V; A++) {
+              var te;
               try {
-                q = t();
+                te = t();
               } catch {
                 throw new o.ErrnoError(29);
               }
-              if (q === void 0 && w === 0) throw new o.ErrnoError(6);
-              if (q == null) break;
-              w++, d[_ + P] = q;
+              if (te === void 0 && g === 0) throw new o.ErrnoError(6);
+              if (te == null) break;
+              g++, d[P + A] = te;
             }
-            return w && (l.node.atime = Date.now()), w;
+            return g && (l.node.atime = Date.now()), g;
           },
-          write(l, d, _, B, N) {
-            for (var w = 0; w < B; w++) try {
-              n(d[_ + w]);
+          write(l, d, P, V, K) {
+            for (var g = 0; g < V; g++) try {
+              n(d[P + g]);
             } catch {
               throw new o.ErrnoError(29);
             }
-            return B && (l.node.mtime = l.node.ctime = Date.now()), w;
+            return V && (l.node.mtime = l.node.ctime = Date.now()), g;
           }
         }), o.mkdev(s, a, i);
       },
       forceLoadFile(e) {
         if (e.isDevice || e.isFolder || e.link || e.contents) return true;
-        if (globalThis.XMLHttpRequest) F("Lazy loading should have been performed (contents set) in createLazyFile, but it was not. Lazy loading only works in web workers. Use --embed-file or --preload-file in emcc on the main thread.");
+        if (globalThis.XMLHttpRequest) Y("Lazy loading should have been performed (contents set) in createLazyFile, but it was not. Lazy loading only works in web workers. Use --embed-file or --preload-file in emcc on the main thread.");
         else try {
-          e.contents = ne(e.url);
+          e.contents = L(e.url);
         } catch {
           throw new o.ErrnoError(29);
         }
@@ -1525,29 +1606,29 @@ let __tla = (async () => {
             __publicField(this, "lengthKnown", false);
             __publicField(this, "chunks", []);
           }
-          get(w) {
-            if (!(w > this.length - 1 || w < 0)) {
-              var P = w % this.chunkSize, q = w / this.chunkSize | 0;
-              return this.getter(q)[P];
+          get(g) {
+            if (!(g > this.length - 1 || g < 0)) {
+              var A = g % this.chunkSize, te = g / this.chunkSize | 0;
+              return this.getter(te)[A];
             }
           }
-          setDataGetter(w) {
-            this.getter = w;
+          setDataGetter(g) {
+            this.getter = g;
           }
           cacheLength() {
-            var w = new XMLHttpRequest();
-            w.open("HEAD", t, false), w.send(null), w.status >= 200 && w.status < 300 || w.status === 304 || F("Couldn't load " + t + ". Status: " + w.status);
-            var P = Number(w.getResponseHeader("Content-length")), q, Ee = (q = w.getResponseHeader("Accept-Ranges")) && q === "bytes", ge = (q = w.getResponseHeader("Content-Encoding")) && q === "gzip", _e = 1024 * 1024;
-            Ee || (_e = P);
+            var g = new XMLHttpRequest();
+            g.open("HEAD", t, false), g.send(null), g.status >= 200 && g.status < 300 || g.status === 304 || Y("Couldn't load " + t + ". Status: " + g.status);
+            var A = Number(g.getResponseHeader("Content-length")), te, we = (te = g.getResponseHeader("Accept-Ranges")) && te === "bytes", Ee = (te = g.getResponseHeader("Content-Encoding")) && te === "gzip", ge = 1024 * 1024;
+            we || (ge = A);
             var ke = (be, Ue) => {
-              be > Ue && F("invalid range (" + be + ", " + Ue + ") or no bytes requested!"), Ue > P - 1 && F("only " + P + " bytes available! programmer error!");
+              be > Ue && Y("invalid range (" + be + ", " + Ue + ") or no bytes requested!"), Ue > A - 1 && Y("only " + A + " bytes available! programmer error!");
               var ue = new XMLHttpRequest();
-              return ue.open("GET", t, false), P !== _e && ue.setRequestHeader("Range", "bytes=" + be + "-" + Ue), ue.responseType = "arraybuffer", ue.overrideMimeType && ue.overrideMimeType("text/plain; charset=x-user-defined"), ue.send(null), ue.status >= 200 && ue.status < 300 || ue.status === 304 || F("Couldn't load " + t + ". Status: " + ue.status), ue.response !== void 0 ? new Uint8Array(ue.response || []) : We(ue.responseText || "");
-            }, xe = this;
-            xe.setDataGetter((be) => {
-              var Ue = be * _e, ue = (be + 1) * _e - 1;
-              return ue = Math.min(ue, P - 1), typeof xe.chunks[be] > "u" && (xe.chunks[be] = ke(Ue, ue)), typeof xe.chunks[be] > "u" && F("doXHR failed!"), xe.chunks[be];
-            }), (ge || !P) && (_e = P = 1, P = this.getter(0).length, _e = P, X("LazyFiles on gzip forces download of the whole file when length is accessed")), this._length = P, this._chunkSize = _e, this.lengthKnown = true;
+              return ue.open("GET", t, false), A !== ge && ue.setRequestHeader("Range", "bytes=" + be + "-" + Ue), ue.responseType = "arraybuffer", ue.overrideMimeType && ue.overrideMimeType("text/plain; charset=x-user-defined"), ue.send(null), ue.status >= 200 && ue.status < 300 || ue.status === 304 || Y("Couldn't load " + t + ". Status: " + ue.status), ue.response !== void 0 ? new Uint8Array(ue.response || []) : qe(ue.responseText || "");
+            }, Le = this;
+            Le.setDataGetter((be) => {
+              var Ue = be * ge, ue = (be + 1) * ge - 1;
+              return ue = Math.min(ue, A - 1), typeof Le.chunks[be] > "u" && (Le.chunks[be] = ke(Ue, ue)), typeof Le.chunks[be] > "u" && Y("doXHR failed!"), Le.chunks[be];
+            }), (Ee || !A) && (ge = A = 1, A = this.getter(0).length, ge = A, p("LazyFiles on gzip forces download of the whole file when length is accessed")), this._length = A, this._chunkSize = ge, this.lengthKnown = true;
           }
           get length() {
             return this.lengthKnown || this.cacheLength(), this._length;
@@ -1557,7 +1638,7 @@ let __tla = (async () => {
           }
         }
         if (globalThis.XMLHttpRequest) {
-          F("Cannot do synchronous binary XHRs outside webworkers in modern browsers. Use --embed-file or --preload-file in emcc");
+          h || Y("Cannot do synchronous binary XHRs outside webworkers in modern browsers. Use --embed-file or --preload-file in emcc");
           var i = new a(), l = {
             isDevice: false,
             contents: i
@@ -1574,33 +1655,33 @@ let __tla = (async () => {
             }
           }
         });
-        var _ = {};
-        for (const [N, w] of Object.entries(d.stream_ops)) _[N] = (...P) => (o.forceLoadFile(d), w(...P));
-        function B(N, w, P, q, Ee) {
-          var ge = N.node.contents;
-          if (Ee >= ge.length) return 0;
-          var _e = Math.min(ge.length - Ee, q);
-          if (ge.slice) for (var ke = 0; ke < _e; ke++) w[P + ke] = ge[Ee + ke];
-          else for (var ke = 0; ke < _e; ke++) w[P + ke] = ge.get(Ee + ke);
-          return _e;
+        var P = {};
+        for (const [K, g] of Object.entries(d.stream_ops)) P[K] = (...A) => (o.forceLoadFile(d), g(...A));
+        function V(K, g, A, te, we) {
+          var Ee = K.node.contents;
+          if (we >= Ee.length) return 0;
+          var ge = Math.min(Ee.length - we, te);
+          if (Ee.slice) for (var ke = 0; ke < ge; ke++) g[A + ke] = Ee[we + ke];
+          else for (var ke = 0; ke < ge; ke++) g[A + ke] = Ee.get(we + ke);
+          return ge;
         }
-        return _.read = (N, w, P, q, Ee) => (o.forceLoadFile(d), B(N, w, P, q, Ee)), _.mmap = (N, w, P, q, Ee) => {
+        return P.read = (K, g, A, te, we) => (o.forceLoadFile(d), V(K, g, A, te, we)), P.mmap = (K, g, A, te, we) => {
           o.forceLoadFile(d);
-          var ge = Ge();
-          if (!ge) throw new o.ErrnoError(48);
-          return B(N, g, ge, w, P), {
-            ptr: ge,
+          var Ee = Je();
+          if (!Ee) throw new o.ErrnoError(48);
+          return V(K, k, Ee, g, A), {
+            ptr: Ee,
             allocated: true
           };
-        }, d.stream_ops = _, d;
+        }, d.stream_ops = P, d;
       }
-    }, Oe = {
+    }, Ce = {
       calculateAt(e, r, t) {
-        if (H.isAbs(r)) return r;
+        if (B.isAbs(r)) return r;
         var n;
         if (e === -100) n = o.cwd();
         else {
-          var s = Oe.getStreamFromFD(e);
+          var s = Ce.getStreamFromFD(e);
           n = s.path;
         }
         if (r.length == 0) {
@@ -1610,17 +1691,17 @@ let __tla = (async () => {
         return n + "/" + r;
       },
       writeStat(e, r) {
-        h[e >> 2] = r.dev, h[e + 4 >> 2] = r.mode, h[e + 8 >> 2] = r.nlink, h[e + 12 >> 2] = r.uid, h[e + 16 >> 2] = r.gid, h[e + 20 >> 2] = r.rdev, M[e + 24 >> 3] = BigInt(r.size), p[e + 32 >> 2] = 4096, p[e + 36 >> 2] = r.blocks;
+        v[e >> 2] = r.dev, v[e + 4 >> 2] = r.mode, v[e + 8 >> 2] = r.nlink, v[e + 12 >> 2] = r.uid, v[e + 16 >> 2] = r.gid, v[e + 20 >> 2] = r.rdev, M[e + 24 >> 3] = BigInt(r.size), I[e + 32 >> 2] = 4096, I[e + 36 >> 2] = r.blocks;
         var t = r.atime.getTime(), n = r.mtime.getTime(), s = r.ctime.getTime();
-        return M[e + 40 >> 3] = BigInt(Math.floor(t / 1e3)), h[e + 48 >> 2] = t % 1e3 * 1e3 * 1e3, M[e + 56 >> 3] = BigInt(Math.floor(n / 1e3)), h[e + 64 >> 2] = n % 1e3 * 1e3 * 1e3, M[e + 72 >> 3] = BigInt(Math.floor(s / 1e3)), h[e + 80 >> 2] = s % 1e3 * 1e3 * 1e3, M[e + 88 >> 3] = BigInt(r.ino), 0;
+        return M[e + 40 >> 3] = BigInt(Math.floor(t / 1e3)), v[e + 48 >> 2] = t % 1e3 * 1e3 * 1e3, M[e + 56 >> 3] = BigInt(Math.floor(n / 1e3)), v[e + 64 >> 2] = n % 1e3 * 1e3 * 1e3, M[e + 72 >> 3] = BigInt(Math.floor(s / 1e3)), v[e + 80 >> 2] = s % 1e3 * 1e3 * 1e3, M[e + 88 >> 3] = BigInt(r.ino), 0;
       },
       writeStatFs(e, r) {
-        h[e + 4 >> 2] = r.bsize, h[e + 60 >> 2] = r.bsize, M[e + 8 >> 3] = BigInt(r.blocks), M[e + 16 >> 3] = BigInt(r.bfree), M[e + 24 >> 3] = BigInt(r.bavail), M[e + 32 >> 3] = BigInt(r.files), M[e + 40 >> 3] = BigInt(r.ffree), h[e + 48 >> 2] = r.fsid, h[e + 64 >> 2] = r.flags, h[e + 56 >> 2] = r.namelen;
+        v[e + 4 >> 2] = r.bsize, v[e + 60 >> 2] = r.bsize, M[e + 8 >> 3] = BigInt(r.blocks), M[e + 16 >> 3] = BigInt(r.bfree), M[e + 24 >> 3] = BigInt(r.bavail), M[e + 32 >> 3] = BigInt(r.files), M[e + 40 >> 3] = BigInt(r.ffree), v[e + 48 >> 2] = r.fsid, v[e + 64 >> 2] = r.flags, v[e + 56 >> 2] = r.namelen;
       },
       doMsync(e, r, t, n, s) {
         if (!o.isFile(r.node.mode)) throw new o.ErrnoError(43);
         if (n & 2) return 0;
-        var a = z.slice(e, e + t);
+        var a = j.slice(e, e + t);
         o.msync(r, a, s, t, n);
       },
       getStreamFromFD(e) {
@@ -1629,393 +1710,393 @@ let __tla = (async () => {
       },
       varargs: void 0,
       getStr(e) {
-        var r = R(e);
+        var r = F(e);
         return r;
       }
     };
-    function pr(e) {
+    function kr(e) {
       try {
-        var r = Oe.getStreamFromFD(e);
+        var r = Ce.getStreamFromFD(e);
         return o.close(r), 0;
       } catch (t) {
         if (typeof o > "u" || t.name !== "ErrnoError") throw t;
         return t.errno;
       }
     }
-    var yr = (e, r, t, n) => {
+    var Ar = (e, r, t, n) => {
       for (var s = 0, a = 0; a < t; a++) {
-        var i = h[r >> 2], l = h[r + 4 >> 2];
+        var i = v[r >> 2], l = v[r + 4 >> 2];
         r += 8;
-        var d = o.read(e, g, i, l, n);
+        var d = o.read(e, k, i, l, n);
         if (d < 0) return -1;
         if (s += d, d < l) break;
       }
       return s;
     };
-    function wr(e, r, t, n) {
+    function br(e, r, t, n) {
       try {
-        var s = Oe.getStreamFromFD(e), a = yr(s, r, t);
-        return h[n >> 2] = a, 0;
+        var s = Ce.getStreamFromFD(e), a = Ar(s, r, t);
+        return v[n >> 2] = a, 0;
       } catch (i) {
         if (typeof o > "u" || i.name !== "ErrnoError") throw i;
         return i.errno;
       }
     }
-    var Er = 9007199254740992, gr = -9007199254740992, _r = (e) => e < gr || e > Er ? NaN : Number(e);
-    function Pr(e, r, t, n) {
-      r = _r(r);
+    var Fr = 9007199254740992, Sr = -9007199254740992, Rr = (e) => e < Sr || e > Fr ? NaN : Number(e);
+    function Mr(e, r, t, n) {
+      r = Rr(r);
       try {
         if (isNaN(r)) return 61;
-        var s = Oe.getStreamFromFD(e);
+        var s = Ce.getStreamFromFD(e);
         return o.llseek(s, r, t), M[n >> 3] = BigInt(s.position), s.getdents && r === 0 && t === 0 && (s.getdents = null), 0;
       } catch (a) {
         if (typeof o > "u" || a.name !== "ErrnoError") throw a;
         return a.errno;
       }
     }
-    var kr = (e, r, t, n) => {
+    var zr = (e, r, t, n) => {
       for (var s = 0, a = 0; a < t; a++) {
-        var i = h[r >> 2], l = h[r + 4 >> 2];
+        var i = v[r >> 2], l = v[r + 4 >> 2];
         r += 8;
-        var d = o.write(e, g, i, l, n);
+        var d = o.write(e, k, i, l, n);
         if (d < 0) return -1;
         if (s += d, d < l) break;
       }
       return s;
     };
-    function Ar(e, r, t, n) {
+    function Ur(e, r, t, n) {
       try {
-        var s = Oe.getStreamFromFD(e), a = kr(s, r, t);
-        return h[n >> 2] = a, 0;
+        var s = Ce.getStreamFromFD(e), a = zr(s, r, t);
+        return v[n >> 2] = a, 0;
       } catch (i) {
         if (typeof o > "u" || i.name !== "ErrnoError") throw i;
         return i.errno;
       }
     }
-    if (o.createPreloadedFile = vr, o.preloadFile = Je, o.staticInit(), c.noExitRuntime && c.noExitRuntime, c.preloadPlugins && (Ie = c.preloadPlugins), c.print && (X = c.print), c.printErr && (j = c.printErr), c.wasmBinary && (Z = c.wasmBinary), c.arguments && c.arguments, c.thisProgram && (u = c.thisProgram), c.preInit) for (typeof c.preInit == "function" && (c.preInit = [
+    if (o.createPreloadedFile = Pr, o.preloadFile = rr, o.staticInit(), c.noExitRuntime && c.noExitRuntime, c.preloadPlugins && (er = c.preloadPlugins), c.print && (p = c.print), c.printErr && (w = c.printErr), c.wasmBinary && (U = c.wasmBinary), c.arguments && c.arguments, c.thisProgram && (D = c.thisProgram), c.preInit) for (typeof c.preInit == "function" && (c.preInit = [
       c.preInit
     ]); c.preInit.length > 0; ) c.preInit.shift()();
-    var je;
-    function br(e) {
-      c._didactic_solve = e.didactic_solve, c._malloc = e.malloc, c._free = e.free, e._emscripten_stack_restore, e._emscripten_stack_alloc, e.emscripten_stack_get_current, je = e.memory, e.__indirect_function_table;
+    var Ye;
+    function Tr(e) {
+      c._deform = e.deform, c._malloc = e.malloc, c._free = e.free, c._didactic_solve = e.didactic_solve, c._modal = e.modal, c._modal_paz = e.modal_paz, e._emscripten_stack_restore, e._emscripten_stack_alloc, e.emscripten_stack_get_current, Ye = e.memory, e.__indirect_function_table;
     }
-    var er = {
-      __assert_fail: V,
-      __cxa_throw: O,
-      _abort_js: C,
-      _tzset_js: Ke,
-      emscripten_resize_heap: or,
-      environ_get: sr,
-      environ_sizes_get: ar,
-      fd_close: pr,
-      fd_read: wr,
-      fd_seek: Pr,
-      fd_write: Ar
+    var tr = {
+      __assert_fail: Pe,
+      __cxa_throw: je,
+      _abort_js: sr,
+      _tzset_js: ar,
+      emscripten_resize_heap: fr,
+      environ_get: dr,
+      environ_sizes_get: hr,
+      fd_close: kr,
+      fd_read: br,
+      fd_seek: Mr,
+      fd_write: Ur
     };
-    function Xe() {
-      if (Me > 0) {
-        Te = Xe;
+    function Qe() {
+      if (Re > 0) {
+        Oe = Qe;
         return;
       }
-      if ($(), Me > 0) {
-        Te = Xe;
+      if (le(), Re > 0) {
+        Oe = Qe;
         return;
       }
       function e() {
-        var _a;
-        c.calledRun = true, !K && (G(), re == null ? void 0 : re(c), (_a = c.onRuntimeInitialized) == null ? void 0 : _a.call(c), W());
+        var _a2;
+        c.calledRun = true, !y && (me(), ee == null ? void 0 : ee(c), (_a2 = c.onRuntimeInitialized) == null ? void 0 : _a2.call(c), ce());
       }
       c.setStatus ? (c.setStatus("Running..."), setTimeout(() => {
         setTimeout(() => c.setStatus(""), 1), e();
       }, 1)) : e();
     }
-    var Ne;
-    return Ne = await pe(), Xe(), T ? v = c : v = new Promise((e, r) => {
-      re = e, E = r;
-    }), v;
+    var Be;
+    return Be = await fe(), Qe(), S ? m = c : m = new Promise((e, r) => {
+      ee = e, x = r;
+    }), m;
   };
-  const L = await De();
-  Mr = function(f, v, c, u) {
+  const q = await Te();
+  Br = function(f, m, c, u) {
     if (f.length === 0) return;
-    const m = [], k = Pe(f.flat(), Float64Array, L.HEAPF64);
-    m.push(k);
-    const oe = v.flat(), Q = Pe(oe, Uint32Array, L.HEAPU32);
-    m.push(Q);
-    const ne = v.map((S) => S.length), X = Pe(ne, Uint32Array, L.HEAPU32);
-    m.push(X);
-    const j = c.supports ? Array.from(c.supports.keys()) : [], Z = c.supports ? Array.from(c.supports.values()).flat().map((S) => S ? 1 : 0) : [], K = Pe(j, Uint32Array, L.HEAPU32);
-    m.push(K);
-    const re = Pe(Z, Uint8Array, L.HEAPU8);
-    m.push(re);
-    const E = c.loads ? Array.from(c.loads.keys()) : [], g = c.loads ? Array.from(c.loads.values()).flat() : [], z = Pe(E, Uint32Array, L.HEAPU32);
-    m.push(z);
-    const p = Pe(g, Float64Array, L.HEAPF64);
-    m.push(p);
-    const h = (S) => {
-      const we = S ? Array.from(S.keys()) : [], Ke = S ? Array.from(S.values()) : [], Be = Pe(we, Uint32Array, L.HEAPU32);
-      m.push(Be);
-      const Le = Pe(Ke, Float64Array, L.HEAPF64);
-      return m.push(Le), {
-        keysPtr: Be,
-        valuesPtr: Le,
-        size: we.length
+    const h = [], _ = _e(f.flat(), Float64Array, q.HEAPF64);
+    h.push(_);
+    const H = m.flat(), D = _e(H, Uint32Array, q.HEAPU32);
+    h.push(D);
+    const G = m.map((F) => F.length), z = _e(G, Uint32Array, q.HEAPU32);
+    h.push(z);
+    const X = c.supports ? Array.from(c.supports.keys()) : [], J = c.supports ? Array.from(c.supports.values()).flat().map((F) => F ? 1 : 0) : [], L = _e(X, Uint32Array, q.HEAPU32);
+    h.push(L);
+    const N = _e(J, Uint8Array, q.HEAPU8);
+    h.push(N);
+    const p = c.loads ? Array.from(c.loads.keys()) : [], w = c.loads ? Array.from(c.loads.values()).flat() : [], U = _e(p, Uint32Array, q.HEAPU32);
+    h.push(U);
+    const y = _e(w, Float64Array, q.HEAPF64);
+    h.push(y);
+    const b = (F) => {
+      const Pe = F ? Array.from(F.keys()) : [], Ke = F ? Array.from(F.values()) : [], De = _e(Pe, Uint32Array, q.HEAPU32);
+      h.push(De);
+      const je = _e(Ke, Float64Array, q.HEAPF64);
+      return h.push(je), {
+        keysPtr: De,
+        valuesPtr: je,
+        size: Pe.length
       };
-    }, M = h(u.elasticities), T = h(u.elasticitiesOrthogonal), U = h(u.areas), $ = h(u.momentsOfInertiaZ), G = h(u.momentsOfInertiaY), W = h(u.shearModuli), F = h(u.torsionalConstants), A = h(u.thicknesses), te = h(u.poissonsRatios);
-    h(u.shearAreasY), h(u.shearAreasZ);
-    const ce = u.rigidOffsets ? Array.from(u.rigidOffsets.keys()) : [], me = u.rigidOffsets ? Array.from(u.rigidOffsets.values()).flat() : [], fe = Pe(ce, Uint32Array, L.HEAPU32);
-    m.push(fe);
-    const ve = Pe(me, Float64Array, L.HEAPF64);
-    m.push(ve);
-    const I = u.momentReleases ? Array.from(u.momentReleases.keys()) : [], pe = u.momentReleases ? Array.from(u.momentReleases.values()).flat().map((S) => S ? 1 : 0) : [], de = Pe(I, Uint32Array, L.HEAPU32);
-    m.push(de);
-    const J = Pe(pe, Uint8Array, L.HEAPU8);
-    m.push(J);
-    const se = L._malloc(4);
-    m.push(se);
-    const Y = L._malloc(4);
-    m.push(Y);
-    const he = L._malloc(4);
-    m.push(he);
-    const ae = L._malloc(4);
-    m.push(ae), L._deform(k, f.length, Q, oe.length, X, v.length, K, re, j.length, z, p, E.length, M.keysPtr, M.valuesPtr, M.size, U.keysPtr, U.valuesPtr, U.size, $.keysPtr, $.valuesPtr, $.size, G.keysPtr, G.valuesPtr, G.size, W.keysPtr, W.valuesPtr, W.size, F.keysPtr, F.valuesPtr, F.size, A.keysPtr, A.valuesPtr, A.size, te.keysPtr, te.valuesPtr, te.size, T.keysPtr, T.valuesPtr, T.size, se, Y, he, ae);
-    const ye = L.HEAPU32[se / 4], ie = L.HEAPU32[Y / 4], R = L.HEAPU32[he / 4], V = L.HEAPU32[ae / 4], ee = new Float64Array(L.HEAPF64.buffer, ye, ie), b = new Float64Array(L.HEAPF64.buffer, R, V), O = /* @__PURE__ */ new Map();
-    for (let S = 0; S < ie; S += 7) {
-      const we = ee[S];
-      O.set(we, Array.from(ee.slice(S + 1, S + 7)));
+    }, ee = b(u.elasticities), x = b(u.elasticitiesOrthogonal), k = b(u.areas), j = b(u.momentsOfInertiaZ), I = b(u.momentsOfInertiaY), v = b(u.shearModuli), M = b(u.torsionalConstants), S = b(u.thicknesses), oe = b(u.poissonsRatios);
+    b(u.shearAreasY), b(u.shearAreasZ);
+    const le = u.rigidOffsets ? Array.from(u.rigidOffsets.keys()) : [], me = u.rigidOffsets ? Array.from(u.rigidOffsets.values()).flat() : [], ce = _e(le, Uint32Array, q.HEAPU32);
+    h.push(ce);
+    const Y = _e(me, Float64Array, q.HEAPF64);
+    h.push(Y);
+    const re = u.momentReleases ? Array.from(u.momentReleases.keys()) : [], ve = u.momentReleases ? Array.from(u.momentReleases.values()).flat().map((F) => F ? 1 : 0) : [], pe = _e(re, Uint32Array, q.HEAPU32);
+    h.push(pe);
+    const se = _e(ve, Uint8Array, q.HEAPU8);
+    h.push(se);
+    const ae = q._malloc(4);
+    h.push(ae);
+    const Q = q._malloc(4);
+    h.push(Q);
+    const de = q._malloc(4);
+    h.push(de);
+    const fe = q._malloc(4);
+    h.push(fe), q._deform(_, f.length, D, H.length, z, m.length, L, N, X.length, U, y, p.length, ee.keysPtr, ee.valuesPtr, ee.size, k.keysPtr, k.valuesPtr, k.size, j.keysPtr, j.valuesPtr, j.size, I.keysPtr, I.valuesPtr, I.size, v.keysPtr, v.valuesPtr, v.size, M.keysPtr, M.valuesPtr, M.size, S.keysPtr, S.valuesPtr, S.size, oe.keysPtr, oe.valuesPtr, oe.size, x.keysPtr, x.valuesPtr, x.size, ae, Q, de, fe);
+    const he = q.HEAPU32[ae / 4], ye = q.HEAPU32[Q / 4], C = q.HEAPU32[de / 4], Z = q.HEAPU32[fe / 4], ne = new Float64Array(q.HEAPF64.buffer, he, ye), R = new Float64Array(q.HEAPF64.buffer, C, Z), $ = /* @__PURE__ */ new Map();
+    for (let F = 0; F < ye; F += 7) {
+      const Pe = ne[F];
+      $.set(Pe, Array.from(ne.slice(F + 1, F + 7)));
     }
-    const C = /* @__PURE__ */ new Map();
-    for (let S = 0; S < V; S += 7) {
-      const we = b[S];
-      C.set(we, Array.from(b.slice(S + 1, S + 7)));
+    const T = /* @__PURE__ */ new Map();
+    for (let F = 0; F < Z; F += 7) {
+      const Pe = R[F];
+      T.set(Pe, Array.from(R.slice(F + 1, F + 7)));
     }
-    return ye && m.push(ye), R && m.push(R), m.forEach((S) => L._free(S)), {
-      deformations: O,
-      reactions: C
+    return he && h.push(he), C && h.push(C), h.forEach((F) => q._free(F)), {
+      deformations: $,
+      reactions: T
     };
   };
-  function Pe(f, v, c) {
-    const u = new v(f), m = L._malloc(u.length * u.BYTES_PER_ELEMENT);
-    return c.set(u, m / u.BYTES_PER_ELEMENT), m;
+  function _e(f, m, c) {
+    const u = new m(f), h = q._malloc(u.length * u.BYTES_PER_ELEMENT);
+    return c.set(u, h / u.BYTES_PER_ELEMENT), h;
   }
-  const D = await De();
-  zr = function(f, v, c, u, m = 10) {
+  const O = await Te();
+  Lr = function(f, m, c, u, h = 10) {
     if (f.length === 0) return {
       frequencies: [],
       modeShapes: [],
       massParticipation: []
     };
-    const k = [], oe = ze(f.flat(), Float64Array, D.HEAPF64);
-    k.push(oe);
-    const Q = v.flat(), ne = ze(Q, Uint32Array, D.HEAPU32);
-    k.push(ne);
-    const X = v.map((R) => R.length), j = ze(X, Uint32Array, D.HEAPU32);
-    k.push(j);
-    const Z = c.supports ? Array.from(c.supports.keys()) : [], K = c.supports ? Array.from(c.supports.values()).flat().map((R) => R ? 1 : 0) : [], re = ze(Z, Uint32Array, D.HEAPU32);
-    k.push(re);
-    const E = ze(K, Uint8Array, D.HEAPU8);
-    k.push(E);
-    const g = (R) => {
-      const V = R ? Array.from(R.keys()) : [], ee = R ? Array.from(R.values()) : [], b = ze(V, Uint32Array, D.HEAPU32);
-      k.push(b);
-      const O = ze(ee, Float64Array, D.HEAPF64);
-      return k.push(O), {
-        keysPtr: b,
-        valuesPtr: O,
-        size: V.length
+    const _ = [], H = Me(f.flat(), Float64Array, O.HEAPF64);
+    _.push(H);
+    const D = m.flat(), G = Me(D, Uint32Array, O.HEAPU32);
+    _.push(G);
+    const z = m.map((C) => C.length), X = Me(z, Uint32Array, O.HEAPU32);
+    _.push(X);
+    const J = c.supports ? Array.from(c.supports.keys()) : [], L = c.supports ? Array.from(c.supports.values()).flat().map((C) => C ? 1 : 0) : [], N = Me(J, Uint32Array, O.HEAPU32);
+    _.push(N);
+    const p = Me(L, Uint8Array, O.HEAPU8);
+    _.push(p);
+    const w = (C) => {
+      const Z = C ? Array.from(C.keys()) : [], ne = C ? Array.from(C.values()) : [], R = Me(Z, Uint32Array, O.HEAPU32);
+      _.push(R);
+      const $ = Me(ne, Float64Array, O.HEAPF64);
+      return _.push($), {
+        keysPtr: R,
+        valuesPtr: $,
+        size: Z.length
       };
-    }, z = g(u.elasticities), p = g(u.areas), h = g(u.momentsOfInertiaZ), M = g(u.momentsOfInertiaY), T = g(u.shearModuli), U = g(u.torsionalConstants), $ = g(u.densities), G = D._malloc(4);
-    k.push(G);
-    const W = D._malloc(4);
-    k.push(W);
-    const F = D._malloc(4);
-    k.push(F);
-    const A = D._malloc(4);
-    k.push(A);
-    const te = D._malloc(4);
-    k.push(te);
-    const ce = D._malloc(4);
-    k.push(ce);
-    const me = D._malloc(4);
-    k.push(me);
-    const fe = D._malloc(4);
-    k.push(fe), D._modal(oe, f.length, ne, Q.length, j, v.length, re, E, Z.length, z.keysPtr, z.valuesPtr, z.size, p.keysPtr, p.valuesPtr, p.size, h.keysPtr, h.valuesPtr, h.size, M.keysPtr, M.valuesPtr, M.size, T.keysPtr, T.valuesPtr, T.size, U.keysPtr, U.valuesPtr, U.size, $.keysPtr, $.valuesPtr, $.size, m, G, W, F, A, te, ce, me, fe);
-    const ve = D.HEAPU32[G / 4], I = D.HEAPU32[W / 4], pe = D.HEAPU32[F / 4], de = D.HEAPU32[A / 4], J = D.HEAPU32[te / 4], se = D.HEAPU32[ce / 4], Y = D.HEAPU32[me / 4], he = D.HEAPU32[fe / 4];
-    let ae = [], ye = [], ie = [];
-    if (I > 0 && ve) {
-      const R = new Float64Array(D.HEAPF64.buffer, ve, I);
-      ae = Array.from(R), k.push(ve);
+    }, U = w(u.elasticities), y = w(u.areas), b = w(u.momentsOfInertiaZ), ee = w(u.momentsOfInertiaY), x = w(u.shearModuli), k = w(u.torsionalConstants), j = w(u.densities), I = O._malloc(4);
+    _.push(I);
+    const v = O._malloc(4);
+    _.push(v);
+    const M = O._malloc(4);
+    _.push(M);
+    const S = O._malloc(4);
+    _.push(S);
+    const oe = O._malloc(4);
+    _.push(oe);
+    const le = O._malloc(4);
+    _.push(le);
+    const me = O._malloc(4);
+    _.push(me);
+    const ce = O._malloc(4);
+    _.push(ce), O._modal(H, f.length, G, D.length, X, m.length, N, p, J.length, U.keysPtr, U.valuesPtr, U.size, y.keysPtr, y.valuesPtr, y.size, b.keysPtr, b.valuesPtr, b.size, ee.keysPtr, ee.valuesPtr, ee.size, x.keysPtr, x.valuesPtr, x.size, k.keysPtr, k.valuesPtr, k.size, j.keysPtr, j.valuesPtr, j.size, h, I, v, M, S, oe, le, me, ce);
+    const Y = O.HEAPU32[I / 4], re = O.HEAPU32[v / 4], ve = O.HEAPU32[M / 4], pe = O.HEAPU32[S / 4], se = O.HEAPU32[oe / 4], ae = O.HEAPU32[le / 4], Q = O.HEAPU32[me / 4], de = O.HEAPU32[ce / 4];
+    let fe = [], he = [], ye = [];
+    if (re > 0 && Y) {
+      const C = new Float64Array(O.HEAPF64.buffer, Y, re);
+      fe = Array.from(C), _.push(Y);
     }
-    if (de > 0 && J > 0 && pe) {
-      const R = new Float64Array(D.HEAPF64.buffer, pe, de * J);
-      for (let V = 0; V < de; V++) ye.push(Array.from(R.slice(V * J, (V + 1) * J)));
-      k.push(pe);
+    if (pe > 0 && se > 0 && ve) {
+      const C = new Float64Array(O.HEAPF64.buffer, ve, pe * se);
+      for (let Z = 0; Z < pe; Z++) he.push(Array.from(C.slice(Z * se, (Z + 1) * se)));
+      _.push(ve);
     }
-    if (Y > 0 && he > 0 && se) {
-      const R = new Float64Array(D.HEAPF64.buffer, se, Y * he);
-      for (let V = 0; V < Y; V++) ie.push(Array.from(R.slice(V * he, (V + 1) * he)));
-      k.push(se);
+    if (Q > 0 && de > 0 && ae) {
+      const C = new Float64Array(O.HEAPF64.buffer, ae, Q * de);
+      for (let Z = 0; Z < Q; Z++) ye.push(Array.from(C.slice(Z * de, (Z + 1) * de)));
+      _.push(ae);
     }
-    return k.forEach((R) => D._free(R)), {
-      frequencies: ae,
-      modeShapes: ye,
-      massParticipation: ie
+    return _.forEach((C) => O._free(C)), {
+      frequencies: fe,
+      modeShapes: he,
+      massParticipation: ye
     };
   };
-  function ze(f, v, c) {
-    const u = new v(f), m = D._malloc(u.length * u.BYTES_PER_ELEMENT);
-    return c.set(u, m / u.BYTES_PER_ELEMENT), m;
+  function Me(f, m, c) {
+    const u = new m(f), h = O._malloc(u.length * u.BYTES_PER_ELEMENT);
+    return c.set(u, h / u.BYTES_PER_ELEMENT), h;
   }
-  await De();
-  const Ae = await De();
-  Rr = function(f) {
-    const { nodes: v, elements: c, E: u, nu: m, gamma: k, c: oe, phi: Q, thickness: ne = 1, supports: X, surcharge: j = 0, surfaceYThreshold: Z = -1e10 } = f, K = [], re = v.flat(), E = Fr(re);
-    K.push(E);
-    const g = c.flat(), z = rr(g);
-    K.push(z);
-    const p = [];
-    for (const A of X) p.push(A.node, A.fixX ? 1 : 0, A.fixY ? 1 : 0);
-    const h = rr(p);
-    K.push(h);
-    const M = c.length, T = v.length, U = Ae._slopeAllocDouble(M);
-    K.push(U);
-    const $ = Ae._slopeAllocDouble(T * 2);
-    K.push($);
-    const G = Ae._slopeStabilitySolver(E, T, z, M, u, m, k, oe, Q, ne, h, X.length, j, Z, U, $), W = [];
-    for (let A = 0; A < M; A++) W.push(Ae.HEAPF64[U / 8 + A]);
-    const F = [];
-    for (let A = 0; A < T; A++) F.push([
-      Ae.HEAPF64[$ / 8 + 2 * A],
-      Ae.HEAPF64[$ / 8 + 2 * A + 1]
+  await Te();
+  const Ae = await Te();
+  xr = function(f) {
+    const { nodes: m, elements: c, E: u, nu: h, gamma: _, c: H, phi: D, thickness: G = 1, supports: z, surcharge: X = 0, surfaceYThreshold: J = -1e10 } = f, L = [], N = m.flat(), p = Or(N);
+    L.push(p);
+    const w = c.flat(), U = nr(w);
+    L.push(U);
+    const y = [];
+    for (const S of z) y.push(S.node, S.fixX ? 1 : 0, S.fixY ? 1 : 0);
+    const b = nr(y);
+    L.push(b);
+    const ee = c.length, x = m.length, k = Ae._slopeAllocDouble(ee);
+    L.push(k);
+    const j = Ae._slopeAllocDouble(x * 2);
+    L.push(j);
+    const I = Ae._slopeStabilitySolver(p, x, U, ee, u, h, _, H, D, G, b, z.length, X, J, k, j), v = [];
+    for (let S = 0; S < ee; S++) v.push(Ae.HEAPF64[k / 8 + S]);
+    const M = [];
+    for (let S = 0; S < x; S++) M.push([
+      Ae.HEAPF64[j / 8 + 2 * S],
+      Ae.HEAPF64[j / 8 + 2 * S + 1]
     ]);
-    return K.forEach((A) => Ae._free(A)), {
-      fos: G,
-      plasticStrain: W,
-      displacements: F
+    return L.forEach((S) => Ae._free(S)), {
+      fos: I,
+      plasticStrain: v,
+      displacements: M
     };
   };
-  function Fr(f) {
-    const v = new Float64Array(f), c = Ae._malloc(v.length * v.BYTES_PER_ELEMENT);
-    return Ae.HEAPF64.set(v, c / 8), c;
+  function Or(f) {
+    const m = new Float64Array(f), c = Ae._malloc(m.length * m.BYTES_PER_ELEMENT);
+    return Ae.HEAPF64.set(m, c / 8), c;
   }
-  function rr(f) {
-    const v = new Uint32Array(f), c = Ae._malloc(v.length * v.BYTES_PER_ELEMENT);
-    return Ae.HEAPU32.set(v, c / 4), c;
+  function nr(f) {
+    const m = new Uint32Array(f), c = Ae._malloc(m.length * m.BYTES_PER_ELEMENT);
+    return Ae.HEAPU32.set(m, c / 4), c;
   }
-  const le = await De();
-  function Ce(f, v, c) {
-    const u = new v(f), m = le._malloc(u.length * u.BYTES_PER_ELEMENT);
-    return c.set(u, m / u.BYTES_PER_ELEMENT), m;
+  const ie = await Te();
+  function xe(f, m, c) {
+    const u = new m(f), h = ie._malloc(u.length * u.BYTES_PER_ELEMENT);
+    return c.set(u, h / u.BYTES_PER_ELEMENT), h;
   }
-  Ur = function(f) {
-    const v = [];
+  jr = function(f) {
+    const m = [];
     let c = [], u = 0;
     f.nodes && f.nodes.length > 0 && (u = f.nodes.length, c = f.nodes.flat());
-    const m = Ce(c.length > 0 ? c : [
+    const h = xe(c.length > 0 ? c : [
       0
-    ], Float64Array, le.HEAPF64);
-    v.push(m);
-    let k = [], oe = 0;
-    f.elements && f.elements.length > 0 && (oe = f.elements.length, k = f.elements.flat());
-    const Q = Ce(k.length > 0 ? k : [
+    ], Float64Array, ie.HEAPF64);
+    m.push(h);
+    let _ = [], H = 0;
+    f.elements && f.elements.length > 0 && (H = f.elements.length, _ = f.elements.flat());
+    const D = xe(_.length > 0 ? _ : [
       0
-    ], Int32Array, le.HEAPU32);
-    v.push(Q);
-    let ne = [], X = 0;
-    f.bcs && f.bcs.length > 0 && (X = f.bcs.length, ne = f.bcs.flatMap((b) => [
-      b.node,
-      b.dof,
-      b.value
+    ], Int32Array, ie.HEAPU32);
+    m.push(D);
+    let G = [], z = 0;
+    f.bcs && f.bcs.length > 0 && (z = f.bcs.length, G = f.bcs.flatMap((R) => [
+      R.node,
+      R.dof,
+      R.value
     ]));
-    const j = Ce(ne.length > 0 ? ne : [
+    const X = xe(G.length > 0 ? G : [
       0
-    ], Float64Array, le.HEAPF64);
-    v.push(j);
-    let Z = [], K = 0;
-    f.pointLoads && f.pointLoads.length > 0 && (K = f.pointLoads.length, Z = f.pointLoads.flatMap((b) => [
-      b.node,
-      b.dof,
-      b.value
+    ], Float64Array, ie.HEAPF64);
+    m.push(X);
+    let J = [], L = 0;
+    f.pointLoads && f.pointLoads.length > 0 && (L = f.pointLoads.length, J = f.pointLoads.flatMap((R) => [
+      R.node,
+      R.dof,
+      R.value
     ]));
-    const re = Ce(Z.length > 0 ? Z : [
+    const N = xe(J.length > 0 ? J : [
       0
-    ], Float64Array, le.HEAPF64);
-    v.push(re);
-    const E = f.meshLx ?? 0, g = f.meshLy ?? 0, z = f.meshNx ?? 0, p = f.meshNy ?? 0, M = {
+    ], Float64Array, ie.HEAPF64);
+    m.push(N);
+    const p = f.meshLx ?? 0, w = f.meshLy ?? 0, U = f.meshNx ?? 0, y = f.meshNy ?? 0, ee = {
       none: 0,
       "simply-supported": 1,
       clamped: 2
-    }[f.bcType ?? "none"] ?? 0, T = f.theoryType ?? 0;
-    let U = [], $ = 0;
-    f.springs && f.springs.length > 0 && ($ = f.springs.length, U = f.springs.flatMap((b) => [
-      b.node,
-      b.dof,
-      b.k
+    }[f.bcType ?? "none"] ?? 0, x = f.theoryType ?? 0;
+    let k = [], j = 0;
+    f.springs && f.springs.length > 0 && (j = f.springs.length, k = f.springs.flatMap((R) => [
+      R.node,
+      R.dof,
+      R.k
     ]));
-    const G = Ce(U.length > 0 ? U : [
+    const I = xe(k.length > 0 ? k : [
       0
-    ], Float64Array, le.HEAPF64);
-    v.push(G);
-    const W = le._malloc(4);
-    v.push(W);
-    const F = le._malloc(4);
-    v.push(F);
-    const A = le._malloc(4);
-    v.push(A);
-    const te = le._malloc(4);
-    v.push(te), le._plate_q4_solve(m, u, Q, oe, f.E, f.nu, f.thickness, j, X, f.pressure ?? 0, re, K, E, g, z, p, M, T, G, $, W, F, A, te);
-    const ce = le.HEAPU32[W / 4], me = le.HEAPU32[F / 4], fe = le.HEAPU32[A / 4], ve = le.HEAPU32[te / 4], I = new Float64Array(le.HEAPF64.buffer, ce, me), pe = I[0], de = I[1], J = [];
-    let se = 0;
-    for (let b = 0; b < pe; b++) {
-      const O = 2 + b * 5, C = {
-        x: I[O],
-        y: I[O + 1],
-        w: I[O + 2],
-        bx: I[O + 3],
-        by: I[O + 4]
+    ], Float64Array, ie.HEAPF64);
+    m.push(I);
+    const v = ie._malloc(4);
+    m.push(v);
+    const M = ie._malloc(4);
+    m.push(M);
+    const S = ie._malloc(4);
+    m.push(S);
+    const oe = ie._malloc(4);
+    m.push(oe), ie._plate_q4_solve(h, u, D, H, f.E, f.nu, f.thickness, X, z, f.pressure ?? 0, N, L, p, w, U, y, ee, x, I, j, v, M, S, oe);
+    const le = ie.HEAPU32[v / 4], me = ie.HEAPU32[M / 4], ce = ie.HEAPU32[S / 4], Y = ie.HEAPU32[oe / 4], re = new Float64Array(ie.HEAPF64.buffer, le, me), ve = re[0], pe = re[1], se = [];
+    let ae = 0;
+    for (let R = 0; R < ve; R++) {
+      const $ = 2 + R * 5, T = {
+        x: re[$],
+        y: re[$ + 1],
+        w: re[$ + 2],
+        bx: re[$ + 3],
+        by: re[$ + 4]
       };
-      J.push(C), Math.abs(C.w) > Math.abs(se) && (se = C.w);
+      se.push(T), Math.abs(T.w) > Math.abs(ae) && (ae = T.w);
     }
-    const Y = new Float64Array(le.HEAPF64.buffer, fe, ve), he = [];
-    let ae = 0, ye = 0, ie = 0, R = 0, V = 0;
-    for (let b = 0; b < de; b++) {
-      const O = b * 9, C = {
+    const Q = new Float64Array(ie.HEAPF64.buffer, ce, Y), de = [];
+    let fe = 0, he = 0, ye = 0, C = 0, Z = 0;
+    for (let R = 0; R < pe; R++) {
+      const $ = R * 9, T = {
         nodes: [
-          Y[O],
-          Y[O + 1],
-          Y[O + 2],
-          Y[O + 3]
+          Q[$],
+          Q[$ + 1],
+          Q[$ + 2],
+          Q[$ + 3]
         ],
-        Mxx: Y[O + 4],
-        Myy: Y[O + 5],
-        Mxy: Y[O + 6],
-        Qx: Y[O + 7],
-        Qy: Y[O + 8]
+        Mxx: Q[$ + 4],
+        Myy: Q[$ + 5],
+        Mxy: Q[$ + 6],
+        Qx: Q[$ + 7],
+        Qy: Q[$ + 8]
       };
-      he.push(C), Math.abs(C.Mxx) > Math.abs(ae) && (ae = C.Mxx), Math.abs(C.Myy) > Math.abs(ye) && (ye = C.Myy), Math.abs(C.Mxy) > Math.abs(ie) && (ie = C.Mxy), Math.abs(C.Qx) > Math.abs(R) && (R = C.Qx), Math.abs(C.Qy) > Math.abs(V) && (V = C.Qy);
+      de.push(T), Math.abs(T.Mxx) > Math.abs(fe) && (fe = T.Mxx), Math.abs(T.Myy) > Math.abs(he) && (he = T.Myy), Math.abs(T.Mxy) > Math.abs(ye) && (ye = T.Mxy), Math.abs(T.Qx) > Math.abs(C) && (C = T.Qx), Math.abs(T.Qy) > Math.abs(Z) && (Z = T.Qy);
     }
-    let ee;
-    if (E > 0 && g > 0) {
-      const b = E / 2, O = g / 2;
-      let C = 1 / 0;
-      for (const S of J) {
-        const we = Math.hypot(S.x - b, S.y - O);
-        we < C && (C = we, ee = S.w);
+    let ne;
+    if (p > 0 && w > 0) {
+      const R = p / 2, $ = w / 2;
+      let T = 1 / 0;
+      for (const F of se) {
+        const Pe = Math.hypot(F.x - R, F.y - $);
+        Pe < T && (T = Pe, ne = F.w);
       }
     }
-    return ce && v.push(ce), fe && v.push(fe), v.forEach((b) => le._free(b)), {
-      nodeResults: J,
-      elementResults: he,
-      maxW: se,
-      maxMxx: ae,
-      maxMyy: ye,
-      maxMxy: ie,
-      maxQx: R,
-      maxQy: V,
-      centerW: ee
+    return le && m.push(le), ce && m.push(ce), m.forEach((R) => ie._free(R)), {
+      nodeResults: se,
+      elementResults: de,
+      maxW: ae,
+      maxMxx: fe,
+      maxMyy: he,
+      maxMxy: ye,
+      maxQx: C,
+      maxQy: Z,
+      centerW: ne
     };
   };
-  const x = await De();
-  Dr = function(f, v, c, u) {
+  const W = await Te();
+  Yr = function(f, m, c, u) {
     if (f.length === 0) return {
       nNodes: 0,
       nElements: 0,
@@ -2029,135 +2110,136 @@ let __tla = (async () => {
       freeDOFs: [],
       fixedDOFs: []
     };
-    const m = [], k = Fe(f.flat(), Float64Array, x.HEAPF64);
-    m.push(k);
-    const oe = v.flat(), Q = Fe(oe, Uint32Array, x.HEAPU32);
-    m.push(Q);
-    const ne = v.map((ee) => ee.length), X = Fe(ne, Uint32Array, x.HEAPU32);
-    m.push(X);
-    const j = c.supports ? Array.from(c.supports.keys()) : [], Z = c.supports ? Array.from(c.supports.values()).flat().map((ee) => ee ? 1 : 0) : [], K = Fe(j, Uint32Array, x.HEAPU32);
-    m.push(K);
-    const re = Fe(Z, Uint8Array, x.HEAPU8);
-    m.push(re);
-    const E = c.loads ? Array.from(c.loads.keys()) : [], g = c.loads ? Array.from(c.loads.values()).flat() : [], z = Fe(E, Uint32Array, x.HEAPU32);
-    m.push(z);
-    const p = Fe(g, Float64Array, x.HEAPF64);
-    m.push(p);
-    const h = (ee) => {
-      const b = ee ? Array.from(ee.keys()) : [], O = ee ? Array.from(ee.values()) : [], C = Fe(b, Uint32Array, x.HEAPU32);
-      m.push(C);
-      const S = Fe(O, Float64Array, x.HEAPF64);
-      return m.push(S), {
-        keysPtr: C,
-        valuesPtr: S,
-        size: b.length
+    const h = [], _ = Fe(f.flat(), Float64Array, W.HEAPF64);
+    h.push(_);
+    const H = m.flat(), D = Fe(H, Uint32Array, W.HEAPU32);
+    h.push(D);
+    const G = m.map((ne) => ne.length), z = Fe(G, Uint32Array, W.HEAPU32);
+    h.push(z);
+    const X = c.supports ? Array.from(c.supports.keys()) : [], J = c.supports ? Array.from(c.supports.values()).flat().map((ne) => ne ? 1 : 0) : [], L = Fe(X, Uint32Array, W.HEAPU32);
+    h.push(L);
+    const N = Fe(J, Uint8Array, W.HEAPU8);
+    h.push(N);
+    const p = c.loads ? Array.from(c.loads.keys()) : [], w = c.loads ? Array.from(c.loads.values()).flat() : [], U = Fe(p, Uint32Array, W.HEAPU32);
+    h.push(U);
+    const y = Fe(w, Float64Array, W.HEAPF64);
+    h.push(y);
+    const b = (ne) => {
+      const R = ne ? Array.from(ne.keys()) : [], $ = ne ? Array.from(ne.values()) : [], T = Fe(R, Uint32Array, W.HEAPU32);
+      h.push(T);
+      const F = Fe($, Float64Array, W.HEAPF64);
+      return h.push(F), {
+        keysPtr: T,
+        valuesPtr: F,
+        size: R.length
       };
-    }, M = h(u.elasticities), T = h(u.areas), U = h(u.momentsOfInertiaZ), $ = h(u.momentsOfInertiaY), G = h(u.shearModuli), W = h(u.torsionalConstants), F = h(u.thicknesses), A = h(u.poissonsRatios), te = h(u.shearAreasY), ce = h(u.shearAreasZ), me = x._malloc(4);
-    m.push(me);
-    const fe = x._malloc(4);
-    m.push(fe);
-    const ve = x._malloc(4);
-    m.push(ve);
-    const I = x._malloc(4);
-    m.push(I);
-    const pe = x._malloc(4);
-    m.push(pe);
-    const de = x._malloc(4);
-    m.push(de), x._didactic_solve(k, f.length, Q, oe.length, X, v.length, K, re, j.length, z, p, E.length, M.keysPtr, M.valuesPtr, M.size, T.keysPtr, T.valuesPtr, T.size, U.keysPtr, U.valuesPtr, U.size, $.keysPtr, $.valuesPtr, $.size, G.keysPtr, G.valuesPtr, G.size, W.keysPtr, W.valuesPtr, W.size, F.keysPtr, F.valuesPtr, F.size, A.keysPtr, A.valuesPtr, A.size, te.keysPtr, te.valuesPtr, te.size, ce.keysPtr, ce.valuesPtr, ce.size, me, fe, ve, I, pe, de);
-    const J = x.HEAPU32[me / 4], se = x.HEAPU32[fe / 4], Y = x.HEAPU32[ve / 4], he = x.HEAPU32[I / 4], ae = x.HEAPU32[pe / 4], ye = x.HEAPU32[de / 4], ie = J && se > 0 ? Array.from(new Float64Array(x.HEAPF64.buffer, J, se)) : [], R = Y && he > 0 ? Array.from(new Float64Array(x.HEAPF64.buffer, Y, he)) : [], V = ae && ye > 0 ? Array.from(new Float64Array(x.HEAPF64.buffer, ae, ye)) : [];
-    return J && m.push(J), Y && m.push(Y), ae && m.push(ae), m.forEach((ee) => x._free(ee)), Sr(ie, R, V, f.length, v.length);
+    }, ee = b(u.elasticities), x = b(u.areas), k = b(u.momentsOfInertiaZ), j = b(u.momentsOfInertiaY), I = b(u.shearModuli), v = b(u.torsionalConstants), M = b(u.thicknesses), S = b(u.poissonsRatios), oe = b(u.shearAreasY), le = b(u.shearAreasZ), me = W._malloc(4);
+    h.push(me);
+    const ce = W._malloc(4);
+    h.push(ce);
+    const Y = W._malloc(4);
+    h.push(Y);
+    const re = W._malloc(4);
+    h.push(re);
+    const ve = W._malloc(4);
+    h.push(ve);
+    const pe = W._malloc(4);
+    h.push(pe), W._didactic_solve(_, f.length, D, H.length, z, m.length, L, N, X.length, U, y, p.length, ee.keysPtr, ee.valuesPtr, ee.size, x.keysPtr, x.valuesPtr, x.size, k.keysPtr, k.valuesPtr, k.size, j.keysPtr, j.valuesPtr, j.size, I.keysPtr, I.valuesPtr, I.size, v.keysPtr, v.valuesPtr, v.size, M.keysPtr, M.valuesPtr, M.size, S.keysPtr, S.valuesPtr, S.size, oe.keysPtr, oe.valuesPtr, oe.size, le.keysPtr, le.valuesPtr, le.size, me, ce, Y, re, ve, pe);
+    const se = W.HEAPU32[me / 4], ae = W.HEAPU32[ce / 4], Q = W.HEAPU32[Y / 4], de = W.HEAPU32[re / 4], fe = W.HEAPU32[ve / 4], he = W.HEAPU32[pe / 4], ye = se && ae > 0 ? Array.from(new Float64Array(W.HEAPF64.buffer, se, ae)) : [], C = Q && de > 0 ? Array.from(new Float64Array(W.HEAPF64.buffer, Q, de)) : [], Z = fe && he > 0 ? Array.from(new Float64Array(W.HEAPF64.buffer, fe, he)) : [];
+    return se && h.push(se), Q && h.push(Q), fe && h.push(fe), h.forEach((ne) => W._free(ne)), Cr(ye, C, Z, f.length, m.length);
   };
-  function Sr(f, v, c, u, m) {
-    const k = u * 6, oe = [];
+  function Cr(f, m, c, u, h) {
+    const _ = u * 6, H = [];
     if (f.length > 0) {
-      const E = f[0], g = [];
-      for (let z = 0; z < E; z++) g.push(f[1 + z]);
-      for (let z = 0; z < E; z++) {
-        let p = g[z];
-        const h = f[p++], M = f[p++], T = f[p++], U = T * T, $ = Ye(f.slice(p, p + U), T);
-        p += U;
-        const G = Ye(f.slice(p, p + U), T);
-        p += U;
-        const W = Ye(f.slice(p, p + U), T);
-        p += U;
-        const F = Ye(f.slice(p, p + 9), 3);
-        p += 9;
-        const A = f[p++], te = f[p++], ce = f[p++], me = f[p++], fe = f[p++], ve = f[p++], I = f[p++], pe = f[p++], de = f[p++], J = f[p++], se = f[p++];
-        oe.push({
-          index: h,
-          type: M === 0 ? "frame" : "shell-Q4",
-          nDOF: T,
-          K_local: $,
-          T: G,
-          K_global: W,
-          lambda: F,
-          L: A,
-          E: te,
-          A: ce,
+      const p = f[0], w = [];
+      for (let U = 0; U < p; U++) w.push(f[1 + U]);
+      for (let U = 0; U < p; U++) {
+        let y = w[U];
+        const b = f[y++], ee = f[y++], x = f[y++], k = x * x, j = $e(f.slice(y, y + k), x);
+        y += k;
+        const I = $e(f.slice(y, y + k), x);
+        y += k;
+        const v = $e(f.slice(y, y + k), x);
+        y += k;
+        const M = $e(f.slice(y, y + 9), 3);
+        y += 9;
+        const S = f[y++], oe = f[y++], le = f[y++], me = f[y++], ce = f[y++], Y = f[y++], re = f[y++], ve = f[y++], pe = f[y++], se = f[y++], ae = f[y++];
+        H.push({
+          index: b,
+          type: ee === 0 ? "frame" : "shell-Q4",
+          nDOF: x,
+          K_local: j,
+          T: I,
+          K_global: v,
+          lambda: M,
+          L: S,
+          E: oe,
+          A: le,
           Iz: me,
-          Iy: fe,
-          G: ve,
-          J: I,
-          t: pe,
-          nu: de,
-          phiZ: J,
-          phiY: se
+          Iy: ce,
+          G: Y,
+          J: re,
+          t: ve,
+          nu: pe,
+          phiZ: se,
+          phiY: ae
         });
       }
     }
-    const Q = [];
-    let ne = 0;
-    if (v.length > 0) {
-      ne = v[0];
-      for (let E = 0; E < ne; E++) {
-        const g = 1 + E * 3;
-        Q.push({
-          row: v[g],
-          col: v[g + 1],
-          value: v[g + 2]
+    const D = [];
+    let G = 0;
+    if (m.length > 0) {
+      G = m[0];
+      for (let p = 0; p < G; p++) {
+        const w = 1 + p * 3;
+        D.push({
+          row: m[w],
+          col: m[w + 1],
+          value: m[w + 2]
         });
       }
     }
-    let X = [], j = [], Z = [], K = [], re = [];
+    let z = [], X = [], J = [], L = [], N = [];
     if (c.length > 0) {
-      let E = 0;
-      const g = c[E++];
-      X = c.slice(E, E + g), E += g, j = c.slice(E, E + g), E += g, Z = c.slice(E, E + g), E += g;
-      const z = c[E++];
-      K = c.slice(E, E + z).map(Math.round), E += z;
-      const p = c[E++];
-      re = c.slice(E, E + p).map(Math.round);
+      let p = 0;
+      const w = c[p++];
+      z = c.slice(p, p + w), p += w, X = c.slice(p, p + w), p += w, J = c.slice(p, p + w), p += w;
+      const U = c[p++];
+      L = c.slice(p, p + U).map(Math.round), p += U;
+      const y = c[p++];
+      N = c.slice(p, p + y).map(Math.round);
     }
     return {
       nNodes: u,
-      nElements: m,
-      nDOF: k,
-      elements: oe,
-      K_assembled_sparse: Q,
-      K_assembled_nnz: ne,
-      F_applied: X,
-      U_full: j,
-      R_full: Z,
-      freeDOFs: K,
-      fixedDOFs: re
+      nElements: h,
+      nDOF: _,
+      elements: H,
+      K_assembled_sparse: D,
+      K_assembled_nnz: G,
+      F_applied: z,
+      U_full: X,
+      R_full: J,
+      freeDOFs: L,
+      fixedDOFs: N
     };
   }
-  function Ye(f, v) {
+  function $e(f, m) {
     const c = [];
-    for (let u = 0; u < v; u++) c.push(f.slice(u * v, (u + 1) * v));
+    for (let u = 0; u < m; u++) c.push(f.slice(u * m, (u + 1) * m));
     return c;
   }
-  function Fe(f, v, c) {
-    const u = new v(f), m = x._malloc(u.length * u.BYTES_PER_ELEMENT);
-    return c.set(u, m / u.BYTES_PER_ELEMENT), m;
+  function Fe(f, m, c) {
+    const u = new m(f), h = W._malloc(u.length * u.BYTES_PER_ELEMENT);
+    return c.set(u, h / u.BYTES_PER_ELEMENT), h;
   }
 })();
 export {
-  De as M,
+  Te as M,
+  Nr as _,
   __tla,
-  Dr as a,
-  Mr as d,
-  zr as m,
-  Ur as p,
-  Rr as s
+  Yr as a,
+  Br as d,
+  Lr as m,
+  jr as p,
+  xr as s
 };

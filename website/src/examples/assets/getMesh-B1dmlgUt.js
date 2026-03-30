@@ -1,11 +1,12 @@
-import { m as j, t as Qe, s as de, d as pe, n as ye, c as J, b as Xe } from "./pureFunctionsAny.generated-JAcEVsJ7.js";
-let Je, yr, _r, K;
+import { _ as Qe } from "./__vite-browser-external-D7Ct-6yo.js";
+import { m as j, t as Xe, s as de, d as pe, n as ye, c as J, b as Je } from "./pureFunctionsAny.generated-JAcEVsJ7.js";
+let Ke, yr, _r, K;
 let __tla = (async () => {
   yr = typeof globalThis < "u" ? globalThis : typeof window < "u" ? window : typeof global < "u" ? global : typeof self < "u" ? self : {};
-  Je = function(n) {
+  Ke = function(n) {
     return n && n.__esModule && Object.prototype.hasOwnProperty.call(n, "default") ? n.default : n;
   };
-  function Ke(n) {
+  function je(n) {
     if (n.__esModule) return n;
     var t = n.default;
     if (typeof t == "function") {
@@ -26,15 +27,7 @@ let __tla = (async () => {
       });
     }), o;
   }
-  let je, er;
-  je = {};
-  er = Object.freeze(Object.defineProperty({
-    __proto__: null,
-    default: je
-  }, Symbol.toStringTag, {
-    value: "Module"
-  }));
-  K = Ke(er);
+  K = je(Qe);
   var _e = {
     exports: {}
   };
@@ -57,9 +50,9 @@ let __tla = (async () => {
         function Ae(e) {
           return r.locateFile ? r.locateFile(e, v) : v + e;
         }
-        var L, N, z, G;
+        var L, N, G, z;
         x ? (d ? v = K.dirname(v) + "/" : v = __dirname + "/", L = function(i, a) {
-          return z || (z = K), G || (G = K), i = G.normalize(i), z.readFileSync(i, a ? null : "utf8");
+          return G || (G = K), z || (z = K), i = z.normalize(i), G.readFileSync(i, a ? null : "utf8");
         }, N = function(i) {
           var a = L(i, true);
           return a.buffer || (a = new Uint8Array(a)), re(a.buffer), a;
@@ -86,11 +79,11 @@ let __tla = (async () => {
         var Ee = r.print || console.log.bind(console), F = r.printErr || console.warn.bind(console);
         for (w in _) _.hasOwnProperty(w) && (r[w] = _[w]);
         _ = null, r.arguments && r.arguments, r.thisProgram && r.thisProgram, r.quit && (P = r.quit);
-        var B;
-        r.wasmBinary && (B = r.wasmBinary);
+        var U;
+        r.wasmBinary && (U = r.wasmBinary);
         var Y;
         r.noExitRuntime && (Y = r.noExitRuntime), typeof WebAssembly != "object" && M("no native wasm support detected");
-        var U, V, Z = false;
+        var B, V, Z = false;
         function re(e, i) {
           e || M("Assertion failed: " + i);
         }
@@ -119,7 +112,7 @@ let __tla = (async () => {
           return g;
         }
         function we(e, i) {
-          return e ? ne($, e, i) : "";
+          return e ? ne(H, e, i) : "";
         }
         function Re(e, i, a, h) {
           if (!(h > 0)) return 0;
@@ -146,7 +139,7 @@ let __tla = (async () => {
           return i[a] = 0, a - b;
         }
         function Te(e, i, a) {
-          return Re(e, $, i, a);
+          return Re(e, H, i, a);
         }
         function Se(e) {
           for (var i = 0, a = 0; a < e.length; ++a) {
@@ -155,20 +148,20 @@ let __tla = (async () => {
           }
           return i;
         }
-        var ie = 65536, q, $, T;
+        var ie = 65536, q, H, T;
         function Pe(e) {
-          q = e, r.HEAP8 = new Int8Array(e), r.HEAP16 = new Int16Array(e), r.HEAP32 = T = new Int32Array(e), r.HEAPU8 = $ = new Uint8Array(e), r.HEAPU16 = new Uint16Array(e), r.HEAPU32 = new Uint32Array(e), r.HEAPF32 = new Float32Array(e), r.HEAPF64 = new Float64Array(e);
+          q = e, r.HEAP8 = new Int8Array(e), r.HEAP16 = new Int16Array(e), r.HEAP32 = T = new Int32Array(e), r.HEAPU8 = H = new Uint8Array(e), r.HEAPU16 = new Uint16Array(e), r.HEAPU32 = new Uint32Array(e), r.HEAPF32 = new Float32Array(e), r.HEAPF64 = new Float64Array(e);
         }
         var Q = r.INITIAL_MEMORY || 16777216;
-        r.wasmMemory ? U = r.wasmMemory : U = new WebAssembly.Memory({
+        r.wasmMemory ? B = r.wasmMemory : B = new WebAssembly.Memory({
           initial: Q / ie,
           maximum: Q / ie
-        }), U && (q = U.buffer), Q = q.byteLength, Pe(q);
+        }), B && (q = B.buffer), Q = q.byteLength, Pe(q);
         var se = [], ae = [], Ie = [], oe = [];
         function Fe() {
           if (r.preRun) for (typeof r.preRun == "function" && (r.preRun = [
             r.preRun
-          ]); r.preRun.length; ) Be(r.preRun.shift());
+          ]); r.preRun.length; ) Ue(r.preRun.shift());
           D(se);
         }
         function Me() {
@@ -180,23 +173,23 @@ let __tla = (async () => {
         function Ne() {
           if (r.postRun) for (typeof r.postRun == "function" && (r.postRun = [
             r.postRun
-          ]); r.postRun.length; ) Ue(r.postRun.shift());
+          ]); r.postRun.length; ) Be(r.postRun.shift());
           D(oe);
         }
-        function Be(e) {
+        function Ue(e) {
           se.unshift(e);
         }
-        function Ue(e) {
+        function Be(e) {
           oe.unshift(e);
         }
-        var S = 0, H = null;
-        function $e(e) {
+        var S = 0, $ = null;
+        function He(e) {
           S++, r.monitorRunDependencies && r.monitorRunDependencies(S);
         }
-        function He(e) {
-          if (S--, r.monitorRunDependencies && r.monitorRunDependencies(S), S == 0 && H) {
-            var i = H;
-            H = null, i();
+        function $e(e) {
+          if (S--, r.monitorRunDependencies && r.monitorRunDependencies(S), S == 0 && $) {
+            var i = $;
+            $ = null, i();
           }
         }
         r.preloadedImages = {}, r.preloadedAudios = {};
@@ -220,7 +213,7 @@ let __tla = (async () => {
         ue(R) || (R = Ae(R));
         function ce() {
           try {
-            if (B) return new Uint8Array(B);
+            if (U) return new Uint8Array(U);
             if (N) return N(R);
             throw "both async and sync fetching of the wasm failed";
           } catch (e) {
@@ -228,7 +221,7 @@ let __tla = (async () => {
           }
         }
         function qe() {
-          return !B && (I || d) && typeof fetch == "function" && !le(R) ? fetch(R, {
+          return !U && (I || d) && typeof fetch == "function" && !le(R) ? fetch(R, {
             credentials: "same-origin"
           }).then(function(e) {
             if (!e.ok) throw "failed to load wasm binary file at '" + R + "'";
@@ -243,9 +236,9 @@ let __tla = (async () => {
           };
           function i(l, f) {
             var A = l.exports;
-            r.asm = A, V = r.asm.g, He();
+            r.asm = A, V = r.asm.g, $e();
           }
-          $e();
+          He();
           function a(l) {
             i(l.instance);
           }
@@ -257,7 +250,7 @@ let __tla = (async () => {
             });
           }
           function b() {
-            if (!B && typeof WebAssembly.instantiateStreaming == "function" && !ue(R) && !le(R) && typeof fetch == "function") fetch(R, {
+            if (!U && typeof WebAssembly.instantiateStreaming == "function" && !ue(R) && !le(R) && typeof fetch == "function") fetch(R, {
               credentials: "same-origin"
             }).then(function(l) {
               var f = WebAssembly.instantiateStreaming(l, e);
@@ -287,7 +280,7 @@ let __tla = (async () => {
           }
         }
         function We(e, i, a) {
-          $.copyWithin(e, i, i + a);
+          H.copyWithin(e, i, i + a);
         }
         function ke(e) {
           M("OOM");
@@ -295,7 +288,7 @@ let __tla = (async () => {
         function xe(e) {
           ke();
         }
-        function ze(e) {
+        function Ge(e) {
           Ze(e);
         }
         var W = {
@@ -323,9 +316,9 @@ let __tla = (async () => {
             return e;
           }
         };
-        function Ge(e, i, a, h) {
+        function ze(e, i, a, h) {
           for (var b = 0, g = 0; g < a; g++) {
-            for (var l = T[i + g * 8 >> 2], f = T[i + (g * 8 + 4) >> 2], A = 0; A < f; A++) W.printChar(e, $[l + A]);
+            for (var l = T[i + g * 8 >> 2], f = T[i + (g * 8 + 4) >> 2], A = 0; A < f; A++) W.printChar(e, H[l + A]);
             b += f;
           }
           return T[h >> 2] = b, 0;
@@ -342,10 +335,10 @@ let __tla = (async () => {
         var Ve = {
           d: We,
           e: xe,
-          f: ze,
-          c: Ge,
+          f: Ge,
+          c: ze,
           b: Ye,
-          a: U
+          a: B
         };
         De();
         var me = r.___wasm_call_ctors = function() {
@@ -362,8 +355,8 @@ let __tla = (async () => {
         function he(e) {
           this.name = "ExitStatus", this.message = "Program terminated with exit(" + e + ")", this.status = e;
         }
-        H = function e() {
-          k || X(), k || (H = e);
+        $ = function e() {
+          k || X(), k || ($ = e);
         };
         function X(e) {
           if (S > 0 || (Fe(), S > 0)) return;
@@ -388,15 +381,15 @@ let __tla = (async () => {
     }();
     n.exports = o;
   })(_e);
-  var rr = _e.exports;
-  const tr = rr;
+  var er = _e.exports;
+  const rr = er;
   let c = {};
-  const nr = (n) => {
+  const tr = (n) => {
     const t = c.lengthBytesUTF8(n) + 1, o = c._malloc(t);
     return c.stringToUTF8(n, o, t), o;
   }, y = (n, t = Int32Array) => {
     if (!n || !n.length) return null;
-    const o = ir(n, t), s = c._malloc(o.length * o.BYTES_PER_ELEMENT), u = s / o.BYTES_PER_ELEMENT, r = ve(t);
+    const o = nr(n, t), s = c._malloc(o.length * o.BYTES_PER_ELEMENT), u = s / o.BYTES_PER_ELEMENT, r = ve(t);
     return c[r].subarray(u, u + o.length).set(o), s;
   }, p = (n, t, o = Int32Array) => {
     if (!n) return null;
@@ -411,7 +404,7 @@ let __tla = (async () => {
       default:
         return "HEAP8";
     }
-  }, ir = (n, t) => n.constructor == t ? n : new t(n), be = (n, t, o = null) => {
+  }, nr = (n, t) => n.constructor == t ? n : new t(n), be = (n, t, o = null) => {
     if (typeof n == "string") return n;
     (typeof n != "object" || !n) && (n = {});
     let s = "";
@@ -558,27 +551,27 @@ let __tla = (async () => {
       return this.arr[22];
     }
   }
-  const sr = (n) => new Promise((t, o) => {
-    tr({
+  const ir = (n) => new Promise((t, o) => {
+    rr({
       locateFile: (s, u) => n || u + s
     }).then((s) => {
       c = s, t();
     });
-  }), ar = (n, t, o, s = null) => {
-    const u = be(n, t, s), r = nr(u), m = s ? s.ptr : null;
+  }), sr = (n, t, o, s = null) => {
+    const u = be(n, t, s), r = tr(u), m = s ? s.ptr : null;
     c._triangulate(r, t.ptr, o.ptr, m), c._free(r);
-  }, or = (n) => new C(n), fr = (n, t) => {
+  }, ar = (n) => new C(n), or = (n, t) => {
     n.destroy(t);
   };
-  var ur = {
-    init: sr,
-    triangulate: ar,
-    makeIO: or,
-    freeIO: fr,
+  var fr = {
+    init: ir,
+    triangulate: sr,
+    makeIO: ar,
+    freeIO: or,
     getSwitchesStr: be
   };
-  const O = Je(ur), lr = "" + new URL("triangle-CCJHBrBP.wasm", import.meta.url).href;
-  await O.init(lr);
+  const O = Ke(fr), ur = "" + new URL("triangle-CCJHBrBP.wasm", import.meta.url).href;
+  await O.init(ur);
   _r = function({ points: n, polygon: t, maxMeshSize: o = 3 }) {
     if (n.length < 3 || t.length < 3) return {
       nodes: [],
@@ -586,32 +579,32 @@ let __tla = (async () => {
       boundaryIndices: []
     };
     const s = n.slice(0, 3);
-    dr(t, n) > 0 && s.reverse();
-    const u = gr(s), r = n.map((d) => j(Qe(u), d)).map((d) => [
+    gr(t, n) > 0 && s.reverse();
+    const u = hr(s), r = n.map((d) => j(Xe(u), d)).map((d) => [
       d[0],
       d[1]
     ]), m = O.makeIO({
       pointlist: r.flat(),
-      segmentlist: cr(t)
+      segmentlist: lr(t)
     }), E = O.makeIO();
     O.triangulate(`pzQOq30a${o}`, m, E);
-    const { nodes: _, boundaryIndices: w } = hr(E.pointlist, E.pointmarkerlist), P = _.map((d) => j(u, [
+    const { nodes: _, boundaryIndices: w } = mr(E.pointlist, E.pointmarkerlist), P = _.map((d) => j(u, [
       d[0],
       d[1],
       0
-    ])), I = mr(E.trianglelist);
+    ])), I = cr(E.trianglelist);
     return O.freeIO(m, true), O.freeIO(E), {
       nodes: P,
       elements: I,
       boundaryIndices: w
     };
   };
-  function cr(n) {
+  function lr(n) {
     const t = [];
     for (let o = 0; o < n.length; o += 1) t.push(n[o], n[(o + 1) % n.length]);
     return t;
   }
-  function mr(n) {
+  function cr(n) {
     const t = [];
     for (let o = 0; o < n.length; o += 3) t.push([
       n[o],
@@ -620,7 +613,7 @@ let __tla = (async () => {
     ]);
     return t;
   }
-  function hr(n, t) {
+  function mr(n, t) {
     const o = [], s = [];
     for (let u = 0; u < n.length; u += 2) o.push([
       n[u],
@@ -631,10 +624,10 @@ let __tla = (async () => {
       boundaryIndices: s
     };
   }
-  function gr([n, t, o]) {
+  function hr([n, t, o]) {
     const s = de(t, n), u = de(o, n), r = pe(s, ye(s));
     let m = pe(J(s, u), ye(J(s, u)));
-    Xe(m, [
+    Je(m, [
       0,
       0,
       1
@@ -658,7 +651,7 @@ let __tla = (async () => {
       ]
     ];
   }
-  function dr(n, t) {
+  function gr(n, t) {
     let o = 0;
     const s = n.length;
     for (let u = 0; u < s; u++) {
@@ -670,7 +663,7 @@ let __tla = (async () => {
 })();
 export {
   __tla,
-  Je as a,
+  Ke as a,
   yr as c,
   _r as g,
   K as r
