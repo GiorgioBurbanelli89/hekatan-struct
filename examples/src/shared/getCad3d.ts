@@ -2351,7 +2351,7 @@ Util:     cad.info()  cad.clear()  cad.help()
       }
     }
     // Re-run analysis after regeneration (skip for plate solvers — they run their own)
-    const skipAnalysis = ["placa-q4", "placa-3q", "losa-rect", "losa-plana", "viga-alta", "muro-contencion", "zapata", "placa-orificios", "col-placa", "talud", "eiffel", "arco", "puente", "twisted", "burj", "opera", "diagrid"];
+    const skipAnalysis = ["placa-q4", "placa-3q", "losa-rect", "losa-plana", "viga-alta", "muro-contencion", "zapata", "placa-orificios", "col-placa", "talud", "eiffel", "arco", "puente", "twisted", "burj", "opera", "diagrid", "muro-q4"];
     if (!skipAnalysis.includes(activeGenerator)) {
       // Apply element deletions + visibility
       if (deletedElements.size > 0 || hiddenElements.size > 0 || isolateMode) {

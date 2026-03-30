@@ -7761,7 +7761,8 @@ Util:     cad.info()  cad.clear()  cad.help()
         "twisted",
         "burj",
         "opera",
-        "diagrid"
+        "diagrid",
+        "muro-q4"
       ].includes(T)) {
         if (U.size > 0 || Y.size > 0 || q) {
           const o = e.elements.val, n = o.filter((l, a) => !(U.has(a) || Y.has(a) || q && !W.has(a)));

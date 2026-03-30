@@ -3,9 +3,9 @@
   "configurations": [
     {
       "name": "workspace-dev",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["vite", "--port", "4640"],
-      "port": 4640
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:examples"],
+      "port": 4600
     }
   ]
 }

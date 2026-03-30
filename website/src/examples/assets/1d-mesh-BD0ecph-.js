@@ -5,7 +5,7 @@ import { d as b, __tla as __tla_0 } from "./didacticCpp-C93PWeaP.js";
 import { g as k } from "./getViewer-CXJ9v-Sw.js";
 import { g as S } from "./getParameters-D_F_vOn_.js";
 import { g as A } from "./styles-B8h3dtQW.js";
-import { g as _, __tla as __tla_1 } from "./getCad3d-BJ4nDewU.js";
+import { g as _, __tla as __tla_1 } from "./getCad3d-0aY3etgV.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
 import "./Text-CBH-tcJP.js";
 import { __tla as __tla_2 } from "./getMesh-B1dmlgUt.js";
