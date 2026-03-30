@@ -1,11 +1,11 @@
 const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./calcPanel-C1Mz4Itg.js","./getMesh-B1dmlgUt.js","./__vite-browser-external-D7Ct-6yo.js","./pureFunctionsAny.generated-JAcEVsJ7.js","./analyze-ClLKGn9k.js","./didacticCpp-C93PWeaP.js","./cyclicPushoverCpp-C_AWr1zl.js"])))=>i.map(i=>d[i]);
-import { d as Ct, _ as Qs, p as Un, m as Ja, s as Va, __tla as __tla_0 } from "./didacticCpp-C93PWeaP.js";
-import { v as Jo, P as on, g as Ua, a as Xa, o as Ka } from "./theme-CzzIlc4y.js";
-import { G as sn, b as Za, M as ea, D as ta, B as to, c as xn, d as Qa, C as el, e as ia, V as Oe, P as So, R as oa, f as na, g as Wo, h as Go, i as tl, S as ol, j as nl, F as Lo, a as Yo, L as Co, k as sl, l as al, A as dn, T as Xn, m as pn, n as fn, o as ll, p as rl } from "./Text-CBH-tcJP.js";
-import { g as vn, b as yn, a as Io } from "./analyze-ClLKGn9k.js";
-import { g as go, __tla as __tla_1 } from "./getMesh-B1dmlgUt.js";
-import { n as Po, s as ho, m as no, t as ns } from "./pureFunctionsAny.generated-JAcEVsJ7.js";
-let ra, pl, Ql;
+import { d as kt, _ as ea, p as Uo, m as Va, s as Ua, __tla as __tla_0 } from "./didacticCpp-C93PWeaP.js";
+import { v as Jn, P as no, g as Xa, a as Ka, o as Za } from "./theme-CzzIlc4y.js";
+import { G as so, b as Qa, M as ta, D as na, B as tn, c as xo, d as el, C as tl, e as ca, V as Oe, P as In, R as oa, f as sa, g as Wn, h as Gn, i as nl, S as ol, j as sl, F as Ln, a as Yn, L as Cn, k as al, l as ll, A as co, T as Xo, m as po, n as fo, o as rl, p as il } from "./Text-CBH-tcJP.js";
+import { g as vo, b as yo, a as gn } from "./analyze-ClLKGn9k.js";
+import { g as hn, __tla as __tla_1 } from "./getMesh-B1dmlgUt.js";
+import { n as Rn, s as xn, m as on, t as os } from "./pureFunctionsAny.generated-JAcEVsJ7.js";
+let ia, fl, er;
 let __tla = Promise.all([
   (() => {
     try {
@@ -20,7 +20,7 @@ let __tla = Promise.all([
     }
   })()
 ]).then(async () => {
-  const os = [
+  const ns = [
     {
       id: "kN",
       label: "kN",
@@ -51,7 +51,7 @@ let __tla = Promise.all([
       label: "N",
       toKN: 1e-3
     }
-  ], Vo = [
+  ], Vn = [
     {
       id: "m",
       label: "m",
@@ -158,10 +158,10 @@ let __tla = Promise.all([
       galponRise: 10
     }
   ];
-  function il(e, b) {
+  function cl(e, b) {
     return e === "kN" && b === "m" ? "kPa" : e === "kN" && b === "mm" || e === "N" && b === "mm" ? "MPa" : e === "N" && b === "m" ? "Pa" : e === "kip" && b === "in" ? "ksi" : e === "kip" && b === "ft" ? "ksf" : `${e}/${b}\xB2`;
   }
-  const Fo = {
+  const Fn = {
     E: 2e8,
     G: 77e6,
     A: 0.01,
@@ -170,8 +170,8 @@ let __tla = Promise.all([
     J: 141e-6,
     rho: 7.85
   };
-  function Ro(e, b) {
-    const F = os.find((W) => W.id === e), $ = Vo.find((W) => W.id === b), J = F.toKN, H = $.toM, U = (W, ye, z) => z / (Math.pow(J, W) * Math.pow(H, ye));
+  function Pn(e, b) {
+    const P = ns.find((W) => W.id === e), M = Vn.find((W) => W.id === b), J = P.toKN, H = M.toM, U = (W, ye, z) => z / (Math.pow(J, W) * Math.pow(H, ye));
     let Y, q;
     switch (e) {
       case "kN":
@@ -219,32 +219,32 @@ let __tla = Promise.all([
     }
     return {
       id: `${e}-${b}`,
-      label: `${F.label}, ${$.label}`,
-      force: F.label,
-      length: $.label,
-      stress: il(e, b),
-      moment: `${F.label}\xB7${$.label}`,
-      E: U(1, -2, Fo.E),
-      G: U(1, -2, Fo.G),
-      A: U(0, 2, Fo.A),
-      Iz: U(0, 4, Fo.Iz),
-      Iy: U(0, 4, Fo.Iy),
-      J: U(0, 4, Fo.J),
-      rho: U(1, -4, Fo.rho),
-      spanRange: $.spanRange,
-      heightRange: $.heightRange,
-      defaultSpan: $.defaultSpan,
-      defaultHeight: $.defaultHeight,
+      label: `${P.label}, ${M.label}`,
+      force: P.label,
+      length: M.label,
+      stress: cl(e, b),
+      moment: `${P.label}\xB7${M.label}`,
+      E: U(1, -2, Fn.E),
+      G: U(1, -2, Fn.G),
+      A: U(0, 2, Fn.A),
+      Iz: U(0, 4, Fn.Iz),
+      Iy: U(0, 4, Fn.Iy),
+      J: U(0, 4, Fn.J),
+      rho: U(1, -4, Fn.rho),
+      spanRange: M.spanRange,
+      heightRange: M.heightRange,
+      defaultSpan: M.defaultSpan,
+      defaultHeight: M.defaultHeight,
       defaultForce: Y,
       forceRange: q,
-      galponSpan: $.galponSpan,
-      galponLength: $.galponLength,
-      galponHeight: $.galponHeight,
-      galponRise: $.galponRise
+      galponSpan: M.galponSpan,
+      galponLength: M.galponLength,
+      galponHeight: M.galponHeight,
+      galponRise: M.galponRise
     };
   }
-  Ro("kN", "m"), Ro("kip", "in");
-  function un() {
+  Pn("kN", "m"), Pn("kip", "in");
+  function uo() {
     return {
       truss: [
         {
@@ -758,7 +758,7 @@ let __tla = Promise.all([
       ]
     };
   }
-  function cl(e) {
+  function dl(e) {
     return {
       truss: [
         {
@@ -1940,6 +1940,72 @@ let __tla = Promise.all([
           label: `P puntual (${e.force})`
         }
       ],
+      "placa-xy": [
+        {
+          key: "Lx",
+          val: 4,
+          min: 1,
+          max: 15,
+          step: 0.5,
+          label: `Lx (${e.length})`
+        },
+        {
+          key: "Ly",
+          val: 2,
+          min: 0.5,
+          max: 10,
+          step: 0.5,
+          label: `Ly (${e.length})`
+        },
+        {
+          key: "t",
+          val: 0.15,
+          min: 0.05,
+          max: 0.5,
+          step: 0.05,
+          label: `Espesor t (${e.length})`
+        },
+        {
+          key: "nx",
+          val: 8,
+          min: 2,
+          max: 20,
+          step: 1,
+          label: "Mesh nx"
+        },
+        {
+          key: "ny",
+          val: 4,
+          min: 2,
+          max: 15,
+          step: 1,
+          label: "Mesh ny"
+        },
+        {
+          key: "E",
+          val: e.E * 25e6 / 2e8,
+          min: 1e4,
+          max: 1e9,
+          step: 1e5,
+          label: `E concreto (${e.stress})`
+        },
+        {
+          key: "nu",
+          val: 0.2,
+          min: 0,
+          max: 0.49,
+          step: 0.01,
+          label: "v"
+        },
+        {
+          key: "P",
+          val: e.defaultForce * 2,
+          min: 1,
+          max: e.forceRange[1] * 20,
+          step: e.forceRange[2],
+          label: `P borde (${e.force})`
+        }
+      ],
       eiffel: [],
       arco: [],
       puente: [],
@@ -2039,14 +2105,14 @@ let __tla = Promise.all([
       ]
     };
   }
-  function dl(e) {
-    const b = e.force, [F, $, J] = e.forceRange;
+  function pl(e) {
+    const b = e.force, [P, M, J] = e.forceRange;
     return {
       truss: [
         {
           key: "CM",
           val: -e.defaultForce,
-          min: F,
+          min: P,
           max: 0,
           step: J,
           label: `CM (${b})`
@@ -2054,7 +2120,7 @@ let __tla = Promise.all([
         {
           key: "CV",
           val: 0,
-          min: F,
+          min: P,
           max: 0,
           step: J,
           label: `CV (${b})`
@@ -2064,7 +2130,7 @@ let __tla = Promise.all([
         {
           key: "CM",
           val: 0,
-          min: F,
+          min: P,
           max: 0,
           step: J,
           label: `CM (${b})`
@@ -2072,7 +2138,7 @@ let __tla = Promise.all([
         {
           key: "CV",
           val: 0,
-          min: F,
+          min: P,
           max: 0,
           step: J,
           label: `CV (${b})`
@@ -2080,8 +2146,8 @@ let __tla = Promise.all([
         {
           key: "Ex",
           val: e.defaultForce,
-          min: F,
-          max: $,
+          min: P,
+          max: M,
           step: J,
           label: `Ex sismo (${b})`
         }
@@ -2090,7 +2156,7 @@ let __tla = Promise.all([
         {
           key: "CM",
           val: 0,
-          min: F,
+          min: P,
           max: 0,
           step: J,
           label: `CM (${b})`
@@ -2098,7 +2164,7 @@ let __tla = Promise.all([
         {
           key: "CV",
           val: 0,
-          min: F,
+          min: P,
           max: 0,
           step: J,
           label: `CV (${b})`
@@ -2106,8 +2172,8 @@ let __tla = Promise.all([
         {
           key: "Ex",
           val: e.defaultForce * 3,
-          min: F,
-          max: $,
+          min: P,
+          max: M,
           step: J,
           label: `Ex sismo (${b})`
         }
@@ -2116,7 +2182,7 @@ let __tla = Promise.all([
         {
           key: "CM",
           val: -e.defaultForce,
-          min: F,
+          min: P,
           max: 0,
           step: J,
           label: `CM (${b})`
@@ -2124,7 +2190,7 @@ let __tla = Promise.all([
         {
           key: "CV",
           val: 0,
-          min: F,
+          min: P,
           max: 0,
           step: J,
           label: `CV (${b})`
@@ -2132,8 +2198,8 @@ let __tla = Promise.all([
         {
           key: "Ex",
           val: 0,
-          min: F,
-          max: $,
+          min: P,
+          max: M,
           step: J,
           label: `Ex sismo (${b})`
         }
@@ -2142,7 +2208,7 @@ let __tla = Promise.all([
         {
           key: "CM",
           val: -e.defaultForce,
-          min: F,
+          min: P,
           max: 0,
           step: J,
           label: `CM (${b})`
@@ -2150,7 +2216,7 @@ let __tla = Promise.all([
         {
           key: "CV",
           val: 0,
-          min: F,
+          min: P,
           max: 0,
           step: J,
           label: `CV (${b})`
@@ -2158,16 +2224,16 @@ let __tla = Promise.all([
         {
           key: "Ex",
           val: 0,
-          min: F,
-          max: $,
+          min: P,
+          max: M,
           step: J,
           label: `Ex sismo (${b})`
         },
         {
           key: "Ey",
           val: 0,
-          min: F,
-          max: $,
+          min: P,
+          max: M,
           step: J,
           label: `Ey sismo (${b})`
         }
@@ -2176,7 +2242,7 @@ let __tla = Promise.all([
         {
           key: "CM",
           val: -e.defaultForce,
-          min: F,
+          min: P,
           max: 0,
           step: J,
           label: `CM (${b})`
@@ -2184,7 +2250,7 @@ let __tla = Promise.all([
         {
           key: "CV",
           val: 0,
-          min: F,
+          min: P,
           max: 0,
           step: J,
           label: `CV (${b})`
@@ -2204,7 +2270,7 @@ let __tla = Promise.all([
         {
           key: "CM",
           val: 0,
-          min: F,
+          min: P,
           max: 0,
           step: J,
           label: `CM (${b})`
@@ -2214,7 +2280,7 @@ let __tla = Promise.all([
         {
           key: "CM",
           val: 0,
-          min: F,
+          min: P,
           max: 0,
           step: J,
           label: `CM (${b})`
@@ -2230,6 +2296,7 @@ let __tla = Promise.all([
       talud: [],
       "muro-q4": [],
       "viga-q4": [],
+      "placa-xy": [],
       eiffel: [],
       arco: [],
       puente: [],
@@ -2239,7 +2306,7 @@ let __tla = Promise.all([
       diagrid: []
     };
   }
-  pl = function() {
+  fl = function() {
     const e = document.createElement("div");
     e.id = "modal-results", e.style.cssText = `
     position: fixed; bottom: 10px; left: 10px; z-index: 9999;
@@ -2249,9 +2316,9 @@ let __tla = Promise.all([
     border: 1px solid #0f03;
   `;
     let b = false;
-    function F($, J) {
+    function P(M, J) {
       var _a, _b;
-      if (!$.frequencies || $.frequencies.length === 0) {
+      if (!M.frequencies || M.frequencies.length === 0) {
         e.innerHTML = "<b style='padding:12px;display:block'>Modal: no results</b>";
         return;
       }
@@ -2290,9 +2357,9 @@ let __tla = Promise.all([
       for (const q of H) Y += `<th style="padding:2px 5px">${q}</th>`;
       if (Y += `<th style="padding:2px 5px; color:#0ff">\u03A3Ux</th>
   <th style="padding:2px 5px; color:#0ff">\u03A3Uy</th>
-  <th style="padding:2px 5px; color:#0ff">\u03A3Rz</th></tr>`, $.frequencies.forEach((q, W) => {
+  <th style="padding:2px 5px; color:#0ff">\u03A3Rz</th></tr>`, M.frequencies.forEach((q, W) => {
         var _a2;
-        const ye = q > 0 ? 1 / q : 0, z = q * 2 * Math.PI, Q = ((_a2 = $.massParticipation) == null ? void 0 : _a2[W]) || [
+        const ye = q > 0 ? 1 / q : 0, z = q * 2 * Math.PI, Z = ((_a2 = M.massParticipation) == null ? void 0 : _a2[W]) || [
           0,
           0,
           0,
@@ -2300,14 +2367,14 @@ let __tla = Promise.all([
           0,
           0
         ];
-        for (let ve = 0; ve < 6; ve++) U[ve] += Q[ve];
+        for (let ve = 0; ve < 6; ve++) U[ve] += Z[ve];
         Y += `<tr style="border-bottom:1px solid #fff1">
   <td style="padding:2px 6px; text-align:center">${W + 1}</td>
   <td style="padding:2px 6px; text-align:right">${q.toFixed(4)}</td>
   <td style="padding:2px 6px; text-align:right">${ye.toFixed(4)}</td>
   <td style="padding:2px 6px; text-align:right">${z.toFixed(2)}</td>`;
         for (let ve = 0; ve < 6; ve++) {
-          const me = (Q[ve] * 100).toFixed(1), ie = Q[ve] > 0.5 ? "#f00" : Q[ve] > 0.1 ? "#ff0" : "#0f0";
+          const me = (Z[ve] * 100).toFixed(1), ie = Z[ve] > 0.5 ? "#f00" : Z[ve] > 0.1 ? "#ff0" : "#0f0";
           Y += `<td style="padding:2px 5px; text-align:right; color:${ie}">${me}%</td>`;
         }
         Y += `<td style="padding:2px 5px; text-align:right; color:#0ff">${(U[0] * 100).toFixed(1)}%</td>
@@ -2334,9 +2401,9 @@ let __tla = Promise.all([
           0,
           0
         ];
-        $.frequencies.forEach((Q, ve) => {
+        M.frequencies.forEach((Z, ve) => {
           var _a2;
-          const me = Q > 0 ? 1 / Q : 0, ie = Q * 2 * Math.PI, oe = ((_a2 = $.massParticipation) == null ? void 0 : _a2[ve]) || [
+          const me = Z > 0 ? 1 / Z : 0, ie = Z * 2 * Math.PI, ne = ((_a2 = M.massParticipation) == null ? void 0 : _a2[ve]) || [
             0,
             0,
             0,
@@ -2344,9 +2411,9 @@ let __tla = Promise.all([
             0,
             0
           ];
-          for (let D = 0; D < 6; D++) ye[D] += oe[D];
-          const N = oe.map((D) => ((D * 100).toFixed(1) + "%").padStart(6)).join(" ");
-          q.push(`${String(ve + 1).padStart(4)}  ${Q.toFixed(4).padStart(9)}  ${me.toFixed(4).padStart(9)}  ${ie.toFixed(2).padStart(9)}  ${N}  ${(ye[0] * 100).toFixed(1).padStart(5)}%  ${(ye[1] * 100).toFixed(1).padStart(5)}%  ${(ye[5] * 100).toFixed(1).padStart(5)}%`);
+          for (let D = 0; D < 6; D++) ye[D] += ne[D];
+          const N = ne.map((D) => ((D * 100).toFixed(1) + "%").padStart(6)).join(" ");
+          q.push(`${String(ve + 1).padStart(4)}  ${Z.toFixed(4).padStart(9)}  ${me.toFixed(4).padStart(9)}  ${ie.toFixed(2).padStart(9)}  ${N}  ${(ye[0] * 100).toFixed(1).padStart(5)}%  ${(ye[1] * 100).toFixed(1).padStart(5)}%  ${(ye[5] * 100).toFixed(1).padStart(5)}%`);
         }), navigator.clipboard.writeText(q.join(`
 `));
         const z = e.querySelector("#modal-copy");
@@ -2355,10 +2422,10 @@ let __tla = Promise.all([
     }
     return {
       div: e,
-      render: F
+      render: P
     };
   };
-  const Fe = 64516e-8, O = 416231e-12, te = 0.0254, ko = [
+  const Fe = 64516e-8, O = 416231e-12, te = 0.0254, kn = [
     {
       name: "W6x9",
       type: "W",
@@ -3150,45 +3217,45 @@ let __tla = Promise.all([
       bf: 8 * te
     }
   ];
-  function mn() {
+  function mo() {
     const e = {};
-    return ko.forEach((b, F) => {
-      b.type === "W" && (e[b.name] = F);
+    return kn.forEach((b, P) => {
+      b.type === "W" && (e[b.name] = P);
     }), e;
   }
-  function bn() {
+  function bo() {
     const e = {};
-    return ko.forEach((b, F) => {
-      b.type === "HSS" && (e[b.name] = F);
+    return kn.forEach((b, P) => {
+      b.type === "HSS" && (e[b.name] = P);
     }), e;
   }
-  function fl(e) {
+  function ul(e) {
     var _a, _b, _c, _d, _e, _f, _g, _h;
-    const { nodes: b, elements: F, elementInputs: $, nodeInputs: J, deformOutputs: H } = e, U = b.length * 6, Y = F.length, q = F.filter((ie) => ie.length === 2).length, W = F.filter((ie) => ie.length >= 3).length, ye = document.createElement("div");
+    const { nodes: b, elements: P, elementInputs: M, nodeInputs: J, deformOutputs: H } = e, U = b.length * 6, Y = P.length, q = P.filter((ie) => ie.length === 2).length, W = P.filter((ie) => ie.length >= 3).length, ye = document.createElement("div");
     ye.className = "rpt-overlay";
     let z = "";
-    z += '<button class="rpt-close" id="rpt-close">\u2715 Close</button>', z += "<h1>Finite Element Analysis \u2014 Step-by-Step Report</h1>", z += '<div class="rpt-subtitle">Complete FEM derivation from element formulation to final results</div>', z += '<hr class="rpt-sep"/>', z += "<h2>1. Input Data</h2>", z += '<table class="rpt-info"><tbody>', z += `<tr><td>Number of nodes</td><td class="val">${b.length}</td></tr>`, z += `<tr><td>Number of elements</td><td class="val">${Y} (${q} frames, ${W} shells)</td></tr>`, z += '<tr><td>DOFs per node</td><td class="val">6 (u<sub>x</sub>, u<sub>y</sub>, u<sub>z</sub>, \u03B8<sub>x</sub>, \u03B8<sub>y</sub>, \u03B8<sub>z</sub>)</td></tr>', z += `<tr><td>Total DOFs</td><td class="val">${U}</td></tr>`, z += "</tbody></table>", z += "<h3>1.1 Node Coordinates</h3>", z += '<table class="rpt-data"><thead><tr><th>Node</th><th>x</th><th>y</th><th>z</th></tr></thead><tbody>', b.forEach((ie, oe) => {
-      z += `<tr><td>${oe}</td><td>${nt(ie[0])}</td><td>${nt(ie[1])}</td><td>${nt(ie[2])}</td></tr>`;
-    }), z += "</tbody></table>", z += "<h3>1.2 Element Connectivity</h3>", z += '<table class="rpt-data"><thead><tr><th>Elem</th><th>Type</th><th>Nodes</th><th>L</th><th>E</th><th>A</th><th>I<sub>z</sub></th><th>I<sub>y</sub></th></tr></thead><tbody>', F.forEach((ie, oe) => {
+    z += '<button class="rpt-close" id="rpt-close">\u2715 Close</button>', z += "<h1>Finite Element Analysis \u2014 Step-by-Step Report</h1>", z += '<div class="rpt-subtitle">Complete FEM derivation from element formulation to final results</div>', z += '<hr class="rpt-sep"/>', z += "<h2>1. Input Data</h2>", z += '<table class="rpt-info"><tbody>', z += `<tr><td>Number of nodes</td><td class="val">${b.length}</td></tr>`, z += `<tr><td>Number of elements</td><td class="val">${Y} (${q} frames, ${W} shells)</td></tr>`, z += '<tr><td>DOFs per node</td><td class="val">6 (u<sub>x</sub>, u<sub>y</sub>, u<sub>z</sub>, \u03B8<sub>x</sub>, \u03B8<sub>y</sub>, \u03B8<sub>z</sub>)</td></tr>', z += `<tr><td>Total DOFs</td><td class="val">${U}</td></tr>`, z += "</tbody></table>", z += "<h3>1.1 Node Coordinates</h3>", z += '<table class="rpt-data"><thead><tr><th>Node</th><th>x</th><th>y</th><th>z</th></tr></thead><tbody>', b.forEach((ie, ne) => {
+      z += `<tr><td>${ne}</td><td>${ot(ie[0])}</td><td>${ot(ie[1])}</td><td>${ot(ie[2])}</td></tr>`;
+    }), z += "</tbody></table>", z += "<h3>1.2 Element Connectivity</h3>", z += '<table class="rpt-data"><thead><tr><th>Elem</th><th>Type</th><th>Nodes</th><th>L</th><th>E</th><th>A</th><th>I<sub>z</sub></th><th>I<sub>y</sub></th></tr></thead><tbody>', P.forEach((ie, ne) => {
       var _a2, _b2, _c2, _d2;
-      const N = ie.length === 2, D = ie.map((he) => b[he]), G = N ? Po(ho(D[1], D[0])) : 0, ce = ((_a2 = $.elasticities) == null ? void 0 : _a2.get(oe)) ?? 0, $e = ((_b2 = $.areas) == null ? void 0 : _b2.get(oe)) ?? 0, Te = ((_c2 = $.momentsOfInertiaZ) == null ? void 0 : _c2.get(oe)) ?? 0, Ve = ((_d2 = $.momentsOfInertiaY) == null ? void 0 : _d2.get(oe)) ?? 0;
-      z += `<tr><td>${oe}</td><td>${N ? "Frame" : "Shell"}</td><td>${ie.join(" \u2192 ")}</td>`, z += `<td>${nt(G)}</td><td>${nt(ce)}</td><td>${nt($e)}</td><td>${nt(Te)}</td><td>${nt(Ve)}</td></tr>`;
-    }), z += "</tbody></table>", z += "<h2>2. Element Formulation</h2>", q > 0 && (z += "<h3>2.1 Frame Element (Euler-Bernoulli Beam)</h3>", z += "<p>Each frame element has 2 nodes and 12 DOFs: [u<sub>x</sub>, u<sub>y</sub>, u<sub>z</sub>, \u03B8<sub>x</sub>, \u03B8<sub>y</sub>, \u03B8<sub>z</sub>] per node.</p>", z += "<h4>2.1.1 Shape Functions</h4>", z += "<p><b>Axial</b> (linear interpolation):</p>", z += '<div class="rpt-eq">N\u2081(\u03BE) = 1 \u2212 \u03BE &nbsp;&nbsp;&nbsp; N\u2082(\u03BE) = \u03BE &nbsp;&nbsp;&nbsp; where \u03BE = x/L \u2208 [0, 1]</div>', z += "<p><b>Bending</b> (Hermite cubic polynomials):</p>", z += '<table class="rpt-eq-table"><tbody>', z += '<tr><td class="eq-name">H\u2081(\u03BE)</td><td>= 1 \u2212 3\u03BE\xB2 + 2\u03BE\xB3</td><td class="eq-desc">displacement at node i</td></tr>', z += '<tr><td class="eq-name">H\u2082(\u03BE)</td><td>= L\u03BE(1 \u2212 \u03BE)\xB2</td><td class="eq-desc">rotation at node i</td></tr>', z += '<tr><td class="eq-name">H\u2083(\u03BE)</td><td>= 3\u03BE\xB2 \u2212 2\u03BE\xB3</td><td class="eq-desc">displacement at node j</td></tr>', z += '<tr><td class="eq-name">H\u2084(\u03BE)</td><td>= L\u03BE\xB2(\u03BE \u2212 1)</td><td class="eq-desc">rotation at node j</td></tr>', z += "</tbody></table>", z += ml(), z += "<p><b>Torsion</b> (linear): same as axial.</p>", z += "<h4>2.1.2 Strain-Displacement Matrix B</h4>", z += "<p>The B matrix relates nodal displacements to internal strains:</p>", z += '<div class="rpt-eq">\u03B5<sub>axial</sub> = du/dx = (1/L)\xB7[\u22121, 1]\xB7{u<sub>i</sub>, u<sub>j</sub>}</div>', z += '<div class="rpt-eq">\u03BA<sub>bending</sub> = d\xB2v/dx\xB2 = B<sub>b</sub>\xB7{v<sub>i</sub>, \u03B8<sub>i</sub>, v<sub>j</sub>, \u03B8<sub>j</sub>}</div>', z += '<div class="rpt-eq">B<sub>b</sub>(\u03BE) = (1/L\xB2)\xB7[\u22126+12\u03BE, L(\u22124+6\u03BE), 6\u221212\u03BE, L(\u22122+6\u03BE)]</div>', z += '<div class="rpt-eq">\u03C6\u2032<sub>torsion</sub> = d\u03B8<sub>x</sub>/dx = (1/L)\xB7[\u22121, 1]\xB7{\u03B8<sub>xi</sub>, \u03B8<sub>xj</sub>}</div>', z += "<h4>2.1.3 Constitutive Relations D</h4>", z += '<table class="rpt-eq-table"><tbody>', z += '<tr><td class="eq-name">Axial:</td><td>\u03C3 = E\xB7\u03B5</td><td>\u2192 D<sub>axial</sub> = E\xB7A</td></tr>', z += '<tr><td class="eq-name">Bending Z:</td><td>M<sub>z</sub> = EI<sub>z</sub>\xB7\u03BA</td><td>\u2192 D<sub>bz</sub> = E\xB7I<sub>z</sub></td></tr>', z += '<tr><td class="eq-name">Bending Y:</td><td>M<sub>y</sub> = EI<sub>y</sub>\xB7\u03BA</td><td>\u2192 D<sub>by</sub> = E\xB7I<sub>y</sub></td></tr>', z += '<tr><td class="eq-name">Torsion:</td><td>T = GJ\xB7\u03C6\u2032</td><td>\u2192 D<sub>torsion</sub> = G\xB7J</td></tr>', z += "</tbody></table>", z += "<h4>2.1.4 Local Stiffness Matrix K<sub>local</sub></h4>", z += "<p>Obtained by analytical integration:</p>", z += '<div class="rpt-eq rpt-eq-highlight">K<sub>local</sub> = \u222B\u2080\u1D38 B\u1D40\xB7D\xB7B dx</div>', z += "<p>Result for Euler-Bernoulli beam (12\xD712 symmetric):</p>", z += '<div class="rpt-eq-small">', z += "K[0,0] = EA/L &nbsp;&nbsp; K[1,1] = 12EI<sub>z</sub>/L\xB3 &nbsp;&nbsp; K[2,2] = 12EI<sub>y</sub>/L\xB3 &nbsp;&nbsp; K[3,3] = GJ/L<br/>", z += "K[4,4] = 4EI<sub>y</sub>/L &nbsp;&nbsp; K[5,5] = 4EI<sub>z</sub>/L &nbsp;&nbsp; K[1,5] = 6EI<sub>z</sub>/L\xB2 &nbsp;&nbsp; K[2,4] = \u22126EI<sub>y</sub>/L\xB2", z += "</div>", z += "<h4>2.1.5 Transformation Matrix T</h4>", z += "<p>Direction cosines of element axis:</p>", z += '<div class="rpt-eq">l = (x<sub>j</sub>\u2212x<sub>i</sub>)/L &nbsp;&nbsp; m = (y<sub>j</sub>\u2212y<sub>i</sub>)/L &nbsp;&nbsp; n = (z<sub>j</sub>\u2212z<sub>i</sub>)/L &nbsp;&nbsp; D = \u221A(l\xB2+m\xB2)</div>', z += '<div class="rpt-eq">\u03BB = [l, m, n; \u2212m/D, l/D, 0; \u2212ln/D, \u2212mn/D, D] &nbsp;&nbsp; (3\xD73)</div>', z += '<div class="rpt-eq rpt-eq-highlight">T = I\u2084 \u2297 \u03BB &nbsp;&nbsp; (12\xD712 block-diagonal, Kronecker product)</div>', z += "<p>Special case for vertical elements (n = \xB11): \u03BB uses fixed axes.</p>", z += "<h4>2.1.6 Global Stiffness Matrix</h4>", z += '<div class="rpt-eq rpt-eq-highlight">K<sub>global</sub> = T\u1D40 \xB7 K<sub>local</sub> \xB7 T</div>'), z += "<h2>3. Numerical Results per Element</h2>", z += "<p>For each element, we compute K<sub>local</sub>, T, and K<sub>global</sub> = T\u1D40\xB7K\xB7T with the actual properties:</p>";
+      const N = ie.length === 2, D = ie.map((he) => b[he]), G = N ? Rn(xn(D[1], D[0])) : 0, ce = ((_a2 = M.elasticities) == null ? void 0 : _a2.get(ne)) ?? 0, $e = ((_b2 = M.areas) == null ? void 0 : _b2.get(ne)) ?? 0, Te = ((_c2 = M.momentsOfInertiaZ) == null ? void 0 : _c2.get(ne)) ?? 0, Ve = ((_d2 = M.momentsOfInertiaY) == null ? void 0 : _d2.get(ne)) ?? 0;
+      z += `<tr><td>${ne}</td><td>${N ? "Frame" : "Shell"}</td><td>${ie.join(" \u2192 ")}</td>`, z += `<td>${ot(G)}</td><td>${ot(ce)}</td><td>${ot($e)}</td><td>${ot(Te)}</td><td>${ot(Ve)}</td></tr>`;
+    }), z += "</tbody></table>", z += "<h2>2. Element Formulation</h2>", q > 0 && (z += "<h3>2.1 Frame Element (Euler-Bernoulli Beam)</h3>", z += "<p>Each frame element has 2 nodes and 12 DOFs: [u<sub>x</sub>, u<sub>y</sub>, u<sub>z</sub>, \u03B8<sub>x</sub>, \u03B8<sub>y</sub>, \u03B8<sub>z</sub>] per node.</p>", z += "<h4>2.1.1 Shape Functions</h4>", z += "<p><b>Axial</b> (linear interpolation):</p>", z += '<div class="rpt-eq">N\u2081(\u03BE) = 1 \u2212 \u03BE &nbsp;&nbsp;&nbsp; N\u2082(\u03BE) = \u03BE &nbsp;&nbsp;&nbsp; where \u03BE = x/L \u2208 [0, 1]</div>', z += "<p><b>Bending</b> (Hermite cubic polynomials):</p>", z += '<table class="rpt-eq-table"><tbody>', z += '<tr><td class="eq-name">H\u2081(\u03BE)</td><td>= 1 \u2212 3\u03BE\xB2 + 2\u03BE\xB3</td><td class="eq-desc">displacement at node i</td></tr>', z += '<tr><td class="eq-name">H\u2082(\u03BE)</td><td>= L\u03BE(1 \u2212 \u03BE)\xB2</td><td class="eq-desc">rotation at node i</td></tr>', z += '<tr><td class="eq-name">H\u2083(\u03BE)</td><td>= 3\u03BE\xB2 \u2212 2\u03BE\xB3</td><td class="eq-desc">displacement at node j</td></tr>', z += '<tr><td class="eq-name">H\u2084(\u03BE)</td><td>= L\u03BE\xB2(\u03BE \u2212 1)</td><td class="eq-desc">rotation at node j</td></tr>', z += "</tbody></table>", z += bl(), z += "<p><b>Torsion</b> (linear): same as axial.</p>", z += "<h4>2.1.2 Strain-Displacement Matrix B</h4>", z += "<p>The B matrix relates nodal displacements to internal strains:</p>", z += '<div class="rpt-eq">\u03B5<sub>axial</sub> = du/dx = (1/L)\xB7[\u22121, 1]\xB7{u<sub>i</sub>, u<sub>j</sub>}</div>', z += '<div class="rpt-eq">\u03BA<sub>bending</sub> = d\xB2v/dx\xB2 = B<sub>b</sub>\xB7{v<sub>i</sub>, \u03B8<sub>i</sub>, v<sub>j</sub>, \u03B8<sub>j</sub>}</div>', z += '<div class="rpt-eq">B<sub>b</sub>(\u03BE) = (1/L\xB2)\xB7[\u22126+12\u03BE, L(\u22124+6\u03BE), 6\u221212\u03BE, L(\u22122+6\u03BE)]</div>', z += '<div class="rpt-eq">\u03C6\u2032<sub>torsion</sub> = d\u03B8<sub>x</sub>/dx = (1/L)\xB7[\u22121, 1]\xB7{\u03B8<sub>xi</sub>, \u03B8<sub>xj</sub>}</div>', z += "<h4>2.1.3 Constitutive Relations D</h4>", z += '<table class="rpt-eq-table"><tbody>', z += '<tr><td class="eq-name">Axial:</td><td>\u03C3 = E\xB7\u03B5</td><td>\u2192 D<sub>axial</sub> = E\xB7A</td></tr>', z += '<tr><td class="eq-name">Bending Z:</td><td>M<sub>z</sub> = EI<sub>z</sub>\xB7\u03BA</td><td>\u2192 D<sub>bz</sub> = E\xB7I<sub>z</sub></td></tr>', z += '<tr><td class="eq-name">Bending Y:</td><td>M<sub>y</sub> = EI<sub>y</sub>\xB7\u03BA</td><td>\u2192 D<sub>by</sub> = E\xB7I<sub>y</sub></td></tr>', z += '<tr><td class="eq-name">Torsion:</td><td>T = GJ\xB7\u03C6\u2032</td><td>\u2192 D<sub>torsion</sub> = G\xB7J</td></tr>', z += "</tbody></table>", z += "<h4>2.1.4 Local Stiffness Matrix K<sub>local</sub></h4>", z += "<p>Obtained by analytical integration:</p>", z += '<div class="rpt-eq rpt-eq-highlight">K<sub>local</sub> = \u222B\u2080\u1D38 B\u1D40\xB7D\xB7B dx</div>', z += "<p>Result for Euler-Bernoulli beam (12\xD712 symmetric):</p>", z += '<div class="rpt-eq-small">', z += "K[0,0] = EA/L &nbsp;&nbsp; K[1,1] = 12EI<sub>z</sub>/L\xB3 &nbsp;&nbsp; K[2,2] = 12EI<sub>y</sub>/L\xB3 &nbsp;&nbsp; K[3,3] = GJ/L<br/>", z += "K[4,4] = 4EI<sub>y</sub>/L &nbsp;&nbsp; K[5,5] = 4EI<sub>z</sub>/L &nbsp;&nbsp; K[1,5] = 6EI<sub>z</sub>/L\xB2 &nbsp;&nbsp; K[2,4] = \u22126EI<sub>y</sub>/L\xB2", z += "</div>", z += "<h4>2.1.5 Transformation Matrix T</h4>", z += "<p>Direction cosines of element axis:</p>", z += '<div class="rpt-eq">l = (x<sub>j</sub>\u2212x<sub>i</sub>)/L &nbsp;&nbsp; m = (y<sub>j</sub>\u2212y<sub>i</sub>)/L &nbsp;&nbsp; n = (z<sub>j</sub>\u2212z<sub>i</sub>)/L &nbsp;&nbsp; D = \u221A(l\xB2+m\xB2)</div>', z += '<div class="rpt-eq">\u03BB = [l, m, n; \u2212m/D, l/D, 0; \u2212ln/D, \u2212mn/D, D] &nbsp;&nbsp; (3\xD73)</div>', z += '<div class="rpt-eq rpt-eq-highlight">T = I\u2084 \u2297 \u03BB &nbsp;&nbsp; (12\xD712 block-diagonal, Kronecker product)</div>', z += "<p>Special case for vertical elements (n = \xB11): \u03BB uses fixed axes.</p>", z += "<h4>2.1.6 Global Stiffness Matrix</h4>", z += '<div class="rpt-eq rpt-eq-highlight">K<sub>global</sub> = T\u1D40 \xB7 K<sub>local</sub> \xB7 T</div>'), z += "<h2>3. Numerical Results per Element</h2>", z += "<p>For each element, we compute K<sub>local</sub>, T, and K<sub>global</sub> = T\u1D40\xB7K\xB7T with the actual properties:</p>";
     for (let ie = 0; ie < Y; ie++) {
-      const oe = F[ie], N = oe.map((at) => b[at]);
-      if (!(oe.length === 2)) continue;
-      const G = Po(ho(N[1], N[0])), ce = ((_a = $.elasticities) == null ? void 0 : _a.get(ie)) ?? 0, $e = ((_b = $.areas) == null ? void 0 : _b.get(ie)) ?? 0, Te = ((_c = $.momentsOfInertiaZ) == null ? void 0 : _c.get(ie)) ?? 0, Ve = ((_d = $.momentsOfInertiaY) == null ? void 0 : _d.get(ie)) ?? 0, he = ((_e = $.shearModuli) == null ? void 0 : _e.get(ie)) ?? 0, Be = ((_f = $.torsionalConstants) == null ? void 0 : _f.get(ie)) ?? 0;
+      const ne = P[ie], N = ne.map((at) => b[at]);
+      if (!(ne.length === 2)) continue;
+      const G = Rn(xn(N[1], N[0])), ce = ((_a = M.elasticities) == null ? void 0 : _a.get(ie)) ?? 0, $e = ((_b = M.areas) == null ? void 0 : _b.get(ie)) ?? 0, Te = ((_c = M.momentsOfInertiaZ) == null ? void 0 : _c.get(ie)) ?? 0, Ve = ((_d = M.momentsOfInertiaY) == null ? void 0 : _d.get(ie)) ?? 0, he = ((_e = M.shearModuli) == null ? void 0 : _e.get(ie)) ?? 0, Be = ((_f = M.torsionalConstants) == null ? void 0 : _f.get(ie)) ?? 0;
       let He = null, be = null, Ee = null;
       try {
-        He = vn(N, $, ie), be = yn(N), Ee = no(ns(be), no(He, be));
+        He = vo(N, M, ie), be = yo(N), Ee = on(os(be), on(He, be));
       } catch {
         continue;
       }
-      const ze = ho(N[1], N[0]), Je = ze[0] / G, st = ze[1] / G, Ue = ze[2] / G;
-      z += '<div class="rpt-elem-block">', z += `<h3 class="rpt-elem-title" data-toggle="elem${ie}">\u25B6 Element ${ie} \u2014 Nodes ${oe[0]} \u2192 ${oe[1]}, L = ${nt(G)}</h3>`, z += `<div id="rpt-elem${ie}" class="rpt-elem-body" style="display:none">`, z += "<h4>Properties (numerical substitution)</h4>", z += '<div class="rpt-eq-small">', z += `E = ${nt(ce)} &nbsp;&nbsp; A = ${nt($e)} &nbsp;&nbsp; I<sub>z</sub> = ${nt(Te)} &nbsp;&nbsp; I<sub>y</sub> = ${nt(Ve)} &nbsp;&nbsp; G = ${nt(he)} &nbsp;&nbsp; J = ${nt(Be)}<br/>`, z += `EA/L = ${nt(ce)}\xB7${nt($e)}/${nt(G)} = <b>${nt(ce * $e / G)}</b><br/>`, z += `12EI<sub>z</sub>/L\xB3 = 12\xB7${nt(ce)}\xB7${nt(Te)}/${nt(G)}\xB3 = <b>${nt(12 * ce * Te / G ** 3)}</b><br/>`, z += `12EI<sub>y</sub>/L\xB3 = 12\xB7${nt(ce)}\xB7${nt(Ve)}/${nt(G)}\xB3 = <b>${nt(12 * ce * Ve / G ** 3)}</b><br/>`, z += `GJ/L = ${nt(he)}\xB7${nt(Be)}/${nt(G)} = <b>${nt(he * Be / G)}</b>`, z += "</div>", z += "<h4>Direction cosines</h4>", z += `<div class="rpt-eq-small">l = ${gn(Je)}, m = ${gn(st)}, n = ${gn(Ue)}, D = ${gn(Math.sqrt(Je ** 2 + st ** 2))}</div>`, z += "<h4>K<sub>local</sub> (12\xD712)</h4>", z += Kn(He, 12), z += "<h4>T \u2014 Transformation (12\xD712)</h4>", z += Kn(be, 12), z += "<h4>K<sub>global</sub> = T\u1D40 \xB7 K<sub>local</sub> \xB7 T</h4>", z += Kn(Ee, 12), z += "<h4>Assembly</h4>", z += `<div class="rpt-eq-small">Global DOFs: node ${oe[0]} \u2192 [${oe[0] * 6}..${oe[0] * 6 + 5}], node ${oe[1]} \u2192 [${oe[1] * 6}..${oe[1] * 6 + 5}]</div>`, z += "</div></div>";
+      const ze = xn(N[1], N[0]), Je = ze[0] / G, st = ze[1] / G, Ue = ze[2] / G;
+      z += '<div class="rpt-elem-block">', z += `<h3 class="rpt-elem-title" data-toggle="elem${ie}">\u25B6 Element ${ie} \u2014 Nodes ${ne[0]} \u2192 ${ne[1]}, L = ${ot(G)}</h3>`, z += `<div id="rpt-elem${ie}" class="rpt-elem-body" style="display:none">`, z += "<h4>Properties (numerical substitution)</h4>", z += '<div class="rpt-eq-small">', z += `E = ${ot(ce)} &nbsp;&nbsp; A = ${ot($e)} &nbsp;&nbsp; I<sub>z</sub> = ${ot(Te)} &nbsp;&nbsp; I<sub>y</sub> = ${ot(Ve)} &nbsp;&nbsp; G = ${ot(he)} &nbsp;&nbsp; J = ${ot(Be)}<br/>`, z += `EA/L = ${ot(ce)}\xB7${ot($e)}/${ot(G)} = <b>${ot(ce * $e / G)}</b><br/>`, z += `12EI<sub>z</sub>/L\xB3 = 12\xB7${ot(ce)}\xB7${ot(Te)}/${ot(G)}\xB3 = <b>${ot(12 * ce * Te / G ** 3)}</b><br/>`, z += `12EI<sub>y</sub>/L\xB3 = 12\xB7${ot(ce)}\xB7${ot(Ve)}/${ot(G)}\xB3 = <b>${ot(12 * ce * Ve / G ** 3)}</b><br/>`, z += `GJ/L = ${ot(he)}\xB7${ot(Be)}/${ot(G)} = <b>${ot(he * Be / G)}</b>`, z += "</div>", z += "<h4>Direction cosines</h4>", z += `<div class="rpt-eq-small">l = ${go(Je)}, m = ${go(st)}, n = ${go(Ue)}, D = ${go(Math.sqrt(Je ** 2 + st ** 2))}</div>`, z += "<h4>K<sub>local</sub> (12\xD712)</h4>", z += Ko(He, 12), z += "<h4>T \u2014 Transformation (12\xD712)</h4>", z += Ko(be, 12), z += "<h4>K<sub>global</sub> = T\u1D40 \xB7 K<sub>local</sub> \xB7 T</h4>", z += Ko(Ee, 12), z += "<h4>Assembly</h4>", z += `<div class="rpt-eq-small">Global DOFs: node ${ne[0]} \u2192 [${ne[0] * 6}..${ne[0] * 6 + 5}], node ${ne[1]} \u2192 [${ne[1] * 6}..${ne[1] * 6 + 5}]</div>`, z += "</div></div>";
     }
-    z += "<h2>4. Global Assembly</h2>", z += `<div class="rpt-eq rpt-eq-highlight">K<sub>total</sub> = \u03A3<sub>e=0</sub><sup>${Y - 1}</sup> (T<sub>e</sub>\u1D40 \xB7 k<sub>e</sub> \xB7 T<sub>e</sub>)</div>`, z += "<p>Each element contributes its K<sub>global</sub> to the positions determined by its node DOF indices.</p>", z += bl(F, b.length), z += "<h2>5. Boundary Conditions</h2>";
-    const Q = [
+    z += "<h2>4. Global Assembly</h2>", z += `<div class="rpt-eq rpt-eq-highlight">K<sub>total</sub> = \u03A3<sub>e=0</sub><sup>${Y - 1}</sup> (T<sub>e</sub>\u1D40 \xB7 k<sub>e</sub> \xB7 T<sub>e</sub>)</div>`, z += "<p>Each element contributes its K<sub>global</sub> to the positions determined by its node DOF indices.</p>", z += gl(P, b.length), z += "<h2>5. Boundary Conditions</h2>";
+    const Z = [
       "u<sub>x</sub>",
       "u<sub>y</sub>",
       "u<sub>z</sub>",
@@ -3198,10 +3265,10 @@ let __tla = Promise.all([
     ], ve = [];
     if (z += "<h3>5.1 Supports (fixed DOFs)</h3>", J.supports && J.supports.size > 0) {
       z += '<table class="rpt-data"><thead><tr><th>Node</th>';
-      for (const ie of Q) z += `<th>${ie}</th>`;
-      z += "</tr></thead><tbody>", J.supports.forEach((ie, oe) => {
-        z += `<tr><td>${oe}</td>`, ie.forEach((N, D) => {
-          N && ve.push(oe * 6 + D), z += `<td class="${N ? "fixed" : ""}">${N ? "Fixed" : "Free"}</td>`;
+      for (const ie of Z) z += `<th>${ie}</th>`;
+      z += "</tr></thead><tbody>", J.supports.forEach((ie, ne) => {
+        z += `<tr><td>${ne}</td>`, ie.forEach((N, D) => {
+          N && ve.push(ne * 6 + D), z += `<td class="${N ? "fixed" : ""}">${N ? "Fixed" : "Free"}</td>`;
         }), z += "</tr>";
       }), z += "</tbody></table>";
     }
@@ -3215,31 +3282,31 @@ let __tla = Promise.all([
         "M<sub>y</sub>",
         "M<sub>z</sub>"
       ];
-      for (const oe of ie) z += `<th>${oe}</th>`;
-      z += "</tr></thead><tbody>", J.loads.forEach((oe, N) => {
-        z += `<tr><td>${N}</td>`, oe.forEach((D) => {
+      for (const ne of ie) z += `<th>${ne}</th>`;
+      z += "</tr></thead><tbody>", J.loads.forEach((ne, N) => {
+        z += `<tr><td>${N}</td>`, ne.forEach((D) => {
           const G = Math.abs(D) > 1e-10;
-          z += `<td class="${G ? "nz" : ""}">${G ? nt(D) : "0"}</td>`;
+          z += `<td class="${G ? "nz" : ""}">${G ? ot(D) : "0"}</td>`;
         }), z += "</tr>";
       }), z += "</tbody></table>";
     }
     if (z += "<h2>6. Solution</h2>", z += "<p>After removing fixed DOFs, the reduced system is:</p>", z += '<div class="rpt-eq rpt-eq-highlight">K<sub>free</sub> \xB7 u<sub>free</sub> = F<sub>free</sub></div>', z += "<p>Solved using LU decomposition with partial pivoting (sparse matrix).</p>", z += "<h3>6.1 Nodal Displacements</h3>", H == null ? void 0 : H.deformations) {
       z += '<table class="rpt-data"><thead><tr><th>Node</th>';
-      for (const ie of Q) z += `<th>${ie}</th>`;
-      z += "</tr></thead><tbody>", H.deformations.forEach((ie, oe) => {
-        z += `<tr><td>${oe}</td>`, ie.forEach((N) => {
+      for (const ie of Z) z += `<th>${ie}</th>`;
+      z += "</tr></thead><tbody>", H.deformations.forEach((ie, ne) => {
+        z += `<tr><td>${ne}</td>`, ie.forEach((N) => {
           const D = Math.abs(N) > 1e-10;
-          z += `<td class="${D ? "nz" : ""}">${nt(N, 6)}</td>`;
+          z += `<td class="${D ? "nz" : ""}">${ot(N, 6)}</td>`;
         }), z += "</tr>";
       }), z += "</tbody></table>";
     }
     if (z += "<h3>6.2 Reactions</h3>", z += '<div class="rpt-eq">R = K<sub>total</sub> \xB7 u (extract at fixed DOFs)</div>', H == null ? void 0 : H.reactions) {
       z += '<table class="rpt-data"><thead><tr><th>Node</th>';
-      for (const ie of Q) z += `<th>${ie}</th>`;
-      z += "</tr></thead><tbody>", H.reactions.forEach((ie, oe) => {
-        z += `<tr><td>${oe}</td>`, ie.forEach((N) => {
+      for (const ie of Z) z += `<th>${ie}</th>`;
+      z += "</tr></thead><tbody>", H.reactions.forEach((ie, ne) => {
+        z += `<tr><td>${ne}</td>`, ie.forEach((N) => {
           const D = Math.abs(N) > 1e-10;
-          z += `<td class="${D ? "nz-react" : ""}">${D ? nt(N, 4) : "0"}</td>`;
+          z += `<td class="${D ? "nz-react" : ""}">${D ? ot(N, 4) : "0"}</td>`;
         }), z += "</tr>";
       }), z += "</tbody></table>";
     }
@@ -3253,15 +3320,15 @@ let __tla = Promise.all([
         "M<sub>z</sub>"
       ];
       z += '<table class="rpt-data"><thead><tr><th>Elem</th><th>Nodes</th>';
-      for (const oe of ie) z += `<th>${oe}<sub>i</sub></th>`;
-      for (const oe of ie) z += `<th>${oe}<sub>j</sub></th>`;
+      for (const ne of ie) z += `<th>${ne}<sub>i</sub></th>`;
+      for (const ne of ie) z += `<th>${ne}<sub>j</sub></th>`;
       z += "</tr></thead><tbody>";
-      for (let oe = 0; oe < Y; oe++) {
-        const N = F[oe];
+      for (let ne = 0; ne < Y; ne++) {
+        const N = P[ne];
         if (N.length !== 2) continue;
         const D = N.map((G) => b[G]);
         try {
-          const G = vn(D, $, oe), ce = yn(D), $e = [];
+          const G = vo(D, M, ne), ce = yo(D), $e = [];
           for (const he of N) {
             const Be = ((_g = H.deformations) == null ? void 0 : _g.get(he)) || [
               0,
@@ -3273,11 +3340,11 @@ let __tla = Promise.all([
             ];
             $e.push(...Be);
           }
-          const Te = no(ce, $e), Ve = no(G, Te);
-          z += `<tr><td>${oe}</td><td>${N.join("\u2192")}</td>`;
+          const Te = on(ce, $e), Ve = on(G, Te);
+          z += `<tr><td>${ne}</td><td>${N.join("\u2192")}</td>`;
           for (let he = 0; he < 12; he++) {
             const Be = Math.abs(Ve[he]) > 1e-10;
-            z += `<td class="${Be ? "nz" : ""}">${nt(Ve[he], 2)}</td>`;
+            z += `<td class="${Be ? "nz" : ""}">${ot(Ve[he], 2)}</td>`;
           }
           z += "</tr>";
         } catch {
@@ -3347,7 +3414,7 @@ let __tla = Promise.all([
   `;
     return ye.innerHTML = me + z, (_h = ye.querySelector("#rpt-close")) == null ? void 0 : _h.addEventListener("click", () => ye.remove()), ye.querySelectorAll("[data-toggle]").forEach((ie) => {
       ie.addEventListener("click", () => {
-        const oe = ie.dataset.toggle, N = ye.querySelector(`#rpt-${oe}`);
+        const ne = ie.dataset.toggle, N = ye.querySelector(`#rpt-${ne}`);
         if (N) {
           const D = N.style.display !== "none";
           N.style.display = D ? "none" : "", ie.textContent = ie.textContent.replace(/^[▼▶]/, D ? "\u25B6" : "\u25BC");
@@ -3355,30 +3422,30 @@ let __tla = Promise.all([
       });
     }), ye;
   }
-  function nt(e, b = 2) {
+  function ot(e, b = 2) {
     return Math.abs(e) < 1e-10 ? "0" : Math.abs(e) >= 1e7 || Math.abs(e) < 0.01 && e !== 0 ? e.toExponential(b) : e.toFixed(b);
   }
-  function gn(e) {
+  function go(e) {
     return Math.abs(e) < 1e-10 ? "0" : e.toFixed(4);
   }
-  function Kn(e, b) {
+  function Ko(e, b) {
     var _a;
-    const F = Math.min(b, 12);
-    let $ = '<div style="overflow-x:auto"><table class="rpt-mtx">';
-    for (let J = 0; J < F; J++) {
-      $ += "<tr>";
-      for (let H = 0; H < F; H++) {
+    const P = Math.min(b, 12);
+    let M = '<div style="overflow-x:auto"><table class="rpt-mtx">';
+    for (let J = 0; J < P; J++) {
+      M += "<tr>";
+      for (let H = 0; H < P; H++) {
         const U = ((_a = e[J]) == null ? void 0 : _a[H]) ?? 0, Y = Math.abs(U) < 1e-10;
-        $ += `<td class="${Y ? "z" : ""} ${J === H && !Y ? "diag" : ""}">${Y ? "0" : ul(U)}</td>`;
+        M += `<td class="${Y ? "z" : ""} ${J === H && !Y ? "diag" : ""}">${Y ? "0" : ml(U)}</td>`;
       }
-      $ += "</tr>";
+      M += "</tr>";
     }
-    return $ += "</table>", b > F && ($ += `<div style="color:#888;font-size:9pt">(showing ${F}\xD7${F} of ${b}\xD7${b})</div>`), $ += "</div>", $;
+    return M += "</table>", b > P && (M += `<div style="color:#888;font-size:9pt">(showing ${P}\xD7${P} of ${b}\xD7${b})</div>`), M += "</div>", M;
   }
-  function ul(e) {
+  function ml(e) {
     return Math.abs(e) >= 1e6 || Math.abs(e) < 0.01 && e !== 0 ? e.toExponential(1) : Math.abs(e) >= 100 ? e.toFixed(0) : e.toFixed(2);
   }
-  function ml() {
+  function bl() {
     const U = [
       {
         name: "H\u2081",
@@ -3406,55 +3473,55 @@ let __tla = Promise.all([
     for (const q of U) {
       let W = "";
       for (let ve = 0; ve <= 80; ve++) {
-        const me = ve / 80, ie = 30 + me * 540, oe = 180 / 2 - q.fn(me) * 60;
-        W += (ve === 0 ? "M" : "L") + `${ie.toFixed(1)},${oe.toFixed(1)}`;
+        const me = ve / 80, ie = 30 + me * 540, ne = 180 / 2 - q.fn(me) * 60;
+        W += (ve === 0 ? "M" : "L") + `${ie.toFixed(1)},${ne.toFixed(1)}`;
       }
       Y += `<path d="${W}" fill="none" stroke="${q.color}" stroke-width="2.5"/>`;
-      const ye = 0.75, z = 30 + ye * 540 + 8, Q = 180 / 2 - q.fn(ye) * 60 - 6;
-      Y += `<text x="${z}" y="${Q}" fill="${q.color}" font-size="11" font-weight="bold" font-family="sans-serif">${q.name}</text>`;
+      const ye = 0.75, z = 30 + ye * 540 + 8, Z = 180 / 2 - q.fn(ye) * 60 - 6;
+      Y += `<text x="${z}" y="${Z}" fill="${q.color}" font-size="11" font-weight="bold" font-family="sans-serif">${q.name}</text>`;
     }
     return Y += "</svg>", Y;
   }
-  function bl(e, b) {
-    const F = b * 6, $ = Math.min(F, 30);
+  function gl(e, b) {
+    const P = b * 6, M = Math.min(P, 30);
     let J = "<p>Assembly contribution map (number = how many elements contribute to each K<sub>total</sub> entry):</p>";
     J += '<div style="overflow-x:auto"><table class="rpt-assembly-map">', J += "<tr><td></td>";
-    for (let U = 0; U < $; U++) J += `<td style="color:#003366;font-weight:bold;font-size:7px">${U}</td>`;
+    for (let U = 0; U < M; U++) J += `<td style="color:#003366;font-weight:bold;font-size:7px">${U}</td>`;
     J += "</tr>";
     const H = Array.from({
-      length: $
-    }, () => Array($).fill(0));
+      length: M
+    }, () => Array(M).fill(0));
     for (let U = 0; U < e.length; U++) {
       const Y = e[U].map((q) => q * 6);
       for (const q of Y) for (const W of Y) for (let ye = 0; ye < 6; ye++) for (let z = 0; z < 6; z++) {
-        const Q = q + ye, ve = W + z;
-        Q < $ && ve < $ && H[Q][ve]++;
+        const Z = q + ye, ve = W + z;
+        Z < M && ve < M && H[Z][ve]++;
       }
     }
-    for (let U = 0; U < $; U++) {
+    for (let U = 0; U < M; U++) {
       J += `<tr><td style="color:#003366;font-weight:bold;font-size:7px">${U}</td>`;
-      for (let Y = 0; Y < $; Y++) {
+      for (let Y = 0; Y < M; Y++) {
         const q = H[U][Y], W = q === 0 ? "#fff" : q === 1 ? "#e8f0fe" : q === 2 ? "#c6dcf5" : "#a0c4e8", ye = q === 0 ? "" : q.toString();
         J += `<td style="background:${W};color:#003366">${ye}</td>`;
       }
       J += "</tr>";
     }
-    return J += "</table></div>", F > $ && (J += `<div style="color:#888;font-size:9pt">(showing ${$}\xD7${$} of ${F}\xD7${F})</div>`), J;
+    return J += "</table></div>", P > M && (J += `<div style="color:#888;font-size:9pt">(showing ${M}\xD7${M} of ${P}\xD7${P})</div>`), J;
   }
-  let Zn = false;
-  function gl(e) {
-    if (Zn || window.katex) {
-      Zn = true, e();
+  let Zo = false;
+  function hl(e) {
+    if (Zo || window.katex) {
+      Zo = true, e();
       return;
     }
     const b = document.createElement("link");
     b.rel = "stylesheet", b.href = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css", document.head.appendChild(b);
-    const F = document.createElement("script");
-    F.src = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js", F.onload = () => {
-      Zn = true, e();
-    }, document.head.appendChild(F);
+    const P = document.createElement("script");
+    P.src = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js", P.onload = () => {
+      Zo = true, e();
+    }, document.head.appendChild(P);
   }
-  function sa(e, b = false) {
+  function aa(e, b = false) {
     try {
       if (window.katex) return window.katex.renderToString(e, {
         displayMode: b,
@@ -3464,15 +3531,15 @@ let __tla = Promise.all([
     }
     return `<code class="er-tex-fallback">${e}</code>`;
   }
-  function hl(e, b, F, $, J, H) {
+  function xl(e, b, P, M, J, H) {
     var _a, _b, _c, _d, _e, _f;
-    const U = F[e], Y = U.map((be) => b[be]), q = U.length === 2, W = q ? Po(ho(Y[1], Y[0])) : 0, ye = ((_a = $.elasticities) == null ? void 0 : _a.get(e)) ?? 0, z = ((_b = $.areas) == null ? void 0 : _b.get(e)) ?? 0, Q = ((_c = $.momentsOfInertiaZ) == null ? void 0 : _c.get(e)) ?? 0, ve = ((_d = $.momentsOfInertiaY) == null ? void 0 : _d.get(e)) ?? 0, me = ((_e = $.shearModuli) == null ? void 0 : _e.get(e)) ?? 0, ie = ((_f = $.torsionalConstants) == null ? void 0 : _f.get(e)) ?? 0;
-    let oe = null, N = null, D = null;
+    const U = P[e], Y = U.map((be) => b[be]), q = U.length === 2, W = q ? Rn(xn(Y[1], Y[0])) : 0, ye = ((_a = M.elasticities) == null ? void 0 : _a.get(e)) ?? 0, z = ((_b = M.areas) == null ? void 0 : _b.get(e)) ?? 0, Z = ((_c = M.momentsOfInertiaZ) == null ? void 0 : _c.get(e)) ?? 0, ve = ((_d = M.momentsOfInertiaY) == null ? void 0 : _d.get(e)) ?? 0, me = ((_e = M.shearModuli) == null ? void 0 : _e.get(e)) ?? 0, ie = ((_f = M.torsionalConstants) == null ? void 0 : _f.get(e)) ?? 0;
+    let ne = null, N = null, D = null;
     try {
-      oe = vn(Y, $, e), N = yn(Y), D = no(ns(N), no(oe, N));
+      ne = vo(Y, M, e), N = yo(Y), D = on(os(N), on(ne, N));
     } catch {
     }
-    const G = q ? ho(Y[1], Y[0]) : [
+    const G = q ? xn(Y[1], Y[0]) : [
       0,
       0,
       0
@@ -3489,14 +3556,14 @@ let __tla = Promise.all([
       he.push(...Ee);
     }
     let Be = [], He = [];
-    if (he.length === 12 && N && oe) {
+    if (he.length === 12 && N && ne) {
       try {
-        Be = no(N, he);
+        Be = on(N, he);
       } catch {
         Be = Array(12).fill(0);
       }
       try {
-        He = no(oe, Be);
+        He = on(ne, Be);
       } catch {
         He = Array(12).fill(0);
       }
@@ -3509,11 +3576,11 @@ let __tla = Promise.all([
       L: W,
       E: ye,
       A: z,
-      Iz: Q,
+      Iz: Z,
       Iy: ve,
       G: me,
       J: ie,
-      kLocal: oe,
+      kLocal: ne,
       T: N,
       kGlobal: D,
       l: ce,
@@ -3528,10 +3595,10 @@ let __tla = Promise.all([
       totalNodes: b.length
     };
   }
-  function xl(e, b, F, $, J, H) {
+  function vl(e, b, P, M, J, H) {
     var _a, _b;
-    const U = hl(e, b, F, $, J, H), Y = document.createElement("div");
-    return Y.className = "er-panel", Y.innerHTML = Ml + `
+    const U = xl(e, b, P, M, J, H), Y = document.createElement("div");
+    return Y.className = "er-panel", Y.innerHTML = wl + `
     <div class="er-header">
       <span class="er-badge">Element ${e}</span>
       <span class="er-type">${U.isFrame ? "Frame" : "Shell"} \u2014 Nodes ${U.elem.join(" \u2192 ")} \u2014 L = ${Ye(U.L)}</span>
@@ -3543,9 +3610,9 @@ let __tla = Promise.all([
       <button class="er-tab" data-tab="math">Matematica Explicada</button>
       <button class="er-tab" data-tab="resumen">Resumen</button>
     </div>
-    <div class="er-body" id="er-body-tabla">${vl(U)}</div>
-    <div class="er-body" id="er-body-math" style="display:none">${aa(U)}</div>
-    <div class="er-body" id="er-body-resumen" style="display:none">${yl(U)}</div>
+    <div class="er-body" id="er-body-tabla">${yl(U)}</div>
+    <div class="er-body" id="er-body-math" style="display:none">${la(U)}</div>
+    <div class="er-body" id="er-body-resumen" style="display:none">${$l(U)}</div>
   `, Y.querySelectorAll(".er-tab").forEach((q) => {
       q.addEventListener("click", () => {
         Y.querySelectorAll(".er-tab").forEach((ye) => ye.classList.remove("active")), q.classList.add("active");
@@ -3557,14 +3624,14 @@ let __tla = Promise.all([
       W && (W.textContent = q ? "\u22A1" : "\u26F6");
     }), setTimeout(() => {
       const q = Y.querySelector("#er-sf-canvas");
-      q && Qn(q);
+      q && Qo(q);
       const W = Y.querySelector("#er-sf-canvas-math");
-      W && Qn(W);
-    }, 50), gl(() => {
+      W && Qo(W);
+    }, 50), hl(() => {
       const q = Y.querySelector("#er-body-math");
-      q && (q.innerHTML = aa(U)), setTimeout(() => {
+      q && (q.innerHTML = la(U)), setTimeout(() => {
         const W = Y.querySelector("#er-sf-canvas-math");
-        W && Qn(W);
+        W && Qo(W);
       }, 50), Y.querySelectorAll(".er-deriv-header").forEach((W) => {
         W.addEventListener("click", () => {
           const ye = W.dataset.toggle, z = Y.querySelector(`#er-${ye}`);
@@ -3573,10 +3640,10 @@ let __tla = Promise.all([
       });
     }), Y;
   }
-  function vl(e) {
+  function yl(e) {
     let b = "";
-    if (b += '<div class="er-section-title">1. Propiedades</div>', b += '<table class="er-props">', b += `<tr><td>E</td><td>${Ye(e.E)}</td><td>A</td><td>${Ye(e.A)}</td></tr>`, b += `<tr><td>I<sub>z</sub></td><td>${Ye(e.Iz)}</td><td>I<sub>y</sub></td><td>${Ye(e.Iy)}</td></tr>`, b += `<tr><td>G</td><td>${Ye(e.G)}</td><td>J</td><td>${Ye(e.J)}</td></tr>`, b += "</table>", e.kLocal && (b += `<div class="er-section-title">2. K<sub>local</sub> (${e.kLocal.length}\xD7${e.kLocal.length})</div>`, b += an(e.kLocal)), e.T && (b += '<div class="er-section-title">3. T \u2014 Transformaci\xF3n</div>', b += an(e.T)), e.kGlobal && (b += '<div class="er-section-title">4. K<sub>global</sub> = T<sup>T</sup>\xB7K\xB7T</div>', b += an(e.kGlobal)), b += '<div class="er-section-title">5. Desplazamientos</div>', e.uGlobal.length > 0) {
-      const F = [
+    if (b += '<div class="er-section-title">1. Propiedades</div>', b += '<table class="er-props">', b += `<tr><td>E</td><td>${Ye(e.E)}</td><td>A</td><td>${Ye(e.A)}</td></tr>`, b += `<tr><td>I<sub>z</sub></td><td>${Ye(e.Iz)}</td><td>I<sub>y</sub></td><td>${Ye(e.Iy)}</td></tr>`, b += `<tr><td>G</td><td>${Ye(e.G)}</td><td>J</td><td>${Ye(e.J)}</td></tr>`, b += "</table>", e.kLocal && (b += `<div class="er-section-title">2. K<sub>local</sub> (${e.kLocal.length}\xD7${e.kLocal.length})</div>`, b += ao(e.kLocal)), e.T && (b += '<div class="er-section-title">3. T \u2014 Transformaci\xF3n</div>', b += ao(e.T)), e.kGlobal && (b += '<div class="er-section-title">4. K<sub>global</sub> = T<sup>T</sup>\xB7K\xB7T</div>', b += ao(e.kGlobal)), b += '<div class="er-section-title">5. Desplazamientos</div>', e.uGlobal.length > 0) {
+      const P = [
         "u<sub>x</sub>",
         "u<sub>y</sub>",
         "u<sub>z</sub>",
@@ -3584,17 +3651,17 @@ let __tla = Promise.all([
         "\u03B8<sub>y</sub>",
         "\u03B8<sub>z</sub>"
       ];
-      for (let $ = 0; $ < e.elem.length; $++) {
-        b += `<div class="er-sub">Nodo ${e.elem[$]}: `;
+      for (let M = 0; M < e.elem.length; M++) {
+        b += `<div class="er-sub">Nodo ${e.elem[M]}: `;
         for (let J = 0; J < 6; J++) {
-          const H = e.uGlobal[$ * 6 + J];
-          b += `${F[J]}=<span class="${Math.abs(H) > 1e-10 ? "nz" : ""}">${Ye(H, 6)}</span> `;
+          const H = e.uGlobal[M * 6 + J];
+          b += `${P[J]}=<span class="${Math.abs(H) > 1e-10 ? "nz" : ""}">${Ye(H, 6)}</span> `;
         }
         b += "</div>";
       }
     } else b += '<div class="er-sub">Sin an\xE1lisis</div>';
-    if (b += '<div class="er-section-title">6. Fuerzas internas</div>', e.fLocal.length > 0 && e.fLocal.some((F) => F !== 0)) {
-      const F = [
+    if (b += '<div class="er-section-title">6. Fuerzas internas</div>', e.fLocal.length > 0 && e.fLocal.some((P) => P !== 0)) {
+      const P = [
         "N",
         "V<sub>y</sub>",
         "V<sub>z</sub>",
@@ -3603,29 +3670,29 @@ let __tla = Promise.all([
         "M<sub>z</sub>"
       ];
       b += '<table class="er-forces"><tr><th></th>';
-      for (const $ of F) b += `<th>${$}</th>`;
+      for (const M of P) b += `<th>${M}</th>`;
       b += "</tr>", b += "<tr><td>Nodo i</td>";
-      for (let $ = 0; $ < 6; $++) b += `<td class="${Math.abs(e.fLocal[$]) > 1e-10 ? "nz" : ""}">${Ye(e.fLocal[$], 3)}</td>`;
+      for (let M = 0; M < 6; M++) b += `<td class="${Math.abs(e.fLocal[M]) > 1e-10 ? "nz" : ""}">${Ye(e.fLocal[M], 3)}</td>`;
       b += "</tr><tr><td>Nodo j</td>";
-      for (let $ = 6; $ < 12; $++) b += `<td class="${Math.abs(e.fLocal[$]) > 1e-10 ? "nz" : ""}">${Ye(e.fLocal[$], 3)}</td>`;
+      for (let M = 6; M < 12; M++) b += `<td class="${Math.abs(e.fLocal[M]) > 1e-10 ? "nz" : ""}">${Ye(e.fLocal[M], 3)}</td>`;
       b += "</tr></table>";
     } else b += '<div class="er-sub">Sin an\xE1lisis</div>';
     return b;
   }
-  function aa(e) {
+  function la(e) {
     if (!e.isFrame) return '<div class="er-sub">Shell element math: coming soon</div>';
     let b = "";
-    const F = (ye) => sa(ye), $ = (ye) => sa(ye, true);
-    b += '<div class="er-section-title">1. Geometria del elemento</div>', b += "<p>Viga Euler-Bernoulli con 2 nodos y 6 GDL por nodo:</p>", b += `<div class="er-eq">${$("\\text{DOFs} = [u_x,\\, u_y,\\, u_z,\\, \\theta_x,\\, \\theta_y,\\, \\theta_z] \\quad \\Rightarrow \\quad 12 \\text{ GDL totales}")}</div>`, b += '<div class="er-eq-num">', b += `${F("\\text{Nodo } i")} = (${e.elmNodes[0].map((ye) => Ye(ye)).join(", ")})<br/>`, b += `${F("\\text{Nodo } j")} = (${e.elmNodes[1].map((ye) => Ye(ye)).join(", ")})<br/>`, b += `${$(`L = \\sqrt{(x_j - x_i)^2 + (y_j - y_i)^2 + (z_j - z_i)^2} = \\mathbf{${Ye(e.L)}}`)}`, b += "</div>", b += '<div class="er-section-title">2. Funciones de forma</div>', b += "<p>La viga usa <b>interpolacion lineal</b> para axial/torsion y <b>polinomios cubicos de Hermite</b> para flexion.</p>", b += '<div class="er-subsec">2.1 Axial y Torsion (lineal)</div>', b += `<div class="er-eq">${$("N_1(\\xi) = 1 - \\xi \\qquad N_2(\\xi) = \\xi \\qquad \\text{donde } \\xi = \\frac{x}{L} \\in [0,1]")}</div>`, b += "<p>Primera derivada:</p>", b += `<div class="er-eq">${$("\\frac{dN_1}{d\\xi} = -1 \\qquad \\frac{dN_2}{d\\xi} = 1")}</div>`, b += '<div class="er-subsec">2.2 Flexion (Hermite cubicos)</div>', b += `<p>Las funciones de Hermite garantizan continuidad ${F("C^1")} (desplazamiento y pendiente continuos):</p>`, b += `<div class="er-eq">${$("H_1(\\xi) = 1 - 3\\xi^2 + 2\\xi^3 \\qquad \\text{(desplazamiento nodo } i\\text{)}")}</div>`, b += `<div class="er-eq">${$("H_2(\\xi) = L\\,\\xi\\,(1-\\xi)^2 \\qquad \\text{(rotacion nodo } i\\text{)}")}</div>`, b += `<div class="er-eq">${$("H_3(\\xi) = 3\\xi^2 - 2\\xi^3 \\qquad \\text{(desplazamiento nodo } j\\text{)}")}</div>`, b += `<div class="er-eq">${$("H_4(\\xi) = L\\,\\xi^2(\\xi - 1) \\qquad \\text{(rotacion nodo } j\\text{)}")}</div>`, b += `<div class="er-subsec">Derivadas segunda (curvatura ${F("\\kappa = \\frac{d^2v}{dx^2}")}):</div>`, b += `<div class="er-eq">${$("H_1'' = \\frac{-6}{L^2}(1-2\\xi) \\qquad H_2'' = \\frac{-2}{L}(2-3\\xi)")}</div>`, b += `<div class="er-eq">${$("H_3'' = \\frac{6}{L^2}(1-2\\xi) \\qquad H_4'' = \\frac{-2}{L}(1-3\\xi)")}</div>`, b += '<canvas id="er-sf-canvas-math" width="500" height="250" style="width:100%;border:1px solid var(--fem-border);border-radius:4px;margin:8px 0;"></canvas>', b += '<div class="er-section-title">3. Matriz B (strain-displacement)</div>', b += "<p>La matriz B relaciona desplazamientos nodales con deformaciones internas:</p>", b += `<div class="er-eq">${$("\\boldsymbol{\\varepsilon} = \\mathbf{B} \\cdot \\mathbf{u}")}</div>`, b += '<div class="er-subsec">3.1 Deformacion axial</div>', b += `<div class="er-eq">${$("\\varepsilon_{axial} = \\frac{du}{dx} = \\frac{1}{L} \\begin{bmatrix} -1 & 1 \\end{bmatrix} \\begin{Bmatrix} u_i \\\\ u_j \\end{Bmatrix}")}</div>`, b += `<div class="er-subsec">3.2 Curvatura por flexion (plano XY \u2192 ${F("I_z")})</div>`, b += `<div class="er-eq">${$("\\kappa_z = \\frac{d^2 v}{dx^2} = \\mathbf{B}_{bz} \\cdot \\begin{Bmatrix} v_i \\\\ \\theta_{zi} \\\\ v_j \\\\ \\theta_{zj} \\end{Bmatrix}")}</div>`, b += `<div class="er-eq">${$("\\mathbf{B}_{bz}(\\xi) = \\frac{1}{L^2} \\begin{bmatrix} H_1'' & H_2'' & H_3'' & H_4'' \\end{bmatrix}")}</div>`, b += `<div class="er-subsec">3.3 Curvatura (plano XZ \u2192 ${F("I_y")})</div>`, b += `<div class="er-eq">${$("\\kappa_y = \\frac{d^2 w}{dx^2} = \\mathbf{B}_{by} \\cdot \\begin{Bmatrix} w_i \\\\ \\theta_{yi} \\\\ w_j \\\\ \\theta_{yj} \\end{Bmatrix}")}</div>`, b += '<div class="er-subsec">3.4 Torsion</div>', b += `<div class="er-eq">${$("\\phi' = \\frac{d\\theta_x}{dx} = \\frac{1}{L} \\begin{bmatrix} -1 & 1 \\end{bmatrix} \\begin{Bmatrix} \\theta_{xi} \\\\ \\theta_{xj} \\end{Bmatrix}")}</div>`, b += '<div class="er-section-title">4. Relaciones constitutivas D</div>', b += "<p>Cada modo de deformacion tiene su rigidez material:</p>", b += `<div class="er-eq">${$(`\\text{Axial: } \\sigma = E \\cdot \\varepsilon \\;\\Rightarrow\\; D_{ax} = EA = ${Ye(e.E)} \\times ${Ye(e.A)} = \\mathbf{${Ye(e.E * e.A)}}`)}</div>`, b += `<div class="er-eq">${$(`\\text{Flex Z: } M_z = EI_z \\cdot \\kappa \\;\\Rightarrow\\; D_{bz} = EI_z = ${Ye(e.E)} \\times ${Ye(e.Iz)} = \\mathbf{${Ye(e.E * e.Iz)}}`)}</div>`, b += `<div class="er-eq">${$(`\\text{Flex Y: } M_y = EI_y \\cdot \\kappa \\;\\Rightarrow\\; D_{by} = EI_y = ${Ye(e.E)} \\times ${Ye(e.Iy)} = \\mathbf{${Ye(e.E * e.Iy)}}`)}</div>`, b += `<div class="er-eq">${$(`\\text{Torsion: } T = GJ \\cdot \\phi' \\;\\Rightarrow\\; D_t = GJ = ${Ye(e.G)} \\times ${Ye(e.J)} = \\mathbf{${Ye(e.G * e.J)}}`)}</div>`, b += `<div class="er-section-title">5. Integracion \u2192 ${F("\\mathbf{K}_{local}")}</div>`, b += "<p>La matriz de rigidez local se obtiene integrando analiticamente:</p>", b += `<div class="er-eq er-eq-main">${$("\\mathbf{K}_{local} = \\int_0^L \\mathbf{B}^T \\cdot \\mathbf{D} \\cdot \\mathbf{B} \\; dx")}</div>`;
+    const P = (ye) => aa(ye), M = (ye) => aa(ye, true);
+    b += '<div class="er-section-title">1. Geometria del elemento</div>', b += "<p>Viga Euler-Bernoulli con 2 nodos y 6 GDL por nodo:</p>", b += `<div class="er-eq">${M("\\text{DOFs} = [u_x,\\, u_y,\\, u_z,\\, \\theta_x,\\, \\theta_y,\\, \\theta_z] \\quad \\Rightarrow \\quad 12 \\text{ GDL totales}")}</div>`, b += '<div class="er-eq-num">', b += `${P("\\text{Nodo } i")} = (${e.elmNodes[0].map((ye) => Ye(ye)).join(", ")})<br/>`, b += `${P("\\text{Nodo } j")} = (${e.elmNodes[1].map((ye) => Ye(ye)).join(", ")})<br/>`, b += `${M(`L = \\sqrt{(x_j - x_i)^2 + (y_j - y_i)^2 + (z_j - z_i)^2} = \\mathbf{${Ye(e.L)}}`)}`, b += "</div>", b += '<div class="er-section-title">2. Funciones de forma</div>', b += "<p>La viga usa <b>interpolacion lineal</b> para axial/torsion y <b>polinomios cubicos de Hermite</b> para flexion.</p>", b += '<div class="er-subsec">2.1 Axial y Torsion (lineal)</div>', b += `<div class="er-eq">${M("N_1(\\xi) = 1 - \\xi \\qquad N_2(\\xi) = \\xi \\qquad \\text{donde } \\xi = \\frac{x}{L} \\in [0,1]")}</div>`, b += "<p>Primera derivada:</p>", b += `<div class="er-eq">${M("\\frac{dN_1}{d\\xi} = -1 \\qquad \\frac{dN_2}{d\\xi} = 1")}</div>`, b += '<div class="er-subsec">2.2 Flexion (Hermite cubicos)</div>', b += `<p>Las funciones de Hermite garantizan continuidad ${P("C^1")} (desplazamiento y pendiente continuos):</p>`, b += `<div class="er-eq">${M("H_1(\\xi) = 1 - 3\\xi^2 + 2\\xi^3 \\qquad \\text{(desplazamiento nodo } i\\text{)}")}</div>`, b += `<div class="er-eq">${M("H_2(\\xi) = L\\,\\xi\\,(1-\\xi)^2 \\qquad \\text{(rotacion nodo } i\\text{)}")}</div>`, b += `<div class="er-eq">${M("H_3(\\xi) = 3\\xi^2 - 2\\xi^3 \\qquad \\text{(desplazamiento nodo } j\\text{)}")}</div>`, b += `<div class="er-eq">${M("H_4(\\xi) = L\\,\\xi^2(\\xi - 1) \\qquad \\text{(rotacion nodo } j\\text{)}")}</div>`, b += `<div class="er-subsec">Derivadas segunda (curvatura ${P("\\kappa = \\frac{d^2v}{dx^2}")}):</div>`, b += `<div class="er-eq">${M("H_1'' = \\frac{-6}{L^2}(1-2\\xi) \\qquad H_2'' = \\frac{-2}{L}(2-3\\xi)")}</div>`, b += `<div class="er-eq">${M("H_3'' = \\frac{6}{L^2}(1-2\\xi) \\qquad H_4'' = \\frac{-2}{L}(1-3\\xi)")}</div>`, b += '<canvas id="er-sf-canvas-math" width="500" height="250" style="width:100%;border:1px solid var(--fem-border);border-radius:4px;margin:8px 0;"></canvas>', b += '<div class="er-section-title">3. Matriz B (strain-displacement)</div>', b += "<p>La matriz B relaciona desplazamientos nodales con deformaciones internas:</p>", b += `<div class="er-eq">${M("\\boldsymbol{\\varepsilon} = \\mathbf{B} \\cdot \\mathbf{u}")}</div>`, b += '<div class="er-subsec">3.1 Deformacion axial</div>', b += `<div class="er-eq">${M("\\varepsilon_{axial} = \\frac{du}{dx} = \\frac{1}{L} \\begin{bmatrix} -1 & 1 \\end{bmatrix} \\begin{Bmatrix} u_i \\\\ u_j \\end{Bmatrix}")}</div>`, b += `<div class="er-subsec">3.2 Curvatura por flexion (plano XY \u2192 ${P("I_z")})</div>`, b += `<div class="er-eq">${M("\\kappa_z = \\frac{d^2 v}{dx^2} = \\mathbf{B}_{bz} \\cdot \\begin{Bmatrix} v_i \\\\ \\theta_{zi} \\\\ v_j \\\\ \\theta_{zj} \\end{Bmatrix}")}</div>`, b += `<div class="er-eq">${M("\\mathbf{B}_{bz}(\\xi) = \\frac{1}{L^2} \\begin{bmatrix} H_1'' & H_2'' & H_3'' & H_4'' \\end{bmatrix}")}</div>`, b += `<div class="er-subsec">3.3 Curvatura (plano XZ \u2192 ${P("I_y")})</div>`, b += `<div class="er-eq">${M("\\kappa_y = \\frac{d^2 w}{dx^2} = \\mathbf{B}_{by} \\cdot \\begin{Bmatrix} w_i \\\\ \\theta_{yi} \\\\ w_j \\\\ \\theta_{yj} \\end{Bmatrix}")}</div>`, b += '<div class="er-subsec">3.4 Torsion</div>', b += `<div class="er-eq">${M("\\phi' = \\frac{d\\theta_x}{dx} = \\frac{1}{L} \\begin{bmatrix} -1 & 1 \\end{bmatrix} \\begin{Bmatrix} \\theta_{xi} \\\\ \\theta_{xj} \\end{Bmatrix}")}</div>`, b += '<div class="er-section-title">4. Relaciones constitutivas D</div>', b += "<p>Cada modo de deformacion tiene su rigidez material:</p>", b += `<div class="er-eq">${M(`\\text{Axial: } \\sigma = E \\cdot \\varepsilon \\;\\Rightarrow\\; D_{ax} = EA = ${Ye(e.E)} \\times ${Ye(e.A)} = \\mathbf{${Ye(e.E * e.A)}}`)}</div>`, b += `<div class="er-eq">${M(`\\text{Flex Z: } M_z = EI_z \\cdot \\kappa \\;\\Rightarrow\\; D_{bz} = EI_z = ${Ye(e.E)} \\times ${Ye(e.Iz)} = \\mathbf{${Ye(e.E * e.Iz)}}`)}</div>`, b += `<div class="er-eq">${M(`\\text{Flex Y: } M_y = EI_y \\cdot \\kappa \\;\\Rightarrow\\; D_{by} = EI_y = ${Ye(e.E)} \\times ${Ye(e.Iy)} = \\mathbf{${Ye(e.E * e.Iy)}}`)}</div>`, b += `<div class="er-eq">${M(`\\text{Torsion: } T = GJ \\cdot \\phi' \\;\\Rightarrow\\; D_t = GJ = ${Ye(e.G)} \\times ${Ye(e.J)} = \\mathbf{${Ye(e.G * e.J)}}`)}</div>`, b += `<div class="er-section-title">5. Integracion \u2192 ${P("\\mathbf{K}_{local}")}</div>`, b += "<p>La matriz de rigidez local se obtiene integrando analiticamente:</p>", b += `<div class="er-eq er-eq-main">${M("\\mathbf{K}_{local} = \\int_0^L \\mathbf{B}^T \\cdot \\mathbf{D} \\cdot \\mathbf{B} \\; dx")}</div>`;
     const J = e.E * e.A / e.L, H = e.E * e.Iz / e.L ** 3, U = e.E * e.Iy / e.L ** 3, Y = e.G * e.J / e.L;
-    if (b += '<div class="er-deriv-block">', b += '<div class="er-deriv-header" data-toggle="deriv-axial">\u{1F4D6} K[0,0] = EA/L \u2014 <i>click para ver derivacion completa</i></div>', b += '<div id="er-deriv-axial" class="er-deriv-body" style="display:none">', b += "<p><b>Paso 1:</b> Funcion de forma axial</p>", b += `<div class="er-eq">${$("u(\\xi) = N_1 \\cdot u_i + N_2 \\cdot u_j = (1-\\xi)\\,u_i + \\xi\\,u_j")}</div>`, b += "<p><b>Paso 2:</b> Derivada (deformacion)</p>", b += `<div class="er-eq">${$("\\varepsilon = \\frac{du}{dx} = \\frac{1}{L}\\frac{du}{d\\xi} = \\frac{1}{L}(-u_i + u_j)")}</div>`, b += `<div class="er-eq">${$("\\mathbf{B}_{ax} = \\frac{1}{L}\\begin{bmatrix} -1 & 1 \\end{bmatrix}")}</div>`, b += `<p><b>Paso 3:</b> Integracion ${F("K = \\int_0^L B^T \\cdot EA \\cdot B \\; dx")}</p>`, b += `<div class="er-eq">${$("K_{ax} = \\int_0^L \\frac{1}{L}\\begin{bmatrix}-1\\\\1\\end{bmatrix} \\cdot EA \\cdot \\frac{1}{L}\\begin{bmatrix}-1 & 1\\end{bmatrix} dx")}</div>`, b += `<div class="er-eq">${$("= \\frac{EA}{L^2} \\begin{bmatrix}1 & -1\\\\-1 & 1\\end{bmatrix} \\int_0^L dx = \\frac{EA}{L^2} \\cdot L \\begin{bmatrix}1 & -1\\\\-1 & 1\\end{bmatrix}")}</div>`, b += `<div class="er-eq er-eq-main">${$(`K_{ax} = \\frac{EA}{L}\\begin{bmatrix}1 & -1\\\\-1 & 1\\end{bmatrix} = \\frac{${Ye(e.E)}\\times${Ye(e.A)}}{${Ye(e.L)}}\\begin{bmatrix}1 & -1\\\\-1 & 1\\end{bmatrix}`)}</div>`, b += `<div class="er-eq">${$(`K[0,0] = K[6,6] = \\frac{EA}{L} = \\mathbf{${Ye(J)}}`)}</div>`, b += "</div></div>", b += '<div class="er-deriv-block">', b += '<div class="er-deriv-header" data-toggle="deriv-bend">\u{1F4D6} K[1,1] = 12EI<sub>z</sub>/L\xB3 \u2014 <i>click para ver derivacion completa</i></div>', b += '<div id="er-deriv-bend" class="er-deriv-body" style="display:none">', b += `<p><b>Paso 1:</b> Funcion de forma Hermite para ${F("v(\\xi)")}</p>`, b += `<div class="er-eq">${$("v(\\xi) = H_1 v_i + H_2 \\theta_i + H_3 v_j + H_4 \\theta_j")}</div>`, b += "<p><b>Paso 2:</b> Segunda derivada (curvatura)</p>", b += `<div class="er-eq">${$("\\kappa = \\frac{d^2v}{dx^2} = \\frac{1}{L^2}\\frac{d^2v}{d\\xi^2}")}</div>`, b += `<div class="er-eq">${$("H_1'' = -6+12\\xi, \\quad H_2'' = L(-4+6\\xi), \\quad H_3'' = 6-12\\xi, \\quad H_4'' = L(-2+6\\xi)")}</div>`, b += `<div class="er-eq">${$("\\mathbf{B}_b = \\frac{1}{L^2}\\begin{bmatrix} H_1'' & H_2'' & H_3'' & H_4'' \\end{bmatrix}")}</div>`, b += `<p><b>Paso 3:</b> Integracion para K[1,1] (termino ${F("v_i \\cdot v_i")})</p>`, b += `<div class="er-eq">${$("K[1,1] = \\int_0^L \\frac{(H_1'')^2}{L^4} \\cdot EI_z \\; dx = \\frac{EI_z}{L^4} \\int_0^L (-6+12\\xi)^2 \\; dx")}</div>`, b += `<p>Expandimos: ${F("(-6+12\\xi)^2 = 36 - 144\\xi + 144\\xi^2")}</p>`, b += `<div class="er-eq">${$("\\int_0^L (36-144\\xi+144\\xi^2)\\,dx = 36L - 72L + 48L = 12L")}</div>`, b += `<div class="er-eq er-eq-main">${$(`K[1,1] = \\frac{EI_z}{L^4} \\cdot 12L = \\frac{12EI_z}{L^3} = \\frac{12 \\times ${Ye(e.E)} \\times ${Ye(e.Iz)}}{${Ye(e.L)}^3} = \\mathbf{${Ye(12 * H)}}`)}</div>`, b += "</div></div>", b += '<div class="er-deriv-block">', b += '<div class="er-deriv-header" data-toggle="deriv-tors">\u{1F4D6} K[3,3] = GJ/L \u2014 <i>click para ver derivacion</i></div>', b += '<div id="er-deriv-tors" class="er-deriv-body" style="display:none">', b += `<p>Mismo proceso que axial pero con ${F("\\theta_x")} y ${F("GJ")}:</p>`, b += `<div class="er-eq">${$(`K_{torsion} = \\frac{GJ}{L}\\begin{bmatrix}1 & -1\\\\-1 & 1\\end{bmatrix} = \\frac{${Ye(e.G)}\\times${Ye(e.J)}}{${Ye(e.L)}} = \\mathbf{${Ye(Y)}}`)}</div>`, b += "</div></div>", b += '<div class="er-deriv-block">', b += '<div class="er-deriv-header" data-toggle="deriv-coup">\u{1F4D6} K[1,5] = 6EI<sub>z</sub>/L\xB2 \u2014 <i>acoplamiento corte-momento</i></div>', b += '<div id="er-deriv-coup" class="er-deriv-body" style="display:none">', b += `<p>Termino cruzado ${F("v_i \\cdot \\theta_{zi}")} (acoplamiento corte-momento):</p>`, b += `<div class="er-eq">${$("K[1,5] = \\frac{EI_z}{L^4} \\int_0^L H_1'' \\cdot H_2'' \\; dx")}</div>`, b += `<div class="er-eq">${$("= \\frac{EI_z}{L^4} \\int_0^L (-6+12\\xi) \\cdot L(-4+6\\xi) \\; dx")}</div>`, b += `<div class="er-eq">${$("= \\frac{EI_z}{L^3} \\int_0^L (24-36\\xi-48\\xi+72\\xi^2) \\; dx = \\frac{EI_z}{L^3} \\cdot 6L")}</div>`, b += `<div class="er-eq er-eq-main">${$(`K[1,5] = \\frac{6EI_z}{L^2} = \\mathbf{${Ye(6 * e.E * e.Iz / e.L ** 2)}}`)}</div>`, b += "</div></div>", b += '<div class="er-subsec">Resumen de coeficientes:</div>', b += `<div class="er-eq">${$(`\\frac{EA}{L} = \\mathbf{${Ye(J)}} \\qquad \\frac{12EI_z}{L^3} = \\mathbf{${Ye(12 * H)}} \\qquad \\frac{12EI_y}{L^3} = \\mathbf{${Ye(12 * U)}}`)}</div>`, b += `<div class="er-eq">${$(`\\frac{GJ}{L} = \\mathbf{${Ye(Y)}} \\qquad \\frac{4EI_y}{L} = \\mathbf{${Ye(4 * e.E * e.Iy / e.L)}} \\qquad \\frac{4EI_z}{L} = \\mathbf{${Ye(4 * e.E * e.Iz / e.L)}}`)}</div>`, b += `<div class="er-eq">${$(`\\frac{6EI_z}{L^2} = \\mathbf{${Ye(6 * e.E * e.Iz / e.L ** 2)}} \\qquad \\frac{6EI_y}{L^2} = \\mathbf{${Ye(6 * e.E * e.Iy / e.L ** 2)}}`)}</div>`, e.kLocal && (b += `<div class="er-subsec">Resultado: ${F("\\mathbf{K}_{local}")} (12x12)</div>`, b += an(e.kLocal)), b += '<div class="er-section-title">6. Transformacion de coordenadas</div>', b += "<p>Los cosenos directores del eje del elemento:</p>", b += `<div class="er-eq">${$(`l = \\frac{x_j - x_i}{L} = ${hn(e.l)} \\qquad m = \\frac{y_j - y_i}{L} = ${hn(e.m)} \\qquad n = \\frac{z_j - z_i}{L} = ${hn(e.n)}`)}</div>`, b += `<div class="er-eq">${$(`D = \\sqrt{l^2 + m^2} = ${hn(e.D)}`)}</div>`, Math.abs(e.n) > 0.999) {
-      b += `<p>Caso especial: elemento vertical (${F(`n \\approx ${e.n > 0 ? "+1" : "-1"}`)}):</p>`;
+    if (b += '<div class="er-deriv-block">', b += '<div class="er-deriv-header" data-toggle="deriv-axial">\u{1F4D6} K[0,0] = EA/L \u2014 <i>click para ver derivacion completa</i></div>', b += '<div id="er-deriv-axial" class="er-deriv-body" style="display:none">', b += "<p><b>Paso 1:</b> Funcion de forma axial</p>", b += `<div class="er-eq">${M("u(\\xi) = N_1 \\cdot u_i + N_2 \\cdot u_j = (1-\\xi)\\,u_i + \\xi\\,u_j")}</div>`, b += "<p><b>Paso 2:</b> Derivada (deformacion)</p>", b += `<div class="er-eq">${M("\\varepsilon = \\frac{du}{dx} = \\frac{1}{L}\\frac{du}{d\\xi} = \\frac{1}{L}(-u_i + u_j)")}</div>`, b += `<div class="er-eq">${M("\\mathbf{B}_{ax} = \\frac{1}{L}\\begin{bmatrix} -1 & 1 \\end{bmatrix}")}</div>`, b += `<p><b>Paso 3:</b> Integracion ${P("K = \\int_0^L B^T \\cdot EA \\cdot B \\; dx")}</p>`, b += `<div class="er-eq">${M("K_{ax} = \\int_0^L \\frac{1}{L}\\begin{bmatrix}-1\\\\1\\end{bmatrix} \\cdot EA \\cdot \\frac{1}{L}\\begin{bmatrix}-1 & 1\\end{bmatrix} dx")}</div>`, b += `<div class="er-eq">${M("= \\frac{EA}{L^2} \\begin{bmatrix}1 & -1\\\\-1 & 1\\end{bmatrix} \\int_0^L dx = \\frac{EA}{L^2} \\cdot L \\begin{bmatrix}1 & -1\\\\-1 & 1\\end{bmatrix}")}</div>`, b += `<div class="er-eq er-eq-main">${M(`K_{ax} = \\frac{EA}{L}\\begin{bmatrix}1 & -1\\\\-1 & 1\\end{bmatrix} = \\frac{${Ye(e.E)}\\times${Ye(e.A)}}{${Ye(e.L)}}\\begin{bmatrix}1 & -1\\\\-1 & 1\\end{bmatrix}`)}</div>`, b += `<div class="er-eq">${M(`K[0,0] = K[6,6] = \\frac{EA}{L} = \\mathbf{${Ye(J)}}`)}</div>`, b += "</div></div>", b += '<div class="er-deriv-block">', b += '<div class="er-deriv-header" data-toggle="deriv-bend">\u{1F4D6} K[1,1] = 12EI<sub>z</sub>/L\xB3 \u2014 <i>click para ver derivacion completa</i></div>', b += '<div id="er-deriv-bend" class="er-deriv-body" style="display:none">', b += `<p><b>Paso 1:</b> Funcion de forma Hermite para ${P("v(\\xi)")}</p>`, b += `<div class="er-eq">${M("v(\\xi) = H_1 v_i + H_2 \\theta_i + H_3 v_j + H_4 \\theta_j")}</div>`, b += "<p><b>Paso 2:</b> Segunda derivada (curvatura)</p>", b += `<div class="er-eq">${M("\\kappa = \\frac{d^2v}{dx^2} = \\frac{1}{L^2}\\frac{d^2v}{d\\xi^2}")}</div>`, b += `<div class="er-eq">${M("H_1'' = -6+12\\xi, \\quad H_2'' = L(-4+6\\xi), \\quad H_3'' = 6-12\\xi, \\quad H_4'' = L(-2+6\\xi)")}</div>`, b += `<div class="er-eq">${M("\\mathbf{B}_b = \\frac{1}{L^2}\\begin{bmatrix} H_1'' & H_2'' & H_3'' & H_4'' \\end{bmatrix}")}</div>`, b += `<p><b>Paso 3:</b> Integracion para K[1,1] (termino ${P("v_i \\cdot v_i")})</p>`, b += `<div class="er-eq">${M("K[1,1] = \\int_0^L \\frac{(H_1'')^2}{L^4} \\cdot EI_z \\; dx = \\frac{EI_z}{L^4} \\int_0^L (-6+12\\xi)^2 \\; dx")}</div>`, b += `<p>Expandimos: ${P("(-6+12\\xi)^2 = 36 - 144\\xi + 144\\xi^2")}</p>`, b += `<div class="er-eq">${M("\\int_0^L (36-144\\xi+144\\xi^2)\\,dx = 36L - 72L + 48L = 12L")}</div>`, b += `<div class="er-eq er-eq-main">${M(`K[1,1] = \\frac{EI_z}{L^4} \\cdot 12L = \\frac{12EI_z}{L^3} = \\frac{12 \\times ${Ye(e.E)} \\times ${Ye(e.Iz)}}{${Ye(e.L)}^3} = \\mathbf{${Ye(12 * H)}}`)}</div>`, b += "</div></div>", b += '<div class="er-deriv-block">', b += '<div class="er-deriv-header" data-toggle="deriv-tors">\u{1F4D6} K[3,3] = GJ/L \u2014 <i>click para ver derivacion</i></div>', b += '<div id="er-deriv-tors" class="er-deriv-body" style="display:none">', b += `<p>Mismo proceso que axial pero con ${P("\\theta_x")} y ${P("GJ")}:</p>`, b += `<div class="er-eq">${M(`K_{torsion} = \\frac{GJ}{L}\\begin{bmatrix}1 & -1\\\\-1 & 1\\end{bmatrix} = \\frac{${Ye(e.G)}\\times${Ye(e.J)}}{${Ye(e.L)}} = \\mathbf{${Ye(Y)}}`)}</div>`, b += "</div></div>", b += '<div class="er-deriv-block">', b += '<div class="er-deriv-header" data-toggle="deriv-coup">\u{1F4D6} K[1,5] = 6EI<sub>z</sub>/L\xB2 \u2014 <i>acoplamiento corte-momento</i></div>', b += '<div id="er-deriv-coup" class="er-deriv-body" style="display:none">', b += `<p>Termino cruzado ${P("v_i \\cdot \\theta_{zi}")} (acoplamiento corte-momento):</p>`, b += `<div class="er-eq">${M("K[1,5] = \\frac{EI_z}{L^4} \\int_0^L H_1'' \\cdot H_2'' \\; dx")}</div>`, b += `<div class="er-eq">${M("= \\frac{EI_z}{L^4} \\int_0^L (-6+12\\xi) \\cdot L(-4+6\\xi) \\; dx")}</div>`, b += `<div class="er-eq">${M("= \\frac{EI_z}{L^3} \\int_0^L (24-36\\xi-48\\xi+72\\xi^2) \\; dx = \\frac{EI_z}{L^3} \\cdot 6L")}</div>`, b += `<div class="er-eq er-eq-main">${M(`K[1,5] = \\frac{6EI_z}{L^2} = \\mathbf{${Ye(6 * e.E * e.Iz / e.L ** 2)}}`)}</div>`, b += "</div></div>", b += '<div class="er-subsec">Resumen de coeficientes:</div>', b += `<div class="er-eq">${M(`\\frac{EA}{L} = \\mathbf{${Ye(J)}} \\qquad \\frac{12EI_z}{L^3} = \\mathbf{${Ye(12 * H)}} \\qquad \\frac{12EI_y}{L^3} = \\mathbf{${Ye(12 * U)}}`)}</div>`, b += `<div class="er-eq">${M(`\\frac{GJ}{L} = \\mathbf{${Ye(Y)}} \\qquad \\frac{4EI_y}{L} = \\mathbf{${Ye(4 * e.E * e.Iy / e.L)}} \\qquad \\frac{4EI_z}{L} = \\mathbf{${Ye(4 * e.E * e.Iz / e.L)}}`)}</div>`, b += `<div class="er-eq">${M(`\\frac{6EI_z}{L^2} = \\mathbf{${Ye(6 * e.E * e.Iz / e.L ** 2)}} \\qquad \\frac{6EI_y}{L^2} = \\mathbf{${Ye(6 * e.E * e.Iy / e.L ** 2)}}`)}</div>`, e.kLocal && (b += `<div class="er-subsec">Resultado: ${P("\\mathbf{K}_{local}")} (12x12)</div>`, b += ao(e.kLocal)), b += '<div class="er-section-title">6. Transformacion de coordenadas</div>', b += "<p>Los cosenos directores del eje del elemento:</p>", b += `<div class="er-eq">${M(`l = \\frac{x_j - x_i}{L} = ${ho(e.l)} \\qquad m = \\frac{y_j - y_i}{L} = ${ho(e.m)} \\qquad n = \\frac{z_j - z_i}{L} = ${ho(e.n)}`)}</div>`, b += `<div class="er-eq">${M(`D = \\sqrt{l^2 + m^2} = ${ho(e.D)}`)}</div>`, Math.abs(e.n) > 0.999) {
+      b += `<p>Caso especial: elemento vertical (${P(`n \\approx ${e.n > 0 ? "+1" : "-1"}`)}):</p>`;
       const ye = e.n > 0 ? "\\boldsymbol{\\lambda} = \\begin{bmatrix} 0 & 0 & 1 \\\\ 0 & 1 & 0 \\\\ -1 & 0 & 0 \\end{bmatrix}" : "\\boldsymbol{\\lambda} = \\begin{bmatrix} 0 & 0 & -1 \\\\ 0 & 1 & 0 \\\\ 1 & 0 & 0 \\end{bmatrix}";
-      b += `<div class="er-eq">${$(ye)}</div>`;
-    } else b += `<div class="er-eq">${$("\\boldsymbol{\\lambda} = \\begin{bmatrix} l & m & n \\\\ -m/D & l/D & 0 \\\\ -ln/D & -mn/D & D \\end{bmatrix}")}</div>`;
-    b += `<div class="er-eq er-eq-main">${$("\\mathbf{T} = \\mathbf{I}_4 \\otimes \\boldsymbol{\\lambda} \\quad \\text{(Kronecker product} \\rightarrow 12 \\times 12 \\text{ bloque-diagonal)}")}</div>`, b += `<div class="er-section-title">7. ${F("\\mathbf{K}_{global}")} = ${F("\\mathbf{T}^T \\cdot \\mathbf{K}_{local} \\cdot \\mathbf{T}")}</div>`, b += "<p>Transformar la rigidez local al sistema global de coordenadas:</p>", b += `<div class="er-eq er-eq-main">${$("\\mathbf{K}_{global} = \\mathbf{T}^T \\cdot \\mathbf{K}_{local} \\cdot \\mathbf{T}")}</div>`, e.kGlobal && (b += an(e.kGlobal)), b += '<div class="er-section-title">8. Ensamblaje</div>';
+      b += `<div class="er-eq">${M(ye)}</div>`;
+    } else b += `<div class="er-eq">${M("\\boldsymbol{\\lambda} = \\begin{bmatrix} l & m & n \\\\ -m/D & l/D & 0 \\\\ -ln/D & -mn/D & D \\end{bmatrix}")}</div>`;
+    b += `<div class="er-eq er-eq-main">${M("\\mathbf{T} = \\mathbf{I}_4 \\otimes \\boldsymbol{\\lambda} \\quad \\text{(Kronecker product} \\rightarrow 12 \\times 12 \\text{ bloque-diagonal)}")}</div>`, b += `<div class="er-section-title">7. ${P("\\mathbf{K}_{global}")} = ${P("\\mathbf{T}^T \\cdot \\mathbf{K}_{local} \\cdot \\mathbf{T}")}</div>`, b += "<p>Transformar la rigidez local al sistema global de coordenadas:</p>", b += `<div class="er-eq er-eq-main">${M("\\mathbf{K}_{global} = \\mathbf{T}^T \\cdot \\mathbf{K}_{local} \\cdot \\mathbf{T}")}</div>`, e.kGlobal && (b += ao(e.kGlobal)), b += '<div class="er-section-title">8. Ensamblaje</div>';
     const q = e.elem[0] * 6, W = e.elem[1] * 6;
-    if (b += `<div class="er-eq">${$(`\\text{Nodo } ${e.elem[0]} \\rightarrow \\text{DOFs } [${q} \\ldots ${q + 5}]`)}</div>`, b += `<div class="er-eq">${$(`\\text{Nodo } ${e.elem[1]} \\rightarrow \\text{DOFs } [${W} \\ldots ${W + 5}]`)}</div>`, b += `<div class="er-eq">${$("\\mathbf{K}_{total}[\\text{DOFs}_i, \\text{DOFs}_j] \\mathrel{+}= \\mathbf{K}_{global}[i, j]")}</div>`, b += '<div class="er-section-title">9. Recuperacion de fuerzas internas</div>', b += `<div class="er-eq">${$("\\mathbf{u}_{local} = \\mathbf{T} \\cdot \\mathbf{u}_{global}")}</div>`, b += `<div class="er-eq er-eq-main">${$("\\mathbf{f}_{local} = \\mathbf{K}_{local} \\cdot \\mathbf{u}_{local}")}</div>`, e.fLocal.length > 0 && e.fLocal.some((ye) => ye !== 0)) {
+    if (b += `<div class="er-eq">${M(`\\text{Nodo } ${e.elem[0]} \\rightarrow \\text{DOFs } [${q} \\ldots ${q + 5}]`)}</div>`, b += `<div class="er-eq">${M(`\\text{Nodo } ${e.elem[1]} \\rightarrow \\text{DOFs } [${W} \\ldots ${W + 5}]`)}</div>`, b += `<div class="er-eq">${M("\\mathbf{K}_{total}[\\text{DOFs}_i, \\text{DOFs}_j] \\mathrel{+}= \\mathbf{K}_{global}[i, j]")}</div>`, b += '<div class="er-section-title">9. Recuperacion de fuerzas internas</div>', b += `<div class="er-eq">${M("\\mathbf{u}_{local} = \\mathbf{T} \\cdot \\mathbf{u}_{global}")}</div>`, b += `<div class="er-eq er-eq-main">${M("\\mathbf{f}_{local} = \\mathbf{K}_{local} \\cdot \\mathbf{u}_{local}")}</div>`, e.fLocal.length > 0 && e.fLocal.some((ye) => ye !== 0)) {
       const ye = [
         "N",
         "V<sub>y</sub>",
@@ -3644,11 +3711,11 @@ let __tla = Promise.all([
     }
     return b;
   }
-  function yl(e) {
+  function $l(e) {
     let b = "";
     if (b += `<div class="er-section-title">Resumen \u2014 Elemento ${e.elemIdx}</div>`, b += '<table class="er-props">', b += `<tr><td>Tipo</td><td>${e.isFrame ? "Frame (Euler-Bernoulli)" : "Shell"}</td></tr>`, b += `<tr><td>Nodos</td><td>${e.elem.join(" \u2192 ")}</td></tr>`, b += `<tr><td>Longitud</td><td><b>${Ye(e.L)}</b></td></tr>`, b += `<tr><td>E</td><td>${Ye(e.E)}</td></tr>`, b += `<tr><td>A</td><td>${Ye(e.A)}</td></tr>`, b += "</table>", e.uGlobal.length > 0) {
       b += '<div class="er-section-title">Desplazamientos</div>';
-      const F = [
+      const P = [
         "u<sub>x</sub>",
         "u<sub>y</sub>",
         "u<sub>z</sub>",
@@ -3657,21 +3724,21 @@ let __tla = Promise.all([
         "\u03B8<sub>z</sub>"
       ];
       b += '<table class="er-forces"><tr><th>Nodo</th>';
-      for (const $ of F) b += `<th>${$}</th>`;
+      for (const M of P) b += `<th>${M}</th>`;
       b += "</tr>";
-      for (let $ = 0; $ < e.elem.length; $++) {
-        b += `<tr><td>${e.elem[$]}</td>`;
+      for (let M = 0; M < e.elem.length; M++) {
+        b += `<tr><td>${e.elem[M]}</td>`;
         for (let J = 0; J < 6; J++) {
-          const H = e.uGlobal[$ * 6 + J];
+          const H = e.uGlobal[M * 6 + J];
           b += `<td class="${Math.abs(H) > 1e-10 ? "nz" : ""}">${Ye(H, 6)}</td>`;
         }
         b += "</tr>";
       }
       b += "</table>";
     }
-    if (e.fLocal.length > 0 && e.fLocal.some((F) => F !== 0)) {
+    if (e.fLocal.length > 0 && e.fLocal.some((P) => P !== 0)) {
       b += '<div class="er-section-title">Fuerzas internas</div>';
-      const F = [
+      const P = [
         "N",
         "V<sub>y</sub>",
         "V<sub>z</sub>",
@@ -3680,11 +3747,11 @@ let __tla = Promise.all([
         "M<sub>z</sub>"
       ];
       b += '<table class="er-forces"><tr><th></th>';
-      for (const $ of F) b += `<th>${$}</th>`;
+      for (const M of P) b += `<th>${M}</th>`;
       b += "</tr><tr><td>Nodo i</td>";
-      for (let $ = 0; $ < 6; $++) b += `<td class="${Math.abs(e.fLocal[$]) > 1e-10 ? "nz" : ""}">${Ye(e.fLocal[$], 3)}</td>`;
+      for (let M = 0; M < 6; M++) b += `<td class="${Math.abs(e.fLocal[M]) > 1e-10 ? "nz" : ""}">${Ye(e.fLocal[M], 3)}</td>`;
       b += "</tr><tr><td>Nodo j</td>";
-      for (let $ = 6; $ < 12; $++) b += `<td class="${Math.abs(e.fLocal[$]) > 1e-10 ? "nz" : ""}">${Ye(e.fLocal[$], 3)}</td>`;
+      for (let M = 6; M < 12; M++) b += `<td class="${Math.abs(e.fLocal[M]) > 1e-10 ? "nz" : ""}">${Ye(e.fLocal[M], 3)}</td>`;
       b += "</tr></table>";
     }
     return b;
@@ -3692,43 +3759,43 @@ let __tla = Promise.all([
   function Ye(e, b = 2) {
     return Math.abs(e) < 1e-10 ? "0" : Math.abs(e) >= 1e7 || Math.abs(e) < 0.01 && e !== 0 ? e.toExponential(b) : e.toFixed(b);
   }
-  function hn(e) {
+  function ho(e) {
     return Math.abs(e) < 1e-10 ? "0" : e.toFixed(4);
   }
-  function an(e) {
+  function ao(e) {
     var _a;
-    const b = e.length, F = Math.min(b, 12);
-    let $ = '<div style="overflow-x:auto"><table class="er-matrix">';
-    for (let J = 0; J < F; J++) {
-      $ += "<tr>";
-      for (let H = 0; H < F; H++) {
+    const b = e.length, P = Math.min(b, 12);
+    let M = '<div style="overflow-x:auto"><table class="er-matrix">';
+    for (let J = 0; J < P; J++) {
+      M += "<tr>";
+      for (let H = 0; H < P; H++) {
         const U = ((_a = e[J]) == null ? void 0 : _a[H]) ?? 0, Y = Math.abs(U) < 1e-10;
-        $ += `<td class="${Y ? "z" : ""} ${J === H && !Y ? "diag" : ""}">${Y ? "0" : $l(U)}</td>`;
+        M += `<td class="${Y ? "z" : ""} ${J === H && !Y ? "diag" : ""}">${Y ? "0" : Ml(U)}</td>`;
       }
-      $ += "</tr>";
+      M += "</tr>";
     }
-    return $ += "</table>", b > F && ($ += `<div style="color:var(--fem-label);font-size:9px">(${F}\xD7${F} de ${b}\xD7${b})</div>`), $ += "</div>", $;
+    return M += "</table>", b > P && (M += `<div style="color:var(--fem-label);font-size:9px">(${P}\xD7${P} de ${b}\xD7${b})</div>`), M += "</div>", M;
   }
-  function $l(e) {
+  function Ml(e) {
     return Math.abs(e) >= 1e6 || Math.abs(e) < 0.01 && e !== 0 ? e.toExponential(1) : Math.abs(e) >= 100 ? e.toFixed(0) : e.toFixed(2);
   }
-  function Qn(e) {
+  function Qo(e) {
     const b = e.getContext("2d");
     if (!b) return;
-    const F = e.width, $ = e.height, J = 30, H = F - 2 * J, U = ($ - 3 * J) / 2;
-    b.fillStyle = getComputedStyle(document.body).getPropertyValue("--fem-bg").trim() || "#111", b.fillRect(0, 0, F, $);
+    const P = e.width, M = e.height, J = 30, H = P - 2 * J, U = (M - 3 * J) / 2;
+    b.fillStyle = getComputedStyle(document.body).getPropertyValue("--fem-bg").trim() || "#111", b.fillRect(0, 0, P, M);
     const Y = (q, W, ye) => {
       b.strokeStyle = "#333", b.lineWidth = 1, b.strokeRect(J, q, H, U), b.strokeStyle = "#444", b.beginPath(), b.moveTo(J, q + U / 2), b.lineTo(J + H, q + U / 2), b.stroke(), b.fillStyle = "#888", b.font = "11px sans-serif", b.fillText(W, J + 4, q + 14);
-      for (const Q of ye) {
-        b.strokeStyle = Q.color, b.lineWidth = 2.5, b.beginPath();
+      for (const Z of ye) {
+        b.strokeStyle = Z.color, b.lineWidth = 2.5, b.beginPath();
         for (let ve = 0; ve <= 100; ve++) {
-          const me = ve / 100, ie = J + me * H, oe = q + U / 2 - Q.fn(me) * (U / 2 * 0.85);
-          ve === 0 ? b.moveTo(ie, oe) : b.lineTo(ie, oe);
+          const me = ve / 100, ie = J + me * H, ne = q + U / 2 - Z.fn(me) * (U / 2 * 0.85);
+          ve === 0 ? b.moveTo(ie, ne) : b.lineTo(ie, ne);
         }
         b.stroke();
       }
       let z = J + H - 90;
-      for (const Q of ye) b.fillStyle = Q.color, b.font = "bold 10px sans-serif", b.fillText(Q.label, z, q + U - 6), z += 36;
+      for (const Z of ye) b.fillStyle = Z.color, b.font = "bold 10px sans-serif", b.fillText(Z.label, z, q + U - 6), z += 36;
       b.fillStyle = "#666", b.font = "9px monospace", b.fillText("0", J, q + U + 12), b.fillText("1", J + H - 6, q + U + 12), b.fillText("\u03BE", J + H / 2, q + U + 12);
     };
     Y(J, "Axial (lineal)", [
@@ -3765,7 +3832,7 @@ let __tla = Promise.all([
       }
     ]);
   }
-  const Ml = `<style>
+  const wl = `<style>
   .er-panel {
     position: fixed; right: 0; top: 0; width: 560px; height: 100vh;
     background: var(--fem-bg, #111); color: var(--fem-text, #ddd);
@@ -3841,7 +3908,7 @@ let __tla = Promise.all([
   .er-panel::-webkit-scrollbar { width: 6px; }
   .er-panel::-webkit-scrollbar-track { background: var(--fem-bg, #111); }
   .er-panel::-webkit-scrollbar-thumb { background: var(--fem-accent, #0f3460); border-radius: 3px; }
-</style>`, nn = [
+</style>`, oo = [
     {
       selector: "#cad3d-panel",
       title: "FEM Studio",
@@ -3927,24 +3994,24 @@ let __tla = Promise.all([
       position: "left"
     }
   ];
-  let Mn = false, Oo = null, lo = null, Bt = null, kt = null;
-  function wl() {
-    kt = document.createElement("button"), kt.id = "help-tour-btn", kt.innerHTML = "?", kt.title = "Ayuda interactiva \u2014 Tour guiado";
+  let Mo = false, On = null, ln = null, Bt = null, Tt = null;
+  function El() {
+    Tt = document.createElement("button"), Tt.id = "help-tour-btn", Tt.innerHTML = "?", Tt.title = "Ayuda interactiva \u2014 Tour guiado";
     let e = false;
-    const b = ($) => {
-      kt.style.cssText = $ ? "position:fixed;bottom:5px;right:5px;z-index:9999999;width:20px;height:20px;border-radius:50%;background:#555;color:#aaa;border:1px solid #777;font-size:10px;cursor:pointer;opacity:0.5;transition:all 0.2s;" : "position:fixed;bottom:20px;right:20px;z-index:9999999;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0066cc,#0099ff);color:white;border:2px solid rgba(255,255,255,0.3);font-size:18px;font-weight:bold;cursor:pointer;box-shadow:0 2px 10px rgba(0,102,204,0.3);transition:all 0.2s;font-family:'Arial Nova',sans-serif;";
+    const b = (M) => {
+      Tt.style.cssText = M ? "position:fixed;bottom:5px;right:5px;z-index:9999999;width:20px;height:20px;border-radius:50%;background:#555;color:#aaa;border:1px solid #777;font-size:10px;cursor:pointer;opacity:0.5;transition:all 0.2s;" : "position:fixed;bottom:20px;right:20px;z-index:9999999;width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#0066cc,#0099ff);color:white;border:2px solid rgba(255,255,255,0.3);font-size:18px;font-weight:bold;cursor:pointer;box-shadow:0 2px 10px rgba(0,102,204,0.3);transition:all 0.2s;font-family:'Arial Nova',sans-serif;";
     };
-    b(false), kt.addEventListener("contextmenu", ($) => {
-      $.preventDefault(), e = !e, b(e), kt.innerHTML = "?";
-    }), kt.addEventListener("mouseenter", () => {
-      kt.style.transform = "scale(1.15)", kt.style.boxShadow = "0 6px 20px rgba(0,102,204,0.6)";
-    }), kt.addEventListener("mouseleave", () => {
-      kt.style.transform = "scale(1)", kt.style.boxShadow = "0 4px 15px rgba(0,102,204,0.4)";
-    }), kt.addEventListener("click", () => {
-      Mn ? ss() : El();
+    b(false), Tt.addEventListener("contextmenu", (M) => {
+      M.preventDefault(), e = !e, b(e), Tt.innerHTML = "?";
+    }), Tt.addEventListener("mouseenter", () => {
+      Tt.style.transform = "scale(1.15)", Tt.style.boxShadow = "0 6px 20px rgba(0,102,204,0.6)";
+    }), Tt.addEventListener("mouseleave", () => {
+      Tt.style.transform = "scale(1)", Tt.style.boxShadow = "0 4px 15px rgba(0,102,204,0.4)";
+    }), Tt.addEventListener("click", () => {
+      Mo ? ss() : Sl();
     });
-    const F = document.createElement("style");
-    return F.textContent = `
+    const P = document.createElement("style");
+    return P.textContent = `
     @keyframes helpPulse {
       0%, 100% { box-shadow: 0 4px 15px rgba(0,102,204,0.4); }
       50% { box-shadow: 0 4px 25px rgba(0,102,204,0.7), 0 0 0 8px rgba(0,102,204,0.1); }
@@ -3967,59 +4034,59 @@ let __tla = Promise.all([
       animation: handPoint 1s ease-in-out infinite;
       margin-right: 6px;
     }
-  `, document.head.appendChild(F), kt;
+  `, document.head.appendChild(P), Tt;
   }
-  function El() {
-    Mn = true, kt && (kt.innerHTML = "\u2715", kt.style.background = "linear-gradient(135deg, #cc3333, #ff4444)", kt.style.animation = "none"), Oo = document.createElement("div"), Oo.id = "tour-overlay", Oo.style.cssText = `
+  function Sl() {
+    Mo = true, Tt && (Tt.innerHTML = "\u2715", Tt.style.background = "linear-gradient(135deg, #cc3333, #ff4444)", Tt.style.animation = "none"), On = document.createElement("div"), On.id = "tour-overlay", On.style.cssText = `
     position: fixed; inset: 0; z-index: 9999990;
     pointer-events: none;
-  `, document.body.appendChild(Oo), Uo(0);
+  `, document.body.appendChild(On), Un(0);
   }
   function ss() {
-    Mn = false, kt && (kt.innerHTML = "?", kt.style.background = "linear-gradient(135deg, #0066cc, #0099ff)", kt.style.animation = "helpPulse 2s infinite"), lo && (lo.remove(), lo = null), Bt && (Bt.remove(), Bt = null), Oo && (Oo.remove(), Oo = null);
+    Mo = false, Tt && (Tt.innerHTML = "?", Tt.style.background = "linear-gradient(135deg, #0066cc, #0099ff)", Tt.style.animation = "helpPulse 2s infinite"), ln && (ln.remove(), ln = null), Bt && (Bt.remove(), Bt = null), On && (On.remove(), On = null);
   }
-  function Uo(e) {
+  function Un(e) {
     var _a, _b;
-    if (e >= nn.length) {
-      Sl();
+    if (e >= oo.length) {
+      Il();
       return;
     }
-    const b = nn[e], F = document.querySelector(b.selector);
-    if (!F) {
-      Uo(e + 1);
+    const b = oo[e], P = document.querySelector(b.selector);
+    if (!P) {
+      Un(e + 1);
       return;
     }
-    F.scrollIntoView({
+    P.scrollIntoView({
       behavior: "smooth",
       block: "nearest"
-    }), lo && lo.remove(), Bt && Bt.remove();
-    const $ = F.getBoundingClientRect(), J = window.innerWidth, H = window.innerHeight, U = 320, Y = 180;
-    lo = document.createElement("div"), lo.style.cssText = `
+    }), ln && ln.remove(), Bt && Bt.remove();
+    const M = P.getBoundingClientRect(), J = window.innerWidth, H = window.innerHeight, U = 320, Y = 180;
+    ln = document.createElement("div"), ln.style.cssText = `
     position: fixed;
-    left: ${$.left - 6}px; top: ${$.top - 6}px;
-    width: ${$.width + 12}px; height: ${$.height + 12}px;
+    left: ${M.left - 6}px; top: ${M.top - 6}px;
+    width: ${M.width + 12}px; height: ${M.height + 12}px;
     border-radius: 8px;
     z-index: 9999991;
     pointer-events: none;
     animation: spotlightPulse 1.5s ease-in-out infinite;
     transition: all 0.3s ease;
-  `, document.body.appendChild(lo);
-    const q = J - $.right, W = $.left, ye = H - $.bottom, z = $.top;
-    let Q = b.position || "bottom";
-    Q === "bottom" && ye < Y + 20 && (Q = "top"), Q === "top" && z < Y + 20 && (Q = "right"), Q === "right" && q < U + 20 && (Q = "left"), Q === "left" && W < U + 20 && (Q = "bottom");
+  `, document.body.appendChild(ln);
+    const q = J - M.right, W = M.left, ye = H - M.bottom, z = M.top;
+    let Z = b.position || "bottom";
+    Z === "bottom" && ye < Y + 20 && (Z = "top"), Z === "top" && z < Y + 20 && (Z = "right"), Z === "right" && q < U + 20 && (Z = "left"), Z === "left" && W < U + 20 && (Z = "bottom");
     let ve, me, ie = "";
-    switch (Q) {
+    switch (Z) {
       case "bottom":
-        ve = $.left + $.width / 2 - U / 2, me = $.bottom + 14, ie = "position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:8px solid #0099ff;";
+        ve = M.left + M.width / 2 - U / 2, me = M.bottom + 14, ie = "position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:8px solid #0099ff;";
         break;
       case "top":
-        ve = $.left + $.width / 2 - U / 2, me = $.top - Y - 14, ie = "position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:8px solid #0099ff;";
+        ve = M.left + M.width / 2 - U / 2, me = M.top - Y - 14, ie = "position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:8px solid #0099ff;";
         break;
       case "right":
-        ve = $.right + 14, me = $.top + $.height / 2 - Y / 2, ie = "position:absolute;left:-8px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:8px solid #0099ff;";
+        ve = M.right + 14, me = M.top + M.height / 2 - Y / 2, ie = "position:absolute;left:-8px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:8px solid #0099ff;";
         break;
       case "left":
-        ve = $.left - U - 14, me = $.top + $.height / 2 - Y / 2, ie = "position:absolute;right:-8px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;border-left:8px solid #0099ff;";
+        ve = M.left - U - 14, me = M.top + M.height / 2 - Y / 2, ie = "position:absolute;right:-8px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;border-left:8px solid #0099ff;";
         break;
     }
     ve = Math.max(10, Math.min(ve, J - U - 10)), me = Math.max(10, Math.min(me, H - Y - 10)), Bt = document.createElement("div"), Bt.style.cssText = `
@@ -4041,35 +4108,35 @@ let __tla = Promise.all([
     <div style="display:flex;align-items:center;margin-bottom:8px;">
       <span class="tour-hand">\u{1F446}</span>
       <span style="color:#0099ff;font-weight:bold;font-size:15px;">${b.title}</span>
-      <span style="margin-left:auto;color:#666;font-size:11px;">${e + 1}/${nn.length}</span>
+      <span style="margin-left:auto;color:#666;font-size:11px;">${e + 1}/${oo.length}</span>
     </div>
     <p style="margin:0 0 12px 0;font-size:12px;line-height:1.6;color:#bbb;">${b.description}</p>
     <div style="display:flex;gap:8px;justify-content:flex-end;">
       ${e > 0 ? '<button id="tour-prev" style="padding:5px 14px;background:transparent;color:#888;border:1px solid #444;border-radius:6px;cursor:pointer;font-size:11px;">\u25C0 Anterior</button>' : ""}
       <button id="tour-next" style="padding:5px 18px;background:linear-gradient(135deg,#0066cc,#0099ff);color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;">
-        ${e < nn.length - 1 ? "Siguiente \u25B6" : "Finalizar \u2713"}
+        ${e < oo.length - 1 ? "Siguiente \u25B6" : "Finalizar \u2713"}
       </button>
     </div>
     <div style="margin-top:8px;display:flex;gap:3px;justify-content:center;">
-      ${nn.map((N, D) => `<div style="width:${D === e ? "16px" : "6px"};height:6px;border-radius:3px;background:${D === e ? "#0099ff" : D < e ? "#004488" : "#333"};transition:all 0.3s;"></div>`).join("")}
+      ${oo.map((N, D) => `<div style="width:${D === e ? "16px" : "6px"};height:6px;border-radius:3px;background:${D === e ? "#0099ff" : D < e ? "#004488" : "#333"};transition:all 0.3s;"></div>`).join("")}
     </div>
   `, document.body.appendChild(Bt), (_a = Bt.querySelector("#tour-next")) == null ? void 0 : _a.addEventListener("click", () => {
-      Uo(e + 1);
+      Un(e + 1);
     }), (_b = Bt.querySelector("#tour-prev")) == null ? void 0 : _b.addEventListener("click", () => {
-      Uo(e - 1);
+      Un(e - 1);
     });
-    const oe = (N) => {
-      if (!Mn) {
-        document.removeEventListener("keydown", oe);
+    const ne = (N) => {
+      if (!Mo) {
+        document.removeEventListener("keydown", ne);
         return;
       }
-      (N.key === "ArrowRight" || N.key === "Enter") && (Uo(e + 1), document.removeEventListener("keydown", oe)), N.key === "ArrowLeft" && (Uo(Math.max(0, e - 1)), document.removeEventListener("keydown", oe)), N.key === "Escape" && (ss(), document.removeEventListener("keydown", oe));
+      (N.key === "ArrowRight" || N.key === "Enter") && (Un(e + 1), document.removeEventListener("keydown", ne)), N.key === "ArrowLeft" && (Un(Math.max(0, e - 1)), document.removeEventListener("keydown", ne)), N.key === "Escape" && (ss(), document.removeEventListener("keydown", ne));
     };
-    document.addEventListener("keydown", oe);
+    document.addEventListener("keydown", ne);
   }
-  function Sl() {
+  function Il() {
     var _a;
-    lo && (lo.remove(), lo = null), Bt && (Bt.remove(), Bt = null), Bt = document.createElement("div"), Bt.style.cssText = `
+    ln && (ln.remove(), ln = null), Bt && (Bt.remove(), Bt = null), Bt = document.createElement("div"), Bt.style.cssText = `
     position: fixed;
     left: 50%; top: 50%; transform: translate(-50%, -50%);
     width: 400px;
@@ -4095,12 +4162,12 @@ let __tla = Promise.all([
     <button id="tour-done" style="padding:8px 24px;background:linear-gradient(135deg,#00aa55,#00cc66);color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold;">Entendido</button>
   `, document.body.appendChild(Bt), (_a = Bt.querySelector("#tour-done")) == null ? void 0 : _a.addEventListener("click", () => ss());
   }
-  function Il(e) {
+  function kl(e) {
     var _a;
-    const b = e.split(/\r?\n/), F = {
+    const b = e.split(/\r?\n/), P = {
       force: "TONF",
       length: "M"
-    }, $ = [], J = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), U = /* @__PURE__ */ new Map(), Y = [], q = [], W = /* @__PURE__ */ new Map(), ye = /* @__PURE__ */ new Map(), z = [], Q = [];
+    }, M = [], J = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), U = /* @__PURE__ */ new Map(), Y = [], q = [], W = /* @__PURE__ */ new Map(), ye = /* @__PURE__ */ new Map(), z = [], Z = [];
     let ve = "", me = "";
     const ie = /* @__PURE__ */ new Map();
     for (const Le of b) {
@@ -4111,7 +4178,7 @@ let __tla = Promise.all([
       }
       if (me && (ie.has(me) || ie.set(me, []), ie.get(me).push(Le)), me === "CONTROLS") {
         const xe = qe.match(/UNITS\s+"([^"]+)"\s+"([^"]+)"/);
-        xe && (F.force = xe[1], F.length = xe[2]);
+        xe && (P.force = xe[1], P.length = xe[2]);
         const Ce = qe.match(/TITLE2\s+"([^"]+)"/);
         Ce && (ve = Ce[1]);
       }
@@ -4119,7 +4186,7 @@ let __tla = Promise.all([
         const xe = qe.match(/STORY\s+"([^"]+)"\s+(?:HEIGHT\s+([\d.]+)|ELEV\s+([-\d.]+))/);
         if (xe) {
           const Ce = xe[1], ge = xe[2] ? parseFloat(xe[2]) : 0, ke = xe[3] ? parseFloat(xe[3]) : void 0;
-          $.push({
+          M.push({
             name: Ce,
             height: ge,
             elev: ke ?? 0
@@ -4224,7 +4291,7 @@ let __tla = Promise.all([
       }
       if (me === "GRIDS") {
         const xe = qe.match(/^\s*GRID\s+"[^"]+"\s+LABEL\s+"([^"]+)"\s+DIR\s+"([XY])"\s+COORD\s+([-\d.eE+]+)/);
-        xe && Q.push({
+        xe && Z.push({
           label: xe[1],
           dir: xe[2],
           coord: parseFloat(xe[3])
@@ -4253,29 +4320,29 @@ let __tla = Promise.all([
         }
       }
     }
-    const oe = /* @__PURE__ */ new Map();
-    if ($.length > 0) {
-      const Le = $.length - 1;
-      oe.set($[Le].name, $[Le].elev);
+    const ne = /* @__PURE__ */ new Map();
+    if (M.length > 0) {
+      const Le = M.length - 1;
+      ne.set(M[Le].name, M[Le].elev);
       for (let qe = Le - 1; qe >= 0; qe--) {
-        const Ce = oe.get($[qe + 1].name) + $[qe].height;
-        $[qe].elev = Ce, oe.set($[qe].name, Ce);
+        const Ce = ne.get(M[qe + 1].name) + M[qe].height;
+        M[qe].elev = Ce, ne.set(M[qe].name, Ce);
       }
     }
     const N = [], D = [], G = /* @__PURE__ */ new Map(), ce = (Le, qe) => `${Le}@${qe}`, $e = /* @__PURE__ */ new Set(), Te = /* @__PURE__ */ new Map();
     for (const Le of Y) Te.set(Le.name, Le);
     for (const Le of Y) for (const [qe, xe] of ye) {
       if (!qe.startsWith(Le.name + "@")) continue;
-      const Ce = xe.story, ge = $.findIndex((ke) => ke.name === Ce);
+      const Ce = xe.story, ge = M.findIndex((ke) => ke.name === Ce);
       if (!(ge < 0)) if (Le.type === "COLUMN" || Le.type === "BRACE") {
         $e.add(ce(Le.pt2, Ce));
-        const ke = Math.max(Le.nStories, 1), Ge = Math.min(ge + ke, $.length - 1);
-        $e.add(ce(Le.pt1, $[Ge].name));
+        const ke = Math.max(Le.nStories, 1), Ge = Math.min(ge + ke, M.length - 1);
+        $e.add(ce(Le.pt1, M[Ge].name));
       } else $e.add(ce(Le.pt1, Ce)), $e.add(ce(Le.pt2, Ce));
     }
     for (const [Le] of W) $e.add(Le);
     for (const Le of $e) {
-      const [qe, xe] = Le.split("@"), Ce = U.get(qe), ge = oe.get(xe);
+      const [qe, xe] = Le.split("@"), Ce = U.get(qe), ge = ne.get(xe);
       Ce === void 0 || ge === void 0 || (N.push([
         Ce[0],
         Ce[1],
@@ -4285,12 +4352,12 @@ let __tla = Promise.all([
     const Ve = [], he = [], Be = [], He = [], be = /* @__PURE__ */ new Map();
     for (const Le of Y) for (const [qe, xe] of ye) {
       if (!qe.startsWith(Le.name + "@")) continue;
-      const Ce = xe.story, ge = $.findIndex((We) => We.name === Ce);
+      const Ce = xe.story, ge = M.findIndex((We) => We.name === Ce);
       if (ge < 0) continue;
       let ke, Ge;
       if (Le.type === "COLUMN" || Le.type === "BRACE") {
-        const We = Math.max(Le.nStories, 1), Xe = Math.min(ge + We, $.length - 1);
-        ke = ce(Le.pt1, $[Xe].name), Ge = ce(Le.pt2, Ce);
+        const We = Math.max(Le.nStories, 1), Xe = Math.min(ge + We, M.length - 1);
+        ke = ce(Le.pt1, M[Xe].name), Ge = ce(Le.pt2, Ce);
       } else ke = ce(Le.pt1, Ce), Ge = ce(Le.pt2, Ce);
       const _e = G.get(ke), it = G.get(Ge);
       if (_e === void 0 || it === void 0 || _e === it) continue;
@@ -4323,7 +4390,7 @@ let __tla = Promise.all([
         dt.set(mt, We);
       }
     }
-    const Ee = /* @__PURE__ */ new Map(), ze = /* @__PURE__ */ new Map(), Je = /* @__PURE__ */ new Map(), st = /* @__PURE__ */ new Map(), Ue = /* @__PURE__ */ new Map(), at = /* @__PURE__ */ new Map(), dt = /* @__PURE__ */ new Map(), yt = /* @__PURE__ */ new Map(), Tt = /* @__PURE__ */ new Map(), Ft = /* @__PURE__ */ new Map(), gt = /* @__PURE__ */ new Map();
+    const Ee = /* @__PURE__ */ new Map(), ze = /* @__PURE__ */ new Map(), Je = /* @__PURE__ */ new Map(), st = /* @__PURE__ */ new Map(), Ue = /* @__PURE__ */ new Map(), at = /* @__PURE__ */ new Map(), dt = /* @__PURE__ */ new Map(), yt = /* @__PURE__ */ new Map(), zt = /* @__PURE__ */ new Map(), Ft = /* @__PURE__ */ new Map(), gt = /* @__PURE__ */ new Map();
     for (const [Le, qe] of be) {
       const xe = H.get(qe);
       if (!xe) continue;
@@ -4363,7 +4430,7 @@ let __tla = Promise.all([
           ge > 0 && ke > 0 && (it = ge * ke, mt = ke * ge ** 3 / 12, We = ge * ke ** 3 / 12, Xe = Math.min(ge, ke) * Math.max(ge, ke) ** 3 / 3 * 0.3, pt = lt = 5 / 6 * it);
           break;
       }
-      xe.modI2 && (We *= xe.modI2), xe.modI3 && (mt *= xe.modI3), Je.set(Le, it), yt.set(Le, mt), Tt.set(Le, We), Ft.set(Le, Xe), pt > 0 && st.set(Le, pt), lt > 0 && Ue.set(Le, lt), gt.set(Le, {
+      xe.modI2 && (We *= xe.modI2), xe.modI3 && (mt *= xe.modI3), Je.set(Le, it), yt.set(Le, mt), zt.set(Le, We), Ft.set(Le, Xe), pt > 0 && st.set(Le, pt), lt > 0 && Ue.set(Le, lt), gt.set(Le, {
         type: bt,
         b: ke || void 0,
         h: ge || void 0,
@@ -4389,7 +4456,7 @@ let __tla = Promise.all([
       for (const ge of qe) ge === "UX" && (Ce[0] = true), ge === "UY" && (Ce[1] = true), ge === "UZ" && (Ce[2] = true), ge === "RX" && (Ce[3] = true), ge === "RY" && (Ce[4] = true), ge === "RZ" && (Ce[5] = true);
       ut.set(xe, Ce);
     }
-    const ro = /* @__PURE__ */ new Map(), Ne = /* @__PURE__ */ new Map();
+    const rn = /* @__PURE__ */ new Map(), Ne = /* @__PURE__ */ new Map();
     for (let Le = 0; Le < he.length; Le++) Ne.set(`${he[Le]}@${He[Le]}`, Le);
     for (const Le of z) {
       const qe = Ne.get(`${Le.line}@${Le.story}`);
@@ -4403,7 +4470,7 @@ let __tla = Promise.all([
         xe,
         Ce
       ]) {
-        const pt = ro.get(Xe) || [
+        const pt = rn.get(Xe) || [
           0,
           0,
           0,
@@ -4411,7 +4478,7 @@ let __tla = Promise.all([
           0,
           0
         ];
-        pt[0] += it, pt[1] += mt, pt[2] += We, ro.set(Xe, pt);
+        pt[0] += it, pt[1] += mt, pt[2] += We, rn.set(Xe, pt);
       }
     }
     const xt = /* @__PURE__ */ new Map();
@@ -4422,8 +4489,8 @@ let __tla = Promise.all([
       (Ce == null ? void 0 : Ce.density) && xt.set(Le, Ce.density);
     }
     return {
-      units: F,
-      stories: $.reverse(),
+      units: P,
+      stories: M.reverse(),
       materials: J,
       frameSections: H,
       nodes: N,
@@ -4436,14 +4503,14 @@ let __tla = Promise.all([
       elementSections: be,
       nodeInputs: {
         supports: ut,
-        loads: ro
+        loads: rn
       },
       elementInputs: {
         elasticities: Ee,
         shearModuli: ze,
         areas: Je,
         momentsOfInertiaZ: yt,
-        momentsOfInertiaY: Tt,
+        momentsOfInertiaY: zt,
         torsionalConstants: Ft,
         shearAreasY: st,
         shearAreasZ: Ue,
@@ -4453,7 +4520,7 @@ let __tla = Promise.all([
         sectionShapes: gt
       },
       sectionShapes: gt,
-      grids: Q,
+      grids: Z,
       info: {
         nNodes: N.length,
         nFrames: Ve.length,
@@ -4466,34 +4533,34 @@ let __tla = Promise.all([
   function tt(e) {
     return e && parseFloat(e) || 0;
   }
-  function ca(e) {
-    const b = /* @__PURE__ */ new Map(), F = /(\w+)\s*=\s*(?:"([^"]*?)"|(\S+))/g;
-    let $;
-    for (; ($ = F.exec(e)) !== null; ) b.set($[1], $[2] !== void 0 ? $[2] : $[3]);
+  function da(e) {
+    const b = /* @__PURE__ */ new Map(), P = /(\w+)\s*=\s*(?:"([^"]*?)"|(\S+))/g;
+    let M;
+    for (; (M = P.exec(e)) !== null; ) b.set(M[1], M[2] !== void 0 ? M[2] : M[3]);
     return b;
   }
-  function kl(e) {
-    const b = e.split(/\r?\n/);
-    return b.some(($) => $.trim().startsWith("TABLE:")) ? Tl(b) : zl(b);
-  }
   function Tl(e) {
+    const b = e.split(/\r?\n/);
+    return b.some((M) => M.trim().startsWith("TABLE:")) ? zl(b) : Al(b);
+  }
+  function zl(e) {
     var _a, _b, _c, _d, _e, _f;
     const b = [];
-    let F = "";
-    for (const oe of e) {
-      const N = oe.trimEnd();
-      N.endsWith("_") ? F += N.slice(0, -1) + " " : (F += N, b.push(F), F = "");
+    let P = "";
+    for (const ne of e) {
+      const N = ne.trimEnd();
+      N.endsWith("_") ? P += N.slice(0, -1) + " " : (P += N, b.push(P), P = "");
     }
-    F && b.push(F);
-    const $ = {
+    P && b.push(P);
+    const M = {
       force: "KN",
       length: "m"
     };
     let J = "UX,UY,UZ,RX,RY,RZ";
-    const H = /* @__PURE__ */ new Map(), U = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), q = /* @__PURE__ */ new Map(), W = [], ye = [], z = /* @__PURE__ */ new Map(), Q = /* @__PURE__ */ new Map(), ve = /* @__PURE__ */ new Map(), me = [];
+    const H = /* @__PURE__ */ new Map(), U = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), q = /* @__PURE__ */ new Map(), W = [], ye = [], z = /* @__PURE__ */ new Map(), Z = /* @__PURE__ */ new Map(), ve = /* @__PURE__ */ new Map(), me = [];
     let ie = "";
-    for (const oe of b) {
-      const N = oe.trim();
+    for (const ne of b) {
+      const N = ne.trim();
       if (!N || N.startsWith(";") || N.startsWith("File ")) continue;
       if (N.startsWith("TABLE:")) {
         const G = N.match(/TABLE:\s+"(.+?)"/);
@@ -4504,13 +4571,13 @@ let __tla = Promise.all([
         ie = "";
         continue;
       }
-      const D = ca(N);
+      const D = da(N);
       switch (ie) {
         case "PROGRAM CONTROL": {
           const G = D.get("CurrUnits");
           if (G) {
             const ce = G.split(",").map(($e) => $e.trim());
-            ce[0] && ($.force = ce[0]), ce[1] && ($.length = ce[1]);
+            ce[0] && (M.force = ce[0]), ce[1] && (M.length = ce[1]);
           }
           break;
         }
@@ -4618,7 +4685,7 @@ let __tla = Promise.all([
         }
         case "FRAME SECTION ASSIGNMENTS": {
           const G = D.get("Frame"), ce = D.get("AnalSect");
-          G && ce && Q.set(G, ce);
+          G && ce && Z.set(G, ce);
           break;
         }
         case "AREA SECTION ASSIGNMENTS": {
@@ -4641,30 +4708,30 @@ let __tla = Promise.all([
         }
       }
     }
-    return da($, J, H, U, Y, q, W, ye, z, Q, ve, me);
+    return pa(M, J, H, U, Y, q, W, ye, z, Z, ve, me);
   }
-  function zl(e) {
+  function Al(e) {
     const b = {
       force: "KN",
       length: "m"
     };
-    let F = "UX,UY,UZ,RX,RY,RZ";
-    const $ = /* @__PURE__ */ new Map(), J = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), U = /* @__PURE__ */ new Map(), Y = [], q = [], W = /* @__PURE__ */ new Map(), ye = [];
-    let z = "", Q = "";
+    let P = "UX,UY,UZ,RX,RY,RZ";
+    const M = /* @__PURE__ */ new Map(), J = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), U = /* @__PURE__ */ new Map(), Y = [], q = [], W = /* @__PURE__ */ new Map(), ye = [];
+    let z = "", Z = "";
     for (const ie of e) {
-      const oe = ie.trim();
-      if (!oe || oe.startsWith(";")) continue;
+      const ne = ie.trim();
+      if (!ne || ne.startsWith(";")) continue;
       if (!ie.startsWith(" ") && !ie.startsWith("	")) {
-        const G = oe.toUpperCase();
+        const G = ne.toUpperCase();
         if (G === "END") break;
         G.startsWith("SHELL SECTION") ? z = "SHELL SECTION" : G.startsWith("FRAME SECTION") ? z = "FRAME SECTION" : z = G.split(/\s+/)[0];
         continue;
       }
-      const N = ca(oe), D = oe.split(/\s+/);
+      const N = da(ne), D = ne.split(/\s+/);
       switch (z) {
         case "SYSTEM": {
           const G = N.get("DOF");
-          G && (F = G);
+          G && (P = G);
           const ce = N.get("LENGTH");
           ce && (b.length = ce);
           const $e = N.get("FORCE");
@@ -4701,13 +4768,13 @@ let __tla = Promise.all([
         }
         case "MATERIAL": {
           const G = N.get("NAME");
-          if (G) Q = G, $.set(G, {
+          if (G) Z = G, M.set(G, {
             E: 0,
             nu: 0,
             G: 0
           });
-          else if (Q) {
-            const ce = $.get(Q), $e = N.get("E");
+          else if (Z) {
+            const ce = M.get(Z), $e = N.get("E");
             $e && (ce.E = tt($e));
             const Te = N.get("U");
             Te && (ce.nu = tt(Te)), ce.G = ce.E / (2 * (1 + ce.nu));
@@ -4760,13 +4827,13 @@ let __tla = Promise.all([
         }
       }
     }
-    return da(b, F, $, J, H, U, Y, q, W, /* @__PURE__ */ new Map(), /* @__PURE__ */ new Map(), ye);
+    return pa(b, P, M, J, H, U, Y, q, W, /* @__PURE__ */ new Map(), /* @__PURE__ */ new Map(), ye);
   }
-  function da(e, b, F, $, J, H, U, Y, q, W, ye, z) {
+  function pa(e, b, P, M, J, H, U, Y, q, W, ye, z) {
     var _a;
-    const Q = [], ve = /* @__PURE__ */ new Map(), me = [];
-    for (const [he, Be] of H) ve.set(he, me.length), Q.push(he), me.push(Be);
-    const ie = [], oe = [], N = /* @__PURE__ */ new Map();
+    const Z = [], ve = /* @__PURE__ */ new Map(), me = [];
+    for (const [he, Be] of H) ve.set(he, me.length), Z.push(he), me.push(Be);
+    const ie = [], ne = [], N = /* @__PURE__ */ new Map();
     for (const he of U) {
       const Be = ve.get(he.j1), He = ve.get(he.j2);
       if (Be !== void 0 && He !== void 0) {
@@ -4774,7 +4841,7 @@ let __tla = Promise.all([
         ie.push([
           Be,
           He
-        ]), oe.push(he.name);
+        ]), ne.push(he.name);
         const Ee = W.get(he.name);
         Ee && N.set(be, Ee);
       }
@@ -4784,7 +4851,7 @@ let __tla = Promise.all([
       const Be = he.joints.map((He) => ve.get(He)).filter((He) => He !== void 0);
       if (Be.length >= 3) {
         const He = ie.length;
-        ie.push(Be), oe.push(he.name);
+        ie.push(Be), ne.push(he.name);
         const be = ye.get(he.name);
         be && N.set(He, be);
       }
@@ -4799,13 +4866,13 @@ let __tla = Promise.all([
       densities: /* @__PURE__ */ new Map(),
       thicknesses: /* @__PURE__ */ new Map(),
       poissonsRatios: /* @__PURE__ */ new Map()
-    }, $e = /* @__PURE__ */ new Map(), Te = F.values().next().value || {
+    }, $e = /* @__PURE__ */ new Map(), Te = P.values().next().value || {
       E: 29e3,
       nu: 0.3,
       G: 11153
     };
     for (let he = 0; he < ie.length; he++) {
-      const Be = N.get(he), He = Be ? $.get(Be) : null, be = Be ? J.get(Be) : null;
+      const Be = N.get(he), He = Be ? M.get(Be) : null, be = Be ? J.get(Be) : null;
       if (He || ie[he].length === 2) {
         const Ee = He || {
           material: "",
@@ -4816,7 +4883,7 @@ let __tla = Promise.all([
           D: 0.3,
           B: 0.3,
           shape: "Rectangular"
-        }, ze = F.get(Ee.material) || Te, Je = ze.E || Te.E, st = ze.nu || 0.3, Ue = ze.G || Je / (2 * (1 + st));
+        }, ze = P.get(Ee.material) || Te, Je = ze.E || Te.E, st = ze.nu || 0.3, Ue = ze.G || Je / (2 * (1 + st));
         ce.elasticities.set(he, Je), ce.shearModuli.set(he, Ue), ce.areas.set(he, Ee.A || Ee.D * Ee.B), ce.momentsOfInertiaZ.set(he, Ee.Iz || Ee.B * Ee.D ** 3 / 12), ce.momentsOfInertiaY.set(he, Ee.Iy || Ee.D * Ee.B ** 3 / 12), ce.torsionalConstants.set(he, Ee.J || 0), ce.densities.set(he, ze.density || 0), ((_a = Ee.shape) == null ? void 0 : _a.includes("Wide Flange")) || Ee.shape === "I" ? $e.set(he, {
           type: "I",
           b: Ee.B,
@@ -4828,7 +4895,7 @@ let __tla = Promise.all([
           h: Ee.D
         });
       } else if (be) {
-        const Ee = F.get(be.material) || Te, ze = Ee.E || Te.E, Je = Ee.nu || 0.2, st = Ee.G || ze / (2 * (1 + Je));
+        const Ee = P.get(be.material) || Te, ze = Ee.E || Te.E, Je = Ee.nu || 0.2, st = Ee.G || ze / (2 * (1 + Je));
         ce.elasticities.set(he, ze), ce.shearModuli.set(he, st), ce.thicknesses.set(he, be.thickness), ce.poissonsRatios.set(he, Je), ce.densities.set(he, Ee.density || 0);
       }
     }
@@ -4857,14 +4924,14 @@ let __tla = Promise.all([
     return {
       units: e,
       dof: b,
-      materials: F,
-      frameSections: $,
+      materials: P,
+      frameSections: M,
       shellSections: J,
       nodes: me,
-      nodeNames: Q,
+      nodeNames: Z,
       nodeNameToIdx: ve,
       elements: ie,
-      elementNames: oe,
+      elementNames: ne,
       elementSections: N,
       nodeInputs: Ve,
       elementInputs: ce,
@@ -4877,20 +4944,20 @@ let __tla = Promise.all([
       }
     };
   }
-  function Al(e) {
+  function Ll(e) {
     var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j;
-    const { nodes: b, elements: F, nodeInputs: $, elementInputs: J } = e, H = e.units || {
+    const { nodes: b, elements: P, nodeInputs: M, elementInputs: J } = e, H = e.units || {
       force: "KN",
       length: "m"
     }, U = e.title || "Awatif Model", Y = [], q = (N) => Y.push(N), W = () => Y.push(" ");
     q(`File ${U}.$2k was saved on m/d/yy at h:mm:ss`), W(), q('TABLE:  "ACTIVE DEGREES OF FREEDOM"'), q("   UX=Yes   UY=Yes   UZ=Yes   RX=Yes   RY=Yes   RZ=Yes"), W();
     const ye = [], z = [];
-    if (F.forEach((N, D) => {
+    if (P.forEach((N, D) => {
       N.length === 2 ? ye.push(D) : z.push(D);
     }), ye.length > 0) {
       q('TABLE:  "CONNECTIVITY - FRAME"');
       for (const N of ye) {
-        const D = F[N];
+        const D = P[N];
         q(`   Frame=${N + 1}   JointI=${D[0] + 1}   JointJ=${D[1] + 1}   IsCurved=No`);
       }
       W();
@@ -4898,18 +4965,18 @@ let __tla = Promise.all([
     if (z.length > 0) {
       q('TABLE:  "CONNECTIVITY - AREA"');
       for (const N of z) {
-        const D = F[N], G = D.map((ce, $e) => `Joint${$e + 1}=${ce + 1}`).join("   ");
+        const D = P[N], G = D.map((ce, $e) => `Joint${$e + 1}=${ce + 1}`).join("   ");
         q(`   Area=${N + 1}   NumJoints=${D.length}   ${G}`);
       }
       W();
     }
     q('TABLE:  "COORDINATE SYSTEMS"'), q("   Name=GLOBAL   Type=Cartesian   X=0   Y=0   Z=0   AboutZ=0   AboutY=0   AboutX=0"), W(), q('TABLE:  "DATABASE FORMAT TYPES"'), q("   UnitsCurr=Yes   OverrideE=No"), W();
-    const Q = /* @__PURE__ */ new Map(), ve = /* @__PURE__ */ new Map();
+    const Z = /* @__PURE__ */ new Map(), ve = /* @__PURE__ */ new Map();
     for (const N of ye) {
       const D = ((_a = J.areas) == null ? void 0 : _a.get(N)) || 0, G = ((_b = J.momentsOfInertiaZ) == null ? void 0 : _b.get(N)) || 0, ce = ((_c = J.momentsOfInertiaY) == null ? void 0 : _c.get(N)) || 0, $e = ((_d = J.torsionalConstants) == null ? void 0 : _d.get(N)) || 0, Te = ((_e = J.elasticities) == null ? void 0 : _e.get(N)) || 0, Ve = `MAT_${Math.round(Te)}`, he = `A${D.toPrecision(6)}_Iz${G.toPrecision(6)}`;
-      if (!Q.has(he)) {
+      if (!Z.has(he)) {
         let He = 0.3, be = 0.3;
-        D > 0 && G > 0 && (He = Math.sqrt(12 * G / D), be = D / He), Q.set(he, {
+        D > 0 && G > 0 && (He = Math.sqrt(12 * G / D), be = D / He), Z.set(he, {
           A: D,
           Iz: G,
           Iy: ce,
@@ -4920,7 +4987,7 @@ let __tla = Promise.all([
         });
       }
       const Be = [
-        ...Q.keys()
+        ...Z.keys()
       ].indexOf(he) + 1;
       ve.set(N, `SEC${Be}`);
     }
@@ -4932,13 +4999,13 @@ let __tla = Promise.all([
       }
       W();
     }
-    if (Q.size > 0) {
+    if (Z.size > 0) {
       q('TABLE:  "FRAME SECTION PROPERTIES 01 - GENERAL"');
       let N = 0;
-      for (const [, D] of Q) {
+      for (const [, D] of Z) {
         N++;
         const G = D.A * 5 / 6;
-        q(`   SectionName=SEC${N}   Material=${D.matKey}   Shape=Rectangular   t3=${St(D.h)}   t2=${St(D.b)}   Area=${St(D.A)}   TorsConst=${St(D.J)}   I33=${St(D.Iz)}   I22=${St(D.Iy)}   I23=0   AS2=${St(G)}   AS3=${St(G)} _`), q("        Color=Blue   FromFile=No   AMod=1   A2Mod=1   A3Mod=1   JMod=1   I2Mod=1   I3Mod=1   MMod=1   WMod=1");
+        q(`   SectionName=SEC${N}   Material=${D.matKey}   Shape=Rectangular   t3=${It(D.h)}   t2=${It(D.b)}   Area=${It(D.A)}   TorsConst=${It(D.J)}   I33=${It(D.Iz)}   I22=${It(D.Iy)}   I23=0   AS2=${It(G)}   AS3=${It(G)} _`), q("        Color=Blue   FromFile=No   AMod=1   A2Mod=1   A3Mod=1   JMod=1   I2Mod=1   I3Mod=1   MMod=1   WMod=1");
       }
       W();
     }
@@ -4962,32 +5029,32 @@ let __tla = Promise.all([
       }
       W(), q('TABLE:  "AREA SECTION PROPERTIES"');
       let N = 0;
-      for (const [, D] of me) N++, q(`   Section=SSEC${N}   Material=${D.matKey}   MatAngle=0   AreaType=Shell   Type=ShellThin   DrillDOF=Yes   Thickness=${St(D.t)}   BendThick=${St(D.t)}   Color=Cyan`);
+      for (const [, D] of me) N++, q(`   Section=SSEC${N}   Material=${D.matKey}   MatAngle=0   AreaType=Shell   Type=ShellThin   DrillDOF=Yes   Thickness=${It(D.t)}   BendThick=${It(D.t)}   Color=Cyan`);
       W();
     }
     q('TABLE:  "JOINT COORDINATES"');
     for (let N = 0; N < b.length; N++) {
       const D = b[N];
-      q(`   Joint=${N + 1}   CoordSys=GLOBAL   CoordType=Cartesian   XorR=${St(D[0])}   Y=${St(D[1])}   Z=${St(D[2])}   SpecialJt=No`);
+      q(`   Joint=${N + 1}   CoordSys=GLOBAL   CoordType=Cartesian   XorR=${It(D[0])}   Y=${It(D[1])}   Z=${It(D[2])}   SpecialJt=No`);
     }
-    if (W(), $.supports && $.supports.size > 0) {
+    if (W(), M.supports && M.supports.size > 0) {
       q('TABLE:  "JOINT RESTRAINT ASSIGNMENTS"');
-      for (const [N, D] of $.supports) {
+      for (const [N, D] of M.supports) {
         if (!D.some((ce) => ce)) continue;
         const G = (ce) => ce ? "Yes" : "No";
         q(`   Joint=${N + 1}   U1=${G(D[0])}   U2=${G(D[1])}   U3=${G(D[2])}   R1=${G(D[3])}   R2=${G(D[4])}   R3=${G(D[5])}`);
       }
       W();
     }
-    if (q('TABLE:  "LOAD PATTERN DEFINITIONS"'), q("   LoadPat=DEAD   DesignType=Dead   SelfWtMult=0"), W(), q('TABLE:  "LOAD CASE DEFINITIONS"'), q('   Case=DEAD   Type=LinStatic   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Dead   DesActOpt="Prog Det"   DesignAct=Non-Composite   AutoType=None   RunCase=Yes'), W(), q('TABLE:  "CASE - STATIC 1 - LOAD ASSIGNMENTS"'), q('   Case=DEAD   LoadType="Load pattern"   LoadName=DEAD   LoadSF=1'), W(), $.forces && $.forces.size > 0) {
+    if (q('TABLE:  "LOAD PATTERN DEFINITIONS"'), q("   LoadPat=DEAD   DesignType=Dead   SelfWtMult=0"), W(), q('TABLE:  "LOAD CASE DEFINITIONS"'), q('   Case=DEAD   Type=LinStatic   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Dead   DesActOpt="Prog Det"   DesignAct=Non-Composite   AutoType=None   RunCase=Yes'), W(), q('TABLE:  "CASE - STATIC 1 - LOAD ASSIGNMENTS"'), q('   Case=DEAD   LoadType="Load pattern"   LoadName=DEAD   LoadSF=1'), W(), M.forces && M.forces.size > 0) {
       q('TABLE:  "JOINT LOADS - FORCE"');
-      for (const [N, D] of $.forces) D.some((G) => Math.abs(G) > 1e-12) && q(`   Joint=${N + 1}   LoadPat=DEAD   CoordSys=GLOBAL   F1=${St(D[0])}   F2=${St(D[1])}   F3=${St(D[2])}   M1=${St(D[3])}   M2=${St(D[4])}   M3=${St(D[5])}`);
+      for (const [N, D] of M.forces) D.some((G) => Math.abs(G) > 1e-12) && q(`   Joint=${N + 1}   LoadPat=DEAD   CoordSys=GLOBAL   F1=${It(D[0])}   F2=${It(D[1])}   F3=${It(D[2])}   M1=${It(D[3])}   M2=${It(D[4])}   M3=${It(D[5])}`);
       W();
     }
-    const oe = /* @__PURE__ */ new Map();
-    for (let N = 0; N < F.length; N++) {
+    const ne = /* @__PURE__ */ new Map();
+    for (let N = 0; N < P.length; N++) {
       const D = ((_h = J.elasticities) == null ? void 0 : _h.get(N)) || 0, G = ((_i = J.shearModuli) == null ? void 0 : _i.get(N)) || 0, ce = D > 0 && G > 0 ? Math.max(0, Math.min(0.5, D / (2 * G) - 1)) : 0.2, $e = ((_j = J.densities) == null ? void 0 : _j.get(N)) || 0, Te = `MAT_${Math.round(D)}`;
-      oe.has(Te) || oe.set(Te, {
+      ne.has(Te) || ne.set(Te, {
         E: D,
         nu: ce,
         G,
@@ -4995,23 +5062,23 @@ let __tla = Promise.all([
       });
     }
     q('TABLE:  "MATERIAL PROPERTIES 01 - GENERAL"');
-    for (const [N] of oe) q(`   Material=${N}   Type=Concrete   SymType=Isotropic   TempDepend=No   Color=Green`);
+    for (const [N] of ne) q(`   Material=${N}   Type=Concrete   SymType=Isotropic   TempDepend=No   Color=Green`);
     W(), q('TABLE:  "MATERIAL PROPERTIES 02 - BASIC MECHANICAL PROPERTIES"');
-    for (const [N, D] of oe) q(`   Material=${N}   UnitWeight=${St(D.rho * 9.81)}   UnitMass=${St(D.rho)}   E1=${St(D.E)}   G12=${St(D.G)}   U12=${St(D.nu)}   A1=9.9E-06`);
+    for (const [N, D] of ne) q(`   Material=${N}   UnitWeight=${It(D.rho * 9.81)}   UnitMass=${It(D.rho)}   E1=${It(D.E)}   G12=${It(D.G)}   U12=${It(D.nu)}   A1=9.9E-06`);
     W(), q('TABLE:  "MATERIAL PROPERTIES 03B - CONCRETE DATA"');
-    for (const [N] of oe) q(`   Material=${N}   Fc=27579   eFc=27579   LtWtConc=No   SSCurveOpt=Mander   SSHysType=Takeda   SFc=0.00222   SCap=0.005   FinalSlope=-0.1   FAngle=0   DAngle=0`);
+    for (const [N] of ne) q(`   Material=${N}   Fc=27579   eFc=27579   LtWtConc=No   SSCurveOpt=Mander   SSHysType=Takeda   SFc=0.00222   SCap=0.005   FinalSlope=-0.1   FAngle=0   DAngle=0`);
     return W(), q('TABLE:  "PROGRAM CONTROL"'), q(`   ProgramName=SAP2000   Version=24.1.0   CurrUnits="${H.force}, ${H.length}, C"   SteelCode="AISC 360-16"   ConcCode="ACI 318-19"   AlumCode="AA 2015"   ColdCode=AISI-16   RegenHinge=Yes`), W(), q("END TABLE DATA"), q(""), Y.join(`\r
 `);
   }
-  function St(e) {
+  function It(e) {
     return e === 0 || Math.abs(e) < 1e-15 ? "0" : Math.abs(e) >= 1e6 || Math.abs(e) < 1e-3 && Math.abs(e) > 0 ? e.toExponential(8) : parseFloat(e.toPrecision(10)).toString();
   }
-  function Ll(e) {
-    const { e2kModel: b } = e, F = b == null ? void 0 : b.rawSections;
-    return F && F.size > 0 ? Cl(F) : Fl(e);
+  function Cl(e) {
+    const { e2kModel: b } = e, P = b == null ? void 0 : b.rawSections;
+    return P && P.size > 0 ? Fl(P) : Pl(e);
   }
-  function Cl(e, b) {
-    const F = [], $ = [
+  function Fl(e, b) {
+    const P = [], M = [
       "PROGRAM INFORMATION",
       "CONTROLS",
       "STORIES - IN SEQUENCE FROM TOP",
@@ -5039,54 +5106,54 @@ let __tla = Promise.all([
       "LOAD CASES",
       "LOAD COMBINATIONS"
     ];
-    F.push("$ File exported from Awatif FEM Studio (round-trip)"), F.push("");
-    for (const J of $) {
+    P.push("$ File exported from Awatif FEM Studio (round-trip)"), P.push("");
+    for (const J of M) {
       const H = e.get(J);
       if (!(!H || H.length === 0)) {
-        F.push(`$ ${J}`);
-        for (const U of H) F.push(U);
-        F.push("");
+        P.push(`$ ${J}`);
+        for (const U of H) P.push(U);
+        P.push("");
       }
     }
-    for (const [J, H] of e) if (!$.includes(J) && H.length !== 0) {
-      F.push(`$ ${J}`);
-      for (const U of H) F.push(U);
-      F.push("");
+    for (const [J, H] of e) if (!M.includes(J) && H.length !== 0) {
+      P.push(`$ ${J}`);
+      for (const U of H) P.push(U);
+      P.push("");
     }
-    return F.push("  END"), F.push("$ END OF MODEL FILE"), F.join(`\r
+    return P.push("  END"), P.push("$ END OF MODEL FILE"), P.join(`\r
 `);
   }
-  function Fl(e) {
+  function Pl(e) {
     var _a, _b, _c, _d;
-    const { nodes: b, elements: F, nodeInputs: $, elementInputs: J, title: H, units: U } = e, Y = (U == null ? void 0 : U.force) || "TONF", q = (U == null ? void 0 : U.length) || "M", W = [], ye = (be) => Math.round(be * 1e4) / 1e4;
+    const { nodes: b, elements: P, nodeInputs: M, elementInputs: J, title: H, units: U } = e, Y = (U == null ? void 0 : U.force) || "TONF", q = (U == null ? void 0 : U.length) || "M", W = [], ye = (be) => Math.round(be * 1e4) / 1e4;
     W.push("$ File exported from Awatif FEM Studio"), W.push(""), W.push("$ PROGRAM INFORMATION"), W.push('  PROGRAM  "AWATIF"  VERSION "1.0.0"  '), W.push(""), W.push("$ CONTROLS"), W.push(`  UNITS  "${Y}"  "${q}"  "C"  `), H && W.push(`  TITLE2  "${H}"  `), W.push("");
     const z = /* @__PURE__ */ new Set();
     b.forEach((be) => z.add(ye(be[1])));
-    const Q = [
+    const Z = [
       ...z
     ].sort((be, Ee) => be - Ee), ve = [], me = /* @__PURE__ */ new Map();
-    ve.push("Base"), me.set(Q[0], "Base");
-    for (let be = 1; be < Q.length; be++) {
+    ve.push("Base"), me.set(Z[0], "Base");
+    for (let be = 1; be < Z.length; be++) {
       const Ee = `Level_${be}`;
-      ve.push(Ee), me.set(Q[be], Ee);
+      ve.push(Ee), me.set(Z[be], Ee);
     }
     W.push("$ STORIES - IN SEQUENCE FROM TOP");
-    for (let be = Q.length - 1; be >= 1; be--) W.push(`  STORY "${ve[be]}"  HEIGHT ${ye(Q[be] - Q[be - 1])} MASTERSTORY "Yes"  `);
-    Q.length > 0 && W.push(`  STORY "Base"  ELEV ${Q[0]} `), W.push(""), F.some((be) => be.length === 4) && (W.push("$ DIAPHRAGM NAMES"), W.push('  DIAPHRAGM "D1"    TYPE RIGID'), W.push("")), W.push("$ MATERIAL PROPERTIES");
-    const oe = /* @__PURE__ */ new Set();
-    (_a = J.elasticities) == null ? void 0 : _a.forEach((be) => oe.add(be));
+    for (let be = Z.length - 1; be >= 1; be--) W.push(`  STORY "${ve[be]}"  HEIGHT ${ye(Z[be] - Z[be - 1])} MASTERSTORY "Yes"  `);
+    Z.length > 0 && W.push(`  STORY "Base"  ELEV ${Z[0]} `), W.push(""), P.some((be) => be.length === 4) && (W.push("$ DIAPHRAGM NAMES"), W.push('  DIAPHRAGM "D1"    TYPE RIGID'), W.push("")), W.push("$ MATERIAL PROPERTIES");
+    const ne = /* @__PURE__ */ new Set();
+    (_a = J.elasticities) == null ? void 0 : _a.forEach((be) => ne.add(be));
     const N = /* @__PURE__ */ new Map();
     let D = 0;
-    for (const be of oe) {
+    for (const be of ne) {
       const Ee = `Mat_${++D}`;
       N.set(be, Ee), W.push(`  MATERIAL  "${Ee}"    TYPE "Concrete"    WEIGHTPERVOLUME 2.4`), W.push(`  MATERIAL  "${Ee}"    SYMTYPE "Isotropic"  E ${be}  U 0.2  A 1E-05`);
     }
     W.push(""), W.push("$ FRAME SECTIONS");
     const G = /* @__PURE__ */ new Set(), ce = /* @__PURE__ */ new Map(), $e = /* @__PURE__ */ new Map();
-    F.forEach((be, Ee) => {
+    P.forEach((be, Ee) => {
       var _a2, _b2;
       if (be.length !== 2) return;
-      const ze = (_a2 = J.sectionShapes) == null ? void 0 : _a2.get(Ee), Je = ((_b2 = J.elasticities) == null ? void 0 : _b2.get(Ee)) ?? 0, st = N.get(Je) || "Mat_1", Ue = (ze == null ? void 0 : ze.h) ?? 0, at = (ze == null ? void 0 : ze.b) ?? 0, dt = (ze == null ? void 0 : ze.d) ?? 0, yt = (ze == null ? void 0 : ze.tf) ?? 0, Tt = (ze == null ? void 0 : ze.tw) ?? 0, Ft = (ze == null ? void 0 : ze.type) || "rect", gt = `${Ft}_${Ue}_${at}_${dt}_${yt}_${Tt}`;
+      const ze = (_a2 = J.sectionShapes) == null ? void 0 : _a2.get(Ee), Je = ((_b2 = J.elasticities) == null ? void 0 : _b2.get(Ee)) ?? 0, st = N.get(Je) || "Mat_1", Ue = (ze == null ? void 0 : ze.h) ?? 0, at = (ze == null ? void 0 : ze.b) ?? 0, dt = (ze == null ? void 0 : ze.d) ?? 0, yt = (ze == null ? void 0 : ze.tf) ?? 0, zt = (ze == null ? void 0 : ze.tw) ?? 0, Ft = (ze == null ? void 0 : ze.type) || "rect", gt = `${Ft}_${Ue}_${at}_${dt}_${yt}_${zt}`;
       (ze == null ? void 0 : ze.name) && !$e.has(gt) && $e.set(gt, ze.name);
       let ut = $e.get(gt);
       if (ut || (Ft === "rect" ? ut = `R${ye(at * 100)}x${ye(Ue * 100)}` : Ft === "circ" ? ut = `C_D${ye(dt * 100)}` : Ft === "I" ? ut = `I_${ye(Ue * 100)}` : ut = `Sec_${G.size + 1}`, $e.set(gt, ut)), ce.set(Ee, ut), G.has(ut)) return;
@@ -5102,7 +5169,7 @@ let __tla = Promise.all([
         "2C": "Steel Double Channel"
       }[Ft] || "Concrete Rectangular";
       let xt = `  FRAMESECTION  "${ut}"  MATERIAL "${st}"  SHAPE "${Ne}"`;
-      Ue && (xt += `  D ${Ue}`), at && (xt += `  B ${at}`), dt && !Ue && (xt += `  D ${dt}`), yt && (xt += `  TF ${yt}`), Tt && (xt += `  TW ${Tt}`), W.push(xt);
+      Ue && (xt += `  D ${Ue}`), at && (xt += `  B ${at}`), dt && !Ue && (xt += `  D ${dt}`), yt && (xt += `  TF ${yt}`), zt && (xt += `  TW ${zt}`), W.push(xt);
     }), W.push("");
     const Te = /* @__PURE__ */ new Map();
     let Ve = 0;
@@ -5124,7 +5191,7 @@ let __tla = Promise.all([
     };
     W.push("$ LINE CONNECTIVITIES");
     const Be = [];
-    F.forEach((be, Ee) => {
+    P.forEach((be, Ee) => {
       if (be.length !== 2) return;
       const ze = Rl(b, be), Je = ce.get(Ee) || `Sec_${Ee}`;
       if (ze === "BEAM") {
@@ -5133,14 +5200,14 @@ let __tla = Promise.all([
       } else {
         const st = b[be[0]][1] <= b[be[1]][1] ? be[0] : be[1], Ue = b[be[0]][1] <= b[be[1]][1] ? be[1] : be[0];
         he(st);
-        const at = he(Ue), dt = ye(b[st][1]), yt = ye(b[Ue][1]), Tt = Q.indexOf(dt), Ft = Q.indexOf(yt), gt = Math.max(1, Ft >= 0 && Tt >= 0 ? Ft - Tt : 1);
+        const at = he(Ue), dt = ye(b[st][1]), yt = ye(b[Ue][1]), zt = Z.indexOf(dt), Ft = Z.indexOf(yt), gt = Math.max(1, Ft >= 0 && zt >= 0 ? Ft - zt : 1);
         W.push(`  LINE  "E${Ee + 1}"  ${ze}  "${at.pt}"  "${at.pt}"  ${gt}`);
         for (let ut = 0; ut < gt; ut++) {
-          const ro = Ft - ut;
-          ro >= 0 && ro < ve.length && Be.push(`  LINEASSIGN  "E${Ee + 1}"  "${ve[ro]}"  SECTION "${Je}"  MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
+          const rn = Ft - ut;
+          rn >= 0 && rn < ve.length && Be.push(`  LINEASSIGN  "E${Ee + 1}"  "${ve[rn]}"  SECTION "${Je}"  MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
         }
       }
-    }), W.push(""), W.push("$ POINT ASSIGNS"), (_b = $.supports) == null ? void 0 : _b.forEach((be, Ee) => {
+    }), W.push(""), W.push("$ POINT ASSIGNS"), (_b = M.supports) == null ? void 0 : _b.forEach((be, Ee) => {
       const ze = [];
       if (be[0] && ze.push("UX"), be[1] && ze.push("UY"), be[2] && ze.push("UZ"), be[3] && ze.push("RX"), be[4] && ze.push("RY"), be[5] && ze.push("RZ"), ze.length > 0) {
         const Je = he(Ee);
@@ -5148,7 +5215,7 @@ let __tla = Promise.all([
       }
     }), W.push(""), W.push("$ LINE ASSIGNS"), Be.forEach((be) => W.push(be)), W.push("");
     const He = [];
-    if (F.forEach((be, Ee) => {
+    if (P.forEach((be, Ee) => {
       if (be.length === 4) {
         const ze = b[be[0]], Je = b[be[1]], st = b[be[2]], Ue = [
           Je[0] - ze[0],
@@ -5158,11 +5225,11 @@ let __tla = Promise.all([
           st[0] - ze[0],
           st[1] - ze[1],
           st[2] - ze[2]
-        ], dt = Math.abs(Ue[2] * at[0] - Ue[0] * at[2]), yt = Math.sqrt((Ue[1] * at[2] - Ue[2] * at[1]) ** 2 + dt ** 2 + (Ue[0] * at[1] - Ue[1] * at[0]) ** 2), Tt = yt > 1e-10 && dt / yt < 0.5;
+        ], dt = Math.abs(Ue[2] * at[0] - Ue[0] * at[2]), yt = Math.sqrt((Ue[1] * at[2] - Ue[2] * at[1]) ** 2 + dt ** 2 + (Ue[0] * at[1] - Ue[1] * at[0]) ** 2), zt = yt > 1e-10 && dt / yt < 0.5;
         He.push({
           idx: Ee,
           el: be,
-          isWall: Tt
+          isWall: zt
         });
       }
     }), He.some((be) => !be.isWall)) {
@@ -5181,71 +5248,71 @@ let __tla = Promise.all([
       He.forEach((Ee, ze) => {
         const { el: Je, isWall: st } = Ee, Ue = st ? `W${ze + 1}` : `F${ze + 1}`, at = st ? "PANEL" : "FLOOR", dt = Je.map((yt) => he(yt));
         if (st) {
-          const yt = b[Je[0]][1] <= b[Je[2]][1] ? 0 : 2, Tt = b[Je[1]][1] <= b[Je[3]][1] ? 1 : 3;
-          W.push(`  AREA "${Ue}"  ${at}  4  "${dt[yt].pt}"  "${dt[Tt].pt}"  "${dt[Tt].pt}"  "${dt[yt].pt}"  1  1  0  0  `);
+          const yt = b[Je[0]][1] <= b[Je[2]][1] ? 0 : 2, zt = b[Je[1]][1] <= b[Je[3]][1] ? 1 : 3;
+          W.push(`  AREA "${Ue}"  ${at}  4  "${dt[yt].pt}"  "${dt[zt].pt}"  "${dt[zt].pt}"  "${dt[yt].pt}"  1  1  0  0  `);
           const Ft = dt[yt === 0 ? 2 : 0].story;
           be.push(`  AREAASSIGN  "${Ue}"  "${Ft}"  SECTION "Muro"  OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "MIDDLE"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
         } else W.push(`  AREA "${Ue}"  ${at}  4  "${dt[0].pt}"  "${dt[1].pt}"  "${dt[2].pt}"  "${dt[3].pt}"  0  0  0  0  `), be.push(`  AREAASSIGN  "${Ue}"  "${dt[0].story}"  SECTION "Losa"  DIAPH  "D1"  OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "TOP"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
       }), W.push(""), W.push("$ AREA ASSIGNS"), be.forEach((Ee) => W.push(Ee)), W.push("");
     }
-    return W.push("$ LOAD PATTERNS"), W.push('  LOADPATTERN "Dead"  TYPE  "Dead"  SELFWEIGHT  1'), W.push('  LOADPATTERN "Live"  TYPE  "Live"  SELFWEIGHT  0'), W.push(""), $.loads && $.loads.size > 0 && (W.push("$ POINT OBJECT LOADS"), $.loads.forEach((be, Ee) => {
+    return W.push("$ LOAD PATTERNS"), W.push('  LOADPATTERN "Dead"  TYPE  "Dead"  SELFWEIGHT  1'), W.push('  LOADPATTERN "Live"  TYPE  "Live"  SELFWEIGHT  0'), W.push(""), M.loads && M.loads.size > 0 && (W.push("$ POINT OBJECT LOADS"), M.loads.forEach((be, Ee) => {
       const [ze, Je, st] = be, Ue = he(Ee);
       Math.abs(ze) > 1e-10 && W.push(`  POINTLOAD  "${Ue.pt}"  "${Ue.story}"  "Dead"  TYPE "FORCE"  FX ${ze}`), Math.abs(Je) > 1e-10 && W.push(`  POINTLOAD  "${Ue.pt}"  "${Ue.story}"  "Dead"  TYPE "FORCE"  FY ${Je}`), Math.abs(st) > 1e-10 && W.push(`  POINTLOAD  "${Ue.pt}"  "${Ue.story}"  "Dead"  TYPE "FORCE"  FZ ${st}`);
     }), W.push("")), W.push("  END"), W.push("$ END OF MODEL FILE"), W.join(`\r
 `);
   }
   function Rl(e, b) {
-    const F = e[b[0]], $ = e[b[1]], J = Math.abs($[1] - F[1]), H = Math.sqrt(($[0] - F[0]) ** 2 + ($[2] - F[2]) ** 2), U = J > H * 0.5;
+    const P = e[b[0]], M = e[b[1]], J = Math.abs(M[1] - P[1]), H = Math.sqrt((M[0] - P[0]) ** 2 + (M[2] - P[2]) ** 2), U = J > H * 0.5;
     return U && H > 0.01 ? "BRACE" : U ? "COLUMN" : "BEAM";
   }
-  function Pl(e) {
+  function Ol(e) {
     var _a, _b;
-    const { nodes: b, elements: F, nodeInputs: $, elementInputs: J } = e, H = [];
-    return H.push("# OpenSeesPy model exported from Awatif FEM Studio"), H.push(`# ${b.length} nodes, ${F.length} elements`), H.push(""), H.push("import openseespy.opensees as ops"), H.push(""), H.push("ops.wipe()"), H.push("ops.model('basic', '-ndm', 3, '-ndf', 6)"), H.push(""), H.push("# --- Nodes ---"), b.forEach((U, Y) => {
+    const { nodes: b, elements: P, nodeInputs: M, elementInputs: J } = e, H = [];
+    return H.push("# OpenSeesPy model exported from Awatif FEM Studio"), H.push(`# ${b.length} nodes, ${P.length} elements`), H.push(""), H.push("import openseespy.opensees as ops"), H.push(""), H.push("ops.wipe()"), H.push("ops.model('basic', '-ndm', 3, '-ndf', 6)"), H.push(""), H.push("# --- Nodes ---"), b.forEach((U, Y) => {
       H.push(`ops.node(${Y + 1}, ${U[0]}, ${U[1]}, ${U[2]})`);
-    }), H.push(""), H.push("# --- Boundary Conditions ---"), (_a = $.supports) == null ? void 0 : _a.forEach((U, Y) => {
+    }), H.push(""), H.push("# --- Boundary Conditions ---"), (_a = M.supports) == null ? void 0 : _a.forEach((U, Y) => {
       const q = U.map((W) => W ? 1 : 0).join(", ");
       H.push(`ops.fix(${Y + 1}, ${q})`);
-    }), H.push(""), H.push("# --- Geometric Transformations ---"), H.push("ops.geomTransf('Linear', 1, 0.0, 0.0, 1.0)  # beams (vecxz = Z)"), H.push("ops.geomTransf('Linear', 2, -1.0, 0.0, 0.0)  # columns (vecxz = -X)"), H.push(""), H.push("# --- Elements (elasticBeamColumn) ---"), F.forEach((U, Y) => {
+    }), H.push(""), H.push("# --- Geometric Transformations ---"), H.push("ops.geomTransf('Linear', 1, 0.0, 0.0, 1.0)  # beams (vecxz = Z)"), H.push("ops.geomTransf('Linear', 2, -1.0, 0.0, 0.0)  # columns (vecxz = -X)"), H.push(""), H.push("# --- Elements (elasticBeamColumn) ---"), P.forEach((U, Y) => {
       var _a2, _b2, _c, _d, _e, _f;
       if (U.length !== 2) return;
-      const q = b[U[0]], W = b[U[1]], z = Math.abs(W[2] - q[2]) > Math.max(Math.abs(W[0] - q[0]), Math.abs(W[1] - q[1])) ? 2 : 1, Q = ((_a2 = J.areas) == null ? void 0 : _a2.get(Y)) ?? 1, ve = ((_b2 = J.elasticities) == null ? void 0 : _b2.get(Y)) ?? 2e5, me = ((_c = J.shearModuli) == null ? void 0 : _c.get(Y)) ?? 8e4, ie = ((_d = J.torsionalConstants) == null ? void 0 : _d.get(Y)) ?? 1, oe = ((_e = J.momentsOfInertiaY) == null ? void 0 : _e.get(Y)) ?? 1, N = ((_f = J.momentsOfInertiaZ) == null ? void 0 : _f.get(Y)) ?? 1;
-      H.push(`ops.element('elasticBeamColumn', ${Y + 1}, ${U[0] + 1}, ${U[1] + 1}, ${Q}, ${ve}, ${me}, ${ie}, ${oe}, ${N}, ${z})`);
-    }), H.push(""), $.loads && $.loads.size > 0 && (H.push("# --- Loads ---"), H.push("ops.timeSeries('Linear', 1)"), H.push("ops.pattern('Plain', 1, 1)"), $.loads.forEach((U, Y) => {
+      const q = b[U[0]], W = b[U[1]], z = Math.abs(W[2] - q[2]) > Math.max(Math.abs(W[0] - q[0]), Math.abs(W[1] - q[1])) ? 2 : 1, Z = ((_a2 = J.areas) == null ? void 0 : _a2.get(Y)) ?? 1, ve = ((_b2 = J.elasticities) == null ? void 0 : _b2.get(Y)) ?? 2e5, me = ((_c = J.shearModuli) == null ? void 0 : _c.get(Y)) ?? 8e4, ie = ((_d = J.torsionalConstants) == null ? void 0 : _d.get(Y)) ?? 1, ne = ((_e = J.momentsOfInertiaY) == null ? void 0 : _e.get(Y)) ?? 1, N = ((_f = J.momentsOfInertiaZ) == null ? void 0 : _f.get(Y)) ?? 1;
+      H.push(`ops.element('elasticBeamColumn', ${Y + 1}, ${U[0] + 1}, ${U[1] + 1}, ${Z}, ${ve}, ${me}, ${ie}, ${ne}, ${N}, ${z})`);
+    }), H.push(""), M.loads && M.loads.size > 0 && (H.push("# --- Loads ---"), H.push("ops.timeSeries('Linear', 1)"), H.push("ops.pattern('Plain', 1, 1)"), M.loads.forEach((U, Y) => {
       const q = U.map((W) => W).join(", ");
       H.push(`ops.load(${Y + 1}, ${q})`);
     }), H.push("")), H.push("# --- Analysis ---"), H.push("ops.system('BandGeneral')"), H.push("ops.numberer('RCM')"), H.push("ops.constraints('Plain')"), H.push("ops.integrator('LoadControl', 1.0)"), H.push("ops.algorithm('Linear')"), H.push("ops.analysis('Static')"), H.push("ops.analyze(1)"), H.push(""), H.push("# --- Results ---"), H.push('print("\\n=== Displacements ===")'), b.forEach((U, Y) => {
       H.push(`print(f"Node {${Y + 1}}: {ops.nodeDisp(${Y + 1})}")`);
-    }), H.push(""), H.push('print("\\n=== Reactions ===")'), H.push("ops.reactions()"), (_b = $.supports) == null ? void 0 : _b.forEach((U, Y) => {
+    }), H.push(""), H.push('print("\\n=== Reactions ===")'), H.push("ops.reactions()"), (_b = M.supports) == null ? void 0 : _b.forEach((U, Y) => {
       H.push(`print(f"Node {${Y + 1}}: {ops.nodeReaction(${Y + 1})}")`);
     }), H.join(`
 `);
   }
-  function Ol(e) {
+  function Nl(e) {
     var _a, _b;
-    const { nodes: b, elements: F, nodeInputs: $, elementInputs: J } = e, H = [];
-    return H.push("# OpenSees Tcl model exported from Awatif FEM Studio"), H.push(`# ${b.length} nodes, ${F.length} elements`), H.push(""), H.push("wipe"), H.push("model basic -ndm 3 -ndf 6"), H.push(""), H.push("# --- Nodes ---"), b.forEach((U, Y) => {
+    const { nodes: b, elements: P, nodeInputs: M, elementInputs: J } = e, H = [];
+    return H.push("# OpenSees Tcl model exported from Awatif FEM Studio"), H.push(`# ${b.length} nodes, ${P.length} elements`), H.push(""), H.push("wipe"), H.push("model basic -ndm 3 -ndf 6"), H.push(""), H.push("# --- Nodes ---"), b.forEach((U, Y) => {
       H.push(`node ${Y + 1} ${U[0]} ${U[1]} ${U[2]}`);
-    }), H.push(""), H.push("# --- Boundary Conditions ---"), (_a = $.supports) == null ? void 0 : _a.forEach((U, Y) => {
+    }), H.push(""), H.push("# --- Boundary Conditions ---"), (_a = M.supports) == null ? void 0 : _a.forEach((U, Y) => {
       const q = U.map((W) => W ? 1 : 0).join(" ");
       H.push(`fix ${Y + 1} ${q}`);
-    }), H.push(""), H.push("# --- Geometric Transformations ---"), H.push("geomTransf Linear 1 0.0 0.0 1.0"), H.push("geomTransf Linear 2 -1.0 0.0 0.0"), H.push(""), H.push("# --- Elements ---"), F.forEach((U, Y) => {
+    }), H.push(""), H.push("# --- Geometric Transformations ---"), H.push("geomTransf Linear 1 0.0 0.0 1.0"), H.push("geomTransf Linear 2 -1.0 0.0 0.0"), H.push(""), H.push("# --- Elements ---"), P.forEach((U, Y) => {
       var _a2, _b2, _c, _d, _e, _f;
       if (U.length !== 2) return;
-      const q = b[U[0]], W = b[U[1]], z = Math.abs(W[2] - q[2]) > Math.max(Math.abs(W[0] - q[0]), Math.abs(W[1] - q[1])) ? 2 : 1, Q = ((_a2 = J.areas) == null ? void 0 : _a2.get(Y)) ?? 1, ve = ((_b2 = J.elasticities) == null ? void 0 : _b2.get(Y)) ?? 2e5, me = ((_c = J.shearModuli) == null ? void 0 : _c.get(Y)) ?? 8e4, ie = ((_d = J.torsionalConstants) == null ? void 0 : _d.get(Y)) ?? 1, oe = ((_e = J.momentsOfInertiaY) == null ? void 0 : _e.get(Y)) ?? 1, N = ((_f = J.momentsOfInertiaZ) == null ? void 0 : _f.get(Y)) ?? 1;
-      H.push(`element elasticBeamColumn ${Y + 1} ${U[0] + 1} ${U[1] + 1} ${Q} ${ve} ${me} ${ie} ${oe} ${N} ${z}`);
-    }), H.push(""), $.loads && $.loads.size > 0 && (H.push("# --- Loads ---"), H.push("timeSeries Linear 1"), H.push("pattern Plain 1 1 {"), $.loads.forEach((U, Y) => {
+      const q = b[U[0]], W = b[U[1]], z = Math.abs(W[2] - q[2]) > Math.max(Math.abs(W[0] - q[0]), Math.abs(W[1] - q[1])) ? 2 : 1, Z = ((_a2 = J.areas) == null ? void 0 : _a2.get(Y)) ?? 1, ve = ((_b2 = J.elasticities) == null ? void 0 : _b2.get(Y)) ?? 2e5, me = ((_c = J.shearModuli) == null ? void 0 : _c.get(Y)) ?? 8e4, ie = ((_d = J.torsionalConstants) == null ? void 0 : _d.get(Y)) ?? 1, ne = ((_e = J.momentsOfInertiaY) == null ? void 0 : _e.get(Y)) ?? 1, N = ((_f = J.momentsOfInertiaZ) == null ? void 0 : _f.get(Y)) ?? 1;
+      H.push(`element elasticBeamColumn ${Y + 1} ${U[0] + 1} ${U[1] + 1} ${Z} ${ve} ${me} ${ie} ${ne} ${N} ${z}`);
+    }), H.push(""), M.loads && M.loads.size > 0 && (H.push("# --- Loads ---"), H.push("timeSeries Linear 1"), H.push("pattern Plain 1 1 {"), M.loads.forEach((U, Y) => {
       const q = U.map((W) => W).join(" ");
       H.push(`  load ${Y + 1} ${q}`);
     }), H.push("}"), H.push("")), H.push("# --- Analysis ---"), H.push("system BandGeneral"), H.push("numberer RCM"), H.push("constraints Plain"), H.push("integrator LoadControl 1.0"), H.push("algorithm Linear"), H.push("analysis Static"), H.push("analyze 1"), H.push(""), H.push("# --- Results ---"), H.push('puts "\\n=== Displacements ==="'), b.forEach((U, Y) => {
       H.push(`puts "Node ${Y + 1}: [nodeDisp ${Y + 1}]"`);
-    }), H.push('puts "\\n=== Reactions ==="'), H.push("reactions"), (_b = $.supports) == null ? void 0 : _b.forEach((U, Y) => {
+    }), H.push('puts "\\n=== Reactions ==="'), H.push("reactions"), (_b = M.supports) == null ? void 0 : _b.forEach((U, Y) => {
       H.push(`puts "Node ${Y + 1}: [nodeReaction ${Y + 1}]"`);
     }), H.join(`
 `);
   }
-  function Nl(e) {
-    const b = [], F = [], $ = /* @__PURE__ */ new Map(), J = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), U = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), q = /* @__PURE__ */ new Map(), W = /* @__PURE__ */ new Map(), ye = /* @__PURE__ */ new Map(), z = /* @__PURE__ */ new Map(), Q = /* @__PURE__ */ new Map();
+  function ql(e) {
+    const b = [], P = [], M = /* @__PURE__ */ new Map(), J = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), U = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), q = /* @__PURE__ */ new Map(), W = /* @__PURE__ */ new Map(), ye = /* @__PURE__ */ new Map(), z = /* @__PURE__ */ new Map(), Z = /* @__PURE__ */ new Map();
     for (const ve of e.split(/\r?\n/)) {
       const me = ve.trim(), ie = me.match(/ops\.node\(\s*(\d+)\s*,\s*([-\d.eE+]+)\s*,\s*([-\d.eE+]+)\s*,\s*([-\d.eE+]+)/);
       if (ie) {
@@ -5257,16 +5324,16 @@ let __tla = Promise.all([
         ]), z.set(G, ce);
         continue;
       }
-      const oe = me.match(/ops\.fix\(\s*(\d+)\s*,\s*(\d)\s*,\s*(\d)\s*,\s*(\d)\s*,\s*(\d)\s*,\s*(\d)\s*,\s*(\d)/);
-      if (oe) {
-        const G = parseInt(oe[1]), ce = z.get(G);
-        ce !== void 0 && $.set(ce, [
-          oe[2] === "1",
-          oe[3] === "1",
-          oe[4] === "1",
-          oe[5] === "1",
-          oe[6] === "1",
-          oe[7] === "1"
+      const ne = me.match(/ops\.fix\(\s*(\d+)\s*,\s*(\d)\s*,\s*(\d)\s*,\s*(\d)\s*,\s*(\d)\s*,\s*(\d)\s*,\s*(\d)/);
+      if (ne) {
+        const G = parseInt(ne[1]), ce = z.get(G);
+        ce !== void 0 && M.set(ce, [
+          ne[2] === "1",
+          ne[3] === "1",
+          ne[4] === "1",
+          ne[5] === "1",
+          ne[6] === "1",
+          ne[7] === "1"
         ]);
         continue;
       }
@@ -5274,11 +5341,11 @@ let __tla = Promise.all([
       if (N) {
         const G = parseInt(N[1]), ce = z.get(parseInt(N[2])), $e = z.get(parseInt(N[3]));
         if (ce !== void 0 && $e !== void 0) {
-          const Te = F.length;
-          F.push([
+          const Te = P.length;
+          P.push([
             ce,
             $e
-          ]), Q.set(G, Te), Y.set(Te, parseFloat(N[4])), H.set(Te, parseFloat(N[5])), U.set(Te, parseFloat(N[6])), ye.set(Te, parseFloat(N[7])), q.set(Te, parseFloat(N[8])), W.set(Te, parseFloat(N[9]));
+          ]), Z.set(G, Te), Y.set(Te, parseFloat(N[4])), H.set(Te, parseFloat(N[5])), U.set(Te, parseFloat(N[6])), ye.set(Te, parseFloat(N[7])), q.set(Te, parseFloat(N[8])), W.set(Te, parseFloat(N[9]));
         }
         continue;
       }
@@ -5297,9 +5364,9 @@ let __tla = Promise.all([
     }
     return {
       nodes: b,
-      elements: F,
+      elements: P,
       nodeInputs: {
-        supports: $,
+        supports: M,
         loads: J
       },
       elementInputs: {
@@ -5312,24 +5379,24 @@ let __tla = Promise.all([
       }
     };
   }
-  function ql(e) {
-    const b = [], F = [], $ = /* @__PURE__ */ new Map(), J = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), U = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), q = /* @__PURE__ */ new Map(), W = /* @__PURE__ */ new Map(), ye = /* @__PURE__ */ new Map(), z = /* @__PURE__ */ new Map();
-    for (const Q of e.split(/\r?\n/)) {
-      const ve = Q.trim();
+  function _l(e) {
+    const b = [], P = [], M = /* @__PURE__ */ new Map(), J = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), U = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), q = /* @__PURE__ */ new Map(), W = /* @__PURE__ */ new Map(), ye = /* @__PURE__ */ new Map(), z = /* @__PURE__ */ new Map();
+    for (const Z of e.split(/\r?\n/)) {
+      const ve = Z.trim();
       if (ve.startsWith("#") || ve.startsWith("//")) continue;
       const me = ve.split(/\s+/);
       if (me[0] === "node" && me.length >= 5) {
-        const ie = parseInt(me[1]), oe = b.length;
+        const ie = parseInt(me[1]), ne = b.length;
         b.push([
           parseFloat(me[2]),
           parseFloat(me[3]),
           parseFloat(me[4])
-        ]), z.set(ie, oe);
+        ]), z.set(ie, ne);
         continue;
       }
       if (me[0] === "fix" && me.length >= 8) {
         const ie = z.get(parseInt(me[1]));
-        ie !== void 0 && $.set(ie, [
+        ie !== void 0 && M.set(ie, [
           me[2] === "1",
           me[3] === "1",
           me[4] === "1",
@@ -5340,12 +5407,12 @@ let __tla = Promise.all([
         continue;
       }
       if (me[0] === "element" && me[1] === "elasticBeamColumn" && me.length >= 12) {
-        const ie = z.get(parseInt(me[3])), oe = z.get(parseInt(me[4]));
-        if (ie !== void 0 && oe !== void 0) {
-          const N = F.length;
-          F.push([
+        const ie = z.get(parseInt(me[3])), ne = z.get(parseInt(me[4]));
+        if (ie !== void 0 && ne !== void 0) {
+          const N = P.length;
+          P.push([
             ie,
-            oe
+            ne
           ]), Y.set(N, parseFloat(me[5])), H.set(N, parseFloat(me[6])), U.set(N, parseFloat(me[7])), ye.set(N, parseFloat(me[8])), q.set(N, parseFloat(me[9])), W.set(N, parseFloat(me[10]));
         }
         continue;
@@ -5364,9 +5431,9 @@ let __tla = Promise.all([
     }
     return {
       nodes: b,
-      elements: F,
+      elements: P,
       nodeInputs: {
-        supports: $,
+        supports: M,
         loads: J
       },
       elementInputs: {
@@ -5381,26 +5448,26 @@ let __tla = Promise.all([
   }
   function Ut(e) {
     const b = [];
-    let F = 0, $ = false, J = "";
+    let P = 0, M = false, J = "";
     for (let H = 0; H < e.length; H++) {
       const U = e[H];
       if (U === "'" && (H === 0 || e[H - 1] !== "\\")) {
-        $ = !$, J += U;
+        M = !M, J += U;
         continue;
       }
-      if ($) {
+      if (M) {
         J += U;
         continue;
       }
       if (U === "(") {
-        F++, J += U;
+        P++, J += U;
         continue;
       }
       if (U === ")") {
-        F--, J += U;
+        P--, J += U;
         continue;
       }
-      if (U === "," && F === 0) {
+      if (U === "," && P === 0) {
         b.push(J.trim()), J = "";
         continue;
       }
@@ -5408,50 +5475,50 @@ let __tla = Promise.all([
     }
     return J.trim() && b.push(J.trim()), b;
   }
-  function pa(e, b) {
-    const F = Ut(e);
-    if (b < F.length) {
-      let $ = F[b].trim();
-      return $.startsWith("'") && $.endsWith("'") && ($ = $.slice(1, -1)), $ === "$" ? null : $;
+  function fa(e, b) {
+    const P = Ut(e);
+    if (b < P.length) {
+      let M = P[b].trim();
+      return M.startsWith("'") && M.endsWith("'") && (M = M.slice(1, -1)), M === "$" ? null : M;
     }
     return null;
   }
-  function _l(e) {
+  function Dl(e) {
     const b = {
       schema: "",
       project: "",
       app: ""
-    }, F = {}, $ = {}, J = e.match(/FILE_SCHEMA\s*\(\s*\(\s*'([^']*)'/i);
+    }, P = {}, M = {}, J = e.match(/FILE_SCHEMA\s*\(\s*\(\s*'([^']*)'/i);
     J && (b.schema = J[1]);
     const H = /^#(\d+)\s*=\s*([A-Z][A-Z0-9_]*)\s*\(([\s\S]*?)\)\s*;\s*$/gm;
     let U;
     for (; (U = H.exec(e)) !== null; ) {
       const Y = parseInt(U[1]), q = U[2].toUpperCase();
-      F[Y] = {
+      P[Y] = {
         id: Y,
         type: q,
         args: U[3]
-      }, $[q] || ($[q] = []), $[q].push(Y);
+      }, M[q] || (M[q] = []), M[q].push(Y);
     }
-    if ($.IFCPROJECT) {
-      const Y = F[$.IFCPROJECT[0]];
+    if (M.IFCPROJECT) {
+      const Y = P[M.IFCPROJECT[0]];
       if (Y) {
-        const q = pa(Y.args, 2);
+        const q = fa(Y.args, 2);
         q && (b.project = q);
       }
     }
     return {
       meta: b,
-      entities: F,
-      typeIndex: $
+      entities: P,
+      typeIndex: M
     };
   }
   function Wt(e, b) {
-    const F = b.match(/#(\d+)/);
-    return F && e[parseInt(F[1])] || null;
+    const P = b.match(/#(\d+)/);
+    return P && e[parseInt(P[1])] || null;
   }
-  function fa(e, b) {
-    const F = Ut(b.args), $ = Wt(e, F[0]), J = $ ? Dl(e, $) : [
+  function ua(e, b) {
+    const P = Ut(b.args), M = Wt(e, P[0]), J = M ? Bl(e, M) : [
       0,
       0,
       0
@@ -5465,13 +5532,13 @@ let __tla = Promise.all([
       0,
       0
     ];
-    if (F[1] && F[1] !== "$") {
-      const Y = Wt(e, F[1]);
-      Y && (H = la(e, Y));
+    if (P[1] && P[1] !== "$") {
+      const Y = Wt(e, P[1]);
+      Y && (H = ra(e, Y));
     }
-    if (F[2] && F[2] !== "$") {
-      const Y = Wt(e, F[2]);
-      Y && (U = la(e, Y));
+    if (P[2] && P[2] !== "$") {
+      const Y = Wt(e, P[2]);
+      Y && (U = ra(e, Y));
     }
     return {
       origin: J,
@@ -5479,14 +5546,14 @@ let __tla = Promise.all([
       dirX: U
     };
   }
-  function Dl(e, b) {
-    return b.args.replace(/[()]/g, "").split(",").map(($) => parseFloat($.trim())).filter(($) => !isNaN($));
+  function Bl(e, b) {
+    return b.args.replace(/[()]/g, "").split(",").map((M) => parseFloat(M.trim())).filter((M) => !isNaN(M));
   }
-  function la(e, b) {
-    return b.args.replace(/[()]/g, "").split(",").map(($) => parseFloat($.trim())).filter(($) => !isNaN($));
+  function ra(e, b) {
+    return b.args.replace(/[()]/g, "").split(",").map((M) => parseFloat(M.trim())).filter((M) => !isNaN(M));
   }
-  function ua(e, b) {
-    const F = Ut(b.args), $ = Wt(e, F[1]);
+  function ma(e, b) {
+    const P = Ut(b.args), M = Wt(e, P[1]);
     let J = {
       origin: [
         0,
@@ -5504,10 +5571,10 @@ let __tla = Promise.all([
         0
       ]
     };
-    if ($ && (J = fa(e, $)), F[0] && F[0] !== "$") {
-      const H = Wt(e, F[0]);
+    if (M && (J = ua(e, M)), P[0] && P[0] !== "$") {
+      const H = Wt(e, P[0]);
       if (H && H.type === "IFCLOCALPLACEMENT") {
-        const U = ua(e, H), Y = ts(J.origin, U.dirX, es(U.dirZ, U.dirX), U.dirZ);
+        const U = ma(e, H), Y = ts(J.origin, U.dirX, es(U.dirZ, U.dirX), U.dirZ);
         J.origin = [
           U.origin[0] + Y[0],
           U.origin[1] + Y[1],
@@ -5524,16 +5591,16 @@ let __tla = Promise.all([
       e[0] * b[1] - e[1] * b[0]
     ];
   }
-  function ts(e, b, F, $) {
+  function ts(e, b, P, M) {
     return [
-      e[0] * b[0] + e[1] * F[0] + e[2] * $[0],
-      e[0] * b[1] + e[1] * F[1] + e[2] * $[1],
-      e[0] * b[2] + e[1] * F[2] + e[2] * $[2]
+      e[0] * b[0] + e[1] * P[0] + e[2] * M[0],
+      e[0] * b[1] + e[1] * P[1] + e[2] * M[1],
+      e[0] * b[2] + e[1] * P[2] + e[2] * M[2]
     ];
   }
-  const Bl = 0.01;
-  function Hl(e) {
-    const b = _l(e), { entities: F, typeIndex: $ } = b, J = [], H = [], U = /* @__PURE__ */ new Map();
+  const Hl = 0.01;
+  function jl(e) {
+    const b = Dl(e), { entities: P, typeIndex: M } = b, J = [], H = [], U = /* @__PURE__ */ new Map();
     U.set("Hormigon", {
       E: 2132888792e-2,
       nu: 0.2,
@@ -5544,26 +5611,26 @@ let __tla = Promise.all([
       rho: 7.85
     });
     let Y = 0, q = 0;
-    function W(oe, N, D) {
+    function W(ne, N, D) {
       for (const G of J) {
-        const ce = G.x - oe, $e = G.y - N, Te = G.z - D;
-        if (Math.sqrt(ce * ce + $e * $e + Te * Te) < Bl) return G.id;
+        const ce = G.x - ne, $e = G.y - N, Te = G.z - D;
+        if (Math.sqrt(ce * ce + $e * $e + Te * Te) < Hl) return G.id;
       }
       return J.push({
         id: Y,
-        x: oe,
+        x: ne,
         y: N,
         z: D
       }), Y++;
     }
-    function ye(oe) {
-      const N = pa(oe.args, 2) || "", D = $.IFCRELASSOCIATESMATERIAL || [];
+    function ye(ne) {
+      const N = fa(ne.args, 2) || "", D = M.IFCRELASSOCIATESMATERIAL || [];
       for (const ce of D) {
-        const $e = F[ce];
+        const $e = P[ce];
         if (!$e) continue;
         const Te = Ut($e.args);
-        if ((Te[4] || Te[3] || "").includes(`#${oe.id}`)) {
-          const he = Te[5] || Te[4] || "", Be = Wt(F, he);
+        if ((Te[4] || Te[3] || "").includes(`#${ne.id}`)) {
+          const he = Te[5] || Te[4] || "", Be = Wt(P, he);
           if (Be) return z(Be);
         }
       }
@@ -5578,10 +5645,10 @@ let __tla = Promise.all([
         name: N || "Default"
       };
     }
-    function z(oe) {
-      const N = oe.type;
+    function z(ne) {
+      const N = ne.type;
       if (N === "IFCRECTANGLEPROFILEDEF") {
-        const D = Ut(oe.args), G = (D[1] || "").replace(/'/g, ""), ce = parseFloat(D[3]) || 0.3, $e = parseFloat(D[4]) || 0.3;
+        const D = Ut(ne.args), G = (D[1] || "").replace(/'/g, ""), ce = parseFloat(D[3]) || 0.3, $e = parseFloat(D[4]) || 0.3;
         return {
           b: ce,
           h: $e,
@@ -5589,18 +5656,18 @@ let __tla = Promise.all([
         };
       }
       if (N === "IFCMATERIALPROFILE") {
-        const D = Ut(oe.args), G = D[2] || D[1] || "", ce = Wt(F, G);
+        const D = Ut(ne.args), G = D[2] || D[1] || "", ce = Wt(P, G);
         if (ce) return z(ce);
       }
       if (N === "IFCMATERIALPROFILESET") {
-        const D = Ut(oe.args), ce = (D[2] || D[1] || "").match(/#(\d+)/);
+        const D = Ut(ne.args), ce = (D[2] || D[1] || "").match(/#(\d+)/);
         if (ce) {
-          const $e = F[parseInt(ce[1])];
+          const $e = P[parseInt(ce[1])];
           if ($e) return z($e);
         }
       }
       if (N === "IFCMATERIALPROFILESETUSAGE") {
-        const G = Ut(oe.args)[0], ce = Wt(F, G);
+        const G = Ut(ne.args)[0], ce = Wt(P, G);
         if (ce) return z(ce);
       }
       return {
@@ -5609,21 +5676,21 @@ let __tla = Promise.all([
         name: "Unknown"
       };
     }
-    function Q(oe, N, D, G) {
-      const ce = $[oe] || [];
+    function Z(ne, N, D, G) {
+      const ce = M[ne] || [];
       for (const $e of ce) {
-        const Te = F[$e];
+        const Te = P[$e];
         if (!Te) continue;
-        const Ve = Ut(Te.args), he = Ve[5] || Ve[4] || "", Be = Wt(F, he);
+        const Ve = Ut(Te.args), he = Ve[5] || Ve[4] || "", Be = Wt(P, he);
         if (!Be) continue;
-        const He = ua(F, Be), be = ye(Te);
+        const He = ma(P, Be), be = ye(Te);
         let Ee = G, ze = null, Je = null;
-        const st = Ve[6] || Ve[5] || "", Ue = Wt(F, st);
+        const st = Ve[6] || Ve[5] || "", Ue = Wt(P, st);
         if (Ue) {
-          const ut = $n(F, Ue);
+          const ut = $o(P, Ue);
           ut && (Ee = ut.depth || G, ze = ut.origin, Je = ut.direction);
         }
-        const at = ze ? ze[0] : He.origin[0], dt = ze ? ze[1] : He.origin[1], yt = ze ? ze[2] : He.origin[2], Tt = Je || (D === "Z" ? He.dirZ : He.dirX), Ft = W(at, dt, yt), gt = W(at + Tt[0] * Ee, dt + Tt[1] * Ee, yt + Tt[2] * Ee);
+        const at = ze ? ze[0] : He.origin[0], dt = ze ? ze[1] : He.origin[1], yt = ze ? ze[2] : He.origin[2], zt = Je || (D === "Z" ? He.dirZ : He.dirX), Ft = W(at, dt, yt), gt = W(at + zt[0] * Ee, dt + zt[1] * Ee, yt + zt[2] * Ee);
         H.push({
           id: q++,
           type: "frame",
@@ -5640,17 +5707,17 @@ let __tla = Promise.all([
         });
       }
     }
-    Q("IFCCOLUMN", "column", "Z", 3), Q("IFCBEAM", "beam", "X", 5), Q("IFCMEMBER", "diagonal", "X", 4), Q("IFCPILE", "pile", "Z", 10), Q("IFCSTAIRFLIGHT", "stair", "X", 3), Q("IFCRAMPFLIGHT", "ramp", "X", 4);
-    function ve(oe, N, D) {
-      const G = $[oe] || [];
+    Z("IFCCOLUMN", "column", "Z", 3), Z("IFCBEAM", "beam", "X", 5), Z("IFCMEMBER", "diagonal", "X", 4), Z("IFCPILE", "pile", "Z", 10), Z("IFCSTAIRFLIGHT", "stair", "X", 3), Z("IFCRAMPFLIGHT", "ramp", "X", 4);
+    function ve(ne, N, D) {
+      const G = M[ne] || [];
       for (const ce of G) {
-        const $e = F[ce];
+        const $e = P[ce];
         if (!$e) continue;
         const Te = Ut($e.args), Ve = Te[5] || Te[4] || "";
-        if (!Wt(F, Ve)) continue;
+        if (!Wt(P, Ve)) continue;
         let Be = D;
-        const He = Te[6] || Te[5] || "", be = Wt(F, He);
-        be && (Be = jl(F, be) || D);
+        const He = Te[6] || Te[5] || "", be = Wt(P, He);
+        be && (Be = Wl(P, be) || D);
         const Ee = N === "slab" ? `Losa e=${(Be * 100).toFixed(0)}cm` : N === "wall" ? `Muro e=${(Be * 100).toFixed(0)}cm` : N === "footing" ? `Zapata e=${(Be * 100).toFixed(0)}cm` : `${N} e=${(Be * 100).toFixed(0)}cm`;
         H.push({
           id: q++,
@@ -5666,9 +5733,9 @@ let __tla = Promise.all([
       }
     }
     ve("IFCSLAB", "slab", 0.15), ve("IFCWALL", "wall", 0.2), ve("IFCWALLSTANDARDCASE", "wall", 0.2), ve("IFCFOOTING", "footing", 0.5), ve("IFCROOF", "slab", 0.12);
-    const me = [], ie = $.IFCBUILDINGSTOREY || [];
-    for (const oe of ie) {
-      const N = F[oe];
+    const me = [], ie = M.IFCBUILDINGSTOREY || [];
+    for (const ne of ie) {
+      const N = P[ne];
       if (!N) continue;
       const D = Ut(N.args), G = (D[2] || "").replace(/'/g, ""), ce = parseFloat(D[9]) || 0;
       me.push({
@@ -5676,7 +5743,7 @@ let __tla = Promise.all([
         elevation: ce
       });
     }
-    return me.sort((oe, N) => oe.elevation - N.elevation), {
+    return me.sort((ne, N) => ne.elevation - N.elevation), {
       nodes: J,
       elements: H,
       materials: U,
@@ -5685,10 +5752,10 @@ let __tla = Promise.all([
       schema: b.meta.schema
     };
   }
-  function $n(e, b) {
-    const F = Ut(b.args);
-    for (const $ of F) {
-      const J = $.match(/#(\d+)/g) || [];
+  function $o(e, b) {
+    const P = Ut(b.args);
+    for (const M of P) {
+      const J = M.match(/#(\d+)/g) || [];
       for (const H of J) {
         const U = parseInt(H.replace("#", "")), Y = e[U];
         if (Y) {
@@ -5699,15 +5766,15 @@ let __tla = Promise.all([
               0,
               0
             ];
-            ye && (z = fa(e, ye).origin);
-            const Q = Wt(e, q[2]);
+            ye && (z = ua(e, ye).origin);
+            const Z = Wt(e, q[2]);
             let ve = [
               0,
               0,
               1
             ];
-            if (Q && Q.type === "IFCDIRECTION") {
-              const me = Q.args.match(/[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?/g);
+            if (Z && Z.type === "IFCDIRECTION") {
+              const me = Z.args.match(/[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?/g);
               me && me.length >= 3 && (ve = me.map(Number));
             }
             return {
@@ -5717,7 +5784,7 @@ let __tla = Promise.all([
             };
           }
           if (Y.type === "IFCSHAPEREPRESENTATION") {
-            const q = $n(e, Y);
+            const q = $o(e, Y);
             if (q) return q;
           }
           if (Y.type === "IFCMAPPEDITEM") {
@@ -5725,8 +5792,8 @@ let __tla = Promise.all([
             if (W && W.type === "IFCREPRESENTATIONMAP") {
               const ye = Ut(W.args), z = Wt(e, ye[1]);
               if (z) {
-                const Q = $n(e, z);
-                if (Q) return Q;
+                const Z = $o(e, z);
+                if (Z) return Z;
               }
             }
           }
@@ -5735,11 +5802,11 @@ let __tla = Promise.all([
     }
     return null;
   }
-  function jl(e, b) {
-    const F = $n(e, b);
-    return F ? F.depth : null;
+  function Wl(e, b) {
+    const P = $o(e, b);
+    return P ? P.depth : null;
   }
-  const ma = [
+  const ba = [
     [
       843113511,
       "column"
@@ -5796,7 +5863,7 @@ let __tla = Promise.all([
       395920057,
       "opening"
     ]
-  ], ba = [
+  ], ga = [
     "column",
     "beam",
     "slab",
@@ -5808,19 +5875,19 @@ let __tla = Promise.all([
     "wall",
     "opening",
     "other"
-  ], ga = /* @__PURE__ */ new Map();
-  for (const [e, b] of ma) ga.set(e, b);
-  function Wl(e) {
-    return ga.get(e) ?? "other";
+  ], ha = /* @__PURE__ */ new Map();
+  for (const [e, b] of ba) ha.set(e, b);
+  function Gl(e) {
+    return ha.get(e) ?? "other";
   }
-  new Set(ba);
-  async function Gl(e, b) {
+  new Set(ga);
+  async function Yl(e, b) {
     var _a, _b;
-    const F = window.WebIFC;
-    if (!F) throw new Error("web-ifc no disponible. Verifica que web-ifc-api-iife.js se carg\xF3.");
-    const $ = new F.IfcAPI(), J = window.location.pathname.replace(/\/[^/]*$/, "/");
-    $.SetWasmPath(J), await $.Init();
-    const H = $.OpenModel(new Uint8Array(b)), U = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), q = {
+    const P = window.WebIFC;
+    if (!P) throw new Error("web-ifc no disponible. Verifica que web-ifc-api-iife.js se carg\xF3.");
+    const M = new P.IfcAPI(), J = window.location.pathname.replace(/\/[^/]*$/, "/");
+    M.SetWasmPath(J), await M.Init();
+    const H = M.OpenModel(new Uint8Array(b)), U = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), q = {
       843113511: "Columna",
       753842376: "Viga",
       1529196076: "Losa",
@@ -5836,16 +5903,16 @@ let __tla = Promise.all([
       3304561284: "Ventana",
       395920057: "Puerta"
     };
-    for (const [ve] of ma) {
-      const me = Wl(ve);
+    for (const [ve] of ba) {
+      const me = Gl(ve);
       try {
-        const ie = $.GetLineIDsWithType(H, ve);
-        for (let oe = 0; oe < ie.size(); oe++) {
-          const N = ie.get(oe);
+        const ie = M.GetLineIDsWithType(H, ve);
+        for (let ne = 0; ne < ie.size(); ne++) {
+          const N = ie.get(ne);
           U.set(N, me);
           let D = "";
           try {
-            const G = $.GetLine(H, N);
+            const G = M.GetLine(H, N);
             D = ((_a = G == null ? void 0 : G.Name) == null ? void 0 : _a.value) || ((_b = G == null ? void 0 : G.Description) == null ? void 0 : _b.value) || "";
           } catch {
           }
@@ -5860,51 +5927,51 @@ let __tla = Promise.all([
       }
     }
     const W = /* @__PURE__ */ new Map();
-    for (const ve of ba) {
-      const me = new sn();
+    for (const ve of ga) {
+      const me = new so();
       me.name = `ifc-${ve}`, e.add(me), W.set(ve, me);
     }
-    const ye = new Za();
+    const ye = new Qa();
     let z = 0;
-    const Q = new ea({
+    const Z = new ta({
       color: 13421772,
       transparent: true,
       opacity: 0.9,
-      side: ta
+      side: na
     });
-    return $.StreamAllMeshes(H, (ve) => {
-      const me = U.get(ve.expressID) ?? "other", ie = W.get(me), oe = ve.geometries;
-      for (let N = 0; N < oe.size(); N++) {
-        const D = oe.get(N), G = $.GetGeometry(H, D.geometryExpressID), ce = $.GetVertexArray(G.GetVertexData(), G.GetVertexDataSize()), $e = $.GetIndexArray(G.GetIndexData(), G.GetIndexDataSize()), Te = new to(), Ve = new Float32Array(ce.length / 2), he = new Float32Array(ce.length / 2);
+    return M.StreamAllMeshes(H, (ve) => {
+      const me = U.get(ve.expressID) ?? "other", ie = W.get(me), ne = ve.geometries;
+      for (let N = 0; N < ne.size(); N++) {
+        const D = ne.get(N), G = M.GetGeometry(H, D.geometryExpressID), ce = M.GetVertexArray(G.GetVertexData(), G.GetVertexDataSize()), $e = M.GetIndexArray(G.GetIndexData(), G.GetIndexDataSize()), Te = new tn(), Ve = new Float32Array(ce.length / 2), he = new Float32Array(ce.length / 2);
         for (let ze = 0; ze < ce.length; ze += 6) {
           const Je = ze / 2;
           Ve[Je] = ce[ze], Ve[Je + 1] = ce[ze + 1], Ve[Je + 2] = ce[ze + 2], he[Je] = ce[ze + 3], he[Je + 1] = ce[ze + 4], he[Je + 2] = ce[ze + 5];
         }
-        Te.setAttribute("position", new xn(Ve, 3)), Te.setAttribute("normal", new xn(he, 3)), Te.setIndex(new xn(new Uint32Array($e), 1));
-        const Be = new Qa();
+        Te.setAttribute("position", new xo(Ve, 3)), Te.setAttribute("normal", new xo(he, 3)), Te.setIndex(new xo(new Uint32Array($e), 1));
+        const Be = new el();
         Be.fromArray(D.flatTransformation);
         let He;
         const be = D.color;
-        be && (be.x !== 1 || be.y !== 1 || be.z !== 1) ? He = new ea({
-          color: new el(be.x, be.y, be.z),
+        be && (be.x !== 1 || be.y !== 1 || be.z !== 1) ? He = new ta({
+          color: new tl(be.x, be.y, be.z),
           transparent: be.w < 1,
           opacity: be.w,
-          side: ta
-        }) : He = Q, He._origOpacity = He.opacity;
-        const Ee = new ia(Te, He);
+          side: na
+        }) : He = Z, He._origOpacity = He.opacity;
+        const Ee = new ca(Te, He);
         Ee.applyMatrix4(Be), Ee.userData.expressID = ve.expressID, Ee.userData.category = me, ie.add(Ee), ye.expandByObject(Ee), z++, G.delete();
       }
-    }), $.CloseModel(H), {
+    }), M.CloseModel(H), {
       meshCount: z,
       bbox: ye,
       detailCategories: W,
       elementInfo: Y
     };
   }
-  ra = Jo.state(false);
-  Ql = function(e) {
-    e.nodeInputs || (e.nodeInputs = Jo.state({})), e.elementInputs || (e.elementInputs = Jo.state({})), e.deformOutputs || (e.deformOutputs = Jo.state({})), e.analyzeOutputs || (e.analyzeOutputs = Jo.state({}));
-    let b = "tonf", F = "m", $ = Ro(b, F), J = {
+  ia = Jn.state(false);
+  er = function(e) {
+    e.nodeInputs || (e.nodeInputs = Jn.state({})), e.elementInputs || (e.elementInputs = Jn.state({})), e.deformOutputs || (e.deformOutputs = Jn.state({})), e.analyzeOutputs || (e.analyzeOutputs = Jn.state({}));
+    let b = "tonf", P = "m", M = Pn(b, P), J = {
       forceId: "kgf",
       lengthId: "cm",
       label: "kgf/cm\xB2"
@@ -5940,7 +6007,7 @@ let __tla = Promise.all([
     }, U = /* @__PURE__ */ new Set(), Y = /* @__PURE__ */ new Set();
     let q = false;
     const W = /* @__PURE__ */ new Set(), ye = /* @__PURE__ */ new Map();
-    let z = "", Q = {}, ve = null, me = "", ie = [], oe = [], N = [], D = /* @__PURE__ */ new Set(), G = /* @__PURE__ */ new Set(), ce = /* @__PURE__ */ new Set(), $e = /* @__PURE__ */ new Map(), Te = /* @__PURE__ */ new Map(), Ve = null, he = [], Be = 0.2, He = 2, be = 2, Ee = false, ze = 2, Je = "x", st = /* @__PURE__ */ new Set(), Ue = true, at = 0.15, dt = 2, yt = 2, Tt = /* @__PURE__ */ new Set(), Ft = false, gt = "perimeter";
+    let z = "", Z = {}, ve = null, me = "", ie = [], ne = [], N = [], D = /* @__PURE__ */ new Set(), G = /* @__PURE__ */ new Set(), ce = /* @__PURE__ */ new Set(), $e = /* @__PURE__ */ new Map(), Te = /* @__PURE__ */ new Map(), Ve = null, he = [], Be = 0.2, He = 2, be = 2, Ee = false, ze = 2, Je = "x", st = /* @__PURE__ */ new Set(), Ue = true, at = 0.15, dt = 2, yt = 2, zt = /* @__PURE__ */ new Set(), Ft = false, gt = "perimeter";
     const ut = () => ({
       b: 0.3,
       h: 0.4,
@@ -5953,7 +6020,7 @@ let __tla = Promise.all([
       hc: 0.3,
       bc: 0.2,
       t: 8e-3
-    }), ro = (t, o) => ({
+    }), rn = (t, n) => ({
       bCol: 0.4,
       hCol: 0.4,
       dCol: 0.4,
@@ -5974,7 +6041,7 @@ let __tla = Promise.all([
         length: t
       }, ut),
       vigasY: Array.from({
-        length: o
+        length: n
       }, ut)
     }), Ne = {
       colMat: 0,
@@ -5986,10 +6053,10 @@ let __tla = Promise.all([
       perFloor: []
     };
     let xt = 0, Le = 3, qe = false, xe = 0, Ce = null, ge = 0, ke = [], Ge = 1, _e = true;
-    const it = pl();
+    const it = fl();
     it.div.style.display = "none";
     function mt() {
-      const t = un()[z];
+      const t = uo()[z];
       return t && t[xt] ? t[xt].dofs : [
         true,
         true,
@@ -6003,72 +6070,72 @@ let __tla = Promise.all([
     function Ht() {
       if (!bt) return;
       const t = et();
-      t && t.scene.remove(bt), bt.traverse((o) => {
-        if (o.geometry && o.geometry.dispose(), o.material) {
-          const n = o.material;
-          n.map && n.map.dispose(), n.dispose();
+      t && t.scene.remove(bt), bt.traverse((n) => {
+        if (n.geometry && n.geometry.dispose(), n.material) {
+          const o = n.material;
+          o.map && o.map.dispose(), o.dispose();
         }
       }), bt = null;
     }
-    function as(t, o, n, l, s) {
+    function as(t, n, o, l, s) {
       Ht();
       const d = et();
       if (!d) return;
-      bt = new sn(), bt.name = "refGrid";
-      const a = Math.min(...t), r = Math.max(...t), f = Math.min(...o), i = Math.max(...o), c = Math.max(...n), m = r - a || 1, S = i - f || 1, w = 3359829, y = 2241348;
-      for (const h of n) {
-        for (const T of o) {
-          const k = new to().setFromPoints([
+      bt = new so(), bt.name = "refGrid";
+      const a = Math.min(...t), r = Math.max(...t), f = Math.min(...n), i = Math.max(...n), c = Math.max(...o), m = r - a || 1, w = i - f || 1, E = 3359829, y = 2241348;
+      for (const h of o) {
+        for (const T of n) {
+          const k = new tn().setFromPoints([
             new Oe(a, h, T),
             new Oe(r, h, T)
-          ]), M = new Wo({
-            color: w,
+          ]), $ = new Wn({
+            color: E,
             dashSize: m * 0.015,
             gapSize: m * 0.01,
             transparent: true,
             opacity: 0.25
-          }), P = new Co(k, M);
-          P.computeLineDistances(), P.renderOrder = -10, bt.add(P);
+          }), C = new Cn(k, $);
+          C.computeLineDistances(), C.renderOrder = -10, bt.add(C);
         }
         for (const T of t) {
-          const k = new to().setFromPoints([
+          const k = new tn().setFromPoints([
             new Oe(T, h, f),
             new Oe(T, h, i)
-          ]), M = new Wo({
-            color: w,
-            dashSize: S * 0.015,
-            gapSize: S * 0.01,
+          ]), $ = new Wn({
+            color: E,
+            dashSize: w * 0.015,
+            gapSize: w * 0.01,
             transparent: true,
             opacity: 0.25
-          }), P = new Co(k, M);
-          P.computeLineDistances(), P.renderOrder = -10, bt.add(P);
+          }), C = new Cn(k, $);
+          C.computeLineDistances(), C.renderOrder = -10, bt.add(C);
         }
       }
-      for (const h of t) for (const T of o) {
-        const k = new to().setFromPoints([
+      for (const h of t) for (const T of n) {
+        const k = new tn().setFromPoints([
           new Oe(h, 0, T),
           new Oe(h, c, T)
-        ]), M = new Wo({
+        ]), $ = new Wn({
           color: y,
           dashSize: c * 0.01,
           gapSize: c * 8e-3,
           transparent: true,
           opacity: 0.15
-        }), P = new Co(k, M);
-        P.computeLineDistances(), P.renderOrder = -10, bt.add(P);
+        }), C = new Cn(k, $);
+        C.computeLineDistances(), C.renderOrder = -10, bt.add(C);
       }
-      const p = Math.min(m, S) * 0.015;
-      for (const h of n) for (const T of t) for (const k of o) {
-        const M = [
+      const p = Math.min(m, w) * 0.015;
+      for (const h of o) for (const T of t) for (const k of n) {
+        const $ = [
           new Oe(T - p, h, k),
           new Oe(T + p, h, k),
           new Oe(T, h, k - p),
           new Oe(T, h, k + p)
-        ], P = new to().setFromPoints(M), B = new Yo({
+        ], C = new tn().setFromPoints($), B = new Yn({
           color: 5596791,
           transparent: true,
           opacity: 0.4
-        }), x = new Go(P, B);
+        }), x = new Gn(C, B);
         x.renderOrder = -5, bt.add(x);
       }
       bt.traverse((h) => {
@@ -6077,72 +6144,72 @@ let __tla = Promise.all([
         }) : h.material.clippingPlanes = []);
       }), d.scene.add(bt), d.render();
     }
-    let Pt = null;
+    let Rt = null;
     function ls() {
-      if (!Pt) return;
+      if (!Rt) return;
       const t = et();
-      t && t.scene.remove(Pt), Pt.traverse((o) => {
-        if (o.geometry && o.geometry.dispose(), o.material) {
-          const n = o.material;
-          n.map && n.map.dispose(), n.dispose();
+      t && t.scene.remove(Rt), Rt.traverse((n) => {
+        if (n.geometry && n.geometry.dispose(), n.material) {
+          const o = n.material;
+          o.map && o.map.dispose(), o.dispose();
         }
-      }), Pt = null;
+      }), Rt = null;
     }
-    function Xo(t, o, n, l, s) {
+    function Xn(t, n, o, l, s) {
       ls();
       const d = et();
       if (!d) return;
-      Pt = new sn(), Pt.name = "gridAxes";
-      const a = Math.min(...t), r = Math.max(...t), f = Math.min(...o), i = Math.max(...o), c = r - a || 1, m = i - f || 1, S = Math.max(c, m), w = S * 0.08, y = l || t.map((x, u) => String.fromCharCode(65 + u)), p = s || o.map((x, u) => String(u + 1)), h = S * 0.018, T = o.length <= 1, k = 8947848;
+      Rt = new so(), Rt.name = "gridAxes";
+      const a = Math.min(...t), r = Math.max(...t), f = Math.min(...n), i = Math.max(...n), c = r - a || 1, m = i - f || 1, w = Math.max(c, m), E = w * 0.08, y = l || t.map((x, u) => String.fromCharCode(65 + u)), p = s || n.map((x, u) => String(u + 1)), h = w * 0.018, T = n.length <= 1, k = 8947848;
       for (let x = 0; x < t.length; x++) {
         const u = t[x];
         if (T) {
-          const I = -w - h * 1.5;
-          In(u, 0, 0, u, 0, I + h, k, Pt), kn(y[x] || `${x}`, u, 0, I, h, Pt);
+          const I = -E - h * 1.5;
+          Io(u, 0, 0, u, 0, I + h, k, Rt), ko(y[x] || `${x}`, u, 0, I, h, Rt);
         } else {
-          const I = f - w - h * 1.5;
-          In(u, f, 0, u, I + h, 0, k, Pt), kn(y[x] || `${x}`, u, I, 0, h, Pt);
+          const I = f - E - h * 1.5;
+          Io(u, f, 0, u, I + h, 0, k, Rt), ko(y[x] || `${x}`, u, I, 0, h, Rt);
         }
       }
-      if (!T) for (let x = 0; x < o.length; x++) {
-        const u = o[x], I = a - w - h * 1.5;
-        In(a, u, 0, I + h, u, 0, k, Pt), kn(p[x] || `${x}`, I, u, 0, h, Pt);
+      if (!T) for (let x = 0; x < n.length; x++) {
+        const u = n[x], I = a - E - h * 1.5;
+        Io(a, u, 0, I + h, u, 0, k, Rt), ko(p[x] || `${x}`, I, u, 0, h, Rt);
       }
-      const M = h * 1.8, P = w * 1.2, B = w * 1.2;
+      const $ = h * 1.8, C = E * 1.2, B = E * 1.2;
       for (let x = 0; x < t.length - 1; x++) {
         const u = t[x], I = t[x + 1], L = Math.abs(I - u), R = (u + I) / 2, j = `${L.toFixed(2)} m`;
-        T ? (En(j, R, 0, -P, M, Pt), Sn(u, 0, -P * 0.7, I, 0, -P * 0.7, 16763904, Pt)) : (En(j, R, f - B, 0, M, Pt), Sn(u, f - B * 0.7, 0, I, f - B * 0.7, 0, 16763904, Pt));
+        T ? (Eo(j, R, 0, -C, $, Rt), So(u, 0, -C * 0.7, I, 0, -C * 0.7, 16763904, Rt)) : (Eo(j, R, f - B, 0, $, Rt), So(u, f - B * 0.7, 0, I, f - B * 0.7, 0, 16763904, Rt));
       }
-      if (!T) for (let x = 0; x < o.length - 1; x++) {
-        const u = o[x], I = o[x + 1], L = Math.abs(I - u), R = (u + I) / 2, j = `${L.toFixed(2)} m`;
-        En(j, a - P, R, 0, M, Pt), Sn(a - P * 0.7, u, 0, a - P * 0.7, I, 0, 16763904, Pt);
+      if (!T) for (let x = 0; x < n.length - 1; x++) {
+        const u = n[x], I = n[x + 1], L = Math.abs(I - u), R = (u + I) / 2, j = `${L.toFixed(2)} m`;
+        Eo(j, a - C, R, 0, $, Rt), So(a - C * 0.7, u, 0, a - C * 0.7, I, 0, 16763904, Rt);
       }
-      Pt.traverse((x) => {
+      Rt.traverse((x) => {
         x.material && (Array.isArray(x.material) ? x.material.forEach((u) => {
           u.clippingPlanes = [];
         }) : x.material.clippingPlanes = []);
-      }), d.scene.add(Pt), d.render();
+      }), d.scene.add(Rt), d.render();
     }
     let Gt = null;
     function rs() {
       if (!Gt) return;
       const t = et();
-      t && t.scene.remove(Gt), Gt.traverse((o) => {
-        if (o.geometry && o.geometry.dispose(), o.material) {
-          const n = o.material;
-          n.map && n.map.dispose(), n.dispose();
+      t && t.scene.remove(Gt), Gt.traverse((n) => {
+        if (n.geometry && n.geometry.dispose(), n.material) {
+          const o = n.material;
+          o.map && o.map.dispose(), o.dispose();
         }
       }), Gt = null;
     }
-    function wn(t, o, n) {
+    function wo(t, n, o) {
       if (rs(), t.length === 0) return;
       const l = et();
       if (!l) return;
-      Gt = new sn(), Gt.name = "storyLevels";
-      const s = Math.min(...o), d = Math.max(...o), a = Math.min(...n), r = Math.max(...n), f = d - s || 1, i = r - a || 1, c = Math.max(f, i), m = c * 0.06, S = n.length <= 1, w = 4491519, y = c * 0.015;
+      Gt = new so(), Gt.name = "storyLevels";
+      const s = Math.min(...n), d = Math.max(...n), a = Math.min(...o), r = Math.max(...o), f = d - s || 1, i = r - a || 1, c = Math.max(f, i), m = c * 0.06, w = o.length <= 1, E = 4491519, y = c * 0.015;
       for (const p of t) {
         const h = p.elev;
-        S ? (Ko(s - m, 0, h, d + m, 0, h, w, Gt), is(p.name, d + m * 1.5, 0, h, y, Gt)) : (Ko(s, a, h, d, a, h, w, Gt), Ko(d, a, h, d, r, h, w, Gt), Ko(d, r, h, s, r, h, w, Gt), Ko(s, r, h, s, a, h, w, Gt), is(p.name, s - m * 1.5, a, h, y, Gt));
+        w ? (Kn(s - m, 0, h, d + m, 0, h, E, Gt), is(p.name, d + m * 1.5, 0, h, y, Gt)) : (Kn(s, a, h, d, a, h, E, Gt), Kn(d, a, h, d, r, h, E, Gt), Kn(d, r, h, s, r, h, E, Gt), Kn(s, r, h, s, a, h, E, Gt), is(p.name, s - m * 1.5, a, h, y, Gt));
       }
       Gt.traverse((p) => {
         p.material && (Array.isArray(p.material) ? p.material.forEach((h) => {
@@ -6150,193 +6217,193 @@ let __tla = Promise.all([
         }) : p.material.clippingPlanes = []);
       }), l.scene.add(Gt), l.render();
     }
-    function Ko(t, o, n, l, s, d, a, r) {
-      const f = Math.sqrt((l - t) ** 2 + (s - o) ** 2 + (d - n) ** 2) || 1, i = new to().setFromPoints([
-        new Oe(t, o, n),
+    function Kn(t, n, o, l, s, d, a, r) {
+      const f = Math.sqrt((l - t) ** 2 + (s - n) ** 2 + (d - o) ** 2) || 1, i = new tn().setFromPoints([
+        new Oe(t, n, o),
         new Oe(l, s, d)
-      ]), c = new Wo({
+      ]), c = new Wn({
         color: a,
         dashSize: f * 0.02,
         gapSize: f * 0.01,
         transparent: true,
         opacity: 0.5
-      }), m = new Co(i, c);
+      }), m = new Cn(i, c);
       m.computeLineDistances(), m.renderOrder = 50, r.add(m);
     }
-    function is(t, o, n, l, s, d) {
+    function is(t, n, o, l, s, d) {
       const a = document.createElement("canvas"), r = 512, f = 64;
       a.width = r, a.height = f;
       const i = a.getContext("2d");
       i.fillStyle = "rgba(30,60,120,0.8)";
       const c = 8;
       i.beginPath(), i.moveTo(c, 0), i.lineTo(r - c, 0), i.quadraticCurveTo(r, 0, r, c), i.lineTo(r, f - c), i.quadraticCurveTo(r, f, r - c, f), i.lineTo(c, f), i.quadraticCurveTo(0, f, 0, f - c), i.lineTo(0, c), i.quadraticCurveTo(0, 0, c, 0), i.closePath(), i.fill(), i.fillStyle = "#88bbff", i.font = "bold 38px monospace", i.textAlign = "center", i.textBaseline = "middle", i.fillText(t, r / 2, f / 2);
-      const m = new Xn(a);
+      const m = new Xo(a);
       m.needsUpdate = true;
-      const S = new fn({
+      const w = new fo({
         map: m,
         depthTest: false,
         transparent: true
-      }), w = new pn(S);
-      w.position.set(o, n, l), w.scale.set(s * 8, s, 1), w.renderOrder = 101, d.add(w);
+      }), E = new po(w);
+      E.position.set(n, o, l), E.scale.set(s * 8, s, 1), E.renderOrder = 101, d.add(E);
     }
-    function En(t, o, n, l, s, d) {
+    function Eo(t, n, o, l, s, d) {
       const a = document.createElement("canvas"), r = 256, f = 64;
       a.width = r, a.height = f;
       const i = a.getContext("2d");
       i.fillStyle = "rgba(0,0,0,0.75)";
       const c = 8;
       i.beginPath(), i.moveTo(c, 0), i.lineTo(r - c, 0), i.quadraticCurveTo(r, 0, r, c), i.lineTo(r, f - c), i.quadraticCurveTo(r, f, r - c, f), i.lineTo(c, f), i.quadraticCurveTo(0, f, 0, f - c), i.lineTo(0, c), i.quadraticCurveTo(0, 0, c, 0), i.closePath(), i.fill(), i.fillStyle = "#ffcc00", i.font = "bold 36px monospace", i.textAlign = "center", i.textBaseline = "middle", i.fillText(t, r / 2, f / 2);
-      const m = new ll(a);
-      m.minFilter = rl;
-      const S = new fn({
+      const m = new rl(a);
+      m.minFilter = il;
+      const w = new fo({
         map: m,
         transparent: true,
         depthTest: false
-      }), w = new pn(S);
-      w.position.set(o, n, l);
+      }), E = new po(w);
+      E.position.set(n, o, l);
       const y = r / f;
-      w.scale.set(s * y, s, 1), w.renderOrder = 999, d.add(w);
+      E.scale.set(s * y, s, 1), E.renderOrder = 999, d.add(E);
     }
-    function Sn(t, o, n, l, s, d, a, r) {
+    function So(t, n, o, l, s, d, a, r) {
       const f = [
-        new Oe(t, o, n),
+        new Oe(t, n, o),
         new Oe(l, s, d)
-      ], i = new to().setFromPoints(f), c = new Yo({
+      ], i = new tn().setFromPoints(f), c = new Yn({
         color: a,
         transparent: true,
         opacity: 0.6,
         depthTest: false
-      }), m = new Co(i, c);
+      }), m = new Cn(i, c);
       m.renderOrder = 998, r.add(m);
     }
-    function In(t, o, n, l, s, d, a, r) {
-      const f = new to().setFromPoints([
-        new Oe(t, o, n),
+    function Io(t, n, o, l, s, d, a, r) {
+      const f = new tn().setFromPoints([
+        new Oe(t, n, o),
         new Oe(l, s, d)
-      ]), i = new Wo({
+      ]), i = new Wn({
         color: a,
-        dashSize: 0.15 * Math.max(Math.abs(l - t), Math.abs(s - o), Math.abs(d - n), 0.1),
-        gapSize: 0.1 * Math.max(Math.abs(l - t), Math.abs(s - o), Math.abs(d - n), 0.1),
+        dashSize: 0.15 * Math.max(Math.abs(l - t), Math.abs(s - n), Math.abs(d - o), 0.1),
+        gapSize: 0.1 * Math.max(Math.abs(l - t), Math.abs(s - n), Math.abs(d - o), 0.1),
         transparent: true,
         opacity: 0.6
-      }), c = new Co(f, i);
+      }), c = new Cn(f, i);
       c.computeLineDistances(), r.add(c);
     }
-    function kn(t, o, n, l, s, d) {
+    function ko(t, n, o, l, s, d) {
       const a = document.createElement("canvas"), r = 128;
       a.width = r, a.height = r;
       const f = a.getContext("2d");
       f.beginPath(), f.arc(r / 2, r / 2, r * 0.42, 0, Math.PI * 2), f.fillStyle = "rgba(255,255,255,0.9)", f.fill(), f.lineWidth = r * 0.04, f.strokeStyle = "#555", f.stroke(), f.fillStyle = "#222", f.font = `bold ${r * 0.45}px Arial`, f.textAlign = "center", f.textBaseline = "middle", f.fillText(t, r / 2, r / 2 + r * 0.02);
-      const i = new Xn(a);
+      const i = new Xo(a);
       i.needsUpdate = true;
-      const c = new fn({
+      const c = new fo({
         map: i,
         depthTest: false,
         transparent: true
-      }), m = new pn(c);
-      m.position.set(o, n, l);
-      const S = s * 2;
-      m.scale.set(S, S, 1), m.renderOrder = 100, d.add(m);
+      }), m = new po(c);
+      m.position.set(n, o, l);
+      const w = s * 2;
+      m.scale.set(w, w, 1), m.renderOrder = 100, d.add(m);
     }
     const Ke = {
-      addNode(t, o, n) {
+      addNode(t, n, o) {
         const l = [
           ...e.nodes.val
         ], s = l.length;
         return l.push([
           t,
-          o,
-          n
-        ]), e.nodes.val = l, console.log(`Node ${s} at (${t}, ${o}, ${n})`), Ze(), s;
+          n,
+          o
+        ]), e.nodes.val = l, console.log(`Node ${s} at (${t}, ${n}, ${o})`), Ze(), s;
       },
       removeNode(t) {
-        const o = [
+        const n = [
           ...e.nodes.val
         ];
-        if (t < 0 || t >= o.length) {
+        if (t < 0 || t >= n.length) {
           console.error(`Node ${t} not found`);
           return;
         }
-        o.splice(t, 1);
-        const n = e.elements.val.map(([l, s]) => {
+        n.splice(t, 1);
+        const o = e.elements.val.map(([l, s]) => {
           const d = l > t ? l - 1 : l, a = s > t ? s - 1 : s;
           return l === t || s === t ? null : [
             d,
             a
           ];
         }).filter((l) => l !== null);
-        e.nodes.val = o, e.elements.val = n, console.log(`Node ${t} removed`), Ze();
+        e.nodes.val = n, e.elements.val = o, console.log(`Node ${t} removed`), Ze();
       },
       listNodes() {
         const t = e.nodes.val;
-        return console.table(t.map((o, n) => ({
-          id: n,
-          x: o[0],
-          y: o[1],
-          z: o[2]
+        return console.table(t.map((n, o) => ({
+          id: o,
+          x: n[0],
+          y: n[1],
+          z: n[2]
         }))), t;
       },
-      addFrame(t, o) {
-        const n = [
-          ...e.elements.val
-        ], l = n.length;
-        return n.push([
-          t,
-          o
-        ]), e.elements.val = n, console.log(`Element ${l}: node ${t} -> node ${o}`), Ze(), l;
-      },
-      removeFrame(t) {
+      addFrame(t, n) {
         const o = [
           ...e.elements.val
+        ], l = o.length;
+        return o.push([
+          t,
+          n
+        ]), e.elements.val = o, console.log(`Element ${l}: node ${t} -> node ${n}`), Ze(), l;
+      },
+      removeFrame(t) {
+        const n = [
+          ...e.elements.val
         ];
-        if (t < 0 || t >= o.length) {
+        if (t < 0 || t >= n.length) {
           console.error(`Element ${t} not found`);
           return;
         }
-        o.splice(t, 1), e.elements.val = o, console.log(`Element ${t} removed`), Ze();
+        n.splice(t, 1), e.elements.val = n, console.log(`Element ${t} removed`), Ze();
       },
       listFrames() {
         const t = e.elements.val;
-        return console.table(t.map((o, n) => ({
-          id: n,
-          nodeI: o[0],
-          nodeJ: o[1]
+        return console.table(t.map((n, o) => ({
+          id: o,
+          nodeI: n[0],
+          nodeJ: n[1]
         }))), t;
       },
-      addSupport(t, o) {
+      addSupport(t, n) {
         if (!e.nodeInputs) return;
-        const n = {
+        const o = {
           ...e.nodeInputs.val
-        }, l = new Map(n.supports || []);
-        l.set(t, o || [
+        }, l = new Map(o.supports || []);
+        l.set(t, n || [
           true,
           true,
           true,
           true,
           true,
           true
-        ]), n.supports = l, e.nodeInputs.val = n, console.log(`Support added at node ${t}`), Ze();
+        ]), o.supports = l, e.nodeInputs.val = o, console.log(`Support added at node ${t}`), Ze();
       },
       removeSupport(t) {
         if (!e.nodeInputs) return;
-        const o = {
-          ...e.nodeInputs.val
-        }, n = new Map(o.supports || []);
-        n.delete(t), o.supports = n, e.nodeInputs.val = o, console.log(`Support removed from node ${t}`), Ze();
-      },
-      addLoad(t, o) {
-        if (!e.nodeInputs) return;
         const n = {
           ...e.nodeInputs.val
-        }, l = new Map(n.loads || []);
-        l.set(t, o), n.loads = l, e.nodeInputs.val = n, console.log(`Load added at node ${t}: [${o.join(", ")}]`), Ze();
+        }, o = new Map(n.supports || []);
+        o.delete(t), n.supports = o, e.nodeInputs.val = n, console.log(`Support removed from node ${t}`), Ze();
+      },
+      addLoad(t, n) {
+        if (!e.nodeInputs) return;
+        const o = {
+          ...e.nodeInputs.val
+        }, l = new Map(o.loads || []);
+        l.set(t, n), o.loads = l, e.nodeInputs.val = o, console.log(`Load added at node ${t}: [${n.join(", ")}]`), Ze();
       },
       removeLoad(t) {
         if (!e.nodeInputs) return;
-        const o = {
+        const n = {
           ...e.nodeInputs.val
-        }, n = new Map(o.loads || []);
-        n.delete(t), o.loads = n, e.nodeInputs.val = o, console.log(`Load removed from node ${t}`), Ze();
+        }, o = new Map(n.loads || []);
+        o.delete(t), n.loads = o, e.nodeInputs.val = n, console.log(`Load removed from node ${t}`), Ze();
       },
       listSupports() {
         if (!e.nodeInputs) return;
@@ -6345,11 +6412,11 @@ let __tla = Promise.all([
           console.log("No supports");
           return;
         }
-        const o = [];
-        return t.forEach((n, l) => o.push({
+        const n = [];
+        return t.forEach((o, l) => n.push({
           node: l,
-          dof: n.map((s) => s ? 1 : 0).join("")
-        })), console.table(o), t;
+          dof: o.map((s) => s ? 1 : 0).join("")
+        })), console.table(n), t;
       },
       listLoads() {
         if (!e.nodeInputs) return;
@@ -6358,32 +6425,32 @@ let __tla = Promise.all([
           console.log("No loads");
           return;
         }
-        const o = [];
-        return t.forEach((n, l) => o.push({
+        const n = [];
+        return t.forEach((o, l) => n.push({
           node: l,
-          Fx: n[0],
-          Fy: n[1],
-          Fz: n[2]
-        })), console.table(o), t;
+          Fx: o[0],
+          Fy: o[1],
+          Fz: o[2]
+        })), console.table(n), t;
       },
       info() {
         var _a2, _b, _c, _d, _e2, _f;
-        const t = e.nodes.val.length, o = e.elements.val.length, n = ((_c = (_b = (_a2 = e.nodeInputs) == null ? void 0 : _a2.val) == null ? void 0 : _b.supports) == null ? void 0 : _c.size) || 0, l = ((_f = (_e2 = (_d = e.nodeInputs) == null ? void 0 : _d.val) == null ? void 0 : _e2.loads) == null ? void 0 : _f.size) || 0;
-        return console.log(`Model: ${t} nodes, ${o} elements, ${n} supports, ${l} loads`), {
+        const t = e.nodes.val.length, n = e.elements.val.length, o = ((_c = (_b = (_a2 = e.nodeInputs) == null ? void 0 : _a2.val) == null ? void 0 : _b.supports) == null ? void 0 : _c.size) || 0, l = ((_f = (_e2 = (_d = e.nodeInputs) == null ? void 0 : _d.val) == null ? void 0 : _e2.loads) == null ? void 0 : _f.size) || 0;
+        return console.log(`Model: ${t} nodes, ${n} elements, ${o} supports, ${l} loads`), {
           nodes: t,
-          elements: o,
-          supports: n,
+          elements: n,
+          supports: o,
           loads: l
         };
       },
-      set(t, o) {
+      set(t, n) {
         var _a2, _b, _c, _d;
-        const n = Ae.querySelectorAll("input[type=checkbox]");
-        for (const l of n) {
+        const o = Ae.querySelectorAll("input[type=checkbox]");
+        for (const l of o) {
           const s = ((_b = (_a2 = l.closest("label")) == null ? void 0 : _a2.textContent) == null ? void 0 : _b.trim()) || ((_d = (_c = l.parentElement) == null ? void 0 : _c.textContent) == null ? void 0 : _d.trim()) || "", d = l.id || "";
           if (s.toLowerCase().includes(t.toLowerCase()) || d.toLowerCase().includes(t.toLowerCase())) {
             const a = l;
-            return a.checked = o !== void 0 ? o : !a.checked, a.dispatchEvent(new Event("change", {
+            return a.checked = n !== void 0 ? n : !a.checked, a.dispatchEvent(new Event("change", {
               bubbles: true
             })), console.log(`${s || d}: ${a.checked}`), a.checked;
           }
@@ -6391,40 +6458,40 @@ let __tla = Promise.all([
         console.log(`Setting "${t}" not found. Use cad.settings() to list.`);
       },
       settings() {
-        const t = Ae.querySelectorAll("input[type=checkbox]"), o = {};
-        return t.forEach((n) => {
+        const t = Ae.querySelectorAll("input[type=checkbox]"), n = {};
+        return t.forEach((o) => {
           var _a2, _b, _c, _d;
-          const l = n, s = ((_b = (_a2 = l.closest("label")) == null ? void 0 : _a2.textContent) == null ? void 0 : _b.trim()) || ((_d = (_c = l.parentElement) == null ? void 0 : _c.textContent) == null ? void 0 : _d.trim()) || l.id || "?";
-          o[s] = l.checked;
-        }), console.table(o), o;
+          const l = o, s = ((_b = (_a2 = l.closest("label")) == null ? void 0 : _a2.textContent) == null ? void 0 : _b.trim()) || ((_d = (_c = l.parentElement) == null ? void 0 : _c.textContent) == null ? void 0 : _d.trim()) || l.id || "?";
+          n[s] = l.checked;
+        }), console.table(n), n;
       },
-      param(t, o) {
-        const n = window.__cad;
-        if (n == null ? void 0 : n.setParam) return n.setParam(t, o), console.log(`${t} = ${o}`), o;
+      param(t, n) {
+        const o = window.__cad;
+        if (o == null ? void 0 : o.setParam) return o.setParam(t, n), console.log(`${t} = ${n}`), n;
         console.log("Parameters not available");
       },
       params() {
         const t = window.__cad;
         if (t == null ? void 0 : t.getParams) {
-          const o = t.getParams();
-          return console.table(o), o;
+          const n = t.getParams();
+          return console.table(n), n;
         }
         console.log("Parameters not available");
       },
       use(t) {
-        const o = window.__cad;
-        if (o == null ? void 0 : o.setGenerator) return o.setGenerator(t), console.log(`Generator: ${t}`), t;
+        const n = window.__cad;
+        if (n == null ? void 0 : n.setGenerator) return n.setGenerator(t), console.log(`Generator: ${t}`), t;
       },
-      panel(t, o, n) {
+      panel(t, n, o) {
         const l = window.__cad;
-        if (l == null ? void 0 : l.createCustomPanel) return l.createCustomPanel(t, o, n);
+        if (l == null ? void 0 : l.createCustomPanel) return l.createCustomPanel(t, n, o);
         console.log("Custom panels not available");
       },
       removePanel(t) {
-        const o = window.__cad;
-        (o == null ? void 0 : o.removeCustomPanel) && (o.removeCustomPanel(t), console.log(`Panel "${t}" removed`));
+        const n = window.__cad;
+        (n == null ? void 0 : n.removeCustomPanel) && (n.removeCustomPanel(t), console.log(`Panel "${t}" removed`));
       },
-      refgrid(t, o, n) {
+      refgrid(t, n, o) {
         if (!t) {
           Ht(), console.log("Reference grid cleared");
           return;
@@ -6436,13 +6503,13 @@ let __tla = Promise.all([
         const s = [
           0
         ];
-        for (const a of o || [
+        for (const a of n || [
           0
         ]) s.push(s[s.length - 1] + a);
         const d = [
           0
         ];
-        for (const a of n || [
+        for (const a of o || [
           3
         ]) d.push(d[d.length - 1] + a);
         as(l, s, d), We = l.map((a, r) => ({
@@ -6454,14 +6521,14 @@ let __tla = Promise.all([
         })), pt = d[d.length - 1], lt = d.map((a, r) => ({
           label: r === 0 ? "Base" : `P${r}`,
           elev: a
-        })), Xo(We.map((a) => a.coord), Xe.map((a) => a.coord), pt, We.map((a) => a.label), Xe.map((a) => a.label));
+        })), Xn(We.map((a) => a.coord), Xe.map((a) => a.coord), pt, We.map((a) => a.label), Xe.map((a) => a.label));
         {
           const a = d.map((r, f) => ({
             name: f === 0 ? "Base" : `P${f}`,
             height: f > 0 ? r - d[f - 1] : 0,
             elev: r
           }));
-          wn(a, We.map((r) => r.coord), Xe.map((r) => r.coord));
+          wo(a, We.map((r) => r.coord), Xe.map((r) => r.coord));
         }
         return console.log(`RefGrid: X=[${l}] Z=[${s}] Y=[${d}]`), {
           xCoords: l,
@@ -6475,93 +6542,93 @@ let __tla = Promise.all([
           console.log("Error: call cad.refgrid() first to define axes and levels");
           return;
         }
-        const o = (t == null ? void 0 : t.col) || "40x40", n = (t == null ? void 0 : t.viga) || "30x40", l = (t == null ? void 0 : t.fc) || 210, [s, d] = o.split("x").map((_) => parseFloat(_) / 100), [a, r] = n.split("x").map((_) => parseFloat(_) / 100), f = We.map((_) => _.coord), i = Xe.map((_) => _.coord), c = lt.map((_) => _.elev), m = f.length, S = i.length, w = c.length, y = w - 1, p = [], h = {};
-        for (let _ = 0; _ < w; _++) for (let fe = 0; fe < S; fe++) for (let ne = 0; ne < m; ne++) h[`${ne},${fe},${_}`] = p.length, p.push([
-          f[ne],
+        const n = (t == null ? void 0 : t.col) || "40x40", o = (t == null ? void 0 : t.viga) || "30x40", l = (t == null ? void 0 : t.fc) || 210, [s, d] = n.split("x").map((_) => parseFloat(_) / 100), [a, r] = o.split("x").map((_) => parseFloat(_) / 100), f = We.map((_) => _.coord), i = Xe.map((_) => _.coord), c = lt.map((_) => _.elev), m = f.length, w = i.length, E = c.length, y = E - 1, p = [], h = {};
+        for (let _ = 0; _ < E; _++) for (let fe = 0; fe < w; fe++) for (let oe = 0; oe < m; oe++) h[`${oe},${fe},${_}`] = p.length, p.push([
+          f[oe],
           i[fe],
           c[_]
         ]);
-        const T = [], k = /* @__PURE__ */ new Set(), M = /* @__PURE__ */ new Set(), P = /* @__PURE__ */ new Map();
-        for (let _ = 0; _ < y; _++) for (let fe = 0; fe < S; fe++) for (let ne = 0; ne < m; ne++) {
+        const T = [], k = /* @__PURE__ */ new Set(), $ = /* @__PURE__ */ new Set(), C = /* @__PURE__ */ new Map();
+        for (let _ = 0; _ < y; _++) for (let fe = 0; fe < w; fe++) for (let oe = 0; oe < m; oe++) {
           const pe = T.length;
           T.push([
-            h[`${ne},${fe},${_}`],
-            h[`${ne},${fe},${_ + 1}`]
-          ]), k.add(pe), P.set(pe, _);
+            h[`${oe},${fe},${_}`],
+            h[`${oe},${fe},${_ + 1}`]
+          ]), k.add(pe), C.set(pe, _);
         }
-        for (let _ = 1; _ < w; _++) for (let fe = 0; fe < S; fe++) for (let ne = 0; ne < m - 1; ne++) {
+        for (let _ = 1; _ < E; _++) for (let fe = 0; fe < w; fe++) for (let oe = 0; oe < m - 1; oe++) {
           const pe = T.length;
           T.push([
-            h[`${ne},${fe},${_}`],
-            h[`${ne + 1},${fe},${_}`]
-          ]), M.add(pe), P.set(pe, _ - 1);
+            h[`${oe},${fe},${_}`],
+            h[`${oe + 1},${fe},${_}`]
+          ]), $.add(pe), C.set(pe, _ - 1);
         }
-        for (let _ = 1; _ < w; _++) for (let fe = 0; fe < m; fe++) for (let ne = 0; ne < S - 1; ne++) {
+        for (let _ = 1; _ < E; _++) for (let fe = 0; fe < m; fe++) for (let oe = 0; oe < w - 1; oe++) {
           const pe = T.length;
           T.push([
-            h[`${fe},${ne},${_}`],
-            h[`${fe},${ne + 1},${_}`]
-          ]), M.add(pe), P.set(pe, _ - 1);
+            h[`${fe},${oe},${_}`],
+            h[`${fe},${oe + 1},${_}`]
+          ]), $.add(pe), C.set(pe, _ - 1);
         }
         const B = ((_a2 = t == null ? void 0 : t.braces) == null ? void 0 : _a2.toLowerCase()) || "", x = /* @__PURE__ */ new Set();
         if (B) {
           const _ = B === "all" || B === "x" || B === "perimeter", fe = B === "all" || B === "y" || B === "perimeter";
-          for (let ne = 0; ne < y; ne++) {
-            if (_) for (let pe = 0; pe < S; pe++) {
-              if (B === "perimeter" && pe !== 0 && pe !== S - 1) continue;
+          for (let oe = 0; oe < y; oe++) {
+            if (_) for (let pe = 0; pe < w; pe++) {
+              if (B === "perimeter" && pe !== 0 && pe !== w - 1) continue;
               const ee = Math.floor((m - 1) / 2);
               for (let ue = 0; ue < m - 1; ue++) {
                 if (B === "perimeter" && ue !== ee) continue;
                 const we = T.length;
                 T.push([
-                  h[`${ue},${pe},${ne}`],
-                  h[`${ue + 1},${pe},${ne + 1}`]
-                ]), x.add(we), P.set(we, ne);
+                  h[`${ue},${pe},${oe}`],
+                  h[`${ue + 1},${pe},${oe + 1}`]
+                ]), x.add(we), C.set(we, oe);
                 const se = T.length;
                 T.push([
-                  h[`${ue + 1},${pe},${ne}`],
-                  h[`${ue},${pe},${ne + 1}`]
-                ]), x.add(se), P.set(se, ne);
+                  h[`${ue + 1},${pe},${oe}`],
+                  h[`${ue},${pe},${oe + 1}`]
+                ]), x.add(se), C.set(se, oe);
               }
             }
             if (fe) for (let pe = 0; pe < m; pe++) {
               if (B === "perimeter" && pe !== 0 && pe !== m - 1) continue;
-              const ee = Math.floor((S - 1) / 2);
-              for (let ue = 0; ue < S - 1; ue++) {
+              const ee = Math.floor((w - 1) / 2);
+              for (let ue = 0; ue < w - 1; ue++) {
                 if (B === "perimeter" && ue !== ee) continue;
                 const we = T.length;
                 T.push([
-                  h[`${pe},${ue},${ne}`],
-                  h[`${pe},${ue + 1},${ne + 1}`]
-                ]), x.add(we), P.set(we, ne);
+                  h[`${pe},${ue},${oe}`],
+                  h[`${pe},${ue + 1},${oe + 1}`]
+                ]), x.add(we), C.set(we, oe);
                 const se = T.length;
                 T.push([
-                  h[`${pe},${ue + 1},${ne}`],
-                  h[`${pe},${ue},${ne + 1}`]
-                ]), x.add(se), P.set(se, ne);
+                  h[`${pe},${ue + 1},${oe}`],
+                  h[`${pe},${ue},${oe + 1}`]
+                ]), x.add(se), C.set(se, oe);
               }
             }
           }
         }
-        const u = 15100 * Math.sqrt(l) * 10, I = u / (2 * (1 + 0.2)), L = s * d, R = s * d ** 3 / 12, j = d * s ** 3 / 12, g = s * d * (s ** 2 + d ** 2) / 12, E = a * r, v = a * r ** 3 / 12, C = r * a ** 3 / 12, X = a * r * (a ** 2 + r ** 2) / 12, V = /* @__PURE__ */ new Map(), ae = /* @__PURE__ */ new Map(), Z = /* @__PURE__ */ new Map(), K = /* @__PURE__ */ new Map(), de = /* @__PURE__ */ new Map(), re = /* @__PURE__ */ new Map(), Ie = /* @__PURE__ */ new Map();
-        for (let _ = 0; _ < T.length; _++) V.set(_, u), ae.set(_, I), k.has(_) ? (Z.set(_, L), K.set(_, R), de.set(_, j), re.set(_, g), Ie.set(_, {
+        const u = 15100 * Math.sqrt(l) * 10, I = u / (2 * (1 + 0.2)), L = s * d, R = s * d ** 3 / 12, j = d * s ** 3 / 12, g = s * d * (s ** 2 + d ** 2) / 12, S = a * r, v = a * r ** 3 / 12, F = r * a ** 3 / 12, X = a * r * (a ** 2 + r ** 2) / 12, V = /* @__PURE__ */ new Map(), ae = /* @__PURE__ */ new Map(), Q = /* @__PURE__ */ new Map(), K = /* @__PURE__ */ new Map(), de = /* @__PURE__ */ new Map(), re = /* @__PURE__ */ new Map(), Ie = /* @__PURE__ */ new Map();
+        for (let _ = 0; _ < T.length; _++) V.set(_, u), ae.set(_, I), k.has(_) ? (Q.set(_, L), K.set(_, R), de.set(_, j), re.set(_, g), Ie.set(_, {
           type: "rect",
           b: s,
           h: d,
-          name: `COL${o}`
-        })) : x.has(_) ? (Z.set(_, L), K.set(_, R), de.set(_, j), re.set(_, g), Ie.set(_, {
+          name: `COL${n}`
+        })) : x.has(_) ? (Q.set(_, L), K.set(_, R), de.set(_, j), re.set(_, g), Ie.set(_, {
           type: "rect",
           b: s,
           h: d,
-          name: `BR${o}`
-        })) : (Z.set(_, E), K.set(_, v), de.set(_, C), re.set(_, X), Ie.set(_, {
+          name: `BR${n}`
+        })) : (Q.set(_, S), K.set(_, v), de.set(_, F), re.set(_, X), Ie.set(_, {
           type: "rect",
           b: a,
           h: r,
-          name: `V${n}`
+          name: `V${o}`
         }));
-        const Pe = /* @__PURE__ */ new Map();
-        for (let _ = 0; _ < S; _++) for (let fe = 0; fe < m; fe++) Pe.set(h[`${fe},${_},0`], [
+        const Re = /* @__PURE__ */ new Map();
+        for (let _ = 0; _ < w; _++) for (let fe = 0; fe < m; fe++) Re.set(h[`${fe},${_},0`], [
           true,
           true,
           true,
@@ -6570,30 +6637,30 @@ let __tla = Promise.all([
           true
         ]);
         return e.nodes.val = p, e.elements.val = T, e.nodeInputs.val = {
-          supports: Pe,
+          supports: Re,
           loads: /* @__PURE__ */ new Map()
         }, e.elementInputs.val = {
           elasticities: V,
           shearModuli: ae,
-          areas: Z,
+          areas: Q,
           momentsOfInertiaZ: K,
           momentsOfInertiaY: de,
           torsionalConstants: re,
           sectionShapes: Ie
-        }, D = k, G = M, $e = P, console.log(`Built: ${p.length} nodes, ${T.length} elements (${k.size} cols, ${M.size} beams, ${x.size} braces)`), console.log(`  Col: ${o}, Viga: ${n}, f'c=${l}${B ? `, braces=${B}` : ""}`), {
+        }, D = k, G = $, $e = C, console.log(`Built: ${p.length} nodes, ${T.length} elements (${k.size} cols, ${$.size} beams, ${x.size} braces)`), console.log(`  Col: ${n}, Viga: ${o}, f'c=${l}${B ? `, braces=${B}` : ""}`), {
           nodes: p.length,
           elements: T.length
         };
       },
-      addCol(t, o, n) {
+      addCol(t, n, o) {
         var _a2, _b, _c, _d, _e2, _f;
-        const l = We.findIndex((y) => y.label === t), s = Xe.findIndex((y) => y.label === o);
+        const l = We.findIndex((y) => y.label === t), s = Xe.findIndex((y) => y.label === n);
         if (l < 0) {
           console.log(`Axis "${t}" not found. Available: ${We.map((y) => y.label)}`);
           return;
         }
         if (s < 0) {
-          console.log(`Axis "${o}" not found. Available: ${Xe.map((y) => y.label)}`);
+          console.log(`Axis "${n}" not found. Available: ${Xe.map((y) => y.label)}`);
           return;
         }
         const d = We[l].coord, a = Xe[s].coord, r = [
@@ -6609,12 +6676,12 @@ let __tla = Promise.all([
             a,
             y
           ]), r.length - 1);
-        }, c = n ? [
-          lt.findIndex((y) => y.label === n)
+        }, c = o ? [
+          lt.findIndex((y) => y.label === o)
         ] : Array.from({
           length: lt.length - 1
-        }, (y, p) => p + 1), m = new Map(((_d = (_c = e.nodeInputs) == null ? void 0 : _c.val) == null ? void 0 : _d.supports) || []), S = i(lt[0].elev);
-        m.has(S) || m.set(S, [
+        }, (y, p) => p + 1), m = new Map(((_d = (_c = e.nodeInputs) == null ? void 0 : _c.val) == null ? void 0 : _d.supports) || []), w = i(lt[0].elev);
+        m.has(w) || m.set(w, [
           true,
           true,
           true,
@@ -6622,76 +6689,76 @@ let __tla = Promise.all([
           true,
           true
         ]);
-        let w = 0;
+        let E = 0;
         for (const y of c) {
           if (y < 1 || y >= lt.length) continue;
           const p = i(lt[y - 1].elev), h = i(lt[y].elev);
           f.push([
             p,
             h
-          ]), D.add(f.length - 1), $e.set(f.length - 1, y - 1), w++;
+          ]), D.add(f.length - 1), $e.set(f.length - 1, y - 1), E++;
         }
         return e.nodes.val = r, e.elements.val = f, e.nodeInputs.val = {
           ...e.nodeInputs.val,
           supports: m,
           loads: ((_f = (_e2 = e.nodeInputs) == null ? void 0 : _e2.val) == null ? void 0 : _f.loads) || /* @__PURE__ */ new Map()
-        }, console.log(`Added ${w} column(s) at ${t}-${o}${n ? ` story ${n}` : ""}`), w;
+        }, console.log(`Added ${E} column(s) at ${t}-${n}${o ? ` story ${o}` : ""}`), E;
       },
-      addBeam(t, o, n, l, s) {
+      addBeam(t, n, o, l, s) {
         var _a2;
-        const d = We.findIndex((P) => P.label === t), a = Xe.findIndex((P) => P.label === o), r = We.findIndex((P) => P.label === n), f = Xe.findIndex((P) => P.label === l), i = lt.findIndex((P) => P.label === s);
+        const d = We.findIndex((C) => C.label === t), a = Xe.findIndex((C) => C.label === n), r = We.findIndex((C) => C.label === o), f = Xe.findIndex((C) => C.label === l), i = lt.findIndex((C) => C.label === s);
         if (d < 0 || a < 0 || r < 0 || f < 0) {
           console.log("Axis not found");
           return;
         }
         if (i < 1) {
-          console.log(`Story "${s}" not found. Available: ${lt.filter((P) => P.label !== "Base").map((P) => P.label)}`);
+          console.log(`Story "${s}" not found. Available: ${lt.filter((C) => C.label !== "Base").map((C) => C.label)}`);
           return;
         }
-        const c = We[d].coord, m = Xe[a].coord, S = We[r].coord, w = Xe[f].coord, y = lt[i].elev, p = [
+        const c = We[d].coord, m = Xe[a].coord, w = We[r].coord, E = Xe[f].coord, y = lt[i].elev, p = [
           ...e.nodes.val
         ], h = [
           ...((_a2 = e.elements) == null ? void 0 : _a2.val) || []
-        ], T = (P, B, x) => {
-          const u = p.findIndex((I) => Math.abs(I[0] - P) < 1e-3 && Math.abs(I[1] - B) < 1e-3 && Math.abs(I[2] - x) < 1e-3);
+        ], T = (C, B, x) => {
+          const u = p.findIndex((I) => Math.abs(I[0] - C) < 1e-3 && Math.abs(I[1] - B) < 1e-3 && Math.abs(I[2] - x) < 1e-3);
           return u >= 0 ? u : (p.push([
-            P,
+            C,
             B,
             x
           ]), p.length - 1);
-        }, k = T(c, m, y), M = T(S, w, y);
+        }, k = T(c, m, y), $ = T(w, E, y);
         return h.push([
           k,
-          M
-        ]), G.add(h.length - 1), $e.set(h.length - 1, i - 1), e.nodes.val = p, e.elements.val = h, console.log(`Added beam ${t}-${o} \u2192 ${n}-${l} at ${s}`), h.length - 1;
+          $
+        ]), G.add(h.length - 1), $e.set(h.length - 1, i - 1), e.nodes.val = p, e.elements.val = h, console.log(`Added beam ${t}-${n} \u2192 ${o}-${l} at ${s}`), h.length - 1;
       },
-      addBrace(t, o, n, l, s, d) {
+      addBrace(t, n, o, l, s, d) {
         var _a2;
-        const a = We.findIndex((u) => u.label === t), r = Xe.findIndex((u) => u.label === o), f = lt.findIndex((u) => u.label === n), i = We.findIndex((u) => u.label === l), c = Xe.findIndex((u) => u.label === s), m = lt.findIndex((u) => u.label === d);
+        const a = We.findIndex((u) => u.label === t), r = Xe.findIndex((u) => u.label === n), f = lt.findIndex((u) => u.label === o), i = We.findIndex((u) => u.label === l), c = Xe.findIndex((u) => u.label === s), m = lt.findIndex((u) => u.label === d);
         if (a < 0 || r < 0 || f < 0) {
-          console.log(`Point 1 not found: ${t}-${o}@${n}`);
+          console.log(`Point 1 not found: ${t}-${n}@${o}`);
           return;
         }
         if (i < 0 || c < 0 || m < 0) {
           console.log(`Point 2 not found: ${l}-${s}@${d}`);
           return;
         }
-        const S = We[a].coord, w = Xe[r].coord, y = lt[f].elev, p = We[i].coord, h = Xe[c].coord, T = lt[m].elev, k = [
+        const w = We[a].coord, E = Xe[r].coord, y = lt[f].elev, p = We[i].coord, h = Xe[c].coord, T = lt[m].elev, k = [
           ...e.nodes.val
-        ], M = [
+        ], $ = [
           ...((_a2 = e.elements) == null ? void 0 : _a2.val) || []
-        ], P = (u, I, L) => {
+        ], C = (u, I, L) => {
           const R = k.findIndex((j) => Math.abs(j[0] - u) < 1e-3 && Math.abs(j[1] - I) < 1e-3 && Math.abs(j[2] - L) < 1e-3);
           return R >= 0 ? R : (k.push([
             u,
             I,
             L
           ]), k.length - 1);
-        }, B = P(S, w, y), x = P(p, h, T);
-        return M.push([
+        }, B = C(w, E, y), x = C(p, h, T);
+        return $.push([
           B,
           x
-        ]), $e.set(M.length - 1, Math.min(f, m)), e.nodes.val = k, e.elements.val = M, console.log(`Added brace ${t}-${o}@${n} \u2192 ${l}-${s}@${d}`), M.length - 1;
+        ]), $e.set($.length - 1, Math.min(f, m)), e.nodes.val = k, e.elements.val = $, console.log(`Added brace ${t}-${n}@${o} \u2192 ${l}-${s}@${d}`), $.length - 1;
       },
       help() {
         return `=== CLI Commands ===
@@ -6752,10 +6819,10 @@ VIEW:
       },
       model3d(t) {
         Ke.clear();
-        const o = (t == null ? void 0 : t.bx) || [
+        const n = (t == null ? void 0 : t.bx) || [
           5,
           5
-        ], n = (t == null ? void 0 : t.bz) || [
+        ], o = (t == null ? void 0 : t.bz) || [
           4,
           4
         ], l = (t == null ? void 0 : t.h) || [
@@ -6765,57 +6832,57 @@ VIEW:
         ], s = (t == null ? void 0 : t.col) || "40x40", d = (t == null ? void 0 : t.viga) || "30x40", a = (t == null ? void 0 : t.fc) || 210, [r, f] = s.split("x").map((ee) => parseFloat(ee) / 100), [i, c] = d.split("x").map((ee) => parseFloat(ee) / 100), m = [
           0
         ];
-        for (const ee of o) m.push(m[m.length - 1] + ee);
-        const S = [
-          0
-        ];
-        for (const ee of n) S.push(S[S.length - 1] + ee);
+        for (const ee of n) m.push(m[m.length - 1] + ee);
         const w = [
           0
         ];
-        for (const ee of l) w.push(w[w.length - 1] + ee);
-        const y = m.length, p = S.length, h = w.length, T = l.length, k = [], M = {};
-        for (let ee = 0; ee < h; ee++) for (let ue = 0; ue < p; ue++) for (let we = 0; we < y; we++) M[`${we},${ee},${ue}`] = k.length, k.push([
+        for (const ee of o) w.push(w[w.length - 1] + ee);
+        const E = [
+          0
+        ];
+        for (const ee of l) E.push(E[E.length - 1] + ee);
+        const y = m.length, p = w.length, h = E.length, T = l.length, k = [], $ = {};
+        for (let ee = 0; ee < h; ee++) for (let ue = 0; ue < p; ue++) for (let we = 0; we < y; we++) $[`${we},${ee},${ue}`] = k.length, k.push([
           m[we],
-          w[ee],
-          S[ue]
+          E[ee],
+          w[ue]
         ]);
-        const P = [], B = /* @__PURE__ */ new Set(), x = /* @__PURE__ */ new Set(), u = /* @__PURE__ */ new Map();
+        const C = [], B = /* @__PURE__ */ new Set(), x = /* @__PURE__ */ new Set(), u = /* @__PURE__ */ new Map();
         for (let ee = 0; ee < T; ee++) for (let ue = 0; ue < p; ue++) for (let we = 0; we < y; we++) {
-          const se = P.length;
-          P.push([
-            M[`${we},${ee},${ue}`],
-            M[`${we},${ee + 1},${ue}`]
+          const se = C.length;
+          C.push([
+            $[`${we},${ee},${ue}`],
+            $[`${we},${ee + 1},${ue}`]
           ]), B.add(se), u.set(se, ee);
         }
         for (let ee = 1; ee < h; ee++) for (let ue = 0; ue < p; ue++) for (let we = 0; we < y - 1; we++) {
-          const se = P.length;
-          P.push([
-            M[`${we},${ee},${ue}`],
-            M[`${we + 1},${ee},${ue}`]
+          const se = C.length;
+          C.push([
+            $[`${we},${ee},${ue}`],
+            $[`${we + 1},${ee},${ue}`]
           ]), x.add(se), u.set(se, ee - 1);
         }
         for (let ee = 1; ee < h; ee++) for (let ue = 0; ue < y; ue++) for (let we = 0; we < p - 1; we++) {
-          const se = P.length;
-          P.push([
-            M[`${ue},${ee},${we}`],
-            M[`${ue},${ee},${we + 1}`]
+          const se = C.length;
+          C.push([
+            $[`${ue},${ee},${we}`],
+            $[`${ue},${ee},${we + 1}`]
           ]), x.add(se), u.set(se, ee - 1);
         }
-        const L = 15100 * Math.sqrt(a) * 10, R = L / (2 * (1 + 0.2)), j = r * f, g = r * f ** 3 / 12, E = f * r ** 3 / 12, v = r * f * (r ** 2 + f ** 2) / 12, C = i * c, X = i * c ** 3 / 12, V = c * i ** 3 / 12, ae = i * c * (i ** 2 + c ** 2) / 12, Z = /* @__PURE__ */ new Map(), K = /* @__PURE__ */ new Map(), de = /* @__PURE__ */ new Map(), re = /* @__PURE__ */ new Map(), Ie = /* @__PURE__ */ new Map(), Pe = /* @__PURE__ */ new Map(), _ = /* @__PURE__ */ new Map();
-        for (let ee = 0; ee < P.length; ee++) Z.set(ee, L), K.set(ee, R), B.has(ee) ? (de.set(ee, j), re.set(ee, g), Ie.set(ee, E), Pe.set(ee, v), _.set(ee, {
+        const L = 15100 * Math.sqrt(a) * 10, R = L / (2 * (1 + 0.2)), j = r * f, g = r * f ** 3 / 12, S = f * r ** 3 / 12, v = r * f * (r ** 2 + f ** 2) / 12, F = i * c, X = i * c ** 3 / 12, V = c * i ** 3 / 12, ae = i * c * (i ** 2 + c ** 2) / 12, Q = /* @__PURE__ */ new Map(), K = /* @__PURE__ */ new Map(), de = /* @__PURE__ */ new Map(), re = /* @__PURE__ */ new Map(), Ie = /* @__PURE__ */ new Map(), Re = /* @__PURE__ */ new Map(), _ = /* @__PURE__ */ new Map();
+        for (let ee = 0; ee < C.length; ee++) Q.set(ee, L), K.set(ee, R), B.has(ee) ? (de.set(ee, j), re.set(ee, g), Ie.set(ee, S), Re.set(ee, v), _.set(ee, {
           type: "rect",
           b: r,
           h: f,
           name: `COL${s}`
-        })) : (de.set(ee, C), re.set(ee, X), Ie.set(ee, V), Pe.set(ee, ae), _.set(ee, {
+        })) : (de.set(ee, F), re.set(ee, X), Ie.set(ee, V), Re.set(ee, ae), _.set(ee, {
           type: "rect",
           b: i,
           h: c,
           name: `V${d}`
         }));
         const fe = /* @__PURE__ */ new Map();
-        for (let ee = 0; ee < p; ee++) for (let ue = 0; ue < y; ue++) fe.set(M[`${ue},0,${ee}`], [
+        for (let ee = 0; ee < p; ee++) for (let ue = 0; ue < y; ue++) fe.set($[`${ue},0,${ee}`], [
           true,
           true,
           true,
@@ -6823,49 +6890,49 @@ VIEW:
           true,
           true
         ]);
-        e.nodes.val = k, e.elements.val = P, e.nodeInputs.val = {
+        e.nodes.val = k, e.elements.val = C, e.nodeInputs.val = {
           supports: fe,
           loads: /* @__PURE__ */ new Map()
         }, e.elementInputs.val = {
-          elasticities: Z,
+          elasticities: Q,
           shearModuli: K,
           areas: de,
           momentsOfInertiaZ: re,
           momentsOfInertiaY: Ie,
-          torsionalConstants: Pe,
+          torsionalConstants: Re,
           sectionShapes: _
         }, D = B, G = x, $e = u, We = m.map((ee, ue) => ({
           label: String.fromCharCode(65 + ue),
           coord: ee
-        })), Xe = S.map((ee, ue) => ({
+        })), Xe = w.map((ee, ue) => ({
           label: `${ue + 1}`,
           coord: ee
-        })), pt = w[w.length - 1], Xo(We.map((ee) => ee.coord), Xe.map((ee) => ee.coord), pt, We.map((ee) => ee.label), Xe.map((ee) => ee.label));
+        })), pt = E[E.length - 1], Xn(We.map((ee) => ee.coord), Xe.map((ee) => ee.coord), pt, We.map((ee) => ee.label), Xe.map((ee) => ee.label));
         {
-          const ee = w.map((ue, we) => ({
+          const ee = E.map((ue, we) => ({
             name: we === 0 ? "Base" : `P${we}`,
-            height: we > 0 ? ue - w[we - 1] : 0,
+            height: we > 0 ? ue - E[we - 1] : 0,
             elev: ue
           }));
-          wn(ee, m, S);
+          wo(ee, m, w);
         }
-        const ne = Ae.querySelector("#cad3d-axis-buttons");
-        if (ne) {
-          ne.style.display = "flex";
+        const oe = Ae.querySelector("#cad3d-axis-buttons");
+        if (oe) {
+          oe.style.display = "flex";
           const ee = We.map((we) => we.label), ue = Xe.map((we) => we.label);
-          ne.innerHTML = '<span style="font-size:10px;color:var(--cad-heading);margin-right:4px">Ejes:</span>';
-          for (const we of ee) ne.innerHTML += `<button class="axis-btn" data-axis="x" data-label="${we}">${we}</button>`;
-          ne.innerHTML += '<span style="margin:0 2px">|</span>';
-          for (const we of ue) ne.innerHTML += `<button class="axis-btn" data-axis="y" data-label="${we}">${we}</button>`;
+          oe.innerHTML = '<span style="font-size:10px;color:var(--cad-heading);margin-right:4px">Ejes:</span>';
+          for (const we of ee) oe.innerHTML += `<button class="axis-btn" data-axis="x" data-label="${we}">${we}</button>`;
+          oe.innerHTML += '<span style="margin:0 2px">|</span>';
+          for (const we of ue) oe.innerHTML += `<button class="axis-btn" data-axis="y" data-label="${we}">${we}</button>`;
         }
         const pe = Ae.querySelector("#cad3d-floor-buttons");
         if (pe) {
           pe.style.display = "flex", pe.innerHTML = '<span style="font-size:10px;color:var(--cad-heading);margin-right:4px">Planta:</span>';
           for (let ee = 0; ee < T; ee++) pe.innerHTML += `<button class="floor-btn" data-floor="${ee}">P${ee + 1}</button>`;
         }
-        return as(m, S, w), Ze(), console.log(`Model3D: ${k.length}n ${P.length}e | ${y}x${p} grid, ${T} floors | COL${s} V${d} f'c=${a}`), {
+        return as(m, w, E), Ze(), console.log(`Model3D: ${k.length}n ${C.length}e | ${y}x${p} grid, ${T} floors | COL${s} V${d} f'c=${a}`), {
           nodes: k.length,
-          elements: P.length,
+          elements: C.length,
           columns: B.size,
           beams: x.size
         };
@@ -6875,10 +6942,10 @@ VIEW:
         const t = Ae.querySelector("#cad3d-axis-buttons");
         t && (t.style.display = "none", t.innerHTML = ""), console.log("Model cleared"), Ze();
       },
-      frame(t, o, n = 0, l = 0) {
+      frame(t, n, o = 0, l = 0) {
         Ke.clear();
         const s = [];
-        n > 0 && s.push(-n);
+        o > 0 && s.push(-o);
         let d = 0;
         s.push(d);
         for (const y of t) d += y, s.push(d);
@@ -6887,8 +6954,8 @@ VIEW:
           0
         ];
         let r = 0;
-        for (const y of o) r += y, a.push(r);
-        const f = (y) => n > 0 && y === 0 || l > 0 && y === s.length - 1, i = {}, c = [];
+        for (const y of n) r += y, a.push(r);
+        const f = (y) => o > 0 && y === 0 || l > 0 && y === s.length - 1, i = {}, c = [];
         for (let y = 0; y < a.length; y++) for (let p = 0; p < s.length; p++) y === 0 && f(p) || (i[`${p},${y}`] = c.length, c.push([
           s[p],
           0,
@@ -6904,30 +6971,30 @@ VIEW:
           i[`${p},${y}`],
           i[`${p + 1},${y}`]
         ]);
-        const S = /* @__PURE__ */ new Map(), w = mt();
+        const w = /* @__PURE__ */ new Map(), E = mt();
         for (let y = 0; y < s.length; y++) {
           if (f(y)) continue;
           const p = `${y},0`;
-          i[p] !== void 0 && S.set(i[p], [
-            ...w
+          i[p] !== void 0 && w.set(i[p], [
+            ...E
           ]);
         }
         return e.nodes.val = c, e.elements.val = m, e.nodeInputs && (e.nodeInputs.val = {
-          supports: S
+          supports: w
         }), We = [
           ...s
         ], Xe = [
           0
         ], pt = a[a.length - 1] || 0, setTimeout(() => {
-          It(), Xo(s, [
+          wt(), Xn(s, [
             0
-          ]), Nn(), qn();
+          ]), No(), qo();
         }, 50), Ze(), {
           nodes: c.length,
           elements: m.length
         };
       },
-      building(t, o, n, l = 3, s = 0, d = 0, a = 0, r = 0, f = 1) {
+      building(t, n, o, l = 3, s = 0, d = 0, a = 0, r = 0, f = 1) {
         Ke.clear();
         const i = [];
         s > 0 && i.push(-s), i.push(0);
@@ -6935,13 +7002,13 @@ VIEW:
         d > 0 && i.push(i[i.length - 1] + d);
         const c = [];
         a > 0 && c.push(-a), c.push(0);
-        for (const u of o) c.push(c[c.length - 1] + u);
+        for (const u of n) c.push(c[c.length - 1] + u);
         r > 0 && c.push(c[c.length - 1] + r);
         const m = [
           0
         ];
-        for (const u of n) m.push(m[m.length - 1] + u);
-        const S = (u) => s > 0 && u === 0 || d > 0 && u === i.length - 1, w = (u) => a > 0 && u === 0 || r > 0 && u === c.length - 1, y = (u, I) => S(u) || w(I), p = [], h = {};
+        for (const u of o) m.push(m[m.length - 1] + u);
+        const w = (u) => s > 0 && u === 0 || d > 0 && u === i.length - 1, E = (u) => a > 0 && u === 0 || r > 0 && u === c.length - 1, y = (u, I) => w(u) || E(I), p = [], h = {};
         for (let u = 0; u < m.length; u++) for (let I = 0; I < c.length; I++) for (let L = 0; L < i.length; L++) u === 0 && y(L, I) || (h[`${L},${I},${u}`] = p.length, p.push([
           i[L],
           c[I],
@@ -6949,15 +7016,15 @@ VIEW:
         ]));
         const T = p.length, k = [];
         D = /* @__PURE__ */ new Set(), G = /* @__PURE__ */ new Set(), $e = /* @__PURE__ */ new Map();
-        const M = [];
-        for (let u = 0; u < m.length - 1; u++) for (let I = 0; I < c.length; I++) for (let L = 0; L < i.length; L++) y(L, I) || M.push({
+        const $ = [];
+        for (let u = 0; u < m.length - 1; u++) for (let I = 0; I < c.length; I++) for (let L = 0; L < i.length; L++) y(L, I) || $.push({
           el: [
             h[`${L},${I},${u}`],
             h[`${L},${I},${u + 1}`]
           ],
           floor: u
         });
-        for (const { el: [u, I], floor: L } of M) {
+        for (const { el: [u, I], floor: L } of $) {
           if (f <= 1) {
             D.add(k.length), $e.set(k.length, L), k.push([
               u,
@@ -6967,16 +7034,16 @@ VIEW:
           }
           const R = p[u], j = p[I];
           let g = u;
-          for (let E = 1; E < f; E++) {
-            const v = E / f, C = p.length;
+          for (let S = 1; S < f; S++) {
+            const v = S / f, F = p.length;
             p.push([
               R[0] + (j[0] - R[0]) * v,
               R[1] + (j[1] - R[1]) * v,
               R[2] + (j[2] - R[2]) * v
             ]), D.add(k.length), $e.set(k.length, L), k.push([
               g,
-              C
-            ]), g = C;
+              F
+            ]), g = F;
           }
           D.add(k.length), $e.set(k.length, L), k.push([
             g,
@@ -6984,8 +7051,8 @@ VIEW:
           ]);
         }
         Te = /* @__PURE__ */ new Map();
-        const P = [];
-        for (let u = 1; u < m.length; u++) for (let I = 0; I < c.length; I++) for (let L = 0; L < i.length - 1; L++) P.push({
+        const C = [];
+        for (let u = 1; u < m.length; u++) for (let I = 0; I < c.length; I++) for (let L = 0; L < i.length - 1; L++) C.push({
           el: [
             h[`${L},${I},${u}`],
             h[`${L + 1},${I},${u}`]
@@ -6994,7 +7061,7 @@ VIEW:
           dir: "x",
           bay: L
         });
-        for (let u = 1; u < m.length; u++) for (let I = 0; I < i.length; I++) for (let L = 0; L < c.length - 1; L++) P.push({
+        for (let u = 1; u < m.length; u++) for (let I = 0; I < i.length; I++) for (let L = 0; L < c.length - 1; L++) C.push({
           el: [
             h[`${I},${L},${u}`],
             h[`${I},${L + 1},${u}`]
@@ -7003,18 +7070,18 @@ VIEW:
           dir: "y",
           bay: L
         });
-        for (const { el: [u, I], floor: L, dir: R, bay: j } of P) {
-          const g = p[u], E = p[I];
+        for (const { el: [u, I], floor: L, dir: R, bay: j } of C) {
+          const g = p[u], S = p[I];
           let v = u;
           for (let X = 1; X < l; X++) {
             const V = X / l, ae = p.length;
             p.push([
-              g[0] + (E[0] - g[0]) * V,
-              g[1] + (E[1] - g[1]) * V,
-              g[2] + (E[2] - g[2]) * V
+              g[0] + (S[0] - g[0]) * V,
+              g[1] + (S[1] - g[1]) * V,
+              g[2] + (S[2] - g[2]) * V
             ]);
-            const Z = k.length;
-            G.add(Z), $e.set(Z, L), Te.set(Z, {
+            const Q = k.length;
+            G.add(Q), $e.set(Q, L), Te.set(Q, {
               dir: R,
               bay: j
             }), k.push([
@@ -7022,8 +7089,8 @@ VIEW:
               ae
             ]), v = ae;
           }
-          const C = k.length;
-          G.add(C), $e.set(C, L), Te.set(C, {
+          const F = k.length;
+          G.add(F), $e.set(F, L), Te.set(F, {
             dir: R,
             bay: j
           }), k.push([
@@ -7044,16 +7111,16 @@ VIEW:
           for (let I = 1; I < m.length; I++) if (Je === "x") for (let L = 0; L < c.length - 1; L++) {
             const R = c[L], j = c[L + 1];
             for (let g = 1; g <= ze; g++) {
-              const E = R + g / (ze + 1) * (j - R), v = [];
-              for (let C = 0; C < i.length; C++) v.push(u(i[C], E, m[I]));
-              for (let C = 0; C < i.length - 1; C++) {
+              const S = R + g / (ze + 1) * (j - R), v = [];
+              for (let F = 0; F < i.length; F++) v.push(u(i[F], S, m[I]));
+              for (let F = 0; F < i.length - 1; F++) {
                 const X = k.length;
                 st.add(X), G.add(X), $e.set(X, I - 1), Te.set(X, {
                   dir: "x",
-                  bay: C
+                  bay: F
                 }), k.push([
-                  v[C],
-                  v[C + 1]
+                  v[F],
+                  v[F + 1]
                 ]);
               }
             }
@@ -7061,16 +7128,16 @@ VIEW:
           else for (let L = 0; L < i.length - 1; L++) {
             const R = i[L], j = i[L + 1];
             for (let g = 1; g <= ze; g++) {
-              const E = R + g / (ze + 1) * (j - R), v = [];
-              for (let C = 0; C < c.length; C++) v.push(u(E, c[C], m[I]));
-              for (let C = 0; C < c.length - 1; C++) {
+              const S = R + g / (ze + 1) * (j - R), v = [];
+              for (let F = 0; F < c.length; F++) v.push(u(S, c[F], m[I]));
+              for (let F = 0; F < c.length - 1; F++) {
                 const X = k.length;
                 st.add(X), G.add(X), $e.set(X, I - 1), Te.set(X, {
                   dir: "y",
-                  bay: C
+                  bay: F
                 }), k.push([
-                  v[C],
-                  v[C + 1]
+                  v[F],
+                  v[F + 1]
                 ]);
               }
             }
@@ -7086,26 +7153,26 @@ VIEW:
             length: I
           }, (R, j) => j) : u.floors.filter((R) => R < I);
           for (const R of L) {
-            let j, g, E, v;
-            u.dir === "x" ? (j = u.bay, E = u.bay + 1, g = u.axisIdx, v = u.axisIdx) : (j = u.axisIdx, E = u.axisIdx, g = u.bay, v = u.bay + 1);
-            const C = h[`${j},${g},${R}`], X = h[`${j},${g},${R + 1}`];
+            let j, g, S, v;
+            u.dir === "x" ? (j = u.bay, S = u.bay + 1, g = u.axisIdx, v = u.axisIdx) : (j = u.axisIdx, S = u.axisIdx, g = u.bay, v = u.bay + 1);
+            const F = h[`${j},${g},${R}`], X = h[`${j},${g},${R + 1}`];
             let V, ae;
-            if (u.dir === "x" ? (V = h[`${E},${v},${R}`], ae = h[`${E},${v},${R + 1}`]) : (V = h[`${E},${v},${R}`], ae = h[`${E},${v},${R + 1}`]), C === void 0 || V === void 0 || X === void 0 || ae === void 0) continue;
-            const Z = be, K = He, de = p[C], re = p[V], Ie = p[X], Pe = p[ae], _ = [];
+            if (u.dir === "x" ? (V = h[`${S},${v},${R}`], ae = h[`${S},${v},${R + 1}`]) : (V = h[`${S},${v},${R}`], ae = h[`${S},${v},${R + 1}`]), F === void 0 || V === void 0 || X === void 0 || ae === void 0) continue;
+            const Q = be, K = He, de = p[F], re = p[V], Ie = p[X], Re = p[ae], _ = [];
             for (let fe = 0; fe <= K; fe++) {
-              const ne = [], pe = fe / K;
-              for (let ee = 0; ee <= Z; ee++) {
-                const ue = ee / Z, we = (1 - pe) * ((1 - ue) * de[0] + ue * re[0]) + pe * ((1 - ue) * Ie[0] + ue * Pe[0]), se = (1 - pe) * ((1 - ue) * de[1] + ue * re[1]) + pe * ((1 - ue) * Ie[1] + ue * Pe[1]), Se = (1 - pe) * ((1 - ue) * de[2] + ue * re[2]) + pe * ((1 - ue) * Ie[2] + ue * Pe[2]);
-                fe === 0 && ee === 0 ? ne.push(C) : fe === 0 && ee === Z ? ne.push(V) : fe === K && ee === 0 ? ne.push(X) : fe === K && ee === Z ? ne.push(ae) : (ne.push(p.length), p.push([
+              const oe = [], pe = fe / K;
+              for (let ee = 0; ee <= Q; ee++) {
+                const ue = ee / Q, we = (1 - pe) * ((1 - ue) * de[0] + ue * re[0]) + pe * ((1 - ue) * Ie[0] + ue * Re[0]), se = (1 - pe) * ((1 - ue) * de[1] + ue * re[1]) + pe * ((1 - ue) * Ie[1] + ue * Re[1]), Se = (1 - pe) * ((1 - ue) * de[2] + ue * re[2]) + pe * ((1 - ue) * Ie[2] + ue * Re[2]);
+                fe === 0 && ee === 0 ? oe.push(F) : fe === 0 && ee === Q ? oe.push(V) : fe === K && ee === 0 ? oe.push(X) : fe === K && ee === Q ? oe.push(ae) : (oe.push(p.length), p.push([
                   we,
                   se,
                   Se
                 ]));
               }
-              _.push(ne);
+              _.push(oe);
             }
-            for (let fe = 0; fe < K; fe++) for (let ne = 0; ne < Z; ne++) {
-              const pe = _[fe][ne], ee = _[fe][ne + 1], ue = _[fe + 1][ne + 1], we = _[fe + 1][ne], se = k.length;
+            for (let fe = 0; fe < K; fe++) for (let oe = 0; oe < Q; oe++) {
+              const pe = _[fe][oe], ee = _[fe][oe + 1], ue = _[fe + 1][oe + 1], we = _[fe + 1][oe], se = k.length;
               ce.add(se), $e.set(se, R), k.push([
                 pe,
                 ee,
@@ -7113,50 +7180,50 @@ VIEW:
                 we
               ]);
             }
-            if (R === 0) for (let fe = 0; fe <= Z; fe++) {
-              const ne = _[0][fe];
-              ne >= T && B.set(ne, [
+            if (R === 0) for (let fe = 0; fe <= Q; fe++) {
+              const oe = _[0][fe];
+              oe >= T && B.set(oe, [
                 ...x
               ]);
             }
           }
         }
-        if (Tt = /* @__PURE__ */ new Set(), Ue) {
-          const u = l, I = l, L = /* @__PURE__ */ new Map(), R = (j, g, E) => `${Math.round(j * 1e4)},${Math.round(g * 1e4)},${Math.round(E * 1e4)}`;
+        if (zt = /* @__PURE__ */ new Set(), Ue) {
+          const u = l, I = l, L = /* @__PURE__ */ new Map(), R = (j, g, S) => `${Math.round(j * 1e4)},${Math.round(g * 1e4)},${Math.round(S * 1e4)}`;
           for (let j = 0; j < p.length; j++) L.set(R(p[j][0], p[j][1], p[j][2]), j);
           for (let j = 1; j < m.length; j++) {
             const g = m[j];
-            for (let E = 0; E < i.length - 1; E++) for (let v = 0; v < c.length - 1; v++) {
-              const C = i[E], X = i[E + 1], V = c[v], ae = c[v + 1], Z = [];
+            for (let S = 0; S < i.length - 1; S++) for (let v = 0; v < c.length - 1; v++) {
+              const F = i[S], X = i[S + 1], V = c[v], ae = c[v + 1], Q = [];
               for (let K = 0; K <= I; K++) {
                 const de = [];
                 for (let re = 0; re <= u; re++) {
-                  const Ie = C + re / u * (X - C), Pe = V + K / I * (ae - V);
-                  if (K === 0 && re === 0) de.push(h[`${E},${v},${j}`]);
-                  else if (K === 0 && re === u) de.push(h[`${E + 1},${v},${j}`]);
-                  else if (K === I && re === 0) de.push(h[`${E},${v + 1},${j}`]);
-                  else if (K === I && re === u) de.push(h[`${E + 1},${v + 1},${j}`]);
+                  const Ie = F + re / u * (X - F), Re = V + K / I * (ae - V);
+                  if (K === 0 && re === 0) de.push(h[`${S},${v},${j}`]);
+                  else if (K === 0 && re === u) de.push(h[`${S + 1},${v},${j}`]);
+                  else if (K === I && re === 0) de.push(h[`${S},${v + 1},${j}`]);
+                  else if (K === I && re === u) de.push(h[`${S + 1},${v + 1},${j}`]);
                   else {
-                    const _ = R(Ie, Pe, g), fe = L.get(_);
+                    const _ = R(Ie, Re, g), fe = L.get(_);
                     if (fe !== void 0) de.push(fe);
                     else {
-                      const ne = p.length;
+                      const oe = p.length;
                       p.push([
                         Ie,
-                        Pe,
+                        Re,
                         g
-                      ]), L.set(_, ne), de.push(ne);
+                      ]), L.set(_, oe), de.push(oe);
                     }
                   }
                 }
-                Z.push(de);
+                Q.push(de);
               }
               for (let K = 0; K < I; K++) for (let de = 0; de < u; de++) {
-                const re = Z[K][de], Ie = Z[K][de + 1], Pe = Z[K + 1][de + 1], _ = Z[K + 1][de], fe = k.length;
-                Tt.add(fe), $e.set(fe, j - 1), k.push([
+                const re = Q[K][de], Ie = Q[K][de + 1], Re = Q[K + 1][de + 1], _ = Q[K + 1][de], fe = k.length;
+                zt.add(fe), $e.set(fe, j - 1), k.push([
                   re,
                   Ie,
-                  Pe,
+                  Re,
                   _
                 ]);
               }
@@ -7169,12 +7236,12 @@ VIEW:
             if (u) for (let j = 0; j < c.length; j++) {
               if (gt === "perimeter" && j !== 0 && j !== c.length - 1) continue;
               const g = Math.floor((i.length - 1) / 2);
-              for (let E = 0; E < i.length - 1; E++) {
-                if (gt === "perimeter" && E !== g || y(E, j) || y(E + 1, j)) continue;
-                const v = h[`${E},${j},${R}`], C = h[`${E + 1},${j},${R + 1}`], X = h[`${E + 1},${j},${R}`], V = h[`${E},${j},${R + 1}`];
-                v !== void 0 && C !== void 0 && (k.push([
+              for (let S = 0; S < i.length - 1; S++) {
+                if (gt === "perimeter" && S !== g || y(S, j) || y(S + 1, j)) continue;
+                const v = h[`${S},${j},${R}`], F = h[`${S + 1},${j},${R + 1}`], X = h[`${S + 1},${j},${R}`], V = h[`${S},${j},${R + 1}`];
+                v !== void 0 && F !== void 0 && (k.push([
                   v,
-                  C
+                  F
                 ]), $e.set(k.length - 1, R)), X !== void 0 && V !== void 0 && (k.push([
                   X,
                   V
@@ -7184,12 +7251,12 @@ VIEW:
             if (I) for (let j = 0; j < i.length; j++) {
               if (gt === "perimeter" && j !== 0 && j !== i.length - 1) continue;
               const g = Math.floor((c.length - 1) / 2);
-              for (let E = 0; E < c.length - 1; E++) {
-                if (gt === "perimeter" && E !== g || y(j, E) || y(j, E + 1)) continue;
-                const v = h[`${j},${E},${R}`], C = h[`${j},${E + 1},${R + 1}`], X = h[`${j},${E + 1},${R}`], V = h[`${j},${E},${R + 1}`];
-                v !== void 0 && C !== void 0 && (k.push([
+              for (let S = 0; S < c.length - 1; S++) {
+                if (gt === "perimeter" && S !== g || y(j, S) || y(j, S + 1)) continue;
+                const v = h[`${j},${S},${R}`], F = h[`${j},${S + 1},${R + 1}`], X = h[`${j},${S + 1},${R}`], V = h[`${j},${S},${R + 1}`];
+                v !== void 0 && F !== void 0 && (k.push([
                   v,
-                  C
+                  F
                 ]), $e.set(k.length - 1, R)), X !== void 0 && V !== void 0 && (k.push([
                   X,
                   V
@@ -7205,18 +7272,18 @@ VIEW:
         ], Xe = [
           ...c
         ], pt = m[m.length - 1] || 0, setTimeout(() => {
-          It(), Xo(i, c), Nn(), qn();
+          wt(), Xn(i, c), No(), qo();
         }, 50), Ze(), {
           nodes: p.length,
           elements: k.length,
           nJointNodes: T
         };
       },
-      galpon(t = 12, o = 20, n = 6, l = 3, s = 8, d = 4) {
+      galpon(t = 12, n = 20, o = 6, l = 3, s = 8, d = 4) {
         Ke.clear();
-        const a = [], r = [], f = (w) => n + l * (1 - Math.pow(2 * w / t - 1, 2)), i = [], c = d + 1;
-        for (let w = 0; w < c; w++) {
-          const y = [], p = o / d * w;
+        const a = [], r = [], f = (E) => o + l * (1 - Math.pow(2 * E / t - 1, 2)), i = [], c = d + 1;
+        for (let E = 0; E < c; E++) {
+          const y = [], p = n / d * E;
           y.push(a.length), a.push([
             0,
             p,
@@ -7228,7 +7295,7 @@ VIEW:
           ]), y.push(a.length), a.push([
             0,
             p,
-            n
+            o
           ]);
           for (let h = 1; h < s; h++) {
             const T = t / s * h;
@@ -7241,11 +7308,11 @@ VIEW:
           y.push(a.length), a.push([
             t,
             p,
-            n
+            o
           ]), i.push(y);
         }
-        for (let w = 0; w < c; w++) {
-          const y = i[w];
+        for (let E = 0; E < c; E++) {
+          const y = i[E];
           r.push([
             y[0],
             y[2]
@@ -7258,19 +7325,19 @@ VIEW:
             y[p + 1]
           ]);
         }
-        for (let w = 0; w < d; w++) for (let y = 2; y < i[0].length; y++) r.push([
-          i[w][y],
-          i[w + 1][y]
+        for (let E = 0; E < d; E++) for (let y = 2; y < i[0].length; y++) r.push([
+          i[E][y],
+          i[E + 1][y]
         ]);
-        for (let w = 0; w < d; w++) for (let y = 2; y < i[0].length - 1; y += 2) r.push([
-          i[w][y],
-          i[w + 1][y + 1]
+        for (let E = 0; E < d; E++) for (let y = 2; y < i[0].length - 1; y += 2) r.push([
+          i[E][y],
+          i[E + 1][y + 1]
         ]);
-        const m = /* @__PURE__ */ new Map(), S = mt();
-        for (let w = 0; w < c; w++) m.set(i[w][0], [
-          ...S
-        ]), m.set(i[w][1], [
-          ...S
+        const m = /* @__PURE__ */ new Map(), w = mt();
+        for (let E = 0; E < c; E++) m.set(i[E][0], [
+          ...w
+        ]), m.set(i[E][1], [
+          ...w
         ]);
         return e.nodes.val = a, e.elements.val = r, e.nodeInputs && (e.nodeInputs.val = {
           supports: m
@@ -7301,31 +7368,31 @@ VIEW:
             break;
           }
           case "portico": {
-            Ne.colMat = 0, Ne.vigaMat = 0, Ne.colShape = 0, Qe("frame"), Re();
+            Ne.colMat = 0, Ne.vigaMat = 0, Ne.colShape = 0, Qe("frame"), Pe();
             break;
           }
           case "edificio": {
-            Qe("edificio"), Ne.colMat = 0, Ne.vigaMat = 0, Ne.colShape = 0, he = [], Ue = false, Ee = false, Ft = false, Re();
+            Qe("edificio"), Ne.colMat = 0, Ne.vigaMat = 0, Ne.colShape = 0, he = [], Ue = false, Ee = false, Ft = false, Pe();
             break;
           }
           case "edif-acero":
           case "edificio-acero": {
             Qe("edificio"), Ne.colMat = 1, Ne.vigaMat = 1, Ne.steelColType = 0, Ne.steelVigaType = 0, he = [], Ee = true, ze = 2;
-            const o = ie.reduce((l, s) => l + s, 0) / ie.length, n = oe.reduce((l, s) => l + s, 0) / oe.length;
-            Je = o >= n ? "y" : "x", Ue = true, at = 0.08, Ft = false, Re();
+            const n = ie.reduce((l, s) => l + s, 0) / ie.length, o = ne.reduce((l, s) => l + s, 0) / ne.length;
+            Je = n >= o ? "y" : "x", Ue = true, at = 0.08, Ft = false, Pe();
             break;
           }
           case "edif-acero-diag":
           case "edificio-acero-diag": {
             Qe("edificio"), Ne.colMat = 1, Ne.vigaMat = 1, Ne.steelColType = 0, Ne.steelVigaType = 0, he = [], Ee = true, ze = 2;
-            const o = ie.reduce((l, s) => l + s, 0) / ie.length, n = oe.reduce((l, s) => l + s, 0) / oe.length;
-            Je = o >= n ? "y" : "x", Ue = true, at = 0.08, Ft = true, gt = "perimeter", Re();
+            const n = ie.reduce((l, s) => l + s, 0) / ie.length, o = ne.reduce((l, s) => l + s, 0) / ne.length;
+            Je = n >= o ? "y" : "x", Ue = true, at = 0.08, Ft = true, gt = "perimeter", Pe();
             break;
           }
           case "edif-muros":
           case "edificio-muros": {
             Qe("edificio"), Ne.colMat = 0, Ne.vigaMat = 0, Ne.colShape = 0, Ee = false;
-            const o = Math.round(((_a2 = Q.nVanosX) == null ? void 0 : _a2.val) ?? 2), n = Math.round(((_b = Q.nVanosY) == null ? void 0 : _b.val) ?? 2);
+            const n = Math.round(((_a2 = Z.nVanosX) == null ? void 0 : _a2.val) ?? 2), o = Math.round(((_b = Z.nVanosY) == null ? void 0 : _b.val) ?? 2);
             he = [
               {
                 dir: "x",
@@ -7337,8 +7404,8 @@ VIEW:
               },
               {
                 dir: "x",
-                bay: o - 1,
-                axisIdx: n,
+                bay: n - 1,
+                axisIdx: o,
                 floors: [
                   -1
                 ]
@@ -7353,57 +7420,57 @@ VIEW:
               },
               {
                 dir: "y",
+                bay: o - 1,
+                axisIdx: n,
+                floors: [
+                  -1
+                ]
+              }
+            ], Ue = true, at = 0.15, Pe();
+            break;
+          }
+          case "edif-mixto":
+          case "edificio-mixto": {
+            Qe("edificio"), Ne.colMat = 2, Ne.vigaMat = 0, Ee = false;
+            const n = Math.round(((_c = Z.nVanosX) == null ? void 0 : _c.val) ?? 2), o = Math.round(((_d = Z.nVanosY) == null ? void 0 : _d.val) ?? 2);
+            he = [
+              {
+                dir: "x",
+                bay: 0,
+                axisIdx: 0,
+                floors: [
+                  -1
+                ]
+              },
+              {
+                dir: "x",
                 bay: n - 1,
                 axisIdx: o,
                 floors: [
                   -1
                 ]
               }
-            ], Ue = true, at = 0.15, Re();
-            break;
-          }
-          case "edif-mixto":
-          case "edificio-mixto": {
-            Qe("edificio"), Ne.colMat = 2, Ne.vigaMat = 0, Ee = false;
-            const o = Math.round(((_c = Q.nVanosX) == null ? void 0 : _c.val) ?? 2), n = Math.round(((_d = Q.nVanosY) == null ? void 0 : _d.val) ?? 2);
-            he = [
-              {
-                dir: "x",
-                bay: 0,
-                axisIdx: 0,
-                floors: [
-                  -1
-                ]
-              },
-              {
-                dir: "x",
-                bay: o - 1,
-                axisIdx: n,
-                floors: [
-                  -1
-                ]
-              }
-            ], Ue = true, at = 0.12, Re();
+            ], Ue = true, at = 0.12, Pe();
             break;
           }
           case "mezanine":
           case "mezzanine": {
-            Qe("edificio"), Q.nPisos && (Q.nPisos.val = 1), Q.hPiso && (Q.hPiso.val = 4.5), Q.nVanosX && (Q.nVanosX.val = 3), Q.nVanosY && (Q.nVanosY.val = 2), Q.nSubViga && (Q.nSubViga.val = 3), ie = [
+            Qe("edificio"), Z.nPisos && (Z.nPisos.val = 1), Z.hPiso && (Z.hPiso.val = 4.5), Z.nVanosX && (Z.nVanosX.val = 3), Z.nVanosY && (Z.nVanosY.val = 2), Z.nSubViga && (Z.nSubViga.val = 3), ie = [
               6,
               6,
               6
-            ], oe = [
+            ], ne = [
               5,
               5
-            ], Ne.colMat = 1, Ne.vigaMat = 1, Ne.steelColType = 0, Ne.steelVigaType = 0, he = [], Ee = true, ze = 2, Je = ie[0] >= oe[0] ? "y" : "x", Ue = true, at = 0.08, dt = 3, yt = 3, Re();
+            ], Ne.colMat = 1, Ne.vigaMat = 1, Ne.steelColType = 0, Ne.steelVigaType = 0, he = [], Ee = true, ze = 2, Je = ie[0] >= ne[0] ? "y" : "x", Ue = true, at = 0.08, dt = 3, yt = 3, Pe();
             break;
           }
           case "galpon": {
-            Qe("galpon"), Ne.colMat = 1, Ne.vigaMat = 1, Re();
+            Qe("galpon"), Ne.colMat = 1, Ne.vigaMat = 1, Pe();
             break;
           }
           case "barra": {
-            Qe("barra"), Re();
+            Qe("barra"), Pe();
             break;
           }
           case "placa3q":
@@ -7499,7 +7566,7 @@ VIEW:
           case "muro-q4":
           case "shear-wall":
           case "muro-cantilever": {
-            Ke.clear(), Qe("muro-q4"), Vn();
+            Ke.clear(), Qe("muro-q4"), Vo();
             break;
           }
           case "viga-q4":
@@ -7508,53 +7575,59 @@ VIEW:
             Ke.clear(), Qe("viga-q4"), Ys();
             break;
           }
+          case "placa-xy":
+          case "placa-cantilever":
+          case "losa-cantilever": {
+            Ke.clear(), Qe("placa-xy"), Js();
+            break;
+          }
           default:
             console.error(`Ejemplo desconocido: "${t}".`);
         }
       },
-      plateQ4(t = 10, o = 10, n = 16, l = 16, s = "simply-supported", d = -10, a = 0.2, r = 3e7, f = 0.3, i = 0) {
+      plateQ4(t = 10, n = 10, o = 16, l = 16, s = "simply-supported", d = -10, a = 0.2, r = 3e7, f = 0.3, i = 0) {
         console.log(`Plate Q4 [${[
           "Mindlin (gruesa)",
           "Kirchhoff (delgada)",
           "Membrane"
-        ][i]}]: ${t}\xD7${o}, ${n}\xD7${l} elem, BC=${s}, q=${d}, t=${a}`);
-        const m = performance.now(), S = Un({
+        ][i]}]: ${t}\xD7${n}, ${o}\xD7${l} elem, BC=${s}, q=${d}, t=${a}`);
+        const m = performance.now(), w = Uo({
           E: r,
           nu: f,
           thickness: a,
           meshLx: t,
-          meshLy: o,
-          meshNx: n,
+          meshLy: n,
+          meshNx: o,
           meshNy: l,
           bcType: s,
           pressure: d,
           theoryType: i
-        }), w = performance.now() - m;
-        console.log(`Solved in ${w.toFixed(1)} ms`), console.log(`w_max = ${S.maxW.toExponential(6)}`), console.log(`w_center = ${(S.centerW ?? 0).toExponential(6)}`), console.log(`Mxx_max = ${S.maxMxx.toExponential(4)}, Myy_max = ${S.maxMyy.toExponential(4)}`), console.log(`Mxy_max = ${S.maxMxy.toExponential(4)}`), console.log(`Qx_max = ${S.maxQx.toExponential(4)}, Qy_max = ${S.maxQy.toExponential(4)}`);
-        const y = S.nodeResults.map((M) => [
-          M.x,
-          M.y,
+        }), E = performance.now() - m;
+        console.log(`Solved in ${E.toFixed(1)} ms`), console.log(`w_max = ${w.maxW.toExponential(6)}`), console.log(`w_center = ${(w.centerW ?? 0).toExponential(6)}`), console.log(`Mxx_max = ${w.maxMxx.toExponential(4)}, Myy_max = ${w.maxMyy.toExponential(4)}`), console.log(`Mxy_max = ${w.maxMxy.toExponential(4)}`), console.log(`Qx_max = ${w.maxQx.toExponential(4)}, Qy_max = ${w.maxQy.toExponential(4)}`);
+        const y = w.nodeResults.map(($) => [
+          $.x,
+          $.y,
           0
-        ]), p = S.elementResults.map((M) => [
-          ...M.nodes
+        ]), p = w.elementResults.map(($) => [
+          ...$.nodes
         ]);
         e.nodes.val = y, e.elements.val = p;
         const h = /* @__PURE__ */ new Map();
-        S.nodeResults.forEach((M, P) => {
-          h.set(P, [
+        w.nodeResults.forEach(($, C) => {
+          h.set(C, [
             0,
             0,
-            M.w,
-            M.bx,
-            M.by,
+            $.w,
+            $.bx,
+            $.by,
             0
           ]);
         }), e.deformOutputs && (e.deformOutputs.val = {
           deformations: h
         });
         const T = /* @__PURE__ */ new Map();
-        S.nodeResults.forEach((M, P) => {
-          (M.x < 1e-10 || M.x > t - 1e-10 || M.y < 1e-10 || M.y > o - 1e-10) && T.set(P, [
+        w.nodeResults.forEach(($, C) => {
+          ($.x < 1e-10 || $.x > t - 1e-10 || $.y < 1e-10 || $.y > n - 1e-10) && T.set(C, [
             true,
             true,
             true,
@@ -7565,12 +7638,12 @@ VIEW:
         });
         const k = /* @__PURE__ */ new Map();
         if (Math.abs(d) > 1e-30) {
-          const M = d * t * o / y.length;
-          y.forEach((P, B) => {
+          const $ = d * t * n / y.length;
+          y.forEach((C, B) => {
             T.has(B) || k.set(B, [
               0,
               0,
-              M,
+              $,
               0,
               0,
               0
@@ -7581,13 +7654,13 @@ VIEW:
           supports: T,
           loads: k
         }), e.elementInputs && (e.elementInputs.val = {}), e.analyzeOutputs) {
-          const M = /* @__PURE__ */ new Map(), P = /* @__PURE__ */ new Map(), B = /* @__PURE__ */ new Map();
-          S.elementResults.forEach((x, u) => {
-            M.set(u, [
+          const $ = /* @__PURE__ */ new Map(), C = /* @__PURE__ */ new Map(), B = /* @__PURE__ */ new Map();
+          w.elementResults.forEach((x, u) => {
+            $.set(u, [
               x.Mxx,
               x.Mxx,
               x.Mxx
-            ]), P.set(u, [
+            ]), C.set(u, [
               x.Myy,
               x.Myy,
               x.Myy
@@ -7597,29 +7670,29 @@ VIEW:
               x.Mxy
             ]);
           }), e.analyzeOutputs.val = {
-            bendingXX: M,
-            bendingYY: P,
+            bendingXX: $,
+            bendingYY: C,
             bendingXY: B
           };
         }
-        return setTimeout(() => It(), 50), Ze(), S;
+        return setTimeout(() => wt(), 50), Ze(), w;
       },
-      set(t, o) {
-        Q[t] ? (Q[t].val = o, console.log(`${t} = ${o}`), so(), Re()) : ft[t] ? (ft[t].val = o, console.log(`${t} = ${o}`), so(), Re()) : console.error(`Par\xE1metro "${t}" no encontrado. Disponibles: ${Object.keys({
-          ...Q,
+      set(t, n) {
+        Z[t] ? (Z[t].val = n, console.log(`${t} = ${n}`), sn(), Pe()) : ft[t] ? (ft[t].val = n, console.log(`${t} = ${n}`), sn(), Pe()) : console.error(`Par\xE1metro "${t}" no encontrado. Disponibles: ${Object.keys({
+          ...Z,
           ...ft
         }).join(", ")}`);
       },
       get(t) {
         if (!t) {
-          const o = {};
-          for (const l in Q) o[l] = Q[l].val;
-          for (const l in ft) o[l] = ft[l].val;
-          o.plateTheory = Le, o.supportType = xt;
-          const n = un()[z];
-          return n && n[xt] && (o.supportLabel = n[xt].label), console.table(o), o;
+          const n = {};
+          for (const l in Z) n[l] = Z[l].val;
+          for (const l in ft) n[l] = ft[l].val;
+          n.plateTheory = Le, n.supportType = xt;
+          const o = uo()[z];
+          return o && o[xt] && (n.supportLabel = o[xt].label), console.table(n), n;
         }
-        if (Q[t]) return Q[t].val;
+        if (Z[t]) return Z[t].val;
         if (ft[t]) return ft[t].val;
         console.error(`Par\xE1metro "${t}" no encontrado.`);
       },
@@ -7637,19 +7710,19 @@ VIEW:
           1: "Membrana",
           2: "Kirchhoff (delgada)",
           3: "Mindlin (gruesa)"
-        }[Le] || Le}`), z.includes("placa") && (so(), Re());
+        }[Le] || Le}`), z.includes("placa") && (sn(), Pe());
       },
       setBc(t) {
-        const o = un()[z];
-        if (!o || o.length === 0) {
+        const n = uo()[z];
+        if (!n || n.length === 0) {
           console.error("No support options for current generator");
           return;
         }
         if (typeof t == "string") {
-          const n = o.findIndex((l) => l.label.toLowerCase().includes(t.toLowerCase()));
-          t = n >= 0 ? n : 0;
+          const o = n.findIndex((l) => l.label.toLowerCase().includes(t.toLowerCase()));
+          t = o >= 0 ? o : 0;
         }
-        xt = t, xt >= o.length && (xt = 0), console.log(`Apoyo: ${o[xt].label} \u2192 DOFs: [${o[xt].dofs.map((n) => n ? "1" : "0").join(",")}]`), so(), Re();
+        xt = t, xt >= n.length && (xt = 0), console.log(`Apoyo: ${n[xt].label} \u2192 DOFs: [${n[xt].dofs.map((o) => o ? "1" : "0").join(",")}]`), sn(), Pe();
       },
       help() {
         console.log(`
@@ -7668,10 +7741,10 @@ Unidades: cad.units('SI'|'US')  \u2014 cambia sistema de unidades
 Util:     cad.info()  cad.clear()  cad.help()
       `);
       },
-      units(t, o) {
-        t && (b = t), o && (F = o), $ = Ro(b, F);
-        const n = Ae.querySelector("#cad3d-force-unit"), l = Ae.querySelector("#cad3d-length-unit");
-        return n && (n.textContent = b), l && (l.textContent = F), z && Qe(z), console.log(`Unidades: ${$.label} | E=${$.E.toExponential(3)} ${$.stress}`), $.id;
+      units(t, n) {
+        t && (b = t), n && (P = n), M = Pn(b, P);
+        const o = Ae.querySelector("#cad3d-force-unit"), l = Ae.querySelector("#cad3d-length-unit");
+        return o && (o.textContent = b), l && (l.textContent = P), z && Qe(z), console.log(`Unidades: ${M.label} | E=${M.E.toExponential(3)} ${M.stress}`), M.id;
       },
       view(t) {
       },
@@ -7680,17 +7753,17 @@ Util:     cad.info()  cad.clear()  cad.help()
       }
     };
     function cs() {
-      return cl($);
+      return dl(M);
     }
     function ds() {
-      return dl($);
+      return pl(M);
     }
     let ft = {};
     function Qe(t) {
       var _a2, _b, _c, _d;
-      z = t, ra.val = true, xt = 0, ge && Cn(), Q = {};
-      const o = cs()[t];
-      if (o) for (const l of o) Q[l.key] = {
+      z = t, ia.val = true, xt = 0, ge && Co(), Z = {};
+      const n = cs()[t];
+      if (n) for (const l of n) Z[l.key] = {
         val: l.val,
         min: l.min,
         max: l.max,
@@ -7698,8 +7771,8 @@ Util:     cad.info()  cad.clear()  cad.help()
         label: l.label
       };
       ft = {};
-      const n = ds()[t];
-      if (n) for (const l of n) ft[l.key] = {
+      const o = ds()[t];
+      if (o) for (const l of o) ft[l.key] = {
         val: l.val,
         min: l.min,
         max: l.max,
@@ -7707,20 +7780,20 @@ Util:     cad.info()  cad.clear()  cad.help()
         label: l.label
       };
       if (t === "edificio") {
-        const l = Math.round(((_a2 = Q.nVanosX) == null ? void 0 : _a2.val) ?? 2), s = Math.round(((_b = Q.nVanosY) == null ? void 0 : _b.val) ?? 2);
-        ie = Array(l).fill($.defaultSpan), oe = Array(s).fill($.defaultSpan * 0.8);
-        const d = Math.round(((_c = Q.nPisos) == null ? void 0 : _c.val) ?? 3), a = ((_d = Q.hPiso) == null ? void 0 : _d.val) ?? 3;
+        const l = Math.round(((_a2 = Z.nVanosX) == null ? void 0 : _a2.val) ?? 2), s = Math.round(((_b = Z.nVanosY) == null ? void 0 : _b.val) ?? 2);
+        ie = Array(l).fill(M.defaultSpan), ne = Array(s).fill(M.defaultSpan * 0.8);
+        const d = Math.round(((_c = Z.nPisos) == null ? void 0 : _c.val) ?? 3), a = ((_d = Z.hPiso) == null ? void 0 : _d.val) ?? 3;
         N = Array(d).fill(a);
       }
-      so(), setTimeout(() => {
-        Ia(), Re();
+      sn(), setTimeout(() => {
+        ka(), Pe();
       }, 50);
     }
     function le(t) {
       var _a2, _b;
-      return ((_a2 = Q[t]) == null ? void 0 : _a2.val) ?? ((_b = ft[t]) == null ? void 0 : _b.val) ?? 0;
+      return ((_a2 = Z[t]) == null ? void 0 : _a2.val) ?? ((_b = ft[t]) == null ? void 0 : _b.val) ?? 0;
     }
-    function Re() {
+    function Pe() {
       switch (z) {
         case "truss":
           ps();
@@ -7732,26 +7805,26 @@ Util:     cad.info()  cad.clear()  cad.help()
           us();
           break;
         case "frame": {
-          const o = Math.round(le("nVanos")), n = le("spanV"), l = Math.round(le("nPisos")), s = le("hPiso");
-          Ke.frame(Array(o).fill(n), Array(l).fill(s));
+          const n = Math.round(le("nVanos")), o = le("spanV"), l = Math.round(le("nPisos")), s = le("hPiso");
+          Ke.frame(Array(n).fill(o), Array(l).fill(s));
           break;
         }
         case "edificio": {
-          const o = le("Lvix") || 0, n = le("Lvdx") || 0, l = le("Lviy") || 0, s = le("Lvdy") || 0, d = Math.max(1, Math.round(le("nSubViga") || 3)), a = Math.max(1, Math.round(le("nSubCol") || 1)), r = le("hPiso"), f = N.length > 0 ? [
+          const n = le("Lvix") || 0, o = le("Lvdx") || 0, l = le("Lviy") || 0, s = le("Lvdy") || 0, d = Math.max(1, Math.round(le("nSubViga") || 3)), a = Math.max(1, Math.round(le("nSubCol") || 1)), r = le("hPiso"), f = N.length > 0 ? [
             ...N
           ] : Array(Math.round(le("nPisos"))).fill(r);
           Ke.building([
             ...ie
           ], [
-            ...oe
-          ], f, d, o, n, l, s, a);
+            ...ne
+          ], f, d, n, o, l, s, a);
           break;
         }
         case "galpon":
           Ke.galpon(le("span"), le("length"), le("height"), le("archRise"), Math.round(le("xDiv")), Math.round(le("yDiv")));
           break;
         case "barra":
-          ha();
+          xa();
           break;
         case "placa-3q":
           ms();
@@ -7805,16 +7878,19 @@ Util:     cad.info()  cad.clear()  cad.help()
           Gs();
           break;
         case "muro-q4":
-          Vn();
+          Vo();
           break;
         case "viga-q4":
           Ys();
           break;
+        case "placa-xy":
+          Js();
+          break;
       }
       if ((z === "frame" || z === "edificio" || z === "galpon") && e.nodeInputs) {
-        const o = e.nodeInputs.val;
-        o.supports && (e.nodeInputs.val = {
-          supports: o.supports
+        const n = e.nodeInputs.val;
+        n.supports && (e.nodeInputs.val = {
+          supports: n.supports
         });
       }
       if (![
@@ -7836,43 +7912,44 @@ Util:     cad.info()  cad.clear()  cad.help()
         "opera",
         "diagrid",
         "muro-q4",
-        "viga-q4"
+        "viga-q4",
+        "placa-xy"
       ].includes(z)) {
         if (U.size > 0 || Y.size > 0 || q) {
-          const o = e.elements.val, n = o.filter((l, s) => !(U.has(s) || Y.has(s) || q && !W.has(s)));
-          n.length !== o.length && (e.elements.val = n);
+          const n = e.elements.val, o = n.filter((l, s) => !(U.has(s) || Y.has(s) || q && !W.has(s)));
+          o.length !== n.length && (e.elements.val = o);
         }
         setTimeout(() => {
-          xo(), Fn();
+          vn(), Fo();
         }, 30);
       }
     }
     function ps() {
-      const t = le("span"), o = Math.round(le("divisions")), n = le("height"), l = t / o, s = [], d = [];
-      for (let c = 0; c <= o; c++) s.push([
+      const t = le("span"), n = Math.round(le("divisions")), o = le("height"), l = t / n, s = [], d = [];
+      for (let c = 0; c <= n; c++) s.push([
         l * c,
         0,
         0
       ]);
-      for (let c = 0; c <= o; c++) s.push([
+      for (let c = 0; c <= n; c++) s.push([
         l * c,
         0,
-        n
+        o
       ]);
-      const a = o + 1;
-      for (let c = 0; c < o; c++) d.push([
+      const a = n + 1;
+      for (let c = 0; c < n; c++) d.push([
         c,
         c + 1
       ]);
-      for (let c = 0; c < o; c++) d.push([
+      for (let c = 0; c < n; c++) d.push([
         a + c,
         a + c + 1
       ]);
-      for (let c = 0; c <= o; c++) d.push([
+      for (let c = 0; c <= n; c++) d.push([
         c,
         a + c
       ]);
-      for (let c = 0; c < o; c++) c < o / 2 ? d.push([
+      for (let c = 0; c < n; c++) c < n / 2 ? d.push([
         c,
         a + c + 1
       ]) : d.push([
@@ -7892,7 +7969,7 @@ Util:     cad.info()  cad.clear()  cad.help()
           ]
         ],
         [
-          Math.round(o),
+          Math.round(n),
           [
             true,
             true,
@@ -7903,7 +7980,7 @@ Util:     cad.info()  cad.clear()  cad.help()
           ]
         ]
       ]), f = (le("CM") ?? 0) + (le("CV") ?? 0), i = /* @__PURE__ */ new Map();
-      if (f !== 0) for (let c = 0; c <= o; c++) i.set(c, [
+      if (f !== 0) for (let c = 0; c <= n; c++) i.set(c, [
         0,
         0,
         f,
@@ -7917,7 +7994,7 @@ Util:     cad.info()  cad.clear()  cad.help()
       }), Ze();
     }
     function fs() {
-      const t = le("width"), o = le("height"), n = le("Ex") ?? 0, l = (le("CM") ?? 0) + (le("CV") ?? 0), s = Math.max(1, Math.round(le("nSub") || 4)), d = [
+      const t = le("width"), n = le("height"), o = le("Ex") ?? 0, l = (le("CM") ?? 0) + (le("CV") ?? 0), s = Math.max(1, Math.round(le("nSub") || 4)), d = [
         [
           0,
           0,
@@ -7926,12 +8003,12 @@ Util:     cad.info()  cad.clear()  cad.help()
         [
           0,
           0,
-          o
+          n
         ],
         [
           t,
           0,
-          o
+          n
         ],
         [
           t,
@@ -7949,38 +8026,38 @@ Util:     cad.info()  cad.clear()  cad.help()
       const r = [
         0,
         0,
-        o
+        n
       ], f = [
         t,
         0,
-        o
+        n
       ];
       let i = 1;
       for (let m = 1; m < s; m++) {
-        const S = m / s, w = d.length;
+        const w = m / s, E = d.length;
         d.push([
-          r[0] + (f[0] - r[0]) * S,
-          r[1] + (f[1] - r[1]) * S,
-          r[2] + (f[2] - r[2]) * S
+          r[0] + (f[0] - r[0]) * w,
+          r[1] + (f[1] - r[1]) * w,
+          r[2] + (f[2] - r[2]) * w
         ]), a.push([
           i,
-          w
-        ]), i = w;
+          E
+        ]), i = E;
       }
       a.push([
         i,
         2
       ]);
       const c = /* @__PURE__ */ new Map();
-      if (n !== 0 && l === 0) c.set(2, [
-        n,
+      if (o !== 0 && l === 0) c.set(2, [
+        o,
         0,
         0,
         0,
         0,
         0
       ]);
-      else if (l !== 0 && n === 0) for (let m = 1; m < d.length; m++) m === 0 || m === 3 || c.set(m, [
+      else if (l !== 0 && o === 0) for (let m = 1; m < d.length; m++) m === 0 || m === 3 || c.set(m, [
         0,
         0,
         l,
@@ -7988,8 +8065,8 @@ Util:     cad.info()  cad.clear()  cad.help()
         0,
         0
       ]);
-      else if (n !== 0 && l !== 0) for (let m = 1; m < d.length; m++) m === 0 || m === 3 || c.set(m, [
-        m === 2 ? n : 0,
+      else if (o !== 0 && l !== 0) for (let m = 1; m < d.length; m++) m === 0 || m === 3 || c.set(m, [
+        m === 2 ? o : 0,
         0,
         l,
         0,
@@ -8025,23 +8102,23 @@ Util:     cad.info()  cad.clear()  cad.help()
       }), Ze();
     }
     function us() {
-      const t = le("dx"), o = le("dy"), n = le("dz"), l = Math.round(le("stories")), s = Math.max(1, Math.round(le("nSub") || 3)), d = [];
+      const t = le("dx"), n = le("dy"), o = le("dz"), l = Math.round(le("stories")), s = Math.max(1, Math.round(le("nSub") || 3)), d = [];
       for (let p = 0; p <= l; p++) d.push([
         0,
         0,
-        n * p
+        o * p
       ], [
         t,
         0,
-        n * p
+        o * p
       ], [
         t,
-        o,
-        n * p
+        n,
+        o * p
       ], [
         0,
-        o,
-        n * p
+        n,
+        o * p
       ]);
       const a = d.length, r = [
         ...d
@@ -8088,20 +8165,20 @@ Util:     cad.info()  cad.clear()  cad.help()
       }
       for (const [p, h] of i) {
         const T = d[p], k = d[h];
-        let M = p;
-        for (let P = 1; P < s; P++) {
-          const B = P / s, x = r.length;
+        let $ = p;
+        for (let C = 1; C < s; C++) {
+          const B = C / s, x = r.length;
           r.push([
             T[0] + (k[0] - T[0]) * B,
             T[1] + (k[1] - T[1]) * B,
             T[2] + (k[2] - T[2]) * B
           ]), f.push([
-            M,
+            $,
             x
-          ]), M = x;
+          ]), $ = x;
         }
         f.push([
-          M,
+          $,
           h
         ]);
       }
@@ -8114,8 +8191,8 @@ Util:     cad.info()  cad.clear()  cad.help()
         true,
         true
       ]);
-      const m = le("Ex") ?? 0, S = (le("CM") ?? 0) + (le("CV") ?? 0), w = a - 2, y = /* @__PURE__ */ new Map();
-      if (m !== 0 && S === 0) y.set(w, [
+      const m = le("Ex") ?? 0, w = (le("CM") ?? 0) + (le("CV") ?? 0), E = a - 2, y = /* @__PURE__ */ new Map();
+      if (m !== 0 && w === 0) y.set(E, [
         m,
         0,
         0,
@@ -8123,18 +8200,18 @@ Util:     cad.info()  cad.clear()  cad.help()
         0,
         0
       ]);
-      else if (S !== 0 && m === 0) for (let p = 0; p < r.length; p++) c.has(p) || y.set(p, [
+      else if (w !== 0 && m === 0) for (let p = 0; p < r.length; p++) c.has(p) || y.set(p, [
         0,
         0,
-        S,
+        w,
         0,
         0,
         0
       ]);
-      else if (m !== 0 && S !== 0) for (let p = 0; p < r.length; p++) c.has(p) || y.set(p, [
-        p === w ? m : 0,
+      else if (m !== 0 && w !== 0) for (let p = 0; p < r.length; p++) c.has(p) || y.set(p, [
+        p === E ? m : 0,
         0,
-        S,
+        w,
         0,
         0,
         0
@@ -8144,14 +8221,14 @@ Util:     cad.info()  cad.clear()  cad.help()
         loads: y
       }), Ze();
     }
-    function ha() {
-      const t = le("L"), o = Math.round(le("nElem")), n = le("F"), l = t / o, s = [], d = [];
-      for (let f = 0; f <= o; f++) s.push([
+    function xa() {
+      const t = le("L"), n = Math.round(le("nElem")), o = le("F"), l = t / n, s = [], d = [];
+      for (let f = 0; f <= n; f++) s.push([
         l * f,
         0,
         0
       ]);
-      for (let f = 0; f < o; f++) d.push([
+      for (let f = 0; f < n; f++) d.push([
         f,
         f + 1
       ]);
@@ -8169,9 +8246,9 @@ Util:     cad.info()  cad.clear()  cad.help()
         ]
       ]), r = /* @__PURE__ */ new Map([
         [
-          o,
+          n,
           [
-            n,
+            o,
             0,
             0,
             0,
@@ -8186,7 +8263,7 @@ Util:     cad.info()  cad.clear()  cad.help()
       }), Ze();
     }
     function ms() {
-      const t = le("Lx") || 15, o = le("Ly") || 10, n = le("meshSize") || 0.5, l = le("q") || -3, s = le("t") || 1, d = le("E") || 3e7, a = le("nu") || 0.3, r = d / (2 * (1 + a)), f = Le === 1 ? "Membrana" : Le === 2 ? "Kirchhoff" : "Mindlin", { nodes: i, elements: c, boundaryIndices: m } = go({
+      const t = le("Lx") || 15, n = le("Ly") || 10, o = le("meshSize") || 0.5, l = le("q") || -3, s = le("t") || 1, d = le("E") || 3e7, a = le("nu") || 0.3, r = d / (2 * (1 + a)), f = Le === 1 ? "Membrana" : Le === 2 ? "Kirchhoff" : "Mindlin", { nodes: i, elements: c, boundaryIndices: m } = hn({
         points: [
           [
             0,
@@ -8200,12 +8277,12 @@ Util:     cad.info()  cad.clear()  cad.help()
           ],
           [
             t,
-            o,
+            n,
             0
           ],
           [
             0,
-            o,
+            n,
             0
           ]
         ],
@@ -8215,8 +8292,8 @@ Util:     cad.info()  cad.clear()  cad.help()
           2,
           3
         ],
-        maxMeshSize: n
-      }), S = t * o, w = l * S / i.length, y = new Map(m.map((h) => [
+        maxMeshSize: o
+      }), w = t * n, E = l * w / i.length, y = new Map(m.map((h) => [
         h,
         [
           true,
@@ -8231,7 +8308,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         [
           0,
           0,
-          w,
+          E,
           0,
           0,
           0
@@ -8263,42 +8340,42 @@ Util:     cad.info()  cad.clear()  cad.help()
         ]))
       });
       try {
-        const h = Ct(i, c, e.nodeInputs.val, e.elementInputs.val);
+        const h = kt(i, c, e.nodeInputs.val, e.elementInputs.val);
         h && e.deformOutputs && (e.deformOutputs.val = h);
-        const T = Io(i, c, e.elementInputs.val, h);
+        const T = gn(i, c, e.elementInputs.val, h);
         T && e.analyzeOutputs && (e.analyzeOutputs.val = T), console.log(`Plate 3Q [${f}]: ${i.length} nodes, ${c.length} triangles, t=${s}, E=${d}, \u03BD=${a}`);
       } catch (h) {
         console.warn("Plate 3Q analysis failed:", h.message);
       }
-      setTimeout(() => It(), 50), Ze();
+      setTimeout(() => wt(), 50), Ze();
     }
     function bs() {
-      const t = le("Lx") || 10, o = le("Ly") || 10, n = Math.round(le("nx") || 16), l = Math.round(le("ny") || 16), s = le("t") || 0.2, d = le("q") || -10, a = le("E") || 3e7, r = le("nu") || 0.3, f = xt === 1 ? "clamped" : "simply-supported", c = {
+      const t = le("Lx") || 10, n = le("Ly") || 10, o = Math.round(le("nx") || 16), l = Math.round(le("ny") || 16), s = le("t") || 0.2, d = le("q") || -10, a = le("E") || 3e7, r = le("nu") || 0.3, f = xt === 1 ? "clamped" : "simply-supported", c = {
         1: 2,
         2: 1,
         3: 0
       }[Le] ?? 0;
-      return Ke.plateQ4(t, o, n, l, f, d, s, a, r, c);
+      return Ke.plateQ4(t, n, o, l, f, d, s, a, r, c);
     }
     function gs() {
-      const t = le("a") || 6, o = le("b") || 4, n = Math.round(le("nx") || 12), l = Math.round(le("ny") || 8), s = le("t") || 0.1, d = le("q") || -10, a = le("E") || 35e6, r = le("nu") || 0.15, i = {
+      const t = le("a") || 6, n = le("b") || 4, o = Math.round(le("nx") || 12), l = Math.round(le("ny") || 8), s = le("t") || 0.1, d = le("q") || -10, a = le("E") || 35e6, r = le("nu") || 0.15, i = {
         1: 2,
         2: 1,
         3: 0
-      }[Le] ?? 0, c = Ke.plateQ4(t, o, n, l, "simply-supported", d, s, a, r, i), m = a * s * s * s / (12 * (1 - r * r));
-      let S = 0;
-      for (let w = 1; w <= 19; w += 2) for (let y = 1; y <= 19; y += 2) {
-        const p = w * w / (t * t) + y * y / (o * o);
-        S += 1 / (w * y * p * p);
+      }[Le] ?? 0, c = Ke.plateQ4(t, n, o, l, "simply-supported", d, s, a, r, i), m = a * s * s * s / (12 * (1 - r * r));
+      let w = 0;
+      for (let E = 1; E <= 19; E += 2) for (let y = 1; y <= 19; y += 2) {
+        const p = E * E / (t * t) + y * y / (n * n);
+        w += 1 / (E * y * p * p);
       }
-      if (S *= 16 * Math.abs(d) / (Math.PI ** 6 * m), console.log(`\u{1F4D0} Navier anal\xEDtico w_center = ${S.toExponential(6)}`), c) {
-        const w = Math.abs((Math.abs(c.centerW || 0) - S) / S * 100);
-        console.log(`   WASM w_center = ${(c.centerW || 0).toExponential(6)}, error = ${w.toFixed(2)}%`);
+      if (w *= 16 * Math.abs(d) / (Math.PI ** 6 * m), console.log(`\u{1F4D0} Navier anal\xEDtico w_center = ${w.toExponential(6)}`), c) {
+        const E = Math.abs((Math.abs(c.centerW || 0) - w) / w * 100);
+        console.log(`   WASM w_center = ${(c.centerW || 0).toExponential(6)}, error = ${E.toFixed(2)}%`);
       }
       return c;
     }
     function hs() {
-      const t = le("t") || 0.2, o = le("q") || -10, n = le("E") || 35e6, l = le("nu") || 0.2, s = le("meshSize") || 0.6, d = [
+      const t = le("t") || 0.2, n = le("q") || -10, o = le("E") || 35e6, l = le("nu") || 0.2, s = le("meshSize") || 0.6, d = [
         3.6,
         4.2,
         4.2,
@@ -8307,7 +8384,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         3,
         3.6,
         3
-      ], r = d.reduce((g, E) => g + E, 0), f = a.reduce((g, E) => g + E, 0), i = [
+      ], r = d.reduce((g, S) => g + S, 0), f = a.reduce((g, S) => g + S, 0), i = [
         0
       ];
       for (const g of d) i.push(i[i.length - 1] + g);
@@ -8315,25 +8392,25 @@ Util:     cad.info()  cad.clear()  cad.help()
         0
       ];
       for (const g of a) c.push(c[c.length - 1] + g);
-      const m = Math.max(2, Math.round(r / s)), S = Math.max(2, Math.round(f / s)), w = r / m, y = f / S, p = [];
-      for (let g = 0; g <= S; g++) for (let E = 0; E <= m; E++) p.push([
-        E * w,
+      const m = Math.max(2, Math.round(r / s)), w = Math.max(2, Math.round(f / s)), E = r / m, y = f / w, p = [];
+      for (let g = 0; g <= w; g++) for (let S = 0; S <= m; S++) p.push([
+        S * E,
         g * y
       ]);
       const h = [], T = /* @__PURE__ */ new Set();
-      for (const g of i) for (const E of c) {
-        let v = 1 / 0, C = 0;
+      for (const g of i) for (const S of c) {
+        let v = 1 / 0, F = 0;
         for (let X = 0; X < p.length; X++) {
-          const V = Math.hypot(p[X][0] - g, p[X][1] - E);
-          V < v && (v = V, C = X);
+          const V = Math.hypot(p[X][0] - g, p[X][1] - S);
+          V < v && (v = V, F = X);
         }
-        T.has(C) || (T.add(C), h.push({
-          node: C,
+        T.has(F) || (T.add(F), h.push({
+          node: F,
           dof: 0,
           k: 1e15
         }));
       }
-      const M = {
+      const $ = {
         1: 2,
         2: 1,
         3: 0
@@ -8342,20 +8419,20 @@ Util:     cad.info()  cad.clear()  cad.help()
         "Mindlin",
         "Kirchhoff",
         "Membrane"
-      ][M]}]: ${r}\xD7${f}m, ${m}\xD7${S} elem, ${T.size} columnas`);
-      const P = performance.now(), B = Un({
-        E: n,
+      ][$]}]: ${r}\xD7${f}m, ${m}\xD7${w} elem, ${T.size} columnas`);
+      const C = performance.now(), B = Uo({
+        E: o,
         nu: l,
         thickness: t,
         meshLx: r,
         meshLy: f,
         meshNx: m,
-        meshNy: S,
+        meshNy: w,
         bcType: "none",
-        pressure: o,
-        theoryType: M,
+        pressure: n,
+        theoryType: $,
         springs: h
-      }), x = performance.now() - P;
+      }), x = performance.now() - C;
       console.log(`Solved in ${x.toFixed(1)} ms, w_max = ${B.maxW.toExponential(4)}`);
       const u = B.nodeResults.map((g) => [
         g.x,
@@ -8366,8 +8443,8 @@ Util:     cad.info()  cad.clear()  cad.help()
       ]);
       e.nodes.val = u, e.elements.val = I;
       const L = /* @__PURE__ */ new Map();
-      B.nodeResults.forEach((g, E) => {
-        L.set(E, [
+      B.nodeResults.forEach((g, S) => {
+        L.set(S, [
           0,
           0,
           g.w,
@@ -8388,9 +8465,9 @@ Util:     cad.info()  cad.clear()  cad.help()
         false
       ]);
       const j = /* @__PURE__ */ new Map();
-      if (Math.abs(o) > 1e-30) {
-        const g = o * r * f / u.length;
-        u.forEach((E, v) => {
+      if (Math.abs(n) > 1e-30) {
+        const g = n * r * f / u.length;
+        u.forEach((S, v) => {
           R.has(v) || j.set(v, [
             0,
             0,
@@ -8405,31 +8482,31 @@ Util:     cad.info()  cad.clear()  cad.help()
         supports: R,
         loads: j
       }), e.elementInputs && (e.elementInputs.val = {}), e.analyzeOutputs) {
-        const g = /* @__PURE__ */ new Map(), E = /* @__PURE__ */ new Map(), v = /* @__PURE__ */ new Map();
-        B.elementResults.forEach((C, X) => {
+        const g = /* @__PURE__ */ new Map(), S = /* @__PURE__ */ new Map(), v = /* @__PURE__ */ new Map();
+        B.elementResults.forEach((F, X) => {
           g.set(X, [
-            C.Mxx,
-            C.Mxx,
-            C.Mxx
-          ]), E.set(X, [
-            C.Myy,
-            C.Myy,
-            C.Myy
+            F.Mxx,
+            F.Mxx,
+            F.Mxx
+          ]), S.set(X, [
+            F.Myy,
+            F.Myy,
+            F.Myy
           ]), v.set(X, [
-            C.Mxy,
-            C.Mxy,
-            C.Mxy
+            F.Mxy,
+            F.Mxy,
+            F.Mxy
           ]);
         }), e.analyzeOutputs.val = {
           bendingXX: g,
-          bendingYY: E,
+          bendingYY: S,
           bendingXY: v
         };
       }
-      setTimeout(() => It(), 50), Ze();
+      setTimeout(() => wt(), 50), Ze();
     }
     function xs() {
-      const t = le("L") || 4, o = le("H") || 2, n = le("t") || 0.1, l = le("E") || 2e7, s = le("nu") || 0.2, d = l / (2 * (1 + s)), a = le("q") || -100, r = le("b") || 0.8, f = le("meshSize") || 0.2, { nodes: i, elements: c, boundaryIndices: m } = go({
+      const t = le("L") || 4, n = le("H") || 2, o = le("t") || 0.1, l = le("E") || 2e7, s = le("nu") || 0.2, d = l / (2 * (1 + s)), a = le("q") || -100, r = le("b") || 0.8, f = le("meshSize") || 0.2, { nodes: i, elements: c, boundaryIndices: m } = hn({
         points: [
           [
             0,
@@ -8443,12 +8520,12 @@ Util:     cad.info()  cad.clear()  cad.help()
           ],
           [
             t,
-            o,
+            n,
             0
           ],
           [
             0,
-            o,
+            n,
             0
           ]
         ],
@@ -8459,10 +8536,10 @@ Util:     cad.info()  cad.clear()  cad.help()
           3
         ],
         maxMeshSize: f
-      }), S = i, w = 0.4, y = /* @__PURE__ */ new Map();
-      for (let x = 0; x < S.length; x++) {
-        const u = S[x][0], I = S[x][1];
-        Math.abs(I) < 1e-6 && (u <= w + 1e-6 || u >= t - w - 1e-6) && y.set(x, [
+      }), w = i, E = 0.4, y = /* @__PURE__ */ new Map();
+      for (let x = 0; x < w.length; x++) {
+        const u = w[x][0], I = w[x][1];
+        Math.abs(I) < 1e-6 && (u <= E + 1e-6 || u >= t - E - 1e-6) && y.set(x, [
           true,
           true,
           true,
@@ -8472,12 +8549,12 @@ Util:     cad.info()  cad.clear()  cad.help()
         ]);
       }
       const p = (t - r) / 2, h = p + r, T = [];
-      for (let x = 0; x < S.length; x++) if (Math.abs(S[x][1] - o) < 1e-6) {
-        const u = S[x][0];
+      for (let x = 0; x < w.length; x++) if (Math.abs(w[x][1] - n) < 1e-6) {
+        const u = w[x][0];
         u >= p - 1e-6 && u <= h + 1e-6 && T.push(x);
       }
-      const k = a * r / Math.max(T.length, 1), M = /* @__PURE__ */ new Map();
-      for (const x of T) M.set(x, [
+      const k = a * r / Math.max(T.length, 1), $ = /* @__PURE__ */ new Map();
+      for (const x of T) $.set(x, [
         0,
         k,
         0,
@@ -8485,7 +8562,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         0,
         0
       ]);
-      const P = {
+      const C = {
         elasticities: new Map(c.map((x, u) => [
           u,
           l
@@ -8496,7 +8573,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         ])),
         thicknesses: new Map(c.map((x, u) => [
           u,
-          n
+          o
         ])),
         poissonsRatios: new Map(c.map((x, u) => [
           u,
@@ -8508,10 +8585,10 @@ Util:     cad.info()  cad.clear()  cad.help()
         ]))
       }, B = {
         supports: y,
-        loads: M
+        loads: $
       };
       try {
-        const x = Ct(S, c, B, P), u = Io(S, c, P, x), I = S.map((R) => [
+        const x = kt(w, c, B, C), u = gn(w, c, C, x), I = w.map((R) => [
           R[0],
           0,
           R[1]
@@ -8533,9 +8610,9 @@ Util:     cad.info()  cad.clear()  cad.help()
         }
         if (e.nodeInputs) {
           const R = /* @__PURE__ */ new Map();
-          y.forEach((g, E) => R.set(E, g));
+          y.forEach((g, S) => R.set(S, g));
           const j = /* @__PURE__ */ new Map();
-          M.forEach((g, E) => j.set(E, [
+          $.forEach((g, S) => j.set(S, [
             g[0],
             g[2],
             g[1],
@@ -8552,36 +8629,36 @@ Util:     cad.info()  cad.clear()  cad.help()
         x && x.deformations && x.deformations.forEach((R) => {
           const j = Math.sqrt(R[0] * R[0] + R[1] * R[1] + R[2] * R[2]);
           L = Math.max(L, j);
-        }), console.log(`Viga Alta: ${S.length} nodos, ${c.length} triangulos`), console.log(`  L=${t}, H=${o}, t=${n}, E=${l}, nu=${s}`), console.log(`  Carga: q=${a} kN/m sobre ${r}m central`), console.log(`  max|u| = ${L.toExponential(4)}`);
+        }), console.log(`Viga Alta: ${w.length} nodos, ${c.length} triangulos`), console.log(`  L=${t}, H=${n}, t=${o}, E=${l}, nu=${s}`), console.log(`  Carga: q=${a} kN/m sobre ${r}m central`), console.log(`  max|u| = ${L.toExponential(4)}`);
       } catch (x) {
         console.warn("Viga Alta analysis failed:", x.message);
       }
-      setTimeout(() => It(), 50), Ze();
+      setTimeout(() => wt(), 50), Ze();
     }
     function vs() {
-      const t = le("H") || 4, o = le("B") || 3, n = le("tw") || 0.3, l = le("tb") || 0.4, s = le("meshSize") || 0.2, d = le("E") || 25e6, a = le("nu") || 0.2, r = d / (2 * (1 + a)), f = le("gamma") || 18, i = le("Ka") || 0.33, c = le("Es") || 5e4, m = le("nus") || 0.3, S = c / (2 * (1 + m)), w = le("kn") || 1e6, y = le("ks") || 1e4, p = le("gammaW") || 9.81, h = le("Hw") || 3.5, T = le("qs") || 0, k = xt, M = o * 0.3, P = o * 0.7, B = [
+      const t = le("H") || 4, n = le("B") || 3, o = le("tw") || 0.3, l = le("tb") || 0.4, s = le("meshSize") || 0.2, d = le("E") || 25e6, a = le("nu") || 0.2, r = d / (2 * (1 + a)), f = le("gamma") || 18, i = le("Ka") || 0.33, c = le("Es") || 5e4, m = le("nus") || 0.3, w = c / (2 * (1 + m)), E = le("kn") || 1e6, y = le("ks") || 1e4, p = le("gammaW") || 9.81, h = le("Hw") || 3.5, T = le("qs") || 0, k = xt, $ = n * 0.3, C = n * 0.7, B = [
         [
-          -M,
+          -$,
           0,
           0
         ],
         [
-          P,
+          C,
           0,
           0
         ],
         [
-          P,
+          C,
           l,
           0
         ],
         [
-          n,
+          o,
           l,
           0
         ],
         [
-          n,
+          o,
           l + t,
           0
         ],
@@ -8596,14 +8673,14 @@ Util:     cad.info()  cad.clear()  cad.help()
           0
         ],
         [
-          -M,
+          -$,
           l,
           0
         ]
       ];
       let x = [], u = [], I = /* @__PURE__ */ new Map(), L = /* @__PURE__ */ new Map(), R;
       if (k === 0) {
-        const E = go({
+        const S = hn({
           points: B,
           polygon: [
             0,
@@ -8617,8 +8694,8 @@ Util:     cad.info()  cad.clear()  cad.help()
           ],
           maxMeshSize: s
         });
-        x = E.nodes, u = E.elements;
-        for (let C = 0; C < x.length; C++) Math.abs(x[C][1]) < 1e-6 && I.set(C, [
+        x = S.nodes, u = S.elements;
+        for (let F = 0; F < x.length; F++) Math.abs(x[F][1]) < 1e-6 && I.set(F, [
           true,
           true,
           true,
@@ -8627,19 +8704,19 @@ Util:     cad.info()  cad.clear()  cad.help()
           true
         ]);
         const v = [];
-        for (let C = 0; C < x.length; C++) {
-          const X = x[C][0], V = x[C][1];
-          Math.abs(X - n) < s * 0.6 && V >= l - 1e-6 && v.push({
-            idx: C,
+        for (let F = 0; F < x.length; F++) {
+          const X = x[F][0], V = x[F][1];
+          Math.abs(X - o) < s * 0.6 && V >= l - 1e-6 && v.push({
+            idx: F,
             y: V
           });
         }
-        v.sort((C, X) => C.y - X.y);
-        for (let C = 0; C < v.length; C++) {
-          const { idx: X, y: V } = v[C], ae = l + t - V, Z = i * f * ae + i * T;
+        v.sort((F, X) => F.y - X.y);
+        for (let F = 0; F < v.length; F++) {
+          const { idx: X, y: V } = v[F], ae = l + t - V, Q = i * f * ae + i * T;
           let K = s;
-          C > 0 && C < v.length - 1 ? K = (v[C + 1].y - v[C - 1].y) / 2 : C === 0 && v.length > 1 ? K = (v[1].y - v[0].y) / 2 : C === v.length - 1 && v.length > 1 && (K = (v[C].y - v[C - 1].y) / 2);
-          const de = Z * K;
+          F > 0 && F < v.length - 1 ? K = (v[F + 1].y - v[F - 1].y) / 2 : F === 0 && v.length > 1 ? K = (v[1].y - v[0].y) / 2 : F === v.length - 1 && v.length > 1 && (K = (v[F].y - v[F - 1].y) / 2);
+          const de = Q * K;
           Math.abs(de) > 1e-10 && L.set(X, [
             de,
             0,
@@ -8650,48 +8727,48 @@ Util:     cad.info()  cad.clear()  cad.help()
           ]);
         }
         R = {
-          elasticities: new Map(u.map((C, X) => [
+          elasticities: new Map(u.map((F, X) => [
             X,
             d
           ])),
-          elasticitiesOrthogonal: new Map(u.map((C, X) => [
+          elasticitiesOrthogonal: new Map(u.map((F, X) => [
             X,
             d
           ])),
-          thicknesses: new Map(u.map((C, X) => [
+          thicknesses: new Map(u.map((F, X) => [
             X,
-            n
+            o
           ])),
-          poissonsRatios: new Map(u.map((C, X) => [
+          poissonsRatios: new Map(u.map((F, X) => [
             X,
             a
           ])),
-          shearModuli: new Map(u.map((C, X) => [
+          shearModuli: new Map(u.map((F, X) => [
             X,
             r
           ]))
         };
       } else if (k === 1 || k === 2) {
-        const E = P, v = l + t;
+        const S = C, v = l + t;
         if (k === 2) {
-          const C = [
+          const F = [
             [
-              -M,
+              -$,
               0,
               0
             ],
             [
-              E,
+              S,
               0,
               0
             ],
             [
-              E,
+              S,
               v,
               0
             ],
             [
-              n,
+              o,
               v,
               0
             ],
@@ -8706,19 +8783,19 @@ Util:     cad.info()  cad.clear()  cad.help()
               0
             ],
             [
-              -M,
+              -$,
               l,
               0
             ]
           ], X = Math.max(3, Math.ceil((v - l) / s)), V = [];
           for (let se = 0; se <= X; se++) V.push([
-            n,
+            o,
             l + se * (v - l) / X,
             0
           ]);
-          const ae = go({
+          const ae = hn({
             points: [
-              ...C,
+              ...F,
               ...V
             ],
             polygon: [
@@ -8733,10 +8810,10 @@ Util:     cad.info()  cad.clear()  cad.help()
             maxMeshSize: s
           });
           x = ae.nodes, u = ae.elements;
-          const Z = s * 0.4, K = [];
+          const Q = s * 0.4, K = [];
           for (let se = 0; se < x.length; se++) {
             const Se = x[se][0], je = x[se][1];
-            Math.abs(Se - n) < Z && je >= l - Z && K.push(se);
+            Math.abs(Se - o) < Q && je >= l - Q && K.push(se);
           }
           K.sort((se, Se) => x[se][1] - x[Se][1]);
           const de = [
@@ -8756,12 +8833,12 @@ Util:     cad.info()  cad.clear()  cad.help()
               x[se][2]
             ]), re.set(se, Se);
           }
-          const Ie = u.length, Pe = [];
+          const Ie = u.length, Re = [];
           for (let se = 0; se < Ie; se++) {
-            const Se = u[se], je = (x[Se[0]][0] + x[Se[1]][0] + x[Se[2]][0]) / 3, rt = (x[Se[0]][1] + x[Se[1]][1] + x[Se[2]][1]) / 3, ct = je >= -M && je <= P && rt >= 0 && rt <= l, Lt = je >= 0 && je <= n && rt >= l && rt <= l + t, _t = ct || Lt;
-            if (Pe.push(!_t), !_t) for (let Rt = 0; Rt < Se.length; Rt++) {
-              const Dt = re.get(Se[Rt]);
-              Dt !== void 0 && (Se[Rt] = Dt);
+            const Se = u[se], je = (x[Se[0]][0] + x[Se[1]][0] + x[Se[2]][0]) / 3, rt = (x[Se[0]][1] + x[Se[1]][1] + x[Se[2]][1]) / 3, ct = je >= -$ && je <= C && rt >= 0 && rt <= l, Ct = je >= 0 && je <= o && rt >= l && rt <= l + t, _t = ct || Ct;
+            if (Re.push(!_t), !_t) for (let Pt = 0; Pt < Se.length; Pt++) {
+              const Dt = re.get(Se[Pt]);
+              Dt !== void 0 && (Se[Pt] = Dt);
             }
           }
           const _ = u.length;
@@ -8774,11 +8851,11 @@ Util:     cad.info()  cad.clear()  cad.help()
               ct
             ]);
           }
-          const fe = u.length - _, ne = /* @__PURE__ */ new Map(), pe = /* @__PURE__ */ new Map(), ee = /* @__PURE__ */ new Map(), ue = /* @__PURE__ */ new Map(), we = /* @__PURE__ */ new Map();
-          for (let se = 0; se < Ie; se++) Pe[se] ? (ne.set(se, c), pe.set(se, c), ue.set(se, m), we.set(se, S), ee.set(se, 1)) : (ne.set(se, d), pe.set(se, d), ue.set(se, a), we.set(se, r), ee.set(se, 1));
-          for (let se = _; se < u.length; se++) ne.set(se, w), pe.set(se, 0), ue.set(se, 0), we.set(se, y), ee.set(se, 0);
+          const fe = u.length - _, oe = /* @__PURE__ */ new Map(), pe = /* @__PURE__ */ new Map(), ee = /* @__PURE__ */ new Map(), ue = /* @__PURE__ */ new Map(), we = /* @__PURE__ */ new Map();
+          for (let se = 0; se < Ie; se++) Re[se] ? (oe.set(se, c), pe.set(se, c), ue.set(se, m), we.set(se, w), ee.set(se, 1)) : (oe.set(se, d), pe.set(se, d), ue.set(se, a), we.set(se, r), ee.set(se, 1));
+          for (let se = _; se < u.length; se++) oe.set(se, E), pe.set(se, 0), ue.set(se, 0), we.set(se, y), ee.set(se, 0);
           R = {
-            elasticities: ne,
+            elasticities: oe,
             elasticitiesOrthogonal: pe,
             thicknesses: ee,
             poissonsRatios: ue,
@@ -8793,7 +8870,7 @@ Util:     cad.info()  cad.clear()  cad.help()
               true,
               true,
               true
-            ]) : Math.abs(Se - E) < s * 0.1 && I.set(se, [
+            ]) : Math.abs(Se - S) < s * 0.1 && I.set(se, [
               true,
               false,
               true,
@@ -8803,10 +8880,10 @@ Util:     cad.info()  cad.clear()  cad.help()
             ]);
           }
           for (let se = 0; se < Ie; se++) {
-            if (!Pe[se]) continue;
-            const Se = u[se], je = x[Se[0]], rt = x[Se[1]], ct = x[Se[2]], Lt = Math.abs((rt[0] - je[0]) * (ct[1] - je[1]) - (ct[0] - je[0]) * (rt[1] - je[1])) / 2, _t = -f * Lt / 3;
-            for (const Rt of Se) {
-              const Dt = L.get(Rt) || [
+            if (!Re[se]) continue;
+            const Se = u[se], je = x[Se[0]], rt = x[Se[1]], ct = x[Se[2]], Ct = Math.abs((rt[0] - je[0]) * (ct[1] - je[1]) - (ct[0] - je[0]) * (rt[1] - je[1])) / 2, _t = -f * Ct / 3;
+            for (const Pt of Se) {
+              const Dt = L.get(Pt) || [
                 0,
                 0,
                 0,
@@ -8814,14 +8891,14 @@ Util:     cad.info()  cad.clear()  cad.help()
                 0,
                 0
               ];
-              Dt[1] += _t, L.set(Rt, Dt);
+              Dt[1] += _t, L.set(Pt, Dt);
             }
           }
           if (T > 0) {
             const se = [];
             for (let Se = 0; Se < x.length; Se++) {
               const je = x[Se][0], rt = x[Se][1];
-              Math.abs(rt - v) < s * 0.1 && je > n - 1e-6 && se.push({
+              Math.abs(rt - v) < s * 0.1 && je > o - 1e-6 && se.push({
                 idx: Se,
                 x: je
               });
@@ -8841,26 +8918,26 @@ Util:     cad.info()  cad.clear()  cad.help()
               ct[1] += rt, L.set(se[Se].idx, ct);
             }
           }
-          console.log(`  Interfaz Goodman: ${K.length} nodos interfaz, ${fe} elem interfaz, kn=${w}, ks=${y}`);
+          console.log(`  Interfaz Goodman: ${K.length} nodos interfaz, ${fe} elem interfaz, kn=${E}, ks=${y}`);
         } else {
-          const C = [
+          const F = [
             [
-              -M,
+              -$,
               0,
               0
             ],
             [
-              E,
+              S,
               0,
               0
             ],
             [
-              E,
+              S,
               v,
               0
             ],
             [
-              n,
+              o,
               v,
               0
             ],
@@ -8875,19 +8952,19 @@ Util:     cad.info()  cad.clear()  cad.help()
               0
             ],
             [
-              -M,
+              -$,
               l,
               0
             ]
           ], X = [
             [
-              n,
+              o,
               l,
               0
             ]
-          ], V = go({
+          ], V = hn({
             points: [
-              ...C,
+              ...F,
               ...X
             ],
             polygon: [
@@ -8903,30 +8980,30 @@ Util:     cad.info()  cad.clear()  cad.help()
           });
           x = V.nodes, u = V.elements;
           const ae = (_) => {
-            const fe = (x[_[0]][0] + x[_[1]][0] + x[_[2]][0]) / 3, ne = (x[_[0]][1] + x[_[1]][1] + x[_[2]][1]) / 3, pe = fe >= -M && fe <= P && ne >= 0 && ne <= l, ee = fe >= 0 && fe <= n && ne >= l && ne <= l + t;
+            const fe = (x[_[0]][0] + x[_[1]][0] + x[_[2]][0]) / 3, oe = (x[_[0]][1] + x[_[1]][1] + x[_[2]][1]) / 3, pe = fe >= -$ && fe <= C && oe >= 0 && oe <= l, ee = fe >= 0 && fe <= o && oe >= l && oe <= l + t;
             return pe || ee;
-          }, Z = /* @__PURE__ */ new Map(), K = /* @__PURE__ */ new Map(), de = /* @__PURE__ */ new Map(), re = /* @__PURE__ */ new Map(), Ie = /* @__PURE__ */ new Map(), Pe = [];
+          }, Q = /* @__PURE__ */ new Map(), K = /* @__PURE__ */ new Map(), de = /* @__PURE__ */ new Map(), re = /* @__PURE__ */ new Map(), Ie = /* @__PURE__ */ new Map(), Re = [];
           for (let _ = 0; _ < u.length; _++) {
             const fe = ae(u[_]);
-            Pe.push(!fe), fe ? (Z.set(_, d), K.set(_, d), re.set(_, a), Ie.set(_, r), de.set(_, 1)) : (Z.set(_, c), K.set(_, c), re.set(_, m), Ie.set(_, S), de.set(_, 1));
+            Re.push(!fe), fe ? (Q.set(_, d), K.set(_, d), re.set(_, a), Ie.set(_, r), de.set(_, 1)) : (Q.set(_, c), K.set(_, c), re.set(_, m), Ie.set(_, w), de.set(_, 1));
           }
           R = {
-            elasticities: Z,
+            elasticities: Q,
             elasticitiesOrthogonal: K,
             thicknesses: de,
             poissonsRatios: re,
             shearModuli: Ie
           };
           for (let _ = 0; _ < x.length; _++) {
-            const fe = x[_][0], ne = x[_][1];
-            Math.abs(ne) < 1e-6 ? I.set(_, [
+            const fe = x[_][0], oe = x[_][1];
+            Math.abs(oe) < 1e-6 ? I.set(_, [
               true,
               true,
               true,
               true,
               true,
               true
-            ]) : Math.abs(fe - E) < s * 0.1 && I.set(_, [
+            ]) : Math.abs(fe - S) < s * 0.1 && I.set(_, [
               true,
               false,
               true,
@@ -8936,8 +9013,8 @@ Util:     cad.info()  cad.clear()  cad.help()
             ]);
           }
           for (let _ = 0; _ < u.length; _++) {
-            if (!Pe[_]) continue;
-            const fe = u[_], ne = x[fe[0]], pe = x[fe[1]], ee = x[fe[2]], ue = Math.abs((pe[0] - ne[0]) * (ee[1] - ne[1]) - (ee[0] - ne[0]) * (pe[1] - ne[1])) / 2, we = -f * ue / 3;
+            if (!Re[_]) continue;
+            const fe = u[_], oe = x[fe[0]], pe = x[fe[1]], ee = x[fe[2]], ue = Math.abs((pe[0] - oe[0]) * (ee[1] - oe[1]) - (ee[0] - oe[0]) * (pe[1] - oe[1])) / 2, we = -f * ue / 3;
             for (const se of fe) {
               const Se = L.get(se) || [
                 0,
@@ -8953,17 +9030,17 @@ Util:     cad.info()  cad.clear()  cad.help()
           if (T > 0) {
             const _ = [];
             for (let fe = 0; fe < x.length; fe++) {
-              const ne = x[fe][0], pe = x[fe][1];
-              Math.abs(pe - v) < s * 0.1 && ne > n - 1e-6 && _.push({
+              const oe = x[fe][0], pe = x[fe][1];
+              Math.abs(pe - v) < s * 0.1 && oe > o - 1e-6 && _.push({
                 idx: fe,
-                x: ne
+                x: oe
               });
             }
-            _.sort((fe, ne) => fe.x - ne.x);
+            _.sort((fe, oe) => fe.x - oe.x);
             for (let fe = 0; fe < _.length; fe++) {
-              let ne = s;
-              fe > 0 && fe < _.length - 1 ? ne = (_[fe + 1].x - _[fe - 1].x) / 2 : fe === 0 && _.length > 1 ? ne = (_[1].x - _[0].x) / 2 : fe === _.length - 1 && _.length > 1 && (ne = (_[fe].x - _[fe - 1].x) / 2);
-              const pe = -T * ne, ee = L.get(_[fe].idx) || [
+              let oe = s;
+              fe > 0 && fe < _.length - 1 ? oe = (_[fe + 1].x - _[fe - 1].x) / 2 : fe === 0 && _.length > 1 ? oe = (_[1].x - _[0].x) / 2 : fe === _.length - 1 && _.length > 1 && (oe = (_[fe].x - _[fe - 1].x) / 2);
+              const pe = -T * oe, ee = L.get(_[fe].idx) || [
                 0,
                 0,
                 0,
@@ -8977,7 +9054,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         }
       }
       if (k === 3) {
-        const E = go({
+        const S = hn({
           points: B,
           polygon: [
             0,
@@ -8991,7 +9068,7 @@ Util:     cad.info()  cad.clear()  cad.help()
           ],
           maxMeshSize: s
         });
-        x = E.nodes, u = E.elements;
+        x = S.nodes, u = S.elements;
         for (let ae = 0; ae < x.length; ae++) Math.abs(x[ae][1]) < 1e-6 && I.set(ae, [
           true,
           true,
@@ -9000,23 +9077,23 @@ Util:     cad.info()  cad.clear()  cad.help()
           true,
           true
         ]);
-        const v = l + t, C = Math.min(h, t), X = v - C, V = [];
+        const v = l + t, F = Math.min(h, t), X = v - F, V = [];
         for (let ae = 0; ae < x.length; ae++) {
-          const Z = x[ae][0], K = x[ae][1];
-          Math.abs(Z - n) < s * 0.6 && K >= l - 1e-6 && V.push({
+          const Q = x[ae][0], K = x[ae][1];
+          Math.abs(Q - o) < s * 0.6 && K >= l - 1e-6 && V.push({
             idx: ae,
             y: K
           });
         }
-        V.sort((ae, Z) => ae.y - Z.y);
+        V.sort((ae, Q) => ae.y - Q.y);
         for (let ae = 0; ae < V.length; ae++) {
-          const { idx: Z, y: K } = V[ae], de = Math.max(0, v - K);
+          const { idx: Q, y: K } = V[ae], de = Math.max(0, v - K);
           if (de <= 0 || K < X - 1e-6) continue;
-          const re = Math.min(de, C), Ie = p * re;
-          let Pe = s;
-          ae > 0 && ae < V.length - 1 ? Pe = (V[ae + 1].y - V[ae - 1].y) / 2 : ae === 0 && V.length > 1 ? Pe = (V[1].y - V[0].y) / 2 : ae === V.length - 1 && V.length > 1 && (Pe = (V[ae].y - V[ae - 1].y) / 2);
-          const _ = Ie * Pe;
-          Math.abs(_) > 1e-10 && L.set(Z, [
+          const re = Math.min(de, F), Ie = p * re;
+          let Re = s;
+          ae > 0 && ae < V.length - 1 ? Re = (V[ae + 1].y - V[ae - 1].y) / 2 : ae === 0 && V.length > 1 ? Re = (V[1].y - V[0].y) / 2 : ae === V.length - 1 && V.length > 1 && (Re = (V[ae].y - V[ae - 1].y) / 2);
+          const _ = Ie * Re;
+          Math.abs(_) > 1e-10 && L.set(Q, [
             _,
             0,
             0,
@@ -9026,24 +9103,24 @@ Util:     cad.info()  cad.clear()  cad.help()
           ]);
         }
         R = {
-          elasticities: new Map(u.map((ae, Z) => [
-            Z,
+          elasticities: new Map(u.map((ae, Q) => [
+            Q,
             d
           ])),
-          elasticitiesOrthogonal: new Map(u.map((ae, Z) => [
-            Z,
+          elasticitiesOrthogonal: new Map(u.map((ae, Q) => [
+            Q,
             d
           ])),
-          thicknesses: new Map(u.map((ae, Z) => [
-            Z,
-            n
+          thicknesses: new Map(u.map((ae, Q) => [
+            Q,
+            o
           ])),
-          poissonsRatios: new Map(u.map((ae, Z) => [
-            Z,
+          poissonsRatios: new Map(u.map((ae, Q) => [
+            Q,
             a
           ])),
-          shearModuli: new Map(u.map((ae, Z) => [
-            Z,
+          shearModuli: new Map(u.map((ae, Q) => [
+            Q,
             r
           ]))
         };
@@ -9058,24 +9135,24 @@ Util:     cad.info()  cad.clear()  cad.help()
         "Presion agua"
       ];
       try {
-        const E = Ct(x, u, j, R), v = u.filter((de) => de.length === 3), C = {};
+        const S = kt(x, u, j, R), v = u.filter((de) => de.length === 3), F = {};
         for (const de of Object.keys(R)) {
           const re = R[de];
           if (re && re instanceof Map) {
             const Ie = /* @__PURE__ */ new Map();
-            let Pe = 0;
-            for (let _ = 0; _ < u.length; _++) u[_].length === 3 && (re.has(_) && Ie.set(Pe, re.get(_)), Pe++);
-            C[de] = Ie;
+            let Re = 0;
+            for (let _ = 0; _ < u.length; _++) u[_].length === 3 && (re.has(_) && Ie.set(Re, re.get(_)), Re++);
+            F[de] = Ie;
           }
         }
-        const X = Io(x, v, C, E), V = x.map((de) => [
+        const X = gn(x, v, F, S), V = x.map((de) => [
           de[0],
           0,
           de[1]
         ]);
-        if (e.nodes.val = V, e.elements.val = v, E && E.deformations) {
+        if (e.nodes.val = V, e.elements.val = v, S && S.deformations) {
           const de = /* @__PURE__ */ new Map();
-          E.deformations.forEach((re, Ie) => {
+          S.deformations.forEach((re, Ie) => {
             de.set(Ie, [
               re[0],
               re[2],
@@ -9090,8 +9167,8 @@ Util:     cad.info()  cad.clear()  cad.help()
         }
         const ae = /* @__PURE__ */ new Map();
         I.forEach((de, re) => ae.set(re, de));
-        const Z = /* @__PURE__ */ new Map();
-        L.forEach((de, re) => Z.set(re, [
+        const Q = /* @__PURE__ */ new Map();
+        L.forEach((de, re) => Q.set(re, [
           de[0],
           de[2],
           de[1],
@@ -9100,69 +9177,69 @@ Util:     cad.info()  cad.clear()  cad.help()
           de[4]
         ])), e.nodeInputs && (e.nodeInputs.val = {
           supports: ae,
-          loads: Z
+          loads: Q
         }), e.elementInputs && (e.elementInputs.val = {}), e.analyzeOutputs && (e.analyzeOutputs.val = {});
         let K = 0;
-        E && E.deformations && E.deformations.forEach((de) => {
+        S && S.deformations && S.deformations.forEach((de) => {
           const re = Math.sqrt(de[0] * de[0] + de[1] * de[1] + de[2] * de[2]);
           K = Math.max(K, re);
-        }), console.log(`Muro Contencion [${g[k]}]: ${x.length} nodos, ${u.length} triangulos`), console.log(`  H=${t}, B=${o}, tw=${n}, tb=${l}, Ka=${i}, gamma=${f}, qs=${T}`), k === 1 && console.log(`  Es=${c}, nus=${m}`), k === 2 && console.log(`  Es=${c}, nus=${m}, kn=${w}, ks=${y}`), k === 3 && console.log(`  gammaW=${p}, Hw=${h}`), console.log(`  max|u| = ${K.toExponential(4)}`);
-      } catch (E) {
-        console.warn("Muro Contencion failed:", E.message);
+        }), console.log(`Muro Contencion [${g[k]}]: ${x.length} nodos, ${u.length} triangulos`), console.log(`  H=${t}, B=${n}, tw=${o}, tb=${l}, Ka=${i}, gamma=${f}, qs=${T}`), k === 1 && console.log(`  Es=${c}, nus=${m}`), k === 2 && console.log(`  Es=${c}, nus=${m}, kn=${E}, ks=${y}`), k === 3 && console.log(`  gammaW=${p}, Hw=${h}`), console.log(`  max|u| = ${K.toExponential(4)}`);
+      } catch (S) {
+        console.warn("Muro Contencion failed:", S.message);
       }
-      setTimeout(() => It(), 50), Ze();
+      setTimeout(() => wt(), 50), Ze();
     }
     function ys() {
-      const t = le("Lx") || 2, o = le("Ly") || 2, n = le("t") || 0.5, l = le("colA") || 0.4, s = le("colH") || 1.5, d = Math.round(le("nx") || 8), a = Math.round(le("ny") || 8), r = le("E") || 25e6, f = le("nu") || 0.2, i = le("P") || -500, c = le("Mx") || 0, m = le("My") || 0, S = le("ks") || 2e4, w = t / d, y = o / a, p = t / 2, h = o / 2, T = l / 2, k = [];
+      const t = le("Lx") || 2, n = le("Ly") || 2, o = le("t") || 0.5, l = le("colA") || 0.4, s = le("colH") || 1.5, d = Math.round(le("nx") || 8), a = Math.round(le("ny") || 8), r = le("E") || 25e6, f = le("nu") || 0.2, i = le("P") || -500, c = le("Mx") || 0, m = le("My") || 0, w = le("ks") || 2e4, E = t / d, y = n / a, p = t / 2, h = n / 2, T = l / 2, k = [];
       for (let I = 0; I <= a; I++) for (let L = 0; L <= d; L++) {
         const R = I * (d + 1) + L;
-        let j = w, g = y;
-        (L === 0 || L === d) && (j = w / 2), (I === 0 || I === a) && (g = y / 2), k.push({
+        let j = E, g = y;
+        (L === 0 || L === d) && (j = E / 2), (I === 0 || I === a) && (g = y / 2), k.push({
           node: R,
           dof: 0,
-          k: S * j * g
+          k: w * j * g
         });
       }
-      let M = 0;
-      for (let I = 0; I <= a; I++) for (let L = 0; L <= d; L++) Math.abs(L * w - p) <= T + 1e-6 && Math.abs(I * y - h) <= T + 1e-6 && M++;
-      const P = i / Math.max(M, 1), B = [];
+      let $ = 0;
+      for (let I = 0; I <= a; I++) for (let L = 0; L <= d; L++) Math.abs(L * E - p) <= T + 1e-6 && Math.abs(I * y - h) <= T + 1e-6 && $++;
+      const C = i / Math.max($, 1), B = [];
       for (let I = 0; I <= a; I++) for (let L = 0; L <= d; L++) {
-        const R = L * w, j = I * y;
+        const R = L * E, j = I * y;
         Math.abs(R - p) <= T + 1e-6 && Math.abs(j - h) <= T + 1e-6 && B.push({
           node: I * (d + 1) + L,
           dof: 0,
-          value: P
+          value: C
         });
       }
       if (Math.abs(c) > 1e-6) {
         const I = T > 1e-6 ? T : y, L = c / I;
         for (let R = 0; R <= a; R++) for (let j = 0; j <= d; j++) {
-          const g = j * w, E = R * y;
-          if (Math.abs(g - p) <= T + 1e-6 && Math.abs(E - h) <= T + 1e-6) {
-            const v = E - h;
+          const g = j * E, S = R * y;
+          if (Math.abs(g - p) <= T + 1e-6 && Math.abs(S - h) <= T + 1e-6) {
+            const v = S - h;
             if (Math.abs(v) > 1e-6) {
-              const C = v > 0 ? 1 : -1;
+              const F = v > 0 ? 1 : -1;
               B.push({
                 node: R * (d + 1) + j,
                 dof: 0,
-                value: C * L / M * 2
+                value: F * L / $ * 2
               });
             }
           }
         }
       }
       if (Math.abs(m) > 1e-6) {
-        const I = T > 1e-6 ? T : w, L = m / I;
+        const I = T > 1e-6 ? T : E, L = m / I;
         for (let R = 0; R <= a; R++) for (let j = 0; j <= d; j++) {
-          const g = j * w, E = R * y;
-          if (Math.abs(g - p) <= T + 1e-6 && Math.abs(E - h) <= T + 1e-6) {
+          const g = j * E, S = R * y;
+          if (Math.abs(g - p) <= T + 1e-6 && Math.abs(S - h) <= T + 1e-6) {
             const v = g - p;
             if (Math.abs(v) > 1e-6) {
-              const C = v > 0 ? 1 : -1;
+              const F = v > 0 ? 1 : -1;
               B.push({
                 node: R * (d + 1) + j,
                 dof: 0,
-                value: C * L / M * 2
+                value: F * L / $ * 2
               });
             }
           }
@@ -9173,14 +9250,14 @@ Util:     cad.info()  cad.clear()  cad.help()
         2: 1,
         3: 0
       }[Le] ?? 1;
-      console.log(`Zapata: ${t}x${o}m, t=${n}m, ${d}x${a} elem`), console.log(`  col=${l}m, P=${i}, Mx=${c}, My=${m}, ks=${S}`);
+      console.log(`Zapata: ${t}x${n}m, t=${o}m, ${d}x${a} elem`), console.log(`  col=${l}m, P=${i}, Mx=${c}, My=${m}, ks=${w}`);
       try {
-        const I = Un({
+        const I = Uo({
           E: r,
           nu: f,
-          thickness: n,
+          thickness: o,
           meshLx: t,
-          meshLy: o,
+          meshLy: n,
           meshNx: d,
           meshNy: a,
           bcType: "none",
@@ -9281,10 +9358,10 @@ Util:     cad.info()  cad.clear()  cad.help()
         }), e.deformOutputs && (e.deformOutputs.val = {
           deformations: g
         });
-        const E = /* @__PURE__ */ new Map();
+        const S = /* @__PURE__ */ new Map();
         I.nodeResults.forEach((X, V) => {
-          const ae = X.x, Z = X.y;
-          (ae < 1e-6 || ae > t - 1e-6 || Z < 1e-6 || Z > o - 1e-6) && E.set(V, [
+          const ae = X.x, Q = X.y;
+          (ae < 1e-6 || ae > t - 1e-6 || Q < 1e-6 || Q > n - 1e-6) && S.set(V, [
             false,
             false,
             true,
@@ -9323,10 +9400,10 @@ Util:     cad.info()  cad.clear()  cad.help()
           0,
           0
         ]), e.nodeInputs && (e.nodeInputs.val = {
-          supports: E,
+          supports: S,
           loads: v
         }), e.elementInputs && (e.elementInputs.val = {}), e.analyzeOutputs) {
-          const X = I.elementResults.length, V = /* @__PURE__ */ new Map(), ae = /* @__PURE__ */ new Map(), Z = /* @__PURE__ */ new Map();
+          const X = I.elementResults.length, V = /* @__PURE__ */ new Map(), ae = /* @__PURE__ */ new Map(), Q = /* @__PURE__ */ new Map();
           I.elementResults.forEach((K, de) => {
             V.set(de, [
               K.Mxx,
@@ -9336,7 +9413,7 @@ Util:     cad.info()  cad.clear()  cad.help()
               K.Myy,
               K.Myy,
               K.Myy
-            ]), Z.set(de, [
+            ]), Q.set(de, [
               K.Mxy,
               K.Mxy,
               K.Mxy
@@ -9344,44 +9421,44 @@ Util:     cad.info()  cad.clear()  cad.help()
           }), e.analyzeOutputs.val = {
             bendingXX: V,
             bendingYY: ae,
-            bendingXY: Z
+            bendingXY: Q
           };
         }
-        const C = et();
-        C && (C.settings.shellResults.val = "bendingXX");
+        const F = et();
+        F && (F.settings.shellResults.val = "bendingXX");
       } catch (I) {
         console.warn("Zapata solver failed:", I.message);
       }
-      setTimeout(() => It(), 50), Ze();
+      setTimeout(() => wt(), 50), Ze();
     }
     function $s() {
-      const t = le("Lx") || 0.4, o = le("Ly") || 0.4, n = le("t") || 0.025, l = le("dBolt") || 0.022, s = le("sx") || 0.28, d = le("sy") || 0.28, a = le("colA") || 0.2, r = le("meshSize") || 8e-3, f = le("E") || 2e8, i = le("nu") || 0.3, c = f / (2 * (1 + i)), m = le("P") || -200, S = Math.round(le("nBolts") || 4), w = t / 2, y = o / 2, p = l / 2, h = a / 2, T = [];
-      S >= 4 && (T.push([
-        w - s / 2,
+      const t = le("Lx") || 0.4, n = le("Ly") || 0.4, o = le("t") || 0.025, l = le("dBolt") || 0.022, s = le("sx") || 0.28, d = le("sy") || 0.28, a = le("colA") || 0.2, r = le("meshSize") || 8e-3, f = le("E") || 2e8, i = le("nu") || 0.3, c = f / (2 * (1 + i)), m = le("P") || -200, w = Math.round(le("nBolts") || 4), E = t / 2, y = n / 2, p = l / 2, h = a / 2, T = [];
+      w >= 4 && (T.push([
+        E - s / 2,
         y - d / 2
       ]), T.push([
-        w + s / 2,
+        E + s / 2,
         y - d / 2
       ]), T.push([
-        w + s / 2,
+        E + s / 2,
         y + d / 2
       ]), T.push([
-        w - s / 2,
+        E - s / 2,
         y + d / 2
-      ])), S >= 6 && (T.push([
-        w,
+      ])), w >= 6 && (T.push([
+        E,
         y - d / 2
       ]), T.push([
-        w,
+        E,
         y + d / 2
-      ])), S >= 8 && (T.push([
-        w - s / 2,
+      ])), w >= 8 && (T.push([
+        E - s / 2,
         y
       ]), T.push([
-        w + s / 2,
+        E + s / 2,
         y
       ]));
-      const { nodes: k, elements: M } = go({
+      const { nodes: k, elements: $ } = hn({
         points: [
           [
             0,
@@ -9395,12 +9472,12 @@ Util:     cad.info()  cad.clear()  cad.help()
           ],
           [
             t,
-            o,
+            n,
             0
           ],
           [
             0,
-            o,
+            n,
             0
           ]
         ],
@@ -9411,17 +9488,17 @@ Util:     cad.info()  cad.clear()  cad.help()
           3
         ],
         maxMeshSize: r
-      }), P = (g, E) => {
-        for (const [v, C] of T) if ((g - v) * (g - v) + (E - C) * (E - C) < p * p) return true;
+      }), C = (g, S) => {
+        for (const [v, F] of T) if ((g - v) * (g - v) + (S - F) * (S - F) < p * p) return true;
         return false;
-      }, B = M.filter((g) => {
-        const E = (k[g[0]][0] + k[g[1]][0] + k[g[2]][0]) / 3, v = (k[g[0]][1] + k[g[1]][1] + k[g[2]][1]) / 3;
-        return !P(E, v);
+      }, B = $.filter((g) => {
+        const S = (k[g[0]][0] + k[g[1]][0] + k[g[2]][0]) / 3, v = (k[g[0]][1] + k[g[1]][1] + k[g[2]][1]) / 3;
+        return !C(S, v);
       }), x = k, u = /* @__PURE__ */ new Map();
       for (let g = 0; g < x.length; g++) {
-        const E = x[g][0], v = x[g][1];
-        for (const [C, X] of T) {
-          const V = Math.sqrt((E - C) * (E - C) + (v - X) * (v - X));
+        const S = x[g][0], v = x[g][1];
+        for (const [F, X] of T) {
+          const V = Math.sqrt((S - F) * (S - F) + (v - X) * (v - X));
           V >= p * 0.7 && V <= p * 1.5 && u.set(g, [
             true,
             true,
@@ -9435,14 +9512,14 @@ Util:     cad.info()  cad.clear()  cad.help()
       const I = /* @__PURE__ */ new Map();
       let L = 0;
       for (let g = 0; g < x.length; g++) {
-        const E = x[g][0], v = x[g][1];
-        Math.abs(E - w) <= h && Math.abs(v - y) <= h && L++;
+        const S = x[g][0], v = x[g][1];
+        Math.abs(S - E) <= h && Math.abs(v - y) <= h && L++;
       }
       const R = m / Math.max(L, 1);
       for (let g = 0; g < x.length; g++) {
-        const E = x[g][0], v = x[g][1];
-        if (Math.abs(E - w) <= h && Math.abs(v - y) <= h) {
-          const C = I.get(g) || [
+        const S = x[g][0], v = x[g][1];
+        if (Math.abs(S - E) <= h && Math.abs(v - y) <= h) {
+          const F = I.get(g) || [
             0,
             0,
             0,
@@ -9450,53 +9527,53 @@ Util:     cad.info()  cad.clear()  cad.help()
             0,
             0
           ];
-          C[2] += R, I.set(g, C);
+          F[2] += R, I.set(g, F);
         }
       }
       const j = {
-        elasticities: new Map(B.map((g, E) => [
-          E,
+        elasticities: new Map(B.map((g, S) => [
+          S,
           f
         ])),
-        elasticitiesOrthogonal: new Map(B.map((g, E) => [
-          E,
+        elasticitiesOrthogonal: new Map(B.map((g, S) => [
+          S,
           f
         ])),
-        thicknesses: new Map(B.map((g, E) => [
-          E,
-          n
+        thicknesses: new Map(B.map((g, S) => [
+          S,
+          o
         ])),
-        poissonsRatios: new Map(B.map((g, E) => [
-          E,
+        poissonsRatios: new Map(B.map((g, S) => [
+          S,
           i
         ])),
-        shearModuli: new Map(B.map((g, E) => [
-          E,
+        shearModuli: new Map(B.map((g, S) => [
+          S,
           c
         ]))
       };
-      console.log(`Placa Base: ${t * 1e3}x${o * 1e3}mm, t=${n * 1e3}mm, ${S} pernos d=${l * 1e3}mm`), console.log(`  P=${m} kN, col=${a * 1e3}mm, mesh=${r * 1e3}mm`), console.log(`  ${B.length} triangulos, ${x.length} nodos`);
+      console.log(`Placa Base: ${t * 1e3}x${n * 1e3}mm, t=${o * 1e3}mm, ${w} pernos d=${l * 1e3}mm`), console.log(`  P=${m} kN, col=${a * 1e3}mm, mesh=${r * 1e3}mm`), console.log(`  ${B.length} triangulos, ${x.length} nodos`);
       try {
-        const g = Ct(x, B, {
+        const g = kt(x, B, {
           supports: u,
           loads: I
-        }, j), E = Io(x, B, j, g);
+        }, j), S = gn(x, B, j, g);
         e.nodes.val = x, e.elements.val = B, g && e.deformOutputs && (e.deformOutputs.val = g), e.nodeInputs && (e.nodeInputs.val = {
           supports: u,
           loads: I
-        }), e.elementInputs && (e.elementInputs.val = {}), E && e.analyzeOutputs && (e.analyzeOutputs.val = E);
+        }), e.elementInputs && (e.elementInputs.val = {}), S && e.analyzeOutputs && (e.analyzeOutputs.val = S);
         let v = 0;
-        g && g.deformations && g.deformations.forEach((C) => {
-          const X = Math.sqrt(C[0] * C[0] + C[1] * C[1] + C[2] * C[2]);
+        g && g.deformations && g.deformations.forEach((F) => {
+          const X = Math.sqrt(F[0] * F[0] + F[1] * F[1] + F[2] * F[2]);
           v = Math.max(v, X);
         }), console.log(`  max|u| = ${v.toExponential(4)}`);
       } catch (g) {
         console.warn("Placa Base failed:", g.message);
       }
-      setTimeout(() => It(), 50), Ze();
+      setTimeout(() => wt(), 50), Ze();
     }
     function Ms() {
-      const t = le("colB") || 0.3, o = le("colH") || 0.3, n = le("colT") || 8e-3, l = le("colLen") || 1.5, s = le("Lx") || 0.45, d = le("Ly") || 0.45, a = le("tPlaca") || 0.025, r = le("dBolt") || 0.022, f = le("sx") || 0.32, i = le("sy") || 0.32, c = Math.round(le("nSubColV") || 6), m = Math.round(le("nSubColH") || 4), S = Math.round(le("nSubPlaca") || 10), w = le("E") || 2e8, y = le("nu") || 0.3, p = w / (2 * (1 + y)), h = le("P") || -300, T = s / 2, k = d / 2, M = r / 2, P = t / 2, B = o / 2, x = [], u = [], I = S, L = s / I, R = d / I, j = (pe, ee) => ee * (I + 1) + pe;
+      const t = le("colB") || 0.3, n = le("colH") || 0.3, o = le("colT") || 8e-3, l = le("colLen") || 1.5, s = le("Lx") || 0.45, d = le("Ly") || 0.45, a = le("tPlaca") || 0.025, r = le("dBolt") || 0.022, f = le("sx") || 0.32, i = le("sy") || 0.32, c = Math.round(le("nSubColV") || 6), m = Math.round(le("nSubColH") || 4), w = Math.round(le("nSubPlaca") || 10), E = le("E") || 2e8, y = le("nu") || 0.3, p = E / (2 * (1 + y)), h = le("P") || -300, T = s / 2, k = d / 2, $ = r / 2, C = t / 2, B = n / 2, x = [], u = [], I = w, L = s / I, R = d / I, j = (pe, ee) => ee * (I + 1) + pe;
       for (let pe = 0; pe <= I; pe++) for (let ee = 0; ee <= I; ee++) x.push([
         ee * L,
         pe * R,
@@ -9519,37 +9596,37 @@ Util:     cad.info()  cad.clear()  cad.help()
           T - f / 2,
           k + i / 2
         ]
-      ], E = (pe, ee) => {
-        for (const [ue, we] of g) if ((pe - ue) * (pe - ue) + (ee - we) * (ee - we) < M * M) return true;
+      ], S = (pe, ee) => {
+        for (const [ue, we] of g) if ((pe - ue) * (pe - ue) + (ee - we) * (ee - we) < $ * $) return true;
         return false;
       }, v = u.length;
       for (let pe = 0; pe < I; pe++) for (let ee = 0; ee < I; ee++) {
         const ue = (ee + 0.5) * L, we = (pe + 0.5) * R;
-        E(ue, we) || u.push([
+        S(ue, we) || u.push([
           j(ee, pe),
           j(ee + 1, pe),
           j(ee + 1, pe + 1),
           j(ee, pe + 1)
         ]);
       }
-      const C = u.length - v, X = c, V = m, ae = [
+      const F = u.length - v, X = c, V = m, ae = [
         [
-          T - P,
+          T - C,
           k - B
         ],
         [
-          T + P,
+          T + C,
           k - B
         ],
         [
-          T + P,
+          T + C,
           k + B
         ],
         [
-          T - P,
+          T - C,
           k + B
         ]
-      ], Z = u.length, K = [
+      ], Q = u.length, K = [
         [
           0,
           1
@@ -9573,25 +9650,25 @@ Util:     cad.info()  cad.clear()  cad.help()
       for (const [pe, ee] of K) {
         const [ue, we] = ae[pe], [se, Se] = ae[ee], je = [];
         for (let rt = 0; rt <= X; rt++) {
-          const ct = [], Lt = rt / X * l;
+          const ct = [], Ct = rt / X * l;
           for (let _t = 0; _t <= V; _t++) {
-            const Rt = _t / V, Dt = ue + Rt * (se - ue), Eo = we + Rt * (Se - we);
+            const Pt = _t / V, Dt = ue + Pt * (se - ue), Sn = we + Pt * (Se - we);
             if (rt === 0) {
-              const Vt = de(Dt, Eo);
+              const Vt = de(Dt, Sn);
               if (Vt >= 0) {
                 ct.push(Vt);
                 continue;
               }
             }
-            let ao = -1;
-            for (let Vt = 0; Vt < x.length; Vt++) if (Math.abs(x[Vt][0] - Dt) < 1e-6 && Math.abs(x[Vt][1] - Eo) < 1e-6 && Math.abs(x[Vt][2] - Lt) < 1e-6) {
-              ao = Vt;
+            let an = -1;
+            for (let Vt = 0; Vt < x.length; Vt++) if (Math.abs(x[Vt][0] - Dt) < 1e-6 && Math.abs(x[Vt][1] - Sn) < 1e-6 && Math.abs(x[Vt][2] - Ct) < 1e-6) {
+              an = Vt;
               break;
             }
-            ao >= 0 ? ct.push(ao) : (ct.push(x.length), x.push([
+            an >= 0 ? ct.push(an) : (ct.push(x.length), x.push([
               Dt,
-              Eo,
-              Lt
+              Sn,
+              Ct
             ]));
           }
           je.push(ct);
@@ -9603,12 +9680,12 @@ Util:     cad.info()  cad.clear()  cad.help()
           je[rt + 1][ct]
         ]);
       }
-      const re = u.length - Z, Ie = /* @__PURE__ */ new Map();
+      const re = u.length - Q, Ie = /* @__PURE__ */ new Map();
       for (let pe = 0; pe < (I + 1) * (I + 1); pe++) {
         const ee = x[pe][0], ue = x[pe][1];
         for (const [we, se] of g) {
           const Se = Math.sqrt((ee - we) * (ee - we) + (ue - se) * (ue - se));
-          Se >= M * 0.5 && Se <= M * 2 && Ie.set(pe, [
+          Se >= $ * 0.5 && Se <= $ * 2 && Ie.set(pe, [
             true,
             true,
             true,
@@ -9618,10 +9695,10 @@ Util:     cad.info()  cad.clear()  cad.help()
           ]);
         }
       }
-      const Pe = /* @__PURE__ */ new Map(), _ = [];
+      const Re = /* @__PURE__ */ new Map(), _ = [];
       for (let pe = 0; pe < x.length; pe++) Math.abs(x[pe][2] - l) < 1e-6 && _.push(pe);
       const fe = h / Math.max(_.length, 1);
-      for (const pe of _) Pe.set(pe, [
+      for (const pe of _) Re.set(pe, [
         0,
         0,
         fe,
@@ -9629,24 +9706,24 @@ Util:     cad.info()  cad.clear()  cad.help()
         0,
         0
       ]);
-      const ne = {
+      const oe = {
         elasticities: /* @__PURE__ */ new Map(),
         poissonsRatios: /* @__PURE__ */ new Map(),
         thicknesses: /* @__PURE__ */ new Map(),
         shearModuli: /* @__PURE__ */ new Map()
       };
-      for (let pe = v; pe < v + C; pe++) ne.elasticities.set(pe, w), ne.poissonsRatios.set(pe, y), ne.thicknesses.set(pe, a), ne.shearModuli.set(pe, p);
-      for (let pe = Z; pe < Z + re; pe++) ne.elasticities.set(pe, w), ne.poissonsRatios.set(pe, y), ne.thicknesses.set(pe, n), ne.shearModuli.set(pe, p);
-      console.log(`Col+Placa 3D: col ${t * 1e3}x${o * 1e3}x${n * 1e3}mm, h=${l}m`), console.log(`  Placa ${s * 1e3}x${d * 1e3}mm, t=${a * 1e3}mm, 4 pernos d=${r * 1e3}mm`), console.log(`  ${C} Q4 placa + ${re} Q4 columna = ${u.length} total`), console.log(`  ${x.length} nodos, P=${h} kN`);
+      for (let pe = v; pe < v + F; pe++) oe.elasticities.set(pe, E), oe.poissonsRatios.set(pe, y), oe.thicknesses.set(pe, a), oe.shearModuli.set(pe, p);
+      for (let pe = Q; pe < Q + re; pe++) oe.elasticities.set(pe, E), oe.poissonsRatios.set(pe, y), oe.thicknesses.set(pe, o), oe.shearModuli.set(pe, p);
+      console.log(`Col+Placa 3D: col ${t * 1e3}x${n * 1e3}x${o * 1e3}mm, h=${l}m`), console.log(`  Placa ${s * 1e3}x${d * 1e3}mm, t=${a * 1e3}mm, 4 pernos d=${r * 1e3}mm`), console.log(`  ${F} Q4 placa + ${re} Q4 columna = ${u.length} total`), console.log(`  ${x.length} nodos, P=${h} kN`);
       try {
-        const pe = Ct(x, u, {
+        const pe = kt(x, u, {
           supports: Ie,
-          loads: Pe
-        }, ne), ee = Io(x, u, ne, pe);
+          loads: Re
+        }, oe), ee = gn(x, u, oe, pe);
         e.nodes.val = x, e.elements.val = u, pe && e.deformOutputs && (e.deformOutputs.val = pe), e.nodeInputs && (e.nodeInputs.val = {
           supports: Ie,
-          loads: Pe
-        }), e.elementInputs && (e.elementInputs.val = ne), ee && e.analyzeOutputs && (e.analyzeOutputs.val = ee);
+          loads: Re
+        }), e.elementInputs && (e.elementInputs.val = oe), ee && e.analyzeOutputs && (e.analyzeOutputs.val = ee);
         let ue = 0;
         (pe == null ? void 0 : pe.deformations) && pe.deformations.forEach((we) => {
           const se = Math.sqrt(we[0] * we[0] + we[1] * we[1] + we[2] * we[2]);
@@ -9655,25 +9732,25 @@ Util:     cad.info()  cad.clear()  cad.help()
       } catch (pe) {
         console.warn("Col+Placa failed:", pe.message), e.nodes.val = x, e.elements.val = u, e.nodeInputs && (e.nodeInputs.val = {
           supports: Ie,
-          loads: Pe
+          loads: Re
         });
       }
-      setTimeout(() => It(), 50), Ze();
+      setTimeout(() => wt(), 50), Ze();
     }
     function ws() {
-      const t = le("H") || 6, o = le("angle") || 45, n = le("bTop") || 3, l = le("bBot") || 3, s = le("meshSize") || 2, d = le("E") || 5e4, a = le("nu") || 0.3, r = le("gamma") || 18, f = le("c") || 15, i = le("phi") || 30, c = le("qs") || 0, m = t / Math.tan(o * Math.PI / 180), S = l + m + n, w = t, y = [
+      const t = le("H") || 6, n = le("angle") || 45, o = le("bTop") || 3, l = le("bBot") || 3, s = le("meshSize") || 2, d = le("E") || 5e4, a = le("nu") || 0.3, r = le("gamma") || 18, f = le("c") || 15, i = le("phi") || 30, c = le("qs") || 0, m = t / Math.tan(n * Math.PI / 180), w = l + m + o, E = t, y = [
         [
           0,
-          -w,
+          -E,
           0
         ],
         [
-          S,
-          -w,
+          w,
+          -E,
           0
         ],
         [
-          S,
+          w,
           t,
           0
         ],
@@ -9692,7 +9769,7 @@ Util:     cad.info()  cad.clear()  cad.help()
           0,
           0
         ]
-      ], { nodes: p, elements: h } = go({
+      ], { nodes: p, elements: h } = hn({
         points: y,
         polygon: [
           0,
@@ -9703,25 +9780,25 @@ Util:     cad.info()  cad.clear()  cad.help()
           5
         ],
         maxMeshSize: s
-      }), T = p, k = [], M = /* @__PURE__ */ new Map();
+      }), T = p, k = [], $ = /* @__PURE__ */ new Map();
       for (let B = 0; B < T.length; B++) {
         const x = T[B][0], u = T[B][1];
-        Math.abs(u + w) < 1e-6 ? (k.push({
+        Math.abs(u + E) < 1e-6 ? (k.push({
           node: B,
           fixX: true,
           fixY: true
-        }), M.set(B, [
+        }), $.set(B, [
           true,
           true,
           true,
           true,
           true,
           true
-        ])) : (Math.abs(x) < 1e-6 || Math.abs(x - S) < 1e-6) && (k.push({
+        ])) : (Math.abs(x) < 1e-6 || Math.abs(x - w) < 1e-6) && (k.push({
           node: B,
           fixX: true,
           fixY: false
-        }), M.set(B, [
+        }), $.set(B, [
           true,
           false,
           true,
@@ -9730,16 +9807,16 @@ Util:     cad.info()  cad.clear()  cad.help()
           true
         ]));
       }
-      const P = t - s * 0.3;
+      const C = t - s * 0.3;
       try {
-        const B = T.map((E) => [
-          E[0],
-          E[1]
-        ]), x = h.map((E) => [
-          E[0],
-          E[1],
-          E[2]
-        ]), u = Va({
+        const B = T.map((S) => [
+          S[0],
+          S[1]
+        ]), x = h.map((S) => [
+          S[0],
+          S[1],
+          S[2]
+        ]), u = Ua({
           nodes: B,
           elements: x,
           E: d,
@@ -9750,20 +9827,20 @@ Util:     cad.info()  cad.clear()  cad.help()
           thickness: 1,
           supports: k,
           surcharge: c,
-          surfaceYThreshold: P
-        }), I = T.map((E) => [
-          E[0],
+          surfaceYThreshold: C
+        }), I = T.map((S) => [
+          S[0],
           0,
-          E[1]
+          S[1]
         ]);
         e.nodes.val = I, e.elements.val = h;
         const L = /* @__PURE__ */ new Map();
-        for (let E = 0; E < u.displacements.length; E++) {
-          const [v, C] = u.displacements[E];
-          L.set(E, [
+        for (let S = 0; S < u.displacements.length; S++) {
+          const [v, F] = u.displacements[S];
+          L.set(S, [
             v,
             0,
-            C,
+            F,
             0,
             0,
             0
@@ -9772,12 +9849,12 @@ Util:     cad.info()  cad.clear()  cad.help()
         e.deformOutputs && (e.deformOutputs.val = {
           deformations: L
         }), e.nodeInputs && (e.nodeInputs.val = {
-          supports: M
+          supports: $
         }), e.elementInputs && (e.elementInputs.val = {});
         const R = /* @__PURE__ */ new Map();
-        for (let E = 0; E < u.plasticStrain.length; E++) {
-          const v = u.plasticStrain[E];
-          R.set(E, [
+        for (let S = 0; S < u.plasticStrain.length; S++) {
+          const v = u.plasticStrain[S];
+          R.set(S, [
             v,
             v,
             v
@@ -9787,57 +9864,57 @@ Util:     cad.info()  cad.clear()  cad.help()
           membraneXX: R
         });
         let j = 0;
-        for (const [E, v] of u.displacements) {
-          const C = Math.sqrt(E * E + v * v);
-          j = Math.max(j, C);
+        for (const [S, v] of u.displacements) {
+          const F = Math.sqrt(S * S + v * v);
+          j = Math.max(j, F);
         }
         let g = 0;
-        for (const E of u.plasticStrain) g = Math.max(g, E);
-        console.log(`Talud SRM: ${T.length} nodos, ${h.length} triangulos`), console.log(`  H=${t}, angulo=${o}\xB0, c=${f} kPa, \u03C6=${i}\xB0, \u03B3=${r}`), console.log("  \u2550\u2550\u2550 Strength Reduction Method (Mohr-Coulomb) \u2550\u2550\u2550"), console.log(`  FOS = ${u.fos.toFixed(3)}`), console.log(`  max|u| = ${j.toExponential(4)}`), console.log(`  max \u03B5_pl = ${g.toExponential(4)}`), u.fos < 1 ? console.warn("  \u26A0 TALUD INESTABLE (FOS < 1.0)") : u.fos < 1.5 && console.warn("  \u26A0 FOS < 1.5 \u2014 revisar estabilidad");
+        for (const S of u.plasticStrain) g = Math.max(g, S);
+        console.log(`Talud SRM: ${T.length} nodos, ${h.length} triangulos`), console.log(`  H=${t}, angulo=${n}\xB0, c=${f} kPa, \u03C6=${i}\xB0, \u03B3=${r}`), console.log("  \u2550\u2550\u2550 Strength Reduction Method (Mohr-Coulomb) \u2550\u2550\u2550"), console.log(`  FOS = ${u.fos.toFixed(3)}`), console.log(`  max|u| = ${j.toExponential(4)}`), console.log(`  max \u03B5_pl = ${g.toExponential(4)}`), u.fos < 1 ? console.warn("  \u26A0 TALUD INESTABLE (FOS < 1.0)") : u.fos < 1.5 && console.warn("  \u26A0 FOS < 1.5 \u2014 revisar estabilidad");
       } catch (B) {
         console.warn("Talud SRM failed:", B.message);
       }
-      setTimeout(() => It(), 50), Ze();
+      setTimeout(() => wt(), 50), Ze();
     }
-    let io = null, zt = null, co = null;
-    function xa() {
+    let cn = null, At = null, dn = null;
+    function va() {
       let t = document.getElementById("sections");
       if (!t) {
         t = document.createElement("div"), t.id = "sections";
-        const o = document.getElementById("parameters");
-        let n = document.getElementById("right-panels-wrapper");
-        if (!n && o) {
-          n = document.createElement("div"), n.id = "right-panels-wrapper", n.style.cssText = "position:absolute;bottom:0;right:0;z-index:3;max-height:95vh;display:flex;flex-direction:row;gap:0;align-items:flex-end;pointer-events:none;";
+        const n = document.getElementById("parameters");
+        let o = document.getElementById("right-panels-wrapper");
+        if (!o && n) {
+          o = document.createElement("div"), o.id = "right-panels-wrapper", o.style.cssText = "position:absolute;bottom:0;right:0;z-index:3;max-height:95vh;display:flex;flex-direction:row;gap:0;align-items:flex-end;pointer-events:none;";
           let l = document.getElementById("luces-panel");
-          l || (l = document.createElement("div"), l.id = "luces-panel", l.style.cssText = "width:180px;max-height:90vh;overflow-y:auto;pointer-events:auto;"), o.style.cssText = "width:240px;position:static;max-height:90vh;overflow-y:auto;pointer-events:auto;";
-          const s = o.parentElement;
-          s.removeChild(o), n.appendChild(t), n.appendChild(l), n.appendChild(o), s.appendChild(n);
+          l || (l = document.createElement("div"), l.id = "luces-panel", l.style.cssText = "width:180px;max-height:90vh;overflow-y:auto;pointer-events:auto;"), n.style.cssText = "width:240px;position:static;max-height:90vh;overflow-y:auto;pointer-events:auto;";
+          const s = n.parentElement;
+          s.removeChild(n), o.appendChild(t), o.appendChild(l), o.appendChild(n), s.appendChild(o);
         }
-        n ? t.style.cssText = "width:200px;max-height:90vh;overflow-y:auto;pointer-events:auto;" : (t.style.cssText = "position:absolute;bottom:0;right:316px;width:250px;z-index:3;max-height:80vh;overflow-y:auto;", document.body.appendChild(t));
+        o ? t.style.cssText = "width:200px;max-height:90vh;overflow-y:auto;pointer-events:auto;" : (t.style.cssText = "position:absolute;bottom:0;right:316px;width:250px;z-index:3;max-height:80vh;overflow-y:auto;", document.body.appendChild(t));
       }
       return t;
     }
     function $t(t) {
-      const o = Vo.find((n) => n.id === F);
-      return t / o.toM;
+      const n = Vn.find((o) => o.id === P);
+      return t / n.toM;
     }
     function Mt(t) {
-      const o = Vo.find((n) => n.id === F);
-      return t * o.toM;
-    }
-    function To(t) {
-      const o = os.find((l) => l.id === J.forceId), n = Vo.find((l) => l.id === J.lengthId);
-      return t / (o.toKN / (n.toM * n.toM));
+      const n = Vn.find((o) => o.id === P);
+      return t * n.toM;
     }
     function Tn(t) {
-      const o = os.find((l) => l.id === J.forceId), n = Vo.find((l) => l.id === J.lengthId);
-      return t * (o.toKN / (n.toM * n.toM));
+      const n = ns.find((l) => l.id === J.forceId), o = Vn.find((l) => l.id === J.lengthId);
+      return t / (n.toKN / (o.toM * o.toM));
     }
-    function zn() {
+    function To(t) {
+      const n = ns.find((l) => l.id === J.forceId), o = Vn.find((l) => l.id === J.lengthId);
+      return t * (n.toKN / (o.toM * o.toM));
+    }
+    function zo() {
       return J.label;
     }
-    function va() {
-      switch (Vo.find((o) => o.id === F).id) {
+    function ya() {
+      switch (Vn.find((n) => n.id === P).id) {
         case "m":
           return [
             0.1,
@@ -9870,132 +9947,132 @@ Util:     cad.info()  cad.clear()  cad.help()
           ];
       }
     }
-    function ya() {
-      const t = To(20594), o = To(58840), n = Math.max(1, Math.round((o - t) / 40));
+    function $a() {
+      const t = Tn(20594), n = Tn(58840), o = Math.max(1, Math.round((n - t) / 40));
       return [
         Math.round(t),
-        Math.round(o),
-        n
+        Math.round(n),
+        o
       ];
     }
-    function Es(t, o, n, l, s) {
-      const d = Ne.steelVigaType, a = d === 0 ? mn() : bn();
+    function Es(t, n, o, l, s) {
+      const d = Ne.steelVigaType, a = d === 0 ? mo() : bo();
       if (Ne.vigaMat === 0) {
-        for (let r = 0; r < o.length; r++) {
-          const f = o[r], i = `b${n}${r}`, c = `h${n}${r}`, m = {};
+        for (let r = 0; r < n.length; r++) {
+          const f = n[r], i = `b${o}${r}`, c = `h${o}${r}`, m = {};
           m[i] = +$t(f.b).toFixed(2), m[c] = +$t(f.h).toFixed(2), t.addBinding(m, i, {
             min: l[0],
             max: l[1],
             step: l[2],
-            label: `b sv${n}${r + 1}`
+            label: `b sv${o}${r + 1}`
           }), t.addBinding(m, c, {
             min: l[0],
             max: l[1],
             step: l[2],
-            label: `h sv${n}${r + 1}`
+            label: `h sv${o}${r + 1}`
           });
         }
         t.on("change", (r) => {
           var _a2;
-          const f = (_a2 = r.target) == null ? void 0 : _a2.key, i = f == null ? void 0 : f.match(new RegExp(`^b${n}(\\d+)$`)), c = f == null ? void 0 : f.match(new RegExp(`^h${n}(\\d+)$`));
-          i && (o[parseInt(i[1])].b = Mt(r.value), Re()), c && (o[parseInt(c[1])].h = Mt(r.value), Re());
+          const f = (_a2 = r.target) == null ? void 0 : _a2.key, i = f == null ? void 0 : f.match(new RegExp(`^b${o}(\\d+)$`)), c = f == null ? void 0 : f.match(new RegExp(`^h${o}(\\d+)$`));
+          i && (n[parseInt(i[1])].b = Mt(r.value), Pe()), c && (n[parseInt(c[1])].h = Mt(r.value), Pe());
         });
       } else if (d <= 1) {
-        for (let r = 0; r < o.length; r++) {
+        for (let r = 0; r < n.length; r++) {
           const f = {};
-          f[`p${n}${r}`] = o[r].profileIdx ?? 0, t.addBinding(f, `p${n}${r}`, {
-            label: `sv${n}${r + 1}`,
+          f[`p${o}${r}`] = n[r].profileIdx ?? 0, t.addBinding(f, `p${o}${r}`, {
+            label: `sv${o}${r + 1}`,
             options: a
           });
         }
         t.on("change", (r) => {
           var _a2, _b;
-          const i = (_b = (_a2 = r.target) == null ? void 0 : _a2.key) == null ? void 0 : _b.match(new RegExp(`^p${n}(\\d+)$`));
-          i && (o[parseInt(i[1])].profileIdx = r.value, Re());
+          const i = (_b = (_a2 = r.target) == null ? void 0 : _a2.key) == null ? void 0 : _b.match(new RegExp(`^p${o}(\\d+)$`));
+          i && (n[parseInt(i[1])].profileIdx = r.value, Pe());
         });
       } else if (d === 2) {
-        for (let r = 0; r < o.length; r++) {
-          const f = o[r], i = {}, c = `${n}${r}`;
+        for (let r = 0; r < n.length; r++) {
+          const f = n[r], i = {}, c = `${o}${r}`;
           i[`bf${c}`] = +$t(f.bf ?? 0.2).toFixed(3), i[`h${c}`] = +$t(f.hf ?? 0.4).toFixed(3), i[`tf${c}`] = +$t(f.tf ?? 0.015).toFixed(3), i[`tw${c}`] = +$t(f.tw ?? 0.01).toFixed(3), t.addBinding(i, `bf${c}`, {
             min: l[0],
             max: l[1],
             step: l[2],
-            label: `bf sv${n}${r + 1}`
+            label: `bf sv${o}${r + 1}`
           }), t.addBinding(i, `h${c}`, {
             min: l[0],
             max: l[1],
             step: l[2],
-            label: `h sv${n}${r + 1}`
+            label: `h sv${o}${r + 1}`
           }), t.addBinding(i, `tf${c}`, {
             min: s[0],
             max: s[1],
             step: s[2],
-            label: `tf sv${n}${r + 1}`
+            label: `tf sv${o}${r + 1}`
           }), t.addBinding(i, `tw${c}`, {
             min: s[0],
             max: s[1],
             step: s[2],
-            label: `tw sv${n}${r + 1}`
+            label: `tw sv${o}${r + 1}`
           });
         }
         t.on("change", (r) => {
           var _a2;
           const f = (_a2 = r.target) == null ? void 0 : _a2.key;
-          for (let i = 0; i < o.length; i++) {
-            const c = `${n}${i}`;
-            f === `bf${c}` && (o[i].bf = Mt(r.value), Re()), f === `h${c}` && (o[i].hf = Mt(r.value), Re()), f === `tf${c}` && (o[i].tf = Mt(r.value), Re()), f === `tw${c}` && (o[i].tw = Mt(r.value), Re());
+          for (let i = 0; i < n.length; i++) {
+            const c = `${o}${i}`;
+            f === `bf${c}` && (n[i].bf = Mt(r.value), Pe()), f === `h${c}` && (n[i].hf = Mt(r.value), Pe()), f === `tf${c}` && (n[i].tf = Mt(r.value), Pe()), f === `tw${c}` && (n[i].tw = Mt(r.value), Pe());
           }
         });
       } else {
-        for (let r = 0; r < o.length; r++) {
-          const f = o[r], i = {}, c = `${n}${r}`;
+        for (let r = 0; r < n.length; r++) {
+          const f = n[r], i = {}, c = `${o}${r}`;
           i[`bc${c}`] = +$t(f.bc ?? 0.2).toFixed(3), i[`hc${c}`] = +$t(f.hc ?? 0.3).toFixed(3), i[`t${c}`] = +$t(f.t ?? 8e-3).toFixed(3), t.addBinding(i, `bc${c}`, {
             min: l[0],
             max: l[1],
             step: l[2],
-            label: `b sv${n}${r + 1}`
+            label: `b sv${o}${r + 1}`
           }), t.addBinding(i, `hc${c}`, {
             min: l[0],
             max: l[1],
             step: l[2],
-            label: `h sv${n}${r + 1}`
+            label: `h sv${o}${r + 1}`
           }), t.addBinding(i, `t${c}`, {
             min: s[0],
             max: s[1],
             step: s[2],
-            label: `t sv${n}${r + 1}`
+            label: `t sv${o}${r + 1}`
           });
         }
         t.on("change", (r) => {
           var _a2;
           const f = (_a2 = r.target) == null ? void 0 : _a2.key;
-          for (let i = 0; i < o.length; i++) {
-            const c = `${n}${i}`;
-            f === `bc${c}` && (o[i].bc = Mt(r.value), Re()), f === `hc${c}` && (o[i].hc = Mt(r.value), Re()), f === `t${c}` && (o[i].t = Mt(r.value), Re());
+          for (let i = 0; i < n.length; i++) {
+            const c = `${o}${i}`;
+            f === `bc${c}` && (n[i].bc = Mt(r.value), Pe()), f === `hc${c}` && (n[i].hc = Mt(r.value), Pe()), f === `t${c}` && (n[i].t = Mt(r.value), Pe());
           }
         });
       }
     }
-    function No() {
+    function Nn() {
       var _a2;
-      if (zt) {
+      if (At) {
         try {
-          zt.dispose();
+          At.dispose();
         } catch {
         }
-        zt = null;
+        At = null;
       }
       const t = document.getElementById("sections");
       if (t && (t.innerHTML = ""), z !== "edificio" && z !== "frame") {
         t && (t.style.display = "none");
         return;
       }
-      const o = xa();
-      if (!o) return;
-      o.style.display = "";
-      const n = $, l = Math.round(((_a2 = Q.nPisos) == null ? void 0 : _a2.val) ?? 3), s = va(), d = ya(), a = ie.length || 1, r = oe.length || 1;
+      const n = va();
+      if (!n) return;
+      n.style.display = "";
+      const o = M, l = Math.round(((_a2 = Z.nPisos) == null ? void 0 : _a2.val) ?? 3), s = ya(), d = $a(), a = ie.length || 1, r = ne.length || 1;
       for (; Ne.perFloor.length < l; ) {
-        const x = Ne.perFloor.length > 0 ? JSON.parse(JSON.stringify(Ne.perFloor[Ne.perFloor.length - 1])) : ro(a, r);
+        const x = Ne.perFloor.length > 0 ? JSON.parse(JSON.stringify(Ne.perFloor[Ne.perFloor.length - 1])) : rn(a, r);
         Ne.perFloor.push(x);
       }
       Ne.perFloor.length > l && (Ne.perFloor.length = l);
@@ -10008,14 +10085,14 @@ Util:     cad.info()  cad.clear()  cad.help()
         } : ut());
         x.vigasY.length > r && (x.vigasY.length = r);
       }
-      zt = new on({
-        title: `Sections (${n.label})`,
-        container: o
+      At = new no({
+        title: `Sections (${o.label})`,
+        container: n
       });
       const f = {
         colMat: Ne.colMat
       };
-      if (zt.addBinding(f, "colMat", {
+      if (At.addBinding(f, "colMat", {
         label: "Col Material",
         options: {
           Hormigon: 0,
@@ -10023,37 +10100,37 @@ Util:     cad.info()  cad.clear()  cad.help()
           CFT: 2
         }
       }).on("change", (x) => {
-        Ne.colMat = x.value, No(), Re();
+        Ne.colMat = x.value, Nn(), Pe();
       }), Ne.colMat === 0) {
         const x = {
           forma: Ne.colShape
         };
-        zt.addBinding(x, "forma", {
+        At.addBinding(x, "forma", {
           label: "Col forma",
           options: {
             Rectangular: 0,
             Circular: 1
           }
         }).on("change", (I) => {
-          Ne.colShape = I.value, No(), Re();
+          Ne.colShape = I.value, Nn(), Pe();
         });
         const u = {
-          fc: +To(Ne.fc).toFixed(1)
+          fc: +Tn(Ne.fc).toFixed(1)
         };
-        zt.addBinding(u, "fc", {
+        At.addBinding(u, "fc", {
           min: d[0],
           max: d[1],
           step: d[2],
-          label: `f'c col (${zn()})`
-        }), zt.on("change", (I) => {
+          label: `f'c col (${zo()})`
+        }), At.on("change", (I) => {
           var _a3;
-          ((_a3 = I.target) == null ? void 0 : _a3.key) === "fc" && (Ne.fc = Tn(I.value), Re());
+          ((_a3 = I.target) == null ? void 0 : _a3.key) === "fc" && (Ne.fc = To(I.value), Pe());
         });
       } else if (Ne.colMat === 1) {
         const x = {
           colType: Ne.steelColType
         };
-        zt.addBinding(x, "colType", {
+        At.addBinding(x, "colType", {
           label: "Col tipo",
           options: {
             "W profile": 0,
@@ -10062,28 +10139,28 @@ Util:     cad.info()  cad.clear()  cad.help()
             Tubular: 3
           }
         }).on("change", (u) => {
-          Ne.steelColType = u.value, No(), Re();
+          Ne.steelColType = u.value, Nn(), Pe();
         });
       }
-      zt.addBlade({
+      At.addBlade({
         view: "separator"
       });
       const i = {
         vigaMat: Ne.vigaMat
       };
-      if (zt.addBinding(i, "vigaMat", {
+      if (At.addBinding(i, "vigaMat", {
         label: "Viga Material",
         options: {
           Hormigon: 0,
           Acero: 1
         }
       }).on("change", (x) => {
-        Ne.vigaMat = x.value, No(), Re();
+        Ne.vigaMat = x.value, Nn(), Pe();
       }), Ne.vigaMat === 1) {
         const x = {
           vigaType: Ne.steelVigaType
         };
-        zt.addBinding(x, "vigaType", {
+        At.addBinding(x, "vigaType", {
           label: "Viga tipo",
           options: {
             "W profile": 0,
@@ -10092,24 +10169,24 @@ Util:     cad.info()  cad.clear()  cad.help()
             Tubular: 3
           }
         }).on("change", (u) => {
-          Ne.steelVigaType = u.value, No(), Re();
+          Ne.steelVigaType = u.value, Nn(), Pe();
         });
       }
-      const c = Ne.steelColType === 0 ? mn() : bn();
-      Ne.steelVigaType === 0 ? mn() : bn();
-      const m = F === "m" ? [
+      const c = Ne.steelColType === 0 ? mo() : bo();
+      Ne.steelVigaType === 0 ? mo() : bo();
+      const m = P === "m" ? [
         5e-3,
         0.1,
         1e-3
-      ] : F === "cm" ? [
+      ] : P === "cm" ? [
         0.5,
         10,
         0.1
-      ] : F === "mm" ? [
+      ] : P === "mm" ? [
         5,
         100,
         1
-      ] : F === "in" ? [
+      ] : P === "in" ? [
         0.2,
         4,
         0.05
@@ -10119,7 +10196,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         5e-3
       ];
       for (let x = 0; x < l; x++) {
-        const u = Ne.perFloor[x], I = zt.addFolder({
+        const u = Ne.perFloor[x], I = At.addFolder({
           title: `Piso ${x + 1}`,
           expanded: x < 2
         });
@@ -10134,7 +10211,7 @@ Util:     cad.info()  cad.clear()  cad.help()
             label: "d col"
           }), I.on("change", (R) => {
             var _a3;
-            ((_a3 = R.target) == null ? void 0 : _a3.key) === "dCol" && (u.dCol = Mt(R.value), Re());
+            ((_a3 = R.target) == null ? void 0 : _a3.key) === "dCol" && (u.dCol = Mt(R.value), Pe());
           });
         } else {
           const L = {
@@ -10153,7 +10230,7 @@ Util:     cad.info()  cad.clear()  cad.help()
             label: "h col"
           }), I.on("change", (R) => {
             var _a3, _b;
-            ((_a3 = R.target) == null ? void 0 : _a3.key) === "bCol" && (u.bCol = Mt(R.value), Re()), ((_b = R.target) == null ? void 0 : _b.key) === "hCol" && (u.hCol = Mt(R.value), Re());
+            ((_a3 = R.target) == null ? void 0 : _a3.key) === "bCol" && (u.bCol = Mt(R.value), Pe()), ((_b = R.target) == null ? void 0 : _b.key) === "hCol" && (u.hCol = Mt(R.value), Pe());
           });
         }
         else if (Ne.colMat === 1) if (Ne.steelColType <= 1) {
@@ -10164,7 +10241,7 @@ Util:     cad.info()  cad.clear()  cad.help()
             label: "Columna",
             options: c
           }).on("change", (R) => {
-            u.colProfileIdx = R.value, Re();
+            u.colProfileIdx = R.value, Pe();
           });
         } else if (Ne.steelColType === 2) {
           const L = {
@@ -10195,7 +10272,7 @@ Util:     cad.info()  cad.clear()  cad.help()
             label: "Col tw"
           }), I.on("change", (R) => {
             var _a3, _b, _c, _d;
-            ((_a3 = R.target) == null ? void 0 : _a3.key) === "bf" && (u.colBf = Mt(R.value), Re()), ((_b = R.target) == null ? void 0 : _b.key) === "h" && (u.colHf = Mt(R.value), Re()), ((_c = R.target) == null ? void 0 : _c.key) === "tf" && (u.colTf = Mt(R.value), Re()), ((_d = R.target) == null ? void 0 : _d.key) === "tw" && (u.colTw = Mt(R.value), Re());
+            ((_a3 = R.target) == null ? void 0 : _a3.key) === "bf" && (u.colBf = Mt(R.value), Pe()), ((_b = R.target) == null ? void 0 : _b.key) === "h" && (u.colHf = Mt(R.value), Pe()), ((_c = R.target) == null ? void 0 : _c.key) === "tf" && (u.colTf = Mt(R.value), Pe()), ((_d = R.target) == null ? void 0 : _d.key) === "tw" && (u.colTw = Mt(R.value), Pe());
           });
         } else {
           const L = {
@@ -10220,7 +10297,7 @@ Util:     cad.info()  cad.clear()  cad.help()
             label: "Col t"
           }), I.on("change", (R) => {
             var _a3, _b, _c;
-            ((_a3 = R.target) == null ? void 0 : _a3.key) === "bc" && (u.colBc = Mt(R.value), Re()), ((_b = R.target) == null ? void 0 : _b.key) === "hc" && (u.colHc = Mt(R.value), Re()), ((_c = R.target) == null ? void 0 : _c.key) === "t" && (u.colT = Mt(R.value), Re());
+            ((_a3 = R.target) == null ? void 0 : _a3.key) === "bc" && (u.colBc = Mt(R.value), Pe()), ((_b = R.target) == null ? void 0 : _b.key) === "hc" && (u.colHc = Mt(R.value), Pe()), ((_c = R.target) == null ? void 0 : _c.key) === "t" && (u.colT = Mt(R.value), Pe());
           });
         }
         else {
@@ -10228,9 +10305,9 @@ Util:     cad.info()  cad.clear()  cad.help()
             bc: +$t(u.colBc ?? 0.3).toFixed(3),
             hc: +$t(u.colHc ?? 0.3).toFixed(3),
             t: +$t(u.colT ?? 0.01).toFixed(3),
-            Es: +To(u.colEs ?? 2e8).toFixed(0),
+            Es: +Tn(u.colEs ?? 2e8).toFixed(0),
             nuS: u.colNuS ?? 0.3,
-            fc: +To(u.colFc ?? 28e3).toFixed(1),
+            fc: +Tn(u.colFc ?? 28e3).toFixed(1),
             nuC: u.colNuC ?? 0.2
           };
           I.addBinding(L, "bc", {
@@ -10251,12 +10328,12 @@ Util:     cad.info()  cad.clear()  cad.help()
           }), I.addBlade({
             view: "separator"
           });
-          const R = +To(1e8).toFixed(0), j = +To(3e8).toFixed(0), g = Math.max(1, Math.round((j - R) / 200));
+          const R = +Tn(1e8).toFixed(0), j = +Tn(3e8).toFixed(0), g = Math.max(1, Math.round((j - R) / 200));
           I.addBinding(L, "Es", {
             min: R,
             max: j,
             step: g,
-            label: `Es (${zn()})`
+            label: `Es (${zo()})`
           }), I.addBinding(L, "nuS", {
             min: 0.15,
             max: 0.45,
@@ -10266,15 +10343,15 @@ Util:     cad.info()  cad.clear()  cad.help()
             min: d[0],
             max: d[1],
             step: d[2],
-            label: `f'c (${zn()})`
+            label: `f'c (${zo()})`
           }), I.addBinding(L, "nuC", {
             min: 0.1,
             max: 0.35,
             step: 0.01,
             label: "\u03BDc"
-          }), I.on("change", (E) => {
+          }), I.on("change", (S) => {
             var _a3, _b, _c, _d, _e2, _f, _g;
-            ((_a3 = E.target) == null ? void 0 : _a3.key) === "bc" && (u.colBc = Mt(E.value), Re()), ((_b = E.target) == null ? void 0 : _b.key) === "hc" && (u.colHc = Mt(E.value), Re()), ((_c = E.target) == null ? void 0 : _c.key) === "t" && (u.colT = Mt(E.value), Re()), ((_d = E.target) == null ? void 0 : _d.key) === "Es" && (u.colEs = Tn(E.value), Re()), ((_e2 = E.target) == null ? void 0 : _e2.key) === "nuS" && (u.colNuS = E.value, Re()), ((_f = E.target) == null ? void 0 : _f.key) === "fc" && (u.colFc = Tn(E.value), Re()), ((_g = E.target) == null ? void 0 : _g.key) === "nuC" && (u.colNuC = E.value, Re());
+            ((_a3 = S.target) == null ? void 0 : _a3.key) === "bc" && (u.colBc = Mt(S.value), Pe()), ((_b = S.target) == null ? void 0 : _b.key) === "hc" && (u.colHc = Mt(S.value), Pe()), ((_c = S.target) == null ? void 0 : _c.key) === "t" && (u.colT = Mt(S.value), Pe()), ((_d = S.target) == null ? void 0 : _d.key) === "Es" && (u.colEs = To(S.value), Pe()), ((_e2 = S.target) == null ? void 0 : _e2.key) === "nuS" && (u.colNuS = S.value, Pe()), ((_f = S.target) == null ? void 0 : _f.key) === "fc" && (u.colFc = To(S.value), Pe()), ((_g = S.target) == null ? void 0 : _g.key) === "nuC" && (u.colNuC = S.value, Pe());
           });
         }
         if (u.vigasX.length > 0) {
@@ -10292,37 +10369,37 @@ Util:     cad.info()  cad.clear()  cad.help()
           Es(L, u.vigasY, "y", s, m);
         }
       }
-      zt.addBlade({
+      At.addBlade({
         view: "separator"
       });
-      const S = zt.addFolder({
+      const w = At.addFolder({
         title: "Vigas Secundarias",
         expanded: false
-      }), w = {
+      }), E = {
         activar: Ee,
         direccion: Je === "x" ? 0 : 1,
         cantidad: ze
       };
-      S.addBinding(w, "activar", {
+      w.addBinding(E, "activar", {
         label: "Activar"
-      }), S.addBinding(w, "direccion", {
+      }), w.addBinding(E, "direccion", {
         label: "Corren en",
         options: {
           "X (entre ejes Y)": 0,
           "Y (entre ejes X)": 1
         }
-      }), S.addBinding(w, "cantidad", {
+      }), w.addBinding(E, "cantidad", {
         min: 1,
         max: 5,
         step: 1,
         label: "Cantidad/vano"
-      }), S.on("change", (x) => {
+      }), w.on("change", (x) => {
         var _a3, _b, _c;
-        ((_a3 = x.target) == null ? void 0 : _a3.key) === "activar" && (Ee = x.value, Re()), ((_b = x.target) == null ? void 0 : _b.key) === "direccion" && (Je = x.value === 0 ? "x" : "y", Re()), ((_c = x.target) == null ? void 0 : _c.key) === "cantidad" && (ze = Math.round(x.value), Re());
-      }), zt.addBlade({
+        ((_a3 = x.target) == null ? void 0 : _a3.key) === "activar" && (Ee = x.value, Pe()), ((_b = x.target) == null ? void 0 : _b.key) === "direccion" && (Je = x.value === 0 ? "x" : "y", Pe()), ((_c = x.target) == null ? void 0 : _c.key) === "cantidad" && (ze = Math.round(x.value), Pe());
+      }), At.addBlade({
         view: "separator"
       });
-      const y = zt.addFolder({
+      const y = At.addFolder({
         title: "Losas de Piso",
         expanded: true
       }), p = {
@@ -10337,7 +10414,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         min: s[0],
         max: s[1] * 0.3,
         step: s[2],
-        label: `Espesor (${n.length})`
+        label: `Espesor (${o.length})`
       }), y.addBinding(p, "subdivX", {
         min: 1,
         max: 6,
@@ -10350,11 +10427,11 @@ Util:     cad.info()  cad.clear()  cad.help()
         label: "Subdiv. Y"
       }), y.on("change", (x) => {
         var _a3, _b, _c, _d;
-        ((_a3 = x.target) == null ? void 0 : _a3.key) === "activar" && (Ue = x.value, Re()), ((_b = x.target) == null ? void 0 : _b.key) === "espesor" && (at = Mt(x.value), Re()), ((_c = x.target) == null ? void 0 : _c.key) === "subdivX" && (dt = Math.round(x.value), Re()), ((_d = x.target) == null ? void 0 : _d.key) === "subdivY" && (yt = Math.round(x.value), Re());
-      }), zt.addBlade({
+        ((_a3 = x.target) == null ? void 0 : _a3.key) === "activar" && (Ue = x.value, Pe()), ((_b = x.target) == null ? void 0 : _b.key) === "espesor" && (at = Mt(x.value), Pe()), ((_c = x.target) == null ? void 0 : _c.key) === "subdivX" && (dt = Math.round(x.value), Pe()), ((_d = x.target) == null ? void 0 : _d.key) === "subdivY" && (yt = Math.round(x.value), Pe());
+      }), At.addBlade({
         view: "separator"
       });
-      const h = zt.addFolder({
+      const h = At.addFolder({
         title: "Muros de Corte",
         expanded: true
       }), T = {
@@ -10366,7 +10443,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         min: s[0],
         max: s[1],
         step: s[2],
-        label: `Espesor (${n.length})`
+        label: `Espesor (${o.length})`
       }), h.addBinding(T, "subdivH", {
         min: 1,
         max: 6,
@@ -10379,52 +10456,52 @@ Util:     cad.info()  cad.clear()  cad.help()
         label: "Subdiv. H"
       }), h.on("change", (x) => {
         var _a3, _b, _c;
-        ((_a3 = x.target) == null ? void 0 : _a3.key) === "espesor" && (Be = Mt(x.value), Re()), ((_b = x.target) == null ? void 0 : _b.key) === "subdivH" && (He = Math.round(x.value), Re()), ((_c = x.target) == null ? void 0 : _c.key) === "subdivW" && (be = Math.round(x.value), Re());
+        ((_a3 = x.target) == null ? void 0 : _a3.key) === "espesor" && (Be = Mt(x.value), Pe()), ((_b = x.target) == null ? void 0 : _b.key) === "subdivH" && (He = Math.round(x.value), Pe()), ((_c = x.target) == null ? void 0 : _c.key) === "subdivW" && (be = Math.round(x.value), Pe());
       });
-      const k = ie.length || 1, M = oe.length || 1, P = k + 1, B = M + 1;
+      const k = ie.length || 1, $ = ne.length || 1, C = k + 1, B = $ + 1;
       if (k > 0) {
         const x = h.addFolder({
           title: `Muros dir X (${k} vanos)`,
           expanded: false
         });
         for (let u = 0; u < k; u++) for (let I = 0; I < B; I++) {
-          const L = `wx_${u}_${I}`, R = he.some((E) => E.dir === "x" && E.bay === u && E.axisIdx === I), j = {};
+          const L = `wx_${u}_${I}`, R = he.some((S) => S.dir === "x" && S.bay === u && S.axisIdx === I), j = {};
           j[L] = R;
           const g = `Vano X${u + 1} / Eje Y${String.fromCharCode(65 + I)}`;
           x.addBinding(j, L, {
             label: g
-          }).on("change", (E) => {
-            E.value ? he.push({
+          }).on("change", (S) => {
+            S.value ? he.push({
               dir: "x",
               bay: u,
               axisIdx: I,
               floors: [
                 -1
               ]
-            }) : he = he.filter((v) => !(v.dir === "x" && v.bay === u && v.axisIdx === I)), Re();
+            }) : he = he.filter((v) => !(v.dir === "x" && v.bay === u && v.axisIdx === I)), Pe();
           });
         }
       }
-      if (M > 0) {
+      if ($ > 0) {
         const x = h.addFolder({
-          title: `Muros dir Y (${M} vanos)`,
+          title: `Muros dir Y (${$} vanos)`,
           expanded: false
         });
-        for (let u = 0; u < M; u++) for (let I = 0; I < P; I++) {
-          const L = `wy_${u}_${I}`, R = he.some((E) => E.dir === "y" && E.bay === u && E.axisIdx === I), j = {};
+        for (let u = 0; u < $; u++) for (let I = 0; I < C; I++) {
+          const L = `wy_${u}_${I}`, R = he.some((S) => S.dir === "y" && S.bay === u && S.axisIdx === I), j = {};
           j[L] = R;
           const g = `Vano Y${u + 1} / Eje X${I + 1}`;
           x.addBinding(j, L, {
             label: g
-          }).on("change", (E) => {
-            E.value ? he.push({
+          }).on("change", (S) => {
+            S.value ? he.push({
               dir: "y",
               bay: u,
               axisIdx: I,
               floors: [
                 -1
               ]
-            }) : he = he.filter((v) => !(v.dir === "y" && v.bay === u && v.axisIdx === I)), Re();
+            }) : he = he.filter((v) => !(v.dir === "y" && v.bay === u && v.axisIdx === I)), Pe();
           });
         }
       }
@@ -10441,7 +10518,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         });
       }
     }
-    function so() {
+    function sn() {
       const t = document.getElementById("parameters");
       if (!t) return;
       if (me || (me = t.innerHTML), ve) {
@@ -10451,37 +10528,37 @@ Util:     cad.info()  cad.clear()  cad.help()
         }
         ve = null;
       }
-      if (io) {
+      if (cn) {
         try {
-          io.dispose();
+          cn.dispose();
         } catch {
         }
-        io = null;
+        cn = null;
       }
       t.innerHTML = "";
-      const o = z.charAt(0).toUpperCase() + z.slice(1);
-      ve = new on({
-        title: `Parameters \u2014 ${o}`,
+      const n = z.charAt(0).toUpperCase() + z.slice(1);
+      ve = new no({
+        title: `Parameters \u2014 ${n}`,
         container: t
       });
-      const n = cs()[z];
-      if (n) {
+      const o = cs()[z];
+      if (o) {
         const s = {};
-        for (const a of n) s[a.key] = Q[a.key].val;
-        for (const a of n) ve.addBinding(s, a.key, {
-          min: Q[a.key].min,
-          max: Q[a.key].max,
-          step: Q[a.key].step,
-          label: Q[a.key].label
+        for (const a of o) s[a.key] = Z[a.key].val;
+        for (const a of o) ve.addBinding(s, a.key, {
+          min: Z[a.key].min,
+          max: Z[a.key].max,
+          step: Z[a.key].step,
+          label: Z[a.key].label
         });
         const d = ve.addFolder({
           title: "Rangos",
           expanded: false
         });
-        for (const a of n) {
+        for (const a of o) {
           const r = {
-            min: Q[a.key].min,
-            max: Q[a.key].max
+            min: Z[a.key].min,
+            max: Z[a.key].max
           };
           d.addBinding(r, "min", {
             label: `${a.key} min`,
@@ -10490,115 +10567,115 @@ Util:     cad.info()  cad.clear()  cad.help()
             label: `${a.key} max`,
             step: a.step
           }), d.on("change", () => {
-            Q[a.key] && (Q[a.key].min = r.min, Q[a.key].max = r.max, Q[a.key].val < r.min && (Q[a.key].val = r.min), Q[a.key].val > r.max && (Q[a.key].val = r.max)), so(), Re();
+            Z[a.key] && (Z[a.key].min = r.min, Z[a.key].max = r.max, Z[a.key].val < r.min && (Z[a.key].val = r.min), Z[a.key].val > r.max && (Z[a.key].val = r.max)), sn(), Pe();
           });
         }
         ve.on("change", (a) => {
           var _a2, _b;
           const r = (_a2 = a.target) == null ? void 0 : _a2.key;
-          if (r && Q[r]) {
-            if (Q[r].val = a.value, z === "edificio" && (r === "nVanosX" || r === "nVanosY" || r === "nPisos")) {
+          if (r && Z[r]) {
+            if (Z[r].val = a.value, z === "edificio" && (r === "nVanosX" || r === "nVanosY" || r === "nPisos")) {
               if (r === "nVanosX" || r === "nVanosY") {
-                const f = Math.round(Q.nVanosX.val), i = Math.round(Q.nVanosY.val);
-                for (; ie.length < f; ) ie.push(ie[ie.length - 1] ?? $.defaultSpan);
-                for (ie.length > f && (ie.length = f); oe.length < i; ) oe.push(oe[oe.length - 1] ?? $.defaultSpan * 0.8);
-                oe.length > i && (oe.length = i);
+                const f = Math.round(Z.nVanosX.val), i = Math.round(Z.nVanosY.val);
+                for (; ie.length < f; ) ie.push(ie[ie.length - 1] ?? M.defaultSpan);
+                for (ie.length > f && (ie.length = f); ne.length < i; ) ne.push(ne[ne.length - 1] ?? M.defaultSpan * 0.8);
+                ne.length > i && (ne.length = i);
               }
               if (r === "nPisos" || r === "hPiso") {
-                const f = Math.round(Q.nPisos.val), i = ((_b = Q.hPiso) == null ? void 0 : _b.val) ?? 3;
+                const f = Math.round(Z.nPisos.val), i = ((_b = Z.hPiso) == null ? void 0 : _b.val) ?? 3;
                 for (; N.length < f; ) N.push(N[N.length - 1] ?? i);
                 N.length > f && (N.length = f);
               }
-              so();
+              sn();
             }
-            Re();
+            Pe();
           }
         });
       }
       if (z === "edificio") {
-        if (co) {
+        if (dn) {
           try {
-            co.dispose();
+            dn.dispose();
           } catch {
           }
-          co = null;
+          dn = null;
         }
         const s = document.getElementById("luces-panel");
         if (s) {
           let d = function() {
             var _a2, _b, _c, _d;
-            const f = "ABCDEFGHIJKLMNOPQRSTUVWXYZ", i = ((_a2 = Q.Lvix) == null ? void 0 : _a2.val) || 0, c = ((_b = Q.Lvdx) == null ? void 0 : _b.val) || 0, m = ((_c = Q.Lviy) == null ? void 0 : _c.val) || 0, S = ((_d = Q.Lvdy) == null ? void 0 : _d.val) || 0;
-            let w = "X: ";
-            i > 0 && (w += `\u251C${i.toFixed(1)}\u2524`);
-            for (let h = 0; h < ie.length; h++) w += `[${f[h + (i > 0 ? 1 : 0)]}]\u2500\u2500${ie[h].toFixed(1)}\u2500\u2500`;
-            w += `[${f[ie.length + (i > 0 ? 1 : 0)]}]`, c > 0 && (w += `\u251C${c.toFixed(1)}\u2524`);
+            const f = "ABCDEFGHIJKLMNOPQRSTUVWXYZ", i = ((_a2 = Z.Lvix) == null ? void 0 : _a2.val) || 0, c = ((_b = Z.Lvdx) == null ? void 0 : _b.val) || 0, m = ((_c = Z.Lviy) == null ? void 0 : _c.val) || 0, w = ((_d = Z.Lvdy) == null ? void 0 : _d.val) || 0;
+            let E = "X: ";
+            i > 0 && (E += `\u251C${i.toFixed(1)}\u2524`);
+            for (let h = 0; h < ie.length; h++) E += `[${f[h + (i > 0 ? 1 : 0)]}]\u2500\u2500${ie[h].toFixed(1)}\u2500\u2500`;
+            E += `[${f[ie.length + (i > 0 ? 1 : 0)]}]`, c > 0 && (E += `\u251C${c.toFixed(1)}\u2524`);
             let y = "Y: ";
             m > 0 && (y += `\u251C${m.toFixed(1)}\u2524`);
-            for (let h = 0; h < oe.length; h++) y += `[${h + 1 + (m > 0 ? 1 : 0)}]\u2500\u2500${oe[h].toFixed(1)}\u2500\u2500`;
-            y += `[${oe.length + 1 + (m > 0 ? 1 : 0)}]`, S > 0 && (y += `\u251C${S.toFixed(1)}\u2524`);
+            for (let h = 0; h < ne.length; h++) y += `[${h + 1 + (m > 0 ? 1 : 0)}]\u2500\u2500${ne[h].toFixed(1)}\u2500\u2500`;
+            y += `[${ne.length + 1 + (m > 0 ? 1 : 0)}]`, w > 0 && (y += `\u251C${w.toFixed(1)}\u2524`);
             let p = "Z: ";
             for (let h = 0; h < N.length; h++) p += `P${h + 1}=${N[h].toFixed(1)} `;
-            r.textContent = w + `
+            r.textContent = E + `
 ` + y + `
 ` + p;
           };
           s.innerHTML = "";
-          const a = $;
+          const a = M;
           try {
-            co = new on({
+            dn = new no({
               title: `Luces (${a.length})`,
               container: s
             });
-            const f = co.addFolder({
+            const f = dn.addFolder({
               title: "Luces X",
               expanded: true
             });
             for (let c = 0; c < ie.length; c++) {
-              const m = c, S = {
+              const m = c, w = {
                 v: ie[c]
               };
-              f.addBinding(S, "v", {
+              f.addBinding(w, "v", {
                 min: a.spanRange[0],
                 max: a.spanRange[1],
                 step: a.spanRange[2],
                 label: `svx${c + 1}`
-              }).on("change", (w) => {
-                ie[m] = w.value, Re();
+              }).on("change", (E) => {
+                ie[m] = E.value, Pe();
               });
             }
-            const i = co.addFolder({
+            const i = dn.addFolder({
               title: "Luces Y",
               expanded: true
             });
-            for (let c = 0; c < oe.length; c++) {
-              const m = c, S = {
-                v: oe[c]
+            for (let c = 0; c < ne.length; c++) {
+              const m = c, w = {
+                v: ne[c]
               };
-              i.addBinding(S, "v", {
+              i.addBinding(w, "v", {
                 min: a.spanRange[0],
                 max: a.spanRange[1],
                 step: a.spanRange[2],
                 label: `svy${c + 1}`
-              }).on("change", (w) => {
-                oe[m] = w.value, Re();
+              }).on("change", (E) => {
+                ne[m] = E.value, Pe();
               });
             }
             if (N.length > 0) {
-              const c = co.addFolder({
+              const c = dn.addFolder({
                 title: "Alturas por Piso",
                 expanded: true
               });
               for (let m = 0; m < N.length; m++) {
-                const S = m, w = {
+                const w = m, E = {
                   v: N[m]
                 };
-                c.addBinding(w, "v", {
+                c.addBinding(E, "v", {
                   min: a.heightRange[0],
                   max: a.heightRange[1],
                   step: a.heightRange[2],
                   label: `Piso ${m + 1}`
                 }).on("change", (y) => {
-                  N[S] = y.value, Re();
+                  N[w] = y.value, Pe();
                 });
               }
             }
@@ -10609,11 +10686,11 @@ Util:     cad.info()  cad.clear()  cad.help()
           r.style.cssText = "font-family:monospace;font-size:10px;color:#aaa;padding:6px;background:#1a1a2e;border-radius:4px;margin-top:6px;line-height:1.6;white-space:pre;overflow-x:auto;", d(), s.appendChild(r);
         }
       }
-      if (No(), ve) {
+      if (Nn(), ve) {
         ve.addBlade({
           view: "separator"
         });
-        const s = un()[z];
+        const s = uo()[z];
         if (s && s.length > 0) {
           const d = {};
           s.forEach((r, f) => {
@@ -10626,7 +10703,7 @@ Util:     cad.info()  cad.clear()  cad.help()
             label: "Apoyo",
             options: d
           }).on("change", (r) => {
-            xt = r.value, Re();
+            xt = r.value, Pe();
           });
         }
         if (z === "placa-3q" || z === "placa-q4") {
@@ -10641,25 +10718,25 @@ Util:     cad.info()  cad.clear()  cad.help()
               "Mindlin (gruesa)": 3
             }
           }).on("change", (a) => {
-            Le = a.value, Re();
+            Le = a.value, Pe();
           });
         }
       }
       const l = ds()[z];
       if (l && l.length > 0) {
-        io = new on({
-          title: `Cargas Est\xE1ticas \u2014 ${o}`,
+        cn = new no({
+          title: `Cargas Est\xE1ticas \u2014 ${n}`,
           container: t
         });
         const s = {};
         for (const a of l) s[a.key] = ft[a.key].val;
-        for (const a of l) io.addBinding(s, a.key, {
+        for (const a of l) cn.addBinding(s, a.key, {
           min: ft[a.key].min,
           max: ft[a.key].max,
           step: ft[a.key].step,
           label: ft[a.key].label
         });
-        const d = io.addFolder({
+        const d = cn.addFolder({
           title: "Rangos",
           expanded: false
         });
@@ -10675,10 +10752,10 @@ Util:     cad.info()  cad.clear()  cad.help()
             label: `${a.key} max`,
             step: a.step
           }), d.on("change", () => {
-            ft[a.key] && (ft[a.key].min = r.min, ft[a.key].max = r.max, ft[a.key].val < r.min && (ft[a.key].val = r.min), ft[a.key].val > r.max && (ft[a.key].val = r.max)), so(), Re();
+            ft[a.key] && (ft[a.key].min = r.min, ft[a.key].max = r.max, ft[a.key].val < r.min && (ft[a.key].val = r.min), ft[a.key].val > r.max && (ft[a.key].val = r.max)), sn(), Pe();
           });
         }
-        io.on("change", (a) => {
+        cn.on("change", (a) => {
           var _a2;
           const r = (_a2 = a.target) == null ? void 0 : _a2.key;
           if (r && ft[r]) {
@@ -10688,13 +10765,13 @@ Util:     cad.info()  cad.clear()  cad.help()
                 supports: f.supports
               });
             }
-            setTimeout(() => Fn(), 30);
+            setTimeout(() => Fo(), 30);
           }
         });
       }
       window.__cad = {
         setParam: (s, d) => {
-          if (Q[s]) Q[s].val = d, Re(), so();
+          if (Z[s]) Z[s].val = d, Pe(), sn();
           else if (ft[s]) {
             if (ft[s].val = d, e.nodeInputs) {
               const a = e.nodeInputs.val;
@@ -10703,25 +10780,25 @@ Util:     cad.info()  cad.clear()  cad.help()
               });
             }
             setTimeout(() => {
-              Fn(), so();
+              Fo(), sn();
             }, 30);
           }
         },
         getParams: () => {
           const s = {};
-          for (const d in Q) s[d] = Q[d].val;
+          for (const d in Z) s[d] = Z[d].val;
           for (const d in ft) s[d] = ft[d].val;
           return s;
         },
         setGenerator: Qe,
-        createCustomPanel: (s, d, a) => $a(s, d, a),
+        createCustomPanel: (s, d, a) => Ma(s, d, a),
         removeCustomPanel: (s) => {
           Ss(s);
         }
       };
     }
-    const An = /* @__PURE__ */ new Map();
-    function $a(t, o, n) {
+    const Ao = /* @__PURE__ */ new Map();
+    function Ma(t, n, o) {
       var _a2;
       Ss(t);
       let l = document.querySelector("#cad3d-custom-panels");
@@ -10732,11 +10809,11 @@ Util:     cad.info()  cad.clear()  cad.help()
       }
       const s = document.createElement("div");
       s.className = "cad3d-custom-panel", s.style.marginBottom = "4px", l.appendChild(s);
-      const d = new on({
+      const d = new no({
         title: t,
         container: s
       }), a = {};
-      for (const [r, f] of Object.entries(o)) {
+      for (const [r, f] of Object.entries(n)) {
         const i = f.label || r;
         if (Array.isArray(f.value)) {
           a[r] = f.value;
@@ -10746,7 +10823,7 @@ Util:     cad.info()  cad.clear()  cad.help()
           d.addBinding(c, r, {
             label: i
           }).on("change", (m) => {
-            a[r] = m.value.split(",").map((S) => parseFloat(S.trim())).filter((S) => !isNaN(S)), n && n({
+            a[r] = m.value.split(",").map((w) => parseFloat(w.trim())).filter((w) => !isNaN(w)), o && o({
               ...a
             });
           });
@@ -10755,12 +10832,12 @@ Util:     cad.info()  cad.clear()  cad.help()
           const c = {
             [r]: f.value
           }, m = {};
-          for (const S of f.options) m[S] = S;
+          for (const w of f.options) m[w] = w;
           d.addBinding(c, r, {
             label: i,
             options: m
-          }).on("change", (S) => {
-            a[r] = S.value, n && n({
+          }).on("change", (w) => {
+            a[r] = w.value, o && o({
               ...a
             });
           });
@@ -10772,7 +10849,7 @@ Util:     cad.info()  cad.clear()  cad.help()
           d.addBinding(c, r, {
             label: i
           }).on("change", (m) => {
-            a[r] = m.value, n && n({
+            a[r] = m.value, o && o({
               ...a
             });
           });
@@ -10784,7 +10861,7 @@ Util:     cad.info()  cad.clear()  cad.help()
           d.addBinding(c, r, {
             label: i
           }).on("change", (m) => {
-            a[r] = m.value, n && n({
+            a[r] = m.value, o && o({
               ...a
             });
           });
@@ -10795,35 +10872,35 @@ Util:     cad.info()  cad.clear()  cad.help()
           }, m = {
             label: i
           };
-          f.min !== void 0 && (m.min = f.min), f.max !== void 0 && (m.max = f.max), f.step !== void 0 && (m.step = f.step), d.addBinding(c, r, m).on("change", (S) => {
-            a[r] = S.value, n && n({
+          f.min !== void 0 && (m.min = f.min), f.max !== void 0 && (m.max = f.max), f.step !== void 0 && (m.step = f.step), d.addBinding(c, r, m).on("change", (w) => {
+            a[r] = w.value, o && o({
               ...a
             });
           });
         }
       }
-      return n && d.addButton({
+      return o && d.addButton({
         title: "Aplicar"
       }).on("click", () => {
-        n({
+        o({
           ...a
         });
-      }), An.set(t, {
+      }), Ao.set(t, {
         pane: d,
         values: a
-      }), console.log(`Panel "${t}" created with ${Object.keys(o).length} params`), a;
+      }), console.log(`Panel "${t}" created with ${Object.keys(n).length} params`), a;
     }
     function Ss(t) {
-      const o = An.get(t);
-      if (o) {
+      const n = Ao.get(t);
+      if (n) {
         try {
-          o.pane.dispose();
+          n.pane.dispose();
         } catch {
         }
-        An.delete(t);
+        Ao.delete(t);
       }
     }
-    function Ma() {
+    function wa() {
       if (ve) {
         try {
           ve.dispose();
@@ -10831,31 +10908,31 @@ Util:     cad.info()  cad.clear()  cad.help()
         }
         ve = null;
       }
-      if (io) {
+      if (cn) {
         try {
-          io.dispose();
+          cn.dispose();
         } catch {
         }
-        io = null;
+        cn = null;
       }
-      if (zt) {
+      if (At) {
         try {
-          zt.dispose();
+          At.dispose();
         } catch {
         }
-        zt = null;
+        At = null;
       }
-      if (co) {
+      if (dn) {
         try {
-          co.dispose();
+          dn.dispose();
         } catch {
         }
-        co = null;
+        dn = null;
       }
       const t = document.getElementById("sections");
       t && t.remove();
-      const o = document.getElementById("right-panels-wrapper"), n = document.getElementById("parameters");
-      o && n && (n.style.cssText = "", document.body.appendChild(n), o.remove()), n && me && (n.innerHTML = me);
+      const n = document.getElementById("right-panels-wrapper"), o = document.getElementById("parameters");
+      n && o && (o.style.cssText = "", document.body.appendChild(o), n.remove()), o && me && (o.innerHTML = me);
     }
     const Ae = document.createElement("div");
     Ae.id = "cad3d-panel";
@@ -11178,8 +11255,8 @@ Util:     cad.info()  cad.clear()  cad.help()
     .fem-full-sym sub { font-size: 0.7em; vertical-align: sub; color: var(--fem-eq-sub); }
     .fem-expand-btn { background: var(--fem-btn-bg); color: var(--fem-btn-text); border: 1px solid var(--fem-border); border-radius: 3px; padding: 2px 8px; cursor: pointer; font-size: 10px; margin-left: 8px; }
     .fem-expand-btn:hover { background: var(--fem-btn-hover); color: var(--fem-btn-hover-text); }
-  `, document.head.appendChild(Is), Xa() === "light" && document.documentElement.classList.add("awatif-light"), Ka((t) => {
-      t === "light" ? document.documentElement.classList.add("awatif-light") : document.documentElement.classList.remove("awatif-light"), z && It(true);
+  `, document.head.appendChild(Is), Ka() === "light" && document.documentElement.classList.add("awatif-light"), Za((t) => {
+      t === "light" ? document.documentElement.classList.add("awatif-light") : document.documentElement.classList.remove("awatif-light"), z && wt(true);
     }), Ae.innerHTML = `
     <button class="toggle-btn-collapsed" id="cad3d-expand">FEM Studio</button>
     <h3>FEM Studio <span style="font-size:10px;color:var(--cad-info);margin-left:6px" id="cad3d-info">0n 0e</span><button class="toggle-btn" id="cad3d-toggle">_</button></h3>
@@ -11221,6 +11298,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         <button data-ex="diagrid">Diagrid</button>
         <button data-ex="muro-q4">Muro Q4</button>
         <button data-ex="viga-q4">Viga Q4</button>
+        <button data-ex="placa-xy">Placa XY</button>
       </div>
       <div class="btn-row" style="margin-top:4px">
         <button data-view="3d" class="view-active">3D</button>
@@ -11298,20 +11376,20 @@ Util:     cad.info()  cad.clear()  cad.help()
       </div>
     </div>
   `;
-    let At = null;
-    function wa() {
+    let Lt = null;
+    function Ea() {
       var _a2, _b, _c, _d, _e2, _f;
-      const t = e.nodes.val, o = e.elements.val, n = (_a2 = e.nodeInputs) == null ? void 0 : _a2.val, l = (_b = e.elementInputs) == null ? void 0 : _b.val, s = F, d = b, a = [];
+      const t = e.nodes.val, n = e.elements.val, o = (_a2 = e.nodeInputs) == null ? void 0 : _a2.val, l = (_b = e.elementInputs) == null ? void 0 : _b.val, s = P, d = b, a = [];
       if (a.push("# Awatif FEM \u2014 Model Export"), a.push(`# Generator: ${z || "custom"}`), a.push(`# Units: ${d}, ${s}`), a.push(`# ${(/* @__PURE__ */ new Date()).toISOString()}`), a.push(""), a.push(`## NODES (${t.length})`), a.push("# idx     X          Y          Z"), t.forEach((i, c) => {
         a.push(`  ${String(c).padStart(4)}  ${i[0].toFixed(4).padStart(10)}  ${i[1].toFixed(4).padStart(10)}  ${i[2].toFixed(4).padStart(10)}`);
-      }), a.push(""), a.push(`## ELEMENTS (${o.length})`), a.push("# idx    nodeI  nodeJ"), o.forEach((i, c) => {
-        const m = i.map((S) => String(S).padStart(6)).join("");
+      }), a.push(""), a.push(`## ELEMENTS (${n.length})`), a.push("# idx    nodeI  nodeJ"), n.forEach((i, c) => {
+        const m = i.map((w) => String(w).padStart(6)).join("");
         a.push(`  ${String(c).padStart(4)}  ${m}`);
-      }), a.push(""), (n == null ? void 0 : n.supports) && n.supports.size > 0 && (a.push(`## SUPPORTS (${n.supports.size})`), a.push("# node   Ux  Uy  Uz  Rx  Ry  Rz"), n.supports.forEach((i, c) => {
-        const m = i.map((S) => S ? "  1" : "  0").join("");
+      }), a.push(""), (o == null ? void 0 : o.supports) && o.supports.size > 0 && (a.push(`## SUPPORTS (${o.supports.size})`), a.push("# node   Ux  Uy  Uz  Rx  Ry  Rz"), o.supports.forEach((i, c) => {
+        const m = i.map((w) => w ? "  1" : "  0").join("");
         a.push(`  ${String(c).padStart(4)} ${m}`);
-      }), a.push("")), (n == null ? void 0 : n.loads) && n.loads.size > 0 && (a.push(`## LOADS (${n.loads.size})`), a.push("# node         Fx          Fy          Fz          Mx          My          Mz"), n.loads.forEach((i, c) => {
-        const m = i.map((S) => S.toFixed(3).padStart(11)).join(" ");
+      }), a.push("")), (o == null ? void 0 : o.loads) && o.loads.size > 0 && (a.push(`## LOADS (${o.loads.size})`), a.push("# node         Fx          Fy          Fz          Mx          My          Mz"), o.loads.forEach((i, c) => {
+        const m = i.map((w) => w.toFixed(3).padStart(11)).join(" ");
         a.push(`  ${String(c).padStart(4)}  ${m}`);
       }), a.push("")), l) {
         a.push("## ELEMENT PROPERTIES");
@@ -11346,42 +11424,42 @@ Util:     cad.info()  cad.clear()  cad.help()
           }
         ], c = "# elem  " + i.map((m) => m.name.padStart(12)).join(" ");
         a.push(c);
-        for (let m = 0; m < o.length; m++) {
-          const S = i.map((w) => {
+        for (let m = 0; m < n.length; m++) {
+          const w = i.map((E) => {
             var _a3;
-            const y = (_a3 = w.map) == null ? void 0 : _a3.get(m);
+            const y = (_a3 = E.map) == null ? void 0 : _a3.get(m);
             return y !== void 0 ? y.toExponential(4).padStart(12) : "           -";
           }).join(" ");
-          a.push(`  ${String(m).padStart(4)}  ${S}`);
+          a.push(`  ${String(m).padStart(4)}  ${w}`);
         }
         a.push("");
       }
       const r = (_d = (_c = e.deformOutputs) == null ? void 0 : _c.val) == null ? void 0 : _d.deformations;
       r && r.size > 0 && (a.push(`## DISPLACEMENTS (${r.size} nodes)`), a.push("# node          Ux           Uy           Uz           Rx           Ry           Rz"), r.forEach((i, c) => {
-        const m = i.map((S) => S.toExponential(4).padStart(12)).join(" ");
+        const m = i.map((w) => w.toExponential(4).padStart(12)).join(" ");
         a.push(`  ${String(c).padStart(4)}  ${m}`);
       }), a.push(""));
       const f = (_f = (_e2 = e.deformOutputs) == null ? void 0 : _e2.val) == null ? void 0 : _f.reactions;
       if (f && f.size > 0 && (a.push(`## REACTIONS (${f.size} supports)`), a.push("# node          Rx           Ry           Rz           Mx           My           Mz"), f.forEach((i, c) => {
-        const m = i.map((S) => S.toFixed(4).padStart(12)).join(" ");
+        const m = i.map((w) => w.toFixed(4).padStart(12)).join(" ");
         a.push(`  ${String(c).padStart(4)}  ${m}`);
       }), a.push("")), z) {
         a.push("## CLI COMMAND");
-        const i = Object.entries(Q).map(([c, m]) => `${c}=${m.val}`).join(" ");
+        const i = Object.entries(Z).map(([c, m]) => `${c}=${m.val}`).join(" ");
         a.push(`cad.${z === "edificio" ? "building" : z}(${i})`);
       }
       return a.join(`
 `);
     }
-    let Zo = false;
-    function Ea() {
+    let Zn = false;
+    function Sa() {
       var _a2, _b, _c, _d;
-      if (At) {
-        At.remove(), At = null, Zo = false;
+      if (Lt) {
+        Lt.remove(), Lt = null, Zn = false;
         return;
       }
-      const t = wa();
-      At = document.createElement("div"), At.id = "export-overlay", At.style.cssText = `
+      const t = Ea();
+      Lt = document.createElement("div"), Lt.id = "export-overlay", Lt.style.cssText = `
       position:fixed; bottom:10px; right:10px; z-index:10000;
       width:720px; max-width:90vw;
       display:flex; flex-direction:column;
@@ -11389,7 +11467,7 @@ Util:     cad.info()  cad.clear()  cad.help()
       background:var(--cad-bg,#1a1a2e); border:1px solid var(--cad-border,#333);
       border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.5);
       transition: height 0.2s ease;
-    `, At.innerHTML = `
+    `, Lt.innerHTML = `
       <div id="export-header" style="display:flex; align-items:center; justify-content:space-between;
         padding:8px 12px; border-bottom:1px solid var(--cad-border,#333); cursor:default;
         border-radius:8px 8px 0 0; background:var(--cad-bg,#1a1a2e);">
@@ -11423,32 +11501,32 @@ Util:     cad.info()  cad.clear()  cad.help()
         >${t.replace(/</g, "&lt;")}</textarea>
         <div id="export-status" style="font-size:11px; color:#40916c; margin-top:4px; height:14px;"></div>
       </div>
-    `, document.body.appendChild(At), (_a2 = At.querySelector("#export-close")) == null ? void 0 : _a2.addEventListener("click", () => {
-        At == null ? void 0 : At.remove(), At = null, Zo = false;
-      }), (_b = At.querySelector("#export-minimize")) == null ? void 0 : _b.addEventListener("click", () => {
-        const o = At.querySelector("#export-body"), n = At.querySelector("#export-minimize");
-        Zo = !Zo, Zo ? (o.style.display = "none", n.textContent = "\u25A2", n.title = "Restaurar", At.style.width = "auto") : (o.style.display = "flex", n.textContent = "\u25AC", n.title = "Minimizar", At.style.width = "720px");
-      }), (_c = At.querySelector("#export-copy")) == null ? void 0 : _c.addEventListener("click", () => {
-        const o = At.querySelector("#export-text");
-        navigator.clipboard.writeText(o.value).then(() => {
-          const n = At.querySelector("#export-status");
-          n.textContent = "\u2713 Copiado al clipboard", setTimeout(() => n.textContent = "", 2e3);
+    `, document.body.appendChild(Lt), (_a2 = Lt.querySelector("#export-close")) == null ? void 0 : _a2.addEventListener("click", () => {
+        Lt == null ? void 0 : Lt.remove(), Lt = null, Zn = false;
+      }), (_b = Lt.querySelector("#export-minimize")) == null ? void 0 : _b.addEventListener("click", () => {
+        const n = Lt.querySelector("#export-body"), o = Lt.querySelector("#export-minimize");
+        Zn = !Zn, Zn ? (n.style.display = "none", o.textContent = "\u25A2", o.title = "Restaurar", Lt.style.width = "auto") : (n.style.display = "flex", o.textContent = "\u25AC", o.title = "Minimizar", Lt.style.width = "720px");
+      }), (_c = Lt.querySelector("#export-copy")) == null ? void 0 : _c.addEventListener("click", () => {
+        const n = Lt.querySelector("#export-text");
+        navigator.clipboard.writeText(n.value).then(() => {
+          const o = Lt.querySelector("#export-status");
+          o.textContent = "\u2713 Copiado al clipboard", setTimeout(() => o.textContent = "", 2e3);
         });
-      }), (_d = At.querySelector("#export-json")) == null ? void 0 : _d.addEventListener("click", () => {
+      }), (_d = Lt.querySelector("#export-json")) == null ? void 0 : _d.addEventListener("click", () => {
         var _a3, _b2, _c2, _d2, _e2, _f;
-        const o = e.nodes.val, n = e.elements.val, l = (_a3 = e.nodeInputs) == null ? void 0 : _a3.val, s = (_b2 = e.elementInputs) == null ? void 0 : _b2.val, d = {
+        const n = e.nodes.val, o = e.elements.val, l = (_a3 = e.nodeInputs) == null ? void 0 : _a3.val, s = (_b2 = e.elementInputs) == null ? void 0 : _b2.val, d = {
           generator: z || "custom",
           units: {
             force: b,
-            length: F
+            length: P
           },
-          nodes: o.map((c, m) => ({
+          nodes: n.map((c, m) => ({
             id: m,
             x: c[0],
             y: c[1],
             z: c[2]
           })),
-          elements: n.map((c, m) => ({
+          elements: o.map((c, m) => ({
             id: m,
             nodes: c
           }))
@@ -11464,9 +11542,9 @@ Util:     cad.info()  cad.clear()  cad.help()
         a && a.size > 0 && (d.displacements = {}, a.forEach((c, m) => d.displacements[m] = c));
         const r = (_f = (_e2 = e.deformOutputs) == null ? void 0 : _e2.val) == null ? void 0 : _f.reactions;
         r && r.size > 0 && (d.reactions = {}, r.forEach((c, m) => d.reactions[m] = c));
-        const f = At.querySelector("#export-text");
+        const f = Lt.querySelector("#export-text");
         f.value = JSON.stringify(d, null, 2);
-        const i = At.querySelector("#export-status");
+        const i = Lt.querySelector("#export-status");
         i.textContent = "Formato JSON activo \u2014 presiona Copy para copiar";
       });
     }
@@ -11474,93 +11552,93 @@ Util:     cad.info()  cad.clear()  cad.help()
       var _a2, _b, _c;
       const t = Ae.querySelector("#cad3d-info");
       if (t) {
-        const o = e.nodes.val.length, n = e.elements.val, l = n.length, s = ((_c = (_b = (_a2 = e.nodeInputs) == null ? void 0 : _a2.val) == null ? void 0 : _b.supports) == null ? void 0 : _c.size) || 0;
+        const n = e.nodes.val.length, o = e.elements.val, l = o.length, s = ((_c = (_b = (_a2 = e.nodeInputs) == null ? void 0 : _a2.val) == null ? void 0 : _b.supports) == null ? void 0 : _c.size) || 0;
         let d = 0, a = 0, r = 0;
-        for (const i of n) i.length === 2 ? d++ : i.length === 3 ? a++ : i.length === 4 && r++;
-        let f = `${o}n ${l}e ${s}s`;
+        for (const i of o) i.length === 2 ? d++ : i.length === 3 ? a++ : i.length === 4 && r++;
+        let f = `${n}n ${l}e ${s}s`;
         (r > 0 || a > 0) && (f += ` | ${d}fr`, r > 0 && (f += ` ${r}q4`), a > 0 && (f += ` ${a}tri`)), t.textContent = f;
       }
     }
-    function Ln() {
+    function Lo() {
       var _a2;
       if (!qe || !e.nodeInputs || !e.elementInputs) return;
-      const t = e.nodes.val, o = e.elements.val, n = e.nodeInputs.val, l = e.elementInputs.val;
-      if (!(t.length === 0 || o.length === 0) && !(!n.supports || n.supports.size === 0) && !(!l.densities || l.densities.size === 0)) try {
-        const s = Math.min(12, t.length * 6 - n.supports.size * 6);
+      const t = e.nodes.val, n = e.elements.val, o = e.nodeInputs.val, l = e.elementInputs.val;
+      if (!(t.length === 0 || n.length === 0) && !(!o.supports || o.supports.size === 0) && !(!l.densities || l.densities.size === 0)) try {
+        const s = Math.min(12, t.length * 6 - o.supports.size * 6);
         if (s <= 0) return;
-        const d = Ja(t, o, n, l, Math.min(s, 12));
+        const d = Va(t, n, o, l, Math.min(s, 12));
         if (d.frequencies && d.frequencies.length > 0) {
           Ce = d, ke = t.map((i) => [
             ...i
           ]), xe = 0;
-          const { extent: a } = vo(), r = (_a2 = d.modeShapes) == null ? void 0 : _a2[0];
+          const { extent: a } = yn(), r = (_a2 = d.modeShapes) == null ? void 0 : _a2[0];
           if (r) {
             let i = 0;
             for (let c = 0; c < t.length; c++) {
-              const m = r[c * 6] || 0, S = r[c * 6 + 1] || 0, w = r[c * 6 + 2] || 0;
-              i = Math.max(i, Math.sqrt(m * m + S * S + w * w));
+              const m = r[c * 6] || 0, w = r[c * 6 + 1] || 0, E = r[c * 6 + 2] || 0;
+              i = Math.max(i, Math.sqrt(m * m + w * w + E * E));
             }
             Ge = i > 1e-12 ? a * 0.05 / i : 1;
           }
-          const f = `${z} \u2014 ${t.length}n ${o.length}e`;
+          const f = `${z} \u2014 ${t.length}n ${n.length}e`;
           it.render(d, {
             title: f
-          }), it.div.style.display = "", Qo(), console.log(`Modal: ${d.frequencies.length} modos. f\u2081 = ${d.frequencies[0].toFixed(4)} Hz`);
+          }), it.div.style.display = "", Qn(), console.log(`Modal: ${d.frequencies.length} modos. f\u2081 = ${d.frequencies[0].toFixed(4)} Hz`);
         }
       } catch (s) {
         console.warn("Modal analysis failed:", s.message), Ce = null;
       }
     }
-    function Cn() {
+    function Co() {
       ge && (cancelAnimationFrame(ge), ge = 0), ke.length > 0 && (e.nodes.val = ke.map((t) => [
         ...t
       ])), it.div.style.display = "none", Ce = null;
     }
-    function Qo() {
+    function Qn() {
       var _a2;
       if (ge && cancelAnimationFrame(ge), !(Ce == null ? void 0 : Ce.modeShapes) || !ke.length) return;
       const t = Ce.modeShapes[xe];
       if (!t) return;
-      const o = ((_a2 = Ce.frequencies) == null ? void 0 : _a2[xe]) || 1, n = Math.max(0.5, Math.min(3, o * 0.1)), l = performance.now(), s = ke.length, d = e.elements.rawVal, { extent: a } = vo(), r = Ae.querySelector("#cad3d-modal-scale"), f = r && parseFloat(r.value) || 5;
+      const n = ((_a2 = Ce.frequencies) == null ? void 0 : _a2[xe]) || 1, o = Math.max(0.5, Math.min(3, n * 0.1)), l = performance.now(), s = ke.length, d = e.elements.rawVal, { extent: a } = yn(), r = Ae.querySelector("#cad3d-modal-scale"), f = r && parseFloat(r.value) || 5;
       let i = 0;
-      for (let M = 0; M < s; M++) {
-        const P = t[M * 6] || 0, B = t[M * 6 + 1] || 0, x = t[M * 6 + 2] || 0;
-        i = Math.max(i, Math.sqrt(P * P + B * B + x * x));
+      for (let $ = 0; $ < s; $++) {
+        const C = t[$ * 6] || 0, B = t[$ * 6 + 1] || 0, x = t[$ * 6 + 2] || 0;
+        i = Math.max(i, Math.sqrt(C * C + B * B + x * x));
       }
       const c = i > 1e-12 ? a * f / 100 / i : 1, m = et();
       if (!m) return;
-      let S = null, w = null, y = null;
-      m.scene.traverse((M) => {
+      let w = null, E = null, y = null;
+      m.scene.traverse(($) => {
         var _a3, _b;
-        !S && M.isPoints && M.geometry && (S = M), !w && M.isLineSegments && M.geometry && !M.name && (w = M), !y && M.isMesh && ((_a3 = M.material) == null ? void 0 : _a3.transparent) && ((_b = M.material) == null ? void 0 : _b.opacity) < 0.5 && M.geometry && (y = M);
+        !w && $.isPoints && $.geometry && (w = $), !E && $.isLineSegments && $.geometry && !$.name && (E = $), !y && $.isMesh && ((_a3 = $.material) == null ? void 0 : _a3.transparent) && ((_b = $.material) == null ? void 0 : _b.opacity) < 0.5 && $.geometry && (y = $);
       });
       const p = new Float32Array(s * 3), h = [];
-      for (const M of d) if (M.length === 2) h.push([
-        M[0],
-        M[1]
+      for (const $ of d) if ($.length === 2) h.push([
+        $[0],
+        $[1]
       ]);
-      else for (let P = 0; P < M.length; P++) h.push([
-        M[P],
-        M[(P + 1) % M.length]
+      else for (let C = 0; C < $.length; C++) h.push([
+        $[C],
+        $[(C + 1) % $.length]
       ]);
       const T = new Float32Array(h.length * 6);
       function k() {
-        const M = (performance.now() - l) / 1e3, P = Math.sin(2 * Math.PI * n * M) * c;
+        const $ = (performance.now() - l) / 1e3, C = Math.sin(2 * Math.PI * o * $) * c;
         for (let B = 0; B < s; B++) {
           const x = ke[B];
-          p[B * 3] = x[0] + (t[B * 6] || 0) * P, p[B * 3 + 1] = x[1] + (t[B * 6 + 1] || 0) * P, p[B * 3 + 2] = x[2] + (t[B * 6 + 2] || 0) * P;
-        }
-        if (S) {
-          const B = S.geometry, x = B.getAttribute("position");
-          x && x.array.length === p.length ? (x.array.set(p), x.needsUpdate = true) : B.setAttribute("position", new Lo(p.slice(), 3));
+          p[B * 3] = x[0] + (t[B * 6] || 0) * C, p[B * 3 + 1] = x[1] + (t[B * 6 + 1] || 0) * C, p[B * 3 + 2] = x[2] + (t[B * 6 + 2] || 0) * C;
         }
         if (w) {
+          const B = w.geometry, x = B.getAttribute("position");
+          x && x.array.length === p.length ? (x.array.set(p), x.needsUpdate = true) : B.setAttribute("position", new Ln(p.slice(), 3));
+        }
+        if (E) {
           for (let u = 0; u < h.length; u++) {
             const [I, L] = h[u];
             T[u * 6] = p[I * 3], T[u * 6 + 1] = p[I * 3 + 1], T[u * 6 + 2] = p[I * 3 + 2], T[u * 6 + 3] = p[L * 3], T[u * 6 + 4] = p[L * 3 + 1], T[u * 6 + 5] = p[L * 3 + 2];
           }
-          const B = w.geometry, x = B.getAttribute("position");
-          x && x.array.length === T.length ? (x.array.set(T), x.needsUpdate = true) : B.setAttribute("position", new Lo(T.slice(), 3));
+          const B = E.geometry, x = B.getAttribute("position");
+          x && x.array.length === T.length ? (x.array.set(T), x.needsUpdate = true) : B.setAttribute("position", new Ln(T.slice(), 3));
         }
         if (y) {
           const B = [];
@@ -11573,74 +11651,74 @@ Util:     cad.info()  cad.clear()  cad.help()
           }
           if (B.length > 0) {
             const x = y.geometry, u = new Float32Array(B), I = x.getAttribute("position");
-            I && I.array.length === u.length ? (I.array.set(u), I.needsUpdate = true) : x.setAttribute("position", new Lo(u, 3));
+            I && I.array.length === u.length ? (I.array.set(u), I.needsUpdate = true) : x.setAttribute("position", new Ln(u, 3));
           }
         }
         m.render(), ge = requestAnimationFrame(k);
       }
       ge = requestAnimationFrame(k);
     }
-    function Fn() {
+    function Fo() {
       var _a2, _b, _c, _d, _e2;
       if (!e.deformOutputs || !e.analyzeOutputs || !e.nodeInputs || !e.elementInputs) return;
-      const t = e.nodes.val, o = e.elements.val;
-      let n = e.nodeInputs.val;
+      const t = e.nodes.val, n = e.elements.val;
+      let o = e.nodeInputs.val;
       const l = e.elementInputs.val;
-      if (t.length === 0 || o.length === 0 || !n.supports || n.supports.size === 0) return;
-      if (!n.loads || n.loads.size === 0) {
+      if (t.length === 0 || n.length === 0 || !o.supports || o.supports.size === 0) return;
+      if (!o.loads || o.loads.size === 0) {
         const y = le("CM") ?? 0, p = le("CV") ?? 0, h = y + p, T = le("Ex") ?? 0, k = le("Ey") ?? 0;
         if (h === 0 && T === 0 && k === 0) return;
-        const M = /* @__PURE__ */ new Map(), P = [];
-        for (let E = 0; E < t.length; E++) n.supports.has(E) || P.push(E);
-        const B = (E) => Math.round(E * 1e3) / 1e3, x = /* @__PURE__ */ new Set();
-        n.supports.forEach((E, v) => {
+        const $ = /* @__PURE__ */ new Map(), C = [];
+        for (let S = 0; S < t.length; S++) o.supports.has(S) || C.push(S);
+        const B = (S) => Math.round(S * 1e3) / 1e3, x = /* @__PURE__ */ new Set();
+        o.supports.forEach((S, v) => {
           x.add(`${B(t[v][0])},${B(t[v][1])}`);
         });
         const u = /* @__PURE__ */ new Set();
-        for (const E of P) x.has(`${B(t[E][0])},${B(t[E][1])}`) && u.add(E);
+        for (const S of C) x.has(`${B(t[S][0])},${B(t[S][1])}`) && u.add(S);
         const I = /* @__PURE__ */ new Set(), L = /* @__PURE__ */ new Set();
         if (T !== 0 || k !== 0) {
-          let E = -1 / 0, v = -1 / 0;
-          for (const X of u) E = Math.max(E, B(t[X][0])), v = Math.max(v, B(t[X][1]));
-          const C = /* @__PURE__ */ new Map();
+          let S = -1 / 0, v = -1 / 0;
+          for (const X of u) S = Math.max(S, B(t[X][0])), v = Math.max(v, B(t[X][1]));
+          const F = /* @__PURE__ */ new Map();
           for (const X of u) {
             const V = B(t[X][2]);
-            C.has(V) || C.set(V, []), C.get(V).push(X);
+            F.has(V) || F.set(V, []), F.get(V).push(X);
           }
-          C.forEach((X) => {
+          F.forEach((X) => {
             if (T !== 0) {
               const V = /* @__PURE__ */ new Set();
-              for (const ae of X) if (B(t[ae][0]) === E) {
-                const Z = B(t[ae][1]);
-                V.has(Z) || (V.add(Z), I.add(ae));
+              for (const ae of X) if (B(t[ae][0]) === S) {
+                const Q = B(t[ae][1]);
+                V.has(Q) || (V.add(Q), I.add(ae));
               }
             }
             if (k !== 0) {
               const V = /* @__PURE__ */ new Set();
               for (const ae of X) if (B(t[ae][1]) === v) {
-                const Z = B(t[ae][0]);
-                V.has(Z) || (V.add(Z), L.add(ae));
+                const Q = B(t[ae][0]);
+                V.has(Q) || (V.add(Q), L.add(ae));
               }
             }
           });
         }
         const R = 9.81, j = /* @__PURE__ */ new Map();
-        for (let E = 0; E < o.length; E++) {
-          const v = o[E], C = ((_a2 = l.densities) == null ? void 0 : _a2.get(E)) ?? 0;
-          if (!(Math.abs(C) < 1e-15)) {
+        for (let S = 0; S < n.length; S++) {
+          const v = n[S], F = ((_a2 = l.densities) == null ? void 0 : _a2.get(S)) ?? 0;
+          if (!(Math.abs(F) < 1e-15)) {
             if (v.length === 2) {
-              const X = ((_b = l.areas) == null ? void 0 : _b.get(E)) ?? 0, V = t[v[0]], ae = t[v[1]], Z = Math.sqrt((ae[0] - V[0]) ** 2 + (ae[1] - V[1]) ** 2 + (ae[2] - V[2]) ** 2), de = -(C * X * Z * R) / 2;
+              const X = ((_b = l.areas) == null ? void 0 : _b.get(S)) ?? 0, V = t[v[0]], ae = t[v[1]], Q = Math.sqrt((ae[0] - V[0]) ** 2 + (ae[1] - V[1]) ** 2 + (ae[2] - V[2]) ** 2), de = -(F * X * Q * R) / 2;
               j.set(v[0], (j.get(v[0]) ?? 0) + de), j.set(v[1], (j.get(v[1]) ?? 0) + de);
             } else if (v.length >= 3) {
-              const X = ((_c = l.thicknesses) == null ? void 0 : _c.get(E)) ?? 0;
+              const X = ((_c = l.thicknesses) == null ? void 0 : _c.get(S)) ?? 0;
               let V = 0;
               if (v.length === 3) {
                 const [K, de, re] = v.map((Ie) => t[Ie]);
                 V = 0.5 * Math.abs((de[0] - K[0]) * (re[1] - K[1]) - (re[0] - K[0]) * (de[1] - K[1]));
               } else if (v.length === 4) {
-                const [K, de, re, Ie] = v.map((Pe) => t[Pe]);
+                const [K, de, re, Ie] = v.map((Re) => t[Re]);
                 if (V = 0.5 * Math.abs((de[0] - K[0]) * (re[1] - K[1]) - (re[0] - K[0]) * (de[1] - K[1])) + 0.5 * Math.abs((re[0] - K[0]) * (Ie[1] - K[1]) - (Ie[0] - K[0]) * (re[1] - K[1])), V < 1e-10) {
-                  const Pe = [
+                  const Re = [
                     de[0] - K[0],
                     de[1] - K[1],
                     de[2] - K[2]
@@ -11649,81 +11727,81 @@ Util:     cad.info()  cad.clear()  cad.help()
                     Ie[1] - K[1],
                     Ie[2] - K[2]
                   ], fe = [
-                    Pe[1] * _[2] - Pe[2] * _[1],
-                    Pe[2] * _[0] - Pe[0] * _[2],
-                    Pe[0] * _[1] - Pe[1] * _[0]
+                    Re[1] * _[2] - Re[2] * _[1],
+                    Re[2] * _[0] - Re[0] * _[2],
+                    Re[0] * _[1] - Re[1] * _[0]
                   ];
                   V = Math.sqrt(fe[0] ** 2 + fe[1] ** 2 + fe[2] ** 2);
                 }
               }
-              const Z = -(C * X * V * R) / v.length;
-              for (const K of v) j.set(K, (j.get(K) ?? 0) + Z);
+              const Q = -(F * X * V * R) / v.length;
+              for (const K of v) j.set(K, (j.get(K) ?? 0) + Q);
             }
           }
         }
         const g = /* @__PURE__ */ new Set();
-        for (const E of o) E.length === 2 && (g.add(E[0]), g.add(E[1]));
-        for (const E of P) {
-          const v = I.has(E) ? T : 0, C = L.has(E) ? k : 0, X = j.get(E) ?? 0, V = g.has(E) ? h : 0, ae = X + V;
-          (v !== 0 || C !== 0 || Math.abs(ae) > 1e-10) && M.set(E, [
+        for (const S of n) S.length === 2 && (g.add(S[0]), g.add(S[1]));
+        for (const S of C) {
+          const v = I.has(S) ? T : 0, F = L.has(S) ? k : 0, X = j.get(S) ?? 0, V = g.has(S) ? h : 0, ae = X + V;
+          (v !== 0 || F !== 0 || Math.abs(ae) > 1e-10) && $.set(S, [
             v,
-            C,
+            F,
             ae,
             0,
             0,
             0
           ]);
         }
-        n = {
-          ...n,
-          loads: M
-        }, e.nodeInputs.val = n;
+        o = {
+          ...o,
+          loads: $
+        }, e.nodeInputs.val = o;
       }
       const s = performance.now();
       let d = 0, a = 0, r = 0;
-      for (const y of o) y.length === 2 ? d++ : y.length === 3 ? r++ : y.length === 4 && a++;
-      const f = ((_d = n.supports) == null ? void 0 : _d.size) || 0, i = ((_e2 = n.loads) == null ? void 0 : _e2.size) || 0, c = t.length * 6, m = c - f * 6, S = [], w = (y) => S.push(y);
-      w('<b style="color:var(--cad-heading)">FEM Solver</b>'), w(`<span style="color:var(--cad-info)">Modelo:</span> ${t.length} nodos, ${o.length} elem`), d && w(`&nbsp;&nbsp;Frames: <b>${d}</b>`), a && w(`&nbsp;&nbsp;Shell Q4: <b>${a}</b>`), r && w(`&nbsp;&nbsp;Triangulos: <b>${r}</b>`), w(`&nbsp;&nbsp;Apoyos: ${f} &nbsp;|&nbsp; Cargas: ${i}`), w(`<span style="color:var(--cad-info)">DOFs:</span> ${c} total, ~${m} libres`), w('<hr style="border-color:var(--cad-border);margin:4px 0">'), w(`<span style="color:#888">1.</span> Ensamblaje <b>K</b> global (${c}&times;${c})`), w("&nbsp;&nbsp;&nbsp;<i>K<sub>global</sub> = &Sigma; T<sup>T</sup> &middot; K<sub>local</sub> &middot; T</i>");
+      for (const y of n) y.length === 2 ? d++ : y.length === 3 ? r++ : y.length === 4 && a++;
+      const f = ((_d = o.supports) == null ? void 0 : _d.size) || 0, i = ((_e2 = o.loads) == null ? void 0 : _e2.size) || 0, c = t.length * 6, m = c - f * 6, w = [], E = (y) => w.push(y);
+      E('<b style="color:var(--cad-heading)">FEM Solver</b>'), E(`<span style="color:var(--cad-info)">Modelo:</span> ${t.length} nodos, ${n.length} elem`), d && E(`&nbsp;&nbsp;Frames: <b>${d}</b>`), a && E(`&nbsp;&nbsp;Shell Q4: <b>${a}</b>`), r && E(`&nbsp;&nbsp;Triangulos: <b>${r}</b>`), E(`&nbsp;&nbsp;Apoyos: ${f} &nbsp;|&nbsp; Cargas: ${i}`), E(`<span style="color:var(--cad-info)">DOFs:</span> ${c} total, ~${m} libres`), E('<hr style="border-color:var(--cad-border);margin:4px 0">'), E(`<span style="color:#888">1.</span> Ensamblaje <b>K</b> global (${c}&times;${c})`), E("&nbsp;&nbsp;&nbsp;<i>K<sub>global</sub> = &Sigma; T<sup>T</sup> &middot; K<sub>local</sub> &middot; T</i>");
       try {
-        const y = Ct(t, o, n, l), p = performance.now() - s;
+        const y = kt(t, n, o, l), p = performance.now() - s;
         if (y) {
-          e.deformOutputs.val = y, w(`<span style="color:#888">2.</span> <b>K &middot; u = F</b> &rarr; SparseLU &rarr; <span style="color:#00cc88">${p.toFixed(0)} ms</span>`);
-          let h = 0, T = -1, k = 0, M = 0;
+          e.deformOutputs.val = y, E(`<span style="color:#888">2.</span> <b>K &middot; u = F</b> &rarr; SparseLU &rarr; <span style="color:#00cc88">${p.toFixed(0)} ms</span>`);
+          let h = 0, T = -1, k = 0, $ = 0;
           y.deformations && y.deformations.forEach((I, L) => {
             const R = Math.sqrt(I[0] * I[0] + I[1] * I[1] + I[2] * I[2]);
-            R > h && (h = R, T = L, k = I[0], M = I[2]);
-          }), w('<span style="color:#888">3.</span> Desplazamientos:'), w(`&nbsp;&nbsp;&nbsp;max|<b>u</b>| = <b style="color:var(--cad-heading)">${h.toExponential(3)}</b> m <span style="color:#666">(nodo ${T})</span>`), w(`&nbsp;&nbsp;&nbsp;u<sub>x</sub> = ${(k * 1e3).toFixed(4)} mm &nbsp;|&nbsp; u<sub>z</sub> = ${(M * 1e3).toFixed(4)} mm`);
-          const P = performance.now(), B = Io(t, o, l, y), x = performance.now() - P;
-          B && (e.analyzeOutputs.val = B, w(`<span style="color:#888">4.</span> Fuerzas internas: <span style="color:#00cc88">${x.toFixed(0)} ms</span>`), w("&nbsp;&nbsp;&nbsp;<i>F<sub>int</sub> = K<sub>local</sub> &middot; T &middot; u</i>"));
+            R > h && (h = R, T = L, k = I[0], $ = I[2]);
+          }), E('<span style="color:#888">3.</span> Desplazamientos:'), E(`&nbsp;&nbsp;&nbsp;max|<b>u</b>| = <b style="color:var(--cad-heading)">${h.toExponential(3)}</b> m <span style="color:#666">(nodo ${T})</span>`), E(`&nbsp;&nbsp;&nbsp;u<sub>x</sub> = ${(k * 1e3).toFixed(4)} mm &nbsp;|&nbsp; u<sub>z</sub> = ${($ * 1e3).toFixed(4)} mm`);
+          const C = performance.now(), B = gn(t, n, l, y), x = performance.now() - C;
+          B && (e.analyzeOutputs.val = B, E(`<span style="color:#888">4.</span> Fuerzas internas: <span style="color:#00cc88">${x.toFixed(0)} ms</span>`), E("&nbsp;&nbsp;&nbsp;<i>F<sub>int</sub> = K<sub>local</sub> &middot; T &middot; u</i>"));
           const u = performance.now() - s;
-          w('<hr style="border-color:var(--cad-border);margin:4px 0">'), w(`<b style="color:#00cc88">&#10004; Completado: ${u.toFixed(0)} ms</b>`);
+          E('<hr style="border-color:var(--cad-border);margin:4px 0">'), E(`<b style="color:#00cc88">&#10004; Completado: ${u.toFixed(0)} ms</b>`);
         }
       } catch (y) {
         const p = performance.now() - s;
-        w(`<b style="color:#ff4444">&#10008; Error (${p.toFixed(0)} ms): ${y.message}</b>`);
+        E(`<b style="color:#ff4444">&#10008; Error (${p.toFixed(0)} ms): ${y.message}</b>`);
       }
-      window.__femLog = S, console.log(`FEM Solver: ${t.length}n ${o.length}e \u2192 ${(performance.now() - s).toFixed(0)}ms`), qe && setTimeout(() => Ln(), 50);
+      window.__femLog = w, console.log(`FEM Solver: ${t.length}n ${n.length}e \u2192 ${(performance.now() - s).toFixed(0)}ms`), qe && setTimeout(() => Lo(), 50);
     }
-    function Rn(t, o) {
-      const n = t * o, l = t * o * o * o / 12, s = o * t * t * t / 12, d = Math.min(t, o), a = Math.max(t, o), r = d * d * d * a * (1 / 3 - 0.21 * d / a * (1 - d * d * d * d / (12 * a * a * a * a)));
+    function Po(t, n) {
+      const o = t * n, l = t * n * n * n / 12, s = n * t * t * t / 12, d = Math.min(t, n), a = Math.max(t, n), r = d * d * d * a * (1 / 3 - 0.21 * d / a * (1 - d * d * d * d / (12 * a * a * a * a)));
       return {
-        A: n,
+        A: o,
         Iz: l,
         Iy: s,
         J: r
       };
     }
     function ks(t) {
-      const o = t / 2, n = Math.PI * o * o, l = Math.PI * o * o * o * o / 4, s = Math.PI * o * o * o * o / 2;
+      const n = t / 2, o = Math.PI * n * n, l = Math.PI * n * n * n * n / 4, s = Math.PI * n * n * n * n / 2;
       return {
-        A: n,
+        A: o,
         Iz: l,
         Iy: l,
         J: s
       };
     }
-    function Pn(t, o, n, l) {
-      const s = o - 2 * n, d = 2 * t * n + s * l, a = (t * o * o * o - (t - l) * s * s * s) / 12, r = (2 * n * t * t * t + s * l * l * l) / 12, f = (2 * t * n * n * n + s * l * l * l) / 3;
+    function Ro(t, n, o, l) {
+      const s = n - 2 * o, d = 2 * t * o + s * l, a = (t * n * n * n - (t - l) * s * s * s) / 12, r = (2 * o * t * t * t + s * l * l * l) / 12, f = (2 * t * o * o * o + s * l * l * l) / 3;
       return {
         A: d,
         Iz: a,
@@ -11731,8 +11809,8 @@ Util:     cad.info()  cad.clear()  cad.help()
         J: f
       };
     }
-    function On(t, o, n) {
-      const l = t - 2 * n, s = o - 2 * n, d = t * o - l * s, a = (t * o * o * o - l * s * s * s) / 12, r = (o * t * t * t - s * l * l * l) / 12, f = (t - n) * (o - n), i = 2 * ((t - n) / n + (o - n) / n), c = 4 * f * f / (i > 0 ? i : 1);
+    function Oo(t, n, o) {
+      const l = t - 2 * o, s = n - 2 * o, d = t * n - l * s, a = (t * n * n * n - l * s * s * s) / 12, r = (n * t * t * t - s * l * l * l) / 12, f = (t - o) * (n - o), i = 2 * ((t - o) / o + (n - o) / o), c = 4 * f * f / (i > 0 ? i : 1);
       return {
         A: d,
         Iz: a,
@@ -11740,22 +11818,22 @@ Util:     cad.info()  cad.clear()  cad.help()
         J: c
       };
     }
-    function Sa(t, o, n, l, s, d, a) {
-      const f = 4700 * Math.sqrt(d / 1e3) * 1e3 / l, i = t - 2 * n, c = o - 2 * n, m = t * o - i * c, S = (t * o * o * o - i * c * c * c) / 12, w = (o * t * t * t - c * i * i * i) / 12, y = i * c, p = i * c * c * c / 12, h = c * i * i * i / 12, T = m + f * y, k = S + f * p, M = w + f * h, P = l / (2 * (1 + s)), B = (t - n) * (o - n), x = 2 * ((t - n) / n + (o - n) / n), u = 4 * B * B / (x > 0 ? x : 1);
+    function Ia(t, n, o, l, s, d, a) {
+      const f = 4700 * Math.sqrt(d / 1e3) * 1e3 / l, i = t - 2 * o, c = n - 2 * o, m = t * n - i * c, w = (t * n * n * n - i * c * c * c) / 12, E = (n * t * t * t - c * i * i * i) / 12, y = i * c, p = i * c * c * c / 12, h = c * i * i * i / 12, T = m + f * y, k = w + f * p, $ = E + f * h, C = l / (2 * (1 + s)), B = (t - o) * (n - o), x = 2 * ((t - o) / o + (n - o) / o), u = 4 * B * B / (x > 0 ? x : 1);
       return {
         A: T,
         Iz: k,
-        Iy: M,
+        Iy: $,
         J: u,
         Es: l,
-        Gs: P,
+        Gs: C,
         A_steel: m,
         A_conc: y
       };
     }
-    function xo() {
+    function vn() {
       if (!e.elementInputs) return;
-      const t = e.elements.val, o = $, n = {
+      const t = e.elements.val, n = M, o = {
         elasticities: /* @__PURE__ */ new Map(),
         shearModuli: /* @__PURE__ */ new Map(),
         areas: /* @__PURE__ */ new Map(),
@@ -11768,16 +11846,16 @@ Util:     cad.info()  cad.clear()  cad.help()
         poissonsRatios: /* @__PURE__ */ new Map()
       };
       if ((z === "edificio" || z === "frame") && D.size > 0) {
-        const { colMat: s, vigaMat: d, colShape: a, fc: r, perFloor: f } = Ne, i = 4700 * Math.sqrt(r / 1e3) * 1e3, c = i / (2 * 1.2), m = 24 / 9.80665, S = o.E, w = o.G, y = o.rho;
+        const { colMat: s, vigaMat: d, colShape: a, fc: r, perFloor: f } = Ne, i = 4700 * Math.sqrt(r / 1e3) * 1e3, c = i / (2 * 1.2), m = 24 / 9.80665, w = n.E, E = n.G, y = n.rho;
         for (let p = 0; p < t.length; p++) {
           if (ce.has(p)) {
             const I = 4700 * Math.sqrt(r / 1e3) * 1e3, L = 0.2;
-            n.elasticities.set(p, I), n.poissonsRatios.set(p, L), n.thicknesses.set(p, Be), n.shearModuli.set(p, I / (2 * (1 + L))), n.densities.set(p, 24 / 9.80665);
+            o.elasticities.set(p, I), o.poissonsRatios.set(p, L), o.thicknesses.set(p, Be), o.shearModuli.set(p, I / (2 * (1 + L))), o.densities.set(p, 24 / 9.80665);
             continue;
           }
-          if (Tt.has(p)) {
+          if (zt.has(p)) {
             const I = 4700 * Math.sqrt(r / 1e3) * 1e3, L = 0.2;
-            n.elasticities.set(p, I), n.poissonsRatios.set(p, L), n.thicknesses.set(p, at), n.shearModuli.set(p, I / (2 * (1 + L))), n.densities.set(p, 24 / 9.80665);
+            o.elasticities.set(p, I), o.poissonsRatios.set(p, L), o.thicknesses.set(p, at), o.shearModuli.set(p, I / (2 * (1 + L))), o.densities.set(p, 24 / 9.80665);
             continue;
           }
           const h = D.has(p), T = $e.get(p) ?? 0, k = f[T] ?? f[0] ?? {
@@ -11785,8 +11863,8 @@ Util:     cad.info()  cad.clear()  cad.help()
             hCol: 0.4,
             dCol: 0.4
           };
-          let M, P, B, x;
-          if (h) if (s === 0) P = i, B = c, x = m, M = a === 1 ? ks(k.dCol) : Rn(k.bCol, k.hCol), n.sectionShapes.set(p, a === 1 ? {
+          let $, C, B, x;
+          if (h) if (s === 0) C = i, B = c, x = m, $ = a === 1 ? ks(k.dCol) : Po(k.bCol, k.hCol), o.sectionShapes.set(p, a === 1 ? {
             type: "circ",
             d: k.dCol
           } : {
@@ -11795,16 +11873,16 @@ Util:     cad.info()  cad.clear()  cad.help()
             h: k.hCol
           });
           else if (s === 1) {
-            P = S, B = w, x = y;
+            C = w, B = E, x = y;
             const I = Ne.steelColType;
             if (I <= 1) {
-              const L = ko[k.colProfileIdx] ?? ko[0];
-              M = {
+              const L = kn[k.colProfileIdx] ?? kn[0];
+              $ = {
                 A: L.A,
                 Iz: L.Iz,
                 Iy: L.Iy,
                 J: L.J
-              }, n.sectionShapes.set(p, {
+              }, o.sectionShapes.set(p, {
                 type: "I",
                 b: L.bf,
                 h: L.d,
@@ -11812,21 +11890,21 @@ Util:     cad.info()  cad.clear()  cad.help()
               });
             } else if (I === 2) {
               const L = k.colBf ?? 0.3, R = k.colHf ?? 0.3, j = k.colTf ?? 0.02, g = k.colTw ?? 0.012;
-              M = Pn(L, R, j, g);
-              const E = `I${(R * 100).toFixed(0)}x${(L * 100).toFixed(0)}`;
-              n.sectionShapes.set(p, {
+              $ = Ro(L, R, j, g);
+              const S = `I${(R * 100).toFixed(0)}x${(L * 100).toFixed(0)}`;
+              o.sectionShapes.set(p, {
                 type: "I",
                 b: L,
                 h: R,
                 tf: j,
                 tw: g,
-                name: E
+                name: S
               });
             } else {
               const L = k.colBc ?? 0.3, R = k.colHc ?? 0.3, j = k.colT ?? 0.01;
-              M = On(L, R, j);
+              $ = Oo(L, R, j);
               const g = `\u25A1${(R * 100).toFixed(0)}x${(L * 100).toFixed(0)}x${(j * 1e3).toFixed(0)}`;
-              n.sectionShapes.set(p, {
+              o.sectionShapes.set(p, {
                 type: "HSS",
                 b: L,
                 h: R,
@@ -11835,19 +11913,19 @@ Util:     cad.info()  cad.clear()  cad.help()
               });
             }
           } else {
-            const I = k.colBc ?? 0.3, L = k.colHc ?? 0.3, R = k.colT ?? 0.01, j = k.colFc ?? 28e3, g = k.colEs ?? 2e8, E = k.colNuS ?? 0.3;
+            const I = k.colBc ?? 0.3, L = k.colHc ?? 0.3, R = k.colT ?? 0.01, j = k.colFc ?? 28e3, g = k.colEs ?? 2e8, S = k.colNuS ?? 0.3;
             k.colNuC;
-            const v = Sa(I, L, R, g, E, j);
-            M = {
+            const v = Ia(I, L, R, g, S, j);
+            $ = {
               A: v.A,
               Iz: v.Iz,
               Iy: v.Iy,
               J: v.J
-            }, P = v.Es, B = v.Gs;
-            const C = 7.85, X = 24 / 9.80665;
-            x = (C * v.A_steel + X * v.A_conc) / (v.A_steel + v.A_conc);
+            }, C = v.Es, B = v.Gs;
+            const F = 7.85, X = 24 / 9.80665;
+            x = (F * v.A_steel + X * v.A_conc) / (v.A_steel + v.A_conc);
             const V = `CFT ${(L * 1e3).toFixed(0)}X${(I * 1e3).toFixed(0)}X${(R * 1e3).toFixed(0)}`;
-            n.sectionShapes.set(p, {
+            o.sectionShapes.set(p, {
               type: "CFT",
               b: I,
               h: L,
@@ -11857,81 +11935,81 @@ Util:     cad.info()  cad.clear()  cad.help()
           }
           else {
             const I = Te.get(p), L = I ? I.dir === "x" ? k.vigasX : k.vigasY : [], R = I ? L[I.bay] ?? L[0] ?? ut() : ut();
-            if (d === 0) P = i, B = c, x = m, M = Rn(R.b, R.h), n.sectionShapes.set(p, {
+            if (d === 0) C = i, B = c, x = m, $ = Po(R.b, R.h), o.sectionShapes.set(p, {
               type: "rect",
               b: R.b,
               h: R.h
             });
             else {
-              P = S, B = w, x = y;
+              C = w, B = E, x = y;
               const j = Ne.steelVigaType;
               if (j <= 1) {
-                const g = ko[R.profileIdx ?? 0] ?? ko[0];
-                M = {
+                const g = kn[R.profileIdx ?? 0] ?? kn[0];
+                $ = {
                   A: g.A,
                   Iz: g.Iz,
                   Iy: g.Iy,
                   J: g.J
-                }, n.sectionShapes.set(p, {
+                }, o.sectionShapes.set(p, {
                   type: "I",
                   b: g.bf,
                   h: g.d,
                   name: g.name
                 });
               } else if (j === 2) {
-                const g = R.bf ?? 0.2, E = R.hf ?? 0.4, v = R.tf ?? 0.015, C = R.tw ?? 0.01;
-                M = Pn(g, E, v, C);
-                const X = `I${(E * 100).toFixed(0)}x${(g * 100).toFixed(0)}`;
-                n.sectionShapes.set(p, {
+                const g = R.bf ?? 0.2, S = R.hf ?? 0.4, v = R.tf ?? 0.015, F = R.tw ?? 0.01;
+                $ = Ro(g, S, v, F);
+                const X = `I${(S * 100).toFixed(0)}x${(g * 100).toFixed(0)}`;
+                o.sectionShapes.set(p, {
                   type: "I",
                   b: g,
-                  h: E,
+                  h: S,
                   tf: v,
-                  tw: C,
+                  tw: F,
                   name: X
                 });
               } else {
-                const g = R.bc ?? 0.2, E = R.hc ?? 0.3, v = R.t ?? 8e-3;
-                M = On(g, E, v);
-                const C = `\u25A1${(E * 100).toFixed(0)}x${(g * 100).toFixed(0)}x${(v * 1e3).toFixed(0)}`;
-                n.sectionShapes.set(p, {
+                const g = R.bc ?? 0.2, S = R.hc ?? 0.3, v = R.t ?? 8e-3;
+                $ = Oo(g, S, v);
+                const F = `\u25A1${(S * 100).toFixed(0)}x${(g * 100).toFixed(0)}x${(v * 1e3).toFixed(0)}`;
+                o.sectionShapes.set(p, {
                   type: "HSS",
                   b: g,
-                  h: E,
+                  h: S,
                   tw: v,
-                  name: C
+                  name: F
                 });
               }
             }
           }
           const u = ye.get(p);
           if (u) {
-            if ((u.material ?? 1) === 0 ? (P = i, B = c, x = m) : (P = S, B = w, x = y), u.secType === "rect" && u.b && u.h) M = Rn(u.b, u.h), n.sectionShapes.set(p, {
+            if ((u.material ?? 1) === 0 ? (C = i, B = c, x = m) : (C = w, B = E, x = y), u.secType === "rect" && u.b && u.h) $ = Po(u.b, u.h), o.sectionShapes.set(p, {
               type: "rect",
               b: u.b,
               h: u.h
             });
-            else if (u.secType === "circ" && u.b) M = ks(u.b), n.sectionShapes.set(p, {
+            else if (u.secType === "circ" && u.b) $ = ks(u.b), o.sectionShapes.set(p, {
               type: "circ",
               d: u.b
             });
             else if ((u.secType === "W" || u.secType === "HSS") && u.profileIdx !== void 0) {
-              const L = ko[u.profileIdx] ?? ko[0];
-              M = {
+              const L = kn[u.profileIdx] ?? kn[0];
+              $ = {
                 A: L.A,
                 Iz: L.Iz,
                 Iy: L.Iy,
                 J: L.J
-              }, n.sectionShapes.set(p, {
+              }, o.sectionShapes.set(p, {
                 type: "I",
                 b: L.bf,
                 h: L.d,
                 name: L.name
               });
             } else if (u.secType === "I-param" && u.bf && u.hf && u.tf && u.tw) {
-              M = Pn(u.bf, u.hf, u.tf, u.tw);
+              $ = Ro(u.bf, u.hf, u.tf, u.tw);
               const L = `I${(u.hf * 100).toFixed(0)}x${(u.bf * 100).toFixed(0)}`;
-              n.sectionShapes.set(p, {
+              o.sectionShapes.set(p, {
                 type: "I",
                 b: u.bf,
                 h: u.hf,
@@ -11940,9 +12018,9 @@ Util:     cad.info()  cad.clear()  cad.help()
                 name: L
               });
             } else if (u.secType === "tubular" && u.bc && u.hc && u.t) {
-              M = On(u.bc, u.hc, u.t);
+              $ = Oo(u.bc, u.hc, u.t);
               const L = `\u25A1${(u.hc * 100).toFixed(0)}x${(u.bc * 100).toFixed(0)}x${(u.t * 1e3).toFixed(0)}`;
-              n.sectionShapes.set(p, {
+              o.sectionShapes.set(p, {
                 type: "HSS",
                 b: u.bc,
                 h: u.hc,
@@ -11951,14 +12029,14 @@ Util:     cad.info()  cad.clear()  cad.help()
               });
             }
           }
-          n.elasticities.set(p, P), n.shearModuli.set(p, B), n.areas.set(p, M.A), n.momentsOfInertiaZ.set(p, M.Iy), n.momentsOfInertiaY.set(p, M.Iz), n.torsionalConstants.set(p, M.J), n.densities.set(p, x), u && u.releases12 && u.releases12.some((I) => I) && (n.momentReleases || (n.momentReleases = /* @__PURE__ */ new Map()), n.momentReleases.set(p, u.releases12)), u && u.springs12 && u.springs12.some((I) => I > 0) && (n.partialFixitySprings || (n.partialFixitySprings = /* @__PURE__ */ new Map()), n.partialFixitySprings.set(p, u.springs12));
+          o.elasticities.set(p, C), o.shearModuli.set(p, B), o.areas.set(p, $.A), o.momentsOfInertiaZ.set(p, $.Iy), o.momentsOfInertiaY.set(p, $.Iz), o.torsionalConstants.set(p, $.J), o.densities.set(p, x), u && u.releases12 && u.releases12.some((I) => I) && (o.momentReleases || (o.momentReleases = /* @__PURE__ */ new Map()), o.momentReleases.set(p, u.releases12)), u && u.springs12 && u.springs12.some((I) => I > 0) && (o.partialFixitySprings || (o.partialFixitySprings = /* @__PURE__ */ new Map()), o.partialFixitySprings.set(p, u.springs12));
         }
-      } else for (let s = 0; s < t.length; s++) n.elasticities.set(s, o.E), n.shearModuli.set(s, o.G), n.areas.set(s, o.A), n.momentsOfInertiaZ.set(s, o.Iy), n.momentsOfInertiaY.set(s, o.Iz), n.torsionalConstants.set(s, o.J), n.densities.set(s, o.rho);
-      e.elementInputs.val = n;
+      } else for (let s = 0; s < t.length; s++) o.elasticities.set(s, n.E), o.shearModuli.set(s, n.G), o.areas.set(s, n.A), o.momentsOfInertiaZ.set(s, n.Iy), o.momentsOfInertiaY.set(s, n.Iz), o.torsionalConstants.set(s, n.J), o.densities.set(s, n.rho);
+      e.elementInputs.val = o;
     }
     function Ts(t) {
-      Ae.querySelectorAll("[data-ex]").forEach((o) => {
-        o.classList.toggle("active", o.dataset.ex === t);
+      Ae.querySelectorAll("[data-ex]").forEach((n) => {
+        n.classList.toggle("active", n.dataset.ex === t);
       });
     }
     window.innerWidth <= 600 && Ae.classList.add("collapsed"), setTimeout(() => {
@@ -11968,41 +12046,41 @@ Util:     cad.info()  cad.clear()  cad.help()
       }), (_b = Ae.querySelector("#cad3d-expand")) == null ? void 0 : _b.addEventListener("click", (g) => {
         g.stopPropagation(), Ae.classList.remove("collapsed");
       }), Ae.querySelectorAll("[data-ex]").forEach((g) => {
-        g.addEventListener("click", (E) => {
-          E.stopPropagation();
+        g.addEventListener("click", (S) => {
+          S.stopPropagation();
           const v = g.dataset.ex;
           Ts(v), Ke.example(v);
         });
       }), Ae.querySelectorAll("[data-view]").forEach((g) => {
-        g.addEventListener("click", (E) => {
-          E.stopPropagation();
+        g.addEventListener("click", (S) => {
+          S.stopPropagation();
           const v = g.dataset.view;
-          yo(v), Ae.querySelectorAll("[data-view]").forEach((C) => C.classList.remove("view-active")), g.classList.add("view-active");
+          $n(v), Ae.querySelectorAll("[data-view]").forEach((F) => F.classList.remove("view-active")), g.classList.add("view-active");
         });
       }), (_c = Ae.querySelector("#cad3d-btn-clear")) == null ? void 0 : _c.addEventListener("click", (g) => {
-        g.stopPropagation(), z = "", ra.val = false, Ma(), Ke.clear();
+        g.stopPropagation(), z = "", ia.val = false, wa(), Ke.clear();
       }), (_d = Ae.querySelector("#cad3d-select")) == null ? void 0 : _d.addEventListener("click", (g) => {
         var _a3;
-        g.stopPropagation(), oo && (oo = false, Ao()), po && cn(), Yt = !Yt, (_a3 = Ae.querySelector("#cad3d-select")) == null ? void 0 : _a3.classList.toggle("inspect-active", Yt);
+        g.stopPropagation(), nn && (nn = false, An()), pn && io(), Yt = !Yt, (_a3 = Ae.querySelector("#cad3d-select")) == null ? void 0 : _a3.classList.toggle("inspect-active", Yt);
         const v = et();
-        v && (v.controls.enabled = !Yt), Yt || rn();
+        v && (v.controls.enabled = !Yt), Yt || ro();
       }), (_e2 = Ae.querySelector("#cad3d-draw")) == null ? void 0 : _e2.addEventListener("click", (g) => {
         var _a3;
-        g.stopPropagation(), oo && (oo = false, Ao()), Yt && rn(), po = !po, (_a3 = Ae.querySelector("#cad3d-draw")) == null ? void 0 : _a3.classList.toggle("inspect-active", po), po ? Aa() : cn();
+        g.stopPropagation(), nn && (nn = false, An()), Yt && ro(), pn = !pn, (_a3 = Ae.querySelector("#cad3d-draw")) == null ? void 0 : _a3.classList.toggle("inspect-active", pn), pn ? La() : io();
       }), (_f = Ae.querySelector("#cad3d-inspect")) == null ? void 0 : _f.addEventListener("click", (g) => {
         var _a3;
-        g.stopPropagation(), Yt && rn(), po && cn(), oo = !oo, (_a3 = Ae.querySelector("#cad3d-inspect")) == null ? void 0 : _a3.classList.toggle("inspect-active", oo), oo || Ao();
+        g.stopPropagation(), Yt && ro(), pn && io(), nn = !nn, (_a3 = Ae.querySelector("#cad3d-inspect")) == null ? void 0 : _a3.classList.toggle("inspect-active", nn), nn || An();
       }), (_g = Ae.querySelector("#cad3d-new-model")) == null ? void 0 : _g.addEventListener("click", (g) => {
         g.stopPropagation(), Ke.clear(), Ve = null;
       });
       const t = Ae.querySelector("#cad3d-tests-menu");
       t && t.addEventListener("change", () => {
         const g = t.value;
-        t.value = "", g && o(g);
+        t.value = "", g && n(g);
       });
-      function o(g) {
+      function n(g) {
         var _a3, _b2, _c2, _d2, _e3, _f2;
-        const C = 15e3 * Math.sqrt(210) * 10, X = 0.2, V = C / (2 * (1 + X)), ae = 0.09, Z = 0.3 ** 4 / 12, K = 0.141 * 0.3 ** 4, de = 0.25 * 0.4, re = 0.25 * 0.4 ** 3 / 12, Ie = 0.4 * 0.25 ** 3 / 12, Pe = 1e-3, _ = 5 / 6 * ae, fe = 5 / 6 * de, ne = [];
+        const F = 15e3 * Math.sqrt(210) * 10, X = 0.2, V = F / (2 * (1 + X)), ae = 0.09, Q = 0.3 ** 4 / 12, K = 0.141 * 0.3 ** 4, de = 0.25 * 0.4, re = 0.25 * 0.4 ** 3 / 12, Ie = 0.4 * 0.25 ** 3 / 12, Re = 1e-3, _ = 5 / 6 * ae, fe = 5 / 6 * de, oe = [];
         function pe(ee, ue, we) {
           const se = {
             elasticities: /* @__PURE__ */ new Map(),
@@ -12014,12 +12092,12 @@ Util:     cad.info()  cad.clear()  cad.help()
             shearAreasY: /* @__PURE__ */ new Map(),
             shearAreasZ: /* @__PURE__ */ new Map()
           };
-          for (const Se of ue) se.elasticities.set(Se, C), se.shearModuli.set(Se, V), se.areas.set(Se, ae), se.momentsOfInertiaZ.set(Se, Z), se.momentsOfInertiaY.set(Se, Z), se.torsionalConstants.set(Se, K), se.shearAreasY.set(Se, _), se.shearAreasZ.set(Se, _);
-          for (const Se of we) se.elasticities.set(Se, C), se.shearModuli.set(Se, V), se.areas.set(Se, de), se.momentsOfInertiaZ.set(Se, Ie), se.momentsOfInertiaY.set(Se, re), se.torsionalConstants.set(Se, Pe), se.shearAreasY.set(Se, fe), se.shearAreasZ.set(Se, fe);
+          for (const Se of ue) se.elasticities.set(Se, F), se.shearModuli.set(Se, V), se.areas.set(Se, ae), se.momentsOfInertiaZ.set(Se, Q), se.momentsOfInertiaY.set(Se, Q), se.torsionalConstants.set(Se, K), se.shearAreasY.set(Se, _), se.shearAreasZ.set(Se, _);
+          for (const Se of we) se.elasticities.set(Se, F), se.shearModuli.set(Se, V), se.areas.set(Se, de), se.momentsOfInertiaZ.set(Se, Ie), se.momentsOfInertiaY.set(Se, re), se.torsionalConstants.set(Se, Re), se.shearAreasY.set(Se, fe), se.shearAreasZ.set(Se, fe);
           return se;
         }
         if (g === "test-cantilever" || g === "test-all") {
-          const we = 270 / (3 * C * Z), se = [
+          const we = 270 / (3 * F * Q), se = [
             [
               0,
               0,
@@ -12036,8 +12114,8 @@ Util:     cad.info()  cad.clear()  cad.help()
               1
             ]
           ], je = pe(1, [], []);
-          je.elasticities.set(0, C), je.shearModuli.set(0, V), je.areas.set(0, ae), je.momentsOfInertiaZ.set(0, Z), je.momentsOfInertiaY.set(0, Z), je.torsionalConstants.set(0, K);
-          const rt = Ct(se, Se, {
+          je.elasticities.set(0, F), je.shearModuli.set(0, V), je.areas.set(0, ae), je.momentsOfInertiaZ.set(0, Q), je.momentsOfInertiaY.set(0, Q), je.torsionalConstants.set(0, K);
+          const rt = kt(se, Se, {
             supports: /* @__PURE__ */ new Map([
               [
                 0,
@@ -12065,7 +12143,7 @@ Util:     cad.info()  cad.clear()  cad.help()
               ]
             ])
           }, je);
-          ne.push({
+          oe.push({
             name: "Cantilever Beam",
             formulation: "Euler-Bernoulli (PL\xB3/3EI)",
             nodes: se,
@@ -12120,7 +12198,7 @@ Util:     cad.info()  cad.clear()  cad.help()
             1
           ], [
             2
-          ]), se = Ct(ee, ue, {
+          ]), se = kt(ee, ue, {
             supports: /* @__PURE__ */ new Map([
               [
                 0,
@@ -12170,7 +12248,7 @@ Util:     cad.info()  cad.clear()  cad.help()
               ]
             ])
           }, we);
-          ne.push({
+          oe.push({
             name: "Portal 1-Story (Timoshenko)",
             formulation: "Frame Timoshenko (As=5/6\xB7A)",
             nodes: ee,
@@ -12250,7 +12328,7 @@ Util:     cad.info()  cad.clear()  cad.help()
           ], [
             4,
             5
-          ]), se = Ct(ee, ue, {
+          ]), se = kt(ee, ue, {
             supports: /* @__PURE__ */ new Map([
               [
                 0,
@@ -12300,7 +12378,7 @@ Util:     cad.info()  cad.clear()  cad.help()
               ]
             ])
           }, we);
-          ne.push({
+          oe.push({
             name: "Portal 2-Story",
             formulation: "Frame Timoshenko",
             nodes: ee,
@@ -12350,7 +12428,7 @@ Util:     cad.info()  cad.clear()  cad.help()
               2,
               3
             ]
-          ], se = Ct(ee, ue, {
+          ], se = kt(ee, ue, {
             supports: /* @__PURE__ */ new Map([
               [
                 0,
@@ -12403,7 +12481,7 @@ Util:     cad.info()  cad.clear()  cad.help()
             elasticities: /* @__PURE__ */ new Map([
               [
                 0,
-                C
+                F
               ]
             ]),
             shearModuli: /* @__PURE__ */ new Map([
@@ -12425,7 +12503,7 @@ Util:     cad.info()  cad.clear()  cad.help()
               ]
             ])
           });
-          ne.push({
+          oe.push({
             name: "Wall Q4 Only",
             formulation: "Membrane (incompatible modes) + Mindlin-Reissner + Hughes-Brezzi drilling",
             nodes: ee,
@@ -12512,7 +12590,7 @@ Util:     cad.info()  cad.clear()  cad.help()
             4,
             5
           ]);
-          we.elasticities.set(6, C), we.shearModuli.set(6, V), we.thicknesses = /* @__PURE__ */ new Map([
+          we.elasticities.set(6, F), we.shearModuli.set(6, V), we.thicknesses = /* @__PURE__ */ new Map([
             [
               6,
               0.2
@@ -12523,7 +12601,7 @@ Util:     cad.info()  cad.clear()  cad.help()
               X
             ]
           ]);
-          const se = Ct(ee, ue, {
+          const se = kt(ee, ue, {
             supports: /* @__PURE__ */ new Map([
               [
                 0,
@@ -12573,7 +12651,7 @@ Util:     cad.info()  cad.clear()  cad.help()
               ]
             ])
           }, we);
-          ne.push({
+          oe.push({
             name: "Portal 2-Story + Wall Q4",
             formulation: "Frame Timoshenko + Shell Q4 (Hughes-Brezzi drilling)",
             nodes: ee,
@@ -12626,7 +12704,7 @@ Util:     cad.info()  cad.clear()  cad.help()
               1,
               0
             ]
-          ], Lt = [
+          ], Ct = [
             [
               0,
               1,
@@ -12680,15 +12758,15 @@ Util:     cad.info()  cad.clear()  cad.help()
                 0.25
               ]
             ])
-          }, Rt = /* @__PURE__ */ new Map();
-          Rt.set(0, [
+          }, Pt = /* @__PURE__ */ new Map();
+          Pt.set(0, [
             true,
             true,
             true,
             true,
             true,
             true
-          ]), Rt.set(5, [
+          ]), Pt.set(5, [
             true,
             true,
             true,
@@ -12712,38 +12790,38 @@ Util:     cad.info()  cad.clear()  cad.help()
             0,
             0
           ]);
-          const Eo = 5 ** 3 / (3 * 1500 * rt);
+          const Sn = 5 ** 3 / (3 * 1500 * rt);
           try {
-            const ao = Ct(ct, Lt, {
-              supports: Rt,
+            const an = kt(ct, Ct, {
+              supports: Pt,
               loads: Dt
-            }, _t), Vt = Math.abs(((_b2 = (_a3 = ao.deformations) == null ? void 0 : _a3.get(2)) == null ? void 0 : _b2[1]) ?? 0), ot = Math.abs(((_d2 = (_c2 = ao.deformations) == null ? void 0 : _c2.get(3)) == null ? void 0 : _d2[1]) ?? 0), Et = (Vt + ot) / 2, eo = Et / Eo;
-            ne.push({
+            }, _t), Vt = Math.abs(((_b2 = (_a3 = an.deformations) == null ? void 0 : _a3.get(2)) == null ? void 0 : _b2[1]) ?? 0), nt = Math.abs(((_d2 = (_c2 = an.deformations) == null ? void 0 : _c2.get(3)) == null ? void 0 : _d2[1]) ?? 0), St = (Vt + nt) / 2, en = St / Sn;
+            oe.push({
               name: "Wilson Fig 6.2 \u2014 Cantilever Q4",
               formulation: "2 Q4 elements + incompatible modes (Wilson 1971, Table 6.1)",
               nodes: ct,
-              elements: Lt,
+              elements: Ct,
               results: [
                 {
                   label: "Uy/Uy_exact (cortante)",
-                  awatif: eo,
+                  awatif: en,
                   reference: 0.932,
                   refSource: "Wilson Table 6.1"
                 },
                 {
                   label: "Uy free end",
-                  awatif: Et,
-                  reference: Eo * 0.932,
+                  awatif: St,
+                  reference: Sn * 0.932,
                   refSource: "Wilson"
                 }
               ]
             });
-          } catch (ao) {
-            ne.push({
+          } catch (an) {
+            oe.push({
               name: "Wilson Fig 6.2 \u2014 Cantilever Q4",
-              formulation: "ERROR: " + ao.message,
+              formulation: "ERROR: " + an.message,
               nodes: ct,
-              elements: Lt,
+              elements: Ct,
               results: [
                 {
                   label: "Error",
@@ -12756,23 +12834,23 @@ Util:     cad.info()  cad.clear()  cad.help()
           }
         }
         if (g === "test-scordelis" || g === "test-all") {
-          const rt = 40 * Math.PI / 180, ct = 8, Lt = 8, _t = [];
-          for (let ot = 0; ot <= ct; ot++) for (let Et = 0; Et <= Lt; Et++) {
-            const eo = 25 * ot / ct, Ot = rt * Et / Lt, bo = 25 * Math.sin(Ot), mo = 25 * Math.cos(Ot) - 25 * Math.cos(rt);
+          const rt = 40 * Math.PI / 180, ct = 8, Ct = 8, _t = [];
+          for (let nt = 0; nt <= ct; nt++) for (let St = 0; St <= Ct; St++) {
+            const en = 25 * nt / ct, Ot = rt * St / Ct, bn = 25 * Math.sin(Ot), mn = 25 * Math.cos(Ot) - 25 * Math.cos(rt);
             _t.push([
-              eo,
-              bo,
-              mo
+              en,
+              bn,
+              mn
             ]);
           }
-          const Rt = [];
-          for (let ot = 0; ot < ct; ot++) for (let Et = 0; Et < Lt; Et++) {
-            const eo = ot * (Lt + 1) + Et, Ot = (ot + 1) * (Lt + 1) + Et, bo = (ot + 1) * (Lt + 1) + (Et + 1), mo = ot * (Lt + 1) + (Et + 1);
-            Rt.push([
-              eo,
+          const Pt = [];
+          for (let nt = 0; nt < ct; nt++) for (let St = 0; St < Ct; St++) {
+            const en = nt * (Ct + 1) + St, Ot = (nt + 1) * (Ct + 1) + St, bn = (nt + 1) * (Ct + 1) + (St + 1), mn = nt * (Ct + 1) + (St + 1);
+            Pt.push([
+              en,
               Ot,
-              bo,
-              mo
+              bn,
+              mn
             ]);
           }
           const Dt = {
@@ -12780,11 +12858,11 @@ Util:     cad.info()  cad.clear()  cad.help()
             shearModuli: /* @__PURE__ */ new Map(),
             thicknesses: /* @__PURE__ */ new Map(),
             poissonsRatios: /* @__PURE__ */ new Map()
-          }, Eo = 432e6 / (2 * 1);
-          for (let ot = 0; ot < Rt.length; ot++) Dt.elasticities.set(ot, 432e6), Dt.shearModuli.set(ot, Eo), Dt.thicknesses.set(ot, 0.25), Dt.poissonsRatios.set(ot, 0);
-          const ao = /* @__PURE__ */ new Map();
-          for (let ot = 0; ot <= ct; ot++) for (let Et = 0; Et <= Lt; Et++) {
-            const eo = ot * (Lt + 1) + Et, Ot = [
+          }, Sn = 432e6 / (2 * 1);
+          for (let nt = 0; nt < Pt.length; nt++) Dt.elasticities.set(nt, 432e6), Dt.shearModuli.set(nt, Sn), Dt.thicknesses.set(nt, 0.25), Dt.poissonsRatios.set(nt, 0);
+          const an = /* @__PURE__ */ new Map();
+          for (let nt = 0; nt <= ct; nt++) for (let St = 0; St <= Ct; St++) {
+            const en = nt * (Ct + 1) + St, Ot = [
               false,
               false,
               false,
@@ -12792,21 +12870,21 @@ Util:     cad.info()  cad.clear()  cad.help()
               false,
               false
             ];
-            ot === 0 && (Ot[0] = true, Ot[4] = true, Ot[5] = true), ot === ct && (Ot[1] = true, Ot[2] = true, Ot[3] = true), Et === 0 && (Ot[1] = true, Ot[3] = true, Ot[5] = true), Ot.some((bo) => bo) && ao.set(eo, Ot);
+            nt === 0 && (Ot[0] = true, Ot[4] = true, Ot[5] = true), nt === ct && (Ot[1] = true, Ot[2] = true, Ot[3] = true), St === 0 && (Ot[1] = true, Ot[3] = true, Ot[5] = true), Ot.some((bn) => bn) && an.set(en, Ot);
           }
           const Vt = /* @__PURE__ */ new Map();
-          for (const ot of Rt) {
-            const Et = _t[ot[0]], eo = _t[ot[1]], Ot = _t[ot[2]], bo = _t[ot[3]], mo = [
-              Ot[0] - Et[0],
-              Ot[1] - Et[1],
-              Ot[2] - Et[2]
-            ], jo = [
-              bo[0] - eo[0],
-              bo[1] - eo[1],
-              bo[2] - eo[2]
-            ], Vs = mo[1] * jo[2] - mo[2] * jo[1], Us = mo[2] * jo[0] - mo[0] * jo[2], Xs = mo[0] * jo[1] - mo[1] * jo[0], Ya = -90 * (0.5 * Math.sqrt(Vs * Vs + Us * Us + Xs * Xs)) / 4;
-            for (const Ks of ot) {
-              const Zs = Vt.get(Ks) || [
+          for (const nt of Pt) {
+            const St = _t[nt[0]], en = _t[nt[1]], Ot = _t[nt[2]], bn = _t[nt[3]], mn = [
+              Ot[0] - St[0],
+              Ot[1] - St[1],
+              Ot[2] - St[2]
+            ], jn = [
+              bn[0] - en[0],
+              bn[1] - en[1],
+              bn[2] - en[2]
+            ], Us = mn[1] * jn[2] - mn[2] * jn[1], Xs = mn[2] * jn[0] - mn[0] * jn[2], Ks = mn[0] * jn[1] - mn[1] * jn[0], Ja = -90 * (0.5 * Math.sqrt(Us * Us + Xs * Xs + Ks * Ks)) / 4;
+            for (const Zs of nt) {
+              const Qs = Vt.get(Zs) || [
                 0,
                 0,
                 0,
@@ -12814,34 +12892,34 @@ Util:     cad.info()  cad.clear()  cad.help()
                 0,
                 0
               ];
-              Zs[2] += Ya, Vt.set(Ks, Zs);
+              Qs[2] += Ja, Vt.set(Zs, Qs);
             }
           }
           try {
-            const ot = Ct(_t, Rt, {
-              supports: ao,
+            const nt = kt(_t, Pt, {
+              supports: an,
               loads: Vt
-            }, Dt), Et = Lt, eo = ((_f2 = (_e3 = ot.deformations) == null ? void 0 : _e3.get(Et)) == null ? void 0 : _f2[2]) ?? 0;
-            ne.push({
+            }, Dt), St = Ct, en = ((_f2 = (_e3 = nt.deformations) == null ? void 0 : _e3.get(St)) == null ? void 0 : _f2[2]) ?? 0;
+            oe.push({
               name: "Scordelis-Lo Barrel Vault",
-              formulation: `Shell Q4 (${ct}x${Lt} mesh), Mindlin-Reissner + incompatible modes`,
+              formulation: `Shell Q4 (${ct}x${Ct} mesh), Mindlin-Reissner + incompatible modes`,
               nodes: _t,
-              elements: Rt,
+              elements: Pt,
               results: [
                 {
                   label: "Uz midspan free edge (ft)",
-                  awatif: Math.abs(eo),
+                  awatif: Math.abs(en),
                   reference: 0.3086,
                   refSource: "Wilson (2004) / MacNeal-Harder"
                 }
               ]
             });
-          } catch (ot) {
-            ne.push({
+          } catch (nt) {
+            oe.push({
               name: "Scordelis-Lo Barrel Vault",
-              formulation: "ERROR: " + ot.message,
+              formulation: "ERROR: " + nt.message,
               nodes: _t,
-              elements: Rt,
+              elements: Pt,
               results: [
                 {
                   label: "Error",
@@ -12853,8 +12931,8 @@ Util:     cad.info()  cad.clear()  cad.help()
             });
           }
         }
-        if (d(ne), ne.length > 0) {
-          const ee = ne[ne.length - 1];
+        if (d(oe), oe.length > 0) {
+          const ee = oe[oe.length - 1];
           e.nodes.val = ee.nodes, e.elements.val = ee.elements;
           const ue = /* @__PURE__ */ new Map(), we = /* @__PURE__ */ new Map(), se = Math.max(...ee.nodes.map((Se) => Se[2]));
           ee.nodes.forEach((Se, je) => {
@@ -12879,19 +12957,19 @@ Util:     cad.info()  cad.clear()  cad.help()
           }, e.elementInputs.val = {}, e.deformOutputs.val = {}, e.analyzeOutputs.val = {};
         }
       }
-      function n(g) {
-        const E = 15e3 * Math.sqrt(210) * 10, v = [];
+      function o(g) {
+        const S = 15e3 * Math.sqrt(210) * 10, v = [];
         v.push(`$ File exported from Awatif FEM Validation: ${g.name}`), v.push(" "), v.push("$ PROGRAM INFORMATION"), v.push('  PROGRAM  "ETABS"  VERSION "22.6.0"  '), v.push(""), v.push("$ CONTROLS"), v.push('  UNITS  "TONF"  "M"  "C"  '), v.push("");
-        const C = /* @__PURE__ */ new Set();
-        g.nodes.forEach((_) => C.add(Math.round(_[1] * 1e4) / 1e4));
+        const F = /* @__PURE__ */ new Set();
+        g.nodes.forEach((_) => F.add(Math.round(_[1] * 1e4) / 1e4));
         const X = [
-          ...C
+          ...F
         ].sort((_, fe) => _ - fe), V = X.map((_, fe) => fe === 0 ? "Base" : `Level_${fe}`), ae = /* @__PURE__ */ new Map();
         X.forEach((_, fe) => ae.set(_, V[fe])), v.push("$ STORIES - IN SEQUENCE FROM TOP");
         for (let _ = X.length - 1; _ >= 1; _--) v.push(`  STORY "${V[_]}"  HEIGHT ${X[_] - X[_ - 1]} MASTERSTORY "Yes"  `);
-        v.push(`  STORY "Base"  ELEV ${X[0]} `), v.push(""), v.push("$ MATERIAL PROPERTIES"), v.push('  MATERIAL  "CONC"    TYPE "Concrete"    WEIGHTPERVOLUME 2.4'), v.push(`  MATERIAL  "CONC"    SYMTYPE "Isotropic"  E ${E}  U 0.2  A 1E-05`), v.push(""), v.push("$ FRAME SECTIONS"), v.push('  FRAMESECTION  "COL30"  MATERIAL "CONC"  SHAPE "Concrete Rectangular"  D 0.3 B 0.3 '), v.push('  FRAMESECTION  "VIGA"  MATERIAL "CONC"  SHAPE "Concrete Rectangular"  D 0.4 B 0.25 '), v.push("");
-        const Z = g.elements.some((_) => _.length === 4);
-        Z && (v.push("$ WALL/SLAB/DECK SECTIONS"), v.push('  SHELLPROP  "Muro20"  PROPTYPE  "Wall"  MATERIAL "CONC"  MODELINGTYPE "ShellThick"  WALLTHICKNESS 0.2 '), v.push(""));
+        v.push(`  STORY "Base"  ELEV ${X[0]} `), v.push(""), v.push("$ MATERIAL PROPERTIES"), v.push('  MATERIAL  "CONC"    TYPE "Concrete"    WEIGHTPERVOLUME 2.4'), v.push(`  MATERIAL  "CONC"    SYMTYPE "Isotropic"  E ${S}  U 0.2  A 1E-05`), v.push(""), v.push("$ FRAME SECTIONS"), v.push('  FRAMESECTION  "COL30"  MATERIAL "CONC"  SHAPE "Concrete Rectangular"  D 0.3 B 0.3 '), v.push('  FRAMESECTION  "VIGA"  MATERIAL "CONC"  SHAPE "Concrete Rectangular"  D 0.4 B 0.25 '), v.push("");
+        const Q = g.elements.some((_) => _.length === 4);
+        Q && (v.push("$ WALL/SLAB/DECK SECTIONS"), v.push('  SHELLPROP  "Muro20"  PROPTYPE  "Wall"  MATERIAL "CONC"  MODELINGTYPE "ShellThick"  WALLTHICKNESS 0.2 '), v.push(""));
         const K = /* @__PURE__ */ new Map();
         let de = 0;
         g.nodes.forEach((_) => {
@@ -12899,14 +12977,14 @@ Util:     cad.info()  cad.clear()  cad.help()
           K.has(fe) || K.set(fe, `${++de}`);
         }), v.push("$ POINT COORDINATES");
         for (const [_, fe] of K) {
-          const [ne, pe] = _.split(",").map(Number);
-          v.push(`  POINT "${fe}"  ${ne} ${pe} `);
+          const [oe, pe] = _.split(",").map(Number);
+          v.push(`  POINT "${fe}"  ${oe} ${pe} `);
         }
         v.push("");
         const re = (_) => {
-          const fe = g.nodes[_], ne = `${fe[0]},${fe[2]}`;
+          const fe = g.nodes[_], oe = `${fe[0]},${fe[2]}`;
           return {
-            pt: K.get(ne) || "1",
+            pt: K.get(oe) || "1",
             story: ae.get(Math.round(fe[1] * 1e4) / 1e4) || "Base"
           };
         };
@@ -12914,41 +12992,41 @@ Util:     cad.info()  cad.clear()  cad.help()
         const Ie = [];
         if (g.elements.forEach((_, fe) => {
           if (_.length !== 2) return;
-          const ne = g.nodes[_[0]], pe = g.nodes[_[1]], ee = Math.abs(pe[1] - ne[1]), ue = Math.sqrt((pe[0] - ne[0]) ** 2 + (pe[2] - ne[2]) ** 2), we = ee > ue * 0.5, se = re(_[0]), Se = re(_[1]), je = we ? "COL30" : "VIGA";
+          const oe = g.nodes[_[0]], pe = g.nodes[_[1]], ee = Math.abs(pe[1] - oe[1]), ue = Math.sqrt((pe[0] - oe[0]) ** 2 + (pe[2] - oe[2]) ** 2), we = ee > ue * 0.5, se = re(_[0]), Se = re(_[1]), je = we ? "COL30" : "VIGA";
           we ? (v.push(`  LINE  "E${fe + 1}"  COLUMN  "${se.pt}"  "${se.pt}"  1`), Ie.push(`  LINEASSIGN  "E${fe + 1}"  "${Se.story}"  SECTION "${je}"  `)) : (v.push(`  LINE  "E${fe + 1}"  BEAM  "${se.pt}"  "${Se.pt}"  0`), Ie.push(`  LINEASSIGN  "E${fe + 1}"  "${se.story}"  SECTION "${je}"  `));
-        }), v.push(""), Z) {
+        }), v.push(""), Q) {
           v.push("$ AREA CONNECTIVITIES");
           const _ = [];
-          g.elements.forEach((fe, ne) => {
+          g.elements.forEach((fe, oe) => {
             if (fe.length !== 4) return;
             const pe = fe.map((ee) => re(ee));
-            v.push(`  AREA "W${ne + 1}"  PANEL  4  "${pe[0].pt}"  "${pe[1].pt}"  "${pe[2].pt}"  "${pe[3].pt}"  1  1  0  0  `), _.push(`  AREAASSIGN  "W${ne + 1}"  "${pe[2].story}"  SECTION "Muro20"  `);
+            v.push(`  AREA "W${oe + 1}"  PANEL  4  "${pe[0].pt}"  "${pe[1].pt}"  "${pe[2].pt}"  "${pe[3].pt}"  1  1  0  0  `), _.push(`  AREAASSIGN  "W${oe + 1}"  "${pe[2].story}"  SECTION "Muro20"  `);
           }), v.push(""), v.push("$ AREA ASSIGNS"), _.forEach((fe) => v.push(fe)), v.push("");
         }
         v.push("$ POINT ASSIGNS"), g.nodes.forEach((_, fe) => {
           if (Math.abs(_[1]) < 0.01) {
-            const ne = re(fe);
-            v.push(`  POINTASSIGN  "${ne.pt}"  "${ne.story}"  RESTRAINT "UX UY UZ RX RY RZ"  `);
+            const oe = re(fe);
+            v.push(`  POINTASSIGN  "${oe.pt}"  "${oe.story}"  RESTRAINT "UX UY UZ RX RY RZ"  `);
           }
         }), v.push(""), v.push("$ LINE ASSIGNS"), Ie.forEach((_) => v.push(_)), v.push(""), v.push("$ LOAD PATTERNS"), v.push('  LOADPATTERN "Lat"  TYPE  "Other"  SELFWEIGHT  0'), v.push(""), v.push("$ POINT OBJECT LOADS");
-        const Pe = Math.max(...g.nodes.map((_) => _[1]));
+        const Re = Math.max(...g.nodes.map((_) => _[1]));
         return g.nodes.forEach((_, fe) => {
-          if (Math.abs(_[1] - Pe) < 0.01) {
-            const ne = re(fe);
-            v.push(`  POINTLOAD  "${ne.pt}"  "${ne.story}"  "Lat"  TYPE "FORCE"  FX 10`);
+          if (Math.abs(_[1] - Re) < 0.01) {
+            const oe = re(fe);
+            v.push(`  POINTLOAD  "${oe.pt}"  "${oe.story}"  "Lat"  TYPE "FORCE"  FX 10`);
           }
         }), v.push(""), v.push("  END"), v.push("$ END OF MODEL FILE"), v.join(`\r
 `);
       }
       function l(g) {
-        const E = 15e3 * Math.sqrt(210) * 10, v = [];
-        v.push(`"""ETABS API Validation: ${g.name}`), v.push('Generated by Awatif FEM Studio"""'), v.push("import comtypes.client, time, math"), v.push(""), v.push("helper = comtypes.client.CreateObject('ETABSv1.Helper')"), v.push("helper = helper.QueryInterface(comtypes.gen.ETABSv1.cHelper)"), v.push('myETABS = helper.CreateObjectProgID("CSI.ETABS.API.ETABSObject")'), v.push("myETABS.ApplicationStart()"), v.push("time.sleep(10)"), v.push("SapModel = myETABS.SapModel"), v.push("SapModel.InitializeNewModel()"), v.push("SapModel.File.NewBlank()"), v.push("SapModel.SetPresentUnits(12)  # tonf_m_C"), v.push(""), v.push(`E = ${E}`), v.push('SapModel.PropMaterial.SetMaterial("CONC", 2)'), v.push('SapModel.PropMaterial.SetMPIsotropic("CONC", E, 0.2, 5.5e-6)'), v.push('SapModel.PropFrame.SetRectangle("COL30", "CONC", 0.30, 0.30)'), v.push('SapModel.PropFrame.SetRectangle("VIGA", "CONC", 0.40, 0.25)'), g.elements.some((V) => V.length === 4) && v.push('SapModel.PropArea.SetWall("Muro20", 6, False, "CONC", 0.20)'), v.push(""), v.push("# Add elements"), v.push("FN = ' '"), g.elements.forEach((V, ae) => {
+        const S = 15e3 * Math.sqrt(210) * 10, v = [];
+        v.push(`"""ETABS API Validation: ${g.name}`), v.push('Generated by Awatif FEM Studio"""'), v.push("import comtypes.client, time, math"), v.push(""), v.push("helper = comtypes.client.CreateObject('ETABSv1.Helper')"), v.push("helper = helper.QueryInterface(comtypes.gen.ETABSv1.cHelper)"), v.push('myETABS = helper.CreateObjectProgID("CSI.ETABS.API.ETABSObject")'), v.push("myETABS.ApplicationStart()"), v.push("time.sleep(10)"), v.push("SapModel = myETABS.SapModel"), v.push("SapModel.InitializeNewModel()"), v.push("SapModel.File.NewBlank()"), v.push("SapModel.SetPresentUnits(12)  # tonf_m_C"), v.push(""), v.push(`E = ${S}`), v.push('SapModel.PropMaterial.SetMaterial("CONC", 2)'), v.push('SapModel.PropMaterial.SetMPIsotropic("CONC", E, 0.2, 5.5e-6)'), v.push('SapModel.PropFrame.SetRectangle("COL30", "CONC", 0.30, 0.30)'), v.push('SapModel.PropFrame.SetRectangle("VIGA", "CONC", 0.40, 0.25)'), g.elements.some((V) => V.length === 4) && v.push('SapModel.PropArea.SetWall("Muro20", 6, False, "CONC", 0.20)'), v.push(""), v.push("# Add elements"), v.push("FN = ' '"), g.elements.forEach((V, ae) => {
           if (V.length === 2) {
-            const Z = g.nodes[V[0]], K = g.nodes[V[1]], de = Math.abs(K[1] - Z[1]), re = Math.sqrt((K[0] - Z[0]) ** 2 + (K[2] - Z[2]) ** 2), Ie = de > re * 0.5 ? "COL30" : "VIGA";
-            v.push(`[FN,r]=SapModel.FrameObj.AddByCoord(${Z[0]},${Z[2]},${Z[1]}, ${K[0]},${K[2]},${K[1]}, FN,"${Ie}","E${ae + 1}","Global")`);
+            const Q = g.nodes[V[0]], K = g.nodes[V[1]], de = Math.abs(K[1] - Q[1]), re = Math.sqrt((K[0] - Q[0]) ** 2 + (K[2] - Q[2]) ** 2), Ie = de > re * 0.5 ? "COL30" : "VIGA";
+            v.push(`[FN,r]=SapModel.FrameObj.AddByCoord(${Q[0]},${Q[2]},${Q[1]}, ${K[0]},${K[2]},${K[1]}, FN,"${Ie}","E${ae + 1}","Global")`);
           } else if (V.length === 4) {
-            const Z = V.map((K) => g.nodes[K]);
-            v.push(`SapModel.AreaObj.AddByCoord(4, [${Z.map((K) => K[0]).join(",")}], [${Z.map((K) => K[2]).join(",")}], [${Z.map((K) => K[1]).join(",")}], "", "Muro20")`);
+            const Q = V.map((K) => g.nodes[K]);
+            v.push(`SapModel.AreaObj.AddByCoord(4, [${Q.map((K) => K[0]).join(",")}], [${Q.map((K) => K[2]).join(",")}], [${Q.map((K) => K[1]).join(",")}], "", "Muro20")`);
           }
         }), v.push(""), v.push("# Supports at Z=0"), v.push("names = SapModel.PointObj.GetNameList()"), v.push("for i in range(int(names[0])):"), v.push("    c = SapModel.PointObj.GetCoordCartesian(names[1][i])"), v.push("    if abs(float(c[2])) < 0.01:"), v.push("        SapModel.PointObj.SetRestraint(names[1][i], [True]*6)"), v.push(""), v.push("# Load at top"), v.push('SapModel.LoadPatterns.Add("Lat", 8, 0, True)');
         const X = Math.max(...g.nodes.map((V) => V[1]));
@@ -12957,67 +13035,67 @@ Util:     cad.info()  cad.clear()  cad.help()
         return v.push("SapModel.View.RefreshView(0, False)"), v.join(`
 `);
       }
-      function s(g, E) {
+      function s(g, S) {
         const v = new Blob([
           g
         ], {
           type: "text/plain"
-        }), C = URL.createObjectURL(v), X = document.createElement("a");
-        X.href = C, X.download = E, X.click(), URL.revokeObjectURL(C);
+        }), F = URL.createObjectURL(v), X = document.createElement("a");
+        X.href = F, X.download = S, X.click(), URL.revokeObjectURL(F);
       }
       function d(g) {
-        let E = document.getElementById("test-results-overlay");
-        E && E.remove(), E = document.createElement("div"), E.id = "test-results-overlay", E.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+        let S = document.getElementById("test-results-overlay");
+        S && S.remove(), S = document.createElement("div"), S.id = "test-results-overlay", S.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
         background:#1a1a2e;color:#eee;border:2px solid #16213e;border-radius:8px;padding:20px;
         z-index:10000;max-width:750px;width:90%;max-height:80vh;overflow-y:auto;font-family:monospace;font-size:13px;
         box-shadow:0 10px 40px rgba(0,0,0,0.5);`;
         let v = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <h3 style="margin:0;color:#00d4ff">Awatif FEM Validation</h3>
         <button onclick="this.parentElement.parentElement.remove()" style="background:none;border:none;color:#888;font-size:18px;cursor:pointer">X</button>
-      </div>`, C = true;
+      </div>`, F = true;
         window.__awatifTests = g;
         for (let V = 0; V < g.length; V++) {
           const ae = g[V];
           v += '<div style="margin-bottom:16px;border:1px solid #333;border-radius:6px;padding:10px">', v += '<div style="display:flex;justify-content:space-between;align-items:center">', v += `<div style="font-weight:bold;color:#00d4ff">${ae.name}</div>`, v += "<div>", v += `<button onclick="window.__awatifDownloadE2k(${V})" style="background:#1e3a5f;color:#aaa;border:1px solid #444;padding:2px 6px;font-size:10px;cursor:pointer;margin-right:4px;border-radius:3px">e2k</button>`, v += `<button onclick="window.__awatifDownloadPy(${V})" style="background:#2a1e3a;color:#aaa;border:1px solid #444;padding:2px 6px;font-size:10px;cursor:pointer;border-radius:3px">py</button>`, v += "</div></div>", v += `<div style="color:#888;font-size:11px;margin-bottom:8px">${ae.formulation}</div>`, v += `<table style="width:100%;border-collapse:collapse;font-size:12px">
           <tr style="color:#888"><td style="padding:3px 6px">Measure</td><td style="text-align:right">Awatif</td><td style="text-align:right">Reference</td><td style="text-align:right">Ratio</td><td style="text-align:right">Source</td><td style="text-align:center"></td></tr>`;
-          for (const Z of ae.results) {
-            const K = Z.reference !== 0 ? Z.awatif / Z.reference : 1, de = Math.abs(K - 1) < 0.05;
-            de || (C = false);
+          for (const Q of ae.results) {
+            const K = Q.reference !== 0 ? Q.awatif / Q.reference : 1, de = Math.abs(K - 1) < 0.05;
+            de || (F = false);
             const re = de ? "#4caf50" : "#f44336", Ie = de ? "PASS" : "FAIL";
             v += `<tr style="border-top:1px solid #333">
-            <td style="padding:3px 6px">${Z.label}</td>
-            <td style="text-align:right;color:#fff">${Z.awatif.toFixed(4)}</td>
-            <td style="text-align:right;color:#aaa">${Z.reference.toFixed(4)}</td>
+            <td style="padding:3px 6px">${Q.label}</td>
+            <td style="text-align:right;color:#fff">${Q.awatif.toFixed(4)}</td>
+            <td style="text-align:right;color:#aaa">${Q.reference.toFixed(4)}</td>
             <td style="text-align:right;color:${re};font-weight:bold">${K.toFixed(4)}</td>
-            <td style="text-align:right;color:#888;font-size:11px">${Z.refSource}</td>
+            <td style="text-align:right;color:#888;font-size:11px">${Q.refSource}</td>
             <td style="text-align:center;color:${re};font-size:10px;font-weight:bold">${Ie}</td></tr>`;
           }
           v += "</table></div>";
         }
-        v += C ? '<div style="color:#4caf50;font-weight:bold;text-align:center;margin-top:8px">ALL TESTS PASSED (< 5% error vs ETABS)</div>' : '<div style="color:#f44336;font-weight:bold;text-align:center;margin-top:8px">Some tests exceeded 5% tolerance</div>', E.innerHTML = v, document.body.appendChild(E), window.__awatifDownloadE2k = (V) => {
-          const ae = window.__awatifTests[V], Z = ae.name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
-          s(n(ae), `${Z}.e2k`);
+        v += F ? '<div style="color:#4caf50;font-weight:bold;text-align:center;margin-top:8px">ALL TESTS PASSED (< 5% error vs ETABS)</div>' : '<div style="color:#f44336;font-weight:bold;text-align:center;margin-top:8px">Some tests exceeded 5% tolerance</div>', S.innerHTML = v, document.body.appendChild(S), window.__awatifDownloadE2k = (V) => {
+          const ae = window.__awatifTests[V], Q = ae.name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+          s(o(ae), `${Q}.e2k`);
         }, window.__awatifDownloadPy = (V) => {
-          const ae = window.__awatifTests[V], Z = ae.name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
-          s(l(ae), `${Z}_etabs.py`);
+          const ae = window.__awatifTests[V], Q = ae.name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+          s(l(ae), `${Q}_etabs.py`);
         };
       }
       (_h = Ae.querySelector("#cad3d-export")) == null ? void 0 : _h.addEventListener("click", (g) => {
-        g.stopPropagation(), Ea();
+        g.stopPropagation(), Sa();
       });
       let a = "";
       const r = Ae.querySelector("#cad3d-io-menu"), f = Ae.querySelector("#cad3d-io-file");
-      function i(g, E) {
+      function i(g, S) {
         e.nodes.val = g.nodes, e.elements.val = g.elements, e.nodeInputs.val = g.nodeInputs, e.elementInputs.val = g.elementInputs, g.sectionShapes && g.elementInputs && (g.elementInputs.sectionShapes = g.sectionShapes), e.deformOutputs.val = {}, e.analyzeOutputs.val = {};
-        const v = g.elements.filter((X) => X.length === 2).length, C = g.elements.filter((X) => X.length >= 3).length;
-        console.log(`${E} (${g.nodes.length} nodos, ${v} frames, ${C} shells): ${g.nodes.length} nodes, ${g.elements.length} elements`), setTimeout(() => It(), 50);
+        const v = g.elements.filter((X) => X.length === 2).length, F = g.elements.filter((X) => X.length >= 3).length;
+        console.log(`${S} (${g.nodes.length} nodos, ${v} frames, ${F} shells): ${g.nodes.length} nodes, ${g.elements.length} elements`), setTimeout(() => wt(), 50);
       }
-      function c(g, E) {
+      function c(g, S) {
         var _a3, _b2, _c2;
         const v = {};
         g.elementInfo.forEach((K) => v[K.category] = (v[K.category] || 0) + 1), (_a3 = document.getElementById("ifc-filter-panel")) == null ? void 0 : _a3.remove();
-        const C = document.createElement("div");
-        C.id = "ifc-filter-panel", C.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+        const F = document.createElement("div");
+        F.id = "ifc-filter-panel", F.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
         background:#1e1e2e;border:2px solid #00ccff;border-radius:12px;padding:20px;
         z-index:1000010;color:#eee;font-family:monospace;font-size:12px;min-width:320px;
         box-shadow:0 8px 32px rgba(0,0,0,0.6);`;
@@ -13047,7 +13125,7 @@ Util:     cad.info()  cad.clear()  cad.help()
           fastener: "Pernos",
           other: "Otros"
         };
-        let Z = `<h3 style="color:#00ccff;margin:0 0 12px">IFC \u2192 Modelo Anal\xEDtico</h3>
+        let Q = `<h3 style="color:#00ccff;margin:0 0 12px">IFC \u2192 Modelo Anal\xEDtico</h3>
         <div style="color:#888;margin-bottom:10px">Selecciona qu\xE9 convertir a FEM:</div>
         <div style="border:1px solid #444;border-radius:6px;padding:8px;margin-bottom:8px">
           <div style="color:#33ff33;font-weight:bold;margin-bottom:4px">Estructural</div>`;
@@ -13059,29 +13137,29 @@ Util:     cad.info()  cad.clear()  cad.help()
             "beam",
             "slab"
           ].includes(K) ? "checked" : "";
-          Z += `<label style="display:flex;align-items:center;gap:6px;padding:2px 0">
+          Q += `<label style="display:flex;align-items:center;gap:6px;padding:2px 0">
           <input type="checkbox" data-ifc-cat="${K}" ${re}>
           <span>${ae[K] || K}</span>
           <span style="color:#888;margin-left:auto">(${de})</span>
         </label>`;
         }
-        Z += `</div><div style="border:1px solid #333;border-radius:6px;padding:8px;margin-bottom:12px">
+        Q += `</div><div style="border:1px solid #333;border-radius:6px;padding:8px;margin-bottom:12px">
         <div style="color:#ff6666;font-weight:bold;margin-bottom:4px">No estructural (solo visual)</div>`;
         for (const K of V) {
           const de = v[K] || 0;
-          de !== 0 && (Z += `<label style="display:flex;align-items:center;gap:6px;padding:2px 0;color:#888">
+          de !== 0 && (Q += `<label style="display:flex;align-items:center;gap:6px;padding:2px 0;color:#888">
           <input type="checkbox" data-ifc-cat="${K}" disabled>
           <span>${ae[K] || K}</span>
           <span style="margin-left:auto">(${de})</span>
         </label>`);
         }
-        Z += `</div>
+        Q += `</div>
         <div style="display:flex;gap:8px">
           <button id="ifc-gen-analytical" style="flex:1;padding:8px;background:#0f3460;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:bold">
             \u{1F527} Generar Modelo Anal\xEDtico
           </button>
           <button id="ifc-cancel" style="padding:8px 12px;background:#333;color:#aaa;border:1px solid #555;border-radius:6px;cursor:pointer">\u2715</button>
-        </div>`, C.innerHTML = Z, document.body.appendChild(C), C.querySelectorAll("input[data-ifc-cat]").forEach((K) => {
+        </div>`, F.innerHTML = Q, document.body.appendChild(F), F.querySelectorAll("input[data-ifc-cat]").forEach((K) => {
           K.addEventListener("change", () => {
             const de = K.dataset.ifcCat, re = g.detailCategories.get(de);
             if (re) {
@@ -13090,16 +13168,16 @@ Util:     cad.info()  cad.clear()  cad.help()
               Ie && Ie.render();
             }
           });
-        }), (_b2 = C.querySelector("#ifc-gen-analytical")) == null ? void 0 : _b2.addEventListener("click", () => {
+        }), (_b2 = F.querySelector("#ifc-gen-analytical")) == null ? void 0 : _b2.addEventListener("click", () => {
           var _a4;
           const K = /* @__PURE__ */ new Set();
-          C.querySelectorAll("input[data-ifc-cat]:checked").forEach((ne) => {
-            K.add(ne.dataset.ifcCat);
+          F.querySelectorAll("input[data-ifc-cat]:checked").forEach((oe) => {
+            K.add(oe.dataset.ifcCat);
           });
-          const de = E.nodes.map((ne) => [
-            ne.x,
-            ne.y,
-            ne.z
+          const de = S.nodes.map((oe) => [
+            oe.x,
+            oe.y,
+            oe.z
           ]), re = [], Ie = {
             elasticities: /* @__PURE__ */ new Map(),
             shearModuli: /* @__PURE__ */ new Map(),
@@ -13109,28 +13187,28 @@ Util:     cad.info()  cad.clear()  cad.help()
             torsionalConstants: /* @__PURE__ */ new Map(),
             densities: /* @__PURE__ */ new Map(),
             sectionShapes: /* @__PURE__ */ new Map()
-          }, Pe = {
+          }, Re = {
             supports: /* @__PURE__ */ new Map(),
             loads: /* @__PURE__ */ new Map()
           };
           let _ = 0;
-          for (const ne of E.elements) if (K.has(ne.category) && ne.type === "frame" && ne.nodeIds.length >= 2) {
-            re.push(ne.nodeIds);
-            const pe = ((_a4 = E.materials) == null ? void 0 : _a4.get(ne.material)) || {
+          for (const oe of S.elements) if (K.has(oe.category) && oe.type === "frame" && oe.nodeIds.length >= 2) {
+            re.push(oe.nodeIds);
+            const pe = ((_a4 = S.materials) == null ? void 0 : _a4.get(oe.material)) || {
               E: 2132888792e-2,
               nu: 0.2,
               rho: 2.4
-            }, ee = ne.b || 0.3, ue = ne.h || 0.3, we = ee * ue, se = ee * ue * ue * ue / 12, Se = ue * ee * ee * ee / 12, je = ee * ue * (ee * ee + ue * ue) / 12, rt = pe.E / (2 * (1 + pe.nu));
+            }, ee = oe.b || 0.3, ue = oe.h || 0.3, we = ee * ue, se = ee * ue * ue * ue / 12, Se = ue * ee * ee * ee / 12, je = ee * ue * (ee * ee + ue * ue) / 12, rt = pe.E / (2 * (1 + pe.nu));
             Ie.elasticities.set(_, pe.E), Ie.shearModuli.set(_, rt), Ie.areas.set(_, we), Ie.momentsOfInertiaZ.set(_, Se), Ie.momentsOfInertiaY.set(_, se), Ie.torsionalConstants.set(_, je), Ie.densities.set(_, pe.rho), Ie.sectionShapes.set(_, {
               type: "rect",
               b: ee,
               h: ue,
-              name: ne.sectionName
+              name: oe.sectionName
             }), _++;
           }
-          const fe = Math.min(...de.map((ne) => ne[2]));
-          de.forEach((ne, pe) => {
-            Math.abs(ne[2] - fe) < 0.05 && Pe.supports.set(pe, [
+          const fe = Math.min(...de.map((oe) => oe[2]));
+          de.forEach((oe, pe) => {
+            Math.abs(oe[2] - fe) < 0.05 && Re.supports.set(pe, [
               true,
               true,
               true,
@@ -13139,53 +13217,53 @@ Util:     cad.info()  cad.clear()  cad.help()
               true
             ]);
           });
-          for (const [, ne] of g.detailCategories) {
+          for (const [, oe] of g.detailCategories) {
             const pe = et();
-            pe && pe.scene.remove(ne);
+            pe && pe.scene.remove(oe);
           }
           i({
             nodes: de,
             elements: re,
-            nodeInputs: Pe,
+            nodeInputs: Re,
             elementInputs: Ie,
             sectionShapes: Ie.sectionShapes,
             info: {
               nNodes: de.length,
               nFrames: re.length
             }
-          }, "IFC analytical"), C.remove();
-        }), (_c2 = C.querySelector("#ifc-cancel")) == null ? void 0 : _c2.addEventListener("click", () => {
+          }, "IFC analytical"), F.remove();
+        }), (_c2 = F.querySelector("#ifc-cancel")) == null ? void 0 : _c2.addEventListener("click", () => {
           for (const [, de] of g.detailCategories) {
             const re = et();
             re && re.scene.remove(de);
           }
           const K = et();
-          K && K.render(), C.remove();
+          K && K.render(), F.remove();
         });
       }
       function m(g) {
         D = /* @__PURE__ */ new Set(), G = /* @__PURE__ */ new Set(), $e = /* @__PURE__ */ new Map(), Te = /* @__PURE__ */ new Map();
-        const E = /* @__PURE__ */ new Map();
-        for (let re = 0; re < g.stories.length; re++) E.set(g.stories[re].name, re);
+        const S = /* @__PURE__ */ new Map();
+        for (let re = 0; re < g.stories.length; re++) S.set(g.stories[re].name, re);
         for (let re = 0; re < g.elementTypes.length; re++) {
-          const Ie = g.elementTypes[re], Pe = g.elementStories[re], _ = E.get(Pe) ?? 0;
+          const Ie = g.elementTypes[re], Re = g.elementStories[re], _ = S.get(Re) ?? 0;
           $e.set(re, _), Ie === "COLUMN" || Ie === "BRACE" ? D.add(re) : G.add(re);
         }
         z = "edificio";
-        const v = g.grids.filter((re) => re.dir === "X").sort((re, Ie) => re.coord - Ie.coord), C = g.grids.filter((re) => re.dir === "Y").sort((re, Ie) => re.coord - Ie.coord);
-        let X, V, ae, Z;
-        if (v.length > 0 || C.length > 0) X = v.map((re) => re.coord), V = C.map((re) => re.coord), ae = v.map((re) => re.label), Z = C.map((re) => re.label);
+        const v = g.grids.filter((re) => re.dir === "X").sort((re, Ie) => re.coord - Ie.coord), F = g.grids.filter((re) => re.dir === "Y").sort((re, Ie) => re.coord - Ie.coord);
+        let X, V, ae, Q;
+        if (v.length > 0 || F.length > 0) X = v.map((re) => re.coord), V = F.map((re) => re.coord), ae = v.map((re) => re.label), Q = F.map((re) => re.label);
         else {
-          const re = new Set(g.nodes.map((Pe) => Pe[0])), Ie = new Set(g.nodes.map((Pe) => Pe[1]));
+          const re = new Set(g.nodes.map((Re) => Re[0])), Ie = new Set(g.nodes.map((Re) => Re[1]));
           X = [
             ...re
-          ].sort((Pe, _) => Pe - _), V = [
+          ].sort((Re, _) => Re - _), V = [
             ...Ie
-          ].sort((Pe, _) => Pe - _), ae = X.map((Pe, _) => String(_ + 1)), Z = V.map((Pe, _) => String.fromCharCode(65 + _));
+          ].sort((Re, _) => Re - _), ae = X.map((Re, _) => String(_ + 1)), Q = V.map((Re, _) => String.fromCharCode(65 + _));
         }
         const K = g.stories.length > 0 ? Math.max(...g.stories.map((re) => re.elev)) : Math.max(...g.nodes.map((re) => re[2]));
         We = X, Xe = V, pt = K, setTimeout(() => {
-          It(), Xo(X, V, K, ae, Z), wn(g.stories, X, V), Nn(), qn();
+          wt(), Xn(X, V, K, ae, Q), wo(g.stories, X, V), No(), qo();
         }, 100);
         const de = {
           COLUMN: 0,
@@ -13193,15 +13271,15 @@ Util:     cad.info()  cad.clear()  cad.help()
           BRACE: 0
         };
         for (const re of g.elementTypes) de[re]++;
-        console.log(`E2K grids: X=[${ae.join(",")}] Y=[${Z.join(",")}]`), console.log(`E2K stories: ${g.stories.map((re) => `${re.name}@${re.elev.toFixed(2)}`).join(", ")}`), console.log(`E2K elements: ${de.COLUMN} columns, ${de.BEAM} beams, ${de.BRACE} braces`), Ze();
+        console.log(`E2K grids: X=[${ae.join(",")}] Y=[${Q.join(",")}]`), console.log(`E2K stories: ${g.stories.map((re) => `${re.name}@${re.elev.toFixed(2)}`).join(", ")}`), console.log(`E2K elements: ${de.COLUMN} columns, ${de.BEAM} beams, ${de.BRACE} braces`), Ze();
       }
-      function S(g, E) {
+      function w(g, S) {
         const v = new Blob([
           g
         ], {
           type: "text/plain"
-        }), C = URL.createObjectURL(v), X = document.createElement("a");
-        X.href = C, X.download = E, X.click(), URL.revokeObjectURL(C);
+        }), F = URL.createObjectURL(v), X = document.createElement("a");
+        X.href = F, X.download = S, X.click(), URL.revokeObjectURL(F);
       }
       r && r.addEventListener("change", () => {
         if (a = r.value, r.value = "", a.startsWith("import")) a === "import-e2k" ? f.accept = ".e2k,.E2K" : a === "import-s2k" ? f.accept = ".s2k,.S2K,.$2k" : a === "import-ifc" ? f.accept = ".ifc,.IFC" : a === "import-py" ? f.accept = ".py" : a === "import-tcl" && (f.accept = ".tcl"), f.click();
@@ -13213,16 +13291,16 @@ Util:     cad.info()  cad.clear()  cad.help()
             elementInputs: e.elementInputs.val
           };
           try {
-            a === "export-e2k" ? S(Ll({
+            a === "export-e2k" ? w(Cl({
               ...g,
               title: "Awatif Model",
               e2kModel: Ve ?? void 0
-            }), "model.e2k") : a === "export-s2k" ? S(Al({
+            }), "model.e2k") : a === "export-s2k" ? w(Ll({
               ...g,
               title: "Awatif Model"
-            }), "model.s2k") : a === "export-py" ? S(Pl(g), "model_opensees.py") : a === "export-tcl" && S(Ol(g), "model_opensees.tcl");
-          } catch (E) {
-            alert("Export error: " + E.message);
+            }), "model.s2k") : a === "export-py" ? w(Ol(g), "model_opensees.py") : a === "export-tcl" && w(Nl(g), "model_opensees.tcl");
+          } catch (S) {
+            alert("Export error: " + S.message);
           }
         }
       }), f && f.addEventListener("change", () => {
@@ -13232,7 +13310,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         if (a === "import-ifc") {
           const v = new FileReader();
           v.onload = async () => {
-            const C = v.result;
+            const F = v.result;
             try {
               const X = et();
               if (!X) {
@@ -13240,20 +13318,20 @@ Util:     cad.info()  cad.clear()  cad.help()
                 return;
               }
               console.log("IFC: Loading 3D geometry...");
-              const V = await Gl(X.scene, C);
+              const V = await Yl(X.scene, F);
               console.log(`IFC: ${V.meshCount} meshes loaded, bbox:`, V.bbox);
               const ae = new Oe();
               V.bbox.getCenter(ae);
-              const Z = new Oe();
-              V.bbox.getSize(Z);
-              const K = Math.max(Z.x, Z.y, Z.z);
-              X.controls.target.copy(ae), X.camera.position.set(ae.x + K, ae.y + K * 0.5, ae.z + K), X.camera.lookAt(ae), X.controls.maxDistance = K * 5, X.controls.update(), X.render(), window.__ifcLoadResult = V, window.__ifcArrayBuffer = C;
+              const Q = new Oe();
+              V.bbox.getSize(Q);
+              const K = Math.max(Q.x, Q.y, Q.z);
+              X.controls.target.copy(ae), X.camera.position.set(ae.x + K, ae.y + K * 0.5, ae.z + K), X.camera.lookAt(ae), X.controls.maxDistance = K * 5, X.controls.update(), X.render(), window.__ifcLoadResult = V, window.__ifcArrayBuffer = F;
               const de = new FileReader();
               de.onload = () => {
-                const re = de.result, Ie = Hl(re);
+                const re = de.result, Ie = jl(re);
                 window.__ifcAnalytical = Ie;
-                const Pe = {};
-                V.elementInfo.forEach((_) => Pe[_.category] = (Pe[_.category] || 0) + 1), console.log("IFC categories:", Pe), console.log(`IFC: ${V.elementInfo.size} geometric elements, ${Ie.elements.length} analytical elements`), c(V, Ie);
+                const Re = {};
+                V.elementInfo.forEach((_) => Re[_.category] = (Re[_.category] || 0) + 1), console.log("IFC categories:", Re), console.log(`IFC: ${V.elementInfo.size} geometric elements, ${Ie.elements.length} analytical elements`), c(V, Ie);
               }, de.readAsText(g);
             } catch (X) {
               alert("IFC error: " + X.message), console.error(X);
@@ -13261,68 +13339,68 @@ Util:     cad.info()  cad.clear()  cad.help()
           }, v.readAsArrayBuffer(g), f.value = "";
           return;
         }
-        const E = new FileReader();
-        E.onload = () => {
-          const v = E.result;
+        const S = new FileReader();
+        S.onload = () => {
+          const v = S.result;
           try {
             if (a === "import-e2k") {
-              const C = Il(v);
-              Ve = C, i(C, "E2K imported"), m(C);
+              const F = kl(v);
+              Ve = F, i(F, "E2K imported"), m(F);
             } else if (a === "import-s2k") {
-              const C = kl(v);
+              const F = Tl(v);
               i({
-                nodes: C.nodes,
-                elements: C.elements,
-                nodeInputs: C.nodeInputs,
-                elementInputs: C.elementInputs,
-                sectionShapes: C.sectionShapes,
-                info: C.info
+                nodes: F.nodes,
+                elements: F.elements,
+                nodeInputs: F.nodeInputs,
+                elementInputs: F.elementInputs,
+                sectionShapes: F.sectionShapes,
+                info: F.info
               }, "S2K imported");
             } else if (a === "import-py") {
-              const C = Nl(v);
-              i(C, "OpenSeesPy imported");
+              const F = ql(v);
+              i(F, "OpenSeesPy imported");
             } else if (a === "import-tcl") {
-              const C = ql(v);
-              i(C, "OpenSees Tcl imported");
+              const F = _l(v);
+              i(F, "OpenSees Tcl imported");
             }
-          } catch (C) {
-            alert("Import error: " + C.message), console.error(C);
+          } catch (F) {
+            alert("Import error: " + F.message), console.error(F);
           }
-        }, E.readAsText(g), f.value = "";
+        }, S.readAsText(g), f.value = "";
       });
-      const w = Ae.querySelector("#cad3d-force-unit");
-      w && (w.value = b, w.addEventListener("change", (g) => {
-        g.stopPropagation(), b = w.value, $ = Ro(b, F), z && Qe(z);
+      const E = Ae.querySelector("#cad3d-force-unit");
+      E && (E.value = b, E.addEventListener("change", (g) => {
+        g.stopPropagation(), b = E.value, M = Pn(b, P), z && Qe(z);
       }));
       const y = Ae.querySelector("#cad3d-length-unit");
-      y && (y.value = F, y.addEventListener("change", (g) => {
-        g.stopPropagation(), F = y.value, $ = Ro(b, F), z && Qe(z);
+      y && (y.value = P, y.addEventListener("change", (g) => {
+        g.stopPropagation(), P = y.value, M = Pn(b, P), z && Qe(z);
       })), Ae.querySelectorAll("[data-preset]").forEach((g) => {
-        g.addEventListener("click", (E) => {
-          E.stopPropagation();
-          const v = g.dataset.preset, C = H[v];
-          C && (b = C.force, F = C.length, J = C.stress, $ = Ro(b, F), w && (w.value = b), y && (y.value = F), Ae.querySelectorAll("[data-preset]").forEach((X) => {
+        g.addEventListener("click", (S) => {
+          S.stopPropagation();
+          const v = g.dataset.preset, F = H[v];
+          F && (b = F.force, P = F.length, J = F.stress, M = Pn(b, P), E && (E.value = b), y && (y.value = P), Ae.querySelectorAll("[data-preset]").forEach((X) => {
             X.classList.toggle("active", X.dataset.preset === v);
-          }), z && Qe(z), console.log(`Preset: ${v} \u2192 ${b}+${F}, stress: ${J.label}`));
+          }), z && Qe(z), console.log(`Preset: ${v} \u2192 ${b}+${P}, stress: ${J.label}`));
         });
       }), (_i = Ae.querySelector("#cad3d-log")) == null ? void 0 : _i.addEventListener("click", (g) => {
-        g.stopPropagation(), qa();
-      }), (_j = Ae.querySelector("#cad3d-pushover")) == null ? void 0 : _j.addEventListener("click", (g) => {
         g.stopPropagation(), _a();
+      }), (_j = Ae.querySelector("#cad3d-pushover")) == null ? void 0 : _j.addEventListener("click", (g) => {
+        g.stopPropagation(), Da();
       }), (_k = Ae.querySelector("#cad3d-nonlinear")) == null ? void 0 : _k.addEventListener("click", (g) => {
-        g.stopPropagation(), Ba();
+        g.stopPropagation(), Ha();
       }), (_l2 = Ae.querySelector("#cad3d-fem-solver")) == null ? void 0 : _l2.addEventListener("click", (g) => {
-        g.stopPropagation(), ja();
+        g.stopPropagation(), Wa();
       }), (_m = Ae.querySelector("#cad3d-calc")) == null ? void 0 : _m.addEventListener("click", (g) => {
-        g.stopPropagation(), Qs(async () => {
-          const { openCalcPanel: E } = await import("./calcPanel-C1Mz4Itg.js").then(async (m2) => {
+        g.stopPropagation(), ea(async () => {
+          const { openCalcPanel: S } = await import("./calcPanel-C1Mz4Itg.js").then(async (m2) => {
             await m2.__tla;
             return m2;
           });
           return {
-            openCalcPanel: E
+            openCalcPanel: S
           };
-        }, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url).then(({ openCalcPanel: E }) => {
+        }, __vite__mapDeps([0,1,2,3,4,5]), import.meta.url).then(({ openCalcPanel: S }) => {
           var _a3, _b2;
           const v = {
             nodes: e.nodes.val,
@@ -13331,16 +13409,16 @@ Util:     cad.info()  cad.clear()  cad.help()
             elementInputs: ((_b2 = e.elementInputs) == null ? void 0 : _b2.val) ?? {},
             modelName: z ? z.charAt(0).toUpperCase() + z.slice(1) : "Modelo"
           };
-          E(v);
+          S(v);
         });
       }), (_n2 = Ae.querySelector("#cad3d-modal")) == null ? void 0 : _n2.addEventListener("click", (g) => {
         var _a3, _b2;
         g.stopPropagation(), qe = !qe, (_a3 = Ae.querySelector("#cad3d-modal")) == null ? void 0 : _a3.classList.toggle("active", qe);
-        const v = Ae.querySelector("#cad3d-mode-prev"), C = Ae.querySelector("#cad3d-mode-next"), X = Ae.querySelector("#cad3d-mode-label"), V = Ae.querySelector("#cad3d-modal-scale");
+        const v = Ae.querySelector("#cad3d-mode-prev"), F = Ae.querySelector("#cad3d-mode-next"), X = Ae.querySelector("#cad3d-mode-label"), V = Ae.querySelector("#cad3d-modal-scale");
         if (qe) {
           const ae = et();
-          ((_b2 = ae == null ? void 0 : ae.settings) == null ? void 0 : _b2.loads) && (_e = ae.settings.loads.rawVal, ae.settings.loads.val = false), Ln(), v.style.display = "", C.style.display = "", X.style.display = "", V && (V.style.display = ""), p();
-        } else Cn(), v.style.display = "none", C.style.display = "none", X.style.display = "none", V && (V.style.display = "none"), z && z !== "placa-q4" && z !== "placa-3q" && Re(), setTimeout(() => {
+          ((_b2 = ae == null ? void 0 : ae.settings) == null ? void 0 : _b2.loads) && (_e = ae.settings.loads.rawVal, ae.settings.loads.val = false), Lo(), v.style.display = "", F.style.display = "", X.style.display = "", V && (V.style.display = ""), p();
+        } else Co(), v.style.display = "none", F.style.display = "none", X.style.display = "none", V && (V.style.display = "none"), z && z !== "placa-q4" && z !== "placa-3q" && Pe(), setTimeout(() => {
           var _a4;
           const ae = et();
           ((_a4 = ae == null ? void 0 : ae.settings) == null ? void 0 : _a4.loads) && _e && (ae.settings.loads.val = true);
@@ -13350,7 +13428,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         var _a3;
         const g = Ae.querySelector("#cad3d-mode-label");
         if (!g || !(Ce == null ? void 0 : Ce.frequencies)) return;
-        const E = Ce.frequencies[xe], v = E > 0 ? 1 / E : 0, C = [
+        const S = Ce.frequencies[xe], v = S > 0 ? 1 / S : 0, F = [
           0,
           0,
           0,
@@ -13360,41 +13438,41 @@ Util:     cad.info()  cad.clear()  cad.help()
         ];
         for (let X = 0; X <= xe; X++) {
           const V = (_a3 = Ce.massParticipation) == null ? void 0 : _a3[X];
-          if (V) for (let ae = 0; ae < 6; ae++) C[ae] += V[ae];
+          if (V) for (let ae = 0; ae < 6; ae++) F[ae] += V[ae];
         }
-        g.textContent = `Modo ${xe + 1} \u2014 ${E.toFixed(2)} Hz \u2014 T=${v.toFixed(3)}s \u2014 \u03A3Ux=${(C[0] * 100).toFixed(1)}% \u03A3Uy=${(C[1] * 100).toFixed(1)}% \u03A3Rz=${(C[5] * 100).toFixed(1)}%`;
+        g.textContent = `Modo ${xe + 1} \u2014 ${S.toFixed(2)} Hz \u2014 T=${v.toFixed(3)}s \u2014 \u03A3Ux=${(F[0] * 100).toFixed(1)}% \u03A3Uy=${(F[1] * 100).toFixed(1)}% \u03A3Rz=${(F[5] * 100).toFixed(1)}%`;
       }
       (_o2 = Ae.querySelector("#cad3d-mode-prev")) == null ? void 0 : _o2.addEventListener("click", (g) => {
         if (g.stopPropagation(), !(Ce == null ? void 0 : Ce.modeShapes)) return;
         xe = (xe - 1 + Ce.modeShapes.length) % Ce.modeShapes.length;
-        const E = Ce.modeShapes[xe], { extent: v } = vo();
-        let C = 0;
+        const S = Ce.modeShapes[xe], { extent: v } = yn();
+        let F = 0;
         for (let X = 0; X < ke.length; X++) {
-          const V = E[X * 6] || 0, ae = E[X * 6 + 1] || 0, Z = E[X * 6 + 2] || 0;
-          C = Math.max(C, Math.sqrt(V * V + ae * ae + Z * Z));
+          const V = S[X * 6] || 0, ae = S[X * 6 + 1] || 0, Q = S[X * 6 + 2] || 0;
+          F = Math.max(F, Math.sqrt(V * V + ae * ae + Q * Q));
         }
-        Ge = C > 1e-12 ? v * 0.05 / C : 1, Qo(), p();
+        Ge = F > 1e-12 ? v * 0.05 / F : 1, Qn(), p();
       }), (_p = Ae.querySelector("#cad3d-mode-next")) == null ? void 0 : _p.addEventListener("click", (g) => {
         if (g.stopPropagation(), !(Ce == null ? void 0 : Ce.modeShapes)) return;
         xe = (xe + 1) % Ce.modeShapes.length;
-        const E = Ce.modeShapes[xe], { extent: v } = vo();
-        let C = 0;
+        const S = Ce.modeShapes[xe], { extent: v } = yn();
+        let F = 0;
         for (let X = 0; X < ke.length; X++) {
-          const V = E[X * 6] || 0, ae = E[X * 6 + 1] || 0, Z = E[X * 6 + 2] || 0;
-          C = Math.max(C, Math.sqrt(V * V + ae * ae + Z * Z));
+          const V = S[X * 6] || 0, ae = S[X * 6 + 1] || 0, Q = S[X * 6 + 2] || 0;
+          F = Math.max(F, Math.sqrt(V * V + ae * ae + Q * Q));
         }
-        Ge = C > 1e-12 ? v * 0.05 / C : 1, Qo(), p();
+        Ge = F > 1e-12 ? v * 0.05 / F : 1, Qn(), p();
       });
       const h = Ae.querySelector("#cad3d-modal-scale");
       h == null ? void 0 : h.addEventListener("mousedown", (g) => g.stopPropagation()), h == null ? void 0 : h.addEventListener("change", () => {
-        qe && (Ce == null ? void 0 : Ce.modeShapes) && Qo();
+        qe && (Ce == null ? void 0 : Ce.modeShapes) && Qn();
       });
-      const T = Ae.querySelector("#cad3d-cli-toggle"), k = Ae.querySelector("#cad3d-cli-panel"), M = Ae.querySelector("#cad3d-cli-output"), P = Ae.querySelector("#cad3d-cmd"), B = [];
+      const T = Ae.querySelector("#cad3d-cli-toggle"), k = Ae.querySelector("#cad3d-cli-panel"), $ = Ae.querySelector("#cad3d-cli-output"), C = Ae.querySelector("#cad3d-cmd"), B = [];
       let x = -1;
       T == null ? void 0 : T.addEventListener("click", (g) => {
         if (g.stopPropagation(), k) {
-          const E = k.style.display !== "none";
-          k.style.display = E ? "none" : "block", E || (P == null ? void 0 : P.focus(), M && !M.textContent && (M.textContent = `CLI ready. Commands:
+          const S = k.style.display !== "none";
+          k.style.display = S ? "none" : "block", S || (C == null ? void 0 : C.focus(), $ && !$.textContent && ($.textContent = `CLI ready. Commands:
   cad.addNode(x, y, z)     cad.addFrame(i, j)
   cad.addSupport(n)        cad.addLoad(n, [fx,fy,fz,0,0,0])
   cad.frame([5,5],[3,3])   cad.building([5],[4],[3])
@@ -13402,7 +13480,7 @@ Util:     cad.info()  cad.clear()  cad.help()
   cad.info()               cad.listNodes()
 `));
         }
-      }), P == null ? void 0 : P.addEventListener("mousedown", (g) => g.stopPropagation()), document.addEventListener("keydown", (g) => {
+      }), C == null ? void 0 : C.addEventListener("mousedown", (g) => g.stopPropagation()), document.addEventListener("keydown", (g) => {
         var _a3;
         if ((g.ctrlKey || g.metaKey) && g.key === "z" && !g.shiftKey) {
           g.preventDefault(), As();
@@ -13413,42 +13491,42 @@ Util:     cad.info()  cad.clear()  cad.help()
           return;
         }
         if ((g.key === "Delete" || g.key === "Backspace") && ht.size > 0) {
-          g.preventDefault(), ht.forEach((E) => U.add(E)), ht.clear(), fo && (fo.remove(), fo = null), Re();
+          g.preventDefault(), ht.forEach((S) => U.add(S)), ht.clear(), fn && (fn.remove(), fn = null), Pe();
           return;
         }
         if (g.key === "Escape") {
-          if (po) if (vt !== null) {
+          if (pn) if (vt !== null) {
             vt = null;
-            const E = et();
-            Nt && E && (E.scene.remove(Nt), Nt.geometry.dispose(), Nt.material.dispose(), Nt = null), qt && E && (E.scene.remove(qt), qt.geometry.dispose(), qt.material.dispose(), qt = null), E == null ? void 0 : E.render();
-          } else cn();
-          Yt && rn(), oo && (oo = false, Ao(), (_a3 = Ae.querySelector("#cad3d-inspect")) == null ? void 0 : _a3.classList.remove("inspect-active"));
+            const S = et();
+            Nt && S && (S.scene.remove(Nt), Nt.geometry.dispose(), Nt.material.dispose(), Nt = null), qt && S && (S.scene.remove(qt), qt.geometry.dispose(), qt.material.dispose(), qt = null), S == null ? void 0 : S.render();
+          } else io();
+          Yt && ro(), nn && (nn = false, An(), (_a3 = Ae.querySelector("#cad3d-inspect")) == null ? void 0 : _a3.classList.remove("inspect-active"));
         }
-      }), P == null ? void 0 : P.addEventListener("keydown", (g) => {
+      }), C == null ? void 0 : C.addEventListener("keydown", (g) => {
         if (g.stopPropagation(), g.key === "Enter") {
-          const E = P.value.trim();
-          if (E) {
-            B.unshift(E), x = -1, M && (M.textContent += `> ${E}
+          const S = C.value.trim();
+          if (S) {
+            B.unshift(S), x = -1, $ && ($.textContent += `> ${S}
 `);
             try {
-              const v = new Function("cad", `return ${E}`)(Ke);
-              if (v !== void 0 && M) {
-                const C = typeof v == "object" ? JSON.stringify(v, null, 2) : String(v);
-                M.textContent += `${C}
+              const v = new Function("cad", `return ${S}`)(Ke);
+              if (v !== void 0 && $) {
+                const F = typeof v == "object" ? JSON.stringify(v, null, 2) : String(v);
+                $.textContent += `${F}
 `;
               }
             } catch (v) {
-              M && (M.textContent += `ERROR: ${v.message}
+              $ && ($.textContent += `ERROR: ${v.message}
 `);
             }
-            M && (M.scrollTop = M.scrollHeight), P.value = "";
+            $ && ($.scrollTop = $.scrollHeight), C.value = "";
           }
-        } else g.key === "ArrowUp" ? (g.preventDefault(), B.length > 0 && x < B.length - 1 && (x++, P.value = B[x])) : g.key === "ArrowDown" && (g.preventDefault(), x > 0 ? (x--, P.value = B[x]) : (x = -1, P.value = ""));
+        } else g.key === "ArrowUp" ? (g.preventDefault(), B.length > 0 && x < B.length - 1 && (x++, C.value = B[x])) : g.key === "ArrowDown" && (g.preventDefault(), x > 0 ? (x--, C.value = B[x]) : (x = -1, C.value = ""));
       });
       let u = false, I = 0, L = 0, R = 0, j = 0;
       Ae.addEventListener("mousedown", (g) => {
-        const E = g.target.tagName;
-        if (E === "BUTTON" || E === "INPUT" || E === "SELECT") return;
+        const S = g.target.tagName;
+        if (S === "BUTTON" || S === "INPUT" || S === "SELECT") return;
         u = true;
         const v = Ae.getBoundingClientRect();
         Ae.style.bottom = "unset", I = g.clientX, L = g.clientY, R = v.left, j = v.top, g.preventDefault();
@@ -13462,40 +13540,40 @@ Util:     cad.info()  cad.clear()  cad.help()
       const t = document.getElementById("viewer");
       return t ? t.__ctx : null;
     }
-    function vo() {
+    function yn() {
       const t = e.nodes.val;
       if (t.length === 0) return {
         center: new Oe(),
         extent: 10
       };
-      let o = 1 / 0, n = 1 / 0, l = 1 / 0, s = -1 / 0, d = -1 / 0, a = -1 / 0;
-      for (const [i, c, m] of t) i < o && (o = i), i > s && (s = i), c < n && (n = c), c > d && (d = c), m < l && (l = m), m > a && (a = m);
-      const r = new Oe((o + s) / 2, (n + d) / 2, (l + a) / 2), f = Math.max(s - o, d - n, a - l, 1);
+      let n = 1 / 0, o = 1 / 0, l = 1 / 0, s = -1 / 0, d = -1 / 0, a = -1 / 0;
+      for (const [i, c, m] of t) i < n && (n = i), i > s && (s = i), c < o && (o = c), c > d && (d = c), m < l && (l = m), m > a && (a = m);
+      const r = new Oe((n + s) / 2, (o + d) / 2, (l + a) / 2), f = Math.max(s - n, d - o, a - l, 1);
       return {
         center: r,
         extent: f
       };
     }
-    function It(t = false) {
-      const o = et();
-      if (!o) return;
-      const { extent: n } = vo();
+    function wt(t = false) {
+      const n = et();
+      if (!n) return;
+      const { extent: o } = yn();
       let l;
-      n <= 5 ? l = Math.max(1, Math.ceil(n * 1.5)) : n <= 50 ? l = Math.max(5, Math.ceil(n * 1.3 / 5) * 5) : l = Math.max(20, Math.ceil(n * 1.3 / 10) * 10), o.settings.gridSize.val = l, o.scene.children.filter((m) => m.type === "GridHelper").forEach((m) => {
+      o <= 5 ? l = Math.max(1, Math.ceil(o * 1.5)) : o <= 50 ? l = Math.max(5, Math.ceil(o * 1.3 / 5) * 5) : l = Math.max(20, Math.ceil(o * 1.3 / 10) * 10), n.settings.gridSize.val = l, n.scene.children.filter((m) => m.type === "GridHelper").forEach((m) => {
         var _a2, _b;
-        (_a2 = m.geometry) == null ? void 0 : _a2.dispose(), (_b = m.material) == null ? void 0 : _b.dispose(), o.scene.remove(m);
+        (_a2 = m.geometry) == null ? void 0 : _a2.dispose(), (_b = m.material) == null ? void 0 : _b.dispose(), n.scene.remove(m);
       });
-      const d = Ua(), a = new al(l, 20, d.grid, d.grid);
-      a.rotation.x = Math.PI / 2, a.position.set(0.5 * l, 0.5 * l, 0), o.scene.add(a), o.scene.children.filter((m) => m.type === "Group" && m.name !== "gridAxes" && m.name !== "loadsGroup" && (m.name === "viewerAxes" || m.children.some((S) => S instanceof dn))).forEach((m) => {
-        m.traverse((S) => {
-          S.geometry && S.geometry.dispose(), S.material && (S.material.map && S.material.map.dispose(), S.material.dispose());
-        }), o.scene.remove(m);
+      const d = Xa(), a = new ll(l, 20, d.grid, d.grid);
+      a.rotation.x = Math.PI / 2, a.position.set(0.5 * l, 0.5 * l, 0), n.scene.add(a), n.scene.children.filter((m) => m.type === "Group" && m.name !== "gridAxes" && m.name !== "loadsGroup" && (m.name === "viewerAxes" || m.children.some((w) => w instanceof co))).forEach((m) => {
+        m.traverse((w) => {
+          w.geometry && w.geometry.dispose(), w.material && (w.material.map && w.material.map.dispose(), w.material.dispose());
+        }), n.scene.remove(m);
       });
-      const f = 0.05 * l, i = new sn();
+      const f = 0.05 * l, i = new so();
       i.name = "viewerAxes";
       const c = d.axisArrow;
-      i.add(new dn(new Oe(1, 0, 0), new Oe(), 1, c, 0.2, 0.2)), i.add(new dn(new Oe(0, 1, 0), new Oe(), 1, c, 0.2, 0.2)), i.add(new dn(new Oe(0, 0, 1), new Oe(), 1, c, 0.2, 0.2)), i.children.forEach((m) => m.scale.set(f, f, f));
-      for (const [m, S, w] of [
+      i.add(new co(new Oe(1, 0, 0), new Oe(), 1, c, 0.2, 0.2)), i.add(new co(new Oe(0, 1, 0), new Oe(), 1, c, 0.2, 0.2)), i.add(new co(new Oe(0, 0, 1), new Oe(), 1, c, 0.2, 0.2)), i.children.forEach((m) => m.scale.set(f, f, f));
+      for (const [m, w, E] of [
         [
           "X",
           "red",
@@ -13527,31 +13605,31 @@ Util:     cad.info()  cad.clear()  cad.help()
         const y = document.createElement("canvas");
         y.width = 64, y.height = 64;
         const p = y.getContext("2d");
-        p.fillStyle = S, p.font = "bold 50px Arial", p.textAlign = "center", p.textBaseline = "middle", p.fillText(m, 32, 34);
-        const h = new Xn(y);
+        p.fillStyle = w, p.font = "bold 50px Arial", p.textAlign = "center", p.textBaseline = "middle", p.fillText(m, 32, 34);
+        const h = new Xo(y);
         h.needsUpdate = true;
-        const T = new pn(new fn({
+        const T = new po(new fo({
           map: h,
           depthTest: false,
           transparent: true
         }));
-        T.position.set(w[0], w[1], w[2]), T.scale.set(0.4 * f, 0.4 * f, 1), T.renderOrder = 99, i.add(T);
+        T.position.set(E[0], E[1], E[2]), T.scale.set(0.4 * f, 0.4 * f, 1), T.renderOrder = 99, i.add(T);
       }
-      o.scene.add(i), t ? o.render() : yo("3d");
+      n.scene.add(i), t ? n.render() : $n("3d");
     }
-    function zs(t, o, n) {
-      if (t.length < 2) return n * 10;
+    function zs(t, n, o) {
+      if (t.length < 2) return o * 10;
       let l = 1 / 0;
-      return o > 0 && (l = Math.min(l, Math.abs(t[o] - t[o - 1]))), o < t.length - 1 && (l = Math.min(l, Math.abs(t[o + 1] - t[o]))), l * 0.45 || n * 0.1;
+      return n > 0 && (l = Math.min(l, Math.abs(t[n] - t[n - 1]))), n < t.length - 1 && (l = Math.min(l, Math.abs(t[n + 1] - t[n]))), l * 0.45 || o * 0.1;
     }
-    function yo(t) {
+    function $n(t) {
       var _a2;
-      const o = et();
-      if (!o) return;
-      const { center: n, extent: l } = vo(), s = o.renderer.domElement.clientWidth / (o.renderer.domElement.clientHeight || 1), d = l * 0.7;
-      o.controls.maxDistance = l * 5, o.controls.minDistance = l * 0.05, o.renderer.clippingPlanes = [];
+      const n = et();
+      if (!n) return;
+      const { center: o, extent: l } = yn(), s = n.renderer.domElement.clientWidth / (n.renderer.domElement.clientHeight || 1), d = l * 0.7;
+      n.controls.maxDistance = l * 5, n.controls.minDistance = l * 0.05, n.renderer.clippingPlanes = [];
       const a = () => {
-        o.scene.traverse((r) => {
+        n.scene.traverse((r) => {
           var _a3;
           if (!r.material) return;
           const f = r.type === "GridHelper" || r.type === "AxesHelper", i = r.isSprite, c = ((_a3 = r.userData) == null ? void 0 : _a3.noClip) === true;
@@ -13561,48 +13639,48 @@ Util:     cad.info()  cad.clear()  cad.help()
         });
       };
       if (t === "3d") {
-        const r = o.perspCamera.fov, f = l / (2 * Math.tan(r * Math.PI / 360)) * 2.2;
-        o.perspCamera.position.set(n.x + f * 0.5, n.y - f * 0.8, n.z + f * 0.5), o.controls.target.copy(n), o.setActiveCamera(o.perspCamera);
+        const r = n.perspCamera.fov, f = l / (2 * Math.tan(r * Math.PI / 360)) * 2.2;
+        n.perspCamera.position.set(o.x + f * 0.5, o.y - f * 0.8, o.z + f * 0.5), n.controls.target.copy(o), n.setActiveCamera(n.perspCamera);
       } else {
-        const r = o.orthoCamera;
+        const r = n.orthoCamera;
         r.left = -d * s, r.right = d * s, r.top = d, r.bottom = -d, r.near = -l * 10, r.far = l * 10, r.updateProjectionMatrix();
         const f = (i, c, m) => {
-          r.position.copy(i), r.up.copy(m), o.controls.target.copy(c), r.lookAt(c), o.controls.update();
+          r.position.copy(i), r.up.copy(m), n.controls.target.copy(c), r.lookAt(c), n.controls.update();
         };
-        if (t === "plan") o.renderer.clippingPlanes = [], f(new Oe(n.x, n.y, n.z + l * 2), new Oe(n.x, n.y, n.z), new Oe(0, 1, 0));
+        if (t === "plan") n.renderer.clippingPlanes = [], f(new Oe(o.x, o.y, o.z + l * 2), new Oe(o.x, o.y, o.z), new Oe(0, 1, 0));
         else if (t.startsWith("plan:")) {
-          const i = parseInt(t.split(":")[1]), c = ((_a2 = Q.hPiso) == null ? void 0 : _a2.val) ?? 3, m = (i + 1) * c, S = c * 0.45;
-          o.renderer.clippingPlanes = [
-            new So(new Oe(0, 0, -1), m + S),
-            new So(new Oe(0, 0, 1), -m + S)
-          ], a(), f(new Oe(n.x, n.y, m + l * 2), new Oe(n.x, n.y, m), new Oe(0, 1, 0));
-        } else if (t === "elevX") r.position.set(n.x + l * 2, n.y, n.z), r.up.set(0, 0, 1);
-        else if (t === "elevY") r.position.set(n.x, n.y - l * 2, n.z), r.up.set(0, 0, 1);
+          const i = parseInt(t.split(":")[1]), c = ((_a2 = Z.hPiso) == null ? void 0 : _a2.val) ?? 3, m = (i + 1) * c, w = c * 0.45;
+          n.renderer.clippingPlanes = [
+            new In(new Oe(0, 0, -1), m + w),
+            new In(new Oe(0, 0, 1), -m + w)
+          ], a(), f(new Oe(o.x, o.y, m + l * 2), new Oe(o.x, o.y, m), new Oe(0, 1, 0));
+        } else if (t === "elevX") r.position.set(o.x + l * 2, o.y, o.z), r.up.set(0, 0, 1);
+        else if (t === "elevY") r.position.set(o.x, o.y - l * 2, o.z), r.up.set(0, 0, 1);
         else if (t.startsWith("axisX:")) {
-          const i = parseInt(t.split(":")[1]), c = We[i] ?? n.x;
+          const i = parseInt(t.split(":")[1]), c = We[i] ?? o.x;
           if (Xe.length > 1) {
-            const S = zs(We, i, l);
-            o.renderer.clippingPlanes = [
-              new So(new Oe(-1, 0, 0), c + S),
-              new So(new Oe(1, 0, 0), -c + S)
-            ], a(), r.position.set(n.x + l * 2, n.y, n.z), o.controls.target.set(n.x, n.y, n.z);
-          } else r.position.set(n.x, n.y - l * 2, n.z), o.controls.target.copy(n);
+            const w = zs(We, i, l);
+            n.renderer.clippingPlanes = [
+              new In(new Oe(-1, 0, 0), c + w),
+              new In(new Oe(1, 0, 0), -c + w)
+            ], a(), r.position.set(o.x + l * 2, o.y, o.z), n.controls.target.set(o.x, o.y, o.z);
+          } else r.position.set(o.x, o.y - l * 2, o.z), n.controls.target.copy(o);
           r.up.set(0, 0, 1);
         } else if (t.startsWith("axisY:")) {
-          const i = parseInt(t.split(":")[1]), c = Xe[i] ?? n.y;
+          const i = parseInt(t.split(":")[1]), c = Xe[i] ?? o.y;
           if (We.length > 1) {
-            const S = zs(Xe, i, l);
-            o.renderer.clippingPlanes = [
-              new So(new Oe(0, -1, 0), c + S),
-              new So(new Oe(0, 1, 0), -c + S)
-            ], a(), r.position.set(n.x, n.y - l * 2, n.z), o.controls.target.set(n.x, n.y, n.z);
-          } else r.position.set(n.x + l * 2, n.y, n.z), o.controls.target.copy(n);
+            const w = zs(Xe, i, l);
+            n.renderer.clippingPlanes = [
+              new In(new Oe(0, -1, 0), c + w),
+              new In(new Oe(0, 1, 0), -c + w)
+            ], a(), r.position.set(o.x, o.y - l * 2, o.z), n.controls.target.set(o.x, o.y, o.z);
+          } else r.position.set(o.x + l * 2, o.y, o.z), n.controls.target.copy(o);
           r.up.set(0, 0, 1);
         }
-        !t.startsWith("axisX:") && !t.startsWith("axisY:") && o.controls.target.copy(n), o.setActiveCamera(r);
+        !t.startsWith("axisX:") && !t.startsWith("axisY:") && n.controls.target.copy(o), n.setActiveCamera(r);
       }
     }
-    function Nn() {
+    function No() {
       const t = Ae.querySelector("#cad3d-axis-buttons");
       if (!t) return;
       if (We.length < 2 && Xe.length < 2) {
@@ -13610,51 +13688,51 @@ Util:     cad.info()  cad.clear()  cad.help()
         return;
       }
       t.style.display = "", t.innerHTML = "";
-      const o = (d, a, r) => {
+      const n = (d, a, r) => {
         const f = document.createElement("button");
         return f.textContent = d, f.dataset.view = a, f.title = r, f.style.cssText = "min-width:22px;padding:1px 5px;font-weight:bold", f.addEventListener("click", (i) => {
           var _a2;
           i.stopPropagation();
           const c = f.classList.contains("view-active");
-          Ae.querySelectorAll("[data-view]").forEach((m) => m.classList.remove("view-active")), c ? (yo("3d"), (_a2 = Ae.querySelector('[data-view="3d"]')) == null ? void 0 : _a2.classList.add("view-active")) : (yo(a), f.classList.add("view-active"));
+          Ae.querySelectorAll("[data-view]").forEach((m) => m.classList.remove("view-active")), c ? ($n("3d"), (_a2 = Ae.querySelector('[data-view="3d"]')) == null ? void 0 : _a2.classList.add("view-active")) : ($n(a), f.classList.add("view-active"));
         }), f;
-      }, n = document.createElement("span");
-      n.textContent = "Ejes:", n.style.cssText = "color:#888;font-size:10px;margin-right:2px;align-self:center", t.appendChild(n);
+      }, o = document.createElement("span");
+      o.textContent = "Ejes:", o.style.cssText = "color:#888;font-size:10px;margin-right:2px;align-self:center", t.appendChild(o);
       const l = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
       We.forEach((d, a) => {
         const r = a < l.length ? l[a] : `X${a}`;
-        t.appendChild(o(r, `axisX:${a}`, `Eje ${r} \u2014 elevaci\xF3n mirando en Y`));
+        t.appendChild(n(r, `axisX:${a}`, `Eje ${r} \u2014 elevaci\xF3n mirando en Y`));
       });
       const s = document.createElement("span");
       s.textContent = "|", s.style.cssText = "color:#555;margin:0 3px;align-self:center;font-weight:bold", t.appendChild(s), Xe.forEach((d, a) => {
         const r = `${a + 1}`;
-        t.appendChild(o(r, `axisY:${a}`, `Eje ${r} \u2014 elevaci\xF3n mirando en X`));
+        t.appendChild(n(r, `axisY:${a}`, `Eje ${r} \u2014 elevaci\xF3n mirando en X`));
       });
     }
-    function qn() {
+    function qo() {
       var _a2;
       const t = Ae.querySelector("#cad3d-floor-buttons");
       if (!t) return;
-      const o = Math.round(((_a2 = Q.nPisos) == null ? void 0 : _a2.val) ?? 0);
-      if (o < 1) {
+      const n = Math.round(((_a2 = Z.nPisos) == null ? void 0 : _a2.val) ?? 0);
+      if (n < 1) {
         t.style.display = "none";
         return;
       }
       t.style.display = "", t.innerHTML = "";
-      const n = (s, d, a) => {
+      const o = (s, d, a) => {
         const r = document.createElement("button");
         return r.textContent = s, r.dataset.view = d, r.title = a, r.style.cssText = "min-width:22px;padding:1px 5px;font-weight:bold", r.addEventListener("click", (f) => {
           var _a3;
           f.stopPropagation();
           const i = r.classList.contains("view-active");
-          Ae.querySelectorAll("[data-view]").forEach((c) => c.classList.remove("view-active")), i ? (yo("3d"), (_a3 = Ae.querySelector('[data-view="3d"]')) == null ? void 0 : _a3.classList.add("view-active")) : (yo(d), r.classList.add("view-active"));
+          Ae.querySelectorAll("[data-view]").forEach((c) => c.classList.remove("view-active")), i ? ($n("3d"), (_a3 = Ae.querySelector('[data-view="3d"]')) == null ? void 0 : _a3.classList.add("view-active")) : ($n(d), r.classList.add("view-active"));
         }), r;
       }, l = document.createElement("span");
       l.textContent = "Planta:", l.style.cssText = "color:#888;font-size:10px;margin-right:2px;align-self:center", t.appendChild(l);
-      for (let s = 0; s < o; s++) t.appendChild(n(`P${s + 1}`, `plan:${s}`, `Planta Piso ${s + 1}`));
+      for (let s = 0; s < n; s++) t.appendChild(o(`P${s + 1}`, `plan:${s}`, `Planta Piso ${s + 1}`));
     }
-    function Ia() {
-      yo("3d"), Ae.querySelectorAll("[data-view]").forEach((t) => t.classList.toggle("view-active", t.dataset.view === "3d"));
+    function ka() {
+      $n("3d"), Ae.querySelectorAll("[data-view]").forEach((t) => t.classList.toggle("view-active", t.dataset.view === "3d"));
     }
     Ke.view = (t) => {
       t = {
@@ -13662,81 +13740,81 @@ Util:     cad.info()  cad.clear()  cad.help()
         elevationX: "elevX",
         elevationY: "elevY",
         corte: "section"
-      }[t] || t, yo(t), Ae.querySelectorAll("[data-view]").forEach((n) => n.classList.toggle("view-active", n.dataset.view === t));
+      }[t] || t, $n(t), Ae.querySelectorAll("[data-view]").forEach((o) => o.classList.toggle("view-active", o.dataset.view === t));
     };
-    let oo = false, Yt = false, po = false, jt = "line", Xt = [], vt = null, Nt = null, qt = null, qo = null, Zt = null;
-    const wt = {
+    let nn = false, Yt = false, pn = false, jt = "line", Xt = [], vt = null, Nt = null, qt = null, qn = null, Zt = null;
+    const Et = {
       node: true,
       grid: true,
       midpoint: true,
       track: true
-    }, _n = 0.5;
-    let Dn = [], Qt = null, zo = null;
-    const _o = [], ln = [], ka = 50;
-    function Do() {
-      _o.push({
+    }, _o = 0.5;
+    let Do = [], Qt = null, zn = null;
+    const _n = [], lo = [], Ta = 50;
+    function Dn() {
+      _n.push({
         nodes: JSON.parse(JSON.stringify(e.nodes.val)),
         elements: JSON.parse(JSON.stringify(e.elements.val))
-      }), _o.length > ka && _o.shift(), ln.length = 0;
+      }), _n.length > Ta && _n.shift(), lo.length = 0;
     }
     function As() {
-      if (_o.length === 0) return;
-      ln.push({
+      if (_n.length === 0) return;
+      lo.push({
         nodes: JSON.parse(JSON.stringify(e.nodes.val)),
         elements: JSON.parse(JSON.stringify(e.elements.val))
       });
-      const t = _o.pop();
-      e.nodes.val = t.nodes, e.elements.val = t.elements, xo(), e.elementInputs.val = {
+      const t = _n.pop();
+      e.nodes.val = t.nodes, e.elements.val = t.elements, vn(), e.elementInputs.val = {
         ...e.elementInputs.val
       };
     }
     function Ls() {
-      if (ln.length === 0) return;
-      _o.push({
+      if (lo.length === 0) return;
+      _n.push({
         nodes: JSON.parse(JSON.stringify(e.nodes.val)),
         elements: JSON.parse(JSON.stringify(e.elements.val))
       });
-      const t = ln.pop();
-      e.nodes.val = t.nodes, e.elements.val = t.elements, xo(), e.elementInputs.val = {
+      const t = lo.pop();
+      e.nodes.val = t.nodes, e.elements.val = t.elements, vn(), e.elementInputs.val = {
         ...e.elementInputs.val
       };
     }
     const ht = /* @__PURE__ */ new Set();
-    let Jt = null, $o = [], Kt = null, fo = null;
-    function Bn(t) {
-      const o = et();
-      if (!o) return;
-      const n = e.nodes.val, l = e.elements.val[t];
+    let Jt = null, Mn = [], Kt = null, fn = null;
+    function Bo(t) {
+      const n = et();
+      if (!n) return;
+      const o = e.nodes.val, l = e.elements.val[t];
       if (!l) return;
       const s = [];
       for (let r = 0; r < l.length; r++) {
-        const f = n[l[r]], i = n[l[(r + 1) % l.length]];
+        const f = o[l[r]], i = o[l[(r + 1) % l.length]];
         s.push(f[0], f[1], f[2], i[0], i[1], i[2]);
       }
-      const d = new to();
-      d.setAttribute("position", new Lo(s, 3));
-      const a = new Go(d, new Yo({
+      const d = new tn();
+      d.setAttribute("position", new Ln(s, 3));
+      const a = new Gn(d, new Yn({
         color: 16711935,
         linewidth: 3,
         depthTest: false
       }));
-      a.renderOrder = 9998, a.__elemIdx = t, o.scene.add(a), $o.push(a), o.render();
+      a.renderOrder = 9998, a.__elemIdx = t, n.scene.add(a), Mn.push(a), n.render();
     }
-    function Mo() {
+    function wn() {
       const t = et();
-      $o.forEach((o) => {
-        t == null ? void 0 : t.scene.remove(o), o.geometry.dispose(), o.material.dispose();
-      }), $o = [], t == null ? void 0 : t.render();
+      Mn.forEach((n) => {
+        t == null ? void 0 : t.scene.remove(n), n.geometry.dispose(), n.material.dispose();
+      }), Mn = [], t == null ? void 0 : t.render();
     }
-    function wo() {
-      fo && fo.remove();
+    function En() {
+      fn && fn.remove();
       const t = Y.size > 0 || q;
       if (ht.size === 0 && !t) {
-        fo = null;
+        fn = null;
         return;
       }
-      const o = document.createElement("div");
-      o.style.cssText = "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--cad-bg);color:var(--cad-text);border:2px solid var(--cad-heading);border-radius:8px;padding:10px 16px;z-index:10000;font-family:monospace;font-size:13px;display:flex;gap:12px;align-items:center;box-shadow:0 4px 20px var(--cad-shadow);", o.innerHTML = `
+      const n = document.createElement("div");
+      n.style.cssText = "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--cad-bg);color:var(--cad-text);border:2px solid var(--cad-heading);border-radius:8px;padding:10px 16px;z-index:10000;font-family:monospace;font-size:13px;display:flex;gap:12px;align-items:center;box-shadow:0 4px 20px var(--cad-shadow);", n.innerHTML = `
       <span style="color:var(--cad-heading);font-weight:bold;">${ht.size} elem.</span>
       <button id="sel-assign" style="padding:5px 8px;background:#336699;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;" title="Asignar secci\xF3n">\u{1F4D0}</button>
       <button id="sel-info" style="padding:5px 8px;background:#225588;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;" title="Info del elemento">\u{1F50D}</button>
@@ -13745,64 +13823,64 @@ Util:     cad.info()  cad.clear()  cad.help()
       <button id="sel-showall" style="padding:5px 8px;background:#444;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;" title="Mostrar todo">\u21BA</button>
       <button id="sel-delete" style="padding:5px 8px;background:#cc3333;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;" title="Eliminar seleccionados">\u{1F5D1}</button>
       <button id="sel-clear" style="padding:5px 8px;background:#555;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;" title="Limpiar selecci\xF3n">\u2715</button>
-    `, document.body.appendChild(o), fo = o, o.querySelector("#sel-assign").addEventListener("click", () => {
-        Wa([
+    `, document.body.appendChild(n), fn = n, n.querySelector("#sel-assign").addEventListener("click", () => {
+        Ga([
           ...ht
         ]);
-      }), o.querySelector("#sel-info").addEventListener("click", () => {
+      }), n.querySelector("#sel-info").addEventListener("click", () => {
         if (ht.size === 1) {
-          const n = [
+          const o = [
             ...ht
           ][0];
-          qs(n);
+          qs(o);
         } else {
-          const n = [
+          const o = [
             ...ht
           ], l = e.nodes.val, s = e.elements.val;
           let d = 0, a = 0, r = 0, f = 0;
-          n.forEach((c) => {
+          o.forEach((c) => {
             const m = s[c];
             if (m) if (m.length === 2) {
-              const S = l[m[0]], w = l[m[1]], y = Math.abs(w[0] - S[0]), p = Math.abs(w[1] - S[1]), h = Math.abs(w[2] - S[2]);
+              const w = l[m[0]], E = l[m[1]], y = Math.abs(E[0] - w[0]), p = Math.abs(E[1] - w[1]), h = Math.abs(E[2] - w[2]);
               h > y && h > p ? d++ : a++;
             } else m.length === 3 ? r++ : m.length === 4 && f++;
           });
           const i = [];
-          d && i.push(`${d} columnas`), a && i.push(`${a} vigas`), f && i.push(`${f} shells Q4`), r && i.push(`${r} triangulos`), alert(`${n.length} elementos seleccionados:
+          d && i.push(`${d} columnas`), a && i.push(`${a} vigas`), f && i.push(`${f} shells Q4`), r && i.push(`${r} triangulos`), alert(`${o.length} elementos seleccionados:
 ${i.join(", ")}`);
         }
-      }), o.querySelector("#sel-hide").addEventListener("click", () => {
-        ht.forEach((n) => Y.add(n)), ht.clear(), Mo(), wo(), Re();
-      }), o.querySelector("#sel-isolate").addEventListener("click", () => {
-        q = true, W.clear(), ht.forEach((n) => W.add(n)), ht.clear(), Mo(), wo(), Re();
-      }), o.querySelector("#sel-showall").addEventListener("click", () => {
-        Y.clear(), q = false, W.clear(), wo(), Re();
-      }), o.querySelector("#sel-delete").addEventListener("click", () => {
-        Do(), ht.forEach((n) => U.add(n)), ht.clear(), Mo(), wo(), Re();
-      }), o.querySelector("#sel-clear").addEventListener("click", () => {
-        ht.clear(), Mo(), wo();
+      }), n.querySelector("#sel-hide").addEventListener("click", () => {
+        ht.forEach((o) => Y.add(o)), ht.clear(), wn(), En(), Pe();
+      }), n.querySelector("#sel-isolate").addEventListener("click", () => {
+        q = true, W.clear(), ht.forEach((o) => W.add(o)), ht.clear(), wn(), En(), Pe();
+      }), n.querySelector("#sel-showall").addEventListener("click", () => {
+        Y.clear(), q = false, W.clear(), En(), Pe();
+      }), n.querySelector("#sel-delete").addEventListener("click", () => {
+        Dn(), ht.forEach((o) => U.add(o)), ht.clear(), wn(), En(), Pe();
+      }), n.querySelector("#sel-clear").addEventListener("click", () => {
+        ht.clear(), wn(), En();
       });
     }
-    function rn() {
+    function ro() {
       var _a2;
-      Yt = false, ht.clear(), Mo(), fo && (fo.remove(), fo = null), (_a2 = Ae.querySelector("#cad3d-select")) == null ? void 0 : _a2.classList.remove("inspect-active");
-      const o = et();
-      o && (o.controls.enabled = true);
+      Yt = false, ht.clear(), wn(), fn && (fn.remove(), fn = null), (_a2 = Ae.querySelector("#cad3d-select")) == null ? void 0 : _a2.classList.remove("inspect-active");
+      const n = et();
+      n && (n.controls.enabled = true);
     }
-    function Ao() {
+    function An() {
       if (Jt) {
         const t = et();
         t == null ? void 0 : t.scene.remove(Jt), Jt.geometry.dispose(), Jt.material.dispose(), Jt = null, t == null ? void 0 : t.render();
       }
       Kt && (Kt.remove(), Kt = null);
     }
-    function Ta(t) {
-      Hn();
-      const o = et();
-      if (!o) return;
-      const n = e.nodes.val[t];
+    function za(t) {
+      Ho();
+      const n = et();
       if (!n) return;
-      zo = t;
+      const o = e.nodes.val[t];
+      if (!o) return;
+      zn = t;
       const l = 200, s = [
         [
           [
@@ -13834,78 +13912,78 @@ ${i.join(", ")}`);
       ];
       for (const [d, a] of s) {
         const r = new Float32Array([
-          n[0] - d[0] * l,
-          n[1] - d[1] * l,
-          n[2] - d[2] * l,
-          n[0] + d[0] * l,
-          n[1] + d[1] * l,
-          n[2] + d[2] * l
-        ]), f = new to();
-        f.setAttribute("position", new xn(r, 3));
-        const i = new Wo({
+          o[0] - d[0] * l,
+          o[1] - d[1] * l,
+          o[2] - d[2] * l,
+          o[0] + d[0] * l,
+          o[1] + d[1] * l,
+          o[2] + d[2] * l
+        ]), f = new tn();
+        f.setAttribute("position", new xo(r, 3));
+        const i = new Wn({
           color: a,
           dashSize: 0.3,
           gapSize: 0.15,
           transparent: true,
           opacity: 0.4,
           depthTest: false
-        }), c = new Go(f, i);
-        c.computeLineDistances(), c.renderOrder = 9990, o.scene.add(c), Dn.push(c);
+        }), c = new Gn(f, i);
+        c.computeLineDistances(), c.renderOrder = 9990, n.scene.add(c), Do.push(c);
       }
-      o.render();
+      n.render();
     }
-    function Hn() {
+    function Ho() {
       const t = et();
-      for (const o of Dn) t == null ? void 0 : t.scene.remove(o), o.geometry.dispose(), o.material.dispose();
-      Dn = [], zo = null, Qt && (Qt.remove(), Qt = null);
+      for (const n of Do) t == null ? void 0 : t.scene.remove(n), n.geometry.dispose(), n.material.dispose();
+      Do = [], zn = null, Qt && (Qt.remove(), Qt = null);
     }
-    function Cs(t, o, n, l) {
+    function Cs(t, n, o, l) {
       Qt || (Qt = document.createElement("div"), Qt.style.cssText = "position:fixed;pointer-events:none;z-index:10002;background:var(--cad-bg);color:var(--cad-heading);font-family:monospace;font-size:11px;padding:2px 6px;border-radius:3px;white-space:nowrap;border:1px solid var(--cad-border);", document.body.appendChild(Qt));
-      const s = l.x - n.x, d = l.y - n.y, a = l.z - n.z, r = Math.sqrt(s * s + d * d + a * a), f = Math.abs(s), i = Math.abs(d), c = Math.abs(a);
+      const s = l.x - o.x, d = l.y - o.y, a = l.z - o.z, r = Math.sqrt(s * s + d * d + a * a), f = Math.abs(s), i = Math.abs(d), c = Math.abs(a);
       let m = "";
-      f > i && f > c ? m = `\u0394X=${s.toFixed(2)}` : i > f && i > c ? m = `\u0394Y=${d.toFixed(2)}` : c > 0.01 && (m = `\u0394Z=${a.toFixed(2)}`), Qt.textContent = `${r.toFixed(3)} m  ${m}`, Qt.style.left = t + 20 + "px", Qt.style.top = o - 10 + "px";
+      f > i && f > c ? m = `\u0394X=${s.toFixed(2)}` : i > f && i > c ? m = `\u0394Y=${d.toFixed(2)}` : c > 0.01 && (m = `\u0394Z=${a.toFixed(2)}`), Qt.textContent = `${r.toFixed(3)} m  ${m}`, Qt.style.left = t + 20 + "px", Qt.style.top = n - 10 + "px";
     }
-    function za(t, o) {
-      const l = e.nodes.val[o];
+    function Aa(t, n) {
+      const l = e.nodes.val[n];
       if (!l) return null;
       const s = new Oe(l[0], l[1], l[2]), d = t.clone(), a = d.clone().sub(s), r = 0.3, f = Math.abs(a.x), i = Math.abs(a.y), c = Math.abs(a.z);
       return i < r && c < r && f > 0.01 ? new Oe(d.x, s.y, s.z) : f < r && c < r && i > 0.01 ? new Oe(s.x, d.y, s.z) : f < r && i < r && c > 0.01 ? new Oe(s.x, s.y, d.z) : null;
     }
-    function cn() {
+    function io() {
       var _a2;
       const t = et();
-      Nt && t && (t.scene.remove(Nt), Nt.geometry.dispose(), Nt.material.dispose(), Nt = null), qt && t && (t.scene.remove(qt), qt.geometry.dispose(), qt.material.dispose(), qt = null), Hn(), vt = null, Zt = null, po = false, qo && (qo.remove(), qo = null), (_a2 = Ae.querySelector("#cad3d-draw")) == null ? void 0 : _a2.classList.remove("inspect-active"), t == null ? void 0 : t.render();
+      Nt && t && (t.scene.remove(Nt), Nt.geometry.dispose(), Nt.material.dispose(), Nt = null), qt && t && (t.scene.remove(qt), qt.geometry.dispose(), qt.material.dispose(), qt = null), Ho(), vt = null, Zt = null, pn = false, qn && (qn.remove(), qn = null), (_a2 = Ae.querySelector("#cad3d-draw")) == null ? void 0 : _a2.classList.remove("inspect-active"), t == null ? void 0 : t.render();
     }
-    function Aa() {
-      qo && qo.remove();
+    function La() {
+      qn && qn.remove();
       const t = document.createElement("div");
       t.style.cssText = "position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:var(--cad-bg);border:1px solid var(--cad-border);border-radius:6px;padding:6px 10px;z-index:10000;display:flex;gap:6px;align-items:center;font-family:monospace;font-size:11px;box-shadow:0 2px 10px var(--cad-shadow);";
-      const o = (s) => `padding:4px 10px;border:1px solid ${s ? "#00ccff" : "#555"};background:${s ? "#003355" : "#333"};color:${s ? "#00ccff" : "#ccc"};border-radius:3px;cursor:pointer;font-size:11px;font-family:monospace;`, n = (s) => `padding:3px 6px;border:1px solid ${s ? "#33ff33" : "#444"};background:${s ? "#113311" : "#222"};color:${s ? "#33ff33" : "#888"};border-radius:3px;cursor:pointer;font-size:10px;`;
+      const n = (s) => `padding:4px 10px;border:1px solid ${s ? "#00ccff" : "#555"};background:${s ? "#003355" : "#333"};color:${s ? "#00ccff" : "#ccc"};border-radius:3px;cursor:pointer;font-size:11px;font-family:monospace;`, o = (s) => `padding:3px 6px;border:1px solid ${s ? "#33ff33" : "#444"};background:${s ? "#113311" : "#222"};color:${s ? "#33ff33" : "#888"};border-radius:3px;cursor:pointer;font-size:10px;`;
       t.innerHTML = `
       <span style="color:#00ccff;font-weight:bold;margin-right:4px;">Draw:</span>
-      <button id="dt-line" style="${o(jt === "line")}">\u{1F4CF} Line</button>
-      <button id="dt-arc" style="${o(jt === "arc")}">\u2312 Arc</button>
-      <button id="dt-node" style="${o(jt === "node")}">\u2295 Node</button>
-      <button id="dt-area" style="${o(jt === "area")}">\u25A2 Area</button>
+      <button id="dt-line" style="${n(jt === "line")}">\u{1F4CF} Line</button>
+      <button id="dt-arc" style="${n(jt === "arc")}">\u2312 Arc</button>
+      <button id="dt-node" style="${n(jt === "node")}">\u2295 Node</button>
+      <button id="dt-area" style="${n(jt === "area")}">\u25A2 Area</button>
       <span style="color:#666;margin:0 4px;">|</span>
       <span style="color:#888;font-size:10px;">Snap:</span>
-      <button id="ds-node" style="${n(wt.node)}">Node</button>
-      <button id="ds-grid" style="${n(wt.grid)}">Grid</button>
-      <button id="ds-mid" style="${n(wt.midpoint)}">Mid</button>
-      <button id="ds-track" style="${n(wt.track)}">Prolong</button>
+      <button id="ds-node" style="${o(Et.node)}">Node</button>
+      <button id="ds-grid" style="${o(Et.grid)}">Grid</button>
+      <button id="ds-mid" style="${o(Et.midpoint)}">Mid</button>
+      <button id="ds-track" style="${o(Et.track)}">Prolong</button>
       <span style="color:#666;margin:0 4px;">|</span>
       <span style="color:#888;font-size:10px;">Grid:</span>
-      <input id="ds-gridsize" type="number" value="${_n}" step="0.1" min="0.1" max="10" style="width:45px;background:#333;color:#fff;border:1px solid #555;padding:2px;font-size:10px;">
+      <input id="ds-gridsize" type="number" value="${_o}" step="0.1" min="0.1" max="10" style="width:45px;background:#333;color:#fff;border:1px solid #555;padding:2px;font-size:10px;">
       <span style="color:#888;font-size:10px;">m</span>
       <span style="color:#666;margin:0 4px;">|</span>
       <button id="dt-undo" style="padding:3px 6px;background:#444;color:#ccc;border:1px solid #555;border-radius:3px;cursor:pointer;font-size:10px;" title="Ctrl+Z">\u21A9 Undo</button>
       <button id="dt-redo" style="padding:3px 6px;background:#444;color:#ccc;border:1px solid #555;border-radius:3px;cursor:pointer;font-size:10px;" title="Ctrl+Y">\u21AA Redo</button>
-    `, document.body.appendChild(t), qo = t;
+    `, document.body.appendChild(t), qn = t;
       const l = () => {
         const s = t.querySelector("#dt-line"), d = t.querySelector("#dt-arc"), a = t.querySelector("#dt-node"), r = t.querySelector("#dt-area");
-        s && (s.style.cssText = o(jt === "line")), d && (d.style.cssText = o(jt === "arc")), a && (a.style.cssText = o(jt === "node")), r && (r.style.cssText = o(jt === "area"));
+        s && (s.style.cssText = n(jt === "line")), d && (d.style.cssText = n(jt === "arc")), a && (a.style.cssText = n(jt === "node")), r && (r.style.cssText = n(jt === "area"));
         const f = t.querySelector("#ds-node"), i = t.querySelector("#ds-grid"), c = t.querySelector("#ds-mid"), m = t.querySelector("#ds-track");
-        f && (f.style.cssText = n(wt.node)), i && (i.style.cssText = n(wt.grid)), c && (c.style.cssText = n(wt.midpoint)), m && (m.style.cssText = n(wt.track));
+        f && (f.style.cssText = o(Et.node)), i && (i.style.cssText = o(Et.grid)), c && (c.style.cssText = o(Et.midpoint)), m && (m.style.cssText = o(Et.track));
       };
       t.querySelector("#dt-line").addEventListener("click", () => {
         jt = "line", vt = null, Zt = null, Xt = [], l();
@@ -13916,39 +13994,39 @@ ${i.join(", ")}`);
       }), t.querySelector("#dt-area").addEventListener("click", () => {
         jt = "area", vt = null, Zt = null, Xt = [], console.log("Area mode: click vertices del poligono. Doble-click o click cerca del 1er punto para cerrar."), l();
       }), t.querySelector("#ds-node").addEventListener("click", () => {
-        wt.node = !wt.node, l();
+        Et.node = !Et.node, l();
       }), t.querySelector("#ds-grid").addEventListener("click", () => {
-        wt.grid = !wt.grid, l();
+        Et.grid = !Et.grid, l();
       }), t.querySelector("#ds-mid").addEventListener("click", () => {
-        wt.midpoint = !wt.midpoint, l();
+        Et.midpoint = !Et.midpoint, l();
       }), t.querySelector("#ds-track").addEventListener("click", () => {
-        wt.track = !wt.track, wt.track || Hn(), l();
+        Et.track = !Et.track, Et.track || Ho(), l();
       }), t.querySelector("#ds-gridsize").addEventListener("change", (s) => {
-        wt.gridSize = parseFloat(s.target.value) || 0.5;
+        Et.gridSize = parseFloat(s.target.value) || 0.5;
       }), t.querySelector("#dt-undo").addEventListener("click", () => As()), t.querySelector("#dt-redo").addEventListener("click", () => Ls());
     }
-    function Fs(t, o, n, l) {
-      const s = l.getBoundingClientRect(), d = (t - s.left) / s.width * 2 - 1, a = -((o - s.top) / s.height) * 2 + 1, r = new oa();
-      r.setFromCamera(new na(d, a), n);
+    function Fs(t, n, o, l) {
+      const s = l.getBoundingClientRect(), d = (t - s.left) / s.width * 2 - 1, a = -((n - s.top) / s.height) * 2 + 1, r = new oa();
+      r.setFromCamera(new sa(d, a), o);
       const f = e.nodes.val, i = e.elements.val, c = 0.12;
-      if (wt.node) {
-        let w = -1, y = 1 / 0;
+      if (Et.node) {
+        let E = -1, y = 1 / 0;
         for (let p = 0; p < f.length; p++) {
-          const h = f[p], T = new Oe(h[0], h[1], h[2]).project(n), k = Math.sqrt((T.x - d) ** 2 + (T.y - a) ** 2);
-          k < c && k < y && (y = k, w = p);
+          const h = f[p], T = new Oe(h[0], h[1], h[2]).project(o), k = Math.sqrt((T.x - d) ** 2 + (T.y - a) ** 2);
+          k < c && k < y && (y = k, E = p);
         }
-        if (w >= 0) return {
-          nodeIdx: w,
-          worldPos: new Oe(...f[w]),
+        if (E >= 0) return {
+          nodeIdx: E,
+          worldPos: new Oe(...f[E]),
           snapType: "node"
         };
       }
-      if (wt.midpoint) {
-        let w = 1 / 0, y = null;
+      if (Et.midpoint) {
+        let E = 1 / 0, y = null;
         for (const p of i) {
           if (p.length !== 2) continue;
-          const h = f[p[0]], T = f[p[1]], k = new Oe((h[0] + T[0]) / 2, (h[1] + T[1]) / 2, (h[2] + T[2]) / 2), M = k.clone().project(n), P = Math.sqrt((M.x - d) ** 2 + (M.y - a) ** 2);
-          P < c * 0.8 && P < w && (w = P, y = k);
+          const h = f[p[0]], T = f[p[1]], k = new Oe((h[0] + T[0]) / 2, (h[1] + T[1]) / 2, (h[2] + T[2]) / 2), $ = k.clone().project(o), C = Math.sqrt(($.x - d) ** 2 + ($.y - a) ** 2);
+          C < c * 0.8 && C < E && (E = C, y = k);
         }
         if (y) return {
           nodeIdx: null,
@@ -13956,10 +14034,10 @@ ${i.join(", ")}`);
           snapType: "mid"
         };
       }
-      if (wt.grid) {
-        const w = new So(new Oe(0, 0, 1), 0), y = new Oe();
-        if (r.ray.intersectPlane(w, y)) {
-          const p = wt.gridSize || _n;
+      if (Et.grid) {
+        const E = new In(new Oe(0, 0, 1), 0), y = new Oe();
+        if (r.ray.intersectPlane(E, y)) {
+          const p = Et.gridSize || _o;
           return y.x = Math.round(y.x / p) * p, y.y = Math.round(y.y / p) * p, y.z = Math.round(y.z / p) * p, {
             nodeIdx: null,
             worldPos: y,
@@ -13967,33 +14045,33 @@ ${i.join(", ")}`);
           };
         }
       }
-      const m = new So(new Oe(0, 0, 1), 0), S = new Oe();
-      return r.ray.intersectPlane(m, S), {
+      const m = new In(new Oe(0, 0, 1), 0), w = new Oe();
+      return r.ray.intersectPlane(m, w), {
         nodeIdx: null,
-        worldPos: S,
+        worldPos: w,
         snapType: "free"
       };
     }
-    function Rs(t) {
-      const o = et();
-      if (!o) return;
-      const n = e.nodes.val;
-      if (qt && (o.scene.remove(qt), qt.geometry.dispose(), qt.material.dispose(), qt = null), t.worldPos) {
-        const l = t.snapType === "node" ? 16776960 : t.snapType === "mid" ? 16711935 : t.snapType === "grid" ? 65535 : 8947848, s = t.snapType === "node" ? 0.08 : 0.06, d = t.snapType === "mid" ? new tl(s * 2, s * 2, s * 2) : new ol(s, 12, 12), a = new nl({
+    function Ps(t) {
+      const n = et();
+      if (!n) return;
+      const o = e.nodes.val;
+      if (qt && (n.scene.remove(qt), qt.geometry.dispose(), qt.material.dispose(), qt = null), t.worldPos) {
+        const l = t.snapType === "node" ? 16776960 : t.snapType === "mid" ? 16711935 : t.snapType === "grid" ? 65535 : 8947848, s = t.snapType === "node" ? 0.08 : 0.06, d = t.snapType === "mid" ? new nl(s * 2, s * 2, s * 2) : new ol(s, 12, 12), a = new sl({
           color: l,
           transparent: true,
           opacity: 0.8,
           depthTest: false
         });
-        qt = new ia(d, a), qt.position.copy(t.worldPos), qt.renderOrder = 9999, o.scene.add(qt);
+        qt = new ca(d, a), qt.position.copy(t.worldPos), qt.renderOrder = 9999, n.scene.add(qt);
       }
-      if (Nt && (o.scene.remove(Nt), Nt.geometry.dispose(), Nt.material.dispose(), Nt = null), vt !== null && t.worldPos) {
-        const l = n[vt], s = new to();
+      if (Nt && (n.scene.remove(Nt), Nt.geometry.dispose(), Nt.material.dispose(), Nt = null), vt !== null && t.worldPos) {
+        const l = o[vt], s = new tn();
         if (jt === "arc" && Zt !== null) {
-          const a = n[Zt], r = Ps(new Oe(l[0], l[1], l[2]), new Oe(a[0], a[1], a[2]), t.worldPos, 16), f = [];
+          const a = o[Zt], r = Rs(new Oe(l[0], l[1], l[2]), new Oe(a[0], a[1], a[2]), t.worldPos, 16), f = [];
           for (let i = 0; i < r.length - 1; i++) f.push(r[i].x, r[i].y, r[i].z, r[i + 1].x, r[i + 1].y, r[i + 1].z);
-          s.setAttribute("position", new Lo(f, 3));
-        } else s.setAttribute("position", new Lo([
+          s.setAttribute("position", new Ln(f, 3));
+        } else s.setAttribute("position", new Ln([
           l[0],
           l[1],
           l[2],
@@ -14001,31 +14079,31 @@ ${i.join(", ")}`);
           t.worldPos.y,
           t.worldPos.z
         ], 3));
-        const d = new Yo({
+        const d = new Yn({
           color: 65280,
           linewidth: 2,
           depthTest: false
         });
-        Nt = new Co(s, d), jt === "arc" && Zt !== null && (Nt = new Go(s, d)), Nt.renderOrder = 9999, o.scene.add(Nt);
+        Nt = new Cn(s, d), jt === "arc" && Zt !== null && (Nt = new Gn(s, d)), Nt.renderOrder = 9999, n.scene.add(Nt);
       }
-      o.render();
+      n.render();
     }
-    function Ps(t, o, n, l) {
+    function Rs(t, n, o, l) {
       const s = [];
       for (let d = 0; d <= l; d++) {
-        const a = d / l, r = o.clone().multiplyScalar(2).sub(t.clone().multiplyScalar(0.5)).sub(n.clone().multiplyScalar(0.5)), f = (1 - a) * (1 - a), i = 2 * (1 - a) * a, c = a * a;
-        s.push(new Oe(f * t.x + i * r.x + c * n.x, f * t.y + i * r.y + c * n.y, f * t.z + i * r.z + c * n.z));
+        const a = d / l, r = n.clone().multiplyScalar(2).sub(t.clone().multiplyScalar(0.5)).sub(o.clone().multiplyScalar(0.5)), f = (1 - a) * (1 - a), i = 2 * (1 - a) * a, c = a * a;
+        s.push(new Oe(f * t.x + i * r.x + c * o.x, f * t.y + i * r.y + c * o.y, f * t.z + i * r.z + c * o.z));
       }
       return s;
     }
-    function jn(t) {
+    function jo(t) {
       if (t.nodeIdx !== null) return t.nodeIdx;
       if (!t.worldPos) return -1;
-      const o = e.nodes.val, n = 1e-3;
-      for (let s = 0; s < o.length; s++) if (Math.abs(o[s][0] - t.worldPos.x) < n && Math.abs(o[s][1] - t.worldPos.y) < n && Math.abs(o[s][2] - t.worldPos.z) < n) return s;
-      Do();
+      const n = e.nodes.val, o = 1e-3;
+      for (let s = 0; s < n.length; s++) if (Math.abs(n[s][0] - t.worldPos.x) < o && Math.abs(n[s][1] - t.worldPos.y) < o && Math.abs(n[s][2] - t.worldPos.z) < o) return s;
+      Dn();
       const l = [
-        ...o,
+        ...n,
         [
           t.worldPos.x,
           t.worldPos.y,
@@ -14034,56 +14112,56 @@ ${i.join(", ")}`);
       ];
       return e.nodes.val = l, l.length - 1;
     }
-    function La(t) {
+    function Ca(t) {
       var _a2;
       if (jt === "node") {
         if (!t.worldPos) return;
-        Do();
-        const o = [
+        Dn();
+        const n = [
           ...e.nodes.val
         ];
-        o.push([
+        n.push([
           t.worldPos.x,
           t.worldPos.y,
           t.worldPos.z
-        ]), e.nodes.val = o;
+        ]), e.nodes.val = n;
         return;
       }
       if (jt === "line") {
-        const o = jn(t);
-        if (o < 0) return;
+        const n = jo(t);
+        if (n < 0) return;
         if (vt === null) {
-          vt = o;
+          vt = n;
           return;
         }
-        if (o === vt) return;
-        Do();
-        const n = [
+        if (n === vt) return;
+        Dn();
+        const o = [
           ...e.elements.val
         ];
-        n.some((s) => s.length === 2 && (s[0] === vt && s[1] === o || s[1] === vt && s[0] === o)) || (n.push([
+        o.some((s) => s.length === 2 && (s[0] === vt && s[1] === n || s[1] === vt && s[0] === n)) || (o.push([
           vt,
-          o
-        ]), e.elements.val = n, xo(), e.elementInputs.val = {
+          n
+        ]), e.elements.val = o, vn(), e.elementInputs.val = {
           ...e.elementInputs.val
-        }), vt = o;
+        }), vt = n;
         return;
       }
       if (jt === "arc") {
-        const o = jn(t);
-        if (o < 0) return;
+        const n = jo(t);
+        if (n < 0) return;
         if (vt === null) {
-          vt = o;
+          vt = n;
           return;
         }
         if (Zt === null) {
-          if (o === vt) return;
-          Zt = o;
+          if (n === vt) return;
+          Zt = n;
           return;
         }
-        if (o === vt || o === Zt) return;
-        const n = e.nodes.val, l = new Oe(...n[vt]), s = new Oe(...n[Zt]), d = new Oe(...n[o]), a = Math.max(4, Math.round(((_a2 = Q.nSubViga) == null ? void 0 : _a2.val) ?? 8)), r = Ps(l, s, d, a);
-        Do();
+        if (n === vt || n === Zt) return;
+        const o = e.nodes.val, l = new Oe(...o[vt]), s = new Oe(...o[Zt]), d = new Oe(...o[n]), a = Math.max(4, Math.round(((_a2 = Z.nSubViga) == null ? void 0 : _a2.val) ?? 8)), r = Rs(l, s, d, a);
+        Dn();
         const f = [
           ...e.nodes.val
         ], i = [
@@ -14091,54 +14169,54 @@ ${i.join(", ")}`);
         ];
         let c = vt;
         for (let m = 1; m < r.length; m++) {
-          let S;
-          if (m === r.length - 1) S = o;
+          let w;
+          if (m === r.length - 1) w = n;
           else {
-            const w = r[m];
-            S = f.length, f.push([
-              w.x,
-              w.y,
-              w.z
+            const E = r[m];
+            w = f.length, f.push([
+              E.x,
+              E.y,
+              E.z
             ]);
           }
           i.push([
             c,
-            S
-          ]), c = S;
+            w
+          ]), c = w;
         }
-        e.nodes.val = f, e.elements.val = i, xo(), e.elementInputs.val = {
+        e.nodes.val = f, e.elements.val = i, vn(), e.elementInputs.val = {
           ...e.elementInputs.val
-        }, vt = o, Zt = null;
+        }, vt = n, Zt = null;
         return;
       }
       if (jt === "area") {
-        const o = jn(t);
-        if (o < 0) return;
-        if (Xt.length >= 3 && o === Xt[0]) {
-          Do();
-          const n = [
+        const n = jo(t);
+        if (n < 0) return;
+        if (Xt.length >= 3 && n === Xt[0]) {
+          Dn();
+          const o = [
             ...e.nodes.val
           ], l = [
             ...e.elements.val
-          ], s = Xt.map((d) => n[d]);
+          ], s = Xt.map((d) => o[d]);
           try {
-            const d = go({
+            const d = hn({
               points: s,
               polygon: Array.from({
                 length: s.length
               }, (r, f) => f),
-              maxMeshSize: _n || 0.5
+              maxMeshSize: _o || 0.5
             }), a = [];
             for (const r of d.nodes) {
               let f = -1;
-              for (let i = 0; i < n.length; i++) {
-                const c = Math.abs(n[i][0] - r[0]), m = Math.abs(n[i][1] - r[1]), S = Math.abs(n[i][2] - r[2]);
-                if (c < 0.01 && m < 0.01 && S < 0.01) {
+              for (let i = 0; i < o.length; i++) {
+                const c = Math.abs(o[i][0] - r[0]), m = Math.abs(o[i][1] - r[1]), w = Math.abs(o[i][2] - r[2]);
+                if (c < 0.01 && m < 0.01 && w < 0.01) {
                   f = i;
                   break;
                 }
               }
-              f >= 0 ? a.push(f) : (a.push(n.length), n.push([
+              f >= 0 ? a.push(f) : (a.push(o.length), o.push([
                 r[0],
                 r[1],
                 r[2]
@@ -14149,20 +14227,20 @@ ${i.join(", ")}`);
               a[r[1]],
               a[r[2]]
             ]);
-            e.nodes.val = n, e.elements.val = l, xo(), console.log(`Area: ${d.elements.length} triangulos creados desde ${Xt.length} vertices`);
+            e.nodes.val = o, e.elements.val = l, vn(), console.log(`Area: ${d.elements.length} triangulos creados desde ${Xt.length} vertices`);
           } catch (d) {
             console.error("Area mesh failed:", d.message);
           }
           Xt = [];
           return;
         }
-        if (Xt.push(o), console.log(`Area vertex ${Xt.length}: node ${o}`), Xt.length >= 2) {
-          const n = Xt[Xt.length - 2], l = e.nodes.val, s = et();
+        if (Xt.push(n), console.log(`Area vertex ${Xt.length}: node ${n}`), Xt.length >= 2) {
+          const o = Xt[Xt.length - 2], l = e.nodes.val, s = et();
           if (s) {
-            const d = new to().setFromPoints([
-              new Oe(...l[n]),
-              new Oe(...l[o])
-            ]), a = new Go(d, new Yo({
+            const d = new tn().setFromPoints([
+              new Oe(...l[o]),
+              new Oe(...l[n])
+            ]), a = new Gn(d, new Yn({
               color: 65280,
               linewidth: 2
             }));
@@ -14173,28 +14251,28 @@ ${i.join(", ")}`);
       }
     }
     function Os(t) {
-      const o = et();
-      if (!o) return;
-      Jt && (o.scene.remove(Jt), Jt.geometry.dispose(), Jt.material.dispose());
-      const n = e.nodes.val, l = e.elements.val[t];
+      const n = et();
+      if (!n) return;
+      Jt && (n.scene.remove(Jt), Jt.geometry.dispose(), Jt.material.dispose());
+      const o = e.nodes.val, l = e.elements.val[t];
       if (!l) return;
       const s = [];
       for (let a = 0; a < l.length; a++) {
-        const r = n[l[a]], f = n[l[(a + 1) % l.length]];
+        const r = o[l[a]], f = o[l[(a + 1) % l.length]];
         s.push(r[0], r[1], r[2], f[0], f[1], f[2]);
       }
-      const d = new to();
-      d.setAttribute("position", new Lo(s, 3)), Jt = new Go(d, new Yo({
+      const d = new tn();
+      d.setAttribute("position", new Ln(s, 3)), Jt = new Gn(d, new Yn({
         color: 16776960,
         linewidth: 3,
         depthTest: false
-      })), Jt.renderOrder = 9999, o.scene.add(Jt), o.render();
+      })), Jt.renderOrder = 9999, n.scene.add(Jt), n.render();
     }
-    function Wn(t) {
-      const o = et();
-      if (!o) return -1;
-      const n = o.renderer.domElement.getBoundingClientRect(), l = new na((t.clientX - n.left) / n.width * 2 - 1, -((t.clientY - n.top) / n.height) * 2 + 1), s = new oa();
-      s.setFromCamera(l, o.controls.object), s.params.Line = {
+    function Wo(t) {
+      const n = et();
+      if (!n) return -1;
+      const o = n.renderer.domElement.getBoundingClientRect(), l = new sa((t.clientX - o.left) / o.width * 2 - 1, -((t.clientY - o.top) / o.height) * 2 + 1), s = new oa();
+      s.setFromCamera(l, n.controls.object), s.params.Line = {
         threshold: 0.5
       };
       const d = e.nodes.val, a = e.elements.val;
@@ -14202,53 +14280,53 @@ ${i.join(", ")}`);
       let r = 1 / 0, f = -1;
       const i = s.ray;
       for (let m = 0; m < a.length; m++) {
-        const S = a[m];
-        if (S.length === 2) {
-          const w = new Oe(...d[S[0]]), y = new Oe(...d[S[1]]), p = new sl(w, y), h = new Oe(), T = new Oe();
+        const w = a[m];
+        if (w.length === 2) {
+          const E = new Oe(...d[w[0]]), y = new Oe(...d[w[1]]), p = new al(E, y), h = new Oe(), T = new Oe();
           i.closestPointToPoint(p.getCenter(new Oe()), h), p.closestPointToPoint(h, true, T);
           const k = h.distanceTo(T);
           k < r && (r = k, f = m);
-        } else if (S.length === 3) {
-          const w = new Oe(...d[S[0]]), y = new Oe(...d[S[1]]), p = new Oe(...d[S[2]]), h = new Oe();
-          if (i.intersectTriangle(w, y, p, false, h)) {
+        } else if (w.length === 3) {
+          const E = new Oe(...d[w[0]]), y = new Oe(...d[w[1]]), p = new Oe(...d[w[2]]), h = new Oe();
+          if (i.intersectTriangle(E, y, p, false, h)) {
             const k = i.origin.distanceTo(h);
             k < r && (r = k, f = m);
           } else {
-            const k = w.add(y).add(p).divideScalar(3), M = new Oe();
-            i.closestPointToPoint(k, M);
-            const P = M.distanceTo(k);
-            P < r && (r = P, f = m);
+            const k = E.add(y).add(p).divideScalar(3), $ = new Oe();
+            i.closestPointToPoint(k, $);
+            const C = $.distanceTo(k);
+            C < r && (r = C, f = m);
           }
-        } else if (S.length === 4) {
-          const w = new Oe(...d[S[0]]), y = new Oe(...d[S[1]]), p = new Oe(...d[S[2]]), h = new Oe(...d[S[3]]), T = new Oe();
-          let k = i.intersectTriangle(w, y, p, false, T);
+        } else if (w.length === 4) {
+          const E = new Oe(...d[w[0]]), y = new Oe(...d[w[1]]), p = new Oe(...d[w[2]]), h = new Oe(...d[w[3]]), T = new Oe();
+          let k = i.intersectTriangle(E, y, p, false, T);
           if (k) {
-            const M = i.origin.distanceTo(T);
-            M < r && (r = M, f = m);
+            const $ = i.origin.distanceTo(T);
+            $ < r && (r = $, f = m);
           }
-          if (k = i.intersectTriangle(w, p, h, false, T), k) {
-            const M = i.origin.distanceTo(T);
-            M < r && (r = M, f = m);
+          if (k = i.intersectTriangle(E, p, h, false, T), k) {
+            const $ = i.origin.distanceTo(T);
+            $ < r && (r = $, f = m);
           }
         }
       }
-      const { extent: c } = vo();
+      const { extent: c } = yn();
       return r < c * 0.1 ? f : -1;
     }
-    function Me(t, o = 4) {
-      return Math.abs(t) < 1e-10 ? "0" : Math.abs(t) >= 1e6 ? t.toExponential(2) : Math.abs(t) >= 100 ? t.toFixed(1) : t.toFixed(o);
+    function Me(t, n = 4) {
+      return Math.abs(t) < 1e-10 ? "0" : Math.abs(t) >= 1e6 ? t.toExponential(2) : Math.abs(t) >= 100 ? t.toFixed(1) : t.toFixed(n);
     }
-    function Gn(t, o, n = 12) {
+    function Go(t, n, o = 12) {
       var _a2;
-      const l = Math.min(t.length, n), s = Math.min(((_a2 = t[0]) == null ? void 0 : _a2.length) || 0, n);
+      const l = Math.min(t.length, o), s = Math.min(((_a2 = t[0]) == null ? void 0 : _a2.length) || 0, o);
       let d = "<table>";
-      if (o) {
+      if (n) {
         d += '<tr><td class="header"></td>';
-        for (let a = 0; a < s; a++) d += `<td class="header">${o[a] || a}</td>`;
+        for (let a = 0; a < s; a++) d += `<td class="header">${n[a] || a}</td>`;
         d += "</tr>";
       }
       for (let a = 0; a < l; a++) {
-        d += "<tr>", o && (d += `<td class="header">${o[a] || a}</td>`);
+        d += "<tr>", n && (d += `<td class="header">${n[a] || a}</td>`);
         for (let r = 0; r < s; r++) {
           const f = t[a][r], i = Math.abs(f) > 1e-10 ? "nonzero" : "";
           d += `<td class="${i}">${Me(f, 2)}</td>`;
@@ -14257,15 +14335,15 @@ ${i.join(", ")}`);
       }
       return d += "</table>", d;
     }
-    function De(t, o) {
-      return `<span class="frac"><span class="frac-num">${t}</span><span class="frac-den">${o}</span></span>`;
+    function De(t, n) {
+      return `<span class="frac"><span class="frac-num">${t}</span><span class="frac-den">${n}</span></span>`;
     }
-    function A(t, o, n) {
+    function A(t, n, o) {
       let l = `<span class="var">${t}</span>`;
-      return o && (l += `<sub>${o}</sub>`), l;
+      return n && (l += `<sub>${n}</sub>`), l;
     }
-    function Ca(t, o, n, l, s, d, a) {
-      const r = 0.8333333333333334 * o, f = 5 / 6 * o, i = f > 0 && s > 0 ? 12 * t * n / (s * f * a ** 2) : 0, c = r > 0 && s > 0 ? 12 * t * l / (s * r * a ** 2) : 0, m = t * o / a, S = s * d / a, w = 12 * t * n / a ** 3 / (1 + i), y = 6 * t * n / a ** 2 / (1 + i), p = 4 * t * n / a * (1 + i / 4) / (1 + i), h = 2 * t * n / a * (1 - i / 2) / (1 + i), T = i > 1e-10 || c > 1e-10;
+    function Fa(t, n, o, l, s, d, a) {
+      const r = 0.8333333333333334 * n, f = 5 / 6 * n, i = f > 0 && s > 0 ? 12 * t * o / (s * f * a ** 2) : 0, c = r > 0 && s > 0 ? 12 * t * l / (s * r * a ** 2) : 0, m = t * n / a, w = s * d / a, E = 12 * t * o / a ** 3 / (1 + i), y = 6 * t * o / a ** 2 / (1 + i), p = 4 * t * o / a * (1 + i / 4) / (1 + i), h = 2 * t * o / a * (1 - i / 2) / (1 + i), T = i > 1e-10 || c > 1e-10;
       return `<div class="fem-eq eq-box">
       <div style="text-align:left;margin-bottom:4px"><strong style="color:var(--fem-section-title)">Formulaci\xF3n: ${T ? "Timoshenko (con deformaci\xF3n por cortante)" : "Euler-Bernoulli"}</strong></div>
       ${T ? `
@@ -14275,7 +14353,7 @@ ${i.join(", ")}`);
         &nbsp;&nbsp; \u03C6<sub>y</sub> = <span class="highlight">${Me(c)}</span>
       </div>
       <div style="text-align:left;margin-bottom:4px"><strong style="color:var(--fem-section-title)">Coeficientes Timoshenko (Dr. Aguiar):</strong></div>
-      <div>${A("t", "z")} = ${De("12\xB7" + A("E") + "\xB7" + A("I", "z"), A("L") + "\xB3\xB7(1+\u03C6<sub>z</sub>)")} = <span class="highlight">${Me(w)}</span> &nbsp;(cortante)</div>
+      <div>${A("t", "z")} = ${De("12\xB7" + A("E") + "\xB7" + A("I", "z"), A("L") + "\xB3\xB7(1+\u03C6<sub>z</sub>)")} = <span class="highlight">${Me(E)}</span> &nbsp;(cortante)</div>
       <div>${A("b", "z")} = ${De("6\xB7" + A("E") + "\xB7" + A("I", "z"), A("L") + "\xB2\xB7(1+\u03C6<sub>z</sub>)")} = <span class="highlight">${Me(y)}</span> &nbsp;(acoplamiento)</div>
       <div>${A("k", "z")} = ${De("4\xB7" + A("E") + "\xB7" + A("I", "z") + "\xB7(1+\u03C6/4)", A("L") + "\xB7(1+\u03C6<sub>z</sub>)")} = <span class="highlight">${Me(p)}</span> &nbsp;(flexi\xF3n diagonal)</div>
       <div>${A("a", "z")} = ${De("2\xB7" + A("E") + "\xB7" + A("I", "z") + "\xB7(1\u2212\u03C6/2)", A("L") + "\xB7(1+\u03C6<sub>z</sub>)")} = <span class="highlight">${Me(h)}</span> &nbsp;(flexi\xF3n off-diag)</div>
@@ -14283,9 +14361,9 @@ ${i.join(", ")}`);
       <div style="text-align:left;margin-bottom:4px"><strong style="color:var(--fem-section-title)">Coeficientes de rigidez:</strong></div>
       `}
       <div>${De(A("E") + "\xB7" + A("A"), A("L"))} = <span class="highlight">${Me(m)}</span> &nbsp;(axial)</div>
-      <div>${De(A("G") + "\xB7" + A("J"), A("L"))} = <span class="highlight">${Me(S)}</span> &nbsp;(torsi\xF3n)</div>
+      <div>${De(A("G") + "\xB7" + A("J"), A("L"))} = <span class="highlight">${Me(w)}</span> &nbsp;(torsi\xF3n)</div>
       ${T ? "" : `
-      <div>${De("12\xB7" + A("E") + "\xB7" + A("I", "z"), A("L") + "\xB3")} = <span class="highlight">${Me(w)}</span></div>
+      <div>${De("12\xB7" + A("E") + "\xB7" + A("I", "z"), A("L") + "\xB3")} = <span class="highlight">${Me(E)}</span></div>
       <div>${De("4\xB7" + A("E") + "\xB7" + A("I", "z"), A("L"))} = <span class="highlight">${Me(p)}</span></div>
       `}
     </div>
@@ -14305,14 +14383,14 @@ ${i.join(", ")}`);
       <div>${A("K", "total")} = ${A("K", "f")} + ${A("K", "c")}</div>
     </div>` : ""}`;
     }
-    function Fa(t) {
+    function Pa(t) {
       if (t.length === 2) {
-        const n = ho(t[1], t[0]), l = Po(n), s = n[0] / l, d = n[1] / l, a = n[2] / l;
+        const o = xn(t[1], t[0]), l = Rn(o), s = o[0] / l, d = o[1] / l, a = o[2] / l;
         return `<div class="fem-eq eq-box">
         <div style="text-align:left;margin-bottom:4px"><strong style="color:var(--fem-section-title)">Cosenos directores:</strong></div>
-        <div>${A("l")} = cos(\u03B1) = ${De("\u0394x", A("L"))} = ${De(Me(n[0]), Me(l))} = <span class="highlight">${Me(s)}</span></div>
-        <div>${A("m")} = cos(\u03B2) = ${De("\u0394y", A("L"))} = ${De(Me(n[1]), Me(l))} = <span class="highlight">${Me(d)}</span></div>
-        <div>${A("n")} = cos(\u03B3) = ${De("\u0394z", A("L"))} = ${De(Me(n[2]), Me(l))} = <span class="highlight">${Me(a)}</span></div>
+        <div>${A("l")} = cos(\u03B1) = ${De("\u0394x", A("L"))} = ${De(Me(o[0]), Me(l))} = <span class="highlight">${Me(s)}</span></div>
+        <div>${A("m")} = cos(\u03B2) = ${De("\u0394y", A("L"))} = ${De(Me(o[1]), Me(l))} = <span class="highlight">${Me(d)}</span></div>
+        <div>${A("n")} = cos(\u03B3) = ${De("\u0394z", A("L"))} = ${De(Me(o[2]), Me(l))} = <span class="highlight">${Me(a)}</span></div>
       </div>
       <div class="fem-eq">
         \u03BB = <span class="mat-sym" style="grid-template-columns:repeat(3,auto)">
@@ -14333,15 +14411,15 @@ ${i.join(", ")}`);
       ${A("K", "global")} = ${A("T")}<sup>T</sup> \xB7 ${A("k", "local")} \xB7 ${A("T")}
     </div>`;
     }
-    function Pa(t) {
-      const o = t.map((n) => `6\xB7${n} = ${6 * n}`).join(", ");
+    function Oa(t) {
+      const n = t.map((o) => `6\xB7${o} = ${6 * o}`).join(", ");
       return `<div class="fem-eq eq-box">
       <div style="text-align:left;margin-bottom:4px"><strong style="color:var(--fem-section-title)">Ensamblaje en K global:</strong></div>
       <div>${A("K", "global")}[${A("i")}, ${A("j")}] += ${A("K", "elem")}[${A("i")}, ${A("j")}]</div>
-      <div style="margin-top:4px">donde ${A("i")}, ${A("j")} \u2208 {${o}} + (0..5)</div>
+      <div style="margin-top:4px">donde ${A("i")}, ${A("j")} \u2208 {${n}} + (0..5)</div>
     </div>`;
     }
-    function Oa(t) {
+    function Na(t) {
       return t ? `<div class="fem-eq eq-box">
         <div style="text-align:left;margin-bottom:4px"><strong style="color:var(--fem-section-title)">Recuperaci\xF3n de fuerzas:</strong></div>
         <div>${A("u", "local")} = ${A("T")} \xB7 ${A("u", "global")}</div>
@@ -14355,14 +14433,14 @@ ${i.join(", ")}`);
       <div>${A("N", "xx")} = \u03C3<sub>xx</sub> \xB7 ${A("t")} &nbsp;&nbsp; ${A("M", "xx")} = \u03C3<sub>xx</sub> \xB7 ${De(A("t") + "\xB3", "12")}</div>
     </div>`;
     }
-    function Yn(t, o) {
-      const n = t.length;
+    function Yo(t, n) {
+      const o = t.length;
       let l = '<table><tr><td class="hdr"></td>';
-      for (let s = 0; s < n; s++) l += `<td class="hdr">${o[s] || s}</td>`;
+      for (let s = 0; s < o; s++) l += `<td class="hdr">${n[s] || s}</td>`;
       l += "</tr>";
-      for (let s = 0; s < n; s++) {
-        l += `<tr><td class="hdr">${o[s] || s}</td>`;
-        for (let d = 0; d < n; d++) {
+      for (let s = 0; s < o; s++) {
+        l += `<tr><td class="hdr">${n[s] || s}</td>`;
+        for (let d = 0; d < o; d++) {
           const a = t[s][d], r = (s === d ? "diag " : "") + (Math.abs(a) > 1e-10 ? "nz" : "");
           l += `<td class="${r}">${Me(a, 2)}</td>`;
         }
@@ -14371,7 +14449,7 @@ ${i.join(", ")}`);
       return l += "</table>", l;
     }
     function Ns() {
-      const t = "0", o = De(A("EA"), A("L")), n = De("\u2212" + A("EA"), A("L")), l = De("12" + A("EI", "z"), A("L") + "\xB3"), s = De("\u221212" + A("EI", "z"), A("L") + "\xB3"), d = De("12" + A("EI", "y"), A("L") + "\xB3"), a = De("\u221212" + A("EI", "y"), A("L") + "\xB3"), r = De("6" + A("EI", "z"), A("L") + "\xB2"), f = De("\u22126" + A("EI", "z"), A("L") + "\xB2"), i = De("6" + A("EI", "y"), A("L") + "\xB2"), c = De("\u22126" + A("EI", "y"), A("L") + "\xB2"), m = De(A("GJ"), A("L")), S = De("\u2212" + A("GJ"), A("L")), w = De("4" + A("EI", "z"), A("L")), y = De("2" + A("EI", "z"), A("L")), p = De("4" + A("EI", "y"), A("L")), h = De("2" + A("EI", "y"), A("L")), T = '<span style="color:var(--fem-eq-dots);font-style:italic">sym</span>', k = [
+      const t = "0", n = De(A("EA"), A("L")), o = De("\u2212" + A("EA"), A("L")), l = De("12" + A("EI", "z"), A("L") + "\xB3"), s = De("\u221212" + A("EI", "z"), A("L") + "\xB3"), d = De("12" + A("EI", "y"), A("L") + "\xB3"), a = De("\u221212" + A("EI", "y"), A("L") + "\xB3"), r = De("6" + A("EI", "z"), A("L") + "\xB2"), f = De("\u22126" + A("EI", "z"), A("L") + "\xB2"), i = De("6" + A("EI", "y"), A("L") + "\xB2"), c = De("\u22126" + A("EI", "y"), A("L") + "\xB2"), m = De(A("GJ"), A("L")), w = De("\u2212" + A("GJ"), A("L")), E = De("4" + A("EI", "z"), A("L")), y = De("2" + A("EI", "z"), A("L")), p = De("4" + A("EI", "y"), A("L")), h = De("2" + A("EI", "y"), A("L")), T = '<span style="color:var(--fem-eq-dots);font-style:italic">sym</span>', k = [
         "P\u2081",
         "P\u2082",
         "P\u2083",
@@ -14384,7 +14462,7 @@ ${i.join(", ")}`);
         "P\u2081\u2080",
         "P\u2081\u2081",
         "P\u2081\u2082"
-      ], M = [
+      ], $ = [
         "\u03B4\u2081",
         "\u03B4\u2082",
         "\u03B4\u2083",
@@ -14397,15 +14475,15 @@ ${i.join(", ")}`);
         "\u03B4\u2081\u2080",
         "\u03B4\u2081\u2081",
         "\u03B4\u2081\u2082"
-      ], P = [
+      ], C = [
         [
-          o,
-          t,
-          t,
-          t,
-          t,
-          t,
           n,
+          t,
+          t,
+          t,
+          t,
+          t,
+          o,
           t,
           t,
           t,
@@ -14450,7 +14528,7 @@ ${i.join(", ")}`);
           t,
           t,
           t,
-          S,
+          w,
           t,
           t
         ],
@@ -14474,7 +14552,7 @@ ${i.join(", ")}`);
           t,
           t,
           t,
-          w,
+          E,
           t,
           f,
           t,
@@ -14483,13 +14561,13 @@ ${i.join(", ")}`);
           y
         ],
         [
-          n,
-          t,
-          t,
-          t,
-          t,
-          t,
           o,
+          t,
+          t,
+          t,
+          t,
+          t,
+          n,
           t,
           t,
           t,
@@ -14528,7 +14606,7 @@ ${i.join(", ")}`);
           t,
           t,
           t,
-          S,
+          w,
           t,
           t,
           t,
@@ -14564,42 +14642,42 @@ ${i.join(", ")}`);
           t,
           t,
           t,
-          w
+          E
         ]
       ];
       let B = '<div style="margin-bottom:8px;color:var(--fem-eq-sub);font-size:11px;font-family:monospace">Eq. 6.1 \u2014 Matriz de rigidez de elemento de p\xF3rtico espacial</div>';
       B += '<table><tr><td class="hdr"></td>';
-      for (const x of M) B += `<td class="hdr">${x}</td>`;
+      for (const x of $) B += `<td class="hdr">${x}</td>`;
       B += "</tr>";
       for (let x = 0; x < 12; x++) {
         B += `<tr><td class="hdr">${k[x]}</td>`;
         for (let u = 0; u < 12; u++) if (u < x) B += `<td style="color:var(--fem-border-cell)">${u === 0 && x > 0 ? T : ""}</td>`;
         else {
-          const I = P[x][u], L = (x === u ? "diag " : "") + (I !== "0" ? "nz" : "");
+          const I = C[x][u], L = (x === u ? "diag " : "") + (I !== "0" ? "nz" : "");
           B += `<td class="${L}">${I}</td>`;
         }
         B += "</tr>";
       }
       return B += "</table>", B;
     }
-    function Na(t, o, n, l, s, d, a) {
+    function qa(t, n, o, l, s, d, a) {
       return `<div class="coeff-grid">${[
         {
           name: `${De(A("E") + "\xB7" + A("A"), A("L"))}`,
-          calc: `${De(Me(t) + "\xD7" + Me(o), Me(a))}`,
-          val: t * o / a,
+          calc: `${De(Me(t) + "\xD7" + Me(n), Me(a))}`,
+          val: t * n / a,
           label: "Axial"
         },
         {
           name: `${De("12\xB7" + A("E") + "\xB7" + A("I", "z"), A("L") + "\xB3")}`,
-          calc: `${De("12\xD7" + Me(t) + "\xD7" + Me(n), Me(a) + "\xB3")}`,
-          val: 12 * t * n / a ** 3,
+          calc: `${De("12\xD7" + Me(t) + "\xD7" + Me(o), Me(a) + "\xB3")}`,
+          val: 12 * t * o / a ** 3,
           label: "Corte Y"
         },
         {
           name: `${De("6\xB7" + A("E") + "\xB7" + A("I", "z"), A("L") + "\xB2")}`,
-          calc: `${De("6\xD7" + Me(t) + "\xD7" + Me(n), Me(a) + "\xB2")}`,
-          val: 6 * t * n / a ** 2,
+          calc: `${De("6\xD7" + Me(t) + "\xD7" + Me(o), Me(a) + "\xB2")}`,
+          val: 6 * t * o / a ** 2,
           label: "Corte-Momento Z"
         },
         {
@@ -14622,14 +14700,14 @@ ${i.join(", ")}`);
         },
         {
           name: `${De("4\xB7" + A("E") + "\xB7" + A("I", "z"), A("L"))}`,
-          calc: `${De("4\xD7" + Me(t) + "\xD7" + Me(n), Me(a))}`,
-          val: 4 * t * n / a,
+          calc: `${De("4\xD7" + Me(t) + "\xD7" + Me(o), Me(a))}`,
+          val: 4 * t * o / a,
           label: "Flexi\xF3n Z (4EI/L)"
         },
         {
           name: `${De("2\xB7" + A("E") + "\xB7" + A("I", "z"), A("L"))}`,
-          calc: `${De("2\xD7" + Me(t) + "\xD7" + Me(n), Me(a))}`,
-          val: 2 * t * n / a,
+          calc: `${De("2\xD7" + Me(t) + "\xD7" + Me(o), Me(a))}`,
+          val: 2 * t * o / a,
           label: "Flexi\xF3n Z (2EI/L)"
         },
         {
@@ -14646,7 +14724,7 @@ ${i.join(", ")}`);
         }
       ].map((f) => `<div class="coeff-item"><div style="color:var(--fem-eq-sub);font-size:10px;font-family:monospace;margin-bottom:2px">${f.label}</div>${f.name} = ${f.calc} = <span class="highlight">${Me(f.val)}</span></div>`).join("")}</div>`;
     }
-    function Jn(t, o, n, l) {
+    function Jo(t, n, o, l) {
       var _a2;
       const s = document.querySelector(".fem-full-overlay");
       s && s.remove();
@@ -14657,7 +14735,7 @@ ${i.join(", ")}`);
       <div class="fem-full-sections">
         <div class="full-section">
           <div class="side-title">\u2460 F\xF3rmula General (simb\xF3lica)</div>
-          <div class="fem-full-sym">${o}</div>
+          <div class="fem-full-sym">${n}</div>
         </div>
         ${l ? `<div class="full-section coeff">
           <div class="side-title">\u2461 C\xE1lculo de Coeficientes (sustituci\xF3n num\xE9rica)</div>
@@ -14665,7 +14743,7 @@ ${i.join(", ")}`);
         </div>` : ""}
         <div class="full-section numeric">
           <div class="side-title">${l ? "\u2462" : "\u2461"} Matriz Num\xE9rica Resultante</div>
-          ${n}
+          ${o}
         </div>
       </div>
     `, document.body.appendChild(d), (_a2 = d.querySelector("#fem-full-close")) == null ? void 0 : _a2.addEventListener("click", () => d.remove()), d.addEventListener("click", (a) => {
@@ -14675,9 +14753,9 @@ ${i.join(", ")}`);
     function qs(t) {
       var _a2, _b, _c, _d, _e2, _f, _g, _h, _i, _j, _k, _l2, _m, _n2, _o2, _p, _q, _r, _s2, _t, _u, _v, _w, _x, _y, _z, _A, _B, _C, _D, _E, _F, _G, _H, _I, _J, _K, _L, _M, _N, _O;
       Kt && Kt.remove();
-      const o = e.nodes.val, n = e.elements.val, l = n[t], s = l.map((x) => o[x]), d = l.length === 2, a = ((_a2 = e.elementInputs) == null ? void 0 : _a2.val) || {}, r = (_b = e.deformOutputs) == null ? void 0 : _b.val, f = (_c = e.analyzeOutputs) == null ? void 0 : _c.val;
+      const n = e.nodes.val, o = e.elements.val, l = o[t], s = l.map((x) => n[x]), d = l.length === 2, a = ((_a2 = e.elementInputs) == null ? void 0 : _a2.val) || {}, r = (_b = e.deformOutputs) == null ? void 0 : _b.val, f = (_c = e.analyzeOutputs) == null ? void 0 : _c.val;
       if (d) {
-        const x = Po(ho(s[1], s[0])), u = ((_d = a.elasticities) == null ? void 0 : _d.get(t)) ?? 0, I = ((_e2 = a.areas) == null ? void 0 : _e2.get(t)) ?? 0, L = ((_f = a.momentsOfInertiaZ) == null ? void 0 : _f.get(t)) ?? 0, R = ((_g = a.momentsOfInertiaY) == null ? void 0 : _g.get(t)) ?? 0, j = ((_h = a.shearModuli) == null ? void 0 : _h.get(t)) ?? 0, g = ((_i = a.torsionalConstants) == null ? void 0 : _i.get(t)) ?? 0, E = ((_j = a.momentReleases) == null ? void 0 : _j.get(t)) || [], v = ((_k = a.partialFixitySprings) == null ? void 0 : _k.get(t)) || [], C = [
+        const x = Rn(xn(s[1], s[0])), u = ((_d = a.elasticities) == null ? void 0 : _d.get(t)) ?? 0, I = ((_e2 = a.areas) == null ? void 0 : _e2.get(t)) ?? 0, L = ((_f = a.momentsOfInertiaZ) == null ? void 0 : _f.get(t)) ?? 0, R = ((_g = a.momentsOfInertiaY) == null ? void 0 : _g.get(t)) ?? 0, j = ((_h = a.shearModuli) == null ? void 0 : _h.get(t)) ?? 0, g = ((_i = a.torsionalConstants) == null ? void 0 : _i.get(t)) ?? 0, S = ((_j = a.momentReleases) == null ? void 0 : _j.get(t)) || [], v = ((_k = a.partialFixitySprings) == null ? void 0 : _k.get(t)) || [], F = [
           "P (Axial)",
           "V2 (Corte)",
           "V3 (Corte)",
@@ -14687,19 +14765,19 @@ ${i.join(", ")}`);
         ];
         let X = "";
         for (let V = 0; V < 6; V++) {
-          const ae = V, Z = V + 6, K = (E.length >= 12 ? E[ae] : V >= 3 && E.length >= 6 && E[V - 3]) ? "checked" : "", de = (E.length >= 12 ? E[Z] : V >= 3 && E.length >= 6 && E[V]) ? "checked" : "", re = v.length >= 12 && v[ae] > 0 ? v[ae].toFixed(1) : "", Ie = v.length >= 12 && v[Z] > 0 ? v[Z].toFixed(1) : "";
+          const ae = V, Q = V + 6, K = (S.length >= 12 ? S[ae] : V >= 3 && S.length >= 6 && S[V - 3]) ? "checked" : "", de = (S.length >= 12 ? S[Q] : V >= 3 && S.length >= 6 && S[V]) ? "checked" : "", re = v.length >= 12 && v[ae] > 0 ? v[ae].toFixed(1) : "", Ie = v.length >= 12 && v[Q] > 0 ? v[Q].toFixed(1) : "";
           X += `<tr>
-          <td style="text-align:left;color:var(--fem-key)">${C[V]}</td>
+          <td style="text-align:left;color:var(--fem-key)">${F[V]}</td>
           <td style="text-align:center"><input type="checkbox" data-rel="${ae}" ${K}></td>
-          <td style="text-align:center"><input type="checkbox" data-rel="${Z}" ${de}></td>
+          <td style="text-align:center"><input type="checkbox" data-rel="${Q}" ${de}></td>
           <td><input type="number" data-spr="${ae}" value="${re}" placeholder="0" style="width:50px;background:var(--fem-bg);color:var(--fem-val);border:1px solid var(--fem-border);font-size:10px;text-align:right"></td>
-          <td><input type="number" data-spr="${Z}" value="${Ie}" placeholder="0" style="width:50px;background:var(--fem-bg);color:var(--fem-val);border:1px solid var(--fem-border);font-size:10px;text-align:right"></td>
+          <td><input type="number" data-spr="${Q}" value="${Ie}" placeholder="0" style="width:50px;background:var(--fem-bg);color:var(--fem-val);border:1px solid var(--fem-border);font-size:10px;text-align:right"></td>
         </tr>`;
         }
         `${l[0]}${l[1]}${Me(x)}${Me(u)}${Me(I)}${Me(L)}${Me(R)}${Me(j)}${Me(g)}${X}`;
       } else {
         const x = ((_l2 = a.elasticities) == null ? void 0 : _l2.get(t)) ?? 0, u = ((_m = a.thicknesses) == null ? void 0 : _m.get(t)) ?? 0, I = ((_n2 = a.poissonsRatios) == null ? void 0 : _n2.get(t)) ?? 0, L = x / (2 * (1 + I)), R = l.length === 4, j = x / (1 - I * I);
-        `${l.length}${l.join(", ")}${Me(x)}${Me(L)}${Me(u)}${Me(I)}`, R && (S = `<div class="fem-eq eq-box">
+        `${l.length}${l.join(", ")}${Me(x)}${Me(L)}${Me(u)}${Me(I)}`, R && (w = `<div class="fem-eq eq-box">
           <div style="text-align:left;margin-bottom:6px"><strong style="color:var(--fem-section-title)">Formulaci\xF3n Q4: Membrana + Mindlin-Reissner + Drilling</strong></div>
 
           <div style="text-align:left;margin-bottom:4px"><strong style="color:var(--fem-section-title)">1. Matriz constitutiva (esfuerzo plano):</strong></div>
@@ -14747,9 +14825,9 @@ ${i.join(", ")}`);
           <div style="color:var(--fem-eq-sub)">DOFs por nodo: [u, v, w, \u03B8x, \u03B8y, \u03B8z]</div>
         </div>`);
       }
-      let i = "", c = "", m = "", S = "", w = "", y = "", p = "", h = "", T = null, k = null, M = null, P = [];
+      let i = "", c = "", m = "", w = "", E = "", y = "", p = "", h = "", T = null, k = null, $ = null, C = [];
       try {
-        if (T = vn(s, a, t), k = yn(s), M = no(ns(k), no(T, k)), P = d ? [
+        if (T = vo(s, a, t), k = yo(s), $ = on(os(k), on(T, k)), C = d ? [
           "ux\u2080",
           "uy\u2080",
           "uz\u2080",
@@ -14782,12 +14860,12 @@ ${i.join(", ")}`);
           "\u03B8y\u2081",
           "\u03B8z\u2082"
         ], d) {
-          const L = Po(ho(s[1], s[0])), R = ((_o2 = a.elasticities) == null ? void 0 : _o2.get(t)) ?? 0, j = ((_p = a.areas) == null ? void 0 : _p.get(t)) ?? 0, g = ((_q = a.momentsOfInertiaZ) == null ? void 0 : _q.get(t)) ?? 0, E = ((_r = a.momentsOfInertiaY) == null ? void 0 : _r.get(t)) ?? 0, v = ((_s2 = a.shearModuli) == null ? void 0 : _s2.get(t)) ?? 0, C = ((_t = a.torsionalConstants) == null ? void 0 : _t.get(t)) ?? 0;
-          S = Ca(R, j, g, E, v, C, L);
+          const L = Rn(xn(s[1], s[0])), R = ((_o2 = a.elasticities) == null ? void 0 : _o2.get(t)) ?? 0, j = ((_p = a.areas) == null ? void 0 : _p.get(t)) ?? 0, g = ((_q = a.momentsOfInertiaZ) == null ? void 0 : _q.get(t)) ?? 0, S = ((_r = a.momentsOfInertiaY) == null ? void 0 : _r.get(t)) ?? 0, v = ((_s2 = a.shearModuli) == null ? void 0 : _s2.get(t)) ?? 0, F = ((_t = a.torsionalConstants) == null ? void 0 : _t.get(t)) ?? 0;
+          w = Fa(R, j, g, S, v, F, L);
         }
-        w = Fa(s), y = Ra(), p = Pa(l), h = Oa(d);
+        E = Pa(s), y = Ra(), p = Oa(l), h = Na(d);
         const x = '<button class="fem-expand-btn" data-full="kLocal">\u26F6 Ver completa</button>', u = '<button class="fem-expand-btn" data-full="T">\u26F6 Ver completa</button>', I = '<button class="fem-expand-btn" data-full="kGlobal">\u26F6 Ver completa</button>';
-        i = `<div class="matrix-label">k_local (${T.length}\xD7${T.length}) ${x}</div>${Gn(T, P)}`, c = `<div class="matrix-label">T \u2014 Transformaci\xF3n (${k.length}\xD7${k.length}) ${u}</div>${Gn(k, P)}`, m = `<div class="matrix-label">K_global = T^T \xB7 k \xB7 T ${I}</div>${Gn(M, P)}`;
+        i = `<div class="matrix-label">k_local (${T.length}\xD7${T.length}) ${x}</div>${Go(T, C)}`, c = `<div class="matrix-label">T \u2014 Transformaci\xF3n (${k.length}\xD7${k.length}) ${u}</div>${Go(k, C)}`, m = `<div class="matrix-label">K_global = T^T \xB7 k \xB7 T ${I}</div>${Go($, C)}`;
       } catch (x) {
         i = `<div style="color:red">Error: ${x.message}</div>`;
       }
@@ -14821,9 +14899,9 @@ ${i.join(", ")}`);
           "\u03B8x",
           "\u03B8y",
           "\u03B8z"
-        ], E = [];
-        for (const Z of l) {
-          const K = ((_A = r.deformations) == null ? void 0 : _A.get(Z)) || [
+        ], S = [];
+        for (const Q of l) {
+          const K = ((_A = r.deformations) == null ? void 0 : _A.get(Q)) || [
             0,
             0,
             0,
@@ -14831,21 +14909,21 @@ ${i.join(", ")}`);
             0,
             0
           ];
-          E.push(...K);
+          S.push(...K);
         }
         let v = [];
         try {
-          v = no(k, E);
+          v = on(k, S);
         } catch {
           v = new Array(12).fill(0);
         }
-        let C = [];
+        let F = [];
         try {
-          C = no(T, v);
+          F = on(T, v);
         } catch {
-          C = new Array(12).fill(0);
+          F = new Array(12).fill(0);
         }
-        const X = (Z, K) => Z.map((de, re) => `<span style="color:${Math.abs(de) > 1e-10 ? "var(--fem-nonzero)" : "var(--fem-eq-dots)"}">${K[re % 6]}=${Me(de)}</span>`).join(", "), ae = [
+        const X = (Q, K) => Q.map((de, re) => `<span style="color:${Math.abs(de) > 1e-10 ? "var(--fem-nonzero)" : "var(--fem-eq-dots)"}">${K[re % 6]}=${Me(de)}</span>`).join(", "), ae = [
           "N",
           "Vy",
           "Vz",
@@ -14858,11 +14936,11 @@ ${i.join(", ")}`);
           "Mx",
           "My",
           "Mz"
-        ].map((Z, K) => `${Z}${K < 6 ? "\u1D62" : "\u2C7C"}`);
-        `${A("u", "global")}${l.map((Z, K) => `<span style="color:var(--fem-label)">nodo ${Z}:</span> ${g.map((de, re) => `<span style="color:${Math.abs(E[K * 6 + re]) > 1e-10 ? "var(--fem-eq-var)" : "var(--fem-eq-dots)"}">${Me(E[K * 6 + re])}</span>`).join(", ")}`).join(" | ")}${A("u", "local")}${A("T")}${A("u", "global")}${A("u", "local")}${X(v, [
+        ].map((Q, K) => `${Q}${K < 6 ? "\u1D62" : "\u2C7C"}`);
+        `${A("u", "global")}${l.map((Q, K) => `<span style="color:var(--fem-label)">nodo ${Q}:</span> ${g.map((de, re) => `<span style="color:${Math.abs(S[K * 6 + re]) > 1e-10 ? "var(--fem-eq-var)" : "var(--fem-eq-dots)"}">${Me(S[K * 6 + re])}</span>`).join(", ")}`).join(" | ")}${A("u", "local")}${A("T")}${A("u", "global")}${A("u", "local")}${X(v, [
           ...g,
           ...g
-        ])}${A("f", "local")}${A("k", "local")}${A("u", "local")}${A("f", "local")}${C.map((Z, K) => `<span style="color:${Math.abs(Z) > 1e-10 ? "var(--fem-nonzero)" : "var(--fem-eq-dots)"}">${ae[K]}=${Me(Z)}</span>`).join(", ")}${A("P", "1")}${A("N", "i")}${Me(C[0])}${A("P", "7")}${A("N", "j")}${Me(C[6])}${A("P", "2")}${A("V", "y,i")}${Me(C[1])}${A("P", "8")}${A("V", "y,j")}${Me(C[7])}${A("P", "3")}${A("V", "z,i")}${Me(C[2])}${A("P", "9")}${A("V", "z,j")}${Me(C[8])}${A("P", "4")}${A("M", "x,i")}${Me(C[3])}${A("P", "10")}${A("M", "x,j")}${Me(C[9])}${A("P", "5")}${A("M", "y,i")}${Me(C[4])}${A("P", "11")}${A("M", "y,j")}${Me(C[10])}${A("P", "6")}${A("M", "z,i")}${Me(C[5])}${A("P", "12")}${A("M", "z,j")}${Me(C[11])}${x ? x.map((Z) => Me(Z)).join(", ") : "\u2014"}${u ? u.map((Z) => Me(Z)).join(", ") : "\u2014"}${I ? I.map((Z) => Me(Z)).join(", ") : "\u2014"}${L ? L.map((Z) => Me(Z)).join(", ") : "\u2014"}${R ? R.map((Z) => Me(Z)).join(", ") : "\u2014"}${j ? j.map((Z) => Me(Z)).join(", ") : "\u2014"}`;
+        ])}${A("f", "local")}${A("k", "local")}${A("u", "local")}${A("f", "local")}${F.map((Q, K) => `<span style="color:${Math.abs(Q) > 1e-10 ? "var(--fem-nonzero)" : "var(--fem-eq-dots)"}">${ae[K]}=${Me(Q)}</span>`).join(", ")}${A("P", "1")}${A("N", "i")}${Me(F[0])}${A("P", "7")}${A("N", "j")}${Me(F[6])}${A("P", "2")}${A("V", "y,i")}${Me(F[1])}${A("P", "8")}${A("V", "y,j")}${Me(F[7])}${A("P", "3")}${A("V", "z,i")}${Me(F[2])}${A("P", "9")}${A("V", "z,j")}${Me(F[8])}${A("P", "4")}${A("M", "x,i")}${Me(F[3])}${A("P", "10")}${A("M", "x,j")}${Me(F[9])}${A("P", "5")}${A("M", "y,i")}${Me(F[4])}${A("P", "11")}${A("M", "y,j")}${Me(F[10])}${A("P", "6")}${A("M", "z,i")}${Me(F[5])}${A("P", "12")}${A("M", "z,j")}${Me(F[11])}${x ? x.map((Q) => Me(Q)).join(", ") : "\u2014"}${u ? u.map((Q) => Me(Q)).join(", ") : "\u2014"}${I ? I.map((Q) => Me(Q)).join(", ") : "\u2014"}${L ? L.map((Q) => Me(Q)).join(", ") : "\u2014"}${R ? R.map((Q) => Me(Q)).join(", ") : "\u2014"}${j ? j.map((Q) => Me(Q)).join(", ") : "\u2014"}`;
       } else if (f && d) {
         const x = (_B = f.normals) == null ? void 0 : _B.get(t), u = (_C = f.shearsY) == null ? void 0 : _C.get(t), I = (_D = f.shearsZ) == null ? void 0 : _D.get(t), L = (_E = f.torsions) == null ? void 0 : _E.get(t), R = (_F = f.bendingsY) == null ? void 0 : _F.get(t), j = (_G = f.bendingsZ) == null ? void 0 : _G.get(t);
         `${x ? x.map((g) => Me(g)).join(", ") : "\u2014"}${u ? u.map((g) => Me(g)).join(", ") : "\u2014"}${I ? I.map((g) => Me(g)).join(", ") : "\u2014"}${L ? L.map((g) => Me(g)).join(", ") : "\u2014"}${R ? R.map((g) => Me(g)).join(", ") : "\u2014"}${j ? j.map((g) => Me(g)).join(", ") : "\u2014"}`;
@@ -14870,7 +14948,7 @@ ${i.join(", ")}`);
         const x = (_H = f.bendingXX) == null ? void 0 : _H.get(t), u = (_I = f.bendingYY) == null ? void 0 : _I.get(t), I = (_J = f.bendingXY) == null ? void 0 : _J.get(t), L = (_K = f.membraneXX) == null ? void 0 : _K.get(t), R = (_L = f.membraneYY) == null ? void 0 : _L.get(t), j = (_M = f.membraneXY) == null ? void 0 : _M.get(t);
         `${x ? x.map((g) => Me(g)).join(", ") : "\u2014"}${u ? u.map((g) => Me(g)).join(", ") : "\u2014"}${I ? I.map((g) => Me(g)).join(", ") : "\u2014"}${L ? L.map((g) => Me(g)).join(", ") : "\u2014"}${R ? R.map((g) => Me(g)).join(", ") : "\u2014"}${j ? j.map((g) => Me(g)).join(", ") : "\u2014"}`;
       }
-      `${l[0]}`, 6 * l[0], 6 * l[0] + 5, `${l[1]}`, 6 * l[1], 6 * l[1] + 5, l.length === 3 && (`${l[2]}`, 6 * l[2], 6 * l[2] + 5), o.length * 6, o.length * 6, Kt = xl(t, o, n, a, r, f), Kt.id = "fem-inspect-panel", document.body.appendChild(Kt), (_N = Kt.querySelector("#er-close")) == null ? void 0 : _N.addEventListener("click", () => Ao()), (_O = Kt.querySelector("#rel-apply")) == null ? void 0 : _O.addEventListener("click", () => {
+      `${l[0]}`, 6 * l[0], 6 * l[0] + 5, `${l[1]}`, 6 * l[1], 6 * l[1] + 5, l.length === 3 && (`${l[2]}`, 6 * l[2], 6 * l[2] + 5), n.length * 6, n.length * 6, Kt = vl(t, n, o, a, r, f), Kt.id = "fem-inspect-panel", document.body.appendChild(Kt), (_N = Kt.querySelector("#er-close")) == null ? void 0 : _N.addEventListener("click", () => An()), (_O = Kt.querySelector("#rel-apply")) == null ? void 0 : _O.addEventListener("click", () => {
         const x = Kt.querySelectorAll("input[data-rel]"), u = Kt.querySelectorAll("input[data-spr]"), I = new Array(12).fill(false), L = new Array(12).fill(0);
         x.forEach((j) => {
           I[parseInt(j.dataset.rel)] = j.checked;
@@ -14885,8 +14963,8 @@ ${i.join(", ")}`);
       });
       const B = d ? (() => {
         var _a3, _b2, _c2, _d2, _e3, _f2;
-        const x = Po(ho(s[1], s[0])), u = ((_a3 = a.elasticities) == null ? void 0 : _a3.get(t)) ?? 0, I = ((_b2 = a.areas) == null ? void 0 : _b2.get(t)) ?? 0, L = ((_c2 = a.momentsOfInertiaZ) == null ? void 0 : _c2.get(t)) ?? 0, R = ((_d2 = a.momentsOfInertiaY) == null ? void 0 : _d2.get(t)) ?? 0, j = ((_e3 = a.shearModuli) == null ? void 0 : _e3.get(t)) ?? 0, g = ((_f2 = a.torsionalConstants) == null ? void 0 : _f2.get(t)) ?? 0;
-        return Na(u, I, L, R, j, g, x);
+        const x = Rn(xn(s[1], s[0])), u = ((_a3 = a.elasticities) == null ? void 0 : _a3.get(t)) ?? 0, I = ((_b2 = a.areas) == null ? void 0 : _b2.get(t)) ?? 0, L = ((_c2 = a.momentsOfInertiaZ) == null ? void 0 : _c2.get(t)) ?? 0, R = ((_d2 = a.momentsOfInertiaY) == null ? void 0 : _d2.get(t)) ?? 0, j = ((_e3 = a.shearModuli) == null ? void 0 : _e3.get(t)) ?? 0, g = ((_f2 = a.torsionalConstants) == null ? void 0 : _f2.get(t)) ?? 0;
+        return qa(u, I, L, R, j, g, x);
       })() : void 0;
       Kt.querySelectorAll("[data-full]").forEach((x) => {
         x.addEventListener("click", (u) => {
@@ -14894,11 +14972,11 @@ ${i.join(", ")}`);
           const I = x.dataset.full;
           if (I === "kLocal" && T) {
             const L = d ? Ns() : "<em>Shell 18\xD718 \u2014 ver tabla num\xE9rica</em>";
-            Jn(`Elemento ${t} \u2014 Rigidez Local k_local`, L, Yn(T, P), B);
-          } else if (I === "T" && k) Jn(`Elemento ${t} \u2014 Transformaci\xF3n T`, w, Yn(k, P));
-          else if (I === "kGlobal" && M) {
+            Jo(`Elemento ${t} \u2014 Rigidez Local k_local`, L, Yo(T, C), B);
+          } else if (I === "T" && k) Jo(`Elemento ${t} \u2014 Transformaci\xF3n T`, E, Yo(k, C));
+          else if (I === "kGlobal" && $) {
             const L = d ? Ns() : "<em>Shell 18\xD718</em>";
-            Jn(`Elemento ${t} \u2014 Rigidez Global K = T^T \xB7 k \xB7 T`, L, Yn(M, P), B);
+            Jo(`Elemento ${t} \u2014 Rigidez Global K = T^T \xB7 k \xB7 T`, L, Yo($, C), B);
           }
         });
       });
@@ -14906,7 +14984,7 @@ ${i.join(", ")}`);
     function _s() {
       const l = [], s = [];
       for (let y = 0; y <= 8; y++) {
-        const p = y / 8, h = 30 * p, k = 12 * (1 - p) * (1 - p * 0.3) / 2, M = l.length;
+        const p = y / 8, h = 30 * p, k = 12 * (1 - p) * (1 - p * 0.3) / 2, $ = l.length;
         if (l.push([
           -k,
           -k,
@@ -14924,41 +15002,41 @@ ${i.join(", ")}`);
           k,
           h
         ]), s.push([
-          M,
-          M + 1
+          $,
+          $ + 1
         ]), s.push([
-          M + 1,
-          M + 2
+          $ + 1,
+          $ + 2
         ]), s.push([
-          M + 2,
-          M + 3
+          $ + 2,
+          $ + 3
         ]), s.push([
-          M + 3,
-          M
+          $ + 3,
+          $
         ]), y > 0 && y < 8 && (s.push([
-          M,
-          M + 2
+          $,
+          $ + 2
         ]), s.push([
-          M + 1,
-          M + 3
+          $ + 1,
+          $ + 3
         ])), y > 0) {
-          const P = M - 4;
+          const C = $ - 4;
           for (let B = 0; B < 4; B++) s.push([
-            P + B,
-            M + B
+            C + B,
+            $ + B
           ]);
           s.push([
-            P,
-            M + 1
+            C,
+            $ + 1
           ]), s.push([
-            P + 1,
-            M + 2
+            C + 1,
+            $ + 2
           ]), s.push([
-            P + 2,
-            M + 3
+            C + 2,
+            $ + 3
           ]), s.push([
-            P + 3,
-            M
+            C + 3,
+            $
           ]);
         }
       }
@@ -14984,7 +15062,7 @@ ${i.join(", ")}`);
         supports: d,
         loads: r
       });
-      const f = 2e8, i = 77e6, c = 5e-3, m = 2e-6, S = 1e-6, w = {
+      const f = 2e8, i = 77e6, c = 5e-3, m = 2e-6, w = 1e-6, E = {
         elasticities: new Map(s.map((y, p) => [
           p,
           f
@@ -15007,25 +15085,25 @@ ${i.join(", ")}`);
         ])),
         torsionalConstants: new Map(s.map((y, p) => [
           p,
-          S
+          w
         ]))
       };
-      e.elementInputs && (e.elementInputs.val = w);
+      e.elementInputs && (e.elementInputs.val = E);
       try {
-        const y = Ct(l, s, {
+        const y = kt(l, s, {
           supports: d,
           loads: r
-        }, w);
+        }, E);
         y && e.deformOutputs && (e.deformOutputs.val = y);
       } catch (y) {
         console.warn("Eiffel deform:", y.message);
       }
-      setTimeout(() => It(), 50), Ze(), console.log(`Torre Eiffel: ${l.length} nodos, ${s.length} elementos, H=30m`);
+      setTimeout(() => wt(), 50), Ze(), console.log(`Torre Eiffel: ${l.length} nodos, ${s.length} elementos, H=30m`);
     }
     function Ds() {
       const l = [], s = [];
-      for (let w = 0; w <= 20; w++) {
-        const y = w / 20, p = 20 * y, h = 20 * (1 - Math.pow(2 * y - 1, 2)), T = 2;
+      for (let E = 0; E <= 20; E++) {
+        const y = E / 20, p = 20 * y, h = 20 * (1 - Math.pow(2 * y - 1, 2)), T = 2;
         l.push([
           p,
           -2 / 2,
@@ -15036,21 +15114,21 @@ ${i.join(", ")}`);
           h
         ]);
       }
-      for (let w = 0; w < 20; w++) s.push([
-        w * 2,
-        (w + 1) * 2
+      for (let E = 0; E < 20; E++) s.push([
+        E * 2,
+        (E + 1) * 2
       ]), s.push([
-        w * 2 + 1,
-        (w + 1) * 2 + 1
+        E * 2 + 1,
+        (E + 1) * 2 + 1
       ]), s.push([
-        w * 2,
-        w * 2 + 1
+        E * 2,
+        E * 2 + 1
       ]), s.push([
-        w * 2,
-        (w + 1) * 2 + 1
+        E * 2,
+        (E + 1) * 2 + 1
       ]), s.push([
-        w * 2 + 1,
-        (w + 1) * 2
+        E * 2 + 1,
+        (E + 1) * 2
       ]);
       s.push([
         20 * 2,
@@ -15087,14 +15165,14 @@ ${i.join(", ")}`);
         true
       ]);
       const a = /* @__PURE__ */ new Map();
-      for (let w = 0; w <= 20; w++) a.set(w * 2, [
+      for (let E = 0; E <= 20; E++) a.set(E * 2, [
         0,
         0,
         -20,
         0,
         0,
         0
-      ]), a.set(w * 2 + 1, [
+      ]), a.set(E * 2 + 1, [
         0,
         0,
         -20,
@@ -15106,43 +15184,43 @@ ${i.join(", ")}`);
         supports: d,
         loads: a
       });
-      const r = 2e8, f = 77e6, i = 0.01, c = 5e-6, m = 2e-6, S = {
-        elasticities: new Map(s.map((w, y) => [
+      const r = 2e8, f = 77e6, i = 0.01, c = 5e-6, m = 2e-6, w = {
+        elasticities: new Map(s.map((E, y) => [
           y,
           r
         ])),
-        shearModuli: new Map(s.map((w, y) => [
+        shearModuli: new Map(s.map((E, y) => [
           y,
           f
         ])),
-        areas: new Map(s.map((w, y) => [
+        areas: new Map(s.map((E, y) => [
           y,
           i
         ])),
-        momentsOfInertiaZ: new Map(s.map((w, y) => [
+        momentsOfInertiaZ: new Map(s.map((E, y) => [
           y,
           c
         ])),
-        momentsOfInertiaY: new Map(s.map((w, y) => [
+        momentsOfInertiaY: new Map(s.map((E, y) => [
           y,
           c
         ])),
-        torsionalConstants: new Map(s.map((w, y) => [
+        torsionalConstants: new Map(s.map((E, y) => [
           y,
           m
         ]))
       };
-      e.elementInputs && (e.elementInputs.val = S);
+      e.elementInputs && (e.elementInputs.val = w);
       try {
-        const w = Ct(l, s, {
+        const E = kt(l, s, {
           supports: d,
           loads: a
-        }, S);
-        w && e.deformOutputs && (e.deformOutputs.val = w);
-      } catch (w) {
-        console.warn("Arco:", w.message);
+        }, w);
+        E && e.deformOutputs && (e.deformOutputs.val = E);
+      } catch (E) {
+        console.warn("Arco:", E.message);
       }
-      setTimeout(() => It(), 50), Ze(), console.log(`Arco Gateway: ${l.length} nodos, ${s.length} elem, span=20m, H=20m`);
+      setTimeout(() => wt(), 50), Ze(), console.log(`Arco Gateway: ${l.length} nodos, ${s.length} elem, span=20m, H=20m`);
     }
     function Bs() {
       const d = [], a = [];
@@ -15190,32 +15268,32 @@ ${i.join(", ")}`);
           6 / 2,
           0
         ]);
-        const M = d.length;
+        const $ = d.length;
         d.push([
           h,
           -6 / 2,
           28
         ]);
-        const P = d.length;
+        const C = d.length;
         d.push([
           h,
           6 / 2,
           28
-        ]), i.push(M, P), a.push([
+        ]), i.push($, C), a.push([
           T,
           p * 2
         ]), a.push([
           p * 2,
-          M
+          $
         ]), a.push([
           k,
           p * 2 + 1
         ]), a.push([
           p * 2 + 1,
-          P
+          C
         ]), a.push([
-          M,
-          P
+          $,
+          C
         ]);
       }
       for (const p of i) {
@@ -15223,10 +15301,10 @@ ${i.join(", ")}`);
         for (let T = 0; T <= 16; T++) {
           const k = 60 * T / 16;
           if (Math.abs(k - h) > 60 * 0.05 && Math.abs(k - h) < 60 * 0.45) {
-            const M = d[p][1] < 0 ? T * 2 : T * 2 + 1;
+            const $ = d[p][1] < 0 ? T * 2 : T * 2 + 1;
             T % 2 === 0 && a.push([
               p,
-              M
+              $
             ]);
           }
         }
@@ -15296,14 +15374,14 @@ ${i.join(", ")}`);
         supports: c,
         loads: m
       });
-      const S = 2e8, w = 77e6, y = {
+      const w = 2e8, E = 77e6, y = {
         elasticities: new Map(a.map((p, h) => [
           h,
-          S
+          w
         ])),
         shearModuli: new Map(a.map((p, h) => [
           h,
-          w
+          E
         ])),
         areas: new Map(a.map((p, h) => [
           h,
@@ -15324,7 +15402,7 @@ ${i.join(", ")}`);
       };
       e.elementInputs && (e.elementInputs.val = y);
       try {
-        const p = Ct(d, a, {
+        const p = kt(d, a, {
           supports: c,
           loads: m
         }, y);
@@ -15332,14 +15410,14 @@ ${i.join(", ")}`);
       } catch (p) {
         console.warn("Puente:", p.message);
       }
-      setTimeout(() => It(), 50), Ze(), console.log(`Puente atirantado: ${d.length} nodos, ${a.length} elem, span=60m`);
+      setTimeout(() => wt(), 50), Ze(), console.log(`Puente atirantado: ${d.length} nodos, ${a.length} elem, span=60m`);
     }
     function Hs() {
       const d = [], a = [];
       for (let h = 0; h <= 12; h++) {
         const T = h * 3.5, k = h * 5 * Math.PI / 180;
-        for (let M = 0; M < 6; M++) {
-          const P = k + 2 * Math.PI * M / 6, B = 5 * Math.cos(P), x = 5 * Math.sin(P);
+        for (let $ = 0; $ < 6; $++) {
+          const C = k + 2 * Math.PI * $ / 6, B = 5 * Math.cos(C), x = 5 * Math.sin(C);
           d.push([
             B,
             x,
@@ -15355,12 +15433,12 @@ ${i.join(", ")}`);
         ]);
         if (h < 12) {
           const k = (h + 1) * 6;
-          for (let M = 0; M < 6; M++) a.push([
-            T + M,
-            k + M
+          for (let $ = 0; $ < 6; $++) a.push([
+            T + $,
+            k + $
           ]), a.push([
-            T + M,
-            k + (M + 1) % 6
+            T + $,
+            k + ($ + 1) % 6
           ]);
         }
       }
@@ -15372,9 +15450,9 @@ ${i.join(", ")}`);
           h * 3.5
         ]);
         const k = h * 6;
-        for (let M = 0; M < 6; M++) a.push([
+        for (let $ = 0; $ < 6; $++) a.push([
           T,
-          k + M
+          k + $
         ]);
       }
       const r = 13 * 6;
@@ -15402,7 +15480,7 @@ ${i.join(", ")}`);
       const i = /* @__PURE__ */ new Map();
       for (let h = 1; h <= 12; h++) {
         const T = 10 * h / 12, k = h * 6;
-        for (let M = 0; M < 6; M++) i.set(k + M, [
+        for (let $ = 0; $ < 6; $++) i.set(k + $, [
           T,
           0,
           -5,
@@ -15415,7 +15493,7 @@ ${i.join(", ")}`);
         supports: f,
         loads: i
       });
-      const c = 2e8, m = 77e6, S = 8e-3, w = 1e-5, y = 5e-6, p = {
+      const c = 2e8, m = 77e6, w = 8e-3, E = 1e-5, y = 5e-6, p = {
         elasticities: new Map(a.map((h, T) => [
           T,
           c
@@ -15426,15 +15504,15 @@ ${i.join(", ")}`);
         ])),
         areas: new Map(a.map((h, T) => [
           T,
-          S
+          w
         ])),
         momentsOfInertiaZ: new Map(a.map((h, T) => [
           T,
-          w
+          E
         ])),
         momentsOfInertiaY: new Map(a.map((h, T) => [
           T,
-          w
+          E
         ])),
         torsionalConstants: new Map(a.map((h, T) => [
           T,
@@ -15443,7 +15521,7 @@ ${i.join(", ")}`);
       };
       e.elementInputs && (e.elementInputs.val = p);
       try {
-        const h = Ct(d, a, {
+        const h = kt(d, a, {
           supports: f,
           loads: i
         }, p);
@@ -15451,7 +15529,7 @@ ${i.join(", ")}`);
       } catch (h) {
         console.warn("Twisted:", h.message);
       }
-      setTimeout(() => It(), 50), Ze(), console.log(`Torre Twist: ${d.length} nodos, ${a.length} elem, 12 pisos, twist=5deg/piso`);
+      setTimeout(() => wt(), 50), Ze(), console.log(`Torre Twist: ${d.length} nodos, ${a.length} elem, 12 pisos, twist=5deg/piso`);
     }
     function js() {
       const s = [], d = [];
@@ -15459,20 +15537,20 @@ ${i.join(", ")}`);
         const h = p / 20, T = p * 3;
         let k = 8 * (1 - h * 0.7);
         h > 0.4 && (k *= 0.85), h > 0.7 && (k *= 0.7);
-        const M = s.length;
+        const $ = s.length;
         s.push([
           0,
           0,
           T
         ]);
-        for (let P = 0; P < 3; P++) {
-          const B = P * 2 * Math.PI / 3 - Math.PI / 2, x = k * Math.cos(B), u = k * Math.sin(B), I = s.length;
+        for (let C = 0; C < 3; C++) {
+          const B = C * 2 * Math.PI / 3 - Math.PI / 2, x = k * Math.cos(B), u = k * Math.sin(B), I = s.length;
           s.push([
             x,
             u,
             T
           ]), d.push([
-            M,
+            $,
             I
           ]);
           const L = s.length;
@@ -15481,34 +15559,34 @@ ${i.join(", ")}`);
             u * 0.5,
             T
           ]), d.push([
-            M,
+            $,
             L
           ]), d.push([
             L,
             I
           ]);
         }
-        for (let P = 0; P < 3; P++) {
-          const B = M + 1 + P * 2, x = M + 1 + (P + 1) % 3 * 2;
+        for (let C = 0; C < 3; C++) {
+          const B = $ + 1 + C * 2, x = $ + 1 + (C + 1) % 3 * 2;
           d.push([
             B,
             x
           ]);
         }
         if (p < 20) {
-          const B = M + 7;
+          const B = $ + 7;
           d.push([
-            M,
+            $,
             B
           ]);
           for (let x = 0; x < 3; x++) d.push([
-            M + 1 + x * 2,
+            $ + 1 + x * 2,
             B + 1 + x * 2
           ]), d.push([
-            M + 2 + x * 2,
+            $ + 2 + x * 2,
             B + 2 + x * 2
           ]), d.push([
-            M + 1 + x * 2,
+            $ + 1 + x * 2,
             B + 2 + x * 2
           ]);
         }
@@ -15538,7 +15616,7 @@ ${i.join(", ")}`);
         supports: a,
         loads: f
       });
-      const i = 35e6, c = 14e6, m = 0.02, S = 5e-5, w = 2e-5, y = {
+      const i = 35e6, c = 14e6, m = 0.02, w = 5e-5, E = 2e-5, y = {
         elasticities: new Map(d.map((p, h) => [
           h,
           i
@@ -15553,20 +15631,20 @@ ${i.join(", ")}`);
         ])),
         momentsOfInertiaZ: new Map(d.map((p, h) => [
           h,
-          S
+          w
         ])),
         momentsOfInertiaY: new Map(d.map((p, h) => [
           h,
-          S
+          w
         ])),
         torsionalConstants: new Map(d.map((p, h) => [
           h,
-          w
+          E
         ]))
       };
       e.elementInputs && (e.elementInputs.val = y);
       try {
-        const p = Ct(s, d, {
+        const p = kt(s, d, {
           supports: a,
           loads: f
         }, y);
@@ -15574,16 +15652,16 @@ ${i.join(", ")}`);
       } catch (p) {
         console.warn("Burj:", p.message);
       }
-      setTimeout(() => It(), 50), Ze(), console.log(`Burj Khalifa: ${s.length} nodos, ${d.length} elem, 20 pisos, H=${20 * 3}m`);
+      setTimeout(() => wt(), 50), Ze(), console.log(`Burj Khalifa: ${s.length} nodos, ${d.length} elem, 20 pisos, H=${20 * 3}m`);
     }
     function Ws() {
-      const t = [], o = [];
+      const t = [], n = [];
       for (let m = 0; m < 3; m++) {
-        const S = m * 12, w = 15 - m * 2, y = 20 - m * 3, p = 8 - m, h = t.length;
+        const w = m * 12, E = 15 - m * 2, y = 20 - m * 3, p = 8 - m, h = t.length;
         for (let k = 0; k <= 4; k++) {
-          const M = k / 4, P = -p / 2 + p * M, B = y * (1 - M * M * 0.3);
+          const $ = k / 4, C = -p / 2 + p * $, B = y * (1 - $ * $ * 0.3);
           for (let x = 0; x <= 12; x++) {
-            const u = x / 12, I = S + B * u, L = w * Math.sin(Math.PI * u) * (1 - M * M * 0.5), R = P;
+            const u = x / 12, I = w + B * u, L = E * Math.sin(Math.PI * u) * (1 - $ * $ * 0.5), R = C;
             t.push([
               I,
               R,
@@ -15592,10 +15670,10 @@ ${i.join(", ")}`);
           }
         }
         const T = 13;
-        for (let k = 0; k < 4; k++) for (let M = 0; M < 12; M++) {
-          const P = h + k * T + M, B = h + k * T + M + 1, x = h + (k + 1) * T + M + 1, u = h + (k + 1) * T + M;
-          o.push([
-            P,
+        for (let k = 0; k < 4; k++) for (let $ = 0; $ < 12; $++) {
+          const C = h + k * T + $, B = h + k * T + $ + 1, x = h + (k + 1) * T + $ + 1, u = h + (k + 1) * T + $;
+          n.push([
+            C,
             B,
             x,
             u
@@ -15620,31 +15698,31 @@ ${i.join(", ")}`);
         0,
         0
       ]);
-      e.nodes.val = t, e.elements.val = o, e.nodeInputs && (e.nodeInputs.val = {
+      e.nodes.val = t, e.elements.val = n, e.nodeInputs && (e.nodeInputs.val = {
         supports: s,
         loads: d
       });
       const a = 35e6, r = 0.2, f = 0.15, i = a / (2 * (1 + r)), c = {
-        elasticities: new Map(o.map((m, S) => [
-          S,
+        elasticities: new Map(n.map((m, w) => [
+          w,
           a
         ])),
-        poissonsRatios: new Map(o.map((m, S) => [
-          S,
+        poissonsRatios: new Map(n.map((m, w) => [
+          w,
           r
         ])),
-        thicknesses: new Map(o.map((m, S) => [
-          S,
+        thicknesses: new Map(n.map((m, w) => [
+          w,
           f
         ])),
-        shearModuli: new Map(o.map((m, S) => [
-          S,
+        shearModuli: new Map(n.map((m, w) => [
+          w,
           i
         ]))
       };
       e.elementInputs && (e.elementInputs.val = c);
       try {
-        const m = Ct(t, o, {
+        const m = kt(t, n, {
           supports: s,
           loads: d
         }, c);
@@ -15652,7 +15730,7 @@ ${i.join(", ")}`);
       } catch (m) {
         console.warn("Opera:", m.message);
       }
-      setTimeout(() => It(), 50), Ze(), console.log(`Sydney Opera: ${t.length} nodos, ${o.length} shells Q4, 3 velas`);
+      setTimeout(() => wt(), 50), Ze(), console.log(`Sydney Opera: ${t.length} nodos, ${n.length} shells Q4, 3 velas`);
     }
     function Gs() {
       const l = [], s = [];
@@ -15660,19 +15738,19 @@ ${i.join(", ")}`);
         const p = y / 15, h = y * 3.5, T = 5 * (0.6 + 0.4 * Math.sin(Math.PI * p));
         if (p > 0.9) {
           const k = 5 * (0.6 + 0.4 * Math.sin(Math.PI * 0.9)) * (1 - (p - 0.9) * 8);
-          for (let M = 0; M < 12; M++) {
-            const P = 2 * Math.PI * M / 12;
+          for (let $ = 0; $ < 12; $++) {
+            const C = 2 * Math.PI * $ / 12;
             l.push([
-              Math.max(k, 1) * Math.cos(P),
-              Math.max(k, 1) * Math.sin(P),
+              Math.max(k, 1) * Math.cos(C),
+              Math.max(k, 1) * Math.sin(C),
               h
             ]);
           }
         } else for (let k = 0; k < 12; k++) {
-          const M = 2 * Math.PI * k / 12;
+          const $ = 2 * Math.PI * k / 12;
           l.push([
-            T * Math.cos(M),
-            T * Math.sin(M),
+            T * Math.cos($),
+            T * Math.sin($),
             h
           ]);
         }
@@ -15685,10 +15763,10 @@ ${i.join(", ")}`);
         ]);
         const T = y % 2 === 0 ? 1 : -1;
         for (let k = 0; k < 12; k++) {
-          const M = (k + T + 12) % 12;
+          const $ = (k + T + 12) % 12;
           s.push([
             p + k,
-            h + M
+            h + $
           ]), s.push([
             p + k,
             h + k
@@ -15725,7 +15803,7 @@ ${i.join(", ")}`);
         supports: a,
         loads: r
       });
-      const f = 2e8, i = 77e6, c = 6e-3, m = 8e-6, S = 4e-6, w = {
+      const f = 2e8, i = 77e6, c = 6e-3, m = 8e-6, w = 4e-6, E = {
         elasticities: new Map(s.map((y, p) => [
           p,
           f
@@ -15748,37 +15826,37 @@ ${i.join(", ")}`);
         ])),
         torsionalConstants: new Map(s.map((y, p) => [
           p,
-          S
+          w
         ]))
       };
-      e.elementInputs && (e.elementInputs.val = w);
+      e.elementInputs && (e.elementInputs.val = E);
       try {
-        const y = Ct(l, s, {
+        const y = kt(l, s, {
           supports: a,
           loads: r
-        }, w);
+        }, E);
         y && e.deformOutputs && (e.deformOutputs.val = y);
       } catch (y) {
         console.warn("Diagrid:", y.message);
       }
-      setTimeout(() => It(), 50), Ze(), console.log(`Diagrid Tower: ${l.length} nodos, ${s.length} elem, 15 pisos, H=${15 * 3.5}m`);
+      setTimeout(() => wt(), 50), Ze(), console.log(`Diagrid Tower: ${l.length} nodos, ${s.length} elem, 15 pisos, H=${15 * 3.5}m`);
     }
-    function Vn() {
+    function Vo() {
       var _a2, _b, _c, _d, _e2, _f, _g, _h;
-      const t = ((_a2 = Q.W) == null ? void 0 : _a2.val) ?? 5, o = ((_b = Q.H) == null ? void 0 : _b.val) ?? 3, n = ((_c = Q.t) == null ? void 0 : _c.val) ?? 0.2, l = Math.round(((_d = Q.nx) == null ? void 0 : _d.val) ?? 8), s = Math.round(((_e2 = Q.ny) == null ? void 0 : _e2.val) ?? 6), d = ((_f = Q.E) == null ? void 0 : _f.val) ?? 25e6, a = ((_g = Q.nu) == null ? void 0 : _g.val) ?? 0.2, r = ((_h = Q.P) == null ? void 0 : _h.val) ?? 100, f = d / (2 * (1 + a)), i = t / l, c = o / s, m = [], S = [], w = /* @__PURE__ */ new Map(), y = /* @__PURE__ */ new Map();
-      for (let M = 0; M <= s; M++) for (let P = 0; P <= l; P++) m.push([
-        P * i,
+      const t = ((_a2 = Z.W) == null ? void 0 : _a2.val) ?? 5, n = ((_b = Z.H) == null ? void 0 : _b.val) ?? 3, o = ((_c = Z.t) == null ? void 0 : _c.val) ?? 0.2, l = Math.round(((_d = Z.nx) == null ? void 0 : _d.val) ?? 8), s = Math.round(((_e2 = Z.ny) == null ? void 0 : _e2.val) ?? 6), d = ((_f = Z.E) == null ? void 0 : _f.val) ?? 25e6, a = ((_g = Z.nu) == null ? void 0 : _g.val) ?? 0.2, r = ((_h = Z.P) == null ? void 0 : _h.val) ?? 100, f = d / (2 * (1 + a)), i = t / l, c = n / s, m = [], w = [], E = /* @__PURE__ */ new Map(), y = /* @__PURE__ */ new Map();
+      for (let $ = 0; $ <= s; $++) for (let C = 0; C <= l; C++) m.push([
+        C * i,
         0,
-        M * c
+        $ * c
       ]);
       const p = l + 1;
-      for (let M = 0; M < s; M++) for (let P = 0; P < l; P++) S.push([
-        M * p + P,
-        M * p + P + 1,
-        (M + 1) * p + P + 1,
-        (M + 1) * p + P
+      for (let $ = 0; $ < s; $++) for (let C = 0; C < l; C++) w.push([
+        $ * p + C,
+        $ * p + C + 1,
+        ($ + 1) * p + C + 1,
+        ($ + 1) * p + C
       ]);
-      for (let M = 0; M <= l; M++) w.set(M, [
+      for (let $ = 0; $ <= l; $++) E.set($, [
         true,
         true,
         true,
@@ -15787,9 +15865,9 @@ ${i.join(", ")}`);
         true
       ]);
       const h = [];
-      for (let M = 0; M <= l; M++) h.push(s * p + M);
+      for (let $ = 0; $ <= l; $++) h.push(s * p + $);
       const T = r / h.length;
-      for (const M of h) y.set(M, [
+      for (const $ of h) y.set($, [
         T,
         0,
         0,
@@ -15797,66 +15875,66 @@ ${i.join(", ")}`);
         0,
         0
       ]);
-      e.nodes.val = m, e.elements.val = S, e.nodeInputs && (e.nodeInputs.val = {
-        supports: w,
+      e.nodes.val = m, e.elements.val = w, e.nodeInputs && (e.nodeInputs.val = {
+        supports: E,
         loads: y
       });
       const k = {
-        elasticities: new Map(S.map((M, P) => [
-          P,
+        elasticities: new Map(w.map(($, C) => [
+          C,
           d
         ])),
-        poissonsRatios: new Map(S.map((M, P) => [
-          P,
+        poissonsRatios: new Map(w.map(($, C) => [
+          C,
           a
         ])),
-        thicknesses: new Map(S.map((M, P) => [
-          P,
-          n
+        thicknesses: new Map(w.map(($, C) => [
+          C,
+          o
         ])),
-        shearModuli: new Map(S.map((M, P) => [
-          P,
+        shearModuli: new Map(w.map(($, C) => [
+          C,
           f
         ])),
-        densities: new Map(S.map((M, P) => [
-          P,
+        densities: new Map(w.map(($, C) => [
+          C,
           24 / 9.80665
         ]))
       };
       e.elementInputs && (e.elementInputs.val = k);
       try {
-        const M = Ct(m, S, {
-          supports: w,
+        const $ = kt(m, w, {
+          supports: E,
           loads: y
         }, k);
-        if (M && e.deformOutputs) {
-          e.deformOutputs.val = M;
-          const P = Io(m, S, k, M);
-          e.analyzeOutputs && (e.analyzeOutputs.val = P);
-          const B = s * p + Math.floor(l / 2), x = M.deformations.get(B), u = x ? x[0] : 0;
+        if ($ && e.deformOutputs) {
+          e.deformOutputs.val = $;
+          const C = gn(m, w, k, $);
+          e.analyzeOutputs && (e.analyzeOutputs.val = C);
+          const B = s * p + Math.floor(l / 2), x = $.deformations.get(B), u = x ? x[0] : 0;
           console.log(`Muro Q4: Ux=${u.toExponential(4)} m | OS:4.602e-5 | SAP:4.629e-5 | ETABS:4.582e-5`);
         }
-      } catch (M) {
-        console.warn("MuroQ4:", M.message);
+      } catch ($) {
+        console.warn("MuroQ4:", $.message);
       }
-      setTimeout(() => It(), 50), Ze();
+      setTimeout(() => wt(), 50), Ze();
     }
     function Ys() {
       var _a2, _b, _c, _d, _e2, _f, _g, _h;
-      const t = ((_a2 = Q.L) == null ? void 0 : _a2.val) ?? 6, o = ((_b = Q.h) == null ? void 0 : _b.val) ?? 0.5, n = ((_c = Q.t) == null ? void 0 : _c.val) ?? 0.2, l = Math.round(((_d = Q.nx) == null ? void 0 : _d.val) ?? 12), s = Math.round(((_e2 = Q.ny) == null ? void 0 : _e2.val) ?? 4), d = ((_f = Q.E) == null ? void 0 : _f.val) ?? 25e6, a = ((_g = Q.nu) == null ? void 0 : _g.val) ?? 0.2, r = ((_h = Q.P) == null ? void 0 : _h.val) ?? 50, f = d / (2 * (1 + a)), i = t / l, c = o / s, m = [], S = [], w = /* @__PURE__ */ new Map(), y = /* @__PURE__ */ new Map();
-      for (let k = 0; k <= s; k++) for (let M = 0; M <= l; M++) m.push([
-        M * i,
+      const t = ((_a2 = Z.L) == null ? void 0 : _a2.val) ?? 6, n = ((_b = Z.h) == null ? void 0 : _b.val) ?? 0.5, o = ((_c = Z.t) == null ? void 0 : _c.val) ?? 0.2, l = Math.round(((_d = Z.nx) == null ? void 0 : _d.val) ?? 12), s = Math.round(((_e2 = Z.ny) == null ? void 0 : _e2.val) ?? 4), d = ((_f = Z.E) == null ? void 0 : _f.val) ?? 25e6, a = ((_g = Z.nu) == null ? void 0 : _g.val) ?? 0.2, r = ((_h = Z.P) == null ? void 0 : _h.val) ?? 50, f = d / (2 * (1 + a)), i = t / l, c = n / s, m = [], w = [], E = /* @__PURE__ */ new Map(), y = /* @__PURE__ */ new Map();
+      for (let k = 0; k <= s; k++) for (let $ = 0; $ <= l; $++) m.push([
+        $ * i,
         0,
         k * c
       ]);
       const p = l + 1;
-      for (let k = 0; k < s; k++) for (let M = 0; M < l; M++) S.push([
-        k * p + M,
-        k * p + M + 1,
-        (k + 1) * p + M + 1,
-        (k + 1) * p + M
+      for (let k = 0; k < s; k++) for (let $ = 0; $ < l; $++) w.push([
+        k * p + $,
+        k * p + $ + 1,
+        (k + 1) * p + $ + 1,
+        (k + 1) * p + $
       ]);
-      for (let k = 0; k <= s; k++) w.set(k * p, [
+      for (let k = 0; k <= s; k++) E.set(k * p, [
         true,
         true,
         true,
@@ -15872,57 +15950,135 @@ ${i.join(", ")}`);
         0,
         0,
         0
-      ]), e.nodes.val = m, e.elements.val = S, e.nodeInputs && (e.nodeInputs.val = {
-        supports: w,
+      ]), e.nodes.val = m, e.elements.val = w, e.nodeInputs && (e.nodeInputs.val = {
+        supports: E,
         loads: y
       });
       const T = {
-        elasticities: new Map(S.map((k, M) => [
-          M,
+        elasticities: new Map(w.map((k, $) => [
+          $,
           d
         ])),
-        poissonsRatios: new Map(S.map((k, M) => [
-          M,
+        poissonsRatios: new Map(w.map((k, $) => [
+          $,
           a
         ])),
-        thicknesses: new Map(S.map((k, M) => [
-          M,
-          n
+        thicknesses: new Map(w.map((k, $) => [
+          $,
+          o
         ])),
-        shearModuli: new Map(S.map((k, M) => [
-          M,
+        shearModuli: new Map(w.map((k, $) => [
+          $,
           f
         ])),
-        densities: new Map(S.map((k, M) => [
-          M,
+        densities: new Map(w.map((k, $) => [
+          $,
           24 / 9.80665
         ]))
       };
       e.elementInputs && (e.elementInputs.val = T);
       try {
-        const k = Ct(m, S, {
-          supports: w,
+        const k = kt(m, w, {
+          supports: E,
           loads: y
         }, T);
         if (k && e.deformOutputs) {
           e.deformOutputs.val = k;
-          const M = Io(m, S, T, k);
-          e.analyzeOutputs && (e.analyzeOutputs.val = M);
-          const P = k.deformations.get(h), B = P ? P[2] : 0, x = n * o * o * o / 12, u = r * t * t * t / (3 * d * x);
+          const $ = gn(m, w, T, k);
+          e.analyzeOutputs && (e.analyzeOutputs.val = $);
+          const C = k.deformations.get(h), B = C ? C[2] : 0, x = o * n * n * n / 12, u = r * t * t * t / (3 * d * x);
           console.log(`Viga Q4: Uz_tip=${B.toExponential(4)} | Analitico=${u.toExponential(4)} | ratio=${(Math.abs(B) / u).toFixed(4)}`);
         }
       } catch (k) {
         console.warn("VigaQ4:", k.message);
       }
-      setTimeout(() => It(), 50), Ze();
+      setTimeout(() => wt(), 50), Ze();
     }
-    function qa() {
+    function Js() {
+      var _a2, _b, _c, _d, _e2, _f, _g, _h;
+      const t = ((_a2 = Z.Lx) == null ? void 0 : _a2.val) ?? 4, n = ((_b = Z.Ly) == null ? void 0 : _b.val) ?? 2, o = ((_c = Z.t) == null ? void 0 : _c.val) ?? 0.15, l = Math.round(((_d = Z.nx) == null ? void 0 : _d.val) ?? 8), s = Math.round(((_e2 = Z.ny) == null ? void 0 : _e2.val) ?? 4), d = ((_f = Z.E) == null ? void 0 : _f.val) ?? 25e6, a = ((_g = Z.nu) == null ? void 0 : _g.val) ?? 0.2, r = ((_h = Z.P) == null ? void 0 : _h.val) ?? 20, f = d / (2 * (1 + a)), i = t / l, c = n / s, m = [], w = [], E = /* @__PURE__ */ new Map(), y = /* @__PURE__ */ new Map();
+      for (let $ = 0; $ <= s; $++) for (let C = 0; C <= l; C++) m.push([
+        C * i,
+        0,
+        $ * c
+      ]);
+      const p = l + 1;
+      for (let $ = 0; $ < s; $++) for (let C = 0; C < l; C++) w.push([
+        $ * p + C,
+        $ * p + C + 1,
+        ($ + 1) * p + C + 1,
+        ($ + 1) * p + C
+      ]);
+      for (let $ = 0; $ <= s; $++) E.set($ * p, [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]);
+      const h = [];
+      for (let $ = 0; $ <= s; $++) h.push($ * p + l);
+      const T = r / h.length;
+      for (const $ of h) y.set($, [
+        0,
+        -T,
+        0,
+        0,
+        0,
+        0
+      ]);
+      e.nodes.val = m, e.elements.val = w, e.nodeInputs && (e.nodeInputs.val = {
+        supports: E,
+        loads: y
+      });
+      const k = {
+        elasticities: new Map(w.map(($, C) => [
+          C,
+          d
+        ])),
+        poissonsRatios: new Map(w.map(($, C) => [
+          C,
+          a
+        ])),
+        thicknesses: new Map(w.map(($, C) => [
+          C,
+          o
+        ])),
+        shearModuli: new Map(w.map(($, C) => [
+          C,
+          f
+        ])),
+        densities: new Map(w.map(($, C) => [
+          C,
+          24 / 9.80665
+        ]))
+      };
+      e.elementInputs && (e.elementInputs.val = k);
+      try {
+        const $ = kt(m, w, {
+          supports: E,
+          loads: y
+        }, k);
+        if ($ && e.deformOutputs) {
+          e.deformOutputs.val = $;
+          const C = gn(m, w, k, $);
+          e.analyzeOutputs && (e.analyzeOutputs.val = C);
+          const B = (s / 2 | 0) * p + l, x = $.deformations.get(B), u = x ? x[1] : 0;
+          console.log(`Placa XY Q4: Uy_tip=${u.toExponential(4)} m`);
+        }
+      } catch ($) {
+        console.warn("PlacaXY:", $.message);
+      }
+      setTimeout(() => wt(), 50), Ze();
+    }
+    function _a() {
       var _a2, _b;
       (_a2 = document.getElementById("fem-log-panel")) == null ? void 0 : _a2.remove();
       const t = window.__femLog || [
         "<i>No hay log. Ejecuta un analisis primero.</i>"
-      ], o = document.createElement("div");
-      o.id = "fem-log-panel", o.style.cssText = "position:fixed;top:60px;right:10px;width:360px;max-height:500px;overflow-y:auto;background:var(--cad-bg);color:var(--cad-text);border:1px solid var(--cad-border);border-radius:8px;padding:10px;z-index:10001;font-family:'Segoe UI',system-ui,sans-serif;font-size:12px;line-height:1.6;box-shadow:0 4px 20px var(--cad-shadow);", o.innerHTML = `
+      ], n = document.createElement("div");
+      n.id = "fem-log-panel", n.style.cssText = "position:fixed;top:60px;right:10px;width:360px;max-height:500px;overflow-y:auto;background:var(--cad-bg);color:var(--cad-text);border:1px solid var(--cad-border);border-radius:8px;padding:10px;z-index:10001;font-family:'Segoe UI',system-ui,sans-serif;font-size:12px;line-height:1.6;box-shadow:0 4px 20px var(--cad-shadow);", n.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <span style="font-size:14px;font-weight:bold;color:var(--cad-heading)">\u{1F4CB} Solver Log</span>
         <button id="fem-log-close" style="background:var(--cad-btn-bg);color:var(--cad-btn-text);border:1px solid var(--cad-btn-border);border-radius:3px;padding:2px 8px;cursor:pointer;font-size:11px;">\u2715</button>
@@ -15930,9 +16086,9 @@ ${i.join(", ")}`);
       <div style="font-family:'Segoe UI',system-ui,sans-serif;font-size:12px;line-height:1.7;">
         ${t.join("<br>")}
       </div>
-    `, document.body.appendChild(o), (_b = o.querySelector("#fem-log-close")) == null ? void 0 : _b.addEventListener("click", () => o.remove());
+    `, document.body.appendChild(n), (_b = n.querySelector("#fem-log-close")) == null ? void 0 : _b.addEventListener("click", () => n.remove());
     }
-    function _a() {
+    function Da() {
       var _a2, _b, _c;
       (_a2 = document.getElementById("pushover-panel")) == null ? void 0 : _a2.remove();
       const t = document.createElement("div");
@@ -15957,19 +16113,19 @@ ${i.join(", ")}`);
       <div id="pushover-status" style="margin-top:6px;height:16px;font-size:11px;color:var(--cad-info);"></div>
       <canvas id="pushover-canvas" width="400" height="280" style="width:100%;margin-top:6px;background:#111;border:1px solid var(--cad-border);border-radius:4px;"></canvas>
     `, document.body.appendChild(t), (_b = t.querySelector("#pushover-close")) == null ? void 0 : _b.addEventListener("click", () => t.remove()), (_c = t.querySelector("#pushover-run")) == null ? void 0 : _c.addEventListener("click", async () => {
-        const o = (h) => {
+        const n = (h) => {
           var _a3;
           return parseFloat(((_a3 = t.querySelector(`#${h}`)) == null ? void 0 : _a3.value) || "0");
-        }, n = o("po-colB"), l = o("po-colH"), s = o("po-fc") * 1e3, d = o("po-fy") * 1e3, a = o("po-H"), r = o("po-L"), f = o("po-As") * 1e-4, i = o("po-nbar"), c = o("po-drift") / 100, m = o("po-ncycles"), S = t.querySelector("#pushover-status");
-        S.textContent = "Generando historia de desplazamientos...";
-        const w = [], y = c * a, p = 40;
+        }, o = n("po-colB"), l = n("po-colH"), s = n("po-fc") * 1e3, d = n("po-fy") * 1e3, a = n("po-H"), r = n("po-L"), f = n("po-As") * 1e-4, i = n("po-nbar"), c = n("po-drift") / 100, m = n("po-ncycles"), w = t.querySelector("#pushover-status");
+        w.textContent = "Generando historia de desplazamientos...";
+        const E = [], y = c * a, p = 40;
         for (let h = 1; h <= m; h++) {
           const T = y * h / m;
-          for (let k = 0; k <= p; k++) w.push(T * Math.sin(2 * Math.PI * k / p));
+          for (let k = 0; k <= p; k++) E.push(T * Math.sin(2 * Math.PI * k / p));
         }
-        S.textContent = `Resolviendo pushover (${w.length} pasos)...`;
+        w.textContent = `Resolviendo pushover (${E.length} pasos)...`;
         try {
-          const { cyclicPushover: h } = await Qs(async () => {
+          const { cyclicPushover: h } = await ea(async () => {
             const { cyclicPushover: k } = await import("./cyclicPushoverCpp-C_AWr1zl.js").then(async (m2) => {
               await m2.__tla;
               return m2;
@@ -15981,7 +16137,7 @@ ${i.join(", ")}`);
             colHeight: a,
             beamLength: r,
             col: {
-              b: n,
+              b: o,
               h: l,
               fpc: -s,
               Fy_rebar: d,
@@ -16000,17 +16156,17 @@ ${i.join(", ")}`);
               cover: 0.03,
               n_rebar: i
             },
-            dispHistory: w
+            dispHistory: E
           });
-          S.textContent = `Completado: ${T.nSteps} pasos`, Da(t.querySelector("#pushover-canvas"), T.displacements, T.forces, `Pushover: ${n * 100}x${l * 100}cm, f'c=${s / 1e3}MPa, Fy=${d / 1e3}MPa`);
+          w.textContent = `Completado: ${T.nSteps} pasos`, Ba(t.querySelector("#pushover-canvas"), T.displacements, T.forces, `Pushover: ${o * 100}x${l * 100}cm, f'c=${s / 1e3}MPa, Fy=${d / 1e3}MPa`);
         } catch (h) {
-          S.textContent = `Error: ${h.message}`, console.error("Pushover failed:", h);
+          w.textContent = `Error: ${h.message}`, console.error("Pushover failed:", h);
         }
       });
     }
-    function Da(t, o, n, l) {
+    function Ba(t, n, o, l) {
       const s = t.getContext("2d");
-      if (!s || o.length === 0) return;
+      if (!s || n.length === 0) return;
       const d = t.width, a = t.height, r = {
         left: 55,
         right: 15,
@@ -16018,28 +16174,28 @@ ${i.join(", ")}`);
         bottom: 35
       }, f = d - r.left - r.right, i = a - r.top - r.bottom;
       s.fillStyle = "#111118", s.fillRect(0, 0, d, a);
-      let c = Math.min(...o), m = Math.max(...o), S = Math.min(...n), w = Math.max(...n);
-      c === m && (c -= 0.01, m += 0.01), S === w && (S -= 1, w += 1);
-      const y = m - c, p = w - S, h = (P) => r.left + (P - c) / y * f, T = (P) => r.top + i - (P - S) / p * i;
-      s.strokeStyle = "#333", s.lineWidth = 0.5, c < 0 && m > 0 && (s.strokeStyle = "#555", s.beginPath(), s.moveTo(h(0), r.top), s.lineTo(h(0), r.top + i), s.stroke()), S < 0 && w > 0 && (s.beginPath(), s.moveTo(r.left, T(0)), s.lineTo(r.left + f, T(0)), s.stroke()), s.strokeStyle = "#ff4444", s.lineWidth = 1.5, s.beginPath(), s.moveTo(h(o[0]), T(n[0]));
-      for (let P = 1; P < o.length; P++) s.lineTo(h(o[P]), T(n[P]));
+      let c = Math.min(...n), m = Math.max(...n), w = Math.min(...o), E = Math.max(...o);
+      c === m && (c -= 0.01, m += 0.01), w === E && (w -= 1, E += 1);
+      const y = m - c, p = E - w, h = (C) => r.left + (C - c) / y * f, T = (C) => r.top + i - (C - w) / p * i;
+      s.strokeStyle = "#333", s.lineWidth = 0.5, c < 0 && m > 0 && (s.strokeStyle = "#555", s.beginPath(), s.moveTo(h(0), r.top), s.lineTo(h(0), r.top + i), s.stroke()), w < 0 && E > 0 && (s.beginPath(), s.moveTo(r.left, T(0)), s.lineTo(r.left + f, T(0)), s.stroke()), s.strokeStyle = "#ff4444", s.lineWidth = 1.5, s.beginPath(), s.moveTo(h(n[0]), T(o[0]));
+      for (let C = 1; C < n.length; C++) s.lineTo(h(n[C]), T(o[C]));
       s.stroke(), s.fillStyle = "#aaa", s.font = "11px monospace", s.textAlign = "center", s.fillText("Desplazamiento (m)", r.left + f / 2, a - 5), s.save(), s.translate(12, r.top + i / 2), s.rotate(-Math.PI / 2), s.fillText("Fuerza (kN)", 0, 0), s.restore(), s.fillStyle = "#ee9b00", s.font = "bold 11px monospace", s.textAlign = "center", s.fillText(l, d / 2, 15), s.fillStyle = "#888", s.font = "9px monospace", s.textAlign = "center";
       const k = y / 5;
-      for (let P = 0; P <= 5; P++) {
-        const B = c + k * P;
+      for (let C = 0; C <= 5; C++) {
+        const B = c + k * C;
         s.fillText((B * 1e3).toFixed(1), h(B), a - r.bottom + 15);
       }
       s.textAlign = "right";
-      const M = p / 5;
-      for (let P = 0; P <= 5; P++) {
-        const B = S + M * P;
+      const $ = p / 5;
+      for (let C = 0; C <= 5; C++) {
+        const B = w + $ * C;
         s.fillText(B.toFixed(0), r.left - 5, T(B) + 3);
       }
     }
-    let en = null;
-    function Ba() {
-      if (en) {
-        en.remove(), en = null;
+    let eo = null;
+    function Ha() {
+      if (eo) {
+        eo.remove(), eo = null;
         return;
       }
       const t = document.createElement("div");
@@ -16062,87 +16218,87 @@ ${i.join(", ")}`);
       </div>
       <canvas id="nl-canvas" width="370" height="250" style="background:#0a0a1a;border:1px solid #333;border-radius:4px;width:100%;"></canvas>
       <div id="nl-info" style="margin-top:6px;color:#888;font-size:10px;"></div>
-    `, document.body.appendChild(t), en = t, t.querySelector("#nl-close").addEventListener("click", () => {
-        t.remove(), en = null;
-      }), t.querySelector("#nl-test").addEventListener("click", () => Ha(t));
+    `, document.body.appendChild(t), eo = t, t.querySelector("#nl-close").addEventListener("click", () => {
+        t.remove(), eo = null;
+      }), t.querySelector("#nl-test").addEventListener("click", () => ja(t));
     }
-    function Ha(t) {
-      const o = parseFloat(t.querySelector("#nl-fy").value), n = parseFloat(t.querySelector("#nl-e0").value), l = parseFloat(t.querySelector("#nl-b").value), s = parseFloat(t.querySelector("#nl-r0").value), d = parseFloat(t.querySelector("#nl-amp").value), a = parseInt(t.querySelector("#nl-cycles").value), r = 100, f = [];
+    function ja(t) {
+      const n = parseFloat(t.querySelector("#nl-fy").value), o = parseFloat(t.querySelector("#nl-e0").value), l = parseFloat(t.querySelector("#nl-b").value), s = parseFloat(t.querySelector("#nl-r0").value), d = parseFloat(t.querySelector("#nl-amp").value), a = parseInt(t.querySelector("#nl-cycles").value), r = 100, f = [];
       for (let V = 0; V < a; V++) {
         const ae = d * (1 + V * 0.5);
-        for (let Z = 0; Z < r; Z++) {
-          const K = Z / r * 2 * Math.PI;
+        for (let Q = 0; Q < r; Q++) {
+          const K = Q / r * 2 * Math.PI;
           f.push(ae * Math.sin(K));
         }
       }
-      const i = o / n, c = l * n;
-      let m = 0, S = 0, w = -i, y = i, p = 0, h = 0, T = 0, k = 0, M = 0, P = 0;
+      const i = n / o, c = l * o;
+      let m = 0, w = 0, E = -i, y = i, p = 0, h = 0, T = 0, k = 0, $ = 0, C = 0;
       const B = [];
       for (const V of f) {
-        let ae = w, Z = y, K = p, de = h, re = T, Ie = k, Pe = M, _ = P, fe;
-        const ne = V - m;
-        if (Math.abs(ne) < 1e-20) {
-          B.push(S);
+        let ae = E, Q = y, K = p, de = h, re = T, Ie = k, Re = $, _ = C, fe;
+        const oe = V - m;
+        if (Math.abs(oe) < 1e-20) {
+          B.push(w);
           continue;
         }
-        if ((_ === 0 || _ === 3) && (ne < 0 ? (_ = 2, de = -i, re = -o, K = de, Ie = 0, Pe = 0) : (_ = 1, de = i, re = o, K = de, Ie = 0, Pe = 0)), _ === 2 && ne > 0) {
-          _ = 1, Ie = m, Pe = S, m < ae && (ae = m);
-          const Se = (Z - ae) / (2 * 1 * i), je = 1 + 0 * Math.pow(Se, 0.8);
-          de = (o * je - c * i * je - Pe + n * Ie) / (n - c), re = o * je + c * (de - i * je), K = Z;
-        } else if (_ === 1 && ne < 0) {
-          _ = 2, Ie = m, Pe = S, m > Z && (Z = m);
-          const Se = (Z - ae) / (2 * 1 * i), je = 1 + 0 * Math.pow(Se, 0.8);
-          de = (-o * je + c * i * je - Pe + n * Ie) / (n - c), re = -o * je + c * (de + i * je), K = ae;
+        if ((_ === 0 || _ === 3) && (oe < 0 ? (_ = 2, de = -i, re = -n, K = de, Ie = 0, Re = 0) : (_ = 1, de = i, re = n, K = de, Ie = 0, Re = 0)), _ === 2 && oe > 0) {
+          _ = 1, Ie = m, Re = w, m < ae && (ae = m);
+          const Se = (Q - ae) / (2 * 1 * i), je = 1 + 0 * Math.pow(Se, 0.8);
+          de = (n * je - c * i * je - Re + o * Ie) / (o - c), re = n * je + c * (de - i * je), K = Q;
+        } else if (_ === 1 && oe < 0) {
+          _ = 2, Ie = m, Re = w, m > Q && (Q = m);
+          const Se = (Q - ae) / (2 * 1 * i), je = 1 + 0 * Math.pow(Se, 0.8);
+          de = (-n * je + c * i * je - Re + o * Ie) / (o - c), re = -n * je + c * (de + i * je), K = ae;
         }
         const pe = Math.abs((K - de) / i);
         let ee = s - 0.925 * pe / (0.15 + pe);
         ee < 0.1 && (ee = 0.1);
         const ue = (V - Ie) / (de - Ie), we = 1 + Math.pow(Math.abs(ue), ee), se = Math.pow(we, 1 / ee);
-        fe = l * ue + (1 - l) * ue / se, fe = fe * (re - Pe) + Pe, B.push(fe), m = V, S = fe, w = ae, y = Z, p = K, h = de, T = re, k = Ie, M = Pe, P = _;
+        fe = l * ue + (1 - l) * ue / se, fe = fe * (re - Re) + Re, B.push(fe), m = V, w = fe, E = ae, y = Q, p = K, h = de, T = re, k = Ie, $ = Re, C = _;
       }
       const x = t.querySelector("#nl-canvas"), u = x.getContext("2d"), I = x.width, L = x.height;
       u.clearRect(0, 0, I, L);
-      const R = Math.max(...f.map(Math.abs)), j = Math.max(...B.map(Math.abs)), g = (I - 40) / (2 * R), E = (L - 40) / (2 * j), v = I / 2, C = L / 2;
-      u.strokeStyle = "#444", u.lineWidth = 1, u.beginPath(), u.moveTo(20, C), u.lineTo(I - 20, C), u.stroke(), u.beginPath(), u.moveTo(v, 20), u.lineTo(v, L - 20), u.stroke(), u.fillStyle = "#888", u.font = "10px monospace", u.textAlign = "center", u.fillText("\u03B5 (strain)", I - 40, C - 5), u.fillText("\u03C3 (stress)", v + 30, 15), u.fillText(`\xB1${(R * 100).toFixed(1)}%`, I - 30, C + 12), u.fillText(`\xB1${(j / 1e3).toFixed(0)} MPa`, v + 40, 30), u.strokeStyle = "#00ccff", u.lineWidth = 1.5, u.beginPath();
+      const R = Math.max(...f.map(Math.abs)), j = Math.max(...B.map(Math.abs)), g = (I - 40) / (2 * R), S = (L - 40) / (2 * j), v = I / 2, F = L / 2;
+      u.strokeStyle = "#444", u.lineWidth = 1, u.beginPath(), u.moveTo(20, F), u.lineTo(I - 20, F), u.stroke(), u.beginPath(), u.moveTo(v, 20), u.lineTo(v, L - 20), u.stroke(), u.fillStyle = "#888", u.font = "10px monospace", u.textAlign = "center", u.fillText("\u03B5 (strain)", I - 40, F - 5), u.fillText("\u03C3 (stress)", v + 30, 15), u.fillText(`\xB1${(R * 100).toFixed(1)}%`, I - 30, F + 12), u.fillText(`\xB1${(j / 1e3).toFixed(0)} MPa`, v + 40, 30), u.strokeStyle = "#00ccff", u.lineWidth = 1.5, u.beginPath();
       for (let V = 0; V < f.length; V++) {
-        const ae = v + f[V] * g, Z = C - B[V] * E;
-        V === 0 ? u.moveTo(ae, Z) : u.lineTo(ae, Z);
+        const ae = v + f[V] * g, Q = F - B[V] * S;
+        V === 0 ? u.moveTo(ae, Q) : u.lineTo(ae, Q);
       }
       u.stroke(), u.strokeStyle = "#ff333366", u.lineWidth = 1, u.setLineDash([
         4,
         4
-      ]), u.beginPath(), u.moveTo(20, C - o * E), u.lineTo(I - 20, C - o * E), u.stroke(), u.beginPath(), u.moveTo(20, C + o * E), u.lineTo(I - 20, C + o * E), u.stroke(), u.setLineDash([]), u.fillStyle = "#ff6666", u.font = "9px monospace", u.fillText(`Fy = ${(o / 1e3).toFixed(0)} MPa`, I - 50, C - o * E - 5);
+      ]), u.beginPath(), u.moveTo(20, F - n * S), u.lineTo(I - 20, F - n * S), u.stroke(), u.beginPath(), u.moveTo(20, F + n * S), u.lineTo(I - 20, F + n * S), u.stroke(), u.setLineDash([]), u.fillStyle = "#ff6666", u.font = "9px monospace", u.fillText(`Fy = ${(n / 1e3).toFixed(0)} MPa`, I - 50, F - n * S - 5);
       const X = t.querySelector("#nl-info");
-      X.textContent = `Steel02: Fy=${(o / 1e3).toFixed(0)} MPa, E\u2080=${(n / 1e6).toFixed(0)} GPa, b=${l}, R\u2080=${s} \u2014 ${a} ciclos, amp=${(d * 100).toFixed(1)}%`;
+      X.textContent = `Steel02: Fy=${(n / 1e3).toFixed(0)} MPa, E\u2080=${(o / 1e6).toFixed(0)} GPa, b=${l}, R\u2080=${s} \u2014 ${a} ciclos, amp=${(d * 100).toFixed(1)}%`;
     }
-    function ja() {
+    function Wa() {
       var _a2, _b, _c, _d;
       const t = document.querySelector(".rpt-overlay");
       if (t) {
         t.remove();
         return;
       }
-      const o = e.nodes.val, n = e.elements.val, l = ((_a2 = e.elementInputs) == null ? void 0 : _a2.val) || {}, s = ((_b = e.nodeInputs) == null ? void 0 : _b.val) || {}, d = (_c = e.deformOutputs) == null ? void 0 : _c.val;
-      if ((_d = e.analyzeOutputs) == null ? void 0 : _d.val, !o.length || !n.length) {
+      const n = e.nodes.val, o = e.elements.val, l = ((_a2 = e.elementInputs) == null ? void 0 : _a2.val) || {}, s = ((_b = e.nodeInputs) == null ? void 0 : _b.val) || {}, d = (_c = e.deformOutputs) == null ? void 0 : _c.val;
+      if ((_d = e.analyzeOutputs) == null ? void 0 : _d.val, !n.length || !o.length) {
         alert("No hay modelo cargado");
         return;
       }
-      const a = fl({
-        nodes: o,
-        elements: n,
+      const a = ul({
+        nodes: n,
+        elements: o,
         nodeInputs: s,
         elementInputs: l,
         deformOutputs: d
       });
       document.body.appendChild(a);
     }
-    let Bo = null;
-    function Wa(t) {
-      Bo && Bo.remove();
-      const o = document.createElement("div");
-      o.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1a2e;color:#eee;border:2px solid #00ccff;border-radius:8px;padding:16px;z-index:10001;width:320px;font-family:monospace;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,0.5);";
-      const n = mn(), l = bn(), s = Object.entries(n).map(([i, c]) => `<option value="${c}">${i}</option>`).join(""), d = Object.entries(l).map(([i, c]) => `<option value="${c}">${i}</option>`).join("");
-      o.innerHTML = `
+    let Bn = null;
+    function Ga(t) {
+      Bn && Bn.remove();
+      const n = document.createElement("div");
+      n.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1a2e;color:#eee;border:2px solid #00ccff;border-radius:8px;padding:16px;z-index:10001;width:320px;font-family:monospace;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,0.5);";
+      const o = mo(), l = bo(), s = Object.entries(o).map(([i, c]) => `<option value="${c}">${i}</option>`).join(""), d = Object.entries(l).map(([i, c]) => `<option value="${c}">${i}</option>`).join("");
+      n.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <b style="color:#00ccff;">Asignar Secci\xF3n (${t.length} elem.)</b>
         <button id="asgn-close" style="background:none;border:none;color:#888;cursor:pointer;font-size:18px;">\u2715</button>
@@ -16218,8 +16374,8 @@ ${i.join(", ")}`);
         <button id="asgn-apply" style="flex:1;padding:8px;background:#00aa66;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">\u2713 Aplicar</button>
         <button id="asgn-remove" style="flex:1;padding:8px;background:#996600;color:#fff;border:none;border-radius:4px;cursor:pointer;">\u21BA Quitar Override</button>
       </div>
-    `, document.body.appendChild(o), Bo = o;
-      const a = o.querySelector("#asgn-type"), r = o.querySelector("#asgn-params");
+    `, document.body.appendChild(n), Bn = n;
+      const a = n.querySelector("#asgn-type"), r = n.querySelector("#asgn-params");
       function f() {
         const i = a.value;
         let c = "";
@@ -16235,39 +16391,39 @@ ${i.join(", ")}`);
           <label>t(m):<input id="ap-t" type="number" value="0.008" step="0.001" style="width:60px;background:#333;color:#fff;border:1px solid #555;padding:2px;"></label>
         </div>`), r.innerHTML = c;
       }
-      a.addEventListener("change", f), f(), o.querySelector("#asgn-close").addEventListener("click", () => {
-        o.remove(), Bo = null;
-      }), o.querySelector("#asgn-apply").addEventListener("click", () => {
+      a.addEventListener("change", f), f(), n.querySelector("#asgn-close").addEventListener("click", () => {
+        n.remove(), Bn = null;
+      }), n.querySelector("#asgn-apply").addEventListener("click", () => {
         var _a2, _b, _c, _d, _e2, _f, _g, _h;
         const i = a.value, c = {
           secType: i
         };
-        i === "rect" ? (c.b = parseFloat(o.querySelector("#ap-b").value), c.h = parseFloat(o.querySelector("#ap-h").value), c.material = 0) : i === "circ" ? (c.b = parseFloat(o.querySelector("#ap-d").value), c.material = 0) : i === "W" || i === "HSS" ? (c.profileIdx = parseInt(o.querySelector("#ap-profile").value), c.material = 1) : i === "I-param" ? (c.bf = parseFloat(o.querySelector("#ap-bf").value), c.hf = parseFloat(o.querySelector("#ap-hf").value), c.tf = parseFloat(o.querySelector("#ap-tf").value), c.tw = parseFloat(o.querySelector("#ap-tw").value), c.material = 1) : i === "tubular" && (c.bc = parseFloat(o.querySelector("#ap-bc").value), c.hc = parseFloat(o.querySelector("#ap-hc").value), c.t = parseFloat(o.querySelector("#ap-t").value), c.material = 1);
-        const m = new Array(12).fill(false), S = new Array(12).fill(0);
-        o.querySelectorAll("input[data-asgn-rel]").forEach((w) => {
-          m[parseInt(w.dataset.asgnRel)] = w.checked;
-        }), o.querySelectorAll("input[data-asgn-spr]").forEach((w) => {
-          const y = parseFloat(w.value);
-          y > 0 && (S[parseInt(w.dataset.asgnSpr)] = y);
-        }), c.releases12 = m, c.springs12 = S, c.releaseRotStart = m[4] || m[5], c.releaseRotEnd = m[10] || m[11], c.releaseAxial = m[0], c.releaseTorsion = m[3], c.modI = parseFloat((_a2 = o.querySelector("#asgn-mod-i")) == null ? void 0 : _a2.value) || 1, c.modA = parseFloat((_b = o.querySelector("#asgn-mod-a")) == null ? void 0 : _b.value) || 1, c.modJ = parseFloat((_c = o.querySelector("#asgn-mod-j")) == null ? void 0 : _c.value) || 1, c.modAs2 = parseFloat((_d = o.querySelector("#asgn-mod-as2")) == null ? void 0 : _d.value) ?? 1, c.modAs3 = parseFloat((_e2 = o.querySelector("#asgn-mod-as3")) == null ? void 0 : _e2.value) ?? 1, c.modI3 = parseFloat((_f = o.querySelector("#asgn-mod-i3")) == null ? void 0 : _f.value) || 1, c.modMass = parseFloat((_g = o.querySelector("#asgn-mod-mass")) == null ? void 0 : _g.value) || 1, c.modWeight = parseFloat((_h = o.querySelector("#asgn-mod-weight")) == null ? void 0 : _h.value) || 1, t.forEach((w) => ye.set(w, {
+        i === "rect" ? (c.b = parseFloat(n.querySelector("#ap-b").value), c.h = parseFloat(n.querySelector("#ap-h").value), c.material = 0) : i === "circ" ? (c.b = parseFloat(n.querySelector("#ap-d").value), c.material = 0) : i === "W" || i === "HSS" ? (c.profileIdx = parseInt(n.querySelector("#ap-profile").value), c.material = 1) : i === "I-param" ? (c.bf = parseFloat(n.querySelector("#ap-bf").value), c.hf = parseFloat(n.querySelector("#ap-hf").value), c.tf = parseFloat(n.querySelector("#ap-tf").value), c.tw = parseFloat(n.querySelector("#ap-tw").value), c.material = 1) : i === "tubular" && (c.bc = parseFloat(n.querySelector("#ap-bc").value), c.hc = parseFloat(n.querySelector("#ap-hc").value), c.t = parseFloat(n.querySelector("#ap-t").value), c.material = 1);
+        const m = new Array(12).fill(false), w = new Array(12).fill(0);
+        n.querySelectorAll("input[data-asgn-rel]").forEach((E) => {
+          m[parseInt(E.dataset.asgnRel)] = E.checked;
+        }), n.querySelectorAll("input[data-asgn-spr]").forEach((E) => {
+          const y = parseFloat(E.value);
+          y > 0 && (w[parseInt(E.dataset.asgnSpr)] = y);
+        }), c.releases12 = m, c.springs12 = w, c.releaseRotStart = m[4] || m[5], c.releaseRotEnd = m[10] || m[11], c.releaseAxial = m[0], c.releaseTorsion = m[3], c.modI = parseFloat((_a2 = n.querySelector("#asgn-mod-i")) == null ? void 0 : _a2.value) || 1, c.modA = parseFloat((_b = n.querySelector("#asgn-mod-a")) == null ? void 0 : _b.value) || 1, c.modJ = parseFloat((_c = n.querySelector("#asgn-mod-j")) == null ? void 0 : _c.value) || 1, c.modAs2 = parseFloat((_d = n.querySelector("#asgn-mod-as2")) == null ? void 0 : _d.value) ?? 1, c.modAs3 = parseFloat((_e2 = n.querySelector("#asgn-mod-as3")) == null ? void 0 : _e2.value) ?? 1, c.modI3 = parseFloat((_f = n.querySelector("#asgn-mod-i3")) == null ? void 0 : _f.value) || 1, c.modMass = parseFloat((_g = n.querySelector("#asgn-mod-mass")) == null ? void 0 : _g.value) || 1, c.modWeight = parseFloat((_h = n.querySelector("#asgn-mod-weight")) == null ? void 0 : _h.value) || 1, t.forEach((E) => ye.set(E, {
           ...c
-        })), o.remove(), Bo = null, xo(), e.elementInputs.val = {
+        })), n.remove(), Bn = null, vn(), e.elementInputs.val = {
           ...e.elementInputs.val
         };
-      }), o.querySelector("#asgn-remove").addEventListener("click", () => {
-        t.forEach((i) => ye.delete(i)), o.remove(), Bo = null, xo(), e.elementInputs.val = {
+      }), n.querySelector("#asgn-remove").addEventListener("click", () => {
+        t.forEach((i) => ye.delete(i)), n.remove(), Bn = null, vn(), e.elementInputs.val = {
           ...e.elementInputs.val
         };
       });
     }
-    let Ho = null;
-    function Ga(t) {
+    let Hn = null;
+    function Ya(t) {
       var _a2, _b, _c;
-      Ho && Ho.remove();
-      const o = e.nodes.val, n = e.elements.val[t];
-      if (!n || n.length !== 2) return;
-      const l = o[n[0]], s = o[n[1]], d = Math.abs(s[0] - l[0]), a = Math.abs(s[1] - l[1]), r = Math.abs(s[2] - l[2]), f = a > d && a > r, i = Math.sqrt(d * d + a * a + r * r), c = $e.get(t) ?? 0, m = (_c = (_b = (_a2 = e.elementInputs) == null ? void 0 : _a2.val) == null ? void 0 : _b.sectionShapes) == null ? void 0 : _c.get(t), S = (m == null ? void 0 : m.name) || (m ? `${m.type} ${((m.b ?? 0) * 100).toFixed(0)}x${((m.h ?? 0) * 100).toFixed(0)}` : "\u2014"), w = document.createElement("div");
-      w.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1a2e;color:#eee;border:2px solid #ff9900;border-radius:8px;padding:16px;z-index:10000;min-width:280px;font-family:monospace;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,0.5);", w.innerHTML = `
+      Hn && Hn.remove();
+      const n = e.nodes.val, o = e.elements.val[t];
+      if (!o || o.length !== 2) return;
+      const l = n[o[0]], s = n[o[1]], d = Math.abs(s[0] - l[0]), a = Math.abs(s[1] - l[1]), r = Math.abs(s[2] - l[2]), f = a > d && a > r, i = Math.sqrt(d * d + a * a + r * r), c = $e.get(t) ?? 0, m = (_c = (_b = (_a2 = e.elementInputs) == null ? void 0 : _a2.val) == null ? void 0 : _b.sectionShapes) == null ? void 0 : _c.get(t), w = (m == null ? void 0 : m.name) || (m ? `${m.type} ${((m.b ?? 0) * 100).toFixed(0)}x${((m.h ?? 0) * 100).toFixed(0)}` : "\u2014"), E = document.createElement("div");
+      E.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1a2e;color:#eee;border:2px solid #ff9900;border-radius:8px;padding:16px;z-index:10000;min-width:280px;font-family:monospace;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,0.5);", E.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <b style="color:#ff9900;">Elemento ${t}</b>
         <button id="ep-close" style="background:none;border:none;color:#888;cursor:pointer;font-size:18px;">\u2715</button>
@@ -16278,169 +16434,169 @@ ${i.join(", ")}`);
         <span style="color:#888;">L:</span> ${i.toFixed(3)} m
       </div>
       <div style="margin-bottom:8px;">
-        <span style="color:#888;">Secci\xF3n:</span> <span style="color:#00ccff;">${S}</span>
+        <span style="color:#888;">Secci\xF3n:</span> <span style="color:#00ccff;">${w}</span>
       </div>
       <div style="margin-bottom:8px;">
-        <span style="color:#888;">Nodos:</span> ${n[0]} \u2192 ${n[1]}
+        <span style="color:#888;">Nodos:</span> ${o[0]} \u2192 ${o[1]}
       </div>
       <hr style="border-color:#333;margin:12px 0;">
       <div style="display:flex;gap:8px;">
         <button id="ep-delete" style="flex:1;padding:8px;background:#cc3333;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">\u{1F5D1} Eliminar</button>
         <button id="ep-inspect" style="flex:1;padding:8px;background:#336699;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">\u{1F50D} Inspect</button>
       </div>
-    `, document.body.appendChild(w), Ho = w, w.querySelector("#ep-close").addEventListener("click", () => {
-        w.remove(), Ho = null, Ao();
-      }), w.querySelector("#ep-delete").addEventListener("click", () => {
-        U.add(t), w.remove(), Ho = null, Ao(), Re();
-      }), w.querySelector("#ep-inspect").addEventListener("click", () => {
-        w.remove(), Ho = null, qs(t);
+    `, document.body.appendChild(E), Hn = E, E.querySelector("#ep-close").addEventListener("click", () => {
+        E.remove(), Hn = null, An();
+      }), E.querySelector("#ep-delete").addEventListener("click", () => {
+        U.add(t), E.remove(), Hn = null, An(), Pe();
+      }), E.querySelector("#ep-inspect").addEventListener("click", () => {
+        E.remove(), Hn = null, qs(t);
       });
     }
     setTimeout(() => {
       const t = document.getElementById("viewer");
       if (!t) return;
-      const o = t.querySelector("canvas");
-      if (!o) return;
-      let n = null, l = null;
+      const n = t.querySelector("canvas");
+      if (!n) return;
+      let o = null, l = null;
       const s = 5;
       function d(f) {
         const i = et();
         if (!i) return null;
         const c = i.controls.object, m = new Oe(f[0], f[1], f[2]);
         m.project(c);
-        const S = o.getBoundingClientRect();
+        const w = n.getBoundingClientRect();
         return {
-          x: (m.x + 1) / 2 * S.width,
-          y: (-m.y + 1) / 2 * S.height
+          x: (m.x + 1) / 2 * w.width,
+          y: (-m.y + 1) / 2 * w.height
         };
       }
-      function a(f, i, c, m, S) {
-        const w = Math.min(f, c), y = Math.max(f, c), p = Math.min(i, m), h = Math.max(i, m), T = e.nodes.val, k = e.elements.val, M = [];
-        for (let P = 0; P < k.length; P++) {
-          const B = k[P], x = B.map((u) => d(T[u])).filter(Boolean);
-          if (x.length !== 0) if (S) x.every((I) => I.x >= w && I.x <= y && I.y >= p && I.y <= h) && M.push(P);
+      function a(f, i, c, m, w) {
+        const E = Math.min(f, c), y = Math.max(f, c), p = Math.min(i, m), h = Math.max(i, m), T = e.nodes.val, k = e.elements.val, $ = [];
+        for (let C = 0; C < k.length; C++) {
+          const B = k[C], x = B.map((u) => d(T[u])).filter(Boolean);
+          if (x.length !== 0) if (w) x.every((I) => I.x >= E && I.x <= y && I.y >= p && I.y <= h) && $.push(C);
           else {
-            if (x.some((I) => I.x >= w && I.x <= y && I.y >= p && I.y <= h)) {
-              M.push(P);
+            if (x.some((I) => I.x >= E && I.x <= y && I.y >= p && I.y <= h)) {
+              $.push(C);
               continue;
             }
             if (B.length === 2) {
               const I = x[0], L = x[1];
-              r(I.x, I.y, L.x, L.y, w, p, y, h) && M.push(P);
+              r(I.x, I.y, L.x, L.y, E, p, y, h) && $.push(C);
             }
           }
         }
-        return M;
+        return $;
       }
-      function r(f, i, c, m, S, w, y, p) {
-        const h = (k, M) => k >= S && k <= y && M >= w && M <= p;
+      function r(f, i, c, m, w, E, y, p) {
+        const h = (k, $) => k >= w && k <= y && $ >= E && $ <= p;
         if (h(f, i) || h(c, m)) return true;
-        const T = (k, M, P, B, x, u, I, L) => {
-          const R = (P - k) * (L - u) - (B - M) * (I - x);
+        const T = (k, $, C, B, x, u, I, L) => {
+          const R = (C - k) * (L - u) - (B - $) * (I - x);
           if (Math.abs(R) < 1e-10) return false;
-          const j = ((x - k) * (L - u) - (u - M) * (I - x)) / R, g = ((x - k) * (B - M) - (u - M) * (P - k)) / R;
+          const j = ((x - k) * (L - u) - (u - $) * (I - x)) / R, g = ((x - k) * (B - $) - (u - $) * (C - k)) / R;
           return j >= 0 && j <= 1 && g >= 0 && g <= 1;
         };
-        return T(f, i, c, m, S, w, y, w) || T(f, i, c, m, y, w, y, p) || T(f, i, c, m, S, p, y, p) || T(f, i, c, m, S, w, S, p);
+        return T(f, i, c, m, w, E, y, E) || T(f, i, c, m, y, E, y, p) || T(f, i, c, m, w, p, y, p) || T(f, i, c, m, w, E, w, p);
       }
-      o.addEventListener("mousedown", (f) => {
-        Yt && (n = {
+      n.addEventListener("mousedown", (f) => {
+        Yt && (o = {
           x: f.offsetX,
           y: f.offsetY
         });
-      }), o.addEventListener("mousemove", (f) => {
-        if (po) {
+      }), n.addEventListener("mousemove", (f) => {
+        if (pn) {
           const c = et();
           if (!c) return;
           const m = Fs(f.clientX, f.clientY, c.camera, c.rendererElm);
-          if (wt.track && m.snapType === "node" && m.nodeIdx !== null && m.nodeIdx !== zo && Ta(m.nodeIdx), wt.track && zo !== null && m.worldPos && m.snapType !== "node") {
-            const S = za(m.worldPos, zo);
-            S && (m.worldPos = S, m.snapType = "grid");
+          if (Et.track && m.snapType === "node" && m.nodeIdx !== null && m.nodeIdx !== zn && za(m.nodeIdx), Et.track && zn !== null && m.worldPos && m.snapType !== "node") {
+            const w = Aa(m.worldPos, zn);
+            w && (m.worldPos = w, m.snapType = "grid");
           }
-          if (zo !== null && m.worldPos) {
-            const S = e.nodes.val[zo];
-            S && Cs(f.clientX, f.clientY, new Oe(...S), m.worldPos);
+          if (zn !== null && m.worldPos) {
+            const w = e.nodes.val[zn];
+            w && Cs(f.clientX, f.clientY, new Oe(...w), m.worldPos);
           } else if (vt !== null && m.worldPos) {
-            const S = e.nodes.val[vt];
-            S && Cs(f.clientX, f.clientY, new Oe(...S), m.worldPos);
+            const w = e.nodes.val[vt];
+            w && Cs(f.clientX, f.clientY, new Oe(...w), m.worldPos);
           } else Qt && (Qt.remove(), Qt = null);
-          m.nodeIdx, Rs(m), o.style.cursor = m.snapType !== "free" ? "pointer" : "crosshair";
+          m.nodeIdx, Ps(m), n.style.cursor = m.snapType !== "free" ? "pointer" : "crosshair";
           return;
         }
-        if (!oo && !Yt) return;
-        if (Yt && n) {
-          const c = f.offsetX - n.x, m = f.offsetY - n.y;
+        if (!nn && !Yt) return;
+        if (Yt && o) {
+          const c = f.offsetX - o.x, m = f.offsetY - o.y;
           if (Math.abs(c) > s || Math.abs(m) > s) {
-            l || (l = document.createElement("div"), l.style.cssText = "position:absolute;pointer-events:none;z-index:9999;", o.parentElement.style.position = "relative", o.parentElement.appendChild(l));
-            const S = c > 0, w = Math.min(n.x, f.offsetX), y = Math.min(n.y, f.offsetY), p = Math.abs(c), h = Math.abs(m);
-            l.style.left = w + "px", l.style.top = y + "px", l.style.width = p + "px", l.style.height = h + "px", l.style.border = S ? "2px solid #3399ff" : "2px dashed #33ff33", l.style.background = S ? "rgba(51,153,255,0.1)" : "rgba(51,255,51,0.1)", o.style.cursor = "crosshair";
+            l || (l = document.createElement("div"), l.style.cssText = "position:absolute;pointer-events:none;z-index:9999;", n.parentElement.style.position = "relative", n.parentElement.appendChild(l));
+            const w = c > 0, E = Math.min(o.x, f.offsetX), y = Math.min(o.y, f.offsetY), p = Math.abs(c), h = Math.abs(m);
+            l.style.left = E + "px", l.style.top = y + "px", l.style.width = p + "px", l.style.height = h + "px", l.style.border = w ? "2px solid #3399ff" : "2px dashed #33ff33", l.style.background = w ? "rgba(51,153,255,0.1)" : "rgba(51,255,51,0.1)", n.style.cursor = "crosshair";
             return;
           }
         }
-        const i = Wn(f);
-        if (i >= 0) Os(i), o.style.cursor = "pointer";
+        const i = Wo(f);
+        if (i >= 0) Os(i), n.style.cursor = "pointer";
         else {
           if (Jt) {
             const c = et();
             c == null ? void 0 : c.scene.remove(Jt), Jt = null, c == null ? void 0 : c.render();
           }
-          o.style.cursor = Yt ? "crosshair" : "";
+          n.style.cursor = Yt ? "crosshair" : "";
         }
-      }), o.addEventListener("mouseup", (f) => {
-        if (Yt && n) {
-          const i = f.offsetX - n.x, c = f.offsetY - n.y;
+      }), n.addEventListener("mouseup", (f) => {
+        if (Yt && o) {
+          const i = f.offsetX - o.x, c = f.offsetY - o.y;
           if (Math.abs(i) > s || Math.abs(c) > s) {
-            const m = i > 0, S = a(n.x, n.y, f.offsetX, f.offsetY, m);
-            f.ctrlKey || f.metaKey || (ht.clear(), Mo()), S.forEach((y) => {
-              ht.has(y) || (ht.add(y), Bn(y));
-            }), wo();
+            const m = i > 0, w = a(o.x, o.y, f.offsetX, f.offsetY, m);
+            f.ctrlKey || f.metaKey || (ht.clear(), wn()), w.forEach((y) => {
+              ht.has(y) || (ht.add(y), Bo(y));
+            }), En();
           }
-          l && (l.remove(), l = null), n = null, o.style.cursor = "crosshair";
+          l && (l.remove(), l = null), o = null, n.style.cursor = "crosshair";
           return;
         }
-        n = null;
-      }), o.addEventListener("click", (f) => {
-        if (po) {
+        o = null;
+      }), n.addEventListener("click", (f) => {
+        if (pn) {
           const i = et();
           if (!i) return;
           const c = Fs(f.clientX, f.clientY, i.camera, i.rendererElm);
-          (c.worldPos || c.nodeIdx !== null) && (La(c), Rs(c));
+          (c.worldPos || c.nodeIdx !== null) && (Ca(c), Ps(c));
           return;
         }
         if (Yt) {
           if (l) return;
-          const i = Wn(f), c = f.ctrlKey || f.metaKey;
+          const i = Wo(f), c = f.ctrlKey || f.metaKey;
           if (i >= 0) {
             if (c) if (ht.has(i)) {
               ht.delete(i);
-              const m = $o.findIndex((S) => S.__elemIdx === i);
+              const m = Mn.findIndex((w) => w.__elemIdx === i);
               if (m >= 0) {
-                const S = et();
-                S == null ? void 0 : S.scene.remove($o[m]), $o[m].geometry.dispose(), $o[m].material.dispose(), $o.splice(m, 1), S == null ? void 0 : S.render();
+                const w = et();
+                w == null ? void 0 : w.scene.remove(Mn[m]), Mn[m].geometry.dispose(), Mn[m].material.dispose(), Mn.splice(m, 1), w == null ? void 0 : w.render();
               }
-            } else ht.add(i), Bn(i);
-            else ht.clear(), Mo(), ht.add(i), Bn(i);
-            wo();
-          } else c || (ht.clear(), Mo(), wo());
+            } else ht.add(i), Bo(i);
+            else ht.clear(), wn(), ht.add(i), Bo(i);
+            En();
+          } else c || (ht.clear(), wn(), En());
           return;
         }
-        if (oo) {
-          const i = Wn(f);
-          i >= 0 && (Os(i), Ga(i));
+        if (nn) {
+          const i = Wo(f);
+          i >= 0 && (Os(i), Ya(i));
         }
       });
-    }, 500), Jo.derive(() => {
+    }, 500), Jn.derive(() => {
       var _a2;
       e.nodes.val, e.elements.val, (_a2 = e.nodeInputs) == null ? void 0 : _a2.val, Ze();
     }), Ke.modal = (t) => {
       var _a2, _b;
       if (t === void 0 && (t = !qe), qe = t, (_a2 = Ae.querySelector("#cad3d-modal")) == null ? void 0 : _a2.classList.toggle("active", qe), qe) {
-        const n = et();
-        ((_b = n == null ? void 0 : n.settings) == null ? void 0 : _b.loads) && (_e = n.settings.loads.rawVal, n.settings.loads.val = false), Ln(), Ae.querySelector("#cad3d-mode-prev").style.display = "", Ae.querySelector("#cad3d-mode-next").style.display = "", Ae.querySelector("#cad3d-mode-label").style.display = "";
-      } else Cn(), Ae.querySelector("#cad3d-mode-prev").style.display = "none", Ae.querySelector("#cad3d-mode-next").style.display = "none", Ae.querySelector("#cad3d-mode-label").style.display = "none", z && z !== "placa-q4" && z !== "placa-3q" && Re(), setTimeout(() => {
+        const o = et();
+        ((_b = o == null ? void 0 : o.settings) == null ? void 0 : _b.loads) && (_e = o.settings.loads.rawVal, o.settings.loads.val = false), Lo(), Ae.querySelector("#cad3d-mode-prev").style.display = "", Ae.querySelector("#cad3d-mode-next").style.display = "", Ae.querySelector("#cad3d-mode-label").style.display = "";
+      } else Co(), Ae.querySelector("#cad3d-mode-prev").style.display = "none", Ae.querySelector("#cad3d-mode-next").style.display = "none", Ae.querySelector("#cad3d-mode-label").style.display = "none", z && z !== "placa-q4" && z !== "placa-3q" && Pe(), setTimeout(() => {
         var _a3;
-        const n = et();
-        ((_a3 = n == null ? void 0 : n.settings) == null ? void 0 : _a3.loads) && _e && (n.settings.loads.val = true);
+        const o = et();
+        ((_a3 = o == null ? void 0 : o.settings) == null ? void 0 : _a3.loads) && _e && (o.settings.loads.val = true);
       }, 600);
       console.log(`Modal analysis: ${qe ? "ON" : "OFF"}`);
     }, Ke.setMode = (t) => {
@@ -16450,29 +16606,29 @@ ${i.join(", ")}`);
         return;
       }
       xe = Math.max(0, Math.min(t, Ce.modeShapes.length - 1));
-      const o = Ce.modeShapes[xe], { extent: n } = vo();
+      const n = Ce.modeShapes[xe], { extent: o } = yn();
       let l = 0;
       for (let d = 0; d < ke.length; d++) {
-        const a = o[d * 6] || 0, r = o[d * 6 + 1] || 0, f = o[d * 6 + 2] || 0;
+        const a = n[d * 6] || 0, r = n[d * 6 + 1] || 0, f = n[d * 6 + 2] || 0;
         l = Math.max(l, Math.sqrt(a * a + r * r + f * f));
       }
-      Ge = l > 1e-12 ? n * 0.05 / l : 1, Qo();
+      Ge = l > 1e-12 ? o * 0.05 / l : 1, Qn();
       const s = Ae.querySelector("#cad3d-mode-label");
       s && Ce.frequencies && (s.textContent = `Modo ${xe + 1} \u2014 ${Ce.frequencies[xe].toFixed(2)} Hz`), console.log(`Modo ${xe + 1}: f = ${(_a2 = Ce.frequencies) == null ? void 0 : _a2[xe].toFixed(4)} Hz`);
     }, window.cad = Ke, console.log("FEM Studio CLI ready. Type cad.help() for commands."), setTimeout(() => {
       document.body.appendChild(Ae), document.body.appendChild(it.div);
     }, 0), setTimeout(() => {
-      e.nodes.val.length === 0 && (Qe("muro-q4"), Vn(), Ts("muro-q4"), setTimeout(() => {
-        z === "muro-q4" && so();
+      e.nodes.val.length === 0 && (Qe("muro-q4"), Vo(), Ts("muro-q4"), setTimeout(() => {
+        z === "muro-q4" && sn();
       }, 200));
     }, 100);
-    const tn = document.createElement("button");
-    tn.id = "mobile-menu-btn", tn.innerHTML = "\u2630", tn.addEventListener("click", () => {
+    const to = document.createElement("button");
+    to.id = "mobile-menu-btn", to.innerHTML = "\u2630", to.addEventListener("click", () => {
       const t = document.getElementById("cad3d-panel");
-      t && (t.classList.toggle("mobile-open"), tn.innerHTML = t.classList.contains("mobile-open") ? "\u2715" : "\u2630");
-    }), document.body.appendChild(tn);
-    const uo = document.createElement("button");
-    uo.id = "fullscreen-btn", uo.innerHTML = "\u26F6", uo.title = "Pantalla completa", uo.style.cssText = `
+      t && (t.classList.toggle("mobile-open"), to.innerHTML = t.classList.contains("mobile-open") ? "\u2715" : "\u2630");
+    }), document.body.appendChild(to);
+    const un = document.createElement("button");
+    un.id = "fullscreen-btn", un.innerHTML = "\u26F6", un.title = "Pantalla completa", un.style.cssText = `
     position: fixed; bottom: 20px; right: 78px; z-index: 9999999;
     width: 48px; height: 48px; border-radius: 50%;
     background: linear-gradient(135deg, #333, #555);
@@ -16481,22 +16637,22 @@ ${i.join(", ")}`);
     box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     transition: transform 0.2s, box-shadow 0.2s;
     display: flex; align-items: center; justify-content: center;
-  `, uo.addEventListener("mouseenter", () => {
-      uo.style.transform = "scale(1.15)";
-    }), uo.addEventListener("mouseleave", () => {
-      uo.style.transform = "scale(1)";
-    }), uo.addEventListener("click", () => {
+  `, un.addEventListener("mouseenter", () => {
+      un.style.transform = "scale(1.15)";
+    }), un.addEventListener("mouseleave", () => {
+      un.style.transform = "scale(1)";
+    }), un.addEventListener("click", () => {
       document.fullscreenElement ? document.exitFullscreen().catch(() => {
       }) : document.documentElement.requestFullscreen().catch(() => {
       });
-    }), document.body.appendChild(uo), document.body.appendChild(wl());
-    const Js = document.createElement("span");
-    return Js.style.display = "none", Js;
+    }), document.body.appendChild(un), document.body.appendChild(El());
+    const Vs = document.createElement("span");
+    return Vs.style.display = "none", Vs;
   };
 });
 export {
   __tla,
-  ra as a,
-  pl as c,
-  Ql as g
+  ia as a,
+  fl as c,
+  er as g
 };

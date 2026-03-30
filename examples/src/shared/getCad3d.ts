@@ -2097,6 +2097,9 @@ VIEW:
         case "viga-q4": case "cantilever-beam": case "viga-cantilever": {
           cli.clear(); setGenerator("viga-q4"); generateCantileverBeamQ4(); break;
         }
+        case "placa-xy": case "placa-cantilever": case "losa-cantilever": {
+          cli.clear(); setGenerator("placa-xy"); generatePlacaCantileverQ4(); break;
+        }
         default: console.error(`Ejemplo desconocido: "${name}".`);
       }
     },
@@ -2343,6 +2346,7 @@ Util:     cad.info()  cad.clear()  cad.help()
       case "diagrid": generateDiagrid(); break;
       case "muro-q4": generateShearWallQ4(); break;
       case "viga-q4": generateCantileverBeamQ4(); break;
+      case "placa-xy": generatePlacaCantileverQ4(); break;
     }
     // For generators that build their own loads (beams, 3d, truss, placa-q4), keep them.
     // For frame/edificio/galpon (use cli.frame/building/galpon), clear loads so runAnalysis creates them.
@@ -2355,7 +2359,7 @@ Util:     cad.info()  cad.clear()  cad.help()
       }
     }
     // Re-run analysis after regeneration (skip for plate solvers — they run their own)
-    const skipAnalysis = ["placa-q4", "placa-3q", "losa-rect", "losa-plana", "viga-alta", "muro-contencion", "zapata", "placa-orificios", "col-placa", "talud", "eiffel", "arco", "puente", "twisted", "burj", "opera", "diagrid", "muro-q4", "viga-q4"];
+    const skipAnalysis = ["placa-q4", "placa-3q", "losa-rect", "losa-plana", "viga-alta", "muro-contencion", "zapata", "placa-orificios", "col-placa", "talud", "eiffel", "arco", "puente", "twisted", "burj", "opera", "diagrid", "muro-q4", "viga-q4", "placa-xy"];
     if (!skipAnalysis.includes(activeGenerator)) {
       // Apply element deletions + visibility
       if (deletedElements.size > 0 || hiddenElements.size > 0 || isolateMode) {
@@ -5436,6 +5440,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         <button data-ex="diagrid">Diagrid</button>
         <button data-ex="muro-q4">Muro Q4</button>
         <button data-ex="viga-q4">Viga Q4</button>
+        <button data-ex="placa-xy">Placa XY</button>
       </div>
       <div class="btn-row" style="margin-top:4px">
         <button data-view="3d" class="view-active">3D</button>
@@ -10566,6 +10571,76 @@ Util:     cad.info()  cad.clear()  cad.help()
         console.log(`Viga Q4: Uz_tip=${uz.toExponential(4)} | Analitico=${delta_ana.toExponential(4)} | ratio=${(Math.abs(uz)/delta_ana).toFixed(4)}`);
       }
     } catch (e: any) { console.warn("VigaQ4:", e.message); }
+    setTimeout(() => autoFitGridSize(), 50);
+    updatePanel();
+  }
+
+  /** Placa cantilever horizontal Q4 — plano XY, carga vertical Z, empotrada un borde */
+  function generatePlacaCantileverQ4() {
+    const Lx = generatorParams["Lx"]?.val ?? 4;
+    const Ly = generatorParams["Ly"]?.val ?? 2;
+    const t  = generatorParams["t"]?.val ?? 0.15;
+    const nx = Math.round(generatorParams["nx"]?.val ?? 8);
+    const ny = Math.round(generatorParams["ny"]?.val ?? 4);
+    const E  = generatorParams["E"]?.val ?? 25e6;
+    const nu = generatorParams["nu"]?.val ?? 0.2;
+    const P  = generatorParams["P"]?.val ?? 20;
+    const G  = E / (2*(1+nu));
+    const dx = Lx/nx, dy = Ly/ny;
+
+    const nodes: Node[] = [];
+    const elements: Element[] = [];
+    const supports = new Map<number, boolean[]>();
+    const loads = new Map<number, number[]>();
+
+    // Nodes in XY plane (horizontal plate): [x, y, z=0]
+    // Three.js Y-up: x=X, y=Z(elev=0), z=Y
+    for (let j = 0; j <= ny; j++)
+      for (let i = 0; i <= nx; i++)
+        nodes.push([i*dx, 0, j*dy]);  // [x, elev=0, y_plan]
+
+    const nNx = nx + 1;
+    for (let j = 0; j < ny; j++)
+      for (let i = 0; i < nx; i++)
+        elements.push([j*nNx+i, j*nNx+i+1, (j+1)*nNx+i+1, (j+1)*nNx+i]);
+
+    // Fixed left edge (x=0)
+    for (let j = 0; j <= ny; j++)
+      supports.set(j * nNx, [true,true,true,true,true,true]);
+
+    // Distributed load on free edge (x=Lx) — vertical downward (Y in Three.js)
+    const freeEdge: number[] = [];
+    for (let j = 0; j <= ny; j++) freeEdge.push(j * nNx + nx);
+    const pn = P / freeEdge.length;
+    for (const n of freeEdge) loads.set(n, [0, -pn, 0, 0, 0, 0]);  // Fy=-pn (down in Three.js Y)
+
+    mesh.nodes.val = nodes;
+    mesh.elements.val = elements;
+    if (mesh.nodeInputs) mesh.nodeInputs.val = { supports, loads } as any;
+
+    const ei: any = {
+      elasticities: new Map(elements.map((_,i) => [i, E])),
+      poissonsRatios: new Map(elements.map((_,i) => [i, nu])),
+      thicknesses: new Map(elements.map((_,i) => [i, t])),
+      shearModuli: new Map(elements.map((_,i) => [i, G])),
+      densities: new Map(elements.map((_,i) => [i, 24/9.80665])),
+    };
+    if (mesh.elementInputs) mesh.elementInputs.val = ei;
+
+    try {
+      const dOut = deform(nodes, elements, { supports, loads } as any, ei);
+      if (dOut && mesh.deformOutputs) {
+        mesh.deformOutputs.val = dOut;
+        const aOut = analyze(nodes, elements, ei, dOut);
+        if (mesh.analyzeOutputs) mesh.analyzeOutputs.val = aOut;
+
+        // Report
+        const tipMid = (ny/2|0) * nNx + nx;
+        const def = dOut.deformations.get(tipMid);
+        const uy = def ? def[1] : 0; // Y displacement (vertical in Three.js)
+        console.log(`Placa XY Q4: Uy_tip=${uy.toExponential(4)} m`);
+      }
+    } catch (e: any) { console.warn("PlacaXY:", e.message); }
     setTimeout(() => autoFitGridSize(), 50);
     updatePanel();
   }

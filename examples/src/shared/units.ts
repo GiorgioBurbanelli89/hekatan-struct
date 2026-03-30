@@ -412,6 +412,16 @@ export function getGeneratorParams(u: UnitSystem) {
       { key: "nu", val: 0.2,  min: 0.0, max: 0.49, step: 0.01, label: `v` },
       { key: "P",  val: u.defaultForce * 5, min: 1, max: u.forceRange[1] * 50, step: u.forceRange[2] * 2, label: `P puntual (${u.force})` },
     ],
+    "placa-xy": [
+      { key: "Lx", val: 4.0,  min: 1,  max: 15,  step: 0.5, label: `Lx (${u.length})` },
+      { key: "Ly", val: 2.0,  min: 0.5, max: 10,  step: 0.5, label: `Ly (${u.length})` },
+      { key: "t",  val: 0.15, min: 0.05, max: 0.5, step: 0.05, label: `Espesor t (${u.length})` },
+      { key: "nx", val: 8,    min: 2,  max: 20,  step: 1,   label: `Mesh nx` },
+      { key: "ny", val: 4,    min: 2,  max: 15,  step: 1,   label: `Mesh ny` },
+      { key: "E",  val: u.E * 25e6 / 200e6, min: 1e4, max: 1e9, step: 1e5, label: `E concreto (${u.stress})` },
+      { key: "nu", val: 0.2,  min: 0.0, max: 0.49, step: 0.01, label: `v` },
+      { key: "P",  val: u.defaultForce * 2, min: 1, max: u.forceRange[1] * 20, step: u.forceRange[2], label: `P borde (${u.force})` },
+    ],
     "eiffel": [], "arco": [], "puente": [], "twisted": [],
     "burj": [], "opera": [], "diagrid": [],
     "talud": [
@@ -483,6 +493,7 @@ export function getLoadParams(u: UnitSystem) {
     "talud": [],
     "muro-q4": [],
     "viga-q4": [],
+    "placa-xy": [],
     "eiffel": [], "arco": [], "puente": [], "twisted": [],
     "burj": [], "opera": [], "diagrid": [],
   };
