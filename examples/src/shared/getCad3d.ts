@@ -28,6 +28,7 @@ import { createModalPanel } from "./renderModalTable";
 import { STEEL_PROFILES, getWProfileOptions, getHSSProfileOptions } from "./steelProfiles";
 import { buildReportExplained } from "./reportExplained";
 import { buildElementReport } from "./elementReport";
+import { currentLang, setLang, updateDomTranslations } from "./i18n";
 import { createHelpButton } from "./helpTour";
 import { parseE2k, type E2kModel } from "./e2kParser";
 import { parseS2k } from "./s2kParser";
@@ -12183,6 +12184,41 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
 
   // Add help tour button
   document.body.appendChild(createHelpButton());
+
+  // ── Language toggle button (Es/En) ──
+  const langBtn = document.createElement("button");
+  langBtn.id = "lang-toggle-btn";
+  langBtn.textContent = currentLang() === "es" ? "EN" : "ES";
+  langBtn.title = currentLang() === "es" ? "Switch to English" : "Cambiar a Español";
+  langBtn.style.cssText = `
+    position: fixed; bottom: 20px; right: 136px; z-index: 9999999;
+    width: 48px; height: 48px; border-radius: 50%;
+    background: linear-gradient(135deg, #1a4a7a, #2a6ab0);
+    color: white; border: 3px solid rgba(255,255,255,0.2);
+    font-size: 14px; font-weight: bold; cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  `;
+  langBtn.addEventListener("mouseenter", () => { langBtn.style.transform = "scale(1.15)"; });
+  langBtn.addEventListener("mouseleave", () => { langBtn.style.transform = "scale(1)"; });
+  langBtn.addEventListener("click", () => {
+    const newLang = currentLang() === "es" ? "en" : "es";
+    setLang(newLang);
+    langBtn.textContent = newLang === "es" ? "EN" : "ES";
+    langBtn.title = newLang === "es" ? "Switch to English" : "Cambiar a Español";
+    updateDomTranslations();
+  });
+  document.body.appendChild(langBtn);
+
+  // ── Auto-load example from ?t= URL parameter ──
+  const urlT = new URLSearchParams(window.location.search).get("t");
+  if (urlT) {
+    setTimeout(() => {
+      highlightExButton(urlT);
+      cli.example(urlT);
+    }, 300);
+  }
 
   const placeholder = document.createElement("span");
   placeholder.style.display = "none";
