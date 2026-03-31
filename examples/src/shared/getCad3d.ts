@@ -2100,6 +2100,9 @@ VIEW:
         case "placa-xy": case "placa-cantilever": case "losa-cantilever": {
           cli.clear(); setGenerator("placa-xy"); generatePlacaCantileverQ4(); break;
         }
+        case "pergola": {
+          cli.clear(); setGenerator("pergola"); generatePergola(); break;
+        }
         default: console.error(`Ejemplo desconocido: "${name}".`);
       }
     },
@@ -2166,8 +2169,8 @@ VIEW:
       return result;
     },
 
-    /** Set a generator parameter by key. Example: cad.set('Lx', 15) */
-    set(key: string, value: number) {
+    /** Set a generator parameter by key. Example: cad.setParam('Lx', 15) */
+    setParam(key: string, value: number) {
       if (generatorParams[key]) {
         generatorParams[key].val = value;
         console.log(`${key} = ${value}`);
@@ -2227,7 +2230,7 @@ VIEW:
       rebuildTweakpane(); regenerateFromParams();
     },
 
-    help() {
+    helpFull() {
       console.log(`
 === FEM Studio CLI ===
 Nodos:    cad.addNode(x,y,z)  cad.removeNode(i)  cad.listNodes()
@@ -2237,11 +2240,11 @@ Genera:   cad.frame(sv,sp)    cad.building(svX,svY,sp)
           cad.galpon(span,length,height,archRise,xDiv,yDiv)
 Ejemplos: cad.example('truss') | 'beams' | '3d' | 'portico' | 'edificio' | 'galpon' | 'barra' | 'placa'
 Placa Q4: cad.plateQ4(Lx, Ly, nx, ny, bcType, pressure, thickness, E, nu)
-Params:   cad.set('Lx', 15)  cad.get()  cad.get('Lx')
+Params:   cad.setParam('Lx', 15)  cad.get()  cad.get('Lx')
 Placa:    cad.setTheory('mindlin'|'kirchhoff'|'membrana')  cad.setBc('ss'|'empotrado')
 Modal:    cad.modal()  cad.modal(true/false)  cad.setMode(0)  — análisis modal + animación
 Unidades: cad.units('SI'|'US')  — cambia sistema de unidades
-Util:     cad.info()  cad.clear()  cad.help()
+Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
       `);
     },
 
@@ -2347,6 +2350,7 @@ Util:     cad.info()  cad.clear()  cad.help()
       case "muro-q4": generateShearWallQ4(); break;
       case "viga-q4": generateCantileverBeamQ4(); break;
       case "placa-xy": generatePlacaCantileverQ4(); break;
+      case "pergola": generatePergola(); break;
     }
     // For generators that build their own loads (beams, 3d, truss, placa-q4), keep them.
     // For frame/edificio/galpon (use cli.frame/building/galpon), clear loads so runAnalysis creates them.
@@ -4690,17 +4694,28 @@ Util:     cad.info()  cad.clear()  cad.help()
     cadPane = new Pane({ title: `Parameters — ${title}`, container });
     const geoDefs = GENERATOR_PARAMS()[activeGenerator];
     if (geoDefs) {
-      const tweakObj: Record<string, number> = {};
-      for (const d of geoDefs) tweakObj[d.key] = generatorParams[d.key].val;
+      const tweakObj: Record<string, any> = {};
       for (const d of geoDefs) {
-        cadPane.addBinding(tweakObj, d.key, {
-          min: generatorParams[d.key].min, max: generatorParams[d.key].max,
-          step: generatorParams[d.key].step, label: generatorParams[d.key].label,
-        });
+        const p = generatorParams[d.key];
+        const isBool = p.min === 0 && p.max === 1 && p.step === 1;
+        tweakObj[d.key] = isBool ? (p.val >= 0.5) : p.val;
       }
-      // ── Rangos folder (editable intervals) ──
+      // Split: numeric sliders vs boolean toggles (DOF checkboxes)
+      const boolDefs = geoDefs.filter(d => { const p = generatorParams[d.key]; return p.min === 0 && p.max === 1 && p.step === 1; });
+      const numDefs = geoDefs.filter(d => { const p = generatorParams[d.key]; return !(p.min === 0 && p.max === 1 && p.step === 1); });
+      for (const d of numDefs) {
+        const p = generatorParams[d.key];
+        cadPane.addBinding(tweakObj, d.key, { min: p.min, max: p.max, step: p.step, label: p.label });
+      }
+      if (boolDefs.length > 0) {
+        const apoyoFolder = cadPane.addFolder({ title: tr('Apoyos DOFs'), expanded: false });
+        for (const d of boolDefs) {
+          apoyoFolder.addBinding(tweakObj, d.key, { label: generatorParams[d.key].label });
+        }
+      }
+      // ── Rangos folder (editable intervals, skip booleans) ──
       const rangosFolder = cadPane.addFolder({ title: 'Rangos', expanded: false });
-      for (const d of geoDefs) {
+      for (const d of numDefs) {
         const rangeObj = { min: generatorParams[d.key].min, max: generatorParams[d.key].max };
         rangosFolder.addBinding(rangeObj, 'min', { label: `${d.key} min`, step: d.step });
         rangosFolder.addBinding(rangeObj, 'max', { label: `${d.key} max`, step: d.step });
@@ -4721,7 +4736,7 @@ Util:     cad.info()  cad.clear()  cad.help()
       cadPane.on("change", (e: any) => {
         const key = e.target?.key as string;
         if (key && generatorParams[key]) {
-          generatorParams[key].val = e.value as number;
+          generatorParams[key].val = (typeof e.value === 'boolean') ? (e.value ? 1 : 0) : (e.value as number);
           // When nVanosX/nVanosY changes, resize span arrays and rebuild UI
           if (activeGenerator === "edificio" && (key === "nVanosX" || key === "nVanosY" || key === "nPisos")) {
             if (key === "nVanosX" || key === "nVanosY") {
@@ -5441,6 +5456,7 @@ Util:     cad.info()  cad.clear()  cad.help()
         <button data-ex="muro-q4">Muro Q4</button>
         <button data-ex="viga-q4">Viga Q4</button>
         <button data-ex="placa-xy">Placa XY</button>
+        <button data-ex="pergola" data-i18n="Pérgola">Pérgola</button>
       </div>
       <div class="btn-row" style="margin-top:4px">
         <button data-view="3d" class="view-active">3D</button>
@@ -10641,6 +10657,254 @@ Util:     cad.info()  cad.clear()  cad.help()
         console.log(`Placa XY Q4: Uy_tip=${uy.toExponential(4)} m`);
       }
     } catch (e: any) { console.warn("PlacaXY:", e.message); }
+    setTimeout(() => autoFitGridSize(), 50);
+    updatePanel();
+  }
+
+  /** Pérgola de acero: 3 pórticos con vigas inclinadas + correas + panel shell Q4 */
+  function generatePergola() {
+    const u = activeUnits;
+    const Lx     = generatorParams["Lx"]?.val ?? 6;
+    const Ly     = generatorParams["Ly"]?.val ?? 8;
+    const H1     = generatorParams["H1"]?.val ?? 3;
+    const H2     = generatorParams["H2"]?.val ?? 4.5;
+    const nCol   = Math.round(generatorParams["nCol"]?.val ?? 4);
+    const nCorr  = Math.round(generatorParams["nCorr"]?.val ?? 8);
+    const E      = generatorParams["E"]?.val ?? u.E;
+    const tPanel = generatorParams["t"]?.val ?? 0.0005;
+    const q      = generatorParams["q"]?.val ?? 1.0;
+    // Support DOFs
+    const supUx = (generatorParams["supUx"]?.val ?? 1) >= 0.5;
+    const supUy = (generatorParams["supUy"]?.val ?? 1) >= 0.5;
+    const supUz = (generatorParams["supUz"]?.val ?? 1) >= 0.5;
+    const supRx = (generatorParams["supRx"]?.val ?? 1) >= 0.5;
+    const supRy = (generatorParams["supRy"]?.val ?? 1) >= 0.5;
+    const supRz = (generatorParams["supRz"]?.val ?? 1) >= 0.5;
+    // Section params
+    const colD  = generatorParams["colD"]?.val  ?? 0.16;
+    const colBf = generatorParams["colBf"]?.val ?? 0.16;
+    const colTf = generatorParams["colTf"]?.val ?? 0.013;
+    const colTw = generatorParams["colTw"]?.val ?? 0.008;
+    const vigD  = generatorParams["vigD"]?.val  ?? 0.20;
+    const vigBf = generatorParams["vigBf"]?.val ?? 0.10;
+    const vigTf = generatorParams["vigTf"]?.val ?? 0.0085;
+    const vigTw = generatorParams["vigTw"]?.val ?? 0.0056;
+    const corrB = generatorParams["corrB"]?.val ?? 0.06;
+    const corrT = generatorParams["corrT"]?.val ?? 0.004;
+
+    const nu = 0.3;
+    const G = E / (2 * (1 + nu));
+
+    // I-section properties
+    function Isec(d: number, bf: number, tf: number, tw: number) {
+      const hw = d - 2 * tf;
+      const A = 2 * bf * tf + hw * tw;
+      const Iz = (bf * d * d * d - (bf - tw) * hw * hw * hw) / 12;
+      const Iy = (2 * tf * bf * bf * bf + hw * tw * tw * tw) / 12;
+      const J = (2 * bf * tf * tf * tf + hw * tw * tw * tw) / 3;
+      return { A, Iz, Iy, J };
+    }
+    const colSec = Isec(colD, colBf, colTf, colTw);
+    const vigSec = Isec(vigD, vigBf, vigTf, vigTw);
+    // Correa: rectangular tube
+    const corrA = corrB * corrB - (corrB - 2 * corrT) * (corrB - 2 * corrT);
+    const corrIz = (corrB ** 4 - (corrB - 2 * corrT) ** 4) / 12;
+    const corrIy = corrIz;
+    const corrJ = 2 * corrT * (corrB - corrT) ** 2 * (corrB - corrT) ** 2 / (2 * (corrB - corrT) + 2 * (corrB - corrT));
+
+    // Layout: 3 lines of vigas along X (at x=0, Lx/2, Lx)
+    const nVig = 3;
+    const vigX = [0, Lx / 2, Lx];
+
+    // Correas along Y: merge column positions into correa positions
+    const colY: number[] = [];
+    for (let i = 0; i < nCol; i++) colY.push(i * Ly / (nCol - 1));
+    // Generate correa Y positions
+    const corrYSet = new Set<number>();
+    for (const cy of colY) corrYSet.add(cy);
+    for (let i = 0; i < nCorr; i++) corrYSet.add(i * Ly / (nCorr - 1));
+    const corrY = Array.from(corrYSet).sort((a, b) => a - b);
+    const nRoof = corrY.length;
+
+    // Height interpolation along Y (inclined H1→H2)
+    function roofH(y: number): number { return H1 + (H2 - H1) * y / Ly; }
+
+    const nodes: Node[] = [];
+    const elements: Element[] = [];
+
+    // Node grids
+    // baseGrid[k][i] = node index for base of column at vigX[k], colY[i]
+    const baseGrid: number[][] = [];
+    // roofGrid[k][j] = node index for roof at vigX[k], corrY[j]
+    const roofGrid: number[][] = [];
+
+    // Create base + roof nodes for each viga line
+    for (let k = 0; k < nVig; k++) {
+      const bRow: number[] = [];
+      for (let i = 0; i < nCol; i++) {
+        bRow.push(nodes.length);
+        nodes.push([vigX[k], corrY[colY.indexOf(colY[i])], 0] as Node); // base at Z=0
+      }
+      baseGrid.push(bRow);
+
+      const rRow: number[] = [];
+      for (let j = 0; j < nRoof; j++) {
+        rRow.push(nodes.length);
+        nodes.push([vigX[k], corrY[j], roofH(corrY[j])] as Node); // roof at Z=H
+      }
+      roofGrid.push(rRow);
+    }
+
+    // Fix base node duplicates (colY positions exist in corrY)
+    // baseGrid nodes are at colY positions → map to roofGrid where corrY matches colY
+    // Actually base nodes are separate (Z=0 vs Z=H), so no duplicates
+
+    const elasticities = new Map<number, number>();
+    const shearModuli = new Map<number, number>();
+    const areas = new Map<number, number>();
+    const moiZ = new Map<number, number>();
+    const moiY = new Map<number, number>();
+    const torsion = new Map<number, number>();
+    const sectionShapes = new Map<number, any>();
+    const momentReleases = new Map<number, boolean[]>();
+    const densities = new Map<number, number>();
+    const rho = u.rho ?? 7850;
+
+    // === COLUMNS (base → roof, at column Y positions) ===
+    for (let k = 0; k < nVig; k++) {
+      for (let i = 0; i < nCol; i++) {
+        // Find roof node at this colY
+        const cyi = corrY.indexOf(colY[i]);
+        if (cyi < 0) continue;
+        const ei = elements.length;
+        elements.push([baseGrid[k][i], roofGrid[k][cyi]]);
+        elasticities.set(ei, E); shearModuli.set(ei, G);
+        areas.set(ei, colSec.A); moiZ.set(ei, colSec.Iy); moiY.set(ei, colSec.Iz);
+        torsion.set(ei, colSec.J); densities.set(ei, rho);
+        sectionShapes.set(ei, { type: "I" as const, d: colD, bf: colBf, tf: colTf, tw: colTw, name: `Col` });
+        // Column pinned at top (J end): release M22 + M33
+        const relCol = new Array(12).fill(false);
+        relCol[10] = true; relCol[11] = true;
+        momentReleases.set(ei, relCol);
+      }
+    }
+
+    // === VIGAS (along Y at each viga line, connecting roof nodes) ===
+    for (let k = 0; k < nVig; k++) {
+      for (let j = 0; j < nRoof - 1; j++) {
+        const ei = elements.length;
+        elements.push([roofGrid[k][j], roofGrid[k][j + 1]]);
+        elasticities.set(ei, E); shearModuli.set(ei, G);
+        areas.set(ei, vigSec.A); moiZ.set(ei, vigSec.Iy); moiY.set(ei, vigSec.Iz);
+        torsion.set(ei, vigSec.J); densities.set(ei, rho);
+        sectionShapes.set(ei, { type: "I" as const, d: vigD, bf: vigBf, tf: vigTf, tw: vigTw, name: `Vig` });
+      }
+    }
+
+    // === CORREAS (along X, connecting viga lines at each corrY) ===
+    const corrStartIdx = elements.length;
+    for (let j = 0; j < nRoof; j++) {
+      for (let k = 0; k < nVig - 1; k++) {
+        const ei = elements.length;
+        elements.push([roofGrid[k][j], roofGrid[k + 1][j]]);
+        elasticities.set(ei, E); shearModuli.set(ei, G);
+        areas.set(ei, corrA); moiZ.set(ei, corrIy); moiY.set(ei, corrIz);
+        torsion.set(ei, corrJ); densities.set(ei, rho);
+        sectionShapes.set(ei, { type: "rect" as const, b: corrB, h: corrB, name: `Corr` });
+        // Correa pinned both ends
+        const rel = new Array(12).fill(false);
+        rel[4] = true; rel[5] = true;   // M22_I, M33_I
+        rel[10] = true; rel[11] = true;  // M22_J, M33_J
+        momentReleases.set(ei, rel);
+      }
+    }
+
+    // === SHELL PANELS (Q4 between viga lines on roof) ===
+    for (let k = 0; k < nVig - 1; k++) {
+      for (let j = 0; j < nRoof - 1; j++) {
+        const ei = elements.length;
+        elements.push([roofGrid[k][j], roofGrid[k + 1][j], roofGrid[k + 1][j + 1], roofGrid[k][j + 1]]);
+        elasticities.set(ei, E); shearModuli.set(ei, G);
+        densities.set(ei, rho);
+        // Shell-specific
+        (elasticities as any).set(ei, E);
+      }
+    }
+
+    // === SUPPORTS ===
+    const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
+    const supDofs: [boolean, boolean, boolean, boolean, boolean, boolean] = [supUx, supUy, supUz, supRx, supRy, supRz];
+    for (let k = 0; k < nVig; k++) {
+      for (let i = 0; i < nCol; i++) {
+        supports.set(baseGrid[k][i], supDofs);
+      }
+    }
+
+    // === LOADS (gravity on roof nodes, -Z) ===
+    const loads = new Map<number, number[]>();
+    for (let k = 0; k < nVig; k++) {
+      for (let j = 0; j < nRoof; j++) {
+        let tribDx: number;
+        if (k === 0) tribDx = (vigX[1] - vigX[0]) / 2;
+        else if (k === nVig - 1) tribDx = (vigX[nVig - 1] - vigX[nVig - 2]) / 2;
+        else tribDx = (vigX[k + 1] - vigX[k - 1]) / 2;
+        let tribDy: number;
+        if (j === 0) tribDy = (corrY[1] - corrY[0]) / 2;
+        else if (j === nRoof - 1) tribDy = (corrY[nRoof - 1] - corrY[nRoof - 2]) / 2;
+        else tribDy = (corrY[j + 1] - corrY[j - 1]) / 2;
+        const Fz = -q * tribDx * tribDy;
+        loads.set(roofGrid[k][j], [0, 0, Fz, 0, 0, 0]);
+      }
+    }
+
+    // Apply to mesh
+    mesh.nodes.val = nodes;
+    mesh.elements.val = elements;
+    if (mesh.nodeInputs) mesh.nodeInputs.val = { supports, loads } as any;
+
+    // Element inputs
+    const nFrames = elements.filter(e => e.length === 2).length;
+    const ei: any = {
+      elasticities, shearModuli, areas,
+      momentsOfInertiaZ: moiZ, momentsOfInertiaY: moiY,
+      torsionalConstants: torsion, sectionShapes, momentReleases, densities,
+    };
+    // Shell-specific: thicknesses & poissonsRatios for Q4 elements
+    const thicknesses = new Map<number, number>();
+    const poissonsRatios = new Map<number, number>();
+    for (let i = 0; i < elements.length; i++) {
+      if (elements[i].length === 4) {
+        thicknesses.set(i, tPanel);
+        poissonsRatios.set(i, nu);
+      }
+    }
+    ei.thicknesses = thicknesses;
+    ei.poissonsRatios = poissonsRatios;
+    if (mesh.elementInputs) mesh.elementInputs.val = ei;
+
+    // Solve
+    try {
+      const t0 = performance.now();
+      const dOut = deform(nodes, elements, { supports, loads } as any, ei);
+      const dt = performance.now() - t0;
+      if (dOut && mesh.deformOutputs) {
+        mesh.deformOutputs.val = dOut;
+        const aOut = analyze(nodes, elements, ei, dOut);
+        if (mesh.analyzeOutputs) mesh.analyzeOutputs.val = aOut;
+
+        let maxUz = 0, maxNode = -1;
+        dOut.deformations.forEach((d: number[], ni: number) => {
+          if (Math.abs(d[2]) > Math.abs(maxUz)) { maxUz = d[2]; maxNode = ni; }
+        });
+        console.log(`Pérgola: Uz_max=${maxUz.toExponential(4)} m en nodo ${maxNode} | ${nFrames} frames + ${elements.length - nFrames} shells | ${dt.toFixed(0)} ms`);
+      }
+    } catch (e: any) { console.warn("Pergola:", e.message); }
+
+    const ctxP = getViewerCtx();
+    if (ctxP) {
+      ctxP.settings.shellResults.val = "displacementZ";
+      ctxP.settings.deformedShape.val = true;
+    }
     setTimeout(() => autoFitGridSize(), 50);
     updatePanel();
   }

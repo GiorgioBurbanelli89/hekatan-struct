@@ -494,6 +494,7 @@ export function getLoadParams(u: UnitSystem) {
     "muro-q4": [],
     "viga-q4": [],
     "placa-xy": [],
+    "pergola": [],
     "eiffel": [], "arco": [], "puente": [], "twisted": [],
     "burj": [], "opera": [], "diagrid": [],
   };
