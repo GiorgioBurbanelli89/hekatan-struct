@@ -10665,10 +10665,10 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
   /** Pérgola de acero: 3 pórticos con vigas inclinadas + correas + panel shell Q4 */
   function generatePergola() {
     const u = activeUnits;
-    const Lx     = generatorParams["Lx"]?.val ?? 6;
+    const Lx     = generatorParams["Lx"]?.val ?? 5.50;
     const Ly     = generatorParams["Ly"]?.val ?? 8;
-    const H1     = generatorParams["H1"]?.val ?? 3;
-    const H2     = generatorParams["H2"]?.val ?? 4.5;
+    const H1     = generatorParams["H1"]?.val ?? 3.00;
+    const H2     = generatorParams["H2"]?.val ?? 4.00;
     const nCol   = Math.round(generatorParams["nCol"]?.val ?? 4);
     const nCorr  = Math.round(generatorParams["nCorr"]?.val ?? 8);
     const E      = generatorParams["E"]?.val ?? u.E;
@@ -10744,7 +10744,7 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
       const bRow: number[] = [];
       for (let i = 0; i < nCol; i++) {
         bRow.push(nodes.length);
-        nodes.push([vigX[k], corrY[colY.indexOf(colY[i])], 0] as Node); // base at Z=0
+        nodes.push([vigX[k], colY[i], 0] as Node); // base at Z=0 — column is vertical
       }
       baseGrid.push(bRow);
 
