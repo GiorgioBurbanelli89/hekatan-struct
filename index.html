@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Hekatan Struct — Parametric Structural Engineering</title>
+  <meta name="description" content="Hekatan Struct — plataforma paramétrica de ingeniería estructural basada en la web. Validada contra Calcpad-Symbolic y SAP2000.">
+  <meta http-equiv="refresh" content="0; url=./workspace/">
+  <link rel="canonical" href="./workspace/">
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+    body {
+      background: #0f172a; color: #e2e8f0;
+      display: flex; align-items: center; justify-content: center; text-align: center; padding: 2rem;
+    }
+    h1 { font-weight: 300; font-size: 2rem; letter-spacing: 0.5px; margin: 0 0 0.5rem; color: #0ea5e9; }
+    p { margin: 0.25rem 0; font-size: 14px; color: #94a3b8; }
+    a { color: #0ea5e9; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .spin {
+      display: inline-block; width: 20px; height: 20px; border: 2px solid #334155;
+      border-top-color: #0ea5e9; border-radius: 50%; animation: sp 0.8s linear infinite;
+      vertical-align: middle; margin-right: 8px;
+    }
+    @keyframes sp { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>Hekatan Struct</h1>
+    <p>Parametric Structural Engineering — 3D FEM, solids, plates, frames</p>
+    <p><span class="spin"></span>Cargando workspace…</p>
+    <p><small>Si no redirige automáticamente, <a href="./workspace/">haz clic aquí</a>.</small></p>
+  </div>
+  <script>
+    // Instant client-side redirect (faster than meta refresh)
+    window.location.replace('./workspace/');
+  </script>
+</body>
+</html>
