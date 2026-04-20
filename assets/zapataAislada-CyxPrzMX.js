@@ -141,23 +141,23 @@ let __tla = Promise.all([
     category: "Cimentaciones",
     params: {
       Lz: {
-        default: 3,
+        default: 2,
         min: 1,
         max: 5,
         step: 0.05,
         label: "Lz (m)"
       },
       Bz: {
-        default: 3,
+        default: 2,
         min: 1,
         max: 5,
         step: 0.05,
         label: "Bz (m)"
       },
       tz: {
-        default: 0.15,
-        min: 0.1,
-        max: 1.2,
+        default: 0.3,
+        min: 0.2,
+        max: 1,
         step: 0.05,
         label: "tz (m)"
       },

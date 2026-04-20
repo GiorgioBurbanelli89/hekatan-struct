@@ -4,7 +4,7 @@ import { g as $ } from "./getViewer-BLqMEmXo.js";
 import { g as G } from "./styles-B8h3dtQW.js";
 import { c as Q } from "./renderModalTable-29W4CuGz.js";
 import { z as J, __tla as __tla_0 } from "./zapataVigaAmarre-DrRBSNUQ.js";
-import { z as W, __tla as __tla_1 } from "./zapataAislada-BkYEzNjA.js";
+import { z as W, __tla as __tla_1 } from "./zapataAislada-CyxPrzMX.js";
 import { p as z, d as N, __tla as __tla_2 } from "./didacticCpp-Bnj9OwqQ.js";
 import { a as R } from "./analyze-ClLKGn9k.js";
 import { d as O, f as T } from "./units-CVPhvG5E.js";
@@ -110,13 +110,13 @@ Promise.all([
         0
       ]), r = t.elementResults.map((o) => o.nodes);
       a.nodes.val = i, a.elements.val = r;
-      const l = /* @__PURE__ */ new Map();
-      r.forEach((o, u) => l.set(u, e.t)), a.nodeInputs.val = {}, a.elementInputs.val = {
-        thicknesses: l
+      const s = /* @__PURE__ */ new Map();
+      r.forEach((o, d) => s.set(d, e.t)), a.nodeInputs.val = {}, a.elementInputs.val = {
+        thicknesses: s
       };
       const m = /* @__PURE__ */ new Map();
-      t.nodeResults.forEach((o, u) => {
-        m.set(u, [
+      t.nodeResults.forEach((o, d) => {
+        m.set(d, [
           0,
           0,
           o.w,
@@ -208,13 +208,13 @@ Promise.all([
         0
       ]), r = t.elementResults.map((o) => o.nodes);
       a.nodes.val = i, a.elements.val = r;
-      const l = /* @__PURE__ */ new Map();
-      r.forEach((o, u) => l.set(u, e.t)), a.nodeInputs.val = {}, a.elementInputs.val = {
-        thicknesses: l
+      const s = /* @__PURE__ */ new Map();
+      r.forEach((o, d) => s.set(d, e.t)), a.nodeInputs.val = {}, a.elementInputs.val = {
+        thicknesses: s
       };
       const m = /* @__PURE__ */ new Map();
-      t.nodeResults.forEach((o, u) => {
-        m.set(u, [
+      t.nodeResults.forEach((o, d) => {
+        m.set(d, [
           0,
           0,
           o.w,
@@ -306,13 +306,13 @@ Promise.all([
         0
       ]), r = t.elementResults.map((o) => o.nodes);
       a.nodes.val = i, a.elements.val = r;
-      const l = /* @__PURE__ */ new Map();
-      r.forEach((o, u) => l.set(u, e.t)), a.nodeInputs.val = {}, a.elementInputs.val = {
-        thicknesses: l
+      const s = /* @__PURE__ */ new Map();
+      r.forEach((o, d) => s.set(d, e.t)), a.nodeInputs.val = {}, a.elementInputs.val = {
+        thicknesses: s
       };
       const m = /* @__PURE__ */ new Map();
-      t.nodeResults.forEach((o, u) => {
-        m.set(u, [
+      t.nodeResults.forEach((o, d) => {
+        m.set(d, [
           0,
           0,
           o.w,
@@ -388,15 +388,15 @@ Promise.all([
     },
     build(e, a) {
       const t = Math.round(e.nx), i = Math.round(e.ny), r = [];
-      for (let n = 0; n <= i; n++) for (let s = 0; s <= t; s++) r.push([
-        s * e.Lx / t,
+      for (let n = 0; n <= i; n++) for (let l = 0; l <= t; l++) r.push([
+        l * e.Lx / t,
         n * e.Ly / i,
         0
       ]);
-      const l = [];
-      for (let n = 0; n < i; n++) for (let s = 0; s < t; s++) {
-        const f = n * (t + 1) + s;
-        l.push([
+      const s = [];
+      for (let n = 0; n < i; n++) for (let l = 0; l < t; l++) {
+        const f = n * (t + 1) + l;
+        s.push([
           f,
           f + 1,
           f + 1 + (t + 1),
@@ -434,10 +434,10 @@ Promise.all([
         false,
         false
       ]);
-      const o = e.Lx / t * (e.Ly / i), u = /* @__PURE__ */ new Map();
-      for (let n = 0; n <= i; n++) for (let s = 0; s <= t; s++) {
-        const f = n * (t + 1) + s, g = (s === 0 || s === t) && (n === 0 || n === i) ? 0.25 : s === 0 || s === t || n === 0 || n === i ? 0.5 : 1, H = e.q * o * g;
-        u.set(f, [
+      const o = e.Lx / t * (e.Ly / i), d = /* @__PURE__ */ new Map();
+      for (let n = 0; n <= i; n++) for (let l = 0; l <= t; l++) {
+        const f = n * (t + 1) + l, M = (l === 0 || l === t) && (n === 0 || n === i) ? 0.25 : l === 0 || l === t || n === 0 || n === i ? 0.5 : 1, H = e.q * o * M;
+        d.set(f, [
           0,
           0,
           H,
@@ -446,23 +446,23 @@ Promise.all([
           0
         ]);
       }
-      const d = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new Map(), p = /* @__PURE__ */ new Map(), k = /* @__PURE__ */ new Map();
-      l.forEach((n, s) => {
-        d.set(s, e.t), c.set(s, e.E), p.set(s, e.nu), k.set(s, 24);
-      }), a.nodes.val = r, a.elements.val = l, a.nodeInputs.val = {
+      const u = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new Map(), p = /* @__PURE__ */ new Map(), k = /* @__PURE__ */ new Map();
+      s.forEach((n, l) => {
+        u.set(l, e.t), c.set(l, e.E), p.set(l, e.nu), k.set(l, 24);
+      }), a.nodes.val = r, a.elements.val = s, a.nodeInputs.val = {
         supports: m,
-        loads: u
+        loads: d
       }, a.elementInputs.val = {
-        thicknesses: d,
+        thicknesses: u,
         elasticities: c,
         poissonsRatios: p,
         densities: k
       };
       try {
-        a.deformOutputs.val = N(r, l, {
+        a.deformOutputs.val = N(r, s, {
           supports: m,
-          loads: u
-        }, a.elementInputs.val), a.analyzeOutputs.val = R(r, l, a.elementInputs.val, a.deformOutputs.val);
+          loads: d
+        }, a.elementInputs.val), a.analyzeOutputs.val = R(r, s, a.elementInputs.val, a.deformOutputs.val);
       } catch (n) {
         console.error("Shell thin solver error:", n);
       }
@@ -532,15 +532,15 @@ Promise.all([
     },
     build(e, a) {
       const t = Math.round(e.nx), i = Math.round(e.ny), r = [];
-      for (let n = 0; n <= i; n++) for (let s = 0; s <= t; s++) r.push([
-        s * e.Lx / t,
+      for (let n = 0; n <= i; n++) for (let l = 0; l <= t; l++) r.push([
+        l * e.Lx / t,
         n * e.Ly / i,
         0
       ]);
-      const l = [];
-      for (let n = 0; n < i; n++) for (let s = 0; s < t; s++) {
-        const f = n * (t + 1) + s;
-        l.push([
+      const s = [];
+      for (let n = 0; n < i; n++) for (let l = 0; l < t; l++) {
+        const f = n * (t + 1) + l;
+        s.push([
           f,
           f + 1,
           f + 1 + (t + 1),
@@ -578,35 +578,35 @@ Promise.all([
         false,
         false
       ]);
-      const o = e.Lx / t * (e.Ly / i), u = /* @__PURE__ */ new Map();
-      for (let n = 0; n <= i; n++) for (let s = 0; s <= t; s++) {
-        const f = n * (t + 1) + s, g = (s === 0 || s === t) && (n === 0 || n === i) ? 0.25 : s === 0 || s === t || n === 0 || n === i ? 0.5 : 1;
-        u.set(f, [
+      const o = e.Lx / t * (e.Ly / i), d = /* @__PURE__ */ new Map();
+      for (let n = 0; n <= i; n++) for (let l = 0; l <= t; l++) {
+        const f = n * (t + 1) + l, M = (l === 0 || l === t) && (n === 0 || n === i) ? 0.25 : l === 0 || l === t || n === 0 || n === i ? 0.5 : 1;
+        d.set(f, [
           0,
           0,
-          e.q * o * g,
+          e.q * o * M,
           0,
           0,
           0
         ]);
       }
-      const d = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new Map(), p = /* @__PURE__ */ new Map(), k = /* @__PURE__ */ new Map();
-      l.forEach((n, s) => {
-        d.set(s, e.t), c.set(s, e.E), p.set(s, e.nu), k.set(s, 24);
-      }), a.nodes.val = r, a.elements.val = l, a.nodeInputs.val = {
+      const u = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new Map(), p = /* @__PURE__ */ new Map(), k = /* @__PURE__ */ new Map();
+      s.forEach((n, l) => {
+        u.set(l, e.t), c.set(l, e.E), p.set(l, e.nu), k.set(l, 24);
+      }), a.nodes.val = r, a.elements.val = s, a.nodeInputs.val = {
         supports: m,
-        loads: u
+        loads: d
       }, a.elementInputs.val = {
-        thicknesses: d,
+        thicknesses: u,
         elasticities: c,
         poissonsRatios: p,
         densities: k
       };
       try {
-        a.deformOutputs.val = N(r, l, {
+        a.deformOutputs.val = N(r, s, {
           supports: m,
-          loads: u
-        }, a.elementInputs.val), a.analyzeOutputs.val = R(r, l, a.elementInputs.val, a.deformOutputs.val);
+          loads: d
+        }, a.elementInputs.val), a.analyzeOutputs.val = R(r, s, a.elementInputs.val, a.deformOutputs.val);
       } catch (n) {
         console.error("Shell thick solver error:", n);
       }
@@ -629,61 +629,61 @@ Promise.all([
     analyzeOutputs: D,
     objects3D: A
   };
-  let x = null, y = {}, w = null;
+  let x = null, y = {}, g = null;
   const v = Q();
   v.div.style.display = "none";
-  function F() {
+  function X() {
     h.objects3D.val = [], h.nodes.val = [], h.elements.val = [], h.nodeInputs.val = {}, h.elementInputs.val = {}, h.deformOutputs.val = {}, h.analyzeOutputs.val = {};
   }
-  function U(e) {
+  function F(e) {
     x = e, y = Object.fromEntries(Object.entries(e.params).map(([a, t]) => [
       a,
       t.default
-    ])), F(), e.build(y, h, v), se();
+    ])), X(), e.build(y, h, v), le();
   }
   function j() {
-    x && (F(), x.build(y, h, v));
+    x && (X(), x.build(y, h, v));
   }
-  const M = document.createElement("div");
-  M.style.cssText = "position:fixed;top:16px;right:16px;width:320px;z-index:100;max-height:90vh;overflow-y:auto";
-  document.body.appendChild(M);
-  function E(e) {
-    const a = V.__ctx;
+  const E = document.createElement("div");
+  E.style.cssText = "position:fixed;top:16px;right:16px;width:320px;z-index:100;max-height:90vh;overflow-y:auto";
+  document.body.appendChild(E);
+  function w(e) {
+    const a = U.__ctx;
     if (!a) return;
-    const { camera: t, controls: i, render: r } = a, l = i.target.clone(), m = t.position.distanceTo(l) || 10;
+    const { camera: t, controls: i, render: r } = a, s = i.target.clone(), m = t.position.distanceTo(s) || 10;
     switch (e) {
       case "iso":
-        t.position.set(l.x + m * 0.6, l.y - m * 0.6, l.z + m * 0.6);
+        t.position.set(s.x + m * 0.6, s.y - m * 0.6, s.z + m * 0.6);
         break;
       case "plan":
-        t.position.set(l.x, l.y, l.z + m);
+        t.position.set(s.x, s.y, s.z + m);
         break;
       case "elevX":
-        t.position.set(l.x + m, l.y, l.z);
+        t.position.set(s.x + m, s.y, s.z);
         break;
       case "elevY":
-        t.position.set(l.x, l.y + m, l.z);
+        t.position.set(s.x, s.y + m, s.z);
         break;
     }
-    t.up.set(0, 0, 1), t.lookAt(l), i.update(), r == null ? void 0 : r();
+    t.up.set(0, 0, 1), t.lookAt(s), i.update(), r == null ? void 0 : r();
   }
-  function se() {
-    if (w && (w.dispose(), w = null), M.innerHTML = "", !x) return;
+  function le() {
+    if (g && (g.dispose(), g = null), E.innerHTML = "", !x) return;
     const e = new K({
-      container: M,
+      container: E,
       title: x.name
     }), a = {
       id: x.id
-    }, t = Object.fromEntries(L.map((d) => [
-      `${d.category} \xB7 ${d.name}`,
-      d.id
+    }, t = Object.fromEntries(L.map((u) => [
+      `${u.category} \xB7 ${u.name}`,
+      u.id
     ]));
     e.addBinding(a, "id", {
       label: "Ejemplo",
       options: t
-    }).on("change", (d) => {
-      const c = L.find((p) => p.id === d.value);
-      c && U(c);
+    }).on("change", (u) => {
+      const c = L.find((p) => p.id === u.value);
+      c && F(c);
     });
     const i = e.addFolder({
       title: "Vista",
@@ -691,67 +691,67 @@ Promise.all([
     });
     i.addButton({
       title: "\u{1F3D7} Isom\xE9trica"
-    }).on("click", () => E("iso")), i.addButton({
+    }).on("click", () => w("iso")), i.addButton({
       title: "\u2B07 Planta (X-Y)"
-    }).on("click", () => E("plan")), i.addButton({
+    }).on("click", () => w("plan")), i.addButton({
       title: "\u2192 Elevaci\xF3n X (frente)"
-    }).on("click", () => E("elevX")), i.addButton({
+    }).on("click", () => w("elevX")), i.addButton({
       title: "\u2191 Elevaci\xF3n Y (lado)"
-    }).on("click", () => E("elevY"));
+    }).on("click", () => w("elevY"));
     const r = e.addFolder({
       title: "Unidades",
       expanded: false
-    }), l = {
+    }), s = {
       force: T.val,
       disp: O.val
     };
-    r.addBinding(l, "force", {
+    r.addBinding(s, "force", {
       label: "Fuerza",
       options: {
         kN: "kN",
         tonf: "tonf",
         kip: "kip"
       }
-    }).on("change", (d) => {
-      T.val = d.value, j();
-    }), r.addBinding(l, "disp", {
+    }).on("change", (u) => {
+      T.val = u.value, j();
+    }), r.addBinding(s, "disp", {
       label: "Desplazamiento",
       options: {
         mm: "mm",
         cm: "cm",
         "\xB5m (poco prob.)": "\xB5m"
       }
-    }).on("change", (d) => {
-      O.val = d.value, j();
+    }).on("change", (u) => {
+      O.val = u.value, j();
     });
     const m = e.addFolder({
       title: "Par\xE1metros"
     });
     let o = null;
-    const u = () => {
+    const d = () => {
       o !== null && clearTimeout(o), o = window.setTimeout(() => {
         o = null, j();
       }, 120);
     };
-    for (const [d, c] of Object.entries(x.params)) {
+    for (const [u, c] of Object.entries(x.params)) {
       const p = {
-        label: c.label ?? d
+        label: c.label ?? u
       };
-      c.options !== void 0 ? p.options = c.options : (c.min !== void 0 && (p.min = c.min), c.max !== void 0 && (p.max = c.max), c.step !== void 0 && (p.step = c.step)), m.addBinding(y, d, p).on("change", () => {
-        (x == null ? void 0 : x.onParamChange) && (x.onParamChange(d, y), e.refresh()), u();
+      c.options !== void 0 ? p.options = c.options : (c.min !== void 0 && (p.min = c.min), c.max !== void 0 && (p.max = c.max), c.step !== void 0 && (p.step = c.step)), m.addBinding(y, u, p).on("change", () => {
+        (x == null ? void 0 : x.onParamChange) && (x.onParamChange(u, y), e.refresh()), d();
       });
     }
     x.hasModal && e.addButton({
       title: "\u26A1 An\xE1lisis modal"
     }).on("click", () => {
       v.div.style.display = "block", x.runModal && x.runModal(y, h, v);
-    }), w = e;
+    }), g = e;
   }
-  const le = {
+  const se = {
     deformedShape: true,
-    shellResults: "pressure",
+    shellResults: "bendingXX",
     gridSize: 10
-  }, V = $({
+  }, U = $({
     mesh: {
       nodes: q,
       elements: _,
@@ -761,13 +761,13 @@ Promise.all([
       analyzeOutputs: D
     },
     objects3D: A,
-    settingsObj: le
+    settingsObj: se
   });
-  document.body.append(V, G({
+  document.body.append(U, G({
     sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct",
     author: "https://www.linkedin.com/in/jorge-burbano-213741138/"
   }));
   document.body.appendChild(v.div);
   const P = new URLSearchParams(window.location.search).get("t"), I = P && L.find((e) => e.id === P) || L.find((e) => e.id === "zapata-aislada") || L[0];
-  I && U(I);
+  I && F(I);
 });
