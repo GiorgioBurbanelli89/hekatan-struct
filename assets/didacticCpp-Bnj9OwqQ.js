@@ -6,7 +6,7 @@ let __tla = (async () => {
   let st, at, yr;
   st = "modulepreload";
   at = function(f) {
-    return "/Program%20Files/Git/hekatan-struct/" + f;
+    return "/hekatan-struct/" + f;
   };
   yr = {};
   it = function(p, a, m) {
@@ -201,7 +201,7 @@ let __tla = (async () => {
     }
     var K;
     function se() {
-      return a.locateFile ? $("deform.wasm") : new URL("/Program%20Files/Git/hekatan-struct/assets/deform-C4JHu45h.wasm", import.meta.url).href;
+      return a.locateFile ? $("deform.wasm") : new URL("/hekatan-struct/assets/deform-C4JHu45h.wasm", import.meta.url).href;
     }
     function Ee(e) {
       if (e == K && E) return new Uint8Array(E);

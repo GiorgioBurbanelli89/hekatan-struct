@@ -3,7 +3,7 @@ import { v as e } from "./theme-CzzIlc4y.js";
 import { g as r } from "./getViewer-BLqMEmXo.js";
 import { g as n } from "./getParameters-D_F_vOn_.js";
 import { g as i } from "./styles-B8h3dtQW.js";
-import { g as p, __tla as __tla_0 } from "./getMesh-Dh6N7uza.js";
+import { g as p, __tla as __tla_0 } from "./getMesh-CUX4SIXA.js";
 import "./Text-CBH-tcJP.js";
 import "./__vite-browser-external-D7Ct-6yo.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";

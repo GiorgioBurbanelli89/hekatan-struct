@@ -1,11 +1,11 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { z as r, __tla as __tla_0 } from "./zapataAislada-6_Nod1ZW.js";
+import { z as r, __tla as __tla_0 } from "./zapataVigaAmarre-DrRBSNUQ.js";
 import { r as m } from "./runExampleStandalone-BTd-vsdQ.js";
 import "./Text-CBH-tcJP.js";
 import "./theme-CzzIlc4y.js";
 import "./analyze-ClLKGn9k.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
-import { __tla as __tla_1 } from "./didacticCpp-CZmuvtpn.js";
+import { __tla as __tla_1 } from "./didacticCpp-Bnj9OwqQ.js";
 import "./getViewer-BLqMEmXo.js";
 import "./styles-B8h3dtQW.js";
 import "./units-CVPhvG5E.js";

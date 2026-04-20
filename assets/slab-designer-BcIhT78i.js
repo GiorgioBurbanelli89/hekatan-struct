@@ -7,11 +7,11 @@ import { w as Q, x as N, g as W } from "./styles-B8h3dtQW.js";
 import { g as Y } from "./getDialog-PPft_MKZ.js";
 import { g as tt } from "./getReport-Cjz2ijBq.js";
 import { a as at } from "./analyze-ClLKGn9k.js";
-import { d as et, __tla as __tla_0 } from "./didacticCpp-CZmuvtpn.js";
-import { g as st, a as lt, b as ot, c as A, d as H, __tla as __tla_1 } from "./getSolids-BqNctevc.js";
+import { d as et, __tla as __tla_0 } from "./didacticCpp-Bnj9OwqQ.js";
+import { g as st, a as lt, b as ot, c as A, d as H, __tla as __tla_1 } from "./getSolids-CoPYgSBG.js";
 import "./Text-CBH-tcJP.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
-import { __tla as __tla_2 } from "./getMesh-Dh6N7uza.js";
+import { __tla as __tla_2 } from "./getMesh-CUX4SIXA.js";
 import "./__vite-browser-external-D7Ct-6yo.js";
 Promise.all([
   (() => {
@@ -92,30 +92,30 @@ Promise.all([
     }, (i, y) => y % 2 === 0 ? s : l);
     let d = [
       0
-    ], F = 0;
-    for (let i of o) F += i, d.push(F);
+    ], L = 0;
+    for (let i of o) L += i, d.push(L);
     const M = d.map((i) => i - b / 2);
-    let k = 0, L = [];
-    const $ = 1e3;
+    let k = 0, $ = [];
+    const F = 1e3;
     for (let i = 0; i < o.length; i++) {
-      let y = o[i], j = $ * y ** 3 / 12, K = $ * y, X = M[i + 1], E = j + K * X ** 2;
-      L.push(E), k += E;
+      let y = o[i], G = F * y ** 3 / 12, K = F * y, X = M[i + 1], E = G + K * X ** 2;
+      $.push(E), k += E;
     }
-    const B = M.map((i) => Number((u * 1e6 * i / k).toFixed(2))), O = Math.max(...B), R = e.f_mk * C, _ = B.map((i) => Number((i / R).toFixed(2))), U = Math.max(..._);
+    const B = M.map((i) => Number((u * 1e6 * i / k).toFixed(2))), U = Math.max(...B), R = e.f_mk * C, _ = B.map((i) => Number((i / R).toFixed(2))), j = Math.max(..._);
     return {
       slabHeight: b,
       thicknesses: o,
       zCordsFromMid: M,
-      inertiaList: L,
+      inertiaList: $,
       inertia: k,
       bendingStresses: B,
-      bendingStressMax: O,
+      bendingStressMax: U,
       f_md: R,
       eta: _,
-      etaMax: U
+      etaMax: j
     };
   }
-  const dt = "/Program%20Files/Git/hekatan-struct/assets/awatif-logo-DnnuEFJ2.png", mt = "/Program%20Files/Git/hekatan-struct/assets/clt-bending-stress-DvR3Ux1R.png", ct = ({ designMomentInput: e, designOutputs: s }) => N`
+  const dt = "/hekatan-struct/assets/awatif-logo-DnnuEFJ2.png", mt = "/hekatan-struct/assets/clt-bending-stress-DvR3Ux1R.png", ct = ({ designMomentInput: e, designOutputs: s }) => N`
     <div id="report">
       <header class="header">
         <div class="header-left">
@@ -362,7 +362,7 @@ Promise.all([
       6
     ],
     []
-  ], c = t.state([]), m = t.state(ht), h = t.state(ut), f = t.state(vt), S = t.state([]), G = t.state({
+  ], c = t.state([]), m = t.state(ht), h = t.state(ut), f = t.state(vt), S = t.state([]), O = t.state({
     position: [
       10,
       10,
@@ -376,7 +376,7 @@ Promise.all([
   }), z = t.state(""), D = t.state(void 0), w = 4;
   let x = "1st-floor";
   function bt(e) {
-    x = e, G.val = {
+    x = e, O.val = {
       position: [
         10,
         10,
@@ -510,7 +510,7 @@ Promise.all([
     drawingObj: {
       points: f,
       polylines: S,
-      gridTarget: G
+      gridTarget: O
     },
     settingsObj: {
       nodes: false,

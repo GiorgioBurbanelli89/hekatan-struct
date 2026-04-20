@@ -44,8 +44,8 @@ let __tla = (async () => {
         for (w in r) r.hasOwnProperty(w) && (_[w] = r[w]);
         var P = function(e, i) {
           throw i;
-        }, F = false, d = false, x = false, ee = false;
-        F = typeof window == "object", d = typeof importScripts == "function", x = typeof process == "object" && typeof process.versions == "object" && typeof process.versions.node == "string", ee = !F && !x && !d;
+        }, I = false, d = false, x = false, ee = false;
+        I = typeof window == "object", d = typeof importScripts == "function", x = typeof process == "object" && typeof process.versions == "object" && typeof process.versions.node == "string", ee = !I && !x && !d;
         var v = "";
         function Ae(e) {
           return r.locateFile ? r.locateFile(e, v) : v + e;
@@ -69,14 +69,14 @@ let __tla = (async () => {
           return typeof readbuffer == "function" ? new Uint8Array(readbuffer(i)) : (a = read(i, "binary"), re(typeof a == "object"), a);
         }, typeof scriptArgs < "u" && scriptArgs, typeof quit == "function" && (P = function(e) {
           quit(e);
-        }), typeof print < "u" && (typeof console > "u" && (console = {}), console.log = print, console.warn = console.error = typeof printErr < "u" ? printErr : print)) : (F || d) && (d ? v = self.location.href : document.currentScript && (v = document.currentScript.src), s && (v = s), v.indexOf("blob:") !== 0 ? v = v.substr(0, v.lastIndexOf("/") + 1) : v = "", q = function(i) {
+        }), typeof print < "u" && (typeof console > "u" && (console = {}), console.log = print, console.warn = console.error = typeof printErr < "u" ? printErr : print)) : (I || d) && (d ? v = self.location.href : document.currentScript && (v = document.currentScript.src), s && (v = s), v.indexOf("blob:") !== 0 ? v = v.substr(0, v.lastIndexOf("/") + 1) : v = "", q = function(i) {
           var a = new XMLHttpRequest();
           return a.open("GET", i, false), a.send(null), a.responseText;
         }, d && (N = function(i) {
           var a = new XMLHttpRequest();
           return a.open("GET", i, false), a.responseType = "arraybuffer", a.send(null), new Uint8Array(a.response);
         }));
-        var Ee = r.print || console.log.bind(console), I = r.printErr || console.warn.bind(console);
+        var Ee = r.print || console.log.bind(console), F = r.printErr || console.warn.bind(console);
         for (w in _) _.hasOwnProperty(w) && (r[w] = _[w]);
         _ = null, r.arguments && r.arguments, r.thisProgram && r.thisProgram, r.quit && (P = r.quit);
         var B;
@@ -157,8 +157,8 @@ let __tla = (async () => {
           initial: Q / ie,
           maximum: Q / ie
         }), U && (D = U.buffer), Q = D.byteLength, Pe(D);
-        var se = [], ae = [], Fe = [], oe = [];
-        function Ie() {
+        var se = [], ae = [], Ie = [], oe = [];
+        function Fe() {
           if (r.preRun) for (typeof r.preRun == "function" && (r.preRun = [
             r.preRun
           ]); r.preRun.length; ) Be(r.preRun.shift());
@@ -168,7 +168,7 @@ let __tla = (async () => {
           L(ae);
         }
         function Oe() {
-          L(Fe);
+          L(Ie);
         }
         function Ne() {
           if (r.postRun) for (typeof r.postRun == "function" && (r.postRun = [
@@ -194,7 +194,7 @@ let __tla = (async () => {
         }
         r.preloadedImages = {}, r.preloadedAudios = {};
         function M(e) {
-          r.onAbort && r.onAbort(e), e += "", I(e), Z = true, e = "abort(" + e + "). Build with -s ASSERTIONS=1 for more info.";
+          r.onAbort && r.onAbort(e), e += "", F(e), Z = true, e = "abort(" + e + "). Build with -s ASSERTIONS=1 for more info.";
           var i = new WebAssembly.RuntimeError(e);
           throw E(i), i;
         }
@@ -221,7 +221,7 @@ let __tla = (async () => {
           }
         }
         function De() {
-          return !B && (F || d) && typeof fetch == "function" && !le(R) ? fetch(R, {
+          return !B && (I || d) && typeof fetch == "function" && !le(R) ? fetch(R, {
             credentials: "same-origin"
           }).then(function(e) {
             if (!e.ok) throw "failed to load wasm binary file at '" + R + "'";
@@ -246,7 +246,7 @@ let __tla = (async () => {
             return De().then(function(f) {
               return WebAssembly.instantiate(f, e);
             }).then(l, function(f) {
-              I("failed to asynchronously prepare wasm: " + f), M(f);
+              F("failed to asynchronously prepare wasm: " + f), M(f);
             });
           }
           function b() {
@@ -255,7 +255,7 @@ let __tla = (async () => {
             }).then(function(l) {
               var f = WebAssembly.instantiateStreaming(l, e);
               return f.then(a, function(A) {
-                return I("wasm streaming compile failed: " + A), I("falling back to ArrayBuffer instantiation"), h(a);
+                return F("wasm streaming compile failed: " + A), F("falling back to ArrayBuffer instantiation"), h(a);
               });
             });
             else return h(a);
@@ -264,7 +264,7 @@ let __tla = (async () => {
             var g = r.instantiateWasm(e, i);
             return g;
           } catch (l) {
-            return I("Module.instantiateWasm callback failed with error: " + l), false;
+            return F("Module.instantiateWasm callback failed with error: " + l), false;
           }
           return b(), {};
         }
@@ -300,7 +300,7 @@ let __tla = (async () => {
           ],
           printChar: function(e, i) {
             var a = W.buffers[e];
-            i === 0 || i === 10 ? ((e === 1 ? Ee : I)(ne(a, 0)), a.length = 0) : a.push(i);
+            i === 0 || i === 10 ? ((e === 1 ? Ee : F)(ne(a, 0)), a.length = 0) : a.push(i);
           },
           varargs: void 0,
           get: function() {
@@ -359,7 +359,7 @@ let __tla = (async () => {
           k || X(), k || ($ = e);
         };
         function X(e) {
-          if (S > 0 || (Ie(), S > 0)) return;
+          if (S > 0 || (Fe(), S > 0)) return;
           function i() {
             k || (k = true, r.calledRun = true, !Z && (Me(), Oe(), m(r), r.onRuntimeInitialized && r.onRuntimeInitialized(), Ne()));
           }
@@ -570,7 +570,7 @@ let __tla = (async () => {
     freeIO: or,
     getSwitchesStr: be
   };
-  const O = Ke(fr), ur = "/Program%20Files/Git/hekatan-struct/assets/triangle-CCJHBrBP.wasm";
+  const O = Ke(fr), ur = "/hekatan-struct/assets/triangle-CCJHBrBP.wasm";
   await O.init(ur);
   _r = function({ points: n, polygon: t, maxMeshSize: o = 3 }) {
     if (n.length < 3 || t.length < 3) return {
@@ -592,10 +592,10 @@ let __tla = (async () => {
       d[0],
       d[1],
       0
-    ])), F = cr(E.trianglelist);
+    ])), I = cr(E.trianglelist);
     return O.freeIO(m, true), O.freeIO(E), {
       nodes: P,
-      elements: F,
+      elements: I,
       boundaryIndices: w
     };
   };

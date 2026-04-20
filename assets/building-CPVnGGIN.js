@@ -3,9 +3,9 @@ import { v as a } from "./theme-CzzIlc4y.js";
 import { g as D } from "./getViewer-BLqMEmXo.js";
 import { g as O } from "./getParameters-D_F_vOn_.js";
 import { g as L } from "./styles-B8h3dtQW.js";
-import { g as x, a as G, b as H, c as j, d as C, __tla as __tla_0 } from "./getSolids-BqNctevc.js";
+import { g as x, a as G, b as H, c as j, d as C, __tla as __tla_0 } from "./getSolids-CoPYgSBG.js";
 import "./Text-CBH-tcJP.js";
-import { __tla as __tla_1 } from "./getMesh-Dh6N7uza.js";
+import { __tla as __tla_1 } from "./getMesh-CUX4SIXA.js";
 import "./__vite-browser-external-D7Ct-6yo.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
 Promise.all([
