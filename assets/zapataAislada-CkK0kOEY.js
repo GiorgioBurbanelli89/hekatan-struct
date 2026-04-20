@@ -155,8 +155,8 @@ let __tla = Promise.all([
         label: "Bz (m)"
       },
       tz: {
-        default: 0.5,
-        min: 0.2,
+        default: 0.25,
+        min: 0.15,
         max: 1.2,
         step: 0.05,
         label: "tz (m)"
@@ -233,7 +233,7 @@ let __tla = Promise.all([
         label: "E suelo (kPa)"
       },
       P: {
-        default: 50,
+        default: 30,
         min: 1,
         max: 200,
         step: 1,
@@ -254,9 +254,9 @@ let __tla = Promise.all([
         label: "My (tonf\xB7m)"
       },
       nSub: {
-        default: 6,
+        default: 10,
         min: 3,
-        max: 12,
+        max: 16,
         step: 1,
         label: "n subdivisiones"
       }
