@@ -381,10 +381,12 @@ let __tla = Promise.all([
             c.push($), $ < l && (l = $);
           }
           s.set(q, c);
-        }), e.pressure = s, e.colorMapRange = [
-          0,
-          -D
-        ], a.analyzeOutputs.val = e;
+        }), e.pressure = s, e.colorMapRanges = {
+          pressure: [
+            0,
+            -D
+          ]
+        }, a.analyzeOutputs.val = e;
         const p = Math.abs(l);
         let g = 1 / 0;
         s.forEach((u) => {
