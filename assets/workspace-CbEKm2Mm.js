@@ -3,7 +3,7 @@ import { v as M, P as $ } from "./theme-CzzIlc4y.js";
 import { g as G } from "./getViewer-B98XqCpJ.js";
 import { g as J } from "./styles-B8h3dtQW.js";
 import { c as K } from "./renderModalTable-29W4CuGz.js";
-import { e as P, a as Q, __tla as __tla_0 } from "./exampleRegistry-CPTnF6XL.js";
+import { e as P, a as Q, __tla as __tla_0 } from "./exampleRegistry-CStt7VDM.js";
 import { d as B, f as T } from "./units-CVPhvG5E.js";
 import "./Text-CBH-tcJP.js";
 import "./analyze-ClLKGn9k.js";
