@@ -1,6 +1,6 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { p as r, __tla as __tla_0 } from "./plateThin-C30Q-WjQ.js";
-import { r as m } from "./runExampleStandalone-Cb5Gasff.js";
+import { p as r, __tla as __tla_0 } from "./plateThick-DrHD17l3.js";
+import { r as m } from "./runExampleStandalone-CQlzUbpm.js";
 import { __tla as __tla_1 } from "./didacticCpp-Bnj9OwqQ.js";
 import "./theme-CzzIlc4y.js";
 import "./getViewer-BpBQk0GY.js";

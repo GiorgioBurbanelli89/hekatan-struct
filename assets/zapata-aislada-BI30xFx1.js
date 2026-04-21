@@ -1,6 +1,6 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { z as r, __tla as __tla_0 } from "./zapataVigaAmarre-DZo3fozE.js";
-import { r as m } from "./runExampleStandalone-Cb5Gasff.js";
+import { z as r, __tla as __tla_0 } from "./zapataAislada-CmJZXWcO.js";
+import { r as m } from "./runExampleStandalone-CQlzUbpm.js";
 import "./Text-CBH-tcJP.js";
 import "./theme-CzzIlc4y.js";
 import "./analyze-ClLKGn9k.js";
