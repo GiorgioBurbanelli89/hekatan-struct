@@ -1,5 +1,5 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { b as r, __tla as __tla_0 } from "./exampleRegistry-CXZc21p7.js";
+import { b as r, __tla as __tla_0 } from "./exampleRegistry-BYQw7C7T.js";
 import { r as m } from "./runExampleStandalone-CIIoiwij.js";
 import "./Text-CBH-tcJP.js";
 import "./theme-CzzIlc4y.js";
