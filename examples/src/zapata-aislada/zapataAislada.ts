@@ -63,8 +63,9 @@ export const zapataAislada: ExampleDef = {
     // λ = (ks·L⁴/D)^0.25 > 1 → deformación no-uniforme visible con carga puntual.
     Lz:    { default: 2.5,  min: 1.0, max: 5.0,  step: 0.05, label: "Lz (m)" },
     Bz:    { default: 2.5,  min: 1.0, max: 5.0,  step: 0.05, label: "Bz (m)" },
-    // Espesor delgado para que la placa flexione (L/t = 16.7 → flexible)
-    tz:    { default: 0.15, min: 0.10, max: 1.0, step: 0.05, label: "tz (m)" },
+    // Espesor delgado para que domine la flexión sobre asentamiento rígido
+    // (λ ≈ 3 → deformación cóncava visible, similar a plate-thin)
+    tz:    { default: 0.10, min: 0.05, max: 1.0, step: 0.05, label: "tz (m)" },
     bc:    { default: 0.4,  min: 0.2, max: 0.8,  step: 0.05, label: "bc columna (m)" },
     Hp:    { default: 0.5,  min: 0.3, max: 2.0,  step: 0.1,  label: "Hp pedestal (m)" },
     // Selector de tipo de suelo (NEC-SE-GC Ecuador / Bowles)
@@ -300,24 +301,9 @@ export const zapataAislada: ExampleDef = {
     const HELIX_SEGMENTS_PER_COIL = 12;   // 12 puntos por vuelta = hélice lisa
     const totalSegs = SPRING_COILS * HELIX_SEGMENTS_PER_COIL;
 
-    // Sampling: para mallas densas, mostrar solo un subset de resortes para que
-    // cada hélice 3D sea visible individualmente. Meta: ~25-36 resortes visibles.
-    // Identifico los nodos por su posición en la grilla (xs, ys).
-    const nxGrid = xs.length, nyGrid = ys.length;
-    const MAX_VISIBLE = 6;  // como máximo 6×6 = 36 resortes visibles
-    const stepX = Math.max(1, Math.ceil((nxGrid - 1) / (MAX_VISIBLE - 1)));
-    const stepY = Math.max(1, Math.ceil((nyGrid - 1) / (MAX_VISIBLE - 1)));
-    const visibleNodeSet = new Set<number>();
-    for (let jy = 0; jy < nyGrid; jy += stepY) {
-      for (let ix = 0; ix < nxGrid; ix += stepX) {
-        visibleNodeSet.add(idx[jy][ix]);
-      }
-      // Siempre incluir la última columna
-      visibleNodeSet.add(idx[jy][nxGrid - 1]);
-    }
-    // Siempre incluir la última fila
-    for (let ix = 0; ix < nxGrid; ix += stepX) visibleNodeSet.add(idx[nyGrid - 1][ix]);
-    visibleNodeSet.add(idx[nyGrid - 1][nxGrid - 1]);
+    // Mostrar TODOS los nodos donde hay resortes Winkler (1:1 con las subdivisiones
+    // del mallado de la zapata — cada nodo → 1 resorte físico → 1 hélice visible).
+    const visibleNodeSet = new Set<number>(springNodes);
 
     // ── Lee estados reactivos del viewer para sincronizar resortes ↔ plato ──
     // viewer.__settings.deformedShape determina si el plato está a z=0 o z=dz*amp.
