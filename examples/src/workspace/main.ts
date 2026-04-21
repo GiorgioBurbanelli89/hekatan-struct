@@ -215,8 +215,9 @@ const initialEx =
   examplesRegistry[0];
 if (initialEx) {
   loadExample(initialEx);
-  // Para zapata aislada: vista en planta por default (visual directo del colormap de presión)
+  // Zapata: vista isométrica por default — se ven los resortes Winkler en elevación
+  // comprimidos/extendidos según la deformada (como en croquis clásicos de ingeniería).
   if (initialEx.id === "zapata-aislada" || initialEx.id === "zapata-viga-amarre") {
-    setTimeout(() => setView("plan"), 200);
+    setTimeout(() => setView("iso"), 200);
   }
 }

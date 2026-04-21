@@ -40,9 +40,11 @@ export const SOIL_TYPES = [
   { name: "Roca alterada",       q_adm: 100, ks_factor: 15.0, su: 0,   phi: 45, gamma: 22, N_SPT: 100,E_soil: 500000 },
   { name: "Roca sana",           q_adm: 200, ks_factor: 20.0, su: 0,   phi: 50, gamma: 25, N_SPT: 100,E_soil: 2000000 },
 ];
-const SPRING_HEIGHT = 0.3, SPRING_WIDTH = 0.08, SPRING_COILS = 6;
-const MAT_SPRING = new THREE.LineBasicMaterial({ color: 0xff0033, linewidth: 3 });
-const VISUAL_AMP = 10;  // amplificación visual del asentamiento (no afecta cálculos)
+// Resorte con altura razonable (15 cm de "suelo virtual" debajo del plato)
+const SPRING_HEIGHT = 0.15, SPRING_WIDTH = 0.04, SPRING_COILS = 4;
+const MAT_SPRING = new THREE.LineBasicMaterial({ color: 0xff0033, linewidth: 2 });
+const MAT_GROUND = new THREE.LineBasicMaterial({ color: 0x00cc00, linewidth: 2 });
+const ANCHOR_SIZE = 0.04;          // lado del cajón verde de tierra en la base del spring
 
 export const zapataAislada: ExampleDef = {
   id: "zapata-aislada",
@@ -260,25 +262,50 @@ export const zapataAislada: ExampleDef = {
       console.error("Solver error zapata aislada:", e);
     }
 
-    // Zigzag springs visuales
-    const springs3D: THREE.Object3D[] = [];
+    // Zigzag springs visuales. El plato está en Z=0 en el modelo FEM.
+    // Resorte va desde el plato (Z=0 → dz × amp) hasta el suelo fijo (Z = -SPRING_HEIGHT).
+    // Sin deformar: longitud = SPRING_HEIGHT (0.15 m). Deformado: más corto (compresión).
+    // Amp adaptativa: compresión visible = 50% de SPRING_HEIGHT, sin invertir.
     const deforms = states.deformOutputs.rawVal.deformations;
+    let wMaxAbs = 1e-9;
+    for (const nIdx of springNodes) {
+      const d = deforms?.get(nIdx);
+      if (d) wMaxAbs = Math.max(wMaxAbs, Math.abs(d[2]));
+    }
+    const VISUAL_AMP = (SPRING_HEIGHT * 0.5) / wMaxAbs;
+    const zBot = -SPRING_HEIGHT;  // suelo rígido referencia
+
+    const springs3D: THREE.Object3D[] = [];
     for (const nIdx of springNodes) {
       const node = states.nodes.rawVal[nIdx];
       if (!node) continue;
       const x = node[0], y = node[1];
       const d = deforms?.get(nIdx);
       const dz_real = d ? d[2] : 0;
-      const zTop = 0 + dz_real * VISUAL_AMP, zBot = -SPRING_HEIGHT;
+      const zTop = 0 + dz_real * VISUAL_AMP;
       const step = (zTop - zBot) / SPRING_COILS;
+
+      // Zigzag del spring (rojo)
       const pts: THREE.Vector3[] = [new THREE.Vector3(x, y, zTop)];
       for (let i = 1; i < SPRING_COILS; i++) {
         const side = i % 2 === 0 ? SPRING_WIDTH : -SPRING_WIDTH;
         pts.push(new THREE.Vector3(x + side, y, zTop - i * step));
       }
       pts.push(new THREE.Vector3(x, y, zBot));
-      const geom = new THREE.BufferGeometry().setFromPoints(pts);
-      springs3D.push(new THREE.Line(geom, MAT_SPRING));
+      springs3D.push(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(pts), MAT_SPRING));
+
+      // Base verde: cajón anchor representando el suelo fijo (referencia ground)
+      const a = ANCHOR_SIZE;
+      const anchorPts: THREE.Vector3[] = [
+        new THREE.Vector3(x - a, y, zBot - a),
+        new THREE.Vector3(x + a, y, zBot - a),
+        new THREE.Vector3(x + a, y, zBot + a),
+        new THREE.Vector3(x - a, y, zBot + a),
+        new THREE.Vector3(x - a, y, zBot - a),  // cerrar
+      ];
+      springs3D.push(new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(anchorPts), MAT_GROUND));
     }
     states.objects3D.val = springs3D;
   },
