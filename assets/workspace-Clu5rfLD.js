@@ -1,6 +1,6 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { v as b, P as $ } from "./theme-CzzIlc4y.js";
-import { g as G } from "./getViewer-BpBQk0GY.js";
+import { g as G } from "./getViewer-6Q4ZHSQ2.js";
 import { g as J } from "./styles-B8h3dtQW.js";
 import { c as K } from "./renderModalTable-29W4CuGz.js";
 import { z as Q, __tla as __tla_0 } from "./zapataVigaAmarre-CAFZbpuf.js";
@@ -10,7 +10,7 @@ import { p as et, __tla as __tla_3 } from "./plateThick-DrHD17l3.js";
 import { m as nt, __tla as __tla_4 } from "./membrana-Darbd52d.js";
 import { s as ot, __tla as __tla_5 } from "./shellThin-ORSIx719.js";
 import { s as at, __tla as __tla_6 } from "./shellThick-BSU3qF0E.js";
-import { e as st, __tla as __tla_7 } from "./edificioAporticado-PkQ-5RVJ.js";
+import { e as st, __tla as __tla_7 } from "./edificioAporticado-DG3xVeOI.js";
 import { d as I, f as O } from "./units-CVPhvG5E.js";
 import "./Text-CBH-tcJP.js";
 import "./analyze-ClLKGn9k.js";
@@ -81,18 +81,18 @@ Promise.all([
     at,
     W,
     Q
-  ], X = b.state([]), F = b.state([]), C = b.state({}), V = b.state({}), Y = b.state({}), U = b.state({}), D = b.state([]), p = {
+  ], X = b.state([]), C = b.state([]), F = b.state({}), V = b.state({}), Y = b.state({}), U = b.state({}), D = b.state([]), p = {
     nodes: X,
-    elements: F,
-    nodeInputs: C,
+    elements: C,
+    nodeInputs: F,
     elementInputs: V,
     deformOutputs: Y,
     analyzeOutputs: U,
     objects3D: D
   };
   let c = null, y = {}, P = null;
-  const k = K();
-  k.div.style.display = "none";
+  const w = K();
+  w.div.style.display = "none";
   function q() {
     p.objects3D.val = [], p.nodes.val = [], p.elements.val = [], p.nodeInputs.val = {}, p.elementInputs.val = {}, p.deformOutputs.val = {}, p.analyzeOutputs.val = {};
   }
@@ -100,7 +100,7 @@ Promise.all([
     if (c = t, y = Object.fromEntries(Object.entries(t.params).map(([a, o]) => [
       a,
       o.default
-    ])), q(), t.build(y, p, k), t.defaultShellResult) {
+    ])), q(), t.build(y, p, w), t.defaultShellResult) {
       const a = h.__settings;
       (a == null ? void 0 : a.shellResults) && (a.shellResults.val = t.defaultShellResult), (a == null ? void 0 : a.loads) && (a.loads.val = true), (a == null ? void 0 : a.supports) && (a.supports.val = true);
     }
@@ -116,12 +116,12 @@ Promise.all([
     const { camera: o, controls: l, render: r } = t;
     let e = 1 / 0, i = 1 / 0, u = 1 / 0, g = -1 / 0, m = -1 / 0, x = -1 / 0;
     for (const d of a) d[0] < e && (e = d[0]), d[0] > g && (g = d[0]), d[1] < i && (i = d[1]), d[1] > m && (m = d[1]), d[2] < u && (u = d[2]), d[2] > x && (x = d[2]);
-    const n = (e + g) / 2, s = (i + m) / 2, v = (u + x) / 2, w = g - e, f = m - i, j = x - u, E = Math.max(Math.sqrt(w * w + f * f + j * j), 1), Z = 1.3 * E;
+    const n = (e + g) / 2, s = (i + m) / 2, v = (u + x) / 2, k = g - e, f = m - i, j = x - u, E = Math.max(Math.sqrt(k * k + f * f + j * j), 1), Z = 2.2 * E;
     l.target.set(n, s, v);
     const R = Z / Math.sqrt(3);
     o.position.set(n + R, s - R, v + R), o.up.set(0, 0, 1), o.near = E * 1e-3, o.far = E * 50, o.updateProjectionMatrix(), o.lookAt(n, s, v), l.update(), r == null ? void 0 : r();
     const A = h.__settings;
-    (A == null ? void 0 : A.gridSize) && (A.gridSize.val = Math.max(Math.ceil(Math.max(w, f) * 1.2), 2));
+    (A == null ? void 0 : A.gridSize) && (A.gridSize.val = Math.max(Math.ceil(Math.max(k, f) * 1.2), 2));
   }
   function it(t) {
     const a = h.querySelectorAll("select"), o = Array.from(a).find((r) => Array.from(r.options).some((e) => e.value === "bendingXX"));
@@ -136,7 +136,7 @@ Promise.all([
     })));
   }
   function _() {
-    c && (q(), c.build(y, p, k), L(), N());
+    c && (q(), c.build(y, p, w), L(), N());
   }
   const M = document.createElement("div");
   M.style.cssText = "position:fixed;top:16px;right:16px;width:min(320px,calc(100vw - 32px));max-width:90vw;z-index:100;max-height:90vh;overflow-y:auto;font-size:12px";
@@ -229,29 +229,30 @@ Promise.all([
       }, 120);
     };
     for (const [n, s] of Object.entries(c.params)) {
-      const v = s.folder ?? i, w = g(v), f = {
+      const v = s.folder ?? i, k = g(v), f = {
         label: s.label ?? n
       };
-      s.options !== void 0 ? f.options = s.options : (s.min !== void 0 && (f.min = s.min), s.max !== void 0 && (f.max = s.max), s.step !== void 0 && (f.step = s.step)), w.addBinding(y, n, f).on("change", () => {
+      s.options !== void 0 ? f.options = s.options : (s.min !== void 0 && (f.min = s.min), s.max !== void 0 && (f.max = s.max), s.step !== void 0 && (f.step = s.step)), k.addBinding(y, n, f).on("change", () => {
         (c == null ? void 0 : c.onParamChange) && (c.onParamChange(n, y), t.refresh()), x();
       });
     }
     c.hasModal && t.addButton({
       title: "\u26A1 An\xE1lisis modal"
     }).on("click", () => {
-      k.div.style.display = "block", c.runModal && c.runModal(y, p, k);
+      w.div.style.display = "block", c.runModal && c.runModal(y, p, w);
     }), P = t;
   }
   const rt = {
     deformedShape: true,
     displayScale: -1,
     shellResults: "pressure",
-    gridSize: 10
+    gridSize: 10,
+    showCotas: true
   }, h = G({
     mesh: {
       nodes: X,
-      elements: F,
-      nodeInputs: C,
+      elements: C,
+      nodeInputs: F,
       elementInputs: V,
       deformOutputs: Y,
       analyzeOutputs: U
@@ -263,7 +264,7 @@ Promise.all([
     sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct",
     author: "https://www.linkedin.com/in/jorge-burbano-213741138/"
   }));
-  document.body.appendChild(k.div);
+  document.body.appendChild(w.div);
   const B = new URLSearchParams(window.location.search).get("t"), T = B && S.find((t) => t.id === B) || S.find((t) => t.id === "zapata-aislada") || S[0];
   T && (H(T), (T.id === "zapata-aislada" || T.id === "zapata-viga-amarre") && setTimeout(() => z("iso"), 200));
 });
