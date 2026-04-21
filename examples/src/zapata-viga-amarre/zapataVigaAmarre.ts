@@ -157,9 +157,11 @@ export const zapataVigaAmarre: ExampleDef = {
     loads.set(nCol1Top, [0, 0, -P1, M1x, M1y, 0]);
     loads.set(nCol2Top, [0, 0, -P2, M2x, M2y, 0]);
 
-    // Winkler springs reales
+    // ── Winkler SSI completo: resortes en X, Y, Z en cada nodo ──
+    // kh = ks_horizontal ≈ 0.5 × ks_vertical (fricción suelo-zapata tipo Bowles).
     const dxAvg1 = Lz1 / nSubX, dyAvg1 = Bz1 / nSubY;
     const dxAvg2 = Lz2 / nSubX, dyAvg2 = Bz2 / nSubY;
+    const kh_factor = 0.5;
     const springsList: Array<{ node: number; dof: number; k: number }> = [];
     const zapataSpringNodes: number[] = [];
     for (let j = 0; j < ys1.length; j++)
@@ -167,7 +169,11 @@ export const zapataVigaAmarre: ExampleDef = {
         const A_trib = dxAvg1 * dyAvg1 *
           ((i === 0 || i === xs1.length - 1) ? 0.5 : 1) *
           ((j === 0 || j === ys1.length - 1) ? 0.5 : 1);
-        springsList.push({ node: idx1[j][i], dof: 2, k: ks * A_trib });
+        const kvz = ks * A_trib;
+        const khxy = ks * A_trib * kh_factor;
+        springsList.push({ node: idx1[j][i], dof: 0, k: khxy });
+        springsList.push({ node: idx1[j][i], dof: 1, k: khxy });
+        springsList.push({ node: idx1[j][i], dof: 2, k: kvz });
         zapataSpringNodes.push(idx1[j][i]);
       }
     for (let j = 0; j < ys2.length; j++)
@@ -175,20 +181,18 @@ export const zapataVigaAmarre: ExampleDef = {
         const A_trib = dxAvg2 * dyAvg2 *
           ((i === 0 || i === xs2.length - 1) ? 0.5 : 1) *
           ((j === 0 || j === ys2.length - 1) ? 0.5 : 1);
-        springsList.push({ node: idx2[j][i], dof: 2, k: ks * A_trib });
+        const kvz = ks * A_trib;
+        const khxy = ks * A_trib * kh_factor;
+        springsList.push({ node: idx2[j][i], dof: 0, k: khxy });
+        springsList.push({ node: idx2[j][i], dof: 1, k: khxy });
+        springsList.push({ node: idx2[j][i], dof: 2, k: kvz });
         zapataSpringNodes.push(idx2[j][i]);
       }
-    // SIN apoyos rígidos — solo Winkler.
-    // Para evitar matriz singular en GDL X/Y/Rx/Ry/Rz (Winkler solo da Z),
-    // añado springs laterales SUAVES en el nodo esquina de zapata 1 (no aparecen como triángulos)
-    const kLat = ks * dxAvg1 * dyAvg1 * 0.01;   // 1% de rigidez Winkler vertical
-    const kRot = kLat * 0.01;                   // rotaciones aún más suaves
-    springsList.push({ node: idx1[0][0], dof: 0, k: kLat });   // Fx
-    springsList.push({ node: idx1[0][0], dof: 1, k: kLat });   // Fy
-    springsList.push({ node: idx1[0][0], dof: 3, k: kRot });   // Rx
-    springsList.push({ node: idx1[0][0], dof: 4, k: kRot });   // Ry
-    springsList.push({ node: idx1[0][0], dof: 5, k: kRot });   // Rz
-    springsList.push({ node: idx2[ys2.length - 1][xs2.length - 1], dof: 1, k: kLat });  // Fy en zapata 2
+    // Rotacionales suaves para anti-singularidad
+    const kRot = ks * dxAvg1 * dyAvg1 * 1e-4;
+    springsList.push({ node: idx1[0][0], dof: 3, k: kRot });
+    springsList.push({ node: idx1[0][0], dof: 4, k: kRot });
+    springsList.push({ node: idx1[0][0], dof: 5, k: kRot });
 
     // Commit
     states.nodes.val = N.map((n) => [n[0], n[1], n[2]] as Node);

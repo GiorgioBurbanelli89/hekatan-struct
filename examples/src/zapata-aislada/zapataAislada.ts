@@ -180,6 +180,10 @@ export const zapataAislada: ExampleDef = {
     // central, por lo que aunque placa sea rígida, el peso nodal del centro es mayor
     // → w centro > w bordes → q centro > q bordes (concentración visible).
     const dxAvg = Lz / nSub, dyAvg = Bz / nSub;
+    // ── Resortes Winkler en X, Y, Z (SSI suelo-estructura completa) ──
+    // kh = ks_horizontal ≈ 0.5 × ks_vertical (regla típica Bowles/Das para interacción
+    // suelo-zapata). Cada nodo de la zapata tiene 3 resortes de fricción con el suelo.
+    const kh_factor = 0.5;
     const springsList: Array<{ node: number; dof: number; k: number }> = [];
     const springNodes: number[] = [];
     for (let j = 0; j < ys.length; j++)
@@ -187,18 +191,19 @@ export const zapataAislada: ExampleDef = {
         const A_trib = dxAvg * dyAvg *
           ((i === 0 || i === xs.length - 1) ? 0.5 : 1) *
           ((j === 0 || j === ys.length - 1) ? 0.5 : 1);
-        springsList.push({ node: idx[j][i], dof: 2, k: ks * A_trib });
+        const kvz = ks * A_trib;               // resorte vertical Z
+        const khxy = ks * A_trib * kh_factor;  // resortes laterales X e Y (fricción suelo)
+        springsList.push({ node: idx[j][i], dof: 0, k: khxy }); // X horizontal
+        springsList.push({ node: idx[j][i], dof: 1, k: khxy }); // Y horizontal
+        springsList.push({ node: idx[j][i], dof: 2, k: kvz });  // Z vertical
         springNodes.push(idx[j][i]);
       }
-    // Springs laterales suaves en esquina (para evitar matriz singular X/Y/Rx/Ry/Rz)
-    const kLat = ks * dxAvg * dyAvg * 0.01, kRot = kLat * 0.01;
+    // Rotacionales suaves en esquina (anti-singular para Rx/Ry/Rz)
+    const kRot = ks * dxAvg * dyAvg * 1e-4;
     const n00 = idx[0][0];
-    springsList.push({ node: n00, dof: 0, k: kLat });
-    springsList.push({ node: n00, dof: 1, k: kLat });
     springsList.push({ node: n00, dof: 3, k: kRot });
     springsList.push({ node: n00, dof: 4, k: kRot });
     springsList.push({ node: n00, dof: 5, k: kRot });
-    springsList.push({ node: idx[ys.length - 1][xs.length - 1], dof: 1, k: kLat });
 
     // Commit estados
     states.nodes.val = N.map((n) => [n[0], n[1], n[2]] as Node);
