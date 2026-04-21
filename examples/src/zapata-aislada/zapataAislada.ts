@@ -82,19 +82,38 @@ export const zapataAislada: ExampleDef = {
     gamma:    { default: 18,    min: 14,   max: 26,     step: 0.5,  label: "γ suelo (kN/m³)" },
     N_SPT:    { default: 20,    min: 0,    max: 100,    step: 1,    label: "N SPT" },
     E_soil:   { default: 25000, min: 1000, max: 2000000,step: 1000, label: "E suelo (kPa)" },
-    // ── Patrones de carga (D = Carga Muerta, L = Carga Viva, S = Sobrecarga) ──
-    // Cada patrón: P (axial), Mx, My — se analizan por separado y se combinan
-    // según el "Combo" seleccionado (1.2D+1.6L por defecto, o individuales,
-    // o sísmicas, etc.).
-    P_D:   { default: 10,   min: 0,     max: 500,  step: 0.5,  label: "P (tonf)",   folder: "Carga Muerta (D)" },
-    Mx_D:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "Mx (tonf·m)", folder: "Carga Muerta (D)" },
-    My_D:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "My (tonf·m)", folder: "Carga Muerta (D)" },
-    P_L:   { default: 5,    min: 0,     max: 500,  step: 0.5,  label: "P (tonf)",   folder: "Carga Viva (L)" },
-    Mx_L:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "Mx (tonf·m)", folder: "Carga Viva (L)" },
-    My_L:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "My (tonf·m)", folder: "Carga Viva (L)" },
-    P_S:   { default: 0,    min: 0,     max: 500,  step: 0.5,  label: "P (tonf)",   folder: "Sobrecarga (S)" },
-    Mx_S:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "Mx (tonf·m)", folder: "Sobrecarga (S)" },
-    My_S:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "My (tonf·m)", folder: "Sobrecarga (S)" },
+    // ── Modo de análisis (define cómo se aplican las cargas) ──
+    //   0 = Carga simple (P, Mx, My directos — sin patrones ni factores)
+    //   1 = Solo Carga Muerta (D) — usa patrón D sin factorizar
+    //   2 = Solo Carga Viva (L)  — usa patrón L sin factorizar
+    //   3 = Solo Sobrecarga (S)  — usa patrón S sin factorizar
+    //   4 = Combinación D/L/S    — suma factorizada fD·D + fL·L + fS·S
+    analysisMode: {
+      default: 4,
+      label: "Modo de análisis",
+      folder: "Cargas — Modo",
+      options: {
+        "1. Carga simple (P, Mx, My)":   0,
+        "2. Solo Carga Muerta (D)":      1,
+        "3. Solo Carga Viva (L)":        2,
+        "4. Solo Sobrecarga (S)":        3,
+        "5. Combinación D+L+S (factores)": 4,
+      },
+    },
+    // ── Carga simple (solo se usa si analysisMode = 0) ──
+    P_simple:  { default: 20, min: 0,   max: 500, step: 0.5, label: "P (tonf)",    folder: "Cargas — Simple" },
+    Mx_simple: { default: 0,  min: -50, max: 50,  step: 0.5, label: "Mx (tonf·m)", folder: "Cargas — Simple" },
+    My_simple: { default: 0,  min: -50, max: 50,  step: 0.5, label: "My (tonf·m)", folder: "Cargas — Simple" },
+    // ── Patrones de carga (se usan en modos 1-4: individuales o combinación) ──
+    P_D:   { default: 10,   min: 0,     max: 500,  step: 0.5,  label: "P (tonf)",   folder: "Cargas — Patrón D (Muerta)" },
+    Mx_D:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "Mx (tonf·m)", folder: "Cargas — Patrón D (Muerta)" },
+    My_D:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "My (tonf·m)", folder: "Cargas — Patrón D (Muerta)" },
+    P_L:   { default: 5,    min: 0,     max: 500,  step: 0.5,  label: "P (tonf)",   folder: "Cargas — Patrón L (Viva)" },
+    Mx_L:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "Mx (tonf·m)", folder: "Cargas — Patrón L (Viva)" },
+    My_L:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "My (tonf·m)", folder: "Cargas — Patrón L (Viva)" },
+    P_S:   { default: 0,    min: 0,     max: 500,  step: 0.5,  label: "P (tonf)",   folder: "Cargas — Patrón S (Sobrec.)" },
+    Mx_S:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "Mx (tonf·m)", folder: "Cargas — Patrón S (Sobrec.)" },
+    My_S:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "My (tonf·m)", folder: "Cargas — Patrón S (Sobrec.)" },
     // Selector de combinación de cargas.
     //   0 = 1.2D + 1.6L (ACI 318 / NEC-SE-CG gravitatoria — default)
     //   1 = 1.4D
@@ -110,8 +129,8 @@ export const zapataAislada: ExampleDef = {
     //  11 = Custom (editar factores manualmente abajo)
     combo: {
       default: 0,
-      label: "Combinación",
-      folder: "Combinación",
+      label: "Combinación (solo modo 5)",
+      folder: "Cargas — Combinación D+L+S",
       options: {
         "1.2D + 1.6L (gravitatoria)": 0,
         "1.4D": 1,
@@ -127,9 +146,9 @@ export const zapataAislada: ExampleDef = {
         "Custom": 11,
       },
     },
-    fD: { default: 1.2, min: -2, max: 2, step: 0.05, label: "factor D", folder: "Combinación" },
-    fL: { default: 1.6, min: -2, max: 2, step: 0.05, label: "factor L", folder: "Combinación" },
-    fS: { default: 0,   min: -2, max: 2, step: 0.05, label: "factor S (o E)", folder: "Combinación" },
+    fD: { default: 1.2, min: -2, max: 2, step: 0.05, label: "factor D",       folder: "Cargas — Combinación D+L+S" },
+    fL: { default: 1.6, min: -2, max: 2, step: 0.05, label: "factor L",       folder: "Cargas — Combinación D+L+S" },
+    fS: { default: 0,   min: -2, max: 2, step: 0.05, label: "factor S (o E)", folder: "Cargas — Combinación D+L+S" },
     // Mesh fino captura concentración bajo columna (peak al centro)
     nSub:  { default: 10,   min: 3,   max: 16,   step: 1,    label: "n subdivisiones" },
   },
@@ -145,8 +164,18 @@ export const zapataAislada: ExampleDef = {
     const tz = p.tz ?? 0.15, Lz = p.Lz ?? 2.5;
     const D = Ec * tz ** 3 / (12 * (1 - nu_c ** 2));                 // kN·m (rigidez flexural)
     const k_r = D / (ks * Lz ** 4);                                  // Biot: <1 flexible, >1 rígida
+    const mode = Math.round(p.analysisMode ?? 4);
+    const modeNames = ["Simple", "Solo D", "Solo L", "Solo S", "Combinación D+L+S"];
     const fD = p.fD ?? 1.2, fL = p.fL ?? 1.6, fS = p.fS ?? 0;
-    const P_total = fD * (p.P_D ?? 0) + fL * (p.P_L ?? 0) + fS * (p.P_S ?? 0);
+    // P_total depende del modo (igual que en build)
+    let P_total = 0;
+    switch (mode) {
+      case 0: P_total = p.P_simple ?? 0; break;
+      case 1: P_total = p.P_D ?? 0; break;
+      case 2: P_total = p.P_L ?? 0; break;
+      case 3: P_total = p.P_S ?? 0; break;
+      case 4: default: P_total = fD * (p.P_D ?? 0) + fL * (p.P_L ?? 0) + fS * (p.P_S ?? 0);
+    }
     // q_max / q_min desde analyzeOutputs.pressure (map elemento → presión por nodo tonf/m²)
     let qMax = 0, qMin = 0;
     const pr = (states.analyzeOutputs.rawVal as any)?.pressure as Map<number, number[]> | undefined;
@@ -165,6 +194,7 @@ export const zapataAislada: ExampleDef = {
     }
     const ratio = Math.abs(qMax) / (p.q_adm || 1);
     return {
+      "Modo activo":      modeNames[mode] ?? "?",
       "ks (kN/m³)":       ks.toFixed(0),
       "D (kN·m)":         D.toFixed(1),
       "k_r (Biot)":       k_r.toFixed(3) + (k_r < 1 ? " FLEXIBLE" : " RÍGIDA"),
@@ -222,13 +252,41 @@ export const zapataAislada: ExampleDef = {
     const ks_factor  = p.ks_factor;
     const q_adm_kNm2 = q_adm_tonf * TONF_TO_KN;           // tonf/m² → kN/m²
     const ks = q_adm_kNm2 * ks_factor;                    // kN/m³
-    // ── Combinación de patrones D/L/S ──
-    // P_total = fD × P_D + fL × P_L + fS × P_S  (tonf)
-    // Similar para Mx, My. Se aplica un único set de cargas resultante al nodo.
+    // ── Aplicación de cargas según analysisMode ──
+    //   0 = Simple (P/Mx/My directos, sin patrones ni factores)
+    //   1 = Solo D, 2 = Solo L, 3 = Solo S (patrón único sin factorizar)
+    //   4 = Combinación factorizada fD·D + fL·L + fS·S
+    const mode = Math.round(p.analysisMode ?? 4);
     const fD = p.fD ?? 1.2, fL = p.fL ?? 1.6, fS = p.fS ?? 0;
-    const P_total_tonf  = fD * (p.P_D  ?? 0) + fL * (p.P_L  ?? 0) + fS * (p.P_S  ?? 0);
-    const Mx_total_tonf = fD * (p.Mx_D ?? 0) + fL * (p.Mx_L ?? 0) + fS * (p.Mx_S ?? 0);
-    const My_total_tonf = fD * (p.My_D ?? 0) + fL * (p.My_L ?? 0) + fS * (p.My_S ?? 0);
+    let P_total_tonf = 0, Mx_total_tonf = 0, My_total_tonf = 0;
+    switch (mode) {
+      case 0: // Carga simple
+        P_total_tonf  = p.P_simple  ?? 0;
+        Mx_total_tonf = p.Mx_simple ?? 0;
+        My_total_tonf = p.My_simple ?? 0;
+        break;
+      case 1: // Solo D
+        P_total_tonf  = p.P_D  ?? 0;
+        Mx_total_tonf = p.Mx_D ?? 0;
+        My_total_tonf = p.My_D ?? 0;
+        break;
+      case 2: // Solo L
+        P_total_tonf  = p.P_L  ?? 0;
+        Mx_total_tonf = p.Mx_L ?? 0;
+        My_total_tonf = p.My_L ?? 0;
+        break;
+      case 3: // Solo S
+        P_total_tonf  = p.P_S  ?? 0;
+        Mx_total_tonf = p.Mx_S ?? 0;
+        My_total_tonf = p.My_S ?? 0;
+        break;
+      case 4:
+      default: // Combinación D+L+S con factores
+        P_total_tonf  = fD * (p.P_D  ?? 0) + fL * (p.P_L  ?? 0) + fS * (p.P_S  ?? 0);
+        Mx_total_tonf = fD * (p.Mx_D ?? 0) + fL * (p.Mx_L ?? 0) + fS * (p.Mx_S ?? 0);
+        My_total_tonf = fD * (p.My_D ?? 0) + fL * (p.My_L ?? 0) + fS * (p.My_S ?? 0);
+        break;
+    }
     const P_kN  = P_total_tonf  * TONF_TO_KN;
     const Mx_kN = Mx_total_tonf * TONF_TO_KN;
     const My_kN = My_total_tonf * TONF_TO_KN;
@@ -380,14 +438,17 @@ export const zapataAislada: ExampleDef = {
       // Rigidez relativa de plato (Biot): k_r = D / (ks × Lz⁴). <1 flexible, >1 rígido
       const D_plate = Ec * tz ** 3 / (12 * (1 - nu_c ** 2));
       const k_r = D_plate / (ks * Lz ** 4);
+      const modeNames = ["Simple P/Mx/My", "Solo D (Muerta)", "Solo L (Viva)", "Solo S (Sobrecarga)", "Combinación D+L+S"];
       const comboNames = [
         "1.2D+1.6L", "1.4D", "1.2D+1.0L", "1.2D+1.0L+0.5S",
         "1.2D+1.6S+0.5L", "D+L serv.", "1.0D", "1.0L", "1.0S",
         "1.2D+1.0L+1.0E", "0.9D+1.0E", "Custom",
       ];
+      const modeName = modeNames[mode] ?? "?";
       const comboName = comboNames[Math.round(p.combo ?? 0)] ?? "?";
+      const modeDetail = mode === 4 ? `  (${comboName}: fD=${fD}, fL=${fL}, fS=${fS})` : "";
       console.log(
-        `[Zapata Aislada]  Combo: ${comboName}  (fD=${fD}, fL=${fL}, fS=${fS})\n` +
+        `[Zapata Aislada]  Modo: ${modeName}${modeDetail}\n` +
         `  Cargas totales: P=${P_total_tonf.toFixed(2)} tonf, Mx=${Mx_total_tonf.toFixed(2)} tonf·m, My=${My_total_tonf.toFixed(2)} tonf·m\n` +
         `  Patrones: D(${p.P_D}, ${p.Mx_D}, ${p.My_D}) L(${p.P_L}, ${p.Mx_L}, ${p.My_L}) S(${p.P_S}, ${p.Mx_S}, ${p.My_S})\n` +
         `  q_max (centro) = -${qMaxAbs.toFixed(2)} tonf/m²\n` +
