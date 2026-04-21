@@ -172,6 +172,16 @@ static Eigen::Matrix3d bendingConstitutive(const Material& mat) {
     return Db;
 }
 
+// Overload: per-element thickness (layered zones)
+static Eigen::Matrix3d bendingConstitutive(const Material& mat, double t_elem) {
+    double D0 = mat.E * std::pow(t_elem, 3) / (12.0 * (1.0 - mat.nu * mat.nu));
+    Eigen::Matrix3d Db;
+    Db << D0,           D0 * mat.nu,  0.0,
+          D0 * mat.nu,  D0,           0.0,
+          0.0,          0.0,          D0 * 0.5 * (1.0 - mat.nu);
+    return Db;
+}
+
 /**
  * Shear constitutive matrix Ds (2×2).
  *
@@ -180,9 +190,18 @@ static Eigen::Matrix3d bendingConstitutive(const Material& mat) {
  */
 static Eigen::Matrix2d shearConstitutive(const Material& mat) {
     double G = mat.E / (2.0 * (1.0 + mat.nu));
-    // Kirchhoff: κ → very large → Ds → ∞ → γ → 0 (no shear deformation)
     double kappa = (mat.theory == PlateTheory::KIRCHHOFF) ? 1.0e10 : SHEAR_CORRECTION;
     double Ds0 = kappa * G * mat.t;
+    Eigen::Matrix2d Ds;
+    Ds << Ds0, 0.0,
+          0.0, Ds0;
+    return Ds;
+}
+
+static Eigen::Matrix2d shearConstitutive(const Material& mat, double t_elem) {
+    double G = mat.E / (2.0 * (1.0 + mat.nu));
+    double kappa = (mat.theory == PlateTheory::KIRCHHOFF) ? 1.0e10 : SHEAR_CORRECTION;
+    double Ds0 = kappa * G * t_elem;
     Eigen::Matrix2d Ds;
     Ds << Ds0, 0.0,
           0.0, Ds0;
@@ -426,8 +445,10 @@ PlateResult solve(
     const std::vector<BC>& bcs,
     double pressure,
     const std::vector<PointLoad>& pointLoads,
-    const std::vector<Spring>& springs)
+    const std::vector<Spring>& springs,
+    const std::vector<double>& thicknesses)
 {
+    bool perElemT = !thicknesses.empty() && static_cast<int>(thicknesses.size()) == static_cast<int>(elements.size());
     int nNodes = static_cast<int>(nodes.size());
     int nDofs  = nNodes * DOFS_PER_NODE;
     int nElems = static_cast<int>(elements.size());
@@ -448,8 +469,34 @@ PlateResult solve(
             enodes[i] = nodes[elem[i]];
         }
 
-        // Element stiffness
-        auto Ke = elementStiffness(enodes, mat);
+        // Element stiffness — use per-element thickness if provided (layered)
+        Eigen::Matrix<double, 12, 12> Ke;
+        if (perElemT) {
+            // Manually compute Ke with per-element thickness
+            Ke = Eigen::Matrix<double, 12, 12>::Zero();
+            double t_e = thicknesses[e];
+            Eigen::Matrix3d Db_e = bendingConstitutive(mat, t_e);
+            Eigen::Matrix2d Ds_e = shearConstitutive(mat, t_e);
+            // Bending part
+            for (int gp = 0; gp < 4; gp++) {
+                double xi = GP2_pts[gp][0], eta = GP2_pts[gp][1], wt = GP2_wts[gp];
+                double dN[4][2]; shapeFunctionDerivs(xi, eta, dN);
+                double Jinv[2][2]; double detJ = jacobian(enodes, dN, Jinv);
+                double dNdx[4][2]; physicalDerivs(dN, Jinv, dNdx);
+                auto Bb = bendingB(dNdx);
+                Ke += wt * detJ * (Bb.transpose() * Db_e * Bb);
+            }
+            // Shear part (MITC4)
+            for (int gp = 0; gp < 4; gp++) {
+                double xi = GP2_pts[gp][0], eta = GP2_pts[gp][1], wt = GP2_wts[gp];
+                double dN[4][2]; shapeFunctionDerivs(xi, eta, dN);
+                double Jinv[2][2]; double detJ = jacobian(enodes, dN, Jinv);
+                auto Bs = shearBmitc4(enodes, xi, eta);
+                Ke += wt * detJ * (Bs.transpose() * Ds_e * Bs);
+            }
+        } else {
+            Ke = elementStiffness(enodes, mat);
+        }
 
         // Element load
         auto fe = elementLoadUniform(enodes, pressure);
@@ -525,7 +572,15 @@ PlateResult solve(
             d_e(3 * i + 2) = u(3 * elem[i] + 2);
         }
 
-        auto sr = elementStressResultants(enodes, mat, d_e);
+        // Use per-element material for stress recovery if provided (layered)
+        std::array<double, 5> sr;
+        if (perElemT) {
+            Material mat_e = mat;
+            mat_e.t = thicknesses[e];
+            sr = elementStressResultants(enodes, mat_e, d_e);
+        } else {
+            sr = elementStressResultants(enodes, mat, d_e);
+        }
         result.Mxx[e] = sr[0];
         result.Myy[e] = sr[1];
         result.Mxy[e] = sr[2];

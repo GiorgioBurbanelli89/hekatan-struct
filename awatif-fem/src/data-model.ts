@@ -89,6 +89,15 @@ export type AnalyzeOutputs = {
   tranverseShearX?: Map<number, number[]>;
   tranverseShearY?: Map<number, number[]>;
   vonMises?: Map<number, number[]>;
+  /** Presión de contacto Winkler/soil (kN/m² o tonf/m²). Usado por zapatas con springs. */
+  pressure?: Map<number, number[]>;
+  /**
+   * Override opcional del rango [min, max] del colormap por campo específico.
+   * Keys: "pressure", "bendingXX", "vonMises", etc. (los del shell results dropdown).
+   * Cualquier campo no listado aquí usa auto-escala.
+   * Útil p.ej. para zapata: { pressure: [0, -q_adm] } fija rango de pressure pero NO afecta bendingXX.
+   */
+  colorMapRanges?: Record<string, [number, number]>;
 };
 
 export type ModalOutputs = {

@@ -14,7 +14,8 @@ export function deformCpp(
   nodes: Node[],
   elements: Element[],
   nodeInputs: NodeInputs,
-  elementInputs: ElementInputs
+  elementInputs: ElementInputs,
+  springs?: Array<{ node: number; dof: number; k: number }>
 ): DeformOutputs {
   if (nodes.length === 0) return;
 
@@ -109,6 +110,17 @@ export function deformCpp(
   const reactionsSizeOutPtr = mod._malloc(4);
   gc.push(reactionsSizeOutPtr);
 
+  // Springs (Winkler foundation, nodal). Layout: [node, dof, k, ...]
+  const springsFlat: number[] = springs
+    ? springs.flatMap((s) => [s.node, s.dof, s.k])
+    : [];
+  const springsPtr = allocate(
+    springsFlat.length > 0 ? springsFlat : [0],
+    Float64Array,
+    mod.HEAPF64
+  );
+  gc.push(springsPtr);
+
   // 2- Call C++ Function
   mod._deform(
     nodesPtr,
@@ -151,8 +163,9 @@ export function deformCpp(
     elasticitiesOrthogonal.valuesPtr,
     elasticitiesOrthogonal.size,
     // NOTE: shearAreasY/Z, rigidOffsets, releases are handled by the TS solver
-    // The WASM binary needs recompilation to accept these params
-    // shearAreasY, shearAreasZ, rigidOffsets, releases — skipped for now
+    // Springs (Winkler): flat [node, dof, k, ...] array
+    springsPtr,
+    springs ? springs.length : 0,
     // Output pointers
     deformationsDataPtrOutPtr,
     deformationsSizeOutPtr,

@@ -171,7 +171,8 @@ PlateResult solve(
     const std::vector<BC>& bcs,
     double pressure = 0.0,
     const std::vector<PointLoad>& pointLoads = {},
-    const std::vector<Spring>& springs = {});
+    const std::vector<Spring>& springs = {},
+    const std::vector<double>& thicknesses = {});  // optional per-element thickness (layered)
 
 // ── Mesh Generation ────────────────────────────────────────────────
 

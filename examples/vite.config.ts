@@ -43,6 +43,8 @@ export default defineConfig({
         "plate-q4": "src/plate-q4/index.html",
         "plate-q4-report": "src/plate-q4/report.html",
         "fem-explained": "src/fem-explained/index.html",
+        "zapata-viga-amarre": "src/zapata-viga-amarre/index.html",
+        "zapata-aislada": "src/zapata-aislada/index.html",
       },
     },
   },

@@ -53,6 +53,10 @@ void plate_q4_solve(
     // ── Spring supports ──
     double* springs_ptr, int num_springs,  // [node,dof,k, ...] 3*num_springs doubles
 
+    // ── Per-element thickness (layered) ──
+    // If num_thicknesses > 0 and == num_elements, overrides global thickness per element.
+    double* thicknesses_ptr, int num_thicknesses,
+
     // ── Outputs (allocated by C++, freed by JS) ──
     double** displacements_ptr_out, int* displacements_size_out,
     double** stress_resultants_ptr_out, int* stress_resultants_size_out
@@ -118,8 +122,15 @@ void plate_q4_solve(
         springs[i].k    = springs_ptr[3 * i + 2];
     }
 
+    // ── 5b. Per-element thicknesses (optional, for layered zones) ──
+    std::vector<double> thicknesses;
+    if (num_thicknesses > 0 && thicknesses_ptr) {
+        thicknesses.resize(num_thicknesses);
+        for (int i = 0; i < num_thicknesses; i++) thicknesses[i] = thicknesses_ptr[i];
+    }
+
     // ── 6. Solve ──
-    PlateResult result = solve(nodes, elements, mat, bcs, pressure, pointLoads, springs);
+    PlateResult result = solve(nodes, elements, mat, bcs, pressure, pointLoads, springs, thicknesses);
 
     // ── 6. Pack outputs ──
 

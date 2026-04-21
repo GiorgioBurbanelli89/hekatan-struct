@@ -160,6 +160,7 @@ export function getSettings(
         shearX: "tranverseShearX",
         shearY: "tranverseShearY",
         vonMises: "vonMises",
+        pressure: "pressure",
         displacementX: "displacementX",
         displacementY: "displacementY",
         displacementZ: "displacementZ",

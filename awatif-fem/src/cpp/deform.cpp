@@ -32,6 +32,10 @@ extern "C"
         int *poisson_keys_ptr, double *poisson_values_ptr, int num_poisson,                                              // Map<elemIdx, nu>
         int *elasticitiesOrthogonal_keys_ptr, double *elasticitiesOrthogonal_values_ptr, int num_elasticitiesOrthogonal, // Map<elemIdx, E_ortho>
 
+        // Nodal springs (Winkler foundation, partial restraints)
+        // Flat layout: [node0, dof0, k0, node1, dof1, k1, ...]  length = 3 * num_springs
+        double *springs_flat_ptr, int num_springs,
+
         // --- Output Pointers (to be allocated by C++ and filled) ---
         // These are pointers *to* pointers. C++ allocates memory using malloc
         // and writes the address of the allocated block into these pointers.
@@ -78,6 +82,18 @@ extern "C"
 
         Eigen::VectorXd F_global = getForces(nodeInputs, dof);
         Eigen::SparseMatrix<double> K_global = getGlobalStiffnessMatrix(nodes, element_indices, element_sizes, elementInputs, dof);
+
+        // --- Add nodal springs (Winkler foundation) to diagonal of K_global ---
+        // Each spring adds +k to K_global(gdof, gdof) where gdof = 6*node + dof
+        for (int i = 0; i < num_springs; ++i) {
+            int node = static_cast<int>(springs_flat_ptr[3 * i]);
+            int d    = static_cast<int>(springs_flat_ptr[3 * i + 1]);
+            double k = springs_flat_ptr[3 * i + 2];
+            int gdof = 6 * node + d;
+            if (gdof >= 0 && gdof < dof) {
+                K_global.coeffRef(gdof, gdof) += k;
+            }
+        }
 
         std::vector<int> freeIndices = getFreeIndices(nodeInputs, dof);
         std::vector<int> zeroIndices = getZerosIndices(K_global);

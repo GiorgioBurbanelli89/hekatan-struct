@@ -1,4 +1,5 @@
 import van, { State } from "vanjs-core";
+import { fixedColorMapRange } from "../viewer/getViewer";
 
 import "./styles.css";
 
@@ -50,6 +51,15 @@ export function getLegend(
 
 // Utils
 function getMarkerValue(values: number[], ratio: number) {
-  const valueRange = Math.max(...values) - Math.min(...values);
-  return (Math.min(...values) + ratio * valueRange).toPrecision(3);
+  // Si hay override fijo (ej. zapata: [0, 1.5×q_adm]), usarlo para el legend también
+  const rng = fixedColorMapRange.val;
+  if (rng) {
+    return (rng[0] + ratio * (rng[1] - rng[0])).toPrecision(3);
+  }
+  const valid = values.filter((v) => Number.isFinite(v));
+  if (valid.length === 0) return "0";
+  let vMin = Math.min(...valid);
+  const vMax = Math.max(...valid);
+  if (vMin >= 0 && vMax > 0) vMin = 0;
+  return (vMin + ratio * (vMax - vMin)).toPrecision(3);
 }

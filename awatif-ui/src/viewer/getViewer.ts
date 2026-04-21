@@ -362,6 +362,10 @@ function deriveNodes(
   });
 }
 
+// State global expuesto al legend/colormap para override de rango [min,max]
+// Si es null → auto-escala. Si [a,b] → fijo.
+export const fixedColorMapRange: State<[number, number] | null> = van.state(null as any);
+
 function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
   // Init
   const colorMapValues = van.state([]);
@@ -376,6 +380,7 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
     tranverseShearX = "tranverseShearX",
     tranverseShearY = "tranverseShearY",
     vonMises = "vonMises",
+    pressure = "pressure",
     displacementX = "displacementX",
     displacementY = "displacementY",
     displacementZ = "displacementZ",
@@ -393,6 +398,7 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
     const nodeShearX = new Map<number, number[]>();
     const nodeShearY = new Map<number, number[]>();
     const nodeVonMises = new Map<number, number[]>();
+    const nodePressure = new Map<number, number[]>();
 
     // Map element results to node values.
     // Supports 3-node (triangle) and 4-node (quad) elements.
@@ -418,6 +424,14 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
     mapResultToNodes(mesh.analyzeOutputs?.val?.tranverseShearX, nodeShearX);
     mapResultToNodes(mesh.analyzeOutputs?.val?.tranverseShearY, nodeShearY);
     mapResultToNodes(mesh.analyzeOutputs?.val?.vonMises, nodeVonMises);
+    mapResultToNodes((mesh.analyzeOutputs?.val as any)?.pressure, nodePressure);
+
+    // Override POR CAMPO: colorMapRanges[field] define rango fijo sólo para ese shell result.
+    // Campos no listados → auto-escala (bendingXX, vonMises, etc. conservan su gradiente natural).
+    const ranges = (mesh.analyzeOutputs?.val as any)?.colorMapRanges;
+    const currentField = settings.shellResults.val;
+    const r = ranges?.[currentField];
+    fixedColorMapRange.val = (Array.isArray(r) && r.length === 2) ? [r[0], r[1]] : null;
 
     const resultMapper = {
       [ResultType.bendingXX]: [nodeBendingXX, 0],
@@ -429,6 +443,7 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
       [ResultType.tranverseShearX]: [nodeShearX, 0],
       [ResultType.tranverseShearY]: [nodeShearY, 0],
       [ResultType.vonMises]: [nodeVonMises, 0],
+      [ResultType.pressure]: [nodePressure, 0],
       [ResultType.displacementX]: [mesh.deformOutputs?.val?.deformations, 0],
       [ResultType.displacementY]: [mesh.deformOutputs?.val?.deformations, 1],
       [ResultType.displacementZ]: [mesh.deformOutputs?.val?.deformations, 2],
@@ -439,7 +454,9 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
       const resultMap = resultMapper[settings.shellResults.val];
       if (!resultMap || !resultMap[0] || typeof resultMap[0].has !== 'function') return;
       if (!resultMap[0].has(i)) {
-        values.push(0);
+        // Nodos sin valor (p.ej. tope de pedestal que sobresale de la placa) → NaN.
+        // El colormap filtrará NaN en min/max para que no distorsione el legend.
+        values.push(Number.NaN);
         return;
       }
       const entry = resultMap[0].get(i);

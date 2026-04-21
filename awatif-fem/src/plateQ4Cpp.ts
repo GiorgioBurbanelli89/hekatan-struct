@@ -68,6 +68,10 @@ export interface PlateQ4Input {
 
   // Spring supports: elastic foundation / partial restraints
   springs?: Array<{ node: number; dof: number; k: number }>;
+
+  // Per-element thickness (layered zones: zapata + viga + pedestal)
+  // If provided and length == elements.length, overrides global `thickness`.
+  thicknesses?: number[];
 }
 
 export interface PlateQ4NodeResult {
@@ -218,6 +222,20 @@ export function plateQ4Solve(input: PlateQ4Input): PlateQ4Output {
   );
   gc.push(springsPtr);
 
+  // ── Per-element thicknesses (layered) ──
+  let thicknessesFlat: number[] = [];
+  let numThicknesses = 0;
+  if (input.thicknesses && input.thicknesses.length > 0) {
+    numThicknesses = input.thicknesses.length;
+    thicknessesFlat = input.thicknesses.slice();
+  }
+  const thicknessesPtr = allocate(
+    thicknessesFlat.length > 0 ? thicknessesFlat : [0],
+    Float64Array,
+    mod.HEAPF64
+  );
+  gc.push(thicknessesPtr);
+
   // ── Output pointers (C++ writes addresses here) ──
   const dispPtrOut = mod._malloc(4);
   gc.push(dispPtrOut);
@@ -250,6 +268,8 @@ export function plateQ4Solve(input: PlateQ4Input): PlateQ4Output {
     theoryType,
     springsPtr,
     numSprings,
+    thicknessesPtr,
+    numThicknesses,
     dispPtrOut,
     dispSizeOut,
     srPtrOut,
