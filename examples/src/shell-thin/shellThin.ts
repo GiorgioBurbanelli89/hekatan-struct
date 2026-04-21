@@ -4,7 +4,7 @@
  * Usa solver `deform` con shells Q4 (6 GDL/nodo).
  */
 import { deform, analyze, type Node, type Element } from "awatif-fem";
-import type { ExampleDef } from "../exampleRegistry";
+import type { ExampleDef } from "../workspace/exampleRegistry";
 
 export const shellThin: ExampleDef = {
   id: "shell-thin",
@@ -16,7 +16,7 @@ export const shellThin: ExampleDef = {
     t:  { default: 0.05, min: 0.01, max: 0.2, step: 0.01, label: "espesor t (m)" },
     E:  { default: 30e6, min: 1e6, max: 200e6, step: 1e6, label: "E (kN/m²)" },
     nu: { default: 0.2, min: 0.1, max: 0.4, step: 0.01, label: "ν" },
-    q:  { default: -5, min: -20, max: -1, step: -0.5, label: "q presión (kN/m²)" },
+    q:  { default: 5, min: 1, max: 20, step: 0.5, label: "q presión ↓ (kN/m²)" },
     nx: { default: 8, min: 4, max: 16, step: 1, label: "nx" },
     ny: { default: 8, min: 4, max: 16, step: 1, label: "ny" },
   },
@@ -51,7 +51,7 @@ export const shellThin: ExampleDef = {
         const corner = (i === 0 || i === nx) && (j === 0 || j === ny);
         const edge = (i === 0 || i === nx || j === 0 || j === ny);
         const factor = corner ? 0.25 : edge ? 0.5 : 1.0;
-        const Fz = p.q * A_trib_full * factor;
+        const Fz = -p.q * A_trib_full * factor;  // carga descendente
         loads.set(idx, [0, 0, Fz, 0, 0, 0]);
       }
     const thicknesses = new Map<number, number>();

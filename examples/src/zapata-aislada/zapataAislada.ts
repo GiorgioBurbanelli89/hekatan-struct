@@ -49,12 +49,11 @@ export const zapataAislada: ExampleDef = {
   name: "Zapata Aislada (Ecuador q_adm tonf/m²)",
   category: "Cimentaciones",
   params: {
-    // Lz grande + tz mínimo → k_rigidez<<1 (placa flexible) → pressure/bendingXX con
-    // gradiente visible centro→bordes incluso a cargas moderadas (P=30-100 tonf).
-    Lz:    { default: 3.0,  min: 1.0, max: 5.0,  step: 0.05, label: "Lz (m)" },
-    Bz:    { default: 3.0,  min: 1.0, max: 5.0,  step: 0.05, label: "Bz (m)" },
-    // Espesor realista NEC-SE-HM Ecuador (tz=0.20 mínimo para flexibilidad visible)
-    tz:    { default: 0.20, min: 0.20, max: 1.0, step: 0.05, label: "tz (m)" },
+    // Zapata aislada típica Ecuador: cuadrada 1.50×1.50 m
+    Lz:    { default: 1.5,  min: 1.0, max: 5.0,  step: 0.05, label: "Lz (m)" },
+    Bz:    { default: 1.5,  min: 1.0, max: 5.0,  step: 0.05, label: "Bz (m)" },
+    // Espesor realista NEC-SE-HM Ecuador
+    tz:    { default: 0.30, min: 0.20, max: 1.0, step: 0.05, label: "tz (m)" },
     bc:    { default: 0.4,  min: 0.2, max: 0.8,  step: 0.05, label: "bc columna (m)" },
     Hp:    { default: 0.5,  min: 0.3, max: 2.0,  step: 0.1,  label: "Hp pedestal (m)" },
     // Selector de tipo de suelo (NEC-SE-GC Ecuador / Bowles)
@@ -63,7 +62,7 @@ export const zapataAislada: ExampleDef = {
       label: "Tipo de suelo",
       options: Object.fromEntries(SOIL_TYPES.map((s, i) => [s.name, i])),
     },
-    q_adm:    { default: 20,    min: 1,    max: 200,    step: 1,    label: "q_adm (tonf/m²)" },
+    q_adm:    { default: 20,    min: 1,    max: 100,    step: 1,    label: "q_adm (tonf/m²)" },
     ks_factor:{ default: 10.5,  min: 5,    max: 20,     step: 0.5,  label: "ks/q_adm (Bowles)" },
     // Propiedades geotécnicas (se autopoblan al cambiar Tipo de suelo)
     su:       { default: 0,     min: 0,    max: 300,    step: 1,    label: "su cohesión (kPa)" },
@@ -71,11 +70,10 @@ export const zapataAislada: ExampleDef = {
     gamma:    { default: 18,    min: 14,   max: 26,     step: 0.5,  label: "γ suelo (kN/m³)" },
     N_SPT:    { default: 20,    min: 0,    max: 100,    step: 1,    label: "N SPT" },
     E_soil:   { default: 25000, min: 1000, max: 2000000,step: 1000, label: "E suelo (kPa)" },
-    // Default P < q_adm×Área = 20×2.25 = 45 tonf → colormap NO satura en rojo,
-    // se ve concentración verde/amarillo/rojo bajo la columna (plato flexible tz=0.25).
-    P:     { default: 30,   min: 1,   max: 200,  step: 1,    label: "P axial (tonf)" },
-    Mx:    { default: 0,    min: -3,  max: 3,    step: 0.1,  label: "Mx (tonf·m)" },
-    My:    { default: 0,    min: -3,  max: 3,    step: 0.1,  label: "My (tonf·m)" },
+    // Rangos típicos Ecuador: P 1-400 tonf (edificios pequeños a medianos), M ±1 tonf·m
+    P:     { default: 20,   min: 1,     max: 400,  step: 1,    label: "P axial (tonf)" },
+    Mx:    { default: 0,    min: -1,    max: 1,    step: 0.05, label: "Mx (tonf·m)" },
+    My:    { default: 0,    min: -1,    max: 1,    step: 0.05, label: "My (tonf·m)" },
     // Mesh fino captura concentración bajo columna (peak al centro)
     nSub:  { default: 10,   min: 3,   max: 16,   step: 1,    label: "n subdivisiones" },
   },

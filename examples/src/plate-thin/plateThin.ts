@@ -3,7 +3,7 @@
  * Placa delgada simplemente apoyada bajo carga uniforme.
  */
 import { plateQ4Solve, type Node } from "awatif-fem";
-import type { ExampleDef } from "../exampleRegistry";
+import type { ExampleDef } from "../workspace/exampleRegistry";
 
 export const plateThin: ExampleDef = {
   id: "plate-thin",
@@ -15,7 +15,8 @@ export const plateThin: ExampleDef = {
     t:  { default: 0.05, min: 0.02, max: 0.2, step: 0.01, label: "espesor t (m)" },
     E:  { default: 30e6, min: 1e6, max: 200e6, step: 1e6, label: "E (kN/m²)" },
     nu: { default: 0.3, min: 0.1, max: 0.4, step: 0.01, label: "ν" },
-    q:  { default: -5, min: -20, max: -1, step: -0.5, label: "q presión (kN/m²)" },
+    // q = magnitud de carga uniforme descendente en kN/m² (+). Internamente se aplica como -q.
+    q:  { default: 5, min: 1, max: 20, step: 0.5, label: "q presión ↓ (kN/m²)" },
     nx: { default: 10, min: 4, max: 20, step: 1, label: "nx elementos" },
     ny: { default: 10, min: 4, max: 20, step: 1, label: "ny elementos" },
   },
@@ -26,9 +27,8 @@ export const plateThin: ExampleDef = {
       meshLx: p.Lx, meshLy: p.Ly,
       meshNx: Math.round(p.nx), meshNy: Math.round(p.ny),
       bcType: "simply-supported",
-      pressure: p.q,
+      pressure: -p.q,             // aplicar carga hacia abajo
     });
-    // Convertir a formato awatif nodes/elements para renderizar
     const nodes: Node[] = out.nodeResults.map((n) => [n.x, n.y, 0]);
     const elems = out.elementResults.map((e) => e.nodes);
     states.nodes.val = nodes;
@@ -37,13 +37,22 @@ export const plateThin: ExampleDef = {
     elems.forEach((_, i) => thicknesses.set(i, p.t));
     states.nodeInputs.val = {};
     states.elementInputs.val = { thicknesses };
-    // Displacements a formato DeformOutputs
     const deformations = new Map<number, [number, number, number, number, number, number]>();
     out.nodeResults.forEach((n, i) => {
       deformations.set(i, [0, 0, n.w, n.bx, n.by, 0]);
     });
     states.deformOutputs.val = { deformations };
-    states.analyzeOutputs.val = {};
+    // Poblar analyzeOutputs con bendingXX, bendingYY, bendingXY para shell results
+    const bendingXX = new Map<number, number[]>();
+    const bendingYY = new Map<number, number[]>();
+    const bendingXY = new Map<number, number[]>();
+    out.elementResults.forEach((er, i) => {
+      // Valor constante per-element (4 nodos Q4 reciben mismo valor)
+      bendingXX.set(i, [er.Mxx, er.Mxx, er.Mxx, er.Mxx]);
+      bendingYY.set(i, [er.Myy, er.Myy, er.Myy, er.Myy]);
+      bendingXY.set(i, [er.Mxy, er.Mxy, er.Mxy, er.Mxy]);
+    });
+    states.analyzeOutputs.val = { bendingXX, bendingYY, bendingXY };
     states.objects3D.val = [];
   },
 };
