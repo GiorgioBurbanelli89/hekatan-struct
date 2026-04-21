@@ -82,16 +82,61 @@ export const zapataAislada: ExampleDef = {
     gamma:    { default: 18,    min: 14,   max: 26,     step: 0.5,  label: "γ suelo (kN/m³)" },
     N_SPT:    { default: 20,    min: 0,    max: 100,    step: 1,    label: "N SPT" },
     E_soil:   { default: 25000, min: 1000, max: 2000000,step: 1000, label: "E suelo (kPa)" },
-    // Cargas tipo FEM Studio: CM + CV axial + Mx, My (momentos por default no-cero
-    // para que la zapata se incline visiblemente)
-    CM:    { default: 15,   min: 0,     max: 300,  step: 1,    label: "CM axial (tonf)" },
-    CV:    { default: 5,    min: 0,     max: 200,  step: 1,    label: "CV axial (tonf)" },
-    Mx:    { default: 3,    min: -20,   max: 20,   step: 0.5,  label: "Mx (tonf·m)" },
-    My:    { default: 2,    min: -20,   max: 20,   step: 0.5,  label: "My (tonf·m)" },
+    // ── Patrones de carga (D = Carga Muerta, L = Carga Viva, S = Sobrecarga) ──
+    // Cada patrón: P (axial), Mx, My — se analizan por separado y se combinan
+    // según el "Combo" seleccionado (1.2D+1.6L por defecto, o individuales,
+    // o sísmicas, etc.).
+    P_D:   { default: 10,   min: 0,     max: 500,  step: 0.5,  label: "P (tonf)",   folder: "Carga Muerta (D)" },
+    Mx_D:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "Mx (tonf·m)", folder: "Carga Muerta (D)" },
+    My_D:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "My (tonf·m)", folder: "Carga Muerta (D)" },
+    P_L:   { default: 5,    min: 0,     max: 500,  step: 0.5,  label: "P (tonf)",   folder: "Carga Viva (L)" },
+    Mx_L:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "Mx (tonf·m)", folder: "Carga Viva (L)" },
+    My_L:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "My (tonf·m)", folder: "Carga Viva (L)" },
+    P_S:   { default: 0,    min: 0,     max: 500,  step: 0.5,  label: "P (tonf)",   folder: "Sobrecarga (S)" },
+    Mx_S:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "Mx (tonf·m)", folder: "Sobrecarga (S)" },
+    My_S:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "My (tonf·m)", folder: "Sobrecarga (S)" },
+    // Selector de combinación de cargas.
+    //   0 = 1.2D + 1.6L (ACI 318 / NEC-SE-CG gravitatoria — default)
+    //   1 = 1.4D
+    //   2 = 1.2D + 1.0L
+    //   3 = 1.2D + 1.0L + 0.5S
+    //   4 = 1.2D + 1.6S + 0.5L
+    //   5 = Servicio: 1.0D + 1.0L
+    //   6 = 1.0D (solo Carga Muerta)
+    //   7 = 1.0L (solo Carga Viva)
+    //   8 = 1.0S (solo Sobrecarga)
+    //   9 = Sísmica: 1.2D + 1.0L + 1.0E (se usa P_S como sismo E)
+    //  10 = Sísmica: 0.9D + 1.0E
+    //  11 = Custom (editar factores manualmente abajo)
+    combo: {
+      default: 0,
+      label: "Combinación",
+      folder: "Combinación",
+      options: {
+        "1.2D + 1.6L (gravitatoria)": 0,
+        "1.4D": 1,
+        "1.2D + 1.0L": 2,
+        "1.2D + 1.0L + 0.5S": 3,
+        "1.2D + 1.6S + 0.5L": 4,
+        "Servicio 1.0D + 1.0L": 5,
+        "1.0D (solo D)": 6,
+        "1.0L (solo L)": 7,
+        "1.0S (solo S)": 8,
+        "Sísmica 1.2D+1.0L+1.0E": 9,
+        "Sísmica 0.9D + 1.0E": 10,
+        "Custom": 11,
+      },
+    },
+    fD: { default: 1.2, min: -2, max: 2, step: 0.05, label: "factor D", folder: "Combinación" },
+    fL: { default: 1.6, min: -2, max: 2, step: 0.05, label: "factor L", folder: "Combinación" },
+    fS: { default: 0,   min: -2, max: 2, step: 0.05, label: "factor S (o E)", folder: "Combinación" },
     // Mesh fino captura concentración bajo columna (peak al centro)
     nSub:  { default: 10,   min: 3,   max: 16,   step: 1,    label: "n subdivisiones" },
   },
-  /** Cuando cambia el tipo de suelo → autopoblar TODAS las propiedades geotécnicas */
+  /** onParamChange:
+   *   - soilType → autopoblar propiedades geotécnicas
+   *   - combo    → autopoblar factores fD, fL, fS
+   */
   onParamChange(key, params) {
     if (key === "soilType") {
       const idx = Math.round(params.soilType ?? 0);
@@ -106,6 +151,27 @@ export const zapataAislada: ExampleDef = {
         params.E_soil    = soil.E_soil;
       }
     }
+    if (key === "combo") {
+      const c = Math.round(params.combo ?? 0);
+      // [fD, fL, fS] para cada combinación
+      const FACTORS: Array<[number, number, number]> = [
+        [1.2, 1.6, 0.0], // 0: 1.2D+1.6L
+        [1.4, 0.0, 0.0], // 1: 1.4D
+        [1.2, 1.0, 0.0], // 2: 1.2D+1.0L
+        [1.2, 1.0, 0.5], // 3: 1.2D+1.0L+0.5S
+        [1.2, 0.5, 1.6], // 4: 1.2D+1.6S+0.5L
+        [1.0, 1.0, 0.0], // 5: Servicio D+L
+        [1.0, 0.0, 0.0], // 6: 1.0D
+        [0.0, 1.0, 0.0], // 7: 1.0L
+        [0.0, 0.0, 1.0], // 8: 1.0S
+        [1.2, 1.0, 1.0], // 9: Sísmica 1.2D+1.0L+1.0E (E usa P_S)
+        [0.9, 0.0, 1.0], // 10: Sísmica 0.9D+1.0E
+        // 11: Custom — no sobrescribe (usuario edita manualmente)
+      ];
+      if (c >= 0 && c < FACTORS.length) {
+        [params.fD, params.fL, params.fS] = FACTORS[c];
+      }
+    }
   },
   build(p, states) {
     const { Lz, Bz, tz, bc, Hp } = p;
@@ -115,9 +181,16 @@ export const zapataAislada: ExampleDef = {
     const ks_factor  = p.ks_factor;
     const q_adm_kNm2 = q_adm_tonf * TONF_TO_KN;           // tonf/m² → kN/m²
     const ks = q_adm_kNm2 * ks_factor;                    // kN/m³
-    const P_kN  = (p.CM + p.CV) * TONF_TO_KN;  // axial total = CM + CV
-    const Mx_kN = p.Mx * TONF_TO_KN;
-    const My_kN = p.My * TONF_TO_KN;
+    // ── Combinación de patrones D/L/S ──
+    // P_total = fD × P_D + fL × P_L + fS × P_S  (tonf)
+    // Similar para Mx, My. Se aplica un único set de cargas resultante al nodo.
+    const fD = p.fD ?? 1.2, fL = p.fL ?? 1.6, fS = p.fS ?? 0;
+    const P_total_tonf  = fD * (p.P_D  ?? 0) + fL * (p.P_L  ?? 0) + fS * (p.P_S  ?? 0);
+    const Mx_total_tonf = fD * (p.Mx_D ?? 0) + fL * (p.Mx_L ?? 0) + fS * (p.Mx_S ?? 0);
+    const My_total_tonf = fD * (p.My_D ?? 0) + fL * (p.My_L ?? 0) + fS * (p.My_S ?? 0);
+    const P_kN  = P_total_tonf  * TONF_TO_KN;
+    const Mx_kN = Mx_total_tonf * TONF_TO_KN;
+    const My_kN = My_total_tonf * TONF_TO_KN;
     const nSub = Math.round(p.nSub);
 
     // Mesh shell Q4 + columna centrada
@@ -266,8 +339,16 @@ export const zapataAislada: ExampleDef = {
       // Rigidez relativa de plato (Biot): k_r = D / (ks × Lz⁴). <1 flexible, >1 rígido
       const D_plate = Ec * tz ** 3 / (12 * (1 - nu_c ** 2));
       const k_r = D_plate / (ks * Lz ** 4);
+      const comboNames = [
+        "1.2D+1.6L", "1.4D", "1.2D+1.0L", "1.2D+1.0L+0.5S",
+        "1.2D+1.6S+0.5L", "D+L serv.", "1.0D", "1.0L", "1.0S",
+        "1.2D+1.0L+1.0E", "0.9D+1.0E", "Custom",
+      ];
+      const comboName = comboNames[Math.round(p.combo ?? 0)] ?? "?";
       console.log(
-        `[Zapata Aislada]\n` +
+        `[Zapata Aislada]  Combo: ${comboName}  (fD=${fD}, fL=${fL}, fS=${fS})\n` +
+        `  Cargas totales: P=${P_total_tonf.toFixed(2)} tonf, Mx=${Mx_total_tonf.toFixed(2)} tonf·m, My=${My_total_tonf.toFixed(2)} tonf·m\n` +
+        `  Patrones: D(${p.P_D}, ${p.Mx_D}, ${p.My_D}) L(${p.P_L}, ${p.Mx_L}, ${p.My_L}) S(${p.P_S}, ${p.Mx_S}, ${p.My_S})\n` +
         `  q_max (centro) = -${qMaxAbs.toFixed(2)} tonf/m²\n` +
         `  q_min (bordes) = -${qMinAbs.toFixed(2)} tonf/m²\n` +
         `  variación = ${((1 - qMinAbs / (qMaxAbs || 1)) * 100).toFixed(1)}%\n` +

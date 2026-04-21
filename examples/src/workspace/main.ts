@@ -128,7 +128,9 @@ function autoScaleDeformedShape() {
     if (m > maxDef) maxDef = m;
   });
   if (maxDef < 1e-30) { s.deformScale.val = 1; return; }
-  s.deformScale.val = Math.min(10000, Math.max(1, (0.05 * diag) / maxDef));
+  // Target: deformación visible = 25% del diagonal (antes 15% — poco visible a 10 tonf).
+  // Con 25% ya se ve claramente la curvatura de la placa a cargas moderadas.
+  s.deformScale.val = Math.min(50000, Math.max(1, (0.25 * diag) / maxDef));
   // displayScale solo para markers — fijo en 1 (1:1 real)
   if (s.displayScale) s.displayScale.val = 1;
 }
