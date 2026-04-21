@@ -3,7 +3,7 @@
  * Cáscara delgada (membrana + flexión Kirchhoff) con apoyos en bordes.
  * Usa solver `deform` con shells Q4 (6 GDL/nodo).
  */
-import { deform, analyze, type Node, type Element } from "awatif-fem";
+import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 export const shellThin: ExampleDef = {
@@ -12,6 +12,7 @@ export const shellThin: ExampleDef = {
   category: "Cáscaras",
   defaultShellResult: "displacementZ",
   availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "membraneXX", "membraneYY", "membraneXY", "vonMises", "displacementZ"],
+  hasModal: true,
   params: {
     Lx: { default: 4.0, min: 1, max: 10, step: 0.5, label: "Lx (m)" },
     Ly: { default: 4.0, min: 1, max: 10, step: 0.5, label: "Ly (m)" },
@@ -77,5 +78,20 @@ export const shellThin: ExampleDef = {
       console.error("Shell thin solver error:", e);
     }
     states.objects3D.val = [];
+  },
+  runModal(p, states, modalPanel) {
+    const nodes = states.nodes.val;
+    const elements = states.elements.val;
+    const ni = states.nodeInputs.val;
+    const ei = states.elementInputs.val;
+    if (!nodes.length || !elements.length || !ni.supports?.size || !ei.densities?.size) return;
+    try {
+      const out = modalAnalysis(nodes, elements, ni, ei, 12);
+      modalPanel.render(out, {
+        title: `Shell Thin ${p.Lx}×${p.Ly}m t=${p.t}m`,
+        properties: [`E=${(p.E/1e6).toFixed(1)} GPa  ν=${p.nu}  ρ=24 kN/m³`],
+      });
+      console.log(`[Shell Thin Modal] f₁=${out.frequencies[0]?.toFixed(4)} Hz`);
+    } catch (e: any) { console.warn("Modal shell-thin error:", e.message); }
   },
 };

@@ -3,7 +3,7 @@
  * Shell Q4 (zapatas) + Frame (viga) + Frame (pedestales) + Winkler springs real.
  */
 import * as THREE from "three";
-import { deform, analyze, type Node, type Element } from "awatif-fem";
+import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
 import type { ExampleDef, BuildStates } from "../exampleRegistry";
 
 const Ec = 25e6;
@@ -23,6 +23,7 @@ export const zapataVigaAmarre: ExampleDef = {
   category: "Cimentaciones",
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "displacementZ", "vonMises"],
+  hasModal: true,
   params: {
     Lz1: { default: 2.0, min: 1.0, max: 4.0, step: 0.1, label: "Lz1 (m)" },
     Bz1: { default: 2.0, min: 1.0, max: 4.0, step: 0.1, label: "Bz1 (m)" },
@@ -249,5 +250,20 @@ export const zapataVigaAmarre: ExampleDef = {
       springs3D.push(new THREE.Line(geom, MAT_SPRING));
     }
     states.objects3D.val = springs3D;
+  },
+  runModal(p, states, modalPanel) {
+    const nodes = states.nodes.val;
+    const elements = states.elements.val;
+    const ni = states.nodeInputs.val;
+    const ei = states.elementInputs.val;
+    if (!nodes.length || !elements.length || !ei.densities?.size) return;
+    try {
+      const out = modalAnalysis(nodes, elements, ni, ei, 12);
+      modalPanel.render(out, {
+        title: `Zapata + Viga amarre Lv=${p.Lv}m`,
+        properties: [`E=25 GPa  ν=0.2  ρ=24 kN/m³  Viga ${p.Bv}×${p.Hv}m`],
+      });
+      console.log(`[Zapata+Viga Modal] f₁=${out.frequencies[0]?.toFixed(4)} Hz`);
+    } catch (e: any) { console.warn("Modal zapata-viga error:", e.message); }
   },
 };

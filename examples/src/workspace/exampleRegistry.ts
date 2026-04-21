@@ -17,6 +17,9 @@ export interface ParamDef {
   label?: string;
   /** Si se define, Tweakpane lo renderiza como dropdown (numeric enum) */
   options?: Record<string, number>;
+  /** Folder del Tweakpane donde va (e.g. "Geometría", "Luces", "Cargas").
+   *  Si no se define, va en el folder raíz "Parámetros". */
+  folder?: string;
 }
 
 export interface BuildStates {

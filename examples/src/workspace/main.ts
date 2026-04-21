@@ -101,7 +101,9 @@ function loadExample(ex: ExampleDef) {
  */
 function autoScaleDeformedShape() {
   const s = (viewerElm as any).__settings;
-  if (s?.displayScale) s.displayScale.val = 1;
+  // Default -1 → factor efectivo 1:1 real (no amplifica). Usuario puede mover
+  // el slider a valores positivos para exagerar la deformada.
+  if (s?.displayScale) s.displayScale.val = -1;
 }
 
 /** Oculta opciones no aplicables del <select> "Shell results" del Settings HTML
@@ -196,14 +198,23 @@ function buildParamsPane() {
     options: { mm: "mm", cm: "cm", "µm (poco prob.)": "µm" },
   }).on("change", (e) => { dispUnit.val = e.value as any; rebuild(); });
 
-  // ── Parámetros del ejemplo ──
-  const fParams = pane.addFolder({ title: "Parámetros" });
+  // ── Parámetros del ejemplo — agrupados en folders (si ParamDef.folder se define) ──
+  const defaultFolderTitle = "Parámetros";
+  const folderMap = new Map<string, any>();  // folder title → Tweakpane folder instance
+  const getFolder = (title: string) => {
+    if (!folderMap.has(title)) {
+      folderMap.set(title, pane.addFolder({ title, expanded: title === defaultFolderTitle }));
+    }
+    return folderMap.get(title);
+  };
   let timer: number | null = null;
   const scheduleRebuild = () => {
     if (timer !== null) clearTimeout(timer);
     timer = window.setTimeout(() => { timer = null; rebuild(); }, 120);
   };
   for (const [key, p] of Object.entries(currentExample.params)) {
+    const folderTitle = p.folder ?? defaultFolderTitle;
+    const fTarget = getFolder(folderTitle);
     const opts: any = { label: p.label ?? key };
     if (p.options !== undefined) {
       opts.options = p.options;
@@ -212,7 +223,7 @@ function buildParamsPane() {
       if (p.max !== undefined) opts.max = p.max;
       if (p.step !== undefined) opts.step = p.step;
     }
-    fParams.addBinding(currentParams, key, opts).on("change", () => {
+    fTarget.addBinding(currentParams, key, opts).on("change", () => {
       if (currentExample?.onParamChange) {
         currentExample.onParamChange(key, currentParams);
         pane.refresh();
@@ -237,6 +248,7 @@ function buildParamsPane() {
 // a displacementZ (centro = max compresión = azul; bordes = mínima = rojo) con auto-escala.
 const settingsObj: Record<string, any> = {
   deformedShape: true,
+  displayScale: -1,       // escala 1:1 real de deformada (no amplifica)
   shellResults: "pressure",
   gridSize: 10,
   showCotas: true,
