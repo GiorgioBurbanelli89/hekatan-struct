@@ -304,16 +304,16 @@ export const zapataVigaAmarre: ExampleDef = {
         }
         pts.push(new THREE.Vector3(xTop, yTop, zTop));
         out.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), MAT_SPRING));
-        // Anclaje cúbico 3D
+        // Anclaje simple: cuadrado horizontal plano (sin replicación visual en elevación)
         const a = ANCHOR_SIZE;
         const cv = [
-          [x-a,y-a,zBotEff-a*2],[x+a,y-a,zBotEff-a*2],[x+a,y+a,zBotEff-a*2],[x-a,y+a,zBotEff-a*2],
-          [x-a,y-a,zBotEff],[x+a,y-a,zBotEff],[x+a,y+a,zBotEff],[x-a,y+a,zBotEff],
-        ].map(pp => new THREE.Vector3(pp[0], pp[1], pp[2]));
-        const ce = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
-        const ep: THREE.Vector3[] = [];
-        for (const [i,j] of ce) { ep.push(cv[i], cv[j]); }
-        out.push(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(ep), MAT_GROUND));
+          new THREE.Vector3(x - a, y - a, zBotEff),
+          new THREE.Vector3(x + a, y - a, zBotEff),
+          new THREE.Vector3(x + a, y + a, zBotEff),
+          new THREE.Vector3(x - a, y + a, zBotEff),
+          new THREE.Vector3(x - a, y - a, zBotEff),
+        ];
+        out.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(cv), MAT_GROUND));
       }
       return out;
     };
