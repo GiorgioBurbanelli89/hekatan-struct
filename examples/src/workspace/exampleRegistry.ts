@@ -17,6 +17,10 @@ export interface ParamDef {
   label?: string;
   /** Si se define, Tweakpane lo renderiza como dropdown (numeric enum) */
   options?: Record<string, number>;
+  /** Si `true`, se renderiza como CHECKBOX (on/off) en Tweakpane.
+   *  El valor se guarda como 0 (off) o 1 (on) en `params`. Ejemplo: toggles
+   *  para activar/desactivar patrones de carga D/L/S. */
+  boolean?: boolean;
   /** Folder del Tweakpane donde va (e.g. "Geometría", "Luces", "Cargas").
    *  Si no se define, va en el folder raíz "Parámetros". */
   folder?: string;

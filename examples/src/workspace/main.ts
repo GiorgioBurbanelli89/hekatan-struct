@@ -316,6 +316,7 @@ function buildParamsPane() {
   const isExpandedByDefault = (title: string) =>
     title === defaultFolderTitle ||
     /\bmodo\b/i.test(title) ||
+    /activar/i.test(title) ||       // "Cargas — Activar" (toggles D/L/S)
     /combinaci/i.test(title);
   const getFolder = (title: string) => {
     if (!folderMap.has(title)) {
@@ -328,9 +329,26 @@ function buildParamsPane() {
     if (timer !== null) clearTimeout(timer);
     timer = window.setTimeout(() => { timer = null; rebuild(); }, 120);
   };
+  // Proxy de booleanos: Tweakpane requiere true/false nativo para renderizar
+  // un checkbox, pero `currentParams` usa 0/1 (Record<string, number>).
+  // Guardamos un proxy {key: boolean} y sincronizamos en cada cambio.
+  const boolProxy: Record<string, boolean> = {};
   for (const [key, p] of Object.entries(currentExample.params)) {
     const folderTitle = p.folder ?? defaultFolderTitle;
     const fTarget = getFolder(folderTitle);
+    if (p.boolean) {
+      // Checkbox on/off. Valor almacenado como 0|1 en currentParams.
+      boolProxy[key] = currentParams[key] >= 0.5;
+      fTarget.addBinding(boolProxy, key, { label: p.label ?? key }).on("change", (e) => {
+        currentParams[key] = e.value ? 1 : 0;
+        if (currentExample?.onParamChange) {
+          currentExample.onParamChange(key, currentParams);
+          pane.refresh();
+        }
+        scheduleRebuild();
+      });
+      continue;
+    }
     const opts: any = { label: p.label ?? key };
     if (p.options !== undefined) {
       opts.options = p.options;

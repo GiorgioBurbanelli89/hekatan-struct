@@ -82,25 +82,17 @@ export const zapataAislada: ExampleDef = {
     gamma:    { default: 18,    min: 14,   max: 26,     step: 0.5,  label: "γ suelo (kN/m³)" },
     N_SPT:    { default: 20,    min: 0,    max: 100,    step: 1,    label: "N SPT" },
     E_soil:   { default: 25000, min: 1000, max: 2000000,step: 1000, label: "E suelo (kPa)" },
-    // ── Modo de análisis (define cómo se aplican las cargas) ──
-    //   0 = Carga simple (P, Mx, My directos — sin patrones ni factores)
-    //   1 = Solo Carga Muerta (D) — usa patrón D sin factorizar
-    //   2 = Solo Carga Viva (L)  — usa patrón L sin factorizar
-    //   3 = Solo Sobrecarga (S)  — usa patrón S sin factorizar
-    //   4 = Combinación D/L/S    — suma factorizada fD·D + fL·L + fS·S
-    analysisMode: {
-      default: 4,
-      label: "Modo de análisis",
-      folder: "Cargas — Modo",
-      options: {
-        "1. Carga simple (P, Mx, My)":   0,
-        "2. Solo Carga Muerta (D)":      1,
-        "3. Solo Carga Viva (L)":        2,
-        "4. Solo Sobrecarga (S)":        3,
-        "5. Combinación D+L+S (factores)": 4,
-      },
-    },
-    // ── Carga simple (solo se usa si analysisMode = 0) ──
+    // ── Checkboxes: qué patrones de carga aplicar ──
+    // Cada toggle activa/desactiva un patrón. Si todos D/L/S están en 0,
+    // NO se aplica nada (deformada = 0). Si useSimple=1, se IGNORAN D/L/S
+    // y se usa solo el patrón Simple. Los factores fD/fL/fS solo aplican
+    // si hay más de un patrón activo (modo combinación).
+    useSimple: { default: 0, boolean: true, label: "🎯 Usar Carga Simple (ignora D/L/S)", folder: "Cargas — Activar" },
+    useD:      { default: 1, boolean: true, label: "☑ Usar Patrón D (Muerta)",           folder: "Cargas — Activar" },
+    useL:      { default: 1, boolean: true, label: "☑ Usar Patrón L (Viva)",             folder: "Cargas — Activar" },
+    useS:      { default: 0, boolean: true, label: "☐ Usar Patrón S (Sobrecarga)",       folder: "Cargas — Activar" },
+    useFactors:{ default: 1, boolean: true, label: "× Aplicar factores fD/fL/fS",        folder: "Cargas — Activar" },
+    // ── Carga simple (solo se usa si useSimple = ON) ──
     P_simple:  { default: 20, min: 0,   max: 500, step: 0.5, label: "P (tonf)",    folder: "Cargas — Simple" },
     Mx_simple: { default: 0,  min: -50, max: 50,  step: 0.5, label: "Mx (tonf·m)", folder: "Cargas — Simple" },
     My_simple: { default: 0,  min: -50, max: 50,  step: 0.5, label: "My (tonf·m)", folder: "Cargas — Simple" },
@@ -164,18 +156,28 @@ export const zapataAislada: ExampleDef = {
     const tz = p.tz ?? 0.15, Lz = p.Lz ?? 2.5;
     const D = Ec * tz ** 3 / (12 * (1 - nu_c ** 2));                 // kN·m (rigidez flexural)
     const k_r = D / (ks * Lz ** 4);                                  // Biot: <1 flexible, >1 rígida
-    const mode = Math.round(p.analysisMode ?? 4);
-    const modeNames = ["Simple", "Solo D", "Solo L", "Solo S", "Combinación D+L+S"];
-    const fD = p.fD ?? 1.2, fL = p.fL ?? 1.6, fS = p.fS ?? 0;
-    // P_total depende del modo (igual que en build)
+    const useSimple  = (p.useSimple  ?? 0) >= 0.5;
+    const useD       = (p.useD       ?? 0) >= 0.5;
+    const useL       = (p.useL       ?? 0) >= 0.5;
+    const useS       = (p.useS       ?? 0) >= 0.5;
+    const useFactors = (p.useFactors ?? 1) >= 0.5;
+    const fD = useFactors ? (p.fD ?? 1.2) : 1;
+    const fL = useFactors ? (p.fL ?? 1.6) : 1;
+    const fS = useFactors ? (p.fS ?? 0)   : 1;
+    const kD = useD ? 1 : 0, kL = useL ? 1 : 0, kS = useS ? 1 : 0;
+    // P_total reproduce la misma lógica que el build()
     let P_total = 0;
-    switch (mode) {
-      case 0: P_total = p.P_simple ?? 0; break;
-      case 1: P_total = p.P_D ?? 0; break;
-      case 2: P_total = p.P_L ?? 0; break;
-      case 3: P_total = p.P_S ?? 0; break;
-      case 4: default: P_total = fD * (p.P_D ?? 0) + fL * (p.P_L ?? 0) + fS * (p.P_S ?? 0);
+    if (useSimple) P_total = p.P_simple ?? 0;
+    else P_total = kD*fD*(p.P_D ?? 0) + kL*fL*(p.P_L ?? 0) + kS*fS*(p.P_S ?? 0);
+    const activeList: string[] = [];
+    if (useSimple) activeList.push("Simple");
+    else {
+      if (useD) activeList.push("D");
+      if (useL) activeList.push("L");
+      if (useS) activeList.push("S");
+      if (!activeList.length) activeList.push("NINGUNO");
     }
+    const modeName = activeList.join("+") + (useFactors && !useSimple ? " (factor)" : "");
     // q_max / q_min desde analyzeOutputs.pressure (map elemento → presión por nodo tonf/m²)
     let qMax = 0, qMin = 0;
     const pr = (states.analyzeOutputs.rawVal as any)?.pressure as Map<number, number[]> | undefined;
@@ -194,7 +196,7 @@ export const zapataAislada: ExampleDef = {
     }
     const ratio = Math.abs(qMax) / (p.q_adm || 1);
     return {
-      "Modo activo":      modeNames[mode] ?? "?",
+      "Patrones activos": modeName,
       "ks (kN/m³)":       ks.toFixed(0),
       "D (kN·m)":         D.toFixed(1),
       "k_r (Biot)":       k_r.toFixed(3) + (k_r < 1 ? " FLEXIBLE" : " RÍGIDA"),
@@ -252,40 +254,31 @@ export const zapataAislada: ExampleDef = {
     const ks_factor  = p.ks_factor;
     const q_adm_kNm2 = q_adm_tonf * TONF_TO_KN;           // tonf/m² → kN/m²
     const ks = q_adm_kNm2 * ks_factor;                    // kN/m³
-    // ── Aplicación de cargas según analysisMode ──
-    //   0 = Simple (P/Mx/My directos, sin patrones ni factores)
-    //   1 = Solo D, 2 = Solo L, 3 = Solo S (patrón único sin factorizar)
-    //   4 = Combinación factorizada fD·D + fL·L + fS·S
-    const mode = Math.round(p.analysisMode ?? 4);
-    const fD = p.fD ?? 1.2, fL = p.fL ?? 1.6, fS = p.fS ?? 0;
+    // ── Aplicación de cargas según toggles ──
+    // Si `useSimple`=ON: se ignoran D/L/S y solo se usa Carga Simple.
+    // Si `useSimple`=OFF: se suman los patrones activos (useD, useL, useS).
+    // Los factores fD/fL/fS aplican si `useFactors`=ON; si OFF, multiplicamos por 1
+    // (útil para ver cargas de servicio sin mayorar).
+    const useSimple  = (p.useSimple  ?? 0) >= 0.5;
+    const useD       = (p.useD       ?? 0) >= 0.5;
+    const useL       = (p.useL       ?? 0) >= 0.5;
+    const useS       = (p.useS       ?? 0) >= 0.5;
+    const useFactors = (p.useFactors ?? 1) >= 0.5;
+    const fD_eff = useFactors ? (p.fD ?? 1.2) : 1;
+    const fL_eff = useFactors ? (p.fL ?? 1.6) : 1;
+    const fS_eff = useFactors ? (p.fS ?? 0)   : 1;
+    // Multiplicadores 0/1 por patrón según checkbox
+    const kD = useD ? 1 : 0, kL = useL ? 1 : 0, kS = useS ? 1 : 0;
+    const fD = fD_eff, fL = fL_eff, fS = fS_eff;  // aliases para el log de abajo
     let P_total_tonf = 0, Mx_total_tonf = 0, My_total_tonf = 0;
-    switch (mode) {
-      case 0: // Carga simple
-        P_total_tonf  = p.P_simple  ?? 0;
-        Mx_total_tonf = p.Mx_simple ?? 0;
-        My_total_tonf = p.My_simple ?? 0;
-        break;
-      case 1: // Solo D
-        P_total_tonf  = p.P_D  ?? 0;
-        Mx_total_tonf = p.Mx_D ?? 0;
-        My_total_tonf = p.My_D ?? 0;
-        break;
-      case 2: // Solo L
-        P_total_tonf  = p.P_L  ?? 0;
-        Mx_total_tonf = p.Mx_L ?? 0;
-        My_total_tonf = p.My_L ?? 0;
-        break;
-      case 3: // Solo S
-        P_total_tonf  = p.P_S  ?? 0;
-        Mx_total_tonf = p.Mx_S ?? 0;
-        My_total_tonf = p.My_S ?? 0;
-        break;
-      case 4:
-      default: // Combinación D+L+S con factores
-        P_total_tonf  = fD * (p.P_D  ?? 0) + fL * (p.P_L  ?? 0) + fS * (p.P_S  ?? 0);
-        Mx_total_tonf = fD * (p.Mx_D ?? 0) + fL * (p.Mx_L ?? 0) + fS * (p.Mx_S ?? 0);
-        My_total_tonf = fD * (p.My_D ?? 0) + fL * (p.My_L ?? 0) + fS * (p.My_S ?? 0);
-        break;
+    if (useSimple) {
+      P_total_tonf  = p.P_simple  ?? 0;
+      Mx_total_tonf = p.Mx_simple ?? 0;
+      My_total_tonf = p.My_simple ?? 0;
+    } else {
+      P_total_tonf  = kD*fD_eff*(p.P_D  ?? 0) + kL*fL_eff*(p.P_L  ?? 0) + kS*fS_eff*(p.P_S  ?? 0);
+      Mx_total_tonf = kD*fD_eff*(p.Mx_D ?? 0) + kL*fL_eff*(p.Mx_L ?? 0) + kS*fS_eff*(p.Mx_S ?? 0);
+      My_total_tonf = kD*fD_eff*(p.My_D ?? 0) + kL*fL_eff*(p.My_L ?? 0) + kS*fS_eff*(p.My_S ?? 0);
     }
     const P_kN  = P_total_tonf  * TONF_TO_KN;
     const Mx_kN = Mx_total_tonf * TONF_TO_KN;
@@ -438,17 +431,17 @@ export const zapataAislada: ExampleDef = {
       // Rigidez relativa de plato (Biot): k_r = D / (ks × Lz⁴). <1 flexible, >1 rígido
       const D_plate = Ec * tz ** 3 / (12 * (1 - nu_c ** 2));
       const k_r = D_plate / (ks * Lz ** 4);
-      const modeNames = ["Simple P/Mx/My", "Solo D (Muerta)", "Solo L (Viva)", "Solo S (Sobrecarga)", "Combinación D+L+S"];
-      const comboNames = [
-        "1.2D+1.6L", "1.4D", "1.2D+1.0L", "1.2D+1.0L+0.5S",
-        "1.2D+1.6S+0.5L", "D+L serv.", "1.0D", "1.0L", "1.0S",
-        "1.2D+1.0L+1.0E", "0.9D+1.0E", "Custom",
-      ];
-      const modeName = modeNames[mode] ?? "?";
-      const comboName = comboNames[Math.round(p.combo ?? 0)] ?? "?";
-      const modeDetail = mode === 4 ? `  (${comboName}: fD=${fD}, fL=${fL}, fS=${fS})` : "";
+      const activeList: string[] = [];
+      if (useSimple) activeList.push("Simple");
+      else {
+        if (useD) activeList.push(`D${useFactors ? "×" + fD : ""}`);
+        if (useL) activeList.push(`L${useFactors ? "×" + fL : ""}`);
+        if (useS) activeList.push(`S${useFactors ? "×" + fS : ""}`);
+        if (!activeList.length) activeList.push("⚠ NINGUNO activo");
+      }
+      const modeName = activeList.join(" + ");
       console.log(
-        `[Zapata Aislada]  Modo: ${modeName}${modeDetail}\n` +
+        `[Zapata Aislada]  Patrones activos: ${modeName}\n` +
         `  Cargas totales: P=${P_total_tonf.toFixed(2)} tonf, Mx=${Mx_total_tonf.toFixed(2)} tonf·m, My=${My_total_tonf.toFixed(2)} tonf·m\n` +
         `  Patrones: D(${p.P_D}, ${p.Mx_D}, ${p.My_D}) L(${p.P_L}, ${p.Mx_L}, ${p.My_L}) S(${p.P_S}, ${p.Mx_S}, ${p.My_S})\n` +
         `  q_max (centro) = -${qMaxAbs.toFixed(2)} tonf/m²\n` +
