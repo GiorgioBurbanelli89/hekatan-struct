@@ -260,9 +260,10 @@ export const zapataVigaAmarre: ExampleDef = {
     const viewerEl = document.querySelector("#viewer") as any;
     const settings = viewerEl?.__settings;
 
-    const buildSprings = (deformedOn: boolean, userDisplayScale: number): THREE.Object3D[] => {
-      const ampEff = deformedOn ? VISUAL_AMP * userDisplayScale : 0;
-      const maxSinkingEff = wMaxAbs * Math.max(ampEff, VISUAL_AMP);
+    const buildSprings = (deformedOn: boolean, deformScaleSetting: number): THREE.Object3D[] => {
+      // ampEff = el MISMO scale que usa el viewer (settings.deformScale)
+      const ampEff = deformedOn ? deformScaleSetting : 0;
+      const maxSinkingEff = wMaxAbs * Math.max(ampEff, 1);
       const zBotEff = -(maxSinkingEff + SPRING_HEIGHT);
       const out: THREE.Object3D[] = [];
       for (const nIdx of zapataSpringNodes) {
@@ -321,10 +322,9 @@ export const zapataVigaAmarre: ExampleDef = {
     if (settings) {
       van.derive(() => {
         const on = settings.deformedShape.val;
-        const ds = settings.displayScale.val;
-        if (activeExampleVersion.v !== myVersion) return;  // no-op si cambió ejemplo
-        const userScale = ds === 0 ? 1 : ds > 0 ? ds : -1 / ds;
-        states.objects3D.val = buildSprings(on, userScale);
+        const dScale = settings.deformScale.val;
+        if (activeExampleVersion.v !== myVersion) return;
+        states.objects3D.val = buildSprings(on, dScale);
       });
     } else {
       states.objects3D.val = buildSprings(true, 1);

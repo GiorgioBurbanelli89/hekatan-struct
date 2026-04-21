@@ -325,9 +325,13 @@ export const zapataAislada: ExampleDef = {
     const viewerEl = document.querySelector("#viewer") as any;
     const settings = viewerEl?.__settings;
 
-    const buildSprings = (deformedOn: boolean, userDisplayScale: number): THREE.Object3D[] => {
-      const ampEff = deformedOn ? VISUAL_AMP * userDisplayScale : 0;
-      const maxSinkingEff = wMaxAbs * Math.max(ampEff, VISUAL_AMP);  // zBot se expande al peor caso
+    const buildSprings = (deformedOn: boolean, deformScaleSetting: number): THREE.Object3D[] => {
+      // CRÍTICO: ampEff DEBE ser IDÉNTICO al scale que el viewer usa en deriveNodes
+      // para mover los nodos. Si no, la punta del resorte no toca el nodo.
+      // El viewer usa: node + deformation × settings.deformScale.val
+      // → ampEff = settings.deformScale.val (cuando deformedOn), 0 si no.
+      const ampEff = deformedOn ? deformScaleSetting : 0;
+      const maxSinkingEff = wMaxAbs * Math.max(ampEff, 1);  // zBot suficiente para cualquier caso
       const zBotEff = -(maxSinkingEff + SPRING_HEIGHT);
       const out: THREE.Object3D[] = [];
       for (const nIdx of springNodes) {
@@ -390,11 +394,10 @@ export const zapataAislada: ExampleDef = {
     const myVersion = activeExampleVersion.v;
     if (settings) {
       van.derive(() => {
-        const on = settings.deformedShape.val;  // reactivo
-        const ds = settings.displayScale.val;   // reactivo
+        const on = settings.deformedShape.val;           // reactivo
+        const dScale = settings.deformScale.val;         // reactivo (MISMO scale que el viewer)
         if (activeExampleVersion.v !== myVersion) return;  // no-op si cambió ejemplo
-        const userScale = ds === 0 ? 1 : ds > 0 ? ds : -1 / ds;
-        states.objects3D.val = buildSprings(on, userScale);
+        states.objects3D.val = buildSprings(on, dScale);
       });
     } else {
       states.objects3D.val = buildSprings(true, 1);
