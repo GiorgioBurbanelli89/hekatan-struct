@@ -12,6 +12,7 @@ import * as THREE from "three";
 import van from "vanjs-core";
 import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
+import { activeExampleVersion } from "../workspace/exampleRegistry";
 
 const Ec = 25e6, nu_c = 0.2, Gc = Ec / (2 * (1 + nu_c)), rho = 24;
 const TONF_TO_KN = 9.80665;
@@ -58,11 +59,12 @@ export const zapataAislada: ExampleDef = {
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "displacementZ", "vonMises"],
   hasModal: true,
   params: {
-    // Zapata aislada típica Ecuador: cuadrada 1.50×1.50 m
-    Lz:    { default: 1.5,  min: 1.0, max: 5.0,  step: 0.05, label: "Lz (m)" },
-    Bz:    { default: 1.5,  min: 1.0, max: 5.0,  step: 0.05, label: "Bz (m)" },
-    // Espesor realista NEC-SE-HM Ecuador
-    tz:    { default: 0.30, min: 0.20, max: 1.0, step: 0.05, label: "tz (m)" },
+    // Zapata aislada con defaults que permiten ver deformación cóncava (flexible footing).
+    // λ = (ks·L⁴/D)^0.25 > 1 → deformación no-uniforme visible con carga puntual.
+    Lz:    { default: 2.5,  min: 1.0, max: 5.0,  step: 0.05, label: "Lz (m)" },
+    Bz:    { default: 2.5,  min: 1.0, max: 5.0,  step: 0.05, label: "Bz (m)" },
+    // Espesor delgado para que la placa flexione (L/t = 16.7 → flexible)
+    tz:    { default: 0.15, min: 0.10, max: 1.0, step: 0.05, label: "tz (m)" },
     bc:    { default: 0.4,  min: 0.2, max: 0.8,  step: 0.05, label: "bc columna (m)" },
     Hp:    { default: 0.5,  min: 0.3, max: 2.0,  step: 0.1,  label: "Hp pedestal (m)" },
     // Selector de tipo de suelo (NEC-SE-GC Ecuador / Bowles)
@@ -79,10 +81,11 @@ export const zapataAislada: ExampleDef = {
     gamma:    { default: 18,    min: 14,   max: 26,     step: 0.5,  label: "γ suelo (kN/m³)" },
     N_SPT:    { default: 20,    min: 0,    max: 100,    step: 1,    label: "N SPT" },
     E_soil:   { default: 25000, min: 1000, max: 2000000,step: 1000, label: "E suelo (kPa)" },
-    // Rangos típicos Ecuador: P 1-400 tonf (edificios pequeños a medianos), M ±1 tonf·m
-    P:     { default: 20,   min: 1,     max: 400,  step: 1,    label: "P axial (tonf)" },
-    Mx:    { default: 0,    min: -1,    max: 1,    step: 0.05, label: "Mx (tonf·m)" },
-    My:    { default: 0,    min: -1,    max: 1,    step: 0.05, label: "My (tonf·m)" },
+    // Cargas tipo FEM Studio: CM + CV suman al axial, más Mx y My
+    CM:    { default: 15,   min: 0,     max: 300,  step: 1,    label: "CM axial (tonf)" },
+    CV:    { default: 5,    min: 0,     max: 200,  step: 1,    label: "CV axial (tonf)" },
+    Mx:    { default: 0,    min: -10,   max: 10,   step: 0.5,  label: "Mx (tonf·m)" },
+    My:    { default: 0,    min: -10,   max: 10,   step: 0.5,  label: "My (tonf·m)" },
     // Mesh fino captura concentración bajo columna (peak al centro)
     nSub:  { default: 10,   min: 3,   max: 16,   step: 1,    label: "n subdivisiones" },
   },
@@ -110,7 +113,7 @@ export const zapataAislada: ExampleDef = {
     const ks_factor  = p.ks_factor;
     const q_adm_kNm2 = q_adm_tonf * TONF_TO_KN;           // tonf/m² → kN/m²
     const ks = q_adm_kNm2 * ks_factor;                    // kN/m³
-    const P_kN  = p.P  * TONF_TO_KN;
+    const P_kN  = (p.CM + p.CV) * TONF_TO_KN;  // axial total = CM + CV
     const Mx_kN = p.Mx * TONF_TO_KN;
     const My_kN = p.My * TONF_TO_KN;
     const nSub = Math.round(p.nSub);
@@ -282,7 +285,7 @@ export const zapataAislada: ExampleDef = {
     let wMaxAbs = 1e-9;
     for (const nIdx of springNodes) {
       const d = deforms?.get(nIdx);
-      if (d) wMaxAbs = Math.max(wMaxAbs, Math.abs(d[2]));
+      if (d && Number.isFinite(d[2])) wMaxAbs = Math.max(wMaxAbs, Math.abs(d[2]));
     }
     // Diagonal del modelo (aprox igual al que calcula deriveNodes en el viewer)
     const diag = Math.sqrt(Lz ** 2 + Bz ** 2 + Hp ** 2);
@@ -333,9 +336,10 @@ export const zapataAislada: ExampleDef = {
         if (!node) continue;
         const x = node[0], y = node[1];
         const d = deforms?.get(nIdx);
-        const dx_real = d ? d[0] : 0;
-        const dy_real = d ? d[1] : 0;
-        const dz_real = d ? d[2] : 0;
+        const safe = (v: number) => Number.isFinite(v) ? v : 0;
+        const dx_real = d ? safe(d[0]) : 0;
+        const dy_real = d ? safe(d[1]) : 0;
+        const dz_real = d ? safe(d[2]) : 0;
         // Base anclada al suelo (no se mueve) — top sigue al nodo en 3D
         const xTop = x + dx_real * ampEff;
         const yTop = y + dy_real * ampEff;
@@ -379,12 +383,17 @@ export const zapataAislada: ExampleDef = {
       return out;
     };
 
-    // Render inicial + subscripción reactiva
+    // Render inicial + subscripción reactiva.
+    // Guard: capturamos la versión del ejemplo activo. Si cambia (usuario carga
+    // otro ejemplo), el derive hace no-op — evita que los springs "viejos"
+    // se copien a otros ejemplos que no son zapata.
+    const myVersion = activeExampleVersion.v;
     if (settings) {
       van.derive(() => {
         const on = settings.deformedShape.val;  // reactivo
         const ds = settings.displayScale.val;   // reactivo
-        const userScale = ds === 0 ? 1 : ds > 0 ? ds : -1 / ds;  // misma fórmula del viewer
+        if (activeExampleVersion.v !== myVersion) return;  // no-op si cambió ejemplo
+        const userScale = ds === 0 ? 1 : ds > 0 ? ds : -1 / ds;
         states.objects3D.val = buildSprings(on, userScale);
       });
     } else {

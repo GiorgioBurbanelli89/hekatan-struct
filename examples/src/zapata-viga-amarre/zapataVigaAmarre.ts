@@ -6,6 +6,7 @@ import * as THREE from "three";
 import van from "vanjs-core";
 import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
 import type { ExampleDef, BuildStates } from "../exampleRegistry";
+import { activeExampleVersion } from "../workspace/exampleRegistry";
 
 const Ec = 25e6;
 const nu_c = 0.2;
@@ -41,11 +42,11 @@ export const zapataVigaAmarre: ExampleDef = {
     vigaLevel: { default: 0, min: 0, max: 1, step: 1, label: "Viga: 0=baja 1=alta" },
     ks:  { default: 2000, min: 500, max: 30000, step: 500, label: "ks Winkler (kN/m³)" },
     P1:  { default: 800, min: 100, max: 2000, step: 10, label: "P1 axial (kN)" },
-    M1x: { default: 0, min: -500, max: 500, step: 10, label: "M1x (kN·m)" },
-    M1y: { default: 0, min: -500, max: 500, step: 10, label: "M1y (kN·m)" },
+    M1x: { default: 80, min: -500, max: 500, step: 10, label: "M1x (kN·m)" },
+    M1y: { default: 60, min: -500, max: 500, step: 10, label: "M1y (kN·m)" },
     P2:  { default: 1200, min: 100, max: 2500, step: 10, label: "P2 axial (kN)" },
-    M2x: { default: 0, min: -500, max: 500, step: 10, label: "M2x (kN·m)" },
-    M2y: { default: 0, min: -500, max: 500, step: 10, label: "M2y (kN·m)" },
+    M2x: { default: 120, min: -500, max: 500, step: 10, label: "M2x (kN·m)" },
+    M2y: { default: 90, min: -500, max: 500, step: 10, label: "M2y (kN·m)" },
     nSubX: { default: 4, min: 2, max: 8, step: 1, label: "nx subdiv" },
     nSubY: { default: 4, min: 2, max: 8, step: 1, label: "ny subdiv" },
   },
@@ -241,7 +242,7 @@ export const zapataVigaAmarre: ExampleDef = {
     let wMaxAbs = 1e-9;
     for (const nIdx of zapataSpringNodes) {
       const d = deforms?.get(nIdx);
-      if (d) wMaxAbs = Math.max(wMaxAbs, Math.abs(d[2]));
+      if (d && Number.isFinite(d[2])) wMaxAbs = Math.max(wMaxAbs, Math.abs(d[2]));
     }
     // Diagonal del modelo (zapata + viga + zapata)
     const Ltot = Lz1 + Lv + Lz2;
@@ -270,9 +271,10 @@ export const zapataVigaAmarre: ExampleDef = {
         if (!node) continue;
         const x = node[0], y = node[1];
         const d = deforms?.get(nIdx);
-        const dx_real = d ? d[0] : 0;
-        const dy_real = d ? d[1] : 0;
-        const dz_real = d ? d[2] : 0;
+        const safe = (v: number) => Number.isFinite(v) ? v : 0;
+        const dx_real = d ? safe(d[0]) : 0;
+        const dy_real = d ? safe(d[1]) : 0;
+        const dz_real = d ? safe(d[2]) : 0;
         // Punta del resorte sigue al nodo en las 3 direcciones; base anclada al suelo
         const xTop = x + dx_real * ampEff;
         const yTop = y + dy_real * ampEff;
@@ -315,10 +317,12 @@ export const zapataVigaAmarre: ExampleDef = {
       return out;
     };
 
+    const myVersion = activeExampleVersion.v;
     if (settings) {
       van.derive(() => {
         const on = settings.deformedShape.val;
         const ds = settings.displayScale.val;
+        if (activeExampleVersion.v !== myVersion) return;  // no-op si cambió ejemplo
         const userScale = ds === 0 ? 1 : ds > 0 ? ds : -1 / ds;
         states.objects3D.val = buildSprings(on, userScale);
       });

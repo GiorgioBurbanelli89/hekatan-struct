@@ -23,7 +23,7 @@ import {
 } from "awatif-fem";
 import { getToolbar, getViewer } from "awatif-ui";
 import { createModalPanel } from "../shared/renderModalTable";
-import { examplesRegistry, type ExampleDef } from "./exampleRegistry";
+import { examplesRegistry, activeExampleVersion, type ExampleDef } from "./exampleRegistry";
 import { forceUnit, dispUnit } from "./units";
 
 // ── Estado global compartido ──
@@ -73,6 +73,8 @@ function loadExample(ex: ExampleDef) {
   currentParams = Object.fromEntries(
     Object.entries(ex.params).map(([k, p]) => [k, p.default])
   );
+  // Invalidar derives de ejemplos previos (e.g. springs reactivos de zapatas)
+  activeExampleVersion.v++;
   resetStates();
   ex.build(currentParams, states, modalPanel);
   // Aplica el colormap por defecto que cada ejemplo declara.
@@ -100,11 +102,35 @@ function loadExample(ex: ExampleDef) {
  * en valor absoluto; si el usuario necesita exagerarla visualmente, tiene el
  * slider "Display scale" en el panel Settings.
  */
+/**
+ * Calcula deformScale para que la deformada máxima sea ~5% del diagonal del modelo.
+ * deformScale es independiente de displayScale (que afecta flechas de cargas/soportes).
+ * Se auto-computa en cada build, dando visibilidad inicial. Cuando el usuario cambia
+ * la carga (rebuild con mismos parámetros geométricos), deformScale se re-ajusta,
+ * pero el usuario puede fijar un valor manual desde el slider "Deform scale".
+ */
 function autoScaleDeformedShape() {
   const s = (viewerElm as any).__settings;
-  // Default -1 → factor efectivo 1:1 real (no amplifica). Usuario puede mover
-  // el slider a valores positivos para exagerar la deformada.
-  if (s?.displayScale) s.displayScale.val = -1;
+  if (!s?.deformScale) return;
+  const nodesArr = states.nodes.rawVal;
+  const defMap = states.deformOutputs.rawVal?.deformations;
+  if (!nodesArr?.length || !defMap) { s.deformScale.val = 1; return; }
+  let xMin=Infinity,yMin=Infinity,zMin=Infinity,xMax=-Infinity,yMax=-Infinity,zMax=-Infinity;
+  for (const n of nodesArr) {
+    if (n[0]<xMin) xMin=n[0]; if (n[0]>xMax) xMax=n[0];
+    if (n[1]<yMin) yMin=n[1]; if (n[1]>yMax) yMax=n[1];
+    if (n[2]<zMin) zMin=n[2]; if (n[2]>zMax) zMax=n[2];
+  }
+  const diag = Math.sqrt((xMax-xMin)**2 + (yMax-yMin)**2 + (zMax-zMin)**2) || 1;
+  let maxDef = 0;
+  defMap.forEach((d) => {
+    const m = Math.sqrt((d[0]||0)**2 + (d[1]||0)**2 + (d[2]||0)**2);
+    if (m > maxDef) maxDef = m;
+  });
+  if (maxDef < 1e-30) { s.deformScale.val = 1; return; }
+  s.deformScale.val = Math.min(10000, Math.max(1, (0.05 * diag) / maxDef));
+  // displayScale solo para markers — fijo en 1 (1:1 real)
+  if (s.displayScale) s.displayScale.val = 1;
 }
 
 /**

@@ -31,6 +31,9 @@ export type Settings = {
   custom3D: State<boolean>;
   /** Cotas / dimensiones anotadas sobre el modelo (5.00 m, 40×40, etc.) */
   showCotas: State<boolean>;
+  /** Escala de la deformada visible (independiente de displayScale que afecta
+   *  flechas de cargas y soportes). Se auto-computa para que max ≈ 5% del modelo. */
+  deformScale: State<number>;
 };
 
 export type SettingsObj = {
@@ -57,6 +60,7 @@ export type SettingsObj = {
   solids?: boolean;
   custom3D?: boolean;
   showCotas?: boolean;
+  deformScale?: number;
 };
 
 export function getSettings(
@@ -81,6 +85,12 @@ export function getSettings(
       min: -10,
       max: 10,
       step: 1,
+    });
+    pane.addBinding(settings.deformScale, "val", {
+      label: "Deform scale",
+      min: 0.1,
+      max: 1000,
+      step: 0.1,
     });
     pane.addBinding(settings.nodes, "val", { label: "Nodes" });
     pane.addBinding(settings.elements, "val", {
@@ -212,5 +222,6 @@ export function getDefaultSettings(settingsObj: SettingsObj): Settings {
     solids: van.state(settingsObj?.solids ?? true),
     custom3D: van.state(settingsObj?.custom3D ?? true),
     showCotas: van.state(settingsObj?.showCotas ?? true),
+    deformScale: van.state(settingsObj?.deformScale ?? 1),
   };
 }
