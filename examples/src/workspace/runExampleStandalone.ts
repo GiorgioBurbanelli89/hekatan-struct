@@ -36,7 +36,7 @@ export function runExampleStandalone(ex: ExampleDef) {
 
   // ── Tweakpane panel ──
   const paneHost = document.createElement("div");
-  paneHost.style.cssText = "position:fixed;top:16px;right:16px;width:320px;z-index:100;max-height:90vh;overflow-y:auto";
+  paneHost.style.cssText = "position:fixed;top:16px;right:16px;width:min(320px,calc(100vw - 32px));max-width:90vw;z-index:100;max-height:90vh;overflow-y:auto;font-size:12px";
   document.body.appendChild(paneHost);
 
   const pane = new Pane({ container: paneHost, title: ex.name });

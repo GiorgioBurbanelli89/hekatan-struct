@@ -21,6 +21,8 @@ export const zapataVigaAmarre: ExampleDef = {
   id: "zapata-viga-amarre",
   name: "Zapata + Viga de Amarre + Pedestal",
   category: "Cimentaciones",
+  defaultShellResult: "pressure",
+  availableShellResults: ["pressure", "bendingXX", "bendingYY", "displacementZ", "vonMises"],
   params: {
     Lz1: { default: 2.0, min: 1.0, max: 4.0, step: 0.1, label: "Lz1 (m)" },
     Bz1: { default: 2.0, min: 1.0, max: 4.0, step: 0.1, label: "Bz1 (m)" },

@@ -2,13 +2,16 @@
  * Plate Thin — Kirchhoff (CPT)
  * Placa delgada simplemente apoyada bajo carga uniforme.
  */
-import { plateQ4Solve, type Node } from "awatif-fem";
+import { plateQ4Solve, modalAnalysis, type Node } from "awatif-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 export const plateThin: ExampleDef = {
   id: "plate-thin",
   name: "Plate Thin (Kirchhoff)",
   category: "Placas",
+  defaultShellResult: "bendingXX",
+  availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "displacementZ"],
+  hasModal: true,
   params: {
     Lx: { default: 4.0, min: 1, max: 10, step: 0.5, label: "Lx (m)" },
     Ly: { default: 4.0, min: 1, max: 10, step: 0.5, label: "Ly (m)" },
@@ -35,7 +38,26 @@ export const plateThin: ExampleDef = {
     states.elements.val = elems as number[][];
     const thicknesses = new Map<number, number>();
     elems.forEach((_, i) => thicknesses.set(i, p.t));
-    states.nodeInputs.val = {};
+
+    // ── Supports/loads para visualización (plateQ4Solve los aplicó internamente) ──
+    // Detecta nodos en borde (x=0, x=Lx, y=0, y=Ly) — simply supported: w=0.
+    const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
+    const loads = new Map<number, [number, number, number, number, number, number]>();
+    const A_trib_full = (p.Lx / Math.round(p.nx)) * (p.Ly / Math.round(p.ny));
+    nodes.forEach((n, i) => {
+      const onEdge = Math.abs(n[0]) < 1e-6 || Math.abs(n[0] - p.Lx) < 1e-6 ||
+                     Math.abs(n[1]) < 1e-6 || Math.abs(n[1] - p.Ly) < 1e-6;
+      if (onEdge) supports.set(i, [true, true, true, false, false, false]);
+      // Carga uniforme: q·A_trib por nodo (con factor 0.25/0.5/1 según esquina/borde/interior)
+      const corner = (Math.abs(n[0]) < 1e-6 || Math.abs(n[0] - p.Lx) < 1e-6) &&
+                     (Math.abs(n[1]) < 1e-6 || Math.abs(n[1] - p.Ly) < 1e-6);
+      const edge = onEdge;
+      const factor = corner ? 0.25 : edge ? 0.5 : 1.0;
+      const Fz = -p.q * A_trib_full * factor;
+      loads.set(i, [0, 0, Fz, 0, 0, 0]);
+    });
+
+    states.nodeInputs.val = { supports, loads };
     states.elementInputs.val = { thicknesses };
     const deformations = new Map<number, [number, number, number, number, number, number]>();
     out.nodeResults.forEach((n, i) => {
@@ -53,6 +75,23 @@ export const plateThin: ExampleDef = {
       bendingXY.set(i, [er.Mxy, er.Mxy, er.Mxy, er.Mxy]);
     });
     states.analyzeOutputs.val = { bendingXX, bendingYY, bendingXY };
+    // Agregar propiedades necesarias para modal (E, ν, ρ por elemento)
+    const elasticities = new Map<number, number>();
+    const poissons = new Map<number, number>();
+    const densities = new Map<number, number>();
+    elems.forEach((_, i) => { elasticities.set(i, p.E); poissons.set(i, p.nu); densities.set(i, 24); });
+    states.elementInputs.val = { thicknesses, elasticities, poissonsRatios: poissons, densities };
     states.objects3D.val = [];
+  },
+  runModal(p, states, modalPanel) {
+    const nodes = states.nodes.val;
+    const elements = states.elements.val;
+    const ni = states.nodeInputs.val;
+    const ei = states.elementInputs.val;
+    if (!nodes.length || !elements.length || !ni.supports?.size || !ei.densities?.size) return;
+    try {
+      const out = modalAnalysis(nodes, elements, ni, ei, 12);
+      modalPanel.render(out, { title: `Plate Thin ${p.Lx}×${p.Ly}m t=${p.t}m`, properties: [`E=${(p.E/1e6).toFixed(1)} GPa  ν=${p.nu}  ρ=24 kN/m³`] });
+    } catch (e: any) { console.warn("Modal plate-thin error:", e.message); }
   },
 };

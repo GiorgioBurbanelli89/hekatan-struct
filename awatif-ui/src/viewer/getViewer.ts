@@ -98,7 +98,15 @@ export function getViewer({
   controls.target.set(0.5 * gridSize, 0.5 * gridSize, 0);
   controls.minDistance = 1;
   controls.maxDistance = z2fit * 2.5;
-  controls.zoomSpeed = 10;
+  // Expose settings so the workspace Tweakpane can mutate them (e.g. auto-select
+  // the default shell result each example wants to show).
+  (viewerElm as any).__settings = settings;
+  controls.zoomSpeed = 1.0;
+  // Normaliza zoom: ignora la magnitud del deltaY del trackpad (que puede ser 100-300+
+  // por gesto). Sin esto, un pinch de touchpad colapsa la cámara al 20% en un solo evento.
+  (controls as any)._getZoomScale = function () {
+    return Math.pow(0.95, this.zoomSpeed);
+  };
   controls.update();
 
   scene.add(gridObj, axes(settings.gridSize.rawVal, settings.flipAxes.rawVal));
@@ -264,12 +272,12 @@ export function getViewer({
   if (objects3D) {
     // Events: on objects3D change add/remove objects from the scene
     van.derive(() => {
-      if (!objects3D?.val.length) return;
-
-      scene.remove(...objects3D.oldVal);
-
-      if (settings.custom3D.val) scene.add(...objects3D.rawVal);
-
+      // Leer val para registrar dependencia; siempre remover los viejos
+      // aunque el nuevo array esté vacío (evita que springs de un ejemplo
+      // previo sigan visibles al cambiar a otro).
+      const nextObjs = objects3D.val;
+      if (objects3D.oldVal?.length) scene.remove(...objects3D.oldVal);
+      if (settings.custom3D.val && nextObjs.length) scene.add(...objects3D.rawVal);
       viewerRender();
     });
 
@@ -375,6 +383,8 @@ function deriveNodes(
 // State global expuesto al legend/colormap para override de rango [min,max]
 // Si es null → auto-escala. Si [a,b] → fijo.
 export const fixedColorMapRange: State<[number, number] | null> = van.state(null as any);
+/** Unidad del colormap actual (mm, kN/m², etc.) — se muestra arriba del legend */
+export const colorMapUnit: State<string> = van.state("");
 
 function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
   // Init
@@ -459,18 +469,31 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
       [ResultType.displacementZ]: [mesh.deformOutputs?.val?.deformations, 2],
     };
 
+    // Escalas + unidades por tipo de resultado. El legend multiplica por scale
+    // y muestra el unit para que no haya ambigüedad (e.g. mm vs m).
+    const field = settings.shellResults.val;
+    const isDisp = field === "displacementX" || field === "displacementY" || field === "displacementZ";
+    const scale = isDisp ? 1000 : 1;  // m → mm
+    const unit =
+      isDisp ? "mm" :
+      field === "bendingXX" || field === "bendingYY" || field === "bendingXY" ? "kN·m/m" :
+      field === "membraneXX" || field === "membraneYY" || field === "membraneXY" ? "kN/m" :
+      field === "vonMises" || field === "pressure" ? "kN/m²" :
+      field === "tranverseShearX" || field === "tranverseShearY" ? "kN/m" :
+      "";
+    colorMapUnit.val = unit;
+
     const values: number[] = [];
     mesh.nodes.val.forEach((_, i) => {
-      const resultMap = resultMapper[settings.shellResults.val];
+      const resultMap = resultMapper[field];
       if (!resultMap || !resultMap[0] || typeof resultMap[0].has !== 'function') return;
       if (!resultMap[0].has(i)) {
-        // Nodos sin valor (p.ej. tope de pedestal que sobresale de la placa) → NaN.
-        // El colormap filtrará NaN en min/max para que no distorsione el legend.
         values.push(Number.NaN);
         return;
       }
       const entry = resultMap[0].get(i);
-      values.push(entry ? entry[resultMap[1] as number] ?? 0 : 0);
+      const raw = entry ? entry[resultMap[1] as number] ?? 0 : 0;
+      values.push(raw * scale);
     });
 
     colorMapValues.val = values;

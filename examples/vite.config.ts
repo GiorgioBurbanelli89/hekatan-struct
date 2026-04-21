@@ -9,6 +9,7 @@ export default defineConfig({
   },
   base: process.env.DEPLOY_BASE || "./", // to resolve assets
   root: "./src",
+  publicDir: path.resolve(__dirname, "public"),
   resolve: {
     // Force single instance of vanjs-core (avoids symlink duplication)
     alias: [
@@ -45,8 +46,12 @@ export default defineConfig({
         "fem-explained": "src/fem-explained/index.html",
         "zapata-viga-amarre": "src/zapata-viga-amarre/index.html",
         "zapata-aislada": "src/zapata-aislada/index.html",
+        "edificio-aporticado": "src/edificio-aporticado/index.html",
       },
     },
+  },
+  optimizeDeps: {
+    exclude: ["awatif-fem", "awatif-mesh", "awatif-ui"],
   },
   plugins: [topLevelAwait()], // used by awatif-fem & awatif-mesh to load wasm at top level
 });

@@ -75,18 +75,68 @@ function loadExample(ex: ExampleDef) {
   );
   resetStates();
   ex.build(currentParams, states, modalPanel);
+  // Aplica el colormap por defecto que cada ejemplo declara.
+  // Si el anterior tenía seleccionado "pressure" y el nuevo no lo populó,
+  // quedaría 0 everywhere — así evitamos ese caso.
+  if (ex.defaultShellResult) {
+    const s = (viewerElm as any).__settings;
+    if (s?.shellResults) s.shellResults.val = ex.defaultShellResult;
+    // Encender Loads y Supports por default para que el usuario vea la condición del modelo.
+    if (s?.loads) s.loads.val = true;
+    if (s?.supports) s.supports.val = true;
+  }
+  // Filtra el dropdown Shell results según lo que el ejemplo declara soportar.
+  // "pressure" solo se ofrece en zapatas (con resortes Winkler); "bending*" solo
+  // en elementos que flexan; "membrane*" solo en plane-stress; etc.
+  filterShellResultOptions(ex.availableShellResults);
+  autoScaleDeformedShape();
   buildParamsPane();
+}
+
+/**
+ * Deja displayScale en 1 para que las flechas de carga/soportes no se inflen
+ * y tapen el viewport. Al cambiar la carga, la deformada crece proporcionalmente
+ * en valor absoluto; si el usuario necesita exagerarla visualmente, tiene el
+ * slider "Display scale" en el panel Settings.
+ */
+function autoScaleDeformedShape() {
+  const s = (viewerElm as any).__settings;
+  if (s?.displayScale) s.displayScale.val = 1;
+}
+
+/** Oculta opciones no aplicables del <select> "Shell results" del Settings HTML
+ *  y sincroniza su display con el estado actual de shellResults. */
+function filterShellResultOptions(allowed?: string[]) {
+  // Busca el select que contiene "bendingXX" para distinguirlo de los otros dropdowns.
+  const selects = viewerElm.querySelectorAll<HTMLSelectElement>("select");
+  const shellSelect = Array.from(selects).find((s) =>
+    Array.from(s.options).some((o) => o.value === "bendingXX")
+  );
+  if (!shellSelect) return;
+  for (const opt of Array.from(shellSelect.options)) {
+    // "none" siempre disponible; resto solo si está en la lista (o si no se declaró).
+    const show = opt.value === "none" || !allowed || allowed.includes(opt.value);
+    opt.hidden = !show;
+    opt.disabled = !show;
+  }
+  // Sincronizar el valor mostrado con el estado actual (Tweakpane no lo hace solo).
+  const s = (viewerElm as any).__settings;
+  if (s?.shellResults) {
+    shellSelect.value = s.shellResults.val;
+    shellSelect.dispatchEvent(new Event("change", { bubbles: true }));
+  }
 }
 
 function rebuild() {
   if (!currentExample) return;
   resetStates();
   currentExample.build(currentParams, states, modalPanel);
+  autoScaleDeformedShape();
 }
 
 // ── Tweakpane panel (encima del viewer) ──
 const paneHost = document.createElement("div");
-paneHost.style.cssText = "position:fixed;top:16px;right:16px;width:320px;z-index:100;max-height:90vh;overflow-y:auto";
+paneHost.style.cssText = "position:fixed;top:16px;right:16px;width:min(320px,calc(100vw - 32px));max-width:90vw;z-index:100;max-height:90vh;overflow-y:auto;font-size:12px";
 document.body.appendChild(paneHost);
 
 // Helper de vistas — usa contexto Three.js del viewer (camera + controls)

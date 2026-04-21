@@ -10,6 +10,8 @@ export const shellThin: ExampleDef = {
   id: "shell-thin",
   name: "Shell Thin (Kirchhoff-Love)",
   category: "Cáscaras",
+  defaultShellResult: "displacementZ",
+  availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "membraneXX", "membraneYY", "membraneXY", "vonMises", "displacementZ"],
   params: {
     Lx: { default: 4.0, min: 1, max: 10, step: 0.5, label: "Lx (m)" },
     Ly: { default: 4.0, min: 1, max: 10, step: 0.5, label: "Ly (m)" },

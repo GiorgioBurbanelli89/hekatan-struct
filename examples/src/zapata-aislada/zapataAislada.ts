@@ -53,6 +53,8 @@ export const zapataAislada: ExampleDef = {
   id: "zapata-aislada",
   name: "Zapata Aislada (Ecuador q_adm tonf/m²)",
   category: "Cimentaciones",
+  defaultShellResult: "pressure",
+  availableShellResults: ["pressure", "bendingXX", "bendingYY", "displacementZ", "vonMises"],
   params: {
     // Zapata aislada típica Ecuador: cuadrada 1.50×1.50 m
     Lz:    { default: 1.5,  min: 1.0, max: 5.0,  step: 0.05, label: "Lz (m)" },

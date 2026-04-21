@@ -52,6 +52,16 @@ export interface ExampleDef {
    * Ejemplo: al cambiar soilType, actualizar q_adm y ks_factor.
    */
   onParamChange?: (changedKey: string, params: Record<string, number>) => void;
+  /** Shell colormap por defecto para este ejemplo (e.g. "bendingXX", "pressure"). */
+  defaultShellResult?: string;
+  /**
+   * Lista explícita de opciones de Shell results que aplican a este ejemplo.
+   * El dropdown filtra el resto. Si no se declara, se muestran todas.
+   * Ej: placas flexión → ["bendingXX", "bendingYY", "bendingXY", "displacementZ"]
+   *     zapatas Winkler → ["pressure", "displacementZ"]
+   *     membrana → ["membraneXX", "membraneYY", "membraneXY", "vonMises"]
+   */
+  availableShellResults?: string[];
 }
 
 // ── Import de ejemplos (cada uno en su propia carpeta estilo awatif) ──
@@ -62,8 +72,11 @@ import { plateThick } from "../plate-thick/plateThick";
 import { membrana } from "../membrana-pstress/membrana";
 import { shellThin } from "../shell-thin/shellThin";
 import { shellThick } from "../shell-thick/shellThick";
+import { edificioAporticado } from "../edificio-aporticado/edificioAporticado";
 
 export const examplesRegistry: ExampleDef[] = [
+  // Edificios
+  edificioAporticado,
   // Placas
   plateThin,
   plateThick,

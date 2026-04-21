@@ -2,13 +2,16 @@
  * Plate Thick — Mindlin-Reissner (FSDT)
  * Placa gruesa con deformación por cortante.
  */
-import { plateQ4Solve, type Node } from "awatif-fem";
+import { plateQ4Solve, modalAnalysis, type Node } from "awatif-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 export const plateThick: ExampleDef = {
   id: "plate-thick",
   name: "Plate Thick (Mindlin-Reissner)",
   category: "Placas",
+  defaultShellResult: "bendingXX",
+  availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "displacementZ", "shearX", "shearY"],
+  hasModal: true,
   params: {
     Lx: { default: 4.0, min: 1, max: 10, step: 0.5, label: "Lx (m)" },
     Ly: { default: 4.0, min: 1, max: 10, step: 0.5, label: "Ly (m)" },
@@ -34,7 +37,22 @@ export const plateThick: ExampleDef = {
     states.elements.val = elems as number[][];
     const thicknesses = new Map<number, number>();
     elems.forEach((_, i) => thicknesses.set(i, p.t));
-    states.nodeInputs.val = {};
+
+    // ── Supports/loads para visualización (plateQ4Solve los aplicó internamente) ──
+    const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
+    const loads = new Map<number, [number, number, number, number, number, number]>();
+    const A_trib_full = (p.Lx / Math.round(p.nx)) * (p.Ly / Math.round(p.ny));
+    nodes.forEach((n, i) => {
+      const onEdge = Math.abs(n[0]) < 1e-6 || Math.abs(n[0] - p.Lx) < 1e-6 ||
+                     Math.abs(n[1]) < 1e-6 || Math.abs(n[1] - p.Ly) < 1e-6;
+      if (onEdge) supports.set(i, [true, true, true, false, false, false]);
+      const corner = (Math.abs(n[0]) < 1e-6 || Math.abs(n[0] - p.Lx) < 1e-6) &&
+                     (Math.abs(n[1]) < 1e-6 || Math.abs(n[1] - p.Ly) < 1e-6);
+      const factor = corner ? 0.25 : onEdge ? 0.5 : 1.0;
+      loads.set(i, [0, 0, -p.q * A_trib_full * factor, 0, 0, 0]);
+    });
+
+    states.nodeInputs.val = { supports, loads };
     states.elementInputs.val = { thicknesses };
     const deformations = new Map<number, [number, number, number, number, number, number]>();
     out.nodeResults.forEach((n, i) => {
@@ -50,6 +68,22 @@ export const plateThick: ExampleDef = {
       bendingXY.set(i, [er.Mxy, er.Mxy, er.Mxy, er.Mxy]);
     });
     states.analyzeOutputs.val = { bendingXX, bendingYY, bendingXY };
+    const elasticities = new Map<number, number>();
+    const poissons = new Map<number, number>();
+    const densities = new Map<number, number>();
+    elems.forEach((_, i) => { elasticities.set(i, p.E); poissons.set(i, p.nu); densities.set(i, 24); });
+    states.elementInputs.val = { thicknesses, elasticities, poissonsRatios: poissons, densities };
     states.objects3D.val = [];
+  },
+  runModal(p, states, modalPanel) {
+    const nodes = states.nodes.val;
+    const elements = states.elements.val;
+    const ni = states.nodeInputs.val;
+    const ei = states.elementInputs.val;
+    if (!nodes.length || !elements.length || !ni.supports?.size || !ei.densities?.size) return;
+    try {
+      const out = modalAnalysis(nodes, elements, ni, ei, 12);
+      modalPanel.render(out, { title: `Plate Thick ${p.Lx}×${p.Ly}m t=${p.t}m`, properties: [`E=${(p.E/1e6).toFixed(1)} GPa  ν=${p.nu}  ρ=24 kN/m³`] });
+    } catch (e: any) { console.warn("Modal plate-thick error:", e.message); }
   },
 };

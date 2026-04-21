@@ -1,5 +1,5 @@
 import van, { State } from "vanjs-core";
-import { fixedColorMapRange } from "../viewer/getViewer";
+import { fixedColorMapRange, colorMapUnit } from "../viewer/getViewer";
 
 import "./styles.css";
 
@@ -9,6 +9,15 @@ export function getLegend(
 ): HTMLDivElement {
   const legendElm = document.createElement("div");
   legendElm.id = "legend";
+
+  // Etiqueta de unidad arriba del legend (mm, kN/m², etc.).
+  const unitLabel = document.createElement("div");
+  unitLabel.style.cssText = "position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:11px;color:#bbb;white-space:nowrap;font-family:monospace";
+  legendElm.appendChild(unitLabel);
+  // setTimeout evita TDZ por import circular con getViewer (colorMapUnit aún no inicializado).
+  setTimeout(() => {
+    van.derive(() => { unitLabel.textContent = colorMapUnit.val ? `[${colorMapUnit.val}]` : ""; });
+  });
 
   const markerRatios = Array.from(
     { length: numMarkerIntervals + 1 },
