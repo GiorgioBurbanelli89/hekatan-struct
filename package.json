@@ -22,6 +22,7 @@
     "dev:ui": "npm run dev -w awatif-ui",
     "dev:examples": "npm run dev -w examples",
     "build:examples": "npm run build -w examples",
+    "build:deploy": "cross-env DEPLOY_BASE=/hekatan-struct/ npm run build -w examples",
     "dev:website": "npm run dev -w website",
     "build:website": "npm run build -w website",
     "dedupe": "npm dedupe && echo 'Optimize build size when using same package in multiple packages'",
@@ -36,5 +37,8 @@
   ],
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0"
   }
 }
