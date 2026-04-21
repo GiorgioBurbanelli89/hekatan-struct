@@ -90,6 +90,7 @@ function loadExample(ex: ExampleDef) {
   // en elementos que flexan; "membrane*" solo en plane-stress; etc.
   filterShellResultOptions(ex.availableShellResults);
   autoScaleDeformedShape();
+  autoFitCamera();
   buildParamsPane();
 }
 
@@ -104,6 +105,44 @@ function autoScaleDeformedShape() {
   // Default -1 → factor efectivo 1:1 real (no amplifica). Usuario puede mover
   // el slider a valores positivos para exagerar la deformada.
   if (s?.displayScale) s.displayScale.val = -1;
+}
+
+/**
+ * Auto-fit de cámara al modelo actual. Reencuadra el viewer para que el edificio
+ * /placa/etc. entre en pantalla con un margen razonable, sin que ocupe toda la
+ * plataforma. Se llama después de cada build/rebuild.
+ */
+function autoFitCamera() {
+  const ctx = (viewerElm as any).__ctx;
+  const nodesArr = states.nodes.rawVal;
+  if (!ctx || !nodesArr?.length) return;
+  const { camera, controls, render } = ctx;
+  // Bounding box del modelo
+  let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
+  for (const n of nodesArr) {
+    if (n[0]<minX) minX=n[0]; if (n[0]>maxX) maxX=n[0];
+    if (n[1]<minY) minY=n[1]; if (n[1]>maxY) maxY=n[1];
+    if (n[2]<minZ) minZ=n[2]; if (n[2]>maxZ) maxZ=n[2];
+  }
+  const cx = (minX+maxX)/2, cy = (minY+maxY)/2, cz = (minZ+maxZ)/2;
+  const dx = maxX-minX, dy = maxY-minY, dz = maxZ-minZ;
+  const extent = Math.max(Math.sqrt(dx*dx+dy*dy+dz*dz), 1);
+  // Distancia = 1.3× diagonal para que entre con margen
+  const dist = 1.3 * extent;
+  controls.target.set(cx, cy, cz);
+  // Posicionar cámara isométrica sobre el modelo (vista estándar 3D)
+  const k = dist / Math.sqrt(3);
+  camera.position.set(cx + k, cy - k, cz + k);
+  camera.up.set(0, 0, 1);
+  camera.near = extent * 0.001;
+  camera.far = extent * 50;
+  camera.updateProjectionMatrix();
+  camera.lookAt(cx, cy, cz);
+  controls.update();
+  render?.();
+  // También actualizar el gridSize del viewer para que el grid matchee el modelo
+  const s = (viewerElm as any).__settings;
+  if (s?.gridSize) s.gridSize.val = Math.max(Math.ceil(Math.max(dx, dy) * 1.2), 2);
 }
 
 /** Oculta opciones no aplicables del <select> "Shell results" del Settings HTML
@@ -134,6 +173,7 @@ function rebuild() {
   resetStates();
   currentExample.build(currentParams, states, modalPanel);
   autoScaleDeformedShape();
+  autoFitCamera();
 }
 
 // ── Tweakpane panel (encima del viewer) ──
