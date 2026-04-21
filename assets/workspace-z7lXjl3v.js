@@ -1,13 +1,13 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { v as b, P as K } from "./theme-CzzIlc4y.js";
-import { g as $ } from "./getViewer-PGBsv6Zp.js";
+import { g as $ } from "./getViewer-glAYEfJX.js";
 import { g as G } from "./styles-B8h3dtQW.js";
 import { c as Q } from "./renderModalTable-29W4CuGz.js";
 import { z as J, __tla as __tla_0 } from "./zapataVigaAmarre-DrRBSNUQ.js";
-import { z as W, __tla as __tla_1 } from "./zapataAislada-CgpMbKIV.js";
-import { p as z, d as N, __tla as __tla_2 } from "./didacticCpp-Bnj9OwqQ.js";
+import { z as W, __tla as __tla_1 } from "./zapataAislada-B53K-H_l.js";
+import { p as T, d as N, __tla as __tla_2 } from "./didacticCpp-Bnj9OwqQ.js";
 import { a as R } from "./analyze-ClLKGn9k.js";
-import { d as O, f as T } from "./units-CVPhvG5E.js";
+import { d as O, f as P } from "./units-CVPhvG5E.js";
 import "./Text-CBH-tcJP.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
 Promise.all([
@@ -93,7 +93,7 @@ Promise.all([
       }
     },
     build(e, a) {
-      const t = z({
+      const t = T({
         E: e.E,
         nu: e.nu,
         thickness: e.t,
@@ -110,9 +110,9 @@ Promise.all([
         0
       ]), r = t.elementResults.map((o) => o.nodes);
       a.nodes.val = i, a.elements.val = r;
-      const s = /* @__PURE__ */ new Map();
-      r.forEach((o, d) => s.set(d, e.t)), a.nodeInputs.val = {}, a.elementInputs.val = {
-        thicknesses: s
+      const l = /* @__PURE__ */ new Map();
+      r.forEach((o, d) => l.set(d, e.t)), a.nodeInputs.val = {}, a.elementInputs.val = {
+        thicknesses: l
       };
       const m = /* @__PURE__ */ new Map();
       t.nodeResults.forEach((o, d) => {
@@ -191,7 +191,7 @@ Promise.all([
       }
     },
     build(e, a) {
-      const t = z({
+      const t = T({
         E: e.E,
         nu: e.nu,
         thickness: e.t,
@@ -208,9 +208,9 @@ Promise.all([
         0
       ]), r = t.elementResults.map((o) => o.nodes);
       a.nodes.val = i, a.elements.val = r;
-      const s = /* @__PURE__ */ new Map();
-      r.forEach((o, d) => s.set(d, e.t)), a.nodeInputs.val = {}, a.elementInputs.val = {
-        thicknesses: s
+      const l = /* @__PURE__ */ new Map();
+      r.forEach((o, d) => l.set(d, e.t)), a.nodeInputs.val = {}, a.elementInputs.val = {
+        thicknesses: l
       };
       const m = /* @__PURE__ */ new Map();
       t.nodeResults.forEach((o, d) => {
@@ -289,7 +289,7 @@ Promise.all([
       }
     },
     build(e, a) {
-      const t = z({
+      const t = T({
         E: e.E,
         nu: e.nu,
         thickness: e.t,
@@ -306,9 +306,9 @@ Promise.all([
         0
       ]), r = t.elementResults.map((o) => o.nodes);
       a.nodes.val = i, a.elements.val = r;
-      const s = /* @__PURE__ */ new Map();
-      r.forEach((o, d) => s.set(d, e.t)), a.nodeInputs.val = {}, a.elementInputs.val = {
-        thicknesses: s
+      const l = /* @__PURE__ */ new Map();
+      r.forEach((o, d) => l.set(d, e.t)), a.nodeInputs.val = {}, a.elementInputs.val = {
+        thicknesses: l
       };
       const m = /* @__PURE__ */ new Map();
       t.nodeResults.forEach((o, d) => {
@@ -388,15 +388,15 @@ Promise.all([
     },
     build(e, a) {
       const t = Math.round(e.nx), i = Math.round(e.ny), r = [];
-      for (let n = 0; n <= i; n++) for (let l = 0; l <= t; l++) r.push([
-        l * e.Lx / t,
+      for (let n = 0; n <= i; n++) for (let s = 0; s <= t; s++) r.push([
+        s * e.Lx / t,
         n * e.Ly / i,
         0
       ]);
-      const s = [];
-      for (let n = 0; n < i; n++) for (let l = 0; l < t; l++) {
-        const f = n * (t + 1) + l;
-        s.push([
+      const l = [];
+      for (let n = 0; n < i; n++) for (let s = 0; s < t; s++) {
+        const f = n * (t + 1) + s;
+        l.push([
           f,
           f + 1,
           f + 1 + (t + 1),
@@ -435,8 +435,8 @@ Promise.all([
         false
       ]);
       const o = e.Lx / t * (e.Ly / i), d = /* @__PURE__ */ new Map();
-      for (let n = 0; n <= i; n++) for (let l = 0; l <= t; l++) {
-        const f = n * (t + 1) + l, M = (l === 0 || l === t) && (n === 0 || n === i) ? 0.25 : l === 0 || l === t || n === 0 || n === i ? 0.5 : 1, H = e.q * o * M;
+      for (let n = 0; n <= i; n++) for (let s = 0; s <= t; s++) {
+        const f = n * (t + 1) + s, z = (s === 0 || s === t) && (n === 0 || n === i) ? 0.25 : s === 0 || s === t || n === 0 || n === i ? 0.5 : 1, H = e.q * o * z;
         d.set(f, [
           0,
           0,
@@ -447,9 +447,9 @@ Promise.all([
         ]);
       }
       const u = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new Map(), p = /* @__PURE__ */ new Map(), k = /* @__PURE__ */ new Map();
-      s.forEach((n, l) => {
-        u.set(l, e.t), c.set(l, e.E), p.set(l, e.nu), k.set(l, 24);
-      }), a.nodes.val = r, a.elements.val = s, a.nodeInputs.val = {
+      l.forEach((n, s) => {
+        u.set(s, e.t), c.set(s, e.E), p.set(s, e.nu), k.set(s, 24);
+      }), a.nodes.val = r, a.elements.val = l, a.nodeInputs.val = {
         supports: m,
         loads: d
       }, a.elementInputs.val = {
@@ -459,10 +459,10 @@ Promise.all([
         densities: k
       };
       try {
-        a.deformOutputs.val = N(r, s, {
+        a.deformOutputs.val = N(r, l, {
           supports: m,
           loads: d
-        }, a.elementInputs.val), a.analyzeOutputs.val = R(r, s, a.elementInputs.val, a.deformOutputs.val);
+        }, a.elementInputs.val), a.analyzeOutputs.val = R(r, l, a.elementInputs.val, a.deformOutputs.val);
       } catch (n) {
         console.error("Shell thin solver error:", n);
       }
@@ -532,15 +532,15 @@ Promise.all([
     },
     build(e, a) {
       const t = Math.round(e.nx), i = Math.round(e.ny), r = [];
-      for (let n = 0; n <= i; n++) for (let l = 0; l <= t; l++) r.push([
-        l * e.Lx / t,
+      for (let n = 0; n <= i; n++) for (let s = 0; s <= t; s++) r.push([
+        s * e.Lx / t,
         n * e.Ly / i,
         0
       ]);
-      const s = [];
-      for (let n = 0; n < i; n++) for (let l = 0; l < t; l++) {
-        const f = n * (t + 1) + l;
-        s.push([
+      const l = [];
+      for (let n = 0; n < i; n++) for (let s = 0; s < t; s++) {
+        const f = n * (t + 1) + s;
+        l.push([
           f,
           f + 1,
           f + 1 + (t + 1),
@@ -579,21 +579,21 @@ Promise.all([
         false
       ]);
       const o = e.Lx / t * (e.Ly / i), d = /* @__PURE__ */ new Map();
-      for (let n = 0; n <= i; n++) for (let l = 0; l <= t; l++) {
-        const f = n * (t + 1) + l, M = (l === 0 || l === t) && (n === 0 || n === i) ? 0.25 : l === 0 || l === t || n === 0 || n === i ? 0.5 : 1;
+      for (let n = 0; n <= i; n++) for (let s = 0; s <= t; s++) {
+        const f = n * (t + 1) + s, z = (s === 0 || s === t) && (n === 0 || n === i) ? 0.25 : s === 0 || s === t || n === 0 || n === i ? 0.5 : 1;
         d.set(f, [
           0,
           0,
-          e.q * o * M,
+          e.q * o * z,
           0,
           0,
           0
         ]);
       }
       const u = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new Map(), p = /* @__PURE__ */ new Map(), k = /* @__PURE__ */ new Map();
-      s.forEach((n, l) => {
-        u.set(l, e.t), c.set(l, e.E), p.set(l, e.nu), k.set(l, 24);
-      }), a.nodes.val = r, a.elements.val = s, a.nodeInputs.val = {
+      l.forEach((n, s) => {
+        u.set(s, e.t), c.set(s, e.E), p.set(s, e.nu), k.set(s, 24);
+      }), a.nodes.val = r, a.elements.val = l, a.nodeInputs.val = {
         supports: m,
         loads: d
       }, a.elementInputs.val = {
@@ -603,16 +603,16 @@ Promise.all([
         densities: k
       };
       try {
-        a.deformOutputs.val = N(r, s, {
+        a.deformOutputs.val = N(r, l, {
           supports: m,
           loads: d
-        }, a.elementInputs.val), a.analyzeOutputs.val = R(r, s, a.elementInputs.val, a.deformOutputs.val);
+        }, a.elementInputs.val), a.analyzeOutputs.val = R(r, l, a.elementInputs.val, a.deformOutputs.val);
       } catch (n) {
         console.error("Shell thick solver error:", n);
       }
       a.objects3D.val = [];
     }
-  }, L = [
+  }, g = [
     Z,
     ee,
     te,
@@ -629,52 +629,52 @@ Promise.all([
     analyzeOutputs: D,
     objects3D: A
   };
-  let x = null, y = {}, g = null;
+  let x = null, y = {}, w = null;
   const v = Q();
   v.div.style.display = "none";
-  function X() {
+  function F() {
     h.objects3D.val = [], h.nodes.val = [], h.elements.val = [], h.nodeInputs.val = {}, h.elementInputs.val = {}, h.deformOutputs.val = {}, h.analyzeOutputs.val = {};
   }
-  function F(e) {
+  function U(e) {
     x = e, y = Object.fromEntries(Object.entries(e.params).map(([a, t]) => [
       a,
       t.default
-    ])), X(), e.build(y, h, v), le();
+    ])), F(), e.build(y, h, v), se();
   }
   function j() {
-    x && (X(), x.build(y, h, v));
+    x && (F(), x.build(y, h, v));
   }
-  const E = document.createElement("div");
-  E.style.cssText = "position:fixed;top:16px;right:16px;width:320px;z-index:100;max-height:90vh;overflow-y:auto";
-  document.body.appendChild(E);
-  function w(e) {
-    const a = U.__ctx;
+  const M = document.createElement("div");
+  M.style.cssText = "position:fixed;top:16px;right:16px;width:320px;z-index:100;max-height:90vh;overflow-y:auto";
+  document.body.appendChild(M);
+  function L(e) {
+    const a = V.__ctx;
     if (!a) return;
-    const { camera: t, controls: i, render: r } = a, s = i.target.clone(), m = t.position.distanceTo(s) || 10;
+    const { camera: t, controls: i, render: r } = a, l = i.target.clone(), m = t.position.distanceTo(l) || 10;
     switch (e) {
       case "iso":
-        t.position.set(s.x + m * 0.6, s.y - m * 0.6, s.z + m * 0.6);
+        t.position.set(l.x + m * 0.6, l.y - m * 0.6, l.z + m * 0.6);
         break;
       case "plan":
-        t.position.set(s.x, s.y, s.z + m);
+        t.position.set(l.x, l.y, l.z + m);
         break;
       case "elevX":
-        t.position.set(s.x + m, s.y, s.z);
+        t.position.set(l.x + m, l.y, l.z);
         break;
       case "elevY":
-        t.position.set(s.x, s.y + m, s.z);
+        t.position.set(l.x, l.y + m, l.z);
         break;
     }
-    t.up.set(0, 0, 1), t.lookAt(s), i.update(), r == null ? void 0 : r();
+    t.up.set(0, 0, 1), t.lookAt(l), i.update(), r == null ? void 0 : r();
   }
-  function le() {
-    if (g && (g.dispose(), g = null), E.innerHTML = "", !x) return;
+  function se() {
+    if (w && (w.dispose(), w = null), M.innerHTML = "", !x) return;
     const e = new K({
-      container: E,
+      container: M,
       title: x.name
     }), a = {
       id: x.id
-    }, t = Object.fromEntries(L.map((u) => [
+    }, t = Object.fromEntries(g.map((u) => [
       `${u.category} \xB7 ${u.name}`,
       u.id
     ]));
@@ -682,8 +682,8 @@ Promise.all([
       label: "Ejemplo",
       options: t
     }).on("change", (u) => {
-      const c = L.find((p) => p.id === u.value);
-      c && F(c);
+      const c = g.find((p) => p.id === u.value);
+      c && U(c);
     });
     const i = e.addFolder({
       title: "Vista",
@@ -691,21 +691,21 @@ Promise.all([
     });
     i.addButton({
       title: "\u{1F3D7} Isom\xE9trica"
-    }).on("click", () => w("iso")), i.addButton({
+    }).on("click", () => L("iso")), i.addButton({
       title: "\u2B07 Planta (X-Y)"
-    }).on("click", () => w("plan")), i.addButton({
+    }).on("click", () => L("plan")), i.addButton({
       title: "\u2192 Elevaci\xF3n X (frente)"
-    }).on("click", () => w("elevX")), i.addButton({
+    }).on("click", () => L("elevX")), i.addButton({
       title: "\u2191 Elevaci\xF3n Y (lado)"
-    }).on("click", () => w("elevY"));
+    }).on("click", () => L("elevY"));
     const r = e.addFolder({
       title: "Unidades",
       expanded: false
-    }), s = {
-      force: T.val,
+    }), l = {
+      force: P.val,
       disp: O.val
     };
-    r.addBinding(s, "force", {
+    r.addBinding(l, "force", {
       label: "Fuerza",
       options: {
         kN: "kN",
@@ -713,8 +713,8 @@ Promise.all([
         kip: "kip"
       }
     }).on("change", (u) => {
-      T.val = u.value, j();
-    }), r.addBinding(s, "disp", {
+      P.val = u.value, j();
+    }), r.addBinding(l, "disp", {
       label: "Desplazamiento",
       options: {
         mm: "mm",
@@ -745,13 +745,13 @@ Promise.all([
       title: "\u26A1 An\xE1lisis modal"
     }).on("click", () => {
       v.div.style.display = "block", x.runModal && x.runModal(y, h, v);
-    }), g = e;
+    }), w = e;
   }
-  const se = {
+  const le = {
     deformedShape: true,
-    shellResults: "bendingXX",
+    shellResults: "pressure",
     gridSize: 10
-  }, U = $({
+  }, V = $({
     mesh: {
       nodes: q,
       elements: _,
@@ -761,13 +761,13 @@ Promise.all([
       analyzeOutputs: D
     },
     objects3D: A,
-    settingsObj: se
+    settingsObj: le
   });
-  document.body.append(U, G({
+  document.body.append(V, G({
     sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct",
     author: "https://www.linkedin.com/in/jorge-burbano-213741138/"
   }));
   document.body.appendChild(v.div);
-  const P = new URLSearchParams(window.location.search).get("t"), I = P && L.find((e) => e.id === P) || L.find((e) => e.id === "zapata-aislada") || L[0];
-  I && F(I);
+  const I = new URLSearchParams(window.location.search).get("t"), E = I && g.find((e) => e.id === I) || g.find((e) => e.id === "zapata-aislada") || g[0];
+  E && (U(E), (E.id === "zapata-aislada" || E.id === "zapata-viga-amarre") && setTimeout(() => L("plan"), 200));
 });

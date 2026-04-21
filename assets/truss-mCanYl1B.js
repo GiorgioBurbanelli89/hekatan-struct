@@ -2,7 +2,7 @@ import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { v as a } from "./theme-CzzIlc4y.js";
 import { a as S } from "./analyze-ClLKGn9k.js";
 import { d as z, __tla as __tla_0 } from "./didacticCpp-Bnj9OwqQ.js";
-import { g as C } from "./getViewer-PGBsv6Zp.js";
+import { g as C } from "./getViewer-glAYEfJX.js";
 import { g as M } from "./getParameters-D_F_vOn_.js";
 import { g as _ } from "./styles-B8h3dtQW.js";
 import { g as k, __tla as __tla_1 } from "./getCad3d-Crx29i4I.js";
