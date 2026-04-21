@@ -3,7 +3,7 @@ import { v as b, P as Z } from "./theme-CzzIlc4y.js";
 import { g as $ } from "./getViewer-6Q4ZHSQ2.js";
 import { g as J } from "./styles-B8h3dtQW.js";
 import { c as K } from "./renderModalTable-29W4CuGz.js";
-import { z as Q, __tla as __tla_0 } from "./zapataVigaAmarre-CAFZbpuf.js";
+import { z as Q, __tla as __tla_0 } from "./zapataVigaAmarre-BodOKi8x.js";
 import { z as W, __tla as __tla_1 } from "./zapataAislada-CmJZXWcO.js";
 import { p as tt, __tla as __tla_2 } from "./plateThin-C30Q-WjQ.js";
 import { p as et, __tla as __tla_3 } from "./plateThick-DrHD17l3.js";
@@ -15,11 +15,14 @@ import { t as it, __tla as __tla_8 } from "./trussGen-CYTV_Ioz.js";
 import { b as lt, __tla as __tla_9 } from "./barraAxial-Bnm-0MrG.js";
 import { p as rt, __tla as __tla_10 } from "./portico2D-kxfBcLlJ.js";
 import { t as ct, __tla as __tla_11 } from "./tower3D-tLRX3VEB.js";
+import { g as dt, __tla as __tla_12 } from "./galpon-BaNuuhBd.js";
+import { e as mt, __tla as __tla_13 } from "./edifAcero-Dhwvq9Mc.js";
+import { m as pt, __tla as __tla_14 } from "./mezanine-BmEOOT1G.js";
 import { d as I, f as O } from "./units-CVPhvG5E.js";
 import "./Text-CBH-tcJP.js";
 import "./analyze-ClLKGn9k.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
-import { __tla as __tla_12 } from "./didacticCpp-Bnj9OwqQ.js";
+import { __tla as __tla_15 } from "./didacticCpp-Bnj9OwqQ.js";
 Promise.all([
   (() => {
     try {
@@ -98,6 +101,24 @@ Promise.all([
       return __tla_12;
     } catch {
     }
+  })(),
+  (() => {
+    try {
+      return __tla_13;
+    } catch {
+    }
+  })(),
+  (() => {
+    try {
+      return __tla_14;
+    } catch {
+    }
+  })(),
+  (() => {
+    try {
+      return __tla_15;
+    } catch {
+    }
   })()
 ]).then(async () => {
   const S = [
@@ -105,7 +126,10 @@ Promise.all([
     it,
     rt,
     ct,
+    dt,
     st,
+    mt,
+    pt,
     tt,
     et,
     ot,
@@ -113,7 +137,7 @@ Promise.all([
     nt,
     W,
     Q
-  ], X = b.state([]), C = b.state([]), F = b.state({}), D = b.state({}), V = b.state({}), Y = b.state({}), U = b.state([]), p = {
+  ], X = b.state([]), C = b.state([]), F = b.state({}), D = b.state({}), V = b.state({}), Y = b.state({}), U = b.state([]), m = {
     nodes: X,
     elements: C,
     nodeInputs: F,
@@ -126,36 +150,36 @@ Promise.all([
   const w = K();
   w.div.style.display = "none";
   function q() {
-    p.objects3D.val = [], p.nodes.val = [], p.elements.val = [], p.nodeInputs.val = {}, p.elementInputs.val = {}, p.deformOutputs.val = {}, p.analyzeOutputs.val = {};
+    m.objects3D.val = [], m.nodes.val = [], m.elements.val = [], m.nodeInputs.val = {}, m.elementInputs.val = {}, m.deformOutputs.val = {}, m.analyzeOutputs.val = {};
   }
   function G(t) {
     if (d = t, y = Object.fromEntries(Object.entries(t.params).map(([n, a]) => [
       n,
       a.default
-    ])), q(), t.build(y, p, w), t.defaultShellResult) {
+    ])), q(), t.build(y, m, w), t.defaultShellResult) {
       const n = h.__settings;
       (n == null ? void 0 : n.shellResults) && (n.shellResults.val = t.defaultShellResult), (n == null ? void 0 : n.loads) && (n.loads.val = true), (n == null ? void 0 : n.supports) && (n.supports.val = true);
     }
-    dt(t.availableShellResults), H(), L(), pt();
+    ft(t.availableShellResults), H(), L(), ut();
   }
   function H() {
     const t = h.__settings;
     (t == null ? void 0 : t.displayScale) && (t.displayScale.val = -1);
   }
   function L() {
-    const t = h.__ctx, n = p.nodes.rawVal;
+    const t = h.__ctx, n = m.nodes.rawVal;
     if (!t || !(n == null ? void 0 : n.length)) return;
     const { camera: a, controls: l, render: r } = t;
-    let e = 1 / 0, i = 1 / 0, u = 1 / 0, g = -1 / 0, m = -1 / 0, x = -1 / 0;
-    for (const c of n) c[0] < e && (e = c[0]), c[0] > g && (g = c[0]), c[1] < i && (i = c[1]), c[1] > m && (m = c[1]), c[2] < u && (u = c[2]), c[2] > x && (x = c[2]);
-    const o = (e + g) / 2, s = (i + m) / 2, v = (u + x) / 2, k = g - e, f = m - i, _ = x - u, E = Math.max(Math.sqrt(k * k + f * f + _ * _), 1), N = 2.2 * E;
+    let e = 1 / 0, i = 1 / 0, u = 1 / 0, g = -1 / 0, p = -1 / 0, x = -1 / 0;
+    for (const c of n) c[0] < e && (e = c[0]), c[0] > g && (g = c[0]), c[1] < i && (i = c[1]), c[1] > p && (p = c[1]), c[2] < u && (u = c[2]), c[2] > x && (x = c[2]);
+    const o = (e + g) / 2, s = (i + p) / 2, v = (u + x) / 2, z = g - e, f = p - i, _ = x - u, A = Math.max(Math.sqrt(z * z + f * f + _ * _), 1), N = 2.2 * A;
     l.target.set(o, s, v);
-    const A = N / Math.sqrt(3);
-    a.position.set(o + A, s - A, v + A), a.up.set(0, 0, 1), a.near = E * 1e-3, a.far = E * 50, a.updateProjectionMatrix(), a.lookAt(o, s, v), l.update(), r == null ? void 0 : r();
+    const E = N / Math.sqrt(3);
+    a.position.set(o + E, s - E, v + E), a.up.set(0, 0, 1), a.near = A * 1e-3, a.far = A * 50, a.updateProjectionMatrix(), a.lookAt(o, s, v), l.update(), r == null ? void 0 : r();
     const j = h.__settings;
-    (j == null ? void 0 : j.gridSize) && (j.gridSize.val = Math.max(Math.ceil(Math.max(k, f) * 1.2), 2));
+    (j == null ? void 0 : j.gridSize) && (j.gridSize.val = Math.max(Math.ceil(Math.max(z, f) * 1.2), 2));
   }
-  function dt(t) {
+  function ft(t) {
     const n = h.querySelectorAll("select"), a = Array.from(n).find((r) => Array.from(r.options).some((e) => e.value === "bendingXX"));
     if (!a) return;
     for (const r of Array.from(a.options)) {
@@ -168,12 +192,12 @@ Promise.all([
     })));
   }
   function R() {
-    d && (q(), d.build(y, p, w), H(), L());
+    d && (q(), d.build(y, m, w), H(), L());
   }
   const M = document.createElement("div");
   M.style.cssText = "position:fixed;top:16px;right:16px;width:min(320px,calc(100vw - 32px));max-width:90vw;z-index:100;max-height:90vh;overflow-y:auto;font-size:12px";
   document.body.appendChild(M);
-  function z(t) {
+  function k(t) {
     const n = h.__ctx;
     if (!n) return;
     const { camera: a, controls: l, render: r } = n, e = l.target.clone(), i = a.position.distanceTo(e) || 10;
@@ -193,7 +217,7 @@ Promise.all([
     }
     a.up.set(0, 0, 1), a.lookAt(e), l.update(), r == null ? void 0 : r();
   }
-  function pt() {
+  function ut() {
     if (P && (P.dispose(), P = null), M.innerHTML = "", !d) return;
     const t = new Z({
       container: M,
@@ -217,13 +241,13 @@ Promise.all([
     });
     l.addButton({
       title: "\u{1F3D7} Isom\xE9trica"
-    }).on("click", () => z("iso")), l.addButton({
+    }).on("click", () => k("iso")), l.addButton({
       title: "\u2B07 Planta (X-Y)"
-    }).on("click", () => z("plan")), l.addButton({
+    }).on("click", () => k("plan")), l.addButton({
       title: "\u2192 Elevaci\xF3n X (frente)"
-    }).on("click", () => z("elevX")), l.addButton({
+    }).on("click", () => k("elevX")), l.addButton({
       title: "\u2191 Elevaci\xF3n Y (lado)"
-    }).on("click", () => z("elevY"));
+    }).on("click", () => k("elevY"));
     const r = t.addFolder({
       title: "Unidades",
       expanded: false
@@ -254,27 +278,27 @@ Promise.all([
       title: o,
       expanded: o === i
     })), u.get(o));
-    let m = null;
+    let p = null;
     const x = () => {
-      m !== null && clearTimeout(m), m = window.setTimeout(() => {
-        m = null, R();
+      p !== null && clearTimeout(p), p = window.setTimeout(() => {
+        p = null, R();
       }, 120);
     };
     for (const [o, s] of Object.entries(d.params)) {
-      const v = s.folder ?? i, k = g(v), f = {
+      const v = s.folder ?? i, z = g(v), f = {
         label: s.label ?? o
       };
-      s.options !== void 0 ? f.options = s.options : (s.min !== void 0 && (f.min = s.min), s.max !== void 0 && (f.max = s.max), s.step !== void 0 && (f.step = s.step)), k.addBinding(y, o, f).on("change", () => {
+      s.options !== void 0 ? f.options = s.options : (s.min !== void 0 && (f.min = s.min), s.max !== void 0 && (f.max = s.max), s.step !== void 0 && (f.step = s.step)), z.addBinding(y, o, f).on("change", () => {
         (d == null ? void 0 : d.onParamChange) && (d.onParamChange(o, y), t.refresh()), x();
       });
     }
     d.hasModal && t.addButton({
       title: "\u26A1 An\xE1lisis modal"
     }).on("click", () => {
-      w.div.style.display = "block", d.runModal && d.runModal(y, p, w);
+      w.div.style.display = "block", d.runModal && d.runModal(y, m, w);
     }), P = t;
   }
-  const mt = {
+  const ht = {
     deformedShape: true,
     displayScale: -1,
     shellResults: "pressure",
@@ -290,7 +314,7 @@ Promise.all([
       analyzeOutputs: Y
     },
     objects3D: U,
-    settingsObj: mt
+    settingsObj: ht
   });
   document.body.append(h, J({
     sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct",
@@ -298,5 +322,5 @@ Promise.all([
   }));
   document.body.appendChild(w.div);
   const B = new URLSearchParams(window.location.search).get("t"), T = B && S.find((t) => t.id === B) || S.find((t) => t.id === "zapata-aislada") || S[0];
-  T && (G(T), (T.id === "zapata-aislada" || T.id === "zapata-viga-amarre") && setTimeout(() => z("iso"), 200));
+  T && (G(T), (T.id === "zapata-aislada" || T.id === "zapata-viga-amarre") && setTimeout(() => k("iso"), 200));
 });

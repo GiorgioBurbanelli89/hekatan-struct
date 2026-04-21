@@ -1,11 +1,12 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { z as r, __tla as __tla_0 } from "./zapataVigaAmarre-CAFZbpuf.js";
-import { r as m } from "./runExampleStandalone-CEFRPtXh.js";
-import "./Text-CBH-tcJP.js";
-import "./theme-CzzIlc4y.js";
+import { m, __tla as __tla_0 } from "./mezanine-BmEOOT1G.js";
+import { r } from "./runExampleStandalone-CEFRPtXh.js";
+import { __tla as __tla_1 } from "./edificioAporticado-DG3xVeOI.js";
 import "./analyze-ClLKGn9k.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
-import { __tla as __tla_1 } from "./didacticCpp-Bnj9OwqQ.js";
+import { __tla as __tla_2 } from "./didacticCpp-Bnj9OwqQ.js";
+import "./Text-CBH-tcJP.js";
+import "./theme-CzzIlc4y.js";
 import "./getViewer-6Q4ZHSQ2.js";
 import "./styles-B8h3dtQW.js";
 import "./units-CVPhvG5E.js";
@@ -21,7 +22,13 @@ Promise.all([
       return __tla_1;
     } catch {
     }
+  })(),
+  (() => {
+    try {
+      return __tla_2;
+    } catch {
+    }
   })()
 ]).then(async () => {
-  m(r);
+  r(m);
 });
