@@ -245,20 +245,9 @@ export const zapataVigaAmarre: ExampleDef = {
     const diag = Math.sqrt(Ltot ** 2 + Btot ** 2 + Hp ** 2);
     const VISUAL_AMP = (0.07 * diag) / wMaxAbs;
 
-    // Sampling 6×6 por zapata para no saturar
-    const MAX_VISIBLE = 6;
-    const sampleIndex = (nx: number) => {
-      const step = Math.max(1, Math.ceil((nx - 1) / (MAX_VISIBLE - 1)));
-      const out = new Set<number>();
-      for (let i = 0; i < nx; i += step) out.add(i);
-      out.add(nx - 1);
-      return out;
-    };
-    // Construir Set de nodos muestreados (considerando ambas zapatas)
-    // Para simplificar: mostrar todos si son <= 36, sino samplear por posición
-    const visibleSet = new Set<number>(zapataSpringNodes.length <= 36
-      ? zapataSpringNodes
-      : zapataSpringNodes.filter((_, i) => i % Math.ceil(zapataSpringNodes.length / 36) === 0));
+    // Muestra TODOS los nodos donde hay un resorte k Winkler (sin samplear) —
+    // así los springs visibles coinciden exactamente con donde la física los aplica.
+    const visibleSet = new Set<number>(zapataSpringNodes);
 
     const HELIX_SEGMENTS_PER_COIL = 12;
     const totalSegs = SPRING_COILS * HELIX_SEGMENTS_PER_COIL;
