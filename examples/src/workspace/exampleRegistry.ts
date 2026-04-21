@@ -76,8 +76,17 @@ import { membrana } from "../membrana-pstress/membrana";
 import { shellThin } from "../shell-thin/shellThin";
 import { shellThick } from "../shell-thick/shellThick";
 import { edificioAporticado } from "../edificio-aporticado/edificioAporticado";
+import { trussGen } from "../truss-gen/trussGen";
+import { barraAxial } from "../barra-axial/barraAxial";
+import { portico2D } from "../portico-2d/portico2D";
+import { tower3D } from "../tower-3d/tower3D";
 
 export const examplesRegistry: ExampleDef[] = [
+  // Frames 1D
+  barraAxial,
+  trussGen,
+  portico2D,
+  tower3D,
   // Edificios
   edificioAporticado,
   // Placas
