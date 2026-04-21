@@ -40,11 +40,14 @@ export const SOIL_TYPES = [
   { name: "Roca alterada",       q_adm: 100, ks_factor: 15.0, su: 0,   phi: 45, gamma: 22, N_SPT: 100,E_soil: 500000 },
   { name: "Roca sana",           q_adm: 200, ks_factor: 20.0, su: 0,   phi: 50, gamma: 25, N_SPT: 100,E_soil: 2000000 },
 ];
-// Resorte con altura razonable (15 cm de "suelo virtual" debajo del plato)
-const SPRING_HEIGHT = 0.15, SPRING_WIDTH = 0.04, SPRING_COILS = 4;
+// Resorte: 20 cm de "suelo virtual" debajo del plato, con suficientes coils para
+// que la compresión se vea al compactarse las espiras.
+const SPRING_HEIGHT = 0.20, SPRING_WIDTH = 0.035, SPRING_COILS = 8;
 const MAT_SPRING = new THREE.LineBasicMaterial({ color: 0xff0033, linewidth: 2 });
 const MAT_GROUND = new THREE.LineBasicMaterial({ color: 0x00cc00, linewidth: 2 });
 const ANCHOR_SIZE = 0.04;          // lado del cajón verde de tierra en la base del spring
+// Al asentamiento máximo, compresión visual = 80% del SPRING_HEIGHT (spring queda al 20%)
+const SPRING_COMPRESSION_FRACTION = 0.8;
 
 export const zapataAislada: ExampleDef = {
   id: "zapata-aislada",
@@ -262,18 +265,22 @@ export const zapataAislada: ExampleDef = {
       console.error("Solver error zapata aislada:", e);
     }
 
-    // Zigzag springs visuales. El plato está en Z=0 en el modelo FEM.
-    // Resorte va desde el plato (Z=0 → dz × amp) hasta el suelo fijo (Z = -SPRING_HEIGHT).
-    // Sin deformar: longitud = SPRING_HEIGHT (0.15 m). Deformado: más corto (compresión).
-    // Amp adaptativa: compresión visible = 50% de SPRING_HEIGHT, sin invertir.
+    // Zigzag springs visuales sincronizados con la deformada del viewer.
+    // El viewer auto-escala la deformada para que el máx sea ~7% del diagonal del modelo.
+    // Uso la MISMA fórmula para que spring_top siga EXACTAMENTE al plato deformado,
+    // NUNCA sobre el plato (físicamente imposible).
     const deforms = states.deformOutputs.rawVal.deformations;
     let wMaxAbs = 1e-9;
     for (const nIdx of springNodes) {
       const d = deforms?.get(nIdx);
       if (d) wMaxAbs = Math.max(wMaxAbs, Math.abs(d[2]));
     }
-    const VISUAL_AMP = (SPRING_HEIGHT * 0.5) / wMaxAbs;
-    const zBot = -SPRING_HEIGHT;  // suelo rígido referencia
+    // Diagonal del modelo (aprox igual al que calcula deriveNodes en el viewer)
+    const diag = Math.sqrt(Lz ** 2 + Bz ** 2 + Hp ** 2);
+    const VISUAL_AMP = (0.07 * diag) / wMaxAbs;        // mismo factor que el viewer
+    // zBot = suelo virtual = debajo de la máxima compresión esperada (nunca sobrepasado)
+    const maxSinking = wMaxAbs * VISUAL_AMP;           // cuánto baja el plato en Three.js
+    const zBot = -(maxSinking + SPRING_HEIGHT);        // base bajo el plato más hundido
 
     const springs3D: THREE.Object3D[] = [];
     for (const nIdx of springNodes) {
