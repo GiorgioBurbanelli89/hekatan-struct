@@ -57,6 +57,9 @@ let currentPane: Pane | null = null;
 // Después de cada rebuild(), se re-llena con computedLabels() y el pane.refresh()
 // lo refleja en la UI como bindings readonly.
 let computedObj: Record<string, string> | null = null;
+// Objeto mutable para los valores INLINE calculados (ks después de q_adm, etc.).
+// Misma lógica que computedObj: mutamos in-place y el pane.refresh() los actualiza.
+let inlineComputedObj: Record<string, string> | null = null;
 const modalPanel = createModalPanel();
 modalPanel.div.style.display = "none";
 
@@ -213,8 +216,15 @@ function rebuild() {
     for (const key of Object.keys(computedObj)) {
       if (key in latest) computedObj[key] = latest[key];
     }
-    currentPane?.refresh();
   }
+  // Refrescar los valores INLINE (ks debajo de ks_factor, etc.)
+  if (currentExample.inlineComputed && inlineComputedObj) {
+    for (const ic of currentExample.inlineComputed) {
+      const uniqKey = `__inline_${ic.after}_${ic.label}`;
+      inlineComputedObj[uniqKey] = ic.compute(currentParams, states);
+    }
+  }
+  currentPane?.refresh();
 }
 
 // ── Tweakpane panel (encima del viewer) ──
@@ -333,6 +343,18 @@ function buildParamsPane() {
   // un checkbox, pero `currentParams` usa 0/1 (Record<string, number>).
   // Guardamos un proxy {key: boolean} y sincronizamos en cada cambio.
   const boolProxy: Record<string, boolean> = {};
+  // Prepara los valores inline calculados (ks, D, etc.) ANCLADOS a cada param.
+  // Mapa: key del param → lista de inlines a insertar después.
+  const inlineByAfter = new Map<string, Array<{ label: string; key: string; compute: any }>>();
+  inlineComputedObj = {};
+  if (currentExample.inlineComputed) {
+    for (const ic of currentExample.inlineComputed) {
+      const uniqKey = `__inline_${ic.after}_${ic.label}`;
+      inlineComputedObj[uniqKey] = ic.compute(currentParams, states);
+      if (!inlineByAfter.has(ic.after)) inlineByAfter.set(ic.after, []);
+      inlineByAfter.get(ic.after)!.push({ label: ic.label, key: uniqKey, compute: ic.compute });
+    }
+  }
   for (const [key, p] of Object.entries(currentExample.params)) {
     const folderTitle = p.folder ?? defaultFolderTitle;
     const fTarget = getFolder(folderTitle);
@@ -364,6 +386,18 @@ function buildParamsPane() {
       }
       scheduleRebuild();
     });
+    // Si este param tiene inlines anclados (ej. ks después de ks_factor),
+    // insertar los readonly bindings en el MISMO folder, justo debajo.
+    const inlines = inlineByAfter.get(key);
+    if (inlines && inlineComputedObj) {
+      for (const il of inlines) {
+        fTarget.addBinding(inlineComputedObj, il.key, {
+          readonly: true,
+          label: il.label,
+          view: "text",
+        } as any);
+      }
+    }
   }
 
   // ── Folder "📊 Calculados" (read-only) — valores derivados del build actual ──
@@ -373,8 +407,15 @@ function buildParamsPane() {
     // Objeto mutable que tweakpane monitorea. Claves = labels, valores = strings.
     const initial = currentExample.computedLabels(currentParams, states);
     computedObj = { ...initial };
+    console.log("[Calculados]", computedObj);
     for (const key of Object.keys(initial)) {
-      fCalc.addBinding(computedObj, key, { readonly: true });
+      // view:'text' fuerza a Tweakpane v4 a usar TextInputView para strings readonly
+      // (sin esto, strings readonly a veces se pintan vacíos).
+      fCalc.addBinding(computedObj, key, {
+        readonly: true,
+        view: "text",
+        interval: 0,
+      } as any);
     }
   } else {
     computedObj = null;

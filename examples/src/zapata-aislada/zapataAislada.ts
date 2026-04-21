@@ -145,6 +145,43 @@ export const zapataAislada: ExampleDef = {
     nSub:  { default: 10,   min: 3,   max: 16,   step: 1,    label: "n subdivisiones" },
   },
   /**
+   * Valores calculados INLINE — se muestran como readonly justo debajo del
+   * parámetro que los "ancla". Ej: ks aparece debajo de ks_factor en el mismo
+   * folder, sin tener que ir al panel "Calculados".
+   */
+  inlineComputed: [
+    {
+      after: "ks_factor",
+      label: "ks (kN/m³)",
+      compute: (p) => {
+        const q_adm_kNm2 = (p.q_adm ?? 20) * TONF_TO_KN;
+        const ks = q_adm_kNm2 * (p.ks_factor ?? 10.5);
+        return ks.toFixed(0);
+      },
+    },
+    {
+      after: "tz",
+      label: "D flexural (kN·m)",
+      compute: (p) => {
+        const tz = p.tz ?? 0.15;
+        const D = Ec * tz ** 3 / (12 * (1 - nu_c ** 2));
+        return D.toFixed(1);
+      },
+    },
+    {
+      after: "Lz",
+      label: "k_r Biot",
+      compute: (p) => {
+        const tz = p.tz ?? 0.15, Lz = p.Lz ?? 2.5;
+        const q_adm_kNm2 = (p.q_adm ?? 20) * TONF_TO_KN;
+        const ks = q_adm_kNm2 * (p.ks_factor ?? 10.5);
+        const D = Ec * tz ** 3 / (12 * (1 - nu_c ** 2));
+        const k_r = D / (ks * Lz ** 4);
+        return k_r.toFixed(3) + (k_r < 1 ? " FLEX" : " RÍG");
+      },
+    },
+  ],
+  /**
    * Valores calculados (read-only) que se muestran en el Tweakpane en el folder
    * "📊 Calculados". Permiten ver el módulo de balasto ks, rigidez flexural D,
    * número de Biot k_r, presiones extremas q_max/q_min y ratio q/q_adm sin entrar

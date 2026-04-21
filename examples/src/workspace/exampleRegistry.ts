@@ -72,6 +72,17 @@ export interface ExampleDef {
    * con unidades, e.g. "ks = 2205 kN/m³").
    */
   computedLabels?: (params: Record<string, number>, states: BuildStates) => Record<string, string>;
+  /**
+   * Valores calculados INLINE — se muestran como read-only justo DESPUÉS del
+   * parámetro indicado por `after` (en su mismo folder del Tweakpane). Útil para
+   * mostrar ks calculado debajo de q_adm/ks_factor, o Mu debajo de la carga, etc.
+   * Se actualizan en cada rebuild.
+   */
+  inlineComputed?: Array<{
+    after: string;                                                        // key del param después del cual insertar
+    label: string;                                                        // etiqueta visible
+    compute: (params: Record<string, number>, states: BuildStates) => string;
+  }>;
   /** Shell colormap por defecto para este ejemplo (e.g. "bendingXX", "pressure"). */
   defaultShellResult?: string;
   /**
