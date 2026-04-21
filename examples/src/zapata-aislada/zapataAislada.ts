@@ -133,6 +133,47 @@ export const zapataAislada: ExampleDef = {
     // Mesh fino captura concentración bajo columna (peak al centro)
     nSub:  { default: 10,   min: 3,   max: 16,   step: 1,    label: "n subdivisiones" },
   },
+  /**
+   * Valores calculados (read-only) que se muestran en el Tweakpane en el folder
+   * "📊 Calculados". Permiten ver el módulo de balasto ks, rigidez flexural D,
+   * número de Biot k_r, presiones extremas q_max/q_min y ratio q/q_adm sin entrar
+   * a la consola. Se recalcula tras cada rebuild.
+   */
+  computedLabels(p, states) {
+    const q_adm_kNm2 = (p.q_adm ?? 20) * TONF_TO_KN;
+    const ks = q_adm_kNm2 * (p.ks_factor ?? 10.5);                   // kN/m³
+    const tz = p.tz ?? 0.15, Lz = p.Lz ?? 2.5;
+    const D = Ec * tz ** 3 / (12 * (1 - nu_c ** 2));                 // kN·m (rigidez flexural)
+    const k_r = D / (ks * Lz ** 4);                                  // Biot: <1 flexible, >1 rígida
+    const fD = p.fD ?? 1.2, fL = p.fL ?? 1.6, fS = p.fS ?? 0;
+    const P_total = fD * (p.P_D ?? 0) + fL * (p.P_L ?? 0) + fS * (p.P_S ?? 0);
+    // q_max / q_min desde analyzeOutputs.pressure (map elemento → presión por nodo tonf/m²)
+    let qMax = 0, qMin = 0;
+    const pr = (states.analyzeOutputs.rawVal as any)?.pressure as Map<number, number[]> | undefined;
+    if (pr && pr.size) {
+      for (const vals of pr.values()) {
+        for (const q of vals) {
+          if (q < qMax) qMax = q;
+          if (q < qMin || qMin === 0) qMin = q;
+        }
+      }
+      // qMax es el más negativo (mayor compresión), qMin el menos compresivo
+      let localMin = Infinity;
+      for (const vals of pr.values())
+        for (const q of vals) if (Math.abs(q) < localMin) localMin = Math.abs(q);
+      qMin = -localMin;
+    }
+    const ratio = Math.abs(qMax) / (p.q_adm || 1);
+    return {
+      "ks (kN/m³)":       ks.toFixed(0),
+      "D (kN·m)":         D.toFixed(1),
+      "k_r (Biot)":       k_r.toFixed(3) + (k_r < 1 ? " FLEXIBLE" : " RÍGIDA"),
+      "P total (tonf)":   P_total.toFixed(2),
+      "q_max (tonf/m²)":  qMax.toFixed(2),
+      "q_min (tonf/m²)":  qMin.toFixed(2),
+      "q/q_adm":          ratio.toFixed(2) + (ratio > 1 ? " ⚠" : " ✓"),
+    };
+  },
   /** onParamChange:
    *   - soilType → autopoblar propiedades geotécnicas
    *   - combo    → autopoblar factores fD, fL, fS

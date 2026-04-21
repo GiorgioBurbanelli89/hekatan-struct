@@ -53,6 +53,10 @@ const states: BuildStates = {
 let currentExample: ExampleDef | null = null;
 let currentParams: Record<string, number> = {};
 let currentPane: Pane | null = null;
+// Objeto mutable que backea el folder "📊 Calculados" del Tweakpane.
+// Después de cada rebuild(), se re-llena con computedLabels() y el pane.refresh()
+// lo refleja en la UI como bindings readonly.
+let computedObj: Record<string, string> | null = null;
 const modalPanel = createModalPanel();
 modalPanel.div.style.display = "none";
 
@@ -203,11 +207,22 @@ function rebuild() {
   currentExample.build(currentParams, states, modalPanel);
   autoScaleDeformedShape();
   autoFitCamera();
+  // Refrescar el folder "📊 Calculados" con los nuevos valores derivados
+  if (currentExample.computedLabels && computedObj) {
+    const latest = currentExample.computedLabels(currentParams, states);
+    for (const key of Object.keys(computedObj)) {
+      if (key in latest) computedObj[key] = latest[key];
+    }
+    currentPane?.refresh();
+  }
 }
 
 // ── Tweakpane panel (encima del viewer) ──
 const paneHost = document.createElement("div");
-paneHost.style.cssText = "position:fixed;top:16px;right:16px;width:min(320px,calc(100vw - 32px));max-width:90vw;z-index:100;max-height:90vh;overflow-y:auto;font-size:12px";
+// top: 96px para que el Tweakpane quede claramente debajo de la toolbar superior
+// (logo Hekatan + sourceCode + author) y no se superponga.
+// max-height: calc(100vh - 112px) para que el panel no se salga por abajo tampoco.
+paneHost.style.cssText = "position:fixed;top:96px;right:16px;width:min(320px,calc(100vw - 32px));max-width:90vw;z-index:100;max-height:calc(100vh - 112px);overflow-y:auto;font-size:12px";
 document.body.appendChild(paneHost);
 
 // Helper de vistas — usa contexto Three.js del viewer (camera + controls)
@@ -323,6 +338,20 @@ function buildParamsPane() {
       }
       scheduleRebuild();
     });
+  }
+
+  // ── Folder "📊 Calculados" (read-only) — valores derivados del build actual ──
+  // Solo se muestra si el ejemplo exporta computedLabels(). Se actualiza en cada rebuild.
+  if (currentExample.computedLabels) {
+    const fCalc = pane.addFolder({ title: "📊 Calculados", expanded: true });
+    // Objeto mutable que tweakpane monitorea. Claves = labels, valores = strings.
+    const initial = currentExample.computedLabels(currentParams, states);
+    computedObj = { ...initial };
+    for (const key of Object.keys(initial)) {
+      fCalc.addBinding(computedObj, key, { readonly: true });
+    }
+  } else {
+    computedObj = null;
   }
 
   // Modal trigger (opcional)

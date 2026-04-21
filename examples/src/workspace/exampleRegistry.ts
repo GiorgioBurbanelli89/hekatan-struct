@@ -60,6 +60,14 @@ export interface ExampleDef {
    * Ejemplo: al cambiar soilType, actualizar q_adm y ks_factor.
    */
   onParamChange?: (changedKey: string, params: Record<string, number>) => void;
+  /**
+   * Devuelve valores DERIVADOS (calculados) que se muestran como read-only en
+   * el Tweakpane en el folder "📊 Calculados". Se llama después de cada build.
+   * Ejemplo zapata: ks (módulo balasto), D (rigidez flexural), k_r (Biot), q_max.
+   * Las keys son el label visible; los values se muestran como texto (ya formateados
+   * con unidades, e.g. "ks = 2205 kN/m³").
+   */
+  computedLabels?: (params: Record<string, number>, states: BuildStates) => Record<string, string>;
   /** Shell colormap por defecto para este ejemplo (e.g. "bendingXX", "pressure"). */
   defaultShellResult?: string;
   /**
