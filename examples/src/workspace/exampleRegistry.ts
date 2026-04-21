@@ -80,6 +80,9 @@ import { trussGen } from "../truss-gen/trussGen";
 import { barraAxial } from "../barra-axial/barraAxial";
 import { portico2D } from "../portico-2d/portico2D";
 import { tower3D } from "../tower-3d/tower3D";
+import { galpon } from "../galpon/galpon";
+import { edifAcero } from "../edif-acero/edifAcero";
+import { mezanine } from "../mezanine/mezanine";
 
 export const examplesRegistry: ExampleDef[] = [
   // Frames 1D
@@ -87,8 +90,11 @@ export const examplesRegistry: ExampleDef[] = [
   trussGen,
   portico2D,
   tower3D,
+  galpon,
   // Edificios
   edificioAporticado,
+  edifAcero,
+  mezanine,
   // Placas
   plateThin,
   plateThick,

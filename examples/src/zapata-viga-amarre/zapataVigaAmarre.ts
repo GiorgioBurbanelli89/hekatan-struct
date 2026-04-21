@@ -3,6 +3,7 @@
  * Shell Q4 (zapatas) + Frame (viga) + Frame (pedestales) + Winkler springs real.
  */
 import * as THREE from "three";
+import van from "vanjs-core";
 import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
 import type { ExampleDef, BuildStates } from "../exampleRegistry";
 
@@ -11,11 +12,13 @@ const nu_c = 0.2;
 const Gc = Ec / (2 * (1 + nu_c));
 const rho = 24;
 
-const SPRING_HEIGHT = 0.3;
-const SPRING_WIDTH = 0.10;
-const SPRING_COILS = 6;
-const MAT_SPRING = new THREE.LineBasicMaterial({ color: 0xff0033, linewidth: 3 });
-const VISUAL_AMP = 10;
+// ── Parámetros visuales de resortes 3D (igual estilo que zapata-aislada) ──
+const SPRING_HEIGHT = 0.20;
+const SPRING_WIDTH  = 0.035;
+const SPRING_COILS  = 8;
+const ANCHOR_SIZE   = 0.04;
+const MAT_SPRING = new THREE.LineBasicMaterial({ color: 0xff0033, linewidth: 2 });
+const MAT_GROUND = new THREE.LineBasicMaterial({ color: 0x00cc00, linewidth: 2 });
 
 export const zapataVigaAmarre: ExampleDef = {
   id: "zapata-viga-amarre",
@@ -228,28 +231,89 @@ export const zapataVigaAmarre: ExampleDef = {
       console.error("Solver error:", e);
     }
 
-    // Zigzag springs visuales
-    const springs3D: THREE.Object3D[] = [];
+    // ── Resortes 3D helicoidales (igual estilo que zapata-aislada) ──
+    // Usan hélice paramétrica + anclaje cúbico + reactive toggle con deformedShape.
     const deforms = states.deformOutputs.rawVal.deformations;
+    let wMaxAbs = 1e-9;
     for (const nIdx of zapataSpringNodes) {
-      const node = states.nodes.rawVal[nIdx];
-      if (!node) continue;
-      const x = node[0], y = node[1];
       const d = deforms?.get(nIdx);
-      const dz_real = d ? d[2] : 0;
-      const zTop = 0 + dz_real * VISUAL_AMP;
-      const zBot = -SPRING_HEIGHT;
-      const step = (zTop - zBot) / SPRING_COILS;
-      const pts: THREE.Vector3[] = [new THREE.Vector3(x, y, zTop)];
-      for (let i = 1; i < SPRING_COILS; i++) {
-        const side = i % 2 === 0 ? SPRING_WIDTH : -SPRING_WIDTH;
-        pts.push(new THREE.Vector3(x + side, y, zTop - i * step));
-      }
-      pts.push(new THREE.Vector3(x, y, zBot));
-      const geom = new THREE.BufferGeometry().setFromPoints(pts);
-      springs3D.push(new THREE.Line(geom, MAT_SPRING));
+      if (d) wMaxAbs = Math.max(wMaxAbs, Math.abs(d[2]));
     }
-    states.objects3D.val = springs3D;
+    // Diagonal del modelo (zapata + viga + zapata)
+    const Ltot = Lz1 + Lv + Lz2;
+    const Btot = Math.max(Bz1, Bz2);
+    const diag = Math.sqrt(Ltot ** 2 + Btot ** 2 + Hp ** 2);
+    const VISUAL_AMP = (0.07 * diag) / wMaxAbs;
+
+    // Sampling 6×6 por zapata para no saturar
+    const MAX_VISIBLE = 6;
+    const sampleIndex = (nx: number) => {
+      const step = Math.max(1, Math.ceil((nx - 1) / (MAX_VISIBLE - 1)));
+      const out = new Set<number>();
+      for (let i = 0; i < nx; i += step) out.add(i);
+      out.add(nx - 1);
+      return out;
+    };
+    // Construir Set de nodos muestreados (considerando ambas zapatas)
+    // Para simplificar: mostrar todos si son <= 36, sino samplear por posición
+    const visibleSet = new Set<number>(zapataSpringNodes.length <= 36
+      ? zapataSpringNodes
+      : zapataSpringNodes.filter((_, i) => i % Math.ceil(zapataSpringNodes.length / 36) === 0));
+
+    const HELIX_SEGMENTS_PER_COIL = 12;
+    const totalSegs = SPRING_COILS * HELIX_SEGMENTS_PER_COIL;
+
+    const viewerEl = document.querySelector("#viewer") as any;
+    const settings = viewerEl?.__settings;
+
+    const buildSprings = (deformedOn: boolean, userDisplayScale: number): THREE.Object3D[] => {
+      const ampEff = deformedOn ? VISUAL_AMP * userDisplayScale : 0;
+      const maxSinkingEff = wMaxAbs * Math.max(ampEff, VISUAL_AMP);
+      const zBotEff = -(maxSinkingEff + SPRING_HEIGHT);
+      const out: THREE.Object3D[] = [];
+      for (const nIdx of zapataSpringNodes) {
+        if (!visibleSet.has(nIdx)) continue;
+        const node = states.nodes.rawVal[nIdx];
+        if (!node) continue;
+        const x = node[0], y = node[1];
+        const d = deforms?.get(nIdx);
+        const dz_real = d ? d[2] : 0;
+        const zTop = 0 + dz_real * ampEff;
+        const zLen = zTop - zBotEff;
+        // Hélice 3D
+        const pts: THREE.Vector3[] = [new THREE.Vector3(x, y, zBotEff), new THREE.Vector3(x, y, zBotEff + zLen * 0.05)];
+        for (let k = 0; k <= totalSegs; k++) {
+          const t = k / totalSegs;
+          const angle = 2 * Math.PI * SPRING_COILS * t;
+          const zk = zBotEff + zLen * (0.05 + 0.9 * t);
+          pts.push(new THREE.Vector3(x + SPRING_WIDTH * Math.cos(angle), y + SPRING_WIDTH * Math.sin(angle), zk));
+        }
+        pts.push(new THREE.Vector3(x, y, zTop));
+        out.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), MAT_SPRING));
+        // Anclaje cúbico 3D
+        const a = ANCHOR_SIZE;
+        const cv = [
+          [x-a,y-a,zBotEff-a*2],[x+a,y-a,zBotEff-a*2],[x+a,y+a,zBotEff-a*2],[x-a,y+a,zBotEff-a*2],
+          [x-a,y-a,zBotEff],[x+a,y-a,zBotEff],[x+a,y+a,zBotEff],[x-a,y+a,zBotEff],
+        ].map(pp => new THREE.Vector3(pp[0], pp[1], pp[2]));
+        const ce = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+        const ep: THREE.Vector3[] = [];
+        for (const [i,j] of ce) { ep.push(cv[i], cv[j]); }
+        out.push(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(ep), MAT_GROUND));
+      }
+      return out;
+    };
+
+    if (settings) {
+      van.derive(() => {
+        const on = settings.deformedShape.val;
+        const ds = settings.displayScale.val;
+        const userScale = ds === 0 ? 1 : ds > 0 ? ds : -1 / ds;
+        states.objects3D.val = buildSprings(on, userScale);
+      });
+    } else {
+      states.objects3D.val = buildSprings(true, 1);
+    }
   },
   runModal(p, states, modalPanel) {
     const nodes = states.nodes.val;
