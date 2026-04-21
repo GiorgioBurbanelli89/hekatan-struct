@@ -89,6 +89,12 @@ export function getToolbar({
 
 // Utils
 function getAwatifSvg(): TemplateResult {
-  const base = window.location.pathname.replace(/\/[^/]*$/, '/');
+  // El logo vive en la raíz del site, NO en la subcarpeta del ejemplo actual.
+  // En dev → `/img/hekatan-logo.png`; en gh-pages → `/hekatan-struct/img/hekatan-logo.png`.
+  // Detectamos el site-root tomando el primer segmento del pathname cuando corresponde
+  // al prefijo de deploy (heurística: `/hekatan-struct/...` o similar subcarpeta conocida).
+  // Si la ruta tiene ≥ 2 segmentos, el primero es la raíz del site (carpeta de GitHub Pages).
+  const segs = window.location.pathname.split("/").filter(Boolean);
+  const base = segs.length >= 2 ? `/${segs[0]}/` : "/";
   return html`<img src="${base}img/hekatan-logo.png" alt="Hekatan" style="width:22px;height:22px;border-radius:4px;">`;
 }
