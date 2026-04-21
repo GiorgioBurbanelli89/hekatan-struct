@@ -270,30 +270,35 @@ export function getViewer({
   }
 
   if (objects3D) {
-    // Helper: decide si un objeto se debe mostrar según su userData.
-    // obj.userData.isCota = true → controlado por settings.showCotas
-    // resto → controlado por settings.custom3D (resortes Winkler, etc.)
+    // Tracking local de los objetos que AÑADIMOS a la scene. Esto es más robusto
+    // que objects3D.oldVal (que puede quedar stale si múltiples derives disparan
+    // en el mismo batch). Así evitamos duplicación de resortes.
+    const addedObjs: THREE.Object3D[] = [];
     const shouldShow = (obj: any): boolean => {
       if (obj?.userData?.isCota) return settings.showCotas.val;
       return settings.custom3D.val;
     };
     const applyVisibility = () => {
-      for (const obj of objects3D.rawVal) (obj as any).visible = shouldShow(obj);
+      for (const obj of addedObjs) (obj as any).visible = shouldShow(obj);
       viewerRender();
     };
 
-    // Events: on objects3D change add/remove objects from the scene
     van.derive(() => {
       const nextObjs = objects3D.val;
-      if (objects3D.oldVal?.length) scene.remove(...objects3D.oldVal);
+      // 1) Remover TODO lo que agregamos antes (sin confiar en oldVal)
+      if (addedObjs.length) {
+        scene.remove(...addedObjs);
+        addedObjs.length = 0;
+      }
+      // 2) Añadir los nuevos y recordarlos
       if (nextObjs.length) {
-        scene.add(...objects3D.rawVal);
+        scene.add(...nextObjs);
+        addedObjs.push(...nextObjs);
         applyVisibility();
       }
       viewerRender();
     });
 
-    // Toggle on/off cuando cambia custom3D o showCotas
     van.derive(() => { settings.custom3D.val; applyVisibility(); });
     van.derive(() => { settings.showCotas.val; applyVisibility(); });
   }

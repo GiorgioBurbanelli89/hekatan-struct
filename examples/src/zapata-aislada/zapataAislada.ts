@@ -81,11 +81,12 @@ export const zapataAislada: ExampleDef = {
     gamma:    { default: 18,    min: 14,   max: 26,     step: 0.5,  label: "γ suelo (kN/m³)" },
     N_SPT:    { default: 20,    min: 0,    max: 100,    step: 1,    label: "N SPT" },
     E_soil:   { default: 25000, min: 1000, max: 2000000,step: 1000, label: "E suelo (kPa)" },
-    // Cargas tipo FEM Studio: CM + CV suman al axial, más Mx y My
+    // Cargas tipo FEM Studio: CM + CV axial + Mx, My (momentos por default no-cero
+    // para que la zapata se incline visiblemente)
     CM:    { default: 15,   min: 0,     max: 300,  step: 1,    label: "CM axial (tonf)" },
     CV:    { default: 5,    min: 0,     max: 200,  step: 1,    label: "CV axial (tonf)" },
-    Mx:    { default: 0,    min: -10,   max: 10,   step: 0.5,  label: "Mx (tonf·m)" },
-    My:    { default: 0,    min: -10,   max: 10,   step: 0.5,  label: "My (tonf·m)" },
+    Mx:    { default: 3,    min: -20,   max: 20,   step: 0.5,  label: "Mx (tonf·m)" },
+    My:    { default: 2,    min: -20,   max: 20,   step: 0.5,  label: "My (tonf·m)" },
     // Mesh fino captura concentración bajo columna (peak al centro)
     nSub:  { default: 10,   min: 3,   max: 16,   step: 1,    label: "n subdivisiones" },
   },
