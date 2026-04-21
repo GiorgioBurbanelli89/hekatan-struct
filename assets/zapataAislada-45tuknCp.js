@@ -141,21 +141,21 @@ let __tla = Promise.all([
     category: "Cimentaciones",
     params: {
       Lz: {
-        default: 3,
+        default: 1.5,
         min: 1,
         max: 5,
         step: 0.05,
         label: "Lz (m)"
       },
       Bz: {
-        default: 3,
+        default: 1.5,
         min: 1,
         max: 5,
         step: 0.05,
         label: "Bz (m)"
       },
       tz: {
-        default: 0.2,
+        default: 0.3,
         min: 0.2,
         max: 1,
         step: 0.05,
@@ -186,7 +186,7 @@ let __tla = Promise.all([
       q_adm: {
         default: 20,
         min: 1,
-        max: 200,
+        max: 100,
         step: 1,
         label: "q_adm (tonf/m\xB2)"
       },
@@ -233,24 +233,24 @@ let __tla = Promise.all([
         label: "E suelo (kPa)"
       },
       P: {
-        default: 30,
+        default: 20,
         min: 1,
-        max: 200,
+        max: 400,
         step: 1,
         label: "P axial (tonf)"
       },
       Mx: {
         default: 0,
-        min: -3,
-        max: 3,
-        step: 0.1,
+        min: -1,
+        max: 1,
+        step: 0.05,
         label: "Mx (tonf\xB7m)"
       },
       My: {
         default: 0,
-        min: -3,
-        max: 3,
-        step: 0.1,
+        min: -1,
+        max: 1,
+        step: 0.05,
         label: "My (tonf\xB7m)"
       },
       nSub: {
