@@ -309,9 +309,17 @@ function buildParamsPane() {
   // ── Parámetros del ejemplo — agrupados en folders (si ParamDef.folder se define) ──
   const defaultFolderTitle = "Parámetros";
   const folderMap = new Map<string, any>();  // folder title → Tweakpane folder instance
+  // Folders que aparecen expandidos por default (el usuario los usa todo el tiempo):
+  //  - "Parámetros" (raíz)
+  //  - Cualquier folder con "Modo" en el título (el selector Simple/D/L/S/Combinación)
+  //  - Folder "Combinación" dentro de cargas (para ver factores fD/fL/fS al vuelo)
+  const isExpandedByDefault = (title: string) =>
+    title === defaultFolderTitle ||
+    /\bmodo\b/i.test(title) ||
+    /combinaci/i.test(title);
   const getFolder = (title: string) => {
     if (!folderMap.has(title)) {
-      folderMap.set(title, pane.addFolder({ title, expanded: title === defaultFolderTitle }));
+      folderMap.set(title, pane.addFolder({ title, expanded: isExpandedByDefault(title) }));
     }
     return folderMap.get(title);
   };
