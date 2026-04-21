@@ -213,16 +213,40 @@ function setView(preset: "iso" | "plan" | "elevX" | "elevY") {
   const ctx: any = (viewerElm as any).__ctx;
   if (!ctx) return;
   const { camera, controls, render } = ctx;
-  const tgt = controls.target.clone();
-  const dist = camera.position.distanceTo(tgt) || 10;
-  switch (preset) {
-    case "iso":   camera.position.set(tgt.x + dist * 0.6, tgt.y - dist * 0.6, tgt.z + dist * 0.6); break;
-    case "plan":  camera.position.set(tgt.x, tgt.y, tgt.z + dist); break;         // top-down +Z
-    case "elevX": camera.position.set(tgt.x + dist, tgt.y, tgt.z); break;         // mirando -X
-    case "elevY": camera.position.set(tgt.x, tgt.y + dist, tgt.z); break;         // mirando -Y
+  // Bounding box del modelo para auto-fit
+  const nodesArr = states.nodes.rawVal ?? [];
+  let xMin=Infinity,yMin=Infinity,zMin=Infinity,xMax=-Infinity,yMax=-Infinity,zMax=-Infinity;
+  for (const n of nodesArr) {
+    if (n[0]<xMin) xMin=n[0]; if (n[0]>xMax) xMax=n[0];
+    if (n[1]<yMin) yMin=n[1]; if (n[1]>yMax) yMax=n[1];
+    if (n[2]<zMin) zMin=n[2]; if (n[2]>zMax) zMax=n[2];
+  }
+  const cx = (xMin + xMax) / 2, cy = (yMin + yMax) / 2, cz = (zMin + zMax) / 2;
+  const dx = (xMax - xMin) || 1, dy = (yMax - yMin) || 1, dz = (zMax - zMin) || 1;
+  const diag = Math.sqrt(dx*dx + dy*dy + dz*dz) || 5;
+  controls.target.set(cx, cy, cz);
+
+  // Para vistas 2D (plan/elev): FOV chico (~5°) → cuasi-ortográfico.
+  // Para iso: FOV normal 45°.
+  if (preset === "iso") {
+    (camera as THREE.PerspectiveCamera).fov = 45;
+    const d = diag * 1.2;
+    camera.position.set(cx + d * 0.6, cy - d * 0.6, cz + d * 0.6);
+  } else {
+    (camera as THREE.PerspectiveCamera).fov = 5;  // cuasi-ortográfico
+    // Distancia tal que el extent cabe con margen en el FOV pequeño.
+    // tan(2.5°) × distance = halfExtent → distance = halfExtent / tan(2.5°) ≈ halfExtent × 22.9
+    const halfExtent = diag / 2;
+    const d = halfExtent * 25;
+    switch (preset) {
+      case "plan":  camera.position.set(cx, cy, cz + d); break;
+      case "elevX": camera.position.set(cx + d, cy, cz); break;
+      case "elevY": camera.position.set(cx, cy + d, cz); break;
+    }
   }
   camera.up.set(0, 0, 1);
-  camera.lookAt(tgt);
+  (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
+  camera.lookAt(cx, cy, cz);
   controls.update();
   render?.();
 }
