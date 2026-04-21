@@ -266,18 +266,36 @@ export const zapataVigaAmarre: ExampleDef = {
         if (!node) continue;
         const x = node[0], y = node[1];
         const d = deforms?.get(nIdx);
+        const dx_real = d ? d[0] : 0;
+        const dy_real = d ? d[1] : 0;
         const dz_real = d ? d[2] : 0;
+        // Punta del resorte sigue al nodo en las 3 direcciones; base anclada al suelo
+        const xTop = x + dx_real * ampEff;
+        const yTop = y + dy_real * ampEff;
         const zTop = 0 + dz_real * ampEff;
         const zLen = zTop - zBotEff;
-        // Hélice 3D
-        const pts: THREE.Vector3[] = [new THREE.Vector3(x, y, zBotEff), new THREE.Vector3(x, y, zBotEff + zLen * 0.05)];
+        const axisAt = (t: number): [number, number, number] => [
+          x + (xTop - x) * t,
+          y + (yTop - y) * t,
+          zBotEff + zLen * t,
+        ];
+        const [axB0x, axB0y, axB0z] = axisAt(0);
+        const [axB1x, axB1y, axB1z] = axisAt(0.05);
+        const pts: THREE.Vector3[] = [
+          new THREE.Vector3(axB0x, axB0y, axB0z),
+          new THREE.Vector3(axB1x, axB1y, axB1z),
+        ];
         for (let k = 0; k <= totalSegs; k++) {
-          const t = k / totalSegs;
-          const angle = 2 * Math.PI * SPRING_COILS * t;
-          const zk = zBotEff + zLen * (0.05 + 0.9 * t);
-          pts.push(new THREE.Vector3(x + SPRING_WIDTH * Math.cos(angle), y + SPRING_WIDTH * Math.sin(angle), zk));
+          const t = 0.05 + 0.9 * (k / totalSegs);
+          const [cx, cy, cz] = axisAt(t);
+          const angle = 2 * Math.PI * SPRING_COILS * (k / totalSegs);
+          pts.push(new THREE.Vector3(
+            cx + SPRING_WIDTH * Math.cos(angle),
+            cy + SPRING_WIDTH * Math.sin(angle),
+            cz
+          ));
         }
-        pts.push(new THREE.Vector3(x, y, zTop));
+        pts.push(new THREE.Vector3(xTop, yTop, zTop));
         out.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), MAT_SPRING));
         // Anclaje cúbico 3D
         const a = ANCHOR_SIZE;
