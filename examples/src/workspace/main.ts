@@ -127,8 +127,9 @@ function autoFitCamera() {
   const cx = (minX+maxX)/2, cy = (minY+maxY)/2, cz = (minZ+maxZ)/2;
   const dx = maxX-minX, dy = maxY-minY, dz = maxZ-minZ;
   const extent = Math.max(Math.sqrt(dx*dx+dy*dy+dz*dz), 1);
-  // Distancia = 1.3× diagonal para que entre con margen
-  const dist = 1.3 * extent;
+  // Distancia = 2.2× diagonal para que el modelo ocupe ~40-50% del viewport
+  // (como /beams/ que no ocupa toda la pantalla).
+  const dist = 2.2 * extent;
   controls.target.set(cx, cy, cz);
   // Posicionar cámara isométrica sobre el modelo (vista estándar 3D)
   const k = dist / Math.sqrt(3);

@@ -270,26 +270,32 @@ export function getViewer({
   }
 
   if (objects3D) {
+    // Helper: decide si un objeto se debe mostrar según su userData.
+    // obj.userData.isCota = true → controlado por settings.showCotas
+    // resto → controlado por settings.custom3D (resortes Winkler, etc.)
+    const shouldShow = (obj: any): boolean => {
+      if (obj?.userData?.isCota) return settings.showCotas.val;
+      return settings.custom3D.val;
+    };
+    const applyVisibility = () => {
+      for (const obj of objects3D.rawVal) (obj as any).visible = shouldShow(obj);
+      viewerRender();
+    };
+
     // Events: on objects3D change add/remove objects from the scene
     van.derive(() => {
-      // Leer val para registrar dependencia; siempre remover los viejos
-      // aunque el nuevo array esté vacío (evita que springs de un ejemplo
-      // previo sigan visibles al cambiar a otro).
       const nextObjs = objects3D.val;
       if (objects3D.oldVal?.length) scene.remove(...objects3D.oldVal);
-      if (settings.custom3D.val && nextObjs.length) scene.add(...objects3D.rawVal);
+      if (nextObjs.length) {
+        scene.add(...objects3D.rawVal);
+        applyVisibility();
+      }
       viewerRender();
     });
 
-    // Toggle on/off cuando cambia settings.custom3D
-    van.derive(() => {
-      const show = settings.custom3D.val;
-      const objs = objects3D.rawVal;
-      if (!objs?.length) return;
-      if (show) scene.add(...objs);
-      else scene.remove(...objs);
-      viewerRender();
-    });
+    // Toggle on/off cuando cambia custom3D o showCotas
+    van.derive(() => { settings.custom3D.val; applyVisibility(); });
+    van.derive(() => { settings.showCotas.val; applyVisibility(); });
   }
 
   if (drawingObj)

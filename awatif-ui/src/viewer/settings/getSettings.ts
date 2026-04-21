@@ -29,6 +29,8 @@ export type Settings = {
   flipAxes: State<boolean>;
   /** Resortes/objetos custom 3D (zigzags Winkler en zapatas, etc.) on/off */
   custom3D: State<boolean>;
+  /** Cotas / dimensiones anotadas sobre el modelo (5.00 m, 40×40, etc.) */
+  showCotas: State<boolean>;
 };
 
 export type SettingsObj = {
@@ -54,6 +56,7 @@ export type SettingsObj = {
   flipAxes?: boolean;
   solids?: boolean;
   custom3D?: boolean;
+  showCotas?: boolean;
 };
 
 export function getSettings(
@@ -119,6 +122,7 @@ export function getSettings(
     inputs.addBinding(settings.supports, "val", { label: "Supports" });
     inputs.addBinding(settings.loads, "val", { label: "Loads" });
     inputs.addBinding(settings.custom3D, "val", { label: "Resortes (Winkler)" });
+    inputs.addBinding(settings.showCotas, "val", { label: "Cotas" });
   }
 
   if (mesh?.deformOutputs || mesh?.analyzeOutputs) {
@@ -207,5 +211,6 @@ export function getDefaultSettings(settingsObj: SettingsObj): Settings {
     flipAxes: van.state(settingsObj?.flipAxes ?? false),
     solids: van.state(settingsObj?.solids ?? true),
     custom3D: van.state(settingsObj?.custom3D ?? true),
+    showCotas: van.state(settingsObj?.showCotas ?? true),
   };
 }
