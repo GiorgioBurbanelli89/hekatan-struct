@@ -268,8 +268,18 @@ export function getViewer({
 
       scene.remove(...objects3D.oldVal);
 
-      scene.add(...objects3D.rawVal);
+      if (settings.custom3D.val) scene.add(...objects3D.rawVal);
 
+      viewerRender();
+    });
+
+    // Toggle on/off cuando cambia settings.custom3D
+    van.derive(() => {
+      const show = settings.custom3D.val;
+      const objs = objects3D.rawVal;
+      if (!objs?.length) return;
+      if (show) scene.add(...objs);
+      else scene.remove(...objs);
       viewerRender();
     });
   }

@@ -49,10 +49,12 @@ export const zapataAislada: ExampleDef = {
   name: "Zapata Aislada (Ecuador q_adm tonf/m²)",
   category: "Cimentaciones",
   params: {
-    Lz:    { default: 2.0,  min: 1.0, max: 5.0,  step: 0.05, label: "Lz (m)" },
-    Bz:    { default: 2.0,  min: 1.0, max: 5.0,  step: 0.05, label: "Bz (m)" },
-    // Espesor realista de zapata (NEC-SE-HM Ecuador: 20–30 cm típico)
-    tz:    { default: 0.30, min: 0.20, max: 1.0, step: 0.05, label: "tz (m)" },
+    // Lz grande + tz mínimo → k_rigidez<<1 (placa flexible) → pressure/bendingXX con
+    // gradiente visible centro→bordes incluso a cargas moderadas (P=30-100 tonf).
+    Lz:    { default: 3.0,  min: 1.0, max: 5.0,  step: 0.05, label: "Lz (m)" },
+    Bz:    { default: 3.0,  min: 1.0, max: 5.0,  step: 0.05, label: "Bz (m)" },
+    // Espesor realista NEC-SE-HM Ecuador (tz=0.20 mínimo para flexibilidad visible)
+    tz:    { default: 0.20, min: 0.20, max: 1.0, step: 0.05, label: "tz (m)" },
     bc:    { default: 0.4,  min: 0.2, max: 0.8,  step: 0.05, label: "bc columna (m)" },
     Hp:    { default: 0.5,  min: 0.3, max: 2.0,  step: 0.1,  label: "Hp pedestal (m)" },
     // Selector de tipo de suelo (NEC-SE-GC Ecuador / Bowles)
@@ -212,34 +214,31 @@ export const zapataAislada: ExampleDef = {
         states.nodes.val, states.elements.val,
         states.elementInputs.val, states.deformOutputs.val
       );
-      // Presión de contacto en tonf/m² — convención Ecuador: NEGATIVA (hacia abajo, soil compresión)
-      // q = ks × w donde w es el desplazamiento vertical (negativo al bajar)
-      // Al ser w<0 y ks>0, q resulta NEGATIVA = compresión del suelo sobre zapata
+      // Presión de contacto en tonf/m² — convención Ecuador (negativa=compresión).
+      // Mismo patrón que displacementZ: centro=azul(max compresión), bordes=rojo(menor).
       const defMap = states.deformOutputs.rawVal.deformations;
       const pressureMap = new Map<number, number[]>();
-      let qMinTonf = 0;  // el mínimo (más negativo) = máximo |q|
+      let qMinTonf = 0;  // mínimo (más negativo) = pico bajo columna
       states.elements.rawVal.forEach((el, eIdx) => {
         if (el.length !== 4) return;
         const qPerNode: number[] = [];
         for (const n of el) {
           const d = defMap?.get(n);
-          const q_kN = ks * (d ? d[2] : 0);           // kN/m²  (negativo cuando w<0 = compresión)
-          const q_tonf = q_kN / TONF_TO_KN;           // → tonf/m²
+          const q_kN = ks * (d ? d[2] : 0);            // negativo cuando w<0 (compresión)
+          const q_tonf = q_kN / TONF_TO_KN;            // → tonf/m²
           qPerNode.push(q_tonf);
           if (q_tonf < qMinTonf) qMinTonf = q_tonf;
         }
         pressureMap.set(eIdx, qPerNode);
       });
       (ao as any).pressure = pressureMap;
-      // Rango fijo SÓLO para "pressure" — bendingXX/vonMises conservan su auto-escala
-      // y muestran concentración bajo columna para cualquier carga.
-      (ao as any).colorMapRanges = {
-        pressure: [0, -q_adm_tonf],
-      };
+      // AUTO-ESCALA para todos los campos (pressure, bendingXX, vonMises, etc.) →
+      // el colormap SIEMPRE muestra gradiente centro-bordes por pequeño que sea.
+      // Los valores exactos y ratio q_max/q_adm van al console.log para verificación.
       states.analyzeOutputs.val = ao;
 
       // Log detallado: rango de presión plato + rigidez relativa
-      const qMaxAbs = Math.abs(qMinTonf);
+      const qMaxAbs = Math.abs(qMinTonf);  // pico bajo columna
       // q_min (más suave, bordes) del mapa de presión
       let qMinAbs = Infinity;
       pressureMap.forEach((vals) => {

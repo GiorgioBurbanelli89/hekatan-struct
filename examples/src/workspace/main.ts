@@ -183,12 +183,11 @@ function buildParamsPane() {
 }
 
 // ── Settings del viewer ──
-// Default shellResults = "displacementZ" — muestra el asentamiento diferencial
-// (centro se hunde más que bordes) que SIEMPRE es no-uniforme por geometría,
-// independiente de rigidez. Usuario puede cambiar a pressure/bendingXX/vonMises.
+// Default shellResults = "pressure" — presión de contacto Winkler, patrón similar
+// a displacementZ (centro = max compresión = azul; bordes = mínima = rojo) con auto-escala.
 const settingsObj: Record<string, any> = {
   deformedShape: true,
-  shellResults: "displacementZ",
+  shellResults: "pressure",
   gridSize: 10,
   showCotas: true,
 };
@@ -214,4 +213,10 @@ const initialEx =
   (urlT && examplesRegistry.find((e) => e.id === urlT)) ||
   examplesRegistry.find((e) => e.id === "zapata-aislada") ||
   examplesRegistry[0];
-if (initialEx) loadExample(initialEx);
+if (initialEx) {
+  loadExample(initialEx);
+  // Para zapata aislada: vista en planta por default (visual directo del colormap de presión)
+  if (initialEx.id === "zapata-aislada" || initialEx.id === "zapata-viga-amarre") {
+    setTimeout(() => setView("plan"), 200);
+  }
+}
