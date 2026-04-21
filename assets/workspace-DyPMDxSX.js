@@ -4,7 +4,7 @@ import { g as $ } from "./getViewer-glAYEfJX.js";
 import { g as G } from "./styles-B8h3dtQW.js";
 import { c as Q } from "./renderModalTable-29W4CuGz.js";
 import { z as J, __tla as __tla_0 } from "./zapataVigaAmarre-DrRBSNUQ.js";
-import { z as W, __tla as __tla_1 } from "./zapataAislada-DHs88N1K.js";
+import { z as W, __tla as __tla_1 } from "./zapataAislada-C8HGr5Bd.js";
 import { p as T, d as R, __tla as __tla_2 } from "./didacticCpp-Bnj9OwqQ.js";
 import { a as N } from "./analyze-ClLKGn9k.js";
 import { d as O, f as P } from "./units-CVPhvG5E.js";

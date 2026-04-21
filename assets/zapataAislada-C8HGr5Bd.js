@@ -1,7 +1,7 @@
-import { a as re, V as _, L as le, B as ie } from "./Text-CBH-tcJP.js";
+import { a as fe, V as h, L as me, B as ce } from "./Text-CBH-tcJP.js";
 import { a as Me } from "./analyze-ClLKGn9k.js";
 import { d as be, __tla as __tla_0 } from "./didacticCpp-Bnj9OwqQ.js";
-let ye;
+let Le;
 let __tla = Promise.all([
   (() => {
     try {
@@ -10,13 +10,13 @@ let __tla = Promise.all([
     }
   })()
 ]).then(async () => {
-  let v, z, we, me, S, ce, qe, Ne, de, Pe, Se, Te;
-  v = 25e6;
-  z = 0.2;
-  we = v / (2 * (1 + z));
-  me = 24;
+  let z, y, qe, de, S, re, we, Ne, pe, Pe, Se, Te;
+  z = 25e6;
+  y = 0.2;
+  qe = z / (2 * (1 + y));
+  de = 24;
   S = 9.80665;
-  ce = [
+  re = [
     {
       name: "Custom",
       q_adm: 20,
@@ -128,19 +128,19 @@ let __tla = Promise.all([
       E_soil: 2e6
     }
   ];
-  qe = 0.15;
-  Ne = 0.04;
-  de = 4;
-  Pe = new re({
+  we = 0.2;
+  Ne = 0.035;
+  pe = 8;
+  Pe = new fe({
     color: 16711731,
     linewidth: 2
   });
-  Se = new re({
+  Se = new fe({
     color: 52224,
     linewidth: 2
   });
   Te = 0.04;
-  ye = {
+  Le = {
     id: "zapata-aislada",
     name: "Zapata Aislada (Ecuador q_adm tonf/m\xB2)",
     category: "Cimentaciones",
@@ -183,9 +183,9 @@ let __tla = Promise.all([
       soilType: {
         default: 6,
         label: "Tipo de suelo",
-        options: Object.fromEntries(ce.map((l, a) => [
+        options: Object.fromEntries(re.map((l, o) => [
           l.name,
-          a
+          o
         ]))
       },
       q_adm: {
@@ -266,136 +266,136 @@ let __tla = Promise.all([
         label: "n subdivisiones"
       }
     },
-    onParamChange(l, a) {
+    onParamChange(l, o) {
       if (l === "soilType") {
-        const h = Math.round(a.soilType ?? 0);
-        if (h > 0) {
-          const i = ce[h];
-          a.q_adm = i.q_adm, a.ks_factor = i.ks_factor, a.su = i.su, a.phi = i.phi, a.gamma = i.gamma, a.N_SPT = i.N_SPT, a.E_soil = i.E_soil;
+        const u = Math.round(o.soilType ?? 0);
+        if (u > 0) {
+          const i = re[u];
+          o.q_adm = i.q_adm, o.ks_factor = i.ks_factor, o.su = i.su, o.phi = i.phi, o.gamma = i.gamma, o.N_SPT = i.N_SPT, o.E_soil = i.E_soil;
         }
       }
     },
-    build(l, a) {
-      const { Lz: h, Bz: i, tz: j, bc: x, Hp: pe } = l, fe = l.q_adm, ue = l.ks_factor, T = fe * S * ue, _e = l.P * S, he = l.Mx * S, xe = l.My * S, w = Math.round(l.nSub), E = h / 2, I = i / 2, m = [], c = [];
-      for (let e = 0; e <= w; e++) m.push(h * e / w), c.push(i * e / w);
-      m.includes(E) || (m.push(E), m.sort((e, o) => e - o)), c.includes(I) || (c.push(I), c.sort((e, o) => e - o));
-      const y = [], q = [], O = /* @__PURE__ */ new Map(), L = /* @__PURE__ */ new Map(), Z = /* @__PURE__ */ new Map(), K = /* @__PURE__ */ new Map(), U = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), J = /* @__PURE__ */ new Map(), W = /* @__PURE__ */ new Map(), F = /* @__PURE__ */ new Map(), X = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map(), B = (e, o, n) => {
-        const s = `${e.toFixed(4)},${o.toFixed(4)},${n.toFixed(4)}`;
-        if (R.has(s)) return R.get(s);
-        const f = y.length;
-        return y.push([
+    build(l, o) {
+      const { Lz: u, Bz: i, tz: j, bc: g, Hp: Z } = l, ue = l.q_adm, _e = l.ks_factor, T = ue * S * _e, he = l.P * S, ge = l.Mx * S, xe = l.My * S, q = Math.round(l.nSub), E = u / 2, I = i / 2, m = [], c = [];
+      for (let e = 0; e <= q; e++) m.push(u * e / q), c.push(i * e / q);
+      m.includes(E) || (m.push(E), m.sort((e, a) => e - a)), c.includes(I) || (c.push(I), c.sort((e, a) => e - a));
+      const O = [], w = [], L = /* @__PURE__ */ new Map(), F = /* @__PURE__ */ new Map(), K = /* @__PURE__ */ new Map(), U = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), J = /* @__PURE__ */ new Map(), W = /* @__PURE__ */ new Map(), X = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map(), Q = /* @__PURE__ */ new Map(), B = /* @__PURE__ */ new Map(), C = (e, a, n) => {
+        const t = `${e.toFixed(4)},${a.toFixed(4)},${n.toFixed(4)}`;
+        if (B.has(t)) return B.get(t);
+        const f = O.length;
+        return O.push([
           e,
-          o,
+          a,
           n
-        ]), R.set(s, f), f;
+        ]), B.set(t, f), f;
       }, r = [];
       for (let e = 0; e < c.length; e++) {
-        const o = [];
-        for (let n = 0; n < m.length; n++) o.push(B(m[n], c[e], 0));
-        r.push(o);
+        const a = [];
+        for (let n = 0; n < m.length; n++) a.push(C(m[n], c[e], 0));
+        r.push(a);
       }
-      for (let e = 0; e < c.length - 1; e++) for (let o = 0; o < m.length - 1; o++) {
-        const n = q.length;
-        q.push([
-          r[e][o],
-          r[e][o + 1],
-          r[e + 1][o + 1],
-          r[e + 1][o]
-        ]), K.set(n, j), O.set(n, v), L.set(n, z), F.set(n, me);
+      for (let e = 0; e < c.length - 1; e++) for (let a = 0; a < m.length - 1; a++) {
+        const n = w.length;
+        w.push([
+          r[e][a],
+          r[e][a + 1],
+          r[e + 1][a + 1],
+          r[e + 1][a]
+        ]), U.set(n, j), L.set(n, z), F.set(n, y), R.set(n, de);
       }
-      const ge = B(E, I, 0), Q = B(E, I, pe), p = q.length;
-      q.push([
-        ge,
-        Q
-      ]), O.set(p, v), L.set(p, z), W.set(p, we), Z.set(p, x * x), U.set(p, x ** 4 / 12), Y.set(p, x ** 4 / 12), J.set(p, 0.14 * x ** 4), F.set(p, me), X.set(p, {
+      const ke = C(E, I, 0), ee = C(E, I, Z), p = w.length;
+      w.push([
+        ke,
+        ee
+      ]), L.set(p, z), F.set(p, y), X.set(p, qe), K.set(p, g * g), Y.set(p, g ** 4 / 12), J.set(p, g ** 4 / 12), W.set(p, 0.14 * g ** 4), R.set(p, de), Q.set(p, {
         type: "rect",
-        b: x,
-        h: x
+        b: g,
+        h: g
       });
-      const ee = /* @__PURE__ */ new Map();
-      ee.set(Q, [
+      const ae = /* @__PURE__ */ new Map();
+      ae.set(ee, [
         0,
         0,
-        -_e,
-        he,
+        -he,
+        ge,
         xe,
         0
       ]);
-      const oe = h / w, ae = i / w, u = [], C = [];
-      for (let e = 0; e < c.length; e++) for (let o = 0; o < m.length; o++) {
-        const n = oe * ae * (o === 0 || o === m.length - 1 ? 0.5 : 1) * (e === 0 || e === c.length - 1 ? 0.5 : 1);
-        u.push({
-          node: r[e][o],
+      const oe = u / q, ne = i / q, _ = [], G = [];
+      for (let e = 0; e < c.length; e++) for (let a = 0; a < m.length; a++) {
+        const n = oe * ne * (a === 0 || a === m.length - 1 ? 0.5 : 1) * (e === 0 || e === c.length - 1 ? 0.5 : 1);
+        _.push({
+          node: r[e][a],
           dof: 2,
           k: T * n
-        }), C.push(r[e][o]);
+        }), G.push(r[e][a]);
       }
-      const A = T * oe * ae * 0.01, G = A * 0.01, N = r[0][0];
-      u.push({
+      const A = T * oe * ne * 0.01, $ = A * 0.01, N = r[0][0];
+      _.push({
         node: N,
         dof: 0,
         k: A
-      }), u.push({
+      }), _.push({
         node: N,
         dof: 1,
         k: A
-      }), u.push({
+      }), _.push({
         node: N,
         dof: 3,
-        k: G
-      }), u.push({
+        k: $
+      }), _.push({
         node: N,
         dof: 4,
-        k: G
-      }), u.push({
+        k: $
+      }), _.push({
         node: N,
         dof: 5,
-        k: G
-      }), u.push({
+        k: $
+      }), _.push({
         node: r[c.length - 1][m.length - 1],
         dof: 1,
         k: A
-      }), a.nodes.val = y.map((e) => [
+      }), o.nodes.val = O.map((e) => [
         e[0],
         e[1],
         e[2]
-      ]), a.elements.val = q, a.nodeInputs.val = {
+      ]), o.elements.val = w, o.nodeInputs.val = {
         supports: /* @__PURE__ */ new Map(),
-        loads: ee
-      }, a.elementInputs.val = {
-        elasticities: O,
-        poissonsRatios: L,
-        areas: Z,
-        momentsOfInertiaZ: U,
-        momentsOfInertiaY: Y,
-        torsionalConstants: J,
-        shearModuli: W,
-        thicknesses: K,
-        densities: F,
-        sectionShapes: X
+        loads: ae
+      }, o.elementInputs.val = {
+        elasticities: L,
+        poissonsRatios: F,
+        areas: K,
+        momentsOfInertiaZ: Y,
+        momentsOfInertiaY: J,
+        torsionalConstants: W,
+        shearModuli: X,
+        thicknesses: U,
+        densities: R,
+        sectionShapes: Q
       };
       try {
-        a.deformOutputs.val = be(a.nodes.val, a.elements.val, a.nodeInputs.val, a.elementInputs.val, u);
-        const e = Me(a.nodes.val, a.elements.val, a.elementInputs.val, a.deformOutputs.val), o = a.deformOutputs.rawVal.deformations, n = /* @__PURE__ */ new Map();
-        let s = 0;
-        a.elements.rawVal.forEach((t, P) => {
-          if (t.length !== 4) return;
+        o.deformOutputs.val = be(o.nodes.val, o.elements.val, o.nodeInputs.val, o.elementInputs.val, _);
+        const e = Me(o.nodes.val, o.elements.val, o.elementInputs.val, o.deformOutputs.val), a = o.deformOutputs.rawVal.deformations, n = /* @__PURE__ */ new Map();
+        let t = 0;
+        o.elements.rawVal.forEach((s, P) => {
+          if (s.length !== 4) return;
           const d = [];
-          for (const H of t) {
-            const te = o == null ? void 0 : o.get(H), V = T * (te ? te[2] : 0) / S;
-            d.push(V), V < s && (s = V);
+          for (const H of s) {
+            const ie = a == null ? void 0 : a.get(H), V = T * (ie ? ie[2] : 0) / S;
+            d.push(V), V < t && (t = V);
           }
           n.set(P, d);
-        }), e.pressure = n, a.analyzeOutputs.val = e;
-        const f = Math.abs(s);
+        }), e.pressure = n, o.analyzeOutputs.val = e;
+        const f = Math.abs(t);
         let k = 1 / 0;
-        n.forEach((t) => {
-          for (const P of t) {
+        n.forEach((s) => {
+          for (const P of s) {
             const d = Math.abs(P);
             d < k && (k = d);
           }
         }), Number.isFinite(k) || (k = 0);
-        const M = f / l.q_adm, b = v * j ** 3 / (12 * (1 - z ** 2)) / (T * h ** 4);
+        const M = f / l.q_adm, b = z * j ** 3 / (12 * (1 - y ** 2)) / (T * u ** 4);
         console.log(`[Zapata Aislada]
   q_max (centro) = -${f.toFixed(2)} tonf/m\xB2
   q_min (bordes) = -${k.toFixed(2)} tonf/m\xB2
@@ -405,38 +405,38 @@ let __tla = Promise.all([
       } catch (e) {
         console.error("Solver error zapata aislada:", e);
       }
-      const ne = a.deformOutputs.rawVal.deformations;
-      let $ = 1e-9;
-      for (const e of C) {
-        const o = ne == null ? void 0 : ne.get(e);
-        o && ($ = Math.max($, Math.abs(o[2])));
+      const te = o.deformOutputs.rawVal.deformations;
+      let v = 1e-9;
+      for (const e of G) {
+        const a = te == null ? void 0 : te.get(e);
+        a && (v = Math.max(v, Math.abs(a[2])));
       }
-      const ke = qe * 0.5 / $, g = -0.15, D = [];
-      for (const e of C) {
-        const o = a.nodes.rawVal[e];
-        if (!o) continue;
-        const n = o[0], s = o[1], f = ne == null ? void 0 : ne.get(e), M = 0 + (f ? f[2] : 0) * ke, se = (M - g) / de, b = [
-          new _(n, s, M)
+      const se = 0.07 * Math.sqrt(u ** 2 + i ** 2 + Z ** 2) / v, x = -(v * se + we), D = [];
+      for (const e of G) {
+        const a = o.nodes.rawVal[e];
+        if (!a) continue;
+        const n = a[0], t = a[1], f = te == null ? void 0 : te.get(e), M = 0 + (f ? f[2] : 0) * se, le = (M - x) / pe, b = [
+          new h(n, t, M)
         ];
-        for (let d = 1; d < de; d++) {
-          const H = d % 2 === 0 ? Ne : -0.04;
-          b.push(new _(n + H, s, M - d * se));
+        for (let d = 1; d < pe; d++) {
+          const H = d % 2 === 0 ? Ne : -0.035;
+          b.push(new h(n + H, t, M - d * le));
         }
-        b.push(new _(n, s, g)), D.push(new le(new ie().setFromPoints(b), Pe));
-        const t = Te, P = [
-          new _(n - t, s, g - t),
-          new _(n + t, s, g - t),
-          new _(n + t, s, g + t),
-          new _(n - t, s, g + t),
-          new _(n - t, s, g - t)
+        b.push(new h(n, t, x)), D.push(new me(new ce().setFromPoints(b), Pe));
+        const s = Te, P = [
+          new h(n - s, t, x - s),
+          new h(n + s, t, x - s),
+          new h(n + s, t, x + s),
+          new h(n - s, t, x + s),
+          new h(n - s, t, x - s)
         ];
-        D.push(new le(new ie().setFromPoints(P), Se));
+        D.push(new me(new ce().setFromPoints(P), Se));
       }
-      a.objects3D.val = D;
+      o.objects3D.val = D;
     }
   };
 });
 export {
   __tla,
-  ye as z
+  Le as z
 };
