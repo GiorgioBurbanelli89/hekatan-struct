@@ -258,7 +258,7 @@ Promise.all([
       title: "\u{1F4D0} Reporte matem\xE1tico FEM"
     }).on("click", () => {
       s && G(async () => {
-        const { openMathReport: t } = await import("./mathReport-BaMgfvFs.js");
+        const { openMathReport: t } = await import("./mathReport-BiEJAvIV.js");
         return {
           openMathReport: t
         };

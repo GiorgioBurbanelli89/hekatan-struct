@@ -1,11 +1,11 @@
-function G(a, n, t) {
+function V(a, i, t) {
   switch (a) {
     case "zapata-aislada-validacion":
     case "zapata-aislada":
-      return I(n, t);
+      return G(i, t);
     case "plate-thick":
     case "plate-thick-validacion":
-      return Z(n, t);
+      return Z(i, t);
     case "plate-thin":
       return H();
     case "membrana-pstress":
@@ -18,108 +18,108 @@ function G(a, n, t) {
   }
 }
 function j(a) {
-  const n = Math.max(0, Math.min(1, a));
+  const i = Math.max(0, Math.min(1, a));
   let t = 0, e = 0, l = 0;
-  n < 0.25 ? (t = 0, e = 4 * n, l = 1) : n < 0.5 ? (t = 0, e = 1, l = 1 - 4 * (n - 0.25)) : n < 0.75 ? (t = 4 * (n - 0.5), e = 1, l = 0) : (t = 1, e = 1 - 4 * (n - 0.75), l = 0);
+  i < 0.25 ? (t = 0, e = 4 * i, l = 1) : i < 0.5 ? (t = 0, e = 1, l = 1 - 4 * (i - 0.25)) : i < 0.75 ? (t = 4 * (i - 0.5), e = 1, l = 0) : (t = 1, e = 1 - 4 * (i - 0.75), l = 0);
   const m = ($) => Math.round(255 * $).toString(16).padStart(2, "0");
   return `#${m(t)}${m(e)}${m(l)}`;
 }
-function w(a, n, t, e, l, m, $, x = 420, h = 280) {
+function w(a, i, t, e, l, m, $, b = 420, h = 280) {
   if (!a.length) return `<p><i>No data for "${m}"</i></p>`;
-  const p = Math.min(...a.map((v) => v.v)), r = Math.max(...a.map((v) => v.v)), b = r - p || 1, o = 30, f = (x - 2 * o) / n, y = (h - 2 * o - 30) / t, u = Math.min(f, y), s = n * u, i = t * u, d = e, _ = l, k = s / d, M = i / _;
-  let z = "";
-  for (let v = 0; v < _; v++) for (let D = 0; D < d; D++) {
-    const O = (D + 0.5) / d * n, X = (v + 0.5) / _ * t;
-    let C = 0, N = 0;
-    for (const T of a) {
-      const K = (T.x - O) ** 2 + (T.y - X) ** 2;
+  const p = Math.min(...a.map((_) => _.v)), r = Math.max(...a.map((_) => _.v)), x = r - p || 1, o = 30, f = (b - 2 * o) / i, y = (h - 2 * o - 30) / t, u = Math.min(f, y), s = i * u, n = t * u, d = e, v = l, M = s / d, k = n / v;
+  let q = "";
+  for (let _ = 0; _ < v; _++) for (let T = 0; T < d; T++) {
+    const W = (T + 0.5) / d * i, O = (_ + 0.5) / v * t;
+    let L = 0, N = 0;
+    for (const C of a) {
+      const K = (C.x - W) ** 2 + (C.y - O) ** 2;
       if (K < 1e-10) {
-        N = T.v, C = 1;
+        N = C.v, L = 1;
         break;
       }
       const S = 1 / K;
-      C += S, N += S * T.v;
+      L += S, N += S * C.v;
     }
-    const A = (N / C - p) / b, Y = o + D * k, V = o + (_ - 1 - v) * M;
-    z += `<rect x="${Y.toFixed(1)}" y="${V.toFixed(1)}" width="${(k + 0.3).toFixed(1)}" height="${(M + 0.3).toFixed(1)}" fill="${j(A)}"/>`;
+    const X = (N / L - p) / x, A = o + T * M, Y = o + (v - 1 - _) * k;
+    q += `<rect x="${A.toFixed(1)}" y="${Y.toFixed(1)}" width="${(M + 0.3).toFixed(1)}" height="${(k + 0.3).toFixed(1)}" fill="${j(X)}"/>`;
   }
-  const q = o + s + 10, F = i;
+  const z = o + s + 10, F = n;
   let c = "";
   const P = 60;
-  for (let v = 0; v < P; v++) {
-    const D = 1 - v / (P - 1);
-    c += `<rect x="${q}" y="${o + v * F / P}" width="14" height="${(F / P + 0.5).toFixed(1)}" fill="${j(D)}"/>`;
+  for (let _ = 0; _ < P; _++) {
+    const T = 1 - _ / (P - 1);
+    c += `<rect x="${z}" y="${o + _ * F / P}" width="14" height="${(F / P + 0.5).toFixed(1)}" fill="${j(T)}"/>`;
   }
-  [`<text x="${q + 18}" y="${o + 8}" font-size="10" fill="#ddd">${r.toFixed(2)}</text>`, `<text x="${q + 18}" y="${o + F / 2 + 3}" font-size="10" fill="#ddd">${((p + r) / 2).toFixed(2)}</text>`, `<text x="${q + 18}" y="${o + F - 2}" font-size="10" fill="#ddd">${p.toFixed(2)}</text>`, `<text x="${q + 18}" y="${o + F + 14}" font-size="9" fill="#999" font-style="italic">${$}</text>`].join("");
-  const W = `
-    <text x="${o + s / 2}" y="${o + i + 20}" font-size="11" text-anchor="middle" fill="#ddd">x (m)</text>
-    <text x="${o - 18}" y="${o + i / 2}" font-size="11" text-anchor="middle" fill="#ddd" transform="rotate(-90 ${o - 18} ${o + i / 2})">y (m)</text>
+  [`<text x="${z + 18}" y="${o + 8}" font-size="10" fill="#ddd">${r.toFixed(2)}</text>`, `<text x="${z + 18}" y="${o + F / 2 + 3}" font-size="10" fill="#ddd">${((p + r) / 2).toFixed(2)}</text>`, `<text x="${z + 18}" y="${o + F - 2}" font-size="10" fill="#ddd">${p.toFixed(2)}</text>`, `<text x="${z + 18}" y="${o + F + 14}" font-size="9" fill="#999" font-style="italic">${$}</text>`].join("");
+  const R = `
+    <text x="${o + s / 2}" y="${o + n + 20}" font-size="11" text-anchor="middle" fill="#ddd">x (m)</text>
+    <text x="${o - 18}" y="${o + n / 2}" font-size="11" text-anchor="middle" fill="#ddd" transform="rotate(-90 ${o - 18} ${o + n / 2})">y (m)</text>
     <text x="${o}" y="${o - 8}" font-size="11" fill="#d4af37" font-weight="bold">${m}</text>
   `;
-  return `<svg width="${x}" height="${h}" style="background:#111;border:1px solid #333;border-radius:4px;">
-    ${z}
-    <rect x="${o}" y="${o}" width="${s}" height="${i}" fill="none" stroke="#666" stroke-width="1"/>
+  return `<svg width="${b}" height="${h}" style="background:#111;border:1px solid #333;border-radius:4px;">
+    ${q}
+    <rect x="${o}" y="${o}" width="${s}" height="${n}" fill="none" stroke="#666" stroke-width="1"/>
     ${c}
-    ${W}
+    ${R}
   </svg>`;
 }
-function g(a, n, t, e, l, m = 420, $ = 180) {
+function g(a, i, t, e, l, m = 420, $ = 180) {
   if (!a.length) return "";
-  const x = Math.max(...t === "x" ? a.map((c) => c.y) : a.map((c) => c.x)), h = x / 2, p = x * 0.15, r = a.filter((c) => t === "x" ? Math.abs(c.y - h) < p : Math.abs(c.x - h) < p).map((c) => ({ p: t === "x" ? c.x : c.y, v: c.v })).sort((c, P) => c.p - P.p);
+  const b = Math.max(...t === "x" ? a.map((c) => c.y) : a.map((c) => c.x)), h = b / 2, p = b * 0.15, r = a.filter((c) => t === "x" ? Math.abs(c.y - h) < p : Math.abs(c.x - h) < p).map((c) => ({ p: t === "x" ? c.x : c.y, v: c.v })).sort((c, P) => c.p - P.p);
   if (r.length < 2) return "";
-  const b = Math.min(...r.map((c) => c.v)), o = Math.max(...r.map((c) => c.v)), f = Math.min(0, b), y = Math.max(0, o), u = y - f || 1, s = 40, i = m - 2 * s, d = $ - 2 * s - 10, _ = (c) => s + c / n * i, k = (c) => s + d - (c - f) / u * d, M = k(0);
-  let z = `${_(r[0].p).toFixed(1)},${M.toFixed(1)} `;
-  r.forEach((c) => z += `${_(c.p).toFixed(1)},${k(c.v).toFixed(1)} `), z += `${_(r[r.length - 1].p).toFixed(1)},${M.toFixed(1)}`;
-  const q = `
-    <text x="${s + i / 2}" y="${s + d + 22}" font-size="11" text-anchor="middle" fill="#ddd">${t === "x" ? "x" : "y"} (m) \u2014 cross-section at ${t === "x" ? "y" : "x"} = ${h.toFixed(2)}</text>
+  const x = Math.min(...r.map((c) => c.v)), o = Math.max(...r.map((c) => c.v)), f = Math.min(0, x), y = Math.max(0, o), u = y - f || 1, s = 40, n = m - 2 * s, d = $ - 2 * s - 10, v = (c) => s + c / i * n, M = (c) => s + d - (c - f) / u * d, k = M(0);
+  let q = `${v(r[0].p).toFixed(1)},${k.toFixed(1)} `;
+  r.forEach((c) => q += `${v(c.p).toFixed(1)},${M(c.v).toFixed(1)} `), q += `${v(r[r.length - 1].p).toFixed(1)},${k.toFixed(1)}`;
+  const z = `
+    <text x="${s + n / 2}" y="${s + d + 22}" font-size="11" text-anchor="middle" fill="#ddd">${t === "x" ? "x" : "y"} (m) \u2014 cross-section at ${t === "x" ? "y" : "x"} = ${h.toFixed(2)}</text>
     <text x="${s - 28}" y="${s + d / 2}" font-size="10" text-anchor="middle" fill="#ddd" transform="rotate(-90 ${s - 28} ${s + d / 2})">${l}</text>
     <text x="${s}" y="${s - 10}" font-size="11" fill="#d4af37" font-weight="bold">${e}</text>
-    <line x1="${s}" y1="${s + d}" x2="${s + i}" y2="${s + d}" stroke="#666" stroke-width="1"/>
+    <line x1="${s}" y1="${s + d}" x2="${s + n}" y2="${s + d}" stroke="#666" stroke-width="1"/>
     <line x1="${s}" y1="${s}" x2="${s}" y2="${s + d}" stroke="#666" stroke-width="1"/>
-    <line x1="${s}" y1="${M.toFixed(1)}" x2="${s + i}" y2="${M.toFixed(1)}" stroke="#888" stroke-width="1" stroke-dasharray="3,3"/>
-    <text x="${s + i + 3}" y="${(M + 3).toFixed(1)}" font-size="9" fill="#aaa">0 (undeformed)</text>
+    <line x1="${s}" y1="${k.toFixed(1)}" x2="${s + n}" y2="${k.toFixed(1)}" stroke="#888" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="${s + n + 3}" y="${(k + 3).toFixed(1)}" font-size="9" fill="#aaa">0 (undeformed)</text>
     <text x="${s - 5}" y="${s + 5}" font-size="10" text-anchor="end" fill="#aaa">${y.toFixed(2)}</text>
     <text x="${s - 5}" y="${s + d + 3}" font-size="10" text-anchor="end" fill="#aaa">${f.toFixed(2)}</text>
-  `, F = b < 0 ? "#e74c3c" : "#3498db";
+  `, F = x < 0 ? "#e74c3c" : "#3498db";
   return `<svg width="${m}" height="${$}" style="background:#111;border:1px solid #333;border-radius:4px;">
-    <polygon points="${z}" fill="${F}" fill-opacity="0.35" stroke="${F}" stroke-width="2"/>
-    ${r.map((c) => `<circle cx="${_(c.p).toFixed(1)}" cy="${k(c.v).toFixed(1)}" r="2.5" fill="#f39c12"/>`).join("")}
-    ${q}
+    <polygon points="${q}" fill="${F}" fill-opacity="0.35" stroke="${F}" stroke-width="2"/>
+    ${r.map((c) => `<circle cx="${v(c.p).toFixed(1)}" cy="${M(c.v).toFixed(1)}" r="2.5" fill="#f39c12"/>`).join("")}
+    ${z}
   </svg>`;
 }
-function B(a, n, t = "pressure", e = false) {
+function D(a, i, t = "pressure", e = false) {
   var _a, _b, _c, _d;
-  const l = (_b = (_a = n == null ? void 0 : n.analyzeOutputs) == null ? void 0 : _a.rawVal) == null ? void 0 : _b[t], m = (_c = n == null ? void 0 : n.nodes) == null ? void 0 : _c.rawVal, $ = (_d = n == null ? void 0 : n.elements) == null ? void 0 : _d.rawVal;
+  const l = (_b = (_a = i == null ? void 0 : i.analyzeOutputs) == null ? void 0 : _a.rawVal) == null ? void 0 : _b[t], m = (_c = i == null ? void 0 : i.nodes) == null ? void 0 : _c.rawVal, $ = (_d = i == null ? void 0 : i.elements) == null ? void 0 : _d.rawVal;
   if (!l || !m || !$) return [];
-  const x = /* @__PURE__ */ new Map();
+  const b = /* @__PURE__ */ new Map();
   $.forEach((p, r) => {
     if (p.length !== 4) return;
-    const b = l.get(r);
-    b && p.forEach((o, f) => {
-      const y = x.get(o) || { sum: 0, count: 0 }, u = b[f] ?? 0;
-      y.sum += e ? u : Math.abs(u), y.count += 1, x.set(o, y);
+    const x = l.get(r);
+    x && p.forEach((o, f) => {
+      const y = b.get(o) || { sum: 0, count: 0 }, u = x[f] ?? 0;
+      y.sum += e ? u : Math.abs(u), y.count += 1, b.set(o, y);
     });
   });
   const h = [];
-  return x.forEach((p, r) => {
-    const b = m[r];
-    b && h.push({ x: b[0], y: b[1], v: p.count > 0 ? p.sum / p.count : 0 });
+  return b.forEach((p, r) => {
+    const x = m[r];
+    x && h.push({ x: x[0], y: x[1], v: p.count > 0 ? p.sum / p.count : 0 });
   }), h;
 }
-function L(a, n, t = "main") {
+function B(a, i, t = "main") {
   var _a, _b, _c, _d, _e;
   let e;
-  t === "main" ? e = (_b = (_a = n == null ? void 0 : n.deformOutputs) == null ? void 0 : _a.rawVal) == null ? void 0 : _b.deformations : e = (_d = (_c = n == null ? void 0 : n.analyzeOutputs) == null ? void 0 : _c.rawVal) == null ? void 0 : _d[t];
-  const l = (_e = n == null ? void 0 : n.nodes) == null ? void 0 : _e.rawVal;
+  t === "main" ? e = (_b = (_a = i == null ? void 0 : i.deformOutputs) == null ? void 0 : _a.rawVal) == null ? void 0 : _b.deformations : e = (_d = (_c = i == null ? void 0 : i.analyzeOutputs) == null ? void 0 : _c.rawVal) == null ? void 0 : _d[t];
+  const l = (_e = i == null ? void 0 : i.nodes) == null ? void 0 : _e.rawVal;
   if (!e || !l) return [];
   const m = [];
-  return e.forEach(($, x) => {
-    const h = l[x];
+  return e.forEach(($, b) => {
+    const h = l[b];
     !h || h[2] !== 0 || m.push({ x: h[0], y: h[1], v: 1e3 * ($[2] ?? 0) });
   }), m;
 }
-function I(a, n) {
-  const t = a.Lz ?? 1.5, e = a.Bz ?? 1.5, l = a.tz ?? 0.3, m = a.bc ?? 0.4, $ = a.q_adm ?? 10, x = a.ks_factor ?? 10.5, h = a.ks ?? 1030, p = a.P_simple ?? 20, r = a.Mx_simple ?? 0.5, b = a.My_simple ?? -0.5, o = 22800, f = 0.2, y = o * 1e3 * Math.pow(l, 3) / (12 * (1 - f * f)), u = y / (h * Math.pow(t, 4)), s = u > 1 ? "RIGID" : "FLEXIBLE";
+function G(a, i) {
+  const t = a.Lz ?? 1.5, e = a.Bz ?? 1.5, l = a.tz ?? 0.3, m = a.bc ?? 0.4, $ = a.q_adm ?? 10, b = a.ks_factor ?? 10.5, h = a.ks ?? 1030, p = a.P_simple ?? 20, r = a.Mx_simple ?? 0.5, x = a.My_simple ?? -0.5, o = 22800, f = 0.2, y = o * 1e3 * Math.pow(l, 3) / (12 * (1 - f * f)), u = y / (h * Math.pow(t, 4)), s = u > 1 ? "RIGID" : "FLEXIBLE";
   return [{ title: "1. Theory \u2014 Thick plate (Mindlin-Reissner) on Winkler foundation", html: `
 <p>The isolated footing is modelled as a <b>Mindlin-Reissner plate</b>
 (Shell Thick) resting on a <b>Winkler foundation</b> (bed of independent
@@ -151,7 +151,7 @@ deformation \u2014 valid for <span class="math">$t/L \\geq 0.05$</span>. In our 
 <p>The modulus of subgrade reaction <span class="math">$k_s$</span> is estimated
 via the Bowles correlation from the allowable pressure:</p>
 
-<p class="math">$$k_s = k_{factor} \\cdot q_{adm} \\cdot g = ${x} \\cdot ${$} \\cdot 9.807 = ${h.toFixed(0)} \\ \\text{kN/m}^3$$</p>
+<p class="math">$$k_s = k_{factor} \\cdot q_{adm} \\cdot g = ${b} \\cdot ${$} \\cdot 9.807 = ${h.toFixed(0)} \\ \\text{kN/m}^3$$</p>
 
 <p><b>Biot number</b> \u2014 relative plate/soil stiffness:</p>
 
@@ -181,10 +181,10 @@ are interpolated with the <b>same</b> <span class="math">$N_i$</span>:</p>
 <p><b>Shear</b> (new \u2014 shear correction factor <span class="math">$\\kappa_s = 5/6$</span>):</p>
 <p class="math">$$\\mathbf{D}_s = \\kappa_s \\, G \\, t \\begin{bmatrix} 1 & 0 \\\\ 0 & 1 \\end{bmatrix}$$</p>
       ` }, { title: "7. Element stiffness matrix", html: `
-<p><b>Selective integration</b> to avoid shear locking:</p>
+<p><b>Integration scheme</b> \u2014 MITC4 (Mixed Interpolation of Tensorial Components, Dvorkin &amp; Bathe 1984):</p>
 <ul>
-<li><b>Bending</b>: full <b>2\xD72</b> Gauss quadrature (4 points).</li>
-<li><b>Shear</b>: <b>1\xD71</b> reduced Gauss quadrature (1 point, weight 4).</li>
+<li><b>Bending</b>: full <b>2\xD72</b> Gauss quadrature (4 points, weight 1 each).</li>
+<li><b>Shear</b>: <b>2\xD72 Gauss</b> with <b>MITC4 tied strains</b> sampled at edge midpoints A=(0,\u22121), B=(\u22121,0), C=(0,+1), D=(+1,0), then interpolated linearly. This eliminates <i>both</i> shear locking <i>and</i> hourglass zero-energy modes (unlike naive 1\xD71 reduced integration which introduces artificial spurious modes when point loads are applied).</li>
 </ul>
 
 <p class="math">$$\\mathbf{K}_e = \\int_{-1}^{1}\\!\\!\\int_{-1}^{1} \\!\\left[ \\mathbf{B}_b^T \\mathbf{D}_b \\mathbf{B}_b + \\mathbf{B}_s^T \\mathbf{D}_s \\mathbf{B}_s \\right] \\det(\\mathbf{J}) \\, d\\xi \\, d\\eta$$</p>
@@ -213,7 +213,7 @@ Winkler springs. With <span class="math">$n_j$</span> nodes and 3 DOFs/node,
 the system size is <span class="math">$3 n_j \\times 3 n_j$</span>.</p>
 
 <p>Load vector \u2014 only at the column (center) node:</p>
-<p class="math">$$F_{w,col} = -P = -${p.toFixed(2)} \\ \\text{tonf} \\qquad F_{\\theta_x,col} = M_x = ${r.toFixed(2)} \\qquad F_{\\theta_y,col} = M_y = ${b.toFixed(2)}$$</p>
+<p class="math">$$F_{w,col} = -P = -${p.toFixed(2)} \\ \\text{tonf} \\qquad F_{\\theta_x,col} = M_x = ${r.toFixed(2)} \\qquad F_{\\theta_y,col} = M_y = ${x.toFixed(2)}$$</p>
 
 <p>Solve with <b>Cholesky</b> (K is symmetric positive-definite thanks to Winkler):</p>
 <p class="math">$$\\mathbf{K} \\cdot \\mathbf{Z} = \\mathbf{F} \\quad \\Longrightarrow \\quad \\mathbf{Z} = \\mathbf{K}^{-1} \\mathbf{F}$$</p>
@@ -227,29 +227,29 @@ the system size is <span class="math">$3 n_j \\times 3 n_j$</span>.</p>
 
 <p class="math">$$\\sigma_{max}^{rigid} = \\frac{P}{A} + \\frac{|M_x|}{W_x} + \\frac{|M_y|}{W_y}$$</p>
 
-<p class="math">$$= \\frac{${p.toFixed(2)}}{${(t * e).toFixed(3)}} + \\frac{${Math.abs(r).toFixed(2)}}{${(t * e * e / 6).toFixed(3)}} + \\frac{${Math.abs(b).toFixed(2)}}{${(e * t * t / 6).toFixed(3)}} = ${(p / (t * e) + Math.abs(r) / (t * e * e / 6) + Math.abs(b) / (e * t * t / 6)).toFixed(2)} \\ \\text{tonf/m}^2$$</p>
+<p class="math">$$= \\frac{${p.toFixed(2)}}{${(t * e).toFixed(3)}} + \\frac{${Math.abs(r).toFixed(2)}}{${(t * e * e / 6).toFixed(3)}} + \\frac{${Math.abs(x).toFixed(2)}}{${(e * t * t / 6).toFixed(3)}} = ${(p / (t * e) + Math.abs(r) / (t * e * e / 6) + Math.abs(x) / (e * t * t / 6)).toFixed(2)} \\ \\text{tonf/m}^2$$</p>
 
 <p>With <span class="math">$k_r = ${u.toFixed(2)}$</span> (${s}),
 the FEM result should be ${u > 1 ? "close to" : "larger (concentration) than"} the rigid value.</p>
       ` }, { title: "11. Plan view color map \u2014 contact pressure \u03C3 (tonf/m\xB2, combined)", html: (() => {
-    const i = B(a, n, "pressure");
-    return i.length ? `
+    const n = D(a, i, "pressure");
+    return n.length ? `
 <p>2D plan view (top-down) of the contact pressure distribution at the plate-soil
 interface under the <b>combined</b> load (P + M<sub>x</sub> + M<sub>y</sub>).
 Colors follow the jet palette: <span style="color:#0000ff">blue</span>
 (minimum compression) \u2192 <span style="color:#ff0000">red</span>
 (maximum compression):</p>
 <div style="text-align:center; margin: 10px 0;">
-${w(i, t, e, 40, 40, "\u03C3 combined (tonf/m\xB2)", "tonf/m\xB2", 480, 340)}
+${w(n, t, e, 40, 40, "\u03C3 combined (tonf/m\xB2)", "tonf/m\xB2", 480, 340)}
 </div>
 <p><b>Interpretation</b>: with
 <span class="math">$k_r = ${u.toFixed(2)}$</span> (${s}), the plate
 ${u > 1 ? "behaves rigidly \u2014 the plan distribution is nearly linear (Meyerhof)" : "is flexible \u2014 pressure concentrates under the column"}.</p>
         ` : "<p><i>No pressure data available. Run the analysis by adjusting any parameter to trigger a rebuild.</i></p>";
   })() }, { title: "11a. Load-case decomposition \u2014 \u03C3 and w by P only (axial)", html: (() => {
-    const i = B(a, n, "pressure_P"), d = L(a, n, "deform_P");
-    if (!i.length) return "<p><i>P-only pressure not computed. Adjust any parameter to rebuild.</i></p>";
-    const _ = d.length ? Math.min(...d.map((k) => k.v)) : 0;
+    const n = D(a, i, "pressure_P"), d = B(a, i, "deform_P");
+    if (!n.length) return "<p><i>P-only pressure not computed. Adjust any parameter to rebuild.</i></p>";
+    const v = d.length ? Math.min(...d.map((M) => M.v)) : 0;
     return `
 <p>Response when <b>only the axial load</b>
 <span class="math">$P = ${p.toFixed(2)}$</span> tonf is applied at the
@@ -267,13 +267,13 @@ pressure more uniformly; flexible plates concentrate more sharply.</li>
 
 <h4 style="color:#d4af37; margin-top:14px;">Contact pressure \u03C3</h4>
 <div style="text-align:center; margin: 10px 0;">
-${w(i, t, e, 40, 40, "\u03C3 by P only (tonf/m\xB2)", "tonf/m\xB2", 480, 340)}
+${w(n, t, e, 40, 40, "\u03C3 by P only (tonf/m\xB2)", "tonf/m\xB2", 480, 340)}
 </div>
 <div style="text-align:center; margin: 10px 0;">
-${g(i, t, "x", "\u03C3(P) along X", "tonf/m\xB2", 460, 200)}
+${g(n, t, "x", "\u03C3(P) along X", "tonf/m\xB2", 460, 200)}
 </div>
 <div style="text-align:center; margin: 10px 0;">
-${g(i, e, "y", "\u03C3(P) along Y", "tonf/m\xB2", 460, 200)}
+${g(n, e, "y", "\u03C3(P) along Y", "tonf/m\xB2", 460, 200)}
 </div>
 <p>Theoretical mean (rigid): <span class="math">$\\sigma = P/A = ${(p / (t * e)).toFixed(2)}$</span> tonf/m\xB2.</p>
 
@@ -288,14 +288,14 @@ ${g(d, t, "x", "w(P) along X \u2014 mm, signed", "mm", 460, 200)}
 <div style="text-align:center; margin: 10px 0;">
 ${g(d, e, "y", "w(P) along Y \u2014 mm, signed", "mm", 460, 200)}
 </div>
-<p>Minimum (most downward): <span class="math">$w_{min}^{P} = ${_.toFixed(3)}$</span> mm
+<p>Minimum (most downward): <span class="math">$w_{min}^{P} = ${v.toFixed(3)}$</span> mm
 at the column centre. With the linearity of Winkler soil,
 <span class="math">$\\sigma = -k_s \\cdot w$</span>, so the pressure peak
 coincides with the w-minimum.</p>` : ""}
         `;
   })() }, { title: "11b. Load-case decomposition \u2014 \u03C3 and w by M_x only", html: (() => {
-    const i = B(a, n, "pressure_Mx", true), d = L(a, n, "deform_Mx");
-    return i.length ? `
+    const n = D(a, i, "pressure_Mx", true), d = B(a, i, "deform_Mx");
+    return n.length ? `
 <p>Response when <b>only M<sub>x</sub></b> =
 <span class="math">$${r.toFixed(2)}$</span> tonf\xB7m is applied
 (<span class="math">$P = M_y = 0$</span>). Anti-symmetric about the
@@ -303,10 +303,10 @@ coincides with the w-minimum.</p>` : ""}
 
 <h4 style="color:#d4af37; margin-top:14px;">Contact pressure \u03C3</h4>
 <div style="text-align:center; margin: 10px 0;">
-${w(i, t, e, 40, 40, "\u03C3 by Mx only (tonf/m\xB2, signed)", "tonf/m\xB2", 480, 340)}
+${w(n, t, e, 40, 40, "\u03C3 by Mx only (tonf/m\xB2, signed)", "tonf/m\xB2", 480, 340)}
 </div>
 <div style="text-align:center; margin: 10px 0;">
-${g(i, e, "y", "\u03C3(Mx) along Y \u2014 anti-symmetric", "tonf/m\xB2", 460, 200)}
+${g(n, e, "y", "\u03C3(Mx) along Y \u2014 anti-symmetric", "tonf/m\xB2", 460, 200)}
 </div>
 
 ${d.length ? `
@@ -319,19 +319,19 @@ ${g(d, e, "y", "w(Mx) along Y \u2014 anti-symmetric", "mm", 460, 200)}
 </div>` : ""}
         ` : "<p><i>M<sub>x</sub>-only pressure not computed.</i></p>";
   })() }, { title: "11c. Load-case decomposition \u2014 \u03C3 and w by M_y only", html: (() => {
-    const i = B(a, n, "pressure_My", true), d = L(a, n, "deform_My");
-    return i.length ? `
+    const n = D(a, i, "pressure_My", true), d = B(a, i, "deform_My");
+    return n.length ? `
 <p>Response when <b>only M<sub>y</sub></b> =
-<span class="math">$${b.toFixed(2)}$</span> tonf\xB7m is applied
+<span class="math">$${x.toFixed(2)}$</span> tonf\xB7m is applied
 (<span class="math">$P = M_x = 0$</span>). Anti-symmetric about the
 <span class="math">$x = L/2$</span> line:</p>
 
 <h4 style="color:#d4af37; margin-top:14px;">Contact pressure \u03C3</h4>
 <div style="text-align:center; margin: 10px 0;">
-${w(i, t, e, 40, 40, "\u03C3 by My only (tonf/m\xB2, signed)", "tonf/m\xB2", 480, 340)}
+${w(n, t, e, 40, 40, "\u03C3 by My only (tonf/m\xB2, signed)", "tonf/m\xB2", 480, 340)}
 </div>
 <div style="text-align:center; margin: 10px 0;">
-${g(i, t, "x", "\u03C3(My) along X \u2014 anti-symmetric", "tonf/m\xB2", 460, 200)}
+${g(n, t, "x", "\u03C3(My) along X \u2014 anti-symmetric", "tonf/m\xB2", 460, 200)}
 </div>
 
 ${d.length ? `
@@ -347,14 +347,14 @@ ${g(d, t, "x", "w(My) along X \u2014 anti-symmetric", "mm", 460, 200)}
 individual contributions: <span class="math">$\\sigma_{total} = \\sigma_P + \\sigma_{M_x} + \\sigma_{M_y}$</span>.</p>
         ` : "<p><i>M<sub>y</sub>-only pressure not computed.</i></p>";
   })() }, { title: "12. Lateral elevations \u2014 X and Y cross-sections", html: (() => {
-    const i = B(a, n);
-    return i.length ? `
+    const n = D(a, i);
+    return n.length ? `
 <p>Cross-section of the contact pressure along the central line:</p>
 <div style="text-align:center; margin: 10px 0;">
-${g(i, t, "x", "\u03C3 along X (through column)", "tonf/m\xB2", 460, 200)}
+${g(n, t, "x", "\u03C3 along X (through column)", "tonf/m\xB2", 460, 200)}
 </div>
 <div style="text-align:center; margin: 10px 0;">
-${g(i, e, "y", "\u03C3 along Y (through column)", "tonf/m\xB2", 460, 200)}
+${g(n, e, "y", "\u03C3 along Y (through column)", "tonf/m\xB2", 460, 200)}
 </div>
 <p>Peak (dark blue fill) should coincide with the <b>column center</b>
 (<span class="math">$x = L/2, y = B/2$</span>); the <b>edges</b> should
@@ -362,9 +362,9 @@ show the Meyerhof linear gradient if k<sub>r</sub> \u226B 1, or be close to zero
 if the plate is flexible.</p>
         ` : "<p><i>No cross-section data available.</i></p>";
   })() }, { title: "13. Vertical deflection w (mm, signed)", html: (() => {
-    const i = L(a, n);
-    if (!i.length) return "<p><i>No deflection data available.</i></p>";
-    const d = Math.min(...i.map((_) => _.v));
+    const n = B(a, i);
+    if (!n.length) return "<p><i>No deflection data available.</i></p>";
+    const d = Math.min(...n.map((v) => v.v));
     return `
 <p>Plan view of the vertical deflection <span class="math">$w$</span>
 in mm using the FEM sign convention (<b>negative = downward</b>, global Z
@@ -373,20 +373,20 @@ points upward). The Winkler law
 to the pressure map above \u2014 where w is most negative, the compression \u03C3 is
 maximum (hence positive in the pressure plot).</p>
 <div style="text-align:center; margin: 10px 0;">
-${w(i, t, e, 40, 40, "w plan view (mm, signed)", "mm", 480, 340)}
+${w(n, t, e, 40, 40, "w plan view (mm, signed)", "mm", 480, 340)}
 </div>
 <p>Minimum (most downward): <span class="math">$w_{min} = ${d.toFixed(3)}$</span> mm (at the column)</p>
 <div style="text-align:center; margin: 10px 0;">
-${g(i, t, "x", "w along X (mm, signed)", "mm", 460, 200)}
+${g(n, t, "x", "w along X (mm, signed)", "mm", 460, 200)}
 </div>
 <div style="text-align:center; margin: 10px 0;">
-${g(i, e, "y", "w along Y (mm, signed)", "mm", 460, 200)}
+${g(n, e, "y", "w along Y (mm, signed)", "mm", 460, 200)}
 </div>
         `;
   })() }];
 }
-function Z(a, n) {
-  const t = a.a ?? 6, e = a.b ?? 4, l = a.t ?? 0.1, m = a.q ?? 10, $ = a.E_MPa ?? 35e3, x = a.nu ?? 0.15, h = $ * 1e3, p = h / (2 * (1 + x)), r = h * Math.pow(l, 3) / (12 * (1 - x * x)), b = 772e-5, o = b * m * Math.pow(e, 4) / r * 1e3;
+function Z(a, i) {
+  const t = a.a ?? 6, e = a.b ?? 4, l = a.t ?? 0.1, m = a.q ?? 10, $ = a.E_MPa ?? 35e3, b = a.nu ?? 0.15, h = $ * 1e3, p = h / (2 * (1 + b)), r = h * Math.pow(l, 3) / (12 * (1 - b * b)), x = 772e-5, o = x * m * Math.pow(e, 4) / r * 1e3;
   return [{ title: "1. Theory \u2014 Mindlin-Reissner thick plate", html: `
 <p>The rectangular slab is modelled as a <b>Mindlin-Reissner plate</b>
 (Shell Thick), simply supported along all four edges and subjected to a
@@ -407,13 +407,13 @@ uniform distributed load <span class="math">$q$</span>.</p>
 <tr><td>Thickness</td><td class="math">$t$</td><td>${l.toFixed(3)}</td><td>m</td></tr>
 <tr><td>Uniform load</td><td class="math">$q$</td><td>${m.toFixed(1)}</td><td>kN/m\xB2</td></tr>
 <tr><td>Elastic modulus</td><td class="math">$E$</td><td>${$.toLocaleString()}</td><td>MPa</td></tr>
-<tr><td>Poisson</td><td class="math">$\\nu$</td><td>${x.toFixed(2)}</td><td>\u2014</td></tr>
+<tr><td>Poisson</td><td class="math">$\\nu$</td><td>${b.toFixed(2)}</td><td>\u2014</td></tr>
 <tr><td>Shear modulus</td><td class="math">$G$</td><td>${(p / 1e3).toFixed(0)}</td><td>MPa</td></tr>
 <tr><td>Shear correction</td><td class="math">$\\kappa_s$</td><td>5/6</td><td>\u2014</td></tr>
 </table>
 
 <p>Flexural rigidity:</p>
-<p class="math">$$D = \\frac{E t^3}{12(1-\\nu^2)} = \\frac{${h.toLocaleString()} \\cdot ${l.toFixed(3)}^3}{12(1-${x}^2)} = ${r.toFixed(1)} \\ \\text{kN}\\cdot\\text{m}$$</p>
+<p class="math">$$D = \\frac{E t^3}{12(1-\\nu^2)} = \\frac{${h.toLocaleString()} \\cdot ${l.toFixed(3)}^3}{12(1-${b}^2)} = ${r.toFixed(1)} \\ \\text{kN}\\cdot\\text{m}$$</p>
       ` }, { title: "3. Bilinear Q4 shape functions", html: `
 <p>Natural coordinates <span class="math">$(\\xi, \\eta) \\in [-1, +1]$</span>:</p>
 <p class="math">$$N_i(\\xi,\\eta) = \\tfrac{1}{4}(1 + \\xi_i \\xi)(1 + \\eta_i \\eta), \\quad i=1,\\dots,4$$</p>
@@ -433,14 +433,22 @@ node are interpolated with the same <span class="math">$N_i$</span>.</p>
 <p><b>Shear</b> \u2014 exclusive to Mindlin:</p>
 <p class="math">$$\\mathbf{D}_s = \\kappa_s \\, G \\, t \\begin{bmatrix} 1 & 0 \\\\ 0 & 1 \\end{bmatrix}$$</p>
       ` }, { title: "6. Element stiffness matrix (selective integration)", html: `
-<p>To avoid <b>shear locking</b> in thin regimes, we use a different quadrature
-for each term:</p>
+<p><b>MITC4 integration scheme</b> (Mixed Interpolation of Tensorial Components,
+Dvorkin &amp; Bathe 1984) \u2014 eliminates <i>both</i> shear locking (thin plates)
+<i>and</i> hourglass zero-energy modes (avoids spurious oscillations under
+nodal point loads that plague naive 1\xD71 reduced integration):</p>
 <ul>
-<li><b>Bending</b>: full <b>2\xD72 Gauss</b> (4 points, weight 1).</li>
-<li><b>Shear</b>: <b>1\xD71 reduced Gauss</b> (1 point at <span class="math">$\\xi=\\eta=0$</span>, weight 4).</li>
+<li><b>Bending</b>: full <b>2\xD72 Gauss</b> (4 points, weight 1 each).</li>
+<li><b>Shear</b>: <b>2\xD72 Gauss</b> with <b>MITC4-tied strains</b> \u2014 shear
+strains are sampled at edge midpoints and interpolated bilinearly.</li>
 </ul>
 
-<p class="math">$$\\mathbf{K}_e = \\int_{-1}^{1}\\!\\!\\int_{-1}^{1} \\!\\mathbf{B}_b^T \\mathbf{D}_b \\mathbf{B}_b \\det(\\mathbf{J}) \\,d\\xi\\,d\\eta + \\underbrace{4 \\, \\mathbf{B}_s^T(0,0)\\mathbf{D}_s\\mathbf{B}_s(0,0)\\det(\\mathbf{J})}_{\\text{shear, reduced}}$$</p>
+<p class="math">$$\\mathbf{K}_e = \\int_{-1}^{1}\\!\\!\\int_{-1}^{1} \\!\\left[\\mathbf{B}_b^T \\mathbf{D}_b \\mathbf{B}_b + \\tilde{\\mathbf{B}}_s^T \\mathbf{D}_s \\tilde{\\mathbf{B}}_s\\right]\\! \\det(\\mathbf{J}) \\,d\\xi\\,d\\eta$$</p>
+
+<p>where <span class="math">$\\tilde{\\mathbf{B}}_s$</span> is the MITC4
+tied shear operator computed from sampled values at
+<span class="math">$(\\xi,\\eta) = (0,\\pm1)$</span> and
+<span class="math">$(\\pm1,0)$</span>.</p>
       ` }, { title: "7. Element load vector", html: `
 <p>For uniform pressure <span class="math">$q$</span>, only the <var>w</var>
 DOFs receive force (rotations are not loaded):</p>
@@ -466,7 +474,7 @@ the corresponding DOFs:</p>
 <p><b>Kirchhoff analytical benchmark</b> (Navier series, simply supported
 plate with uniform load, <span class="math">$a/b = ${(t / e).toFixed(2)}$</span>):</p>
 
-<p class="math">$$w_{max}^{Kirchhoff} \\approx \\alpha \\cdot \\frac{q \\cdot b^4}{D} = ${b} \\cdot \\frac{${m} \\cdot ${e.toFixed(1)}^4}{${r.toFixed(1)}} = ${(o / 1e3).toFixed(6)} \\ \\text{m} = ${o.toFixed(2)} \\ \\text{mm}$$</p>
+<p class="math">$$w_{max}^{Kirchhoff} \\approx \\alpha \\cdot \\frac{q \\cdot b^4}{D} = ${x} \\cdot \\frac{${m} \\cdot ${e.toFixed(1)}^4}{${r.toFixed(1)}} = ${(o / 1e3).toFixed(6)} \\ \\text{m} = ${o.toFixed(2)} \\ \\text{mm}$$</p>
 
 <p>Mindlin should give a <b>slightly larger</b> deflection than Kirchhoff
 because it includes shear deformation energy. The difference grows with
@@ -483,7 +491,7 @@ recovered from the bending strain matrix:</p>
 <p>The transverse shear forces are similarly recovered:</p>
 <p class="math">$$\\begin{bmatrix} Q_x \\\\ Q_y \\end{bmatrix} = \\mathbf{D}_s \\cdot \\mathbf{B}_s \\cdot \\mathbf{Z}_e$$</p>
       ` }, { title: "11. Plan view color map \u2014 deflection w (mm, signed)", html: (() => {
-    const f = L(a, n);
+    const f = B(a, i);
     return f.length ? `
 <p>2D plan view (top-down) of the vertical deflection
 <span class="math">$w$</span> in mm using the FEM sign convention
@@ -499,7 +507,7 @@ so FEM should give <span class="math">$w_{min}^{FEM} \\approx -${o.toFixed(3)}$<
 Mindlin typically gives slightly larger magnitude due to shear deformation.</p>
         ` : "<p><i>No deflection data. Adjust any parameter to rebuild.</i></p>";
   })() }, { title: "12. Lateral elevations \u2014 X and Y cross-sections (w signed)", html: (() => {
-    const f = L(a, n);
+    const f = B(a, i);
     return f.length ? `
 <p>Cross-section of the vertical deflection along the central axes.
 With downward load, the curve should <b>dip below zero</b> (negative
@@ -513,38 +521,38 @@ ${g(f, e, "y", "w along Y (through x = a/2) \u2014 mm, signed", "mm", 500, 220)}
         ` : "<p><i>No cross-section data.</i></p>";
   })() }];
 }
-function H(a, n) {
+function H(a, i) {
   return [{ title: "Kirchhoff-Love thin plate", html: `<p>16 DOFs per element (w, \u03B8<sub>x</sub>, \u03B8<sub>y</sub>, \u03C8 per node).
     <span class="math">$\\mathbf{K}_e = \\int\\!\\int \\mathbf{B}^T \\mathbf{D} \\mathbf{B} \\, dA$</span>
     with <span class="math">$\\mathbf{B}$</span> built from 2nd derivatives of
     Hermite shape functions. <i>Full report coming soon.</i></p>` }];
 }
-function Q(a, n) {
+function Q(a, i) {
   return [{ title: "Plane stress membrane", html: `<p>8 DOFs per element (<span class="math">$u_i, v_i$</span> at each of 4 nodes).
     <span class="math">$\\mathbf{D}_m = \\frac{E}{1-\\nu^2}[\\dots]$</span>.
     <i>Full report coming soon.</i></p>` }];
 }
-let E = null, R = false;
+let E = null, I = false;
 async function U() {
-  if (R) return;
+  if (I) return;
   const a = document.createElement("link");
-  a.rel = "stylesheet", a.href = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css", document.head.appendChild(a), await new Promise((n, t) => {
+  a.rel = "stylesheet", a.href = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css", document.head.appendChild(a), await new Promise((i, t) => {
     const e = document.createElement("script");
-    e.src = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js", e.onload = () => n(), e.onerror = () => t(), document.head.appendChild(e);
-  }), await new Promise((n, t) => {
+    e.src = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js", e.onload = () => i(), e.onerror = () => t(), document.head.appendChild(e);
+  }), await new Promise((i, t) => {
     const e = document.createElement("script");
-    e.src = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js", e.onload = () => n(), e.onerror = () => t(), document.head.appendChild(e);
-  }), R = true;
+    e.src = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js", e.onload = () => i(), e.onerror = () => t(), document.head.appendChild(e);
+  }), I = true;
 }
-async function tt(a, n, t, e) {
+async function tt(a, i, t, e) {
   await U(), E && E.remove();
-  const l = G(a, t, e);
+  const l = V(a, t, e);
   E = document.createElement("div"), E.id = "math-report-panel", E.innerHTML = `
     <div class="mr-backdrop" id="mr-backdrop"></div>
     <div class="mr-panel">
       <div class="mr-header">
         <h2>\u{1F4D0} FEM Mathematical Report</h2>
-        <div class="mr-subtitle">${n}</div>
+        <div class="mr-subtitle">${i}</div>
         <button class="mr-close" id="mr-close" title="Close">\u2715</button>
       </div>
       <div class="mr-nav">
@@ -605,10 +613,10 @@ async function tt(a, n, t, e) {
   document.getElementById("mr-close").onclick = $, document.getElementById("mr-backdrop").onclick = $, window.addEventListener("keydown", function p(r) {
     r.key === "Escape" && ($(), window.removeEventListener("keydown", p));
   });
-  const x = document.getElementById("mr-body"), h = window.renderMathInElement;
-  h && h(x, { delimiters: [{ left: "$$", right: "$$", display: true }, { left: "$", right: "$", display: false }], throwOnError: false });
+  const b = document.getElementById("mr-body"), h = window.renderMathInElement;
+  h && h(b, { delimiters: [{ left: "$$", right: "$$", display: true }, { left: "$", right: "$", display: false }], throwOnError: false });
 }
 export {
-  G as buildMathReport,
+  V as buildMathReport,
   tt as openMathReport
 };
