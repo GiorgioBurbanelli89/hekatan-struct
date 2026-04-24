@@ -110,6 +110,14 @@ export const conexionRbs: ExampleDef = {
     load_factor: { default: 0.50, min: 0.02, max: 0.80, step: 0.02, label: "Factor carga (×Mp)", folder: "Solver" },
     // ── IDEA StatiCa mode ──
     idea_steps: { default: 12, min: 4, max: 30, step: 1, label: "N pasos pushover", folder: "Solver" },
+    // ── Animación cíclica (K3 protocol) ──
+    animate_k3: {
+      default: 0,
+      label: "Animación K3",
+      options: { "Off": 0, "On (40 Hz)": 1, "On (lenta 10 Hz)": 2 },
+      folder: "Solver",
+    },
+    anim_amp: { default: 30, min: 5, max: 120, step: 5, label: "Amplificación visual", folder: "Solver" },
     colormap_mode: {
       default: 0,
       label: "Colormap",
@@ -681,6 +689,44 @@ export const conexionRbs: ExampleDef = {
       ...hystObjs,
       ...protocolObjs,
     ];
+
+    // ── Animación K3: el deformScale del viewer pulsa con el protocolo ──
+    // Limpiar animación previa si existe (al re-build)
+    const prevAnim = (window as any).__rbsK3Anim;
+    if (prevAnim) {
+      clearInterval(prevAnim);
+      (window as any).__rbsK3Anim = null;
+    }
+    if (p.animate_k3 > 0.5) {
+      const periodMs = p.animate_k3 < 1.5 ? 25 : 100; // 40 Hz vs 10 Hz
+      const driftMax = Math.max(...thetaHistory.map((d) => Math.abs(d)));
+      const ampFactor = p.anim_amp; // amplificación visual
+      let step = 0;
+      // Esperar a que el viewer esté en el DOM
+      setTimeout(() => {
+        const findViewer = (): any => {
+          const divs = document.querySelectorAll("div");
+          for (const d of divs) if ((d as any).__settings && (d as any).__ctx) return d;
+          return null;
+        };
+        const viewerEl = findViewer();
+        if (!viewerEl) return;
+        const settings = viewerEl.__settings;
+        const ctx = viewerEl.__ctx;
+        if (!settings?.deformScale || !ctx?.render) return;
+        // Activar deformedShape
+        if (settings.deformedShape) settings.deformedShape.val = true;
+        // Loop
+        const id = setInterval(() => {
+          const driftNow = thetaHistory[step] ?? 0;
+          const scale = (driftNow / driftMax) * ampFactor;
+          settings.deformScale.val = scale;
+          ctx.render?.();
+          step = (step + 1) % thetaHistory.length;
+        }, periodMs);
+        (window as any).__rbsK3Anim = id;
+      }, 600);
+    }
 
     // Log verificación
     let M_at_target = 0;
