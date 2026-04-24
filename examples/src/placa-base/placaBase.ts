@@ -24,6 +24,7 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 import type { Node, Element } from "awatif-fem";
 import { deform, analyze } from "awatif-fem";
 import { secantPlasticSolve } from "../shared/secantPlasticity";
+import { colormapPercentileRange } from "../shared/colorMapPercentile";
 import * as THREE from "three";
 
 export const placaBase: ExampleDef = {
@@ -330,7 +331,9 @@ export const placaBase: ExampleDef = {
         });
         states.deformOutputs.val = nlResult.deformOutputs;
         const aOut = nlResult.analyzeOutputs;
-        // Sin override → autoscale (los σ_vm en placa son ~10–80 MPa, muy debajo de Fy=250 MPa)
+        // Percentile clamp evita que singularidades en bordes de pernos saturen el rango
+        const [vmin, vmax] = colormapPercentileRange((aOut as any).vonMises, 90, p.Fy_plate);
+        (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [vmin, vmax] };
         states.analyzeOutputs.val = aOut;
         (states as any).__nlInfo = {
           iterations: nlResult.iterations,
@@ -348,7 +351,8 @@ export const placaBase: ExampleDef = {
         const aOut = analyze(
           nodes, elements, states.elementInputs.val, states.deformOutputs.val,
         );
-        // Sin override → autoscale
+        const [vmin, vmax] = colormapPercentileRange((aOut as any).vonMises, 90, p.Fy_plate);
+        (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [vmin, vmax] };
         states.analyzeOutputs.val = aOut;
         (states as any).__nlInfo = null;
       }

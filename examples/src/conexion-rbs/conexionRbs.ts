@@ -39,6 +39,7 @@ import {
   buildHysteresisChart3D,
   buildLoadingProtocolChart3D,
 } from "../shared/hysteresisChart3D";
+import { colormapPercentileRange } from "../shared/colorMapPercentile";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import type { Node, Element } from "awatif-fem";
 import * as THREE from "three";
@@ -420,7 +421,9 @@ export const conexionRbs: ExampleDef = {
         });
         states.deformOutputs.val = ipo.finalDeformOutputs;
         const aOut = ipo.finalAnalyzeOutputs;
-        // Auto-scale del colormap (los esfuerzos en pushover son menores que Fy)
+        // Percentile clamp para evitar que singularidades en supports saturen el rango
+        const [vmin, vmax] = colormapPercentileRange((aOut as any).vonMises, 90, p.Fy);
+        (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [vmin, vmax] };
         states.analyzeOutputs.val = aOut;
         (states as any).__ideaInfo = ipo;
         (states as any).__nlInfo = null;
@@ -461,7 +464,8 @@ export const conexionRbs: ExampleDef = {
         });
         states.deformOutputs.val = nl.deformOutputs;
         const aOut = nl.analyzeOutputs;
-        // Sin override de colorMapRanges → autoscale del viewer (mejor variación visual)
+        const [vmin1, vmax1] = colormapPercentileRange((aOut as any).vonMises, 90, p.Fy);
+        (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [vmin1, vmax1] };
         states.analyzeOutputs.val = aOut;
         (states as any).__nlInfo = {
           iterations: nl.iterations, converged: nl.converged,
@@ -472,7 +476,8 @@ export const conexionRbs: ExampleDef = {
         const dOut = deform(nodes, elements, { supports, loads }, states.elementInputs.val);
         states.deformOutputs.val = dOut;
         const aOut = analyze(nodes, elements, states.elementInputs.val, dOut);
-        // Sin override de colorMapRanges → autoscale del viewer
+        const [vmin2, vmax2] = colormapPercentileRange((aOut as any).vonMises, 90, p.Fy);
+        (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [vmin2, vmax2] };
         states.analyzeOutputs.val = aOut;
         (states as any).__nlInfo = null;
         (states as any).__ideaInfo = null;
