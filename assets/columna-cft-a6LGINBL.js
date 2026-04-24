@@ -1,7 +1,8 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { c as m, __tla as __tla_0 } from "./columnaCft-CVYRPE3H.js";
+import { c as m, __tla as __tla_0 } from "./columnaCft-DHP1STDn.js";
 import { r as o } from "./runExampleStandalone-DZz1FMNi.js";
 import { __tla as __tla_1 } from "./didacticCpp-Bnj9OwqQ.js";
+import "./fiberSectionCft-D5oK3FFf.js";
 import "./theme-CzzIlc4y.js";
 import "./getViewer-DTAyi5Uw.js";
 import "./Text-z8x6SwE-.js";
