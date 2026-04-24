@@ -170,6 +170,7 @@ import { edificioMixto } from "../edificio-mixto/edificioMixto";
 import { edificioMuros } from "../edificio-muros/edificioMuros";
 import { edificioDual } from "../edificio-dual/edificioDual";
 import { columnaCft } from "../columna-cft/columnaCft";
+import { triangularPlate } from "../triangular-plate/triangularPlate";
 import { trussGen } from "../truss-gen/trussGen";
 import { barraAxial } from "../barra-axial/barraAxial";
 import { portico2D } from "../portico-2d/portico2D";
@@ -202,6 +203,7 @@ export const examplesRegistry: ExampleDef[] = [
   // Placas
   plateThin,
   plateThick,
+  triangularPlate,
   membrana,
   membranaCSI,
   plane,
