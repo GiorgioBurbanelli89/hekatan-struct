@@ -38,6 +38,16 @@ export type {
   Mitc3ElementResult,
 } from "./mitc3";
 
+// CFT Fiber Section — Mander confined concrete + Menegotto-Pinto steel (Level 2)
+export {
+  manderConfinedConcrete, manderStress, steelStress,
+  discretizeCftCircular, discretizeCftRectangular,
+  sectionForces, momentForAxial, pmInteractionFiber,
+} from "./fiberSectionCft";
+export type {
+  ManderParams, ManderResult, SteelParams, Fiber, CftFiberSection,
+} from "./fiberSectionCft";
+
 // Internal utils exposed for FEM inspection/debugging
 export { getLocalStiffnessMatrix } from "./utils/getLocalStiffnessMatrix";
 export { getTransformationMatrix } from "./utils/getTransformationMatrix";
