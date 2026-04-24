@@ -78,15 +78,16 @@ export const plane: ExampleDef = {
     states.nodes.val = nodes;
     states.elements.val = elements;
 
-    // ── 3. Supports: base empotrada (informativo para viewer) ───────
+    // ── 3. Supports FÍSICOS: solo la base empotrada (cantiléver vertical) ──
+    // Como usamos `planeQ4Solve` (2 DOFs/nodo reales, sin out-of-plane), no
+    // necesitamos locks artificiales en los demás nodos — la formulación Q4
+    // plane stress no tiene Uy/Rx/Ry/Rz como variables.
+    // Para el modal analysis (que sí usa shell Q4 6-DOF), los locks
+    // out-of-plane se aplican DENTRO de runModal() sin contaminar el display.
     const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
     nodes.forEach((n, i) => {
       if (Math.abs(n[2]) < 1e-6) {
-        supports.set(i, [true, true, true, true, true, true]);
-      } else {
-        // En régimen plane-stress, Uy, Rx, Ry, Rz son teóricamente cero.
-        // Los marcamos como restringidos para que el viewer los muestre correctamente.
-        supports.set(i, [false, true, false, true, true, true]);
+        supports.set(i, [true, true, true, true, true, true]);   // base empotrada
       }
     });
     const loads = new Map<number, [number, number, number, number, number, number]>();
@@ -147,15 +148,29 @@ export const plane: ExampleDef = {
     );
   },
   runModal(p, states, modalPanel) {
-    // Para modal reutilizamos shell Q4 (tiene masa consistente y modos plane-stress
-    // correctos cuando bloqueamos Uy, Rx, Ry, Rz en los nodos libres).
+    // Modal usa shell Q4 (tiene masa consistente). Para obtener modos plane-stress
+    // LIMPIOS (sin fantasmas out-of-plane ni torsión), construimos aquí un mapa de
+    // supports EXTENDIDO — base empotrada + Uy/Rx/Ry/Rz bloqueados en todos los
+    // nodos libres. Este mapa NO se guarda en states.nodeInputs, así el viewer
+    // sigue mostrando solo los apoyos físicos reales (base).
     const nodes = states.nodes.val;
     const elements = states.elements.val;
     const ni = states.nodeInputs.val;
     const ei = states.elementInputs.val;
-    if (!nodes.length || !elements.length || !ni.supports?.size || !ei.densities?.size) return;
+    if (!nodes.length || !elements.length || !ei.densities?.size) return;
+
+    const modalSupports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
+    nodes.forEach((n, i) => {
+      if (Math.abs(n[2]) < 1e-6) {
+        modalSupports.set(i, [true, true, true, true, true, true]);   // base 6DOF
+      } else {
+        modalSupports.set(i, [false, true, false, true, true, true]); // lock Uy, Rx, Ry, Rz
+      }
+    });
+    const modalNi = { ...ni, supports: modalSupports };
+
     try {
-      const out = modalAnalysis(nodes, elements, ni, ei, 12);
+      const out = modalAnalysis(nodes, elements, modalNi, ei, 12);
       modalPanel.render(out, {
         title: `Plane Q4 ${p.W}×${p.H}m t=${p.t}m`,
         properties: [`E=${(p.E / 1e6).toFixed(1)} GPa  ν=${p.nu}  ρ=24 kN/m³`],
@@ -164,9 +179,6 @@ export const plane: ExampleDef = {
     } catch (e: any) {
       console.warn("Modal plane error:", e.message);
     }
-    // Nota: deform() se usaría si quisiéramos unificar el análisis estático con el
-    // mismo solver shell, pero aquí el estático ya lo resolvimos con planeQ4Solve
-    // (más limpio didácticamente — Q4 plane stress puro, sin estabilizaciones shell).
-    void deform;  // mantener import para uso futuro
+    void deform;
   },
 };
