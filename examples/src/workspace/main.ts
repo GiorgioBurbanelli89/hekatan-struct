@@ -209,7 +209,12 @@ function rebuild() {
   if (!currentExample) return;
   resetStates();
   currentExample.build(currentParams, states, modalPanel);
-  autoScaleDeformedShape();
+  // NO auto-escalar en rebuild — así cuando el usuario sube la carga,
+  // la deformada crece visualmente (scale fijo × w creciente).
+  // El auto-scale solo se llama en loadExample (primer build) para dar
+  // una escala inicial razonable; después el usuario puede ajustarla
+  // manualmente desde el slider "Deform scale".
+  // autoScaleDeformedShape();   ← REMOVIDO
   autoFitCamera();
   // Refrescar el folder "📊 Calculados" con los nuevos valores derivados
   if (currentExample.computedLabels && computedObj) {

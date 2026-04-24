@@ -24,14 +24,15 @@ export const plane: ExampleDef = {
   availableShellResults: ["vonMises", "membraneXX", "membraneYY", "membraneXY", "displacementX", "displacementZ"],
   hasModal: true,
   params: {
+    // Plano vertical X-Z: X horizontal, Z vertical (altura). Y = normal (espesor).
     W:  { default: 3.0, min: 1, max: 8,  step: 0.25, label: "W ancho X (m)" },
-    H:  { default: 6.0, min: 1, max: 15, step: 0.25, label: "H altura Y (m)" },
+    H:  { default: 6.0, min: 1, max: 15, step: 0.25, label: "H altura Z (m)" },
     t:  { default: 0.30, min: 0.05, max: 1.0, step: 0.05, label: "t espesor (m)" },
     E:  { default: 25e6, min: 5e6, max: 200e6, step: 1e6, label: "E (kN/m²)" },
     nu: { default: 0.20, min: 0.10, max: 0.40, step: 0.01, label: "ν" },
     F:  { default: 100, min: 10, max: 2000, step: 10, label: "F lateral tope (kN)" },
     nx: { default: 8, min: 4, max: 20, step: 1, label: "nx elem X" },
-    ny: { default: 16, min: 4, max: 30, step: 1, label: "ny elem Y" },
+    nz: { default: 16, min: 4, max: 30, step: 1, label: "nz elem Z" },
   },
   build(p, states) {
     const out = plateQ4Solve({
@@ -40,26 +41,27 @@ export const plane: ExampleDef = {
       thickness: p.t,
       theoryType: 2,              // 2 = Membrane (plane stress puro)
       meshLx: p.W,
-      meshLy: p.H,
+      meshLy: p.H,                // en el solver 2D es "y"; acá lo mapeo a Z global
       meshNx: Math.round(p.nx),
-      meshNy: Math.round(p.ny),
+      meshNy: Math.round(p.nz),
       bcType: "simply-supported",
-      pressure: 0,                // plane no tiene presión out-of-plane — carga manual abajo
+      pressure: 0,
     });
-    const nodes: Node[] = out.nodeResults.map((n) => [n.x, n.y, 0]);
+    // Remap de (x_solver, y_solver) → (X, 0, Z) global — plano vertical X-Z, Y=0
+    const nodes: Node[] = out.nodeResults.map((n) => [n.x, 0, n.y]);
     const elems = out.elementResults.map((e) => e.nodes);
     states.nodes.val = nodes;
     states.elements.val = elems as number[][];
 
-    // Supports: borde inferior (y=0) empotrado — cantiléver 2D
+    // Supports: borde inferior (Z=0) empotrado — cantiléver vertical
     const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
     const loads = new Map<number, [number, number, number, number, number, number]>();
     nodes.forEach((n, i) => {
-      if (Math.abs(n[1]) < 1e-6) supports.set(i, [true, true, true, true, true, true]);
+      if (Math.abs(n[2]) < 1e-6) supports.set(i, [true, true, true, true, true, true]);
     });
-    // Carga F lateral concentrada en el nodo superior derecho (tope)
+    // Carga F lateral en X concentrada en nodo superior derecho (X=W, Z=H)
     const topRightIdx = nodes.findIndex(
-      (n) => Math.abs(n[0] - p.W) < 1e-6 && Math.abs(n[1] - p.H) < 1e-6,
+      (n) => Math.abs(n[0] - p.W) < 1e-6 && Math.abs(n[2] - p.H) < 1e-6,
     );
     if (topRightIdx >= 0) loads.set(topRightIdx, [p.F, 0, 0, 0, 0, 0]);
     states.nodeInputs.val = { supports, loads };
@@ -76,10 +78,10 @@ export const plane: ExampleDef = {
     });
     states.elementInputs.val = { thicknesses, elasticities, poissonsRatios: poissons, densities };
 
-    // Deformaciones in-plane (Ux, Uy) — Uz = 0 en plane stress puro
+    // Deformaciones: solver da (du, dv) en plano 2D → global (Ux, 0, Uz)
     const deformations = new Map<number, [number, number, number, number, number, number]>();
     out.nodeResults.forEach((n, i) => {
-      deformations.set(i, [n.bx ?? 0, n.by ?? 0, 0, 0, 0, 0]);
+      deformations.set(i, [n.bx ?? 0, 0, n.by ?? 0, 0, 0, 0]);
     });
     states.deformOutputs.val = { deformations };
 
