@@ -6,6 +6,7 @@ import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import { buildEdificioCotas, makeLabel } from "../shared/cotas3D";
 import { etabsDiscretize, DISCRETIZE_OPTIONS } from "../shared/etabsDiscretization";
+import { addRigidDiaphragms, mergeDiaphragmProps } from "../shared/rigidDiaphragm";
 
 const rho_c = 24;
 
@@ -82,6 +83,13 @@ export const edificioAporticado: ExampleDef = {
     // (por bay) al tamaño objetivo seleccionado. 25-50 cm replica el default
     // interno de ETABS; 15 cm es análisis fino; 0 fuerza Q4 único por paño.
     slabDisc: PE("Avanzado", "Discretización losa", 0.50, DISCRETIZE_OPTIONS),
+    // Diafragma rígido (ASCE/SEI 7-22 §12.3.1 + NEC-SE-DS §6.2): une todos los
+    // nodos del piso vía rigid links al centroide. Reduce DOFs laterales del piso
+    // a 3 (Ux, Uy, Rz_master), modelando la losa como placa in-plane rígida.
+    // ON = asunto típico cuando la losa puede considerarse rígida (losa maciza,
+    // losa reticular con vigas profundas). OFF = diafragma flexible (losa delgada
+    // con muros de corte discontínuos — ver ASCE 7-22 §12.3.1.2).
+    diafragmaRigido: PE("Avanzado", "Diafragma rígido", 0, { "Flexible": 0, "Rígido (ASCE 7-22)": 1 }),
   },
   /**
    * Genera sliders dinámicos SOLO para los pisos/vanos que realmente existen.
@@ -462,6 +470,31 @@ export const edificioAporticado: ExampleDef = {
         elasticities.set(i, matVigaE); shearModuli.set(i, matVigaG); poissons.set(i, matVigaNu);
         areas.set(i, vp.A); Iz.set(i, vp.Iz); Iy.set(i, vp.Iy); J.set(i, vp.J);
       }
+    }
+
+    // ── Diafragma rígido (ASCE/SEI 7-22 §12.3.1 + NEC-SE-DS §6.2) ─────
+    // Si está activo, agrega un master node por piso en el centroide + rigid
+    // frame links a cada nodo del piso. Esto aproxima el constraint rigid-body
+    // in-plane sin modificar el solver nativo (penalty via AE/L muy alto).
+    // Los links heredan propiedades del elementInputs (ver mergeDiaphragmProps).
+    if (p.diafragmaRigido >= 0.5) {
+      const floorZs: number[] = [];
+      for (let iz = 1; iz < zCoords.length; iz++) floorZs.push(zCoords[iz]);
+      const dia = addRigidDiaphragms(nodes, floorZs);
+      const baseElemOffset = elements.length;
+      // Agregar master nodes al final del array de nodes
+      for (const m of dia.masterNodes) nodes.push([m.x, m.y, m.z] as Node);
+      // Agregar rigid links al final del array de elements
+      for (const link of dia.rigidLinks) elements.push(link as Element);
+      // Mergear propiedades de los links (areas, E, Iy/Iz, J, G, ρ=0)
+      const elementInputsObj: any = {
+        elasticities, shearModuli, areas,
+        momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy, torsionalConstants: J,
+        densities, poissonsRatios: poissons, thicknesses,
+      };
+      mergeDiaphragmProps(dia, elementInputsObj, baseElemOffset);
+      // Los master nodes NO tienen supports ni cargas — son puntos libres que
+      // acumulan las restricciones vía los rigid links.
     }
 
     states.nodes.val = nodes;
