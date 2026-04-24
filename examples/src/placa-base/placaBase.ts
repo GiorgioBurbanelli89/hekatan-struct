@@ -330,7 +330,7 @@ export const placaBase: ExampleDef = {
         });
         states.deformOutputs.val = nlResult.deformOutputs;
         const aOut = nlResult.analyzeOutputs;
-        (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [0, p.Fy_plate] };
+        // Sin override → autoscale (los σ_vm en placa son ~10–80 MPa, muy debajo de Fy=250 MPa)
         states.analyzeOutputs.val = aOut;
         (states as any).__nlInfo = {
           iterations: nlResult.iterations,
@@ -348,7 +348,7 @@ export const placaBase: ExampleDef = {
         const aOut = analyze(
           nodes, elements, states.elementInputs.val, states.deformOutputs.val,
         );
-        (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [0, p.Fy_plate] };
+        // Sin override → autoscale
         states.analyzeOutputs.val = aOut;
         (states as any).__nlInfo = null;
       }

@@ -420,7 +420,7 @@ export const conexionRbs: ExampleDef = {
         });
         states.deformOutputs.val = ipo.finalDeformOutputs;
         const aOut = ipo.finalAnalyzeOutputs;
-        (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [0, p.Fy] };
+        // Auto-scale del colormap (los esfuerzos en pushover son menores que Fy)
         states.analyzeOutputs.val = aOut;
         (states as any).__ideaInfo = ipo;
         (states as any).__nlInfo = null;
@@ -461,7 +461,7 @@ export const conexionRbs: ExampleDef = {
         });
         states.deformOutputs.val = nl.deformOutputs;
         const aOut = nl.analyzeOutputs;
-        (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [0, p.Fy] };
+        // Sin override de colorMapRanges → autoscale del viewer (mejor variación visual)
         states.analyzeOutputs.val = aOut;
         (states as any).__nlInfo = {
           iterations: nl.iterations, converged: nl.converged,
@@ -472,7 +472,7 @@ export const conexionRbs: ExampleDef = {
         const dOut = deform(nodes, elements, { supports, loads }, states.elementInputs.val);
         states.deformOutputs.val = dOut;
         const aOut = analyze(nodes, elements, states.elementInputs.val, dOut);
-        (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [0, p.Fy] };
+        // Sin override de colorMapRanges → autoscale del viewer
         states.analyzeOutputs.val = aOut;
         (states as any).__nlInfo = null;
         (states as any).__ideaInfo = null;
