@@ -171,6 +171,7 @@ import { edificioMuros } from "../edificio-muros/edificioMuros";
 import { edificioDual } from "../edificio-dual/edificioDual";
 import { columnaCft } from "../columna-cft/columnaCft";
 import { triangularPlate } from "../triangular-plate/triangularPlate";
+import { conexionRbs } from "../conexion-rbs/conexionRbs";
 import { trussGen } from "../truss-gen/trussGen";
 import { barraAxial } from "../barra-axial/barraAxial";
 import { portico2D } from "../portico-2d/portico2D";
@@ -188,6 +189,8 @@ export const examplesRegistry: ExampleDef[] = [
   galpon,
   // Columnas (diseño individual)
   columnaCft,
+  // Conexiones (prequalificación sísmica)
+  conexionRbs,
   // Edificios — variantes limpias por tipo estructural
   edificioAporticado,
   edificioHormigon,
