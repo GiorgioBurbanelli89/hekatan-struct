@@ -34,6 +34,7 @@ import {
   governingComponent,
   failureMode,
 } from "../shared/componentZones";
+import { buildGoverningMarker } from "../shared/governingMarker";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import type { Node, Element } from "awatif-fem";
 import * as THREE from "three";
@@ -44,7 +45,11 @@ export const conexionRbs: ExampleDef = {
   category: "Conexiones",
   hasModal: false,
   defaultShellResult: "vonMises",
-  availableShellResults: ["vonMises", "membraneXX", "membraneYY", "membraneXY", "bendingXX", "bendingYY", "displacementZ"],
+  availableShellResults: [
+    "vonMises",
+    "membraneXX", "membraneYY", "membraneXY",
+    "bendingXX", "bendingYY", "displacementZ",
+  ],
   params: {
     // ── Viga W-shape ──
     d_beam:  { default: 0.60, min: 0.30, max: 1.00, step: 0.02, label: "d viga (m)", folder: "Viga" },
@@ -101,6 +106,15 @@ export const conexionRbs: ExampleDef = {
     load_factor: { default: 0.10, min: 0.02, max: 0.80, step: 0.02, label: "Factor carga (×Mp)", folder: "Solver" },
     // ── IDEA StatiCa mode ──
     idea_steps: { default: 12, min: 4, max: 30, step: 1, label: "N pasos pushover", folder: "Solver" },
+    colormap_mode: {
+      default: 1,
+      label: "Colormap",
+      options: {
+        "σvm por shell (FEM clásico)": 0,
+        "Utilization por componente (IDEA)": 1,
+      },
+      folder: "Solver",
+    },
   },
   build(p, states) {
     // ── 1. Geometría 3D REAL con shells ──────────────────
@@ -478,6 +492,37 @@ export const conexionRbs: ExampleDef = {
         (states as any).__componentRatios = ratios;
         (states as any).__governingComponent = gov;
         (states as any).__failureMode = mode;
+
+        // ═══ IDEA-style colormap: cada shell muestra el ratio DE SU ZONA ═══
+        // Esto hace que el componente entero se vea de UN color (según su ratio),
+        // no shell-por-shell. Reemplaza temporalmente el vonMises con este campo.
+        if (p.colormap_mode > 0.5) {
+          const ratioByZone = new Map<string, number>();
+          for (const r of ratios) ratioByZone.set(r.zone, r.ratio);
+          const utilizationMap = new Map<number, number[]>();
+          for (let ei = 0; ei < elements.length; ei++) {
+            const zone = zoneMap.get(ei);
+            const r = zone ? (ratioByZone.get(zone) ?? 0) : 0;
+            // Valor en la unidad σ_vm equivalente (ratio × Fy) → el slider
+            // [0, Fy] del colormap lo mapea directamente al código IDEA:
+            //   azul = 0 (0% util)  · verde = 0.5·Fy (50%)
+            //   amarillo = 0.8·Fy (80%) · rojo = Fy (100% = fluencia)
+            const nNodes = elements[ei].length;
+            const vals: number[] = new Array(nNodes).fill(r * p.Fy);
+            utilizationMap.set(ei, vals);
+          }
+          // Sobrescribir vonMises con el utilization por componente
+          (states.analyzeOutputs.val as any).vonMises = utilizationMap;
+          // Mantener colorMapRanges en [0, Fy] para que 100% util = rojo
+          (states.analyzeOutputs.val as any).colorMapRanges = {
+            ...(states.analyzeOutputs.val as any).colorMapRanges,
+            vonMises: [0, p.Fy],
+          };
+        }
+
+        // Marcar gobernante con halo rojo 3D
+        const govObjs = buildGoverningMarker(nodes, elements, zoneMap, gov?.zone ?? null);
+        states.objects3D.val = [...states.objects3D.val, ...govObjs];
       }
     } catch (e: any) {
       console.warn("[conexion-rbs] component analysis skipped:", e?.message || e);
