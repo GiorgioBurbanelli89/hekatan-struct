@@ -578,17 +578,40 @@ export const edificioAporticado: ExampleDef = {
     const ei = states.elementInputs.val;
     if (!nodes.length || !elements.length || !ni.supports?.size || !ei.densities?.size) return;
     try {
-      const out = modalAnalysis(nodes, elements, ni, ei, 12);
+      // ── LUMPED MASS para análisis sísmico horizontal ──
+      // ETABS/SAP suprimen los modos verticales (Uz) reduciendo la masa de las
+      // losas (shells horizontales) durante el modal. La masa se concentra en
+      // los master nodes del diafragma, generando modos puramente Ux/Uy/Rz.
+      // Si NO hay diafragma rígido, no aplicamos lumped (modal completo, físico).
+      let eiModal = ei;
+      if (p.diafragmaRigido >= 0.5) {
+        const newDensities = new Map(ei.densities);
+        // Para cada elemento shell con 4 nodos casi-coplanares en Z (losa),
+        // reducir densidad a 1% de la original. Los muros/columnas mantienen masa.
+        for (let elemIdx = 0; elemIdx < elements.length; elemIdx++) {
+          const e = elements[elemIdx];
+          if (e.length !== 4) continue; // solo shells
+          const zs = e.map((ni: number) => nodes[ni][2]);
+          const zRange = Math.max(...zs) - Math.min(...zs);
+          // Si todos los nodos están en el mismo z (±1cm) → es una losa horizontal
+          if (zRange < 0.02) {
+            const orig = ei.densities.get(elemIdx) ?? 24;
+            newDensities.set(elemIdx, orig * 0.01);
+          }
+        }
+        eiModal = { ...ei, densities: newDensities };
+      }
+      const out = modalAnalysis(nodes, elements, ni, eiModal, 12);
       const nvx = Math.round(p.nVanosX), nvy = Math.round(p.nVanosY), np = Math.round(p.nPisos);
       modalPanel.render(out, {
         title: `Edificio ${nvx}×${nvy} vanos × ${np} pisos`,
         properties: [
           `Material cols=${p.matCol<0.5?'Hormigón':'Acero'} vigas=${p.matViga<0.5?'Hormigón':'Acero'}  f'c=${p.fcConcr} kg/cm²`,
-          `Apoyo: ${['Empotrado','Articulado','Rótula'][Math.round(p.apoyo)]}  ${p.slabOn>=0.5?'+ Losa ':''}${p.bracesMode>0?'+ Diagonales':''}`,
+          `Apoyo: ${['Empotrado','Articulado','Rótula'][Math.round(p.apoyo)]}  ${p.slabOn>=0.5?'+ Losa ':''}${p.bracesMode>0?'+ Diagonales':''}  ${p.diafragmaRigido>=0.5?'+ Diafragma rígido (lumped mass)':'Diafragma flexible'}`,
         ],
       });
       const f1 = out.frequencies[0] ?? 0;
-      console.log(`[Edificio Modal] f₁=${f1.toFixed(4)} Hz, T₁=${(1/f1).toFixed(4)} s`);
+      console.log(`[Edificio Modal] f₁=${f1.toFixed(4)} Hz, T₁=${(1/f1).toFixed(4)} s · lumped=${p.diafragmaRigido>=0.5}`);
     } catch (e: any) {
       console.warn("Modal edificio error:", e.message);
     }

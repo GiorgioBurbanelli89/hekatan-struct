@@ -31,6 +31,7 @@ params.bracesMode = { ...base.bracesMode, default: 1 };  // perimetrales (muros 
 params.slabT      = { ...base.slabT,      default: 0.15 };
 params.fcConcr    = { ...base.fcConcr,    default: 280 };
 params.nPisos     = { ...base.nPisos,     default: 6 };
+params.diafragmaRigido = { ...base.diafragmaRigido, default: 1 };  // ASCE 7-22 + lumped mass
 
 export const edificioMuros: ExampleDef = {
   id: "edificio-muros",
