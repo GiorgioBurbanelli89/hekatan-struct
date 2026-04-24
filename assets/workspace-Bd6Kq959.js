@@ -2,8 +2,8 @@ import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { v as j, P as we } from "./theme-CzzIlc4y.js";
 import { c as Se, a as Ie, g as Pe } from "./getViewer-aUy3Y4mH.js";
 import { g as ke } from "./styles-Y66YTQNs.js";
-import { c as qe } from "./renderModalTable-29W4CuGz.js";
-import { z as ze, __tla as __tla_0 } from "./zapataVigaAmarre-ZIEkIpA5.js";
+import { c as ze } from "./renderModalTable-29W4CuGz.js";
+import { z as qe, __tla as __tla_0 } from "./zapataVigaAmarre-ZIEkIpA5.js";
 import { z as Te, __tla as __tla_1 } from "./zapataAislada-DXUkLbZF.js";
 import { z as Be, __tla as __tla_2 } from "./zapataAisladaValidacion-Brghwuvj.js";
 import { e as Ae, __tla as __tla_3 } from "./edificioConLosa-DHZum3Vj.js";
@@ -15,14 +15,14 @@ import { p as Re, __tla as __tla_8 } from "./plateThick-DrHD17l3.js";
 import { m as Fe, __tla as __tla_9 } from "./membrana-Darbd52d.js";
 import { s as je, __tla as __tla_10 } from "./shellThin-ORSIx719.js";
 import { s as $e, __tla as __tla_11 } from "./shellThick-BSU3qF0E.js";
-import { e as De, __tla as __tla_12 } from "./edificioAporticado-DxvhbB1j.js";
-import { e as Ue, __tla as __tla_13 } from "./edificioHormigon-BqbcCME2.js";
+import { e as Ue, __tla as __tla_12 } from "./edificioAporticado-DxvhbB1j.js";
+import { e as De, __tla as __tla_13 } from "./edificioHormigon-BqbcCME2.js";
 import { e as Le, __tla as __tla_14 } from "./edificioAceroV2-DyAKCpcf.js";
 import { e as Ve, __tla as __tla_15 } from "./edificioMixto-DbjwRzyr.js";
 import { e as Ne, __tla as __tla_16 } from "./edificioMuros-ekPMNiwf.js";
-import { e as Xe, __tla as __tla_17 } from "./edificioDual-BPCg1Uf0.js";
-import { t as Ye, __tla as __tla_18 } from "./trussGen-CYTV_Ioz.js";
-import { b as He, __tla as __tla_19 } from "./barraAxial-Bnm-0MrG.js";
+import { e as He, __tla as __tla_17 } from "./edificioDual-BPCg1Uf0.js";
+import { t as Xe, __tla as __tla_18 } from "./trussGen-CYTV_Ioz.js";
+import { b as Ye, __tla as __tla_19 } from "./barraAxial-Bnm-0MrG.js";
 import { p as Ke, __tla as __tla_20 } from "./portico2D-kxfBcLlJ.js";
 import { t as Ge, __tla as __tla_21 } from "./tower3D-tLRX3VEB.js";
 import { g as Je, __tla as __tla_22 } from "./galpon-BaNuuhBd.js";
@@ -194,15 +194,15 @@ Promise.all([
   })()
 ]).then(async () => {
   function ue(n) {
-    const { mesh: o, viewerElm: s, onStatusChange: m } = n, v = n.scalePercent ?? 5, [y, b] = n.visFrequencyRange ?? [
+    const { mesh: o, viewerElm: s, onStatusChange: m } = n, v = n.scalePercent ?? 5, [g, b] = n.visFrequencyRange ?? [
       0.5,
       3
     ];
-    let a = null, r = 0, p = 0, x = [], g = [];
+    let a = null, r = 0, u = 0, x = [], h = [];
     function M() {
       m == null ? void 0 : m();
     }
-    function h() {
+    function y() {
       var _a;
       if (!a || !a.frequencies || a.frequencies.length === 0) return {
         mode: "Sin resultados",
@@ -211,7 +211,7 @@ Promise.all([
         dominant: "\u2014",
         state: "\u23F8 Detenido"
       };
-      const i = a.frequencies[r] ?? 0, S = i > 0 ? 1 / i : 0, d = [
+      const i = a.frequencies[r] ?? 0, w = i > 0 ? 1 / i : 0, l = [
         "Ux",
         "Uy",
         "Uz",
@@ -221,83 +221,83 @@ Promise.all([
       ], t = (_a = a.massParticipation) == null ? void 0 : _a[r];
       let e = "\u2014";
       if (t) {
-        let l = 0, k = 0;
-        for (let f = 0; f < 6; f++) Math.abs(t[f]) > l && (l = Math.abs(t[f]), k = f);
-        e = `${d[k]} (${(l * 100).toFixed(0)}%)`;
+        let d = 0, z = 0;
+        for (let f = 0; f < 6; f++) Math.abs(t[f]) > d && (d = Math.abs(t[f]), z = f);
+        e = `${l[z]} (${(d * 100).toFixed(0)}%)`;
       }
       return {
         mode: `Modo ${r + 1} / ${a.frequencies.length}`,
         frequency: `${i.toFixed(4)} Hz`,
-        period: `${S.toFixed(4)} s`,
+        period: `${w.toFixed(4)} s`,
         dominant: e,
-        state: p !== 0 ? "\u25B6 Reproduciendo" : "\u23F8 Pausado"
+        state: u !== 0 ? "\u25B6 Reproduciendo" : "\u23F8 Pausado"
       };
     }
     function I() {
       return s.__ctx;
     }
-    function z(i) {
+    function q(i) {
       var _a;
-      if (p && (cancelAnimationFrame(p), p = 0), i) {
-        const S = x.length > 0 ? x : g;
-        S.length > 0 && (o.nodes.val = S.map((d) => [
-          ...d
+      if (u && (cancelAnimationFrame(u), u = 0), i) {
+        const w = x.length > 0 ? x : h;
+        w.length > 0 && (o.nodes.val = w.map((l) => [
+          ...l
         ]), (_a = I()) == null ? void 0 : _a.render());
       }
     }
-    function q() {
+    function P() {
       var _a, _b;
       if (!a || !a.modeShapes || a.modeShapes.length === 0 || !a.modeShapes[r]) return;
-      z(false);
-      const i = a.modeShapes[r], S = ((_a = a.frequencies) == null ? void 0 : _a[r]) || 1, d = ((_b = a.frequencies) == null ? void 0 : _b[0]) || 1, t = Math.max(y, Math.min(b, S / d));
-      g = o.nodes.rawVal.map((c) => [
+      q(false);
+      const i = a.modeShapes[r], w = ((_a = a.frequencies) == null ? void 0 : _a[r]) || 1, l = ((_b = a.frequencies) == null ? void 0 : _b[0]) || 1, t = Math.max(g, Math.min(b, w / l));
+      h = o.nodes.rawVal.map((c) => [
         ...c
       ]);
-      const e = g.length;
-      let l = 1 / 0, k = 1 / 0, f = 1 / 0, T = -1 / 0, F = -1 / 0, A = -1 / 0;
-      for (const c of g) c[0] < l && (l = c[0]), c[0] > T && (T = c[0]), c[1] < k && (k = c[1]), c[1] > F && (F = c[1]), c[2] < f && (f = c[2]), c[2] > A && (A = c[2]);
-      const _ = Math.sqrt((T - l) ** 2 + (F - k) ** 2 + (A - f) ** 2) || 1;
+      const e = h.length;
+      let d = 1 / 0, z = 1 / 0, f = 1 / 0, T = -1 / 0, F = -1 / 0, A = -1 / 0;
+      for (const c of h) c[0] < d && (d = c[0]), c[0] > T && (T = c[0]), c[1] < z && (z = c[1]), c[1] > F && (F = c[1]), c[2] < f && (f = c[2]), c[2] > A && (A = c[2]);
+      const _ = Math.sqrt((T - d) ** 2 + (F - z) ** 2 + (A - f) ** 2) || 1;
       let B = 0;
       for (let c = 0; c < e; c++) {
-        const V = i[c * 6] || 0, Y = i[c * 6 + 1] || 0, E = i[c * 6 + 2] || 0, N = Math.sqrt(V * V + Y * Y + E * E);
+        const V = i[c * 6] || 0, X = i[c * 6 + 1] || 0, E = i[c * 6 + 2] || 0, N = Math.sqrt(V * V + X * X + E * E);
         N > B && (B = N);
       }
       const J = B > 1e-12 ? _ * v / 100 / B : 1, C = performance.now(), $ = () => {
         var _a2;
-        const c = (performance.now() - C) / 1e3, V = Math.sin(2 * Math.PI * t * c) * J, Y = new Array(e);
+        const c = (performance.now() - C) / 1e3, V = Math.sin(2 * Math.PI * t * c) * J, X = new Array(e);
         for (let E = 0; E < e; E++) {
-          const N = g[E];
-          Y[E] = [
+          const N = h[E];
+          X[E] = [
             N[0] + (i[E * 6] || 0) * V,
             N[1] + (i[E * 6 + 1] || 0) * V,
             N[2] + (i[E * 6 + 2] || 0) * V
           ];
         }
-        o.nodes.val = Y, (_a2 = I()) == null ? void 0 : _a2.render(), p = requestAnimationFrame($);
+        o.nodes.val = X, (_a2 = I()) == null ? void 0 : _a2.render(), u = requestAnimationFrame($);
       };
-      p = requestAnimationFrame($), M();
+      u = requestAnimationFrame($), M();
     }
     return {
       setResults(i) {
         var _a;
-        a = i, r >= (((_a = i == null ? void 0 : i.frequencies) == null ? void 0 : _a.length) ?? 0) && (r = 0), x = o.nodes.rawVal.map((S) => [
-          ...S
+        a = i, r >= (((_a = i == null ? void 0 : i.frequencies) == null ? void 0 : _a.length) ?? 0) && (r = 0), x = o.nodes.rawVal.map((w) => [
+          ...w
         ]), M();
       },
       setMode(i) {
         var _a;
         if (!a) return;
-        const S = ((_a = a.frequencies) == null ? void 0 : _a.length) ?? 0;
-        r = Math.max(0, Math.min(S - 1, i)), p !== 0 ? q() : M();
+        const w = ((_a = a.frequencies) == null ? void 0 : _a.length) ?? 0;
+        r = Math.max(0, Math.min(w - 1, i)), u !== 0 ? P() : M();
       },
       play() {
-        a && p === 0 && q();
+        a && u === 0 && P();
       },
       stop() {
-        z(true), M();
+        q(true), M();
       },
       isPlaying() {
-        return p !== 0;
+        return u !== 0;
       },
       modeCount() {
         var _a;
@@ -311,25 +311,25 @@ Promise.all([
         return ((_a = a == null ? void 0 : a.frequencies) == null ? void 0 : _a[r]) ?? 0;
       },
       getStatus() {
-        return h();
+        return y();
       },
       dispose() {
-        z(true), a = null;
+        q(true), a = null;
       }
     };
   }
   const K = [
-    He,
     Ye,
+    Xe,
     Ke,
     Ge,
     Je,
-    De,
     Ue,
+    De,
     Le,
     Ve,
     Ne,
-    Xe,
+    He,
     Ae,
     Ce,
     Ze,
@@ -343,7 +343,7 @@ Promise.all([
     $e,
     Te,
     Be,
-    ze
+    qe
   ];
   j.derive(() => {
     Se.val = Q.val;
@@ -351,7 +351,7 @@ Promise.all([
   j.derive(() => {
     Ie.val = se.val;
   });
-  const te = j.state([]), ne = j.state([]), pe = j.state({}), xe = j.state({}), ie = j.state({}), ae = j.state({}), he = j.state([]), P = {
+  const te = j.state([]), ne = j.state([]), pe = j.state({}), xe = j.state({}), ie = j.state({}), ae = j.state({}), he = j.state([]), k = {
     nodes: te,
     elements: ne,
     nodeInputs: pe,
@@ -360,18 +360,18 @@ Promise.all([
     analyzeOutputs: ae,
     objects3D: he
   };
-  let u = null, w = {}, D = null;
+  let p = null, S = {}, U = null;
   const de = {
     modeIdx: 1
   };
-  let O, U = null, X = null;
-  const L = qe();
+  let O, D = null, H = null;
+  const L = ze();
   L.div.style.display = "none";
   function ye() {
-    P.objects3D.val = [], P.nodes.val = [], P.elements.val = [], P.nodeInputs.val = {}, P.elementInputs.val = {}, P.deformOutputs.val = {}, P.analyzeOutputs.val = {};
+    k.objects3D.val = [], k.nodes.val = [], k.elements.val = [], k.nodeInputs.val = {}, k.elementInputs.val = {}, k.deformOutputs.val = {}, k.analyzeOutputs.val = {};
   }
   function ge(n) {
-    if (u = n, w = Object.fromEntries(Object.entries(n.params).map(([o, s]) => {
+    if (p = n, S = Object.fromEntries(Object.entries(n.params).map(([o, s]) => {
       const m = s.default;
       return s.unitType === "force" ? [
         o,
@@ -383,7 +383,7 @@ Promise.all([
         o,
         m
       ];
-    })), at.v++, ye(), n.build(re(), P, L), n.defaultShellResult) {
+    })), at.v++, ye(), n.build(re(), k, L), n.defaultShellResult) {
       const o = R.__settings;
       (o == null ? void 0 : o.shellResults) && (o.shellResults.val = n.defaultShellResult), (o == null ? void 0 : o.loads) && (o.loads.val = true), (o == null ? void 0 : o.supports) && (o.supports.val = true);
     }
@@ -393,45 +393,57 @@ Promise.all([
     var _a;
     const n = R.__settings;
     if (!(n == null ? void 0 : n.deformScale)) return;
-    const o = P.nodes.rawVal, s = (_a = P.deformOutputs.rawVal) == null ? void 0 : _a.deformations;
+    const o = k.nodes.rawVal, s = (_a = k.deformOutputs.rawVal) == null ? void 0 : _a.deformations;
     if (!(o == null ? void 0 : o.length) || !s) {
       n.deformScale.val = 1;
       return;
     }
-    let m = 1 / 0, v = 1 / 0, y = 1 / 0, b = -1 / 0, a = -1 / 0, r = -1 / 0;
-    for (const i of o) i[0] < m && (m = i[0]), i[0] > b && (b = i[0]), i[1] < v && (v = i[1]), i[1] > a && (a = i[1]), i[2] < y && (y = i[2]), i[2] > r && (r = i[2]);
-    const p = Math.sqrt((b - m) ** 2 + (a - v) ** 2 + (r - y) ** 2) || 1;
-    let x = 0, g = 0;
+    let m = 1 / 0, v = 1 / 0, g = 1 / 0, b = -1 / 0, a = -1 / 0, r = -1 / 0;
+    for (const i of o) i[0] < m && (m = i[0]), i[0] > b && (b = i[0]), i[1] < v && (v = i[1]), i[1] > a && (a = i[1]), i[2] < g && (g = i[2]), i[2] > r && (r = i[2]);
+    const u = Math.sqrt((b - m) ** 2 + (a - v) ** 2 + (r - g) ** 2) || 1;
+    let x = 0, h = 0;
     s.forEach((i) => {
-      const S = Math.sqrt((i[0] || 0) ** 2 + (i[1] || 0) ** 2), d = Math.abs(i[2] || 0);
-      S > x && (x = S), d > g && (g = d);
+      const w = Math.sqrt((i[0] || 0) ** 2 + (i[1] || 0) ** 2), l = Math.abs(i[2] || 0);
+      w > x && (x = w), l > h && (h = l);
     });
-    const M = b - m, h = a - v, q = r - y > 1.1 * Math.max(M, h) ? Math.max(x, g * 0.15) : Math.max(x, g);
-    if (q < 1e-30) {
-      n.deformScale.val = 1;
-      return;
+    const M = b - m, y = a - v, I = r - g, q = I > 1.1 * Math.max(M, y);
+    let P;
+    if (q) {
+      x > 1e-9 ? P = Math.min(5e3, Math.max(1, 0.1 * u / x)) : P = 10;
+      const w = 0.3 * (I / 8);
+      if (h > 1e-9) {
+        const l = w / h;
+        P = Math.min(P, l);
+      }
+    } else {
+      const i = Math.max(x, h);
+      if (i < 1e-30) {
+        n.deformScale.val = 1;
+        return;
+      }
+      P = Math.min(5e4, Math.max(1, 0.15 * u / i));
     }
-    n.deformScale.val = Math.min(5e4, Math.max(1, 0.15 * p / q)), n.displayScale && (n.displayScale.val = -1.5);
+    n.deformScale.val = Math.max(1, P), n.displayScale && (n.displayScale.val = -1.5);
   }
   function ve() {
-    const n = R.__ctx, o = P.nodes.rawVal;
+    const n = R.__ctx, o = k.nodes.rawVal;
     if (!n || !(o == null ? void 0 : o.length)) return;
     const { camera: s, controls: m, render: v } = n;
-    let y = 1 / 0, b = 1 / 0, a = 1 / 0, r = -1 / 0, p = -1 / 0, x = -1 / 0;
-    for (const e of o) e[0] < y && (y = e[0]), e[0] > r && (r = e[0]), e[1] < b && (b = e[1]), e[1] > p && (p = e[1]), e[2] < a && (a = e[2]), e[2] > x && (x = e[2]);
-    const g = (y + r) / 2, M = (b + p) / 2, h = (a + x) / 2, I = r - y, z = p - b, q = x - a, i = Math.max(Math.sqrt(I * I + z * z + q * q), 1), S = 2.2 * i;
-    m.target.set(g, M, h);
-    const d = S / Math.sqrt(3);
-    s.position.set(g + d, M - d, h + d), s.up.set(0, 0, 1), s.near = i * 1e-3, s.far = i * 50, s.updateProjectionMatrix(), s.lookAt(g, M, h), m.update(), v == null ? void 0 : v();
+    let g = 1 / 0, b = 1 / 0, a = 1 / 0, r = -1 / 0, u = -1 / 0, x = -1 / 0;
+    for (const e of o) e[0] < g && (g = e[0]), e[0] > r && (r = e[0]), e[1] < b && (b = e[1]), e[1] > u && (u = e[1]), e[2] < a && (a = e[2]), e[2] > x && (x = e[2]);
+    const h = (g + r) / 2, M = (b + u) / 2, y = (a + x) / 2, I = r - g, q = u - b, P = x - a, i = Math.max(Math.sqrt(I * I + q * q + P * P), 1), w = 2.2 * i;
+    m.target.set(h, M, y);
+    const l = w / Math.sqrt(3);
+    s.position.set(h + l, M - l, y + l), s.up.set(0, 0, 1), s.near = i * 1e-3, s.far = i * 50, s.updateProjectionMatrix(), s.lookAt(h, M, y), m.update(), v == null ? void 0 : v();
     const t = R.__settings;
-    (t == null ? void 0 : t.gridSize) && (t.gridSize.val = Math.max(Math.ceil(Math.max(I, z) * 1.2), 2));
+    (t == null ? void 0 : t.gridSize) && (t.gridSize.val = Math.max(Math.ceil(Math.max(I, q) * 1.2), 2));
   }
   function st(n) {
-    const o = R.querySelectorAll("select"), s = Array.from(o).find((v) => Array.from(v.options).some((y) => y.value === "bendingXX"));
+    const o = R.querySelectorAll("select"), s = Array.from(o).find((v) => Array.from(v.options).some((g) => g.value === "bendingXX"));
     if (!s) return;
     for (const v of Array.from(s.options)) {
-      const y = v.value === "none" || !n || n.includes(v.value);
-      v.hidden = !y, v.disabled = !y;
+      const g = v.value === "none" || !n || n.includes(v.value);
+      v.hidden = !g, v.disabled = !g;
     }
     const m = R.__settings;
     (m == null ? void 0 : m.shellResults) && (s.value = m.shellResults.val, s.dispatchEvent(new Event("change", {
@@ -439,24 +451,24 @@ Promise.all([
     })));
   }
   function re() {
-    if (!u) return {};
+    if (!p) return {};
     const n = {
-      ...w
+      ...S
     };
-    for (const [o, s] of Object.entries(u.params)) s.unitType === "force" && (n[o] = Qe(w[o])), s.unitType === "moment" && (n[o] = et(w[o]));
+    for (const [o, s] of Object.entries(p.params)) s.unitType === "force" && (n[o] = Qe(S[o])), s.unitType === "moment" && (n[o] = et(S[o]));
     return n;
   }
   function Z() {
-    if (u) {
-      if (ye(), u.build(re(), P, L), ve(), u.computedLabels && U) {
-        const n = u.computedLabels(w, P);
-        for (const o of Object.keys(U)) o in n && (U[o] = n[o]);
+    if (p) {
+      if (ye(), p.build(re(), k, L), ve(), p.computedLabels && D) {
+        const n = p.computedLabels(S, k);
+        for (const o of Object.keys(D)) o in n && (D[o] = n[o]);
       }
-      if (u.inlineComputed && X) for (const n of u.inlineComputed) {
+      if (p.inlineComputed && H) for (const n of p.inlineComputed) {
         const o = `__inline_${n.after}_${n.label}`;
-        X[o] = n.compute(w, P);
+        H[o] = n.compute(S, k);
       }
-      D == null ? void 0 : D.refresh();
+      U == null ? void 0 : U.refresh();
     }
   }
   const G = document.createElement("div"), be = "hk_paneHostPos", oe = (() => {
@@ -476,15 +488,15 @@ Promise.all([
       return;
     }
     s.style.cursor = "move", s.style.userSelect = "none";
-    let m = false, v = 0, y = 0, b = 0, a = 0;
+    let m = false, v = 0, g = 0, b = 0, a = 0;
     s.addEventListener("mousedown", (r) => {
-      m = true, v = r.clientX, y = r.clientY;
-      const p = n.getBoundingClientRect();
-      b = p.left, a = p.top, n.style.right = "auto", n.style.left = `${b}px`, n.style.top = `${a}px`, r.preventDefault();
+      m = true, v = r.clientX, g = r.clientY;
+      const u = n.getBoundingClientRect();
+      b = u.left, a = u.top, n.style.right = "auto", n.style.left = `${b}px`, n.style.top = `${a}px`, r.preventDefault();
     }), window.addEventListener("mousemove", (r) => {
       if (!m) return;
-      const p = r.clientX - v, x = r.clientY - y, g = Math.max(0, Math.min(window.innerWidth - 40, b + p)), M = Math.max(0, Math.min(window.innerHeight - 40, a + x));
-      n.style.left = `${g}px`, n.style.top = `${M}px`;
+      const u = r.clientX - v, x = r.clientY - g, h = Math.max(0, Math.min(window.innerWidth - 40, b + u)), M = Math.max(0, Math.min(window.innerHeight - 40, a + x));
+      n.style.left = `${h}px`, n.style.top = `${M}px`;
     }), window.addEventListener("mouseup", () => {
       if (m) {
         m = false;
@@ -498,44 +510,44 @@ Promise.all([
       }
     });
   }
-  function H(n) {
+  function Y(n) {
     const o = R.__ctx;
     if (!o) return;
-    const { camera: s, controls: m, render: v } = o, y = P.nodes.rawVal ?? [];
-    let b = 1 / 0, a = 1 / 0, r = 1 / 0, p = -1 / 0, x = -1 / 0, g = -1 / 0;
-    for (const d of y) d[0] < b && (b = d[0]), d[0] > p && (p = d[0]), d[1] < a && (a = d[1]), d[1] > x && (x = d[1]), d[2] < r && (r = d[2]), d[2] > g && (g = d[2]);
-    const M = (b + p) / 2, h = (a + x) / 2, I = (r + g) / 2, z = p - b || 1, q = x - a || 1, i = g - r || 1, S = Math.sqrt(z * z + q * q + i * i) || 5;
-    if (m.target.set(M, h, I), n === "iso") {
+    const { camera: s, controls: m, render: v } = o, g = k.nodes.rawVal ?? [];
+    let b = 1 / 0, a = 1 / 0, r = 1 / 0, u = -1 / 0, x = -1 / 0, h = -1 / 0;
+    for (const l of g) l[0] < b && (b = l[0]), l[0] > u && (u = l[0]), l[1] < a && (a = l[1]), l[1] > x && (x = l[1]), l[2] < r && (r = l[2]), l[2] > h && (h = l[2]);
+    const M = (b + u) / 2, y = (a + x) / 2, I = (r + h) / 2, q = u - b || 1, P = x - a || 1, i = h - r || 1, w = Math.sqrt(q * q + P * P + i * i) || 5;
+    if (m.target.set(M, y, I), n === "iso") {
       s.fov = 45;
-      const d = S * 1.2;
-      s.position.set(M + d * 0.6, h - d * 0.6, I + d * 0.6);
+      const l = w * 1.2;
+      s.position.set(M + l * 0.6, y - l * 0.6, I + l * 0.6);
     } else {
       s.fov = 5;
-      const t = S / 2 * 25;
+      const t = w / 2 * 25;
       switch (n) {
         case "plan":
-          s.position.set(M, h, I + t);
+          s.position.set(M, y, I + t);
           break;
         case "elevX":
-          s.position.set(M + t, h, I);
+          s.position.set(M + t, y, I);
           break;
         case "elevY":
-          s.position.set(M, h + t, I);
+          s.position.set(M, y + t, I);
           break;
       }
     }
-    s.up.set(0, 0, 1), s.updateProjectionMatrix(), s.lookAt(M, h, I), m.update(), v == null ? void 0 : v();
+    s.up.set(0, 0, 1), s.updateProjectionMatrix(), s.lookAt(M, y, I), m.update(), v == null ? void 0 : v();
   }
   function ee() {
     var _a;
-    if (D && (D.dispose(), D = null), G.innerHTML = "", !u) return;
+    if (U && (U.dispose(), U = null), G.innerHTML = "", !p) return;
     const n = new we({
       container: G,
-      title: u.name
+      title: p.name
     });
     setTimeout(() => Me(G), 0);
     const o = {
-      id: u.id
+      id: p.id
     }, s = Object.fromEntries(K.map((t) => [
       `${t.category} \xB7 ${t.name}`,
       t.id
@@ -544,7 +556,7 @@ Promise.all([
       label: "Ejemplo",
       options: s
     }).on("change", (t) => {
-      const e = K.find((l) => l.id === t.value);
+      const e = K.find((d) => d.id === t.value);
       e && ge(e);
     });
     const m = n.addFolder({
@@ -553,21 +565,21 @@ Promise.all([
     });
     m.addButton({
       title: "\u{1F3D7} Isom\xE9trica"
-    }).on("click", () => H("iso")), m.addButton({
+    }).on("click", () => Y("iso")), m.addButton({
       title: "\u2B07 Planta (X-Y)"
-    }).on("click", () => H("plan")), m.addButton({
+    }).on("click", () => Y("plan")), m.addButton({
       title: "\u2192 Elevaci\xF3n X (frente)"
-    }).on("click", () => H("elevX")), m.addButton({
+    }).on("click", () => Y("elevX")), m.addButton({
       title: "\u2191 Elevaci\xF3n Y (lado)"
-    }).on("click", () => H("elevY"));
+    }).on("click", () => Y("elevY"));
     const v = n.addFolder({
       title: "Unidades",
       expanded: false
-    }), y = {
+    }), g = {
       force: Q.val,
       disp: se.val
     };
-    v.addBinding(y, "force", {
+    v.addBinding(g, "force", {
       label: "Fuerza",
       options: {
         kN: "kN",
@@ -575,13 +587,13 @@ Promise.all([
         kip: "kip"
       }
     }).on("change", (t) => {
-      const e = Q.val, l = t.value;
-      if (u && e !== l) {
-        const k = e === "kN" ? 1 : e === "tonf" ? 9.80665 : 4.4482216, f = l === "kN" ? 1 : l === "tonf" ? 9.80665 : 4.4482216;
-        for (const [T, F] of Object.entries(u.params)) (F.unitType === "force" || F.unitType === "moment") && (w[T] = w[T] * k / f);
+      const e = Q.val, d = t.value;
+      if (p && e !== d) {
+        const z = e === "kN" ? 1 : e === "tonf" ? 9.80665 : 4.4482216, f = d === "kN" ? 1 : d === "tonf" ? 9.80665 : 4.4482216;
+        for (const [T, F] of Object.entries(p.params)) (F.unitType === "force" || F.unitType === "moment") && (S[T] = S[T] * z / f);
       }
-      Q.val = l, ee(), Z();
-    }), v.addBinding(y, "disp", {
+      Q.val = d, ee(), Z();
+    }), v.addBinding(g, "disp", {
       label: "Desplazamiento",
       options: {
         mm: "mm",
@@ -592,40 +604,40 @@ Promise.all([
     }).on("change", (t) => {
       se.val = t.value, ee(), Z();
     });
-    const b = "Par\xE1metros", a = /* @__PURE__ */ new Map(), r = (t) => t === b || /\bmodo\b/i.test(t) || /activar/i.test(t) || /combinaci/i.test(t), p = (t) => (a.has(t) || a.set(t, n.addFolder({
+    const b = "Par\xE1metros", a = /* @__PURE__ */ new Map(), r = (t) => t === b || /\bmodo\b/i.test(t) || /activar/i.test(t) || /combinaci/i.test(t), u = (t) => (a.has(t) || a.set(t, n.addFolder({
       title: t,
       expanded: r(t)
     })), a.get(t));
     let x = null;
-    const g = () => {
+    const h = () => {
       x !== null && clearTimeout(x), x = window.setTimeout(() => {
         x = null, Z();
       }, 120);
-    }, M = {}, h = {}, I = {}, z = (t) => t.rangeAdjustable === true || t.rangeAdjustable !== false && (t.unitType === "force" || t.unitType === "moment"), q = /* @__PURE__ */ new Map();
-    if (X = {}, u.inlineComputed) for (const t of u.inlineComputed) {
+    }, M = {}, y = {}, I = {}, q = (t) => t.rangeAdjustable === true || t.rangeAdjustable !== false && (t.unitType === "force" || t.unitType === "moment"), P = /* @__PURE__ */ new Map();
+    if (H = {}, p.inlineComputed) for (const t of p.inlineComputed) {
       const e = `__inline_${t.after}_${t.label}`;
-      X[e] = t.compute(w, P), q.has(t.after) || q.set(t.after, []), q.get(t.after).push({
+      H[e] = t.compute(S, k), P.has(t.after) || P.set(t.after, []), P.get(t.after).push({
         label: t.label,
         key: e,
         compute: t.compute
       });
     }
-    const i = u.dynamicParams ? u.dynamicParams(w) : {};
-    for (const [t, e] of Object.entries(i)) if (!(t in w)) {
-      const l = e.default;
-      w[t] = e.unitType === "force" ? fe(l) : e.unitType === "moment" ? me(l) : l;
+    const i = p.dynamicParams ? p.dynamicParams(S) : {};
+    for (const [t, e] of Object.entries(i)) if (!(t in S)) {
+      const d = e.default;
+      S[t] = e.unitType === "force" ? fe(d) : e.unitType === "moment" ? me(d) : d;
     }
-    const S = {
-      ...u.params,
+    const w = {
+      ...p.params,
       ...i
     };
-    for (const [t, e] of Object.entries(S)) {
-      const l = e.folder ?? b, k = p(l);
+    for (const [t, e] of Object.entries(w)) {
+      const d = e.folder ?? b, z = u(d);
       if (e.boolean) {
-        M[t] = w[t] >= 0.5, k.addBinding(M, t, {
+        M[t] = S[t] >= 0.5, z.addBinding(M, t, {
           label: e.label ?? t
         }).on("change", (C) => {
-          w[t] = C.value ? 1 : 0, (u == null ? void 0 : u.onParamChange) && (u.onParamChange(t, w), n.refresh()), g();
+          S[t] = C.value ? 1 : 0, (p == null ? void 0 : p.onParamChange) && (p.onParamChange(t, S), n.refresh()), h();
         });
         continue;
       }
@@ -643,67 +655,67 @@ Promise.all([
         const c = {
           ...A
         };
-        C !== void 0 && (c.min = C), $ !== void 0 && (c.max = $), c.min !== void 0 && w[t] < c.min && (w[t] = c.min), c.max !== void 0 && w[t] > c.max && (w[t] = c.max), _ = k.addBinding(w, t, c), _.on("change", () => {
-          (u == null ? void 0 : u.onParamChange) && (u.onParamChange(t, w), n.refresh()), e.regenOnChange ? window.setTimeout(() => {
+        C !== void 0 && (c.min = C), $ !== void 0 && (c.max = $), c.min !== void 0 && S[t] < c.min && (S[t] = c.min), c.max !== void 0 && S[t] > c.max && (S[t] = c.max), _ = z.addBinding(S, t, c), _.on("change", () => {
+          (p == null ? void 0 : p.onParamChange) && (p.onParamChange(t, S), n.refresh()), e.regenOnChange ? window.setTimeout(() => {
             ee(), Z();
-          }, 80) : g();
+          }, 80) : h();
         });
       };
-      B(e.min, e.max), z(e) && e.min !== void 0 && e.max !== void 0 && (h[t] = {
+      B(e.min, e.max), q(e) && e.min !== void 0 && e.max !== void 0 && (y[t] = {
         min: e.min,
         max: e.max
       }, I[t] = {
         rebuild: (C, $) => B(C, $)
       });
-      const J = q.get(t);
-      if (J && X) for (const C of J) k.addBinding(X, C.key, {
+      const J = P.get(t);
+      if (J && H) for (const C of J) z.addBinding(H, C.key, {
         readonly: true,
         label: C.label,
         view: "text"
       });
     }
-    const d = Object.keys(h);
-    if (d.length > 0) {
+    const l = Object.keys(y);
+    if (l.length > 0) {
       const t = n.addFolder({
         title: "\u{1F4CF} Rangos",
         expanded: false
       });
-      for (const e of d) {
-        const l = u.params[e], k = le(l.label ?? e), f = l.step ?? 1, T = Math.abs(l.max - l.min), F = l.min - T * 5, A = l.max + T * 5;
-        t.addBinding(h[e], "min", {
-          label: `${k} min`,
+      for (const e of l) {
+        const d = p.params[e], z = le(d.label ?? e), f = d.step ?? 1, T = Math.abs(d.max - d.min), F = d.min - T * 5, A = d.max + T * 5;
+        t.addBinding(y[e], "min", {
+          label: `${z} min`,
           min: F,
-          max: l.max,
+          max: d.max,
           step: f
         }).on("change", (_) => {
-          const B = Math.min(_.value, h[e].max - f);
-          h[e].min = B, I[e].rebuild(B, h[e].max);
-        }), t.addBinding(h[e], "max", {
-          label: `${k} max`,
-          min: l.min,
+          const B = Math.min(_.value, y[e].max - f);
+          y[e].min = B, I[e].rebuild(B, y[e].max);
+        }), t.addBinding(y[e], "max", {
+          label: `${z} max`,
+          min: d.min,
           max: A,
           step: f
         }).on("change", (_) => {
-          const B = Math.max(_.value, h[e].min + f);
-          h[e].max = B, I[e].rebuild(h[e].min, B);
+          const B = Math.max(_.value, y[e].min + f);
+          y[e].max = B, I[e].rebuild(y[e].min, B);
         });
       }
     }
-    if (u.computedLabels) {
+    if (p.computedLabels) {
       const t = n.addFolder({
         title: "\u{1F4CA} Calculados",
         expanded: true
-      }), e = u.computedLabels(w, P);
-      U = {
+      }), e = p.computedLabels(S, k);
+      D = {
         ...e
-      }, console.log("[Calculados]", U);
-      for (const l of Object.keys(e)) t.addBinding(U, l, {
+      }, console.log("[Calculados]", D);
+      for (const d of Object.keys(e)) t.addBinding(D, d, {
         readonly: true,
         view: "text",
         interval: 0
       });
-    } else U = null;
-    if (u.hasModal) {
+    } else D = null;
+    if (p.hasModal) {
       const t = n.addFolder({
         title: "\u26A1 Modal + Animaci\xF3n",
         expanded: true
@@ -725,28 +737,28 @@ Promise.all([
         scalePercent: 5,
         onStatusChange: () => {
           const f = O.getStatus();
-          e.mode = f.mode, e.frequency = f.frequency, e.period = f.period, e.dominant = f.dominant, e.state = f.state, D == null ? void 0 : D.refresh();
+          e.mode = f.mode, e.frequency = f.frequency, e.period = f.period, e.dominant = f.dominant, e.state = f.state, U == null ? void 0 : U.refresh();
         }
       });
-      let l = null;
-      const k = {
+      let d = null;
+      const z = {
         div: L.div,
         render: (f, T) => {
           var _a2;
-          l = f, L.render(f, T), ((_a2 = f == null ? void 0 : f.frequencies) == null ? void 0 : _a2.length) && (O.setResults(f), O.setMode(0), O.play(), de.modeIdx = 1, D == null ? void 0 : D.refresh());
+          d = f, L.render(f, T), ((_a2 = f == null ? void 0 : f.frequencies) == null ? void 0 : _a2.length) && (O.setResults(f), O.setMode(0), O.play(), de.modeIdx = 1, U == null ? void 0 : U.refresh());
         }
       };
       t.addButton({
         title: "\u25B6 Correr modal + animar"
       }).on("click", () => {
-        O.stop(), L.div.style.display = "block", u.runModal && u.runModal(re(), P, k);
+        O.stop(), L.div.style.display = "block", p.runModal && p.runModal(re(), k, z);
       }), t.addBinding(de, "modeIdx", {
         label: "Modo #",
         min: 1,
         max: 30,
         step: 1
       }).on("change", (f) => {
-        l && O.setMode(Math.round(f.value) - 1);
+        d && O.setMode(Math.round(f.value) - 1);
       }), t.addBinding(e, "mode", {
         readonly: true,
         view: "text",
@@ -779,10 +791,10 @@ Promise.all([
       }), t.addButton({
         title: "\u25B6 Reanudar"
       }).on("click", () => {
-        l && O.play();
+        d && O.play();
       });
     }
-    D = n;
+    U = n;
   }
   const rt = {
     deformedShape: true,
@@ -818,5 +830,5 @@ Promise.all([
     scalePercent: 5
   });
   const ce = new URLSearchParams(window.location.search).get("t"), W = ce && K.find((n) => n.id === ce) || K.find((n) => n.id === "zapata-aislada") || K[0];
-  W && (ge(W), (W.id === "zapata-aislada" || W.id === "zapata-viga-amarre") && setTimeout(() => H("iso"), 200));
+  W && (ge(W), (W.id === "zapata-aislada" || W.id === "zapata-viga-amarre") && setTimeout(() => Y("iso"), 200));
 });
