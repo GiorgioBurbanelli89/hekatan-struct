@@ -6,8 +6,8 @@ import { c as qe } from "./renderModalTable-29W4CuGz.js";
 import { z as ze, __tla as __tla_0 } from "./zapataVigaAmarre-B8jPBid3.js";
 import { z as Te, __tla as __tla_1 } from "./zapataAislada-C5pLal4q.js";
 import { z as Be, __tla as __tla_2 } from "./zapataAisladaValidacion-CH2Z4p3f.js";
-import { e as Ae, __tla as __tla_3 } from "./edificioConLosa-B6ep1s87.js";
-import { e as Ce, __tla as __tla_4 } from "./edificioConMuros-DugcPHOd.js";
+import { e as Ce, __tla as __tla_3 } from "./edificioConLosa-B6ep1s87.js";
+import { e as Ae, __tla as __tla_4 } from "./edificioConMuros-DugcPHOd.js";
 import { p as Oe, __tla as __tla_5 } from "./plane-Lr3MmG92.js";
 import { m as _e, __tla as __tla_6 } from "./membranaCSI-CDcH4Mdp.js";
 import { p as Ee, __tla as __tla_7 } from "./plateThin-C30Q-WjQ.js";
@@ -21,19 +21,20 @@ import { e as Le, __tla as __tla_14 } from "./edificioAceroV2-BUkqgOKc.js";
 import { e as Ve, __tla as __tla_15 } from "./edificioMixto-HNymcXyc.js";
 import { e as Ne, __tla as __tla_16 } from "./edificioMuros-CHnHAY7D.js";
 import { e as Xe, __tla as __tla_17 } from "./edificioDual-DndxKuq6.js";
-import { t as Ye, __tla as __tla_18 } from "./trussGen-CYTV_Ioz.js";
-import { b as He, __tla as __tla_19 } from "./barraAxial-Bnm-0MrG.js";
-import { p as Ke, __tla as __tla_20 } from "./portico2D-kxfBcLlJ.js";
-import { t as Ze, __tla as __tla_21 } from "./tower3D-tLRX3VEB.js";
-import { g as Ge, __tla as __tla_22 } from "./galpon-BaNuuhBd.js";
-import { e as Je, __tla as __tla_23 } from "./edifAcero-DWr_Efuo.js";
-import { m as We, __tla as __tla_24 } from "./mezanine-CrrnYAh3.js";
-import { f as Q, d as se, a as fe, b as me, t as Qe, g as et, s as le, c as tt, m as nt, e as it } from "./units-B3ou5gwn.js";
-import { a as at } from "./exampleVersion-D1A_5i59.js";
+import { c as Ye, __tla as __tla_18 } from "./columnaCft-CVYRPE3H.js";
+import { t as He, __tla as __tla_19 } from "./trussGen-CYTV_Ioz.js";
+import { b as Ke, __tla as __tla_20 } from "./barraAxial-Bnm-0MrG.js";
+import { p as Ze, __tla as __tla_21 } from "./portico2D-kxfBcLlJ.js";
+import { t as Ge, __tla as __tla_22 } from "./tower3D-tLRX3VEB.js";
+import { g as Je, __tla as __tla_23 } from "./galpon-BaNuuhBd.js";
+import { e as We, __tla as __tla_24 } from "./edifAcero-DWr_Efuo.js";
+import { m as Qe, __tla as __tla_25 } from "./mezanine-CrrnYAh3.js";
+import { f as Q, d as se, a as fe, b as me, t as et, g as tt, s as le, c as nt, m as it, e as at } from "./units-B3ou5gwn.js";
+import { a as ot } from "./exampleVersion-D1A_5i59.js";
 import "./Text-z8x6SwE-.js";
 import "./analyze-ClLKGn9k.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
-import { __tla as __tla_25 } from "./didacticCpp-Bnj9OwqQ.js";
+import { __tla as __tla_26 } from "./didacticCpp-Bnj9OwqQ.js";
 import "./planeQ4-DsCzHfbV.js";
 Promise.all([
   (() => {
@@ -191,6 +192,12 @@ Promise.all([
       return __tla_25;
     } catch {
     }
+  })(),
+  (() => {
+    try {
+      return __tla_26;
+    } catch {
+    }
   })()
 ]).then(async () => {
   function ue(n) {
@@ -254,17 +261,17 @@ Promise.all([
         ...c
       ]);
       const t = M.length;
-      let l = 1 / 0, q = 1 / 0, m = 1 / 0, T = -1 / 0, F = -1 / 0, A = -1 / 0;
-      for (const c of M) c[0] < l && (l = c[0]), c[0] > T && (T = c[0]), c[1] < q && (q = c[1]), c[1] > F && (F = c[1]), c[2] < m && (m = c[2]), c[2] > A && (A = c[2]);
-      const _ = Math.sqrt((T - l) ** 2 + (F - q) ** 2 + (A - m) ** 2) || 1;
+      let l = 1 / 0, q = 1 / 0, m = 1 / 0, T = -1 / 0, F = -1 / 0, C = -1 / 0;
+      for (const c of M) c[0] < l && (l = c[0]), c[0] > T && (T = c[0]), c[1] < q && (q = c[1]), c[1] > F && (F = c[1]), c[2] < m && (m = c[2]), c[2] > C && (C = c[2]);
+      const _ = Math.sqrt((T - l) ** 2 + (F - q) ** 2 + (C - m) ** 2) || 1;
       let B = 0;
       for (let c = 0; c < t; c++) {
         const V = f[c * 6] || 0, Y = f[c * 6 + 1] || 0, E = f[c * 6 + 2] || 0, N = Math.sqrt(V * V + Y * Y + E * E);
         N > B && (B = N);
       }
-      const G = B > 1e-12 ? _ * v / 100 / B : 1, C = performance.now(), $ = () => {
+      const G = B > 1e-12 ? _ * v / 100 / B : 1, A = performance.now(), $ = () => {
         var _a2;
-        const c = (performance.now() - C) / 1e3, V = Math.sin(2 * Math.PI * e * c) * G, Y = new Array(t);
+        const c = (performance.now() - A) / 1e3, V = Math.sin(2 * Math.PI * e * c) * G, Y = new Array(t);
         for (let E = 0; E < t; E++) {
           const N = M[E];
           Y[E] = [
@@ -319,21 +326,22 @@ Promise.all([
     };
   }
   const K = [
-    He,
-    Ye,
     Ke,
+    He,
     Ze,
     Ge,
+    Je,
+    Ye,
     De,
     Ue,
     Le,
     Ve,
     Ne,
     Xe,
-    Ae,
     Ce,
-    Je,
+    Ae,
     We,
+    Qe,
     Ee,
     Re,
     Fe,
@@ -383,13 +391,13 @@ Promise.all([
         a,
         u
       ];
-    })), at.v++, ye(), n.build(re(), k, L), n.defaultShellResult) {
+    })), ot.v++, ye(), n.build(re(), k, L), n.defaultShellResult) {
       const a = R.__settings;
       (a == null ? void 0 : a.shellResults) && (a.shellResults.val = n.defaultShellResult), (a == null ? void 0 : a.loads) && (a.loads.val = true), (a == null ? void 0 : a.supports) && (a.supports.val = true);
     }
-    st(n.availableShellResults), ot(), ve(), ee();
+    rt(n.availableShellResults), st(), ve(), ee();
   }
-  function ot() {
+  function st() {
     var _a;
     const n = R.__settings;
     if (!(n == null ? void 0 : n.deformScale)) return;
@@ -432,7 +440,7 @@ Promise.all([
     const e = R.__settings;
     (e == null ? void 0 : e.gridSize) && (e.gridSize.val = Math.max(Math.ceil(Math.max(I, z) * 1.2), 2));
   }
-  function st(n) {
+  function rt(n) {
     const a = R.querySelectorAll("select"), o = Array.from(a).find((v) => Array.from(v.options).some((g) => g.value === "bendingXX"));
     if (!o) return;
     for (const v of Array.from(o.options)) {
@@ -449,7 +457,7 @@ Promise.all([
     const n = {
       ...S
     };
-    for (const [a, o] of Object.entries(x.params)) o.unitType === "force" && (n[a] = Qe(S[a])), o.unitType === "moment" && (n[a] = et(S[a]));
+    for (const [a, o] of Object.entries(x.params)) o.unitType === "force" && (n[a] = et(S[a])), o.unitType === "moment" && (n[a] = tt(S[a]));
     return n;
   }
   function J() {
@@ -630,26 +638,26 @@ Promise.all([
       if (t.boolean) {
         w[e] = S[e] >= 0.5, q.addBinding(w, e, {
           label: t.label ?? e
-        }).on("change", (C) => {
-          S[e] = C.value ? 1 : 0, (x == null ? void 0 : x.onParamChange) && (x.onParamChange(e, S), n.refresh()), M();
+        }).on("change", (A) => {
+          S[e] = A.value ? 1 : 0, (x == null ? void 0 : x.onParamChange) && (x.onParamChange(e, S), n.refresh()), M();
         });
         continue;
       }
-      const m = le(t.label ?? e), T = t.unitType === "force" ? ` ${tt()}` : t.unitType === "moment" ? ` ${nt()}` : t.unitType === "disp" ? ` ${it()}` : "", A = {
+      const m = le(t.label ?? e), T = t.unitType === "force" ? ` ${nt()}` : t.unitType === "moment" ? ` ${it()}` : t.unitType === "disp" ? ` ${at()}` : "", C = {
         label: m + T
       };
-      t.options !== void 0 ? A.options = t.options : (t.min !== void 0 && (A.min = t.min), t.max !== void 0 && (A.max = t.max), t.step !== void 0 && (A.step = t.step));
+      t.options !== void 0 ? C.options = t.options : (t.min !== void 0 && (C.min = t.min), t.max !== void 0 && (C.max = t.max), t.step !== void 0 && (C.step = t.step));
       let _ = null;
-      const B = (C, $) => {
+      const B = (A, $) => {
         var _a2;
         if (_) try {
           (_a2 = _.dispose) == null ? void 0 : _a2.call(_);
         } catch {
         }
         const c = {
-          ...A
+          ...C
         };
-        C !== void 0 && (c.min = C), $ !== void 0 && (c.max = $), c.min !== void 0 && S[e] < c.min && (S[e] = c.min), c.max !== void 0 && S[e] > c.max && (S[e] = c.max), _ = q.addBinding(S, e, c), _.on("change", () => {
+        A !== void 0 && (c.min = A), $ !== void 0 && (c.max = $), c.min !== void 0 && S[e] < c.min && (S[e] = c.min), c.max !== void 0 && S[e] > c.max && (S[e] = c.max), _ = q.addBinding(S, e, c), _.on("change", () => {
           (x == null ? void 0 : x.onParamChange) && (x.onParamChange(e, S), n.refresh()), t.regenOnChange ? window.setTimeout(() => {
             ee(), J();
           }, 80) : M();
@@ -659,12 +667,12 @@ Promise.all([
         min: t.min,
         max: t.max
       }, I[e] = {
-        rebuild: (C, $) => B(C, $)
+        rebuild: (A, $) => B(A, $)
       });
       const G = P.get(e);
-      if (G && X) for (const C of G) q.addBinding(X, C.key, {
+      if (G && X) for (const A of G) q.addBinding(X, A.key, {
         readonly: true,
-        label: C.label,
+        label: A.label,
         view: "text"
       });
     }
@@ -675,7 +683,7 @@ Promise.all([
         expanded: false
       });
       for (const t of d) {
-        const l = x.params[t], q = le(l.label ?? t), m = l.step ?? 1, T = Math.abs(l.max - l.min), F = l.min - T * 5, A = l.max + T * 5;
+        const l = x.params[t], q = le(l.label ?? t), m = l.step ?? 1, T = Math.abs(l.max - l.min), F = l.min - T * 5, C = l.max + T * 5;
         e.addBinding(y[t], "min", {
           label: `${q} min`,
           min: F,
@@ -687,7 +695,7 @@ Promise.all([
         }), e.addBinding(y[t], "max", {
           label: `${q} max`,
           min: l.min,
-          max: A,
+          max: C,
           step: m
         }).on("change", (_) => {
           const B = Math.max(_.value, y[t].min + m);
@@ -790,7 +798,7 @@ Promise.all([
     }
     D = n;
   }
-  const rt = {
+  const lt = {
     deformedShape: true,
     displayScale: -1.5,
     shellResults: "pressure",
@@ -806,7 +814,7 @@ Promise.all([
       analyzeOutputs: ae
     },
     objects3D: he,
-    settingsObj: rt
+    settingsObj: lt
   });
   document.body.append(R, ke({
     sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct",
