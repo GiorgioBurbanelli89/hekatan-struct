@@ -1,5 +1,5 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { p as r, __tla as __tla_0 } from "./placaBase-CrclYche.js";
+import { p as r, __tla as __tla_0 } from "./placaBase-BFV_YZvI.js";
 import { r as m } from "./runExampleStandalone-BkCSvKFl.js";
 import "./analyze-ClLKGn9k.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";

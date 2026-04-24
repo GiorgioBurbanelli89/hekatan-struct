@@ -218,19 +218,19 @@ let __tla = Promise.all([
       }
     },
     build(e, d) {
-      const c = [], w = [], h = /* @__PURE__ */ new Map(), C = /* @__PURE__ */ new Map(), v = /* @__PURE__ */ new Map(), L = /* @__PURE__ */ new Map(), k = /* @__PURE__ */ new Map(), A = /* @__PURE__ */ new Map(), z = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), I = /* @__PURE__ */ new Map(), R = e.E_steel / 2.6, O = 77, r = (t, s, n) => (c.push([
+      const c = [], g = [], h = /* @__PURE__ */ new Map(), v = /* @__PURE__ */ new Map(), C = /* @__PURE__ */ new Map(), L = /* @__PURE__ */ new Map(), k = /* @__PURE__ */ new Map(), A = /* @__PURE__ */ new Map(), z = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), I = /* @__PURE__ */ new Map(), R = e.E_steel / 2.6, O = 77, r = (t, s, n) => (c.push([
         t,
         s,
         n
       ]), c.length - 1), P = (t, s, n, o, l) => {
-        w.push([
+        g.push([
           t,
           s,
           n,
           o
         ]);
-        const a = w.length - 1;
-        h.set(a, l), C.set(a, e.E_steel), v.set(a, 0.3), L.set(a, O), k.set(a, 0), A.set(a, 0), z.set(a, 0), H.set(a, 0), I.set(a, R);
+        const a = g.length - 1;
+        h.set(a, l), v.set(a, e.E_steel), C.set(a, 0.3), L.set(a, O), k.set(a, 0), A.set(a, 0), z.set(a, 0), H.set(a, 0), I.set(a, R);
       }, x = ((t) => {
         const s = e.edge_dist, n = e.B / 2 - s, o = e.H / 2 - s;
         return t === 4 ? [
@@ -369,13 +369,13 @@ let __tla = Promise.all([
         for (let n = 0; n <= $; n++) {
           let o = -e.B / 2 + n * X, l = -e.H / 2 + t * G, a = false;
           for (const [f, F] of x) {
-            const m = o - f, g = l - F, b = Math.sqrt(m * m + g * g);
+            const m = o - f, w = l - F, b = Math.sqrt(m * m + w * w);
             if (b < i * 0.35) {
               a = true;
               break;
             }
             if (b < i && b > 1e-9) {
-              o = f + m / b * i, l = F + g / b * i;
+              o = f + m / b * i, l = F + w / b * i;
               break;
             }
           }
@@ -388,7 +388,7 @@ let __tla = Promise.all([
         if (n < 0 || o < 0 || l < 0 || a < 0) continue;
         const f = -e.B / 2 + (s + 0.5) * X, F = -e.H / 2 + (t + 0.5) * G;
         let m = false;
-        for (const [g, b] of x) if (Math.sqrt((f - g) ** 2 + (F - b) ** 2) < i * 0.95) {
+        for (const [w, b] of x) if (Math.sqrt((f - w) ** 2 + (F - b) ** 2) < i * 0.95) {
           m = true;
           break;
         }
@@ -464,13 +464,13 @@ let __tla = Promise.all([
           ]);
         }
       }
-      d.nodes.val = c, d.elements.val = w, d.nodeInputs.val = {
+      d.nodes.val = c, d.elements.val = g, d.nodeInputs.val = {
         supports: j,
         loads: J
       }, d.elementInputs.val = {
         thicknesses: h,
-        elasticities: C,
-        poissonsRatios: v,
+        elasticities: v,
+        poissonsRatios: C,
         densities: L,
         areas: k,
         momentsOfInertiaY: A,
@@ -479,10 +479,18 @@ let __tla = Promise.all([
         shearModuli: I
       };
       try {
-        d.deformOutputs.val = fe(c, w, {
+        d.deformOutputs.val = fe(c, g, {
           supports: j,
           loads: J
-        }, d.elementInputs.val), d.analyzeOutputs.val = ue(c, w, d.elementInputs.val, d.deformOutputs.val);
+        }, d.elementInputs.val);
+        const t = ue(c, g, d.elementInputs.val, d.deformOutputs.val);
+        t.colorMapRanges = {
+          ...t.colorMapRanges,
+          vonMises: [
+            0,
+            e.Fy_plate
+          ]
+        }, d.analyzeOutputs.val = t;
       } catch (t) {
         console.error("[placa-base] solver error:", (t == null ? void 0 : t.message) || t), d.deformOutputs.val = {}, d.analyzeOutputs.val = {};
       }
@@ -514,11 +522,11 @@ let __tla = Promise.all([
         a.position.set(t, s, f), p.push(a);
         const F = new W(e.d_bolt * 0.9, e.d_bolt * 0.9, n, 6), m = new B(F, ce);
         m.rotation.x = Math.PI / 2, m.position.set(t, s, e.t_plate + n / 2), p.push(m);
-        const g = new W(e.d_hole / 2 * 1.4, e.d_hole / 2 * 1.4, 4e-3, 20), b = new D({
+        const w = new W(e.d_hole / 2 * 1.4, e.d_hole / 2 * 1.4, 4e-3, 20), b = new D({
           color: 8947848,
           metalness: 0.6,
           roughness: 0.4
-        }), T = new B(g, b);
+        }), T = new B(w, b);
         T.rotation.x = Math.PI / 2, T.position.set(t, s, e.t_plate + 2e-3), p.push(T);
         const me = new Me(i, i * 1.05, 32), _e = new ne({
           color: 16776960,
@@ -532,17 +540,17 @@ let __tla = Promise.all([
         opacity: 0.18,
         side: se
       }), ee = new B(ie, re);
-      ee.position.set(0, 0, -e.h_ped + 1e-3), p.push(ee), d.objects3D.val = p, console.log(`[Placa Base AISC \xA7J8] Shells=${w.length}, Nodos=${c.length}
+      ee.position.set(0, 0, -e.h_ped + 1e-3), p.push(ee), d.objects3D.val = p, console.log(`[Placa Base AISC \xA7J8] Shells=${g.length}, Nodos=${c.length}
   Placa ${e.B}\xD7${e.H}\xD7${e.t_plate}m, Pernos=${e.bolt_layout} \xD8${e.d_bolt * 1e3}mm
   Pedestal ${e.B_ped}\xD7${e.H_ped}\xD7${e.h_ped}m f'c=${e.fc / 1e3} MPa`);
     },
     computedLabels(e) {
-      const h = e.B * e.H, C = Math.min(e.B_ped * e.H_ped, h * 4), v = Math.min(Math.sqrt(C / h), 2), L = 0.85 * e.fc * h * v, k = 0.65 * L, A = Math.max(0, (e.B - 0.95 * e.d_col) / 2), z = Math.max(0, (e.H - 0.8 * e.bf_col) / 2), H = Math.sqrt(e.d_col * e.bf_col) / 4, I = Math.max(A, z, H), R = e.Pu / h, O = I * Math.sqrt(2 * R / (0.9 * e.Fy_plate)), r = e.t_plate / O, P = e.Mu / Math.max(e.Pu, 1e-3), Z = e.bolt_layout / 2, x = e.H / 2 - e.edge_dist, i = Math.max(0, (e.Mu - e.Pu * x) / (2 * x)), $ = i / Math.max(Z, 1), y = Math.PI * (e.d_bolt / 2) ** 2, G = 0.75 * (0.75 * e.Fu_bolt * y), _ = e.Pu / k, M = $ / G;
+      const h = e.B * e.H, v = Math.min(e.B_ped * e.H_ped, h * 4), C = Math.min(Math.sqrt(v / h), 2), L = 0.85 * e.fc * h * C, k = 0.65 * L, A = Math.max(0, (e.B - 0.95 * e.d_col) / 2), z = Math.max(0, (e.H - 0.8 * e.bf_col) / 2), H = Math.sqrt(e.d_col * e.bf_col) / 4, I = Math.max(A, z, H), R = e.Pu / h, O = I * Math.sqrt(2 * R / (0.9 * e.Fy_plate)), r = e.t_plate / O, P = e.Mu / Math.max(e.Pu, 1e-3), Z = e.bolt_layout / 2, x = e.H / 2 - e.edge_dist, i = Math.max(0, (e.Mu - e.Pu * x) / (2 * x)), $ = i / Math.max(Z, 1), y = Math.PI * (e.d_bolt / 2) ** 2, G = 0.75 * (0.75 * e.Fu_bolt * y), _ = e.Pu / k, M = $ / G;
       return {
         "\u2500\u2500 Geometr\xEDa \u2500\u2500": "",
         "A1 (\xE1rea placa)": `${(h * 1e4).toFixed(0)} cm\xB2`,
-        "A2 (\xE1rea pedestal)": `${(C * 1e4).toFixed(0)} cm\xB2`,
-        "\u221A(A2/A1)": v.toFixed(2),
+        "A2 (\xE1rea pedestal)": `${(v * 1e4).toFixed(0)} cm\xB2`,
+        "\u221A(A2/A1)": C.toFixed(2),
         "m (voladizo X)": `${(A * 1e3).toFixed(0)} mm`,
         "n (voladizo Y)": `${(z * 1e3).toFixed(0)} mm`,
         "\u03BBn' (Thornton)": `${(H * 1e3).toFixed(0)} mm`,
