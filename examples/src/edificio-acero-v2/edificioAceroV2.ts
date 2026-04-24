@@ -1,11 +1,19 @@
 /**
- * Edificio Acero (v2) — Pórtico de acero W puro.
+ * Edificio Acero (v2) — Pórtico de acero W puro (OMF/IMF/SMF).
  *
- * Columnas y vigas de acero perfil W (AISC). Losa metal-deck + concreto (15 cm total).
+ * Columnas y vigas de acero perfil W (AISC Steel Construction Manual, 16th Ed).
+ * Losa metal-deck + concreto colaborante (12 cm total, composite).
  * Sin muros de corte ni diagonales.
  *
- * Caso típico AISC 360 / NEC-SE-AC (Ecuador) para oficinas, estacionamientos,
- * comerciales ligeros 3-10 pisos.
+ * Códigos aplicables:
+ *   - AISC 360-22   (Specification for Structural Steel Buildings)
+ *   - AISC 341-22   (Seismic Provisions for Structural Steel Buildings)
+ *                   OMF (R=3.5), IMF (R=4.5), SMF (R=8)
+ *   - ASCE/SEI 7-22, Table 12.2-1  (Moment-resisting frame systems in steel)
+ *   - AISC Steel Construction Manual, 16th Ed (perfiles W, HSS, HSS round)
+ *   - NEC-SE-AC (Ecuador)  (equivalente local)
+ *
+ * Caso típico: oficinas, estacionamientos, comerciales ligeros de 3-10 pisos.
  */
 import { edificioAporticado } from "../edificio-aporticado/edificioAporticado";
 import type { ExampleDef } from "../workspace/exampleRegistry";

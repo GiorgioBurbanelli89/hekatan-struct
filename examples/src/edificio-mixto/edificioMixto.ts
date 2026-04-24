@@ -1,11 +1,18 @@
 /**
- * Edificio Mixto — Columnas Hormigón + Vigas Acero W.
+ * Edificio Mixto — Columnas Hormigón + Vigas Acero W (Composite).
  *
- * Sistema estructural mixto compuesto (composite) muy popular en edificios
- * altos: la columna de hormigón aporta rigidez gravitacional y las vigas de
- * acero W aligeran piso + permiten luces mayores. Losa colaborante 12 cm.
+ * Sistema estructural mixto compuesto muy popular en edificios altos:
+ * columnas de hormigón (rigidez gravitacional y lateral) + vigas de acero W
+ * con shear studs (luces mayores, peso menor). Losa colaborante 12 cm.
  *
- * NEC-SE-HM + NEC-SE-AC / AISC 360 Part II.
+ * Códigos aplicables:
+ *   - AISC 360-22, Chapter I   (Design of Composite Members)
+ *   - AISC 341-22, Chapter G   (Composite Intermediate Moment Frames, IMF)
+ *   - ACI 318-22, Chapter 18    (Concrete column seismic detailing)
+ *   - ASCE/SEI 7-22, Table 12.2-1  (Composite systems, R=5–8 según detailing)
+ *   - NEC-SE-HM + NEC-SE-AC (Ecuador)
+ *
+ * Caso típico: edificios de 8-20 pisos con grandes luces arquitectónicas.
  */
 import { edificioAporticado } from "../edificio-aporticado/edificioAporticado";
 import type { ExampleDef } from "../workspace/exampleRegistry";

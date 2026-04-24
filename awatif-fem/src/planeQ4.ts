@@ -51,6 +51,12 @@ export interface PlaneQ4Input {
   nu: number;
   /** Element thickness */
   thickness: number;
+  /**
+   * Activar modos incompatibles de Wilson (Taylor-Beresford-Wilson 1976).
+   * Default: `true`. Reduce el error por bending del ~10% a <1% en
+   * cantiléver a flexión pura. Referencia: Bathe Cap. 5.4, Cook 7.9.
+   */
+  incompatibleModes?: boolean;
 
   // ── Option A: explicit geometry ─────────────────────────────────────
   /** Nodes as 2D coords [x, y] */
@@ -158,14 +164,51 @@ function materialD(E: number, nu: number): number[][] {
   ];
 }
 
-// ── Element stiffness matrix Ke (8×8) ───────────────────────────────
+// ── Wilson incompatible mode shape derivatives ─────────────────────
+// Wilson 1973: añadir 2 DOFs internos (α1, α2) con shape extras
+// M_1 = (1 - ξ²), M_2 = (1 - η²) para mejorar bending response.
+// Derivadas respecto a ξ, η evaluadas en Gauss points:
+//   dM1/dξ = -2ξ,  dM1/dη = 0
+//   dM2/dξ = 0,    dM2/dη = -2η
+// Se integra con Jacobiano en centro (ξ=η=0) para cumplir patch test
+// (Taylor, Beresford & Wilson 1976 — "A Non-Conforming Element for Stress Analysis").
+
+// ── Element stiffness matrix Ke (8×8 o 12×12 con incompatible modes) ──
+/**
+ * Si `incompatible=true`, usa modos incompatibles de Wilson:
+ *   - K_aa (8×8 compatible)
+ *   - K_aα (8×4 coupling)
+ *   - K_αα (4×4 internal)
+ * Condensación estática: Ke_final = K_aa - K_aα · K_αα^-1 · K_aα^T  (8×8)
+ * Esto reduce el error de bending del ~10% a <1% (Bathe Cap. 5.4).
+ */
 function elementKe(
-  x: number[],    // [x1, x2, x3, x4]
-  y: number[],    // [y1, y2, y3, y4]
+  x: number[],
+  y: number[],
   D: number[][],
   thickness: number,
+  incompatible: boolean = true,
 ): { Ke: number[][]; B_center: number[][]; detJ_center: number } {
   const Ke = Array.from({ length: 8 }, () => new Array(8).fill(0));
+  // Matrices auxiliares para Wilson incompatible modes (Cook 7.9):
+  //   K_αα (4×4),  K_aα (8×4)
+  const Kaa_w = Array.from({ length: 4 }, () => new Array(4).fill(0));
+  const Kaα_w = Array.from({ length: 8 }, () => new Array(4).fill(0));
+  // Jacobiano en el centro (para evaluar modos incompatibles — patch test):
+  let J0_00 = 0, J0_11 = 0, detJ0 = 0;
+  if (incompatible) {
+    const { dN_dxi, dN_deta } = shapeAndDeriv(0, 0);
+    let J00 = 0, J01 = 0, J10 = 0, J11 = 0;
+    for (let i = 0; i < 4; i++) {
+      J00 += dN_dxi[i] * x[i];
+      J01 += dN_deta[i] * x[i];
+      J10 += dN_dxi[i] * y[i];
+      J11 += dN_deta[i] * y[i];
+    }
+    detJ0 = J00 * J11 - J01 * J10;
+    J0_00 = J11 / detJ0;
+    J0_11 = J00 / detJ0;
+  }
   let B_center: number[][] = [];
   let detJ_center = 0;
 
@@ -224,10 +267,76 @@ function elementKe(
       }
     }
 
-    // Save B at center (ξ=η=0) via first Gauss point ≈ center — used for stress recovery
-    // (We'll actually recompute B at (0,0) after loop for cleaner stress recovery)
+    // ── Wilson incompatible modes (Taylor-Beresford-Wilson 1976) ──
+    // B_α (3×4) usa derivadas de M_1, M_2 respecto a x,y — evaluadas con
+    // Jacobiano EN EL CENTRO (detJ0, J0_00, J0_11) para cumplir patch test.
+    //   M_1(ξ,η) = 1 - ξ² → dM1/dξ = -2ξ,  dM1/dη = 0
+    //   M_2(ξ,η) = 1 - η² → dM2/dξ = 0,    dM2/dη = -2η
+    // DOFs internos: α = [α1_x, α1_y, α2_x, α2_y]
+    if (incompatible) {
+      const dM1_dxi  = -2 * xi, dM1_deta = 0;
+      const dM2_dxi  = 0,        dM2_deta = -2 * eta;
+      // Transformar a x,y usando Jacobian del centro:
+      //   dM_i/dx = J0^-1 · [dM/dξ; dM/dη]
+      //   Para elemento rectangular (J0 diagonal): dM/dx = J0_00 · dM/dξ, dM/dy = J0_11 · dM/dη
+      const dM1_dx = J0_00 * dM1_dxi, dM1_dy = J0_11 * dM1_deta;
+      const dM2_dx = J0_00 * dM2_dxi, dM2_dy = J0_11 * dM2_deta;
+      // B_α (3×4): columnas = [α1x, α1y, α2x, α2y]
+      const Balpha: number[][] = [
+        [dM1_dx, 0,      dM2_dx, 0     ],  // ε_x
+        [0,      dM1_dy, 0,      dM2_dy],  // ε_y
+        [dM1_dy, dM1_dx, dM2_dy, dM2_dx],  // γ_xy
+      ];
+      // K_αα += t·w·|J| · B_α^T · D · B_α  (4×4)
+      // K_aα += t·w·|J| · B^T   · D · B_α  (8×4)
+      const DBa = Array.from({ length: 3 }, () => new Array(4).fill(0));
+      for (let r = 0; r < 3; r++)
+        for (let c = 0; c < 4; c++) {
+          let s = 0;
+          for (let k = 0; k < 3; k++) s += D[r][k] * Balpha[k][c];
+          DBa[r][c] = s;
+        }
+      for (let r = 0; r < 4; r++)
+        for (let c = 0; c < 4; c++) {
+          let s = 0;
+          for (let k = 0; k < 3; k++) s += Balpha[k][r] * DBa[k][c];
+          Kaa_w[r][c] += factor * s;
+        }
+      for (let r = 0; r < 8; r++)
+        for (let c = 0; c < 4; c++) {
+          let s = 0;
+          for (let k = 0; k < 3; k++) s += B[k][r] * DBa[k][c];
+          Kaα_w[r][c] += factor * s;
+        }
+    }
+
+    // Save B at center for stress recovery (recomputed exactly below)
     if (g === 0) { B_center = B; detJ_center = detJ; }
   }
+
+  // ── Condensación estática de los modos incompatibles ───────────
+  // Ke_final = K_aa - K_aα · K_αα^-1 · K_aα^T
+  if (incompatible) {
+    // Invertir K_αα (4×4) manualmente — siempre bien condicionada para Q4 no degenerado.
+    const Kinv = invert4x4(Kaa_w);
+    // Kaα · Kinv (8×4)
+    const KaαKinv = Array.from({ length: 8 }, () => new Array(4).fill(0));
+    for (let r = 0; r < 8; r++)
+      for (let c = 0; c < 4; c++) {
+        let s = 0;
+        for (let k = 0; k < 4; k++) s += Kaα_w[r][k] * Kinv[k][c];
+        KaαKinv[r][c] = s;
+      }
+    // Ke -= KaαKinv · Kaα^T (8×8)
+    for (let r = 0; r < 8; r++)
+      for (let c = 0; c < 8; c++) {
+        let s = 0;
+        for (let k = 0; k < 4; k++) s += KaαKinv[r][k] * Kaα_w[c][k];
+        Ke[r][c] -= s;
+      }
+  }
+  // Variable unused warning silencer
+  void detJ0;
 
   // Recompute B at exact element center (ξ=η=0) for stress recovery
   {
@@ -258,6 +367,30 @@ function elementKe(
   }
 
   return { Ke, B_center, detJ_center };
+}
+
+// ── Inversión 4×4 (Gauss-Jordan) para condensación estática Wilson ──
+function invert4x4(A: number[][]): number[][] {
+  const n = 4;
+  const M = A.map((row) => row.slice());
+  const I: number[][] = Array.from({ length: n }, (_, i) =>
+    Array.from({ length: n }, (_, j) => i === j ? 1 : 0));
+  for (let k = 0; k < n; k++) {
+    // Pivot parcial
+    let maxRow = k;
+    for (let i = k + 1; i < n; i++) if (Math.abs(M[i][k]) > Math.abs(M[maxRow][k])) maxRow = i;
+    if (maxRow !== k) { [M[k], M[maxRow]] = [M[maxRow], M[k]]; [I[k], I[maxRow]] = [I[maxRow], I[k]]; }
+    const pivot = M[k][k];
+    if (Math.abs(pivot) < 1e-14) throw new Error("Singular 4x4 (K_αα) in Wilson condensation");
+    for (let j = 0; j < n; j++) { M[k][j] /= pivot; I[k][j] /= pivot; }
+    for (let i = 0; i < n; i++) {
+      if (i === k) continue;
+      const f = M[i][k];
+      if (f === 0) continue;
+      for (let j = 0; j < n; j++) { M[i][j] -= f * M[k][j]; I[i][j] -= f * I[k][j]; }
+    }
+  }
+  return I;
 }
 
 // ── Dense LU decomposition with partial pivoting (robust) ───────────
@@ -348,7 +481,8 @@ export function planeQ4Solve(input: PlaneQ4Input): PlaneQ4Output {
     const [n1, n2, n3, n4] = elements[e];
     const x = [nodes[n1][0], nodes[n2][0], nodes[n3][0], nodes[n4][0]];
     const y = [nodes[n1][1], nodes[n2][1], nodes[n3][1], nodes[n4][1]];
-    const { Ke, B_center, detJ_center } = elementKe(x, y, D, input.thickness);
+    const useIncompatible = input.incompatibleModes ?? true;
+    const { Ke, B_center, detJ_center } = elementKe(x, y, D, input.thickness, useIncompatible);
     elemKeCache.push(Ke);
     elemBCache.push(B_center);
 

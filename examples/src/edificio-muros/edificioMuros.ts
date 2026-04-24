@@ -1,12 +1,22 @@
 /**
- * Edificio Muros — Hormigón + Muros de Corte perimetrales.
+ * Edificio Muros — Hormigón + Muros de Corte perimetrales (Shear Walls).
  *
- * Sistema muros de corte (shear walls) actuando como diagonales rígidas
- * (en este ejemplo modelados como diagonales perimetrales, proxy simplificado).
- * Sin diagonales metálicas adicionales. Losa + muros comparten la rigidez lateral.
+ * Sistema de muros de corte actuando como elementos principales de resistencia
+ * lateral. En este ejemplo los muros perimetrales se modelan como diagonales
+ * rígidas (bracesMode=1 proxy); en implementación completa serían shell Q4
+ * con discretización ETABS 25 cm. Pórticos + muros comparten cargas laterales.
  *
- * Típico para edificios altos de hormigón armado (6+ pisos) donde los pórticos
- * solos no alcanzan para limitar la deriva sísmica.
+ * Códigos aplicables:
+ *   - ACI 318-22, Chapter 18.10   (Special Structural Walls, SSW)
+ *   - ACI 318-22, Chapter 11       (Wall design for in-plane and out-of-plane)
+ *   - ASCE/SEI 7-22, Table 12.2-1  (Building Frame Systems w/ Special RC Shear Walls, R=6)
+ *                                   (Bearing Wall Systems w/ Ordinary RC Shear Walls, R=4)
+ *   - ASCE/SEI 7-22 §12.2.5.4      (Dual system requirements si se combina)
+ *   - NEC-SE-DS sismo + NEC-SE-HM (Ecuador)
+ *
+ * Típico para edificios altos de hormigón armado (6+ pisos) donde los
+ * pórticos solos no alcanzan para limitar la deriva sísmica (ASCE 7-22
+ * Table 12.12-1: δ_x ≤ 0.020 h_sx para RCC ordinary occupancy).
  */
 import { edificioAporticado } from "../edificio-aporticado/edificioAporticado";
 import type { ExampleDef } from "../workspace/exampleRegistry";

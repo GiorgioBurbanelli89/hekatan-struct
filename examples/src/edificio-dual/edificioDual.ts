@@ -1,15 +1,27 @@
 /**
- * Edificio Dual — Mixto + Muros de Corte + Diagonales.
+ * Edificio Dual — Mixto + Muros de Corte + Diagonales (Dual System).
  *
- * Sistema estructural dual más sofisticado:
- *   - Columnas: Hormigón (rigidez gravitacional)
- *   - Vigas: Acero W (luces grandes)
- *   - Muros de corte perimetrales
- *   - Diagonales en TODOS los vanos (extra rigidez lateral)
+ * Sistema estructural dual sofisticado para edificios altos:
+ *   - Columnas: Hormigón (rigidez gravitacional + lateral)
+ *   - Vigas: Acero W composite (luces grandes)
+ *   - Muros de corte hormigón (resistencia lateral primaria)
+ *   - Diagonales de acero en TODOS los vanos (rigidez lateral redundante)
  *
- * Caso típico de edificios altos (15+ pisos) en zona sísmica alta. Sistema
- * redundante: si muros fallan, diagonales toman la carga; si diagonales
- * pandean, muros resisten (principio de dual system en ASCE 7 / NEC-SE-DS).
+ * Códigos aplicables (sistema dual):
+ *   - ASCE/SEI 7-22, Table 12.2-1, categoría "Dual Systems":
+ *       • Special RC shear walls + Special moment frames  R=7, Ωo=2.5, Cd=5.5
+ *       • Special RC shear walls + Intermediate moment    R=6.5
+ *   - ASCE/SEI 7-22 §12.2.5.4  (Moment frames capaces de 25% de V base)
+ *   - ACI 318-22, Chapter 18   (detallado sísmico muros + pórticos)
+ *   - AISC 341-22 / 360-22     (diagonales y componentes acero)
+ *   - NEC-SE-DS sismo  (sistema dual art. 4.2)
+ *
+ * Redundancia del sistema (ASCE 7-22 §12.3.4):
+ *   Si muros fallan → diagonales toman la carga.
+ *   Si diagonales pandean → muros y pórticos resisten.
+ *   ρ = 1.0 (no penalty factor) por ser dual redundante.
+ *
+ * Caso típico: edificios altos (15+ pisos) en SDC D–F con alta sismicidad.
  */
 import { edificioAporticado } from "../edificio-aporticado/edificioAporticado";
 import type { ExampleDef } from "../workspace/exampleRegistry";

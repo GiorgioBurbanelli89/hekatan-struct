@@ -1,16 +1,20 @@
 /**
- * Edificio Hormigón — Pórtico de hormigón armado puro.
+ * Edificio Hormigón — Pórtico de hormigón armado puro (IMF/SMF).
  *
  * Variante limpia del edificio-aporticado configurada para SOLO HORMIGÓN:
- *   - matCol = 0 (Hormigón)
- *   - matViga = 0 (Hormigón)
+ *   - matCol = 0 (Hormigón), matViga = 0 (Hormigón)
  *   - colShape = 0 (Rectangular)
- *   - slabOn = 1 (losa de hormigón 15 cm, discretizada ETABS-style)
- *   - bracesMode = 0 (sin diagonales)
- *   - Sin muros de corte
+ *   - slabOn = 1 (losa hormigón 15 cm, discretizada ETABS-style)
+ *   - bracesMode = 0 (sin diagonales), sin muros de corte
  *
- * Caso típico NEC-SE-HM (Ecuador) / ACI 318 (USA) para edificios residenciales
- * y oficinas pequeñas de 3-6 pisos.
+ * Códigos aplicables:
+ *   - ACI 318-22, Chapter 18  (Earthquake-Resistant Structures: IMF/SMF detailing)
+ *   - ASCE/SEI 7-22, Table 12.2-1  (R=5 IMF, R=8 SMF for concrete moment frames)
+ *   - ASCE/SEI 7-22, Chapter 12    (Seismic Design Requirements for Building Structures)
+ *   - NEC-SE-HM (Ecuador) / NEC-SE-DS sismo  (equivalentes locales)
+ *
+ * Caso típico: edificios residenciales y oficinas pequeñas de 3–6 pisos,
+ * zonas de sismicidad moderada a alta (SDC C–D).
  */
 import { edificioAporticado } from "../edificio-aporticado/edificioAporticado";
 import type { ExampleDef } from "../workspace/exampleRegistry";
