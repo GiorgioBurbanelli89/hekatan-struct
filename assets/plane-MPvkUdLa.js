@@ -1,5 +1,5 @@
-import { m as g, p as Y, __tla as __tla_0 } from "./didacticCpp-Bnj9OwqQ.js";
-let _;
+import { m as g, p as I, __tla as __tla_0 } from "./didacticCpp-Bnj9OwqQ.js";
+let k;
 let __tla = Promise.all([
   (() => {
     try {
@@ -8,7 +8,7 @@ let __tla = Promise.all([
     }
   })()
 ]).then(async () => {
-  _ = {
+  k = {
     id: "plane",
     name: "Plane Element (2D plane stress)",
     category: "Placas",
@@ -35,7 +35,7 @@ let __tla = Promise.all([
         min: 1,
         max: 15,
         step: 0.25,
-        label: "H altura Y (m)"
+        label: "H altura Z (m)"
       },
       t: {
         default: 0.3,
@@ -72,17 +72,17 @@ let __tla = Promise.all([
         step: 1,
         label: "nx elem X"
       },
-      ny: {
+      nz: {
         default: 16,
         min: 4,
         max: 30,
         step: 1,
-        label: "ny elem Y"
+        label: "nz elem Z"
       }
     },
     build(e, n) {
       var _a;
-      const m = Y({
+      const m = I({
         E: e.E,
         nu: e.nu,
         thickness: e.t,
@@ -90,18 +90,18 @@ let __tla = Promise.all([
         meshLx: e.W,
         meshLy: e.H,
         meshNx: Math.round(e.nx),
-        meshNy: Math.round(e.ny),
+        meshNy: Math.round(e.nz),
         bcType: "simply-supported",
         pressure: 0
       }), r = m.nodeResults.map((t) => [
         t.x,
-        t.y,
-        0
+        0,
+        t.y
       ]), u = m.elementResults.map((t) => t.nodes);
       n.nodes.val = r, n.elements.val = u;
       const d = /* @__PURE__ */ new Map(), i = /* @__PURE__ */ new Map();
       r.forEach((t, s) => {
-        Math.abs(t[1]) < 1e-6 && d.set(s, [
+        Math.abs(t[2]) < 1e-6 && d.set(s, [
           true,
           true,
           true,
@@ -110,7 +110,7 @@ let __tla = Promise.all([
           true
         ]);
       });
-      const a = r.findIndex((t) => Math.abs(t[0] - e.W) < 1e-6 && Math.abs(t[1] - e.H) < 1e-6);
+      const a = r.findIndex((t) => Math.abs(t[0] - e.W) < 1e-6 && Math.abs(t[2] - e.H) < 1e-6);
       a >= 0 && i.set(a, [
         e.F,
         0,
@@ -135,8 +135,8 @@ let __tla = Promise.all([
       m.nodeResults.forEach((t, s) => {
         h.set(s, [
           t.bx ?? 0,
-          t.by ?? 0,
           0,
+          t.by ?? 0,
           0,
           0,
           0
@@ -144,15 +144,15 @@ let __tla = Promise.all([
       }), n.deformOutputs.val = {
         deformations: h
       };
-      const y = /* @__PURE__ */ new Map(), v = /* @__PURE__ */ new Map(), E = /* @__PURE__ */ new Map(), w = /* @__PURE__ */ new Map();
+      const v = /* @__PURE__ */ new Map(), y = /* @__PURE__ */ new Map(), E = /* @__PURE__ */ new Map(), w = /* @__PURE__ */ new Map();
       m.elementResults.forEach((t, s) => {
         const l = t.Mxx, o = t.Myy, c = t.Mxy, p = Math.sqrt(l * l - l * o + o * o + 3 * c * c);
-        y.set(s, [
+        v.set(s, [
           l,
           l,
           l,
           l
-        ]), v.set(s, [
+        ]), y.set(s, [
           o,
           o,
           o,
@@ -169,8 +169,8 @@ let __tla = Promise.all([
           p
         ]);
       }), n.analyzeOutputs.val = {
-        membraneXX: y,
-        membraneYY: v,
+        membraneXX: v,
+        membraneYY: y,
         membraneXY: E,
         vonMises: w
       }, n.objects3D.val = [];
@@ -196,5 +196,5 @@ let __tla = Promise.all([
 });
 export {
   __tla,
-  _ as p
+  k as p
 };
