@@ -35,6 +35,10 @@ import {
   failureMode,
 } from "../shared/componentZones";
 import { buildGoverningMarker } from "../shared/governingMarker";
+import {
+  buildHysteresisChart3D,
+  buildLoadingProtocolChart3D,
+} from "../shared/hysteresisChart3D";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import type { Node, Element } from "awatif-fem";
 import * as THREE from "three";
@@ -103,7 +107,7 @@ export const conexionRbs: ExampleDef = {
       folder: "Solver",
     },
     nl_max_iter: { default: 10, min: 3, max: 25, step: 1, label: "Max iter NL", folder: "Solver" },
-    load_factor: { default: 0.10, min: 0.02, max: 0.80, step: 0.02, label: "Factor carga (×Mp)", folder: "Solver" },
+    load_factor: { default: 0.50, min: 0.02, max: 0.80, step: 0.02, label: "Factor carga (×Mp)", folder: "Solver" },
     // ── IDEA StatiCa mode ──
     idea_steps: { default: 12, min: 4, max: 30, step: 1, label: "N pasos pushover", folder: "Solver" },
     colormap_mode: {
@@ -652,6 +656,31 @@ export const conexionRbs: ExampleDef = {
       targetDrift: finalDrift,
       classification: p.classification < 0.5 ? "IMF" : p.classification < 1.5 ? "SMF" : "Extended",
     };
+
+    // ── Gráficos 3D: histéresis M-θ + protocolo K3 (al lado del modelo) ──
+    const chartSize = Math.max(p.L_beam * 0.6, 1.5);
+    // Histéresis a la derecha (más allá del extremo de la viga)
+    const hystObjs = buildHysteresisChart3D({
+      theta: thetaHistory,
+      M: MHistory,
+      Mp: Mp_rbs,
+      targetDrift: finalDrift,
+      center: [x0 + p.L_beam + chartSize * 0.7, 0, 0],
+      size: chartSize,
+      plane: "xz",
+    });
+    // Protocolo K3 (drift vs step) abajo del modelo
+    const protocolObjs = buildLoadingProtocolChart3D({
+      drifts: thetaHistory,
+      center: [x0 + p.L_beam * 0.5 - chartSize / 2, 0, -p.story_h / 2 - chartSize * 0.7],
+      size: chartSize,
+      plane: "xz",
+    });
+    states.objects3D.val = [
+      ...states.objects3D.val,
+      ...hystObjs,
+      ...protocolObjs,
+    ];
 
     // Log verificación
     let M_at_target = 0;
