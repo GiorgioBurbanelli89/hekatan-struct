@@ -172,6 +172,7 @@ import { edificioDual } from "../edificio-dual/edificioDual";
 import { columnaCft } from "../columna-cft/columnaCft";
 import { triangularPlate } from "../triangular-plate/triangularPlate";
 import { conexionRbs } from "../conexion-rbs/conexionRbs";
+import { placaBase } from "../placa-base/placaBase";
 import { trussGen } from "../truss-gen/trussGen";
 import { barraAxial } from "../barra-axial/barraAxial";
 import { portico2D } from "../portico-2d/portico2D";
@@ -191,6 +192,7 @@ export const examplesRegistry: ExampleDef[] = [
   columnaCft,
   // Conexiones (prequalificación sísmica)
   conexionRbs,
+  placaBase,
   // Edificios — variantes limpias por tipo estructural
   edificioAporticado,
   edificioHormigon,

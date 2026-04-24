@@ -72,6 +72,7 @@ export default defineConfig({
         "columna-cft": "src/columna-cft/index.html",
         "triangular-plate": "src/triangular-plate/index.html",
         "conexion-rbs": "src/conexion-rbs/index.html",
+        "placa-base": "src/placa-base/index.html",
         "truss-gen": "src/truss-gen/index.html",
         "barra-axial": "src/barra-axial/index.html",
         "portico-2d": "src/portico-2d/index.html",
