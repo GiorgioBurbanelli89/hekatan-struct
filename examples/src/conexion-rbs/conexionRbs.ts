@@ -28,6 +28,12 @@ import {
 import { secantPlasticSolve } from "../shared/secantPlasticity";
 import { incrementalPushover } from "../shared/incrementalPushover";
 import { buildPushoverChart3D } from "../shared/pushoverChart3D";
+import {
+  classifyRbsZones,
+  computeStrengthRatios,
+  governingComponent,
+  failureMode,
+} from "../shared/componentZones";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import type { Node, Element } from "awatif-fem";
 import * as THREE from "three";
@@ -451,6 +457,32 @@ export const conexionRbs: ExampleDef = {
       states.analyzeOutputs.val = {} as any;
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // Component-based analysis (CBFEM-style tipo IDEA StatiCa Sprint 2)
+    // ═══════════════════════════════════════════════════════════════
+    try {
+      const zoneMap = classifyRbsZones({
+        nodes, elements,
+        x_col_face: x0,
+        d_col: p.d_col, bf_col: p.bf_col, tf_col: p.tf_col,
+        d_beam: p.d_beam, bf_beam: p.bf_beam, tf_beam: p.tf_beam,
+        x_rbs_start: x0 + x_a_loc,
+        x_rbs_end: x0 + x_b_loc,
+        weld_tol: p.tf_beam * 1.5,
+      });
+      const vmMap = (states.analyzeOutputs.val as any)?.vonMises;
+      if (vmMap) {
+        const ratios = computeStrengthRatios(zoneMap, vmMap, p.Fy);
+        const gov = governingComponent(ratios);
+        const mode = failureMode(gov);
+        (states as any).__componentRatios = ratios;
+        (states as any).__governingComponent = gov;
+        (states as any).__failureMode = mode;
+      }
+    } catch (e: any) {
+      console.warn("[conexion-rbs] component analysis skipped:", e?.message || e);
+    }
+
     // ── Rótula plástica visual en el centro del RBS ──
     const objects: THREE.Object3D[] = [];
     const x_rbs_center = x0 + x_rbs_center_local;
@@ -664,6 +696,22 @@ export const conexionRbs: ExampleDef = {
             ? "CJP ✓ Demand-critical (AISC 358 §3.7)"
             : ratio_weld <= 1 ? "✓ OK" : "✗ REVISAR garganta / electrodo",
         };
+      })(),
+      ...(() => {
+        // Tabla de componentes tipo IDEA StatiCa
+        const ratios = (states as any).__componentRatios;
+        const gov = (states as any).__governingComponent;
+        const fMode = (states as any).__failureMode;
+        if (!ratios || ratios.length === 0) return {};
+        const out: Record<string, string> = {
+          "── Componentes (σvm/Fy) tipo IDEA StatiCa ──": "",
+        };
+        for (const r of ratios.slice(0, 8)) {
+          out[`${r.statusIcon} ${r.label}`] = `${(r.ratio * 100).toFixed(0)}% (${r.nElements} shells)`;
+        }
+        if (gov) out["🎯 Componente gobernante"] = gov.label;
+        if (fMode) out["🔎 Modo de falla estimado"] = fMode;
+        return out;
       })(),
       ...(() => {
         const idea = (states as any).__ideaInfo;
