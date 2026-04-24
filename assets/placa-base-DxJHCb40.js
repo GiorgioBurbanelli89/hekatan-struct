@@ -1,8 +1,9 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { c as o, __tla as __tla_0 } from "./conexionRbs-Iu-NCZ5-.js";
-import { r } from "./runExampleStandalone-BkCSvKFl.js";
+import { p as r, __tla as __tla_0 } from "./placaBase-CrclYche.js";
+import { r as m } from "./runExampleStandalone-BkCSvKFl.js";
+import "./analyze-ClLKGn9k.js";
+import "./pureFunctionsAny.generated-JAcEVsJ7.js";
 import { __tla as __tla_1 } from "./didacticCpp-Bnj9OwqQ.js";
-import "./menegottoPinto-B-C2cxus.js";
 import "./Text-C52Bkp-N.js";
 import "./theme-CzzIlc4y.js";
 import "./getViewer-BIPlhsp_.js";
@@ -22,5 +23,5 @@ Promise.all([
     }
   })()
 ]).then(async () => {
-  r(o);
+  m(r);
 });
