@@ -23,6 +23,7 @@
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import type { Node, Element } from "awatif-fem";
 import { deform, analyze } from "awatif-fem";
+import { secantPlasticSolve } from "../shared/secantPlasticity";
 import * as THREE from "three";
 
 export const placaBase: ExampleDef = {
@@ -69,6 +70,9 @@ export const placaBase: ExampleDef = {
     Mu: { default: 80, min: 0, max: 800, step: 5, label: "Mu (momento)", folder: "Cargas", unitType: "moment" },
     // ── Malla (más denso permite ver concentración de tensiones alrededor de los pernos) ──
     mesh_n: { default: 48, min: 20, max: 80, step: 2, label: "Divisiones por lado", folder: "Malla" },
+    // ── Solver ──
+    use_nonlinear: { default: 1, label: "Solver", options: { "Lineal (elástico)": 0, "No-lineal (plasticidad J2 secante)": 1 }, folder: "Solver" },
+    nl_max_iter: { default: 12, min: 3, max: 30, step: 1, label: "Max iteraciones NL", folder: "Solver" },
   },
   build(p, states) {
     const nodes: Node[] = [];
@@ -312,17 +316,42 @@ export const placaBase: ExampleDef = {
       thicknesses, elasticities, poissonsRatios, densities,
       areas, momentsOfInertiaY, momentsOfInertiaZ, torsionalConstants, shearModuli,
     } as any;
-    // ── Ejecutar solver para obtener colormap de von Mises ──
+    // ── Ejecutar solver (lineal o no-lineal secante) ──
     try {
-      states.deformOutputs.val = deform(
-        nodes, elements, { supports, loads }, states.elementInputs.val,
-      );
-      const aOut = analyze(
-        nodes, elements, states.elementInputs.val, states.deformOutputs.val,
-      );
-      // Normalizar colormap vonMises al rango [0, Fy_plate] para visualizar plastificación
-      (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [0, p.Fy_plate] };
-      states.analyzeOutputs.val = aOut;
+      if (p.use_nonlinear > 0.5) {
+        // Solver no-lineal: secant plasticity (J2 perfect, stiffness reduction)
+        const nlResult = secantPlasticSolve({
+          nodes, elements, nodeInputs: { supports, loads },
+          elementInputs: states.elementInputs.val,
+          Fy: p.Fy_plate,
+          maxIter: Math.round(p.nl_max_iter),
+          tol: 0.03,
+          softeningFactor: 0.90,
+        });
+        states.deformOutputs.val = nlResult.deformOutputs;
+        const aOut = nlResult.analyzeOutputs;
+        (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [0, p.Fy_plate] };
+        states.analyzeOutputs.val = aOut;
+        (states as any).__nlInfo = {
+          iterations: nlResult.iterations,
+          converged: nlResult.converged,
+          elementsYielded: nlResult.elementsYielded,
+          maxRatio: nlResult.maxRatio,
+        };
+        console.log(
+          `[placa-base NL] iter=${nlResult.iterations}, converged=${nlResult.converged}, yielded=${nlResult.elementsYielded}, maxRatio=${nlResult.maxRatio.toFixed(2)}`,
+        );
+      } else {
+        states.deformOutputs.val = deform(
+          nodes, elements, { supports, loads }, states.elementInputs.val,
+        );
+        const aOut = analyze(
+          nodes, elements, states.elementInputs.val, states.deformOutputs.val,
+        );
+        (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [0, p.Fy_plate] };
+        states.analyzeOutputs.val = aOut;
+        (states as any).__nlInfo = null;
+      }
     } catch (e: any) {
       console.error("[placa-base] solver error:", e?.message || e);
       states.deformOutputs.val = {} as any;
@@ -409,7 +438,8 @@ export const placaBase: ExampleDef = {
         `  Pedestal ${p.B_ped}×${p.H_ped}×${p.h_ped}m f'c=${p.fc / 1000} MPa`,
     );
   },
-  computedLabels(p) {
+  computedLabels(p, states) {
+    const nlInfo = (states as any).__nlInfo;
     // Cálculos AISC 360-22 §J8 + ACI 318-22
     const phi_c = 0.65; // bearing on concrete (§J8)
     const phi_b = 0.90; // bending of plate
@@ -479,6 +509,18 @@ export const placaBase: ExampleDef = {
       "Ratio Tu/φRn": `${ratio_bolt.toFixed(3)} ${ratio_bolt <= 1 ? "✓" : "✗"}`,
       "── Dictamen ──": "",
       "Criterio global": `${ratio_bearing <= 1 && ratio_t >= 1 && ratio_bolt <= 1 ? "✓ OK" : "✗ REVISAR"}`,
+      "── Solver FEM ──": "",
+      "Tipo": nlInfo ? "NO-LINEAL (J2 secante)" : "Lineal elástico",
+      ...(nlInfo
+        ? {
+            "Iteraciones NL": `${nlInfo.iterations}${nlInfo.converged ? " ✓ convergió" : " ✗ max-iter"}`,
+            "Elementos plastificados": `${nlInfo.elementsYielded}`,
+            "Max σ/Fy (lineal inicial)": nlInfo.maxRatio.toFixed(2),
+            "Interpretación": nlInfo.elementsYielded > 0
+              ? `${nlInfo.elementsYielded} shells alcanzaron fluencia → redistribución`
+              : "Toda la placa en rango elástico",
+          }
+        : {}),
     };
   },
 };

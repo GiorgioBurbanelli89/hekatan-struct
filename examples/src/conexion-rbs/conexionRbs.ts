@@ -25,6 +25,7 @@ import {
   deform, analyze,
   type MenegottoPintoParams,
 } from "awatif-fem";
+import { secantPlasticSolve } from "../shared/secantPlasticity";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import type { Node, Element } from "awatif-fem";
 import * as THREE from "three";
@@ -62,6 +63,10 @@ export const conexionRbs: ExampleDef = {
     steps_per_cycle: { default: 40, min: 20, max: 100, step: 10, label: "Steps/ciclo", folder: "Ensayo K3" },
     // ── Malla (para ver concentración de tensiones / fracturas) ──
     mesh_density: { default: 3, min: 1, max: 5, step: 1, label: "Densidad malla", folder: "Malla" },
+    // ── Solver FEM ──
+    use_nonlinear: { default: 0, label: "Solver", options: { "Lineal (elástico)": 0, "No-lineal (plasticidad J2 secante)": 1 }, folder: "Solver" },
+    nl_max_iter: { default: 10, min: 3, max: 25, step: 1, label: "Max iter NL", folder: "Solver" },
+    load_factor: { default: 0.10, min: 0.02, max: 0.50, step: 0.02, label: "Factor carga (×Mp)", folder: "Solver" },
   },
   build(p, states) {
     // ── 1. Geometría 3D REAL con shells ──────────────────
@@ -285,7 +290,7 @@ export const conexionRbs: ExampleDef = {
     const Zx_rbs_est = bf_rbs_min * p.tf_beam * (p.d_beam - p.tf_beam);
     const Mp_rbs_est = p.Fy * Zx_rbs_est;
     const lever_arm = p.L_beam - p.a_rbs * p.bf_beam - (p.b_rbs * p.d_beam) / 2;
-    const F_tip = (0.45 * Mp_rbs_est) / Math.max(lever_arm, 0.5); // 45% Mp → rango elástico con concentración visible
+    const F_tip = (p.load_factor * Mp_rbs_est) / Math.max(lever_arm, 0.5);
 
     const loads = new Map<number, [number, number, number, number, number, number]>();
     const iTip = xUnique.length - 1; // último índice X (extremo libre)
@@ -302,17 +307,35 @@ export const conexionRbs: ExampleDef = {
       areas, momentsOfInertiaY, momentsOfInertiaZ, torsionalConstants, shearModuli,
     } as any;
 
-    // ── Ejecutar solver (deform + analyze) para obtener colormap de von Mises ──
-    console.log("[conexion-rbs] Running deform() with", nodes.length, "nodes,", elements.length, "shells,", supports.size, "supports,", loads.size, "loads");
+    // ── Ejecutar solver (lineal o no-lineal secante J2) ──
     try {
-      const dOut = deform(nodes, elements, { supports, loads }, states.elementInputs.val);
-      console.log("[conexion-rbs] deform() OK → deformations keys:", dOut.deformations ? [...dOut.deformations.keys()].slice(0, 3) : "none");
-      states.deformOutputs.val = dOut;
-      const aOut = analyze(nodes, elements, states.elementInputs.val, dOut);
-      // Normalizar colormap vonMises al rango [0, Fy] para visualizar plastificación
-      (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [0, p.Fy] };
-      console.log("[conexion-rbs] analyze() OK → vonMises keys:", aOut.vonMises ? [...aOut.vonMises.keys()].slice(0, 3) : "none");
-      states.analyzeOutputs.val = aOut;
+      if (p.use_nonlinear > 0.5) {
+        const nl = secantPlasticSolve({
+          nodes, elements,
+          nodeInputs: { supports, loads },
+          elementInputs: states.elementInputs.val,
+          Fy: p.Fy,
+          maxIter: Math.round(p.nl_max_iter),
+          tol: 0.03,
+          softeningFactor: 0.90,
+        });
+        states.deformOutputs.val = nl.deformOutputs;
+        const aOut = nl.analyzeOutputs;
+        (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [0, p.Fy] };
+        states.analyzeOutputs.val = aOut;
+        (states as any).__nlInfo = {
+          iterations: nl.iterations, converged: nl.converged,
+          elementsYielded: nl.elementsYielded, maxRatio: nl.maxRatio,
+        };
+        console.log(`[conexion-rbs NL] iter=${nl.iterations} conv=${nl.converged} yield=${nl.elementsYielded} maxRatio=${nl.maxRatio.toFixed(2)}`);
+      } else {
+        const dOut = deform(nodes, elements, { supports, loads }, states.elementInputs.val);
+        states.deformOutputs.val = dOut;
+        const aOut = analyze(nodes, elements, states.elementInputs.val, dOut);
+        (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [0, p.Fy] };
+        states.analyzeOutputs.val = aOut;
+        (states as any).__nlInfo = null;
+      }
     } catch (e: any) {
       console.error("[conexion-rbs] solver error:", e?.message || e, e);
       states.deformOutputs.val = {} as any;
@@ -444,6 +467,19 @@ export const conexionRbs: ExampleDef = {
       "Ratio M/Mp @ target": `${ratio.toFixed(3)}`,
       "Criterio (≥ 0.80)": `${ratio >= 0.8 ? "✓ PASA" : "✗ FALLA"} — ${hist.classification}`,
       "Data points generados": `${hist.theta.length}`,
+      ...(() => {
+        const nl = (states as any).__nlInfo;
+        if (!nl) return { "── Solver FEM shells ──": "", "Tipo": "Lineal elástico" };
+        return {
+          "── Solver FEM shells (NO-LINEAL J2) ──": "",
+          "Iteraciones NL": `${nl.iterations}${nl.converged ? " ✓ convergió" : " ✗ max-iter"}`,
+          "Elementos plastificados": `${nl.elementsYielded}`,
+          "Max σ/Fy (lineal inicial)": nl.maxRatio.toFixed(2),
+          "Interpretación": nl.elementsYielded > 0
+            ? `${nl.elementsYielded} shells fluyeron → redistribución`
+            : "Rango elástico (sin plastificar)",
+        };
+      })(),
     };
   },
 };
