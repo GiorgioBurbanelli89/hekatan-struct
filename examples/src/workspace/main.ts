@@ -156,12 +156,6 @@ function autoScaleDeformedShape() {
   const diag = Math.sqrt((xMax-xMin)**2 + (yMax-yMin)**2 + (zMax-zMin)**2) || 1;
 
   // Compute MAX HORIZONTAL (Ux,Uy) and MAX VERTICAL (Uz) separately.
-  // Razón: las columnas de hormigón/acero son AXIALMENTE rígidas (EA grande);
-  // un edificio de 8 pisos bajo CM/CV puede tener Uz ≈ 5-10 mm por acumulación
-  // de acortamiento elástico, mientras que el sway lateral Ux/Uy ante cargas
-  // sísmicas moderadas es comparable. Si escalamos al max total, el axial
-  // domina y se ve como si los pisos se "aplastaran" 1 piso visualmente (absurdo
-  // para edificios reales donde el axial es ~1/500 de la altura de piso).
   let maxUh = 0, maxUz = 0;
   defMap.forEach((d) => {
     const h = Math.sqrt((d[0]||0)**2 + (d[1]||0)**2);
@@ -169,19 +163,40 @@ function autoScaleDeformedShape() {
     if (h > maxUh) maxUh = h;
     if (v > maxUz) maxUz = v;
   });
-  // Detecta "edificio" = extensión vertical dominante (Δz > Δx, Δy).
-  // En ese caso, el axial Uz se pondera DEBILMENTE (factor 0.15) para que no
-  // domine el auto-scale. Para placas / shells horizontales (Δz pequeña), se
-  // mantiene el comportamiento anterior.
+
   const dx = xMax - xMin, dy = yMax - yMin, dz = zMax - zMin;
   const isBuilding = dz > 1.1 * Math.max(dx, dy);
-  const refDef = isBuilding
-    ? Math.max(maxUh, maxUz * 0.15)    // edificio: axial minimizado
-    : Math.max(maxUh, maxUz);           // placa/shell: todo equivalente
-  if (refDef < 1e-30) { s.deformScale.val = 1; return; }
-  // Target: 15% del diagonal (antes 25% — demasiado agresivo para edificios altos
-  // con cargas verticales). Para placas y muros a corte sigue siendo visible.
-  s.deformScale.val = Math.min(50000, Math.max(1, (0.15 * diag) / refDef));
+
+  let scale: number;
+  if (isBuilding) {
+    // EDIFICIO: el scale se calibra SOLO al sway horizontal. Uz (axial columnas
+    // + sag de losas) queda 1:1 sin amplificar. Esto evita el efecto absurdo
+    // de losas que "se hunden 1 piso" bajo CM/CV, o columnas que "se acortan"
+    // como resortes. Los ingenieros esperan ver sway lateral exagerado, no
+    // axial.
+    // Si no hay sway horizontal (caso puramente gravitacional), scale = 10
+    // (fijo) para que las losas muestren algo de sag sin exagerar.
+    if (maxUh > 1e-9) {
+      // Target: 10% del diagonal para el sway horizontal
+      scale = Math.min(5000, Math.max(1, (0.10 * diag) / maxUh));
+    } else {
+      scale = 10;   // sin sway → scale fijo conservador
+    }
+    // Cap adicional: la visualización de Uz no debe exceder 25% de una altura
+    // de piso típica (asumimos h_piso ≈ dz/8 para 8 pisos; ~30% es razonable).
+    const storyH = dz / 8;                         // estimación altura piso
+    const maxVisibleUz = 0.30 * storyH;            // 0.9m visible para h=3m
+    if (maxUz > 1e-9) {
+      const capByUz = maxVisibleUz / maxUz;
+      scale = Math.min(scale, capByUz);
+    }
+  } else {
+    // PLACA / SHELL / MURO A CORTE: todo equivalente, target 15% del diagonal.
+    const refDef = Math.max(maxUh, maxUz);
+    if (refDef < 1e-30) { s.deformScale.val = 1; return; }
+    scale = Math.min(50000, Math.max(1, (0.15 * diag) / refDef));
+  }
+  s.deformScale.val = Math.max(1, scale);
   if (s.displayScale) s.displayScale.val = -1.5;
 }
 
