@@ -47,8 +47,10 @@ export const plane: ExampleDef = {
     t:  { default: 0.30, min: 0.05, max: 0.60, step: 0.05, label: "t espesor (m)" },
     E:  { default: 25e6, min: 10e6, max: 50e6, step: 1e6,  label: "E (kN/m²)" },
     nu: { default: 0.20, min: 0.10, max: 0.40, step: 0.01, label: "ν" },
-    // F lateral realista: viento/sísmico en muro de 3×6m = ~200 kN → rango 0-400 centrado
-    F:  { default: 200,  min: 0,    max: 400,  step: 10,   label: "F lateral tope (kN)" },
+    // F lateral realista: viento/sísmico en muro de 3×6m = ~200 kN → rango 0-400 centrado.
+    // unitType:"force" → el workspace convierte entre kN/tonf/kip automáticamente
+    // y el label se actualiza a "F lateral tope (kN)" / "(tonf)" / "(kip)" según la unidad.
+    F:  { default: 200,  min: 0,    max: 400,  step: 10,   label: "F lateral tope", unitType: "force" },
     nx: { default: 8,    min: 4,    max: 20,   step: 1,    label: "nx elem X" },
     nz: { default: 16,   min: 6,    max: 30,   step: 1,    label: "nz elem Z" },
   },

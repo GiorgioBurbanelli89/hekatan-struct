@@ -1,7 +1,7 @@
 export type { Parameters } from "./parameters/getParameters";
 export type { Drawing } from "./viewer/drawing/drawing";
 
-export { getViewer } from "./viewer/getViewer";
+export { getViewer, colorMapUnit, colorMapForceUnit, colorMapDispUnit, fixedColorMapRange } from "./viewer/getViewer";
 export { getParameters } from "./parameters/getParameters";
 export { getTables } from "./tables/getTables";
 export { getTable } from "./table/getTable";

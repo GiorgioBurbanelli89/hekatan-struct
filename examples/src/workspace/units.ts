@@ -15,7 +15,7 @@
 import van, { State } from "vanjs-core";
 
 export type ForceUnit = "kN" | "tonf" | "kip";
-export type DispUnit = "mm" | "cm" | "µm";
+export type DispUnit = "mm" | "cm" | "m" | "in";
 
 export const forceUnit: State<ForceUnit> = van.state(
   (localStorage.getItem("hk_forceUnit") as ForceUnit) || "kN"
@@ -64,11 +64,13 @@ export function fromKnm(valKnm: number, unit?: ForceUnit): number {
 }
 
 // ── Conversión de DESPLAZAMIENTO ──────────────────────────────────
-// SI base: m
+// SI base: m. Unidades estándar para ingeniería estructural:
+//   mm (más común para flechas), cm, m (modelos grandes), in (imperial).
 export const dispFactors: Record<DispUnit, number> = {
-  mm: 1000,       // 1 m = 1000 mm
-  cm: 100,
-  "µm": 1e6,
+  mm: 1000,          // 1 m = 1000 mm
+  cm: 100,           // 1 m = 100 cm
+  m: 1,              // 1 m = 1 m (base)
+  in: 39.3700787402, // 1 m = 39.3700787 in
 };
 
 /** Convierte m → unidad UI */
@@ -118,6 +120,6 @@ export function dispUnitSuffix(): string {
 export function stripUnitSuffix(label: string): string {
   return label
     .replace(/\s*\((kN|tonf|kip)(·m|·ft)?\)\s*$/i, "")
-    .replace(/\s*\((mm|cm|µm|um)\)\s*$/i, "")
+    .replace(/\s*\((mm|cm|m|in|µm|um)\)\s*$/i, "")
     .trim();
 }

@@ -379,6 +379,24 @@ export const fixedColorMapRange: State<[number, number] | null> = van.state(null
 /** Unidad del colormap actual (mm, kN/m², etc.) — se muestra arriba del legend */
 export const colorMapUnit: State<string> = van.state("");
 
+/**
+ * Unidad de fuerza seleccionada globalmente por el usuario (Tweakpane "Unidades").
+ * Valores soportados: "kN" | "tonf" | "kip". Afecta TODOS los colormaps que
+ * muestran fuerzas/momentos/tensiones (membrane*, bending*, vonMises, pressure, etc.)
+ * y el scaling de sus valores al unit preferido.
+ */
+export const colorMapForceUnit: State<"kN" | "tonf" | "kip"> = van.state("kN");
+/**
+ * Unidad de desplazamiento seleccionada globalmente. Afecta displacementX/Y/Z del colormap.
+ * Valores soportados para ingeniería estructural: "mm" | "cm" | "m" | "in".
+ */
+export const colorMapDispUnit: State<"mm" | "cm" | "m" | "in"> = van.state("mm");
+
+// Factores de conversión (mismos que units.ts del workspace, duplicados acá
+// porque awatif-ui es un paquete independiente y no debe importar de examples/).
+const FORCE_FACTORS = { kN: 1, tonf: 9.80665, kip: 4.4482216 };
+const DISP_FACTORS = { mm: 1000, cm: 100, m: 1, in: 39.3700787402 };
+
 function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
   // Init
   const colorMapValues = van.state([]);
@@ -462,17 +480,40 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
       [ResultType.displacementZ]: [mesh.deformOutputs?.val?.deformations, 2],
     };
 
-    // Escalas + unidades por tipo de resultado. El legend multiplica por scale
-    // y muestra el unit para que no haya ambigüedad (e.g. mm vs m).
+    // Escalas + unidades por tipo de resultado, reactivas a colorMapForceUnit
+    // y colorMapDispUnit (el usuario los mueve desde el folder "Unidades").
+    //
+    //   Internamente, TODO viene en kN (force), kN·m/m (bending moment/width),
+    //   kN/m (membrane force/length, transverse shear), kN/m² (stress: vonMises, pressure)
+    //   y m (displacement). El colormap los re-escala al unit seleccionado.
     const field = settings.shellResults.val;
+    const fUnit = colorMapForceUnit.val;
+    const dUnit = colorMapDispUnit.val;
     const isDisp = field === "displacementX" || field === "displacementY" || field === "displacementZ";
-    const scale = isDisp ? 1000 : 1;  // m → mm
+    const isBending = field === "bendingXX" || field === "bendingYY" || field === "bendingXY";
+    const isMembrane = field === "membraneXX" || field === "membraneYY" || field === "membraneXY";
+    const isStress = field === "vonMises" || field === "pressure";
+    const isShear = field === "tranverseShearX" || field === "tranverseShearY";
+
+    // Factor de escala UI: convierte valor SI → valor UI (para mostrar en el legend).
+    // - Disp: multiplica por el factor dispUnit (mm=1000, cm=100, µm=1e6)
+    // - Fuerza/tensión/momento: divide por el factor forceUnit (kN=1, tonf=9.80665, kip=4.44822)
+    //   porque 1 tonf = 9.80665 kN ⇒ X kN = X/9.80665 tonf
+    const scale = isDisp ? DISP_FACTORS[dUnit] :
+                  (isBending || isMembrane || isStress || isShear) ? 1 / FORCE_FACTORS[fUnit] :
+                  1;
+
+    // Sufijo de unidad en el legend. Plane-stress real (σ) es kN/m² y
+    // membrane-force (N = σ·t) es kN/m: ambos se distinguen por convención
+    // del ejemplo. Acá asumimos que membrane* = stress (plane Q4) en kN/m².
+    //   - si un ejemplo quiere usar membrane* como FORCE/m, que setee
+    //     analyzeOutputs.colorMapUnitOverride (TODO futuro).
     const unit =
-      isDisp ? "mm" :
-      field === "bendingXX" || field === "bendingYY" || field === "bendingXY" ? "kN·m/m" :
-      field === "membraneXX" || field === "membraneYY" || field === "membraneXY" ? "kN/m" :
-      field === "vonMises" || field === "pressure" ? "kN/m²" :
-      field === "tranverseShearX" || field === "tranverseShearY" ? "kN/m" :
+      isDisp     ? dUnit :
+      isBending  ? `${fUnit}·m/m` :
+      isMembrane ? `${fUnit}/m²` :            // stress de plane Q4
+      isStress   ? `${fUnit}/m²` :
+      isShear    ? `${fUnit}/m` :
       "";
     colorMapUnit.val = unit;
 

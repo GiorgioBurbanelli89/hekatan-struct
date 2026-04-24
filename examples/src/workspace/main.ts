@@ -21,10 +21,19 @@ import {
   Node, Element, NodeInputs, ElementInputs,
   DeformOutputs, AnalyzeOutputs,
 } from "awatif-fem";
-import { getToolbar, getViewer } from "awatif-ui";
+import { getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit } from "awatif-ui";
 import { createModalPanel } from "../shared/renderModalTable";
 import { examplesRegistry, activeExampleVersion, type ExampleDef } from "./exampleRegistry";
-import { forceUnit, dispUnit } from "./units";
+import {
+  forceUnit, dispUnit, fromKn, toKn, fromKnm, toKnm,
+  forceUnitSuffix, momentUnitSuffix, dispUnitSuffix, stripUnitSuffix,
+} from "./units";
+
+// Propagación de unidades al viewer de awatif-ui: cualquier cambio en
+// forceUnit/dispUnit del workspace se refleja en el colormap legend y en
+// el scaling de sus valores (kN/m² → tonf/m², mm → cm, etc.).
+van.derive(() => { colorMapForceUnit.val = forceUnit.val; });
+van.derive(() => { colorMapDispUnit.val = dispUnit.val; });
 
 // ── Estado global compartido ──
 const nodes: State<Node[]> = van.state([]);
@@ -77,13 +86,21 @@ function resetStates() {
 
 function loadExample(ex: ExampleDef) {
   currentExample = ex;
+  // currentParams se almacena en la UNIDAD UI seleccionada. Los p.default
+  // están escritos en SI (kN, kN·m) por convención; aquí los convertimos a
+  // la unidad UI del usuario para que los sliders muestren valores coherentes.
   currentParams = Object.fromEntries(
-    Object.entries(ex.params).map(([k, p]) => [k, p.default])
+    Object.entries(ex.params).map(([k, p]) => {
+      const valSI = p.default;
+      if (p.unitType === "force")  return [k, fromKn(valSI)];
+      if (p.unitType === "moment") return [k, fromKnm(valSI)];
+      return [k, valSI];
+    }),
   );
   // Invalidar derives de ejemplos previos (e.g. springs reactivos de zapatas)
   activeExampleVersion.v++;
   resetStates();
-  ex.build(currentParams, states, modalPanel);
+  ex.build(toSIParams(), states, modalPanel);
   // Aplica el colormap por defecto que cada ejemplo declara.
   // Si el anterior tenía seleccionado "pressure" y el nuevo no lo populó,
   // quedaría 0 everywhere — así evitamos ese caso.
@@ -205,10 +222,27 @@ function filterShellResultOptions(allowed?: string[]) {
   }
 }
 
+/**
+ * Convierte currentParams (que se almacena en la unidad UI seleccionada por
+ * el usuario) a unidades SI (kN, kN·m, m) ANTES de pasar al build() del
+ * ejemplo. Así los ejemplos siempre trabajan en SI, independientemente de
+ * lo que el usuario haya seleccionado en "Unidades".
+ */
+function toSIParams(): Record<string, number> {
+  if (!currentExample) return {};
+  const si: Record<string, number> = { ...currentParams };
+  for (const [k, p] of Object.entries(currentExample.params)) {
+    if (p.unitType === "force")  si[k] = toKn(currentParams[k]);
+    if (p.unitType === "moment") si[k] = toKnm(currentParams[k]);
+    // disp: convertir UI → m (aún no implementado — agregar dispToM si necesario)
+  }
+  return si;
+}
+
 function rebuild() {
   if (!currentExample) return;
   resetStates();
-  currentExample.build(currentParams, states, modalPanel);
+  currentExample.build(toSIParams(), states, modalPanel);
   // NO auto-escalar en rebuild — así cuando el usuario sube la carga,
   // la deformada crece visualmente (scale fijo × w creciente).
   // El auto-scale solo se llama en loadExample (primer build) para dar
@@ -233,13 +267,81 @@ function rebuild() {
   currentPane?.refresh();
 }
 
-// ── Tweakpane panel (encima del viewer) ──
+// ── Tweakpane panel (encima del viewer, ARRASTRABLE) ──
 const paneHost = document.createElement("div");
-// top: 96px para que el Tweakpane quede claramente debajo de la toolbar superior
-// (logo Hekatan + sourceCode + author) y no se superponga.
-// max-height: calc(100vh - 112px) para que el panel no se salga por abajo tampoco.
-paneHost.style.cssText = "position:fixed;top:96px;right:16px;width:min(320px,calc(100vw - 32px));max-width:90vw;z-index:100;max-height:calc(100vh - 112px);overflow-y:auto;font-size:12px";
+// top: 96px para que el Tweakpane quede claramente debajo de la toolbar superior.
+// El usuario puede arrastrarlo a cualquier posición (ver makePaneDraggable más abajo).
+// Posición persistida en localStorage para mantenerla entre sesiones.
+const PANE_POS_KEY = "hk_paneHostPos";
+const savedPos = (() => {
+  try {
+    const raw = localStorage.getItem(PANE_POS_KEY);
+    if (raw) return JSON.parse(raw) as { left: number; top: number };
+  } catch {}
+  return null;
+})();
+paneHost.style.cssText =
+  "position:fixed;" +
+  (savedPos ? `left:${savedPos.left}px;top:${savedPos.top}px;right:auto;` : "top:96px;right:16px;") +
+  "width:min(320px,calc(100vw - 32px));max-width:90vw;z-index:100;" +
+  "max-height:calc(100vh - 112px);overflow-y:auto;font-size:12px;" +
+  // Pequeña sombra y borde para indicar que es una ventana flotante
+  "box-shadow:0 6px 24px rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);";
 document.body.appendChild(paneHost);
+
+/**
+ * Convierte un elemento en arrastrable desde su "handle" (cualquier elemento
+ * con la clase `tp-fldv_b` o el primer `.tp-rotv_b` del Tweakpane — sus
+ * headers/title-bars). Persiste la posición en localStorage.
+ */
+function makePaneDraggable(host: HTMLElement) {
+  const findHandle = (): HTMLElement | null =>
+    host.querySelector(".tp-rotv_b, .tp-fldv_b") as HTMLElement | null;
+  let handle = findHandle();
+  // Reintentar si Tweakpane aún no renderizó
+  if (!handle) {
+    setTimeout(() => makePaneDraggable(host), 200);
+    return;
+  }
+  handle.style.cursor = "move";
+  handle.style.userSelect = "none";
+
+  let dragging = false;
+  let startX = 0, startY = 0, origLeft = 0, origTop = 0;
+  handle.addEventListener("mousedown", (e) => {
+    // Dejar pasar el click normal (colapsar/expandir); solo arrastrar con shift o
+    // con arrastre >5px. Detectamos arrastre real en mousemove.
+    dragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    const r = host.getBoundingClientRect();
+    origLeft = r.left;
+    origTop = r.top;
+    host.style.right = "auto";
+    host.style.left = `${origLeft}px`;
+    host.style.top = `${origTop}px`;
+    e.preventDefault();
+  });
+  window.addEventListener("mousemove", (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    const newLeft = Math.max(0, Math.min(window.innerWidth - 40, origLeft + dx));
+    const newTop = Math.max(0, Math.min(window.innerHeight - 40, origTop + dy));
+    host.style.left = `${newLeft}px`;
+    host.style.top = `${newTop}px`;
+  });
+  window.addEventListener("mouseup", () => {
+    if (!dragging) return;
+    dragging = false;
+    try {
+      localStorage.setItem(PANE_POS_KEY, JSON.stringify({
+        left: parseFloat(host.style.left),
+        top: parseFloat(host.style.top),
+      }));
+    } catch {}
+  });
+}
 
 // Helper de vistas — usa contexto Three.js del viewer (camera + controls)
 function setView(preset: "iso" | "plan" | "elevX" | "elevY") {
@@ -292,6 +394,9 @@ function buildParamsPane() {
   paneHost.innerHTML = "";
   if (!currentExample) return;
   const pane = new Pane({ container: paneHost, title: currentExample.name });
+  // Hacer el pane arrastrable desde su title-bar. El DOM del Tweakpane se
+  // crea de forma síncrona, así que el handle ya está disponible al llamar.
+  setTimeout(() => makePaneDraggable(paneHost), 0);
 
   // Selector de ejemplo (siempre arriba)
   const selectorObj = { id: currentExample.id };
@@ -316,11 +421,37 @@ function buildParamsPane() {
   fUnits.addBinding(unitsProxy, "force", {
     label: "Fuerza",
     options: { kN: "kN", tonf: "tonf", kip: "kip" },
-  }).on("change", (e) => { forceUnit.val = e.value as any; rebuild(); });
+  }).on("change", (e) => {
+    const oldUnit = forceUnit.val;
+    const newUnit = e.value as any;
+    // Re-escala los values actuales de params con unitType="force"/"moment"
+    // para que representen la MISMA fuerza física pero expresada en la nueva
+    // unidad. Ej: F=200 kN con oldUnit=kN, newUnit=tonf → F=200/9.80665=20.4 tonf.
+    if (currentExample && oldUnit !== newUnit) {
+      const fOld = oldUnit === "kN" ? 1 : oldUnit === "tonf" ? 9.80665 : 4.4482216;
+      const fNew = newUnit === "kN" ? 1 : newUnit === "tonf" ? 9.80665 : 4.4482216;
+      for (const [k, p] of Object.entries(currentExample.params)) {
+        if (p.unitType === "force" || p.unitType === "moment") {
+          // value_physical_kN = value_ui × factor_old ⇒ value_ui_new = value_ui × (factor_old/factor_new)
+          currentParams[k] = (currentParams[k] * fOld) / fNew;
+        }
+      }
+    }
+    forceUnit.val = newUnit;
+    // Rebuild UI del pane con nuevos labels y valores escalados
+    buildParamsPane();
+    // Rebuild modelo (no es necesario si internamente trabajamos en SI, pero el
+    // log de verificación usa p.F que ahora está en tonf; fine, se auto-corrige)
+    rebuild();
+  });
   fUnits.addBinding(unitsProxy, "disp", {
     label: "Desplazamiento",
-    options: { mm: "mm", cm: "cm", "µm (poco prob.)": "µm" },
-  }).on("change", (e) => { dispUnit.val = e.value as any; rebuild(); });
+    options: { mm: "mm", cm: "cm", m: "m", in: "in" },
+  }).on("change", (e) => {
+    dispUnit.val = e.value as any;
+    buildParamsPane();
+    rebuild();
+  });
 
   // ── Parámetros del ejemplo — agrupados en folders (si ParamDef.folder se define) ──
   const defaultFolderTitle = "Parámetros";
@@ -377,10 +508,26 @@ function buildParamsPane() {
       });
       continue;
     }
-    const opts: any = { label: p.label ?? key };
+    // Label dinámico: si el param tiene unitType, anexar el sufijo actual
+    // ("(kN)" / "(tonf)" / "(kip)" / "(kN·m)" / "(mm)", etc.). El label base se
+    // limpia primero de cualquier sufijo previo, así un `label: "F lateral (kN)"`
+    // funciona igual que `label: "F lateral"`.
+    const baseLabel = stripUnitSuffix(p.label ?? key);
+    const unitSuffix = p.unitType === "force"  ? ` ${forceUnitSuffix()}` :
+                       p.unitType === "moment" ? ` ${momentUnitSuffix()}` :
+                       p.unitType === "disp"   ? ` ${dispUnitSuffix()}` :
+                       "";
+    const finalLabel = baseLabel + unitSuffix;
+
+    const opts: any = { label: finalLabel };
     if (p.options !== undefined) {
       opts.options = p.options;
     } else {
+      // Cuando hay unitType, min/max/step vienen en unidad UI (para que
+      // el rango del slider sea razonable en la unidad elegida). Internamente
+      // currentParams[key] se almacena en la misma unidad UI que el slider;
+      // la conversión a SI la hace el ejemplo en build() vía toKn/toKnm/dispToM,
+      // O mejor: el workspace la hace automáticamente ANTES de llamar a build().
       if (p.min !== undefined) opts.min = p.min;
       if (p.max !== undefined) opts.max = p.max;
       if (p.step !== undefined) opts.step = p.step;
