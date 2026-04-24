@@ -75,7 +75,7 @@ function tt(p) {
       t.options !== void 0 ? i.options = t.options : (t.min !== void 0 && (i.min = t.min), t.max !== void 0 && (i.max = t.max), t.step !== void 0 && (i.step = t.step)), L.addBinding(d, s, i).on("change", M);
     }
   };
-  w(), document.body.append(C({ mesh: { nodes: S, elements: T, nodeInputs: P, elementInputs: O, deformOutputs: U, analyzeOutputs: k }, objects3D: $, settingsObj: { deformedShape: true, displayScale: -2, shellResults: p.defaultShellResult ?? "displacementZ", gridSize: 10, showCotas: true } }), D({ sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct", author: "https://www.linkedin.com/in/jorge-burbano-213741138/" })), u();
+  w(), document.body.append(C({ mesh: { nodes: S, elements: T, nodeInputs: P, elementInputs: O, deformOutputs: U, analyzeOutputs: k }, objects3D: $, settingsObj: { deformedShape: true, displayScale: -1.5, shellResults: p.defaultShellResult ?? "displacementZ", gridSize: 10, showCotas: true } }), D({ sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct", author: "https://www.linkedin.com/in/jorge-burbano-213741138/" })), u();
 }
 export {
   tt as r

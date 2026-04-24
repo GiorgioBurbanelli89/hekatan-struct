@@ -1,8 +1,6 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { s as r, __tla as __tla_0 } from "./shellThin-ORSIx719.js";
-import { r as m } from "./runExampleStandalone-CSNPjr5R.js";
-import "./analyze-ClLKGn9k.js";
-import "./pureFunctionsAny.generated-JAcEVsJ7.js";
+import { p as r, __tla as __tla_0 } from "./plateThin-C30Q-WjQ.js";
+import { r as m } from "./runExampleStandalone-Dn0jzZFR.js";
 import { __tla as __tla_1 } from "./didacticCpp-Bnj9OwqQ.js";
 import "./theme-CzzIlc4y.js";
 import "./getViewer-aUy3Y4mH.js";

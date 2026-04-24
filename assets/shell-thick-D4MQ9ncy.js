@@ -1,6 +1,6 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { s as r, __tla as __tla_0 } from "./shellThick-BSU3qF0E.js";
-import { r as m } from "./runExampleStandalone-CSNPjr5R.js";
+import { r as m } from "./runExampleStandalone-Dn0jzZFR.js";
 import "./analyze-ClLKGn9k.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
 import { __tla as __tla_1 } from "./didacticCpp-Bnj9OwqQ.js";
