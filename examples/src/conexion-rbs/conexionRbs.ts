@@ -85,9 +85,21 @@ export const conexionRbs: ExampleDef = {
     const G_steel = p.E_steel / 2.6;
     const rho_steel = 77;
 
+    // ── Node merging: nodos coincidentes se fusionan (une patines con alma) ──
+    const NODE_EPS = 1e-4;
+    const nodeMap = new Map<string, number>();
     const addNode = (x: number, y: number, z: number): number => {
-      nodes.push([x, y, z]);
-      return nodes.length - 1;
+      const kx = Math.round(x / NODE_EPS);
+      const ky = Math.round(y / NODE_EPS);
+      const kz = Math.round(z / NODE_EPS);
+      const key = `${kx},${ky},${kz}`;
+      let idx = nodeMap.get(key);
+      if (idx === undefined) {
+        nodes.push([x, y, z]);
+        idx = nodes.length - 1;
+        nodeMap.set(key, idx);
+      }
+      return idx;
     };
     const addShell = (n0: number, n1: number, n2: number, n3: number, t: number) => {
       elements.push([n0, n1, n2, n3]);
@@ -111,14 +123,20 @@ export const conexionRbs: ExampleDef = {
     const ny_col_flange = 2 * md;
     const nxc_web = md + 1;
 
-    // Patín frontal (+x)
+    // Planos medios para merging correcto
+    const xF_col = +p.d_col / 2 - p.tf_col / 2; // plano medio patín frontal col
+    const xB_col = -p.d_col / 2 + p.tf_col / 2; // plano medio patín trasero col
+    const xWebL = xB_col;                         // alma se conecta al patín trasero
+    const xWebR = xF_col;                         // alma se conecta al patín frontal
+
+    // Patín frontal (+x) — plano medio
     const colFrontGrid: number[][] = [];
     for (let iz = 0; iz <= nz_col; iz++) {
       const z = -L_col / 2 + (iz * L_col) / nz_col;
       const row: number[] = [];
       for (let iy = 0; iy <= ny_col_flange; iy++) {
         const y = -p.bf_col / 2 + (iy * p.bf_col) / ny_col_flange;
-        row.push(addNode(+p.d_col / 2, y, z));
+        row.push(addNode(xF_col, y, z));
       }
       colFrontGrid.push(row);
     }
@@ -132,14 +150,14 @@ export const conexionRbs: ExampleDef = {
       }
     }
 
-    // Patín trasero (-x)
+    // Patín trasero (-x) — plano medio
     const colBackGrid: number[][] = [];
     for (let iz = 0; iz <= nz_col; iz++) {
       const z = -L_col / 2 + (iz * L_col) / nz_col;
       const row: number[] = [];
       for (let iy = 0; iy <= ny_col_flange; iy++) {
         const y = -p.bf_col / 2 + (iy * p.bf_col) / ny_col_flange;
-        row.push(addNode(-p.d_col / 2, y, z));
+        row.push(addNode(xB_col, y, z));
       }
       colBackGrid.push(row);
     }
@@ -153,13 +171,13 @@ export const conexionRbs: ExampleDef = {
       }
     }
 
-    // Alma columna (plano XZ, y=0)
+    // Alma columna (plano XZ, y=0) — va de xB_col a xF_col (planos medios de patines)
     const colWebGrid: number[][] = [];
     for (let iz = 0; iz <= nz_col; iz++) {
       const z = -L_col / 2 + (iz * L_col) / nz_col;
       const row: number[] = [];
       for (let ix = 0; ix <= nxc_web; ix++) {
-        const x = -p.d_col / 2 + p.tf_col + (p.d_col - 2 * p.tf_col) * (ix / nxc_web);
+        const x = xWebL + (xWebR - xWebL) * (ix / nxc_web);
         row.push(addNode(x, 0, z));
       }
       colWebGrid.push(row);
@@ -213,6 +231,10 @@ export const conexionRbs: ExampleDef = {
     }
 
     // Nodos viga (patines con divisiones en Y, alma con divisiones en Z)
+    // Planos medios: top flange en z=+d/2-tf/2, bot flange en z=-d/2+tf/2, web en y=0
+    const zTop_b = +p.d_beam / 2 - p.tf_beam / 2;
+    const zBot_b = -p.d_beam / 2 + p.tf_beam / 2;
+
     const topFlangeGrid: number[][] = [];
     const botFlangeGrid: number[][] = [];
     const webGrid: number[][] = [];
@@ -227,15 +249,17 @@ export const conexionRbs: ExampleDef = {
       const botRow: number[] = [];
       for (let iy = 0; iy <= ny_beam_flange; iy++) {
         const y = -bf_local / 2 + (iy * bf_local) / ny_beam_flange;
-        topRow.push(addNode(x, y, +p.d_beam / 2));
-        botRow.push(addNode(x, y, -p.d_beam / 2));
+        topRow.push(addNode(x, y, zTop_b));
+        botRow.push(addNode(x, y, zBot_b));
       }
       topFlangeGrid.push(topRow);
       botFlangeGrid.push(botRow);
 
+      // Alma: de zBot_b a zTop_b → el TOP del alma coincide con el centro (y=0) del patín superior
+      // y el BOTTOM coincide con el centro del patín inferior → nodos se fusionan automáticamente
       const webRow: number[] = [];
       for (let iz = 0; iz <= nz_beam_web; iz++) {
-        const z = -p.d_beam / 2 + p.tf_beam + (p.d_beam - 2 * p.tf_beam) * (iz / nz_beam_web);
+        const z = zBot_b + (zTop_b - zBot_b) * (iz / nz_beam_web);
         webRow.push(addNode(x, 0, z));
       }
       webGrid.push(webRow);
