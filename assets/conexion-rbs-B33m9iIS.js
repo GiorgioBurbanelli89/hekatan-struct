@@ -1,10 +1,11 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { c as o, __tla as __tla_0 } from "./conexionRbs-4KuAArcy.js";
+import { c as o, __tla as __tla_0 } from "./conexionRbs-ClxbTAMb.js";
 import { r } from "./runExampleStandalone-BkCSvKFl.js";
 import "./analyze-ClLKGn9k.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
 import { __tla as __tla_1 } from "./didacticCpp-Bnj9OwqQ.js";
 import "./menegottoPinto-B-C2cxus.js";
+import { __tla as __tla_2 } from "./secantPlasticity-B1VMR3_i.js";
 import "./Text-C52Bkp-N.js";
 import "./theme-CzzIlc4y.js";
 import "./getViewer-BIPlhsp_.js";
@@ -20,6 +21,12 @@ Promise.all([
   (() => {
     try {
       return __tla_1;
+    } catch {
+    }
+  })(),
+  (() => {
+    try {
+      return __tla_2;
     } catch {
     }
   })()
