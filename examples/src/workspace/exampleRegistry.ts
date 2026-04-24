@@ -163,6 +163,12 @@ import { membrana } from "../membrana-pstress/membrana";
 import { shellThin } from "../shell-thin/shellThin";
 import { shellThick } from "../shell-thick/shellThick";
 import { edificioAporticado } from "../edificio-aporticado/edificioAporticado";
+// Variantes limpias de edificios por tipo estructural
+import { edificioHormigon } from "../edificio-hormigon/edificioHormigon";
+import { edificioAceroV2 } from "../edificio-acero-v2/edificioAceroV2";
+import { edificioMixto } from "../edificio-mixto/edificioMixto";
+import { edificioMuros } from "../edificio-muros/edificioMuros";
+import { edificioDual } from "../edificio-dual/edificioDual";
 import { trussGen } from "../truss-gen/trussGen";
 import { barraAxial } from "../barra-axial/barraAxial";
 import { portico2D } from "../portico-2d/portico2D";
@@ -178,8 +184,14 @@ export const examplesRegistry: ExampleDef[] = [
   portico2D,
   tower3D,
   galpon,
-  // Edificios
+  // Edificios — variantes limpias por tipo estructural
   edificioAporticado,
+  edificioHormigon,
+  edificioAceroV2,
+  edificioMixto,
+  edificioMuros,
+  edificioDual,
+  // Legacy (se mantienen por compatibilidad con URLs existentes)
   edificioConLosa,
   edificioConMuros,
   edifAcero,
