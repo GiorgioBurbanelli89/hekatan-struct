@@ -7,16 +7,19 @@
  *  anima sinusoidalmente el modo seleccionado. Funciona con cualquier ejemplo
  *  que expone un `ModalOutputs` (frequencies, modeShapes, massParticipation).
  *
+ *  REGLA DE UI: el helper NO crea ventanas/badges/divs custom. Toda la
+ *  información del modo actual (nº, frecuencia, período, dirección
+ *  dominante) se expone vía `getStatus()` para que el Tweakpane del
+ *  workspace la muestre como bindings readonly (consistencia: único
+ *  sistema de UI = Tweakpane).
+ *
  *  Uso típico desde el workspace:
  *    const anim = createModalAnimator({ mesh, viewerElm });
  *    anim.setResults(modalOut);
  *    anim.setMode(0);      // modo 1 (0-indexed)
  *    anim.play();
- *    // ...
- *    anim.stop();
- *
- *  El helper también renderiza un BADGE flotante con "Modo X — f = Y Hz"
- *  para que el usuario vea qué modo se está animando.
+ *    // El caller lee anim.getStatus() y hace pane.refresh() para actualizar
+ *    // las líneas readonly "f = X Hz", "Dominante: Ux (78%)", etc.
  * =============================================================================
  */
 import type { State } from "vanjs-core";
@@ -39,15 +42,32 @@ export interface ModalAnimatorConfig {
    *  frecuencia REAL que a veces es muy alta o muy baja). Default: escalar
    *  frecuencia a [0.5, 3] Hz para oscilación clara. */
   visFrequencyRange?: [number, number];
+  /** Callback invocado cada vez que el status cambia (modo, freq, play/stop).
+   *  El workspace lo usa para llamar pane.refresh() y actualizar los bindings
+   *  readonly del Tweakpane. */
+  onStatusChange?: () => void;
+}
+
+/** Snapshot del estado actual — se muestra en el Tweakpane como readonly. */
+export interface ModalAnimatorStatus {
+  /** "Modo 3 / 12" o "Sin resultados" */
+  mode: string;
+  /** "0.458 Hz" */
+  frequency: string;
+  /** "2.184 s" */
+  period: string;
+  /** "Ux (78%)" — dirección dominante con % de masa participante */
+  dominant: string;
+  /** "▶ Reproduciendo" / "⏸ Pausado" */
+  state: string;
 }
 
 export interface ModalAnimator {
-  /** Carga nuevos resultados modales (modo oscila hasta que se llame setMode()) */
+  /** Carga nuevos resultados modales */
   setResults(out: ModalOutputs): void;
-  /** Selecciona el modo a animar (0-indexed). Si se está reproduciendo, se
-   *  reinicia el animation loop con el nuevo modo. */
+  /** Selecciona el modo a animar (0-indexed) */
   setMode(i: number): void;
-  /** Inicia la animación del modo actual (no-op si ya está corriendo) */
+  /** Inicia la animación del modo actual */
   play(): void;
   /** Detiene la animación y restaura nodos a posiciones originales */
   stop(): void;
@@ -59,17 +79,18 @@ export interface ModalAnimator {
   currentMode(): number;
   /** Frecuencia del modo actual en Hz (0 si no hay results) */
   currentFreq(): number;
-  /** Remueve el badge y limpia todos los recursos */
+  /** Snapshot string-izado del status para mostrar en Tweakpane */
+  getStatus(): ModalAnimatorStatus;
+  /** Limpieza de recursos (cancela RAF, restaura nodos) */
   dispose(): void;
 }
 
 /**
  * Crea un animador modal para el viewer. El viewer debe tener un `__ctx` en
- * su DOM element (getViewer de awatif-ui lo expone). El badge se anexa al
- * `document.body` y se muestra/oculta según el estado de reproducción.
+ * su DOM element (getViewer de awatif-ui lo expone).
  */
 export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
-  const { mesh, viewerElm } = cfg;
+  const { mesh, viewerElm, onStatusChange } = cfg;
   const scalePct = cfg.scalePercent ?? 5;
   const [visMin, visMax] = cfg.visFrequencyRange ?? [0.5, 3];
 
@@ -79,42 +100,35 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
   let rafId = 0;
   let originalNodes: Node[] = [];
 
-  // Badge flotante (abajo a la derecha) mostrando modo + frecuencia
-  const badge = document.createElement("div");
-  badge.id = "modal-animation-badge";
-  badge.style.cssText = `
-    position: fixed; bottom: 16px; right: 16px; z-index: 9999;
-    background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%);
-    color: #fff; font-family: monospace; font-size: 13px; font-weight: 700;
-    padding: 10px 16px; border-radius: 8px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.45);
-    display: none; pointer-events: none;
-    border: 1px solid rgba(255,255,255,0.25);
-    letter-spacing: 0.3px;
-  `;
-  badge.innerHTML = "⚡ Modal";
-  document.body.appendChild(badge);
+  function fireStatus() { onStatusChange?.(); }
 
-  function updateBadge() {
+  function computeStatus(): ModalAnimatorStatus {
     if (!results || !results.frequencies || results.frequencies.length === 0) {
-      badge.style.display = "none";
-      return;
+      return {
+        mode: "Sin resultados",
+        frequency: "—",
+        period: "—",
+        dominant: "—",
+        state: "⏸ Detenido",
+      };
     }
     const freq = results.frequencies[mode] ?? 0;
     const T = freq > 0 ? 1 / freq : 0;
-    const mp = results.massParticipation?.[mode];
     const dirs = ["Ux", "Uy", "Uz", "Rx", "Ry", "Rz"];
+    const mp = results.massParticipation?.[mode];
     let domDir = "—";
     if (mp) {
       let maxV = 0, maxI = 0;
       for (let i = 0; i < 6; i++) if (Math.abs(mp[i]) > maxV) { maxV = Math.abs(mp[i]); maxI = i; }
       domDir = `${dirs[maxI]} (${(maxV * 100).toFixed(0)}%)`;
     }
-    badge.innerHTML = `⚡ Modo ${mode + 1} / ${results.frequencies.length} <br>` +
-                      `<span style="color:#fde047">f = ${freq.toFixed(3)} Hz</span> · ` +
-                      `<span style="color:#a5f3fc">T = ${T.toFixed(3)} s</span> <br>` +
-                      `<span style="color:#86efac;font-size:11px">Dominante: ${domDir}</span>`;
-    badge.style.display = "block";
+    return {
+      mode: `Modo ${mode + 1} / ${results.frequencies.length}`,
+      frequency: `${freq.toFixed(4)} Hz`,
+      period: `${T.toFixed(4)} s`,
+      dominant: domDir,
+      state: rafId !== 0 ? "▶ Reproduciendo" : "⏸ Pausado",
+    };
   }
 
   // ── Core animation loop ────────────────────────────────────────────
@@ -131,7 +145,6 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
     if (restore && originalNodes.length > 0) {
       mesh.nodes.val = originalNodes.map((n) => [...n] as Node);
     }
-    badge.style.display = "none";
   }
 
   function startInternal() {
@@ -141,15 +154,15 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
 
     const shape = results.modeShapes[mode];
     const freq = results.frequencies?.[mode] || 1;
-    // Mapear frecuencia REAL → frecuencia VISIBLE: la primera frecuencia se
-    // renderiza a 1 Hz; frecuencias mayores se aceleran pero con cap en visMax.
+    // Mapear frecuencia REAL → frecuencia VISIBLE para que modos altos no oscilen
+    // tan rápido que el ojo no los detecte.
     const baseFreq = results.frequencies?.[0] || 1;
-    const visFreq = Math.max(visMin, Math.min(visMax, (freq / baseFreq)));
+    const visFreq = Math.max(visMin, Math.min(visMax, freq / baseFreq));
 
     originalNodes = mesh.nodes.rawVal.map((n) => [...n] as Node);
     const nNodes = originalNodes.length;
 
-    // Calcular escala para que la deformación visible sea scalePct% del modelo
+    // Amplitud = scalePct% del diagonal del modelo / maxDisp del modo
     let xMin = Infinity, yMin = Infinity, zMin = Infinity;
     let xMax = -Infinity, yMax = -Infinity, zMax = -Infinity;
     for (const n of originalNodes) {
@@ -166,8 +179,6 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
     }
     const mScale = maxDisp > 1e-12 ? (extent * scalePct / 100) / maxDisp : 1;
 
-    updateBadge();
-
     const t0 = performance.now();
     const tick = () => {
       const t = (performance.now() - t0) / 1000;
@@ -182,25 +193,26 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
         ];
       }
       mesh.nodes.val = newNodes;
-      // Forzar un render inmediato (sin esperar el debounce reactivo de van.derive)
+      // Forzar render inmediato (bypass debounce reactivo de van.derive)
       getCtx()?.render();
       rafId = requestAnimationFrame(tick);
     };
     rafId = requestAnimationFrame(tick);
+    fireStatus();
   }
 
   return {
     setResults(out) {
       results = out;
       if (mode >= (out?.frequencies?.length ?? 0)) mode = 0;
-      updateBadge();
+      fireStatus();
     },
     setMode(i) {
       if (!results) return;
       const n = results.frequencies?.length ?? 0;
       mode = Math.max(0, Math.min(n - 1, i));
-      if (rafId !== 0) startInternal();  // reanimar con nuevo modo
-      else updateBadge();
+      if (rafId !== 0) startInternal();
+      else fireStatus();
     },
     play() {
       if (!results) return;
@@ -208,14 +220,15 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
     },
     stop() {
       stopInternal(true);
+      fireStatus();
     },
     isPlaying() { return rafId !== 0; },
     modeCount() { return results?.frequencies?.length ?? 0; },
     currentMode() { return mode; },
     currentFreq() { return results?.frequencies?.[mode] ?? 0; },
+    getStatus() { return computeStatus(); },
     dispose() {
       stopInternal(true);
-      badge.remove();
       results = null;
     },
   };

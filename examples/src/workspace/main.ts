@@ -24,6 +24,8 @@ import {
 import { getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit } from "awatif-ui";
 import { createModalPanel } from "../shared/renderModalTable";
 import { createModalAnimator, type ModalAnimator } from "../shared/animateMode";
+// createModalAnimator también se llama en buildParamsPane() para re-wirear el
+// callback onStatusChange al folder "⚡ Modal + Animación" recién creado.
 import { examplesRegistry, activeExampleVersion, type ExampleDef } from "./exampleRegistry";
 import {
   forceUnit, dispUnit, fromKn, toKn, fromKnm, toKnm,
@@ -580,39 +582,66 @@ function buildParamsPane() {
     computedObj = null;
   }
 
-  // Modal trigger + animación visual del modo (opcional)
+  // Modal trigger + animación visual del modo (todo dentro del Tweakpane — sin
+  // ventanas flotantes custom). El status (modo, frecuencia, período, dirección
+  // dominante) se muestra como bindings readonly que se refrescan en vivo.
   if (currentExample.hasModal) {
     const fModal = pane.addFolder({ title: "⚡ Modal + Animación", expanded: true });
-    // Botón: correr modal — dispara runModal() que llena modalPanel y stores la respuesta
-    // en un shadow var que leemos para la animación.
+
+    // Status object: el animador dispara `onStatusChange` → pane.refresh() lo actualiza.
+    const status = { mode: "—", frequency: "—", period: "—", dominant: "—", state: "⏸ Detenido" };
+    modalAnimator.dispose?.();
+    modalAnimator = createModalAnimator({
+      mesh: { nodes, elements, deformOutputs, analyzeOutputs },
+      viewerElm,
+      scalePercent: 5,
+      onStatusChange: () => {
+        const s = modalAnimator.getStatus();
+        status.mode = s.mode;
+        status.frequency = s.frequency;
+        status.period = s.period;
+        status.dominant = s.dominant;
+        status.state = s.state;
+        currentPane?.refresh();
+      },
+    });
     let lastModalResults: any = null;
-    // Wrapper del modalPanel original para capturar la respuesta
     const captureModalPanel = {
       div: modalPanel.div,
       render: (out: any, meta: any) => {
         lastModalResults = out;
         modalPanel.render(out, meta);
-        // Refrescar animador con los nuevos resultados y auto-play modo 1
         if (out?.frequencies?.length) {
           modalAnimator.setResults(out);
           modalAnimator.setMode(0);
           modalAnimator.play();
-          animCtrl.modeIdx = 1;   // 1-indexed para UI
+          animCtrl.modeIdx = 1;
           currentPane?.refresh();
         }
       },
     };
+
     fModal.addButton({ title: "▶ Correr modal + animar" }).on("click", () => {
       modalPanel.div.style.display = "block";
       if (currentExample!.runModal) currentExample!.runModal(toSIParams(), states, captureModalPanel);
     });
-    // Control: selector de modo (1..N) — se popula tras correr el modal
+
+    // Selector dinámico de modo — el usuario gira el slider y la animación
+    // cambia al nuevo modo en tiempo real.
     fModal.addBinding(animCtrl, "modeIdx", {
       label: "Modo #", min: 1, max: 30, step: 1,
     }).on("change", (e) => {
       if (!lastModalResults) return;
       modalAnimator.setMode(Math.round(e.value) - 1);
     });
+
+    // Status LIVE (readonly) — single source of truth = Tweakpane
+    fModal.addBinding(status, "mode", { readonly: true, view: "text", interval: 0, label: "Modo" } as any);
+    fModal.addBinding(status, "frequency", { readonly: true, view: "text", interval: 0, label: "Frecuencia" } as any);
+    fModal.addBinding(status, "period", { readonly: true, view: "text", interval: 0, label: "Período" } as any);
+    fModal.addBinding(status, "dominant", { readonly: true, view: "text", interval: 0, label: "Dominante" } as any);
+    fModal.addBinding(status, "state", { readonly: true, view: "text", interval: 0, label: "Estado" } as any);
+
     fModal.addButton({ title: "⏸ Pausar" }).on("click", () => modalAnimator.stop());
     fModal.addButton({ title: "▶ Reanudar" }).on("click", () => {
       if (lastModalResults) modalAnimator.play();
