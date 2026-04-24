@@ -1,4 +1,4 @@
-import { e as i, __tla as __tla_0 } from "./edificioAporticado-KUAnCkeF.js";
+import { e as i, __tla as __tla_0 } from "./edificioAporticado-Bl5n5_eH.js";
 let l;
 let __tla = Promise.all([
   (() => {
@@ -17,7 +17,7 @@ let __tla = Promise.all([
   };
   e.matViga = {
     ...a.matViga,
-    default: 0
+    default: 1
   };
   e.colShape = {
     ...a.colShape,
@@ -33,21 +33,20 @@ let __tla = Promise.all([
   };
   e.slabT = {
     ...a.slabT,
-    default: 0.15
+    default: 0.12
   };
   e.fcConcr = {
     ...a.fcConcr,
-    default: 240
+    default: 280
   };
   l = {
-    id: "edificio-hormigon",
-    name: "Edificio Hormig\xF3n (puro)",
+    id: "edificio-mixto",
+    name: "Edificio Mixto (Col Hormig\xF3n + Viga Acero)",
     category: "Edificios",
     defaultShellResult: "bendingXX",
     availableShellResults: [
       "bendingXX",
       "bendingYY",
-      "bendingXY",
       "displacementZ",
       "vonMises"
     ],
