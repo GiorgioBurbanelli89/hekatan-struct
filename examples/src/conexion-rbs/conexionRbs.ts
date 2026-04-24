@@ -26,6 +26,8 @@ import {
   type MenegottoPintoParams,
 } from "awatif-fem";
 import { secantPlasticSolve } from "../shared/secantPlasticity";
+import { incrementalPushover } from "../shared/incrementalPushover";
+import { buildPushoverChart3D } from "../shared/pushoverChart3D";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import type { Node, Element } from "awatif-fem";
 import * as THREE from "three";
@@ -79,9 +81,20 @@ export const conexionRbs: ExampleDef = {
     // ── Malla (para ver concentración de tensiones / fracturas) ──
     mesh_density: { default: 3, min: 1, max: 5, step: 1, label: "Densidad malla", folder: "Malla" },
     // ── Solver FEM ──
-    use_nonlinear: { default: 0, label: "Solver", options: { "Lineal (elástico)": 0, "No-lineal (plasticidad J2 secante)": 1 }, folder: "Solver" },
+    use_nonlinear: {
+      default: 2,
+      label: "Solver",
+      options: {
+        "Lineal (elástico)": 0,
+        "No-lineal J2 secante": 1,
+        "IDEA StatiCa (pushover)": 2,
+      },
+      folder: "Solver",
+    },
     nl_max_iter: { default: 10, min: 3, max: 25, step: 1, label: "Max iter NL", folder: "Solver" },
-    load_factor: { default: 0.10, min: 0.02, max: 0.50, step: 0.02, label: "Factor carga (×Mp)", folder: "Solver" },
+    load_factor: { default: 0.10, min: 0.02, max: 0.80, step: 0.02, label: "Factor carga (×Mp)", folder: "Solver" },
+    // ── IDEA StatiCa mode ──
+    idea_steps: { default: 12, min: 4, max: 30, step: 1, label: "N pasos pushover", folder: "Solver" },
   },
   build(p, states) {
     // ── 1. Geometría 3D REAL con shells ──────────────────
@@ -346,9 +359,65 @@ export const conexionRbs: ExampleDef = {
       areas, momentsOfInertiaY, momentsOfInertiaZ, torsionalConstants, shearModuli,
     } as any;
 
-    // ── Ejecutar solver (lineal o no-lineal secante J2) ──
+    // ── Ejecutar solver (lineal / NL secante / IDEA pushover incremental) ──
     try {
-      if (p.use_nonlinear > 0.5) {
+      const mode = Math.round(p.use_nonlinear);
+      if (mode === 2) {
+        // ═══════════════════════════════════════════════════════════════
+        // MODO IDEA StatiCa: pushover incremental con curva P-δ
+        // ═══════════════════════════════════════════════════════════════
+        const trackNode = topFlangeGrid[iTip][0]; // nodo del tip de la viga
+        const ipo = incrementalPushover({
+          nodes, elements,
+          supports,
+          elementInputs: states.elementInputs.val,
+          buildLoads: (lam: number) => {
+            const L = new Map<number, [number, number, number, number, number, number]>();
+            const F_per = (F_tip * lam) / (ny_beam_flange + 1);
+            for (let iy = 0; iy <= ny_beam_flange; iy++) {
+              L.set(topFlangeGrid[iTip][iy], [0, 0, -F_per, 0, 0, 0]);
+            }
+            return L;
+          },
+          Fy: p.Fy,
+          trackNode,
+          trackDof: 2, // Z (desplazamiento vertical)
+          nSteps: Math.round(p.idea_steps),
+          maxIterPerStep: Math.round(p.nl_max_iter),
+          softeningFactor: 0.90,
+        });
+        states.deformOutputs.val = ipo.finalDeformOutputs;
+        const aOut = ipo.finalAnalyzeOutputs;
+        (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [0, p.Fy] };
+        states.analyzeOutputs.val = aOut;
+        (states as any).__ideaInfo = ipo;
+        (states as any).__nlInfo = null;
+
+        // Renderizar curva P-δ 3D al lado del modelo
+        const chartCenter: [number, number, number] = [
+          x0 + p.L_beam * 0.55,
+          -p.bf_beam * 2.5,
+          0,
+        ];
+        const chartObjects = buildPushoverChart3D({
+          lambdas: ipo.lambdas,
+          displacements: ipo.displacements,
+          firstYieldStep: ipo.firstYieldStep,
+          center: chartCenter,
+          size: Math.max(p.L_beam * 0.4, 1.0),
+          plane: "xz",
+        });
+        // Agregar a objects3D existentes (junto con la rótula y soldaduras)
+        states.objects3D.val = [...states.objects3D.val, ...chartObjects];
+
+        console.log(
+          `[conexion-rbs IDEA] ${ipo.lambdas.length} pasos | ` +
+            `λ_max=${ipo.ultimateLoadFactor.toFixed(2)} | ` +
+            `δ_max=${(ipo.displacements[ipo.displacements.length - 1] * 1000).toFixed(2)}mm | ` +
+            `1er yield en paso ${ipo.firstYieldStep + 1}/${ipo.lambdas.length} | ` +
+            `k_elástica=${ipo.elasticStiffness.toFixed(1)}`,
+        );
+      } else if (mode === 1) {
         const nl = secantPlasticSolve({
           nodes, elements,
           nodeInputs: { supports, loads },
@@ -366,7 +435,7 @@ export const conexionRbs: ExampleDef = {
           iterations: nl.iterations, converged: nl.converged,
           elementsYielded: nl.elementsYielded, maxRatio: nl.maxRatio,
         };
-        console.log(`[conexion-rbs NL] iter=${nl.iterations} conv=${nl.converged} yield=${nl.elementsYielded} maxRatio=${nl.maxRatio.toFixed(2)}`);
+        (states as any).__ideaInfo = null;
       } else {
         const dOut = deform(nodes, elements, { supports, loads }, states.elementInputs.val);
         states.deformOutputs.val = dOut;
@@ -374,6 +443,7 @@ export const conexionRbs: ExampleDef = {
         (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [0, p.Fy] };
         states.analyzeOutputs.val = aOut;
         (states as any).__nlInfo = null;
+        (states as any).__ideaInfo = null;
       }
     } catch (e: any) {
       console.error("[conexion-rbs] solver error:", e?.message || e, e);
@@ -596,7 +666,35 @@ export const conexionRbs: ExampleDef = {
         };
       })(),
       ...(() => {
+        const idea = (states as any).__ideaInfo;
         const nl = (states as any).__nlInfo;
+        if (idea) {
+          const lastD = idea.displacements[idea.displacements.length - 1] ?? 0;
+          const lastλ = idea.lambdas[idea.lambdas.length - 1] ?? 0;
+          const yieldλ =
+            idea.firstYieldStep >= 0 ? idea.lambdas[idea.firstYieldStep] : null;
+          const yieldδ =
+            idea.firstYieldStep >= 0 ? idea.displacements[idea.firstYieldStep] : null;
+          const maxVM = Math.max(...idea.vonMisesMax);
+          const lastYielded = idea.elementsYielded[idea.elementsYielded.length - 1] ?? 0;
+          const allConverged = idea.converged.every((c: boolean) => c);
+          return {
+            "── IDEA StatiCa (pushover incremental) ──": "",
+            "Pasos ejecutados": `${idea.lambdas.length}`,
+            "Convergencia": allConverged ? "✓ todos los pasos" : "✗ algún paso no convergió",
+            "λ inicio fluencia": yieldλ !== null ? `${(yieldλ * 100).toFixed(0)}% (paso ${idea.firstYieldStep + 1})` : "no fluyó",
+            "δ @ 1er yield": yieldδ !== null ? `${(yieldδ * 1000).toFixed(2)} mm` : "—",
+            "λ final": `${(lastλ * 100).toFixed(0)}%`,
+            "δ final (tip)": `${(lastD * 1000).toFixed(2)} mm`,
+            "k elástica (λ/δ)": `${idea.elasticStiffness.toFixed(2)} 1/m`,
+            "σvm_max (todo el pushover)": `${(maxVM / 1000).toFixed(1)} MPa`,
+            "σvm / Fy": `${(maxVM / p.Fy).toFixed(2)}`,
+            "Shells plastificados (final)": `${lastYielded}`,
+            "Modo falla (estimado)": lastYielded > 0
+              ? "RBS (dogbone) — donde concentra plastificación"
+              : "Rango elástico (aumentá load_factor)",
+          };
+        }
         if (!nl) return { "── Solver FEM shells ──": "", "Tipo": "Lineal elástico" };
         return {
           "── Solver FEM shells (NO-LINEAL J2) ──": "",
