@@ -5,6 +5,7 @@
 import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import { buildEdificioCotas, makeLabel } from "../shared/cotas3D";
+import { etabsDiscretize, DISCRETIZE_OPTIONS } from "../shared/etabsDiscretization";
 
 const rho_c = 24;
 
@@ -77,6 +78,10 @@ export const edificioAporticado: ExampleDef = {
     bracesMode: PE("Avanzado", "Diagonales", 0, { "ninguna": 0, "perimetrales": 1, "todas": 2, "solo X": 3, "solo Y": 4 }),
     slabOn:   PE("Avanzado", "Losa",  0, { "Off": 0, "On": 1 }),
     slabT:    P("Avanzado", "t losa (m)", 0.15, 0.08, 0.30, 0.01),
+    // Discretización automática ETABS-style: la losa se subdivide por paño
+    // (por bay) al tamaño objetivo seleccionado. 25-50 cm replica el default
+    // interno de ETABS; 15 cm es análisis fino; 0 fuerza Q4 único por paño.
+    slabDisc: PE("Avanzado", "Discretización losa", 0.50, DISCRETIZE_OPTIONS),
   },
   /**
    * Genera sliders dinámicos SOLO para los pisos/vanos que realmente existen.
@@ -336,13 +341,19 @@ export const edificioAporticado: ExampleDef = {
       const nodeIndex = new Map<string, number>();
       const nodeKey = (x: number, y: number, z: number) => `${Math.round(x*10000)},${Math.round(y*10000)},${Math.round(z*10000)}`;
       for (let ni = 0; ni < nodes.length; ni++) nodeIndex.set(nodeKey(nodes[ni][0], nodes[ni][1], nodes[ni][2]), ni);
-      const nSx = nSubViga, nSy = nSubViga;
+      // Discretización ETABS-style: cada paño (bay) se mallado por separado
+      // usando el tamaño objetivo que el usuario eligió en "Discretización losa".
+      // Paños grandes → más elementos; paños pequeños → menos. Coherente con ETABS.
+      const slabTarget = p.slabDisc > 0 ? p.slabDisc : 0.50;
       for (let iz = 1; iz < zCoords.length; iz++) {
         const z = zCoords[iz];
         for (let bx = 0; bx < xCoords.length - 1; bx++)
           for (let by = 0; by < yCoords.length - 1; by++) {
             const x0 = xCoords[bx], x1 = xCoords[bx + 1];
             const y0 = yCoords[by], y1 = yCoords[by + 1];
+            // Discretización por paño según tamaño objetivo
+            const { n: nSx } = etabsDiscretize(Math.abs(x1 - x0), slabTarget);
+            const { n: nSy } = etabsDiscretize(Math.abs(y1 - y0), slabTarget);
             const grid: number[][] = [];
             for (let jr = 0; jr <= nSy; jr++) {
               const row: number[] = [];
