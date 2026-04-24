@@ -665,10 +665,9 @@ export const conexionRbs: ExampleDef = {
       classification: p.classification < 0.5 ? "IMF" : p.classification < 1.5 ? "SMF" : "Extended",
     };
 
-    // ── Gráficos 3D: histéresis M-θ + protocolo K3 (al lado del modelo) ──
+    // ── Gráficos 3D animables: histéresis M-θ + protocolo K3 ──
     const chartSize = Math.max(p.L_beam * 0.6, 1.5);
-    // Histéresis a la derecha (más allá del extremo de la viga)
-    const hystObjs = buildHysteresisChart3D({
+    const hystHandle = buildHysteresisChart3D({
       theta: thetaHistory,
       M: MHistory,
       Mp: Mp_rbs,
@@ -677,8 +676,7 @@ export const conexionRbs: ExampleDef = {
       size: chartSize,
       plane: "xz",
     });
-    // Protocolo K3 (drift vs step) abajo del modelo
-    const protocolObjs = buildLoadingProtocolChart3D({
+    const protocolHandle = buildLoadingProtocolChart3D({
       drifts: thetaHistory,
       center: [x0 + p.L_beam * 0.5 - chartSize / 2, 0, -p.story_h / 2 - chartSize * 0.7],
       size: chartSize,
@@ -686,9 +684,21 @@ export const conexionRbs: ExampleDef = {
     });
     states.objects3D.val = [
       ...states.objects3D.val,
-      ...hystObjs,
-      ...protocolObjs,
+      ...hystHandle.objects,
+      ...protocolHandle.objects,
     ];
+    // Guardar handles para usarlos en la animación
+    (window as any).__rbsCharts = { hyst: hystHandle, prot: protocolHandle };
+    // Si la animación está OFF, mostrar curvas completas; si está ON, partir vacías
+    if (p.animate_k3 < 0.5) {
+      hystHandle.setProgress(thetaHistory.length - 1);
+      protocolHandle.setProgress(thetaHistory.length - 1);
+      hystHandle.moveCursor(thetaHistory.length - 1);
+      protocolHandle.moveCursor(thetaHistory.length - 1);
+    } else {
+      hystHandle.setProgress(0);
+      protocolHandle.setProgress(0);
+    }
 
     // ── Animación K3: el deformScale del viewer pulsa con el protocolo ──
     // Limpiar animación previa si existe (al re-build)
@@ -700,9 +710,9 @@ export const conexionRbs: ExampleDef = {
     if (p.animate_k3 > 0.5) {
       const periodMs = p.animate_k3 < 1.5 ? 25 : 100; // 40 Hz vs 10 Hz
       const driftMax = Math.max(...thetaHistory.map((d) => Math.abs(d)));
-      const ampFactor = p.anim_amp; // amplificación visual
+      const ampFactor = p.anim_amp;
       let step = 0;
-      // Esperar a que el viewer esté en el DOM
+      const charts = (window as any).__rbsCharts;
       setTimeout(() => {
         const findViewer = (): any => {
           const divs = document.querySelectorAll("div");
@@ -714,13 +724,20 @@ export const conexionRbs: ExampleDef = {
         const settings = viewerEl.__settings;
         const ctx = viewerEl.__ctx;
         if (!settings?.deformScale || !ctx?.render) return;
-        // Activar deformedShape
         if (settings.deformedShape) settings.deformedShape.val = true;
-        // Loop
         const id = setInterval(() => {
           const driftNow = thetaHistory[step] ?? 0;
           const scale = (driftNow / driftMax) * ampFactor;
           settings.deformScale.val = scale;
+          // Sincronizar gráficas
+          if (charts?.hyst) {
+            charts.hyst.moveCursor(step);
+            charts.hyst.setProgress(step);
+          }
+          if (charts?.prot) {
+            charts.prot.moveCursor(step);
+            charts.prot.setProgress(step);
+          }
           ctx.render?.();
           step = (step + 1) % thetaHistory.length;
         }, periodMs);
