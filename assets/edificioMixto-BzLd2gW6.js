@@ -1,5 +1,5 @@
-import { e as l, __tla as __tla_0 } from "./edificioAporticado-Bl5n5_eH.js";
-let o;
+import { e as i, __tla as __tla_0 } from "./edificioAporticado-By5emgjT.js";
+let l;
 let __tla = Promise.all([
   (() => {
     try {
@@ -8,7 +8,7 @@ let __tla = Promise.all([
     }
   })()
 ]).then(async () => {
-  const a = l.params, e = {
+  const a = i.params, e = {
     ...a
   };
   e.matCol = {
@@ -29,7 +29,7 @@ let __tla = Promise.all([
   };
   e.bracesMode = {
     ...a.bracesMode,
-    default: 2
+    default: 0
   };
   e.slabT = {
     ...a.slabT,
@@ -39,13 +39,9 @@ let __tla = Promise.all([
     ...a.fcConcr,
     default: 280
   };
-  e.nPisos = {
-    ...a.nPisos,
-    default: 10
-  };
-  o = {
-    id: "edificio-dual",
-    name: "Edificio Dual (Mixto + Muros + Diagonales)",
+  l = {
+    id: "edificio-mixto",
+    name: "Edificio Mixto (Col Hormig\xF3n + Viga Acero)",
     category: "Edificios",
     defaultShellResult: "bendingXX",
     availableShellResults: [
@@ -56,13 +52,13 @@ let __tla = Promise.all([
     ],
     hasModal: true,
     params: e,
-    build: l.build,
-    runModal: l.runModal,
-    computedLabels: l.computedLabels,
-    dynamicParams: l.dynamicParams
+    build: i.build,
+    runModal: i.runModal,
+    computedLabels: i.computedLabels,
+    dynamicParams: i.dynamicParams
   };
 });
 export {
   __tla,
-  o as e
+  l as e
 };
