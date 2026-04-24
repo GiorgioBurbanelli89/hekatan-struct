@@ -22,6 +22,7 @@
  */
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import type { Node, Element } from "awatif-fem";
+import { deform, analyze } from "awatif-fem";
 import * as THREE from "three";
 
 export const placaBase: ExampleDef = {
@@ -29,6 +30,8 @@ export const placaBase: ExampleDef = {
   name: "Placa base anclada (AISC 360-22 §J8 + ACI 318)",
   category: "Conexiones",
   hasModal: false,
+  defaultShellResult: "vonMises",
+  availableShellResults: ["vonMises", "bendingXX", "bendingYY", "bendingXY", "membraneXX", "membraneYY", "displacementZ"],
   params: {
     // ── Placa ──
     B: { default: 0.50, min: 0.25, max: 1.20, step: 0.02, label: "B placa (m, eje X)", folder: "Placa" },
@@ -64,8 +67,8 @@ export const placaBase: ExampleDef = {
     // ── Cargas de diseño ──
     Pu: { default: 800, min: 0, max: 5000, step: 25, label: "Pu (compresión)", folder: "Cargas", unitType: "force" },
     Mu: { default: 80, min: 0, max: 800, step: 5, label: "Mu (momento)", folder: "Cargas", unitType: "moment" },
-    // ── Malla ──
-    mesh_n: { default: 28, min: 14, max: 50, step: 2, label: "Divisiones por lado", folder: "Malla" },
+    // ── Malla (más denso permite ver concentración de tensiones alrededor de los pernos) ──
+    mesh_n: { default: 48, min: 20, max: 80, step: 2, label: "Divisiones por lado", folder: "Malla" },
   },
   build(p, states) {
     const nodes: Node[] = [];
@@ -254,22 +257,53 @@ export const placaBase: ExampleDef = {
       }
     }
 
-    // Supports: bordes de la placa fijados (para que la visualización no se corrompa)
+    // ── Supports: pernos de anclaje = resortes "rígidos" (fijamos Z, X, Y)
+    //   en los nodos del contorno del orificio más cercanos a cada perno ──
     const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
-    for (let j = 0; j <= ny; j++) {
-      const nLeft = nodeGrid[j][0];
-      const nRight = nodeGrid[j][nx];
-      if (nLeft >= 0) supports.set(nLeft, [true, true, true, true, true, true]);
-      if (nRight >= 0) supports.set(nRight, [true, true, true, true, true, true]);
-    }
-    for (let i = 0; i <= nx; i++) {
-      const nBot = nodeGrid[0][i];
-      const nTop = nodeGrid[ny][i];
-      if (nBot >= 0) supports.set(nBot, [true, true, true, true, true, true]);
-      if (nTop >= 0) supports.set(nTop, [true, true, true, true, true, true]);
+    for (const [bx, by] of bolts) {
+      // Busca los 6 nodos más cercanos al borde del orificio (el anillo proyectado)
+      const candidatos: Array<{ idx: number; d: number }> = [];
+      for (let idx = 0; idx < nodes.length; idx++) {
+        if (Math.abs(nodes[idx][2]) > 1e-4) continue; // solo nodos de la placa (z=0)
+        const dx_ = nodes[idx][0] - bx;
+        const dy_ = nodes[idx][1] - by;
+        const d_ = Math.sqrt(dx_ * dx_ + dy_ * dy_);
+        // Nodos muy cercanos al borde del orificio (r_hole ± 10%)
+        if (Math.abs(d_ - r_hole) < r_hole * 0.15) {
+          candidatos.push({ idx, d: d_ });
+        }
+      }
+      for (const c of candidatos) {
+        // Fijación vertical (Z) + horizontal (X,Y) simulando el perno
+        supports.set(c.idx, [true, true, true, false, false, false]);
+      }
     }
 
+    // ── Cargas: Pu (compresión) distribuida bajo columna + Mu como par ──
     const loads = new Map<number, [number, number, number, number, number, number]>();
+    // Pu: fuerza descendente sobre los nodos bajo el footprint de la columna
+    //     (área bajo patines y alma)
+    const footprintNodes: number[] = [];
+    for (let idx = 0; idx < nodes.length; idx++) {
+      if (Math.abs(nodes[idx][2]) > 1e-4) continue; // solo nodos de la placa
+      const x_ = nodes[idx][0], y_ = nodes[idx][1];
+      const inFlangeFront = Math.abs(x_ - p.d_col / 2) < 0.02 && Math.abs(y_) <= p.bf_col / 2 + 1e-6;
+      const inFlangeBack = Math.abs(x_ + p.d_col / 2) < 0.02 && Math.abs(y_) <= p.bf_col / 2 + 1e-6;
+      const inWeb = Math.abs(y_) < 0.015 && Math.abs(x_) <= p.d_col / 2 - p.tf_col + 1e-6;
+      if (inFlangeFront || inFlangeBack || inWeb) {
+        footprintNodes.push(idx);
+      }
+    }
+    if (footprintNodes.length > 0) {
+      const F_per = -p.Pu / footprintNodes.length; // kN hacia abajo
+      for (const idx of footprintNodes) {
+        // Mu: par alrededor de Y → sumar ±Fz extra según posición X
+        const x_ = nodes[idx][0];
+        const lever_X = p.d_col / 2;
+        const F_mu = (p.Mu / (footprintNodes.length * lever_X)) * (x_ > 0 ? 1 : -1);
+        loads.set(idx, [0, 0, F_per + F_mu, 0, 0, 0]);
+      }
+    }
 
     states.nodes.val = nodes;
     states.elements.val = elements;
@@ -278,8 +312,19 @@ export const placaBase: ExampleDef = {
       thicknesses, elasticities, poissonsRatios, densities,
       areas, momentsOfInertiaY, momentsOfInertiaZ, torsionalConstants, shearModuli,
     } as any;
-    states.deformOutputs.val = {} as any;
-    states.analyzeOutputs.val = {} as any;
+    // ── Ejecutar solver para obtener colormap de von Mises ──
+    try {
+      states.deformOutputs.val = deform(
+        nodes, elements, { supports, loads }, states.elementInputs.val,
+      );
+      states.analyzeOutputs.val = analyze(
+        nodes, elements, states.elementInputs.val, states.deformOutputs.val,
+      );
+    } catch (e: any) {
+      console.error("[placa-base] solver error:", e?.message || e);
+      states.deformOutputs.val = {} as any;
+      states.analyzeOutputs.val = {} as any;
+    }
 
     // ── Objetos 3D: pernos (cilindros) + tuercas + pedestal ──
     const objects: THREE.Object3D[] = [];

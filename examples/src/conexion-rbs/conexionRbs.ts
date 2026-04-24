@@ -22,6 +22,7 @@
 import {
   initMpState, mpStep, mpHistory,
   aiscK3StrainHistory,
+  deform, analyze,
   type MenegottoPintoParams,
 } from "awatif-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
@@ -33,6 +34,8 @@ export const conexionRbs: ExampleDef = {
   name: "Conexión RBS (AISC 358-22 · Protocolo K3)",
   category: "Conexiones",
   hasModal: false,
+  defaultShellResult: "vonMises",
+  availableShellResults: ["vonMises", "membraneXX", "membraneYY", "membraneXY", "bendingXX", "bendingYY", "displacementZ"],
   params: {
     // ── Viga W-shape ──
     d_beam:  { default: 0.60, min: 0.30, max: 1.00, step: 0.02, label: "d viga (m)", folder: "Viga" },
@@ -57,6 +60,8 @@ export const conexionRbs: ExampleDef = {
     classification: { default: 1, label: "Clasificación sismo", options: { "IMF (0.02 rad)": 0, "SMF (0.04 rad)": 1, "Extendido (0.06 rad)": 2 }, folder: "Ensayo K3" },
     story_h: { default: 3.66, min: 2.5, max: 5.0, step: 0.1, label: "h piso (m)", folder: "Ensayo K3" },
     steps_per_cycle: { default: 40, min: 20, max: 100, step: 10, label: "Steps/ciclo", folder: "Ensayo K3" },
+    // ── Malla (para ver concentración de tensiones / fracturas) ──
+    mesh_density: { default: 3, min: 1, max: 5, step: 1, label: "Densidad malla", folder: "Malla" },
   },
   build(p, states) {
     // ── 1. Geometría 3D REAL con shells ──────────────────
@@ -96,44 +101,54 @@ export const conexionRbs: ExampleDef = {
     // ── Columna W-shape (eje longitudinal Z) ──
     // Patines en planos x = ±d_col/2, alma en y = 0
     const L_col = p.story_h;
-    const nz_col = 8;
+    const md = Math.max(1, Math.round(p.mesh_density));
+    const nz_col = 6 * md;
+    const ny_col_flange = 2 * md;
+    const nxc_web = md + 1;
 
     // Patín frontal (+x)
     const colFrontGrid: number[][] = [];
     for (let iz = 0; iz <= nz_col; iz++) {
       const z = -L_col / 2 + (iz * L_col) / nz_col;
-      colFrontGrid.push([
-        addNode(+p.d_col / 2, -p.bf_col / 2, z),
-        addNode(+p.d_col / 2, +p.bf_col / 2, z),
-      ]);
+      const row: number[] = [];
+      for (let iy = 0; iy <= ny_col_flange; iy++) {
+        const y = -p.bf_col / 2 + (iy * p.bf_col) / ny_col_flange;
+        row.push(addNode(+p.d_col / 2, y, z));
+      }
+      colFrontGrid.push(row);
     }
     for (let iz = 0; iz < nz_col; iz++) {
-      addShell(
-        colFrontGrid[iz][0], colFrontGrid[iz][1],
-        colFrontGrid[iz + 1][1], colFrontGrid[iz + 1][0],
-        p.tf_col,
-      );
+      for (let iy = 0; iy < ny_col_flange; iy++) {
+        addShell(
+          colFrontGrid[iz][iy], colFrontGrid[iz][iy + 1],
+          colFrontGrid[iz + 1][iy + 1], colFrontGrid[iz + 1][iy],
+          p.tf_col,
+        );
+      }
     }
 
     // Patín trasero (-x)
     const colBackGrid: number[][] = [];
     for (let iz = 0; iz <= nz_col; iz++) {
       const z = -L_col / 2 + (iz * L_col) / nz_col;
-      colBackGrid.push([
-        addNode(-p.d_col / 2, -p.bf_col / 2, z),
-        addNode(-p.d_col / 2, +p.bf_col / 2, z),
-      ]);
+      const row: number[] = [];
+      for (let iy = 0; iy <= ny_col_flange; iy++) {
+        const y = -p.bf_col / 2 + (iy * p.bf_col) / ny_col_flange;
+        row.push(addNode(-p.d_col / 2, y, z));
+      }
+      colBackGrid.push(row);
     }
     for (let iz = 0; iz < nz_col; iz++) {
-      addShell(
-        colBackGrid[iz][0], colBackGrid[iz][1],
-        colBackGrid[iz + 1][1], colBackGrid[iz + 1][0],
-        p.tf_col,
-      );
+      for (let iy = 0; iy < ny_col_flange; iy++) {
+        addShell(
+          colBackGrid[iz][iy], colBackGrid[iz][iy + 1],
+          colBackGrid[iz + 1][iy + 1], colBackGrid[iz + 1][iy],
+          p.tf_col,
+        );
+      }
     }
 
     // Alma columna (plano XZ, y=0)
-    const nxc_web = 2;
     const colWebGrid: number[][] = [];
     for (let iz = 0; iz <= nz_col; iz++) {
       const z = -L_col / 2 + (iz * L_col) / nz_col;
@@ -176,14 +191,14 @@ export const conexionRbs: ExampleDef = {
       return p.bf_beam - 2 * Math.max(0, reduction);
     };
 
-    // Discretización X con densidad en zona RBS
+    // Discretización X con densidad en zona RBS (escala con mesh_density)
     const xList: number[] = [0];
-    const n_before = 2;
+    const n_before = 2 * md;
     for (let i = 1; i <= n_before; i++) xList.push((x_a_loc * i) / n_before);
-    const n_rbs = 14;
+    const n_rbs = 8 * md + 4; // más denso en la zona del dogbone (donde se ven fracturas)
     for (let i = 1; i < n_rbs; i++) xList.push(x_a_loc + ((x_b_loc - x_a_loc) * i) / n_rbs);
     xList.push(x_b_loc);
-    const n_after = 8;
+    const n_after = 5 * md;
     for (let i = 1; i <= n_after; i++) xList.push(x_b_loc + ((p.L_beam - x_b_loc) * i) / n_after);
 
     xList.sort((a, b) => a - b);
@@ -192,24 +207,26 @@ export const conexionRbs: ExampleDef = {
       if (xUnique.length === 0 || xUnique[xUnique.length - 1] < x - 1e-6) xUnique.push(x);
     }
 
-    // Nodos viga
+    // Nodos viga (patines con divisiones en Y, alma con divisiones en Z)
     const topFlangeGrid: number[][] = [];
     const botFlangeGrid: number[][] = [];
     const webGrid: number[][] = [];
-    const nz_beam_web = 2;
+    const ny_beam_flange = 2 * md;
+    const nz_beam_web = 2 * md;
 
     for (const x_local of xUnique) {
       const bf_local = bfAt(x_local);
       const x = x0 + x_local;
 
-      topFlangeGrid.push([
-        addNode(x, -bf_local / 2, +p.d_beam / 2),
-        addNode(x, +bf_local / 2, +p.d_beam / 2),
-      ]);
-      botFlangeGrid.push([
-        addNode(x, -bf_local / 2, -p.d_beam / 2),
-        addNode(x, +bf_local / 2, -p.d_beam / 2),
-      ]);
+      const topRow: number[] = [];
+      const botRow: number[] = [];
+      for (let iy = 0; iy <= ny_beam_flange; iy++) {
+        const y = -bf_local / 2 + (iy * bf_local) / ny_beam_flange;
+        topRow.push(addNode(x, y, +p.d_beam / 2));
+        botRow.push(addNode(x, y, -p.d_beam / 2));
+      }
+      topFlangeGrid.push(topRow);
+      botFlangeGrid.push(botRow);
 
       const webRow: number[] = [];
       for (let iz = 0; iz <= nz_beam_web; iz++) {
@@ -220,16 +237,18 @@ export const conexionRbs: ExampleDef = {
     }
 
     for (let i = 0; i < xUnique.length - 1; i++) {
-      addShell(
-        topFlangeGrid[i][0], topFlangeGrid[i][1],
-        topFlangeGrid[i + 1][1], topFlangeGrid[i + 1][0],
-        p.tf_beam,
-      );
-      addShell(
-        botFlangeGrid[i][0], botFlangeGrid[i][1],
-        botFlangeGrid[i + 1][1], botFlangeGrid[i + 1][0],
-        p.tf_beam,
-      );
+      for (let iy = 0; iy < ny_beam_flange; iy++) {
+        addShell(
+          topFlangeGrid[i][iy], topFlangeGrid[i][iy + 1],
+          topFlangeGrid[i + 1][iy + 1], topFlangeGrid[i + 1][iy],
+          p.tf_beam,
+        );
+        addShell(
+          botFlangeGrid[i][iy], botFlangeGrid[i][iy + 1],
+          botFlangeGrid[i + 1][iy + 1], botFlangeGrid[i + 1][iy],
+          p.tf_beam,
+        );
+      }
       for (let iz = 0; iz < nz_beam_web; iz++) {
         addShell(
           webGrid[i][iz], webGrid[i][iz + 1],
@@ -239,14 +258,33 @@ export const conexionRbs: ExampleDef = {
       }
     }
 
-    // ── Supports: empotramiento en base de columna ──
+    // ── Supports: empotramiento en base Y top de columna (continuidad) ──
     const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
     for (let i = 0; i < nodes.length; i++) {
-      if (Math.abs(nodes[i][2] - -L_col / 2) < 1e-4) {
+      // Empotrar nodos en la base y en el top de la columna (x = ±d_col/2 o y=0, z = ±L_col/2)
+      const isBaseOrTop = Math.abs(Math.abs(nodes[i][2]) - L_col / 2) < 1e-4;
+      const isColumnNode =
+        Math.abs(Math.abs(nodes[i][0]) - p.d_col / 2) < 1e-4 ||
+        (Math.abs(nodes[i][1]) < 1e-6 && Math.abs(nodes[i][0]) < p.d_col / 2 + 1e-4);
+      if (isBaseOrTop && isColumnNode) {
         supports.set(i, [true, true, true, true, true, true]);
       }
     }
+
+    // ── Cargas: fuerza vertical en el extremo de la viga (para flexión) ──
+    const bf_rbs_min = p.bf_beam * (1 - 2 * p.c_rbs);
+    const Zx_rbs_est = bf_rbs_min * p.tf_beam * (p.d_beam - p.tf_beam);
+    const Mp_rbs_est = p.Fy * Zx_rbs_est;
+    const lever_arm = p.L_beam - p.a_rbs * p.bf_beam - (p.b_rbs * p.d_beam) / 2;
+    const F_tip = (0.8 * Mp_rbs_est) / Math.max(lever_arm, 0.5); // target 0.8·Mp
+
     const loads = new Map<number, [number, number, number, number, number, number]>();
+    const iTip = xUnique.length - 1; // último índice X (extremo libre)
+    const nTipTop = ny_beam_flange + 1;
+    const F_per_node = F_tip / nTipTop;
+    for (let iy = 0; iy <= ny_beam_flange; iy++) {
+      loads.set(topFlangeGrid[iTip][iy], [0, 0, -F_per_node, 0, 0, 0]);
+    }
 
     states.nodes.val = nodes;
     states.elements.val = elements;
@@ -255,8 +293,20 @@ export const conexionRbs: ExampleDef = {
       thicknesses, elasticities, poissonsRatios, densities,
       areas, momentsOfInertiaY, momentsOfInertiaZ, torsionalConstants, shearModuli,
     } as any;
-    states.deformOutputs.val = {} as any;
-    states.analyzeOutputs.val = {} as any;
+
+    // ── Ejecutar solver (deform + analyze) para obtener colormap de von Mises ──
+    try {
+      states.deformOutputs.val = deform(
+        nodes, elements, { supports, loads }, states.elementInputs.val,
+      );
+      states.analyzeOutputs.val = analyze(
+        nodes, elements, states.elementInputs.val, states.deformOutputs.val,
+      );
+    } catch (e: any) {
+      console.error("[conexion-rbs] solver error:", e?.message || e);
+      states.deformOutputs.val = {} as any;
+      states.analyzeOutputs.val = {} as any;
+    }
 
     // ── Rótula plástica visual en el centro del RBS ──
     const objects: THREE.Object3D[] = [];
