@@ -18,7 +18,11 @@
  *   - ACI 318-22 §10          (Composite compression members)
  *   - Eurocode 4              (simplified method — analog)
  */
-import { deform, type Node, type Element } from "awatif-fem";
+import {
+  deform, type Node, type Element,
+  discretizeCftCircular, discretizeCftRectangular,
+  sectionForces, momentForAxial,
+} from "awatif-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import { cftCapacity, cftCheck, type CftSectionInput } from "../shared/cftDesign";
 
@@ -175,6 +179,34 @@ export const columnaCft: ExampleDef = {
       "Ratio D/C": `${check.ratio.toFixed(3)} ${check.passes ? "✓" : "✗ FAIL"}`,
       "Ecuación gobernante": check.governing,
     };
+
+    // ── Level 2 — Fiber section con Mander concreto confinado ──
+    try {
+      const sec = shape === "circular"
+        ? discretizeCftCircular(p.Dout, p.t_tube, p.fc, p.Fy, 32, 8)
+        : discretizeCftRectangular(p.Dout, p.Hrect, p.t_tube, p.fc, p.Fy, 16, 16);
+
+      // Pno fiber = fuerza axial con curvatura 0 y strain = εcc (pico concreto)
+      const { P: P_fiber_peak } = sectionForces(sec, sec.mander.ecc, 0);
+      // M fiber para la carga axial aplicada Pu (strain con curvatura que maximiza M)
+      const { M: M_fiber } = momentForAxial(sec, p.Pu, 0.02);
+
+      // Level 1 vs Level 2 comparison
+      const Pno_L1 = cap.Pno;
+      const Pno_L2 = Math.abs(P_fiber_peak);
+      const deltaP = ((Pno_L2 - Pno_L1) / Pno_L1 * 100);
+
+      result["── Level 2 (Fiber section Mander) ──"] = "";
+      result["f'cc concreto confinado"] = `${(sec.mander.fcc / 1000).toFixed(1)} MPa (f'c × ${sec.mander.K_conf.toFixed(2)})`;
+      result["εcc confinado"] = `${(sec.mander.ecc * 1000).toFixed(2)} ‰ (vs εco=2‰ no confinado)`;
+      result["Pno L2 (fiber)"] = `${Pno_L2.toFixed(0)} kN`;
+      result["L2 vs L1 diff"] = `${deltaP >= 0 ? "+" : ""}${deltaP.toFixed(1)} %`;
+      result["M @ Pu (fiber)"] = `${Math.abs(M_fiber).toFixed(1)} kN·m`;
+      result["Fibras acero × concreto"] = `${sec.fibers.filter(f => f.kind === "steel").length} × ${sec.fibers.filter(f => f.kind === "concrete").length}`;
+    } catch (e) {
+      result["Level 2 fiber error"] = `${(e as Error).message}`;
+    }
+
     return result;
   },
 };
