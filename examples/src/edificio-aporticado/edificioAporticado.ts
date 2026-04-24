@@ -578,23 +578,119 @@ export const edificioAporticado: ExampleDef = {
     const ei = states.elementInputs.val;
     if (!nodes.length || !elements.length || !ni.supports?.size || !ei.densities?.size) return;
     try {
-      // ── nModes = 3·nPisos + 12 → asegura cubrir todos los modos laterales
-      //   relevantes (Ux, Uy, Rz por piso) + algunos verticales de losa que
-      //   aparecen mezclados. El panel filtra los participativos. ──
+      // ═══════════════════════════════════════════════════════════════
+      // ETABS-style modal: filtrar losas del modal + lumpear masa en columnas
+      // ═══════════════════════════════════════════════════════════════
+      // Las losas (shells horizontales) generan modos Uz que dominan los
+      // primeros eigenvalores. ETABS y SAP las modelan como "Membrane" con
+      // masa puntual concentrada en master nodes. Aquí replicamos:
+      //   1. Identificar shells con todos sus nodos a la misma cota Z (losas)
+      //   2. Calcular su masa total (m_slab = ρ · A · t)
+      //   3. Skip esos shells en la malla del modal
+      //   4. Multiplicar la densidad de las columnas por (1 + m_slab/m_cols)
+      //      para conservar la masa total del edificio en el modal.
+      const filteredElements: Element[] = [];
+      const newAreas = new Map<number, number>();
+      const newMoiY = new Map<number, number>();
+      const newMoiZ = new Map<number, number>();
+      const newTorsion = new Map<number, number>();
+      const newE = new Map<number, number>();
+      const newG = new Map<number, number>();
+      const newDens = new Map<number, number>();
+      const newThick = new Map<number, number>();
+      const newPois = new Map<number, number>();
+
+      let massSlab = 0; // Σ ρ · A · t
+      let massCols = 0; // Σ ρ · A · L (frames verticales)
+      const colIdxs: number[] = []; // índices nuevos de elementos columna
+      let newIdx = 0;
+
+      for (let i = 0; i < elements.length; i++) {
+        const e = elements[i];
+        let isSlab = false;
+        let isCol = false;
+        if (e.length === 4) {
+          // Shell — verificar si es horizontal (losa)
+          const zs = e.map((nIdx: number) => nodes[nIdx][2]);
+          const zRange = Math.max(...zs) - Math.min(...zs);
+          if (zRange < 0.02) {
+            // Losa horizontal → calcular masa y skip
+            const x0 = nodes[e[0]][0], y0 = nodes[e[0]][1];
+            const x2 = nodes[e[2]][0], y2 = nodes[e[2]][1];
+            const A_el = Math.abs((x2 - x0) * (y2 - y0)); // aproximación rectangular
+            const t = ei.thicknesses?.get(i) ?? 0.15;
+            const rho = ei.densities?.get(i) ?? 24;
+            massSlab += rho * A_el * t;
+            isSlab = true;
+          }
+        } else if (e.length === 2) {
+          // Frame — verificar si es columna (vertical)
+          const z1 = nodes[e[0]][2];
+          const z2 = nodes[e[1]][2];
+          const xy_dist = Math.sqrt(
+            (nodes[e[1]][0] - nodes[e[0]][0]) ** 2 +
+              (nodes[e[1]][1] - nodes[e[0]][1]) ** 2,
+          );
+          if (Math.abs(z2 - z1) > xy_dist) {
+            isCol = true;
+            const L = Math.abs(z2 - z1);
+            const A = ei.areas?.get(i) ?? 0;
+            const rho = ei.densities?.get(i) ?? 24;
+            massCols += rho * A * L;
+          }
+        }
+        if (isSlab) continue; // skip losa en modal
+        // Mantener este elemento en el modal
+        filteredElements.push(e);
+        if (ei.areas?.has(i)) newAreas.set(newIdx, ei.areas.get(i)!);
+        if (ei.momentsOfInertiaY?.has(i)) newMoiY.set(newIdx, ei.momentsOfInertiaY.get(i)!);
+        if (ei.momentsOfInertiaZ?.has(i)) newMoiZ.set(newIdx, ei.momentsOfInertiaZ.get(i)!);
+        if (ei.torsionalConstants?.has(i)) newTorsion.set(newIdx, ei.torsionalConstants.get(i)!);
+        if (ei.elasticities?.has(i)) newE.set(newIdx, ei.elasticities.get(i)!);
+        if (ei.shearModuli?.has(i)) newG.set(newIdx, ei.shearModuli.get(i)!);
+        if (ei.densities?.has(i)) newDens.set(newIdx, ei.densities.get(i)!);
+        if (ei.thicknesses?.has(i)) newThick.set(newIdx, ei.thicknesses.get(i)!);
+        if (ei.poissonsRatios?.has(i)) newPois.set(newIdx, ei.poissonsRatios.get(i)!);
+        if (isCol) colIdxs.push(newIdx);
+        newIdx++;
+      }
+
+      // Lumpear la masa de losas en las columnas (multiplicar densidad)
+      if (massSlab > 0 && massCols > 0 && colIdxs.length > 0) {
+        const factor = 1 + massSlab / massCols;
+        for (const idx of colIdxs) {
+          const orig = newDens.get(idx) ?? 24;
+          newDens.set(idx, orig * factor);
+        }
+      }
+
+      const eiModal = {
+        areas: newAreas,
+        momentsOfInertiaY: newMoiY,
+        momentsOfInertiaZ: newMoiZ,
+        torsionalConstants: newTorsion,
+        elasticities: newE,
+        shearModuli: newG,
+        densities: newDens,
+        thicknesses: newThick,
+        poissonsRatios: newPois,
+      };
+
       const nP = Math.round(p.nPisos);
-      const nModes = Math.min(60, Math.max(15, 3 * nP + 12));
-      const out = modalAnalysis(nodes, elements, ni, ei, nModes);
+      const nModes = Math.min(60, Math.max(15, 3 * nP + 6));
+      const out = modalAnalysis(nodes, filteredElements, ni, eiModal, nModes);
       const nvx = Math.round(p.nVanosX), nvy = Math.round(p.nVanosY), np = Math.round(p.nPisos);
+      const lumpFactor = massCols > 0 ? 1 + massSlab / massCols : 1;
       modalPanel.render(out, {
         title: `Edificio ${nvx}×${nvy} vanos × ${np} pisos · ${nModes} modos`,
         properties: [
           `Material cols=${p.matCol<0.5?'Hormigón':'Acero'} vigas=${p.matViga<0.5?'Hormigón':'Acero'}  f'c=${p.fcConcr} kg/cm²`,
-          `Apoyo: ${['Empotrado','Articulado','Rótula'][Math.round(p.apoyo)]}  ${p.slabOn>=0.5?'+ Losa ':''}${p.bracesMode>0?'+ Diagonales':''}  ${p.diafragmaRigido>=0.5?'+ Diafragma rígido':'Diafragma flexible'}`,
-          `Modos verticales (Uz) son físicamente reales pero NO relevantes para diseño sísmico horizontal — el panel identifica automáticamente los Ux/Uy/Rz dominantes`,
+          `Apoyo: ${['Empotrado','Articulado','Rótula'][Math.round(p.apoyo)]}${p.slabOn>=0.5?` + Losa (lumped: ×${lumpFactor.toFixed(2)} dens cols, ${massSlab.toFixed(0)} kN/g)`:''}${p.bracesMode>0?' + Diagonales':''}`,
+          `Estilo ETABS: losas filtradas del modal + masa transferida a columnas (igual que membrane diaphragm en ETABS/SAP)`,
         ],
       });
       const f1 = out.frequencies[0] ?? 0;
-      console.log(`[Edificio Modal] ${nModes} modos · f₁=${f1.toFixed(4)} Hz`);
+      console.log(`[Edificio Modal] ${nModes} modos · f₁=${f1.toFixed(4)} Hz · m_slab=${massSlab.toFixed(0)} m_cols=${massCols.toFixed(0)} factor=${lumpFactor.toFixed(2)}`);
     } catch (e: any) {
       console.warn("Modal edificio error:", e.message);
     }
