@@ -516,7 +516,28 @@ function buildParamsPane() {
       inlineByAfter.get(ic.after)!.push({ label: ic.label, key: uniqKey, compute: ic.compute });
     }
   }
-  for (const [key, p] of Object.entries(currentExample.params)) {
+
+  // ── Dynamic params (secciones por piso, vigas por vano, etc.) ────────
+  // El ejemplo expone dynamicParams(currentParams) que retorna keys adicionales
+  // basadas en el estado actual (ej: nPisos=3 → bCol_p1, hCol_p1, bCol_p2, ...).
+  // Se fusionan con los params estáticos; los valores actuales se preservan.
+  const dyn = currentExample.dynamicParams
+    ? currentExample.dynamicParams(currentParams)
+    : {};
+  for (const [dkey, dp] of Object.entries(dyn)) {
+    if (!(dkey in currentParams)) {
+      // Nueva key: inicializar con default (en unidad UI si tiene unitType)
+      const valSI = dp.default;
+      currentParams[dkey] =
+        dp.unitType === "force"  ? fromKn(valSI) :
+        dp.unitType === "moment" ? fromKnm(valSI) :
+        valSI;
+    }
+  }
+  // Merged params = estáticos + dinámicos. El loop de render itera sobre todos.
+  const allParams: Record<string, ParamDef> = { ...currentExample.params, ...dyn };
+
+  for (const [key, p] of Object.entries(allParams)) {
     const folderTitle = p.folder ?? defaultFolderTitle;
     const fTarget = getFolder(folderTitle);
     if (p.boolean) {
@@ -574,7 +595,15 @@ function buildParamsPane() {
           currentExample.onParamChange(key, currentParams);
           pane.refresh();
         }
-        scheduleRebuild();
+        // Si este param regenera dynamicParams (nPisos, nVanos, etc.),
+        // reconstruir el pane ENTERO para que aparezcan los nuevos sliders
+        // Piso 1, Piso 2, Piso 3... automáticamente.
+        if (p.regenOnChange) {
+          // debounce pequeño para que el slider no haga flicker
+          window.setTimeout(() => { buildParamsPane(); rebuild(); }, 80);
+        } else {
+          scheduleRebuild();
+        }
       });
     };
     rebuildSlider(p.min, p.max);

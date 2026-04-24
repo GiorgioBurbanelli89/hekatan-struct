@@ -35,6 +35,15 @@ export interface ParamDef {
    */
   rangeAdjustable?: boolean;
   /**
+   * Si `true`, el workspace RECONSTRUYE el pane entero tras cada cambio en
+   * este param. Útil para params "estructurales" (nPisos, nVanosX, nVanosY)
+   * que regeneran `dynamicParams(currentParams)`.
+   *
+   * Sin esta flag, el cambio solo dispara `scheduleRebuild()` (re-ejecuta
+   * ex.build) pero el pane mantiene los mismos sliders.
+   */
+  regenOnChange?: boolean;
+  /**
    * Tipo de unidad del parámetro. Cuando se setea:
    *   - El valor almacenado en `currentParams` se convierte automáticamente
    *     a la unidad base SI (kN para fuerza, kN·m para momento, m para
@@ -93,6 +102,22 @@ export interface ExampleDef {
    * Ejemplo: al cambiar soilType, actualizar q_adm y ks_factor.
    */
   onParamChange?: (changedKey: string, params: Record<string, number>) => void;
+  /**
+   * Genera params adicionales dinámicamente en función del estado actual de
+   * `currentParams`. Se llama en CADA rebuild del pane (después de cambiar
+   * parámetros de estructura como nPisos, nVanosX, nVanosY).
+   *
+   * Caso de uso clásico: secciones por piso. Si `currentParams.nPisos = 3`,
+   * `dynamicParams` retorna { bCol_p1, hCol_p1, bCol_p2, hCol_p2, bCol_p3, hCol_p3 }.
+   * Al cambiar nPisos a 5, se regeneran los sliders automáticamente.
+   *
+   * IMPORTANT: los keys retornados deben ser ÚNICOS y no colisionar con los
+   * params estáticos. Convención: usar sufijos tipo `_p1`, `_p2`, `_vx1`, etc.
+   *
+   * Los valores actuales en currentParams se preservan si la key existía antes;
+   * solo las nuevas keys usan `default` del ParamDef retornado.
+   */
+  dynamicParams?: (currentParams: Record<string, number>) => Record<string, ParamDef>;
   /**
    * Devuelve valores DERIVADOS (calculados) que se muestran como read-only en
    * el Tweakpane en el folder "📊 Calculados". Se llama después de cada build.
