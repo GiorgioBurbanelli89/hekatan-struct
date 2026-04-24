@@ -1,8 +1,8 @@
-import { a as fe } from "./analyze-ClLKGn9k.js";
-import { d as be, __tla as __tla_0 } from "./didacticCpp-Bnj9OwqQ.js";
-import { s as he, c as oe, __tla as __tla_1 } from "./colorMapPercentile-b6DM-OiY.js";
-import { b as ne, M as J, c as I, d as xe, E as Me, L as pe, C as Z, R as ge, e as ae, D as le } from "./Text-Dh9LKuSL.js";
-let Pe;
+import { a as pe } from "./analyze-ClLKGn9k.js";
+import { d as Me, __tla as __tla_0 } from "./didacticCpp-Bnj9OwqQ.js";
+import { s as ge, c as se, __tla as __tla_1 } from "./colorMapPercentile-b6DM-OiY.js";
+import { b as ce, M as Z, c as C, d as ye, E as $e, L as ve, C as Q, R as we, e as ie, D as re } from "./Text-Dh9LKuSL.js";
+let Re;
 let __tla = Promise.all([
   (() => {
     try {
@@ -17,7 +17,7 @@ let __tla = Promise.all([
     }
   })()
 ]).then(async () => {
-  Pe = {
+  Re = {
     id: "placa-base",
     name: "Placa base anclada (AISC 360-22 \xA7J8 + ACI 318)",
     category: "Conexiones",
@@ -241,22 +241,32 @@ let __tla = Promise.all([
         folder: "Solver"
       }
     },
-    build(e, c) {
-      const l = [], u = [], G = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), x = /* @__PURE__ */ new Map(), L = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map(), B = /* @__PURE__ */ new Map(), z = /* @__PURE__ */ new Map(), C = /* @__PURE__ */ new Map(), A = /* @__PURE__ */ new Map(), E = e.E_steel / 2.6, q = 77, m = (t, a, n) => (l.push([
+    build(e, i) {
+      const c = [], f = [], G = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), x = /* @__PURE__ */ new Map(), z = /* @__PURE__ */ new Map(), A = /* @__PURE__ */ new Map(), N = /* @__PURE__ */ new Map(), S = /* @__PURE__ */ new Map(), k = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), E = e.E_steel / 2.6, q = 77, p = (t, l, n) => (c.push([
         t,
-        a,
+        l,
         n
-      ]), l.length - 1), p = (t, a, n, o, i) => {
-        u.push([
+      ]), c.length - 1), v = (t, l, n, o) => {
+        for (let a = 0; a < c.length; a++) {
+          const s = c[a], u = s[0] - t, h = s[1] - l, m = s[2] - n;
+          if (u * u + h * h + m * m < o * o) return a;
+        }
+        return c.push([
           t,
-          a,
+          l,
+          n
+        ]), c.length - 1;
+      }, M = (t, l, n, o, a) => {
+        f.push([
+          t,
+          l,
           n,
           o
         ]);
-        const s = u.length - 1;
-        G.set(s, i), Y.set(s, e.E_steel), x.set(s, 0.3), L.set(s, q), R.set(s, 0), B.set(s, 0), z.set(s, 0), C.set(s, 0), A.set(s, E);
-      }, v = ((t) => {
-        const a = e.edge_dist, n = e.B / 2 - a, o = e.H / 2 - a;
+        const s = f.length - 1;
+        G.set(s, a), Y.set(s, e.E_steel), x.set(s, 0.3), z.set(s, q), A.set(s, 0), N.set(s, 0), S.set(s, 0), k.set(s, 0), H.set(s, E);
+      }, w = ((t) => {
+        const l = e.edge_dist, n = e.B / 2 - l, o = e.H / 2 - l;
         return t === 4 ? [
           [
             -n,
@@ -387,76 +397,77 @@ let __tla = Promise.all([
             +o
           ]
         ];
-      })(e.bolt_layout), d = e.d_hole / 2, g = Math.max(14, Math.round(e.mesh_n)), P = Math.max(14, Math.round(e.mesh_n)), N = e.B / g, k = e.H / P, $ = [];
+      })(e.bolt_layout), d = e.d_hole / 2, F = Math.max(14, Math.round(e.mesh_n)), P = Math.max(14, Math.round(e.mesh_n)), I = e.B / F, O = e.H / P, g = [];
       for (let t = 0; t <= P; t++) {
-        const a = [];
-        for (let n = 0; n <= g; n++) {
-          let o = -e.B / 2 + n * N, i = -e.H / 2 + t * k, s = false;
-          for (const [b, w] of v) {
-            const _ = o - b, y = i - w, h = Math.sqrt(_ * _ + y * y);
-            if (h < d * 0.35) {
+        const l = [];
+        for (let n = 0; n <= F; n++) {
+          let o = -e.B / 2 + n * I, a = -e.H / 2 + t * O, s = false;
+          for (const [u, h] of w) {
+            const m = o - u, $ = a - h, b = Math.sqrt(m * m + $ * $);
+            if (b < d * 0.35) {
               s = true;
               break;
             }
-            if (h < d && h > 1e-9) {
-              o = b + _ / h * d, i = w + y / h * d;
+            if (b < d && b > 1e-9) {
+              o = u + m / b * d, a = h + $ / b * d;
               break;
             }
           }
-          s ? a.push(-1) : a.push(m(o, i, 0));
+          s ? l.push(-1) : l.push(p(o, a, 0));
         }
-        $.push(a);
+        g.push(l);
       }
-      for (let t = 0; t < P; t++) for (let a = 0; a < g; a++) {
-        const n = $[t][a], o = $[t][a + 1], i = $[t + 1][a + 1], s = $[t + 1][a];
-        if (n < 0 || o < 0 || i < 0 || s < 0) continue;
-        const b = -e.B / 2 + (a + 0.5) * N, w = -e.H / 2 + (t + 0.5) * k;
-        let _ = false;
-        for (const [y, h] of v) if (Math.sqrt((b - y) ** 2 + (w - h) ** 2) < d * 0.95) {
-          _ = true;
+      for (let t = 0; t < P; t++) for (let l = 0; l < F; l++) {
+        const n = g[t][l], o = g[t][l + 1], a = g[t + 1][l + 1], s = g[t + 1][l];
+        if (n < 0 || o < 0 || a < 0 || s < 0) continue;
+        const u = -e.B / 2 + (l + 0.5) * I, h = -e.H / 2 + (t + 0.5) * O;
+        let m = false;
+        for (const [$, b] of w) if (Math.sqrt((u - $) ** 2 + (h - b) ** 2) < d * 0.95) {
+          m = true;
           break;
         }
-        _ || p(n, o, i, s, e.t_plate);
+        m || M(n, o, a, s, e.t_plate);
       }
-      const F = e.t_plate;
-      F + e.L_col_stub;
-      const r = 5, f = [];
+      e.L_col_stub;
+      const r = 6, _ = Math.max(2, Math.round(e.mesh_n / 12)), K = Math.max(I, O) * 0.7, V = +e.d_col / 2 - e.tf_col / 2, T = -e.d_col / 2 + e.tf_col / 2, L = [];
       for (let t = 0; t <= r; t++) {
-        const a = F + t * e.L_col_stub / r;
-        f.push([
-          m(+e.d_col / 2, -e.bf_col / 2, a),
-          m(+e.d_col / 2, +e.bf_col / 2, a)
-        ]);
-      }
-      for (let t = 0; t < r; t++) p(f[t][0], f[t][1], f[t + 1][1], f[t + 1][0], e.tf_col);
-      const H = [];
-      for (let t = 0; t <= r; t++) {
-        const a = F + t * e.L_col_stub / r;
-        H.push([
-          m(-e.d_col / 2, -e.bf_col / 2, a),
-          m(-e.d_col / 2, +e.bf_col / 2, a)
-        ]);
-      }
-      for (let t = 0; t < r; t++) p(H[t][0], H[t][1], H[t + 1][1], H[t + 1][0], e.tf_col);
-      const S = [], W = 2;
-      for (let t = 0; t <= r; t++) {
-        const a = F + t * e.L_col_stub / r, n = [];
-        for (let o = 0; o <= W; o++) {
-          const i = -e.d_col / 2 + e.tf_col + (e.d_col - 2 * e.tf_col) * (o / W);
-          n.push(m(i, 0, a));
+        const l = t * e.L_col_stub / r, n = [];
+        for (let o = 0; o <= _; o++) {
+          const a = -e.bf_col / 2 + o * e.bf_col / _;
+          t === 0 ? n.push(v(V, a, 0, K)) : n.push(p(V, a, l));
         }
-        S.push(n);
+        L.push(n);
       }
-      for (let t = 0; t < r; t++) for (let a = 0; a < W; a++) p(S[t][a], S[t][a + 1], S[t + 1][a + 1], S[t + 1][a], e.tw_col);
+      for (let t = 0; t < r; t++) for (let l = 0; l < _; l++) M(L[t][l], L[t][l + 1], L[t + 1][l + 1], L[t + 1][l], e.tf_col);
+      const R = [];
+      for (let t = 0; t <= r; t++) {
+        const l = t * e.L_col_stub / r, n = [];
+        for (let o = 0; o <= _; o++) {
+          const a = -e.bf_col / 2 + o * e.bf_col / _;
+          t === 0 ? n.push(v(T, a, 0, K)) : n.push(p(T, a, l));
+        }
+        R.push(n);
+      }
+      for (let t = 0; t < r; t++) for (let l = 0; l < _; l++) M(R[t][l], R[t][l + 1], R[t + 1][l + 1], R[t + 1][l], e.tf_col);
+      const B = [], W = 2 + Math.round(e.mesh_n / 16);
+      for (let t = 0; t <= r; t++) {
+        const l = t * e.L_col_stub / r, n = [];
+        for (let o = 0; o <= W; o++) {
+          const a = T + (V - T) * (o / W);
+          t === 0 ? n.push(v(a, 0, 0, K)) : n.push(p(a, 0, l));
+        }
+        B.push(n);
+      }
+      for (let t = 0; t < r; t++) for (let l = 0; l < W; l++) M(B[t][l], B[t][l + 1], B[t + 1][l + 1], B[t + 1][l], e.tw_col);
       const D = /* @__PURE__ */ new Map();
-      for (const [t, a] of v) {
+      for (const [t, l] of w) {
         const n = [];
-        for (let o = 0; o < l.length; o++) {
-          if (Math.abs(l[o][2]) > 1e-4) continue;
-          const i = l[o][0] - t, s = l[o][1] - a, b = Math.sqrt(i * i + s * s);
-          Math.abs(b - d) < d * 0.15 && n.push({
+        for (let o = 0; o < c.length; o++) {
+          if (Math.abs(c[o][2]) > 1e-4) continue;
+          const a = c[o][0] - t, s = c[o][1] - l, u = Math.sqrt(a * a + s * s);
+          Math.abs(u - d) < d * 0.15 && n.push({
             idx: o,
-            d: b
+            d: u
           });
         }
         for (const o of n) D.set(o.idx, [
@@ -468,174 +479,173 @@ let __tla = Promise.all([
           false
         ]);
       }
-      const X = /* @__PURE__ */ new Map(), O = [];
-      for (let t = 0; t < l.length; t++) {
-        if (Math.abs(l[t][2]) > 1e-4) continue;
-        const a = l[t][0], n = l[t][1], o = Math.abs(a - e.d_col / 2) < 0.02 && Math.abs(n) <= e.bf_col / 2 + 1e-6, i = Math.abs(a + e.d_col / 2) < 0.02 && Math.abs(n) <= e.bf_col / 2 + 1e-6, s = Math.abs(n) < 0.015 && Math.abs(a) <= e.d_col / 2 - e.tf_col + 1e-6;
-        (o || i || s) && O.push(t);
-      }
-      if (O.length > 0) {
-        const t = -e.Pu / O.length;
-        for (const a of O) {
-          const n = l[a][0], o = e.d_col / 2, i = e.Mu / (O.length * o) * (n > 0 ? 1 : -1);
-          X.set(a, [
+      const X = /* @__PURE__ */ new Map(), j = [
+        ...L[r],
+        ...R[r],
+        ...B[r]
+      ];
+      if (j.length > 0) {
+        const t = -e.Pu / j.length, l = e.d_col / 2;
+        for (const n of j) {
+          const o = c[n][0], a = e.Mu / (j.length * l) * (o > 0 ? 1 : -1);
+          X.set(n, [
             0,
             0,
-            t + i,
+            t + a,
             0,
             0,
             0
           ]);
         }
       }
-      c.nodes.val = l, c.elements.val = u, c.nodeInputs.val = {
+      i.nodes.val = c, i.elements.val = f, i.nodeInputs.val = {
         supports: D,
         loads: X
-      }, c.elementInputs.val = {
+      }, i.elementInputs.val = {
         thicknesses: G,
         elasticities: Y,
         poissonsRatios: x,
-        densities: L,
-        areas: R,
-        momentsOfInertiaY: B,
-        momentsOfInertiaZ: z,
-        torsionalConstants: C,
-        shearModuli: A
+        densities: z,
+        areas: A,
+        momentsOfInertiaY: N,
+        momentsOfInertiaZ: S,
+        torsionalConstants: k,
+        shearModuli: H
       };
       try {
         if (e.use_nonlinear > 0.5) {
-          const t = he({
-            nodes: l,
-            elements: u,
+          const t = ge({
+            nodes: c,
+            elements: f,
             nodeInputs: {
               supports: D,
               loads: X
             },
-            elementInputs: c.elementInputs.val,
+            elementInputs: i.elementInputs.val,
             Fy: e.Fy_plate,
             maxIter: Math.round(e.nl_max_iter),
             tol: 0.03,
             softeningFactor: 0.9
           });
-          c.deformOutputs.val = t.deformOutputs;
-          const a = t.analyzeOutputs, [n, o] = oe(a.vonMises, 90, e.Fy_plate);
-          a.colorMapRanges = {
-            ...a.colorMapRanges,
+          i.deformOutputs.val = t.deformOutputs;
+          const l = t.analyzeOutputs, [n, o] = se(l.vonMises, 90, e.Fy_plate);
+          l.colorMapRanges = {
+            ...l.colorMapRanges,
             vonMises: [
               n,
               o
             ]
-          }, c.analyzeOutputs.val = a, c.__nlInfo = {
+          }, i.analyzeOutputs.val = l, i.__nlInfo = {
             iterations: t.iterations,
             converged: t.converged,
             elementsYielded: t.elementsYielded,
             maxRatio: t.maxRatio
           }, console.log(`[placa-base NL] iter=${t.iterations}, converged=${t.converged}, yielded=${t.elementsYielded}, maxRatio=${t.maxRatio.toFixed(2)}`);
         } else {
-          c.deformOutputs.val = be(l, u, {
+          i.deformOutputs.val = Me(c, f, {
             supports: D,
             loads: X
-          }, c.elementInputs.val);
-          const t = fe(l, u, c.elementInputs.val, c.deformOutputs.val), [a, n] = oe(t.vonMises, 90, e.Fy_plate);
+          }, i.elementInputs.val);
+          const t = pe(c, f, i.elementInputs.val, i.deformOutputs.val), [l, n] = se(t.vonMises, 90, e.Fy_plate);
           t.colorMapRanges = {
             ...t.colorMapRanges,
             vonMises: [
-              a,
+              l,
               n
             ]
-          }, c.analyzeOutputs.val = t, c.__nlInfo = null;
+          }, i.analyzeOutputs.val = t, i.__nlInfo = null;
         }
       } catch (t) {
-        console.error("[placa-base] solver error:", (t == null ? void 0 : t.message) || t), c.deformOutputs.val = {}, c.analyzeOutputs.val = {};
+        console.error("[placa-base] solver error:", (t == null ? void 0 : t.message) || t), i.deformOutputs.val = {}, i.analyzeOutputs.val = {};
       }
-      const M = [], K = new ne(e.B_ped, e.H_ped, e.h_ped), se = new J({
+      const y = [], ee = new ce(e.B_ped, e.H_ped, e.h_ped), de = new Z({
         color: 12298888,
         transparent: true,
         opacity: 0.35,
         metalness: 0.1,
         roughness: 0.9
-      }), V = new I(K, se);
-      V.position.set(0, 0, -e.h_ped / 2), M.push(V);
-      const Q = new xe(new Me(K), new pe({
+      }), te = new C(ee, de);
+      te.position.set(0, 0, -e.h_ped / 2), y.push(te);
+      const oe = new ye(new $e(ee), new ve({
         color: 4473924
       }));
-      Q.position.set(0, 0, -e.h_ped / 2), M.push(Q);
-      const ce = new J({
+      oe.position.set(0, 0, -e.h_ped / 2), y.push(oe);
+      const me = new Z({
         color: 8026746,
         metalness: 0.8,
         roughness: 0.3
-      }), ie = new J({
+      }), ue = new Z({
         color: 3355443,
         metalness: 0.8,
         roughness: 0.3
       });
-      for (const [t, a] of v) {
-        const n = e.d_bolt * 1, o = e.L_bolt + e.t_plate + n + 0.015, i = new Z(e.d_bolt / 2, e.d_bolt / 2, o, 16), s = new I(i, ce);
+      for (const [t, l] of w) {
+        const n = e.d_bolt * 1, o = e.L_bolt + e.t_plate + n + 0.015, a = new Q(e.d_bolt / 2, e.d_bolt / 2, o, 16), s = new C(a, me);
         s.rotation.x = Math.PI / 2;
-        const b = -e.L_bolt + o / 2;
-        s.position.set(t, a, b), M.push(s);
-        const w = new Z(e.d_bolt * 0.9, e.d_bolt * 0.9, n, 6), _ = new I(w, ie);
-        _.rotation.x = Math.PI / 2, _.position.set(t, a, e.t_plate + n / 2), M.push(_);
-        const y = new Z(e.d_hole / 2 * 1.4, e.d_hole / 2 * 1.4, 4e-3, 20), h = new J({
+        const u = -e.L_bolt + o / 2;
+        s.position.set(t, l, u), y.push(s);
+        const h = new Q(e.d_bolt * 0.9, e.d_bolt * 0.9, n, 6), m = new C(h, ue);
+        m.rotation.x = Math.PI / 2, m.position.set(t, l, e.t_plate + n / 2), y.push(m);
+        const $ = new Q(e.d_hole / 2 * 1.4, e.d_hole / 2 * 1.4, 4e-3, 20), b = new Z({
           color: 8947848,
           metalness: 0.6,
           roughness: 0.4
-        }), j = new I(y, h);
-        j.rotation.x = Math.PI / 2, j.position.set(t, a, e.t_plate + 2e-3), M.push(j);
-        const _e = new ge(d, d * 1.05, 32), ue = new ae({
+        }), J = new C($, b);
+        J.rotation.x = Math.PI / 2, J.position.set(t, l, e.t_plate + 2e-3), y.push(J);
+        const be = new we(d, d * 1.05, 32), xe = new ie({
           color: 16776960,
-          side: le
-        }), te = new I(_e, ue);
-        te.position.set(t, a, e.t_plate + 5e-4), M.push(te);
+          side: re
+        }), ae = new C(be, xe);
+        ae.position.set(t, l, e.t_plate + 5e-4), y.push(ae);
       }
-      const re = Math.sqrt(e.B * e.H), U = Math.min(re + 2 * e.h_ped, Math.min(e.B_ped, e.H_ped)), de = new ne(U, U, 2e-3), me = new ae({
+      const _e = Math.sqrt(e.B * e.H), ne = Math.min(_e + 2 * e.h_ped, Math.min(e.B_ped, e.H_ped)), fe = new ce(ne, ne, 2e-3), he = new ie({
         color: 16746496,
         transparent: true,
         opacity: 0.18,
-        side: le
-      }), ee = new I(de, me);
-      ee.position.set(0, 0, -e.h_ped + 1e-3), M.push(ee), c.objects3D.val = M, console.log(`[Placa Base AISC \xA7J8] Shells=${u.length}, Nodos=${l.length}
+        side: re
+      }), le = new C(fe, he);
+      le.position.set(0, 0, -e.h_ped + 1e-3), y.push(le), i.objects3D.val = y, console.log(`[Placa Base AISC \xA7J8] Shells=${f.length}, Nodos=${c.length}
   Placa ${e.B}\xD7${e.H}\xD7${e.t_plate}m, Pernos=${e.bolt_layout} \xD8${e.d_bolt * 1e3}mm
   Pedestal ${e.B_ped}\xD7${e.H_ped}\xD7${e.h_ped}m f'c=${e.fc / 1e3} MPa`);
     },
-    computedLabels(e, c) {
-      const l = c.__nlInfo, u = 0.65, G = 0.9, Y = 0.75, x = e.B * e.H, L = Math.min(e.B_ped * e.H_ped, x * 4), R = Math.min(Math.sqrt(L / x), 2), B = 0.85 * e.fc * x * R, z = u * B, C = Math.max(0, (e.B - 0.95 * e.d_col) / 2), A = Math.max(0, (e.H - 0.8 * e.bf_col) / 2), E = Math.sqrt(e.d_col * e.bf_col) / 4, q = Math.max(C, A, E), m = e.Pu / x, p = q * Math.sqrt(2 * m / (G * e.Fy_plate)), T = e.t_plate / p, v = e.Mu / Math.max(e.Pu, 1e-3), d = e.bolt_layout / 2, g = e.H / 2 - e.edge_dist, P = Math.max(0, (e.Mu - e.Pu * g) / (2 * g)), N = P / Math.max(d, 1), k = Math.PI * (e.d_bolt / 2) ** 2, $ = 0.75 * e.Fu_bolt * k, F = Y * $, r = e.Pu / z, f = N / F;
+    computedLabels(e, i) {
+      const c = i.__nlInfo, f = 0.65, G = 0.9, Y = 0.75, x = e.B * e.H, z = Math.min(e.B_ped * e.H_ped, x * 4), A = Math.min(Math.sqrt(z / x), 2), N = 0.85 * e.fc * x * A, S = f * N, k = Math.max(0, (e.B - 0.95 * e.d_col) / 2), H = Math.max(0, (e.H - 0.8 * e.bf_col) / 2), E = Math.sqrt(e.d_col * e.bf_col) / 4, q = Math.max(k, H, E), p = e.Pu / x, v = q * Math.sqrt(2 * p / (G * e.Fy_plate)), M = e.t_plate / v, U = e.Mu / Math.max(e.Pu, 1e-3), w = e.bolt_layout / 2, d = e.H / 2 - e.edge_dist, F = Math.max(0, (e.Mu - e.Pu * d) / (2 * d)), P = F / Math.max(w, 1), I = Math.PI * (e.d_bolt / 2) ** 2, O = 0.75 * e.Fu_bolt * I, g = Y * O, r = e.Pu / S, _ = P / g;
       return {
         "\u2500\u2500 Geometr\xEDa \u2500\u2500": "",
         "A1 (\xE1rea placa)": `${(x * 1e4).toFixed(0)} cm\xB2`,
-        "A2 (\xE1rea pedestal)": `${(L * 1e4).toFixed(0)} cm\xB2`,
-        "\u221A(A2/A1)": R.toFixed(2),
-        "m (voladizo X)": `${(C * 1e3).toFixed(0)} mm`,
-        "n (voladizo Y)": `${(A * 1e3).toFixed(0)} mm`,
+        "A2 (\xE1rea pedestal)": `${(z * 1e4).toFixed(0)} cm\xB2`,
+        "\u221A(A2/A1)": A.toFixed(2),
+        "m (voladizo X)": `${(k * 1e3).toFixed(0)} mm`,
+        "n (voladizo Y)": `${(H * 1e3).toFixed(0)} mm`,
         "\u03BBn' (Thornton)": `${(E * 1e3).toFixed(0)} mm`,
         "\u2113 cr\xEDtico": `${(q * 1e3).toFixed(0)} mm`,
         "\u2500\u2500 Aplastamiento concreto AISC \xA7J8 \u2500\u2500": "",
-        "Pp (nominal)": `${B.toFixed(0)} kN`,
-        "\u03C6Pp (dise\xF1o)": `${z.toFixed(0)} kN`,
+        "Pp (nominal)": `${N.toFixed(0)} kN`,
+        "\u03C6Pp (dise\xF1o)": `${S.toFixed(0)} kN`,
         "Pu aplicado": `${e.Pu.toFixed(0)} kN`,
         "Ratio Pu/\u03C6Pp": `${r.toFixed(3)} ${r <= 1 ? "\u2713" : "\u2717"}`,
         "\u2500\u2500 Espesor placa AISC DG-1 \u2500\u2500": "",
-        "f_p (presi\xF3n)": `${(m / 1e3).toFixed(0)} kPa (${(m / 1e3).toFixed(0)} kN/m\xB2)`,
-        "t req.": `${(p * 1e3).toFixed(1)} mm`,
+        "f_p (presi\xF3n)": `${(p / 1e3).toFixed(0)} kPa (${(p / 1e3).toFixed(0)} kN/m\xB2)`,
+        "t req.": `${(v * 1e3).toFixed(1)} mm`,
         "t dado": `${(e.t_plate * 1e3).toFixed(1)} mm`,
-        "Ratio t/t_req": `${T.toFixed(2)} ${T >= 1 ? "\u2713" : "\u2717"}`,
+        "Ratio t/t_req": `${M.toFixed(2)} ${M >= 1 ? "\u2713" : "\u2717"}`,
         "\u2500\u2500 Pernos anclaje AISC \xA7J3 / ACI \xA717 \u2500\u2500": "",
-        "e = Mu/Pu": `${(v * 1e3).toFixed(0)} mm`,
-        "Brazo a pernos": `${(g * 1e3).toFixed(0)} mm`,
-        "Tu total (tensi\xF3n neta)": `${P.toFixed(1)} kN`,
-        "Tu por perno": `${N.toFixed(1)} kN`,
-        A_perno: `${(k * 1e6).toFixed(1)} mm\xB2`,
-        "\u03C6Rn perno": `${F.toFixed(1)} kN`,
-        "Ratio Tu/\u03C6Rn": `${f.toFixed(3)} ${f <= 1 ? "\u2713" : "\u2717"}`,
+        "e = Mu/Pu": `${(U * 1e3).toFixed(0)} mm`,
+        "Brazo a pernos": `${(d * 1e3).toFixed(0)} mm`,
+        "Tu total (tensi\xF3n neta)": `${F.toFixed(1)} kN`,
+        "Tu por perno": `${P.toFixed(1)} kN`,
+        A_perno: `${(I * 1e6).toFixed(1)} mm\xB2`,
+        "\u03C6Rn perno": `${g.toFixed(1)} kN`,
+        "Ratio Tu/\u03C6Rn": `${_.toFixed(3)} ${_ <= 1 ? "\u2713" : "\u2717"}`,
         "\u2500\u2500 Dictamen \u2500\u2500": "",
-        "Criterio global": `${r <= 1 && T >= 1 && f <= 1 ? "\u2713 OK" : "\u2717 REVISAR"}`,
+        "Criterio global": `${r <= 1 && M >= 1 && _ <= 1 ? "\u2713 OK" : "\u2717 REVISAR"}`,
         "\u2500\u2500 Solver FEM \u2500\u2500": "",
-        Tipo: l ? "NO-LINEAL (J2 secante)" : "Lineal el\xE1stico",
-        ...l ? {
-          "Iteraciones NL": `${l.iterations}${l.converged ? " \u2713 convergi\xF3" : " \u2717 max-iter"}`,
-          "Elementos plastificados": `${l.elementsYielded}`,
-          "Max \u03C3/Fy (lineal inicial)": l.maxRatio.toFixed(2),
-          Interpretaci\u00F3n: l.elementsYielded > 0 ? `${l.elementsYielded} shells alcanzaron fluencia \u2192 redistribuci\xF3n` : "Toda la placa en rango el\xE1stico"
+        Tipo: c ? "NO-LINEAL (J2 secante)" : "Lineal el\xE1stico",
+        ...c ? {
+          "Iteraciones NL": `${c.iterations}${c.converged ? " \u2713 convergi\xF3" : " \u2717 max-iter"}`,
+          "Elementos plastificados": `${c.elementsYielded}`,
+          "Max \u03C3/Fy (lineal inicial)": c.maxRatio.toFixed(2),
+          Interpretaci\u00F3n: c.elementsYielded > 0 ? `${c.elementsYielded} shells alcanzaron fluencia \u2192 redistribuci\xF3n` : "Toda la placa en rango el\xE1stico"
         } : {}
       };
     }
@@ -643,5 +653,5 @@ let __tla = Promise.all([
 });
 export {
   __tla,
-  Pe as p
+  Re as p
 };
