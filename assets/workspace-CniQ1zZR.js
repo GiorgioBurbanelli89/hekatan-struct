@@ -194,7 +194,7 @@ Promise.all([
   })()
 ]).then(async () => {
   function me(n) {
-    const { mesh: a, viewerElm: o, onStatusChange: f } = n, v = n.scalePercent ?? 5, [h, b] = n.visFrequencyRange ?? [
+    const { mesh: a, viewerElm: o, onStatusChange: f } = n, v = n.scalePercent ?? 5, [g, b] = n.visFrequencyRange ?? [
       0.5,
       3
     ];
@@ -233,19 +233,20 @@ Promise.all([
         state: m !== 0 ? "\u25B6 Reproduciendo" : "\u23F8 Pausado"
       };
     }
-    function g() {
+    function h() {
       return o.__ctx;
     }
     function I(p) {
+      var _a;
       m && (cancelAnimationFrame(m), m = 0), p && u.length > 0 && (a.nodes.val = u.map((k) => [
         ...k
-      ]));
+      ]), (_a = h()) == null ? void 0 : _a.render());
     }
     function B() {
       var _a, _b;
       if (!i || !i.modeShapes || i.modeShapes.length === 0 || !i.modeShapes[r]) return;
       I(false);
-      const p = i.modeShapes[r], k = ((_a = i.frequencies) == null ? void 0 : _a[r]) || 1, C = ((_b = i.frequencies) == null ? void 0 : _b[0]) || 1, d = Math.max(h, Math.min(b, k / C));
+      const p = i.modeShapes[r], k = ((_a = i.frequencies) == null ? void 0 : _a[r]) || 1, C = ((_b = i.frequencies) == null ? void 0 : _b[0]) || 1, d = Math.max(g, Math.min(b, k / C));
       u = a.nodes.rawVal.map((x) => [
         ...x
       ]);
@@ -269,7 +270,7 @@ Promise.all([
             V[2] + (p[O * 6 + 2] || 0) * q
           ];
         }
-        a.nodes.val = X, (_a2 = g()) == null ? void 0 : _a2.render(), m = requestAnimationFrame(A);
+        a.nodes.val = X, (_a2 = h()) == null ? void 0 : _a2.render(), m = requestAnimationFrame(A);
       };
       m = requestAnimationFrame(A), s();
     }
@@ -392,9 +393,9 @@ Promise.all([
       n.deformScale.val = 1;
       return;
     }
-    let f = 1 / 0, v = 1 / 0, h = 1 / 0, b = -1 / 0, i = -1 / 0, r = -1 / 0;
-    for (const s of a) s[0] < f && (f = s[0]), s[0] > b && (b = s[0]), s[1] < v && (v = s[1]), s[1] > i && (i = s[1]), s[2] < h && (h = s[2]), s[2] > r && (r = s[2]);
-    const m = Math.sqrt((b - f) ** 2 + (i - v) ** 2 + (r - h) ** 2) || 1;
+    let f = 1 / 0, v = 1 / 0, g = 1 / 0, b = -1 / 0, i = -1 / 0, r = -1 / 0;
+    for (const s of a) s[0] < f && (f = s[0]), s[0] > b && (b = s[0]), s[1] < v && (v = s[1]), s[1] > i && (i = s[1]), s[2] < g && (g = s[2]), s[2] > r && (r = s[2]);
+    const m = Math.sqrt((b - f) ** 2 + (i - v) ** 2 + (r - g) ** 2) || 1;
     let u = 0;
     if (o.forEach((s) => {
       const w = Math.sqrt((s[0] || 0) ** 2 + (s[1] || 0) ** 2 + (s[2] || 0) ** 2);
@@ -409,21 +410,21 @@ Promise.all([
     const n = R.__ctx, a = P.nodes.rawVal;
     if (!n || !(a == null ? void 0 : a.length)) return;
     const { camera: o, controls: f, render: v } = n;
-    let h = 1 / 0, b = 1 / 0, i = 1 / 0, r = -1 / 0, m = -1 / 0, u = -1 / 0;
-    for (const e of a) e[0] < h && (h = e[0]), e[0] > r && (r = e[0]), e[1] < b && (b = e[1]), e[1] > m && (m = e[1]), e[2] < i && (i = e[2]), e[2] > u && (u = e[2]);
-    const s = (h + r) / 2, w = (b + m) / 2, g = (i + u) / 2, I = r - h, B = m - b, p = u - i, k = Math.max(Math.sqrt(I * I + B * B + p * p), 1), C = 2.2 * k;
-    f.target.set(s, w, g);
+    let g = 1 / 0, b = 1 / 0, i = 1 / 0, r = -1 / 0, m = -1 / 0, u = -1 / 0;
+    for (const e of a) e[0] < g && (g = e[0]), e[0] > r && (r = e[0]), e[1] < b && (b = e[1]), e[1] > m && (m = e[1]), e[2] < i && (i = e[2]), e[2] > u && (u = e[2]);
+    const s = (g + r) / 2, w = (b + m) / 2, h = (i + u) / 2, I = r - g, B = m - b, p = u - i, k = Math.max(Math.sqrt(I * I + B * B + p * p), 1), C = 2.2 * k;
+    f.target.set(s, w, h);
     const d = C / Math.sqrt(3);
-    o.position.set(s + d, w - d, g + d), o.up.set(0, 0, 1), o.near = k * 1e-3, o.far = k * 50, o.updateProjectionMatrix(), o.lookAt(s, w, g), f.update(), v == null ? void 0 : v();
+    o.position.set(s + d, w - d, h + d), o.up.set(0, 0, 1), o.near = k * 1e-3, o.far = k * 50, o.updateProjectionMatrix(), o.lookAt(s, w, h), f.update(), v == null ? void 0 : v();
     const t = R.__settings;
     (t == null ? void 0 : t.gridSize) && (t.gridSize.val = Math.max(Math.ceil(Math.max(I, B) * 1.2), 2));
   }
   function at(n) {
-    const a = R.querySelectorAll("select"), o = Array.from(a).find((v) => Array.from(v.options).some((h) => h.value === "bendingXX"));
+    const a = R.querySelectorAll("select"), o = Array.from(a).find((v) => Array.from(v.options).some((g) => g.value === "bendingXX"));
     if (!o) return;
     for (const v of Array.from(o.options)) {
-      const h = v.value === "none" || !n || n.includes(v.value);
-      v.hidden = !h, v.disabled = !h;
+      const g = v.value === "none" || !n || n.includes(v.value);
+      v.hidden = !g, v.disabled = !g;
     }
     const f = R.__settings;
     (f == null ? void 0 : f.shellResults) && (o.value = f.shellResults.val, o.dispatchEvent(new Event("change", {
@@ -468,14 +469,14 @@ Promise.all([
       return;
     }
     o.style.cursor = "move", o.style.userSelect = "none";
-    let f = false, v = 0, h = 0, b = 0, i = 0;
+    let f = false, v = 0, g = 0, b = 0, i = 0;
     o.addEventListener("mousedown", (r) => {
-      f = true, v = r.clientX, h = r.clientY;
+      f = true, v = r.clientX, g = r.clientY;
       const m = n.getBoundingClientRect();
       b = m.left, i = m.top, n.style.right = "auto", n.style.left = `${b}px`, n.style.top = `${i}px`, r.preventDefault();
     }), window.addEventListener("mousemove", (r) => {
       if (!f) return;
-      const m = r.clientX - v, u = r.clientY - h, s = Math.max(0, Math.min(window.innerWidth - 40, b + m)), w = Math.max(0, Math.min(window.innerHeight - 40, i + u));
+      const m = r.clientX - v, u = r.clientY - g, s = Math.max(0, Math.min(window.innerWidth - 40, b + m)), w = Math.max(0, Math.min(window.innerHeight - 40, i + u));
       n.style.left = `${s}px`, n.style.top = `${w}px`;
     }), window.addEventListener("mouseup", () => {
       if (f) {
@@ -493,30 +494,30 @@ Promise.all([
   function Y(n) {
     const a = R.__ctx;
     if (!a) return;
-    const { camera: o, controls: f, render: v } = a, h = P.nodes.rawVal ?? [];
+    const { camera: o, controls: f, render: v } = a, g = P.nodes.rawVal ?? [];
     let b = 1 / 0, i = 1 / 0, r = 1 / 0, m = -1 / 0, u = -1 / 0, s = -1 / 0;
-    for (const d of h) d[0] < b && (b = d[0]), d[0] > m && (m = d[0]), d[1] < i && (i = d[1]), d[1] > u && (u = d[1]), d[2] < r && (r = d[2]), d[2] > s && (s = d[2]);
-    const w = (b + m) / 2, g = (i + u) / 2, I = (r + s) / 2, B = m - b || 1, p = u - i || 1, k = s - r || 1, C = Math.sqrt(B * B + p * p + k * k) || 5;
-    if (f.target.set(w, g, I), n === "iso") {
+    for (const d of g) d[0] < b && (b = d[0]), d[0] > m && (m = d[0]), d[1] < i && (i = d[1]), d[1] > u && (u = d[1]), d[2] < r && (r = d[2]), d[2] > s && (s = d[2]);
+    const w = (b + m) / 2, h = (i + u) / 2, I = (r + s) / 2, B = m - b || 1, p = u - i || 1, k = s - r || 1, C = Math.sqrt(B * B + p * p + k * k) || 5;
+    if (f.target.set(w, h, I), n === "iso") {
       o.fov = 45;
       const d = C * 1.2;
-      o.position.set(w + d * 0.6, g - d * 0.6, I + d * 0.6);
+      o.position.set(w + d * 0.6, h - d * 0.6, I + d * 0.6);
     } else {
       o.fov = 5;
       const t = C / 2 * 25;
       switch (n) {
         case "plan":
-          o.position.set(w, g, I + t);
+          o.position.set(w, h, I + t);
           break;
         case "elevX":
-          o.position.set(w + t, g, I);
+          o.position.set(w + t, h, I);
           break;
         case "elevY":
-          o.position.set(w, g + t, I);
+          o.position.set(w, h + t, I);
           break;
       }
     }
-    o.up.set(0, 0, 1), o.updateProjectionMatrix(), o.lookAt(w, g, I), f.update(), v == null ? void 0 : v();
+    o.up.set(0, 0, 1), o.updateProjectionMatrix(), o.lookAt(w, h, I), f.update(), v == null ? void 0 : v();
   }
   function Q() {
     var _a;
@@ -555,11 +556,11 @@ Promise.all([
     const v = n.addFolder({
       title: "Unidades",
       expanded: false
-    }), h = {
+    }), g = {
       force: W.val,
       disp: ae.val
     };
-    v.addBinding(h, "force", {
+    v.addBinding(g, "force", {
       label: "Fuerza",
       options: {
         kN: "kN",
@@ -573,7 +574,7 @@ Promise.all([
         for (const [z, F] of Object.entries(c.params)) (F.unitType === "force" || F.unitType === "moment") && (M[z] = M[z] * S / y);
       }
       W.val = l, Q(), J();
-    }), v.addBinding(h, "disp", {
+    }), v.addBinding(g, "disp", {
       label: "Desplazamiento",
       options: {
         mm: "mm",
@@ -593,7 +594,7 @@ Promise.all([
       u !== null && clearTimeout(u), u = window.setTimeout(() => {
         u = null, J();
       }, 120);
-    }, w = {}, g = {}, I = {}, B = (t) => t.rangeAdjustable === true || t.rangeAdjustable !== false && (t.unitType === "force" || t.unitType === "moment"), p = /* @__PURE__ */ new Map();
+    }, w = {}, h = {}, I = {}, B = (t) => t.rangeAdjustable === true || t.rangeAdjustable !== false && (t.unitType === "force" || t.unitType === "moment"), p = /* @__PURE__ */ new Map();
     if (N = {}, c.inlineComputed) for (const t of c.inlineComputed) {
       const e = `__inline_${t.after}_${t.label}`;
       N[e] = t.compute(M, P), p.has(t.after) || p.set(t.after, []), p.get(t.after).push({
@@ -641,7 +642,7 @@ Promise.all([
           }, 80) : s();
         });
       };
-      _(e.min, e.max), B(e) && e.min !== void 0 && e.max !== void 0 && (g[t] = {
+      _(e.min, e.max), B(e) && e.min !== void 0 && e.max !== void 0 && (h[t] = {
         min: e.min,
         max: e.max
       }, I[t] = {
@@ -654,7 +655,7 @@ Promise.all([
         view: "text"
       });
     }
-    const d = Object.keys(g);
+    const d = Object.keys(h);
     if (d.length > 0) {
       const t = n.addFolder({
         title: "\u{1F4CF} Rangos",
@@ -662,22 +663,22 @@ Promise.all([
       });
       for (const e of d) {
         const l = c.params[e], S = re(l.label ?? e), y = l.step ?? 1, z = Math.abs(l.max - l.min), F = l.min - z * 5, j = l.max + z * 5;
-        t.addBinding(g[e], "min", {
+        t.addBinding(h[e], "min", {
           label: `${S} min`,
           min: F,
           max: l.max,
           step: y
         }).on("change", (T) => {
-          const _ = Math.min(T.value, g[e].max - y);
-          g[e].min = _, I[e].rebuild(_, g[e].max);
-        }), t.addBinding(g[e], "max", {
+          const _ = Math.min(T.value, h[e].max - y);
+          h[e].min = _, I[e].rebuild(_, h[e].max);
+        }), t.addBinding(h[e], "max", {
           label: `${S} max`,
           min: l.min,
           max: j,
           step: y
         }).on("change", (T) => {
-          const _ = Math.max(T.value, g[e].min + y);
-          g[e].max = _, I[e].rebuild(g[e].min, _);
+          const _ = Math.max(T.value, h[e].min + y);
+          h[e].max = _, I[e].rebuild(h[e].min, _);
         });
       }
     }
@@ -765,8 +766,10 @@ Promise.all([
         interval: 0,
         label: "Estado"
       }), t.addButton({
-        title: "\u23F8 Pausar"
-      }).on("click", () => E.stop()), t.addButton({
+        title: "\u23F9 Detener y restaurar"
+      }).on("click", () => {
+        E.stop();
+      }), t.addButton({
         title: "\u25B6 Reanudar"
       }).on("click", () => {
         l && E.play();
