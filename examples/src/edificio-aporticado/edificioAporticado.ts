@@ -26,9 +26,11 @@ export const edificioAporticado: ExampleDef = {
   hasModal: true,
   params: {
     // ── Geometría ──
-    nVanosX:  P("Geometría", "Vanos X", 2, 1, 6, 1),
-    nVanosY:  P("Geometría", "Vanos Y", 2, 1, 6, 1),
-    nPisos:   P("Geometría", "N. Pisos", 3, 1, 8, 1),
+    // Params estructurales: al cambiarlos, el workspace regenera los dynamicParams
+    // (Secciones por piso, Alturas por piso, Luces por vano).
+    nVanosX:  { ...P("Geometría", "Vanos X", 2, 1, 6, 1), regenOnChange: true },
+    nVanosY:  { ...P("Geometría", "Vanos Y", 2, 1, 6, 1), regenOnChange: true },
+    nPisos:   { ...P("Geometría", "N. Pisos", 3, 1, 8, 1), regenOnChange: true },
     spanX:    P("Geometría", "Luz X uniforme (m)", 5.0, 2, 12, 0.5),
     spanY:    P("Geometría", "Luz Y uniforme (m)", 5.0, 2, 12, 0.5),
     hPiso:    P("Geometría", "h piso uniforme (m)", 3.0, 2, 5, 0.1),
@@ -37,27 +39,8 @@ export const edificioAporticado: ExampleDef = {
     Lviy:     P("Geometría", "Voladizo izq Y (m)", 0, 0, 3, 0.25),
     Lvdy:     P("Geometría", "Voladizo der Y (m)", 0, 0, 3, 0.25),
 
-    // ── Luces por vano (0 = usa uniforme) ──
-    svX_1:    P("Luces por vano", "svX #1 (m)", 0, 0, 12, 0.5),
-    svX_2:    P("Luces por vano", "svX #2 (m)", 0, 0, 12, 0.5),
-    svX_3:    P("Luces por vano", "svX #3 (m)", 0, 0, 12, 0.5),
-    svX_4:    P("Luces por vano", "svX #4 (m)", 0, 0, 12, 0.5),
-    svX_5:    P("Luces por vano", "svX #5 (m)", 0, 0, 12, 0.5),
-    svX_6:    P("Luces por vano", "svX #6 (m)", 0, 0, 12, 0.5),
-    svY_1:    P("Luces por vano", "svY #1 (m)", 0, 0, 12, 0.5),
-    svY_2:    P("Luces por vano", "svY #2 (m)", 0, 0, 12, 0.5),
-    svY_3:    P("Luces por vano", "svY #3 (m)", 0, 0, 12, 0.5),
-    svY_4:    P("Luces por vano", "svY #4 (m)", 0, 0, 12, 0.5),
-    svY_5:    P("Luces por vano", "svY #5 (m)", 0, 0, 12, 0.5),
-    svY_6:    P("Luces por vano", "svY #6 (m)", 0, 0, 12, 0.5),
-
-    // ── Alturas por piso (0 = usa uniforme) ──
-    hP_1:     P("Alturas por piso", "Piso 1 (m)", 0, 0, 6, 0.1),
-    hP_2:     P("Alturas por piso", "Piso 2 (m)", 0, 0, 6, 0.1),
-    hP_3:     P("Alturas por piso", "Piso 3 (m)", 0, 0, 6, 0.1),
-    hP_4:     P("Alturas por piso", "Piso 4 (m)", 0, 0, 6, 0.1),
-    hP_5:     P("Alturas por piso", "Piso 5 (m)", 0, 0, 6, 0.1),
-    hP_6:     P("Alturas por piso", "Piso 6 (m)", 0, 0, 6, 0.1),
+    // Luces por vano y Alturas por piso ahora son DINÁMICAS (dynamicParams).
+    // Solo se muestran svX_1..svX_{nVanosX}, svY_1..svY_{nVanosY}, hP_1..hP_{nPisos}.
     hP_7:     P("Alturas por piso", "Piso 7 (m)", 0, 0, 6, 0.1),
     hP_8:     P("Alturas por piso", "Piso 8 (m)", 0, 0, 6, 0.1),
 
@@ -71,39 +54,10 @@ export const edificioAporticado: ExampleDef = {
     vigaB:    P("Secciones (global)", "b viga (m)", 0.30, 0.20, 0.60, 0.05),
     vigaH:    P("Secciones (global)", "h viga (m)", 0.50, 0.30, 0.90, 0.05),
 
-    // ── Secciones por piso (0 = usa global) ──
-    colB_1:   P("Secciones por piso", "b col P1 (m)", 0, 0, 1.0, 0.05),
-    colH_1:   P("Secciones por piso", "h col P1 (m)", 0, 0, 1.0, 0.05),
-    vigaB_1:  P("Secciones por piso", "b viga P1 (m)", 0, 0, 0.8, 0.05),
-    vigaH_1:  P("Secciones por piso", "h viga P1 (m)", 0, 0, 1.0, 0.05),
-    colB_2:   P("Secciones por piso", "b col P2 (m)", 0, 0, 1.0, 0.05),
-    colH_2:   P("Secciones por piso", "h col P2 (m)", 0, 0, 1.0, 0.05),
-    vigaB_2:  P("Secciones por piso", "b viga P2 (m)", 0, 0, 0.8, 0.05),
-    vigaH_2:  P("Secciones por piso", "h viga P2 (m)", 0, 0, 1.0, 0.05),
-    colB_3:   P("Secciones por piso", "b col P3 (m)", 0, 0, 1.0, 0.05),
-    colH_3:   P("Secciones por piso", "h col P3 (m)", 0, 0, 1.0, 0.05),
-    vigaB_3:  P("Secciones por piso", "b viga P3 (m)", 0, 0, 0.8, 0.05),
-    vigaH_3:  P("Secciones por piso", "h viga P3 (m)", 0, 0, 1.0, 0.05),
-    colB_4:   P("Secciones por piso", "b col P4 (m)", 0, 0, 1.0, 0.05),
-    colH_4:   P("Secciones por piso", "h col P4 (m)", 0, 0, 1.0, 0.05),
-    vigaB_4:  P("Secciones por piso", "b viga P4 (m)", 0, 0, 0.8, 0.05),
-    vigaH_4:  P("Secciones por piso", "h viga P4 (m)", 0, 0, 1.0, 0.05),
-    colB_5:   P("Secciones por piso", "b col P5 (m)", 0, 0, 1.0, 0.05),
-    colH_5:   P("Secciones por piso", "h col P5 (m)", 0, 0, 1.0, 0.05),
-    vigaB_5:  P("Secciones por piso", "b viga P5 (m)", 0, 0, 0.8, 0.05),
-    vigaH_5:  P("Secciones por piso", "h viga P5 (m)", 0, 0, 1.0, 0.05),
-    colB_6:   P("Secciones por piso", "b col P6 (m)", 0, 0, 1.0, 0.05),
-    colH_6:   P("Secciones por piso", "h col P6 (m)", 0, 0, 1.0, 0.05),
-    vigaB_6:  P("Secciones por piso", "b viga P6 (m)", 0, 0, 0.8, 0.05),
-    vigaH_6:  P("Secciones por piso", "h viga P6 (m)", 0, 0, 1.0, 0.05),
-    colB_7:   P("Secciones por piso", "b col P7 (m)", 0, 0, 1.0, 0.05),
-    colH_7:   P("Secciones por piso", "h col P7 (m)", 0, 0, 1.0, 0.05),
-    vigaB_7:  P("Secciones por piso", "b viga P7 (m)", 0, 0, 0.8, 0.05),
-    vigaH_7:  P("Secciones por piso", "h viga P7 (m)", 0, 0, 1.0, 0.05),
-    colB_8:   P("Secciones por piso", "b col P8 (m)", 0, 0, 1.0, 0.05),
-    colH_8:   P("Secciones por piso", "h col P8 (m)", 0, 0, 1.0, 0.05),
-    vigaB_8:  P("Secciones por piso", "b viga P8 (m)", 0, 0, 0.8, 0.05),
-    vigaH_8:  P("Secciones por piso", "h viga P8 (m)", 0, 0, 1.0, 0.05),
+    // NOTA: las secciones por piso (colB_pN, colH_pN, vigaB_pN, vigaH_pN)
+    // ahora se generan dinámicamente via `dynamicParams(currentParams)` más
+    // abajo — SOLO se muestran los sliders de los pisos que realmente existen
+    // según nPisos. Ya no hay slots fantasma colB_8 cuando el edificio tiene 3 pisos.
 
     // ── Apoyo ──
     apoyo:    PE("Apoyo", "Tipo", 0, { "Empotrado": 0, "Articulado (3 DOFs)": 1, "Rótula completa": 2 }),
@@ -123,6 +77,33 @@ export const edificioAporticado: ExampleDef = {
     bracesMode: PE("Avanzado", "Diagonales", 0, { "ninguna": 0, "perimetrales": 1, "todas": 2, "solo X": 3, "solo Y": 4 }),
     slabOn:   PE("Avanzado", "Losa",  0, { "Off": 0, "On": 1 }),
     slabT:    P("Avanzado", "t losa (m)", 0.15, 0.08, 0.30, 0.01),
+  },
+  /**
+   * Genera sliders dinámicos SOLO para los pisos/vanos que realmente existen.
+   * Si nPisos=3 y nVanosX=2 y nVanosY=3, retorna:
+   *   - hP_1, hP_2, hP_3                   (alturas por piso)
+   *   - svX_1, svX_2                        (luces vano X)
+   *   - svY_1, svY_2, svY_3                 (luces vano Y)
+   *   - colB_p1..colB_p3, colH_p1..colH_p3  (secciones columnas por piso)
+   *   - vigaB_p1..vigaB_p3, vigaH_p1..vigaH_p3 (secciones vigas por piso)
+   * Al subir nPisos a 5, se agregan hP_4, hP_5, colB_p4, colB_p5, etc.
+   * Al bajar a 2, desaparecen los sliders sobrantes (solo quedan hP_1, hP_2).
+   */
+  dynamicParams(cur) {
+    const out: Record<string, any> = {};
+    const nP = Math.round(cur.nPisos ?? 3);
+    const nVX = Math.round(cur.nVanosX ?? 2);
+    const nVY = Math.round(cur.nVanosY ?? 2);
+    for (let i = 1; i <= nP; i++) {
+      out[`hP_${i}`]    = P("Alturas por piso", `h Piso ${i} (m)`, 0, 0, 6, 0.1);
+      out[`colB_p${i}`] = P("Secciones por piso", `b col P${i} (m)`, 0, 0, 1.0, 0.05);
+      out[`colH_p${i}`] = P("Secciones por piso", `h col P${i} (m)`, 0, 0, 1.0, 0.05);
+      out[`vigaB_p${i}`] = P("Secciones por piso", `b viga P${i} (m)`, 0, 0, 0.8, 0.05);
+      out[`vigaH_p${i}`] = P("Secciones por piso", `h viga P${i} (m)`, 0, 0, 1.0, 0.05);
+    }
+    for (let i = 1; i <= nVX; i++) out[`svX_${i}`] = P("Luces por vano", `svX #${i} (m)`, 0, 0, 12, 0.5);
+    for (let i = 1; i <= nVY; i++) out[`svY_${i}`] = P("Luces por vano", `svY #${i} (m)`, 0, 0, 12, 0.5);
+    return out;
   },
   /**
    * Muestra las reacciones máximas en apoyos (z=0) en tonf.
