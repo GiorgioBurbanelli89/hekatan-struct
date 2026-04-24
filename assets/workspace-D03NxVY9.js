@@ -9,9 +9,9 @@ import { z as Be, __tla as __tla_2 } from "./zapataAisladaValidacion-CH2Z4p3f.js
 import { e as Ce, __tla as __tla_3 } from "./edificioConLosa-B6ep1s87.js";
 import { e as Ae, __tla as __tla_4 } from "./edificioConMuros-DugcPHOd.js";
 import { p as Oe, __tla as __tla_5 } from "./plane-Lr3MmG92.js";
-import { m as _e, __tla as __tla_6 } from "./membranaCSI-B7SrWYwj.js";
-import { p as Ee, __tla as __tla_7 } from "./plateThin-C30Q-WjQ.js";
-import { p as Re, __tla as __tla_8 } from "./plateThick-DrHD17l3.js";
+import { m as _e, __tla as __tla_6 } from "./membranaCSI-a9P9aUMe.js";
+import { p as Re, __tla as __tla_7 } from "./plateThin-C30Q-WjQ.js";
+import { p as Ee, __tla as __tla_8 } from "./plateThick-DrHD17l3.js";
 import { m as Fe, __tla as __tla_9 } from "./membrana-Darbd52d.js";
 import { s as je, __tla as __tla_10 } from "./shellThin-ORSIx719.js";
 import { s as $e, __tla as __tla_11 } from "./shellThick-BSU3qF0E.js";
@@ -23,22 +23,24 @@ import { e as Ne, __tla as __tla_16 } from "./edificioMuros-CHnHAY7D.js";
 import { e as Xe, __tla as __tla_17 } from "./edificioDual-DndxKuq6.js";
 import { c as Ye, __tla as __tla_18 } from "./columnaCft-DHP1STDn.js";
 import { t as He, __tla as __tla_19 } from "./triangularPlate-C-QvFBgW.js";
-import { t as Ke, __tla as __tla_20 } from "./trussGen-CYTV_Ioz.js";
-import { b as Ze, __tla as __tla_21 } from "./barraAxial-Bnm-0MrG.js";
-import { p as Ge, __tla as __tla_22 } from "./portico2D-kxfBcLlJ.js";
-import { t as Je, __tla as __tla_23 } from "./tower3D-tLRX3VEB.js";
-import { g as We, __tla as __tla_24 } from "./galpon-BaNuuhBd.js";
-import { e as Qe, __tla as __tla_25 } from "./edifAcero-DWr_Efuo.js";
-import { m as et, __tla as __tla_26 } from "./mezanine-CrrnYAh3.js";
-import { f as Q, d as se, a as fe, b as me, t as tt, g as nt, s as le, c as it, m as at, e as ot } from "./units-B3ou5gwn.js";
-import { a as st } from "./exampleVersion-D1A_5i59.js";
+import { c as Ke, __tla as __tla_20 } from "./conexionRbs-UKtraIQb.js";
+import { t as Ze, __tla as __tla_21 } from "./trussGen-CYTV_Ioz.js";
+import { b as Ge, __tla as __tla_22 } from "./barraAxial-Bnm-0MrG.js";
+import { p as Je, __tla as __tla_23 } from "./portico2D-kxfBcLlJ.js";
+import { t as We, __tla as __tla_24 } from "./tower3D-tLRX3VEB.js";
+import { g as Qe, __tla as __tla_25 } from "./galpon-BaNuuhBd.js";
+import { e as et, __tla as __tla_26 } from "./edifAcero-DWr_Efuo.js";
+import { m as tt, __tla as __tla_27 } from "./mezanine-CrrnYAh3.js";
+import { f as Q, d as se, a as fe, b as me, t as nt, g as it, s as le, c as at, m as ot, e as st } from "./units-B3ou5gwn.js";
+import { a as rt } from "./exampleVersion-D1A_5i59.js";
 import "./Text-z8x6SwE-.js";
 import "./analyze-ClLKGn9k.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
-import { __tla as __tla_27 } from "./didacticCpp-Bnj9OwqQ.js";
+import { __tla as __tla_28 } from "./didacticCpp-Bnj9OwqQ.js";
 import "./planeQ4-DsCzHfbV.js";
 import "./fiberSectionCft-D5oK3FFf.js";
 import "./mitc3-2FJr2z_r.js";
+import "./menegottoPinto-B-C2cxus.js";
 Promise.all([
   (() => {
     try {
@@ -207,6 +209,12 @@ Promise.all([
       return __tla_27;
     } catch {
     }
+  })(),
+  (() => {
+    try {
+      return __tla_28;
+    } catch {
+    }
   })()
 ]).then(async () => {
   function ue(n) {
@@ -275,18 +283,18 @@ Promise.all([
       const _ = Math.sqrt((T - l) ** 2 + (F - q) ** 2 + (C - m) ** 2) || 1;
       let B = 0;
       for (let c = 0; c < t; c++) {
-        const V = f[c * 6] || 0, Y = f[c * 6 + 1] || 0, E = f[c * 6 + 2] || 0, N = Math.sqrt(V * V + Y * Y + E * E);
+        const V = f[c * 6] || 0, Y = f[c * 6 + 1] || 0, R = f[c * 6 + 2] || 0, N = Math.sqrt(V * V + Y * Y + R * R);
         N > B && (B = N);
       }
       const G = B > 1e-12 ? _ * v / 100 / B : 1, A = performance.now(), $ = () => {
         var _a2;
         const c = (performance.now() - A) / 1e3, V = Math.sin(2 * Math.PI * e * c) * G, Y = new Array(t);
-        for (let E = 0; E < t; E++) {
-          const N = M[E];
-          Y[E] = [
-            N[0] + (f[E * 6] || 0) * V,
-            N[1] + (f[E * 6 + 1] || 0) * V,
-            N[2] + (f[E * 6 + 2] || 0) * V
+        for (let R = 0; R < t; R++) {
+          const N = M[R];
+          Y[R] = [
+            N[0] + (f[R * 6] || 0) * V,
+            N[1] + (f[R * 6 + 1] || 0) * V,
+            N[2] + (f[R * 6 + 2] || 0) * V
           ];
         }
         a.nodes.val = Y, (_a2 = I()) == null ? void 0 : _a2.render(), p = requestAnimationFrame($);
@@ -335,12 +343,13 @@ Promise.all([
     };
   }
   const K = [
-    Ze,
-    Ke,
     Ge,
+    Ze,
     Je,
     We,
+    Qe,
     Ye,
+    Ke,
     De,
     Ue,
     Le,
@@ -349,10 +358,10 @@ Promise.all([
     Xe,
     Ce,
     Ae,
-    Qe,
     et,
-    Ee,
+    tt,
     Re,
+    Ee,
     He,
     Fe,
     _e,
@@ -401,15 +410,15 @@ Promise.all([
         a,
         u
       ];
-    })), st.v++, ye(), n.build(re(), k, L), n.defaultShellResult) {
-      const a = R.__settings;
+    })), rt.v++, ye(), n.build(re(), k, L), n.defaultShellResult) {
+      const a = E.__settings;
       (a == null ? void 0 : a.shellResults) && (a.shellResults.val = n.defaultShellResult), (a == null ? void 0 : a.loads) && (a.loads.val = true), (a == null ? void 0 : a.supports) && (a.supports.val = true);
     }
-    lt(n.availableShellResults), rt(), ve(), ee();
+    dt(n.availableShellResults), lt(), ve(), ee();
   }
-  function rt() {
+  function lt() {
     var _a;
-    const n = R.__settings;
+    const n = E.__settings;
     if (!(n == null ? void 0 : n.deformScale)) return;
     const a = k.nodes.rawVal, o = (_a = k.deformOutputs.rawVal) == null ? void 0 : _a.deformations;
     if (!(a == null ? void 0 : a.length) || !o) {
@@ -438,7 +447,7 @@ Promise.all([
     n.deformScale.val = Math.max(1, P), n.deformScaleZ && (n.deformScaleZ.val = f), n.displayScale && (n.displayScale.val = -1.5);
   }
   function ve() {
-    const n = R.__ctx, a = k.nodes.rawVal;
+    const n = E.__ctx, a = k.nodes.rawVal;
     if (!n || !(a == null ? void 0 : a.length)) return;
     const { camera: o, controls: u, render: v } = n;
     let g = 1 / 0, b = 1 / 0, i = 1 / 0, r = -1 / 0, p = -1 / 0, h = -1 / 0;
@@ -447,17 +456,17 @@ Promise.all([
     u.target.set(M, w, y);
     const d = s / Math.sqrt(3);
     o.position.set(M + d, w - d, y + d), o.up.set(0, 0, 1), o.near = f * 1e-3, o.far = f * 50, o.updateProjectionMatrix(), o.lookAt(M, w, y), u.update(), v == null ? void 0 : v();
-    const e = R.__settings;
+    const e = E.__settings;
     (e == null ? void 0 : e.gridSize) && (e.gridSize.val = Math.max(Math.ceil(Math.max(I, z) * 1.2), 2));
   }
-  function lt(n) {
-    const a = R.querySelectorAll("select"), o = Array.from(a).find((v) => Array.from(v.options).some((g) => g.value === "bendingXX"));
+  function dt(n) {
+    const a = E.querySelectorAll("select"), o = Array.from(a).find((v) => Array.from(v.options).some((g) => g.value === "bendingXX"));
     if (!o) return;
     for (const v of Array.from(o.options)) {
       const g = v.value === "none" || !n || n.includes(v.value);
       v.hidden = !g, v.disabled = !g;
     }
-    const u = R.__settings;
+    const u = E.__settings;
     (u == null ? void 0 : u.shellResults) && (o.value = u.shellResults.val, o.dispatchEvent(new Event("change", {
       bubbles: true
     })));
@@ -467,7 +476,7 @@ Promise.all([
     const n = {
       ...S
     };
-    for (const [a, o] of Object.entries(x.params)) o.unitType === "force" && (n[a] = tt(S[a])), o.unitType === "moment" && (n[a] = nt(S[a]));
+    for (const [a, o] of Object.entries(x.params)) o.unitType === "force" && (n[a] = nt(S[a])), o.unitType === "moment" && (n[a] = it(S[a]));
     return n;
   }
   function J() {
@@ -523,7 +532,7 @@ Promise.all([
     });
   }
   function H(n) {
-    const a = R.__ctx;
+    const a = E.__ctx;
     if (!a) return;
     const { camera: o, controls: u, render: v } = a, g = k.nodes.rawVal ?? [];
     let b = 1 / 0, i = 1 / 0, r = 1 / 0, p = -1 / 0, h = -1 / 0, M = -1 / 0;
@@ -653,7 +662,7 @@ Promise.all([
         });
         continue;
       }
-      const m = le(t.label ?? e), T = t.unitType === "force" ? ` ${it()}` : t.unitType === "moment" ? ` ${at()}` : t.unitType === "disp" ? ` ${ot()}` : "", C = {
+      const m = le(t.label ?? e), T = t.unitType === "force" ? ` ${at()}` : t.unitType === "moment" ? ` ${ot()}` : t.unitType === "disp" ? ` ${st()}` : "", C = {
         label: m + T
       };
       t.options !== void 0 ? C.options = t.options : (t.min !== void 0 && (C.min = t.min), t.max !== void 0 && (C.max = t.max), t.step !== void 0 && (C.step = t.step));
@@ -745,7 +754,7 @@ Promise.all([
           deformOutputs: ie,
           analyzeOutputs: ae
         },
-        viewerElm: R,
+        viewerElm: E,
         scalePercent: 5,
         onStatusChange: () => {
           const m = O.getStatus();
@@ -808,13 +817,13 @@ Promise.all([
     }
     D = n;
   }
-  const dt = {
+  const ct = {
     deformedShape: true,
     displayScale: -1.5,
     shellResults: "pressure",
     gridSize: 10,
     showCotas: true
-  }, R = Pe({
+  }, E = Pe({
     mesh: {
       nodes: te,
       elements: ne,
@@ -824,9 +833,9 @@ Promise.all([
       analyzeOutputs: ae
     },
     objects3D: he,
-    settingsObj: dt
+    settingsObj: ct
   });
-  document.body.append(R, ke({
+  document.body.append(E, ke({
     sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct",
     author: "https://www.linkedin.com/in/jorge-burbano-213741138/"
   }));
@@ -838,7 +847,7 @@ Promise.all([
       deformOutputs: ie,
       analyzeOutputs: ae
     },
-    viewerElm: R,
+    viewerElm: E,
     scalePercent: 5
   });
   const ce = new URLSearchParams(window.location.search).get("t"), W = ce && K.find((n) => n.id === ce) || K.find((n) => n.id === "zapata-aislada") || K[0];
