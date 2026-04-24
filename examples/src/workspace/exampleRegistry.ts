@@ -98,6 +98,7 @@ export interface ExampleDef {
 // ── Import de ejemplos (cada uno en su propia carpeta estilo awatif) ──
 import { zapataVigaAmarre } from "../zapata-viga-amarre/zapataVigaAmarre";
 import { zapataAislada } from "../zapata-aislada/zapataAislada";
+import { zapataAisladaValidacion } from "../zapata-aislada-validacion/zapataAisladaValidacion";
 import { plateThin } from "../plate-thin/plateThin";
 import { plateThick } from "../plate-thick/plateThick";
 import { membrana } from "../membrana-pstress/membrana";
@@ -132,5 +133,6 @@ export const examplesRegistry: ExampleDef[] = [
   shellThick,
   // Cimentaciones
   zapataAislada,
+  zapataAisladaValidacion,
   zapataVigaAmarre,
 ];

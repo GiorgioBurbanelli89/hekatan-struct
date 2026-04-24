@@ -58,6 +58,7 @@ export default defineConfig({
         "fem-explained": "src/fem-explained/index.html",
         "zapata-viga-amarre": "src/zapata-viga-amarre/index.html",
         "zapata-aislada": "src/zapata-aislada/index.html",
+        "zapata-aislada-validacion": "src/zapata-aislada-validacion/index.html",
         "edificio-aporticado": "src/edificio-aporticado/index.html",
         "truss-gen": "src/truss-gen/index.html",
         "barra-axial": "src/barra-axial/index.html",
