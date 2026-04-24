@@ -317,9 +317,12 @@ export const placaBase: ExampleDef = {
       states.deformOutputs.val = deform(
         nodes, elements, { supports, loads }, states.elementInputs.val,
       );
-      states.analyzeOutputs.val = analyze(
+      const aOut = analyze(
         nodes, elements, states.elementInputs.val, states.deformOutputs.val,
       );
+      // Normalizar colormap vonMises al rango [0, Fy_plate] para visualizar plastificación
+      (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [0, p.Fy_plate] };
+      states.analyzeOutputs.val = aOut;
     } catch (e: any) {
       console.error("[placa-base] solver error:", e?.message || e);
       states.deformOutputs.val = {} as any;

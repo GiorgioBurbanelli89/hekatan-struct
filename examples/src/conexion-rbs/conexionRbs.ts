@@ -258,30 +258,38 @@ export const conexionRbs: ExampleDef = {
       }
     }
 
-    // ── Supports: empotramiento en base Y top de columna (continuidad) ──
+    // ── Supports: la viga se empotra EN LA CARA DE LA COLUMNA (x = x0, i.e. xUnique[0]=0)
+    //     Esto simula la conexión RBS completa (columna solo visual).
+    //     Además empotramos la base de la columna para que no flote. ──
     const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
+    // Empotrar nodos de la viga en la cara de columna (primer índice X de la viga)
+    const iFix = 0;
+    for (let iy = 0; iy <= ny_beam_flange; iy++) {
+      supports.set(topFlangeGrid[iFix][iy], [true, true, true, true, true, true]);
+      supports.set(botFlangeGrid[iFix][iy], [true, true, true, true, true, true]);
+    }
+    for (let iz = 0; iz <= nz_beam_web; iz++) {
+      supports.set(webGrid[iFix][iz], [true, true, true, true, true, true]);
+    }
+    // Empotrar base y top de columna (soporte visual, no afecta la viga)
     for (let i = 0; i < nodes.length; i++) {
-      // Empotrar nodos en la base y en el top de la columna (x = ±d_col/2 o y=0, z = ±L_col/2)
-      const isBaseOrTop = Math.abs(Math.abs(nodes[i][2]) - L_col / 2) < 1e-4;
-      const isColumnNode =
-        Math.abs(Math.abs(nodes[i][0]) - p.d_col / 2) < 1e-4 ||
-        (Math.abs(nodes[i][1]) < 1e-6 && Math.abs(nodes[i][0]) < p.d_col / 2 + 1e-4);
-      if (isBaseOrTop && isColumnNode) {
-        supports.set(i, [true, true, true, true, true, true]);
+      const z = nodes[i][2];
+      const isCol = Math.abs(nodes[i][0]) > p.d_col / 2 - 1e-4 - 1e-6 || Math.abs(nodes[i][1]) < 1e-6;
+      if (Math.abs(Math.abs(z) - L_col / 2) < 1e-4 && isCol && nodes[i][0] <= p.d_col / 2 + 1e-4) {
+        if (!supports.has(i)) supports.set(i, [true, true, true, true, true, true]);
       }
     }
 
-    // ── Cargas: fuerza vertical en el extremo de la viga (para flexión) ──
+    // ── Cargas: fuerza vertical suave en el extremo de la viga (20% Mp_rbs para quedar en rango elástico) ──
     const bf_rbs_min = p.bf_beam * (1 - 2 * p.c_rbs);
     const Zx_rbs_est = bf_rbs_min * p.tf_beam * (p.d_beam - p.tf_beam);
     const Mp_rbs_est = p.Fy * Zx_rbs_est;
     const lever_arm = p.L_beam - p.a_rbs * p.bf_beam - (p.b_rbs * p.d_beam) / 2;
-    const F_tip = (0.8 * Mp_rbs_est) / Math.max(lever_arm, 0.5); // target 0.8·Mp
+    const F_tip = (0.45 * Mp_rbs_est) / Math.max(lever_arm, 0.5); // 45% Mp → rango elástico con concentración visible
 
     const loads = new Map<number, [number, number, number, number, number, number]>();
     const iTip = xUnique.length - 1; // último índice X (extremo libre)
-    const nTipTop = ny_beam_flange + 1;
-    const F_per_node = F_tip / nTipTop;
+    const F_per_node = F_tip / (ny_beam_flange + 1);
     for (let iy = 0; iy <= ny_beam_flange; iy++) {
       loads.set(topFlangeGrid[iTip][iy], [0, 0, -F_per_node, 0, 0, 0]);
     }
@@ -295,15 +303,18 @@ export const conexionRbs: ExampleDef = {
     } as any;
 
     // ── Ejecutar solver (deform + analyze) para obtener colormap de von Mises ──
+    console.log("[conexion-rbs] Running deform() with", nodes.length, "nodes,", elements.length, "shells,", supports.size, "supports,", loads.size, "loads");
     try {
-      states.deformOutputs.val = deform(
-        nodes, elements, { supports, loads }, states.elementInputs.val,
-      );
-      states.analyzeOutputs.val = analyze(
-        nodes, elements, states.elementInputs.val, states.deformOutputs.val,
-      );
+      const dOut = deform(nodes, elements, { supports, loads }, states.elementInputs.val);
+      console.log("[conexion-rbs] deform() OK → deformations keys:", dOut.deformations ? [...dOut.deformations.keys()].slice(0, 3) : "none");
+      states.deformOutputs.val = dOut;
+      const aOut = analyze(nodes, elements, states.elementInputs.val, dOut);
+      // Normalizar colormap vonMises al rango [0, Fy] para visualizar plastificación
+      (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [0, p.Fy] };
+      console.log("[conexion-rbs] analyze() OK → vonMises keys:", aOut.vonMises ? [...aOut.vonMises.keys()].slice(0, 3) : "none");
+      states.analyzeOutputs.val = aOut;
     } catch (e: any) {
-      console.error("[conexion-rbs] solver error:", e?.message || e);
+      console.error("[conexion-rbs] solver error:", e?.message || e, e);
       states.deformOutputs.val = {} as any;
       states.analyzeOutputs.val = {} as any;
     }
