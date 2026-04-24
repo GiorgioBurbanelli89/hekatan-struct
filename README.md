@@ -7,9 +7,24 @@ Hekatan Struct started as a fork of [awatif v2.0.0](https://github.com/madil4/aw
 🌐 **Live:** [https://giorgioburbanelli89.github.io/hekatan-struct/workspace/](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/)
 
 Jump directly to any example with `?t=<id>`, e.g.:
-- [`/workspace/?t=plane`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=plane) — Plane Q4 cantilever wall (plane stress)
-- [`/workspace/?t=zapata-aislada`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=zapata-aislada) — Isolated footing with Winkler springs
-- [`/workspace/?t=edificio-aporticado`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-aporticado) — Parametric concrete moment frame building
+**Plates & Shells**
+- [`?t=plane`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=plane) — Plane Q4 cantilever wall (plane stress) w/ Wilson incompatible modes
+- [`?t=plate-thin`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=plate-thin) — Kirchhoff thin plate
+- [`?t=plate-thick`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=plate-thick) — Mindlin-Reissner (MITC4)
+- [`?t=membrana-csi`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=membrana-csi) — CSI Shell-Membrane with drilling DOF
+
+**Foundations**
+- [`?t=zapata-aislada`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=zapata-aislada) — Isolated footing + Winkler springs (11 soil types, NEC-SE-GC)
+- [`?t=zapata-viga-amarre`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=zapata-viga-amarre) — Strap-beam footing
+
+**Building variants** (per structural system, AISC 360-22 / ACI 318-22 / ASCE 7-22)
+- [`?t=edificio-hormigon`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-hormigon) — Pure concrete moment frame (IMF/SMF)
+- [`?t=edificio-acero-v2`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-acero-v2) — Steel W moment frame (OMF/IMF/SMF)
+- [`?t=edificio-mixto`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-mixto) — Composite (concrete columns + steel W beams)
+- [`?t=edificio-muros`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-muros) — Concrete + Special RC shear walls (ACI 318-22 §18.10)
+- [`?t=edificio-dual`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-dual) — Dual system (composite + walls + braces, R=7)
+
+All buildings support the **Rigid Diaphragm** toggle (ASCE 7-22 §12.3.1) in the *Avanzado* folder, adjustable *Secciones por Piso* / *Luces por Vano* via `dynamicParams`, and separate XY / Z deform scales in Settings.
 
 ## What Hekatan Struct adds on top of Awatif
 
@@ -20,7 +35,9 @@ Jump directly to any example with `?t=<id>`, e.g.:
 | Winkler springs (native C++) | ❌ | ✅ `deform()` extended with `springsList: {node, dof, k}[]`, assembled into K |
 | Plane Q4 plane-stress solver | ❌ | ✅ Pure-TS `planeQ4Solve`: 2 DOFs/node, 2×2 Gauss, LU dense, stress recovery |
 | Wilson incompatible modes (Q4 bending) | ❌ | ✅ Taylor-Beresford-Wilson 1976; reduces cantilever error ~10% → <2% |
-| Rigid diaphragm (ASCE 7-22 §12.3.1) | ❌ | ✅ Master-slave rigid links helper (`shared/rigidDiaphragm.ts`) |
+| Rigid diaphragm (ASCE 7-22 §12.3.1) | ❌ | ✅ Integrated in all 5 building variants via toggle *Avanzado → Diafragma rígido* |
+| Separate deform scale XY / Z (axial rigidity respect) | ❌ | ✅ Auto-detects Edificio vs Placa; user-adjustable in Settings |
+| Dynamic per-floor params (regenOnChange) | ❌ | ✅ `ExampleDef.dynamicParams(currentParams)` — Secciones/Alturas/Luces por piso |
 | Bathe composite time integration (α-dissipative) | ❌ | ✅ TS scaffold `batheStep()` + `newmarkStep()` for ASCE 7-22 §16 RHA |
 | ETABS-style slab discretization (25-50 cm per bay) | ❌ | ✅ `etabsDiscretize2D()` — each bay meshed to target size, like ETABS default |
 | Materials helper (Hormigón/Acero/CFT × Rect/Circ/W/HSS) | ❌ | ✅ `materials.ts` w/ ACI 318-22 Ec=15100√f'c, AISC/A992 steel, composite |
