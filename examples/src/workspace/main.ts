@@ -154,18 +154,35 @@ function autoScaleDeformedShape() {
     if (n[2]<zMin) zMin=n[2]; if (n[2]>zMax) zMax=n[2];
   }
   const diag = Math.sqrt((xMax-xMin)**2 + (yMax-yMin)**2 + (zMax-zMin)**2) || 1;
-  let maxDef = 0;
+
+  // Compute MAX HORIZONTAL (Ux,Uy) and MAX VERTICAL (Uz) separately.
+  // Razón: las columnas de hormigón/acero son AXIALMENTE rígidas (EA grande);
+  // un edificio de 8 pisos bajo CM/CV puede tener Uz ≈ 5-10 mm por acumulación
+  // de acortamiento elástico, mientras que el sway lateral Ux/Uy ante cargas
+  // sísmicas moderadas es comparable. Si escalamos al max total, el axial
+  // domina y se ve como si los pisos se "aplastaran" 1 piso visualmente (absurdo
+  // para edificios reales donde el axial es ~1/500 de la altura de piso).
+  let maxUh = 0, maxUz = 0;
   defMap.forEach((d) => {
-    const m = Math.sqrt((d[0]||0)**2 + (d[1]||0)**2 + (d[2]||0)**2);
-    if (m > maxDef) maxDef = m;
+    const h = Math.sqrt((d[0]||0)**2 + (d[1]||0)**2);
+    const v = Math.abs(d[2]||0);
+    if (h > maxUh) maxUh = h;
+    if (v > maxUz) maxUz = v;
   });
-  if (maxDef < 1e-30) { s.deformScale.val = 1; return; }
-  // Target: deformación visible = 25% del diagonal (antes 15% — poco visible a 10 tonf).
-  // Con 25% ya se ve claramente la curvatura de la placa a cargas moderadas.
-  s.deformScale.val = Math.min(50000, Math.max(1, (0.25 * diag) / maxDef));
-  // displayScale solo afecta markers/flechas de cargas/soportes (no la deformada).
-  // −2 → factor 0.5 para que las flechas sean más pequeñas y no tapen el modelo.
-  if (s.displayScale) s.displayScale.val = -2;
+  // Detecta "edificio" = extensión vertical dominante (Δz > Δx, Δy).
+  // En ese caso, el axial Uz se pondera DEBILMENTE (factor 0.15) para que no
+  // domine el auto-scale. Para placas / shells horizontales (Δz pequeña), se
+  // mantiene el comportamiento anterior.
+  const dx = xMax - xMin, dy = yMax - yMin, dz = zMax - zMin;
+  const isBuilding = dz > 1.1 * Math.max(dx, dy);
+  const refDef = isBuilding
+    ? Math.max(maxUh, maxUz * 0.15)    // edificio: axial minimizado
+    : Math.max(maxUh, maxUz);           // placa/shell: todo equivalente
+  if (refDef < 1e-30) { s.deformScale.val = 1; return; }
+  // Target: 15% del diagonal (antes 25% — demasiado agresivo para edificios altos
+  // con cargas verticales). Para placas y muros a corte sigue siendo visible.
+  s.deformScale.val = Math.min(50000, Math.max(1, (0.15 * diag) / refDef));
+  if (s.displayScale) s.displayScale.val = -1.5;
 }
 
 /**
