@@ -124,6 +124,49 @@ export const edificioAporticado: ExampleDef = {
     slabOn:   PE("Avanzado", "Losa",  0, { "Off": 0, "On": 1 }),
     slabT:    P("Avanzado", "t losa (m)", 0.15, 0.08, 0.30, 0.01),
   },
+  /**
+   * Muestra las reacciones máximas en apoyos (z=0) en tonf.
+   * Estas son las que el ingeniero debe copiar manualmente a zapata-aislada /
+   * zapata-viga-amarre para diseñar la cimentación por separado (buena práctica:
+   * NO modelar edificio+zapata juntos — se desacoplan por rigidez infinita asumida).
+   */
+  computedLabels(p, states) {
+    const TONF_TO_KN = 9.80665;
+    const reactions = (states.deformOutputs.rawVal as any)?.reactions as
+      Map<number, [number, number, number, number, number, number]> | undefined;
+    const nodes = states.nodes.rawVal as number[][];
+    if (!reactions || !nodes?.length) {
+      return { "Reacciones (→ zapatas)": "—" };
+    }
+    // Buscar máximos en apoyos (nodos con z≈0)
+    let maxFz = 0, maxMx = 0, maxMy = 0;
+    let maxFz_nodo = -1, maxFz_xy: [number, number] = [0, 0];
+    let minFz = 0, minFz_nodo = -1;
+    reactions.forEach((r, idx) => {
+      const n = nodes[idx];
+      if (!n || Math.abs(n[2]) > 1e-6) return;   // sólo apoyos z=0
+      const Fz = r[2], Mx = r[3], My = r[4];
+      if (Math.abs(Fz) > Math.abs(maxFz)) { maxFz = Fz; maxFz_nodo = idx; maxFz_xy = [n[0], n[1]]; }
+      if (Fz > 0 && Fz > Math.abs(minFz)) { minFz = Fz; minFz_nodo = idx; }   // tracción (uplift)
+      if (Math.abs(Mx) > Math.abs(maxMx)) maxMx = Mx;
+      if (Math.abs(My) > Math.abs(maxMy)) maxMy = My;
+    });
+    const P_tonf = Math.abs(maxFz) / TONF_TO_KN;
+    const Mx_tonf = Math.abs(maxMx) / TONF_TO_KN;
+    const My_tonf = Math.abs(maxMy) / TONF_TO_KN;
+    const uplift_tonf = minFz / TONF_TO_KN;
+    const nPisos = Math.round(p.nPisos);
+    const result: Record<string, string> = {
+      "── Reacciones máx (→ zapatas) ──": "",
+      "P (compresión)": `${P_tonf.toFixed(2)} tonf (nodo ${maxFz_nodo})`,
+      "Mx": `${Mx_tonf.toFixed(2)} tonf·m`,
+      "My": `${My_tonf.toFixed(2)} tonf·m`,
+    };
+    if (uplift_tonf > 0.01) result["⚠ Uplift"] = `${uplift_tonf.toFixed(2)} tonf (nodo ${minFz_nodo})`;
+    result["Pisos"] = `${nPisos}`;
+    result["Copiar a → zapata-aislada"] = `P=${P_tonf.toFixed(1)}, Mx=${Mx_tonf.toFixed(1)}, My=${My_tonf.toFixed(1)}`;
+    return result;
+  },
   build(p, states) {
     const nvx = Math.round(p.nVanosX);
     const nvy = Math.round(p.nVanosY);

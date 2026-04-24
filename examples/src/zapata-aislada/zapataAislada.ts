@@ -12,7 +12,7 @@ import * as THREE from "three";
 import van from "vanjs-core";
 import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
-import { activeExampleVersion } from "../workspace/exampleRegistry";
+import { activeExampleVersion } from "../workspace/exampleVersion";
 
 const Ec = 25e6, nu_c = 0.2, Gc = Ec / (2 * (1 + nu_c)), rho = 24;
 const TONF_TO_KN = 9.80665;
@@ -93,9 +93,13 @@ export const zapataAislada: ExampleDef = {
     useS:      { default: 0, boolean: true, label: "☐ Usar Patrón S (Sobrecarga)",       folder: "Cargas — Activar" },
     useFactors:{ default: 1, boolean: true, label: "× Aplicar factores fD/fL/fS",        folder: "Cargas — Activar" },
     // ── Carga simple (solo se usa si useSimple = ON) ──
-    P_simple:  { default: 20, min: 0,   max: 500, step: 0.5, label: "P (tonf)",    folder: "Cargas — Simple" },
-    Mx_simple: { default: 0,  min: -50, max: 50,  step: 0.5, label: "Mx (tonf·m)", folder: "Cargas — Simple" },
-    My_simple: { default: 0,  min: -50, max: 50,  step: 0.5, label: "My (tonf·m)", folder: "Cargas — Simple" },
+    // Valores lógicos verificados contra edificio-aporticado:
+    //   4p real  CM=25 kN/nodo: P ≈ 16 tonf, Mx≈1, My≈2.5 tonf·m
+    //   4p resid CM=40 kN/nodo: P ≈ 26 tonf, Mx≈1.6, My≈4 tonf·m
+    //   8p real  CM=25 kN/nodo: P ≈ 37 tonf, Mx≈2, My≈5 tonf·m
+    P_simple:  { default: 20, min: 0,  max: 100, step: 0.5, label: "P (tonf)",    folder: "Cargas — Simple" },
+    Mx_simple: { default: 1,  min: -5, max: 5,   step: 0.1, label: "Mx (tonf·m)", folder: "Cargas — Simple" },
+    My_simple: { default: 2,  min: -5, max: 5,   step: 0.1, label: "My (tonf·m)", folder: "Cargas — Simple" },
     // ── Patrones de carga (se usan en modos 1-4: individuales o combinación) ──
     P_D:   { default: 10,   min: 0,     max: 500,  step: 0.5,  label: "P (tonf)",   folder: "Cargas — Patrón D (Muerta)" },
     Mx_D:  { default: 0,    min: -50,   max: 50,   step: 0.5,  label: "Mx (tonf·m)", folder: "Cargas — Patrón D (Muerta)" },

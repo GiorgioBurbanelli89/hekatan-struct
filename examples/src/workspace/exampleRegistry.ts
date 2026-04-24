@@ -41,10 +41,10 @@ export interface ModalPanelApi {
   render: (out: any, meta: { title: string; properties?: string[] }) => void;
 }
 
-/** Versión del ejemplo activo — se incrementa al cambiar de ejemplo.
- *  Los van.derive de ejemplos viejos (zapata springs, etc.) capturan el valor
- *  en su closure y hacen no-op si ya no coincide con activeExampleVersion. */
-export const activeExampleVersion = { v: 0 };
+// Re-export de activeExampleVersion (vive en ./exampleVersion para evitar TDZ).
+// Los ejemplos que lo usan DEBEN importarlo desde ./exampleVersion directamente,
+// no desde aquí (para cortar la circularidad registry ← ejemplo ← registry).
+export { activeExampleVersion } from "./exampleVersion";
 
 export interface ExampleDef {
   id: string;

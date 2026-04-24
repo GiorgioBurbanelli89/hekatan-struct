@@ -138,8 +138,9 @@ function autoScaleDeformedShape() {
   // Target: deformación visible = 25% del diagonal (antes 15% — poco visible a 10 tonf).
   // Con 25% ya se ve claramente la curvatura de la placa a cargas moderadas.
   s.deformScale.val = Math.min(50000, Math.max(1, (0.25 * diag) / maxDef));
-  // displayScale solo para markers — fijo en 1 (1:1 real)
-  if (s.displayScale) s.displayScale.val = 1;
+  // displayScale solo afecta markers/flechas de cargas/soportes (no la deformada).
+  // −2 → factor 0.5 para que las flechas sean más pequeñas y no tapen el modelo.
+  if (s.displayScale) s.displayScale.val = -2;
 }
 
 /**
@@ -437,7 +438,7 @@ function buildParamsPane() {
 // a displacementZ (centro = max compresión = azul; bordes = mínima = rojo) con auto-escala.
 const settingsObj: Record<string, any> = {
   deformedShape: true,
-  displayScale: -1,       // escala 1:1 real de deformada (no amplifica)
+  displayScale: -2,       // markers y flechas a 0.5× (no tapan el modelo)
   shellResults: "pressure",
   gridSize: 10,
   showCotas: true,

@@ -79,7 +79,7 @@ export function runExampleStandalone(ex: ExampleDef) {
       objects3D,
       settingsObj: {
         deformedShape: true,
-        displayScale: -1,    // escala 1:1 real de deformada
+        displayScale: -2,    // markers y flechas a 0.5× (no tapan el modelo)
         shellResults: "displacementZ",
         gridSize: 10,
         showCotas: true,

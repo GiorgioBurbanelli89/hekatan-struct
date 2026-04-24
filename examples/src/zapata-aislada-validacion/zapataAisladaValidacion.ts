@@ -24,7 +24,8 @@ import * as THREE from "three";
 import van from "vanjs-core";
 import { deform, analyze, type Node, type Element } from "awatif-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
-import { activeExampleVersion } from "../workspace/exampleRegistry";
+// Importar desde exampleVersion (no exampleRegistry) para evitar TDZ circular.
+import { activeExampleVersion } from "../workspace/exampleVersion";
 
 const Ec = 25e6, nu_c = 0.2, Gc = Ec / (2 * (1 + nu_c)), rho = 24;
 const TONF_TO_KN = 9.80665;

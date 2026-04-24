@@ -6,7 +6,7 @@ import * as THREE from "three";
 import van from "vanjs-core";
 import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
 import type { ExampleDef, BuildStates } from "../exampleRegistry";
-import { activeExampleVersion } from "../workspace/exampleRegistry";
+import { activeExampleVersion } from "../workspace/exampleVersion";
 
 const Ec = 25e6;
 const nu_c = 0.2;
@@ -41,21 +41,27 @@ export const zapataVigaAmarre: ExampleDef = {
     Hp:  { default: 0.8, min: 0.3, max: 2.0, step: 0.1, label: "Hp pedestal (m)" },
     vigaLevel: { default: 0, min: 0, max: 1, step: 1, label: "Viga: 0=baja 1=alta" },
     ks:  { default: 2000, min: 500, max: 30000, step: 500, label: "ks Winkler (kN/m³)" },
-    P1:  { default: 800, min: 100, max: 2000, step: 10, label: "P1 axial (kN)" },
-    M1x: { default: 80, min: -500, max: 500, step: 10, label: "M1x (kN·m)" },
-    M1y: { default: 60, min: -500, max: 500, step: 10, label: "M1y (kN·m)" },
-    P2:  { default: 1200, min: 100, max: 2500, step: 10, label: "P2 axial (kN)" },
-    M2x: { default: 120, min: -500, max: 500, step: 10, label: "M2x (kN·m)" },
-    M2y: { default: 90, min: -500, max: 500, step: 10, label: "M2y (kN·m)" },
+    // Cargas lógicas: reacción típica de columna en edificio 4-8 pisos (medianera + centrada).
+    // Verificado con edificio-aporticado 4 pisos: Fz≈5 tonf, Mx≈1, My≈2.5 tonf·m con
+    // CM/CV por-nodo; valores default representan edificio 8-10 pisos con CM real en kN/m².
+    P1:  { default: 25,  min: 1,  max: 200, step: 1,   label: "P1 axial (tonf)" },
+    M1x: { default: 1,   min: -5, max: 5,   step: 0.1, label: "M1x (tonf·m)" },
+    M1y: { default: 2.5, min: -5, max: 5,   step: 0.1, label: "M1y (tonf·m)" },
+    P2:  { default: 40,  min: 1,  max: 200, step: 1,   label: "P2 axial (tonf)" },
+    M2x: { default: 1,   min: -5, max: 5,   step: 0.1, label: "M2x (tonf·m)" },
+    M2y: { default: 2.5, min: -5, max: 5,   step: 0.1, label: "M2y (tonf·m)" },
     nSubX: { default: 4, min: 2, max: 8, step: 1, label: "nx subdiv" },
     nSubY: { default: 4, min: 2, max: 8, step: 1, label: "ny subdiv" },
   },
   build(p, states) {
     const Lz1 = p.Lz1, Bz1 = p.Bz1, Lv = p.Lv, Bv = p.Bv, Hv = p.Hv;
     const Lz2 = p.Lz2, Bz2 = p.Bz2, tz = p.tz, bc = p.bc, Hp = p.Hp;
-    const P1 = p.P1, P2 = p.P2, ks = p.ks;
-    const M1x = p.M1x ?? 0, M1y = p.M1y ?? 0;
-    const M2x = p.M2x ?? 0, M2y = p.M2y ?? 0;
+    // Conversión tonf → kN (para el solver que trabaja en SI kN/m)
+    const TONF_TO_KN = 9.80665;
+    const P1 = p.P1 * TONF_TO_KN, P2 = p.P2 * TONF_TO_KN;
+    const ks = p.ks;
+    const M1x = (p.M1x ?? 0) * TONF_TO_KN, M1y = (p.M1y ?? 0) * TONF_TO_KN;
+    const M2x = (p.M2x ?? 0) * TONF_TO_KN, M2y = (p.M2y ?? 0) * TONF_TO_KN;
     const nSubX = Math.round(p.nSubX), nSubY = Math.round(p.nSubY);
 
     const xC1 = 0.2, yC1 = Bz1 / 2;
