@@ -169,6 +169,7 @@ import { edificioAceroV2 } from "../edificio-acero-v2/edificioAceroV2";
 import { edificioMixto } from "../edificio-mixto/edificioMixto";
 import { edificioMuros } from "../edificio-muros/edificioMuros";
 import { edificioDual } from "../edificio-dual/edificioDual";
+import { columnaCft } from "../columna-cft/columnaCft";
 import { trussGen } from "../truss-gen/trussGen";
 import { barraAxial } from "../barra-axial/barraAxial";
 import { portico2D } from "../portico-2d/portico2D";
@@ -184,6 +185,8 @@ export const examplesRegistry: ExampleDef[] = [
   portico2D,
   tower3D,
   galpon,
+  // Columnas (diseño individual)
+  columnaCft,
   // Edificios — variantes limpias por tipo estructural
   edificioAporticado,
   edificioHormigon,

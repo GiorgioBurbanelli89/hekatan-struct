@@ -69,6 +69,7 @@ export default defineConfig({
         "edificio-mixto": "src/edificio-mixto/index.html",
         "edificio-muros": "src/edificio-muros/index.html",
         "edificio-dual": "src/edificio-dual/index.html",
+        "columna-cft": "src/columna-cft/index.html",
         "truss-gen": "src/truss-gen/index.html",
         "barra-axial": "src/barra-axial/index.html",
         "portico-2d": "src/portico-2d/index.html",
