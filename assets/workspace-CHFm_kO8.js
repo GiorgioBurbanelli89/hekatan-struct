@@ -8,7 +8,7 @@ import { z as ke, __tla as __tla_1 } from "./zapataAislada-DXUkLbZF.js";
 import { z as qe, __tla as __tla_2 } from "./zapataAisladaValidacion-Brghwuvj.js";
 import { e as ze, __tla as __tla_3 } from "./edificioConLosa-BL-5DIT2.js";
 import { e as Te, __tla as __tla_4 } from "./edificioConMuros-CTs7uE-N.js";
-import { p as Be, __tla as __tla_5 } from "./plane-D7dv__0b.js";
+import { p as Be, __tla as __tla_5 } from "./plane-Ca8zEI1Q.js";
 import { m as Ae, __tla as __tla_6 } from "./membranaCSI-bLtJdrZt.js";
 import { p as Ce, __tla as __tla_7 } from "./plateThin-C30Q-WjQ.js";
 import { p as _e, __tla as __tla_8 } from "./plateThick-DrHD17l3.js";

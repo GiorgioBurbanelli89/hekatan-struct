@@ -1,6 +1,6 @@
 import { m as W, __tla as __tla_0 } from "./didacticCpp-Bnj9OwqQ.js";
 import { p as X } from "./planeQ4-DGsGKcTr.js";
-let N;
+let I;
 let __tla = Promise.all([
   (() => {
     try {
@@ -9,7 +9,7 @@ let __tla = Promise.all([
     }
   })()
 ]).then(async () => {
-  N = {
+  I = {
     id: "plane",
     name: "Plane Element (Q4 plane stress)",
     category: "Placas",
@@ -84,48 +84,41 @@ let __tla = Promise.all([
     },
     build(e, n) {
       var _a;
-      const m = Math.round(e.nx), i = Math.round(e.nz), u = i * (m + 1) + m, a = X({
+      const c = Math.round(e.nx), m = Math.round(e.nz), d = m * (c + 1) + c, o = X({
         E: e.E,
         nu: e.nu,
         thickness: e.t,
         meshLx: e.W,
         meshLy: e.H,
-        meshNx: m,
-        meshNy: i,
+        meshNx: c,
+        meshNy: m,
         bcType: "cantilever-bottom",
         pointLoads: [
           {
-            node: u,
+            node: d,
             fx: e.F,
             fy: 0
           }
         ]
-      }), l = a.nodeResults.map((t) => [
+      }), u = o.nodeResults.map((t) => [
         t.x,
         0,
         t.y
-      ]), o = a.elementResults.map((t) => t.nodes);
-      n.nodes.val = l, n.elements.val = o;
-      const d = /* @__PURE__ */ new Map();
-      l.forEach((t, s) => {
-        Math.abs(t[2]) < 1e-6 ? d.set(s, [
+      ]), i = o.elementResults.map((t) => t.nodes);
+      n.nodes.val = u, n.elements.val = i;
+      const r = /* @__PURE__ */ new Map();
+      u.forEach((t, s) => {
+        Math.abs(t[2]) < 1e-6 && r.set(s, [
           true,
           true,
           true,
-          true,
-          true,
-          true
-        ]) : d.set(s, [
-          false,
-          true,
-          false,
           true,
           true,
           true
         ]);
       });
-      const r = /* @__PURE__ */ new Map(), c = l.findIndex((t) => Math.abs(t[0] - e.W) < 1e-6 && Math.abs(t[2] - e.H) < 1e-6);
-      c >= 0 && r.set(c, [
+      const a = /* @__PURE__ */ new Map(), l = u.findIndex((t) => Math.abs(t[0] - e.W) < 1e-6 && Math.abs(t[2] - e.H) < 1e-6);
+      l >= 0 && a.set(l, [
         e.F,
         0,
         0,
@@ -133,20 +126,20 @@ let __tla = Promise.all([
         0,
         0
       ]), n.nodeInputs.val = {
-        supports: d,
-        loads: r
+        supports: r,
+        loads: a
       };
-      const f = /* @__PURE__ */ new Map(), M = /* @__PURE__ */ new Map(), h = /* @__PURE__ */ new Map(), p = /* @__PURE__ */ new Map();
-      o.forEach((t, s) => {
-        f.set(s, e.t), M.set(s, e.E), h.set(s, e.nu), p.set(s, 24);
+      const f = /* @__PURE__ */ new Map(), M = /* @__PURE__ */ new Map(), p = /* @__PURE__ */ new Map(), h = /* @__PURE__ */ new Map();
+      i.forEach((t, s) => {
+        f.set(s, e.t), M.set(s, e.E), p.set(s, e.nu), h.set(s, 24);
       }), n.elementInputs.val = {
         thicknesses: f,
         elasticities: M,
-        poissonsRatios: h,
-        densities: p
+        poissonsRatios: p,
+        densities: h
       };
       const x = /* @__PURE__ */ new Map();
-      a.nodeResults.forEach((t, s) => {
+      o.nodeResults.forEach((t, s) => {
         x.set(s, [
           t.ux,
           0,
@@ -159,7 +152,7 @@ let __tla = Promise.all([
         deformations: x
       };
       const b = /* @__PURE__ */ new Map(), v = /* @__PURE__ */ new Map(), y = /* @__PURE__ */ new Map(), F = /* @__PURE__ */ new Map();
-      a.elementResults.forEach((t, s) => {
+      o.elementResults.forEach((t, s) => {
         b.set(s, [
           t.sigma_xx,
           t.sigma_xx,
@@ -187,27 +180,50 @@ let __tla = Promise.all([
         membraneXY: y,
         vonMises: F
       }, n.objects3D.val = [];
-      const $ = e.t * Math.pow(e.W, 3) / 12, E = e.t * e.W, w = e.E / (2 * (1 + e.nu)), _ = e.F * Math.pow(e.H, 3) / (3 * e.E * $), g = 1.2 * e.F * e.H / (w * E), H = _ + g, R = c >= 0 ? ((_a = x.get(c)) == null ? void 0 : _a[0]) ?? 0 : 0;
-      console.log(`[Plane Q4] W=${e.W}m H=${e.H}m t=${e.t}m F=${e.F}kN \u2192 \u03B4_top FEM=${(R * 1e3).toFixed(3)} mm | te\xF3rico flex+shear=${(H * 1e3).toFixed(3)} mm (flex=${(_ * 1e3).toFixed(3)}, shear=${(g * 1e3).toFixed(3)}) | max \u03C3vm=${a.maxVonMises.toFixed(1)} kN/m\xB2 | nDOF=${a.nDOF}`);
+      const E = e.t * Math.pow(e.W, 3) / 12, $ = e.t * e.W, w = e.E / (2 * (1 + e.nu)), _ = e.F * Math.pow(e.H, 3) / (3 * e.E * E), g = 1.2 * e.F * e.H / (w * $), H = _ + g, R = l >= 0 ? ((_a = x.get(l)) == null ? void 0 : _a[0]) ?? 0 : 0;
+      console.log(`[Plane Q4] W=${e.W}m H=${e.H}m t=${e.t}m F=${e.F}kN \u2192 \u03B4_top FEM=${(R * 1e3).toFixed(3)} mm | te\xF3rico flex+shear=${(H * 1e3).toFixed(3)} mm (flex=${(_ * 1e3).toFixed(3)}, shear=${(g * 1e3).toFixed(3)}) | max \u03C3vm=${o.maxVonMises.toFixed(1)} kN/m\xB2 | nDOF=${o.nDOF}`);
     },
-    runModal(e, n, m) {
-      var _a, _b, _c;
-      const i = n.nodes.val, u = n.elements.val, a = n.nodeInputs.val, l = n.elementInputs.val;
-      if (!(!i.length || !u.length || !((_a = a.supports) == null ? void 0 : _a.size) || !((_b = l.densities) == null ? void 0 : _b.size))) try {
-        const o = W(i, u, a, l, 12);
-        m.render(o, {
+    runModal(e, n, c) {
+      var _a, _b;
+      const m = n.nodes.val, d = n.elements.val, o = n.nodeInputs.val, u = n.elementInputs.val;
+      if (!m.length || !d.length || !((_a = u.densities) == null ? void 0 : _a.size)) return;
+      const i = /* @__PURE__ */ new Map();
+      m.forEach((a, l) => {
+        Math.abs(a[2]) < 1e-6 ? i.set(l, [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]) : i.set(l, [
+          false,
+          true,
+          false,
+          true,
+          true,
+          true
+        ]);
+      });
+      const r = {
+        ...o,
+        supports: i
+      };
+      try {
+        const a = W(m, d, r, u, 12);
+        c.render(a, {
           title: `Plane Q4 ${e.W}\xD7${e.H}m t=${e.t}m`,
           properties: [
             `E=${(e.E / 1e6).toFixed(1)} GPa  \u03BD=${e.nu}  \u03C1=24 kN/m\xB3`
           ]
-        }), console.log(`[Plane Q4 Modal] f\u2081 = ${(_c = o.frequencies[0]) == null ? void 0 : _c.toFixed(4)} Hz`);
-      } catch (o) {
-        console.warn("Modal plane error:", o.message);
+        }), console.log(`[Plane Q4 Modal] f\u2081 = ${(_b = a.frequencies[0]) == null ? void 0 : _b.toFixed(4)} Hz`);
+      } catch (a) {
+        console.warn("Modal plane error:", a.message);
       }
     }
   };
 });
 export {
   __tla,
-  N as p
+  I as p
 };
