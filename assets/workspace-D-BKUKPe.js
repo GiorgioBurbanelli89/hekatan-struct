@@ -2,7 +2,7 @@ import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { v as j, P as we } from "./theme-CzzIlc4y.js";
 import { c as Se, a as Ie, g as Pe } from "./getViewer-CKkS3ueR.js";
 import { g as ke } from "./styles-Y66YTQNs.js";
-import { c as qe } from "./renderModalTable-29W4CuGz.js";
+import { c as qe } from "./renderModalTable-H-0rlxOz.js";
 import { z as ze, __tla as __tla_0 } from "./zapataVigaAmarre-6zBMZRVv.js";
 import { z as Te, __tla as __tla_1 } from "./zapataAislada-BRPkK-Qo.js";
 import { z as Be, __tla as __tla_2 } from "./zapataAisladaValidacion-Br1Q51g7.js";

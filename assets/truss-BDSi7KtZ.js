@@ -5,12 +5,12 @@ import { d as z, __tla as __tla_0 } from "./didacticCpp-Bnj9OwqQ.js";
 import { g as C } from "./getViewer-CKkS3ueR.js";
 import { g as M } from "./getParameters-DoKMBz9t.js";
 import { g as _ } from "./styles-Y66YTQNs.js";
-import { g as k, __tla as __tla_1 } from "./getCad3d-asdgqBjv.js";
+import { g as k, __tla as __tla_1 } from "./getCad3d-BN3Mqdxf.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
 import "./Text-Dh9LKuSL.js";
 import { __tla as __tla_2 } from "./getMesh-CUX4SIXA.js";
 import "./__vite-browser-external-D7Ct-6yo.js";
-import "./renderModalTable-29W4CuGz.js";
+import "./renderModalTable-H-0rlxOz.js";
 Promise.all([
   (() => {
     try {
