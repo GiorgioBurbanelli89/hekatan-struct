@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/index-Bno7PKLr.js","assets/analyze-ClLKGn9k.js","assets/pureFunctionsAny.generated-JAcEVsJ7.js","assets/didacticCpp-Bnj9OwqQ.js","assets/planeQ4-DsCzHfbV.js","assets/fiberSectionCft-D5oK3FFf.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/index-C_1FL_3a.js","assets/analyze-ClLKGn9k.js","assets/pureFunctionsAny.generated-JAcEVsJ7.js","assets/didacticCpp-Bnj9OwqQ.js","assets/planeQ4-DsCzHfbV.js","assets/mitc3-2FJr2z_r.js","assets/fiberSectionCft-D5oK3FFf.js"])))=>i.map(i=>d[i]);
 import { _ as j, d as z, __tla as __tla_0 } from "./didacticCpp-Bnj9OwqQ.js";
 import { a as F } from "./analyze-ClLKGn9k.js";
 let X;
@@ -205,14 +205,14 @@ let __tla = Promise.all([
     },
     runModal: function(a, o, t) {
       j(async () => {
-        const { modalAnalysis: s } = await import("./index-Bno7PKLr.js").then(async (m) => {
+        const { modalAnalysis: s } = await import("./index-C_1FL_3a.js").then(async (m) => {
           await m.__tla;
           return m;
         });
         return {
           modalAnalysis: s
         };
-      }, __vite__mapDeps([0,1,2,3,4,5])).then(({ modalAnalysis: s }) => {
+      }, __vite__mapDeps([0,1,2,3,4,5,6])).then(({ modalAnalysis: s }) => {
         try {
           const r = s(o.nodes.val, o.elements.val, o.nodeInputs.val, o.elementInputs.val, 12);
           t.render(r, {

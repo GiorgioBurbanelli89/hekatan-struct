@@ -9,7 +9,7 @@ import { z as Be, __tla as __tla_2 } from "./zapataAisladaValidacion-CH2Z4p3f.js
 import { e as Ce, __tla as __tla_3 } from "./edificioConLosa-B6ep1s87.js";
 import { e as Ae, __tla as __tla_4 } from "./edificioConMuros-DugcPHOd.js";
 import { p as Oe, __tla as __tla_5 } from "./plane-Lr3MmG92.js";
-import { m as _e, __tla as __tla_6 } from "./membranaCSI-BeLC0c-x.js";
+import { m as _e, __tla as __tla_6 } from "./membranaCSI-B7SrWYwj.js";
 import { p as Ee, __tla as __tla_7 } from "./plateThin-C30Q-WjQ.js";
 import { p as Re, __tla as __tla_8 } from "./plateThick-DrHD17l3.js";
 import { m as Fe, __tla as __tla_9 } from "./membrana-Darbd52d.js";
@@ -22,21 +22,23 @@ import { e as Ve, __tla as __tla_15 } from "./edificioMixto-HNymcXyc.js";
 import { e as Ne, __tla as __tla_16 } from "./edificioMuros-CHnHAY7D.js";
 import { e as Xe, __tla as __tla_17 } from "./edificioDual-DndxKuq6.js";
 import { c as Ye, __tla as __tla_18 } from "./columnaCft-DHP1STDn.js";
-import { t as He, __tla as __tla_19 } from "./trussGen-CYTV_Ioz.js";
-import { b as Ke, __tla as __tla_20 } from "./barraAxial-Bnm-0MrG.js";
-import { p as Ze, __tla as __tla_21 } from "./portico2D-kxfBcLlJ.js";
-import { t as Ge, __tla as __tla_22 } from "./tower3D-tLRX3VEB.js";
-import { g as Je, __tla as __tla_23 } from "./galpon-BaNuuhBd.js";
-import { e as We, __tla as __tla_24 } from "./edifAcero-DWr_Efuo.js";
-import { m as Qe, __tla as __tla_25 } from "./mezanine-CrrnYAh3.js";
-import { f as Q, d as se, a as fe, b as me, t as et, g as tt, s as le, c as nt, m as it, e as at } from "./units-B3ou5gwn.js";
-import { a as ot } from "./exampleVersion-D1A_5i59.js";
+import { t as He, __tla as __tla_19 } from "./triangularPlate-C-QvFBgW.js";
+import { t as Ke, __tla as __tla_20 } from "./trussGen-CYTV_Ioz.js";
+import { b as Ze, __tla as __tla_21 } from "./barraAxial-Bnm-0MrG.js";
+import { p as Ge, __tla as __tla_22 } from "./portico2D-kxfBcLlJ.js";
+import { t as Je, __tla as __tla_23 } from "./tower3D-tLRX3VEB.js";
+import { g as We, __tla as __tla_24 } from "./galpon-BaNuuhBd.js";
+import { e as Qe, __tla as __tla_25 } from "./edifAcero-DWr_Efuo.js";
+import { m as et, __tla as __tla_26 } from "./mezanine-CrrnYAh3.js";
+import { f as Q, d as se, a as fe, b as me, t as tt, g as nt, s as le, c as it, m as at, e as ot } from "./units-B3ou5gwn.js";
+import { a as st } from "./exampleVersion-D1A_5i59.js";
 import "./Text-z8x6SwE-.js";
 import "./analyze-ClLKGn9k.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
-import { __tla as __tla_26 } from "./didacticCpp-Bnj9OwqQ.js";
+import { __tla as __tla_27 } from "./didacticCpp-Bnj9OwqQ.js";
 import "./planeQ4-DsCzHfbV.js";
 import "./fiberSectionCft-D5oK3FFf.js";
+import "./mitc3-2FJr2z_r.js";
 Promise.all([
   (() => {
     try {
@@ -199,6 +201,12 @@ Promise.all([
       return __tla_26;
     } catch {
     }
+  })(),
+  (() => {
+    try {
+      return __tla_27;
+    } catch {
+    }
   })()
 ]).then(async () => {
   function ue(n) {
@@ -327,11 +335,11 @@ Promise.all([
     };
   }
   const K = [
-    Ke,
-    He,
     Ze,
+    Ke,
     Ge,
     Je,
+    We,
     Ye,
     De,
     Ue,
@@ -341,10 +349,11 @@ Promise.all([
     Xe,
     Ce,
     Ae,
-    We,
     Qe,
+    et,
     Ee,
     Re,
+    He,
     Fe,
     _e,
     Oe,
@@ -392,13 +401,13 @@ Promise.all([
         a,
         u
       ];
-    })), ot.v++, ye(), n.build(re(), k, L), n.defaultShellResult) {
+    })), st.v++, ye(), n.build(re(), k, L), n.defaultShellResult) {
       const a = R.__settings;
       (a == null ? void 0 : a.shellResults) && (a.shellResults.val = n.defaultShellResult), (a == null ? void 0 : a.loads) && (a.loads.val = true), (a == null ? void 0 : a.supports) && (a.supports.val = true);
     }
-    rt(n.availableShellResults), st(), ve(), ee();
+    lt(n.availableShellResults), rt(), ve(), ee();
   }
-  function st() {
+  function rt() {
     var _a;
     const n = R.__settings;
     if (!(n == null ? void 0 : n.deformScale)) return;
@@ -441,7 +450,7 @@ Promise.all([
     const e = R.__settings;
     (e == null ? void 0 : e.gridSize) && (e.gridSize.val = Math.max(Math.ceil(Math.max(I, z) * 1.2), 2));
   }
-  function rt(n) {
+  function lt(n) {
     const a = R.querySelectorAll("select"), o = Array.from(a).find((v) => Array.from(v.options).some((g) => g.value === "bendingXX"));
     if (!o) return;
     for (const v of Array.from(o.options)) {
@@ -458,7 +467,7 @@ Promise.all([
     const n = {
       ...S
     };
-    for (const [a, o] of Object.entries(x.params)) o.unitType === "force" && (n[a] = et(S[a])), o.unitType === "moment" && (n[a] = tt(S[a]));
+    for (const [a, o] of Object.entries(x.params)) o.unitType === "force" && (n[a] = tt(S[a])), o.unitType === "moment" && (n[a] = nt(S[a]));
     return n;
   }
   function J() {
@@ -644,7 +653,7 @@ Promise.all([
         });
         continue;
       }
-      const m = le(t.label ?? e), T = t.unitType === "force" ? ` ${nt()}` : t.unitType === "moment" ? ` ${it()}` : t.unitType === "disp" ? ` ${at()}` : "", C = {
+      const m = le(t.label ?? e), T = t.unitType === "force" ? ` ${it()}` : t.unitType === "moment" ? ` ${at()}` : t.unitType === "disp" ? ` ${ot()}` : "", C = {
         label: m + T
       };
       t.options !== void 0 ? C.options = t.options : (t.min !== void 0 && (C.min = t.min), t.max !== void 0 && (C.max = t.max), t.step !== void 0 && (C.step = t.step));
@@ -799,7 +808,7 @@ Promise.all([
     }
     D = n;
   }
-  const lt = {
+  const dt = {
     deformedShape: true,
     displayScale: -1.5,
     shellResults: "pressure",
@@ -815,7 +824,7 @@ Promise.all([
       analyzeOutputs: ae
     },
     objects3D: he,
-    settingsObj: lt
+    settingsObj: dt
   });
   document.body.append(R, ke({
     sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct",
