@@ -48,6 +48,15 @@ export type {
   ManderParams, ManderResult, SteelParams, Fiber, CftFiberSection,
 } from "./fiberSectionCft";
 
+// Menegotto-Pinto uniaxial cyclic steel material (Steel02 OpenSees-style)
+export {
+  initMpState, mpStep, mpHistory,
+  aiscK3LoadingProtocol, aiscK3StrainHistory,
+} from "./menegottoPinto";
+export type {
+  MenegottoPintoParams, MenegottoPintoState,
+} from "./menegottoPinto";
+
 // Internal utils exposed for FEM inspection/debugging
 export { getLocalStiffnessMatrix } from "./utils/getLocalStiffnessMatrix";
 export { getTransformationMatrix } from "./utils/getTransformationMatrix";
