@@ -488,6 +488,22 @@ function buildParamsPane() {
   // un checkbox, pero `currentParams` usa 0/1 (Record<string, number>).
   // Guardamos un proxy {key: boolean} y sincronizamos en cada cambio.
   const boolProxy: Record<string, boolean> = {};
+
+  // Rangos configurables dinámicamente (folder "📏 Rangos"). Para cada slider
+  // con `rangeAdjustable: true` (o unitType=force/moment), se registra su
+  // min/max actual en rangeProxy; el folder "Rangos" provee dos sliders
+  // auxiliares "key min" y "key max" que cuando cambian, se aplican vía
+  // pane.refresh() (Tweakpane no soporta cambiar min/max en vivo sin
+  // reconstruir; usamos sliderBindings[key] = { binding, rebuildBinding }
+  // para removerlo y recrearlo con nuevos límites).
+  const rangeProxy: Record<string, { min: number; max: number }> = {};
+  const sliderBindings: Record<string, {
+    rebuild: (newMin: number, newMax: number) => void,
+  }> = {};
+  // Detecta si un param DEBE tener rango editable (cargas = sí por default).
+  const shouldHaveAdjustableRange = (p: any) =>
+    p.rangeAdjustable === true ||
+    (p.rangeAdjustable !== false && (p.unitType === "force" || p.unitType === "moment"));
   // Prepara los valores inline calculados (ks, D, etc.) ANCLADOS a cada param.
   // Mapa: key del param → lista de inlines a insertar después.
   const inlineByAfter = new Map<string, Array<{ label: string; key: string; compute: any }>>();
@@ -540,13 +556,34 @@ function buildParamsPane() {
       if (p.max !== undefined) opts.max = p.max;
       if (p.step !== undefined) opts.step = p.step;
     }
-    fTarget.addBinding(currentParams, key, opts).on("change", () => {
-      if (currentExample?.onParamChange) {
-        currentExample.onParamChange(key, currentParams);
-        pane.refresh();
-      }
-      scheduleRebuild();
-    });
+    // Construir (o reconstruir) el binding con los min/max indicados.
+    // Guardamos la API de rebuild en sliderBindings[key] para que el folder
+    // "📏 Rangos" pueda recrear el slider cuando el usuario cambie sus límites.
+    let currentBinding: any = null;
+    const rebuildSlider = (newMin: number | undefined, newMax: number | undefined) => {
+      if (currentBinding) { try { currentBinding.dispose?.(); } catch {} }
+      const rebuiltOpts: any = { ...opts };
+      if (newMin !== undefined) rebuiltOpts.min = newMin;
+      if (newMax !== undefined) rebuiltOpts.max = newMax;
+      // Clampar el valor actual al nuevo rango (evita que el slider se rompa)
+      if (rebuiltOpts.min !== undefined && currentParams[key] < rebuiltOpts.min) currentParams[key] = rebuiltOpts.min;
+      if (rebuiltOpts.max !== undefined && currentParams[key] > rebuiltOpts.max) currentParams[key] = rebuiltOpts.max;
+      currentBinding = fTarget.addBinding(currentParams, key, rebuiltOpts);
+      currentBinding.on("change", () => {
+        if (currentExample?.onParamChange) {
+          currentExample.onParamChange(key, currentParams);
+          pane.refresh();
+        }
+        scheduleRebuild();
+      });
+    };
+    rebuildSlider(p.min, p.max);
+    if (shouldHaveAdjustableRange(p) && p.min !== undefined && p.max !== undefined) {
+      rangeProxy[key] = { min: p.min, max: p.max };
+      sliderBindings[key] = {
+        rebuild: (newMin, newMax) => rebuildSlider(newMin, newMax),
+      };
+    }
     // Si este param tiene inlines anclados (ej. ks después de ks_factor),
     // insertar los readonly bindings en el MISMO folder, justo debajo.
     const inlines = inlineByAfter.get(key);
@@ -558,6 +595,40 @@ function buildParamsPane() {
           view: "text",
         } as any);
       }
+    }
+  }
+
+  // ── Folder "📏 Rangos" — min/max configurables de los sliders de cargas ──
+  // Inspirado en el panel "Rangos" de FEM-Studio (beams/edificio). Para cada
+  // param con rangeAdjustable=true (o unitType=force/moment), se muestra su
+  // "<label> min" y "<label> max" como sliders con valores actuales. Al mover
+  // el min o max, el slider principal se reconstruye con los nuevos límites.
+  const rangeKeys = Object.keys(rangeProxy);
+  if (rangeKeys.length > 0) {
+    const fRanges = pane.addFolder({ title: "📏 Rangos", expanded: false });
+    for (const k of rangeKeys) {
+      const p = currentExample.params[k];
+      const baseLabel = stripUnitSuffix(p.label ?? k);
+      const step = p.step ?? 1;
+      // Rango de los sliders min/max: extendemos ±5× el default para dar margen
+      // pero evitamos crashes con rangos demasiado extremos.
+      const span = Math.abs(p.max! - p.min!);
+      const metaMin = p.min! - span * 5;
+      const metaMax = p.max! + span * 5;
+      fRanges.addBinding(rangeProxy[k], "min", {
+        label: `${baseLabel} min`, min: metaMin, max: p.max!, step,
+      }).on("change", (e) => {
+        const nmin = Math.min(e.value as number, rangeProxy[k].max - step);
+        rangeProxy[k].min = nmin;
+        sliderBindings[k].rebuild(nmin, rangeProxy[k].max);
+      });
+      fRanges.addBinding(rangeProxy[k], "max", {
+        label: `${baseLabel} max`, min: p.min!, max: metaMax, step,
+      }).on("change", (e) => {
+        const nmax = Math.max(e.value as number, rangeProxy[k].min + step);
+        rangeProxy[k].max = nmax;
+        sliderBindings[k].rebuild(rangeProxy[k].min, nmax);
+      });
     }
   }
 

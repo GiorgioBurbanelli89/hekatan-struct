@@ -25,6 +25,16 @@ export interface ParamDef {
    *  Si no se define, va en el folder raíz "Parámetros". */
   folder?: string;
   /**
+   * Si `true`, el workspace agrega en el folder "📏 Rangos" (o el folder
+   * equivalente) dos sliders readonly "<label> min" y "<label> max" que le
+   * permiten al usuario ampliar o reducir el rango del slider principal.
+   *
+   * Inspirado en el panel "Rangos" de beams/FEM-Studio donde el usuario podía
+   * extender CM de (−20, 0) a (−50, 0) sin editar código. Default: los
+   * parámetros con unitType="force"|"moment" lo activan automáticamente.
+   */
+  rangeAdjustable?: boolean;
+  /**
    * Tipo de unidad del parámetro. Cuando se setea:
    *   - El valor almacenado en `currentParams` se convierte automáticamente
    *     a la unidad base SI (kN para fuerza, kN·m para momento, m para
