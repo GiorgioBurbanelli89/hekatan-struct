@@ -99,6 +99,10 @@ export interface ExampleDef {
 import { zapataVigaAmarre } from "../zapata-viga-amarre/zapataVigaAmarre";
 import { zapataAislada } from "../zapata-aislada/zapataAislada";
 import { zapataAisladaValidacion } from "../zapata-aislada-validacion/zapataAisladaValidacion";
+import { edificioConLosa } from "../edificio-con-losa/edificioConLosa";
+import { edificioConMuros } from "../edificio-con-muros/edificioConMuros";
+import { plane } from "../plane/plane";
+import { membranaCSI } from "../membrana-csi/membranaCSI";
 import { plateThin } from "../plate-thin/plateThin";
 import { plateThick } from "../plate-thick/plateThick";
 import { membrana } from "../membrana-pstress/membrana";
@@ -122,12 +126,16 @@ export const examplesRegistry: ExampleDef[] = [
   galpon,
   // Edificios
   edificioAporticado,
+  edificioConLosa,
+  edificioConMuros,
   edifAcero,
   mezanine,
   // Placas
   plateThin,
   plateThick,
   membrana,
+  membranaCSI,
+  plane,
   // Cáscaras
   shellThin,
   shellThick,
