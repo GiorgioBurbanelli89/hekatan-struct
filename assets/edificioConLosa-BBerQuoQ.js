@@ -1,4 +1,4 @@
-import { e as s, __tla as __tla_0 } from "./edificioAporticado-BYFvPBNV.js";
+import { e as a, __tla as __tla_0 } from "./edificioAporticado-KUAnCkeF.js";
 let i;
 let __tla = Promise.all([
   (() => {
@@ -8,28 +8,24 @@ let __tla = Promise.all([
     }
   })()
 ]).then(async () => {
-  const e = s.params, a = {
+  const e = a.params, s = {
     ...e
   };
-  a.slabOn = {
+  s.slabOn = {
     ...e.slabOn,
     default: 1
   };
-  a.bracesMode = {
+  s.bracesMode = {
     ...e.bracesMode,
-    default: 1
+    default: 0
   };
-  a.slabT = {
+  s.slabT = {
     ...e.slabT,
     default: 0.15
   };
-  a.nPisos = {
-    ...e.nPisos,
-    default: 6
-  };
   i = {
-    id: "edificio-con-muros",
-    name: "Edificio con Muros de corte",
+    id: "edificio-con-losa",
+    name: "Edificio con Losa (sin muros)",
     category: "Edificios",
     defaultShellResult: "bendingXX",
     availableShellResults: [
@@ -40,10 +36,10 @@ let __tla = Promise.all([
       "vonMises"
     ],
     hasModal: true,
-    params: a,
-    build: s.build,
-    runModal: s.runModal,
-    computedLabels: s.computedLabels
+    params: s,
+    build: a.build,
+    runModal: a.runModal,
+    computedLabels: a.computedLabels
   };
 });
 export {
