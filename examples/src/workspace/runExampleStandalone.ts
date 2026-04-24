@@ -188,7 +188,7 @@ export function runExampleStandalone(ex: ExampleDef) {
       objects3D,
       settingsObj: {
         deformedShape: true,
-        displayScale: -2,    // markers y flechas a 0.5× (no tapan el modelo)
+        displayScale: -1.5,    // markers y flechas a 0.5× (no tapan el modelo)
         shellResults: (ex as any).defaultShellResult ?? "displacementZ",
         gridSize: 10,
         showCotas: true,

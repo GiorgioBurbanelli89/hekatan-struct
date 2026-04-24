@@ -23,6 +23,7 @@ import {
 } from "awatif-fem";
 import { getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit } from "awatif-ui";
 import { createModalPanel } from "../shared/renderModalTable";
+import { createModalAnimator, type ModalAnimator } from "../shared/animateMode";
 import { examplesRegistry, activeExampleVersion, type ExampleDef } from "./exampleRegistry";
 import {
   forceUnit, dispUnit, fromKn, toKn, fromKnm, toKnm,
@@ -62,6 +63,11 @@ const states: BuildStates = {
 let currentExample: ExampleDef | null = null;
 let currentParams: Record<string, number> = {};
 let currentPane: Pane | null = null;
+// ── Modal animation state (compartido para todos los ejemplos con hasModal=true) ──
+// modeIdx es 1-INDEXADO para que la UI muestre "Modo 1, 2, 3..." en vez de "0, 1, 2...".
+// animCtrl se refresca dinámicamente tras correr el modal para reflejar modeCount real.
+const animCtrl = { modeIdx: 1 };
+let modalAnimator: ModalAnimator;
 // Objeto mutable que backea el folder "📊 Calculados" del Tweakpane.
 // Después de cada rebuild(), se re-llena con computedLabels() y el pane.refresh()
 // lo refleja en la UI como bindings readonly.
@@ -574,12 +580,42 @@ function buildParamsPane() {
     computedObj = null;
   }
 
-  // Modal trigger (opcional)
+  // Modal trigger + animación visual del modo (opcional)
   if (currentExample.hasModal) {
-    const btn = pane.addButton({ title: "⚡ Análisis modal" });
-    btn.on("click", () => {
+    const fModal = pane.addFolder({ title: "⚡ Modal + Animación", expanded: true });
+    // Botón: correr modal — dispara runModal() que llena modalPanel y stores la respuesta
+    // en un shadow var que leemos para la animación.
+    let lastModalResults: any = null;
+    // Wrapper del modalPanel original para capturar la respuesta
+    const captureModalPanel = {
+      div: modalPanel.div,
+      render: (out: any, meta: any) => {
+        lastModalResults = out;
+        modalPanel.render(out, meta);
+        // Refrescar animador con los nuevos resultados y auto-play modo 1
+        if (out?.frequencies?.length) {
+          modalAnimator.setResults(out);
+          modalAnimator.setMode(0);
+          modalAnimator.play();
+          animCtrl.modeIdx = 1;   // 1-indexed para UI
+          currentPane?.refresh();
+        }
+      },
+    };
+    fModal.addButton({ title: "▶ Correr modal + animar" }).on("click", () => {
       modalPanel.div.style.display = "block";
-      if (currentExample!.runModal) currentExample!.runModal(currentParams, states, modalPanel);
+      if (currentExample!.runModal) currentExample!.runModal(toSIParams(), states, captureModalPanel);
+    });
+    // Control: selector de modo (1..N) — se popula tras correr el modal
+    fModal.addBinding(animCtrl, "modeIdx", {
+      label: "Modo #", min: 1, max: 30, step: 1,
+    }).on("change", (e) => {
+      if (!lastModalResults) return;
+      modalAnimator.setMode(Math.round(e.value) - 1);
+    });
+    fModal.addButton({ title: "⏸ Pausar" }).on("click", () => modalAnimator.stop());
+    fModal.addButton({ title: "▶ Reanudar" }).on("click", () => {
+      if (lastModalResults) modalAnimator.play();
     });
   }
   currentPane = pane;
@@ -590,7 +626,7 @@ function buildParamsPane() {
 // a displacementZ (centro = max compresión = azul; bordes = mínima = rojo) con auto-escala.
 const settingsObj: Record<string, any> = {
   deformedShape: true,
-  displayScale: -2,       // markers y flechas a 0.5× (no tapan el modelo)
+  displayScale: -1.5,       // markers y flechas a 0.5× (no tapan el modelo)
   shellResults: "pressure",
   gridSize: 10,
   showCotas: true,
@@ -610,6 +646,13 @@ document.body.append(
   })
 );
 document.body.appendChild(modalPanel.div);
+
+// Inicializar modal animator AHORA que el viewer ya existe (tiene __ctx.scene/render).
+modalAnimator = createModalAnimator({
+  mesh: { nodes, elements, deformOutputs, analyzeOutputs },
+  viewerElm,
+  scalePercent: 5,
+});
 
 // ── Cargar ejemplo inicial via ?t= o default ──
 const urlT = new URLSearchParams(window.location.search).get("t");
