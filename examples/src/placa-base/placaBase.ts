@@ -95,6 +95,17 @@ export const placaBase: ExampleDef = {
       nodes.push([x, y, z]);
       return nodes.length - 1;
     };
+    // Buscar un nodo existente en proximidad ≤ tol; si no, crear uno nuevo.
+    // Se usa para conectar la base de la columna con la malla de la placa.
+    const findOrSnap = (x: number, y: number, z: number, tol: number): number => {
+      for (let idx = 0; idx < nodes.length; idx++) {
+        const n = nodes[idx];
+        const dxn = n[0] - x, dyn = n[1] - y, dzn = n[2] - z;
+        if (dxn * dxn + dyn * dyn + dzn * dzn < tol * tol) return idx;
+      }
+      nodes.push([x, y, z]);
+      return nodes.length - 1;
+    };
     const addShell = (n0: number, n1: number, n2: number, n3: number, t: number) => {
       elements.push([n0, n1, n2, n3]);
       const idx = elements.length - 1;
@@ -209,46 +220,73 @@ export const placaBase: ExampleDef = {
       }
     }
 
-    // ── Columna W-shape stub encima de la placa ──
-    const z_plate_top = p.t_plate; // espesor arriba (visual)
-    const z_col_top = z_plate_top + p.L_col_stub;
-    const nz_col = 5;
+    // ── Columna W-shape (CONECTADA a la placa por node-merging en z=0) ──
+    // Ahora la columna empieza en z=0 (mismo plano que la placa) y sus nodos
+    // basales se snapean al nodo más cercano de la malla de la placa, creando
+    // continuidad estructural. La carga (Pu, Mu) se aplica en el TOP.
+    const z_plate_top = 0;
+    const z_col_top = p.L_col_stub;
+    const nz_col = 6;
+    const ny_col = Math.max(2, Math.round(p.mesh_n / 12)); // divisiones en Y por patín
+    const tolSnap = Math.max(dx, dy) * 0.7; // tolerancia de fusión con placa
+    const xF_col = +p.d_col / 2 - p.tf_col / 2; // plano medio patín frontal
+    const xB_col = -p.d_col / 2 + p.tf_col / 2; // plano medio patín trasero
 
     // Patín frontal (+x)
     const colFront: number[][] = [];
     for (let iz = 0; iz <= nz_col; iz++) {
-      const z = z_plate_top + (iz * p.L_col_stub) / nz_col;
-      colFront.push([
-        addNode(+p.d_col / 2, -p.bf_col / 2, z),
-        addNode(+p.d_col / 2, +p.bf_col / 2, z),
-      ]);
+      const z = (iz * p.L_col_stub) / nz_col;
+      const row: number[] = [];
+      for (let iy = 0; iy <= ny_col; iy++) {
+        const y = -p.bf_col / 2 + (iy * p.bf_col) / ny_col;
+        if (iz === 0) row.push(findOrSnap(xF_col, y, 0, tolSnap));
+        else row.push(addNode(xF_col, y, z));
+      }
+      colFront.push(row);
     }
     for (let iz = 0; iz < nz_col; iz++) {
-      addShell(colFront[iz][0], colFront[iz][1], colFront[iz + 1][1], colFront[iz + 1][0], p.tf_col);
+      for (let iy = 0; iy < ny_col; iy++) {
+        addShell(
+          colFront[iz][iy], colFront[iz][iy + 1],
+          colFront[iz + 1][iy + 1], colFront[iz + 1][iy],
+          p.tf_col,
+        );
+      }
     }
 
     // Patín trasero (-x)
     const colBack: number[][] = [];
     for (let iz = 0; iz <= nz_col; iz++) {
-      const z = z_plate_top + (iz * p.L_col_stub) / nz_col;
-      colBack.push([
-        addNode(-p.d_col / 2, -p.bf_col / 2, z),
-        addNode(-p.d_col / 2, +p.bf_col / 2, z),
-      ]);
+      const z = (iz * p.L_col_stub) / nz_col;
+      const row: number[] = [];
+      for (let iy = 0; iy <= ny_col; iy++) {
+        const y = -p.bf_col / 2 + (iy * p.bf_col) / ny_col;
+        if (iz === 0) row.push(findOrSnap(xB_col, y, 0, tolSnap));
+        else row.push(addNode(xB_col, y, z));
+      }
+      colBack.push(row);
     }
     for (let iz = 0; iz < nz_col; iz++) {
-      addShell(colBack[iz][0], colBack[iz][1], colBack[iz + 1][1], colBack[iz + 1][0], p.tf_col);
+      for (let iy = 0; iy < ny_col; iy++) {
+        addShell(
+          colBack[iz][iy], colBack[iz][iy + 1],
+          colBack[iz + 1][iy + 1], colBack[iz + 1][iy],
+          p.tf_col,
+        );
+      }
     }
 
-    // Alma (y=0, plano XZ)
+    // Alma (y=0, plano XZ) — entre los planos medios de los patines
+    // Su base se snapea a la placa también
     const colWeb: number[][] = [];
-    const nxc = 2;
+    const nxc = 2 + Math.round(p.mesh_n / 16);
     for (let iz = 0; iz <= nz_col; iz++) {
-      const z = z_plate_top + (iz * p.L_col_stub) / nz_col;
+      const z = (iz * p.L_col_stub) / nz_col;
       const row: number[] = [];
       for (let ix = 0; ix <= nxc; ix++) {
-        const x = -p.d_col / 2 + p.tf_col + (p.d_col - 2 * p.tf_col) * (ix / nxc);
-        row.push(addNode(x, 0, z));
+        const x = xB_col + (xF_col - xB_col) * (ix / nxc);
+        if (iz === 0) row.push(findOrSnap(x, 0, 0, tolSnap));
+        else row.push(addNode(x, 0, z));
       }
       colWeb.push(row);
     }
@@ -284,28 +322,19 @@ export const placaBase: ExampleDef = {
       }
     }
 
-    // ── Cargas: Pu (compresión) distribuida bajo columna + Mu como par ──
+    // ── Cargas aplicadas al TOP de la columna (la columna transmite a placa) ──
     const loads = new Map<number, [number, number, number, number, number, number]>();
-    // Pu: fuerza descendente sobre los nodos bajo el footprint de la columna
-    //     (área bajo patines y alma)
-    const footprintNodes: number[] = [];
-    for (let idx = 0; idx < nodes.length; idx++) {
-      if (Math.abs(nodes[idx][2]) > 1e-4) continue; // solo nodos de la placa
-      const x_ = nodes[idx][0], y_ = nodes[idx][1];
-      const inFlangeFront = Math.abs(x_ - p.d_col / 2) < 0.02 && Math.abs(y_) <= p.bf_col / 2 + 1e-6;
-      const inFlangeBack = Math.abs(x_ + p.d_col / 2) < 0.02 && Math.abs(y_) <= p.bf_col / 2 + 1e-6;
-      const inWeb = Math.abs(y_) < 0.015 && Math.abs(x_) <= p.d_col / 2 - p.tf_col + 1e-6;
-      if (inFlangeFront || inFlangeBack || inWeb) {
-        footprintNodes.push(idx);
-      }
-    }
-    if (footprintNodes.length > 0) {
-      const F_per = -p.Pu / footprintNodes.length; // kN hacia abajo
-      for (const idx of footprintNodes) {
-        // Mu: par alrededor de Y → sumar ±Fz extra según posición X
+    // Top nodes de la columna (z = L_col_stub) — patines + alma
+    const topColNodes: number[] = [
+      ...colFront[nz_col], ...colBack[nz_col], ...colWeb[nz_col],
+    ];
+    if (topColNodes.length > 0) {
+      const F_per = -p.Pu / topColNodes.length; // kN hacia abajo
+      const lever_X = p.d_col / 2;
+      for (const idx of topColNodes) {
         const x_ = nodes[idx][0];
-        const lever_X = p.d_col / 2;
-        const F_mu = (p.Mu / (footprintNodes.length * lever_X)) * (x_ > 0 ? 1 : -1);
+        // Mu como par: ±Fz según x (alrededor del eje Y)
+        const F_mu = (p.Mu / (topColNodes.length * lever_X)) * (x_ > 0 ? 1 : -1);
         loads.set(idx, [0, 0, F_per + F_mu, 0, 0, 0]);
       }
     }
