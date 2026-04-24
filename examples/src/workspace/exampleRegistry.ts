@@ -24,6 +24,25 @@ export interface ParamDef {
   /** Folder del Tweakpane donde va (e.g. "Geometría", "Luces", "Cargas").
    *  Si no se define, va en el folder raíz "Parámetros". */
   folder?: string;
+  /**
+   * Tipo de unidad del parámetro. Cuando se setea:
+   *   - El valor almacenado en `currentParams` se convierte automáticamente
+   *     a la unidad base SI (kN para fuerza, kN·m para momento, m para
+   *     desplazamiento, etc.) cuando ex.build() lo lee.
+   *   - El slider del Tweakpane muestra el valor en la unidad UI
+   *     seleccionada por el usuario (forceUnit/dispUnit). Al cambiar unidad,
+   *     los sliders se reescalan automáticamente.
+   *   - El label recibe el sufijo de unidad actual, p. ej. "F lateral (kN)"
+   *     → "F lateral (tonf)" tras switch.
+   *
+   * Valores soportados:
+   *   "force"   → kN / tonf / kip         (base SI: kN)
+   *   "moment"  → kN·m / tonf·m / kip·ft  (base SI: kN·m)
+   *   "disp"    → mm / cm / µm            (base SI: m)
+   *
+   * Si no se define, el parámetro es adimensional y no sufre conversión.
+   */
+  unitType?: "force" | "moment" | "disp";
 }
 
 export interface BuildStates {

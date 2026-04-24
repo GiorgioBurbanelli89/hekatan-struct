@@ -20,6 +20,15 @@ export type {
   PlateQ4ElementResult,
 } from "./plateQ4Cpp";
 
+// Plane Q4 (plane stress, pure TS — independent of C++ plateQ4)
+export { planeQ4Solve } from "./planeQ4";
+export type {
+  PlaneQ4Input,
+  PlaneQ4Output,
+  PlaneQ4NodeResult,
+  PlaneQ4ElementResult,
+} from "./planeQ4";
+
 // Internal utils exposed for FEM inspection/debugging
 export { getLocalStiffnessMatrix } from "./utils/getLocalStiffnessMatrix";
 export { getTransformationMatrix } from "./utils/getTransformationMatrix";
