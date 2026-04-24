@@ -34,6 +34,14 @@ struct ElementInputs
     // Partial fixity springs (semi-rigid connections)
     // 12 values: [kFxI,kFyI,kFzI,kTI,kM2I,kM3I, kFxJ,kFyJ,kFzJ,kTJ,kM2J,kM3J]
     std::map<int, std::vector<double>> partialFixitySprings;
+    // Property Modifiers (estilo ETABS Assign → Area → Property/Stiffness Modifiers).
+    // Multiplican la rigidez de membrana y de flexión del shell. Default = 1.0.
+    //   Membrane modifier = 0   → elemento se comporta como Plate puro
+    //   Bending modifier  = 0   → elemento se comporta como Membrane puro (CSI Manual §10.7)
+    // Esto permite simular fielmente los 4 tipos de área de ETABS (Shell/Membrane/Plate/Layered)
+    // sin crear elementos distintos.
+    std::map<int, double> membraneModifiers;
+    std::map<int, double> bendingModifiers;
 };
 
 struct NodeInputs

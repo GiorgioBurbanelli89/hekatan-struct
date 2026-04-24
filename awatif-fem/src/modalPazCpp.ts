@@ -80,6 +80,11 @@ export function modalPazCpp(
   const shearMod = processElementInput(elementInputs.shearModuli);
   const torsion = processElementInput(elementInputs.torsionalConstants);
   const densities = processElementInput(elementInputs.densities);
+  // Shells: thicknesses + poissons + property modifiers
+  const thicknesses = processElementInput((elementInputs as any).thicknesses);
+  const poissons = processElementInput((elementInputs as any).poissonsRatios);
+  const memMods = processElementInput((elementInputs as any).membraneModifiers);
+  const bendMods = processElementInput((elementInputs as any).bendingModifiers);
   // NEW: polar moment of inertia (I0)
   const polarMoi = processElementInput(elementInputs.polarMomentsOfInertia);
 
@@ -135,6 +140,18 @@ export function modalPazCpp(
     densities.keysPtr,
     densities.valuesPtr,
     densities.size,
+    thicknesses.keysPtr,
+    thicknesses.valuesPtr,
+    thicknesses.size,
+    poissons.keysPtr,
+    poissons.valuesPtr,
+    poissons.size,
+    memMods.keysPtr,
+    memMods.valuesPtr,
+    memMods.size,
+    bendMods.keysPtr,
+    bendMods.valuesPtr,
+    bendMods.size,
     // NEW: polar moment of inertia
     polarMoi.keysPtr,
     polarMoi.valuesPtr,

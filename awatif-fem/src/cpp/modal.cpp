@@ -31,6 +31,10 @@ extern "C"
         int *shear_mod_keys_ptr, double *shear_mod_values_ptr, int num_shear_mod,
         int *torsion_keys_ptr, double *torsion_values_ptr, int num_torsion,
         int *density_keys_ptr, double *density_values_ptr, int num_densities,
+        int *thickness_keys_ptr, double *thickness_values_ptr, int num_thicknesses,
+        int *poisson_keys_ptr, double *poisson_values_ptr, int num_poissons,
+        int *memmod_keys_ptr, double *memmod_values_ptr, int num_memmods,
+        int *bendmod_keys_ptr, double *bendmod_values_ptr, int num_bendmods,
 
         // Control
         int num_modes, // number of modes to return (0 = all)
@@ -73,6 +77,10 @@ extern "C"
         elementInputs.shearModuli = parseMapFromFlat(shear_mod_keys_ptr, shear_mod_values_ptr, num_shear_mod);
         elementInputs.torsionalConstants = parseMapFromFlat(torsion_keys_ptr, torsion_values_ptr, num_torsion);
         elementInputs.densities = parseMapFromFlat(density_keys_ptr, density_values_ptr, num_densities);
+        elementInputs.thicknesses = parseMapFromFlat(thickness_keys_ptr, thickness_values_ptr, num_thicknesses);
+        elementInputs.poissonsRatios = parseMapFromFlat(poisson_keys_ptr, poisson_values_ptr, num_poissons);
+        elementInputs.membraneModifiers = parseMapFromFlat(memmod_keys_ptr, memmod_values_ptr, num_memmods);
+        elementInputs.bendingModifiers = parseMapFromFlat(bendmod_keys_ptr, bendmod_values_ptr, num_bendmods);
 
         // --- 2. Assemble K and M ---
         int dof = num_nodes * 6;

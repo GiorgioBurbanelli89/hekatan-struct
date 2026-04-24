@@ -66,6 +66,11 @@ export function modalCpp(
   const shearMod = processElementInput(elementInputs.shearModuli);
   const torsion = processElementInput(elementInputs.torsionalConstants);
   const densities = processElementInput(elementInputs.densities);
+  // Shells: thicknesses + poissons + property modifiers (estilo ETABS)
+  const thicknesses = processElementInput((elementInputs as any).thicknesses);
+  const poissons = processElementInput((elementInputs as any).poissonsRatios);
+  const memMods = processElementInput((elementInputs as any).membraneModifiers);
+  const bendMods = processElementInput((elementInputs as any).bendingModifiers);
 
   // Output pointers
   const freqPtrOut = mod._malloc(4);
@@ -120,6 +125,18 @@ export function modalCpp(
     densities.keysPtr,
     densities.valuesPtr,
     densities.size,
+    thicknesses.keysPtr,
+    thicknesses.valuesPtr,
+    thicknesses.size,
+    poissons.keysPtr,
+    poissons.valuesPtr,
+    poissons.size,
+    memMods.keysPtr,
+    memMods.valuesPtr,
+    memMods.size,
+    bendMods.keysPtr,
+    bendMods.valuesPtr,
+    bendMods.size,
     // control
     numModes,
     // output pointers

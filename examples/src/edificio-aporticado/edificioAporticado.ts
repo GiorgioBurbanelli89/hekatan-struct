@@ -80,6 +80,15 @@ export const edificioAporticado: ExampleDef = {
     bracesMode: PE("Avanzado", "Diagonales", 0, { "ninguna": 0, "perimetrales": 1, "todas": 2, "solo X": 3, "solo Y": 4 }),
     slabOn:   PE("Avanzado", "Losa",  0, { "Off": 0, "On": 1 }),
     slabT:    P("Avanzado", "t losa (m)", 0.15, 0.08, 0.30, 0.01),
+    // ── Tipo de losa según ETABS (Property Modifiers en CSI Manual §10.7) ──
+    //   Shell completo:  M=1, B=1   (membrana + flexión, default ETABS)
+    //   Membrane only:   M=1, B=0   (solo in-plane, suprime modos verticales)
+    //   Plate only:      M=0, B=1   (solo flexión, raro en edificios)
+    slabType: PE("Avanzado", "Tipo losa (ETABS)", 0, {
+      "Shell (membrane+plate)": 0,
+      "Membrane only": 1,
+      "Plate only": 2,
+    }),
     // Discretización automática ETABS-style: la losa se subdivide por paño
     // (por bay) al tamaño objetivo seleccionado. 25-50 cm replica el default
     // interno de ETABS; 15 cm es análisis fino; 0 fuerza Q4 único por paño.
@@ -468,6 +477,12 @@ export const edificioAporticado: ExampleDef = {
     const densities = new Map<number, number>();
     const poissons = new Map<number, number>();
     const thicknesses = new Map<number, number>();
+    // Property Modifiers según p.slabType (estilo ETABS Assign → Area → Modifiers)
+    const membraneModifiers = new Map<number, number>();
+    const bendingModifiers = new Map<number, number>();
+    const slabTypeVal = Math.round(p.slabType);
+    const mFactor = slabTypeVal === 2 ? 0.0 : 1.0;  // Plate-only: membrana=0
+    const bFactor = slabTypeVal === 1 ? 0.0 : 1.0;  // Membrane-only: bending=0
 
     for (let i = 0; i < elements.length; i++) {
       densities.set(i, rho_c);
@@ -475,6 +490,9 @@ export const edificioAporticado: ExampleDef = {
       if (slabIdx.has(i)) {
         elasticities.set(i, Ec); shearModuli.set(i, Gc); poissons.set(i, nu_c);
         thicknesses.set(i, p.slabT);
+        // Aplicar property modifiers SOLO a las losas (no a muros)
+        membraneModifiers.set(i, mFactor);
+        bendingModifiers.set(i, bFactor);
       } else if (colIdx.has(i)) {
         const cp = colPropsAt(Math.min(floor, 7));
         elasticities.set(i, matColE); shearModuli.set(i, matColG); poissons.set(i, matColNu);
@@ -518,7 +536,8 @@ export const edificioAporticado: ExampleDef = {
       elasticities, shearModuli, areas,
       momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy, torsionalConstants: J,
       densities, poissonsRatios: poissons, thicknesses,
-    };
+      membraneModifiers, bendingModifiers,
+    } as any;
     const deformOut = deform(nodes, elements, states.nodeInputs.val, states.elementInputs.val);
     states.deformOutputs.val = deformOut;
     states.analyzeOutputs.val = analyze(nodes, elements, states.elementInputs.val, deformOut);

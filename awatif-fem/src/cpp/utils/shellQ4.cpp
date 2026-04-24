@@ -264,14 +264,24 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
         y[i] = d.dot(localY);
     }
 
+    // ── ETABS-style Property Modifiers (CSI Manual §10.7) ──
+    //   Membrane modifier = 0 → Plate puro (sin rigidez in-plane)
+    //   Bending modifier  = 0 → Membrane puro (sin rigidez out-of-plane)
+    //   Por defecto ambos = 1.0 → Shell completo
+    double mFactor = getMapVal(elementInputs.membraneModifiers, index, 1.0);
+    double bFactor = getMapVal(elementInputs.bendingModifiers, index, 1.0);
+
     Eigen::MatrixXd Km = getMembraneK(x, y, E, nu, t);   // 8×8
     Eigen::MatrixXd Kb = getBendingK(x, y, E, nu, t);     // 12×12
+    Km *= mFactor;
+    Kb *= bFactor;
 
-    // Drilling stiffness (small artificial value)
+    // Drilling stiffness (small artificial value, escalada por modifier para
+    // preservar la consistencia: si Membrane=0 → drilling también casi 0)
     double drill = 0;
     for (int i = 0; i < 8; i++) drill += std::abs(Km(i, i));
     drill *= 1e-6 / 8.0;
-    if (drill < 1e-15) drill = E * t * 1e-6;
+    if (drill < 1e-15) drill = E * t * 1e-6 * std::max(mFactor, 1e-6);
 
     // Assemble into 24×24
     // DOFs per node: [u, v, w, θx, θy, θz] = indices [0,1,2,3,4,5]
