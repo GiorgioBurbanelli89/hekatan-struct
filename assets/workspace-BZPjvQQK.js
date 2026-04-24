@@ -6,9 +6,9 @@ import { c as ke } from "./renderModalTable-29W4CuGz.js";
 import { z as qe, __tla as __tla_0 } from "./zapataVigaAmarre-ZIEkIpA5.js";
 import { z as ze, __tla as __tla_1 } from "./zapataAislada-DXUkLbZF.js";
 import { z as Te, __tla as __tla_2 } from "./zapataAisladaValidacion-Brghwuvj.js";
-import { e as Be, __tla as __tla_3 } from "./edificioConLosa-DHZum3Vj.js";
-import { e as Ce, __tla as __tla_4 } from "./edificioConMuros-tXhZ9wGB.js";
-import { p as Ae, __tla as __tla_5 } from "./plane-Ca8zEI1Q.js";
+import { e as Ae, __tla as __tla_3 } from "./edificioConLosa-DHZum3Vj.js";
+import { e as Be, __tla as __tla_4 } from "./edificioConMuros-tXhZ9wGB.js";
+import { p as Ce, __tla as __tla_5 } from "./plane-Ca8zEI1Q.js";
 import { m as _e, __tla as __tla_6 } from "./membranaCSI-bLtJdrZt.js";
 import { p as Oe, __tla as __tla_7 } from "./plateThin-C30Q-WjQ.js";
 import { p as Ee, __tla as __tla_8 } from "./plateThick-DrHD17l3.js";
@@ -16,19 +16,24 @@ import { m as Re, __tla as __tla_9 } from "./membrana-Darbd52d.js";
 import { s as Fe, __tla as __tla_10 } from "./shellThin-ORSIx719.js";
 import { s as je, __tla as __tla_11 } from "./shellThick-BSU3qF0E.js";
 import { e as $e, __tla as __tla_12 } from "./edificioAporticado-DxvhbB1j.js";
-import { t as De, __tla as __tla_13 } from "./trussGen-CYTV_Ioz.js";
-import { b as Le, __tla as __tla_14 } from "./barraAxial-Bnm-0MrG.js";
-import { p as Ue, __tla as __tla_15 } from "./portico2D-kxfBcLlJ.js";
-import { t as Ve, __tla as __tla_16 } from "./tower3D-tLRX3VEB.js";
-import { g as Ne, __tla as __tla_17 } from "./galpon-BaNuuhBd.js";
-import { e as Xe, __tla as __tla_18 } from "./edifAcero-DrHF1JtT.js";
-import { m as Ye, __tla as __tla_19 } from "./mezanine-Dg_5q-1J.js";
-import { f as W, d as oe, a as ce, b as fe, t as He, g as Ke, s as re, c as Ge, m as Je, e as Ze } from "./units-B3ou5gwn.js";
-import { a as We } from "./exampleVersion-D1A_5i59.js";
+import { e as De, __tla as __tla_13 } from "./edificioHormigon-BqbcCME2.js";
+import { e as Le, __tla as __tla_14 } from "./edificioAceroV2-DyAKCpcf.js";
+import { e as Ue, __tla as __tla_15 } from "./edificioMixto-DbjwRzyr.js";
+import { e as Ve, __tla as __tla_16 } from "./edificioMuros-ekPMNiwf.js";
+import { e as Ne, __tla as __tla_17 } from "./edificioDual-BPCg1Uf0.js";
+import { t as Xe, __tla as __tla_18 } from "./trussGen-CYTV_Ioz.js";
+import { b as Ye, __tla as __tla_19 } from "./barraAxial-Bnm-0MrG.js";
+import { p as He, __tla as __tla_20 } from "./portico2D-kxfBcLlJ.js";
+import { t as Ke, __tla as __tla_21 } from "./tower3D-tLRX3VEB.js";
+import { g as Ge, __tla as __tla_22 } from "./galpon-BaNuuhBd.js";
+import { e as Je, __tla as __tla_23 } from "./edifAcero-DrHF1JtT.js";
+import { m as Ze, __tla as __tla_24 } from "./mezanine-Dg_5q-1J.js";
+import { f as W, d as ae, a as ce, b as fe, t as We, g as Qe, s as re, c as et, m as tt, e as nt } from "./units-B3ou5gwn.js";
+import { a as it } from "./exampleVersion-D1A_5i59.js";
 import "./Text-BCbgLTjz.js";
 import "./analyze-ClLKGn9k.js";
 import "./pureFunctionsAny.generated-JAcEVsJ7.js";
-import { __tla as __tla_20 } from "./didacticCpp-Bnj9OwqQ.js";
+import { __tla as __tla_25 } from "./didacticCpp-Bnj9OwqQ.js";
 import "./planeQ4-DGsGKcTr.js";
 Promise.all([
   (() => {
@@ -156,10 +161,40 @@ Promise.all([
       return __tla_20;
     } catch {
     }
+  })(),
+  (() => {
+    try {
+      return __tla_21;
+    } catch {
+    }
+  })(),
+  (() => {
+    try {
+      return __tla_22;
+    } catch {
+    }
+  })(),
+  (() => {
+    try {
+      return __tla_23;
+    } catch {
+    }
+  })(),
+  (() => {
+    try {
+      return __tla_24;
+    } catch {
+    }
+  })(),
+  (() => {
+    try {
+      return __tla_25;
+    } catch {
+    }
   })()
 ]).then(async () => {
   function me(n) {
-    const { mesh: o, viewerElm: a, onStatusChange: f } = n, v = n.scalePercent ?? 5, [h, b] = n.visFrequencyRange ?? [
+    const { mesh: a, viewerElm: o, onStatusChange: f } = n, v = n.scalePercent ?? 5, [h, b] = n.visFrequencyRange ?? [
       0.5,
       3
     ];
@@ -176,7 +211,7 @@ Promise.all([
         dominant: "\u2014",
         state: "\u23F8 Detenido"
       };
-      const p = i.frequencies[r] ?? 0, k = p > 0 ? 1 / p : 0, A = [
+      const p = i.frequencies[r] ?? 0, k = p > 0 ? 1 / p : 0, C = [
         "Ux",
         "Uy",
         "Uz",
@@ -188,7 +223,7 @@ Promise.all([
       if (d) {
         let e = 0, l = 0;
         for (let S = 0; S < 6; S++) Math.abs(d[S]) > e && (e = Math.abs(d[S]), l = S);
-        t = `${A[l]} (${(e * 100).toFixed(0)}%)`;
+        t = `${C[l]} (${(e * 100).toFixed(0)}%)`;
       }
       return {
         mode: `Modo ${r + 1} / ${i.frequencies.length}`,
@@ -199,19 +234,19 @@ Promise.all([
       };
     }
     function g() {
-      return a.__ctx;
+      return o.__ctx;
     }
     function I(p) {
-      m && (cancelAnimationFrame(m), m = 0), p && u.length > 0 && (o.nodes.val = u.map((k) => [
+      m && (cancelAnimationFrame(m), m = 0), p && u.length > 0 && (a.nodes.val = u.map((k) => [
         ...k
       ]));
     }
-    function C() {
+    function B() {
       var _a, _b;
       if (!i || !i.modeShapes || i.modeShapes.length === 0 || !i.modeShapes[r]) return;
       I(false);
-      const p = i.modeShapes[r], k = ((_a = i.frequencies) == null ? void 0 : _a[r]) || 1, A = ((_b = i.frequencies) == null ? void 0 : _b[0]) || 1, d = Math.max(h, Math.min(b, k / A));
-      u = o.nodes.rawVal.map((x) => [
+      const p = i.modeShapes[r], k = ((_a = i.frequencies) == null ? void 0 : _a[r]) || 1, C = ((_b = i.frequencies) == null ? void 0 : _b[0]) || 1, d = Math.max(h, Math.min(b, k / C));
+      u = a.nodes.rawVal.map((x) => [
         ...x
       ]);
       const t = u.length;
@@ -223,7 +258,7 @@ Promise.all([
         const q = p[x * 6] || 0, X = p[x * 6 + 1] || 0, O = p[x * 6 + 2] || 0, V = Math.sqrt(q * q + X * X + O * O);
         V > T && (T = V);
       }
-      const _ = T > 1e-12 ? j * v / 100 / T : 1, G = performance.now(), B = () => {
+      const _ = T > 1e-12 ? j * v / 100 / T : 1, G = performance.now(), A = () => {
         var _a2;
         const x = (performance.now() - G) / 1e3, q = Math.sin(2 * Math.PI * d * x) * _, X = new Array(t);
         for (let O = 0; O < t; O++) {
@@ -234,9 +269,9 @@ Promise.all([
             V[2] + (p[O * 6 + 2] || 0) * q
           ];
         }
-        o.nodes.val = X, (_a2 = g()) == null ? void 0 : _a2.render(), m = requestAnimationFrame(B);
+        a.nodes.val = X, (_a2 = g()) == null ? void 0 : _a2.render(), m = requestAnimationFrame(A);
       };
-      m = requestAnimationFrame(B), s();
+      m = requestAnimationFrame(A), s();
     }
     return {
       setResults(p) {
@@ -247,10 +282,10 @@ Promise.all([
         var _a;
         if (!i) return;
         const k = ((_a = i.frequencies) == null ? void 0 : _a.length) ?? 0;
-        r = Math.max(0, Math.min(k - 1, p)), m !== 0 ? C() : s();
+        r = Math.max(0, Math.min(k - 1, p)), m !== 0 ? B() : s();
       },
       play() {
-        i && m === 0 && C();
+        i && m === 0 && B();
       },
       stop() {
         I(true), s();
@@ -278,21 +313,26 @@ Promise.all([
     };
   }
   const H = [
-    Le,
+    Ye,
+    Xe,
+    He,
+    Ke,
+    Ge,
+    $e,
     De,
+    Le,
     Ue,
     Ve,
     Ne,
-    $e,
+    Ae,
     Be,
-    Ce,
-    Xe,
-    Ye,
+    Je,
+    Ze,
     Oe,
     Ee,
     Re,
     _e,
-    Ae,
+    Ce,
     Fe,
     je,
     ze,
@@ -303,7 +343,7 @@ Promise.all([
     we.val = W.val;
   });
   $.derive(() => {
-    Se.val = oe.val;
+    Se.val = ae.val;
   });
   const ee = $.state([]), te = $.state([]), ue = $.state({}), pe = $.state({}), ne = $.state({}), ie = $.state({}), xe = $.state([]), P = {
     nodes: ee,
@@ -325,38 +365,38 @@ Promise.all([
     P.objects3D.val = [], P.nodes.val = [], P.elements.val = [], P.nodeInputs.val = {}, P.elementInputs.val = {}, P.deformOutputs.val = {}, P.analyzeOutputs.val = {};
   }
   function he(n) {
-    if (c = n, M = Object.fromEntries(Object.entries(n.params).map(([o, a]) => {
-      const f = a.default;
-      return a.unitType === "force" ? [
-        o,
+    if (c = n, M = Object.fromEntries(Object.entries(n.params).map(([a, o]) => {
+      const f = o.default;
+      return o.unitType === "force" ? [
+        a,
         ce(f)
-      ] : a.unitType === "moment" ? [
-        o,
+      ] : o.unitType === "moment" ? [
+        a,
         fe(f)
       ] : [
-        o,
+        a,
         f
       ];
-    })), We.v++, ye(), n.build(se(), P, U), n.defaultShellResult) {
-      const o = R.__settings;
-      (o == null ? void 0 : o.shellResults) && (o.shellResults.val = n.defaultShellResult), (o == null ? void 0 : o.loads) && (o.loads.val = true), (o == null ? void 0 : o.supports) && (o.supports.val = true);
+    })), it.v++, ye(), n.build(se(), P, U), n.defaultShellResult) {
+      const a = R.__settings;
+      (a == null ? void 0 : a.shellResults) && (a.shellResults.val = n.defaultShellResult), (a == null ? void 0 : a.loads) && (a.loads.val = true), (a == null ? void 0 : a.supports) && (a.supports.val = true);
     }
-    et(n.availableShellResults), Qe(), ge(), Q();
+    at(n.availableShellResults), ot(), ge(), Q();
   }
-  function Qe() {
+  function ot() {
     var _a;
     const n = R.__settings;
     if (!(n == null ? void 0 : n.deformScale)) return;
-    const o = P.nodes.rawVal, a = (_a = P.deformOutputs.rawVal) == null ? void 0 : _a.deformations;
-    if (!(o == null ? void 0 : o.length) || !a) {
+    const a = P.nodes.rawVal, o = (_a = P.deformOutputs.rawVal) == null ? void 0 : _a.deformations;
+    if (!(a == null ? void 0 : a.length) || !o) {
       n.deformScale.val = 1;
       return;
     }
     let f = 1 / 0, v = 1 / 0, h = 1 / 0, b = -1 / 0, i = -1 / 0, r = -1 / 0;
-    for (const s of o) s[0] < f && (f = s[0]), s[0] > b && (b = s[0]), s[1] < v && (v = s[1]), s[1] > i && (i = s[1]), s[2] < h && (h = s[2]), s[2] > r && (r = s[2]);
+    for (const s of a) s[0] < f && (f = s[0]), s[0] > b && (b = s[0]), s[1] < v && (v = s[1]), s[1] > i && (i = s[1]), s[2] < h && (h = s[2]), s[2] > r && (r = s[2]);
     const m = Math.sqrt((b - f) ** 2 + (i - v) ** 2 + (r - h) ** 2) || 1;
     let u = 0;
-    if (a.forEach((s) => {
+    if (o.forEach((s) => {
       const w = Math.sqrt((s[0] || 0) ** 2 + (s[1] || 0) ** 2 + (s[2] || 0) ** 2);
       w > u && (u = w);
     }), u < 1e-30) {
@@ -366,27 +406,27 @@ Promise.all([
     n.deformScale.val = Math.min(5e4, Math.max(1, 0.25 * m / u)), n.displayScale && (n.displayScale.val = -2);
   }
   function ge() {
-    const n = R.__ctx, o = P.nodes.rawVal;
-    if (!n || !(o == null ? void 0 : o.length)) return;
-    const { camera: a, controls: f, render: v } = n;
+    const n = R.__ctx, a = P.nodes.rawVal;
+    if (!n || !(a == null ? void 0 : a.length)) return;
+    const { camera: o, controls: f, render: v } = n;
     let h = 1 / 0, b = 1 / 0, i = 1 / 0, r = -1 / 0, m = -1 / 0, u = -1 / 0;
-    for (const e of o) e[0] < h && (h = e[0]), e[0] > r && (r = e[0]), e[1] < b && (b = e[1]), e[1] > m && (m = e[1]), e[2] < i && (i = e[2]), e[2] > u && (u = e[2]);
-    const s = (h + r) / 2, w = (b + m) / 2, g = (i + u) / 2, I = r - h, C = m - b, p = u - i, k = Math.max(Math.sqrt(I * I + C * C + p * p), 1), A = 2.2 * k;
+    for (const e of a) e[0] < h && (h = e[0]), e[0] > r && (r = e[0]), e[1] < b && (b = e[1]), e[1] > m && (m = e[1]), e[2] < i && (i = e[2]), e[2] > u && (u = e[2]);
+    const s = (h + r) / 2, w = (b + m) / 2, g = (i + u) / 2, I = r - h, B = m - b, p = u - i, k = Math.max(Math.sqrt(I * I + B * B + p * p), 1), C = 2.2 * k;
     f.target.set(s, w, g);
-    const d = A / Math.sqrt(3);
-    a.position.set(s + d, w - d, g + d), a.up.set(0, 0, 1), a.near = k * 1e-3, a.far = k * 50, a.updateProjectionMatrix(), a.lookAt(s, w, g), f.update(), v == null ? void 0 : v();
+    const d = C / Math.sqrt(3);
+    o.position.set(s + d, w - d, g + d), o.up.set(0, 0, 1), o.near = k * 1e-3, o.far = k * 50, o.updateProjectionMatrix(), o.lookAt(s, w, g), f.update(), v == null ? void 0 : v();
     const t = R.__settings;
-    (t == null ? void 0 : t.gridSize) && (t.gridSize.val = Math.max(Math.ceil(Math.max(I, C) * 1.2), 2));
+    (t == null ? void 0 : t.gridSize) && (t.gridSize.val = Math.max(Math.ceil(Math.max(I, B) * 1.2), 2));
   }
-  function et(n) {
-    const o = R.querySelectorAll("select"), a = Array.from(o).find((v) => Array.from(v.options).some((h) => h.value === "bendingXX"));
-    if (!a) return;
-    for (const v of Array.from(a.options)) {
+  function at(n) {
+    const a = R.querySelectorAll("select"), o = Array.from(a).find((v) => Array.from(v.options).some((h) => h.value === "bendingXX"));
+    if (!o) return;
+    for (const v of Array.from(o.options)) {
       const h = v.value === "none" || !n || n.includes(v.value);
       v.hidden = !h, v.disabled = !h;
     }
     const f = R.__settings;
-    (f == null ? void 0 : f.shellResults) && (a.value = f.shellResults.val, a.dispatchEvent(new Event("change", {
+    (f == null ? void 0 : f.shellResults) && (o.value = f.shellResults.val, o.dispatchEvent(new Event("change", {
       bubbles: true
     })));
   }
@@ -395,23 +435,23 @@ Promise.all([
     const n = {
       ...M
     };
-    for (const [o, a] of Object.entries(c.params)) a.unitType === "force" && (n[o] = He(M[o])), a.unitType === "moment" && (n[o] = Ke(M[o]));
+    for (const [a, o] of Object.entries(c.params)) o.unitType === "force" && (n[a] = We(M[a])), o.unitType === "moment" && (n[a] = Qe(M[a]));
     return n;
   }
   function J() {
     if (c) {
       if (ye(), c.build(se(), P, U), ge(), c.computedLabels && L) {
         const n = c.computedLabels(M, P);
-        for (const o of Object.keys(L)) o in n && (L[o] = n[o]);
+        for (const a of Object.keys(L)) a in n && (L[a] = n[a]);
       }
       if (c.inlineComputed && N) for (const n of c.inlineComputed) {
-        const o = `__inline_${n.after}_${n.label}`;
-        N[o] = n.compute(M, P);
+        const a = `__inline_${n.after}_${n.label}`;
+        N[a] = n.compute(M, P);
       }
       D == null ? void 0 : D.refresh();
     }
   }
-  const K = document.createElement("div"), ve = "hk_paneHostPos", ae = (() => {
+  const K = document.createElement("div"), ve = "hk_paneHostPos", oe = (() => {
     try {
       const n = localStorage.getItem(ve);
       if (n) return JSON.parse(n);
@@ -419,17 +459,17 @@ Promise.all([
     }
     return null;
   })();
-  K.style.cssText = "position:fixed;" + (ae ? `left:${ae.left}px;top:${ae.top}px;right:auto;` : "top:96px;right:16px;") + "width:min(320px,calc(100vw - 32px));max-width:90vw;z-index:100;max-height:calc(100vh - 112px);overflow-y:auto;font-size:12px;box-shadow:0 6px 24px rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);";
+  K.style.cssText = "position:fixed;" + (oe ? `left:${oe.left}px;top:${oe.top}px;right:auto;` : "top:96px;right:16px;") + "width:min(320px,calc(100vw - 32px));max-width:90vw;z-index:100;max-height:calc(100vh - 112px);overflow-y:auto;font-size:12px;box-shadow:0 6px 24px rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);";
   document.body.appendChild(K);
   function be(n) {
-    let a = n.querySelector(".tp-rotv_b, .tp-fldv_b");
-    if (!a) {
+    let o = n.querySelector(".tp-rotv_b, .tp-fldv_b");
+    if (!o) {
       setTimeout(() => be(n), 200);
       return;
     }
-    a.style.cursor = "move", a.style.userSelect = "none";
+    o.style.cursor = "move", o.style.userSelect = "none";
     let f = false, v = 0, h = 0, b = 0, i = 0;
-    a.addEventListener("mousedown", (r) => {
+    o.addEventListener("mousedown", (r) => {
       f = true, v = r.clientX, h = r.clientY;
       const m = n.getBoundingClientRect();
       b = m.left, i = m.top, n.style.right = "auto", n.style.left = `${b}px`, n.style.top = `${i}px`, r.preventDefault();
@@ -451,32 +491,32 @@ Promise.all([
     });
   }
   function Y(n) {
-    const o = R.__ctx;
-    if (!o) return;
-    const { camera: a, controls: f, render: v } = o, h = P.nodes.rawVal ?? [];
+    const a = R.__ctx;
+    if (!a) return;
+    const { camera: o, controls: f, render: v } = a, h = P.nodes.rawVal ?? [];
     let b = 1 / 0, i = 1 / 0, r = 1 / 0, m = -1 / 0, u = -1 / 0, s = -1 / 0;
     for (const d of h) d[0] < b && (b = d[0]), d[0] > m && (m = d[0]), d[1] < i && (i = d[1]), d[1] > u && (u = d[1]), d[2] < r && (r = d[2]), d[2] > s && (s = d[2]);
-    const w = (b + m) / 2, g = (i + u) / 2, I = (r + s) / 2, C = m - b || 1, p = u - i || 1, k = s - r || 1, A = Math.sqrt(C * C + p * p + k * k) || 5;
+    const w = (b + m) / 2, g = (i + u) / 2, I = (r + s) / 2, B = m - b || 1, p = u - i || 1, k = s - r || 1, C = Math.sqrt(B * B + p * p + k * k) || 5;
     if (f.target.set(w, g, I), n === "iso") {
-      a.fov = 45;
-      const d = A * 1.2;
-      a.position.set(w + d * 0.6, g - d * 0.6, I + d * 0.6);
+      o.fov = 45;
+      const d = C * 1.2;
+      o.position.set(w + d * 0.6, g - d * 0.6, I + d * 0.6);
     } else {
-      a.fov = 5;
-      const t = A / 2 * 25;
+      o.fov = 5;
+      const t = C / 2 * 25;
       switch (n) {
         case "plan":
-          a.position.set(w, g, I + t);
+          o.position.set(w, g, I + t);
           break;
         case "elevX":
-          a.position.set(w + t, g, I);
+          o.position.set(w + t, g, I);
           break;
         case "elevY":
-          a.position.set(w, g + t, I);
+          o.position.set(w, g + t, I);
           break;
       }
     }
-    a.up.set(0, 0, 1), a.updateProjectionMatrix(), a.lookAt(w, g, I), f.update(), v == null ? void 0 : v();
+    o.up.set(0, 0, 1), o.updateProjectionMatrix(), o.lookAt(w, g, I), f.update(), v == null ? void 0 : v();
   }
   function Q() {
     var _a;
@@ -486,15 +526,15 @@ Promise.all([
       title: c.name
     });
     setTimeout(() => be(K), 0);
-    const o = {
+    const a = {
       id: c.id
-    }, a = Object.fromEntries(H.map((t) => [
+    }, o = Object.fromEntries(H.map((t) => [
       `${t.category} \xB7 ${t.name}`,
       t.id
     ]));
-    n.addBinding(o, "id", {
+    n.addBinding(a, "id", {
       label: "Ejemplo",
-      options: a
+      options: o
     }).on("change", (t) => {
       const e = H.find((l) => l.id === t.value);
       e && he(e);
@@ -517,7 +557,7 @@ Promise.all([
       expanded: false
     }), h = {
       force: W.val,
-      disp: oe.val
+      disp: ae.val
     };
     v.addBinding(h, "force", {
       label: "Fuerza",
@@ -542,7 +582,7 @@ Promise.all([
         in: "in"
       }
     }).on("change", (t) => {
-      oe.val = t.value, Q(), J();
+      ae.val = t.value, Q(), J();
     });
     const b = "Par\xE1metros", i = /* @__PURE__ */ new Map(), r = (t) => t === b || /\bmodo\b/i.test(t) || /activar/i.test(t) || /combinaci/i.test(t), m = (t) => (i.has(t) || i.set(t, n.addFolder({
       title: t,
@@ -553,7 +593,7 @@ Promise.all([
       u !== null && clearTimeout(u), u = window.setTimeout(() => {
         u = null, J();
       }, 120);
-    }, w = {}, g = {}, I = {}, C = (t) => t.rangeAdjustable === true || t.rangeAdjustable !== false && (t.unitType === "force" || t.unitType === "moment"), p = /* @__PURE__ */ new Map();
+    }, w = {}, g = {}, I = {}, B = (t) => t.rangeAdjustable === true || t.rangeAdjustable !== false && (t.unitType === "force" || t.unitType === "moment"), p = /* @__PURE__ */ new Map();
     if (N = {}, c.inlineComputed) for (const t of c.inlineComputed) {
       const e = `__inline_${t.after}_${t.label}`;
       N[e] = t.compute(M, P), p.has(t.after) || p.set(t.after, []), p.get(t.after).push({
@@ -567,26 +607,26 @@ Promise.all([
       const l = e.default;
       M[t] = e.unitType === "force" ? ce(l) : e.unitType === "moment" ? fe(l) : l;
     }
-    const A = {
+    const C = {
       ...c.params,
       ...k
     };
-    for (const [t, e] of Object.entries(A)) {
+    for (const [t, e] of Object.entries(C)) {
       const l = e.folder ?? b, S = m(l);
       if (e.boolean) {
         w[t] = M[t] >= 0.5, S.addBinding(w, t, {
           label: e.label ?? t
-        }).on("change", (B) => {
-          M[t] = B.value ? 1 : 0, (c == null ? void 0 : c.onParamChange) && (c.onParamChange(t, M), n.refresh()), s();
+        }).on("change", (A) => {
+          M[t] = A.value ? 1 : 0, (c == null ? void 0 : c.onParamChange) && (c.onParamChange(t, M), n.refresh()), s();
         });
         continue;
       }
-      const y = re(e.label ?? t), z = e.unitType === "force" ? ` ${Ge()}` : e.unitType === "moment" ? ` ${Je()}` : e.unitType === "disp" ? ` ${Ze()}` : "", j = {
+      const y = re(e.label ?? t), z = e.unitType === "force" ? ` ${et()}` : e.unitType === "moment" ? ` ${tt()}` : e.unitType === "disp" ? ` ${nt()}` : "", j = {
         label: y + z
       };
       e.options !== void 0 ? j.options = e.options : (e.min !== void 0 && (j.min = e.min), e.max !== void 0 && (j.max = e.max), e.step !== void 0 && (j.step = e.step));
       let T = null;
-      const _ = (B, x) => {
+      const _ = (A, x) => {
         var _a2;
         if (T) try {
           (_a2 = T.dispose) == null ? void 0 : _a2.call(T);
@@ -595,22 +635,22 @@ Promise.all([
         const q = {
           ...j
         };
-        B !== void 0 && (q.min = B), x !== void 0 && (q.max = x), q.min !== void 0 && M[t] < q.min && (M[t] = q.min), q.max !== void 0 && M[t] > q.max && (M[t] = q.max), T = S.addBinding(M, t, q), T.on("change", () => {
+        A !== void 0 && (q.min = A), x !== void 0 && (q.max = x), q.min !== void 0 && M[t] < q.min && (M[t] = q.min), q.max !== void 0 && M[t] > q.max && (M[t] = q.max), T = S.addBinding(M, t, q), T.on("change", () => {
           (c == null ? void 0 : c.onParamChange) && (c.onParamChange(t, M), n.refresh()), e.regenOnChange ? window.setTimeout(() => {
             Q(), J();
           }, 80) : s();
         });
       };
-      _(e.min, e.max), C(e) && e.min !== void 0 && e.max !== void 0 && (g[t] = {
+      _(e.min, e.max), B(e) && e.min !== void 0 && e.max !== void 0 && (g[t] = {
         min: e.min,
         max: e.max
       }, I[t] = {
-        rebuild: (B, x) => _(B, x)
+        rebuild: (A, x) => _(A, x)
       });
       const G = p.get(t);
-      if (G && N) for (const B of G) S.addBinding(N, B.key, {
+      if (G && N) for (const A of G) S.addBinding(N, A.key, {
         readonly: true,
-        label: B.label,
+        label: A.label,
         view: "text"
       });
     }
@@ -734,7 +774,7 @@ Promise.all([
     }
     D = n;
   }
-  const tt = {
+  const st = {
     deformedShape: true,
     displayScale: -1.5,
     shellResults: "pressure",
@@ -750,7 +790,7 @@ Promise.all([
       analyzeOutputs: ie
     },
     objects3D: xe,
-    settingsObj: tt
+    settingsObj: st
   });
   document.body.append(R, Pe({
     sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct",
