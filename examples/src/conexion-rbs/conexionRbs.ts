@@ -111,7 +111,7 @@ export const conexionRbs: ExampleDef = {
     // ── IDEA StatiCa mode ──
     idea_steps: { default: 12, min: 4, max: 30, step: 1, label: "N pasos pushover", folder: "Solver" },
     colormap_mode: {
-      default: 1,
+      default: 0,
       label: "Colormap",
       options: {
         "σvm por shell (FEM clásico)": 0,
