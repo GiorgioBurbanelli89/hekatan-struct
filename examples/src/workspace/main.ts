@@ -742,7 +742,12 @@ function buildParamsPane() {
     fModal.addBinding(status, "dominant", { readonly: true, view: "text", interval: 0, label: "Dominante" } as any);
     fModal.addBinding(status, "state", { readonly: true, view: "text", interval: 0, label: "Estado" } as any);
 
-    fModal.addButton({ title: "⏸ Pausar" }).on("click", () => modalAnimator.stop());
+    fModal.addButton({ title: "⏹ Detener y restaurar" }).on("click", () => {
+      // stop() cancela el RAF + restaura los nodos originales + fuerza un render
+      // inmediato del viewer (el canvas se actualiza al momento, sin esperar el
+      // siguiente evento reactivo que congelaba la deformada).
+      modalAnimator.stop();
+    });
     fModal.addButton({ title: "▶ Reanudar" }).on("click", () => {
       if (lastModalResults) modalAnimator.play();
     });

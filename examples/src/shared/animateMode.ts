@@ -143,7 +143,11 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
   function stopInternal(restore: boolean) {
     if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
     if (restore && originalNodes.length > 0) {
+      // Restaurar los nodos originales Y forzar un render inmediato del viewer
+      // (sin esto, el canvas Three.js mostraba el último frame de la animación
+      // hasta el siguiente evento reactivo — efecto "congelado en deformada").
       mesh.nodes.val = originalNodes.map((n) => [...n] as Node);
+      getCtx()?.render();
     }
   }
 

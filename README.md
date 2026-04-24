@@ -19,6 +19,11 @@ Jump directly to any example with `?t=<id>`, e.g.:
 | Modal animation (live mode shapes) | ❌ | ✅ Shared helper — works in EVERY example with `hasModal: true` |
 | Winkler springs (native C++) | ❌ | ✅ `deform()` extended with `springsList: {node, dof, k}[]`, assembled into K |
 | Plane Q4 plane-stress solver | ❌ | ✅ Pure-TS `planeQ4Solve`: 2 DOFs/node, 2×2 Gauss, LU dense, stress recovery |
+| Wilson incompatible modes (Q4 bending) | ❌ | ✅ Taylor-Beresford-Wilson 1976; reduces cantilever error ~10% → <2% |
+| Rigid diaphragm (ASCE 7-22 §12.3.1) | ❌ | ✅ Master-slave rigid links helper (`shared/rigidDiaphragm.ts`) |
+| Bathe composite time integration (α-dissipative) | ❌ | ✅ TS scaffold `batheStep()` + `newmarkStep()` for ASCE 7-22 §16 RHA |
+| ETABS-style slab discretization (25-50 cm per bay) | ❌ | ✅ `etabsDiscretize2D()` — each bay meshed to target size, like ETABS default |
+| Materials helper (Hormigón/Acero/CFT × Rect/Circ/W/HSS) | ❌ | ✅ `materials.ts` w/ ACI 318-22 Ec=15100√f'c, AISC/A992 steel, composite |
 | Mindlin-Reissner plates | ❌ | ✅ MITC4 shear tying via `plateQ4Solve(theoryType: 0)` |
 | Kirchhoff thin plates | ❌ | ✅ `plateQ4Solve(theoryType: 1)` |
 | CSI Shell-Membrane formulation | ❌ | ✅ Membrane Q4 with drilling DOF (`membrana-csi` example) |
