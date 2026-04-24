@@ -98,6 +98,11 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
   let results: ModalOutputs | null = null;
   let mode = 0;
   let rafId = 0;
+  // trueOriginalNodes: snapshot de los nodos tomada ANTES de CUALQUIER animación.
+  // Se captura una sola vez por cada llamada a setResults() para que consecutivos
+  // play → stop → play → stop siempre restauren a los verdaderos originales, no
+  // al último frame corrompido por una animación anterior.
+  let trueOriginalNodes: Node[] = [];
   let originalNodes: Node[] = [];
 
   function fireStatus() { onStatusChange?.(); }
@@ -142,12 +147,16 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
 
   function stopInternal(restore: boolean) {
     if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
-    if (restore && originalNodes.length > 0) {
-      // Restaurar los nodos originales Y forzar un render inmediato del viewer
-      // (sin esto, el canvas Three.js mostraba el último frame de la animación
-      // hasta el siguiente evento reactivo — efecto "congelado en deformada").
-      mesh.nodes.val = originalNodes.map((n) => [...n] as Node);
-      getCtx()?.render();
+    if (restore) {
+      // Siempre restaurar a los TRUE originals (no al último snapshot del start,
+      // que podría estar corrompido si el usuario encadenó play→stop→play).
+      // Forzamos render inmediato para que el canvas Three.js refleje los nodos
+      // al momento, sin esperar un evento reactivo.
+      const src = trueOriginalNodes.length > 0 ? trueOriginalNodes : originalNodes;
+      if (src.length > 0) {
+        mesh.nodes.val = src.map((n) => [...n] as Node);
+        getCtx()?.render();
+      }
     }
   }
 
@@ -209,6 +218,10 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
     setResults(out) {
       results = out;
       if (mode >= (out?.frequencies?.length ?? 0)) mode = 0;
+      // Captura los nodos TRUE ORIGINALS justo cuando llegan nuevos resultados
+      // modales (asume que en este momento el modelo está en su estado NO
+      // animado). Subsecuentes play→stop→play siempre restauran a estos.
+      trueOriginalNodes = mesh.nodes.rawVal.map((n) => [...n] as Node);
       fireStatus();
     },
     setMode(i) {

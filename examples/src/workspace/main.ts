@@ -739,6 +739,11 @@ function buildParamsPane() {
     };
 
     fModal.addButton({ title: "▶ Correr modal + animar" }).on("click", () => {
+      // Detener y restaurar CUALQUIER animación en curso antes de correr el
+      // nuevo análisis — si el usuario click-click-click este botón, queremos
+      // que cada corrida parta limpia del modelo sin deformar (evita que se
+      // capturen "originals" corruptos con el último frame animado anterior).
+      modalAnimator.stop();
       modalPanel.div.style.display = "block";
       if (currentExample!.runModal) currentExample!.runModal(toSIParams(), states, captureModalPanel);
     });
