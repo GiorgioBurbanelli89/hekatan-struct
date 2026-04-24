@@ -7,6 +7,7 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 import { buildEdificioCotas, makeLabel } from "../shared/cotas3D";
 import { etabsDiscretize, DISCRETIZE_OPTIONS } from "../shared/etabsDiscretization";
 import { addRigidDiaphragms, mergeDiaphragmProps } from "../shared/rigidDiaphragm";
+import { computeHinges, buildHingeObjects3D, summarizeHinges } from "../shared/plasticHinges";
 
 const rho_c = 24;
 
@@ -159,6 +160,19 @@ export const edificioAporticado: ExampleDef = {
     if (uplift_tonf > 0.01) result["⚠ Uplift"] = `${uplift_tonf.toFixed(2)} tonf (nodo ${minFz_nodo})`;
     result["Pisos"] = `${nPisos}`;
     result["Copiar a → zapata-aislada"] = `P=${P_tonf.toFixed(1)}, Mx=${Mx_tonf.toFixed(1)}, My=${My_tonf.toFixed(1)}`;
+
+    // ── Rótulas plásticas (ASCE 41-17 / FEMA 356) ──
+    const hingeCounts = (states as any).__plasticHinges as Record<string, number> | undefined;
+    if (hingeCounts) {
+      const total = (hingeCounts.B ?? 0) + (hingeCounts.IO ?? 0) + (hingeCounts.LS ?? 0) + (hingeCounts.CP ?? 0);
+      result["── Rótulas plásticas (ASCE 41-17) ──"] = "";
+      result["🟢 Elástico"] = `${hingeCounts.Elastic ?? 0}`;
+      result["🟡 B — Yield"] = `${hingeCounts.B ?? 0}`;
+      result["🟠 IO — Immed.Occ."] = `${hingeCounts.IO ?? 0}`;
+      result["🔴 LS — Life Safety"] = `${hingeCounts.LS ?? 0}`;
+      result["⚫ CP — Collapse Prev."] = `${hingeCounts.CP ?? 0}`;
+      result["Total rótulas formadas"] = `${total}`;
+    }
     return result;
   },
   build(p, states) {
@@ -524,6 +538,37 @@ export const edificioAporticado: ExampleDef = {
       (xCoords[0] + xCoords[1]) / 2, yCoords[0], zCoords[1] + 0.2,
       "#ffaa00"
     ));
+
+    // ── Rótulas plásticas (Fase A — ASCE 41-17, FEMA 356) ───────────
+    // Clasificación estática por ratio M/My en extremos de frames. Solo se
+    // muestran las rótulas que salen de rango elástico (estado B-CP) para
+    // no saturar visualmente el modelo. Los counts por estado se guardan en
+    // states para que computedLabels() los muestre en el folder Calculados.
+    try {
+      const hingesArr = computeHinges(
+        nodes, elements,
+        states.analyzeOutputs.rawVal as any,
+        states.elementInputs.rawVal as any,
+        Math.round(p.matCol),
+        Math.round(p.matViga),
+        colIdx,
+      );
+      // Calcular diagonal del modelo para dimensionar esferas
+      let xMin=Infinity, yMin=Infinity, zMin=Infinity, xMax=-Infinity, yMax=-Infinity, zMax=-Infinity;
+      for (const n of nodes) {
+        if (n[0]<xMin) xMin=n[0]; if (n[0]>xMax) xMax=n[0];
+        if (n[1]<yMin) yMin=n[1]; if (n[1]>yMax) yMax=n[1];
+        if (n[2]<zMin) zMin=n[2]; if (n[2]>zMax) zMax=n[2];
+      }
+      const diag = Math.sqrt((xMax-xMin)**2 + (yMax-yMin)**2 + (zMax-zMin)**2) || 1;
+      const hingeObjs = buildHingeObjects3D(hingesArr, nodes, diag, { showElastic: false, radiusFactor: 0.015 });
+      cotas.push(...hingeObjs);
+      // Guardar counts en un slot accesible por computedLabels
+      (states as any).__plasticHinges = summarizeHinges(hingesArr);
+    } catch (e) {
+      console.warn("[Plastic Hinges]", e);
+    }
+
     states.objects3D.val = cotas;
   },
   runModal(p, states, modalPanel) {
