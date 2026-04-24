@@ -168,35 +168,32 @@ function autoScaleDeformedShape() {
   const isBuilding = dz > 1.1 * Math.max(dx, dy);
 
   let scale: number;
+  let scaleZfactor: number;   // multiplicador extra para Z (deformScaleZ)
+
   if (isBuilding) {
-    // EDIFICIO: el scale se calibra SOLO al sway horizontal. Uz (axial columnas
-    // + sag de losas) queda 1:1 sin amplificar. Esto evita el efecto absurdo
-    // de losas que "se hunden 1 piso" bajo CM/CV, o columnas que "se acortan"
-    // como resortes. Los ingenieros esperan ver sway lateral exagerado, no
-    // axial.
-    // Si no hay sway horizontal (caso puramente gravitacional), scale = 10
-    // (fijo) para que las losas muestren algo de sag sin exagerar.
+    // EDIFICIO: el scale XY se calibra al sway horizontal (target 10% del diagonal).
+    // El scaleZ se pone BAJO (~0.15) porque las columnas de concreto/acero son
+    // axialmente RÍGIDAS: EA de una col 40×40 hormigón ≈ 4 MN/m, carga típica
+    // 400 kN → acortamiento elástico ~0.1 mm/m, totalmente imperceptible en la
+    // realidad. Amplificar Uz con el mismo factor XY las hace ver como 'alfeñique'.
     if (maxUh > 1e-9) {
-      // Target: 10% del diagonal para el sway horizontal
       scale = Math.min(5000, Math.max(1, (0.10 * diag) / maxUh));
     } else {
-      scale = 10;   // sin sway → scale fijo conservador
+      scale = 10;  // caso gravitacional puro, scale fijo conservador
     }
-    // Cap adicional: la visualización de Uz no debe exceder 25% de una altura
-    // de piso típica (asumimos h_piso ≈ dz/8 para 8 pisos; ~30% es razonable).
-    const storyH = dz / 8;                         // estimación altura piso
-    const maxVisibleUz = 0.30 * storyH;            // 0.9m visible para h=3m
-    if (maxUz > 1e-9) {
-      const capByUz = maxVisibleUz / maxUz;
-      scale = Math.min(scale, capByUz);
-    }
+    scaleZfactor = 0.15;  // Uz visible = 15% del Ux/Uy visible — refleja rigidez axial real
   } else {
-    // PLACA / SHELL / MURO A CORTE: todo equivalente, target 15% del diagonal.
+    // PLACA / ZAPATA / SHELL / MURO A CORTE (Δz pequeña): la deformación
+    // principal ES Uz (bending out-of-plane de una placa plana, o sag de zapata
+    // sobre resortes Winkler). Amplificamos Uz NORMALMENTE (scaleZ=1) para que
+    // el usuario VEA claramente la deformada, que es el objetivo didáctico.
     const refDef = Math.max(maxUh, maxUz);
     if (refDef < 1e-30) { s.deformScale.val = 1; return; }
     scale = Math.min(50000, Math.max(1, (0.15 * diag) / refDef));
+    scaleZfactor = 1.0;   // Uz = XY: zapatas/placas muestran la deformada completa
   }
   s.deformScale.val = Math.max(1, scale);
+  if (s.deformScaleZ) s.deformScaleZ.val = scaleZfactor;
   if (s.displayScale) s.displayScale.val = -1.5;
 }
 

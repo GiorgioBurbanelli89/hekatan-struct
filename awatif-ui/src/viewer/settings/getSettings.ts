@@ -32,8 +32,17 @@ export type Settings = {
   /** Cotas / dimensiones anotadas sobre el modelo (5.00 m, 40×40, etc.) */
   showCotas: State<boolean>;
   /** Escala de la deformada visible (independiente de displayScale que afecta
-   *  flechas de cargas y soportes). Se auto-computa para que max ≈ 5% del modelo. */
+   *  flechas de cargas y soportes). Se auto-computa para que max ≈ 5% del modelo.
+   *  Aplica uniformemente a las 3 componentes si deformScaleZ está a 1 (default
+   *  legacy). Si el usuario divide XY y Z vía el Tweakpane workspace, entonces
+   *  este actúa como el scale en el plano (X, Y) y deformScaleZ como multiplicador
+   *  adicional para el eje vertical (Z). */
   deformScale: State<number>;
+  /** Multiplicador adicional del scale Z (vertical) respecto a XY. Default 1.
+   *  Útil en edificios para bajar la amplificación axial (compresión columnas,
+   *  sag de losas) sin afectar el sway lateral. Ejemplo: deformScaleZ=0.2 hace
+   *  que Uz visible sea 20% del que saldría con deformScale plano. */
+  deformScaleZ: State<number>;
 };
 
 export type SettingsObj = {
@@ -61,6 +70,7 @@ export type SettingsObj = {
   custom3D?: boolean;
   showCotas?: boolean;
   deformScale?: number;
+  deformScaleZ?: number;
 };
 
 export function getSettings(
@@ -87,10 +97,16 @@ export function getSettings(
       step: 1,
     });
     pane.addBinding(settings.deformScale, "val", {
-      label: "Deform scale",
+      label: "Deform scale XY",
       min: 0.1,
-      max: 1000,
+      max: 5000,
       step: 0.1,
+    });
+    pane.addBinding(settings.deformScaleZ, "val", {
+      label: "Deform scale Z",
+      min: 0.01,
+      max: 10,
+      step: 0.01,
     });
     pane.addBinding(settings.nodes, "val", { label: "Nodes" });
     pane.addBinding(settings.elements, "val", {
@@ -223,5 +239,10 @@ export function getDefaultSettings(settingsObj: SettingsObj): Settings {
     custom3D: van.state(settingsObj?.custom3D ?? true),
     showCotas: van.state(settingsObj?.showCotas ?? true),
     deformScale: van.state(settingsObj?.deformScale ?? 1),
+    // Default 1.0 = Z amplificado igual que XY (legacy). El workspace auto-setea
+    // 0.15-0.30 cuando detecta edificio (Δz > 1.1·Δxy) para respetar que el
+    // concreto/acero son axialmente RÍGIDOS (compresión ~1/500 de h_piso real,
+    // no se deben ver como alfeñique en la visualización).
+    deformScaleZ: van.state(settingsObj?.deformScaleZ ?? 1),
   };
 }

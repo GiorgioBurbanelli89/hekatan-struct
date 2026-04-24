@@ -358,17 +358,33 @@ function deriveNodes(
     const nodes = mesh?.nodes?.val ?? [];
     const deforms = mesh?.deformOutputs?.val?.deformations;
     if (!deforms || nodes.length === 0) return nodes;
-    // Escala LINEAL controlada por settings.deformScale (seteada por autoFit inicial).
-    // Así, cuando el usuario aumenta la carga, la deformación visual crece
-    // proporcionalmente (no hay auto-normalización que lo oculte).
-    const scale = settings.deformScale.val;
-    const safeScale = Number.isFinite(scale) ? scale : 1;
+    // Escalas SEPARADAS: XY (en el plano horizontal) y Z (vertical).
+    // Razón física: concreto y acero son axialmente RÍGIDOS (EA grande) mientras
+    // que lateralmente SÍ se desplazan notablemente bajo sísmico/viento. El
+    // usuario típicamente quiere ver sway lateral exagerado sin ver columnas
+    // 'de alfeñique' aplastándose en Z.
+    //
+    //   Ux visible = Ux * deformScale                  (el plano)
+    //   Uy visible = Uy * deformScale
+    //   Uz visible = Uz * deformScale * deformScaleZ   (Z con multiplicador extra)
+    //
+    // Para placas/zapatas (modelos donde Uz ES la deformación principal, como
+    // flexión out-of-plane), el workspace setea deformScaleZ=1.0. Para edificios,
+    // ~0.15-0.30 para respetar la rigidez axial real.
+    const scaleXY = settings.deformScale.val;
+    const scaleZ = settings.deformScale.val * settings.deformScaleZ.val;
+    const safeXY = Number.isFinite(scaleXY) ? scaleXY : 1;
+    const safeZ  = Number.isFinite(scaleZ)  ? scaleZ  : 1;
     return nodes.map((node, index) => {
       const d = deforms.get(index)?.slice(0, 3) ?? [0, 0, 0];
-      return node.map((n, i) => {
-        const di = Number.isFinite(d[i]) ? d[i] : 0;
-        return n + di * safeScale;
-      }) as Node;
+      const dx = Number.isFinite(d[0]) ? d[0] : 0;
+      const dy = Number.isFinite(d[1]) ? d[1] : 0;
+      const dz = Number.isFinite(d[2]) ? d[2] : 0;
+      return [
+        node[0] + dx * safeXY,
+        node[1] + dy * safeXY,
+        node[2] + dz * safeZ,
+      ] as Node;
     });
   });
 }
