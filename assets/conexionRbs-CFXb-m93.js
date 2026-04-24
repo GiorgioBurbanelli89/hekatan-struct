@@ -540,7 +540,7 @@ let __tla = Promise.all([
         folder: "Solver"
       },
       colormap_mode: {
-        default: 1,
+        default: 0,
         label: "Colormap",
         options: {
           "\u03C3vm por shell (FEM cl\xE1sico)": 0,
