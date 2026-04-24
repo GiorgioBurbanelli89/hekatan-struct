@@ -58,6 +58,21 @@ export const conexionRbs: ExampleDef = {
     E_steel: { default: 200_000_000, min: 190e6, max: 210e6, step: 1e6, label: "E (kN/m²)", folder: "Material" },
     b_hard:  { default: 0.01, min: 0.005, max: 0.05, step: 0.005, label: "b strain hardening", folder: "Material" },
     // ── Protocolo de carga ──
+    // ── Soldadura (AISC 360-22 §J2 + AISC 358-22 §3.7) ──
+    weld_type: {
+      default: 0,
+      label: "Tipo soldadura",
+      options: { "CJP (penetración completa)": 0, "PJP (parcial)": 1, "Filete": 2 },
+      folder: "Soldadura",
+    },
+    electrode_Fexx: {
+      default: 480_000,
+      label: "Electrodo Fexx (kN/m²)",
+      options: { "E60XX (414 MPa)": 414_000, "E70XX (483 MPa)": 483_000, "E80XX (552 MPa)": 552_000 },
+      folder: "Soldadura",
+    },
+    weld_throat: { default: 0.008, min: 0.004, max: 0.020, step: 0.001, label: "Garganta tw (m, filete/PJP)", folder: "Soldadura" },
+    weld_access_hole: { default: 1, label: "Weld access hole", options: { "No": 0, "Sí (AWS D1.8)": 1 }, folder: "Soldadura" },
     classification: { default: 1, label: "Clasificación sismo", options: { "IMF (0.02 rad)": 0, "SMF (0.04 rad)": 1, "Extendido (0.06 rad)": 2 }, folder: "Ensayo K3" },
     story_h: { default: 3.66, min: 2.5, max: 5.0, step: 0.1, label: "h piso (m)", folder: "Ensayo K3" },
     steps_per_cycle: { default: 40, min: 20, max: 100, step: 10, label: "Steps/ciclo", folder: "Ensayo K3" },
@@ -389,6 +404,58 @@ export const conexionRbs: ExampleDef = {
     ring.rotation.y = Math.PI / 2;
     objects.push(ring);
 
+    // ── Soldaduras de la conexión (cordones visibles) ──
+    const weldColor = p.weld_type < 0.5 ? 0xffaa00 : p.weld_type < 1.5 ? 0xff7700 : 0xff5500;
+    const weldGarganta =
+      p.weld_type < 0.5 ? p.tf_beam * 0.95 : p.weld_type < 1.5 ? p.tf_beam * 0.6 : p.weld_throat;
+    // Cordón del ala superior (cara de columna, y∈[-bf/2, +bf/2], z = zTop_b)
+    const mkWeldFlange = (zCenter: number) => {
+      const geom = new THREE.BoxGeometry(weldGarganta * 1.1, p.bf_beam, weldGarganta * 1.2);
+      const mat = new THREE.MeshStandardMaterial({
+        color: weldColor, emissive: 0x331100, metalness: 0.7, roughness: 0.45,
+      });
+      const m = new THREE.Mesh(geom, mat);
+      m.position.set(x0 - weldGarganta / 2, 0, zCenter);
+      return m;
+    };
+    objects.push(mkWeldFlange(+p.d_beam / 2 - p.tf_beam / 2));
+    objects.push(mkWeldFlange(-p.d_beam / 2 + p.tf_beam / 2));
+
+    // Cordón del alma (vertical, z∈[-d/2+tf, +d/2-tf])
+    const webWeldH = p.d_beam - 2 * p.tf_beam - (p.weld_access_hole > 0.5 ? 2 * (p.tf_beam * 1.5) : 0);
+    const webWeldGeom = new THREE.BoxGeometry(weldGarganta * 1.1, weldGarganta * 1.2, webWeldH);
+    const webWeldMat = new THREE.MeshStandardMaterial({
+      color: weldColor, emissive: 0x331100, metalness: 0.7, roughness: 0.45,
+    });
+    const webWeld = new THREE.Mesh(webWeldGeom, webWeldMat);
+    webWeld.position.set(x0 - weldGarganta / 2, 0, 0);
+    objects.push(webWeld);
+
+    // Weld access holes (muescas de acceso AWS D1.8) como anillos oscuros
+    if (p.weld_access_hole > 0.5) {
+      const holeR = p.tf_beam * 1.2;
+      for (const zC of [+p.d_beam / 2 - p.tf_beam - holeR, -p.d_beam / 2 + p.tf_beam + holeR]) {
+        const hg = new THREE.TorusGeometry(holeR, 0.003, 10, 24);
+        const hm = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.5, roughness: 0.6 });
+        const hole = new THREE.Mesh(hg, hm);
+        hole.position.set(x0 + 0.002, 0, zC);
+        hole.rotation.y = Math.PI / 2;
+        objects.push(hole);
+      }
+    }
+
+    // Backup bar (barra de respaldo, típico en CJP)
+    if (p.weld_type < 0.5) {
+      const bbGeom = new THREE.BoxGeometry(0.025, p.bf_beam + 0.02, 0.01);
+      const bbMat = new THREE.MeshStandardMaterial({ color: 0x554433, metalness: 0.3, roughness: 0.8 });
+      for (const zC of [+p.d_beam / 2 - p.tf_beam / 2, -p.d_beam / 2 + p.tf_beam / 2]) {
+        const bb = new THREE.Mesh(bbGeom, bbMat);
+        const zSign = zC > 0 ? -1 : +1; // backup bar fuera del patín (opuesto a la carga)
+        bb.position.set(x0 - 0.015, 0, zC + zSign * p.tf_beam * 0.7);
+        objects.push(bb);
+      }
+    }
+
     // Marcas guía de inicio y fin del RBS (líneas amarillas en los patines)
     const mkLine = (x_local: number) => {
       const bf_l = bfAt(x_local);
@@ -491,6 +558,43 @@ export const conexionRbs: ExampleDef = {
       "Ratio M/Mp @ target": `${ratio.toFixed(3)}`,
       "Criterio (≥ 0.80)": `${ratio >= 0.8 ? "✓ PASA" : "✗ FALLA"} — ${hist.classification}`,
       "Data points generados": `${hist.theta.length}`,
+      "── Soldadura AISC 360 §J2 ──": "",
+      ...(() => {
+        const weldType = p.weld_type < 0.5 ? "CJP" : p.weld_type < 1.5 ? "PJP" : "Filete";
+        const garganta = p.weld_type < 0.5 ? p.tf_beam : p.weld_type < 1.5 ? p.tf_beam * 0.7 : p.weld_throat;
+        const Fexx = p.electrode_Fexx;
+        const phi = 0.75;
+        // CJP con electrodo matching = capacidad full del patín
+        // PJP/Filete: 0.60·Fexx en sección efectiva
+        const L_flange = p.bf_beam; // longitud cordón patín
+        const A_flange = garganta * L_flange;
+        const Rn_flange =
+          p.weld_type < 0.5
+            ? p.Fy * p.bf_beam * p.tf_beam // CJP desarrolla patín completo
+            : 0.6 * Fexx * A_flange;
+        const phiRn_flange = phi * Rn_flange;
+        // Tensión máxima en el patín = M / (d - tf) — par de fuerzas en las dos alas
+        const M_design = 0.8 * Mp;
+        const F_flange = M_design / Math.max(p.d_beam - p.tf_beam, 0.1);
+        const ratio_weld = F_flange / phiRn_flange;
+        const electrodoTxt =
+          Fexx < 440_000 ? "E60XX" : Fexx < 520_000 ? "E70XX" : "E80XX";
+        return {
+          "Tipo soldadura": weldType,
+          "Electrodo": `${electrodoTxt} (Fexx=${(Fexx / 1000).toFixed(0)} MPa)`,
+          "Garganta efectiva": `${(garganta * 1000).toFixed(1)} mm`,
+          "L cordón (patín)": `${(L_flange * 1000).toFixed(0)} mm`,
+          "Ae (patín)": `${(A_flange * 1e6).toFixed(0)} mm²`,
+          "Rn cordón (nominal)": `${Rn_flange.toFixed(0)} kN`,
+          "φRn (diseño)": `${phiRn_flange.toFixed(0)} kN`,
+          "F_demand en patín (0.8Mp)": `${F_flange.toFixed(0)} kN`,
+          "Ratio F/φRn": `${ratio_weld.toFixed(3)} ${ratio_weld <= 1 ? "✓" : "✗"}`,
+          "Weld access hole": p.weld_access_hole > 0.5 ? "Sí (AWS D1.8 §6.10)" : "No",
+          "Dictamen soldadura": p.weld_type < 0.5
+            ? "CJP ✓ Demand-critical (AISC 358 §3.7)"
+            : ratio_weld <= 1 ? "✓ OK" : "✗ REVISAR garganta / electrodo",
+        };
+      })(),
       ...(() => {
         const nl = (states as any).__nlInfo;
         if (!nl) return { "── Solver FEM shells ──": "", "Tipo": "Lineal elástico" };
