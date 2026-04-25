@@ -100,6 +100,22 @@ export const edificioAporticado: ExampleDef = {
     // losa reticular con vigas profundas). OFF = diafragma flexible (losa delgada
     // con muros de corte discontínuos — ver ASCE 7-22 §12.3.1.2).
     diafragmaRigido: PE("Avanzado", "Diafragma rígido", 0, { "Flexible": 0, "Rígido (ASCE 7-22)": 1 }),
+    // ── Modelado de masa estilo ETABS / SAP2000 ──
+    // Self-weight: ρ·V de TODOS los elementos (default Hekatan, MÁS masa)
+    // From loads: DEAD + 0.25·LIVE como AREALOAD (default ETABS, MENOS masa)
+    massSource: PE("Avanzado", "Mass Source", 0, {
+      "Self-weight (peso propio)": 0,
+      "From Loads (DEAD+0.25·LIVE) ETABS": 1,
+    }),
+    qDead:  P("Avanzado", "qDead losa (kN/m²)", 3.5, 0.5, 10, 0.5),
+    qLive:  P("Avanzado", "qLive losa (kN/m²)", 1.5, 0.0, 6, 0.5),
+    // ── Cracked Section Modifiers ACI 318-22 §6.6.3.1.1 ──
+    // ETABS los aplica AUTOMÁTICAMENTE en hormigón. Reducen rigidez efectiva
+    // simulando fisuración bajo cargas de servicio sismicas.
+    crackedSections: PE("Avanzado", "Cracked Sections (ACI 318)", 0, {
+      "Off (sección bruta Ig)": 0,
+      "On: 0.7·Ig col / 0.35·Ig viga / 0.25·Ig losa": 1,
+    }),
   },
   /**
    * Genera sliders dinámicos SOLO para los pisos/vanos que realmente existen.
@@ -484,23 +500,51 @@ export const edificioAporticado: ExampleDef = {
     const mFactor = slabTypeVal === 2 ? 0.0 : 1.0;  // Plate-only: membrana=0
     const bFactor = slabTypeVal === 1 ? 0.0 : 1.0;  // Membrane-only: bending=0
 
+    // ── Cracked Section Modifiers ACI 318-22 §6.6.3.1.1 (estilo ETABS) ──
+    // Estos factores REDUCEN la rigidez efectiva (Ig → Ie). NO aplica a acero.
+    const isCrackedHormigon = p.crackedSections > 0.5;
+    const fCol_I = (p.matCol < 0.5 && isCrackedHormigon) ? 0.70 : 1.0;
+    const fVig_I = (p.matViga < 0.5 && isCrackedHormigon) ? 0.35 : 1.0;
+    const fSlab_b = isCrackedHormigon ? 0.25 : 1.0;  // bending de losa
+    const fSlab_m = isCrackedHormigon ? 1.0 : 1.0;   // membrana de losa NO se reduce
+
+    // ── Mass Source from Loads (estilo ETABS) ──
+    // Si massSource=1, calcular masa equivalente = (qDead + 0.25·qLive)/g · A_trib
+    // y override densities. Esto da MENOS masa total (típico en ETABS).
+    // Se aplica como densidad equivalente sobre el elemento shell de la losa.
+    // Para frames (cols, vigas) se mantiene peso propio (mass de elements).
+    const useMassFromLoads = p.massSource > 0.5;
+    const qMassEquiv_kNm2 = p.qDead + 0.25 * p.qLive;  // kN/m²
+    // Convertir a densidad volumétrica equivalente: ρ_eq = q/(g·t)
+    // Si en kN/m³: ρ_eq = q (kN/m²) / t_losa (m) ya está en kN/m³ porque g se cancela cuando se trata como peso.
+    // En awatif densities se trata como peso específico (kN/m³)
+    const rho_slab_equiv = useMassFromLoads ? qMassEquiv_kNm2 / Math.max(p.slabT, 0.05) : rho_c;
+
     for (let i = 0; i < elements.length; i++) {
-      densities.set(i, rho_c);
       const floor = elementFloor.get(i) ?? 0;
       if (slabIdx.has(i)) {
         elasticities.set(i, Ec); shearModuli.set(i, Gc); poissons.set(i, nu_c);
         thicknesses.set(i, p.slabT);
         // Aplicar property modifiers SOLO a las losas (no a muros)
-        membraneModifiers.set(i, mFactor);
-        bendingModifiers.set(i, bFactor);
+        // Si crackedSections ON: fSlab_b para bending, fSlab_m para membrana
+        membraneModifiers.set(i, mFactor * fSlab_m);
+        bendingModifiers.set(i, bFactor * fSlab_b);
+        // Densidad: si Mass Source = Loads, usar ρ equivalente (q/t)
+        densities.set(i, rho_slab_equiv);
       } else if (colIdx.has(i)) {
         const cp = colPropsAt(Math.min(floor, 7));
         elasticities.set(i, matColE); shearModuli.set(i, matColG); poissons.set(i, matColNu);
-        areas.set(i, cp.A); Iz.set(i, cp.Iz); Iy.set(i, cp.Iy); J.set(i, cp.J);
+        areas.set(i, cp.A);
+        Iz.set(i, cp.Iz * fCol_I); Iy.set(i, cp.Iy * fCol_I); J.set(i, cp.J);
+        // Si Mass Source = Loads, density de cols = 0 (la masa va solo en losa)
+        densities.set(i, useMassFromLoads ? 0 : rho_c);
       } else {
         const vp = vigaPropsAt(Math.min(floor, 7));
         elasticities.set(i, matVigaE); shearModuli.set(i, matVigaG); poissons.set(i, matVigaNu);
-        areas.set(i, vp.A); Iz.set(i, vp.Iz); Iy.set(i, vp.Iy); J.set(i, vp.J);
+        areas.set(i, vp.A);
+        Iz.set(i, vp.Iz * fVig_I); Iy.set(i, vp.Iy * fVig_I); J.set(i, vp.J);
+        // Si Mass Source = Loads, density de vigas = 0 (la masa va solo en losa)
+        densities.set(i, useMassFromLoads ? 0 : rho_c);
       }
     }
 

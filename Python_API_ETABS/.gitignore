@@ -1,0 +1,22 @@
+# Modelos ETABS — regenerables corriendo los scripts
+modelos/
+*.EDB
+*.LOG
+*.$et
+*.K_0
+*.K_I
+*.K_J
+*.K_M
+*.K_O
+*.OUT
+*.RST
+*.msh
+.msh
+
+# Logs con timestamp (se generan en cada run)
+logs/
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
