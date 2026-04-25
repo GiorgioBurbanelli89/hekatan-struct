@@ -71,7 +71,17 @@ docs/PRO/                        ← Documentación comercial
 ✅ Workspace web 100% gratis
 ✅ Validado contra OpenSees + ETABS
 
-## Plan Pro (privado, licencia comercial)
+## Plan Pro (privado · 🚧 BETA testing — no a la venta aún)
+
+> ⚠️ **ESTADO: BETA INTERNO.** El módulo no-lineal está en pruebas
+> intensivas. Validación cruzada en curso contra OpenSeesPy, CalculiX,
+> Code Aster y FEniCS antes de publicación comercial.
+>
+> **Precios y disponibilidad: por definir tras BETA.**
+> Si te interesa probar la BETA y dar feedback como early tester,
+> contactar al autor.
+
+Capacidades en desarrollo:
 
 ⭐ Solver no-lineal Newton-Raphson incremental
 ⭐ Return-mapping J2 (plasticidad de von Mises)
@@ -80,8 +90,7 @@ docs/PRO/                        ← Documentación comercial
 ⭐ Time-history dinámico (Newmark/HHT)
 ⭐ Pushover IDA (Incremental Dynamic Analysis)
 ⭐ Cyclic AISC 341 K3 con plasticidad real
-⭐ Soporte técnico + actualizaciones
-⭐ Precio sugerido: $50/mes o $400/año
+⭐ Soporte técnico + actualizaciones (post-release)
 
 ## Workflow de desarrollo
 
