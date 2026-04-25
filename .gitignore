@@ -2,7 +2,6 @@ dist
 node_modules
 .DS_Store
 website/src/examples/
-"clon awatif/"
 
 # ─── HEKATAN PRO STRUCT (no-lineal · licencia comercial) ────────────────
 # Estos folders/archivos contienen el solver no-lineal con Newton-Raphson J2
