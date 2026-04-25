@@ -12,7 +12,7 @@ import {
   AnalyzeOutputs,
   getLocalStiffnessMatrix,
   getTransformationMatrix,
-} from "awatif-fem";
+} from "hekatan-fem";
 import { multiply, transpose, norm, subtract } from "mathjs";
 
 export interface ReportInput {

@@ -1,5 +1,5 @@
 // Test: simple 4-node square with known answer
-import createModule from './awatif-fem/src/cpp/built/deform.js';
+import createModule from './hekatan-fem/src/cpp/built/deform.js';
 const mod = await createModule();
 
 function allocF64(data) {

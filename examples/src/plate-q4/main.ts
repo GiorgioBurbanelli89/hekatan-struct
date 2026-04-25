@@ -15,8 +15,8 @@
  */
 
 import van from "vanjs-core";
-import { plateQ4Solve, type PlateQ4Output } from "awatif-fem";
-import { getToolbar } from "awatif-ui";
+import { plateQ4Solve, type PlateQ4Output } from "hekatan-fem";
+import { getToolbar } from "hekatan-ui";
 
 // ── State ──
 const state = {

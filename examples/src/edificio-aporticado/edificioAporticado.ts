@@ -2,7 +2,7 @@
  * Edificio Aporticado — Pórtico 3D con parámetros completos estilo FEM Studio.
  * Organizado en folders: Geometría / Luces / Alturas / Secciones / Apoyo / Cargas / Avanzado.
  */
-import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
+import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import { buildEdificioCotas, makeLabel } from "../shared/cotas3D";
 import { etabsDiscretize, DISCRETIZE_OPTIONS } from "../shared/etabsDiscretization";

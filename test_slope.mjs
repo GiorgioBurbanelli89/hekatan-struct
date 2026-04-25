@@ -1,5 +1,5 @@
 // Quick test of slope SRM solver via WASM
-import createModule from './awatif-fem/src/cpp/built/deform.js';
+import createModule from './hekatan-fem/src/cpp/built/deform.js';
 
 const mod = await createModule();
 

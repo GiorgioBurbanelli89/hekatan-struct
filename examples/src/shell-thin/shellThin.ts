@@ -3,7 +3,7 @@
  * Cáscara delgada (membrana + flexión Kirchhoff) con apoyos en bordes.
  * Usa solver `deform` con shells Q4 (6 GDL/nodo).
  */
-import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
+import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 export const shellThin: ExampleDef = {

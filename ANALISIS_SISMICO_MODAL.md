@@ -213,21 +213,21 @@ Consecuencia:
 ```
 
 ### Archivos C++
-- `clon awatif/awatif-fem/src/cpp/modal.cpp` — solver modal default
-- `clon awatif/awatif-fem/src/cpp/modal_paz.cpp` — solver alternativo (con I0)
-- `clon awatif/awatif-fem/src/cpp/utils/getLocalStiffnessMatrix.cpp`
-- `clon awatif/awatif-fem/src/cpp/utils/getLocalMassMatrix.cpp` — masa con Ip=Iy+Iz
-- `clon awatif/awatif-fem/src/cpp/utils/getLocalMassMatrixPaz.cpp` — masa con I0
-- `clon awatif/awatif-fem/src/cpp/utils/getTransformationMatrix.cpp`
-- `clon awatif/awatif-fem/src/cpp/utils/getGlobalStiffnessMatrix.cpp`
-- `clon awatif/awatif-fem/src/cpp/utils/getGlobalMassMatrix.cpp`
-- `clon awatif/awatif-fem/src/cpp/utils/getGlobalMassMatrixPaz.cpp`
-- `clon awatif/awatif-fem/src/cpp/data-model.h`
+- `clon awatif/hekatan-fem/src/cpp/modal.cpp` — solver modal default
+- `clon awatif/hekatan-fem/src/cpp/modal_paz.cpp` — solver alternativo (con I0)
+- `clon awatif/hekatan-fem/src/cpp/utils/getLocalStiffnessMatrix.cpp`
+- `clon awatif/hekatan-fem/src/cpp/utils/getLocalMassMatrix.cpp` — masa con Ip=Iy+Iz
+- `clon awatif/hekatan-fem/src/cpp/utils/getLocalMassMatrixPaz.cpp` — masa con I0
+- `clon awatif/hekatan-fem/src/cpp/utils/getTransformationMatrix.cpp`
+- `clon awatif/hekatan-fem/src/cpp/utils/getGlobalStiffnessMatrix.cpp`
+- `clon awatif/hekatan-fem/src/cpp/utils/getGlobalMassMatrix.cpp`
+- `clon awatif/hekatan-fem/src/cpp/utils/getGlobalMassMatrixPaz.cpp`
+- `clon awatif/hekatan-fem/src/cpp/data-model.h`
 
 ### Archivos TypeScript
-- `clon awatif/awatif-fem/src/modalCpp.ts` — wrapper default
-- `clon awatif/awatif-fem/src/modalPazCpp.ts` — wrapper alternativo
-- `clon awatif/awatif-fem/src/data-model.ts`
+- `clon awatif/hekatan-fem/src/modalCpp.ts` — wrapper default
+- `clon awatif/hekatan-fem/src/modalPazCpp.ts` — wrapper alternativo
+- `clon awatif/hekatan-fem/src/data-model.ts`
 
 ### CLI nativos (g++)
 - `clon awatif/cli_modal_native.cpp` — Ejemplo 6.3 (Paz & Leigh)
@@ -319,22 +319,22 @@ Validado con 4 solvers: WASM browser, WASM Node, C++ nativo, Python/SciPy.
 ```bash
 cd "clon awatif"
 g++ -O2 -std=c++17 -static-libgcc -static-libstdc++ \
-    -I awatif-fem/src/cpp/eigen \
+    -I hekatan-fem/src/cpp/eigen \
     cli_paz13_1.cpp \
-    awatif-fem/src/cpp/utils/feHelpers.cpp \
-    awatif-fem/src/cpp/utils/getLocalStiffnessMatrix.cpp \
-    awatif-fem/src/cpp/utils/getLocalMassMatrix.cpp \
-    awatif-fem/src/cpp/utils/getLocalMassMatrixPaz.cpp \
-    awatif-fem/src/cpp/utils/getTransformationMatrix.cpp \
-    awatif-fem/src/cpp/utils/getGlobalStiffnessMatrix.cpp \
-    awatif-fem/src/cpp/utils/getGlobalMassMatrix.cpp \
-    awatif-fem/src/cpp/utils/getGlobalMassMatrixPaz.cpp \
+    hekatan-fem/src/cpp/utils/feHelpers.cpp \
+    hekatan-fem/src/cpp/utils/getLocalStiffnessMatrix.cpp \
+    hekatan-fem/src/cpp/utils/getLocalMassMatrix.cpp \
+    hekatan-fem/src/cpp/utils/getLocalMassMatrixPaz.cpp \
+    hekatan-fem/src/cpp/utils/getTransformationMatrix.cpp \
+    hekatan-fem/src/cpp/utils/getGlobalStiffnessMatrix.cpp \
+    hekatan-fem/src/cpp/utils/getGlobalMassMatrix.cpp \
+    hekatan-fem/src/cpp/utils/getGlobalMassMatrixPaz.cpp \
     -o cli_paz13_1.exe
 ```
 
 ### WASM (requiere emsdk)
 ```bash
-cd "clon awatif/awatif-fem"
+cd "clon awatif/hekatan-fem"
 source ../../emsdk/emsdk_env.sh
 npm run build
 # Exporta: _deform, _modal, _modal_paz

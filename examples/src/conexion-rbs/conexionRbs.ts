@@ -24,7 +24,7 @@ import {
   aiscK3StrainHistory,
   deform, analyze,
   type MenegottoPintoParams,
-} from "awatif-fem";
+} from "hekatan-fem";
 import { secantPlasticSolve } from "../shared/secantPlasticity";
 import { incrementalPushover } from "../shared/incrementalPushover";
 import { buildPushoverChart3D } from "../shared/pushoverChart3D";
@@ -41,7 +41,7 @@ import {
 } from "../shared/hysteresisChart3D";
 import { colormapPercentileRange } from "../shared/colorMapPercentile";
 import type { ExampleDef } from "../workspace/exampleRegistry";
-import type { Node, Element } from "awatif-fem";
+import type { Node, Element } from "hekatan-fem";
 import * as THREE from "three";
 
 export const conexionRbs: ExampleDef = {

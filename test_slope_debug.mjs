@@ -1,5 +1,5 @@
 // Debug test: check NR convergence step by step
-import createModule from './awatif-fem/src/cpp/built/deform.js';
+import createModule from './hekatan-fem/src/cpp/built/deform.js';
 const mod = await createModule();
 
 function allocF64(data) {

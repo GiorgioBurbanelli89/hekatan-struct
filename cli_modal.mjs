@@ -14,8 +14,8 @@ import { dirname, join } from "path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ── Load WASM module manually (Emscripten ES6 module) ──────────────
-const wasmPath = join(__dirname, "awatif-fem", "src", "cpp", "built", "deform.wasm");
-const jsPath = join(__dirname, "awatif-fem", "src", "cpp", "built", "deform.js");
+const wasmPath = join(__dirname, "hekatan-fem", "src", "cpp", "built", "deform.wasm");
+const jsPath = join(__dirname, "hekatan-fem", "src", "cpp", "built", "deform.js");
 
 // Dynamic import of the Emscripten module factory
 const createModule = (await import(pathToFileURL(jsPath).href)).default;

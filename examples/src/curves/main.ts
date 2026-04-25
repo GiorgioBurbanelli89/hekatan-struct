@@ -1,7 +1,7 @@
 import van, { State } from "vanjs-core";
 import * as THREE from "three";
-import { Node, Element, NodeInputs, ElementInputs, DeformOutputs, AnalyzeOutputs } from "awatif-fem";
-import { getToolbar, getParameters, Parameters, getViewer } from "awatif-ui";
+import { Node, Element, NodeInputs, ElementInputs, DeformOutputs, AnalyzeOutputs } from "hekatan-fem";
+import { getToolbar, getParameters, Parameters, getViewer } from "hekatan-ui";
 import { getCad3d, cadActive } from "../shared/getCad3d";
 
 // Init

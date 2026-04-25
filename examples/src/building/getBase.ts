@@ -5,7 +5,7 @@ import {
   LineBasicMaterial,
   LineSegments,
 } from "three";
-import { Element } from "awatif-fem";
+import { Element } from "hekatan-fem";
 
 export function getBase(): LineSegments {
   const base = new LineSegments(new BufferGeometry(), new LineBasicMaterial());

@@ -22,8 +22,8 @@ import {
   getLocalStiffnessMatrix,
   getTransformationMatrix,
   didacticSolveCpp,
-} from "awatif-fem";
-import type { Node, ElementInputs, NodeInputs } from "awatif-fem";
+} from "hekatan-fem";
+import type { Node, ElementInputs, NodeInputs } from "hekatan-fem";
 import type { ModelData } from "./calcTemplates";
 
 // Create math.js instance with all functions

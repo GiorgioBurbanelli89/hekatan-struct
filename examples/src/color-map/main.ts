@@ -1,6 +1,6 @@
 import * as math from "mathjs";
 import van, { State } from "vanjs-core";
-import { Element, Node } from "awatif-fem";
+import { Element, Node } from "hekatan-fem";
 import {
   getParameters,
   Parameters,
@@ -8,8 +8,8 @@ import {
   getColorMap,
   getLegend,
   getToolbar,
-} from "awatif-ui";
-import { getMesh } from "awatif-mesh";
+} from "hekatan-ui";
+import { getMesh } from "hekatan-mesh";
 
 // Init
 const parameters: Parameters = {

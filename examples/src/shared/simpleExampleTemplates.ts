@@ -2,7 +2,7 @@
  * Templates compactos para crear ExampleDefs simples con geometrías paramétricas.
  * Usados para los ~20 ejemplos restantes de FEM Studio (iconicos + Q4 + losas).
  */
-import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
+import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef, BuildStates, ModalPanelApi } from "../workspace/exampleRegistry";
 
 const Ec = 25e6, nu_c = 0.2, Gc = Ec / (2 * (1 + nu_c)), rho_c = 24;

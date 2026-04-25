@@ -15,7 +15,7 @@
  *   δ_top ≈ F·H³/(3·E·I) + κ·F·H/(G·A)     (flexión + corte)
  * donde I = t·W³/12,  A = t·W,  G = E/(2(1+ν)),  κ=1.2
  */
-import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
+import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 export const membrana: ExampleDef = {

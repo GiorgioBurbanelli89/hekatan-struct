@@ -2,7 +2,7 @@
  * Galpón (nave industrial) — columnas + cerchas arqueadas con diagonales + correas.
  * Portado desde FEM Studio `galpon(...)`.
  */
-import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
+import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 const Es = 200e6, nu_s = 0.3, Gs = Es / (2 * (1 + nu_s)), rho_s = 78;

@@ -4,7 +4,7 @@
  *   - Legacy (v6-v14): SYSTEM/JOINT/SHELL keyword blocks
  *   - Modern (v15+): TABLE: "..." format with key=value pairs
  */
-import type { Node, Element, NodeInputs, ElementInputs, SectionShape } from "awatif-fem";
+import type { Node, Element, NodeInputs, ElementInputs, SectionShape } from "hekatan-fem";
 
 export interface S2kModel {
   units: { force: string; length: string };

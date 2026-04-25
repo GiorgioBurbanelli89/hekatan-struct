@@ -35,7 +35,7 @@
  *  - Con geometría cuadrada → 4 triángulos isósceles (CSI auto)
  *  - Con rectangular → 2 triángulos + 2 trapecios
  */
-import { deform, analyze, type Node, type Element } from "awatif-fem";
+import { deform, analyze, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 const rho_c = 24;  // kN/m³ (hormigón)
@@ -192,7 +192,7 @@ export const membranaCSI: ExampleDef = {
   },
   runModal: function(p, states, modalPanel) {
     // Modal desacoplado del build — usar modalAnalysis si está disponible
-    import("awatif-fem").then(({ modalAnalysis }) => {
+    import("hekatan-fem").then(({ modalAnalysis }) => {
       try {
         const out = modalAnalysis(
           states.nodes.val, states.elements.val,

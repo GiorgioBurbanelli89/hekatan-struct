@@ -7,7 +7,7 @@ import type * as THREE from "three";
 import type {
   Node, Element, NodeInputs, ElementInputs,
   DeformOutputs, AnalyzeOutputs,
-} from "awatif-fem";
+} from "hekatan-fem";
 
 export interface ParamDef {
   default: number;

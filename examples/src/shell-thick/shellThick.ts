@@ -15,7 +15,7 @@
  * MITC4 captura flexión + corte transversal + membrana + drilling — ideal para
  * muros de corte donde la rigidez por flexión y corte son ambas relevantes.
  */
-import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
+import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 export const shellThick: ExampleDef = {

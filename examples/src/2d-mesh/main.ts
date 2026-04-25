@@ -1,7 +1,7 @@
 import van, { State } from "vanjs-core";
-import { getToolbar, getParameters, Parameters, getViewer } from "awatif-ui";
-import { Node, Element } from "awatif-fem";
-import { getMesh } from "awatif-mesh";
+import { getToolbar, getParameters, Parameters, getViewer } from "hekatan-ui";
+import { Node, Element } from "hekatan-fem";
+import { getMesh } from "hekatan-mesh";
 
 // Init
 const parameters: Parameters = {

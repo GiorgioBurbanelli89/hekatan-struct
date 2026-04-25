@@ -10,8 +10,8 @@ import {
   analyze,
   getLocalStiffnessMatrix,
   getTransformationMatrix,
-} from "awatif-fem";
-import { getViewer, getToolbar } from "awatif-ui";
+} from "hekatan-fem";
+import { getViewer, getToolbar } from "hekatan-ui";
 import { multiply, transpose, norm, subtract } from "mathjs";
 import { setupElementPicker } from "./elementPicker";
 import { renderFemPanel } from "./renderSteps";
@@ -213,7 +213,7 @@ const viewerEl = getViewer({
 document.body.append(viewerEl, femPanelDiv);
 document.body.append(
   getToolbar({
-    sourceCode: "https://github.com/GiorgioBurbanelli89/awatif-workspace/blob/awatif-fem-v2-shells-nonlinear/examples/src/fem-explained/main.ts",
+    sourceCode: "https://github.com/GiorgioBurbanelli89/awatif-workspace/blob/hekatan-fem-v2-shells-nonlinear/examples/src/fem-explained/main.ts",
   })
 );
 

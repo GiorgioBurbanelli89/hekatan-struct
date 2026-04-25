@@ -1,6 +1,6 @@
 """
 ============================================================================
-  VALIDACIÓN: Placa Q4 awatif-fem vs OpenSeesPy
+  VALIDACIÓN: Placa Q4 hekatan-fem vs OpenSeesPy
 ============================================================================
 
   Crea un modelo de placa en OpenSees usando ShellMITC4 (Mindlin-Reissner),
@@ -54,7 +54,7 @@ NAVIER_REF = {
 
 def main():
     print("=" * 72)
-    print("  VALIDACIÓN: Placa Q4 — awatif-fem vs OpenSeesPy (ShellMITC4)")
+    print("  VALIDACIÓN: Placa Q4 — hekatan-fem vs OpenSeesPy (ShellMITC4)")
     print("=" * 72)
     print()
     print(f"  Placa:     {Lx} x {Ly} m, t = {t} m")

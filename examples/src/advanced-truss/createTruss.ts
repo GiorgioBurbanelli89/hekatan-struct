@@ -1,4 +1,4 @@
-import { Node, Element } from "awatif-fem";
+import { Node, Element } from "hekatan-fem";
 
 export function createTruss(
   span: number,

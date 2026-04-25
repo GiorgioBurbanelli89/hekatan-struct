@@ -26,7 +26,7 @@
  * más importante que un solver lineal ocultaría. Para estudios detallados el
  * paso siguiente es Newton-Raphson con return-mapping J2 (módulo futuro).
  */
-import { deform, analyze, type Node, type Element } from "awatif-fem";
+import { deform, analyze, type Node, type Element } from "hekatan-fem";
 
 export interface SecantPlasticityInput {
   nodes: Node[];

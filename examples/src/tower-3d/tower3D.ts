@@ -2,7 +2,7 @@
  * Torre 3D con diagonales — pórtico 3D simple con 4 columnas + vigas + diagonales por piso.
  * Portado desde FEM Studio `generate3d()`.
  */
-import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
+import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 const Ec = 25e6, nu_c = 0.2, Gc = Ec / (2 * (1 + nu_c)), rho_c = 24;

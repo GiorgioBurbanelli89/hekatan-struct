@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Placa Q4 awatif-fem WASM vs SAP2000 v24
+Placa Q4 hekatan-fem WASM vs SAP2000 v24
 ========================================
 Basado en 02_zapata_plate_comparison.py (ejemplo funcional)
 

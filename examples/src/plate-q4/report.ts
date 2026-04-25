@@ -11,7 +11,7 @@
  * ============================================================================
  */
 
-import { plateQ4Solve, type PlateQ4Output } from "awatif-fem";
+import { plateQ4Solve, type PlateQ4Output } from "hekatan-fem";
 
 // ── Default parameters ──
 const P = {
@@ -198,7 +198,7 @@ function buildReport(): string {
     <p style="color:#666; font-size:13px">Elemento isoparamétrico de 4 nodos con Integración Selectiva Reducida (SRI)</p>
   </div>
   <div class="meta">
-    <strong>Hekatan Calc / awatif-fem</strong><br>
+    <strong>Hekatan Calc / hekatan-fem</strong><br>
     ${new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })}<br>
     Solver WASM (Eigen C++) — ${dt.toFixed(0)} ms
   </div>
@@ -642,7 +642,7 @@ function buildReport(): string {
 
 <!-- ═══════════ STAMP ═══════════ -->
 <div class="stamp">
-  Generado por <strong>Hekatan Calc</strong> / awatif-fem WASM (Eigen C++ → Emscripten)<br>
+  Generado por <strong>Hekatan Calc</strong> / hekatan-fem WASM (Eigen C++ → Emscripten)<br>
   Validado contra: (1) Navier analítico, (2) OpenSees ShellMITC4, (3) SAP2000 v24 Plate-Thick, (4) Python/NumPy/SciPy<br>
   ${new Date().toISOString()}
 </div>

@@ -1,4 +1,4 @@
-import { Node } from "awatif-fem";
+import { Node } from "hekatan-fem";
 import type { BeamFemSteps, FemStep } from "./femSteps";
 
 declare const katex: {

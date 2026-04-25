@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import van from "vanjs-core";
-import { Text } from "awatif-ui/src/viewer/objects/Text";
+import { Text } from "hekatan-ui/src/viewer/objects/Text";
 import type { CadState, ViewerContext } from "./types";
 import { getGridBounds } from "./gridSystem";
 

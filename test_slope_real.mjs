@@ -1,5 +1,5 @@
-// Real slope test using getMesh from awatif-mesh
-import createModule from './awatif-fem/src/cpp/built/deform.js';
+// Real slope test using getMesh from hekatan-mesh
+import createModule from './hekatan-fem/src/cpp/built/deform.js';
 const mod = await createModule();
 
 function allocF64(data) {

@@ -1,5 +1,5 @@
 import { State } from "vanjs-core";
-import { Node, Element } from "awatif-fem";
+import { Node, Element } from "hekatan-fem";
 import * as THREE from "three";
 
 /**

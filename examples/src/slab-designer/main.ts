@@ -8,8 +8,8 @@ import {
   getReport,
   getParameters,
   Parameters,
-} from "awatif-ui";
-import { deform, Mesh, analyze } from "awatif-fem";
+} from "hekatan-ui";
+import { deform, Mesh, analyze } from "hekatan-fem";
 import { Building } from "../building/data-model";
 import { getBase, getBaseGeometry } from "../building/getBase";
 import { getSolids, getSolidsGeometry } from "../building/getSolids";

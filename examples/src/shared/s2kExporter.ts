@@ -2,7 +2,7 @@
  * SAP2000 .s2k File Exporter (v24 TABLE format)
  * Format matches SAP2000 v24.1.0 native .$2k export exactly
  */
-import type { Node, Element, NodeInputs, ElementInputs } from "awatif-fem";
+import type { Node, Element, NodeInputs, ElementInputs } from "hekatan-fem";
 
 export interface S2kExportInput {
   nodes: Node[];

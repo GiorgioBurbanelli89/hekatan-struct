@@ -24,7 +24,7 @@
  */
 import type { State } from "vanjs-core";
 import * as THREE from "three";
-import type { Node, Element, ModalOutputs } from "awatif-fem";
+import type { Node, Element, ModalOutputs } from "hekatan-fem";
 
 export interface ModalAnimatorConfig {
   /** Reactive mesh del viewer (nodes + elements + deformOutputs del workspace) */
@@ -87,7 +87,7 @@ export interface ModalAnimator {
 
 /**
  * Crea un animador modal para el viewer. El viewer debe tener un `__ctx` en
- * su DOM element (getViewer de awatif-ui lo expone).
+ * su DOM element (getViewer de hekatan-ui lo expone).
  */
 export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
   const { mesh, viewerElm, onStatusChange } = cfg;

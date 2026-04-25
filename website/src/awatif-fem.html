@@ -138,7 +138,7 @@ breadcrumb: FEM Solver
           <div>
             <h2 id="install" class="mb-3 text-lg text-gray-800 font-bold">Installation</h2>
 
-            <pre><code class="language-ts">npm install awatif-fem</code></pre>
+            <pre><code class="language-ts">npm install hekatan-fem</code></pre>
           </div>
           <!-- End Installation -->
 
@@ -147,7 +147,7 @@ breadcrumb: FEM Solver
             <h3 class="mb-3 text-lg text-gray-800 font-bold">Usage</h3>
 
             <pre class="grid grid-cols-1"><code class="language-ts">import { Node, Element, AnalysisInputs, AnalysisOutputs } from "awatif-data-model";
-import { analyze } from "awatif-fem";
+import { analyze } from "hekatan-fem";
 
 const nodes: Node[] = [
   [0, 0, 3],
@@ -229,12 +229,12 @@ const expectedAnalysisOutputs: AnalysisOutputs = {
               </li>
               <li>
                 Examples from the book: A First Course in the Finite Element Method by Daryl L. Logan 6th edition -
-                <a href="https://github.com/madil4/awatif/tree/main/awatif-fem/src/analyze.test.ts" class="text-primary-light hover:underline">source code</a>
+                <a href="https://github.com/madil4/awatif/tree/main/hekatan-fem/src/analyze.test.ts" class="text-primary-light hover:underline">source code</a>
               </li>
             </ol>
 
             <p class="mb-3">When you toggle the bending moment setting located at the top-left corner, you should see this:</p>
-            <img class="w-3/4" src="/img/awatif-ui/portal-frame.jpg" alt="portal-frame bending moment" />
+            <img class="w-3/4" src="/img/hekatan-ui/portal-frame.jpg" alt="portal-frame bending moment" />
           </div>
           <!-- End Examples -->
 
@@ -294,11 +294,11 @@ const expectedAnalysisOutputs: AnalysisOutputs = {
                             Similarly, for rotation, the right-hand curl rule is adopted.
                             <div class="my-3 grid sm:grid-cols-2 gap-2">
                               <div>
-                                <img class="h-60" src="/img/awatif-fem/right-hand-rule.jpg" />
+                                <img class="h-60" src="/img/hekatan-fem/right-hand-rule.jpg" />
                                 <p class="text-xs text-gray-500">Right-hand rule</p>
                               </div>
                               <div>
-                                <img class="h-60" src="/img/awatif-fem/right-hand-curl-rule.jpg" />
+                                <img class="h-60" src="/img/hekatan-fem/right-hand-curl-rule.jpg" />
                                 <p class="text-xs text-gray-500">Right-hand curl rule</p>
                               </div>
                             </div>
@@ -323,7 +323,7 @@ const expectedAnalysisOutputs: AnalysisOutputs = {
               <!-- End analyze -->
             </div>
 
-            <a href="https://github.com/madil4/awatif/tree/main/awatif-fem" class="text-primary-light hover:underline">source code</a> -
+            <a href="https://github.com/madil4/awatif/tree/main/hekatan-fem" class="text-primary-light hover:underline">source code</a> -
             <a href="/terms-and-privacy" class="text-primary-light hover:underline">terms and privacy</a>
           </div>
           <!-- End API Reference -->

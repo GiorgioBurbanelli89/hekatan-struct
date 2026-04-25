@@ -26,7 +26,7 @@ export default defineConfig({
     // Force single instance of vanjs-core (avoids symlink duplication)
     alias: [
       { find: /^vanjs-core$/, replacement: path.resolve(__dirname, "../node_modules/vanjs-core") },
-      { find: /^mathjs$/, replacement: path.resolve(__dirname, "../awatif-fem/node_modules/mathjs") },
+      { find: /^mathjs$/, replacement: path.resolve(__dirname, "../hekatan-fem/node_modules/mathjs") },
     ],
     dedupe: ["vanjs-core", "three", "mathjs"],
     preserveSymlinks: false,
@@ -92,7 +92,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ["awatif-fem", "awatif-mesh", "awatif-ui"],
+    exclude: ["hekatan-fem", "hekatan-mesh", "hekatan-ui"],
   },
-  plugins: [topLevelAwait()], // used by awatif-fem & awatif-mesh to load wasm at top level
+  plugins: [topLevelAwait()], // used by hekatan-fem & hekatan-mesh to load wasm at top level
 });

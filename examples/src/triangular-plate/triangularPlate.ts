@@ -16,7 +16,7 @@
  *   - Bathe, Finite Element Procedures 2nd Ed §5.4.2
  *   - Timoshenko & Woinowsky-Krieger, Theory of Plates and Shells §42
  */
-import { mitc3Solve, type Node, type Element } from "awatif-fem";
+import { mitc3Solve, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 export const triangularPlate: ExampleDef = {
@@ -95,7 +95,7 @@ export const triangularPlate: ExampleDef = {
       const nodes3D: Node[] = out.nodeResults.map((n) => [n.x, n.y, 0]);
 
       // Shell mesh: convertir triángulos MITC3 a Q4 degenerados (repeat último nodo)
-      // para que awatif-ui los renderice como shells. Alternativa: usar elementos triangulares.
+      // para que hekatan-ui los renderice como shells. Alternativa: usar elementos triangulares.
       const elements3D: Element[] = out.elementResults.map((e) => e.nodes as unknown as Element);
 
       states.nodes.val = nodes3D;

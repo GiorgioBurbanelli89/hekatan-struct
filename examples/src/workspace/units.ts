@@ -1,7 +1,7 @@
 /**
  * Sistema de unidades global para el workspace Tweakpane.
  *
- * CONVENCIÓN INTERNA: Todos los cálculos y la API de awatif-fem usan
+ * CONVENCIÓN INTERNA: Todos los cálculos y la API de hekatan-fem usan
  * SI estructural: fuerza en kN, momento en kN·m, longitud/desplazamiento
  * en metros. Lo que el usuario ve y ajusta en los sliders se convierte
  * on-the-fly a/desde estas unidades base.

@@ -8,7 +8,7 @@
  *   POINT ASSIGNS (restraints), LINE ASSIGNS (section assignment),
  *   FRAME OBJECT LOADS
  */
-import type { Node, Element, NodeInputs, ElementInputs, SectionShape } from "awatif-fem";
+import type { Node, Element, NodeInputs, ElementInputs, SectionShape } from "hekatan-fem";
 
 export interface E2kGrid {
   label: string;   // "A", "B", "1", "2", etc.

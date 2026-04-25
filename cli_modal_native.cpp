@@ -4,21 +4,21 @@
  * Example 6.3 Space Frame (Paz & Leigh) — No diagonals
  *
  * Build:
- *   g++ -O2 -std=c++17 -I awatif-fem/src/cpp/eigen \
+ *   g++ -O2 -std=c++17 -I hekatan-fem/src/cpp/eigen \
  *       cli_modal_native.cpp \
- *       awatif-fem/src/cpp/utils/feHelpers.cpp \
- *       awatif-fem/src/cpp/utils/getLocalStiffnessMatrix.cpp \
- *       awatif-fem/src/cpp/utils/getLocalMassMatrix.cpp \
- *       awatif-fem/src/cpp/utils/getTransformationMatrix.cpp \
- *       awatif-fem/src/cpp/utils/getGlobalStiffnessMatrix.cpp \
- *       awatif-fem/src/cpp/utils/getGlobalMassMatrix.cpp \
+ *       hekatan-fem/src/cpp/utils/feHelpers.cpp \
+ *       hekatan-fem/src/cpp/utils/getLocalStiffnessMatrix.cpp \
+ *       hekatan-fem/src/cpp/utils/getLocalMassMatrix.cpp \
+ *       hekatan-fem/src/cpp/utils/getTransformationMatrix.cpp \
+ *       hekatan-fem/src/cpp/utils/getGlobalStiffnessMatrix.cpp \
+ *       hekatan-fem/src/cpp/utils/getGlobalMassMatrix.cpp \
  *       -o cli_modal_native.exe
  *
  * Run:
  *   ./cli_modal_native.exe
  */
 
-#include "awatif-fem/src/cpp/data-model.h"
+#include "hekatan-fem/src/cpp/data-model.h"
 #include <vector>
 #include <map>
 #include <cmath>

@@ -7,7 +7,7 @@
  * envuelve los shells de la zona gobernante.
  */
 import * as THREE from "three";
-import type { Node, Element } from "awatif-fem";
+import type { Node, Element } from "hekatan-fem";
 import type { ZoneKey } from "./componentZones";
 
 export function buildGoverningMarker(

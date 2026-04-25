@@ -21,8 +21,8 @@
  *   - Fisher & Kloiber, "Base Plate and Anchor Rod Design", 2006
  */
 import type { ExampleDef } from "../workspace/exampleRegistry";
-import type { Node, Element } from "awatif-fem";
-import { deform, analyze } from "awatif-fem";
+import type { Node, Element } from "hekatan-fem";
+import { deform, analyze } from "hekatan-fem";
 import { secantPlasticSolve } from "../shared/secantPlasticity";
 import { colormapPercentileRange } from "../shared/colorMapPercentile";
 import * as THREE from "three";

@@ -7,7 +7,7 @@ import {
   AnalyzeOutputs,
   getLocalStiffnessMatrix,
   getTransformationMatrix,
-} from "awatif-fem";
+} from "hekatan-fem";
 import { multiply, transpose, norm, subtract, flatten } from "mathjs";
 
 export interface FemStep {
@@ -67,7 +67,7 @@ export function computeBeamSteps(
   const EIy = (E_val * Iy) / L ** 3;
   const GJ = (G_val * J_val) / L;
 
-  // Compute matrices using awatif-fem functions
+  // Compute matrices using hekatan-fem functions
   const kLocal = getLocalStiffnessMatrix(elmNodes, elementInputs, elementIndex);
   const T = getTransformationMatrix(elmNodes);
   const kGlobal = multiply(transpose(T), multiply(kLocal, T)) as number[][];

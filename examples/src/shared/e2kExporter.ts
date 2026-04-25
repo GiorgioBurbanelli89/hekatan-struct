@@ -6,7 +6,7 @@
  *    re-emit the original raw text for each section exactly as ETABS wrote it.
  *  - When no e2kModel exists (model created from scratch), reconstruct best-effort.
  */
-import type { Node, Element, NodeInputs, ElementInputs, SectionShape } from "awatif-fem";
+import type { Node, Element, NodeInputs, ElementInputs, SectionShape } from "hekatan-fem";
 import type { E2kModel } from "./e2kParser";
 
 export interface ExportE2kInput {

@@ -14,8 +14,8 @@
  * Referencia: F. Crisafulli (2018) + AISC 358-22 §7.
  */
 import type { ExampleDef } from "../workspace/exampleRegistry";
-import type { Node, Element } from "awatif-fem";
-import { deform, analyze } from "awatif-fem";
+import type { Node, Element } from "hekatan-fem";
+import { deform, analyze } from "hekatan-fem";
 import { colormapPercentileRange } from "../shared/colorMapPercentile";
 import * as THREE from "three";
 

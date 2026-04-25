@@ -6,9 +6,9 @@ import {
   ElementInputs,
   DeformOutputs,
   AnalyzeOutputs,
-} from "awatif-fem";
-import { analyze, deform } from "awatif-fem";
-import { getToolbar, getParameters, Parameters, getViewer } from "awatif-ui";
+} from "hekatan-fem";
+import { analyze, deform } from "hekatan-fem";
+import { getToolbar, getParameters, Parameters, getViewer } from "hekatan-ui";
 
 // ============================================================================
 // Verificacion: Barra Axial Simple

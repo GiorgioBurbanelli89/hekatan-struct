@@ -1,4 +1,4 @@
-import { ModalOutputs } from "awatif-fem";
+import { ModalOutputs } from "hekatan-fem";
 
 export interface ModalTableConfig {
   /** Title shown above the table, e.g. "Example 6.3 Space Frame" */

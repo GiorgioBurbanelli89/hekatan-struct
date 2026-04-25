@@ -2,7 +2,7 @@
  * Cercha 2D — truss paralelo con diagonales en K (patrón Warren).
  * Portado desde FEM Studio `generateTruss()` en getCad3d.ts.
  */
-import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
+import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 const Es = 200e6;       // acero kN/m²

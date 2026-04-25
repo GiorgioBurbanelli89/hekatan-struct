@@ -2,7 +2,7 @@
  * Pórtico 2D — marco plano con columnas + viga, carga lateral (Ex) y vertical (CM+CV).
  * Portado desde FEM Studio `generateBeams()`.
  */
-import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
+import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 const Ec = 25e6, nu_c = 0.2, Gc = Ec / (2 * (1 + nu_c)), rho_c = 24;

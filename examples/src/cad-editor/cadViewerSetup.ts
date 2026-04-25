@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { Text } from "awatif-ui/src/viewer/objects/Text";
+import { Text } from "hekatan-ui/src/viewer/objects/Text";
 import type { ViewerContext } from "./types";
 
 /**

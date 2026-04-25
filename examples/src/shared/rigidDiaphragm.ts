@@ -39,7 +39,7 @@
  *  rígido nativo C++".
  * =============================================================================
  */
-import type { Node, Element } from "awatif-fem";
+import type { Node, Element } from "hekatan-fem";
 
 export interface DiaphragmResult {
   /** Nodos agregados (un master por piso) al final del array `nodes` */

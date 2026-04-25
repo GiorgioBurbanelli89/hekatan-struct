@@ -1,4 +1,4 @@
-import { deform } from './awatif-fem/src/deform.js';
+import { deform } from './hekatan-fem/src/deform.js';
 
 // Test with 1x1, 2x2, 4x4, 8x8 mesh and distributed load on top edge
 for (const nDiv of [1, 2, 4, 8]) {

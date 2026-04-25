@@ -16,7 +16,7 @@
  *    0.80–1.00  → ⚠ amarillo (cerca del límite, revisar)
  *    > 1.00     → ✗ rojo     (excede capacidad)
  */
-import type { Node, Element } from "awatif-fem";
+import type { Node, Element } from "hekatan-fem";
 
 export type ZoneKey =
   | "RBS_top"

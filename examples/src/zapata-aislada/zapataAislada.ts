@@ -10,7 +10,7 @@
  */
 import * as THREE from "three";
 import van from "vanjs-core";
-import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
+import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import { activeExampleVersion } from "../workspace/exampleVersion";
 

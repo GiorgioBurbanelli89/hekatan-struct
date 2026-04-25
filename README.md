@@ -107,7 +107,7 @@ Every example exports an `ExampleDef` with:
 │                    Browser                            │
 │                                                      │
 │  ┌─────────────┐  ┌──────────────┐  ┌─────────────┐ │
-│  │  awatif-ui  │  │  awatif-fem  │  │   examples  │ │
+│  │  hekatan-ui  │  │  hekatan-fem  │  │   examples  │ │
 │  │  Three.js   │  │  C++/WASM    │  │  Workspace  │ │
 │  │  VanJS      │  │  Eigen 3.4   │  │  Tweakpane  │ │
 │  │  Tweakpane  │  │  SparseLU    │  │  25+ demos  │ │
@@ -126,11 +126,11 @@ Every example exports an `ExampleDef` with:
 
 | Package | Description |
 |---------|-------------|
-| `awatif-fem` | FEM solver: `deform()`, `analyze()`, `modalAnalysis()`, `plateQ4Solve()`, `planeQ4Solve()`, C++/WASM bindings |
-| `awatif-ui` | UI: `getViewer()` (Three.js + colormap + legend), `getToolbar()`; exports reactive `colorMapForceUnit`, `colorMapDispUnit` |
+| `hekatan-fem` | FEM solver: `deform()`, `analyze()`, `modalAnalysis()`, `plateQ4Solve()`, `planeQ4Solve()`, C++/WASM bindings |
+| `hekatan-ui` | UI: `getViewer()` (Three.js + colormap + legend), `getToolbar()`; exports reactive `colorMapForceUnit`, `colorMapDispUnit` |
 | `examples` | Unified workspace + 25+ self-contained examples + `getCad3d.ts` legacy FEM Studio (being phased out) |
 
-### C++ Solver (awatif-fem/src/cpp/)
+### C++ Solver (hekatan-fem/src/cpp/)
 
 | File | Description |
 |------|-------------|
@@ -149,7 +149,7 @@ Every example exports an `ExampleDef` with:
 
 | File | Description |
 |------|-------------|
-| `awatif-fem/src/planeQ4.ts` | Q4 plane-stress element (`planeQ4Solve`): 2 DOFs/node, 2×2 Gauss, LU dense with partial pivoting, stress recovery (σxx, σyy, τxy, von Mises, principal) |
+| `hekatan-fem/src/planeQ4.ts` | Q4 plane-stress element (`planeQ4Solve`): 2 DOFs/node, 2×2 Gauss, LU dense with partial pivoting, stress recovery (σxx, σyy, τxy, von Mises, principal) |
 
 ### Import/Export
 
@@ -179,7 +179,7 @@ cd emsdk && ./emsdk install latest && ./emsdk activate latest
 source ./emsdk_env.sh
 
 # Compile solver
-cd awatif-fem/src/cpp
+cd hekatan-fem/src/cpp
 em++ -O2 -Ieigen -I. \
   didactic.cpp utils/*.cpp \
   -sEXPORTED_FUNCTIONS=[_didactic_solve,_malloc,_free] \

@@ -22,7 +22,7 @@
  */
 import * as THREE from "three";
 import van from "vanjs-core";
-import { deform, analyze, type Node, type Element } from "awatif-fem";
+import { deform, analyze, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 // Importar desde exampleVersion (no exampleRegistry) para evitar TDZ circular.
 import { activeExampleVersion } from "../workspace/exampleVersion";

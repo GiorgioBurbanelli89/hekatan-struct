@@ -1,4 +1,4 @@
-import { deform } from './awatif-fem/src/deform.js';
+import { deform } from './hekatan-fem/src/deform.js';
 
 // Single element, check all DOFs
 const nodes: [number,number,number][] = [

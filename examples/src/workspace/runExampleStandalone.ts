@@ -9,8 +9,8 @@ import { Pane } from "tweakpane";
 import {
   Node, Element, NodeInputs, ElementInputs,
   DeformOutputs, AnalyzeOutputs,
-} from "awatif-fem";
-import { getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit } from "awatif-ui";
+} from "hekatan-fem";
+import { getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit } from "hekatan-ui";
 import type { ExampleDef, BuildStates } from "./exampleRegistry";
 import {
   forceUnit, dispUnit, fromKn, toKn, fromKnm, toKnm,

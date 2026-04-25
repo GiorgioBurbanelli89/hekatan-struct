@@ -1,25 +1,27 @@
 {
-  "name": "awatif",
-  "description": "The First Web-based Parametric Structural Engineering Platform",
+  "name": "hekatan-struct",
+  "description": "Hekatan Struct — Parametric Structural FEM (fork of awatif by Mohamed Adil)",
   "keywords": [
-    "awatif",
+    "hekatan",
+    "hekatan-struct",
     "parametricdesign",
     "computationaldesign",
     "structuralengineering",
-    "parametricmodeling"
+    "parametricmodeling",
+    "fem"
   ],
-  "author": "Mohamed Adil",
+  "author": "Giorgio Burbanelli (fork) — original: Mohamed Adil",
   "license": "MIT",
-  "homepage": "https://awatif.co/",
+  "homepage": "https://giorgioburbanelli89.github.io/hekatan-struct/workspace/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/madil4/awatif"
+    "url": "https://github.com/GiorgioBurbanelli89/hekatan-struct"
   },
   "scripts": {
-    "dev:fem": "npm run dev -w awatif-fem",
-    "build:fem": "npm run build -w awatif-fem",
-    "dev:mesh": "npm run dev -w awatif-mesh",
-    "dev:ui": "npm run dev -w awatif-ui",
+    "dev:fem": "npm run dev -w hekatan-fem",
+    "build:fem": "npm run build -w hekatan-fem",
+    "dev:mesh": "npm run dev -w hekatan-mesh",
+    "dev:ui": "npm run dev -w hekatan-ui",
     "dev:examples": "npm run dev -w examples",
     "build:examples": "npm run build -w examples",
     "build:deploy": "cross-env DEPLOY_BASE=/hekatan-struct/ npm run build -w examples",
@@ -29,9 +31,9 @@
     "ncu": "ncu && echo 'Update npm packages'"
   },
   "workspaces": [
-    "awatif-fem",
-    "awatif-mesh",
-    "awatif-ui",
+    "hekatan-fem",
+    "hekatan-mesh",
+    "hekatan-ui",
     "examples",
     "website"
   ],

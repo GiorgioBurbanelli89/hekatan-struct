@@ -1,4 +1,4 @@
-import { Structure } from "awatif-fem";
+import { Structure } from "hekatan-fem";
 import { html, TemplateResult } from "lit-html";
 
 import "./template.css";

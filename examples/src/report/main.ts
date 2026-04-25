@@ -5,8 +5,8 @@ import {
   DeformOutputs,
   ElementInputs,
   NodeInputs,
-} from "awatif-fem";
-import { deform, analyze } from "awatif-fem";
+} from "hekatan-fem";
+import { deform, analyze } from "hekatan-fem";
 import van from "vanjs-core";
 import { State } from "vanjs-core/debug";
 import {
@@ -16,7 +16,7 @@ import {
   Parameters,
   getParameters,
   getViewer,
-} from "awatif-ui";
+} from "hekatan-ui";
 import { getCad3d } from "../shared/getCad3d";
 import { template } from "./template";
 

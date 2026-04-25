@@ -20,8 +20,8 @@ import { Pane } from "tweakpane";
 import {
   Node, Element, NodeInputs, ElementInputs,
   DeformOutputs, AnalyzeOutputs,
-} from "awatif-fem";
-import { getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit } from "awatif-ui";
+} from "hekatan-fem";
+import { getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit } from "hekatan-ui";
 import { createModalPanel } from "../shared/renderModalTable";
 import { createModalAnimator, type ModalAnimator } from "../shared/animateMode";
 // createModalAnimator también se llama en buildParamsPane() para re-wirear el
@@ -32,7 +32,7 @@ import {
   forceUnitSuffix, momentUnitSuffix, dispUnitSuffix, stripUnitSuffix,
 } from "./units";
 
-// Propagación de unidades al viewer de awatif-ui: cualquier cambio en
+// Propagación de unidades al viewer de hekatan-ui: cualquier cambio en
 // forceUnit/dispUnit del workspace se refleja en el colormap legend y en
 // el scaling de sus valores (kN/m² → tonf/m², mm → cm, etc.).
 van.derive(() => { colorMapForceUnit.val = forceUnit.val; });

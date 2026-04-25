@@ -1,12 +1,12 @@
 import van, { State } from "vanjs-core";
-import { Element, Node } from "awatif-fem";
+import { Element, Node } from "hekatan-fem";
 import {
   getViewer,
   Drawing,
   Parameters,
   getParameters,
   getToolbar,
-} from "awatif-ui";
+} from "hekatan-ui";
 import { toolbar } from "./toolbar";
 
 // Init

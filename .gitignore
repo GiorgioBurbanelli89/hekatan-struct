@@ -10,11 +10,11 @@ website/src/examples/
 # NO se sube al repo público (MIT). Se mantiene local + repo privado separado
 # (github.com/GiorgioBurbanelli89/hekatan-pro-struct).
 hekatan-pro-struct/
-awatif-fem-pro/
 hekatan-pro/
-awatif-fem/src/cpp/PRO/
-awatif-fem/src/cpp/built/deform-pro.wasm
-awatif-fem/src/cpp/built/deform-pro.js
+awatif-fem-pro/
+hekatan-fem/src/cpp/PRO/
+hekatan-fem/src/cpp/built/deform-pro.wasm
+hekatan-fem/src/cpp/built/deform-pro.js
 examples/src/**/*Pro.ts
 examples/src/conexion-*-pro/
 docs/PRO/

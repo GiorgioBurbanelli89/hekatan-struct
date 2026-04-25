@@ -19,7 +19,7 @@
 hekatan-struct/                  ← Repo público (github.com/GiorgioBurbanelli89/hekatan-struct)
 │
 ├── LICENSE                      ← MIT (todo lo público)
-├── awatif-fem/                  ← Solver lineal MIT
+├── hekatan-fem/                  ← Solver lineal MIT
 │   ├── src/cpp/
 │   │   ├── deform.cpp           ← lineal  (público)
 │   │   ├── modal.cpp            ← lineal  (público)
@@ -89,7 +89,7 @@ docs/PRO/                        ← Documentación comercial
 # Trabajar en código público (lineal, abierto)
 cd hekatan-struct/
 git checkout main
-# ... editar awatif-fem/, examples/, docs/
+# ... editar hekatan-fem/, examples/, docs/
 git push hekatan-struct main      # → repo público
 
 # Trabajar en código Pro (no-lineal, privado)
@@ -105,14 +105,14 @@ git push origin main   # → github.com/GiorgioBurbanelli89/hekatan-pro-struct (
 
 ### Build público (Free, sin no-lineal)
 ```bash
-emcc awatif-fem/src/cpp/deform.cpp ... \
-  -o awatif-fem/src/cpp/built/deform.wasm
+emcc hekatan-fem/src/cpp/deform.cpp ... \
+  -o hekatan-fem/src/cpp/built/deform.wasm
 # 4 MB, sin _nonlinear_*, _arc_length_*
 ```
 
 ### Build comercial (Pro, con no-lineal)
 ```bash
-emcc awatif-fem/src/cpp/deform.cpp \
+emcc hekatan-fem/src/cpp/deform.cpp \
      ../hekatan-pro-struct/src/cpp/nonlinear.cpp \
      ../hekatan-pro-struct/src/cpp/return_mapping_J2.cpp \
      ... \

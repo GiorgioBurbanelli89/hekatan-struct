@@ -9,9 +9,9 @@ import {
   plateQ4Solve,
   modalAnalysis,
   slopeSRM,
-} from "awatif-fem";
-import type { ModalOutputs } from "awatif-fem";
-import { getMesh } from "awatif-mesh";
+} from "hekatan-fem";
+import type { ModalOutputs } from "hekatan-fem";
+import { getMesh } from "hekatan-mesh";
 import { multiply, transpose, norm, subtract } from "mathjs";
 import type {
   Node,
@@ -20,9 +20,9 @@ import type {
   ElementInputs,
   DeformOutputs,
   AnalyzeOutputs,
-} from "awatif-fem";
-import type { ViewerContext3D } from "awatif-ui/src/viewer/getViewer";
-import { getTheme, getThemeName, onThemeChange } from "awatif-ui/src/theme";
+} from "hekatan-fem";
+import type { ViewerContext3D } from "hekatan-ui/src/viewer/getViewer";
+import { getTheme, getThemeName, onThemeChange } from "hekatan-ui/src/theme";
 import { UNIT_SYSTEMS, buildUnitSystem, FORCE_UNITS, LENGTH_UNITS, getGeneratorParams, getLoadParams, getSupportOptions, type UnitSystemId, type UnitSystem, type ForceUnitId, type LengthUnitId } from "./units";
 import { createModalPanel } from "./renderModalTable";
 import { STEEL_PROFILES, getWProfileOptions, getHSSProfileOptions } from "./steelProfiles";
@@ -2272,7 +2272,7 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
   function LOAD_PARAMS() { return getLoadParams(activeUnits); }
   let loadParams: Record<string, { val: number; min: number; max: number; step: number; label: string }> = {};
 
-  // ── Rebuild awatif-ui Parameters Tweakpane with generator params ──
+  // ── Rebuild hekatan-ui Parameters Tweakpane with generator params ──
   function setGenerator(name: string) {
     activeGenerator = name;
     cadActive.val = true;
@@ -9695,7 +9695,7 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
           </div>
         </div>
         <div style="margin-top:8px;border-top:1px solid var(--fem-border);padding-top:6px">
-          <div style="color:var(--fem-label);font-size:10px;margin-bottom:4px">RESUMEN (awatif-fem output):</div>
+          <div style="color:var(--fem-label);font-size:10px;margin-bottom:4px">RESUMEN (hekatan-fem output):</div>
           <div class="prop-row"><span class="prop-key">N (normal)</span><span class="result-val">[${N ? N.map(x=>fmt(x)).join(", ") : "—"}]</span></div>
           <div class="prop-row"><span class="prop-key">Vy (corte Y)</span><span class="result-val">[${Vy ? Vy.map(x=>fmt(x)).join(", ") : "—"}]</span></div>
           <div class="prop-row"><span class="prop-key">Vz (corte Z)</span><span class="result-val">[${Vz ? Vz.map(x=>fmt(x)).join(", ") : "—"}]</span></div>
@@ -10994,7 +10994,7 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
 
       try {
         // Dynamic import to avoid loading WASM until needed
-        const { cyclicPushover } = await import("awatif-fem/src/cyclicPushoverCpp");
+        const { cyclicPushover } = await import("hekatan-fem/src/cyclicPushoverCpp");
 
         const result = await cyclicPushover({
           colHeight: H_col,

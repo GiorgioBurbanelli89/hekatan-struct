@@ -28,7 +28,7 @@
  * =============================================================================
  */
 import * as THREE from "three";
-import type { Node, Element, ElementInputs, AnalyzeOutputs } from "awatif-fem";
+import type { Node, Element, ElementInputs, AnalyzeOutputs } from "hekatan-fem";
 
 export type HingeState = "Elastic" | "B" | "IO" | "LS" | "CP";
 
@@ -149,7 +149,7 @@ export function computeHinges(
   void fc_concrete;   // usado implícitamente vía ω; reservado para cálculos más finos en Fase B
 
   // Frame results: momentos en extremos i/j de cada elemento
-  // En awatif-fem, analyzeOutputs tiene generalmente `bending` o frame-specific
+  // En hekatan-fem, analyzeOutputs tiene generalmente `bending` o frame-specific
   // outputs. Para la Fase A usamos un approach simple: si no hay Mi/Mj disponibles
   // directamente, los calculamos del vector de deformaciones × K_local.
   const frameMoments = (analyzeOutputs as any).frameBendingMoments as

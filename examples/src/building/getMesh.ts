@@ -1,6 +1,6 @@
 import { subtract, divide, add, multiply, cross, norm } from "mathjs";
-import { Node, Element, NodeInputs, ElementInputs } from "awatif-fem";
-import { getMesh as getAwatifMesh } from "awatif-mesh";
+import { Node, Element, NodeInputs, ElementInputs } from "hekatan-fem";
+import { getMesh as getAwatifMesh } from "hekatan-mesh";
 import { Building } from "./data-model";
 
 // Todo: Add reference mesh

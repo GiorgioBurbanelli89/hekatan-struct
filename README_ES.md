@@ -42,7 +42,7 @@ npm run dev    # abre localhost:4600
 ## Arquitectura
 
 ```
-awatif-fem/     Solver FEM C++/Eigen compilado a WASM (334 KB)
+hekatan-fem/     Solver FEM C++/Eigen compilado a WASM (334 KB)
                 - deform.cpp (estatico), modal.cpp (eigenvalores)
                 - Shell Q4, vigas Timoshenko, brazos rigidos
                 - Eigen 3.4.0 SparseLU + GeneralizedEigenSolver
@@ -52,7 +52,7 @@ examples/       UI Three.js + modelos estructurales parametricos
                 - calc-editor/ (calculadora tipo MATLAB)
                 - tutorials/ (12 tutoriales interactivos FEM)
 
-awatif-ui/      Visor (Three.js), parametros (Tweakpane), toolbar (VanJS)
+hekatan-ui/      Visor (Three.js), parametros (Tweakpane), toolbar (VanJS)
 ```
 
 ## Stack Tecnologico

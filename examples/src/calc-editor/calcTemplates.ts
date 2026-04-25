@@ -4,7 +4,7 @@
  * TODOS los templates son ejemplos completos que funcionan sin errores.
  */
 
-import { Node, Element, NodeInputs, ElementInputs } from "awatif-fem";
+import { Node, Element, NodeInputs, ElementInputs } from "hekatan-fem";
 
 export interface ModelData {
   nodes: Node[];

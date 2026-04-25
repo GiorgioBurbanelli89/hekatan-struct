@@ -4,7 +4,7 @@
  */
 import { edificioAporticado } from "../edificio-aporticado/edificioAporticado";
 import { makeSimpleExample } from "./simpleExampleTemplates";
-import type { Node, Element } from "awatif-fem";
+import type { Node, Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 const P = (folder: string, label: string, def: number, min: number, max: number, step: number) =>

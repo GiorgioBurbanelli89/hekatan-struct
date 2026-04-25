@@ -1,0 +1,49 @@
+import * as THREE from "three";
+import van, { State } from "vanjs-core";
+import { Text } from "./Text";
+import { Node } from "hekatan-fem";
+import { Settings } from "../settings/getSettings";
+
+export function nodesIndexes(
+  settings: Settings,
+  derivedNodes: State<Node[]>,
+  derivedDisplayScale: State<number>
+): THREE.Group {
+  const group = new THREE.Group();
+  // on settings.nodesIndexes, and derivedNodes clear and create visuals
+  van.derive(() => {
+    if (!settings.nodesIndexes.val) return;
+
+    group.children.forEach((c) => (c as Text).dispose());
+    group.clear();
+
+    const size = 0.05 * settings.gridSize.val * 0.6;
+    derivedNodes.val.forEach((node, index) => {
+      const text = new Text(`${index}`);
+
+      text.position.set(...node);
+      text.updateScale(size * derivedDisplayScale.rawVal);
+
+      group.add(text);
+    });
+  });
+
+  // on settings.nodesIndexes and setting.displayScale or gridSize change
+  van.derive(() => {
+    derivedDisplayScale.val; // triggers update
+
+    if (!settings.nodesIndexes.rawVal) return;
+
+    const size = 0.05 * settings.gridSize.val * 0.6;
+    group.children.forEach((c) =>
+      (c as Text).updateScale(size * derivedDisplayScale.rawVal)
+    );
+  });
+
+  // on settings.nodesIndexes update visibility
+  van.derive(() => {
+    group.visible = settings.nodesIndexes.val;
+  });
+
+  return group;
+}

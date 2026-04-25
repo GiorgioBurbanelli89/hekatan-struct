@@ -2,7 +2,7 @@
  * Barra axial — elemento 1D con carga puntual en el extremo.
  * Portado desde FEM Studio `generateBarra()`.
  */
-import { deform, analyze, modalAnalysis, type Node, type Element } from "awatif-fem";
+import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 const Es = 200e6, nu_s = 0.3;

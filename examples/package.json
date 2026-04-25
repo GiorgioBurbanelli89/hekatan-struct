@@ -1,30 +1,31 @@
 {
   "name": "examples",
-  "description": "Awatif Examples",
+  "description": "Hekatan Struct Examples",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build"
   },
   "keywords": [
-    "awatif",
+    "hekatan",
     "parametricdesign",
     "computationaldesign",
     "structuralengineering",
     "parametricmodeling"
   ],
-  "author": "Mohamed Adil",
+  "author": "Giorgio Burbanelli (fork) — original: Mohamed Adil",
   "license": "MIT",
   "devDependencies": {
+    "@babel/runtime": "^7.29.2",
     "@types/three": "^0.169.0",
     "typescript": "~5.6.3",
     "vite": "~5.4.10",
     "vite-plugin-top-level-await": "^1.5.0"
   },
   "dependencies": {
-    "awatif-fem": "^1.0.0",
-    "awatif-mesh": "^1.0.0",
-    "awatif-ui": "^1.0.0",
+    "hekatan-fem": "^1.0.0",
+    "hekatan-mesh": "^1.0.0",
+    "hekatan-ui": "^1.0.0",
     "lit-html": "^3.2.1",
     "mathjs": "^14.4.0",
     "nerdamer": "^1.1.13",

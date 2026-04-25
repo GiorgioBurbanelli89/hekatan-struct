@@ -73,12 +73,12 @@ interface ParamDef {
 8. `autoFitCamera()` reencuadra isométrica sobre el modelo
 9. `buildParamsPane()` reconstruye Tweakpane con Vista / Unidades / Parámetros / Modal
 
-## Solver FEM (awatif-fem)
+## Solver FEM (hekatan-fem)
 
-**API pública** (`awatif-fem/src/index.ts`):
+**API pública** (`hekatan-fem/src/index.ts`):
 ```ts
 import { deform, analyze, modalAnalysis, modalAnalysisPaz,
-         plateQ4Solve, didacticSolveCpp, slopeSRM } from "awatif-fem";
+         plateQ4Solve, didacticSolveCpp, slopeSRM } from "hekatan-fem";
 ```
 
 | Función | Entrada | Salida |
@@ -106,7 +106,7 @@ plateQ4Solve({ theoryType: 2 })   // Plane stress (membrana)
 
 Retorna `elementResults[i].Mxx/Myy/Mxy/Qx/Qy` por elemento. El ejemplo debe poblar `analyzeOutputs.bendingXX/YY/XY` (Maps con array per-nodo del Q4) para que el viewer renderice el colormap.
 
-## Viewer (awatif-ui)
+## Viewer (hekatan-ui)
 
 **`getViewer({ mesh, objects3D?, settingsObj? })`** retorna `HTMLDivElement` con Tweakpane "Settings" interno. Expone `(viewerElm as any).__ctx = { scene, camera, controls, render, setActiveCamera, settings }` y `.__settings` para mutación desde fuera.
 
@@ -229,13 +229,13 @@ base: (() => {
 ```bash
 # Nativo (validación)
 g++ -O2 -std=c++17 -static-libgcc -static-libstdc++ \
-  -I awatif-fem/src/cpp/eigen -I awatif-fem/src/cpp \
-  cli_modal_native.cpp awatif-fem/src/cpp/utils/*.cpp \
+  -I hekatan-fem/src/cpp/eigen -I hekatan-fem/src/cpp \
+  cli_modal_native.cpp hekatan-fem/src/cpp/utils/*.cpp \
   -o cli_modal_native.exe
 
 # WASM (requiere emsdk)
 source /c/Users/j-b-j/emsdk/emsdk_env.sh
-# Script de build en awatif-fem/ — deform.cpp + utils/* → built/deform.{wasm,js}
+# Script de build en hekatan-fem/ — deform.cpp + utils/* → built/deform.{wasm,js}
 ```
 
 ## Cómo agregar un ejemplo nuevo
@@ -275,7 +275,7 @@ cd hekatan-struct && npm install && npm run dev:examples
 ## Gotchas
 
 - **NO usar `tasklist` sin `| head`** — output enorme, crashea
-- El WASM compilado está **versionado en git** (`awatif-fem/src/cpp/built/deform.*`). No necesitas emsdk para desarrollo, sólo para modificar C++
+- El WASM compilado está **versionado en git** (`hekatan-fem/src/cpp/built/deform.*`). No necesitas emsdk para desarrollo, sólo para modificar C++
 - `activeExampleVersion` invalida van.derive stale al cambiar de ejemplo — NO remover
 - `colorMapRanges` es por-campo (`{ pressure: [min,max] }`), no global — otros shell results mantienen auto-escala
 - `deformScale` se auto-computa en cada `loadExample`/`rebuild` — el usuario puede sobreescribir desde el slider pero se pierde al siguiente rebuild

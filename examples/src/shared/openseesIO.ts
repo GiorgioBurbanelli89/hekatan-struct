@@ -4,7 +4,7 @@
  * Awatif ↔ OpenSees format conversion for structural models.
  * Supports: nodes, elements (elasticBeamColumn), fixities, loads.
  */
-import type { Node, Element, NodeInputs, ElementInputs } from "awatif-fem";
+import type { Node, Element, NodeInputs, ElementInputs } from "hekatan-fem";
 import { norm, subtract } from "mathjs";
 
 export interface OpenseesModel {

@@ -2,7 +2,7 @@
  * Plate Thick — Mindlin-Reissner (FSDT)
  * Placa gruesa con deformación por cortante.
  */
-import { plateQ4Solve, modalAnalysis, type Node } from "awatif-fem";
+import { plateQ4Solve, modalAnalysis, type Node } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 export const plateThick: ExampleDef = {

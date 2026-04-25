@@ -28,7 +28,7 @@ import {
   modalAnalysis,
   type Node,
   type Element,
-} from "awatif-fem";
+} from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 export const plane: ExampleDef = {

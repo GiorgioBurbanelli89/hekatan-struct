@@ -1,6 +1,6 @@
 import van from "vanjs-core";
-import { Mesh } from "awatif-fem";
-import { Parameters, getParameters, getToolbar, getViewer } from "awatif-ui";
+import { Mesh } from "hekatan-fem";
+import { Parameters, getParameters, getToolbar, getViewer } from "hekatan-ui";
 import { Building } from "./data-model";
 import { getMesh } from "./getMesh";
 import { getBase, getBaseGeometry } from "./getBase";

@@ -1,5 +1,5 @@
 // Realistic slope test: ~100 elements
-import createModule from './awatif-fem/src/cpp/built/deform.js';
+import createModule from './hekatan-fem/src/cpp/built/deform.js';
 
 const mod = await createModule();
 

@@ -1,4 +1,4 @@
-import { deform } from './awatif-fem/src/deform.js';
+import { deform } from './hekatan-fem/src/deform.js';
 
 // Simply supported plate with central load (activates bending = ShellThick)
 // 1m x 1m plate, t=0.1m, E=2e7, nu=0.3

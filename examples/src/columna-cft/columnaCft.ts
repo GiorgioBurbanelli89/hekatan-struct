@@ -22,7 +22,7 @@ import {
   deform, type Node, type Element,
   discretizeCftCircular, discretizeCftRectangular,
   sectionForces, momentForAxial,
-} from "awatif-fem";
+} from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import { cftCapacity, cftCheck, type CftSectionInput } from "../shared/cftDesign";
 
