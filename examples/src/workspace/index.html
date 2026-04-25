@@ -40,8 +40,11 @@
       async
       src="//gc.zgo.at/count.js"
     ></script>
-    <!-- web-ifc WASM — ruta relativa: funciona tanto en dev (/workspace/) como en gh-pages (/hekatan-struct/workspace/) -->
-    <script src="./web-ifc-api-iife.js"></script>
+    <!-- web-ifc WASM — el archivo vive en `examples/public/` (vite lo copia al
+         ROOT del bundle, NO a workspace/). Por eso necesitamos `../`:
+           dev:        /workspace/             → ../web-ifc-api-iife.js → /web-ifc-api-iife.js
+           gh-pages:   /hekatan-struct/workspace/ → ../web-ifc-api-iife.js → /hekatan-struct/web-ifc-api-iife.js -->
+    <script src="../web-ifc-api-iife.js"></script>
   </head>
   <body>
     <script type="module" src="./main.ts"></script>

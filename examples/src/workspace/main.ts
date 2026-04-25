@@ -490,7 +490,11 @@ function buildParamsPane() {
   );
   pane.addBinding(selectorObj, "id", { label: "Ejemplo", options }).on("change", (e) => {
     const nextEx = examplesRegistry.find((x) => x.id === e.value);
-    if (nextEx) loadExample(nextEx);
+    // ── BUGFIX: defer loadExample a next tick. Si lo llamamos sincrónico,
+    // Tweakpane intenta actualizar su modelo interno DESPUÉS de que el
+    // handler retorna y para entonces el pane (el viejo) ya fue disposed
+    // por buildParamsPane(), lanzando "View has been already disposed". ──
+    if (nextEx) setTimeout(() => loadExample(nextEx), 0);
   });
 
   // ── Ejemplos legacy del upstream awatif: solo botón al standalone ──
