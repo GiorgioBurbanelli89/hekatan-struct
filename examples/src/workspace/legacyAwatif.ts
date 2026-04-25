@@ -65,7 +65,24 @@ export const legacySlabDesigner = legacy("slab-designer", "Hekatan – Slab Desi
 export const legacyFemExplained = legacy("fem-explained", "Hekatan – FEM Explained",    "Legacy · Educativo");
 export const legacyReport       = legacy("report",        "Hekatan – Report (Calcpad)", "Legacy · Educativo");
 
-/** Array completo de los 19 ejemplos legacy para registrar de un golpe. */
+// ─── Estructuras emblemáticas (extraídas de getCad3d.ts) ────────────
+export const iconicGatewayArch  = legacy("gateway-arch",         "Gateway Arch",                "Estructuras emblemáticas");
+export const iconicCableBridge  = legacy("cable-stayed-bridge",  "Puente Atirantado",           "Estructuras emblemáticas");
+export const iconicTwistedTower = legacy("twisted-tower",        "Torre Retorcida",             "Estructuras emblemáticas");
+export const iconicBurjKhalifa  = legacy("burj-khalifa",         "Burj Khalifa style",          "Estructuras emblemáticas");
+export const iconicSydneyOpera  = legacy("sydney-opera",         "Sydney Opera House",          "Estructuras emblemáticas");
+export const iconicDiagrid      = legacy("diagrid",              "Diagrid (Gherkin) style",     "Estructuras emblemáticas");
+export const iconicPergola      = legacy("pergola",              "Pérgola de acero",            "Estructuras emblemáticas");
+
+// ─── Demos FEM Q4 (validación contra OpenSees/SAP/ETABS) ────────────
+export const demoShearWallQ4    = legacy("shear-wall-q4",        "Muro de Corte Q4",            "Demos FEM Q4");
+export const demoCantileverQ4   = legacy("cantilever-beam-q4",   "Viga Cantilever Q4",          "Demos FEM Q4");
+export const demoPlacaQ4        = legacy("placa-cantilever-q4",  "Placa Cantilever XY Q4",      "Demos FEM Q4");
+
+// ─── Geotécnico ────────────────────────────────────────────────────
+export const demoSlope          = legacy("slope-stability",      "Estabilidad de Talud (SRM)",  "Geotécnico");
+
+/** Array completo de los 19+11 ejemplos legacy para registrar de un golpe. */
 export const legacyAwatifExamples: ExampleDef[] = [
   legacy1dMesh,
   legacy2dMesh,
@@ -86,4 +103,18 @@ export const legacyAwatifExamples: ExampleDef[] = [
   legacySlabDesigner,
   legacyFemExplained,
   legacyReport,
+  // Iconic structures
+  iconicGatewayArch,
+  iconicCableBridge,
+  iconicTwistedTower,
+  iconicBurjKhalifa,
+  iconicSydneyOpera,
+  iconicDiagrid,
+  iconicPergola,
+  // FEM demos Q4
+  demoShearWallQ4,
+  demoCantileverQ4,
+  demoPlacaQ4,
+  // Geotécnico
+  demoSlope,
 ];

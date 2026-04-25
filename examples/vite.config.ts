@@ -88,6 +88,20 @@ export default defineConfig({
         "membrana-pstress": "src/membrana-pstress/index.html",
         "shell-thin": "src/shell-thin/index.html",
         "shell-thick": "src/shell-thick/index.html",
+        // ── Iconic structures (extraídas de getCad3d.ts a awatif v2 pattern) ──
+        "gateway-arch": "src/gateway-arch/index.html",
+        "cable-stayed-bridge": "src/cable-stayed-bridge/index.html",
+        "twisted-tower": "src/twisted-tower/index.html",
+        "burj-khalifa": "src/burj-khalifa/index.html",
+        "sydney-opera": "src/sydney-opera/index.html",
+        "diagrid": "src/diagrid/index.html",
+        "pergola": "src/pergola/index.html",
+        // ── FEM demos Q4 (validación) ──
+        "shear-wall-q4": "src/shear-wall-q4/index.html",
+        "cantilever-beam-q4": "src/cantilever-beam-q4/index.html",
+        "placa-cantilever-q4": "src/placa-cantilever-q4/index.html",
+        // ── Geotécnico ──
+        "slope-stability": "src/slope-stability/index.html",
       },
     },
   },

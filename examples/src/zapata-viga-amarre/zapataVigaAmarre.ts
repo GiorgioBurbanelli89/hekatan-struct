@@ -327,9 +327,11 @@ export const zapataVigaAmarre: ExampleDef = {
     const myVersion = activeExampleVersion.v;
     if (settings) {
       van.derive(() => {
+        // ── BUGFIX zombie derive: guard ANTES de leer `.val` (ver
+        // zapataAisladaValidacion.ts para explicación completa). ──
+        if (activeExampleVersion.v !== myVersion) return;
         const on = settings.deformedShape.val;
         const dScale = settings.deformScale.val;
-        if (activeExampleVersion.v !== myVersion) return;
         states.objects3D.val = buildSprings(on, dScale);
       });
     } else {

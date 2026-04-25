@@ -1,6 +1,7 @@
 import van, { State } from "vanjs-core";
 import * as THREE from "three";
 import { Pane } from "tweakpane";
+import { activeExampleVersion } from "../workspace/exampleVersion";
 import {
   deform,
   analyze,
@@ -12074,7 +12075,16 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
     });
   }, 500);
 
-  van.derive(() => { mesh.nodes.val; mesh.elements.val; mesh.nodeInputs?.val; updatePanel(); });
+  // ── BUGFIX zombie derive: guard ANTES de leer `.val`. Sin esto, cada vez
+  // que se cargaba un ejemplo nuevo (que escribe a mesh.nodes/elements), TODOS
+  // los getCad3d zombies de ejemplos previos se despertaban y rebuildeaban un
+  // panel ya disposed. ──
+  const cad3dVer = activeExampleVersion.v;
+  van.derive(() => {
+    if (activeExampleVersion.v !== cad3dVer) return;
+    mesh.nodes.val; mesh.elements.val; mesh.nodeInputs?.val;
+    updatePanel();
+  });
 
   // CLI modal commands
   (cli as any).modal = (enable?: boolean) => {

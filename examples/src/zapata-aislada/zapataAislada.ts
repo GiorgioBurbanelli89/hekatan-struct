@@ -618,9 +618,11 @@ export const zapataAislada: ExampleDef = {
     const myVersion = activeExampleVersion.v;
     if (settings) {
       van.derive(() => {
+        // ── BUGFIX zombie derive: guard ANTES de leer `.val` (ver
+        // zapataAisladaValidacion.ts para explicación completa). ──
+        if (activeExampleVersion.v !== myVersion) return;
         const on = settings.deformedShape.val;           // reactivo
         const dScale = settings.deformScale.val;         // reactivo (MISMO scale que el viewer)
-        if (activeExampleVersion.v !== myVersion) return;  // no-op si cambió ejemplo
         states.objects3D.val = buildSprings(on, dScale);
       });
     } else {

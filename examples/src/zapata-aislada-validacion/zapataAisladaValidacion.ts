@@ -371,9 +371,15 @@ export const zapataAisladaValidacion: ExampleDef = {
     const myVer = activeExampleVersion.v;
     if (viewerSettings) {
       van.derive(() => {
+        // ── BUGFIX zombie derive: el guard DEBE ir ANTES de leer `.val`.
+        // VanJS auto-suscribe el derive a TODOS los .val que LEYÓ en su última
+        // ejecución. Si leemos primero y guardamos después, las suscripciones
+        // a deformedShape/deformScale persisten aunque cambiemos de ejemplo,
+        // y se despiertan cada vez que conexion-rbs (u otro) anima esos vals,
+        // acumulando zombies y colgando el navegador. ──
+        if (activeExampleVersion.v !== myVer) return;  // no-op + drop subscriptions
         const ds = viewerSettings.deformedShape.val;
         const sc = viewerSettings.deformScale.val;
-        if (activeExampleVersion.v !== myVer) return;  // no-op si cambié de ejemplo
         states.objects3D.val = buildSprings(ds, sc);
       });
     } else {
