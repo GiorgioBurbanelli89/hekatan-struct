@@ -220,7 +220,11 @@ function autoScaleDeformedShape() {
   }
   s.deformScale.val = Math.max(1, scale);
   if (s.deformScaleZ) s.deformScaleZ.val = scaleZfactor;
-  if (s.displayScale) s.displayScale.val = -1.5;
+  // Display scale: −1.5 default (flechas pequeñas) pero −6 para conexiones
+  // (modelo de orden 0.5–4 m, evitar que markers tapen geometría).
+  const isConexion = currentExample?.id?.startsWith("conexion-") ||
+                     currentExample?.id === "placa-base";
+  if (s.displayScale) s.displayScale.val = isConexion ? -6 : -1.5;
 }
 
 /**
