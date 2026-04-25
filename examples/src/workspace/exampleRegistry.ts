@@ -163,6 +163,7 @@ import { membrana } from "../membrana-pstress/membrana";
 import { shellThin } from "../shell-thin/shellThin";
 import { shellThick } from "../shell-thick/shellThick";
 import { edificioAporticado } from "../edificio-aporticado/edificioAporticado";
+import { edificioValidadoEtabs } from "../edificio-validado-etabs/edificioValidadoEtabs";
 // Variantes limpias de edificios por tipo estructural
 import { edificioHormigon } from "../edificio-hormigon/edificioHormigon";
 import { edificioAceroV2 } from "../edificio-acero-v2/edificioAceroV2";
@@ -195,6 +196,7 @@ export const examplesRegistry: ExampleDef[] = [
   placaBase,
   // Edificios — variantes limpias por tipo estructural
   edificioAporticado,
+  edificioValidadoEtabs,  // 🧪 Validado vs ETABS + OpenSeesPy
   edificioHormigon,
   edificioAceroV2,
   edificioMixto,

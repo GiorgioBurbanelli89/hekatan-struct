@@ -9,7 +9,13 @@ import { etabsDiscretize, DISCRETIZE_OPTIONS } from "../shared/etabsDiscretizati
 import { addRigidDiaphragms, mergeDiaphragmProps } from "../shared/rigidDiaphragm";
 import { computeHinges, buildHingeObjects3D, summarizeHinges } from "../shared/plasticHinges";
 
-const rho_c = 24;
+// Densidad de MASA del concreto, NO peso específico.
+// CSI Manual §4.12: "Mass values must be given in consistent mass units (W/g)".
+// γ_concreto = 24 kN/m³ (peso específico) → ρ = γ/g = 24/9.81 = 2.447 ton/m³ (kN·s²/m⁴)
+// Si se pasa γ directamente (sin dividir por g), las masas están infladas por
+// factor g → períodos modales sale × √9.81 ≈ 3.13× más largos que ETABS.
+const G_GRAVITY = 9.81;
+const rho_c = 24 / G_GRAVITY; // ≈ 2.447 ton/m³
 
 // Helper para crear params con folder
 const P = (folder: string, label: string, def: number, min: number, max: number, step: number) =>
@@ -509,16 +515,13 @@ export const edificioAporticado: ExampleDef = {
     const fSlab_m = isCrackedHormigon ? 1.0 : 1.0;   // membrana de losa NO se reduce
 
     // ── Mass Source from Loads (estilo ETABS) ──
-    // Si massSource=1, calcular masa equivalente = (qDead + 0.25·qLive)/g · A_trib
-    // y override densities. Esto da MENOS masa total (típico en ETABS).
-    // Se aplica como densidad equivalente sobre el elemento shell de la losa.
-    // Para frames (cols, vigas) se mantiene peso propio (mass de elements).
+    // Si massSource=1, masa equivalente = (qDead + 0.25·qLive)/g  por unidad de área
+    // → densidad volumétrica equivalente: ρ_eq = q / (g · t_losa)  [ton/m³]
     const useMassFromLoads = p.massSource > 0.5;
-    const qMassEquiv_kNm2 = p.qDead + 0.25 * p.qLive;  // kN/m²
-    // Convertir a densidad volumétrica equivalente: ρ_eq = q/(g·t)
-    // Si en kN/m³: ρ_eq = q (kN/m²) / t_losa (m) ya está en kN/m³ porque g se cancela cuando se trata como peso.
-    // En awatif densities se trata como peso específico (kN/m³)
-    const rho_slab_equiv = useMassFromLoads ? qMassEquiv_kNm2 / Math.max(p.slabT, 0.05) : rho_c;
+    const qMassEquiv_kNm2 = p.qDead + 0.25 * p.qLive;  // kN/m² (peso por área)
+    const rho_slab_equiv = useMassFromLoads
+      ? qMassEquiv_kNm2 / G_GRAVITY / Math.max(p.slabT, 0.05)  // ton/m³
+      : rho_c;
 
     for (let i = 0; i < elements.length; i++) {
       const floor = elementFloor.get(i) ?? 0;
