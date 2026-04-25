@@ -16,7 +16,7 @@ import { m as Fe, __tla as __tla_9 } from "./membrana-DjQC-13G.js";
 import { s as je, __tla as __tla_10 } from "./shellThin-CRWfR6Yn.js";
 import { s as $e, __tla as __tla_11 } from "./shellThick-k73N0xig.js";
 import { e as De, __tla as __tla_12 } from "./edificioAporticado-DMmhNVXP.js";
-import { e as Ue, __tla as __tla_13 } from "./edificioComparativaFem-B2-g3Jhu.js";
+import { e as Ue, __tla as __tla_13 } from "./edificioComparativaFem-CWGt6toJ.js";
 import { e as Le, __tla as __tla_14 } from "./edificioHormigon-BvVgn7Xe.js";
 import { e as Ve, __tla as __tla_15 } from "./edificioAceroV2-DnzPGOcg.js";
 import { e as Ne, __tla as __tla_16 } from "./edificioMixto-BgvtjF2F.js";
