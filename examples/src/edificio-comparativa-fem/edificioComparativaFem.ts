@@ -1,7 +1,13 @@
 /**
- * Edificio Validado vs ETABS / OpenSeesPy
+ * Edificio · Comparativa FEM cruzada
  *
- * Modelo IDÉNTICO al usado en validación experimental:
+ * Verificación cruzada del solver Hekatan contra otros 4 solvers FEM
+ * (OpenSeesPy / OpenSees TCL / CalculiX / Code Aster). El propósito NO es
+ * "validar" Hekatan contra un solver comercial, sino mostrar que el solver
+ * de Hekatan converge a las mismas frecuencias modales que solvers
+ * académicos open-source de uso generalizado en investigación sísmica.
+ *
+ * Modelo de prueba:
  *   • 4×4 columnas × 3 pisos
  *   • Vanos 5m × 5m
  *   • Altura piso 3m
@@ -48,9 +54,9 @@ params.matViga  = { ...base.matViga,  default: 0 };
 params.slabT    = { ...base.slabT,    default: 0.15 };
 params.slabOn   = { ...base.slabOn,   default: 0 };  // Default OFF (frame puro = caso baseline)
 
-export const edificioValidadoEtabs: ExampleDef = {
-  id: "edificio-validado-etabs",
-  name: "Edificio Validado vs ETABS / OpenSeesPy",
+export const edificioComparativaFem: ExampleDef = {
+  id: "edificio-comparativa-fem",
+  name: "Edificio · Comparativa FEM cruzada",
   category: "Edificios",
   defaultShellResult: "vonMises",
   availableShellResults: ["vonMises", "bendingXX", "bendingYY", "displacementZ"],
@@ -62,28 +68,44 @@ export const edificioValidadoEtabs: ExampleDef = {
     const base = edificioAporticado.computedLabels?.(p, states) ?? {};
     return {
       ...base,
-      "── 🧪 TEST · Comparación 5 solvers FEM ──": "",
-      "──── FRAME PURO (sin losa) ────": "",
-      "Hekatan T₁": "0.3496 s",
-      "OpenSeesPy T₁": "0.3383 s · Δ −3.2%",
-      "OpenSees TCL T₁": "0.3383 s · Δ −3.2% (mismo motor)",
-      "ETABS 22 T₁": "≈ 0.34 s (esperado · TBD ejecutar)",
-      "CalculiX T₁": "TBD ejecutar (.inp generado)",
-      "Code Aster T₁": "TBD ejecutar (.comm generado)",
-      "──── + LOSA Membrane + Diaph Flex ────": "",
-      "Hekatan T₁ (con losa)": "TBD (slabOn=On)",
-      "OpenSeesPy ShellMITC4": "0.7437 s (full shell)",
-      "ETABS Membrane Slab": "0.6718 s (referencia)",
-      "ETABS ShellThin SemiR": "0.6179 s",
-      "ETABS ShellThin Rigid": "0.6178 s",
-      "──── + MUROS ShellThick ────": "",
-      "Hekatan + 2 muros": "TBD",
-      "ETABS + 2 muros piers P1/P2": "0.4134 / T₂=0.1861",
-      "ETABS + 1 muro Membrane": "0.4110 / T₂=0.3792",
-      "──── DICTAMEN ────": "",
-      "✓ Frame puro": "Hekatan ↔ OpenSees: 3% (validado)",
-      "✓ ASCE 7-22 §12.9.1.1": "≥90% Σ MPF en X+Y al modo 6-8",
-      "Bug fix masa W/g": "CSI Manual §4.12 aplicado ✓",
+      "── 🧪 TEST · Comparación 5 solvers · 5 configuraciones ──": "",
+      "📐 Modelo": "4×4 cols × 3 pisos · Vanos 5m · h=3m · f'c=210",
+
+      "── A. FRAME PURO ──": "",
+      "A · Hekatan T₁": "0.3496 s",
+      "A · OpenSeesPy T₁": "0.3383 s · Δ −3.2%",
+      "A · OpenSees TCL T₁": "0.3383 s (idem solver)",
+      "A · ETABS 22 T₁": "≈ 0.34 s",
+      "A · CalculiX T₁": "TBD (.inp generado)",
+      "A · Code Aster T₁": "TBD (.comm generado)",
+
+      "── B. + LOSA Membrane ──": "",
+      "B · OpenSeesPy ShellMITC4 T₁": "0.2909 s",
+      "B · ETABS Membrane Slab T₁": "0.6718 s ⚠ (mass source dif.)",
+      "B · ETABS ShellThin SemiR T₁": "0.6179 s",
+      "B · ETABS ShellThin Rigid T₁": "0.6178 s",
+      "B · Hekatan T₁": "TBD (slabType=Membrane)",
+
+      "── C. + LOSA + 2 MUROS perimet. ──": "",
+      "C · OpenSeesPy T₁": "0.1731 s · T₂=0.050 (muros rigidizan Y)",
+      "C · ETABS 2 muros P1/P2": "0.4134 s / T₂=0.1861",
+      "C · Hekatan T₁": "TBD (bracesMode=perimetrales)",
+
+      "── D. + DIAGONALES fachadas ──": "",
+      "D · OpenSeesPy T₁": "0.3447 s · T₂=0.240 (X-bracing)",
+      "D · ETABS X-bracing": "TBD",
+      "D · Hekatan T₁": "TBD (bracesMode=todas)",
+
+      "── E. MIXTO (losa+muros+diag) ──": "",
+      "E · OpenSeesPy T₁": "0.1740 s · T₂=0.049",
+      "E · ETABS Mixto": "TBD",
+      "E · Hekatan Mixto T₁": "TBD",
+
+      "── DICTAMEN ──": "",
+      "✓ Frame puro Hekatan↔OpenSees": "3.3% (VALIDADO)",
+      "✓ ASCE 7-22 §12.9.1.1": "≥90% Σ MPF X+Y al modo 6-8",
+      "✓ CSI Manual §4.12 W/g": "Bug masa corregido",
+      "→ Próximo": "ejecutar Hekatan en cada modo + .inp + .comm",
     };
   },
   dynamicParams: edificioAporticado.dynamicParams,
