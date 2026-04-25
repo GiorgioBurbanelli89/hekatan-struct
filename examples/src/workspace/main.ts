@@ -449,13 +449,7 @@ function buildParamsPane() {
     if (nextEx) loadExample(nextEx);
   });
 
-  // ── Reporte matemático FEM (estilo Calcpad) ──
-  pane.addButton({ title: "📐 Reporte matemático FEM" }).on("click", () => {
-    if (!currentExample) return;
-    import("./mathReport").then(({ openMathReport }) => {
-      openMathReport(currentExample!.id, currentExample!.name, currentParams, states);
-    });
-  });
+  // ── Reporte matemático FEM (estilo Calcpad) — pendiente módulo mathReport ──
 
   // ── Vista (planta / elevación / isométrica) ──
   const fView = pane.addFolder({ title: "Vista", expanded: false });

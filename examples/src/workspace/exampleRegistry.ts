@@ -162,7 +162,6 @@ import { edificioConLosa } from "../edificio-con-losa/edificioConLosa";
 import { edificioConMuros } from "../edificio-con-muros/edificioConMuros";
 import { plane } from "../plane/plane";
 import { membranaCSI } from "../membrana-csi/membranaCSI";
-import { plateThickValidacion } from "../plate-thick-validacion/plateThickValidacion";
 import { plateThin } from "../plate-thin/plateThin";
 import { plateThick } from "../plate-thick/plateThick";
 import { membrana } from "../membrana-pstress/membrana";
@@ -179,6 +178,8 @@ import { edificioDual } from "../edificio-dual/edificioDual";
 import { columnaCft } from "../columna-cft/columnaCft";
 import { triangularPlate } from "../triangular-plate/triangularPlate";
 import { conexionRbs } from "../conexion-rbs/conexionRbs";
+import { conexionBfp } from "../conexion-bfp/conexionBfp";
+import { conexionEndPlate } from "../conexion-end-plate/conexionEndPlate";
 import { placaBase } from "../placa-base/placaBase";
 import { trussGen } from "../truss-gen/trussGen";
 import { barraAxial } from "../barra-axial/barraAxial";
@@ -191,7 +192,6 @@ import { mezanine } from "../mezanine/mezanine";
 export const examplesRegistry: ExampleDef[] = [
   // Cimentaciones (validación primero — defecto del workspace)
   zapataAisladaValidacion,
-  plateThickValidacion,
   zapataAislada,
   zapataVigaAmarre,
   // Frames 1D
@@ -203,7 +203,9 @@ export const examplesRegistry: ExampleDef[] = [
   // Columnas (diseño individual)
   columnaCft,
   // Conexiones (prequalificación sísmica)
-  conexionRbs,
+  conexionRbs,           // AISC 358 §5 — Reduced Beam Section
+  conexionBfp,           // AISC 358 §7 — Bolted Flange Plate
+  conexionEndPlate,      // AISC 358 §6 — End Plate 4E/4ES/8ES
   placaBase,
   // Edificios — variantes limpias por tipo estructural
   edificioAporticado,
