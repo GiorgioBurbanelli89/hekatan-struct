@@ -1,4 +1,16 @@
-# Hekatan Struct — Modelo de Licenciamiento Dual
+# Hekatan Structure — Modelo de Licenciamiento Dual
+
+```
+┌──────────────────────────┐    ┌──────────────────────────┐
+│  Hekatan Structure       │    │  Hekatan Structure Pro   │
+│  (Free)                  │    │  (Comercial)             │
+│  MIT License             │    │  Licencia comercial      │
+│  Solver lineal completo  │    │  + Solver no-lineal      │
+│  Workspace web abierto   │    │  + Damage / Fractura     │
+│  GitHub público          │    │  + Soporte técnico       │
+└──────────────────────────┘    └──────────────────────────┘
+```
+
 
 ## Estrategia
 
@@ -30,7 +42,7 @@ hekatan-struct/                  ← Repo público (github.com/GiorgioBurbanelli
 # LO QUE SIGUE NO SE SUBE AL REPO PÚBLICO (gitignored):
 # ──────────────────────────────────────────────────────────────────────
 
-awatif-fem-pro/                  ← LICENCIA COMERCIAL Hekatan Pro
+awatif-fem-pro/                  ← LICENCIA COMERCIAL Hekatan Structure Pro
 ├── LICENSE.commercial.txt       ← acuerdo de licencia
 ├── src/cpp/
 │   ├── nonlinear.cpp            ← Newton-Raphson incremental
@@ -106,7 +118,7 @@ emcc awatif-fem/src/cpp/deform.cpp \
 # 6 MB, con todas las extensiones Pro
 ```
 
-El usuario público recibe `deform.wasm`. Si compra Hekatan Pro:
+El usuario público recibe `deform.wasm`. Si compra Hekatan Structure Pro:
 1. Pagas la licencia
 2. Recibes `deform-pro.wasm` + clave de activación
 3. Reemplazas el archivo en tu instalación local
@@ -117,7 +129,7 @@ El usuario público recibe `deform.wasm`. Si compra Hekatan Pro:
 - **MIT**: permite uso comercial, modificación, distribución, sin obligación
   de divulgar el código derivado. Apto para Hekatan Free.
 - **Comercial**: licencia personalizada con cláusulas de uso, prohibición
-  de redistribución, soporte y actualizaciones. Apto para Hekatan Pro.
+  de redistribución, soporte y actualizaciones. Apto para Hekatan Structure Pro.
 
 Esto es el mismo modelo dual que usan Qt, MySQL, MongoDB, GitLab CE/EE.
 
