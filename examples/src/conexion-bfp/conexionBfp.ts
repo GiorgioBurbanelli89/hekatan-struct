@@ -16,6 +16,7 @@
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import type { Node, Element } from "awatif-fem";
 import { deform, analyze } from "awatif-fem";
+import { colormapPercentileRange } from "../shared/colorMapPercentile";
 import * as THREE from "three";
 
 export const conexionBfp: ExampleDef = {
@@ -255,6 +256,9 @@ export const conexionBfp: ExampleDef = {
       const dOut = deform(nodes, elements, { supports, loads }, states.elementInputs.val);
       states.deformOutputs.val = dOut;
       const aOut = analyze(nodes, elements, states.elementInputs.val, dOut);
+      // Percentile clamp para evitar saturación por singularidades en cargas
+      const [vmin, vmax] = colormapPercentileRange((aOut as any).vonMises, 85, p.Fy);
+      (aOut as any).colorMapRanges = { ...(aOut as any).colorMapRanges, vonMises: [vmin, vmax] };
       states.analyzeOutputs.val = aOut;
     } catch (e: any) {
       console.error("[BFP] solver error:", e?.message);
