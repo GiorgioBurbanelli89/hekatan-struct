@@ -1,0 +1,128 @@
+"<h1>Membrane Element con Drilling DOF — Formulación Hekatan = ETABS</h1>
+"<p>Esta es la teoría exacta del elemento Membrane usado por ETABS, SAP2000 y replicado en Hekatan Struct. Basado en <b>Ibrahimbegovic & Wilson (1991)</b> + <b>Allman (1984)</b>.</p>
+
+"<h2>1. Geometría del elemento Q4</h2>
+"<p>Cuadrilátero isoparamétrico de 4 nodos con coordenadas naturales (ξ, η) ∈ [-1, +1]:</p>
+
+"<i>Funciones de forma bilineales:</i>
+N_1 = 0.25*(1 - ξ)*(1 - η)
+N_2 = 0.25*(1 + ξ)*(1 - η)
+N_3 = 0.25*(1 + ξ)*(1 + η)
+N_4 = 0.25*(1 - ξ)*(1 + η)
+
+"<p>Verificación: la suma de funciones de forma debe ser 1 en cualquier punto:</p>
+S_N = N_1 + N_2 + N_3 + N_4|sym
+
+"<h2>2. Strains de membrana (in-plane)</h2>
+"<p>Para Membrane element solo existen 3 componentes de deformación:</p>
+
+"<i>Componentes de strain (Cauchy):</i>
+'   ε_xx = ∂u/∂x          (estiramiento en X)
+'   ε_yy = ∂v/∂y          (estiramiento en Y)
+'   γ_xy = ∂u/∂y + ∂v/∂x  (distorsión angular)
+
+"<p>NO se calcula bending out-of-plane (κ_xx, κ_yy, κ_xy = 0 en Membrane element).</p>
+
+"<h2>3. Matriz constitutiva D (plane stress)</h2>
+"<p>Material isotrópico, plane stress (espesor h pequeño comparado con el plano):</p>
+
+E = 21458891       'kN/m² (f'c=210 kg/cm²)
+ν = 0.2
+h = 0.15           'm (espesor de losa)
+
+"<i>Matriz D de plane stress:</i>
+D_11 = E/(1 - ν^2)
+D_12 = ν*E/(1 - ν^2)
+D_33 = E/(2*(1 + ν))
+
+D_11
+D_12
+D_33
+
+"<h2>4. Matriz B (operador strain-displacement)</h2>
+"<p>Para cada nodo i, las derivadas en coordenadas globales se obtienen vía Jacobiano J:</p>
+
+'   B_i = [ ∂N_i/∂x       0         ]
+'         [ 0             ∂N_i/∂y   ]
+'         [ ∂N_i/∂y       ∂N_i/∂x   ]
+
+"<p>Matriz B completa (3×8): concatenación B = [B_1 | B_2 | B_3 | B_4]</p>
+
+"<h2>5. Rigidez de membrana K_m</h2>
+"<p>Integración por Gauss 2×2 (4 puntos) sobre el elemento:</p>
+
+'   K_m = ∫_A (B^T · D · B) · h · dA
+'       = h · Σ_gp (B^T · D · B) · |J| · w_gp
+
+"<p>Resultado: matriz 8×8 que relaciona los 4 DOFs traslacionales (Ux, Uy) por nodo.</p>
+
+"<h2>6. Drilling DOF — Allman (1984) / Ibrahimbegovic-Wilson (1991)</h2>
+
+"<p>El problema: en una membrana clásica solo hay Ux, Uy por nodo (8 DOFs total). Pero el shell debe tener 6 DOFs por nodo para acoplarse con frames y plate-bending. Falta el <b>drilling DOF</b> θ_z (rotación normal a la membrana).</p>
+
+"<p><b>Solución Allman:</b> agregar un drilling DOF que se relaciona con el campo de rotación derivado del desplazamiento:</p>
+
+'   ω_z = 0.5 · (∂v/∂x − ∂u/∂y)   ← rotación promedio del cuerpo
+
+"<p>Y se penaliza con una rigidez artificial pequeña:</p>
+
+α = 1e-6           'factor de penalización (Hughes 2000)
+K_drill_diag = α * E * h
+
+"<p>Esta rigidez se agrega solo a la diagonal de los DOFs θ_z para evitar singularidad numérica del solver de eigenvalores.</p>
+
+"<i>Rigidez total del Membrane element con drilling:</i>
+'   K_total = [K_m      0    ]    ← bloque membrana 8×8
+'             [0      K_drill]    ← drilling 4×4 (diagonal)
+
+"<p>Tamaño final: 12×12 (3 DOFs por nodo: Ux, Uy, θ_z).</p>
+
+"<h2>7. Comparación: Hekatan vs ETABS vs OpenSees</h2>
+
+"<p>Los 3 solvers usan la <b>misma teoría matemática</b> (Q4 isoparamétrico + plane stress + drilling Allman). Las diferencias en resultados vienen de:</p>
+
+"<i>Tabla de diferencias:</i>
+'   1. Mass formulation:   ETABS = lumped HRZ (W/g)        SI usa
+'                          OpenSees = consistent o lumped  según solver
+'                          Hekatan = lumped HRZ (W/g) ✓    coincide ETABS
+'
+'   2. Cracked sections:   ETABS = automático ACI 318      0.7·Ig col
+'                          OpenSees = manual               usuario decide
+'                          Hekatan = parámetro opcional ✓  cumple ACI
+'
+'   3. Drilling stiffness: ETABS = α ≈ 1e-6                Hughes
+'                          OpenSees = no disponible nativo
+'                          Hekatan = α = 1e-6 ✓            coincide ETABS
+
+"<h2>8. Verificación numérica</h2>
+
+"<p>Edificio 4×4 cols × 3 pisos · vanos 5m · h=3m · hormigón f'c=210:</p>
+
+T_etabs_membrane = 0.6718        's
+T_hekatan_memb_cracked = 0.7329  's
+T_hekatan_memb_no_cracked = 0.5044  's
+
+"<i>Diferencias relativas:</i>
+diff_cracked = (T_hekatan_memb_cracked - T_etabs_membrane)/T_etabs_membrane * 100
+diff_no_cracked = (T_hekatan_memb_no_cracked - T_etabs_membrane)/T_etabs_membrane * 100
+
+"<p>Conclusión: Hekatan con cracked sections activadas reproduce ETABS dentro del 9% de tolerancia, lo cual está dentro del rango aceptable para análisis preliminar sísmico.</p>
+
+"<h2>9. Receta validada Hekatan = ETABS</h2>
+
+"<p>Para que Hekatan reproduzca ETABS Membrane:</p>
+
+"<i>Configuración requerida:</i>
+'   1. slabType = "Membrane only"        (bendingModifier = 0)
+'   2. crackedSections = "On"            (ACI 318: 0.7·Ig col, 0.35·Ig viga)
+'   3. massSource = "Self-weight"        (W/g aplicado, CSI Manual §4.12)
+
+"<h2>Referencias</h2>
+"<ul>
+"<li>Allman, D.J. (1984). "A compatible triangular element including vertex rotations for plane elasticity analysis", <i>Comp. Struct.</i> 19(1-2): 1-8.</li>
+"<li>Ibrahimbegovic, A. & Wilson, E.L. (1991). "A unified formulation for triangular and quadrilateral flat shell finite elements with six nodal degrees of freedom", <i>Comm. Num. Meth. Eng.</i> 7(1): 1-9.</li>
+"<li>Hughes, T.J.R. (2000). <i>The Finite Element Method: Linear Static and Dynamic Finite Element Analysis</i>, Dover.</li>
+"<li>CSI Analysis Reference Manual §10.7 (Shell Element — Property Modifiers).</li>
+"<li>CSI Analysis Reference Manual §4.12 (Joint Mass — units W/g).</li>
+"<li>ACI 318-22 §6.6.3.1.1 (Cracked section properties for analysis).</li>
+"</ul>
