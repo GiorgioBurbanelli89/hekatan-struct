@@ -1,5 +1,5 @@
-import { e as i, __tla as __tla_0 } from "./edificioAporticado-DHy1q3zk.js";
-let l;
+import { e as l, __tla as __tla_0 } from "./edificioAporticado-DMmhNVXP.js";
+let o;
 let __tla = Promise.all([
   (() => {
     try {
@@ -8,7 +8,7 @@ let __tla = Promise.all([
     }
   })()
 ]).then(async () => {
-  const a = i.params, e = {
+  const a = l.params, e = {
     ...a
   };
   e.matCol = {
@@ -17,7 +17,7 @@ let __tla = Promise.all([
   };
   e.matViga = {
     ...a.matViga,
-    default: 0
+    default: 1
   };
   e.colShape = {
     ...a.colShape,
@@ -29,37 +29,40 @@ let __tla = Promise.all([
   };
   e.bracesMode = {
     ...a.bracesMode,
-    default: 0
+    default: 2
   };
   e.slabT = {
     ...a.slabT,
-    default: 0.15
+    default: 0.12
   };
   e.fcConcr = {
     ...a.fcConcr,
-    default: 240
+    default: 280
   };
-  l = {
-    id: "edificio-hormigon",
-    name: "Edificio Hormig\xF3n (puro)",
+  e.nPisos = {
+    ...a.nPisos,
+    default: 10
+  };
+  o = {
+    id: "edificio-dual",
+    name: "Edificio Dual (Mixto + Muros + Diagonales)",
     category: "Edificios",
     defaultShellResult: "bendingXX",
     availableShellResults: [
       "bendingXX",
       "bendingYY",
-      "bendingXY",
       "displacementZ",
       "vonMises"
     ],
     hasModal: true,
     params: e,
-    build: i.build,
-    runModal: i.runModal,
-    computedLabels: i.computedLabels,
-    dynamicParams: i.dynamicParams
+    build: l.build,
+    runModal: l.runModal,
+    computedLabels: l.computedLabels,
+    dynamicParams: l.dynamicParams
   };
 });
 export {
   __tla,
-  l as e
+  o as e
 };
