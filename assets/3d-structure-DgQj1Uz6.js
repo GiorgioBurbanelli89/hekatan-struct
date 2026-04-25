@@ -5,9 +5,10 @@ import { d as z, __tla as __tla_0 } from "./didacticCpp-l2dJQgN-.js";
 import { g as I } from "./getViewer-CARv9b4z.js";
 import { g as S } from "./getParameters-CIJBOwMB.js";
 import { g as O } from "./styles-Cjdl64P4.js";
-import { g as M, __tla as __tla_1 } from "./getCad3d-DxCk4gXz.js";
+import { g as M, __tla as __tla_1 } from "./getCad3d-BBztgPk2.js";
 import "./pureFunctionsAny.generated-DeJSBP3k.js";
 import "./Text-DyNVkyur.js";
+import "./exampleVersion-D1A_5i59.js";
 import { __tla as __tla_2 } from "./getMesh-CMOA6JCi.js";
 import "./__vite-browser-external-D7Ct-6yo.js";
 import "./renderModalTable-H-0rlxOz.js";
@@ -66,7 +67,7 @@ Promise.all([
       step: 0.5,
       label: "load (kN)"
     }
-  }, u = e.state([]), i = e.state([]), d = e.state({}), v = e.state({}), x = e.state({}), b = e.state({});
+  }, i = e.state([]), u = e.state([]), d = e.state({}), v = e.state({}), x = e.state({}), b = e.state({});
   e.derive(() => {
     const c = o.dx.value.val, f = o.dy.value.val, n = o.dz.value.val, m = o.divisions.value.val;
     let s = [], a = [];
@@ -174,17 +175,17 @@ Promise.all([
         10
       ]))
     }, g = z(s, a, h, p), w = y(s, a, p, g);
-    u.val = s, i.val = a, d.val = h, v.val = p, x.val = g, b.val = w;
+    i.val = s, u.val = a, d.val = h, v.val = p, x.val = g, b.val = w;
   });
   document.body.append(M({
-    nodes: u,
-    elements: i,
+    nodes: i,
+    elements: u,
     nodeInputs: d,
     elementInputs: v
   }), S(o), I({
     mesh: {
-      nodes: u,
-      elements: i,
+      nodes: i,
+      elements: u,
       nodeInputs: d,
       elementInputs: v,
       deformOutputs: x,

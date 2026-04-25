@@ -723,8 +723,9 @@ let __tla = Promise.all([
         return p;
       }, Ye = Ae.v;
       xe ? rt.derive(() => {
+        if (Ae.v !== Ye) return;
         const a = xe.deformedShape.val, o = xe.deformScale.val;
-        Ae.v === Ye && (t.objects3D.val = Fe(a, o));
+        t.objects3D.val = Fe(a, o);
       }) : t.objects3D.val = Fe(true, 1);
     },
     runModal(e, t, l) {

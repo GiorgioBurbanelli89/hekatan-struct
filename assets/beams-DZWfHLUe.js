@@ -5,10 +5,11 @@ import { d as Y, m as z, __tla as __tla_0 } from "./didacticCpp-l2dJQgN-.js";
 import { g as E } from "./getViewer-CARv9b4z.js";
 import { g as G } from "./getParameters-CIJBOwMB.js";
 import { g as A } from "./styles-Cjdl64P4.js";
-import { g as R, __tla as __tla_1 } from "./getCad3d-DxCk4gXz.js";
+import { g as R, __tla as __tla_1 } from "./getCad3d-BBztgPk2.js";
 import { c as k } from "./renderModalTable-H-0rlxOz.js";
 import "./pureFunctionsAny.generated-DeJSBP3k.js";
 import "./Text-DyNVkyur.js";
+import "./exampleVersion-D1A_5i59.js";
 import { __tla as __tla_2 } from "./getMesh-CMOA6JCi.js";
 import "./__vite-browser-external-D7Ct-6yo.js";
 Promise.all([
@@ -53,10 +54,10 @@ Promise.all([
       step: 10,
       label: "Bay Y (in)"
     }
-  }, o = t.state([]), e = t.state([]), n = t.state({}), r = t.state({}), u = t.state({}), y = t.state({}), c = k();
+  }, s = t.state([]), e = t.state([]), n = t.state({}), r = t.state({}), u = t.state({}), y = t.state({}), c = k();
   t.derive(() => {
     const a = p.storyH.value.val, l = p.bayX.value.val, i = p.bayY.value.val;
-    o.val = [
+    s.val = [
       [
         0,
         0,
@@ -191,23 +192,23 @@ Promise.all([
         ]
       ])
     };
-    const s = (b, d) => new Map(e.val.map((X, f) => [
+    const o = (b, d) => new Map(e.val.map((X, f) => [
       f,
       f < 4 ? b : d
     ]));
     r.val = {
-      elasticities: s(m, m),
-      shearModuli: s(v, v),
-      areas: s(_, C),
-      momentsOfInertiaZ: s(g, h),
-      momentsOfInertiaY: s(O, $),
-      torsionalConstants: s(x, w),
+      elasticities: o(m, m),
+      shearModuli: o(v, v),
+      areas: o(_, C),
+      momentsOfInertiaZ: o(g, h),
+      momentsOfInertiaY: o(O, $),
+      torsionalConstants: o(x, w),
       densities: new Map(e.val.map((b, d) => [
         d,
         I
       ]))
-    }, u.val = Y(o.val, e.val, n.val, r.val), y.val = S(o.val, e.val, r.val, u.val);
-    const M = z(o.val, e.val, n.val, r.val, T);
+    }, u.val = Y(s.val, e.val, n.val, r.val), y.val = S(s.val, e.val, r.val, u.val);
+    const M = z(s.val, e.val, n.val, r.val, T);
     c.render(M, {
       title: "Example 6.3 Space Frame",
       properties: [
@@ -218,7 +219,7 @@ Promise.all([
     });
   });
   document.body.append(R({
-    nodes: o,
+    nodes: s,
     elements: e,
     nodeInputs: n,
     elementInputs: r,
@@ -226,7 +227,7 @@ Promise.all([
     analyzeOutputs: y
   }), G(p), E({
     mesh: {
-      nodes: o,
+      nodes: s,
       elements: e,
       nodeInputs: n,
       elementInputs: r,

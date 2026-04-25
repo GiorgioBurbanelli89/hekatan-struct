@@ -1,6 +1,6 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { z as r, __tla as __tla_0 } from "./zapataAislada-Cm-Mgm6V.js";
-import { r as m } from "./runExampleStandalone-iR3EyTkl.js";
+import { z as o, __tla as __tla_0 } from "./zapataAisladaValidacion-DjUZZvJ_.js";
+import { r } from "./runExampleStandalone-iR3EyTkl.js";
 import "./Text-DyNVkyur.js";
 import "./theme-2eEBQPmF.js";
 import "./analyze-BydHtRcI.js";
@@ -24,5 +24,5 @@ Promise.all([
     }
   })()
 ]).then(async () => {
-  m(r);
+  r(o);
 });

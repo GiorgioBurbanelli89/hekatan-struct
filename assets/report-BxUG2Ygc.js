@@ -7,9 +7,10 @@ import { g as y } from "./getParameters-CIJBOwMB.js";
 import { c as o, g as z } from "./styles-Cjdl64P4.js";
 import { g as T } from "./getDialog-D0deYgvV.js";
 import { g as S } from "./getReport-UZyXi7YD.js";
-import { g as F, __tla as __tla_1 } from "./getCad3d-DxCk4gXz.js";
+import { g as F, __tla as __tla_1 } from "./getCad3d-BBztgPk2.js";
 import "./pureFunctionsAny.generated-DeJSBP3k.js";
 import "./Text-DyNVkyur.js";
+import "./exampleVersion-D1A_5i59.js";
 import { __tla as __tla_2 } from "./getMesh-CMOA6JCi.js";
 import "./__vite-browser-external-D7Ct-6yo.js";
 import "./renderModalTable-H-0rlxOz.js";
@@ -225,11 +226,11 @@ Promise.all([
       min: 0,
       max: 500
     }
-  }, s = e.state([]), l = e.state([]), i = e.state({}), d = e.state({}), c = e.state({}), n = e.state({}), v = {
+  }, s = e.state([]), l = e.state([]), d = e.state({}), i = e.state({}), c = e.state({}), n = e.state({}), v = {
     nodes: s,
     elements: l,
-    nodeInputs: i,
-    elementInputs: d,
+    nodeInputs: d,
+    elementInputs: i,
     deformOutputs: c,
     analyzeOutputs: n
   };
@@ -259,7 +260,7 @@ Promise.all([
         1,
         2
       ]
-    ], i.val = {
+    ], d.val = {
       supports: /* @__PURE__ */ new Map([
         [
           0,
@@ -297,7 +298,7 @@ Promise.all([
           ]
         ]
       ])
-    }, d.val = {
+    }, i.val = {
       elasticities: /* @__PURE__ */ new Map([
         [
           0,
@@ -318,7 +319,7 @@ Promise.all([
           100
         ]
       ])
-    }, c.val = $(s.val, l.val, i.val, d.val), n.val = w(s.val, l.val, d.val, c.val);
+    }, c.val = $(s.val, l.val, d.val, i.val), n.val = w(s.val, l.val, i.val, c.val);
   });
   const h = e.state(""), m = e.state(void 0);
   e.derive(() => {
@@ -330,8 +331,8 @@ Promise.all([
   document.body.append(F({
     nodes: s,
     elements: l,
-    nodeInputs: i,
-    elementInputs: d
+    nodeInputs: d,
+    elementInputs: i
   }), z({
     clickedButton: h,
     buttons: [

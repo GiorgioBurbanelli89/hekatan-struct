@@ -409,8 +409,9 @@ let __tla = Promise.all([
         return f;
       }, De = _e.v;
       ue ? it.derive(() => {
+        if (_e.v !== De) return;
         const e = ue.deformedShape.val, t = ue.deformScale.val;
-        _e.v === De && (o.objects3D.val = ze(e, t));
+        o.objects3D.val = ze(e, t);
       }) : o.objects3D.val = ze(true, 1);
     },
     runModal(s, o, y) {

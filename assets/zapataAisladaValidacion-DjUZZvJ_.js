@@ -413,8 +413,9 @@ let __tla = Promise.all([
         return c;
       }, Ce = Ie.v;
       le ? Ge.derive(() => {
+        if (Ie.v !== Ce) return;
         const e = le.deformedShape.val, o = le.deformScale.val;
-        Ie.v === Ce && (t.objects3D.val = we(e, o));
+        t.objects3D.val = we(e, o);
       }) : t.objects3D.val = we(true, 1);
     }
   };
