@@ -1,0 +1,26 @@
+
+
+ ETABS Ultimate 64-bit 19.1.0 Build 2420 (Analysis Build 9853/64)               
+ File: C:\Users\j-b-j\Document...ekatan-struct\validation\val_flex_diaphragm.OUT
+                                                                     
+                                                                       
+
+ D I S P L A C E M E N T   D E G R E E S   O F   F R E E D O M
+
+         (A) = Active DOF, equilibrium equation
+         (-) = Restrained DOF, reaction computed
+         (+) = Constrained DOF
+         (>) = External substructure DOF
+         ( ) = Null DOF
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+      P0 TO      P8    -   -   -   -   -   -
+      P9 TO     P12    A   A   A   A   A   A
+     P13               +   +   A   A   A   +
+     P14 TO     P35    A   A   A   A   A   A
+       2               +   +   -   -   -   +
+     ~38 TO    ~373    A   A   A   A   A   A
+    NULL                                    
+
+  CONSTRAINTS         U1  U2  U3  R1  R2  R3
+ 1                     A   A               A
