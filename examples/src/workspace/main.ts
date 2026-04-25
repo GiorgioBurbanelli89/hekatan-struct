@@ -109,6 +109,19 @@ function loadExample(ex: ExampleDef) {
       return [k, valSI];
     }),
   );
+  // ── BUGFIX: limpiar animaciones del ejemplo previo antes de cambiar.
+  // Sin esto, los setInterval siguen corriendo en background y al cambiar
+  // de ejemplo modifican el deformScale del nuevo (causa lag y jank). ──
+  const animKeys = ["__rbsK3Anim", "__bfpK3Anim", "__endPlateK3Anim"];
+  for (const k of animKeys) {
+    const id = (window as any)[k];
+    if (id) {
+      clearInterval(id);
+      (window as any)[k] = null;
+    }
+  }
+  // Detener animación modal si existe
+  try { modalAnimator?.stop?.(); } catch {}
   // Invalidar derives de ejemplos previos (e.g. springs reactivos de zapatas)
   activeExampleVersion.v++;
   resetStates();
@@ -116,6 +129,15 @@ function loadExample(ex: ExampleDef) {
   // Aplica el colormap por defecto que cada ejemplo declara.
   // Si el anterior tenía seleccionado "pressure" y el nuevo no lo populó,
   // quedaría 0 everywhere — así evitamos ese caso.
+  // ── Display scale automático para conexiones (modelo pequeño escala -6) ──
+  // Las conexiones (RBS, BFP, End Plate, Placa Base) tienen modelos del orden
+  // de 0.5–4m, mientras flechas/markers default son grandes. Reducir
+  // displayScale al cargar evita que cargas/apoyos tapen la geometría.
+  const isConexion = ex.id?.startsWith("conexion-") || ex.id === "placa-base";
+  if (isConexion) {
+    const s = (viewerElm as any).__settings;
+    if (s?.displayScale) s.displayScale.val = -6;
+  }
   if (ex.defaultShellResult) {
     const s = (viewerElm as any).__settings;
     if (s?.shellResults) s.shellResults.val = ex.defaultShellResult;

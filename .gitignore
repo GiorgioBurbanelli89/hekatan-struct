@@ -3,3 +3,16 @@ node_modules
 .DS_Store
 website/src/examples/
 "clon awatif/"
+
+# ─── HEKATAN PRO (no-lineal · licencia comercial) ───────────────────────
+# Estos folders/archivos contienen el solver no-lineal con Newton-Raphson J2
+# + return-mapping + damage Lemaitre que se distribuye bajo licencia comercial.
+# NO se sube al repo público (MIT). Se mantiene local + repo privado separado.
+awatif-fem-pro/
+awatif-fem/src/cpp/PRO/
+awatif-fem/src/cpp/built/deform-pro.wasm
+awatif-fem/src/cpp/built/deform-pro.js
+examples/src/**/*Pro.ts
+examples/src/conexion-*-pro/
+docs/PRO/
+LICENSE.commercial.txt
