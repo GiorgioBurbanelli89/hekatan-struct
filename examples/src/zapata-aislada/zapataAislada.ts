@@ -75,7 +75,14 @@ export const zapataAislada: ExampleDef = {
       options: Object.fromEntries(SOIL_TYPES.map((s, i) => [s.name, i])),
     },
     q_adm:    { default: 20,    min: 1,    max: 100,    step: 1,    label: "q_adm (tonf/m²)" },
-    ks_factor:{ default: 10.5,  min: 5,    max: 20,     step: 0.5,  label: "ks/q_adm (Bowles)" },
+    // ks_factor: correlación Bowles (se usa solo para auto-poblar ks al cambiar
+    // de tipo de suelo). El valor que realmente usa el solver es `ks` de abajo,
+    // editable por el usuario (input directo de estudio geotécnico).
+    ks_factor:{ default: 10.5,  min: 5,    max: 20,     step: 0.5,  label: "ks_factor Bowles (referencia)" },
+    // ks — módulo de balasto vertical. Valor usado DIRECTAMENTE por el solver.
+    // Al cambiar el tipo de suelo, se auto-popula con ks = q_adm × 9.807 × ks_factor,
+    // pero el usuario puede sobrescribirlo a mano (típico en modo Custom).
+    ks:       { default: 2059,  min: 100,  max: 200000, step: 10,   label: "ks (kN/m³)" },
     // Propiedades geotécnicas (se autopoblan al cambiar Tipo de suelo)
     su:       { default: 0,     min: 0,    max: 300,    step: 1,    label: "su cohesión (kPa)" },
     phi:      { default: 33,    min: 0,    max: 55,     step: 1,    label: "φ fricción (°)" },
@@ -155,15 +162,19 @@ export const zapataAislada: ExampleDef = {
    */
   inlineComputed: [
     {
+      // Muestra ks derivado de Bowles junto al ks_factor — sirve como referencia
+      // comparativa con el ks editable de arriba. Si coinciden, estás usando Bowles;
+      // si difieren, estás en modo Custom con valor de geotecnia.
       after: "ks_factor",
-      label: "ks (kN/m³)",
+      label: "ks Bowles ref. (kN/m³)",
       compute: (p) => {
         const q_adm_kNm2 = (p.q_adm ?? 20) * TONF_TO_KN;
-        const ks = q_adm_kNm2 * (p.ks_factor ?? 10.5);
-        return ks.toFixed(0);
+        const ks_bowles = q_adm_kNm2 * (p.ks_factor ?? 10.5);
+        return ks_bowles.toFixed(0);
       },
     },
     {
+      // D flexural debajo de tz (rigidez de placa depende de t³)
       after: "tz",
       label: "D flexural (kN·m)",
       compute: (p) => {
@@ -173,12 +184,13 @@ export const zapataAislada: ExampleDef = {
       },
     },
     {
-      after: "Lz",
+      // k_r Biot debajo del ks (input directo) — muestra si la placa
+      // se comporta flexible o rígida con el ks seleccionado.
+      after: "ks",
       label: "k_r Biot",
       compute: (p) => {
         const tz = p.tz ?? 0.15, Lz = p.Lz ?? 2.5;
-        const q_adm_kNm2 = (p.q_adm ?? 20) * TONF_TO_KN;
-        const ks = q_adm_kNm2 * (p.ks_factor ?? 10.5);
+        const ks = p.ks ?? 2059;
         const D = Ec * tz ** 3 / (12 * (1 - nu_c ** 2));
         const k_r = D / (ks * Lz ** 4);
         return k_r.toFixed(3) + (k_r < 1 ? " FLEX" : " RÍG");
@@ -193,7 +205,8 @@ export const zapataAislada: ExampleDef = {
    */
   computedLabels(p, states) {
     const q_adm_kNm2 = (p.q_adm ?? 20) * TONF_TO_KN;
-    const ks = q_adm_kNm2 * (p.ks_factor ?? 10.5);                   // kN/m³
+    // ks real (input directo como SAFE); Bowles es solo referencial.
+    const ks = p.ks ?? (q_adm_kNm2 * (p.ks_factor ?? 10.5));          // kN/m³
     const tz = p.tz ?? 0.15, Lz = p.Lz ?? 2.5;
     const D = Ec * tz ** 3 / (12 * (1 - nu_c ** 2));                 // kN·m (rigidez flexural)
     const k_r = D / (ks * Lz ** 4);                                  // Biot: <1 flexible, >1 rígida
@@ -254,7 +267,7 @@ export const zapataAislada: ExampleDef = {
   onParamChange(key, params) {
     if (key === "soilType") {
       const idx = Math.round(params.soilType ?? 0);
-      if (idx > 0) {
+      if (idx >= 0) {
         const soil = SOIL_TYPES[idx];
         params.q_adm     = soil.q_adm;
         params.ks_factor = soil.ks_factor;
@@ -263,6 +276,9 @@ export const zapataAislada: ExampleDef = {
         params.gamma     = soil.gamma;
         params.N_SPT     = soil.N_SPT;
         params.E_soil    = soil.E_soil;
+        // Al cambiar tipo de suelo, auto-popular ks con Bowles.
+        // (En Custom el usuario puede sobrescribirlo después.)
+        params.ks = soil.q_adm * TONF_TO_KN * soil.ks_factor;
       }
     }
     if (key === "combo") {
@@ -294,7 +310,10 @@ export const zapataAislada: ExampleDef = {
     const q_adm_tonf = p.q_adm;
     const ks_factor  = p.ks_factor;
     const q_adm_kNm2 = q_adm_tonf * TONF_TO_KN;           // tonf/m² → kN/m²
-    const ks = q_adm_kNm2 * ks_factor;                    // kN/m³
+    // ks es INPUT DIRECTO (como SAFE). q_adm/ks_factor son referenciales.
+    // Al cambiar tipo de suelo, onParamChange() auto-pobla ks con Bowles,
+    // pero si el usuario lo edita después, su valor manda.
+    const ks = p.ks ?? (q_adm_kNm2 * ks_factor);          // kN/m³
     // ── Aplicación de cargas según toggles ──
     // Si `useSimple`=ON: se ignoran D/L/S y solo se usa Carga Simple.
     // Si `useSimple`=OFF: se suman los patrones activos (useD, useL, useS).
