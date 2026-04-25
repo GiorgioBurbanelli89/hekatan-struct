@@ -1,13 +1,14 @@
-# Hekatan Structure — Modelo de Licenciamiento Dual
+# Hekatan Struct — Modelo de Licenciamiento Dual
 
 ```
 ┌──────────────────────────┐    ┌──────────────────────────┐
-│  Hekatan Structure       │    │  Hekatan Structure Pro   │
+│  Hekatan Struct          │    │  Hekatan Pro Struct      │
 │  (Free)                  │    │  (Comercial)             │
 │  MIT License             │    │  Licencia comercial      │
 │  Solver lineal completo  │    │  + Solver no-lineal      │
 │  Workspace web abierto   │    │  + Damage / Fractura     │
 │  GitHub público          │    │  + Soporte técnico       │
+│  hekatan-struct (repo)   │    │  hekatan-pro-struct      │
 └──────────────────────────┘    └──────────────────────────┘
 ```
 
@@ -42,7 +43,7 @@ hekatan-struct/                  ← Repo público (github.com/GiorgioBurbanelli
 # LO QUE SIGUE NO SE SUBE AL REPO PÚBLICO (gitignored):
 # ──────────────────────────────────────────────────────────────────────
 
-awatif-fem-pro/                  ← LICENCIA COMERCIAL Hekatan Structure Pro
+hekatan-pro-struct/              ← LICENCIA COMERCIAL Hekatan Pro Struct
 ├── LICENSE.commercial.txt       ← acuerdo de licencia
 ├── src/cpp/
 │   ├── nonlinear.cpp            ← Newton-Raphson incremental
@@ -92,11 +93,12 @@ git checkout main
 git push hekatan-struct main      # → repo público
 
 # Trabajar en código Pro (no-lineal, privado)
-cd hekatan-struct/awatif-fem-pro/  # local solamente, en .gitignore
+# El folder vive AL LADO de hekatan-struct, no dentro:
+#   ~/Documents/Hekatan Calc 1.0.0/hekatan-struct/        (público)
+#   ~/Documents/Hekatan Calc 1.0.0/hekatan-pro-struct/    (privado)
+cd ../hekatan-pro-struct/
 # ... editar nonlinear.cpp, etc.
-# Push a repo privado SEPARADO si tienes uno:
-cd ../  # back to hekatan-struct/
-git -C awatif-fem-pro/ push origin main  # repo privado opcional
+git push origin main   # → github.com/GiorgioBurbanelli89/hekatan-pro-struct (PRIVADO)
 ```
 
 ## Build dual
@@ -111,10 +113,10 @@ emcc awatif-fem/src/cpp/deform.cpp ... \
 ### Build comercial (Pro, con no-lineal)
 ```bash
 emcc awatif-fem/src/cpp/deform.cpp \
-     awatif-fem-pro/src/cpp/nonlinear.cpp \
-     awatif-fem-pro/src/cpp/return_mapping_J2.cpp \
+     ../hekatan-pro-struct/src/cpp/nonlinear.cpp \
+     ../hekatan-pro-struct/src/cpp/return_mapping_J2.cpp \
      ... \
-  -o awatif-fem-pro/built/deform-pro.wasm
+  -o ../hekatan-pro-struct/built/deform-pro.wasm
 # 6 MB, con todas las extensiones Pro
 ```
 
