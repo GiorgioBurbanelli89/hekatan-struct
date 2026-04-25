@@ -10,13 +10,13 @@ import { e as Ce, __tla as __tla_3 } from "./edificioConLosa-BCQHZ5Op.js";
 import { e as Ae, __tla as __tla_4 } from "./edificioConMuros-BhscL3iU.js";
 import { p as Oe, __tla as __tla_5 } from "./plane-CCq7yXjo.js";
 import { m as _e, __tla as __tla_6 } from "./membranaCSI-BB9x0i4O.js";
-import { p as Ee, __tla as __tla_7 } from "./plateThin-wXH9ltoH.js";
-import { p as Re, __tla as __tla_8 } from "./plateThick-B8-L_P7N.js";
+import { p as Re, __tla as __tla_7 } from "./plateThin-wXH9ltoH.js";
+import { p as Ee, __tla as __tla_8 } from "./plateThick-B8-L_P7N.js";
 import { m as Fe, __tla as __tla_9 } from "./membrana-DjQC-13G.js";
 import { s as je, __tla as __tla_10 } from "./shellThin-CRWfR6Yn.js";
 import { s as $e, __tla as __tla_11 } from "./shellThick-k73N0xig.js";
 import { e as De, __tla as __tla_12 } from "./edificioAporticado-DMmhNVXP.js";
-import { e as Ue, __tla as __tla_13 } from "./edificioValidadoEtabs-CCH4lZfG.js";
+import { e as Ue, __tla as __tla_13 } from "./edificioComparativaFem-B2-g3Jhu.js";
 import { e as Le, __tla as __tla_14 } from "./edificioHormigon-BvVgn7Xe.js";
 import { e as Ve, __tla as __tla_15 } from "./edificioAceroV2-DnzPGOcg.js";
 import { e as Ne, __tla as __tla_16 } from "./edificioMixto-BgvtjF2F.js";
@@ -304,18 +304,18 @@ Promise.all([
       const _ = Math.sqrt((T - l) ** 2 + (F - q) ** 2 + (C - m) ** 2) || 1;
       let B = 0;
       for (let c = 0; c < t; c++) {
-        const V = f[c * 6] || 0, Y = f[c * 6 + 1] || 0, E = f[c * 6 + 2] || 0, N = Math.sqrt(V * V + Y * Y + E * E);
+        const V = f[c * 6] || 0, Y = f[c * 6 + 1] || 0, R = f[c * 6 + 2] || 0, N = Math.sqrt(V * V + Y * Y + R * R);
         N > B && (B = N);
       }
       const G = B > 1e-12 ? _ * v / 100 / B : 1, A = performance.now(), $ = () => {
         var _a2;
         const c = (performance.now() - A) / 1e3, V = Math.sin(2 * Math.PI * e * c) * G, Y = new Array(t);
-        for (let E = 0; E < t; E++) {
-          const N = M[E];
-          Y[E] = [
-            N[0] + (f[E * 6] || 0) * V,
-            N[1] + (f[E * 6 + 1] || 0) * V,
-            N[2] + (f[E * 6 + 2] || 0) * V
+        for (let R = 0; R < t; R++) {
+          const N = M[R];
+          Y[R] = [
+            N[0] + (f[R * 6] || 0) * V,
+            N[1] + (f[R * 6 + 1] || 0) * V,
+            N[2] + (f[R * 6 + 2] || 0) * V
           ];
         }
         a.nodes.val = Y, (_a2 = I()) == null ? void 0 : _a2.render(), p = requestAnimationFrame($);
@@ -383,8 +383,8 @@ Promise.all([
     Ae,
     nt,
     it,
-    Ee,
     Re,
+    Ee,
     Ke,
     Fe,
     _e,
@@ -434,14 +434,14 @@ Promise.all([
         u
       ];
     })), dt.v++, ye(), n.build(re(), k, L), n.defaultShellResult) {
-      const a = R.__settings;
+      const a = E.__settings;
       (a == null ? void 0 : a.shellResults) && (a.shellResults.val = n.defaultShellResult), (a == null ? void 0 : a.loads) && (a.loads.val = true), (a == null ? void 0 : a.supports) && (a.supports.val = true);
     }
     ft(n.availableShellResults), ct(), ve(), ee();
   }
   function ct() {
     var _a;
-    const n = R.__settings;
+    const n = E.__settings;
     if (!(n == null ? void 0 : n.deformScale)) return;
     const a = k.nodes.rawVal, o = (_a = k.deformOutputs.rawVal) == null ? void 0 : _a.deformations;
     if (!(a == null ? void 0 : a.length) || !o) {
@@ -470,7 +470,7 @@ Promise.all([
     n.deformScale.val = Math.max(1, P), n.deformScaleZ && (n.deformScaleZ.val = f), n.displayScale && (n.displayScale.val = -1.5);
   }
   function ve() {
-    const n = R.__ctx, a = k.nodes.rawVal;
+    const n = E.__ctx, a = k.nodes.rawVal;
     if (!n || !(a == null ? void 0 : a.length)) return;
     const { camera: o, controls: u, render: v } = n;
     let g = 1 / 0, b = 1 / 0, i = 1 / 0, r = -1 / 0, p = -1 / 0, h = -1 / 0;
@@ -479,17 +479,17 @@ Promise.all([
     u.target.set(M, w, y);
     const d = s / Math.sqrt(3);
     o.position.set(M + d, w - d, y + d), o.up.set(0, 0, 1), o.near = f * 1e-3, o.far = f * 50, o.updateProjectionMatrix(), o.lookAt(M, w, y), u.update(), v == null ? void 0 : v();
-    const e = R.__settings;
+    const e = E.__settings;
     (e == null ? void 0 : e.gridSize) && (e.gridSize.val = Math.max(Math.ceil(Math.max(I, z) * 1.2), 2));
   }
   function ft(n) {
-    const a = R.querySelectorAll("select"), o = Array.from(a).find((v) => Array.from(v.options).some((g) => g.value === "bendingXX"));
+    const a = E.querySelectorAll("select"), o = Array.from(a).find((v) => Array.from(v.options).some((g) => g.value === "bendingXX"));
     if (!o) return;
     for (const v of Array.from(o.options)) {
       const g = v.value === "none" || !n || n.includes(v.value);
       v.hidden = !g, v.disabled = !g;
     }
-    const u = R.__settings;
+    const u = E.__settings;
     (u == null ? void 0 : u.shellResults) && (o.value = u.shellResults.val, o.dispatchEvent(new Event("change", {
       bubbles: true
     })));
@@ -555,7 +555,7 @@ Promise.all([
     });
   }
   function H(n) {
-    const a = R.__ctx;
+    const a = E.__ctx;
     if (!a) return;
     const { camera: o, controls: u, render: v } = a, g = k.nodes.rawVal ?? [];
     let b = 1 / 0, i = 1 / 0, r = 1 / 0, p = -1 / 0, h = -1 / 0, M = -1 / 0;
@@ -777,7 +777,7 @@ Promise.all([
           deformOutputs: ie,
           analyzeOutputs: ae
         },
-        viewerElm: R,
+        viewerElm: E,
         scalePercent: 5,
         onStatusChange: () => {
           const m = O.getStatus();
@@ -846,7 +846,7 @@ Promise.all([
     shellResults: "pressure",
     gridSize: 10,
     showCotas: true
-  }, R = Pe({
+  }, E = Pe({
     mesh: {
       nodes: te,
       elements: ne,
@@ -858,7 +858,7 @@ Promise.all([
     objects3D: he,
     settingsObj: mt
   });
-  document.body.append(R, ke({
+  document.body.append(E, ke({
     sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct",
     author: "https://www.linkedin.com/in/jorge-burbano-213741138/"
   }));
@@ -870,7 +870,7 @@ Promise.all([
       deformOutputs: ie,
       analyzeOutputs: ae
     },
-    viewerElm: R,
+    viewerElm: E,
     scalePercent: 5
   });
   const ce = new URLSearchParams(window.location.search).get("t"), W = ce && K.find((n) => n.id === ce) || K.find((n) => n.id === "zapata-aislada") || K[0];
