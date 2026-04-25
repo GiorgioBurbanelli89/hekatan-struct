@@ -77,6 +77,10 @@ let computedObj: Record<string, string> | null = null;
 // Objeto mutable para los valores INLINE calculados (ks después de q_adm, etc.).
 // Misma lógica que computedObj: mutamos in-place y el pane.refresh() los actualiza.
 let inlineComputedObj: Record<string, string> | null = null;
+// Registro de bindings con visibilidad dinámica (hiddenIf). En cada rebuild
+// evaluamos la función y aplicamos .hidden al binding del Tweakpane.
+interface HiddenBinding { binding: any; hiddenIf: (p: Record<string, number>) => boolean; }
+let hiddenBindings: HiddenBinding[] = [];
 const modalPanel = createModalPanel();
 modalPanel.div.style.display = "none";
 
@@ -445,6 +449,14 @@ function buildParamsPane() {
     if (nextEx) loadExample(nextEx);
   });
 
+  // ── Reporte matemático FEM (estilo Calcpad) ──
+  pane.addButton({ title: "📐 Reporte matemático FEM" }).on("click", () => {
+    if (!currentExample) return;
+    import("./mathReport").then(({ openMathReport }) => {
+      openMathReport(currentExample!.id, currentExample!.name, currentParams, states);
+    });
+  });
+
   // ── Vista (planta / elevación / isométrica) ──
   const fView = pane.addFolder({ title: "Vista", expanded: false });
   fView.addButton({ title: "🏗 Isométrica" }).on("click", () => setView("iso"));
@@ -572,14 +584,17 @@ function buildParamsPane() {
     if (p.boolean) {
       // Checkbox on/off. Valor almacenado como 0|1 en currentParams.
       boolProxy[key] = currentParams[key] >= 0.5;
-      fTarget.addBinding(boolProxy, key, { label: p.label ?? key }).on("change", (e) => {
+      const bb = fTarget.addBinding(boolProxy, key, { label: p.label ?? key });
+      bb.on("change", (e: any) => {
         currentParams[key] = e.value ? 1 : 0;
         if (currentExample?.onParamChange) {
           currentExample.onParamChange(key, currentParams);
           pane.refresh();
         }
+        applyHiddenBindings();
         scheduleRebuild();
       });
+      if (p.hiddenIf) hiddenBindings.push({ binding: bb, hiddenIf: p.hiddenIf });
       continue;
     }
     // Label dinámico: si el param tiene unitType, anexar el sufijo actual
@@ -823,16 +838,27 @@ modalAnimator = createModalAnimator({
 });
 
 // ── Cargar ejemplo inicial via ?t= o default ──
-const urlT = new URLSearchParams(window.location.search).get("t");
+// Si el URL no trae ?t o trae el legado "zapata-aislada", forzamos el ejemplo
+// de validación (defecto actual del workspace). El usuario puede seleccionar
+// la zapata original desde el dropdown "Ejemplo" si la necesita.
+let urlT = new URLSearchParams(window.location.search).get("t");
+if (!urlT || urlT === "zapata-aislada") {
+  urlT = "zapata-aislada-validacion";
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set("t", urlT);
+    window.history.replaceState(null, "", u.toString());
+  } catch { /* no-op */ }
+}
 const initialEx =
-  (urlT && examplesRegistry.find((e) => e.id === urlT)) ||
-  examplesRegistry.find((e) => e.id === "zapata-aislada") ||
+  examplesRegistry.find((e) => e.id === urlT) ||
+  examplesRegistry.find((e) => e.id === "zapata-aislada-validacion") ||
   examplesRegistry[0];
 if (initialEx) {
   loadExample(initialEx);
   // Zapata: vista isométrica por default — se ven los resortes Winkler en elevación
   // comprimidos/extendidos según la deformada (como en croquis clásicos de ingeniería).
-  if (initialEx.id === "zapata-aislada" || initialEx.id === "zapata-viga-amarre") {
+  if (initialEx.id === "zapata-aislada" || initialEx.id === "zapata-aislada-validacion" || initialEx.id === "zapata-viga-amarre") {
     setTimeout(() => setView("iso"), 200);
   }
 }

@@ -63,6 +63,7 @@ export default defineConfig({
         "edificio-con-muros": "src/edificio-con-muros/index.html",
         "plane": "src/plane/index.html",
         "membrana-csi": "src/membrana-csi/index.html",
+        "plate-thick-validacion": "src/plate-thick-validacion/index.html",
         "edificio-aporticado": "src/edificio-aporticado/index.html",
         "edificio-hormigon": "src/edificio-hormigon/index.html",
         "edificio-acero-v2": "src/edificio-acero-v2/index.html",

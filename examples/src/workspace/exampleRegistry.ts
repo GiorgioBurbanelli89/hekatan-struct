@@ -62,6 +62,10 @@ export interface ParamDef {
    * Si no se define, el parámetro es adimensional y no sufre conversión.
    */
   unitType?: "force" | "moment" | "disp";
+  /** Si la función retorna true, el binding se oculta (Tweakpane `.hidden = true`).
+   *  Se re-evalúa en cada rebuild. Útil para mostrar `ks_factor` solo en Custom,
+   *  o sliders de carga simple solo si useSimple=ON. */
+  hiddenIf?: (params: Record<string, number>) => boolean;
 }
 
 export interface BuildStates {
@@ -136,6 +140,7 @@ export interface ExampleDef {
     after: string;                                                        // key del param después del cual insertar
     label: string;                                                        // etiqueta visible
     compute: (params: Record<string, number>, states: BuildStates) => string;
+    hiddenIf?: (params: Record<string, number>) => boolean;                // oculta dinámicamente
   }>;
   /** Shell colormap por defecto para este ejemplo (e.g. "bendingXX", "pressure"). */
   defaultShellResult?: string;
@@ -157,6 +162,7 @@ import { edificioConLosa } from "../edificio-con-losa/edificioConLosa";
 import { edificioConMuros } from "../edificio-con-muros/edificioConMuros";
 import { plane } from "../plane/plane";
 import { membranaCSI } from "../membrana-csi/membranaCSI";
+import { plateThickValidacion } from "../plate-thick-validacion/plateThickValidacion";
 import { plateThin } from "../plate-thin/plateThin";
 import { plateThick } from "../plate-thick/plateThick";
 import { membrana } from "../membrana-pstress/membrana";
@@ -181,6 +187,11 @@ import { edifAcero } from "../edif-acero/edifAcero";
 import { mezanine } from "../mezanine/mezanine";
 
 export const examplesRegistry: ExampleDef[] = [
+  // Cimentaciones (validación primero — defecto del workspace)
+  zapataAisladaValidacion,
+  plateThickValidacion,
+  zapataAislada,
+  zapataVigaAmarre,
   // Frames 1D
   barraAxial,
   trussGen,
@@ -213,8 +224,4 @@ export const examplesRegistry: ExampleDef[] = [
   // Cáscaras
   shellThin,
   shellThick,
-  // Cimentaciones
-  zapataAislada,
-  zapataAisladaValidacion,
-  zapataVigaAmarre,
 ];
