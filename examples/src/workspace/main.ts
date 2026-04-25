@@ -98,11 +98,29 @@ function resetStates() {
 
 function loadExample(ex: ExampleDef) {
   currentExample = ex;
+  // ── Ejemplos legacy del upstream awatif (1d-mesh, beams, plate-q4, etc.):
+  // tienen su propia UI VanJS toolbar y no encajan en el flujo Tweakpane del
+  // workspace. El pane solo muestra un botón "Abrir ejemplo →" que navega
+  // al index.html standalone. ──
+  if (ex.standaloneUrl) {
+    // Limpiar animaciones y estado del ejemplo previo
+    const animKeys = ["__rbsK3Anim", "__bfpK3Anim", "__endPlateK3Anim"];
+    for (const k of animKeys) {
+      const id = (window as any)[k];
+      if (id) { clearInterval(id); (window as any)[k] = null; }
+    }
+    try { modalAnimator?.stop?.(); } catch {}
+    activeExampleVersion.v++;
+    resetStates();
+    currentParams = {};
+    buildParamsPane();
+    return;
+  }
   // currentParams se almacena en la UNIDAD UI seleccionada. Los p.default
   // están escritos en SI (kN, kN·m) por convención; aquí los convertimos a
   // la unidad UI del usuario para que los sliders muestren valores coherentes.
   currentParams = Object.fromEntries(
-    Object.entries(ex.params).map(([k, p]) => {
+    Object.entries(ex.params ?? {}).map(([k, p]) => {
       const valSI = p.default;
       if (p.unitType === "force")  return [k, fromKn(valSI)];
       if (p.unitType === "moment") return [k, fromKnm(valSI)];
@@ -125,7 +143,7 @@ function loadExample(ex: ExampleDef) {
   // Invalidar derives de ejemplos previos (e.g. springs reactivos de zapatas)
   activeExampleVersion.v++;
   resetStates();
-  ex.build(toSIParams(), states, modalPanel);
+  ex.build?.(toSIParams(), states, modalPanel);
   // Aplica el colormap por defecto que cada ejemplo declara.
   // Si el anterior tenía seleccionado "pressure" y el nuevo no lo populó,
   // quedaría 0 everywhere — así evitamos ese caso.
@@ -474,6 +492,19 @@ function buildParamsPane() {
     const nextEx = examplesRegistry.find((x) => x.id === e.value);
     if (nextEx) loadExample(nextEx);
   });
+
+  // ── Ejemplos legacy del upstream awatif: solo botón al standalone ──
+  if (currentExample.standaloneUrl) {
+    const url = currentExample.standaloneUrl;
+    const note = pane.addFolder({ title: "ℹ Ejemplo legacy", expanded: true });
+    // Tweakpane no tiene texto multilínea fácil; uso botones consecutivos como labels.
+    note.addButton({ title: "🔗 Abrir ejemplo →" }).on("click", () => {
+      window.location.href = url;
+    });
+    note.addButton({ title: "(usa toolbar VanJS propio)" }).on("click", () => {});
+    currentPane = pane;
+    return;
+  }
 
   // ── Reporte matemático FEM (estilo Calcpad) — pendiente módulo mathReport ──
 

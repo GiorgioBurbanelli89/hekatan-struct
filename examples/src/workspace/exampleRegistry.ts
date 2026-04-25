@@ -92,9 +92,18 @@ export interface ExampleDef {
   id: string;
   name: string;
   category: string;
-  params: Record<string, ParamDef>;
+  /**
+   * Si se define, este ejemplo NO usa el flujo Tweakpane del workspace.
+   * Es un ejemplo "legacy" del upstream awatif (1d-mesh, 2d-mesh, beams, color-map…)
+   * con su propia UI VanJS toolbar. Al seleccionarlo en el selector, el workspace
+   * muestra un botón "Abrir ejemplo →" que navega a la página standalone
+   * (`/<id>/index.html`). Cuando esto está presente, `params` y `build` son
+   * ignorados (pueden estar vacíos o no existir).
+   */
+  standaloneUrl?: string;
+  params?: Record<string, ParamDef>;
   /** Construye el modelo y ejecuta el análisis estático */
-  build: (params: Record<string, number>, states: BuildStates, modalPanel?: ModalPanelApi) => void;
+  build?: (params: Record<string, number>, states: BuildStates, modalPanel?: ModalPanelApi) => void;
   /** ¿Soporta análisis modal? */
   hasModal?: boolean;
   /** Si hasModal=true, función que corre el modal y actualiza modalPanel */
@@ -188,6 +197,8 @@ import { tower3D } from "../tower-3d/tower3D";
 import { galpon } from "../galpon/galpon";
 import { edifAcero } from "../edif-acero/edifAcero";
 import { mezanine } from "../mezanine/mezanine";
+// Legacy del upstream awatif (rebrandeados, abren standalone)
+import { legacyAwatifExamples } from "./legacyAwatif";
 
 export const examplesRegistry: ExampleDef[] = [
   // Cimentaciones (validación primero — defecto del workspace)
@@ -230,4 +241,6 @@ export const examplesRegistry: ExampleDef[] = [
   // Cáscaras
   shellThin,
   shellThick,
+  // ── Legacy upstream awatif (abren su propia UI VanJS standalone) ──
+  ...legacyAwatifExamples,
 ];
