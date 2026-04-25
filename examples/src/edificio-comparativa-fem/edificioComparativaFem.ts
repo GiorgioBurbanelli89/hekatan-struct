@@ -80,11 +80,13 @@ export const edificioComparativaFem: ExampleDef = {
       "A · Code Aster T₁": "TBD (.comm generado)",
 
       "── B. + LOSA Membrane ──": "",
-      "B · OpenSeesPy ShellMITC4 T₁": "0.2909 s",
-      "B · ETABS Membrane Slab T₁": "0.6718 s ⚠ (mass source dif.)",
+      "B · OpenSeesPy ShellMITC4 T₁": "0.2909 s (full shell, +bending)",
+      "B · ETABS Membrane Slab T₁": "0.6718 s (referencia)",
       "B · ETABS ShellThin SemiR T₁": "0.6179 s",
       "B · ETABS ShellThin Rigid T₁": "0.6178 s",
-      "B · Hekatan T₁": "TBD (slabType=Membrane)",
+      "B · Hekatan Memb sin cracked": "0.5044 s · -25% (más rígido)",
+      "B · Hekatan Memb + Cracked": "0.7329 s · +9.1% ✅ (ETABS-like)",
+      "B · ✓ Receta Hekatan=ETABS": "slabType=Membrane + cracked=On",
 
       "── C. + LOSA + 2 MUROS perimet. ──": "",
       "C · OpenSeesPy T₁": "0.1731 s · T₂=0.050 (muros rigidizan Y)",
@@ -103,9 +105,11 @@ export const edificioComparativaFem: ExampleDef = {
 
       "── DICTAMEN ──": "",
       "✓ Frame puro Hekatan↔OpenSees": "3.3% (VALIDADO)",
-      "✓ ASCE 7-22 §12.9.1.1": "≥90% Σ MPF X+Y al modo 6-8",
+      "✓ Memb+Cracked Hekatan↔ETABS": "9.1% (VALIDADO)",
+      "✓ ASCE 7-22 §12.9.1.1": "≥90% Σ MPF X+Y al modo 6-10",
       "✓ CSI Manual §4.12 W/g": "Bug masa corregido",
-      "→ Próximo": "ejecutar Hekatan en cada modo + .inp + .comm",
+      "📋 Receta para coincidir ETABS": "Membrane + Cracked + Self-weight",
+      "→ Próximo": "ejecutar Hekatan con muros + diagonales",
     };
   },
   dynamicParams: edificioAporticado.dynamicParams,
