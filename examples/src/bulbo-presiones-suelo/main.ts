@@ -29,14 +29,14 @@ const parameters: Parameters = {
   Lx:  { value: van.state(20),    min: 5,  max: 40,  step: 1,    label: "Lx suelo (m)" },
   Ly:  { value: van.state(20),    min: 5,  max: 40,  step: 1,    label: "Ly suelo (m)" },
   Lz:  { value: van.state(10),    min: 4,  max: 20,  step: 1,    label: "Lz suelo (m)" },
-  // Mallado — default mínimo para apertura rápida (6×6×3 = 108 elem,
-  // 196 nodos, 588 DOFs ≈ 200ms solve en TS puro).
-  // Solver hex8Solve es Gauss dense O(N³) — pure TS, NO WASM. Refinar
-  // mesh aumenta tiempo cúbicamente (8×8×4=10s, 12×12×8=2min, 16×16×10=8min+).
-  // Roadmap: compilar hex8Solve a WASM con Eigen sparse para >100× speedup.
-  nx:  { value: van.state(6),     min: 4,  max: 16,  step: 2,    label: "nx mesh" },
-  ny:  { value: van.state(6),     min: 4,  max: 16,  step: 2,    label: "ny mesh" },
-  nz:  { value: van.state(3),     min: 2,  max: 8,   step: 1,    label: "nz mesh" },
+  // Mallado — default mediano para buena resolución del bulbo.
+  // Ahora con hex8 WASM (Eigen sparse Cholesky), tiempos típicos:
+  //   12×12×8 = 1152 elem, 4563 DOFs ≈ 50ms
+  //   16×16×10 = 2560 elem, 9251 DOFs ≈ 200ms
+  //   20×20×10 = 4000 elem, 13230 DOFs ≈ 600ms (réplica EXACTA Serquen SF-70)
+  nx:  { value: van.state(12),    min: 6,  max: 24,  step: 2,    label: "nx mesh" },
+  ny:  { value: van.state(12),    min: 6,  max: 24,  step: 2,    label: "ny mesh" },
+  nz:  { value: van.state(8),     min: 4,  max: 16,  step: 2,    label: "nz mesh" },
   // Material suelo (kPa = kN/m², w en kN/m² = kPa)
   Es:  { value: van.state(20000), min: 5000, max: 100000, step: 1000, label: "Es suelo (kN/m²)" },
   nu:  { value: van.state(0.42),  min: 0.20, max: 0.49, step: 0.01, label: "ν suelo" },
