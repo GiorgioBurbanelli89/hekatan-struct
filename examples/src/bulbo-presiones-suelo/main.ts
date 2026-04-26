@@ -269,26 +269,24 @@ van.derive(() => {
     });
   }
 
-  // analyzeOutputs: usar S33 (σzz) NODAL desde stressPerElement, promediado
-  // por nodo desde elementos vecinos. Esto da el bulbo de presiones REAL.
+  // analyzeOutputs: usar |σzz| (magnitud absoluta de compresión) — siempre
+  // POSITIVO, garantiza buen contraste visual. La auto-escala fuerza vMin=0
+  // y los nodos cargados (alto |σzz|) van a vMax → bulbo bien definido.
   const analyzeOutputs: AnalyzeOutputs = {} as AnalyzeOutputs;
   if (result) {
     const nodeS33 = new Map<number, { sum: number; count: number }>();
     elemsH8.forEach((e, eidx) => {
-      // stressPerElement contiene 8 arrays de 6 componentes (σxx,σyy,σzz,τxy,τyz,τxz)
       const stressGauss = result.stressPerElement.get(eidx) || [];
-      // Promediar σzz (índice 2) sobre los 8 puntos Gauss
-      let s33Avg = 0;
+      let s33AbsAvg = 0;
       let cnt = 0;
       for (const sig of stressGauss) {
-        s33Avg += sig[2];  // σzz
+        s33AbsAvg += Math.abs(sig[2]);  // |σzz| (magnitud compresión)
         cnt++;
       }
-      s33Avg = cnt > 0 ? s33Avg / cnt : 0;
-      // Asignar a todos los 8 nodos del elemento
+      s33AbsAvg = cnt > 0 ? s33AbsAvg / cnt : 0;
       for (const nid of e) {
         const cur = nodeS33.get(nid) || { sum: 0, count: 0 };
-        cur.sum += s33Avg; cur.count += 1;
+        cur.sum += s33AbsAvg; cur.count += 1;
         nodeS33.set(nid, cur);
       }
     });
@@ -300,8 +298,6 @@ van.derive(() => {
       });
       s33Nodes.set(fidx, [vals[0], vals[1], vals[2], vals[3]]);
     });
-    // Usar el campo "vonMises" del Hekatan viewer porque es el field que
-    // se renderiza con colormap rainbow. Pero los valores son S33 reales.
     (analyzeOutputs as any).vonMises = s33Nodes;
   }
   void faceToElem;
@@ -348,7 +344,11 @@ const viewerEl = getViewer({
     deformOutputs: deformOutputsState, analyzeOutputs: analyzeOutputsState,
   },
   settingsObj: {
-    deformedShape: false, shellResults: "vonMises",
+    deformedShape: false,
+    // ✓ Solid results: el dropdown CORRECTO para H8 sólidos. Shell results
+    // queda en "none" porque el modelo es 3D solid, no 2D shell.
+    solidResults: "vonMises",
+    shellResults: "none",
     gridSize: 25, deformScale: 100, custom3D: false,
     // Vista limpia rebanada estilo Calcpad: sin markers de loads/supports/nodes
     loads: false, supports: false, nodes: false, showCotas: false, displayScale: 0.5,

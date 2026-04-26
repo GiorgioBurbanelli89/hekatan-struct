@@ -627,9 +627,16 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
       "";
     colorMapUnit.val = unit;
 
+    // ── Solid Results PRIMARY: cuando solidField está activo (no "none"),
+    // usar la data sólida en lugar de la shell. Los campos sólidos se
+    // mapean al mismo canal nodeVonMises porque el ejemplo populates el
+    // map con S33 / σ / etc. via analyzeOutputs.vonMises.
+    const useSolid = solidField && solidField !== "none";
+    const effectiveResultMap = useSolid ? [nodeVonMises, 0] : resultMapper[field];
+
     const values: number[] = [];
     mesh.nodes.val.forEach((_, i) => {
-      const resultMap = resultMapper[field];
+      const resultMap = effectiveResultMap;
       if (!resultMap || !resultMap[0] || typeof resultMap[0].has !== 'function') return;
       if (!resultMap[0].has(i)) {
         values.push(Number.NaN);
