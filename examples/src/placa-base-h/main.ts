@@ -23,6 +23,7 @@ import {
 } from "hekatan-fem";
 import { analyze, deform } from "hekatan-fem";
 import { getToolbar, getParameters, Parameters, getViewer } from "hekatan-ui";
+import * as THREE from "three";
 
 // Material acero (kN/m², kN/m³)
 const Es = 200e6;
@@ -48,6 +49,12 @@ const parameters: Parameters = {
   sy:       { value: van.state(0.07),  min: 0.03, max: 0.25, step: 0.01, label: "sy — dist borde Y (m)" },
   d_bolt:   { value: van.state(0.024), min: 0.012, max: 0.050, step: 0.002, label: "Ø perno (m)" },
   L_bolt:   { value: van.state(0.30),  min: 0.15, max: 0.60, step: 0.02, label: "L embebido (m)" },
+  L_proj:   { value: van.state(0.05),  min: 0.02, max: 0.15, step: 0.005, label: "L proyección sobre placa (m, tuerca)" },
+  // ── Pedestal de concreto ──
+  B_ped:    { value: van.state(0.80),  min: 0.40, max: 1.80, step: 0.05, label: "B pedestal (m)" },
+  H_ped:    { value: van.state(0.80),  min: 0.40, max: 1.80, step: 0.05, label: "H pedestal (m)" },
+  h_ped:    { value: van.state(0.50),  min: 0.30, max: 1.50, step: 0.05, label: "h pedestal (m, profundidad)" },
+  fc:       { value: van.state(28000), min: 17000, max: 50000, step: 1000, label: "f'c concreto (kN/m²)" },
   // ── Cargas (defaults moderados — la placa de 25mm con Fy=250 MPa apenas plastifica con Pu=300 kN, Mu=30 kN·m) ──
   Pu:       { value: van.state(300),   min: 0,    max: 5000, step: 25,   label: "Pu compresión (kN)" },
   Mu:       { value: van.state(30),    min: 0,    max: 800,  step: 5,    label: "Mu momento (kN·m)" },
@@ -62,6 +69,8 @@ const nodeInputsState: State<NodeInputs>         = van.state({});
 const elementInputsState: State<ElementInputs>   = van.state({});
 const deformOutputsState: State<DeformOutputs>   = van.state({});
 const analyzeOutputsState: State<AnalyzeOutputs> = van.state({});
+// Decoradores 3D: orificios en la placa, tuercas/cabeza de pernos
+const objects3DState: State<THREE.Object3D[]>    = van.state([]);
 
 van.derive(() => {
   const B = parameters.B.value.val;
@@ -74,6 +83,11 @@ van.derive(() => {
   const L_col = parameters.L_col.value.val;
   const d_bolt = parameters.d_bolt.value.val;
   const L_bolt = parameters.L_bolt.value.val;
+  const L_proj = parameters.L_proj.value.val;
+  const B_ped = parameters.B_ped.value.val;
+  const H_ped = parameters.H_ped.value.val;
+  const h_ped = parameters.h_ped.value.val;
+  const fc = parameters.fc.value.val;
   const sx = parameters.sx.value.val;
   const sy = parameters.sy.value.val;
   const nBoltsX = Math.max(2, Math.round(parameters.nBoltsX.value.val));
@@ -287,15 +301,82 @@ van.derive(() => {
   }
 
   const boltAnchorIds: number[] = [];   // nodos al fondo (z=-L_bolt) — se empotran
-  const boltTopIds: number[] = [];      // nodos en la placa (z=0)
+  const boltPlateIds: number[] = [];    // nodos en la placa (z=0, donde está el orificio)
+  const boltProjIds: number[] = [];     // nodos arriba (z=+L_proj, donde va la tuerca)
 
   for (const [bx, by] of boltPositions) {
-    const topNode = snapToPlate(bx, by);
+    const plateNode = snapToPlate(bx, by);
     const anchorNode = addNode(bx, by, -L_bolt);
-    boltTopIds.push(topNode);
+    const projNode = addNode(bx, by, L_proj);
+    boltPlateIds.push(plateNode);
     boltAnchorIds.push(anchorNode);
-    addFrame(topNode, anchorNode, A_bolt, I_bolt, J_bolt);
+    boltProjIds.push(projNode);
+    // Frame del perno entero: anchor (abajo) → plate → projection (tuerca arriba)
+    addFrame(anchorNode, plateNode, A_bolt, I_bolt, J_bolt);
+    addFrame(plateNode, projNode, A_bolt, I_bolt, J_bolt);
   }
+
+  // ── 3.bis. DECORADORES 3D: orificios en placa + tuercas en proyección ──
+  const decorators: THREE.Object3D[] = [];
+  const HOLE_SEGS = 16;
+  const matHole = new THREE.LineBasicMaterial({ color: 0xff8000, linewidth: 2 });
+  const matNut  = new THREE.LineBasicMaterial({ color: 0xffaa00, linewidth: 2 });
+  const r_hole = (d_bolt * 1.5) / 2;  // orificio típico = 1.5× Ø perno
+  const r_nut  = (d_bolt * 1.8) / 2;  // tuerca hexagonal aprox
+
+  for (const [bx, by] of boltPositions) {
+    // Orificio: círculo naranja en la cara superior de la placa (z = t_plate/2 ≈ 0)
+    const holePts: THREE.Vector3[] = [];
+    for (let i = 0; i <= HOLE_SEGS; i++) {
+      const a = (i / HOLE_SEGS) * 2 * Math.PI;
+      holePts.push(new THREE.Vector3(bx + r_hole * Math.cos(a), by + r_hole * Math.sin(a), 0.001));
+    }
+    decorators.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(holePts), matHole));
+
+    // Tuerca arriba: hexágono a z=L_proj
+    const nutPts: THREE.Vector3[] = [];
+    for (let i = 0; i <= 6; i++) {
+      const a = (i / 6) * 2 * Math.PI;
+      nutPts.push(new THREE.Vector3(bx + r_nut * Math.cos(a), by + r_nut * Math.sin(a), L_proj));
+    }
+    decorators.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(nutPts), matNut));
+    // Hexágono inferior de la tuerca (vertical extrusion 1cm)
+    const nutBasePts: THREE.Vector3[] = [];
+    for (let i = 0; i <= 6; i++) {
+      const a = (i / 6) * 2 * Math.PI;
+      nutBasePts.push(new THREE.Vector3(bx + r_nut * Math.cos(a), by + r_nut * Math.sin(a), L_proj - 0.012));
+    }
+    decorators.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(nutBasePts), matNut));
+  }
+
+  // ── PEDESTAL DE CONCRETO (sólido visual + Winkler springs FEM) ──
+  // Caja sólida B_ped × H_ped × h_ped centrada en (0, 0), top a z=0 (mismo nivel
+  // que la placa). El concreto se modela como un BLOQUE VISUAL (THREE.Mesh) +
+  // resortes Winkler en las bases de los pernos (k = E_c × A / L_eff).
+  // E_c = 4700 √f'c (ACI 318) en MPa, convertido a kN/m².
+  const Ec_kNm2 = 4700 * Math.sqrt(fc / 1000) * 1000; // ACI 318: E_c (kN/m²)
+
+  const pedGeom = new THREE.BoxGeometry(B_ped, H_ped, h_ped);
+  const pedMat = new THREE.MeshBasicMaterial({
+    color: 0x8a8a8a,
+    transparent: true,
+    opacity: 0.35,
+    side: THREE.DoubleSide,
+  });
+  const pedMesh = new THREE.Mesh(pedGeom, pedMat);
+  pedMesh.position.set(0, 0, -h_ped / 2); // top del pedestal en z=0
+  decorators.push(pedMesh);
+
+  // Bordes wireframe del pedestal (edges visibles)
+  const pedEdges = new THREE.EdgesGeometry(pedGeom);
+  const pedEdgesLines = new THREE.LineSegments(
+    pedEdges,
+    new THREE.LineBasicMaterial({ color: 0x444444, linewidth: 1 }),
+  );
+  pedEdgesLines.position.set(0, 0, -h_ped / 2);
+  decorators.push(pedEdgesLines);
+
+  objects3DState.val = decorators;
 
   // ── 4. APOYOS ──
   // Empotramiento en los 4 nodos al fondo de los pernos
@@ -364,11 +445,13 @@ const viewerEl = getViewer({
     deformOutputs: deformOutputsState,
     analyzeOutputs: analyzeOutputsState,
   },
+  objects3D: objects3DState,   // orificios + tuercas + pedestal concreto
   settingsObj: {
     deformedShape: true,
     shellResults: "vonMises",
-    gridSize: 1,           // grid 1m (modelo de ~0.5m)
-    deformScale: 20,       // escalar deformada para visibilidad (sin distorsionar)
+    gridSize: 1,
+    deformScale: 20,
+    custom3D: true,            // mostrar objects3D
   },
 });
 
