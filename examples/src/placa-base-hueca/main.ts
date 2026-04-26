@@ -478,7 +478,7 @@ const viewerEl = getViewer({
   settingsObj: {
     deformedShape: false, shellResults: "vonMises",
     gridSize: 1, deformScale: 1, custom3D: true,
-    loads: false, supports: false, showCotas: false, displayScale: 0.1,
+    loads: true, supports: false, showCotas: false, displayScale: 0.15,
   },
 });
 

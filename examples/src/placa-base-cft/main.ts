@@ -592,9 +592,9 @@ const viewerEl = getViewer({
     // displayScale chico para que los markers no saturen visualmente.
     deformedShape: false, shellResults: "vonMises",
     gridSize: 1, deformScale: 1, custom3D: true,
-    // supports off por defecto (los 49+4 markers del empotramiento generan
-    // ruido visual debajo del pedestal). Activar manualmente desde Settings.
-    loads: false, supports: false, showCotas: false, displayScale: 0.1,
+    // supports off (markers de empotramiento bajo el pedestal hacen ruido).
+    // loads ON → flechas de Pu, Mx, My en la cabeza de la columna.
+    loads: true, supports: false, showCotas: false, displayScale: 0.15,
   },
 });
 
