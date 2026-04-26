@@ -321,21 +321,40 @@ van.derive(() => {
   analyzeOutputsState.val = analyzeOutputs;
 });
 
+const viewerEl = getViewer({
+  mesh: {
+    nodes: nodesState,
+    elements: elementsState,
+    nodeInputs: nodeInputsState,
+    elementInputs: elementInputsState,
+    deformOutputs: deformOutputsState,
+    analyzeOutputs: analyzeOutputsState,
+  },
+  settingsObj: {
+    deformedShape: true,
+    shellResults: "vonMises",
+    gridSize: 1,           // grid 1m (modelo de ~0.5m)
+    deformScale: 100,      // escalar deformada para visibilidad
+  },
+});
+
 document.body.append(
   getParameters(parameters),
-  getViewer({
-    mesh: {
-      nodes: nodesState,
-      elements: elementsState,
-      nodeInputs: nodeInputsState,
-      elementInputs: elementInputsState,
-      deformOutputs: deformOutputsState,
-      analyzeOutputs: analyzeOutputsState,
-    },
-    settingsObj: { deformedShape: true, shellResults: "vonMises" },
-  }),
+  viewerEl,
   getToolbar({
     sourceCode:
       "https://github.com/GiorgioBurbanelli89/hekatan-struct/blob/main/examples/src/placa-base-h/main.ts",
   }),
 );
+
+// ── Auto-fit camera al modelo (modelo es ~0.5m, default camera está lejos) ──
+setTimeout(() => {
+  const ctx = (viewerEl as any).__ctx;
+  if (ctx?.camera && ctx?.controls) {
+    ctx.camera.up.set(0, 0, 1);
+    ctx.camera.position.set(2.0, -2.0, 1.2);
+    ctx.controls.target.set(0, 0, 0.25);
+    ctx.controls.update();
+    ctx.render?.();
+  }
+}, 800);
