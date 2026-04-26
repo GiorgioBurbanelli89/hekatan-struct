@@ -316,37 +316,57 @@ van.derive(() => {
     addFrame(plateNode, projNode, A_bolt, I_bolt, J_bolt);
   }
 
-  // ── 3.bis. DECORADORES 3D: orificios en placa + tuercas en proyección ──
+  // ── 3.bis. DECORADORES 3D: pernos cilíndricos + tuercas hexagonales + orificios ──
   const decorators: THREE.Object3D[] = [];
-  const HOLE_SEGS = 16;
-  const matHole = new THREE.LineBasicMaterial({ color: 0xff8000, linewidth: 2 });
-  const matNut  = new THREE.LineBasicMaterial({ color: 0xffaa00, linewidth: 2 });
   const r_hole = (d_bolt * 1.5) / 2;  // orificio típico = 1.5× Ø perno
-  const r_nut  = (d_bolt * 1.8) / 2;  // tuerca hexagonal aprox
+  const r_nut  = (d_bolt * 1.8) / 2;  // tuerca hexagonal
+  const h_nut  = 0.020;               // espesor tuerca 20mm
+
+  // Materiales
+  const matBolt = new THREE.MeshBasicMaterial({ color: 0xff8800 });          // perno acero color naranja
+  const matNutMesh = new THREE.MeshBasicMaterial({ color: 0xffaa00 });        // tuerca color amarillo
+  const matHoleEdge = new THREE.LineBasicMaterial({ color: 0xff4400, linewidth: 3 });
+  const matNutEdge = new THREE.LineBasicMaterial({ color: 0x665500, linewidth: 1 });
 
   for (const [bx, by] of boltPositions) {
-    // Orificio: círculo naranja en la cara superior de la placa (z = t_plate/2 ≈ 0)
-    const holePts: THREE.Vector3[] = [];
-    for (let i = 0; i <= HOLE_SEGS; i++) {
-      const a = (i / HOLE_SEGS) * 2 * Math.PI;
-      holePts.push(new THREE.Vector3(bx + r_hole * Math.cos(a), by + r_hole * Math.sin(a), 0.001));
-    }
-    decorators.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(holePts), matHole));
+    // ── 1. PERNO CILÍNDRICO completo (anchor → plate → projection) ──
+    // Cylinder Three.js eje Y por default — rotamos 90° para que sea vertical (eje Z)
+    const totalLen = L_bolt + L_proj;
+    const boltMid = (-L_bolt + L_proj) / 2;  // centro del cilindro completo
+    const boltGeom = new THREE.CylinderGeometry(d_bolt / 2, d_bolt / 2, totalLen, 12);
+    const boltMesh = new THREE.Mesh(boltGeom, matBolt);
+    boltMesh.position.set(bx, by, boltMid);
+    boltMesh.rotation.x = Math.PI / 2;  // eje Y → eje Z (vertical)
+    decorators.push(boltMesh);
 
-    // Tuerca arriba: hexágono a z=L_proj
-    const nutPts: THREE.Vector3[] = [];
-    for (let i = 0; i <= 6; i++) {
-      const a = (i / 6) * 2 * Math.PI;
-      nutPts.push(new THREE.Vector3(bx + r_nut * Math.cos(a), by + r_nut * Math.sin(a), L_proj));
+    // ── 2. TUERCA HEXAGONAL arriba (mesh sólido) ──
+    const nutGeom = new THREE.CylinderGeometry(r_nut, r_nut, h_nut, 6);
+    const nutMesh = new THREE.Mesh(nutGeom, matNutMesh);
+    nutMesh.position.set(bx, by, L_proj - h_nut / 2);
+    nutMesh.rotation.x = Math.PI / 2;
+    decorators.push(nutMesh);
+
+    // Bordes de la tuerca (wireframe)
+    const nutEdges = new THREE.EdgesGeometry(nutGeom);
+    const nutEdgesLines = new THREE.LineSegments(nutEdges, matNutEdge);
+    nutEdgesLines.position.set(bx, by, L_proj - h_nut / 2);
+    nutEdgesLines.rotation.x = Math.PI / 2;
+    decorators.push(nutEdgesLines);
+
+    // ── 3. ORIFICIO ROJO en placa (visible top + bottom) ──
+    const holePts: THREE.Vector3[] = [];
+    for (let i = 0; i <= 32; i++) {
+      const a = (i / 32) * 2 * Math.PI;
+      holePts.push(new THREE.Vector3(bx + r_hole * Math.cos(a), by + r_hole * Math.sin(a), t_plate / 2 + 0.0005));
     }
-    decorators.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(nutPts), matNut));
-    // Hexágono inferior de la tuerca (vertical extrusion 1cm)
-    const nutBasePts: THREE.Vector3[] = [];
-    for (let i = 0; i <= 6; i++) {
-      const a = (i / 6) * 2 * Math.PI;
-      nutBasePts.push(new THREE.Vector3(bx + r_nut * Math.cos(a), by + r_nut * Math.sin(a), L_proj - 0.012));
+    decorators.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(holePts), matHoleEdge));
+    // Orificio cara inferior placa
+    const holePtsBot: THREE.Vector3[] = [];
+    for (let i = 0; i <= 32; i++) {
+      const a = (i / 32) * 2 * Math.PI;
+      holePtsBot.push(new THREE.Vector3(bx + r_hole * Math.cos(a), by + r_hole * Math.sin(a), -t_plate / 2 - 0.0005));
     }
-    decorators.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(nutBasePts), matNut));
+    decorators.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(holePtsBot), matHoleEdge));
   }
 
   // ── PEDESTAL DE CONCRETO (sólido visual + Winkler springs FEM) ──
