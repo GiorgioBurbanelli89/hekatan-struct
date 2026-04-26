@@ -27,16 +27,17 @@ import {
 } from "hekatan-fem";
 import { getToolbar, getParameters, Parameters, getViewer } from "hekatan-ui";
 
+// Convención COLUMNA: eje largo = Z (vertical), Lx × Ly = base cuadrada, Lz = altura
 const parameters: Parameters = {
-  Lx:       { value: van.state(2.0),   min: 0.5,  max: 5.0,  step: 0.25, label: "Lx (m)" },
-  Ly:       { value: van.state(0.5),   min: 0.25, max: 2.0,  step: 0.25, label: "Ly (m)" },
-  Lz:       { value: van.state(0.5),   min: 0.25, max: 2.0,  step: 0.25, label: "Lz (m)" },
-  nx:       { value: van.state(6),     min: 2,    max: 12,   step: 1,    label: "Mesh nx (elementos)" },
+  Lx:       { value: van.state(0.50),  min: 0.25, max: 2.0,  step: 0.05, label: "Lx (m, ancho)" },
+  Ly:       { value: van.state(0.50),  min: 0.25, max: 2.0,  step: 0.05, label: "Ly (m, profundidad)" },
+  Lz:       { value: van.state(2.00),  min: 0.5,  max: 5.0,  step: 0.25, label: "Lz (m, altura COLUMNA)" },
+  nx:       { value: van.state(3),     min: 2,    max: 8,    step: 1,    label: "Mesh nx" },
   ny:       { value: van.state(3),     min: 2,    max: 8,    step: 1,    label: "Mesh ny" },
-  nz:       { value: van.state(3),     min: 2,    max: 8,    step: 1,    label: "Mesh nz" },
+  nz:       { value: van.state(6),     min: 2,    max: 12,   step: 1,    label: "Mesh nz (vertical)" },
   E:        { value: van.state(200e6), min: 25e6, max: 220e6, step: 5e6, label: "E (kN/m²)" },
   nu:       { value: van.state(0.30),  min: 0.0,  max: 0.49, step: 0.01, label: "ν (Poisson)" },
-  P_tip:    { value: van.state(-50),   min: -500, max: 0,    step: 10,   label: "Carga punta x=L (kN, total)" },
+  P_top:    { value: van.state(-50),   min: -500, max: 0,    step: 10,   label: "Carga top (kN, vertical)" },
 };
 
 // Estados Hekatan-compatibles (solo para visualizar — el solver real es h8.ts)
@@ -57,7 +58,7 @@ van.derive(() => {
   const nz = Math.round(parameters.nz.value.val);
   const E = parameters.E.value.val;
   const nu = parameters.nu.value.val;
-  const P_tip = parameters.P_tip.value.val;
+  const P_top = parameters.P_top.value.val;
 
   // ── 1. MESH H8 estructurado ──
   // Generar nodos en grid (nx+1)(ny+1)(nz+1)
@@ -91,22 +92,23 @@ van.derive(() => {
     }
   }
 
-  // ── 2. BCs: empotrar todos los nodos en x=0 ──
+  // ── 2. BCs: empotrar la BASE de la columna (z=0) ──
+  // Z = elevación (vertical), X-Y = plano horizontal del suelo
   const supports = new Map<number, [boolean, boolean, boolean]>();
-  for (let j = 0; j <= ny; j++) {
-    for (let k = 0; k <= nz; k++) {
-      supports.set(idx(0, j, k), [true, true, true]);
+  for (let i = 0; i <= nx; i++) {
+    for (let j = 0; j <= ny; j++) {
+      supports.set(idx(i, j, 0), [true, true, true]);
     }
   }
 
-  // Carga distribuida en cara x=Lx (eje Z negativo, total P_tip)
-  const tipNodes: number[] = [];
-  for (let j = 0; j <= ny; j++) {
-    for (let k = 0; k <= nz; k++) tipNodes.push(idx(nx, j, k));
+  // Carga axial vertical en la cara TOP de la columna (z=Lz)
+  const topNodes: number[] = [];
+  for (let i = 0; i <= nx; i++) {
+    for (let j = 0; j <= ny; j++) topNodes.push(idx(i, j, nz));
   }
   const loads = new Map<number, [number, number, number]>();
-  const fz = P_tip / tipNodes.length;
-  for (const id of tipNodes) loads.set(id, [0, 0, fz]);
+  const fz = P_top / topNodes.length;
+  for (const id of topNodes) loads.set(id, [0, 0, fz]);
 
   // ── 3. SOLVE H8 ──
   const N = nodes3D.length;
@@ -224,16 +226,16 @@ van.derive(() => {
     (analyzeOutputs as any).vonMises = vonMisesNodes;
   }
 
-  // Apoyos visuales (rojos en x=0)
+  // Apoyos visuales (rojos en base z=0)
   const visualSupports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
-  for (let j = 0; j <= ny; j++) {
-    for (let k = 0; k <= nz; k++) {
-      visualSupports.set(idx(0, j, k), [true, true, true, true, true, true]);
+  for (let i = 0; i <= nx; i++) {
+    for (let j = 0; j <= ny; j++) {
+      visualSupports.set(idx(i, j, 0), [true, true, true, true, true, true]);
     }
   }
-  // Cargas visuales (en x=Lx)
+  // Cargas visuales (en top z=Lz)
   const visualLoads = new Map<number, [number, number, number, number, number, number]>();
-  for (const id of tipNodes) visualLoads.set(id, [0, 0, fz, 0, 0, 0]);
+  for (const id of topNodes) visualLoads.set(id, [0, 0, fz, 0, 0, 0]);
 
   console.log(
     `Solid cube H8: ${N} nodos, ${elemsH8.length} hexa, ${visualElements.length} faces visibles`
@@ -288,8 +290,9 @@ setTimeout(() => {
   const ctx = (viewerEl as any).__ctx;
   if (ctx?.camera && ctx?.controls) {
     ctx.camera.up.set(0, 0, 1);
-    ctx.camera.position.set(4, -4, 2.5);
-    ctx.controls.target.set(1, 0.25, 0.25);
+    // Vista isométrica de columna vertical (Lz=2m altura, Lx=Ly=0.5m base)
+    ctx.camera.position.set(3, -3, 2);
+    ctx.controls.target.set(0.25, 0.25, 1.0);  // centro de la columna
     ctx.controls.update();
     ctx.render?.();
   }
