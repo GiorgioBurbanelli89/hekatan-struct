@@ -364,6 +364,7 @@ Promise.all([
       custom3D: false,
       loads: false,
       supports: false,
+      nodes: false,
       showCotas: false,
       displayScale: 0.5
     }
