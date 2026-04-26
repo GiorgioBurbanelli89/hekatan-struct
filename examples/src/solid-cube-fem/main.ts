@@ -246,6 +246,35 @@ van.derive(() => {
     console.log(`  ε max vm = ${
       Math.max(...Array.from(result.vonMisesPerElement.values()).flat()).toFixed(0)
     } kN/m² | uz_tip ≈ ${maxUz.toExponential(3)} m | solve ${result.elapsedMs.toFixed(0)}ms`);
+
+    // ── BENCHMARK: comparación con solución analítica ──
+    // Caso uniaxial: columna empotrada en base, carga axial -P en top (compresión)
+    // Solución elástica lineal:
+    //   σ_z = P / (Lx·Ly)
+    //   ε_z = σ_z / E
+    //   u_z(z) = ε_z · z  →  u_z_top = ε_z · Lz
+    const A_cross = Lx * Ly;
+    const sigma_analytic = P_top / A_cross;             // kN/m²
+    const eps_analytic = sigma_analytic / E;             // adimensional
+    const uz_analytic_top = eps_analytic * Lz;           // m
+
+    // Promedio de uz en nodos del top (z=Lz) — debería ser ~ uz_analytic_top
+    let sumUzTop = 0, countTop = 0;
+    for (let i = 0; i <= nx; i++) {
+      for (let j = 0; j <= ny; j++) {
+        const u = result.displacements.get(idx(i, j, nz));
+        if (u) { sumUzTop += u[2]; countTop++; }
+      }
+    }
+    const uz_hekatan_top = sumUzTop / Math.max(1, countTop);
+    const errPct = Math.abs(uz_hekatan_top - uz_analytic_top) / Math.abs(uz_analytic_top || 1) * 100;
+
+    console.log("  ─── BENCHMARK uniaxial compression ───");
+    console.log(`  σ_analítico  = ${sigma_analytic.toExponential(3)} kN/m²`);
+    console.log(`  ε_analítico  = ${eps_analytic.toExponential(3)}`);
+    console.log(`  u_z analítico  (top) = ${uz_analytic_top.toExponential(3)} m`);
+    console.log(`  u_z Hekatan H8 (top) = ${uz_hekatan_top.toExponential(3)} m`);
+    console.log(`  Δ error = ${errPct.toFixed(3)}%  ${errPct < 1 ? "✓ PASA (<1%)" : errPct < 5 ? "⚠ marginal" : "✗ FALLA"}`);
   }
   if (solverError) {
     console.error("Solver H8 falló:", solverError);
