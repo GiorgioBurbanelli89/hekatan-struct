@@ -12,13 +12,17 @@ export function elements(
   const t = getTheme();
   const group = new THREE.Group();
 
-  // Wireframe lines
+  // Wireframe lines (delimitación visual entre sólidos H8 / áreas Q4)
   const lines = new THREE.LineSegments(
     new THREE.BufferGeometry(),
     new THREE.LineBasicMaterial({ color: t.elementLine })
   );
   onThemeChange((_n, c) => { lines.material.color.setHex(c.elementLine); });
   lines.frustumCulled = false;
+  // Render order alto + sin polygon offset → líneas siempre encima de cualquier
+  // fill (incluyendo colormap) sin Z-fighting (las líneas son 1D, no compiten
+  // por píxeles con triángulos rellenos).
+  lines.renderOrder = 2;
   group.add(lines);
 
   // Solid faces for shell elements (Q4 = 4 nodes, CST = 3 nodes)
@@ -29,6 +33,14 @@ export function elements(
     opacity: t.shellOpacity,
     side: THREE.DoubleSide,
     depthWrite: false,
+    // ── Polygon offset POSITIVO: empuja el shellMesh LEVÍSIMAMENTE hacia
+    // ATRÁS en profundidad, evitando Z-fighting con el colormap (que ocupa
+    // los mismos planos Q4). Patrón estándar Three.js: fill atrás, wireframe
+    // adelante. Esto elimina los puntitos pixelados que aparecían cuando
+    // colormap y shellMesh peleaban por el z-buffer.
+    polygonOffset: true,
+    polygonOffsetFactor: 1.0,
+    polygonOffsetUnits: 1.0,
   });
   const shellMesh = new THREE.Mesh(new THREE.BufferGeometry(), shellMat);
   shellMesh.frustumCulled = false;
@@ -153,6 +165,13 @@ export function elements(
   // on settings.elements update visibility
   van.derive(() => {
     group.visible = settings.elements.val;
+  });
+
+  // ── Toggle independiente para wireframe edges (delim. sólidos/áreas) ──
+  // Permite ver el colormap "limpio" sin las líneas de delimitación, o ver
+  // sólo las líneas sin el shellMesh fill, etc.
+  van.derive(() => {
+    if (settings.edges) lines.visible = settings.edges.val;
   });
 
   return group;

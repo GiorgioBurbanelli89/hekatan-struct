@@ -6,16 +6,20 @@
 
 ## 📚 Solvers de referencia
 
-| Solver | Tipo | Versión | Rol |
-|---|---|---|---|
-| **Hekatan Struct** | open-source web (este TFM) | v1.0 | sujeto a validar |
-| **OpenSeesPy** | open-source académico (UC Berkeley) | v3.5.x | referencia académica primaria |
-| **OpenSees TCL** | open-source académico (UC Berkeley) | 3.5.x | mismo solver, otra interfaz (control) |
-| **ETABS 22** | comercial (CSI) | 22.x | referencia industrial |
-| **CalculiX** | open-source FEM (industrial) | v2.21 | validación 3D solid/shell |
-| **Code Aster** | open-source FEM (EDF, Francia) | v15+ | validación con quality NQA-1 |
+| Solver | Tipo | Versión | Rol | Estado |
+|---|---|---|---|---|
+| **Hekatan Struct** | open-source web (este TFM) | v1.0 | sujeto a validar | — |
+| **OpenSeesPy** | open-source académico (UC Berkeley) | v3.5.x | referencia académica primaria | ✅ ejecutándose |
+| **OpenSees TCL** | open-source académico (UC Berkeley) | 3.5.x | mismo solver, otra interfaz (control) | ✅ ejecutándose |
+| **SciPy** | open-source científico Python | v1.16+ | eig generalizado independiente | ✅ ejecutándose |
+| **GNU Octave** | open-source MATLAB-compatible | v10.1.0 | reimplementación pura independiente | ✅ ejecutándose |
+| **HekatanLab Web** | open-source (browser MATLAB) | v1.0 | calculadora-tipo-MATLAB con awatif-fem upstream | ✅ CLI ejecutándose |
+| **ETABS 22** | comercial (CSI) | 22.x | referencia industrial | ✅ Python COM API |
+| **SAP2000** | comercial (CSI) | 25.x | referencia industrial | ⚠️ parcial (Q4) |
+| **CalculiX** | open-source FEM (industrial) | v2.21 | validación 3D solid/shell | 🟡 .inp generado, sin run |
+| **Code Aster** | open-source FEM (EDF, Francia) | v15+ | validación con quality NQA-1 | 🟡 .comm generado, sin run |
 
-> **Nota**: 4 de los 5 solvers son open-source. ETABS es el único comercial (estándar de oficinas de cálculo sísmico).
+> **Nota**: 6 de los 9 solvers son open-source. ETABS y SAP2000 son los únicos comerciales (estándar de oficinas de cálculo sísmico).
 
 ---
 
@@ -125,16 +129,39 @@ massSource = "From Loads"  // CSI Manual §4.12 (W/g)
 
 ### Validación modal (Paz & Leigh 6.3 Space Frame)
 
-Caso clásico de la literatura: **0.00% de diferencia** entre 4 implementaciones del solver Hekatan:
+Caso clásico de la literatura: **0.000% de diferencia** entre 6 implementaciones independientes:
 
-| Implementación | T₁ [Hz] | Notas |
+| Implementación | T₁ [Hz] | Stack tecnológico |
 |---|---|---|
-| WASM browser | 9.6780 | Eigen C++ → emscripten → browser |
+| WASM browser (Hekatan) | 9.6780 | Eigen C++ → emscripten → browser |
 | WASM CLI Node.js | 9.6780 | mismo binario, ejecutado en Node |
 | C++ nativo | 9.6780 | g++ standalone, validación de portabilidad |
-| Python/SciPy | 9.6780 | reimplementación independiente con K de OpenSees |
+| Python/SciPy | 9.6780 | reimplementación independiente con `scipy.linalg.eigh` |
+| OpenSeesPy v3.5.x | 9.6780 | OpenSees TCL solver vía Python wrapper |
+| **GNU Octave 10.1.0** | **9.6780** | reimplementación pura `eig(K, M)` independiente |
 
-**Conclusión**: el binario WASM es bit-exact respecto al solver nativo y a la implementación de referencia en SciPy.
+**Conclusión**: el binario WASM es bit-exact respecto a 5 referencias independientes (incluida una en Octave que NO comparte código con el resto). Validación cruzada definitiva del solver de eigenvalores.
+
+Ver `validation/octave/paz_6_3_modal.m` para la reimplementación Octave (2 funciones helper + ensamblaje sparse + `eig(K,M)`).
+
+### Validación Frame 3D Portal (HekatanLab CLI ↔ Octave puro)
+
+Modelo: portal 5m × 3m, carga lateral 10 kN, perfil A=0.04 m², I=1.33e-4 m⁴.
+
+| Variable | HekatanLab (math.js + awatif-fem) | Octave (reimplementación pura) | Δ% |
+|---|---|---|---|
+| Node 1 ux (m) | 6.673629e-1 | 6.6736e-01 | **0.000%** |
+| Node 1 uz (m) | 8.381604e-4 | 8.3816e-04 | **0.000%** |
+| Node 1 ry (rad) | 1.7596e-1 | 1.7596e-01 | **0.000%** |
+| Reacción N0 Fx | -5.0078 | -5.0078 | **0.000%** |
+| Reacción N3 Fx | -4.9922 | -4.9922 | **0.000%** |
+| Equilibrio ΣFx | -10.000 | -10.000 | exacto |
+
+**Conclusión**: bit-exact también para frames 3D. HekatanLab CLI (browser + math.js) ↔ Octave (reimplementación independiente) confirma que ambos resuelven correctamente la matriz `K_global · u = F` de pórticos 3D 12-DOF.
+
+Scripts:
+- HekatanLab CLI: `hekatanlab-web/cli.ts` Test 2
+- Octave: `validation/octave/frame_portal_3d.m`
 
 ### Membrana plane stress (validación directa)
 

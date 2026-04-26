@@ -247,8 +247,12 @@ van.derive(() => {
   const Ec_fill = 4700 * Math.sqrt(fc / 1000) * 1000;
   const nu_c_fill = 0.20;
   const Gc_fill = Ec_fill / (2 * (1 + nu_c_fill));
-  const fill_bc = bc - 2 * t_col;
-  const fill_hc = hc - 2 * t_col;
+  // Fill ligeramente más pequeño que el interior HSS para que sea VISIBLE
+  // (gap visual entre fill y HSS interior, simula la separación real con
+  // recubrimiento aire/imperfección de colado).
+  const gap_visual = 2 * t_col;
+  const fill_bc = bc - 2 * t_col - gap_visual;
+  const fill_hc = hc - 2 * t_col - gap_visual;
   const nx_fill = 4, ny_fill = 4, nz_fill = nz_col;
   const dxf = fill_bc / nx_fill, dyf = fill_hc / ny_fill, dzf = L_col / nz_fill;
   const inHole = (x: number, y: number) => Math.hypot(x, y) < r_hole + dxf * 0.5;
@@ -280,10 +284,11 @@ van.derive(() => {
     densities.set(i, 24/9.80665); shearModuli.set(i, Gc_fill);
     areas.set(i, 0); Iy.set(i, 0); Iz.set(i, 0); J.set(i, 0);
   }
-  // 5 caras: bottom (snapped a placa), top abierto (NO se modela — CFT real
-  // tiene top abierto), 4 laterales que muestran el cuerpo del concreto.
+  // 6 caras del fill: bottom + top + 4 laterales (cuerpo cerrado para visualizar).
   for (let j = 0; j < ny_fill; j++) for (let i = 0; i < nx_fill; i++) {
     addFillShell(fillGrid[0][j][i], fillGrid[0][j][i+1], fillGrid[0][j+1][i+1], fillGrid[0][j+1][i]);
+    // Cara TOP del fill (z = z_gap+L_col) — visualiza el sólido concreto desde arriba
+    addFillShell(fillGrid[nz_fill][j][i], fillGrid[nz_fill][j][i+1], fillGrid[nz_fill][j+1][i+1], fillGrid[nz_fill][j+1][i]);
   }
   for (let k = 0; k < nz_fill; k++) for (let i = 0; i < nx_fill; i++) {
     addFillShell(fillGrid[k][0][i], fillGrid[k][0][i+1], fillGrid[k+1][0][i+1], fillGrid[k+1][0][i]);
@@ -768,8 +773,10 @@ setTimeout(() => {
   const ctx = (viewerEl as any).__ctx;
   if (ctx?.camera && ctx?.controls) {
     ctx.camera.up.set(0, 0, 1);
-    ctx.camera.position.set(2.0, -2.0, 1.2);
-    ctx.controls.target.set(0, 0, 0.25);
+    // Vista alta tilted (3/4 desde arriba) para ver: pedestal + placa +
+    // HSS + fill concreto VISIBLE en el top abierto del HSS.
+    ctx.camera.position.set(1.5, -1.5, 2.0);
+    ctx.controls.target.set(0, 0, 0.4);
     ctx.controls.update(); ctx.render?.();
   }
 }, 800);

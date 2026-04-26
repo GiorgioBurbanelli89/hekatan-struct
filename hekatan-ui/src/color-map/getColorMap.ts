@@ -73,6 +73,7 @@ export function getColorMap(
 
   // ── ShaderMaterial estilo Calcpad: interpolación POR VALOR + lookup en
   // textura 1D del colormap. Esto da bandas NÍTIDAS (no gradiente RGB feo).
+  // Incluye chunks de Three.js para soporte de clipping planes (cortes X/Y/Z).
   const cmapTex = buildSap2000Texture();
   const material = new THREE.ShaderMaterial({
     uniforms: {
@@ -80,18 +81,25 @@ export function getColorMap(
       ambient: { value: 0.95 },
     },
     vertexShader: `
+      #include <common>
+      #include <clipping_planes_pars_vertex>
       attribute float scalar;
       varying float vScalar;
       void main() {
         vScalar = scalar;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mvPosition;
+        #include <clipping_planes_vertex>
       }
     `,
     fragmentShader: `
+      #include <common>
+      #include <clipping_planes_pars_fragment>
       uniform sampler2D cmap;
       uniform float ambient;
       varying float vScalar;
       void main() {
+        #include <clipping_planes_fragment>
         // Si NaN (vScalar < -0.5 sentinel), gris neutro
         if (vScalar < -0.5) {
           gl_FragColor = vec4(0.5, 0.5, 0.5, 1.0);
@@ -103,6 +111,9 @@ export function getColorMap(
     `,
     side: THREE.DoubleSide,
     transparent: false,
+    clipping: true,  // habilitar soporte de clipping planes en ShaderMaterial
+    depthWrite: true,
+    depthTest: true,
   });
 
   const colorMap = new THREE.Mesh(new THREE.BufferGeometry(), material);

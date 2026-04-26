@@ -47,6 +47,11 @@ const parameters: Parameters = {
   // Vista: rebanada XZ central pre-extraída (estilo Calcpad/SAP2000)
   // 1 = solo la rebanada Y=ny/2, 0 = bloque completo
   showSlice: { value: van.state(1), min: 0, max: 1, step: 1, label: "Vista rebanada XZ (1=si)" },
+  // Rango fijo del colormap (kN/m²). 0 = auto-escala (gradiente siempre lleno).
+  // > 0 = fija el max → al subir w el bulbo SE SATURA visualmente: con w bajo
+  // ocupa pocos colores, con w alto llena todo el gradiente. Esencial para
+  // ver evidencia visual del aumento de carga.
+  vmRefMax: { value: van.state(400), min: 0, max: 2000, step: 50, label: "vM ref max (kN/m²)" },
 };
 
 const nodesState: State<Node[]>                  = van.state([]);
@@ -75,6 +80,7 @@ van.derive(() => {
   const Ry = parameters.Ry.value.val;
   const w = parameters.w.value.val;
   const showSlice = Math.round(parameters.showSlice.value.val) === 1;
+  const vmRefMax = parameters.vmRefMax.value.val;
 
   // ── Mallado H8 estructurado ──
   // Convención: X y Y en plano horizontal, Z vertical descendente (z=0 superficie).
@@ -299,6 +305,12 @@ van.derive(() => {
       s33Nodes.set(fidx, [vals[0], vals[1], vals[2], vals[3]]);
     });
     (analyzeOutputs as any).vonMises = s33Nodes;
+    // Rango fijo: cuando vmRefMax > 0, el colormap NO auto-escala. Esto hace
+    // que al subir w (carga) el bulbo se SATURE visualmente — con w bajo ocupa
+    // poca paleta (mayoría magenta), con w alto llena todo hasta cyan/azul.
+    if (vmRefMax > 0) {
+      (analyzeOutputs as any).colorMapRanges = { vonMises: [0, vmRefMax] };
+    }
   }
   void faceToElem;
 
@@ -360,6 +372,11 @@ const benchContainer = document.createElement("div");
 benchContainer.style.cssText = "position:fixed;top:8px;right:8px;width:320px;max-height:90vh;overflow-y:auto;z-index:9999;";
 const benchPane = new Pane({ title: "🌍 Bulbo de Presiones (Serquen SF-70)", container: benchContainer, expanded: true });
 
+// Registrar este pane en el registry global para que window.__hekatanClipApply()
+// también lo refresque cuando se modifique window.__hekatanClip externamente.
+(window as any).__hekatanPanes = (window as any).__hekatanPanes ?? [];
+(window as any).__hekatanPanes.push(benchPane);
+
 const benchObj = { N: 0, nElems: 0, nDOF: 0, s33_min: 0, s33_max: 0, uz_max: 0, elapsed: 0 };
 
 const fStats = benchPane.addFolder({ title: "Estadísticas malla H8" });
@@ -373,30 +390,11 @@ fRes.addBinding(benchObj, "s33_min", { readonly: true, label: "vM min (kN/m²)",
 fRes.addBinding(benchObj, "s33_max", { readonly: true, label: "vM max (kN/m²)", format: (v: number) => v.toExponential(3) });
 fRes.addBinding(benchObj, "uz_max",  { readonly: true, label: "u_z max (m)", format: (v: number) => v.toExponential(3) });
 
-// ── Folder PLANOS DE CORTE (clipping X/Y/Z) ──
-const fClip = benchPane.addFolder({ title: "✂️ Planos de corte X/Y/Z", expanded: true });
-const clipObj = (window as any).__hekatanClip;
-const Lx0 = parameters.Lx.value.rawVal;
-const Ly0 = parameters.Ly.value.rawVal;
-const Lz0 = parameters.Lz.value.rawVal;
-fClip.addBinding(clipObj, "enableX", { label: "Cortar X" })
-  .on("change", () => (window as any).__hekatanClipApply());
-fClip.addBinding(clipObj, "posX", { min: -Lx0/2, max: Lx0/2, step: 0.1, label: "  pos X (m)" })
-  .on("change", () => (window as any).__hekatanClipApply());
-fClip.addBinding(clipObj, "invertX", { label: "  invertir X" })
-  .on("change", () => (window as any).__hekatanClipApply());
-fClip.addBinding(clipObj, "enableY", { label: "Cortar Y" })
-  .on("change", () => (window as any).__hekatanClipApply());
-fClip.addBinding(clipObj, "posY", { min: -Ly0/2, max: Ly0/2, step: 0.1, label: "  pos Y (m)" })
-  .on("change", () => (window as any).__hekatanClipApply());
-fClip.addBinding(clipObj, "invertY", { label: "  invertir Y" })
-  .on("change", () => (window as any).__hekatanClipApply());
-fClip.addBinding(clipObj, "enableZ", { label: "Cortar Z" })
-  .on("change", () => (window as any).__hekatanClipApply());
-fClip.addBinding(clipObj, "posZ", { min: -Lz0, max: 0, step: 0.1, label: "  pos Z (m)" })
-  .on("change", () => (window as any).__hekatanClipApply());
-fClip.addBinding(clipObj, "invertZ", { label: "  invertir Z" })
-  .on("change", () => (window as any).__hekatanClipApply());
+// ── Planos de corte X/Y/Z ──
+// El folder universal "✂️ Cortes X/Y/Z" ya aparece en el panel izquierdo
+// "Settings" del viewer (`hekatan-ui/src/viewer/settings/getSettings.ts`).
+// No duplicamos acá: ambos bindeaban al mismo `window.__hekatanClip`,
+// producía dos paneles con los mismos checkboxes en lados opuestos.
 
 // ── Folder Unidades ──
 const fU = benchPane.addFolder({ title: "Unidades", expanded: false });

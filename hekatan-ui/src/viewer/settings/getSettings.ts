@@ -10,6 +10,9 @@ export type Settings = {
   displayScale: State<number>;
   nodes: State<boolean>;
   elements: State<boolean>;
+  /** Wireframe edges (delim. visual entre sólidos H8 / áreas Q4). Independiente
+   *  de `elements` — útil para ver el colormap sin las líneas de delimitación. */
+  edges: State<boolean>;
   elemColumns: State<boolean>;
   elemBeams: State<boolean>;
   nodesIndexes: State<boolean>;
@@ -52,6 +55,7 @@ export type SettingsObj = {
   displayScale?: number;
   nodes?: boolean;
   elements?: boolean;
+  edges?: boolean;
   elemColumns?: boolean;
   elemBeams?: boolean;
   nodesIndexes?: boolean;
@@ -89,6 +93,13 @@ export function getSettings(
     container,
   });
 
+  // ── REGISTRO GLOBAL DE PANES ──
+  // Para que window.__hekatanClipApply() pueda llamar pane.refresh() en TODOS
+  // los panes que bindean a window.__hekatanClip cuando se modifica vía CLI.
+  // Sin esto los checkboxes/sliders del DOM no reflejan los cambios externos.
+  (window as any).__hekatanPanes = (window as any).__hekatanPanes ?? [];
+  (window as any).__hekatanPanes.push(pane);
+
   // update
   container.setAttribute("id", "settings");
 
@@ -114,6 +125,9 @@ export function getSettings(
     pane.addBinding(settings.nodes, "val", { label: "Nodes" });
     pane.addBinding(settings.elements, "val", {
       label: "Elements",
+    });
+    pane.addBinding(settings.edges, "val", {
+      label: "  Edges (delim.)",
     });
     pane.addBinding(settings.elemColumns, "val", {
       label: "  Columnas",
@@ -246,14 +260,14 @@ export function getSettings(
     if (typeof f === "function") f();
   };
   clip.addBinding(clipState, "enableX", { label: "Cortar X" }).on("change", triggerApply);
-  clip.addBinding(clipState, "posX", { min: -50, max: 50, step: 0.1, label: "  pos X" }).on("change", triggerApply);
-  clip.addBinding(clipState, "invertX", { label: "  inv X" }).on("change", triggerApply);
+  clip.addBinding(clipState, "posX", { min: -50, max: 50, step: 0.1, label: "  pos X (m)" }).on("change", triggerApply);
+  clip.addBinding(clipState, "invertX", { label: "  invertir X" }).on("change", triggerApply);
   clip.addBinding(clipState, "enableY", { label: "Cortar Y" }).on("change", triggerApply);
-  clip.addBinding(clipState, "posY", { min: -50, max: 50, step: 0.1, label: "  pos Y" }).on("change", triggerApply);
-  clip.addBinding(clipState, "invertY", { label: "  inv Y" }).on("change", triggerApply);
+  clip.addBinding(clipState, "posY", { min: -50, max: 50, step: 0.1, label: "  pos Y (m)" }).on("change", triggerApply);
+  clip.addBinding(clipState, "invertY", { label: "  invertir Y" }).on("change", triggerApply);
   clip.addBinding(clipState, "enableZ", { label: "Cortar Z" }).on("change", triggerApply);
-  clip.addBinding(clipState, "posZ", { min: -50, max: 50, step: 0.1, label: "  pos Z" }).on("change", triggerApply);
-  clip.addBinding(clipState, "invertZ", { label: "  inv Z" }).on("change", triggerApply);
+  clip.addBinding(clipState, "posZ", { min: -50, max: 50, step: 0.1, label: "  pos Z (m)" }).on("change", triggerApply);
+  clip.addBinding(clipState, "invertZ", { label: "  invertir Z" }).on("change", triggerApply);
 
   return container;
 }
@@ -265,6 +279,7 @@ export function getDefaultSettings(settingsObj: SettingsObj): Settings {
     displayScale: van.state(settingsObj?.displayScale ?? 1),
     nodes: van.state(settingsObj?.nodes ?? true),
     elements: van.state(settingsObj?.elements ?? true),
+    edges: van.state(settingsObj?.edges ?? true),
     elemColumns: van.state(settingsObj?.elemColumns ?? true),
     elemBeams: van.state(settingsObj?.elemBeams ?? true),
     nodesIndexes: van.state(settingsObj?.nodesIndexes ?? false),

@@ -116,6 +116,17 @@ export function getViewer({
         }
       }
     });
+    // ── SYNC TWEAKPANE DOM ──
+    // Cuando se modifica window.__hekatanClip directamente (CLI, programáticamente,
+    // desde otro Tweakpane que comparte el mismo objeto), Tweakpane NO detecta el
+    // cambio: sus checkboxes/sliders quedan stale. Llamamos pane.refresh() en TODOS
+    // los panes registrados para forzar re-lectura de los valores bound.
+    const panes: any[] = (window as any).__hekatanPanes ?? [];
+    for (const p of panes) {
+      try { if (p && typeof p.refresh === "function") p.refresh(); } catch {}
+    }
+    // Re-render WebGL para reflejar el corte
+    renderer.render(scene, activeCamera);
   }
   applyClipping();
   (window as any).__hekatanClipApply = applyClipping;
@@ -198,6 +209,7 @@ export function getViewer({
     settings.displayScale.val;
     settings.nodes.val;
     settings.elements.val;
+    settings.edges?.val;
     settings.elemColumns.val;
     settings.elemBeams.val;
     settings.nodesIndexes.val;
@@ -213,6 +225,7 @@ export function getViewer({
     settings.nodeResults.val;
     settings.frameResults.val;
     settings.shellResults.val;
+    settings.solidResults?.val;  // re-render al cambiar Solid results (H8 sólidos)
 
     setTimeout(viewerRender); // setTimeout to ensure render is called after all updates are done in that event tick
   });
@@ -270,9 +283,15 @@ export function getViewer({
 
     van.derive(() => {
       const shellActive = settings.shellResults.val != "none";
+      // ── Solid results PRIMARY: si hay un solid result seleccionado (≠ "none"),
+      // el colormap también se activa, aunque shellResults esté en "none". Esto
+      // es crucial para ejemplos con elementos H8 (bulbo, columna+viga, cubos)
+      // donde el dropdown correcto es Solid results, no Shell results.
+      const solidActive = (settings.solidResults?.val ?? "none") !== "none";
+      const colorMapActive = shellActive || solidActive;
       const frameContourActive = settings.frameResults.val.startsWith("contour:");
-      legend.hidden = !shellActive;
-      shellResultsObj.visible = shellActive;
+      legend.hidden = !colorMapActive;
+      shellResultsObj.visible = colorMapActive;
       frameLegend.hidden = !frameContourActive;
     });
   }
@@ -552,10 +571,14 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
 
     // Override POR CAMPO: colorMapRanges[field] define rango fijo sólo para ese shell result.
     // Campos no listados → auto-escala (bendingXX, vonMises, etc. conservan su gradiente natural).
+    // Si solidResults está activo, lookup va por el solidField (vonMises, σxx, etc.).
+    // NOTA: el rango se ESCALA junto con los valores al unit elegido en "Unidades".
+    // Esto se hace después abajo, una vez que scale está definido.
     const ranges = (mesh.analyzeOutputs?.val as any)?.colorMapRanges;
-    const currentField = settings.shellResults.val;
+    const solidFieldEarly = settings.solidResults?.val;
+    const useSolidEarly = solidFieldEarly && solidFieldEarly !== "none";
+    const currentField = useSolidEarly ? solidFieldEarly : settings.shellResults.val;
     const r = ranges?.[currentField];
-    fixedColorMapRange.val = (Array.isArray(r) && r.length === 2) ? [r[0], r[1]] : null;
 
     const resultMapper = {
       [ResultType.bendingXX]: [nodeBendingXX, 0],
@@ -626,6 +649,16 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
       isShear       ? `${fUnit}/m` :
       "";
     colorMapUnit.val = unit;
+
+    // ── Aplicar scale al rango fijo ──
+    // El rango fijo viene de analyzeOutputs.colorMapRanges en unidades INTERNAS
+    // (kN/m² para tensiones). Las values también se escalan vía `raw * scale`.
+    // Para que el rango y los valores estén en la MISMA unidad, multiplicamos el
+    // rango por scale también. Sin esto, cambiar unit en Unidades (kN/m² → MPa)
+    // hace que vMin/vMax queden 1000× más grandes que las values → bulbo todo magenta.
+    fixedColorMapRange.val = (Array.isArray(r) && r.length === 2)
+      ? [r[0] * scale, r[1] * scale]
+      : null;
 
     // ── Solid Results PRIMARY: cuando solidField está activo (no "none"),
     // usar la data sólida en lugar de la shell. Los campos sólidos se
