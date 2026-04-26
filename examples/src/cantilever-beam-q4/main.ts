@@ -33,6 +33,12 @@ const elementInputsState: State<ElementInputs>   = van.state({});
 const deformOutputsState: State<DeformOutputs>   = van.state({});
 const analyzeOutputsState: State<AnalyzeOutputs> = van.state({});
 
+// ── Estado live del benchmark: valores numéricos comparados ──
+const benchValues: State<{
+  uz_an: number; uz_he: number; ratio: number; errPct: number;
+  I_beam: number; sigma_max: number;
+}> = van.state({ uz_an: 0, uz_he: 0, ratio: 0, errPct: 0, I_beam: 0, sigma_max: 0 });
+
 van.derive(() => {
   const L = parameters.L.value.val;
   const h = parameters.h.value.val;
@@ -86,9 +92,17 @@ van.derive(() => {
     const uz = tipDef ? tipDef[2] : 0;
     const I_beam = (t * h * h * h) / 12;
     const delta_ana = (P * L * L * L) / (3 * E * I_beam);
+    const ratio = Math.abs(uz) / delta_ana;
+    const errPct = Math.abs(ratio - 1) * 100;
+    // Tensión flexional máxima en empotramiento: σ = M·c/I = P·L·(h/2)/I
+    const sigma_max = (P * L * (h / 2)) / I_beam;
     console.log(
-      `Viga Q4: Uz_tip=${uz.toExponential(4)} | Analítico=${delta_ana.toExponential(4)} | ratio=${(Math.abs(uz) / delta_ana).toFixed(4)}`,
+      `Viga Q4: Uz_tip=${uz.toExponential(4)} | Analítico=${delta_ana.toExponential(4)} | ratio=${ratio.toFixed(4)}`,
     );
+    benchValues.val = {
+      uz_an: -delta_ana, uz_he: uz, ratio,
+      errPct, I_beam, sigma_max,
+    };
   } catch (e: any) {
     console.warn("Viga Q4 deform/analyze:", e?.message ?? e);
   }
@@ -101,16 +115,39 @@ van.derive(() => {
   analyzeOutputsState.val = analyzeOutputs;
 });
 
+// ── Panel BENCHMARK con valores numéricos LIVE (Hekatan vs Euler-Bernoulli) ──
 const benchmarkPanel = document.createElement("div");
-benchmarkPanel.style.cssText = "position:fixed;top:8px;right:8px;background:rgba(20,20,20,0.92);color:#ddd;font:11px/1.4 ui-monospace,Menlo,monospace;padding:10px 14px;border-radius:6px;border:1px solid #444;z-index:9999;min-width:280px;max-width:360px;";
-benchmarkPanel.innerHTML = `
-  <div style="font-weight:bold;color:#ffaa00;margin-bottom:4px;">🧪 BENCHMARK — cantilever-beam-q4</div>
-  <ul style="margin:0;padding-left:16px;">
-    <li style="color:#7eff7e">⚠ Euler-Bernoulli δ=PL³/3EI — Δ 1-3% (shear locking)</li>
-    <li style="color:#aaa">⚠ Tensión flexional max σ=Mc/I</li>
-  </ul>
-  <div style="margin-top:6px;font-size:10px;color:#888;">F12 console for live Δ%</div>
-`;
+benchmarkPanel.style.cssText = "position:fixed;top:8px;right:8px;background:rgba(20,20,20,0.94);color:#ddd;font:11px/1.4 ui-monospace,Menlo,monospace;padding:10px 14px;border-radius:6px;border:1px solid #444;z-index:9999;min-width:320px;max-width:400px;";
+van.derive(() => {
+  const v = benchValues.val;
+  // "ERROR ACEPTABLE" = Δ entre 1-5% (típico Q4 con shear locking moderado)
+  const status = v.errPct < 1 ? '<span style="color:#7eff7e">✓ PASA (Δ&lt;1%)</span>'
+               : v.errPct < 5 ? '<span style="color:#ffcc00">⚠ ERROR ACEPTABLE (1-5%, shear locking)</span>'
+               : '<span style="color:#ff5555">✗ FALLA (Δ&gt;5%)</span>';
+  benchmarkPanel.innerHTML = `
+    <div style="font-weight:bold;color:#ffaa00;margin-bottom:6px;">🧪 BENCHMARK — cantilever-beam-q4</div>
+    <table style="border-collapse:collapse;width:100%;">
+      <tr style="color:#999;border-bottom:1px solid #444;">
+        <td style="padding:2px 6px 2px 0;">Magnitud</td>
+        <td style="padding:2px 6px;text-align:right;">Euler-Bern.</td>
+        <td style="padding:2px 0;text-align:right;">Hekatan Q4</td>
+      </tr>
+      <tr><td style="padding:1px 6px 1px 0;">u_z punta (m)</td>
+          <td style="text-align:right;padding:1px 6px;">${v.uz_an.toExponential(3)}</td>
+          <td style="text-align:right;padding:1px 0;">${v.uz_he.toExponential(3)}</td></tr>
+      <tr><td style="padding:1px 6px 1px 0;">I = t·h³/12 (m⁴)</td>
+          <td colspan="2" style="text-align:right;padding:1px 0;">${v.I_beam.toExponential(3)}</td></tr>
+      <tr><td style="padding:1px 6px 1px 0;">σ_max = M·c/I (kN/m²)</td>
+          <td colspan="2" style="text-align:right;padding:1px 0;">${v.sigma_max.toExponential(3)}</td></tr>
+      <tr><td style="padding:1px 6px 1px 0;">ratio Hek/Anal</td>
+          <td colspan="2" style="text-align:right;padding:1px 0;">${v.ratio.toFixed(4)}</td></tr>
+    </table>
+    <div style="margin-top:6px;padding-top:4px;border-top:1px solid #444;">
+      <div>Δ error = <b>${v.errPct.toFixed(2)}%</b> ${status}</div>
+      <div style="color:#888;font-size:10px;">δ = P·L³/(3·E·I) (flexión pura)</div>
+    </div>
+  `;
+});
 document.body.append(benchmarkPanel);
 
 document.body.append(

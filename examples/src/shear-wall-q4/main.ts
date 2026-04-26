@@ -33,6 +33,16 @@ const elementInputsState: State<ElementInputs>   = van.state({});
 const deformOutputsState: State<DeformOutputs>   = van.state({});
 const analyzeOutputsState: State<AnalyzeOutputs> = van.state({});
 
+// ── Live benchmark: Hekatan vs OpenSees / SAP2000 / ETABS ──
+// Valores de referencia para H=3m, W=5m, t=0.2m, E=25GPa, ν=0.2, P=100kN
+const REF_OPENSEES = 4.602e-5;
+const REF_SAP2000  = 4.629e-5;
+const REF_ETABS    = 4.582e-5;
+const benchValues: State<{
+  ux_he: number;
+  errOS: number; errSAP: number; errETABS: number;
+}> = van.state({ ux_he: 0, errOS: 0, errSAP: 0, errETABS: 0 });
+
 van.derive(() => {
   const W = parameters.W.value.val;
   const H = parameters.H.value.val;
@@ -84,7 +94,12 @@ van.derive(() => {
     const topCenter = ny * nNx + Math.floor(nx / 2);
     const def = deformOutputs.deformations.get(topCenter);
     const ux = def ? def[0] : 0;
-    console.log(`Muro Q4: Ux=${ux.toExponential(4)} m | OS:4.602e-5 | SAP:4.629e-5 | ETABS:4.582e-5`);
+    const uxAbs = Math.abs(ux);
+    const errOS    = Math.abs(uxAbs - REF_OPENSEES) / REF_OPENSEES * 100;
+    const errSAP   = Math.abs(uxAbs - REF_SAP2000)  / REF_SAP2000  * 100;
+    const errETABS = Math.abs(uxAbs - REF_ETABS)    / REF_ETABS    * 100;
+    console.log(`Muro Q4: Ux=${ux.toExponential(4)} m | OS:${REF_OPENSEES.toExponential(3)} | SAP:${REF_SAP2000.toExponential(3)} | ETABS:${REF_ETABS.toExponential(3)}`);
+    benchValues.val = { ux_he: uxAbs, errOS, errSAP, errETABS };
   } catch (e: any) {
     console.warn("Muro Q4 deform/analyze:", e?.message ?? e);
   }
@@ -97,18 +112,46 @@ van.derive(() => {
   analyzeOutputsState.val = analyzeOutputs;
 });
 
+// ── Panel BENCHMARK con valores numéricos LIVE (Hekatan vs OpenSees/SAP/ETABS) ──
 const benchmarkPanel = document.createElement("div");
-benchmarkPanel.style.cssText = "position:fixed;top:8px;right:8px;background:rgba(20,20,20,0.92);color:#ddd;font:11px/1.4 ui-monospace,Menlo,monospace;padding:10px 14px;border-radius:6px;border:1px solid #444;z-index:9999;min-width:280px;max-width:360px;";
-benchmarkPanel.innerHTML = `
-  <div style="font-weight:bold;color:#ffaa00;margin-bottom:4px;">🧪 BENCHMARK — shear-wall-q4</div>
-  <ul style="margin:0;padding-left:16px;">
-    <li style="color:#7eff7e">✓ vs OpenSees: Ux = 4.602e-5 m</li>
-    <li style="color:#7eff7e">✓ vs SAP2000: Ux = 4.629e-5 m</li>
-    <li style="color:#7eff7e">✓ vs ETABS: Ux = 4.582e-5 m</li>
-    <li style="color:#7eff7e">✓ Hekatan Δ &lt;1.5% vs los 3</li>
-  </ul>
-  <div style="margin-top:6px;font-size:10px;color:#888;">F12 console for live Ux</div>
-`;
+benchmarkPanel.style.cssText = "position:fixed;top:8px;right:8px;background:rgba(20,20,20,0.94);color:#ddd;font:11px/1.4 ui-monospace,Menlo,monospace;padding:10px 14px;border-radius:6px;border:1px solid #444;z-index:9999;min-width:340px;max-width:420px;";
+const fmt = (e: number) => {
+  if (e < 0.5) return `<span style="color:#7eff7e">✓ ${e.toFixed(2)}%</span>`;
+  if (e < 5)   return `<span style="color:#ffcc00">⚠ ${e.toFixed(2)}%</span>`;
+  return `<span style="color:#ff5555">✗ ${e.toFixed(2)}%</span>`;
+};
+van.derive(() => {
+  const v = benchValues.val;
+  const maxErr = Math.max(v.errOS, v.errSAP, v.errETABS);
+  // "ERROR ACEPTABLE" = label de tolerancia 0.5-5% (no es un software).
+  const overallStatus = maxErr < 0.5 ? '<span style="color:#7eff7e">✓ TODOS PASAN</span>'
+                       : maxErr < 5  ? '<span style="color:#ffcc00">⚠ ERROR ACEPTABLE (0.5-5%)</span>'
+                       : '<span style="color:#ff5555">✗ ALGUNO FALLA</span>';
+  benchmarkPanel.innerHTML = `
+    <div style="font-weight:bold;color:#ffaa00;margin-bottom:6px;">🧪 BENCHMARK — shear-wall-q4</div>
+    <div style="font-size:10px;color:#aaa;margin-bottom:4px;">Hekatan Q4 |Ux| top center = <b>${v.ux_he.toExponential(4)} m</b></div>
+    <table style="border-collapse:collapse;width:100%;">
+      <tr style="color:#999;border-bottom:1px solid #444;">
+        <td style="padding:2px 6px 2px 0;">Ref. solver</td>
+        <td style="padding:2px 6px;text-align:right;">Ux ref (m)</td>
+        <td style="padding:2px 0;text-align:right;">Δ%</td>
+      </tr>
+      <tr><td style="padding:1px 6px 1px 0;">OpenSees TCL</td>
+          <td style="text-align:right;padding:1px 6px;">${REF_OPENSEES.toExponential(3)}</td>
+          <td style="text-align:right;padding:1px 0;">${fmt(v.errOS)}</td></tr>
+      <tr><td style="padding:1px 6px 1px 0;">SAP2000</td>
+          <td style="text-align:right;padding:1px 6px;">${REF_SAP2000.toExponential(3)}</td>
+          <td style="text-align:right;padding:1px 0;">${fmt(v.errSAP)}</td></tr>
+      <tr><td style="padding:1px 6px 1px 0;">ETABS</td>
+          <td style="text-align:right;padding:1px 6px;">${REF_ETABS.toExponential(3)}</td>
+          <td style="text-align:right;padding:1px 0;">${fmt(v.errETABS)}</td></tr>
+    </table>
+    <div style="margin-top:6px;padding-top:4px;border-top:1px solid #444;">
+      ${overallStatus}
+      <div style="color:#888;font-size:10px;">Refs: H=3m, W=5m, t=20cm, E=25GPa, ν=0.2, P=100kN</div>
+    </div>
+  `;
+});
 document.body.append(benchmarkPanel);
 
 document.body.append(

@@ -72,6 +72,27 @@ const analyzeOutputsState: State<AnalyzeOutputs> = van.state({});
 // Decoradores 3D: orificios en la placa, tuercas/cabeza de pernos
 const objects3DState: State<THREE.Object3D[]>    = van.state([]);
 
+// ── Live benchmark: AISC §J8 + ACI 318 §17 numérico ──
+const Fy_steel = 250000;     // kN/m² (Fy = 250 MPa, A36/A992 base plate típica)
+const fut_anchor = 600000;   // kN/m² (F1554 Gr.36 → fut ≈ 600 MPa nominal)
+const benchValues: State<{
+  // FEM stress
+  vmMax: number;
+  // AISC §J8 bearing (concrete)
+  A1: number; A2: number; sqrtA2A1: number;
+  phiPp: number; demandCapPp: number;
+  // Plate flexural yielding (DG-1)
+  m_cantilever: number; fp: number;
+  t_req: number; t_actual: number; demandCapT: number;
+  // ACI 318 §17 anchor tension
+  T_anchor: number; phiNn: number; demandCapAnchor: number;
+}> = van.state({
+  vmMax: 0,
+  A1: 0, A2: 0, sqrtA2A1: 0, phiPp: 0, demandCapPp: 0,
+  m_cantilever: 0, fp: 0, t_req: 0, t_actual: 0, demandCapT: 0,
+  T_anchor: 0, phiNn: 0, demandCapAnchor: 0,
+});
+
 van.derive(() => {
   const B = parameters.B.value.val;
   const H = parameters.H.value.val;
@@ -448,6 +469,52 @@ van.derive(() => {
     console.warn("Placa base deform/analyze:", e?.message ?? e);
   }
 
+  // ── BENCHMARK NUMÉRICO: AISC §J8 + DG-1 + ACI 318 §17 ──
+  // 1) σ_max von Mises en placa (FEM)
+  let vmMax = 0;
+  const vmMap = (analyzeOutputs as any)?.vonMises as Map<number, number[]> | undefined;
+  if (vmMap) vmMap.forEach((arr) => arr.forEach((v) => { if (v > vmMax) vmMax = v; }));
+
+  // 2) AISC §J8: bearing en concreto
+  //    φPp = φ · 0.85 · f'c · A1 · √(A2/A1) ≤ 1.7·φ·f'c·A1, con φ=0.65
+  const phi_brg = 0.65;
+  const A1 = B * H;
+  const A2 = B_ped * H_ped;
+  const sqrtA2A1 = Math.min(2, Math.sqrt(A2 / A1));
+  const Pp_nom = 0.85 * fc * A1 * sqrtA2A1;
+  const Pp_cap = Math.min(Pp_nom, 1.7 * fc * A1);
+  const phiPp = phi_brg * Pp_cap;
+  const demandCapPp = Pu / Math.max(1, phiPp);
+
+  // 3) DG-1: cantilever m, presión bearing fp y espesor requerido
+  //    m = (B - 0.95·d_col)/2, fp = Pu/A1
+  //    t_req = m · √(2·fp / (φ·Fy)),  φ=0.9 flexural yielding
+  const m_cantilever = Math.max(0, (B - 0.95 * d_col) / 2);
+  const fp = Pu / A1;
+  const t_req = m_cantilever * Math.sqrt((2 * Math.max(0, fp)) / (0.9 * Fy_steel));
+  const demandCapT = t_req / Math.max(1e-6, t_plate);
+
+  // 4) ACI 318 §17 — tracción por perno (simplificado)
+  //    Asumir Mu vence — par tensión de pernos en lado tracción
+  //    Distancia entre filas ≈ B - 2·sx; n_tens = nBoltsY (fila trasera)
+  //    T_total = Mu / arm,  arm ≈ B - 2·sx  (entre filas extremas)
+  //    Por perno: T_anchor = T_total / nBoltsY
+  const arm = Math.max(0.05, B - 2 * sx);
+  const T_total = Math.max(0, Mu / arm - Pu / 2);  // sustracción de compresión axial
+  const T_anchor = T_total / Math.max(1, nBoltsY);
+  //    A_se ≈ 0.75 · π/4 · d² (área efectiva tensión, F1554 nominal)
+  const A_se = 0.75 * Math.PI / 4 * d_bolt * d_bolt;
+  const phi_t = 0.75;
+  const phiNn = phi_t * A_se * fut_anchor;
+  const demandCapAnchor = T_anchor / Math.max(1, phiNn);
+
+  benchValues.val = {
+    vmMax,
+    A1, A2, sqrtA2A1, phiPp, demandCapPp,
+    m_cantilever, fp, t_req, t_actual: t_plate, demandCapT,
+    T_anchor, phiNn, demandCapAnchor,
+  };
+
   nodesState.val = nodes;
   elementsState.val = elements;
   nodeInputsState.val = nodeInputs;
@@ -475,18 +542,56 @@ const viewerEl = getViewer({
   },
 });
 
+// ── Panel BENCHMARK con valores numéricos LIVE (AISC §J8 + DG-1 + ACI 318 §17) ──
 const benchmarkPanel = document.createElement("div");
-benchmarkPanel.style.cssText = "position:fixed;top:8px;right:8px;background:rgba(20,20,20,0.92);color:#ddd;font:11px/1.4 ui-monospace,Menlo,monospace;padding:10px 14px;border-radius:6px;border:1px solid #444;z-index:9999;min-width:280px;max-width:360px;";
-benchmarkPanel.innerHTML = `
-  <div style="font-weight:bold;color:#ffaa00;margin-bottom:4px;">🧪 BENCHMARK — placa-base-h (CBFEM)</div>
-  <ul style="margin:0;padding-left:16px;">
-    <li style="color:#aaa">⚠ AISC 360-22 §J8 (column base plate strength)</li>
-    <li style="color:#aaa">⚠ ACI 318-22 §17 (anchor bolt design)</li>
-    <li style="color:#7eff7e">✓ Soldadura alma-patines (nodos compartidos en y=0)</li>
-    <li style="color:#7eff7e">✓ Pernos parametrizados nBoltsX × nBoltsY</li>
-    <li style="color:#aaa">📊 IDEA StatiCa CBFEM (visual reference)</li>
-  </ul>
-`;
+benchmarkPanel.style.cssText = "position:fixed;top:8px;right:8px;background:rgba(20,20,20,0.94);color:#ddd;font:11px/1.4 ui-monospace,Menlo,monospace;padding:10px 14px;border-radius:6px;border:1px solid #444;z-index:9999;min-width:340px;max-width:420px;";
+const ratioFmt = (r: number) => {
+  if (r < 1.0) return `<span style="color:#7eff7e">${r.toFixed(2)} ✓</span>`;
+  if (r < 1.2) return `<span style="color:#ffcc00">${r.toFixed(2)} ⚠</span>`;
+  return `<span style="color:#ff5555">${r.toFixed(2)} ✗</span>`;
+};
+van.derive(() => {
+  const v = benchValues.val;
+  const Pu_now = parameters.Pu.value.val;
+  const Mu_now = parameters.Mu.value.val;
+  benchmarkPanel.innerHTML = `
+    <div style="font-weight:bold;color:#ffaa00;margin-bottom:6px;">
+      🧪 BENCHMARK — placa-base-h (CBFEM)
+    </div>
+    <div style="font-size:10px;color:#aaa;margin-bottom:4px;">
+      Demanda: Pu=${Pu_now}kN · Mu=${Mu_now}kN·m
+    </div>
+    <table style="border-collapse:collapse;width:100%;font-size:10.5px;">
+      <tr style="color:#aaa;border-bottom:1px solid #444;">
+        <td colspan="3" style="padding:3px 0;font-weight:bold;color:#ffcc77;">AISC 360-22 §J8 (bearing concreto)</td>
+      </tr>
+      <tr><td>A₁ = B·H (m²)</td><td colspan="2" style="text-align:right;">${v.A1.toFixed(4)}</td></tr>
+      <tr><td>A₂ = B_ped·H_ped (m²)</td><td colspan="2" style="text-align:right;">${v.A2.toFixed(4)}</td></tr>
+      <tr><td>√(A₂/A₁) (≤2)</td><td colspan="2" style="text-align:right;">${v.sqrtA2A1.toFixed(3)}</td></tr>
+      <tr><td>φPp (kN)</td><td colspan="2" style="text-align:right;">${v.phiPp.toFixed(0)}</td></tr>
+      <tr><td>Pu/φPp</td><td colspan="2" style="text-align:right;">${ratioFmt(v.demandCapPp)}</td></tr>
+      <tr style="color:#aaa;border-top:1px solid #333;">
+        <td colspan="3" style="padding:3px 0;font-weight:bold;color:#ffcc77;">DG-1 espesor placa</td>
+      </tr>
+      <tr><td>m cantilever (m)</td><td colspan="2" style="text-align:right;">${v.m_cantilever.toFixed(4)}</td></tr>
+      <tr><td>fp = Pu/A₁ (kN/m²)</td><td colspan="2" style="text-align:right;">${v.fp.toFixed(0)}</td></tr>
+      <tr><td>t_req (mm)</td><td colspan="2" style="text-align:right;">${(v.t_req * 1000).toFixed(1)}</td></tr>
+      <tr><td>t actual (mm)</td><td colspan="2" style="text-align:right;">${(v.t_actual * 1000).toFixed(1)}</td></tr>
+      <tr><td>t_req/t_actual</td><td colspan="2" style="text-align:right;">${ratioFmt(v.demandCapT)}</td></tr>
+      <tr style="color:#aaa;border-top:1px solid #333;">
+        <td colspan="3" style="padding:3px 0;font-weight:bold;color:#ffcc77;">ACI 318-22 §17 (anclaje F1554)</td>
+      </tr>
+      <tr><td>T anclaje (kN/perno)</td><td colspan="2" style="text-align:right;">${v.T_anchor.toFixed(1)}</td></tr>
+      <tr><td>φNn (kN/perno)</td><td colspan="2" style="text-align:right;">${v.phiNn.toFixed(1)}</td></tr>
+      <tr><td>T/φNn</td><td colspan="2" style="text-align:right;">${ratioFmt(v.demandCapAnchor)}</td></tr>
+      <tr style="color:#aaa;border-top:1px solid #333;">
+        <td colspan="3" style="padding:3px 0;font-weight:bold;color:#ffcc77;">FEM</td>
+      </tr>
+      <tr><td>σ vonMises max (kN/m²)</td><td colspan="2" style="text-align:right;">${v.vmMax.toFixed(0)}</td></tr>
+      <tr><td>vs Fy=250000</td><td colspan="2" style="text-align:right;">${ratioFmt(v.vmMax / 250000)}</td></tr>
+    </table>
+  `;
+});
 document.body.append(benchmarkPanel);
 
 document.body.append(
