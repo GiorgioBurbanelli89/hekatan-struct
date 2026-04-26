@@ -41,12 +41,13 @@ const parameters: Parameters = {
   tf_col:   { value: van.state(0.022), min: 0.012, max: 0.040, step: 0.002, label: "tf patín (m)" },
   tw_col:   { value: van.state(0.014), min: 0.008, max: 0.025, step: 0.001, label: "tw alma (m)" },
   L_col:    { value: van.state(0.50),  min: 0.30, max: 1.50, step: 0.05, label: "L stub columna (m)" },
-  // ── Pernos de anclaje (grid nBoltsX × nBoltsY) ──
+  // ── Pernos de anclaje (grid nBoltsX × nBoltsY con dist al borde sx, sy) ──
   nBoltsX:  { value: van.state(2),     min: 2,    max: 6,    step: 1,    label: "Pernos en X (filas)" },
   nBoltsY:  { value: van.state(2),     min: 2,    max: 6,    step: 1,    label: "Pernos en Y (columnas)" },
+  sx:       { value: van.state(0.07),  min: 0.03, max: 0.25, step: 0.01, label: "sx — dist borde X (m)" },
+  sy:       { value: van.state(0.07),  min: 0.03, max: 0.25, step: 0.01, label: "sy — dist borde Y (m)" },
   d_bolt:   { value: van.state(0.024), min: 0.012, max: 0.050, step: 0.002, label: "Ø perno (m)" },
   L_bolt:   { value: van.state(0.30),  min: 0.15, max: 0.60, step: 0.02, label: "L embebido (m)" },
-  edge:     { value: van.state(0.07),  min: 0.03, max: 0.20, step: 0.01, label: "Dist al borde (m)" },
   // ── Cargas (defaults moderados — la placa de 25mm con Fy=250 MPa apenas plastifica con Pu=300 kN, Mu=30 kN·m) ──
   Pu:       { value: van.state(300),   min: 0,    max: 5000, step: 25,   label: "Pu compresión (kN)" },
   Mu:       { value: van.state(30),    min: 0,    max: 800,  step: 5,    label: "Mu momento (kN·m)" },
@@ -73,7 +74,8 @@ van.derive(() => {
   const L_col = parameters.L_col.value.val;
   const d_bolt = parameters.d_bolt.value.val;
   const L_bolt = parameters.L_bolt.value.val;
-  const edge = parameters.edge.value.val;
+  const sx = parameters.sx.value.val;
+  const sy = parameters.sy.value.val;
   const nBoltsX = Math.max(2, Math.round(parameters.nBoltsX.value.val));
   const nBoltsY = Math.max(2, Math.round(parameters.nBoltsY.value.val));
   const Pu = parameters.Pu.value.val;
@@ -265,8 +267,8 @@ van.derive(() => {
   const I_bolt = Math.PI * Math.pow(d_bolt, 4) / 64;
   const J_bolt = 2 * I_bolt;
 
-  const xMin = -B / 2 + edge, xMax = +B / 2 - edge;
-  const yMin = -H / 2 + edge, yMax = +H / 2 - edge;
+  const xMin = -B / 2 + sx, xMax = +B / 2 - sx;
+  const yMin = -H / 2 + sy, yMax = +H / 2 - sy;
   const dxBolt = (xMax - xMin) / (nBoltsX - 1);
   const dyBolt = (yMax - yMin) / (nBoltsY - 1);
 
