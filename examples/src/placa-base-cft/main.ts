@@ -103,6 +103,11 @@ van.derive(() => {
   const nx = Math.round(parameters.nx.value.val), ny = Math.round(parameters.ny.value.val);
   const nz_col = Math.round(parameters.nz_col.value.val);
 
+  // GAP visible entre placa y pedestal — separación visual del contacto.
+  // La placa+col+pernos se elevan z_gap; el pedestal queda en z∈[-h_ped, 0].
+  // El contacto se modela como anclaje exclusivo via pernos (nBot empotrado).
+  const z_gap = 0.04;
+
   const nodes: Node[] = [];
   const elements: Element[] = [];
   const thicknesses = new Map<number, number>();
@@ -140,7 +145,7 @@ van.derive(() => {
   const plateGrid: number[][] = [];
   for (let j = 0; j <= ny; j++) {
     const row: number[] = [];
-    for (let i = 0; i <= nx; i++) row.push(addNode(-B / 2 + i * dxp, -H / 2 + j * dyp, 0));
+    for (let i = 0; i <= nx; i++) row.push(addNode(-B / 2 + i * dxp, -H / 2 + j * dyp, z_gap));
     plateGrid.push(row);
   }
   for (let j = 0; j < ny; j++) {
@@ -172,7 +177,7 @@ van.derive(() => {
     for (let ix = 0; ix <= nx_col; ix++) {
       const x = -bc/2 + ix*dx_c;
       if (iz === 0) row.push(snapToPlate(x, -hc/2));
-      else row.push(addNode(x, -hc/2, iz*dz_c));
+      else row.push(addNode(x, -hc/2, z_gap + iz*dz_c));
     }
     wallS.push(row);
   }
@@ -186,7 +191,7 @@ van.derive(() => {
     for (let ix = 0; ix <= nx_col; ix++) {
       const x = -bc/2 + ix*dx_c;
       if (iz === 0) row.push(snapToPlate(x, hc/2));
-      else row.push(addNode(x, hc/2, iz*dz_c));
+      else row.push(addNode(x, hc/2, z_gap + iz*dz_c));
     }
     wallN.push(row);
   }
@@ -202,7 +207,7 @@ van.derive(() => {
       if (iz === 0) row.push(snapToPlate(-bc/2, y));
       else if (iy === 0) row.push(wallS[iz][0]);  // arista compartida con wallS
       else if (iy === ny_col) row.push(wallN[iz][0]);  // arista con wallN
-      else row.push(addNode(-bc/2, y, iz*dz_c));
+      else row.push(addNode(-bc/2, y, z_gap + iz*dz_c));
     }
     wallW.push(row);
   }
@@ -218,7 +223,7 @@ van.derive(() => {
       if (iz === 0) row.push(snapToPlate(bc/2, y));
       else if (iy === 0) row.push(wallS[iz][nx_col]);
       else if (iy === ny_col) row.push(wallN[iz][nx_col]);
-      else row.push(addNode(bc/2, y, iz*dz_c));
+      else row.push(addNode(bc/2, y, z_gap + iz*dz_c));
     }
     wallE.push(row);
   }
@@ -305,30 +310,16 @@ van.derive(() => {
     placaNodeList.push({ id, x: nodes[id][0], y: nodes[id][1] });
   }
 
+  // Pedestal independiente — no snap a placa (placa ahora está en z=z_gap,
+  // separada del pedestal top z=0 por el gap visible). Anclaje vía pernos.
+  void placaNodeList;
   const pedGrid: number[][][] = [];
   for (let k = 0; k <= nz_p; k++) {
     const layer: number[][] = [];
     for (let j = 0; j <= ny_p; j++) {
       const row: number[] = [];
       for (let i = 0; i <= nx_p; i++) {
-        const x = -B_ped/2 + i*dxp_e;
-        const y = -H_ped/2 + j*dyp_e;
-        const z = -h_ped + k*dzp_e;
-        const isTop = k === nz_p;
-        const inPlaca = Math.abs(x) <= B/2 + 1e-6 && Math.abs(y) <= H/2 + 1e-6;
-        let id: number;
-        if (isTop && inPlaca) {
-          // snap al nodo placa más cercano (CONTACTO)
-          let best = -1; let dmin = Infinity;
-          for (const pn of placaNodeList) {
-            const d = Math.hypot(pn.x - x, pn.y - y);
-            if (d < dmin) { dmin = d; best = pn.id; }
-          }
-          id = best >= 0 ? best : addNode(x, y, z);
-        } else {
-          id = addNode(x, y, z);
-        }
-        row.push(id);
+        row.push(addNode(-B_ped/2 + i*dxp_e, -H_ped/2 + j*dyp_e, -h_ped + k*dzp_e));
       }
       layer.push(row);
     }
@@ -388,9 +379,9 @@ van.derive(() => {
   // El nBot es nodo PROPIO del perno empotrado al suelo (estabiliza el sistema
   // independientemente del pedestal). Visualmente queda embebido en el pedestal.
   for (const [bx, by] of pendingBolts) {
-    const nTop = addNode(bx, by, L_proj);
+    const nTop = addNode(bx, by, z_gap + L_proj);
     const nMid = snapToPlate(bx, by);
-    const nBot = addNode(bx, by, -L_bolt);
+    const nBot = addNode(bx, by, z_gap - L_bolt);
     addFrame(nTop, nMid, A_bolt, I_bolt, J_bolt);
     addFrame(nMid, nBot, A_bolt, I_bolt, J_bolt);
   }
@@ -409,7 +400,7 @@ van.derive(() => {
   // Los pernos son elementos paralelos que también empotran. Sistema estable.
   const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
   nodes.forEach((p, id) => {
-    const onBoltBot = Math.abs(p[2] - (-L_bolt)) < 1e-6 &&
+    const onBoltBot = Math.abs(p[2] - (z_gap - L_bolt)) < 1e-6 &&
                       boltPositions.some(([bx, by]) => Math.abs(p[0]-bx) < 1e-6 && Math.abs(p[1]-by) < 1e-6);
     const onPedBot = Math.abs(p[2] - (-h_ped)) < 1e-6;
     if (onBoltBot || onPedBot) supports.set(id, [true, true, true, true, true, true]);
@@ -418,7 +409,7 @@ van.derive(() => {
   // ── Cargas en top de columna ──
   const colTopNodes: number[] = [];
   nodes.forEach((p, id) => {
-    if (Math.abs(p[2] - L_col) < 1e-6 &&
+    if (Math.abs(p[2] - (z_gap + L_col)) < 1e-6 &&
         Math.abs(p[0]) <= bc / 2 + 1e-6 && Math.abs(p[1]) <= hc / 2 + 1e-6) {
       colTopNodes.push(id);
     }
@@ -454,6 +445,30 @@ van.derive(() => {
   // PLACA BASE como BoxGeometry destacada (acero gris) sobre el pedestal,
   // de espesor t_plate y dimensiones B×H. Esto la hace visible como contacto
   // entre columna y pedestal (la shell FEM es muy delgada para verse sola).
+  // SÍMBOLOS DE CONTACTO: pequeños resortes zigzag entre placa (z=z_gap) y
+  // pedestal (z=0) en las esquinas y centro de la placa, para indicar
+  // visualmente que es un CONTACTO compresivo (no soldadura).
+  const matContact = new THREE.LineBasicMaterial({ color: 0xffaa00 });
+  function addContactSymbol(cx: number, cy: number) {
+    const N = 5;  // numero de zigzags
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= N * 2; i++) {
+      const t = i / (N * 2);
+      const z = z_gap * (1 - t);  // de z=z_gap (placa) a z=0 (pedestal)
+      const dx = (i % 2 === 0) ? 0 : 0.008;
+      pts.push(new THREE.Vector3(cx + dx, cy, z));
+    }
+    const geom = new THREE.BufferGeometry().setFromPoints(pts);
+    const line = new THREE.Line(geom, matContact);
+    objs.push(line);
+  }
+  // 4 esquinas + centro de la placa
+  addContactSymbol(B/2 - 0.04, H/2 - 0.04);
+  addContactSymbol(-B/2 + 0.04, H/2 - 0.04);
+  addContactSymbol(B/2 - 0.04, -H/2 + 0.04);
+  addContactSymbol(-B/2 + 0.04, -H/2 + 0.04);
+  addContactSymbol(0, 0);
+
   // Placa base 3D translúcida — para que la malla FEM Q4 sea visible Y se
   // identifique claramente como un elemento separado entre col y pedestal.
   const matPlaca = new THREE.MeshStandardMaterial({
@@ -461,7 +476,7 @@ van.derive(() => {
     transparent: true, opacity: 0.45,
   });
   const placaMesh = new THREE.Mesh(new THREE.BoxGeometry(B, H, t_plate), matPlaca);
-  placaMesh.position.set(0, 0, t_plate / 2);
+  placaMesh.position.set(0, 0, z_gap + t_plate / 2);
   objs.push(placaMesh);
 
   // CARTELAS (stiffeners) Q4 SHELLS — mallado FEM real, refuerzo AISC.
@@ -477,7 +492,7 @@ van.derive(() => {
   for (const [bx, by] of [[rx, ry], [-rx, ry], [rx, -ry], [-rx, -ry]] as [number, number][]) {
     const bar = new THREE.Mesh(
       new THREE.CylinderGeometry(d_rebar/2, d_rebar/2, L_col, 8), matRebar);
-    bar.position.set(bx, by, L_col / 2 + t_plate);
+    bar.position.set(bx, by, z_gap + L_col / 2 + t_plate);
     bar.rotation.x = Math.PI / 2;
     objs.push(bar);
   }
@@ -486,18 +501,18 @@ van.derive(() => {
   const matFill = new THREE.MeshStandardMaterial({ color: 0xc4a878, transparent: true, opacity: 0.45 });
   const fill = new THREE.Mesh(
     new THREE.BoxGeometry(bc - 2*t_col, hc - 2*t_col, L_col - 0.005), matFill);
-  fill.position.set(0, 0, L_col / 2 + t_plate);
+  fill.position.set(0, 0, z_gap + L_col / 2 + t_plate);
   objs.push(fill);
   const matBolt = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.5 });
   const matNut  = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.7, roughness: 0.3 });
   const t_nut = d_bolt * 0.8;       // espesor tuerca ≈ 0.8·Ø (típico ASTM)
   const r_nut = d_bolt * 0.85;      // radio across flats ≈ 1.7·Ø
-  const nutZ = L_proj + t_nut / 2;  // tuerca encima de la proyección
+  const nutZ = z_gap + L_proj + t_nut / 2;  // tuerca encima de la proyección
   for (const [bx, by] of boltPositions) {
     // Cilindro vástago perno (penetra placa y baja al pedestal)
     const geom = new THREE.CylinderGeometry(d_bolt/2, d_bolt/2, L_bolt + L_proj, 12);
     const m = new THREE.Mesh(geom, matBolt);
-    m.position.set(bx, by, (-L_bolt + L_proj) / 2);
+    m.position.set(bx, by, z_gap + (-L_bolt + L_proj) / 2);
     m.rotation.x = Math.PI / 2;
     objs.push(m);
     // Tuerca hexagonal en el top (CylinderGeometry con 6 lados = hexágono)
@@ -571,7 +586,9 @@ const viewerEl = getViewer({
     // displayScale chico para que los markers no saturen visualmente.
     deformedShape: false, shellResults: "vonMises",
     gridSize: 1, deformScale: 1, custom3D: true,
-    loads: false, supports: true, showCotas: false, displayScale: 0.1,
+    // supports off por defecto (los 49+4 markers del empotramiento generan
+    // ruido visual debajo del pedestal). Activar manualmente desde Settings.
+    loads: false, supports: false, showCotas: false, displayScale: 0.1,
   },
 });
 
