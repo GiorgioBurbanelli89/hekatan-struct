@@ -511,13 +511,28 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
     const isStress = field === "vonMises" || field === "pressure";
     const isShear = field === "tranverseShearX" || field === "tranverseShearY";
 
+    // ── Solid Results override ──
+    // Cuando un ejemplo usa elementos H8 sólidos, el dropdown "Solid results"
+    // se monta en paralelo a "Shell results" y reusa internamente el canal
+    // "vonMises" para el rendering. Pero las UNIDADES dependen del campo real:
+    //   - σ_xx/yy/zz, τ_xy/yz/xz, vonMises  → kN/m² (stress)
+    //   - ux, uy, uz                         → m (desplazamiento)
+    const solidField = settings.solidResults?.val;
+    const isSolidStress = solidField === "vonMises" ||
+                          solidField === "sigmaXX" || solidField === "sigmaYY" || solidField === "sigmaZZ" ||
+                          solidField === "tauXY"   || solidField === "tauYZ"   || solidField === "tauXZ";
+    const isSolidDisp = solidField === "ux" || solidField === "uy" || solidField === "uz";
+
     // Factor de escala UI: convierte valor SI → valor UI (para mostrar en el legend).
     // - Disp: multiplica por el factor dispUnit (mm=1000, cm=100, µm=1e6)
     // - Fuerza/tensión/momento: divide por el factor forceUnit (kN=1, tonf=9.80665, kip=4.44822)
     //   porque 1 tonf = 9.80665 kN ⇒ X kN = X/9.80665 tonf
-    const scale = isDisp ? DISP_FACTORS[dUnit] :
-                  (isBending || isMembrane || isStress || isShear) ? 1 / FORCE_FACTORS[fUnit] :
-                  1;
+    const scale =
+      isSolidStress ? 1 / FORCE_FACTORS[fUnit] :
+      isSolidDisp   ? DISP_FACTORS[dUnit] :
+      isDisp        ? DISP_FACTORS[dUnit] :
+      (isBending || isMembrane || isStress || isShear) ? 1 / FORCE_FACTORS[fUnit] :
+      1;
 
     // Sufijo de unidad en el legend. Plane-stress real (σ) es kN/m² y
     // membrane-force (N = σ·t) es kN/m: ambos se distinguen por convención
@@ -525,11 +540,13 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
     //   - si un ejemplo quiere usar membrane* como FORCE/m, que setee
     //     analyzeOutputs.colorMapUnitOverride (TODO futuro).
     const unit =
-      isDisp     ? dUnit :
-      isBending  ? `${fUnit}·m/m` :
-      isMembrane ? `${fUnit}/m²` :            // stress de plane Q4
-      isStress   ? `${fUnit}/m²` :
-      isShear    ? `${fUnit}/m` :
+      isSolidStress ? `${fUnit}/m²` :         // σ, τ, vonMises sólidos
+      isSolidDisp   ? dUnit :                 // ux, uy, uz (m / mm / etc.)
+      isDisp        ? dUnit :
+      isBending     ? `${fUnit}·m/m` :
+      isMembrane    ? `${fUnit}/m²` :         // stress de plane Q4
+      isStress      ? `${fUnit}/m²` :
+      isShear       ? `${fUnit}/m` :
       "";
     colorMapUnit.val = unit;
 

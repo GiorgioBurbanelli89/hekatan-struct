@@ -241,6 +241,8 @@ export interface Hex8SolveOutput {
   displacements: Map<number, Vec3>;
   /** Map element → von Mises stress per Gauss point (8 values) */
   vonMisesPerElement: Map<number, number[]>;
+  /** Map element → 6-component stress per Gauss point: [σxx,σyy,σzz,τxy,τyz,τxz][] */
+  stressPerElement: Map<number, number[][]>;
   /** Tiempo total del solver en ms */
   elapsedMs: number;
 }
@@ -295,8 +297,9 @@ export function hex8Solve(input: Hex8SolveInput): Hex8SolveOutput {
     displacements.set(i, [u[3 * i], u[3 * i + 1], u[3 * i + 2]]);
   }
 
-  // Calcular von Mises por elemento (en cada punto Gauss)
+  // Calcular σ (6 componentes) + von Mises por elemento (en cada punto Gauss)
   const vmMap = new Map<number, number[]>();
+  const stressMap = new Map<number, number[][]>();
   for (let eidx = 0; eidx < elements.length; eidx++) {
     const elem = elements[eidx];
     const ec: Vec3[] = elem.map((id) => nodes[id]);
@@ -305,6 +308,7 @@ export function hex8Solve(input: Hex8SolveInput): Hex8SolveOutput {
       ueElem.push(u[3 * id], u[3 * id + 1], u[3 * id + 2]);
     }
     const vmList: number[] = [];
+    const sigList: number[][] = [];
     for (const [xi, eta, zeta] of GAUSS) {
       const dNnat = shapeDerivativesNatural(xi, eta, zeta);
       const J = jacobian(ec, dNnat);
@@ -321,7 +325,7 @@ export function hex8Solve(input: Hex8SolveInput): Hex8SolveOutput {
       for (let r = 0; r < 6; r++) {
         for (let c = 0; c < 24; c++) eps[r] += B[r][c] * ueElem[c];
       }
-      // σ = D · ε
+      // σ = D · ε  (orden: σxx, σyy, σzz, τxy, τyz, τxz)
       const sig = new Array(6).fill(0);
       for (let r = 0; r < 6; r++) {
         for (let c = 0; c < 6; c++) sig[r] += D[r][c] * eps[c];
@@ -334,13 +338,16 @@ export function hex8Solve(input: Hex8SolveInput): Hex8SolveOutput {
         3 * (sxy * sxy + syz * syz + sxz * sxz)
       );
       vmList.push(vm);
+      sigList.push([sxx, syy, szz, sxy, syz, sxz]);
     }
     vmMap.set(eidx, vmList);
+    stressMap.set(eidx, sigList);
   }
 
   return {
     displacements,
     vonMisesPerElement: vmMap,
+    stressPerElement: stressMap,
     elapsedMs: performance.now() - t0,
   };
 }

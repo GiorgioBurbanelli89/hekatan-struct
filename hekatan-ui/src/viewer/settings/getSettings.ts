@@ -25,6 +25,8 @@ export type Settings = {
   nodeResults: State<string>;
   frameResults: State<string>;
   shellResults: State<string>;
+  /** Resultados sólidos H8 (columna+viga, cubo, etc.) — vonMises / σ / τ / desp. */
+  solidResults: State<string>;
   solids: State<boolean>;
   flipAxes: State<boolean>;
   /** Resortes/objetos custom 3D (zigzags Winkler en zapatas, etc.) on/off */
@@ -65,6 +67,7 @@ export type SettingsObj = {
   nodeResults?: string;
   frameResults?: string;
   shellResults?: string;
+  solidResults?: string;
   flipAxes?: boolean;
   solids?: boolean;
   custom3D?: boolean;
@@ -202,6 +205,25 @@ export function getSettings(
       label: "Shell results",
     });
 
+    // Solid results (elementos H8 sólidos: columna+viga, cubos, etc.)
+    // Unidades se muestran en el LEGEND del colorbar (kN/m² para σ/τ/vM, m para u).
+    outputs.addBinding(settings.solidResults, "val", {
+      options: {
+        none: "none",
+        vonMises: "vonMises",
+        σxx: "sigmaXX",
+        σyy: "sigmaYY",
+        σzz: "sigmaZZ",
+        τxy: "tauXY",
+        τyz: "tauYZ",
+        τxz: "tauXZ",
+        ux: "ux",
+        uy: "uy",
+        uz: "uz",
+      },
+      label: "Solid results",
+    });
+
     outputs.addBinding(settings.deformedShape, "val", {
       label: "Deformed shape",
     });
@@ -234,6 +256,7 @@ export function getDefaultSettings(settingsObj: SettingsObj): Settings {
     nodeResults: van.state(settingsObj?.nodeResults ?? "none"),
     frameResults: van.state(settingsObj?.frameResults ?? "none"),
     shellResults: van.state(settingsObj?.shellResults ?? "none"),
+    solidResults: van.state(settingsObj?.solidResults ?? "none"),
     flipAxes: van.state(settingsObj?.flipAxes ?? false),
     solids: van.state(settingsObj?.solids ?? true),
     custom3D: van.state(settingsObj?.custom3D ?? true),

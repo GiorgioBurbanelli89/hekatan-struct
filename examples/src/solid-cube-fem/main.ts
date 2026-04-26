@@ -24,11 +24,12 @@
  */
 import van, { State } from "vanjs-core";
 import * as THREE from "three";
+import { Pane } from "tweakpane";
 import { hex8Solve, type Vec3, type Hex8 } from "./h8";
 import {
   Node, Element, NodeInputs, ElementInputs, DeformOutputs, AnalyzeOutputs,
 } from "hekatan-fem";
-import { getToolbar, getParameters, Parameters, getViewer } from "hekatan-ui";
+import { getToolbar, getParameters, Parameters, getViewer, colorMapForceUnit, colorMapDispUnit } from "hekatan-ui";
 
 // Defaults aligned para que beam-grid coincida con column-grid (dedup limpio)
 const parameters: Parameters = {
@@ -61,12 +62,39 @@ const deformOutputsState: State<DeformOutputs>   = van.state({});
 const analyzeOutputsState: State<AnalyzeOutputs> = van.state({});
 const objects3DState: State<THREE.Object3D[]>    = van.state([]);
 
-// ── Live benchmark: H8 vs Euler-Bernoulli cantilever beam ──
+// ── Solid Results: dropdown para elegir qué campo visualizar en las caras H8 ──
+type SolidField =
+  | "vonMises"
+  | "sigmaXX" | "sigmaYY" | "sigmaZZ"
+  | "tauXY"   | "tauYZ"   | "tauXZ"
+  | "ux"      | "uy"      | "uz";
+const solidResultMode: State<SolidField> = van.state("vonMises");
+// Cache de campos por nodo (computado en main derive, leído en derive secundario)
+const nodeFieldsState: State<Record<string, Map<number, number>>> = van.state({});
+const visualElementsCache: State<Element[]> = van.state([]);
+
+// ── Live benchmark: H8 vs Euler-Bernoulli + Timoshenko + flexib. columna ──
+// IMPORTANTE: E-B asume empotramiento RÍGIDO. En col+viga real, H8 captura
+// efectos 3D que E-B no contempla:
+//   1) Cortante Timoshenko (L/h pequeño)
+//   2) Rotación de la columna en el joint (M = P·L_beam → θ_col)
+//   3) Warping 3D del joint
+// El benchmark "honesto" compara H8 vs (E-B + Timoshenko + θ_col·L_beam).
 const benchValues: State<{
   P: number; L_beam: number; I_beam: number;
-  delta_an: number; delta_he: number;
-  errPct: number; elapsed: number;
-}> = van.state({ P: 0, L_beam: 0, I_beam: 0, delta_an: 0, delta_he: 0, errPct: 0, elapsed: 0 });
+  delta_EB: number;          // Euler-Bernoulli puro (rigid wall)
+  delta_shear: number;       // corrección Timoshenko
+  delta_col: number;         // rotación columna en joint
+  delta_total_an: number;    // analítico mejorado = EB + shear + col
+  delta_he: number;          // H8 medido
+  errEBpct: number;          // % vs E-B puro (educativo)
+  errTotalPct: number;       // % vs analítico mejorado (real)
+  elapsed: number;
+}> = van.state({
+  P: 0, L_beam: 0, I_beam: 0,
+  delta_EB: 0, delta_shear: 0, delta_col: 0, delta_total_an: 0,
+  delta_he: 0, errEBpct: 0, errTotalPct: 0, elapsed: 0,
+});
 
 van.derive(() => {
   const Lx_col = parameters.Lx_col.value.val;
@@ -249,29 +277,56 @@ van.derive(() => {
     });
   }
 
-  // analyzeOutputs.vonMises promediado por nodo desde elementos vecinos
-  const analyzeOutputs: AnalyzeOutputs = {} as AnalyzeOutputs;
+  // ── Compute ALL field values per node (vonMises, σ_xx..τ_xz, ux,uy,uz) ──
+  // Promedio simple por nodo desde elementos vecinos (todos los Gauss).
+  const nodeFields: Record<string, Map<number, number>> = {
+    vonMises: new Map(), sigmaXX: new Map(), sigmaYY: new Map(), sigmaZZ: new Map(),
+    tauXY: new Map(), tauYZ: new Map(), tauXZ: new Map(),
+    ux: new Map(), uy: new Map(), uz: new Map(),
+  };
   if (result) {
-    const nodeVm = new Map<number, { sum: number; count: number }>();
+    const sums: Record<string, Map<number, { sum: number; count: number }>> = {
+      vonMises: new Map(), sigmaXX: new Map(), sigmaYY: new Map(), sigmaZZ: new Map(),
+      tauXY: new Map(), tauYZ: new Map(), tauXZ: new Map(),
+    };
     elemsH8.forEach((e, eidx) => {
-      const vmGauss = result.vonMisesPerElement.get(eidx) || [];
-      const vmAvg = vmGauss.reduce((s, v) => s + v, 0) / Math.max(1, vmGauss.length);
+      const vmList = result.vonMisesPerElement.get(eidx) || [];
+      const sigList = result.stressPerElement.get(eidx) || [];
+      // promedios sobre los 8 puntos Gauss
+      const vmAvg = vmList.reduce((s, v) => s + v, 0) / Math.max(1, vmList.length);
+      const sigAvg = [0, 0, 0, 0, 0, 0];
+      for (const s of sigList) {
+        for (let k = 0; k < 6; k++) sigAvg[k] += s[k];
+      }
+      for (let k = 0; k < 6; k++) sigAvg[k] /= Math.max(1, sigList.length);
+      const fieldVals: Record<string, number> = {
+        vonMises: vmAvg,
+        sigmaXX: sigAvg[0], sigmaYY: sigAvg[1], sigmaZZ: sigAvg[2],
+        tauXY: sigAvg[3], tauYZ: sigAvg[4], tauXZ: sigAvg[5],
+      };
       for (const nid of e) {
-        const cur = nodeVm.get(nid) || { sum: 0, count: 0 };
-        cur.sum += vmAvg; cur.count += 1;
-        nodeVm.set(nid, cur);
+        for (const k of Object.keys(sums)) {
+          const cur = sums[k].get(nid) || { sum: 0, count: 0 };
+          cur.sum += fieldVals[k]; cur.count += 1;
+          sums[k].set(nid, cur);
+        }
       }
     });
-    const vonMisesNodes = new Map<number, [number, number, number, number]>();
-    visualElements.forEach((face, fidx) => {
-      const vals = face.map((nid) => {
-        const cur = nodeVm.get(nid);
-        return cur ? cur.sum / cur.count : 0;
+    for (const k of Object.keys(sums)) {
+      sums[k].forEach((v, nid) => {
+        nodeFields[k].set(nid, v.sum / Math.max(1, v.count));
       });
-      vonMisesNodes.set(fidx, [vals[0], vals[1], vals[2], vals[3]]);
+    }
+    // Desplazamientos directos por nodo
+    result.displacements.forEach(([ux, uy, uz], nid) => {
+      nodeFields.ux.set(nid, ux);
+      nodeFields.uy.set(nid, uy);
+      nodeFields.uz.set(nid, uz);
     });
-    (analyzeOutputs as any).vonMises = vonMisesNodes;
   }
+  // Cachear para que el derive secundario reaccione al dropdown solidResultMode
+  nodeFieldsState.val = nodeFields;
+  visualElementsCache.val = visualElements;
 
   // Apoyos visuales
   const visualSupports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
@@ -291,26 +346,44 @@ van.derive(() => {
     }
     tipUzAvg /= Math.max(1, tipNodes.length);
 
-    // ── BENCHMARK: cantilever beam Euler-Bernoulli ──
-    // Viga cantilever empotrada en columna (asumiendo columna mucho más rígida),
-    // con peralte H_beam, ancho W_beam, voladizo L_beam, carga vertical P en tip:
-    //   I_y = W_beam · H_beam³ / 12   (flexión sobre eje X, plano YZ)
-    //   δ_tip = P · L_beam³ / (3 · E · I_y)
+    // ── BENCHMARK físicamente correcto: H8 vs (E-B + Timoshenko + col flex) ──
+    // E-B puro es lower bound: asume pared rígida e ignora cortante.
+    // El modelo H8 captura:
+    //   (a) Flexión pura: δ_EB = P·L³/(3·E·I_beam)
+    //   (b) Cortante Timoshenko: δ_shear = P·L/(κ·G·A_beam), κ=5/6 rect.
+    //   (c) Rotación columna en joint: θ_col = M·Lz/(16·E·I_col) (col fixed-fixed
+    //       con M aplicado en mitad), δ_col = θ_col · L_beam.
     const I_beam = (W_b_snap * H_b_snap * H_b_snap * H_b_snap) / 12;
-    const delta_an = (P_tip * L_beam * L_beam * L_beam) / (3 * E * I_beam);
-    const errPct = Math.abs(tipUzAvg - delta_an) / Math.abs(delta_an || 1) * 100;
+    const A_beam = W_b_snap * H_b_snap;
+    const G = E / (2 * (1 + nu));
+    const kappa = 5 / 6;  // shear correction factor para sección rectangular
+    const delta_EB = (P_tip * L_beam * L_beam * L_beam) / (3 * E * I_beam);
+    const delta_shear = (P_tip * L_beam) / (kappa * G * A_beam);
+    // Columna fixed-fixed con M = P·L_beam aplicado en midspan:
+    //   θ_midspan = M · Lz / (16 · E · I_col)
+    const I_col = (Lx_col * Ly_col * Ly_col * Ly_col) / 12;  // bending about X axis
+    const M_joint = P_tip * L_beam;
+    const theta_col = (M_joint * Lz) / (16 * E * I_col);
+    const delta_col = theta_col * L_beam;
+    const delta_total_an = delta_EB + delta_shear + delta_col;
 
-    console.log("  ─── BENCHMARK cantilever beam (Euler-Bernoulli) ───");
-    console.log(`  L_beam=${L_beam.toFixed(2)} m, W=${W_b_snap.toFixed(3)} × H=${H_b_snap.toFixed(3)}`);
-    console.log(`  I_beam = W·H³/12 = ${I_beam.toExponential(3)} m⁴`);
-    console.log(`  δ analítico = P·L³/(3·E·I) = ${delta_an.toExponential(4)} m`);
-    console.log(`  δ Hekatan H8 (uz tip avg) = ${tipUzAvg.toExponential(4)} m`);
-    console.log(`  Δ = ${errPct.toFixed(2)}%  ${errPct < 1 ? "✓" : errPct < 10 ? "⚠" : "✗"}`);
+    const errEBpct = Math.abs(tipUzAvg - delta_EB) / Math.abs(delta_EB || 1) * 100;
+    const errTotalPct = Math.abs(tipUzAvg - delta_total_an) / Math.abs(delta_total_an || 1) * 100;
+
+    console.log("  ─── BENCHMARK col+viga H8 ───");
+    console.log(`  δ E-B puro (rigid wall) = ${delta_EB.toExponential(4)} m`);
+    console.log(`  δ + Timoshenko shear   = ${(delta_EB + delta_shear).toExponential(4)} m`);
+    console.log(`  δ + col flex (joint)   = ${delta_total_an.toExponential(4)} m`);
+    console.log(`  δ Hekatan H8 (medido)  = ${tipUzAvg.toExponential(4)} m`);
+    console.log(`  Δ vs E-B puro = ${errEBpct.toFixed(2)}% (esperado 20-40% extra)`);
+    console.log(`  Δ vs total analítico = ${errTotalPct.toFixed(2)}% (esperado <15%)`);
 
     benchValues.val = {
       P: P_tip, L_beam, I_beam,
-      delta_an, delta_he: tipUzAvg,
-      errPct, elapsed: result.elapsedMs,
+      delta_EB, delta_shear, delta_col, delta_total_an,
+      delta_he: tipUzAvg,
+      errEBpct, errTotalPct,
+      elapsed: result.elapsedMs,
     };
     void maxUz;
   }
@@ -321,7 +394,38 @@ van.derive(() => {
   nodeInputsState.val = { supports: visualSupports, loads: visualLoads };
   elementInputsState.val = elementInputs;
   deformOutputsState.val = deformOutputs;
-  analyzeOutputsState.val = analyzeOutputs;
+  // analyzeOutputsState lo setea el derive secundario abajo según solidResultMode
+});
+
+// ── Derive secundario: mapea (nodeFields × solidResultMode) → analyzeOutputs ──
+// Reactivo a:
+//   - cambio de modo (dropdown Tweakpane "Solid results")
+//   - cambio de geometría (parámetros) → recalcula nodeFields
+// También override de la unidad del colorbar para que diga "m" en
+// desplazamientos y "kN/m²" en tensiones (el canal interno es vonMises).
+// (Lógica de unidades ahora vive dentro de getViewer.ts — detecta solidResults)
+van.derive(() => {
+  const fields = nodeFieldsState.val;
+  const ve = visualElementsCache.val;
+  const mode = solidResultMode.val;
+  const fieldMap = fields[mode];
+  if (!fieldMap || fieldMap.size === 0 || ve.length === 0) {
+    analyzeOutputsState.val = {} as AnalyzeOutputs;
+    return;
+  }
+  const out = new Map<number, [number, number, number, number]>();
+  ve.forEach((face, fidx) => {
+    const v0 = fieldMap.get(face[0]) ?? 0;
+    const v1 = fieldMap.get(face[1]) ?? 0;
+    const v2 = fieldMap.get(face[2]) ?? 0;
+    const v3 = fieldMap.get(face[3]) ?? 0;
+    out.set(fidx, [v0, v1, v2, v3]);
+  });
+  // El viewer lee analyzeOutputs.vonMises cuando shellResults="vonMises".
+  // Reusamos esa key para todos los modos (el dropdown nuestro es el oficial).
+  // El viewer detecta solidResults != "none" y usa unidades correctas:
+  //   stress → kN/m², displacement → m (ver getViewer.ts).
+  analyzeOutputsState.val = { vonMises: out } as any as AnalyzeOutputs;
 });
 
 const viewerEl = getViewer({
@@ -336,65 +440,130 @@ const viewerEl = getViewer({
   objects3D: objects3DState,
   settingsObj: {
     deformedShape: true,
-    shellResults: "vonMises",
+    // Este ejemplo es 100% H8 sólidos — NO hay shells reales.
+    // Shell results queda en "none"; el dropdown "Solid results" maneja todo.
+    shellResults: "none",
+    solidResults: "vonMises",
     gridSize: 4,
     deformScale: 100,
-    loads: true,         // mostrar flechas de carga en TODOS los nodos del tip de viga
-    supports: true,      // mostrar empotramientos en base y tope de columna
+    loads: true,
+    supports: true,
     displayScale: 0.4,
   },
 });
 
-// ── Panel BENCHMARK con valores numéricos LIVE (Hekatan H8 vs Euler-Bernoulli) ──
-const benchmarkPanel = document.createElement("div");
-benchmarkPanel.style.cssText = `
+// ── Wire dropdown Tweakpane "Solid results" → estado local + activar render ──
+// Internamente el render de las caras Q4 boundary usa el canal shellResults:
+// "vonMises". Cuando el usuario elige cualquier campo sólido ≠ none, activamos
+// shellResults="vonMises" automáticamente para que el viewer pinte las caras.
+setTimeout(() => {
+  const settings = (viewerEl as any).__settings;
+  if (settings?.solidResults) {
+    solidResultMode.val = (settings.solidResults.val !== "none"
+      ? settings.solidResults.val
+      : "vonMises") as SolidField;
+    // Si el dropdown arranca "none", forzar shellResults="none" también
+    if (settings.solidResults.val === "none") settings.shellResults.val = "none";
+    else settings.shellResults.val = "vonMises";
+
+    van.derive(() => {
+      const v = settings.solidResults.val as string;
+      if (v === "none") {
+        settings.shellResults.val = "none";  // apaga rendering
+      } else {
+        settings.shellResults.val = "vonMises";  // activa rendering vía canal Q4
+        const mode = v as SolidField;
+        if (mode !== solidResultMode.val) solidResultMode.val = mode;
+      }
+    });
+  }
+}, 100);
+
+// ── Panel BENCHMARK con TWEAKPANE (consistente con Settings, scrolleable) ──
+const benchContainer = document.createElement("div");
+benchContainer.style.cssText = `
   position: fixed; top: 8px; right: 8px;
-  background: rgba(20,20,20,0.94); color: #ddd;
-  font: 11px/1.4 ui-monospace, Menlo, monospace;
-  padding: 10px 14px; border-radius: 6px;
-  border: 1px solid #444;
-  z-index: 9999; min-width: 340px; max-width: 420px;
+  width: 280px; max-height: 85vh; overflow-y: auto;
+  z-index: 9999;
 `;
+const benchPane = new Pane({
+  title: "🧪 Benchmark — col+viga H8",
+  container: benchContainer,
+  expanded: true,
+});
+// Objeto reactivo que Tweakpane refresca con .refresh() cuando cambia
+const benchObj = {
+  delta_EB: 0, delta_shear: 0, delta_col: 0, delta_total_an: 0,
+  delta_he: 0,
+  errTotalPct: 0, errEBpct: 0, status: "—",
+  I_beam: 0, L_beam: 0, P: 0, elapsed: 0,
+};
+const fmtSci = (v: number) => v.toExponential(3);
+const fmtPct = (v: number) => v.toFixed(2);
+const fmtFix = (v: number) => v.toFixed(2);
+
+const fAn = benchPane.addFolder({ title: "Analítico (E-B + Timoshenko + col flex)" });
+fAn.addBinding(benchObj, "delta_EB",       { readonly: true, label: "δ E-B (m)",        format: fmtSci });
+fAn.addBinding(benchObj, "delta_shear",    { readonly: true, label: "δ Timoshenko (m)", format: fmtSci });
+fAn.addBinding(benchObj, "delta_col",      { readonly: true, label: "δ col joint (m)",  format: fmtSci });
+fAn.addBinding(benchObj, "delta_total_an", { readonly: true, label: "δ TOTAL (m)",      format: fmtSci });
+
+const fH = benchPane.addFolder({ title: "Hekatan H8 (medido)" });
+fH.addBinding(benchObj, "delta_he",    { readonly: true, label: "δ tip (m)",      format: fmtSci });
+fH.addBinding(benchObj, "errTotalPct", { readonly: true, label: "Δ vs total (%)", format: fmtPct });
+fH.addBinding(benchObj, "errEBpct",    { readonly: true, label: "Δ vs E-B (%)",   format: fmtPct });
+fH.addBinding(benchObj, "status",      { readonly: true, label: "Status" });
+
+const fP = benchPane.addFolder({ title: "Parámetros / runtime", expanded: false });
+fP.addBinding(benchObj, "I_beam",  { readonly: true, label: "I_beam (m⁴)", format: fmtSci });
+fP.addBinding(benchObj, "L_beam",  { readonly: true, label: "L_beam (m)",  format: fmtFix });
+fP.addBinding(benchObj, "P",       { readonly: true, label: "P tip (kN)",  format: fmtFix });
+fP.addBinding(benchObj, "elapsed", { readonly: true, label: "Solve (ms)",  format: (v: number) => v.toFixed(0) });
+
+// ── Folder Unidades: cambia unidades del color map (force kN/tonf/kip, disp m/mm/cm) ──
+const fUnits = benchPane.addFolder({ title: "Unidades color map", expanded: true });
+const unitsObj = { force: colorMapForceUnit.val, disp: colorMapDispUnit.val };
+fUnits.addBinding(unitsObj, "force", {
+  options: { kN: "kN", tonf: "tonf", kip: "kip" },
+  label: "Fuerza/tensión",
+}).on("change", (e) => { colorMapForceUnit.val = e.value as any; });
+fUnits.addBinding(unitsObj, "disp", {
+  options: { m: "m", cm: "cm", mm: "mm", "µm": "µm" },
+  label: "Desplazamiento",
+}).on("change", (e) => { colorMapDispUnit.val = e.value as any; });
+
+const fNotes = benchPane.addFolder({ title: "Pendientes", expanded: false });
+const notesEl = document.createElement("div");
+notesEl.style.cssText = "font:10.5px ui-monospace,monospace;color:#aaa;padding:6px 8px;line-height:1.5;";
+notesEl.textContent =
+  "· Patch test (constant strain)\n" +
+  "· MacNeal-Harder warped beam\n" +
+  "· Cook's membrane / Pinched cylinder\n" +
+  "· vs CalculiX, Code Aster, FEniCS, SAP2000";
+notesEl.style.whiteSpace = "pre-line";
+fNotes.element.appendChild(notesEl);
+
+document.body.append(benchContainer);
+
+// Update reactivo: copia benchValues → benchObj y refresca Tweakpane
 van.derive(() => {
   const v = benchValues.val;
-  // "ERROR ACEPTABLE" = label de tolerancia 1-10% (no es un software).
-  const status = v.errPct < 1 ? '<span style="color:#7eff7e">✓ PASA (Δ&lt;1%)</span>'
-               : v.errPct < 10 ? '<span style="color:#ffcc00">⚠ ERROR ACEPTABLE (1-10%, shear deformation H8)</span>'
-               : '<span style="color:#ff5555">✗ FALLA (Δ&gt;10%)</span>';
-  benchmarkPanel.innerHTML = `
-    <div style="font-weight:bold;color:#ffaa00;margin-bottom:6px;">
-      🧪 BENCHMARK — col+viga H8 (concreto)
-    </div>
-    <table style="border-collapse:collapse;width:100%;">
-      <tr style="color:#999;border-bottom:1px solid #444;">
-        <td style="padding:2px 6px 2px 0;">Magnitud</td>
-        <td style="padding:2px 6px;text-align:right;">Euler-Bern.</td>
-        <td style="padding:2px 0;text-align:right;">Hekatan H8</td>
-      </tr>
-      <tr><td style="padding:1px 6px 1px 0;">δ tip viga (m)</td>
-          <td style="text-align:right;padding:1px 6px;">${v.delta_an.toExponential(3)}</td>
-          <td style="text-align:right;padding:1px 0;">${v.delta_he.toExponential(3)}</td></tr>
-      <tr><td style="padding:1px 6px 1px 0;">I = W·H³/12 (m⁴)</td>
-          <td colspan="2" style="text-align:right;padding:1px 0;">${v.I_beam.toExponential(3)}</td></tr>
-      <tr><td style="padding:1px 6px 1px 0;">L_beam (m)</td>
-          <td colspan="2" style="text-align:right;padding:1px 0;">${v.L_beam.toFixed(2)}</td></tr>
-      <tr><td style="padding:1px 6px 1px 0;">P tip (kN)</td>
-          <td colspan="2" style="text-align:right;padding:1px 0;">${v.P.toFixed(1)}</td></tr>
-    </table>
-    <div style="margin-top:6px;padding-top:4px;border-top:1px solid #444;">
-      <div>Δ error = <b>${v.errPct.toFixed(2)}%</b> ${status}</div>
-      <div style="color:#888;font-size:10px;">Solver H8 puro TS · ${v.elapsed.toFixed(0)} ms</div>
-    </div>
-    <div style="margin-top:6px;color:#999;font-size:10px;">
-      <div style="font-weight:bold;color:#aaa;">Más benchmarks (pendientes):</div>
-      <div>· Patch test (constant strain reproducción)</div>
-      <div>· MacNeal-Harder warped beam</div>
-      <div>· Cook's membrane / Pinched cylinder</div>
-      <div>· vs CalculiX, Code Aster, FEniCS, SAP2000</div>
-    </div>
-  `;
+  benchObj.delta_EB = v.delta_EB;
+  benchObj.delta_shear = v.delta_shear;
+  benchObj.delta_col = v.delta_col;
+  benchObj.delta_total_an = v.delta_total_an;
+  benchObj.delta_he = v.delta_he;
+  benchObj.errTotalPct = v.errTotalPct;
+  benchObj.errEBpct = v.errEBpct;
+  benchObj.status = v.errTotalPct < 5 ? "✓ PASA (<5%)"
+                  : v.errTotalPct < 15 ? "⚠ ACEPTABLE (5-15%)"
+                  : "✗ revisar (>15%)";
+  benchObj.I_beam = v.I_beam;
+  benchObj.L_beam = v.L_beam;
+  benchObj.P = v.P;
+  benchObj.elapsed = v.elapsed;
+  benchPane.refresh();
 });
-document.body.append(benchmarkPanel);
 
 document.body.append(
   getParameters(parameters),
