@@ -52,6 +52,8 @@ const parameters: Parameters = {
   d_bolt:   { value: van.state(0.024), min: 0.012, max: 0.040, step: 0.002, label: "Ø perno (m)" },
   L_bolt:   { value: van.state(0.30),  min: 0.15, max: 0.60, step: 0.02, label: "L embebido (m)" },
   L_proj:   { value: van.state(0.05),  min: 0.02, max: 0.10, step: 0.005, label: "L proyec (m)" },
+  // Orificio circular en placa (continuidad concreto col↔pedestal)
+  d_hole:   { value: van.state(0.20),  min: 0.10, max: 0.40, step: 0.02, label: "Ø orificio placa (m)" },
   // Pedestal
   B_ped:    { value: van.state(0.80),  min: 0.40, max: 1.80, step: 0.05, label: "B pedestal (m)" },
   H_ped:    { value: van.state(0.80),  min: 0.40, max: 1.80, step: 0.05, label: "H pedestal (m)" },
@@ -95,6 +97,8 @@ van.derive(() => {
   const nBoltsX = Math.round(parameters.nBoltsX.value.val), nBoltsY = Math.round(parameters.nBoltsY.value.val);
   const sx = parameters.sx.value.val, sy = parameters.sy.value.val;
   const d_bolt = parameters.d_bolt.value.val, L_bolt = parameters.L_bolt.value.val, L_proj = parameters.L_proj.value.val;
+  const d_hole = parameters.d_hole.value.val;
+  const r_hole = d_hole / 2;
   const B_ped = parameters.B_ped.value.val, H_ped = parameters.H_ped.value.val, h_ped = parameters.h_ped.value.val;
   const fc = parameters.fc.value.val;
   const Pu = parameters.Pu.value.val;
@@ -148,8 +152,13 @@ van.derive(() => {
     for (let i = 0; i <= nx; i++) row.push(addNode(-B / 2 + i * dxp, -H / 2 + j * dyp, z_gap));
     plateGrid.push(row);
   }
+  // Generar shells de la placa SALVO las celdas dentro del orificio circular
+  // central (continuidad de concreto entre columna CFT y pedestal).
   for (let j = 0; j < ny; j++) {
     for (let i = 0; i < nx; i++) {
+      const cx = -B/2 + (i + 0.5) * dxp;
+      const cy = -H/2 + (j + 0.5) * dyp;
+      if (Math.hypot(cx, cy) < r_hole) continue;  // dentro del orificio
       addShell(plateGrid[j][i], plateGrid[j][i+1], plateGrid[j+1][i+1], plateGrid[j+1][i], t_plate);
     }
   }
@@ -258,13 +267,26 @@ van.derive(() => {
     addShell(nA, nB, nC, nC, t_col);
   }
   // Cara +Y (front, wallN): centro x=0 → iWall en mitad de fila
-  addStiffenerShell([0, hc/2], [0, 1], wallN, Math.round(nx_col / 2));
+  // 2 cartelas por cara × 4 caras = 8 stiffeners (estilo ABAQUS reference).
+  // Offset desde el centro: índices ~1/4 y ~3/4 de la longitud de la pared.
+  const oN = Math.max(1, Math.round(nx_col * 0.25));   // offset Y-faces
+  const oE = Math.max(1, Math.round(ny_col * 0.25));   // offset X-faces
+  const i1N = Math.round(nx_col / 2) - oN, i2N = Math.round(nx_col / 2) + oN;
+  const i1E = Math.round(ny_col / 2) - oE, i2E = Math.round(ny_col / 2) + oE;
+  // Cara +Y (wallN): 2 stiffeners offset
+  const x1N = -bc/2 + i1N * dx_c, x2N = -bc/2 + i2N * dx_c;
+  addStiffenerShell([x1N, hc/2], [0, 1], wallN, i1N);
+  addStiffenerShell([x2N, hc/2], [0, 1], wallN, i2N);
   // Cara -Y (wallS)
-  addStiffenerShell([0, -hc/2], [0, -1], wallS, Math.round(nx_col / 2));
-  // Cara +X (wallE)
-  addStiffenerShell([bc/2, 0], [1, 0], wallE, Math.round(ny_col / 2));
+  addStiffenerShell([x1N, -hc/2], [0, -1], wallS, i1N);
+  addStiffenerShell([x2N, -hc/2], [0, -1], wallS, i2N);
+  // Cara +X (wallE): 2 stiffeners
+  const y1E = -hc/2 + i1E * dy_c, y2E = -hc/2 + i2E * dy_c;
+  addStiffenerShell([bc/2, y1E], [1, 0], wallE, i1E);
+  addStiffenerShell([bc/2, y2E], [1, 0], wallE, i2E);
   // Cara -X (wallW)
-  addStiffenerShell([-bc/2, 0], [-1, 0], wallW, Math.round(ny_col / 2));
+  addStiffenerShell([-bc/2, y1E], [-1, 0], wallW, i1E);
+  addStiffenerShell([-bc/2, y2E], [-1, 0], wallW, i2E);
 
   // ── PERNOS: grid nBoltsX × nBoltsY, frame elements ──
   const A_bolt = Math.PI * d_bolt * d_bolt / 4;
@@ -475,14 +497,24 @@ van.derive(() => {
   addContactSymbol(-B/2 + 0.04, -H/2 + 0.04);
   addContactSymbol(0, 0);
 
-  // Placa base 3D translúcida — para que la malla FEM Q4 sea visible Y se
-  // identifique claramente como un elemento separado entre col y pedestal.
+  // Placa base 3D — rectángulo con ORIFICIO CIRCULAR central (paso concreto).
   const matPlaca = new THREE.MeshStandardMaterial({
     color: 0xb8b8b8, metalness: 0.7, roughness: 0.4,
-    transparent: true, opacity: 0.45,
+    transparent: true, opacity: 0.55, side: THREE.DoubleSide,
   });
-  const placaMesh = new THREE.Mesh(new THREE.BoxGeometry(B, H, t_plate), matPlaca);
-  placaMesh.position.set(0, 0, z_gap + t_plate / 2);
+  const placaShape = new THREE.Shape();
+  placaShape.moveTo(-B/2, -H/2);
+  placaShape.lineTo(B/2, -H/2);
+  placaShape.lineTo(B/2, H/2);
+  placaShape.lineTo(-B/2, H/2);
+  placaShape.closePath();
+  // Orificio circular en el centro
+  const holePath = new THREE.Path();
+  holePath.absarc(0, 0, r_hole, 0, Math.PI * 2, true);
+  placaShape.holes.push(holePath);
+  const placaGeom = new THREE.ExtrudeGeometry(placaShape, { depth: t_plate, bevelEnabled: false });
+  const placaMesh = new THREE.Mesh(placaGeom, matPlaca);
+  placaMesh.position.set(0, 0, z_gap);
   objs.push(placaMesh);
 
   // CARTELAS (stiffeners) Q4 SHELLS — mallado FEM real, refuerzo AISC.
