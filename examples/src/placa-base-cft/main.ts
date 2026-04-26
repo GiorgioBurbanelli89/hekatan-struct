@@ -238,19 +238,142 @@ van.derive(() => {
       boltPositions.push([bx, by]);
     }
   }
-  // Para cada perno: frame del top (z=L_proj) al bottom (z=-L_bolt)
-  for (const [bx, by] of boltPositions) {
+  // Para cada perno (creado DESPUÉS del pedestal para poder snap a éste):
+  //   nTop (z=L_proj)        → tuerca, nodo libre
+  //   nMid (z=0)             → snap a placa (penetra placa)
+  //   nBot (z=-L_bolt)       → snap a nodo interior del pedestal H8 (embebido)
+  // Los pernos se conectan al pedestal SOLO por embebido (shared node).
+  // Nota: este block se ejecuta DESPUÉS de generar el grid del pedestal.
+  const pendingBolts: [number, number][] = [...boltPositions];
+
+  // ── PEDESTAL DE CONCRETO COMO SÓLIDO H8 (cuerpo INDEPENDIENTE) ──
+  // El pedestal NO comparte nodos con la placa — son cuerpos separados.
+  // La conexión es SOLO vía los pernos de anclaje EMBEBIDOS en el pedestal.
+  const Ec = 4700 * Math.sqrt(fc / 1000) * 1000;
+  const nu_c = 0.20;
+  const Gc = Ec / (2 * (1 + nu_c));
+  const nx_p = 6, ny_p = 6, nz_p = 4;
+  const dxp_e = B_ped / nx_p, dyp_e = H_ped / ny_p, dzp_e = h_ped / nz_p;
+
+  const pedGrid: number[][][] = [];
+  for (let k = 0; k <= nz_p; k++) {
+    const layer: number[][] = [];
+    for (let j = 0; j <= ny_p; j++) {
+      const row: number[] = [];
+      for (let i = 0; i <= nx_p; i++) {
+        row.push(addNode(-B_ped/2 + i*dxp_e, -H_ped/2 + j*dyp_e, -h_ped + k*dzp_e));
+      }
+      layer.push(row);
+    }
+    pedGrid.push(layer);
+  }
+  // Función para EMBEBER un perno en el pedestal: encuentra el nodo del
+  // pedestal H8 más cercano a (x, y, z) y devuelve su ID.
+  function snapToPedestal(x: number, y: number, z: number): number {
+    let best = -1; let dmin = Infinity;
+    for (let k = 0; k <= nz_p; k++) for (let j = 0; j <= ny_p; j++) for (let i = 0; i <= nx_p; i++) {
+      const id = pedGrid[k][j][i];
+      const p = nodes[id];
+      const d = Math.hypot(p[0]-x, p[1]-y) + Math.abs(p[2]-z) * 0.5;
+      if (d < dmin) { dmin = d; best = id; }
+    }
+    return best;
+  }
+  // Generar caras boundary del hex (no duplicadas) → Q4 shells con concreto
+  // Caras: bottom (k=0), top (k=nz_p), 4 laterales
+  function addPedShell(n0: number, n1: number, n2: number, n3: number) {
+    elements.push([n0, n1, n2, n3]);
+    const i = elements.length - 1;
+    thicknesses.set(i, 0.001);   // muy delgado (visual only)
+    elasticities.set(i, Ec);
+    poissonsRatios.set(i, nu_c);
+    densities.set(i, 24 / 9.80665);
+    shearModuli.set(i, Gc);
+    areas.set(i, 0); Iy.set(i, 0); Iz.set(i, 0); J.set(i, 0);
+  }
+  // Bottom (k=0)
+  for (let j = 0; j < ny_p; j++) for (let i = 0; i < nx_p; i++)
+    addPedShell(pedGrid[0][j][i], pedGrid[0][j][i+1], pedGrid[0][j+1][i+1], pedGrid[0][j+1][i]);
+  // Top (k=nz_p) — omitir celdas dentro del footprint de la placa para que
+  // la placa base sea visible (la placa cubre esa zona).
+  for (let j = 0; j < ny_p; j++) for (let i = 0; i < nx_p; i++) {
+    const cx = -B_ped/2 + (i + 0.5) * dxp_e;
+    const cy = -H_ped/2 + (j + 0.5) * dyp_e;
+    const cellInPlaca = Math.abs(cx) <= B/2 && Math.abs(cy) <= H/2;
+    if (cellInPlaca) continue;  // placa cubre esta celda
+    addPedShell(pedGrid[nz_p][j][i], pedGrid[nz_p][j][i+1], pedGrid[nz_p][j+1][i+1], pedGrid[nz_p][j+1][i]);
+  }
+  // Lateral y=-H_ped/2 (j=0)
+  for (let k = 0; k < nz_p; k++) for (let i = 0; i < nx_p; i++)
+    addPedShell(pedGrid[k][0][i], pedGrid[k][0][i+1], pedGrid[k+1][0][i+1], pedGrid[k+1][0][i]);
+  // Lateral y=+H_ped/2 (j=ny_p)
+  for (let k = 0; k < nz_p; k++) for (let i = 0; i < nx_p; i++)
+    addPedShell(pedGrid[k][ny_p][i], pedGrid[k][ny_p][i+1], pedGrid[k+1][ny_p][i+1], pedGrid[k+1][ny_p][i]);
+  // Lateral x=-B_ped/2 (i=0)
+  for (let k = 0; k < nz_p; k++) for (let j = 0; j < ny_p; j++)
+    addPedShell(pedGrid[k][j][0], pedGrid[k][j+1][0], pedGrid[k+1][j+1][0], pedGrid[k+1][j][0]);
+  // Lateral x=+B_ped/2 (i=nx_p)
+  for (let k = 0; k < nz_p; k++) for (let j = 0; j < ny_p; j++)
+    addPedShell(pedGrid[k][j][nx_p], pedGrid[k][j+1][nx_p], pedGrid[k+1][j+1][nx_p], pedGrid[k+1][j][nx_p]);
+
+  // ── PERNOS DE ANCLAJE (frame elements) — embebidos en el pedestal ──
+  // nTop (z=L_proj) [libre, tuerca] → nMid (z=0) [snap placa] → nBot (z=-L_bolt) [snap pedestal]
+  for (const [bx, by] of pendingBolts) {
     const nTop = addNode(bx, by, L_proj);
-    const nMid = snapToPlate(bx, by);  // conexión a placa
-    const nBot = addNode(bx, by, -L_bolt);
+    const nMid = snapToPlate(bx, by);
+    const nBot = snapToPedestal(bx, by, -L_bolt);  // EMBEBIDO en pedestal
     addFrame(nTop, nMid, A_bolt, I_bolt, J_bolt);
     addFrame(nMid, nBot, A_bolt, I_bolt, J_bolt);
   }
 
-  // ── BCs: empotrar fondos de pernos (z=-L_bolt) ──
+  // ── CONCRETO FILL DEL CFT COMO SÓLIDO H8 (interior del HSS) ──
+  // Genera malla hex del relleno de concreto y agrega caras boundary como Q4
+  // shells con material concreto. El user verá el sólido por la apertura
+  // superior del HSS (CFT abierto en top como en práctica industrial).
+  const fill_bc = bc - 2 * t_col;
+  const fill_hc = hc - 2 * t_col;
+  const nx_f = 4, ny_f = 4, nz_f = nz_col;
+  const dxf = fill_bc / nx_f, dyf = fill_hc / ny_f, dzf = L_col / nz_f;
+  const fillGrid: number[][][] = [];
+  for (let k = 0; k <= nz_f; k++) {
+    const layer: number[][] = [];
+    for (let j = 0; j <= ny_f; j++) {
+      const row: number[] = [];
+      for (let i = 0; i <= nx_f; i++) {
+        row.push(addNode(-fill_bc/2 + i*dxf, -fill_hc/2 + j*dyf, k*dzf));
+      }
+      layer.push(row);
+    }
+    fillGrid.push(layer);
+  }
+  function addFillShell(n0: number, n1: number, n2: number, n3: number) {
+    elements.push([n0, n1, n2, n3]);
+    const i = elements.length - 1;
+    thicknesses.set(i, 0.001);
+    elasticities.set(i, Ec); poissonsRatios.set(i, nu_c);
+    densities.set(i, 24/9.80665); shearModuli.set(i, Gc);
+    areas.set(i, 0); Iy.set(i, 0); Iz.set(i, 0); J.set(i, 0);
+  }
+  // 6 caras del fill (top + bottom + 4 laterales)
+  for (let j = 0; j < ny_f; j++) for (let i = 0; i < nx_f; i++) {
+    addFillShell(fillGrid[0][j][i], fillGrid[0][j][i+1], fillGrid[0][j+1][i+1], fillGrid[0][j+1][i]);
+    addFillShell(fillGrid[nz_f][j][i], fillGrid[nz_f][j][i+1], fillGrid[nz_f][j+1][i+1], fillGrid[nz_f][j+1][i]);
+  }
+  for (let k = 0; k < nz_f; k++) for (let i = 0; i < nx_f; i++) {
+    addFillShell(fillGrid[k][0][i], fillGrid[k][0][i+1], fillGrid[k+1][0][i+1], fillGrid[k+1][0][i]);
+    addFillShell(fillGrid[k][ny_f][i], fillGrid[k][ny_f][i+1], fillGrid[k+1][ny_f][i+1], fillGrid[k+1][ny_f][i]);
+  }
+  for (let k = 0; k < nz_f; k++) for (let j = 0; j < ny_f; j++) {
+    addFillShell(fillGrid[k][j][0], fillGrid[k][j+1][0], fillGrid[k+1][j+1][0], fillGrid[k+1][j][0]);
+    addFillShell(fillGrid[k][j][nx_f], fillGrid[k][j+1][nx_f], fillGrid[k+1][j+1][nx_f], fillGrid[k+1][j][nx_f]);
+  }
+
+  // ── BCs: SOLO la base del pedestal (z=-h_ped). El pedestal restringe a
+  // los pernos por embebido, y los pernos a la placa+columna. Cadena
+  // estructural correcta: columna → placa → pernos → pedestal → suelo.
   const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
   nodes.forEach((p, id) => {
-    if (Math.abs(p[2] - (-L_bolt)) < 1e-6) supports.set(id, [true, true, true, true, true, true]);
+    if (Math.abs(p[2] - (-h_ped)) < 1e-6) supports.set(id, [true, true, true, true, true, true]);
   });
 
   // ── Cargas en top de columna ──
@@ -280,24 +403,26 @@ van.derive(() => {
     analyzeOutputs = analyze(nodes, elements, elementInputs, deformOutputs);
   } catch (e: any) { console.warn("placa-base-hueca:", e?.message ?? e); }
 
-  // ── 3D decoraciones: pedestal + concreto fill (CFT) + bolts ──
+  // ── 3D decoraciones: pernos cilindros + tuercas HEXAGONALES ──
   const objs: THREE.Object3D[] = [];
-  const matPed = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.9 });
   const matBolt = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.5 });
-  // Concreto interior del HSS: caja translúcida (CFT visualization)
-  const matFill = new THREE.MeshStandardMaterial({ color: 0xaa9966, transparent: true, opacity: 0.55 });
-  const fill = new THREE.Mesh(new THREE.BoxGeometry(bc - 2*t_col, hc - 2*t_col, L_col), matFill);
-  fill.position.set(0, 0, L_col / 2);
-  objs.push(fill);
-  const ped = new THREE.Mesh(new THREE.BoxGeometry(B_ped, H_ped, h_ped), matPed);
-  ped.position.set(0, 0, -h_ped / 2);
-  objs.push(ped);
+  const matNut  = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.7, roughness: 0.3 });
+  const t_nut = d_bolt * 0.8;       // espesor tuerca ≈ 0.8·Ø (típico ASTM)
+  const r_nut = d_bolt * 0.85;      // radio across flats ≈ 1.7·Ø
+  const nutZ = L_proj + t_nut / 2;  // tuerca encima de la proyección
   for (const [bx, by] of boltPositions) {
+    // Cilindro vástago perno (penetra placa y baja al pedestal)
     const geom = new THREE.CylinderGeometry(d_bolt/2, d_bolt/2, L_bolt + L_proj, 12);
     const m = new THREE.Mesh(geom, matBolt);
     m.position.set(bx, by, (-L_bolt + L_proj) / 2);
     m.rotation.x = Math.PI / 2;
     objs.push(m);
+    // Tuerca hexagonal en el top (CylinderGeometry con 6 lados = hexágono)
+    const nutGeom = new THREE.CylinderGeometry(r_nut, r_nut, t_nut, 6);
+    const nut = new THREE.Mesh(nutGeom, matNut);
+    nut.position.set(bx, by, nutZ);
+    nut.rotation.x = Math.PI / 2;
+    objs.push(nut);
   }
   void fc;
 
@@ -356,9 +481,12 @@ const viewerEl = getViewer({
   },
   objects3D: objects3DState,
   settingsObj: {
-    deformedShape: true, shellResults: "vonMises",
-    gridSize: 1, deformScale: 20, custom3D: true,
-    loads: true, supports: true, displayScale: 0.4,
+    // deformedShape off por defecto (las amplificaciones generaban "líneas
+    // tomate" confusas). Supports SI activos en la base del pedestal —
+    // displayScale chico para que los markers no saturen visualmente.
+    deformedShape: false, shellResults: "vonMises",
+    gridSize: 1, deformScale: 5, custom3D: true,
+    loads: false, supports: true, showCotas: false, displayScale: 0.1,
   },
 });
 
