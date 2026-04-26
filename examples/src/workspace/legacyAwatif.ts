@@ -84,6 +84,7 @@ export const demoSlope          = legacy("slope-stability",      "Estabilidad de
 
 // ─── Conexión Placa Base con Columna H (CBFEM-style) ───────────────
 export const conexPlacaBaseH    = legacy("placa-base-h",         "Placa Base + Columna H (CBFEM)", "Conexiones");
+export const detBoltHole        = legacy("bolt-hole-detail",     "Detalle Perno + Orificio (Kirsch)", "Conexiones");
 
 /** Array completo de los 19+11 ejemplos legacy para registrar de un golpe. */
 export const legacyAwatifExamples: ExampleDef[] = [
@@ -122,4 +123,5 @@ export const legacyAwatifExamples: ExampleDef[] = [
   demoSlope,
   // Conexiones (CBFEM)
   conexPlacaBaseH,
+  detBoltHole,
 ];

@@ -104,6 +104,8 @@ export default defineConfig({
         "slope-stability": "src/slope-stability/index.html",
         // ── Conexión placa base con columna H (CBFEM-style) ──
         "placa-base-h": "src/placa-base-h/index.html",
+        // ── Detalle perno + orificio (concentración tensiones) ──
+        "bolt-hole-detail": "src/bolt-hole-detail/index.html",
       },
     },
   },
