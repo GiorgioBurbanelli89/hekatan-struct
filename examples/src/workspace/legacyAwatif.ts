@@ -23,11 +23,12 @@
 import type { ExampleDef } from "./exampleRegistry";
 
 /** Helper para crear una entrada legacy mínima. */
-function legacy(id: string, name: string, category: string): ExampleDef {
+function legacy(id: string, name: string, category: string, benchmark = false): ExampleDef {
   return {
     id,
     name,
     category,
+    benchmark,
     standaloneUrl: `../${id}/`,
   };
 }
@@ -41,7 +42,7 @@ export const legacy3dStructure  = legacy("3d-structure",  "Hekatan – 3D Struct
 export const legacyAxialBar     = legacy("axial-bar",     "Hekatan – Axial Bar",        "Legacy · Frames");
 export const legacyTruss        = legacy("truss",         "Hekatan – Truss",            "Legacy · Frames");
 export const legacyAdvancedTruss= legacy("advanced-truss","Hekatan – Advanced Truss",   "Legacy · Frames");
-export const legacyBeams        = legacy("beams",         "Hekatan – Paz 6.3 Space Frame", "Legacy · Frames");
+export const legacyBeams        = legacy("beams",         "Paz 6.3 Space Frame (validación 4 solvers)", "🏁 Benchmarks", true);
 
 // ─── Edificios ──────────────────────────────────────────────────────
 export const legacyBuilding     = legacy("building",      "Hekatan – Building (upstream)", "Legacy · Edificios");
@@ -87,7 +88,8 @@ export const conexPlacaBaseH    = legacy("placa-base-h",         "Placa Base + C
 export const detBoltHole        = legacy("bolt-hole-detail",     "Detalle Perno + Orificio (Kirsch)", "Conexiones");
 
 // ─── FEM 3D Sólido H8 (validación cruzada con CalculiX/CodeAster/FEniCS) ───
-export const solidCubeFEM       = legacy("solid-cube-fem",       "Cubo Sólido H8 (FEM 3D)",          "FEM 3D Sólido");
+export const solidCubeFEM       = legacy("solid-cube-fem",       "Cubo Sólido H8 (validación CalculiX)",          "🏁 Benchmarks", true);
+export const bulboPresionesSuelo= legacy("bulbo-presiones-suelo","Bulbo de Presiones — Serquen SF-70",            "🏁 Benchmarks", true);
 
 /** Array completo de los 19+11 ejemplos legacy para registrar de un golpe. */
 export const legacyAwatifExamples: ExampleDef[] = [
@@ -127,6 +129,7 @@ export const legacyAwatifExamples: ExampleDef[] = [
   // Conexiones (CBFEM)
   conexPlacaBaseH,
   detBoltHole,
-  // FEM 3D Sólido
+  // 🏁 Benchmarks (FEM 3D Sólido validados)
   solidCubeFEM,
+  bulboPresionesSuelo,
 ];

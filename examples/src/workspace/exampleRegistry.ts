@@ -93,6 +93,14 @@ export interface ExampleDef {
   name: string;
   category: string;
   /**
+   * Si `true`, este ejemplo es un caso de **benchmark validado** — se compara
+   * contra una referencia conocida (Paz 6.3, Serquen SF-70, OpenSees, CalculiX,
+   * Bowles, etc.). En el selector del workspace aparece con un emoji 🏁
+   * adelante para distinguirlo. Útil para que el usuario pueda elegir
+   * directamente "Benchmarks" desde la categoría y validar el solver.
+   */
+  benchmark?: boolean;
+  /**
    * Si se define, este ejemplo NO usa el flujo Tweakpane del workspace.
    * Es un ejemplo "legacy" del upstream awatif (1d-mesh, 2d-mesh, beams, color-map…)
    * con su propia UI VanJS toolbar. Al seleccionarlo en el selector, el workspace

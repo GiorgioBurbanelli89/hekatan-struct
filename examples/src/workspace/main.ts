@@ -27,6 +27,8 @@ import { createModalAnimator, type ModalAnimator } from "../shared/animateMode";
 // createModalAnimator también se llama en buildParamsPane() para re-wirear el
 // callback onStatusChange al folder "⚡ Modal + Animación" recién creado.
 import { examplesRegistry, activeExampleVersion, type ExampleDef } from "./exampleRegistry";
+import { downloadZapataF2k } from "../zapata-aislada/f2kExporter";
+import { parseZapataF2k } from "../zapata-aislada/f2kImporter";
 import {
   forceUnit, dispUnit, fromKn, toKn, fromKnm, toKnm,
   forceUnitSuffix, momentUnitSuffix, dispUnitSuffix, stripUnitSuffix,
@@ -483,18 +485,77 @@ function buildParamsPane() {
   // crea de forma síncrona, así que el handle ya está disponible al llamar.
   setTimeout(() => makePaneDraggable(paneHost), 0);
 
-  // Selector de ejemplo (siempre arriba)
-  const selectorObj = { id: currentExample.id };
-  const options = Object.fromEntries(
-    examplesRegistry.map((e) => [`${e.category} · ${e.name}`, e.id])
-  );
-  pane.addBinding(selectorObj, "id", { label: "Ejemplo", options }).on("change", (e) => {
+  // ── Selector con SUBLISTAS por categoría ──
+  // Dos dropdowns: Categoría → Ejemplo. Filtra los ejemplos visibles según la
+  // categoría elegida. Mucho más manejable cuando hay 30+ ejemplos.
+  // Categorías derivadas dinámicamente del registry (cada ExampleDef.category).
+  const allCategories = Array.from(new Set(examplesRegistry.map((e) => e.category)));
+  // Orden preferido de categorías (las primeras arriba, después alfabético)
+  const categoryOrder = [
+    "🏁 Benchmarks",
+    "Cimentaciones",
+    "Frames 1D",
+    "Pórticos 2D",
+    "Pórticos 3D",
+    "Edificios",
+    "Placas",
+    "Cáscaras",
+    "Sólidos",
+    "Conexiones",
+    "Columnas",
+  ];
+  const sortedCats = [
+    ...categoryOrder.filter((c) => allCategories.includes(c)),
+    ...allCategories.filter((c) => !categoryOrder.includes(c)).sort(),
+  ];
+  const ALL = "Todas";
+  const catOptions: Record<string, string> = { [ALL]: ALL };
+  for (const c of sortedCats) catOptions[c] = c;
+
+  const selectorObj = { category: currentExample.category, id: currentExample.id };
+
+  const catBinding = pane.addBinding(selectorObj, "category", {
+    label: "Categoría", options: catOptions,
+  });
+
+  // Helper: opciones del dropdown "Ejemplo" filtradas por la categoría seleccionada.
+  const buildExOptions = (cat: string) =>
+    Object.fromEntries(
+      examplesRegistry
+        .filter((e) => cat === ALL || e.category === cat)
+        .map((e) => [`${e.benchmark ? "🏁 " : ""}${e.name}`, e.id])
+    );
+
+  let exBinding = pane.addBinding(selectorObj, "id", {
+    label: "Ejemplo", options: buildExOptions(selectorObj.category),
+  });
+  exBinding.on("change", (e) => {
     const nextEx = examplesRegistry.find((x) => x.id === e.value);
-    // ── BUGFIX: defer loadExample a next tick. Si lo llamamos sincrónico,
-    // Tweakpane intenta actualizar su modelo interno DESPUÉS de que el
-    // handler retorna y para entonces el pane (el viejo) ya fue disposed
-    // por buildParamsPane(), lanzando "View has been already disposed". ──
+    // ── BUGFIX: defer loadExample a next tick (ver comentario abajo) ──
     if (nextEx) setTimeout(() => loadExample(nextEx), 0);
+  });
+
+  catBinding.on("change", (e) => {
+    // Reconstruir el dropdown "Ejemplo" cuando cambia la categoría.
+    const newOptions = buildExOptions(e.value);
+    const newIds = Object.values(newOptions);
+    if (newIds.length === 0) return;
+    // Si el id actual no está en la nueva categoría, switch al primero
+    if (!newIds.includes(selectorObj.id)) selectorObj.id = newIds[0] as string;
+    // Tweakpane no permite mutar `options` de un binding existente — hay que
+    // disponer y recrear. Usamos el orden actual (después de category, antes de
+    // que termine el constructor del pane).
+    try { exBinding.dispose(); } catch {}
+    exBinding = pane.addBinding(selectorObj, "id", {
+      label: "Ejemplo", options: newOptions, index: 2,  // colocar justo después de Categoría
+    });
+    exBinding.on("change", (ev) => {
+      const nextEx = examplesRegistry.find((x) => x.id === ev.value);
+      if (nextEx) setTimeout(() => loadExample(nextEx), 0);
+    });
+    // Cargar el ejemplo seleccionado en la nueva categoría
+    const newEx = examplesRegistry.find((x) => x.id === selectorObj.id);
+    if (newEx && newEx.id !== currentExample?.id) setTimeout(() => loadExample(newEx), 0);
   });
 
   // ── Ejemplos legacy del upstream awatif: solo botón al standalone ──
@@ -518,6 +579,89 @@ function buildParamsPane() {
   fView.addButton({ title: "⬇ Planta (X-Y)" }).on("click", () => setView("plan"));
   fView.addButton({ title: "→ Elevación X (frente)" }).on("click", () => setView("elevX"));
   fView.addButton({ title: "↑ Elevación Y (lado)" }).on("click", () => setView("elevY"));
+
+  // ── SAFE F2K Export/Import (solo para zapatas) ──
+  // Permite roundtrip Hekatan ↔ SAFE para validación cruzada.
+  if (currentExample && currentExample.id.startsWith("zapata")) {
+    const fF2K = pane.addFolder({ title: "📄 SAFE F2K", expanded: false });
+    fF2K.addButton({ title: "📤 Exportar a SAFE (.f2k)" }).on("click", () => {
+      try {
+        const p = currentParams;
+        // Calcular ks en kN/m³ desde params actuales
+        const ks_factor = p.ks_factor ?? 10.5;
+        const q_adm_tonf = p.q_adm ?? 20;
+        const ks_kNm3 = ks_factor * q_adm_tonf * 9.80665;  // tonf/m² × 9.80665 = kN/m²
+        // Cargas: usar Carga Simple si está activa, sino patrón D
+        const useSimple = (p.useSimple ?? 1) >= 0.5;
+        const P_dead_kN = useSimple ? (p.P_simple ?? 0) * 9.80665 : (p.P_D ?? 10) * 9.80665;
+        const P_live_kN = useSimple ? 0 : (p.P_L ?? 5) * 9.80665;
+        const Mx_dead = useSimple ? (p.Mx_simple ?? 0) * 9.80665 : (p.Mx_D ?? 0) * 9.80665;
+        const My_dead = useSimple ? (p.My_simple ?? 0) * 9.80665 : (p.My_D ?? 0) * 9.80665;
+        const bytes = downloadZapataF2k({
+          Lz: p.Lz ?? 1.5,
+          Bz: p.Bz ?? 1.5,
+          tz: p.tz ?? 0.30,
+          bc: p.bc ?? 0.4,
+          ks_kNm3,
+          P_dead_kN, P_live_kN,
+          Mx_dead_kNm: Mx_dead, My_dead_kNm: My_dead,
+        }, `Zapata_Hekatan_${Date.now()}.f2k`);
+        console.log(`✅ F2K exportado: ${bytes} bytes con ks=${ks_kNm3.toFixed(0)} kN/m³, P_D=${P_dead_kN.toFixed(1)} kN`);
+        alert(`F2K descargado correctamente.\n\nks=${ks_kNm3.toFixed(0)} kN/m³\nP_dead=${P_dead_kN.toFixed(1)} kN\n\nAbrilo en SAFE 20.x: File → Import → SAFE Text File (.f2k)`);
+      } catch (e: any) {
+        alert(`Error exportando F2K: ${e?.message ?? e}`);
+        console.error(e);
+      }
+    });
+    fF2K.addButton({ title: "📥 Importar F2K…" }).on("click", () => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".f2k,.txt";
+      input.onchange = async (ev: any) => {
+        const file = ev.target.files?.[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const params = parseZapataF2k(text);
+          // Aplicar al modelo actual
+          if (params.Lz != null) currentParams.Lz = params.Lz;
+          if (params.Bz != null) currentParams.Bz = params.Bz;
+          if (params.tz != null) currentParams.tz = params.tz;
+          if (params.bc != null) currentParams.bc = params.bc;
+          if (params.q_adm != null) currentParams.q_adm = params.q_adm;
+          if (params.ks_factor != null) currentParams.ks_factor = params.ks_factor;
+          // CRÍTICO: ks (kN/m³) es el valor que usa el solver. Sin escribirlo aquí
+          // el slider queda en default (2059 kN/m³) aunque el F2K traía
+          // 19,999 kN/m³ (= 2,039 tonf/m³ que SAFE muestra como Subgrade Modulus).
+          if (params.ks_kNm3 != null) currentParams.ks = params.ks_kNm3;
+          if (params.P_dead_tonf != null) {
+            currentParams.useSimple = 1;
+            currentParams.P_simple = params.P_dead_tonf;
+            // Si hay carga simple, desactivar patrones D/L/S para evitar superposición
+            currentParams.useD = 0;
+            currentParams.useL = 0;
+            currentParams.useS = 0;
+          }
+          if (params.Mx_dead_tonfm != null) currentParams.Mx_simple = params.Mx_dead_tonfm;
+          if (params.My_dead_tonfm != null) currentParams.My_simple = params.My_dead_tonfm;
+          // Si Custom soil type es necesario para reflejar ks importado
+          if (params.q_adm != null && params.ks_factor != null) {
+            // Forzar Custom (índice 0 en SOIL_TYPES) para que los valores no se sobreescriban
+            currentParams.soilType = 0;
+          }
+          // Reconstruir TODO el pane (lee los nuevos values en buildParamsPane).
+          buildParamsPane();
+          // Disparar re-cálculo del modelo con los nuevos params.
+          rebuild();
+          alert(`F2K importado: ${file.name}\nLz=${params.Lz}, Bz=${params.Bz}, tz=${params.tz}\nks=${params.ks_kNm3?.toFixed(0)} kN/m³\nP_dead=${params.P_dead_tonf?.toFixed(2)} tonf\n\nLos sliders del Tweakpane se actualizaron a estos valores.`);
+        } catch (e: any) {
+          alert(`Error importando F2K: ${e?.message ?? e}`);
+          console.error(e);
+        }
+      };
+      input.click();
+    });
+  }
 
   // ── Unidades (global, persistido en localStorage) ──
   const fUnits = pane.addFolder({ title: "Unidades", expanded: false });

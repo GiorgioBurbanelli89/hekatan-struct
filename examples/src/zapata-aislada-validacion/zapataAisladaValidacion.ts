@@ -39,7 +39,8 @@ const MAT_GROUND = new THREE.LineBasicMaterial({ color: 0x00cc00, linewidth: 2 }
 export const zapataAisladaValidacion: ExampleDef = {
   id: "zapata-aislada-validacion",
   name: "Isolated Footing — Calcpad validation",
-  category: "Foundations",
+  category: "Cimentaciones",
+  benchmark: true,  // 🏁 Validación Bowles 1996 — referencia Winkler clásica
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "displacementZ", "vonMises"],
   hasModal: false,

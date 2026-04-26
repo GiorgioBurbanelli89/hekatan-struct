@@ -55,7 +55,26 @@ export function runExampleStandalone(ex: ExampleDef) {
     return si;
   };
 
-  const rebuild = () => ex.build(toSIParams(), states);
+  // computedObj backea el folder "📊 Resultados". Se rellena con
+  // ex.computedLabels() y se refresca tras cada rebuild() vía pane.refresh().
+  let computedObj: Record<string, string> | null = null;
+  let currentPaneRef: Pane | null = null;
+
+  const rebuild = () => {
+    ex.build(toSIParams(), states);
+    // Refrescar valores calculados después del build (lecturas de outputs)
+    if (ex.computedLabels && computedObj && currentPaneRef) {
+      const latest = ex.computedLabels(toSIParams(), states);
+      for (const key of Object.keys(computedObj)) {
+        if (key in latest) computedObj[key] = latest[key];
+      }
+      // Agregar nuevas keys que no estaban en el initial
+      for (const key of Object.keys(latest)) {
+        if (!(key in computedObj)) computedObj[key] = latest[key];
+      }
+      currentPaneRef.refresh();
+    }
+  };
 
   // ── Tweakpane panel (ARRASTRABLE, posición persistida) ─────────────
   const paneHost = document.createElement("div");
@@ -84,6 +103,7 @@ export function runExampleStandalone(ex: ExampleDef) {
     paneHost.innerHTML = "";
     const pane = new Pane({ container: paneHost, title: ex.name });
     currentPane = pane;
+    currentPaneRef = pane;
 
     // Hacer el pane arrastrable desde el title-bar.
     setTimeout(() => {
@@ -123,6 +143,122 @@ export function runExampleStandalone(ex: ExampleDef) {
       });
     }, 0);
 
+    // ── SAFE F2K Export/Import (solo zapatas) ─────────────────
+    // Mismo behavior que el workspace: roundtrip Hekatan ↔ SAFE para validación.
+    if (ex.id.startsWith("zapata")) {
+      const fF2K = pane.addFolder({ title: "📄 SAFE F2K", expanded: false });
+      fF2K.addButton({ title: "📤 Exportar a SAFE (.f2k)" }).on("click", async () => {
+        try {
+          const { downloadZapataF2k } = await import("../zapata-aislada/f2kExporter");
+          const p = currentParams;
+          const ks_factor = p.ks_factor ?? 10.5;
+          const q_adm_tonf = p.q_adm ?? 20;
+          const ks_kNm3 = ks_factor * q_adm_tonf * 9.80665;
+          const useSimple = (p.useSimple ?? 1) >= 0.5;
+          const P_dead_kN = useSimple ? (p.P_simple ?? 0) * 9.80665 : (p.P_D ?? 10) * 9.80665;
+          const P_live_kN = useSimple ? 0 : (p.P_L ?? 5) * 9.80665;
+          const Mx_dead = useSimple ? (p.Mx_simple ?? 0) * 9.80665 : (p.Mx_D ?? 0) * 9.80665;
+          const My_dead = useSimple ? (p.My_simple ?? 0) * 9.80665 : (p.My_D ?? 0) * 9.80665;
+          downloadZapataF2k({
+            Lz: p.Lz ?? 1.5,
+            Bz: p.Bz ?? 1.5,
+            tz: p.tz ?? 0.30,
+            bc: p.bc ?? 0.4,
+            ks_kNm3, P_dead_kN, P_live_kN,
+            Mx_dead_kNm: Mx_dead, My_dead_kNm: My_dead,
+          }, `Zapata_Hekatan_${Date.now()}.f2k`);
+          alert(`F2K descargado.\nks=${ks_kNm3.toFixed(0)} kN/m³, P_dead=${P_dead_kN.toFixed(1)} kN.\nAbrilo en SAFE: File → Import → SAFE Text File.`);
+        } catch (e: any) {
+          alert(`Error: ${e?.message ?? e}`);
+        }
+      });
+      // Función reutilizable para aplicar un F2K text (también expuesta en window
+      // como `__hekatanImportF2kText` para testing programático del flujo).
+      const applyF2kText = async (text: string, sourceName: string) => {
+        const { parseZapataF2k } = await import("../zapata-aislada/f2kImporter");
+        const p = parseZapataF2k(text);
+        if (p.Lz != null) currentParams.Lz = p.Lz;
+        if (p.Bz != null) currentParams.Bz = p.Bz;
+        if (p.tz != null) currentParams.tz = p.tz;
+        if (p.bc != null) currentParams.bc = p.bc;
+        if (p.q_adm != null) currentParams.q_adm = p.q_adm;
+        if (p.ks_factor != null) currentParams.ks_factor = p.ks_factor;
+        // CRÍTICO: ks (kN/m³) es el valor REAL que usa el solver, no q_adm × ks_factor.
+        // Sin este line, el slider ks queda en default (2059) aunque el F2K traía
+        // 19,999 kN/m³ (= 2,039 tonf/m³ que muestra SAFE).
+        if (p.ks_kNm3 != null) currentParams.ks = p.ks_kNm3;
+        if (p.P_dead_tonf != null) {
+          currentParams.useSimple = 1;
+          currentParams.P_simple = p.P_dead_tonf;
+          currentParams.useD = 0;
+          currentParams.useL = 0;
+          currentParams.useS = 0;
+        }
+        if (p.Mx_dead_tonfm != null) currentParams.Mx_simple = p.Mx_dead_tonfm;
+        if (p.My_dead_tonfm != null) currentParams.My_simple = p.My_dead_tonfm;
+        if (p.q_adm != null && p.ks_factor != null) {
+          currentParams.soilType = 0;
+        }
+        buildPane();
+        rebuild();
+        return p;
+      };
+      // Exponer para testing CLI / DOM scripts
+      (window as any).__hekatanImportF2kText = applyF2kText;
+
+      fF2K.addButton({ title: "📥 Importar F2K…" }).on("click", () => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".f2k,.txt";
+        input.onchange = async (ev: any) => {
+          const file = ev.target.files?.[0];
+          if (!file) return;
+          try {
+            const text = await file.text();
+            const p = await applyF2kText(text, file.name);
+            alert(
+              `F2K importado: ${file.name}\n` +
+              `\nGeometría:` +
+              `\n  Lz = ${p.Lz?.toFixed(2)} m, Bz = ${p.Bz?.toFixed(2)} m, tz = ${p.tz?.toFixed(2)} m` +
+              `\n  Columna = ${p.bc?.toFixed(2)} m` +
+              `\n\nSuelo:` +
+              `\n  ks = ${p.ks_kNm3?.toFixed(0)} kN/m³` +
+              `\n  q_adm = ${p.q_adm?.toFixed(1)} tonf/m²  ks_factor = ${p.ks_factor?.toFixed(1)}` +
+              `\n\nCargas (modo Simple):` +
+              `\n  P = ${p.P_dead_tonf?.toFixed(2)} tonf` +
+              `\n  Mx = ${(p.Mx_dead_tonfm ?? 0).toFixed(2)} tonf·m` +
+              `\n  My = ${(p.My_dead_tonfm ?? 0).toFixed(2)} tonf·m` +
+              `\n\n✓ Los sliders del Tweakpane se actualizaron.`
+            );
+          } catch (e: any) {
+            alert(`Error: ${e?.message ?? e}`);
+          }
+        };
+        input.click();
+      });
+      // OpenSeesPy + TCL exporters (bonus)
+      fF2K.addButton({ title: "🐍 Exportar a OpenSeesPy (.py)" }).on("click", async () => {
+        try {
+          const { exportZapataOpsPy } = await import("../zapata-aislada/opsPyExporter");
+          const p = currentParams;
+          const ks_kNm3 = (p.ks_factor ?? 10.5) * (p.q_adm ?? 20) * 9.80665;
+          const useSimple = (p.useSimple ?? 1) >= 0.5;
+          const text = exportZapataOpsPy({
+            Lz: p.Lz ?? 1.5, Bz: p.Bz ?? 1.5, tz: p.tz ?? 0.30, bc: p.bc ?? 0.4,
+            ks_kNm3,
+            P_dead_kN: useSimple ? (p.P_simple ?? 0) * 9.80665 : (p.P_D ?? 10) * 9.80665,
+            P_live_kN: useSimple ? 0 : (p.P_L ?? 5) * 9.80665,
+          });
+          const blob = new Blob([text], { type: "text/x-python" });
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = `Zapata_Hekatan_${Date.now()}.py`;
+          a.click();
+          alert(`OpenSeesPy script descargado.\nEjecutar: python -X utf8 <archivo>.py`);
+        } catch (e: any) { alert(`Error: ${e?.message ?? e}`); }
+      });
+    }
+
     // ── Unidades ─────────────────────────────────────────────
     const fUnits = pane.addFolder({ title: "Unidades", expanded: false });
     const unitsProxy = { force: forceUnit.val, disp: dispUnit.val };
@@ -154,14 +290,46 @@ export function runExampleStandalone(ex: ExampleDef) {
       rebuild();
     });
 
-    // ── Parámetros ───────────────────────────────────────────
-    const fParams = pane.addFolder({ title: "Parámetros" });
+    // ── Parámetros — agrupados en folders según ParamDef.folder ──
+    // Mismo comportamiento que el workspace pane builder: si un param tiene
+    // `folder: "Cargas — Patrón D"`, se mete bajo ese folder. Sin folder → root "Parámetros".
+    const defaultFolderTitle = "Parámetros";
+    const folderMap = new Map<string, any>();
+    const isExpandedByDefault = (title: string) =>
+      title === defaultFolderTitle ||
+      /\bmodo\b/i.test(title) ||
+      /activar/i.test(title) ||
+      /combinaci/i.test(title);
+    const getFolder = (title: string) => {
+      if (!folderMap.has(title)) {
+        folderMap.set(title, pane.addFolder({ title, expanded: isExpandedByDefault(title) }));
+      }
+      return folderMap.get(title);
+    };
     let timer: number | null = null;
     const scheduleRebuild = () => {
       if (timer !== null) clearTimeout(timer);
       timer = window.setTimeout(() => { timer = null; rebuild(); }, 120);
     };
+    // Proxy para checkboxes (p.boolean=true) — Tweakpane requiere true/false nativo
+    const boolProxy: Record<string, boolean> = {};
     for (const [key, p] of Object.entries(ex.params)) {
+      const folderTitle = p.folder ?? defaultFolderTitle;
+      const fTarget = getFolder(folderTitle);
+      // Boolean → checkbox
+      if (p.boolean) {
+        boolProxy[key] = currentParams[key] >= 0.5;
+        fTarget.addBinding(boolProxy, key, { label: p.label ?? key }).on("change", (e: any) => {
+          currentParams[key] = e.value ? 1 : 0;
+          if (ex.onParamChange) {
+            ex.onParamChange(key, currentParams);
+            pane.refresh();  // sync UI con currentParams modificado en onParamChange
+          }
+          scheduleRebuild();
+        });
+        continue;
+      }
+      // Slider / dropdown / number input
       const baseLabel = stripUnitSuffix(p.label ?? key);
       const unitSuffix = p.unitType === "force"  ? ` ${forceUnitSuffix()}` :
                          p.unitType === "moment" ? ` ${momentUnitSuffix()}` :
@@ -175,7 +343,35 @@ export function runExampleStandalone(ex: ExampleDef) {
         if (p.max !== undefined) opts.max = p.max;
         if (p.step !== undefined) opts.step = p.step;
       }
-      fParams.addBinding(currentParams, key, opts).on("change", scheduleRebuild);
+      fTarget.addBinding(currentParams, key, opts).on("change", () => {
+        if (ex.onParamChange) {
+          ex.onParamChange(key, currentParams);
+          pane.refresh();  // sync UI con currentParams modificado en onParamChange
+        }
+        scheduleRebuild();
+      });
+    }
+
+    // ── Folder "📊 Resultados" (read-only) — valores derivados del análisis ──
+    // Solo se muestra si el ejemplo exporta computedLabels(). Se pobla en el
+    // primer build (después del buildPane inicial) y se refresca tras cada
+    // rebuild() vía pane.refresh() — ver el override de rebuild() arriba.
+    if (ex.computedLabels) {
+      const fResults = pane.addFolder({ title: "📊 Resultados", expanded: true });
+      // Llamar computedLabels con los params actuales — states puede estar vacío
+      // en el primer build, pero la función debe manejar eso (ej: q_max=0).
+      const initial = ex.computedLabels(toSIParams(), states);
+      computedObj = computedObj ?? {};
+      for (const key of Object.keys(initial)) {
+        computedObj[key] = initial[key];
+      }
+      for (const key of Object.keys(initial)) {
+        fResults.addBinding(computedObj, key, {
+          readonly: true,
+          view: "text",
+          interval: 0,
+        } as any);
+      }
     }
   };
 

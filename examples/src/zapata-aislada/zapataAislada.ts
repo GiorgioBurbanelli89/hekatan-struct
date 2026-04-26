@@ -42,6 +42,63 @@ export const SOIL_TYPES = [
   { name: "Roca alterada",       q_adm: 100, ks_factor: 15.0, su: 0,   phi: 45, gamma: 22, N_SPT: 100,E_soil: 500000 },
   { name: "Roca sana",           q_adm: 200, ks_factor: 20.0, su: 0,   phi: 50, gamma: 25, N_SPT: 100,E_soil: 2000000 },
 ];
+/**
+ * Calcula el módulo de balasto vertical ks (kN/m³) según el método seleccionado.
+ *
+ *   0 = Bowles 1996:  ks = ks_factor × q_adm × g
+ *                     (correlación empírica, q_adm en tonf/m²)
+ *   1 = Vesic 1973:   ks = 0.65 × E_s / (B(1-ν²)) × (E_s × B^4 / (E_c × I_c))^(1/12)
+ *                     (rigidez relativa zapata-suelo, fórmula Bowles 1996 §16.2)
+ *                     I_c por unidad de ancho = t³/12
+ *   2 = Placa carga: corrección Terzaghi del ks medido en placa de 0.30 m a B real.
+ *                    Cohesivos:    ks_B = ks_p × (B_p / B)
+ *                    Granulares:   ks_B = ks_p × ((B + B_p) / (2B))²
+ *   3 = Manual:      retorna p.ks (no recomputa).
+ */
+export function computeKs(p: any): number {
+  const method = Math.round(p.ks_method ?? 0);
+  if (method === 3) return p.ks ?? 2059;
+
+  if (method === 0) {
+    // Bowles 1996
+    const q_adm_kNm2 = (p.q_adm ?? 20) * TONF_TO_KN;
+    return q_adm_kNm2 * (p.ks_factor ?? 10.5);
+  }
+
+  if (method === 1) {
+    // Vesic 1973 (Bowles §16.2)
+    const E_s   = p.E_soil ?? 25000;     // kN/m² (kPa)
+    const nu_s  = p.nu_soil ?? 0.30;
+    const B     = Math.min(p.Lz ?? 1.5, p.Bz ?? 1.5);  // ancho menor (lado corto)
+    const tz    = p.tz ?? 0.30;
+    const E_c   = Ec;                    // 25 GPa = 25e6 kN/m² (Hekatan default)
+    const I_c   = (tz ** 3) / 12;        // m⁴/m (por unidad de ancho)
+    const ratio = (E_s * B ** 4) / (E_c * I_c);
+    const factor = Math.pow(ratio, 1 / 12);
+    return 0.65 * factor * E_s / (B * (1 - nu_s ** 2));
+  }
+
+  if (method === 2) {
+    // Placa de carga (Terzaghi/Bowles)
+    const q_test  = (p.q_plate ?? 5) * TONF_TO_KN;        // kN/m²
+    const dlt_mm  = p.delta_plate ?? 5;                   // mm
+    const dlt_m   = dlt_mm / 1000;                        // m
+    const ks_p    = q_test / dlt_m;                       // kN/m³ ks de la placa
+    const Bp      = p.B_plate ?? 0.30;                    // m
+    const Bf      = Math.min(p.Lz ?? 1.5, p.Bz ?? 1.5);   // m (ancho zapata)
+    const granular = (p.soilGranular ?? 1) >= 0.5;
+    if (granular) {
+      // Granulares (Terzaghi): ks_B = ks_p × ((B + B_p) / (2B))²
+      return ks_p * Math.pow((Bf + Bp) / (2 * Bf), 2);
+    } else {
+      // Cohesivos: ks_B = ks_p × (B_p / B)
+      return ks_p * (Bp / Bf);
+    }
+  }
+
+  return 2059;
+}
+
 // Resorte: 20 cm de "suelo virtual" debajo del plato, con suficientes coils para
 // que la compresión se vea al compactarse las espiras.
 const SPRING_HEIGHT = 0.20, SPRING_WIDTH = 0.035, SPRING_COILS = 8;
@@ -74,15 +131,37 @@ export const zapataAislada: ExampleDef = {
       label: "Tipo de suelo",
       options: Object.fromEntries(SOIL_TYPES.map((s, i) => [s.name, i])),
     },
-    q_adm:    { default: 20,    min: 1,    max: 100,    step: 1,    label: "q_adm (tonf/m²)" },
+    q_adm:    { default: 20,    min: 1,    max: 200,    step: 1,    label: "q_adm (tonf/m²)" },
+    // ── Método de cálculo de ks (módulo de balasto vertical) ──
+    // 0 = Bowles 1996 (correlación con q_adm)
+    // 1 = Vesic 1973 (E_soil + rigidez relativa zapata-suelo)
+    // 2 = Placa de carga (ensayo PLT — q_test / δ_test corregido por escala)
+    // 3 = Manual (input directo de ks, NO se autocomputa)
+    ks_method: {
+      default: 0,
+      label: "Método ks",
+      options: {
+        "Bowles 1996 (q_adm × factor)": 0,
+        "Vesic 1973 (E_soil)":          1,
+        "Placa de carga (PLT)":         2,
+        "Manual (ks directo)":          3,
+      },
+    },
     // ks_factor: correlación Bowles (se usa solo para auto-poblar ks al cambiar
     // de tipo de suelo). El valor que realmente usa el solver es `ks` de abajo,
     // editable por el usuario (input directo de estudio geotécnico).
-    ks_factor:{ default: 10.5,  min: 5,    max: 20,     step: 0.5,  label: "ks_factor Bowles (referencia)" },
+    ks_factor:{ default: 10.5,  min: 5,    max: 200,    step: 0.5,  label: "ks_factor Bowles (referencia)" },
+    // ── Inputs para Vesic 1973 ──
+    nu_soil:  { default: 0.30,  min: 0.0,  max: 0.50,   step: 0.01, label: "ν_soil Poisson" },
+    // ── Inputs para Placa de carga ──
+    q_plate:  { default: 5,     min: 0.5,  max: 100,    step: 0.5,  label: "q_test placa (tonf/m²)" },
+    delta_plate: { default: 5,  min: 0.1,  max: 50,     step: 0.1,  label: "δ_test placa (mm)" },
+    B_plate:  { default: 0.30,  min: 0.10, max: 1.0,    step: 0.05, label: "B_placa (m)" },
+    soilGranular: { default: 1, boolean: true, label: "Suelo granular (Terzaghi)" },
     // ks — módulo de balasto vertical. Valor usado DIRECTAMENTE por el solver.
     // Al cambiar el tipo de suelo, se auto-popula con ks = q_adm × 9.807 × ks_factor,
     // pero el usuario puede sobrescribirlo a mano (típico en modo Custom).
-    ks:       { default: 2059,  min: 100,  max: 200000, step: 10,   label: "ks (kN/m³)" },
+    ks:       { default: 2059,  min: 100,  max: 200000, step: 10,   label: "ks (kN/m/m²)" },
     // Propiedades geotécnicas (se autopoblan al cambiar Tipo de suelo)
     su:       { default: 0,     min: 0,    max: 300,    step: 1,    label: "su cohesión (kPa)" },
     phi:      { default: 33,    min: 0,    max: 55,     step: 1,    label: "φ fricción (°)" },
@@ -174,6 +253,36 @@ export const zapataAislada: ExampleDef = {
       },
     },
     {
+      // ks Vesic — referencia (independiente del método activo).
+      after: "nu_soil",
+      label: "ks Vesic ref. (kN/m³)",
+      compute: (p) => {
+        const E_s = p.E_soil ?? 25000;
+        const nu_s = p.nu_soil ?? 0.30;
+        const B = Math.min(p.Lz ?? 1.5, p.Bz ?? 1.5);
+        const tz = p.tz ?? 0.30;
+        const I_c = tz ** 3 / 12;
+        const ratio = (E_s * B ** 4) / (Ec * I_c);
+        const ks_v = 0.65 * Math.pow(ratio, 1/12) * E_s / (B * (1 - nu_s**2));
+        return ks_v.toFixed(0);
+      },
+    },
+    {
+      // ks Placa — referencia.
+      after: "B_plate",
+      label: "ks Placa ref. (kN/m³)",
+      compute: (p) => {
+        const q_test = (p.q_plate ?? 5) * TONF_TO_KN;
+        const dlt = (p.delta_plate ?? 5) / 1000;
+        const ks_p = q_test / dlt;
+        const Bp = p.B_plate ?? 0.30;
+        const Bf = Math.min(p.Lz ?? 1.5, p.Bz ?? 1.5);
+        const gran = (p.soilGranular ?? 1) >= 0.5;
+        const ks_B = gran ? ks_p * Math.pow((Bf + Bp)/(2*Bf), 2) : ks_p * (Bp/Bf);
+        return ks_B.toFixed(0);
+      },
+    },
+    {
       // D flexural debajo de tz (rigidez de placa depende de t³)
       after: "tz",
       label: "D flexural (kN·m)",
@@ -181,6 +290,16 @@ export const zapataAislada: ExampleDef = {
         const tz = p.tz ?? 0.15;
         const D = Ec * tz ** 3 / (12 * (1 - nu_c ** 2));
         return D.toFixed(1);
+      },
+    },
+    {
+      // ks en tonf/m³ — formato SAFE "Subgrade Modulus" para roundtrip exacto.
+      // Permite ver si el F2K importado coincide con el ks del slider (kN/m³).
+      after: "ks",
+      label: "↳ ks SAFE (tonf/m³)",
+      compute: (p) => {
+        const ks = p.ks ?? 2059;
+        return (ks / TONF_TO_KN).toFixed(2);
       },
     },
     {
@@ -249,20 +368,111 @@ export const zapataAislada: ExampleDef = {
       qMin = -localMin;
     }
     const ratio = Math.abs(qMax) / (p.q_adm || 1);
+    // ── Peso propio del slab (igual que SAFE auto-calcula) ──
+    // V = Lz × Bz × tz (m³) × γ_concreto (24 kN/m³ default ACI)
+    // En SAFE su Self Weight Multiplier=1 lo agrega automáticamente al pattern Dead.
+    // Acá lo mostramos para que el ingeniero entienda P_total real cuando incluye SW.
+    const Bz = p.Bz ?? Lz;
+    const gamma_c_kNm3 = 24;   // peso específico concreto armado (ACI 318 §C.2.6)
+    const W_losa_kN   = Lz * Bz * tz * gamma_c_kNm3;            // peso propio en kN
+    const W_losa_tonf = W_losa_kN / 9.80665;                     // tonf
+    const P_con_SW    = P_total + W_losa_tonf;                   // P total + peso propio
+
+    // ── Deformaciones verticales (asentamientos) ──
+    // Convención Hekatan: w<0 = hundimiento (compresión del suelo).
+    // Lectura: deformOutputs.deformations: Map<nodeIdx, [ux,uy,uz,rx,ry,rz]>
+    const deforms = (states.deformOutputs.rawVal as any)?.deformations as
+      Map<number, number[]> | undefined;
+    let wMin = 0, wMax = 0, wCenter = 0;
+    let nodeCount = 0;
+    let sumW_abs = 0;  // Σ|w| de nodos de la zapata (m)
+    if (deforms && deforms.size) {
+      const nodes = states.nodes.rawVal;
+      const xC = Lz / 2, yC = Bz / 2;
+      let bestCenterDist = Infinity;
+      for (const [nIdx, d] of deforms) {
+        const node = nodes[nIdx];
+        if (!node) continue;
+        // Solo nodos de la zapata (Z=0), no del pedestal (Z>0)
+        if (Math.abs(node[2]) > 1e-6) continue;
+        const w = d[2];
+        if (!Number.isFinite(w)) continue;
+        if (w < wMin) wMin = w;
+        if (w > wMax || nodeCount === 0) wMax = w;
+        nodeCount++;
+        sumW_abs += Math.abs(w);
+        // Detectar nodo central (más cerca de xC, yC)
+        const dx = node[0] - xC, dy = node[1] - yC;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < bestCenterDist) {
+          bestCenterDist = dist;
+          wCenter = w;
+        }
+      }
+    }
+    // ΣReacc Z ≈ ks × A_node × Σ|w| (A_node = área tributaria uniforme aprox)
+    // Σ A_node = Lz × Bz (área total losa) → A_avg = LzBz/nNodes
+    const A_avg = (Lz * Bz) / Math.max(nodeCount, 1);
+    const sumRZ_kN = ks * A_avg * sumW_abs;
+    // Convertir a mm (UI más legible). Convención negativa = hundimiento.
+    const wMin_mm    = wMin    * 1000;
+    const wMax_mm    = wMax    * 1000;
+    const wCenter_mm = wCenter * 1000;
+    const dz_diff_mm = (wMax - wMin) * 1000;
+    // ΣReacciones de springs en tonf (debería ≈ P_total + SW)
+    const sumRZ_tonf = sumRZ_kN / 9.80665;
+
+    // ── Momentos máximos en la losa (flexión XX/YY) ──
+    const ao = states.analyzeOutputs.rawVal as any;
+    let MxxMax = 0, MyyMax = 0, vmMax = 0;
+    const scanMap = (m: Map<number, number[]> | undefined): number => {
+      if (!m) return 0;
+      let absMax = 0;
+      for (const arr of m.values())
+        for (const v of arr)
+          if (Number.isFinite(v) && Math.abs(v) > absMax) absMax = Math.abs(v);
+      return absMax;
+    };
+    if (ao) {
+      MxxMax = scanMap(ao.bendingXX);
+      MyyMax = scanMap(ao.bendingYY);
+      vmMax  = scanMap(ao.vonMises);
+    }
+
     return {
-      "Patrones activos": modeName,
-      "ks (kN/m³)":       ks.toFixed(0),
-      "D (kN·m)":         D.toFixed(1),
-      "k_r (Biot)":       k_r.toFixed(3) + (k_r < 1 ? " FLEXIBLE" : " RÍGIDA"),
-      "P total (tonf)":   P_total.toFixed(2),
-      "q_max (tonf/m²)":  qMax.toFixed(2),
-      "q_min (tonf/m²)":  qMin.toFixed(2),
-      "q/q_adm":          ratio.toFixed(2) + (ratio > 1 ? " ⚠" : " ✓"),
+      "Patrones activos":      modeName,
+      // Suelo / rigidez
+      "ks (kN/m³)":            ks.toFixed(0),
+      "D (kN·m)":              D.toFixed(1),
+      "k_r (Biot)":            k_r.toFixed(3) + (k_r < 1 ? " FLEXIBLE" : " RÍGIDA"),
+      // Cargas aplicadas
+      "P total (tonf)":        P_total.toFixed(2),
+      "Peso propio losa (tonf)": W_losa_tonf.toFixed(3),
+      "P + SW (tonf)":         P_con_SW.toFixed(2) + " ← match con SAFE",
+      // Presión de contacto suelo (signo negativo = compresión Hekatan/SAFE)
+      "q_max (tonf/m²)":       qMax.toFixed(2)  + " (compresión pico)",
+      "q_min (tonf/m²)":       qMin.toFixed(2)  + " (compresión menor)",
+      "q/q_adm":               ratio.toFixed(2) + (ratio > 1 ? " ⚠ EXCEDE" : " ✓ OK"),
+      // Asentamientos (deformación vertical)
+      "Δz max losa (mm)":      wMin_mm.toFixed(2) + " ↓ (más negativo)",
+      "Δz centro losa (mm)":   wCenter_mm.toFixed(2),
+      "Δz mín losa (mm)":      wMax_mm.toFixed(2) + " (esquina/borde)",
+      "Asiento diferencial (mm)": dz_diff_mm.toFixed(2)
+                                + (dz_diff_mm/Math.max(Lz,Bz)/1000 > 1/300 ? " ⚠ excede L/300" : " ✓ < L/300"),
+      // Verificación equilibrio
+      "ΣReacc Z (tonf) ≈": sumRZ_tonf.toFixed(2) + (Math.abs(sumRZ_tonf - P_con_SW) / Math.max(P_con_SW, 1) < 0.10
+                                ? " ✓ ≈ P+SW" : " ⚠ verificar"),
+      // Esfuerzos internos
+      "|Mxx| max (kN·m/m)":    MxxMax.toFixed(2),
+      "|Myy| max (kN·m/m)":    MyyMax.toFixed(2),
+      "von Mises max (kPa)":   vmMax.toFixed(1),
     };
   },
   /** onParamChange:
    *   - soilType → autopoblar propiedades geotécnicas
    *   - combo    → autopoblar factores fD, fL, fS
+   *   - ks_method, q_adm, ks_factor, E_soil, nu_soil, q_plate, delta_plate, B_plate, Lz, tz
+   *     → recomputar ks según método seleccionado
    */
   onParamChange(key, params) {
     if (key === "soilType") {
@@ -276,9 +486,21 @@ export const zapataAislada: ExampleDef = {
         params.gamma     = soil.gamma;
         params.N_SPT     = soil.N_SPT;
         params.E_soil    = soil.E_soil;
-        // Al cambiar tipo de suelo, auto-popular ks con Bowles.
-        // (En Custom el usuario puede sobrescribirlo después.)
-        params.ks = soil.q_adm * TONF_TO_KN * soil.ks_factor;
+        // Al cambiar tipo de suelo, auto-popular ks con el método activo.
+        params.ks = computeKs(params);
+      }
+    }
+    // Si el usuario cambia cualquier input que afecte ks, recomputar
+    // (excepto en modo Manual donde el usuario edita ks directamente).
+    const ksDeps = new Set([
+      "ks_method", "q_adm", "ks_factor",
+      "E_soil", "nu_soil", "Lz", "tz",
+      "q_plate", "delta_plate", "B_plate", "soilGranular",
+    ]);
+    if (ksDeps.has(key)) {
+      const method = Math.round(params.ks_method ?? 0);
+      if (method !== 3) {  // 3 = Manual: NO sobrescribir
+        params.ks = computeKs(params);
       }
     }
     if (key === "combo") {
@@ -548,7 +770,7 @@ export const zapataAislada: ExampleDef = {
     const viewerEl = document.querySelector("#viewer") as any;
     const settings = viewerEl?.__settings;
 
-    const buildSprings = (deformedOn: boolean, deformScaleSetting: number): THREE.Object3D[] => {
+    const buildSprings = (deformedOn: boolean, deformScaleSetting: number, dispScale: number = 1): THREE.Object3D[] => {
       // CRÍTICO: ampEff DEBE ser IDÉNTICO al scale que el viewer usa en deriveNodes
       // para mover los nodos. Si no, la punta del resorte no toca el nodo.
       // El viewer usa: node + deformation × settings.deformScale.val
@@ -556,6 +778,12 @@ export const zapataAislada: ExampleDef = {
       const ampEff = deformedOn ? deformScaleSetting : 0;
       const maxSinkingEff = wMaxAbs * Math.max(ampEff, 1);  // zBot suficiente para cualquier caso
       const zBotEff = -(maxSinkingEff + SPRING_HEIGHT);
+      // ── displayScale: escala el RADIO del coil y el TAMAÑO del anchor (igual
+      // que las flechas de loads/supports). NO escala SPRING_HEIGHT (eso es
+      // físico: debe alcanzar el nodo deformado). ──
+      const visScale = dispScale > 0 ? dispScale : (dispScale < 0 ? -1 / dispScale : 1);
+      const SPRING_WIDTH_EFF = SPRING_WIDTH * visScale;
+      const ANCHOR_SIZE_EFF  = ANCHOR_SIZE  * visScale;
       const out: THREE.Object3D[] = [];
       for (const nIdx of springNodes) {
         if (!visibleNodeSet.has(nIdx)) continue;
@@ -589,8 +817,8 @@ export const zapataAislada: ExampleDef = {
           const [cx, cy, cz] = axisAt(t);
           const angle = 2 * Math.PI * SPRING_COILS * (k / totalSegs);
           pts.push(new THREE.Vector3(
-            cx + SPRING_WIDTH * Math.cos(angle),
-            cy + SPRING_WIDTH * Math.sin(angle),
+            cx + SPRING_WIDTH_EFF * Math.cos(angle),
+            cy + SPRING_WIDTH_EFF * Math.sin(angle),
             cz
           ));
         }
@@ -598,7 +826,7 @@ export const zapataAislada: ExampleDef = {
         out.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), MAT_SPRING));
         // Anclaje simple: cuadrado horizontal plano en la base (sin cubo 3D para
         // evitar "replicación visual" en vista elevación).
-        const a = ANCHOR_SIZE;
+        const a = ANCHOR_SIZE_EFF;
         const cv = [
           new THREE.Vector3(x - a, y - a, zBotEff),
           new THREE.Vector3(x + a, y - a, zBotEff),
@@ -623,7 +851,8 @@ export const zapataAislada: ExampleDef = {
         if (activeExampleVersion.v !== myVersion) return;
         const on = settings.deformedShape.val;           // reactivo
         const dScale = settings.deformScale.val;         // reactivo (MISMO scale que el viewer)
-        states.objects3D.val = buildSprings(on, dScale);
+        const dispScale = settings.displayScale.val;     // reactivo: escala SPRING_WIDTH/ANCHOR_SIZE
+        states.objects3D.val = buildSprings(on, dScale, dispScale);
       });
     } else {
       states.objects3D.val = buildSprings(true, 1);
