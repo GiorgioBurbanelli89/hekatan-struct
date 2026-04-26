@@ -95,7 +95,7 @@ export const conexionRbs: ExampleDef = {
     story_h: { default: 3.66, min: 2.5, max: 5.0, step: 0.1, label: "h piso (m)", folder: "Ensayo K3" },
     steps_per_cycle: { default: 40, min: 20, max: 100, step: 10, label: "Steps/ciclo", folder: "Ensayo K3" },
     // ── Malla (para ver concentración de tensiones / fracturas) ──
-    mesh_density: { default: 3, min: 1, max: 5, step: 1, label: "Densidad malla", folder: "Malla" },
+    mesh_density: { default: 2, min: 1, max: 5, step: 1, label: "Densidad malla (2 = rápido, 4 = denso)", folder: "Malla" },
     // ── Solver FEM ──
     use_nonlinear: {
       default: 2,

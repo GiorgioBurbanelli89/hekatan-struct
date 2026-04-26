@@ -55,7 +55,7 @@ export const conexionBfp: ExampleDef = {
     // ── Cargas ──
     Mu:      { default: 400, min: 0, max: 2000, step: 25, label: "Mu demanda (kN·m)", folder: "Cargas", unitType: "moment" },
     // ── Malla ──
-    mesh_density: { default: 3, min: 1, max: 5, step: 1, label: "Densidad malla", folder: "Malla" },
+    mesh_density: { default: 2, min: 1, max: 5, step: 1, label: "Densidad malla (2 = rápido, 4 = denso)", folder: "Malla" },
   },
   build(p, states) {
     const nodes: Node[] = [];
