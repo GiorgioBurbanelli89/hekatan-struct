@@ -9,8 +9,7 @@ import { fixedColorMapRange } from "../viewer/getViewer";
 // Contours" de SAP2000/CSiBridge/ETABS. 14 stops del clásico industrial:
 //   min(t=0)=magenta → rosa → rojo → naranja → amarillo → verde → cian → azul oscuro(t=1)
 // Adaptado de calcpad-viz/src/utils/colormap.ts (Calcpad-Symbolic).
-(Lut as any).ColorMapKeywords = (Lut as any).ColorMapKeywords ?? {};
-(Lut as any).ColorMapKeywords["sap2000"] = [
+const SAP2000_PALETTE: [number, number][] = [
   [0.000, 0xff00ff],  // magenta (min)
   [0.077, 0xff00b4],  // rosa
   [0.154, 0xff0000],  // rojo
@@ -44,8 +43,10 @@ export function getColorMap(
     })
   );
 
-  // Update — usar palette SAP2000 (estilo CSiBridge/ETABS/Calcpad).
-  // 14 stops perceptualmente mejor que rainbow puro para resultados FEM.
+  // Update — registrar palette SAP2000 (estilo CSiBridge/ETABS/Calcpad)
+  // y usarla por defecto. 14 stops perceptualmente mejor que rainbow.
+  // Three.js Lut API: addColorMap registra en ColorMapKeywords módulo-level.
+  (lut as any).addColorMap("sap2000", SAP2000_PALETTE);
   lut.setColorMap("sap2000");
   colorMap.renderOrder = -1; // to ensure that it always set behind the mesh
   colorMap.frustumCulled = false;
