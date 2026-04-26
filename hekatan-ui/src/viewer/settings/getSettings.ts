@@ -231,6 +231,30 @@ export function getSettings(
 
   if (solids) pane.addBinding(settings.solids, "val", { label: "Solids" });
 
+  // ── Folder PLANOS DE CORTE X/Y/Z (universal — para sólidos H8) ──
+  // Disponible en TODOS los viewers. Modifica window.__hekatanClip y dispara
+  // window.__hekatanClipApply() (definido en getViewer al inicializar).
+  const clip = pane.addFolder({ title: "✂️ Cortes X/Y/Z", expanded: false });
+  // Estado global compartido (inicializado por getViewer)
+  const clipState: any = (window as any).__hekatanClip ?? ((window as any).__hekatanClip = {
+    enableX: false, enableY: false, enableZ: false,
+    posX: 0, posY: 0, posZ: 0,
+    invertX: false, invertY: false, invertZ: false,
+  });
+  const triggerApply = () => {
+    const f = (window as any).__hekatanClipApply;
+    if (typeof f === "function") f();
+  };
+  clip.addBinding(clipState, "enableX", { label: "Cortar X" }).on("change", triggerApply);
+  clip.addBinding(clipState, "posX", { min: -50, max: 50, step: 0.1, label: "  pos X" }).on("change", triggerApply);
+  clip.addBinding(clipState, "invertX", { label: "  inv X" }).on("change", triggerApply);
+  clip.addBinding(clipState, "enableY", { label: "Cortar Y" }).on("change", triggerApply);
+  clip.addBinding(clipState, "posY", { min: -50, max: 50, step: 0.1, label: "  pos Y" }).on("change", triggerApply);
+  clip.addBinding(clipState, "invertY", { label: "  inv Y" }).on("change", triggerApply);
+  clip.addBinding(clipState, "enableZ", { label: "Cortar Z" }).on("change", triggerApply);
+  clip.addBinding(clipState, "posZ", { min: -50, max: 50, step: 0.1, label: "  pos Z" }).on("change", triggerApply);
+  clip.addBinding(clipState, "invertZ", { label: "  inv Z" }).on("change", triggerApply);
+
   return container;
 }
 

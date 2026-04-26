@@ -103,6 +103,19 @@ export function getViewer({
       planes.push(clipPlaneZ);
     }
     renderer.clippingPlanes = planes;
+    // En Three.js renderer.clippingPlanes NO se propaga automáticamente a los
+    // materiales — hay que setear material.clippingPlanes en cada material
+    // de la escena para que el clipping tenga efecto visual.
+    scene.traverse((obj: THREE.Object3D) => {
+      const mesh = obj as THREE.Mesh;
+      if (mesh.material) {
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const m of mats) {
+          (m as THREE.Material).clippingPlanes = planes;
+          (m as THREE.Material).needsUpdate = true;
+        }
+      }
+    });
   }
   applyClipping();
   (window as any).__hekatanClipApply = applyClipping;
