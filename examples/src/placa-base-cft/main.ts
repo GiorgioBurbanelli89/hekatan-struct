@@ -240,12 +240,10 @@ van.derive(() => {
     addShell(wallE[iz][iy], wallE[iz][iy+1], wallE[iz+1][iy+1], wallE[iz+1][iy], t_col);
 
   // ── CONCRETO FILL DEL CFT como cuerpo FEM (Q4 boundary faces) ──
-  // Modelo estructural correcto:
-  //   - Dentro del orificio: el concreto del fill es CONTINUO con el plug
-  //     que cruza la placa hasta el pedestal (shared nodes).
-  //   - Fuera del orificio: el concreto fill descansa SOBRE la placa por
-  //     CONTACTO compresivo (aproximación lineal: shared nodes con placa).
-  //   - Paredes HSS: en contacto con el concreto fill (NO shared nodes).
+  // Cara inferior (k=0) del fill comparte nodos con la placa via snap
+  // (contacto compresivo aproximado como shared nodes en linear FEA).
+  // El plug que conecta fill ↔ pedestal vía orificio se genera DESPUÉS del
+  // pedestal (necesita pedGrid declarado) — ver bloque "PLUG diferido" abajo.
   const Ec_fill = 4700 * Math.sqrt(fc / 1000) * 1000;
   const nu_c_fill = 0.20;
   const Gc_fill = Ec_fill / (2 * (1 + nu_c_fill));
@@ -253,27 +251,8 @@ van.derive(() => {
   const fill_hc = hc - 2 * t_col;
   const nx_fill = 4, ny_fill = 4, nz_fill = nz_col;
   const dxf = fill_bc / nx_fill, dyf = fill_hc / ny_fill, dzf = L_col / nz_fill;
-
-  // Generar PLUG (cilindro cuadriculado de la zona del orificio): nodos en
-  // z entre 0 (pedestal top) y z_gap+t_plate (fill bottom). Mallado coincide
-  // con la malla del fill bottom para shared nodes.
-  // Helper: ¿(x,y) está dentro del orificio circular (más tolerancia)?
   const inHole = (x: number, y: number) => Math.hypot(x, y) < r_hole + dxf * 0.5;
-  // Snap-to-pedestal-top: encuentra el nodo del pedestal más cercano en cara top
-  function snapToPedTop(x: number, y: number): number {
-    let best = -1; let dmin = Infinity;
-    for (let j = 0; j <= ny_p; j++) for (let i = 0; i <= nx_p; i++) {
-      const id = pedGrid[nz_p][j][i];
-      const p = nodes[id];
-      const d = Math.hypot(p[0]-x, p[1]-y);
-      if (d < dmin) { dmin = d; best = id; }
-    }
-    return best;
-  }
-  // Generar mallado del fill (rectangular). Para la cara INFERIOR (k=0):
-  //   - dentro del hueco → crear nodo NUEVO en z=z_gap+t_plate (lo conectaremos
-  //     con el plug que va de z=0 hasta z=z_gap+t_plate)
-  //   - fuera del hueco → snap a placa (contacto)
+
   const fillGrid: number[][][] = [];
   for (let k = 0; k <= nz_fill; k++) {
     const layer: number[][] = [];
@@ -283,66 +262,15 @@ van.derive(() => {
         const x = -fill_bc/2 + i*dxf;
         const y = -fill_hc/2 + j*dyf;
         const z = z_gap + t_plate + k*dzf;
-        if (k === 0) {
-          if (inHole(x, y)) row.push(addNode(x, y, z));    // continuo con plug
-          else row.push(snapToPlate(x, y));                  // contacto placa
+        if (k === 0 && !inHole(x, y)) {
+          row.push(snapToPlate(x, y));   // contacto placa fuera del hueco
         } else {
-          row.push(addNode(x, y, z));
+          row.push(addNode(x, y, z));    // libre o futuro plug-top dentro del hueco
         }
       }
       layer.push(row);
     }
     fillGrid.push(layer);
-  }
-  // PLUG: estratos verticales conectando z=0 (pedestal) → z=z_gap+t_plate (fill).
-  // Para cada nodo del fill_bottom (k=0) que está dentro del hueco: crear
-  // columna vertical de nodos hasta el pedestal top, formando un H8 prism.
-  const plugGrid: { idTop: number; idBot: number; x: number; y: number }[] = [];
-  for (let j = 0; j <= ny_fill; j++) {
-    for (let i = 0; i <= nx_fill; i++) {
-      const x = -fill_bc/2 + i*dxf;
-      const y = -fill_hc/2 + j*dyf;
-      if (!inHole(x, y)) continue;
-      // Top del plug = nodo del fill bottom (ya creado arriba)
-      const idTop = fillGrid[0][j][i];
-      // Bottom del plug = snap a pedestal top
-      const idBot = snapToPedTop(x, y);
-      plugGrid.push({ idTop, idBot, x, y });
-    }
-  }
-  // PLUG mallado: Q4 verticales conectando cada par adyacente del plugGrid.
-  // Cada nodo del plugGrid tiene idTop (en fill bottom) e idBot (en pedestal
-  // top). Tomamos celdas cuadradas adjacentes en el (i,j) original del fill.
-  function findPlugAt(i: number, j: number) {
-    const x = -fill_bc/2 + i*dxf, y = -fill_hc/2 + j*dyf;
-    if (!inHole(x, y)) return null;
-    return plugGrid.find(p => Math.abs(p.x - x) < 1e-6 && Math.abs(p.y - y) < 1e-6) ?? null;
-  }
-  // Generar 4 caras laterales por celda del plug (mantos Q4 verticales)
-  for (let j = 0; j < ny_fill; j++) {
-    for (let i = 0; i < nx_fill; i++) {
-      const p00 = findPlugAt(i, j),     p10 = findPlugAt(i+1, j);
-      const p01 = findPlugAt(i, j+1),   p11 = findPlugAt(i+1, j+1);
-      // Si los 4 nodos del cell son del plug, generar 4 caras verticales (manto)
-      // y 1 face top + 1 face bottom (cilindro cerrado).
-      if (p00 && p10 && p01 && p11) {
-        // Cara top (en fill bottom z = z_gap+t_plate) — comparte con fill,
-        // ya está implícita por shared nodes; generamos shell para visualizar.
-        addFillShell(p00.idTop, p10.idTop, p11.idTop, p01.idTop);
-        // Cara bottom (en pedestal top z = 0)
-        addFillShell(p00.idBot, p10.idBot, p11.idBot, p01.idBot);
-        // 4 caras laterales (verticales) — solo en el contorno del plug
-        // (cuando una celda adyacente NO está en el hueco)
-        const isOuterX0 = !findPlugAt(i-1, j) || !findPlugAt(i-1, j+1);
-        const isOuterX1 = !findPlugAt(i+2, j) || !findPlugAt(i+2, j+1);
-        const isOuterY0 = !findPlugAt(i, j-1) || !findPlugAt(i+1, j-1);
-        const isOuterY1 = !findPlugAt(i, j+2) || !findPlugAt(i+1, j+2);
-        if (isOuterX0) addFillShell(p00.idBot, p00.idTop, p01.idTop, p01.idBot);
-        if (isOuterX1) addFillShell(p10.idBot, p11.idBot, p11.idTop, p10.idTop);
-        if (isOuterY0) addFillShell(p00.idBot, p10.idBot, p10.idTop, p00.idTop);
-        if (isOuterY1) addFillShell(p01.idBot, p01.idTop, p11.idTop, p11.idBot);
-      }
-    }
   }
   function addFillShell(n0: number, n1: number, n2: number, n3: number) {
     elements.push([n0, n1, n2, n3]);
@@ -528,6 +456,48 @@ van.derive(() => {
   // Lateral x=+B_ped/2 (i=nx_p)
   for (let k = 0; k < nz_p; k++) for (let j = 0; j < ny_p; j++)
     addPedShell(pedGrid[k][j][nx_p], pedGrid[k][j+1][nx_p], pedGrid[k+1][j+1][nx_p], pedGrid[k+1][j][nx_p]);
+
+  // ── PLUG diferido: cuerpo de concreto cilíndrico que cruza el orificio ──
+  // Pedestal ya está creado (pedGrid disponible). Para cada nodo del fill_bottom
+  // dentro del hueco, generar columna vertical hasta el pedestal top (snap).
+  function snapToPedTop(x: number, y: number): number {
+    let best = -1; let dmin = Infinity;
+    for (let j = 0; j <= ny_p; j++) for (let i = 0; i <= nx_p; i++) {
+      const id = pedGrid[nz_p][j][i];
+      const p = nodes[id];
+      const d = Math.hypot(p[0]-x, p[1]-y);
+      if (d < dmin) { dmin = d; best = id; }
+    }
+    return best;
+  }
+  type PlugPt = { idTop: number; idBot: number; x: number; y: number };
+  const plugMap = new Map<string, PlugPt>();
+  for (let j = 0; j <= ny_fill; j++) {
+    for (let i = 0; i <= nx_fill; i++) {
+      const x = -fill_bc/2 + i*dxf;
+      const y = -fill_hc/2 + j*dyf;
+      if (!inHole(x, y)) continue;
+      plugMap.set(`${i},${j}`, { idTop: fillGrid[0][j][i], idBot: snapToPedTop(x, y), x, y });
+    }
+  }
+  // Mantos del plug: 4 caras laterales por cada celda del fill grid donde
+  // los 4 vértices son del plug. Caras top y bottom del plug.
+  const getPlug = (i: number, j: number) => plugMap.get(`${i},${j}`) ?? null;
+  for (let j = 0; j < ny_fill; j++) {
+    for (let i = 0; i < nx_fill; i++) {
+      const p00 = getPlug(i, j),     p10 = getPlug(i+1, j);
+      const p01 = getPlug(i, j+1),   p11 = getPlug(i+1, j+1);
+      if (!p00 || !p10 || !p01 || !p11) continue;
+      // Caras top y bottom del cilindro (concreto del orificio)
+      addFillShell(p00.idTop, p10.idTop, p11.idTop, p01.idTop);
+      addFillShell(p00.idBot, p10.idBot, p11.idBot, p01.idBot);
+      // Caras laterales solo en el contorno del plug
+      if (!getPlug(i-1, j) || !getPlug(i-1, j+1)) addFillShell(p00.idBot, p00.idTop, p01.idTop, p01.idBot);
+      if (!getPlug(i+2, j) || !getPlug(i+2, j+1)) addFillShell(p10.idBot, p11.idBot, p11.idTop, p10.idTop);
+      if (!getPlug(i, j-1) || !getPlug(i+1, j-1)) addFillShell(p00.idBot, p10.idBot, p10.idTop, p00.idTop);
+      if (!getPlug(i, j+2) || !getPlug(i+1, j+2)) addFillShell(p01.idBot, p01.idTop, p11.idTop, p11.idBot);
+    }
+  }
 
   // ── PERNOS DE ANCLAJE (frames) — empotrados en su nBot Y embebidos visualmente ──
   // nTop (z=L_proj, tuerca) → nMid (z=0, placa) → nBot (z=-L_bolt, empotrado)
