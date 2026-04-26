@@ -552,11 +552,11 @@ let __tla = Promise.all([
         folder: "Ensayo K3"
       },
       mesh_density: {
-        default: 3,
+        default: 2,
         min: 1,
         max: 5,
         step: 1,
-        label: "Densidad malla",
+        label: "Densidad malla (2 = r\xE1pido, 4 = denso)",
         folder: "Malla"
       },
       use_nonlinear: {

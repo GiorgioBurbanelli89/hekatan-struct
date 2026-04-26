@@ -188,16 +188,16 @@ let __tla = Promise.all([
         unitType: "moment"
       },
       mesh_density: {
-        default: 3,
+        default: 2,
         min: 1,
         max: 5,
         step: 1,
-        label: "Densidad malla",
+        label: "Densidad malla (2 = r\xE1pido, 4 = denso)",
         folder: "Malla"
       }
     },
     build(e, c) {
-      const i = [], _ = [], x = /* @__PURE__ */ new Map(), N = /* @__PURE__ */ new Map(), I = /* @__PURE__ */ new Map(), M = /* @__PURE__ */ new Map(), V = /* @__PURE__ */ new Map(), F = /* @__PURE__ */ new Map(), k = /* @__PURE__ */ new Map(), p = /* @__PURE__ */ new Map(), D = /* @__PURE__ */ new Map(), E = e.E_steel / 2.6, de = 77 / 9.81, Z = 1e-4, ee = /* @__PURE__ */ new Map(), l = (t, o, n) => {
+      const i = [], _ = [], p = /* @__PURE__ */ new Map(), N = /* @__PURE__ */ new Map(), I = /* @__PURE__ */ new Map(), x = /* @__PURE__ */ new Map(), V = /* @__PURE__ */ new Map(), F = /* @__PURE__ */ new Map(), k = /* @__PURE__ */ new Map(), M = /* @__PURE__ */ new Map(), D = /* @__PURE__ */ new Map(), E = e.E_steel / 2.6, de = 77 / 9.81, Z = 1e-4, ee = /* @__PURE__ */ new Map(), l = (t, o, n) => {
         const a = `${Math.round(t / Z)},${Math.round(o / Z)},${Math.round(n / Z)}`;
         let m = ee.get(a);
         return m === void 0 && (i.push([
@@ -213,7 +213,7 @@ let __tla = Promise.all([
           a
         ]);
         const s = _.length - 1;
-        x.set(s, m), N.set(s, e.E_steel), I.set(s, 0.3), M.set(s, de), V.set(s, 0), F.set(s, 0), k.set(s, 0), p.set(s, 0), D.set(s, E);
+        p.set(s, m), N.set(s, e.E_steel), I.set(s, 0.3), x.set(s, de), V.set(s, 0), F.set(s, 0), k.set(s, 0), M.set(s, 0), D.set(s, E);
       }, u = Math.max(1, Math.round(e.mesh_density)), te = Math.round(e.config), be = te >= 1, _e = te === 2, g = 4, A = +e.d_col / 2 - e.tf_col / 2, U = -e.d_col / 2 + e.tf_col / 2, b = 8 * u, $ = 2 * u, L = [];
       for (let t = 0; t <= b; t++) {
         const o = -g / 2 + t * g / b, n = [];
@@ -315,14 +315,14 @@ let __tla = Promise.all([
         supports: z,
         loads: J
       }, c.elementInputs.val = {
-        thicknesses: x,
+        thicknesses: p,
         elasticities: N,
         poissonsRatios: I,
-        densities: M,
+        densities: x,
         areas: V,
         momentsOfInertiaY: F,
         momentsOfInertiaZ: k,
-        torsionalConstants: p,
+        torsionalConstants: M,
         shearModuli: D
       };
       try {
@@ -342,10 +342,10 @@ let __tla = Promise.all([
       } catch (t) {
         console.error("[EndPlate] solver error:", t == null ? void 0 : t.message);
       }
-      const j = [], xe = new K({
+      const j = [], pe = new K({
         color: 4473924,
         metalness: 0.8
-      }), Me = new K({
+      }), xe = new K({
         color: 2236962
       }), oe = e.tp + e.tf_col + 0.02, ae = +e.d_beam / 2 + e.pf, ne = +e.d_beam / 2 - e.pf, se = -e.d_beam / 2 - e.pf, le = -e.d_beam / 2 + e.pf, me = +e.d_beam / 2 + e.pf * 2, ce = -e.d_beam / 2 - e.pf * 2, C = -e.g / 2, R = +e.g / 2, r = A - e.tp / 2 - 5e-3, re = [
         [
@@ -407,25 +407,25 @@ let __tla = Promise.all([
         ce
       ]);
       for (const [t, o, n] of re) {
-        const a = new Q(new fe(e.d_bolt / 2, e.d_bolt / 2, oe, 12), xe);
+        const a = new Q(new fe(e.d_bolt / 2, e.d_bolt / 2, oe, 12), pe);
         a.rotation.z = Math.PI / 2, a.position.set(t, o, n), j.push(a);
-        const m = new Q(new fe(e.d_bolt * 0.85, e.d_bolt * 0.85, e.d_bolt * 0.8, 6), Me);
+        const m = new Q(new fe(e.d_bolt * 0.85, e.d_bolt * 0.85, e.d_bolt * 0.8, 6), xe);
         m.rotation.z = Math.PI / 2, m.position.set(t + oe / 2 + 5e-3, o, n), j.push(m);
       }
-      const pe = Math.min(e.d_beam / 2, 3 * e.bf_beam), ge = new K({
+      const Me = Math.min(e.d_beam / 2, 3 * e.bf_beam), ge = new K({
         color: 16720384,
         emissive: 5574912,
         transparent: true,
         opacity: 0.7
       }), ie = new Q(new Fe(Math.min(e.bf_beam, e.d_beam) * 0.25, 16, 12), ge);
-      ie.position.set(f + pe, 0, 0), j.push(ie), c.objects3D.val = j;
+      ie.position.set(f + Me, 0, 0), j.push(ie), c.objects3D.val = j;
     },
     computedLabels(e) {
-      const c = Math.round(e.config), i = c === 0 ? "4E (Unstiffened)" : c === 1 ? "4ES (Stiffened)" : "8ES", _ = Math.PI * Math.pow(e.d_bolt / 2, 2), x = c === 2 ? 8 : 4, N = 0.75, I = 0.6 * e.Fu_bolt * _, M = N * I * (x / 2), V = e.bf_beam * e.tf_beam * (e.d_beam - e.tf_beam) + e.tw_beam * Math.pow(e.d_beam - 2 * e.tf_beam, 2) / 4, F = e.Fy * V, k = 1.1 * 1.2 * F, p = k / Math.max(e.d_beam, 0.1), D = Math.min(e.d_beam / 2, 3 * e.bf_beam), E = Math.sqrt(1.11 * 1.2 * F / (0.9 * e.Fy * (e.bp / 2)));
+      const c = Math.round(e.config), i = c === 0 ? "4E (Unstiffened)" : c === 1 ? "4ES (Stiffened)" : "8ES", _ = Math.PI * Math.pow(e.d_bolt / 2, 2), p = c === 2 ? 8 : 4, N = 0.75, I = 0.6 * e.Fu_bolt * _, x = N * I * (p / 2), V = e.bf_beam * e.tf_beam * (e.d_beam - e.tf_beam) + e.tw_beam * Math.pow(e.d_beam - 2 * e.tf_beam, 2) / 4, F = e.Fy * V, k = 1.1 * 1.2 * F, M = k / Math.max(e.d_beam, 0.1), D = Math.min(e.d_beam / 2, 3 * e.bf_beam), E = Math.sqrt(1.11 * 1.2 * F / (0.9 * e.Fy * (e.bp / 2)));
       return {
         "\u2500\u2500 Configuraci\xF3n AISC 358 \xA76 \u2500\u2500": "",
         Tipo: i,
-        "Pernos totales": `${x} (${x / 2} arriba + ${x / 2} abajo)`,
+        "Pernos totales": `${p} (${p / 2} arriba + ${p / 2} abajo)`,
         "\u2500\u2500 Geometr\xEDa End Plate \u2500\u2500": "",
         "Sh (r\xF3tula pl\xE1stica)": `${(D * 1e3).toFixed(0)} mm desde cara col`,
         "bp \xD7 hp \xD7 tp": `${(e.bp * 1e3).toFixed(0)} \xD7 ${(e.hp * 1e3).toFixed(0)} \xD7 ${(e.tp * 1e3).toFixed(0)} mm`,
@@ -434,7 +434,7 @@ let __tla = Promise.all([
         "\u2500\u2500 Capacidades \u2500\u2500": "",
         "Mp viga": `${F.toFixed(0)} kN\xB7m`,
         "M_pr (Cpr\xB7Ry\xB7Mp)": `${k.toFixed(0)} kN\xB7m`,
-        "T demanda": `${p.toFixed(0)} kN`,
+        "T demanda": `${M.toFixed(0)} kN`,
         "\u2500\u2500 Espesor placa \xA76.7 \u2500\u2500": "",
         "tp requerido (Yc)": `${(E * 1e3).toFixed(1)} mm`,
         "tp dado": `${(e.tp * 1e3).toFixed(1)} mm`,
@@ -442,10 +442,10 @@ let __tla = Promise.all([
         "\u2500\u2500 Pernos \xA76.7 \u2500\u2500": "",
         [`A_b (\xD8 ${(e.d_bolt * 1e3).toFixed(0)} mm)`]: `${(_ * 1e6).toFixed(0)} mm\xB2`,
         "\u03C6Rn por perno": `${(N * I).toFixed(1)} kN`,
-        "\u03A3\u03C6Rn (N/2 pernos por pat\xEDn)": `${M.toFixed(0)} kN`,
-        "Ratio T/\u03A3\u03C6Rn": `${(p / M).toFixed(3)} ${p <= M ? "\u2713" : "\u2717"}`,
+        "\u03A3\u03C6Rn (N/2 pernos por pat\xEDn)": `${x.toFixed(0)} kN`,
+        "Ratio T/\u03A3\u03C6Rn": `${(M / x).toFixed(3)} ${M <= x ? "\u2713" : "\u2717"}`,
         "\u2500\u2500 Dictamen \u2500\u2500": "",
-        Status: e.tp >= E && p <= M ? `\u2713 PASA ${i}` : "\u2717 REVISAR"
+        Status: e.tp >= E && M <= x ? `\u2713 PASA ${i}` : "\u2717 REVISAR"
       };
     }
   };
