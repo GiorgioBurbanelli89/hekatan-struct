@@ -475,6 +475,20 @@ const viewerEl = getViewer({
   },
 });
 
+const benchmarkPanel = document.createElement("div");
+benchmarkPanel.style.cssText = "position:fixed;top:8px;right:8px;background:rgba(20,20,20,0.92);color:#ddd;font:11px/1.4 ui-monospace,Menlo,monospace;padding:10px 14px;border-radius:6px;border:1px solid #444;z-index:9999;min-width:280px;max-width:360px;";
+benchmarkPanel.innerHTML = `
+  <div style="font-weight:bold;color:#ffaa00;margin-bottom:4px;">🧪 BENCHMARK — placa-base-h (CBFEM)</div>
+  <ul style="margin:0;padding-left:16px;">
+    <li style="color:#aaa">⚠ AISC 360-22 §J8 (column base plate strength)</li>
+    <li style="color:#aaa">⚠ ACI 318-22 §17 (anchor bolt design)</li>
+    <li style="color:#7eff7e">✓ Soldadura alma-patines (nodos compartidos en y=0)</li>
+    <li style="color:#7eff7e">✓ Pernos parametrizados nBoltsX × nBoltsY</li>
+    <li style="color:#aaa">📊 IDEA StatiCa CBFEM (visual reference)</li>
+  </ul>
+`;
+document.body.append(benchmarkPanel);
+
 document.body.append(
   getParameters(parameters),
   viewerEl,

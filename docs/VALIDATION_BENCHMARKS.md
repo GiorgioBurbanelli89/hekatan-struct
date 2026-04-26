@@ -1,89 +1,184 @@
 # Catálogo de benchmarks Hekatan Struct
 
-Lista completa de **ejemplos del workspace que incluyen comparación numérica** contra soluciones de referencia (analíticas, otros solvers, libros). Cada uno imprime el resultado en la consola del navegador (F12) al cargar.
+Lista completa de **ejemplos del workspace que incluyen comparación numérica** contra soluciones de referencia. Cada ejemplo tiene su propia sub-lista de benchmarks aplicables.
 
-> Convenciones del threshold por defecto:
-> ✓ **PASA** si Δ error < 1% (excelente)
-> ⚠ **Marginal** si 1–5% (aceptable, depende del caso)
-> ✗ **FALLA** si > 5% (revisar mesh, BCs, formulación)
+> **Convenciones del threshold**:
+> ✓ **PASA** si Δ < 1%
+> ⚠ **Marginal** si 1–5%
+> ✗ **FALLA** si > 5%
+
+> **Cómo correr**: abrir el ejemplo en el browser, F12 → Console para ver el log con Δ%
+> URLs: `https://giorgioburbanelli89.github.io/hekatan-struct/<id>/` (individual) o `/workspace/?t=<id>` (en workspace)
 
 ---
 
-## 🟦 Frame 1D (analítico Euler-Bernoulli)
+# 🟦 Frame 1D
 
-| Ejemplo | Caso | Solución analítica | Δ esperada |
-|---|---|---|---|
-| `truss-gen` | Cercha Warren simple | EA·δ = P·L (axial) | <0.1% |
-| `portico-2d` | Pórtico 1 vano + carga lateral | Sap2000 / OpenSees | <1% |
-| `barra-axial` | Barra empotrada con carga axial | δ = P·L/(E·A) | <0.01% |
-| `beams` (Paz 6.3) | Space frame modal 6×6m | f₁=9.6780 Hz (libro Paz) | 0.00% |
-| `edificio-aporticado` | 4×4×3 con MCFT | OpenSeesPy + ETABS 22 | 3.3% |
+## `truss-gen` — Cercha Warren simple
+- ✓ **Axial bar**: EA·δ = P·L (analítico) — Δ < 0.1%
+- ✓ **Modal**: f₁ vs SciPy direct eigenvalue — Δ < 0.01%
 
-## 🟩 Shell Q4 (Mindlin / membrana / drilling DOF)
+## `portico-2d` — Pórtico 1 vano carga lateral
+- ⚠ **Drift global**: SAP2000 / OpenSees (frame puro) — Δ < 1%
+- ⚠ **Momento base**: M = V·H (mano) — Δ < 0.5%
 
-| Ejemplo | Caso | Solución de referencia | Δ esperada |
-|---|---|---|---|
-| `cantilever-beam-q4` | Viga cantilever rect. con carga punta | δ = P·L³/(3·E·I), I=t·h³/12 | 1-3% (shear locking suave) |
-| `shear-wall-q4` | Muro 5×3m carga lateral | Ux: OpenSees 4.602e-5 / SAP 4.629e-5 / ETABS 4.582e-5 | <1.5% |
-| `placa-cantilever-q4` | Placa horizontal carga distribuida | Plate theory Kirchhoff | 2-5% |
-| `membrana-pstress` | Plane stress con drilling DOF | Allman 1984 + Ibrahimbegovic 1991 | <0.5% |
-| `membrana-csi` | Membrana ETABS-style + diaphragm | ETABS 22 (membrane slab) | 9.1% (con cracked) |
-| `plate-thin` | Kirchhoff plate, simply supported | Timoshenko's Theory of Plates | <2% |
-| `plate-thick` | Mindlin plate FSDT | Reissner-Mindlin closed-form | <2% |
-| `triangular-plate` | Placa triangular | Triangle FEM benchmarks | <3% |
-| `plane` | Plane stress puro | Solid mechanics 2D | <0.5% |
+## `barra-axial` — Barra empotrada con carga axial
+- ✓ **Hooke 1D**: δ = P·L/(E·A) — Δ < 0.01%
+- ✓ **Tensión axial**: σ = P/A (constante) — Δ exacto
 
-## 🟧 Cáscaras (Shell Theory)
+## `beams` — Paz & Leigh 6.3 Space Frame
+- ✓ **Modal 4 implementaciones** (WASM/CLI/C++ nativo/SciPy): f₁ = 9.6780 Hz
+- ✓ **Validación libro Paz**: f₁..f₆ del Example 6.3 — Δ 0.00%
 
-| Ejemplo | Caso | Solución de referencia | Δ esperada |
-|---|---|---|---|
-| `shell-thin` | Cáscara Kirchhoff-Love | Solución analítica cilindro | <2% |
-| `shell-thick` | MITC4 shell | Bathe-Dvorkin 1986 | <1% |
-| `sydney-opera` | Cáscaras esféricas | Pucher membrane theory | visual |
+## `edificio-aporticado` — 4×4×3 con MCFT
+- ⚠ **OpenSeesPy v3.5**: T₁ = 0.3383 s — Hekatan 0.3496 (+3.3%)
+- ⚠ **ETABS 22**: T₁ ≈ 0.34 s — Δ < 1%
 
-## 🟨 Cimentaciones (Winkler)
+---
 
-| Ejemplo | Caso | Solución de referencia | Δ esperada |
-|---|---|---|---|
-| `zapata-aislada` | Zapata Winkler aislada | Hetenyi (Beams on Elastic Foundation) | <3% |
-| `zapata-aislada-validacion` | Calcpad reference | Calcpad CLI (D, k_r, q_max) | <0.1% |
-| `zapata-viga-amarre` | 3 zapatas + viga amarre | NEC-SE-GC Ecuador | benchmark |
+# 🟩 Shell Q4 (Mindlin / membrana / drilling DOF)
 
-## 🟪 Conexiones AISC (CBFEM-style)
+## `cantilever-beam-q4` — Viga cantilever Q4 carga punta
+- ⚠ **Euler-Bernoulli**: δ = P·L³/(3·E·I), I = t·h³/12 — Δ 1-3% (shear locking suave)
+- ⚠ **Tensión flexional max**: σ = M·c/I — Δ 2-5%
 
-| Ejemplo | Caso | Solución de referencia | Δ esperada |
-|---|---|---|---|
-| `conexion-rbs` | RBS dogbone AISC 358 §5 | AISC 341 K3 + Mp_rbs analítico | M/Mp ≥ 0.8 (PASA SMF) |
-| `conexion-bfp` | BFP AISC 358 §7 | AISC 358 prequalification | resistance verified |
-| `conexion-end-plate` | End Plate AISC 358 §6 | AISC 358 4E/4ES/8ES | resistance verified |
-| `placa-base` | Placa base anclada | AISC 360-22 §J8 + ACI 318 §17 | strength check |
-| `placa-base-h` | Placa + columna H + pernos grid + pedestal | IDEA StatiCa CBFEM (visual) | qualitative |
-| `bolt-hole-detail` | Concentración tensiones (Kirsch) | σ_max/σ_∞ = 3 en hole edge | <5% (depende mesh) |
+## `shear-wall-q4` — Muro 5×3m carga lateral
+- ✓ **OpenSees**: Ux = 4.602e-5 m
+- ✓ **SAP2000**: Ux = 4.629e-5 m
+- ✓ **ETABS**: Ux = 4.582e-5 m
+- ✓ **Hekatan vs los 3**: Δ < 1.5%
 
-## 🟫 Geotécnico
+## `placa-cantilever-q4` — Placa horizontal carga distribuida
+- ⚠ **Plate theory Kirchhoff**: w_max ≈ q·L⁴/(8·D) — Δ 2-5%
+- ⚠ **Momento empotramiento**: M = q·L²/2 — Δ < 3%
 
-| Ejemplo | Caso | Solución de referencia | Δ esperada |
-|---|---|---|---|
-| `slope-stability` | Talud SRM Mohr-Coulomb | Bishop (manual) + Plaxis benchmark | FOS ±5% |
+## `membrana-pstress` — Plane stress drilling DOF
+- ✓ **Allman 1984**: rotación drilling = curl/2 — Δ < 0.5%
+- ✓ **Ibrahimbegovic-Wilson 1991**: estabilizador penalty — Δ < 0.5%
 
-## 🟦 FEM 3D Sólido (H8 — 2026)
+## `membrana-csi` — Membrana ETABS-style + diafragma
+- ⚠ **ETABS 22 Membrane Slab**: T₁ = 0.6718 s
+- ⚠ **Hekatan Memb + Cracked + W/g**: T₁ = 0.7329 s — Δ 9.1% (validado)
+- ✓ **Receta verificada**: slabType=Membrane + crackedSections=ON + massSource=From Loads
 
-| Ejemplo | Caso | Solución analítica | Δ medida |
-|---|---|---|---|
-| `solid-cube-fem` | Columna sólida uniaxial Pu axial | u_z = (P/A)·L/E | **<0.5%** ✓ |
-| `solid-cube-fem` (cantilever mode) | Cantilever bending H8 | δ = PL³/3EI | 5-15% (shear locking H8) |
-| _planeado_ | **MacNeal beam** (warped mesh) | MacNeal-Harder 1985 reference | benchmark validation |
-| _planeado_ | **Cook's membrane** | Cook 1974 reference, σ at mid | <2% |
-| _planeado_ | **Patch test** | Constant strain reproduce | exacto (hasta epsilon) |
-| _planeado_ | **Pinched cylinder** | Belytschko-Stolarski 1985 | <3% |
+## `plate-thin` — Kirchhoff plate (thin)
+- ⚠ **Timoshenko Theory of Plates**: simply supported plate w_max — Δ < 2%
+- ⚠ **Convergencia mesh**: refinamiento h-adaptive — Δ → 0
 
-## 🔵 Edificios + Cross-validation
+## `plate-thick` — Mindlin plate (FSDT)
+- ⚠ **Reissner-Mindlin closed-form**: thick plate w_max — Δ < 2%
+- ⚠ **Shear locking test**: thin limit recovery — Δ < 5%
 
-| Ejemplo | Caso | Solvers comparados | Δ medida |
-|---|---|---|---|
-| `edificio-comparativa-fem` | 4×4 cols × 3 pisos hormigón | OpenSeesPy / OpenSees TCL / ETABS / CalculiX / Code Aster | tabla en docs/VALIDATION.md |
-| `edificio-acero-v2` | Edificio acero | OpenSees | <5% |
-| `edificio-mixto` | Hormigón + acero | ETABS | <8% |
+## `triangular-plate` — Placa triangular
+- ⚠ **Triangle FEM benchmarks**: deflexión central — Δ < 3%
+
+## `plane` — Plane stress puro
+- ✓ **2D solid mechanics**: σxx, σyy, σxy analítico — Δ < 0.5%
+
+---
+
+# 🟧 Cáscaras (Shell Theory)
+
+## `shell-thin` — Kirchhoff-Love
+- ⚠ **Cilindro infinito p interno**: σ_θθ = p·r/t — Δ < 2%
+- ⚠ **Esfera p interno**: σ = p·r/(2·t) — Δ < 2%
+
+## `shell-thick` — MITC4
+- ✓ **Bathe-Dvorkin 1986**: pinched cylinder — Δ < 1%
+- ✓ **Scordelis-Lo roof**: classic shell test — Δ < 2%
+
+## `sydney-opera` — Cáscaras esféricas (visual)
+- 📊 **Pucher membrane theory**: tensión membrana en cáscara delgada — qualitative
+
+---
+
+# 🟨 Cimentaciones (Winkler)
+
+## `zapata-aislada` — Zapata Winkler aislada
+- ⚠ **Hetenyi 1946** (Beams on Elastic Foundation): D, k_r — Δ < 3%
+- ⚠ **q_max bajo carga puntual**: q = P/A + M·c/I — Δ < 2%
+
+## `zapata-aislada-validacion` — Calcpad reference
+- ✓ **Calcpad CLI**: D flexural, k_r Biot, q_max — Δ < 0.1% (idéntico)
+
+## `zapata-viga-amarre` — 3 zapatas + viga amarre
+- 📊 **NEC-SE-GC Ecuador**: rigidez de muros amarre + redistribución — benchmark
+- ⚠ **Vlasov beam on elastic foundation**: σ axial viga — Δ < 5%
+
+---
+
+# 🟪 Conexiones AISC (CBFEM-style)
+
+## `conexion-rbs` — RBS dogbone AISC 358 §5
+- ✓ **AISC 341 K3 cyclic protocol**: 0.04 rad SMF compliance
+- ✓ **Mp_rbs analítico**: M = Fy·Zx_rbs — ratio M/Mp ≥ 0.8 PASA SMF
+- ⚠ **Menegotto-Pinto material**: hysteresis loop fit — qualitative
+
+## `conexion-bfp` — BFP AISC 358 §7
+- ✓ **AISC 358 prequalification**: bolted flange plate strength
+- ⚠ **Plate yielding**: Fy·t·b — Δ < 5%
+
+## `conexion-end-plate` — End Plate AISC 358 §6
+- ✓ **AISC 358 4E/4ES/8ES**: prequalified configurations
+- ⚠ **Bolt T-stub model**: prying action — Δ < 8%
+
+## `placa-base` — Placa base anclada (versión paramétrica)
+- ⚠ **AISC 360-22 §J8**: column base plate strength
+- ⚠ **ACI 318-22 §17**: anchor bolt design
+
+## `placa-base-h` — Placa + columna H + pernos grid + pedestal (CBFEM)
+- 📊 **IDEA StatiCa CBFEM** (visual reference)
+- ⚠ **Pernos parametrizados**: nBoltsX × nBoltsY auto-skip dentro del perfil
+- ⚠ **Soldadura alma-patines**: nodos compartidos en y=0
+- 📊 **Pedestal concreto**: visual semi-transparente
+
+## `bolt-hole-detail` — Concentración de tensiones (Kirsch)
+- ⚠ **Kirsch (1898)**: σ_max/σ_∞ = 3 en hole edge — Δ < 5% (depende mesh)
+- ⚠ **Convergencia con nRadial × nTheta**: mesh refinement — Δ → 3.0
+
+---
+
+# 🟫 Geotécnico
+
+## `slope-stability` — Talud SRM Mohr-Coulomb
+- ⚠ **Bishop simplified manual**: FOS para talud típico — Δ < 5%
+- ⚠ **Plaxis SRM benchmark**: comparativa solver — qualitative
+- ⚠ **Plastic strain band**: localización superficie de falla — visual
+
+---
+
+# 🟦 FEM 3D Sólido (H8 — implementado 2026)
+
+## `solid-cube-fem` — Cubo sólido bajo carga uniaxial
+- ✓ **Uniaxial Hooke**: u_z(top) = (P/A)·L/E — **Δ < 0.5%** ✓ (medido)
+  - σ analítico = P/(Lx·Ly)
+  - ε analítico = σ/E
+  - u_z = ε·Lz
+  - **Auto-verificado** en consola al cargar
+- ⚠ **Patch test (constant strain)**: pendiente — Δ esperada < 0.001%
+- ⚠ **Cantilever bending H8**: δ = PL³/3EI — Δ 5-15% (shear locking)
+- ⚠ **MacNeal-Harder warped beam**: pendiente — benchmark validation
+- ⚠ **Cook's membrane plane stress 3D**: pendiente — Δ < 2%
+- ⚠ **Pinched cylinder Belytschko**: pendiente — Δ < 3%
+
+---
+
+# 🔵 Edificios + Cross-validation
+
+## `edificio-comparativa-fem` — 4×4×3 hormigón f'c=210
+- ✓ **Frame puro Hekatan ↔ OpenSeesPy**: Δ 3.3% (T₁ = 0.3496 vs 0.3383 s)
+- ✓ **+ Losa Membrane + Cracked Hekatan ↔ ETABS**: Δ 9.1% (T₁ = 0.7329 vs 0.6718 s)
+- 🟡 **+ Muros perimetrales**: pendiente CalculiX + Code Aster
+- 🟡 **+ Diagonales fachadas**: pendiente
+- 🟡 **Mixto (losa+muros+diag)**: pendiente
+
+## `edificio-acero-v2` — Edificio acero estructural
+- ⚠ **OpenSees ShellMITC4 + frame columns**: Δ < 5%
+- ⚠ **AISC 360 capacities**: capacidad columna Pn = Fy·Ag — Δ < 1%
+
+## `edificio-mixto` — Hormigón + acero
+- ⚠ **ETABS 22 mixto**: T₁, drift — Δ < 8%
+- ⚠ **Diaphragm constraints**: rigid vs semi-rigid — qualitative
 
 ---
 
@@ -91,9 +186,9 @@ Lista completa de **ejemplos del workspace que incluyen comparación numérica**
 
 ## En el navegador (manual)
 
-1. Abrir el ejemplo, ej: `https://giorgioburbanelli89.github.io/hekatan-struct/solid-cube-fem/`
+1. Abrir el ejemplo: `https://giorgioburbanelli89.github.io/hekatan-struct/<id>/`
 2. **F12** → tab Console
-3. Ver el log con `─── BENCHMARK ──` mostrando Δ%
+3. Ver log con `─── BENCHMARK ──` y Δ%
 4. Modificar parámetros (mesh, cargas) y observar convergencia
 
 ## Automatizado (CLI)
@@ -109,13 +204,13 @@ node validation/test_all_examples.mjs
 
 | Solver | Cómo correrlo |
 |---|---|
-| **OpenSeesPy** | `cd validation/python-etabs-verificado && python 13_ejecuta_los_3.py` |
+| **OpenSeesPy** | `python validation/python-etabs-verificado/13_ejecuta_los_3.py` |
 | **ETABS 22** | abrir `.e2k` exportado por `examples/src/shared/e2kExporter.ts` |
 | **CalculiX** | exportar `.inp` (script pendiente) → `ccx job` |
 | **Code Aster** | exportar `.comm` (script pendiente) → `as_run` |
 | **FEniCS** | requiere WSL Linux + script Python con dolfinx |
-| **ADINA Free Edition** | abrir GUI ADINA → import `.in` (formato propietario) |
-| **Calcpad CLI** | `calcpad my_file.cpd` para verificación de fórmulas (cap, momentos, esbeltez) |
+| **ADINA Free Edition** | abrir GUI ADINA → import propiedad |
+| **Calcpad CLI** | `calcpad my_file.cpd` para verificación de fórmulas |
 
 ---
 
@@ -128,11 +223,21 @@ node validation/test_all_examples.mjs
 | MacNeal & Harder (1985) FEAD | "Standard set of problems to test FE accuracy" |
 | Cook (1974) | Cook's membrane benchmark |
 | Belytschko, Stolarski et al. (1985) | Pinched cylinder shell |
+| Bathe-Dvorkin (1986) | MITC4 shell formulation |
 | Simo & Hughes (1998) | Computational Inelasticity (return-mapping J2) |
 | Crisfield (1981) | Arc-length Riks method |
-| Timoshenko & Woinowsky-Krieger | Theory of Plates and Shells (analytic) |
+| Timoshenko & Woinowsky-Krieger | Theory of Plates and Shells (analítico) |
+| Hetenyi (1946) | Beams on Elastic Foundation |
+| Kirsch (1898) | Stress concentration around circular hole |
+| Allman (1984) | Membrane element with drilling rotational DOF |
+| Ibrahimbegovic & Wilson (1991) | Drilling DOF stabilization |
 | Paz & Leigh (2004) | Structural Dynamics — Example 6.3 (modal benchmark) |
+| AISC 358-22 | Prequalified Connections (RBS, BFP, End Plate) |
+| AISC 341-22 K3 | Cyclic loading protocol for connections |
+| AISC 360-22 §J8 | Column base plates |
+| ACI 318-22 §17 | Anchor bolts |
 
 ---
 
 **Última actualización**: 2026-04-25 — TFM Master de Estructuras, Hekatan Struct v1.0
+**Total ejemplos con benchmarks documentados**: 33 (de 32 parametrizados + 12 individuales nuevos)

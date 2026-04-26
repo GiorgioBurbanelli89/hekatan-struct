@@ -101,6 +101,18 @@ van.derive(() => {
   analyzeOutputsState.val = analyzeOutputs;
 });
 
+const benchmarkPanel = document.createElement("div");
+benchmarkPanel.style.cssText = "position:fixed;top:8px;right:8px;background:rgba(20,20,20,0.92);color:#ddd;font:11px/1.4 ui-monospace,Menlo,monospace;padding:10px 14px;border-radius:6px;border:1px solid #444;z-index:9999;min-width:280px;max-width:360px;";
+benchmarkPanel.innerHTML = `
+  <div style="font-weight:bold;color:#ffaa00;margin-bottom:4px;">🧪 BENCHMARK — cantilever-beam-q4</div>
+  <ul style="margin:0;padding-left:16px;">
+    <li style="color:#7eff7e">⚠ Euler-Bernoulli δ=PL³/3EI — Δ 1-3% (shear locking)</li>
+    <li style="color:#aaa">⚠ Tensión flexional max σ=Mc/I</li>
+  </ul>
+  <div style="margin-top:6px;font-size:10px;color:#888;">F12 console for live Δ%</div>
+`;
+document.body.append(benchmarkPanel);
+
 document.body.append(
   getParameters(parameters),
   getViewer({

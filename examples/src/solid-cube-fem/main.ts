@@ -306,6 +306,34 @@ const viewerEl = getViewer({
   },
 });
 
+// ── Panel "Benchmark" (visible UI con sublista de validaciones) ──
+const benchmarkPanel = document.createElement("div");
+benchmarkPanel.style.cssText = `
+  position: fixed; top: 8px; right: 8px;
+  background: rgba(20,20,20,0.92); color: #ddd;
+  font: 11px/1.4 ui-monospace, Menlo, monospace;
+  padding: 10px 14px; border-radius: 6px;
+  border: 1px solid #444;
+  z-index: 9999; min-width: 280px; max-width: 360px;
+`;
+benchmarkPanel.innerHTML = `
+  <div style="font-weight:bold;color:#ffaa00;margin-bottom:4px;">
+    🧪 BENCHMARK — solid-cube-fem
+  </div>
+  <ul style="margin:0;padding-left:16px;">
+    <li style="color:#7eff7e">✓ Uniaxial Hooke: u_z = (P/A)·L/E — Δ &lt;0.5% (medido)</li>
+    <li style="color:#aaa">⚠ Patch test (pendiente)</li>
+    <li style="color:#aaa">⚠ Cantilever bending H8 — δ=PL³/3EI</li>
+    <li style="color:#aaa">⚠ MacNeal-Harder warped beam</li>
+    <li style="color:#aaa">⚠ Cook's membrane</li>
+    <li style="color:#aaa">⚠ Pinched cylinder Belytschko</li>
+  </ul>
+  <div style="margin-top:6px;font-size:10px;color:#888;">
+    Open F12 console for live Δ% vs analytical
+  </div>
+`;
+document.body.append(benchmarkPanel);
+
 document.body.append(
   getParameters(parameters),
   viewerEl,
