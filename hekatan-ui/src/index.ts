@@ -1,7 +1,9 @@
 export type { Parameters } from "./parameters/getParameters";
 export type { Drawing } from "./viewer/drawing/drawing";
 
-export { getViewer, colorMapUnit, colorMapForceUnit, colorMapDispUnit, fixedColorMapRange } from "./viewer/getViewer";
+export { getViewer, colorMapUnit, colorMapForceUnit, colorMapDispUnit, colorMapStressUnit, fixedColorMapRange } from "./viewer/getViewer";
+export type { StressUnit } from "./viewer/getViewer";
+export { makeDraggablePane, enableDraggableAllPanes } from "./viewer/settings/makeDraggable";
 export { getParameters } from "./parameters/getParameters";
 export { getTables } from "./tables/getTables";
 export { getTable } from "./table/getTable";

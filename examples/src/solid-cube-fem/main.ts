@@ -29,7 +29,7 @@ import { hex8Solve, type Vec3, type Hex8 } from "./h8";
 import {
   Node, Element, NodeInputs, ElementInputs, DeformOutputs, AnalyzeOutputs,
 } from "hekatan-fem";
-import { getToolbar, getParameters, Parameters, getViewer, colorMapForceUnit, colorMapDispUnit } from "hekatan-ui";
+import { getToolbar, getParameters, Parameters, getViewer, colorMapForceUnit, colorMapDispUnit, colorMapStressUnit, enableDraggableAllPanes } from "hekatan-ui";
 
 // Defaults aligned para que beam-grid coincida con column-grid (dedup limpio)
 const parameters: Parameters = {
@@ -520,17 +520,38 @@ fP.addBinding(benchObj, "L_beam",  { readonly: true, label: "L_beam (m)",  forma
 fP.addBinding(benchObj, "P",       { readonly: true, label: "P tip (kN)",  format: fmtFix });
 fP.addBinding(benchObj, "elapsed", { readonly: true, label: "Solve (ms)",  format: (v: number) => v.toFixed(0) });
 
-// ── Folder Unidades: cambia unidades del color map (force kN/tonf/kip, disp m/mm/cm) ──
+// ── Folder Unidades: cambia unidades del color map ──
+//   Stress: dropdown propio con MPa, kPa, kgf/cm², ksi, etc. (sólidos)
+//   Disp:   m / cm / mm / µm (sólidos: ux/uy/uz)
+//   Force:  kN / tonf / kip  (afecta shells y frames legacy, no sólidos)
 const fUnits = benchPane.addFolder({ title: "Unidades color map", expanded: true });
-const unitsObj = { force: colorMapForceUnit.val, disp: colorMapDispUnit.val };
-fUnits.addBinding(unitsObj, "force", {
-  options: { kN: "kN", tonf: "tonf", kip: "kip" },
-  label: "Fuerza/tensión",
-}).on("change", (e) => { colorMapForceUnit.val = e.value as any; });
+const unitsObj = {
+  stress: colorMapStressUnit.val,
+  disp: colorMapDispUnit.val,
+  force: colorMapForceUnit.val,
+};
+fUnits.addBinding(unitsObj, "stress", {
+  // Keys === valores (Tweakpane v4 usa keys como labels y values al mismo tiempo).
+  options: {
+    "kN/m²":   "kN/m²",
+    "kPa":     "kPa",
+    "MPa":     "MPa",
+    "GPa":     "GPa",
+    "kgf/cm²": "kgf/cm²",
+    "tonf/m²": "tonf/m²",
+    "ksi":     "ksi",
+    "psi":     "psi",
+  },
+  label: "Tensión σ/τ",
+}).on("change", (e) => { colorMapStressUnit.val = e.value as any; });
 fUnits.addBinding(unitsObj, "disp", {
   options: { m: "m", cm: "cm", mm: "mm", "µm": "µm" },
-  label: "Desplazamiento",
+  label: "Desplazamiento u",
 }).on("change", (e) => { colorMapDispUnit.val = e.value as any; });
+fUnits.addBinding(unitsObj, "force", {
+  options: { kN: "kN", tonf: "tonf", kip: "kip" },
+  label: "Fuerza (shells)",
+}).on("change", (e) => { colorMapForceUnit.val = e.value as any; });
 
 const fNotes = benchPane.addFolder({ title: "Pendientes", expanded: false });
 const notesEl = document.createElement("div");
@@ -573,6 +594,10 @@ document.body.append(
       "https://github.com/GiorgioBurbanelli89/hekatan-struct/blob/main/examples/src/solid-cube-fem/main.ts",
   }),
 );
+
+// Hace TODOS los Tweakpanes desplazables (Settings, Parameters, Benchmark, ...)
+// arrastrando por su barra de título (.tp-rotv_t).
+setTimeout(() => enableDraggableAllPanes(), 200);
 
 setTimeout(() => {
   const ctx = (viewerEl as any).__ctx;

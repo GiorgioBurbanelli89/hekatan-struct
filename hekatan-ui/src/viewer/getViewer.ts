@@ -408,10 +408,38 @@ export const colorMapForceUnit: State<"kN" | "tonf" | "kip"> = van.state("kN");
  */
 export const colorMapDispUnit: State<"mm" | "cm" | "m" | "in"> = van.state("mm");
 
+/**
+ * Unidad de TENSIÓN/STRESS para resultados sólidos (σxx, τxy, vonMises, ...).
+ * Independiente de forceUnit porque las tensiones son força/área y los
+ * ingenieros prefieren unidades compuestas estándar (MPa, ksi, kgf/cm²)
+ * en lugar de combinar manualmente force + length.
+ */
+export type StressUnit = "kN/m²" | "kPa" | "MPa" | "GPa" | "kgf/cm²" | "tonf/m²" | "ksi" | "psi";
+export const colorMapStressUnit: State<StressUnit> = van.state("kN/m²");
+
 // Factores de conversión (mismos que units.ts del workspace, duplicados acá
 // porque hekatan-ui es un paquete independiente y no debe importar de examples/).
 const FORCE_FACTORS = { kN: 1, tonf: 9.80665, kip: 4.4482216 };
 const DISP_FACTORS = { mm: 1000, cm: 100, m: 1, in: 39.3700787402 };
+
+// Stress conversion: 1 kN/m² × STRESS_FACTORS[unit] = valor en `unit`
+//   1 kN/m² = 1 kPa
+//   1 MPa  = 1000 kPa = 1000 kN/m² = 1 N/mm²
+//   1 GPa  = 1e6 kN/m²
+//   1 kgf/cm² = 98.0665 kN/m²    (1 kgf = 9.80665 N)
+//   1 tonf/m² = 9.80665 kN/m²
+//   1 psi  = 6.89476 kN/m²
+//   1 ksi  = 6894.76 kN/m²
+const STRESS_FACTORS: Record<StressUnit, number> = {
+  "kN/m²":   1,
+  "kPa":     1,
+  "MPa":     1 / 1000,
+  "GPa":     1 / 1e6,
+  "kgf/cm²": 1 / 98.0665,
+  "tonf/m²": 1 / 9.80665,
+  "psi":     1 / 6.89476,
+  "ksi":     1 / 6894.76,
+};
 
 function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
   // Init
@@ -523,29 +551,29 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
                           solidField === "tauXY"   || solidField === "tauYZ"   || solidField === "tauXZ";
     const isSolidDisp = solidField === "ux" || solidField === "uy" || solidField === "uz";
 
+    // Unidad de tensión sólido (independiente de forceUnit: el usuario elige
+    // MPa, kgf/cm², ksi, etc. directamente — más práctico para ingeniería).
+    const sUnit = colorMapStressUnit.val;
+
     // Factor de escala UI: convierte valor SI → valor UI (para mostrar en el legend).
-    // - Disp: multiplica por el factor dispUnit (mm=1000, cm=100, µm=1e6)
-    // - Fuerza/tensión/momento: divide por el factor forceUnit (kN=1, tonf=9.80665, kip=4.44822)
-    //   porque 1 tonf = 9.80665 kN ⇒ X kN = X/9.80665 tonf
+    // - Disp: multiplica por DISP_FACTORS[dUnit] (mm=1000, cm=100, µm=1e6)
+    // - Fuerza/tensión/momento (shells): divide por FORCE_FACTORS[fUnit]
+    // - Solid stress: multiplica por STRESS_FACTORS[sUnit] directamente
     const scale =
-      isSolidStress ? 1 / FORCE_FACTORS[fUnit] :
+      isSolidStress ? STRESS_FACTORS[sUnit] :
       isSolidDisp   ? DISP_FACTORS[dUnit] :
       isDisp        ? DISP_FACTORS[dUnit] :
       (isBending || isMembrane || isStress || isShear) ? 1 / FORCE_FACTORS[fUnit] :
       1;
 
-    // Sufijo de unidad en el legend. Plane-stress real (σ) es kN/m² y
-    // membrane-force (N = σ·t) es kN/m: ambos se distinguen por convención
-    // del ejemplo. Acá asumimos que membrane* = stress (plane Q4) en kN/m².
-    //   - si un ejemplo quiere usar membrane* como FORCE/m, que setee
-    //     analyzeOutputs.colorMapUnitOverride (TODO futuro).
+    // Sufijo de unidad en el legend.
     const unit =
-      isSolidStress ? `${fUnit}/m²` :         // σ, τ, vonMises sólidos
+      isSolidStress ? sUnit :                 // MPa, kPa, kgf/cm², etc.
       isSolidDisp   ? dUnit :                 // ux, uy, uz (m / mm / etc.)
       isDisp        ? dUnit :
       isBending     ? `${fUnit}·m/m` :
-      isMembrane    ? `${fUnit}/m²` :         // stress de plane Q4
-      isStress      ? `${fUnit}/m²` :
+      isMembrane    ? `${fUnit}/m²` :         // stress de plane Q4 (legacy)
+      isStress      ? `${fUnit}/m²` :         // shell vonMises legacy
       isShear       ? `${fUnit}/m` :
       "";
     colorMapUnit.val = unit;
