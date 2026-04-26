@@ -288,7 +288,7 @@ Promise.all([
         o
       ]);
     }
-    const Ft = 4700 * Math.sqrt(ot / 1e3) * 1e3, jt = 0.2, be = Ft / (2 * (1 + jt)), x = 6, b = 6, M = 4, Lt = q / x, Ot = E / b, Me = st / M, r = [];
+    const Ft = 4700 * Math.sqrt(ot / 1e3) * 1e3, jt = 0.2, be = Ft / (2 * (1 + jt)), x = 10, b = 10, M = 6, Lt = q / x, Ot = E / b, Me = st / M, r = [];
     for (let t = 0; t <= M; t++) {
       const e = [];
       for (let a = 0; a <= b; a++) {
@@ -419,7 +419,7 @@ Promise.all([
       deformedShape: false,
       shellResults: "vonMises",
       gridSize: 1,
-      deformScale: 5,
+      deformScale: 1,
       custom3D: true,
       loads: false,
       supports: true,

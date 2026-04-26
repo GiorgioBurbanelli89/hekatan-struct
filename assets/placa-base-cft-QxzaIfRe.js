@@ -294,7 +294,7 @@ Promise.all([
     }
     const ze = [
       ...xt
-    ], bt = 4700 * Math.sqrt(et / 1e3) * 1e3, vt = 0.2, Yt = bt / (2 * (1 + vt)), h = 6, x = 6, b = 4, Jt = Q / h, Ut = tt / x, Ie = pt / b, r = [];
+    ], bt = 4700 * Math.sqrt(et / 1e3) * 1e3, vt = 0.2, Yt = bt / (2 * (1 + vt)), h = 10, x = 10, b = 6, Jt = Q / h, Ut = tt / x, Ie = pt / b, r = [];
     for (let t = 0; t <= b; t++) {
       const e = [];
       for (let a = 0; a <= x; a++) {
@@ -454,7 +454,7 @@ Promise.all([
       deformedShape: false,
       shellResults: "vonMises",
       gridSize: 1,
-      deformScale: 5,
+      deformScale: 1,
       custom3D: true,
       loads: false,
       supports: true,
