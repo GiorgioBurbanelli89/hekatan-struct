@@ -110,6 +110,14 @@ export default defineConfig({
         "solid-cube-fem": "src/solid-cube-fem/index.html",
         // ── Viga doble T ASIMÉTRICA (patines sup/inf independientes) ──
         "viga-doble-t": "src/viga-doble-t/index.html",
+        // ── Columna CFT MIXTA (HSS shells Q4 + concreto H8 sólidos) ──
+        "columna-cft-h8": "src/columna-cft-h8/index.html",
+        // ── Conexión viga-columna con diafragma (Cervantes / CIDECT México) ──
+        "conexion-diafragma-cft": "src/conexion-diafragma-cft/index.html",
+        // ── Placa base con columna HSS hueca + pernos de anclaje ──
+        "placa-base-hueca": "src/placa-base-hueca/index.html",
+        // ── Placa base con columna CFT + pernos de anclaje ──
+        "placa-base-cft": "src/placa-base-cft/index.html",
       },
     },
   },
