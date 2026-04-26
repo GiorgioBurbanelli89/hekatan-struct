@@ -420,15 +420,55 @@ van.derive(() => {
   // entre columna y pedestal (la shell FEM es muy delgada para verse sola).
   const matPlaca = new THREE.MeshStandardMaterial({ color: 0xa0a0a0, metalness: 0.7, roughness: 0.4 });
   const placaMesh = new THREE.Mesh(new THREE.BoxGeometry(B, H, t_plate), matPlaca);
-  placaMesh.position.set(0, 0, t_plate / 2);  // sentada sobre el pedestal (z=0 → t_plate)
+  placaMesh.position.set(0, 0, t_plate / 2);
   objs.push(placaMesh);
+
+  // CARTELAS (stiffeners) triangulares — refuerzo AISC moment-resisting base.
+  // 4 cartelas verticales, una por cada cara del HSS, hacia afuera radialmente.
+  const matStiff = new THREE.MeshStandardMaterial({ color: 0x707070, metalness: 0.6 });
+  const h_stiff = Math.min(0.20, L_col * 0.4);
+  const w_stiff = Math.min(0.10, (B - bc) / 2 * 0.7);
+  const t_stiff = t_col;
+  function addStiffener(faceX: number, faceY: number, dirX: number, dirY: number) {
+    const shape = new THREE.Shape();
+    shape.moveTo(0, 0);                  // esquina interior (col-placa)
+    shape.lineTo(w_stiff, 0);            // borde sobre placa hacia afuera
+    shape.lineTo(0, h_stiff);            // borde subiendo por columna
+    shape.closePath();
+    const geom = new THREE.ExtrudeGeometry(shape, { depth: t_stiff, bevelEnabled: false });
+    const m = new THREE.Mesh(geom, matStiff);
+    m.position.set(faceX - dirX * t_stiff / 2, faceY - dirY * t_stiff / 2, t_plate);
+    if (Math.abs(dirX) > 0.5) {
+      m.rotation.set(Math.PI / 2, dirX > 0 ? 0 : Math.PI, 0);
+    } else {
+      m.rotation.set(Math.PI / 2, -Math.PI / 2, dirY > 0 ? -Math.PI / 2 : Math.PI / 2);
+    }
+    objs.push(m);
+  }
+  addStiffener(0, hc / 2, 0, 1);    // cara +Y
+  addStiffener(0, -hc / 2, 0, -1);  // cara -Y
+  addStiffener(bc / 2, 0, 1, 0);    // cara +X
+  addStiffener(-bc / 2, 0, -1, 0);  // cara -X
+
+  // REBAR longitudinal (4 barras Ø1/2" en esquinas del fill concreto)
+  const matRebar = new THREE.MeshStandardMaterial({ color: 0x884422, roughness: 0.6 });
+  const d_rebar = 0.012;
+  const cover = 0.025;
+  const rx = bc/2 - t_col - cover;
+  const ry = hc/2 - t_col - cover;
+  for (const [bx, by] of [[rx, ry], [-rx, ry], [rx, -ry], [-rx, -ry]] as [number, number][]) {
+    const bar = new THREE.Mesh(
+      new THREE.CylinderGeometry(d_rebar/2, d_rebar/2, L_col, 8), matRebar);
+    bar.position.set(bx, by, L_col / 2 + t_plate);
+    bar.rotation.x = Math.PI / 2;
+    objs.push(bar);
+  }
+
   // Fill de concreto translúcido dentro del HSS (visual)
-  const matFill = new THREE.MeshStandardMaterial({ color: 0xc4a878, transparent: true, opacity: 0.5 });
+  const matFill = new THREE.MeshStandardMaterial({ color: 0xc4a878, transparent: true, opacity: 0.45 });
   const fill = new THREE.Mesh(
-    new THREE.BoxGeometry(bc - 2*t_col, hc - 2*t_col, L_col - 0.005),
-    matFill,
-  );
-  fill.position.set(0, 0, L_col / 2);
+    new THREE.BoxGeometry(bc - 2*t_col, hc - 2*t_col, L_col - 0.005), matFill);
+  fill.position.set(0, 0, L_col / 2 + t_plate);
   objs.push(fill);
   const matBolt = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.5 });
   const matNut  = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.7, roughness: 0.3 });
