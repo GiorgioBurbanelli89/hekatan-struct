@@ -490,10 +490,10 @@ Promise.all([
       gridSize: 1,
       deformScale: 1,
       custom3D: true,
-      loads: false,
+      loads: true,
       supports: false,
       showCotas: false,
-      displayScale: 0.1
+      displayScale: 0.15
     }
   }), kt = document.createElement("div");
   kt.style.cssText = "position:fixed;top:8px;right:8px;width:300px;max-height:85vh;overflow-y:auto;z-index:9999;";
