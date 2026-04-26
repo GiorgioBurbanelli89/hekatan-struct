@@ -108,6 +108,8 @@ export default defineConfig({
         "bolt-hole-detail": "src/bolt-hole-detail/index.html",
         // ── FEM 3D Sólido H8 (TS puro, validación CalculiX/CodeAster/FEniCS) ──
         "solid-cube-fem": "src/solid-cube-fem/index.html",
+        // ── Viga doble T ASIMÉTRICA (patines sup/inf independientes) ──
+        "viga-doble-t": "src/viga-doble-t/index.html",
       },
     },
   },
