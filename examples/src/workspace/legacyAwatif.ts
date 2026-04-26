@@ -86,6 +86,9 @@ export const demoSlope          = legacy("slope-stability",      "Estabilidad de
 export const conexPlacaBaseH    = legacy("placa-base-h",         "Placa Base + Columna H (CBFEM)", "Conexiones");
 export const detBoltHole        = legacy("bolt-hole-detail",     "Detalle Perno + Orificio (Kirsch)", "Conexiones");
 
+// ─── FEM 3D Sólido H8 (validación cruzada con CalculiX/CodeAster/FEniCS) ───
+export const solidCubeFEM       = legacy("solid-cube-fem",       "Cubo Sólido H8 (FEM 3D)",          "FEM 3D Sólido");
+
 /** Array completo de los 19+11 ejemplos legacy para registrar de un golpe. */
 export const legacyAwatifExamples: ExampleDef[] = [
   legacy1dMesh,
@@ -124,4 +127,6 @@ export const legacyAwatifExamples: ExampleDef[] = [
   // Conexiones (CBFEM)
   conexPlacaBaseH,
   detBoltHole,
+  // FEM 3D Sólido
+  solidCubeFEM,
 ];

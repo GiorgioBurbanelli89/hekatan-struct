@@ -106,6 +106,8 @@ export default defineConfig({
         "placa-base-h": "src/placa-base-h/index.html",
         // ── Detalle perno + orificio (concentración tensiones) ──
         "bolt-hole-detail": "src/bolt-hole-detail/index.html",
+        // ── FEM 3D Sólido H8 (TS puro, validación CalculiX/CodeAster/FEniCS) ──
+        "solid-cube-fem": "src/solid-cube-fem/index.html",
       },
     },
   },
