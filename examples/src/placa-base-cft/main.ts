@@ -705,8 +705,6 @@ const viewerEl = getViewer({
     // displayScale chico para que los markers no saturen visualmente.
     deformedShape: false, shellResults: "vonMises",
     gridSize: 1, deformScale: 1, custom3D: true,
-    // supports off (markers de empotramiento bajo el pedestal hacen ruido).
-    // loads ON → flechas de Pu, Mx, My en la cabeza de la columna.
     loads: true, supports: false, showCotas: false, displayScale: 0.15,
   },
 });
@@ -778,5 +776,15 @@ setTimeout(() => {
     ctx.camera.position.set(1.5, -1.5, 2.0);
     ctx.controls.target.set(0, 0, 0.4);
     ctx.controls.update(); ctx.render?.();
+  }
+  // CORTE Y POR DEFECTO: abre el HSS por la mitad para EXPONER el concreto FILL
+  // como sólido FEM. Sin esto el tubo exterior tapa el cuerpo Q4 boundary del concreto.
+  const cs = (window as any).__hekatanClip;
+  const apply = (window as any).__hekatanClipApply;
+  if (cs && apply) {
+    cs.enableY = true;
+    cs.posY = 0;
+    cs.invertY = false;
+    apply();
   }
 }, 800);

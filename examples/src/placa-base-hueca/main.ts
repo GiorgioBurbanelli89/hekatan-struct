@@ -1,13 +1,22 @@
 /**
  * Placa Base + Columna HSS HUECA + Pernos de Anclaje (CBFEM-style).
  *
- * Componentes:
- *   - Placa base (shell Q4 horizontal) con orificios en posiciones de pernos
- *   - Columna HSS rectangular hueca (4 paredes shell verticales soldadas a placa)
- *   - Pedestal de concreto (visualización THREE.Mesh)
- *   - Pernos de anclaje (frame elements + cilindros 3D + tuercas hexagonales)
+ * VERSIÓN HUECA = clon de placa-base-cft sin el concreto interior.
+ * Diferencias vs placa-base-cft:
+ *   - SIN concreto fill FEM dentro del HSS (columna metálica vacía)
+ *   - SIN orificio circular en la placa (no hay continuidad concreto col↔pedestal)
+ *   - SIN PLUG cilíndrico que conecta fill ↔ pedestal
+ *   - SIN benchmark AISC §I2.1b composite (Pno = Fy·As + 0.85·fc·Ac no aplica)
+ *   - SIN rebar longitudinal interior
  *
- * Validación AISC §J8 + DG-1 + ACI 318 §17 (igual que placa-base-h).
+ * Componentes IDÉNTICOS a CFT:
+ *   - Placa base (shell Q4 horizontal) ✓
+ *   - Columna HSS rectangular hueca (4 paredes shell verticales) ✓
+ *   - Cartelas (stiffeners) Q4 alrededor ✓
+ *   - Pedestal de concreto sólido H8 (cara superficial Q4) ✓
+ *   - Pernos de anclaje (frame elements + cilindros + tuercas) ✓
+ *
+ * Validación AISC §J8 + DG-1 + ACI 318 §17 (sin §I2.1b).
  */
 import van, { State } from "vanjs-core";
 import { Pane } from "tweakpane";
@@ -89,7 +98,9 @@ van.derive(() => {
   const My = parameters.My.value.val;
   const nx = Math.round(parameters.nx.value.val), ny = Math.round(parameters.ny.value.val);
   const nz_col = Math.round(parameters.nz_col.value.val);
-  const z_gap = 0.04;  // gap visible entre placa (lifted) y pedestal top
+
+  // GAP visible entre placa y pedestal — separación visual del contacto.
+  const z_gap = 0.04;
 
   const nodes: Node[] = [];
   const elements: Element[] = [];
@@ -123,7 +134,9 @@ van.derive(() => {
     thicknesses.set(i, 0);
   }
 
-  // ── PLACA BASE: grid nx × ny en plano XY z=0 ──
+  // ── PLACA BASE: grid nx × ny en plano XY z=z_gap (SIN orificio) ──
+  // En la versión HUECA NO hay orificio circular central — la columna
+  // descansa sobre la placa completa (típico para HSS soldada a placa base).
   const dxp = B / nx, dyp = H / ny;
   const plateGrid: number[][] = [];
   for (let j = 0; j <= ny; j++) {
@@ -148,7 +161,7 @@ van.derive(() => {
     return best;
   }
 
-  // ── COLUMNA HSS: 4 paredes shell verticales ──
+  // ── COLUMNA HSS HUECA: 4 paredes shell verticales (sin fill interior) ──
   const nx_col = Math.max(2, Math.round(bc / dxp));
   const ny_col = Math.max(2, Math.round(hc / dyp));
   const dx_c = bc / nx_col, dy_c = hc / ny_col, dz_c = L_col / nz_col;
@@ -188,8 +201,8 @@ van.derive(() => {
     for (let iy = 0; iy <= ny_col; iy++) {
       const y = -hc/2 + iy*dy_c;
       if (iz === 0) row.push(snapToPlate(-bc/2, y));
-      else if (iy === 0) row.push(wallS[iz][0]);  // arista compartida con wallS
-      else if (iy === ny_col) row.push(wallN[iz][0]);  // arista con wallN
+      else if (iy === 0) row.push(wallS[iz][0]);
+      else if (iy === ny_col) row.push(wallN[iz][0]);
       else row.push(addNode(-bc/2, y, z_gap + iz*dz_c));
     }
     wallW.push(row);
@@ -213,13 +226,16 @@ van.derive(() => {
   for (let iz = 0; iz < nz_col; iz++) for (let iy = 0; iy < ny_col; iy++)
     addShell(wallE[iz][iy], wallE[iz][iy+1], wallE[iz+1][iy+1], wallE[iz+1][iy], t_col);
 
-  // ── CARTELAS Q4 FEM (4 stiffeners, una por cara del HSS) ──
+  // ── CARTELAS (stiffeners) Q4 — IDÉNTICAS a CFT ──
   const h_stiff_target = Math.min(0.20, L_col * 0.4);
   const w_stiff = Math.min(0.10, (B - bc) / 2 * 0.7);
   const k_stiff = Math.max(1, Math.round(h_stiff_target / dz_c));
+
   function addStiffenerShell(
-    facePos: [number, number], outDir: [number, number],
-    wallGrid: number[][], iWall: number,
+    facePos: [number, number],
+    outDir: [number, number],
+    wallGrid: number[][],
+    iWall: number,
   ) {
     const [fx, fy] = facePos;
     const [ox, oy] = outDir;
@@ -228,12 +244,22 @@ van.derive(() => {
     const nC = wallGrid[Math.min(k_stiff, wallGrid.length - 1)][iWall];
     addShell(nA, nB, nC, nC, t_col);
   }
-  addStiffenerShell([0, hc/2], [0, 1], wallN, Math.round(nx_col / 2));
-  addStiffenerShell([0, -hc/2], [0, -1], wallS, Math.round(nx_col / 2));
-  addStiffenerShell([bc/2, 0], [1, 0], wallE, Math.round(ny_col / 2));
-  addStiffenerShell([-bc/2, 0], [-1, 0], wallW, Math.round(ny_col / 2));
+  const oN = Math.max(1, Math.round(nx_col * 0.25));
+  const oE = Math.max(1, Math.round(ny_col * 0.25));
+  const i1N = Math.round(nx_col / 2) - oN, i2N = Math.round(nx_col / 2) + oN;
+  const i1E = Math.round(ny_col / 2) - oE, i2E = Math.round(ny_col / 2) + oE;
+  const x1N = -bc/2 + i1N * dx_c, x2N = -bc/2 + i2N * dx_c;
+  addStiffenerShell([x1N, hc/2], [0, 1], wallN, i1N);
+  addStiffenerShell([x2N, hc/2], [0, 1], wallN, i2N);
+  addStiffenerShell([x1N, -hc/2], [0, -1], wallS, i1N);
+  addStiffenerShell([x2N, -hc/2], [0, -1], wallS, i2N);
+  const y1E = -hc/2 + i1E * dy_c, y2E = -hc/2 + i2E * dy_c;
+  addStiffenerShell([bc/2, y1E], [1, 0], wallE, i1E);
+  addStiffenerShell([bc/2, y2E], [1, 0], wallE, i2E);
+  addStiffenerShell([-bc/2, y1E], [-1, 0], wallW, i1E);
+  addStiffenerShell([-bc/2, y2E], [-1, 0], wallW, i2E);
 
-  // ── PERNOS: grid nBoltsX × nBoltsY, frame elements ──
+  // ── PERNOS: grid nBoltsX × nBoltsY ──
   const A_bolt = Math.PI * d_bolt * d_bolt / 4;
   const I_bolt = Math.PI * d_bolt ** 4 / 64;
   const J_bolt = 2 * I_bolt;
@@ -244,25 +270,18 @@ van.derive(() => {
     for (let iy = 0; iy < nBoltsY; iy++) {
       const bx = -B / 2 + sx + ix * dxBolt;
       const by = -H / 2 + sy + iy * dyBolt;
-      // Skip si está adentro de la columna HSS
       if (Math.abs(bx) < bc / 2 + 0.005 && Math.abs(by) < hc / 2 + 0.005) continue;
       boltPositions.push([bx, by]);
     }
   }
-  // ── PEDESTAL DE CONCRETO COMO SÓLIDO H8 ──
-  // Conexiones: (1) CONTACTO con placa via snap-nodes en top face,
-  // (2) EMBEBIDO de pernos via snap nBot a nodo interior pedestal.
+  const pendingBolts: [number, number][] = [...boltPositions];
+
+  // ── PEDESTAL DE CONCRETO COMO SÓLIDO (caras Q4) ──
   const Ec = 4700 * Math.sqrt(fc / 1000) * 1000;
   const nu_c = 0.20;
   const Gc = Ec / (2 * (1 + nu_c));
   const nx_p = 10, ny_p = 10, nz_p = 6;
   const dxp_e = B_ped / nx_p, dyp_e = H_ped / ny_p, dzp_e = h_ped / nz_p;
-
-  const placaNodeList: { id: number; x: number; y: number }[] = [];
-  for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) {
-    const id = plateGrid[j][i];
-    placaNodeList.push({ id, x: nodes[id][0], y: nodes[id][1] });
-  }
 
   const pedGrid: number[][][] = [];
   for (let k = 0; k <= nz_p; k++) {
@@ -270,58 +289,24 @@ van.derive(() => {
     for (let j = 0; j <= ny_p; j++) {
       const row: number[] = [];
       for (let i = 0; i <= nx_p; i++) {
-        const x = -B_ped/2 + i*dxp_e;
-        const y = -H_ped/2 + j*dyp_e;
-        const z = -h_ped + k*dzp_e;
-        const isTop = k === nz_p;
-        const inPlaca = Math.abs(x) <= B/2 + 1e-6 && Math.abs(y) <= H/2 + 1e-6;
-        let id: number;
-        if (isTop && inPlaca) {
-          let best = -1; let dmin = Infinity;
-          for (const pn of placaNodeList) {
-            const d = Math.hypot(pn.x - x, pn.y - y);
-            if (d < dmin) { dmin = d; best = pn.id; }
-          }
-          id = best >= 0 ? best : addNode(x, y, z);
-        } else {
-          id = addNode(x, y, z);
-        }
-        row.push(id);
+        row.push(addNode(-B_ped/2 + i*dxp_e, -H_ped/2 + j*dyp_e, -h_ped + k*dzp_e));
       }
       layer.push(row);
     }
     pedGrid.push(layer);
   }
-  function snapToPedestal(x: number, y: number, z: number): number {
-    let best = -1; let dmin = Infinity;
-    for (let k = 0; k <= nz_p; k++) for (let j = 0; j <= ny_p; j++) for (let i = 0; i <= nx_p; i++) {
-      const id = pedGrid[k][j][i];
-      const p = nodes[id];
-      const d = Math.hypot(p[0]-x, p[1]-y) + Math.abs(p[2]-z) * 0.5;
-      if (d < dmin) { dmin = d; best = id; }
-    }
-    return best;
-  }
-  // Pernos: nBot es nodo PROPIO empotrado (estabilidad). Visualmente el
-  // perno queda embebido en el pedestal por coincidencia geométrica.
-  for (const [bx, by] of boltPositions) {
-    const nTop = addNode(bx, by, z_gap + L_proj);
-    const nMid = snapToPlate(bx, by);
-    const nBot = addNode(bx, by, z_gap - L_bolt);
-    addFrame(nTop, nMid, A_bolt, I_bolt, J_bolt);
-    addFrame(nMid, nBot, A_bolt, I_bolt, J_bolt);
-  }
-  void snapToPedestal;
   function addPedShell(n0: number, n1: number, n2: number, n3: number) {
     elements.push([n0, n1, n2, n3]);
     const i = elements.length - 1;
     thicknesses.set(i, 0.001);
-    elasticities.set(i, Ec); poissonsRatios.set(i, nu_c);
-    densities.set(i, 24/9.80665); shearModuli.set(i, Gc);
+    elasticities.set(i, Ec);
+    poissonsRatios.set(i, nu_c);
+    densities.set(i, 24 / 9.80665);
+    shearModuli.set(i, Gc);
     areas.set(i, 0); Iy.set(i, 0); Iz.set(i, 0); J.set(i, 0);
   }
-  // Pedestal top completo (placa lifted z_gap arriba, no hay overlap). Solo
-  // omitir pequeñas celdas en posiciones de pernos (paso del perno).
+  for (let j = 0; j < ny_p; j++) for (let i = 0; i < nx_p; i++)
+    addPedShell(pedGrid[0][j][i], pedGrid[0][j][i+1], pedGrid[0][j+1][i+1], pedGrid[0][j+1][i]);
   function cellAtBoltPosition(cx: number, cy: number): boolean {
     for (const [bx, by] of boltPositions) {
       if (Math.hypot(cx - bx, cy - by) < dxp_e * 0.6) return true;
@@ -329,22 +314,30 @@ van.derive(() => {
     return false;
   }
   for (let j = 0; j < ny_p; j++) for (let i = 0; i < nx_p; i++) {
-    addPedShell(pedGrid[0][j][i], pedGrid[0][j][i+1], pedGrid[0][j+1][i+1], pedGrid[0][j+1][i]);
     const cx = -B_ped/2 + (i + 0.5) * dxp_e;
     const cy = -H_ped/2 + (j + 0.5) * dyp_e;
     if (cellAtBoltPosition(cx, cy)) continue;
     addPedShell(pedGrid[nz_p][j][i], pedGrid[nz_p][j][i+1], pedGrid[nz_p][j+1][i+1], pedGrid[nz_p][j+1][i]);
   }
-  for (let k = 0; k < nz_p; k++) for (let i = 0; i < nx_p; i++) {
+  for (let k = 0; k < nz_p; k++) for (let i = 0; i < nx_p; i++)
     addPedShell(pedGrid[k][0][i], pedGrid[k][0][i+1], pedGrid[k+1][0][i+1], pedGrid[k+1][0][i]);
+  for (let k = 0; k < nz_p; k++) for (let i = 0; i < nx_p; i++)
     addPedShell(pedGrid[k][ny_p][i], pedGrid[k][ny_p][i+1], pedGrid[k+1][ny_p][i+1], pedGrid[k+1][ny_p][i]);
-  }
-  for (let k = 0; k < nz_p; k++) for (let j = 0; j < ny_p; j++) {
+  for (let k = 0; k < nz_p; k++) for (let j = 0; j < ny_p; j++)
     addPedShell(pedGrid[k][j][0], pedGrid[k][j+1][0], pedGrid[k+1][j+1][0], pedGrid[k+1][j][0]);
+  for (let k = 0; k < nz_p; k++) for (let j = 0; j < ny_p; j++)
     addPedShell(pedGrid[k][j][nx_p], pedGrid[k][j+1][nx_p], pedGrid[k+1][j+1][nx_p], pedGrid[k+1][j][nx_p]);
+
+  // ── PERNOS DE ANCLAJE ──
+  for (const [bx, by] of pendingBolts) {
+    const nTop = addNode(bx, by, z_gap + L_proj);
+    const nMid = snapToPlate(bx, by);
+    const nBot = addNode(bx, by, z_gap - L_bolt);
+    addFrame(nTop, nMid, A_bolt, I_bolt, J_bolt);
+    addFrame(nMid, nBot, A_bolt, I_bolt, J_bolt);
   }
 
-  // ── BCs: Pernos empotrados en nBot (z=-L_bolt) + pedestal en su base (z=-h_ped) ──
+  // ── BCs: bolt nBot + pedestal bottom empotrados ──
   const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
   nodes.forEach((p, id) => {
     const onBoltBot = Math.abs(p[2] - (z_gap - L_bolt)) < 1e-6 &&
@@ -361,7 +354,6 @@ van.derive(() => {
       colTopNodes.push(id);
     }
   });
-  // Cargas reales en cabeza columna (sum total = Pu, Mx, My):
   const N_top = Math.max(1, colTopNodes.length);
   const fz_col = -Pu / N_top;
   const mx_col = Mx / N_top;
@@ -383,11 +375,8 @@ van.derive(() => {
     analyzeOutputs = analyze(nodes, elements, elementInputs, deformOutputs);
   } catch (e: any) { console.warn("placa-base-hueca:", e?.message ?? e); }
 
-  // ── 3D decoraciones: pernos + tuercas + símbolos de contacto ──
-  // (Placa decorativa removida — la placa FEM Q4 ya se ve con vonMises)
+  // ── 3D decoraciones: símbolos contacto + tuercas pernos ──
   const objs: THREE.Object3D[] = [];
-
-  // SÍMBOLOS DE CONTACTO: zigzag entre placa (z=z_gap) y pedestal (z=0)
   const matContact = new THREE.LineBasicMaterial({ color: 0xffaa00 });
   function addContactSymbol(cx: number, cy: number) {
     const N = 5;
@@ -399,13 +388,15 @@ van.derive(() => {
       pts.push(new THREE.Vector3(cx + dx, cy, z));
     }
     const geom = new THREE.BufferGeometry().setFromPoints(pts);
-    objs.push(new THREE.Line(geom, matContact));
+    const line = new THREE.Line(geom, matContact);
+    objs.push(line);
   }
   addContactSymbol(B/2 - 0.04, H/2 - 0.04);
   addContactSymbol(-B/2 + 0.04, H/2 - 0.04);
   addContactSymbol(B/2 - 0.04, -H/2 + 0.04);
   addContactSymbol(-B/2 + 0.04, -H/2 + 0.04);
   addContactSymbol(0, 0);
+
   const matBolt = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.5 });
   const matNut  = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.7, roughness: 0.3 });
   const t_nut = d_bolt * 0.8;
@@ -417,15 +408,15 @@ van.derive(() => {
     m.position.set(bx, by, z_gap + (-L_bolt + L_proj) / 2);
     m.rotation.x = Math.PI / 2;
     objs.push(m);
-    // Tuerca hexagonal (CylinderGeometry con 6 lados)
     const nutGeom = new THREE.CylinderGeometry(r_nut, r_nut, t_nut, 6);
     const nut = new THREE.Mesh(nutGeom, matNut);
     nut.position.set(bx, by, nutZ);
     nut.rotation.x = Math.PI / 2;
     objs.push(nut);
   }
+  void fc;
 
-  // ── BENCHMARK AISC §J8 + DG-1 + ACI §17 ──
+  // ── BENCHMARK AISC §J8 + DG-1 + ACI §17 (sin §I2.1b composite) ──
   let vmMax = 0;
   const vmMap = (analyzeOutputs as any)?.vonMises as Map<number, number[]> | undefined;
   if (vmMap) vmMap.forEach(arr => arr.forEach(v => { if (v > vmMax) vmMax = v; }));
@@ -478,7 +469,11 @@ const viewerEl = getViewer({
 const benchContainer = document.createElement("div");
 benchContainer.style.cssText = "position:fixed;top:8px;right:8px;width:300px;max-height:85vh;overflow-y:auto;z-index:9999;";
 const benchPane = new Pane({ title: "🧪 Placa base + col HSS hueca", container: benchContainer, expanded: true });
-const benchObj = { vmMax: 0, A1: 0, A2: 0, phiPp: 0, demandCapPp: 0, m_cant: 0, t_req: 0, demandCapT: 0, T_anchor: 0, phiNn: 0, demandCapAnchor: 0 };
+const benchObj = {
+  vmMax: 0, A1: 0, A2: 0, phiPp: 0, demandCapPp: 0,
+  m_cant: 0, t_req: 0, demandCapT: 0,
+  T_anchor: 0, phiNn: 0, demandCapAnchor: 0,
+};
 const ratioFmt = (r: number) => r < 1 ? `${r.toFixed(2)} ✓` : r < 1.2 ? `${r.toFixed(2)} ⚠` : `${r.toFixed(2)} ✗`;
 
 const fJ8 = benchPane.addFolder({ title: "AISC §J8 bearing concreto" });
@@ -526,8 +521,19 @@ setTimeout(() => {
   const ctx = (viewerEl as any).__ctx;
   if (ctx?.camera && ctx?.controls) {
     ctx.camera.up.set(0, 0, 1);
-    ctx.camera.position.set(2.0, -2.0, 1.2);
-    ctx.controls.target.set(0, 0, 0.25);
+    ctx.camera.position.set(1.5, -1.5, 2.0);
+    ctx.controls.target.set(0, 0, 0.4);
     ctx.controls.update(); ctx.render?.();
+  }
+  // CORTE Y POR DEFECTO: abre el HSS por la mitad para mostrar el INTERIOR
+  // VACÍO del tubo (no hay concreto fill) — clave didáctica para diferenciarlo
+  // de placa-base-cft donde sí se ve concreto adentro.
+  const cs = (window as any).__hekatanClip;
+  const apply = (window as any).__hekatanClipApply;
+  if (cs && apply) {
+    cs.enableY = true;
+    cs.posY = 0;
+    cs.invertY = false;
+    apply();
   }
 }, 800);

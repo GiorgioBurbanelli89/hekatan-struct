@@ -83,9 +83,18 @@ export const demoPlacaQ4        = legacy("placa-cantilever-q4",  "Placa Cantilev
 // ─── Geotécnico ────────────────────────────────────────────────────
 export const demoSlope          = legacy("slope-stability",      "Estabilidad de Talud (SRM)",  "Geotécnico");
 
-// ─── Conexión Placa Base con Columna H (CBFEM-style) ───────────────
-export const conexPlacaBaseH    = legacy("placa-base-h",         "Placa Base + Columna H (CBFEM)", "Conexiones");
-export const detBoltHole        = legacy("bolt-hole-detail",     "Detalle Perno + Orificio (Kirsch)", "Conexiones");
+// ─── Conexiones (CBFEM-style con FEM sólidos / shells) ─────────────
+export const conexPlacaBaseH    = legacy("placa-base-h",         "Placa Base + Columna H (CBFEM)",                "Conexiones");
+export const detBoltHole        = legacy("bolt-hole-detail",     "Detalle Perno + Orificio (Kirsch)",             "Conexiones");
+export const conexDiafCft       = legacy("conexion-diafragma-cft","Conexión Viga-Columna CFT con Diafragma (Cervantes)", "Conexiones");
+export const conexPlacaBaseHueca= legacy("placa-base-hueca",     "Placa Base + Columna HSS Hueca (acero)",        "Conexiones");
+export const conexPlacaBaseCft  = legacy("placa-base-cft",       "Placa Base + Columna CFT (rellena de concreto)","Conexiones");
+
+// ─── Columnas (FEM detallado, sólidos H8) ──────────────────────────
+export const colCftH8           = legacy("columna-cft-h8",       "Columna CFT con sólidos H8",                     "Columnas FEM 3D");
+
+// ─── Vigas (perfiles) ──────────────────────────────────────────────
+export const vigaDobleT         = legacy("viga-doble-t",         "Viga Doble-T (perfil W)",                        "Vigas / Perfiles");
 
 // ─── FEM 3D Sólido H8 (validación cruzada con CalculiX/CodeAster/FEniCS) ───
 export const solidCubeFEM       = legacy("solid-cube-fem",       "Cubo Sólido H8 (validación CalculiX)",          "🏁 Benchmarks", true);
@@ -126,9 +135,16 @@ export const legacyAwatifExamples: ExampleDef[] = [
   demoPlacaQ4,
   // Geotécnico
   demoSlope,
-  // Conexiones (CBFEM)
+  // Conexiones (CBFEM + CFT)
   conexPlacaBaseH,
   detBoltHole,
+  conexDiafCft,
+  conexPlacaBaseHueca,
+  conexPlacaBaseCft,
+  // Columnas FEM 3D
+  colCftH8,
+  // Vigas / Perfiles
+  vigaDobleT,
   // 🏁 Benchmarks (FEM 3D Sólido validados)
   solidCubeFEM,
   bulboPresionesSuelo,
