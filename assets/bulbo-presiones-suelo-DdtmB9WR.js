@@ -362,8 +362,8 @@ Promise.all([
       gridSize: 25,
       deformScale: 100,
       custom3D: false,
-      loads: true,
-      supports: true,
+      loads: false,
+      supports: false,
       showCotas: false,
       displayScale: 0.5
     }
