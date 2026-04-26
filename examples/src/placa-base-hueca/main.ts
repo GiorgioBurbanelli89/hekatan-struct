@@ -212,6 +212,26 @@ van.derive(() => {
   for (let iz = 0; iz < nz_col; iz++) for (let iy = 0; iy < ny_col; iy++)
     addShell(wallE[iz][iy], wallE[iz][iy+1], wallE[iz+1][iy+1], wallE[iz+1][iy], t_col);
 
+  // ── CARTELAS Q4 FEM (4 stiffeners, una por cara del HSS) ──
+  const h_stiff_target = Math.min(0.20, L_col * 0.4);
+  const w_stiff = Math.min(0.10, (B - bc) / 2 * 0.7);
+  const k_stiff = Math.max(1, Math.round(h_stiff_target / dz_c));
+  function addStiffenerShell(
+    facePos: [number, number], outDir: [number, number],
+    wallGrid: number[][], iWall: number,
+  ) {
+    const [fx, fy] = facePos;
+    const [ox, oy] = outDir;
+    const nA = wallGrid[0][iWall];
+    const nB = snapToPlate(fx + ox * w_stiff, fy + oy * w_stiff);
+    const nC = wallGrid[Math.min(k_stiff, wallGrid.length - 1)][iWall];
+    addShell(nA, nB, nC, nC, t_col);
+  }
+  addStiffenerShell([0, hc/2], [0, 1], wallN, Math.round(nx_col / 2));
+  addStiffenerShell([0, -hc/2], [0, -1], wallS, Math.round(nx_col / 2));
+  addStiffenerShell([bc/2, 0], [1, 0], wallE, Math.round(ny_col / 2));
+  addStiffenerShell([-bc/2, 0], [-1, 0], wallW, Math.round(ny_col / 2));
+
   // ── PERNOS: grid nBoltsX × nBoltsY, frame elements ──
   const A_bolt = Math.PI * d_bolt * d_bolt / 4;
   const I_bolt = Math.PI * d_bolt ** 4 / 64;
@@ -359,9 +379,13 @@ van.derive(() => {
 
   // ── 3D decoraciones: placa base destacada + pernos + tuercas ──
   const objs: THREE.Object3D[] = [];
-  const matPlaca = new THREE.MeshStandardMaterial({ color: 0xa0a0a0, metalness: 0.7, roughness: 0.4 });
+  // Placa base 3D translúcida (la malla FEM Q4 queda visible debajo)
+  const matPlaca = new THREE.MeshStandardMaterial({
+    color: 0xb8b8b8, metalness: 0.7, roughness: 0.4,
+    transparent: true, opacity: 0.45,
+  });
   const placaMesh = new THREE.Mesh(new THREE.BoxGeometry(B, H, t_plate), matPlaca);
-  placaMesh.position.set(0, 0, t_plate / 2);  // sentada sobre el pedestal
+  placaMesh.position.set(0, 0, t_plate / 2);
   objs.push(placaMesh);
   const matBolt = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.5 });
   const matNut  = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.7, roughness: 0.3 });

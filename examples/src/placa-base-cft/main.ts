@@ -225,6 +225,42 @@ van.derive(() => {
   for (let iz = 0; iz < nz_col; iz++) for (let iy = 0; iy < ny_col; iy++)
     addShell(wallE[iz][iy], wallE[iz][iy+1], wallE[iz+1][iy+1], wallE[iz+1][iy], t_col);
 
+  // ── CARTELAS (stiffeners) como Q4 shells FEM ──
+  // Triángulo: A=esquina col-placa, B=borde placa, C=top sobre col.
+  // Q4 degenerada [A, B, C, C]. Comparte nodos con placa (snapToPlate)
+  // y con paredes col (snap a fila inferior wall iz=0).
+  const h_stiff_target = Math.min(0.20, L_col * 0.4);
+  const w_stiff = Math.min(0.10, (B - bc) / 2 * 0.7);
+  // h_stiff snap al z más cercano de la columna
+  const k_stiff = Math.max(1, Math.round(h_stiff_target / dz_c));
+  const h_stiff = k_stiff * dz_c;
+
+  function addStiffenerShell(
+    facePos: [number, number],   // (x, y) de la esquina sobre col-placa
+    outDir: [number, number],    // dirección hacia afuera (unit)
+    wallGrid: number[][],        // grid de la pared, fila iz=0 sobre placa
+    iWall: number,               // índice en la fila iz=0 que coincide con facePos
+  ) {
+    const [fx, fy] = facePos;
+    const [ox, oy] = outDir;
+    // A: esquina inferior interior — del wall en iz=0 (snap)
+    const nA = wallGrid[0][iWall];
+    // B: borde placa hacia afuera (snap a placa)
+    const nB = snapToPlate(fx + ox * w_stiff, fy + oy * w_stiff);
+    // C: arriba sobre col, mismo i (snap a wall en iz=k_stiff)
+    const nC = wallGrid[Math.min(k_stiff, wallGrid.length - 1)][iWall];
+    // Q4 degenerada
+    addShell(nA, nB, nC, nC, t_col);
+  }
+  // Cara +Y (front, wallN): centro x=0 → iWall en mitad de fila
+  addStiffenerShell([0, hc/2], [0, 1], wallN, Math.round(nx_col / 2));
+  // Cara -Y (wallS)
+  addStiffenerShell([0, -hc/2], [0, -1], wallS, Math.round(nx_col / 2));
+  // Cara +X (wallE)
+  addStiffenerShell([bc/2, 0], [1, 0], wallE, Math.round(ny_col / 2));
+  // Cara -X (wallW)
+  addStiffenerShell([-bc/2, 0], [-1, 0], wallW, Math.round(ny_col / 2));
+
   // ── PERNOS: grid nBoltsX × nBoltsY, frame elements ──
   const A_bolt = Math.PI * d_bolt * d_bolt / 4;
   const I_bolt = Math.PI * d_bolt ** 4 / 64;
@@ -418,37 +454,19 @@ van.derive(() => {
   // PLACA BASE como BoxGeometry destacada (acero gris) sobre el pedestal,
   // de espesor t_plate y dimensiones B×H. Esto la hace visible como contacto
   // entre columna y pedestal (la shell FEM es muy delgada para verse sola).
-  const matPlaca = new THREE.MeshStandardMaterial({ color: 0xa0a0a0, metalness: 0.7, roughness: 0.4 });
+  // Placa base 3D translúcida — para que la malla FEM Q4 sea visible Y se
+  // identifique claramente como un elemento separado entre col y pedestal.
+  const matPlaca = new THREE.MeshStandardMaterial({
+    color: 0xb8b8b8, metalness: 0.7, roughness: 0.4,
+    transparent: true, opacity: 0.45,
+  });
   const placaMesh = new THREE.Mesh(new THREE.BoxGeometry(B, H, t_plate), matPlaca);
   placaMesh.position.set(0, 0, t_plate / 2);
   objs.push(placaMesh);
 
-  // CARTELAS (stiffeners) triangulares — refuerzo AISC moment-resisting base.
-  // 4 cartelas verticales, una por cada cara del HSS, hacia afuera radialmente.
-  const matStiff = new THREE.MeshStandardMaterial({ color: 0x707070, metalness: 0.6 });
-  const h_stiff = Math.min(0.20, L_col * 0.4);
-  const w_stiff = Math.min(0.10, (B - bc) / 2 * 0.7);
-  const t_stiff = t_col;
-  function addStiffener(faceX: number, faceY: number, dirX: number, dirY: number) {
-    const shape = new THREE.Shape();
-    shape.moveTo(0, 0);                  // esquina interior (col-placa)
-    shape.lineTo(w_stiff, 0);            // borde sobre placa hacia afuera
-    shape.lineTo(0, h_stiff);            // borde subiendo por columna
-    shape.closePath();
-    const geom = new THREE.ExtrudeGeometry(shape, { depth: t_stiff, bevelEnabled: false });
-    const m = new THREE.Mesh(geom, matStiff);
-    m.position.set(faceX - dirX * t_stiff / 2, faceY - dirY * t_stiff / 2, t_plate);
-    if (Math.abs(dirX) > 0.5) {
-      m.rotation.set(Math.PI / 2, dirX > 0 ? 0 : Math.PI, 0);
-    } else {
-      m.rotation.set(Math.PI / 2, -Math.PI / 2, dirY > 0 ? -Math.PI / 2 : Math.PI / 2);
-    }
-    objs.push(m);
-  }
-  addStiffener(0, hc / 2, 0, 1);    // cara +Y
-  addStiffener(0, -hc / 2, 0, -1);  // cara -Y
-  addStiffener(bc / 2, 0, 1, 0);    // cara +X
-  addStiffener(-bc / 2, 0, -1, 0);  // cara -X
+  // CARTELAS (stiffeners) Q4 SHELLS — mallado FEM real, refuerzo AISC.
+  // Triángulo modelado como Q4 degenerada [A, B, C, C] (top-inner colapsado).
+  // 4 cartelas, una por cara del HSS, vertical hacia afuera del centroide.
 
   // REBAR longitudinal (4 barras Ø1/2" en esquinas del fill concreto)
   const matRebar = new THREE.MeshStandardMaterial({ color: 0x884422, roughness: 0.6 });
