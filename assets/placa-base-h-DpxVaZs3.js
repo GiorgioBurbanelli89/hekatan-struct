@@ -94,14 +94,14 @@ Promise.all([
       label: "Dist al borde (m)"
     },
     Pu: {
-      value: l.state(800),
+      value: l.state(300),
       min: 0,
       max: 5e3,
       step: 25,
       label: "Pu compresi\xF3n (kN)"
     },
     Mu: {
-      value: l.state(80),
+      value: l.state(30),
       min: 0,
       max: 800,
       step: 5,
@@ -311,7 +311,7 @@ Promise.all([
       deformedShape: true,
       shellResults: "vonMises",
       gridSize: 1,
-      deformScale: 100
+      deformScale: 20
     }
   });
   document.body.append(Ot(c), pt, Lt({
