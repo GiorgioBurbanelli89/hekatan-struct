@@ -535,11 +535,31 @@ van.derive(() => {
     objs.push(bar);
   }
 
-  // Fill de concreto translúcido dentro del HSS (visual)
-  const matFill = new THREE.MeshStandardMaterial({ color: 0xc4a878, transparent: true, opacity: 0.45 });
+  // ── CONCRETO CONTINUO: pedestal top → tapón en orificio placa → HSS fill ──
+  // Un solo cuerpo de concreto que muestra la continuidad estructural típica
+  // del CFT real: el concreto colado pasa POR EL HUECO de la placa y llena
+  // el tubo HSS arriba sin junta.
+  const matFill = new THREE.MeshStandardMaterial({ color: 0xc4a878, transparent: true, opacity: 0.55 });
+
+  // 1) TAPÓN cilíndrico en el orificio: concreto que va de z=0 (pedestal top)
+  //    hasta z=z_gap+t_plate (top de placa) atravesando placa y gap.
+  const h_plug = z_gap + t_plate;
+  const plug = new THREE.Mesh(
+    new THREE.CylinderGeometry(r_hole, r_hole, h_plug, 24),
+    matFill,
+  );
+  plug.position.set(0, 0, h_plug / 2);  // centrado en z=0..h_plug
+  plug.rotation.x = Math.PI / 2;        // eje cilindro vertical
+  objs.push(plug);
+
+  // 2) FILL rectangular dentro del HSS: de z=z_gap+t_plate hasta z=z_gap+L_col
+  const fill_z0 = z_gap + t_plate;
+  const fill_z1 = z_gap + L_col;
   const fill = new THREE.Mesh(
-    new THREE.BoxGeometry(bc - 2*t_col, hc - 2*t_col, L_col - 0.005), matFill);
-  fill.position.set(0, 0, z_gap + L_col / 2 + t_plate);
+    new THREE.BoxGeometry(bc - 2*t_col, hc - 2*t_col, fill_z1 - fill_z0),
+    matFill,
+  );
+  fill.position.set(0, 0, (fill_z0 + fill_z1) / 2);
   objs.push(fill);
   const matBolt = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.5 });
   const matNut  = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.7, roughness: 0.3 });
