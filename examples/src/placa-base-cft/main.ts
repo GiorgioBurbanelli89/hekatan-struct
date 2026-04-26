@@ -239,6 +239,133 @@ van.derive(() => {
   for (let iz = 0; iz < nz_col; iz++) for (let iy = 0; iy < ny_col; iy++)
     addShell(wallE[iz][iy], wallE[iz][iy+1], wallE[iz+1][iy+1], wallE[iz+1][iy], t_col);
 
+  // ── CONCRETO FILL DEL CFT como cuerpo FEM (Q4 boundary faces) ──
+  // Modelo estructural correcto:
+  //   - Dentro del orificio: el concreto del fill es CONTINUO con el plug
+  //     que cruza la placa hasta el pedestal (shared nodes).
+  //   - Fuera del orificio: el concreto fill descansa SOBRE la placa por
+  //     CONTACTO compresivo (aproximación lineal: shared nodes con placa).
+  //   - Paredes HSS: en contacto con el concreto fill (NO shared nodes).
+  const Ec_fill = 4700 * Math.sqrt(fc / 1000) * 1000;
+  const nu_c_fill = 0.20;
+  const Gc_fill = Ec_fill / (2 * (1 + nu_c_fill));
+  const fill_bc = bc - 2 * t_col;
+  const fill_hc = hc - 2 * t_col;
+  const nx_fill = 4, ny_fill = 4, nz_fill = nz_col;
+  const dxf = fill_bc / nx_fill, dyf = fill_hc / ny_fill, dzf = L_col / nz_fill;
+
+  // Generar PLUG (cilindro cuadriculado de la zona del orificio): nodos en
+  // z entre 0 (pedestal top) y z_gap+t_plate (fill bottom). Mallado coincide
+  // con la malla del fill bottom para shared nodes.
+  // Helper: ¿(x,y) está dentro del orificio circular (más tolerancia)?
+  const inHole = (x: number, y: number) => Math.hypot(x, y) < r_hole + dxf * 0.5;
+  // Snap-to-pedestal-top: encuentra el nodo del pedestal más cercano en cara top
+  function snapToPedTop(x: number, y: number): number {
+    let best = -1; let dmin = Infinity;
+    for (let j = 0; j <= ny_p; j++) for (let i = 0; i <= nx_p; i++) {
+      const id = pedGrid[nz_p][j][i];
+      const p = nodes[id];
+      const d = Math.hypot(p[0]-x, p[1]-y);
+      if (d < dmin) { dmin = d; best = id; }
+    }
+    return best;
+  }
+  // Generar mallado del fill (rectangular). Para la cara INFERIOR (k=0):
+  //   - dentro del hueco → crear nodo NUEVO en z=z_gap+t_plate (lo conectaremos
+  //     con el plug que va de z=0 hasta z=z_gap+t_plate)
+  //   - fuera del hueco → snap a placa (contacto)
+  const fillGrid: number[][][] = [];
+  for (let k = 0; k <= nz_fill; k++) {
+    const layer: number[][] = [];
+    for (let j = 0; j <= ny_fill; j++) {
+      const row: number[] = [];
+      for (let i = 0; i <= nx_fill; i++) {
+        const x = -fill_bc/2 + i*dxf;
+        const y = -fill_hc/2 + j*dyf;
+        const z = z_gap + t_plate + k*dzf;
+        if (k === 0) {
+          if (inHole(x, y)) row.push(addNode(x, y, z));    // continuo con plug
+          else row.push(snapToPlate(x, y));                  // contacto placa
+        } else {
+          row.push(addNode(x, y, z));
+        }
+      }
+      layer.push(row);
+    }
+    fillGrid.push(layer);
+  }
+  // PLUG: estratos verticales conectando z=0 (pedestal) → z=z_gap+t_plate (fill).
+  // Para cada nodo del fill_bottom (k=0) que está dentro del hueco: crear
+  // columna vertical de nodos hasta el pedestal top, formando un H8 prism.
+  const plugGrid: { idTop: number; idBot: number; x: number; y: number }[] = [];
+  for (let j = 0; j <= ny_fill; j++) {
+    for (let i = 0; i <= nx_fill; i++) {
+      const x = -fill_bc/2 + i*dxf;
+      const y = -fill_hc/2 + j*dyf;
+      if (!inHole(x, y)) continue;
+      // Top del plug = nodo del fill bottom (ya creado arriba)
+      const idTop = fillGrid[0][j][i];
+      // Bottom del plug = snap a pedestal top
+      const idBot = snapToPedTop(x, y);
+      plugGrid.push({ idTop, idBot, x, y });
+    }
+  }
+  // PLUG mallado: Q4 verticales conectando cada par adyacente del plugGrid.
+  // Cada nodo del plugGrid tiene idTop (en fill bottom) e idBot (en pedestal
+  // top). Tomamos celdas cuadradas adjacentes en el (i,j) original del fill.
+  function findPlugAt(i: number, j: number) {
+    const x = -fill_bc/2 + i*dxf, y = -fill_hc/2 + j*dyf;
+    if (!inHole(x, y)) return null;
+    return plugGrid.find(p => Math.abs(p.x - x) < 1e-6 && Math.abs(p.y - y) < 1e-6) ?? null;
+  }
+  // Generar 4 caras laterales por celda del plug (mantos Q4 verticales)
+  for (let j = 0; j < ny_fill; j++) {
+    for (let i = 0; i < nx_fill; i++) {
+      const p00 = findPlugAt(i, j),     p10 = findPlugAt(i+1, j);
+      const p01 = findPlugAt(i, j+1),   p11 = findPlugAt(i+1, j+1);
+      // Si los 4 nodos del cell son del plug, generar 4 caras verticales (manto)
+      // y 1 face top + 1 face bottom (cilindro cerrado).
+      if (p00 && p10 && p01 && p11) {
+        // Cara top (en fill bottom z = z_gap+t_plate) — comparte con fill,
+        // ya está implícita por shared nodes; generamos shell para visualizar.
+        addFillShell(p00.idTop, p10.idTop, p11.idTop, p01.idTop);
+        // Cara bottom (en pedestal top z = 0)
+        addFillShell(p00.idBot, p10.idBot, p11.idBot, p01.idBot);
+        // 4 caras laterales (verticales) — solo en el contorno del plug
+        // (cuando una celda adyacente NO está en el hueco)
+        const isOuterX0 = !findPlugAt(i-1, j) || !findPlugAt(i-1, j+1);
+        const isOuterX1 = !findPlugAt(i+2, j) || !findPlugAt(i+2, j+1);
+        const isOuterY0 = !findPlugAt(i, j-1) || !findPlugAt(i+1, j-1);
+        const isOuterY1 = !findPlugAt(i, j+2) || !findPlugAt(i+1, j+2);
+        if (isOuterX0) addFillShell(p00.idBot, p00.idTop, p01.idTop, p01.idBot);
+        if (isOuterX1) addFillShell(p10.idBot, p11.idBot, p11.idTop, p10.idTop);
+        if (isOuterY0) addFillShell(p00.idBot, p10.idBot, p10.idTop, p00.idTop);
+        if (isOuterY1) addFillShell(p01.idBot, p01.idTop, p11.idTop, p11.idBot);
+      }
+    }
+  }
+  function addFillShell(n0: number, n1: number, n2: number, n3: number) {
+    elements.push([n0, n1, n2, n3]);
+    const i = elements.length - 1;
+    thicknesses.set(i, 0.001);
+    elasticities.set(i, Ec_fill); poissonsRatios.set(i, nu_c_fill);
+    densities.set(i, 24/9.80665); shearModuli.set(i, Gc_fill);
+    areas.set(i, 0); Iy.set(i, 0); Iz.set(i, 0); J.set(i, 0);
+  }
+  // 5 caras: bottom (snapped a placa), top abierto (NO se modela — CFT real
+  // tiene top abierto), 4 laterales que muestran el cuerpo del concreto.
+  for (let j = 0; j < ny_fill; j++) for (let i = 0; i < nx_fill; i++) {
+    addFillShell(fillGrid[0][j][i], fillGrid[0][j][i+1], fillGrid[0][j+1][i+1], fillGrid[0][j+1][i]);
+  }
+  for (let k = 0; k < nz_fill; k++) for (let i = 0; i < nx_fill; i++) {
+    addFillShell(fillGrid[k][0][i], fillGrid[k][0][i+1], fillGrid[k+1][0][i+1], fillGrid[k+1][0][i]);
+    addFillShell(fillGrid[k][ny_fill][i], fillGrid[k][ny_fill][i+1], fillGrid[k+1][ny_fill][i+1], fillGrid[k+1][ny_fill][i]);
+  }
+  for (let k = 0; k < nz_fill; k++) for (let j = 0; j < ny_fill; j++) {
+    addFillShell(fillGrid[k][j][0], fillGrid[k][j+1][0], fillGrid[k+1][j+1][0], fillGrid[k+1][j][0]);
+    addFillShell(fillGrid[k][j][nx_fill], fillGrid[k][j+1][nx_fill], fillGrid[k+1][j+1][nx_fill], fillGrid[k+1][j][nx_fill]);
+  }
+
   // ── CARTELAS (stiffeners) como Q4 shells FEM ──
   // Triángulo: A=esquina col-placa, B=borde placa, C=top sobre col.
   // Q4 degenerada [A, B, C, C]. Comparte nodos con placa (snapToPlate)
@@ -535,32 +662,9 @@ van.derive(() => {
     objs.push(bar);
   }
 
-  // ── CONCRETO CONTINUO: pedestal top → tapón en orificio placa → HSS fill ──
-  // Un solo cuerpo de concreto que muestra la continuidad estructural típica
-  // del CFT real: el concreto colado pasa POR EL HUECO de la placa y llena
-  // el tubo HSS arriba sin junta.
-  const matFill = new THREE.MeshStandardMaterial({ color: 0xc4a878, transparent: true, opacity: 0.55 });
-
-  // 1) TAPÓN cilíndrico en el orificio: concreto que va de z=0 (pedestal top)
-  //    hasta z=z_gap+t_plate (top de placa) atravesando placa y gap.
-  const h_plug = z_gap + t_plate;
-  const plug = new THREE.Mesh(
-    new THREE.CylinderGeometry(r_hole, r_hole, h_plug, 24),
-    matFill,
-  );
-  plug.position.set(0, 0, h_plug / 2);  // centrado en z=0..h_plug
-  plug.rotation.x = Math.PI / 2;        // eje cilindro vertical
-  objs.push(plug);
-
-  // 2) FILL rectangular dentro del HSS: de z=z_gap+t_plate hasta z=z_gap+L_col
-  const fill_z0 = z_gap + t_plate;
-  const fill_z1 = z_gap + L_col;
-  const fill = new THREE.Mesh(
-    new THREE.BoxGeometry(bc - 2*t_col, hc - 2*t_col, fill_z1 - fill_z0),
-    matFill,
-  );
-  fill.position.set(0, 0, (fill_z0 + fill_z1) / 2);
-  objs.push(fill);
+  // CONCRETO ahora es FEM real (Q4 boundary faces de plug + fill arriba) —
+  // se ve con vonMises colormap como los demás elementos. Eliminamos el
+  // THREE.Mesh translúcido que antes tapaba la malla FEM.
   const matBolt = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.5 });
   const matNut  = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.7, roughness: 0.3 });
   const t_nut = d_bolt * 0.8;       // espesor tuerca ≈ 0.8·Ø (típico ASTM)
