@@ -425,8 +425,8 @@ Promise.all([
       deformScale: 20,
       custom3D: true,
       loads: true,
-      supports: true,
-      displayScale: 0.4
+      supports: false,
+      displayScale: 0.2
     }
   }), ht = document.createElement("div");
   ht.style.cssText = "position:fixed;top:8px;right:8px;width:300px;max-height:85vh;overflow-y:auto;z-index:9999;";

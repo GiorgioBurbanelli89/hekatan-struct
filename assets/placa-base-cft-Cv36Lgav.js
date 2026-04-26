@@ -178,7 +178,7 @@ Promise.all([
       step: 2,
       label: "nz col"
     }
-  }, re = l.state([]), ie = l.state([]), de = l.state({}), me = l.state({}), pe = l.state({}), ue = l.state({}), he = l.state([]), fe = l.state({
+  }, re = l.state([]), ie = l.state([]), de = l.state({}), me = l.state({}), pe = l.state({}), ue = l.state({}), fe = l.state([]), he = l.state({
     vmMax: 0,
     A1: 0,
     A2: 0,
@@ -196,30 +196,30 @@ Promise.all([
     demandCapPno: 0
   });
   l.derive(() => {
-    const o = d.B.value.val, w = d.H.value.val, zt = d.t_plate.value.val, p = d.bc.value.val, u = d.hc.value.val, P = d.t_col.value.val, dt = d.L_col.value.val, Ft = Math.round(d.nBoltsX.value.val), mt = Math.round(d.nBoltsY.value.val), pt = d.sx.value.val, kt = d.sy.value.val, C = d.d_bolt.value.val, tt = d.L_bolt.value.val, ut = d.L_proj.value.val, et = d.B_ped.value.val, at = d.H_ped.value.val, ht = d.h_ped.value.val, ot = d.fc.value.val, L = d.Pu.value.val, It = d.Mu.value.val, O = Math.round(d.nx.value.val), q = Math.round(d.ny.value.val), x = Math.round(d.nz_col.value.val), h = [], f = [], H = /* @__PURE__ */ new Map(), G = /* @__PURE__ */ new Map(), D = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), J = /* @__PURE__ */ new Map(), U = /* @__PURE__ */ new Map(), X = /* @__PURE__ */ new Map(), $ = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map();
+    const o = d.B.value.val, w = d.H.value.val, zt = d.t_plate.value.val, p = d.bc.value.val, u = d.hc.value.val, P = d.t_col.value.val, dt = d.L_col.value.val, Ft = Math.round(d.nBoltsX.value.val), mt = Math.round(d.nBoltsY.value.val), pt = d.sx.value.val, kt = d.sy.value.val, C = d.d_bolt.value.val, tt = d.L_bolt.value.val, ut = d.L_proj.value.val, et = d.B_ped.value.val, at = d.H_ped.value.val, ft = d.h_ped.value.val, ot = d.fc.value.val, L = d.Pu.value.val, It = d.Mu.value.val, O = Math.round(d.nx.value.val), q = Math.round(d.ny.value.val), x = Math.round(d.nz_col.value.val), f = [], h = [], H = /* @__PURE__ */ new Map(), G = /* @__PURE__ */ new Map(), D = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), J = /* @__PURE__ */ new Map(), U = /* @__PURE__ */ new Map(), X = /* @__PURE__ */ new Map(), $ = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map();
     function y(t, e, a) {
-      return h.push([
+      return f.push([
         t,
         e,
         a
-      ]), h.length - 1;
+      ]), f.length - 1;
     }
     function V(t, e, a, s, n) {
-      f.push([
+      h.push([
         t,
         e,
         a,
         s
       ]);
-      const c = f.length - 1;
+      const c = h.length - 1;
       H.set(c, n), G.set(c, gt), D.set(c, Bt), Y.set(c, ne), J.set(c, se), U.set(c, 0), $.set(c, 0), X.set(c, 0), R.set(c, 0);
     }
     function jt(t, e, a, s, n) {
-      f.push([
+      h.push([
         t,
         e
       ]);
-      const c = f.length - 1;
+      const c = h.length - 1;
       G.set(c, gt), D.set(c, Bt), Y.set(c, ne), J.set(c, se), U.set(c, a), $.set(c, s), X.set(c, s), R.set(c, n), H.set(c, 0);
     }
     const Tt = o / O, St = w / q, z = [];
@@ -232,7 +232,7 @@ Promise.all([
     function W(t, e) {
       let a = -1, s = 1 / 0;
       for (let n = 0; n <= q; n++) for (let c = 0; c <= O; c++) {
-        const M = z[n][c], T = Math.hypot(h[M][0] - t, h[M][1] - e);
+        const M = z[n][c], T = Math.hypot(f[M][0] - t, f[M][1] - e);
         T < s && (s = T, a = M);
       }
       return a;
@@ -277,7 +277,7 @@ Promise.all([
       K.push(e);
     }
     for (let t = 0; t < x; t++) for (let e = 0; e < k; e++) V(K[t][e], K[t][e + 1], K[t + 1][e + 1], K[t + 1][e], P);
-    const Lt = Math.PI * C * C / 4, ft = Math.PI * C ** 4 / 64, Ot = 2 * ft, nt = [], _e = (o - 2 * pt) / Math.max(1, Ft - 1), Me = (w - 2 * kt) / Math.max(1, mt - 1);
+    const Lt = Math.PI * C * C / 4, ht = Math.PI * C ** 4 / 64, Ot = 2 * ht, nt = [], _e = (o - 2 * pt) / Math.max(1, Ft - 1), Me = (w - 2 * kt) / Math.max(1, mt - 1);
     for (let t = 0; t < Ft; t++) for (let e = 0; e < mt; e++) {
       const a = -o / 2 + pt + t * _e, s = -w / 2 + kt + e * Me;
       Math.abs(a) < p / 2 + 5e-3 && Math.abs(s) < u / 2 + 5e-3 || nt.push([
@@ -287,15 +287,15 @@ Promise.all([
     }
     for (const [t, e] of nt) {
       const a = y(t, e, ut), s = W(t, e), n = y(t, e, -tt);
-      jt(a, s, Lt, ft, Ot), jt(s, n, Lt, ft, Ot);
+      jt(a, s, Lt, ht, Ot), jt(s, n, Lt, ht, Ot);
     }
-    const bt = 4700 * Math.sqrt(ot / 1e3) * 1e3, xt = 0.2, qt = bt / (2 * (1 + xt)), v = 6, _ = 6, b = 4, Ht = et / v, Gt = at / _, ye = ht / b, Dt = [];
+    const bt = 4700 * Math.sqrt(ot / 1e3) * 1e3, xt = 0.2, qt = bt / (2 * (1 + xt)), v = 6, _ = 6, b = 4, Ht = et / v, Gt = at / _, ye = ft / b, Dt = [];
     for (let t = 0; t <= q; t++) for (let e = 0; e <= O; e++) {
       const a = z[t][e];
       Dt.push({
         id: a,
-        x: h[a][0],
-        y: h[a][1]
+        x: f[a][0],
+        y: f[a][1]
       });
     }
     function Pe(t, e, a, s) {
@@ -315,7 +315,7 @@ Promise.all([
       for (let a = 0; a <= _; a++) {
         const s = [];
         for (let n = 0; n <= v; n++) {
-          const c = -et / 2 + n * Ht, M = -at / 2 + a * Gt, T = -ht + t * ye, He = t === b, Ge = Math.abs(c) <= o / 2 + 1e-6 && Math.abs(M) <= w / 2 + 1e-6;
+          const c = -et / 2 + n * Ht, M = -at / 2 + a * Gt, T = -ft + t * ye, He = t === b, Ge = Math.abs(c) <= o / 2 + 1e-6 && Math.abs(M) <= w / 2 + 1e-6;
           s.push(Pe(c, M, T, He && Ge));
         }
         e.push(s);
@@ -323,13 +323,13 @@ Promise.all([
       r.push(e);
     }
     function N(t, e, a, s) {
-      f.push([
+      h.push([
         t,
         e,
         a,
         s
       ]);
-      const n = f.length - 1;
+      const n = h.length - 1;
       H.set(n, 1e-3), G.set(n, bt), D.set(n, xt), Y.set(n, 24 / 9.80665), J.set(n, qt), U.set(n, 0), $.set(n, 0), X.set(n, 0), R.set(n, 0);
     }
     for (let t = 0; t < _; t++) for (let e = 0; e < v; e++) N(r[0][t][e], r[0][t][e + 1], r[0][t + 1][e + 1], r[0][t + 1][e]);
@@ -352,21 +352,21 @@ Promise.all([
       i.push(e);
     }
     function E(t, e, a, s) {
-      f.push([
+      h.push([
         t,
         e,
         a,
         s
       ]);
-      const n = f.length - 1;
+      const n = h.length - 1;
       H.set(n, 1e-3), G.set(n, bt), D.set(n, xt), Y.set(n, 24 / 9.80665), J.set(n, qt), U.set(n, 0), $.set(n, 0), X.set(n, 0), R.set(n, 0);
     }
     for (let t = 0; t < B; t++) for (let e = 0; e < g; e++) E(i[0][t][e], i[0][t][e + 1], i[0][t + 1][e + 1], i[0][t + 1][e]), E(i[A][t][e], i[A][t][e + 1], i[A][t + 1][e + 1], i[A][t + 1][e]);
     for (let t = 0; t < A; t++) for (let e = 0; e < g; e++) E(i[t][0][e], i[t][0][e + 1], i[t + 1][0][e + 1], i[t + 1][0][e]), E(i[t][B][e], i[t][B][e + 1], i[t + 1][B][e + 1], i[t + 1][B][e]);
     for (let t = 0; t < A; t++) for (let e = 0; e < B; e++) E(i[t][e][0], i[t][e + 1][0], i[t + 1][e + 1][0], i[t + 1][e][0]), E(i[t][e][g], i[t][e + 1][g], i[t + 1][e + 1][g], i[t + 1][e][g]);
     const Ut = /* @__PURE__ */ new Map();
-    h.forEach((t, e) => {
-      const a = Math.abs(t[2] - -tt) < 1e-6 && nt.some(([n, c]) => Math.abs(t[0] - n) < 1e-6 && Math.abs(t[1] - c) < 1e-6), s = Math.abs(t[2] - -ht) < 1e-6;
+    f.forEach((t, e) => {
+      const a = Math.abs(t[2] - -tt) < 1e-6 && nt.some(([n, c]) => Math.abs(t[0] - n) < 1e-6 && Math.abs(t[1] - c) < 1e-6), s = Math.abs(t[2] - -ft) < 1e-6;
       (a || s) && Ut.set(e, [
         true,
         true,
@@ -377,7 +377,7 @@ Promise.all([
       ]);
     });
     const lt = [];
-    h.forEach((t, e) => {
+    f.forEach((t, e) => {
       Math.abs(t[2] - dt) < 1e-6 && Math.abs(t[0]) <= p / 2 + 1e-6 && Math.abs(t[1]) <= u / 2 + 1e-6 && lt.push(e);
     });
     const we = -L / Math.max(1, lt.length), Ce = It / Math.max(1, lt.length), Xt = /* @__PURE__ */ new Map();
@@ -405,7 +405,7 @@ Promise.all([
     };
     let _t = {}, Mt = {};
     try {
-      _t = $e(h, f, $t, vt), Mt = Xe(h, f, vt, _t);
+      _t = $e(f, h, $t, vt), Mt = Xe(f, h, vt, _t);
     } catch (t) {
       console.warn("placa-base-hueca:", (t == null ? void 0 : t.message) ?? t);
     }
@@ -423,7 +423,7 @@ Promise.all([
       e > yt && (yt = e);
     }));
     const Fe = 0.65, Q = o * w, Wt = et * at, ke = Math.min(2, Math.sqrt(Wt / Q)), Ie = Math.min(0.85 * ot * Q * ke, 1.7 * ot * Q), Zt = Fe * Ie, je = L / Math.max(1, Zt), Kt = Math.max(0, (o - 0.95 * Math.max(p, u)) / 2), Te = L / Q, Qt = Kt * Math.sqrt(2 * Math.max(0, Te) / (0.9 * Ke)), Se = Qt / Math.max(1e-6, zt), Ne = Math.max(0.05, o - 2 * pt), te = Math.max(0, It / Ne - L / 2) / Math.max(1, mt), ee = 0.75 * (0.75 * Math.PI * C * C / 4) * Qe, Ee = te / Math.max(1, ee), Le = p * u, Pt = (p - 2 * P) * (u - 2 * P), ae = Le - Pt, oe = 35e4 * ae + 0.85 * ot * Pt, Oe = 0.75 * oe, qe = L / Math.max(1, Oe);
-    fe.val = {
+    he.val = {
       vmMax: yt,
       A1: Q,
       A2: Wt,
@@ -439,7 +439,7 @@ Promise.all([
       Ac: Pt,
       Pno_composite: oe,
       demandCapPno: qe
-    }, re.val = h, ie.val = f, de.val = $t, me.val = vt, pe.val = _t, ue.val = Mt, he.val = Rt;
+    }, re.val = f, ie.val = h, de.val = $t, me.val = vt, pe.val = _t, ue.val = Mt, fe.val = Rt;
   });
   const be = Re({
     mesh: {
@@ -450,7 +450,7 @@ Promise.all([
       deformOutputs: pe,
       analyzeOutputs: ue
     },
-    objects3D: he,
+    objects3D: fe,
     settingsObj: {
       deformedShape: true,
       shellResults: "vonMises",
@@ -458,8 +458,8 @@ Promise.all([
       deformScale: 20,
       custom3D: true,
       loads: true,
-      supports: true,
-      displayScale: 0.4
+      supports: false,
+      displayScale: 0.2
     }
   }), At = document.createElement("div");
   At.style.cssText = "position:fixed;top:8px;right:8px;width:300px;max-height:85vh;overflow-y:auto;z-index:9999;";
@@ -603,7 +603,7 @@ Promise.all([
   });
   document.body.append(At);
   l.derive(() => {
-    const o = fe.val;
+    const o = he.val;
     Object.assign(m, o), S.refresh();
   });
   document.body.append(We(d), be, Ze({
