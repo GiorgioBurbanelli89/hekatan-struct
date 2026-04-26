@@ -320,15 +320,20 @@ van.derive(() => {
     densities.set(i, 24/9.80665); shearModuli.set(i, Gc);
     areas.set(i, 0); Iy.set(i, 0); Iz.set(i, 0); J.set(i, 0);
   }
-  // 5 caras boundary (bottom + 4 laterales) — SIN top dentro del footprint placa
+  // Pedestal top completo (placa lifted z_gap arriba, no hay overlap). Solo
+  // omitir pequeñas celdas en posiciones de pernos (paso del perno).
+  function cellAtBoltPosition(cx: number, cy: number): boolean {
+    for (const [bx, by] of boltPositions) {
+      if (Math.hypot(cx - bx, cy - by) < dxp_e * 0.6) return true;
+    }
+    return false;
+  }
   for (let j = 0; j < ny_p; j++) for (let i = 0; i < nx_p; i++) {
-    addPedShell(pedGrid[0][j][i], pedGrid[0][j][i+1], pedGrid[0][j+1][i+1], pedGrid[0][j+1][i]);   // bottom
-    // top: solo si la celda NO está dentro del footprint placa (la placa cubre)
+    addPedShell(pedGrid[0][j][i], pedGrid[0][j][i+1], pedGrid[0][j+1][i+1], pedGrid[0][j+1][i]);
     const cx = -B_ped/2 + (i + 0.5) * dxp_e;
     const cy = -H_ped/2 + (j + 0.5) * dyp_e;
-    if (!(Math.abs(cx) <= B/2 && Math.abs(cy) <= H/2)) {
-      addPedShell(pedGrid[nz_p][j][i], pedGrid[nz_p][j][i+1], pedGrid[nz_p][j+1][i+1], pedGrid[nz_p][j+1][i]);
-    }
+    if (cellAtBoltPosition(cx, cy)) continue;
+    addPedShell(pedGrid[nz_p][j][i], pedGrid[nz_p][j][i+1], pedGrid[nz_p][j+1][i+1], pedGrid[nz_p][j+1][i]);
   }
   for (let k = 0; k < nz_p; k++) for (let i = 0; i < nx_p; i++) {
     addPedShell(pedGrid[k][0][i], pedGrid[k][0][i+1], pedGrid[k+1][0][i+1], pedGrid[k+1][0][i]);
