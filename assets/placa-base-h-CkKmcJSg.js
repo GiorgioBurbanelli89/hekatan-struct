@@ -1,8 +1,8 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { v as l } from "./theme-2eEBQPmF.js";
-import { a as zt } from "./analyze-BydHtRcI.js";
-import { d as It, __tla as __tla_0 } from "./didacticCpp-l2dJQgN-.js";
-import { g as Pt } from "./getViewer-CARv9b4z.js";
+import { a as It } from "./analyze-BydHtRcI.js";
+import { d as Pt, __tla as __tla_0 } from "./didacticCpp-l2dJQgN-.js";
+import { g as St } from "./getViewer-CARv9b4z.js";
 import { g as Ot } from "./getParameters-CIJBOwMB.js";
 import { g as Lt } from "./styles-Cjdl64P4.js";
 import "./pureFunctionsAny.generated-DeJSBP3k.js";
@@ -121,15 +121,15 @@ Promise.all([
       step: 2,
       label: "Mesh ny (placa)"
     }
-  }, lt = l.state([]), ct = l.state([]), ut = l.state({}), rt = l.state({}), mt = l.state({}), pt = l.state({});
+  }, lt = l.state([]), ct = l.state([]), rt = l.state({}), ut = l.state({}), mt = l.state({}), it = l.state({});
   l.derive(() => {
-    const v = c.B.value.val, b = c.H.value.val, W = c.t_plate.value.val, S = c.d_col.value.val, g = c.bf_col.value.val, w = c.tf_col.value.val, it = c.tw_col.value.val, k = c.L_col.value.val, j = c.d_bolt.value.val, dt = c.L_bolt.value.val, m = c.edge.value.val, X = c.Pu.value.val, Z = c.Mu.value.val, z = Math.round(c.nx.value.val), I = Math.round(c.ny.value.val), i = [], p = [], B = /* @__PURE__ */ new Map(), G = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), $ = /* @__PURE__ */ new Map(), C = /* @__PURE__ */ new Map(), F = /* @__PURE__ */ new Map(), A = /* @__PURE__ */ new Map(), E = /* @__PURE__ */ new Map(), J = /* @__PURE__ */ new Map();
+    const r = c.B.value.val, b = c.H.value.val, W = c.t_plate.value.val, N = c.d_col.value.val, g = c.bf_col.value.val, w = c.tf_col.value.val, dt = c.tw_col.value.val, k = c.L_col.value.val, j = c.d_bolt.value.val, ft = c.L_bolt.value.val, i = c.edge.value.val, X = c.Pu.value.val, Z = c.Mu.value.val, z = Math.round(c.nx.value.val), I = Math.round(c.ny.value.val), d = [], p = [], B = /* @__PURE__ */ new Map(), G = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), $ = /* @__PURE__ */ new Map(), C = /* @__PURE__ */ new Map(), F = /* @__PURE__ */ new Map(), E = /* @__PURE__ */ new Map(), T = /* @__PURE__ */ new Map(), A = /* @__PURE__ */ new Map();
     function y(t, e, o) {
-      return i.push([
+      return d.push([
         t,
         e,
         o
-      ]), i.length - 1;
+      ]), d.length - 1;
     }
     function P(t, e, o, s, a) {
       p.push([
@@ -139,87 +139,87 @@ Promise.all([
         s
       ]);
       const n = p.length - 1;
-      B.set(n, a), G.set(n, D), H.set(n, V), $.set(n, nt), C.set(n, 0), A.set(n, 0), F.set(n, 0), E.set(n, 0), J.set(n, at);
+      B.set(n, a), G.set(n, D), H.set(n, V), $.set(n, nt), C.set(n, 0), E.set(n, 0), F.set(n, 0), T.set(n, 0), A.set(n, at);
     }
-    function ft(t, e, o, s, a) {
+    function vt(t, e, o, s, a) {
       p.push([
         t,
         e
       ]);
       const n = p.length - 1;
-      G.set(n, D), J.set(n, at), H.set(n, V), $.set(n, nt), C.set(n, o), A.set(n, s), F.set(n, s), E.set(n, a), B.set(n, 0);
+      G.set(n, D), A.set(n, at), H.set(n, V), $.set(n, nt), C.set(n, o), E.set(n, s), F.set(n, s), T.set(n, a), B.set(n, 0);
     }
-    const vt = v / z, bt = b / I, h = [];
+    const bt = r / z, ht = b / I, h = [];
     for (let t = 0; t <= I; t++) {
-      const e = [], o = -b / 2 + t * bt;
+      const e = [], o = -b / 2 + t * ht;
       for (let s = 0; s <= z; s++) {
-        const a = -v / 2 + s * vt;
+        const a = -r / 2 + s * bt;
         e.push(y(a, o, 0));
       }
       h.push(e);
     }
     for (let t = 0; t < I; t++) for (let e = 0; e < z; e++) P(h[t][e], h[t][e + 1], h[t + 1][e + 1], h[t + 1][e], W);
-    function O(t, e) {
+    function S(t, e) {
       let o = -1, s = 1 / 0;
       for (let a = 0; a <= I; a++) for (let n = 0; n <= z; n++) {
-        const st = h[a][n], [gt, wt, Nt] = i[st], ot = Math.hypot(gt - t, wt - e);
+        const st = h[a][n], [wt, zt, Nt] = d[st], ot = Math.hypot(wt - t, zt - e);
         ot < s && (s = ot, o = st);
       }
       return o;
     }
-    const u = 6, r = 4, L = 3, R = +S / 2 - w / 2, N = -S / 2 + w / 2, d = [];
+    const u = 6, m = 4, O = 3, J = +N / 2 - w / 2, L = -N / 2 + w / 2, f = [];
     for (let t = 0; t <= u; t++) {
       const e = t / u * k + 0, o = [];
-      for (let s = 0; s <= r; s++) {
-        const a = -g / 2 + s * g / r;
-        t === 0 ? o.push(O(R, a)) : o.push(y(R, a, e));
-      }
-      d.push(o);
-    }
-    for (let t = 0; t < u; t++) for (let e = 0; e < r; e++) P(d[t][e], d[t][e + 1], d[t + 1][e + 1], d[t + 1][e], w);
-    const f = [];
-    for (let t = 0; t <= u; t++) {
-      const e = t / u * k, o = [];
-      for (let s = 0; s <= r; s++) {
-        const a = -g / 2 + s * g / r;
-        t === 0 ? o.push(O(N, a)) : o.push(y(N, a, e));
+      for (let s = 0; s <= m; s++) {
+        const a = -g / 2 + s * g / m;
+        t === 0 ? o.push(S(J, a)) : o.push(y(J, a, e));
       }
       f.push(o);
     }
-    for (let t = 0; t < u; t++) for (let e = 0; e < r; e++) P(f[t][e], f[t][e + 1], f[t + 1][e + 1], f[t + 1][e], w);
+    for (let t = 0; t < u; t++) for (let e = 0; e < m; e++) P(f[t][e], f[t][e + 1], f[t + 1][e + 1], f[t + 1][e], w);
+    const v = [];
+    for (let t = 0; t <= u; t++) {
+      const e = t / u * k, o = [];
+      for (let s = 0; s <= m; s++) {
+        const a = -g / 2 + s * g / m;
+        t === 0 ? o.push(S(L, a)) : o.push(y(L, a, e));
+      }
+      v.push(o);
+    }
+    for (let t = 0; t < u; t++) for (let e = 0; e < m; e++) P(v[t][e], v[t][e + 1], v[t + 1][e + 1], v[t + 1][e], w);
     const x = [];
     for (let t = 0; t <= u; t++) {
       const e = t / u * k, o = [];
-      for (let s = 0; s <= L; s++) {
-        const a = N + s * (R - N) / L;
-        t === 0 ? o.push(O(a, 0)) : o.push(y(a, 0, e));
+      for (let s = 0; s <= O; s++) {
+        const a = L + s * (J - L) / O;
+        t === 0 ? o.push(S(a, 0)) : o.push(y(a, 0, e));
       }
       x.push(o);
     }
-    for (let t = 0; t < u; t++) for (let e = 0; e < L; e++) P(x[t][e], x[t][e + 1], x[t + 1][e + 1], x[t + 1][e], it);
-    const ht = Math.PI * j * j / 4, q = Math.PI * Math.pow(j, 4) / 64, xt = 2 * q, _t = [
+    for (let t = 0; t < u; t++) for (let e = 0; e < O; e++) P(x[t][e], x[t][e + 1], x[t + 1][e + 1], x[t + 1][e], dt);
+    const xt = Math.PI * j * j / 4, q = Math.PI * Math.pow(j, 4) / 64, _t = 2 * q, yt = [
       [
-        -v / 2 + m,
-        -b / 2 + m
+        -r / 2 + i,
+        -b / 2 + i
       ],
       [
-        +v / 2 - m,
-        -b / 2 + m
+        +r / 2 - i,
+        -b / 2 + i
       ],
       [
-        +v / 2 - m,
-        +b / 2 - m
+        +r / 2 - i,
+        +b / 2 - i
       ],
       [
-        -v / 2 + m,
-        +b / 2 - m
+        -r / 2 + i,
+        +b / 2 - i
       ]
     ], K = [];
-    for (const [t, e] of _t) {
-      const o = O(t, e), s = y(t, e, -dt);
-      K.push(s), ft(o, s, ht, q, xt);
+    for (const [t, e] of yt) {
+      const o = S(t, e), s = y(t, e, -ft);
+      K.push(s), vt(o, s, xt, q, _t);
     }
-    const Q = /* @__PURE__ */ new Map(), yt = [
+    const Q = /* @__PURE__ */ new Map(), Mt = [
       true,
       true,
       true,
@@ -227,23 +227,23 @@ Promise.all([
       true,
       true
     ];
-    for (const t of K) Q.set(t, yt);
+    for (const t of K) Q.set(t, Mt);
     const M = [];
-    for (let t = 0; t <= r; t++) M.push(d[u][t]);
-    for (let t = 0; t <= r; t++) M.push(f[u][t]);
-    for (let t = 1; t < L; t++) M.push(x[u][t]);
-    const _ = /* @__PURE__ */ new Map(), Mt = -X / M.length;
+    for (let t = 0; t <= m; t++) M.push(f[u][t]);
+    for (let t = 0; t <= m; t++) M.push(v[u][t]);
+    for (let t = 1; t < O; t++) M.push(x[u][t]);
+    const _ = /* @__PURE__ */ new Map(), gt = -X / M.length;
     for (const t of M) _.set(t, [
       0,
       0,
-      Mt,
+      gt,
       0,
       0,
       0
     ]);
-    const U = Z / S / (r + 1);
-    for (let t = 0; t <= r; t++) {
-      const e = d[u][t], o = f[u][t], s = _.get(e) || [
+    const U = Z / N / (m + 1);
+    for (let t = 0; t <= m; t++) {
+      const e = f[u][t], o = v[u][t], s = _.get(e) || [
         0,
         0,
         0,
@@ -279,39 +279,47 @@ Promise.all([
     const tt = {
       supports: Q,
       loads: _
-    }, T = {
+    }, R = {
       elasticities: G,
-      shearModuli: J,
+      shearModuli: A,
       areas: C,
       momentsOfInertiaZ: F,
-      momentsOfInertiaY: A,
-      torsionalConstants: E,
+      momentsOfInertiaY: E,
+      torsionalConstants: T,
       densities: $,
       poissonsRatios: H,
       thicknesses: B
     };
     let Y = {}, et = {};
     try {
-      Y = It(i, p, tt, T), et = zt(i, p, T, Y), console.log(`Placa base H: ${i.length} nodos, ${p.length} elementos | Pu=${X}kN, Mu=${Z}kN\xB7m | t_plate=${(W * 1e3).toFixed(0)}mm`);
+      Y = Pt(d, p, tt, R), et = It(d, p, R, Y), console.log(`Placa base H: ${d.length} nodos, ${p.length} elementos | Pu=${X}kN, Mu=${Z}kN\xB7m | t_plate=${(W * 1e3).toFixed(0)}mm`);
     } catch (t) {
       console.warn("Placa base deform/analyze:", (t == null ? void 0 : t.message) ?? t);
     }
-    lt.val = i, ct.val = p, ut.val = tt, rt.val = T, mt.val = Y, pt.val = et;
+    lt.val = d, ct.val = p, rt.val = tt, ut.val = R, mt.val = Y, it.val = et;
   });
-  document.body.append(Ot(c), Pt({
+  const pt = St({
     mesh: {
       nodes: lt,
       elements: ct,
-      nodeInputs: ut,
-      elementInputs: rt,
+      nodeInputs: rt,
+      elementInputs: ut,
       deformOutputs: mt,
-      analyzeOutputs: pt
+      analyzeOutputs: it
     },
     settingsObj: {
       deformedShape: true,
-      shellResults: "vonMises"
+      shellResults: "vonMises",
+      gridSize: 1,
+      deformScale: 100
     }
-  }), Lt({
+  });
+  document.body.append(Ot(c), pt, Lt({
     sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct/blob/main/examples/src/placa-base-h/main.ts"
   }));
+  setTimeout(() => {
+    var _a;
+    const r = pt.__ctx;
+    (r == null ? void 0 : r.camera) && (r == null ? void 0 : r.controls) && (r.camera.up.set(0, 0, 1), r.camera.position.set(2, -2, 1.2), r.controls.target.set(0, 0, 0.25), r.controls.update(), (_a = r.render) == null ? void 0 : _a.call(r));
+  }, 800);
 });
