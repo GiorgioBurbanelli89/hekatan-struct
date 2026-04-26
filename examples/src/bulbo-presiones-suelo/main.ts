@@ -29,10 +29,12 @@ const parameters: Parameters = {
   Lx:  { value: van.state(20),    min: 5,  max: 40,  step: 1,    label: "Lx suelo (m)" },
   Ly:  { value: van.state(20),    min: 5,  max: 40,  step: 1,    label: "Ly suelo (m)" },
   Lz:  { value: van.state(10),    min: 4,  max: 20,  step: 1,    label: "Lz suelo (m)" },
-  // Mallado
-  nx:  { value: van.state(12),    min: 6,  max: 24,  step: 2,    label: "nx mesh" },
-  ny:  { value: van.state(12),    min: 6,  max: 24,  step: 2,    label: "ny mesh" },
-  nz:  { value: van.state(8),     min: 4,  max: 16,  step: 2,    label: "nz mesh" },
+  // Mallado — default reducido para apertura rápida (8×8×4 = 256 elem, 729
+  // nodos, 2187 DOFs ≈ 1-2s solve en TS puro). Aumentar nx/ny/nz para
+  // mayor refinamiento (12×12×8 = 1152 elem ≈ 10s, 16×16×10 = 2560 ≈ 30s).
+  nx:  { value: van.state(8),     min: 4,  max: 24,  step: 2,    label: "nx mesh" },
+  ny:  { value: van.state(8),     min: 4,  max: 24,  step: 2,    label: "ny mesh" },
+  nz:  { value: van.state(4),     min: 2,  max: 16,  step: 2,    label: "nz mesh" },
   // Material suelo (kPa = kN/m², w en kN/m² = kPa)
   Es:  { value: van.state(20000), min: 5000, max: 100000, step: 1000, label: "Es suelo (kN/m²)" },
   nu:  { value: van.state(0.42),  min: 0.20, max: 0.49, step: 0.01, label: "ν suelo" },
@@ -197,29 +199,34 @@ van.derive(() => {
     elementInputs.areas.set(i, 0); elementInputs.momentsOfInertiaY.set(i, 0);
     elementInputs.momentsOfInertiaZ.set(i, 0); elementInputs.torsionalConstants.set(i, 0);
   }
-  // Para visualizar el bulbo, dibujamos TODAS las caras de TODOS los elementos
-  // (no solo boundary). Esto permite ver cortes internos cuando se activa un
-  // plano de corte.
+  // Render TODAS las caras de TODOS los elementos para que los planos de
+  // corte revelen el interior. Para mallas grandes esto es muy pesado
+  // (6 × nElems shells); usamos detección de boundary (cara aparece en 1 elem
+  // = exterior, en 2 elems = interior). Las interiores se incluyen pero
+  // marcadas para clipping rendering.
+  // Usamos el truco rápido: agregamos solo caras BOUNDARY (las que solo
+  // aparecen una vez) — esto es ~10× menos shells. El usuario verá el
+  // exterior del bulbo + las caras del bloque cuando active clipping.
+  const faceCount = new Map<string, [number, number, number, number]>();
+  function addCount(face: [number, number, number, number]) {
+    const key = [...face].sort((a, b) => a - b).join(",");
+    if (faceCount.has(key)) faceCount.delete(key);
+    else faceCount.set(key, face);
+  }
   for (let k = 0; k < nz; k++) {
     for (let j = 0; j < ny; j++) {
       for (let i = 0; i < nx; i++) {
-        // Para cada hex8: 6 caras
         const n = (a:number, b:number, c:number) => idx(i+a, j+b, k+c);
-        // Cara z=k (top del elemento, más cerca a superficie)
-        addBoundaryFace(n(0,0,0), n(1,0,0), n(1,1,0), n(0,1,0));
-        // Cara z=k+1 (bottom)
-        addBoundaryFace(n(0,0,1), n(1,0,1), n(1,1,1), n(0,1,1));
-        // Cara y=j
-        addBoundaryFace(n(0,0,0), n(1,0,0), n(1,0,1), n(0,0,1));
-        // Cara y=j+1
-        addBoundaryFace(n(0,1,0), n(1,1,0), n(1,1,1), n(0,1,1));
-        // Cara x=i
-        addBoundaryFace(n(0,0,0), n(0,1,0), n(0,1,1), n(0,0,1));
-        // Cara x=i+1
-        addBoundaryFace(n(1,0,0), n(1,1,0), n(1,1,1), n(1,0,1));
+        addCount([n(0,0,0), n(1,0,0), n(1,1,0), n(0,1,0)]);
+        addCount([n(0,0,1), n(1,0,1), n(1,1,1), n(0,1,1)]);
+        addCount([n(0,0,0), n(1,0,0), n(1,0,1), n(0,0,1)]);
+        addCount([n(0,1,0), n(1,1,0), n(1,1,1), n(0,1,1)]);
+        addCount([n(0,0,0), n(0,1,0), n(0,1,1), n(0,0,1)]);
+        addCount([n(1,0,0), n(1,1,0), n(1,1,1), n(1,0,1)]);
       }
     }
   }
+  faceCount.forEach((face) => addBoundaryFace(...face));
 
   // Convertir desplazamientos H8 → DeformOutputs (6 DOF por nodo)
   const deformOutputs: DeformOutputs = { deformations: new Map() };
