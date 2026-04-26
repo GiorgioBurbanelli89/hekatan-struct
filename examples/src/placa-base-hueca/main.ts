@@ -228,14 +228,20 @@ van.derive(() => {
       boltPositions.push([bx, by]);
     }
   }
-  // ── PEDESTAL DE CONCRETO COMO SÓLIDO H8 (cuerpo INDEPENDIENTE) ──
-  // El pedestal NO comparte nodos con placa — la conexión es SOLO vía pernos
-  // embebidos. Cadena: columna → placa → pernos → pedestal → suelo.
+  // ── PEDESTAL DE CONCRETO COMO SÓLIDO H8 ──
+  // Conexiones: (1) CONTACTO con placa via snap-nodes en top face,
+  // (2) EMBEBIDO de pernos via snap nBot a nodo interior pedestal.
   const Ec = 4700 * Math.sqrt(fc / 1000) * 1000;
   const nu_c = 0.20;
   const Gc = Ec / (2 * (1 + nu_c));
   const nx_p = 10, ny_p = 10, nz_p = 6;
   const dxp_e = B_ped / nx_p, dyp_e = H_ped / ny_p, dzp_e = h_ped / nz_p;
+
+  const placaNodeList: { id: number; x: number; y: number }[] = [];
+  for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) {
+    const id = plateGrid[j][i];
+    placaNodeList.push({ id, x: nodes[id][0], y: nodes[id][1] });
+  }
 
   const pedGrid: number[][][] = [];
   for (let k = 0; k <= nz_p; k++) {
@@ -243,7 +249,23 @@ van.derive(() => {
     for (let j = 0; j <= ny_p; j++) {
       const row: number[] = [];
       for (let i = 0; i <= nx_p; i++) {
-        row.push(addNode(-B_ped/2 + i*dxp_e, -H_ped/2 + j*dyp_e, -h_ped + k*dzp_e));
+        const x = -B_ped/2 + i*dxp_e;
+        const y = -H_ped/2 + j*dyp_e;
+        const z = -h_ped + k*dzp_e;
+        const isTop = k === nz_p;
+        const inPlaca = Math.abs(x) <= B/2 + 1e-6 && Math.abs(y) <= H/2 + 1e-6;
+        let id: number;
+        if (isTop && inPlaca) {
+          let best = -1; let dmin = Infinity;
+          for (const pn of placaNodeList) {
+            const d = Math.hypot(pn.x - x, pn.y - y);
+            if (d < dmin) { dmin = d; best = pn.id; }
+          }
+          id = best >= 0 ? best : addNode(x, y, z);
+        } else {
+          id = addNode(x, y, z);
+        }
+        row.push(id);
       }
       layer.push(row);
     }
