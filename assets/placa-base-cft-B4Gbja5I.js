@@ -452,14 +452,15 @@ Promise.all([
     },
     objects3D: fe,
     settingsObj: {
-      deformedShape: true,
+      deformedShape: false,
       shellResults: "vonMises",
       gridSize: 1,
-      deformScale: 20,
+      deformScale: 5,
       custom3D: true,
-      loads: true,
-      supports: false,
-      displayScale: 0.2
+      loads: false,
+      supports: true,
+      showCotas: false,
+      displayScale: 0.1
     }
   }), At = document.createElement("div");
   At.style.cssText = "position:fixed;top:8px;right:8px;width:300px;max-height:85vh;overflow-y:auto;z-index:9999;";
