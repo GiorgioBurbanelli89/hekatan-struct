@@ -281,14 +281,16 @@ van.derive(() => {
     }
     return best;
   }
-  // Pernos embebidos en pedestal (DESPUÉS del pedestal)
+  // Pernos: nBot es nodo PROPIO empotrado (estabilidad). Visualmente el
+  // perno queda embebido en el pedestal por coincidencia geométrica.
   for (const [bx, by] of boltPositions) {
     const nTop = addNode(bx, by, L_proj);
     const nMid = snapToPlate(bx, by);
-    const nBot = snapToPedestal(bx, by, -L_bolt);  // EMBEBIDO
+    const nBot = addNode(bx, by, -L_bolt);
     addFrame(nTop, nMid, A_bolt, I_bolt, J_bolt);
     addFrame(nMid, nBot, A_bolt, I_bolt, J_bolt);
   }
+  void snapToPedestal;
   function addPedShell(n0: number, n1: number, n2: number, n3: number) {
     elements.push([n0, n1, n2, n3]);
     const i = elements.length - 1;
@@ -316,11 +318,13 @@ van.derive(() => {
     addPedShell(pedGrid[k][j][nx_p], pedGrid[k][j+1][nx_p], pedGrid[k+1][j+1][nx_p], pedGrid[k+1][j][nx_p]);
   }
 
-  // ── BCs: SOLO fondo del pedestal (z=-h_ped). Cadena de fuerzas:
-  // columna → placa → pernos (embebidos) → pedestal → suelo.
+  // ── BCs: Pernos empotrados en nBot (z=-L_bolt) + pedestal en su base (z=-h_ped) ──
   const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
   nodes.forEach((p, id) => {
-    if (Math.abs(p[2] - (-h_ped)) < 1e-6) supports.set(id, [true, true, true, true, true, true]);
+    const onBoltBot = Math.abs(p[2] - (-L_bolt)) < 1e-6 &&
+                      boltPositions.some(([bx, by]) => Math.abs(p[0]-bx) < 1e-6 && Math.abs(p[1]-by) < 1e-6);
+    const onPedBot = Math.abs(p[2] - (-h_ped)) < 1e-6;
+    if (onBoltBot || onPedBot) supports.set(id, [true, true, true, true, true, true]);
   });
 
   // ── Cargas en top de columna ──
@@ -353,8 +357,12 @@ van.derive(() => {
     analyzeOutputs = analyze(nodes, elements, elementInputs, deformOutputs);
   } catch (e: any) { console.warn("placa-base-hueca:", e?.message ?? e); }
 
-  // ── 3D decoraciones: pernos cilindros + tuercas HEXAGONALES ──
+  // ── 3D decoraciones: placa base destacada + pernos + tuercas ──
   const objs: THREE.Object3D[] = [];
+  const matPlaca = new THREE.MeshStandardMaterial({ color: 0xa0a0a0, metalness: 0.7, roughness: 0.4 });
+  const placaMesh = new THREE.Mesh(new THREE.BoxGeometry(B, H, t_plate), matPlaca);
+  placaMesh.position.set(0, 0, t_plate / 2);  // sentada sobre el pedestal
+  objs.push(placaMesh);
   const matBolt = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.5 });
   const matNut  = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.7, roughness: 0.3 });
   const t_nut = d_bolt * 0.8;

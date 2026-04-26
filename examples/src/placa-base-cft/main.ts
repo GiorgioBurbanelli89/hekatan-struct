@@ -347,64 +347,36 @@ van.derive(() => {
   for (let k = 0; k < nz_p; k++) for (let j = 0; j < ny_p; j++)
     addPedShell(pedGrid[k][j][nx_p], pedGrid[k][j+1][nx_p], pedGrid[k+1][j+1][nx_p], pedGrid[k+1][j][nx_p]);
 
-  // ── PERNOS DE ANCLAJE (frame elements) — embebidos en el pedestal ──
-  // nTop (z=L_proj) [libre, tuerca] → nMid (z=0) [snap placa] → nBot (z=-L_bolt) [snap pedestal]
+  // ── PERNOS DE ANCLAJE (frames) — empotrados en su nBot Y embebidos visualmente ──
+  // nTop (z=L_proj, tuerca) → nMid (z=0, placa) → nBot (z=-L_bolt, empotrado)
+  // El nBot es nodo PROPIO del perno empotrado al suelo (estabiliza el sistema
+  // independientemente del pedestal). Visualmente queda embebido en el pedestal.
   for (const [bx, by] of pendingBolts) {
     const nTop = addNode(bx, by, L_proj);
     const nMid = snapToPlate(bx, by);
-    const nBot = snapToPedestal(bx, by, -L_bolt);  // EMBEBIDO en pedestal
+    const nBot = addNode(bx, by, -L_bolt);
     addFrame(nTop, nMid, A_bolt, I_bolt, J_bolt);
     addFrame(nMid, nBot, A_bolt, I_bolt, J_bolt);
   }
+  void snapToPedestal;  // mantener helper por si se usa en el futuro
 
-  // ── CONCRETO FILL DEL CFT COMO SÓLIDO H8 (interior del HSS) ──
-  // Genera malla hex del relleno de concreto y agrega caras boundary como Q4
-  // shells con material concreto. El user verá el sólido por la apertura
-  // superior del HSS (CFT abierto en top como en práctica industrial).
-  const fill_bc = bc - 2 * t_col;
-  const fill_hc = hc - 2 * t_col;
-  const nx_f = 4, ny_f = 4, nz_f = nz_col;
-  const dxf = fill_bc / nx_f, dyf = fill_hc / ny_f, dzf = L_col / nz_f;
-  const fillGrid: number[][][] = [];
-  for (let k = 0; k <= nz_f; k++) {
-    const layer: number[][] = [];
-    for (let j = 0; j <= ny_f; j++) {
-      const row: number[] = [];
-      for (let i = 0; i <= nx_f; i++) {
-        row.push(addNode(-fill_bc/2 + i*dxf, -fill_hc/2 + j*dyf, k*dzf));
-      }
-      layer.push(row);
-    }
-    fillGrid.push(layer);
-  }
-  function addFillShell(n0: number, n1: number, n2: number, n3: number) {
-    elements.push([n0, n1, n2, n3]);
-    const i = elements.length - 1;
-    thicknesses.set(i, 0.001);
-    elasticities.set(i, Ec); poissonsRatios.set(i, nu_c);
-    densities.set(i, 24/9.80665); shearModuli.set(i, Gc);
-    areas.set(i, 0); Iy.set(i, 0); Iz.set(i, 0); J.set(i, 0);
-  }
-  // 6 caras del fill (top + bottom + 4 laterales)
-  for (let j = 0; j < ny_f; j++) for (let i = 0; i < nx_f; i++) {
-    addFillShell(fillGrid[0][j][i], fillGrid[0][j][i+1], fillGrid[0][j+1][i+1], fillGrid[0][j+1][i]);
-    addFillShell(fillGrid[nz_f][j][i], fillGrid[nz_f][j][i+1], fillGrid[nz_f][j+1][i+1], fillGrid[nz_f][j+1][i]);
-  }
-  for (let k = 0; k < nz_f; k++) for (let i = 0; i < nx_f; i++) {
-    addFillShell(fillGrid[k][0][i], fillGrid[k][0][i+1], fillGrid[k+1][0][i+1], fillGrid[k+1][0][i]);
-    addFillShell(fillGrid[k][ny_f][i], fillGrid[k][ny_f][i+1], fillGrid[k+1][ny_f][i+1], fillGrid[k+1][ny_f][i]);
-  }
-  for (let k = 0; k < nz_f; k++) for (let j = 0; j < ny_f; j++) {
-    addFillShell(fillGrid[k][j][0], fillGrid[k][j+1][0], fillGrid[k+1][j+1][0], fillGrid[k+1][j][0]);
-    addFillShell(fillGrid[k][j][nx_f], fillGrid[k][j+1][nx_f], fillGrid[k+1][j+1][nx_f], fillGrid[k+1][j][nx_f]);
-  }
+  // ── CONCRETO FILL DEL CFT (visualización THREE.Mesh translúcido) ──
+  // El fill como sólido FEM independiente generaba inestabilidad numérica
+  // (nodos sin conectividad rígida con HSS+placa). Por simplicidad lo
+  // representamos como mesh decorativo. La capacidad composite ya está
+  // contemplada en el benchmark AISC §I2.1b (Pno = Fy·As + 0.85·fc·Ac).
 
-  // ── BCs: SOLO la base del pedestal (z=-h_ped). El pedestal restringe a
-  // los pernos por embebido, y los pernos a la placa+columna. Cadena
-  // estructural correcta: columna → placa → pernos → pedestal → suelo.
+  // ── BCs: AMBAS bases empotradas para máxima estabilidad numérica ──
+  //   - Bolt nBot (z=-L_bolt): empotramiento de pernos
+  //   - Pedestal bottom (z=-h_ped): empotramiento del bloque concreto
+  // El pedestal contacta con la placa via shared nodes (snap top→placa).
+  // Los pernos son elementos paralelos que también empotran. Sistema estable.
   const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
   nodes.forEach((p, id) => {
-    if (Math.abs(p[2] - (-h_ped)) < 1e-6) supports.set(id, [true, true, true, true, true, true]);
+    const onBoltBot = Math.abs(p[2] - (-L_bolt)) < 1e-6 &&
+                      boltPositions.some(([bx, by]) => Math.abs(p[0]-bx) < 1e-6 && Math.abs(p[1]-by) < 1e-6);
+    const onPedBot = Math.abs(p[2] - (-h_ped)) < 1e-6;
+    if (onBoltBot || onPedBot) supports.set(id, [true, true, true, true, true, true]);
   });
 
   // ── Cargas en top de columna ──
@@ -441,8 +413,23 @@ van.derive(() => {
     analyzeOutputs = analyze(nodes, elements, elementInputs, deformOutputs);
   } catch (e: any) { console.warn("placa-base-hueca:", e?.message ?? e); }
 
-  // ── 3D decoraciones: pernos cilindros + tuercas HEXAGONALES ──
+  // ── 3D decoraciones: placa base destacada + concreto fill CFT + tuercas ──
   const objs: THREE.Object3D[] = [];
+  // PLACA BASE como BoxGeometry destacada (acero gris) sobre el pedestal,
+  // de espesor t_plate y dimensiones B×H. Esto la hace visible como contacto
+  // entre columna y pedestal (la shell FEM es muy delgada para verse sola).
+  const matPlaca = new THREE.MeshStandardMaterial({ color: 0xa0a0a0, metalness: 0.7, roughness: 0.4 });
+  const placaMesh = new THREE.Mesh(new THREE.BoxGeometry(B, H, t_plate), matPlaca);
+  placaMesh.position.set(0, 0, t_plate / 2);  // sentada sobre el pedestal (z=0 → t_plate)
+  objs.push(placaMesh);
+  // Fill de concreto translúcido dentro del HSS (visual)
+  const matFill = new THREE.MeshStandardMaterial({ color: 0xc4a878, transparent: true, opacity: 0.5 });
+  const fill = new THREE.Mesh(
+    new THREE.BoxGeometry(bc - 2*t_col, hc - 2*t_col, L_col - 0.005),
+    matFill,
+  );
+  fill.position.set(0, 0, L_col / 2);
+  objs.push(fill);
   const matBolt = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.5 });
   const matNut  = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.7, roughness: 0.3 });
   const t_nut = d_bolt * 0.8;       // espesor tuerca ≈ 0.8·Ø (típico ASTM)
