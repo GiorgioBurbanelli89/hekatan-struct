@@ -102,6 +102,8 @@ export default defineConfig({
         "placa-cantilever-q4": "src/placa-cantilever-q4/index.html",
         // ── Geotécnico ──
         "slope-stability": "src/slope-stability/index.html",
+        // ── Conexión placa base con columna H (CBFEM-style) ──
+        "placa-base-h": "src/placa-base-h/index.html",
       },
     },
   },

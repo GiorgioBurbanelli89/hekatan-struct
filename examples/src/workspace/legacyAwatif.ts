@@ -82,6 +82,9 @@ export const demoPlacaQ4        = legacy("placa-cantilever-q4",  "Placa Cantilev
 // ─── Geotécnico ────────────────────────────────────────────────────
 export const demoSlope          = legacy("slope-stability",      "Estabilidad de Talud (SRM)",  "Geotécnico");
 
+// ─── Conexión Placa Base con Columna H (CBFEM-style) ───────────────
+export const conexPlacaBaseH    = legacy("placa-base-h",         "Placa Base + Columna H (CBFEM)", "Conexiones");
+
 /** Array completo de los 19+11 ejemplos legacy para registrar de un golpe. */
 export const legacyAwatifExamples: ExampleDef[] = [
   legacy1dMesh,
@@ -117,4 +120,6 @@ export const legacyAwatifExamples: ExampleDef[] = [
   demoPlacaQ4,
   // Geotécnico
   demoSlope,
+  // Conexiones (CBFEM)
+  conexPlacaBaseH,
 ];
