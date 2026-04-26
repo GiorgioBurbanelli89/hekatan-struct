@@ -1,12 +1,12 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { v as l, P as Re } from "./theme-2eEBQPmF.js";
-import { M as zt, b as Ct, c as Ze, L as Ke, C as de, V as Qe, B as We, a as ta } from "./Text-DyNVkyur.js";
-import { a as ea } from "./analyze-BydHtRcI.js";
-import { d as aa, __tla as __tla_0 } from "./didacticCpp-l2dJQgN-.js";
-import { g as sa, a as ue, e as he } from "./getViewer-DnVmZy1T.js";
-import { e as oa } from "./makeDraggable-zx2br6Yh.js";
-import { g as na } from "./getParameters-CIJBOwMB.js";
-import { g as la } from "./styles-Cjdl64P4.js";
+import { v as l, P as Ze } from "./theme-2eEBQPmF.js";
+import { M as At, b as Ct, c as Ke, L as Qe, C as de, V as We, B as ta, a as ea } from "./Text-DyNVkyur.js";
+import { a as aa } from "./analyze-BydHtRcI.js";
+import { d as sa, __tla as __tla_0 } from "./didacticCpp-l2dJQgN-.js";
+import { g as oa, a as ue, e as he } from "./getViewer-DnVmZy1T.js";
+import { e as na } from "./makeDraggable-zx2br6Yh.js";
+import { g as la } from "./getParameters-CIJBOwMB.js";
+import { g as ca } from "./styles-Cjdl64P4.js";
 import "./pureFunctionsAny.generated-DeJSBP3k.js";
 Promise.all([
   (() => {
@@ -16,7 +16,7 @@ Promise.all([
     }
   })()
 ]).then(async () => {
-  const Nt = 2e8, At = 0.3, me = Nt / (2 * (1 + At)), pe = 78, ca = 25e4, ra = 6e5, i = {
+  const Nt = 2e8, St = 0.3, me = Nt / (2 * (1 + St)), pe = 78, ra = 25e4, ia = 6e5, i = {
     B: {
       value: l.state(0.5),
       min: 0.3,
@@ -199,7 +199,7 @@ Promise.all([
     demandCapAnchor: 0
   });
   l.derive(() => {
-    const s = i.B.value.val, u = i.H.value.val, U = i.t_plate.value.val, d = i.bc.value.val, m = i.hc.value.val, O = i.t_col.value.val, it = i.L_col.value.val, Tt = Math.round(i.nBoltsX.value.val), dt = Math.round(i.nBoltsY.value.val), mt = i.sx.value.val, jt = i.sy.value.val, b = i.d_bolt.value.val, V = i.L_bolt.value.val, X = i.L_proj.value.val, $ = i.B_ped.value.val, R = i.H_ped.value.val, pt = i.h_ped.value.val, ut = i.fc.value.val, Z = i.Pu.value.val, ht = i.Mx.value.val, ft = i.My.value.val, q = Math.round(i.nx.value.val), E = Math.round(i.ny.value.val), v = Math.round(i.nz_col.value.val), p = 0.04, x = [], M = [], K = /* @__PURE__ */ new Map(), Q = /* @__PURE__ */ new Map(), W = /* @__PURE__ */ new Map(), tt = /* @__PURE__ */ new Map(), et = /* @__PURE__ */ new Map(), at = /* @__PURE__ */ new Map(), st = /* @__PURE__ */ new Map(), ot = /* @__PURE__ */ new Map(), nt = /* @__PURE__ */ new Map();
+    const s = i.B.value.val, f = i.H.value.val, V = i.t_plate.value.val, d = i.bc.value.val, m = i.hc.value.val, O = i.t_col.value.val, it = i.L_col.value.val, jt = Math.round(i.nBoltsX.value.val), dt = Math.round(i.nBoltsY.value.val), mt = i.sx.value.val, Lt = i.sy.value.val, b = i.d_bolt.value.val, X = i.L_bolt.value.val, $ = i.L_proj.value.val, R = i.B_ped.value.val, Z = i.H_ped.value.val, pt = i.h_ped.value.val, ut = i.fc.value.val, K = i.Pu.value.val, ht = i.Mx.value.val, ft = i.My.value.val, q = Math.round(i.nx.value.val), E = Math.round(i.ny.value.val), v = Math.round(i.nz_col.value.val), p = 0.04, x = [], M = [], Q = /* @__PURE__ */ new Map(), W = /* @__PURE__ */ new Map(), tt = /* @__PURE__ */ new Map(), et = /* @__PURE__ */ new Map(), at = /* @__PURE__ */ new Map(), st = /* @__PURE__ */ new Map(), ot = /* @__PURE__ */ new Map(), nt = /* @__PURE__ */ new Map(), lt = /* @__PURE__ */ new Map();
     function _(t, e, a) {
       return x.push([
         t,
@@ -215,36 +215,36 @@ Promise.all([
         o
       ]);
       const n = M.length - 1;
-      K.set(n, c), Q.set(n, Nt), W.set(n, At), tt.set(n, pe), et.set(n, me), at.set(n, 0), ot.set(n, 0), st.set(n, 0), nt.set(n, 0);
+      Q.set(n, c), W.set(n, Nt), tt.set(n, St), et.set(n, pe), at.set(n, me), st.set(n, 0), nt.set(n, 0), ot.set(n, 0), lt.set(n, 0);
     }
-    function Lt(t, e, a, o, c) {
+    function Ot(t, e, a, o, c) {
       M.push([
         t,
         e
       ]);
       const n = M.length - 1;
-      Q.set(n, Nt), W.set(n, At), tt.set(n, pe), et.set(n, me), at.set(n, a), ot.set(n, o), st.set(n, o), nt.set(n, c), K.set(n, 0);
+      W.set(n, Nt), tt.set(n, St), et.set(n, pe), at.set(n, me), st.set(n, a), nt.set(n, o), ot.set(n, o), lt.set(n, c), Q.set(n, 0);
     }
-    const Ot = s / q, qt = u / E, A = [];
+    const qt = s / q, Et = f / E, N = [];
     for (let t = 0; t <= E; t++) {
       const e = [];
-      for (let a = 0; a <= q; a++) e.push(_(-s / 2 + a * Ot, -u / 2 + t * qt, p));
-      A.push(e);
+      for (let a = 0; a <= q; a++) e.push(_(-s / 2 + a * qt, -f / 2 + t * Et, p));
+      N.push(e);
     }
-    for (let t = 0; t < E; t++) for (let e = 0; e < q; e++) S(A[t][e], A[t][e + 1], A[t + 1][e + 1], A[t + 1][e], U);
+    for (let t = 0; t < E; t++) for (let e = 0; e < q; e++) S(N[t][e], N[t][e + 1], N[t + 1][e + 1], N[t + 1][e], V);
     function k(t, e) {
       let a = -1, o = 1 / 0;
       for (let c = 0; c <= E; c++) for (let n = 0; n <= q; n++) {
-        const h = A[c][n], B = Math.hypot(x[h][0] - t, x[h][1] - e);
-        B < o && (o = B, a = h);
+        const u = N[c][n], w = Math.hypot(x[u][0] - t, x[u][1] - e);
+        w < o && (o = w, a = u);
       }
       return a;
     }
-    const y = Math.max(2, Math.round(d / Ot)), g = Math.max(2, Math.round(m / qt)), Et = d / y, Ht = m / g, H = it / v, P = [];
+    const y = Math.max(2, Math.round(d / qt)), g = Math.max(2, Math.round(m / Et)), Ht = d / y, Gt = m / g, H = it / v, P = [];
     for (let t = 0; t <= v; t++) {
       const e = [];
       for (let a = 0; a <= y; a++) {
-        const o = -d / 2 + a * Et;
+        const o = -d / 2 + a * Ht;
         t === 0 ? e.push(k(o, -m / 2)) : e.push(_(o, -m / 2, p + t * H));
       }
       P.push(e);
@@ -254,7 +254,7 @@ Promise.all([
     for (let t = 0; t <= v; t++) {
       const e = [];
       for (let a = 0; a <= y; a++) {
-        const o = -d / 2 + a * Et;
+        const o = -d / 2 + a * Ht;
         t === 0 ? e.push(k(o, m / 2)) : e.push(_(o, m / 2, p + t * H));
       }
       z.push(e);
@@ -264,7 +264,7 @@ Promise.all([
     for (let t = 0; t <= v; t++) {
       const e = [];
       for (let a = 0; a <= g; a++) {
-        const o = -m / 2 + a * Ht;
+        const o = -m / 2 + a * Gt;
         t === 0 ? e.push(k(-d / 2, o)) : a === 0 ? e.push(P[t][0]) : a === g ? e.push(z[t][0]) : e.push(_(-d / 2, o, p + t * H));
       }
       F.push(e);
@@ -274,53 +274,53 @@ Promise.all([
     for (let t = 0; t <= v; t++) {
       const e = [];
       for (let a = 0; a <= g; a++) {
-        const o = -m / 2 + a * Ht;
+        const o = -m / 2 + a * Gt;
         t === 0 ? e.push(k(d / 2, o)) : a === 0 ? e.push(P[t][y]) : a === g ? e.push(z[t][y]) : e.push(_(d / 2, o, p + t * H));
       }
       I.push(e);
     }
     for (let t = 0; t < v; t++) for (let e = 0; e < g; e++) S(I[t][e], I[t][e + 1], I[t + 1][e + 1], I[t + 1][e], O);
-    const ze = Math.min(0.2, it * 0.4), Gt = Math.min(0.1, (s - d) / 2 * 0.7), Ce = Math.max(1, Math.round(ze / H));
-    function lt(t, e, a, o) {
-      const [c, n] = t, [h, B] = e, J = a[0][o], wt = k(c + h * Gt, n + B * Gt), j = a[Math.min(Ce, a.length - 1)][o];
-      S(J, wt, j, j, O);
+    const ze = Math.min(0.2, it * 0.4), Dt = Math.min(0.1, (s - d) / 2 * 0.7), Ae = Math.max(1, Math.round(ze / H));
+    function ct(t, e, a, o) {
+      const [c, n] = t, [u, w] = e, U = a[0][o], wt = k(c + u * Dt, n + w * Dt), j = a[Math.min(Ae, a.length - 1)][o];
+      S(U, wt, j, j, O);
     }
-    lt([
+    ct([
       0,
       m / 2
     ], [
       0,
       1
-    ], z, Math.round(y / 2)), lt([
+    ], z, Math.round(y / 2)), ct([
       0,
       -m / 2
     ], [
       0,
       -1
-    ], P, Math.round(y / 2)), lt([
+    ], P, Math.round(y / 2)), ct([
       d / 2,
       0
     ], [
       1,
       0
-    ], I, Math.round(g / 2)), lt([
+    ], I, Math.round(g / 2)), ct([
       -d / 2,
       0
     ], [
       -1,
       0
     ], F, Math.round(g / 2));
-    const Dt = Math.PI * b * b / 4, xt = Math.PI * b ** 4 / 64, Yt = 2 * xt, ct = [], Ne = (s - 2 * mt) / Math.max(1, Tt - 1), Ae = (u - 2 * jt) / Math.max(1, dt - 1);
-    for (let t = 0; t < Tt; t++) for (let e = 0; e < dt; e++) {
-      const a = -s / 2 + mt + t * Ne, o = -u / 2 + jt + e * Ae;
-      Math.abs(a) < d / 2 + 5e-3 && Math.abs(o) < m / 2 + 5e-3 || ct.push([
+    const Yt = Math.PI * b * b / 4, xt = Math.PI * b ** 4 / 64, Jt = 2 * xt, G = [], Ce = (s - 2 * mt) / Math.max(1, jt - 1), Ne = (f - 2 * Lt) / Math.max(1, dt - 1);
+    for (let t = 0; t < jt; t++) for (let e = 0; e < dt; e++) {
+      const a = -s / 2 + mt + t * Ce, o = -f / 2 + Lt + e * Ne;
+      Math.abs(a) < d / 2 + 5e-3 && Math.abs(o) < m / 2 + 5e-3 || G.push([
         a,
         o
       ]);
     }
-    const Jt = 4700 * Math.sqrt(ut / 1e3) * 1e3, Ut = 0.2, Se = Jt / (2 * (1 + Ut)), C = 10, N = 10, w = 6, Vt = $ / C, Xt = R / N, ke = pt / w, $t = [];
+    const Ut = 4700 * Math.sqrt(ut / 1e3) * 1e3, Vt = 0.2, Se = Ut / (2 * (1 + Vt)), A = 10, C = 10, B = 6, bt = R / A, Xt = Z / C, ke = pt / B, $t = [];
     for (let t = 0; t <= E; t++) for (let e = 0; e <= q; e++) {
-      const a = A[t][e];
+      const a = N[t][e];
       $t.push({
         id: a,
         x: x[a][0],
@@ -328,30 +328,30 @@ Promise.all([
       });
     }
     const r = [];
-    for (let t = 0; t <= w; t++) {
+    for (let t = 0; t <= B; t++) {
       const e = [];
-      for (let a = 0; a <= N; a++) {
+      for (let a = 0; a <= C; a++) {
         const o = [];
-        for (let c = 0; c <= C; c++) {
-          const n = -$ / 2 + c * Vt, h = -R / 2 + a * Xt, B = -pt + t * ke, J = t === w, wt = Math.abs(n) <= s / 2 + 1e-6 && Math.abs(h) <= u / 2 + 1e-6;
+        for (let c = 0; c <= A; c++) {
+          const n = -R / 2 + c * bt, u = -Z / 2 + a * Xt, w = -pt + t * ke, U = t === B, wt = Math.abs(n) <= s / 2 + 1e-6 && Math.abs(u) <= f / 2 + 1e-6;
           let j;
-          if (J && wt) {
-            let Bt = -1, re = 1 / 0;
-            for (const Pt of $t) {
-              const ie = Math.hypot(Pt.x - n, Pt.y - h);
-              ie < re && (re = ie, Bt = Pt.id);
+          if (U && wt) {
+            let Pt = -1, re = 1 / 0;
+            for (const zt of $t) {
+              const ie = Math.hypot(zt.x - n, zt.y - u);
+              ie < re && (re = ie, Pt = zt.id);
             }
-            j = Bt >= 0 ? Bt : _(n, h, B);
-          } else j = _(n, h, B);
+            j = Pt >= 0 ? Pt : _(n, u, w);
+          } else j = _(n, u, w);
           o.push(j);
         }
         e.push(o);
       }
       r.push(e);
     }
-    for (const [t, e] of ct) {
-      const a = _(t, e, p + X), o = k(t, e), c = _(t, e, p - V);
-      Lt(a, o, Dt, xt, Yt), Lt(o, c, Dt, xt, Yt);
+    for (const [t, e] of G) {
+      const a = _(t, e, p + $), o = k(t, e), c = _(t, e, p - X);
+      Ot(a, o, Yt, xt, Jt), Ot(o, c, Yt, xt, Jt);
     }
     function T(t, e, a, o) {
       M.push([
@@ -361,18 +361,22 @@ Promise.all([
         o
       ]);
       const c = M.length - 1;
-      K.set(c, 1e-3), Q.set(c, Jt), W.set(c, Ut), tt.set(c, 24 / 9.80665), et.set(c, Se), at.set(c, 0), ot.set(c, 0), st.set(c, 0), nt.set(c, 0);
+      Q.set(c, 1e-3), W.set(c, Ut), tt.set(c, Vt), et.set(c, 24 / 9.80665), at.set(c, Se), st.set(c, 0), nt.set(c, 0), ot.set(c, 0), lt.set(c, 0);
     }
-    for (let t = 0; t < N; t++) for (let e = 0; e < C; e++) {
+    function Fe(t, e) {
+      for (const [a, o] of G) if (Math.hypot(t - a, e - o) < bt * 0.6) return true;
+      return false;
+    }
+    for (let t = 0; t < C; t++) for (let e = 0; e < A; e++) {
       T(r[0][t][e], r[0][t][e + 1], r[0][t + 1][e + 1], r[0][t + 1][e]);
-      const a = -$ / 2 + (e + 0.5) * Vt, o = -R / 2 + (t + 0.5) * Xt;
-      Math.abs(a) <= s / 2 && Math.abs(o) <= u / 2 || T(r[w][t][e], r[w][t][e + 1], r[w][t + 1][e + 1], r[w][t + 1][e]);
+      const a = -R / 2 + (e + 0.5) * bt, o = -Z / 2 + (t + 0.5) * Xt;
+      Fe(a, o) || T(r[B][t][e], r[B][t][e + 1], r[B][t + 1][e + 1], r[B][t + 1][e]);
     }
-    for (let t = 0; t < w; t++) for (let e = 0; e < C; e++) T(r[t][0][e], r[t][0][e + 1], r[t + 1][0][e + 1], r[t + 1][0][e]), T(r[t][N][e], r[t][N][e + 1], r[t + 1][N][e + 1], r[t + 1][N][e]);
-    for (let t = 0; t < w; t++) for (let e = 0; e < N; e++) T(r[t][e][0], r[t][e + 1][0], r[t + 1][e + 1][0], r[t + 1][e][0]), T(r[t][e][C], r[t][e + 1][C], r[t + 1][e + 1][C], r[t + 1][e][C]);
+    for (let t = 0; t < B; t++) for (let e = 0; e < A; e++) T(r[t][0][e], r[t][0][e + 1], r[t + 1][0][e + 1], r[t + 1][0][e]), T(r[t][C][e], r[t][C][e + 1], r[t + 1][C][e + 1], r[t + 1][C][e]);
+    for (let t = 0; t < B; t++) for (let e = 0; e < C; e++) T(r[t][e][0], r[t][e + 1][0], r[t + 1][e + 1][0], r[t + 1][e][0]), T(r[t][e][A], r[t][e + 1][A], r[t + 1][e + 1][A], r[t + 1][e][A]);
     const Rt = /* @__PURE__ */ new Map();
     x.forEach((t, e) => {
-      const a = Math.abs(t[2] - (p - V)) < 1e-6 && ct.some(([c, n]) => Math.abs(t[0] - c) < 1e-6 && Math.abs(t[1] - n) < 1e-6), o = Math.abs(t[2] - -pt) < 1e-6;
+      const a = Math.abs(t[2] - (p - X)) < 1e-6 && G.some(([c, n]) => Math.abs(t[0] - c) < 1e-6 && Math.abs(t[1] - n) < 1e-6), o = Math.abs(t[2] - -pt) < 1e-6;
       (a || o) && Rt.set(e, [
         true,
         true,
@@ -382,95 +386,95 @@ Promise.all([
         true
       ]);
     });
-    const bt = [];
+    const vt = [];
     x.forEach((t, e) => {
-      Math.abs(t[2] - (p + it)) < 1e-6 && Math.abs(t[0]) <= d / 2 + 1e-6 && Math.abs(t[1]) <= m / 2 + 1e-6 && bt.push(e);
+      Math.abs(t[2] - (p + it)) < 1e-6 && Math.abs(t[0]) <= d / 2 + 1e-6 && Math.abs(t[1]) <= m / 2 + 1e-6 && vt.push(e);
     });
-    const vt = Math.max(1, bt.length), Fe = -Z / vt, Ie = ht / vt, Te = ft / vt, Zt = /* @__PURE__ */ new Map();
-    for (const t of bt) Zt.set(t, [
+    const Mt = Math.max(1, vt.length), Ie = -K / Mt, Te = ht / Mt, je = ft / Mt, Zt = /* @__PURE__ */ new Map();
+    for (const t of vt) Zt.set(t, [
       0,
       0,
-      Fe,
       Ie,
       Te,
+      je,
       0
     ]);
     const Kt = {
       supports: Rt,
       loads: Zt
-    }, Mt = {
-      elasticities: Q,
-      shearModuli: et,
-      areas: at,
-      momentsOfInertiaZ: st,
-      momentsOfInertiaY: ot,
-      torsionalConstants: nt,
-      densities: tt,
-      poissonsRatios: W,
-      thicknesses: K
+    }, _t = {
+      elasticities: W,
+      shearModuli: at,
+      areas: st,
+      momentsOfInertiaZ: ot,
+      momentsOfInertiaY: nt,
+      torsionalConstants: lt,
+      densities: et,
+      poissonsRatios: tt,
+      thicknesses: Q
     };
-    let _t = {}, yt = {};
+    let yt = {}, gt = {};
     try {
-      _t = aa(x, M, Kt, Mt), yt = ea(x, M, Mt, _t);
+      yt = sa(x, M, Kt, _t), gt = aa(x, M, _t, yt);
     } catch (t) {
       console.warn("placa-base-hueca:", (t == null ? void 0 : t.message) ?? t);
     }
-    const G = [], je = new zt({
+    const D = [], Le = new At({
       color: 12105912,
       metalness: 0.7,
       roughness: 0.4,
       transparent: true,
       opacity: 0.45
-    }), Qt = new Ct(new Ze(s, u, U), je);
-    Qt.position.set(0, 0, p + U / 2);
-    const Le = new Ke({
+    }), Qt = new Ct(new Ke(s, f, V), Le);
+    Qt.position.set(0, 0, p + V / 2);
+    const Oe = new Qe({
       color: 16755200
     });
-    function D(t, e) {
+    function Y(t, e) {
       const o = [];
       for (let n = 0; n <= 5 * 2; n++) {
-        const h = n / 10, B = p * (1 - h), J = n % 2 === 0 ? 0 : 8e-3;
-        o.push(new Qe(t + J, e, B));
+        const u = n / 10, w = p * (1 - u), U = n % 2 === 0 ? 0 : 8e-3;
+        o.push(new We(t + U, e, w));
       }
-      const c = new We().setFromPoints(o);
-      G.push(new ta(c, Le));
+      const c = new ta().setFromPoints(o);
+      D.push(new ea(c, Oe));
     }
-    D(s / 2 - 0.04, u / 2 - 0.04), D(-s / 2 + 0.04, u / 2 - 0.04), D(s / 2 - 0.04, -u / 2 + 0.04), D(-s / 2 + 0.04, -u / 2 + 0.04), D(0, 0), G.push(Qt);
-    const Oe = new zt({
+    Y(s / 2 - 0.04, f / 2 - 0.04), Y(-s / 2 + 0.04, f / 2 - 0.04), Y(s / 2 - 0.04, -f / 2 + 0.04), Y(-s / 2 + 0.04, -f / 2 + 0.04), Y(0, 0), D.push(Qt);
+    const qe = new At({
       color: 6710886,
       metalness: 0.5
-    }), qe = new zt({
+    }), Ee = new At({
       color: 4473924,
       metalness: 0.7,
       roughness: 0.3
-    }), Wt = b * 0.8, te = b * 0.85, Ee = p + X + Wt / 2;
-    for (const [t, e] of ct) {
-      const a = new de(b / 2, b / 2, V + X, 12), o = new Ct(a, Oe);
-      o.position.set(t, e, p + (-V + X) / 2), o.rotation.x = Math.PI / 2, G.push(o);
-      const c = new de(te, te, Wt, 6), n = new Ct(c, qe);
-      n.position.set(t, e, Ee), n.rotation.x = Math.PI / 2, G.push(n);
+    }), Wt = b * 0.8, te = b * 0.85, He = p + $ + Wt / 2;
+    for (const [t, e] of G) {
+      const a = new de(b / 2, b / 2, X + $, 12), o = new Ct(a, qe);
+      o.position.set(t, e, p + (-X + $) / 2), o.rotation.x = Math.PI / 2, D.push(o);
+      const c = new de(te, te, Wt, 6), n = new Ct(c, Ee);
+      n.position.set(t, e, He), n.rotation.x = Math.PI / 2, D.push(n);
     }
-    let gt = 0;
-    const ee = yt == null ? void 0 : yt.vonMises;
+    let Bt = 0;
+    const ee = gt == null ? void 0 : gt.vonMises;
     ee && ee.forEach((t) => t.forEach((e) => {
-      e > gt && (gt = e);
+      e > Bt && (Bt = e);
     }));
-    const He = 0.65, Y = s * u, ae = $ * R, Ge = Math.min(2, Math.sqrt(ae / Y)), De = Math.min(0.85 * ut * Y * Ge, 1.7 * ut * Y), se = He * De, Ye = Z / Math.max(1, se), oe = Math.max(0, (s - 0.95 * Math.max(d, m)) / 2), Je = Z / Y, ne = oe * Math.sqrt(2 * Math.max(0, Je) / (0.9 * ca)), Ue = ne / Math.max(1e-6, U), Ve = Math.max(0.05, s - 2 * mt), Xe = Math.sqrt(ht * ht + ft * ft), le = Math.max(0, Xe / Ve - Z / 2) / Math.max(1, dt), ce = 0.75 * (0.75 * Math.PI * b * b / 4) * ra, $e = le / Math.max(1, ce);
+    const Ge = 0.65, J = s * f, ae = R * Z, De = Math.min(2, Math.sqrt(ae / J)), Ye = Math.min(0.85 * ut * J * De, 1.7 * ut * J), se = Ge * Ye, Je = K / Math.max(1, se), oe = Math.max(0, (s - 0.95 * Math.max(d, m)) / 2), Ue = K / J, ne = oe * Math.sqrt(2 * Math.max(0, Ue) / (0.9 * ra)), Ve = ne / Math.max(1e-6, V), Xe = Math.max(0.05, s - 2 * mt), $e = Math.sqrt(ht * ht + ft * ft), le = Math.max(0, $e / Xe - K / 2) / Math.max(1, dt), ce = 0.75 * (0.75 * Math.PI * b * b / 4) * ia, Re = le / Math.max(1, ce);
     ge.val = {
-      vmMax: gt,
-      A1: Y,
+      vmMax: Bt,
+      A1: J,
       A2: ae,
       phiPp: se,
-      demandCapPp: Ye,
+      demandCapPp: Je,
       m_cant: oe,
       t_req: ne,
-      demandCapT: Ue,
+      demandCapT: Ve,
       T_anchor: le,
       phiNn: ce,
-      demandCapAnchor: $e
-    }, fe.val = x, xe.val = M, be.val = Kt, ve.val = Mt, Me.val = _t, _e.val = yt, ye.val = G;
+      demandCapAnchor: Re
+    }, fe.val = x, xe.val = M, be.val = Kt, ve.val = _t, Me.val = yt, _e.val = gt, ye.val = D;
   });
-  const we = sa({
+  const Be = oa({
     mesh: {
       nodes: fe,
       elements: xe,
@@ -491,13 +495,13 @@ Promise.all([
       showCotas: false,
       displayScale: 0.1
     }
-  }), St = document.createElement("div");
-  St.style.cssText = "position:fixed;top:8px;right:8px;width:300px;max-height:85vh;overflow-y:auto;z-index:9999;";
-  const L = new Re({
+  }), kt = document.createElement("div");
+  kt.style.cssText = "position:fixed;top:8px;right:8px;width:300px;max-height:85vh;overflow-y:auto;z-index:9999;";
+  const L = new Ze({
     title: "\u{1F9EA} Placa base + col HSS hueca",
-    container: St,
+    container: kt,
     expanded: true
-  }), f = {
+  }), h = {
     vmMax: 0,
     A1: 0,
     A2: 0,
@@ -509,81 +513,81 @@ Promise.all([
     T_anchor: 0,
     phiNn: 0,
     demandCapAnchor: 0
-  }, kt = (s) => s < 1 ? `${s.toFixed(2)} \u2713` : s < 1.2 ? `${s.toFixed(2)} \u26A0` : `${s.toFixed(2)} \u2717`, rt = L.addFolder({
+  }, Ft = (s) => s < 1 ? `${s.toFixed(2)} \u2713` : s < 1.2 ? `${s.toFixed(2)} \u26A0` : `${s.toFixed(2)} \u2717`, rt = L.addFolder({
     title: "AISC \xA7J8 bearing concreto"
   });
-  rt.addBinding(f, "A1", {
+  rt.addBinding(h, "A1", {
     readonly: true,
     label: "A1 (m\xB2)",
     format: (s) => s.toFixed(4)
   });
-  rt.addBinding(f, "A2", {
+  rt.addBinding(h, "A2", {
     readonly: true,
     label: "A2 (m\xB2)",
     format: (s) => s.toFixed(4)
   });
-  rt.addBinding(f, "phiPp", {
+  rt.addBinding(h, "phiPp", {
     readonly: true,
     label: "\u03C6Pp (kN)",
     format: (s) => s.toFixed(0)
   });
-  rt.addBinding(f, "demandCapPp", {
+  rt.addBinding(h, "demandCapPp", {
     readonly: true,
     label: "Pu/\u03C6Pp",
-    format: kt
+    format: Ft
   });
-  const Ft = L.addFolder({
+  const It = L.addFolder({
     title: "DG-1 espesor placa"
   });
-  Ft.addBinding(f, "m_cant", {
+  It.addBinding(h, "m_cant", {
     readonly: true,
     label: "m cant (m)",
     format: (s) => s.toFixed(4)
   });
-  Ft.addBinding(f, "t_req", {
+  It.addBinding(h, "t_req", {
     readonly: true,
     label: "t_req (mm)",
     format: (s) => (s * 1e3).toFixed(1)
   });
-  Ft.addBinding(f, "demandCapT", {
+  It.addBinding(h, "demandCapT", {
     readonly: true,
     label: "t_req/t_act",
-    format: kt
+    format: Ft
   });
-  const It = L.addFolder({
+  const Tt = L.addFolder({
     title: "ACI \xA717 anclaje"
   });
-  It.addBinding(f, "T_anchor", {
+  Tt.addBinding(h, "T_anchor", {
     readonly: true,
     label: "T (kN/perno)",
     format: (s) => s.toFixed(1)
   });
-  It.addBinding(f, "phiNn", {
+  Tt.addBinding(h, "phiNn", {
     readonly: true,
     label: "\u03C6Nn (kN)",
     format: (s) => s.toFixed(1)
   });
-  It.addBinding(f, "demandCapAnchor", {
+  Tt.addBinding(h, "demandCapAnchor", {
     readonly: true,
     label: "T/\u03C6Nn",
-    format: kt
+    format: Ft
   });
-  const ia = L.addFolder({
+  const da = L.addFolder({
     title: "FEM"
   });
-  ia.addBinding(f, "vmMax", {
+  da.addBinding(h, "vmMax", {
     readonly: true,
     label: "\u03C3 vM max (kN/m\xB2)",
     format: (s) => s.toExponential(3)
   });
-  const Be = L.addFolder({
+  const we = L.addFolder({
     title: "Unidades",
     expanded: false
   }), Pe = {
     stress: he.val,
     disp: ue.val
   };
-  Be.addBinding(Pe, "stress", {
+  we.addBinding(Pe, "stress", {
     options: {
       "kN/m\xB2": "kN/m\xB2",
       MPa: "MPa",
@@ -594,7 +598,7 @@ Promise.all([
   }).on("change", (s) => {
     he.val = s.value;
   });
-  Be.addBinding(Pe, "disp", {
+  we.addBinding(Pe, "disp", {
     options: {
       m: "m",
       cm: "cm",
@@ -604,18 +608,18 @@ Promise.all([
   }).on("change", (s) => {
     ue.val = s.value;
   });
-  document.body.append(St);
+  document.body.append(kt);
   l.derive(() => {
     const s = ge.val;
-    Object.assign(f, s), L.refresh();
+    Object.assign(h, s), L.refresh();
   });
-  document.body.append(na(i), we, la({
+  document.body.append(la(i), Be, ca({
     sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct/blob/main/examples/src/placa-base-hueca/main.ts"
   }));
-  setTimeout(() => oa(), 200);
+  setTimeout(() => na(), 200);
   setTimeout(() => {
     var _a;
-    const s = we.__ctx;
+    const s = Be.__ctx;
     (s == null ? void 0 : s.camera) && (s == null ? void 0 : s.controls) && (s.camera.up.set(0, 0, 1), s.camera.position.set(2, -2, 1.2), s.controls.target.set(0, 0, 0.25), s.controls.update(), (_a = s.render) == null ? void 0 : _a.call(s));
   }, 800);
 });
