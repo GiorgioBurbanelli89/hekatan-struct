@@ -5,6 +5,28 @@ import { Lut } from "three/addons/math/Lut.js";
 import van, { State } from "vanjs-core";
 import { fixedColorMapRange } from "../viewer/getViewer";
 
+// SAP2000 default contour colormap — replica EXACTA del "Display Deformed Shape →
+// Contours" de SAP2000/CSiBridge/ETABS. 14 stops del clásico industrial:
+//   min(t=0)=magenta → rosa → rojo → naranja → amarillo → verde → cian → azul oscuro(t=1)
+// Adaptado de calcpad-viz/src/utils/colormap.ts (Calcpad-Symbolic).
+(Lut as any).ColorMapKeywords = (Lut as any).ColorMapKeywords ?? {};
+(Lut as any).ColorMapKeywords["sap2000"] = [
+  [0.000, 0xff00ff],  // magenta (min)
+  [0.077, 0xff00b4],  // rosa
+  [0.154, 0xff0000],  // rojo
+  [0.231, 0xff5000],  // rojo-naranja
+  [0.308, 0xff8c00],  // naranja
+  [0.385, 0xffbe00],  // amarillo-naranja
+  [0.462, 0xffff00],  // amarillo
+  [0.538, 0xb4ff00],  // amarillo-verde
+  [0.615, 0x00ff00],  // verde
+  [0.692, 0x00ffb4],  // verde-cian
+  [0.769, 0x00ffff],  // cian
+  [0.846, 0x00b4ff],  // cian-azul
+  [0.923, 0x0000ff],  // azul
+  [1.000, 0x0000b4],  // azul oscuro (max)
+];
+
 export function getColorMap(
   nodes: State<Node[]>,
   elements: State<Element[]>,
@@ -22,8 +44,9 @@ export function getColorMap(
     })
   );
 
-  // Update
-  lut.setColorMap("rainbow");
+  // Update — usar palette SAP2000 (estilo CSiBridge/ETABS/Calcpad).
+  // 14 stops perceptualmente mejor que rainbow puro para resultados FEM.
+  lut.setColorMap("sap2000");
   colorMap.renderOrder = -1; // to ensure that it always set behind the mesh
   colorMap.frustumCulled = false;
 

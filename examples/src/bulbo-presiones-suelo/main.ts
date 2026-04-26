@@ -44,6 +44,9 @@ const parameters: Parameters = {
   Rx:  { value: van.state(5),     min: 1,  max: 15,  step: 0.5,  label: "Rx carga (m)" },
   Ry:  { value: van.state(3),     min: 1,  max: 15,  step: 0.5,  label: "Ry carga (m)" },
   w:   { value: van.state(100),   min: 10, max: 500, step: 10,   label: "w (kN/m²)" },
+  // Vista: rebanada XZ central pre-extraída (estilo Calcpad/SAP2000)
+  // 1 = solo la rebanada Y=ny/2, 0 = bloque completo
+  showSlice: { value: van.state(1), min: 0, max: 1, step: 1, label: "Vista rebanada XZ (1=si)" },
 };
 
 const nodesState: State<Node[]>                  = van.state([]);
@@ -71,6 +74,7 @@ van.derive(() => {
   const Rx = parameters.Rx.value.val;
   const Ry = parameters.Ry.value.val;
   const w = parameters.w.value.val;
+  const showSlice = Math.round(parameters.showSlice.value.val) === 1;
 
   // ── Mallado H8 estructurado ──
   // Convención: X y Y en plano horizontal, Z vertical descendente (z=0 superficie).
@@ -201,20 +205,58 @@ van.derive(() => {
     elementInputs.areas.set(i, 0); elementInputs.momentsOfInertiaY.set(i, 0);
     elementInputs.momentsOfInertiaZ.set(i, 0); elementInputs.torsionalConstants.set(i, 0);
   }
-  // Render TODAS las 6 caras de TODOS los elementos hex8 (incluyendo
-  // interiores). Esto es necesario para que al activar un PLANO DE CORTE
-  // se revele el interior con colormap (bulbo de presiones).
-  // Performance: 6 × nElems shells. Con default 6×6×3 = 108 elem → 648 shells (OK).
+  // Render mode:
+  //   showSlice=true  → SOLO la rebanada XZ central j=ny/2 (estilo Calcpad)
+  //                    Muestra una pared delgada con el bulbo directamente.
+  //   showSlice=false → todas las caras (con clipping plane se puede revelar interior).
+  const j_mid = Math.floor(ny / 2);
+  // Mapa face → elemento que la genera (para colormap S33 nodal)
+  const faceToElem = new Map<number, number>();  // visualElement index → hex8 element index
+  let elemCounter = 0;
   for (let k = 0; k < nz; k++) {
     for (let j = 0; j < ny; j++) {
       for (let i = 0; i < nx; i++) {
+        if (showSlice && j !== j_mid) { elemCounter++; continue; }
         const n = (a:number, b:number, c:number) => idx(i+a, j+b, k+c);
-        addBoundaryFace(n(0,0,0), n(1,0,0), n(1,1,0), n(0,1,0));  // top z=k
-        addBoundaryFace(n(0,0,1), n(1,0,1), n(1,1,1), n(0,1,1));  // bot z=k+1
+        // Cara y=j (frontal de la rebanada)
+        const fIdx = visualElements.length;
         addBoundaryFace(n(0,0,0), n(1,0,0), n(1,0,1), n(0,0,1));  // y=j
-        addBoundaryFace(n(0,1,0), n(1,1,0), n(1,1,1), n(0,1,1));  // y=j+1
-        addBoundaryFace(n(0,0,0), n(0,1,0), n(0,1,1), n(0,0,1));  // x=i
-        addBoundaryFace(n(1,0,0), n(1,1,0), n(1,1,1), n(1,0,1));  // x=i+1
+        faceToElem.set(fIdx, elemCounter);
+        if (!showSlice || j === j_mid) {
+          // Cara y=j+1 trasera de rebanada (para tener 2 caras visibles)
+          if (showSlice) {
+            const fIdx2 = visualElements.length;
+            addBoundaryFace(n(0,1,0), n(1,1,0), n(1,1,1), n(0,1,1));
+            faceToElem.set(fIdx2, elemCounter);
+          }
+          // Top z=k
+          const fT = visualElements.length;
+          addBoundaryFace(n(0,0,0), n(1,0,0), n(1,1,0), n(0,1,0));
+          faceToElem.set(fT, elemCounter);
+          // Bottom z=k+1
+          const fB = visualElements.length;
+          addBoundaryFace(n(0,0,1), n(1,0,1), n(1,1,1), n(0,1,1));
+          faceToElem.set(fB, elemCounter);
+          // Caras X (laterales) solo si NO está en slice mode
+          if (!showSlice) {
+            addBoundaryFace(n(0,1,0), n(1,1,0), n(1,1,1), n(0,1,1));
+            addBoundaryFace(n(0,0,0), n(0,1,0), n(0,1,1), n(0,0,1));
+            addBoundaryFace(n(1,0,0), n(1,1,0), n(1,1,1), n(1,0,1));
+          } else {
+            // Caras X solo en bordes (i=0 e i=nx-1) para que la rebanada parezca un panel
+            if (i === 0) {
+              const fX = visualElements.length;
+              addBoundaryFace(n(0,0,0), n(0,1,0), n(0,1,1), n(0,0,1));
+              faceToElem.set(fX, elemCounter);
+            }
+            if (i === nx - 1) {
+              const fX = visualElements.length;
+              addBoundaryFace(n(1,0,0), n(1,1,0), n(1,1,1), n(1,0,1));
+              faceToElem.set(fX, elemCounter);
+            }
+          }
+        }
+        elemCounter++;
       }
     }
   }
@@ -227,35 +269,42 @@ van.derive(() => {
     });
   }
 
-  // analyzeOutputs.vonMises mapeado a TODAS las caras visuales
+  // analyzeOutputs: usar S33 (σzz) NODAL desde stressPerElement, promediado
+  // por nodo desde elementos vecinos. Esto da el bulbo de presiones REAL.
   const analyzeOutputs: AnalyzeOutputs = {} as AnalyzeOutputs;
   if (result) {
-    // Promediar S33 (sigma_zz) por nodo desde elementos vecinos
     const nodeS33 = new Map<number, { sum: number; count: number }>();
     elemsH8.forEach((e, eidx) => {
-      // result.vonMisesPerElement contiene 8 vonMises por elemento (gauss points)
-      // Para S33 nodal aproximado, usamos el promedio del elemento como valor en sus nodos.
-      const vmGauss = result.vonMisesPerElement.get(eidx) || [];
-      const vmAvg = vmGauss.reduce((s, v) => s + v, 0) / Math.max(1, vmGauss.length);
-      // NOTA: vmAvg es vonMises (≥0), no S33 (puede ser negativo). Para S33 real
-      // necesitaríamos evaluar la matriz B*u en cada gauss point. Como
-      // simplificación, usamos vonMises pero indicamos en el panel que es vM.
+      // stressPerElement contiene 8 arrays de 6 componentes (σxx,σyy,σzz,τxy,τyz,τxz)
+      const stressGauss = result.stressPerElement.get(eidx) || [];
+      // Promediar σzz (índice 2) sobre los 8 puntos Gauss
+      let s33Avg = 0;
+      let cnt = 0;
+      for (const sig of stressGauss) {
+        s33Avg += sig[2];  // σzz
+        cnt++;
+      }
+      s33Avg = cnt > 0 ? s33Avg / cnt : 0;
+      // Asignar a todos los 8 nodos del elemento
       for (const nid of e) {
         const cur = nodeS33.get(nid) || { sum: 0, count: 0 };
-        cur.sum += vmAvg; cur.count += 1;
+        cur.sum += s33Avg; cur.count += 1;
         nodeS33.set(nid, cur);
       }
     });
-    const vmNodes = new Map<number, [number, number, number, number]>();
+    const s33Nodes = new Map<number, [number, number, number, number]>();
     visualElements.forEach((face, fidx) => {
       const vals = face.map(nid => {
         const cur = nodeS33.get(nid);
         return cur ? cur.sum / cur.count : 0;
       });
-      vmNodes.set(fidx, [vals[0], vals[1], vals[2], vals[3]]);
+      s33Nodes.set(fidx, [vals[0], vals[1], vals[2], vals[3]]);
     });
-    (analyzeOutputs as any).vonMises = vmNodes;
+    // Usar el campo "vonMises" del Hekatan viewer porque es el field que
+    // se renderiza con colormap rainbow. Pero los valores son S33 reales.
+    (analyzeOutputs as any).vonMises = s33Nodes;
   }
+  void faceToElem;
 
   // Apoyos visuales (en fondo z=-Lz)
   const visualSupports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
@@ -301,7 +350,8 @@ const viewerEl = getViewer({
   settingsObj: {
     deformedShape: false, shellResults: "vonMises",
     gridSize: 25, deformScale: 100, custom3D: false,
-    loads: true, supports: true, showCotas: false, displayScale: 0.5,
+    // Vista limpia rebanada estilo Calcpad: sin markers de loads/supports/nodes
+    loads: false, supports: false, nodes: false, showCotas: false, displayScale: 0.5,
   },
 });
 
