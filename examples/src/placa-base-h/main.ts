@@ -45,9 +45,9 @@ const parameters: Parameters = {
   d_bolt:   { value: van.state(0.024), min: 0.012, max: 0.050, step: 0.002, label: "Ø perno (m)" },
   L_bolt:   { value: van.state(0.30),  min: 0.15, max: 0.60, step: 0.02, label: "L embebido (m)" },
   edge:     { value: van.state(0.07),  min: 0.03, max: 0.20, step: 0.01, label: "Dist al borde (m)" },
-  // ── Cargas ──
-  Pu:       { value: van.state(800),   min: 0,    max: 5000, step: 25,   label: "Pu compresión (kN)" },
-  Mu:       { value: van.state(80),    min: 0,    max: 800,  step: 5,    label: "Mu momento (kN·m)" },
+  // ── Cargas (defaults moderados — la placa de 25mm con Fy=250 MPa apenas plastifica con Pu=300 kN, Mu=30 kN·m) ──
+  Pu:       { value: van.state(300),   min: 0,    max: 5000, step: 25,   label: "Pu compresión (kN)" },
+  Mu:       { value: van.state(30),    min: 0,    max: 800,  step: 5,    label: "Mu momento (kN·m)" },
   // ── Malla ──
   nx:       { value: van.state(12),    min: 6,    max: 24,   step: 2,    label: "Mesh nx (placa)" },
   ny:       { value: van.state(12),    min: 6,    max: 24,   step: 2,    label: "Mesh ny (placa)" },
@@ -334,7 +334,7 @@ const viewerEl = getViewer({
     deformedShape: true,
     shellResults: "vonMises",
     gridSize: 1,           // grid 1m (modelo de ~0.5m)
-    deformScale: 100,      // escalar deformada para visibilidad
+    deformScale: 20,       // escalar deformada para visibilidad (sin distorsionar)
   },
 });
 
