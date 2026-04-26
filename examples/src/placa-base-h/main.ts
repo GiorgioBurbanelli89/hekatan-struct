@@ -41,7 +41,9 @@ const parameters: Parameters = {
   tf_col:   { value: van.state(0.022), min: 0.012, max: 0.040, step: 0.002, label: "tf patín (m)" },
   tw_col:   { value: van.state(0.014), min: 0.008, max: 0.025, step: 0.001, label: "tw alma (m)" },
   L_col:    { value: van.state(0.50),  min: 0.30, max: 1.50, step: 0.05, label: "L stub columna (m)" },
-  // ── Pernos de anclaje (4 en esquinas) ──
+  // ── Pernos de anclaje (grid nBoltsX × nBoltsY) ──
+  nBoltsX:  { value: van.state(2),     min: 2,    max: 6,    step: 1,    label: "Pernos en X (filas)" },
+  nBoltsY:  { value: van.state(2),     min: 2,    max: 6,    step: 1,    label: "Pernos en Y (columnas)" },
   d_bolt:   { value: van.state(0.024), min: 0.012, max: 0.050, step: 0.002, label: "Ø perno (m)" },
   L_bolt:   { value: van.state(0.30),  min: 0.15, max: 0.60, step: 0.02, label: "L embebido (m)" },
   edge:     { value: van.state(0.07),  min: 0.03, max: 0.20, step: 0.01, label: "Dist al borde (m)" },
@@ -72,6 +74,8 @@ van.derive(() => {
   const d_bolt = parameters.d_bolt.value.val;
   const L_bolt = parameters.L_bolt.value.val;
   const edge = parameters.edge.value.val;
+  const nBoltsX = Math.max(2, Math.round(parameters.nBoltsX.value.val));
+  const nBoltsY = Math.max(2, Math.round(parameters.nBoltsY.value.val));
   const Pu = parameters.Pu.value.val;
   const Mu = parameters.Mu.value.val;
   const nx = Math.round(parameters.nx.value.val);
@@ -253,18 +257,32 @@ van.derive(() => {
     }
   }
 
-  // ── 3. PERNOS DE ANCLAJE (4 en esquinas) ──
-  // Empotrados en el extremo inferior (z = -L_bolt, simulan el embebido)
+  // ── 3. PERNOS DE ANCLAJE (grid nBoltsX × nBoltsY) ──
+  // Empotrados en el extremo inferior (z = -L_bolt, simulan el embebido al pedestal).
+  // Distribuidos en grid uniforme dentro del rectángulo (B−2·edge) × (H−2·edge),
+  // con los pernos extremos en las esquinas a edge del borde.
   const A_bolt = Math.PI * d_bolt * d_bolt / 4;
   const I_bolt = Math.PI * Math.pow(d_bolt, 4) / 64;
   const J_bolt = 2 * I_bolt;
 
-  const boltPositions: [number, number][] = [
-    [-B / 2 + edge, -H / 2 + edge],   // SW
-    [+B / 2 - edge, -H / 2 + edge],   // SE
-    [+B / 2 - edge, +H / 2 - edge],   // NE
-    [-B / 2 + edge, +H / 2 - edge],   // NW
-  ];
+  const xMin = -B / 2 + edge, xMax = +B / 2 - edge;
+  const yMin = -H / 2 + edge, yMax = +H / 2 - edge;
+  const dxBolt = (xMax - xMin) / (nBoltsX - 1);
+  const dyBolt = (yMax - yMin) / (nBoltsY - 1);
+
+  const boltPositions: [number, number][] = [];
+  for (let ix = 0; ix < nBoltsX; ix++) {
+    const bx = xMin + ix * dxBolt;
+    for (let iy = 0; iy < nBoltsY; iy++) {
+      const by = yMin + iy * dyBolt;
+      // Saltar los pernos que caen DENTRO del footprint de la columna H
+      // (donde alma o patines ocupan el espacio físicamente)
+      const insideColX = Math.abs(bx) < d_col / 2 + 0.005;
+      const insideColY = Math.abs(by) < bf_col / 2 + 0.005;
+      if (insideColX && insideColY) continue;
+      boltPositions.push([bx, by]);
+    }
+  }
 
   const boltAnchorIds: number[] = [];   // nodos al fondo (z=-L_bolt) — se empotran
   const boltTopIds: number[] = [];      // nodos en la placa (z=0)
