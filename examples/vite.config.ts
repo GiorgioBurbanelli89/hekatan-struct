@@ -118,6 +118,8 @@ export default defineConfig({
         "placa-base-hueca": "src/placa-base-hueca/index.html",
         // ── Placa base con columna CFT + pernos de anclaje ──
         "placa-base-cft": "src/placa-base-cft/index.html",
+        // ── Bulbo de presiones bajo carga rectangular (Serquen SF-70, hex8) ──
+        "bulbo-presiones-suelo": "src/bulbo-presiones-suelo/index.html",
       },
     },
   },

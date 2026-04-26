@@ -71,6 +71,42 @@ export function getViewer({
   renderer.localClippingEnabled = true;
   const controls = new OrbitControls(camera, renderer.domElement);
 
+  // ── PLANOS DE CORTE (clipping planes X / Y / Z) ──
+  // Para visualizar resultados internos de sólidos H8 (bulbo de presiones,
+  // distribución de tensiones internas, embedment de pernos, etc.).
+  // Cada plano se controla por panel global vía window.__hekatanClip.
+  const clipPlaneX = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0);
+  const clipPlaneY = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
+  const clipPlaneZ = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
+  // Estado global accesible desde los ejemplos para activar/desactivar
+  (window as any).__hekatanClip = (window as any).__hekatanClip ?? {
+    enableX: false, enableY: false, enableZ: false,
+    posX: 0, posY: 0, posZ: 0,
+    invertX: false, invertY: false, invertZ: false,
+  };
+  function applyClipping() {
+    const s = (window as any).__hekatanClip;
+    const planes: THREE.Plane[] = [];
+    if (s.enableX) {
+      clipPlaneX.normal.set(s.invertX ? 1 : -1, 0, 0);
+      clipPlaneX.constant = s.invertX ? -s.posX : s.posX;
+      planes.push(clipPlaneX);
+    }
+    if (s.enableY) {
+      clipPlaneY.normal.set(0, s.invertY ? 1 : -1, 0);
+      clipPlaneY.constant = s.invertY ? -s.posY : s.posY;
+      planes.push(clipPlaneY);
+    }
+    if (s.enableZ) {
+      clipPlaneZ.normal.set(0, 0, s.invertZ ? 1 : -1);
+      clipPlaneZ.constant = s.invertZ ? -s.posZ : s.posZ;
+      planes.push(clipPlaneZ);
+    }
+    renderer.clippingPlanes = planes;
+  }
+  applyClipping();
+  (window as any).__hekatanClipApply = applyClipping;
+
   const settings = getDefaultSettings(settingsObj);
   const derivedDisplayScale = van.derive(() =>
     settings.displayScale.val === 0
