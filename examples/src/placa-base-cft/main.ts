@@ -57,9 +57,10 @@ const parameters: Parameters = {
   H_ped:    { value: van.state(0.80),  min: 0.40, max: 1.80, step: 0.05, label: "H pedestal (m)" },
   h_ped:    { value: van.state(0.50),  min: 0.30, max: 1.50, step: 0.05, label: "h pedestal (m)" },
   fc:       { value: van.state(28000), min: 17000, max: 50000, step: 1000, label: "f'c (kN/m²)" },
-  // Cargas
-  Pu:       { value: van.state(300),   min: 0, max: 5000, step: 25, label: "Pu (kN)" },
-  Mu:       { value: van.state(30),    min: 0, max: 800,  step: 5,  label: "Mu (kN·m)" },
+  // Cargas en cabeza columna (carga puntual axial + momentos biaxiales)
+  Pu:       { value: van.state(300),   min: 0, max: 5000, step: 25, label: "Pu axial (kN)" },
+  Mx:       { value: van.state(20),    min: 0, max: 500,  step: 5,  label: "Mx (kN·m)" },
+  My:       { value: van.state(30),    min: 0, max: 500,  step: 5,  label: "My (kN·m)" },
   // Mesh
   nx:       { value: van.state(10),    min: 6, max: 20, step: 2, label: "Mesh nx" },
   ny:       { value: van.state(10),    min: 6, max: 20, step: 2, label: "Mesh ny" },
@@ -96,7 +97,9 @@ van.derive(() => {
   const d_bolt = parameters.d_bolt.value.val, L_bolt = parameters.L_bolt.value.val, L_proj = parameters.L_proj.value.val;
   const B_ped = parameters.B_ped.value.val, H_ped = parameters.H_ped.value.val, h_ped = parameters.h_ped.value.val;
   const fc = parameters.fc.value.val;
-  const Pu = parameters.Pu.value.val, Mu = parameters.Mu.value.val;
+  const Pu = parameters.Pu.value.val;
+  const Mx = parameters.Mx.value.val;
+  const My = parameters.My.value.val;
   const nx = Math.round(parameters.nx.value.val), ny = Math.round(parameters.ny.value.val);
   const nz_col = Math.round(parameters.nz_col.value.val);
 
@@ -252,7 +255,8 @@ van.derive(() => {
   const Ec = 4700 * Math.sqrt(fc / 1000) * 1000;
   const nu_c = 0.20;
   const Gc = Ec / (2 * (1 + nu_c));
-  const nx_p = 6, ny_p = 6, nz_p = 4;
+  // Mesh fina para que los bolt nBot encuentren snap más cercano al embeber
+  const nx_p = 10, ny_p = 10, nz_p = 6;
   const dxp_e = B_ped / nx_p, dyp_e = H_ped / ny_p, dzp_e = h_ped / nz_p;
 
   const pedGrid: number[][][] = [];
@@ -384,10 +388,17 @@ van.derive(() => {
       colTopNodes.push(id);
     }
   });
-  const fz_col = -Pu / Math.max(1, colTopNodes.length);
-  const my_col = Mu / Math.max(1, colTopNodes.length);  // distribuir Mu como My
+  // Cargas en cabeza columna distribuidas en N nodos del top:
+  //   - Pu axial (-Z): repartida como fz = -Pu/N por nodo (sum total = -Pu)
+  //   - Mx (sobre eje X): repartida como mx = Mx/N por nodo
+  //   - My (sobre eje Y): repartida como my = My/N por nodo
+  // Todos VALORES REALES (sum total = Pu, Mx, My definidos por usuario).
+  const N_top = Math.max(1, colTopNodes.length);
+  const fz_col = -Pu / N_top;
+  const mx_col = Mx / N_top;
+  const my_col = My / N_top;
   const loads = new Map<number, [number, number, number, number, number, number]>();
-  for (const id of colTopNodes) loads.set(id, [0, 0, fz_col, 0, my_col, 0]);
+  for (const id of colTopNodes) loads.set(id, [0, 0, fz_col, mx_col, my_col, 0]);
 
   const nodeInputs: NodeInputs = { supports, loads };
   const elementInputs: ElementInputs = {
@@ -444,7 +455,9 @@ van.derive(() => {
   const demandCapT = t_req / Math.max(1e-6, t_plate);
 
   const arm = Math.max(0.05, B - 2 * sx);
-  const T_total = Math.max(0, Mu / arm - Pu / 2);
+  // Momento resultante biaxial M = √(Mx² + My²) — usado para tracción anclaje
+  const M_resultant = Math.sqrt(Mx * Mx + My * My);
+  const T_total = Math.max(0, M_resultant / arm - Pu / 2);
   const T_anchor = T_total / Math.max(1, nBoltsY);
   const A_se = 0.75 * Math.PI * d_bolt * d_bolt / 4;
   const phiNn = 0.75 * A_se * fut_anchor;
@@ -485,7 +498,7 @@ const viewerEl = getViewer({
     // tomate" confusas). Supports SI activos en la base del pedestal —
     // displayScale chico para que los markers no saturen visualmente.
     deformedShape: false, shellResults: "vonMises",
-    gridSize: 1, deformScale: 5, custom3D: true,
+    gridSize: 1, deformScale: 1, custom3D: true,
     loads: false, supports: true, showCotas: false, displayScale: 0.1,
   },
 });
