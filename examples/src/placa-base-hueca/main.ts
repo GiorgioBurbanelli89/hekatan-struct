@@ -383,15 +383,9 @@ van.derive(() => {
     analyzeOutputs = analyze(nodes, elements, elementInputs, deformOutputs);
   } catch (e: any) { console.warn("placa-base-hueca:", e?.message ?? e); }
 
-  // ── 3D decoraciones: placa base destacada + pernos + tuercas ──
+  // ── 3D decoraciones: pernos + tuercas + símbolos de contacto ──
+  // (Placa decorativa removida — la placa FEM Q4 ya se ve con vonMises)
   const objs: THREE.Object3D[] = [];
-  // Placa base 3D translúcida (la malla FEM Q4 queda visible debajo)
-  const matPlaca = new THREE.MeshStandardMaterial({
-    color: 0xb8b8b8, metalness: 0.7, roughness: 0.4,
-    transparent: true, opacity: 0.45,
-  });
-  const placaMesh = new THREE.Mesh(new THREE.BoxGeometry(B, H, t_plate), matPlaca);
-  placaMesh.position.set(0, 0, z_gap + t_plate / 2);
 
   // SÍMBOLOS DE CONTACTO: zigzag entre placa (z=z_gap) y pedestal (z=0)
   const matContact = new THREE.LineBasicMaterial({ color: 0xffaa00 });
@@ -412,7 +406,6 @@ van.derive(() => {
   addContactSymbol(B/2 - 0.04, -H/2 + 0.04);
   addContactSymbol(-B/2 + 0.04, -H/2 + 0.04);
   addContactSymbol(0, 0);
-  objs.push(placaMesh);
   const matBolt = new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.5 });
   const matNut  = new THREE.MeshStandardMaterial({ color: 0x444444, metalness: 0.7, roughness: 0.3 });
   const t_nut = d_bolt * 0.8;

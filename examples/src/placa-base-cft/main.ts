@@ -594,25 +594,7 @@ van.derive(() => {
   addContactSymbol(-B/2 + 0.04, -H/2 + 0.04);
   addContactSymbol(0, 0);
 
-  // Placa base 3D — rectángulo con ORIFICIO CIRCULAR central (paso concreto).
-  const matPlaca = new THREE.MeshStandardMaterial({
-    color: 0xb8b8b8, metalness: 0.7, roughness: 0.4,
-    transparent: true, opacity: 0.55, side: THREE.DoubleSide,
-  });
-  const placaShape = new THREE.Shape();
-  placaShape.moveTo(-B/2, -H/2);
-  placaShape.lineTo(B/2, -H/2);
-  placaShape.lineTo(B/2, H/2);
-  placaShape.lineTo(-B/2, H/2);
-  placaShape.closePath();
-  // Orificio circular en el centro
-  const holePath = new THREE.Path();
-  holePath.absarc(0, 0, r_hole, 0, Math.PI * 2, true);
-  placaShape.holes.push(holePath);
-  const placaGeom = new THREE.ExtrudeGeometry(placaShape, { depth: t_plate, bevelEnabled: false });
-  const placaMesh = new THREE.Mesh(placaGeom, matPlaca);
-  placaMesh.position.set(0, 0, z_gap);
-  objs.push(placaMesh);
+  // (Placa decorativa removida — la placa FEM Q4 ya se ve con vonMises).
 
   // CARTELAS (stiffeners) Q4 SHELLS — mallado FEM real, refuerzo AISC.
   // Triángulo modelado como Q4 degenerada [A, B, C, C] (top-inner colapsado).
