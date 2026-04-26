@@ -154,11 +154,15 @@ van.derive(() => {
     return best;
   }
 
-  // ── 2. COLUMNA H (3 piezas shell) ──
-  // Patín frontal en x=+d_col/2, patín trasero en x=-d_col/2, alma en plano YZ pasa por x=0
+  // ── 2. COLUMNA H (3 piezas shell SOLDADAS) ──
+  // Patín frontal en x=+d_col/2, patín trasero en x=-d_col/2, alma en plano XZ con y=0
+  // CLAVE: el alma comparte nodos con los patines en su punto medio (y=0)
+  // → simula la soldadura física entre alma y patines.
+  // nyFlange debe ser PAR para tener un nodo exacto en y=0 (middle).
   const nzCol = 6;
-  const nyFlange = 4;
+  const nyFlange = 4;          // par → middle iy = nyFlange/2 = 2
   const nxWeb = 3;
+  const flangeMidIy = nyFlange / 2;
 
   const xF = +d_col / 2 - tf_col / 2;
   const xB = -d_col / 2 + tf_col / 2;
@@ -215,13 +219,23 @@ van.derive(() => {
   }
 
   // Alma (plano XZ con y=0, espesor tw_col)
+  // SOLDADURA: el alma comparte nodos con los patines en y=0 (su línea media)
+  //   - ix=0      → mismo nodo que back flange en iy=flangeMidIy
+  //   - ix=nxWeb  → mismo nodo que front flange en iy=flangeMidIy
+  // Esto crea continuidad estructural simulando la soldadura física.
   const webGrid: number[][] = [];
   for (let iz = 0; iz <= nzCol; iz++) {
     const z = (iz / nzCol) * L_col;
     const row: number[] = [];
     for (let ix = 0; ix <= nxWeb; ix++) {
       const x = xB + (ix * (xF - xB)) / nxWeb;
-      if (iz === 0) {
+      if (ix === 0) {
+        // SOLDADURA con patín trasero (compartir nodo middle)
+        row.push(backGrid[iz][flangeMidIy]);
+      } else if (ix === nxWeb) {
+        // SOLDADURA con patín frontal (compartir nodo middle)
+        row.push(frontGrid[iz][flangeMidIy]);
+      } else if (iz === 0) {
         row.push(snapToPlate(x, 0));
       } else {
         row.push(addNode(x, 0, z));
