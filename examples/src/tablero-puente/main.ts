@@ -344,19 +344,69 @@ van.derive(() => {
     A_beam: A_eff, Iz_beam: I_eff,
   };
 
-  // Decoracion 3D minima: 3 LINEAS naranjas representando los frames de las
-  // vigas, dentro del plano del tablero (z=0). Coinciden EXACTAMENTE con los
-  // frame elements del solver (nodos compartidos con el shell). Vista en
-  // planta: como la imagen del usuario — 3 lineas dentro del rectangulo.
+  // ── Decoracion 3D EXTRUIDA TRANSPARENTE (toggleable via custom3D) ──
+  // Composicion del tablero compuesto:
+  //   1) AREA losa: BoxGeometry concreto, top a z=+t_s/2, bottom a z=-t_s/2
+  //   2) VIGAS doble-T metalicas: 3 perfiles I debajo del slab, top flange
+  //      tocando el bottom del slab (= z=-t_s/2). Convencion del esquema usuario.
+  //   3) LINEAS frame: 3 cilindros NARANJAS al z=0 (plano medio shell), que
+  //      coinciden con los frame elements del solver (nodos compartidos).
+  //
+  // Todo TRANSPARENTE (opacity 0.35-0.5) para ver el FEM colormap detras.
   const objs: THREE.Object3D[] = [];
-  const matBeamLine = new THREE.LineBasicMaterial({ color: 0xff8800, linewidth: 3 });
+
+  // ── 1) LOSA concreto (semi-transparente, gris) ──
+  const matSlab = new THREE.MeshStandardMaterial({
+    color: 0xbbbbbb, transparent: true, opacity: 0.25,
+    roughness: 0.85, metalness: 0.05, side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  const slabBox = new THREE.Mesh(new THREE.BoxGeometry(L, W, t_s), matSlab);
+  slabBox.position.set(L / 2, W / 2, 0);
+  objs.push(slabBox);
+
+  // ── 2) VIGAS doble-T metalicas (acero, transparente cyan) ──
+  // Posicion: top flange en z = -t_s/2 (tocando bottom del slab)
+  const matBeam = new THREE.MeshStandardMaterial({
+    color: 0x00ddee, transparent: true, opacity: 0.45,
+    roughness: 0.25, metalness: 0.6, side: THREE.DoubleSide,
+    depthWrite: false,
+  });
   for (const yB of yBeams) {
-    const pts = [
-      new THREE.Vector3(0, yB, 0),
-      new THREE.Vector3(L, yB, 0),
-    ];
-    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), matBeamLine);
-    objs.push(line);
+    if (modo === 1) {
+      // Modo 1 Solar: solo alma + patin inferior
+      const beamWeb = new THREE.Mesh(new THREE.BoxGeometry(L, tw, hw), matBeam);
+      beamWeb.position.set(L/2, yB, -t_s/2 - hw/2);
+      objs.push(beamWeb);
+      const beamBot = new THREE.Mesh(new THREE.BoxGeometry(L, bf, tf), matBeam);
+      beamBot.position.set(L/2, yB, -t_s/2 - hw - tf/2);
+      objs.push(beamBot);
+    } else {
+      // Modos 0 y 2: doble-T completa
+      const beamTop = new THREE.Mesh(new THREE.BoxGeometry(L, bf, tf), matBeam);
+      beamTop.position.set(L/2, yB, -t_s/2 - tf/2);
+      objs.push(beamTop);
+      const beamWeb = new THREE.Mesh(new THREE.BoxGeometry(L, tw, hw), matBeam);
+      beamWeb.position.set(L/2, yB, -t_s/2 - tf - hw/2);
+      objs.push(beamWeb);
+      const beamBot = new THREE.Mesh(new THREE.BoxGeometry(L, bf, tf), matBeam);
+      beamBot.position.set(L/2, yB, -t_s/2 - tf - hw - tf/2);
+      objs.push(beamBot);
+    }
+  }
+
+  // ── 3) LINEAS frame naranjas (centerlines en z=0 = plano medio shell) ──
+  const matBeamLine = new THREE.MeshStandardMaterial({
+    color: 0xff6600, emissive: 0xff4400, emissiveIntensity: 0.7,
+  });
+  for (const yB of yBeams) {
+    const cyl = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.04, L, 16),
+      matBeamLine,
+    );
+    cyl.rotation.z = Math.PI / 2;
+    cyl.position.set(L / 2, yB, 0);   // al plano medio del shell (frame REAL)
+    objs.push(cyl);
   }
 
   nodesState.val = nodes;
@@ -431,11 +481,12 @@ setTimeout(() => enableDraggableAllPanes(), 200);
 setTimeout(() => {
   const ctx = (viewerEl as any).__ctx;
   if (ctx?.camera && ctx?.controls) {
-    ctx.camera.up.set(0, 1, 0);
+    ctx.camera.up.set(0, 0, 1);
     const L = parameters.L.value.val, W = parameters.W.value.val;
-    // Vista en PLANTA (top-down) — para ver area + 3 lineas dentro del rectangulo
-    // como en el esquema del usuario
-    ctx.camera.position.set(L / 2, W / 2, Math.max(L, W) * 1.2);
+    // Vista oblicua amplia desde arriba — se ven las 3 lineas naranjas
+    // ENCIMA del area shell, como el esquema del usuario.
+    const D = Math.max(L, W);
+    ctx.camera.position.set(L / 2, W / 2 - D * 1.2, D * 1.5);
     ctx.controls.target.set(L / 2, W / 2, 0);
     ctx.controls.update(); ctx.render?.();
   }
