@@ -38,22 +38,29 @@ import {
 } from "hekatan-ui";
 
 // Materiales
-const Ec = 25e6;       // kN/m² — concreto f'c=24 MPa
+// LOSA = concreto armado f'c=24 MPa
+const Ec = 25e6;       // kN/m²
 const nu_c = 0.20;
 const Gc = Ec / (2 * (1 + nu_c));
-const rho_c = 24 / 9.80665;  // tonf/m³
+const rho_c = 24 / 9.80665;  // tonf/m³ -> usado como densidad consistente kN/m³ en hekatan-fem
+// VIGAS = acero estructural ASTM A36 (Fy=250 MPa, E=200 GPa)
+const Es = 200e6;      // kN/m²
+const nu_s = 0.30;
+const Gs = Es / (2 * (1 + nu_s));
+const rho_s = 78 / 9.80665;  // tonf/m³ -> 7.85 t/m³ acero
 
 const parameters: Parameters = {
   // Geometría tablero
   L:   { value: van.state(15.0), min: 5,  max: 30,  step: 0.5,  label: "L luz (m)" },
   W:   { value: van.state(6.0),  min: 4,  max: 12,  step: 0.5,  label: "W ancho (m)" },
   t_s: { value: van.state(0.20), min: 0.10, max: 0.40, step: 0.01, label: "t losa (m)" },
-  // Vigas doble-T (3 vigas longitudinales)
+  // Vigas doble-T METÁLICAS (3 vigas longitudinales, perfil W tipico A36)
+  // Defaults aprox W21x44: d=525mm, bf=165mm, tf=11mm, tw=9mm
   s_b:  { value: van.state(2.0),  min: 1.0, max: 4.0, step: 0.1, label: "spacing vigas (m)" },
-  bf:   { value: van.state(0.40), min: 0.20, max: 0.80, step: 0.02, label: "bf alas (m)" },
-  tf:   { value: van.state(0.05), min: 0.02, max: 0.12, step: 0.01, label: "tf alas (m)" },
-  hw:   { value: van.state(0.80), min: 0.30, max: 1.50, step: 0.05, label: "hw alma (m)" },
-  tw:   { value: van.state(0.025), min: 0.010, max: 0.080, step: 0.005, label: "tw alma (m)" },
+  bf:   { value: van.state(0.20), min: 0.10, max: 0.50, step: 0.01, label: "bf patines (m)" },
+  tf:   { value: van.state(0.015), min: 0.008, max: 0.040, step: 0.001, label: "tf patines (m)" },
+  hw:   { value: van.state(0.55), min: 0.30, max: 1.20, step: 0.025, label: "hw alma (m)" },
+  tw:   { value: van.state(0.010), min: 0.005, max: 0.030, step: 0.001, label: "tw alma (m)" },
   // Modo de vinculación viga-losa
   modo: {
     value: van.state(1),
@@ -162,8 +169,9 @@ van.derive(() => {
   function addFrame(n0: number, n1: number, A: number, Imom: number, Jt: number) {
     elements.push([n0, n1]);
     const i = elements.length - 1;
-    elasticities.set(i, Ec); poissonsRatios.set(i, nu_c);
-    densities.set(i, rho_c); shearModuli.set(i, Gc);
+    // ACERO ESTRUCTURAL para las vigas frame (3 vigas doble-T metalicas)
+    elasticities.set(i, Es); poissonsRatios.set(i, nu_s);
+    densities.set(i, rho_s); shearModuli.set(i, Gs);
     areas.set(i, A); Iy.set(i, Imom); Iz.set(i, Imom); J.set(i, Jt);
     thicknesses.set(i, 0);
   }
