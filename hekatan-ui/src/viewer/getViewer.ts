@@ -194,8 +194,11 @@ export function getViewer({
   const z2fit = gridSize * 0.5 + (gridSize * 0.5) / Math.tan(45 * 0.5);
   camera.position.set(0.5 * gridSize, 0.8 * -z2fit, 0.5 * gridSize);
   controls.target.set(0.5 * gridSize, 0.5 * gridSize, 0);
-  controls.minDistance = 1;
-  controls.maxDistance = z2fit * 2.5;
+  controls.minDistance = 0.1;
+  // maxDistance generoso — calculado por gridSize fallaba para modelos grandes
+  // (ej: tablero-puente con gridSize=1 daba max=4m, insuficiente para puente 15m).
+  // 10000 m permite ver desde puentes hasta edificios completos sin limitar.
+  controls.maxDistance = 10000;
   // Expose settings so the workspace Tweakpane can mutate them (e.g. auto-select
   // the default shell result each example wants to show).
   (viewerElm as any).__settings = settings;
