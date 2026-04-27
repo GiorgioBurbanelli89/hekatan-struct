@@ -71,6 +71,44 @@ export function getViewer({
   renderer.localClippingEnabled = true;
   const controls = new OrbitControls(camera, renderer.domElement);
 
+  // ── Configuración trackpad-friendly (laptop touchpad) ──
+  // OrbitControls default: wheel = zoom. En trackpads de laptop, two-finger drag
+  // emite wheel events SIN ctrlKey, lo que produce zoom en vez de pan (frustrante).
+  // Solución estándar: mapear two-finger drag (wheel sin ctrl) → pan, mantener
+  // ctrl+wheel y pinch (con ctrlKey true) → zoom.
+  controls.enableDamping = true;          // suaviza movimiento
+  controls.dampingFactor = 0.1;
+  controls.screenSpacePanning = true;     // pan en plano de pantalla (más natural)
+  controls.zoomSpeed = 0.8;
+  controls.panSpeed = 1.2;
+  controls.rotateSpeed = 0.9;
+  controls.keyPanSpeed = 12;
+  controls.listenToKeyEvents(window);     // arrow keys → pan (rescate sin trackpad)
+  // Touch gestures (en laptops con touchscreen y tablets)
+  controls.touches = {
+    ONE: THREE.TOUCH.ROTATE,
+    TWO: THREE.TOUCH.DOLLY_PAN,
+  };
+  // Custom wheel handler: si NO hay ctrlKey y el deltaX es significativo,
+  // tratar como PAN. Si hay ctrlKey o solo deltaY, tratar como ZOOM (default).
+  // Esto da soporte a "two-finger swipe" de Mac/Windows trackpads que emiten
+  // deltaX != 0 cuando se arrastra horizontalmente con dos dedos.
+  renderer.domElement.addEventListener("wheel", (ev: WheelEvent) => {
+    // Trackpad horizontal swipe (deltaX dominante) → pan horizontal
+    if (!ev.ctrlKey && Math.abs(ev.deltaX) > Math.abs(ev.deltaY) * 1.5) {
+      ev.preventDefault();
+      const target = controls.target;
+      const offset = new THREE.Vector3().subVectors(camera.position, target);
+      const right = new THREE.Vector3();
+      right.crossVectors(camera.up, offset).normalize();
+      const distance = offset.length();
+      const factor = distance * 0.001 * controls.panSpeed;
+      target.addScaledVector(right, ev.deltaX * factor);
+      camera.position.addScaledVector(right, ev.deltaX * factor);
+      controls.update();
+    }
+  }, { passive: false });
+
   // ── PLANOS DE CORTE (clipping planes X / Y / Z) ──
   // Para visualizar resultados internos de sólidos H8 (bulbo de presiones,
   // distribución de tensiones internas, embedment de pernos, etc.).
@@ -412,6 +450,70 @@ export function getViewer({
     settings,
   };
   (viewerElm as any).__ctx = ctx as ViewerContext3D;
+
+  // ── BOTONES DE NAVEGACIÓN (overlay) — para laptops sin trackpad funcional ──
+  // Permiten zoom in/out, pan en 4 direcciones y reset sin necesidad de scroll
+  // wheel o gestos de trackpad. Útiles también en pantallas touch.
+  const navOverlay = document.createElement("div");
+  navOverlay.style.cssText = [
+    "position:absolute","right:8px","bottom:8px","z-index:50",
+    "display:grid","grid-template-columns:repeat(3, 32px)","gap:2px",
+    "user-select:none","pointer-events:auto",
+  ].join(";");
+  const mkBtn = (label: string, title: string, onClick: () => void): HTMLButtonElement => {
+    const b = document.createElement("button");
+    b.textContent = label; b.title = title;
+    b.style.cssText = [
+      "width:32px","height:32px","background:rgba(40,40,40,0.85)","color:#fff",
+      "border:1px solid rgba(255,255,255,0.15)","border-radius:4px",
+      "cursor:pointer","font-size:14px","font-family:system-ui",
+    ].join(";");
+    b.onmouseenter = () => { b.style.background = "rgba(70,70,70,0.9)"; };
+    b.onmouseleave = () => { b.style.background = "rgba(40,40,40,0.85)"; };
+    b.onclick = (e) => { e.preventDefault(); onClick(); };
+    return b;
+  };
+  const panBy = (dx: number, dy: number) => {
+    const target = controls.target;
+    const offset = new THREE.Vector3().subVectors(activeCamera.position, target);
+    const distance = offset.length();
+    const right = new THREE.Vector3();
+    const up = new THREE.Vector3();
+    right.crossVectors(activeCamera.up, offset).normalize();
+    up.copy(activeCamera.up).normalize();
+    const f = distance * 0.05;
+    target.addScaledVector(right, -dx * f);
+    target.addScaledVector(up, dy * f);
+    activeCamera.position.addScaledVector(right, -dx * f);
+    activeCamera.position.addScaledVector(up, dy * f);
+    controls.update(); viewerRender();
+  };
+  const zoomBy = (factor: number) => {
+    const offset = new THREE.Vector3().subVectors(activeCamera.position, controls.target);
+    offset.multiplyScalar(factor);
+    activeCamera.position.copy(controls.target).add(offset);
+    controls.update(); viewerRender();
+  };
+  // Grid 3×3:    [   ][ ↑ ][   ]
+  //              [ ← ][🏠][ → ]
+  //              [ -- ][ ↓ ][ ++ ]
+  const filler = () => { const d = document.createElement("div"); d.style.cssText = "width:32px;height:32px;"; return d; };
+  navOverlay.append(filler());
+  navOverlay.append(mkBtn("↑", "Pan arriba", () => panBy(0, 1)));
+  navOverlay.append(mkBtn("⊕", "Zoom in", () => zoomBy(0.85)));
+  navOverlay.append(mkBtn("←", "Pan izquierda", () => panBy(-1, 0)));
+  navOverlay.append(mkBtn("⌂", "Reset vista", () => {
+    controls.reset(); viewerRender();
+  }));
+  navOverlay.append(mkBtn("→", "Pan derecha", () => panBy(1, 0)));
+  navOverlay.append(mkBtn("⊖", "Zoom out", () => zoomBy(1.18)));
+  navOverlay.append(mkBtn("↓", "Pan abajo", () => panBy(0, -1)));
+  navOverlay.append(filler());
+  // Necesitamos posicionar el overlay relativo al viewerElm
+  if (getComputedStyle(viewerElm).position === "static") {
+    viewerElm.style.position = "relative";
+  }
+  viewerElm.appendChild(navOverlay);
 
   return viewerElm;
 }
