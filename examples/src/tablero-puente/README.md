@@ -30,33 +30,40 @@ Validación cruzada del problema de **vinculación viga frame ↔ losa shell** q
 
 Diferencia clave Naive ↔ Eccentric: **M_eccentric / M_naive ≈ 1.88** (la viga toma casi el doble de momento cuando se la deja en su posición real).
 
-## Cómo correr el script **SAP2000** (no ETABS — SAP2000 OAPI)
+## Cómo correr el script **SAP2000** (vía Bridge — usa el server existente del usuario)
 
-### Prerrequisitos
+Tu SAP2000 corre **elevado** (Administrator), lo que rompe COM directo desde Claude Code (Medium integrity). Por eso ya tenés un **bridge server elevado** construido en:
 
-- Windows con **SAP2000 v23, v24 o v25** instalado (no ETABS — son APIs distintas)
-- Python 3.8+ con `comtypes` (ya instalado en tu sistema)
-- **El script NO lanza SAP2000 automáticamente** — vos abrís SAP primero (mismo flujo que tus `Ejemplos API ETABS 1.py`).
+```
+C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\python api sap 2000 claude\
+```
+
+El script `sap2000_test_solar_bridge.py` usa tu `SAP2000Bridge` client + `iniciar_bridge.bat`.
 
 ### Pasos
 
-1. **Abrir SAP2000 v24** manualmente (doble-click en el icono del escritorio).
-2. **Crear un modelo nuevo en blanco** (`File → New → Blank`).
-3. **Correr el script Python**:
-
+1. **Abrir SAP2000 v24** manualmente.
+2. **Click derecho** en `iniciar_bridge.bat` (en la carpeta de arriba) → **"Ejecutar como administrador"**. La consola del bridge mostrará "Servidor listo".
+3. **Correr el script** (sin elevar):
 ```bash
 cd "C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\examples\src\tablero-puente"
-
-# Correr los 3 modos secuencialmente y comparar con Hekatan
-python sap2000_test_solar.py
-
-# O un modo específico
-python sap2000_test_solar.py --mode 1
+python sap2000_test_solar_bridge.py
 ```
 
-El script se conecta a tu sesión SAP2000 abierta vía OAPI (`SAP2000v1.Helper` → `GetObject("CSI.SAP2000.API.SapObject")`), construye el modelo, corre el análisis, extrae M3/V2/U3 de la viga central, y compara con valores Hekatan de referencia.
+El script envía comandos JSON al bridge server elevado, que ejecuta:
+- `PropMaterial.SetMaterial` + `SetMPIsotropic` (CONC24, ACERO_A36)
+- `PropFrame.SetISection` (sección viga según modo)
+- `PropArea.SetSlab` (losa concreto)
+- `PointObj.AddCartesian` (252 nodos)
+- `AreaObj.AddByPoint` (240 shells losa)
+- `FrameObj.AddByPoint` (60 frames vigas)
+- `FrameObj.SetInsertionPoint` cardinal=8 Bottom Center (solo modo 2)
+- `PointObj.SetRestraint` pin-roller en extremos
+- `AreaObj.SetLoadUniform` q=15 kN/m² en losa
+- `Analyze.RunAnalysis()`
+- `Results.FrameForce` + `Results.JointDispl` (M3, V2, U3 viga central)
 
-Output guardado en `C:\Users\<usuario>\Documents\tablero_puente_modeX.sdb` para abrir manualmente y revisar el modelo.
+Output guardado en `~/Documents/tablero_puente_modeX.sdb`.
 
 ### Output esperado
 
