@@ -30,25 +30,33 @@ Validación cruzada del problema de **vinculación viga frame ↔ losa shell** q
 
 Diferencia clave Naive ↔ Eccentric: **M_eccentric / M_naive ≈ 1.88** (la viga toma casi el doble de momento cuando se la deja en su posición real).
 
-## Cómo correr el script SAP2000
+## Cómo correr el script **SAP2000** (no ETABS — SAP2000 OAPI)
 
 ### Prerrequisitos
 
-- Windows con **SAP2000 v23, v24 o v25** instalado (path típico `C:\Program Files\Computers and Structures\SAP2000 23\`)
-- Python 3.8+
-- Instalar: `pip install comtypes pywin32`
+- Windows con **SAP2000 v23, v24 o v25** instalado (no ETABS — son APIs distintas)
+- Python 3.8+ con `comtypes` (ya instalado en tu sistema)
+- **El script NO lanza SAP2000 automáticamente** — vos abrís SAP primero (mismo flujo que tus `Ejemplos API ETABS 1.py`).
 
-### Comando
+### Pasos
+
+1. **Abrir SAP2000 v24** manualmente (doble-click en el icono del escritorio).
+2. **Crear un modelo nuevo en blanco** (`File → New → Blank`).
+3. **Correr el script Python**:
 
 ```bash
+cd "C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\examples\src\tablero-puente"
+
 # Correr los 3 modos secuencialmente y comparar con Hekatan
 python sap2000_test_solar.py
 
-# O un modo específico, con SAP visible
-python sap2000_test_solar.py --mode 1 --show
-
-# Output guardado en C:\Users\<usuario>\Documents\tablero_puente_modeX.sdb
+# O un modo específico
+python sap2000_test_solar.py --mode 1
 ```
+
+El script se conecta a tu sesión SAP2000 abierta vía OAPI (`SAP2000v1.Helper` → `GetObject("CSI.SAP2000.API.SapObject")`), construye el modelo, corre el análisis, extrae M3/V2/U3 de la viga central, y compara con valores Hekatan de referencia.
+
+Output guardado en `C:\Users\<usuario>\Documents\tablero_puente_modeX.sdb` para abrir manualmente y revisar el modelo.
 
 ### Output esperado
 

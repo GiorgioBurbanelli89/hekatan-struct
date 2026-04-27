@@ -57,27 +57,31 @@ N_Y = 12
 
 
 def attach_sap2000(visible: bool = False):
-    """Conecta a una instancia de SAP2000 ya abierta, o lanza una nueva."""
+    """Conecta a SAP2000 — mismo patron que Ejemplos API ETABS adaptado a SAP.
+
+    REQUISITO: SAP2000 debe estar ABIERTO antes de correr este script.
+    Si no, el script aborta con instruccion clara.
+    """
     helper = comtypes.client.CreateObject("SAP2000v1.Helper")
     helper = helper.QueryInterface(comtypes.gen.SAP2000v1.cHelper)
-    try:
-        # Intentar conectar a una instancia ya abierta
-        sap_obj = helper.GetObject("CSI.SAP2000.API.SapObject")
-    except Exception:
-        # Lanzar nueva instancia
-        sap_path = r"C:\Program Files\Computers and Structures\SAP2000 23\SAP2000.exe"
-        if not os.path.exists(sap_path):
-            # Probar otras versiones comunes
-            for v in [25, 24, 22, 21]:
-                p = rf"C:\Program Files\Computers and Structures\SAP2000 {v}\SAP2000.exe"
-                if os.path.exists(p):
-                    sap_path = p; break
-        sap_obj = helper.CreateObject(sap_path)
-    sap_obj.ApplicationStart()
+    print("Conectando a instancia existente de SAP2000...")
+    sap_obj = helper.GetObject("CSI.SAP2000.API.SapObject")
+    if sap_obj is None:
+        raise RuntimeError(
+            "\n" + "=" * 70 + "\n"
+            "  ERROR: SAP2000 no esta abierto.\n"
+            "=" * 70 + "\n"
+            "  PASO 1: Abri SAP2000 v24 manualmente (doble-click en el icono).\n"
+            "  PASO 2: Crea un modelo nuevo (File -> New Blank).\n"
+            "  PASO 3: Volve a correr este script.\n"
+            "\n  El script NO crea la instancia de SAP automaticamente para\n"
+            "  evitar problemas de licencia/COM. Igual que el flujo ETABS.\n"
+            + "=" * 70
+        )
+    print("Conexion exitosa a SAP2000.")
+
     sap_obj.SapModel.InitializeNewModel()
     sap_obj.SapModel.File.NewBlank()
-    if visible:
-        sap_obj.Hide()  # ya esta visible por default
     return sap_obj, sap_obj.SapModel
 
 
@@ -294,8 +298,9 @@ def main():
             print(f"  delta  = {delta:>8.2f} mm")
             print(f"  Modelo guardado en: {sdb_path}")
         finally:
-            if not args.show:
-                sap_obj.ApplicationExit(False)
+            # No cerramos SAP2000 — es la instancia del usuario.
+            # El usuario puede revisar el modelo manualmente despues.
+            pass
 
     # Comparación final
     if len(results) > 1:
