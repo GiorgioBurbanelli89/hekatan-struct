@@ -96,6 +96,9 @@ export const colCftH8           = legacy("columna-cft-h8",       "Columna CFT co
 // ─── Vigas (perfiles) ──────────────────────────────────────────────
 export const vigaDobleT         = legacy("viga-doble-t",         "Viga Doble-T (perfil W)",                        "Vigas / Perfiles");
 
+// ─── Puentes / tableros ────────────────────────────────────────────
+export const tableroPuente      = legacy("tablero-puente",       "Tablero Puente (3 vigas+losa, test Solar)",      "Puentes");
+
 // ─── FEM 3D Sólido H8 (validación cruzada con CalculiX/CodeAster/FEniCS) ───
 export const solidCubeFEM       = legacy("solid-cube-fem",       "Cubo Sólido H8 (validación CalculiX)",          "🏁 Benchmarks", true);
 export const bulboPresionesSuelo= legacy("bulbo-presiones-suelo","Bulbo de Presiones — Serquen SF-70",            "🏁 Benchmarks", true);
@@ -145,6 +148,8 @@ export const legacyAwatifExamples: ExampleDef[] = [
   colCftH8,
   // Vigas / Perfiles
   vigaDobleT,
+  // Puentes
+  tableroPuente,
   // 🏁 Benchmarks (FEM 3D Sólido validados)
   solidCubeFEM,
   bulboPresionesSuelo,
