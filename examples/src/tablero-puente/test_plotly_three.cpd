@@ -1,0 +1,52 @@
+"Test — #plotly y #three (verificar que existen)
+'<hr/>
+'<h4>Test 1: #plotly — gráfico 2D con líneas</h4>
+#plotly 600 400
+{
+  data: [
+    {x:[1,2,3,4,5], y:[1,4,9,16,25], type:'scatter', mode:'lines+markers', name:'y=x²'},
+    {x:[1,2,3,4,5], y:[1,8,27,64,125], type:'scatter', mode:'lines+markers', name:'y=x³'}
+  ],
+  layout: {title:'Polinomios', xaxis:{title:'x'}, yaxis:{title:'y'}}
+}
+#end plotly
+'<h4>Test 2: #three — cubo 3D</h4>
+#three 600 500
+const cube = new THREE.Mesh(
+    new THREE.BoxGeometry(2, 2, 2),
+    new THREE.MeshStandardMaterial({color:0xffd966}));
+scene.add(cube);
+const edges = new THREE.LineSegments(
+    new THREE.EdgesGeometry(cube.geometry),
+    new THREE.LineBasicMaterial({color:0x000000}));
+scene.add(edges);
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(5, 5, 5);
+scene.add(dirLight);
+const grid = new THREE.GridHelper(10, 10);
+scene.add(grid);
+const axes = new THREE.AxesHelper(3);
+scene.add(axes);
+camera.position.set(5, 5, 5);
+camera.lookAt(0, 0, 0);
+#end three
+'<h4>Test 3: #three — visualización de dominio de integral triple [0,1]³</h4>
+#three 600 500
+// Cubo unitario [0,1]³ — dominio de integración triple
+const box = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshStandardMaterial({color:0x4a90e2, transparent:true, opacity:0.4}));
+box.position.set(0.5, 0.5, 0.5);
+scene.add(box);
+const wireframe = new THREE.LineSegments(
+    new THREE.EdgesGeometry(box.geometry),
+    new THREE.LineBasicMaterial({color:0x000000}));
+wireframe.position.set(0.5, 0.5, 0.5);
+scene.add(wireframe);
+scene.add(new THREE.AxesHelper(2));
+scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+scene.add(new THREE.DirectionalLight(0xffffff, 0.5));
+camera.position.set(2.5, 2.5, 2.5);
+camera.lookAt(0.5, 0.5, 0.5);
+#end three

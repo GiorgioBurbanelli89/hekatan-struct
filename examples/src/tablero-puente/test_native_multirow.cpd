@@ -1,0 +1,15 @@
+"Test — $area en multirow nativo
+'<hr/>
+'<h4>1-row simple — debe funcionar</h4>
+V = [$area{x^2 @ x = 0 : 1}; $area{x @ x = 0 : 2}]
+'V ='V
+'<h4>2-row direct — ¿funciona?</h4>
+M = [$area{x^2 @ x = 0 : 1}; $area{x^3 @ x = 0 : 1}|$area{x @ x = 0 : 2}; $area{x^2 @ x = 0 : 2}]
+'M ='M
+'<h4>2-row con valores intermedios</h4>
+a1 = $area{x^2 @ x = 0 : 1}
+a2 = $area{x^3 @ x = 0 : 1}
+a3 = $area{x @ x = 0 : 2}
+a4 = $area{x^2 @ x = 0 : 2}
+M2 = [a1; a2|a3; a4]
+'M2 ='M2

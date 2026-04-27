@@ -1,0 +1,22 @@
+"Test — integrales múltiples
+'<hr/>
+'<h4>Funciones de prueba</h4>
+g_2(x; y) = x^2 + 2*y + 3
+g_3(x; y; z) = x*y*z
+g_4(x; y; z) = x^2 + y^2 + z^2
+'<h4>Integral simple</h4>
+'∫₀¹ x² dx = 'integrate(x^2; x; 0; 1)
+'<h4>Integral doble</h4>
+'∫₀¹∫₀¹ g_2(x;y) dy dx = 'integrate(integrate(g_2(x; y); y; 0; 1); x; 0; 1)
+'(esperado: 13/3 ≈ 4.333)
+'<h4>Integral triple</h4>
+'∫₀¹∫₀¹∫₀¹ x·y·z dz dy dx = 'integrate(integrate(integrate(g_3(x; y; z); z; 0; 1); y; 0; 1); x; 0; 1)
+'(esperado: 1/8 = 0.125)
+'<h4>Integral triple — x²+y²+z²</h4>
+I_3 = integrate(integrate(integrate(g_4(x; y; z); z; 0; 1); y; 0; 1); x; 0; 1)
+'I_3 ='I_3
+'(esperado: 1)
+'<h4>Integral triple en cubo [0,2]³</h4>
+I_4 = integrate(integrate(integrate(g_4(x; y; z); z; 0; 2); y; 0; 2); x; 0; 2)
+'I_4 ='I_4
+'(esperado: 3·∫₀²x²dx·4 = 3·(8/3)·4 = 32)

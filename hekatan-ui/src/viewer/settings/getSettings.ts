@@ -13,6 +13,11 @@ export type Settings = {
   /** Wireframe edges (delim. visual entre sólidos H8 / áreas Q4). Independiente
    *  de `elements` — útil para ver el colormap sin las líneas de delimitación. */
   edges: State<boolean>;
+  /** Caras de áreas/shells/sólidos (shellMesh fill). Cuando se desactiva, se
+   *  ocultan SOLO las superficies coloreadas dejando edges + nodos visibles
+   *  (modo wireframe puro). Útil para ver vigas/lineas frame que están dentro
+   *  o detrás de un shell sin que el colormap las tape. */
+  faces: State<boolean>;
   elemColumns: State<boolean>;
   elemBeams: State<boolean>;
   nodesIndexes: State<boolean>;
@@ -56,6 +61,7 @@ export type SettingsObj = {
   nodes?: boolean;
   elements?: boolean;
   edges?: boolean;
+  faces?: boolean;
   elemColumns?: boolean;
   elemBeams?: boolean;
   nodesIndexes?: boolean;
@@ -128,6 +134,9 @@ export function getSettings(
     });
     pane.addBinding(settings.edges, "val", {
       label: "  Edges (delim.)",
+    });
+    pane.addBinding(settings.faces, "val", {
+      label: "  Caras (fill)",
     });
     pane.addBinding(settings.elemColumns, "val", {
       label: "  Columnas",
@@ -280,6 +289,7 @@ export function getDefaultSettings(settingsObj: SettingsObj): Settings {
     nodes: van.state(settingsObj?.nodes ?? true),
     elements: van.state(settingsObj?.elements ?? true),
     edges: van.state(settingsObj?.edges ?? true),
+    faces: van.state(settingsObj?.faces ?? true),
     elemColumns: van.state(settingsObj?.elemColumns ?? true),
     elemBeams: van.state(settingsObj?.elemBeams ?? true),
     nodesIndexes: van.state(settingsObj?.nodesIndexes ?? false),

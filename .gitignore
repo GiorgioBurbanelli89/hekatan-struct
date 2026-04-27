@@ -3,6 +3,9 @@ node_modules
 .DS_Store
 website/src/examples/
 
+# Calcpad-Symbolic generated output files (regenerable from .cpd sources)
+examples/src/**/*_out.html
+
 # ─── HEKATAN PRO STRUCT (no-lineal · licencia comercial) ────────────────
 # Estos folders/archivos contienen el solver no-lineal con Newton-Raphson J2
 # + return-mapping + damage Lemaitre que se distribuye bajo licencia comercial.

@@ -1,0 +1,13 @@
+"Test — #manim ABSOLUTAMENTE aislado (sin #mathbox previo)
+'<hr/>
+#manim 600 400
+mathbox.set('focus', 3);
+var view = mathbox.cartesian({range:[[-3,3],[-2,2],[-2,2]], scale:[1.5,1,1]});
+view.axis({axis:1, color:0xffffff});
+view.axis({axis:2, color:0xffffff});
+view.axis({axis:3, color:0xffffff});
+view.area({width:32, height:32, axes:[1,2],
+    expr:function(emit,x,y){emit(x, y, Math.sin(x)*Math.cos(y));},
+    channels:3});
+view.surface({shaded:true, color:0xffd966});
+#end manim

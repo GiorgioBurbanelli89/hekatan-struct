@@ -1,0 +1,47 @@
+"Mindlin-Reissner Plate FEA — Calcpad-Original
+'<hr/>
+'<h4>Theory: Mindlin-Reissner</h4>
+'3 DOFs por nodo: w, theta_x, theta_y. Incluye deformacion por cortante.
+'<h4>Input</h4>
+'Plate -'a = 6'm, 'b = 4'm, 't = 0.2'm
+'Load -'q = 10'kN/m²
+'Material -'E = 35000'MPa, 'ν = 0.15
+'Shear correction -'κ = 5/6
+'<h4>Constants</h4>
+D_b = E*t^3/(12*(1 - ν^2))
+'Flexural rigidity:'D_b'kN·m
+G = E/(2*(1 + ν))
+'Shear modulus:'G'MPa
+D_s = κ*G*t
+'Shear rigidity:'D_s'kN/m
+'<h4>Slenderness</h4>
+lambda = a/t
+'a/t ratio:'lambda
+'<h4>Analytical reference — simply supported plate, uniform load</h4>
+'Kirchhoff (thin plate, no shear):
+w_kirchhoff = 0.00406*q*a^4/D_b
+'Center deflection Kirchhoff:'w_kirchhoff*1000'mm
+'Mindlin adds shear contribution:
+extra_shear = q*a^2/(8*D_s)
+'Extra deflection by shear:'extra_shear*1000'mm
+w_mindlin = w_kirchhoff + extra_shear
+'Mindlin total:'w_mindlin*1000'mm
+'Increase due to shear:'(extra_shear/w_kirchhoff)*100'%
+'<h4>Mesh setup</h4>
+n_a = 6
+n_b = 4
+n_e = n_a*n_b
+n_j = (n_a + 1)*(n_b + 1)
+a_1 = a/n_a
+b_1 = b/n_b
+'Elements:'n_e
+'Joints:'n_j
+'Element size a1xb1:'a_1'x'b_1'm
+n_dof = 3*n_j
+'Total DOFs:'n_dof
+'<h4>Constitutive — bending part (3x3)</h4>
+D_bend = D_b*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+'D_bend ='D_bend
+'<h4>Constitutive — shear part (2x2)</h4>
+D_shear = D_s*[1; 0|0; 1]
+'D_shear ='D_shear

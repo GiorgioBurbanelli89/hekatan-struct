@@ -122,8 +122,10 @@ def build_model(sm, mode: int):
     print(f"[OK] Seccion viga: {section}", flush=True)
 
     # Shell losa via PropArea.SetSlab — ETABS:
-    #   SetSlab(Name, SlabType=0=Slab, ShellType=2=ShellThin, Material, Thickness)
-    sm.PropArea.SetSlab("LOSA20", 0, 2, "CONC24", T_S)
+    #   SetSlab(Name, SlabType=0=Slab, ShellType, Material, Thickness)
+    #   ShellType: 1=ShellThin, 2=ShellThick, 3=Membrane
+    # USAMOS 1 = ShellThin (Kirchhoff, sin transverse shear)
+    sm.PropArea.SetSlab("LOSA20", 0, 1, "CONC24", T_S)
     print("[OK] Shell LOSA20 (ShellThin t=0.20)", flush=True)
 
     # Geometria

@@ -1,0 +1,211 @@
+"Test — TODAS las directivas web de Calcpad-Symbolic
+'<hr/>
+'<h2>Fase 1 — directivas existentes</h2>
+'<h3>1. #plotly — gráficos científicos 2D/3D</h3>
+#plotly 600 350
+{
+  data: [{x:[1,2,3,4,5], y:[1,4,9,16,25], type:'scatter', mode:'lines+markers', name:'y=x²'}],
+  layout: {title:'Plotly demo'}
+}
+#end plotly
+'<h3>2. #three — 3D WebGL (Three.js)</h3>
+#three 500 350
+const cube = new THREE.Mesh(
+    new THREE.BoxGeometry(2,2,2),
+    new THREE.MeshStandardMaterial({color:0x4a90e2}));
+scene.add(cube);
+scene.add(new THREE.AxesHelper(3));
+scene.add(new THREE.AmbientLight(0xffffff,0.6));
+scene.add(new THREE.DirectionalLight(0xffffff,0.8));
+camera.position.set(4,4,4);
+#end three
+'<h3>3. #mermaid — diagramas</h3>
+#mermaid 500 250
+flowchart LR
+    A[Carga D] --> B[1.4D]
+    A --> C[1.2D + 1.6L]
+    C --> D[Diseño]
+    B --> D
+#end mermaid
+'<h3>4. #canvas — HTML5 dibujo libre</h3>
+#canvas 500 200
+ctx.fillStyle='#ffd966';
+ctx.fillRect(20,20,100,80);
+ctx.fillStyle='#000';
+ctx.font='16px sans-serif';
+ctx.fillText('Canvas demo', 30, 60);
+#end canvas
+'<h3>5. #cyto — Cytoscape grafos</h3>
+#cyto 500 300
+{
+  elements: [
+    {data:{id:'A'}}, {data:{id:'B'}}, {data:{id:'C'}},
+    {data:{id:'AB',source:'A',target:'B'}},
+    {data:{id:'BC',source:'B',target:'C'}}
+  ],
+  style: [{selector:'node',style:{label:'data(id)','background-color':'#4a90e2'}}],
+  layout: {name:'circle'}
+}
+#end cyto
+'<h3>6. #math — KaTeX fórmulas LaTeX</h3>
+#math 600 50
+\int_0^1 \int_0^1 (x^2+2y+3)\, dy\, dx = \frac{13}{3}
+#end math
+'<hr/>
+'<h2>Fase 3 — nuevas directivas (10)</h2>
+'<h3>7. #mathbox — math viz 3D ⭐⭐⭐</h3>
+#mathbox 600 400
+mathbox.set('focus', 3);
+var view = mathbox.cartesian({range:[[-2,2],[-2,2],[-2,2]], scale:[1,1,1]});
+view.axis({axis:1}); view.axis({axis:2}); view.axis({axis:3});
+view.grid({divideX:10, divideY:10, axes:[1,2]});
+view.area({width:32, height:32, axes:[1,2],
+    expr:function(emit,x,y){emit(x, y, Math.sin(Math.sqrt(x*x+y*y)*2));},
+    channels:3});
+view.surface({shaded:true, color:0x3090ff});
+#end mathbox
+'<h3>8. #d3 — D3.js custom plot</h3>
+#d3 600 300
+const data = [{x:1,y:10},{x:2,y:25},{x:3,y:30},{x:4,y:45},{x:5,y:60}];
+const xS = d3.scaleLinear().domain([0,6]).range([40, width-20]);
+const yS = d3.scaleLinear().domain([0,70]).range([height-30, 20]);
+svg.append('path').datum(data)
+   .attr('fill','none').attr('stroke','steelblue').attr('stroke-width',2)
+   .attr('d', d3.line().x(d=>xS(d.x)).y(d=>yS(d.y)));
+svg.selectAll('circle').data(data).enter().append('circle')
+   .attr('cx',d=>xS(d.x)).attr('cy',d=>yS(d.y)).attr('r',5).attr('fill','steelblue');
+#end d3
+'<h3>9. #echarts — Apache ECharts</h3>
+#echarts 600 350
+{
+  title:{text:'Cargas vs Resistencia'},
+  xAxis:{type:'category', data:['L1','L2','L3','L4']},
+  yAxis:{type:'value'},
+  series:[
+    {name:'Demanda', type:'bar', data:[120, 200, 150, 80], itemStyle:{color:'#ff6b6b'}},
+    {name:'Capacidad', type:'bar', data:[180, 230, 200, 150], itemStyle:{color:'#4ecdc4'}}
+  ],
+  legend:{data:['Demanda','Capacidad']}
+}
+#end echarts
+'<h3>10. #vega — Vega-Lite declarativo</h3>
+#vega 600 300
+{
+  "data": {"values":[
+    {"a":"A","b":28},{"a":"B","b":55},{"a":"C","b":43},
+    {"a":"D","b":91},{"a":"E","b":81}
+  ]},
+  "mark": "bar",
+  "encoding": {
+    "x":{"field":"a","type":"nominal"},
+    "y":{"field":"b","type":"quantitative"}
+  }
+}
+#end vega
+'<h3>11. #visnet — vis-network</h3>
+#visnet 600 350
+{
+  nodes: [
+    {id:1,label:'Beam-1'},{id:2,label:'Beam-2'},{id:3,label:'Beam-3'},
+    {id:4,label:'Col-A'},{id:5,label:'Col-B'}
+  ],
+  edges: [
+    {from:1,to:4},{from:1,to:5},{from:2,to:4},{from:2,to:5},
+    {from:3,to:4},{from:3,to:5}
+  ],
+  options: {physics:{enabled:true}, nodes:{shape:'box',color:'#4a90e2'}}
+}
+#end visnet
+'<h3>12. #p5 — p5.js creative coding</h3>
+#p5 500 300
+let angle = 0;
+function setup() { createCanvas(width, height); }
+function draw() {
+  background(240);
+  translate(width/2, height/2);
+  rotate(angle);
+  fill(255, 200, 100);
+  rectMode(CENTER);
+  rect(0, 0, 80, 80);
+  angle += 0.02;
+}
+#end p5
+'<h3>13. #matter — Matter.js física 2D</h3>
+#matter 500 300
+var ground = Matter.Bodies.rectangle(width/2, height-15, width, 30, {isStatic:true, render:{fillStyle:'#999'}});
+var ball1 = Matter.Bodies.circle(width/3, 50, 25, {restitution:0.8, render:{fillStyle:'#ff6b6b'}});
+var ball2 = Matter.Bodies.circle(2*width/3, 100, 30, {restitution:0.6, render:{fillStyle:'#4ecdc4'}});
+Matter.World.add(world, [ground, ball1, ball2]);
+#end matter
+'<h3>14. #cannon — Cannon-es física 3D</h3>
+#cannon 600 400
+const groundBody = new CANNON.Body({type:CANNON.Body.STATIC, shape:new CANNON.Plane()});
+groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0), -Math.PI/2);
+world.addBody(groundBody);
+const groundMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(20, 20),
+    new THREE.MeshStandardMaterial({color:0x999999, side:THREE.DoubleSide}));
+groundMesh.rotation.x = -Math.PI/2;
+scene.add(groundMesh);
+const sphereBody = new CANNON.Body({mass:1, shape:new CANNON.Sphere(1)});
+sphereBody.position.set(0, 5, 0);
+world.addBody(sphereBody);
+const sphereMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(1, 32, 32),
+    new THREE.MeshStandardMaterial({color:0xff6b6b}));
+scene.add(sphereMesh);
+const oldAnimate = animate;
+function syncMeshes() {
+    sphereMesh.position.copy(sphereBody.position);
+    sphereMesh.quaternion.copy(sphereBody.quaternion);
+}
+setInterval(syncMeshes, 16);
+#end cannon
+'<h3>15. #geogebra — math interactivo</h3>
+#geogebra 600 400
+{
+  appName:'graphing',
+  commands:['f(x) = sin(x)', 'g(x) = cos(x)', 'h(x) = sin(x) + cos(x)']
+}
+#end geogebra
+'<h3>16. #chart — Chart.js gráficos simples</h3>
+#chart 600 300
+{
+  type: 'line',
+  data: {
+    labels: ['Ene','Feb','Mar','Abr','May','Jun'],
+    datasets: [
+      {label:'Ventas 2024', data:[12,19,3,5,2,3], borderColor:'rgb(75,192,192)'},
+      {label:'Ventas 2025', data:[5,15,20,30,25,35], borderColor:'rgb(255,99,132)'}
+    ]
+  },
+  options: {responsive:true, plugins:{title:{display:true, text:'Trend'}}}
+}
+#end chart
+'<hr/>
+'<h2>Fase 4 — animaciones</h2>
+'<h3>17. #anime — anime.js animaciones</h3>
+#anime 500 200
+container.innerHTML = '<div class="box" style="width:60px;height:60px;background:#ffd966;position:absolute;top:70px;left:30px;border-radius:8px"></div>';
+anime({
+    targets: container.querySelector('.box'),
+    translateX: 380,
+    rotate: '1turn',
+    duration: 2000,
+    direction: 'alternate',
+    loop: true,
+    easing: 'easeInOutQuad'
+});
+#end anime
+'<h3>18. #manim — animaciones matemáticas (vía MathBox, estilo 3blue1brown)</h3>
+#manim 600 400
+mathbox.set('focus', 3);
+var view = mathbox.cartesian({range:[[-3,3],[-2,2],[-2,2]], scale:[1.5,1,1]});
+view.axis({axis:1, color:0xffffff}); view.axis({axis:2, color:0xffffff}); view.axis({axis:3, color:0xffffff});
+view.area({width:64, height:64, axes:[1,2], live:true,
+    expr:function(emit,x,y,i,j,t){emit(x, y, Math.sin(x + t*2)*Math.cos(y));},
+    channels:3});
+view.surface({shaded:true, color:0xffd966});
+#end manim
+'<hr/>
+'<p>Total: <b>18 directivas</b> de visualización web disponibles.</p>

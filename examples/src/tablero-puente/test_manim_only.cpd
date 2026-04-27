@@ -1,0 +1,27 @@
+"Test — #mathbox + #manim juntos
+'<hr/>
+'<h3>1. #mathbox (fondo claro)</h3>
+#mathbox 600 400
+mathbox.set('focus', 3);
+var view = mathbox.cartesian({range:[[-2,2],[-2,2],[-2,2]], scale:[1,1,1]});
+view.axis({axis:1}); view.axis({axis:2}); view.axis({axis:3});
+view.grid({divideX:10, divideY:10, axes:[1,2]});
+view.area({width:32, height:32, axes:[1,2],
+    expr:function(emit,x,y){emit(x, y, Math.sin(Math.sqrt(x*x+y*y)*2));},
+    channels:3});
+view.surface({shaded:true, color:0x3090ff});
+#end mathbox
+'<h3>2. #manim (fondo oscuro)</h3>
+#manim 600 400
+mathbox.set('focus', 3);
+var view = mathbox.cartesian({range:[[-3,3],[-2,2],[-2,2]], scale:[1.5,1,1]});
+view.axis({axis:1, color:0xffffff});
+view.axis({axis:2, color:0xffffff});
+view.axis({axis:3, color:0xffffff});
+view.area({width:32, height:32, axes:[1,2],
+    expr:function(emit,x,y){emit(x, y, Math.sin(x)*Math.cos(y));},
+    channels:3});
+view.surface({shaded:true, color:0xffd966});
+#end manim
+'<h3>3. #manim solo (sin #mathbox previo)</h3>
+'(en doc separado test_manim_aislado_out.html)

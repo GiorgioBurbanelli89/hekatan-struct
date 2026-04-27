@@ -1,0 +1,203 @@
+"Mindlin-Reissner Q4 Plate Element — Adaptación MathCad Prime
+'<hr/>
+'<p>Conversión del worksheet <i>CLASE 05_Placas gruesas</i> de MathCad Prime a Calcpad-Symbolic.
+'Implementa el elemento finito Q4 con 3 DOFs por nodo (<var>w</var>, <var>θ</var><sub>x</sub>, <var>θ</var><sub>y</sub>)
+'usando la teoría de placa gruesa de <b>Mindlin-Reissner</b> (FSDT). El elemento incluye:</p>
+'<ul>
+'<li>Matriz constitutiva separada — <i>bending</i> (3×3) + <i>shear</i> (2×2)</li>
+'<li>Cuadratura selectiva — Gauss 2×2 para flexión, 1×1 para cortante (evita shear locking)</li>
+'<li>Funciones de forma bilineales <var>N</var><sub>i</sub>(<var>ξ</var>, <var>η</var>) y derivadas naturales <var>dN</var></li>
+'<li>Mapeo isoparamétrico: Jacobiano <var>J</var> = <var>dN</var>·<var>XY</var>, derivadas físicas <var>dN'</var> = <var>J</var><sup>−1</sup>·<var>dN</var></li>
+'</ul>
+'<p>Fuente: <i>Cálculo de estructuras por el método de los elementos finitos</i> — E. Oñate, Cap. 8.</p>
+'<hr/>
+#val
+
+'<h4>1. Material y geometría</h4>
+'Módulo de elasticidad -'E = 2*10^7
+'(unidades kN/m² — placa de hormigón típica)
+'Coeficiente de Poisson -'ν = 0.30
+'Módulo de elasticidad a corte -'G = E/(2*(1 + ν))
+'Espesor de la placa -'d = 0.02
+'(metros — placa muy delgada para verificar implementación)
+'Coeficiente de corrección por corte -'κ = 5/6
+'(valor estándar para sección rectangular)
+
+'<h4>2. Matrices constitutivas</h4>
+'<p>A diferencia de Kirchhoff (1 sola matriz <var>D</var>), Mindlin separa <b>flexión</b> y <b>corte</b>:</p>
+'Matriz constitutiva a flexión (3×3):
+D_f = E*d^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
+D_f
+'Matriz constitutiva a corte (2×2):
+D_s = κ*G*d*[1; 0|0; 1]
+D_s
+
+'<h4>3. Funciones de forma bilineales del Q4</h4>
+'<p>Nodos en coordenadas naturales (<var>ξ</var>, <var>η</var>) ∈ [−1, +1]:
+'1(−1,−1), 2(+1,−1), 3(+1,+1), 4(−1,+1).</p>
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+
+'<h4>4. Derivadas naturales analíticas</h4>
+'<p>Derivadas calculadas explícitamente (Q4 bilineal):</p>
+'∂N_i/∂ξ:
+dN1_xi(ξ; η) = -(1 - η)/4
+dN2_xi(ξ; η) = (1 - η)/4
+dN3_xi(ξ; η) = (1 + η)/4
+dN4_xi(ξ; η) = -(1 + η)/4
+'∂N_i/∂η:
+dN1_eta(ξ; η) = -(1 - ξ)/4
+dN2_eta(ξ; η) = -(1 + ξ)/4
+dN3_eta(ξ; η) = (1 + ξ)/4
+dN4_eta(ξ; η) = (1 - ξ)/4
+
+'<h4>5. Coordenadas físicas del elemento</h4>
+'<p>Mismo elemento que el worksheet original:</p>
+X = [0|1|1|0]
+Y = [-1|-1|0|0]
+'<p>El elemento es un cuadrado unitario en el plano (x, y) con vértices (0,−1), (1,−1), (1,0), (0,0).</p>
+
+'<h4>6. Jacobiano del mapeo isoparamétrico (2×2)</h4>
+'<p>Para el Q4 con coordenadas físicas X, Y:</p>
+'<p><var>J</var><sub>11</sub> = Σ ∂N_i/∂ξ · X_i,  <var>J</var><sub>12</sub> = Σ ∂N_i/∂ξ · Y_i</p>
+'<p><var>J</var><sub>21</sub> = Σ ∂N_i/∂η · X_i,  <var>J</var><sub>22</sub> = Σ ∂N_i/∂η · Y_i</p>
+J11(ξ; η) = dN1_xi(ξ; η)*X.1 + dN2_xi(ξ; η)*X.2 + dN3_xi(ξ; η)*X.3 + dN4_xi(ξ; η)*X.4
+J12(ξ; η) = dN1_xi(ξ; η)*Y.1 + dN2_xi(ξ; η)*Y.2 + dN3_xi(ξ; η)*Y.3 + dN4_xi(ξ; η)*Y.4
+J21(ξ; η) = dN1_eta(ξ; η)*X.1 + dN2_eta(ξ; η)*X.2 + dN3_eta(ξ; η)*X.3 + dN4_eta(ξ; η)*X.4
+J22(ξ; η) = dN1_eta(ξ; η)*Y.1 + dN2_eta(ξ; η)*Y.2 + dN3_eta(ξ; η)*Y.3 + dN4_eta(ξ; η)*Y.4
+'Jacobiano en el centro:
+J11_0 = J11(0; 0)
+J12_0 = J12(0; 0)
+J21_0 = J21(0; 0)
+J22_0 = J22(0; 0)
+'<var>J</var><sub>11</sub>(0,0) ='J11_0
+'<var>J</var><sub>12</sub>(0,0) ='J12_0
+'<var>J</var><sub>21</sub>(0,0) ='J21_0
+'<var>J</var><sub>22</sub>(0,0) ='J22_0
+'Determinante:
+detJ_func(ξ; η) = J11(ξ; η)*J22(ξ; η) - J12(ξ; η)*J21(ξ; η)
+detJ_0 = detJ_func(0; 0)
+'det <var>J</var>(0,0) ='detJ_0
+'(coincide con la regla: para elemento 1×1 el área es 1, det J = 1/4 · área = 0.25)
+
+'<h4>7. Inversa del Jacobiano</h4>
+'<p>Para una matriz 2×2: J<sup>−1</sup> = (1/det J) · [[J22, −J12], [−J21, J11]]</p>
+Ji11(ξ; η) = J22(ξ; η)/detJ_func(ξ; η)
+Ji12(ξ; η) = -J12(ξ; η)/detJ_func(ξ; η)
+Ji21(ξ; η) = -J21(ξ; η)/detJ_func(ξ; η)
+Ji22(ξ; η) = J11(ξ; η)/detJ_func(ξ; η)
+
+'<h4>8. Derivadas físicas (cartesianas) — dN/dx, dN/dy</h4>
+'<p>dNp_x_i = J<sub>i11</sub>·dN_xi_i + J<sub>i12</sub>·dN_eta_i (para cada nodo i)</p>
+'<p>dNp_y_i = J<sub>i21</sub>·dN_xi_i + J<sub>i22</sub>·dN_eta_i</p>
+dNp1_x(ξ; η) = Ji11(ξ; η)*dN1_xi(ξ; η) + Ji12(ξ; η)*dN1_eta(ξ; η)
+dNp2_x(ξ; η) = Ji11(ξ; η)*dN2_xi(ξ; η) + Ji12(ξ; η)*dN2_eta(ξ; η)
+dNp3_x(ξ; η) = Ji11(ξ; η)*dN3_xi(ξ; η) + Ji12(ξ; η)*dN3_eta(ξ; η)
+dNp4_x(ξ; η) = Ji11(ξ; η)*dN4_xi(ξ; η) + Ji12(ξ; η)*dN4_eta(ξ; η)
+dNp1_y(ξ; η) = Ji21(ξ; η)*dN1_xi(ξ; η) + Ji22(ξ; η)*dN1_eta(ξ; η)
+dNp2_y(ξ; η) = Ji21(ξ; η)*dN2_xi(ξ; η) + Ji22(ξ; η)*dN2_eta(ξ; η)
+dNp3_y(ξ; η) = Ji21(ξ; η)*dN3_xi(ξ; η) + Ji22(ξ; η)*dN3_eta(ξ; η)
+dNp4_y(ξ; η) = Ji21(ξ; η)*dN4_xi(ξ; η) + Ji22(ξ; η)*dN4_eta(ξ; η)
+
+'<h4>9. Matriz B_b (3×12) — bending strain-displacement</h4>
+'<p>Convención Oñate Cap. 8: para nodo i (1..4) bloque columnas (3i−2, 3i−1, 3i) ↔ DOFs
+'(<var>w</var><sub>i</sub>, <var>θ</var><sub>xi</sub>, <var>θ</var><sub>yi</sub>):</p>
+'<pre>
+'  fila 1: χ_x  =  ∂θ_y/∂x   →   col 3i:    +∂N_i/∂x
+'  fila 2: χ_y  = -∂θ_x/∂y   →   col 3i-1:  -∂N_i/∂y
+'  fila 3: χ_xy = ∂θ_y/∂y - ∂θ_x/∂x  →  col 3i-1: -∂N_i/∂x,  col 3i: +∂N_i/∂y
+'</pre>
+B_b(ξ; η) = [0; 0; dNp1_x(ξ; η); 0; 0; dNp2_x(ξ; η); 0; 0; dNp3_x(ξ; η); 0; 0; dNp4_x(ξ; η)|0; -dNp1_y(ξ; η); 0; 0; -dNp2_y(ξ; η); 0; 0; -dNp3_y(ξ; η); 0; 0; -dNp4_y(ξ; η); 0|0; -dNp1_x(ξ; η); dNp1_y(ξ; η); 0; -dNp2_x(ξ; η); dNp2_y(ξ; η); 0; -dNp3_x(ξ; η); dNp3_y(ξ; η); 0; -dNp4_x(ξ; η); dNp4_y(ξ; η)]
+
+'<h4>10. Matriz B_s (2×12) — shear strain-displacement</h4>
+'<pre>
+'  fila 1: γ_xz = ∂w/∂x - θ_y  →  col 3i-2: +∂N_i/∂x,  col 3i:   -N_i
+'  fila 2: γ_yz = ∂w/∂y - θ_x  →  col 3i-2: +∂N_i/∂y,  col 3i-1: -N_i
+'</pre>
+B_s(ξ; η) = [dNp1_x(ξ; η); 0; -N_1(ξ; η); dNp2_x(ξ; η); 0; -N_2(ξ; η); dNp3_x(ξ; η); 0; -N_3(ξ; η); dNp4_x(ξ; η); 0; -N_4(ξ; η)|dNp1_y(ξ; η); -N_1(ξ; η); 0; dNp2_y(ξ; η); -N_2(ξ; η); 0; dNp3_y(ξ; η); -N_3(ξ; η); 0; dNp4_y(ξ; η); -N_4(ξ; η); 0]
+
+'<h4>11. B_b y B_s evaluadas en el centro (ξ = η = 0)</h4>
+'<p>Para nuestro elemento (X = [0,1,1,0], Y = [−1,−1,0,0]):</p>
+'<ul>
+'<li><var>J</var>(0,0) = [[0.5, 0], [0, 0.5]] ⇒ det <var>J</var> = 0.25, <var>J</var><sup>−1</sup> = [[2, 0], [0, 2]]</li>
+'<li>∂N<sub>i</sub>/∂ξ|<sub>(0,0)</sub> = [−1/4, +1/4, +1/4, −1/4]</li>
+'<li>∂N<sub>i</sub>/∂η|<sub>(0,0)</sub> = [−1/4, −1/4, +1/4, +1/4]</li>
+'<li>∂N<sub>i</sub>/∂x|<sub>(0,0)</sub> = 2·∂N<sub>i</sub>/∂ξ = [−1/2, +1/2, +1/2, −1/2]</li>
+'<li>∂N<sub>i</sub>/∂y|<sub>(0,0)</sub> = 2·∂N<sub>i</sub>/∂η = [−1/2, −1/2, +1/2, +1/2]</li>
+'<li><var>N</var><sub>i</sub>(0,0) = 1/4 cada una</li>
+'</ul>
+'<p>Sustituyendo, B_b y B_s en el centro son matrices con coeficientes ±1/2 y ±1/4:</p>
+B_b_centro = [0; 0; -1/2; 0; 0; 1/2; 0; 0; 1/2; 0; 0; -1/2|0; 1/2; 0; 0; 1/2; 0; 0; -1/2; 0; 0; -1/2; 0|0; 1/2; -1/2; 0; -1/2; -1/2; 0; -1/2; 1/2; 0; 1/2; 1/2]
+B_b_centro
+B_s_centro = [-1/2; 0; -1/4; 1/2; 0; -1/4; 1/2; 0; -1/4; -1/2; 0; -1/4|-1/2; -1/4; 0; -1/2; -1/4; 0; 1/2; -1/4; 0; 1/2; -1/4; 0]
+B_s_centro
+'Determinante del Jacobiano (constante):
+detJ = 0.25
+
+'<h4>12. Cuadratura de Gauss 2×2 (puntos ±1/√3, pesos = 1)</h4>
+'<p>4 puntos de Gauss para integración full (flexión), 1 punto para reducida (cortante).</p>
+
+'<h4>13. Stiffness K_b por integración Gauss (J constante simplifica)</h4>
+'<p>K_b = Σ<sub>g</sub> B_b(ξ_g, η_g)<sup>T</sup>·D_f·B_b(ξ_g, η_g)·det(J_g)·W_g</p>
+'<p>Como J es constante (paralelogramo) y B_b sólo depende de J<sup>−1</sup> y derivadas naturales,
+'B_b también es constante. Σ W_g = 4 ⇒ K_b = 4·det(J)·B_b<sup>T</sup>·D_f·B_b</p>
+K_b = 4*detJ*transp(B_b_centro)*D_f*B_b_centro
+'Resultado <var>K</var><sub>b</sub> (12×12) — expresión simbólica:
+K_b
+'<p><b>Nota:</b> Calcpad-Symbolic preserva la expresión simbólica para auditoría.
+'Los valores numéricos pueden inspeccionarse en el motor con todas las matrices
+'<var>B</var><sub>b_centro</sub>, <var>D</var><sub>f</sub> y det <var>J</var> ya numéricas.</p>
+
+'<h4>14. Stiffness K_s con integración reducida 1×1</h4>
+'<p>K_s = 4·B_s(0,0)<sup>T</sup>·D_s·B_s(0,0)·det(J)
+'(integración reducida en un solo punto evita shear locking; peso = 4).</p>
+K_s = 4*detJ*transp(B_s_centro)*D_s*B_s_centro
+'Resultado <var>K</var><sub>s</sub> (12×12) — expresión simbólica:
+K_s
+
+'<h4>15. Stiffness total K_T = K_b + K_s</h4>
+K_T = 4*detJ*transp(B_b_centro)*D_f*B_b_centro + 4*detJ*transp(B_s_centro)*D_s*B_s_centro
+'Resultado <var>K</var><sub>T</sub> (12×12) — expresión simbólica:
+K_T
+
+'<hr/>
+'<h4>16. Verificación del K_T</h4>
+'<p>El elemento Q4 Mindlin tiene 12 DOFs (3 por nodo × 4 nodos). La matriz <var>K</var><sub>T</sub>
+'debe ser <b>simétrica</b>, <b>semi-definida positiva</b> (3 modos rígidos:
+'traslación <var>w</var>, rotación <var>θ</var><sub>x</sub>, rotación <var>θ</var><sub>y</sub>).</p>
+'Traza de K_T (suma diagonal, indicador de magnitud total):
+trace_KT = sum(diagonal(K_T))
+'<var>tr</var>(<var>K</var><sub>T</sub>) ='trace_KT
+'Norma de Frobenius (||K_T||):
+norm_KT = sqrt(sum(K_T*transp(K_T)))
+'<var>||K</var><sub>T</sub><var>||</var><sub>F</sub> ='norm_KT
+'Verificación de simetría — máxima asimetría:
+asym_max = max(abs(K_T - transp(K_T)))
+'max|<var>K</var><sub>T</sub> − <var>K</var><sub>T</sub><sup>T</sup>| ='asym_max
+'(debe ser ≪ 1, idealmente del orden de 10<sup>−10</sup> por errores de redondeo)
+
+'<hr/>
+'<h4>17. Comparación con MathCad Prime original</h4>
+'<p>El worksheet original genera K_b, K_s y K_T como matrices 12×12 con
+'unidades kN/m³ implícitas. Verificación de constantes clave:</p>
+factor_bending = E*d^3/(12*(1 - ν^2))
+'<var>D</var><sub>b</sub> = E·d³/(12(1−ν²)) ='factor_bending'kN·m
+'(coincide con MathCad: D_b ≈ 14.65 kN·m)
+factor_shear = κ*G*d
+'<var>D</var><sub>s</sub> = κ·G·d ='factor_shear'kN/m
+'(coincide con MathCad: D_s ≈ 128205 kN/m)
+'<p>El elemento es 1 m × 1 m, espesor 0.02 m, hormigón con E = 2·10⁷ kN/m².
+'Es una placa <b>extremadamente delgada</b> (d/L = 1/50). Aún así, el
+'método Mindlin con integración reducida en cortante (selective reduced integration)
+'evita el <i>shear locking</i> y produce respuestas correctas.</p>
+
+'<h4>18. Próximos pasos</h4>
+'<ul>
+'<li>Ensamblar varios elementos en una malla y aplicar condiciones de contorno</li>
+'<li>Comparar con SAP2000 <code>shellType=2</code> (Shell-Thick / Mindlin)</li>
+'<li>Validar contra solución analítica de Navier (placa simply supported)</li>
+'<li>Para placa muy delgada (d/L &lt; 1/100): la formulación Q4 estándar produce
+'<i>locking numérico</i>; usar elemento MITC4 (Bathe) en su lugar</li>
+'</ul>

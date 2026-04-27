@@ -51,7 +51,7 @@ const parameters: Parameters = {
   // > 0 = fija el max → al subir w el bulbo SE SATURA visualmente: con w bajo
   // ocupa pocos colores, con w alto llena todo el gradiente. Esencial para
   // ver evidencia visual del aumento de carga.
-  vmRefMax: { value: van.state(400), min: 0, max: 2000, step: 50, label: "vM ref max (kN/m²)" },
+  vmRefMax: { value: van.state(0), min: 0, max: 2000, step: 10, label: "vM ref max (0=auto)" },
 };
 
 const nodesState: State<Node[]>                  = van.state([]);

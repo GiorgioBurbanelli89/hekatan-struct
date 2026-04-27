@@ -1,0 +1,14 @@
+"Test minimal — $slope/$area multi-row
+'<hr/>
+f(x) = x^2 + 2*x + 3
+'<h4>Variable = matriz multi-row con $area (debe funcionar)</h4>
+M_var = [$area{f(t) @ t = 0 : 1}; $area{f(t) @ t = 0 : 2}|f(0); f(1)]
+'M_var ='M_var
+'<h4>Función con matriz multi-row con $area</h4>
+M_fn(x) = [$area{f(t) @ t = 0 : x}; $area{f(t) @ t = 0 : 2*x}|f(x); f(x)^2]
+'M_fn(x) ='M_fn(x)
+'M_fn(1) ='M_fn(1)
+'<h4>Función con matriz multi-row con $slope</h4>
+M_sl(x) = [$slope{f(t) @ t = x}; f(x)|f(x); f(x)^2]
+'M_sl(x) ='M_sl(x)
+'M_sl(2) ='M_sl(2)

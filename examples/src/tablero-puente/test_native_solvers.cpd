@@ -1,0 +1,20 @@
+"Test — $area y $slope nativos
+'<hr/>
+f(x) = x^2 + 2*x + 3
+'<h4>$area directo</h4>
+'∫₀¹ x² dx ='$area{x^2 @ x = 0 : 1}
+'∫₀² f(x) dx ='$area{f(x) @ x = 0 : 2}
+'<h4>$slope directo</h4>
+'f'(2) ='$slope{f(x) @ x = 2}
+'<h4>$area en variable simple</h4>
+A = $area{x^2 @ x = 0 : 1}
+'A ='A
+'<h4>$area dentro de matriz literal (sin función)</h4>
+V = [$area{x^2 @ x = 0 : 1}; $area{x @ x = 0 : 2}]
+'V ='V
+'<h4>$slope dentro de función</h4>
+dV(x) = $slope{f(x) @ x = x}
+'dV(2) ='dV(2)
+'<h4>$slope con renombrado de variable</h4>
+dV2(x) = $slope{f(t) @ t = x}
+'dV2(2) ='dV2(2)

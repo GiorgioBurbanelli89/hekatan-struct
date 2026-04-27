@@ -1,0 +1,42 @@
+"Test — matrices como funciones (sin variables previas)
+'<hr/>
+'<h4>Test A: shape functions Q4</h4>
+N_1(ξ; η) = (1 - ξ)*(1 - η)/4
+N_2(ξ; η) = (1 + ξ)*(1 - η)/4
+N_3(ξ; η) = (1 + ξ)*(1 + η)/4
+N_4(ξ; η) = (1 - ξ)*(1 + η)/4
+'N_1(ξ; η) ='N_1(ξ; η)
+'N_2(ξ; η) ='N_2(ξ; η)
+'N_3(ξ; η) ='N_3(ξ; η)
+'N_4(ξ; η) ='N_4(ξ; η)
+'<h4>Test B: matriz N(ξ; η) — funciona ✓</h4>
+N(ξ; η) = [N_1(ξ; η); N_2(ξ; η); N_3(ξ; η); N_4(ξ; η)]
+'N(ξ; η) ='N(ξ; η)
+'N(0; 0) ='N(0; 0)
+'N(1; 1) ='N(1; 1)
+'<h4>Test C: derivadas parciales como funciones individuales</h4>
+N_1ξ(ξ; η) = pdiff(N_1(ξ; η); ξ)
+N_2ξ(ξ; η) = pdiff(N_2(ξ; η); ξ)
+N_3ξ(ξ; η) = pdiff(N_3(ξ; η); ξ)
+N_4ξ(ξ; η) = pdiff(N_4(ξ; η); ξ)
+N_1η(ξ; η) = pdiff(N_1(ξ; η); η)
+N_2η(ξ; η) = pdiff(N_2(ξ; η); η)
+N_3η(ξ; η) = pdiff(N_3(ξ; η); η)
+N_4η(ξ; η) = pdiff(N_4(ξ; η); η)
+'∂N_1/∂ξ en (0;0) ='N_1ξ(0; 0)
+'∂N_2/∂ξ en (0;0) ='N_2ξ(0; 0)
+'∂N_3/∂ξ en (0;0) ='N_3ξ(0; 0)
+'∂N_4/∂ξ en (0;0) ='N_4ξ(0; 0)
+'∂N_1/∂η en (0;0) ='N_1η(0; 0)
+'∂N_2/∂η en (0;0) ='N_2η(0; 0)
+'∂N_3/∂η en (0;0) ='N_3η(0; 0)
+'∂N_4/∂η en (0;0) ='N_4η(0; 0)
+'<h4>Test D: matriz dN(ξ; η) — derivadas como funciones, ya no pdiff inline</h4>
+dN(ξ; η) = [N_1ξ(ξ; η); N_2ξ(ξ; η); N_3ξ(ξ; η); N_4ξ(ξ; η)|N_1η(ξ; η); N_2η(ξ; η); N_3η(ξ; η); N_4η(ξ; η)]
+'dN(ξ; η) ='dN(ξ; η)
+'dN(0; 0) ='dN(0; 0)
+'dN(1; 0) ='dN(1; 0)
+'<h4>Test E: comprobación manual</h4>
+'En (0; 0) la matriz debe ser:
+'[-1/4  1/4  1/4  -1/4]
+'[-1/4 -1/4  1/4   1/4]
