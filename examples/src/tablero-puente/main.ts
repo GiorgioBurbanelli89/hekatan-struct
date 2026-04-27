@@ -142,6 +142,11 @@ van.derive(() => {
   const A_beam   = (modo === 1) ? A_solar  : A_full;
   const I_beam   = (modo === 1) ? I_solar  : I_full;
   const J_beam   = (modo === 1) ? J_solar  : J_full;
+  // Offset Z desde el plano medio del shell HASTA el centroide del beam.
+  // Convencion: beam debajo del shell, top flange tocando bottom del slab.
+  //   z_top_beam = -t_s/2  (top flange tocando bottom slab)
+  //   z_centroid_beam = z_top_beam - h_total/2 = -t_s/2 - h_total/2
+  const Z_BEAM_CENTROID = -t_s / 2 - h_total / 2;
 
   // ── Generar nodos y elementos ──
   const nodes: Node[] = [];
@@ -227,7 +232,11 @@ van.derive(() => {
     A_eff = A_full;
   }
 
-  // Frames longitudinales en cada viga
+  // 3 LINEAS frame longitudinales en el plano del tablero (z=0).
+  // Comparten nodos con la losa shell (vista en planta: 3 lineas dentro del area).
+  // El "modo" solo afecta la SECCION (A, I, J) usada por la viga frame —
+  // NO crea nodos extra ni offsets fisicos. Mantiene el modelo limpio:
+  // simplemente 3 frames + 1 area = como la imagen del usuario.
   const beamFrameElements: number[] = [];
   for (const jBeam of beamRowIndices) {
     for (let i = 0; i < nx; i++) {
@@ -335,35 +344,19 @@ van.derive(() => {
     A_beam: A_eff, Iz_beam: I_eff,
   };
 
-  // Decoraciones 3D
+  // Decoracion 3D minima: 3 LINEAS naranjas representando los frames de las
+  // vigas, dentro del plano del tablero (z=0). Coinciden EXACTAMENTE con los
+  // frame elements del solver (nodos compartidos con el shell). Vista en
+  // planta: como la imagen del usuario — 3 lineas dentro del rectangulo.
   const objs: THREE.Object3D[] = [];
-  // Renderizar las vigas como BoxGeometry para que se VEAN (frame de Hekatan
-  // es solo una línea por defecto). Usamos las dimensiones reales según modo.
-  const matBeam = new THREE.MeshStandardMaterial({
-    color: modo === 0 ? 0xff8800 : modo === 1 ? 0x00ccff : 0x88ff44,
-    transparent: true, opacity: 0.7,
-  });
+  const matBeamLine = new THREE.LineBasicMaterial({ color: 0xff8800, linewidth: 3 });
   for (const yB of yBeams) {
-    if (modo === 1) {
-      // Solo alma + patín inferior — geometría reducida
-      const beamWeb = new THREE.Mesh(new THREE.BoxGeometry(L, tw, hw), matBeam);
-      beamWeb.position.set(L/2, yB, -t_s/2 - hw/2);
-      objs.push(beamWeb);
-      const beamBot = new THREE.Mesh(new THREE.BoxGeometry(L, bf, tf), matBeam);
-      beamBot.position.set(L/2, yB, -t_s/2 - hw - tf/2);
-      objs.push(beamBot);
-    } else {
-      // Doble-T completa
-      const beamWeb = new THREE.Mesh(new THREE.BoxGeometry(L, tw, hw), matBeam);
-      beamWeb.position.set(L/2, yB, -t_s/2 - hw/2 - tf);
-      objs.push(beamWeb);
-      const beamTop = new THREE.Mesh(new THREE.BoxGeometry(L, bf, tf), matBeam);
-      beamTop.position.set(L/2, yB, -t_s/2 - tf/2);
-      objs.push(beamTop);
-      const beamBot = new THREE.Mesh(new THREE.BoxGeometry(L, bf, tf), matBeam);
-      beamBot.position.set(L/2, yB, -t_s/2 - hw - tf - tf/2);
-      objs.push(beamBot);
-    }
+    const pts = [
+      new THREE.Vector3(0, yB, 0),
+      new THREE.Vector3(L, yB, 0),
+    ];
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), matBeamLine);
+    objs.push(line);
   }
 
   nodesState.val = nodes;
@@ -438,12 +431,12 @@ setTimeout(() => enableDraggableAllPanes(), 200);
 setTimeout(() => {
   const ctx = (viewerEl as any).__ctx;
   if (ctx?.camera && ctx?.controls) {
-    ctx.camera.up.set(0, 0, 1);
+    ctx.camera.up.set(0, 1, 0);
     const L = parameters.L.value.val, W = parameters.W.value.val;
-    // Vista oblicua amplia para ver TODO el tablero — viga horizontal a lo largo de X
-    const D = Math.max(L, W) * 1.8;
-    ctx.camera.position.set(L / 2 + D, -D * 0.6, D * 0.4);
-    ctx.controls.target.set(L / 2, W / 2, -0.5);
+    // Vista en PLANTA (top-down) — para ver area + 3 lineas dentro del rectangulo
+    // como en el esquema del usuario
+    ctx.camera.position.set(L / 2, W / 2, Math.max(L, W) * 1.2);
+    ctx.controls.target.set(L / 2, W / 2, 0);
     ctx.controls.update(); ctx.render?.();
   }
 }, 800);
