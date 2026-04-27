@@ -156,7 +156,8 @@ export function elements(
         new THREE.Float32BufferAttribute(faceColors, 3)
       );
       shellMesh.geometry.computeVertexNormals();
-      shellMesh.visible = true;
+      // Visibilidad final = hay geometria AND toggle faces ON
+      shellMesh.visible = settings.faces ? settings.faces.rawVal : true;
     } else {
       shellMesh.visible = false;
     }
@@ -172,6 +173,22 @@ export function elements(
   // sólo las líneas sin el shellMesh fill, etc.
   van.derive(() => {
     if (settings.edges) lines.visible = settings.edges.val;
+  });
+
+  // ── Toggle independiente para Caras (shellMesh fill) ──
+  // Cuando faces=OFF, las superficies coloreadas se ocultan pero edges/nodos
+  // siguen visibles. Util para ver lineas frame detras de un shell.
+  // CRITICO: leemos `.val` PRIMERO (registra dependencia reactiva) y solo
+  // despues chequeamos si hay geometria. Sino la derive nunca re-corre.
+  van.derive(() => {
+    if (!settings.faces) return;
+    const facesOn = settings.faces.val;  // <- registra dependencia reactiva
+    if (shellMesh.geometry.attributes.position) {
+      shellMesh.visible = facesOn;
+    } else if (!facesOn) {
+      // Aunque no haya geometria todavia, marcar invisible para cuando llegue
+      shellMesh.visible = false;
+    }
   });
 
   return group;
