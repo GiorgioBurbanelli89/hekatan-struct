@@ -1467,6 +1467,7 @@ export const edificioAporticado: ExampleDef = {
             // (esquinera=2, lindero=3, central=4).
             const sistemaCim = Math.round((p.sistemaCimentacion as number) ?? 0);
             const tieAlpha = 0.30;  // fracción absorbida por viga de amarre
+            const va_pos_log = Math.round((p.vigaAmarre_pos as number) ?? 0);
             // Contar vigas que conectan a cada zapata (sea cual sea el nivel
             // — vigaAmarre_pos no cambia este número, lo que cambia es la
             // posición visual; el efecto físico sí se distribuye igual).
@@ -1505,7 +1506,6 @@ export const edificioAporticado: ExampleDef = {
               // En la implementación per-zapata aislada actual no se
               // resuelve la viga directamente — solo se redistribuye el
               // momento. Para análisis rigoroso, exportar a SAFE.
-              const va_pos_log = Math.round((p.vigaAmarre_pos as number) ?? 0);
               if (va_pos_log === 0) {
                 console.log(`   ↳ vigaAmarre_pos=0 (mismo nivel zapata) → en F2K se exportará como cimentación corrida con ks·b·dL distribuido por nodo`);
               }
@@ -1583,6 +1583,58 @@ export const edificioAporticado: ExampleDef = {
                   springs_loc.push({ node: ni_l, dof: 1, k: kvz_l * kh_f });
                   springs_loc.push({ node: ni_l, dof: 2, k: kvz_l });
                 }
+              }
+              // ── VIGA DE AMARRE como cimentación corrida (vigaAmarre_pos=0) ──
+              // Cuando la viga va al MISMO NIVEL de la zapata, actúa como una
+              // cimentación lineal CORRIDA enterrada. En el sub-FEM aislado
+              // de cada zapata, esto se modela aumentando los springs verticales
+              // de los nodos del BORDE donde llega una viga, en proporción a
+              // ks·b_viga·L_viga_eff (zona de influencia de la viga).
+              //
+              // L_viga_eff = mitad de la distancia a la zapata vecina (por
+              // simetría, el otro extremo de la viga lleva la otra mitad).
+              if (sistemaCim === 1 && va_pos_log === 0) {
+                const va_b_loc = (p.vigaAmarre_b as number) ?? 0.25;
+                // Identificar vecinos en X y Y
+                const myIdx = z.idx;
+                const sameRow = baseRowsCim.filter(b => Math.abs(b.y - z.y) < 1e-3 && b.idx !== myIdx).sort((a,b)=>a.x-b.x);
+                const sameCol = baseRowsCim.filter(b => Math.abs(b.x - z.x) < 1e-3 && b.idx !== myIdx).sort((a,b)=>a.y-b.y);
+                // Vecino más cercano en X (positivo)
+                const xPosNeighbor = sameRow.find(b => b.x > z.x);
+                const xNegNeighbor = [...sameRow].reverse().find(b => b.x < z.x);
+                const yPosNeighbor = sameCol.find(b => b.y > z.y);
+                const yNegNeighbor = [...sameCol].reverse().find(b => b.y < z.y);
+                // Para cada viga conectada: distribuir springs ks·b·L/2 en
+                // los nodos del borde correspondiente
+                const distribOnEdge = (
+                  edge: "x+"|"x-"|"y+"|"y-",
+                  L_va_full: number,
+                ) => {
+                  // Solo la mitad porque la otra mitad va a la zapata vecina
+                  const L_eff = L_va_full / 2;
+                  // El borde tiene nSubZC+1 nodos. Distribuyo proporcionalmente
+                  // por longitud tributaria: cada nodo cubre L_eff/nSubZC
+                  // (excepto los extremos que llevan la mitad)
+                  for (let k = 0; k <= nSubZC; k++) {
+                    const dL = (k === 0 || k === nSubZC) ? L_eff/(2*nSubZC) : L_eff/nSubZC;
+                    const k_extra_v = ksC * va_b_loc * dL;
+                    const k_extra_h = k_extra_v * kh_f;
+                    let nodeId: number;
+                    switch (edge) {
+                      case "x+": nodeId = grid_loc[k][nSubZC]; break;
+                      case "x-": nodeId = grid_loc[k][0]; break;
+                      case "y+": nodeId = grid_loc[nSubZC][k]; break;
+                      case "y-": nodeId = grid_loc[0][k]; break;
+                    }
+                    springs_loc.push({ node: nodeId, dof: 0, k: k_extra_h });
+                    springs_loc.push({ node: nodeId, dof: 1, k: k_extra_h });
+                    springs_loc.push({ node: nodeId, dof: 2, k: k_extra_v });
+                  }
+                };
+                if (xPosNeighbor) distribOnEdge("x+", xPosNeighbor.x - z.x);
+                if (xNegNeighbor) distribOnEdge("x-", z.x - xNegNeighbor.x);
+                if (yPosNeighbor) distribOnEdge("y+", yPosNeighbor.y - z.y);
+                if (yNegNeighbor) distribOnEdge("y-", z.y - yNegNeighbor.y);
               }
               const kRotL = ksC * dxL * dyL * 1e-4;
               springs_loc.push({ node: grid_loc[0][0], dof: 3, k: kRotL });
