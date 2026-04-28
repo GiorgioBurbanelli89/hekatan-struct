@@ -75,7 +75,7 @@ sapModel = mySafe.SapModel
 print("\n=== Importando F2K ===")
 ret = sapModel.File.OpenFile(str(F2K_PATH))
 if ret != 0:
-    print(f"ERROR: OpenFile retornó {ret}")
+    print(f"ERROR: OpenFile retorno {ret}")
     mySafe.ApplicationExit(False)
     sys.exit(1)
 print("   [OK] F2K cargado")
@@ -83,8 +83,18 @@ print("   [OK] F2K cargado")
 # Set units a tonf, m, C
 sapModel.SetPresentUnits(8)  # 8 = tonf, m, C en SAFE
 
-# ── Correr análisis ──
-print("\n=== Corriendo análisis ===")
+# Guardar como FDB (SAFE necesita guardar antes de RunAnalysis)
+FDB_PATH = F2K_PATH.with_suffix(".FDB")
+print(f"\n=== Guardando como FDB ===")
+print(f"   Path: {FDB_PATH}")
+ret = sapModel.File.Save(str(FDB_PATH))
+if ret != 0:
+    print(f"   [WARN] Save retorno {ret}")
+else:
+    print(f"   [OK] FDB guardado")
+
+# ── Correr analisis ──
+print("\n=== Corriendo analisis ===")
 ret = sapModel.Analyze.RunAnalysis()
 if ret != 0:
     print(f"ERROR: RunAnalysis retornó {ret}")
