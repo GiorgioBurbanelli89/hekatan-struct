@@ -185,6 +185,7 @@ import { membrana } from "../membrana-pstress/membrana";
 import { shellThin } from "../shell-thin/shellThin";
 import { shellThick } from "../shell-thick/shellThick";
 import { edificioAporticado } from "../edificio-aporticado/edificioAporticado";
+import { edificioLadera } from "../edificio-ladera/edificioLadera";
 import { edificioComparativaFem } from "../edificio-comparativa-fem/edificioComparativaFem";
 // Variantes limpias de edificios por tipo estructural
 import { edificioHormigon } from "../edificio-hormigon/edificioHormigon";
@@ -228,6 +229,7 @@ export const examplesRegistry: ExampleDef[] = [
   placaBase,
   // Edificios — variantes limpias por tipo estructural
   edificioAporticado,
+  edificioLadera,
   edificioComparativaFem,  // 🧪 Comparativa cruzada Hekatan vs OpenSees / CalculiX / Code Aster
   edificioHormigon,
   edificioAceroV2,

@@ -122,10 +122,12 @@ function exportFromScratch(input: ExportE2kInput): string {
   if (title) lines.push(`  TITLE2  "${title}"  `);
   lines.push(``);
 
-  // Stories from Y elevations (Three.js Y-up convention)
-  // Node = [x, y_vertical, z_horizontal]
+  // Stories from Z elevations.
+  // Hekatan-Struct uses Z-up convention (CLAUDE.md: THREE.Object3D.DEFAULT_UP=(0,0,1)).
+  // Node = [x_horizontal, y_horizontal, z_vertical]. ETABS .e2k POINT format
+  // is (id, X, Y) with Z derived from STORY assignment.
   const zSet = new Set<number>();
-  nodes.forEach(n => zSet.add(rd(n[1]))); // Y = elevation
+  nodes.forEach(n => zSet.add(rd(n[2]))); // Z = vertical elevation
   const sortedZ = [...zSet].sort((a, b) => a - b);
   const storyNames: string[] = [];
   const zToStory = new Map<number, string>();
@@ -219,24 +221,25 @@ function exportFromScratch(input: ExportE2kInput): string {
   });
   lines.push(``);
 
-  // Plan Points (X, Z in Three.js Y-up; Y = elevation)
+  // Plan Points (X, Y in plan; Z = elevation in Hekatan-Struct Z-up convention).
+  // ETABS .e2k POINT format is `POINT id  X Y` (no Z) — Z comes from STORY.
   const xyToPoint = new Map<string, string>();
   let ptIdx = 0;
   nodes.forEach(n => {
-    const key = `${rd(n[0])},${rd(n[2])}`; // X, Z = plan coords
+    const key = `${rd(n[0])},${rd(n[1])}`; // X, Y = plan coords
     if (!xyToPoint.has(key)) xyToPoint.set(key, `${++ptIdx}`);
   });
   lines.push(`$ POINT COORDINATES`);
   for (const [key, ptName] of xyToPoint) {
-    const [x, z] = key.split(",").map(Number);
-    lines.push(`  POINT "${ptName}"  ${x} ${z} `);
+    const [x, y] = key.split(",").map(Number);
+    lines.push(`  POINT "${ptName}"  ${x} ${y} `);
   }
   lines.push(``);
 
   const nodeToPS = (ni: number): { pt: string; story: string } => {
     const n = nodes[ni];
-    const key = `${rd(n[0])},${rd(n[2])}`; // X, Z = plan coords
-    return { pt: xyToPoint.get(key) || "1", story: zToStory.get(rd(n[1])) || "Base" }; // Y = elevation
+    const key = `${rd(n[0])},${rd(n[1])}`; // X, Y = plan coords
+    return { pt: xyToPoint.get(key) || "1", story: zToStory.get(rd(n[2])) || "Base" }; // Z = elevation
   };
 
   // Lines
@@ -252,12 +255,12 @@ function exportFromScratch(input: ExportE2kInput): string {
       lines.push(`  LINE  "E${i + 1}"  BEAM  "${ps0.pt}"  "${ps1.pt}"  0`);
       laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${ps0.story}"  SECTION "${secName}"  MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
     } else {
-      // COLUMN/BRACE: Y-up: Y = elevation
+      // COLUMN/BRACE: Z-up convention: n[2] = elevation
       // In e2k format, columns use the SAME plan point at both ends
-      const bot = nodes[el[0]][1] <= nodes[el[1]][1] ? el[0] : el[1];
-      const top = nodes[el[0]][1] <= nodes[el[1]][1] ? el[1] : el[0];
+      const bot = nodes[el[0]][2] <= nodes[el[1]][2] ? el[0] : el[1];
+      const top = nodes[el[0]][2] <= nodes[el[1]][2] ? el[1] : el[0];
       const psBot = nodeToPS(bot), psTop = nodeToPS(top);
-      const zBot = rd(nodes[bot][1]), zTop = rd(nodes[top][1]);
+      const zBot = rd(nodes[bot][2]), zTop = rd(nodes[top][2]);
       const botIdx = sortedZ.indexOf(zBot), topIdx = sortedZ.indexOf(zTop);
       const nStories = Math.max(1, topIdx >= 0 && botIdx >= 0 ? topIdx - botIdx : 1);
       // Column: same point at top and bottom, nStories determines height
@@ -297,14 +300,19 @@ function exportFromScratch(input: ExportE2kInput): string {
   const areaElements: { idx: number; el: number[]; isWall: boolean }[] = [];
   elements.forEach((el, i) => {
     if (el.length === 4) {
-      // Determine if wall (vertical) or slab (horizontal) by checking normal direction
+      // Determine if wall (vertical) or slab (horizontal) by normal direction.
+      // Hekatan-Struct uses Z-up: normal vertical (high |nz|) → SLAB (floor);
+      // normal mostly horizontal (low |nz|) → WALL (panel).
       const p0 = nodes[el[0]], p1 = nodes[el[1]], p2 = nodes[el[2]];
-      // Cross product of edges to get normal
       const v1 = [p1[0]-p0[0], p1[1]-p0[1], p1[2]-p0[2]];
       const v2 = [p2[0]-p0[0], p2[1]-p0[1], p2[2]-p0[2]];
-      const ny = Math.abs(v1[2]*v2[0] - v1[0]*v2[2]); // Y component of normal
-      const nLen = Math.sqrt((v1[1]*v2[2]-v1[2]*v2[1])**2 + ny**2 + (v1[0]*v2[1]-v1[1]*v2[0])**2);
-      const isWall = nLen > 1e-10 && (ny / nLen) < 0.5; // normal is mostly horizontal → wall
+      // Cross product v1 × v2 = normal vector
+      const nx = v1[1]*v2[2] - v1[2]*v2[1];
+      const ny = v1[2]*v2[0] - v1[0]*v2[2];
+      const nz = v1[0]*v2[1] - v1[1]*v2[0];
+      const nLen = Math.sqrt(nx*nx + ny*ny + nz*nz);
+      const isWall = nLen > 1e-10 && (Math.abs(nz) / nLen) < 0.5;
+      // |nz|/|n| close to 1 → horizontal slab; close to 0 → vertical wall.
       areaElements.push({ idx: i, el, isWall });
     }
   });
@@ -333,9 +341,9 @@ function exportFromScratch(input: ExportE2kInput): string {
       const ps = el.map(ni => nodeToPS(ni));
       if (isWall) {
         // PANEL: pt1 pt2 pt2 pt1 nStories nStories 0 0
-        // Use bottom-left and bottom-right points
-        const bot0 = nodes[el[0]][1] <= nodes[el[2]][1] ? 0 : 2;
-        const bot1 = nodes[el[1]][1] <= nodes[el[3]][1] ? 1 : 3;
+        // Use bottom-left and bottom-right points (Z-up: n[2] = elevation)
+        const bot0 = nodes[el[0]][2] <= nodes[el[2]][2] ? 0 : 2;
+        const bot1 = nodes[el[1]][2] <= nodes[el[3]][2] ? 1 : 3;
         lines.push(`  AREA "${aName}"  ${aType}  4  "${ps[bot0].pt}"  "${ps[bot1].pt}"  "${ps[bot1].pt}"  "${ps[bot0].pt}"  1  1  0  0  `);
         // Assign at story of top nodes
         const topStory = ps[bot0 === 0 ? 2 : 0].story;
@@ -379,9 +387,9 @@ function exportFromScratch(input: ExportE2kInput): string {
 /** Guess element type from geometry (Y-up convention: Y = vertical) */
 function guessElementType(nodes: Node[], el: number[]): string {
   const n0 = nodes[el[0]], n1 = nodes[el[1]];
-  const dy = Math.abs(n1[1] - n0[1]); // Y = vertical
-  const dxz = Math.sqrt((n1[0] - n0[0]) ** 2 + (n1[2] - n0[2]) ** 2); // XZ = horizontal
-  const isCol = dy > dxz * 0.5;
-  const isBrace = isCol && dxz > 0.01;
+  const dz = Math.abs(n1[2] - n0[2]); // Z = vertical (Hekatan-Struct convention)
+  const dxy = Math.sqrt((n1[0] - n0[0]) ** 2 + (n1[1] - n0[1]) ** 2); // XY = horizontal plane
+  const isCol = dz > dxy * 0.5;
+  const isBrace = isCol && dxy > 0.01;
   return isBrace ? "BRACE" : isCol ? "COLUMN" : "BEAM";
 }

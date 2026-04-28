@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:examples"],
       "port": 4600
+    },
+    {
+      "name": "calcpad-test",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "examples/src/tablero-puente"],
+      "port": 8765
     }
   ]
 }

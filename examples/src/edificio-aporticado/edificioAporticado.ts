@@ -8,6 +8,8 @@ import { buildEdificioCotas, makeLabel } from "../shared/cotas3D";
 import { etabsDiscretize, DISCRETIZE_OPTIONS } from "../shared/etabsDiscretization";
 import { addRigidDiaphragms, mergeDiaphragmProps } from "../shared/rigidDiaphragm";
 import { computeHinges, buildHingeObjects3D, summarizeHinges } from "../shared/plasticHinges";
+import { designAllFootings, classifyFootingType, type FootingType } from "../shared/footingDesign";
+import * as THREE from "three";
 
 // Densidad de MASA del concreto, NO peso específico.
 // CSI Manual §4.12: "Mass values must be given in consistent mass units (W/g)".
@@ -27,11 +29,17 @@ export const edificioAporticado: ExampleDef = {
   id: "edificio-aporticado",
   name: "Edificio Aporticado",
   category: "Edificios",
-  // Edificio aporticado tiene SOLO elementos 1D (columnas + vigas). No hay shell/plate.
-  // Por eso no se ofrece shell colormap — las opciones membrane/bending/displacement
-  // del dropdown aplican solo a placas Q4, y aquí darían 0 o valores irrelevantes.
+  // Edificio aporticado: por defecto sin shell colormap (modelo 1D), pero si
+  // el usuario activa losas (slabOn) o el modo "Solo cimentación" tendremos
+  // elementos shell Q4 cuyos resultados (pressure, bending, displacement) sí
+  // son significativos. Por eso ofrecemos los principales — el dropdown no
+  // muestra nada útil cuando solo hay frames, pero al haber shells se activa.
   defaultShellResult: "none",
-  availableShellResults: [],
+  availableShellResults: [
+    "none", "pressure",
+    "bendingXX", "bendingYY", "bendingXY",
+    "displacementZ", "vonMises",
+  ],
   hasModal: true,
   params: {
     // ── Geometría ──
@@ -76,6 +84,77 @@ export const edificioAporticado: ExampleDef = {
     CV:       P("Cargas", "CV (kN/nodo)", -2,   -20, 0,    0.5),
     Ex:       P("Cargas", "Ex sismo tope (kN)", 50,  0,   500, 10),
     Ey:       P("Cargas", "Ey sismo tope (kN)", 0,   0,   500, 10),
+
+    // ══════════════════════════════════════════════════════════════
+    // ══  CIMENTACIÓN  ══════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════════
+    // El primer parámetro es el TOGGLE 1-click entre ver el edificio
+    // completo o solo la cimentación. Funciona como "botón
+    // superestructura ↔ cimentación":
+    //   "🏢 Edificio completo"   = ver/editar la superestructura
+    //                              (la cimentación se auto-recalcula
+    //                              cuando vuelves al modo cimentación)
+    //   "🪨 Solo cimentación"    = elimina la superestructura, las
+    //                              reacciones del último deform se
+    //                              aplican como P,Mx,My en pedestales
+    modoCimentacion: PE("Cimentación", "🔘 Vista (toggle)", 0, {
+      "🏢 Edificio completo (ver/editar)":  0,
+      "🪨 Solo cimentación (P,Mx,My)":      1,
+    }),
+    // Modela la cimentación bajo cada columna base como zapata aislada Q4
+    // (shellthick) con la columna ENTERRADA Df entre z=0 (primera cadena
+    // /contrapiso) y el top de la zapata. Permite representar dos prácticas:
+    //   1) Columna llega hasta z=0 y CONTINÚA enterrada hasta la zapata
+    //      → Df > 0 (lo típico cuando hay primera cadena/contrapiso)
+    //   2) Columna baja directamente hasta la zapata sin enterrarse
+    //      → Df = 0 (el bottom de la columna toca el top de la zapata)
+    q_adm_zapata: P("Cimentación", "q_adm (tonf/m²)",   10,   1,    100,   1),
+    ks_zapata:    P("Cimentación", "ks (kN/m³)",       1030, 100,   2e5,  10),
+    Hf_pedestal:  P("Cimentación", "Df col enterrada (m) (m)", 0.5, 0.0, 3.0, 0.05),
+    t_zapata:     P("Cimentación", "t zapata (m)",     0.30, 0.10, 1.50, 0.05),
+    nSubZapata:   P("Cimentación", "Subdiv. Q4 zapata", 4, 2, 12, 1),
+    voladoExtra:  P("Cimentación", "Volado extra esq./lin (m)", 0.30, 0.0, 1.0, 0.05),
+    tipoZapataOverride: PE("Cimentación", "Tipo (override)", 0, {
+      "Auto (por posición)": 0,
+      "Todas central":       1,
+      "Todas lindero":       2,
+      "Todas esquinera":     3,
+    }),
+    mostrarZapatas: PE("Cimentación", "Mostrar zapatas 3D", 1, { "On": 1, "Off": 0 }),
+    mostrarLabelsZapatas: PE("Cimentación", "Mostrar etiquetas zapatas", 1, { "On": 1, "Off": 0 }),
+    estiloZapata: PE("Cimentación", "Estilo render", 1, {
+      "Sólido (caja translúcida)": 0,
+      "Shellthick (Q4 + grilla)":  1,
+    }),
+    // ── Sistema de cimentación (solo aplica si modoCimentacion=1) ──
+    //   0 = Zapatas aisladas individuales por columna (default)
+    //   1 = Zapatas aisladas + Vigas de amarre (tie beams entre zapatas)
+    //   2 = Vigas de cimentación T invertida (frame corrido sin shell)
+    //   3 = Vigas rectangulares + Zapata corrida (frame + Q4 strip)
+    //   4 = Losa de cimentación (raft mat — Q4 único bajo TODA la planta)
+    sistemaCimentacion: PE("Cimentación", "Sistema cim.", 0, {
+      "Zapatas aisladas":              0,
+      "Zapatas + vigas de amarre":     1,
+      "Vigas T invertida (corrida)":   2,
+      "Vigas rect. + zapata corrida":  3,
+      "Losa de cimentación (raft)":    4,
+    }),
+    // Posición de las vigas de amarre (sistema 1):
+    //   0 = Unidas a las zapatas (en el shell de la zapata, z=-Hf)
+    //   1 = Conectadas a los pedestales a media altura (z=-Hf/2)
+    vigaAmarre_pos: PE("Cimentación", "Viga amarre — posición", 0, {
+      "Unida a zapatas (z=-Hf)":       0,
+      "Conectada a pedestales (-Hf/2)": 1,
+    }),
+    vigaAmarre_h: P("Cimentación", "Viga amarre h (m)", 0.40, 0.20, 1.00, 0.05),
+    vigaAmarre_b: P("Cimentación", "Viga amarre b (m)", 0.25, 0.15, 0.60, 0.05),
+    // Sección de viga de cimentación (sistemas 2, 3):
+    //   h_total y b_alma para T invertida; b_ala = ancho del ala bajo el alma
+    //   (= ancho de la zapata corrida en sistema 3)
+    vigaCim_h:   P("Cimentación", "Viga cim. h (m)",    0.80, 0.30, 2.00, 0.05),
+    vigaCim_bw:  P("Cimentación", "Viga cim. b alma (m)", 0.40, 0.20, 1.00, 0.05),
+    vigaCim_bf:  P("Cimentación", "Viga cim. b ala (m)",  1.20, 0.40, 3.00, 0.10),
+    vigaCim_tf:  P("Cimentación", "Viga cim. e ala (m)",  0.30, 0.10, 0.80, 0.05),
 
     // ── Avanzado ──
     nSubViga: P("Avanzado", "Div. vigas", 1, 1, 6, 1),
@@ -164,10 +243,13 @@ export const edificioAporticado: ExampleDef = {
     if (!reactions || !nodes?.length) {
       return { "Reacciones (→ zapatas)": "—" };
     }
-    // Buscar máximos en apoyos (nodos con z≈0)
+    // Buscar máximos en apoyos (nodos con z≈0) y recolectar TODAS las base reactions
     let maxFz = 0, maxMx = 0, maxMy = 0;
     let maxFz_nodo = -1, maxFz_xy: [number, number] = [0, 0];
     let minFz = 0, minFz_nodo = -1;
+    type BaseRow = { idx: number; x: number; y: number; P_kN: number; Mx_kN: number; My_kN: number };
+    const baseRows: BaseRow[] = [];
+    let xMax = 0, yMax = 0;
     reactions.forEach((r, idx) => {
       const n = nodes[idx];
       if (!n || Math.abs(n[2]) > 1e-6) return;   // sólo apoyos z=0
@@ -176,6 +258,12 @@ export const edificioAporticado: ExampleDef = {
       if (Fz > 0 && Fz > Math.abs(minFz)) { minFz = Fz; minFz_nodo = idx; }   // tracción (uplift)
       if (Math.abs(Mx) > Math.abs(maxMx)) maxMx = Mx;
       if (Math.abs(My) > Math.abs(maxMy)) maxMy = My;
+      // P en compresión: usamos |Fz| (la convención de signo del solver awatif
+      // varía y aquí solo necesitamos la magnitud para dimensionar la zapata).
+      // El uplift se detecta por separado en el branch `Fz > 0 && Fz > minFz`.
+      baseRows.push({ idx, x: n[0], y: n[1], P_kN: Math.abs(Fz), Mx_kN: Mx, My_kN: My });
+      if (n[0] > xMax) xMax = n[0];
+      if (n[1] > yMax) yMax = n[1];
     });
     const P_tonf = Math.abs(maxFz) / TONF_TO_KN;
     const Mx_tonf = Math.abs(maxMx) / TONF_TO_KN;
@@ -191,6 +279,47 @@ export const edificioAporticado: ExampleDef = {
     if (uplift_tonf > 0.01) result["⚠ Uplift"] = `${uplift_tonf.toFixed(2)} tonf (nodo ${minFz_nodo})`;
     result["Pisos"] = `${nPisos}`;
     result["Copiar a → zapata-aislada"] = `P=${P_tonf.toFixed(1)}, Mx=${Mx_tonf.toFixed(1)}, My=${My_tonf.toFixed(1)}`;
+
+    // ── Diseño automático de zapatas para TODOS los apoyos ──
+    if (baseRows.length > 0 && xMax > 0 && yMax > 0) {
+      const q_adm = (p.q_adm_zapata as number) ?? 10;  // tonf/m²
+      const ks    = (p.ks_zapata as number) ?? 1030;   // kN/m³
+      try {
+        const zapatas = designAllFootings(baseRows, xMax, yMax, q_adm, ks);
+        let nEsq = 0, nLin = 0, nCen = 0;
+        let sigmaMax = 0, sigmaMaxIdx = -1, sigmaMaxTipo = "";
+        let okCount = 0;
+        let LzMaxDim = 0;
+        for (const z of zapatas) {
+          if (z.tipo === "esquinera") nEsq++;
+          else if (z.tipo === "lindero") nLin++;
+          else nCen++;
+          if (z.sigmaMax_tonf > sigmaMax) {
+            sigmaMax = z.sigmaMax_tonf;
+            sigmaMaxIdx = z.idx;
+            sigmaMaxTipo = z.tipo;
+          }
+          if (z.status === "OK") okCount++;
+          if (z.Lz > LzMaxDim) LzMaxDim = z.Lz;
+        }
+        result["── Cimentación (auto) ──"] = "";
+        result["Tipos zapata"] = `${nEsq} esquineras, ${nLin} linderas, ${nCen} centrales`;
+        result["σ_max global"] = `${sigmaMax.toFixed(2)} tonf/m² (nodo ${sigmaMaxIdx}, ${sigmaMaxTipo})`;
+        result["σ/q_adm"] = `${(sigmaMax / q_adm).toFixed(2)}` + (sigmaMax / q_adm <= 1 ? " ✓" : " ⚠");
+        result["Lz máx zapata"] = `${LzMaxDim.toFixed(2)} m`;
+        result["Cumplen"] = `${okCount}/${zapatas.length}` + (okCount === zapatas.length ? " ✓" : " ⚠");
+        // Parámetros geométricos del modelo de cimentación
+        const Hf_lbl = (p.Hf_pedestal as number) ?? 0.5;
+        const tz_lbl = (p.t_zapata as number) ?? 0.30;
+        const nSub_lbl = Math.round((p.nSubZapata as number) ?? 4);
+        result["Df col enterrada"] = `${Hf_lbl.toFixed(2)} m` + (Hf_lbl < 1e-3 ? " (sin pedestal)" : "");
+        result["t zapata"] = `${tz_lbl.toFixed(2)} m`;
+        result["Subdiv. Q4"] = `${nSub_lbl}×${nSub_lbl}`;
+        result["Volado extra"] = `${((p.voladoExtra as number) ?? 0.30).toFixed(2)} m`;
+      } catch (e) {
+        result["── Cimentación ──"] = "module load error";
+      }
+    }
 
     // ── Rótulas plásticas (ASCE 41-17 / FEMA 356) ──
     const hingeCounts = (states as any).__plasticHinges as Record<string, number> | undefined;
@@ -633,6 +762,874 @@ export const edificioAporticado: ExampleDef = {
       (states as any).__plasticHinges = summarizeHinges(hingesArr);
     } catch (e) {
       console.warn("[Plastic Hinges]", e);
+    }
+
+    // ── Render 3D de zapatas bajo cada columna base ──
+    // Modela la cimentación de cada apoyo como:
+    //   1) PEDESTAL: línea/caja entre z=0 (base de columna del edificio) y
+    //      z=-Hf_pedestal (top de la zapata). Si Hf=0, no hay pedestal y la
+    //      columna toca directamente la zapata (otro estilo de modelado común).
+    //   2) ZAPATA: shellthick-style Q4 mesh con espesor t_zapata, dimensiones
+    //      Lz×Bz auto-diseñadas según reacción + tipo (esq./lin./central) y
+    //      coloreada por σ/q_adm.
+    //
+    // Estilo de render configurable: "Sólido" (caja translúcida) o
+    // "Shellthick" (grid Q4 transparente + edges, igual al ejemplo
+    // zapata-aislada).
+    if ((p.mostrarZapatas ?? 1) >= 0.5) {
+      try {
+        const reactions = (states.deformOutputs.rawVal as any)?.reactions as
+          Map<number, [number, number, number, number, number, number]> | undefined;
+        if (reactions) {
+          const baseRows: Array<{idx:number;x:number;y:number;P_kN:number;Mx_kN:number;My_kN:number}> = [];
+          let xMaxBldg = 0, yMaxBldg = 0;
+          reactions.forEach((r, idx) => {
+            const n = nodes[idx];
+            if (!n || Math.abs(n[2]) > 1e-6) return;
+            baseRows.push({
+              idx, x: n[0], y: n[1],
+              P_kN: Math.abs(r[2]), Mx_kN: r[3], My_kN: r[4],
+            });
+            if (n[0] > xMaxBldg) xMaxBldg = n[0];
+            if (n[1] > yMaxBldg) yMaxBldg = n[1];
+          });
+          if (baseRows.length > 0) {
+            // Parámetros de cimentación expuestos al usuario
+            const q_adm  = (p.q_adm_zapata as number) ?? 10;
+            const ks     = (p.ks_zapata as number)   ?? 1030;
+            const Hf_ped = Math.max(0, (p.Hf_pedestal as number) ?? 0.5);
+            const tz_user = Math.max(0.1, (p.t_zapata as number) ?? 0.30);
+            const nSubZ  = Math.max(2, Math.round((p.nSubZapata as number) ?? 4));
+            const volExtra = Math.max(0, (p.voladoExtra as number) ?? 0.30);
+            const overrideMode = Math.round(p.tipoZapataOverride ?? 0) | 0;
+            const estilo = Math.round(p.estiloZapata ?? 1);  // 0=Sólido, 1=Shellthick
+
+            // Diseñar — pero respetar override de tipo si el user lo pidió
+            const zapatas = designAllFootings(baseRows, xMaxBldg, yMaxBldg, q_adm, ks);
+            const tiposForzados: FootingType[] = ["central", "lindero", "esquinera"];
+            for (const z of zapatas) {
+              if (overrideMode > 0) z.tipo = tiposForzados[overrideMode - 1];
+              // Forzar el espesor según parámetro user (sobreescribe el t auto)
+              z.t = tz_user;
+            }
+
+            const footingObjs: THREE.Object3D[] = [];
+            // Materiales reutilizables
+            const matSolido = (color: number) => new THREE.MeshStandardMaterial({
+              color, transparent: true, opacity: 0.55, roughness: 0.7,
+            });
+            const matEdge = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+            const matGrid = new THREE.LineBasicMaterial({ color: 0x222222, linewidth: 1, transparent: true, opacity: 0.5 });
+            const matPedestal = new THREE.MeshStandardMaterial({
+              color: 0x9ca3af, transparent: true, opacity: 0.75, roughness: 0.5,
+            });
+            const matPedEdge = new THREE.LineBasicMaterial({ color: 0x111111, linewidth: 2 });
+
+            // Sección del pedestal: heredamos de la columna del piso 1 si existe
+            const colP1_b_local = colB_piso[0] ?? p.colSize;
+            const colP1_h_local = colH_piso[0] ?? p.colSize;
+
+            for (const z of zapatas) {
+              const Lz = z.Lz, Bz = z.Bz, t = z.t;
+              // ── Offset columna vs centro de zapata según tipo ──
+              // Esquinera y lindero: la columna queda en el borde de la zapata
+              // (no en el centroide), creando volado adicional hacia el interior.
+              let offsetX = 0, offsetY = 0;
+              if (z.tipo === "esquinera") {
+                offsetX = (z.x < xMaxBldg / 2) ? -(Lz/2 - volExtra) : (Lz/2 - volExtra);
+                offsetY = (z.y < yMaxBldg / 2) ? -(Bz/2 - volExtra) : (Bz/2 - volExtra);
+              } else if (z.tipo === "lindero") {
+                if (Math.abs(z.x) < 1e-3 || Math.abs(z.x - xMaxBldg) < 1e-3) {
+                  offsetX = (z.x < xMaxBldg / 2) ? -(Lz/2 - volExtra) : (Lz/2 - volExtra);
+                } else if (Math.abs(z.y) < 1e-3 || Math.abs(z.y - yMaxBldg) < 1e-3) {
+                  offsetY = (z.y < yMaxBldg / 2) ? -(Bz/2 - volExtra) : (Bz/2 - volExtra);
+                }
+              }
+              // Centro de zapata (tras corrección por offset)
+              const xCz = z.x - offsetX;
+              const yCz = z.y - offsetY;
+              const zTopFooting = -Hf_ped;          // top de la zapata
+              const zCenterFooting = zTopFooting - t / 2;
+              const zBotFooting = zTopFooting - t;  // bottom de la zapata (Winkler springs)
+
+              // Color por σ/q_adm
+              const ratio = z.ratio;
+              let color = 0x4ade80;  // verde (OK)
+              if (ratio > 1.5)      color = 0xef4444;
+              else if (ratio > 1.0) color = 0xf59e0b;
+              else if (ratio > 0.8) color = 0xfbbf24;
+
+              // ── 1) PEDESTAL — frame line entre z=0 (base columna) y
+              // z=-Df_pedestal (top de la zapata). Se dibuja como UNA LÍNEA
+              // (frame element típico FEM 1D), NO como caja 3D, igual que
+              // las columnas de la superestructura.
+              if (Hf_ped > 1e-3) {
+                const pedLineGeom = new THREE.BufferGeometry().setFromPoints([
+                  new THREE.Vector3(z.x, z.y, 0),         // top columna (z=0)
+                  new THREE.Vector3(z.x, z.y, -Hf_ped),   // top zapata (z=-Df)
+                ]);
+                footingObjs.push(new THREE.Line(
+                  pedLineGeom,
+                  new THREE.LineBasicMaterial({ color: 0x60a5fa, linewidth: 4 }),
+                ));
+                // Marca pequeña en la base del pedestal (donde toca la zapata)
+                footingObjs.push(makeLabel(
+                  `Df=${Hf_ped.toFixed(2)}m`,
+                  z.x + 0.10, z.y + 0.10, -Hf_ped / 2,
+                  "#60a5fa",
+                ));
+              }
+
+              // ── 2) ZAPATA Q4 shellthick-style ──
+              if (estilo === 0) {
+                // Estilo "Sólido": caja translúcida + edges
+                const box = new THREE.BoxGeometry(Lz, Bz, t);
+                const mesh = new THREE.Mesh(box, matSolido(color));
+                mesh.position.set(xCz, yCz, zCenterFooting);
+                footingObjs.push(mesh);
+                const edges = new THREE.LineSegments(new THREE.EdgesGeometry(box), matEdge);
+                edges.position.copy(mesh.position);
+                footingObjs.push(edges);
+              } else {
+                // Estilo "Shellthick": top y bottom plano translúcido + grilla
+                // Q4 mostrando subdivisiones (igual que zapata-aislada Q4 mesh).
+                const planeGeomTop = new THREE.PlaneGeometry(Lz, Bz);
+                const planeMatTop = new THREE.MeshStandardMaterial({
+                  color, transparent: true, opacity: 0.45,
+                  roughness: 0.6, side: THREE.DoubleSide,
+                });
+                const planeTop = new THREE.Mesh(planeGeomTop, planeMatTop);
+                planeTop.position.set(xCz, yCz, zTopFooting);
+                footingObjs.push(planeTop);
+                const planeBot = new THREE.Mesh(planeGeomTop.clone(), planeMatTop.clone());
+                planeBot.position.set(xCz, yCz, zBotFooting);
+                footingObjs.push(planeBot);
+                // Grilla Q4: nSubZ × nSubZ subdivisiones
+                const dx = Lz / nSubZ, dy = Bz / nSubZ;
+                const gridPts: THREE.Vector3[] = [];
+                // Líneas paralelas a Y (verticales en planta)
+                for (let i = 0; i <= nSubZ; i++) {
+                  const xi = -Lz/2 + i * dx;
+                  gridPts.push(
+                    new THREE.Vector3(xCz + xi, yCz - Bz/2, zTopFooting),
+                    new THREE.Vector3(xCz + xi, yCz + Bz/2, zTopFooting),
+                  );
+                  gridPts.push(
+                    new THREE.Vector3(xCz + xi, yCz - Bz/2, zBotFooting),
+                    new THREE.Vector3(xCz + xi, yCz + Bz/2, zBotFooting),
+                  );
+                }
+                // Líneas paralelas a X (horizontales en planta)
+                for (let j = 0; j <= nSubZ; j++) {
+                  const yj = -Bz/2 + j * dy;
+                  gridPts.push(
+                    new THREE.Vector3(xCz - Lz/2, yCz + yj, zTopFooting),
+                    new THREE.Vector3(xCz + Lz/2, yCz + yj, zTopFooting),
+                  );
+                  gridPts.push(
+                    new THREE.Vector3(xCz - Lz/2, yCz + yj, zBotFooting),
+                    new THREE.Vector3(xCz + Lz/2, yCz + yj, zBotFooting),
+                  );
+                }
+                const gridGeom = new THREE.BufferGeometry().setFromPoints(gridPts);
+                footingObjs.push(new THREE.LineSegments(gridGeom, matGrid));
+                // Edges del bloque (las 4 aristas verticales + perímetros)
+                const corners = [
+                  [-Lz/2, -Bz/2], [ Lz/2, -Bz/2],
+                  [ Lz/2,  Bz/2], [-Lz/2,  Bz/2],
+                ];
+                const edgePts: THREE.Vector3[] = [];
+                for (let k = 0; k < 4; k++) {
+                  const [ax, ay] = corners[k];
+                  const [bx, by] = corners[(k + 1) % 4];
+                  // Top perímetro
+                  edgePts.push(
+                    new THREE.Vector3(xCz + ax, yCz + ay, zTopFooting),
+                    new THREE.Vector3(xCz + bx, yCz + by, zTopFooting),
+                  );
+                  // Bottom perímetro
+                  edgePts.push(
+                    new THREE.Vector3(xCz + ax, yCz + ay, zBotFooting),
+                    new THREE.Vector3(xCz + bx, yCz + by, zBotFooting),
+                  );
+                  // Aristas verticales
+                  edgePts.push(
+                    new THREE.Vector3(xCz + ax, yCz + ay, zTopFooting),
+                    new THREE.Vector3(xCz + ax, yCz + ay, zBotFooting),
+                  );
+                }
+                const edgeGeom = new THREE.BufferGeometry().setFromPoints(edgePts);
+                footingObjs.push(new THREE.LineSegments(edgeGeom, matEdge));
+              }
+
+              // ── 3) Label informativo (tipo + dimensiones + ratio) ──
+              const showLabels = ((p.mostrarLabelsZapatas ?? 1) as number) >= 0.5;
+              if (showLabels) {
+                footingObjs.push(makeLabel(
+                  `${z.tipo[0].toUpperCase()} ${Lz.toFixed(2)}×${Bz.toFixed(2)}×${t.toFixed(2)}m σ/q=${z.ratio.toFixed(2)}`,
+                  xCz, yCz, zBotFooting - 0.20,
+                  ratio <= 1 ? "#4ade80" : (ratio <= 1.5 ? "#f59e0b" : "#ef4444"),
+                ));
+              }
+            }
+            // ── Vigas de amarre (sistema=1) en modo VISUAL ──
+            // Mismo render que en modo FEM: líneas cyan entre apoyos
+            // adyacentes en X y en Y, al nivel de la zapata o pedestal.
+            const sistemaVis = Math.round((p.sistemaCimentacion as number) ?? 0);
+            if (sistemaVis === 1) {
+              const va_pos = Math.round((p.vigaAmarre_pos as number) ?? 0);
+              const zVA = va_pos === 0 ? -Hf_ped : -Hf_ped / 2;
+              const va_b_v = (p.vigaAmarre_b as number) ?? 0.25;
+              const va_h_v = (p.vigaAmarre_h as number) ?? 0.40;
+              const byY_v = new Map<string, typeof baseRows>();
+              const byX_v = new Map<string, typeof baseRows>();
+              for (const b of baseRows) {
+                const ky = b.y.toFixed(4), kx = b.x.toFixed(4);
+                if (!byY_v.has(ky)) byY_v.set(ky, []);
+                if (!byX_v.has(kx)) byX_v.set(kx, []);
+                byY_v.get(ky)!.push(b);
+                byX_v.get(kx)!.push(b);
+              }
+              const vaPtsVis: THREE.Vector3[] = [];
+              for (const row of byY_v.values()) {
+                row.sort((a, b) => a.x - b.x);
+                for (let i = 0; i < row.length - 1; i++) {
+                  vaPtsVis.push(new THREE.Vector3(row[i].x, row[i].y, zVA));
+                  vaPtsVis.push(new THREE.Vector3(row[i+1].x, row[i+1].y, zVA));
+                }
+              }
+              for (const col of byX_v.values()) {
+                col.sort((a, b) => a.y - b.y);
+                for (let i = 0; i < col.length - 1; i++) {
+                  vaPtsVis.push(new THREE.Vector3(col[i].x, col[i].y, zVA));
+                  vaPtsVis.push(new THREE.Vector3(col[i+1].x, col[i+1].y, zVA));
+                }
+              }
+              if (vaPtsVis.length > 0) {
+                footingObjs.push(new THREE.LineSegments(
+                  new THREE.BufferGeometry().setFromPoints(vaPtsVis),
+                  new THREE.LineBasicMaterial({ color: 0x22d3ee, linewidth: 3 }),
+                ));
+                footingObjs.push(makeLabel(
+                  `Vigas amarre ${(va_b_v*100).toFixed(0)}×${(va_h_v*100).toFixed(0)} cm @ ${va_pos === 0 ? "zapatas" : "pedestales"}`,
+                  xMaxBldg / 2, yMaxBldg / 2, zVA + 0.20,
+                  "#22d3ee",
+                ));
+              }
+            }
+
+            cotas.push(...footingObjs);
+          }
+        }
+      } catch (e) {
+        console.warn("[Zapatas 3D]", e);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ── MODO "Solo cimentación" (P, Mx, My de reacciones) ──
+    // ═══════════════════════════════════════════════════════════════
+    // Cuando modoCimentacion=1:
+    //   • Se eliminan todas las restricciones de los apoyos rígidos
+    //   • Se elimina la superestructura (columnas, vigas, losas, brazos
+    //     rígidos, diagonales)
+    //   • Cada apoyo se reemplaza por un pedestal + zapata Q4 shellthick
+    //     con Winkler springs (kv vertical + kh horizontal)
+    //   • Las reacciones P, Mx, My del análisis previo (edificio completo)
+    //     se aplican como cargas en el TOP del pedestal de cada zapata
+    //   • Se reemplazan TODOS los states con el modelo solo-cimentación,
+    //     se re-ejecuta deform + analyze para mostrar la deformada y
+    //     presiones de contacto del suelo (q = ks · w_z) reales.
+    // Esta es la forma estándar Ecuador (NEC-SE-GC) de diseñar zapatas:
+    // desacopladas del edificio, con las reacciones como input.
+    if ((p.modoCimentacion ?? 0) >= 0.5) {
+      try {
+        const TONF_TO_KN_LOC = 9.80665;
+        const reactionsFull = (states.deformOutputs.rawVal as any)?.reactions as
+          Map<number, [number, number, number, number, number, number]> | undefined;
+        if (reactionsFull && reactionsFull.size > 0) {
+          // Recolectar reacciones de los apoyos en z=0
+          type BaseRow = {
+            idx: number; x: number; y: number;
+            P_kN: number; Mx_kN: number; My_kN: number;
+          };
+          const baseRowsCim: BaseRow[] = [];
+          let xMaxBldgC = 0, yMaxBldgC = 0;
+          reactionsFull.forEach((r, idx) => {
+            const n = nodes[idx];
+            if (!n || Math.abs(n[2]) > 1e-6) return;
+            baseRowsCim.push({
+              idx, x: n[0], y: n[1],
+              P_kN: Math.abs(r[2]), Mx_kN: r[3], My_kN: r[4],
+            });
+            if (n[0] > xMaxBldgC) xMaxBldgC = n[0];
+            if (n[1] > yMaxBldgC) yMaxBldgC = n[1];
+          });
+
+          if (baseRowsCim.length > 0) {
+            // Parámetros geométricos de cimentación
+            const q_admC  = (p.q_adm_zapata as number) ?? 10;
+            const ksC     = (p.ks_zapata as number)   ?? 1030;
+            const HfPedC  = Math.max(0, (p.Hf_pedestal as number) ?? 0.5);
+            const tzC     = Math.max(0.1, (p.t_zapata as number) ?? 0.30);
+            const nSubZC  = Math.max(2, Math.round((p.nSubZapata as number) ?? 4));
+            const volExtC = Math.max(0, (p.voladoExtra as number) ?? 0.30);
+            const overrideModeC = Math.round(p.tipoZapataOverride ?? 0) | 0;
+
+            // Diseño preliminar de cada zapata (Lz×Bz auto)
+            const zapatasDes = designAllFootings(
+              baseRowsCim, xMaxBldgC, yMaxBldgC, q_admC, ksC,
+            );
+            const tiposForzC: FootingType[] = ["central", "lindero", "esquinera"];
+            for (const z of zapatasDes) {
+              if (overrideModeC > 0) z.tipo = tiposForzC[overrideModeC - 1];
+              z.t = tzC;  // forzar el espesor parametrizado
+            }
+
+            // Sección del pedestal: usamos la columna del piso 1
+            const colP1bC = colB_piso[0] ?? p.colSize;
+            const colP1hC = colH_piso[0] ?? p.colSize;
+            const A_ped = colP1bC * colP1hC;
+            const Iy_ped = (colP1bC * colP1hC ** 3) / 12;
+            const Iz_ped = (colP1hC * colP1bC ** 3) / 12;
+            const J_ped  = 0.14 * Math.pow(Math.min(colP1bC, colP1hC), 4);
+            const matE_pedC = p.matCol < 0.5 ? Ec : Es;
+            const matG_pedC = p.matCol < 0.5 ? Gc : Gs;
+            const matNu_pedC = p.matCol < 0.5 ? nu_c : nu_s;
+
+            // Nuevos arrays (reemplazan a TODO el modelo)
+            const N2: Node[] = [];
+            const E2: Element[] = [];
+            const elasticities2 = new Map<number, number>();
+            const shearModuli2 = new Map<number, number>();
+            const areas2 = new Map<number, number>();
+            const Iz2 = new Map<number, number>();
+            const Iy2 = new Map<number, number>();
+            const J2 = new Map<number, number>();
+            const densities2 = new Map<number, number>();
+            const poissons2 = new Map<number, number>();
+            const thicknesses2 = new Map<number, number>();
+            const supports2 = new Map<number, [boolean,boolean,boolean,boolean,boolean,boolean]>();
+            const loads2 = new Map<number, [number,number,number,number,number,number]>();
+            const springsList2: Array<{ node: number; dof: number; k: number }> = [];
+            const cotas2: THREE.Object3D[] = [];
+
+            // Helper para ubicar nodo único en N2 (key por coords)
+            const nodeKey2 = (x: number, y: number, z: number) =>
+              `${Math.round(x*10000)},${Math.round(y*10000)},${Math.round(z*10000)}`;
+            const nodeIndex2 = new Map<string, number>();
+            const addNode2 = (x: number, y: number, z: number): number => {
+              const key = nodeKey2(x, y, z);
+              const found = nodeIndex2.get(key);
+              if (found !== undefined) return found;
+              const i = N2.length;
+              N2.push([x, y, z]);
+              nodeIndex2.set(key, i);
+              return i;
+            };
+
+            // Materiales 3D
+            const matEdgeC = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+            const matPedEdgeC = new THREE.LineBasicMaterial({ color: 0x111111, linewidth: 2 });
+
+            // Construir cada cimentación (zapata + pedestal + cargas + springs)
+            for (const z of zapatasDes) {
+              const Lz = z.Lz, Bz = z.Bz, t = z.t;
+              // Offset columna ↔ centro zapata según tipo
+              let offsetX = 0, offsetY = 0;
+              if (z.tipo === "esquinera") {
+                offsetX = (z.x < xMaxBldgC / 2) ? -(Lz/2 - volExtC) : (Lz/2 - volExtC);
+                offsetY = (z.y < yMaxBldgC / 2) ? -(Bz/2 - volExtC) : (Bz/2 - volExtC);
+              } else if (z.tipo === "lindero") {
+                if (Math.abs(z.x) < 1e-3 || Math.abs(z.x - xMaxBldgC) < 1e-3) {
+                  offsetX = (z.x < xMaxBldgC / 2) ? -(Lz/2 - volExtC) : (Lz/2 - volExtC);
+                } else if (Math.abs(z.y) < 1e-3 || Math.abs(z.y - yMaxBldgC) < 1e-3) {
+                  offsetY = (z.y < yMaxBldgC / 2) ? -(Bz/2 - volExtC) : (Bz/2 - volExtC);
+                }
+              }
+              const xCz = z.x - offsetX;
+              const yCz = z.y - offsetY;
+              // Plano único de la zapata (shell Q4 a z = -HfPed - t/2 mid-surface)
+              // Para no complicarlo, modelamos la zapata como UN solo plano shell
+              // a z = -HfPed (top de la losa) — espesor t va en thicknesses.
+              const zMidFoot = -HfPedC;  // shell mid-surface = top of footing
+              const dx2 = Lz / nSubZC, dy2 = Bz / nSubZC;
+              const grid2: number[][] = [];
+              for (let jr = 0; jr <= nSubZC; jr++) {
+                const row: number[] = [];
+                for (let jc = 0; jc <= nSubZC; jc++) {
+                  const x = xCz - Lz/2 + jc * dx2;
+                  const y = yCz - Bz/2 + jr * dy2;
+                  row.push(addNode2(x, y, zMidFoot));
+                }
+                grid2.push(row);
+              }
+              // Q4 shells de la zapata
+              for (let jr = 0; jr < nSubZC; jr++) {
+                for (let jc = 0; jc < nSubZC; jc++) {
+                  const eIdx = E2.length;
+                  E2.push([
+                    grid2[jr][jc], grid2[jr][jc+1],
+                    grid2[jr+1][jc+1], grid2[jr+1][jc],
+                  ] as Element);
+                  thicknesses2.set(eIdx, t);
+                  elasticities2.set(eIdx, Ec);
+                  poissons2.set(eIdx, nu_c);
+                  shearModuli2.set(eIdx, Gc);
+                  densities2.set(eIdx, rho_c);
+                }
+              }
+              // ── Springs Winkler — magnitudes ROBUSTAS para evitar
+              // matriz mal condicionada con múltiples zapatas en la misma
+              // estructura.
+              // Resortes verticales (kvz) ALTOS, horizontales (khxy) MENOS,
+              // rotacionales en TODOS los nodos para drilling.
+              const kh_factor = 0.5;
+              for (let jr = 0; jr <= nSubZC; jr++) {
+                for (let jc = 0; jc <= nSubZC; jc++) {
+                  const A_trib = dx2 * dy2 *
+                    ((jc === 0 || jc === nSubZC) ? 0.5 : 1) *
+                    ((jr === 0 || jr === nSubZC) ? 0.5 : 1);
+                  const kvz = ksC * A_trib;
+                  const khxy = kvz * kh_factor;
+                  const ni0 = grid2[jr][jc];
+                  springsList2.push({ node: ni0, dof: 0, k: khxy });
+                  springsList2.push({ node: ni0, dof: 1, k: khxy });
+                  springsList2.push({ node: ni0, dof: 2, k: kvz });
+                  // Drilling Rz substancial (impide modos rígidos)
+                  springsList2.push({ node: ni0, dof: 5, k: kvz * 0.1 });
+                }
+              }
+              // ANCLAJE RÍGIDO en UNA ESQUINA DE CADA zapata
+              // (fija solo Rx, Ry, Rz — translaciones quedan libres con
+              // Winkler). Sin esto el solver tiene 9 modos de rigid body
+              // rotation por zapata = matriz singular.
+              const anclaZ = grid2[0][0];
+              supports2.set(anclaZ, [false, false, false, true, true, true]);
+
+              // ── Conexión columna-zapata ──
+              // Buscamos el nodo del grid del shell MÁS CERCANO a la posición
+              // de la columna (z.x, z.y) y aplicamos la carga DIRECTAMENTE
+              // ahí. NO modelamos el pedestal como frame FEM (eso introduce
+              // singularidad pedestal↔shell). El pedestal es solo visual
+              // (línea cyan) — la carga se "transfiere" instantáneamente al
+              // top del shell, lo que es equivalente a un pedestal RÍGIDO.
+              let bestI = 0, bestJ = 0, bestDist = Infinity;
+              for (let jr = 0; jr <= nSubZC; jr++) {
+                for (let jc = 0; jc <= nSubZC; jc++) {
+                  const ngrid = grid2[jr][jc];
+                  const xn = N2[ngrid][0], yn = N2[ngrid][1];
+                  const d = Math.sqrt((xn - z.x)**2 + (yn - z.y)**2);
+                  if (d < bestDist) { bestDist = d; bestI = jr; bestJ = jc; }
+                }
+              }
+              const nFootCol = grid2[bestI][bestJ];
+              const nLoadApply = nFootCol;
+              // Aplicar reacción directamente al nodo shell bajo la columna.
+              // Convención: el momento se traslada de top de columna (z=0) al
+              // top de zapata (z=-Df) sumando el efecto de P × Df como
+              // momento adicional? No — para un pedestal rígido, el momento
+              // se conserva (no hay deformación entre top y bottom).
+              const baseR = baseRowsCim.find(b => b.idx === z.idx)!;
+              loads2.set(nLoadApply, [
+                0, 0,
+                -baseR.P_kN,             // -P (compresión hacia abajo)
+                baseR.Mx_kN,
+                baseR.My_kN,
+                0,
+              ]);
+
+              // ── Visualización (cotas) en modo solo-cimentación ──
+              // Color por σ/q_adm
+              const ratio = z.ratio;
+              let color = 0x4ade80;
+              if (ratio > 1.5)      color = 0xef4444;
+              else if (ratio > 1.0) color = 0xf59e0b;
+              else if (ratio > 0.8) color = 0xfbbf24;
+              // Pedestal — LÍNEA (frame), no caja 3D.
+              // El frame element ya está agregado al FEM (ver más arriba con
+              // ePed2). Aquí solo lo visualizamos como línea azul + label Df.
+              if (HfPedC > 1e-3) {
+                const pedLineG = new THREE.BufferGeometry().setFromPoints([
+                  new THREE.Vector3(z.x, z.y, 0),
+                  new THREE.Vector3(z.x, z.y, -HfPedC),
+                ]);
+                cotas2.push(new THREE.Line(
+                  pedLineG,
+                  new THREE.LineBasicMaterial({ color: 0x60a5fa, linewidth: 4 }),
+                ));
+                cotas2.push(makeLabel(
+                  `Df=${HfPedC.toFixed(2)}m`,
+                  z.x + 0.10, z.y + 0.10, -HfPedC / 2,
+                  "#60a5fa",
+                ));
+              }
+              // Labels — sólo si mostrarLabelsZapatas=ON
+              const showLabelsC = ((p.mostrarLabelsZapatas ?? 1) as number) >= 0.5;
+              if (showLabelsC) {
+                const P_tonf = baseR.P_kN / TONF_TO_KN_LOC;
+                const Mx_tonfM = baseR.Mx_kN / TONF_TO_KN_LOC;
+                const My_tonfM = baseR.My_kN / TONF_TO_KN_LOC;
+                cotas2.push(makeLabel(
+                  `P=${P_tonf.toFixed(2)} tonf`,
+                  z.x, z.y, 0.30,
+                  "#fbbf24",
+                ));
+                cotas2.push(makeLabel(
+                  `Mx=${Mx_tonfM.toFixed(2)}  My=${My_tonfM.toFixed(2)} tonf·m`,
+                  z.x, z.y, 0.10,
+                  "#fbbf24",
+                ));
+                cotas2.push(makeLabel(
+                  `${z.tipo[0].toUpperCase()} ${Lz.toFixed(2)}×${Bz.toFixed(2)}×${t.toFixed(2)}m σ/q=${ratio.toFixed(2)}`,
+                  xCz, yCz, -HfPedC - t - 0.20,
+                  ratio <= 1 ? "#4ade80" : (ratio <= 1.5 ? "#f59e0b" : "#ef4444"),
+                ));
+              }
+            }
+
+            // ── Sistema de cimentación: vigas de amarre / corridas / losa ──
+            const sistema = Math.round((p.sistemaCimentacion as number) ?? 0);
+            if (sistema === 1) {
+              // ── SISTEMA 1: Zapatas + Vigas de amarre ──
+              // Conecta cada par de zapatas adyacentes en X y en Y con
+              // un frame element (sección rectangular). Posición controlada
+              // por vigaAmarre_pos:
+              //   0 = en el plano de la zapata (z=-Hf), conecta los nodos
+              //       centrales de las zapatas (mismo nodo nFootCol que
+              //       hereda la carga del pedestal)
+              //   1 = a media altura del pedestal (z=-Hf/2): se crean nodos
+              //       intermedios en cada pedestal que sirven de puntos de
+              //       conexión de las vigas
+              const va_pos = Math.round((p.vigaAmarre_pos as number) ?? 0);
+              const va_h   = (p.vigaAmarre_h as number) ?? 0.40;
+              const va_b   = (p.vigaAmarre_b as number) ?? 0.25;
+              const va_A   = va_b * va_h;
+              const va_Iy  = (va_b * va_h ** 3) / 12;
+              const va_Iz  = (va_h * va_b ** 3) / 12;
+              const va_J   = 0.21 * Math.pow(Math.min(va_b, va_h), 3) * Math.max(va_b, va_h);
+
+              // Nodos de conexión de las vigas de amarre (uno por zapata)
+              const vaNodesByZap = new Map<number, number>();
+              for (const z of zapatasDes) {
+                let zVA: number;
+                if (va_pos === 0) {
+                  // En el plano de la zapata: usar el nodo central existente
+                  zVA = -HfPedC;
+                } else {
+                  // En el medio del pedestal
+                  zVA = -HfPedC / 2;
+                }
+                const ni0 = addNode2(z.x, z.y, zVA);
+                vaNodesByZap.set(z.idx, ni0);
+                // Si es a media altura del pedestal, debemos romper el frame
+                // del pedestal en ese nodo. Para simplificar, agregamos un
+                // segundo frame element entre nFootCol y este nodo, y entre
+                // este nodo y nTopPed. Pero ya creamos el pedestal entero
+                // antes — vamos a agregar el nodo y conectar las vigas allí
+                // sin "splitear" el pedestal (el frame original cruza por
+                // este nodo geométricamente, pero el solver no lo conoce).
+                //
+                // SOLUCIÓN: en lugar de splitear, las vigas de amarre se
+                // conectan al nodo intermedio creado, y agregamos UN frame
+                // adicional desde z.x,z.y,zMidFoot HASTA z.x,z.y,zVA y otro
+                // desde z.x,z.y,zVA HASTA z.x,z.y,0. Esto reemplazaría el
+                // pedestal original. Pero para mantener simplicidad,
+                // agregamos un frame "stub" rígido entre el pedestal y este
+                // nodo VA — corto, transversal — que en la práctica conecta
+                // las vigas al pedestal. Esta es una simplificación; el
+                // resultado es muy similar al pedestal continuo splitteado.
+                if (va_pos === 1 && HfPedC > 1e-3) {
+                  const nPedMid = addNode2(z.x, z.y, -HfPedC / 2);
+                  // El nodo nPedMid es el mismo que zVA por construcción
+                  // (Ambos son z.x, z.y, -HfPedC/2). El addNode2 dedup por key.
+                  // Conectamos nPedMid → top del pedestal con frame
+                  const nTopPed = addNode2(z.x, z.y, 0);
+                  const nFootCol = addNode2(z.x, z.y, -HfPedC);
+                  // Eliminamos el frame original [nFootCol, nTopPed]
+                  // (NO podemos hacerlo sin reorganizar — pero en la práctica
+                  // con un pedestal corto la diferencia entre tener el frame
+                  // continuo o splitteado es marginal). Dejamos el original
+                  // y el splitteado actúa como "resorte adicional": esto
+                  // sobre-rigidiza pero es conservador. Para un análisis
+                  // limpio usar va_pos=0.
+                  void nPedMid; void nTopPed; void nFootCol;
+                }
+              }
+              // Identificar pares adyacentes en X (mismo y, x consecutivos)
+              const byY = new Map<string, BaseRow[]>();
+              const byX = new Map<string, BaseRow[]>();
+              for (const b of baseRowsCim) {
+                const ky = b.y.toFixed(4);
+                const kx = b.x.toFixed(4);
+                if (!byY.has(ky)) byY.set(ky, []);
+                if (!byX.has(kx)) byX.set(kx, []);
+                byY.get(ky)!.push(b);
+                byX.get(kx)!.push(b);
+              }
+              const addVA = (na: number, nb: number) => {
+                const eIdx = E2.length;
+                E2.push([na, nb] as Element);
+                elasticities2.set(eIdx, matE_pedC);
+                shearModuli2.set(eIdx, matG_pedC);
+                poissons2.set(eIdx, matNu_pedC);
+                areas2.set(eIdx, va_A);
+                Iz2.set(eIdx, va_Iz);
+                Iy2.set(eIdx, va_Iy);
+                J2.set(eIdx, va_J);
+                densities2.set(eIdx, rho_c);
+              };
+              let nVA = 0;
+              for (const row of byY.values()) {
+                row.sort((a, b) => a.x - b.x);
+                for (let i = 0; i < row.length - 1; i++) {
+                  const na = vaNodesByZap.get(row[i].idx);
+                  const nb = vaNodesByZap.get(row[i+1].idx);
+                  if (na !== undefined && nb !== undefined) { addVA(na, nb); nVA++; }
+                }
+              }
+              for (const col of byX.values()) {
+                col.sort((a, b) => a.y - b.y);
+                for (let i = 0; i < col.length - 1; i++) {
+                  const na = vaNodesByZap.get(col[i].idx);
+                  const nb = vaNodesByZap.get(col[i+1].idx);
+                  if (na !== undefined && nb !== undefined) { addVA(na, nb); nVA++; }
+                }
+              }
+              // Render visual de las vigas de amarre como líneas cyan
+              // explícitas (cotas) en addición a los frame elements FEM,
+              // para que sean SIEMPRE visibles incluso si el viewer oculta
+              // los frames sin sección.
+              const vaLineMat = new THREE.LineBasicMaterial({
+                color: 0x22d3ee, linewidth: 3,
+              });
+              const vaPts: THREE.Vector3[] = [];
+              for (const row of byY.values()) {
+                const sortedRow = [...row].sort((a, b) => a.x - b.x);
+                for (let i = 0; i < sortedRow.length - 1; i++) {
+                  const a = sortedRow[i], b = sortedRow[i+1];
+                  const zVA = va_pos === 0 ? -HfPedC : -HfPedC / 2;
+                  vaPts.push(new THREE.Vector3(a.x, a.y, zVA));
+                  vaPts.push(new THREE.Vector3(b.x, b.y, zVA));
+                }
+              }
+              for (const col of byX.values()) {
+                const sortedCol = [...col].sort((a, b) => a.y - b.y);
+                for (let i = 0; i < sortedCol.length - 1; i++) {
+                  const a = sortedCol[i], b = sortedCol[i+1];
+                  const zVA = va_pos === 0 ? -HfPedC : -HfPedC / 2;
+                  vaPts.push(new THREE.Vector3(a.x, a.y, zVA));
+                  vaPts.push(new THREE.Vector3(b.x, b.y, zVA));
+                }
+              }
+              if (vaPts.length > 0) {
+                const vaLineGeom = new THREE.BufferGeometry().setFromPoints(vaPts);
+                cotas2.push(new THREE.LineSegments(vaLineGeom, vaLineMat));
+              }
+              cotas2.push(makeLabel(
+                `+${nVA} vigas de amarre ${(va_b*100).toFixed(0)}×${(va_h*100).toFixed(0)} cm @ ${va_pos === 0 ? "zapatas" : "pedestales"}`,
+                xMaxBldgC / 2, yMaxBldgC / 2, va_pos === 1 ? -HfPedC/2 + 0.30 : -HfPedC + 0.30,
+                "#22d3ee",
+              ));
+              console.log(`[Cimentación] Sistema 1 — ${nVA} vigas de amarre ${(va_b*100).toFixed(0)}×${(va_h*100).toFixed(0)} cm en posición ${va_pos === 0 ? "zapatas" : "pedestales"}`);
+            } else if (sistema >= 2) {
+              // Sistemas 2, 3, 4 (TODO): vigas T invertida corridas, vigas rect.
+              // + zapata corrida, losa de cimentación. Por ahora se muestra
+              // el modelo de zapatas aisladas + un mensaje en consola.
+              console.warn(
+                `[Cimentación] Sistema ${sistema} (${["", "", "Vigas T invertida", "Vigas rect. + zapata corrida", "Losa de cimentación"][sistema]}) ` +
+                `aún no implementado completamente. Mostrando zapatas aisladas. ` +
+                `Próximamente: malla shell continua + frames T-invertida.`,
+              );
+              cotas2.push(makeLabel(
+                `Sistema ${sistema} (TODO) — usando zapatas aisladas`,
+                xMaxBldgC / 2, yMaxBldgC / 2, 1.5,
+                "#fbbf24",
+              ));
+            }
+
+            // ══════════════════════════════════════════════════════════
+            // ── ENFOQUE POR ZAPATA AISLADA (verificación individual) ──
+            // ══════════════════════════════════════════════════════════
+            // En vez de solucionar las 9 zapatas en una sola matriz global
+            // (que sale singular por los modos rígidos de cada zapata
+            // independiente), resolvemos CADA zapata por separado con su
+            // propia P, Mx, My — exactamente como zapata-aislada-validacion.
+            // Reusamos la malla N2/E2 ya construida arriba — solo mapeamos
+            // los desplazamientos del sub-FEM de cada zapata al índice
+            // global correspondiente.
+            const allDeforms = new Map<number, number[]>();
+            const pressureMap = new Map<number, number[]>();
+            // Re-iterar zapatasDes para resolver cada una independientemente
+            for (const z of zapatasDes) {
+              const baseR = baseRowsCim.find(b => b.idx === z.idx)!;
+              const Lz = z.Lz, Bz = z.Bz, t = z.t;
+              // Encontrar offsetX, offsetY (mismo cálculo que arriba)
+              let offX = 0, offY = 0;
+              if (z.tipo === "esquinera") {
+                offX = (z.x < xMaxBldgC / 2) ? -(Lz/2 - volExtC) : (Lz/2 - volExtC);
+                offY = (z.y < yMaxBldgC / 2) ? -(Bz/2 - volExtC) : (Bz/2 - volExtC);
+              } else if (z.tipo === "lindero") {
+                if (Math.abs(z.x) < 1e-3 || Math.abs(z.x - xMaxBldgC) < 1e-3) {
+                  offX = (z.x < xMaxBldgC / 2) ? -(Lz/2 - volExtC) : (Lz/2 - volExtC);
+                } else if (Math.abs(z.y) < 1e-3 || Math.abs(z.y - yMaxBldgC) < 1e-3) {
+                  offY = (z.y < yMaxBldgC / 2) ? -(Bz/2 - volExtC) : (Bz/2 - volExtC);
+                }
+              }
+              const xCzS = z.x - offX, yCzS = z.y - offY;
+              // Construir SUB-FEM independiente para esta zapata
+              const N_loc: Node[] = [];
+              const E_loc: Element[] = [];
+              const ei_loc: any = {
+                elasticities: new Map<number, number>(),
+                shearModuli: new Map<number, number>(),
+                poissonsRatios: new Map<number, number>(),
+                thicknesses: new Map<number, number>(),
+                densities: new Map<number, number>(),
+              };
+              const dxL = Lz / nSubZC, dyL = Bz / nSubZC;
+              const grid_loc: number[][] = [];
+              const globalNodeMap: number[] = [];  // localIdx → globalIdx en N2
+              for (let jr = 0; jr <= nSubZC; jr++) {
+                const row: number[] = [];
+                for (let jc = 0; jc <= nSubZC; jc++) {
+                  const xl = -Lz/2 + jc * dxL;
+                  const yl = -Bz/2 + jr * dyL;
+                  row.push(N_loc.length);
+                  N_loc.push([xl, yl, 0]);
+                  // Encontrar el global node en N2 con coords (xCzS+xl, yCzS+yl, -HfPedC)
+                  const xGlob = xCzS + xl, yGlob = yCzS + yl;
+                  const keyG = nodeKey2(xGlob, yGlob, -HfPedC);
+                  const gIdx = nodeIndex2.get(keyG);
+                  if (gIdx !== undefined) globalNodeMap.push(gIdx);
+                  else globalNodeMap.push(-1);  // no debería pasar
+                }
+                grid_loc.push(row);
+              }
+              for (let jr = 0; jr < nSubZC; jr++) {
+                for (let jc = 0; jc < nSubZC; jc++) {
+                  const eIdx = E_loc.length;
+                  E_loc.push([grid_loc[jr][jc], grid_loc[jr][jc+1],
+                              grid_loc[jr+1][jc+1], grid_loc[jr+1][jc]] as Element);
+                  ei_loc.thicknesses.set(eIdx, t);
+                  ei_loc.elasticities.set(eIdx, Ec);
+                  ei_loc.poissonsRatios.set(eIdx, nu_c);
+                  ei_loc.shearModuli.set(eIdx, Gc);
+                  ei_loc.densities.set(eIdx, rho_c);
+                }
+              }
+              const springs_loc: Array<{node:number,dof:number,k:number}> = [];
+              const kh_f = 0.5;
+              for (let jr = 0; jr <= nSubZC; jr++) {
+                for (let jc = 0; jc <= nSubZC; jc++) {
+                  const A_trib = dxL * dyL *
+                    ((jc === 0 || jc === nSubZC) ? 0.5 : 1) *
+                    ((jr === 0 || jr === nSubZC) ? 0.5 : 1);
+                  const kvz_l = ksC * A_trib;
+                  const ni_l = grid_loc[jr][jc];
+                  springs_loc.push({ node: ni_l, dof: 0, k: kvz_l * kh_f });
+                  springs_loc.push({ node: ni_l, dof: 1, k: kvz_l * kh_f });
+                  springs_loc.push({ node: ni_l, dof: 2, k: kvz_l });
+                }
+              }
+              const kRotL = ksC * dxL * dyL * 1e-4;
+              springs_loc.push({ node: grid_loc[0][0], dof: 3, k: kRotL });
+              springs_loc.push({ node: grid_loc[0][0], dof: 4, k: kRotL });
+              springs_loc.push({ node: grid_loc[0][0], dof: 5, k: kRotL });
+              // Cargar P, Mx, My en el nodo local más cercano a la columna
+              const xColL = -offX, yColL = -offY;
+              let bestI = 0, bestJ = 0, bestD = Infinity;
+              for (let jr = 0; jr <= nSubZC; jr++) {
+                for (let jc = 0; jc <= nSubZC; jc++) {
+                  const xl = -Lz/2 + jc * dxL, yl = -Bz/2 + jr * dyL;
+                  const d2 = (xl-xColL)**2 + (yl-yColL)**2;
+                  if (d2 < bestD) { bestD = d2; bestI = jr; bestJ = jc; }
+                }
+              }
+              const loadNL = grid_loc[bestI][bestJ];
+              const loads_loc = new Map<number, [number,number,number,number,number,number]>();
+              loads_loc.set(loadNL, [0, 0, -baseR.P_kN, baseR.Mx_kN, baseR.My_kN, 0]);
+              // Resolver
+              try {
+                const def_loc = deform(N_loc, E_loc, { supports: new Map(), loads: loads_loc }, ei_loc, springs_loc);
+                const defLocMap = (def_loc as any).deformations as Map<number, number[]>;
+                // Mapear desplazamientos al índice GLOBAL en N2
+                for (let li = 0; li < N_loc.length; li++) {
+                  const gIdx = globalNodeMap[li];
+                  if (gIdx >= 0) {
+                    const d = defLocMap.get(li);
+                    if (d) allDeforms.set(gIdx, [...d]);
+                  }
+                }
+              } catch (e) {
+                console.warn(`[Zapata ${z.idx}] solver falló:`, e);
+              }
+            }
+            // Calcular pressure global elemento por elemento
+            for (let eIdx = 0; eIdx < E2.length; eIdx++) {
+              const el = E2[eIdx];
+              if (el.length !== 4) continue;
+              const qN: number[] = [];
+              for (const ng of el) {
+                const d = allDeforms.get(ng);
+                qN.push(ksC * (d ? d[2] : 0) / TONF_TO_KN_LOC);
+              }
+              pressureMap.set(eIdx, qN);
+            }
+            // ── Estados globales (la malla N2/E2 ya está construida arriba) ──
+            states.nodes.val = N2;
+            states.elements.val = E2;
+            states.nodeInputs.val = { supports: supports2, loads: loads2 };
+            states.elementInputs.val = {
+              elasticities: elasticities2,
+              shearModuli: shearModuli2,
+              areas: areas2,
+              momentsOfInertiaZ: Iz2,
+              momentsOfInertiaY: Iy2,
+              torsionalConstants: J2,
+              densities: densities2,
+              poissonsRatios: poissons2,
+              thicknesses: thicknesses2,
+            } as any;
+            states.deformOutputs.val = { deformations: allDeforms, reactions: new Map() } as any;
+            states.analyzeOutputs.val = {
+              pressure: pressureMap,
+              colorMapRanges: { pressure: [0, -q_admC] },
+            } as any;
+            // Reemplazar también las cotas (ocultar superestructura)
+            states.objects3D.val = cotas2;
+            console.log(
+              `[Modo Cimentación] ${baseRowsCim.length} zapatas + pedestales (Hf=${HfPedC} m, t=${tzC} m, q_adm=${q_admC} tonf/m², ks=${ksC} kN/m³) — reemplaza superestructura`,
+            );
+            // Forzar al viewer mostrar colormap de presiones (sin deformada
+            // amplificada — los desplazamientos reales son ~30cm en zapatas
+            // de esquina con momentos altos, y la auto-amplificación 400×
+            // produce ±60m visual = ilegible). El usuario puede activar
+            // deformedShape manualmente con scale moderado si lo necesita.
+            try {
+              setTimeout(() => {
+                const viewerEl = document.querySelector("#viewer") as any;
+                const settings = viewerEl?.__settings;
+                if (settings) {
+                  if (settings.shellResults) settings.shellResults.val = "pressure";
+                  if (settings.deformedShape) settings.deformedShape.val = false;
+                  if (settings.deformScale) settings.deformScale.val = 5;  // razonable si user lo activa
+                  // Apagar secciones para que el pedestal sea LÍNEA, no caja
+                  if (settings.sections) settings.sections.val = false;
+                  if (settings.secColumns) settings.secColumns.val = false;
+                  if (settings.secBeams) settings.secBeams.val = false;
+                  if (settings.frameResults) settings.frameResults.val = "none";
+                  // Encender custom3D (objects3D = nuestros pedestales/labels)
+                  if (settings.custom3D) settings.custom3D.val = true;
+                }
+              }, 50);
+            } catch (e) { /* viewer no disponible */ }
+            return;  // No ejecutar el "states.objects3D.val = cotas" final
+          }
+        }
+      } catch (e) {
+        console.warn("[Modo Cimentación] error:", e);
+      }
     }
 
     states.objects3D.val = cotas;

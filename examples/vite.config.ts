@@ -64,6 +64,7 @@ export default defineConfig({
         "plane": "src/plane/index.html",
         "membrana-csi": "src/membrana-csi/index.html",
         "edificio-aporticado": "src/edificio-aporticado/index.html",
+        "edificio-ladera": "src/edificio-ladera/index.html",
         "edificio-comparativa-fem": "src/edificio-comparativa-fem/index.html",
         "edificio-hormigon": "src/edificio-hormigon/index.html",
         "edificio-acero-v2": "src/edificio-acero-v2/index.html",

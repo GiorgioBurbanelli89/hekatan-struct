@@ -29,6 +29,10 @@ import { createModalAnimator, type ModalAnimator } from "../shared/animateMode";
 import { examplesRegistry, activeExampleVersion, type ExampleDef } from "./exampleRegistry";
 import { downloadZapataF2k } from "../zapata-aislada/f2kExporter";
 import { parseZapataF2k } from "../zapata-aislada/f2kImporter";
+import { exportE2k } from "../shared/e2kExporter";
+import { parseE2k } from "../shared/e2kParser";
+import { exportS2k } from "../shared/s2kExporter";
+import { parseS2k } from "../shared/s2kParser";
 import {
   forceUnit, dispUnit, fromKn, toKn, fromKnm, toKnm,
   forceUnitSuffix, momentUnitSuffix, dispUnitSuffix, stripUnitSuffix,
@@ -583,8 +587,8 @@ function buildParamsPane() {
   // ── SAFE F2K Export/Import (solo para zapatas) ──
   // Permite roundtrip Hekatan ↔ SAFE para validación cruzada.
   if (currentExample && currentExample.id.startsWith("zapata")) {
-    const fF2K = pane.addFolder({ title: "📄 SAFE F2K", expanded: false });
-    fF2K.addButton({ title: "📤 Exportar a SAFE (.f2k)" }).on("click", () => {
+    const fF2K = pane.addFolder({ title: "SAFE", expanded: false });
+    fF2K.addButton({ title: "📤 Exportar F2K" }).on("click", () => {
       try {
         const p = currentParams;
         // Calcular ks en kN/m³ desde params actuales
@@ -657,6 +661,170 @@ function buildParamsPane() {
         } catch (e: any) {
           alert(`Error importando F2K: ${e?.message ?? e}`);
           console.error(e);
+        }
+      };
+      input.click();
+    });
+  }
+
+  // ── Navegación cruzada Edificio ↔ Cimentación ──
+  // Si el ejemplo activo es un edificio: botón "→ Diseñar zapata" que toma
+  // la reacción máxima de base y la pasa via URL al ejemplo zapata-aislada-validacion.
+  // Si es zapata y URL trae ?from=...: botón "← Volver" que regresa.
+  if (currentExample) {
+    const isBuilding = !currentExample.id.startsWith("zapata");
+    const isFooting  = currentExample.id.startsWith("zapata");
+    const urlFrom    = new URLSearchParams(window.location.search).get("from");
+
+    if (isBuilding) {
+      // ── BOTÓN VISIBLE: toggle FEM cimentación in-place ──
+      // En edificios con varias columnas, este botón muestra TODAS las
+      // zapatas FEM (Q4 shellthick + Winkler) con sus respectivas P, Mx,
+      // My en la misma página. Es un toggle entre:
+      //   🏢 Edificio completo (con superestructura)
+      //   🪨 Solo cimentación (sin superestructura, P,Mx,My de reacciones
+      //                         aplicados a los pedestales de cada zapata)
+      try {
+        // Detectar si el ejemplo soporta el toggle: presence de la opción
+        // modoCimentacion en su definición de params (si tiene PE
+        // "modoCimentacion", el dropdown estará en el DOM tras buildPane).
+        const exParams = (currentExample as any)?.params;
+        const hasModoCim = exParams && exParams.modoCimentacion !== undefined;
+        if (hasModoCim) {
+          const fCim = pane.addFolder({ title: "🪨 Cimentación FEM (toggle)", expanded: true });
+          const cimBtn = fCim.addButton({ title: "🪨 Ver TODAS las zapatas FEM" });
+          cimBtn.on("click", () => {
+            const selects = Array.from(document.querySelectorAll('select')) as HTMLSelectElement[];
+            const target = selects.find(s => {
+              const lbl = s.closest('.tp-lblv')?.querySelector('.tp-lblv_l')?.textContent ?? '';
+              return lbl.includes('Vista (toggle)');
+            });
+            if (!target) {
+              alert("No se encontró el dropdown 'Vista (toggle)'.");
+              return;
+            }
+            const isInCim = target.value.includes('Solo cimentación');
+            const opts = Array.from(target.options);
+            const newVal = isInCim
+              ? opts.find(o => o.value.includes('Edificio'))?.value
+              : opts.find(o => o.value.includes('Solo cimentación'))?.value;
+            if (!newVal) return;
+            target.value = newVal;
+            target.dispatchEvent(new Event('change', { bubbles: true }));
+            // Actualizar título del botón
+            (cimBtn as any).title = isInCim
+              ? "🪨 Ver TODAS las zapatas FEM"
+              : "🏢 Volver al edificio completo";
+            try { pane.refresh(); } catch {}
+            console.log(`[FEM Cim] cambiado a: ${newVal}`);
+          });
+        }
+      } catch (e) {
+        console.warn("[Workspace] Toggle FEM Cim setup falló:", e);
+      }
+      // Folder "🔗 Validar 1 zapata" REMOVIDO — no tiene sentido en un
+      // edificio con varias columnas. La validación contra Calcpad se hace
+      // en el ejemplo standalone zapata-aislada-validacion abriéndolo
+      // directamente desde el selector de ejemplos.
+    }
+    if (isFooting && urlFrom) {
+      const fNav = pane.addFolder({ title: "🔗 Origen", expanded: true });
+      fNav.addButton({ title: `← Volver a ${urlFrom}` }).on("click", () => {
+        const url = new URL(window.location.href);
+        url.searchParams.set("t", urlFrom);
+        url.searchParams.delete("P");
+        url.searchParams.delete("Mx");
+        url.searchParams.delete("My");
+        url.searchParams.delete("from");
+        window.location.href = url.toString();
+      });
+    }
+  }
+
+  // ── ETABS .e2k / SAP2000 .s2k Export/Import ──
+  // F2K (SAFE) ya cubre las zapatas; ETABS/SAP cubren TODO LO DEMÁS:
+  // edificios, pórticos, placas, cáscaras, mezzanines, galpones, etc.
+  // Permite roundtrip Hekatan ↔ ETABS/SAP para validación cruzada de
+  // edificios duales, modal y participación de masa.
+  if (currentExample && !currentExample.id.startsWith("zapata")) {
+    const fEtabs = pane.addFolder({ title: "ETABS", expanded: false });
+    const fSap   = pane.addFolder({ title: "SAP",   expanded: false });
+    const downloadText = (text: string, filename: string) => {
+      const blob = new Blob([text], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    };
+    fEtabs.addButton({ title: "📤 Exportar E2K" }).on("click", () => {
+      try {
+        const text = exportE2k({
+          nodes: states.nodes.val,
+          elements: states.elements.val,
+          nodeInputs: states.nodeInputs.val,
+          elementInputs: states.elementInputs.val,
+          title: `${currentExample!.name} — Hekatan export`,
+          units: { force: "Tonf", length: "m" },
+        });
+        const fname = `${currentExample!.id}_${Date.now()}.e2k`;
+        downloadText(text, fname);
+        console.log(`✅ E2K exportado: ${text.length} bytes → ${fname}`);
+        console.log(`Abrilo en ETABS: File → Import → ETABS .e2k Text File`);
+      } catch (e: any) {
+        console.error(`Error exportando E2K:`, e);
+      }
+    });
+    fEtabs.addButton({ title: "📥 Importar E2K" }).on("click", () => {
+      const input = document.createElement("input");
+      input.type = "file"; input.accept = ".e2k,.$et,.txt";
+      input.onchange = async (ev: any) => {
+        const file = ev.target.files?.[0]; if (!file) return;
+        try {
+          const text = await file.text();
+          const model = parseE2k(text);
+          alert(`E2K parseado: ${file.name}\n` +
+                `Nodos: ${model.nodes?.length ?? 0}\n` +
+                `Elementos: ${model.elements?.length ?? 0}\n\n` +
+                `(Para cargar en el viewer hace falta un ejemplo "Importado E2K". Por ahora devuelve a consola.)`);
+          console.log("E2K parsed:", model);
+        } catch (e: any) {
+          alert(`Error importando E2K: ${e?.message ?? e}`); console.error(e);
+        }
+      };
+      input.click();
+    });
+    fSap.addButton({ title: "📤 Exportar S2K" }).on("click", () => {
+      try {
+        const text = exportS2k({
+          nodes: states.nodes.val,
+          elements: states.elements.val,
+          nodeInputs: states.nodeInputs.val,
+          elementInputs: states.elementInputs.val,
+          title: `${currentExample!.name} — Hekatan export`,
+        });
+        const fname = `${currentExample!.id}_${Date.now()}.s2k`;
+        downloadText(text, fname);
+        console.log(`✅ S2K exportado: ${text.length} bytes → ${fname}`);
+        console.log(`SAP2000 .s2k descargado: ${fname}`);
+      } catch (e: any) {
+        console.error(`Error exportando S2K:`, e);
+      }
+    });
+    fSap.addButton({ title: "📥 Importar S2K" }).on("click", () => {
+      const input = document.createElement("input");
+      input.type = "file"; input.accept = ".s2k,.$2k,.txt";
+      input.onchange = async (ev: any) => {
+        const file = ev.target.files?.[0]; if (!file) return;
+        try {
+          const text = await file.text();
+          const model = parseS2k(text);
+          alert(`S2K parseado: ${file.name}\n` +
+                `Nodos: ${model.nodes?.length ?? 0}\n` +
+                `Elementos: ${model.elements?.length ?? 0}`);
+          console.log("S2K parsed:", model);
+        } catch (e: any) {
+          alert(`Error importando S2K: ${e?.message ?? e}`); console.error(e);
         }
       };
       input.click();
@@ -1029,6 +1197,209 @@ document.body.append(
 );
 document.body.appendChild(modalPanel.div);
 
+// ═══════════════════════════════════════════════════════════════
+// ── HOVER TOOLTIP GLOBAL para shell results en cualquier ejemplo ──
+// Al pasar el cursor sobre un shell Q4, busca por raycast el elemento
+// y muestra el valor del campo activo (pressure / bendingXX / vonMises /
+// displacementZ etc.) interpolado en el nodo más cercano.
+// Funciona para zapata-aislada, edificio-aporticado solo cimentación,
+// shell-thick, plate-q4, losas, etc. — cualquier mesh con shells.
+// ═══════════════════════════════════════════════════════════════
+(function setupShellHoverTooltip() {
+  const tooltip = document.createElement("div");
+  tooltip.id = "shell-hover-tooltip";
+  Object.assign(tooltip.style, {
+    position: "fixed",
+    pointerEvents: "none",
+    background: "rgba(0,0,0,0.85)",
+    color: "#fff",
+    padding: "6px 10px",
+    fontSize: "12px",
+    fontFamily: "system-ui, monospace",
+    border: "1px solid #22d3ee",
+    borderRadius: "4px",
+    whiteSpace: "nowrap",
+    zIndex: "9999",
+    display: "none",
+    boxShadow: "0 4px 8px rgba(0,0,0,0.4)",
+  });
+  document.body.appendChild(tooltip);
+
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+
+  // Etiquetas legibles para cada campo de shellResults
+  const FIELD_LABELS: Record<string, string> = {
+    pressure: "σ (presión)",
+    bendingXX: "Mxx (flexión)",
+    bendingYY: "Myy (flexión)",
+    bendingXY: "Mxy (torsión)",
+    membraneXX: "Nxx (membrana)",
+    membraneYY: "Nyy (membrana)",
+    membraneXY: "Nxy (corte)",
+    shearX: "Vx (corte)",
+    shearY: "Vy (corte)",
+    vonMises: "von Mises",
+    displacementX: "ux",
+    displacementY: "uy",
+    displacementZ: "uz",
+  };
+  // Tipo de cada campo según unidades:
+  //   force/m² → pressure, vonMises (1/m²)
+  //   moment/m → bending* (kN·m/m → tonf·m/m)
+  //   force/m → membrane*, shear* (kN/m → tonf/m)
+  //   disp → displacement* (m → mm/cm/m/in)
+  const FIELD_KIND: Record<string, "force_per_area"|"moment_per_length"|"force_per_length"|"displacement"> = {
+    pressure: "force_per_area",
+    bendingXX: "moment_per_length",
+    bendingYY: "moment_per_length",
+    bendingXY: "moment_per_length",
+    membraneXX: "force_per_length",
+    membraneYY: "force_per_length",
+    membraneXY: "force_per_length",
+    shearX: "force_per_length",
+    shearY: "force_per_length",
+    vonMises: "force_per_area",
+    displacementX: "displacement",
+    displacementY: "displacement",
+    displacementZ: "displacement",
+  };
+  // Convierte el valor SI base (kN, kN·m, m) a la unidad UI activa
+  // y devuelve [valor_convertido, sufijo_unidad].
+  const formatValue = (kind: string, valSI: number): [number, string] => {
+    const u = forceUnit.val;
+    const du = dispUnit.val;
+    if (kind === "force_per_area") {
+      return [fromKn(valSI), `${u}/m²`];
+    }
+    if (kind === "moment_per_length") {
+      const lbl = u === "kip" ? "kip·ft/m" : `${u}·m/m`;
+      return [fromKnm(valSI), lbl];
+    }
+    if (kind === "force_per_length") {
+      return [fromKn(valSI), `${u}/m`];
+    }
+    if (kind === "displacement") {
+      return [mToDisp(valSI), du];
+    }
+    return [valSI, ""];
+  };
+
+  const onPointerMove = (event: PointerEvent) => {
+    const ctx = (viewerElm as any).__ctx;
+    const settings = (viewerElm as any).__settings;
+    if (!ctx?.scene || !ctx?.camera) { tooltip.style.display = "none"; return; }
+    const field = settings?.shellResults?.val ?? "none";
+    if (field === "none") { tooltip.style.display = "none"; return; }
+    // Convert mouse to NDC respecto al canvas del viewer
+    const canvas = viewerElm.querySelector("canvas") as HTMLCanvasElement | null;
+    if (!canvas) { tooltip.style.display = "none"; return; }
+    const rect = canvas.getBoundingClientRect();
+    pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(pointer, ctx.camera);
+    // Buscar shell meshes en la escena (los que tienen vertex colors)
+    const targets: THREE.Mesh[] = [];
+    ctx.scene.traverse((o: any) => {
+      if (o.isMesh && o.geometry?.attributes?.color &&
+          o.geometry.attributes.position.count > 50) {
+        targets.push(o);
+      }
+    });
+    if (!targets.length) { tooltip.style.display = "none"; return; }
+    const hits = raycaster.intersectObjects(targets, false);
+    if (!hits.length) { tooltip.style.display = "none"; return; }
+    const hit = hits[0];
+    // Obtener el ÍNDICE del elemento Q4 a partir del face index
+    // Cada Q4 se triangula en 2 triangles (6 vertex indices), así
+    // faceIndex / 2 = elementIndex en la mesh shell.
+    const faceIdx = hit.faceIndex ?? 0;
+    const elemIdx = Math.floor(faceIdx / 2);
+    // Leer el valor del campo activo del analyzeOutputs
+    const ao = analyzeOutputs.rawVal as any;
+    const fieldMap = ao?.[field] as Map<number, number[]> | undefined;
+    if (!fieldMap || !fieldMap.size) {
+      tooltip.style.display = "none";
+      return;
+    }
+    const values = fieldMap.get(elemIdx);
+    if (!values?.length) { tooltip.style.display = "none"; return; }
+    const els = elements.rawVal as Element[];
+    const nds = nodes.rawVal as Node[];
+    const elNodes = els[elemIdx];
+    // ── INTERPOLACIÓN BILINEAL Q4 (estilo ETABS/SAP) ──
+    // Inferir las coordenadas naturales (ξ, η) ∈ [-1, 1] del punto del hit
+    // dentro del Q4. Usamos solver de Newton-Raphson 2D simple sobre la
+    // mapa isoparamétrica x(ξ,η) = Σ N_i(ξ,η)·x_i.
+    let valInterp = values[0], xi = 0, eta = 0;
+    let closestCorner = 0;
+    if (elNodes?.length === 4 && hit.point) {
+      const corners = elNodes.map(ni => nds[ni]) as [number,number,number][];
+      // Funciones de forma N_i(ξ, η) para Q4
+      const N = (xi: number, eta: number) => [
+        0.25 * (1 - xi) * (1 - eta),
+        0.25 * (1 + xi) * (1 - eta),
+        0.25 * (1 + xi) * (1 + eta),
+        0.25 * (1 - xi) * (1 + eta),
+      ];
+      // Newton-Raphson para encontrar (ξ, η) tal que x(ξ,η) = hit.point
+      // (proyectamos al plano XY del Q4 — válido para shells horizontales)
+      const tx = hit.point.x, ty = hit.point.y;
+      for (let iter = 0; iter < 8; iter++) {
+        const Nv = N(xi, eta);
+        const fx = corners.reduce((s, c, i) => s + Nv[i] * c[0], 0) - tx;
+        const fy = corners.reduce((s, c, i) => s + Nv[i] * c[1], 0) - ty;
+        // Derivadas dN/dξ, dN/dη
+        const dNdxi = [-(1-eta), (1-eta), (1+eta), -(1+eta)].map(v => 0.25*v);
+        const dNdeta = [-(1-xi), -(1+xi), (1+xi), (1-xi)].map(v => 0.25*v);
+        const J11 = corners.reduce((s, c, i) => s + dNdxi[i] * c[0], 0);
+        const J12 = corners.reduce((s, c, i) => s + dNdeta[i] * c[0], 0);
+        const J21 = corners.reduce((s, c, i) => s + dNdxi[i] * c[1], 0);
+        const J22 = corners.reduce((s, c, i) => s + dNdeta[i] * c[1], 0);
+        const det = J11*J22 - J12*J21;
+        if (Math.abs(det) < 1e-12) break;
+        const dxi = (J22*fx - J12*fy) / det;
+        const deta = (-J21*fx + J11*fy) / det;
+        xi -= dxi; eta -= deta;
+        if (Math.abs(dxi) + Math.abs(deta) < 1e-6) break;
+      }
+      // Clamp ξ, η a [-1, 1] (por si el hit cae en borde)
+      xi = Math.max(-1, Math.min(1, xi));
+      eta = Math.max(-1, Math.min(1, eta));
+      // Interpolación bilineal del valor
+      const Nv = N(xi, eta);
+      valInterp = values.reduce((s, v, i) => s + Nv[i] * v, 0);
+      // El "corner más cercano" en (ξ, η)-space para info
+      closestCorner = (xi >= 0 ? (eta >= 0 ? 2 : 1) : (eta >= 0 ? 3 : 0));
+    }
+    // Render tooltip — convierte SI base → unidad UI activa (forceUnit/dispUnit)
+    const lbl = FIELD_LABELS[field] ?? field;
+    const kind = FIELD_KIND[field] ?? "force_per_area";
+    const [valConv, unit] = formatValue(kind, valInterp);
+    const xPos = hit.point?.x?.toFixed(2) ?? '?';
+    const yPos = hit.point?.y?.toFixed(2) ?? '?';
+    const zPos = hit.point?.z?.toFixed(2) ?? '?';
+    tooltip.innerHTML =
+      `<b>${lbl}</b> <span style="color:#888;font-size:10px">(interpolado)</span><br>` +
+      `Valor: <span style="color:#22d3ee;font-size:14px;">${valConv.toFixed(3)} ${unit}</span><br>` +
+      `Punto cursor: (${xPos}, ${yPos}, ${zPos}) m<br>` +
+      `Elem #${elemIdx} · ξ=${xi.toFixed(2)}, η=${eta.toFixed(2)}<br>` +
+      `Esquina ${closestCorner}: ${formatValue(kind, values[closestCorner] ?? 0)[0].toFixed(3)} ${unit}`;
+    tooltip.style.left = `${event.clientX + 12}px`;
+    tooltip.style.top = `${event.clientY + 12}px`;
+    tooltip.style.display = "block";
+  };
+
+  const onPointerLeave = () => {
+    tooltip.style.display = "none";
+  };
+
+  viewerElm.addEventListener("pointermove", onPointerMove);
+  viewerElm.addEventListener("pointerleave", onPointerLeave);
+  // Exponer al window para test/debug via DOM
+  (window as any).__hekatan_hover_tooltip = tooltip;
+})();
+
 // Inicializar modal animator AHORA que el viewer ya existe (tiene __ctx.scene/render).
 modalAnimator = createModalAnimator({
   mesh: { nodes, elements, deformOutputs, analyzeOutputs },
@@ -1059,5 +1430,23 @@ if (initialEx) {
   // comprimidos/extendidos según la deformada (como en croquis clásicos de ingeniería).
   if (initialEx.id === "zapata-aislada" || initialEx.id === "zapata-aislada-validacion" || initialEx.id === "zapata-viga-amarre") {
     setTimeout(() => setView("iso"), 200);
+  }
+  // ── Pre-fill desde URL params ──
+  // Si vienes de un edificio (?t=zapata-aislada-validacion&P=23.5&Mx=1.2&My=-0.8&from=edificio-aporticado)
+  // pre-cargo P_simple/Mx_simple/My_simple y muestro botón "← Volver al edificio".
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlP = parseFloat(urlParams.get("P") || "");
+  const urlMx = parseFloat(urlParams.get("Mx") || "");
+  const urlMy = parseFloat(urlParams.get("My") || "");
+  const urlFrom = urlParams.get("from");
+  if (initialEx.id.startsWith("zapata") && (!isNaN(urlP) || !isNaN(urlMx) || !isNaN(urlMy))) {
+    setTimeout(() => {
+      if (!isNaN(urlP))  currentParams.P_simple  = urlP;
+      if (!isNaN(urlMx)) currentParams.Mx_simple = urlMx;
+      if (!isNaN(urlMy)) currentParams.My_simple = urlMy;
+      buildParamsPane();
+      rebuild();
+      console.log(`✅ Zapata pre-cargada desde ${urlFrom || "URL"}: P=${urlP}, Mx=${urlMx}, My=${urlMy}`);
+    }, 300);
   }
 }

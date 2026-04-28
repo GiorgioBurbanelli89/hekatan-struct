@@ -53,6 +53,19 @@ export const zapataAisladaValidacion: ExampleDef = {
     q_adm:     { default: 10,   min: 1,   max: 100,   step: 1,   label: "q_adm (tonf/m²)" },
     ks_factor: { default: 10.5, min: 5,   max: 20,    step: 0.5, label: "ks_factor (Bowles)" },
     ks:        { default: 1030, min: 100, max: 2e5,   step: 10,  label: "ks — subgrade modulus (kN/m³)" },
+    // Suelo avanzado — Winkler horizontal y anti-singularidad rotacional
+    kh_ratio:    { default: 0.5,  min: 0,   max: 1,     step: 0.05,  label: "kh / kv (Bowles 0.3-0.7)",      folder: "Suelo avanzado" },
+    kRot_factor: { default: 1e-4, min: 0,   max: 1e-2,  step: 1e-5,  label: "k_rot factor (anti-singular.)", folder: "Suelo avanzado" },
+    support_mode: {
+      default: 0,
+      options: {
+        "A. Winkler 3D (kx/ky/kz)":           0,
+        "B. Winkler vert. + esquinas X,Y,Rz": 1,
+        "C. Winkler vert. + 1 nodo anti-sing": 2,
+      },
+      label: "Modelo de soporte",
+      folder: "Suelo avanzado",
+    },
     // Cargas SIMPLES — directamente P/Mx/My (no patrones D/L/S)
     P_simple:  { default: 20,   min: 0,   max: 500, step: 0.5, label: "P — axial (tonf)",   folder: "Loads" },
     Mx_simple: { default: 0.5,  min: -50, max: 50,  step: 0.1, label: "Mx (tonf·m)",        folder: "Loads" },
@@ -105,9 +118,14 @@ export const zapataAisladaValidacion: ExampleDef = {
     }
     const sigmaMax = Math.abs(qMin), sigmaMin = Math.abs(qMax);
     const ratio = sigmaMax / (q_adm_tonf || 1);
+    const khRatio = p.kh_ratio ?? 0.5;
+    const supportModeIdx = (p.support_mode ?? 0) | 0;
+    const supportModeName = ["A. Winkler 3D", "B. Vert+esquinas", "C. Vert+1 nodo"][supportModeIdx];
     return {
       "Mode": "Direct P/Mx/My",
+      "Soporte": supportModeName,
       "ks (kN/m³)": ks.toFixed(0),
+      "k_h/k_v": khRatio.toFixed(2) + " (Bowles)",
       "D (kN·m)": D.toFixed(1),
       "k_r (Biot)": kr.toFixed(3) + (kr < 1 ? " FLEXIBLE" : " RIGID"),
       "P (tonf)": P.toFixed(2),
@@ -190,33 +208,67 @@ export const zapataAisladaValidacion: ExampleDef = {
     const loadsCombo = new Map<number, [number, number, number, number, number, number]>();
     loadsCombo.set(nColTop, [0, 0, -P_kN, Mx_kN, My_kN, 0]);
 
-    // Winkler springs: kv (dof 2) + kh = kv × 0.5 (dof 0 y 1) Bowles
+    // ─── Modelos de soporte ───────────────────────────────────────────
+    //   A (0): Winkler 3D — resortes kx, ky, kz en TODOS los nodos.
+    //          Ratio kh/kv configurable (Bowles 0.3-0.7). Anti-singular
+    //          rotacional muy suave en esquina (0,0).
+    //   B (1): Winkler vertical (kz solo) + 4 esquinas restringidas en
+    //          X, Y, Rz. Asume el suelo no aporta rigidez horizontal y
+    //          las restricciones puntuales evitan mecanismo. Estilo
+    //          "base empotrada" para análisis sísmico simplificado.
+    //   C (2): Winkler vertical solo + 1 nodo (esquina 0,0) restringido
+    //          en X, Y, Rz para evitar mecanismo. Más fiel al Winkler
+    //          clásico de Bowles que usa resortes rotacionales suaves.
+    // ─────────────────────────────────────────────────────────────────
     const dxAvg = Lz / nSub, dyAvg = Bz / nSub;
-    const KH_RATIO = 0.5;
+    const KH_RATIO = p.kh_ratio ?? 0.5;
+    const kRotFactor = p.kRot_factor ?? 1e-4;
+    const supportMode = (p.support_mode ?? 0) | 0;
     const springs: Array<{ node: number; dof: number; k: number }> = [];
     const springNodes: number[] = [];
+    const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
+
     for (let j = 0; j < ys.length; j++)
       for (let i = 0; i < xs.length; i++) {
         const A_trib = dxAvg * dyAvg
           * ((i === 0 || i === xs.length - 1) ? 0.5 : 1)
           * ((j === 0 || j === ys.length - 1) ? 0.5 : 1);
         const kv = ks * A_trib;
-        const kh = ks * A_trib * KH_RATIO;
-        springs.push({ node: idx[j][i], dof: 0, k: kh });
-        springs.push({ node: idx[j][i], dof: 1, k: kh });
+        if (supportMode === 0) {
+          // A: Winkler 3D
+          const kh = ks * A_trib * KH_RATIO;
+          springs.push({ node: idx[j][i], dof: 0, k: kh });
+          springs.push({ node: idx[j][i], dof: 1, k: kh });
+        }
+        // Vertical Winkler en TODOS los modos
         springs.push({ node: idx[j][i], dof: 2, k: kv });
         springNodes.push(idx[j][i]);
       }
-    // Anti-rotación: resortes rotacionales muy suaves en el nodo esquina para evitar singularidad
-    const kRot = ks * dxAvg * dyAvg * 1e-4;
-    const n00 = idx[0][0];
-    springs.push({ node: n00, dof: 3, k: kRot });
-    springs.push({ node: n00, dof: 4, k: kRot });
-    springs.push({ node: n00, dof: 5, k: kRot });
+
+    if (supportMode === 0) {
+      // A: anti-singular rotacional en esquina (0,0)
+      const kRot = ks * dxAvg * dyAvg * kRotFactor;
+      const n00 = idx[0][0];
+      springs.push({ node: n00, dof: 3, k: kRot });
+      springs.push({ node: n00, dof: 4, k: kRot });
+      springs.push({ node: n00, dof: 5, k: kRot });
+    } else if (supportMode === 1) {
+      // B: las 4 esquinas restringidas en X, Y, Rz
+      const lastJ = ys.length - 1, lastI = xs.length - 1;
+      const corners = [idx[0][0], idx[0][lastI], idx[lastJ][0], idx[lastJ][lastI]];
+      for (const n of corners) {
+        // [Tx, Ty, Tz, Rx, Ry, Rz] — true = fijo
+        supports.set(n, [true, true, false, false, false, true]);
+      }
+    } else if (supportMode === 2) {
+      // C: 1 nodo esquina restringido en X, Y, Rz
+      const n00 = idx[0][0];
+      supports.set(n00, [true, true, false, false, false, true]);
+    }
 
     states.nodes.val = N.map((n) => [n[0], n[1], n[2]] as Node);
     states.elements.val = elsEl;
-    states.nodeInputs.val = { supports: new Map(), loads: loadsCombo };
+    states.nodeInputs.val = { supports, loads: loadsCombo };
     states.elementInputs.val = {
       elasticities, poissonsRatios: poissons,
       areas, momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy,
