@@ -718,6 +718,112 @@ function buildParamsPane() {
             try { pane.refresh(); } catch {}
             console.log(`[FEM Cim] cambiado a: ${newVal}`);
           });
+
+          // ── Botón: Exportar F2K cimentación COMPLETA ──
+          // Genera UN solo .f2k con TODAS las zapatas + vigas de amarre del
+          // edificio en un mismo modelo SAFE. Cada zapata mantiene su P, Mx,
+          // My propios (de la reacción del apoyo correspondiente).
+          fCim.addButton({ title: "📤 Exportar F2K cimentación COMPLETA" }).on("click", async () => {
+            const reactions = (deformOutputs.rawVal as any)?.reactions as
+              Map<number, [number, number, number, number, number, number]> | undefined;
+            const ns = nodes.rawVal as number[][];
+            if (!reactions || !ns?.length) {
+              alert("Sin reacciones aún — corre primero el análisis del edificio (modo 'Edificio completo').");
+              return;
+            }
+            const p = params as any;
+            const q_adm = (p.q_adm_zapata as number) ?? 10;
+            const ks = (p.ks_zapata as number) ?? 1030;
+            const tz = (p.t_zapata as number) ?? 0.30;
+            const colSize = p.colSize ?? 0.40;
+            const Hf = (p.Hf_pedestal as number) ?? 0.5;
+            const volExt = (p.voladoExtra as number) ?? 0.30;
+            const sistema = Math.round((p.sistemaCimentacion as number) ?? 0);
+            const va_pos = Math.round((p.vigaAmarre_pos as number) ?? 0);
+            const va_h = (p.vigaAmarre_h as number) ?? 0.40;
+            const va_b = (p.vigaAmarre_b as number) ?? 0.25;
+            const baseRows: Array<{idx:number;x:number;y:number;P_kN:number;Mx_kN:number;My_kN:number}> = [];
+            let xMax = 0, yMax = 0;
+            reactions.forEach((r, idx) => {
+              const n = ns[idx];
+              if (!n || Math.abs(n[2]) > 1e-6) return;
+              baseRows.push({
+                idx, x: n[0], y: n[1],
+                P_kN: Math.abs(r[2]), Mx_kN: r[3], My_kN: r[4],
+              });
+              if (n[0] > xMax) xMax = n[0];
+              if (n[1] > yMax) yMax = n[1];
+            });
+            if (!baseRows.length) { alert("No hay apoyos en z=0."); return; }
+            const { designAllFootings } = await import("../shared/footingDesign");
+            const { downloadEdificioCimentacionF2k } = await import("../shared/f2kCimentacionCompleta");
+            const zapatasD = designAllFootings(baseRows, xMax, yMax, q_adm, ks);
+            for (const z of zapatasD) z.t = tz;
+            // Construir items con offsets correctos para esquinera/lindero
+            const zapatas = zapatasD.map(z => {
+              let offX = 0, offY = 0;
+              if (z.tipo === "esquinera") {
+                offX = (z.x < xMax/2) ? -(z.Lz/2 - volExt) : (z.Lz/2 - volExt);
+                offY = (z.y < yMax/2) ? -(z.Bz/2 - volExt) : (z.Bz/2 - volExt);
+              } else if (z.tipo === "lindero") {
+                if (Math.abs(z.x) < 1e-3 || Math.abs(z.x - xMax) < 1e-3) {
+                  offX = (z.x < xMax/2) ? -(z.Lz/2 - volExt) : (z.Lz/2 - volExt);
+                } else if (Math.abs(z.y) < 1e-3 || Math.abs(z.y - yMax) < 1e-3) {
+                  offY = (z.y < yMax/2) ? -(z.Bz/2 - volExt) : (z.Bz/2 - volExt);
+                }
+              }
+              const baseR = baseRows.find(b => b.idx === z.idx)!;
+              return {
+                xC: z.x - offX, yC: z.y - offY,
+                xCol: z.x, yCol: z.y,
+                Lz: z.Lz, Bz: z.Bz, tz: z.t, bc: colSize,
+                P_dead_kN: baseR.P_kN,
+                Mx_dead_kNm: baseR.Mx_kN,
+                My_dead_kNm: baseR.My_kN,
+                label: z.idx,
+              };
+            });
+            // Vigas de amarre (sistema=1) — entre zapatas adyacentes
+            const vigasAmarre = [] as any[];
+            if (sistema === 1) {
+              const zVA = va_pos === 0 ? -Hf : -Hf / 2;
+              const byY = new Map<string, typeof baseRows>();
+              const byX = new Map<string, typeof baseRows>();
+              for (const b of baseRows) {
+                const ky = b.y.toFixed(4), kx = b.x.toFixed(4);
+                if (!byY.has(ky)) byY.set(ky, []);
+                if (!byX.has(kx)) byX.set(kx, []);
+                byY.get(ky)!.push(b);
+                byX.get(kx)!.push(b);
+              }
+              for (const row of byY.values()) {
+                row.sort((a,b)=>a.x-b.x);
+                for (let i = 0; i < row.length-1; i++) {
+                  vigasAmarre.push({ x1:row[i].x, y1:row[i].y, x2:row[i+1].x, y2:row[i+1].y, h:va_h, b:va_b, z:zVA });
+                }
+              }
+              for (const col of byX.values()) {
+                col.sort((a,b)=>a.y-b.y);
+                for (let i = 0; i < col.length-1; i++) {
+                  vigasAmarre.push({ x1:col[i].x, y1:col[i].y, x2:col[i+1].x, y2:col[i+1].y, h:va_h, b:va_b, z:zVA });
+                }
+              }
+            }
+            try {
+              downloadEdificioCimentacionF2k({
+                zapatas,
+                vigasAmarre: vigasAmarre.length ? vigasAmarre : undefined,
+                ks_kNm3: ks,
+                Z: -Hf,
+              }, `cimentacion_edificio_${zapatas.length}_zapatas.f2k`);
+              const msgVigas = vigasAmarre.length ? `\n+ ${vigasAmarre.length} vigas de amarre` : "";
+              alert(`✅ Exportado UN F2K con TODA la cimentación:\n• ${zapatas.length} zapatas (P, Mx, My individuales)${msgVigas}\n• ks compartido = ${ks} kN/m³\n\nÁbrelo en SAFE 20.x — verás todas las zapatas + vigas en un solo modelo.`);
+              console.log(`[F2K Cim Completa] ${zapatas.length} zapatas + ${vigasAmarre.length} vigas exportadas en 1 archivo`);
+            } catch (e: any) {
+              alert(`❌ Error al exportar: ${e.message}`);
+              console.error(e);
+            }
+          });
         }
       } catch (e) {
         console.warn("[Workspace] Toggle FEM Cim setup falló:", e);
