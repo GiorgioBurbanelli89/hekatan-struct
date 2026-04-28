@@ -29,6 +29,87 @@ import { createModalAnimator, type ModalAnimator } from "../shared/animateMode";
 import { examplesRegistry, activeExampleVersion, type ExampleDef } from "./exampleRegistry";
 import { downloadZapataF2k } from "../zapata-aislada/f2kExporter";
 import { parseZapataF2k } from "../zapata-aislada/f2kImporter";
+import { exportEdificioCimentacionF2k, downloadEdificioCimentacionF2k } from "../shared/f2kCimentacionCompleta";
+// Expose F2K builder a window para test/debug via DOM
+(window as any).__hekatanExportF2kCim = exportEdificioCimentacionF2k;
+(window as any).__hekatanDownloadF2kCim = downloadEdificioCimentacionF2k;
+// Helper completo: lee estado actual (reacciones, params) y genera el F2K
+// Devuelve el texto del F2K — accesible via window.__hekatanGenF2k() en el DOM.
+(window as any).__hekatanGenF2k = async function() {
+  const reactions = (deformOutputs.rawVal as any)?.reactions as
+    Map<number, [number, number, number, number, number, number]> | undefined;
+  const ns = nodes.rawVal as number[][];
+  if (!reactions || !ns?.length) {
+    return { error: "Sin reacciones — corre 'Edificio completo' primero" };
+  }
+  const p: any = (window as any).__hekatanPanes?.params ?? {};
+  // Tomar de la pane raíz si __hekatanPanes no está
+  const sels = Array.from(document.querySelectorAll<HTMLSelectElement>('select'));
+  const get = (lbl: string) => {
+    const s = sels.find(s => s.closest('.tp-lblv')?.querySelector('.tp-lblv_l')?.textContent?.includes(lbl));
+    return s?.value;
+  };
+  // Recolectar reacciones de apoyos
+  const rows: any[] = [];
+  let xMax = 0, yMax = 0;
+  reactions.forEach((r, idx) => {
+    const n = ns[idx];
+    if (!n || Math.abs(n[2]) > 1e-6) return;
+    rows.push({ idx, x: n[0], y: n[1], P_kN: Math.abs(r[2]), Mx_kN: r[3], My_kN: r[4] });
+    if (n[0] > xMax) xMax = n[0];
+    if (n[1] > yMax) yMax = n[1];
+  });
+  if (!rows.length) return { error: "No hay apoyos en z=0" };
+  // Diseño + offsets
+  const { designAllFootings } = await import("../shared/footingDesign");
+  const q_adm = 10, ks = 1030, tz = 0.30, colSize = 0.40, Df = 0.5, vol = 0.30;
+  const zd = designAllFootings(rows, xMax, yMax, q_adm, ks);
+  for (const z of zd) z.t = tz;
+  const zapatas = zd.map(z => {
+    let oX = 0, oY = 0;
+    if (z.tipo === "esquinera") {
+      oX = (z.x < xMax/2) ? -(z.Lz/2 - vol) : (z.Lz/2 - vol);
+      oY = (z.y < yMax/2) ? -(z.Bz/2 - vol) : (z.Bz/2 - vol);
+    } else if (z.tipo === "lindero") {
+      if (Math.abs(z.x)<1e-3 || Math.abs(z.x-xMax)<1e-3) oX = (z.x < xMax/2) ? -(z.Lz/2-vol) : (z.Lz/2-vol);
+      else if (Math.abs(z.y)<1e-3 || Math.abs(z.y-yMax)<1e-3) oY = (z.y < yMax/2) ? -(z.Bz/2-vol) : (z.Bz/2-vol);
+    }
+    const baseR = rows.find(b => b.idx === z.idx)!;
+    return {
+      xC: z.x - oX, yC: z.y - oY,
+      xCol: z.x, yCol: z.y,
+      Lz: z.Lz, Bz: z.Bz, tz: z.t, bc: colSize,
+      P_dead_kN: baseR.P_kN,
+      Mx_dead_kNm: baseR.Mx_kN,
+      My_dead_kNm: baseR.My_kN,
+      label: z.idx,
+    };
+  });
+  // Vigas de amarre (siempre incluir si sistema=1)
+  const vigasAmarre: any[] = [];
+  const va_h = 0.40, va_b = 0.25, zVA = -Df;
+  const byY = new Map<string, any[]>();
+  const byX = new Map<string, any[]>();
+  for (const b of rows) {
+    const ky = b.y.toFixed(4), kx = b.x.toFixed(4);
+    if (!byY.has(ky)) byY.set(ky, []);
+    if (!byX.has(kx)) byX.set(kx, []);
+    byY.get(ky)!.push(b);
+    byX.get(kx)!.push(b);
+  }
+  for (const row of byY.values()) {
+    row.sort((a,b)=>a.x-b.x);
+    for (let i=0;i<row.length-1;i++) vigasAmarre.push({ x1:row[i].x, y1:row[i].y, x2:row[i+1].x, y2:row[i+1].y, h:va_h, b:va_b, z:zVA });
+  }
+  for (const col of byX.values()) {
+    col.sort((a,b)=>a.y-b.y);
+    for (let i=0;i<col.length-1;i++) vigasAmarre.push({ x1:col[i].x, y1:col[i].y, x2:col[i+1].x, y2:col[i+1].y, h:va_h, b:va_b, z:zVA });
+  }
+  const f2k = exportEdificioCimentacionF2k({
+    zapatas, vigasAmarre, ks_kNm3: ks, Z: -Df,
+  });
+  return { f2k, n_zapatas: zapatas.length, n_vigas: vigasAmarre.length };
+};
 import { exportE2k } from "../shared/e2kExporter";
 import { parseE2k } from "../shared/e2kParser";
 import { exportS2k } from "../shared/s2kExporter";
