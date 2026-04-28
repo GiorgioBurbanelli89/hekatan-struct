@@ -1452,12 +1452,64 @@ export const edificioAporticado: ExampleDef = {
             // ── ENFOQUE POR ZAPATA AISLADA (verificación individual) ──
             // ══════════════════════════════════════════════════════════
             // En vez de solucionar las 9 zapatas en una sola matriz global
-            // (que sale singular por los modos rígidos de cada zapata
-            // independiente), resolvemos CADA zapata por separado con su
-            // propia P, Mx, My — exactamente como zapata-aislada-validacion.
-            // Reusamos la malla N2/E2 ya construida arriba — solo mapeamos
-            // los desplazamientos del sub-FEM de cada zapata al índice
-            // global correspondiente.
+            // (que sale singular), resolvemos CADA zapata por separado con
+            // su propia P, Mx, My (P/Mx/My del edificio) — pero con el
+            // efecto de las vigas de amarre REDISTRIBUIDO en cada caso.
+            //
+            // ── REDISTRIBUCIÓN DE MOMENTOS POR VIGAS DE AMARRE ──
+            // Cuando sistemaCimentacion=1, las vigas de amarre conectan
+            // zapatas adyacentes y absorben parte del momento que se
+            // transfiere de la columna a la zapata. Aproximación práctica:
+            //   M_zapata_efectivo = M_columna × (1 - alpha · n_vigas_conex/4)
+            // donde alpha = 0.30 es la fracción típica que la viga absorbe
+            // (Bowles §11 — el resto va al suelo via flexión de la zapata).
+            // n_vigas_conex es el # de vigas que llegan a esa zapata
+            // (esquinera=2, lindero=3, central=4).
+            const sistemaCim = Math.round((p.sistemaCimentacion as number) ?? 0);
+            const tieAlpha = 0.30;  // fracción absorbida por viga de amarre
+            // Contar vigas que conectan a cada zapata (sea cual sea el nivel
+            // — vigaAmarre_pos no cambia este número, lo que cambia es la
+            // posición visual; el efecto físico sí se distribuye igual).
+            const nVigasConByZap = new Map<number, number>();
+            if (sistemaCim === 1) {
+              const byY = new Map<string, typeof baseRowsCim>();
+              const byX = new Map<string, typeof baseRowsCim>();
+              for (const b of baseRowsCim) {
+                const ky = b.y.toFixed(4), kx = b.x.toFixed(4);
+                if (!byY.has(ky)) byY.set(ky, []);
+                if (!byX.has(kx)) byX.set(kx, []);
+                byY.get(ky)!.push(b);
+                byX.get(kx)!.push(b);
+              }
+              const inc = (idx: number) => nVigasConByZap.set(idx, (nVigasConByZap.get(idx) ?? 0) + 1);
+              for (const row of byY.values()) {
+                row.sort((a,b)=>a.x-b.x);
+                for (let i = 0; i < row.length-1; i++) { inc(row[i].idx); inc(row[i+1].idx); }
+              }
+              for (const col of byX.values()) {
+                col.sort((a,b)=>a.y-b.y);
+                for (let i = 0; i < col.length-1; i++) { inc(col[i].idx); inc(col[i+1].idx); }
+              }
+              console.log(`[Cimentación] Vigas de amarre activas — momentos en zapatas reducidos por factor (1 - ${tieAlpha} · n_vigas/4):`);
+              nVigasConByZap.forEach((n, idx) => {
+                const reduc = (tieAlpha * n / 4 * 100).toFixed(0);
+                console.log(`   Zapata ${idx}: ${n} vigas conectadas → momento reducido ${reduc}%`);
+              });
+              // ── Regla adicional cuando viga de amarre va al MISMO NIVEL
+              // de la cimentación (vigaAmarre_pos=0):
+              // La viga actúa como cimentación lineal corrida ENTERRADA, con
+              // su propio Winkler distribuido en cada nodo a lo largo de su
+              // línea. Se modela como una cadena de springs proporcional al
+              // ks·b·dL por nodo (b = ancho de la viga). Esto se exporta al
+              // F2K como SLAB tipo "Footing" con spring asignado.
+              // En la implementación per-zapata aislada actual no se
+              // resuelve la viga directamente — solo se redistribuye el
+              // momento. Para análisis rigoroso, exportar a SAFE.
+              const va_pos_log = Math.round((p.vigaAmarre_pos as number) ?? 0);
+              if (va_pos_log === 0) {
+                console.log(`   ↳ vigaAmarre_pos=0 (mismo nivel zapata) → en F2K se exportará como cimentación corrida con ks·b·dL distribuido por nodo`);
+              }
+            }
             const allDeforms = new Map<number, number[]>();
             const pressureMap = new Map<number, number[]>();
             // Re-iterar zapatasDes para resolver cada una independientemente
@@ -1548,7 +1600,20 @@ export const edificioAporticado: ExampleDef = {
               }
               const loadNL = grid_loc[bestI][bestJ];
               const loads_loc = new Map<number, [number,number,number,number,number,number]>();
-              loads_loc.set(loadNL, [0, 0, -baseR.P_kN, baseR.Mx_kN, baseR.My_kN, 0]);
+              // ── Aplicar redistribución por vigas de amarre ──
+              // Si sistema=1, los momentos se reducen por la fracción que
+              // la viga absorbe (siempre activa, sea pos=zapata o pedestal).
+              const nVigas = nVigasConByZap.get(z.idx) ?? 0;
+              const reducMom = sistemaCim === 1
+                ? Math.max(0.4, 1 - tieAlpha * nVigas / 4)
+                : 1.0;
+              loads_loc.set(loadNL, [
+                0, 0,
+                -baseR.P_kN,
+                baseR.Mx_kN * reducMom,
+                baseR.My_kN * reducMom,
+                0,
+              ]);
               // Resolver
               try {
                 const def_loc = deform(N_loc, E_loc, { supports: new Map(), loads: loads_loc }, ei_loc, springs_loc);
