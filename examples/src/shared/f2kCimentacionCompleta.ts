@@ -158,31 +158,57 @@ export function exportEdificioCimentacionF2k(data: F2kCimentacionData): string {
   L.push(`   Name=MsSrc1   "Is Default"=Yes   "Include Lateral Mass?"=No   "Include Vertical Mass?"=Yes   "Lump Mass?"=Yes   "Source Self Mass?"=Yes   "Source Added Mass?"=Yes   "Source Load Patterns?"=No   "Move Mass Centroid?"=No   GUID=${guid()}`);
   L.push(` `);
 
-  // ── POINT OBJECT CONNECTIVITY: 9 joints por zapata, en posiciones globales ──
+  // ── POINT OBJECT CONNECTIVITY: TODOS los joints en UNA sola tabla ──
+  // (zapatas: 9 por zapata + vigas: 2 por viga). SAFE rechaza tablas
+  // POINT OBJECT CONNECTIVITY duplicadas — debe ser una sola.
+  const vigasArr = data.vigasAmarre ?? [];
   L.push(`TABLE:  "POINT OBJECT CONNECTIVITY"`);
+  // Zapatas joints (1 .. Nz*9)
   for (let i = 0; i < Nz; i++) {
     const z = zapatas[i];
     const offset = i * 9;
     const halfL = z.Lz / 2;
     const halfB = z.Bz / 2;
     const halfBc = z.bc / 2;
-    // Esquinas zapata (perímetro) — globales
     const corners = [
       { uid: offset+1, x: z.xC - halfL, y: z.yC - halfB, special: false },
       { uid: offset+2, x: z.xC + halfL, y: z.yC - halfB, special: false },
       { uid: offset+3, x: z.xC + halfL, y: z.yC + halfB, special: false },
       { uid: offset+4, x: z.xC - halfL, y: z.yC + halfB, special: false },
-      // Patch columna (centrado en xCol, yCol)
       { uid: offset+5, x: z.xCol - halfBc, y: z.yCol - halfBc, special: false },
       { uid: offset+6, x: z.xCol + halfBc, y: z.yCol - halfBc, special: false },
       { uid: offset+7, x: z.xCol + halfBc, y: z.yCol + halfBc, special: false },
       { uid: offset+8, x: z.xCol - halfBc, y: z.yCol + halfBc, special: false },
-      // Centro de columna (donde se aplica la carga)
       { uid: offset+9, x: z.xCol, y: z.yCol, special: true },
     ];
     for (const c of corners) {
       L.push(`   UniqueName=${c.uid}   "Is Auto Point"=No   IsSpecial=${c.special?"Yes":"No"}   X=${fmt(c.x)}   Y=${fmt(c.y)}   Z=${fmt(Z)}   GUID=${guid()}`);
     }
+  }
+  // Vigas de amarre joints (Nz*9+1 .. Nz*9+2*nVigas)
+  // Reuso joints existentes si las coordenadas coinciden con un joint de zapata.
+  const vigaJointsMap: Array<{vigaIdx: number, jStart: number, jEnd: number}> = [];
+  let nextVigaId = Nz * 9 + 1;
+  // Helper: encontrar joint con coords (x, y) entre joints zapata
+  const findOrCreateJoint = (x: number, y: number, zCoord: number): number => {
+    for (let i = 0; i < Nz; i++) {
+      const z = zapatas[i];
+      // Solo el centro de columna (joint offset+9) coincidirá típicamente
+      if (Math.abs(z.xCol - x) < 1e-3 && Math.abs(z.yCol - y) < 1e-3 && Math.abs(Z - zCoord) < 1e-3) {
+        return i * 9 + 9;  // centro columna ya existe
+      }
+    }
+    // Crear nuevo joint
+    const newId = nextVigaId++;
+    L.push(`   UniqueName=${newId}   "Is Auto Point"=No   IsSpecial=No   X=${fmt(x)}   Y=${fmt(y)}   Z=${fmt(zCoord)}   GUID=${guid()}`);
+    return newId;
+  };
+  for (let i = 0; i < vigasArr.length; i++) {
+    const v = vigasArr[i];
+    const zV = v.z ?? Z;
+    const jStart = findOrCreateJoint(v.x1, v.y1, zV);
+    const jEnd = findOrCreateJoint(v.x2, v.y2, zV);
+    vigaJointsMap.push({ vigaIdx: i, jStart, jEnd });
   }
   L.push(` `);
 
@@ -257,57 +283,34 @@ export function exportEdificioCimentacionF2k(data: F2kCimentacionData): string {
   }
   L.push(` `);
 
-  // ── VIGAS DE AMARRE (frames) ──
-  // Cada viga es una línea entre 2 joints. Usamos joints adicionales con IDs
-  // a partir de 9·Nz + 1 (después de los joints de zapatas).
-  const vigas = data.vigasAmarre ?? [];
-  if (vigas.length > 0) {
-    // Crear sección de viga (todas iguales en este export — usa la primera)
-    // Si las vigas tienen secciones distintas, generaremos una sección por viga.
+  // ── VIGAS DE AMARRE: solo secciones + LINE OBJECT CONNECTIVITY
+  // (los joints ya están agregados arriba en POINT OBJECT CONNECTIVITY) ──
+  if (vigasArr.length > 0) {
     L.push(`TABLE:  "FRAME SECTION PROPERTIES - GENERAL"`);
     const sectionsCreated = new Set<string>();
-    for (let i = 0; i < vigas.length; i++) {
-      const v = vigas[i];
+    for (let i = 0; i < vigasArr.length; i++) {
+      const v = vigasArr[i];
       const key = `${v.b.toFixed(3)}x${v.h.toFixed(3)}`;
       if (!sectionsCreated.has(key)) {
         sectionsCreated.add(key);
         const A = v.b * v.h;
-        const I33 = (v.b * v.h ** 3) / 12;  // flexión vertical (eje fuerte)
-        const I22 = (v.h * v.b ** 3) / 12;  // flexión lateral
+        const I33 = (v.b * v.h ** 3) / 12;
+        const I22 = (v.h * v.b ** 3) / 12;
         const J = 0.21 * Math.pow(Math.min(v.b, v.h), 3) * Math.max(v.b, v.h);
         L.push(`   SectionName=VAmarre_${key}   Material=4000Psi   Shape=Rectangular   t3=${fmt(v.h)}   t2=${fmt(v.b)}   Area=${fmt(A)}   TorsConst=${fmt(J)}   I33=${fmt(I33)}   I22=${fmt(I22)}   AS2=${fmt(A*5/6)}   AS3=${fmt(A*5/6)}   S33=${fmt(I33/(v.h/2))}   S22=${fmt(I22/(v.b/2))}   GUID=${guid()}`);
       }
     }
     L.push(` `);
-
-    // Joints de las vigas — IDs únicos a partir de Nz·9 + 1
-    let nextJointId = Nz * 9 + 1;
-    const vigaJoints: { v: VigaAmarreItem; jStart: number; jEnd: number }[] = [];
-    L.push(`TABLE:  "POINT OBJECT CONNECTIVITY"`);
-    for (const v of vigas) {
-      const z = v.z ?? Z;
-      L.push(`   UniqueName=${nextJointId}   "Is Auto Point"=No   IsSpecial=No   X=${fmt(v.x1)}   Y=${fmt(v.y1)}   Z=${fmt(z)}   GUID=${guid()}`);
-      const jStart = nextJointId++;
-      L.push(`   UniqueName=${nextJointId}   "Is Auto Point"=No   IsSpecial=No   X=${fmt(v.x2)}   Y=${fmt(v.y2)}   Z=${fmt(z)}   GUID=${guid()}`);
-      const jEnd = nextJointId++;
-      vigaJoints.push({ v, jStart, jEnd });
-    }
-    L.push(` `);
-
-    // Frame element connectivity
     L.push(`TABLE:  "LINE OBJECT CONNECTIVITY"`);
-    for (let i = 0; i < vigaJoints.length; i++) {
-      const { jStart, jEnd } = vigaJoints[i];
-      L.push(`   UniqueName=VA${i+1}   UniquePtI=${jStart}   UniquePtJ=${jEnd}   GUID=${guid()}`);
+    for (const vj of vigaJointsMap) {
+      L.push(`   UniqueName=VA${vj.vigaIdx+1}   UniquePtI=${vj.jStart}   UniquePtJ=${vj.jEnd}   GUID=${guid()}`);
     }
     L.push(` `);
-
-    // Asignar sección a cada frame
     L.push(`TABLE:  "LINE ASSIGNMENTS - SECTION PROPERTIES"`);
-    for (let i = 0; i < vigaJoints.length; i++) {
-      const { v } = vigaJoints[i];
+    for (const vj of vigaJointsMap) {
+      const v = vigasArr[vj.vigaIdx];
       const key = `${v.b.toFixed(3)}x${v.h.toFixed(3)}`;
-      L.push(`   UniqueName=VA${i+1}   "Section Property"=VAmarre_${key}`);
+      L.push(`   UniqueName=VA${vj.vigaIdx+1}   "Section Property"=VAmarre_${key}`);
     }
     L.push(` `);
   }
