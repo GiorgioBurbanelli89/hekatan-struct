@@ -307,27 +307,28 @@ export function exportEdificioCimentacionF2k(data: F2kCimentacionData): string {
   // ── VIGAS DE AMARRE: solo secciones + LINE OBJECT CONNECTIVITY
   // (los joints ya están agregados arriba en POINT OBJECT CONNECTIVITY) ──
   if (vigasArr.length > 0) {
-    L.push(`TABLE:  "FRAME SECTION PROPERTIES - GENERAL"`);
+    // En SAFE las secciones de viga de cimentacion van en
+    // "BEAM SECTION PROPERTIES" (NO "FRAME SECTION..." de ETABS).
+    L.push(`TABLE:  "BEAM SECTION PROPERTIES - GENERAL"`);
     const sectionsCreated = new Set<string>();
     for (let i = 0; i < vigasArr.length; i++) {
       const v = vigasArr[i];
       const key = `${v.b.toFixed(3)}x${v.h.toFixed(3)}`;
       if (!sectionsCreated.has(key)) {
         sectionsCreated.add(key);
-        const A = v.b * v.h;
-        const I33 = (v.b * v.h ** 3) / 12;
-        const I22 = (v.h * v.b ** 3) / 12;
-        const J = 0.21 * Math.pow(Math.min(v.b, v.h), 3) * Math.max(v.b, v.h);
-        L.push(`   SectionName=VAmarre_${key}   Material=4000Psi   Shape=Rectangular   t3=${fmt(v.h)}   t2=${fmt(v.b)}   Area=${fmt(A)}   TorsConst=${fmt(J)}   I33=${fmt(I33)}   I22=${fmt(I22)}   AS2=${fmt(A*5/6)}   AS3=${fmt(A*5/6)}   S33=${fmt(I33/(v.h/2))}   S22=${fmt(I22/(v.b/2))}   GUID=${guid()}`);
+        L.push(`   Name=VAmarre_${key}   Material=4000Psi   Shape=Rectangular   t3=${fmt(v.h)}   t2=${fmt(v.b)}   Color=Magenta   GUID=${guid()}`);
       }
     }
     L.push(` `);
-    L.push(`TABLE:  "LINE OBJECT CONNECTIVITY"`);
+    // SAFE usa "BEAM OBJECT CONNECTIVITY" (NO "LINE OBJECT CONNECTIVITY"
+    // — eso es solo ETABS/SAP2000). En SAFE los frame elements de
+    // cimentacion son tipo BEAM y se acceden via mySafe.SapModel.BeamObj.
+    L.push(`TABLE:  "BEAM OBJECT CONNECTIVITY"`);
     for (const vj of vigaJointsMap) {
-      L.push(`   UniqueName=VA${vj.vigaIdx+1}   UniquePtI=${vj.jStart}   UniquePtJ=${vj.jEnd}   GUID=${guid()}`);
+      L.push(`   UniqueName=VA${vj.vigaIdx+1}   UniquePt1=${vj.jStart}   UniquePt2=${vj.jEnd}   GUID=${guid()}`);
     }
     L.push(` `);
-    L.push(`TABLE:  "LINE ASSIGNMENTS - SECTION PROPERTIES"`);
+    L.push(`TABLE:  "BEAM ASSIGNMENTS - SECTION PROPERTIES"`);
     for (const vj of vigaJointsMap) {
       const v = vigasArr[vj.vigaIdx];
       const key = `${v.b.toFixed(3)}x${v.h.toFixed(3)}`;

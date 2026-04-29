@@ -1,0 +1,6 @@
+﻿Referencia a objeto no establecida como instancia de un objeto.
+   en CSI.SAFE.mdiMainForm.DisposeAllMDIForms()
+   en CSI.SAFE.mdiMainForm.mdiMainForm_FormClosing(Object sender, FormClosingEventArgs e)
+   en System.Windows.Forms.Form.OnFormClosing(FormClosingEventArgs e)
+   en System.Windows.Forms.Form.WmClose(Message& m)
+   en System.Windows.Forms.NativeWindow.Callback(IntPtr hWnd, Int32 msg, IntPtr wparam, IntPtr lparam)

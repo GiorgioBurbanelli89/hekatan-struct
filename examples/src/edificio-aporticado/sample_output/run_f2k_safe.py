@@ -95,6 +95,17 @@ else:
 
 # ── Correr analisis ──
 print("\n=== Corriendo analisis ===")
+# Pre-pasos requeridos por SAFE OAPI:
+try:
+    sapModel.Analyze.CreateAnalysisModel()
+    print("   [OK] AnalysisModel creado")
+except Exception as e:
+    print(f"   [WARN] CreateAnalysisModel: {e}")
+try:
+    sapModel.Analyze.SetRunCaseFlag("Dead", True)
+    print("   [OK] Dead flagged for run")
+except Exception as e:
+    print(f"   [WARN] SetRunCaseFlag: {e}")
 ret = sapModel.Analyze.RunAnalysis()
 if ret != 0:
     print(f"ERROR: RunAnalysis retornó {ret}")

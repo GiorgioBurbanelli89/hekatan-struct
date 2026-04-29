@@ -59,7 +59,9 @@ for (const xCol of [0, 5, 10]) {
   for (let i=0;i<col.length-1;i++) vigasAmarre.push({ x1:col[i][0], y1:col[i][1], x2:col[i+1][0], y2:col[i+1][1], h:va_h, b:va_b, z:zVA });
 }
 
-const f2k = exportEdificioCimentacionF2k({ zapatas, vigasAmarre, ks_kNm3: ks, Z: -Df });
+// Test minimal: SOLO 1 zapata (la central) sin vigas
+const oneZapata = [zapatas[4]];  // central
+const f2k = exportEdificioCimentacionF2k({ zapatas: oneZapata, vigasAmarre: undefined, ks_kNm3: ks, Z: -Df });
 const outPath = path.join(__dirname, "cimentacion_edificio_9zapatas_12vigas.f2k");
 fs.writeFileSync(outPath, f2k);
 console.log("F2K escrito:", outPath);
