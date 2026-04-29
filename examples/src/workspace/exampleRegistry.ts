@@ -173,6 +173,7 @@ export interface ExampleDef {
 
 // ── Import de ejemplos (cada uno en su propia carpeta estilo awatif) ──
 import { csiImporter } from "../csi-importer/csiImporter";
+import { vigaMedioElastico } from "../viga-medio-elastico/vigaMedioElastico";
 import { zapataVigaAmarre } from "../zapata-viga-amarre/zapataVigaAmarre";
 import { zapataAislada } from "../zapata-aislada/zapataAislada";
 import { zapataAisladaValidacion } from "../zapata-aislada-validacion/zapataAisladaValidacion";
@@ -217,6 +218,7 @@ export const examplesRegistry: ExampleDef[] = [
   zapataAisladaValidacion,
   zapataAislada,
   zapataVigaAmarre,
+  vigaMedioElastico,
   // Frames 1D
   barraAxial,
   trussGen,
