@@ -283,6 +283,27 @@ export function exportEdificioCimentacionF2k(data: F2kCimentacionData): string {
   }
   L.push(` `);
 
+  // ── AUTO EDGE CONSTRAINTS: fuerza unión de bordes entre Footing y Stiff
+  // (sin esto, el patch chico bajo la columna no comparte nodos con la
+  // zapata grande y SAFE genera mesh disjoint — fuente de las warnings
+  // "Check meshing, At area X (% Increment)").
+  L.push(`TABLE:  "AREA ASSIGNMENTS - AUTO EDGE CONSTRAINTS"`);
+  for (let i = 0; i < Nz; i++) {
+    L.push(`   UniqueName=${i+1}        Constraint=Yes`);
+    L.push(`   UniqueName=LOAD${i+1}    Constraint=Yes`);
+  }
+  L.push(` `);
+
+  // ── ANALYSIS MESH SETTINGS: Rectangular + localized + merge joints
+  // Tamaño máximo de elemento adaptado al tamaño típico de zapata.
+  // Con Localized Meshing=Yes, SAFE ajusta el mesh alrededor del Stiff
+  // patch reduciendo el % de incremento entre elementos vecinos.
+  const minLado = Math.min(...zapatas.map(z => Math.min(z.Lz, z.Bz)));
+  const maxMeshSize = Math.round(Math.max(0.15, minLado / 6) * 100) / 100;
+  L.push(`TABLE:  "ANALYSIS OPTIONS - AUTOMATIC MESH SETTINGS FOR FLOORS"`);
+  L.push(`   "Mesh Option"=Rectangular   "Use Localized Meshing"=Yes   "Merge Joints"=Yes   "Maximum Mesh Size"=${fmt(maxMeshSize)}`);
+  L.push(` `);
+
   // ── VIGAS DE AMARRE: solo secciones + LINE OBJECT CONNECTIVITY
   // (los joints ya están agregados arriba en POINT OBJECT CONNECTIVITY) ──
   if (vigasArr.length > 0) {

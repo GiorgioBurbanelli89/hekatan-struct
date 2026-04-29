@@ -812,7 +812,7 @@ function buildParamsPane() {
               alert("Sin reacciones aún — corre primero el análisis del edificio (modo 'Edificio completo').");
               return;
             }
-            const p = params as any;
+            const p = currentParams as any;
             const q_adm = (p.q_adm_zapata as number) ?? 10;
             const ks = (p.ks_zapata as number) ?? 1030;
             const tz = (p.t_zapata as number) ?? 0.30;
@@ -904,6 +904,31 @@ function buildParamsPane() {
               alert(`❌ Error al exportar: ${e.message}`);
               console.error(e);
             }
+          });
+
+          // ── Botón: Importar F2K cimentación COMPLETA ──
+          fCim.addButton({ title: "📥 Importar F2K cimentación COMPLETA" }).on("click", async () => {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = ".f2k,.txt";
+            input.onchange = async (ev: any) => {
+              const file = ev.target.files?.[0];
+              if (!file) return;
+              try {
+                const text = await file.text();
+                const { parseEdificioCimentacionF2k } = await import("../shared/f2kCimentacionImporter");
+                const data = parseEdificioCimentacionF2k(text);
+                const w = data._warnings ?? [];
+                const wMsg = w.length ? `\n⚠ ${w.join("\n⚠ ")}` : "";
+                (window as any).__hekatanImportedCim = data;
+                console.log("[F2K Cim Importada]", data);
+                alert(`✅ F2K importado:\n• ${data.zapatas.length} zapatas\n• ${data.vigasAmarre?.length ?? 0} vigas de amarre\n• ks = ${Math.round(data.ks_kNm3)} kN/m³\n• Z = ${data.Z?.toFixed(2)} m\n\nDatos en window.__hekatanImportedCim. Para re-exportar el mismo modelo: window.__hekatanDownloadF2kCim(window.__hekatanImportedCim).${wMsg}`);
+              } catch (e: any) {
+                alert(`❌ Error al importar: ${e.message}`);
+                console.error(e);
+              }
+            };
+            input.click();
           });
         }
       } catch (e) {
