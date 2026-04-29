@@ -439,6 +439,11 @@ function rebuild() {
   currentPane?.refresh();
 }
 
+// Expose rebuild + autoFitCamera al window para test/debug via DOM
+// (también usado por el csi-importer para forceRebuildAndFit).
+(window as any).__hekatanRebuild = rebuild;
+(window as any).__hekatanAutoFit = autoFitCamera;
+
 // ── Tweakpane panel (encima del viewer, ARRASTRABLE) ──
 const paneHost = document.createElement("div");
 // top: 96px para que el Tweakpane quede claramente debajo de la toolbar superior.
@@ -668,6 +673,15 @@ function buildParamsPane() {
   // ── 📥 Importar CSI (solo para el ejemplo csi-importer) ──
   if (currentExample && currentExample.id === "csi-importer") {
     const fImp = pane.addFolder({ title: "📥 Importar archivo", expanded: true });
+    // Helper: forzar rebuild + autoFitCamera tras setear los datos.
+    // El bug previo era que scheduleRebuild() debounce 120ms a veces
+    // perdía el set, o el viewer no reencuadraba al cargar geometría
+    // de un modelo recién importado. Forzamos rebuild síncrono +
+    // autoFitCamera explícito.
+    const forceRebuildAndFit = () => {
+      try { rebuild(); } catch (e) { console.error("[CSI Importer] rebuild error:", e); }
+      try { autoFitCamera(); } catch {}
+    };
     const triggerImport = (kind: "f2k" | "e2k" | "s2k") => {
       const input = document.createElement("input");
       input.type = "file";
@@ -682,8 +696,11 @@ function buildParamsPane() {
             const data = parseEdificioCimentacionF2k(text);
             (window as any).__hekatanImportedCim = data;
             console.log("[CSI Importer] F2K parseado:", data);
-            alert(`✅ F2K cargado:\n• ${data.zapatas.length} zapatas\n• ${data.vigasAmarre?.length ?? 0} vigas\n• ks = ${Math.round(data.ks_kNm3)} kN/m³\n\nLa escena se actualizará al rebuild.`);
-            scheduleRebuild();
+            const wMsg = data._warnings && data._warnings.length
+              ? `\n\n⚠ Warnings:\n${data._warnings.map((w: string) => "• " + w).join("\n")}`
+              : "";
+            alert(`✅ F2K cargado:\n• ${data.zapatas.length} zapatas\n• ${data.vigasAmarre?.length ?? 0} vigas\n• ks = ${Math.round(data.ks_kNm3)} kN/m³${wMsg}`);
+            forceRebuildAndFit();
           } else {
             alert(`Importador ${kind.toUpperCase()} aún no implementado. Por ahora solo F2K (SAFE).`);
           }
@@ -699,7 +716,7 @@ function buildParamsPane() {
     fImp.addButton({ title: "📥 S2K (SAP2000) — Modelo (próximo)" }).on("click", () => triggerImport("s2k"));
     fImp.addButton({ title: "🗑 Limpiar y vaciar escena" }).on("click", () => {
       delete (window as any).__hekatanImportedCim;
-      scheduleRebuild();
+      forceRebuildAndFit();
     });
   }
 

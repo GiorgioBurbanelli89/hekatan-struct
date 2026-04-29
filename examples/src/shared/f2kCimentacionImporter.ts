@@ -320,7 +320,16 @@ export function parseEdificioCimentacionF2k(text: string): ImportedCimentacion {
   }
 
   // ── 9. CONSTRUIR ZapataItem[] ──
+  // Filtrado: si la "zapata" tiene Lz o Bz > umbral (ej. 5m), es una
+  // cimentación corrida o losa, no una zapata aislada. Las clasificamos
+  // como vigas T invertida (las dejamos como zapata pero con flag).
+  const ZAPATA_MAX_DIM_M = 8.0;  // arriba de eso, sospecha cimentación corrida
   const zapatas: ZapataItem[] = [];
+  // Array de vigas de amarre — se popula tanto desde strip footings (acá)
+  // como desde BEAM OBJECT CONNECTIVITY (más abajo).
+  const vigasAmarre: VigaAmarreItem[] = [];
+  const vigasAmarrePush = (v: VigaAmarreItem) => vigasAmarre.push(v);
+  let nStripFootings = 0;
   let ks_kNm3 = 0;
   let ksCount = 0;
   for (const z of zapatasFromFooting) {
@@ -330,6 +339,26 @@ export function parseEdificioCimentacionF2k(text: string): ImportedCimentacion {
     const Bz = Math.max(...ys) - Math.min(...ys);
     const xC = (Math.min(...xs) + Math.max(...xs)) / 2;
     const yC = (Math.min(...ys) + Math.max(...ys)) / 2;
+    // Detectar strip footing: una dimensión >> que la otra (relación >5:1)
+    // o cualquiera > umbral
+    const aspectRatio = Math.max(Lz, Bz) / Math.max(Math.min(Lz, Bz), 0.01);
+    const isStrip = aspectRatio > 5 || Math.max(Lz, Bz) > ZAPATA_MAX_DIM_M;
+    if (isStrip) {
+      nStripFootings++;
+      // Si Lz>>Bz, convertir a viga de amarre (línea por el centroide en X)
+      if (Lz > Bz) {
+        vigasAmarrePush({
+          x1: Math.min(...xs), y1: yC, x2: Math.max(...xs), y2: yC,
+          h: 0.6, b: Bz, z: z.pts[0]?.z ?? 0,
+        });
+      } else {
+        vigasAmarrePush({
+          x1: xC, y1: Math.min(...ys), x2: xC, y2: Math.max(...ys),
+          h: 0.6, b: Lz, z: z.pts[0]?.z ?? 0,
+        });
+      }
+      continue; // saltar — no es zapata aislada
+    }
     let bc = 0.4;
     let xCol = xC, yCol = yC;
     if (z.stiffPts && z.stiffPts.length >= 4) {
@@ -379,44 +408,125 @@ export function parseEdificioCimentacionF2k(text: string): ImportedCimentacion {
     }
   }
 
-  // ── 10. VIGAS DE AMARRE: LINE OBJECT CONNECTIVITY + SECTION PROPERTIES ──
+  // ── 10. VIGAS DE AMARRE: SAFE usa BEAM OBJECT CONNECTIVITY (no LINE).
+  // Verificado contra Cimentacion de Edificaciones.f2k y Riochico.f2k:
+  //   TABLE: "BEAM OBJECT CONNECTIVITY"
+  //     "Unique Name"=N (con comillas), UniquePtI=N, UniquePtJ=N, Length, GUID
+  //   TABLE: "FRAME SECTION PROPERTY DEFINITIONS - SUMMARY"
+  //     Name=X, Material=Y, Shape="Concrete Rectangular", Area, J, I33, I22, ...
+  //   TABLE: "FRAME SECTION PROPERTY DEFINITIONS - CONCRETE RECTANGULAR"
+  //     Name=X, Depth=h, Width=b, "Section Type"=Beam/Column
+  //   TABLE: "FRAME ASSIGNMENTS - SECTION PROPERTIES"
+  //     UniqueName=N, "Section Property"=X
+  // Mantenemos compatibilidad con LINE OBJECT CONNECTIVITY (formato antiguo
+  // Hekatan) como fallback.
   const lines: LineObj[] = [];
-  for (const row of getTableBlock(text, "LINE OBJECT CONNECTIVITY")) {
+  // Primero BEAM (formato real SAFE)
+  for (const row of getTableBlock(text, "BEAM OBJECT CONNECTIVITY")) {
     const r = parseRow(row);
-    const name = r["UniqueName"];
+    const name = r["Unique Name"] ?? r["UniqueName"];
     const ptI = parseInt(r["UniquePtI"], 10);
     const ptJ = parseInt(r["UniquePtJ"], 10);
     if (name && isFinite(ptI) && isFinite(ptJ)) lines.push({ name, ptI, ptJ });
   }
-  // Frame section dimensions: t3=h, t2=b
-  const frameSec = new Map<string, { h: number; b: number }>();
-  for (const row of getTableBlock(text, "FRAME SECTION PROPERTIES - GENERAL")) {
-    const r = parseRow(row);
-    const name = r["SectionName"];
-    if (!name) continue;
-    frameSec.set(name, { h: num(r["t3"]) * u.lengthToM, b: num(r["t2"]) * u.lengthToM });
+  // Fallback LINE OBJECT CONNECTIVITY (formato Hekatan antiguo)
+  if (lines.length === 0) {
+    for (const row of getTableBlock(text, "LINE OBJECT CONNECTIVITY")) {
+      const r = parseRow(row);
+      const name = r["Unique Name"] ?? r["UniqueName"];
+      const ptI = parseInt(r["UniquePtI"], 10);
+      const ptJ = parseInt(r["UniquePtJ"], 10);
+      if (name && isFinite(ptI) && isFinite(ptJ)) lines.push({ name, ptI, ptJ });
+    }
   }
+
+  // Secciones — primero el formato real SAFE (FRAME SECTION PROPERTY DEFINITIONS)
+  const frameSec = new Map<string, { h: number; b: number; type?: string }>();
+  // Width/Depth desde CONCRETE RECTANGULAR (más confiable)
+  for (const row of getTableBlock(text, "FRAME SECTION PROPERTY DEFINITIONS - CONCRETE RECTANGULAR")) {
+    const r = parseRow(row);
+    const name = r["Name"];
+    if (!name) continue;
+    frameSec.set(name, {
+      h: num(r["Depth"]) * u.lengthToM,
+      b: num(r["Width"]) * u.lengthToM,
+      type: r["Section Type"], // "Beam" | "Column"
+    });
+  }
+  // Si no encontramos en CONCRETE RECTANGULAR, leer de SUMMARY (puede tener Area pero no Width/Depth)
+  if (frameSec.size === 0) {
+    for (const row of getTableBlock(text, "FRAME SECTION PROPERTY DEFINITIONS - SUMMARY")) {
+      const r = parseRow(row);
+      const name = r["Name"];
+      if (!name) continue;
+      // Intentar reconstruir b,h de Area + I33 (rectangular: I33=b·h³/12)
+      const A = num(r["Area"]);
+      const I33 = num(r["I33"]);
+      if (isFinite(A) && isFinite(I33) && A > 0) {
+        // h² = 12·I33/A → h = sqrt(12·I33/A)
+        const h = Math.sqrt(12 * I33 / A);
+        const b = A / h;
+        frameSec.set(name, { h: h * u.lengthToM, b: b * u.lengthToM });
+      }
+    }
+  }
+  // Fallback formato antiguo Hekatan (FRAME SECTION PROPERTIES - GENERAL con t3=h, t2=b)
+  if (frameSec.size === 0) {
+    for (const row of getTableBlock(text, "FRAME SECTION PROPERTIES - GENERAL")) {
+      const r = parseRow(row);
+      const name = r["SectionName"];
+      if (!name) continue;
+      frameSec.set(name, { h: num(r["t3"]) * u.lengthToM, b: num(r["t2"]) * u.lengthToM });
+    }
+  }
+
+  // Asignación frame → section: primero FRAME ASSIGNMENTS (real SAFE)
   const lineSec = new Map<string, string>();
-  for (const row of getTableBlock(text, "LINE ASSIGNMENTS - SECTION PROPERTIES")) {
+  for (const row of getTableBlock(text, "FRAME ASSIGNMENTS - SECTION PROPERTIES")) {
     const r = parseRow(row);
     const a = r["UniqueName"];
     const sec = r["Section Property"];
     if (a && sec) lineSec.set(a, sec);
   }
+  // Fallback LINE ASSIGNMENTS
+  if (lineSec.size === 0) {
+    for (const row of getTableBlock(text, "LINE ASSIGNMENTS - SECTION PROPERTIES")) {
+      const r = parseRow(row);
+      const a = r["UniqueName"];
+      const sec = r["Section Property"];
+      if (a && sec) lineSec.set(a, sec);
+    }
+  }
 
-  const vigasAmarre: VigaAmarreItem[] = [];
+  // (vigasAmarre ya está declarado arriba; aquí solo agregamos las BEAMs)
+  let nVigasIgnoradasColumna = 0;
   for (const ln of lines) {
     const j1 = joints.get(ln.ptI);
     const j2 = joints.get(ln.ptJ);
     if (!j1 || !j2) continue;
     const secName = lineSec.get(ln.name);
     const dim = secName ? frameSec.get(secName) : undefined;
-    vigasAmarre.push({
+    // Filtrar columnas: si el frame es vertical (mismo X,Y diferente Z), o si
+    // la sección es de tipo Column, lo excluimos de vigas de amarre.
+    const dx = j2.x - j1.x, dy = j2.y - j1.y, dz = j2.z - j1.z;
+    const isVertical = Math.abs(dz) > Math.max(Math.abs(dx), Math.abs(dy));
+    const isColumnSection = dim?.type === "Column";
+    if (isVertical || isColumnSection) {
+      nVigasIgnoradasColumna++;
+      continue;
+    }
+    vigasAmarrePush({
       x1: j1.x, y1: j1.y, x2: j2.x, y2: j2.y,
       h: dim?.h ?? 0.4,
       b: dim?.b ?? 0.25,
       z: j1.z,
     });
+  }
+  if (nVigasIgnoradasColumna > 0) {
+    warnings.push(`${nVigasIgnoradasColumna} BEAMs verticales/Column ignoradas (no son vigas de amarre)`);
+  }
+  if (nStripFootings > 0) {
+    warnings.push(`${nStripFootings} cimentaciones corridas/strip footings convertidas a vigas (Lz×Bz > ${ZAPATA_MAX_DIM_M}m o aspect>5)`);
   }
 
   // ── 11. Cota Z: del primer joint

@@ -21,3 +21,4 @@ examples/src/**/*Pro.ts
 examples/src/conexion-*-pro/
 docs/PRO/
 LICENSE.commercial.txt
+examples/public/*.f2k
