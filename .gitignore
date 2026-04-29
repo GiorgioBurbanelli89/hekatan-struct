@@ -22,3 +22,4 @@ examples/src/conexion-*-pro/
 docs/PRO/
 LICENSE.commercial.txt
 examples/public/*.f2k
+examples/public/*.html
