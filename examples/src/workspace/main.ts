@@ -665,6 +665,44 @@ function buildParamsPane() {
   fView.addButton({ title: "→ Elevación X (frente)" }).on("click", () => setView("elevX"));
   fView.addButton({ title: "↑ Elevación Y (lado)" }).on("click", () => setView("elevY"));
 
+  // ── 📥 Importar CSI (solo para el ejemplo csi-importer) ──
+  if (currentExample && currentExample.id === "csi-importer") {
+    const fImp = pane.addFolder({ title: "📥 Importar archivo", expanded: true });
+    const triggerImport = (kind: "f2k" | "e2k" | "s2k") => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = `.${kind},.txt`;
+      input.onchange = async (ev: any) => {
+        const file = ev.target.files?.[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          if (kind === "f2k") {
+            const { parseEdificioCimentacionF2k } = await import("../shared/f2kCimentacionImporter");
+            const data = parseEdificioCimentacionF2k(text);
+            (window as any).__hekatanImportedCim = data;
+            console.log("[CSI Importer] F2K parseado:", data);
+            alert(`✅ F2K cargado:\n• ${data.zapatas.length} zapatas\n• ${data.vigasAmarre?.length ?? 0} vigas\n• ks = ${Math.round(data.ks_kNm3)} kN/m³\n\nLa escena se actualizará al rebuild.`);
+            scheduleRebuild();
+          } else {
+            alert(`Importador ${kind.toUpperCase()} aún no implementado. Por ahora solo F2K (SAFE).`);
+          }
+        } catch (e: any) {
+          alert(`❌ Error al importar ${kind.toUpperCase()}: ${e.message}`);
+          console.error(e);
+        }
+      };
+      input.click();
+    };
+    fImp.addButton({ title: "📥 F2K (SAFE) — Cimentación" }).on("click", () => triggerImport("f2k"));
+    fImp.addButton({ title: "📥 E2K (ETABS) — Edificio (próximo)" }).on("click", () => triggerImport("e2k"));
+    fImp.addButton({ title: "📥 S2K (SAP2000) — Modelo (próximo)" }).on("click", () => triggerImport("s2k"));
+    fImp.addButton({ title: "🗑 Limpiar y vaciar escena" }).on("click", () => {
+      delete (window as any).__hekatanImportedCim;
+      scheduleRebuild();
+    });
+  }
+
   // ── SAFE F2K Export/Import (solo para zapatas) ──
   // Permite roundtrip Hekatan ↔ SAFE para validación cruzada.
   if (currentExample && currentExample.id.startsWith("zapata")) {

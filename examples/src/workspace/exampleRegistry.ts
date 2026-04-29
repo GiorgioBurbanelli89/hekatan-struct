@@ -172,6 +172,7 @@ export interface ExampleDef {
 }
 
 // ── Import de ejemplos (cada uno en su propia carpeta estilo awatif) ──
+import { csiImporter } from "../csi-importer/csiImporter";
 import { zapataVigaAmarre } from "../zapata-viga-amarre/zapataVigaAmarre";
 import { zapataAislada } from "../zapata-aislada/zapataAislada";
 import { zapataAisladaValidacion } from "../zapata-aislada-validacion/zapataAisladaValidacion";
@@ -210,6 +211,8 @@ import { mezanine } from "../mezanine/mezanine";
 import { legacyAwatifExamples } from "./legacyAwatif";
 
 export const examplesRegistry: ExampleDef[] = [
+  // Importador CSI (F2K/E2K/S2K) — al inicio para acceso rápido
+  csiImporter,
   // Cimentaciones (validación primero — defecto del workspace)
   zapataAisladaValidacion,
   zapataAislada,
