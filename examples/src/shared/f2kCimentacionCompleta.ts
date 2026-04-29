@@ -307,32 +307,63 @@ export function exportEdificioCimentacionF2k(data: F2kCimentacionData): string {
   // ── VIGAS DE AMARRE: solo secciones + LINE OBJECT CONNECTIVITY
   // (los joints ya están agregados arriba en POINT OBJECT CONNECTIVITY) ──
   if (vigasArr.length > 0) {
-    // En SAFE las secciones de viga de cimentacion van en
-    // "BEAM SECTION PROPERTIES" (NO "FRAME SECTION..." de ETABS).
-    L.push(`TABLE:  "BEAM SECTION PROPERTIES - GENERAL"`);
-    const sectionsCreated = new Set<string>();
-    for (let i = 0; i < vigasArr.length; i++) {
-      const v = vigasArr[i];
+    // SAFE usa convención mixta verificada contra archivos reales SAFE 20.x:
+    //   FRAME SECTION PROPERTY DEFINITIONS - SUMMARY     (sección general)
+    //   FRAME SECTION PROPERTY DEFINITIONS - CONCRETE RECTANGULAR (dimensiones)
+    //   BEAM OBJECT CONNECTIVITY                         (frame element refs)
+    //   FRAME ASSIGNMENTS - SECTION PROPERTIES           (asignación)
+    // BEAM se usa solo para CONNECTIVITY; FRAME para todo lo demás.
+
+    // Calcular propiedades por sección única
+    const sectionsCreated = new Map<string, { b: number; h: number }>();
+    for (const v of vigasArr) {
       const key = `${v.b.toFixed(3)}x${v.h.toFixed(3)}`;
-      if (!sectionsCreated.has(key)) {
-        sectionsCreated.add(key);
-        L.push(`   Name=VAmarre_${key}   Material=4000Psi   Shape=Rectangular   t3=${fmt(v.h)}   t2=${fmt(v.b)}   Color=Magenta   GUID=${guid()}`);
-      }
+      if (!sectionsCreated.has(key)) sectionsCreated.set(key, { b: v.b, h: v.h });
+    }
+
+    // FRAME SECTION PROPERTY DEFINITIONS - SUMMARY
+    L.push(`TABLE:  "FRAME SECTION PROPERTY DEFINITIONS - SUMMARY"`);
+    for (const [key, dim] of sectionsCreated) {
+      const A = dim.b * dim.h;
+      const I33 = (dim.b * dim.h ** 3) / 12;
+      const I22 = (dim.h * dim.b ** 3) / 12;
+      const J = 0.21 * Math.pow(Math.min(dim.b, dim.h), 3) * Math.max(dim.b, dim.h);
+      const As2 = (5 / 6) * A;
+      const As3 = (5 / 6) * A;
+      const S33 = I33 / (dim.h / 2);
+      const S22 = I22 / (dim.b / 2);
+      const Z33 = (dim.b * dim.h ** 2) / 4;
+      const Z22 = (dim.h * dim.b ** 2) / 4;
+      const R33 = Math.sqrt(I33 / A);
+      const R22 = Math.sqrt(I22 / A);
+      L.push(`   Name=VAmarre_${key}   Material=4000Psi   Shape="Concrete Rectangular"   Color=Magenta   Area=${fmt(A)}   J=${fmt(J)}   I33=${fmt(I33)}   I22=${fmt(I22)}   As2=${fmt(As2)}   As3=${fmt(As3)}   S33Pos=${fmt(S33)}   S33Neg=${fmt(S33)}   S22Pos=${fmt(S22)}   S22Neg=${fmt(S22)}   Z33=${fmt(Z33)}   Z22=${fmt(Z22)}   R33=${fmt(R33)}   R22=${fmt(R22)}   "CG Offset 3"=0   "CG Offset 2"=0   "PNA Offset 3"=0   "PNA Offset 2"=0   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I33 Modifier"=1   "I22 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1`);
     }
     L.push(` `);
-    // SAFE usa "BEAM OBJECT CONNECTIVITY" (NO "LINE OBJECT CONNECTIVITY"
-    // — eso es solo ETABS/SAP2000). En SAFE los frame elements de
-    // cimentacion son tipo BEAM y se acceden via mySafe.SapModel.BeamObj.
+
+    // FRAME SECTION PROPERTY DEFINITIONS - CONCRETE RECTANGULAR
+    L.push(`TABLE:  "FRAME SECTION PROPERTY DEFINITIONS - CONCRETE RECTANGULAR"`);
+    for (const [key, dim] of sectionsCreated) {
+      L.push(`   Name=VAmarre_${key}   Material=4000Psi   "From File?"=No   Depth=${fmt(dim.h)}   Width=${fmt(dim.b)}   "Rigid Zone?"=No   "Notional Size Type"=User   "Notional User Size"=0.1   "Section Type"=Beam   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=${guid()}`);
+    }
+    L.push(` `);
+
+    // BEAM OBJECT CONNECTIVITY (formato real SAFE: "Unique Name" con comillas)
     L.push(`TABLE:  "BEAM OBJECT CONNECTIVITY"`);
     for (const vj of vigaJointsMap) {
-      L.push(`   UniqueName=VA${vj.vigaIdx+1}   UniquePt1=${vj.jStart}   UniquePt2=${vj.jEnd}   GUID=${guid()}`);
+      // Calcular longitud del beam
+      const v = vigasArr[vj.vigaIdx];
+      const dx = v.x2 - v.x1, dy = v.y2 - v.y1;
+      const len = Math.sqrt(dx*dx + dy*dy);
+      L.push(`   "Unique Name"=${vj.vigaIdx+1}   UniquePtI=${vj.jStart}   UniquePtJ=${vj.jEnd}   Length=${fmt(len)}   GUID=${guid()}`);
     }
     L.push(` `);
-    L.push(`TABLE:  "BEAM ASSIGNMENTS - SECTION PROPERTIES"`);
+
+    // FRAME ASSIGNMENTS - SECTION PROPERTIES (asignar la sección al frame)
+    L.push(`TABLE:  "FRAME ASSIGNMENTS - SECTION PROPERTIES"`);
     for (const vj of vigaJointsMap) {
       const v = vigasArr[vj.vigaIdx];
       const key = `${v.b.toFixed(3)}x${v.h.toFixed(3)}`;
-      L.push(`   UniqueName=VA${vj.vigaIdx+1}   "Section Property"=VAmarre_${key}`);
+      L.push(`   UniqueName=${vj.vigaIdx+1}   Shape="Concrete Rectangular"   "Auto Select List"=N.A.   "Section Property"=VAmarre_${key}`);
     }
     L.push(` `);
   }
