@@ -1134,7 +1134,69 @@ solve`;
         // el F2K. Si el ejemplo NO tiene params específicos de cimentación
         // (q_adm_zapata, ks_zapata, etc.), se usan defaults sensatos.
         {
-          const fCim = pane.addFolder({ title: "📤 SAFE F2K (cimentación)", expanded: false });
+          const fCim = pane.addFolder({ title: "🪨 Cimentación (diseño + SAFE F2K)", expanded: false });
+
+          // ── Botón: Calcular y mostrar cimentación en pantalla ──
+          // Diseña las zapatas desde las reacciones de base y las dibuja como
+          // bloques 3D semi-transparentes sobre los apoyos. Esto da feedback
+          // VISUAL antes de exportar a SAFE — el usuario ve qué se está
+          // dimensionando.
+          fCim.addButton({ title: "👁 Calcular y ver cimentación" }).on("click", async () => {
+            const reactions = (deformOutputs.rawVal as any)?.reactions as
+              Map<number, [number, number, number, number, number, number]> | undefined;
+            const ns = nodes.rawVal as number[][];
+            if (!reactions || !ns?.length) {
+              alert("Sin reacciones aún — corre primero el análisis del edificio.");
+              return;
+            }
+            const p = currentParams as any;
+            const q_adm = (p.q_adm_zapata as number) ?? 10;
+            const ks = (p.ks_zapata as number) ?? 1030;
+            const tz = (p.t_zapata as number) ?? 0.30;
+            const colSize = p.colSize ?? 0.40;
+            const Hf = (p.Hf_pedestal as number) ?? 0.5;
+            const baseRows: Array<{idx:number;x:number;y:number;P_kN:number;Mx_kN:number;My_kN:number}> = [];
+            let xMax = 0, yMax = 0;
+            reactions.forEach((r, idx) => {
+              const n = ns[idx];
+              if (!n || Math.abs(n[2]) > 1e-6) return;
+              baseRows.push({ idx, x: n[0], y: n[1], P_kN: Math.abs(r[2]), Mx_kN: r[3], My_kN: r[4] });
+              if (n[0] > xMax) xMax = n[0];
+              if (n[1] > yMax) yMax = n[1];
+            });
+            if (!baseRows.length) { alert("No hay apoyos en z=0."); return; }
+            const { designAllFootings } = await import("../shared/footingDesign");
+            const zapatasD = designAllFootings(baseRows, xMax, yMax, q_adm, ks);
+            for (const z of zapatasD) z.t = tz;
+
+            // Dibujar zapatas como bloques 3D semi-transparentes
+            const THREE = await import("three");
+            const meshes: any[] = [];
+            for (const z of zapatasD) {
+              // Zapata (caja debajo del nivel z=0, espesor tz)
+              const geo = new THREE.BoxGeometry(z.Lz, z.Bz, z.t);
+              const mat = new THREE.MeshLambertMaterial({
+                color: 0x4488cc, transparent: true, opacity: 0.55,
+              });
+              const mesh = new THREE.Mesh(geo, mat);
+              mesh.position.set(z.x, z.y, -Hf - z.t / 2);
+              meshes.push(mesh);
+              // Pedestal (columna desde la zapata hasta z=0)
+              const pedGeo = new THREE.BoxGeometry(colSize, colSize, Hf);
+              const pedMat = new THREE.MeshLambertMaterial({ color: 0x808080, transparent: true, opacity: 0.7 });
+              const pedMesh = new THREE.Mesh(pedGeo, pedMat);
+              pedMesh.position.set(z.x, z.y, -Hf / 2);
+              meshes.push(pedMesh);
+            }
+            states.objects3D.val = [...(states.objects3D.val ?? []), ...meshes];
+            // Guardar diseño para uso del exportador
+            (window as any).__hekatanCimentacionDesigned = { zapatasD, baseRows, xMax, yMax, q_adm, ks, tz, colSize, Hf };
+            const totalZ = zapatasD.length;
+            const tipos = zapatasD.reduce((acc: any, z: any) => { acc[z.tipo] = (acc[z.tipo] ?? 0) + 1; return acc; }, {});
+            const tiposStr = Object.entries(tipos).map(([k, v]) => `${v} ${k}`).join(", ");
+            alert(`✅ Cimentación calculada y dibujada:\n• ${totalZ} zapatas (${tiposStr})\n• ks = ${ks} kN/m³, q_adm = ${q_adm} tonf/m²\n• Espesor = ${tz} m, pedestal Hf = ${Hf} m\n\nVés bloques azules (zapatas) + grises (pedestales) bajo cada apoyo.`);
+            console.log(`[Cimentación] ${totalZ} zapatas dibujadas (${tiposStr})`);
+          });
 
           // ── Botón: Exportar F2K cimentación COMPLETA ──
           // Genera UN solo .f2k con TODAS las zapatas + vigas de amarre del
