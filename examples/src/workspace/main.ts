@@ -670,9 +670,19 @@ function buildParamsPane() {
   fView.addButton({ title: "→ Elevación X (frente)" }).on("click", () => setView("elevX"));
   fView.addButton({ title: "↑ Elevación Y (lado)" }).on("click", () => setView("elevY"));
 
-  // ── ✏ CAD Drawer (solo para el ejemplo cad-draw) ──
-  if (currentExample && currentExample.id === "cad-draw") {
-    const fCad = pane.addFolder({ title: "✏ Herramientas CAD", expanded: true });
+  // ── ✏ CAD Drawer / 💻 CLI Editor — DISPONIBLES EN TODOS LOS EJEMPLOS ──
+  // Permiten agregar/editar/eliminar elementos del modelo en cualquier ejemplo.
+  // Si estás en cad-draw o cli-modeler, las acciones MUTAN el modelo y se
+  // re-renderizan. En otros ejemplos, las acciones agregan al script CLI
+  // global (window.__hekatanCliScript) — el usuario puede revisar el script
+  // equivalente del modelo actual y exportarlo.
+  // (folder colapsado por default cuando NO es cad-draw/cli-modeler para
+  // no estorbar el workflow del ejemplo).
+  const isModelerCtx = currentExample && (currentExample.id === "cad-draw" || currentExample.id === "cli-modeler");
+
+  // ── ✏ CAD Drawer (siempre disponible) ──
+  if (currentExample) {
+    const fCad = pane.addFolder({ title: "✏ Herramientas CAD", expanded: !!isModelerCtx });
     // Tool selector — botones grandes
     const proxyTool = { v: "node" };
     const toolBtns: Record<string, any> = {};
@@ -724,9 +734,10 @@ function buildParamsPane() {
     });
   }
 
-  // ── 💻 CLI Modeler (solo para el ejemplo cli-modeler) ──
-  if (currentExample && currentExample.id === "cli-modeler") {
-    const fCli = pane.addFolder({ title: "💻 CLI Comandos", expanded: true });
+  // ── 💻 CLI Modeler (siempre disponible — folder colapsado por default
+  //     en ejemplos que no son cli-modeler para no estorbar) ──
+  if (currentExample) {
+    const fCli = pane.addFolder({ title: "💻 CLI Comandos", expanded: !!isModelerCtx });
     // Crear textarea para escribir comandos
     const taContainer = document.createElement("div");
     taContainer.style.padding = "4px";
