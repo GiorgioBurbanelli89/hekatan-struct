@@ -132,7 +132,6 @@ export const cadDraw: ExampleDef = {
     } as any;
     states.objects3D.val = [];
 
-    const st = getState();
     console.log(
       `[CAD Draw] tool=${st.tool} | snap=${st.snap}m | plane=${st.workPlane}@z=${st.workZ}m | ` +
       `nodes=${st.model.nodes.size} lines=${st.model.lines.size} areas=${st.model.areas.size}`,
