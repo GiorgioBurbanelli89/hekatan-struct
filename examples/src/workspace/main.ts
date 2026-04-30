@@ -1355,6 +1355,7 @@ solve`;
             const tz = (p.t_zapata as number) ?? 0.30;
             const Hf = (p.Hf_pedestal as number) ?? 0.5;
             const volExt = (p.voladoExtra as number) ?? 0.30;
+            const colSize = (p.colSize as number) ?? 0.40;
             const nSubZ = Math.max(2, Math.round((p.nSubZapata as number) ?? 4));
             const Ec = 25e6, nu_c = 0.20, Gc = Ec / (2 * (1 + nu_c)), rho_c = 24;
             const baseRows: Array<{idx:number;x:number;y:number;P_kN:number;Mx_kN:number;My_kN:number}> = [];
