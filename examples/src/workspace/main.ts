@@ -989,80 +989,9 @@ function buildParamsPane() {
       } catch (e) {
         console.warn("[Workspace] Toggle FEM Cim setup falló:", e);
       }
-
-      // ── Folder F2K SAFE para TODOS los edificios (no solo edificio-aporticado) ──
-      // Cualquier ejemplo isBuilding con reacciones en z=0 puede exportar la
-      // cimentación que necesitaría a SAFE. Diseña automáticamente con q_adm
-      // y ks default si el ejemplo no expone esos params.
-      const fF2KAll = pane.addFolder({ title: "📤 SAFE F2K (cualquier edificio)", expanded: false });
-      fF2KAll.addButton({ title: "📤 Exportar cimentación F2K (auto-diseñada)" }).on("click", async () => {
-        const reactions = (deformOutputs.rawVal as any)?.reactions as
-          Map<number, [number, number, number, number, number, number]> | undefined;
-        const ns = nodes.rawVal as number[][];
-        if (!reactions || !ns?.length) {
-          alert("Sin reacciones aún. Corre el análisis del edificio primero (los apoyos en z=0 se usan para diseñar las zapatas).");
-          return;
-        }
-        const p = currentParams as any;
-        // Defaults razonables si el ejemplo no tiene estos params:
-        const q_adm = (p.q_adm_zapata as number) ?? (p.q_adm as number) ?? 10;
-        const ks = (p.ks_zapata as number) ?? (p.ks as number) ?? 1030;
-        const tz = (p.t_zapata as number) ?? 0.30;
-        const colSize = (p.colSize as number) ?? 0.40;
-        const Hf = (p.Hf_pedestal as number) ?? 0.5;
-        const volExt = (p.voladoExtra as number) ?? 0.30;
-        const baseRows: Array<{idx:number;x:number;y:number;P_kN:number;Mx_kN:number;My_kN:number}> = [];
-        let xMax = 0, yMax = 0;
-        reactions.forEach((r, idx) => {
-          const n = ns[idx];
-          if (!n || Math.abs(n[2]) > 1e-6) return;
-          baseRows.push({
-            idx, x: n[0], y: n[1],
-            P_kN: Math.abs(r[2]), Mx_kN: r[3] ?? 0, My_kN: r[4] ?? 0,
-          });
-          if (n[0] > xMax) xMax = n[0];
-          if (n[1] > yMax) yMax = n[1];
-        });
-        if (!baseRows.length) { alert("No hay apoyos en z=0."); return; }
-        try {
-          const { designAllFootings } = await import("../shared/footingDesign");
-          const { downloadEdificioCimentacionF2k } = await import("../shared/f2kCimentacionCompleta");
-          const zapatasD = designAllFootings(baseRows, xMax || 1, yMax || 1, q_adm, ks);
-          for (const z of zapatasD) z.t = tz;
-          const zapatas = zapatasD.map(z => {
-            let offX = 0, offY = 0;
-            if (z.tipo === "esquinera") {
-              offX = (z.x < xMax/2) ? -(z.Lz/2 - volExt) : (z.Lz/2 - volExt);
-              offY = (z.y < yMax/2) ? -(z.Bz/2 - volExt) : (z.Bz/2 - volExt);
-            } else if (z.tipo === "lindero") {
-              if (Math.abs(z.x) < 1e-3 || Math.abs(z.x - xMax) < 1e-3) {
-                offX = (z.x < xMax/2) ? -(z.Lz/2 - volExt) : (z.Lz/2 - volExt);
-              } else if (Math.abs(z.y) < 1e-3 || Math.abs(z.y - yMax) < 1e-3) {
-                offY = (z.y < yMax/2) ? -(z.Bz/2 - volExt) : (z.Bz/2 - volExt);
-              }
-            }
-            const baseR = baseRows.find(b => b.idx === z.idx)!;
-            return {
-              xC: z.x - offX, yC: z.y - offY,
-              xCol: z.x, yCol: z.y,
-              Lz: z.Lz, Bz: z.Bz, tz: z.t, bc: colSize,
-              P_dead_kN: baseR.P_kN,
-              Mx_dead_kNm: baseR.Mx_kN,
-              My_dead_kNm: baseR.My_kN,
-              label: z.idx,
-            };
-          });
-          const exId = currentExample!.id;
-          downloadEdificioCimentacionF2k({
-            zapatas, ks_kNm3: ks, Z: -Hf,
-          }, `cimentacion_${exId}_${zapatas.length}zapatas.f2k`);
-          alert(`✅ Exportado F2K cimentación auto-diseñada:\n• ${zapatas.length} zapatas (P, Mx, My de reacciones reales)\n• q_adm = ${q_adm} tonf/m²\n• ks = ${ks} kN/m³\n• Df pedestal = ${Hf} m\n\nÁbrelo en SAFE 20.x.`);
-          console.log(`[F2K Auto] ${exId} → ${zapatas.length} zapatas exportadas`);
-        } catch (e: any) {
-          alert(`❌ Error: ${e.message}`);
-          console.error(e);
-        }
-      });
+      // REGLA: F2K (SAFE) solo se exporta cuando el edificio tiene cálculo de
+      // cimentación (modoCimentacion). En superestructuras sin modo cimentación
+      // solo se ofrece E2K (ETABS) y S2K (SAP) — más abajo.
     }
     if (isFooting && urlFrom) {
       const fNav = pane.addFolder({ title: "🔗 Origen", expanded: true });
