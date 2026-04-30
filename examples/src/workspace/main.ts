@@ -522,6 +522,16 @@ function makePaneDraggable(host: HTMLElement) {
 
 // Helper de vistas — usa contexto Three.js del viewer (camera + controls)
 function setView(preset: "iso" | "plan" | "elevX" | "elevY") {
+  // Sincronizar plano de trabajo CAD con la vista (solo si cad-draw activo)
+  if (currentExample?.id === "cad-draw") {
+    const cadSt = (window as any).__hekatanCadState?.get?.();
+    if (cadSt) {
+      if (preset === "plan") cadSt.workPlane = "xy";
+      else if (preset === "elevX") cadSt.workPlane = "xz";
+      else if (preset === "elevY") cadSt.workPlane = "yz";
+      console.log(`[CAD ↔ Vista] workPlane sincronizado a ${cadSt.workPlane}`);
+    }
+  }
   const ctx: any = (viewerElm as any).__ctx;
   if (!ctx) return;
   const { camera, controls, render } = ctx;
@@ -698,7 +708,8 @@ function buildParamsPane() {
     // Plano de trabajo
     const fPlane = fCad.addFolder({ title: "📐 Plano de trabajo", expanded: true });
     fPlane.addButton({ title: "Plano XY (planta)" }).on("click", () => {
-      (window as any).__hekatanCadState?.get?.().workPlane = "xy";
+      const st = (window as any).__hekatanCadState?.get?.();
+      if (st) st.workPlane = "xy";
       console.log("[CAD] Plano: XY");
     });
     fPlane.addButton({ title: "Plano XZ (elevación)" }).on("click", () => {
