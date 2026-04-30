@@ -116,18 +116,8 @@ export function getSettings(
       max: 10,
       step: 1,
     });
-    pane.addBinding(settings.deformScale, "val", {
-      label: "Deform scale XY",
-      min: 0.1,
-      max: 5000,
-      step: 0.1,
-    });
-    pane.addBinding(settings.deformScaleZ, "val", {
-      label: "Deform scale Z",
-      min: 0.01,
-      max: 10,
-      step: 0.01,
-    });
+    // NOTA: deformScale XY/Z se bindean en Analysis Outputs JUNTO al toggle
+    // "Deformed shape" para evitar duplicacion y mantener UX coherente.
     pane.addBinding(settings.nodes, "val", { label: "Nodes" });
     pane.addBinding(settings.elements, "val", {
       label: "Elements",
@@ -249,6 +239,22 @@ export function getSettings(
 
     outputs.addBinding(settings.deformedShape, "val", {
       label: "Deformed shape",
+    });
+    // Sliders de escala JUNTO al toggle de deformada — en TODOS los
+    // ejemplos que tengan deformOutputs/analyzeOutputs. Bindings extra
+    // a las mismas State que los sliders top-level: vanjs sincroniza
+    // ambos bindings automaticamente (mover uno mueve el otro).
+    outputs.addBinding(settings.deformScale, "val", {
+      label: "  Scale XY",
+      min: 0.1,
+      max: 5000,
+      step: 0.1,
+    });
+    outputs.addBinding(settings.deformScaleZ, "val", {
+      label: "  Scale Z",
+      min: 0.01,
+      max: 10,
+      step: 0.01,
     });
   }
 
