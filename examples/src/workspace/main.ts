@@ -20,6 +20,7 @@ import { Pane } from "tweakpane";
 import {
   Node, Element, NodeInputs, ElementInputs,
   DeformOutputs, AnalyzeOutputs,
+  deform, analyze,
 } from "hekatan-fem";
 import { getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit } from "hekatan-ui";
 import { createModalPanel } from "../shared/renderModalTable";
@@ -1323,6 +1324,162 @@ solve`;
                             "Zapatas aisladas";
             alert(`✅ Cimentación calculada (sistema = ${sysName}):\n• ${totalZ} zapatas Q4 ShellThick (${tiposStr})\n• Cada zapata: 1 placa shell en plano medio + grilla ${nSubZ}×${nSubZ}\n• ks = ${ks} kN/m³, q_adm = ${q_adm} tonf/m²\n• Espesor (propiedad del shell) = ${tz} m\n• Pedestal Hf = ${Hf} m`);
             console.log(`[Cimentación] sistema=${sysName}, ${totalZ} zapatas (${tiposStr})`);
+          });
+
+          // ── Botón: Análisis FEM solo cimentación ──
+          // Reemplaza el modelo actual con la cimentación FEM (zapatas Q4
+          // ShellThick + Winkler springs + cargas P,Mx,My de las reacciones).
+          // Corre deform+analyze. Permite ver Deformed shape + Shell results
+          // (pressure, displacementZ, bending) sobre la cimentación.
+          fCim.addButton({ title: "🧮 Análisis FEM solo cimentación" }).on("click", async () => {
+            const reactions = (deformOutputs.rawVal as any)?.reactions as
+              Map<number, [number, number, number, number, number, number]> | undefined;
+            const ns = nodes.rawVal as number[][];
+            if (!reactions || !ns?.length) {
+              alert("Sin reacciones aún — corre primero el análisis del edificio.");
+              return;
+            }
+            const p = currentParams as any;
+            const q_adm = (p.q_adm_zapata as number) ?? 10;
+            const ks = (p.ks_zapata as number) ?? 1030;
+            const tz = (p.t_zapata as number) ?? 0.30;
+            const Hf = (p.Hf_pedestal as number) ?? 0.5;
+            const volExt = (p.voladoExtra as number) ?? 0.30;
+            const nSubZ = Math.max(2, Math.round((p.nSubZapata as number) ?? 4));
+            const Ec = 25e6, nu_c = 0.20, Gc = Ec / (2 * (1 + nu_c)), rho_c = 24;
+            const baseRows: Array<{idx:number;x:number;y:number;P_kN:number;Mx_kN:number;My_kN:number}> = [];
+            let xMaxC = 0, yMaxC = 0;
+            reactions.forEach((r, idx) => {
+              const n = ns[idx];
+              if (!n || Math.abs(n[2]) > 1e-6) return;
+              baseRows.push({ idx, x: n[0], y: n[1], P_kN: Math.abs(r[2]), Mx_kN: r[3], My_kN: r[4] });
+              if (n[0] > xMaxC) xMaxC = n[0];
+              if (n[1] > yMaxC) yMaxC = n[1];
+            });
+            if (!baseRows.length) { alert("No hay apoyos en z=0."); return; }
+            const { designAllFootings } = await import("../shared/footingDesign");
+            const zapatasD = designAllFootings(baseRows, xMaxC, yMaxC, q_adm, ks);
+            for (const z of zapatasD) z.t = tz;
+
+            // Construir FEM model — solo zapatas
+            const N2: Node[] = [];
+            const E2: Element[] = [];
+            const elasticities2 = new Map<number, number>();
+            const shearModuli2 = new Map<number, number>();
+            const areas2 = new Map<number, number>();
+            const Iz2 = new Map<number, number>();
+            const Iy2 = new Map<number, number>();
+            const J2 = new Map<number, number>();
+            const densities2 = new Map<number, number>();
+            const poissons2 = new Map<number, number>();
+            const thicknesses2 = new Map<number, number>();
+            const supports2 = new Map<number, [boolean,boolean,boolean,boolean,boolean,boolean]>();
+            const loads2 = new Map<number, [number,number,number,number,number,number]>();
+            const springsList2: Array<{ node: number; dof: number; k: number }> = [];
+
+            const nodeIdx = new Map<string, number>();
+            const addNode = (x: number, y: number, z: number): number => {
+              const key = `${Math.round(x*10000)},${Math.round(y*10000)},${Math.round(z*10000)}`;
+              const found = nodeIdx.get(key); if (found !== undefined) return found;
+              const i = N2.length; N2.push([x, y, z]); nodeIdx.set(key, i); return i;
+            };
+
+            for (const z of zapatasD as any[]) {
+              const Lz = z.Lz, Bz = z.Bz, t = z.t;
+              let offX = 0, offY = 0;
+              if (z.tipo === "esquinera") {
+                offX = (z.x < xMaxC/2) ? -(Lz/2 - volExt) : (Lz/2 - volExt);
+                offY = (z.y < yMaxC/2) ? -(Bz/2 - volExt) : (Bz/2 - volExt);
+              } else if (z.tipo === "lindero") {
+                if (Math.abs(z.x) < 1e-3 || Math.abs(z.x - xMaxC) < 1e-3) offX = (z.x < xMaxC/2) ? -(Lz/2 - volExt) : (Lz/2 - volExt);
+                else if (Math.abs(z.y) < 1e-3 || Math.abs(z.y - yMaxC) < 1e-3) offY = (z.y < yMaxC/2) ? -(Bz/2 - volExt) : (Bz/2 - volExt);
+              }
+              const xCz = z.x - offX, yCz = z.y - offY;
+              const zMid = -Hf - t / 2;  // mid-surface del shell
+              const dx = Lz / nSubZ, dy = Bz / nSubZ;
+              const grid: number[][] = [];
+              for (let jr = 0; jr <= nSubZ; jr++) {
+                const row: number[] = [];
+                for (let jc = 0; jc <= nSubZ; jc++) {
+                  row.push(addNode(xCz - Lz/2 + jc * dx, yCz - Bz/2 + jr * dy, zMid));
+                }
+                grid.push(row);
+              }
+              for (let jr = 0; jr < nSubZ; jr++) {
+                for (let jc = 0; jc < nSubZ; jc++) {
+                  const eIdx = E2.length;
+                  E2.push([grid[jr][jc], grid[jr][jc+1], grid[jr+1][jc+1], grid[jr+1][jc]] as Element);
+                  thicknesses2.set(eIdx, t);
+                  elasticities2.set(eIdx, Ec);
+                  poissons2.set(eIdx, nu_c);
+                  shearModuli2.set(eIdx, Gc);
+                  densities2.set(eIdx, rho_c);
+                }
+              }
+              // Winkler springs en cada nodo del grid
+              for (let jr = 0; jr <= nSubZ; jr++) {
+                for (let jc = 0; jc <= nSubZ; jc++) {
+                  const A_trib = dx * dy *
+                    ((jc === 0 || jc === nSubZ) ? 0.5 : 1) *
+                    ((jr === 0 || jr === nSubZ) ? 0.5 : 1);
+                  const kvz = ks * A_trib;
+                  const khxy = kvz * 0.5;
+                  const ni = grid[jr][jc];
+                  springsList2.push({ node: ni, dof: 0, k: khxy });
+                  springsList2.push({ node: ni, dof: 1, k: khxy });
+                  springsList2.push({ node: ni, dof: 2, k: kvz });
+                  springsList2.push({ node: ni, dof: 5, k: kvz * 0.1 });
+                }
+              }
+              // Anclaje rotacional en una esquina (evita modos rígidos)
+              supports2.set(grid[0][0], [false, false, false, true, true, true]);
+              // Aplicar carga en el nodo más cercano a la columna
+              let bI = 0, bJ = 0, bD = Infinity;
+              for (let jr = 0; jr <= nSubZ; jr++) {
+                for (let jc = 0; jc <= nSubZ; jc++) {
+                  const ni = grid[jr][jc];
+                  const d = Math.hypot(N2[ni][0] - z.x, N2[ni][1] - z.y);
+                  if (d < bD) { bD = d; bI = jr; bJ = jc; }
+                }
+              }
+              const baseR = baseRows.find(b => b.idx === z.idx)!;
+              loads2.set(grid[bI][bJ], [0, 0, -baseR.P_kN, baseR.Mx_kN, baseR.My_kN, 0]);
+            }
+
+            // Reemplazar states + correr análisis
+            states.nodes.val = N2;
+            states.elements.val = E2;
+            states.nodeInputs.val = { supports: supports2, loads: loads2 };
+            states.elementInputs.val = {
+              elasticities: elasticities2, shearModuli: shearModuli2,
+              poissonsRatios: poissons2, densities: densities2,
+              areas: areas2, momentsOfInertiaY: Iy2, momentsOfInertiaZ: Iz2,
+              torsionalConstants: J2, thicknesses: thicknesses2,
+            };
+            states.objects3D.val = [];
+            try {
+              const dout = deform(N2, E2, states.nodeInputs.val, states.elementInputs.val, springsList2);
+              states.deformOutputs.val = dout;
+              const aout = analyze(N2, E2, states.elementInputs.val, dout);
+              // Override colormap range para pressure (hasta -q_adm)
+              const q_adm_kPa = q_adm * 9.80665;  // tonf/m² → kN/m² ≈ kPa
+              if (aout.colorMapRanges == null) aout.colorMapRanges = {};
+              aout.colorMapRanges.pressure = [0, -q_adm_kPa];
+              states.analyzeOutputs.val = aout;
+              // Activar visualización: pressure + deformed shape
+              const viewerEl = document.querySelector('div[class*="getViewerEl"], canvas')?.parentElement?.parentElement?.parentElement as any;
+              const settings = (Array.from(document.querySelectorAll('div')) as HTMLElement[]).map((d: any) => d.__settings).find(s => s);
+              if (settings) {
+                settings.shellResults = "pressure";
+                settings.deformedShape = true;
+                settings.deformScale = 1;
+              }
+              alert(`✅ Análisis FEM cimentación completo:\n• ${zapatasD.length} zapatas Q4 ShellThick\n• ${E2.length} elementos shell, ${N2.length} nodos\n• Winkler ks=${ks} kN/m³ + anclaje rot esquina\n• Cargas P,Mx,My aplicadas\n\nViewer: shell results = pressure (rango 0 a -${q_adm_kPa.toFixed(0)} kPa)\nActivá Deformed shape para ver la deformación.`);
+              console.log(`[FEM Cim] ${zapatasD.length} zapatas, ${E2.length} Q4, ${N2.length} nodos, ${springsList2.length} springs`);
+            } catch (e: any) {
+              alert(`❌ Error en análisis FEM: ${e.message}`);
+              console.error(e);
+            }
           });
 
           // ── Botón: Exportar F2K cimentación COMPLETA ──
