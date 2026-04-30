@@ -83,7 +83,7 @@ export function parseCliCommands(text: string): ParsedModel {
   // Mantiene compatibilidad con la sintaxis explicita por linea:
   //   node 1 0 0 0
   //   frame 1 1 2 25e6 0.16 0.001
-  let blockMode: "nodes" | "elements" | "areas" | null = null;
+  let blockMode: "nodes" | "elements" | "areas" | "supports" | "loads" | "springs" | null = null;
   let autoNodeIdx = 0;  // 0-based para modo bloque (awatif compatible)
   let autoFrameIdx = 0;
   let autoShellIdx = 0;
@@ -99,6 +99,9 @@ export function parseCliCommands(text: string): ParsedModel {
     if (cmd === "nodes" && tokens.length === 1) { blockMode = "nodes"; continue; }
     if ((cmd === "elements" || cmd === "frames") && tokens.length === 1) { blockMode = "elements"; continue; }
     if (cmd === "areas" && tokens.length === 1) { blockMode = "areas"; continue; }
+    if (cmd === "supports" && tokens.length === 1) { blockMode = "supports"; continue; }
+    if (cmd === "loads" && tokens.length === 1) { blockMode = "loads"; continue; }
+    if (cmd === "springs" && tokens.length === 1) { blockMode = "springs"; continue; }
     // Modo bloque: linea = solo numeros (coords o índices)
     if (blockMode && /^[\-\d]/.test(tokens[0])) {
       const nums = tokens.map(parseFloat);
@@ -125,6 +128,26 @@ export function parseCliCommands(text: string): ParsedModel {
         });
         continue;
       }
+      if (blockMode === "loads" && nums.length >= 4) {
+        // Sintaxis: nodeId FX FY FZ [MX MY MZ]
+        m.loads.set(nums[0], [
+          nums[1] ?? 0, nums[2] ?? 0, nums[3] ?? 0,
+          nums[4] ?? 0, nums[5] ?? 0, nums[6] ?? 0,
+        ]);
+        continue;
+      }
+      if (blockMode === "springs" && nums.length >= 3) {
+        // Sintaxis: nodeId dof_idx k (dof_idx 0=ux .. 5=rz, default 2=uz)
+        m.springs.push({ node: nums[0], dof: nums[1], k: nums[2] });
+        continue;
+      }
+    }
+    // Bloque "supports" — sintaxis: "nodeId DOFs" (ej. "1 fixed")
+    if (blockMode === "supports" && /^\d/.test(tokens[0])) {
+      const nodeId = parseInt(tokens[0], 10);
+      const spec = tokens.slice(1).join(" ");
+      m.supports.set(nodeId, parseSupportSpec(spec));
+      continue;
     }
     // Si la linea no encaja con bloque, salimos del modo bloque y la procesamos
     // como comando explicito (compatibilidad atras).
