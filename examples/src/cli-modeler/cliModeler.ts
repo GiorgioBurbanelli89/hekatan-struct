@@ -297,19 +297,11 @@ export const cliModeler: ExampleDef = {
       }
     }
 
-    // Visualizacion: marcar nodos con esfera + IDs como labels
-    const objects3D: THREE.Object3D[] = [];
-    const sphereGeo = new THREE.SphereGeometry(0.08);
-    for (const id of sortedIds) {
-      const [x, y, z] = m.nodes.get(id)!;
-      const sphere = new THREE.Mesh(
-        sphereGeo,
-        new THREE.MeshBasicMaterial({ color: 0xfbbf24 }),
-      );
-      sphere.position.set(x, y, z);
-      objects3D.push(sphere);
-    }
-    states.objects3D.val = objects3D;
+    // El viewer dibuja nodos/elementos automaticamente desde states.nodes
+    // y states.elements (mismo render que zapata-aislada, plate, etc.).
+    // No agregamos objects3D extra — ese campo se reserva para overlays
+    // específicos de cada ejemplo (zigzag springs, cotas, labels).
+    states.objects3D.val = [];
 
     // Reportar errores en consola
     if (m.errors.length) {

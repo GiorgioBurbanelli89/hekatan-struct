@@ -17,10 +17,10 @@
  * Plano de trabajo: XY (planta), XZ (elevación frontal), YZ (lateral).
  * Cota Z fija ajustable cuando trabajas en XY.
  */
+import type { Node, Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import { getState, syncToCliScript } from "./cadDrawState";
 import { handleClick, pointerToWorld } from "./cadDrawMouse";
-import { renderCadModel } from "./cadDrawRender";
 
 let mouseHandler: ((ev: PointerEvent) => void) | null = null;
 let attachedCanvas: HTMLCanvasElement | null = null;
@@ -70,21 +70,67 @@ export const cadDraw: ExampleDef = {
     attachMouseHandler();
     // Sincronizar el script CLI con el modelo actual
     syncToCliScript();
-    // Renderizar el modelo a Object3D
-    const objects3D = renderCadModel();
-    // El modelo CAD se muestra solo via objects3D — los nodes/elements del
-    // FEM solver se dejan vacíos hasta que el usuario presione "Solve" en el
-    // folder Tweakpane (eso lee el CLI script y dispara deform).
-    states.nodes.val = [];
-    states.elements.val = [];
+
+    // ── Construir el modelo en el formato estandar Hekatan-Struct ──
+    // El viewer dibuja nodos/elementos automaticamente — no necesitamos
+    // objects3D custom (mismo patron que zapata-aislada, plate, etc).
+    const st = getState();
+    const sortedIds = Array.from(st.model.nodes.keys()).sort((a, b) => a - b);
+    const idToIdx = new Map<number, number>();
+    const nodes: Node[] = [];
+    for (const id of sortedIds) {
+      idToIdx.set(id, nodes.length);
+      const n = st.model.nodes.get(id)!;
+      nodes.push(n.pos as Node);
+    }
+    const elements: Element[] = [];
+    const elasticities = new Map<number, number>();
+    const shearModuli = new Map<number, number>();
+    const areas = new Map<number, number>();
+    const Iz = new Map<number, number>();
+    const Iy = new Map<number, number>();
+    const J = new Map<number, number>();
+    const densities = new Map<number, number>();
+    const poissons = new Map<number, number>();
+    const thicknesses = new Map<number, number>();
+    // Lineas (frames) — props default razonables (concreto col 0.40×0.40)
+    for (const l of st.model.lines.values()) {
+      const a = idToIdx.get(l.nI), b = idToIdx.get(l.nJ);
+      if (a === undefined || b === undefined) continue;
+      const eIdx = elements.length;
+      elements.push([a, b]);
+      elasticities.set(eIdx, 25e6);
+      shearModuli.set(eIdx, 25e6 / (2 * 1.2));
+      areas.set(eIdx, 0.16);
+      Iz.set(eIdx, 0.0021);
+      Iy.set(eIdx, 0.0021);
+      J.set(eIdx, 0.0014);
+      densities.set(eIdx, 2.45);
+      poissons.set(eIdx, 0.2);
+    }
+    // Areas (shells Q4) — props default
+    for (const ar of st.model.areas.values()) {
+      if (ar.pts.length !== 4) continue;
+      const idxs = ar.pts.map(id => idToIdx.get(id));
+      if (idxs.some(i => i === undefined)) continue;
+      const eIdx = elements.length;
+      elements.push(idxs as Element);
+      elasticities.set(eIdx, 25e6);
+      shearModuli.set(eIdx, 25e6 / (2 * 1.2));
+      thicknesses.set(eIdx, 0.20);
+      densities.set(eIdx, 2.45);
+      poissons.set(eIdx, 0.2);
+    }
+
+    states.nodes.val = nodes;
+    states.elements.val = elements;
     states.nodeInputs.val = { supports: new Map(), loads: new Map() };
     states.elementInputs.val = {
-      elasticities: new Map(), shearModuli: new Map(), areas: new Map(),
-      momentsOfInertiaZ: new Map(), momentsOfInertiaY: new Map(),
-      torsionalConstants: new Map(), densities: new Map(), poissonsRatios: new Map(),
-      thicknesses: new Map(),
+      elasticities, shearModuli, areas,
+      momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy,
+      torsionalConstants: J, densities, poissonsRatios: poissons, thicknesses,
     } as any;
-    states.objects3D.val = objects3D;
+    states.objects3D.val = [];
 
     const st = getState();
     console.log(
