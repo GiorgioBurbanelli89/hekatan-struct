@@ -1202,10 +1202,11 @@ solve`;
                 }
               }
               const xCz = z.x - offX, yCz = z.y - offY;
-              // ShellThick = una sola superficie 2D en el plano medio.
-              // El espesor `t` es propiedad del elemento, NO se duplica visualmente.
-              const zMid = -Hf - t / 2;
-              // UN plano translúcido en el plano medio del shell
+              // ShellThick = superficie 2D en el TOP de la zapata (convención
+              // FEM, igual que edificio-aporticado). El espesor t es propiedad
+              // del elemento, no afecta posición de la superficie.
+              const zMid = -Hf;
+              // UN plano translúcido en el plano del shell
               const planeMid = new THREE.Mesh(new THREE.PlaneGeometry(Lz, Bz), matPlane.clone());
               planeMid.position.set(xCz, yCz, zMid);
               meshes.push(planeMid);
@@ -1238,11 +1239,17 @@ solve`;
                 );
               }
               meshes.push(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(edgePts), matEdge));
-              // Pedestal: columna translúcida del nodo de columna (z=0) hasta zMid
-              const pedGeo = new THREE.BoxGeometry(colSize, colSize, Hf + t / 2);
+              // Columna extruida: del nodo de columna (z=0) hasta el top de
+              // la zapata (z=-Hf = zMid). Esto permite ver visualmente que
+              // el filo de la columna queda DENTRO de la zapata por volExt.
+              const pedGeo = new THREE.BoxGeometry(colSize, colSize, Hf);
               const pedMesh = new THREE.Mesh(pedGeo, matPed.clone());
-              pedMesh.position.set(z.x, z.y, zMid + (Hf + t / 2) / 2);
+              pedMesh.position.set(z.x, z.y, -Hf / 2);
               meshes.push(pedMesh);
+              // Edges de la columna para resaltar su outline
+              const pedEdges = new THREE.LineSegments(new THREE.EdgesGeometry(pedGeo), matEdge.clone());
+              pedEdges.position.copy(pedMesh.position);
+              meshes.push(pedEdges);
             }
 
             // ── Vigas de amarre (sistema=1) — entre zapatas adyacentes ──
@@ -1395,7 +1402,9 @@ solve`;
                 else if (Math.abs(z.y) < 1e-3 || Math.abs(z.y - yMaxC) < 1e-3) offY = (z.y < yMaxC/2) ? -(Bz/2 - volExt) : (Bz/2 - volExt);
               }
               const xCz = z.x - offX, yCz = z.y - offY;
-              const zMid = -Hf - t / 2;  // mid-surface del shell
+              // Convención (igual que edificio-aporticado): shell sits at TOP
+              // de la zapata. Espesor t es propiedad del elemento, no se duplica.
+              const zMid = -Hf;
               const dx = Lz / nSubZ, dy = Bz / nSubZ;
               const grid: number[][] = [];
               for (let jr = 0; jr <= nSubZ; jr++) {
@@ -1494,6 +1503,28 @@ solve`;
               }
             }
 
+            // ── Visualización: columna EXTRUIDA z=0 → z=-Hf (no línea) ──
+            // Box de tamaño colSize×colSize×Hf que muestra que el filo de la
+            // columna queda DENTRO de la zapata por la cantidad volExt. La
+            // cadena (viga de amarre) se conecta al EXTREMO INFERIOR de esta
+            // columna — al nodo del shell donde aplicamos la carga.
+            const THREE = await import("three");
+            const matCol = new THREE.MeshStandardMaterial({
+              color: 0x808080, transparent: true, opacity: 0.7,
+              roughness: 0.6, side: THREE.DoubleSide,
+            });
+            const matColEdge = new THREE.LineBasicMaterial({ color: 0x000000 });
+            const colObjs: any[] = [];
+            for (const z of zapatasD as any[]) {
+              const pedGeo = new THREE.BoxGeometry(colSize, colSize, Hf);
+              const pedMesh = new THREE.Mesh(pedGeo, matCol.clone());
+              pedMesh.position.set(z.x, z.y, -Hf / 2);
+              colObjs.push(pedMesh);
+              const pedEdges = new THREE.LineSegments(new THREE.EdgesGeometry(pedGeo), matColEdge);
+              pedEdges.position.copy(pedMesh.position);
+              colObjs.push(pedEdges);
+            }
+
             // Reemplazar states + correr análisis
             states.nodes.val = N2;
             states.elements.val = E2;
@@ -1504,7 +1535,7 @@ solve`;
               areas: areas2, momentsOfInertiaY: Iy2, momentsOfInertiaZ: Iz2,
               torsionalConstants: J2, thicknesses: thicknesses2,
             };
-            states.objects3D.val = [];
+            states.objects3D.val = colObjs;
             try {
               const dout = deform(N2, E2, states.nodeInputs.val, states.elementInputs.val, springsList2);
               states.deformOutputs.val = dout;
