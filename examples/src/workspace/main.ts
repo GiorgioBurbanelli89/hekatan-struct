@@ -773,11 +773,44 @@ function buildParamsPane() {
     const fCli = pane.addFolder({ title: "💻 CLI Comandos", expanded: !!isModelerCtx });
     // Crear textarea para escribir comandos
     const taContainer = document.createElement("div");
-    taContainer.style.padding = "4px";
+    taContainer.style.cssText = "padding:4px;pointer-events:auto;user-select:text;";
     const ta = document.createElement("textarea");
-    ta.style.cssText = "width:100%;min-height:240px;font-family:Consolas,monospace;font-size:11px;background:#0f172a;color:#22d3ee;border:1px solid #334155;border-radius:4px;padding:6px;resize:vertical;";
+    ta.style.cssText = [
+      "width:100%",
+      "min-height:240px",
+      "font-family:Consolas,monospace",
+      "font-size:11px",
+      "background:#0f172a",
+      "color:#22d3ee",
+      "border:1px solid #334155",
+      "border-radius:4px",
+      "padding:6px",
+      "resize:vertical",
+      // CRITICAL: dejar que la textarea reciba foco/eventos sin que Tweakpane los intercepte
+      "pointer-events:auto",
+      "user-select:text",
+      "-webkit-user-select:text",
+      "outline:none",
+      "white-space:pre",
+      "overflow:auto",
+    ].join(";") + ";";
+    ta.spellcheck = false;
+    ta.autocomplete = "off";
+    ta.setAttribute("autocorrect", "off");
+    ta.setAttribute("autocapitalize", "off");
     ta.placeholder = "node 1 0 0 0\nnode 2 5 0 0\nsupport 1 fixed\nframe 1 1 2 25e6 0.04 0.001\nload 2 0 0 -100\nsolve";
     ta.value = (window as any).__hekatanCliScript ?? "";
+    // Tweakpane intercepta pointer/keyboard events sobre sus folders → la textarea
+    // queda "muerta" (no se puede editar/seleccionar/copiar). Solución: cortar la
+    // propagación de TODOS los eventos relevantes a nivel de la textarea.
+    const swallow = (e: Event) => e.stopPropagation();
+    [
+      "pointerdown", "pointerup", "pointermove",
+      "mousedown", "mouseup", "mousemove", "click", "dblclick",
+      "keydown", "keyup", "keypress", "input", "change",
+      "focus", "blur", "select", "selectstart",
+      "copy", "cut", "paste", "contextmenu", "wheel",
+    ].forEach(ev => ta.addEventListener(ev, swallow));
     taContainer.appendChild(ta);
     fCli.element.appendChild(taContainer);
     fCli.addButton({ title: "▶ Ejecutar comandos" }).on("click", () => {
@@ -795,9 +828,49 @@ function buildParamsPane() {
       (window as any).__hekatanCliScript = "";
       (window as any).__hekatanRebuild?.();
     });
-    fCli.addButton({ title: "📋 Ejemplo: pórtico 2D (awatif)" }).on("click", () => {
-      // Sintaxis compacta tipo awatif: nodes/elements como bloque
-      ta.value = `# Portico 2D — sintaxis awatif (TODOS bloques compactos)
+    // Ejemplos: el usuario elige inline o bloque.
+    // - Inline = una linea por entidad ("node 1 0 0 0"). Comodo para
+    //   modelos pequeños o cuando se mezclan tipos.
+    // - Bloque = encabezado una sola vez ("nodes" / "elements" / ...) y
+    //   despues solo coordenadas/indices. Preferible cuando hay muchas
+    //   lineas seguidas de la misma llamada.
+    fCli.addButton({ title: "📋 Pórtico 2D (inline)" }).on("click", () => {
+      ta.value = `# Portico 2D — sintaxis inline (cada linea con su comando)
+node 1 0 0 0
+node 2 0 0 3
+node 3 5 0 3
+node 4 5 0 0
+
+support 1 fixed
+support 4 fixed
+
+# frame ID nI nJ E A I  (col 0.40x0.40)
+frame 1 1 2 25e6 0.16 0.0021
+frame 2 2 3 25e6 0.15 0.0028
+frame 3 3 4 25e6 0.16 0.0021
+
+load 2 10 0 -50 0 0 0
+load 3 10 0 -50 0 0 0
+
+solve`;
+      (window as any).__hekatanCliScript = ta.value;
+      (window as any).__hekatanRebuild?.();
+    });
+    fCli.addButton({ title: "📋 Cantilever (inline)" }).on("click", () => {
+      ta.value = `# Cantilever 5m con carga en extremo — sintaxis inline
+node 1 0 0 0
+node 2 5 0 0
+support 1 fixed
+frame 1 1 2 25e6 0.04 0.001
+load 2 0 0 -100
+solve`;
+      (window as any).__hekatanCliScript = ta.value;
+      (window as any).__hekatanRebuild?.();
+    });
+    fCli.addButton({ title: "📋 Pórtico 2D (bloques)" }).on("click", () => {
+      // Sintaxis compacta tipo awatif: encabezado una vez y luego solo numeros.
+      // Util cuando hay muchas lineas seguidas del mismo tipo (nodos/elementos).
+      ta.value = `# Portico 2D — sintaxis bloque (estilo awatif, indices 0-based)
 nodes
 0 0 0
 0 0 3
@@ -816,25 +889,6 @@ supports
 loads
 2 10 0 -50 0 0 0
 3 10 0 -50 0 0 0
-
-solve`;
-      (window as any).__hekatanCliScript = ta.value;
-      (window as any).__hekatanRebuild?.();
-    });
-    fCli.addButton({ title: "📋 Ejemplo: cantilever (awatif)" }).on("click", () => {
-      ta.value = `# Cantilever 5m con carga en extremo (TODO bloques)
-nodes
-0 0 0
-5 0 0
-
-elements
-0 1
-
-supports
-1 fixed
-
-loads
-2 0 0 -100 0 0 0
 
 solve`;
       (window as any).__hekatanCliScript = ta.value;

@@ -21,41 +21,9 @@ import type { Node, Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import { getState } from "./cadDrawState";
 
-let mouseHandler: ((ev: PointerEvent) => void) | null = null;
-let attachedCanvas: HTMLCanvasElement | null = null;
-
-/**
- * Adjuntar el handler de mouse al canvas del viewer.
- * Se llama una sola vez desde build() (idempotente).
- */
-function attachMouseHandler() {
-  const viewerEl = document.querySelector("#viewer") as any;
-  const canvas = viewerEl?.querySelector?.("canvas") as HTMLCanvasElement | null;
-  const ctx = viewerEl?.__ctx;
-  if (!canvas || !ctx?.camera) return;
-  if (attachedCanvas === canvas && mouseHandler) return;  // ya attached
-
-  // Quitar handler previo si cambia el canvas
-  if (attachedCanvas && mouseHandler) {
-    attachedCanvas.removeEventListener("click", mouseHandler as any);
-  }
-
-  mouseHandler = (ev: PointerEvent) => {
-    // Solo procesar click izquierdo (button 0)
-    if ((ev as MouseEvent).button !== 0 && (ev as MouseEvent).button !== undefined) return;
-    const world = pointerToWorld(ev, canvas, ctx.camera);
-    if (!world) return;
-    const result = handleClick(world);
-    if (result) {
-      console.log("[CAD]", result, "@", world.map(v => v.toFixed(2)));
-      // Re-render el modelo después de cada click
-      try { (window as any).__hekatanRebuild?.(); } catch {}
-    }
-  };
-  canvas.addEventListener("click", mouseHandler as any);
-  attachedCanvas = canvas;
-  console.log("[CAD Draw] Mouse handler attached to viewer canvas");
-}
+// NOTA: el mouse handler custom fue eliminado. Ahora usamos el Drawing
+// nativo de hekatan-ui (drawingPoints/polylines en workspace/main.ts) que
+// genera el script CLI automaticamente via van.derive.
 
 export const cadDraw: ExampleDef = {
   id: "cad-draw",
