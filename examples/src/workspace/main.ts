@@ -1201,52 +1201,46 @@ solve`;
                 }
               }
               const xCz = z.x - offX, yCz = z.y - offY;
-              const zTop = -Hf, zBot = -Hf - t;
-              // Planos top y bottom translúcidos
-              const planeTop = new THREE.Mesh(new THREE.PlaneGeometry(Lz, Bz), matPlane.clone());
-              planeTop.position.set(xCz, yCz, zTop);
-              meshes.push(planeTop);
-              const planeBot = new THREE.Mesh(new THREE.PlaneGeometry(Lz, Bz), matPlane.clone());
-              planeBot.position.set(xCz, yCz, zBot);
-              meshes.push(planeBot);
-              // Grilla Q4 (nSubZ × nSubZ subdivisiones, top + bottom)
+              // ShellThick = una sola superficie 2D en el plano medio.
+              // El espesor `t` es propiedad del elemento, NO se duplica visualmente.
+              const zMid = -Hf - t / 2;
+              // UN plano translúcido en el plano medio del shell
+              const planeMid = new THREE.Mesh(new THREE.PlaneGeometry(Lz, Bz), matPlane.clone());
+              planeMid.position.set(xCz, yCz, zMid);
+              meshes.push(planeMid);
+              // Grilla Q4 (nSubZ × nSubZ subdivisiones) en el plano medio
               const dx = Lz / nSubZ, dy = Bz / nSubZ;
               const gridPts: any[] = [];
               for (let i = 0; i <= nSubZ; i++) {
                 const xi = -Lz/2 + i * dx;
                 gridPts.push(
-                  new THREE.Vector3(xCz + xi, yCz - Bz/2, zTop),
-                  new THREE.Vector3(xCz + xi, yCz + Bz/2, zTop),
-                  new THREE.Vector3(xCz + xi, yCz - Bz/2, zBot),
-                  new THREE.Vector3(xCz + xi, yCz + Bz/2, zBot),
+                  new THREE.Vector3(xCz + xi, yCz - Bz/2, zMid),
+                  new THREE.Vector3(xCz + xi, yCz + Bz/2, zMid),
                 );
               }
               for (let j = 0; j <= nSubZ; j++) {
                 const yj = -Bz/2 + j * dy;
                 gridPts.push(
-                  new THREE.Vector3(xCz - Lz/2, yCz + yj, zTop),
-                  new THREE.Vector3(xCz + Lz/2, yCz + yj, zTop),
-                  new THREE.Vector3(xCz - Lz/2, yCz + yj, zBot),
-                  new THREE.Vector3(xCz + Lz/2, yCz + yj, zBot),
+                  new THREE.Vector3(xCz - Lz/2, yCz + yj, zMid),
+                  new THREE.Vector3(xCz + Lz/2, yCz + yj, zMid),
                 );
               }
               meshes.push(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(gridPts), matGrid));
-              // Aristas (perímetros + verticales)
+              // Edges del perímetro (rectángulo único)
               const corners = [[-Lz/2, -Bz/2], [Lz/2, -Bz/2], [Lz/2, Bz/2], [-Lz/2, Bz/2]];
               const edgePts: any[] = [];
               for (let k = 0; k < 4; k++) {
                 const [ax, ay] = corners[k]; const [bx, by] = corners[(k + 1) % 4];
                 edgePts.push(
-                  new THREE.Vector3(xCz + ax, yCz + ay, zTop), new THREE.Vector3(xCz + bx, yCz + by, zTop),
-                  new THREE.Vector3(xCz + ax, yCz + ay, zBot), new THREE.Vector3(xCz + bx, yCz + by, zBot),
-                  new THREE.Vector3(xCz + ax, yCz + ay, zTop), new THREE.Vector3(xCz + ax, yCz + ay, zBot),
+                  new THREE.Vector3(xCz + ax, yCz + ay, zMid),
+                  new THREE.Vector3(xCz + bx, yCz + by, zMid),
                 );
               }
               meshes.push(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(edgePts), matEdge));
-              // Pedestal: columna translúcida del nodo de columna (z=0) hasta zTop
-              const pedGeo = new THREE.BoxGeometry(colSize, colSize, Hf);
+              // Pedestal: columna translúcida del nodo de columna (z=0) hasta zMid
+              const pedGeo = new THREE.BoxGeometry(colSize, colSize, Hf + t / 2);
               const pedMesh = new THREE.Mesh(pedGeo, matPed.clone());
-              pedMesh.position.set(z.x, z.y, -Hf / 2);
+              pedMesh.position.set(z.x, z.y, zMid + (Hf + t / 2) / 2);
               meshes.push(pedMesh);
             }
 
@@ -1288,37 +1282,31 @@ solve`;
               const Lx = xMx - xMin, Ly = yMx - yMin;
               const xC = (xMin + xMx) / 2, yC = (yMin + yMx) / 2;
               const t_raft = (p.t_zapata as number) ?? 0.30;
-              const zTop = -Hf, zBot = -Hf - t_raft;
+              const zMidR = -Hf - t_raft / 2;  // plano medio del shell raft
               const matRaft = new THREE.MeshStandardMaterial({ color: 0xea580c, transparent: true, opacity: 0.40, roughness: 0.6, side: THREE.DoubleSide });
               const matRaftGrid = new THREE.LineBasicMaterial({ color: 0x9a3412 });
-              // Top y bottom
-              const planeTopR = new THREE.Mesh(new THREE.PlaneGeometry(Lx, Ly), matRaft.clone());
-              planeTopR.position.set(xC, yC, zTop); meshes.push(planeTopR);
-              const planeBotR = new THREE.Mesh(new THREE.PlaneGeometry(Lx, Ly), matRaft.clone());
-              planeBotR.position.set(xC, yC, zBot); meshes.push(planeBotR);
+              // UN solo plano shell raft en el plano medio
+              const planeR = new THREE.Mesh(new THREE.PlaneGeometry(Lx, Ly), matRaft.clone());
+              planeR.position.set(xC, yC, zMidR); meshes.push(planeR);
               // Grilla densa: subdiv automática según tamaño (~1m por celda)
               const nx = Math.max(2, Math.round(Lx)), ny = Math.max(2, Math.round(Ly));
               const dxR = Lx / nx, dyR = Ly / ny;
               const ptsR: any[] = [];
               for (let i = 0; i <= nx; i++) {
                 const xi = xMin + i * dxR;
-                ptsR.push(new THREE.Vector3(xi, yMin, zTop), new THREE.Vector3(xi, yMx, zTop));
-                ptsR.push(new THREE.Vector3(xi, yMin, zBot), new THREE.Vector3(xi, yMx, zBot));
+                ptsR.push(new THREE.Vector3(xi, yMin, zMidR), new THREE.Vector3(xi, yMx, zMidR));
               }
               for (let j = 0; j <= ny; j++) {
                 const yj = yMin + j * dyR;
-                ptsR.push(new THREE.Vector3(xMin, yj, zTop), new THREE.Vector3(xMx, yj, zTop));
-                ptsR.push(new THREE.Vector3(xMin, yj, zBot), new THREE.Vector3(xMx, yj, zBot));
+                ptsR.push(new THREE.Vector3(xMin, yj, zMidR), new THREE.Vector3(xMx, yj, zMidR));
               }
               meshes.push(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(ptsR), matRaftGrid));
-              // Edges raft
+              // Edges raft (perímetro único en plano medio)
               const c4 = [[xMin,yMin],[xMx,yMin],[xMx,yMx],[xMin,yMx]];
               const eR: any[] = [];
               for (let k = 0; k < 4; k++) {
                 const [ax, ay] = c4[k]; const [bx, by] = c4[(k+1)%4];
-                eR.push(new THREE.Vector3(ax, ay, zTop), new THREE.Vector3(bx, by, zTop),
-                        new THREE.Vector3(ax, ay, zBot), new THREE.Vector3(bx, by, zBot),
-                        new THREE.Vector3(ax, ay, zTop), new THREE.Vector3(ax, ay, zBot));
+                eR.push(new THREE.Vector3(ax, ay, zMidR), new THREE.Vector3(bx, by, zMidR));
               }
               meshes.push(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(eR), matEdge.clone()));
             }
@@ -1333,7 +1321,7 @@ solve`;
                             sistemaCim === 3 ? "Vigas + zapata corrida" :
                             sistemaCim === 4 ? "Losa raft" :
                             "Zapatas aisladas";
-            alert(`✅ Cimentación calculada (sistema = ${sysName}):\n• ${totalZ} zapatas Q4 ShellThick (${tiposStr})\n• Cada zapata: planos top/bot + grilla ${nSubZ}×${nSubZ}\n• ks = ${ks} kN/m³, q_adm = ${q_adm} tonf/m²\n• Espesor = ${tz} m, pedestal Hf = ${Hf} m`);
+            alert(`✅ Cimentación calculada (sistema = ${sysName}):\n• ${totalZ} zapatas Q4 ShellThick (${tiposStr})\n• Cada zapata: 1 placa shell en plano medio + grilla ${nSubZ}×${nSubZ}\n• ks = ${ks} kN/m³, q_adm = ${q_adm} tonf/m²\n• Espesor (propiedad del shell) = ${tz} m\n• Pedestal Hf = ${Hf} m`);
             console.log(`[Cimentación] sistema=${sysName}, ${totalZ} zapatas (${tiposStr})`);
           });
 
