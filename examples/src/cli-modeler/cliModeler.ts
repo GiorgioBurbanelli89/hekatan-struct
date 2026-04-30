@@ -196,7 +196,7 @@ solve
 export const cliModeler: ExampleDef = {
   id: "cli-modeler",
   name: "CLI Modeler (comandos)",
-  category: "Importar",
+  category: "Modelar",
   defaultShellResult: "none",
   availableShellResults: [],
   params: {},

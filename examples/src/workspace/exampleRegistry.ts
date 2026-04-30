@@ -174,6 +174,7 @@ export interface ExampleDef {
 // ── Import de ejemplos (cada uno en su propia carpeta estilo awatif) ──
 import { csiImporter } from "../csi-importer/csiImporter";
 import { cliModeler } from "../cli-modeler/cliModeler";
+import { cadDraw } from "../cad-draw/cadDraw";
 import { vigaMedioElastico } from "../viga-medio-elastico/vigaMedioElastico";
 import { zapataVigaAmarre } from "../zapata-viga-amarre/zapataVigaAmarre";
 import { zapataAislada } from "../zapata-aislada/zapataAislada";
@@ -217,6 +218,8 @@ export const examplesRegistry: ExampleDef[] = [
   csiImporter,
   // CLI Modeler — modelar con comandos tipo SAP (sin importar ningun archivo)
   cliModeler,
+  // CAD Drawer — dibujar con mouse + Tweakpane (sincronizado con CLI)
+  cadDraw,
   // Cimentaciones (validación primero — defecto del workspace)
   zapataAisladaValidacion,
   zapataAislada,

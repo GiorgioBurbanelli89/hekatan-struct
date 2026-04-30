@@ -670,6 +670,60 @@ function buildParamsPane() {
   fView.addButton({ title: "→ Elevación X (frente)" }).on("click", () => setView("elevX"));
   fView.addButton({ title: "↑ Elevación Y (lado)" }).on("click", () => setView("elevY"));
 
+  // ── ✏ CAD Drawer (solo para el ejemplo cad-draw) ──
+  if (currentExample && currentExample.id === "cad-draw") {
+    const fCad = pane.addFolder({ title: "✏ Herramientas CAD", expanded: true });
+    // Tool selector — botones grandes
+    const proxyTool = { v: "node" };
+    const toolBtns: Record<string, any> = {};
+    const setActiveTool = (tool: string) => {
+      proxyTool.v = tool;
+      try { (window as any).__hekatanCadState?.setTool?.(tool); } catch {}
+      console.log(`[CAD] Tool activo: ${tool}`);
+    };
+    fCad.addButton({ title: "🖱 Seleccionar" }).on("click", () => setActiveTool("select"));
+    fCad.addButton({ title: "● Nodo" }).on("click", () => setActiveTool("node"));
+    fCad.addButton({ title: "／ Línea (frame)" }).on("click", () => setActiveTool("line"));
+    fCad.addButton({ title: "▭ Área (shell Q4)" }).on("click", () => setActiveTool("area"));
+    // Plano de trabajo
+    const fPlane = fCad.addFolder({ title: "📐 Plano de trabajo", expanded: true });
+    fPlane.addButton({ title: "Plano XY (planta)" }).on("click", () => {
+      (window as any).__hekatanCadState?.get?.().workPlane = "xy";
+      console.log("[CAD] Plano: XY");
+    });
+    fPlane.addButton({ title: "Plano XZ (elevación)" }).on("click", () => {
+      const st = (window as any).__hekatanCadState?.get?.();
+      if (st) st.workPlane = "xz";
+      console.log("[CAD] Plano: XZ");
+    });
+    // Snap + Z
+    const proxyCAD = { snap: 0.5, workZ: 0 };
+    fCad.addBinding(proxyCAD, "snap", { min: 0, max: 5, step: 0.1, label: "Snap (m)" }).on("change", (ev: any) => {
+      const st = (window as any).__hekatanCadState?.get?.();
+      if (st) st.snap = ev.value;
+    });
+    fCad.addBinding(proxyCAD, "workZ", { min: -10, max: 50, step: 0.1, label: "Cota Z (m)" }).on("change", (ev: any) => {
+      const st = (window as any).__hekatanCadState?.get?.();
+      if (st) st.workZ = ev.value;
+      try { (window as any).__hekatanRebuild?.(); } catch {}
+    });
+    // Acciones
+    const fAcc = fCad.addFolder({ title: "🛠 Acciones", expanded: true });
+    fAcc.addButton({ title: "↶ Cancelar selección actual" }).on("click", () => {
+      (window as any).__hekatanCadMouse?.cancel?.();
+    });
+    fAcc.addButton({ title: "🗑 Limpiar todo" }).on("click", () => {
+      (window as any).__hekatanCadState?.reset?.();
+      try { (window as any).__hekatanRebuild?.(); } catch {}
+    });
+    fAcc.addButton({ title: "📋 Copiar comandos a CLI" }).on("click", () => {
+      const script = (window as any).__hekatanCliScript ?? "";
+      console.log("[CAD] Comandos generados:\n" + script);
+      navigator.clipboard?.writeText(script);
+      alert("Comandos copiados al portapapeles. Pega en cli-modeler para editar/correr el FEM.");
+    });
+  }
+
   // ── 💻 CLI Modeler (solo para el ejemplo cli-modeler) ──
   if (currentExample && currentExample.id === "cli-modeler") {
     const fCli = pane.addFolder({ title: "💻 CLI Comandos", expanded: true });
