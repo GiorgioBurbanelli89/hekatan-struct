@@ -1137,6 +1137,26 @@ solve`;
         {
           const fCim = pane.addFolder({ title: "🪨 Cimentación (diseño + SAFE F2K)", expanded: false });
 
+          // ── Cardinal Point del insertion point (convención SAFE/ETABS) ──
+          // Determina dónde queda la sección de la columna respecto al
+          // insertion point (z.x, z.y) reportado por el FEM.
+          //   1=BotL  2=BotC  3=BotR
+          //   4=MidL  5=MidC  6=MidR
+          //   7=TopL  8=TopC  9=TopR
+          //  10=Centroid (default, simétrico = MidC para sección cuadrada)
+          //  11=Shear Center (= Centroid para sección simétrica)
+          const cimUiState: any = (window as any).__hekatanCimUI ?? { cardinal: 10 };
+          (window as any).__hekatanCimUI = cimUiState;
+          fCim.addBinding(cimUiState, "cardinal", {
+            label: "Cardinal Point col.",
+            options: {
+              "1 — Bottom Left":   1, "2 — Bottom Center": 2, "3 — Bottom Right": 3,
+              "4 — Middle Left":   4, "5 — Middle Center": 5, "6 — Middle Right": 6,
+              "7 — Top Left":      7, "8 — Top Center":    8, "9 — Top Right":    9,
+              "10 — Centroid":    10, "11 — Shear Center":11,
+            },
+          });
+
           // ── Botón: Calcular y mostrar cimentación en pantalla ──
           // Diseña las zapatas desde las reacciones de base y las dibuja como
           // bloques 3D semi-transparentes sobre los apoyos. Esto da feedback
@@ -1194,17 +1214,42 @@ solve`;
               // point (centro de columna) está a colSize/2 del borde.
               let offX = 0, offY = 0;
               const halfCol = colSize / 2;
+              // Cardinal Point: offset del CENTROIDE de la sección respecto
+              // al insertion point.
+              //   K=1,4,7 (Left)   → centroide a la derecha de insertion: +halfCol
+              //   K=3,6,9 (Right)  → centroide a la izquierda: -halfCol
+              //   K=1,2,3 (Bottom) → centroide arriba: +halfCol
+              //   K=7,8,9 (Top)    → centroide abajo: -halfCol
+              //   K=5,10,11        → centroide en insertion (no offset)
+              const K = (cimUiState.cardinal as number) ?? 10;
+              let cdx = 0, cdy = 0;
+              if (K === 1 || K === 4 || K === 7) cdx = +halfCol;
+              else if (K === 3 || K === 6 || K === 9) cdx = -halfCol;
+              if (K === 1 || K === 2 || K === 3) cdy = +halfCol;
+              else if (K === 7 || K === 8 || K === 9) cdy = -halfCol;
+              // Cara IZQUIERDA y DERECHA del col en X relativo a insertion:
+              //   leftFace = z.x + cdx - halfCol; rightFace = z.x + cdx + halfCol
               if (z.tipo === "esquinera") {
-                offX = (z.x < xMax/2) ? -(Lz/2 - halfCol) : (Lz/2 - halfCol);
-                offY = (z.y < yMax/2) ? -(Bz/2 - halfCol) : (Bz/2 - halfCol);
+                // En esquinera: la cara CONSTRAINED de cada lado coincide con
+                // borde de zapata. Para el lado izquierdo (z.x < xMax/2),
+                // queremos rightFace = z.x + cdx - halfCol al borde, NO —
+                // queremos LEFT face del col al borde IZQUIERDO de la zapata.
+                if (z.x < xMax/2) offX = -(Lz/2 + (cdx - halfCol));   // leftFace al borde izq
+                else              offX =  (Lz/2 - (cdx + halfCol));   // rightFace al borde der
+                if (z.y < yMax/2) offY = -(Bz/2 + (cdy - halfCol));
+                else              offY =  (Bz/2 - (cdy + halfCol));
               } else if (z.tipo === "lindero") {
                 if (Math.abs(z.x) < 1e-3 || Math.abs(z.x - xMax) < 1e-3) {
-                  offX = (z.x < xMax/2) ? -(Lz/2 - halfCol) : (Lz/2 - halfCol);
+                  if (z.x < xMax/2) offX = -(Lz/2 + (cdx - halfCol));
+                  else              offX =  (Lz/2 - (cdx + halfCol));
                 } else if (Math.abs(z.y) < 1e-3 || Math.abs(z.y - yMax) < 1e-3) {
-                  offY = (z.y < yMax/2) ? -(Bz/2 - halfCol) : (Bz/2 - halfCol);
+                  if (z.y < yMax/2) offY = -(Bz/2 + (cdy - halfCol));
+                  else              offY =  (Bz/2 - (cdy + halfCol));
                 }
               }
               const xCz = z.x - offX, yCz = z.y - offY;
+              // Centro real del eje de la columna (puede no ser z.x,z.y)
+              const xColAxis = z.x + cdx, yColAxis = z.y + cdy;
               // ShellThick = superficie 2D en el TOP de la zapata (convención
               // FEM, igual que edificio-aporticado). El espesor t es propiedad
               // del elemento, no afecta posición de la superficie.
@@ -1242,17 +1287,26 @@ solve`;
                 );
               }
               meshes.push(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(edgePts), matEdge));
-              // Columna extruida: del nodo de columna (z=0) hasta el top de
-              // la zapata (z=-Hf = zMid). Esto permite ver visualmente que
-              // el filo de la columna queda DENTRO de la zapata por volExt.
+              // Columna EXTRUIDA centrada en el centroide del col (xColAxis,
+              // yColAxis) — NO necesariamente en (z.x, z.y) que es el insertion.
+              // Box de tamaño colSize×colSize×Hf. Esto muestra correctamente
+              // como el insertion point puede estar en cualquier cardinal de
+              // la sección (1=BotL, ..., 10=Centroid).
               const pedGeo = new THREE.BoxGeometry(colSize, colSize, Hf);
               const pedMesh = new THREE.Mesh(pedGeo, matPed.clone());
-              pedMesh.position.set(z.x, z.y, -Hf / 2);
+              pedMesh.position.set(xColAxis, yColAxis, -Hf / 2);
               meshes.push(pedMesh);
               // Edges de la columna para resaltar su outline
               const pedEdges = new THREE.LineSegments(new THREE.EdgesGeometry(pedGeo), matEdge.clone());
               pedEdges.position.copy(pedMesh.position);
               meshes.push(pedEdges);
+              // Marker pequeño verde en el INSERTION POINT (z.x, z.y, 0..-Hf)
+              // para que el usuario vea claramente DÓNDE conecta la viga.
+              const insMarkerGeo = new THREE.SphereGeometry(0.05, 8, 8);
+              const insMarkerMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+              const insMarker = new THREE.Mesh(insMarkerGeo, insMarkerMat);
+              insMarker.position.set(z.x, z.y, -Hf);
+              meshes.push(insMarker);
             }
 
             // ── Vigas de amarre (sistema=1) — entre zapatas adyacentes ──
