@@ -19,8 +19,7 @@
  */
 import type { Node, Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
-import { getState, syncToCliScript } from "./cadDrawState";
-import { handleClick, pointerToWorld } from "./cadDrawMouse";
+import { getState } from "./cadDrawState";
 
 let mouseHandler: ((ev: PointerEvent) => void) | null = null;
 let attachedCanvas: HTMLCanvasElement | null = null;
@@ -66,10 +65,10 @@ export const cadDraw: ExampleDef = {
   availableShellResults: [],
   params: {},
   build(_p, states) {
-    // Adjuntar mouse handler (idempotente)
-    attachMouseHandler();
-    // Sincronizar el script CLI con el modelo actual
-    syncToCliScript();
+    // El Drawing NATIVO de hekatan-ui (awatif) maneja todo el mouse via
+    // drawingPoints/polylines en main.ts. NO necesitamos attachMouseHandler.
+    // Tampoco syncToCliScript propio: el van.derive de drawingPoints
+    // genera el script CLI automaticamente.
 
     // ── Construir el modelo en el formato estandar Hekatan-Struct ──
     // El viewer dibuja nodos/elementos automaticamente — no necesitamos
