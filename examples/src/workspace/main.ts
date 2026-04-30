@@ -1188,17 +1188,20 @@ solve`;
             const meshes: any[] = [];
             for (const z of zapatasD as any[]) {
               const Lz = z.Lz, Bz = z.Bz, t = z.t;
-              // Offset columna ↔ centro zapata (esquinera/lindero/central)
+              // Offset columna ↔ centro zapata (esquinera/lindero/central).
+              // Convención CSI/ETABS: en lindero/esquinera la CARA de la
+              // columna queda FLUSH con el borde de la zapata. El insertion
+              // point (centro de columna) está a colSize/2 del borde.
               let offX = 0, offY = 0;
-              const volExt = (p.voladoExtra as number) ?? 0.30;
+              const halfCol = colSize / 2;
               if (z.tipo === "esquinera") {
-                offX = (z.x < xMax/2) ? -(Lz/2 - volExt) : (Lz/2 - volExt);
-                offY = (z.y < yMax/2) ? -(Bz/2 - volExt) : (Bz/2 - volExt);
+                offX = (z.x < xMax/2) ? -(Lz/2 - halfCol) : (Lz/2 - halfCol);
+                offY = (z.y < yMax/2) ? -(Bz/2 - halfCol) : (Bz/2 - halfCol);
               } else if (z.tipo === "lindero") {
                 if (Math.abs(z.x) < 1e-3 || Math.abs(z.x - xMax) < 1e-3) {
-                  offX = (z.x < xMax/2) ? -(Lz/2 - volExt) : (Lz/2 - volExt);
+                  offX = (z.x < xMax/2) ? -(Lz/2 - halfCol) : (Lz/2 - halfCol);
                 } else if (Math.abs(z.y) < 1e-3 || Math.abs(z.y - yMax) < 1e-3) {
-                  offY = (z.y < yMax/2) ? -(Bz/2 - volExt) : (Bz/2 - volExt);
+                  offY = (z.y < yMax/2) ? -(Bz/2 - halfCol) : (Bz/2 - halfCol);
                 }
               }
               const xCz = z.x - offX, yCz = z.y - offY;
@@ -1393,13 +1396,17 @@ solve`;
 
             for (const z of zapatasD as any[]) {
               const Lz = z.Lz, Bz = z.Bz, t = z.t;
+              // Insertion point CSI/ETABS: la cara de la columna FLUSH con el
+              // borde de la zapata en lados constrained (lindero/esquinera).
+              // El insertion point (centro columna) está a colSize/2 del borde.
               let offX = 0, offY = 0;
+              const halfColC = colSize / 2;
               if (z.tipo === "esquinera") {
-                offX = (z.x < xMaxC/2) ? -(Lz/2 - volExt) : (Lz/2 - volExt);
-                offY = (z.y < yMaxC/2) ? -(Bz/2 - volExt) : (Bz/2 - volExt);
+                offX = (z.x < xMaxC/2) ? -(Lz/2 - halfColC) : (Lz/2 - halfColC);
+                offY = (z.y < yMaxC/2) ? -(Bz/2 - halfColC) : (Bz/2 - halfColC);
               } else if (z.tipo === "lindero") {
-                if (Math.abs(z.x) < 1e-3 || Math.abs(z.x - xMaxC) < 1e-3) offX = (z.x < xMaxC/2) ? -(Lz/2 - volExt) : (Lz/2 - volExt);
-                else if (Math.abs(z.y) < 1e-3 || Math.abs(z.y - yMaxC) < 1e-3) offY = (z.y < yMaxC/2) ? -(Bz/2 - volExt) : (Bz/2 - volExt);
+                if (Math.abs(z.x) < 1e-3 || Math.abs(z.x - xMaxC) < 1e-3) offX = (z.x < xMaxC/2) ? -(Lz/2 - halfColC) : (Lz/2 - halfColC);
+                else if (Math.abs(z.y) < 1e-3 || Math.abs(z.y - yMaxC) < 1e-3) offY = (z.y < yMaxC/2) ? -(Bz/2 - halfColC) : (Bz/2 - halfColC);
               }
               const xCz = z.x - offX, yCz = z.y - offY;
               // Convención (igual que edificio-aporticado): shell sits at TOP
@@ -1601,17 +1608,20 @@ solve`;
             const { downloadEdificioCimentacionF2k } = await import("../shared/f2kCimentacionCompleta");
             const zapatasD = designAllFootings(baseRows, xMax, yMax, q_adm, ks);
             for (const z of zapatasD) z.t = tz;
-            // Construir items con offsets correctos para esquinera/lindero
+            // Construir items con offsets correctos para esquinera/lindero.
+            // Insertion point CSI/ETABS: cara de columna FLUSH con borde
+            // de zapata en lados constrained (col.face = zapata.edge).
+            const halfColE = colSize / 2;
             const zapatas = zapatasD.map(z => {
               let offX = 0, offY = 0;
               if (z.tipo === "esquinera") {
-                offX = (z.x < xMax/2) ? -(z.Lz/2 - volExt) : (z.Lz/2 - volExt);
-                offY = (z.y < yMax/2) ? -(z.Bz/2 - volExt) : (z.Bz/2 - volExt);
+                offX = (z.x < xMax/2) ? -(z.Lz/2 - halfColE) : (z.Lz/2 - halfColE);
+                offY = (z.y < yMax/2) ? -(z.Bz/2 - halfColE) : (z.Bz/2 - halfColE);
               } else if (z.tipo === "lindero") {
                 if (Math.abs(z.x) < 1e-3 || Math.abs(z.x - xMax) < 1e-3) {
-                  offX = (z.x < xMax/2) ? -(z.Lz/2 - volExt) : (z.Lz/2 - volExt);
+                  offX = (z.x < xMax/2) ? -(z.Lz/2 - halfColE) : (z.Lz/2 - halfColE);
                 } else if (Math.abs(z.y) < 1e-3 || Math.abs(z.y - yMax) < 1e-3) {
-                  offY = (z.y < yMax/2) ? -(z.Bz/2 - volExt) : (z.Bz/2 - volExt);
+                  offY = (z.y < yMax/2) ? -(z.Bz/2 - halfColE) : (z.Bz/2 - halfColE);
                 }
               }
               const baseR = baseRows.find(b => b.idx === z.idx)!;
