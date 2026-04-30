@@ -71,6 +71,23 @@ export function parseCliCommands(text: string): ParsedModel {
     doSolve: false,
     errors: [],
   };
+  // Modo BLOQUE estilo awatif (nodes ENCABEZADO, luego solo coords):
+  //   nodes
+  //   0 0 0
+  //   5 0 0
+  //   elements         (frames)
+  //   0 1
+  //   1 2
+  //   areas            (shells Q4)
+  //   0 1 2 3
+  // Mantiene compatibilidad con la sintaxis explicita por linea:
+  //   node 1 0 0 0
+  //   frame 1 1 2 25e6 0.16 0.001
+  let blockMode: "nodes" | "elements" | "areas" | null = null;
+  let autoNodeIdx = 0;  // 0-based para modo bloque (awatif compatible)
+  let autoFrameIdx = 0;
+  let autoShellIdx = 0;
+
   const lines = text.split(/\r?\n/);
   for (let lineNo = 0; lineNo < lines.length; lineNo++) {
     let raw = lines[lineNo].trim();
@@ -78,6 +95,40 @@ export function parseCliCommands(text: string): ParsedModel {
     raw = raw.replace(/[;]+$/, "");
     const tokens = raw.split(/\s+/);
     const cmd = tokens[0].toLowerCase();
+    // Detectar headers de bloque
+    if (cmd === "nodes" && tokens.length === 1) { blockMode = "nodes"; continue; }
+    if ((cmd === "elements" || cmd === "frames") && tokens.length === 1) { blockMode = "elements"; continue; }
+    if (cmd === "areas" && tokens.length === 1) { blockMode = "areas"; continue; }
+    // Modo bloque: linea = solo numeros (coords o índices)
+    if (blockMode && /^[\-\d]/.test(tokens[0])) {
+      const nums = tokens.map(parseFloat);
+      if (blockMode === "nodes" && nums.length >= 3) {
+        autoNodeIdx++;
+        m.nodes.set(autoNodeIdx, [nums[0], nums[1], nums[2]]);
+        continue;
+      }
+      if (blockMode === "elements" && nums.length >= 2) {
+        // En modo awatif los índices son 0-based; los convertimos a IDs 1-based
+        autoFrameIdx++;
+        m.frames.push({
+          id: autoFrameIdx, nI: nums[0]+1, nJ: nums[1]+1,
+          E: 25e6, A: 0.16, I: 0.0021,
+        });
+        continue;
+      }
+      if (blockMode === "areas" && nums.length >= 4) {
+        autoShellIdx++;
+        m.shells.push({
+          id: autoShellIdx,
+          pts: [nums[0]+1, nums[1]+1, nums[2]+1, nums[3]+1],
+          t: 0.20, E: 25e6,
+        });
+        continue;
+      }
+    }
+    // Si la linea no encaja con bloque, salimos del modo bloque y la procesamos
+    // como comando explicito (compatibilidad atras).
+    if (blockMode && !/^[\-\d]/.test(tokens[0])) blockMode = null;
     try {
       switch (cmd) {
         case "node":

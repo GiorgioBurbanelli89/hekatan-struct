@@ -773,29 +773,38 @@ function buildParamsPane() {
       (window as any).__hekatanCliScript = "";
       (window as any).__hekatanRebuild?.();
     });
-    fCli.addButton({ title: "📋 Ejemplo: pórtico 2D" }).on("click", () => {
-      ta.value = `# Portico 2D simple — 2 columnas + 1 viga
-node 1  0 0 0
-node 2  0 0 3
-node 3  5 0 3
-node 4  5 0 0
+    fCli.addButton({ title: "📋 Ejemplo: pórtico 2D (awatif)" }).on("click", () => {
+      // Sintaxis compacta tipo awatif: nodes/elements como bloque
+      ta.value = `# Portico 2D — sintaxis awatif (bloques compactos)
+nodes
+0 0 0
+0 0 3
+5 0 3
+5 0 0
+
+elements
+0 1
+1 2
+2 3
+
 support 1 fixed
 support 4 fixed
-frame 1  1 2  25e6  0.16  0.0021
-frame 2  2 3  25e6  0.15  0.0028
-frame 3  3 4  25e6  0.16  0.0021
 load 2  10 0 -50  0 0 0
 load 3  10 0 -50  0 0 0
 solve`;
       (window as any).__hekatanCliScript = ta.value;
       (window as any).__hekatanRebuild?.();
     });
-    fCli.addButton({ title: "📋 Ejemplo: cantilever" }).on("click", () => {
-      ta.value = `# Cantilever 5m con carga en extremo
-node 1  0 0 0
-node 2  5 0 0
+    fCli.addButton({ title: "📋 Ejemplo: cantilever (awatif)" }).on("click", () => {
+      ta.value = `# Cantilever 5m con carga en extremo (sintaxis awatif)
+nodes
+0 0 0
+5 0 0
+
+elements
+0 1
+
 support 1 fixed
-frame 1  1 2  25e6  0.04  0.001
 load 2  0 0 -100  0 0 0
 solve`;
       (window as any).__hekatanCliScript = ta.value;
