@@ -133,6 +133,12 @@ const elementInputs: State<ElementInputs> = van.state({});
 const deformOutputs: State<DeformOutputs> = van.state({});
 const analyzeOutputs: State<AnalyzeOutputs> = van.state({});
 const objects3D: State<THREE.Object3D[]> = van.state([]);
+// Drawing states (awatif-style) — mouse interactivo + raycaster nativo de
+// hekatan-ui. Solo se usa en el ejemplo cad-draw (otros los ignoran).
+const drawingPoints: State<[number, number, number][]> = van.state([]);
+const drawingPolylines: State<number[][]> = van.state([[]]);
+const drawingGridTarget: State<{ position: [number,number,number]; rotation: [number,number,number] }> =
+  van.state({ position: [10, 10, 0], rotation: [Math.PI/2, 0, 0] });
 
 export interface BuildStates {
   nodes: State<Node[]>;
@@ -735,7 +741,23 @@ function buildParamsPane() {
     });
     fAcc.addButton({ title: "🗑 Limpiar todo" }).on("click", () => {
       (window as any).__hekatanCadState?.reset?.();
+      // También limpiar el Drawing nativo (puntos + polylines)
+      drawingPoints.val = [];
+      drawingPolylines.val = [[]];
       try { (window as any).__hekatanRebuild?.(); } catch {}
+    });
+    // Botones para cambiar la cota Z del plano de trabajo (planta de cada piso)
+    const fFloors = fCad.addFolder({ title: "🏢 Plantas de pisos", expanded: false });
+    [0, 3, 6, 9, 12].forEach(z => {
+      fFloors.addButton({ title: `Piso a Z=${z}m` }).on("click", () => {
+        drawingGridTarget.val = {
+          position: [10, 10, z],
+          rotation: [Math.PI/2, 0, 0],
+        };
+        const cs = (window as any).__hekatanCadState?.get?.();
+        if (cs) cs.workZ = z;
+        console.log(`[CAD] Plano XY @ Z=${z}m`);
+      });
     });
     fAcc.addButton({ title: "📋 Copiar comandos a CLI" }).on("click", () => {
       const script = (window as any).__hekatanCliScript ?? "";
@@ -1603,6 +1625,40 @@ const viewerElm = getViewer({
   mesh: { nodes, elements, nodeInputs, elementInputs, deformOutputs, analyzeOutputs },
   objects3D,
   settingsObj,
+  // Drawing nativo de hekatan-ui (awatif). Mouse handler + raycaster + snap
+  // a grid + plane indicator funcionan automáticamente. Solo activo en cad-draw.
+  drawingObj: {
+    points: drawingPoints,
+    polylines: drawingPolylines,
+    gridTarget: drawingGridTarget,
+  },
+});
+
+// ── Sincronizar drawingPoints/polylines a window.__hekatanCliScript ──
+// Cada vez que el usuario dibuja un punto o polyline (con mouse en el
+// viewer), se regenera el script CLI con sintaxis awatif (bloques
+// nodes/elements). Eso hace que el cad-draw y cli-modeler queden
+// sincronizados sin código mouse handler custom de mi parte.
+van.derive(() => {
+  const pts = drawingPoints.val;
+  const lines = drawingPolylines.val;
+  if (pts.length === 0 && lines.every(l => l.length === 0)) return;
+  const out: string[] = [
+    "# Modelo dibujado con mouse (awatif Drawing)",
+    "",
+    "nodes",
+  ];
+  for (const p of pts) out.push(`${p[0]}  ${p[1]}  ${p[2]}`);
+  // Polylines → frames consecutivos (cada 2 puntos consecutivos = 1 frame)
+  const frames: [number, number][] = [];
+  for (const ply of lines) {
+    for (let i = 0; i < ply.length - 1; i++) frames.push([ply[i], ply[i+1]]);
+  }
+  if (frames.length > 0) {
+    out.push("", "elements");
+    for (const [i, j] of frames) out.push(`${i} ${j}`);
+  }
+  (window as any).__hekatanCliScript = out.join("\n");
 });
 document.body.append(
   viewerElm,
