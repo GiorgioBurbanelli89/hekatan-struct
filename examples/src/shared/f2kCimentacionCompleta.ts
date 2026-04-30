@@ -304,6 +304,29 @@ export function exportEdificioCimentacionF2k(data: F2kCimentacionData): string {
   L.push(`   "Mesh Option"=Rectangular   "Use Localized Meshing"=Yes   "Merge Joints"=Yes   "Maximum Mesh Size"=${fmt(maxMeshSize)}`);
   L.push(` `);
 
+  // ── ANALYSIS RUN-READY OPTIONS ──
+  // Estas tablas hacen que SAFE 20.x pueda ejecutar Run Analysis (F5)
+  // automáticamente sin pasos manuales. Sin ellas, el .f2k se importa
+  // pero RunAnalysis devuelve "model has not been analyzed" porque
+  // faltan las opciones del solver SAPFire y de modelado.
+  // Valores tomados de un modelo SAFE 20.3 real (Riochico, verificado).
+
+  L.push(`TABLE:  "ANALYSIS MODELING OPTIONS"`);
+  L.push(`   "Two Dimensional Only"=No   "Rigid Diaphragm At Top"=No   "Ignore Vertical Offsets"=Yes`);
+  L.push(` `);
+
+  L.push(`TABLE:  "ANALYSIS OPTIONS - SAPFIRE OPTIONS"`);
+  L.push(`   "Solver Option"=Advanced   "Analysis Process"=Auto   "Number Analysis Threads"=0   "Max File Size"=0`);
+  L.push(` `);
+
+  L.push(`TABLE:  "ANALYSIS OPTIONS - DESIGN AND RESPONSE RECOVERY OPTIONS"`);
+  L.push(`   "Number Design Threads"=0   "Number Recovery Threads"=0   "Use Memory Mapped Files"="Program Determined"   "Allow Model Differences"=No`);
+  L.push(` `);
+
+  L.push(`TABLE:  "ANALYSIS OPTIONS - CRACKING ANALYSIS OPTIONS"`);
+  L.push(`   "Reinforcement Source"="User and Designed"   "Minimum Tension Ratio"=0.0018   "Minimum Compression Ratio"=0`);
+  L.push(` `);
+
   // ── VIGAS DE AMARRE: solo secciones + LINE OBJECT CONNECTIVITY
   // (los joints ya están agregados arriba en POINT OBJECT CONNECTIVITY) ──
   if (vigasArr.length > 0) {

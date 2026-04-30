@@ -1127,6 +1127,15 @@ solve`;
             console.log(`[FEM Cim] cambiado a: ${newVal}`);
           });
 
+        }
+        // Folder "📤 SAFE F2K (cimentación)" — disponible para CUALQUIER
+        // edificio/galpón/pórtico (no solo edificio-aporticado). Diseña
+        // zapatas automáticamente desde las reacciones de base y exporta
+        // el F2K. Si el ejemplo NO tiene params específicos de cimentación
+        // (q_adm_zapata, ks_zapata, etc.), se usan defaults sensatos.
+        {
+          const fCim = pane.addFolder({ title: "📤 SAFE F2K (cimentación)", expanded: false });
+
           // ── Botón: Exportar F2K cimentación COMPLETA ──
           // Genera UN solo .f2k con TODAS las zapatas + vigas de amarre del
           // edificio en un mismo modelo SAFE. Cada zapata mantiene su P, Mx,
