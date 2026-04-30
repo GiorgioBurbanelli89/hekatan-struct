@@ -61,18 +61,36 @@ export const csiImporter: ExampleDef = {
       objects3D.push(colMesh);
     }
 
-    // Render vigas de amarre como cilindros
+    // Render vigas de amarre — DOBLE: línea cyan delgada (siempre visible) +
+    // box 3D semi-transparente con la sección real. La línea garantiza
+    // visualización clara incluso cuando las vigas son delgadas vs zapatas.
     if (imported.vigasAmarre) {
+      const vigasLines: THREE.Vector3[] = [];
       for (const v of imported.vigasAmarre) {
         const z = v.z ?? z0;
         const dx = v.x2 - v.x1, dy = v.y2 - v.y1;
         const len = Math.hypot(dx, dy);
         if (len < 1e-6) continue;
+        // 1) Línea cyan brillante entre nodos extremos (siempre visible)
+        vigasLines.push(new THREE.Vector3(v.x1, v.y1, z));
+        vigasLines.push(new THREE.Vector3(v.x2, v.y2, z));
+        // 2) Caja 3D translúcida con la sección real (b × h × len)
         const geom = new THREE.BoxGeometry(v.b, len, v.h);
-        const mesh = new THREE.Mesh(geom, new THREE.MeshLambertMaterial({ color: 0x4a90e2 }));
+        const mat = new THREE.MeshLambertMaterial({
+          color: 0x22d3ee, transparent: true, opacity: 0.35,
+        });
+        const mesh = new THREE.Mesh(geom, mat);
         mesh.position.set((v.x1 + v.x2) / 2, (v.y1 + v.y2) / 2, z);
         mesh.rotateZ(Math.atan2(dy, dx) - Math.PI / 2);
         objects3D.push(mesh);
+      }
+      // Crear UN LineSegments con todas las vigas (más eficiente que N líneas)
+      if (vigasLines.length > 0) {
+        const lineGeom = new THREE.BufferGeometry().setFromPoints(vigasLines);
+        const lineMat = new THREE.LineBasicMaterial({
+          color: 0x22d3ee, linewidth: 3,
+        });
+        objects3D.push(new THREE.LineSegments(lineGeom, lineMat));
       }
     }
 
