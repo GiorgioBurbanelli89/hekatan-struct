@@ -1444,6 +1444,54 @@ solve`;
               }
               const baseR = baseRows.find(b => b.idx === z.idx)!;
               loads2.set(grid[bI][bJ], [0, 0, -baseR.P_kN, baseR.Mx_kN, baseR.My_kN, 0]);
+              // Guardar el nodo central de cada zapata para conectar vigas
+              (z as any)._nFootCol = grid[bI][bJ];
+              (z as any)._zMid = zMid;
+            }
+
+            // ── Cadenas / vigas de amarre (sistema=1) — frames entre zapatas
+            // adyacentes. Se conectan al nodo central FEM de cada zapata
+            // (mismo nodo donde se aplicó la carga), al nivel del plano medio
+            // del shell. Son frames concreto rectangulares b×h.
+            const sistemaCimFem = Math.round((p.sistemaCimentacion as number) ?? 0);
+            if (sistemaCimFem === 1) {
+              const va_h = (p.vigaAmarre_h as number) ?? 0.40;
+              const va_b = (p.vigaAmarre_b as number) ?? 0.25;
+              const va_A = va_b * va_h;
+              const va_Iy = (va_b * va_h ** 3) / 12;
+              const va_Iz = (va_h * va_b ** 3) / 12;
+              const va_J = 0.21 * Math.pow(Math.min(va_b, va_h), 3) * Math.max(va_b, va_h);
+
+              const byY = new Map<string, any[]>();
+              const byX = new Map<string, any[]>();
+              for (const z of zapatasD as any[]) {
+                const ky = z.y.toFixed(4), kx = z.x.toFixed(4);
+                if (!byY.has(ky)) byY.set(ky, []);
+                if (!byX.has(kx)) byX.set(kx, []);
+                byY.get(ky)!.push(z); byX.get(kx)!.push(z);
+              }
+              const addViga = (a: any, b: any) => {
+                if (a._nFootCol === undefined || b._nFootCol === undefined) return;
+                if (a._nFootCol === b._nFootCol) return;  // frame degenerado
+                const eIdx = E2.length;
+                E2.push([a._nFootCol, b._nFootCol] as Element);
+                elasticities2.set(eIdx, Ec);
+                shearModuli2.set(eIdx, Gc);
+                poissons2.set(eIdx, nu_c);
+                densities2.set(eIdx, rho_c);
+                areas2.set(eIdx, va_A);
+                Iy2.set(eIdx, va_Iy);
+                Iz2.set(eIdx, va_Iz);
+                J2.set(eIdx, va_J);
+              };
+              for (const row of byY.values()) {
+                row.sort((a: any, b: any) => a.x - b.x);
+                for (let i = 0; i < row.length - 1; i++) addViga(row[i], row[i+1]);
+              }
+              for (const col of byX.values()) {
+                col.sort((a: any, b: any) => a.y - b.y);
+                for (let i = 0; i < col.length - 1; i++) addViga(col[i], col[i+1]);
+              }
             }
 
             // Reemplazar states + correr análisis
