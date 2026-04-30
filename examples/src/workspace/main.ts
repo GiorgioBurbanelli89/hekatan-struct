@@ -813,20 +813,69 @@ function buildParamsPane() {
     ].forEach(ev => ta.addEventListener(ev, swallow));
     taContainer.appendChild(ta);
     fCli.element.appendChild(taContainer);
-    fCli.addButton({ title: "▶ Ejecutar comandos" }).on("click", () => {
+
+    // Status line debajo de la textarea — feedback inmediato (nodos/frames/errs)
+    const statusLine = document.createElement("div");
+    statusLine.style.cssText = "padding:2px 6px;font-family:Consolas,monospace;font-size:10px;color:#94a3b8;min-height:14px;";
+    statusLine.textContent = "Listo. El modelo se actualiza al escribir.";
+    taContainer.appendChild(statusLine);
+
+    /**
+     * Aplica el script CLI: lo escribe en window y dispara rebuild.
+     * Si el ejemplo actual NO es cli-modeler, cambia a cli-modeler para
+     * que el script tome efecto (sino el rebuild reconstruye el ejemplo
+     * activo y descarta el script).
+     */
+    const applyCliScript = () => {
       (window as any).__hekatanCliScript = ta.value;
-      try { (window as any).__hekatanRebuild?.(); } catch (e) { console.error(e); }
+      const cli = examplesRegistry.find((x) => x.id === "cli-modeler");
+      if (cli && currentExample?.id !== "cli-modeler") {
+        // Cambiar a cli-modeler para que el script se interprete
+        loadExample(cli);
+      } else {
+        try { (window as any).__hekatanRebuild?.(); } catch (e) { console.error(e); }
+      }
+      // Actualizar status line con stats del parser
       const stats = (window as any).__hekatanCliStats;
       const errs = (window as any).__hekatanCliErrors as string[] | undefined;
       if (stats) {
-        console.log(`[CLI] ${stats.nodes} nodos, ${stats.frames} frames, ${stats.shells} shells, ${stats.errors} errores`);
+        statusLine.textContent =
+          `${stats.nodes} nodos · ${stats.frames} frames · ${stats.shells} shells · ` +
+          `${stats.solved ? "solve OK" : "(sin solve)"}` +
+          (errs?.length ? ` · ⚠ ${errs.length} err` : "");
+        statusLine.style.color = errs?.length ? "#f87171" : "#94a3b8";
       }
+    };
+
+    // ── Live update con debounce ──
+    // Cada cambio en la textarea se aplica tras 250ms de inactividad para
+    // no recalcular el FEM en cada tecla. Si el usuario quiere forzar
+    // actualizacion inmediata puede usar el boton ▶ o Ctrl+Enter.
+    let liveTimer: any = null;
+    const liveApply = () => {
+      if (liveTimer) clearTimeout(liveTimer);
+      liveTimer = setTimeout(() => { applyCliScript(); }, 250);
+    };
+    ta.addEventListener("input", liveApply);
+    // Ctrl+Enter ejecuta inmediatamente (sin esperar debounce)
+    ta.addEventListener("keydown", (ev) => {
+      if (ev.ctrlKey && ev.key === "Enter") {
+        ev.preventDefault();
+        if (liveTimer) clearTimeout(liveTimer);
+        applyCliScript();
+      }
+    });
+
+    fCli.addButton({ title: "▶ Ejecutar ahora (Ctrl+Enter)" }).on("click", () => {
+      if (liveTimer) clearTimeout(liveTimer);
+      applyCliScript();
+      const errs = (window as any).__hekatanCliErrors as string[] | undefined;
       if (errs?.length) alert("⚠ Errores:\n" + errs.slice(0, 5).join("\n"));
     });
     fCli.addButton({ title: "🗑 Limpiar comandos" }).on("click", () => {
       ta.value = "";
       (window as any).__hekatanCliScript = "";
-      (window as any).__hekatanRebuild?.();
+      applyCliScript();
     });
     // Ejemplos: el usuario elige inline o bloque.
     // - Inline = una linea por entidad ("node 1 0 0 0"). Comodo para
@@ -853,8 +902,7 @@ load 2 10 0 -50 0 0 0
 load 3 10 0 -50 0 0 0
 
 solve`;
-      (window as any).__hekatanCliScript = ta.value;
-      (window as any).__hekatanRebuild?.();
+      applyCliScript();
     });
     fCli.addButton({ title: "📋 Cantilever (inline)" }).on("click", () => {
       ta.value = `# Cantilever 5m con carga en extremo — sintaxis inline
@@ -864,8 +912,7 @@ support 1 fixed
 frame 1 1 2 25e6 0.04 0.001
 load 2 0 0 -100
 solve`;
-      (window as any).__hekatanCliScript = ta.value;
-      (window as any).__hekatanRebuild?.();
+      applyCliScript();
     });
     fCli.addButton({ title: "📋 Pórtico 2D (bloques)" }).on("click", () => {
       // Sintaxis compacta tipo awatif: encabezado una vez y luego solo numeros.
@@ -891,8 +938,7 @@ loads
 3 10 0 -50 0 0 0
 
 solve`;
-      (window as any).__hekatanCliScript = ta.value;
-      (window as any).__hekatanRebuild?.();
+      applyCliScript();
     });
   }
 
