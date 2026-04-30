@@ -1169,24 +1169,158 @@ solve`;
             const zapatasD = designAllFootings(baseRows, xMax, yMax, q_adm, ks);
             for (const z of zapatasD) z.t = tz;
 
-            // Dibujar zapatas como bloques 3D semi-transparentes
+            // Dibujar zapatas como placa Q4 ShellThick — plano translúcido top
+            // y bottom + grilla de subdivisiones + edges (mismo estilo que
+            // edificio-aporticado modo Shellthick).
             const THREE = await import("three");
+            const nSubZ = Math.max(2, Math.round((p.nSubZapata as number) ?? 4));
+            const matPlane = new THREE.MeshStandardMaterial({
+              color: 0x4488cc, transparent: true, opacity: 0.45,
+              roughness: 0.6, side: THREE.DoubleSide,
+            });
+            const matGrid = new THREE.LineBasicMaterial({ color: 0x1f3a5f, transparent: true, opacity: 0.85 });
+            const matEdge = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+            const matPed = new THREE.MeshStandardMaterial({
+              color: 0x808080, transparent: true, opacity: 0.5,
+              roughness: 0.6, side: THREE.DoubleSide,
+            });
             const meshes: any[] = [];
-            for (const z of zapatasD) {
-              // Zapata (caja debajo del nivel z=0, espesor tz)
-              const geo = new THREE.BoxGeometry(z.Lz, z.Bz, z.t);
-              const mat = new THREE.MeshLambertMaterial({
-                color: 0x4488cc, transparent: true, opacity: 0.55,
-              });
-              const mesh = new THREE.Mesh(geo, mat);
-              mesh.position.set(z.x, z.y, -Hf - z.t / 2);
-              meshes.push(mesh);
-              // Pedestal (columna desde la zapata hasta z=0)
+            for (const z of zapatasD as any[]) {
+              const Lz = z.Lz, Bz = z.Bz, t = z.t;
+              // Offset columna ↔ centro zapata (esquinera/lindero/central)
+              let offX = 0, offY = 0;
+              const volExt = (p.voladoExtra as number) ?? 0.30;
+              if (z.tipo === "esquinera") {
+                offX = (z.x < xMax/2) ? -(Lz/2 - volExt) : (Lz/2 - volExt);
+                offY = (z.y < yMax/2) ? -(Bz/2 - volExt) : (Bz/2 - volExt);
+              } else if (z.tipo === "lindero") {
+                if (Math.abs(z.x) < 1e-3 || Math.abs(z.x - xMax) < 1e-3) {
+                  offX = (z.x < xMax/2) ? -(Lz/2 - volExt) : (Lz/2 - volExt);
+                } else if (Math.abs(z.y) < 1e-3 || Math.abs(z.y - yMax) < 1e-3) {
+                  offY = (z.y < yMax/2) ? -(Bz/2 - volExt) : (Bz/2 - volExt);
+                }
+              }
+              const xCz = z.x - offX, yCz = z.y - offY;
+              const zTop = -Hf, zBot = -Hf - t;
+              // Planos top y bottom translúcidos
+              const planeTop = new THREE.Mesh(new THREE.PlaneGeometry(Lz, Bz), matPlane.clone());
+              planeTop.position.set(xCz, yCz, zTop);
+              meshes.push(planeTop);
+              const planeBot = new THREE.Mesh(new THREE.PlaneGeometry(Lz, Bz), matPlane.clone());
+              planeBot.position.set(xCz, yCz, zBot);
+              meshes.push(planeBot);
+              // Grilla Q4 (nSubZ × nSubZ subdivisiones, top + bottom)
+              const dx = Lz / nSubZ, dy = Bz / nSubZ;
+              const gridPts: any[] = [];
+              for (let i = 0; i <= nSubZ; i++) {
+                const xi = -Lz/2 + i * dx;
+                gridPts.push(
+                  new THREE.Vector3(xCz + xi, yCz - Bz/2, zTop),
+                  new THREE.Vector3(xCz + xi, yCz + Bz/2, zTop),
+                  new THREE.Vector3(xCz + xi, yCz - Bz/2, zBot),
+                  new THREE.Vector3(xCz + xi, yCz + Bz/2, zBot),
+                );
+              }
+              for (let j = 0; j <= nSubZ; j++) {
+                const yj = -Bz/2 + j * dy;
+                gridPts.push(
+                  new THREE.Vector3(xCz - Lz/2, yCz + yj, zTop),
+                  new THREE.Vector3(xCz + Lz/2, yCz + yj, zTop),
+                  new THREE.Vector3(xCz - Lz/2, yCz + yj, zBot),
+                  new THREE.Vector3(xCz + Lz/2, yCz + yj, zBot),
+                );
+              }
+              meshes.push(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(gridPts), matGrid));
+              // Aristas (perímetros + verticales)
+              const corners = [[-Lz/2, -Bz/2], [Lz/2, -Bz/2], [Lz/2, Bz/2], [-Lz/2, Bz/2]];
+              const edgePts: any[] = [];
+              for (let k = 0; k < 4; k++) {
+                const [ax, ay] = corners[k]; const [bx, by] = corners[(k + 1) % 4];
+                edgePts.push(
+                  new THREE.Vector3(xCz + ax, yCz + ay, zTop), new THREE.Vector3(xCz + bx, yCz + by, zTop),
+                  new THREE.Vector3(xCz + ax, yCz + ay, zBot), new THREE.Vector3(xCz + bx, yCz + by, zBot),
+                  new THREE.Vector3(xCz + ax, yCz + ay, zTop), new THREE.Vector3(xCz + ax, yCz + ay, zBot),
+                );
+              }
+              meshes.push(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(edgePts), matEdge));
+              // Pedestal: columna translúcida del nodo de columna (z=0) hasta zTop
               const pedGeo = new THREE.BoxGeometry(colSize, colSize, Hf);
-              const pedMat = new THREE.MeshLambertMaterial({ color: 0x808080, transparent: true, opacity: 0.7 });
-              const pedMesh = new THREE.Mesh(pedGeo, pedMat);
+              const pedMesh = new THREE.Mesh(pedGeo, matPed.clone());
               pedMesh.position.set(z.x, z.y, -Hf / 2);
               meshes.push(pedMesh);
+            }
+
+            // ── Vigas de amarre (sistema=1) — entre zapatas adyacentes ──
+            const sistemaCim = Math.round((p.sistemaCimentacion as number) ?? 0);
+            if (sistemaCim === 1) {
+              const va_h = (p.vigaAmarre_h as number) ?? 0.40;
+              const va_b = (p.vigaAmarre_b as number) ?? 0.25;
+              const va_pos = Math.round((p.vigaAmarre_pos as number) ?? 0);
+              const zVA = va_pos === 0 ? -Hf : -Hf / 2;
+              const matViga = new THREE.MeshStandardMaterial({ color: 0x10b981, transparent: true, opacity: 0.65 });
+              const byY = new Map<string, typeof baseRows>();
+              const byX = new Map<string, typeof baseRows>();
+              for (const b of baseRows) {
+                const ky = b.y.toFixed(4), kx = b.x.toFixed(4);
+                if (!byY.has(ky)) byY.set(ky, []);
+                if (!byX.has(kx)) byX.set(kx, []);
+                byY.get(ky)!.push(b); byX.get(kx)!.push(b);
+              }
+              const drawViga = (a: any, b: any) => {
+                const dx = b.x - a.x, dy = b.y - a.y;
+                const len = Math.hypot(dx, dy); if (len < 1e-6) return;
+                const geo = new THREE.BoxGeometry(va_b, len, va_h);
+                const m = new THREE.Mesh(geo, matViga.clone());
+                m.position.set((a.x + b.x) / 2, (a.y + b.y) / 2, zVA);
+                m.rotateZ(Math.atan2(dy, dx) - Math.PI / 2);
+                meshes.push(m);
+              };
+              for (const row of byY.values()) { row.sort((a,b)=>a.x-b.x); for (let i=0;i<row.length-1;i++) drawViga(row[i], row[i+1]); }
+              for (const col of byX.values()) { col.sort((a,b)=>a.y-b.y); for (let i=0;i<col.length-1;i++) drawViga(col[i], col[i+1]); }
+            }
+
+            // ── Losa raft (sistema=2,3,4) — UN único plano Q4 cubriendo
+            // toda la huella del edificio ──
+            if (sistemaCim >= 2) {
+              const margen = (p.voladoExtra as number) ?? 0.30;
+              const xMin = 0 - margen, xMx = xMax + margen;
+              const yMin = 0 - margen, yMx = yMax + margen;
+              const Lx = xMx - xMin, Ly = yMx - yMin;
+              const xC = (xMin + xMx) / 2, yC = (yMin + yMx) / 2;
+              const t_raft = (p.t_zapata as number) ?? 0.30;
+              const zTop = -Hf, zBot = -Hf - t_raft;
+              const matRaft = new THREE.MeshStandardMaterial({ color: 0xea580c, transparent: true, opacity: 0.40, roughness: 0.6, side: THREE.DoubleSide });
+              const matRaftGrid = new THREE.LineBasicMaterial({ color: 0x9a3412 });
+              // Top y bottom
+              const planeTopR = new THREE.Mesh(new THREE.PlaneGeometry(Lx, Ly), matRaft.clone());
+              planeTopR.position.set(xC, yC, zTop); meshes.push(planeTopR);
+              const planeBotR = new THREE.Mesh(new THREE.PlaneGeometry(Lx, Ly), matRaft.clone());
+              planeBotR.position.set(xC, yC, zBot); meshes.push(planeBotR);
+              // Grilla densa: subdiv automática según tamaño (~1m por celda)
+              const nx = Math.max(2, Math.round(Lx)), ny = Math.max(2, Math.round(Ly));
+              const dxR = Lx / nx, dyR = Ly / ny;
+              const ptsR: any[] = [];
+              for (let i = 0; i <= nx; i++) {
+                const xi = xMin + i * dxR;
+                ptsR.push(new THREE.Vector3(xi, yMin, zTop), new THREE.Vector3(xi, yMx, zTop));
+                ptsR.push(new THREE.Vector3(xi, yMin, zBot), new THREE.Vector3(xi, yMx, zBot));
+              }
+              for (let j = 0; j <= ny; j++) {
+                const yj = yMin + j * dyR;
+                ptsR.push(new THREE.Vector3(xMin, yj, zTop), new THREE.Vector3(xMx, yj, zTop));
+                ptsR.push(new THREE.Vector3(xMin, yj, zBot), new THREE.Vector3(xMx, yj, zBot));
+              }
+              meshes.push(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(ptsR), matRaftGrid));
+              // Edges raft
+              const c4 = [[xMin,yMin],[xMx,yMin],[xMx,yMx],[xMin,yMx]];
+              const eR: any[] = [];
+              for (let k = 0; k < 4; k++) {
+                const [ax, ay] = c4[k]; const [bx, by] = c4[(k+1)%4];
+                eR.push(new THREE.Vector3(ax, ay, zTop), new THREE.Vector3(bx, by, zTop),
+                        new THREE.Vector3(ax, ay, zBot), new THREE.Vector3(bx, by, zBot),
+                        new THREE.Vector3(ax, ay, zTop), new THREE.Vector3(ax, ay, zBot));
+              }
+              meshes.push(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(eR), matEdge.clone()));
             }
             states.objects3D.val = [...(states.objects3D.val ?? []), ...meshes];
             // Guardar diseño para uso del exportador
@@ -1194,8 +1328,13 @@ solve`;
             const totalZ = zapatasD.length;
             const tipos = zapatasD.reduce((acc: any, z: any) => { acc[z.tipo] = (acc[z.tipo] ?? 0) + 1; return acc; }, {});
             const tiposStr = Object.entries(tipos).map(([k, v]) => `${v} ${k}`).join(", ");
-            alert(`✅ Cimentación calculada y dibujada:\n• ${totalZ} zapatas (${tiposStr})\n• ks = ${ks} kN/m³, q_adm = ${q_adm} tonf/m²\n• Espesor = ${tz} m, pedestal Hf = ${Hf} m\n\nVés bloques azules (zapatas) + grises (pedestales) bajo cada apoyo.`);
-            console.log(`[Cimentación] ${totalZ} zapatas dibujadas (${tiposStr})`);
+            const sysName = sistemaCim === 1 ? "Zapatas + vigas de amarre" :
+                            sistemaCim === 2 ? "Losa raft" :
+                            sistemaCim === 3 ? "Vigas + zapata corrida" :
+                            sistemaCim === 4 ? "Losa raft" :
+                            "Zapatas aisladas";
+            alert(`✅ Cimentación calculada (sistema = ${sysName}):\n• ${totalZ} zapatas Q4 ShellThick (${tiposStr})\n• Cada zapata: planos top/bot + grilla ${nSubZ}×${nSubZ}\n• ks = ${ks} kN/m³, q_adm = ${q_adm} tonf/m²\n• Espesor = ${tz} m, pedestal Hf = ${Hf} m`);
+            console.log(`[Cimentación] sistema=${sysName}, ${totalZ} zapatas (${tiposStr})`);
           });
 
           // ── Botón: Exportar F2K cimentación COMPLETA ──
