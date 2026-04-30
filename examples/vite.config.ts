@@ -60,6 +60,7 @@ export default defineConfig({
         "zapata-aislada": "src/zapata-aislada/index.html",
         "zapata-aislada-validacion": "src/zapata-aislada-validacion/index.html",
         "viga-medio-elastico": "src/viga-medio-elastico/index.html",
+        "cli-modeler": "src/cli-modeler/index.html",
         "edificio-con-losa": "src/edificio-con-losa/index.html",
         "edificio-con-muros": "src/edificio-con-muros/index.html",
         "plane": "src/plane/index.html",

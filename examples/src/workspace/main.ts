@@ -670,6 +670,63 @@ function buildParamsPane() {
   fView.addButton({ title: "→ Elevación X (frente)" }).on("click", () => setView("elevX"));
   fView.addButton({ title: "↑ Elevación Y (lado)" }).on("click", () => setView("elevY"));
 
+  // ── 💻 CLI Modeler (solo para el ejemplo cli-modeler) ──
+  if (currentExample && currentExample.id === "cli-modeler") {
+    const fCli = pane.addFolder({ title: "💻 CLI Comandos", expanded: true });
+    // Crear textarea para escribir comandos
+    const taContainer = document.createElement("div");
+    taContainer.style.padding = "4px";
+    const ta = document.createElement("textarea");
+    ta.style.cssText = "width:100%;min-height:240px;font-family:Consolas,monospace;font-size:11px;background:#0f172a;color:#22d3ee;border:1px solid #334155;border-radius:4px;padding:6px;resize:vertical;";
+    ta.placeholder = "node 1 0 0 0\nnode 2 5 0 0\nsupport 1 fixed\nframe 1 1 2 25e6 0.04 0.001\nload 2 0 0 -100\nsolve";
+    ta.value = (window as any).__hekatanCliScript ?? "";
+    taContainer.appendChild(ta);
+    fCli.element.appendChild(taContainer);
+    fCli.addButton({ title: "▶ Ejecutar comandos" }).on("click", () => {
+      (window as any).__hekatanCliScript = ta.value;
+      try { (window as any).__hekatanRebuild?.(); } catch (e) { console.error(e); }
+      const stats = (window as any).__hekatanCliStats;
+      const errs = (window as any).__hekatanCliErrors as string[] | undefined;
+      if (stats) {
+        console.log(`[CLI] ${stats.nodes} nodos, ${stats.frames} frames, ${stats.shells} shells, ${stats.errors} errores`);
+      }
+      if (errs?.length) alert("⚠ Errores:\n" + errs.slice(0, 5).join("\n"));
+    });
+    fCli.addButton({ title: "🗑 Limpiar comandos" }).on("click", () => {
+      ta.value = "";
+      (window as any).__hekatanCliScript = "";
+      (window as any).__hekatanRebuild?.();
+    });
+    fCli.addButton({ title: "📋 Ejemplo: pórtico 2D" }).on("click", () => {
+      ta.value = `# Portico 2D simple — 2 columnas + 1 viga
+node 1  0 0 0
+node 2  0 0 3
+node 3  5 0 3
+node 4  5 0 0
+support 1 fixed
+support 4 fixed
+frame 1  1 2  25e6  0.16  0.0021
+frame 2  2 3  25e6  0.15  0.0028
+frame 3  3 4  25e6  0.16  0.0021
+load 2  10 0 -50  0 0 0
+load 3  10 0 -50  0 0 0
+solve`;
+      (window as any).__hekatanCliScript = ta.value;
+      (window as any).__hekatanRebuild?.();
+    });
+    fCli.addButton({ title: "📋 Ejemplo: cantilever" }).on("click", () => {
+      ta.value = `# Cantilever 5m con carga en extremo
+node 1  0 0 0
+node 2  5 0 0
+support 1 fixed
+frame 1  1 2  25e6  0.04  0.001
+load 2  0 0 -100  0 0 0
+solve`;
+      (window as any).__hekatanCliScript = ta.value;
+      (window as any).__hekatanRebuild?.();
+    });
+  }
+
   // ── 📥 Importar CSI (solo para el ejemplo csi-importer) ──
   if (currentExample && currentExample.id === "csi-importer") {
     const fImp = pane.addFolder({ title: "📥 Importar archivo", expanded: true });

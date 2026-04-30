@@ -173,6 +173,7 @@ export interface ExampleDef {
 
 // ── Import de ejemplos (cada uno en su propia carpeta estilo awatif) ──
 import { csiImporter } from "../csi-importer/csiImporter";
+import { cliModeler } from "../cli-modeler/cliModeler";
 import { vigaMedioElastico } from "../viga-medio-elastico/vigaMedioElastico";
 import { zapataVigaAmarre } from "../zapata-viga-amarre/zapataVigaAmarre";
 import { zapataAislada } from "../zapata-aislada/zapataAislada";
@@ -214,6 +215,8 @@ import { legacyAwatifExamples } from "./legacyAwatif";
 export const examplesRegistry: ExampleDef[] = [
   // Importador CSI (F2K/E2K/S2K) — al inicio para acceso rápido
   csiImporter,
+  // CLI Modeler — modelar con comandos tipo SAP (sin importar ningun archivo)
+  cliModeler,
   // Cimentaciones (validación primero — defecto del workspace)
   zapataAisladaValidacion,
   zapataAislada,
