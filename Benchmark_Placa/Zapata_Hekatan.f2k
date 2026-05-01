@@ -1,0 +1,80 @@
+File "Zapata_Hekatan.f2k" exportado desde Hekatan Struct 2026-05-01 at 9:18:22 a.m.
+
+TABLE:  "PROGRAM CONTROL"
+   ProgramName=SAFE   Version=20.3.0   ProgLevel="Post Tensioning"   LicenseNum=3010-*12MBTJ2L34MJLQ5   CurrUnits="tonf, m, C"   CompBmCode="AISC 360-16"   ConcFrmCode="ACI 318-19"   ConcSlbCode="ACI 318-19"
+
+TABLE:  "MATERIAL PROPERTIES - GENERAL"
+   Material=4000Psi   Type=Concrete   SymType=Isotropic   Grade="f'c 4000 psi"   Color=Gray8Dark   GUID=9094a697-ce92-4860-a40c-8d9cd59ca0ea
+
+TABLE:  "MATERIAL PROPERTIES - BASIC MECHANICAL PROPERTIES"
+   Material=4000Psi   DensityType=Weight   UnitWeight=2.447318911147028   UnitMass=0.24955707720241146   E1=2534504.647356641   G12=1056043.6030652672   U12=0.2   A1=9.9E-06
+
+TABLE:  "MATERIAL PROPERTIES - CONCRETE DATA"
+   Material=4000Psi   Fc=2851.747985968733   LtWtConc=No   IsUserFr=No   SSCurveOpt=Mander   SSHysType=Concrete   SFc=0.00221914   SCap=0.005   FinalSlope=-0.1   FAngle=0   DAngle=0
+
+TABLE:  "AREA SECTION PROPERTY DEFINITIONS - SUMMARY"
+   Name=Footing1   Type=Slab   "Element Type"=Shell-Thin   Material=4000Psi   "Total Thickness"=0.3
+   Name=Stiff1     Type=Slab   "Element Type"=Shell-Thin   Material=4000Psi   "Total Thickness"=0.3
+
+TABLE:  "SLAB PROPERTY DEFINITIONS"
+   Name=Footing1   "Modeling Type"=Shell-Thin   "Property Type"=Footing   Material=4000Psi   "Slab Thickness"=0.3   "Notional Size Type"=Auto   "Notional Auto Factor"=1   "f11 Modifier"=1   "f22 Modifier"=1   "f12 Modifier"=1   "m11 Modifier"=1   "m22 Modifier"=1   "m12 Modifier"=1   "v13 Modifier"=1   "v23 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=01233a79-7d07-4029-b488-9ecb7881db08   Orthotropic?=No
+   Name=Stiff1     "Modeling Type"=Shell-Thin   "Property Type"=Stiff     Material=4000Psi   "Slab Thickness"=0.3   "Notional Size Type"=Auto   "Notional Auto Factor"=1   "f11 Modifier"=1   "f22 Modifier"=1   "f12 Modifier"=1   "m11 Modifier"=100   "m22 Modifier"=100   "m12 Modifier"=100   "v13 Modifier"=1   "v23 Modifier"=1   "Mass Modifier"=0   "Weight Modifier"=0   Color=Cyan   GUID=2adde931-514d-46c9-8eff-869e6088df0e   Orthotropic?=No
+
+TABLE:  "SPRING PROPERTY DEFINITIONS - AREA SPRINGS"
+   Name=ASpr1   "Subgrade Modulus"=105   "Nonlinear Option"="Compression Only"   Color=Green   GUID=2c60b52e-bb77-4347-be62-cca84f328049
+
+TABLE:  "LOAD PATTERN DEFINITIONS"
+   Name=Dead   "Is Auto Load"=No   Type=Dead   "Self Weight Multiplier"=1   GUID=8c2fd768-aafe-457b-9304-38cefd0fb2b6
+   Name=Live   "Is Auto Load"=No   Type=Live   "Self Weight Multiplier"=0   GUID=f971d93e-ca97-40a0-b847-90e7958b69f4
+
+TABLE:  "LOAD CASE DEFINITIONS - SUMMARY"
+   Name=Dead   Type="Linear Static"   GUID=eecce59c-5ede-4f85-903c-00c82b46a2ac
+   Name=Live   Type="Linear Static"   GUID=7307c95f-8c6e-4d2b-8724-7cb3d8135bb6
+
+TABLE:  "LOAD CASE DEFINITIONS - LINEAR STATIC"
+   Name=Dead   "Exclude Group"=None   "Mass Source"=MsSrc1   "Initial Condition"=Unstressed   "Load Type"=Load   "Load Name"=Dead   "Load SF"=1   "Design Type"="Program Determined"   GUID=e3ef536e-1ccf-4499-92b1-169ea81fc06c
+   Name=Live   "Exclude Group"=None   "Mass Source"=MsSrc1   "Initial Condition"=Unstressed   "Load Type"=Load   "Load Name"=Live   "Load SF"=1   "Design Type"="Program Determined"   GUID=7fa3b4c2-41a3-435a-8b2c-723c8b978729
+
+TABLE:  "MASS SOURCE DEFINITION"
+   Name=MsSrc1   "Is Default"=Yes   "Include Lateral Mass?"=No   "Include Vertical Mass?"=Yes   "Lump Mass?"=Yes   "Source Self Mass?"=Yes   "Source Added Mass?"=Yes   "Source Load Patterns?"=No   "Move Mass Centroid?"=No   GUID=87607c06-2347-4227-abc4-8110f9feda21
+
+TABLE:  "POINT OBJECT CONNECTIVITY"
+   UniqueName=1   "Is Auto Point"=No   IsSpecial=No   X=-0.75   Y=-0.75   Z=0   GUID=7d734da7-fd7d-4c9e-85c4-d735fcd3e3d0
+   UniqueName=2   "Is Auto Point"=No   IsSpecial=No   X=0.75   Y=-0.75   Z=0   GUID=11aab1eb-a025-4805-950b-238085e0ec2f
+   UniqueName=3   "Is Auto Point"=No   IsSpecial=No   X=0.75   Y=0.75   Z=0   GUID=64641e71-6273-498c-ad19-b41b897d1c91
+   UniqueName=4   "Is Auto Point"=No   IsSpecial=No   X=-0.75   Y=0.75   Z=0   GUID=0d326493-8011-417d-b8f6-f3125aa4c698
+   UniqueName=5   "Is Auto Point"=No   IsSpecial=No   X=-0.2   Y=-0.2   Z=0   GUID=d3802257-3720-4713-b5f5-95036a931c20
+   UniqueName=6   "Is Auto Point"=No   IsSpecial=No   X=0.2   Y=-0.2   Z=0   GUID=e1fa4064-bd81-4e14-bd8a-ea11ba82df7b
+   UniqueName=7   "Is Auto Point"=No   IsSpecial=No   X=0.2   Y=0.2   Z=0   GUID=4b819e8d-5db8-47ed-b84b-ea3ab31f6218
+   UniqueName=8   "Is Auto Point"=No   IsSpecial=No   X=-0.2   Y=0.2   Z=0   GUID=fdecf3fc-9e24-4d97-9d01-9f23527b53fe
+   UniqueName=9   "Is Auto Point"=No   IsSpecial=Yes   X=0   Y=0   Z=0   GUID=084f660b-7ba0-4087-a1c1-c862ddbf3683
+
+TABLE:  "FLOOR OBJECT CONNECTIVITY"
+   "Unique Name"=1       UniquePt1=1   UniquePt2=2   UniquePt3=3   UniquePt4=4   Perimeter=6   Area=2.25   GUID=64dba47c-e54c-49f2-9353-9f7c8dd7e74a
+   "Unique Name"=LOAD1   UniquePt1=5   UniquePt2=6   UniquePt3=7   UniquePt4=8   Perimeter=1.6   Area=0.16000000000000003   GUID=427ba89e-c292-4448-9915-dec1d5e58f77
+
+TABLE:  "JOINT ASSIGNMENTS - FLOOR MESHING OPTION"
+   UniqueName=9   IncludeInMesh=Yes
+
+TABLE:  "JOINT LOADS ASSIGNMENTS - FORCE"
+   UniqueName=9   "Load Pattern"=Dead   FX=0   FY=0   FZ=-20   MX=0.5   MY=-0.5   MZ=0   "X Dimension"=0.4   "Y Dimension"=0.4   GUID=384da029-03e2-4208-9304-a570ccd629b5
+
+TABLE:  "AREA ASSIGNMENTS - SUMMARY"
+   UniqueName=1       "Section Property"=Footing1   "Property Type"=Slab   Spring=ASpr1
+   UniqueName=LOAD1   "Section Property"=Stiff1     "Property Type"=Slab
+
+TABLE:  "AREA ASSIGNMENTS - SECTION PROPERTIES"
+   UniqueName=1       "Section Property"=Footing1   "Property Type"=Slab
+   UniqueName=LOAD1   "Section Property"=Stiff1     "Property Type"=Slab
+
+TABLE:  "AREA ASSIGNMENTS - INSERTION POINT"
+   UniqueName=1       "Cardinal Point"=Top   Transform=No
+   UniqueName=LOAD1   "Cardinal Point"=Top   Transform=No
+
+TABLE:  "AREA ASSIGNMENTS - AREA SPRINGS"
+   UniqueName=1   "Spring Property"=ASpr1
+
+TABLE:  "AREA ASSIGNMENTS - FLOOR AUTO MESH OPTIONS"
+   UniqueName=1   "Mesh Option"=Default   "Add Restraints"=No
+
+END TABLE DATA
