@@ -34,7 +34,7 @@ export type {
 // Computa matrices ABBD, resuelve Q4 Mindlin-Reissner con coupling
 // membrane-bending para laminados asimetricos.
 export { computeABBD, printABBD, layeredShellSolveABBD } from "./layeredShell";
-export type { LayerDef, LayeredQ4Input, ABBD } from "./layeredShell";
+export type { LayerDef, LayeredQ4Input, ABBD, StressMode } from "./layeredShell";
 export { layeredQ4Solve } from "./layeredQ4";
 export type { LayeredQ4SolveInput, LayeredQ4Output } from "./layeredQ4";
 

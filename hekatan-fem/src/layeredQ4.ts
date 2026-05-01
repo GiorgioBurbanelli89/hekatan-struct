@@ -23,7 +23,7 @@
  * ============================================================================
  */
 
-import { computeABBD, type LayerDef, type ABBD } from "./layeredShell";
+import { computeABBD, type LayerDef, type ABBD, type StressMode } from "./layeredShell";
 
 export interface LayeredQ4SolveInput {
   layers: LayerDef[];
@@ -35,6 +35,13 @@ export interface LayeredQ4SolveInput {
   pressure?: number;     // force/area, +z = up (we apply -pressure for downward)
   bcs?: Array<{ node: number; dof: number; value: number }>;
   pointLoads?: Array<{ node: number; dof: number; value: number }>;
+  /**
+   * Modo constitutivo through-thickness:
+   *   "plane-stress" (DEFAULT) — teoría placa clásica Mindlin/Kirchhoff
+   *   "plane-strain" — shell 3D, replica SAP2000 Type=6 (~22% más rígido)
+   * Default = "plane-stress" para mantener compat con plate-thin/thick.
+   */
+  stressMode?: StressMode;
 }
 
 export interface LayeredQ4Output {
@@ -259,7 +266,7 @@ function solveLinear(K: number[][], F: number[]): number[] {
 // ──── Main solver ─────────────────────────────────────────────────────
 
 export function layeredQ4Solve(input: LayeredQ4SolveInput): LayeredQ4Output {
-  const abbd = computeABBD(input.layers);
+  const abbd = computeABBD(input.layers, input.stressMode ?? "plane-stress");
 
   const Lx = input.meshLx;
   const Ly = input.meshLy;

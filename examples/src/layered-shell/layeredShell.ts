@@ -128,6 +128,15 @@ export const layeredShell: ExampleDef = {
       options: { "Simply supported": 0, "Clamped (empotrado)": 1 },
       folder: F_GEOM,
     },
+    stressMode: {
+      default: 0,
+      label: "Modo constitutivo",
+      options: {
+        "Plane stress (placa Mindlin)": 0,
+        "Plane strain (3D, ≈ SAP Type=6)": 1,
+      },
+      folder: F_GEOM,
+    },
     nx: { default: 10, min: 4, max: 20, step: 1, label: "nx elementos", folder: F_GEOM },
     ny: { default: 10, min: 4, max: 20, step: 1, label: "ny elementos", folder: F_GEOM },
 
@@ -173,6 +182,7 @@ export const layeredShell: ExampleDef = {
     // espesor total (depende del preset)
     const t_total = layers.reduce((s, l) => s + l.thickness, 0);
     const bcType = Math.round(p.bcType) === 1 ? "clamped" : "simply-supported";
+    const stressMode = Math.round(p.stressMode) === 1 ? "plane-strain" : "plane-stress";
 
     const out = layeredQ4Solve({
       layers,
@@ -180,6 +190,7 @@ export const layeredShell: ExampleDef = {
       meshNx: Math.round(p.nx), meshNy: Math.round(p.ny),
       bcType,
       pressure: -p.q,
+      stressMode,
     });
 
     // ── Nodos / elementos para el viewer ──
@@ -250,7 +261,7 @@ export const layeredShell: ExampleDef = {
     const presetName = (Object.entries(layeredShell.params.preset.options ?? {})
       .find(([, v]) => v === Math.round(p.preset))?.[0]) ?? "?";
     console.log(
-      `[Layered Shell] ${presetName} | ${layers.length} capas | t=${t_total.toFixed(3)}m | BC=${bcType} | mesh=${Math.round(p.nx)}×${Math.round(p.ny)}\n` +
+      `[Layered Shell] ${presetName} | ${layers.length} capas | t=${t_total.toFixed(3)}m | BC=${bcType} | mode=${stressMode} | mesh=${Math.round(p.nx)}×${Math.round(p.ny)}\n` +
       `  ABBD: A11=${a11.toExponential(3)}  B11=${b11.toExponential(3)}  D11=${d11.toExponential(3)}\n` +
       `  maxW=${out.maxW.toExponential(3)} m | maxMxx=${out.maxMxx.toFixed(2)} kN·m/m | maxMyy=${out.maxMyy.toFixed(2)} kN·m/m`
     );

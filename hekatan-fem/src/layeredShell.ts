@@ -69,11 +69,33 @@ export interface ABBD {
 
 // ──── Helper: Q matrix de una capa transformada al sistema global ──────
 
+/** Modo constitutivo through-thickness para layered shell. */
+export type StressMode = "plane-stress" | "plane-strain";
+
 /**
- * Q matrix (reduced stiffness) en el sistema MATERIAL de la capa
- * Q[0][0] = E1 / (1 - nu12*nu21)  (asumimos isotropico → nu12 = nu21 = nu)
+ * Q matrix (reduced stiffness) en el sistema MATERIAL de la capa.
+ *
+ * - "plane-stress" (DEFAULT) — σ_zz = 0, teoría placa clásica
+ *   Mindlin/Kirchhoff. Q[0][0] = E / (1 - ν²).
+ *
+ * - "plane-strain" — ε_zz = 0, comportamiento "shell 3D" como
+ *   SAP2000 Shell-Layered (Type=6). Q[0][0] = E(1-ν)/[(1+ν)(1-2ν)].
+ *   Para ν=0.3 da ~22% más rigidez (placa más rígida, w más pequeño).
+ *   Útil para validar contra SAP Shell-Layered.
  */
-function Q_material(E: number, nu: number): number[][] {
+function Q_material(E: number, nu: number, mode: StressMode = "plane-stress"): number[][] {
+  if (mode === "plane-strain") {
+    // Plane strain: σ_zz != 0, ε_zz = 0  (SAP Type=6 estilo)
+    const denom = (1 + nu) * (1 - 2 * nu);
+    const lam = E * nu / denom;
+    const mu = E / (2 * (1 + nu));
+    return [
+      [lam + 2 * mu, lam, 0],
+      [lam, lam + 2 * mu, 0],
+      [0, 0, mu],
+    ];
+  }
+  // Plane stress (default, teoría placa clásica)
   const f = E / (1 - nu * nu);
   return [
     [f, f * nu, 0],
@@ -88,8 +110,8 @@ function Q_material(E: number, nu: number): number[][] {
  *
  * Q_bar = T^-1 · Q · T^-T  donde T es la matriz de transformacion de strain
  */
-function Q_transformed(E: number, nu: number, theta: number): number[][] {
-  const Qm = Q_material(E, nu);
+function Q_transformed(E: number, nu: number, theta: number, mode: StressMode = "plane-stress"): number[][] {
+  const Qm = Q_material(E, nu, mode);
   if (Math.abs(theta) < 1e-10) return Qm;
 
   const c = Math.cos(theta);
@@ -138,7 +160,7 @@ function Q_transformed(E: number, nu: number, theta: number): number[][] {
  * If layers don't specify z_mid, they are stacked from bottom to top
  * starting at -t_total/2.
  */
-export function computeABBD(layers: LayerDef[]): ABBD {
+export function computeABBD(layers: LayerDef[], stressMode: StressMode = "plane-stress"): ABBD {
   // Determinar t_total y z_mid si no especificado
   const t_total = layers.reduce((sum, l) => sum + l.thickness, 0);
 
@@ -166,7 +188,7 @@ export function computeABBD(layers: LayerDef[]): ABBD {
 
   // Sumar contribuciones de cada capa
   for (const l of layersWithZ) {
-    const Qb = Q_transformed(l.E, l.nu, l.angle);
+    const Qb = Q_transformed(l.E, l.nu, l.angle, stressMode);
     const t = l.thickness;
     const z = l.z_mid;
 
@@ -182,7 +204,7 @@ export function computeABBD(layers: LayerDef[]): ABBD {
       }
     }
 
-    // Transverse shear: simplificado (homogeneo equivalente con kappa=5/6)
+    // Transverse shear: κ=5/6 (Reissner clásico, Mindlin teorético)
     const G = l.E / (2 * (1 + l.nu));
     const kappa_s = 5 / 6;
     As[0][0] += kappa_s * G * t;
