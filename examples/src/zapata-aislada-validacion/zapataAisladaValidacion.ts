@@ -53,10 +53,13 @@ export const zapataAisladaValidacion: ExampleDef = {
     Hp:   { default: 0.50, min: 0.3,  max: 2.0,  step: 0.1,  label: "Hp — pedestal height (m)" },
     q_adm:     { default: 10,   min: 1,   max: 100,   step: 1,   label: "q_adm (tonf/m²)" },
     ks_factor: { default: 10.5, min: 5,   max: 20,    step: 0.5, label: "ks_factor (Bowles)" },
-    // Slider en tonf/m³ (rango realista Bowles para suelos medios-firmes:
-    // suelo blando ~500-2000, medio ~2000-5000, firme >5000, roca >20000).
+    // Slider en tonf/m³ (rango realista para cimentaciones, default minimo
+    // 2000 tonf/m³ — suelo medio mínimo. Tabla referencia:
+    //   suelo medio:  2000-5000 tonf/m³
+    //   suelo firme:  5000-20000 tonf/m³
+    //   roca:         >20000 tonf/m³
     // Internamente la pressure usa kN/m³ — el build() convierte tonf/m³ → kN/m³.
-    ks:        { default: 10500, min: 2000, max: 200000, step: 100, label: "ks (tonf/m³)" },
+    ks:        { default: 2000, min: 2000, max: 200000, step: 100, label: "ks (tonf/m³)" },
     // Suelo avanzado — Winkler horizontal y anti-singularidad rotacional
     kh_ratio:    { default: 0.5,  min: 0,   max: 1,     step: 0.05,  label: "kh / kv (Bowles 0.3-0.7)",      folder: "Suelo avanzado" },
     kRot_factor: { default: 1e-4, min: 0,   max: 1e-2,  step: 1e-5,  label: "k_rot factor (anti-singular.)", folder: "Suelo avanzado" },
