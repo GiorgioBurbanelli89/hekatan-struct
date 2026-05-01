@@ -116,7 +116,10 @@ export const zapataAisladaValidacion: ExampleDef = {
         }
       }
     }
-    const sigmaMax = Math.abs(qMin), sigmaMin = Math.abs(qMax);
+    // pm está en kN/m² (unidad SI base). Convertir a tonf/m² para coincidir con labels.
+    const sigmaMax_kN = Math.abs(qMin), sigmaMin_kN = Math.abs(qMax);
+    const sigmaMax = sigmaMax_kN / TONF_TO_KN;   // tonf/m²
+    const sigmaMin = sigmaMin_kN / TONF_TO_KN;
     const ratio = sigmaMax / (q_adm_tonf || 1);
     const khRatio = p.kh_ratio ?? 0.5;
     const supportModeIdx = (p.support_mode ?? 0) | 0;
@@ -333,11 +336,13 @@ export const zapataAisladaValidacion: ExampleDef = {
 
       states.analyzeOutputs.val = ao;
 
-      // Log espejo Calcpad
-      const qMaxAbs = Math.abs(qMinCombo);
-      let qMinAbs = Infinity;
-      pressureAll.forEach((vals) => { for (const v of vals) { const a = Math.abs(v); if (a < qMinAbs) qMinAbs = a; } });
-      if (!Number.isFinite(qMinAbs)) qMinAbs = 0;
+      // Log espejo Calcpad — pressureAll en kN/m², convertir a tonf/m² para Calcpad
+      const qMaxAbs_kN = Math.abs(qMinCombo);
+      let qMinAbs_kN = Infinity;
+      pressureAll.forEach((vals) => { for (const v of vals) { const a = Math.abs(v); if (a < qMinAbs_kN) qMinAbs_kN = a; } });
+      if (!Number.isFinite(qMinAbs_kN)) qMinAbs_kN = 0;
+      const qMaxAbs = qMaxAbs_kN / TONF_TO_KN;   // tonf/m²
+      const qMinAbs = qMinAbs_kN / TONF_TO_KN;
       const ratio = qMaxAbs / p.q_adm;
       const D = Ec * tz ** 3 / (12 * (1 - nu_c ** 2));
       const kr = D / (ks * Lz ** 4);
