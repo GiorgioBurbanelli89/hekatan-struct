@@ -580,12 +580,27 @@ function setView(preset: "iso" | "plan" | "elevX" | "elevY") {
   render?.();
 }
 
+/**
+ * Aplica visibilidad dinamica a los bindings registrados con hiddenIf.
+ * Un ejemplo lo usa para mostrar/ocultar params segun el valor de otro
+ * (ej: layered-shell oculta params de Sandwich cuando el preset es Bimetal).
+ */
+function applyHiddenBindings() {
+  for (const hb of hiddenBindings) {
+    try {
+      hb.binding.hidden = hb.hiddenIf(currentParams);
+    } catch {}
+  }
+}
+
 function buildParamsPane() {
   if (currentPane) {
     currentPane.dispose();
     currentPane = null;
   }
   paneHost.innerHTML = "";
+  // Reset registro de bindings con hiddenIf (cada ejemplo declara los suyos)
+  hiddenBindings = [];
   if (!currentExample) return;
   const pane = new Pane({ container: paneHost, title: currentExample.name });
   // Hacer el pane arrastrable desde su title-bar. El DOM del Tweakpane se
@@ -2174,11 +2189,15 @@ solve`;
       if (rebuiltOpts.min !== undefined && currentParams[key] < rebuiltOpts.min) currentParams[key] = rebuiltOpts.min;
       if (rebuiltOpts.max !== undefined && currentParams[key] > rebuiltOpts.max) currentParams[key] = rebuiltOpts.max;
       currentBinding = fTarget.addBinding(currentParams, key, rebuiltOpts);
+      // Registrar visibilidad dinamica si el param tiene hiddenIf
+      if (p.hiddenIf) hiddenBindings.push({ binding: currentBinding, hiddenIf: p.hiddenIf });
       currentBinding.on("change", () => {
         if (currentExample?.onParamChange) {
           currentExample.onParamChange(key, currentParams);
           pane.refresh();
         }
+        // Re-evaluar visibilidad de hiddenIf bindings (preset cambio puede ocultar/mostrar otros)
+        applyHiddenBindings();
         // Si este param regenera dynamicParams (nPisos, nVanos, etc.),
         // reconstruir el pane ENTERO para que aparezcan los nuevos sliders
         // Piso 1, Piso 2, Piso 3... automáticamente.
@@ -2342,6 +2361,10 @@ solve`;
     });
   }
   currentPane = pane;
+  // Aplicar visibilidad dinamica de bindings (hiddenIf) en el render inicial.
+  // Sin esto, todos los params hiddenIf se muestran al cargar (solo se ocultan
+  // tras el primer cambio de slider).
+  applyHiddenBindings();
 }
 
 // ── Settings del viewer ──
