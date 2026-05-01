@@ -17,8 +17,10 @@ import van, { State } from "vanjs-core";
 export type ForceUnit = "kN" | "tonf" | "kip";
 export type DispUnit = "mm" | "cm" | "m" | "in";
 
+// Defaults: tonf y mm (preferencia del usuario para cimentaciones/concreto).
+// Se persisten en localStorage; al cambiar via Tweakpane se actualizan.
 export const forceUnit: State<ForceUnit> = van.state(
-  (localStorage.getItem("hk_forceUnit") as ForceUnit) || "kN"
+  (localStorage.getItem("hk_forceUnit") as ForceUnit) || "tonf"
 );
 export const dispUnit: State<DispUnit> = van.state(
   (localStorage.getItem("hk_dispUnit") as DispUnit) || "mm"
