@@ -92,6 +92,7 @@ export default defineConfig({
         "membrana-pstress": "src/membrana-pstress/index.html",
         "shell-thin": "src/shell-thin/index.html",
         "shell-thick": "src/shell-thick/index.html",
+        "layered-shell": "src/layered-shell/index.html",
         // ── Iconic structures (extraídas de getCad3d.ts a awatif v2 pattern) ──
         "gateway-arch": "src/gateway-arch/index.html",
         "cable-stayed-bridge": "src/cable-stayed-bridge/index.html",

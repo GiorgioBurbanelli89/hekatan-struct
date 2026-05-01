@@ -188,6 +188,7 @@ import { plateThick } from "../plate-thick/plateThick";
 import { membrana } from "../membrana-pstress/membrana";
 import { shellThin } from "../shell-thin/shellThin";
 import { shellThick } from "../shell-thick/shellThick";
+import { layeredShell } from "../layered-shell/layeredShell";
 import { edificioAporticado } from "../edificio-aporticado/edificioAporticado";
 import { edificioLadera } from "../edificio-ladera/edificioLadera";
 import { edificioComparativaFem } from "../edificio-comparativa-fem/edificioComparativaFem";
@@ -262,6 +263,8 @@ export const examplesRegistry: ExampleDef[] = [
   // Cáscaras
   shellThin,
   shellThick,
+  layeredShell,         // CLT Q4 (TS puro) con presets isotropico/balanced/sandwich/asimetrico
+
   // ── Legacy upstream awatif (abren su propia UI VanJS standalone) ──
   ...legacyAwatifExamples,
 ];
