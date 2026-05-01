@@ -53,10 +53,10 @@ export const zapataAisladaValidacion: ExampleDef = {
     Hp:   { default: 0.50, min: 0.3,  max: 2.0,  step: 0.1,  label: "Hp — pedestal height (m)" },
     q_adm:     { default: 10,   min: 1,   max: 100,   step: 1,   label: "q_adm (tonf/m²)" },
     ks_factor: { default: 10.5, min: 5,   max: 20,    step: 0.5, label: "ks_factor (Bowles)" },
-    // Slider en kN/m³ (interno SI). El label se queda fijo porque cambiar el min/max al cambiar
-    // unidades requeriria reconstruir el slider; el ks computed (inlineComputed arriba) sí
-    // muestra dinamicamente el unit elegido (tonf/m³ o kN/m³).
-    ks:        { default: 1030, min: 100, max: 2e5,   step: 10,  label: "ks (kN/m³, interno)" },
+    // Slider en tonf/m³ (rango realista Bowles para suelos medios-firmes:
+    // suelo blando ~500-2000, medio ~2000-5000, firme >5000, roca >20000).
+    // Internamente la pressure usa kN/m³ — el build() convierte tonf/m³ → kN/m³.
+    ks:        { default: 10500, min: 2000, max: 200000, step: 100, label: "ks (tonf/m³)" },
     // Suelo avanzado — Winkler horizontal y anti-singularidad rotacional
     kh_ratio:    { default: 0.5,  min: 0,   max: 1,     step: 0.05,  label: "kh / kv (Bowles 0.3-0.7)",      folder: "Suelo avanzado" },
     kRot_factor: { default: 1e-4, min: 0,   max: 1e-2,  step: 1e-5,  label: "k_rot factor (anti-singular.)", folder: "Suelo avanzado" },
@@ -103,7 +103,9 @@ export const zapataAisladaValidacion: ExampleDef = {
       after: "ks",
       label: "k_r Biot",
       compute: (p) => {
-        const t = p.tz ?? 0.3, L = p.Lz ?? 1.5, ks = p.ks ?? 1030;
+        const t = p.tz ?? 0.3, L = p.Lz ?? 1.5;
+        // p.ks en tonf/m³ → convertir a kN/m³ para D/(ks·L⁴)
+        const ks = (p.ks ?? 10500) * TONF_TO_KN;
         const kr = (Ec * t ** 3 / (12 * (1 - nu_c ** 2))) / (ks * L ** 4);
         return kr.toFixed(3) + (kr < 1 ? " FLEX" : " RIGID");
       },
@@ -113,7 +115,9 @@ export const zapataAisladaValidacion: ExampleDef = {
     const q_adm_tonf = p.q_adm ?? 10;
     const ks_factor = p.ks_factor ?? 10.5;
     const q_adm_kN = q_adm_tonf * TONF_TO_KN;
-    const ks = p.ks ?? q_adm_kN * ks_factor;
+    // ks slider en tonf/m³ → convertir a kN/m³ para uso interno
+    const ks_tonf = p.ks ?? (q_adm_tonf * ks_factor);
+    const ks = ks_tonf * TONF_TO_KN;   // kN/m³ interno
     const t = p.tz ?? 0.3, L = p.Lz ?? 1.5;
     const D = Ec * t ** 3 / (12 * (1 - nu_c ** 2));
     const kr = D / (ks * L ** 4);
@@ -167,7 +171,9 @@ export const zapataAisladaValidacion: ExampleDef = {
   build(p, states) {
     const { Lz, Bz, tz, bc, Hp } = p;
     const q_adm_kN = p.q_adm * TONF_TO_KN;
-    const ks = p.ks ?? (q_adm_kN * p.ks_factor);
+    // ks slider en tonf/m³ → convertir a kN/m³ para uso interno
+    const ks_tonf = p.ks ?? (p.q_adm * p.ks_factor);
+    const ks = ks_tonf * TONF_TO_KN;   // kN/m³
     const P_kN = (p.P_simple ?? 0) * TONF_TO_KN;
     const Mx_kN = (p.Mx_simple ?? 0) * TONF_TO_KN;
     const My_kN = (p.My_simple ?? 0) * TONF_TO_KN;
