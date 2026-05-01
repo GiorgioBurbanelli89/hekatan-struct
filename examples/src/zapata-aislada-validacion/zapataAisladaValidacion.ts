@@ -287,7 +287,9 @@ export const zapataAisladaValidacion: ExampleDef = {
         states.elementInputs.val, states.deformOutputs.val,
       );
 
-      // Helper: mapa de presiones (σ_z = ks × w, en tonf/m²) por elemento Q4
+      // Helper: mapa de presiones (σ_z = ks × w, en kN/m² — unidad SI base
+      // de hekatan-struct, el colormap legend la convierte al unit elegido
+      // por el usuario via colorMapForceUnit). σ<0 = compresion (hacia abajo).
       const computePressure = (defs?: Map<number, number[]>): Map<number, number[]> => {
         const pm = new Map<number, number[]>();
         states.elements.rawVal.forEach((el, eIdx) => {
@@ -296,9 +298,8 @@ export const zapataAisladaValidacion: ExampleDef = {
           for (const n of el) {
             const d = defs?.get(n);
             const w = d ? d[2] : 0;
-            // σ_z = ks × w. En Calcpad σ<0 = compresión (hacia abajo). w negativo al asentar.
-            const sigma_kN = ks * w;
-            qPerNode.push(sigma_kN / TONF_TO_KN);
+            // σ_z = ks × w (kN/m³ × m = kN/m²). Internamente todo SI.
+            qPerNode.push(ks * w);
           }
           pm.set(eIdx, qPerNode);
         });
