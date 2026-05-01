@@ -49,10 +49,13 @@ const PRESETS: Record<string, LayerSpec[]> = {
     { fracT: 0.90, angle: 0, eFactor: 0.02, densityFactor: 0.1 }, // E core = 2% de E base
     { fracT: 0.05, angle: 0, eFactor: 1.0,  densityFactor: 1.0 },
   ],
-  // 4 = Asimetrico [0/90] — coupling B != 0
+  // 4 = Bimetalico (E1/E2 distintos) — coupling B != 0 con material isotropico
+  // Nota: con material puramente isotropico, rotar la fibra NO genera coupling
+  // (la rigidez es la misma en todas direcciones). Para mostrar B != 0 real
+  // usamos 2 capas con E distinto (analogo a un strip bimetalico Cu/Steel).
   asym: [
-    { fracT: 0.5, angle: 0,           eFactor: 1.0 },
-    { fracT: 0.5, angle: Math.PI / 2, eFactor: 1.0 },
+    { fracT: 0.5, angle: 0, eFactor: 1.0 },   // layer below midplane (E completo)
+    { fracT: 0.5, angle: 0, eFactor: 0.5 },   // layer above midplane (E/2)
   ],
 };
 
@@ -81,7 +84,7 @@ export const layeredShell: ExampleDef = {
     preset: {
       default: 1,
       label: "Laminado",
-      options: { "Isotropico (1 capa)": 0, "CLT balanced [0/90/0]": 1, "CLT balanced 5 capas": 2, "Sandwich [face/core/face]": 3, "Asimetrico [0/90] (coupling B≠0)": 4 },
+      options: { "Isotropico (1 capa)": 0, "CLT balanced [0/90/0]": 1, "CLT balanced 5 capas": 2, "Sandwich [face/core/face]": 3, "Bimetalico [E/E·0.5] (coupling B≠0)": 4 },
     },
     Lx: { default: 4.0, min: 1, max: 10, step: 0.5, label: "Lx (m)" },
     Ly: { default: 4.0, min: 1, max: 10, step: 0.5, label: "Ly (m)" },
