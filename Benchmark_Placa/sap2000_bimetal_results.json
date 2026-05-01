@@ -1,0 +1,23 @@
+﻿{
+    "program":  "SAP2000 Layered Bimetalico",
+    "case":  {
+                 "L_m":  4,
+                 "t_total_m":  0.3,
+                 "t1_frac":  0.5,
+                 "E1_kPa":  30000000,
+                 "E2_kPa":  15000000,
+                 "nu":  0.3,
+                 "q_kPa":  10,
+                 "rho_ton_m3":  2.4,
+                 "mesh":  "10x10"
+             },
+    "sap2000":  {
+                    "w_max_m":  -0.00014860946345719337,
+                    "u_max_m":  0,
+                    "v_max_m":  0,
+                    "M11_max_kNm_m":  7.96534099170663,
+                    "M22_max_kNm_m":  7.9653409917056086,
+                    "N11_max_kN_m":  0,
+                    "runtime_s":  3.6680021999999997
+                }
+}
