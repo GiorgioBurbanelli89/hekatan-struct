@@ -29,6 +29,19 @@ sdb_path = os.path.join(os.environ["TEMP"], "zapata_hek_safe.FDB")
 ret = m.File.Save(sdb_path)
 print(f"    Save FDB ret={ret} -> {sdb_path}")
 
+# Asegurar que los cases estan marcados para correr (a veces los heredados
+# del .f2k tienen RunCase=No y RunAnalysis los salta).
+try:
+    nLC = 0; lcNames = None
+    res = m.LoadCases.GetNameList()
+    nLC = res[0]; lcNames = list(res[1]) if res[1] else []
+    print(f"    Load cases: {lcNames}")
+    for lc in lcNames:
+        m.Analyze.SetRunCaseFlag(lc, True)
+        print(f"      SetRunCaseFlag({lc}) = True")
+except Exception as e:
+    print(f"    (SetRunCaseFlag warning: {e})")
+
 print("\n>>> Run analysis...")
 t0 = time.time()
 ret = m.Analyze.RunAnalysis()
