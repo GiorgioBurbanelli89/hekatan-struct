@@ -26,6 +26,7 @@ import { deform, analyze, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 // Importar desde exampleVersion (no exampleRegistry) para evitar TDZ circular.
 import { activeExampleVersion } from "../workspace/exampleVersion";
+import { forceUnit } from "../workspace/units";
 
 const Ec = 25e6, nu_c = 0.2, Gc = Ec / (2 * (1 + nu_c)), rho = 24;
 const TONF_TO_KN = 9.80665;
@@ -52,7 +53,10 @@ export const zapataAisladaValidacion: ExampleDef = {
     Hp:   { default: 0.50, min: 0.3,  max: 2.0,  step: 0.1,  label: "Hp — pedestal height (m)" },
     q_adm:     { default: 10,   min: 1,   max: 100,   step: 1,   label: "q_adm (tonf/m²)" },
     ks_factor: { default: 10.5, min: 5,   max: 20,    step: 0.5, label: "ks_factor (Bowles)" },
-    ks:        { default: 1030, min: 100, max: 2e5,   step: 10,  label: "ks — subgrade modulus (kN/m³)" },
+    // Slider en kN/m³ (interno SI). El label se queda fijo porque cambiar el min/max al cambiar
+    // unidades requeriria reconstruir el slider; el ks computed (inlineComputed arriba) sí
+    // muestra dinamicamente el unit elegido (tonf/m³ o kN/m³).
+    ks:        { default: 1030, min: 100, max: 2e5,   step: 10,  label: "ks (kN/m³, interno)" },
     // Suelo avanzado — Winkler horizontal y anti-singularidad rotacional
     kh_ratio:    { default: 0.5,  min: 0,   max: 1,     step: 0.05,  label: "kh / kv (Bowles 0.3-0.7)",      folder: "Suelo avanzado" },
     kRot_factor: { default: 1e-4, min: 0,   max: 1e-2,  step: 1e-5,  label: "k_rot factor (anti-singular.)", folder: "Suelo avanzado" },
@@ -75,15 +79,24 @@ export const zapataAisladaValidacion: ExampleDef = {
   inlineComputed: [
     {
       after: "ks_factor",
-      label: "ks computed (kN/m³)",
-      compute: (p) => ((p.q_adm ?? 10) * TONF_TO_KN * (p.ks_factor ?? 10.5)).toFixed(0),
+      // Label dinamico: muestra (tonf/m³) si forceUnit=tonf, etc.
+      get label() { return `ks computed (${forceUnit.val}/m³)`; },
+      compute: (p) => {
+        const ks_kN = (p.q_adm ?? 10) * TONF_TO_KN * (p.ks_factor ?? 10.5);
+        const u = forceUnit.val;
+        const factor = u === "tonf" ? 1 / TONF_TO_KN : u === "kip" ? 1 / 4.4482216 : 1;
+        return (ks_kN * factor).toFixed(u === "kN" ? 0 : 2);
+      },
     },
     {
       after: "tz",
-      label: "D flexural (kN·m)",
+      get label() { return `D flexural (${forceUnit.val}·m)`; },
       compute: (p) => {
         const t = p.tz ?? 0.3;
-        return (Ec * t ** 3 / (12 * (1 - nu_c ** 2))).toFixed(1);
+        const D_kN = Ec * t ** 3 / (12 * (1 - nu_c ** 2));
+        const u = forceUnit.val;
+        const factor = u === "tonf" ? 1 / TONF_TO_KN : u === "kip" ? 1 / 4.4482216 : 1;
+        return (D_kN * factor).toFixed(1);
       },
     },
     {
@@ -124,19 +137,30 @@ export const zapataAisladaValidacion: ExampleDef = {
     const khRatio = p.kh_ratio ?? 0.5;
     const supportModeIdx = (p.support_mode ?? 0) | 0;
     const supportModeName = ["A. Winkler 3D", "B. Vert+esquinas", "C. Vert+1 nodo"][supportModeIdx];
+    // Convertir valores a la unidad de fuerza activa (tonf por default)
+    const u = forceUnit.val;
+    const fFactor = u === "tonf" ? 1 / TONF_TO_KN : u === "kip" ? 1 / 4.4482216 : 1;
+    const ks_u = ks * fFactor;          // kN/m³ → u/m³
+    const D_u = D * fFactor;            // kN·m → u·m
+    const sigmaMax_u = sigmaMax * (u === "tonf" ? 1 : u === "kip" ? TONF_TO_KN / 4.4482216 : TONF_TO_KN);
+    const sigmaMin_u = sigmaMin * (u === "tonf" ? 1 : u === "kip" ? TONF_TO_KN / 4.4482216 : TONF_TO_KN);
+    const qAdm_u    = q_adm_tonf * (u === "tonf" ? 1 : u === "kip" ? TONF_TO_KN / 4.4482216 : TONF_TO_KN);
+    const P_u = P * (u === "tonf" ? 1 : u === "kip" ? TONF_TO_KN / 4.4482216 : TONF_TO_KN);
+    const Mx_u = (p.Mx_simple ?? 0) * (u === "tonf" ? 1 : u === "kip" ? TONF_TO_KN / 4.4482216 : TONF_TO_KN);
+    const My_u = (p.My_simple ?? 0) * (u === "tonf" ? 1 : u === "kip" ? TONF_TO_KN / 4.4482216 : TONF_TO_KN);
     return {
       "Mode": "Direct P/Mx/My",
       "Soporte": supportModeName,
-      "ks (kN/m³)": ks.toFixed(0),
+      [`ks (${u}/m³)`]: ks_u.toFixed(u === "kN" ? 0 : 2),
       "k_h/k_v": khRatio.toFixed(2) + " (Bowles)",
-      "D (kN·m)": D.toFixed(1),
+      [`D (${u}·m)`]: D_u.toFixed(1),
       "k_r (Biot)": kr.toFixed(3) + (kr < 1 ? " FLEXIBLE" : " RIGID"),
-      "P (tonf)": P.toFixed(2),
-      "Mx (tonf·m)": (p.Mx_simple ?? 0).toFixed(2),
-      "My (tonf·m)": (p.My_simple ?? 0).toFixed(2),
-      "σ_max comp (tonf/m²)": sigmaMax.toFixed(2),
-      "σ_min comp (tonf/m²)": sigmaMin.toFixed(2),
-      "q_adm (tonf/m²)": q_adm_tonf.toFixed(2),
+      [`P (${u})`]: P_u.toFixed(2),
+      [`Mx (${u}·m)`]: Mx_u.toFixed(2),
+      [`My (${u}·m)`]: My_u.toFixed(2),
+      [`σ_max comp (${u}/m²)`]: sigmaMax_u.toFixed(2),
+      [`σ_min comp (${u}/m²)`]: sigmaMin_u.toFixed(2),
+      [`q_adm (${u}/m²)`]: qAdm_u.toFixed(2),
       "σ/q_adm": ratio.toFixed(2) + (ratio > 1 ? " ⚠" : " ✓"),
     };
   },
