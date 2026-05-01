@@ -369,9 +369,13 @@ export const zapataAisladaValidacion: ExampleDef = {
     const springSet = new Set(springNodes);
     const viewerSettings = (document.querySelector("#viewer") as any)?.__settings;
 
-    const buildSprings = (deformedShape: boolean, deformScaleVal: number): THREE.Object3D[] => {
+    const buildSprings = (deformedShape: boolean, deformScaleVal: number, dispScale: number = 1): THREE.Object3D[] => {
       const amp = deformedShape ? deformScaleVal : 0;
       const zBot = -(wMaxAbs * Math.max(amp, 1) + SPRING_HEIGHT);
+      // displayScale: escala el RADIO del coil y el TAMAÑO del anchor.
+      const visScale = dispScale > 0 ? dispScale : (dispScale < 0 ? -1 / dispScale : 1);
+      const SPRING_WIDTH_EFF = SPRING_WIDTH * visScale;
+      const ANCHOR_SIZE_EFF  = ANCHOR_SIZE  * visScale;
       const arr: THREE.Object3D[] = [];
       for (const nIdx of springNodes) {
         if (!springSet.has(nIdx)) continue;
@@ -402,13 +406,13 @@ export const zapataAisladaValidacion: ExampleDef = {
           const t = 0.05 + 0.9 * (c / COILS_VIS);
           const [xc, yc, zc] = parametric(t);
           const ang = 2 * Math.PI * SPRING_COILS * (c / COILS_VIS);
-          pts.push(new THREE.Vector3(xc + SPRING_WIDTH * Math.cos(ang), yc + SPRING_WIDTH * Math.sin(ang), zc));
+          pts.push(new THREE.Vector3(xc + SPRING_WIDTH_EFF * Math.cos(ang), yc + SPRING_WIDTH_EFF * Math.sin(ang), zc));
         }
         pts.push(new THREE.Vector3(xt, yt, zt));
         arr.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), MAT_SPRING));
 
         // Ancla verde cuadrada en el suelo
-        const a = ANCHOR_SIZE;
+        const a = ANCHOR_SIZE_EFF;
         const aPts = [
           new THREE.Vector3(x0 - a, y0 - a, zBot),
           new THREE.Vector3(x0 + a, y0 - a, zBot),
@@ -433,10 +437,11 @@ export const zapataAisladaValidacion: ExampleDef = {
         if (activeExampleVersion.v !== myVer) return;  // no-op + drop subscriptions
         const ds = viewerSettings.deformedShape.val;
         const sc = viewerSettings.deformScale.val;
-        states.objects3D.val = buildSprings(ds, sc);
+        const disp = viewerSettings.displayScale.val;
+        states.objects3D.val = buildSprings(ds, sc, disp);
       });
     } else {
-      states.objects3D.val = buildSprings(true, 1);
+      states.objects3D.val = buildSprings(true, 1, 1);
     }
   },
 };

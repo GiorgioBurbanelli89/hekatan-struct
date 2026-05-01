@@ -266,11 +266,16 @@ export const zapataVigaAmarre: ExampleDef = {
     const viewerEl = document.querySelector("#viewer") as any;
     const settings = viewerEl?.__settings;
 
-    const buildSprings = (deformedOn: boolean, deformScaleSetting: number): THREE.Object3D[] => {
+    const buildSprings = (deformedOn: boolean, deformScaleSetting: number, dispScale: number = 1): THREE.Object3D[] => {
       // ampEff = el MISMO scale que usa el viewer (settings.deformScale)
       const ampEff = deformedOn ? deformScaleSetting : 0;
       const maxSinkingEff = wMaxAbs * Math.max(ampEff, 1);
       const zBotEff = -(maxSinkingEff + SPRING_HEIGHT);
+      // displayScale: escala el RADIO del coil y el TAMAÑO del anchor (igual
+      // que las flechas de loads/supports). dispScale puede ser negativo.
+      const visScale = dispScale > 0 ? dispScale : (dispScale < 0 ? -1 / dispScale : 1);
+      const SPRING_WIDTH_EFF = SPRING_WIDTH * visScale;
+      const ANCHOR_SIZE_EFF  = ANCHOR_SIZE  * visScale;
       const out: THREE.Object3D[] = [];
       for (const nIdx of zapataSpringNodes) {
         if (!visibleSet.has(nIdx)) continue;
@@ -303,15 +308,15 @@ export const zapataVigaAmarre: ExampleDef = {
           const [cx, cy, cz] = axisAt(t);
           const angle = 2 * Math.PI * SPRING_COILS * (k / totalSegs);
           pts.push(new THREE.Vector3(
-            cx + SPRING_WIDTH * Math.cos(angle),
-            cy + SPRING_WIDTH * Math.sin(angle),
+            cx + SPRING_WIDTH_EFF * Math.cos(angle),
+            cy + SPRING_WIDTH_EFF * Math.sin(angle),
             cz
           ));
         }
         pts.push(new THREE.Vector3(xTop, yTop, zTop));
         out.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), MAT_SPRING));
         // Anclaje simple: cuadrado horizontal plano (sin replicación visual en elevación)
-        const a = ANCHOR_SIZE;
+        const a = ANCHOR_SIZE_EFF;
         const cv = [
           new THREE.Vector3(x - a, y - a, zBotEff),
           new THREE.Vector3(x + a, y - a, zBotEff),
@@ -332,10 +337,11 @@ export const zapataVigaAmarre: ExampleDef = {
         if (activeExampleVersion.v !== myVersion) return;
         const on = settings.deformedShape.val;
         const dScale = settings.deformScale.val;
-        states.objects3D.val = buildSprings(on, dScale);
+        const dispScale = settings.displayScale.val;
+        states.objects3D.val = buildSprings(on, dScale, dispScale);
       });
     } else {
-      states.objects3D.val = buildSprings(true, 1);
+      states.objects3D.val = buildSprings(true, 1, 1);
     }
   },
   runModal(p, states, modalPanel) {
