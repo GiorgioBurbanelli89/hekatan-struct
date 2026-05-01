@@ -1,8 +1,42 @@
 /**
  * SAP2000 .s2k File Exporter (v24 TABLE format)
- * Format matches SAP2000 v24.1.0 native .$2k export exactly
+ * Format matches SAP2000 v24.1.0 native .$2k export exactly.
+ *
+ * Soporta:
+ *  - Frames + shells homogeneos (Shell-Thin / Shell-Thick)
+ *  - Shell-Layered: pasar `layeredSection` con array de capas y este modulo
+ *    genera la tabla "AREA SECTION PROPERTY LAYERS" que SAP parsea
+ *    correctamente al hacer File.OpenFile(*.s2k) (workaround del bug
+ *    SetShellLayer_1 en COM/PowerShell).
+ *  - Area loads uniformes (q presion sobre placa)
  */
 import type { Node, Element, NodeInputs, ElementInputs } from "hekatan-fem";
+
+/** Capa de un Shell-Layered. */
+export interface S2kLayer {
+  name: string;
+  distance: number;     // desde mid-plane (m). + = arriba, - = abajo
+  thickness: number;    // m
+  material: string;     // nombre material (debe estar en `materials`)
+  angle?: number;       // rad, default 0
+  numIntPts?: number;   // Gauss thru-thickness, default 3
+}
+
+export interface S2kLayeredSection {
+  name: string;          // ej. "BIMETAL"
+  totalThickness: number;
+  layers: S2kLayer[];
+  /** Materiales con E/nu propios (ademas de los implicitos en elementInputs) */
+  materials?: Array<{ name: string; E: number; nu: number; rho?: number }>;
+}
+
+export interface S2kAreaLoad {
+  /** Indice del elemento Q4 (0-based en hekatan) */
+  elementIdx: number;
+  loadPattern: string;   // "DEAD", "Q", etc.
+  value: number;         // kN/m² (positivo = aplicacion, signo segun Dir)
+  dir?: number;          // 10 = Gravity, 6 = +Z proyect, default 10
+}
 
 export interface S2kExportInput {
   nodes: Node[];
@@ -11,6 +45,14 @@ export interface S2kExportInput {
   elementInputs: ElementInputs;
   title?: string;
   units?: { force: string; length: string };
+  /**
+   * Si se provee, los elementos shell usaran esta seccion layered en lugar
+   * de la seccion homogenea derivada de `elementInputs.thicknesses`.
+   * Aplica a TODOS los shells (mismo laminado).
+   */
+  layeredSection?: S2kLayeredSection;
+  /** Cargas uniformes sobre areas (q presion). */
+  areaLoads?: S2kAreaLoad[];
 }
 
 export function exportS2k(input: S2kExportInput): string {
@@ -113,35 +155,59 @@ export function exportS2k(input: S2kExportInput): string {
     blank();
   }
 
-  // ── Collect unique shell sections ──
+  // ── LAYERED SHELL: si se provee, todos los shells usan la misma seccion ──
+  const isLayered = !!input.layeredSection && shellIdx.length > 0;
+  const layeredSec = input.layeredSection;
+
+  // ── Collect unique shell sections (homogeneo) ──
   const shellSecs = new Map<string, { t: number; matKey: string }>();
   const elemToShellSec = new Map<number, string>();
-  for (const i of shellIdx) {
-    const t = elementInputs.thicknesses?.get(i) || 0.1;
-    const E = elementInputs.elasticities?.get(i) || 0;
-    const matKey = `MAT_${Math.round(E)}`;
-    const key = `t${t.toPrecision(6)}`;
-    if (!shellSecs.has(key)) shellSecs.set(key, { t, matKey });
-    const secIdx = [...shellSecs.keys()].indexOf(key) + 1;
-    elemToShellSec.set(i, `SSEC${secIdx}`);
+  if (!isLayered) {
+    for (const i of shellIdx) {
+      const t = elementInputs.thicknesses?.get(i) || 0.1;
+      const E = elementInputs.elasticities?.get(i) || 0;
+      const matKey = `MAT_${Math.round(E)}`;
+      const key = `t${t.toPrecision(6)}`;
+      if (!shellSecs.has(key)) shellSecs.set(key, { t, matKey });
+      const secIdx = [...shellSecs.keys()].indexOf(key) + 1;
+      elemToShellSec.set(i, `SSEC${secIdx}`);
+    }
   }
 
   // ── AREA SECTION ASSIGNMENTS ──
   if (shellIdx.length > 0) {
     push(`TABLE:  "AREA SECTION ASSIGNMENTS"`);
     for (const i of shellIdx) {
-      const sec = elemToShellSec.get(i) || "SSEC1";
+      const sec = isLayered ? layeredSec!.name : (elemToShellSec.get(i) || "SSEC1");
       push(`   Area=${i + 1}   Section=${sec}   MatProp=Default`);
     }
     blank();
 
     push(`TABLE:  "AREA SECTION PROPERTIES"`);
-    let idx = 0;
-    for (const [, sec] of shellSecs) {
-      idx++;
-      push(`   Section=SSEC${idx}   Material=${sec.matKey}   MatAngle=0   AreaType=Shell   Type=ShellThin   DrillDOF=Yes   Thickness=${fmt(sec.t)}   BendThick=${fmt(sec.t)}   Color=Cyan`);
+    if (isLayered) {
+      const sec = layeredSec!;
+      const matBase = sec.layers[0]?.material || "MAT_DEFAULT";
+      push(`   Section=${sec.name}   Material=${matBase}   MatAngle=0   AreaType=Shell   Type=Shell-Layered   Thickness=${fmt(sec.totalThickness)}   BendThick=${fmt(sec.totalThickness)}   Color=Magenta`);
+    } else {
+      let idx = 0;
+      for (const [, sec] of shellSecs) {
+        idx++;
+        push(`   Section=SSEC${idx}   Material=${sec.matKey}   MatAngle=0   AreaType=Shell   Type=ShellThin   DrillDOF=Yes   Thickness=${fmt(sec.t)}   BendThick=${fmt(sec.t)}   Color=Cyan`);
+      }
     }
     blank();
+
+    // ── AREA SECTION PROPERTY LAYERS (solo si layered) ──
+    if (isLayered) {
+      push(`TABLE:  "AREA SECTION PROPERTY LAYERS"`);
+      const sec = layeredSec!;
+      for (const L0 of sec.layers) {
+        const ang = L0.angle ?? 0;
+        const np = L0.numIntPts ?? 3;
+        push(`   Section=${sec.name}   LayerName=${L0.name}   Distance=${fmt(L0.distance)}   Thickness=${fmt(L0.thickness)}   Type=Shell   NumIntPts=${np}   Material=${L0.material}   MatAngle=${fmt(ang * 180 / Math.PI)}   MatBehave=Directional   S11Opt=Linear   S22Opt=Linear   S12Opt=Linear`);
+      }
+      blank();
+    }
   }
 
   // ── JOINT COORDINATES ──
