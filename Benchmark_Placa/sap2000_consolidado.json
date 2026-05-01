@@ -1,0 +1,46 @@
+﻿{
+    "benchmark":  "Placa cuadrada simply supported - 5 tipos SAP2000",
+    "case":  "L=4m t=0.20m E=21.5e6kPa nu=0.20 q=10kPa malla=8x8",
+    "analytical":  {
+                       "w_max_mm":  0.6961,
+                       "M_max_kNm_m":  7.664,
+                       "f11_Hz":  34.63
+                   },
+    "sap2000_results":  [
+                            {
+                                "type":  1,
+                                "name":  "Shell-Thin",
+                                "w_max_mm":  0.6959104776282939000,
+                                "M11_max":  7.1440956183095325,
+                                "f1_Hz":  34.210961547659117
+                            },
+                            {
+                                "type":  2,
+                                "name":  "Shell-Thick",
+                                "w_max_mm":  0.72374801460684000,
+                                "M11_max":  7.4439700707266834,
+                                "f1_Hz":  33.513568676959906
+                            },
+                            {
+                                "type":  3,
+                                "name":  "Plate-Thin",
+                                "w_max_mm":  0.6959104776282939000,
+                                "M11_max":  7.1440956183095325,
+                                "f1_Hz":  4.591758776454878E-07
+                            },
+                            {
+                                "type":  4,
+                                "name":  "Plate-Thick",
+                                "w_max_mm":  0.72374801460684619000,
+                                "M11_max":  7.4439700707267811,
+                                "f1_Hz":  4.5917587764548795E-07
+                            },
+                            {
+                                "type":  5,
+                                "name":  "Membrane",
+                                "w_max_mm":  2499999999999999.5000,
+                                "M11_max":  0,
+                                "f1_Hz":  4.5917587751173997E-07
+                            }
+                        ]
+}

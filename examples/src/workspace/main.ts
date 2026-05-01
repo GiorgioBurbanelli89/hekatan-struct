@@ -1147,7 +1147,7 @@ solve`;
           //  11=Shear Center (= Centroid para sección simétrica)
           const cimUiState: any = (window as any).__hekatanCimUI ?? { cardinal: 10 };
           (window as any).__hekatanCimUI = cimUiState;
-          fCim.addBinding(cimUiState, "cardinal", {
+          const cardBinding = fCim.addBinding(cimUiState, "cardinal", {
             label: "Cardinal Point col.",
             options: {
               "1 — Bottom Left":   1, "2 — Bottom Center": 2, "3 — Bottom Right": 3,
@@ -1156,6 +1156,29 @@ solve`;
               "10 — Centroid":    10, "11 — Shear Center":11,
             },
           });
+          // Live reactive: cuando cambia el cardinal, re-renderiza la
+          // cimentación visual (silenciosamente, sin alert).
+          cardBinding.on("change", () => {
+            const btn = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(b => b.textContent?.includes('Calcular y ver cimentación'));
+            if (btn && (window as any).__hekatanCimentacionDesigned) {
+              (window as any).__cimSilent = true;
+              btn.click();
+            }
+          });
+          // Auto-fire una vez al primer build cuando aparezcan reacciones
+          // (igual que vanjs derive — reactivo sobre deformOutputs).
+          van.derive(() => {
+            const out = (deformOutputs as any).val;
+            if (!out?.reactions || out.reactions.size === 0) return;
+            // Solo auto-firarlo si NUNCA se ha calculado (primera vez)
+            if ((window as any).__hekatanCimAutoFired) return;
+            (window as any).__hekatanCimAutoFired = true;
+            // Esperar un tick para que el botón ya esté en el DOM
+            setTimeout(() => {
+              const btn = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(b => b.textContent?.includes('Calcular y ver cimentación'));
+              if (btn) { (window as any).__cimSilent = true; btn.click(); }
+            }, 100);
+          });
 
           // ── Botón: Calcular y mostrar cimentación en pantalla ──
           // Diseña las zapatas desde las reacciones de base y las dibuja como
@@ -1163,11 +1186,14 @@ solve`;
           // VISUAL antes de exportar a SAFE — el usuario ve qué se está
           // dimensionando.
           fCim.addButton({ title: "👁 Calcular y ver cimentación" }).on("click", async () => {
+            // Modo silencioso (auto-fire reactivo): suprimir alert
+            const silent = (window as any).__cimSilent === true;
+            delete (window as any).__cimSilent;
             const reactions = (deformOutputs.rawVal as any)?.reactions as
               Map<number, [number, number, number, number, number, number]> | undefined;
             const ns = nodes.rawVal as number[][];
             if (!reactions || !ns?.length) {
-              alert("Sin reacciones aún — corre primero el análisis del edificio.");
+              if (!silent) alert("Sin reacciones aún — corre primero el análisis del edificio.");
               return;
             }
             const p = currentParams as any;
@@ -1300,13 +1326,35 @@ solve`;
               const pedEdges = new THREE.LineSegments(new THREE.EdgesGeometry(pedGeo), matEdge.clone());
               pedEdges.position.copy(pedMesh.position);
               meshes.push(pedEdges);
-              // Marker pequeño verde en el INSERTION POINT (z.x, z.y, 0..-Hf)
+              // ── LÍNEA DEL PEDESTAL — eje vertical del insertion point ──
+              // Línea gruesa amarilla que va desde z=0 (base de columna de la
+              // superestructura) hasta z=-Hf (top de la zapata Q4 ShellThick).
+              // Esta es la LÍNEA DE EJE del pedestal: visualmente clara,
+              // independiente de la BoxGeometry del pedestal extruido.
+              // Termina exactamente en el insertion point (z.x, z.y, -Hf)
+              // donde se conecta la cadena/viga de amarre.
+              const axisPts = [
+                new THREE.Vector3(z.x, z.y, 0),
+                new THREE.Vector3(z.x, z.y, -Hf),
+              ];
+              const axisGeo = new THREE.BufferGeometry().setFromPoints(axisPts);
+              const axisMat = new THREE.LineBasicMaterial({ color: 0xffcc00, linewidth: 3 });
+              const axisLine = new THREE.Line(axisGeo, axisMat);
+              meshes.push(axisLine);
+              // Marker pequeño verde en el INSERTION POINT (z.x, z.y, -Hf)
               // para que el usuario vea claramente DÓNDE conecta la viga.
               const insMarkerGeo = new THREE.SphereGeometry(0.05, 8, 8);
               const insMarkerMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
               const insMarker = new THREE.Mesh(insMarkerGeo, insMarkerMat);
               insMarker.position.set(z.x, z.y, -Hf);
               meshes.push(insMarker);
+              // Marker amarillo en el TOP del pedestal (z.x, z.y, 0) — base
+              // de la columna de la superestructura.
+              const topMarkerGeo = new THREE.SphereGeometry(0.04, 8, 8);
+              const topMarkerMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
+              const topMarker = new THREE.Mesh(topMarkerGeo, topMarkerMat);
+              topMarker.position.set(z.x, z.y, 0);
+              meshes.push(topMarker);
             }
 
             // ── Vigas de amarre (sistema=1) — entre zapatas adyacentes ──
@@ -1376,6 +1424,36 @@ solve`;
               meshes.push(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(eR), matEdge.clone()));
             }
             states.objects3D.val = [...(states.objects3D.val ?? []), ...meshes];
+            // ── ISOLAR vista: ocultar superestructura para mostrar SOLO la
+            // cimentación (zapatas + cadenas + pedestales). El usuario pidió
+            // explícitamente que al calcular cimentación no se vea todo el
+            // edificio mezclado — sólo la parte de cimentación.
+            // Guardamos el estado anterior de cada toggle para poder restaurarlo.
+            // NOTA: NO tocamos shellResults / frameResults / nodeResults aquí
+            // porque las meshes visuales de cimentación viven en objects3D
+            // (no son shells FEM con campos analíticos). El botón "🧮 Análisis
+            // FEM solo cimentación" sí setea shellResults = pressure.
+            const sCim = (viewerElm as any).__settings;
+            if (sCim) {
+              const saved = (window as any).__hekatanSavedSettings = (window as any).__hekatanSavedSettings ?? {};
+              const offKeys = ["elements", "nodes", "elemColumns", "elemBeams",
+                               "supports", "loads", "deformedShape",
+                               "orientations", "nodesIndexes", "elementsIndexes",
+                               "sections", "secColumns", "secBeams", "secFloor",
+                               "solids"];
+              for (const k of offKeys) {
+                if (sCim[k] && typeof sCim[k] === "object" && "val" in sCim[k]) {
+                  if (saved[k] === undefined) saved[k] = sCim[k].val;
+                  sCim[k].val = false;
+                }
+              }
+              // custom3D ON para que se vean las meshes de cimentación en objects3D
+              if (sCim.custom3D && typeof sCim.custom3D === "object" && "val" in sCim.custom3D) {
+                if (saved.custom3D === undefined) saved.custom3D = sCim.custom3D.val;
+                sCim.custom3D.val = true;
+              }
+              (window as any).__hekatanCimViewIsolated = true;
+            }
             // Guardar diseño para uso del exportador
             (window as any).__hekatanCimentacionDesigned = { zapatasD, baseRows, xMax, yMax, q_adm, ks, tz, colSize, Hf };
             const totalZ = zapatasD.length;
@@ -1386,8 +1464,39 @@ solve`;
                             sistemaCim === 3 ? "Vigas + zapata corrida" :
                             sistemaCim === 4 ? "Losa raft" :
                             "Zapatas aisladas";
-            alert(`✅ Cimentación calculada (sistema = ${sysName}):\n• ${totalZ} zapatas Q4 ShellThick (${tiposStr})\n• Cada zapata: 1 placa shell en plano medio + grilla ${nSubZ}×${nSubZ}\n• ks = ${ks} kN/m³, q_adm = ${q_adm} tonf/m²\n• Espesor (propiedad del shell) = ${tz} m\n• Pedestal Hf = ${Hf} m`);
-            console.log(`[Cimentación] sistema=${sysName}, ${totalZ} zapatas (${tiposStr})`);
+            if (!silent) {
+              alert(`✅ Cimentación calculada (sistema = ${sysName}):\n• ${totalZ} zapatas Q4 ShellThick (${tiposStr})\n• Cada zapata: 1 placa shell en plano medio + grilla ${nSubZ}×${nSubZ}\n• ks = ${ks} kN/m³, q_adm = ${q_adm} tonf/m²\n• Espesor (propiedad del shell) = ${tz} m\n• Pedestal Hf = ${Hf} m\n\nVista AISLADA: superestructura oculta, solo cimentación.\nUsá el botón "🏢 Volver a vista superestructura" para restaurar.`);
+            }
+            console.log(`[Cimentación] sistema=${sysName}, ${totalZ} zapatas (${tiposStr}) — vista isolada`);
+          });
+
+          // ── Botón: Volver a vista superestructura ──
+          // Restaura los toggles que "Calcular y ver cimentación" apagó para
+          // aislar la cimentación. El usuario vuelve a ver el edificio completo
+          // con sus elementos/nodos/cargas/apoyos/deformada.
+          fCim.addButton({ title: "🏢 Volver a vista superestructura" }).on("click", () => {
+            const sR = (viewerElm as any).__settings;
+            const saved = (window as any).__hekatanSavedSettings;
+            if (!sR || !saved) {
+              alert("No hay vista isolada activa.");
+              return;
+            }
+            for (const k of Object.keys(saved)) {
+              if (sR[k] && typeof sR[k] === "object" && "val" in sR[k]) {
+                sR[k].val = saved[k];
+              }
+            }
+            // Limpiar meshes de cimentación de objects3D (mantener resortes y
+            // otros custom3D del ejemplo activo). Los meshes de cimentación se
+            // re-generan al pulsar de nuevo "Calcular y ver cimentación".
+            // Conservamos lo que había ANTES (referencia guardada antes de
+            // pushearlas — si no se guardó, simplemente vaciamos foundation).
+            // Heurística: re-correr el build del ejemplo activo restablece
+            // objects3D del ejemplo (resortes Winkler de zapata-aislada, etc.)
+            (window as any).__hekatanCimViewIsolated = false;
+            delete (window as any).__hekatanSavedSettings;
+            alert("✅ Vista superestructura restaurada.");
+            console.log("[Cimentación] vista superestructura restaurada");
           });
 
           // ── Botón: Análisis FEM solo cimentación ──
@@ -1607,14 +1716,41 @@ solve`;
               if (aout.colorMapRanges == null) aout.colorMapRanges = {};
               aout.colorMapRanges.pressure = [0, -q_adm_kPa];
               states.analyzeOutputs.val = aout;
-              // Activar visualización: pressure + deformed shape
-              const viewerEl = document.querySelector('div[class*="getViewerEl"], canvas')?.parentElement?.parentElement?.parentElement as any;
-              const settings = (Array.from(document.querySelectorAll('div')) as HTMLElement[]).map((d: any) => d.__settings).find(s => s);
-              if (settings) {
-                settings.shellResults = "pressure";
-                settings.deformedShape = true;
-                settings.deformScale = 1;
+              // ── Activar visualización: shell results = pressure + deformed
+              // shape + elementos visibles. CRÍTICO: settings son van states,
+              // hay que mutar `.val` (no overwrite la propiedad como string).
+              const sFEM = (viewerElm as any).__settings;
+              if (sFEM) {
+                // Re-encender elementos/nodos (los apagó el botón visual)
+                if (sFEM.elements?.val !== undefined) sFEM.elements.val = true;
+                if (sFEM.nodes?.val !== undefined) sFEM.nodes.val = true;
+                // Apagar columnas/vigas de superestructura (no aplica al FEM cim)
+                if (sFEM.elemColumns?.val !== undefined) sFEM.elemColumns.val = false;
+                if (sFEM.elemBeams?.val !== undefined) sFEM.elemBeams.val = false;
+                if (sFEM.sections?.val !== undefined) sFEM.sections.val = false;
+                if (sFEM.secColumns?.val !== undefined) sFEM.secColumns.val = false;
+                if (sFEM.secBeams?.val !== undefined) sFEM.secBeams.val = false;
+                if (sFEM.secFloor?.val !== undefined) sFEM.secFloor.val = false;
+                // Encender supports/loads para ver Winkler + cargas P,Mx,My
+                if (sFEM.supports?.val !== undefined) sFEM.supports.val = true;
+                if (sFEM.loads?.val !== undefined) sFEM.loads.val = true;
+                // Shell results = pressure (con override colorMapRanges)
+                if (sFEM.shellResults?.val !== undefined) sFEM.shellResults.val = "pressure";
+                if (sFEM.deformedShape?.val !== undefined) sFEM.deformedShape.val = true;
+                if (sFEM.custom3D?.val !== undefined) sFEM.custom3D.val = true;
+              } else {
+                console.warn("[FEM Cim] viewerElm.__settings no disponible — shell results no auto-activado");
               }
+              // ── Desfiltrar el dropdown shell results: el ejemplo activo
+              // (edificio-muros, edificio-hormigón, etc.) puede excluir
+              // "pressure" via availableShellResults. Re-aplicar el filtro
+              // INCLUYENDO los campos relevantes para FEM cimentación.
+              const cimAllowed = ["pressure", "displacementZ", "displacementX", "displacementY",
+                                  "bendingXX", "bendingYY", "bendingXY", "vonMises",
+                                  "shearX", "shearY"];
+              try { filterShellResultOptions(cimAllowed); } catch (e) { console.warn(e); }
+              // Auto-escalar deformada para que sea visible
+              try { autoScaleDeformedShape(); } catch {}
               alert(`✅ Análisis FEM cimentación completo:\n• ${zapatasD.length} zapatas Q4 ShellThick\n• ${E2.length} elementos shell, ${N2.length} nodos\n• Winkler ks=${ks} kN/m³ + anclaje rot esquina\n• Cargas P,Mx,My aplicadas\n\nViewer: shell results = pressure (rango 0 a -${q_adm_kPa.toFixed(0)} kPa)\nActivá Deformed shape para ver la deformación.`);
               console.log(`[FEM Cim] ${zapatasD.length} zapatas, ${E2.length} Q4, ${N2.length} nodos, ${springsList2.length} springs`);
             } catch (e: any) {

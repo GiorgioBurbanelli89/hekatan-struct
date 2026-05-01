@@ -23,3 +23,18 @@ docs/PRO/
 LICENSE.commercial.txt
 examples/public/*.f2k
 examples/public/*.html
+
+# Benchmark output JSONs (large model exports)
+Etabs Powershell/V01_RIOCHICO_results_sample.json
+Etabs Powershell/*_results.json
+*.K_0
+*.K_I
+*.K_J
+*.K_M
+*.Y00
+*.Y01
+*.Y02
+*.Y03
+*.Y04
+*.Y05
+*.Y06

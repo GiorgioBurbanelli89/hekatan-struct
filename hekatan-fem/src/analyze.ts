@@ -313,20 +313,31 @@ function computeQ4ShellStresses(
   const Nxy = Dm[2][2]*gammaXY;
 
   // --- Bending curvatures (Mindlin) ---
+  // Convencion del solver shellQ4.cpp:
+  //   d[3] (theta_x output) = -dw/dx
+  //   d[4] (theta_y output) = -dw/dy
+  // Por lo tanto:
+  //   kappaXX = d²w/dx² = -d(theta_x)/dx
+  //   kappaYY = d²w/dy² = -d(theta_y)/dy
+  //   kappaXY = 2·d²w/dxdy = -d(theta_x)/dy - d(theta_y)/dx
   let kappaXX = 0, kappaYY = 0, kappaXY = 0;
   for (let n = 0; n < 4; n++) {
     const thetaX = uLocal[n*6 + 3];
     const thetaY = uLocal[n*6 + 4];
-    kappaXX += dNdx[n] * thetaY;
-    kappaYY += -dNdy[n] * thetaX;
-    kappaXY += dNdy[n] * thetaY - dNdx[n] * thetaX;
+    kappaXX += -dNdx[n] * thetaX;
+    kappaYY += -dNdy[n] * thetaY;
+    kappaXY += -dNdy[n] * thetaX - dNdx[n] * thetaY;
   }
 
   const Mx = Db[0][0]*kappaXX + Db[0][1]*kappaYY;
   const My = Db[1][0]*kappaXX + Db[1][1]*kappaYY;
   const Mxy = Db[2][2]*kappaXY;
 
-  // --- Transverse shear ---
+  // --- Transverse shear (Mindlin) ---
+  // shellQ4.cpp: γxz = dw/dx - θx_solver, donde θx_solver = -d[3]
+  // → γxz = dw/dx - (-d[3]) = dw/dx + d[3]
+  // En thin plate ideal: γxz = 0 → d[3] = -dw/dx ✓
+  // Por construccion el γ residual reportado da Qx = Ds * γ.
   const kappa_s = 5.0/6.0;
   const G = E / (2*(1+nu));
   const Ds = kappa_s * G * t;
@@ -334,10 +345,10 @@ function computeQ4ShellStresses(
   const N_vals = [0.25, 0.25, 0.25, 0.25];
   for (let n = 0; n < 4; n++) {
     const w = uLocal[n*6 + 2];
-    const thetaX = uLocal[n*6 + 3];
-    const thetaY = uLocal[n*6 + 4];
-    gammaXZ += dNdx[n] * w + N_vals[n] * thetaY;
-    gammaYZ += dNdy[n] * w - N_vals[n] * thetaX;
+    const thetaX = uLocal[n*6 + 3];   // = -dw/dx en convencion solver
+    const thetaY = uLocal[n*6 + 4];   // = -dw/dy en convencion solver
+    gammaXZ += dNdx[n] * w + N_vals[n] * thetaX;  // dw/dx + thetaX = γxz
+    gammaYZ += dNdy[n] * w + N_vals[n] * thetaY;  // dw/dy + thetaY = γyz
   }
   const Qx = Ds * gammaXZ;
   const Qy = Ds * gammaYZ;

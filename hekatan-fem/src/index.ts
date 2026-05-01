@@ -29,6 +29,15 @@ export type {
   PlaneQ4ElementResult,
 } from "./planeQ4";
 
+// Layered Shell Q4 — Classical Laminate Theory (TS puro)
+// Soporta: capas con diferentes E, nu, espesor, angulo, densidad.
+// Computa matrices ABBD, resuelve Q4 Mindlin-Reissner con coupling
+// membrane-bending para laminados asimetricos.
+export { computeABBD, printABBD, layeredShellSolveABBD } from "./layeredShell";
+export type { LayerDef, LayeredQ4Input, ABBD } from "./layeredShell";
+export { layeredQ4Solve } from "./layeredQ4";
+export type { LayeredQ4SolveInput, LayeredQ4Output } from "./layeredQ4";
+
 // MITC3 triangular plate bending (Bathe 2013 MITC3+, pure TS)
 export { mitc3Solve } from "./mitc3";
 export type {
