@@ -44,7 +44,37 @@ El Bimetálico muestra coupling membrane-bending real: B11 ≠ 0 y w sube
 de 0.153 mm (iso) a 0.222 mm (+45 %) por la flexibilidad adicional que
 introduce el coupling.
 
-## ⚠ Limitación encontrada con SAP2000 layered shell vía OAPI
+## 🔴 BUG ENCONTRADO con SAP2000 layered shell vía OAPI
+
+`SetShellLayer_1` se ignora SILENTEMENTE en SAP2000 v24 vía OAPI COM —
+la sección permanece como Shell-Thick homogéneo creado por `SetShell_1`.
+
+### Diagnóstico via `.s2k` text dump (SAP siempre genera este al Save)
+
+Inspeccionando `%TEMP%\bench_bimetal.$2k` después del benchmark:
+
+```
+TABLE:  "AREA SECTION PROPERTIES"
+   Section=PlacaBimetal  Material=MatE1  AreaType=Shell  Type=Shell-Thick
+                         Thickness=0.3   ← UN solo material, UN espesor
+```
+
+**NO aparece la tabla `SHELL LAYERED`** que SAP usaría para una sección
+de capas. Lo mismo pasa en el benchmark "validado" preexistente
+(`bench_placa_layered.$2k`):
+
+```
+TABLE:  "AREA SECTION PROPERTIES"
+   Section=PlacaLayered2k  Material=ConcHek  Type=Shell-Thick
+                          Thickness=0.2   ← homogéneo, NO layered
+```
+
+**Implicación**: las diferencias del benchmark "validado" preexistente
+(w_max −0.87%, M11 −2.72% vs Shell-Thick) eran **ruido numérico del
+solver** (mesh 16×16 vs 8×8, modal habilitado o no, etc.) — NO efecto
+real de capas. El layered SAP nunca tomó efecto.
+
+### Verificación cuantitativa
 
 `SetShellLayer_1` con materiales DISTINTOS por capa (mat1 ≠ mat2) no
 toma efecto vía `SAP2000v1.Helper` PowerShell — el solver retorna los
@@ -60,11 +90,22 @@ isotrópico:
 | N11_max [kN/m] | ≠ 0 | 0 |
 | u_membrane [mm] | ≠ 0 | 0 |
 
-**Workaround posibles** (no probados aquí):
-- Importar un modelo `.s2k` con `SHELL LAYERED` definido en texto
-- Usar la GUI de SAP para crear la sección layered, save .sdb, y luego
-  cargar vía OAPI
-- Usar SAP2000 v2 OAPI (algunas builds tienen bugs en `SetShellLayer_1`)
+**Workaround recomendados** (basados en el diagnóstico .s2k):
+
+1. **Importar un `.s2k` con la tabla SHELL LAYERED ya en texto** — SAP
+   parsea el formato texto correctamente; el bug está en `SetShellLayer_1`.
+   Estructura mínima:
+   ```
+   TABLE: "AREA SECTION PROPERTIES"
+      Section=Layered  AreaType=Shell  Type=Shell-Thick  ...
+   TABLE: "SHELL LAYERED PROPERTIES"
+      Section=Layered  LayerName=Layer1  Distance=-0.075  Thickness=0.15  Mat=MatE1  ...
+      Section=Layered  LayerName=Layer2  Distance=+0.075  Thickness=0.15  Mat=MatE2  ...
+   ```
+2. **GUI manual + save .sdb + reuse via OAPI** — definir layered en GUI,
+   guardar como `.sdb`, abrir luego con `OpenFile` (omite `SetShellLayer_1`).
+3. **Probar con SAP2000 versión más reciente** (v25+) por si parchearon
+   este bug del COM bridge.
 
 Para validar el coupling Bimetálico se recomienda usar:
 - ETABS (similar OAPI, posible mismo bug)
