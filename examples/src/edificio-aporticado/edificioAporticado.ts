@@ -139,7 +139,12 @@ export const edificioAporticado: ExampleDef = {
       "Todas lindero":       2,
       "Todas esquinera":     3,
     }),
-    mostrarZapatas: PE("Cimentación", "Mostrar zapatas 3D", 1, { "On": 1, "Off": 0 }),
+    // Default OFF — el modelo default es EMPOTRADO en la base (supports fixed
+    // a z=0). El usuario activa este toggle si quiere VER las zapatas 3D
+    // sobre el modelo edificio (modo verificación cimentación). Para análisis
+    // FEM completo de las zapatas con Q4+Winkler, usar el toggle aparte
+    // "Cimentación FEM" o el botón "Ver TODAS las zapatas FEM".
+    mostrarZapatas: PE("Cimentación", "Mostrar zapatas 3D", 0, { "On": 1, "Off": 0 }),
     mostrarLabelsZapatas: PE("Cimentación", "Mostrar etiquetas zapatas", 1, { "On": 1, "Off": 0 }),
     estiloZapata: PE("Cimentación", "Estilo render", 1, {
       "Sólido (caja translúcida)": 0,
@@ -761,19 +766,11 @@ export const edificioAporticado: ExampleDef = {
 
     // ── Cotas 3D (dimensiones anotadas, toggle via Settings → Cotas) ──
     const cotas = buildEdificioCotas(xCoords, yCoords, zCoords);
-    // Etiqueta de sección de columna típica en esquina bajo el primer piso
-    const colP1_b = colB_piso[0], colP1_h = colH_piso[0];
-    const vigaP1_b = vigaB_piso[0], vigaP1_h = vigaH_piso[0];
-    cotas.push(makeLabel(
-      `Col ${(colP1_b*100).toFixed(0)}×${(colP1_h*100).toFixed(0)} cm`,
-      xCoords[0] + 0.3, yCoords[0] + 0.3, zCoords[1] * 0.5,
-      "#ffaa00"
-    ));
-    cotas.push(makeLabel(
-      `Viga ${(vigaP1_b*100).toFixed(0)}×${(vigaP1_h*100).toFixed(0)} cm`,
-      (xCoords[0] + xCoords[1]) / 2, yCoords[0], zCoords[1] + 0.2,
-      "#ffaa00"
-    ));
+    // Las etiquetas de sección Col/Viga (texto en cm) eran redundantes con
+    // el rendering de Sec. Columnas / Sec. Vigas del viewer (cajas con la
+    // sección real). Removidas — el usuario tiene "Sections" en Settings
+    // para controlar la visualización de secciones, y los CLI comandos del
+    // panel ya muestran los tamaños numéricos.
 
     // ── Rótulas plásticas (Fase A — ASCE 41-17, FEMA 356) ───────────
     // Clasificación estática por ratio M/My en extremos de frames. Solo se
@@ -1305,6 +1302,35 @@ export const edificioAporticado: ExampleDef = {
                   "#60a5fa",
                 ));
               }
+              // ── Grilla Q4 visual por zapata (líneas de subdivisión + perímetro) ──
+              // Sin esto, cuando settings.solids=false, las zapatas se verían
+              // sólo como planos planos sin grilla. Este overlay reproduce
+              // visualmente lo que el solver ya tiene en E2 (Q4 shells).
+              {
+                const gridMatC = new THREE.LineBasicMaterial({
+                  color: 0xaaaaaa, linewidth: 1, transparent: true, opacity: 0.6,
+                });
+                const dxV = Lz / nSubZC, dyV = Bz / nSubZC;
+                const gridPtsC: THREE.Vector3[] = [];
+                for (let i = 0; i <= nSubZC; i++) {
+                  const xi = -Lz/2 + i * dxV;
+                  gridPtsC.push(
+                    new THREE.Vector3(xCz + xi, yCz - Bz/2, -HfPedC),
+                    new THREE.Vector3(xCz + xi, yCz + Bz/2, -HfPedC),
+                  );
+                }
+                for (let j = 0; j <= nSubZC; j++) {
+                  const yj = -Bz/2 + j * dyV;
+                  gridPtsC.push(
+                    new THREE.Vector3(xCz - Lz/2, yCz + yj, -HfPedC),
+                    new THREE.Vector3(xCz + Lz/2, yCz + yj, -HfPedC),
+                  );
+                }
+                cotas2.push(new THREE.LineSegments(
+                  new THREE.BufferGeometry().setFromPoints(gridPtsC),
+                  gridMatC,
+                ));
+              }
               // Labels — sólo si mostrarLabelsZapatas=ON
               const showLabelsC = ((p.mostrarLabelsZapatas ?? 1) as number) >= 0.5;
               if (showLabelsC) {
@@ -1765,22 +1791,21 @@ export const edificioAporticado: ExampleDef = {
             // produce ±60m visual = ilegible). El usuario puede activar
             // deformedShape manualmente con scale moderado si lo necesita.
             try {
-              setTimeout(() => {
+              // Solo cambios NO-invasivos: shellResults + custom3D.
+              // NO tocamos faces/sections/secColumns para evitar contaminar
+              // el van.state del viewer entre cambios de ejemplo.
+              const applyFEMSettings = () => {
                 const viewerEl = document.querySelector("#viewer") as any;
                 const settings = viewerEl?.__settings;
-                if (settings) {
-                  if (settings.shellResults) settings.shellResults.val = "pressure";
-                  if (settings.deformedShape) settings.deformedShape.val = false;
-                  if (settings.deformScale) settings.deformScale.val = 5;  // razonable si user lo activa
-                  // Apagar secciones para que el pedestal sea LÍNEA, no caja
-                  if (settings.sections) settings.sections.val = false;
-                  if (settings.secColumns) settings.secColumns.val = false;
-                  if (settings.secBeams) settings.secBeams.val = false;
-                  if (settings.frameResults) settings.frameResults.val = "none";
-                  // Encender custom3D (objects3D = nuestros pedestales/labels)
-                  if (settings.custom3D) settings.custom3D.val = true;
-                }
-              }, 50);
+                if (!settings) return;
+                if (settings.shellResults) settings.shellResults.val = "pressure";
+                if (settings.deformedShape) settings.deformedShape.val = false;
+                if (settings.deformScale) settings.deformScale.val = 5;
+                if (settings.frameResults) settings.frameResults.val = "none";
+                // Encender custom3D (objects3D = nuestros pedestales/labels/grilla)
+                if (settings.custom3D) settings.custom3D.val = true;
+              };
+              [0, 100, 300].forEach((ms) => setTimeout(applyFEMSettings, ms));
             } catch (e) { /* viewer no disponible */ }
             return;  // No ejecutar el "states.objects3D.val = cotas" final
           }

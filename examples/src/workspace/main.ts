@@ -143,6 +143,12 @@ const drawingPoints: State<[number, number, number][]> = van.state([]);
 const drawingPolylines: State<number[][]> = van.state([[]]);
 const drawingGridTarget: State<{ position: [number,number,number]; rotation: [number,number,number] }> =
   van.state({ position: [10, 10, 0], rotation: [Math.PI/2, 0, 0] });
+// Expongo los van states a globals para que ejemplos (newBlank, etc.)
+// puedan LEER los puntos/polylines dibujados con mouse y construir
+// nodes/elements del FEM directamente.
+(window as any).__hekatanDrawingPoints = drawingPoints;
+(window as any).__hekatanDrawingPolylines = drawingPolylines;
+(window as any).__hekatanDrawingGridTarget = drawingGridTarget;
 
 export interface BuildStates {
   nodes: State<Node[]>;
@@ -240,7 +246,36 @@ function loadExample(ex: ExampleDef) {
   // Invalidar derives de ejemplos previos (e.g. springs reactivos de zapatas)
   activeExampleVersion.v++;
   resetStates();
+  // ── Reset settings de visibilidad del viewer ──
+  // El botón "Ver TODAS las zapatas FEM" + algunos ejemplos apagan
+  // elements/elemColumns/elemBeams/sections/etc. para mostrar solo la
+  // cimentación. Esos toggles persisten en el van.state singleton del
+  // viewer, así que al cambiar de ejemplo (o salir del modo FEM) las
+  // columnas/vigas seguían invisibles. Forzamos defaults ON aquí para
+  // que cada ejemplo arranque con la superestructura visible.
   ex.build?.(toSIParams(), states, modalPanel);
+  // ── Reset settings de visibilidad del viewer (DESPUÉS de build) ──
+  // El botón "Ver TODAS las zapatas FEM" + ex.build() pueden apagar
+  // elements/elemColumns/elemBeams/sections/etc. Esos toggles persisten
+  // en el van.state singleton del viewer. Forzamos defaults ON aquí, Y
+  // también con setTimeout multi-retry para sobrevivir cualquier código
+  // que dispare async después de build.
+  const resetViewerVis = () => {
+    const sR = (viewerElm as any).__settings;
+    if (!sR) return;
+    if (sR.elements?.val !== undefined)    sR.elements.val = true;
+    if (sR.nodes?.val !== undefined)       sR.nodes.val = true;
+    if (sR.elemColumns?.val !== undefined) sR.elemColumns.val = true;
+    if (sR.elemBeams?.val !== undefined)   sR.elemBeams.val = true;
+    if (sR.sections?.val !== undefined)    sR.sections.val = true;
+    if (sR.secColumns?.val !== undefined)  sR.secColumns.val = true;
+    if (sR.secBeams?.val !== undefined)    sR.secBeams.val = true;
+    if (sR.faces?.val !== undefined)       sR.faces.val = true;
+    if (sR.edges?.val !== undefined)       sR.edges.val = true;
+    if (sR.solids?.val !== undefined)      sR.solids.val = true;
+  };
+  resetViewerVis();
+  [50, 200, 500, 1000].forEach((ms) => setTimeout(resetViewerVis, ms));
   // Aplica el colormap por defecto que cada ejemplo declara.
   // Si el anterior tenía seleccionado "pressure" y el nuevo no lo populó,
   // quedaría 0 everywhere — así evitamos ese caso.
@@ -531,17 +566,182 @@ function makePaneDraggable(host: HTMLElement) {
 }
 
 // Helper de vistas — usa contexto Three.js del viewer (camera + controls)
-function setView(preset: "iso" | "plan" | "elevX" | "elevY") {
-  // Sincronizar plano de trabajo CAD con la vista (solo si cad-draw activo)
-  if (currentExample?.id === "cad-draw") {
-    const cadSt = (window as any).__hekatanCadState?.get?.();
-    if (cadSt) {
-      if (preset === "plan") cadSt.workPlane = "xy";
-      else if (preset === "elevX") cadSt.workPlane = "xz";
-      else if (preset === "elevY") cadSt.workPlane = "yz";
-      console.log(`[CAD ↔ Vista] workPlane sincronizado a ${cadSt.workPlane}`);
-    }
+// ════════════════════════════════════════════════════════════════════════
+// Simulador de mouse — Demo CAD interactivo
+// ════════════════════════════════════════════════════════════════════════
+/**
+ * Crea un cursor virtual visible (overlay HTML) que se anima sobre la
+ * pantalla, hace click en los botones del CAD panel y dibuja un pórtico
+ * paso por paso. El usuario VE el cursor moviéndose en su propio browser.
+ *
+ * Workflow del demo:
+ *   1. Crear cursor visible (div rojo con halo amarillo)
+ *   2. Mover cursor al botón "⬇ Planta (X-Y)" → click → vista cambia
+ *   3. Mover cursor al botón "Plano XY (planta)" en CAD tools → click
+ *   4. Mover cursor al botón "／ Línea (frame)" → click → tool seleccionado
+ *   5. Mover cursor a 4 posiciones en el canvas → click cada una
+ *   6. Pórtico 2D dibujado completamente
+ */
+function runCadDemo(): void {
+  // 1) Crear/reusar cursor visible
+  let cursor = document.getElementById("hk-fake-cursor") as HTMLDivElement | null;
+  if (!cursor) {
+    cursor = document.createElement("div");
+    cursor.id = "hk-fake-cursor";
+    cursor.style.cssText = [
+      "position:fixed",
+      "width:14px",
+      "height:14px",
+      "pointer-events:none",
+      "z-index:99999",
+      "background:radial-gradient(circle,#ef4444 30%,transparent 60%)",
+      "border:2px solid #fbbf24",
+      "border-radius:50%",
+      "box-shadow:0 0 6px #ef4444,0 0 12px #fbbf24",
+      "transition:left 0.7s ease-in-out, top 0.7s ease-in-out, transform 0.2s",
+      "transform:translate(-50%,-50%)",
+      "left:50px",
+      "top:50px",
+    ].join(";");
+    document.body.appendChild(cursor);
   }
+  // Tag de status para que el usuario vea qué paso se está ejecutando
+  let statusEl = document.getElementById("hk-demo-status") as HTMLDivElement | null;
+  if (!statusEl) {
+    statusEl = document.createElement("div");
+    statusEl.id = "hk-demo-status";
+    statusEl.style.cssText = [
+      "position:fixed",
+      "top:10px",
+      "left:50%",
+      "transform:translateX(-50%)",
+      "padding:8px 16px",
+      "background:rgba(15, 23, 42, 0.95)",
+      "color:#22d3ee",
+      "border:1px solid #22d3ee",
+      "border-radius:8px",
+      "font-family:Consolas,monospace",
+      "font-size:14px",
+      "z-index:99998",
+      "box-shadow:0 0 12px rgba(34, 211, 238, 0.4)",
+    ].join(";");
+    document.body.appendChild(statusEl);
+  }
+  const status = (txt: string) => {
+    if (statusEl) statusEl.textContent = "🎬 Demo: " + txt;
+  };
+  // Buscar botón del Tweakpane por texto
+  const findBtn = (txt: string): HTMLButtonElement | null => {
+    const btns = document.querySelectorAll<HTMLButtonElement>("button.tp-btnv_b");
+    for (const b of Array.from(btns)) if (b.textContent?.includes(txt)) return b;
+    return null;
+  };
+  // Mover cursor a un botón + click
+  const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
+  const moveCursorTo = async (x: number, y: number) => {
+    if (!cursor) return;
+    cursor.style.left = x + "px";
+    cursor.style.top = y + "px";
+    await sleep(800);
+  };
+  const clickAnimation = async () => {
+    if (!cursor) return;
+    cursor.style.transform = "translate(-50%,-50%) scale(1.6)";
+    cursor.style.background = "radial-gradient(circle,#ffffff 30%,#ef4444 60%)";
+    await sleep(250);
+    cursor.style.transform = "translate(-50%,-50%) scale(1)";
+    cursor.style.background = "radial-gradient(circle,#ef4444 30%,transparent 60%)";
+    await sleep(150);
+  };
+  const clickButton = async (label: string): Promise<boolean> => {
+    const b = findBtn(label);
+    if (!b) return false;
+    const r = b.getBoundingClientRect();
+    if (r.width === 0) return false;
+    await moveCursorTo(r.left + r.width / 2, r.top + r.height / 2);
+    await clickAnimation();
+    b.click();
+    await sleep(400);
+    return true;
+  };
+  // Convertir coords mundo → pantalla
+  const worldToScreen = (wx: number, wy: number, wz: number): { x: number; y: number } | null => {
+    const v = document.querySelector("#viewer") as HTMLElement | null;
+    const ctx: any = v ? (v as any).__ctx : null;
+    if (!ctx) return null;
+    const camera = ctx.camera as THREE.Camera;
+    const canvas = v?.querySelector("canvas") as HTMLCanvasElement | null;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const vec = new THREE.Vector3(wx, wy, wz);
+    vec.project(camera);
+    return {
+      x: rect.left + (vec.x * 0.5 + 0.5) * rect.width,
+      y: rect.top + (-vec.y * 0.5 + 0.5) * rect.height,
+    };
+  };
+  // ── Demo principal — secuencia paso por paso ──
+  (async () => {
+    status("Limpiando lienzo...");
+    drawingPoints.val = [];
+    drawingPolylines.val = [[]];
+    await sleep(500);
+    status("Click en ⬇ Planta (X-Y)");
+    await clickButton("⬇ Planta (X-Y)");
+    status("Click en ／ Línea (frame)");
+    await clickButton("／ Línea (frame)");
+    // Setear vista para que las coords mundiales se proyecten visiblemente
+    setView("plan");
+    await sleep(700);
+    // Dibujar 4 nodos en planta — un cuadrado 5×4 m a Z=0
+    const seq: Array<[number, number, number]> = [
+      [0, 0, 0], [5, 0, 0], [5, 4, 0], [0, 4, 0],
+    ];
+    for (let i = 0; i < seq.length; i++) {
+      const [x, y, z] = seq[i];
+      status(`Click nodo ${i + 1} en (${x}, ${y}, ${z})`);
+      const sp = worldToScreen(x, y, z);
+      if (sp) await moveCursorTo(sp.x, sp.y);
+      await clickAnimation();
+      // Dibujar punto + extender polyline
+      const dpFn = (window as any).__hekatanDrawAt as ((x: number, y: number, z: number) => void) | undefined;
+      if (dpFn) dpFn(x, y, z);
+      await sleep(500);
+    }
+    status("Demo completo ✓ — pórtico de 4 puntos en planta dibujado");
+    await sleep(3000);
+    if (statusEl) {
+      statusEl.style.transition = "opacity 1.5s";
+      statusEl.style.opacity = "0";
+      setTimeout(() => statusEl?.remove(), 1500);
+    }
+  })().catch((e) => {
+    status("Error: " + e.message);
+    console.error("[Demo CAD]", e);
+  });
+}
+
+function setView(preset: "iso" | "plan" | "elevX" | "elevY") {
+  // Sincronizar plano de trabajo CAD + drawing plane con la vista
+  // (para CUALQUIER ejemplo — antes solo cad-draw, ahora también
+  // new-blank y cli-modeler que usan dibujo con mouse).
+  const cadSt = (window as any).__hekatanCadState?.get?.();
+  if (cadSt) {
+    if (preset === "plan") cadSt.workPlane = "xy";
+    else if (preset === "elevX") cadSt.workPlane = "xz";
+    else if (preset === "elevY") cadSt.workPlane = "yz";
+  }
+  // Actualizar también el drawingGridTarget (plano del raycaster awatif)
+  // para que los clicks del mouse caigan correctamente sobre el plano
+  // visible. Esto sincroniza vista + plano de dibujo en un solo paso.
+  if (preset === "plan") {
+    drawingGridTarget.val = { position: [10, 10, 0], rotation: [Math.PI/2, 0, 0] };
+  } else if (preset === "elevX") {
+    drawingGridTarget.val = { position: [10, 0, 10], rotation: [0, 0, 0] };
+  } else if (preset === "elevY") {
+    drawingGridTarget.val = { position: [0, 10, 10], rotation: [0, Math.PI/2, 0] };
+  }
+  console.log(`[Vista ↔ CAD] preset=${preset}, workPlane=${cadSt?.workPlane ?? "n/a"}`);
   const ctx: any = (viewerElm as any).__ctx;
   if (!ctx) return;
   const { camera, controls, render } = ctx;
@@ -698,12 +898,86 @@ function buildParamsPane() {
 
   // ── Reporte matemático FEM (estilo Calcpad) — pendiente módulo mathReport ──
 
-  // ── Vista (planta / elevación / isométrica) ──
+  // ── Vista (planta / elevación / isométrica + ejes A,B,C / 1,2,3) ──
   const fView = pane.addFolder({ title: "Vista", expanded: false });
   fView.addButton({ title: "🏗 Isométrica" }).on("click", () => setView("iso"));
   fView.addButton({ title: "⬇ Planta (X-Y)" }).on("click", () => setView("plan"));
   fView.addButton({ title: "→ Elevación X (frente)" }).on("click", () => setView("elevX"));
   fView.addButton({ title: "↑ Elevación Y (lado)" }).on("click", () => setView("elevY"));
+  // ── 🎬 Simulador de mouse — demo visible en el browser ──
+  // Crea un cursor virtual (rojo + halo) que se anima sobre la pantalla,
+  // hace click en los botones del CAD panel y dibuja un pórtico paso a
+  // paso. El usuario VE el cursor moviéndose en su propio browser.
+  fView.addButton({ title: "🎬 Demo simulador CAD" }).on("click", () => runCadDemo());
+  // ── Vistas por ejes (A,B,C en X | 1,2,3 en Y) — al estilo FEM Studio ──
+  // Cada eje es una elevación PARALELA a un plano X=cte o Y=cte que
+  // contiene una columna del modelo. Útil para inspeccionar un frame
+  // específico de un edificio multi-vano.
+  const fAxes = fView.addFolder({ title: "📍 Ejes (frames individuales)", expanded: false });
+  const xLabels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const buildAxisButtons = () => {
+    // Limpiar buttons previos del folder
+    try {
+      const ch = (fAxes as any).children;
+      while (ch && ch.length) {
+        const c = ch[ch.length - 1];
+        if (c.dispose) c.dispose();
+        else (fAxes as any).remove?.(c);
+      }
+    } catch {}
+    const ns = states.nodes.rawVal ?? [];
+    if (!ns.length) {
+      fAxes.addButton({ title: "(modelo vacío — dibujá nodos)" }).on("click", () => {});
+      return;
+    }
+    // Recolectar X únicos + Y únicos (ordenados)
+    const xs = Array.from(new Set(ns.map(n => +n[0].toFixed(3)))).sort((a, b) => a - b);
+    const ys = Array.from(new Set(ns.map(n => +n[1].toFixed(3)))).sort((a, b) => a - b);
+    xs.forEach((x, i) => {
+      const lbl = i < xLabels.length ? xLabels[i] : `X${i}`;
+      fAxes.addButton({ title: `Eje ${lbl} (X=${x.toFixed(2)} m)` }).on("click", () => {
+        setView("elevX");
+        const ctx: any = (viewerElm as any).__ctx;
+        if (ctx?.controls?.target) {
+          ctx.controls.target.x = x;
+          ctx.camera.position.x = x + 25;
+          ctx.controls.update?.();
+          ctx.render?.();
+        }
+      });
+    });
+    ys.forEach((y, i) => {
+      fAxes.addButton({ title: `Eje ${i + 1} (Y=${y.toFixed(2)} m)` }).on("click", () => {
+        setView("elevY");
+        const ctx: any = (viewerElm as any).__ctx;
+        if (ctx?.controls?.target) {
+          ctx.controls.target.y = y;
+          ctx.camera.position.y = y - 25;
+          ctx.controls.update?.();
+          ctx.render?.();
+        }
+      });
+    });
+  };
+  buildAxisButtons();
+  // NOTA: removido van.derive sobre states.nodes — causaba loop infinito
+  // (cada rebuild de los buttons disparaba derive del Tweakpane que volvía
+  // a cambiar nodes). El usuario debe re-cargar el ejemplo o cambiar de
+  // ejemplo para que se reconstruyan los botones de ejes.
+  // Toggle dibujar ejes visibles A/B/C + 1/2/3 sobre el modelo
+  const proxyAxes = { visible: false };
+  fAxes.addBinding(proxyAxes, "visible", { label: "👁 Mostrar ejes en escena" }).on("change", (ev: any) => {
+    if (!ev.value) {
+      (window as any).__hekatanHideAxes?.();
+      return;
+    }
+    const ns = states.nodes.rawVal ?? [];
+    if (!ns.length) return;
+    const xs = Array.from(new Set(ns.map(n => +n[0].toFixed(3)))).sort((a, b) => a - b);
+    const ys = Array.from(new Set(ns.map(n => +n[1].toFixed(3)))).sort((a, b) => a - b);
+    const zMax = Math.max(...ns.map(n => n[2]), 3);
+    (window as any).__hekatanShowAxes?.(xs, ys, zMax);
+  });
 
   // ── ✏ CAD Drawer / 💻 CLI Editor — DISPONIBLES EN TODOS LOS EJEMPLOS ──
   // Permiten agregar/editar/eliminar elementos del modelo en cualquier ejemplo.
@@ -713,7 +987,11 @@ function buildParamsPane() {
   // equivalente del modelo actual y exportarlo.
   // (folder colapsado por default cuando NO es cad-draw/cli-modeler para
   // no estorbar el workflow del ejemplo).
-  const isModelerCtx = currentExample && (currentExample.id === "cad-draw" || currentExample.id === "cli-modeler");
+  const isModelerCtx = currentExample && (
+    currentExample.id === "cad-draw" ||
+    currentExample.id === "cli-modeler" ||
+    currentExample.id === "new-blank"
+  );
 
   // ── ✏ CAD Drawer (siempre disponible) ──
   if (currentExample) {
@@ -730,27 +1008,70 @@ function buildParamsPane() {
     fCad.addButton({ title: "● Nodo" }).on("click", () => setActiveTool("node"));
     fCad.addButton({ title: "／ Línea (frame)" }).on("click", () => setActiveTool("line"));
     fCad.addButton({ title: "▭ Área (shell Q4)" }).on("click", () => setActiveTool("area"));
-    // Plano de trabajo
+    // Tools CAD adicionales (estilo AutoCAD): polilínea, rectángulo, círculo,
+    // arco, líneas auxiliares/de prolongación. Los elementos no lineales
+    // (arco, círculo) se discretizan en N segmentos al exportarse al FEM.
+    fCad.addButton({ title: "⌒ Polilínea" }).on("click", () => setActiveTool("polyline"));
+    fCad.addButton({ title: "▭ Rectángulo" }).on("click", () => setActiveTool("rect"));
+    fCad.addButton({ title: "○ Círculo" }).on("click", () => setActiveTool("circle"));
+    fCad.addButton({ title: "⌒ Arco (3 ptos)" }).on("click", () => setActiveTool("arc"));
+    fCad.addButton({ title: "┊ Línea auxiliar" }).on("click", () => setActiveTool("aux"));
+    fCad.addButton({ title: "↗ Prolongar línea" }).on("click", () => setActiveTool("extend"));
+    // Modos de drawing
+    const fModes = fCad.addFolder({ title: "🎯 Modos de dibujo", expanded: true });
+    const proxyModes = { ortho: false, polar: false, segs: 12 };
+    fModes.addBinding(proxyModes, "ortho", { label: "ORTO (90°)" }).on("change", (ev: any) => {
+      (window as any).__hekatanOrtho = ev.value;
+      console.log(`[CAD] ORTO ${ev.value ? "ON" : "OFF"}`);
+    });
+    fModes.addBinding(proxyModes, "polar", { label: "POLAR (45°)" }).on("change", (ev: any) => {
+      (window as any).__hekatanPolar = ev.value;
+      console.log(`[CAD] POLAR ${ev.value ? "ON" : "OFF"}`);
+    });
+    fModes.addBinding(proxyModes, "segs", { min: 4, max: 64, step: 1, label: "Segmentos arc/círc" }).on("change", (ev: any) => {
+      (window as any).__hekatanArcSegs = ev.value;
+    });
+    // Plano de trabajo — actualiza drawingGridTarget para que el raycaster
+    // del awatif Drawing intersecte contra el plano correcto. Sin esto los
+    // botones solo cambiaban una variable lógica sin efecto visual.
     const fPlane = fCad.addFolder({ title: "📐 Plano de trabajo", expanded: true });
-    fPlane.addButton({ title: "Plano XY (planta)" }).on("click", () => {
+    const proxyPlane = { workZ: 0 };
+    const setPlane = (kind: "xy" | "xz" | "yz", z?: number) => {
       const st = (window as any).__hekatanCadState?.get?.();
-      if (st) st.workPlane = "xy";
-      console.log("[CAD] Plano: XY");
-    });
-    fPlane.addButton({ title: "Plano XZ (elevación)" }).on("click", () => {
+      if (st) st.workPlane = kind;
+      // Rotación del plano según orientación:
+      //   xy (planta)   → plano horizontal a Z = workZ → rotX=PI/2
+      //   xz (elevación) → plano vertical X-Z          → rotX=0
+      //   yz (lateral)   → plano vertical Y-Z          → rotZ=PI/2 (sobre Y)
+      const wz = z ?? proxyPlane.workZ;
+      if (kind === "xy") {
+        drawingGridTarget.val = { position: [10, 10, wz], rotation: [Math.PI/2, 0, 0] };
+      } else if (kind === "xz") {
+        drawingGridTarget.val = { position: [10, 0, 10], rotation: [0, 0, 0] };
+      } else {
+        drawingGridTarget.val = { position: [0, 10, 10], rotation: [0, Math.PI/2, 0] };
+      }
+      console.log(`[CAD] Plano: ${kind.toUpperCase()} @ Z=${wz}m`);
+    };
+    fPlane.addButton({ title: "Plano XY (planta)" }).on("click", () => setPlane("xy"));
+    fPlane.addButton({ title: "Plano XZ (elevación frontal)" }).on("click", () => setPlane("xz"));
+    fPlane.addButton({ title: "Plano YZ (elevación lateral)" }).on("click", () => setPlane("yz"));
+    // Snap 2D y 3D separados (más flexibilidad para distintos workflows)
+    const proxyCAD = { snap2D: 0.5, snap3D: 0.25, workZ: 0 };
+    fCad.addBinding(proxyCAD, "snap2D", { min: 0, max: 5, step: 0.05, label: "Snap 2D (m)" }).on("change", (ev: any) => {
       const st = (window as any).__hekatanCadState?.get?.();
-      if (st) st.workPlane = "xz";
-      console.log("[CAD] Plano: XZ");
+      if (st) st.snap = ev.value;  // legacy
+      (window as any).__hekatanSnap2D = ev.value;
     });
-    // Snap + Z
-    const proxyCAD = { snap: 0.5, workZ: 0 };
-    fCad.addBinding(proxyCAD, "snap", { min: 0, max: 5, step: 0.1, label: "Snap (m)" }).on("change", (ev: any) => {
-      const st = (window as any).__hekatanCadState?.get?.();
-      if (st) st.snap = ev.value;
+    fCad.addBinding(proxyCAD, "snap3D", { min: 0, max: 5, step: 0.05, label: "Snap 3D (m)" }).on("change", (ev: any) => {
+      (window as any).__hekatanSnap3D = ev.value;
     });
-    fCad.addBinding(proxyCAD, "workZ", { min: -10, max: 50, step: 0.1, label: "Cota Z (m)" }).on("change", (ev: any) => {
+    fCad.addBinding(proxyPlane, "workZ", { min: -10, max: 50, step: 0.1, label: "Cota Z (m)" }).on("change", (ev: any) => {
       const st = (window as any).__hekatanCadState?.get?.();
       if (st) st.workZ = ev.value;
+      // Re-posicionar el plano XY (si está activo) a esa Z
+      const curPlane = ((window as any).__hekatanCadState?.get?.())?.workPlane ?? "xy";
+      if (curPlane === "xy") setPlane("xy", ev.value);
       try { (window as any).__hekatanRebuild?.(); } catch {}
     });
     // Acciones
@@ -1183,20 +1504,12 @@ solve`;
               btn.click();
             }
           });
-          // Auto-fire una vez al primer build cuando aparezcan reacciones
-          // (igual que vanjs derive — reactivo sobre deformOutputs).
-          van.derive(() => {
-            const out = (deformOutputs as any).val;
-            if (!out?.reactions || out.reactions.size === 0) return;
-            // Solo auto-firarlo si NUNCA se ha calculado (primera vez)
-            if ((window as any).__hekatanCimAutoFired) return;
-            (window as any).__hekatanCimAutoFired = true;
-            // Esperar un tick para que el botón ya esté en el DOM
-            setTimeout(() => {
-              const btn = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(b => b.textContent?.includes('Calcular y ver cimentación'));
-              if (btn) { (window as any).__cimSilent = true; btn.click(); }
-            }, 100);
-          });
+          // ── Auto-fire REMOVIDO ──
+          // Antes había un van.derive que auto-disparaba "Calcular y ver
+          // cimentación" cuando aparecían reacciones — eso hacía que las
+          // zapatas Q4 + pedestales + vigas de amarre aparecieran SIN que
+          // el usuario las pidiera. La cimentación es opcional; solo se
+          // muestra cuando el user hace click explícitamente en el botón.
 
           // ── Botón: Calcular y mostrar cimentación en pantalla ──
           // Diseña las zapatas desde las reacciones de base y las dibuja como
@@ -1692,26 +2005,56 @@ solve`;
               }
             }
 
-            // ── Visualización: columna EXTRUIDA z=0 → z=-Hf (no línea) ──
-            // Box de tamaño colSize×colSize×Hf que muestra que el filo de la
-            // columna queda DENTRO de la zapata por la cantidad volExt. La
-            // cadena (viga de amarre) se conecta al EXTREMO INFERIOR de esta
-            // columna — al nodo del shell donde aplicamos la carga.
+            // ── Visualización: pedestal como LÍNEA (no caja extruida) ──
+            // El usuario pidió no mostrar la extrusión sólida oscura sobre
+            // fondo negro. Reemplazado por línea cyan tipo frame (igual que
+            // las columnas en el resto del modelo).
             const THREE = await import("three");
-            const matCol = new THREE.MeshStandardMaterial({
-              color: 0x808080, transparent: true, opacity: 0.7,
-              roughness: 0.6, side: THREE.DoubleSide,
-            });
-            const matColEdge = new THREE.LineBasicMaterial({ color: 0x000000 });
+            const matPedLine = new THREE.LineBasicMaterial({ color: 0x60a5fa, linewidth: 4 });
             const colObjs: any[] = [];
             for (const z of zapatasD as any[]) {
-              const pedGeo = new THREE.BoxGeometry(colSize, colSize, Hf);
-              const pedMesh = new THREE.Mesh(pedGeo, matCol.clone());
-              pedMesh.position.set(z.x, z.y, -Hf / 2);
-              colObjs.push(pedMesh);
-              const pedEdges = new THREE.LineSegments(new THREE.EdgesGeometry(pedGeo), matColEdge);
-              pedEdges.position.copy(pedMesh.position);
-              colObjs.push(pedEdges);
+              const lineGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(z.x, z.y, 0),
+                new THREE.Vector3(z.x, z.y, -Hf),
+              ]);
+              colObjs.push(new THREE.Line(lineGeo, matPedLine));
+            }
+            // ── Vigas de amarre VISUALIZACIÓN — líneas cyan entre zapatas
+            // adyacentes en X y en Y. Solo si sistemaCimentacion=1 (default
+            // del usuario en este flujo). Renderiza al nivel de plano medio
+            // del shell, conectando los nodos donde se aplican las cargas. ──
+            if (sistemaCimFem === 1) {
+              const vaMat = new THREE.LineBasicMaterial({ color: 0x22d3ee, linewidth: 3 });
+              const vaPts: any[] = [];
+              const byYv = new Map<string, any[]>();
+              const byXv = new Map<string, any[]>();
+              for (const z of zapatasD as any[]) {
+                const ky = z.y.toFixed(4), kx = z.x.toFixed(4);
+                if (!byYv.has(ky)) byYv.set(ky, []);
+                if (!byXv.has(kx)) byXv.set(kx, []);
+                byYv.get(ky)!.push(z); byXv.get(kx)!.push(z);
+              }
+              const zMidLevel = -Hf;
+              for (const row of byYv.values()) {
+                row.sort((a: any, b: any) => a.x - b.x);
+                for (let i = 0; i < row.length - 1; i++) {
+                  vaPts.push(new THREE.Vector3(row[i].x, row[i].y, zMidLevel));
+                  vaPts.push(new THREE.Vector3(row[i+1].x, row[i+1].y, zMidLevel));
+                }
+              }
+              for (const col of byXv.values()) {
+                col.sort((a: any, b: any) => a.y - b.y);
+                for (let i = 0; i < col.length - 1; i++) {
+                  vaPts.push(new THREE.Vector3(col[i].x, col[i].y, zMidLevel));
+                  vaPts.push(new THREE.Vector3(col[i+1].x, col[i+1].y, zMidLevel));
+                }
+              }
+              if (vaPts.length > 0) {
+                colObjs.push(new THREE.LineSegments(
+                  new THREE.BufferGeometry().setFromPoints(vaPts),
+                  vaMat,
+                ));
+              }
             }
 
             // Reemplazar states + correr análisis
@@ -2525,6 +2868,17 @@ van.derive(() => {
     for (const [i, j] of frames) out.push(`${i} ${j}`);
   }
   (window as any).__hekatanCliScript = out.join("\n");
+  // Re-corre build() del ejemplo activo si es uno que reacciona a drawing
+  // (newBlank, cad-draw, cli-modeler). Lo invocamos via __hekatanRebuild
+  // que está expuesto por buildParamsPane (rebuilds el modelo manteniendo
+  // los params actuales).
+  if (currentExample && (
+    currentExample.id === "new-blank" ||
+    currentExample.id === "cad-draw" ||
+    currentExample.id === "cli-modeler"
+  )) {
+    try { (window as any).__hekatanRebuild?.(); } catch {}
+  }
 });
 document.body.append(
   viewerElm,

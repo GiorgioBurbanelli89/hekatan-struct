@@ -62,6 +62,7 @@ export default defineConfig({
         "viga-medio-elastico": "src/viga-medio-elastico/index.html",
         "cli-modeler": "src/cli-modeler/index.html",
         "cad-draw": "src/cad-draw/index.html",
+        "new-blank": "src/new-blank/index.html",
         "edificio-con-losa": "src/edificio-con-losa/index.html",
         "edificio-con-muros": "src/edificio-con-muros/index.html",
         "plane": "src/plane/index.html",

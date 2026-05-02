@@ -26,6 +26,77 @@ Jump directly to any example with `?t=<id>`, e.g.:
 
 All buildings support the **Rigid Diaphragm** toggle (ASCE 7-22 §12.3.1) in the *Avanzado* folder, adjustable *Secciones por Piso* / *Luces por Vano* via `dynamicParams`, and separate XY / Z deform scales in Settings.
 
+## 📐 CAD Tools (new — NewBlank canvas)
+
+[`?t=new-blank`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=new-blank) — **Lienzo CAD 2D/3D** for drawing structures from scratch with mouse + Tweakpane controls.
+
+**Tools** (folder `✏ Herramientas CAD`):
+- 🖱 Seleccionar / ● Nodo / ／ Línea (frame) / ▭ Área (shell Q4)
+- ⌒ Polilínea / ▭ Rectángulo / ○ Círculo / ⌒ Arco (3 ptos)
+- ┊ Línea auxiliar / ↗ Prolongar línea
+- **ORTO (90°)** + **POLAR (45°)** modes
+- **Segmentos arc/círc** slider (4–64) — discretizes any non-linear element to N straight segments at FEM export
+
+**Work planes:** XY (planta) / XZ (elevación frontal) / YZ (elevación lateral) — sync with raycaster so mouse clicks fall on the active plane.
+
+**Snap:** separate **Snap 2D** + **Snap 3D** sliders. Snap 3D Indicator (sphere + RGB axes cross) follows the cursor on the work plane to help orient in 3D.
+
+**Views** (folder `Vista`):
+- 🏗 Isométrica / ⬇ Planta (X-Y) / → Elevación X / ↑ Elevación Y
+- 📍 **Ejes (frames individuales):** auto-generated buttons per unique X (Eje A, B, C…) and Y (Eje 1, 2, 3…) coordinate of the model — click to view that frame in elevation (FEM Studio style)
+- 👁 **Toggle ejes en escena** — draws dashed gridlines + labels A/B/C (blue) + 1/2/3 (red) at each gridline for CAD-style reference
+- 🎬 **Demo simulador CAD** — animates a virtual cursor through CAD tools and draws a portico in the canvas (visible mouse simulation)
+
+**Sections (Tweakpane params):** material (Hormigón/Acero), b/h column, b/h beam, shell thickness — applied to drawn elements automatically.
+
+**Supports/Loads (auto):** apoyo type at z_min nodes (Empotrado / Articulado / Rótula / sin apoyo), Fz/Fx loads at z_max nodes — toggleable.
+
+**Public TS API** (exposed on `window` for scripting/demos):
+```ts
+__hekatanDrawAt(x, y, z)         // add point (= mouse click)
+__hekatanDrawNewPoly()           // start new polyline (= right-click)
+__hekatanDrawCircle(cx, cy, cz, r, segs, plane)
+__hekatanDrawArc([p1], [p2], [p3], segs)
+__hekatanDrawRect([p1], [p2])
+__hekatanShowSnap(x, y, z) / __hekatanHideSnap()
+__hekatanShowAxes(xs, ys, zMax) / __hekatanHideAxes()
+__hekatanShowRefPlanes(zLevels, sizeM, cx, cy)
+```
+
+## 🔌 SAP2000 / ETABS / SAFE integration (PowerShell)
+
+**Imports (file → Hekatan):**
+- E2K (ETABS) — `csi-importer` example
+- S2K (SAP2000) — `csi-importer` example
+- Mesh, sections, loads, releases, supports parsed from text format
+
+**Exports (Hekatan → file):**
+- E2K full export (compatible with ETABS 22+)
+- S2K full export
+- F2K (SAFE) — foundation models with Winkler springs + reactions
+
+**Cross-validation pipeline** (Windows + PowerShell + CSI OAPI):
+- `Benchmark_Placa/safe_debug_zapata.ps1` — diagnostic tool that opens .FDB in SAFE, runs analysis, extracts settlement + Mxx via OAPI
+- `Benchmark_Placa/safe_extract_zapata.py` — Python OAPI version with SetRunCaseFlag + post-import joint count
+- Validated: zapata-aislada (Hekatan Q4 + Winkler) vs SAFE 21 — 96.7 mm SAFE vs 84 mm analytical (acceptable for Boussinesq deep formulation differences)
+- ETABS validation: ratio = 1.0000 for frames + modal, 0.99–1.003 for shells (full table at `/validation/python-etabs-verificado/`)
+
+**Known issue:** SAFE OAPI `File.OpenFile(.f2k)` returns `ret=0` but model is empty. **Workaround**: open .f2k in SAFE GUI manually → File → Save As → .FDB → OAPI reads .FDB correctly. Documented in `Benchmark_Placa/REPORTE_SAFE_F2K_BUG.md`.
+
+**Build & deploy in PowerShell** (Windows native, no MSYS):
+```powershell
+# Build
+$env:DEPLOY_BASE="/hekatan-struct/"; npm run build -w examples
+
+# Deploy (no MSYS_NO_PATHCONV needed in pure PowerShell)
+$env:GIT_AUTHOR_NAME="Your Name"
+$env:GIT_AUTHOR_EMAIL="you@example.com"
+npx gh-pages --dist website/src/examples `
+  --repo https://github.com/GiorgioBurbanelli89/hekatan-struct.git `
+  --branch gh-pages --dotfiles `
+  --message "your commit message"
+```
+
 ## What Hekatan Struct adds on top of Awatif
 
 | Feature | Awatif v2.0.0 | Hekatan Struct |

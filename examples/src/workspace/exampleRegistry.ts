@@ -221,10 +221,14 @@ import { tower3D } from "../tower-3d/tower3D";
 import { galpon } from "../galpon/galpon";
 import { edifAcero } from "../edif-acero/edifAcero";
 import { mezanine } from "../mezanine/mezanine";
+// Lienzo en blanco para dibujar (CAD interactivo)
+import { newBlank } from "../new-blank/newBlank";
 // Legacy del upstream awatif (rebrandeados, abren standalone)
 import { legacyAwatifExamples } from "./legacyAwatif";
 
 export const examplesRegistry: ExampleDef[] = [
+  // 📐 NewBlank — lienzo en blanco al inicio (más visible)
+  newBlank,
   // Importador CSI (F2K/E2K/S2K) — al inicio para acceso rápido
   csiImporter,
   // CLI Modeler — modelar con comandos tipo SAP (sin importar ningun archivo)
