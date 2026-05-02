@@ -84,6 +84,25 @@ export const edificioAporticado: ExampleDef = {
     CV:       P("Cargas", "CV (kN/nodo)", -2,   -20, 0,    0.5),
     Ex:       P("Cargas", "Ex sismo tope (kN)", 50,  0,   500, 10),
     Ey:       P("Cargas", "Ey sismo tope (kN)", 0,   0,   500, 10),
+    // ── Caso de carga a visualizar/analizar ──
+    // Selector que filtra qué cargas se aplican al solver. El viewer
+    // muestra las flechas solo de las cargas activas.
+    loadCase: PE("Cargas", "Caso de carga", 0, {
+      "Combinada (CM+CV+Ex+Ey)":     0,   // default — todas las cargas
+      "Solo Vertical (CM+CV)":        1,
+      "Solo Dead (CM)":               2,
+      "Solo Live (CV)":               3,
+      "Solo Sismo Ex":                4,
+      "Solo Sismo Ey":                5,
+      "Sismo XY (Ex+Ey)":             6,
+      "1.2 CM + 1.6 CV (ASCE)":       7,
+      "1.2 CM + 1.0 CV + 1.0 Ex":     8,
+      "1.2 CM + 1.0 CV + 1.0 Ey":     9,
+      "1.2 CM + 1.0 CV - 1.0 Ex":    10,
+      "1.2 CM + 1.0 CV - 1.0 Ey":    11,
+      "0.9 CM + 1.0 Ex":             12,
+      "0.9 CM + 1.0 Ey":             13,
+    }),
 
     // ══════════════════════════════════════════════════════════════
     // ══  CIMENTACIÓN  ══════════════════════════════════════════════
@@ -573,9 +592,29 @@ export const edificioAporticado: ExampleDef = {
         supports.set(nid[`${ix},${iy},0`], [...sDofs]);
       }
 
-    // Loads: CM + CV vertical por nodo, Ex/Ey en esquina superior
+    // ── Loads filtrados por caso de carga seleccionado ──
+    // p.loadCase: 0=combinada, 1=vert, 2=CM, 3=CV, 4=Ex, 5=Ey, 6=XY,
+    //   7=1.2D+1.6L, 8-11=combinaciones sísmicas, 12-13=0.9D ± E
+    const lc = Math.round(p.loadCase ?? 0);
+    // Factores [fCM, fCV, fEx, fEy] según caso
+    const factors: [number, number, number, number] =
+      lc === 1  ? [1.0, 1.0, 0.0, 0.0] :
+      lc === 2  ? [1.0, 0.0, 0.0, 0.0] :
+      lc === 3  ? [0.0, 1.0, 0.0, 0.0] :
+      lc === 4  ? [0.0, 0.0, 1.0, 0.0] :
+      lc === 5  ? [0.0, 0.0, 0.0, 1.0] :
+      lc === 6  ? [0.0, 0.0, 1.0, 1.0] :
+      lc === 7  ? [1.2, 1.6, 0.0, 0.0] :
+      lc === 8  ? [1.2, 1.0, 1.0, 0.0] :
+      lc === 9  ? [1.2, 1.0, 0.0, 1.0] :
+      lc === 10 ? [1.2, 1.0, -1.0, 0.0] :
+      lc === 11 ? [1.2, 1.0, 0.0, -1.0] :
+      lc === 12 ? [0.9, 0.0, 1.0, 0.0] :
+      lc === 13 ? [0.9, 0.0, 0.0, 1.0] :
+                  [1.0, 1.0, 1.0, 1.0];   // 0 = combinada todas
+    const [fCM, fCV, fEx, fEy] = factors;
     const loads = new Map<number, [number,number,number,number,number,number]>();
-    const vertNodo = p.CM + p.CV;
+    const vertNodo = fCM * p.CM + fCV * p.CV;
     if (vertNodo !== 0) {
       for (let iz = 1; iz < zCoords.length; iz++)
         for (let iy = 0; iy < yCoords.length; iy++)
@@ -584,11 +623,13 @@ export const edificioAporticado: ExampleDef = {
             if (nid[k] !== undefined) loads.set(nid[k], [0, 0, vertNodo, 0, 0, 0]);
           }
     }
-    if (p.Ex !== 0 || p.Ey !== 0) {
+    const ExEff = fEx * p.Ex;
+    const EyEff = fEy * p.Ey;
+    if (ExEff !== 0 || EyEff !== 0) {
       const top = nid[`${xCoords.length-1-(p.Lvdx>0?1:0)},${p.Lviy>0?1:0},${np}`];
       if (top !== undefined) {
         const prev = loads.get(top) ?? [0, 0, 0, 0, 0, 0];
-        loads.set(top, [prev[0] + p.Ex, prev[1] + p.Ey, prev[2], prev[3], prev[4], prev[5]]);
+        loads.set(top, [prev[0] + ExEff, prev[1] + EyEff, prev[2], prev[3], prev[4], prev[5]]);
       }
     }
 
