@@ -24,10 +24,19 @@ print(f"    OpenFile ret={ret}")
 
 m.SetPresentUnits(6)
 
-# Save first as .FDB to make SAFE happy (necesario para algunos f2k importados)
+# Verify model exists post-import
+n_pts = m.PointObj.Count()
+n_areas = m.AreaObj.Count()
+print(f"    Post-OpenFile: {n_pts} joints, {n_areas} areas")
+
+# Save first as .FDB
 sdb_path = os.path.join(os.environ["TEMP"], "zapata_hek_safe.FDB")
 ret = m.File.Save(sdb_path)
 print(f"    Save FDB ret={ret} -> {sdb_path}")
+
+n_pts2 = m.PointObj.Count()
+n_areas2 = m.AreaObj.Count()
+print(f"    Post-Save: {n_pts2} joints, {n_areas2} areas")
 
 # Asegurar que los cases estan marcados para correr (a veces los heredados
 # del .f2k tienen RunCase=No y RunAnalysis los salta).
