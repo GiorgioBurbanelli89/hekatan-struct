@@ -202,6 +202,70 @@ export function drawing({
       drawingObj.polylines.val = [...polys.slice(0, -1), arcPoly, []];
     }
   };
+  // ── Losa rectangular con chaflanes (esquinas redondeadas) ──
+  // 2 clicks: esquinas opuestas de la bounding box. Genera 4 lados rectos
+  // + 4 cuartos de círculo en las esquinas. Pensado para volados curvos
+  // arquitectónicos (balcones, fachadas redondeadas, losas de piscina).
+  (window as any).__hekatanDrawSlabChaflan = (
+    p1: [number, number, number],
+    p2: [number, number, number],
+    chaflanRadius: number = 1.0,
+    segArc: number = 6,
+    segStr: number = 6,
+  ) => {
+    const xMin = Math.min(p1[0], p2[0]);
+    const xMax = Math.max(p1[0], p2[0]);
+    const yMin = Math.min(p1[1], p2[1]);
+    const yMax = Math.max(p1[1], p2[1]);
+    const z = (p1[2] + p2[2]) / 2;
+    const Lx = xMax - xMin;
+    const Ly = yMax - yMin;
+    const r = Math.min(chaflanRadius, Lx / 2 - 0.01, Ly / 2 - 0.01);
+    if (r <= 0) return;
+    const baseIdx = drawingObj.points.rawVal.length;
+    const newPts: [number, number, number][] = [];
+    const polyIdx: number[] = [];
+    const addPt = (x: number, y: number) => {
+      newPts.push([x, y, z]);
+      polyIdx.push(baseIdx + newPts.length - 1);
+    };
+    // Borde inferior (y=yMin): de (xMin+r, yMin) a (xMax-r, yMin)
+    for (let i = 0; i <= segStr; i++) addPt(xMin + r + (Lx - 2*r) * i / segStr, yMin);
+    // Chaflán BR
+    for (let i = 1; i <= segArc; i++) {
+      const ang = -Math.PI/2 + (Math.PI/2) * i / segArc;
+      addPt((xMax - r) + r * Math.cos(ang), (yMin + r) + r * Math.sin(ang));
+    }
+    // Borde derecho
+    for (let i = 1; i <= segStr; i++) addPt(xMax, yMin + r + (Ly - 2*r) * i / segStr);
+    // Chaflán TR
+    for (let i = 1; i <= segArc; i++) {
+      const ang = 0 + (Math.PI/2) * i / segArc;
+      addPt((xMax - r) + r * Math.cos(ang), (yMax - r) + r * Math.sin(ang));
+    }
+    // Borde superior
+    for (let i = 1; i <= segStr; i++) addPt(xMax - r - (Lx - 2*r) * i / segStr, yMax);
+    // Chaflán TL
+    for (let i = 1; i <= segArc; i++) {
+      const ang = Math.PI/2 + (Math.PI/2) * i / segArc;
+      addPt((xMin + r) + r * Math.cos(ang), (yMax - r) + r * Math.sin(ang));
+    }
+    // Borde izquierdo
+    for (let i = 1; i <= segStr; i++) addPt(xMin, yMax - r - (Ly - 2*r) * i / segStr);
+    // Chaflán BL
+    for (let i = 1; i <= segArc; i++) {
+      const ang = Math.PI + (Math.PI/2) * i / segArc;
+      addPt((xMin + r) + r * Math.cos(ang), (yMin + r) + r * Math.sin(ang));
+    }
+    // Cerrar
+    polyIdx.push(baseIdx);
+    drawingObj.points.val = [...drawingObj.points.rawVal, ...newPts];
+    if (drawingObj.polylines) {
+      const polys = drawingObj.polylines.rawVal;
+      drawingObj.polylines.val = [...polys.slice(0, -1), polyIdx, []];
+    }
+  };
+
   // Rectángulo por 2 esquinas en plano XY o XZ
   (window as any).__hekatanDrawRect = (
     p1: [number, number, number],
@@ -411,7 +475,7 @@ export function drawing({
     viewerRender();
   };
   // Auto-update el snap marker cuando se mueve el mouse sobre el plano
-  // (intersect del raycaster + snap a la grilla configurada)
+  // Prioridad: OSNAP (Endpoint/Midpoint/etc.) > grid snap 2D
   rendererElm.addEventListener("pointermove", (event: PointerEvent) => {
     pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
     pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -419,17 +483,26 @@ export function drawing({
     const hit = raycaster.intersectObject(plane);
     if (hit.length) {
       const p = hit[0].point;
-      // Aplicar snap (default 0.5 m, override via window.__hekatanSnap2D)
-      const snap = (window as any).__hekatanSnap2D ?? 0.5;
-      if (snap > 0) {
-        p.x = Math.round(p.x / snap) * snap;
-        p.y = Math.round(p.y / snap) * snap;
-        p.z = Math.round(p.z / snap) * snap;
+      const osnapTol = ((window as any).__hekatanSnap2D ?? 0.5) * 1.2;
+      const osnap = (window as any).__hekatanOsnapCompute?.(p.x, p.y, p.z, osnapTol);
+      if (osnap) {
+        showOsnap(osnap.type, osnap.x, osnap.y, osnap.z);
+        snapMarker.position.set(osnap.x, osnap.y, osnap.z);
+        snapMarker.visible = true;
+      } else {
+        hideOsnap();
+        const snap = (window as any).__hekatanSnap2D ?? 0.5;
+        if (snap > 0) {
+          p.x = Math.round(p.x / snap) * snap;
+          p.y = Math.round(p.y / snap) * snap;
+          p.z = Math.round(p.z / snap) * snap;
+        }
+        snapMarker.position.copy(p);
+        snapMarker.visible = true;
       }
-      snapMarker.position.copy(p);
-      snapMarker.visible = true;
       viewerRender();
     } else {
+      hideOsnap();
       snapMarker.visible = false;
       viewerRender();
     }
@@ -515,6 +588,98 @@ export function drawing({
   });
 
   // On pointer click, add a point and polyline
+  // ════════════════════════════════════════════════════════════════════
+  // OBJECT SNAP (OSNAP) — estilo AutoCAD
+  // ════════════════════════════════════════════════════════════════════
+  // Snaps soportados:
+  //   - END (Endpoint): extremos de polilíneas/segmentos
+  //   - MID (Midpoint): punto medio de un segmento
+  //   - NODE: cualquier punto/nodo existente
+  //   - CEN (Center): centro de un círculo/arco discretizado
+  //   - PER (Perpendicular): proyección perpendicular sobre un segmento
+  //   - NEA (Nearest): punto más cercano sobre un segmento
+  //   - INT (Intersection): intersección de 2 segmentos
+  // El usuario activa cada snap via window.__hekatanOsnap[type] = true
+  (window as any).__hekatanOsnap = (window as any).__hekatanOsnap ?? {
+    end: true, mid: true, node: true, cen: true,
+    per: false, nea: false, int: false,
+  };
+  // Snap marker visual (cuadrado coloreado por tipo + label)
+  const osnapMarker = new THREE.Group();
+  osnapMarker.visible = false;
+  osnapMarker.frustumCulled = false;
+  scene.add(osnapMarker);
+  const osnapColors: Record<string, number> = {
+    end: 0xff3344, mid: 0xfbbf24, node: 0x60a5fa, cen: 0x34d399,
+    per: 0xc084fc, nea: 0xff7eb6, int: 0xff8800,
+  };
+  const showOsnap = (type: string, x: number, y: number, z: number) => {
+    while (osnapMarker.children.length) {
+      const c = osnapMarker.children.pop()!;
+      (c as any).geometry?.dispose?.();
+      (c as any).material?.dispose?.();
+    }
+    const col = osnapColors[type] ?? 0xffffff;
+    // Cuadrado pequeño + label
+    const s = 0.12;
+    const sqGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(x-s, y-s, z), new THREE.Vector3(x+s, y-s, z),
+      new THREE.Vector3(x+s, y-s, z), new THREE.Vector3(x+s, y+s, z),
+      new THREE.Vector3(x+s, y+s, z), new THREE.Vector3(x-s, y+s, z),
+      new THREE.Vector3(x-s, y+s, z), new THREE.Vector3(x-s, y-s, z),
+    ]);
+    osnapMarker.add(new THREE.LineSegments(sqGeo, new THREE.LineBasicMaterial({ color: col, linewidth: 2 })));
+    osnapMarker.position.set(0, 0, 0);
+    osnapMarker.visible = true;
+  };
+  const hideOsnap = () => { osnapMarker.visible = false; };
+  // Compute closest snap for current cursor world point
+  const computeOsnap = (px: number, py: number, pz: number, tol: number): { type: string; x: number; y: number; z: number } | null => {
+    const opts = (window as any).__hekatanOsnap as Record<string, boolean>;
+    const pts = drawingObj.points.rawVal as [number,number,number][];
+    const polys = drawingObj.polylines?.rawVal ?? [];
+    let best: { type: string; x: number; y: number; z: number; d: number } | null = null;
+    const consider = (type: string, x: number, y: number, z: number) => {
+      const d = Math.hypot(x - px, y - py, z - pz);
+      if (d > tol) return;
+      if (!best || d < best.d) best = { type, x, y, z, d };
+    };
+    // NODE: cada punto existente
+    if (opts.node || opts.end) {
+      pts.forEach(p => {
+        if (opts.node) consider("node", p[0], p[1], p[2]);
+      });
+    }
+    // ENDPOINT + MIDPOINT + NEAREST + PERPENDICULAR sobre segmentos de polilíneas
+    for (const poly of polys) {
+      if (poly.length < 2) continue;
+      for (let i = 0; i < poly.length - 1; i++) {
+        const a = pts[poly[i]], b = pts[poly[i+1]];
+        if (!a || !b) continue;
+        if (opts.end) {
+          consider("end", a[0], a[1], a[2]);
+          consider("end", b[0], b[1], b[2]);
+        }
+        if (opts.mid) {
+          consider("mid", (a[0]+b[0])/2, (a[1]+b[1])/2, (a[2]+b[2])/2);
+        }
+        if (opts.nea || opts.per) {
+          const dx = b[0]-a[0], dy = b[1]-a[1], dz = b[2]-a[2];
+          const len2 = dx*dx + dy*dy + dz*dz;
+          if (len2 < 1e-12) continue;
+          const t = Math.max(0, Math.min(1, ((px-a[0])*dx + (py-a[1])*dy + (pz-a[2])*dz) / len2));
+          const sx = a[0] + t*dx, sy = a[1] + t*dy, sz = a[2] + t*dz;
+          if (opts.nea) consider("nea", sx, sy, sz);
+          if (opts.per) consider("per", sx, sy, sz);
+        }
+      }
+    }
+    return best ? { type: best.type, x: best.x, y: best.y, z: best.z } : null;
+  };
+  (window as any).__hekatanOsnapCompute = computeOsnap;
+  (window as any).__hekatanOsnapShow = showOsnap;
+  (window as any).__hekatanOsnapHide = hideOsnap;
+
   // ── Buffer de clicks pendientes para tools multi-click ──
   // Círculo: 2 clicks (centro + radio) → __hekatanDrawCircle
   // Arco: 3 clicks (start + mid + end) → __hekatanDrawArc
@@ -580,14 +745,22 @@ export function drawing({
         Math.round(intersect[0].point.z)
       );
     }
-    // Aplicar snap 2D si está configurado
-    const snap = (window as any).__hekatanSnap2D ?? 0;
-    if (snap > 0) {
-      point = new THREE.Vector3(
-        Math.round(point.x / snap) * snap,
-        Math.round(point.y / snap) * snap,
-        Math.round(point.z / snap) * snap,
-      );
+    // OSNAP primero (prioridad sobre grid snap)
+    const osnapTol = ((window as any).__hekatanSnap2D ?? 0.5) * 1.2;
+    const osnap = (window as any).__hekatanOsnapCompute?.(point.x, point.y, point.z, osnapTol);
+    if (osnap) {
+      point = new THREE.Vector3(osnap.x, osnap.y, osnap.z);
+      updateStatus(`🎯 Snap [${osnap.type.toUpperCase()}] → (${point.x.toFixed(2)}, ${point.y.toFixed(2)}, ${point.z.toFixed(2)})`);
+    } else {
+      // Si no hay osnap, aplicar grid snap 2D
+      const snap = (window as any).__hekatanSnap2D ?? 0;
+      if (snap > 0) {
+        point = new THREE.Vector3(
+          Math.round(point.x / snap) * snap,
+          Math.round(point.y / snap) * snap,
+          Math.round(point.z / snap) * snap,
+        );
+      }
     }
 
     // ── Tool dispatcher ──
@@ -638,6 +811,24 @@ export function drawing({
       const [a, b] = pendingClicks;
       (window as any).__hekatanDrawRect?.(a, b);
       updateStatus(`✓ Rectángulo dibujado — (${a[0].toFixed(1)},${a[1].toFixed(1)}) → (${b[0].toFixed(1)},${b[1].toFixed(1)})`);
+      pendingClicks = [];
+      try { (window as any).__hekatanRebuild?.(); } catch {}
+      return;
+    }
+    if (tool === "chaflan") {
+      // 2 clicks: esquinas opuestas. El radio se lee de window.__hekatanChaflanR
+      pendingClicks.push([point.x, point.y, point.z]);
+      if (pendingClicks.length === 1) {
+        updateStatus(`▱ Losa con chaflanes — click 1/2 OK (esquina). Marcá la esquina opuesta.`);
+        return;
+      }
+      const [a, b] = pendingClicks;
+      const rad = (window as any).__hekatanChaflanR ?? 1.0;
+      const segArc = Math.max(3, (window as any).__hekatanArcSegs ?? 6);
+      (window as any).__hekatanDrawSlabChaflan?.(a, b, rad, segArc, 6);
+      const dx = Math.abs(b[0] - a[0]).toFixed(1);
+      const dy = Math.abs(b[1] - a[1]).toFixed(1);
+      updateStatus(`✓ Losa con chaflanes dibujada — ${dx}×${dy}m, r=${rad}m, ${segArc} seg/chaflán`);
       pendingClicks = [];
       try { (window as any).__hekatanRebuild?.(); } catch {}
       return;

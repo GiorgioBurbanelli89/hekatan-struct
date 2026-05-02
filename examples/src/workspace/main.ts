@@ -1037,6 +1037,7 @@ function buildParamsPane() {
       rect:     "▭ Rectángulo — click 2 esquinas opuestas. Genera 4 nodos + 4 frames cerrados.",
       aux:      "┊ Línea auxiliar — referencia visual (no genera FEM)",
       extend:   "↗ Prolongar — click una línea existente, click en la dirección a extender",
+      chaflan:  "▱ Losa con chaflanes — click 2 esquinas opuestas. Radio del chaflán se ajusta en 'Chaflán r (m)'. Genera 4 lados rectos + 4 cuartos de círculo automáticamente.",
     };
     const setActiveTool = (tool: string) => {
       proxyTool.v = tool;
@@ -1062,6 +1063,8 @@ function buildParamsPane() {
     fCad.addButton({ title: "⌒ Arco (3 ptos)" }).on("click", () => setActiveTool("arc"));
     fCad.addButton({ title: "┊ Línea auxiliar" }).on("click", () => setActiveTool("aux"));
     fCad.addButton({ title: "↗ Prolongar línea" }).on("click", () => setActiveTool("extend"));
+    // ── Tools arquitectónicos (formas irregulares) ──
+    fCad.addButton({ title: "▱ Losa con chaflanes (rect + arcos)" }).on("click", () => setActiveTool("chaflan"));
     // Modos de drawing
     const fModes = fCad.addFolder({ title: "🎯 Modos de dibujo", expanded: true });
     const proxyModes = { ortho: false, polar: false, segs: 12 };
@@ -1076,6 +1079,30 @@ function buildParamsPane() {
     fModes.addBinding(proxyModes, "segs", { min: 4, max: 64, step: 1, label: "Segmentos arc/círc" }).on("change", (ev: any) => {
       (window as any).__hekatanArcSegs = ev.value;
     });
+    // Radio del chaflán para losas arquitectónicas
+    const proxyChaflan = { r: 1.0 };
+    fModes.addBinding(proxyChaflan, "r", { min: 0.1, max: 5, step: 0.1, label: "Chaflán r (m)" }).on("change", (ev: any) => {
+      (window as any).__hekatanChaflanR = ev.value;
+    });
+    (window as any).__hekatanChaflanR = 1.0;  // default
+
+    // ── 🎯 Object Snap (OSNAP) — estilo AutoCAD ──
+    // Endpoint, Midpoint, Center, Node, Perpendicular, Nearest, Intersection.
+    // Cada uno toggle independiente. Marcador con color por tipo aparece
+    // cuando el cursor está cerca de un snap activo.
+    const fOsnap = fCad.addFolder({ title: "🎯 Object Snap (OSNAP)", expanded: false });
+    const osnapState = (window as any).__hekatanOsnap ?? {
+      end: true, mid: true, node: true, cen: true,
+      per: false, nea: false, int: false,
+    };
+    (window as any).__hekatanOsnap = osnapState;
+    fOsnap.addBinding(osnapState, "end",  { label: "🔴 Endpoint" });
+    fOsnap.addBinding(osnapState, "mid",  { label: "🟡 Midpoint" });
+    fOsnap.addBinding(osnapState, "node", { label: "🔵 Node" });
+    fOsnap.addBinding(osnapState, "cen",  { label: "🟢 Center" });
+    fOsnap.addBinding(osnapState, "per",  { label: "🟣 Perpendicular" });
+    fOsnap.addBinding(osnapState, "nea",  { label: "🌸 Nearest" });
+    fOsnap.addBinding(osnapState, "int",  { label: "🟠 Intersection" });
     // Plano de trabajo — actualiza drawingGridTarget para que el raycaster
     // del awatif Drawing intersecte contra el plano correcto. Sin esto los
     // botones solo cambiaban una variable lógica sin efecto visual.
