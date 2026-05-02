@@ -15,6 +15,8 @@ import type { ExampleDef, BuildStates } from "./exampleRegistry";
 import {
   forceUnit, dispUnit, fromKn, toKn, fromKnm, toKnm,
   forceUnitSuffix, momentUnitSuffix, dispUnitSuffix, stripUnitSuffix,
+  stressUnit, subgradeUnit, stiffTransUnit, lengthSectionUnit,
+  applyConsistentUnits, detectCurrentPreset,
 } from "./units";
 
 // Propagación unit → colormap legend del viewer (misma pipeline que el workspace)
@@ -287,6 +289,80 @@ export function runExampleStandalone(ex: ExampleDef) {
     }).on("change", (e) => {
       dispUnit.val = e.value as any;
       buildPane();
+      rebuild();
+    });
+
+    // Sub-folder "🌐 Sistema (preset)" — un click setea todo coherente
+    const fPreset = fUnits.addFolder({ title: "🌐 Sistema (preset)", expanded: true });
+    const presetProxy = { sistema: detectCurrentPreset() };
+    fPreset.addBinding(presetProxy, "sistema", {
+      label: "Preset",
+      options: {
+        "Metric MKS (tonf, m, mm, kgf/cm²)": "Metric MKS",
+        "Metric SI (kN, m, mm, MPa)": "Metric SI",
+        "U.S. Imperial (kip, ft, in, ksi)": "U.S. Imperial",
+        "Custom (granular)": "Custom",
+      },
+    }).on("change", (e: any) => {
+      if (e.value === "Custom") return;
+      applyConsistentUnits(e.value);
+      unitsProxy.force = forceUnit.val;
+      unitsProxy.disp = dispUnit.val;
+      customProxy.stress = stressUnit.val;
+      customProxy.subgrade = subgradeUnit.val;
+      customProxy.stiffTrans = stiffTransUnit.val;
+      customProxy.lengthSection = lengthSectionUnit.val;
+      pane.refresh();
+      buildPane();
+      rebuild();
+    });
+
+    // Sub-folder "📐 Display Units (granular)"
+    const fCustom = fUnits.addFolder({ title: "📐 Display Units (granular)", expanded: false });
+    const customProxy = {
+      stress: stressUnit.val,
+      subgrade: subgradeUnit.val,
+      stiffTrans: stiffTransUnit.val,
+      lengthSection: lengthSectionUnit.val,
+    };
+    fCustom.addBinding(customProxy, "stress", {
+      label: "Stress",
+      options: { "kN/m²": "kN/m²", "kPa": "kPa", "MPa": "MPa", "GPa": "GPa",
+                 "kgf/cm²": "kgf/cm²", "tonf/m²": "tonf/m²", "psi": "psi",
+                 "ksi": "ksi", "kip/ft²": "kip/ft²" },
+    }).on("change", (e: any) => {
+      stressUnit.val = e.value;
+      presetProxy.sistema = detectCurrentPreset();
+      pane.refresh();
+      rebuild();
+    });
+    fCustom.addBinding(customProxy, "subgrade", {
+      label: "Subgrade ks",
+      options: { "kN/m³": "kN/m³", "tonf/m³": "tonf/m³", "kgf/cm³": "kgf/cm³",
+                 "kip/ft³": "kip/ft³", "pci": "pci" },
+    }).on("change", (e: any) => {
+      subgradeUnit.val = e.value;
+      presetProxy.sistema = detectCurrentPreset();
+      pane.refresh();
+      rebuild();
+    });
+    fCustom.addBinding(customProxy, "stiffTrans", {
+      label: "Stiffness K",
+      options: { "kN/m": "kN/m", "tonf/m": "tonf/m", "kip/in": "kip/in",
+                 "kip/ft": "kip/ft", "N/mm": "N/mm" },
+    }).on("change", (e: any) => {
+      stiffTransUnit.val = e.value;
+      presetProxy.sistema = detectCurrentPreset();
+      pane.refresh();
+      rebuild();
+    });
+    fCustom.addBinding(customProxy, "lengthSection", {
+      label: "Length section",
+      options: { "mm": "mm", "cm": "cm", "m": "m", "in": "in", "ft": "ft" },
+    }).on("change", (e: any) => {
+      lengthSectionUnit.val = e.value;
+      presetProxy.sistema = detectCurrentPreset();
+      pane.refresh();
       rebuild();
     });
 
