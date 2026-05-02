@@ -109,6 +109,70 @@ export function getSettings(
   // update
   container.setAttribute("id", "settings");
 
+  // ── Hacer el panel Settings ARRASTRABLE ──
+  // Igual que el panel Workspace (paneHost en main.ts). El usuario puede
+  // mover este panel desde la barra de título "Settings" (.tp-rotv_b).
+  // Posición persistida en localStorage.
+  const SETTINGS_POS_KEY = "hk_settingsPos";
+  // Posicionar como flotante con la posición guardada (o default top-left)
+  let savedPos: { left: number; top: number } | null = null;
+  try {
+    const raw = localStorage.getItem(SETTINGS_POS_KEY);
+    if (raw) savedPos = JSON.parse(raw);
+  } catch { /* default */ }
+  container.style.cssText = [
+    "position:fixed",
+    savedPos ? `left:${savedPos.left}px` : "left:8px",
+    savedPos ? `top:${savedPos.top}px` : "top:8px",
+    "z-index:50",
+    "max-height:calc(100vh - 32px)",
+    "overflow-y:auto",
+    "box-shadow:0 4px 16px rgba(0,0,0,0.35)",
+    "border-radius:6px",
+  ].join(";") + ";";
+
+  const setupDrag = () => {
+    const handle = container.querySelector(".tp-rotv_b") as HTMLElement | null;
+    if (!handle) {
+      setTimeout(setupDrag, 200);
+      return;
+    }
+    handle.style.cursor = "move";
+    handle.style.userSelect = "none";
+    let dragging = false;
+    let startX = 0, startY = 0, origLeft = 0, origTop = 0;
+    handle.addEventListener("mousedown", (e: MouseEvent) => {
+      dragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      const r = container.getBoundingClientRect();
+      origLeft = r.left;
+      origTop = r.top;
+      container.style.left = `${origLeft}px`;
+      container.style.top = `${origTop}px`;
+    });
+    window.addEventListener("mousemove", (e: MouseEvent) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      const newLeft = Math.max(0, Math.min(window.innerWidth - 40, origLeft + dx));
+      const newTop = Math.max(0, Math.min(window.innerHeight - 40, origTop + dy));
+      container.style.left = `${newLeft}px`;
+      container.style.top = `${newTop}px`;
+    });
+    window.addEventListener("mouseup", () => {
+      if (!dragging) return;
+      dragging = false;
+      try {
+        localStorage.setItem(SETTINGS_POS_KEY, JSON.stringify({
+          left: parseFloat(container.style.left),
+          top: parseFloat(container.style.top),
+        }));
+      } catch { /* localStorage unavailable */ }
+    });
+  };
+  setupDrag();
+
   if (mesh?.nodes) {
     pane.addBinding(settings.displayScale, "val", {
       label: "Display scale",
