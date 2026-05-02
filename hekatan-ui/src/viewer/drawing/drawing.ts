@@ -515,8 +515,51 @@ export function drawing({
   });
 
   // On pointer click, add a point and polyline
+  // ── Buffer de clicks pendientes para tools multi-click ──
+  // Círculo: 2 clicks (centro + radio) → __hekatanDrawCircle
+  // Arco: 3 clicks (start + mid + end) → __hekatanDrawArc
+  // Rectángulo: 2 clicks (esquina A + B) → __hekatanDrawRect
+  let pendingClicks: [number, number, number][] = [];
+  // ── Crear status bar HTML siempre visible debajo del viewer ──
+  // Muestra: tool activa + paso actual + última acción.
+  const statusBar = document.createElement("div");
+  statusBar.id = "hk-cad-status";
+  statusBar.style.cssText = [
+    "position:fixed",
+    "bottom:8px",
+    "left:50%",
+    "transform:translateX(-50%)",
+    "padding:6px 14px",
+    "background:rgba(15, 23, 42, 0.92)",
+    "color:#22d3ee",
+    "border:1px solid rgba(34, 211, 238, 0.5)",
+    "border-radius:6px",
+    "font-family:Consolas, monospace",
+    "font-size:12px",
+    "z-index:90",
+    "pointer-events:none",
+    "box-shadow:0 0 8px rgba(34, 211, 238, 0.25)",
+    "max-width:90vw",
+    "white-space:nowrap",
+    "overflow:hidden",
+    "text-overflow:ellipsis",
+  ].join(";") + ";";
+  statusBar.textContent = "🛠 CAD listo — seleccioná un tool y hacé click en el viewer";
+  document.body.appendChild(statusBar);
+
+  // Helper de status — el usuario VE en pantalla qué paso del tool va
+  const updateStatus = (txt: string) => {
+    statusBar.textContent = txt;
+    (window as any).__hekatanCadStatusText = txt;
+  };
+  // Reset pendingClicks cuando el usuario cambia de tool
+  (window as any).__hekatanCadResetPending = () => {
+    pendingClicks = [];
+    updateStatus("🛠 Tool cambiado — clicks pendientes limpiados");
+  };
+
   rendererElm.addEventListener("click", (event: PointerEvent) => {
-    // handle when rotation and click happen together
+    // Ignorar click que viene de drag (rotación)
     if (pointerDownAndMovedCount > 5) {
       pointerDownAndMovedCount = 0;
       return;
@@ -527,31 +570,95 @@ export function drawing({
     pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(pointer, camera);
     const intersect = raycaster.intersectObject(plane);
+    if (!intersect.length) return;
 
-    if (intersect.length) {
-      let point = intersect[0].point;
-      if (event.ctrlKey || event.metaKey) {
-        point = new THREE.Vector3(
-          Math.round(intersect[0].point.x),
-          Math.round(intersect[0].point.y),
-          Math.round(intersect[0].point.z)
-        );
-      }
-
-      drawingObj.points.val = [...drawingObj.points.rawVal, point.toArray()];
-
-      if (drawingObj.polylines) {
-        drawingObj.polylines.val = [
-          ...drawingObj.polylines.rawVal.slice(0, -1),
-          [
-            ...(drawingObj.polylines.rawVal.length
-              ? drawingObj.polylines.rawVal.pop()
-              : []),
-            drawingObj.points.rawVal.length - 1,
-          ],
-        ];
-      }
+    let point = intersect[0].point;
+    if (event.ctrlKey || event.metaKey) {
+      point = new THREE.Vector3(
+        Math.round(intersect[0].point.x),
+        Math.round(intersect[0].point.y),
+        Math.round(intersect[0].point.z)
+      );
     }
+    // Aplicar snap 2D si está configurado
+    const snap = (window as any).__hekatanSnap2D ?? 0;
+    if (snap > 0) {
+      point = new THREE.Vector3(
+        Math.round(point.x / snap) * snap,
+        Math.round(point.y / snap) * snap,
+        Math.round(point.z / snap) * snap,
+      );
+    }
+
+    // ── Tool dispatcher ──
+    const tool = ((window as any).__hekatanCadState?.get?.() as any)?.tool ?? "node";
+
+    if (tool === "circle") {
+      // 2 clicks: centro + punto en el radio
+      pendingClicks.push([point.x, point.y, point.z]);
+      if (pendingClicks.length === 1) {
+        updateStatus(`○ Círculo — click 1/2 OK (centro). Ahora marcá el radio.`);
+        return;
+      }
+      // 2 clicks recolectados → calcular radio + plano + dibujar
+      const [c, p2] = pendingClicks;
+      const r = Math.hypot(p2[0] - c[0], p2[1] - c[1], p2[2] - c[2]);
+      // Detectar plano según componente con menor variación
+      const dx = Math.abs(p2[0] - c[0]);
+      const dy = Math.abs(p2[1] - c[1]);
+      const dz = Math.abs(p2[2] - c[2]);
+      const planeKind: "xy" | "xz" | "yz" = dz < 1e-3 ? "xy" : (dy < 1e-3 ? "xz" : "yz");
+      const segs = (window as any).__hekatanArcSegs ?? 12;
+      (window as any).__hekatanDrawCircle?.(c[0], c[1], c[2], r, segs, planeKind);
+      updateStatus(`✓ Círculo dibujado en ${planeKind.toUpperCase()} — r=${r.toFixed(2)}m, ${segs} segmentos`);
+      pendingClicks = [];
+      try { (window as any).__hekatanRebuild?.(); } catch {}
+      return;
+    }
+    if (tool === "arc") {
+      // 3 clicks: start + mid + end
+      pendingClicks.push([point.x, point.y, point.z]);
+      if (pendingClicks.length === 1) { updateStatus(`⌒ Arco — click 1/3 OK (inicio). Marcá el punto medio.`); return; }
+      if (pendingClicks.length === 2) { updateStatus(`⌒ Arco — click 2/3 OK (medio). Marcá el final.`); return; }
+      const [p1, pm, pe] = pendingClicks;
+      const segs = (window as any).__hekatanArcSegs ?? 12;
+      (window as any).__hekatanDrawArc?.(p1, pm, pe, segs);
+      updateStatus(`✓ Arco dibujado — ${segs} segmentos`);
+      pendingClicks = [];
+      try { (window as any).__hekatanRebuild?.(); } catch {}
+      return;
+    }
+    if (tool === "rect") {
+      // 2 clicks: esquina A + esquina opuesta
+      pendingClicks.push([point.x, point.y, point.z]);
+      if (pendingClicks.length === 1) {
+        updateStatus(`▭ Rectángulo — click 1/2 OK (esquina). Marcá la esquina opuesta.`);
+        return;
+      }
+      const [a, b] = pendingClicks;
+      (window as any).__hekatanDrawRect?.(a, b);
+      updateStatus(`✓ Rectángulo dibujado — (${a[0].toFixed(1)},${a[1].toFixed(1)}) → (${b[0].toFixed(1)},${b[1].toFixed(1)})`);
+      pendingClicks = [];
+      try { (window as any).__hekatanRebuild?.(); } catch {}
+      return;
+    }
+
+    // ── Default behavior: tools "select", "node", "line", "polyline", "area" ──
+    // Click agrega punto + extiende polilínea actual
+    drawingObj.points.val = [...drawingObj.points.rawVal, point.toArray()];
+    if (drawingObj.polylines) {
+      drawingObj.polylines.val = [
+        ...drawingObj.polylines.rawVal.slice(0, -1),
+        [
+          ...(drawingObj.polylines.rawVal.length
+            ? drawingObj.polylines.rawVal.pop()
+            : []),
+          drawingObj.points.rawVal.length - 1,
+        ],
+      ];
+    }
+    if (tool === "node") updateStatus(`● Nodo creado en (${point.x.toFixed(2)}, ${point.y.toFixed(2)}, ${point.z.toFixed(2)})`);
+    else if (tool === "line") updateStatus(`／ Línea — punto agregado. Continuá clickeando para extender, right-click para terminar.`);
   });
 
   // On contextmenu, add a new empty polyline

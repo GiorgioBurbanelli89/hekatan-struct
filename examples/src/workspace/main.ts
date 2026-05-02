@@ -1025,10 +1025,29 @@ function buildParamsPane() {
     // Tool selector — botones grandes
     const proxyTool = { v: "node" };
     const toolBtns: Record<string, any> = {};
+    // Instrucciones por tool — el usuario las ve en el status bar al activar
+    const toolInstructions: Record<string, string> = {
+      select:   "🖱 Seleccionar — click sobre un nodo/elemento para seleccionarlo",
+      node:     "● Nodo — cada click crea un nodo en la posición del plano de trabajo",
+      line:     "／ Línea — click 2 puntos para crear un frame. Continúa clickeando para extender la polilínea, right-click para terminar.",
+      polyline: "⌒ Polilínea — click sucesivos crean segmentos conectados; right-click para terminar.",
+      area:     "▭ Área — 4 clicks crean un Q4 shell (en orden CCW)",
+      circle:   "○ Círculo — click 2 puntos: 1=centro, 2=radio. Se discretiza en N segmentos (slider 'Segmentos arc/circ').",
+      arc:      "⌒ Arco (3 ptos) — click 3 puntos: 1=inicio, 2=medio, 3=fin. Se discretiza en N segmentos.",
+      rect:     "▭ Rectángulo — click 2 esquinas opuestas. Genera 4 nodos + 4 frames cerrados.",
+      aux:      "┊ Línea auxiliar — referencia visual (no genera FEM)",
+      extend:   "↗ Prolongar — click una línea existente, click en la dirección a extender",
+    };
     const setActiveTool = (tool: string) => {
       proxyTool.v = tool;
       try { (window as any).__hekatanCadState?.setTool?.(tool); } catch {}
-      console.log(`[CAD] Tool activo: ${tool}`);
+      // Limpiar clicks pendientes del tool anterior (round-trip)
+      try { (window as any).__hekatanCadResetPending?.(); } catch {}
+      // Mostrar instrucción del tool nuevo
+      const instr = toolInstructions[tool] ?? `Tool ${tool} activo`;
+      const statusEl = document.getElementById("hk-cad-status");
+      if (statusEl) statusEl.textContent = instr;
+      console.log(`[CAD] Tool activo: ${tool} — ${instr}`);
     };
     fCad.addButton({ title: "🖱 Seleccionar" }).on("click", () => setActiveTool("select"));
     fCad.addButton({ title: "● Nodo" }).on("click", () => setActiveTool("node"));
