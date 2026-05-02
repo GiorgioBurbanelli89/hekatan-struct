@@ -7,8 +7,9 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 
 export const plateThick: ExampleDef = {
   id: "plate-thick",
-  name: "Plate Thick (Mindlin-Reissner)",
-  category: "Placas",
+  name: "Plate Thick (Mindlin-Reissner) — Hekatan vs SAP +0.30%",
+  category: "🏁 Benchmarks",
+  benchmark: true,
   defaultShellResult: "bendingXX",
   availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "displacementZ", "shearX", "shearY"],
   hasModal: true,

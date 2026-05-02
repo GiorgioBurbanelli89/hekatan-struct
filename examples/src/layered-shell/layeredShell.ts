@@ -99,8 +99,9 @@ function buildLayers(p: Record<string, number>): { layers: LayerDef[]; presetKey
 
 export const layeredShell: ExampleDef = {
   id: "layered-shell",
-  name: "Layered Shell (CLT — ABBD)",
-  category: "Cáscaras",
+  name: "Layered Shell (CLT/ABBD) — Hekatan vs SAP layered (ratios 0.7%)",
+  category: "🏁 Benchmarks",
+  benchmark: true,
   defaultShellResult: "bendingXX",
   availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "displacementZ", "membraneXX", "membraneYY"],
   hasModal: false,

@@ -20,8 +20,9 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 
 export const shellThick: ExampleDef = {
   id: "shell-thick",
-  name: "Shell Thick (MITC4) — Muro de corte",
-  category: "Cáscaras",
+  name: "Shell Thick (MITC4) — Hekatan vs SAP +0.30%",
+  category: "🏁 Benchmarks",
+  benchmark: true,
   defaultShellResult: "vonMises",
   availableShellResults: ["vonMises", "bendingXX", "bendingYY", "bendingXY", "membraneXX", "membraneYY", "membraneXY", "shearX", "shearY", "displacementX", "displacementZ"],
   hasModal: true,
