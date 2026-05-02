@@ -139,8 +139,34 @@ const analyzeOutputs: State<AnalyzeOutputs> = van.state({});
 const objects3D: State<THREE.Object3D[]> = van.state([]);
 // Drawing states (awatif-style) — mouse interactivo + raycaster nativo de
 // hekatan-ui. Solo se usa en el ejemplo cad-draw (otros los ignoran).
-const drawingPoints: State<[number, number, number][]> = van.state([]);
-const drawingPolylines: State<number[][]> = van.state([[]]);
+// ── Drawing state — persistido en localStorage ──
+// Antes era memoria pura: cada reload perdía los nodos dibujados con CAD.
+// Ahora lo persistimos en hk_drawingPoints + hk_drawingPolylines para que
+// el usuario pueda cerrar/reabrir el browser y mantener su modelo.
+const DRAW_PTS_KEY = "hk_drawingPoints";
+const DRAW_POLYS_KEY = "hk_drawingPolylines";
+const loadDrawState = (): { pts: [number,number,number][]; polys: number[][] } => {
+  try {
+    const ptsRaw = localStorage.getItem(DRAW_PTS_KEY);
+    const polysRaw = localStorage.getItem(DRAW_POLYS_KEY);
+    if (ptsRaw && polysRaw) {
+      const pts = JSON.parse(ptsRaw) as [number,number,number][];
+      const polys = JSON.parse(polysRaw) as number[][];
+      return { pts, polys };
+    }
+  } catch {}
+  return { pts: [], polys: [[]] };
+};
+const _initialDraw = loadDrawState();
+const drawingPoints: State<[number, number, number][]> = van.state(_initialDraw.pts);
+const drawingPolylines: State<number[][]> = van.state(_initialDraw.polys);
+// Persist on every change
+van.derive(() => {
+  try {
+    localStorage.setItem(DRAW_PTS_KEY, JSON.stringify(drawingPoints.val));
+    localStorage.setItem(DRAW_POLYS_KEY, JSON.stringify(drawingPolylines.val));
+  } catch {}
+});
 const drawingGridTarget: State<{ position: [number,number,number]; rotation: [number,number,number] }> =
   van.state({ position: [10, 10, 0], rotation: [Math.PI/2, 0, 0] });
 // Expongo los van states a globals para que ejemplos (newBlank, etc.)
