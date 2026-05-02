@@ -39,8 +39,8 @@ const MAT_GROUND = new THREE.LineBasicMaterial({ color: 0x00cc00, linewidth: 2 }
 
 export const zapataAisladaValidacion: ExampleDef = {
   id: "zapata-aislada-validacion",
-  name: "Isolated Footing — Calcpad validation",
-  category: "Cimentaciones",
+  name: "Zapata Aislada — Hekatan vs SAFE/Calcpad (Bowles)",
+  category: "🏁 Benchmarks",
   benchmark: true,  // 🏁 Validación Bowles 1996 — referencia Winkler clásica
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "displacementZ", "vonMises"],
@@ -163,6 +163,24 @@ export const zapataAisladaValidacion: ExampleDef = {
     const P_u = P * (u === "tonf" ? 1 : u === "kip" ? TONF_TO_KN / 4.4482216 : TONF_TO_KN);
     const Mx_u = (p.Mx_simple ?? 0) * (u === "tonf" ? 1 : u === "kip" ? TONF_TO_KN / 4.4482216 : TONF_TO_KN);
     const My_u = (p.My_simple ?? 0) * (u === "tonf" ? 1 : u === "kip" ? TONF_TO_KN / 4.4482216 : TONF_TO_KN);
+    // ─── Comparación con SAFE F2K (caso de referencia con ks=1030 kN/m³) ───
+    // SAFE GUI parsea el F2K de Hekatan → corre análisis → max |Uz|=96.7 mm
+    // (ver Benchmark_Placa/safe_zapata_run.LOG, sesión 2026-05-02)
+    // Solo aplica al caso default. Si user cambia params, los SAFE no escalan.
+    const isDefaultCase = (p.q_adm ?? 10) === 10 && (p.P_simple ?? 0) === 20 &&
+                          Math.abs((p.Mx_simple ?? 0) - 0.5) < 0.01 &&
+                          Math.abs((p.My_simple ?? 0) - (-0.5)) < 0.01 &&
+                          (p.Lz ?? 1.5) === 1.5 && (p.Bz ?? 1.5) === 1.5;
+    const safeRefMm = isDefaultCase ? "96.7 mm" : "(no aplica)";
+
+    // w_max Hekatan
+    const defs = states.deformOutputs.rawVal?.deformations as Map<number, number[]> | undefined;
+    let wMax_m = 0;
+    if (defs) defs.forEach((v) => { if (Math.abs(v[2]) > Math.abs(wMax_m)) wMax_m = v[2]; });
+    const wMax_mm = Math.abs(wMax_m) * 1000;
+    const safeW_mm = 96.7;
+    const diffPct = isDefaultCase ? ((wMax_mm - safeW_mm) / safeW_mm * 100) : 0;
+
     return {
       "Mode": "Direct P/Mx/My",
       "Soporte": supportModeName,
@@ -177,6 +195,11 @@ export const zapataAisladaValidacion: ExampleDef = {
       [`σ_min comp (${u}/m²)`]: sigmaMin_u.toFixed(2),
       [`q_adm (${u}/m²)`]: qAdm_u.toFixed(2),
       "σ/q_adm": ratio.toFixed(2) + (ratio > 1 ? " ⚠" : " ✓"),
+      // ─── 🏁 Comparación cruzada Hekatan vs SAFE F2K ───
+      "—— Validación cruzada ——": "",
+      "Hekatan w_max (mm)": wMax_mm.toFixed(2),
+      "SAFE w_max ref (mm)": safeRefMm,
+      "Diff Hekatan vs SAFE": isDefaultCase ? `${diffPct.toFixed(1)}%` : "(cambia params al default)",
     };
   },
   build(p, states) {
