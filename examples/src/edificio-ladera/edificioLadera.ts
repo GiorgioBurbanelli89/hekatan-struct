@@ -65,6 +65,23 @@ export const edificioLadera: ExampleDef = {
     CV:    P("Cargas", "CV (kN/nodo cubierta)",  -3, -20,   0,  0.5),
     Ex:    P("Cargas", "Ex sismo X tope (kN)",   80,   0, 500, 10),
     Ey:    P("Cargas", "Ey sismo Y tope (kN)",    0,   0, 500, 10),
+    // Selector caso de carga (mismo que edificio-aporticado)
+    loadCase: PE("Cargas", "Caso de carga", 0, {
+      "Combinada (CM+CV+Ex+Ey)":     0,
+      "Solo Vertical (CM+CV)":        1,
+      "Solo Dead (CM)":               2,
+      "Solo Live (CV)":               3,
+      "Solo Sismo Ex":                4,
+      "Solo Sismo Ey":                5,
+      "Sismo XY (Ex+Ey)":             6,
+      "1.2 CM + 1.6 CV (ASCE)":       7,
+      "1.2 CM + 1.0 CV + 1.0 Ex":     8,
+      "1.2 CM + 1.0 CV + 1.0 Ey":     9,
+      "1.2 CM + 1.0 CV - 1.0 Ex":    10,
+      "1.2 CM + 1.0 CV - 1.0 Ey":    11,
+      "0.9 CM + 1.0 Ex":             12,
+      "0.9 CM + 1.0 Ey":             13,
+    }),
 
     // ── Cimentación ──
     q_adm_zapata: P("Cimentación", "q_adm (tonf/m²)",   10,   1,    100,   1),
@@ -297,16 +314,34 @@ export const edificioLadera: ExampleDef = {
         else                 supports.set(baseId, [true, true, true, false, false, false]);
       }
 
-    // ── Cargas: CM+CV en nodos de cubierta + Ex/Ey en cota más alta ──
+    // ── Cargas filtradas por caso de carga seleccionado ──
+    const lc = Math.round(p.loadCase ?? 0);
+    const factors: [number, number, number, number] =
+      lc === 1  ? [1.0, 1.0, 0.0, 0.0] :
+      lc === 2  ? [1.0, 0.0, 0.0, 0.0] :
+      lc === 3  ? [0.0, 1.0, 0.0, 0.0] :
+      lc === 4  ? [0.0, 0.0, 1.0, 0.0] :
+      lc === 5  ? [0.0, 0.0, 0.0, 1.0] :
+      lc === 6  ? [0.0, 0.0, 1.0, 1.0] :
+      lc === 7  ? [1.2, 1.6, 0.0, 0.0] :
+      lc === 8  ? [1.2, 1.0, 1.0, 0.0] :
+      lc === 9  ? [1.2, 1.0, 0.0, 1.0] :
+      lc === 10 ? [1.2, 1.0, -1.0, 0.0] :
+      lc === 11 ? [1.2, 1.0, 0.0, -1.0] :
+      lc === 12 ? [0.9, 0.0, 1.0, 0.0] :
+      lc === 13 ? [0.9, 0.0, 0.0, 1.0] :
+                  [1.0, 1.0, 1.0, 1.0];
+    const [fCM, fCV, fEx, fEy] = factors;
     const loads = new Map<number, [number, number, number, number, number, number]>();
     const totalNodos = (nvx + 1) * (nvy + 1);
-    const ExPorNodo = (p.Ex ?? 0) / totalNodos;
-    const EyPorNodo = (p.Ey ?? 0) / totalNodos;
+    const ExPorNodo = (fEx * (p.Ex ?? 0)) / totalNodos;
+    const EyPorNodo = (fEy * (p.Ey ?? 0)) / totalNodos;
+    const vertNodo = fCM * p.CM + fCV * p.CV;
     for (let ix = 0; ix <= nvx; ix++)
       for (let iy = 0; iy <= nvy; iy++) {
         const cub = findNodeAt(ix, iy, cotaCubierta);
         if (cub !== null) {
-          loads.set(cub, [ExPorNodo, EyPorNodo, p.CM + p.CV, 0, 0, 0]);
+          loads.set(cub, [ExPorNodo, EyPorNodo, vertNodo, 0, 0, 0]);
         }
       }
 
