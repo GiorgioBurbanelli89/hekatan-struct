@@ -104,6 +104,15 @@ export const layeredShell: ExampleDef = {
   defaultShellResult: "bendingXX",
   availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "displacementZ", "membraneXX", "membraneYY"],
   hasModal: false,
+  guide: [
+    "Elegí Laminado: 5 presets (Iso, CLT 3, CLT 5, Sandwich, Bimetálico)",
+    "Solo aparecen los params del preset seleccionado (los demás se ocultan)",
+    "Geometría: Lx, Ly (m). BC simply supported o clamped. Carga q presión ↓",
+    "Modo constitutivo: 'Plane stress' (placa Mindlin) o 'Plane strain' (≈ SAP Type=6)",
+    "Para validar contra SAP Shell-Layered usá 'Plane strain' (matchea al 5%)",
+    "Console log muestra matriz ABBD: B11 ≠ 0 indica coupling membrane-bending real (Bimetálico)",
+    "Calculados: max u/v = 0 en presets simétricos · max v ≠ 0 en Bimetálico (B≠0)",
+  ],
   params: {
     // ── Selector de preset (cabecera, sin folder) ────────────────────
     preset: {

@@ -2264,6 +2264,35 @@ solve`;
     }
   }
 
+  // ── Folder "📖 Guía de pasos" — instrucciones del ejemplo para el usuario ──
+  // Si el ejemplo define `guide`, mostramos los pasos numerados como labels
+  // read-only en un folder. Expandido por default si es la primera visita
+  // (flag en localStorage por example.id).
+  if (currentExample.guide && currentExample.guide.length > 0) {
+    const guideKey = `hk_guide_seen_${currentExample.id}`;
+    const seen = localStorage.getItem(guideKey) === "1";
+    const fGuide = pane.addFolder({ title: "📖 Guía de pasos", expanded: !seen });
+    // Marcar como visto la primera vez que se renderiza
+    if (!seen) localStorage.setItem(guideKey, "1");
+    // Renderizar pasos como divs estilizados (Tweakpane no tiene texto multilinea
+    // built-in, usamos elementos DOM directos).
+    const guideContainer = document.createElement("div");
+    guideContainer.style.cssText = "padding:6px 8px;font-size:11px;color:#cbd5e1;line-height:1.5;font-family:system-ui,sans-serif;";
+    currentExample.guide.forEach((step, i) => {
+      const stepDiv = document.createElement("div");
+      stepDiv.style.cssText = "padding:3px 0;border-bottom:1px solid #334155;";
+      const num = document.createElement("span");
+      num.style.cssText = "display:inline-block;min-width:18px;height:18px;line-height:18px;text-align:center;background:#0ea5e9;color:white;border-radius:9px;font-size:10px;font-weight:bold;margin-right:6px;";
+      num.textContent = String(i + 1);
+      const text = document.createElement("span");
+      text.textContent = step;
+      stepDiv.appendChild(num);
+      stepDiv.appendChild(text);
+      guideContainer.appendChild(stepDiv);
+    });
+    fGuide.element.appendChild(guideContainer);
+  }
+
   // ── Folder "📊 Calculados" (read-only) — valores derivados del build actual ──
   // Solo se muestra si el ejemplo exporta computedLabels(). Se actualiza en cada rebuild.
   if (currentExample.computedLabels) {

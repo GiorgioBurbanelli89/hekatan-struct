@@ -101,6 +101,16 @@ export interface ExampleDef {
    */
   benchmark?: boolean;
   /**
+   * Pasos numerados de uso del ejemplo. Se renderiza como folder "📖 Guía"
+   * en Tweakpane, expandido por default cuando el ejemplo es nuevo para el
+   * usuario (gobierno por localStorage flag por id).
+   * Cada string es un paso conciso (idealmente < 80 chars).
+   *   ej: ["Mové q_adm para fijar la presión admisible del suelo",
+   *        "ks_factor = 10.5 es Bowles típico, ajustá según ensayo de placa",
+   *        "El folder Calculados muestra σ_max — debe cumplir σ/q_adm ≤ 1"]
+   */
+  guide?: string[];
+  /**
    * Si se define, este ejemplo NO usa el flujo Tweakpane del workspace.
    * Es un ejemplo "legacy" del upstream awatif (1d-mesh, 2d-mesh, beams, color-map…)
    * con su propia UI VanJS toolbar. Al seleccionarlo en el selector, el workspace

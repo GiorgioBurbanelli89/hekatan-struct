@@ -44,6 +44,14 @@ export const zapataAisladaValidacion: ExampleDef = {
   benchmark: true,  // 🏁 Validación Bowles 1996 — referencia Winkler clásica
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "displacementZ", "vonMises"],
+  guide: [
+    "Geometría: ajustá Lz, Bz (m) — dimensiones de la zapata en planta",
+    "Material suelo: q_adm (tonf/m²) presión admisible · ks (tonf/m³) módulo Bowles",
+    "Cargas: P axial + Mx/My en la columna (tonf, tonf·m). Default 20 tonf",
+    "Resultados: el colormap muestra σ presión (tonf/m²). Verde = q_adm",
+    "Folder Calculados: σ_max debe cumplir σ/q_adm ≤ 1 (✓). Si > 1 → ⚠ aumentá zapata o ks",
+    "Mové ks para ver cómo cambia la distribución (no la presión media): suelo más rígido = más concentración en el centro",
+  ],
   hasModal: false,
   params: {
     Lz:   { default: 1.5,  min: 1.0,  max: 5.0,  step: 0.05, label: "Lz — length X (m)" },
