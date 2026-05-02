@@ -166,7 +166,7 @@ export const zapataAisladaValidacion: ExampleDef = {
     return {
       "Mode": "Direct P/Mx/My",
       "Soporte": supportModeName,
-      [`ks (${u}/m³)`]: ks_u.toFixed(u === "kN" ? 0 : 2),
+      [`ks usado (${u}/m³)`]: ks_u.toFixed(u === "kN" ? 0 : 2),
       "k_h/k_v": khRatio.toFixed(2) + " (Bowles)",
       [`D (${u}·m)`]: D_u.toFixed(1),
       "k_r (Biot)": kr.toFixed(3) + (kr < 1 ? " FLEXIBLE" : " RIGID"),

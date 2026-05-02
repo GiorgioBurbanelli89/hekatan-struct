@@ -351,22 +351,25 @@ export const zapataAislada: ExampleDef = {
       if (!activeList.length) activeList.push("NINGUNO");
     }
     const modeName = activeList.join("+") + (useFactors && !useSimple ? " (factor)" : "");
-    // q_max / q_min desde analyzeOutputs.pressure (map elemento → presión por nodo tonf/m²)
-    let qMax = 0, qMin = 0;
+    // q_max / q_min desde analyzeOutputs.pressure
+    // pressure ahora en kN/m² SI base — convertir a tonf/m² para ratio (q_adm en tonf).
+    let qMax_kN = 0, qMin_kN = 0;
     const pr = (states.analyzeOutputs.rawVal as any)?.pressure as Map<number, number[]> | undefined;
     if (pr && pr.size) {
       for (const vals of pr.values()) {
         for (const q of vals) {
-          if (q < qMax) qMax = q;
-          if (q < qMin || qMin === 0) qMin = q;
+          if (q < qMax_kN) qMax_kN = q;
+          if (q < qMin_kN || qMin_kN === 0) qMin_kN = q;
         }
       }
-      // qMax es el más negativo (mayor compresión), qMin el menos compresivo
-      let localMin = Infinity;
+      let localMin_kN = Infinity;
       for (const vals of pr.values())
-        for (const q of vals) if (Math.abs(q) < localMin) localMin = Math.abs(q);
-      qMin = -localMin;
+        for (const q of vals) if (Math.abs(q) < localMin_kN) localMin_kN = Math.abs(q);
+      qMin_kN = -localMin_kN;
     }
+    const TONF_TO_KN_LOCAL = 9.80665;
+    const qMax = qMax_kN / TONF_TO_KN_LOCAL;   // tonf/m²
+    const qMin = qMin_kN / TONF_TO_KN_LOCAL;
     const ratio = Math.abs(qMax) / (p.q_adm || 1);
     // ── Peso propio del slab (igual que SAFE auto-calcula) ──
     // V = Lz × Bz × tz (m³) × γ_concreto (24 kN/m³ default ACI)
@@ -678,23 +681,24 @@ export const zapataAislada: ExampleDef = {
         states.nodes.val, states.elements.val,
         states.elementInputs.val, states.deformOutputs.val
       );
-      // Presión de contacto en tonf/m² — convención Ecuador (negativa=compresión).
-      // Mismo patrón que displacementZ: centro=azul(max compresión), bordes=rojo(menor).
+      // Presión de contacto en kN/m² (SI base) — el colormap legend la
+      // convierte al unit elegido (tonf/m², MPa, kgf/cm², etc).
+      // Convención: negativa = compresión (Ecuador / Calcpad).
       const defMap = states.deformOutputs.rawVal.deformations;
       const pressureMap = new Map<number, number[]>();
-      let qMinTonf = 0;  // mínimo (más negativo) = pico bajo columna
+      let qMin_kN = 0;  // mínimo (más negativo) = pico bajo columna, en kN/m²
       states.elements.rawVal.forEach((el, eIdx) => {
         if (el.length !== 4) return;
         const qPerNode: number[] = [];
         for (const n of el) {
           const d = defMap?.get(n);
-          const q_kN = ks * (d ? d[2] : 0);            // negativo cuando w<0 (compresión)
-          const q_tonf = q_kN / TONF_TO_KN;            // → tonf/m²
-          qPerNode.push(q_tonf);
-          if (q_tonf < qMinTonf) qMinTonf = q_tonf;
+          const q_kN = ks * (d ? d[2] : 0);            // kN/m² (ks en kN/m³ × w en m)
+          qPerNode.push(q_kN);                          // ← guardar en kN/m² SI base
+          if (q_kN < qMin_kN) qMin_kN = q_kN;
         }
         pressureMap.set(eIdx, qPerNode);
       });
+      const qMinTonf = qMin_kN / TONF_TO_KN;            // para logs en tonf/m²
       (ao as any).pressure = pressureMap;
       // AUTO-ESCALA para todos los campos (pressure, bendingXX, vonMises, etc.) →
       // el colormap SIEMPRE muestra gradiente centro-bordes por pequeño que sea.
@@ -702,14 +706,16 @@ export const zapataAislada: ExampleDef = {
       states.analyzeOutputs.val = ao;
 
       // Log detallado: rango de presión plato + rigidez relativa
-      const qMaxAbs = Math.abs(qMinTonf);  // pico bajo columna
-      // q_min (más suave, bordes) del mapa de presión
-      let qMinAbs = Infinity;
+      // pressureMap ahora en kN/m² (SI base) → convertir a tonf/m² para logs/ratio.
+      const qMaxAbs = Math.abs(qMinTonf);  // pico bajo columna en tonf/m²
+      // q_min (más suave, bordes) del mapa de presión — convertir kN/m² → tonf/m²
+      let qMinAbs_kN = Infinity;
       pressureMap.forEach((vals) => {
-        for (const q of vals) { const a = Math.abs(q); if (a < qMinAbs) qMinAbs = a; }
+        for (const q of vals) { const a = Math.abs(q); if (a < qMinAbs_kN) qMinAbs_kN = a; }
       });
-      if (!Number.isFinite(qMinAbs)) qMinAbs = 0;
-      const ratio = qMaxAbs / p.q_adm;
+      if (!Number.isFinite(qMinAbs_kN)) qMinAbs_kN = 0;
+      const qMinAbs = qMinAbs_kN / TONF_TO_KN;   // tonf/m² para log
+      const ratio = qMaxAbs / p.q_adm;            // tonf/m² / tonf/m² ✓
       // Rigidez relativa de plato (Biot): k_r = D / (ks × Lz⁴). <1 flexible, >1 rígido
       const D_plate = Ec * tz ** 3 / (12 * (1 - nu_c ** 2));
       const k_r = D_plate / (ks * Lz ** 4);
