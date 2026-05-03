@@ -69,6 +69,59 @@ export function drawing({
   );
   scene.add(activePoints);
 
+  // ── COORD READOUT — texto flotante con coord del cursor (X, Y, Z) ──
+  const coordReadout = document.createElement("div");
+  coordReadout.id = "hk-coord-readout";
+  coordReadout.style.cssText = [
+    "position:fixed", "pointer-events:none", "z-index:99997",
+    "padding:4px 8px", "background:rgba(15,23,42,0.92)",
+    "color:#22d3ee", "border:1px solid #22d3ee", "border-radius:4px",
+    "font-family:Consolas,monospace", "font-size:11px",
+    "transform:translate(12px,-22px)", "white-space:nowrap",
+    "display:none",
+  ].join(";") + ";";
+  coordReadout.textContent = "X=0.00  Y=0.00  Z=0.00";
+  document.body.appendChild(coordReadout);
+
+  // ── RUBBER BAND — línea de preview/prolongación cursor → último punto ──
+  // Mientras el usuario mueve el mouse con tool "line"/"polyline" activa,
+  // se ve una línea cyan dashed desde el último punto dibujado hasta la
+  // posición actual del cursor. Visible en cualquier vista (planta/iso/elev).
+  const rubberBand = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0),
+    ]),
+    new THREE.LineDashedMaterial({
+      color: 0x22d3ee, dashSize: 0.2, gapSize: 0.1,
+      transparent: true, opacity: 0.85, linewidth: 2,
+    })
+  );
+  rubberBand.frustumCulled = false;
+  rubberBand.visible = false;
+  scene.add(rubberBand);
+
+  // ── EJES DE PROLONGACIÓN (Ortho/Polar tracking) ──
+  // Líneas dashed desde el último punto en direcciones X/Y/Z + diagonales
+  // 45°. Aparecen cuando el cursor está cerca de uno de esos ángulos.
+  const polarLines = new THREE.Group();
+  polarLines.frustumCulled = false;
+  polarLines.visible = false;
+  scene.add(polarLines);
+  const mkPolarLine = (col: number) => {
+    const geo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0),
+    ]);
+    const mat = new THREE.LineDashedMaterial({
+      color: col, dashSize: 0.15, gapSize: 0.08,
+      transparent: true, opacity: 0.5, linewidth: 1,
+    });
+    return new THREE.Line(geo, mat);
+  };
+  const polarX = mkPolarLine(0xff0000);  // rojo X
+  const polarY = mkPolarLine(0x00ff00);  // verde Y
+  const polarZ = mkPolarLine(0x0088ff);  // azul Z
+  polarLines.add(polarX, polarY, polarZ);
+
   // Update
   points.geometry.setAttribute(
     "position",
@@ -476,6 +529,7 @@ export function drawing({
   };
   // Auto-update el snap marker cuando se mueve el mouse sobre el plano
   // Prioridad: OSNAP (Endpoint/Midpoint/etc.) > grid snap 2D
+  // ADEMÁS: rubber band desde último punto al cursor + polar tracking
   rendererElm.addEventListener("pointermove", (event: PointerEvent) => {
     pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
     pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -489,6 +543,7 @@ export function drawing({
         showOsnap(osnap.type, osnap.x, osnap.y, osnap.z);
         snapMarker.position.set(osnap.x, osnap.y, osnap.z);
         snapMarker.visible = true;
+        p.set(osnap.x, osnap.y, osnap.z);
       } else {
         hideOsnap();
         const snap = (window as any).__hekatanSnap2D ?? 0.5;
@@ -500,10 +555,60 @@ export function drawing({
         snapMarker.position.copy(p);
         snapMarker.visible = true;
       }
+      // ── COORD READOUT: texto al lado del cursor con X, Y, Z + ΔL si rubber band
+      coordReadout.style.left = event.clientX + "px";
+      coordReadout.style.top = event.clientY + "px";
+      coordReadout.style.display = "block";
+      // ── RUBBER BAND: línea desde el último punto de la polilínea actual
+      // hasta el cursor. Solo visible si hay al menos 1 punto previo en la
+      // polilínea activa. Da feedback constante "voy a dibujar desde aquí".
+      const polys = drawingObj.polylines?.rawVal ?? [];
+      const lastPoly = polys[polys.length - 1] ?? [];
+      const allPts = drawingObj.points.rawVal ?? [];
+      if (lastPoly.length > 0 && allPts[lastPoly[lastPoly.length - 1]]) {
+        const lastIdx = lastPoly[lastPoly.length - 1];
+        const lastPt = allPts[lastIdx];
+        const dL = Math.hypot(p.x - lastPt[0], p.y - lastPt[1], p.z - lastPt[2]);
+        const ang = Math.atan2(p.y - lastPt[1], p.x - lastPt[0]) * 180 / Math.PI;
+        coordReadout.textContent = `X=${p.x.toFixed(2)} Y=${p.y.toFixed(2)} Z=${p.z.toFixed(2)} | ΔL=${dL.toFixed(2)}m ${ang.toFixed(0)}°`;
+        rubberBand.geometry.setFromPoints([
+          new THREE.Vector3(lastPt[0], lastPt[1], lastPt[2]),
+          new THREE.Vector3(p.x, p.y, p.z),
+        ]);
+        (rubberBand as any).computeLineDistances?.();
+        rubberBand.visible = true;
+        // ── Polar tracking — líneas X/Y/Z extendidas desde el último punto
+        // hasta los bordes del modelo (longitud 5m por dirección, ajustable)
+        const ext = 8;
+        polarX.geometry.setFromPoints([
+          new THREE.Vector3(lastPt[0] - ext, lastPt[1], lastPt[2]),
+          new THREE.Vector3(lastPt[0] + ext, lastPt[1], lastPt[2]),
+        ]);
+        (polarX as any).computeLineDistances?.();
+        polarY.geometry.setFromPoints([
+          new THREE.Vector3(lastPt[0], lastPt[1] - ext, lastPt[2]),
+          new THREE.Vector3(lastPt[0], lastPt[1] + ext, lastPt[2]),
+        ]);
+        (polarY as any).computeLineDistances?.();
+        polarZ.geometry.setFromPoints([
+          new THREE.Vector3(lastPt[0], lastPt[1], lastPt[2] - ext),
+          new THREE.Vector3(lastPt[0], lastPt[1], lastPt[2] + ext),
+        ]);
+        (polarZ as any).computeLineDistances?.();
+        polarLines.visible = true;
+      } else {
+        // Sin punto previo: solo mostrar coords del cursor
+        coordReadout.textContent = `X=${p.x.toFixed(2)} Y=${p.y.toFixed(2)} Z=${p.z.toFixed(2)}`;
+        rubberBand.visible = false;
+        polarLines.visible = false;
+      }
       viewerRender();
     } else {
       hideOsnap();
+      coordReadout.style.display = "none";
       snapMarker.visible = false;
+      rubberBand.visible = false;
+      polarLines.visible = false;
       viewerRender();
     }
   });
