@@ -1104,7 +1104,7 @@ function buildParamsPane() {
     fOsnap.addBinding(osnapState, "nea",  { label: "🌸 Nearest" });
     fOsnap.addBinding(osnapState, "int",  { label: "🟠 Intersection" });
     // Plano de trabajo — actualiza drawingGridTarget para que el raycaster
-    // del awatif Drawing intersecte contra el plano correcto. Sin esto los
+    // del Hekatan Drawing intersecte contra el plano correcto. Sin esto los
     // botones solo cambiaban una variable lógica sin efecto visual.
     const fPlane = fCad.addFolder({ title: "📐 Plano de trabajo", expanded: true });
     const proxyPlane = { workZ: 0 };
@@ -2933,7 +2933,7 @@ van.derive(() => {
   const lines = drawingPolylines.val;
   if (pts.length === 0 && lines.every(l => l.length === 0)) return;
   const out: string[] = [
-    "# Modelo dibujado con mouse (awatif Drawing)",
+    "# Modelo dibujado con mouse (Hekatan Drawing)",
     "",
     "nodes",
   ];

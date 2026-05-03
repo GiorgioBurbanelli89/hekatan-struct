@@ -16,7 +16,7 @@
  *      laterales. Todo en Tweakpane.
  *
  * Diferencia con cad-draw: este ejemplo lee directo de drawingPoints +
- * drawingPolylines (más simple, awatif-native), expone params físicos
+ * drawingPolylines (Hekatan-native simple), expone params físicos
  * en Tweakpane (secciones/cargas/apoyos) y permite alternar 2D/3D con
  * un toggle. Es el "nuevo proyecto en blanco" de Hekatan.
  */
