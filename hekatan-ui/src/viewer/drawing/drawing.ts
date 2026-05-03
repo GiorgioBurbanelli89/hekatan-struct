@@ -69,54 +69,42 @@ export function drawing({
   );
   scene.add(activePoints);
 
-  // ── DIMENSION LABELS — longitud en el medio de cada segmento ──
-  // Cada vez que drawingPolylines o drawingPoints cambia, regenerar labels
-  // (Sprite con texto "5.00m") en el midpoint de cada par consecutivo.
-  const dimLabelsGroup = new THREE.Group();
-  dimLabelsGroup.frustumCulled = false;
-  scene.add(dimLabelsGroup);
-  const updateDimLabels = () => {
-    while (dimLabelsGroup.children.length) {
-      const c = dimLabelsGroup.children.pop()!;
-      (c as any).material?.map?.dispose?.();
-      (c as any).material?.dispose?.();
-    }
-    const polys = drawingObj.polylines?.rawVal ?? [];
-    const pts = drawingObj.points.rawVal ?? [];
-    for (const poly of polys) {
-      for (let i = 0; i < poly.length - 1; i++) {
-        const a = pts[poly[i]], b = pts[poly[i+1]];
-        if (!a || !b) continue;
-        const dL = Math.hypot(b[0]-a[0], b[1]-a[1], b[2]-a[2]);
-        if (dL < 0.01) continue;
-        const mx = (a[0]+b[0])/2, my = (a[1]+b[1])/2, mz = (a[2]+b[2])/2;
-        const cv = document.createElement("canvas");
-        cv.width = 96; cv.height = 32;
-        const cc = cv.getContext("2d")!;
-        cc.fillStyle = "rgba(15,23,42,0.92)";
-        cc.fillRect(0, 0, 96, 32);
-        cc.strokeStyle = "#22d3ee"; cc.lineWidth = 2;
-        cc.strokeRect(1, 1, 94, 30);
-        cc.fillStyle = "#22d3ee";
-        cc.font = "bold 16px Consolas, monospace";
-        cc.textAlign = "center";
-        cc.fillText(`${dL.toFixed(2)} m`, 48, 22);
-        const tex = new THREE.CanvasTexture(cv);
-        const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
-        const sp = new THREE.Sprite(mat);
-        sp.position.set(mx, my, mz);
-        sp.scale.set(1.0, 0.33, 1);
-        sp.renderOrder = 999;
-        dimLabelsGroup.add(sp);
-      }
-    }
-    viewerRender();
+  // ── DIMENSION LABEL EN RUBBER BAND (sólo mientras se dibuja) ──
+  // Sprite UNA SOLA vez con la longitud de la línea pendiente (último
+  // punto → cursor). NO se persisten labels en segmentos ya confirmados.
+  // El usuario los ve mientras prolonga, una vez click fijado se quita
+  // (la coord readout sigue mostrando coords del cursor).
+  const rubberLabel = (() => {
+    const cv = document.createElement("canvas");
+    cv.width = 96; cv.height = 32;
+    const tex = new THREE.CanvasTexture(cv);
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    const sp = new THREE.Sprite(mat);
+    sp.scale.set(1.0, 0.33, 1);
+    sp.renderOrder = 999;
+    sp.visible = false;
+    sp.frustumCulled = false;
+    scene.add(sp);
+    return { sprite: sp, canvas: cv, texture: tex };
+  })();
+  const updateRubberLabel = (ax: number, ay: number, az: number, bx: number, by: number, bz: number) => {
+    const dL = Math.hypot(bx-ax, by-ay, bz-az);
+    if (dL < 0.01) { rubberLabel.sprite.visible = false; return; }
+    const cc = rubberLabel.canvas.getContext("2d")!;
+    cc.clearRect(0, 0, 96, 32);
+    cc.fillStyle = "rgba(15,23,42,0.92)";
+    cc.fillRect(0, 0, 96, 32);
+    cc.strokeStyle = "#22d3ee"; cc.lineWidth = 2;
+    cc.strokeRect(1, 1, 94, 30);
+    cc.fillStyle = "#22d3ee";
+    cc.font = "bold 16px Consolas, monospace";
+    cc.textAlign = "center";
+    cc.fillText(`${dL.toFixed(2)} m`, 48, 22);
+    rubberLabel.texture.needsUpdate = true;
+    rubberLabel.sprite.position.set((ax+bx)/2, (ay+by)/2, (az+bz)/2);
+    rubberLabel.sprite.visible = true;
   };
-  van.derive(() => {
-    void drawingObj.points.val;
-    void drawingObj.polylines?.val;
-    updateDimLabels();
-  });
+  const hideRubberLabel = () => { rubberLabel.sprite.visible = false; };
 
   // ── COORD READOUT — texto flotante con coord del cursor (X, Y, Z) ──
   const coordReadout = document.createElement("div");
@@ -626,6 +614,8 @@ export function drawing({
         ]);
         (rubberBand as any).computeLineDistances?.();
         rubberBand.visible = true;
+        // Dim label en midpoint del rubber band (referencial mientras se dibuja)
+        updateRubberLabel(lastPt[0], lastPt[1], lastPt[2], p.x, p.y, p.z);
         // ── Polar tracking — líneas X/Y/Z extendidas desde el último punto
         // hasta los bordes del modelo (longitud 5m por dirección, ajustable)
         const ext = 8;
@@ -650,6 +640,7 @@ export function drawing({
         coordReadout.textContent = `X=${p.x.toFixed(2)} Y=${p.y.toFixed(2)} Z=${p.z.toFixed(2)}`;
         rubberBand.visible = false;
         polarLines.visible = false;
+        hideRubberLabel();
       }
       viewerRender();
     } else {
@@ -658,6 +649,7 @@ export function drawing({
       snapMarker.visible = false;
       rubberBand.visible = false;
       polarLines.visible = false;
+      hideRubberLabel();
       viewerRender();
     }
   });
