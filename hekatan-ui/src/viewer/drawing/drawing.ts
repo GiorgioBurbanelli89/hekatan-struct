@@ -65,7 +65,7 @@ export function drawing({
 
   const activePoints = new THREE.Points(
     new THREE.BufferGeometry(),
-    new THREE.PointsMaterial({ color: "orange", size: 0.8 })
+    new THREE.PointsMaterial({ color: "orange", size: 0.1 })
   );
   scene.add(activePoints);
 
