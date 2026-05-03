@@ -28,9 +28,11 @@ export function nodes(
   });
 
   // on derivedDisplayScale or gridSize update scale
+  // Reducido de 0.05 → 0.02 (factor base más chico, 40% del original)
+  // para que los node markers (cuadrados naranjas) no dominen el modelo.
   van.derive(() => {
     derivedDisplayScale.val; // trigger update
-    const size = 0.05 * settings.gridSize.val * 0.5;
+    const size = 0.02 * settings.gridSize.val * 0.5;
 
     if (!settings.nodes.rawVal) return;
 
