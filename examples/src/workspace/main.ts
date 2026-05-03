@@ -400,7 +400,7 @@ function autoScaleDeformedShape() {
   // (modelo de orden 0.5–4 m, evitar que markers tapen geometría).
   const isConexion = currentExample?.id?.startsWith("conexion-") ||
                      currentExample?.id === "placa-base";
-  if (s.displayScale) s.displayScale.val = isConexion ? -6 : -1.5;
+  if (s.displayScale) s.displayScale.val = isConexion ? -6 : -3;
 }
 
 /**
@@ -2903,7 +2903,7 @@ solve`;
 // a displacementZ (centro = max compresión = azul; bordes = mínima = rojo) con auto-escala.
 const settingsObj: Record<string, any> = {
   deformedShape: true,
-  displayScale: -1.5,       // markers y flechas a 0.5× (no tapan el modelo)
+  displayScale: -3,         // default -3 (markers/arrows pequeños — no dominan modelo)
   shellResults: "pressure",
   gridSize: 10,
   showCotas: true,

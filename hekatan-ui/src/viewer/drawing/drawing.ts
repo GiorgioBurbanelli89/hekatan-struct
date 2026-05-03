@@ -69,6 +69,55 @@ export function drawing({
   );
   scene.add(activePoints);
 
+  // ── DIMENSION LABELS — longitud en el medio de cada segmento ──
+  // Cada vez que drawingPolylines o drawingPoints cambia, regenerar labels
+  // (Sprite con texto "5.00m") en el midpoint de cada par consecutivo.
+  const dimLabelsGroup = new THREE.Group();
+  dimLabelsGroup.frustumCulled = false;
+  scene.add(dimLabelsGroup);
+  const updateDimLabels = () => {
+    while (dimLabelsGroup.children.length) {
+      const c = dimLabelsGroup.children.pop()!;
+      (c as any).material?.map?.dispose?.();
+      (c as any).material?.dispose?.();
+    }
+    const polys = drawingObj.polylines?.rawVal ?? [];
+    const pts = drawingObj.points.rawVal ?? [];
+    for (const poly of polys) {
+      for (let i = 0; i < poly.length - 1; i++) {
+        const a = pts[poly[i]], b = pts[poly[i+1]];
+        if (!a || !b) continue;
+        const dL = Math.hypot(b[0]-a[0], b[1]-a[1], b[2]-a[2]);
+        if (dL < 0.01) continue;
+        const mx = (a[0]+b[0])/2, my = (a[1]+b[1])/2, mz = (a[2]+b[2])/2;
+        const cv = document.createElement("canvas");
+        cv.width = 96; cv.height = 32;
+        const cc = cv.getContext("2d")!;
+        cc.fillStyle = "rgba(15,23,42,0.92)";
+        cc.fillRect(0, 0, 96, 32);
+        cc.strokeStyle = "#22d3ee"; cc.lineWidth = 2;
+        cc.strokeRect(1, 1, 94, 30);
+        cc.fillStyle = "#22d3ee";
+        cc.font = "bold 16px Consolas, monospace";
+        cc.textAlign = "center";
+        cc.fillText(`${dL.toFixed(2)} m`, 48, 22);
+        const tex = new THREE.CanvasTexture(cv);
+        const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+        const sp = new THREE.Sprite(mat);
+        sp.position.set(mx, my, mz);
+        sp.scale.set(1.0, 0.33, 1);
+        sp.renderOrder = 999;
+        dimLabelsGroup.add(sp);
+      }
+    }
+    viewerRender();
+  };
+  van.derive(() => {
+    void drawingObj.points.val;
+    void drawingObj.polylines?.val;
+    updateDimLabels();
+  });
+
   // ── COORD READOUT — texto flotante con coord del cursor (X, Y, Z) ──
   const coordReadout = document.createElement("div");
   coordReadout.id = "hk-coord-readout";
