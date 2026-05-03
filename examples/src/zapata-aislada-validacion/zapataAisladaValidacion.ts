@@ -59,6 +59,18 @@ export const zapataAisladaValidacion: ExampleDef = {
     tz:   { default: 0.30, min: 0.05, max: 1.0,  step: 0.05, label: "t — thickness (m)" },
     bc:   { default: 0.40, min: 0.2,  max: 0.8,  step: 0.05, label: "bc — column side (m)" },
     Hp:   { default: 0.50, min: 0.3,  max: 2.0,  step: 0.1,  label: "Hp — pedestal height (m)" },
+    // ── Modo de soporte de suelo: dos formas de definir el resorte Winkler ──
+    //   0: q_adm dado por el suelo → ks derivado vía ks_factor (Bowles)
+    //   1: ks (módulo de balasto) ingresado directamente
+    // En ambos modos, el inline computed muestra k_area (kN/m³) y k_spring/nodo (kN/m).
+    springMode: {
+      default: 0,
+      options: {
+        "A. q_adm (suelo) → ks derivado": 0,
+        "B. ks (módulo de balasto) directo": 1,
+      },
+      label: "Modo definición suelo",
+    },
     q_adm:     { default: 10,   min: 1,   max: 100,   step: 1,   label: "q_adm (tonf/m²)" },
     ks_factor: { default: 10.5, min: 5,   max: 20,    step: 0.5, label: "ks_factor (Bowles)" },
     // Slider en tonf/m³ (rango realista para cimentaciones, default minimo
@@ -88,15 +100,46 @@ export const zapataAisladaValidacion: ExampleDef = {
     nSub: { default: 10, min: 3, max: 16, step: 1, label: "n — mesh subdivisions" },
   },
   inlineComputed: [
+    // ── Inline debajo de q_adm: k_area derivado (modo A) ──
+    {
+      after: "q_adm",
+      get label() { return `k_area (${forceUnit.val}/m³)`; },
+      compute: (p) => {
+        const ks_kN = (p.q_adm ?? 10) * TONF_TO_KN * (p.ks_factor ?? 10.5);
+        const u = forceUnit.val;
+        const factor = u === "tonf" ? 1 / TONF_TO_KN : u === "kip" ? 1 / 4.4482216 : 1;
+        return (ks_kN * factor).toFixed(u === "kN" ? 0 : 2) + " (Bowles)";
+      },
+      hiddenIf: (p) => Math.round(p.springMode ?? 0) !== 0,
+    },
     {
       after: "ks_factor",
-      // Label dinamico: muestra (tonf/m³) si forceUnit=tonf, etc.
       get label() { return `ks computed (${forceUnit.val}/m³)`; },
       compute: (p) => {
         const ks_kN = (p.q_adm ?? 10) * TONF_TO_KN * (p.ks_factor ?? 10.5);
         const u = forceUnit.val;
         const factor = u === "tonf" ? 1 / TONF_TO_KN : u === "kip" ? 1 / 4.4482216 : 1;
         return (ks_kN * factor).toFixed(u === "kN" ? 0 : 2);
+      },
+      hiddenIf: (p) => Math.round(p.springMode ?? 0) !== 0,
+    },
+    // ── Inline debajo de ks: k_spring/nodo (kN/m) — la rigidez real que va al solver ──
+    // Calculamos A_trib típica = (Lz × Bz) / (nSub × nSub) → k_spring = ks × A_trib
+    {
+      after: "ks",
+      get label() { return `k_spring/nodo (${forceUnit.val}/m)`; },
+      compute: (p) => {
+        const mode = Math.round(p.springMode ?? 0);
+        // En modo A: ks viene de q_adm × ks_factor; en modo B: ks directo
+        const ks_tonf = mode === 0
+          ? (p.q_adm ?? 10) * (p.ks_factor ?? 10.5)
+          : (p.ks ?? 2000);
+        const ks_kN = ks_tonf * TONF_TO_KN;
+        const A_trib = ((p.Lz ?? 1.5) * (p.Bz ?? 1.5)) / Math.max(1, Math.pow(p.nSub ?? 10, 2));
+        const k_spring_kN = ks_kN * A_trib;  // kN/m por nodo
+        const u = forceUnit.val;
+        const factor = u === "tonf" ? 1 / TONF_TO_KN : u === "kip" ? 1 / 4.4482216 : 1;
+        return (k_spring_kN * factor).toFixed(u === "kN" ? 1 : 3);
       },
     },
     {
@@ -126,8 +169,13 @@ export const zapataAisladaValidacion: ExampleDef = {
     const q_adm_tonf = p.q_adm ?? 10;
     const ks_factor = p.ks_factor ?? 10.5;
     const q_adm_kN = q_adm_tonf * TONF_TO_KN;
-    // ks slider en tonf/m³ → convertir a kN/m³ para uso interno
-    const ks_tonf = p.ks ?? (q_adm_tonf * ks_factor);
+    // ks slider en tonf/m³ → convertir a kN/m³ para uso interno.
+    // Modo A (springMode=0): ks_derived = q_adm × ks_factor (Bowles)
+    // Modo B (springMode=1): ks_direct (slider del usuario)
+    const springModeUsed = Math.round(p.springMode ?? 0);
+    const ks_tonf = springModeUsed === 0
+      ? (q_adm_tonf * ks_factor)
+      : (p.ks ?? 2000);
     const ks = ks_tonf * TONF_TO_KN;   // kN/m³ interno
     const t = p.tz ?? 0.3, L = p.Lz ?? 1.5;
     const D = Ec * t ** 3 / (12 * (1 - nu_c ** 2));
@@ -205,8 +253,13 @@ export const zapataAisladaValidacion: ExampleDef = {
   build(p, states) {
     const { Lz, Bz, tz, bc, Hp } = p;
     const q_adm_kN = p.q_adm * TONF_TO_KN;
-    // ks slider en tonf/m³ → convertir a kN/m³ para uso interno
-    const ks_tonf = p.ks ?? (p.q_adm * p.ks_factor);
+    // ks slider en tonf/m³ → convertir a kN/m³ para uso interno.
+    // Modo A (springMode=0): ks derivado q_adm × ks_factor (Bowles)
+    // Modo B (springMode=1): ks slider directo
+    const springModeBuild = Math.round(p.springMode ?? 0);
+    const ks_tonf = springModeBuild === 0
+      ? (p.q_adm * p.ks_factor)
+      : (p.ks ?? 2000);
     const ks = ks_tonf * TONF_TO_KN;   // kN/m³
     const P_kN = (p.P_simple ?? 0) * TONF_TO_KN;
     const Mx_kN = (p.Mx_simple ?? 0) * TONF_TO_KN;

@@ -2596,14 +2596,17 @@ solve`;
     (p.rangeAdjustable !== false && (p.unitType === "force" || p.unitType === "moment"));
   // Prepara los valores inline calculados (ks, D, etc.) ANCLADOS a cada param.
   // Mapa: key del param → lista de inlines a insertar después.
-  const inlineByAfter = new Map<string, Array<{ label: string; key: string; compute: any }>>();
+  const inlineByAfter = new Map<string, Array<{ label: string; key: string; compute: any; hiddenIf?: any }>>();
   inlineComputedObj = {};
   if (currentExample.inlineComputed) {
     for (const ic of currentExample.inlineComputed) {
       const uniqKey = `__inline_${ic.after}_${ic.label}`;
       inlineComputedObj[uniqKey] = ic.compute(currentParams, states);
       if (!inlineByAfter.has(ic.after)) inlineByAfter.set(ic.after, []);
-      inlineByAfter.get(ic.after)!.push({ label: ic.label, key: uniqKey, compute: ic.compute });
+      inlineByAfter.get(ic.after)!.push({
+        label: ic.label, key: uniqKey, compute: ic.compute,
+        hiddenIf: ic.hiddenIf,
+      });
     }
   }
 
@@ -2715,11 +2718,16 @@ solve`;
     const inlines = inlineByAfter.get(key);
     if (inlines && inlineComputedObj) {
       for (const il of inlines) {
-        fTarget.addBinding(inlineComputedObj, il.key, {
+        const ilBinding = fTarget.addBinding(inlineComputedObj, il.key, {
           readonly: true,
           label: il.label,
           view: "text",
         } as any);
+        // Si el inline tiene hiddenIf, registrarlo para que se oculte/muestre
+        // dinámicamente cuando cambie el modo (springMode, etc.)
+        if (il.hiddenIf) {
+          hiddenBindings.push({ binding: ilBinding, hiddenIf: il.hiddenIf });
+        }
       }
     }
   }
