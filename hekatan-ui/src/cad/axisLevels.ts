@@ -124,9 +124,11 @@ export function buildAxisGridMesh(axis: AxisGrid): THREE.Group {
   const spriteMat = new THREE.SpriteMaterial({ map: tex, depthTest: false });
   const sprite = new THREE.Sprite(spriteMat);
   sprite.position.set(...axis.end);
-  // Tamaño en world units — el caller puede escalar dinámicamente con
-  // updateAxisLabelScale() para mantener tamaño en pantalla constante.
-  sprite.scale.set(0.6, 0.6, 1);
+  // Tamaño en world units — sprite.scale = 0.3m. Si la cámara está cerca
+  // del eje, la burbuja se ve grande (estilo Revit zoom-in); si está lejos,
+  // chica (Three.js Sprite mantiene la escala world). Usuario puede ajustar
+  // con __hekatanAxisLabelScale (próxima feature).
+  sprite.scale.set(0.3, 0.3, 1);
   sprite.userData.isAxisLabel = true;
   g.add(sprite);
   return g;

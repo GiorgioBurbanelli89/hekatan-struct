@@ -2434,6 +2434,25 @@ export function drawing({
       return;
     }
 
+    // ── AXIS TOOL: 2 clicks para crear un eje (start → end) con burbuja ──
+    if (tool === "axis") {
+      const st = (window as any).__hekatanAxisDraw as { mode: string; pendingStart: number[] | null } | undefined;
+      if (!st) return;
+      if (!st.pendingStart) {
+        // Primer click → guarda start
+        st.pendingStart = [point.x, point.y, point.z];
+        updateStatus(`📍 Eje — click 1 OK en (${point.x.toFixed(2)}, ${point.y.toFixed(2)}, ${point.z.toFixed(2)}). Click 2=fin.`);
+        return;
+      }
+      // Segundo click → crea el eje
+      const useNum = st.mode === "number";
+      const label = (window as any).__hekatanAxisCommit?.(
+        st.pendingStart, [point.x, point.y, point.z], useNum,
+      );
+      updateStatus(`✓ Eje "${label}" creado. Click 1=nuevo eje, o cambia tool.`);
+      return;
+    }
+
     if (tool === "delete") {
       // Prioridad: aux line hover > polilínea hover (el de menor dist gana,
       // y eso ya se resolvió en el pointermove → solo uno está activo).

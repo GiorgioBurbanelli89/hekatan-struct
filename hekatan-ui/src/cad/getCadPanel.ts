@@ -330,38 +330,42 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
     for (const lv of levelList) levelGroup.add(buildLevelMesh(lv));
     getRender()?.();
   };
-  // Botón "+ Eje X" → ej. agrega un eje vertical (en planta XY) en la
-  // posición del último click en select mode (orthoAnchor) o en (0,0,0).
-  // El usuario puede después editarlo en localStorage o vía console.
-  fAxis.addButton({ title: "➕ Eje vertical (planta)" }).on("click", () => {
-    const anchor = (window as any).__hekatanOrthoAnchor as number[] | undefined;
-    const x = anchor?.[0] ?? 0;
-    // Eje vertical en planta = línea que va en dirección Y desde -10 a +10
-    // (extent default), a la cota X clickeada.
-    const label = nextAxisLabel(axisList.map(a => a.label));
+  // ── Tools "axis" — activan modo dibujo de eje (2 clicks: inicio y fin) ──
+  // axisLetter = numera con letras A,B,C... (típico para ejes verticales en
+  // planta). axisNumber = numera con 1,2,3... (típico para ejes horizontales).
+  // Estado: window.__hekatanAxisDraw guarda { mode, pendingStart } durante
+  // el flujo. drawing.ts intercepta clicks cuando este flag está activo.
+  (window as any).__hekatanAxisCommit = (start: number[], end: number[], useNum: boolean) => {
+    let label: string;
+    if (useNum) {
+      const numAxes = axisList.filter(a => /^\d+$/.test(a.label));
+      label = String(numAxes.length + 1);
+    } else {
+      const alphaAxes = axisList.filter(a => !/^\d+$/.test(a.label)).map(a => a.label);
+      label = nextAxisLabel(alphaAxes);
+    }
     axisList.push({
       label,
-      start: [x, -10, 0],
-      end: [x, 10, 0],
+      start: [start[0], start[1], start[2]],
+      end: [end[0], end[1], end[2]],
     });
     refreshAxisRender();
+    // Resetear pendingStart para permitir dibujar otro eje sin desactivar tool
+    const st = (window as any).__hekatanAxisDraw;
+    if (st) st.pendingStart = null;
+    return label;
+  };
+  fAxis.addButton({ title: "➕ Eje (letra A,B,C...)" }).on("click", () => {
+    (window as any).__hekatanAxisDraw = { mode: "letter", pendingStart: null };
+    try { (window as any).__hekatanCadState?.setTool?.("axis"); } catch {}
+    const statusEl = document.getElementById("hk-cad-status");
+    if (statusEl) statusEl.textContent = "📍 Eje (letra) — click 1=inicio, click 2=fin (con burbuja A/B/C...)";
   });
-  fAxis.addButton({ title: "➕ Eje horizontal (planta)" }).on("click", () => {
-    const anchor = (window as any).__hekatanOrthoAnchor as number[] | undefined;
-    const y = anchor?.[1] ?? 0;
-    // Eje horizontal en planta = línea en dirección X
-    // Default labels alfa, pero si ya hay numéricos sigue numérico
-    const last = axisList[axisList.length - 1]?.label ?? "";
-    const useNum = /^\d+$/.test(last) || axisList.length === 0;
-    const label = useNum
-      ? String(axisList.filter(a => /^\d+$/.test(a.label)).length + 1)
-      : nextAxisLabel(axisList.map(a => a.label));
-    axisList.push({
-      label,
-      start: [-10, y, 0],
-      end: [10, y, 0],
-    });
-    refreshAxisRender();
+  fAxis.addButton({ title: "➕ Eje (número 1,2,3...)" }).on("click", () => {
+    (window as any).__hekatanAxisDraw = { mode: "number", pendingStart: null };
+    try { (window as any).__hekatanCadState?.setTool?.("axis"); } catch {}
+    const statusEl = document.getElementById("hk-cad-status");
+    if (statusEl) statusEl.textContent = "📍 Eje (número) — click 1=inicio, click 2=fin (con burbuja 1/2/3...)";
   });
   fAxis.addButton({ title: "🗑 Limpiar ejes" }).on("click", () => {
     axisList.length = 0;
