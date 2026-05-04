@@ -892,14 +892,26 @@ export function drawing({
   hoverHL.frustumCulled = false;
   hoverHL.visible = false;
   scene.add(hoverHL);
-  // Sphere amarilla pequeña para hover de NODOS (puntos individuales)
+  // Sphere amarilla para hover de NODOS — radio base 0.02m, escala dinámica
+  // según distancia de cámara para que se vea constante en pantalla (~6px).
   const hoverPtHL = new THREE.Mesh(
-    new THREE.SphereGeometry(0.06, 12, 12),
+    new THREE.SphereGeometry(0.02, 12, 12),
     new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.9, depthTest: false }),
   );
   hoverPtHL.renderOrder = 998;
   hoverPtHL.visible = false;
   scene.add(hoverPtHL);
+  // Helper: actualiza el scale del hoverPtHL para mantener tamaño aparente
+  // constante. Se llama en pointermove cuando se setea su posición.
+  const updateHoverPtScale = () => {
+    if (!hoverPtHL.visible) return;
+    const cam = getActiveCamera();
+    const dist = cam.position.distanceTo(hoverPtHL.position);
+    // factor 10 → a 10m la sphere es ~2cm; al alejarse crece para que
+    // siga viéndose como punto (~6px en pantalla).
+    const s = Math.max(0.05, dist / 10);
+    hoverPtHL.scale.setScalar(s);
+  };
   // Grupo CYAN para todos los items SELECCIONADOS (líneas + spheres)
   const selectionGroup = new THREE.Group();
   selectionGroup.frustumCulled = false;
@@ -1646,6 +1658,13 @@ export function drawing({
   // Re-escalar cuando el usuario zoomea/orbita (OrbitControls emite "change")
   controls.addEventListener("change", () => {
     updateSnapMarkerScale();
+    // hoverPtHL — el indicador amarillo de selección de nodo (hover) también
+    // debe mantener tamaño constante en pantalla. Sin esto se ve enorme al
+    // zoom in (la geometría es 0.02m world-space).
+    if (hoverPtHL.visible) {
+      const dh = getActiveCamera().position.distanceTo(hoverPtHL.position);
+      hoverPtHL.scale.setScalar(Math.max(0.05, dh / 10));
+    }
     // Mismo tratamiento para osnapMarker (Endpoint/Mid/Per/etc.) creado más
     // abajo. Lo referenciamos por window porque la closure todavía no lo tiene.
     const om = (window as any).__hekatanOsnapMarkerRef as THREE.Group | undefined;
@@ -1712,6 +1731,7 @@ export function drawing({
           const pt = drawingObj.points.rawVal[ptIdx];
           hoverPtHL.position.set(pt[0], pt[1], pt[2]);
           hoverPtHL.visible = true;
+          updateHoverPtScale();  // tamaño constante en pantalla
           hoverHL.visible = false;
           hoverItem = { kind: "pt", a: ptIdx };
         } else if (found) {
