@@ -185,6 +185,15 @@ export function drawing({
   rubberLabelInput.id = "hk-rubber-label";
   rubberLabelInput.type = "text";
   rubberLabelInput.spellcheck = false;
+  // Tooltip de sintaxis estilo AutoCAD — aparece al hacer hover sobre el input
+  rubberLabelInput.title =
+    "Sintaxis estilo AutoCAD:\n" +
+    "  5         → 5m en dirección del cursor (DDE)\n" +
+    "  5,3,2     → coordenada absoluta (X,Y,Z)\n" +
+    "  @5,3,2    → relativa al último punto\n" +
+    "  5<45      → polar 2D: 5m a 45° desde origen\n" +
+    "  @5<45     → polar relativa: 5m a 45° del último punto\n" +
+    "  @5<45<30  → esférica 3D: 5m, azimuth 45°, elevación 30°";
   rubberLabelInput.style.cssText = [
     "position:fixed", "z-index:99996",
     "padding:3px 8px", "background:rgba(15,23,42,0.92)",
@@ -282,16 +291,122 @@ export function drawing({
     try { (window as any).__hekatanRebuild?.(); } catch {}
     viewerRender();
   };
+  // ── Parser estilo AutoCAD para el input del rubber label ──
+  // Acepta:
+  //   "5"         → DDE: 5m en dirección del cursor
+  //   "5,3"       → absCart 2D (x=5, y=3, z=0)
+  //   "5,3,2"     → absCart 3D
+  //   "@5,3"      → relCart 2D desde último punto (Δx=5, Δy=3, Δz=0)
+  //   "@5,3,2"    → relCart 3D
+  //   "5<45"      → absPolar 2D (5m a 45° desde origen, plano XY)
+  //   "@5<45"     → relPolar 2D (5m a 45° desde último punto)
+  //   "@5<45<30"  → relSpherical 3D (5m, azimuth 45°, elevación 30°)
+  type ParsedInput =
+    | { kind: "length"; L: number }
+    | { kind: "absCart"; x: number; y: number; z: number }
+    | { kind: "relCart"; dx: number; dy: number; dz: number }
+    | { kind: "absPolar"; L: number; ang: number }
+    | { kind: "relPolar"; L: number; ang: number }
+    | { kind: "relSpherical"; L: number; az: number; el: number }
+    | null;
+  const parseAutoCadInput = (raw: string): ParsedInput => {
+    let s = raw.trim().toLowerCase().replace(/m$/g, "").trim();
+    if (!s) return null;
+    const isRel = s.startsWith("@");
+    if (isRel) s = s.slice(1);
+    // Polar / esférica: contiene "<"
+    if (s.includes("<")) {
+      const parts = s.split("<").map(p => parseFloat(p.trim()));
+      if (parts.some(isNaN)) return null;
+      if (parts.length === 2) {
+        const [L, ang] = parts;
+        return isRel ? { kind: "relPolar", L, ang } : { kind: "absPolar", L, ang };
+      }
+      if (parts.length === 3 && isRel) {
+        const [L, az, el] = parts;
+        return { kind: "relSpherical", L, az, el };
+      }
+      return null;
+    }
+    // Cartesiana: contiene ","
+    if (s.includes(",")) {
+      const parts = s.split(",").map(p => parseFloat(p.trim()));
+      if (parts.some(isNaN)) return null;
+      const [x, y, z = 0] = parts;
+      return isRel ? { kind: "relCart", dx: x, dy: y, dz: z }
+                   : { kind: "absCart", x, y, z };
+    }
+    // Solo número → DDE (longitud)
+    const v = parseFloat(s);
+    if (isNaN(v) || v <= 0) return null;
+    return { kind: "length", L: v };
+  };
+  // Convierte cualquier ParsedInput en el punto FINAL (x,y,z) que se agrega
+  // a la polilínea. Necesita rubberStart (último punto) para los modos rel.
+  const resolveParsedInput = (p: ParsedInput): [number, number, number] | null => {
+    if (!p) return null;
+    if (p.kind === "absCart") return [p.x, p.y, p.z];
+    if (p.kind === "relCart") {
+      if (!rubberStart) return null;
+      return [rubberStart[0] + p.dx, rubberStart[1] + p.dy, rubberStart[2] + p.dz];
+    }
+    if (p.kind === "absPolar") {
+      const a = p.ang * Math.PI / 180;
+      return [p.L * Math.cos(a), p.L * Math.sin(a), 0];
+    }
+    if (p.kind === "relPolar") {
+      if (!rubberStart) return null;
+      const a = p.ang * Math.PI / 180;
+      return [rubberStart[0] + p.L * Math.cos(a),
+              rubberStart[1] + p.L * Math.sin(a),
+              rubberStart[2]];
+    }
+    if (p.kind === "relSpherical") {
+      if (!rubberStart) return null;
+      const az = p.az * Math.PI / 180;  // azimuth (XY plane angle)
+      const el = p.el * Math.PI / 180;  // elevation (Z angle)
+      const horiz = p.L * Math.cos(el);
+      return [rubberStart[0] + horiz * Math.cos(az),
+              rubberStart[1] + horiz * Math.sin(az),
+              rubberStart[2] + p.L * Math.sin(el)];
+    }
+    return null;  // length → manejado aparte por commitTypedDistance
+  };
+  // Commit un punto absoluto (x,y,z) — equivalente a un click en esa coord.
+  const commitAbsolutePoint = (pt: [number, number, number]) => {
+    if (!drawingObj.polylines) return;
+    if ((window as any).__hekatanPushUndo) (window as any).__hekatanPushUndo();
+    drawingObj.points.val = [...drawingObj.points.rawVal, pt];
+    const polys = drawingObj.polylines.rawVal;
+    const last = polys.length ? polys[polys.length - 1] : [];
+    drawingObj.polylines.val = [
+      ...polys.slice(0, -1),
+      [...last, drawingObj.points.rawVal.length - 1],
+    ];
+    rubberLabelInput.blur();
+    try { (window as any).__hekatanRebuild?.(); } catch {}
+    viewerRender();
+  };
+
   // Keydown del input — Enter confirma, Esc finaliza, X/Y/Z se delegan al
   // handler global para axis lock, y cualquier dígito marca "userEditing"
   // para que el value no se pise con la cota live mientras el user tipea.
   rubberLabelInput.addEventListener("keydown", (ev: KeyboardEvent) => {
     if (ev.key === "Enter") {
       ev.preventDefault();
-      const v = parseFloat(rubberLabelInput.value);
-      if (!isNaN(v) && v > 0) {
-        rubberUserEditing = false;
-        commitTypedDistance(v);
+      const parsed = parseAutoCadInput(rubberLabelInput.value);
+      if (!parsed) return;
+      rubberUserEditing = false;
+      // DDE (solo longitud) usa commitTypedDistance que aplica axisLock
+      if (parsed.kind === "length") {
+        commitTypedDistance(parsed.L);
+        updateStatus(`✏ DDE ${parsed.L}m aplicado en dirección actual`);
+      } else {
+        const pt = resolveParsedInput(parsed);
+        if (!pt) return;
+        commitAbsolutePoint(pt);
+        const k = parsed.kind;
+        updateStatus(`✏ ${k} → (${pt[0].toFixed(2)}, ${pt[1].toFixed(2)}, ${pt[2].toFixed(2)})`);
       }
       return;
     }

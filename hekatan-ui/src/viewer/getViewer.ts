@@ -239,8 +239,15 @@ export function getViewer({
 
   const gridSize = settings.gridSize.rawVal;
   const z2fit = gridSize * 0.5 + (gridSize * 0.5) / Math.tan(45 * 0.5);
-  // Cámara iso mirando al origen (convención CAD: origen = centro del grid).
-  camera.position.set(0.5 * gridSize, -z2fit, 0.5 * gridSize);
+  // ── Vista DEFAULT = PLANTA (top-down sobre XY) ──
+  // Antes era iso pero confundía: el plano XY (horizontal) parecía estar
+  // parado como si fuera XZ. Ahora arrancamos en planta — el usuario VE
+  // el plano XY como un cuadrado plano frente a sí, y puede cambiar a
+  // iso/elevación con los botones de Tweakpane (Vista isométrica, etc.).
+  // Cámara directamente sobre el origen mirando hacia abajo (-Z), con +Y
+  // como "arriba" de la pantalla (convención CAD planta).
+  camera.position.set(0, 0, z2fit);
+  camera.up.set(0, 1, 0);  // Y up en screen (CAD convention)
   controls.target.set(0, 0, 0);
   controls.minDistance = 0.1;
   // maxDistance generoso — calculado por gridSize fallaba para modelos grandes
@@ -345,8 +352,17 @@ export function getViewer({
     // Distancia actual de la cámara al target — comparar contra el "default"
     // del gridSize previo para detectar si el user ya movió la vista.
     const curDist = camera.position.distanceTo(controls.target);
-    // Reposicionamos siempre — el user pidió que la cámara responda al grid.
-    camera.position.set(0.5 * gs, -z2fit2, 0.5 * gs);
+    // Reposicionar respetando el modo de vista actual: si la cámara está
+    // mirando "directamente desde arriba" (planta), mantener planta. Si
+    // está en iso/elevación, recolocar a iso. Detectamos planta cuando la
+    // cámara está alineada con +Z y X≈0, Y≈0.
+    const isPlan = Math.abs(camera.position.x) < 0.1 && Math.abs(camera.position.y) < 0.1
+                   && camera.position.z > 0;
+    if (isPlan) {
+      camera.position.set(0, 0, z2fit2);
+    } else {
+      camera.position.set(0.5 * gs, -z2fit2, 0.5 * gs);
+    }
     controls.target.set(0, 0, 0);
     // minDistance proporcional al grid (no menos de 0.1m para grids chicos)
     controls.minDistance = Math.max(0.05, gs * 0.01);
