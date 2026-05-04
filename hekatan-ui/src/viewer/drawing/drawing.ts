@@ -875,6 +875,124 @@ export function drawing({
   // como array de [x1,y1,z1,x2,y2,z2] (vanjs State).
   let hoveredAuxIndex = -1;
 
+  // ── SELECCIÓN UNIFICADA (sin tool específico) ──
+  // En modo "select" (default), el usuario simplemente pasa el mouse cerca
+  // de un nodo / línea / área y se RESALTA en amarillo (hover). Click la
+  // SELECCIONA en cyan. Ctrl+Click agrega a la selección (múltiple).
+  // IDs de selección: "pt:N" (nodo), "seg:P:S" (segmento polilínea P #S),
+  // "poly:P" (polilínea P entera, usado para áreas), "aux:N" (línea aux).
+  const selection = new Set<string>();
+  (window as any).__hekatanSelection = selection;
+  // Línea amarilla de HOVER — resalta lo que el cursor encontró antes de click
+  const hoverHL = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
+    new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.95, depthTest: false }),
+  );
+  hoverHL.renderOrder = 997;
+  hoverHL.frustumCulled = false;
+  hoverHL.visible = false;
+  scene.add(hoverHL);
+  // Sphere amarilla pequeña para hover de NODOS (puntos individuales)
+  const hoverPtHL = new THREE.Mesh(
+    new THREE.SphereGeometry(0.06, 12, 12),
+    new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.9, depthTest: false }),
+  );
+  hoverPtHL.renderOrder = 998;
+  hoverPtHL.visible = false;
+  scene.add(hoverPtHL);
+  // Grupo CYAN para todos los items SELECCIONADOS (líneas + spheres)
+  const selectionGroup = new THREE.Group();
+  selectionGroup.frustumCulled = false;
+  scene.add(selectionGroup);
+  const selColor = 0x22d3ee;  // cyan
+  // Estado de hover actual (lo que se va a seleccionar al click)
+  let hoverItem: { kind: "pt" | "seg" | "poly" | "aux"; a: number; b?: number } | null = null;
+
+  // Encuentra el NODO (punto individual) más cercano al cursor
+  const findClosestPoint = (px: number, py: number, pz: number, tol: number): number => {
+    if (!drawingObj.points) return -1;
+    const pts = drawingObj.points.rawVal;
+    let bestIdx = -1, bestD = tol;
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i];
+      if (!p) continue;
+      const d = Math.hypot(px - p[0], py - p[1], pz - p[2]);
+      if (d < bestD) { bestD = d; bestIdx = i; }
+    }
+    return bestIdx;
+  };
+
+  // Reconstruye los meshes cyan del grupo selectionGroup según el Set selection
+  const refreshSelectionGroup = () => {
+    while (selectionGroup.children.length) {
+      const c = selectionGroup.children.pop()!;
+      (c as any).geometry?.dispose?.();
+      (c as any).material?.dispose?.();
+    }
+    const pts = drawingObj.points?.rawVal ?? [];
+    const polys = drawingObj.polylines?.rawVal ?? [];
+    const auxState = (window as any).__hekatanDrawingAuxLines;
+    const aux: number[][] = auxState?.rawVal ?? [];
+    for (const id of selection) {
+      const [kind, ...rest] = id.split(":");
+      if (kind === "pt") {
+        const p = pts[+rest[0]];
+        if (!p) continue;
+        const m = new THREE.Mesh(
+          new THREE.SphereGeometry(0.07, 12, 12),
+          new THREE.MeshBasicMaterial({ color: selColor, transparent: true, opacity: 0.9, depthTest: false }),
+        );
+        m.position.set(p[0], p[1], p[2]);
+        m.renderOrder = 999;
+        selectionGroup.add(m);
+      } else if (kind === "seg") {
+        const poly = polys[+rest[0]];
+        const a = pts[poly?.[+rest[1]]], b = pts[poly?.[+rest[1]+1]];
+        if (!a || !b) continue;
+        const g = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(a[0], a[1], a[2]),
+          new THREE.Vector3(b[0], b[1], b[2]),
+        ]);
+        const ln = new THREE.Line(g, new THREE.LineBasicMaterial({
+          color: selColor, transparent: true, opacity: 0.95, depthTest: false,
+        }));
+        ln.renderOrder = 999;
+        selectionGroup.add(ln);
+      } else if (kind === "poly") {
+        const poly = polys[+rest[0]];
+        const ptsLine = poly.map(idx => {
+          const p = pts[idx];
+          return p ? new THREE.Vector3(p[0], p[1], p[2]) : null;
+        }).filter(Boolean) as THREE.Vector3[];
+        if (ptsLine.length < 2) continue;
+        const g = new THREE.BufferGeometry().setFromPoints(ptsLine);
+        const ln = new THREE.Line(g, new THREE.LineBasicMaterial({
+          color: selColor, transparent: true, opacity: 0.95, depthTest: false,
+        }));
+        ln.renderOrder = 999;
+        selectionGroup.add(ln);
+      } else if (kind === "aux") {
+        const ln = aux[+rest[0]];
+        if (!ln || ln.length !== 6) continue;
+        const g = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(ln[0], ln[1], ln[2]),
+          new THREE.Vector3(ln[3], ln[4], ln[5]),
+        ]);
+        const line = new THREE.Line(g, new THREE.LineBasicMaterial({
+          color: selColor, transparent: true, opacity: 0.95, depthTest: false,
+        }));
+        line.renderOrder = 999;
+        selectionGroup.add(line);
+      }
+    }
+    viewerRender();
+  };
+  (window as any).__hekatanRefreshSelection = refreshSelectionGroup;
+  (window as any).__hekatanClearSelection = () => {
+    selection.clear();
+    refreshSelectionGroup();
+  };
+
   // Distancia de un punto a un segmento (3D)
   const distPointSeg = (px: number, py: number, pz: number,
                          ax: number, ay: number, az: number,
@@ -1579,10 +1697,69 @@ export function drawing({
         snapMarker.visible = true;
       }
       updateSnapMarkerScale();  // tamaño constante en pantalla
-      // ── DELETE TOOL: hover highlight de la polilínea más cercana ──
-      // Cuando el usuario pasa el mouse sobre una línea/área dibujada y
-      // tiene activo el tool "delete", se resalta en rojo. Click → borra.
+      // ── SELECT TOOL: hover highlight + click para seleccionar ──
+      // Cuando el cursor está cerca de un nodo / segmento / aux line, lo
+      // resalta en AMARILLO. Click selecciona en CYAN. Ctrl+Click multi.
+      // Selección rápida sin tener que activar otra herramienta.
       const curTool = ((window as any).__hekatanCadState?.get?.() as any)?.tool ?? "select";
+      if (curTool === "select" || !curTool) {
+        const tol = ((window as any).__hekatanSnap2D ?? 0.5) * 1.5;
+        // Prioridad: NODO > SEGMENTO > AUX. Más fácil seleccionar un punto.
+        const ptIdx = findClosestPoint(p.x, p.y, p.z, tol);
+        const found = findClosestPoly(p.x, p.y, p.z, tol);
+        const auxIdx = findClosestAuxLine(p.x, p.y, p.z, tol);
+        if (ptIdx >= 0) {
+          const pt = drawingObj.points.rawVal[ptIdx];
+          hoverPtHL.position.set(pt[0], pt[1], pt[2]);
+          hoverPtHL.visible = true;
+          hoverHL.visible = false;
+          hoverItem = { kind: "pt", a: ptIdx };
+        } else if (found) {
+          const allPts = drawingObj.points.rawVal;
+          const poly = drawingObj.polylines!.rawVal[found.polyIdx];
+          const a = allPts[poly[found.segIdx]], b = allPts[poly[found.segIdx+1]];
+          hoverHL.geometry.setFromPoints([
+            new THREE.Vector3(a[0], a[1], a[2]),
+            new THREE.Vector3(b[0], b[1], b[2]),
+          ]);
+          hoverHL.visible = true;
+          hoverPtHL.visible = false;
+          // ¿Es un área? entonces seleccionar polilínea entera
+          const isArea = drawingObj.areas?.rawVal?.includes(found.polyIdx) ?? false;
+          hoverItem = isArea
+            ? { kind: "poly", a: found.polyIdx }
+            : { kind: "seg", a: found.polyIdx, b: found.segIdx };
+        } else if (auxIdx >= 0) {
+          const auxState = (window as any).__hekatanDrawingAuxLines;
+          const ln = (auxState?.rawVal ?? [])[auxIdx];
+          if (ln) {
+            hoverHL.geometry.setFromPoints([
+              new THREE.Vector3(ln[0], ln[1], ln[2]),
+              new THREE.Vector3(ln[3], ln[4], ln[5]),
+            ]);
+            hoverHL.visible = true;
+            hoverPtHL.visible = false;
+            hoverItem = { kind: "aux", a: auxIdx };
+          }
+        } else {
+          hoverHL.visible = false;
+          hoverPtHL.visible = false;
+          hoverItem = null;
+        }
+        coordReadout.style.left = event.clientX + "px";
+        coordReadout.style.top = event.clientY + "px";
+        coordReadout.style.display = "block";
+        if (hoverItem) {
+          const labels: any = { pt: "nodo", seg: "segmento", poly: "área", aux: "línea aux" };
+          coordReadout.textContent = `🖱 Click para seleccionar ${labels[hoverItem.kind]}`;
+        } else {
+          coordReadout.textContent = `X=${p.x.toFixed(2)} Y=${p.y.toFixed(2)} Z=${p.z.toFixed(2)}`;
+        }
+        rubberBand.visible = false;
+        polarLines.visible = false;
+        viewerRender();
+        return;
+      }
       if (curTool === "delete") {
         const tol = ((window as any).__hekatanSnap2D ?? 0.5) * 1.5;
         // Buscar lo más cerca entre polilínea y aux line — gana el de menor dist
@@ -2229,31 +2406,30 @@ export function drawing({
     // ── Tool dispatcher ──
     const tool = ((window as any).__hekatanCadState?.get?.() as any)?.tool ?? "select";
 
-    // ── SELECT/none: NO crear geometría — solo re-anclar planos ortogonales ──
-    // Click no genera nodos/líneas. Si los planos ortogonales están activos,
-    // el click los re-centra al punto clickeado: el usuario puede "fijar" el
-    // anchor antes de elegir un tool de dibujo. OrbitControls captura el drag
-    // así que la rotación de cámara sigue funcionando normal.
+    // ── SELECT/none: NO crear geometría — los planos ortogonales se quedan
+    // SIMÉTRICOS al origen siempre. Antes cualquier click los movía y
+    // confundía al usuario ("el cursor no cae en el eje"). Ahora solo
+    // se re-anclan con Ctrl+Click (acción deliberada).
     if (tool === "select" || tool === "none" || !tool) {
-      const showOrtho = (window as any).__hekatanShowOrthoPlanes !== false
-                        && orthoRefGroup.visible;
-      if (showOrtho) {
-        // Tamaño configurable desde Tweakpane vía window.__hekatanOrthoExt.
-      // Default 8m (cuadrado 16×16). Usuario puede agrandar/achicar con slider.
-      const ext = (window as any).__hekatanOrthoExt ?? 8;
-        const anchor = [point.x, point.y, point.z];
-        updateRefPlaneRect(refPlaneXY, anchor, "xy", ext);
-        updateRefPlaneRect(refPlaneXZ, anchor, "xz", ext);
-        updateRefPlaneRect(refPlaneYZ, anchor, "yz", ext);
-        updateRefPlaneFill(refFillXY, anchor, "xy", ext);
-        updateRefPlaneFill(refFillXZ, anchor, "xz", ext);
-        updateRefPlaneFill(refFillYZ, anchor, "yz", ext);
-        // Guardar anchor para que el setter lo reuse si re-togglean
-        (window as any).__hekatanOrthoAnchor = anchor;
-        updateStatus(
-          `▦ Anchor planos ortogonales → (${point.x.toFixed(2)}, ${point.y.toFixed(2)}, ${point.z.toFixed(2)})`
-        );
-        viewerRender();
+      // ── Click selecciona el item bajo el cursor (hover detectado en pointermove) ──
+      // Ctrl+Click agrega/quita de selección múltiple. Click simple reemplaza
+      // toda la selección por el item nuevo (o limpia si no hay hover).
+      if (hoverItem) {
+        const { kind, a, b } = hoverItem;
+        const id = b !== undefined ? `${kind}:${a}:${b}` : `${kind}:${a}`;
+        const isMulti = event.ctrlKey || event.metaKey || event.shiftKey;
+        if (!isMulti) selection.clear();
+        if (selection.has(id)) selection.delete(id);
+        else selection.add(id);
+        refreshSelectionGroup();
+        updateStatus(`✓ Seleccionados ${selection.size} elemento(s) — Ctrl+Click para multi-selección`);
+      } else if (!event.ctrlKey && !event.metaKey && !event.shiftKey) {
+        // Click en vacío sin ctrl → limpia selección
+        if (selection.size > 0) {
+          selection.clear();
+          refreshSelectionGroup();
+          updateStatus("Selección limpiada");
+        }
       }
       return;
     }
