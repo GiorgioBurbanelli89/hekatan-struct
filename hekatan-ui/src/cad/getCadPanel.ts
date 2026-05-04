@@ -55,19 +55,20 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
   const proxyTool = { v: "node" };
   const toolInstructions: Record<string, string> = {
     select:   "🖱 Seleccionar — click sobre un nodo/elemento para seleccionarlo",
-    node:     "● Nodo — cada click crea un nodo en la posición del plano de trabajo",
-    line:     "／ Línea — click 2 puntos para crear un frame. Continúa clickeando para extender la polilínea, right-click para terminar.",
-    polyline: "⌒ Polilínea — click sucesivos crean segmentos conectados; right-click para terminar.",
-    area:     "▭ Área — 4 clicks crean un Q4 shell (en orden CCW)",
-    col:      "▌ Columna 3D — tipeá altura + Enter, después 1 click en la base. Default = 3m. Ideal para iso.",
-    wall:     "▥ Pared Q4 3D — tipeá altura + Enter, después 2 clicks en las esquinas inferiores. Default = 3m. Crea shell Q4 vertical.",
-    circle:   "○ Círculo — click 2 puntos: 1=centro, 2=radio. Se discretiza en N segmentos.",
-    arc:      "⌒ Arco (3 ptos) — click 3 puntos: 1=inicio, 2=medio, 3=fin.",
-    rect:     "▭ Rectángulo — click 2 esquinas opuestas. Genera 4 nodos + 4 frames cerrados.",
-    aux:      "┊ Línea auxiliar — referencia visual (no genera FEM)",
-    extend:   "↗ Prolongar — click una línea existente, click en la dirección a extender",
-    chaflan:  "▱ Losa con chaflanes — click 2 esquinas opuestas. Radio del chaflán se ajusta en 'Chaflán r (m)'.",
-    "delete": "🗑 Borrar — pasá el mouse sobre una línea/área. Se resalta en rojo. Click para eliminarla.",
+    node:     "● Nodo — click crea nodo. Tipear: 5,3,2 (abs) | @1,0,0 (rel) | Enter",
+    line:     "／ Línea — click 2 puntos. Tipear: 5 (DDE) | 5,3,2 (abs) | @5,3,2 (rel) | @5<45 (polar) | @5<45<30 (esférico) | Enter",
+    polyline: "⌒ Polilínea — click sucesivos. Tipear: 5 | 5,3 | @5,3 | @5<45. Right-click para terminar.",
+    area:     "▭ Área — 4 clicks (CCW). Tipear: x,y o @dx,dy o @L<ang. Enter para confirmar coord.",
+    col:      "▌ Columna 3D — tipeá altura (ej: 3) + Enter, después 1 click en la base.",
+    wall:     "▥ Pared Q4 3D — tipeá altura + Enter, después 2 clicks. Crea shell Q4 vertical.",
+    circle:   "○ Círculo — click 1=centro, click 2=radio. Tipear radio: 5 + Enter (en vez del 2do click).",
+    arc:      "⌒ Arco (3 ptos) — click 1=inicio, 2=medio, 3=fin.",
+    rect:     "▭ Rectángulo — click 2 esquinas. Tipear @5,3 para esquina opuesta relativa.",
+    aux:      "┊ Línea auxiliar — referencia visual (no genera FEM). Mismo input que línea.",
+    extend:   "↗ Prolongar — click una línea, click en la dirección a extender.",
+    chaflan:  "▱ Losa con chaflanes — click 2 esquinas. Radio en slider 'Chaflán r'.",
+    "delete": "🗑 Borrar — hover sobre línea/área (se resalta en rojo) + click para eliminar.",
+    select:   "🖱 Seleccionar — click sobre un elemento. Sin tool activo no se crean nodos.",
   };
   const setActiveTool = (tool: string) => {
     proxyTool.v = tool;

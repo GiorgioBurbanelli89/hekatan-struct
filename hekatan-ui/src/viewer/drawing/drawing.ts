@@ -2058,7 +2058,11 @@ export function drawing({
     "overflow:hidden",
     "text-overflow:ellipsis",
   ].join(";") + ";";
-  statusBar.textContent = "🛠 CAD listo — seleccioná un tool y hacé click en el viewer";
+  // Mensaje default — incluye la "leyenda" de sintaxis tipo AutoCAD para que
+  // el usuario sepa qué puede tipear apenas active un tool de dibujo.
+  statusBar.textContent =
+    "🛠 CAD listo — seleccioná un tool. " +
+    "Inputs: 5 (DDE) · 5,3,2 (abs) · @5,3,2 (rel) · @5<45 (polar) · @5<45<30 (esférico) + Enter";
   document.body.appendChild(statusBar);
 
   // Helper de status — el usuario VE en pantalla qué paso del tool va.
