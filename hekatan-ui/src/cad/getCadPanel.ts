@@ -17,7 +17,13 @@
  *   - hooks.setView / splitState / refreshSplit: cámara + vista doble
  *   - hooks.onRebuild: opcional, se llama cuando hay que recomputar el modelo
  */
+import * as THREE from "three";
 import type { State } from "vanjs-core";
+import {
+  buildAxisGridMesh, buildLevelMesh,
+  nextAxisLabel, nextLevelLabel,
+  type AxisGrid, type Level,
+} from "./axisLevels";
 
 export type GridTargetVal = {
   position: [number, number, number];
@@ -275,6 +281,117 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
       if (cs) cs.workZ = z;
     });
   });
+
+  // ── Ejes y Niveles estilo Revit ──
+  // Grupo en la escena que contiene todos los meshes de ejes + niveles.
+  // Reactivo: cuando se agregan/borran items, se re-renderiza el grupo.
+  // El acceso a `scene` se hace vía el ctx del viewer.
+  const fAxis = fCad.addFolder({ title: "📍 Ejes y Niveles (Revit)", expanded: false });
+  const axisList: AxisGrid[] = [];
+  const levelList: Level[] = [];
+  (window as any).__hekatanAxisGrids = axisList;
+  (window as any).__hekatanLevels = levelList;
+  // Buscar la escena vía __ctx del viewerElm
+  const getScene = (): THREE.Scene | null => (viewerElm as any).__ctx?.scene ?? null;
+  const getRender = (): (() => void) | null => (viewerElm as any).__ctx?.render ?? null;
+  const axisGroup = new THREE.Group();
+  axisGroup.name = "axis-grids";
+  const levelGroup = new THREE.Group();
+  levelGroup.name = "levels";
+  // Agregar a la escena cuando esté disponible
+  const ensureGroupsInScene = () => {
+    const scene = getScene();
+    if (!scene) return false;
+    if (!scene.children.includes(axisGroup)) scene.add(axisGroup);
+    if (!scene.children.includes(levelGroup)) scene.add(levelGroup);
+    return true;
+  };
+  const refreshAxisRender = () => {
+    if (!ensureGroupsInScene()) return;
+    while (axisGroup.children.length) {
+      const c = axisGroup.children.pop()!;
+      (c as any).traverse?.((o: any) => {
+        o.geometry?.dispose?.(); o.material?.dispose?.();
+        o.material?.map?.dispose?.();
+      });
+    }
+    for (const ax of axisList) axisGroup.add(buildAxisGridMesh(ax));
+    getRender()?.();
+  };
+  const refreshLevelRender = () => {
+    if (!ensureGroupsInScene()) return;
+    while (levelGroup.children.length) {
+      const c = levelGroup.children.pop()!;
+      (c as any).traverse?.((o: any) => {
+        o.geometry?.dispose?.(); o.material?.dispose?.();
+        o.material?.map?.dispose?.();
+      });
+    }
+    for (const lv of levelList) levelGroup.add(buildLevelMesh(lv));
+    getRender()?.();
+  };
+  // Botón "+ Eje X" → ej. agrega un eje vertical (en planta XY) en la
+  // posición del último click en select mode (orthoAnchor) o en (0,0,0).
+  // El usuario puede después editarlo en localStorage o vía console.
+  fAxis.addButton({ title: "➕ Eje vertical (planta)" }).on("click", () => {
+    const anchor = (window as any).__hekatanOrthoAnchor as number[] | undefined;
+    const x = anchor?.[0] ?? 0;
+    // Eje vertical en planta = línea que va en dirección Y desde -10 a +10
+    // (extent default), a la cota X clickeada.
+    const label = nextAxisLabel(axisList.map(a => a.label));
+    axisList.push({
+      label,
+      start: [x, -10, 0],
+      end: [x, 10, 0],
+    });
+    refreshAxisRender();
+  });
+  fAxis.addButton({ title: "➕ Eje horizontal (planta)" }).on("click", () => {
+    const anchor = (window as any).__hekatanOrthoAnchor as number[] | undefined;
+    const y = anchor?.[1] ?? 0;
+    // Eje horizontal en planta = línea en dirección X
+    // Default labels alfa, pero si ya hay numéricos sigue numérico
+    const last = axisList[axisList.length - 1]?.label ?? "";
+    const useNum = /^\d+$/.test(last) || axisList.length === 0;
+    const label = useNum
+      ? String(axisList.filter(a => /^\d+$/.test(a.label)).length + 1)
+      : nextAxisLabel(axisList.map(a => a.label));
+    axisList.push({
+      label,
+      start: [-10, y, 0],
+      end: [10, y, 0],
+    });
+    refreshAxisRender();
+  });
+  fAxis.addButton({ title: "🗑 Limpiar ejes" }).on("click", () => {
+    axisList.length = 0;
+    refreshAxisRender();
+  });
+  // Niveles — botones rápidos para Z=0/3/6/9/12 y un genérico desde anchor
+  const proxyLevel = { z: 0 };
+  fAxis.addBinding(proxyLevel, "z", { min: -10, max: 50, step: 0.1, label: "Cota nivel (m)" });
+  fAxis.addButton({ title: "➕ Agregar nivel a la cota Z elegida" }).on("click", () => {
+    const z = proxyLevel.z;
+    const label = nextLevelLabel(levelList, z);
+    levelList.push({ label, z });
+    refreshLevelRender();
+  });
+  fAxis.addButton({ title: "🏢 Niveles típicos (0,3,6,9,12 m)" }).on("click", () => {
+    [0, 3, 6, 9, 12].forEach(z => {
+      const label = `N+${z.toFixed(2)}`;
+      if (!levelList.some(l => l.z === z)) levelList.push({ label, z });
+    });
+    refreshLevelRender();
+  });
+  fAxis.addButton({ title: "🗑 Limpiar niveles" }).on("click", () => {
+    levelList.length = 0;
+    refreshLevelRender();
+  });
+  // Helpers expuestos al window para programmatic + debug
+  (window as any).__hekatanRefreshAxes = refreshAxisRender;
+  (window as any).__hekatanRefreshLevels = refreshLevelRender;
+  // Render inicial (en caso de que el usuario haya cargado un modelo previo)
+  setTimeout(() => { refreshAxisRender(); refreshLevelRender(); }, 200);
 
   return { fCad };
 }

@@ -14,5 +14,10 @@ export { getDialog } from "./dialog/getDialog";
 export { getReport } from "./report/getReport";
 export { addCadPanel } from "./cad/getCadPanel";
 export type { CadPanelOptions, GridTargetVal } from "./cad/getCadPanel";
+export {
+  buildAxisGridMesh, buildLevelMesh,
+  nextAxisLabel, nextLevelLabel,
+} from "./cad/axisLevels";
+export type { AxisGrid, Level } from "./cad/axisLevels";
 export { getTheme, getThemeName, setTheme, toggleTheme, onThemeChange } from "./theme";
 export type { ThemeName, ThemeColors } from "./theme";
