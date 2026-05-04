@@ -34,8 +34,8 @@ const PE = (folder: string, label: string, def: number, options: Record<string, 
 
 export const newBlank: ExampleDef = {
   id: "new-blank",
-  name: "📐 NewBlank — lienzo CAD 2D/3D",
-  category: "Modelar",
+  name: "📄 Archivo nuevo (lienzo CAD 2D/3D)",
+  category: "Archivo nuevo",
   defaultShellResult: "none",
   availableShellResults: [],
   hasModal: false,
@@ -79,7 +79,7 @@ export const newBlank: ExampleDef = {
   },
 
   build(p, states) {
-    // ── Leer puntos y polilíneas dibujadas (workspace native drawing) ──
+    // ── Leer puntos, polilíneas y áreas dibujadas (workspace native drawing) ──
     // Ambos están en window globals (escritos por van.derive en
     // workspace/main.ts cada vez que el usuario hace click).
     const drawPoints: number[][] =
@@ -90,6 +90,15 @@ export const newBlank: ExampleDef = {
       ((window as any).__hekatanDrawingPolylines?.val) ??
       ((window as any).__hekatanDrawingPolylines) ??
       [];
+    // drawingAreas: índices de polylines marcadas como ÁREA (shell Q4)
+    // por el tool "area" explícito. NO inferido de geometría — una
+    // polilínea cerrada con tool "polyline" sigue siendo una cadena
+    // de frames (cercha/truss).
+    const drawAreasArr: number[] =
+      ((window as any).__hekatanDrawingAreas?.val) ??
+      ((window as any).__hekatanDrawingAreas) ??
+      [];
+    const drawAreas = new Set<number>(drawAreasArr);
 
     // ── Si no hay nada dibujado, mostrar viewer vacío ──
     if (!drawPoints.length) {
@@ -109,32 +118,55 @@ export const newBlank: ExampleDef = {
       is2D ? [pt[0], 0, pt[2]] : [pt[0], pt[1], pt[2]]
     );
 
-    // ── Construir elements (frames a partir de polilíneas) ──
+    // ── Construir elements según tipo de polilínea ──
+    // Polilínea NO marcada como área → cadena de frames (1D, columnas/vigas)
+    // Polilínea marcada como área → shell Q4 (4 vértices, elemento 2D)
     const elements: Element[] = [];
     const colIdx = new Set<number>();
     const beamIdx = new Set<number>();
-    for (const poly of drawPolylines) {
-      for (let i = 0; i < poly.length - 1; i++) {
-        const a = poly[i], b = poly[i + 1];
-        if (a === b || nodes[a] === undefined || nodes[b] === undefined) continue;
+    const shellIdx = new Set<number>();
+    for (let pi = 0; pi < drawPolylines.length; pi++) {
+      const poly = drawPolylines[pi];
+      if (drawAreas.has(pi)) {
+        // ─ ÁREA → shell Q4 ─
+        // El click handler cierra la polilínea agregando poly[0] al final,
+        // así que poly = [v0, v1, v2, v3, v0]. Tomamos los 4 vértices únicos.
+        const verts = poly.length === 5 ? poly.slice(0, 4) : poly.slice(0, Math.min(4, poly.length));
+        if (verts.length !== 4) continue;
+        if (verts.some(v => nodes[v] === undefined)) continue;
         const eIdx = elements.length;
-        elements.push([a, b]);
-        // Heurística: frame vertical (Δz dominante) → columna; horizontal → viga
-        const dx = nodes[b][0] - nodes[a][0];
-        const dy = nodes[b][1] - nodes[a][1];
-        const dz = nodes[b][2] - nodes[a][2];
-        const isVert = Math.abs(dz) > Math.max(Math.abs(dx), Math.abs(dy));
-        if (isVert) colIdx.add(eIdx);
-        else beamIdx.add(eIdx);
+        elements.push(verts as unknown as Element);
+        shellIdx.add(eIdx);
+      } else {
+        // ─ POLILÍNEA o LÍNEA → cadena de frames ─
+        for (let i = 0; i < poly.length - 1; i++) {
+          const a = poly[i], b = poly[i + 1];
+          if (a === b || nodes[a] === undefined || nodes[b] === undefined) continue;
+          const eIdx = elements.length;
+          elements.push([a, b]);
+          // Heurística: frame vertical (Δz dominante) → columna; horizontal → viga
+          const dx = nodes[b][0] - nodes[a][0];
+          const dy = nodes[b][1] - nodes[a][1];
+          const dz = nodes[b][2] - nodes[a][2];
+          const isVert = Math.abs(dz) > Math.max(Math.abs(dx), Math.abs(dy));
+          if (isVert) colIdx.add(eIdx);
+          else beamIdx.add(eIdx);
+        }
       }
     }
 
-    // ── Properties por elemento (basado en columna vs viga) ──
+    // ── Properties por elemento (frames: I/J/A; shells: thickness) ──
     const matIdx = Math.round(p.mat ?? 0);
     const E_frm = matIdx === 0 ? Ec : Es;
     const G_frm = matIdx === 0 ? Gc : Gs;
     const nu_frm = matIdx === 0 ? nu_c : nu_s;
     const rho_frm = matIdx === 0 ? rho_c : rho_s;
+
+    const matShellIdx = Math.round(p.matShell ?? 0);
+    const E_sh = matShellIdx === 0 ? Ec : Es;
+    const G_sh = matShellIdx === 0 ? Gc : Gs;
+    const nu_sh = matShellIdx === 0 ? nu_c : nu_s;
+    const rho_sh = matShellIdx === 0 ? rho_c : rho_s;
 
     const elasticities = new Map<number, number>();
     const shearModuli = new Map<number, number>();
@@ -144,23 +176,34 @@ export const newBlank: ExampleDef = {
     const J = new Map<number, number>();
     const densities = new Map<number, number>();
     const poissons = new Map<number, number>();
+    const thicknesses = new Map<number, number>();
 
     for (let i = 0; i < elements.length; i++) {
-      const isCol = colIdx.has(i);
-      const b = isCol ? p.bCol : p.bViga;
-      const h = isCol ? p.hCol : p.hViga;
-      const A = b * h;
-      const Iz_ = (h * Math.pow(b, 3)) / 12;
-      const Iy_ = (b * Math.pow(h, 3)) / 12;
-      const J_ = 0.14 * Math.pow(Math.min(b, h), 4);
-      elasticities.set(i, E_frm);
-      shearModuli.set(i, G_frm);
-      areas.set(i, A);
-      Iz.set(i, Iz_);
-      Iy.set(i, Iy_);
-      J.set(i, J_);
-      densities.set(i, rho_frm);
-      poissons.set(i, nu_frm);
+      if (shellIdx.has(i)) {
+        // Shell Q4 — solo necesita E, G, nu, density y espesor
+        elasticities.set(i, E_sh);
+        shearModuli.set(i, G_sh);
+        densities.set(i, rho_sh);
+        poissons.set(i, nu_sh);
+        thicknesses.set(i, (p.tShell ?? 0.20) as number);
+      } else {
+        // Frame 1D — propiedades de sección rectangular
+        const isCol = colIdx.has(i);
+        const b = isCol ? p.bCol : p.bViga;
+        const h = isCol ? p.hCol : p.hViga;
+        const A = b * h;
+        const Iz_ = (h * Math.pow(b, 3)) / 12;
+        const Iy_ = (b * Math.pow(h, 3)) / 12;
+        const J_ = 0.14 * Math.pow(Math.min(b, h), 4);
+        elasticities.set(i, E_frm);
+        shearModuli.set(i, G_frm);
+        areas.set(i, A);
+        Iz.set(i, Iz_);
+        Iy.set(i, Iy_);
+        J.set(i, J_);
+        densities.set(i, rho_frm);
+        poissons.set(i, nu_frm);
+      }
     }
 
     // ── Apoyos automáticos en nodos del Z mínimo ──
@@ -195,6 +238,7 @@ export const newBlank: ExampleDef = {
       elasticities, shearModuli, areas,
       momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy,
       torsionalConstants: J, densities, poissonsRatios: poissons,
+      thicknesses,
     } as any;
     states.objects3D.val = [];
 
@@ -219,7 +263,8 @@ export const newBlank: ExampleDef = {
     } else {
       console.log(
         `[NewBlank] mode=${is2D ? "2D" : "3D"} | nodes=${nodes.length} elem=${elements.length} ` +
-        `cols=${colIdx.size} vigas=${beamIdx.size} apoyos=${supports.size} cargas=${loads.size}`,
+        `cols=${colIdx.size} vigas=${beamIdx.size} shells=${shellIdx.size} ` +
+        `apoyos=${supports.size} cargas=${loads.size}`,
       );
     }
   },
@@ -228,9 +273,14 @@ export const newBlank: ExampleDef = {
     const out: Record<string, string> = {};
     const ns = states.nodes.val.length;
     const es = states.elements.val.length;
-    out["Stats"] = `${ns} nodos, ${es} elementos`;
+    let frames = 0, shells = 0;
+    for (const e of states.elements.val) {
+      if ((e as number[]).length === 4) shells++;
+      else frames++;
+    }
+    out["Stats"] = `${ns} nodos · ${frames} frames · ${shells} shells`;
     if (ns === 0) {
-      out["💡 Tip"] = "Usá el folder 📐 Herramientas CAD para dibujar";
+      out["💡 Tip"] = "Línea = 2 clicks · Polilínea = N clicks + click derecho · Área = 4 clicks";
     }
     return out;
   },

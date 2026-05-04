@@ -240,6 +240,29 @@ export const zapataAislada: ExampleDef = {
    * folder, sin tener que ir al panel "Calculados".
    */
   inlineComputed: [
+    // k_area debajo de q_adm — el módulo de balasto en kN/m³ derivado del
+    // método activo. Muestra qué valor de ks va a usar el solver según
+    // ks_method (Bowles / Vesic / Placa / Manual).
+    {
+      after: "q_adm",
+      label: "k_area (kN/m³ activo)",
+      compute: (p) => {
+        const method = Math.round(p.ks_method ?? 0);
+        let ks: number;
+        if (method === 0) {
+          // Bowles
+          ks = (p.q_adm ?? 20) * TONF_TO_KN * (p.ks_factor ?? 10.5);
+        } else if (method === 3) {
+          // Manual: ks directo del slider
+          ks = p.ks ?? 2059;
+        } else {
+          // Vesic / Placa: usar el ks que el build calculó (en p.ks fallback)
+          ks = p.ks ?? 2059;
+        }
+        const methodName = ["Bowles", "Vesic", "PLT", "Manual"][method] || "?";
+        return `${ks.toFixed(0)} (${methodName})`;
+      },
+    },
     {
       // Muestra ks derivado de Bowles junto al ks_factor — sirve como referencia
       // comparativa con el ks editable de arriba. Si coinciden, estás usando Bowles;

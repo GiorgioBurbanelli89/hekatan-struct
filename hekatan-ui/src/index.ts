@@ -12,5 +12,7 @@ export { getColorMap } from "./color-map/getColorMap";
 export { getToolbar } from "./toolbar/getToolbar";
 export { getDialog } from "./dialog/getDialog";
 export { getReport } from "./report/getReport";
+export { addCadPanel } from "./cad/getCadPanel";
+export type { CadPanelOptions, GridTargetVal } from "./cad/getCadPanel";
 export { getTheme, getThemeName, setTheme, toggleTheme, onThemeChange } from "./theme";
 export type { ThemeName, ThemeColors } from "./theme";

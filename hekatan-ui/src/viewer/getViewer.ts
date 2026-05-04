@@ -178,7 +178,54 @@ export function getViewer({
       : -1 / settings.displayScale.val
   );
   const derivedNodes = deriveNodes(mesh, settings);
-  let gridObj = grid(settings.gridSize.rawVal);
+  // Helper para construir la lista de planos activos según los toggles.
+  // Si todos están OFF, retorna lista vacía → grid totalmente oculto
+  // (forma natural de "esconder el grid": destildar XY/XZ/YZ en Settings).
+  const activePlanes = (): ("xy" | "xz" | "yz")[] => {
+    const out: ("xy" | "xz" | "yz")[] = [];
+    if (settings.gridXY.rawVal) out.push("xy");
+    if (settings.gridXZ.rawVal) out.push("xz");
+    if (settings.gridYZ.rawVal) out.push("yz");
+    return out;
+  };
+  // Helper: opciones del grid derivadas de los settings reactivos.
+  // gridStep es el paso de las líneas menores; las mayores se dibujan cada
+  // 5× ese valor para destacar cada 5 subdivisiones (convención CAD común).
+  // Además, el snap del cursor en drawing.ts lee window.__hekatanSnap2D que
+  // sincronizamos abajo con gridStep.
+  const gridOptions = () => {
+    const minor = settings.gridStep.rawVal;
+    // gridMajor ahora es ABSOLUTO en metros (no multiplicador). Permite
+    // configuraciones libres como minor=0.5 + major=2 (cada 4 menores hay
+    // una mayor) o minor=0.1 + major=1 (cada 10 menores hay una mayor).
+    const major = Math.max(minor, settings.gridMajor.rawVal);
+    return { planes: activePlanes(), majorStep: major, minorStep: minor };
+  };
+  let gridObj = grid(settings.gridSize.rawVal, gridOptions());
+  gridObj.visible = settings.gridVisible.rawVal;
+  // Inicializar snap del cursor — slider INDEPENDIENTE del paso visual
+  (window as any).__hekatanSnap2D = settings.cursorSnap.rawVal;
+  // Helper: aplica gridOpacity como opacidad ABSOLUTA del grid.
+  // Diferenciamos minor (líneas finas, máx 0.35) vs major (líneas gruesas,
+  // máx 1.0) por nombre — esto preserva el contraste entre las dos.
+  // Sin userData.baseOpacity (más simple y predecible). El slider controla:
+  //   1.0 → minor=0.35 / major=1.00 (totalmente visible)
+  //   0.5 → minor=0.18 / major=0.50 (medio)
+  //   0   → invisible
+  const applyGridOpacity = () => {
+    const factor = Math.max(0, Math.min(1, settings.gridOpacity.rawVal));
+    gridObj.traverse((o: any) => {
+      const m = o.material as THREE.Material | undefined;
+      if (!m || !("opacity" in m)) return;
+      const name = (o.name as string) ?? "";
+      // 3 niveles de opacidad — borde > major > minor
+      let baseMax = 0.35;  // minor
+      if (name.includes("border")) baseMax = 1.0;
+      else if (name.includes("major")) baseMax = 0.75;
+      (m as any).opacity = factor * baseMax;
+    });
+  };
+  applyGridOpacity();
 
   // update
   viewerElm.appendChild(getSettings(settings, mesh, solids));
@@ -192,8 +239,9 @@ export function getViewer({
 
   const gridSize = settings.gridSize.rawVal;
   const z2fit = gridSize * 0.5 + (gridSize * 0.5) / Math.tan(45 * 0.5);
-  camera.position.set(0.5 * gridSize, 0.8 * -z2fit, 0.5 * gridSize);
-  controls.target.set(0.5 * gridSize, 0.5 * gridSize, 0);
+  // Cámara iso mirando al origen (convención CAD: origen = centro del grid).
+  camera.position.set(0.5 * gridSize, -z2fit, 0.5 * gridSize);
+  controls.target.set(0, 0, 0);
   controls.minDistance = 0.1;
   // maxDistance generoso — calculado por gridSize fallaba para modelos grandes
   // (ej: tablero-puente con gridSize=1 daba max=4m, insuficiente para puente 15m).
@@ -210,7 +258,105 @@ export function getViewer({
   };
   controls.update();
 
-  scene.add(gridObj, axes(settings.gridSize.rawVal, settings.flipAxes.rawVal));
+  let axesObj = axes(settings.gridSize.rawVal, settings.flipAxes.rawVal);
+  scene.add(gridObj, axesObj);
+
+  // ── Sincronizar flags de planos raycast con los toggles de settings ──
+  // drawing.ts crea planeXZ/planeYZ invisibles para que el cursor pueda
+  // engancharse al plano XZ o YZ cuando estén activos en Settings → Grid.
+  // Acá los activamos/desactivamos según los toggles del usuario.
+  van.derive(() => {
+    (window as any).__hekatanGridPlaneXY = settings.gridXY.val;
+    (window as any).__hekatanGridPlaneXZ = settings.gridXZ.val;
+    (window as any).__hekatanGridPlaneYZ = settings.gridYZ.val;
+  });
+
+  // ── Reactividad de gridSize y flipAxes ──
+  // GridHelper y axes hornean la geometría en buffers — no se pueden
+  // redimensionar in-place. Cada vez que cambia gridSize (slider Tweakpane
+  // "Tamaño grid (m)") o flipAxes, se recrean los meshes y se re-agregan a
+  // la escena. Sin esto, mover el slider sólo actualiza el valor interno
+  // pero el grid visual queda al tamaño inicial.
+  // skipFirst: van.derive corre la función una vez al registrarla; usamos
+  // un flag para saltar esa primera ejecución (los meshes ya existen).
+  // ── Reactividad de gridVisible y gridOpacity ──
+  // Estos no requieren reconstruir geometría — solo flip .visible y mutar
+  // opacity de los materiales. Más rápido que el rebuild completo.
+  let _skipFirstGridVis = true;
+  van.derive(() => {
+    const v = settings.gridVisible.val;
+    if (_skipFirstGridVis) { _skipFirstGridVis = false; return; }
+    gridObj.visible = v;
+    viewerRender();
+  });
+  let _skipFirstGridOp = true;
+  van.derive(() => {
+    const op = settings.gridOpacity.val;
+    void op;
+    if (_skipFirstGridOp) { _skipFirstGridOp = false; return; }
+    applyGridOpacity();
+    viewerRender();
+  });
+  // ── Reactividad de cursorSnap ──
+  // Solo escribe a window.__hekatanSnap2D — drawing.ts lo lee en cada
+  // pointermove. No requiere render ni rebuild.
+  van.derive(() => {
+    const cs = settings.cursorSnap.val;
+    (window as any).__hekatanSnap2D = cs;
+  });
+
+  let _skipFirstGridDerive = true;
+  van.derive(() => {
+    // Subscribe a los 5 toggles + tamaño (suficiente para reactividad)
+    const gs = settings.gridSize.val;
+    const fa = settings.flipAxes.val;
+    const xy = settings.gridXY.val;
+    const xz = settings.gridXZ.val;
+    const yz = settings.gridYZ.val;
+    const step = settings.gridStep.val;
+    const major = settings.gridMajor.val;
+    void xy; void xz; void yz; void step; void major;
+    if (_skipFirstGridDerive) { _skipFirstGridDerive = false; return; }
+    // Reemplazar grid — ahora es Group (mayor + minor lines), dispose recursivo
+    scene.remove(gridObj);
+    (gridObj as any).traverse?.((o: any) => {
+      o.geometry?.dispose?.();
+      o.material?.dispose?.();
+    });
+    gridObj = grid(gs, gridOptions());
+    gridObj.visible = settings.gridVisible.rawVal;
+    scene.add(gridObj);
+    applyGridOpacity();  // re-aplica el factor del slider sobre el nuevo gridObj
+    // Reemplazar axes (tamaño = gridSize / 2 por convención awatif)
+    scene.remove(axesObj);
+    axesObj.traverse((o: any) => {
+      o.geometry?.dispose?.();
+      o.material?.dispose?.();
+    });
+    axesObj = axes(gs, fa);
+    scene.add(axesObj);
+    // ── Re-encuadrar la cámara al nuevo grid ──
+    // Sin esto, al achicar gridSize el grid queda lejísimo (la cámara se
+    // quedó en la posición del gridSize inicial). Calculamos la distancia
+    // ISO que enmarca el nuevo grid completo y reposicionamos la cámara
+    // SOLO si todavía está cerca del default — si el usuario ya zoomó/orbitó
+    // a un punto custom no le pisamos su vista.
+    const z2fit2 = gs * 0.5 + (gs * 0.5) / Math.tan(45 * 0.5);
+    // Distancia actual de la cámara al target — comparar contra el "default"
+    // del gridSize previo para detectar si el user ya movió la vista.
+    const curDist = camera.position.distanceTo(controls.target);
+    // Reposicionamos siempre — el user pidió que la cámara responda al grid.
+    camera.position.set(0.5 * gs, -z2fit2, 0.5 * gs);
+    controls.target.set(0, 0, 0);
+    // minDistance proporcional al grid (no menos de 0.1m para grids chicos)
+    controls.minDistance = Math.max(0.05, gs * 0.01);
+    // maxDistance ~50× el grid para que el zoom out tenga aire pero no se
+    // pueda perder el modelo en el infinito. 10000m era demasiado generoso.
+    controls.maxDistance = Math.max(50, gs * 50);
+    controls.update();
+    void curDist;  // (silenciar TS si no se usa)
+    viewerRender();
+  });
 
   // Events
   // on size change
@@ -220,14 +366,29 @@ export function getViewer({
       const height = entry.target?.clientHeight;
       if (width === 0 || height === 0) continue;
 
-      camera.aspect = width / height;
+      // En split mode el aspect de la cámara activa es media-pantalla.
+      const wActive = splitMode ? width / 2 : width;
+      const aspect = wActive / height;
+
+      camera.aspect = aspect;
       camera.updateProjectionMatrix();
 
-      const aspect = width / height;
       const frustumHalf = orthoCamera.top;
       orthoCamera.left = -frustumHalf * aspect;
       orthoCamera.right = frustumHalf * aspect;
       orthoCamera.updateProjectionMatrix();
+
+      // splitCamera (panel derecho) también usa media-pantalla aspect
+      if (splitCamera && (splitCamera as any).isPerspectiveCamera) {
+        (splitCamera as THREE.PerspectiveCamera).aspect = aspect;
+        (splitCamera as THREE.PerspectiveCamera).updateProjectionMatrix();
+      } else if (splitCamera && (splitCamera as any).isOrthographicCamera) {
+        const sCam = splitCamera as THREE.OrthographicCamera;
+        const sH = sCam.top;
+        sCam.left = -sH * aspect;
+        sCam.right = sH * aspect;
+        sCam.updateProjectionMatrix();
+      }
 
       renderer.setSize(width, height);
       viewerRender();
@@ -271,15 +432,121 @@ export function getViewer({
     setTimeout(viewerRender); // setTimeout to ensure render is called after all updates are done in that event tick
   });
 
-  // Object's functions (Actions)
+  // ── SPLIT VIEW (vista doble) ──
+  // Cuando está activado, renderiza dos veces el scene: izquierda con
+  // activeCamera (donde el usuario dibuja) y derecha con splitCamera
+  // (preview iso/elevación, INTERACTIVO — orbit/zoom/pan independiente
+  // gracias a splitControls). Usa setViewport+setScissor para limitar
+  // cada render a su mitad del canvas. Cuando OFF: render único a
+  // pantalla completa (comportamiento original).
+  let splitMode = false;
+  let splitCamera: THREE.Camera | null = null;
+  // OrbitControls secundarios para rotar/zoom/pan la vista preview de
+  // la derecha. Se crean lazy en la primera activación de split mode.
+  // Se alternan con los primarios según el lado del mouse (handler abajo).
+  let splitControls: OrbitControls | null = null;
+  let splitListenersAttached = false;
+
   function viewerRender() {
+    const w = viewerElm.clientWidth || 1;
+    const h = viewerElm.clientHeight || 1;
+    if (!splitMode || !splitCamera) {
+      renderer.setScissorTest(false);
+      renderer.setViewport(0, 0, w, h);
+      renderer.render(scene, activeCamera);
+      return;
+    }
+    const halfW = w / 2;
+    renderer.setScissorTest(true);
+    // LEFT: cámara activa (dibujable)
+    renderer.setViewport(0, 0, halfW, h);
+    renderer.setScissor(0, 0, halfW, h);
     renderer.render(scene, activeCamera);
+    // RIGHT: cámara preview (read-only)
+    renderer.setViewport(halfW, 0, halfW, h);
+    renderer.setScissor(halfW, 0, halfW, h);
+    renderer.render(scene, splitCamera);
+    renderer.setScissorTest(false);
   }
 
   function setActiveCamera(cam: THREE.Camera) {
     activeCamera = cam;
     controls.object = cam;
     controls.update();
+    viewerRender();
+  }
+
+  function setSplitMode(enabled: boolean, secondaryCam?: THREE.Camera) {
+    splitMode = enabled;
+    if (secondaryCam) splitCamera = secondaryCam;
+    // Recalcular aspect del frustum activo (mitad de ancho cuando split)
+    const w = viewerElm.clientWidth || 1;
+    const h = viewerElm.clientHeight || 1;
+    const wActive = enabled ? w / 2 : w;
+    const aspect = wActive / h;
+    if ((camera as any).isPerspectiveCamera) {
+      camera.aspect = aspect;
+      camera.updateProjectionMatrix();
+    }
+    const frustumHalf = orthoCamera.top;
+    orthoCamera.left = -frustumHalf * aspect;
+    orthoCamera.right = frustumHalf * aspect;
+    orthoCamera.updateProjectionMatrix();
+
+    // ── OrbitControls secundarios para el panel derecho ──
+    if (enabled && splitCamera) {
+      if (!splitControls) {
+        splitControls = new OrbitControls(splitCamera, renderer.domElement);
+        splitControls.enableDamping = true;
+        splitControls.dampingFactor = 0.1;
+        splitControls.screenSpacePanning = true;
+        splitControls.zoomSpeed = 0.8;
+        splitControls.panSpeed = 1.2;
+        splitControls.rotateSpeed = 0.9;
+        splitControls.touches = {
+          ONE: THREE.TOUCH.ROTATE,
+          TWO: THREE.TOUCH.DOLLY_PAN,
+        };
+        splitControls.target.copy(controls.target);
+        splitControls.addEventListener("change", viewerRender);
+        splitControls.enabled = false;  // OFF hasta que el mouse entre al lado derecho
+      } else {
+        splitControls.object = splitCamera;
+        splitControls.update();
+      }
+
+      // Listeners de switching: deciden qué OrbitControls procesa el evento
+      // según el lado donde está el mouse. Usan capture-phase para correr
+      // ANTES de los listeners internos de cada OrbitControls.
+      if (!splitListenersAttached) {
+        const decideSide = (e: PointerEvent | WheelEvent) => {
+          if (!splitMode || !splitControls) return;
+          const rect = renderer.domElement.getBoundingClientRect();
+          const localX = e.clientX - rect.left;
+          const halfW = rect.width / 2;
+          const mouseRight = localX >= halfW;
+          controls.enabled = !mouseRight;
+          splitControls.enabled = mouseRight;
+        };
+        renderer.domElement.addEventListener("pointerdown", decideSide, true);
+        renderer.domElement.addEventListener("wheel", decideSide, { capture: true, passive: true });
+        splitListenersAttached = true;
+      }
+    } else if (!enabled) {
+      // Volver a estado normal: solo controls primarios activos
+      controls.enabled = true;
+      if (splitControls) splitControls.enabled = false;
+    }
+
+    // Globals para que drawing.ts dispatchee al panel correcto:
+    //   __hekatanSplitMode  → flag general
+    //   __hekatanSplitCamera → cámara secundaria (panel derecho)
+    // Cuando split está activo, drawing.ts decide qué cámara usar según el
+    // lado donde está el mouse, así el usuario puede DIBUJAR desde ambas
+    // ventanas (no solo orbit/zoom).
+    (viewerElm as any).__splitMode = enabled;
+    (window as any).__hekatanSplitMode = enabled;
+    (window as any).__hekatanSplitCamera = enabled ? splitCamera : null;
     viewerRender();
   }
 
@@ -417,7 +684,9 @@ export function getViewer({
       drawingObj,
       gridObj,
       scene,
-      camera,
+      // Getter en vez de ref fija → drawing siempre usa la cámara activa actual
+      // (perspectiva o ortográfica según la vista que el usuario seleccionó)
+      getActiveCamera: () => activeCamera,
       controls,
       gridSize,
       derivedDisplayScale,
@@ -428,11 +697,13 @@ export function getViewer({
   // Theme change: update renderer, recreate grid, CSS vars, and re-render
   onThemeChange((_name, colors) => {
     renderer.setClearColor(colors.background, 1);
-    // Recreate grid (GridHelper bakes colors into vertex buffer)
+    // Recreate grid — Group con mayor+minor lines, dispose recursivo
     scene.remove(gridObj);
-    gridObj.geometry.dispose();
-    (gridObj.material as THREE.Material).dispose();
-    gridObj = grid(settings.gridSize.rawVal);
+    (gridObj as any).traverse?.((o: any) => {
+      o.geometry?.dispose?.();
+      o.material?.dispose?.();
+    });
+    gridObj = grid(settings.gridSize.rawVal, { planes: activePlanes() });
     scene.add(gridObj);
     // Update CSS custom properties for legend etc.
     viewerElm.style.setProperty("--awatif-legend-color", colors.legendMarker);
@@ -450,6 +721,9 @@ export function getViewer({
     rendererElm: renderer.domElement,
     render: viewerRender,
     setActiveCamera,
+    setSplitMode,
+    get splitMode() { return splitMode; },
+    get splitCamera() { return splitCamera; },
     settings,
   };
   (viewerElm as any).__ctx = ctx as ViewerContext3D;

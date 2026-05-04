@@ -70,7 +70,9 @@ export interface CadDrawState {
 export function emptyState(): CadDrawState {
   return {
     model: emptyModel(),
-    tool: "node",
+    // Default = "select" → click solo orbita la cámara, no crea geometría.
+    // El usuario debe activar EXPLÍCITAMENTE un tool de dibujo desde Tweakpane.
+    tool: "select",
     snap: 0.5,
     workPlane: "xy",
     workZ: 0,

@@ -7,6 +7,36 @@ import "./styles.css";
 // Todo: Remove this duplicated Settings type (might not be possible to remove it)
 export type Settings = {
   gridSize: State<number>;
+  /** Master toggle del grid completo. Cuando OFF oculta los 3 planos sin
+   *  perder la configuración de cuáles (XY/XZ/YZ) estaban activos. Útil
+   *  para alternar rápido entre "ver grid" y "vista limpia". */
+  gridVisible: State<boolean>;
+  /** Opacidad global del grid — multiplica las opacidades base (mayor=0.40,
+   *  menor=0.12) por este factor. Range 0..1. Default 1 (visible normal).
+   *  Permite ajustar visibilidad sin tocar los toggles. */
+  gridOpacity: State<number>;
+  /** Separación VISUAL de las líneas MENORES del grid (en metros).
+   *  SOLO afecta cómo se ve el grid — no toca el snap del cursor.
+   *  Range 0.05 a 5. Default 0.5. Las líneas MAYORES se dibujan cada
+   *  5×gridStep para destacar la graduación principal. */
+  gridStep: State<number>;
+  /** Separación EN METROS de las líneas MAYORES del grid (las resaltadas).
+   *  INDEPENDIENTE de gridStep — el usuario puede tener menores cada 0.5m
+   *  y mayores cada 2m, o cualquier otra combinación. Default 1m.
+   *  Range 0.1..50. Para que las mayores se vean alineadas con las menores,
+   *  conviene que gridMajor sea múltiplo entero de gridStep. */
+  gridMajor: State<number>;
+  /** Paso de adherencia del CURSOR al grid (en metros). Independiente
+   *  de gridStep — el usuario puede tener un grid visual cada 0.5m pero
+   *  el cursor saltando cada 0.1m, o viceversa. Default 0.5.
+   *  Escribe a window.__hekatanSnap2D que lee drawing.ts. */
+  cursorSnap: State<number>;
+  /** Plataformas de grid en cada plano principal (XY/XZ/YZ). Por default
+   *  solo XY (vista de planta CAD). Toggles permiten activar XZ y YZ también
+   *  para trabajar en 3D iso desde cualquier plano. Centrados en (0,0,0). */
+  gridXY: State<boolean>;
+  gridXZ: State<boolean>;
+  gridYZ: State<boolean>;
   displayScale: State<number>;
   nodes: State<boolean>;
   elements: State<boolean>;
@@ -57,6 +87,14 @@ export type Settings = {
 
 export type SettingsObj = {
   gridSize?: number;
+  gridVisible?: boolean;
+  gridOpacity?: number;
+  gridStep?: number;
+  gridMajor?: number;
+  cursorSnap?: number;
+  gridXY?: boolean;
+  gridXZ?: boolean;
+  gridYZ?: boolean;
   displayScale?: number;
   nodes?: boolean;
   elements?: boolean;
@@ -180,6 +218,38 @@ export function getSettings(
       max: 10,
       step: 1,
     });
+    // ── Folder "Grid" agrupa todas las opciones del grid ──
+    // Tamaño, paso, visibilidad, opacidad, planos XY/XZ/YZ — son varios
+    // controles relacionados, así que viven en un folder colapsable para
+    // no ocupar espacio en el panel principal. Default colapsado para vista
+    // limpia; el usuario lo expande cuando quiere ajustar.
+    const gridFolder = pane.addFolder({ title: "📐 Grid", expanded: true });
+    // Etiquetas claras:
+    //  - Dimensión   = tamaño TOTAL del grid (cuántos metros mide cada lado)
+    //  - Separación  = distancia entre LÍNEAS (cada cuánto se dibuja una)
+    //  - Paso cursor = a cuánto SALTA el cursor (independiente del visual)
+    gridFolder.addBinding(settings.gridSize, "val", {
+      label: "Dimensión (m)", min: 1, max: 100, step: 1,
+    });
+    // Separación de las líneas MENORES (toda la malla cuadriculada).
+    gridFolder.addBinding(settings.gridStep, "val", {
+      label: "Separación grid (m)", min: 0.05, max: 5, step: 0.05,
+    });
+    // Separación de las líneas MAYORES (resaltadas) — INDEPENDIENTE en metros.
+    // No es multiplicador: cada slider tiene su propio valor en m.
+    gridFolder.addBinding(settings.gridMajor, "val", {
+      label: "Separación mayores (m)", min: 0.1, max: 50, step: 0.1,
+    });
+    gridFolder.addBinding(settings.cursorSnap, "val", {
+      label: "Paso cursor (m)", min: 0.05, max: 5, step: 0.05,
+    });
+    gridFolder.addBinding(settings.gridVisible, "val", { label: "Mostrar" });
+    gridFolder.addBinding(settings.gridOpacity, "val", {
+      label: "Opacidad", min: 0, max: 1, step: 0.05,
+    });
+    gridFolder.addBinding(settings.gridXY, "val", { label: "Plano XY (planta)" });
+    gridFolder.addBinding(settings.gridXZ, "val", { label: "Plano XZ (frontal)" });
+    gridFolder.addBinding(settings.gridYZ, "val", { label: "Plano YZ (lateral)" });
     // NOTA: deformScale XY/Z se bindean en Analysis Outputs JUNTO al toggle
     // "Deformed shape" para evitar duplicacion y mantener UX coherente.
     pane.addBinding(settings.nodes, "val", { label: "Nodes" });
@@ -355,6 +425,14 @@ export function getSettings(
 export function getDefaultSettings(settingsObj: SettingsObj): Settings {
   return {
     gridSize: van.state(settingsObj?.gridSize ?? 20),
+    gridVisible: van.state(settingsObj?.gridVisible ?? true),
+    gridOpacity: van.state(settingsObj?.gridOpacity ?? 1.0),
+    gridStep: van.state(settingsObj?.gridStep ?? 0.5),
+    gridMajor: van.state(settingsObj?.gridMajor ?? 1),
+    cursorSnap: van.state(settingsObj?.cursorSnap ?? 0.5),
+    gridXY: van.state(settingsObj?.gridXY ?? true),
+    gridXZ: van.state(settingsObj?.gridXZ ?? false),
+    gridYZ: van.state(settingsObj?.gridYZ ?? false),
     displayScale: van.state(settingsObj?.displayScale ?? 1),
     nodes: van.state(settingsObj?.nodes ?? true),
     elements: van.state(settingsObj?.elements ?? true),

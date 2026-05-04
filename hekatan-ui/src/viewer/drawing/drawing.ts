@@ -6,6 +6,10 @@ import van, { State } from "vanjs-core";
 export type Drawing = {
   points?: State<[number, number, number][]>;
   polylines?: State<number[][]>;
+  // Índices de polylines marcadas como ÁREA (shell Q4). Una polilínea
+  // cerrada NO es automáticamente un área — puede ser una cercha (frames
+  // cerrados). Solo el tool "area" agrega entries acá.
+  areas?: State<number[]>;
   gridTarget?: State<{
     position: [number, number, number];
     rotation: [number, number, number];
@@ -16,7 +20,7 @@ export function drawing({
   drawingObj,
   gridObj,
   scene,
-  camera,
+  getActiveCamera,
   controls,
   gridSize,
   derivedDisplayScale,
@@ -26,7 +30,10 @@ export function drawing({
   drawingObj: Drawing;
   gridObj: THREE.GridHelper;
   scene: THREE.Scene;
-  camera: THREE.Camera;
+  // Getter dinámico — devuelve la cámara activa AHORA (puede ser persp ↔ ortho).
+  // Sin esto, el raycaster usa la cámara original cacheada y los clicks caen
+  // en world coords que no coinciden con la vista renderizada (off-by-mucho).
+  getActiveCamera: () => THREE.Camera;
   controls: THREE.Controls<any>;
   gridSize: number;
   derivedDisplayScale: State<number>;
@@ -37,8 +44,44 @@ export function drawing({
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
 
+  // Helper: actualiza pointer NDC desde un event de mouse y devuelve la
+  // CÁMARA que el caller debe usar para el raycaster (null si el evento
+  // no debe procesarse). En split mode, esto permite dibujar desde el
+  // panel izquierdo (cámara activa) Y el derecho (cámara secundaria).
+  const setPointerFromEvent = (event: { clientX: number; clientY: number }): THREE.Camera | null => {
+    const rect = rendererElm.getBoundingClientRect();
+    const localX = event.clientX - rect.left;
+    const localY = event.clientY - rect.top;
+    const w = rect.width || 1;
+    const h = rect.height || 1;
+    const split = !!(window as any).__hekatanSplitMode;
+    if (split) {
+      const halfW = w / 2;
+      if (localX >= halfW) {
+        // Mouse en panel DERECHO → usar splitCamera (preview interactivo).
+        // pointer NDC respecto a la mitad derecha del canvas.
+        pointer.x = ((localX - halfW) / halfW) * 2 - 1;
+        pointer.y = -(localY / h) * 2 + 1;
+        const splitCam = (window as any).__hekatanSplitCamera as THREE.Camera | null;
+        return splitCam ?? getActiveCamera();
+      }
+      // Mouse en panel IZQUIERDO → usar cámara activa.
+      pointer.x = (localX / halfW) * 2 - 1;
+    } else {
+      pointer.x = (localX / w) * 2 - 1;
+    }
+    pointer.y = -(localY / h) * 2 + 1;
+    return getActiveCamera();
+  };
+
+  // Plano gigante (10000×10000m) — invisible, sólo para raycaster.
+  // Antes era gridSize×gridSize (20×20) y se desplazaba a (0,10,10) o
+  // (10,10,0) según el plano de trabajo. Eso hacía que en YZ/XZ el plano
+  // sólo cubriera un cuadrante chico del viewport ortográfico → si el
+  // mouse iba fuera, el rayo no intersectaba nada y el cursor "se moría".
+  // Tamaño 10000m garantiza que cualquier click razonable hit.
   const plane = new THREE.Mesh(
-    new THREE.PlaneGeometry(gridSize, gridSize),
+    new THREE.PlaneGeometry(10000, 10000),
     new THREE.MeshBasicMaterial({
       side: THREE.DoubleSide,
       transparent: true,
@@ -53,6 +96,63 @@ export function drawing({
   // (y a veces los reales tras transforms) fallaban silenciosamente al no
   // intersectar nada → drawingPoints jamás se actualizaba.
   scene.add(plane);
+  // Planos de raycast adicionales para los GRID PLANES XZ / YZ.
+  // Existe `plane` arriba como plano XY global. Para que el cursor (snap +
+  // intersección) trabaje sobre los planos XZ y YZ del grid (cuando están
+  // activados en Settings → Grid → Plano XZ / Plano YZ), creamos otros 2
+  // meshes invisibles. Los activamos vía window.__hekatanGridPlaneXZ/YZ
+  // (booleans seteados por getViewer.ts cuando los toggles cambian).
+  const mkInvisiblePlane = (rotX: number, rotY: number, rotZ: number) => {
+    const m = new THREE.Mesh(
+      new THREE.PlaneGeometry(10000, 10000),
+      new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true, opacity: 0, depthWrite: false }),
+    );
+    m.rotation.set(rotX, rotY, rotZ);
+    m.visible = false;
+    m.frustumCulled = false;
+    scene.add(m);
+    return m;
+  };
+  // PlaneGeometry default está en XY. Para que sea XZ → rotX=π/2.
+  // Para YZ → rotY=π/2 (así la normal apunta a +X y el plano queda en YZ).
+  const planeXZ = mkInvisiblePlane(Math.PI / 2, 0, 0);
+  const planeYZ = mkInvisiblePlane(0, Math.PI / 2, 0);
+  // Helper: raycast contra el plano de trabajo activo + los planos de
+  // referencia visibles. El cursor cae sobre el plano que el rayo de cámara
+  // intersecta primero (el "más al frente"). Esto incluye:
+  //   - plane (workplane global XY/XZ/YZ a la Cota Z actual)
+  //   - planeXZ / planeYZ (si los grid planes XZ/YZ están activos)
+  //   - refPlaneMeshes (Z=0,3,6,9,12 si están visibles)
+  //   - refFillXY/XZ/YZ (planos ortogonales del último punto del rubber)
+  // CRÍTICO para que ORTO detecte el eje correcto según el plano hover:
+  // si el cursor está sobre el plano XZ del último punto, el `point` tendrá
+  // variación en X y Z (no solo en X como con el plane global XY).
+  const intersectWorkPlane = () => {
+    // Sincronizar visibilidad de planeXZ/YZ con flags globales
+    planeXZ.visible = !!(window as any).__hekatanGridPlaneXZ;
+    planeYZ.visible = !!(window as any).__hekatanGridPlaneYZ;
+    // PRIORIDAD 1: Planos ortogonales del último punto (XY/XZ/YZ).
+    // Cuando están visibles, son la referencia ACTIVA del usuario — el rubber
+    // band debe caer ahí, no en el plano global XY (que es gigante 10000m
+    // y siempre "gana" por estar más cerca a la cámara). Sin esta
+    // priorización, ORTO siempre detecta X o Y (nunca Z) en iso.
+    const showOrtho = (window as any).__hekatanShowOrthoPlanes !== false;
+    if (showOrtho && refFillXY.visible) {
+      const orthoHits = raycaster.intersectObjects(
+        [refFillXY, refFillXZ, refFillYZ], false,
+      );
+      if (orthoHits.length > 0) return orthoHits;
+    }
+    // PRIORIDAD 2: grid planes XZ/YZ del Settings (si activos) + planos
+    // de referencia Z=0,3,6,9,12 (si visibles) + workplane XY global.
+    const targets: THREE.Object3D[] = [plane];
+    if (planeXZ.visible) targets.push(planeXZ);
+    if (planeYZ.visible) targets.push(planeYZ);
+    if (refPlanesGroup.visible && refPlaneMeshes.length > 0) {
+      targets.push(...refPlaneMeshes);
+    }
+    return raycaster.intersectObjects(targets, false);
+  };
   const points = new THREE.Points(
     new THREE.BufferGeometry(),
     new THREE.PointsMaterial()
@@ -60,7 +160,10 @@ export function drawing({
 
   const indicationPoint = new THREE.Points(
     new THREE.BufferGeometry(),
-    new THREE.PointsMaterial({ color: "gray" })
+    // sizeAttenuation:false → size en PÍXELES (no en world units).
+    // Antes, size era world-units con atenuación; al zoomear in el cuadrado
+    // gris crecía hasta ser enorme. Ahora queda fijo a ~6px en pantalla.
+    new THREE.PointsMaterial({ color: "gray", sizeAttenuation: false, size: 6 })
   );
 
   const activePoints = new THREE.Points(
@@ -74,37 +177,174 @@ export function drawing({
   // punto → cursor). NO se persisten labels en segmentos ya confirmados.
   // El usuario los ve mientras prolonga, una vez click fijado se quita
   // (la coord readout sigue mostrando coords del cursor).
-  const rubberLabel = (() => {
-    const cv = document.createElement("canvas");
-    cv.width = 96; cv.height = 32;
-    const tex = new THREE.CanvasTexture(cv);
-    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
-    const sp = new THREE.Sprite(mat);
-    sp.scale.set(1.0, 0.33, 1);
-    sp.renderOrder = 999;
-    sp.visible = false;
-    sp.frustumCulled = false;
-    scene.add(sp);
-    return { sprite: sp, canvas: cv, texture: tex };
-  })();
+  // Rubber label EDITABLE — input HTML con tamaño FIJO en pixels (AutoCAD-style).
+  // El usuario puede tipear un valor numérico + Enter → confirma el segundo
+  // punto a esa distancia exacta en la dirección actual del cursor.
+  // Auto-focus cuando se tipea un dígito durante un rubber band activo.
+  const rubberLabelInput = document.createElement("input");
+  rubberLabelInput.id = "hk-rubber-label";
+  rubberLabelInput.type = "text";
+  rubberLabelInput.spellcheck = false;
+  rubberLabelInput.style.cssText = [
+    "position:fixed", "z-index:99996",
+    "padding:3px 8px", "background:rgba(15,23,42,0.92)",
+    "color:#22d3ee", "border:1.5px solid #22d3ee", "border-radius:4px",
+    "font-family:Consolas,monospace", "font-size:13px", "font-weight:bold",
+    "transform:translate(-50%,-50%)", "white-space:nowrap",
+    "outline:none", "width:80px", "text-align:center",
+    "display:none",
+  ].join(";") + ";";
+  document.body.appendChild(rubberLabelInput);
+  // State para "AutoCAD direct distance entry":
+  //   - rubberStart: punto inicial del rubber band (último click)
+  //   - rubberDir: dirección unitaria desde rubberStart al cursor
+  //   - rubberCurrentLen: longitud actual del cursor (sólo display)
+  let rubberStart: [number, number, number] | null = null;
+  let rubberDir: [number, number, number] | null = null;
+  // Flag: true cuando el usuario tipeó manualmente algo en el input. Mientras
+  // sea true NO se sobreescribe el value con la cota live del cursor (sino
+  // perderíamos lo que está tipeando). Se resetea al confirmar (Enter), al
+  // hacer Esc, o al hacer un click nuevo.
+  let rubberUserEditing = false;
+  const _rubberMid = new THREE.Vector3();
   const updateRubberLabel = (ax: number, ay: number, az: number, bx: number, by: number, bz: number) => {
-    const dL = Math.hypot(bx-ax, by-ay, bz-az);
-    if (dL < 0.01) { rubberLabel.sprite.visible = false; return; }
-    const cc = rubberLabel.canvas.getContext("2d")!;
-    cc.clearRect(0, 0, 96, 32);
-    cc.fillStyle = "rgba(15,23,42,0.92)";
-    cc.fillRect(0, 0, 96, 32);
-    cc.strokeStyle = "#22d3ee"; cc.lineWidth = 2;
-    cc.strokeRect(1, 1, 94, 30);
-    cc.fillStyle = "#22d3ee";
-    cc.font = "bold 16px Consolas, monospace";
-    cc.textAlign = "center";
-    cc.fillText(`${dL.toFixed(2)} m`, 48, 22);
-    rubberLabel.texture.needsUpdate = true;
-    rubberLabel.sprite.position.set((ax+bx)/2, (ay+by)/2, (az+bz)/2);
-    rubberLabel.sprite.visible = true;
+    const dx = bx - ax, dy = by - ay, dz = bz - az;
+    const dL = Math.hypot(dx, dy, dz);
+    if (dL < 0.01) { rubberLabelInput.style.display = "none"; return; }
+    rubberStart = [ax, ay, az];
+    rubberDir = [dx / dL, dy / dL, dz / dL];
+    // Proyectar midpoint world → screen usando la cámara activa
+    _rubberMid.set((ax+bx)/2, (ay+by)/2, (az+bz)/2);
+    _rubberMid.project(getActiveCamera());
+    const rect = rendererElm.getBoundingClientRect();
+    const sx = rect.left + (_rubberMid.x * 0.5 + 0.5) * rect.width;
+    const sy = rect.top + (-_rubberMid.y * 0.5 + 0.5) * rect.height;
+    rubberLabelInput.style.left = sx + "px";
+    rubberLabelInput.style.top = sy + "px";
+    rubberLabelInput.style.display = "block";
+    // Live update del value mientras el usuario NO esté editando manualmente.
+    if (!rubberUserEditing) {
+      rubberLabelInput.value = `${dL.toFixed(2)} m`;
+      // Mantener el input enfocado (cursor parpadeante visible) y todo el
+      // texto seleccionado — así tipear cualquier dígito reemplaza el valor
+      // automáticamente, estilo AutoCAD/Revit. El user no necesita clickear.
+      if (document.activeElement !== rubberLabelInput) {
+        // No robar focus si está editando otro input (Tweakpane, etc.)
+        const ae = document.activeElement;
+        const isOtherInput = ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")
+                              && ae !== rubberLabelInput;
+        if (!isOtherInput) rubberLabelInput.focus({ preventScroll: true });
+      }
+      // Seleccionar todo el texto: tipear lo reemplaza directamente
+      try { rubberLabelInput.select(); } catch {}
+    }
   };
-  const hideRubberLabel = () => { rubberLabel.sprite.visible = false; };
+  const hideRubberLabel = () => {
+    rubberLabelInput.style.display = "none";
+    rubberStart = null;
+    rubberDir = null;
+    rubberUserEditing = false;
+    if (document.activeElement === rubberLabelInput) rubberLabelInput.blur();
+  };
+  // Confirma el endpoint a la distancia tipeada: nuevo punto = start + dir*L
+  const commitTypedDistance = (lengthM: number) => {
+    // Para tools 3D (col/wall/extp/extl) la "distancia" tipeada es la ALTURA
+    // del elemento — la guardamos para que el próximo click la use.
+    const curTool = ((window as any).__hekatanCadState?.get?.() as any)?.tool ?? "select";
+    if (curTool === "col" || curTool === "wall" || curTool === "extp" || curTool === "extl") {
+      pendingHeight = lengthM;
+      const labels: any = { col: "columna", wall: "pared", extp: "extrusión punto→línea", extl: "extrusión línea→área" };
+      updateStatus(`📐 Altura ${lengthM}m memorizada — hacé el click para crear ${labels[curTool]}.`);
+      rubberLabelInput.blur();
+      return;
+    }
+    if (!rubberStart || !rubberDir || !drawingObj.polylines) return;
+    // Si hay axis lock activo, OVERRIDE la dirección al eje correspondiente.
+    // Sin esto, "Lock Z + tipear 3 + Enter" usaría la dirección del cursor
+    // al último hover (puede no ser vertical).
+    let dx = rubberDir[0], dy = rubberDir[1], dz = rubberDir[2];
+    if (axisLock === "x") { dx = Math.sign(dx) || 1; dy = 0; dz = 0; }
+    else if (axisLock === "y") { dx = 0; dy = Math.sign(dy) || 1; dz = 0; }
+    else if (axisLock === "z") { dx = 0; dy = 0; dz = Math.sign(dz) || 1; }
+    const ex = rubberStart[0] + dx * lengthM;
+    const ey = rubberStart[1] + dy * lengthM;
+    const ez = rubberStart[2] + dz * lengthM;
+    // Agregar punto + extender la polilínea actual (mismo flujo que click)
+    if ((window as any).__hekatanPushUndo) (window as any).__hekatanPushUndo();
+    drawingObj.points.val = [...drawingObj.points.rawVal, [ex, ey, ez]];
+    const polys = drawingObj.polylines.rawVal;
+    const last = polys.length ? polys[polys.length - 1] : [];
+    drawingObj.polylines.val = [
+      ...polys.slice(0, -1),
+      [...last, drawingObj.points.rawVal.length - 1],
+    ];
+    rubberLabelInput.blur();
+    try { (window as any).__hekatanRebuild?.(); } catch {}
+    viewerRender();
+  };
+  // Keydown del input — Enter confirma, Esc finaliza, X/Y/Z se delegan al
+  // handler global para axis lock, y cualquier dígito marca "userEditing"
+  // para que el value no se pise con la cota live mientras el user tipea.
+  rubberLabelInput.addEventListener("keydown", (ev: KeyboardEvent) => {
+    if (ev.key === "Enter") {
+      ev.preventDefault();
+      const v = parseFloat(rubberLabelInput.value);
+      if (!isNaN(v) && v > 0) {
+        rubberUserEditing = false;
+        commitTypedDistance(v);
+      }
+      return;
+    }
+    if (ev.key === "Escape") {
+      ev.preventDefault();
+      rubberUserEditing = false;
+      rubberLabelInput.blur();
+      // Esc también finaliza dibujo (manejado por handler global)
+      return;
+    }
+    // Delegar X/Y/Z al global handler (axis lock) — NO insertar como texto
+    const k = ev.key.toLowerCase();
+    if (k === "x" || k === "y" || k === "z") {
+      ev.preventDefault();
+      // Disparar manualmente el global handler vía un keydown sintético sería
+      // raro — mejor: replicar la lógica acá directamente. Pero como el
+      // global handler escucha en window, podemos dispatcher un evento.
+      // Más simple: hacer toggle directo aquí si el global ya escucha:
+      // ya que ev.preventDefault NO previene el bubbling al window listener,
+      // dejamos que el global lo procese. Pero antes restauramos la
+      // selección para que el cursor quede visible al volver el value.
+      setTimeout(() => {
+        if (!rubberUserEditing && rubberLabelInput.style.display === "block") {
+          try { rubberLabelInput.select(); } catch {}
+        }
+      }, 0);
+      return;
+    }
+    // Si el user tipea un dígito / punto / minus / Backspace / Delete →
+    // marcar como editing. La selección "todo seleccionado" hace que el
+    // primer dígito reemplace el value live ("6.95 m" → "5").
+    if (/^[0-9.\-]$/.test(ev.key) || ev.key === "Backspace" || ev.key === "Delete") {
+      rubberUserEditing = true;
+    }
+  });
+  // Auto-focus + intercept cuando el usuario tipea un dígito durante rubber band
+  // activo (igual a AutoCAD: empezás a tipear y el "campo de distancia" agarra
+  // el foco automáticamente sin tener que clickear nada).
+  window.addEventListener("keydown", (ev: KeyboardEvent) => {
+    if (!rubberStart || !rubberDir) return;
+    if (document.activeElement === rubberLabelInput) return;
+    // Ignorar si está editando otro input (Tweakpane, etc.)
+    const ae = document.activeElement;
+    if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) return;
+    // Solo agarrar dígitos / punto / minus
+    if (/^[0-9.\-]$/.test(ev.key)) {
+      rubberLabelInput.value = ev.key;
+      rubberLabelInput.focus();
+      // Coloca el cursor al final del input (acabamos de escribir 1 char)
+      rubberLabelInput.setSelectionRange(1, 1);
+      ev.preventDefault();
+    }
+  });
 
   // ── COORD READOUT — texto flotante con coord del cursor (X, Y, Z) ──
   const coordReadout = document.createElement("div");
@@ -158,6 +398,539 @@ export function drawing({
   const polarY = mkPolarLine(0x00ff00);  // verde Y
   const polarZ = mkPolarLine(0x0088ff);  // azul Z
   polarLines.add(polarX, polarY, polarZ);
+  // ── Planos de referencia ortogonales (estilo SketchUp inferencing) ──
+  // 3 rectángulos coloreados centrados en el último punto, uno por cada
+  // plano principal (XY verde / XZ rojo / YZ azul). Sirven como guía visual
+  // y snap targets — el cursor engancha al plano cuya normal es más
+  // perpendicular al rayo de cámara.
+  const mkRefPlaneRect = (col: number) => {
+    const geo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0),
+      new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0),
+    ]);
+    const mat = new THREE.LineBasicMaterial({
+      // Bordes de los planos ortogonales — antes 0.9 (muy fuertes).
+      // Bajado a 0.45 para que sean sutiles, no compitan con la geometría.
+      color: col, transparent: true, opacity: 0.45,
+      depthTest: false,
+    });
+    const loop = new THREE.LineLoop(geo, mat);
+    loop.renderOrder = 997;
+    loop.frustumCulled = false;
+    return loop;
+  };
+  const refPlaneXY = mkRefPlaneRect(0x34d399);  // verde — plano XY (perp a Z)
+  const refPlaneXZ = mkRefPlaneRect(0xff3344);  // rojo  — plano XZ (perp a Y)
+  const refPlaneYZ = mkRefPlaneRect(0x60a5fa);  // azul  — plano YZ (perp a X)
+  // ── Grupo SEPARADO para los planos de referencia ortogonales (XY/XZ/YZ) ──
+  // Antes estaban dentro de polarLines, pero polarLines.visible solo se hace
+  // true durante el rubber band. Eso ocultaba los planos aunque el usuario
+  // los activara con el toggle. Ahora viven en su propio grupo controlado
+  // únicamente por __hekatanSetOrthoPlanes / __hekatanShowOrthoPlanes.
+  // (NOTA: el otro `refPlanesGroup` más abajo en este archivo es para los
+  // planos Z=0,3,6,9,12 — DIFERENTES; por eso este se llama orthoRefGroup.)
+  const orthoRefGroup = new THREE.Group();
+  orthoRefGroup.frustumCulled = false;
+  orthoRefGroup.visible = false;
+  scene.add(orthoRefGroup);
+  orthoRefGroup.add(refPlaneXY, refPlaneXZ, refPlaneYZ);
+  // ── Fill semitransparente para resaltar el área del plano ──
+  // Cuando el cursor está cerca de un plano, el fill aumenta la opacity
+  // (highlight) — facilita identificar visualmente sobre qué plano cae el
+  // próximo click.
+  const mkRefPlaneFill = (col: number) => {
+    const geo = new THREE.PlaneGeometry(1, 1);
+    const mat = new THREE.MeshBasicMaterial({
+      // Fill semitransparente del plano — opacity inicial muy baja (0.06).
+      // Apenas tinta el área para identificar el plano sin tapar geometría.
+      color: col, transparent: true, opacity: 0.06,
+      side: THREE.DoubleSide, depthWrite: false,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.frustumCulled = false;
+    mesh.renderOrder = 996;
+    return mesh;
+  };
+  const refFillXY = mkRefPlaneFill(0x34d399);
+  const refFillXZ = mkRefPlaneFill(0xff3344);
+  const refFillYZ = mkRefPlaneFill(0x60a5fa);
+  orthoRefGroup.add(refFillXY, refFillXZ, refFillYZ);
+  // Helper para reposicionar+orientar un fill mesh al plano XY/XZ/YZ
+  const updateRefPlaneFill = (
+    mesh: THREE.Mesh, lp: number[], plane: "xy" | "xz" | "yz", ext: number,
+  ) => {
+    mesh.scale.set(2 * ext, 2 * ext, 1);
+    if (plane === "xy") {
+      // PlaneGeometry default está en XY — no rotar
+      mesh.position.set(lp[0], lp[1], lp[2]);
+      mesh.rotation.set(0, 0, 0);
+    } else if (plane === "xz") {
+      // Rotar 90° en X para llevar el plano a XZ
+      mesh.position.set(lp[0], lp[1], lp[2]);
+      mesh.rotation.set(Math.PI / 2, 0, 0);
+    } else {
+      // Rotar 90° en Y para llevar el plano a YZ
+      mesh.position.set(lp[0], lp[1], lp[2]);
+      mesh.rotation.set(0, Math.PI / 2, 0);
+    }
+  };
+  // Badge DOM que muestra qué plano de ref está bajo el cursor (XY/XZ/YZ).
+  // Más explícito que solo el highlight de opacity — el usuario VE el nombre.
+  const refPlaneBadge = document.createElement("div");
+  refPlaneBadge.id = "hk-refplane-badge";
+  refPlaneBadge.style.cssText = [
+    "position:fixed", "pointer-events:none", "z-index:99997",
+    "padding:3px 10px", "border-radius:4px",
+    "font-family:Consolas,monospace", "font-size:12px", "font-weight:bold",
+    "transform:translate(20px,40px)", "white-space:nowrap",
+    "display:none",
+  ].join(";") + ";";
+  document.body.appendChild(refPlaneBadge);
+  // Setter expuesto al window — toggle inmediato del flag con efecto visual.
+  // El botón Tweakpane "▦ Planos ref. ortogonales" llama a esto.
+  // CRÍTICO: las geometrías de refPlane*/refFill* se inicializan vacías
+  // (LineLoop con 4 vectores cero, Mesh PlaneGeometry(1,1) sin scale). Si
+  // sólo seteamos `.visible=true` sin actualizar geometría, los planos son
+  // invisibles a la vista (degenerados/microscópicos en el origen). Por eso
+  // acá llamamos a updateRefPlaneRect/Fill con un anchor (último punto de
+  // la polilínea actual o el origen) para que el toggle SE VEA al instante.
+  (window as any).__hekatanSetOrthoPlanes = (visible: boolean) => {
+    (window as any).__hekatanShowOrthoPlanes = visible;
+    // Toggle del grupo entero — controla los 6 hijos (3 borders + 3 fills).
+    orthoRefGroup.visible = visible;
+    if (visible) {
+      // Anchor jerárquico:
+      //   1. Último click en modo select (__hekatanOrthoAnchor) ← prioritario
+      //   2. Último punto de la polilínea actual
+      //   3. Origen (0,0,0)
+      const savedAnchor = (window as any).__hekatanOrthoAnchor as number[] | undefined;
+      const polys = drawingObj.polylines?.rawVal ?? [];
+      const lastPoly = polys[polys.length - 1] ?? [];
+      const allPts = drawingObj.points.rawVal ?? [];
+      const anchor = savedAnchor && savedAnchor.length === 3
+        ? savedAnchor
+        : (lastPoly.length > 0 && allPts[lastPoly[lastPoly.length - 1]]
+            ? allPts[lastPoly[lastPoly.length - 1]]
+            : [0, 0, 0]);
+      // Tamaño configurable desde Tweakpane vía window.__hekatanOrthoExt.
+      // Default 8m (cuadrado 16×16). Usuario puede agrandar/achicar con slider.
+      const ext = (window as any).__hekatanOrthoExt ?? 8;
+      updateRefPlaneRect(refPlaneXY, anchor, "xy", ext);
+      updateRefPlaneRect(refPlaneXZ, anchor, "xz", ext);
+      updateRefPlaneRect(refPlaneYZ, anchor, "yz", ext);
+      updateRefPlaneFill(refFillXY, anchor, "xy", ext);
+      updateRefPlaneFill(refFillXZ, anchor, "xz", ext);
+      updateRefPlaneFill(refFillYZ, anchor, "yz", ext);
+      // Opacity inicial: muy transparente (0.10) para que no domine la
+      // escena. El borde + el tinte sutil son suficientes para identificar
+      // los planos sin tapar la geometría detrás. Hover sube a 0.25.
+      (refFillXY.material as THREE.MeshBasicMaterial).opacity = 0.10;
+      (refFillXZ.material as THREE.MeshBasicMaterial).opacity = 0.10;
+      (refFillYZ.material as THREE.MeshBasicMaterial).opacity = 0.10;
+    } else {
+      const badge = document.getElementById("hk-refplane-badge");
+      if (badge) badge.style.display = "none";
+    }
+    viewerRender();
+  };
+  // Setter dedicado para redimensionar los planos ortogonales en vivo.
+  // El slider Tweakpane "Tamaño área planos ref." llama a esto en cada cambio.
+  // Re-aplica la geometría al ext nuevo usando el anchor actual (saved/last/origen).
+  (window as any).__hekatanSetOrthoExt = (extNew: number) => {
+    (window as any).__hekatanOrthoExt = extNew;
+    if (!orthoRefGroup.visible) { viewerRender(); return; }
+    const savedAnchor = (window as any).__hekatanOrthoAnchor as number[] | undefined;
+    const polys = drawingObj.polylines?.rawVal ?? [];
+    const lastPoly = polys[polys.length - 1] ?? [];
+    const allPts = drawingObj.points.rawVal ?? [];
+    const anchor = savedAnchor && savedAnchor.length === 3
+      ? savedAnchor
+      : (lastPoly.length > 0 && allPts[lastPoly[lastPoly.length - 1]]
+          ? allPts[lastPoly[lastPoly.length - 1]]
+          : [0, 0, 0]);
+    updateRefPlaneRect(refPlaneXY, anchor, "xy", extNew);
+    updateRefPlaneRect(refPlaneXZ, anchor, "xz", extNew);
+    updateRefPlaneRect(refPlaneYZ, anchor, "yz", extNew);
+    updateRefPlaneFill(refFillXY, anchor, "xy", extNew);
+    updateRefPlaneFill(refFillXZ, anchor, "xz", extNew);
+    updateRefPlaneFill(refFillYZ, anchor, "yz", extNew);
+    viewerRender();
+  };
+  // Helper para resaltar un plano (cuando el cursor está cerca).
+  // hovered: "xy" | "xz" | "yz" | null. Aumenta contraste: dim casi invisible
+  // (0.04), highlight muy visible (0.45). Además muestra badge DOM.
+  const setRefPlaneHover = (hovered: "xy" | "xz" | "yz" | null) => {
+    // Más sutil: dim 0.04 (casi invisible para no-hover), hover 0.22 (antes
+    // 0.45 era demasiado fuerte y tapaba el modelo). Sigue siendo distinguible.
+    const dimO = 0.04, hiO = 0.22;
+    (refFillXY.material as THREE.MeshBasicMaterial).opacity = hovered === "xy" ? hiO : dimO;
+    (refFillXZ.material as THREE.MeshBasicMaterial).opacity = hovered === "xz" ? hiO : dimO;
+    (refFillYZ.material as THREE.MeshBasicMaterial).opacity = hovered === "yz" ? hiO : dimO;
+    if (hovered) {
+      const colors = {
+        xy: { bg: "rgba(52,211,153,0.90)", text: "#0a1f12" },
+        xz: { bg: "rgba(255,51,68,0.90)",  text: "#1f0a0e" },
+        yz: { bg: "rgba(96,165,250,0.90)", text: "#0a1224" },
+      };
+      const c = colors[hovered];
+      refPlaneBadge.style.background = c.bg;
+      refPlaneBadge.style.color = c.text;
+      refPlaneBadge.textContent = `▦ Plano ${hovered.toUpperCase()}`;
+      refPlaneBadge.style.display = "block";
+    } else {
+      refPlaneBadge.style.display = "none";
+    }
+  };
+  // Helper para actualizar geometría del rectángulo de un plano de ref.
+  // Tamaño: ext (8m) — suficientemente grande para verse pero sin dominar.
+  const updateRefPlaneRect = (
+    line: THREE.Line, lp: number[], plane: "xy" | "xz" | "yz", ext: number,
+  ) => {
+    let pts: THREE.Vector3[];
+    if (plane === "xy") {
+      pts = [
+        new THREE.Vector3(lp[0] - ext, lp[1] - ext, lp[2]),
+        new THREE.Vector3(lp[0] + ext, lp[1] - ext, lp[2]),
+        new THREE.Vector3(lp[0] + ext, lp[1] + ext, lp[2]),
+        new THREE.Vector3(lp[0] - ext, lp[1] + ext, lp[2]),
+        new THREE.Vector3(lp[0] - ext, lp[1] - ext, lp[2]),
+      ];
+    } else if (plane === "xz") {
+      pts = [
+        new THREE.Vector3(lp[0] - ext, lp[1], lp[2] - ext),
+        new THREE.Vector3(lp[0] + ext, lp[1], lp[2] - ext),
+        new THREE.Vector3(lp[0] + ext, lp[1], lp[2] + ext),
+        new THREE.Vector3(lp[0] - ext, lp[1], lp[2] + ext),
+        new THREE.Vector3(lp[0] - ext, lp[1], lp[2] - ext),
+      ];
+    } else {
+      pts = [
+        new THREE.Vector3(lp[0], lp[1] - ext, lp[2] - ext),
+        new THREE.Vector3(lp[0], lp[1] + ext, lp[2] - ext),
+        new THREE.Vector3(lp[0], lp[1] + ext, lp[2] + ext),
+        new THREE.Vector3(lp[0], lp[1] - ext, lp[2] + ext),
+        new THREE.Vector3(lp[0], lp[1] - ext, lp[2] - ext),
+      ];
+    }
+    line.geometry.setFromPoints(pts);
+  };
+
+  // ── AXIS LOCK (estilo AutoCAD/SketchUp) ──
+  // Mientras hay rubber band activo, presionar X/Y/Z restringe el cursor
+  // a moverse SOLO en ese eje desde el último punto. Esencial para dibujar
+  // columnas verticales (Lock Z), vigas horizontales (Lock X o Y) en iso.
+  // Esc o repetir la misma tecla libera el lock.
+  let axisLock: "x" | "y" | "z" | null = null;
+  (window as any).__hekatanAxisLock = () => axisLock;  // getter para debug
+  // Label DOM que muestra qué eje está bloqueado
+  const axisLockBadge = document.createElement("div");
+  axisLockBadge.id = "hk-axis-lock-badge";
+  axisLockBadge.style.cssText = [
+    "position:fixed", "pointer-events:none", "z-index:99998",
+    "padding:4px 10px", "border-radius:4px",
+    "font-family:Consolas,monospace", "font-size:13px", "font-weight:bold",
+    "transform:translate(20px,18px)", "white-space:nowrap",
+    "display:none",
+  ].join(";") + ";";
+  document.body.appendChild(axisLockBadge);
+  const updateAxisLockBadge = () => {
+    if (!axisLock) { axisLockBadge.style.display = "none"; return; }
+    const colors = { x: "#ff3344", y: "#34d399", z: "#60a5fa" };
+    axisLockBadge.style.background = "rgba(15,23,42,0.92)";
+    axisLockBadge.style.color = colors[axisLock];
+    axisLockBadge.style.border = `1.5px solid ${colors[axisLock]}`;
+    axisLockBadge.textContent = `🔒 LOCK ${axisLock.toUpperCase()}`;
+    axisLockBadge.style.display = "block";
+  };
+  // Keyboard handler global: X/Y/Z toggle, Esc libera
+  window.addEventListener("keydown", (ev: KeyboardEvent) => {
+    // Solo activo si hay rubber band en progreso (rubberStart definido al
+    // principio del archivo en updateRubberLabel). Y NO si está editando OTRO
+    // input distinto al rubber label (Tweakpane, etc.). El rubber label SÍ
+    // permite procesar X/Y/Z aunque tenga focus.
+    const ae = document.activeElement;
+    if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")
+        && ae !== rubberLabelInput) return;
+    const k = ev.key.toLowerCase();
+    if (k === "x" || k === "y" || k === "z") {
+      // Toggle: si ya estaba en ese eje, libera; si no, cambia a ese eje
+      axisLock = (axisLock === k) ? null : (k as "x" | "y" | "z");
+      updateAxisLockBadge();
+      ev.preventDefault();
+    } else if (ev.key === "Escape") {
+      // Esc → finalizar dibujo: termina polilínea, libera lock, esconde guías.
+      // También blur cualquier input editable (rubber label, etc.).
+      const ae = document.activeElement;
+      if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) {
+        (ae as HTMLElement).blur();
+      }
+      finalizeDraw();
+      ev.preventDefault();
+    } else if (ev.key === "F8") {
+      // F8 → toggle ORTO mode (AutoCAD-style). Restringe el rubber band al
+      // eje X/Y/Z más cercano AUTOMÁTICAMENTE (axis lock dinámico).
+      ev.preventDefault();
+      (window as any).__hekatanOrthoMode = !(window as any).__hekatanOrthoMode;
+      const on = (window as any).__hekatanOrthoMode;
+      // Refrescar status (re-aplica sufijo con modos activos)
+      (window as any).__hekatanRefreshStatus?.();
+      // Borde cyan grueso alrededor del viewer activo cuando ORTO=ON.
+      // Esto hace IMPOSIBLE no notar el cambio visual al apretar F8.
+      let orthoFrame = document.getElementById("hk-ortho-frame");
+      if (!orthoFrame) {
+        orthoFrame = document.createElement("div");
+        orthoFrame.id = "hk-ortho-frame";
+        orthoFrame.style.cssText = [
+          "position:fixed", "inset:0", "z-index:99996",
+          "border:3px solid rgba(34,211,238,0.85)",
+          "box-shadow:inset 0 0 24px rgba(34,211,238,0.35)",
+          "pointer-events:none",
+        ].join(";") + ";";
+        document.body.appendChild(orthoFrame);
+      }
+      orthoFrame.style.display = on ? "block" : "none";
+      // Badge visual fijo en la esquina superior — siempre visible cuando ON
+      let orthoBadge = document.getElementById("hk-ortho-badge");
+      if (!orthoBadge) {
+        orthoBadge = document.createElement("div");
+        orthoBadge.id = "hk-ortho-badge";
+        orthoBadge.style.cssText = [
+          "position:fixed", "top:10px", "left:50%",
+          "transform:translateX(-50%)", "z-index:99998",
+          "padding:6px 16px", "background:rgba(34,211,238,0.95)",
+          "color:#0a1f24", "border-radius:6px",
+          "border:2px solid rgba(8,145,178,1)",
+          "box-shadow:0 4px 16px rgba(34,211,238,0.5)",
+          "font-family:Consolas,monospace", "font-size:13px", "font-weight:bold",
+          "pointer-events:none", "white-space:nowrap",
+        ].join(";") + ";";
+        orthoBadge.textContent = "⊥ ORTO ON (F8)";
+        document.body.appendChild(orthoBadge);
+      }
+      orthoBadge.style.display = on ? "block" : "none";
+    }
+  });
+  // Helper: proyecta el rayo del raycaster sobre el eje desde lastPt y
+  // devuelve el punto del eje más cercano al cursor en pantalla.
+  const _axisLockEndA = new THREE.Vector3();
+  const _axisLockEndB = new THREE.Vector3();
+  const _axisLockOut = new THREE.Vector3();
+  const projectOnAxis = (lastPt: number[]): THREE.Vector3 | null => {
+    if (!axisLock) return null;
+    const ax = lastPt[0], ay = lastPt[1], az = lastPt[2];
+    if (axisLock === "x") {
+      _axisLockEndA.set(ax - 10000, ay, az);
+      _axisLockEndB.set(ax + 10000, ay, az);
+    } else if (axisLock === "y") {
+      _axisLockEndA.set(ax, ay - 10000, az);
+      _axisLockEndB.set(ax, ay + 10000, az);
+    } else {
+      _axisLockEndA.set(ax, ay, az - 10000);
+      _axisLockEndB.set(ax, ay, az + 10000);
+    }
+    raycaster.ray.distanceSqToSegment(_axisLockEndA, _axisLockEndB, null as any, _axisLockOut);
+    return _axisLockOut;
+  };
+  (window as any).__hekatanProjectOnAxis = projectOnAxis;
+
+  // ── DELETE HOVER HIGHLIGHT ──
+  // Cuando el tool "delete" está activo, esta línea roja gruesa se sitúa
+  // sobre la polilínea más cercana al cursor para indicar QUÉ se va a
+  // borrar. Al hacer click, la polilínea hover se elimina del modelo.
+  const deleteHover = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 0),
+    ]),
+    new THREE.LineBasicMaterial({
+      color: 0xff3344, transparent: true, opacity: 0.95, linewidth: 4, depthTest: false,
+    })
+  );
+  deleteHover.renderOrder = 998;
+  deleteHover.frustumCulled = false;
+  deleteHover.visible = false;
+  scene.add(deleteHover);
+  // Índice de la polilínea + segmento actualmente hover. El hover resalta
+  // SOLO el segmento individual; el delete elimina solo ese segmento (a
+  // menos que la polilínea sea un área Q4 — entonces se borra entera).
+  let hoveredPolyIndex = -1;
+  let hoveredSegIndex = -1;
+  // Índice de la línea auxiliar bajo el cursor (-1 = ninguna). El tool
+  // "delete" lo usa además de hoveredPolyIndex para borrar tanto polilíneas
+  // como aux lines. Las aux lines se almacenan en window.__hekatanDrawingAuxLines
+  // como array de [x1,y1,z1,x2,y2,z2] (vanjs State).
+  let hoveredAuxIndex = -1;
+
+  // Distancia de un punto a un segmento (3D)
+  const distPointSeg = (px: number, py: number, pz: number,
+                         ax: number, ay: number, az: number,
+                         bx: number, by: number, bz: number): number => {
+    const dx = bx - ax, dy = by - ay, dz = bz - az;
+    const L2 = dx*dx + dy*dy + dz*dz;
+    if (L2 < 1e-12) return Math.hypot(px-ax, py-ay, pz-az);
+    let t = ((px-ax)*dx + (py-ay)*dy + (pz-az)*dz) / L2;
+    t = Math.max(0, Math.min(1, t));
+    const cx = ax + t*dx, cy = ay + t*dy, cz = az + t*dz;
+    return Math.hypot(px-cx, py-cy, pz-cz);
+  };
+
+  // Encuentra la polilínea más cercana al punto cursor — devuelve
+  // { polyIdx, segIdx, dist } o null si nada en tolerancia.
+  const findClosestPoly = (px: number, py: number, pz: number, tol: number) => {
+    if (!drawingObj.polylines) return null;
+    const polys = drawingObj.polylines.rawVal;
+    const allPts = drawingObj.points.rawVal;
+    let bestIdx = -1, bestSeg = -1, bestD = tol;
+    for (let i = 0; i < polys.length; i++) {
+      const poly = polys[i];
+      for (let j = 0; j < poly.length - 1; j++) {
+        const a = allPts[poly[j]], b = allPts[poly[j+1]];
+        if (!a || !b) continue;
+        const d = distPointSeg(px, py, pz, a[0],a[1],a[2], b[0],b[1],b[2]);
+        if (d < bestD) { bestD = d; bestIdx = i; bestSeg = j; }
+      }
+    }
+    return bestIdx >= 0 ? { polyIdx: bestIdx, segIdx: bestSeg, dist: bestD } : null;
+  };
+
+  // Encuentra la línea auxiliar más cercana al cursor — devuelve el índice
+  // (en window.__hekatanDrawingAuxLines.rawVal) o -1 si nada en tolerancia.
+  const findClosestAuxLine = (px: number, py: number, pz: number, tol: number): number => {
+    const auxState = (window as any).__hekatanDrawingAuxLines;
+    const lines: number[][] = auxState?.rawVal ?? auxState?.val ?? auxState ?? [];
+    let bestIdx = -1, bestD = tol;
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      if (!ln || ln.length !== 6) continue;
+      const d = distPointSeg(px, py, pz, ln[0], ln[1], ln[2], ln[3], ln[4], ln[5]);
+      if (d < bestD) { bestD = d; bestIdx = i; }
+    }
+    return bestIdx;
+  };
+
+  // Resalta la aux line `i` en rojo (mismo deleteHover que polilíneas).
+  const showDeleteAuxHover = (i: number) => {
+    const auxState = (window as any).__hekatanDrawingAuxLines;
+    const lines: number[][] = auxState?.rawVal ?? auxState?.val ?? auxState ?? [];
+    const ln = lines[i];
+    if (!ln || ln.length !== 6) { deleteHover.visible = false; return; }
+    deleteHover.geometry.setFromPoints([
+      new THREE.Vector3(ln[0], ln[1], ln[2]),
+      new THREE.Vector3(ln[3], ln[4], ln[5]),
+    ]);
+    deleteHover.visible = true;
+  };
+
+  // Renderiza solo el SEGMENTO j de la polilínea i en deleteHover (rojo).
+  // Excepción: si la polilínea es un ÁREA (Q4), se resalta entera porque
+  // un Q4 con 3 vértices no tiene sentido — el delete elimina el área
+  // completa.
+  const showDeleteHover = (i: number, j: number = -1) => {
+    if (!drawingObj.polylines) return;
+    const poly = drawingObj.polylines.rawVal[i];
+    const allPts = drawingObj.points.rawVal;
+    if (!poly || poly.length < 2) { deleteHover.visible = false; return; }
+    const isArea = drawingObj.areas?.rawVal?.includes(i) ?? false;
+    const pts: THREE.Vector3[] = [];
+    if (isArea || j < 0 || j >= poly.length - 1) {
+      // Resaltar polilínea entera (área Q4 o segIdx inválido)
+      for (const idx of poly) {
+        const p = allPts[idx];
+        if (p) pts.push(new THREE.Vector3(p[0], p[1], p[2]));
+      }
+    } else {
+      // Resaltar SOLO el segmento (frame individual)
+      const a = allPts[poly[j]], b = allPts[poly[j+1]];
+      if (a) pts.push(new THREE.Vector3(a[0], a[1], a[2]));
+      if (b) pts.push(new THREE.Vector3(b[0], b[1], b[2]));
+    }
+    deleteHover.geometry.setFromPoints(pts);
+    deleteHover.visible = true;
+  };
+
+  // Borra la polilínea i, limpia puntos huérfanos, dispara rebuild.
+  const deletePoly = (i: number) => {
+    if (!drawingObj.polylines) return;
+    const polys = drawingObj.polylines.rawVal;
+    if (i < 0 || i >= polys.length) return;
+    const newPolys = polys.filter((_, k) => k !== i);
+    // Limpiar puntos huérfanos: nodes no referenciados por NINGUNA polilínea
+    const used = new Set<number>();
+    for (const p of newPolys) for (const idx of p) used.add(idx);
+    const allPts = drawingObj.points.rawVal;
+    const remap = new Map<number, number>();
+    const newPts: number[][] = [];
+    for (let k = 0; k < allPts.length; k++) {
+      if (used.has(k)) { remap.set(k, newPts.length); newPts.push(allPts[k]); }
+    }
+    // Reindexar polilíneas con el remap
+    const reindexed = newPolys.map(p => p.map(idx => remap.get(idx)!).filter(v => v !== undefined));
+    drawingObj.points.val = newPts;
+    drawingObj.polylines.val = reindexed;
+    // Reindexar drawingAreas: descartar el índice borrado y desplazar
+    // todos los > i en -1 (porque las polylines posteriores se corrieron).
+    if (drawingObj.areas) {
+      drawingObj.areas.val = drawingObj.areas.rawVal
+        .filter(a => a !== i)
+        .map(a => (a > i ? a - 1 : a));
+    }
+    deleteHover.visible = false;
+    hoveredPolyIndex = -1;
+    hoveredSegIndex = -1;
+    try { (window as any).__hekatanRebuild?.(); } catch {}
+  };
+
+  // Borra UN SEGMENTO de una polilínea. Si la polilínea es área → borra
+  // entera (un Q4 sin un lado no tiene sentido). Si es polilínea normal:
+  //   - segmento al medio → split en 2 polilíneas
+  //   - segmento al inicio → shorten (remover poly[0])
+  //   - segmento al fin → shorten (remover último)
+  //   - polilínea de 2 puntos (1 segmento) → eliminar entera
+  const deleteSeg = (polyIdx: number, segIdx: number) => {
+    if (!drawingObj.polylines) return;
+    const polys = drawingObj.polylines.rawVal;
+    if (polyIdx < 0 || polyIdx >= polys.length) return;
+    const isArea = drawingObj.areas?.rawVal?.includes(polyIdx) ?? false;
+    if (isArea) { deletePoly(polyIdx); return; }
+    const poly = polys[polyIdx];
+    if (segIdx < 0 || segIdx >= poly.length - 1) return;
+    // Si solo hay 1 segmento → eliminar polilínea entera
+    if (poly.length === 2) { deletePoly(polyIdx); return; }
+    // Construir nuevas polilíneas reemplazando la actual
+    let newPolyList: number[][];
+    if (segIdx === 0) {
+      // Sacar el primer punto: poly[1:]
+      newPolyList = [poly.slice(1)];
+    } else if (segIdx === poly.length - 2) {
+      // Sacar el último punto: poly[:-1]
+      newPolyList = [poly.slice(0, -1)];
+    } else {
+      // Split: dos polilíneas independientes
+      newPolyList = [poly.slice(0, segIdx + 1), poly.slice(segIdx + 1)];
+    }
+    const newPolys = [...polys.slice(0, polyIdx), ...newPolyList, ...polys.slice(polyIdx + 1)];
+    // Limpiar puntos huérfanos
+    const used = new Set<number>();
+    for (const p of newPolys) for (const idx of p) used.add(idx);
+    const allPts = drawingObj.points.rawVal;
+    const remap = new Map<number, number>();
+    const newPts: number[][] = [];
+    for (let k = 0; k < allPts.length; k++) {
+      if (used.has(k)) { remap.set(k, newPts.length); newPts.push(allPts[k]); }
+    }
+    const reindexed = newPolys.map(p => p.map(idx => remap.get(idx)!).filter(v => v !== undefined));
+    drawingObj.points.val = newPts;
+    drawingObj.polylines.val = reindexed;
+    // Reindexar áreas — todas las áreas con índice > polyIdx se desplazan
+    // según cuántas polilíneas nuevas insertamos (newPolyList.length - 1).
+    if (drawingObj.areas) {
+      const shift = newPolyList.length - 1;
+      drawingObj.areas.val = drawingObj.areas.rawVal.map(a => a > polyIdx ? a + shift : a);
+    }
+    deleteHover.visible = false;
+    hoveredPolyIndex = -1;
+    hoveredSegIndex = -1;
+    try { (window as any).__hekatanRebuild?.(); } catch {}
+  };
 
   // Update
   points.geometry.setAttribute(
@@ -170,8 +943,9 @@ export function drawing({
   indicationPoint.frustumCulled = false;
   scene.add(indicationPoint);
 
-  // Match initial grid position and rotation
-  plane.position.set(0.5 * gridSize, 0.5 * gridSize, 0);
+  // Match initial grid position and rotation — grid centrado en el origen
+  // (convención CAD: origen mundial = centro del grid).
+  plane.position.set(0, 0, 0);
   plane.rotateX(Math.PI / 2);
   plane.geometry.rotateX(Math.PI / 2);
   plane.updateMatrixWorld(); // to fix intersect object
@@ -472,14 +1246,20 @@ export function drawing({
   // Líneas semitransparentes en X-Y a Z=0,3,6,9,12 m que sirven de guía
   // al dibujar (ej. niveles de pisos). El usuario activa/desactiva con
   // window.__hekatanShowRefPlanes(zArray, gridSizeM).
+  // Además de las líneas visuales, cada plano tiene un Mesh INVISIBLE de
+  // 10000×10000 m para raycast — permite dibujar EN ISOMÉTRICO directamente
+  // sobre cualquier plano: el click engancha al plano más cercano al rayo
+  // de cámara (el que el usuario "ve al frente").
   const refPlanesGroup = new THREE.Group();
   refPlanesGroup.visible = false;
   scene.add(refPlanesGroup);
+  // Meshes invisibles para raycast — separados del group visual.
+  let refPlaneMeshes: THREE.Mesh[] = [];
   (window as any).__hekatanShowRefPlanes = (
     zLevels: number[] = [0, 3, 6, 9, 12],
     sizeM: number = 20,
-    centerX: number = 10,
-    centerY: number = 10,
+    centerX: number = 0,    // grid centrado en origen (convención CAD)
+    centerY: number = 0,
   ) => {
     // Limpiar viejos
     while (refPlanesGroup.children.length) {
@@ -487,6 +1267,12 @@ export function drawing({
       (c as any).geometry?.dispose();
       (c as any).material?.dispose();
     }
+    refPlaneMeshes.forEach(m => {
+      scene.remove(m);
+      m.geometry.dispose();
+      (m.material as THREE.Material).dispose();
+    });
+    refPlaneMeshes = [];
     const colors = [0x60a5fa, 0x34d399, 0xfbbf24, 0xfb7185, 0xc084fc, 0x22d3ee];
     zLevels.forEach((z, i) => {
       const col = colors[i % colors.length];
@@ -515,33 +1301,90 @@ export function drawing({
       spr.position.set(centerX - half - 1.5, centerY - half - 1.5, z);
       spr.scale.set(2.5, 0.6, 1);
       refPlanesGroup.add(spr);
+      // Mesh INVISIBLE 10000×10000 horizontal en XY a Z=z para raycast.
+      // userData.z guarda el nivel para identificarlo después si hace falta.
+      const rmGeo = new THREE.PlaneGeometry(10000, 10000);
+      const rmMat = new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide });
+      const rmMesh = new THREE.Mesh(rmGeo, rmMat);
+      rmMesh.position.set(0, 0, z);  // plano XY a la altura Z dada
+      // PlaneGeometry default está en XY → ya es horizontal en este sistema Z-up.
+      // Ojo: el "plane" del active workplane usa rotateX(π/2) porque viene
+      // pre-rotado con `geometry.rotateX(π/2)`. Acá NO necesitamos rotar.
+      rmMesh.frustumCulled = false;
+      (rmMesh as any).userData = { refPlaneZ: z };
+      scene.add(rmMesh);
+      refPlaneMeshes.push(rmMesh);
     });
     refPlanesGroup.visible = true;
     viewerRender();
   };
   (window as any).__hekatanHideRefPlanes = () => {
     refPlanesGroup.visible = false;
+    // Los meshes invisibles también dejan de ser raycast targets.
+    refPlaneMeshes.forEach(m => { m.visible = false; });
     viewerRender();
   };
 
+  // ── Líneas auxiliares (construction lines) ──
+  // Color cyan dashed semitransparente. NO generan frames FEM, pero SÍ son
+  // objeto de OSNAP (endpoint/midpoint/intersection). Útil para construir
+  // referencias en 3D iso, alinear, proyectar, etc.
+  const auxLinesGroup = new THREE.Group();
+  auxLinesGroup.frustumCulled = false;
+  scene.add(auxLinesGroup);
+  const renderAuxLines = () => {
+    while (auxLinesGroup.children.length) {
+      const c = auxLinesGroup.children.pop()!;
+      (c as any).geometry?.dispose?.();
+      (c as any).material?.dispose?.();
+    }
+    const auxState = (window as any).__hekatanDrawingAuxLines;
+    const lines: number[][] = auxState?.rawVal ?? auxState?.val ?? auxState ?? [];
+    for (const ln of lines) {
+      if (ln.length !== 6) continue;
+      const geo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(ln[0], ln[1], ln[2]),
+        new THREE.Vector3(ln[3], ln[4], ln[5]),
+      ]);
+      const mat = new THREE.LineDashedMaterial({
+        color: 0x22d3ee,    // cyan
+        dashSize: 0.3,
+        gapSize: 0.15,
+        transparent: true,
+        opacity: 0.8,
+      });
+      const line = new THREE.Line(geo, mat);
+      line.computeLineDistances();  // requerido para dashed
+      auxLinesGroup.add(line);
+    }
+  };
+  // Re-render automático cuando cambia el array de aux lines
+  van.derive(() => {
+    const auxState = (window as any).__hekatanDrawingAuxLines;
+    if (auxState?.val) {
+      auxState.val;  // dependency
+      renderAuxLines();
+      viewerRender();
+    }
+  });
+
   // ── Snap 3D Indicator ──
-  // Tamaño FIJO — consistente con node markers (~20 cm) y support boxes
-  // (~50 cm). Sin auto-escalado para evitar inconsistencia: si bajás
-  // displayScale los nodos/cargas no cambian, así que el snap tampoco
-  // debería. Sphere 5 cm + halo 10 cm + cruz 0.4 m → claramente visible
-  // pero sin dominar la pantalla.
+  // Tamaño FIJO — consistente con node markers (~2 cm). Sin auto-escalado
+  // para evitar inconsistencia: si bajás displayScale los nodos/cargas no
+  // cambian, así que el snap tampoco debería. Sphere 2 cm + halo 4 cm +
+  // cruz 0.15 m → visible pero discreto, sin dominar la pantalla.
   const snapMarker = new THREE.Group();
   const snapSphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.05, 12, 12),
+    new THREE.SphereGeometry(0.02, 12, 12),
     new THREE.MeshBasicMaterial({ color: 0xff3344, transparent: true, opacity: 0.95 }),
   );
   const snapHalo = new THREE.Mesh(
-    new THREE.SphereGeometry(0.10, 12, 12),
+    new THREE.SphereGeometry(0.04, 12, 12),
     new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.25, depthWrite: false }),
   );
   snapMarker.add(snapSphere, snapHalo);
-  // Cruz de ejes 0.4 m — más larga que un node marker para diferenciarse
-  const axisLen = 0.4;
+  // Cruz de ejes 0.15 m — apenas más larga que el halo para diferenciarse
+  const axisLen = 0.15;
   const mkLine = (a: [number, number, number], b: [number, number, number], col: number) => {
     const g = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(...a), new THREE.Vector3(...b),
@@ -554,10 +1397,35 @@ export function drawing({
   snapMarker.visible = false;
   snapMarker.frustumCulled = false;
   scene.add(snapMarker);
+  // ── Tamaño constante en pantalla (compensa el zoom) ──
+  // Sin esto, al acercarse el snap marker crece visualmente (es geometría
+  // 3D world-space). Calculamos el scale = distancia/factor para que el
+  // tamaño aparente en píxeles quede igual a cualquier zoom.
+  // Calibración: a 10m de la cámara, scale=1 (sphere=2cm, cruz=15cm).
+  const _snapBaseDist = 10;
+  const updateSnapMarkerScale = () => {
+    if (!snapMarker.visible) return;
+    const cam = getActiveCamera();
+    const dist = cam.position.distanceTo(snapMarker.position);
+    const s = Math.max(0.05, dist / _snapBaseDist);
+    snapMarker.scale.setScalar(s);
+  };
+  // Re-escalar cuando el usuario zoomea/orbita (OrbitControls emite "change")
+  controls.addEventListener("change", () => {
+    updateSnapMarkerScale();
+    // Mismo tratamiento para osnapMarker (Endpoint/Mid/Per/etc.) creado más
+    // abajo. Lo referenciamos por window porque la closure todavía no lo tiene.
+    const om = (window as any).__hekatanOsnapMarkerRef as THREE.Group | undefined;
+    if (om?.visible) {
+      const dist2 = getActiveCamera().position.distanceTo(om.position);
+      om.scale.setScalar(Math.max(0.05, dist2 / _snapBaseDist));
+    }
+  });
   // API pública para mover el snap marker (útil para demos + debug)
   (window as any).__hekatanShowSnap = (x: number, y: number, z: number) => {
     snapMarker.position.set(x, y, z);
     snapMarker.visible = true;
+    updateSnapMarkerScale();
     viewerRender();
   };
   (window as any).__hekatanHideSnap = () => {
@@ -568,10 +1436,10 @@ export function drawing({
   // Prioridad: OSNAP (Endpoint/Midpoint/etc.) > grid snap 2D
   // ADEMÁS: rubber band desde último punto al cursor + polar tracking
   rendererElm.addEventListener("pointermove", (event: PointerEvent) => {
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    raycaster.setFromCamera(pointer, camera);
-    const hit = raycaster.intersectObject(plane);
+    const _camForRay = setPointerFromEvent(event);
+    if (!_camForRay) return;
+    raycaster.setFromCamera(pointer, _camForRay);
+    const hit = intersectWorkPlane();
     if (hit.length) {
       const p = hit[0].point;
       const osnapTol = ((window as any).__hekatanSnap2D ?? 0.5) * 1.2;
@@ -583,14 +1451,80 @@ export function drawing({
         p.set(osnap.x, osnap.y, osnap.z);
       } else {
         hideOsnap();
+        // Toggle global: si __hekatanSnapEnabled es false, NO snap a grid.
+        // El cursor queda en la coordenada raw del raycaster.
+        const snapEnabled = (window as any).__hekatanSnapEnabled !== false;
         const snap = (window as any).__hekatanSnap2D ?? 0.5;
-        if (snap > 0) {
+        if (snapEnabled && snap > 0) {
           p.x = Math.round(p.x / snap) * snap;
           p.y = Math.round(p.y / snap) * snap;
           p.z = Math.round(p.z / snap) * snap;
         }
         snapMarker.position.copy(p);
         snapMarker.visible = true;
+      }
+      updateSnapMarkerScale();  // tamaño constante en pantalla
+      // ── DELETE TOOL: hover highlight de la polilínea más cercana ──
+      // Cuando el usuario pasa el mouse sobre una línea/área dibujada y
+      // tiene activo el tool "delete", se resalta en rojo. Click → borra.
+      const curTool = ((window as any).__hekatanCadState?.get?.() as any)?.tool ?? "select";
+      if (curTool === "delete") {
+        const tol = ((window as any).__hekatanSnap2D ?? 0.5) * 1.5;
+        // Buscar lo más cerca entre polilínea y aux line — gana el de menor dist
+        const foundPoly = findClosestPoly(p.x, p.y, p.z, tol);
+        const foundAuxIdx = findClosestAuxLine(p.x, p.y, p.z, tol);
+        // Comparar distancias para elegir cuál resaltar
+        let pickAux = false;
+        if (foundAuxIdx >= 0) {
+          if (!foundPoly) pickAux = true;
+          else {
+            // Recomputar dist del aux para comparar (cheap, 1 línea)
+            const auxState = (window as any).__hekatanDrawingAuxLines;
+            const lns: number[][] = auxState?.rawVal ?? auxState?.val ?? auxState ?? [];
+            const ln = lns[foundAuxIdx];
+            const dAux = distPointSeg(p.x, p.y, p.z, ln[0],ln[1],ln[2], ln[3],ln[4],ln[5]);
+            if (dAux < foundPoly.dist) pickAux = true;
+          }
+        }
+        if (pickAux) {
+          hoveredAuxIndex = foundAuxIdx;
+          hoveredPolyIndex = -1;
+          hoveredSegIndex = -1;
+          showDeleteAuxHover(foundAuxIdx);
+        } else if (foundPoly) {
+          hoveredPolyIndex = foundPoly.polyIdx;
+          hoveredSegIndex = foundPoly.segIdx;
+          hoveredAuxIndex = -1;
+          showDeleteHover(foundPoly.polyIdx, foundPoly.segIdx);
+        } else {
+          hoveredPolyIndex = -1;
+          hoveredSegIndex = -1;
+          hoveredAuxIndex = -1;
+          deleteHover.visible = false;
+        }
+        // Hide rubberband + polar in delete mode (no sentido)
+        rubberBand.visible = false;
+        polarLines.visible = false;
+        hideRubberLabel();
+        coordReadout.style.left = event.clientX + "px";
+        coordReadout.style.top = event.clientY + "px";
+        coordReadout.style.display = "block";
+        if (pickAux) {
+          coordReadout.textContent = `🗑 Click para borrar línea auxiliar #${hoveredAuxIndex + 1}`;
+        } else if (foundPoly) {
+          const isArea = drawingObj.areas?.rawVal?.includes(foundPoly.polyIdx) ?? false;
+          coordReadout.textContent = isArea
+            ? `🗑 Click para borrar área #${foundPoly.polyIdx + 1} completa`
+            : `🗑 Click para borrar segmento ${foundPoly.segIdx + 1} de polilínea #${foundPoly.polyIdx + 1}`;
+        } else {
+          coordReadout.textContent = `🗑 Acercá el cursor a una línea/área/aux para resaltarla`;
+        }
+        viewerRender();
+        return;
+      } else {
+        deleteHover.visible = false;
+        hoveredPolyIndex = -1;
+        hoveredAuxIndex = -1;
       }
       // ── COORD READOUT: texto al lado del cursor con X, Y, Z + ΔL si rubber band
       coordReadout.style.left = event.clientX + "px";
@@ -605,6 +1539,75 @@ export function drawing({
       if (lastPoly.length > 0 && allPts[lastPoly[lastPoly.length - 1]]) {
         const lastIdx = lastPoly[lastPoly.length - 1];
         const lastPt = allPts[lastIdx];
+        // ── AXIS LOCK manual (X/Y/Z) ──
+        // Si hay tecla X/Y/Z presionada, proyectar el cursor sobre el eje
+        // correspondiente desde el último punto.
+        // ── ORTO mode (F8) ──
+        // Si está activo Y no hay axis lock manual, AUTO-DETECTAR el eje
+        // más cercano (X/Y/Z) según |Δx|/|Δy|/|Δz| del cursor al lastPt y
+        // snappear a ese eje. Si el cursor está sobre un plano ortogonal
+        // específico (XY/XZ/YZ), ORTO solo elige entre los 2 ejes del
+        // plano (el tercero está fijo por la intersección).
+        const orthoOn = !!(window as any).__hekatanOrthoMode;
+        let effectiveLock = axisLock;
+        if (!effectiveLock && orthoOn) {
+          const dx = Math.abs(p.x - lastPt[0]);
+          const dy = Math.abs(p.y - lastPt[1]);
+          const dz = Math.abs(p.z - lastPt[2]);
+          // Detectar plano hover desde la intersección actual (igual que
+          // refPlaneBadge calcula más abajo). El plano hover restringe ORTO
+          // a solo los 2 ejes del plano.
+          const hoveredObj = hit[0]?.object;
+          let hoveredPlane: "xy" | "xz" | "yz" | null = null;
+          if (hoveredObj === refFillXY) hoveredPlane = "xy";
+          else if (hoveredObj === refFillXZ) hoveredPlane = "xz";
+          else if (hoveredObj === refFillYZ) hoveredPlane = "yz";
+          if (hoveredPlane === "xy") {
+            effectiveLock = dx >= dy ? "x" : "y";
+          } else if (hoveredPlane === "xz") {
+            effectiveLock = dx >= dz ? "x" : "z";
+          } else if (hoveredPlane === "yz") {
+            effectiveLock = dy >= dz ? "y" : "z";
+          } else {
+            effectiveLock = dx >= dy && dx >= dz ? "x" : (dy >= dz ? "y" : "z");
+          }
+        }
+        if (effectiveLock) {
+          // Proyección manual al eje (sin tocar axisLock global, así no
+          // interfiere con direct distance entry que usa axisLock para signo).
+          const ax = lastPt[0], ay = lastPt[1], az = lastPt[2];
+          if (effectiveLock === "x") p.set(p.x, ay, az);
+          else if (effectiveLock === "y") p.set(ax, p.y, az);
+          else p.set(ax, ay, p.z);
+          // ── Badge dinámico "⊥ ORTO X/Y/Z" o "🔒 LOCK X/Y/Z" ──
+          // Confirmación visual junto al cursor de que está alineado al eje.
+          // Diferencia manual (axisLock por tecla) vs auto (ORTO mode por F8).
+          const isManual = !!axisLock;
+          const colors = { x: "#ff3344", y: "#34d399", z: "#60a5fa" };
+          const c = colors[effectiveLock];
+          axisLockBadge.style.background = "rgba(15,23,42,0.92)";
+          axisLockBadge.style.color = c;
+          axisLockBadge.style.border = `1.5px solid ${c}`;
+          // Detectar plano hover para incluir en el badge (más informativo)
+          const hovObj = hit[0]?.object;
+          let hovPlane: "xy" | "xz" | "yz" | null = null;
+          if (hovObj === refFillXY) hovPlane = "xy";
+          else if (hovObj === refFillXZ) hovPlane = "xz";
+          else if (hovObj === refFillYZ) hovPlane = "yz";
+          const planeText = hovPlane ? ` (plano ${hovPlane.toUpperCase()})` : "";
+          axisLockBadge.textContent = isManual
+            ? `🔒 LOCK ${effectiveLock.toUpperCase()}${planeText}`
+            : `⊥ ORTO ${effectiveLock.toUpperCase()}${planeText}`;
+          // Posicionar junto al cursor (offset abajo-derecha del coord readout)
+          axisLockBadge.style.left = (event.clientX + 20) + "px";
+          axisLockBadge.style.top = (event.clientY + 18) + "px";
+          axisLockBadge.style.transform = "none";
+          axisLockBadge.style.display = "block";
+        } else {
+          // Sin lock activo — ocultar badge (a menos que el global keydown
+          // lo tenga activo manualmente; pero si llegamos acá axisLock=null).
+          if (!axisLock) axisLockBadge.style.display = "none";
+        }
         const dL = Math.hypot(p.x - lastPt[0], p.y - lastPt[1], p.z - lastPt[2]);
         const ang = Math.atan2(p.y - lastPt[1], p.x - lastPt[0]) * 180 / Math.PI;
         coordReadout.textContent = `X=${p.x.toFixed(2)} Y=${p.y.toFixed(2)} Z=${p.z.toFixed(2)} | ΔL=${dL.toFixed(2)}m ${ang.toFixed(0)}°`;
@@ -618,7 +1621,48 @@ export function drawing({
         updateRubberLabel(lastPt[0], lastPt[1], lastPt[2], p.x, p.y, p.z);
         // ── Polar tracking — líneas X/Y/Z extendidas desde el último punto
         // hasta los bordes del modelo (longitud 5m por dirección, ajustable)
-        const ext = 8;
+        // Tamaño configurable desde Tweakpane vía window.__hekatanOrthoExt.
+      // Default 8m (cuadrado 16×16). Usuario puede agrandar/achicar con slider.
+      const ext = (window as any).__hekatanOrthoExt ?? 8;
+        // 3 planos de referencia ortogonales (XY/XZ/YZ) centrados en lastPt:
+        // bordes (LineLoop) + fill (Mesh transparente). El fill permite
+        // identificar visualmente sobre qué plano está cayendo el cursor.
+        // El toggle window.__hekatanShowOrthoPlanes controla si se muestran
+        // (botón Tweakpane "▦ Planos ref. ortogonales").
+        const showOrtho = (window as any).__hekatanShowOrthoPlanes !== false;
+        // Toggle del grupo entero (los hijos individualmente quedan visible=true
+        // por construcción; el grupo padre orthoRefGroup es el switch real).
+        orthoRefGroup.visible = showOrtho;
+        if (!showOrtho) {
+          setRefPlaneHover(null);
+        }
+        if (showOrtho) {
+          updateRefPlaneRect(refPlaneXY, lastPt, "xy", ext);
+          updateRefPlaneRect(refPlaneXZ, lastPt, "xz", ext);
+          updateRefPlaneRect(refPlaneYZ, lastPt, "yz", ext);
+          updateRefPlaneFill(refFillXY, lastPt, "xy", ext);
+          updateRefPlaneFill(refFillXZ, lastPt, "xz", ext);
+          updateRefPlaneFill(refFillYZ, lastPt, "yz", ext);
+        }
+        // Detectar sobre qué plano de referencia está el cursor (raycast).
+        // El plano con la PRIMERA intersección es el que el rayo de cámara
+        // cruza primero — el más cerca a la pantalla.
+        const refHits = !showOrtho ? [] : raycaster.intersectObjects(
+          [refFillXY, refFillXZ, refFillYZ], false,
+        );
+        let hoveredRefPlane: "xy" | "xz" | "yz" | null = null;
+        if (refHits.length > 0) {
+          const obj = refHits[0].object;
+          if (obj === refFillXY) hoveredRefPlane = "xy";
+          else if (obj === refFillXZ) hoveredRefPlane = "xz";
+          else if (obj === refFillYZ) hoveredRefPlane = "yz";
+        }
+        setRefPlaneHover(hoveredRefPlane);
+        // Posicionar badge cerca del cursor
+        if (hoveredRefPlane) {
+          refPlaneBadge.style.left = event.clientX + "px";
+          refPlaneBadge.style.top = event.clientY + "px";
+        }
         polarX.geometry.setFromPoints([
           new THREE.Vector3(lastPt[0] - ext, lastPt[1], lastPt[2]),
           new THREE.Vector3(lastPt[0] + ext, lastPt[1], lastPt[2]),
@@ -635,6 +1679,23 @@ export function drawing({
         ]);
         (polarZ as any).computeLineDistances?.();
         polarLines.visible = true;
+        // ── Resaltar la polar del eje al que se está proyectando ──
+        // Si effectiveLock=x → polarX brillante (op 0.95), polarY/Z apagados
+        // (op 0.12). Idem Y, Z. Sin lock → todos opacidad media (0.5).
+        // Esto da feedback visual inequívoco: "estás dibujando en EL eje
+        // resaltado" (el rubber band cae sobre esa misma línea proyectada).
+        const polarMatX = polarX.material as THREE.LineDashedMaterial;
+        const polarMatY = polarY.material as THREE.LineDashedMaterial;
+        const polarMatZ = polarZ.material as THREE.LineDashedMaterial;
+        if (effectiveLock === "x") {
+          polarMatX.opacity = 0.95; polarMatY.opacity = 0.10; polarMatZ.opacity = 0.10;
+        } else if (effectiveLock === "y") {
+          polarMatX.opacity = 0.10; polarMatY.opacity = 0.95; polarMatZ.opacity = 0.10;
+        } else if (effectiveLock === "z") {
+          polarMatX.opacity = 0.10; polarMatY.opacity = 0.10; polarMatZ.opacity = 0.95;
+        } else {
+          polarMatX.opacity = 0.5; polarMatY.opacity = 0.5; polarMatZ.opacity = 0.5;
+        }
       } else {
         // Sin punto previo: solo mostrar coords del cursor
         coordReadout.textContent = `X=${p.x.toFixed(2)} Y=${p.y.toFixed(2)} Z=${p.z.toFixed(2)}`;
@@ -686,12 +1747,13 @@ export function drawing({
     points.geometry.computeBoundingSphere();
   });
 
-  // On derivedDisplayScale update indicationPoint size and point threshold
+  // On derivedDisplayScale update raycaster threshold (NO tocamos el size del
+  // indicationPoint — ahora está en píxeles con sizeAttenuation:false y debe
+  // quedar constante al zoom). El threshold sigue en world-units porque es
+  // para el raycaster, no el render visual.
   van.derive(() => {
-    const size = 0.05 * gridSize * 0.5 * derivedDisplayScale.val;
-
-    indicationPoint.material.size = size;
-    raycaster.params.Points.threshold = 0.4 * size;
+    const sizeWorld = 0.05 * gridSize * 0.5 * derivedDisplayScale.val;
+    raycaster.params.Points.threshold = 0.4 * sizeWorld;
   });
 
   van.derive(() => {
@@ -767,7 +1829,7 @@ export function drawing({
     }
     const col = osnapColors[type] ?? 0xffffff;
     // Cuadrado pequeño + label
-    const s = 0.12;
+    const s = 0.05;
     const sqGeo = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(x-s, y-s, z), new THREE.Vector3(x+s, y-s, z),
       new THREE.Vector3(x+s, y-s, z), new THREE.Vector3(x+s, y+s, z),
@@ -820,6 +1882,28 @@ export function drawing({
         }
       }
     }
+    // Líneas auxiliares: endpoint, midpoint, nearest, perpendicular
+    const auxState = (window as any).__hekatanDrawingAuxLines;
+    const auxLines: number[][] = auxState?.rawVal ?? auxState?.val ?? auxState ?? [];
+    for (const ln of auxLines) {
+      if (ln.length !== 6) continue;
+      const a: [number, number, number] = [ln[0], ln[1], ln[2]];
+      const b: [number, number, number] = [ln[3], ln[4], ln[5]];
+      if (opts.end) {
+        consider("end", a[0], a[1], a[2]);
+        consider("end", b[0], b[1], b[2]);
+      }
+      if (opts.mid) consider("mid", (a[0]+b[0])/2, (a[1]+b[1])/2, (a[2]+b[2])/2);
+      if (opts.nea || opts.per) {
+        const dx = b[0]-a[0], dy = b[1]-a[1], dz = b[2]-a[2];
+        const len2 = dx*dx + dy*dy + dz*dz;
+        if (len2 < 1e-12) continue;
+        const t = Math.max(0, Math.min(1, ((px-a[0])*dx + (py-a[1])*dy + (pz-a[2])*dz) / len2));
+        const sx = a[0] + t*dx, sy = a[1] + t*dy, sz = a[2] + t*dz;
+        if (opts.nea) consider("nea", sx, sy, sz);
+        if (opts.per) consider("per", sx, sy, sz);
+      }
+    }
     return best ? { type: best.type, x: best.x, y: best.y, z: best.z } : null;
   };
   (window as any).__hekatanOsnapCompute = computeOsnap;
@@ -831,6 +1915,10 @@ export function drawing({
   // Arco: 3 clicks (start + mid + end) → __hekatanDrawArc
   // Rectángulo: 2 clicks (esquina A + B) → __hekatanDrawRect
   let pendingClicks: [number, number, number][] = [];
+  // Altura tipeada para tools "col" (columna) y "wall" (pared Q4).
+  // Se setea cuando el usuario tipea un número + Enter ANTES de hacer el
+  // click final. Default = 3m si no se tipea nada.
+  let pendingHeight = 0;
   // ── Crear status bar HTML siempre visible debajo del viewer ──
   // Muestra: tool activa + paso actual + última acción.
   const statusBar = document.createElement("div");
@@ -858,16 +1946,102 @@ export function drawing({
   statusBar.textContent = "🛠 CAD listo — seleccioná un tool y hacé click en el viewer";
   document.body.appendChild(statusBar);
 
-  // Helper de status — el usuario VE en pantalla qué paso del tool va
+  // Helper de status — el usuario VE en pantalla qué paso del tool va.
+  // El sufijo automático muestra modos activos: ⊥ ORTO ON, Cota Z, axisLock.
+  const buildStatusSuffix = (): string => {
+    const parts: string[] = [];
+    if ((window as any).__hekatanOrthoMode) parts.push("⊥ ORTO ON (F8)");
+    if (axisLock) parts.push(`🔒 LOCK ${axisLock.toUpperCase()}`);
+    const st = (window as any).__hekatanCadState?.get?.();
+    const wz = st?.workZ ?? 0;
+    if (Math.abs(wz) > 0.001) parts.push(`Cota Z=${wz}m`);
+    if ((window as any).__hekatanShowOrthoPlanes !== false) parts.push("▦ Planos XY/XZ/YZ");
+    return parts.length > 0 ? `   |   ${parts.join("  ·  ")}` : "";
+  };
   const updateStatus = (txt: string) => {
-    statusBar.textContent = txt;
-    (window as any).__hekatanCadStatusText = txt;
+    const fullText = txt + buildStatusSuffix();
+    statusBar.textContent = fullText;
+    (window as any).__hekatanCadStatusText = fullText;
+  };
+  // Refresh expuesto al window — para que main.ts y otros listeners
+  // (F8, toggle planos, slider Cota Z, cambio de tool) puedan refrescar
+  // el status sin saber el texto del tool actual.
+  (window as any).__hekatanRefreshStatus = () => {
+    const cur = (window as any).__hekatanCadStatusText ?? "";
+    // Quitar sufijo previo (split por "   |   " que es nuestro separador)
+    const baseTxt = cur.split("   |   ")[0] ?? cur;
+    updateStatus(baseTxt);
   };
   // Reset pendingClicks cuando el usuario cambia de tool
   (window as any).__hekatanCadResetPending = () => {
     pendingClicks = [];
     updateStatus("🛠 Tool cambiado — clicks pendientes limpiados");
   };
+
+  // ── UNDO STACK (Ctrl+Z) ──
+  // Snapshot del estado de drawing ANTES de cada modificación. Ctrl+Z hace
+  // pop y restaura. Limit 100 estados para no consumir mucha RAM.
+  const undoStack: { p: any; l: any; a: any }[] = [];
+  const pushUndo = () => {
+    undoStack.push({
+      p: JSON.parse(JSON.stringify(drawingObj.points.rawVal ?? [])),
+      l: JSON.parse(JSON.stringify(drawingObj.polylines?.rawVal ?? [])),
+      a: JSON.parse(JSON.stringify(drawingObj.areas?.rawVal ?? [])),
+    });
+    if (undoStack.length > 100) undoStack.shift();
+  };
+  const undo = () => {
+    const prev = undoStack.pop();
+    if (!prev) {
+      updateStatus("↶ Nada para deshacer");
+      return;
+    }
+    drawingObj.points.val = prev.p;
+    if (drawingObj.polylines) drawingObj.polylines.val = prev.l;
+    if (drawingObj.areas) drawingObj.areas.val = prev.a;
+    pendingClicks = [];
+    rubberBand.visible = false;
+    polarLines.visible = false;
+    hideRubberLabel();
+    updateStatus(`↶ Undo — ${undoStack.length} estados restantes`);
+    try { (window as any).__hekatanRebuild?.(); } catch {}
+    viewerRender();
+  };
+  (window as any).__hekatanPushUndo = pushUndo;
+  (window as any).__hekatanUndo = undo;
+  // Ctrl+Z / Cmd+Z global
+  window.addEventListener("keydown", (ev: KeyboardEvent) => {
+    if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "z" && !ev.shiftKey) {
+      ev.preventDefault();
+      undo();
+    }
+  });
+
+  // ── FINALIZAR DIBUJO (Esc / botón Tweakpane / click derecho del usuario) ──
+  // Termina la polilínea actual (push empty), libera axis lock, oculta
+  // rubber band y polar lines. Equivalente a "ya terminé este trazo, pasá al
+  // siguiente click como inicio de algo nuevo".
+  const finalizeDraw = () => {
+    pendingClicks = [];
+    if (drawingObj.polylines) {
+      const polys = drawingObj.polylines.rawVal;
+      const last = polys[polys.length - 1];
+      // Si la última polilínea tiene puntos, push una vacía nueva
+      if (last && last.length > 0) {
+        drawingObj.polylines.val = [...polys, []];
+      }
+    }
+    // Liberar axis lock
+    axisLock = null;
+    updateAxisLockBadge();
+    // Ocultar rubber band y polar lines
+    rubberBand.visible = false;
+    polarLines.visible = false;
+    hideRubberLabel();
+    updateStatus("⏹ Dibujo finalizado — click para empezar otra serie");
+    viewerRender();
+  };
+  (window as any).__hekatanFinalizeDraw = finalizeDraw;
 
   rendererElm.addEventListener("click", (event: PointerEvent) => {
     // Ignorar click que viene de drag (rotación)
@@ -877,10 +2051,10 @@ export function drawing({
     }
     pointerDownAndMovedCount = 0;
 
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    raycaster.setFromCamera(pointer, camera);
-    const intersect = raycaster.intersectObject(plane);
+    const _camForRay = setPointerFromEvent(event);
+    if (!_camForRay) return;
+    raycaster.setFromCamera(pointer, _camForRay);
+    const intersect = intersectWorkPlane();
     if (!intersect.length) return;
 
     let point = intersect[0].point;
@@ -891,6 +2065,29 @@ export function drawing({
         Math.round(intersect[0].point.z)
       );
     }
+    // ── AXIS LOCK + ORTO en click ──
+    // axisLock manual (X/Y/Z) o ORTO auto (F8) → proyecta el punto al eje.
+    {
+      const polysNow = drawingObj.polylines?.rawVal ?? [];
+      const lastPolyNow = polysNow[polysNow.length - 1] ?? [];
+      const allPtsNow = drawingObj.points.rawVal ?? [];
+      if (lastPolyNow.length > 0) {
+        const lp = allPtsNow[lastPolyNow[lastPolyNow.length - 1]];
+        if (lp) {
+          const orthoOn = !!(window as any).__hekatanOrthoMode;
+          let effectiveLock: "x" | "y" | "z" | null = axisLock;
+          if (!effectiveLock && orthoOn) {
+            const dx = Math.abs(point.x - lp[0]);
+            const dy = Math.abs(point.y - lp[1]);
+            const dz = Math.abs(point.z - lp[2]);
+            effectiveLock = dx >= dy && dx >= dz ? "x" : (dy >= dz ? "y" : "z");
+          }
+          if (effectiveLock === "x") point = new THREE.Vector3(point.x, lp[1], lp[2]);
+          else if (effectiveLock === "y") point = new THREE.Vector3(lp[0], point.y, lp[2]);
+          else if (effectiveLock === "z") point = new THREE.Vector3(lp[0], lp[1], point.z);
+        }
+      }
+    }
     // OSNAP primero (prioridad sobre grid snap)
     const osnapTol = ((window as any).__hekatanSnap2D ?? 0.5) * 1.2;
     const osnap = (window as any).__hekatanOsnapCompute?.(point.x, point.y, point.z, osnapTol);
@@ -898,9 +2095,10 @@ export function drawing({
       point = new THREE.Vector3(osnap.x, osnap.y, osnap.z);
       updateStatus(`🎯 Snap [${osnap.type.toUpperCase()}] → (${point.x.toFixed(2)}, ${point.y.toFixed(2)}, ${point.z.toFixed(2)})`);
     } else {
-      // Si no hay osnap, aplicar grid snap 2D
+      // Si no hay osnap, aplicar grid snap 2D — solo si toggle ON.
+      const snapEnabled = (window as any).__hekatanSnapEnabled !== false;
       const snap = (window as any).__hekatanSnap2D ?? 0;
-      if (snap > 0) {
+      if (snapEnabled && snap > 0) {
         point = new THREE.Vector3(
           Math.round(point.x / snap) * snap,
           Math.round(point.y / snap) * snap,
@@ -910,7 +2108,77 @@ export function drawing({
     }
 
     // ── Tool dispatcher ──
-    const tool = ((window as any).__hekatanCadState?.get?.() as any)?.tool ?? "node";
+    const tool = ((window as any).__hekatanCadState?.get?.() as any)?.tool ?? "select";
+
+    // ── SELECT/none: NO crear geometría — solo re-anclar planos ortogonales ──
+    // Click no genera nodos/líneas. Si los planos ortogonales están activos,
+    // el click los re-centra al punto clickeado: el usuario puede "fijar" el
+    // anchor antes de elegir un tool de dibujo. OrbitControls captura el drag
+    // así que la rotación de cámara sigue funcionando normal.
+    if (tool === "select" || tool === "none" || !tool) {
+      const showOrtho = (window as any).__hekatanShowOrthoPlanes !== false
+                        && orthoRefGroup.visible;
+      if (showOrtho) {
+        // Tamaño configurable desde Tweakpane vía window.__hekatanOrthoExt.
+      // Default 8m (cuadrado 16×16). Usuario puede agrandar/achicar con slider.
+      const ext = (window as any).__hekatanOrthoExt ?? 8;
+        const anchor = [point.x, point.y, point.z];
+        updateRefPlaneRect(refPlaneXY, anchor, "xy", ext);
+        updateRefPlaneRect(refPlaneXZ, anchor, "xz", ext);
+        updateRefPlaneRect(refPlaneYZ, anchor, "yz", ext);
+        updateRefPlaneFill(refFillXY, anchor, "xy", ext);
+        updateRefPlaneFill(refFillXZ, anchor, "xz", ext);
+        updateRefPlaneFill(refFillYZ, anchor, "yz", ext);
+        // Guardar anchor para que el setter lo reuse si re-togglean
+        (window as any).__hekatanOrthoAnchor = anchor;
+        updateStatus(
+          `▦ Anchor planos ortogonales → (${point.x.toFixed(2)}, ${point.y.toFixed(2)}, ${point.z.toFixed(2)})`
+        );
+        viewerRender();
+      }
+      return;
+    }
+
+    if (tool === "delete") {
+      // Prioridad: aux line hover > polilínea hover (el de menor dist gana,
+      // y eso ya se resolvió en el pointermove → solo uno está activo).
+      if (hoveredAuxIndex >= 0) {
+        const auxState = (window as any).__hekatanDrawingAuxLines;
+        const cur: number[][] = auxState?.rawVal ?? auxState?.val ?? auxState ?? [];
+        const idx = hoveredAuxIndex;
+        if (idx >= 0 && idx < cur.length) {
+          pushUndo();  // snapshot para Ctrl+Z
+          const next = cur.slice(0, idx).concat(cur.slice(idx + 1));
+          // Soportar tanto vanjs State como array pelado
+          if (auxState && typeof auxState === "object" && "val" in auxState) {
+            auxState.val = next;
+          } else {
+            (window as any).__hekatanDrawingAuxLines = next;
+          }
+          updateStatus(`🗑 Línea auxiliar #${idx + 1} borrada`);
+          hoveredAuxIndex = -1;
+          deleteHover.visible = false;
+          try { (window as any).__hekatanRebuild?.(); } catch {}
+        }
+      } else if (hoveredPolyIndex >= 0) {
+        const polyIdx = hoveredPolyIndex;
+        const segIdx = hoveredSegIndex;
+        const isArea = drawingObj.areas?.rawVal?.includes(polyIdx) ?? false;
+        if (isArea) {
+          deletePoly(polyIdx);
+          updateStatus(`🗑 Área #${polyIdx + 1} (shell Q4) borrada`);
+        } else if (segIdx >= 0) {
+          deleteSeg(polyIdx, segIdx);
+          updateStatus(`🗑 Segmento ${segIdx + 1} de polilínea #${polyIdx + 1} borrado`);
+        } else {
+          deletePoly(polyIdx);
+          updateStatus(`🗑 Polilínea #${polyIdx + 1} borrada`);
+        }
+      } else {
+        updateStatus(`🗑 Acercá el cursor a una línea/área/aux para borrarla`);
+      }
+      return;
+    }
 
     if (tool === "circle") {
       // 2 clicks: centro + punto en el radio
@@ -961,6 +2229,180 @@ export function drawing({
       try { (window as any).__hekatanRebuild?.(); } catch {}
       return;
     }
+    if (tool === "col") {
+      // 1 click + tipear altura + Enter → frame vertical (columna).
+      // Si solo hace 1 click sin tipear, usa altura default 3m.
+      // Sin pendingClicks porque solo necesitamos 1 click.
+      pushUndo();
+      const baseZ = point.z;
+      const h = pendingHeight && pendingHeight > 0 ? pendingHeight : 3;
+      drawingObj.points.val = [
+        ...drawingObj.points.rawVal,
+        [point.x, point.y, baseZ],
+        [point.x, point.y, baseZ + h],
+      ];
+      const polys = drawingObj.polylines!.rawVal;
+      const n = drawingObj.points.rawVal.length;
+      drawingObj.polylines!.val = [
+        ...polys.slice(0, -1),
+        ...(polys[polys.length - 1].length > 0 ? [polys[polys.length - 1]] : []),
+        [n - 2, n - 1],
+        [],
+      ];
+      pendingHeight = 0;
+      updateStatus(`▌ Columna creada — h=${h.toFixed(2)}m. Tipeá altura + Enter para custom.`);
+      try { (window as any).__hekatanRebuild?.(); } catch {}
+      return;
+    }
+    if (tool === "wall") {
+      // 2 clicks (esquinas inferiores) + tipear altura + Enter → shell Q4
+      // vertical. Los 4 vértices: a, b (base), b+H·z, a+H·z.
+      pendingClicks.push([point.x, point.y, point.z]);
+      if (pendingClicks.length === 1) {
+        updateStatus(`▥ Pared Q4 — click 1/2 OK (esquina base 1). Marcá la otra esquina base.`);
+        return;
+      }
+      const [a, b] = pendingClicks;
+      const h = pendingHeight && pendingHeight > 0 ? pendingHeight : 3;
+      pushUndo();
+      const n0 = drawingObj.points.rawVal.length;
+      drawingObj.points.val = [
+        ...drawingObj.points.rawVal,
+        [a[0], a[1], a[2]],            // n0
+        [b[0], b[1], b[2]],            // n0+1
+        [b[0], b[1], b[2] + h],        // n0+2
+        [a[0], a[1], a[2] + h],        // n0+3
+      ];
+      const polys = drawingObj.polylines!.rawVal;
+      const newPolyIdx = polys.length - 1;  // será el último después del push
+      drawingObj.polylines!.val = [
+        ...polys.slice(0, -1),
+        ...(polys[polys.length - 1].length > 0 ? [polys[polys.length - 1]] : []),
+        [n0, n0 + 1, n0 + 2, n0 + 3, n0],   // shell Q4 vertical (cerrado visual)
+        [],
+      ];
+      // Marcar el shell Q4 como área
+      if (drawingObj.areas) {
+        const newPolyAt = drawingObj.polylines!.rawVal.length - 2;  // antes del último vacío
+        drawingObj.areas.val = [...drawingObj.areas.rawVal, newPolyAt];
+      }
+      updateStatus(`▥ Pared Q4 creada — h=${h.toFixed(2)}m. Tipeá altura + Enter para custom.`);
+      pendingClicks = [];
+      pendingHeight = 0;
+      try { (window as any).__hekatanRebuild?.(); } catch {}
+      return;
+    }
+    if (tool === "extp") {
+      // EXTRUIR PUNTO → LÍNEA: 1 click sobre un nodo (OSNAP NODE engancha)
+      // o sobre el plano. Crea frame vertical de altura `pendingHeight`.
+      // Si el click no enganchó a un node existente, usa el point clickeado.
+      // Diferencia con "col": busca explícitamente OSNAP node, ideal para
+      // extruir nodes ya creados.
+      pushUndo();
+      const h = pendingHeight && pendingHeight > 0 ? pendingHeight : 3;
+      const baseZ = point.z;
+      drawingObj.points.val = [
+        ...drawingObj.points.rawVal,
+        [point.x, point.y, baseZ],
+        [point.x, point.y, baseZ + h],
+      ];
+      const polys = drawingObj.polylines!.rawVal;
+      const n = drawingObj.points.rawVal.length;
+      drawingObj.polylines!.val = [
+        ...polys.slice(0, -1),
+        ...(polys[polys.length - 1].length > 0 ? [polys[polys.length - 1]] : []),
+        [n - 2, n - 1],
+        [],
+      ];
+      pendingHeight = 0;
+      updateStatus(`⬆ Extrusión punto→línea — h=${h.toFixed(2)}m`);
+      try { (window as any).__hekatanRebuild?.(); } catch {}
+      return;
+    }
+    if (tool === "extl") {
+      // EXTRUIR LÍNEA → ÁREA Q4: 1 click cerca de una línea existente.
+      // Crea shell Q4 con los 2 vértices del segmento + 2 vértices extruidos
+      // en +Z por la altura tipeada (o 3m default).
+      const tol = ((window as any).__hekatanSnap2D ?? 0.5) * 1.5;
+      const found = findClosestPoly(point.x, point.y, point.z, tol);
+      if (!found) {
+        updateStatus(`⬆ Extruir línea — acercá el cursor a una línea existente y volvé a clickear.`);
+        return;
+      }
+      const polys = drawingObj.polylines!.rawVal;
+      const allPts = drawingObj.points.rawVal;
+      const poly = polys[found.polyIdx];
+      const a = allPts[poly[found.segIdx]];
+      const b = allPts[poly[found.segIdx + 1]];
+      if (!a || !b) {
+        updateStatus(`⬆ Extruir línea — segmento no válido.`);
+        return;
+      }
+      const h = pendingHeight && pendingHeight > 0 ? pendingHeight : 3;
+      pushUndo();
+      const n0 = drawingObj.points.rawVal.length;
+      drawingObj.points.val = [
+        ...drawingObj.points.rawVal,
+        [a[0], a[1], a[2]],            // n0
+        [b[0], b[1], b[2]],            // n0+1
+        [b[0], b[1], b[2] + h],        // n0+2
+        [a[0], a[1], a[2] + h],        // n0+3
+      ];
+      const polysAfter = drawingObj.polylines!.rawVal;
+      drawingObj.polylines!.val = [
+        ...polysAfter.slice(0, -1),
+        ...(polysAfter[polysAfter.length - 1].length > 0 ? [polysAfter[polysAfter.length - 1]] : []),
+        [n0, n0 + 1, n0 + 2, n0 + 3, n0],   // shell Q4 extrudido
+        [],
+      ];
+      // Marcar como área (shell Q4)
+      if (drawingObj.areas) {
+        const newPolyAt = drawingObj.polylines!.rawVal.length - 2;
+        drawingObj.areas.val = [...drawingObj.areas.rawVal, newPolyAt];
+      }
+      pendingHeight = 0;
+      updateStatus(`⬆ Extrusión línea→área Q4 — h=${h.toFixed(2)}m`);
+      try { (window as any).__hekatanRebuild?.(); } catch {}
+      return;
+    }
+    if (tool === "aux") {
+      // 2 clicks: punto inicio + punto fin → crea línea auxiliar (NO frame FEM)
+      pendingClicks.push([point.x, point.y, point.z]);
+      if (pendingClicks.length === 1) {
+        updateStatus(`┊ Línea auxiliar — click 1/2 OK. Marcá el punto final.`);
+        return;
+      }
+      const [a, b] = pendingClicks;
+      const auxState = (window as any).__hekatanDrawingAuxLines;
+      if (auxState) {
+        const cur: number[][] = auxState.rawVal ?? auxState.val ?? [];
+        auxState.val = [...cur, [a[0], a[1], a[2], b[0], b[1], b[2]]];
+      }
+      const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2];
+      const len = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      updateStatus(`✓ Línea auxiliar creada — L=${len.toFixed(2)}m (cyan, no FEM)`);
+      pendingClicks = [];
+      return;
+    }
+    if (tool === "extend") {
+      // 2 clicks: 1° sobre una línea existente (cualquiera) → toma su dirección.
+      // 2° en la dirección de extensión → crea aux line desde el endpoint
+      // hasta el nuevo click.
+      pendingClicks.push([point.x, point.y, point.z]);
+      if (pendingClicks.length === 1) {
+        updateStatus(`↗ Prolongar — click 1/2 OK. Marcá el destino de la prolongación.`);
+        return;
+      }
+      const [a, b] = pendingClicks;
+      const auxState = (window as any).__hekatanDrawingAuxLines;
+      if (auxState) {
+        const cur: number[][] = auxState.rawVal ?? auxState.val ?? [];
+        auxState.val = [...cur, [a[0], a[1], a[2], b[0], b[1], b[2]]];
+      }
+      updateStatus(`✓ Prolongación creada como línea auxiliar`);
+      pendingClicks = [];
+      return;
+    }
     if (tool === "chaflan") {
       // 2 clicks: esquinas opuestas. El radio se lee de window.__hekatanChaflanR
       pendingClicks.push([point.x, point.y, point.z]);
@@ -982,6 +2424,8 @@ export function drawing({
 
     // ── Default behavior: tools "select", "node", "line", "polyline", "area" ──
     // Click agrega punto + extiende polilínea actual
+    rubberUserEditing = false;  // reset al hacer click — el siguiente rubber band parte limpio
+    pushUndo();  // snapshot ANTES de modificar — Ctrl+Z restaura
     drawingObj.points.val = [...drawingObj.points.rawVal, point.toArray()];
     if (drawingObj.polylines) {
       drawingObj.polylines.val = [
@@ -994,8 +2438,50 @@ export function drawing({
         ],
       ];
     }
+
+    // ── Auto-cierre semántico por tool ──
+    // Estos comportamientos diferencian la INTENCIÓN del usuario, no la
+    // geometría. Una polilínea cerrada con tool "polyline" sigue siendo
+    // una cadena de frames (ej: cercha); solo tool "area" la convierte
+    // en shell Q4.
+    if (drawingObj.polylines) {
+      const polysNow = drawingObj.polylines.rawVal;
+      const lastIdx = polysNow.length - 1;
+      const last = polysNow[lastIdx] ?? [];
+
+      if (tool === "line" && last.length === 2) {
+        // 2 clicks → 1 frame, auto-corta y arranca polilínea nueva
+        drawingObj.polylines.val = [...polysNow, []];
+        updateStatus(`／ Línea creada (frame). Marcá 2 puntos más para otro frame.`);
+        try { (window as any).__hekatanRebuild?.(); } catch {}
+        return;
+      }
+
+      if (tool === "area" && last.length === 4) {
+        // 4 clicks → cerrar la polilínea (agregar el primer punto al final
+        // como referencia visual) y marcarla como ÁREA en drawingAreas.
+        // El shell Q4 lo construye newBlank.build() leyendo drawingAreas.
+        drawingObj.polylines.val = [
+          ...polysNow.slice(0, -1),
+          [...last, last[0]],   // cerrar visualmente
+          [],                    // arrancar polilínea nueva
+        ];
+        if (drawingObj.areas) {
+          drawingObj.areas.val = [...drawingObj.areas.rawVal, lastIdx];
+        }
+        updateStatus(`▦ Área (shell Q4) creada — 4 vértices marcados.`);
+        try { (window as any).__hekatanRebuild?.(); } catch {}
+        return;
+      }
+    }
+
     if (tool === "node") updateStatus(`● Nodo creado en (${point.x.toFixed(2)}, ${point.y.toFixed(2)}, ${point.z.toFixed(2)})`);
-    else if (tool === "line") updateStatus(`／ Línea — punto agregado. Continuá clickeando para extender, right-click para terminar.`);
+    else if (tool === "line") updateStatus(`／ Línea — click 1/2 OK. Marcá el segundo punto para crear el frame.`);
+    else if (tool === "polyline") updateStatus(`⌐ Polilínea — punto agregado. Continuá clickeando, right-click para terminar.`);
+    else if (tool === "area") {
+      const last = drawingObj.polylines?.rawVal[drawingObj.polylines.rawVal.length - 1] ?? [];
+      updateStatus(`▦ Área — click ${last.length}/4. Marcá ${4 - last.length} vértice${4 - last.length === 1 ? "" : "s"} más.`);
+    }
   });
 
   // On contextmenu, add a new empty polyline
@@ -1011,23 +2497,38 @@ export function drawing({
   });
 
   // On pointer move and intersection with plan, show indication point
+  // CRÍTICO: este indicationPoint debe quedar en la MISMA coordenada que el
+  // snapMarker (que aplica osnap + grid snap). Antes mostraba el punto raw
+  // del raycaster, divergiendo del snap → 2 cursores en posiciones distintas.
   rendererElm.addEventListener("pointermove", (event: PointerEvent) => {
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    raycaster.setFromCamera(pointer, camera);
-    const intersect = raycaster.intersectObject(plane);
+    const _camForRay = setPointerFromEvent(event);
+    if (!_camForRay) return;
+    raycaster.setFromCamera(pointer, _camForRay);
+    const intersect = intersectWorkPlane();
 
     indicationPoint.geometry.deleteAttribute("position"); // delete point if not intersection
 
     if (intersect.length) {
-      let point = intersect[0].point;
+      let point = intersect[0].point.clone();
 
+      // Aplicar OSNAP (igual que el snapMarker en el otro pointermove)
+      const osnapTol = ((window as any).__hekatanSnap2D ?? 0.5) * 1.2;
+      const osnap = (window as any).__hekatanOsnapCompute?.(point.x, point.y, point.z, osnapTol);
+      if (osnap) {
+        point.set(osnap.x, osnap.y, osnap.z);
+      } else {
+        // Sin osnap → grid snap 2D (idéntico a snapMarker fallback) — respeta toggle
+        const snapEnabled = (window as any).__hekatanSnapEnabled !== false;
+        const snap = (window as any).__hekatanSnap2D ?? 0.5;
+        if (snapEnabled && snap > 0) {
+          point.x = Math.round(point.x / snap) * snap;
+          point.y = Math.round(point.y / snap) * snap;
+          point.z = Math.round(point.z / snap) * snap;
+        }
+      }
+      // Ctrl/Cmd → snap entero (override del grid snap)
       if (event.ctrlKey || event.metaKey) {
-        point = new THREE.Vector3(
-          Math.round(intersect[0].point.x),
-          Math.round(intersect[0].point.y),
-          Math.round(intersect[0].point.z)
-        );
+        point.set(Math.round(point.x), Math.round(point.y), Math.round(point.z));
       }
 
       indicationPoint.geometry.setAttribute(
@@ -1041,14 +2542,14 @@ export function drawing({
 
   // On pointer move and intersection with a point, hide indication point
   rendererElm.addEventListener("pointermove", (event: PointerEvent) => {
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    raycaster.setFromCamera(pointer, camera);
+    const _camForRay = setPointerFromEvent(event);
+    if (!_camForRay) return;
+    raycaster.setFromCamera(pointer, _camForRay);
 
     // Check if point in the plane
     let isPointInPlane = false;
     const intersectWithPoints = raycaster.intersectObject(points);
-    const intersectWithPlane = raycaster.intersectObject(plane);
+    const intersectWithPlane = intersectWorkPlane();
     if (intersectWithPoints.length && intersectWithPlane.length) {
       const point = new THREE.Vector3(
         ...drawingObj.points.rawVal[intersectWithPoints[0].index]
@@ -1069,14 +2570,14 @@ export function drawing({
   rendererElm.addEventListener("pointermove", (event: PointerEvent) => {
     if (!pointerDownAndMovedCount) return;
 
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    raycaster.setFromCamera(pointer, camera);
+    const _camForRay = setPointerFromEvent(event);
+    if (!_camForRay) return;
+    raycaster.setFromCamera(pointer, _camForRay);
 
     // Check if point in the plane
     let isPointInPlane = false;
     const intersectWithPoints = raycaster.intersectObject(points);
-    const intersectWithPlane = raycaster.intersectObject(plane);
+    const intersectWithPlane = intersectWorkPlane();
     if (intersectWithPoints.length && intersectWithPlane.length) {
       const point = new THREE.Vector3(
         ...drawingObj.points.rawVal[intersectWithPoints[0].index]
@@ -1124,14 +2625,14 @@ export function drawing({
 
   // On contextmenu move and point in the plane, delete the point and update polyline
   rendererElm.addEventListener("contextmenu", (event: PointerEvent) => {
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-    raycaster.setFromCamera(pointer, camera);
+    const _camForRay = setPointerFromEvent(event);
+    if (!_camForRay) return;
+    raycaster.setFromCamera(pointer, _camForRay);
 
     // Check if point in the plane
     let isPointInPlane = false;
     const intersectWithPoints = raycaster.intersectObject(points);
-    const intersectWithPlane = raycaster.intersectObject(plane);
+    const intersectWithPlane = intersectWorkPlane();
     if (intersectWithPoints.length && intersectWithPlane.length) {
       const point = new THREE.Vector3(
         ...drawingObj.points.rawVal[intersectWithPoints[0].index]

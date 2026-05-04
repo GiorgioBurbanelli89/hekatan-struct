@@ -22,7 +22,7 @@ import {
   DeformOutputs, AnalyzeOutputs,
   deform, analyze,
 } from "hekatan-fem";
-import { getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit } from "hekatan-ui";
+import { getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit, addCadPanel } from "hekatan-ui";
 import { createModalPanel } from "../shared/renderModalTable";
 import { createModalAnimator, type ModalAnimator } from "../shared/animateMode";
 // createModalAnimator también se llama en buildParamsPane() para re-wirear el
@@ -145,35 +145,58 @@ const objects3D: State<THREE.Object3D[]> = van.state([]);
 // el usuario pueda cerrar/reabrir el browser y mantener su modelo.
 const DRAW_PTS_KEY = "hk_drawingPoints";
 const DRAW_POLYS_KEY = "hk_drawingPolylines";
-const loadDrawState = (): { pts: [number,number,number][]; polys: number[][] } => {
+const DRAW_AREAS_KEY = "hk_drawingAreas";
+const loadDrawState = (): { pts: [number,number,number][]; polys: number[][]; areas: number[] } => {
   try {
     const ptsRaw = localStorage.getItem(DRAW_PTS_KEY);
     const polysRaw = localStorage.getItem(DRAW_POLYS_KEY);
+    const areasRaw = localStorage.getItem(DRAW_AREAS_KEY);
     if (ptsRaw && polysRaw) {
       const pts = JSON.parse(ptsRaw) as [number,number,number][];
       const polys = JSON.parse(polysRaw) as number[][];
-      return { pts, polys };
+      const areas = areasRaw ? (JSON.parse(areasRaw) as number[]) : [];
+      return { pts, polys, areas };
     }
   } catch {}
-  return { pts: [], polys: [[]] };
+  return { pts: [], polys: [[]], areas: [] };
 };
 const _initialDraw = loadDrawState();
 const drawingPoints: State<[number, number, number][]> = van.state(_initialDraw.pts);
 const drawingPolylines: State<number[][]> = van.state(_initialDraw.polys);
+// drawingAreas: array de ÍNDICES de polylines que el usuario eligió como
+// "área" (shell Q4). Una polilínea cerrada NO es automáticamente un área —
+// puede ser una cercha (frames cerrados) o un shell. La intención se
+// distingue por la elección del tool ("line"/"polyline" → frames; "area" →
+// shell explícito de 4 vértices).
+const drawingAreas: State<number[]> = van.state(_initialDraw.areas);
+// drawingAuxLines: líneas auxiliares (construction lines) — NO generan
+// FEM frames pero SÍ son objeto de OSNAP (endpoint/midpoint/intersection).
+// Sirven como guía visual para construir geometría en 3D iso, alinear
+// puntos con ejes auxiliares, prolongar líneas existentes, etc.
+// Cada entry es un par [x0,y0,z0, x1,y1,z1].
+const drawingAuxLines: State<number[][]> = van.state([]);
+// drawingAuxPoints: puntos auxiliares — NO generan nodos FEM pero SÍ son
+// objeto de OSNAP (endpoint). Útiles para marcar referencias en 3D iso.
+// Cada entry es [x,y,z].
+const drawingAuxPoints: State<number[][]> = van.state([]);
 // Persist on every change
 van.derive(() => {
   try {
     localStorage.setItem(DRAW_PTS_KEY, JSON.stringify(drawingPoints.val));
     localStorage.setItem(DRAW_POLYS_KEY, JSON.stringify(drawingPolylines.val));
+    localStorage.setItem(DRAW_AREAS_KEY, JSON.stringify(drawingAreas.val));
   } catch {}
 });
+// Grid centrado en el origen mundial (convención CAD).
 const drawingGridTarget: State<{ position: [number,number,number]; rotation: [number,number,number] }> =
-  van.state({ position: [10, 10, 0], rotation: [Math.PI/2, 0, 0] });
+  van.state({ position: [0, 0, 0], rotation: [Math.PI/2, 0, 0] });
 // Expongo los van states a globals para que ejemplos (newBlank, etc.)
 // puedan LEER los puntos/polylines dibujados con mouse y construir
 // nodes/elements del FEM directamente.
 (window as any).__hekatanDrawingPoints = drawingPoints;
 (window as any).__hekatanDrawingPolylines = drawingPolylines;
+(window as any).__hekatanDrawingAreas = drawingAreas;
+(window as any).__hekatanDrawingAuxLines = drawingAuxLines;
 (window as any).__hekatanDrawingGridTarget = drawingGridTarget;
 
 export interface BuildStates {
@@ -412,7 +435,7 @@ function autoFitCamera() {
   const ctx = (viewerElm as any).__ctx;
   const nodesArr = states.nodes.rawVal;
   if (!ctx || !nodesArr?.length) return;
-  const { camera, controls, render } = ctx;
+  const { camera, controls, render, perspCamera, orthoCamera } = ctx;
   // Bounding box del modelo
   let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
   for (const n of nodesArr) {
@@ -423,21 +446,39 @@ function autoFitCamera() {
   const cx = (minX+maxX)/2, cy = (minY+maxY)/2, cz = (minZ+maxZ)/2;
   const dx = maxX-minX, dy = maxY-minY, dz = maxZ-minZ;
   const extent = Math.max(Math.sqrt(dx*dx+dy*dy+dz*dz), 1);
-  // Distancia = 2.2× diagonal para que el modelo ocupe ~40-50% del viewport
-  // (como /beams/ que no ocupa toda la pantalla).
-  const dist = 2.2 * extent;
   controls.target.set(cx, cy, cz);
-  // Posicionar cámara isométrica sobre el modelo (vista estándar 3D)
+
+  // Si la cámara activa es ortográfica, sólo recalcular frustum (preservar
+  // orientación de planta/elevación que el usuario eligió). NO reposicionar
+  // a iso porque sino destruimos la vista CAD que el usuario seleccionó.
+  if (orthoCamera && camera === orthoCamera) {
+    const w = (viewerElm as HTMLElement).clientWidth || window.innerWidth;
+    const h = (viewerElm as HTMLElement).clientHeight || window.innerHeight;
+    const aspect = w / h;
+    const halfH = Math.max(extent * 0.6, 5);
+    orthoCamera.left = -halfH * aspect; orthoCamera.right = halfH * aspect;
+    orthoCamera.top = halfH; orthoCamera.bottom = -halfH;
+    orthoCamera.updateProjectionMatrix();
+    controls.update();
+    render?.();
+    const s = (viewerElm as any).__settings;
+    if (s?.gridSize) s.gridSize.val = Math.max(Math.ceil(Math.max(dx, dy) * 1.2), 2);
+    return;
+  }
+
+  // Cámara perspectiva → reposicionar isométrica (comportamiento original)
+  const dist = 2.2 * extent;
   const k = dist / Math.sqrt(3);
   camera.position.set(cx + k, cy - k, cz + k);
   camera.up.set(0, 0, 1);
-  camera.near = extent * 0.001;
-  camera.far = extent * 50;
+  if ((camera as any).isPerspectiveCamera) {
+    (camera as THREE.PerspectiveCamera).near = extent * 0.001;
+    (camera as THREE.PerspectiveCamera).far = extent * 50;
+  }
   camera.updateProjectionMatrix();
   camera.lookAt(cx, cy, cz);
   controls.update();
   render?.();
-  // También actualizar el gridSize del viewer para que el grid matchee el modelo
   const s = (viewerElm as any).__settings;
   if (s?.gridSize) s.gridSize.val = Math.max(Math.ceil(Math.max(dx, dy) * 1.2), 2);
 }
@@ -711,6 +752,7 @@ function runCadDemo(): void {
     status("Limpiando lienzo...");
     drawingPoints.val = [];
     drawingPolylines.val = [[]];
+    drawingAreas.val = [];
     await sleep(500);
     status("Click en ⬇ Planta (X-Y)");
     await clickButton("⬇ Planta (X-Y)");
@@ -748,63 +790,88 @@ function runCadDemo(): void {
 }
 
 function setView(preset: "iso" | "plan" | "elevX" | "elevY") {
-  // Sincronizar plano de trabajo CAD + drawing plane con la vista
-  // (para CUALQUIER ejemplo — antes solo cad-draw, ahora también
-  // new-blank y cli-modeler que usan dibujo con mouse).
+  // Sincroniza plano CAD + drawing plane con la vista
   const cadSt = (window as any).__hekatanCadState?.get?.();
   if (cadSt) {
     if (preset === "plan") cadSt.workPlane = "xy";
     else if (preset === "elevX") cadSt.workPlane = "xz";
     else if (preset === "elevY") cadSt.workPlane = "yz";
   }
-  // Actualizar también el drawingGridTarget (plano del raycaster awatif)
-  // para que los clicks del mouse caigan correctamente sobre el plano
-  // visible. Esto sincroniza vista + plano de dibujo en un solo paso.
+  // Grid centrado en el origen mundial (convención CAD).
   if (preset === "plan") {
-    drawingGridTarget.val = { position: [10, 10, 0], rotation: [Math.PI/2, 0, 0] };
+    drawingGridTarget.val = { position: [0, 0, 0], rotation: [Math.PI/2, 0, 0] };
   } else if (preset === "elevX") {
-    drawingGridTarget.val = { position: [10, 0, 10], rotation: [0, 0, 0] };
+    drawingGridTarget.val = { position: [0, 0, 0], rotation: [0, 0, 0] };
   } else if (preset === "elevY") {
-    drawingGridTarget.val = { position: [0, 10, 10], rotation: [0, Math.PI/2, 0] };
+    // YZ: rotZ(π/2) — combinada con la pre-rot rotX(π/2) de la geometría
+    // del plano da normal +X (vertical YZ). rotY no servía porque rotY
+    // sobre +Y deja +Y → plano queda horizontal y el raycaster falla.
+    drawingGridTarget.val = { position: [0, 0, 0], rotation: [0, 0, Math.PI/2] };
   }
   console.log(`[Vista ↔ CAD] preset=${preset}, workPlane=${cadSt?.workPlane ?? "n/a"}`);
+
   const ctx: any = (viewerElm as any).__ctx;
-  if (!ctx) return;
-  const { camera, controls, render } = ctx;
-  // Bounding box del modelo para auto-fit
-  const nodesArr = states.nodes.rawVal ?? [];
-  let xMin=Infinity,yMin=Infinity,zMin=Infinity,xMax=-Infinity,yMax=-Infinity,zMax=-Infinity;
-  for (const n of nodesArr) {
-    if (n[0]<xMin) xMin=n[0]; if (n[0]>xMax) xMax=n[0];
-    if (n[1]<yMin) yMin=n[1]; if (n[1]>yMax) yMax=n[1];
-    if (n[2]<zMin) zMin=n[2]; if (n[2]>zMax) zMax=n[2];
+  if (!ctx) { console.warn("[setView] viewer __ctx no disponible"); return; }
+  const { perspCamera, orthoCamera, controls, render, setActiveCamera } = ctx;
+  if (!setActiveCamera || !perspCamera || !orthoCamera) {
+    console.warn("[setView] viewer no expone perspCamera/orthoCamera/setActiveCamera");
+    return;
   }
-  const cx = (xMin + xMax) / 2, cy = (yMin + yMax) / 2, cz = (zMin + zMax) / 2;
-  const dx = (xMax - xMin) || 1, dy = (yMax - yMin) || 1, dz = (zMax - zMin) || 1;
-  const diag = Math.sqrt(dx*dx + dy*dy + dz*dz) || 5;
+
+  // BBox con fallback robusto (lienzo vacío → centrado en origen, diag=10)
+  const nodesArr = states.nodes.rawVal ?? [];
+  let cx = 0, cy = 0, cz = 0, diag = 10;
+  if (nodesArr.length > 0) {
+    let xMin=Infinity,yMin=Infinity,zMin=Infinity,xMax=-Infinity,yMax=-Infinity,zMax=-Infinity;
+    for (const n of nodesArr) {
+      if (n[0]<xMin) xMin=n[0]; if (n[0]>xMax) xMax=n[0];
+      if (n[1]<yMin) yMin=n[1]; if (n[1]>yMax) yMax=n[1];
+      if (n[2]<zMin) zMin=n[2]; if (n[2]>zMax) zMax=n[2];
+    }
+    cx = (xMin+xMax)/2; cy = (yMin+yMax)/2; cz = (zMin+zMax)/2;
+    const dx = (xMax-xMin) || 1, dy = (yMax-yMin) || 1, dz = (zMax-zMin) || 1;
+    diag = Math.sqrt(dx*dx + dy*dy + dz*dz) || 5;
+  }
   controls.target.set(cx, cy, cz);
 
-  // Para vistas 2D (plan/elev): FOV chico (~5°) → cuasi-ortográfico.
-  // Para iso: FOV normal 45°.
   if (preset === "iso") {
-    (camera as THREE.PerspectiveCamera).fov = 45;
+    // Isométrica → perspectiva nativa del viewer
+    perspCamera.fov = 45;
     const d = diag * 1.2;
-    camera.position.set(cx + d * 0.6, cy - d * 0.6, cz + d * 0.6);
+    perspCamera.position.set(cx + d * 0.6, cy - d * 0.6, cz + d * 0.6);
+    perspCamera.up.set(0, 0, 1);
+    perspCamera.updateProjectionMatrix();
+    perspCamera.lookAt(cx, cy, cz);
+    setActiveCamera(perspCamera);
   } else {
-    (camera as THREE.PerspectiveCamera).fov = 5;  // cuasi-ortográfico
-    // Distancia tal que el extent cabe con margen en el FOV pequeño.
-    // tan(2.5°) × distance = halfExtent → distance = halfExtent / tan(2.5°) ≈ halfExtent × 22.9
-    const halfExtent = diag / 2;
-    const d = halfExtent * 25;
-    switch (preset) {
-      case "plan":  camera.position.set(cx, cy, cz + d); break;
-      case "elevX": camera.position.set(cx + d, cy, cz); break;
-      case "elevY": camera.position.set(cx, cy + d, cz); break;
+    // Planta / elevación REAL → OrthographicCamera del viewer
+    const w = (viewerElm as HTMLElement).clientWidth || window.innerWidth;
+    const h = (viewerElm as HTMLElement).clientHeight || window.innerHeight;
+    const aspect = w / h;
+    const halfH = Math.max(diag * 0.6, 5);
+    const halfW = halfH * aspect;
+    orthoCamera.left = -halfW; orthoCamera.right = halfW;
+    orthoCamera.top = halfH;   orthoCamera.bottom = -halfH;
+
+    const D = 1000; // distancia (no afecta tamaño en orto, solo orientación)
+    if (preset === "plan") {
+      // Planta XY: cámara mira -Z, "arriba" en pantalla = +Y (Norte)
+      orthoCamera.position.set(cx, cy, cz + D);
+      orthoCamera.up.set(0, 1, 0);
+    } else if (preset === "elevX") {
+      // Elevación frontal: cámara desde -Y → vemos XZ (X horizontal, Z vertical)
+      orthoCamera.position.set(cx, cy - D, cz);
+      orthoCamera.up.set(0, 0, 1);
+    } else if (preset === "elevY") {
+      // Elevación lateral: cámara desde +X → vemos YZ
+      orthoCamera.position.set(cx + D, cy, cz);
+      orthoCamera.up.set(0, 0, 1);
     }
+    orthoCamera.updateProjectionMatrix();
+    orthoCamera.lookAt(cx, cy, cz);
+    setActiveCamera(orthoCamera);
   }
-  camera.up.set(0, 0, 1);
-  (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
-  camera.lookAt(cx, cy, cz);
+
   controls.update();
   render?.();
 }
@@ -930,6 +997,69 @@ function buildParamsPane() {
   fView.addButton({ title: "⬇ Planta (X-Y)" }).on("click", () => setView("plan"));
   fView.addButton({ title: "→ Elevación X (frente)" }).on("click", () => setView("elevX"));
   fView.addButton({ title: "↑ Elevación Y (lado)" }).on("click", () => setView("elevY"));
+
+  // ── 🔀 Vista doble (split): izq dibujable + der preview ──
+  // Renderiza el scene dos veces lado a lado. El usuario dibuja en el
+  // panel izquierdo (vista activa); el panel derecho muestra el modelo
+  // desde otra cámara (iso/planta/elevX/elevY) sincronizada en tiempo
+  // real — útil para ver cómo queda en alzado mientras dibujás en planta.
+  const fSplit = fView.addFolder({ title: "🔀 Vista doble (split)", expanded: false });
+  const splitState = { enabled: false, secondary: 0 };  // 0=iso 1=plan 2=elevX 3=elevY
+  const buildSecondaryCamera = (kind: number): THREE.Camera => {
+    const ctx: any = (viewerElm as any).__ctx;
+    const w = (viewerElm as HTMLElement).clientWidth || window.innerWidth;
+    const h = (viewerElm as HTMLElement).clientHeight || window.innerHeight;
+    const aspect = (w / 2) / h;  // panel derecho = media-pantalla
+    const nodesArr = states.nodes.rawVal ?? [];
+    let cx=0,cy=0,cz=0,diag=10;
+    if (nodesArr.length) {
+      let xMin=Infinity,yMin=Infinity,zMin=Infinity,xMax=-Infinity,yMax=-Infinity,zMax=-Infinity;
+      for (const n of nodesArr) {
+        if (n[0]<xMin) xMin=n[0]; if (n[0]>xMax) xMax=n[0];
+        if (n[1]<yMin) yMin=n[1]; if (n[1]>yMax) yMax=n[1];
+        if (n[2]<zMin) zMin=n[2]; if (n[2]>zMax) zMax=n[2];
+      }
+      cx=(xMin+xMax)/2; cy=(yMin+yMax)/2; cz=(zMin+zMax)/2;
+      const dx=(xMax-xMin)||1,dy=(yMax-yMin)||1,dz=(zMax-zMin)||1;
+      diag = Math.sqrt(dx*dx+dy*dy+dz*dz)||5;
+    }
+    if (kind === 0) {
+      // Iso → PerspectiveCamera nueva
+      const pc = new THREE.PerspectiveCamera(45, aspect, 0.1, 100000);
+      const d = diag * 1.2;
+      pc.position.set(cx + d*0.6, cy - d*0.6, cz + d*0.6);
+      pc.up.set(0,0,1); pc.lookAt(cx,cy,cz); pc.updateProjectionMatrix();
+      return pc;
+    }
+    // Planta/elevX/elevY → OrthographicCamera nueva
+    const halfH = Math.max(diag * 0.6, 5);
+    const oc = new THREE.OrthographicCamera(-halfH*aspect, halfH*aspect, halfH, -halfH, -100000, 100000);
+    const D = 1000;
+    if (kind === 1) { oc.position.set(cx, cy, cz + D); oc.up.set(0,1,0); }
+    else if (kind === 2) { oc.position.set(cx, cy - D, cz); oc.up.set(0,0,1); }
+    else { oc.position.set(cx + D, cy, cz); oc.up.set(0,0,1); }
+    oc.lookAt(cx, cy, cz); oc.updateProjectionMatrix();
+    return oc;
+  };
+  const refreshSplit = () => {
+    const ctx: any = (viewerElm as any).__ctx;
+    if (!ctx?.setSplitMode) return;
+    if (splitState.enabled) {
+      ctx.setSplitMode(true, buildSecondaryCamera(splitState.secondary));
+    } else {
+      ctx.setSplitMode(false);
+    }
+  };
+  fSplit.addBinding(splitState, "enabled", { label: "Activar" }).on("change", refreshSplit);
+  fSplit.addBinding(splitState, "secondary", {
+    label: "Panel derecho",
+    options: { "Isométrica": 0, "Planta (XY)": 1, "Elev. X": 2, "Elev. Y": 3 },
+  }).on("change", refreshSplit);
+  fSplit.addButton({ title: "🔄 Re-encuadrar derecha" }).on("click", refreshSplit);
+  // Exponer para que el hook reactivo de drawingPoints (más abajo) pueda
+  // re-encuadrar el panel derecho automáticamente cada vez que se dibuja.
+  (window as any).__hekatanRefreshSplit = refreshSplit;
+  (window as any).__hekatanSplitState = splitState;
   // ── 🎬 Simulador de mouse — demo visible en el browser ──
   // Crea un cursor virtual (rojo + halo) que se anima sobre la pantalla,
   // hace click en los botones del CAD panel y dibuja un pórtico paso a
@@ -1019,10 +1149,35 @@ function buildParamsPane() {
     currentExample.id === "new-blank"
   );
 
-  // ── ✏ CAD Drawer (siempre disponible) ──
+  // ── ✏ CAD Drawer — UI vive ahora en hekatan-ui (addCadPanel) ──
+  // Antes esto era ~300 líneas de Tweakpane inline acá. Movido a
+  // hekatan-ui/src/cad/getCadPanel.ts para que CUALQUIER consumidor del
+  // viewer (no solo el workspace) reciba la misma UI sin duplicar código.
+  // El workspace solo inyecta los van.states del modelo de dibujo + hooks
+  // a setView/splitState que son específicos del workspace.
   if (currentExample) {
+    addCadPanel({
+      parentPane: pane,
+      expanded: !!isModelerCtx,
+      viewerElm,
+      drawing: {
+        points: drawingPoints,
+        polylines: drawingPolylines,
+        areas: drawingAreas,
+        auxLines: drawingAuxLines,
+        gridTarget: drawingGridTarget,
+      },
+      hooks: {
+        setView,
+        splitState,
+        refreshSplit,
+        onRebuild: () => { try { (window as any).__hekatanRebuild?.(); } catch {} },
+      },
+    });
+  }
+  // ── BLOQUE INLINE LEGACY (será removido al confirmarse el move) ──
+  if (false && currentExample) {
     const fCad = pane.addFolder({ title: "✏ Herramientas CAD", expanded: !!isModelerCtx });
-    // Tool selector — botones grandes
     const proxyTool = { v: "node" };
     const toolBtns: Record<string, any> = {};
     // Instrucciones por tool — el usuario las ve en el status bar al activar
@@ -1032,12 +1187,15 @@ function buildParamsPane() {
       line:     "／ Línea — click 2 puntos para crear un frame. Continúa clickeando para extender la polilínea, right-click para terminar.",
       polyline: "⌒ Polilínea — click sucesivos crean segmentos conectados; right-click para terminar.",
       area:     "▭ Área — 4 clicks crean un Q4 shell (en orden CCW)",
+      col:      "▌ Columna 3D — tipeá altura + Enter, después 1 click en la base. Default = 3m. Ideal para iso.",
+      wall:     "▥ Pared Q4 3D — tipeá altura + Enter, después 2 clicks en las esquinas inferiores. Default = 3m. Crea shell Q4 vertical.",
       circle:   "○ Círculo — click 2 puntos: 1=centro, 2=radio. Se discretiza en N segmentos (slider 'Segmentos arc/circ').",
       arc:      "⌒ Arco (3 ptos) — click 3 puntos: 1=inicio, 2=medio, 3=fin. Se discretiza en N segmentos.",
       rect:     "▭ Rectángulo — click 2 esquinas opuestas. Genera 4 nodos + 4 frames cerrados.",
       aux:      "┊ Línea auxiliar — referencia visual (no genera FEM)",
       extend:   "↗ Prolongar — click una línea existente, click en la dirección a extender",
       chaflan:  "▱ Losa con chaflanes — click 2 esquinas opuestas. Radio del chaflán se ajusta en 'Chaflán r (m)'. Genera 4 lados rectos + 4 cuartos de círculo automáticamente.",
+      "delete": "🗑 Borrar — pasá el mouse sobre una línea/área. Se resalta en rojo. Click para eliminarla. Los nodos huérfanos se limpian automáticamente.",
     };
     const setActiveTool = (tool: string) => {
       proxyTool.v = tool;
@@ -1047,13 +1205,27 @@ function buildParamsPane() {
       // Mostrar instrucción del tool nuevo
       const instr = toolInstructions[tool] ?? `Tool ${tool} activo`;
       const statusEl = document.getElementById("hk-cad-status");
-      if (statusEl) statusEl.textContent = instr;
+      if (statusEl) {
+        // Setear texto base; updateStatus interno va a aplicar el sufijo
+        // de modos activos (ORTO, Cota Z, planos) — pero el setText directo
+        // lo hace simple. Usamos refresh helper si está disponible para que
+        // el sufijo se aplique automáticamente.
+        statusEl.textContent = instr;
+        (window as any).__hekatanCadStatusText = instr;
+        (window as any).__hekatanRefreshStatus?.();
+      }
       console.log(`[CAD] Tool activo: ${tool} — ${instr}`);
     };
     fCad.addButton({ title: "🖱 Seleccionar" }).on("click", () => setActiveTool("select"));
     fCad.addButton({ title: "● Nodo" }).on("click", () => setActiveTool("node"));
     fCad.addButton({ title: "／ Línea (frame)" }).on("click", () => setActiveTool("line"));
     fCad.addButton({ title: "▭ Área (shell Q4)" }).on("click", () => setActiveTool("area"));
+    // Tools 3D dedicados — para dibujar SOLO desde vista isométrica sin
+    // tener que cambiar Cota Z entre clicks. Internamente:
+    //   col  → 1 click + altura → frame vertical (columna)
+    //   wall → 2 clicks base + altura → shell Q4 vertical (pared)
+    fCad.addButton({ title: "▌ Columna 3D (1 click + altura)" }).on("click", () => setActiveTool("col"));
+    fCad.addButton({ title: "▥ Pared Q4 3D (2 clicks + altura)" }).on("click", () => setActiveTool("wall"));
     // Tools CAD adicionales (estilo AutoCAD): polilínea, rectángulo, círculo,
     // arco, líneas auxiliares/de prolongación. Los elementos no lineales
     // (arco, círculo) se discretizan en N segmentos al exportarse al FEM.
@@ -1065,6 +1237,8 @@ function buildParamsPane() {
     fCad.addButton({ title: "↗ Prolongar línea" }).on("click", () => setActiveTool("extend"));
     // ── Tools arquitectónicos (formas irregulares) ──
     fCad.addButton({ title: "▱ Losa con chaflanes (rect + arcos)" }).on("click", () => setActiveTool("chaflan"));
+    // ── 🗑 Borrar — hover-highlight + click para eliminar líneas/áreas ──
+    fCad.addButton({ title: "🗑 Borrar (hover + click)" }).on("click", () => setActiveTool("delete"));
     // Modos de drawing
     const fModes = fCad.addFolder({ title: "🎯 Modos de dibujo", expanded: true });
     const proxyModes = { ortho: false, polar: false, segs: 12 };
@@ -1108,7 +1282,7 @@ function buildParamsPane() {
     // botones solo cambiaban una variable lógica sin efecto visual.
     const fPlane = fCad.addFolder({ title: "📐 Plano de trabajo", expanded: true });
     const proxyPlane = { workZ: 0 };
-    const setPlane = (kind: "xy" | "xz" | "yz", z?: number) => {
+    const setPlane = (kind: "xy" | "xz" | "yz", z?: number, syncCam = true) => {
       const st = (window as any).__hekatanCadState?.get?.();
       if (st) st.workPlane = kind;
       // Rotación del plano según orientación:
@@ -1116,21 +1290,134 @@ function buildParamsPane() {
       //   xz (elevación) → plano vertical X-Z          → rotX=0
       //   yz (lateral)   → plano vertical Y-Z          → rotZ=PI/2 (sobre Y)
       const wz = z ?? proxyPlane.workZ;
+      // Grid centrado en el origen mundial (convención CAD).
       if (kind === "xy") {
-        drawingGridTarget.val = { position: [10, 10, wz], rotation: [Math.PI/2, 0, 0] };
+        drawingGridTarget.val = { position: [0, 0, wz], rotation: [Math.PI/2, 0, 0] };
       } else if (kind === "xz") {
-        drawingGridTarget.val = { position: [10, 0, 10], rotation: [0, 0, 0] };
+        drawingGridTarget.val = { position: [0, 0, 0], rotation: [0, 0, 0] };
       } else {
-        drawingGridTarget.val = { position: [0, 10, 10], rotation: [0, Math.PI/2, 0] };
+        // YZ: rotZ(π/2) — ver setView elevY para detalle. rotY(π/2) NO sirve
+        // porque deja el plano del raycaster horizontal en y=10 y el rayo
+        // de la cámara nunca lo cruza.
+        drawingGridTarget.val = { position: [0, 0, 0], rotation: [0, 0, Math.PI/2] };
       }
       console.log(`[CAD] Plano: ${kind.toUpperCase()} @ Z=${wz}m`);
+      // Sincronizar cámara → vista ortográfica real para CAD-feel
+      if (syncCam) {
+        if (kind === "xy") setView("plan");
+        else if (kind === "xz") setView("elevX");
+        else if (kind === "yz") setView("elevY");
+      }
     };
     fPlane.addButton({ title: "Plano XY (planta)" }).on("click", () => setPlane("xy"));
     fPlane.addButton({ title: "Plano XZ (elevación frontal)" }).on("click", () => setPlane("xz"));
     fPlane.addButton({ title: "Plano YZ (elevación lateral)" }).on("click", () => setPlane("yz"));
+    // Vista 3D — útil para orientarse mientras se dibuja en planta/elevación.
+    fPlane.addButton({ title: "🧊 Vista isométrica (3D)" }).on("click", () => {
+      setView("iso");
+      console.log("[CAD] Vista: ISOMÉTRICA");
+    });
+    // Vista doble: planta dibujable a la izquierda + iso preview a la derecha.
+    // Toggle: 1er click activa, 2do click desactiva. El folder "🔀 Vista doble
+    // (split)" en Vista expone configuración avanzada (otra cámara secundaria).
+    fPlane.addButton({ title: "🔀 Vista doble (planta + iso)" }).on("click", () => {
+      splitState.enabled = !splitState.enabled;
+      if (splitState.enabled) {
+        splitState.secondary = 0;  // 0 = iso a la derecha
+        setPlane("xy");            // planta a la izquierda (vista activa, dibujable)
+        console.log("[CAD] Vista doble ACTIVADA — planta (izq, dibujable) + iso (der, preview)");
+      } else {
+        console.log("[CAD] Vista doble DESACTIVADA");
+      }
+      refreshSplit();
+    });
+    // Planos de referencia visibles — guías horizontales a Z=0,3,6,9,12 m
+    // (niveles típicos de pisos). Útil para orientarse en iso 3D.
+    let refPlanesVisible = false;
+    fPlane.addButton({ title: "📐 Mostrar/ocultar planos de ref. (Z=0,3,6,9,12)" }).on("click", () => {
+      refPlanesVisible = !refPlanesVisible;
+      if (refPlanesVisible) {
+        (window as any).__hekatanShowRefPlanes?.([0, 3, 6, 9, 12], 20, 0, 0);
+        console.log("[CAD] Planos de referencia VISIBLES");
+      } else {
+        (window as any).__hekatanHideRefPlanes?.();
+        console.log("[CAD] Planos de referencia OCULTOS");
+      }
+    });
+    // Toggle de planos ORTOGONALES del último punto (XY/XZ/YZ que aparecen
+    // durante el rubber band para guía visual + snap). Default ON.
+    (window as any).__hekatanShowOrthoPlanes = true;
+    let orthoPlanesVisible = true;
+    fPlane.addButton({ title: "▦ Planos ref. ortogonales (XY/XZ/YZ del último pto)" }).on("click", () => {
+      orthoPlanesVisible = !orthoPlanesVisible;
+      // Llamar al setter expuesto para que el cambio se aplique YA, sin
+      // esperar a que el usuario mueva el mouse. Si no existe el setter
+      // (versión vieja), fallback al flag pelado.
+      const fn = (window as any).__hekatanSetOrthoPlanes;
+      if (typeof fn === "function") fn(orthoPlanesVisible);
+      else (window as any).__hekatanShowOrthoPlanes = orthoPlanesVisible;
+      // Refrescar status (sufijo refleja los modos activos)
+      (window as any).__hekatanRefreshStatus?.();
+      console.log(`[CAD] Planos ortogonales ${orthoPlanesVisible ? "ACTIVADOS" : "DESACTIVADOS"}`);
+    });
+    // ── Sliders de dimensión visual ──
+    // 1) Tamaño del área de los planos ortogonales (cuadrado XY/XZ/YZ).
+    //    `ext` es el semi-lado, así que el cuadrado total es 2·ext × 2·ext.
+    //    Default 8m → cuadrado 16×16. Range generoso (1m a 50m) cubre desde
+    //    detalle (zapata) hasta edificio entero.
+    // 2) Tamaño del grid mallado (la "plataforma" que se ve en el viewer).
+    //    Tira de settings.gridSize del viewer interno (default 10).
+    const proxySizes = { orthoExt: 8, gridSize: 10 };
+    fPlane.addBinding(proxySizes, "orthoExt", {
+      min: 1, max: 50, step: 0.5, label: "Tamaño área planos ref. (m)",
+    }).on("change", (ev: any) => {
+      const fn = (window as any).__hekatanSetOrthoExt;
+      if (typeof fn === "function") fn(ev.value);
+      else (window as any).__hekatanOrthoExt = ev.value;
+    });
+    fPlane.addBinding(proxySizes, "gridSize", {
+      min: 1, max: 100, step: 1, label: "Tamaño grid (m)",
+    }).on("change", (ev: any) => {
+      const s = (viewerElm as any).__settings;
+      if (s?.gridSize) s.gridSize.val = ev.value;
+    });
+    // ── Toggle global de grid snap ──
+    // Cuando OFF, el cursor ignora el grid (Snap 2D / Snap 3D) y queda en
+    // la coordenada raw del raycaster. OSnap (endpoint/midpoint/etc.) sigue
+    // funcionando — esto solo controla el snap a la malla cuadriculada.
+    (window as any).__hekatanSnapEnabled = true;
+    const proxySnapToggle = { snapEnabled: true };
+    fCad.addBinding(proxySnapToggle, "snapEnabled", { label: "🧲 Grid snap ON/OFF" }).on("change", (ev: any) => {
+      (window as any).__hekatanSnapEnabled = !!ev.value;
+    });
+    // ── Selector de paso de snap (cuánto salta el cursor) ──
+    // Dropdown con valores discretos comunes en CAD: 0.01 / 0.05 / 0.1 / 0.2 /
+    // 0.25 / 0.5 / 1 / 2 / 5 metros. Bindea a __hekatanSnap2D igual que el
+    // slider continuo, pero más usable porque clava valores "limpios" sin
+    // tener que arrastrar el slider con precisión.
+    const proxySnapStep = { step: 0.5 };
+    fCad.addBinding(proxySnapStep, "step", {
+      label: "Paso snap (m)",
+      options: {
+        "0.01 m (mm)":  0.01,
+        "0.05 m (5cm)": 0.05,
+        "0.10 m":       0.1,
+        "0.20 m":       0.2,
+        "0.25 m":       0.25,
+        "0.50 m":       0.5,
+        "1.00 m":       1.0,
+        "2.00 m":       2.0,
+        "5.00 m":       5.0,
+      },
+    }).on("change", (ev: any) => {
+      const v = Number(ev.value);
+      (window as any).__hekatanSnap2D = v;
+      const st = (window as any).__hekatanCadState?.get?.();
+      if (st) st.snap = v;  // legacy
+    });
     // Snap 2D y 3D separados (más flexibilidad para distintos workflows)
     const proxyCAD = { snap2D: 0.5, snap3D: 0.25, workZ: 0 };
-    fCad.addBinding(proxyCAD, "snap2D", { min: 0, max: 5, step: 0.05, label: "Snap 2D (m)" }).on("change", (ev: any) => {
+    fCad.addBinding(proxyCAD, "snap2D", { min: 0, max: 5, step: 0.05, label: "Snap 2D fino (m)" }).on("change", (ev: any) => {
       const st = (window as any).__hekatanCadState?.get?.();
       if (st) st.snap = ev.value;  // legacy
       (window as any).__hekatanSnap2D = ev.value;
@@ -1143,19 +1430,25 @@ function buildParamsPane() {
       if (st) st.workZ = ev.value;
       // Re-posicionar el plano XY (si está activo) a esa Z
       const curPlane = ((window as any).__hekatanCadState?.get?.())?.workPlane ?? "xy";
-      if (curPlane === "xy") setPlane("xy", ev.value);
+      if (curPlane === "xy") setPlane("xy", ev.value, false); // no re-sync cámara en cada tick
       try { (window as any).__hekatanRebuild?.(); } catch {}
     });
     // Acciones
     const fAcc = fCad.addFolder({ title: "🛠 Acciones", expanded: true });
-    fAcc.addButton({ title: "↶ Cancelar selección actual" }).on("click", () => {
+    // ⏹ Finalizar dibujo: termina la polilínea actual (próximo click = nuevo
+    // trazo independiente), libera axis lock, oculta rubber band/polar lines.
+    // Equivalente a Esc o click derecho.
+    fAcc.addButton({ title: "⏹ Finalizar dibujo (Esc)" }).on("click", () => {
+      (window as any).__hekatanFinalizeDraw?.();
       (window as any).__hekatanCadMouse?.cancel?.();
     });
     fAcc.addButton({ title: "🗑 Limpiar todo" }).on("click", () => {
       (window as any).__hekatanCadState?.reset?.();
-      // También limpiar el Drawing nativo (puntos + polylines)
+      // También limpiar el Drawing nativo (puntos + polylines + áreas + aux)
       drawingPoints.val = [];
       drawingPolylines.val = [[]];
+      drawingAreas.val = [];
+      drawingAuxLines.val = [];
       try { (window as any).__hekatanRebuild?.(); } catch {}
     });
     // Botones para cambiar la cota Z del plano de trabajo (planta de cada piso)
@@ -1163,7 +1456,7 @@ function buildParamsPane() {
     [0, 3, 6, 9, 12].forEach(z => {
       fFloors.addButton({ title: `Piso a Z=${z}m` }).on("click", () => {
         drawingGridTarget.val = {
-          position: [10, 10, z],
+          position: [0, 0, z],
           rotation: [Math.PI/2, 0, 0],
         };
         const cs = (window as any).__hekatanCadState?.get?.();
@@ -2919,6 +3212,7 @@ const viewerElm = getViewer({
   drawingObj: {
     points: drawingPoints,
     polylines: drawingPolylines,
+    areas: drawingAreas,
     gridTarget: drawingGridTarget,
   },
 });
@@ -3180,12 +3474,21 @@ modalAnimator = createModalAnimator({
 });
 
 // ── Cargar ejemplo inicial via ?t= o default ──
-// Si el URL no trae ?t o trae el legado "zapata-aislada", forzamos el ejemplo
-// de validación (defecto actual del workspace). El usuario puede seleccionar
-// la zapata original desde el dropdown "Ejemplo" si la necesita.
+// Default (sin ?t en URL): "new-blank" — lienzo CAD vacío en categoría
+// "Archivo nuevo". El usuario al abrir el workspace ya está parado en
+// el lienzo vacío listo para dibujar, sin tener que navegar al ejemplo.
+// Backward-compat: ?t=zapata-aislada (legacy) → zapata-aislada-validacion.
 let urlT = new URLSearchParams(window.location.search).get("t");
-if (!urlT || urlT === "zapata-aislada") {
+if (urlT === "zapata-aislada") {
   urlT = "zapata-aislada-validacion";
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set("t", urlT);
+    window.history.replaceState(null, "", u.toString());
+  } catch { /* no-op */ }
+}
+if (!urlT) {
+  urlT = "new-blank";
   try {
     const u = new URL(window.location.href);
     u.searchParams.set("t", urlT);
@@ -3194,7 +3497,7 @@ if (!urlT || urlT === "zapata-aislada") {
 }
 const initialEx =
   examplesRegistry.find((e) => e.id === urlT) ||
-  examplesRegistry.find((e) => e.id === "zapata-aislada-validacion") ||
+  examplesRegistry.find((e) => e.id === "new-blank") ||
   examplesRegistry[0];
 if (initialEx) {
   loadExample(initialEx);
