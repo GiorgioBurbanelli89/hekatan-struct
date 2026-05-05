@@ -19,5 +19,10 @@ export {
   nextAxisLabel, nextLevelLabel,
 } from "./cad/axisLevels";
 export type { AxisGrid, Level } from "./cad/axisLevels";
+export {
+  PROVIDERS as AI_PROVIDERS, getProvider, aiStorage,
+  blobToBase64, listOllamaModels, HEKATAN_SYSTEM_PROMPT,
+} from "./cad/aiAssistant";
+export type { AIProvider, AIMessage, AIImage } from "./cad/aiAssistant";
 export { getTheme, getThemeName, setTheme, toggleTheme, onThemeChange } from "./theme";
 export type { ThemeName, ThemeColors } from "./theme";

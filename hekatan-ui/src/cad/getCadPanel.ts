@@ -24,6 +24,11 @@ import {
   nextAxisLabel, nextLevelLabel,
   type AxisGrid, type Level,
 } from "./axisLevels";
+import {
+  PROVIDERS, getProvider, aiStorage, blobToBase64,
+  listOllamaModels, HEKATAN_SYSTEM_PROMPT,
+  type AIImage,
+} from "./aiAssistant";
 
 export type GridTargetVal = {
   position: [number, number, number];
@@ -604,6 +609,277 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
     hooks.onRebuild?.();
     alert(`✓ ${extruded} nodo(s) extruidos a frames de altura ${H}m en dirección (${dir.map(d=>d.toFixed(2)).join(",")}).`);
   });
+  // ── 💬 AI Assistant (providers gratuitos) ──
+  // Folder con prompt textarea + paste/drop de imágenes + selector de
+  // provider (Ollama/Gemini/Groq/OpenRouter). El user pega su API key
+  // (excepto para Ollama que es local) y la persiste en localStorage.
+  // El system prompt instruye a la IA a emitir comandos CLI Hekatan que
+  // se ejecutan vía window.__hekatanCliScript + un parser que ya existe.
+  const fAI = fCad.addFolder({ title: "💬 AI Assistant (gratis)", expanded: false });
+  // Estado AI
+  const aiState = {
+    providerId: aiStorage.getProvider(),
+    apiKey: "",
+    model: "",
+    images: [] as AIImage[],
+    prompt: "",
+    response: "",
+  };
+  aiState.apiKey = aiStorage.getKey(aiState.providerId);
+  // Selector de provider
+  const providerOptions: Record<string, string> = {};
+  for (const p of PROVIDERS) providerOptions[p.name] = p.id;
+  const proxyProvider = { id: aiState.providerId };
+  fAI.addBinding(proxyProvider, "id", {
+    label: "Provider",
+    options: providerOptions,
+  }).on("change", (ev: any) => {
+    aiState.providerId = ev.value;
+    aiStorage.setProvider(aiState.providerId);
+    aiState.apiKey = aiStorage.getKey(aiState.providerId);
+    refreshAiUi();
+  });
+  // Selector de modelo (dinámico según provider)
+  const proxyModel = { id: "" };
+  let modelBinding: any = null;
+  // Input de API key (oculto para Ollama)
+  const proxyKey = { key: "" };
+  let keyBinding: any = null;
+  // Container DOM para textarea, imágenes, response
+  const aiPanelDOM = document.createElement("div");
+  aiPanelDOM.style.cssText = [
+    "padding:8px", "display:flex", "flex-direction:column", "gap:6px",
+    "font-family:Consolas,monospace", "font-size:12px",
+  ].join(";") + ";";
+  // Área de imágenes (paste/drop/click)
+  const imgArea = document.createElement("div");
+  imgArea.style.cssText = [
+    "min-height:50px", "border:1.5px dashed #555", "border-radius:4px",
+    "padding:6px", "display:flex", "flex-wrap:wrap", "gap:4px",
+    "align-items:center", "color:#888",
+  ].join(";") + ";";
+  imgArea.textContent = "📋 Pega/arrastra imágenes acá (Ctrl+V)";
+  imgArea.tabIndex = 0;  // permite focus para capturar paste
+  // Textarea para el prompt
+  const promptTA = document.createElement("textarea");
+  promptTA.placeholder = "Pedile al AI: 'Crea un pórtico de 3 vanos de 5m, altura 3m, columnas 40×40, vigas 25×40, empotrado'";
+  promptTA.style.cssText = [
+    "width:100%", "min-height:80px", "padding:6px",
+    "background:#1a1a1a", "color:#ddd", "border:1px solid #444",
+    "border-radius:4px", "font-family:inherit", "font-size:12px",
+    "resize:vertical", "box-sizing:border-box",
+  ].join(";") + ";";
+  // Botones
+  const btnRow = document.createElement("div");
+  btnRow.style.cssText = "display:flex;gap:6px;";
+  const btnSend = document.createElement("button");
+  btnSend.textContent = "▶ Generar";
+  btnSend.style.cssText = "flex:1;padding:6px;background:#22d3ee;color:#000;border:none;border-radius:4px;cursor:pointer;font-weight:bold;";
+  const btnClearImg = document.createElement("button");
+  btnClearImg.textContent = "✗ Limpiar imágenes";
+  btnClearImg.style.cssText = "padding:6px 10px;background:#444;color:#ddd;border:none;border-radius:4px;cursor:pointer;";
+  btnRow.appendChild(btnSend);
+  btnRow.appendChild(btnClearImg);
+  // Área de respuesta
+  const responseTA = document.createElement("textarea");
+  responseTA.placeholder = "La respuesta del AI aparecerá acá...";
+  responseTA.readOnly = true;
+  responseTA.style.cssText = promptTA.style.cssText + "min-height:120px;background:#0a0a0a;";
+  // Botón para ejecutar
+  const btnExec = document.createElement("button");
+  btnExec.textContent = "✓ Ejecutar como comandos CLI";
+  btnExec.style.cssText = "padding:6px;background:#34d399;color:#000;border:none;border-radius:4px;cursor:pointer;font-weight:bold;";
+  btnExec.disabled = true;
+  // Hint del provider seleccionado
+  const hint = document.createElement("div");
+  hint.style.cssText = "color:#888;font-size:11px;line-height:1.4;";
+  // Ensamblar
+  aiPanelDOM.appendChild(imgArea);
+  aiPanelDOM.appendChild(promptTA);
+  aiPanelDOM.appendChild(btnRow);
+  aiPanelDOM.appendChild(responseTA);
+  aiPanelDOM.appendChild(btnExec);
+  aiPanelDOM.appendChild(hint);
+  // Insertar el container DOM en el folder Tweakpane
+  setTimeout(() => fAI.element?.appendChild?.(aiPanelDOM), 50);
+  // Manejo de paste de imágenes
+  const addImage = async (blob: Blob) => {
+    const b64 = await blobToBase64(blob);
+    aiState.images.push({ mimeType: blob.type, base64: b64 });
+    renderImages();
+  };
+  const renderImages = () => {
+    imgArea.innerHTML = "";
+    if (aiState.images.length === 0) {
+      imgArea.style.color = "#888";
+      imgArea.textContent = "📋 Pega/arrastra imágenes acá (Ctrl+V)";
+      return;
+    }
+    imgArea.style.color = "#ddd";
+    aiState.images.forEach((img, i) => {
+      const wrap = document.createElement("div");
+      wrap.style.cssText = "position:relative;display:inline-block;";
+      const thumb = document.createElement("img");
+      thumb.src = `data:${img.mimeType};base64,${img.base64}`;
+      thumb.style.cssText = "width:60px;height:60px;object-fit:cover;border:1px solid #666;border-radius:3px;";
+      const x = document.createElement("button");
+      x.textContent = "×";
+      x.style.cssText = "position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:#ef4444;color:#fff;border:none;cursor:pointer;font-size:11px;line-height:1;padding:0;";
+      x.onclick = () => { aiState.images.splice(i, 1); renderImages(); };
+      wrap.appendChild(thumb);
+      wrap.appendChild(x);
+      imgArea.appendChild(wrap);
+    });
+    const counter = document.createElement("span");
+    counter.style.cssText = "color:#888;font-size:11px;margin-left:6px;";
+    counter.textContent = `${aiState.images.length} imagen(es)`;
+    imgArea.appendChild(counter);
+  };
+  imgArea.addEventListener("paste", async (ev: any) => {
+    for (const item of ev.clipboardData?.items ?? []) {
+      if (item.type?.startsWith("image/")) {
+        const blob = item.getAsFile();
+        if (blob) await addImage(blob);
+      }
+    }
+  });
+  promptTA.addEventListener("paste", async (ev: any) => {
+    for (const item of ev.clipboardData?.items ?? []) {
+      if (item.type?.startsWith("image/")) {
+        ev.preventDefault();
+        const blob = item.getAsFile();
+        if (blob) await addImage(blob);
+      }
+    }
+  });
+  imgArea.addEventListener("dragover", (ev) => {
+    ev.preventDefault();
+    imgArea.style.borderColor = "#22d3ee";
+  });
+  imgArea.addEventListener("dragleave", () => {
+    imgArea.style.borderColor = "#555";
+  });
+  imgArea.addEventListener("drop", async (ev) => {
+    ev.preventDefault();
+    imgArea.style.borderColor = "#555";
+    for (const file of Array.from(ev.dataTransfer?.files ?? [])) {
+      if (file.type.startsWith("image/")) await addImage(file);
+    }
+  });
+  btnClearImg.onclick = () => { aiState.images = []; renderImages(); };
+  // Refrescar UI según provider seleccionado
+  const refreshAiUi = () => {
+    const p = getProvider(aiState.providerId);
+    if (!p) return;
+    // Modelos
+    if (modelBinding) modelBinding.dispose();
+    const modelOpts: Record<string, string> = {};
+    for (const m of p.models) modelOpts[m.name] = m.id;
+    const savedModel = aiStorage.getModel(p.id);
+    proxyModel.id = savedModel || p.defaultModel;
+    aiState.model = proxyModel.id;
+    modelBinding = fAI.addBinding(proxyModel, "id", { label: "Modelo", options: modelOpts });
+    modelBinding.on("change", (ev: any) => {
+      aiState.model = ev.value;
+      aiStorage.setModel(p.id, ev.value);
+    });
+    // API key (solo si requiresKey)
+    if (keyBinding) { try { keyBinding.dispose(); } catch {} keyBinding = null; }
+    if (p.requiresKey) {
+      proxyKey.key = aiStorage.getKey(p.id);
+      keyBinding = fAI.addBinding(proxyKey, "key", { label: "API Key" });
+      keyBinding.on("change", (ev: any) => {
+        aiStorage.setKey(p.id, ev.value);
+        aiState.apiKey = ev.value;
+      });
+      aiState.apiKey = proxyKey.key;
+    } else {
+      aiState.apiKey = "";
+    }
+    // Hint
+    const lines: string[] = [];
+    if (p.id === "ollama") {
+      lines.push("Requiere Ollama corriendo en localhost:11434.");
+      lines.push("Instalar: ollama.com → ollama pull qwen2.5-coder:7b");
+    } else if (p.id === "gemini") {
+      lines.push("API key gratis: aistudio.google.com/apikey");
+      lines.push("Free tier: 15 req/min, 1M tok/día.");
+    } else if (p.id === "groq") {
+      lines.push("API key gratis: console.groq.com/keys");
+      lines.push("Inferencia ~500 tok/seg.");
+    } else if (p.id === "openrouter") {
+      lines.push("API key: openrouter.ai/keys (modelos free disponibles).");
+      lines.push("Sufijo :free indica modelo gratuito.");
+    }
+    hint.textContent = lines.join("\n");
+  };
+  refreshAiUi();
+  // Auto-detectar Ollama y poblar modelos instalados
+  listOllamaModels().then(installed => {
+    if (installed.length > 0 && aiState.providerId === "ollama") {
+      console.log("[AI] Ollama detectado. Modelos:", installed);
+    }
+  });
+  // Botón "Generar" → llamar al provider
+  btnSend.onclick = async () => {
+    const p = getProvider(aiState.providerId);
+    if (!p) { alert("Provider no encontrado."); return; }
+    if (p.requiresKey && !aiState.apiKey) {
+      alert(`${p.name} requiere API key. Pegala en el campo de arriba.`);
+      return;
+    }
+    if (!aiState.prompt.trim() && aiState.images.length === 0) {
+      alert("Escribí un prompt o pegá una imagen.");
+      return;
+    }
+    btnSend.disabled = true;
+    btnSend.textContent = "⏳ Generando...";
+    responseTA.value = "Esperando respuesta del modelo...";
+    btnExec.disabled = true;
+    try {
+      const out = await p.send({
+        msg: { text: aiState.prompt, images: aiState.images },
+        system: HEKATAN_SYSTEM_PROMPT,
+        apiKey: aiState.apiKey,
+        model: aiState.model,
+      });
+      aiState.response = out;
+      // Limpiar markdown wrapping si la IA puso ```
+      const cleaned = out.replace(/^```[a-z]*\n?/i, "").replace(/\n?```\s*$/, "").trim();
+      responseTA.value = cleaned;
+      responseTA.readOnly = false;  // editable post-generación
+      btnExec.disabled = false;
+    } catch (err: any) {
+      responseTA.value = `❌ Error: ${err?.message ?? err}`;
+    } finally {
+      btnSend.disabled = false;
+      btnSend.textContent = "▶ Generar";
+    }
+  };
+  promptTA.addEventListener("input", () => { aiState.prompt = promptTA.value; });
+  promptTA.addEventListener("keydown", (ev) => {
+    if ((ev.ctrlKey || ev.metaKey) && ev.key === "Enter") {
+      ev.preventDefault();
+      btnSend.click();
+    }
+  });
+  // Botón "Ejecutar" → setear el script CLI y ejecutarlo
+  btnExec.onclick = () => {
+    const cli = responseTA.value.trim();
+    if (!cli) return;
+    // Setear el script CLI global y disparar ejecución (mismo flujo que el
+    // textarea CLI manual). El parser está en cad-draw/cliRunner.
+    (window as any).__hekatanCliScript = cli;
+    const fn = (window as any).__hekatanCliExecute;
+    if (typeof fn === "function") {
+      fn();
+    } else {
+      // Fallback: copiar al portapapeles para que el user lo pegue manualmente
+      navigator.clipboard?.writeText(cli);
+      alert("Script copiado al clipboard. Pegalo en el panel CLI Comandos para ejecutarlo.");
+    }
+    hooks.onRebuild?.();
+  };
   fSel.addButton({ title: "⬆ Extruir frame→área (1+ segmentos seleccionados + altura)" }).on("click", () => {
     const sel = (window as any).__hekatanSelection as Set<string> | undefined;
     if (!sel || sel.size === 0) {
