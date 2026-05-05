@@ -71,6 +71,7 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
     arc:      "⌒ Arco (3 ptos) — click 1=inicio, 2=medio, 3=fin.",
     rect:     "▭ Rectángulo — click 2 esquinas. Tipear @5,3 para esquina opuesta relativa.",
     aux:      "┊ Línea auxiliar — referencia visual (no genera FEM). Mismo input que línea.",
+    auxp:     "✦ Punto auxiliar — 1 click crea un punto cyan (no genera nodo FEM, sirve para OSnap).",
     extend:   "↗ Prolongar — click una línea, click en la dirección a extender.",
     chaflan:  "▱ Losa con chaflanes — click 2 esquinas. Radio en slider 'Chaflán r'.",
     "delete": "🗑 Borrar — hover sobre línea/área (se resalta en rojo) + click para eliminar.",
@@ -100,6 +101,7 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
   fCad.addButton({ title: "○ Círculo" }).on("click", () => setActiveTool("circle"));
   fCad.addButton({ title: "⌒ Arco (3 ptos)" }).on("click", () => setActiveTool("arc"));
   fCad.addButton({ title: "┊ Línea auxiliar" }).on("click", () => setActiveTool("aux"));
+  fCad.addButton({ title: "✦ Punto auxiliar" }).on("click", () => setActiveTool("auxp"));
   fCad.addButton({ title: "↗ Prolongar línea" }).on("click", () => setActiveTool("extend"));
   fCad.addButton({ title: "▱ Losa con chaflanes (rect + arcos)" }).on("click", () => setActiveTool("chaflan"));
   fCad.addButton({ title: "🗑 Borrar (hover + click)" }).on("click", () => setActiveTool("delete"));
@@ -543,6 +545,120 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
   });
   fSel.addButton({ title: "🗑 Limpiar selección" }).on("click", () => {
     (window as any).__hekatanClearSelection?.();
+  });
+
+  // ── Extrusión: convierte la dimensión del item seleccionado al siguiente ──
+  // node → frame: extruye un nodo en una dirección por una altura → línea
+  // frame → area: extruye un segmento perpendicular por una altura → shell Q4
+  // Default dir = +Z (vertical, típico para columnas/paredes en planta).
+  const proxyExtr = { dirX: 0, dirY: 0, dirZ: 1, height: 3 };
+  fSel.addBinding(proxyExtr, "height", { min: 0.1, max: 50, step: 0.1, label: "Altura extrusión (m)" });
+  fSel.addBinding(proxyExtr, "dirX", { min: -1, max: 1, step: 1, label: "Dir X" });
+  fSel.addBinding(proxyExtr, "dirY", { min: -1, max: 1, step: 1, label: "Dir Y" });
+  fSel.addBinding(proxyExtr, "dirZ", { min: -1, max: 1, step: 1, label: "Dir Z" });
+  fSel.addButton({ title: "⬆ Extruir nodo→frame (1 nodo seleccionado + altura)" }).on("click", () => {
+    const sel = (window as any).__hekatanSelection as Set<string> | undefined;
+    if (!sel || sel.size === 0) {
+      alert("Seleccioná al menos 1 nodo (click sobre un punto).");
+      return;
+    }
+    const dirRaw = [proxyExtr.dirX, proxyExtr.dirY, proxyExtr.dirZ];
+    const dirLen = Math.hypot(...dirRaw);
+    if (dirLen < 0.01) {
+      alert("Dir X/Y/Z son todos cero. Elegí al menos uno (default +Z = vertical).");
+      return;
+    }
+    const dir = dirRaw.map(v => v / dirLen);
+    const H = proxyExtr.height;
+    const points = drawing.points;
+    const polys = drawing.polylines;
+    if (!points || !polys) return;
+    const ptsArr = [...points.rawVal];
+    const polysArr = polys.rawVal.map(p => [...p]);
+    let extruded = 0;
+    for (const id of sel) {
+      const parts = id.split(":");
+      if (parts[0] !== "pt") continue;
+      const baseIdx = +parts[1];
+      const base = ptsArr[baseIdx];
+      if (!base) continue;
+      // Crear nodo top y un frame base→top (nueva polilínea)
+      const top: number[] = [
+        base[0] + dir[0] * H,
+        base[1] + dir[1] * H,
+        base[2] + dir[2] * H,
+      ];
+      ptsArr.push(top);
+      const topIdx = ptsArr.length - 1;
+      polysArr.push([baseIdx, topIdx]);
+      extruded++;
+    }
+    if (extruded === 0) {
+      alert("La selección no contiene nodos.");
+      return;
+    }
+    points.val = ptsArr;
+    polys.val = polysArr;
+    sel.clear();
+    (window as any).__hekatanRefreshSelection?.();
+    hooks.onRebuild?.();
+    alert(`✓ ${extruded} nodo(s) extruidos a frames de altura ${H}m en dirección (${dir.map(d=>d.toFixed(2)).join(",")}).`);
+  });
+  fSel.addButton({ title: "⬆ Extruir frame→área (1+ segmentos seleccionados + altura)" }).on("click", () => {
+    const sel = (window as any).__hekatanSelection as Set<string> | undefined;
+    if (!sel || sel.size === 0) {
+      alert("Seleccioná al menos 1 segmento (click sobre una línea).");
+      return;
+    }
+    const dirRaw = [proxyExtr.dirX, proxyExtr.dirY, proxyExtr.dirZ];
+    const dirLen = Math.hypot(...dirRaw);
+    if (dirLen < 0.01) {
+      alert("Dir X/Y/Z son todos cero.");
+      return;
+    }
+    const dir = dirRaw.map(v => v / dirLen);
+    const H = proxyExtr.height;
+    const points = drawing.points;
+    const polys = drawing.polylines;
+    const areas = drawing.areas;
+    if (!points || !polys || !areas) return;
+    const ptsArr = [...points.rawVal];
+    const polysArr = polys.rawVal.map(p => [...p]);
+    const areasArr = [...areas.rawVal];
+    let extruded = 0;
+    for (const id of sel) {
+      const parts = id.split(":");
+      if (parts[0] !== "seg") continue;
+      const polyIdx = +parts[1], segIdx = +parts[2];
+      const poly = polysArr[polyIdx];
+      if (!poly) continue;
+      const aIdx = poly[segIdx], bIdx = poly[segIdx + 1];
+      const a = ptsArr[aIdx], b = ptsArr[bIdx];
+      if (!a || !b) continue;
+      // Crear 2 nodos top (a' = a + dir*H, b' = b + dir*H)
+      const aTop: number[] = [a[0] + dir[0] * H, a[1] + dir[1] * H, a[2] + dir[2] * H];
+      const bTop: number[] = [b[0] + dir[0] * H, b[1] + dir[1] * H, b[2] + dir[2] * H];
+      ptsArr.push(aTop);
+      const aTopIdx = ptsArr.length - 1;
+      ptsArr.push(bTop);
+      const bTopIdx = ptsArr.length - 1;
+      // Q4 vertical: aIdx → bIdx → bTopIdx → aTopIdx → aIdx (cerrado)
+      const newPolyIdx = polysArr.length;
+      polysArr.push([aIdx, bIdx, bTopIdx, aTopIdx, aIdx]);
+      areasArr.push(newPolyIdx);
+      extruded++;
+    }
+    if (extruded === 0) {
+      alert("La selección no contiene segmentos.");
+      return;
+    }
+    points.val = ptsArr;
+    polys.val = polysArr;
+    areas.val = areasArr;
+    sel.clear();
+    (window as any).__hekatanRefreshSelection?.();
+    hooks.onRebuild?.();
+    alert(`✓ ${extruded} segmento(s) extruido(s) a shells Q4 verticales de altura ${H}m.`);
   });
 
   return { fCad };

@@ -197,6 +197,7 @@ const drawingGridTarget: State<{ position: [number,number,number]; rotation: [nu
 (window as any).__hekatanDrawingPolylines = drawingPolylines;
 (window as any).__hekatanDrawingAreas = drawingAreas;
 (window as any).__hekatanDrawingAuxLines = drawingAuxLines;
+(window as any).__hekatanDrawingAuxPoints = drawingAuxPoints;
 (window as any).__hekatanDrawingGridTarget = drawingGridTarget;
 
 export interface BuildStates {

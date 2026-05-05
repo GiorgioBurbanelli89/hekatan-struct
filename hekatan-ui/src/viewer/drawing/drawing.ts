@@ -1613,6 +1613,54 @@ export function drawing({
     }
   });
 
+  // ── Puntos auxiliares (aux points) ──
+  // Esferitas cyan que NO generan nodos FEM pero sirven de referencia
+  // OSnap (endpoint). Cada entry en __hekatanDrawingAuxPoints es [x,y,z].
+  // Render como Mesh sphere con scale dinámico (constante en pantalla).
+  const auxPointsGroup = new THREE.Group();
+  auxPointsGroup.frustumCulled = false;
+  scene.add(auxPointsGroup);
+  const renderAuxPoints = () => {
+    while (auxPointsGroup.children.length) {
+      const c = auxPointsGroup.children.pop()!;
+      (c as any).geometry?.dispose?.();
+      (c as any).material?.dispose?.();
+    }
+    const apState = (window as any).__hekatanDrawingAuxPoints;
+    const pts: number[][] = apState?.rawVal ?? apState?.val ?? apState ?? [];
+    for (const p of pts) {
+      if (!p || p.length !== 3) continue;
+      const m = new THREE.Mesh(
+        new THREE.SphereGeometry(0.025, 12, 12),
+        new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.85, depthTest: false }),
+      );
+      m.position.set(p[0], p[1], p[2]);
+      m.renderOrder = 996;
+      // Escala dinámica para tamaño constante en pantalla
+      const cam = getActiveCamera();
+      const dist = cam.position.distanceTo(m.position);
+      m.scale.setScalar(Math.max(0.05, dist / 10));
+      auxPointsGroup.add(m);
+    }
+  };
+  van.derive(() => {
+    const apState = (window as any).__hekatanDrawingAuxPoints;
+    if (apState?.val !== undefined) {
+      apState.val;  // dependency
+      renderAuxPoints();
+      viewerRender();
+    }
+  });
+  // Re-escalar al cambiar cámara
+  controls.addEventListener("change", () => {
+    const cam = getActiveCamera();
+    auxPointsGroup.children.forEach((m: any) => {
+      const d = cam.position.distanceTo(m.position);
+      m.scale.setScalar(Math.max(0.05, d / 10));
+    });
+  });
+  (window as any).__hekatanRenderAuxPoints = renderAuxPoints;
+
   // ── Snap 3D Indicator ──
   // Tamaño FIJO — consistente con node markers (~2 cm). Sin auto-escalado
   // para evitar inconsistencia: si bajás displayScale los nodos/cargas no
@@ -2843,6 +2891,17 @@ export function drawing({
       pendingHeight = 0;
       updateStatus(`⬆ Extrusión línea→área Q4 — h=${h.toFixed(2)}m`);
       try { (window as any).__hekatanRebuild?.(); } catch {}
+      return;
+    }
+    if (tool === "auxp") {
+      // 1 click → agrega un punto auxiliar (cyan sphere). NO genera nodo FEM
+      // pero sirve como anchor de OSnap (endpoint).
+      const apState = (window as any).__hekatanDrawingAuxPoints;
+      if (apState) {
+        const cur: number[][] = apState.rawVal ?? apState.val ?? [];
+        apState.val = [...cur, [point.x, point.y, point.z]];
+      }
+      updateStatus(`✦ Punto auxiliar agregado en (${point.x.toFixed(2)}, ${point.y.toFixed(2)}, ${point.z.toFixed(2)})`);
       return;
     }
     if (tool === "aux") {
