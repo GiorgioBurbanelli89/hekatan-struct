@@ -2107,6 +2107,152 @@ export function drawing({
     if (pointerdown) pointerDownAndMovedCount++;
   });
 
+  // ── WINDOW / CROSSING SELECTION estilo AutoCAD ──
+  // En modo SELECT, drag con botón izquierdo dibuja un rectángulo en pantalla:
+  //   • Izquierda → derecha = ventana (azul, sólido) → solo objetos COMPLETAMENTE
+  //     dentro del rectángulo se seleccionan.
+  //   • Derecha → izquierda = crossing (verde, dashed) → objetos parcialmente
+  //     dentro o que CRUCEN el rectángulo se seleccionan.
+  // Si no hay drag (mouseup sin movimiento) → click normal (lo maneja el otro
+  // listener). El threshold es 8 píxeles para diferenciar click vs drag.
+  const dragRect = document.createElement("div");
+  dragRect.id = "hk-window-select";
+  dragRect.style.cssText = [
+    "position:fixed", "pointer-events:none", "z-index:99996",
+    "display:none", "border:1.5px solid", "background:rgba(0,0,0,0)",
+  ].join(";") + ";";
+  document.body.appendChild(dragRect);
+  let dragStart: { x: number; y: number } | null = null;
+  let dragActive = false;
+  rendererElm.addEventListener("pointerdown", (ev: PointerEvent) => {
+    const tool = ((window as any).__hekatanCadState?.get?.() as any)?.tool ?? "select";
+    if (tool !== "select" && tool !== "none" && tool) return;
+    if (ev.button !== 0) return;  // solo botón izquierdo
+    dragStart = { x: ev.clientX, y: ev.clientY };
+    dragActive = false;
+  });
+  rendererElm.addEventListener("pointermove", (ev: PointerEvent) => {
+    if (!dragStart) return;
+    const dx = ev.clientX - dragStart.x;
+    const dy = ev.clientY - dragStart.y;
+    const dist = Math.hypot(dx, dy);
+    if (!dragActive && dist < 8) return;  // threshold click vs drag
+    dragActive = true;
+    // Pintar el rect en pantalla — color/borde según dirección
+    const x0 = Math.min(dragStart.x, ev.clientX);
+    const y0 = Math.min(dragStart.y, ev.clientY);
+    const w = Math.abs(dx), h = Math.abs(dy);
+    const isCrossing = ev.clientX < dragStart.x;  // R→L = crossing
+    if (isCrossing) {
+      dragRect.style.borderColor = "#34d399";  // verde
+      dragRect.style.borderStyle = "dashed";
+      dragRect.style.background = "rgba(52, 211, 153, 0.10)";
+    } else {
+      dragRect.style.borderColor = "#22d3ee";  // cyan
+      dragRect.style.borderStyle = "solid";
+      dragRect.style.background = "rgba(34, 211, 238, 0.10)";
+    }
+    dragRect.style.left = x0 + "px";
+    dragRect.style.top = y0 + "px";
+    dragRect.style.width = w + "px";
+    dragRect.style.height = h + "px";
+    dragRect.style.display = "block";
+  });
+  rendererElm.addEventListener("pointerup", (ev: PointerEvent) => {
+    if (!dragStart) return;
+    if (!dragActive) { dragStart = null; return; }
+    // Drag completado → seleccionar objetos dentro/cruzando el rect
+    const x0 = Math.min(dragStart.x, ev.clientX);
+    const x1 = Math.max(dragStart.x, ev.clientX);
+    const y0 = Math.min(dragStart.y, ev.clientY);
+    const y1 = Math.max(dragStart.y, ev.clientY);
+    const isCrossing = ev.clientX < dragStart.x;
+    const rect = rendererElm.getBoundingClientRect();
+    const cam = getActiveCamera();
+    cam.updateMatrixWorld();
+    const projectToScreen = (p: number[]): { x: number; y: number } => {
+      const v = new THREE.Vector3(p[0], p[1], p[2]);
+      v.project(cam);
+      return {
+        x: rect.left + (v.x * 0.5 + 0.5) * rect.width,
+        y: rect.top + (-v.y * 0.5 + 0.5) * rect.height,
+      };
+    };
+    const inRect = (sp: { x: number; y: number }) =>
+      sp.x >= x0 && sp.x <= x1 && sp.y >= y0 && sp.y <= y1;
+    // Para crossing: además, segmentos que CRUCEN un borde del rect cuentan.
+    // Usamos line-rect intersection 2D simple.
+    const segCrosses = (a: { x: number; y: number }, b: { x: number; y: number }) => {
+      // ambos fuera por mismo lado → no cruza
+      if (a.x < x0 && b.x < x0) return false;
+      if (a.x > x1 && b.x > x1) return false;
+      if (a.y < y0 && b.y < y0) return false;
+      if (a.y > y1 && b.y > y1) return false;
+      return true;  // hay solapamiento de bounding box → asumimos cruce
+    };
+    const isMulti = ev.ctrlKey || ev.metaKey || ev.shiftKey;
+    if (!isMulti) selection.clear();
+    let added = 0;
+    // 1. Nodos (puntos) — solo si su screen pos está en el rect
+    const pts = drawingObj.points?.rawVal ?? [];
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i];
+      if (!p) continue;
+      if (inRect(projectToScreen(p))) {
+        selection.add(`pt:${i}`);
+        added++;
+      }
+    }
+    // 2. Polilíneas — segmento por segmento, con regla window vs crossing
+    const polys = drawingObj.polylines?.rawVal ?? [];
+    const areas = drawingObj.areas?.rawVal ?? [];
+    for (let i = 0; i < polys.length; i++) {
+      const poly = polys[i];
+      const isArea = areas.includes(i);
+      let polyMatches = false;
+      for (let j = 0; j < poly.length - 1; j++) {
+        const a = pts[poly[j]], b = pts[poly[j + 1]];
+        if (!a || !b) continue;
+        const sa = projectToScreen(a), sb = projectToScreen(b);
+        const matches = isCrossing
+          ? (inRect(sa) || inRect(sb) || segCrosses(sa, sb))
+          : (inRect(sa) && inRect(sb));
+        if (matches) {
+          if (isArea) { polyMatches = true; break; }
+          selection.add(`seg:${i}:${j}`);
+          added++;
+        }
+      }
+      if (isArea && polyMatches) {
+        selection.add(`poly:${i}`);
+        added++;
+      }
+    }
+    // 3. Aux lines
+    const auxState = (window as any).__hekatanDrawingAuxLines;
+    const aux: number[][] = auxState?.rawVal ?? [];
+    for (let i = 0; i < aux.length; i++) {
+      const ln = aux[i];
+      if (!ln || ln.length !== 6) continue;
+      const sa = projectToScreen([ln[0], ln[1], ln[2]]);
+      const sb = projectToScreen([ln[3], ln[4], ln[5]]);
+      const matches = isCrossing
+        ? (inRect(sa) || inRect(sb) || segCrosses(sa, sb))
+        : (inRect(sa) && inRect(sb));
+      if (matches) {
+        selection.add(`aux:${i}`);
+        added++;
+      }
+    }
+    refreshSelectionGroup();
+    updateStatus(
+      `${isCrossing ? "🟢 Crossing" : "🔵 Window"} — ${added} item(s) ${isMulti ? "agregados a" : "→"} selección (total ${selection.size})`,
+    );
+    dragRect.style.display = "none";
+    dragStart = null;
+    dragActive = false;
+  });
+
   // On pointer click, add a point and polyline
   // ════════════════════════════════════════════════════════════════════
   // OBJECT SNAP (OSNAP) — estilo AutoCAD
