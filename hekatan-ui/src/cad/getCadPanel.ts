@@ -294,10 +294,40 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
   // Buscar la escena vía __ctx del viewerElm
   const getScene = (): THREE.Scene | null => (viewerElm as any).__ctx?.scene ?? null;
   const getRender = (): (() => void) | null => (viewerElm as any).__ctx?.render ?? null;
+  const getCamera = (): THREE.Camera | null => (viewerElm as any).__ctx?.camera ?? null;
   const axisGroup = new THREE.Group();
   axisGroup.name = "axis-grids";
   const levelGroup = new THREE.Group();
   levelGroup.name = "levels";
+  // ── Helper: escalar burbujas/labels según distancia de cámara ──
+  // Las burbujas de ejes y los rectángulos de niveles son Sprites con
+  // scale en world units. Sin re-escalar, en zoom-in se ven enormes
+  // (cubrían el viewport en el demo). Ahora ajustamos su scale a una
+  // fracción de la distancia cámara→sprite para mantener tamaño aparente
+  // constante en pantalla (~40px). Se invoca al render y al cambiar cámara.
+  const _axisBaseScale = 0.025;  // factor para burbuja circular
+  const _levelBaseScaleW = 0.083;  // factor para etiqueta rectangular (W)
+  const _levelBaseScaleH = 0.021;  // ídem (H)
+  const updateAxisLabelScales = () => {
+    const cam = getCamera();
+    if (!cam) return;
+    axisGroup.traverse((o: any) => {
+      if (!o.userData?.isAxisLabel) return;
+      const dist = cam.position.distanceTo(o.position);
+      const s = Math.max(0.1, dist * _axisBaseScale);
+      o.scale.set(s, s, 1);
+    });
+    levelGroup.traverse((o: any) => {
+      if (!o.userData?.isLevelLabel) return;
+      const dist = cam.position.distanceTo(o.position);
+      o.scale.set(dist * _levelBaseScaleW, dist * _levelBaseScaleH, 1);
+    });
+  };
+  // Hookear al cambio de cámara (orbit/zoom) — controls del viewer.
+  const ctrl = (viewerElm as any).__ctx?.controls;
+  if (ctrl?.addEventListener) {
+    ctrl.addEventListener("change", updateAxisLabelScales);
+  }
   // Agregar a la escena cuando esté disponible
   const ensureGroupsInScene = () => {
     const scene = getScene();
@@ -316,6 +346,7 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
       });
     }
     for (const ax of axisList) axisGroup.add(buildAxisGridMesh(ax));
+    updateAxisLabelScales();  // tamaño constante en pantalla
     getRender()?.();
   };
   const refreshLevelRender = () => {
@@ -328,6 +359,7 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
       });
     }
     for (const lv of levelList) levelGroup.add(buildLevelMesh(lv));
+    updateAxisLabelScales();
     getRender()?.();
   };
   // ── Tools "axis" — activan modo dibujo de eje (2 clicks: inicio y fin) ──
@@ -396,6 +428,122 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
   (window as any).__hekatanRefreshLevels = refreshLevelRender;
   // Render inicial (en caso de que el usuario haya cargado un modelo previo)
   setTimeout(() => { refreshAxisRender(); refreshLevelRender(); }, 200);
+
+  // ── Acciones sobre la SELECCIÓN actual ──
+  // El user selecciona items con click (en select mode) y después aplica
+  // acciones acá: discretización de líneas, apoyos en nodos, etc.
+  // La selección está en window.__hekatanSelection (Set<string>) con IDs
+  // tipo "pt:N" / "seg:P:S" / "poly:P" / "aux:N".
+  const fSel = fCad.addFolder({ title: "🎯 Acciones de selección", expanded: false });
+  // Discretización de segmentos seleccionados
+  const proxyMesh = { divisions: 4 };
+  fSel.addBinding(proxyMesh, "divisions", { min: 2, max: 50, step: 1, label: "Divisiones" });
+  fSel.addButton({ title: "✂ Mallar línea seleccionada (N divisiones)" }).on("click", () => {
+    const sel = (window as any).__hekatanSelection as Set<string> | undefined;
+    if (!sel || sel.size === 0) {
+      alert("Seleccioná un segmento primero (click sobre la línea).");
+      return;
+    }
+    const N = Math.max(2, Math.round(proxyMesh.divisions));
+    const points = drawing.points;
+    const polys = drawing.polylines;
+    if (!points || !polys) return;
+    const ptsArr = [...points.rawVal];
+    const polysArr = polys.rawVal.map(p => [...p]);
+    let count = 0;
+    for (const id of sel) {
+      const parts = id.split(":");
+      if (parts[0] !== "seg") continue;
+      const polyIdx = +parts[1], segIdx = +parts[2];
+      const poly = polysArr[polyIdx];
+      if (!poly) continue;
+      const a = ptsArr[poly[segIdx]];
+      const b = ptsArr[poly[segIdx + 1]];
+      if (!a || !b) continue;
+      // Generar N-1 puntos intermedios entre a y b
+      const newIdxs: number[] = [];
+      for (let i = 1; i < N; i++) {
+        const t = i / N;
+        const np: number[] = [
+          a[0] + t * (b[0] - a[0]),
+          a[1] + t * (b[1] - a[1]),
+          a[2] + t * (b[2] - a[2]),
+        ];
+        ptsArr.push(np);
+        newIdxs.push(ptsArr.length - 1);
+      }
+      // Insertar los nuevos índices entre poly[segIdx] y poly[segIdx+1]
+      poly.splice(segIdx + 1, 0, ...newIdxs);
+      count++;
+    }
+    if (count === 0) {
+      alert("La selección no contiene segmentos. Click sobre líneas (no nodos).");
+      return;
+    }
+    points.val = ptsArr;
+    polys.val = polysArr;
+    sel.clear();
+    (window as any).__hekatanRefreshSelection?.();
+    hooks.onRebuild?.();
+  });
+  // Apoyos / Boundary conditions sobre nodos seleccionados
+  const proxyDOF = {
+    Ux: true, Uy: true, Uz: true,
+    Rx: false, Ry: false, Rz: false,
+  };
+  fSel.addBinding(proxyDOF, "Ux", { label: "DOF Ux (restringido)" });
+  fSel.addBinding(proxyDOF, "Uy", { label: "DOF Uy (restringido)" });
+  fSel.addBinding(proxyDOF, "Uz", { label: "DOF Uz (restringido)" });
+  fSel.addBinding(proxyDOF, "Rx", { label: "DOF Rx (restringido)" });
+  fSel.addBinding(proxyDOF, "Ry", { label: "DOF Ry (restringido)" });
+  fSel.addBinding(proxyDOF, "Rz", { label: "DOF Rz (restringido)" });
+  fSel.addButton({ title: "📌 Aplicar apoyo a nodos seleccionados" }).on("click", () => {
+    const sel = (window as any).__hekatanSelection as Set<string> | undefined;
+    if (!sel || sel.size === 0) {
+      alert("Seleccioná un nodo primero (click sobre el punto).");
+      return;
+    }
+    // Los supports se almacenan en window.__hekatanCadSupports como Map
+    // {nodeIdx → [Ux,Uy,Uz,Rx,Ry,Rz]} (booleans). Los lee el ejemplo
+    // newBlank.ts para construir nodeInputs.supports del FEM.
+    const supports: Record<number, boolean[]> =
+      (window as any).__hekatanCadSupports ?? {};
+    const dof = [proxyDOF.Ux, proxyDOF.Uy, proxyDOF.Uz, proxyDOF.Rx, proxyDOF.Ry, proxyDOF.Rz];
+    let count = 0;
+    for (const id of sel) {
+      const parts = id.split(":");
+      if (parts[0] !== "pt") continue;
+      const nodeIdx = +parts[1];
+      supports[nodeIdx] = [...dof];
+      count++;
+    }
+    (window as any).__hekatanCadSupports = supports;
+    if (count === 0) {
+      alert("La selección no contiene nodos. Click sobre los puntos primero.");
+      return;
+    }
+    hooks.onRebuild?.();
+    alert(`Aplicado apoyo [Ux=${dof[0]}, Uy=${dof[1]}, Uz=${dof[2]}, Rx=${dof[3]}, Ry=${dof[4]}, Rz=${dof[5]}] a ${count} nodo(s).`);
+  });
+  fSel.addButton({ title: "🔓 Liberar apoyos de nodos seleccionados" }).on("click", () => {
+    const sel = (window as any).__hekatanSelection as Set<string> | undefined;
+    if (!sel) return;
+    const supports: Record<number, boolean[]> =
+      (window as any).__hekatanCadSupports ?? {};
+    let count = 0;
+    for (const id of sel) {
+      const parts = id.split(":");
+      if (parts[0] !== "pt") continue;
+      const nodeIdx = +parts[1];
+      if (supports[nodeIdx]) { delete supports[nodeIdx]; count++; }
+    }
+    (window as any).__hekatanCadSupports = supports;
+    hooks.onRebuild?.();
+    if (count === 0) alert("Selección no contiene nodos con apoyo.");
+  });
+  fSel.addButton({ title: "🗑 Limpiar selección" }).on("click", () => {
+    (window as any).__hekatanClearSelection?.();
+  });
 
   return { fCad };
 }
