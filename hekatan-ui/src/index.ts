@@ -21,7 +21,7 @@ export {
 export type { AxisGrid, Level } from "./cad/axisLevels";
 export {
   PROVIDERS as AI_PROVIDERS, getProvider, aiStorage,
-  blobToBase64, listOllamaModels, HEKATAN_SYSTEM_PROMPT,
+  blobToBase64, listOllamaModels, isOllamaRunning, HEKATAN_SYSTEM_PROMPT,
 } from "./cad/aiAssistant";
 export type { AIProvider, AIMessage, AIImage } from "./cad/aiAssistant";
 export { getTheme, getThemeName, setTheme, toggleTheme, onThemeChange } from "./theme";

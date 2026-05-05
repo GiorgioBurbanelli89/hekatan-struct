@@ -89,33 +89,73 @@ export const OllamaProvider: AIProvider = {
       // Ollama: array de strings base64 (sin prefix)
       message.images = msg.images.map(i => i.base64);
     }
-    const r = await fetch("http://localhost:11434/api/chat", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: system },
-          message,
-        ],
-        stream: false,
-      }),
-    });
-    if (!r.ok) throw new Error(`Ollama error ${r.status}: ${await r.text()}`);
+    let r: Response;
+    try {
+      r = await fetch("http://localhost:11434/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: system },
+            message,
+          ],
+          stream: false,
+        }),
+      });
+    } catch (err: any) {
+      // ERR_CONNECTION_REFUSED, network error, etc.
+      throw new Error(
+        "Ollama no está corriendo en localhost:11434.\n\n" +
+        "Para usar Ollama:\n" +
+        "1. Descargalo de ollama.com/download\n" +
+        "2. Instalá un modelo: ollama pull " + model + "\n" +
+        "3. Verificá que esté activo (Ollama corre como servicio en background)\n\n" +
+        "O cambiá a otro provider (Gemini/Groq/OpenRouter) que solo requiere API key."
+      );
+    }
+    if (!r.ok) {
+      const txt = await r.text();
+      if (r.status === 404) {
+        throw new Error(`Modelo "${model}" no instalado. Ejecutá: ollama pull ${model}`);
+      }
+      throw new Error(`Ollama error ${r.status}: ${txt}`);
+    }
     const j = await r.json();
     return j.message?.content ?? "";
   },
 };
 
 // Helper: lista los modelos instalados en Ollama (consultando /api/tags)
+// Silencia el error en consola si Ollama no está corriendo (esperable cuando
+// el user no lo instaló — no es realmente un error sino "feature opcional").
 export async function listOllamaModels(): Promise<string[]> {
   try {
-    const r = await fetch("http://localhost:11434/api/tags");
-    if (!r.ok) return [];
+    // AbortController + timeout corto para no colgar la UI si la red está rara
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 1500);
+    const r = await fetch("http://localhost:11434/api/tags", { signal: ctrl.signal })
+      .catch(() => null);  // catch silencioso de ERR_CONNECTION_REFUSED
+    clearTimeout(t);
+    if (!r || !r.ok) return [];
     const j = await r.json();
     return (j.models ?? []).map((m: any) => m.name);
   } catch {
-    return [];  // Ollama no está corriendo
+    return [];  // Ollama no corriendo o timeout
+  }
+}
+
+// Helper: detecta si Ollama está corriendo (más liviano que listOllamaModels)
+export async function isOllamaRunning(): Promise<boolean> {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 1000);
+    const r = await fetch("http://localhost:11434/api/tags", { signal: ctrl.signal })
+      .catch(() => null);
+    clearTimeout(t);
+    return !!r && r.ok;
+  } catch {
+    return false;
   }
 }
 

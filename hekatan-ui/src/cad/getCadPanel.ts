@@ -26,7 +26,7 @@ import {
 } from "./axisLevels";
 import {
   PROVIDERS, getProvider, aiStorage, blobToBase64,
-  listOllamaModels, HEKATAN_SYSTEM_PROMPT,
+  listOllamaModels, isOllamaRunning, HEKATAN_SYSTEM_PROMPT,
   type AIImage,
 } from "./aiAssistant";
 
@@ -814,12 +814,70 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
     hint.textContent = lines.join("\n");
   };
   refreshAiUi();
-  // Auto-detectar Ollama y poblar modelos instalados
-  listOllamaModels().then(installed => {
-    if (installed.length > 0 && aiState.providerId === "ollama") {
-      console.log("[AI] Ollama detectado. Modelos:", installed);
+  // Auto-detectar Ollama. Si NO está corriendo y el user nunca eligió un
+  // provider, cambiar default a Gemini para que la primera experiencia no
+  // sea un error de conexión. Si el user ya configuró Ollama explícitamente
+  // (saved in localStorage), respetarle la elección y mostrar warning.
+  isOllamaRunning().then(running => {
+    if (!running && aiState.providerId === "ollama") {
+      const userExplicitlyChoseOllama = !!localStorage.getItem("hekatan_ai_provider");
+      if (!userExplicitlyChoseOllama) {
+        // Auto-cambiar a Gemini (más amigable como default)
+        console.log("[AI] Ollama no detectado → default a Gemini Flash");
+        aiState.providerId = "gemini";
+        proxyProvider.id = "gemini";
+        aiStorage.setProvider("gemini");
+        refreshAiUi();
+        hint.textContent = "ℹ Ollama no está corriendo — usando Gemini Flash. " +
+          "Pegá tu API key gratis (aistudio.google.com/apikey) o instalá Ollama.";
+      } else {
+        hint.textContent = "⚠ Ollama no responde en localhost:11434. " +
+          "Iniciá Ollama o cambiá a otro provider.";
+      }
+    } else if (running && aiState.providerId === "ollama") {
+      listOllamaModels().then(installed => {
+        if (installed.length > 0) {
+          console.log("[AI] Ollama OK. Modelos instalados:", installed);
+        }
+      });
     }
   });
+  // Botón "Test connection" — útil para debug
+  const btnTest = document.createElement("button");
+  btnTest.textContent = "🔌 Test conexión";
+  btnTest.style.cssText = "padding:4px 8px;background:#444;color:#ddd;border:none;border-radius:3px;cursor:pointer;font-size:11px;margin-top:4px;";
+  btnTest.onclick = async () => {
+    const p = getProvider(aiState.providerId);
+    if (!p) return;
+    btnTest.textContent = "⏳ Probando...";
+    try {
+      // Para Ollama: ping a /api/tags. Para los demás: un prompt mínimo.
+      if (p.id === "ollama") {
+        const ok = await isOllamaRunning();
+        if (ok) {
+          const models = await listOllamaModels();
+          alert(`✓ Ollama OK. ${models.length} modelo(s) instalados:\n${models.join("\n")}`);
+        } else {
+          alert("✗ Ollama no responde en localhost:11434.\n\nIniciá Ollama o instalalo desde ollama.com");
+        }
+      } else if (!aiState.apiKey) {
+        alert(`Pegá tu API key de ${p.name} primero.`);
+      } else {
+        const out = await p.send({
+          msg: { text: "Responde solo: OK" },
+          system: "Sos un test de conexión. Responde solo: OK",
+          apiKey: aiState.apiKey,
+          model: aiState.model,
+        });
+        alert(`✓ ${p.name} respondió: "${out.slice(0, 100)}"`);
+      }
+    } catch (err: any) {
+      alert(`✗ Error: ${err?.message ?? err}`);
+    } finally {
+      btnTest.textContent = "🔌 Test conexión";
+    }
+  };
+  aiPanelDOM.appendChild(btnTest);
   // Botón "Generar" → llamar al provider
   btnSend.onclick = async () => {
     const p = getProvider(aiState.providerId);
