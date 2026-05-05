@@ -1,0 +1,10 @@
+import "./modulepreload-polyfill-B5Qt9EMX.js";
+import { c as r } from "./cadDraw-D1zgZQaH.js";
+import { r as m } from "./runExampleStandalone-BOtdOr52.js";
+import "./preload-helper-DrUBW0xl.js";
+import "./theme-2eEBQPmF.js";
+import "./getViewer-DJHQ7Uo0.js";
+import "./Text-BE8nxNWm.js";
+import "./styles-Cjdl64P4.js";
+import "./units-BHnVfatd.js";
+m(r);
