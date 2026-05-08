@@ -119,6 +119,10 @@ export function getColorMap(
   const colorMap = new THREE.Mesh(new THREE.BufferGeometry(), material);
   colorMap.renderOrder = -1;
   colorMap.frustumCulled = false;
+  // Marcar como área shell con colormap para que setupShellHoverTooltip filtre
+  // SOLO los Q4 reales (no cilindros de frames con userData.isFrameSection).
+  colorMap.userData.isShellArea = true;
+  colorMap.name = "__hekatan_shell_colormap";
 
   // Update — al cambiar nodes/elements/values, regenerar geometría + scalar attribute
   van.derive(() => {

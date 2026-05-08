@@ -21,7 +21,11 @@ export function supports(
 
     group.clear();
 
-    const size = 0.05 * settings.gridSize.val * 0.6;
+    // Factor 0.18 (vs 0.05 default) hace que los símbolos de apoyo sean
+    // ~3.6× más grandes — visibles incluso con displayScale negativo (común
+    // cuando el usuario reduce el tamaño de markers para ver el modelo). Los
+    // apoyos son anclas conceptuales gruesas, no merecen el size de un nodo.
+    const size = 0.18 * settings.gridSize.val * 0.6;
     structure.nodeInputs?.val.supports?.forEach((_, index) => {
       const position = derivedNodes.val[index];
       if (!position) return; // do not create if node does not exist
@@ -42,7 +46,11 @@ export function supports(
 
     if (!settings.supports.rawVal) return;
 
-    const size = 0.05 * settings.gridSize.val * 0.6;
+    // Factor 0.18 (vs 0.05 default) hace que los símbolos de apoyo sean
+    // ~3.6× más grandes — visibles incluso con displayScale negativo (común
+    // cuando el usuario reduce el tamaño de markers para ver el modelo). Los
+    // apoyos son anclas conceptuales gruesas, no merecen el size de un nodo.
+    const size = 0.18 * settings.gridSize.val * 0.6;
     const scale = size * derivedDisplayScale.rawVal;
     group.children.forEach((c) => c.scale.set(scale, scale, scale));
   });

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import van, { State } from "vanjs-core";
+import { Pane } from "tweakpane";
 
 // Todo: refactor isInPlane to a function
 
@@ -474,6 +475,30 @@ export function drawing({
   ].join(";") + ";";
   coordReadout.textContent = "X=0.00  Y=0.00  Z=0.00";
   document.body.appendChild(coordReadout);
+
+  // ── PANEL FIJO DE COORDS (siempre visible, top-right del canvas) ──
+  // Estilo AutoCAD/Revit: las coords del cursor SIEMPRE se ven en una
+  // posición fija (no al lado del cursor), incluso cuando el cursor está
+  // sobre paneles. Útil para usuarios que prefieren un readout estable.
+  // Cosa diferente del coordReadout que sigue al cursor con hover info.
+  // Posicionado top-CENTER del canvas (entre el toolbar y el Properties Pane);
+  // cuando el Properties Pane se muestra, este panel no choca porque tiene
+  // top más arriba (4px vs 8px del Properties).
+  const coordFixed = document.createElement("div");
+  coordFixed.id = "hk-coord-fixed";
+  coordFixed.style.cssText = [
+    "position:fixed", "pointer-events:none", "z-index:99998",
+    "right:80px", "top:10px",
+    "padding:6px 14px", "background:rgba(15,23,42,0.92)",
+    "color:#22d3ee", "border:1px solid rgba(34,211,238,0.55)",
+    "border-radius:5px", "font-family:Consolas,monospace",
+    "font-size:13px", "font-weight:500", "white-space:nowrap",
+    "letter-spacing:0.3px",
+    "box-shadow:0 2px 8px rgba(0,0,0,0.4)",
+    "backdrop-filter:blur(4px)",
+  ].join(";") + ";";
+  coordFixed.textContent = "X=0.00  Y=0.00  Z=0.00";
+  document.body.appendChild(coordFixed);
 
   // ── RUBBER BAND — línea de preview/prolongación cursor → último punto ──
   // Mientras el usuario mueve el mouse con tool "line"/"polyline" activa,
@@ -950,12 +975,16 @@ export function drawing({
       if (kind === "pt") {
         const p = pts[+rest[0]];
         if (!p) continue;
+        // Radio base 0.025m (~consistente con hover/snap markers).
+        // El scale se ajusta en updateSelectionPtScale() para que el tamaño
+        // aparente en pantalla sea constante (~8 px) a cualquier zoom.
         const m = new THREE.Mesh(
-          new THREE.SphereGeometry(0.07, 12, 12),
+          new THREE.SphereGeometry(0.025, 12, 12),
           new THREE.MeshBasicMaterial({ color: selColor, transparent: true, opacity: 0.9, depthTest: false }),
         );
         m.position.set(p[0], p[1], p[2]);
         m.renderOrder = 999;
+        (m as any).__isSelectionPt = true;
         selectionGroup.add(m);
       } else if (kind === "seg") {
         const poly = polys[+rest[0]];
@@ -997,6 +1026,14 @@ export function drawing({
         selectionGroup.add(line);
       }
     }
+    // Aplicar escala dinámica inmediata a las esferas cyan recién creadas
+    // (definida más abajo, así que verificamos existencia para evitar TDZ).
+    const fn = (window as any).__hekatanUpdateSelectionPtScale as (() => void) | undefined;
+    if (fn) fn();
+    // Auto-actualizar el Properties Pane (definido más abajo, también
+    // verificamos para evitar TDZ).
+    const upd = (window as any).__hekatanRefreshPropsPane as (() => void) | undefined;
+    if (upd) upd();
     viewerRender();
   };
   (window as any).__hekatanRefreshSelection = refreshSelectionGroup;
@@ -1703,6 +1740,22 @@ export function drawing({
     const s = Math.max(0.05, dist / _snapBaseDist);
     snapMarker.scale.setScalar(s);
   };
+  // Helper compartido: re-escala cada esfera de selección (cyan) según
+  // su distancia individual a la cámara. Se invoca al orbitar/zoomear y
+  // también justo después de refreshSelectionGroup().
+  const updateSelectionPtScale = () => {
+    if (selectionGroup.children.length === 0) return;
+    const cam = getActiveCamera();
+    selectionGroup.children.forEach((child) => {
+      if (!(child as any).__isSelectionPt) return;
+      const dist = cam.position.distanceTo((child as THREE.Mesh).position);
+      // factor 10 → a 10m escala 1 (sphere=2.5cm). Mayor distancia ⇒ más
+      // escala para preservar tamaño aparente en pantalla.
+      const s = Math.max(0.05, dist / 10);
+      (child as THREE.Mesh).scale.setScalar(s);
+    });
+  };
+  (window as any).__hekatanUpdateSelectionPtScale = updateSelectionPtScale;
   // Re-escalar cuando el usuario zoomea/orbita (OrbitControls emite "change")
   controls.addEventListener("change", () => {
     updateSnapMarkerScale();
@@ -1720,6 +1773,8 @@ export function drawing({
       const dist2 = getActiveCamera().position.distanceTo(om.position);
       om.scale.setScalar(Math.max(0.05, dist2 / _snapBaseDist));
     }
+    // Esferas cyan de selección — mismo tratamiento.
+    updateSelectionPtScale();
   });
   // API pública para mover el snap marker (útil para demos + debug)
   (window as any).__hekatanShowSnap = (x: number, y: number, z: number) => {
@@ -1817,12 +1872,28 @@ export function drawing({
         coordReadout.style.left = event.clientX + "px";
         coordReadout.style.top = event.clientY + "px";
         coordReadout.style.display = "block";
+        // ── COORDS DISPLAY: si el hover detectó un NODO existente, mostrar
+        // las coords EXACTAS del nodo (no el raycast raw). El cursor visual
+        // ya se snappeó al nodo (hoverPtHL en pt[0..2]), así que las coords
+        // del readout deben coincidir con el snap visible. Antes mostraba
+        // X=0.03 cuando el nodo estaba en X=0.00 — confuso.
+        let coordPt = p;
+        if (hoverItem?.kind === "pt") {
+          const nodePt = drawingObj.points.rawVal[hoverItem.a];
+          if (nodePt) {
+            coordPt = new THREE.Vector3(nodePt[0], nodePt[1], nodePt[2]);
+          }
+        }
+        const coords = `X=${coordPt.x.toFixed(2)} Y=${coordPt.y.toFixed(2)} Z=${coordPt.z.toFixed(2)}`;
         if (hoverItem) {
           const labels: any = { pt: "nodo", seg: "segmento", poly: "área", aux: "línea aux" };
-          coordReadout.textContent = `🖱 Click para seleccionar ${labels[hoverItem.kind]}`;
+          coordReadout.textContent = `${coords}  ·  🖱 Click → ${labels[hoverItem.kind]}`;
         } else {
-          coordReadout.textContent = `X=${p.x.toFixed(2)} Y=${p.y.toFixed(2)} Z=${p.z.toFixed(2)}`;
+          coordReadout.textContent = coords;
         }
+        // Sincronizar panel fijo de coords (siempre visible)
+        const fixedReadout = document.getElementById("hk-coord-fixed");
+        if (fixedReadout) fixedReadout.textContent = coords;
         rubberBand.visible = false;
         polarLines.visible = false;
         viewerRender();
@@ -1869,16 +1940,22 @@ export function drawing({
         coordReadout.style.left = event.clientX + "px";
         coordReadout.style.top = event.clientY + "px";
         coordReadout.style.display = "block";
+        const coordsDel = `X=${p.x.toFixed(2)} Y=${p.y.toFixed(2)} Z=${p.z.toFixed(2)}`;
+        let hint = "";
         if (pickAux) {
-          coordReadout.textContent = `🗑 Click para borrar línea auxiliar #${hoveredAuxIndex + 1}`;
+          hint = `🗑 línea aux #${hoveredAuxIndex + 1}`;
         } else if (foundPoly) {
           const isArea = drawingObj.areas?.rawVal?.includes(foundPoly.polyIdx) ?? false;
-          coordReadout.textContent = isArea
-            ? `🗑 Click para borrar área #${foundPoly.polyIdx + 1} completa`
-            : `🗑 Click para borrar segmento ${foundPoly.segIdx + 1} de polilínea #${foundPoly.polyIdx + 1}`;
+          hint = isArea
+            ? `🗑 área #${foundPoly.polyIdx + 1}`
+            : `🗑 seg ${foundPoly.segIdx + 1} / poly #${foundPoly.polyIdx + 1}`;
         } else {
-          coordReadout.textContent = `🗑 Acercá el cursor a una línea/área/aux para resaltarla`;
+          hint = `🗑 acercá a línea/área`;
         }
+        coordReadout.textContent = `${coordsDel}  ·  ${hint}`;
+        // Sincronizar panel fijo
+        const fixedReadoutDel = document.getElementById("hk-coord-fixed");
+        if (fixedReadoutDel) fixedReadoutDel.textContent = coordsDel;
         viewerRender();
         return;
       } else {
@@ -1970,7 +2047,10 @@ export function drawing({
         }
         const dL = Math.hypot(p.x - lastPt[0], p.y - lastPt[1], p.z - lastPt[2]);
         const ang = Math.atan2(p.y - lastPt[1], p.x - lastPt[0]) * 180 / Math.PI;
-        coordReadout.textContent = `X=${p.x.toFixed(2)} Y=${p.y.toFixed(2)} Z=${p.z.toFixed(2)} | ΔL=${dL.toFixed(2)}m ${ang.toFixed(0)}°`;
+        const coordsRb = `X=${p.x.toFixed(2)} Y=${p.y.toFixed(2)} Z=${p.z.toFixed(2)}`;
+        coordReadout.textContent = `${coordsRb} | ΔL=${dL.toFixed(2)}m ${ang.toFixed(0)}°`;
+        const fr = document.getElementById("hk-coord-fixed");
+        if (fr) fr.textContent = coordsRb;
         rubberBand.geometry.setFromPoints([
           new THREE.Vector3(lastPt[0], lastPt[1], lastPt[2]),
           new THREE.Vector3(p.x, p.y, p.z),
@@ -2058,10 +2138,46 @@ export function drawing({
         }
       } else {
         // Sin punto previo: solo mostrar coords del cursor
-        coordReadout.textContent = `X=${p.x.toFixed(2)} Y=${p.y.toFixed(2)} Z=${p.z.toFixed(2)}`;
+        const coordsNop = `X=${p.x.toFixed(2)} Y=${p.y.toFixed(2)} Z=${p.z.toFixed(2)}`;
+        coordReadout.textContent = coordsNop;
+        const frNop = document.getElementById("hk-coord-fixed");
+        if (frNop) frNop.textContent = coordsNop;
         rubberBand.visible = false;
         polarLines.visible = false;
-        hideRubberLabel();
+        // ── INPUT PARA EL PRIMER PUNTO ──
+        // Si hay un drawing tool activo (line, polyline, area, node, etc.)
+        // y aún no se hizo el primer click, mostramos el rubberLabelInput
+        // cerca del cursor pre-cargado con la coord snapped del cursor en
+        // formato "X,Y,Z". Enter → commitAbsolutePoint con esa coord; o
+        // tipear "5,3,2" → ese punto absoluto. Estilo AutoCAD: la primera
+        // coordenada también puede ingresarse por teclado, no sólo click.
+        const drawingTools = new Set([
+          "line", "polyline", "area", "node",
+          "column", "wall", "rect", "circle", "arc",
+          "polyline-multi", "axis", "chaflan",
+        ]);
+        if (drawingTools.has(curTool)) {
+          rubberStart = null;  // primer punto: no hay rubber start aún
+          rubberDir = null;
+          rubberLabelInput.style.left = (event.clientX + 20) + "px";
+          rubberLabelInput.style.top = (event.clientY - 28) + "px";
+          rubberLabelInput.style.display = "block";
+          // Live update del placeholder con coords actuales (excepto si el
+          // usuario está editando manualmente — preservamos su texto).
+          if (!rubberUserEditing) {
+            rubberLabelInput.value = `${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)}`;
+            // Auto-focus + select-all sólo si nadie más tiene focus
+            const ae = document.activeElement;
+            const isOtherInput = ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")
+                                  && ae !== rubberLabelInput;
+            if (!isOtherInput && document.activeElement !== rubberLabelInput) {
+              rubberLabelInput.focus({ preventScroll: true });
+            }
+            try { rubberLabelInput.select(); } catch {}
+          }
+        } else {
+          hideRubberLabel();
+        }
       }
       viewerRender();
     } else {
@@ -2172,49 +2288,43 @@ export function drawing({
   document.body.appendChild(dragRect);
   let dragStart: { x: number; y: number } | null = null;
   let dragActive = false;
-  rendererElm.addEventListener("pointerdown", (ev: PointerEvent) => {
-    const tool = ((window as any).__hekatanCadState?.get?.() as any)?.tool ?? "select";
-    if (tool !== "select" && tool !== "none" && tool) return;
-    if (ev.button !== 0) return;  // solo botón izquierdo
-    dragStart = { x: ev.clientX, y: ev.clientY };
-    dragActive = false;
-  });
-  rendererElm.addEventListener("pointermove", (ev: PointerEvent) => {
-    if (!dragStart) return;
-    const dx = ev.clientX - dragStart.x;
-    const dy = ev.clientY - dragStart.y;
-    const dist = Math.hypot(dx, dy);
-    if (!dragActive && dist < 8) return;  // threshold click vs drag
-    dragActive = true;
-    // Pintar el rect en pantalla — color/borde según dirección
-    const x0 = Math.min(dragStart.x, ev.clientX);
-    const y0 = Math.min(dragStart.y, ev.clientY);
-    const w = Math.abs(dx), h = Math.abs(dy);
-    const isCrossing = ev.clientX < dragStart.x;  // R→L = crossing
+
+  // ── CLICK-CLICK RECT SELECT (AutoCAD puro) ──
+  // Patrón alternativo al press-drag-release: el usuario hace click sin
+  // mantener, mueve el cursor y vuelve a hacer click para definir la
+  // esquina opuesta. Útil en mobile (touch sin drag) y para usuarios
+  // de AutoCAD que prefieren ese flujo. Se activa SOLO cuando el primer
+  // click cae en espacio vacío (sin hoverItem) y no hay multi-modifier.
+  let ccAnchor: { x: number; y: number } | null = null;
+  // Helper: pinta el preview del rect (usado por ambos modos)
+  const paintDragRect = (
+    x0: number, y0: number, x1: number, y1: number, isCrossing: boolean,
+  ) => {
     if (isCrossing) {
-      dragRect.style.borderColor = "#34d399";  // verde
+      dragRect.style.borderColor = "#34d399";
       dragRect.style.borderStyle = "dashed";
       dragRect.style.background = "rgba(52, 211, 153, 0.10)";
     } else {
-      dragRect.style.borderColor = "#22d3ee";  // cyan
+      dragRect.style.borderColor = "#22d3ee";
       dragRect.style.borderStyle = "solid";
       dragRect.style.background = "rgba(34, 211, 238, 0.10)";
     }
-    dragRect.style.left = x0 + "px";
-    dragRect.style.top = y0 + "px";
-    dragRect.style.width = w + "px";
-    dragRect.style.height = h + "px";
+    dragRect.style.left = Math.min(x0, x1) + "px";
+    dragRect.style.top = Math.min(y0, y1) + "px";
+    dragRect.style.width = Math.abs(x1 - x0) + "px";
+    dragRect.style.height = Math.abs(y1 - y0) + "px";
     dragRect.style.display = "block";
-  });
-  rendererElm.addEventListener("pointerup", (ev: PointerEvent) => {
-    if (!dragStart) return;
-    if (!dragActive) { dragStart = null; return; }
-    // Drag completado → seleccionar objetos dentro/cruzando el rect
-    const x0 = Math.min(dragStart.x, ev.clientX);
-    const x1 = Math.max(dragStart.x, ev.clientX);
-    const y0 = Math.min(dragStart.y, ev.clientY);
-    const y1 = Math.max(dragStart.y, ev.clientY);
-    const isCrossing = ev.clientX < dragStart.x;
+  };
+  // Helper compartido: ejecuta la selección dado un par de esquinas en
+  // pantalla. Lo usan AMBOS modos (drag-and-release y click-click).
+  const finalizeRectSelection = (
+    aX: number, aY: number, bX: number, bY: number, isMulti: boolean,
+  ) => {
+    const x0 = Math.min(aX, bX);
+    const x1 = Math.max(aX, bX);
+    const y0 = Math.min(aY, bY);
+    const y1 = Math.max(aY, bY);
+    const isCrossing = bX < aX;  // R→L = crossing
     const rect = rendererElm.getBoundingClientRect();
     const cam = getActiveCamera();
     cam.updateMatrixWorld();
@@ -2228,30 +2338,20 @@ export function drawing({
     };
     const inRect = (sp: { x: number; y: number }) =>
       sp.x >= x0 && sp.x <= x1 && sp.y >= y0 && sp.y <= y1;
-    // Para crossing: además, segmentos que CRUCEN un borde del rect cuentan.
-    // Usamos line-rect intersection 2D simple.
     const segCrosses = (a: { x: number; y: number }, b: { x: number; y: number }) => {
-      // ambos fuera por mismo lado → no cruza
       if (a.x < x0 && b.x < x0) return false;
       if (a.x > x1 && b.x > x1) return false;
       if (a.y < y0 && b.y < y0) return false;
       if (a.y > y1 && b.y > y1) return false;
-      return true;  // hay solapamiento de bounding box → asumimos cruce
+      return true;
     };
-    const isMulti = ev.ctrlKey || ev.metaKey || ev.shiftKey;
     if (!isMulti) selection.clear();
     let added = 0;
-    // 1. Nodos (puntos) — solo si su screen pos está en el rect
     const pts = drawingObj.points?.rawVal ?? [];
     for (let i = 0; i < pts.length; i++) {
-      const p = pts[i];
-      if (!p) continue;
-      if (inRect(projectToScreen(p))) {
-        selection.add(`pt:${i}`);
-        added++;
-      }
+      const p = pts[i]; if (!p) continue;
+      if (inRect(projectToScreen(p))) { selection.add(`pt:${i}`); added++; }
     }
-    // 2. Polilíneas — segmento por segmento, con regla window vs crossing
     const polys = drawingObj.polylines?.rawVal ?? [];
     const areas = drawingObj.areas?.rawVal ?? [];
     for (let i = 0; i < polys.length; i++) {
@@ -2267,16 +2367,11 @@ export function drawing({
           : (inRect(sa) && inRect(sb));
         if (matches) {
           if (isArea) { polyMatches = true; break; }
-          selection.add(`seg:${i}:${j}`);
-          added++;
+          selection.add(`seg:${i}:${j}`); added++;
         }
       }
-      if (isArea && polyMatches) {
-        selection.add(`poly:${i}`);
-        added++;
-      }
+      if (isArea && polyMatches) { selection.add(`poly:${i}`); added++; }
     }
-    // 3. Aux lines
     const auxState = (window as any).__hekatanDrawingAuxLines;
     const aux: number[][] = auxState?.rawVal ?? [];
     for (let i = 0; i < aux.length; i++) {
@@ -2287,16 +2382,688 @@ export function drawing({
       const matches = isCrossing
         ? (inRect(sa) || inRect(sb) || segCrosses(sa, sb))
         : (inRect(sa) && inRect(sb));
-      if (matches) {
-        selection.add(`aux:${i}`);
-        added++;
-      }
+      if (matches) { selection.add(`aux:${i}`); added++; }
     }
     refreshSelectionGroup();
     updateStatus(
       `${isCrossing ? "🟢 Crossing" : "🔵 Window"} — ${added} item(s) ${isMulti ? "agregados a" : "→"} selección (total ${selection.size})`,
     );
     dragRect.style.display = "none";
+  };
+  // API pública: cancela el modo click-click si está activo (Esc, cambio
+  // de tool, otra acción).
+  const cancelClickClick = () => {
+    if (ccAnchor) {
+      ccAnchor = null;
+      dragRect.style.display = "none";
+      updateStatus("Selección cancelada");
+    }
+  };
+  (window as any).__hekatanCancelClickClickRect = cancelClickClick;
+  // Cancelar con Escape
+  window.addEventListener("keydown", (ev: KeyboardEvent) => {
+    if (ev.key === "Escape" && ccAnchor) cancelClickClick();
+  });
+
+  // ── DELETE/BACKSPACE: borrar items seleccionados ──
+  // Tecla Delete (o Backspace) elimina del modelo todos los items en
+  // selection: pt:N (nodo), seg:P:S (segmento), poly:P (polilínea/área),
+  // aux:N (línea auxiliar). Tras borrar:
+  //   1. Limpia selection
+  //   2. Refresca cyan group
+  //   3. Trigger __hekatanRebuild() para que el FEM se reconstruya
+  // Ignora si: hay un input enfocado (Tweakpane editing), o sin selección.
+  const deleteSelectedItems = () => {
+    if (selection.size === 0) return false;
+    const ids = [...selection];
+    const pts = drawingObj.points?.rawVal ?? [];
+    const polys = drawingObj.polylines?.rawVal ?? [];
+    const areas = drawingObj.areas?.rawVal ?? [];
+    const auxState = (window as any).__hekatanDrawingAuxLines;
+    const auxLines: number[][] = auxState?.rawVal ?? [];
+
+    // Sets de índices a borrar
+    const ptsToDelete = new Set<number>();
+    const polysToDelete = new Set<number>();
+    const segsToDelete = new Map<number, Set<number>>();  // polyIdx → Set<segIdx>
+    const auxToDelete = new Set<number>();
+    for (const id of ids) {
+      const [kind, ...rest] = id.split(":");
+      if (kind === "pt") ptsToDelete.add(+rest[0]);
+      else if (kind === "poly") polysToDelete.add(+rest[0]);
+      else if (kind === "seg") {
+        const pIdx = +rest[0], sIdx = +rest[1];
+        if (!segsToDelete.has(pIdx)) segsToDelete.set(pIdx, new Set());
+        segsToDelete.get(pIdx)!.add(sIdx);
+      } else if (kind === "aux") auxToDelete.add(+rest[0]);
+    }
+
+    let deletedCount = 0;
+
+    // 1) Borrar polilíneas completas marcadas + propagar borrado a sus pts huérfanos
+    let newPolys: number[][] = [];
+    let newAreas: number[] = [];
+    const polyIdxRemap = new Map<number, number>();
+    for (let i = 0; i < polys.length; i++) {
+      if (polysToDelete.has(i)) {
+        deletedCount++;
+        continue;  // skip
+      }
+      polyIdxRemap.set(i, newPolys.length);
+      // Si tiene segs marcados para borrar, partir la polilínea
+      const segDel = segsToDelete.get(i);
+      if (segDel && segDel.size > 0) {
+        // Reconstruir polilínea sin los segmentos borrados.
+        // Cada segmento k es entre poly[k] y poly[k+1]. Si k está en segDel,
+        // se "corta" la polilínea allí, generando posiblemente múltiples polilíneas.
+        let cur: number[] = [];
+        for (let k = 0; k < polys[i].length; k++) {
+          cur.push(polys[i][k]);
+          if (k < polys[i].length - 1 && segDel.has(k)) {
+            // Cerrar fragmento actual
+            if (cur.length >= 2) newPolys.push(cur);
+            cur = [];  // empezar nuevo (sin el next pt — segmento borrado)
+            deletedCount++;
+          }
+        }
+        if (cur.length >= 2) newPolys.push(cur);
+        else if (cur.length === 1) {
+          // Pt huérfano: lo dejamos, queda un nodo sin segmentos
+          newPolys.push(cur);
+        }
+      } else {
+        newPolys.push([...polys[i]]);
+      }
+    }
+
+    // 2) Borrar pts marcados + propagar a polylines (remover refs + cortar)
+    if (ptsToDelete.size > 0) {
+      // Filtrar pts y construir remap viejo→nuevo
+      const newPts: [number, number, number][] = [];
+      const ptRemap = new Map<number, number>();
+      for (let i = 0; i < pts.length; i++) {
+        if (ptsToDelete.has(i)) { deletedCount++; continue; }
+        ptRemap.set(i, newPts.length);
+        newPts.push([...pts[i]] as [number, number, number]);
+      }
+      // Recorrer polylines y reemplazar índices, cortando donde hay borrados
+      const polysAfterPtDel: number[][] = [];
+      for (const poly of newPolys) {
+        let cur: number[] = [];
+        for (const oldIdx of poly) {
+          const newIdx = ptRemap.get(oldIdx);
+          if (newIdx === undefined) {
+            // pt borrado → cortar polilínea aquí
+            if (cur.length >= 2) polysAfterPtDel.push(cur);
+            cur = [];
+          } else {
+            cur.push(newIdx);
+          }
+        }
+        if (cur.length >= 2) polysAfterPtDel.push(cur);
+      }
+      newPolys = polysAfterPtDel;
+      drawingObj.points.val = newPts;
+    }
+
+    // 3) Filtrar y remapear areas
+    for (const a of areas) {
+      const newIdx = polyIdxRemap.get(a);
+      if (newIdx !== undefined && newIdx < newPolys.length) newAreas.push(newIdx);
+    }
+    if (drawingObj.polylines) drawingObj.polylines.val = newPolys;
+    if (drawingObj.areas) drawingObj.areas.val = newAreas;
+
+    // 4) Borrar aux lines
+    if (auxToDelete.size > 0 && auxState) {
+      const newAux = auxLines.filter((_, i) => !auxToDelete.has(i));
+      if ("val" in auxState) auxState.val = newAux;
+      else (window as any).__hekatanDrawingAuxLines = newAux;
+      deletedCount += auxToDelete.size;
+    }
+
+    // 5) Limpiar selection y refrescar
+    selection.clear();
+    refreshSelectionGroup();
+    try { (window as any).__hekatanRebuild?.(); } catch {}
+    updateStatus(`🗑 ${deletedCount} item(s) borrado(s)`);
+    return true;
+  };
+  (window as any).__hekatanDeleteSelected = deleteSelectedItems;
+
+  window.addEventListener("keydown", (ev: KeyboardEvent) => {
+    if (ev.key !== "Delete" && ev.key !== "Backspace") return;
+    // Ignorar si hay input/textarea enfocado (no robar typing)
+    const ae = document.activeElement;
+    if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || (ae as HTMLElement).isContentEditable)) {
+      return;
+    }
+    if (selection.size === 0) return;
+    ev.preventDefault();
+    deleteSelectedItems();
+  });
+
+  // ════════════════════════════════════════════════════════════════════
+  // PROPERTIES PANE — Tweakpane real, auto-aparece al seleccionar
+  // ════════════════════════════════════════════════════════════════════
+  // Construido con la librería `tweakpane` (no DOM vanilla). Al cambiar
+  // la selección se DESTRUYE el pane previo y se construye uno nuevo
+  // con los folders relevantes según el tipo de items seleccionados:
+  //   • Solo nodos      → DOFs apoyo + carga puntual + masa
+  //   • Solo segmentos  → sección + material + releases I/J + dist load
+  //   • Solo áreas/shells → tipo + espesor + material + carga superficial
+  //   • Mixto           → mensaje (sin propiedades)
+  // Las modificaciones disparan CustomEvent("hk:property-applied",
+  // { detail: { kind, ids, prop, value } }) en window. El workspace
+  // (main.ts) puede subscribirse para mutar states.nodeInputs/elementInputs.
+  const propsContainer = document.createElement("div");
+  propsContainer.id = "hk-properties-pane";
+  // Posición persistida en localStorage entre sesiones
+  const PROPS_POS_KEY = "hk-props-pane-pos";
+  let savedPos: { left: number; top: number } | null = null;
+  try {
+    const raw = localStorage.getItem(PROPS_POS_KEY);
+    if (raw) savedPos = JSON.parse(raw);
+  } catch {}
+  propsContainer.style.cssText = [
+    "position:fixed",
+    savedPos ? `left:${savedPos.left}px` : "left:50%",
+    savedPos ? `top:${savedPos.top}px` : "top:8px",
+    savedPos ? "transform:none" : "transform:translateX(-50%)",
+    "width:min(320px, calc(100vw - 32px))",
+    "max-height:60vh",
+    "overflow-y:auto",
+    "z-index:201",
+    "box-shadow:0 6px 24px rgba(0,0,0,0.45)",
+    "border-radius:6px",
+    "display:none",
+  ].join(";") + ";";
+  document.body.appendChild(propsContainer);
+
+  // ── DRAG por el title bar (mismo patrón que el paneHost del workspace) ──
+  // El handle es la barra de título Tweakpane (.tp-rotv_b). Como el Pane se
+  // dispone y recrea en cada cambio de selección, re-attach al final de
+  // updatePropsPane() llamando a setupPropsDrag().
+  const setupPropsDrag = () => {
+    const handle = propsContainer.querySelector(".tp-rotv_b") as HTMLElement | null;
+    if (!handle || (handle as any).__hkDragWired) return;
+    (handle as any).__hkDragWired = true;
+    handle.style.cursor = "move";
+    handle.style.userSelect = "none";
+
+    let dragging = false;
+    let startX = 0, startY = 0, origLeft = 0, origTop = 0;
+    handle.addEventListener("mousedown", (e: MouseEvent) => {
+      dragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      const r = propsContainer.getBoundingClientRect();
+      origLeft = r.left;
+      origTop = r.top;
+      // Convertir transform-based positioning a left/top fijo para el drag
+      propsContainer.style.transform = "none";
+      propsContainer.style.left = `${origLeft}px`;
+      propsContainer.style.top = `${origTop}px`;
+      e.preventDefault();
+    });
+    window.addEventListener("mousemove", (e: MouseEvent) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      const newLeft = Math.max(0, Math.min(window.innerWidth - 80, origLeft + dx));
+      const newTop = Math.max(0, Math.min(window.innerHeight - 40, origTop + dy));
+      propsContainer.style.left = `${newLeft}px`;
+      propsContainer.style.top = `${newTop}px`;
+    });
+    window.addEventListener("mouseup", () => {
+      if (!dragging) return;
+      dragging = false;
+      try {
+        localStorage.setItem(PROPS_POS_KEY, JSON.stringify({
+          left: parseFloat(propsContainer.style.left),
+          top: parseFloat(propsContainer.style.top),
+        }));
+      } catch {}
+    });
+  };
+
+  // Almacén de estado mutable que Tweakpane usa para .addBinding(state, key)
+  const propsState = {
+    // ── Nodos (Joint en ETABS) ──
+    // Restraints
+    Ux: false, Uy: false, Uz: false, Rx: false, Ry: false, Rz: false,
+    // Joint Loads
+    Fx: 0, Fy: 0, Fz: 0, Mx: 0, My: 0, Mz: 0,
+    // Springs (joint elastic) — kN/m, kN·m/rad
+    Kx: 0, Ky: 0, Kz: 0, Krx: 0, Kry: 0, Krz: 0,
+    // Additional Mass
+    mass: 0,
+    // Diaphragms
+    diaphragm: "Ninguno",  // "Ninguno", "D1 (rigid)", "D2", "D3"...
+    // ── Frames (segs) ──
+    section: "W14x84", material_frame: "A572 Gr 50",
+    // Property Modifiers (multipliers sobre A, Iz, Iy, J)
+    A_mod: 1.0, Iz_mod: 1.0, Iy_mod: 1.0, J_mod: 1.0,
+    // Insertion Point (cardinal point — 1..11 estilo ETABS)
+    insertionPoint: "10 — Centroid",
+    // Local Axes (rotación angular en grados sobre eje local-x)
+    beta: 0,
+    // Releases I/J
+    relMxI: false, relMyI: false, relMzI: false,
+    relMxJ: false, relMyJ: false, relMzJ: false,
+    // Hinges (plastic — para nonlinear pushover)
+    hinges: "None",  // "None", "Auto-FEMA M3", "Auto-FEMA P-M2-M3", ...
+    // Line Springs (kN/m por metro de longitud — Winkler tipo)
+    LKx: 0, LKy: 0, LKz: 0,
+    // Carga distribuida (kN/m)
+    qx: 0, qy: 0, qz: 0,
+    // Additional Mass (kg/m)
+    massPerM: 0,
+    // ── Áreas / shells ──
+    shellType: "Mindlin (FSDT)", thickness: 0.20,
+    material_shell: "Concreto C25", surfLoad: 0,
+  };
+  let propsPaneInstance: Pane | null = null;
+
+  const fireProp = (kind: string, ids: string[], prop: string, value: any) => {
+    window.dispatchEvent(new CustomEvent("hk:property-applied", {
+      detail: { kind, ids, prop, value },
+    }));
+  };
+
+  const updatePropsPane = () => {
+    // Destruir el Pane anterior (importante para no acumular)
+    if (propsPaneInstance) {
+      propsPaneInstance.dispose();
+      propsPaneInstance = null;
+    }
+    if (selection.size === 0) {
+      propsContainer.style.display = "none";
+      return;
+    }
+    // Clasificar selección
+    const ids = [...selection];
+    const nodeIds = ids.filter(id => id.startsWith("pt:"));
+    const segIds = ids.filter(id => id.startsWith("seg:"));
+    const polyIds = ids.filter(id => id.startsWith("poly:"));
+    const auxIds = ids.filter(id => id.startsWith("aux:"));
+
+    const onlyNodes = nodeIds.length === ids.length && nodeIds.length > 0;
+    const onlySegs = segIds.length === ids.length && segIds.length > 0;
+    const onlyPolys = polyIds.length === ids.length && polyIds.length > 0;
+    const isMixed = !onlyNodes && !onlySegs && !onlyPolys;
+
+    // Título: resumen por tipo
+    const parts: string[] = [];
+    if (nodeIds.length) parts.push(`🔵 ${nodeIds.length} nodo(s)`);
+    if (segIds.length) parts.push(`📏 ${segIds.length} segmento(s)`);
+    if (polyIds.length) parts.push(`▭ ${polyIds.length} área(s)`);
+    if (auxIds.length) parts.push(`┊ ${auxIds.length} aux`);
+    const title = `🎯 ${selection.size} item(s) — ${parts.join(", ")}`;
+
+    propsPaneInstance = new Pane({ container: propsContainer, title });
+
+    if (onlyNodes) {
+      // ── Joint > Restraints (Apoyos) ──
+      const fApoyo = propsPaneInstance.addFolder({ title: "📌 Restraints (DOFs)" });
+      fApoyo.addBinding(propsState, "Ux");
+      fApoyo.addBinding(propsState, "Uy");
+      fApoyo.addBinding(propsState, "Uz");
+      fApoyo.addBinding(propsState, "Rx");
+      fApoyo.addBinding(propsState, "Ry");
+      fApoyo.addBinding(propsState, "Rz");
+
+      // ── Joint > Springs (Resortes elásticos) ──
+      const fSprings = propsPaneInstance.addFolder({ title: "🌀 Springs (kN/m, kN·m/rad)", expanded: false });
+      fSprings.addBinding(propsState, "Kx", { label: "Kx", min: 0, step: 100 });
+      fSprings.addBinding(propsState, "Ky", { label: "Ky", min: 0, step: 100 });
+      fSprings.addBinding(propsState, "Kz", { label: "Kz", min: 0, step: 100 });
+      fSprings.addBinding(propsState, "Krx", { label: "Krx", min: 0, step: 1000 });
+      fSprings.addBinding(propsState, "Kry", { label: "Kry", min: 0, step: 1000 });
+      fSprings.addBinding(propsState, "Krz", { label: "Krz", min: 0, step: 1000 });
+
+      // ── Joint Loads (Carga puntual) ──
+      const fCarga = propsPaneInstance.addFolder({ title: "⬇ Joint Loads (kN, kN·m)" });
+      fCarga.addBinding(propsState, "Fx", { step: 0.1 });
+      fCarga.addBinding(propsState, "Fy", { step: 0.1 });
+      fCarga.addBinding(propsState, "Fz", { step: 0.1 });
+      fCarga.addBinding(propsState, "Mx", { step: 0.1 });
+      fCarga.addBinding(propsState, "My", { step: 0.1 });
+      fCarga.addBinding(propsState, "Mz", { step: 0.1 });
+
+      // ── Joint > Additional Mass ──
+      const fMasa = propsPaneInstance.addFolder({ title: "⚖ Additional Mass (kg)", expanded: false });
+      fMasa.addBinding(propsState, "mass", { label: "m", min: 0, step: 1 });
+
+      // ── Joint > Diaphragms (rigid floor) ──
+      const fDiaph = propsPaneInstance.addFolder({ title: "🔗 Diaphragm (rigid link)", expanded: false });
+      fDiaph.addBinding(propsState, "diaphragm", {
+        label: "Diafragma",
+        options: {
+          "Ninguno": "Ninguno",
+          "D1 (rigid)": "D1 (rigid)",
+          "D2 (rigid)": "D2 (rigid)",
+          "D3 (rigid)": "D3 (rigid)",
+        },
+      });
+
+      propsPaneInstance.addButton({ title: "✓ Aplicar a nodos seleccionados" }).on("click", () => {
+        const dofs = [propsState.Ux, propsState.Uy, propsState.Uz,
+                      propsState.Rx, propsState.Ry, propsState.Rz];
+        if (dofs.some(d => d)) fireProp("nodes", nodeIds, "supports", dofs);
+
+        const loads = [propsState.Fx, propsState.Fy, propsState.Fz,
+                       propsState.Mx, propsState.My, propsState.Mz];
+        if (loads.some(v => v !== 0)) fireProp("nodes", nodeIds, "loads", loads);
+
+        const springs = [propsState.Kx, propsState.Ky, propsState.Kz,
+                         propsState.Krx, propsState.Kry, propsState.Krz];
+        if (springs.some(k => k !== 0)) fireProp("nodes", nodeIds, "springs", springs);
+
+        if (propsState.mass !== 0) fireProp("nodes", nodeIds, "mass", propsState.mass);
+
+        if (propsState.diaphragm !== "Ninguno") {
+          fireProp("nodes", nodeIds, "diaphragm", propsState.diaphragm);
+        }
+
+        updateStatus(`✓ Propiedades aplicadas a ${nodeIds.length} nodo(s)`);
+      });
+    } else if (onlySegs) {
+      const fSec = propsPaneInstance.addFolder({ title: "📏 Sección frame" });
+      fSec.addBinding(propsState, "section", {
+        label: "Sección",
+        options: {
+          "W14x84": "W14x84", "W18x86": "W18x86", "W24x146": "W24x146",
+          "HEB300": "HEB300", "IPN300": "IPN300", "IPE400": "IPE400",
+          "Custom...": "Custom...",
+        },
+      });
+      fSec.addBinding(propsState, "material_frame", {
+        label: "Material",
+        options: {
+          "A572 Gr 50": "A572 Gr 50", "A36": "A36",
+          "A992": "A992", "Concreto C25": "Concreto C25",
+        },
+      });
+
+      // ── Frame > Property Modifiers (multipliers sobre rigidez) ──
+      const fMods = propsPaneInstance.addFolder({ title: "🔧 Property Modifiers", expanded: false });
+      fMods.addBinding(propsState, "A_mod", { label: "A mod", min: 0, max: 10, step: 0.1 });
+      fMods.addBinding(propsState, "Iz_mod", { label: "Iz mod (fuerte)", min: 0, max: 10, step: 0.1 });
+      fMods.addBinding(propsState, "Iy_mod", { label: "Iy mod (débil)", min: 0, max: 10, step: 0.1 });
+      fMods.addBinding(propsState, "J_mod", { label: "J mod", min: 0, max: 10, step: 0.1 });
+
+      // ── Frame > Insertion Point (Cardinal Point estilo ETABS) ──
+      const fInsert = propsPaneInstance.addFolder({ title: "🎯 Insertion Point", expanded: false });
+      fInsert.addBinding(propsState, "insertionPoint", {
+        label: "Cardinal",
+        options: {
+          "1 — Bottom Left":   "1 — Bottom Left",
+          "2 — Bottom Center": "2 — Bottom Center",
+          "3 — Bottom Right":  "3 — Bottom Right",
+          "4 — Middle Left":   "4 — Middle Left",
+          "5 — Middle Center": "5 — Middle Center",
+          "6 — Middle Right":  "6 — Middle Right",
+          "7 — Top Left":      "7 — Top Left",
+          "8 — Top Center":    "8 — Top Center",
+          "9 — Top Right":     "9 — Top Right",
+          "10 — Centroid":     "10 — Centroid",
+          "11 — Shear Center": "11 — Shear Center",
+        },
+      });
+
+      // ── Frame > Local Axes (rotación β) ──
+      const fAxes = propsPaneInstance.addFolder({ title: "🧭 Local Axes", expanded: false });
+      fAxes.addBinding(propsState, "beta", { label: "β (°)", min: -180, max: 180, step: 5 });
+
+      // ── Frame > Releases I ──
+      const fRelI = propsPaneInstance.addFolder({ title: "🔓 Releases extremo I", expanded: false });
+      fRelI.addBinding(propsState, "relMxI", { label: "Mx I" });
+      fRelI.addBinding(propsState, "relMyI", { label: "My I" });
+      fRelI.addBinding(propsState, "relMzI", { label: "Mz I" });
+
+      // ── Frame > Releases J ──
+      const fRelJ = propsPaneInstance.addFolder({ title: "🔓 Releases extremo J", expanded: false });
+      fRelJ.addBinding(propsState, "relMxJ", { label: "Mx J" });
+      fRelJ.addBinding(propsState, "relMyJ", { label: "My J" });
+      fRelJ.addBinding(propsState, "relMzJ", { label: "Mz J" });
+
+      // ── Frame > Hinges (plastic, para nonlinear pushover) ──
+      const fHinges = propsPaneInstance.addFolder({ title: "🩹 Hinges (plastic)", expanded: false });
+      fHinges.addBinding(propsState, "hinges", {
+        label: "Tipo",
+        options: {
+          "None":              "None",
+          "Auto-FEMA M3":      "Auto-FEMA M3",
+          "Auto-FEMA P-M2-M3": "Auto-FEMA P-M2-M3",
+          "Auto-Concrete M3":  "Auto-Concrete M3",
+          "Auto-Steel M3":     "Auto-Steel M3",
+          "Custom...":         "Custom...",
+        },
+      });
+
+      // ── Frame > Line Springs (Winkler distribuido por metro) ──
+      const fLineSpr = propsPaneInstance.addFolder({ title: "🌀 Line Springs (kN/m por m)", expanded: false });
+      fLineSpr.addBinding(propsState, "LKx", { label: "LKx", min: 0, step: 100 });
+      fLineSpr.addBinding(propsState, "LKy", { label: "LKy", min: 0, step: 100 });
+      fLineSpr.addBinding(propsState, "LKz", { label: "LKz", min: 0, step: 100 });
+
+      // ── Frame Loads — Carga distribuida ──
+      const fDist = propsPaneInstance.addFolder({ title: "⬇ Frame Loads (kN/m)" });
+      fDist.addBinding(propsState, "qx", { step: 0.1 });
+      fDist.addBinding(propsState, "qy", { step: 0.1 });
+      fDist.addBinding(propsState, "qz", { step: 0.1 });
+
+      // ── Frame > Additional Mass por longitud ──
+      const fMassPerM = propsPaneInstance.addFolder({ title: "⚖ Additional Mass (kg/m)", expanded: false });
+      fMassPerM.addBinding(propsState, "massPerM", { label: "m/L", min: 0, step: 1 });
+
+      propsPaneInstance.addButton({ title: "✓ Aplicar a segmentos seleccionados" }).on("click", () => {
+        fireProp("segs", segIds, "section", propsState.section);
+        fireProp("segs", segIds, "material", propsState.material_frame);
+
+        // Property modifiers (sólo emit si alguno != 1.0)
+        const mods = { A: propsState.A_mod, Iz: propsState.Iz_mod, Iy: propsState.Iy_mod, J: propsState.J_mod };
+        if (mods.A !== 1 || mods.Iz !== 1 || mods.Iy !== 1 || mods.J !== 1) {
+          fireProp("segs", segIds, "modifiers", mods);
+        }
+
+        if (propsState.insertionPoint !== "10 — Centroid") {
+          fireProp("segs", segIds, "insertionPoint", propsState.insertionPoint);
+        }
+
+        if (propsState.beta !== 0) fireProp("segs", segIds, "beta", propsState.beta);
+
+        const relI = [propsState.relMxI, propsState.relMyI, propsState.relMzI];
+        const relJ = [propsState.relMxJ, propsState.relMyJ, propsState.relMzJ];
+        if (relI.some(r => r) || relJ.some(r => r)) {
+          fireProp("segs", segIds, "releases", { i: relI, j: relJ });
+        }
+
+        if (propsState.hinges !== "None") fireProp("segs", segIds, "hinges", propsState.hinges);
+
+        const lineSprings = [propsState.LKx, propsState.LKy, propsState.LKz];
+        if (lineSprings.some(k => k !== 0)) fireProp("segs", segIds, "lineSprings", lineSprings);
+
+        const qs = [propsState.qx, propsState.qy, propsState.qz];
+        if (qs.some(v => v !== 0)) fireProp("segs", segIds, "distLoad", qs);
+
+        if (propsState.massPerM !== 0) fireProp("segs", segIds, "massPerM", propsState.massPerM);
+
+        updateStatus(`✓ Propiedades aplicadas a ${segIds.length} segmento(s)`);
+      });
+    } else if (onlyPolys) {
+      const fShell = propsPaneInstance.addFolder({ title: "▭ Shell / Área" });
+      fShell.addBinding(propsState, "shellType", {
+        label: "Tipo",
+        options: {
+          "Mindlin (FSDT)": "Mindlin (FSDT)",
+          "Kirchhoff (CPT)": "Kirchhoff (CPT)",
+          "Plane stress": "Plane stress",
+        },
+      });
+      fShell.addBinding(propsState, "thickness", {
+        label: "Espesor (m)", min: 0.01, step: 0.01,
+      });
+      fShell.addBinding(propsState, "material_shell", {
+        label: "Material",
+        options: {
+          "Concreto C20": "Concreto C20", "Concreto C25": "Concreto C25",
+          "Concreto C30": "Concreto C30", "Acero A36": "Acero A36",
+        },
+      });
+
+      const fSurf = propsPaneInstance.addFolder({ title: "⬇ Carga superficial (kN/m²)" });
+      fSurf.addBinding(propsState, "surfLoad", { label: "q", step: 0.1 });
+
+      propsPaneInstance.addButton({ title: "✓ Aplicar a áreas seleccionadas" }).on("click", () => {
+        fireProp("areas", polyIds, "shellType", propsState.shellType);
+        fireProp("areas", polyIds, "thickness", propsState.thickness);
+        fireProp("areas", polyIds, "material", propsState.material_shell);
+        if (propsState.surfLoad !== 0) {
+          fireProp("areas", polyIds, "surfLoad", propsState.surfLoad);
+        }
+        updateStatus(`✓ Propiedades aplicadas a ${polyIds.length} área(s)/shell(s)`);
+      });
+    } else if (isMixed) {
+      // Selección mixta — sólo mostrar info
+      const fInfo = propsPaneInstance.addFolder({ title: "ℹ Selección mixta" });
+      const infoState = { msg: "Selecciona un solo tipo para editar propiedades" };
+      fInfo.addBinding(infoState, "msg", { readonly: true, label: "" });
+    }
+
+    // Botón ✕ cerrar (siempre presente)
+    propsPaneInstance.addButton({ title: "✕ Cerrar (limpia selección)" }).on("click", () => {
+      selection.clear();
+      refreshSelectionGroup();
+    });
+
+    propsContainer.style.display = "block";
+    // Re-attach drag handler al nuevo title bar (Tweakpane se recrea cada vez)
+    setupPropsDrag();
+  };
+
+  (window as any).__hekatanRefreshPropsPane = updatePropsPane;
+
+  // ── RIGHT-CLICK TAP = CANCEL (estilo AutoCAD/Revit) ──
+  // Al hacer click derecho SIN moverse (tap puro) → cancela la operación
+  // pendiente (ccAnchor, drawing en progreso, selección si nada más activo).
+  // Implementado vía dispatch de Escape sintético, así reusa TODOS los
+  // handlers de cancel existentes (drawMode, selectMode, inspectMode, etc.)
+  // sin tener que duplicar la lógica.
+  // Si el usuario MANTIENE click derecho y arrastra (>8px) → es PAN de
+  // OrbitControls (default), no cancelamos.
+  let rcDownPos: { x: number; y: number } | null = null;
+  let rcDragged = false;
+  rendererElm.addEventListener("pointerdown", (ev: PointerEvent) => {
+    if (ev.button === 2) {
+      rcDownPos = { x: ev.clientX, y: ev.clientY };
+      rcDragged = false;
+    }
+  });
+  rendererElm.addEventListener("pointermove", (ev: PointerEvent) => {
+    // Detectar si el right-button está apretado durante move (drag = pan).
+    // ev.buttons bitmask: 2 = secondary button. Si está y rcDownPos existe,
+    // medimos distancia para diferenciar tap vs drag.
+    if (rcDownPos && (ev.buttons & 2) && !rcDragged) {
+      const dx = ev.clientX - rcDownPos.x;
+      const dy = ev.clientY - rcDownPos.y;
+      if (Math.hypot(dx, dy) > 8) rcDragged = true;
+    }
+  });
+  rendererElm.addEventListener("pointerup", (ev: PointerEvent) => {
+    if (ev.button === 2) {
+      const wasTap = rcDownPos !== null && !rcDragged;
+      rcDownPos = null;
+      if (wasTap) {
+        // Right-click TAP → cancel jerárquico (estilo AutoCAD):
+        //   1. Si hay rect-select pendiente → cancelar SOLO eso
+        //   2. Sino, dispatch Escape (cancela drawing en getCad3d.ts)
+        //   3. SIEMPRE limpiar selección + cerrar Properties Pane
+        //   4. SIEMPRE salir del tool actual → tool="select" (no quedás
+        //      atrapado en line/polyline/etc dibujando sin querer)
+        if (ccAnchor) {
+          cancelClickClick();
+        } else {
+          window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        }
+        if (selection.size > 0) {
+          selection.clear();
+          refreshSelectionGroup();
+        }
+        // Cerrar la polilínea actual abierta (si estaba dibujando)
+        if (drawingObj.polylines) {
+          const polys = drawingObj.polylines.rawVal;
+          const last = polys[polys.length - 1] ?? [];
+          if (last.length > 0) {
+            // Si estaba en medio de una polilínea, cerrarla y arrancar nueva
+            drawingObj.polylines.val = [...polys, []];
+          }
+        }
+        // Salir del tool — volver a "select" (estilo AutoCAD: ESC o
+        // right-click salen al modo de selección por default).
+        const cadState = (window as any).__hekatanCadState;
+        const curTool = cadState?.get?.()?.tool;
+        if (curTool && curTool !== "select" && curTool !== "none") {
+          cadState?.setTool?.("select");
+          updateStatus(`⎋ Cancelado — tool '${curTool}' cerrado, volvés a Seleccionar`);
+        } else {
+          updateStatus("⎋ Cancelado (click derecho)");
+        }
+      }
+      // Si fue drag → no hacemos nada (OrbitControls ya hizo pan)
+    }
+  });
+  // Bloquear el menú contextual del browser en el canvas — siempre.
+  // Los handlers viejos de contextmenu (delete-point-on-rclick, finish-poly)
+  // se neutralizan: usamos right-click sólo para cancel.
+  rendererElm.addEventListener("contextmenu", (ev: Event) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+  }, { capture: true });
+
+  rendererElm.addEventListener("pointerdown", (ev: PointerEvent) => {
+    const tool = ((window as any).__hekatanCadState?.get?.() as any)?.tool ?? "select";
+    if (tool !== "select" && tool !== "none" && tool) return;
+    if (ev.button !== 0) return;  // solo botón izquierdo
+    // Rect-select OPT-IN: el flag lo setea el panel CAD sólo cuando
+    // el usuario hace click explícito en "🖱 Seleccionar". El estado
+    // default tool="select" NO activa rect-drag → en móvil un drag
+    // hace orbit de cámara, no un rectángulo de selección verde.
+    if (!(window as any).__hekatanRectSelectExplicit) return;
+    // Mouse-only: en touch (pointerType === "touch") no activamos
+    // rect-drag aunque el usuario haya elegido Seleccionar — en mobile
+    // el drag-to-select es contra-intuitivo (esperan orbit). Para
+    // selección puntual, el usuario toca un nodo/línea (click handler).
+    if (ev.pointerType === "touch") return;
+    dragStart = { x: ev.clientX, y: ev.clientY };
+    dragActive = false;
+  });
+  rendererElm.addEventListener("pointermove", (ev: PointerEvent) => {
+    // ── Modo click-click: si hay anchor, pintamos el preview SIN
+    // necesidad de tener botón apretado (típica AutoCAD experience).
+    // Excepción: si el usuario está holdeando (ev.buttons > 0), está
+    // intentando orbitar/pan la cámara — NO pintamos para no confundir.
+    if (ccAnchor && ev.buttons === 0) {
+      const isCrossing = ev.clientX < ccAnchor.x;
+      paintDragRect(ccAnchor.x, ccAnchor.y, ev.clientX, ev.clientY, isCrossing);
+      return;
+    }
+    // ── Modo drag-and-release tradicional ──
+    if (!dragStart) return;
+    const dx = ev.clientX - dragStart.x;
+    const dy = ev.clientY - dragStart.y;
+    const dist = Math.hypot(dx, dy);
+    if (!dragActive && dist < 8) return;  // threshold click vs drag
+    dragActive = true;
+    const isCrossing = ev.clientX < dragStart.x;  // R→L = crossing
+    paintDragRect(dragStart.x, dragStart.y, ev.clientX, ev.clientY, isCrossing);
+  });
+  rendererElm.addEventListener("pointerup", (ev: PointerEvent) => {
+    if (!dragStart) return;
+    if (!dragActive) { dragStart = null; return; }
+    const isMulti = ev.ctrlKey || ev.metaKey || ev.shiftKey;
+    finalizeRectSelection(dragStart.x, dragStart.y, ev.clientX, ev.clientY, isMulti);
     dragStart = null;
     dragActive = false;
   });
@@ -2519,13 +3286,29 @@ export function drawing({
   };
   (window as any).__hekatanPushUndo = pushUndo;
   (window as any).__hekatanUndo = undo;
-  // Ctrl+Z / Cmd+Z global
-  window.addEventListener("keydown", (ev: KeyboardEvent) => {
+  // Ctrl+Z / Cmd+Z global — usar CAPTURE phase para interceptar ANTES que
+  // los inputs de Tweakpane (sino el input hace su undo de texto y se come
+  // el evento, nunca llegando al window listener).
+  // Excepción: si el target es un input de TEXTO con value modificado,
+  // dejamos que el browser haga su undo nativo del texto. Solo capturamos
+  // cuando el focus está en el body, canvas, o un input vacío.
+  document.addEventListener("keydown", (ev: KeyboardEvent) => {
     if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "z" && !ev.shiftKey) {
+      const tgt = ev.target as HTMLElement;
+      const tag = tgt?.tagName;
+      // Si el focus está en un input de texto NO vacío, dejar que el browser
+      // haga su undo nativo (esperado por el usuario). En cualquier otro
+      // caso, hacer undo del modelo CAD.
+      const isTextInput = (tag === "INPUT" || tag === "TEXTAREA")
+        && (tgt as HTMLInputElement).type !== "checkbox"
+        && (tgt as HTMLInputElement).type !== "range"
+        && (tgt as HTMLInputElement).value?.length > 0;
+      if (isTextInput) return;  // browser native undo
       ev.preventDefault();
+      ev.stopPropagation();
       undo();
     }
-  });
+  }, { capture: true });
 
   // ── FINALIZAR DIBUJO (Esc / botón Tweakpane / click derecho del usuario) ──
   // Termina la polilínea actual (push empty), libera axis lock, oculta
@@ -2629,6 +3412,9 @@ export function drawing({
       // Ctrl+Click agrega/quita de selección múltiple. Click simple reemplaza
       // toda la selección por el item nuevo (o limpia si no hay hover).
       if (hoverItem) {
+        // Si hay click-click activo y el usuario clickea sobre un objeto,
+        // cancelar el modo (no tiene sentido seguir el rect).
+        if (ccAnchor) cancelClickClick();
         const { kind, a, b } = hoverItem;
         const id = b !== undefined ? `${kind}:${a}:${b}` : `${kind}:${a}`;
         const isMulti = event.ctrlKey || event.metaKey || event.shiftKey;
@@ -2637,12 +3423,29 @@ export function drawing({
         else selection.add(id);
         refreshSelectionGroup();
         updateStatus(`✓ Seleccionados ${selection.size} elemento(s) — Ctrl+Click para multi-selección`);
-      } else if (!event.ctrlKey && !event.metaKey && !event.shiftKey) {
-        // Click en vacío sin ctrl → limpia selección
-        if (selection.size > 0) {
-          selection.clear();
-          refreshSelectionGroup();
-          updateStatus("Selección limpiada");
+      } else {
+        // Click en vacío. Tres casos:
+        //   1. ccAnchor != null  → SEGUNDO click → finaliza rect-select
+        //   2. ccAnchor == null  → PRIMER click vacío → empieza click-click rect
+        //                          (siempre que no haya modifier multi)
+        //   3. multi-modifier sin anchor → ignora (consistente con AutoCAD)
+        const isMulti = event.ctrlKey || event.metaKey || event.shiftKey;
+        const cx = event.clientX;
+        const cy = event.clientY;
+        if (ccAnchor) {
+          // Cierre del rect — usar la lógica compartida.
+          finalizeRectSelection(ccAnchor.x, ccAnchor.y, cx, cy, isMulti);
+          ccAnchor = null;
+        } else if (!isMulti) {
+          // Primer click vacío → empezar click-click rect (no limpia
+          // selección todavía; al cerrar el rect se aplica la regla
+          // estándar: sin modifier reemplaza, con modifier agrega).
+          ccAnchor = { x: cx, y: cy };
+          updateStatus(
+            "🖱 Click 2 para cerrar el rectángulo (→ derecha=Window azul, ←izquierda=Crossing verde). Esc=cancelar.",
+          );
+          // Pintar un punto inicial pequeño para feedback inmediato.
+          paintDragRect(cx, cy, cx + 1, cy + 1, false);
         }
       }
       return;
@@ -3037,8 +3840,16 @@ export function drawing({
 
   // On pointer move and intersection with plan, show indication point
   // CRÍTICO: este indicationPoint debe quedar en la MISMA coordenada que el
-  // snapMarker (que aplica osnap + grid snap). Antes mostraba el punto raw
-  // del raycaster, divergiendo del snap → 2 cursores en posiciones distintas.
+  // snapMarker Y el punto donde el click handler hace commit. Antes había
+  // divergencias:
+  //   1. indicationPoint mostraba raw raycast → corregido (osnap + grid snap)
+  //   2. Click handler aplica AXIS LOCK + ORTO antes de osnap → este
+  //      pointermove NO lo hacía → cuando ORTO=ON, cursor visual mostraba
+  //      un punto distinto del que el click realmente comiteaba en la línea.
+  //   3. Orden CRÍTICO: el click handler hace
+  //         (raw → ctrl-round → axis-lock/ORTO → osnap → grid-snap)
+  //      por lo que aquí replicamos ESE orden exacto. Discrepancia en el
+  //      orden = punto distinto bajo ciertas combinaciones (ej. ORTO + OSNAP).
   rendererElm.addEventListener("pointermove", (event: PointerEvent) => {
     const _camForRay = setPointerFromEvent(event);
     if (!_camForRay) return;
@@ -3050,13 +3861,44 @@ export function drawing({
     if (intersect.length) {
       let point = intersect[0].point.clone();
 
-      // Aplicar OSNAP (igual que el snapMarker en el otro pointermove)
+      // 1) Ctrl/Cmd → integer round (igual que click handler L2916-2922)
+      if (event.ctrlKey || event.metaKey) {
+        point.set(Math.round(point.x), Math.round(point.y), Math.round(point.z));
+      }
+
+      // 2) AXIS LOCK + ORTO (igual que click handler L2923-2945) — proyecta
+      //    al eje dominante respecto al último punto de la polilínea actual.
+      //    Sin este bloque, cuando ORTO=ON, cursor visual y commit divergen.
+      {
+        const polysNow = drawingObj.polylines?.rawVal ?? [];
+        const lastPolyNow = polysNow[polysNow.length - 1] ?? [];
+        const allPtsNow = drawingObj.points.rawVal ?? [];
+        if (lastPolyNow.length > 0) {
+          const lp = allPtsNow[lastPolyNow[lastPolyNow.length - 1]];
+          if (lp) {
+            const orthoOn = !!(window as any).__hekatanOrthoMode;
+            // axisLock es la variable de closure (line 739), no el getter window.
+            let effectiveLock: "x" | "y" | "z" | null = axisLock;
+            if (!effectiveLock && orthoOn) {
+              const dx = Math.abs(point.x - lp[0]);
+              const dy = Math.abs(point.y - lp[1]);
+              const dz = Math.abs(point.z - lp[2]);
+              effectiveLock = dx >= dy && dx >= dz ? "x" : (dy >= dz ? "y" : "z");
+            }
+            if (effectiveLock === "x") point.set(point.x, lp[1], lp[2]);
+            else if (effectiveLock === "y") point.set(lp[0], point.y, lp[2]);
+            else if (effectiveLock === "z") point.set(lp[0], lp[1], point.z);
+          }
+        }
+      }
+
+      // 3) OSNAP (prioridad sobre grid snap, igual que click handler L2946-2951)
       const osnapTol = ((window as any).__hekatanSnap2D ?? 0.5) * 1.2;
       const osnap = (window as any).__hekatanOsnapCompute?.(point.x, point.y, point.z, osnapTol);
       if (osnap) {
         point.set(osnap.x, osnap.y, osnap.z);
       } else {
-        // Sin osnap → grid snap 2D (idéntico a snapMarker fallback) — respeta toggle
+        // 4) Sin osnap → grid snap 2D (igual que click handler L2952-2962)
         const snapEnabled = (window as any).__hekatanSnapEnabled !== false;
         const snap = (window as any).__hekatanSnap2D ?? 0.5;
         if (snapEnabled && snap > 0) {
@@ -3064,10 +3906,6 @@ export function drawing({
           point.y = Math.round(point.y / snap) * snap;
           point.z = Math.round(point.z / snap) * snap;
         }
-      }
-      // Ctrl/Cmd → snap entero (override del grid snap)
-      if (event.ctrlKey || event.metaKey) {
-        point.set(Math.round(point.x), Math.round(point.y), Math.round(point.z));
       }
 
       indicationPoint.geometry.setAttribute(

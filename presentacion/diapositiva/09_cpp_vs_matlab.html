@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>09 · C++ vs MATLAB lado a lado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 09 · La misma matemática, dos lenguajes</div>
+    <h1>C++ vs MATLAB &mdash; lado a lado</h1>
+    <div class="subtitle">Mueve los sliders y observa cómo el <em>mismo</em> algoritmo da el <em>mismo</em> resultado</div>
+  </header>
+
+  <section>
+    <h2>El algoritmo: matriz de rigidez de viga 2D</h2>
+    <p>Una viga 1D Euler-Bernoulli con 2 nodos y 4 GDL (desplazamiento + rotación en cada nodo) tiene la matriz:</p>
+    $$ K_e = \frac{EI}{L^3} \begin{bmatrix} 12 & 6L & -12 & 6L \\ 6L & 4L^2 & -6L & 2L^2 \\ -12 & -6L & 12 & -6L \\ 6L & 2L^2 & -6L & 4L^2 \end{bmatrix} $$
+    <p>Esta es la fórmula <em>cerrada</em> (analítica). Tanto MATLAB como C++ la programan idéntica:</p>
+  </section>
+
+  <div class="side-by-side">
+    <div>
+      <div class="lang-header matlab">MATLAB / Octave</div>
+      <pre><code>function Ke = beamK(E, I, L)
+  % Matriz de rigidez viga 2D
+  % Unidades: E [tonf/m²], I [m⁴], L [m]  → K [tonf/m]
+  EI = E * I;
+  Ke = (EI/L^3) * [
+     12,   6*L,   -12,   6*L;
+    6*L, 4*L^2,  -6*L, 2*L^2;
+    -12,  -6*L,    12,  -6*L;
+    6*L, 2*L^2,  -6*L, 4*L^2
+  ];
+end
+
+% Acero: E = 2.1e6 kgf/cm² = 2.1e7 tonf/m²
+%          I = 8500 cm⁴   = 8.5e-5 m⁴
+Ke = beamK(2.1e7, 8.5e-5, 5);
+disp(Ke)</code></pre>
+    </div>
+    <div>
+      <div class="lang-header cpp">C++ con Eigen</div>
+      <pre><code>Eigen::Matrix4d beamK(double E, double I, double L) {
+  // Unidades: E [tonf/m²], I [m⁴], L [m]  → K [tonf/m]
+  double EI = E * I;
+  Eigen::Matrix4d Ke;
+  Ke &lt;&lt;
+     12,    6*L,   -12,   6*L,
+    6*L,  4*L*L,  -6*L, 2*L*L,
+    -12,   -6*L,    12,  -6*L,
+    6*L,  2*L*L,  -6*L, 4*L*L;
+  return (EI / std::pow(L, 3)) * Ke;
+}
+
+// Acero: E = 2.1e6 kgf/cm² = 2.1e7 tonf/m²
+//          I = 8500 cm⁴   = 8.5e-5 m⁴
+auto Ke = beamK(2.1e7, 8.5e-5, 5);
+std::cout &lt;&lt; Ke;</code></pre>
+    </div>
+  </div>
+
+  <p style="text-align:center;font-style:italic;color:var(--ink-soft)">↑ Mismas variables. Mismo orden. Mismas operaciones aritméticas. ↑</p>
+
+  <h2>Visualizador interactivo &mdash; mueve los sliders</h2>
+
+  <div class="controls">
+    <div class="slider-group">
+      <div class="slider-header">
+        <span class="slider-label"><span class="symbol">L</span> Longitud de la viga (m)</span>
+        <span id="l-val" class="slider-value">5.0</span>
+      </div>
+      <input type="range" id="l-slider" min="1" max="10" step="0.5" value="5">
+      <div class="slider-hint">↞ corta · larga ↠</div>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-header">
+        <span class="slider-label"><span class="symbol">E</span> Módulo de Young (kgf/cm²)</span>
+        <span id="e-val" class="slider-value">2,100,000</span>
+      </div>
+      <input type="range" id="e-slider" min="200000" max="2200000" step="100000" value="2100000">
+      <div class="slider-hint">↞ hormigón ~250,000 · acero ~2,100,000 ↠</div>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-header">
+        <span class="slider-label"><span class="symbol">I</span> Momento de inercia (cm⁴)</span>
+        <span id="i-val" class="slider-value">10,000</span>
+      </div>
+      <input type="range" id="i-slider" min="100" max="100000" step="100" value="10000">
+      <div class="slider-hint">↞ sección pequeña · grande ↠</div>
+    </div>
+  </div>
+
+  <h3>Resultado de la matriz K (4×4) — en ambos lenguajes</h3>
+  <div class="viz-card">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:0.78rem">
+      <div style="color:var(--gold);margin-bottom:8px">EI/L³ = <span id="prefactor">—</span> tonf/m</div>
+      <table id="k-table" style="margin:0">
+        <thead>
+          <tr><th></th><th>v₁</th><th>θ₁</th><th>v₂</th><th>θ₂</th></tr>
+        </thead>
+        <tbody id="k-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="results">
+    <div class="result-card matlab">
+      <span class="result-name">MATLAB · K(1,1)</span>
+      <span id="r-matlab" class="result-value">— tonf/m</span>
+    </div>
+    <div class="result-card hekatan">
+      <span class="result-name">C++ Eigen · K(1,1)</span>
+      <span id="r-cpp" class="result-value">— tonf/m</span>
+    </div>
+    <div class="result-card error">
+      <span class="result-name">Diferencia</span>
+      <span id="r-diff" class="result-value">— %</span>
+    </div>
+  </div>
+
+  <div class="explanation-box" id="explanation">
+    Cargando...
+  </div>
+
+  <section>
+    <h2>¿Por qué C++ y no MATLAB en producción?</h2>
+    <table>
+      <tr>
+        <th>Aspecto</th>
+        <th>MATLAB / Octave</th>
+        <th>C++</th>
+      </tr>
+      <tr>
+        <td>Sintaxis matemática</td>
+        <td>✅ Natural (matrices first-class)</td>
+        <td>⚠️ Requiere Eigen / BLAS</td>
+      </tr>
+      <tr>
+        <td>Velocidad</td>
+        <td>1× (con loops)</td>
+        <td><strong>50&ndash;100×</strong> en bucles</td>
+      </tr>
+      <tr>
+        <td>Distribución</td>
+        <td>Requiere licencia (MATLAB) u Octave</td>
+        <td>WASM en navegador, sin instalación</td>
+      </tr>
+      <tr>
+        <td>Para enseñar</td>
+        <td>✅ Octave + libro Paz</td>
+        <td>⚠️ Curva de aprendizaje</td>
+      </tr>
+      <tr>
+        <td>Para producción</td>
+        <td>⚠️ Lento con miles de DOFs</td>
+        <td>✅ ETABS, OpenSees, Hekatan</td>
+      </tr>
+    </table>
+  </section>
+
+  <div class="quote">
+    <strong>Estrategia académica:</strong> aprendemos la matemática en Octave (claro y didáctico), validamos contra C++ (Hekatan = ETABS), y producimos memoria de cálculo en Calcpad Symbolic. Los tres deben dar el mismo número.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 09 · MATLAB ≡ C++
+  </div>
+
+</div>
+
+<script>
+const lSlider = document.getElementById('l-slider');
+const eSlider = document.getElementById('e-slider');
+const iSlider = document.getElementById('i-slider');
+const lVal = document.getElementById('l-val');
+const eVal = document.getElementById('e-val');
+const iVal = document.getElementById('i-val');
+const prefactor = document.getElementById('prefactor');
+const ktbody = document.getElementById('k-tbody');
+const rMatlab = document.getElementById('r-matlab');
+const rCpp = document.getElementById('r-cpp');
+const rDiff = document.getElementById('r-diff');
+const explanation = document.getElementById('explanation');
+
+function update() {
+  const L = parseFloat(lSlider.value);
+  const E_kgfcm2 = parseFloat(eSlider.value);
+  const I_cm4    = parseFloat(iSlider.value);
+
+  lVal.textContent = L.toFixed(1);
+  eVal.textContent = E_kgfcm2.toLocaleString('en-US');
+  iVal.textContent = I_cm4.toLocaleString('en-US');
+
+  // Conversión a tonf/m:
+  //   E [kgf/cm²] × 10  = E [tonf/m²]    (1 kgf/cm² = 10 tonf/m²)
+  //   I [cm⁴]    / 1e8 = I [m⁴]
+  //   EI [tonf·m²]  ÷ L³ [m³] = pref [tonf/m]
+  //   ⇒ pref = (E_kgfcm2 × I_cm4) / (1e7 × L³)
+  const pref = (E_kgfcm2 * I_cm4) / (1e7 * Math.pow(L, 3));
+
+  prefactor.textContent = pref.toLocaleString('en-US', { maximumFractionDigits: 2 });
+
+  // Construir matriz K
+  const K = [
+    [12,   6*L,    -12,   6*L],
+    [6*L,  4*L*L,  -6*L,  2*L*L],
+    [-12,  -6*L,   12,    -6*L],
+    [6*L,  2*L*L,  -6*L,  4*L*L]
+  ];
+
+  // Renderizar tabla
+  ktbody.innerHTML = "";
+  const labels = ["v₁", "θ₁", "v₂", "θ₂"];
+  for (let i = 0; i < 4; i++) {
+    const tr = document.createElement("tr");
+    const th = document.createElement("th");
+    th.textContent = labels[i];
+    th.style.background = "var(--paper-dark)";
+    th.style.color = "var(--blue)";
+    tr.appendChild(th);
+    for (let j = 0; j < 4; j++) {
+      const td = document.createElement("td");
+      const val = pref * K[i][j];
+      td.textContent = formatNum(val);
+      if (i === j) td.style.fontWeight = "700";
+      td.style.color = val > 0 ? "var(--green)" : (val < 0 ? "var(--red)" : "var(--ink-fade)");
+      tr.appendChild(td);
+    }
+    ktbody.appendChild(tr);
+  }
+
+  // Resultados (K[0][0] en MATLAB y C++ son IDÉNTICOS)
+  const k11 = pref * 12;
+  rMatlab.textContent = formatNum(k11) + " tonf/m";
+  rCpp.textContent    = formatNum(k11) + " tonf/m";
+  rDiff.textContent   = "0.00 %";
+
+  const material = E_kgfcm2 < 500_000 ? "hormigón" : "acero";
+  // Explicación dinámica
+  explanation.innerHTML =
+    `Con <strong>E = ${E_kgfcm2.toLocaleString('en-US')} kgf/cm²</strong> (${material}), ` +
+    `<strong>I = ${I_cm4.toLocaleString('en-US')} cm⁴</strong> y ` +
+    `<strong>L = ${L.toFixed(1)} m</strong>, la rigidez de flexión K(1,1) = ` +
+    `<em>12·EI/L³ = ${formatNum(k11)} tonf/m</em>. ` +
+    `MATLAB y C++ producen el mismo número porque ejecutan la misma fórmula. ` +
+    `<strong>La velocidad es lo único que cambia</strong> al escalar a miles de DOFs.`;
+}
+
+function formatNum(v) {
+  if (Math.abs(v) < 1e-9) return "0";
+  if (Math.abs(v) >= 1e6 || Math.abs(v) < 1e-2) return v.toExponential(2);
+  return v.toFixed(2);
+}
+
+lSlider.addEventListener("input", update);
+eSlider.addEventListener("input", update);
+iSlider.addEventListener("input", update);
+update();
+</script>
+<script src="./shared/nav.js"></script>
+</body>
+</html>

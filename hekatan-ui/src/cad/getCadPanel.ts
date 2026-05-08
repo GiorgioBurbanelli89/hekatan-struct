@@ -86,6 +86,12 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
     proxyTool.v = tool;
     try { (window as any).__hekatanCadState?.setTool?.(tool); } catch {}
     try { (window as any).__hekatanCadResetPending?.(); } catch {}
+    // Window/crossing rect-drag selection: opt-in. Sólo activa si el
+    // usuario hace click EXPLÍCITO en "🖱 Seleccionar". El estado
+    // default `tool: "select"` (de cadDrawTypes.emptyState) NO la
+    // activa — sino cualquier touch-drag en móvil dibuja un rectángulo
+    // verde en lugar de orbitar la cámara.
+    (window as any).__hekatanRectSelectExplicit = (tool === "select");
     const instr = toolInstructions[tool] ?? `Tool ${tool} activo`;
     const statusEl = document.getElementById("hk-cad-status");
     if (statusEl) {

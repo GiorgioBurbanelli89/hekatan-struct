@@ -1,0 +1,51 @@
+﻿{
+    "source_edb":  "C:\\Users\\j-b-j\\Documents\\Hekatan Calc 1.0.0\\hekatan-struct\\Benchmark_Placa\\etabs\\composite_slab_thin_frame.EDB",
+    "extracted_at":  "2026-05-07 19:07:00",
+    "units":  "kN, m, C",
+    "program":  "ETABS via OAPI",
+    "model_info":  {
+                       "n_points":  0,
+                       "n_frames":  0,
+                       "n_areas":  0,
+                       "n_load_patterns":  3,
+                       "n_load_cases":  4,
+                       "n_combos":  0,
+                       "load_patterns":  [
+                                             "Dead",
+                                             "Live",
+                                             "~LLRF"
+                                         ],
+                       "load_cases":  [
+                                          "Dead",
+                                          "Live",
+                                          "~LLRF",
+                                          "Modal"
+                                      ],
+                       "combos":  null
+                   },
+    "joint_coordinates":  [
+
+                          ],
+    "joint_reactions":  [
+
+                        ],
+    "joint_displacements":  [
+
+                            ],
+    "modal_periods":  [
+
+                      ],
+    "modal_participation":  [
+
+                            ],
+    "base_reactions":  [
+
+                       ],
+    "story_drifts":  [
+
+                     ],
+    "frame_forces_count":  0,
+    "frame_forces_sample":  [
+
+                            ]
+}

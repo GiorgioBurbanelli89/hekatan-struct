@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>17 · Hekatan Lab — MATLAB en navegador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+<style>
+  .feature-card {
+    background: var(--paper-dark);
+    border: 1px solid var(--ink-fade);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 10px 0;
+  }
+  .feature-card h3 {
+    color: var(--gold);
+    margin-bottom: 6px;
+    font-family: 'Cormorant Garamond', serif;
+  }
+  .feature-card p {
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+  }
+
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+  }
+  .compare-table th {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 8px 10px;
+    text-align: left;
+  }
+  .compare-table td {
+    padding: 8px 10px;
+    border: 1px solid var(--ink-fade);
+  }
+  .compare-table .yes { color: var(--green); font-weight: 700; }
+  .compare-table .no { color: var(--red); font-weight: 700; }
+  .compare-table tr:nth-child(even) { background: rgba(255,255,255,0.3); }
+
+  .price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+  }
+  .price.free { color: var(--green); }
+  .price.paid { color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 17 · Módulo complementario</div>
+    <h1>Hekatan Lab</h1>
+    <div class="subtitle">Octave / MATLAB en el navegador &mdash; sin instalación, sin licencia</div>
+  </header>
+
+  <section>
+    <h2>El problema que resuelve</h2>
+    <p>Los <strong>scripts del libro Paz &amp; Kim</strong> están escritos en sintaxis MATLAB. Para correrlos, los estudiantes necesitan:</p>
+    <ul style="margin-left:24px;line-height:1.7">
+      <li><strong>MATLAB licencia</strong>: ~$1,000 USD/año personal · ~$3,000 USD/año comercial.</li>
+      <li><strong>Octave</strong>: gratis, pero requiere instalación local (~150 MB) y configuración.</li>
+      <li>Ambas opciones <em>fuera del alcance</em> de muchos estudiantes en países en desarrollo.</li>
+    </ul>
+    <div class="quote">
+      <strong>Solución:</strong> compilar Octave a WebAssembly y ejecutarlo en el navegador. Cero instalación, cero licencia, cero costo.
+    </div>
+  </section>
+
+  <section>
+    <h2>Hekatan Lab &mdash; qué es</h2>
+    <div class="feature-card">
+      <h3>📐 Editor MATLAB-like en el navegador</h3>
+      <p>Sintaxis idéntica a MATLAB / Octave. El usuario escribe un script, lo ejecuta, y ve los resultados. Sin instalar nada, solo abriendo una URL.</p>
+    </div>
+    <div class="feature-card">
+      <h3>📚 Scripts del libro Paz &amp; Kim pre-cargados</h3>
+      <p>Los ejemplos canónicos (cantilever, shear building, space frame, modal) están <em>incluidos</em> como plantillas. Click → Run → Resultado.</p>
+    </div>
+    <div class="feature-card">
+      <h3>🔬 Validación contra Hekatan Struct</h3>
+      <p>El mismo modelo se ejecuta en Octave (Hekatan Lab) y en C++ (Hekatan Struct). Los números <strong>deben</strong> coincidir &mdash; si no coinciden, hay bug en uno de los dos.</p>
+    </div>
+    <div class="feature-card">
+      <h3>📤 Exportar memoria de cálculo</h3>
+      <p>El script Octave + sus resultados se exportan como PDF imprimible para incluir en informes profesionales.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Comparación &mdash; ¿con qué se compite?</h2>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Característica</th>
+          <th>MATLAB</th>
+          <th>Octave (local)</th>
+          <th>Hekatan Lab</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Costo anual</td>
+          <td><span class="price paid">$1,000+</span></td>
+          <td><span class="price free">$0</span></td>
+          <td><span class="price free">$0</span></td>
+        </tr>
+        <tr>
+          <td>Instalación</td>
+          <td>~5 GB</td>
+          <td>~150 MB</td>
+          <td class="yes">✓ ninguna</td>
+        </tr>
+        <tr>
+          <td>Sintaxis Paz &amp; Kim</td>
+          <td class="yes">✓ nativa</td>
+          <td class="yes">✓ casi 100%</td>
+          <td class="yes">✓ casi 100% (Octave WASM)</td>
+        </tr>
+        <tr>
+          <td>Plotting</td>
+          <td class="yes">✓</td>
+          <td class="yes">✓</td>
+          <td class="yes">✓ (canvas/SVG)</td>
+        </tr>
+        <tr>
+          <td>Velocidad solver eig()</td>
+          <td>1×</td>
+          <td>0.7×</td>
+          <td>~0.6× (WASM overhead)</td>
+        </tr>
+        <tr>
+          <td>Acceso desde móvil/tablet</td>
+          <td class="no">✗</td>
+          <td class="no">✗</td>
+          <td class="yes">✓</td>
+        </tr>
+        <tr>
+          <td>Compartir un script</td>
+          <td>archivo .m</td>
+          <td>archivo .m</td>
+          <td class="yes">✓ URL</td>
+        </tr>
+        <tr>
+          <td>Instalación requiere admin</td>
+          <td class="no">✗ Sí</td>
+          <td class="no">✗ Sí</td>
+          <td class="yes">✓ No</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Caso de uso típico &mdash; ejemplo del libro</h2>
+    <p>Un estudiante quiere correr el <em>script de Paz &amp; Kim 6.3</em> sin tener MATLAB. Antes:</p>
+    <pre><code>1. Bajar Octave (.exe, 150 MB)
+2. Instalar (requiere permisos de admin)
+3. Configurar paths
+4. Buscar el script en el CD del libro
+5. Convertir sintaxis si hay incompatibilidades
+6. Correr</code></pre>
+    <p>Con Hekatan Lab:</p>
+    <pre><code>1. Abrir hekatan-lab.com/?ej=paz-6-3
+2. Click "Run"
+3. Listo</code></pre>
+    <p style="font-style:italic;color:var(--ink-soft);text-align:center">↑ Tiempo de inicio: 30 segundos vs 30 minutos. ↑</p>
+  </section>
+
+  <section>
+    <h2>Stack tecnológico</h2>
+    <div class="results">
+      <div class="result-card hekatan">
+        <span class="result-name">Backend</span>
+        <span class="result-value" style="font-size:0.85rem">GNU Octave compilado a WASM via Emscripten</span>
+      </div>
+      <div class="result-card matlab">
+        <span class="result-name">Editor</span>
+        <span class="result-value" style="font-size:0.85rem">CodeMirror 6 con highlight MATLAB</span>
+      </div>
+      <div class="result-card hekatan">
+        <span class="result-name">Plotting</span>
+        <span class="result-value" style="font-size:0.85rem">Canvas 2D + ChartJS</span>
+      </div>
+      <div class="result-card exact">
+        <span class="result-name">Hosting</span>
+        <span class="result-value" style="font-size:0.85rem">GitHub Pages (HTTP estático)</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="quote">
+    <strong>Hekatan Lab y Hekatan Struct son hermanos:</strong> uno (Lab) ejecuta los scripts académicos de los libros, el otro (Struct) ejecuta el solver C++ optimizado. Juntos, los <em>5 análisis</em> del libro de Paz &amp; Kim corren en el navegador, gratis, sin instalación &mdash; <em>mismos números</em>.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT + LAB · DIAPOSITIVA 17 · OCTAVE EN EL NAVEGADOR
+  </div>
+
+</div>
+
+<script src="./shared/nav.js"></script>
+</body>
+</html>

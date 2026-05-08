@@ -1,0 +1,54 @@
+[OK] Lanzado ETABS
+
+======================================================================
+CASE: steelOnly
+======================================================================
+  e2k: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_steelOnly.e2k
+  edb: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_steelOnly.EDB
+  [..] OpenFile e2k ->ret=0
+  [..] Save .EDB ->ret=0
+  [..] Re-open .EDB ->ret=0
+  [..] RunAnalysis
+  Beam: {'A': 0.00788600000000001, 'As2': 0.0027932061558925626, 'As3': 0.004732052959746353, 'J': 3.551833333333333e-07, 'I22': 1.8139001166666695e-05, 'I33': 0.00017480990866666676}
+  Col : {'A': 0.009600000000000004, 'As2': 0.004852113602878681, 'As3': 0.004852561178771249, 'J': 0.00013824, 'I22': 9.232000000000006e-05, 'I33': 9.231999999999998e-05}
+  [..] 30 joints
+  [OK] max |Uz| @ joint 13 = -2.9651 mm
+
+======================================================================
+CASE: filled
+======================================================================
+  e2k: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_filled.e2k
+  edb: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_filled.EDB
+  [..] OpenFile e2k ->ret=0
+  [..] Save .EDB ->ret=0
+  [..] Re-open .EDB ->ret=0
+  [..] RunAnalysis
+  Beam: {'A': 0.00788600000000001, 'As2': 0.0027932061558925626, 'As3': 0.004732052959746353, 'J': 3.551833333333333e-07, 'I22': 1.8139001166666695e-05, 'I33': 0.00017480990866666676}
+  Col : {'A': 0.016212500000000005, 'As2': 0.011383959616617251, 'As3': 0.011354474315848325, 'J': 0.0, 'I22': 0.00012147010416666676, 'I33': 0.00012147010416666665}
+  [..] 30 joints
+  [OK] max |Uz| @ joint 13 = -2.9031 mm
+
+======================================================================
+CASE: concreteOnly
+======================================================================
+  e2k: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_concreteOnly.e2k
+  edb: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_concreteOnly.EDB
+  [..] OpenFile e2k ->ret=0
+  [..] Save .EDB ->ret=0
+  [..] Re-open .EDB ->ret=0
+  [..] RunAnalysis
+  Beam: {'A': 0.18, 'As2': 0.14999997900000314, 'As3': 0.14999997900000286, 'J': 0.003707859374999999, 'I22': 0.0013499999999999996, 'I33': 0.0053999999999999986}
+  Col : {'A': 0.0625, 'As2': 0.05208332604166776, 'As3': 0.05208332604166773, 'J': 0.0005501302083333332, 'I22': 0.00032552083333333326, 'I33': 0.00032552083333333326}
+  [..] 30 joints
+  [OK] max |Uz| @ joint 13 = -1.3622 mm
+
+======================================================================
+RESUMEN
+======================================================================
+Case           |      Joint |    centro [mm] |       A_col |       I_col
+-------------- | ---------- | -------------- | ----------- | -----------
+steelOnly      |         13 |        -2.9651 |  9.6000e-03 |  9.2320e-05
+filled         |         13 |        -2.9031 |  1.6213e-02 |  1.2147e-04
+concreteOnly   |         13 |        -1.3622 |  6.2500e-02 |  3.2552e-04
+
+[OK] C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_3cases_results.json

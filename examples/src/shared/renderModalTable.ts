@@ -22,8 +22,12 @@ export function createModalPanel() {
     position: fixed; bottom: 10px; left: 10px; z-index: 9999;
     background: rgba(0,0,0,0.92); color: #0f0; font-family: monospace;
     font-size: 12px; border-radius: 6px;
-    max-width: 760px; overflow-x: auto; pointer-events: auto;
+    max-width: 760px; max-height: 60vh;
+    overflow-x: auto; overflow-y: auto;
+    pointer-events: auto;
     border: 1px solid #0f03;
+    resize: both;
+    min-width: 400px; min-height: 200px;
   `;
 
   let minimized = false;

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11 · Arquitectura Hekatan Struct</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+<style>
+  .layer-card {
+    background: var(--paper-dark);
+    border: 1.5px solid var(--ink);
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin: 6px 0;
+    width: 100%;
+    position: relative;
+  }
+  .layer-card .layer-tag {
+    position: absolute;
+    top: -10px; left: 14px;
+    background: var(--gold);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    padding: 2px 10px;
+    border-radius: 3px;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+  }
+  .layer-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    color: var(--blue);
+    margin: 0 0 4px;
+  }
+  .layer-card .desc {
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .layer-card .tech {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--gold);
+    background: var(--ink);
+    padding: 4px 10px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+
+  .arrow-down {
+    text-align: center;
+    color: var(--gold);
+    font-size: 1.6rem;
+    margin: 0;
+  }
+
+  .arch-numbers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+    margin: 18px 0;
+  }
+  .arch-num {
+    background: var(--ink);
+    color: var(--paper);
+    text-align: center;
+    padding: 14px 10px;
+    border-radius: 4px;
+  }
+  .arch-num .big {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--gold);
+  }
+  .arch-num .lbl {
+    font-size: 0.75rem;
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 11 · Cómo está hecho Hekatan Struct</div>
+    <h1>Arquitectura del workspace</h1>
+    <div class="subtitle">Del código TypeScript de la UI hasta los bucles C++ ejecutándose en el navegador</div>
+  </header>
+
+  <section>
+    <h2>Las 5 capas — de arriba hacia abajo</h2>
+
+    <div class="layer-card">
+      <span class="layer-tag">CAPA 1 · UI</span>
+      <h3>🎨 Tweakpane + Three.js</h3>
+      <div class="desc">El usuario mueve <em>sliders</em>, ve la estructura en 3D, hace click en elementos. Toda la UI parametrizada por código.</div>
+      <span class="tech">TypeScript · Three.js · vanjs · Tweakpane</span>
+    </div>
+
+    <div class="arrow-down">↓ los cambios disparan re-build</div>
+
+    <div class="layer-card">
+      <span class="layer-tag">CAPA 2 · MODELO</span>
+      <h3>📐 hekatan-mesh + parámetros</h3>
+      <div class="desc">El ejemplo (cantilever, edificio, Paz 6.3) traduce los sliders en <strong>nodos, elementos, materiales, cargas, apoyos</strong>.</div>
+      <span class="tech">TypeScript · estructuras de datos puras</span>
+    </div>
+
+    <div class="arrow-down">↓ pasa al solver</div>
+
+    <div class="layer-card">
+      <span class="layer-tag">CAPA 3 · SOLVER C++</span>
+      <h3>⚙️ hekatan-fem (Eigen 3 + C++17)</h3>
+      <div class="desc">El núcleo numérico: ensambla $K$ global, aplica BC, factoriza con SparseLU, resuelve $K\,u = F$, calcula fuerzas internas. <em>Mismas ecuaciones</em> que ETABS, OpenSees, ABAQUS.</div>
+      <span class="tech">C++17 · Eigen 3 · BLAS</span>
+    </div>
+
+    <div class="arrow-down">↓ compilado a WebAssembly</div>
+
+    <div class="layer-card">
+      <span class="layer-tag">CAPA 4 · WASM</span>
+      <h3>🌐 WebAssembly via Emscripten</h3>
+      <div class="desc">El binario C++ se compila a <strong>.wasm</strong>: bytecode portable que el navegador ejecuta a velocidad nativa (~95% de C++ puro). <em>Sin instalación, sin servidor</em>.</div>
+      <span class="tech">Emscripten · embind · LLVM</span>
+    </div>
+
+    <div class="arrow-down">↓ corre en el navegador</div>
+
+    <div class="layer-card">
+      <span class="layer-tag">CAPA 5 · NAVEGADOR</span>
+      <h3>🖥️ Cualquier dispositivo con Chrome / Firefox / Safari</h3>
+      <div class="desc">Resultado final: estudiantes, profesores y profesionales pueden usar Hekatan <strong>sin instalar nada</strong>. Solo abrir una URL. Funciona en Windows, Mac, Linux, móvil, tablet.</div>
+      <span class="tech">HTTP estático · GitHub Pages</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>Los números del workspace</h2>
+    <div class="arch-numbers">
+      <div class="arch-num">
+        <div class="big">~50</div>
+        <div class="lbl">EJEMPLOS BENCHMARKS</div>
+      </div>
+      <div class="arch-num">
+        <div class="big">~30k</div>
+        <div class="lbl">LÍNEAS TS</div>
+      </div>
+      <div class="arch-num">
+        <div class="big">~15k</div>
+        <div class="lbl">LÍNEAS C++</div>
+      </div>
+      <div class="arch-num">
+        <div class="big">~600 KB</div>
+        <div class="lbl">WASM MIN.</div>
+      </div>
+      <div class="arch-num">
+        <div class="big">~10ms</div>
+        <div class="lbl">SOLVE 1k DOFs</div>
+      </div>
+      <div class="arch-num">
+        <div class="big">0%</div>
+        <div class="lbl">INSTALACIÓN</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>El "puente" Eigen ⟶ JavaScript</h2>
+    <p>Cómo el solver C++ se expone al navegador (simplificado):</p>
+    <div class="side-by-side">
+      <div>
+        <div class="lang-header cpp">deform.cpp (C++)</div>
+        <pre><code>#include &lt;Eigen/Sparse&gt;
+#include &lt;emscripten/bind.h&gt;
+
+DeformResult deform(
+    const std::vector&lt;Node&gt;&amp; nodes,
+    const std::vector&lt;Element&gt;&amp; elements,
+    const NodeInputs&amp; ni,
+    const ElementInputs&amp; ei) {
+  // 1. Ensamblar K (sparse)
+  Eigen::SparseMatrix&lt;double&gt; K(ndof, ndof);
+  buildStiffness(K, nodes, elements, ei);
+  // 2. Aplicar BC + cargas
+  applyBC(K, F, ni);
+  // 3. SparseLU solve
+  Eigen::SparseLU solver;
+  solver.compute(K);
+  Eigen::VectorXd u = solver.solve(F);
+  return { u };
+}
+
+// Exportar a WASM
+EMSCRIPTEN_BINDINGS(hekatan_fem) {
+  function("deform", &amp;deform);
+}</code></pre>
+      </div>
+      <div>
+        <div class="lang-header" style="background:#f59e0b">deform.ts (TypeScript)</div>
+        <pre><code>import deformWasm from "./deform.wasm";
+
+const Module = await deformWasm();
+// Module.deform es la misma función C++
+
+export function deform(
+    nodes: Node[],
+    elements: Element[],
+    nodeInputs: NodeInputs,
+    elementInputs: ElementInputs,
+): DeformOutputs {
+  // 1 línea — la magia ocurre en C++
+  return Module.deform(
+    nodes, elements,
+    nodeInputs, elementInputs,
+  );
+}
+
+// Uso en el ejemplo:
+const out = deform(nodes, elems, ni, ei);
+console.log(out.deformations);</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <div class="quote">
+    Hekatan Struct no inventa nada nuevo. <strong>Ensambla 4 tecnologías maduras</strong>: Eigen (Eigen.tuxfamily.org, 2006+), Emscripten (Mozilla, 2010+), Three.js (Mr.doob, 2010+), Tweakpane (cocopon, 2018+). El resultado: <em>FEM en el navegador, sin instalación, gratis</em>.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 11 · 5 CAPAS, 1 NAVEGADOR
+  </div>
+
+</div>
+
+<script src="./shared/nav.js"></script>
+</body>
+</html>

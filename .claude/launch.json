@@ -12,6 +12,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8765", "--directory", "examples/src/tablero-puente"],
       "port": 8765
+    },
+    {
+      "name": "intro-fem-slides",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8800", "--directory", "presentacion/intro_fem"],
+      "port": 8800
     }
   ]
 }

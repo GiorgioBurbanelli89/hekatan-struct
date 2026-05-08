@@ -1,0 +1,19 @@
+[OK] Lanzado
+[..] OpenFile e2k: composite_cft_cftDeckSlab.e2k
+[..] RunAnalysis
+[OK] Analysis done
+  30 joints
+  max |Uz| @ joint 13 = -2.9031 mm
+
+  Reacciones (Dead) en bases empotradas:
+   joint |         Fx         Fy         Fz |         Mx         My         Mz
+      26 |     1.9680     1.9679    20.0000 |    -2.5965     2.5967     0.0000
+      27 |    -1.9680     1.9679    20.0000 |    -2.5965    -2.5967     0.0000
+      28 |     1.9680    -1.9679    20.0000 |     2.5965     2.5967     0.0000
+      29 |    -1.9680    -1.9679    20.0000 |     2.5965    -2.5967     0.0000
+     SUM |    -0.0000     0.0000    80.0000 |     0.0000     0.0000     0.0000
+
+[OK] C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_cftDeckSlab_FIXED.json
+Cannot open file
+BufferFileIn::BufferFileIn(): 
+fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_cantilever\cantilever.Y_

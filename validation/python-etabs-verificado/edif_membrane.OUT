@@ -1,0 +1,29 @@
+
+
+ ETABS Ultimate 64-bit 19.1.0 Build 2420 (Analysis Build 9853/64)               
+ File: C:\Users\j-b-j\Document...ation\python-etabs-verificado\edif_membrane.OUT
+                                                                     
+                                                                       
+
+ D I S P L A C E M E N T   D E G R E E S   O F   F R E E D O M
+
+         (A) = Active DOF, equilibrium equation
+         (-) = Restrained DOF, reaction computed
+         (+) = Constrained DOF
+         (>) = External substructure DOF
+         ( ) = Null DOF
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+       1 TO      10    A   A   A   A   A   A
+      11               +   +   A   A   A   +
+      12 TO      21    A   A   A   A   A   A
+      22               +   +   A   A   A   +
+      23 TO      37    A   A   A   A   A   A
+      38               +   +   A   A   A   +
+      39 TO      48    A   A   A   A   A   A
+      49 TO      64    -   -   -   -   -   -
+      68 TO      70    +   +   -   -   -   +
+    NULL                                    
+
+  CONSTRAINTS         U1  U2  U3  R1  R2  R3
+ 1       TO 3          A   A               A

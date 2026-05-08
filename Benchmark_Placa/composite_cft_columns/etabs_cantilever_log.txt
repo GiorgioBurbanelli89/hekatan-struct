@@ -1,0 +1,14 @@
+[OK] ETABS connected
+[..] OpenFile e2k: Columna CFT Cantilivier.e2k
+[..] RunAnalysis
+[OK] Analysis done
+  Section CR300X300X121mm: A=2.3293e-02 As2=1.6343e-02 J=0.0000e+00 I22=2.5155e-04 I33=2.5155e-04
+  Joints: ['1', '2', '3']
+  joint 1: Ux=0.0000 Uy=0.0000 Uz=-0.0028 mm
+  joint 2: Ux=0.0000 Uy=0.0000 Uz=0.0000 mm
+  joint 3: Ux=0.0000 Uy=0.0000 Uz=0.0000 mm
+
+  Reacciones (Dead):
+    2: Fz=8.5771 kN  Mx=0.0000  My=0.0000
+
+[OK] C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_cantilever_results.json

@@ -26,12 +26,15 @@ export const dispUnit: State<DispUnit> = van.state(
   (localStorage.getItem("hk_dispUnit") as DispUnit) || "mm"
 );
 
-// Persistir preferencias
+// Persistir preferencias + exponer en window para que hover.ts pueda leerlo
+// sin crear dependencia circular hekatan-ui ← examples
 van.derive(() => {
   localStorage.setItem("hk_forceUnit", forceUnit.val);
+  (window as any).__hekatanForceUnit = forceUnit.val;
 });
 van.derive(() => {
   localStorage.setItem("hk_dispUnit", dispUnit.val);
+  (window as any).__hekatanDispUnit = dispUnit.val;
 });
 
 // ── Conversión de FUERZA ──────────────────────────────────────────
@@ -84,19 +87,35 @@ export function dispToM(valUI: number, unit?: DispUnit): number {
   return valUI / dispFactors[unit ?? dispUnit.val];
 }
 
-export function formatDisp(valM: number): string {
+export function formatDisp(valM: number, digits = 2): string {
   const u = dispUnit.val;
-  return `${mToDisp(valM, u).toFixed(2)} ${u}`;
+  return `${mToDisp(valM, u).toFixed(digits)} ${u}`;
 }
 
-export function formatForce(valKn: number): string {
+export function formatForce(valKn: number, digits = 2): string {
   const u = forceUnit.val;
-  return `${fromKn(valKn, u).toFixed(2)} ${u}`;
+  return `${fromKn(valKn, u).toFixed(digits)} ${u}`;
 }
-export function formatMoment(valKnm: number): string {
+export function formatMoment(valKnm: number, digits = 2): string {
   const u = forceUnit.val;
   const label = u === "kip" ? "kip·ft" : `${u}·m`;
-  return `${fromKnm(valKnm, u).toFixed(2)} ${label}`;
+  return `${fromKnm(valKnm, u).toFixed(digits)} ${label}`;
+}
+export function formatStress(valKnPm2: number, digits = 2): string {
+  const u = stressUnit.val;
+  return `${fromKnPm2(valKnPm2, u).toFixed(digits)} ${u}`;
+}
+
+// ── Helpers para SECCIONES ──────────────────────────────────────────
+// Auto-detección: hormigón → cm, acero/CFT → mm
+export function formatSectionDim(valM: number, materialOrShape?: string): string {
+  const isConcrete = !!materialOrShape && /concrete|hormig|rect.*sólida/i.test(materialOrShape);
+  const factor = isConcrete ? 100 : 1000;
+  const unit = isConcrete ? "cm" : "mm";
+  const x = valM * factor;
+  // Entero si es muy cercano, sino 1 decimal
+  const txt = Math.abs(x - Math.round(x)) < 0.05 ? `${Math.round(x)}` : `${x.toFixed(1)}`;
+  return `${txt} ${unit}`;
 }
 
 // ── Helpers UI: label con sufijo de unidad dinámico ───────────────
@@ -158,7 +177,10 @@ export const stressFactors: Record<StressUnit, number> = {
 export const stressUnit: State<StressUnit> = van.state(
   (localStorage.getItem("hk_stressUnit") as StressUnit) || "tonf/m²"
 );
-van.derive(() => { localStorage.setItem("hk_stressUnit", stressUnit.val); });
+van.derive(() => {
+  localStorage.setItem("hk_stressUnit", stressUnit.val);
+  (window as any).__hekatanStressUnit = stressUnit.val;
+});
 
 /** kN/m² → unidad UI */
 export function fromKnPm2(valKnPm2: number, u?: StressUnit): number {
@@ -259,7 +281,29 @@ export function applyConsistentUnits(name: Exclude<UnitsPresetName, "Custom">) {
   lengthSectionUnit.val = p.lengthSection;
   lengthStructureUnit.val = p.lengthStructure;
   localStorage.setItem("hk_unitsPreset", name);
+  // Exponer en window para que hover.ts y otros lo lean (sin import cíclico)
+  (window as any).__hekatanForceUnit  = forceUnit.val;
+  (window as any).__hekatanDispUnit   = dispUnit.val;
+  (window as any).__hekatanStressUnit = stressUnit.val;
 }
+
+// ── Aplicar preset DEFAULT al iniciar el workspace (primera visita) ──
+// Si no hay preset persistido, usa "Metric MKS" (tonf, mm, kgf/cm² para Sudamérica/concreto).
+// Esto garantiza que TODOS los ejemplos arrancan con unidades consistentes.
+(() => {
+  const savedPreset = localStorage.getItem("hk_unitsPreset");
+  if (!savedPreset) {
+    applyConsistentUnits("Metric MKS");
+  } else if (savedPreset !== "Custom" && savedPreset in UNITS_PRESETS) {
+    // Re-aplicar el preset guardado (asegura que window globals estén seteados)
+    applyConsistentUnits(savedPreset as Exclude<UnitsPresetName, "Custom">);
+  } else {
+    // Custom: solo asegurar que window globals estén actualizados
+    (window as any).__hekatanForceUnit  = forceUnit.val;
+    (window as any).__hekatanDispUnit   = dispUnit.val;
+    (window as any).__hekatanStressUnit = stressUnit.val;
+  }
+})();
 
 /**
  * Detecta cuál preset corresponde a la combinación actual de units, o

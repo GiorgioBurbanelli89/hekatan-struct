@@ -1,0 +1,2836 @@
+﻿{
+    "source_edb":  "C:\\Users\\j-b-j\\Documents\\Hekatan Calc 1.0.0\\hekatan-struct\\Benchmark_Placa\\composite_slab_frame\\composite_slab_shellthin_frame.EDB",
+    "extracted_at":  "2026-05-07 19:46:06",
+    "units":  "kN, m, C",
+    "program":  "ETABS via OAPI",
+    "model_info":  {
+                       "n_points":  30,
+                       "n_frames":  20,
+                       "n_areas":  16,
+                       "n_load_patterns":  3,
+                       "n_load_cases":  3,
+                       "n_combos":  0,
+                       "load_patterns":  [
+                                             "Dead",
+                                             "Live",
+                                             "~LLRF"
+                                         ],
+                       "load_cases":  [
+                                          "Dead",
+                                          "Live",
+                                          "~LLRF"
+                                      ],
+                       "combos":  null
+                   },
+    "joint_coordinates":  [
+                              {
+                                  "name":  "1",
+                                  "x":  0,
+                                  "y":  0,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "2",
+                                  "x":  1,
+                                  "y":  0,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "3",
+                                  "x":  2,
+                                  "y":  0,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "4",
+                                  "x":  3,
+                                  "y":  0,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "5",
+                                  "x":  4,
+                                  "y":  0,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "6",
+                                  "x":  0,
+                                  "y":  1,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "7",
+                                  "x":  1,
+                                  "y":  1,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "8",
+                                  "x":  2,
+                                  "y":  1,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "9",
+                                  "x":  3,
+                                  "y":  1,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "10",
+                                  "x":  4,
+                                  "y":  1,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "11",
+                                  "x":  0,
+                                  "y":  2,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "12",
+                                  "x":  1,
+                                  "y":  2,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "13",
+                                  "x":  2,
+                                  "y":  2,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "14",
+                                  "x":  3,
+                                  "y":  2,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "15",
+                                  "x":  4,
+                                  "y":  2,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "16",
+                                  "x":  0,
+                                  "y":  3,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "17",
+                                  "x":  1,
+                                  "y":  3,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "18",
+                                  "x":  2,
+                                  "y":  3,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "19",
+                                  "x":  3,
+                                  "y":  3,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "20",
+                                  "x":  4,
+                                  "y":  3,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "21",
+                                  "x":  0,
+                                  "y":  4,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "22",
+                                  "x":  1,
+                                  "y":  4,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "23",
+                                  "x":  2,
+                                  "y":  4,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "24",
+                                  "x":  3,
+                                  "y":  4,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "25",
+                                  "x":  4,
+                                  "y":  4,
+                                  "z":  4
+                              },
+                              {
+                                  "name":  "26",
+                                  "x":  0,
+                                  "y":  0,
+                                  "z":  0
+                              },
+                              {
+                                  "name":  "27",
+                                  "x":  4,
+                                  "y":  0,
+                                  "z":  0
+                              },
+                              {
+                                  "name":  "28",
+                                  "x":  0,
+                                  "y":  4,
+                                  "z":  0
+                              },
+                              {
+                                  "name":  "29",
+                                  "x":  4,
+                                  "y":  4,
+                                  "z":  0
+                              },
+                              {
+                                  "name":  "31",
+                                  "x":  2,
+                                  "y":  1.9999999999999996,
+                                  "z":  4
+                              }
+                          ],
+    "joint_reactions":  [
+                            {
+                                "joint":  "1",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "1",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "2",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "2",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "3",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "3",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "4",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "4",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "5",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "5",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "6",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "6",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "7",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "7",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "8",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "8",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "9",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "9",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "10",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "10",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "11",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "11",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "12",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "12",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "13",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "13",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "14",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "14",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "15",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "15",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "16",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "16",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "17",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "17",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "18",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "18",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "19",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "19",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "20",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "20",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "21",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "21",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "22",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "22",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "23",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "23",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "24",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "24",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "25",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "25",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "26",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  1.36276440765021,
+                                "Fy":  0.29754801863653191,
+                                "Fz":  20.000000000000014,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "26",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "27",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  -1.3627644076502092,
+                                "Fy":  0.29754801863653291,
+                                "Fz":  20.00000000000005,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "27",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "28",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  1.3627644076502112,
+                                "Fy":  -0.2975480186365318,
+                                "Fz":  20.000000000000043,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "28",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "29",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  -1.3627644076502108,
+                                "Fy":  -0.29754801863653285,
+                                "Fz":  20.000000000000089,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "29",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "31",
+                                "load_case":  "Dead",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            },
+                            {
+                                "joint":  "31",
+                                "load_case":  "Live",
+                                "step_num":  0,
+                                "Fx":  0,
+                                "Fy":  0,
+                                "Fz":  0,
+                                "Mx":  0,
+                                "My":  0,
+                                "Mz":  0
+                            }
+                        ],
+    "joint_displacements":  [
+                                {
+                                    "joint":  "1",
+                                    "load_case":  "Dead",
+                                    "Ux":  -3.7523198813327351E-19,
+                                    "Uy":  -4.4011416594135271E-19,
+                                    "Uz":  -5.0722799898554376E-05,
+                                    "Rx":  -0.00043818844060449636,
+                                    "Ry":  0.00021373977507460468,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "1",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "2",
+                                    "load_case":  "Dead",
+                                    "Ux":  -3.7523198813327351E-19,
+                                    "Uy":  -5.0720125208988422E-19,
+                                    "Uz":  -0.00033243184186314078,
+                                    "Rx":  -0.0016331798255992582,
+                                    "Ry":  0.00021185923921869588,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "2",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "3",
+                                    "load_case":  "Dead",
+                                    "Ux":  -3.7523198813327351E-19,
+                                    "Uy":  -5.7428833823841563E-19,
+                                    "Uz":  -0.00046418262172647905,
+                                    "Rx":  -0.0020311215427680674,
+                                    "Ry":  7.5896826020554886E-20,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "3",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "4",
+                                    "load_case":  "Dead",
+                                    "Ux":  -3.7523198813327351E-19,
+                                    "Uy":  -6.41375424386947E-19,
+                                    "Uz":  -0.00033243184186314089,
+                                    "Rx":  -0.0016331798255992604,
+                                    "Ry":  -0.00021185923921869583,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "4",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "5",
+                                    "load_case":  "Dead",
+                                    "Ux":  -3.7523198813327351E-19,
+                                    "Uy":  -7.0846251053547855E-19,
+                                    "Uz":  -5.0722799898554471E-05,
+                                    "Rx":  -0.00043818844060449777,
+                                    "Ry":  -0.00021373977507460477,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "5",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "6",
+                                    "load_case":  "Dead",
+                                    "Ux":  -3.0814490198474205E-19,
+                                    "Uy":  -4.4011416594135271E-19,
+                                    "Uz":  -0.00049711493800084442,
+                                    "Rx":  -0.00032127500118861463,
+                                    "Ry":  0.0014487947398321023,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "6",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "7",
+                                    "load_case":  "Dead",
+                                    "Ux":  -3.0814490198474205E-19,
+                                    "Uy":  -5.0720125208988422E-19,
+                                    "Uz":  -0.0017955998049993607,
+                                    "Rx":  -0.0011358798936738949,
+                                    "Ry":  0.0010125282417500459,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "7",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "8",
+                                    "load_case":  "Dead",
+                                    "Ux":  -3.0814490198474205E-19,
+                                    "Uy":  -5.7428833823841563E-19,
+                                    "Uz":  -0.0023137494629930817,
+                                    "Rx":  -0.0014270862963510105,
+                                    "Ry":  1.4252322503321751E-18,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "8",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "9",
+                                    "load_case":  "Dead",
+                                    "Ux":  -3.0814490198474205E-19,
+                                    "Uy":  -6.41375424386947E-19,
+                                    "Uz":  -0.0017955998049993627,
+                                    "Rx":  -0.0011358798936738957,
+                                    "Ry":  -0.0010125282417500453,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "9",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "10",
+                                    "load_case":  "Dead",
+                                    "Ux":  -3.0814490198474205E-19,
+                                    "Uy":  -7.0846251053547855E-19,
+                                    "Uz":  -0.00049711493800084594,
+                                    "Rx":  -0.00032127500118861566,
+                                    "Ry":  -0.0014487947398321044,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "10",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "11",
+                                    "load_case":  "Dead",
+                                    "Ux":  -2.4105781583621063E-19,
+                                    "Uy":  -4.4011416594135271E-19,
+                                    "Uz":  -0.00068319526122193768,
+                                    "Rx":  -8.8665818435115815E-20,
+                                    "Ry":  0.0018472461449470729,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "11",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "12",
+                                    "load_case":  "Dead",
+                                    "Ux":  -2.4105781583621063E-19,
+                                    "Uy":  -5.0720125208988422E-19,
+                                    "Uz":  -0.0023762480455955704,
+                                    "Rx":  -5.0415837654538216E-19,
+                                    "Ry":  0.0013082207176096762,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "12",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "13",
+                                    "load_case":  "Dead",
+                                    "Ux":  -2.4105781583621063E-19,
+                                    "Uy":  -5.7428833823841563E-19,
+                                    "Uz":  -0.0030546211807698648,
+                                    "Rx":  3.7947076036992655E-19,
+                                    "Ry":  1.5970025804746715E-18,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "13",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "14",
+                                    "load_case":  "Dead",
+                                    "Ux":  -2.4105781583621063E-19,
+                                    "Uy":  -6.41375424386947E-19,
+                                    "Uz":  -0.0023762480455955725,
+                                    "Rx":  -3.868339440826901E-19,
+                                    "Ry":  -0.0013082207176096747,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "14",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "15",
+                                    "load_case":  "Dead",
+                                    "Ux":  -2.4105781583621063E-19,
+                                    "Uy":  -7.0846251053547855E-19,
+                                    "Uz":  -0.00068319526122193985,
+                                    "Rx":  -1.7775011875481411E-19,
+                                    "Ry":  -0.0018472461449470742,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "15",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "16",
+                                    "load_case":  "Dead",
+                                    "Ux":  -1.7397072968767915E-19,
+                                    "Uy":  -4.4011416594135271E-19,
+                                    "Uz":  -0.00049711493800084453,
+                                    "Rx":  0.00032127500118861446,
+                                    "Ry":  0.0014487947398321055,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "16",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "17",
+                                    "load_case":  "Dead",
+                                    "Ux":  -1.7397072968767915E-19,
+                                    "Uy":  -5.0720125208988422E-19,
+                                    "Uz":  -0.0017955998049993612,
+                                    "Rx":  0.0011358798936738949,
+                                    "Ry":  0.0010125282417500453,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "17",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "18",
+                                    "load_case":  "Dead",
+                                    "Ux":  -1.7397072968767915E-19,
+                                    "Uy":  -5.7428833823841563E-19,
+                                    "Uz":  -0.0023137494629930817,
+                                    "Rx":  0.0014270862963510099,
+                                    "Ry":  1.6642288138408271E-18,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "18",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "19",
+                                    "load_case":  "Dead",
+                                    "Ux":  -1.7397072968767915E-19,
+                                    "Uy":  -6.41375424386947E-19,
+                                    "Uz":  -0.0017955998049993629,
+                                    "Rx":  0.0011358798936738964,
+                                    "Ry":  -0.0010125282417500446,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "19",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "20",
+                                    "load_case":  "Dead",
+                                    "Ux":  -1.7397072968767915E-19,
+                                    "Uy":  -7.0846251053547855E-19,
+                                    "Uz":  -0.00049711493800084626,
+                                    "Rx":  0.00032127500118861549,
+                                    "Ry":  -0.0014487947398321033,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "20",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "21",
+                                    "load_case":  "Dead",
+                                    "Ux":  -1.0688364353914769E-19,
+                                    "Uy":  -4.4011416594135271E-19,
+                                    "Uz":  -5.072279989855445E-05,
+                                    "Rx":  0.00043818844060449636,
+                                    "Ry":  0.00021373977507460493,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "21",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "22",
+                                    "load_case":  "Dead",
+                                    "Ux":  -1.0688364353914769E-19,
+                                    "Uy":  -5.0720125208988422E-19,
+                                    "Uz":  -0.00033243184186314116,
+                                    "Rx":  0.0016331798255992585,
+                                    "Ry":  0.00021185923921869602,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "22",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "23",
+                                    "load_case":  "Dead",
+                                    "Ux":  -1.0688364353914769E-19,
+                                    "Uy":  -5.7428833823841563E-19,
+                                    "Uz":  -0.00046418262172647954,
+                                    "Rx":  0.0020311215427680674,
+                                    "Ry":  1.6327352701510836E-20,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "23",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "24",
+                                    "load_case":  "Dead",
+                                    "Ux":  -1.0688364353914769E-19,
+                                    "Uy":  -6.41375424386947E-19,
+                                    "Uz":  -0.00033243184186314127,
+                                    "Rx":  0.00163317982559926,
+                                    "Ry":  -0.00021185923921869605,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "24",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "25",
+                                    "load_case":  "Dead",
+                                    "Ux":  -1.0688364353914769E-19,
+                                    "Uy":  -7.0846251053547855E-19,
+                                    "Uz":  -5.0722799898554565E-05,
+                                    "Rx":  0.00043818844060449809,
+                                    "Ry":  -0.00021373977507460498,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "25",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "26",
+                                    "load_case":  "Dead",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0.00021796239350719396,
+                                    "Ry":  -9.8087950949501515E-05,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "26",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "27",
+                                    "load_case":  "Dead",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0.00021796239350719478,
+                                    "Ry":  9.8087950949501271E-05,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "27",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "28",
+                                    "load_case":  "Dead",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  -0.00021796239350719364,
+                                    "Ry":  -9.8087950949501515E-05,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "28",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "29",
+                                    "load_case":  "Dead",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  -0.0002179623935071944,
+                                    "Ry":  9.8087950949501487E-05,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "29",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                },
+                                {
+                                    "joint":  "31",
+                                    "load_case":  "Dead",
+                                    "Ux":  -2.4105781583621063E-19,
+                                    "Uy":  -5.7428833823841563E-19,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  -6.708708614853146E-20
+                                },
+                                {
+                                    "joint":  "31",
+                                    "load_case":  "Live",
+                                    "Ux":  0,
+                                    "Uy":  0,
+                                    "Uz":  0,
+                                    "Rx":  0,
+                                    "Ry":  0,
+                                    "Rz":  0
+                                }
+                            ],
+    "modal_periods":  [
+
+                      ],
+    "modal_participation":  [
+
+                            ],
+    "base_reactions":  [
+                           {
+                               "load_case":  "Dead",
+                               "Fx_total":  8.8817841970012523E-16,
+                               "Fy_total":  1.6653345369377348E-16,
+                               "Fz_total":  80.0000000000002,
+                               "Mx_total":  160.00000000000051,
+                               "My_total":  -160.00000000000057,
+                               "Mz_total":  -2.6645352591003757E-15
+                           },
+                           {
+                               "load_case":  "Live",
+                               "Fx_total":  0,
+                               "Fy_total":  0,
+                               "Fz_total":  0,
+                               "Mx_total":  0,
+                               "My_total":  0,
+                               "Mz_total":  0
+                           }
+                       ],
+    "story_drifts":  [
+                         {
+                             "story":  "Level_1",
+                             "load_case":  "Dead",
+                             "direction":  "X",
+                             "drift":  9.3807997033318377E-20,
+                             "max_label":  "5"
+                         },
+                         {
+                             "story":  "Level_1",
+                             "load_case":  "Dead",
+                             "direction":  "Y",
+                             "drift":  1.7711562763386964E-19,
+                             "max_label":  "25"
+                         }
+                     ],
+    "frame_forces_count":  120,
+    "frame_forces_sample":  [
+                                {
+                                    "frame":  "1",
+                                    "station":  0.176,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -10.316293144601953,
+                                    "V3":  0,
+                                    "T":  -0.035370085285588014,
+                                    "M2":  0,
+                                    "M3":  -3.2767317186078744
+                                },
+                                {
+                                    "frame":  "1",
+                                    "station":  0.58800000000000008,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -10.316293144601953,
+                                    "V3":  0,
+                                    "T":  -0.035370085285588014,
+                                    "M2":  0,
+                                    "M3":  0.97358105696813135
+                                },
+                                {
+                                    "frame":  "1",
+                                    "station":  1,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -10.316293144601953,
+                                    "V3":  0,
+                                    "T":  -0.035370085285588014,
+                                    "M2":  0,
+                                    "M3":  5.2238938325441353
+                                },
+                                {
+                                    "frame":  "1",
+                                    "station":  0.176,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "1",
+                                    "station":  0.58800000000000008,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "1",
+                                    "station":  1,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "2",
+                                    "station":  0,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -3.8656284535616265,
+                                    "V3":  -3.1554436208840472E-30,
+                                    "T":  -0.011778522131367354,
+                                    "M2":  -1.5777218104420236E-30,
+                                    "M3":  5.4742046248211338
+                                },
+                                {
+                                    "frame":  "2",
+                                    "station":  0.5,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -3.8656284535616265,
+                                    "V3":  -3.1554436208840472E-30,
+                                    "T":  -0.011778522131367354,
+                                    "M2":  0,
+                                    "M3":  7.4070188516019471
+                                },
+                                {
+                                    "frame":  "2",
+                                    "station":  1,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -3.8656284535616265,
+                                    "V3":  -3.1554436208840472E-30,
+                                    "T":  -0.011778522131367354,
+                                    "M2":  1.5777218104420236E-30,
+                                    "M3":  9.33983307838276
+                                },
+                                {
+                                    "frame":  "2",
+                                    "station":  0,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "2",
+                                    "station":  0.5,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "2",
+                                    "station":  1,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "3",
+                                    "station":  0,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  3.8656284535616123,
+                                    "V3":  0,
+                                    "T":  0.011778522131367285,
+                                    "M2":  0,
+                                    "M3":  9.3398330783827568
+                                },
+                                {
+                                    "frame":  "3",
+                                    "station":  0.5,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  3.8656284535616123,
+                                    "V3":  0,
+                                    "T":  0.011778522131367285,
+                                    "M2":  0,
+                                    "M3":  7.4070188516019506
+                                },
+                                {
+                                    "frame":  "3",
+                                    "station":  1,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  3.8656284535616123,
+                                    "V3":  0,
+                                    "T":  0.011778522131367285,
+                                    "M2":  0,
+                                    "M3":  5.4742046248211444
+                                },
+                                {
+                                    "frame":  "3",
+                                    "station":  0,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "3",
+                                    "station":  0.5,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "3",
+                                    "station":  1,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "4",
+                                    "station":  0,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  10.316293144601957,
+                                    "V3":  3.1554436208840472E-30,
+                                    "T":  0.035370085285588042,
+                                    "M2":  1.5777218104420236E-30,
+                                    "M3":  5.2238938325441477
+                                },
+                                {
+                                    "frame":  "4",
+                                    "station":  0.41200000000000003,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  10.316293144601957,
+                                    "V3":  3.1554436208840472E-30,
+                                    "T":  0.035370085285588042,
+                                    "M2":  2.7767903863779605E-31,
+                                    "M3":  0.97358105696814112
+                                },
+                                {
+                                    "frame":  "4",
+                                    "station":  0.82400000000000007,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  10.316293144601957,
+                                    "V3":  3.1554436208840472E-30,
+                                    "T":  0.035370085285588042,
+                                    "M2":  -1.0223637331664315E-30,
+                                    "M3":  -3.2767317186078655
+                                },
+                                {
+                                    "frame":  "4",
+                                    "station":  0,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "4",
+                                    "station":  0.41200000000000003,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "4",
+                                    "station":  0.82400000000000007,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "5",
+                                    "station":  0.176,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -10.316293144601975,
+                                    "V3":  0,
+                                    "T":  0.035370085285588021,
+                                    "M2":  0,
+                                    "M3":  -3.2767317186078779
+                                },
+                                {
+                                    "frame":  "5",
+                                    "station":  0.58800000000000008,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -10.316293144601975,
+                                    "V3":  0,
+                                    "T":  0.035370085285588021,
+                                    "M2":  0,
+                                    "M3":  0.97358105696813657
+                                },
+                                {
+                                    "frame":  "5",
+                                    "station":  1,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -10.316293144601975,
+                                    "V3":  0,
+                                    "T":  0.035370085285588021,
+                                    "M2":  0,
+                                    "M3":  5.2238938325441495
+                                },
+                                {
+                                    "frame":  "5",
+                                    "station":  0.176,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "5",
+                                    "station":  0.58800000000000008,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "5",
+                                    "station":  1,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "6",
+                                    "station":  0,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -3.8656284535616265,
+                                    "V3":  -3.1554436208840472E-30,
+                                    "T":  0.011778522131367347,
+                                    "M2":  -1.5777218104420236E-30,
+                                    "M3":  5.4742046248211338
+                                },
+                                {
+                                    "frame":  "6",
+                                    "station":  0.5,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -3.8656284535616265,
+                                    "V3":  -3.1554436208840472E-30,
+                                    "T":  0.011778522131367347,
+                                    "M2":  0,
+                                    "M3":  7.4070188516019471
+                                },
+                                {
+                                    "frame":  "6",
+                                    "station":  1,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -3.8656284535616265,
+                                    "V3":  -3.1554436208840472E-30,
+                                    "T":  0.011778522131367347,
+                                    "M2":  1.5777218104420236E-30,
+                                    "M3":  9.33983307838276
+                                },
+                                {
+                                    "frame":  "6",
+                                    "station":  0,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "6",
+                                    "station":  0.5,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "6",
+                                    "station":  1,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "7",
+                                    "station":  0,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  3.8656284535616123,
+                                    "V3":  0,
+                                    "T":  -0.011778522131367299,
+                                    "M2":  0,
+                                    "M3":  9.3398330783827568
+                                },
+                                {
+                                    "frame":  "7",
+                                    "station":  0.5,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  3.8656284535616123,
+                                    "V3":  0,
+                                    "T":  -0.011778522131367299,
+                                    "M2":  0,
+                                    "M3":  7.4070188516019506
+                                },
+                                {
+                                    "frame":  "7",
+                                    "station":  1,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  3.8656284535616123,
+                                    "V3":  0,
+                                    "T":  -0.011778522131367299,
+                                    "M2":  0,
+                                    "M3":  5.4742046248211444
+                                },
+                                {
+                                    "frame":  "7",
+                                    "station":  0,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "7",
+                                    "station":  0.5,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "7",
+                                    "station":  1,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "8",
+                                    "station":  0,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  10.316293144601971,
+                                    "V3":  3.1554436208840472E-30,
+                                    "T":  -0.035370085285588021,
+                                    "M2":  1.5777218104420236E-30,
+                                    "M3":  5.2238938325441522
+                                },
+                                {
+                                    "frame":  "8",
+                                    "station":  0.41200000000000003,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  10.316293144601971,
+                                    "V3":  3.1554436208840472E-30,
+                                    "T":  -0.035370085285588021,
+                                    "M2":  2.7767903863779605E-31,
+                                    "M3":  0.97358105696813968
+                                },
+                                {
+                                    "frame":  "8",
+                                    "station":  0.82400000000000007,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  10.316293144601971,
+                                    "V3":  3.1554436208840472E-30,
+                                    "T":  -0.035370085285588021,
+                                    "M2":  -1.0223637331664315E-30,
+                                    "M3":  -3.2767317186078726
+                                },
+                                {
+                                    "frame":  "8",
+                                    "station":  0,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "8",
+                                    "station":  0.41200000000000003,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "8",
+                                    "station":  0.82400000000000007,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "9",
+                                    "station":  0.1015,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -9.9795827508159363,
+                                    "V3":  0,
+                                    "T":  0.036555911602704209,
+                                    "M2":  7.8886090522101181E-31,
+                                    "M3":  0.11066180703907942
+                                },
+                                {
+                                    "frame":  "9",
+                                    "station":  0.55075,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -9.9795827508159363,
+                                    "V3":  0,
+                                    "T":  0.036555911602704209,
+                                    "M2":  7.8886090522101181E-31,
+                                    "M3":  4.5939893578431379
+                                },
+                                {
+                                    "frame":  "9",
+                                    "station":  1,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -9.9795827508159363,
+                                    "V3":  0,
+                                    "T":  0.036555911602704209,
+                                    "M2":  7.8886090522101181E-31,
+                                    "M3":  9.0773169086471981
+                                },
+                                {
+                                    "frame":  "9",
+                                    "station":  0.1015,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "9",
+                                    "station":  0.55075,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "9",
+                                    "station":  1,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "10",
+                                    "station":  0,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -3.8089883691352071,
+                                    "V3":  -1.5777218104420236E-30,
+                                    "T":  0.011793608186673805,
+                                    "M2":  -1.5777218104420236E-30,
+                                    "M3":  9.3279165383653933
+                                },
+                                {
+                                    "frame":  "10",
+                                    "station":  0.5,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -3.8089883691352071,
+                                    "V3":  -1.5777218104420236E-30,
+                                    "T":  0.011793608186673805,
+                                    "M2":  -7.8886090522101181E-31,
+                                    "M3":  11.232410722932997
+                                },
+                                {
+                                    "frame":  "10",
+                                    "station":  1,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -3.8089883691352071,
+                                    "V3":  -1.5777218104420236E-30,
+                                    "T":  0.011793608186673805,
+                                    "M2":  0,
+                                    "M3":  13.1369049075006
+                                },
+                                {
+                                    "frame":  "10",
+                                    "station":  0,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "10",
+                                    "station":  0.5,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "10",
+                                    "station":  1,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "11",
+                                    "station":  0,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  3.8089883691352071,
+                                    "V3":  1.5777218104420236E-30,
+                                    "T":  -0.011793608186673708,
+                                    "M2":  7.8886090522101181E-31,
+                                    "M3":  13.136904907500593
+                                },
+                                {
+                                    "frame":  "11",
+                                    "station":  0.5,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  3.8089883691352071,
+                                    "V3":  1.5777218104420236E-30,
+                                    "T":  -0.011793608186673708,
+                                    "M2":  0,
+                                    "M3":  11.23241072293299
+                                },
+                                {
+                                    "frame":  "11",
+                                    "station":  1,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  3.8089883691352071,
+                                    "V3":  1.5777218104420236E-30,
+                                    "T":  -0.011793608186673708,
+                                    "M2":  -7.8886090522101181E-31,
+                                    "M3":  9.3279165383653861
+                                },
+                                {
+                                    "frame":  "11",
+                                    "station":  0,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "11",
+                                    "station":  0.5,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "11",
+                                    "station":  1,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "12",
+                                    "station":  0,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  9.9795827508159576,
+                                    "V3":  7.8886090522101181E-31,
+                                    "T":  -0.0365559116027043,
+                                    "M2":  0,
+                                    "M3":  9.0773169086472159
+                                },
+                                {
+                                    "frame":  "12",
+                                    "station":  0.44925,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  9.9795827508159576,
+                                    "V3":  7.8886090522101181E-31,
+                                    "T":  -0.0365559116027043,
+                                    "M2":  -3.5439576167053954E-31,
+                                    "M3":  4.5939893578431468
+                                },
+                                {
+                                    "frame":  "12",
+                                    "station":  0.8985,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  9.9795827508159576,
+                                    "V3":  7.8886090522101181E-31,
+                                    "T":  -0.0365559116027043,
+                                    "M2":  -7.0879152334107908E-31,
+                                    "M3":  0.110661807039078
+                                },
+                                {
+                                    "frame":  "12",
+                                    "station":  0,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "12",
+                                    "station":  0.44925,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "12",
+                                    "station":  0.8985,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "13",
+                                    "station":  0.1015,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -9.9795827508159718,
+                                    "V3":  0,
+                                    "T":  -0.036555911602704272,
+                                    "M2":  7.8886090522101181E-31,
+                                    "M3":  0.11066180703908303
+                                },
+                                {
+                                    "frame":  "13",
+                                    "station":  0.55075,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -9.9795827508159718,
+                                    "V3":  0,
+                                    "T":  -0.036555911602704272,
+                                    "M2":  7.8886090522101181E-31,
+                                    "M3":  4.5939893578431574
+                                },
+                                {
+                                    "frame":  "13",
+                                    "station":  1,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -9.9795827508159718,
+                                    "V3":  0,
+                                    "T":  -0.036555911602704272,
+                                    "M2":  7.8886090522101181E-31,
+                                    "M3":  9.0773169086472336
+                                },
+                                {
+                                    "frame":  "13",
+                                    "station":  0.1015,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "13",
+                                    "station":  0.55075,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "13",
+                                    "station":  1,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "14",
+                                    "station":  0,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -3.8089883691352071,
+                                    "V3":  -1.5777218104420236E-30,
+                                    "T":  -0.011793608186673778,
+                                    "M2":  -1.5777218104420236E-30,
+                                    "M3":  9.3279165383654146
+                                },
+                                {
+                                    "frame":  "14",
+                                    "station":  0.5,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -3.8089883691352071,
+                                    "V3":  -1.5777218104420236E-30,
+                                    "T":  -0.011793608186673778,
+                                    "M2":  -7.8886090522101181E-31,
+                                    "M3":  11.232410722933018
+                                },
+                                {
+                                    "frame":  "14",
+                                    "station":  1,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  -3.8089883691352071,
+                                    "V3":  -1.5777218104420236E-30,
+                                    "T":  -0.011793608186673778,
+                                    "M2":  0,
+                                    "M3":  13.136904907500622
+                                },
+                                {
+                                    "frame":  "14",
+                                    "station":  0,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "14",
+                                    "station":  0.5,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "14",
+                                    "station":  1,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "15",
+                                    "station":  0,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  3.8089883691351929,
+                                    "V3":  1.5777218104420236E-30,
+                                    "T":  0.011793608186673812,
+                                    "M2":  7.8886090522101181E-31,
+                                    "M3":  13.136904907500629
+                                },
+                                {
+                                    "frame":  "15",
+                                    "station":  0.5,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  3.8089883691351929,
+                                    "V3":  1.5777218104420236E-30,
+                                    "T":  0.011793608186673812,
+                                    "M2":  0,
+                                    "M3":  11.232410722933032
+                                },
+                                {
+                                    "frame":  "15",
+                                    "station":  1,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  3.8089883691351929,
+                                    "V3":  1.5777218104420236E-30,
+                                    "T":  0.011793608186673812,
+                                    "M2":  -7.8886090522101181E-31,
+                                    "M3":  9.3279165383654359
+                                },
+                                {
+                                    "frame":  "15",
+                                    "station":  0,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "15",
+                                    "station":  0.5,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "15",
+                                    "station":  1,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "16",
+                                    "station":  0,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  9.979582750816,
+                                    "V3":  7.8886090522101181E-31,
+                                    "T":  0.03655591160270423,
+                                    "M2":  0,
+                                    "M3":  9.0773169086472638
+                                },
+                                {
+                                    "frame":  "16",
+                                    "station":  0.44925,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  9.979582750816,
+                                    "V3":  7.8886090522101181E-31,
+                                    "T":  0.03655591160270423,
+                                    "M2":  -3.5439576167053954E-31,
+                                    "M3":  4.5939893578431761
+                                },
+                                {
+                                    "frame":  "16",
+                                    "station":  0.8985,
+                                    "load_case":  "Dead",
+                                    "P":  0,
+                                    "V2":  9.979582750816,
+                                    "V3":  7.8886090522101181E-31,
+                                    "T":  0.03655591160270423,
+                                    "M2":  -7.0879152334107908E-31,
+                                    "M3":  0.11066180703908815
+                                },
+                                {
+                                    "frame":  "16",
+                                    "station":  0,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "16",
+                                    "station":  0.44925,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "16",
+                                    "station":  0.8985,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "17",
+                                    "station":  0,
+                                    "load_case":  "Dead",
+                                    "P":  -20.000000000000014,
+                                    "V2":  -1.3627644076502097,
+                                    "V3":  -0.29754801863653196,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "17",
+                                    "station":  1.824,
+                                    "load_case":  "Dead",
+                                    "P":  -20.000000000000014,
+                                    "V2":  -1.3627644076502097,
+                                    "V3":  -0.29754801863653196,
+                                    "T":  0,
+                                    "M2":  0.54272758599303428,
+                                    "M3":  2.4856822795539824
+                                },
+                                {
+                                    "frame":  "17",
+                                    "station":  3.648,
+                                    "load_case":  "Dead",
+                                    "P":  -20.000000000000014,
+                                    "V2":  -1.3627644076502097,
+                                    "V3":  -0.29754801863653196,
+                                    "T":  0,
+                                    "M2":  1.0854551719860686,
+                                    "M3":  4.9713645591079647
+                                },
+                                {
+                                    "frame":  "17",
+                                    "station":  0,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "17",
+                                    "station":  1.824,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "17",
+                                    "station":  3.648,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "18",
+                                    "station":  0,
+                                    "load_case":  "Dead",
+                                    "P":  -20.00000000000005,
+                                    "V2":  1.3627644076502095,
+                                    "V3":  -0.29754801863653285,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "18",
+                                    "station":  1.824,
+                                    "load_case":  "Dead",
+                                    "P":  -20.00000000000005,
+                                    "V2":  1.3627644076502095,
+                                    "V3":  -0.29754801863653285,
+                                    "T":  0,
+                                    "M2":  0.54272758599303594,
+                                    "M3":  -2.4856822795539819
+                                },
+                                {
+                                    "frame":  "18",
+                                    "station":  3.648,
+                                    "load_case":  "Dead",
+                                    "P":  -20.00000000000005,
+                                    "V2":  1.3627644076502095,
+                                    "V3":  -0.29754801863653285,
+                                    "T":  0,
+                                    "M2":  1.0854551719860719,
+                                    "M3":  -4.9713645591079638
+                                },
+                                {
+                                    "frame":  "18",
+                                    "station":  0,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "18",
+                                    "station":  1.824,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "18",
+                                    "station":  3.648,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "19",
+                                    "station":  0,
+                                    "load_case":  "Dead",
+                                    "P":  -20.000000000000043,
+                                    "V2":  -1.362764407650211,
+                                    "V3":  0.29754801863653174,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  -4.4408920985006262E-16
+                                },
+                                {
+                                    "frame":  "19",
+                                    "station":  1.824,
+                                    "load_case":  "Dead",
+                                    "P":  -20.000000000000043,
+                                    "V2":  -1.362764407650211,
+                                    "V3":  0.29754801863653174,
+                                    "T":  0,
+                                    "M2":  -0.542727585993034,
+                                    "M3":  2.4856822795539846
+                                },
+                                {
+                                    "frame":  "19",
+                                    "station":  3.648,
+                                    "load_case":  "Dead",
+                                    "P":  -20.000000000000043,
+                                    "V2":  -1.362764407650211,
+                                    "V3":  0.29754801863653174,
+                                    "T":  0,
+                                    "M2":  -1.0854551719860679,
+                                    "M3":  4.9713645591079691
+                                },
+                                {
+                                    "frame":  "19",
+                                    "station":  0,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "19",
+                                    "station":  1.824,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "19",
+                                    "station":  3.648,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "20",
+                                    "station":  0,
+                                    "load_case":  "Dead",
+                                    "P":  -20.000000000000089,
+                                    "V2":  1.3627644076502108,
+                                    "V3":  0.29754801863653291,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  -4.4408920985006262E-16
+                                },
+                                {
+                                    "frame":  "20",
+                                    "station":  1.824,
+                                    "load_case":  "Dead",
+                                    "P":  -20.000000000000089,
+                                    "V2":  1.3627644076502108,
+                                    "V3":  0.29754801863653291,
+                                    "T":  0,
+                                    "M2":  -0.542727585993036,
+                                    "M3":  -2.485682279553985
+                                },
+                                {
+                                    "frame":  "20",
+                                    "station":  3.648,
+                                    "load_case":  "Dead",
+                                    "P":  -20.000000000000089,
+                                    "V2":  1.3627644076502108,
+                                    "V3":  0.29754801863653291,
+                                    "T":  0,
+                                    "M2":  -1.0854551719860721,
+                                    "M3":  -4.9713645591079691
+                                },
+                                {
+                                    "frame":  "20",
+                                    "station":  0,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "20",
+                                    "station":  1.824,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                },
+                                {
+                                    "frame":  "20",
+                                    "station":  3.648,
+                                    "load_case":  "Live",
+                                    "P":  0,
+                                    "V2":  0,
+                                    "V3":  0,
+                                    "T":  0,
+                                    "M2":  0,
+                                    "M3":  0
+                                }
+                            ]
+}

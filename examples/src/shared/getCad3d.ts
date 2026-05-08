@@ -6489,13 +6489,44 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
           }
         }
 
+        // ── Apply Section Property Modifiers (ETABS-style) ──
+        // modA, modI (Iz), modI3 (Iy), modJ multiplican el valor base.
+        // modAs2, modAs3 son ESPECIALES (convención Hekatan/ETABS):
+        //   = 1 (default)  → Timoshenko con As = 5/6·A
+        //   = 0           → Bernoulli puro (sin shear deformation)
+        //   = otro factor → Timoshenko con As = factor · 5/6 · A
+        let A_eff = sec.A, Iz_eff = sec.Iy, Iy_eff = sec.Iz, J_eff = sec.J;
+        let asY_explicit: number | undefined, asZ_explicit: number | undefined;
+        if (ov) {
+          if (ov.modA != null && ov.modA !== 1) A_eff *= ov.modA;
+          if (ov.modI != null && ov.modI !== 1) Iz_eff *= ov.modI;
+          if (ov.modI3 != null && ov.modI3 !== 1) Iy_eff *= ov.modI3;
+          if (ov.modJ != null && ov.modJ !== 1) J_eff *= ov.modJ;
+          // modAs2/3: 0 → Bernoulli (sentinel -1 al WASM); >0 → Timoshenko con factor
+          if (ov.modAs2 != null) {
+            if (ov.modAs2 === 0) asY_explicit = -1;       // Bernoulli sentinel
+            else if (ov.modAs2 !== 1) asY_explicit = ov.modAs2 * (5/6) * A_eff;
+          }
+          if (ov.modAs3 != null) {
+            if (ov.modAs3 === 0) asZ_explicit = -1;
+            else if (ov.modAs3 !== 1) asZ_explicit = ov.modAs3 * (5/6) * A_eff;
+          }
+        }
         ei.elasticities!.set(i, elemE);
         ei.shearModuli!.set(i, elemG);
-        ei.areas!.set(i, sec.A);
-        ei.momentsOfInertiaZ!.set(i, sec.Iy);
-        ei.momentsOfInertiaY!.set(i, sec.Iz);
-        ei.torsionalConstants!.set(i, sec.J);
-        ei.densities!.set(i, elemRho);
+        ei.areas!.set(i, A_eff);
+        ei.momentsOfInertiaZ!.set(i, Iz_eff);
+        ei.momentsOfInertiaY!.set(i, Iy_eff);
+        ei.torsionalConstants!.set(i, J_eff);
+        ei.densities!.set(i, elemRho * (ov?.modMass ?? 1));
+        if (asY_explicit !== undefined) {
+          if (!ei.shearAreasY) (ei as any).shearAreasY = new Map();
+          (ei as any).shearAreasY.set(i, asY_explicit);
+        }
+        if (asZ_explicit !== undefined) {
+          if (!ei.shearAreasZ) (ei as any).shearAreasZ = new Map();
+          (ei as any).shearAreasZ.set(i, asZ_explicit);
+        }
         // Apply 12-DOF releases from override
         if (ov && ov.releases12 && ov.releases12.some((r: boolean) => r)) {
           if (!ei.momentReleases) (ei as any).momentReleases = new Map();

@@ -1,0 +1,31 @@
+[OK] Conectado
+
+=== cantileverColumn ===
+  [..] Analysis done
+  Joints: ['1', '2']
+  joint 1: Ux=0.0000 mm  Uy=0.0000 mm  Uz=0.0000 mm
+  joint 2: Ux=6.2880 mm  Uy=0.0000 mm  Uz=0.0000 mm
+  [OK] KPI Ux = 6.2880 mm
+
+=== clampedClampedBeam ===
+  [..] Analysis done
+  Joints: ['1', '2', '3']
+  joint 1: Ux=0.0000 mm  Uy=0.0000 mm  Uz=0.0000 mm
+  joint 2: Ux=0.0000 mm  Uy=0.0000 mm  Uz=0.0000 mm
+  joint 3: Ux=0.0000 mm  Uy=0.0000 mm  Uz=-0.1419 mm
+  [OK] KPI Uz = -0.1419 mm
+
+=== cantileverBeam ===
+  [..] Analysis done
+  Joints: ['1', '2']
+  joint 1: Ux=0.0000 mm  Uy=0.0000 mm  Uz=0.0000 mm
+  joint 2: Ux=0.0000 mm  Uy=0.0000 mm  Uz=-6.2880 mm
+  [OK] KPI Uz = -6.2880 mm
+
+=== RESUMEN ===
+Case                   | KPI   |         mm
+cantileverColumn       | Ux    |     6.2880
+clampedClampedBeam     | Uz    |    -0.1419
+cantileverBeam         | Uz    |    -6.2880
+
+[OK] C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_canonical_results.json

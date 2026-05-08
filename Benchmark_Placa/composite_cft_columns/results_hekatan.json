@@ -1,0 +1,22 @@
+[
+  {
+    "setup": "cftNoSlab",
+    "nodes": 29,
+    "shells": 0,
+    "frames": 20,
+    "kpi_node": 2,
+    "kpi_label": "w_midspan_beam",
+    "w_kpi_mm": -0.6465038142441866,
+    "sum_Rz_kN": 79.99999999999997
+  },
+  {
+    "setup": "cftDeckSlab",
+    "nodes": 29,
+    "shells": 16,
+    "frames": 20,
+    "kpi_node": 12,
+    "kpi_label": "w_centro",
+    "w_kpi_mm": -2.9000633552194555,
+    "sum_Rz_kN": 80.00000000000135
+  }
+]

@@ -1,4 +1,4 @@
-# ============================================================================
+﻿# ============================================================================
 # etabs_extract.ps1 — CLI PowerShell para extraer resultados de ETABS via OAPI
 # ============================================================================
 # Uso:
@@ -68,6 +68,17 @@ if ($ret -ne 0) { Write-Warning "OpenFile retorno $ret" }
 # Unidades: kN, m, C  (eUnits_kN_m_C = 6)
 $SapModel.SetPresentUnits(6) | Out-Null
 
+# Si importamos un .e2k, ETABS necesita el modelo guardado como .EDB binario
+# para poder correr el analisis. Hacemos SaveAs hacia el mismo nombre con .EDB.
+if ($ext -eq ".e2k") {
+    $edbPath = [System.IO.Path]::ChangeExtension($ModelPath, ".EDB")
+    Write-Output "[INFO] Guardando como .EDB: $edbPath"
+    try {
+        $ret = $SapModel.File.Save($edbPath)
+        if ($ret -ne 0) { Write-Warning "File.Save retorno $ret" }
+    } catch { Write-Warning "File.Save excepcion: $($_.Exception.Message)" }
+}
+
 # === 3. Run analysis si se pidio ==========================================
 if ($RunAnalysis) {
     Write-Output "[INFO] Corriendo RunAnalysis..."
@@ -75,6 +86,14 @@ if ($RunAnalysis) {
     $ret = $SapModel.Analyze.RunAnalysis()
     $dt = ((Get-Date) - $t0).TotalSeconds
     Write-Output ("[INFO] RunAnalysis ret={0} en {1:N1}s" -f $ret, $dt)
+    if ($ret -ne 0) {
+        Write-Warning "RunAnalysis fallo (ret=$ret). Reintentando despues de Save..."
+        try {
+            $SapModel.File.Save($edbPath) | Out-Null
+            $ret = $SapModel.Analyze.RunAnalysis()
+            Write-Output "[INFO] Reintento RunAnalysis ret=$ret"
+        } catch {}
+    }
 }
 
 # === 4. Inicializar output ================================================

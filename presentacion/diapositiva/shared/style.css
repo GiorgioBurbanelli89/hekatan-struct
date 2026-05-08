@@ -1,0 +1,421 @@
+/**
+ * Estilo común para todas las diapositivas — papel académico oscuro/beige
+ * Mismo lenguaje visual que cuadratura_gauss_sliders.html
+ *
+ * Uso desde cada slide:
+ *   <link rel="stylesheet" href="./shared/style.css">
+ *   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+ */
+
+:root {
+  --paper:        #f4ecd8;
+  --paper-dark:   #e8dcc0;
+  --ink:          #1a2942;
+  --ink-soft:     #3d4f6f;
+  --ink-fade:     #6a7a96;
+  --gold:         #b08d4f;
+  --green:        #2d6a4f;
+  --red:          #a23232;
+  --blue:         #2c5e8e;
+  --grid:         rgba(26, 41, 66, 0.07);
+  --highlight:    rgba(176, 141, 79, 0.15);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: 16px;
+  line-height: 1.55;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(176, 141, 79, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(26, 41, 66, 0.04) 0%, transparent 40%),
+    repeating-linear-gradient(90deg, transparent 0, transparent 39px, var(--grid) 39px, var(--grid) 40px),
+    repeating-linear-gradient(0deg, transparent 0, transparent 39px, var(--grid) 39px, var(--grid) 40px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 32px 26px 60px;
+}
+
+/* ── Header de cada slide ────────────────────────────────── */
+header {
+  text-align: center;
+  margin-bottom: 26px;
+  padding-bottom: 20px;
+  border-bottom: 1.5px solid var(--ink);
+}
+.pre-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  font-size: 2.3rem;
+  line-height: 1.1;
+}
+.subtitle {
+  font-style: italic;
+  color: var(--ink-soft);
+  margin-top: 8px;
+  font-size: 1rem;
+}
+
+/* ── Secciones ──────────────────────────────────────────── */
+section { margin-bottom: 26px; }
+h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  font-size: 1.5rem;
+  color: var(--ink);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--ink-fade);
+}
+h3 {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--ink);
+  margin: 14px 0 8px;
+}
+p { margin: 8px 0; }
+strong { color: var(--blue); font-weight: 700; }
+em { font-style: italic; color: var(--gold); }
+
+/* ── Code blocks ─────────────────────────────────────────── */
+code, pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+}
+code {
+  background: var(--paper-dark);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--blue);
+}
+pre {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 12px 14px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 10px 0;
+  line-height: 1.4;
+}
+pre code { background: transparent; color: inherit; padding: 0; }
+
+/* ── Bloque comparativo lado a lado (MATLAB vs C++) ─────── */
+.side-by-side {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 14px 0;
+}
+.side-by-side > div {
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.side-by-side .lang-header {
+  background: var(--blue);
+  color: var(--paper);
+  padding: 6px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.side-by-side .lang-header.matlab { background: #d97706; }
+.side-by-side .lang-header.cpp { background: #1d4ed8; }
+.side-by-side .lang-header.python { background: #15803d; }
+.side-by-side .lang-header.julia { background: #7c3aed; }
+.side-by-side pre { margin: 0; border-radius: 0; font-size: 0.72rem; }
+
+/* ── Cards de resultados ───────────────────────────────── */
+.results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+.result-card {
+  background: var(--paper-dark);
+  border: 1px solid var(--ink-fade);
+  border-radius: 4px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+}
+.result-card.exact { border-left: 4px solid var(--green); }
+.result-card.gauss { border-left: 4px solid var(--gold); }
+.result-card.error { border-left: 4px solid var(--red); }
+.result-card.hekatan { border-left: 4px solid var(--blue); }
+.result-card.matlab { border-left: 4px solid #d97706; }
+.result-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+}
+.result-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-top: 4px;
+}
+
+/* ── Sliders ───────────────────────────────────────────── */
+.controls {
+  background: var(--paper-dark);
+  border: 1px solid var(--ink-fade);
+  border-radius: 4px;
+  padding: 14px 16px;
+  margin: 14px 0;
+}
+.slider-group { margin-bottom: 14px; }
+.slider-group:last-child { margin-bottom: 0; }
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.slider-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--ink);
+}
+.slider-label .symbol {
+  font-style: italic;
+  color: var(--gold);
+  font-weight: 700;
+  margin-right: 4px;
+}
+.slider-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: var(--blue);
+  font-size: 0.95rem;
+  background: var(--paper);
+  padding: 2px 10px;
+  border-radius: 3px;
+  border: 1px solid var(--ink-fade);
+}
+.slider-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--ink-fade);
+  margin-top: 4px;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--ink-fade);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--gold);
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  cursor: grab;
+}
+input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; }
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--gold);
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  cursor: grab;
+}
+
+/* ── Tabla ─────────────────────────────────────────────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+}
+th, td {
+  border: 1px solid var(--ink-fade);
+  padding: 7px 10px;
+  text-align: center;
+}
+th {
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+tr:nth-child(even) { background: rgba(255,255,255,0.3); }
+
+/* ── Bloque cita / quote ───────────────────────────────── */
+.quote, .explanation-box {
+  background: var(--highlight);
+  border-left: 4px solid var(--gold);
+  padding: 12px 16px;
+  margin: 14px 0;
+  font-style: italic;
+  color: var(--ink-soft);
+  border-radius: 3px;
+}
+
+/* ── Indicador de grado / status ────────────────────────── */
+.grade-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--paper-dark);
+  border: 1px solid var(--ink-fade);
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+.grade-indicator strong {
+  color: var(--blue);
+  font-size: 1.05rem;
+}
+
+/* ── Visualizador SVG ────────────────────────────────────── */
+.viz-card {
+  background: var(--paper-dark);
+  border: 1px solid var(--ink-fade);
+  border-radius: 4px;
+  padding: 14px;
+  margin: 14px 0;
+}
+.viz-card svg.plot {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ── Footer / navigation ───────────────────────────────── */
+.nav-bar {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  background: var(--ink);
+  padding: 6px 10px;
+  border-radius: 30px;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+.nav-bar a {
+  color: var(--paper);
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  padding: 4px 12px;
+  border-radius: 16px;
+  transition: background 0.2s;
+}
+.nav-bar a:hover { background: var(--gold); color: var(--ink); }
+.nav-bar a.current { background: var(--gold); color: var(--ink); }
+.nav-bar .nav-prev::before { content: "← "; }
+.nav-bar .nav-next::after { content: " →"; }
+.nav-bar .nav-home { font-weight: 700; }
+
+.footer-note {
+  margin-top: 32px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--ink-fade);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+/* ── MathJax fix ──────────────────────────────────────────── */
+mjx-container { font-size: 105% !important; }
+
+/* ── Diagramas ────────────────────────────────────────────── */
+.arch-diagram {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  align-items: center;
+  margin: 18px 0;
+}
+.arch-layer {
+  background: var(--paper-dark);
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  padding: 12px 18px;
+  width: 80%;
+  text-align: center;
+  margin-bottom: 4px;
+  position: relative;
+}
+.arch-layer h3 { color: var(--gold); margin: 0 0 4px; }
+.arch-layer .desc { font-size: 0.85rem; color: var(--ink-soft); }
+.arch-arrow {
+  font-size: 1.6rem;
+  color: var(--gold);
+  margin: 0;
+  height: 24px;
+  line-height: 24px;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .container { padding: 22px 16px 80px; }
+  h1 { font-size: 1.7rem; }
+  .side-by-side { grid-template-columns: 1fr; }
+  .arch-layer { width: 95%; }
+  .nav-bar { flex-wrap: wrap; max-width: 95%; }
+  .nav-bar a { font-size: 0.7rem; padding: 4px 8px; }
+}
+
+/* ── Print (Ctrl+P → PDF) ────────────────────────────────── */
+@media print {
+  body { background: white; }
+  body::before { display: none; }
+  .nav-bar { display: none; }
+  .container { max-width: 100%; padding: 12mm; }
+  pre { background: #f4ecd8 !important; color: #1a2942 !important; }
+  .side-by-side > div { background: #f4ecd8 !important; color: #1a2942 !important; }
+  .side-by-side .lang-header { color: white !important; }
+}

@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>FEM — del lápiz al código · UPS Maestría</title>
+
+<!-- reveal.js -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/dist/reset.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/dist/theme/black.css" id="theme">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/plugin/highlight/monokai.css">
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
+
+<style>
+  .reveal { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 28px; }
+  .reveal h1, .reveal h2, .reveal h3 { color: #a5b4fc; text-transform: none; letter-spacing: -0.5px; margin-top: 0; }
+  .reveal h1 { font-size: 1.8em; }
+  .reveal h2 { font-size: 1.3em; border-bottom: 2px solid #4f46e5; padding-bottom: 0.15em; margin-bottom: 0.4em; }
+  .reveal h3 { font-size: 1.0em; color: #fde68a; margin-bottom: 0.3em; }
+  .reveal p, .reveal li { color: #e2e8f0; line-height: 1.35; margin: 0.3em 0; }
+  .reveal ol, .reveal ul { margin: 0.3em 0; }
+  .reveal strong { color: #fde68a; }
+  .reveal em { color: #86efac; font-style: normal; }
+  .reveal code { background: rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px; color: #fde68a; font-size: 0.85em; }
+  .reveal pre code { font-size: 0.6em; line-height: 1.4; }
+  .reveal .badge {
+    display: inline-block; padding: 3px 8px; background: #1e3a5f; color: #dbeafe;
+    border-radius: 4px; font-size: 0.55em; margin-right: 6px; vertical-align: middle;
+  }
+  .reveal .quote {
+    background: rgba(165,180,252,0.08); border-left: 4px solid #a5b4fc;
+    padding: 10px 16px; margin: 12px 0; font-style: italic; color: #cbd5e1;
+    font-size: 0.78em;
+  }
+  .reveal .ok { color: #86efac; }
+  .reveal .warn { color: #fde68a; }
+  .reveal .danger { color: #f87171; }
+  .reveal .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+  .reveal .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; align-items: start; }
+  .reveal table { font-size: 0.65em; margin: 8px auto; }
+  .reveal table th { background: #1e3a5f; color: #dbeafe; }
+  .reveal table td, .reveal table th { padding: 4px 10px; border: 1px solid rgba(255,255,255,0.15); }
+  .reveal section img { max-height: 60vh; object-fit: contain; }
+  .reveal .small { font-size: 0.65em; color: #94a3b8; }
+  .reveal .fragment.highlight-yellow.visible { color: #fde68a; }
+  .reveal .footer { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center;
+                    font-size: 0.5em; color: #64748b; pointer-events: none; }
+  .reveal section.lead { text-align: center; }
+  .reveal section.lead h1 { font-size: 2.4em; margin-top: 0.3em; }
+  .reveal section.lead .subtitle { color: #94a3b8; font-size: 0.9em; margin-top: 0.3em; }
+  .reveal section.lead .author { color: #fde68a; font-size: 0.7em; margin-top: 1.5em; }
+  .reveal .center { text-align: center; }
+  .reveal .lang-pill {
+    display: inline-block; padding: 3px 12px; margin: 4px; border-radius: 16px;
+    font-size: 0.55em; font-weight: 600;
+  }
+</style>
+
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ───────────────────────── 1. Portada ───────────────────────── -->
+<section class="lead">
+  <h1>Análisis Estructural<br>por Elementos Finitos</h1>
+  <div class="subtitle">Del lápiz al código — la matemática es ciencia, el software es herramienta</div>
+  <div class="author">
+    <strong>Ing. Jorge Burbano</strong> · TFM Maestría UPS<br>
+    Aplicaciones Computacionales — Dra. Betzabeth Suquillo<br>
+    <span class="small">Viernes 8 de mayo de 2026 · 18:00</span>
+  </div>
+  <div class="footer">Hekatan Struct · Calcpad Symbolic · Hekatan Lab</div>
+</section>
+
+<!-- ───────────────────────── 2. ¿Qué es FEM? ───────────────────────── -->
+<section>
+  <h2>¿Qué es el Método de Elementos Finitos?</h2>
+  <div class="grid2">
+    <div>
+      <h3>Idea central</h3>
+      <p>Un cuerpo continuo (viga, placa, sólido) se <strong>discretiza</strong> en N <em>elementos finitos</em> conectados por <em>nodos</em>.</p>
+      <p>En cada elemento se aproxima la solución con <strong>funciones de forma</strong> (Hermite, Lagrange, Q4, H8...).</p>
+      <p>Las ecuaciones del equilibrio se reducen a un <strong>sistema lineal</strong>:</p>
+      <p class="center" style="font-size:1.4em;margin-top:20px">
+        \( \mathbf{K} \cdot \mathbf{u} = \mathbf{F} \)
+      </p>
+    </div>
+    <div>
+      <h3>Construcción</h3>
+      <ol style="font-size:0.8em">
+        <li>Geometría → nodos + elementos</li>
+        <li>Elemento → matriz local <strong>K<sub>local</sub></strong></li>
+        <li>Transformación local → global <strong>T<sup>T</sup>·K·T</strong></li>
+        <li>Ensamblaje en sistema global</li>
+        <li>Aplicar condiciones de borde</li>
+        <li>Resolver <strong>K·u = F</strong> (LU, Cholesky, sparse)</li>
+        <li>Calcular fuerzas internas <strong>F<sub>int</sub> = K·u</strong></li>
+      </ol>
+    </div>
+  </div>
+  <div class="quote" style="margin-top:14px">
+    El FEM es una técnica <strong>matemática rigurosa</strong> con <em>casi 70 años de teoría establecida</em>.
+  </div>
+</section>
+
+<!-- ───────────────────────── 3. La matemática NO la da el software ───────────────────────── -->
+<section>
+  <h2>La matemática <em>ya está dada</em></h2>
+  <p>El software <span class="danger">NO</span> inventa la matemática. Solo <em>ejecuta</em> lo que ya está demostrado.</p>
+
+  <table style="margin: 20px auto">
+    <thead>
+      <tr><th>Año</th><th>Autor</th><th>Aporte</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1909</td><td>Galerkin</td><td>Método de residuos ponderados</td></tr>
+      <tr><td>1943</td><td>Courant</td><td>Variational methods (germen del FEM)</td></tr>
+      <tr><td>1956</td><td>Turner, Clough, Martin, Topp</td><td>Stiffness method para estructuras aeroespaciales</td></tr>
+      <tr><td>1965</td><td>Zienkiewicz</td><td>Primer libro: <em>The Finite Element Method</em></td></tr>
+      <tr><td>1971</td><td>Wilson</td><td>Incompatible modes para Q4 plate-bending</td></tr>
+      <tr><td>1976</td><td>Bathe</td><td>SAP/ETABS · <em>Finite Element Procedures</em></td></tr>
+      <tr><td>1985</td><td>Mario Paz</td><td><em>Structural Dynamics</em> (libro de referencia hoy)</td></tr>
+    </tbody>
+  </table>
+  <div class="quote">
+    <strong>Las ecuaciones que ETABS, SAP2000 y OpenSees usan</strong> son las mismas que Wilson y Bathe escribieron a mano hace 50 años.
+  </div>
+</section>
+
+<!-- ───────────────────────── 4. ¿Qué aporta el ingeniero? ───────────────────────── -->
+<section>
+  <h2>El ingeniero aporta <em>CRITERIO</em></h2>
+  <p>Lo que la máquina no puede hacer:</p>
+  <div class="grid3" style="margin-top:24px">
+    <div>
+      <h3>🎯 Modelar</h3>
+      <ul style="font-size:0.7em">
+        <li>¿Frame, shell o sólido?</li>
+        <li>¿Empotrado o pinned?</li>
+        <li>¿Q4 thick (Mindlin) o thin (Kirchhoff)?</li>
+        <li>¿Diafragma rígido?</li>
+      </ul>
+    </div>
+    <div>
+      <h3>📊 Cargar</h3>
+      <ul style="font-size:0.7em">
+        <li>D, L, E, W (NEC, ASCE 7)</li>
+        <li>Patrones, combinaciones</li>
+        <li>Sismo: estático/dinámico</li>
+        <li>Pushover (M-φ)</li>
+      </ul>
+    </div>
+    <div>
+      <h3>✅ Verificar</h3>
+      <ul style="font-size:0.7em">
+        <li>Convergencia de malla</li>
+        <li>Reacciones balanceadas</li>
+        <li>ASCE 7-22 §12.9.1 (90% MPF)</li>
+        <li>Análisis de sensibilidad</li>
+      </ul>
+    </div>
+  </div>
+  <div class="quote" style="margin-top:24px">
+    El software ejecuta. <strong>El ingeniero decide</strong>. Sin criterio, los resultados pueden ser <em>numéricamente correctos</em> pero <em>físicamente absurdos</em>.
+  </div>
+</section>
+
+<!-- ───────────────────────── 5. El programador aporta BUCLES ───────────────────────── -->
+<section>
+  <h2>El programador aporta <em>BUCLES RÁPIDOS</em></h2>
+  <p>El FEM resuelve sistemas con <strong>miles a millones de DOFs</strong>. La mano humana no escala. Los lenguajes científicos sí:</p>
+
+  <div class="grid2" style="margin-top:14px">
+    <div>
+      <span class="lang-pill" style="background:#7c3aed">Fortran (1957)</span>
+      <p class="small">El idioma original de la ciencia. Aún domina HPC, climate models, NASTRAN. Sintaxis austera, performance brutal.</p>
+
+      <span class="lang-pill" style="background:#0891b2">C / C++ (1972 / 1985)</span>
+      <p class="small">SAP2000, ETABS, ABAQUS, ANSYS, CalculiX, OpenSees: <strong>todos en C++</strong>. Control total de memoria, SIMD, threads.</p>
+
+      <span class="lang-pill" style="background:#9333ea">Julia (2012)</span>
+      <p class="small">Sintaxis matemática, velocidad de Fortran. Usado en MIT, Berkeley para nuevos solvers FEM (Gridap.jl, Ferrite.jl).</p>
+    </div>
+    <div>
+      <span class="lang-pill" style="background:#facc15;color:#1f2937">Python (1991)</span>
+      <p class="small">Lenguaje "pegamento". OpenSeesPy, FEniCS, scikit-fem. Lento solo, RÁPIDO con NumPy/SciPy/JAX (que están en C/Fortran).</p>
+
+      <span class="lang-pill" style="background:#3b82f6">MATLAB (1984)</span>
+      <p class="small">El estándar académico. Sintaxis matricial natural. Caro y closed-source, pero la base de muchos artículos FEM.</p>
+
+      <span class="lang-pill" style="background:#22c55e">JavaScript / WebAssembly</span>
+      <p class="small">Hekatan Struct: solver C++ → WASM → corre en navegador. <em>Cero instalación</em>.</p>
+    </div>
+  </div>
+  <div class="quote" style="margin-top:14px">
+    No importa el lenguaje. <strong>Importa que ejecute K·u=F rápido y correctamente.</strong>
+  </div>
+</section>
+
+<!-- ───────────────────────── 6. Hekatan Struct + Calcpad ───────────────────────── -->
+<section>
+  <h2>Hekatan Struct + Calcpad Symbolic</h2>
+  <p>Dos herramientas complementarias:</p>
+
+  <div class="grid2" style="margin-top:14px">
+    <div>
+      <h3>🏗 Hekatan Struct</h3>
+      <ul style="font-size:0.75em">
+        <li><strong>Solver C++ Eigen</strong> compilado a WASM</li>
+        <li>Modelado <strong>paramétrico por código</strong> (TypeScript)</li>
+        <li>Visor 3D Three.js, parametrizable con sliders</li>
+        <li>Round-trip <code>.e2k</code> ↔ ETABS</li>
+        <li>Open source MIT · GitHub Pages</li>
+      </ul>
+      <p class="small ok">→ Ejecuta el modelo y muestra el resultado FEM</p>
+    </div>
+    <div>
+      <h3>📐 Calcpad Symbolic</h3>
+      <ul style="font-size:0.75em">
+        <li>Editor MATLAB-like con <strong>output simbólico KaTeX</strong></li>
+        <li>Genera <strong>memoria de cálculo imprimible</strong> (fórmulas + valores)</li>
+        <li>Cada paso del FEM se escribe como ecuación</li>
+        <li>Integrado en Hekatan via panel <code>🧮 Calculadora FEM</code></li>
+      </ul>
+      <p class="small ok">→ Muestra la matemática paso a paso</p>
+    </div>
+  </div>
+
+  <div class="quote" style="margin-top:14px">
+    Mismo modelo, dos lenguajes: <strong>el algorítmico</strong> (Hekatan) y <strong>el simbólico</strong> (Calcpad).
+    Si producen el <em>mismo número</em> → la implementación es correcta.
+  </div>
+</section>
+
+<!-- ───────────────────────── 7. Hekatan Lab — la validación cruzada ───────────────────────── -->
+<section>
+  <h2>Hekatan Lab — validación cruzada del solver</h2>
+  <p>Cada benchmark de Hekatan Struct genera un <strong>script Calcpad equivalente</strong>. Si los números coinciden, el solver está demostrado correcto.</p>
+
+  <div style="margin-top:14px;padding:14px 22px;background:rgba(255,255,255,0.04);border-radius:6px">
+    <h3 style="margin-top:0">Ejemplo: cantilever bajo peso propio</h3>
+    <p class="small" style="margin:6px 0">Solución analítica de Bernoulli (1750):</p>
+    <p class="center" style="font-size:1.3em;margin:14px 0">
+      \( u_{top} = \dfrac{q \cdot L^2}{2 \cdot E \cdot A} \)
+    </p>
+
+    <div class="grid3" style="margin-top:14px">
+      <div class="center" style="background:#1e3a5f;padding:10px;border-radius:4px">
+        <span class="badge" style="background:#22c55e">📐 Calcpad</span>
+        <p class="small" style="margin:8px 0 4px">Script simbólico</p>
+        <p style="font-size:0.9em;color:#fde68a">u = -0.00276 mm</p>
+      </div>
+      <div class="center" style="background:#1e3a5f;padding:10px;border-radius:4px">
+        <span class="badge" style="background:#3b82f6">🏗 Hekatan</span>
+        <p class="small" style="margin:8px 0 4px">Solver C++ WASM</p>
+        <p style="font-size:0.9em;color:#fde68a">u = -0.00276 mm</p>
+      </div>
+      <div class="center" style="background:#1e3a5f;padding:10px;border-radius:4px">
+        <span class="badge" style="background:#f59e0b">🏢 ETABS API</span>
+        <p class="small" style="margin:8px 0 4px">Comercial</p>
+        <p style="font-size:0.9em;color:#fde68a">u = -0.00280 mm</p>
+      </div>
+    </div>
+    <p class="center" style="margin-top:14px;font-size:0.85em" class="ok">
+      ✓ Δ &lt; 0.5% entre Hekatan, Calcpad y ETABS
+    </p>
+  </div>
+</section>
+
+<!-- ───────────────────────── 8. Plan de la clase ───────────────────────── -->
+<section>
+  <h2>Plan de la clase</h2>
+  <p>Vamos a recorrer ejemplos crecientes en complejidad. <strong>Cada uno es un benchmark validado</strong> contra:</p>
+  <ul style="font-size:0.85em">
+    <li>Solución analítica (Timoshenko, Euler-Bernoulli, Paz)</li>
+    <li>Calcpad Symbolic (memoria de cálculo)</li>
+    <li>ETABS API (modelos comerciales)</li>
+    <li>OpenSees (cuando aplica)</li>
+  </ul>
+
+  <table style="margin: 14px auto">
+    <thead>
+      <tr><th>#</th><th>Ejemplo</th><th>Validación</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td>Columna cantilever ACERO</td><td>Analítico + ETABS e2k</td></tr>
+      <tr><td>2</td><td>Columna cantilever HORMIGÓN</td><td>Analítico + ETABS e2k</td></tr>
+      <tr><td>3</td><td>Columna cantilever CFT</td><td>Analítico + ETABS API + Calcpad</td></tr>
+      <tr><td>4</td><td>Viga doblemente empotrada</td><td>qL²/12 + Paz 10.7</td></tr>
+      <tr><td>5</td><td>Paz 7.1 — Shear building 2 pisos</td><td>Modal: f₁=1.88 Hz, f₂=5.24 Hz</td></tr>
+      <tr><td>6</td><td>Paz 9.3 — Shear building 4 pisos uniforme</td><td>Modal: 4 modos canónicos</td></tr>
+      <tr><td>7</td><td>Paz 13.1 — Space frame 3D</td><td>Modal + Newmark-β step force</td></tr>
+    </tbody>
+  </table>
+
+  <p class="center small" style="margin-top:14px">Cada slide siguiente: ecuación + script Calcpad + número de Hekatan + número de ETABS</p>
+</section>
+
+</div>
+</div>
+
+<!-- reveal.js scripts -->
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/plugin/math/math.js"></script>
+
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    transition: 'slide',
+    width: 1280,
+    height: 800,
+    margin: 0.04,
+    minScale: 0.2,
+    maxScale: 2.0,
+    katex: {
+      version: 'latest',
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '$', right: '$', display: false },
+        { left: '\\(', right: '\\)', display: false },
+        { left: '\\[', right: '\\]', display: true },
+      ],
+    },
+    plugins: [RevealHighlight, RevealNotes, RevealMath.KaTeX],
+  });
+</script>
+</body>
+</html>

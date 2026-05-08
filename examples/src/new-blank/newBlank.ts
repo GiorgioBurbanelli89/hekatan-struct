@@ -125,6 +125,10 @@ export const newBlank: ExampleDef = {
     const colIdx = new Set<number>();
     const beamIdx = new Set<number>();
     const shellIdx = new Set<number>();
+    // Mapeo segId ("polyIdx:segIdx") → elementIdx para que el listener del
+    // Properties Pane pueda resolver qué frame FEM corresponde a cada
+    // segmento dibujado. Necesario para asignar sec manuales por segId.
+    const segIdToElemIdx = new Map<string, number>();
     for (let pi = 0; pi < drawPolylines.length; pi++) {
       const poly = drawPolylines[pi];
       if (drawAreas.has(pi)) {
@@ -144,6 +148,7 @@ export const newBlank: ExampleDef = {
           if (a === b || nodes[a] === undefined || nodes[b] === undefined) continue;
           const eIdx = elements.length;
           elements.push([a, b]);
+          segIdToElemIdx.set(`${pi}:${i}`, eIdx);
           // Heurística: frame vertical (Δz dominante) → columna; horizontal → viga
           const dx = nodes[b][0] - nodes[a][0];
           const dy = nodes[b][1] - nodes[a][1];
@@ -205,6 +210,54 @@ export const newBlank: ExampleDef = {
         poissons.set(i, nu_frm);
       }
     }
+    // ── Secciones manuales (kind:"segs" prop:"section") ──
+    type SectionProps = { A: number; Iz: number; Iy: number; J: number; name?: string };
+    const manualSecs: Map<string, SectionProps> | undefined =
+      (window as any).__hekatanManualSections;
+    if (manualSecs && manualSecs.size > 0) {
+      for (const [segKey, sec] of manualSecs.entries()) {
+        const eIdx = segIdToElemIdx.get(segKey);
+        if (eIdx === undefined || shellIdx.has(eIdx)) continue;
+        if (sec.A != null) areas.set(eIdx, sec.A);
+        if (sec.Iz != null) Iz.set(eIdx, sec.Iz);
+        if (sec.Iy != null) Iy.set(eIdx, sec.Iy);
+        if (sec.J != null) J.set(eIdx, sec.J);
+      }
+    }
+    // ── Material override por segmento (prop:"material") ──
+    // El nombre se busca en window.__hekatanMaterialDB. Override E, G, ν, ρ.
+    const matDB: Record<string, { E: number; nu: number; rho: number }> | undefined =
+      (window as any).__hekatanMaterialDB;
+    const manualMat: Map<string, string> | undefined =
+      (window as any).__hekatanManualMaterial;
+    if (manualMat && manualMat.size > 0 && matDB) {
+      for (const [segKey, matName] of manualMat.entries()) {
+        const eIdx = segIdToElemIdx.get(segKey);
+        if (eIdx === undefined || shellIdx.has(eIdx)) continue;
+        const m = matDB[matName];
+        if (!m) continue;
+        elasticities.set(eIdx, m.E);
+        const G_ = m.E / (2 * (1 + m.nu));
+        shearModuli.set(eIdx, G_);
+        densities.set(eIdx, m.rho);
+        poissons.set(eIdx, m.nu);
+      }
+    }
+    // ── Property Modifiers (prop:"modifiers") ──
+    // Multipliers sobre A, Iz, Iy, J (estilo ETABS section property modifiers).
+    type FrameMods = { A: number; Iz: number; Iy: number; J: number };
+    const manualMods: Map<string, FrameMods> | undefined =
+      (window as any).__hekatanManualModifiers;
+    if (manualMods && manualMods.size > 0) {
+      for (const [segKey, mods] of manualMods.entries()) {
+        const eIdx = segIdToElemIdx.get(segKey);
+        if (eIdx === undefined || shellIdx.has(eIdx)) continue;
+        const A0 = areas.get(eIdx); if (A0 != null) areas.set(eIdx, A0 * mods.A);
+        const Iz0 = Iz.get(eIdx); if (Iz0 != null) Iz.set(eIdx, Iz0 * mods.Iz);
+        const Iy0 = Iy.get(eIdx); if (Iy0 != null) Iy.set(eIdx, Iy0 * mods.Iy);
+        const J0 = J.get(eIdx); if (J0 != null) J.set(eIdx, J0 * mods.J);
+      }
+    }
 
     // ── Apoyos automáticos en nodos del Z mínimo ──
     const apoyoMode = Math.round(p.apoyo ?? 0);
@@ -219,6 +272,28 @@ export const newBlank: ExampleDef = {
         if (Math.abs(nodes[i][2] - zMin) < 1e-6) supports.set(i, [...sDofs]);
       }
     }
+    // ── Apoyos manuales (vía Properties Pane → "hk:property-applied") ──
+    // window.__hekatanManualSupports es un Map<drawingPtIdx, [Ux,Uy,Uz,Rx,Ry,Rz]>.
+    // Aquí lo merged por COORDS en el array de nodes FEM (matching por
+    // posición porque el orden de nodes puede diferir de drawingPoints).
+    // Sobrescribe apoyos automáticos en los mismos nodos.
+    const manualSup: Map<number, [boolean,boolean,boolean,boolean,boolean,boolean]> | undefined =
+      (window as any).__hekatanManualSupports;
+    const drawPts: [number, number, number][] | undefined =
+      (window as any).__hekatanDrawingPoints?.rawVal;
+    if (manualSup && manualSup.size > 0 && drawPts) {
+      for (const [drawIdx, dofs] of manualSup.entries()) {
+        const dp = drawPts[drawIdx];
+        if (!dp) continue;
+        // Buscar el nodo FEM más cercano por coordenadas
+        let bestIdx = -1, bestD = 1e-3;
+        for (let i = 0; i < nodes.length; i++) {
+          const d = Math.hypot(nodes[i][0] - dp[0], nodes[i][1] - dp[1], nodes[i][2] - dp[2]);
+          if (d < bestD) { bestD = d; bestIdx = i; }
+        }
+        if (bestIdx >= 0) supports.set(bestIdx, [...dofs]);
+      }
+    }
 
     // ── Cargas automáticas en nodos del Z máximo ──
     const loads = new Map<number, [number,number,number,number,number,number]>();
@@ -228,6 +303,21 @@ export const newBlank: ExampleDef = {
       const Fz = (p.Fz ?? -10) as number;
       for (let i = 0; i < nodes.length; i++) {
         if (Math.abs(nodes[i][2] - zMax) < 1e-6) loads.set(i, [Fx, 0, Fz, 0, 0, 0]);
+      }
+    }
+    // ── Cargas manuales (vía Properties Pane) ──
+    const manualLoads: Map<number, [number,number,number,number,number,number]> | undefined =
+      (window as any).__hekatanManualLoads;
+    if (manualLoads && manualLoads.size > 0 && drawPts) {
+      for (const [drawIdx, lds] of manualLoads.entries()) {
+        const dp = drawPts[drawIdx];
+        if (!dp) continue;
+        let bestIdx = -1, bestD = 1e-3;
+        for (let i = 0; i < nodes.length; i++) {
+          const d = Math.hypot(nodes[i][0] - dp[0], nodes[i][1] - dp[1], nodes[i][2] - dp[2]);
+          if (d < bestD) { bestD = d; bestIdx = i; }
+        }
+        if (bestIdx >= 0) loads.set(bestIdx, [...lds]);
       }
     }
 
@@ -243,6 +333,28 @@ export const newBlank: ExampleDef = {
     states.objects3D.val = [];
 
     // ── Auto-solve si hay apoyos + cargas + elementos ──
+    // ── Springs joint (prop:"springs") → springsList Array<{node, dof, k}> ──
+    // Mapeo desde drawingPtIdx → coords → fem nodeIdx (mismo método que supports)
+    const springsList: Array<{ node: number; dof: number; k: number }> = [];
+    const manualSprings: Map<number, [number, number, number, number, number, number]> | undefined =
+      (window as any).__hekatanManualSprings;
+    if (manualSprings && manualSprings.size > 0 && drawPts) {
+      for (const [drawIdx, kArr] of manualSprings.entries()) {
+        const dp = drawPts[drawIdx];
+        if (!dp) continue;
+        let bestIdx = -1, bestD = 1e-3;
+        for (let i = 0; i < nodes.length; i++) {
+          const d = Math.hypot(nodes[i][0] - dp[0], nodes[i][1] - dp[1], nodes[i][2] - dp[2]);
+          if (d < bestD) { bestD = d; bestIdx = i; }
+        }
+        if (bestIdx < 0) continue;
+        // dof: 0=Ux, 1=Uy, 2=Uz, 3=Rx, 4=Ry, 5=Rz
+        for (let dof = 0; dof < 6; dof++) {
+          if (kArr[dof] !== 0) springsList.push({ node: bestIdx, dof, k: kArr[dof] });
+        }
+      }
+    }
+
     if (
       Math.round(p.autoSolve ?? 1) === 1 &&
       nodes.length > 0 &&
@@ -255,8 +367,9 @@ export const newBlank: ExampleDef = {
           nodes, elements,
           { supports, loads },
           states.elementInputs.val,
+          springsList.length > 0 ? springsList : undefined,
         );
-        console.log(`[NewBlank] Solve OK — ${nodes.length} nodos, ${elements.length} elementos, ${supports.size} apoyos, ${loads.size} cargas`);
+        console.log(`[NewBlank] Solve OK — ${nodes.length} nodos, ${elements.length} elementos, ${supports.size} apoyos, ${loads.size} cargas, ${springsList.length} springs`);
       } catch (e: any) {
         console.warn(`[NewBlank] Solver falló: ${e.message}`);
       }
@@ -264,7 +377,7 @@ export const newBlank: ExampleDef = {
       console.log(
         `[NewBlank] mode=${is2D ? "2D" : "3D"} | nodes=${nodes.length} elem=${elements.length} ` +
         `cols=${colIdx.size} vigas=${beamIdx.size} shells=${shellIdx.size} ` +
-        `apoyos=${supports.size} cargas=${loads.size}`,
+        `apoyos=${supports.size} cargas=${loads.size} springs=${springsList.length}`,
       );
     }
   },

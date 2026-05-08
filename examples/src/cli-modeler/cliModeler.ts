@@ -304,7 +304,15 @@ export const cliModeler: ExampleDef = {
     for (const f of m.frames) {
       const ni = idToIdx.get(f.nI), nj = idToIdx.get(f.nJ);
       if (ni === undefined || nj === undefined) {
-        m.errors.push(`frame ${f.id}: nodo inexistente (nI=${f.nI}, nJ=${f.nJ})`);
+        const have = sortedIds.length
+          ? `IDs disponibles: ${sortedIds.join(", ")}`
+          : "ningún nodo definido";
+        const missing: number[] = [];
+        if (ni === undefined) missing.push(f.nI);
+        if (nj === undefined) missing.push(f.nJ);
+        m.errors.push(
+          `frame ${f.id}: nodo(s) inexistente(s) [${missing.join(", ")}] — ${have}`
+        );
         continue;
       }
       const eIdx = elements.length;

@@ -44,6 +44,10 @@ export function elements(
   });
   const shellMesh = new THREE.Mesh(new THREE.BufferGeometry(), shellMat);
   shellMesh.frustumCulled = false;
+  // Marcar para que setupShellHoverTooltip filtre SOLO esto y no cilindros de
+  // frames (que tienen muchos vertices y pueden engañar al raycaster).
+  shellMesh.userData.isShellArea = true;
+  shellMesh.name = "__hekatan_shell_area";
   group.add(shellMesh);
 
   // Colors from theme (mutable — updated on theme change)

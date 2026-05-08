@@ -21,7 +21,7 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 export const membrana: ExampleDef = {
   id: "membrana",
   name: "Membrana (Plane Stress) — Hekatan vs SAP -0.23%",
-  category: "🏁 Benchmarks",
+  category: "🏁 Benchmarks · 2️⃣ Áreas",
   benchmark: true,
   defaultShellResult: "vonMises",
   availableShellResults: ["vonMises", "membraneXX", "membraneYY", "membraneXY", "displacementX", "displacementZ"],

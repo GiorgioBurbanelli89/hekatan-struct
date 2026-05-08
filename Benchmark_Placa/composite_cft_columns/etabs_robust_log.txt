@@ -1,0 +1,47 @@
+[OK] Dialog auto-closer started
+  [..] Lanzando ETABS via ProgID...
+[OK] Lanzado
+
+======================================================================
+steelOnly
+======================================================================
+  [..] Loading e2k: case_steelOnly.e2k
+Cannot open file
+BufferFileIn::BufferFileIn(): 
+fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_steelOnly_fresh.Y_
+  [..] RunAnalysis
+  [OK] Analysis done
+  Total joints: 30
+  Reacciones (Dead):
+   joint |         Fx         Fy         Fz |         Mx         My         Mz
+      26 |     0.9953     0.9953    20.0000 |     0.0000     0.0000     0.0000
+      27 |    -0.9953     0.9953    20.0000 |     0.0000     0.0000     0.0000
+      28 |     0.9953    -0.9953    20.0000 |     0.0000     0.0000     0.0000
+      29 |    -0.9953    -0.9953    20.0000 |     0.0000     0.0000     0.0000
+     SUM |    -0.0000     0.0000    80.0000 |     0.0000     0.0000     0.0000
+
+======================================================================
+filled
+======================================================================
+  [..] Loading e2k: case_filled.e2k
+Cannot open file
+BufferFileIn::BufferFileIn(): 
+fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_filled_fresh.Y_
+  [..] RunAnalysis
+  [OK] Analysis done
+  Total joints: 30
+  Reacciones (Dead):
+   joint |         Fx         Fy         Fz |         Mx         My         Mz
+      26 |     1.1570     1.1570    20.0000 |     0.0000     0.0000     0.0000
+      27 |    -1.1570     1.1570    20.0000 |     0.0000     0.0000     0.0000
+      28 |     1.1570    -1.1570    20.0000 |     0.0000     0.0000     0.0000
+      29 |    -1.1570    -1.1570    20.0000 |     0.0000     0.0000     0.0000
+     SUM |    -0.0000    -0.0000    80.0000 |     0.0000     0.0000     0.0000
+
+======================================================================
+concreteOnly
+======================================================================
+  [..] Loading e2k: case_concreteOnly.e2k
+Cannot open file
+BufferFileIn::BufferFileIn(): 
+fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_concreteOnly_fresh.Y_

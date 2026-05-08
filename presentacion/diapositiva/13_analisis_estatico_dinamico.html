@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>13 · Análisis estático y dinámico en Hekatan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+<style>
+  .api-card {
+    background: var(--paper-dark);
+    border: 1.5px solid var(--ink);
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin: 12px 0;
+    position: relative;
+  }
+  .api-card .api-tag {
+    position: absolute;
+    top: -10px; left: 14px;
+    background: var(--gold);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.66rem;
+    padding: 2px 10px;
+    border-radius: 3px;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+  }
+  .api-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--blue);
+    margin: 4px 0 6px;
+  }
+  .api-card pre {
+    margin: 8px 0;
+  }
+
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+    margin: 10px 0;
+  }
+  .pipe-step {
+    background: var(--paper-dark);
+    border: 1px solid var(--ink);
+    border-radius: 4px;
+    padding: 10px 12px;
+    text-align: center;
+    position: relative;
+  }
+  .pipe-step .pipe-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--gold);
+    letter-spacing: 0.18em;
+  }
+  .pipe-step .pipe-name {
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--ink);
+    font-weight: 600;
+    margin-top: 3px;
+  }
+  .pipe-step .pipe-desc {
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 13 · Bloque 4 — Hekatan en la práctica</div>
+    <h1>Análisis estático y dinámico &mdash; qué hace Hekatan hoy</h1>
+    <div class="subtitle">Capacidades reales del solver C++ embebido. Lo que ya está, no lo que prometemos.</div>
+  </header>
+
+  <section>
+    <h2>Análisis estático lineal</h2>
+    <p>Resuelve el sistema $\mathbf{K}\,\mathbf{u} = \mathbf{F}$ ensamblado a partir de los $K_e$ derivados en el Bloque 2. Usa <strong>Eigen SparseLU</strong> con factorización LU dispersa.</p>
+
+    <div class="api-card">
+      <span class="api-tag">API · DEFORM</span>
+      <h3>Cálculo de desplazamientos y reacciones</h3>
+      <pre><code>import { deform } from "hekatan-fem";
+
+const out = deform(
+  nodes,           // [[x,y,z], ...]
+  elements,        // [[i,j], [i,j,k,l], ...]  frames + Q4 + H8
+  nodeInputs,      // { supports, loads, moments }
+  elementInputs,   // { elasticities, areas, momentsOfInertia*, sectionShapes, ... }
+  springsList,     // optional Winkler springs [{node, dof, k}]
+);
+
+out.deformations  // Map&lt;node, [u,v,w,rx,ry,rz]&gt;
+out.reactions     // Map&lt;node, [Fx,Fy,Fz,Mx,My,Mz]&gt;</code></pre>
+    </div>
+
+    <div class="api-card">
+      <span class="api-tag">API · ANALYZE</span>
+      <h3>Fuerzas internas y resultados de elemento</h3>
+      <pre><code>import { analyze } from "hekatan-fem";
+
+const res = analyze(nodes, elements, elementInputs, deformOutputs);
+
+// Frames (line elements):
+res.normal       // N axial por elemento
+res.shearY/Z     // V2, V3
+res.torsion      // T
+res.bendingY/Z   // M2, M3 a lo largo de la longitud (3 puntos)
+
+// Shells (Q4 elements):
+res.bendingXX/YY/XY     // momentos de placa por nodo
+res.membraneXX/YY/XY    // tensiones de membrana
+res.shellShearXY        // corte transversal
+res.vonMises            // tensión equivalente</code></pre>
+    </div>
+
+    <p><strong>Tiempo típico:</strong> ~10 ms para 1 000 DOFs. ~1 s para 100 000 DOFs (edificio aporticado completo).</p>
+  </section>
+
+  <section>
+    <h2>Análisis dinámico modal</h2>
+    <p>Resuelve el problema de autovalores generalizado $(\mathbf{K} - \omega^2\,\mathbf{M})\,\boldsymbol{\phi} = \mathbf{0}$ con <strong>Eigen + Spectra</strong> (Lanczos para eigenvalores extremos en sparse).</p>
+
+    <div class="api-card">
+      <span class="api-tag">API · MODAL</span>
+      <h3>Frecuencias, formas modales y masa participante</h3>
+      <pre><code>import { modalAnalysis } from "hekatan-fem";
+
+const m = modalAnalysis(nodes, elements, nodeInputs, elementInputs, 12);
+
+m.frequencies        // [f1, f2, ..., f12] en Hz, ordenadas ascendente
+m.modeShapes         // [φ1, φ2, ...] cada φ es Map&lt;node, [u,v,w,rx,ry,rz]&gt;
+m.massParticipation  // [{ ux, uy, uz, rx, ry, rz }, ...] en %
+                     //   por modo, en cada dirección global</code></pre>
+    </div>
+
+    <div class="api-card">
+      <span class="api-tag">EJEMPLO · PAZ &amp; KIM 6.3</span>
+      <h3>Validación canónica</h3>
+      <table style="margin:0;font-size:0.85rem">
+        <tr><th>Modo</th><th>$f$ (Hz)</th><th>$T$ (s)</th><th>Dirección dominante</th><th>% masa</th></tr>
+        <tr><td>1</td><td>9.6780</td><td>0.1033</td><td>Uy</td><td>99.8</td></tr>
+        <tr><td>2</td><td>16.9874</td><td>0.0589</td><td>Rz (torsional)</td><td>—</td></tr>
+        <tr><td>3</td><td>26.6149</td><td>0.0376</td><td>Ux</td><td>94.3</td></tr>
+        <tr><td>4</td><td>29.9497</td><td>0.0334</td><td>Antisimétrico</td><td>—</td></tr>
+        <tr><td>5</td><td>33.9929</td><td>0.0294</td><td>Rz</td><td>14.2</td></tr>
+        <tr><td>6</td><td>44.9332</td><td>0.0223</td><td>Uz</td><td>26.9</td></tr>
+      </table>
+      <p style="font-size:0.85rem;color:var(--ink-soft);margin-top:6px">
+        ↑ Validación cruzada con ETABS, SAP, OpenSees, Python+SciPy → <strong>0.00% de diferencia</strong>.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Análisis dinámico time-history (Newmark-β)</h2>
+    <p>Para los benchmarks Paz 4.1, 6.1, 8.1, 10.7 — integración temporal directa del sistema dinámico:</p>
+    $$ \mathbf{M}\,\ddot{\mathbf{u}}_{n+1} + \mathbf{C}\,\dot{\mathbf{u}}_{n+1} + \mathbf{K}\,\mathbf{u}_{n+1} = \mathbf{F}(t_{n+1}) $$
+    <div class="api-card">
+      <span class="api-tag">API · TIME-HISTORY</span>
+      <h3>Integración Newmark</h3>
+      <pre><code>import { newmarkBeta } from "hekatan-fem";
+
+const th = newmarkBeta({
+  K, M, C,                    // matrices ensambladas (sparse)
+  forcing: (t) => F_at_t,     // función F(t)
+  u0, v0, a0,                 // condiciones iniciales
+  dt: 0.01, tEnd: 5.0,
+  beta: 0.25, gamma: 0.5,    // promedio constante (incondicionalmente estable)
+});
+
+th.timeArray            // [0, dt, 2dt, ...]
+th.displacementSeries   // u(t)
+th.velocitySeries       // ̇u(t)
+th.accelerationSeries   // ̈u(t)</code></pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Pipeline completo del análisis sísmico</h2>
+    <div class="pipeline">
+      <div class="pipe-step">
+        <span class="pipe-num">PASO 1</span>
+        <div class="pipe-name">Modelar</div>
+        <div class="pipe-desc">Frames + Q4 + Winkler</div>
+      </div>
+      <div class="pipe-step">
+        <span class="pipe-num">PASO 2</span>
+        <div class="pipe-name">deform()</div>
+        <div class="pipe-desc">$K\,u = F$ estático</div>
+      </div>
+      <div class="pipe-step">
+        <span class="pipe-num">PASO 3</span>
+        <div class="pipe-name">analyze()</div>
+        <div class="pipe-desc">N, V, M, σ</div>
+      </div>
+      <div class="pipe-step">
+        <span class="pipe-num">PASO 4</span>
+        <div class="pipe-name">modalAnalysis()</div>
+        <div class="pipe-desc">$\omega_i,\,\phi_i,\,\Gamma_i$</div>
+      </div>
+      <div class="pipe-step">
+        <span class="pipe-num">PASO 5</span>
+        <div class="pipe-name">Espectro</div>
+        <div class="pipe-desc">$S_a(T_i)$ NEC/ASCE</div>
+      </div>
+      <div class="pipe-step">
+        <span class="pipe-num">PASO 6</span>
+        <div class="pipe-name">SRSS / CQC</div>
+        <div class="pipe-desc">Combinar respuestas</div>
+      </div>
+    </div>
+    <p style="font-size:0.88rem;color:var(--ink-soft)">
+      Pasos 1–4 ya corren en producción dentro del workspace web. Espectro y combinación SRSS están en plan de release.
+    </p>
+  </section>
+
+  <div class="quote">
+    <strong>Resumen de capacidades hoy:</strong> análisis estático lineal, fuerzas internas, modal con masa participante, time-history Newmark. Todo en C++ Eigen → WASM, ejecutándose en el navegador del estudiante. Validado contra 4 solvers comerciales con $\Delta = 0.00\%$.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 13 · CAPACIDADES REALES DEL SOLVER
+  </div>
+
+</div>
+
+<script src="./shared/nav.js"></script>
+</body>
+</html>

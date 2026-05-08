@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03 · Funciones de forma</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+<style>
+  .deriv-card {
+    background: var(--paper-dark);
+    border-left: 4px solid var(--gold);
+    padding: 14px 18px;
+    margin: 12px 0;
+    border-radius: 0 4px 4px 0;
+  }
+  .deriv-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--blue);
+    margin: 0 0 6px;
+  }
+
+  .shape-card {
+    background: var(--paper-dark);
+    border: 1.5px solid var(--ink);
+    border-radius: 4px;
+    padding: 12px;
+    margin: 12px 0;
+    text-align: center;
+  }
+  .axis-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    fill: var(--ink-soft);
+  }
+  .axis-tick {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    fill: var(--ink-soft);
+  }
+
+  .compare-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 10px 0;
+  }
+  .compare-2 > div {
+    background: var(--paper-dark);
+    border: 1px solid var(--ink-fade);
+    border-radius: 4px;
+    padding: 10px 14px;
+  }
+  .compare-2 h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin: 0 0 6px;
+  }
+
+  .step {
+    counter-increment: step;
+    margin: 8px 0;
+    padding-left: 38px;
+    position: relative;
+  }
+  .step::before {
+    content: counter(step);
+    position: absolute;
+    left: 0; top: 2px;
+    width: 26px; height: 26px;
+    background: var(--gold);
+    color: var(--ink);
+    border-radius: 50%;
+    text-align: center;
+    line-height: 26px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 0.78rem;
+  }
+  .steps { counter-reset: step; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 03 · Bloque 2 — derivación paso a paso</div>
+    <h1>Funciones de forma <em>N<sub>i</sub>(ξ)</em></h1>
+    <div class="subtitle">El "alfabeto" del FEM. De aquí salen $K_e$, $M_e$ y todas las cantidades del elemento.</div>
+  </header>
+
+  <section>
+    <h2>¿Qué interpolamos?</h2>
+    <p>Dentro de un elemento, no conocemos el desplazamiento en cada punto &mdash; solo en los nodos $u_1, u_2, \ldots$ Lo aproximamos por una <em>combinación lineal</em> de funciones que satisfacen dos reglas:</p>
+    <div class="deriv-card">
+      <h3>Regla del Kronecker</h3>
+      $$ N_i(\xi_j) = \delta_{ij} \;=\; \begin{cases} 1, & i = j \\ 0, & i \neq j \end{cases} $$
+      <p>$N_i$ vale 1 en su nodo y 0 en los demás. Garantiza que en el nodo $j$, la solución coincide con $u_j$.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Caso 1 &mdash; Barra axial: Lagrange lineales (2 nodos)</h2>
+    <p>Coordenada natural $\xi \in [-1, +1]$. Dos nodos: $\xi_1 = -1$, $\xi_2 = +1$.</p>
+    <div class="compare-2">
+      <div>
+        <h4>Forma simbólica</h4>
+        $$ N_1(\xi) = \tfrac{1}{2}(1 - \xi) $$
+        $$ N_2(\xi) = \tfrac{1}{2}(1 + \xi) $$
+      </div>
+      <div>
+        <h4>Verificación numérica</h4>
+        <table style="margin:0;font-size:0.85rem">
+          <tr><th>$\xi$</th><th>$N_1$</th><th>$N_2$</th><th>$N_1 + N_2$</th></tr>
+          <tr><td>−1</td><td>1</td><td>0</td><td>1</td></tr>
+          <tr><td>0</td><td>0.5</td><td>0.5</td><td>1</td></tr>
+          <tr><td>+1</td><td>0</td><td>1</td><td>1</td></tr>
+        </table>
+      </div>
+    </div>
+    <p style="font-size:0.88rem;color:var(--ink-soft)">Nota: $N_1 + N_2 = 1$ siempre &mdash; <em>partición de la unidad</em>: garantiza que un campo constante se reproduce exactamente.</p>
+
+    <div class="shape-card">
+      <svg id="svg-lagrange" viewBox="0 0 480 200" preserveAspectRatio="xMidYMid meet" style="max-width:100%;height:auto;">
+        <!-- Ejes -->
+        <line x1="40" y1="160" x2="440" y2="160" stroke="#1a2942" stroke-width="1.2"/>
+        <line x1="240" y1="20" x2="240" y2="180" stroke="#1a2942" stroke-width="0.8" stroke-dasharray="3,3"/>
+        <text x="240" y="178" text-anchor="middle" class="axis-tick">0</text>
+        <text x="40" y="178" text-anchor="middle" class="axis-tick">−1</text>
+        <text x="440" y="178" text-anchor="middle" class="axis-tick">+1</text>
+        <text x="455" y="164" class="axis-label">ξ</text>
+        <line x1="40" y1="20" x2="40" y2="160" stroke="#1a2942" stroke-width="0.8"/>
+        <text x="32" y="22" text-anchor="end" class="axis-tick">1</text>
+        <text x="32" y="162" text-anchor="end" class="axis-tick">0</text>
+        <!-- N1 (azul) y N2 (rojo) -->
+        <line x1="40" y1="20" x2="440" y2="160" stroke="#2c5e8e" stroke-width="2"/>
+        <line x1="40" y1="160" x2="440" y2="20" stroke="#a23232" stroke-width="2"/>
+        <text x="80" y="40" fill="#2c5e8e" font-family="JetBrains Mono" font-size="11" font-weight="700">N₁(ξ) = ½(1−ξ)</text>
+        <text x="290" y="40" fill="#a23232" font-family="JetBrains Mono" font-size="11" font-weight="700">N₂(ξ) = ½(1+ξ)</text>
+        <!-- Nodos -->
+        <circle cx="40" cy="160" r="5" fill="#1a2942"/>
+        <circle cx="440" cy="160" r="5" fill="#1a2942"/>
+        <text x="40" y="195" text-anchor="middle" class="axis-label">nodo 1</text>
+        <text x="440" y="195" text-anchor="middle" class="axis-label">nodo 2</text>
+      </svg>
+    </div>
+  </section>
+
+  <section>
+    <h2>Caso 2 &mdash; Viga Bernoulli: Hermite cúbicas (4 GDL)</h2>
+    <p>Una viga 1D necesita interpolar <strong>desplazamiento $v$ y rotación $\theta = dv/dx$</strong> &mdash; 2 GDL por nodo, 4 por elemento. Las Hermite cúbicas tienen continuidad $C^1$:</p>
+
+    <div class="steps">
+      <div class="step">$N_1$ vale 1 en el nodo 1 y rotación 0 en ambos nodos.</div>
+      <div class="step">$N_2$ tiene rotación 1 en nodo 1, todo lo demás 0.</div>
+      <div class="step">$N_3$ y $N_4$ son las simétricas para el nodo 2.</div>
+    </div>
+
+    <div class="compare-2">
+      <div>
+        <h4>Forma simbólica (en ξ ∈ [−1, 1])</h4>
+        $$ N_1 = \tfrac{1}{4}(1-\xi)^2(2+\xi) $$
+        $$ N_2 = \tfrac{L}{8}(1-\xi)^2(1+\xi) $$
+        $$ N_3 = \tfrac{1}{4}(1+\xi)^2(2-\xi) $$
+        $$ N_4 = \tfrac{L}{8}(1+\xi)^2(\xi-1) $$
+      </div>
+      <div>
+        <h4>Verificación en los nodos</h4>
+        <table style="margin:0;font-size:0.78rem">
+          <tr><th>ξ</th><th>$N_1$</th><th>$N_2$</th><th>$N_3$</th><th>$N_4$</th></tr>
+          <tr><td>−1</td><td>1</td><td>0</td><td>0</td><td>0</td></tr>
+          <tr><td>+1</td><td>0</td><td>0</td><td>1</td><td>0</td></tr>
+          <tr><th>$\frac{dN}{dx}|_{nodo}$</th><th></th><th></th><th></th><th></th></tr>
+          <tr><td>−1</td><td>0</td><td>1</td><td>0</td><td>0</td></tr>
+          <tr><td>+1</td><td>0</td><td>0</td><td>0</td><td>1</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="shape-card">
+      <svg id="svg-hermite" viewBox="0 0 480 220" preserveAspectRatio="xMidYMid meet" style="max-width:100%;height:auto;">
+        <!-- Ejes -->
+        <line x1="40" y1="180" x2="440" y2="180" stroke="#1a2942" stroke-width="1"/>
+        <line x1="40" y1="20" x2="40" y2="200" stroke="#1a2942" stroke-width="0.8"/>
+        <text x="240" y="198" text-anchor="middle" class="axis-tick">0</text>
+        <text x="40" y="198" text-anchor="middle" class="axis-tick">−1</text>
+        <text x="440" y="198" text-anchor="middle" class="axis-tick">+1</text>
+        <text x="455" y="184" class="axis-label">ξ</text>
+        <!-- Curvas Hermite (calculadas en JS) -->
+        <path id="curve-N1" stroke="#2c5e8e" stroke-width="2" fill="none"/>
+        <path id="curve-N2" stroke="#2d6a4f" stroke-width="2" fill="none"/>
+        <path id="curve-N3" stroke="#a23232" stroke-width="2" fill="none"/>
+        <path id="curve-N4" stroke="#b08d4f" stroke-width="2" fill="none"/>
+        <!-- Leyenda -->
+        <text x="60"  y="30" fill="#2c5e8e" font-family="JetBrains Mono" font-size="10" font-weight="700">N₁ (v₁)</text>
+        <text x="160" y="30" fill="#2d6a4f" font-family="JetBrains Mono" font-size="10" font-weight="700">N₂ (θ₁)</text>
+        <text x="270" y="30" fill="#a23232" font-family="JetBrains Mono" font-size="10" font-weight="700">N₃ (v₂)</text>
+        <text x="370" y="30" fill="#b08d4f" font-family="JetBrains Mono" font-size="10" font-weight="700">N₄ (θ₂)</text>
+        <!-- Nodos -->
+        <circle cx="40"  cy="180" r="4" fill="#1a2942"/>
+        <circle cx="440" cy="180" r="4" fill="#1a2942"/>
+      </svg>
+    </div>
+    <p style="font-size:0.85rem;color:var(--ink-soft);text-align:center">↑ Cuatro polinomios cúbicos. Una combinación lineal $v(\xi) = \sum N_i(\xi)\,q_i$ produce <em>cualquier deformada cúbica</em> en el elemento.</p>
+  </section>
+
+  <section>
+    <h2>Por qué importa</h2>
+    <table>
+      <tr><th>Las funciones de forma determinan…</th><th>El resultado físico</th></tr>
+      <tr><td>Continuidad entre elementos</td><td>$C^0$ para barra, $C^1$ para viga</td></tr>
+      <tr><td>Orden de convergencia</td><td>$O(h^{p+1})$ con polinomio grado $p$</td></tr>
+      <tr><td>Forma de la matriz $K_e$</td><td>Hermite ⟶ matriz 4×4 con $L^2$, $L^3$</td></tr>
+      <tr><td>Forma de la matriz $M_e$</td><td>Lagrange ⟶ $\rho A L/6$, Hermite ⟶ $\rho A L/420$</td></tr>
+      <tr><td>Si el elemento "bloquea"</td><td>Locking en placas thick &mdash; se corrige con MITC, B-bar, etc.</td></tr>
+    </table>
+  </section>
+
+  <div class="quote">
+    <strong>Mensaje clave:</strong> escoger las funciones de forma <em>es</em> escoger el elemento finito. El resto de la teoría (Jacobiano, $K_e$, $M_e$) se deduce de manera mecánica una vez fijadas las $N_i$.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 03 · ALFABETO DEL FEM
+  </div>
+
+</div>
+
+<script>
+// Dibuja las 4 Hermite cúbicas en el SVG
+const SVGNS = "http://www.w3.org/2000/svg";
+const xMin = 40, xMax = 440, yBase = 180, yTop = 30;
+function xi2px(xi) { return xMin + ((xi + 1) / 2) * (xMax - xMin); }
+function v2py(v)   { return yBase - v * (yBase - yTop) * 0.85; } // 1.0 → casi yTop
+const L = 1; // unidad — solo importa la forma, no la magnitud
+
+function N1(xi) { return 0.25 * (1 - xi)*(1 - xi)*(2 + xi); }
+function N2(xi) { return (L/8) * (1 - xi)*(1 - xi)*(1 + xi); }
+function N3(xi) { return 0.25 * (1 + xi)*(1 + xi)*(2 - xi); }
+function N4(xi) { return (L/8) * (1 + xi)*(1 + xi)*(xi - 1); }
+
+function drawCurve(id, fn) {
+  let d = "";
+  for (let i = 0; i <= 200; i++) {
+    const xi = -1 + (i / 200) * 2;
+    const px = xi2px(xi);
+    const py = v2py(fn(xi));
+    d += (i === 0 ? "M " : "L ") + px.toFixed(1) + " " + py.toFixed(1) + " ";
+  }
+  document.getElementById(id).setAttribute("d", d);
+}
+drawCurve("curve-N1", N1);
+drawCurve("curve-N2", N2);
+drawCurve("curve-N3", N3);
+drawCurve("curve-N4", N4);
+</script>
+<script src="./shared/nav.js"></script>
+</body>
+</html>

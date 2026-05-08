@@ -104,13 +104,40 @@ function exportFromRaw(raw: Map<string, string[]>, model: E2kModel): string {
 
 /**
  * Best-effort reconstruction when no original e2k exists.
+ *
+ * Internal model units (Hekatan-Struct convention, see shared/units.ts):
+ *   - Force:  kN
+ *   - Length: m
+ *   - E:      kN/m²
+ *
+ * Output target units come from `units` arg. We convert numbers accordingly.
  */
 function exportFromScratch(input: ExportE2kInput): string {
   const { nodes, elements, nodeInputs, elementInputs, title, units } = input;
-  const force = units?.force || "TONF";
-  const length = units?.length || "M";
+  const force = units?.force || "Tonf";
+  const length = units?.length || "m";
   const lines: string[] = [];
   const rd = (v: number) => Math.round(v * 10000) / 10000;
+
+  // ── UNIT CONVERSION (internal kN-m → target force-length) ────────────
+  // Hekatan-Struct stores everything in kN-m internally. ETABS .e2k accepts
+  // any consistent system as long as numbers + UNITS header agree.
+  // 1 tonf = 9.80665 kN  (force unit)
+  // 1 m    = 1 m         (length unaltered, all SI variants use meters)
+  const forceFactor = (() => {
+    const f = (force || "Tonf").toLowerCase();
+    if (f === "tonf" || f === "tonf-f") return 1 / 9.80665;     // kN → tonf
+    if (f === "kn"   || f === "kn-f")   return 1;               // kN → kN
+    if (f === "kgf"  || f === "kg")     return 1 / 0.00980665;  // kN → kgf
+    if (f === "kip"  || f === "kips")   return 1 / 4.44822;     // kN → kip
+    return 1;
+  })();
+  // Force conversion (loads, reactions, point loads)
+  const cF  = (kN: number) => kN * forceFactor;
+  // Stress conversion (E, fy): kN/m² → tonf/m² = same factor as force
+  const cE  = (kN_m2: number) => kN_m2 * forceFactor;
+  // Volume weight: kN/m³ → tonf/m³ = same factor as force (length cancels)
+  const cWV = (kN_m3: number) => kN_m3 * forceFactor;
 
   lines.push(`$ File exported from Awatif FEM Studio`);
   lines.push(``);
@@ -153,70 +180,149 @@ function exportFromScratch(input: ExportE2kInput): string {
     lines.push(``);
   }
 
-  // Materials
+  // ── MATERIAL PROPERTIES ─────────────────────────────────────────────
+  // Detect material type by E (kN/m² = Pa·1000):
+  //   E ≥ 100,000,000 kN/m² (= 100 GPa) → STEEL  (acero ~200 GPa)
+  //   E <  100,000,000 kN/m²            → CONCRETE (hormigón ~25 GPa)
+  // Auto-emit weight per volume + Poisson + thermal coeff for each.
   lines.push(`$ MATERIAL PROPERTIES`);
   const uniqueE = new Set<number>();
   elementInputs.elasticities?.forEach(v => uniqueE.add(v));
   const matNames = new Map<number, string>();
-  let mi = 0;
-  for (const E of uniqueE) {
-    const name = `Mat_${++mi}`;
-    matNames.set(E, name);
-    lines.push(`  MATERIAL  "${name}"    TYPE "Concrete"    WEIGHTPERVOLUME 2.4`);
-    lines.push(`  MATERIAL  "${name}"    SYMTYPE "Isotropic"  E ${E}  U 0.2  A 1E-05`);
+  const matIsSteel = new Map<number, boolean>();
+  let miStl = 0, miCnc = 0;
+  for (const E_kNm2 of uniqueE) {
+    const isSteel = E_kNm2 >= 1e8;  // >= 100 GPa
+    const name = isSteel ? `Steel_${++miStl}` : `Conc_${++miCnc}`;
+    matNames.set(E_kNm2, name);
+    matIsSteel.set(E_kNm2, isSteel);
+
+    // Weight per volume: steel ≈ 76.97 kN/m³ (7.85 t/m³), concrete ≈ 24 kN/m³ (2.4 t/m³)
+    const wpv_kN = isSteel ? 76.97 : 24.0;
+    const E_out  = cE(E_kNm2);
+    const wpv_out = cWV(wpv_kN);
+    const nu = isSteel ? 0.3 : 0.2;
+    const alpha = isSteel ? 1.17e-5 : 1.0e-5;
+
+    if (isSteel) {
+      lines.push(`  MATERIAL  "${name}"    TYPE "Steel"    GRADE "Grade 50"    WEIGHTPERVOLUME ${rd(wpv_out)}`);
+      lines.push(`  MATERIAL  "${name}"    SYMTYPE "Isotropic"  E ${rd(E_out)}  U ${nu}  A ${alpha}`);
+      // FY/FU típicos A572Gr50 en tonf/m² (35,153 / 45,699)
+      const fy_kN = 345e3, fu_kN = 450e3;
+      lines.push(`  MATERIAL  "${name}"  FY ${rd(cE(fy_kN))}  FU ${rd(cE(fu_kN))}  FYE ${rd(cE(fy_kN*1.1))}  FUE ${rd(cE(fu_kN*1.1))}`);
+    } else {
+      lines.push(`  MATERIAL  "${name}"    TYPE "Concrete"    WEIGHTPERVOLUME ${rd(wpv_out)}`);
+      lines.push(`  MATERIAL  "${name}"    SYMTYPE "Isotropic"  E ${rd(E_out)}  U ${nu}  A ${alpha}`);
+      // f'c típico 24 MPa en tonf/m² (≈ 2,448)
+      const fc_kN = 24e3;
+      lines.push(`  MATERIAL  "${name}"    FC ${rd(cE(fc_kN))}`);
+    }
   }
   lines.push(``);
 
-  // Frame Sections — deduplicate by shape key (type+dimensions)
+  // ── FRAME SECTIONS ──────────────────────────────────────────────────
+  // Si hay sectionShapes válidos: usar dimensiones del shape.
+  // Si NO: derivar h, b equivalentes desde area / momentos de inercia
+  //        (rectangular equivalent), de modo que ETABS calcule la misma A,
+  //        I33, I22 que tiene Hekatan.
+  //
+  // Para una sección rectangular b×h:
+  //   A    = b·h
+  //   I33  = b·h³/12   (eje fuerte, "y" en Hekatan / "I22" en ETABS si col)
+  //   I22  = h·b³/12   (eje débil)
+  //
+  // Conociendo A, I33, I22:
+  //   h = √(12·I33 / b), pero b = A/h ⇒ h⁴ = 12·I33·h/A ⇒ h³ = 12·I33/A · h
+  //   Mejor: h = √(12·I33/A)·something… resolvemos como sistema:
+  //     b·h = A
+  //     b·h³ = 12·I33
+  //   Dividiendo:  h² = 12·I33 / A     →  h = √(12·I33/A)
+  //                b  = A / h
   lines.push(`$ FRAME SECTIONS`);
   const writtenSections = new Set<string>();
-  const elemToSecName = new Map<number, string>(); // element index → section name
-  const shapeKeyToSecName = new Map<string, string>(); // "type_h_b_tf_tw" → name
+  const elemToSecName = new Map<number, string>();
+  const shapeKeyToSecName = new Map<string, string>();
+
+  const minDim = 0.05; // 5 cm mínimo, evita "R0x0"
 
   elements.forEach((el, i) => {
     if (el.length !== 2) return;
     const shape = elementInputs.sectionShapes?.get(i);
-    const E = elementInputs.elasticities?.get(i) ?? 0;
-    const matName = matNames.get(E) || "Mat_1";
+    const E_kNm2 = elementInputs.elasticities?.get(i) ?? 0;
+    const matName = matNames.get(E_kNm2) || "Conc_1";
+    const isSteel = matIsSteel.get(E_kNm2) ?? (E_kNm2 >= 1e8);
 
-    const h = shape?.h ?? 0, b = shape?.b ?? 0, d = shape?.d ?? 0;
-    const tfw = shape?.tf ?? 0, tww = shape?.tw ?? 0;
-    const stype = shape?.type || "rect";
+    const A      = elementInputs.areas?.get(i) ?? 0;
+    const I33    = elementInputs.momentsOfInertiaY?.get(i) ?? 0;
+    const I22    = elementInputs.momentsOfInertiaZ?.get(i) ?? 0;
+    const J      = elementInputs.torsionalConstants?.get(i) ?? 0;
 
-    // Build unique key from shape content
-    const shapeKey = `${stype}_${h}_${b}_${d}_${tfw}_${tww}`;
+    let stype = shape?.type || "rect";
+    let h     = shape?.h ?? 0;
+    let b     = shape?.b ?? 0;
+    let d     = shape?.d ?? 0;
+    const tfw = shape?.tf ?? 0;
+    const tww = shape?.tw ?? 0;
 
+    // Si no hay shape válido, derivar h, b equivalentes desde A, I
+    if (h <= 0 && b <= 0 && d <= 0 && A > 0) {
+      if (I33 > 0) {
+        h = Math.sqrt(12 * I33 / A);
+        b = A / h;
+      } else {
+        // Sección sin I → cuadrada equivalente
+        h = b = Math.sqrt(A);
+      }
+      // Defaults razonables si los cálculos dan dimensiones absurdas
+      if (!isFinite(h) || h < minDim) h = minDim;
+      if (!isFinite(b) || b < minDim) b = minDim;
+      stype = "rect";
+    }
+    // Si todavía no tenemos dimensiones, usar default
+    if (h <= 0 && b <= 0 && d <= 0) {
+      h = 0.30; b = 0.30; stype = "rect";
+    }
+
+    const shapeKey = `${stype}_${rd(h)}_${rd(b)}_${rd(d)}_${rd(tfw)}_${rd(tww)}_${matName}`;
     if (shape?.name && !shapeKeyToSecName.has(shapeKey)) {
       shapeKeyToSecName.set(shapeKey, shape.name);
     }
-
     let secName = shapeKeyToSecName.get(shapeKey);
     if (!secName) {
-      // Auto-generate name from dimensions
-      if (stype === "rect") secName = `R${rd(b*100)}x${rd(h*100)}`;
-      else if (stype === "circ") secName = `C_D${rd(d*100)}`;
-      else if (stype === "I") secName = `I_${rd(h*100)}`;
-      else secName = `Sec_${writtenSections.size + 1}`;
+      const tag = isSteel ? "S" : "C";
+      if (stype === "rect")     secName = `${tag}_R${Math.round(b*100)}x${Math.round(h*100)}`;
+      else if (stype === "circ")secName = `${tag}_C_D${Math.round(d*100)}`;
+      else if (stype === "I")   secName = `${tag}_I${Math.round(h*100)}x${Math.round(b*100)}`;
+      else if (stype === "HSS") secName = `${tag}_HSS${Math.round(b*100)}x${Math.round(h*100)}x${Math.round(tww*1000)}`;
+      else                      secName = `${tag}_Sec${writtenSections.size + 1}`;
       shapeKeyToSecName.set(shapeKey, secName);
     }
-
     elemToSecName.set(i, secName);
 
     if (writtenSections.has(secName)) return;
     writtenSections.add(secName);
 
-    const shapeMap: Record<string, string> = {
-      rect: "Concrete Rectangular", circ: "Concrete Circle",
-      I: "Steel I/Wide Flange", HSS: "Steel Tube", pipe: "Steel Pipe",
-      L: "Steel Angle", C: "Steel Channel", "2C": "Steel Double Channel",
-    };
-    const etabsShape = shapeMap[stype] || "Concrete Rectangular";
+    // ETABS shape: alinear con material (acero usa shapes "Steel ...")
+    let etabsShape = "Concrete Rectangular";
+    if (isSteel) {
+      if      (stype === "I")    etabsShape = "Steel I/Wide Flange";
+      else if (stype === "HSS")  etabsShape = "Steel Tube";
+      else if (stype === "pipe") etabsShape = "Steel Pipe";
+      else if (stype === "L")    etabsShape = "Steel Angle";
+      else if (stype === "C")    etabsShape = "Steel Channel";
+      else if (stype === "2C")   etabsShape = "Steel Double Channel";
+      else                       etabsShape = "Steel Rectangular";
+    } else {
+      if      (stype === "circ") etabsShape = "Concrete Circle";
+      else                       etabsShape = "Concrete Rectangular";
+    }
+
     let line = `  FRAMESECTION  "${secName}"  MATERIAL "${matName}"  SHAPE "${etabsShape}"`;
-    if (h) line += `  D ${h}`;
-    if (b) line += `  B ${b}`;
-    if (d && !h) line += `  D ${d}`;
-    if (tfw) line += `  TF ${tfw}`;
-    if (tww) line += `  TW ${tww}`;
+    if (h) line += `  D ${rd(h)}`;
+    if (b) line += `  B ${rd(b)}`;
+    if (d && !h) line += `  D ${rd(d)}`;
+    if (tfw) line += `  TF ${rd(tfw)}`;
+    if (tww) line += `  TW ${rd(tww)}`;
     lines.push(line);
   });
   lines.push(``);
@@ -317,16 +423,23 @@ function exportFromScratch(input: ExportE2kInput): string {
     }
   });
 
+  // Material default para shells: el primer Concrete que aparezca; si solo
+  // hay acero (raro en losas), usa el primer steel.
+  const defaultShellMat = (() => {
+    for (const [E, isStl] of matIsSteel) if (!isStl) return matNames.get(E);
+    return matNames.values().next().value || "Conc_1";
+  })();
+
   if (areaElements.some(a => !a.isWall)) {
     lines.push(`$ SLAB PROPERTIES`);
     const t_slab = elementInputs.thicknesses?.values().next().value ?? 0.15;
-    lines.push(`  SHELLPROP  "Losa"  PROPTYPE  "Slab"  MATERIAL "${matNames.values().next().value || 'Mat_1'}"  MODELINGTYPE "ShellThin"  SLABTYPE "Slab"  SLABTHICKNESS ${t_slab} `);
+    lines.push(`  SHELLPROP  "Losa"  PROPTYPE  "Slab"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "ShellThin"  SLABTYPE "Slab"  SLABTHICKNESS ${rd(t_slab)} `);
     lines.push(``);
   }
   if (areaElements.some(a => a.isWall)) {
     lines.push(`$ WALL PROPERTIES`);
     const t_wall = elementInputs.thicknesses?.values().next().value ?? 0.2;
-    lines.push(`  SHELLPROP  "Muro"  PROPTYPE  "Wall"  MATERIAL "${matNames.values().next().value || 'Mat_1'}"  MODELINGTYPE "ShellThick"  WALLTHICKNESS ${t_wall} `);
+    lines.push(`  SHELLPROP  "Muro"  PROPTYPE  "Wall"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "ShellThick"  WALLTHICKNESS ${rd(t_wall)} `);
     lines.push(``);
   }
 
@@ -361,23 +474,67 @@ function exportFromScratch(input: ExportE2kInput): string {
     lines.push(``);
   }
 
-  // Loads
+  // ── LOAD PATTERNS ───────────────────────────────────────────────────
+  // SELFWEIGHT 0 porque Hekatan ya incluye el peso propio como POINTLOAD
+  // nodal equivalente cuando el ejemplo lo aplica. Así evitamos el doble
+  // conteo en ETABS.
   lines.push(`$ LOAD PATTERNS`);
-  lines.push(`  LOADPATTERN "Dead"  TYPE  "Dead"  SELFWEIGHT  1`);
+  lines.push(`  LOADPATTERN "Dead"  TYPE  "Dead"  SELFWEIGHT  0`);
   lines.push(`  LOADPATTERN "Live"  TYPE  "Live"  SELFWEIGHT  0`);
   lines.push(``);
 
+  // ── POINT OBJECT LOADS ─────────────────────────────────────────────
+  // Convertir kN → unidades de salida (Tonf/kgf/kip/etc).
   if (nodeInputs.loads && nodeInputs.loads.size > 0) {
     lines.push(`$ POINT OBJECT LOADS`);
     nodeInputs.loads.forEach((load, nodeIdx) => {
       const [fx, fy, fz] = load;
       const ps = nodeToPS(nodeIdx);
-      if (Math.abs(fx) > 1e-10) lines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  "Dead"  TYPE "FORCE"  FX ${fx}`);
-      if (Math.abs(fy) > 1e-10) lines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  "Dead"  TYPE "FORCE"  FY ${fy}`);
-      if (Math.abs(fz) > 1e-10) lines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  "Dead"  TYPE "FORCE"  FZ ${fz}`);
+      if (Math.abs(fx) > 1e-10) lines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  "Dead"  TYPE "FORCE"  FX ${rd(cF(fx))}`);
+      if (Math.abs(fy) > 1e-10) lines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  "Dead"  TYPE "FORCE"  FY ${rd(cF(fy))}`);
+      if (Math.abs(fz) > 1e-10) lines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  "Dead"  TYPE "FORCE"  FZ ${rd(cF(fz))}`);
     });
     lines.push(``);
   }
+
+  // Momentos nodales si existen
+  if ((nodeInputs as any).moments && (nodeInputs as any).moments.size > 0) {
+    if (!lines[lines.length - 1].startsWith("$ POINT OBJECT LOADS")) {
+      // ya emitido arriba; agregamos directamente más líneas
+    }
+    (nodeInputs as any).moments.forEach((m: number[], nodeIdx: number) => {
+      const [mx, my, mz] = m;
+      const ps = nodeToPS(nodeIdx);
+      if (Math.abs(mx) > 1e-10) lines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  "Dead"  TYPE "MOMENT"  MX ${rd(cF(mx))}`);
+      if (Math.abs(my) > 1e-10) lines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  "Dead"  TYPE "MOMENT"  MY ${rd(cF(my))}`);
+      if (Math.abs(mz) > 1e-10) lines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  "Dead"  TYPE "MOMENT"  MZ ${rd(cF(mz))}`);
+    });
+    lines.push(``);
+  }
+
+  // ── LOAD CASES (Linear Static) ─────────────────────────────────────
+  // Sin esto ETABS NO corre análisis. Define Dead y Live como casos
+  // estáticos lineales independientes.
+  lines.push(`$ LOAD CASES`);
+  lines.push(`  LOADCASE "Dead"  TYPE  "Linear Static"  INITCOND  "PRESET"  `);
+  lines.push(`  LOADCASE "Dead"  LOADPAT  "Dead"  SF 1 `);
+  lines.push(`  LOADCASE "Live"  TYPE  "Linear Static"  INITCOND  "PRESET"  `);
+  lines.push(`  LOADCASE "Live"  LOADPAT  "Live"  SF 1 `);
+  // Caso modal estándar (LTH para análisis dinámico) - opcional pero útil
+  lines.push(`  LOADCASE "Modal"  TYPE  "Modal - Eigen"  INITCOND  "PRESET"  `);
+  lines.push(`  LOADCASE "Modal"  MAXMODES 12  MINMODES 1  EIGENSHIFTFREQ 0  EIGENCUTOFFFREQ 0  EIGENTOL 1E-09  ALLOWAUTOFREQSHIFT "Yes"  `);
+  lines.push(``);
+
+  // ── LOAD COMBINATIONS ──────────────────────────────────────────────
+  // Combo básico ASCE: 1.4D y 1.2D + 1.6L, por si el usuario quiere ver
+  // el comportamiento factorizado en ETABS sin tener que crearlo a mano.
+  lines.push(`$ LOAD COMBINATIONS`);
+  lines.push(`  COMBO "1.4D"  TYPE "Linear Add"  `);
+  lines.push(`  COMBO "1.4D"  LOADCASE  "Dead"  SF 1.4 `);
+  lines.push(`  COMBO "1.2D+1.6L"  TYPE "Linear Add"  `);
+  lines.push(`  COMBO "1.2D+1.6L"  LOADCASE  "Dead"  SF 1.2 `);
+  lines.push(`  COMBO "1.2D+1.6L"  LOADCASE  "Live"  SF 1.6 `);
+  lines.push(``);
 
   lines.push(`  END`);
   lines.push(`$ END OF MODEL FILE`);

@@ -31,6 +31,8 @@ extern "C"
         int *thickness_keys_ptr, double *thickness_values_ptr, int num_thickness,                                        // Map<elemIdx, t>
         int *poisson_keys_ptr, double *poisson_values_ptr, int num_poisson,                                              // Map<elemIdx, nu>
         int *elasticitiesOrthogonal_keys_ptr, double *elasticitiesOrthogonal_values_ptr, int num_elasticitiesOrthogonal, // Map<elemIdx, E_ortho>
+        int *shear_area_y_keys_ptr, double *shear_area_y_values_ptr, int num_shear_area_y,                              // Map<elemIdx, AsY> (0 = Bernoulli)
+        int *shear_area_z_keys_ptr, double *shear_area_z_values_ptr, int num_shear_area_z,                              // Map<elemIdx, AsZ> (0 = Bernoulli)
 
         // Nodal springs (Winkler foundation, partial restraints)
         // Flat layout: [node0, dof0, k0, node1, dof1, k1, ...]  length = 3 * num_springs
@@ -76,6 +78,11 @@ extern "C"
         elementInputs.thicknesses = parseMapFromFlat(thickness_keys_ptr, thickness_values_ptr, num_thickness);
         elementInputs.poissonsRatios = parseMapFromFlat(poisson_keys_ptr, poisson_values_ptr, num_poisson);
         elementInputs.elasticitiesOrthogonal = parseMapFromFlat(elasticitiesOrthogonal_keys_ptr, elasticitiesOrthogonal_values_ptr, num_elasticitiesOrthogonal);
+        // Shear areas for Timoshenko frame (used by getLocalStiffnessMatrixFrame)
+        // Convention: As=0 (or not provided) → default 5/6·A (Timoshenko). As<0 sentinel
+        // means Bernoulli (phi=0). As>0 explícito → usar ese valor.
+        elementInputs.shearAreasY = parseMapFromFlat(shear_area_y_keys_ptr, shear_area_y_values_ptr, num_shear_area_y);
+        elementInputs.shearAreasZ = parseMapFromFlat(shear_area_z_keys_ptr, shear_area_z_values_ptr, num_shear_area_z);
 
         // --- 2. Core FEA Calculation using Eigen ---
         int dof = num_nodes * 6; // Total degrees of freedom

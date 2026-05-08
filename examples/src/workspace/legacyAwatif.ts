@@ -42,7 +42,7 @@ export const legacy3dStructure  = legacy("3d-structure",  "Hekatan – 3D Struct
 export const legacyAxialBar     = legacy("axial-bar",     "Hekatan – Axial Bar",        "Legacy · Frames");
 export const legacyTruss        = legacy("truss",         "Hekatan – Truss",            "Legacy · Frames");
 export const legacyAdvancedTruss= legacy("advanced-truss","Hekatan – Advanced Truss",   "Legacy · Frames");
-export const legacyBeams        = legacy("beams",         "Paz 6.3 Space Frame (validación 4 solvers)", "🏁 Benchmarks", true);
+export const legacyBeams        = legacy("beams",         "Paz 6.3 Space Frame (validación 4 solvers)", "🏁 Benchmarks · 1️⃣ Frames", true);
 
 // ─── Edificios ──────────────────────────────────────────────────────
 export const legacyBuilding     = legacy("building",      "Hekatan – Building (upstream)", "Legacy · Edificios");
@@ -100,8 +100,8 @@ export const vigaDobleT         = legacy("viga-doble-t",         "Viga Doble-T (
 export const tableroPuente      = legacy("tablero-puente",       "Tablero Puente (3 vigas+losa, test Solar)",      "Puentes");
 
 // ─── FEM 3D Sólido H8 (validación cruzada con CalculiX/CodeAster/FEniCS) ───
-export const solidCubeFEM       = legacy("solid-cube-fem",       "Cubo Sólido H8 (validación CalculiX)",          "🏁 Benchmarks", true);
-export const bulboPresionesSuelo= legacy("bulbo-presiones-suelo","Bulbo de Presiones — Serquen SF-70",            "🏁 Benchmarks", true);
+export const solidCubeFEM       = legacy("solid-cube-fem",       "Cubo Sólido H8 (validación CalculiX)",          "🏁 Benchmarks · 3️⃣ Sólidos", true);
+export const bulboPresionesSuelo= legacy("bulbo-presiones-suelo","Bulbo de Presiones — Serquen SF-70",            "🏁 Benchmarks · 4️⃣ Combinados", true);
 
 /** Array completo de los 19+11 ejemplos legacy para registrar de un golpe. */
 export const legacyAwatifExamples: ExampleDef[] = [

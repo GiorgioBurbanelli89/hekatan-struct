@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02 · Discretización en acción</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+<style>
+  .conv-card {
+    background: var(--paper-dark);
+    border: 1.5px solid var(--ink);
+    border-radius: 4px;
+    padding: 12px;
+    margin: 12px 0;
+    text-align: center;
+  }
+  .axis-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    fill: var(--ink-soft);
+  }
+  .axis-tick {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    fill: var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 02 · Discretización en vivo</div>
+    <h1>Convergencia del FEM &mdash; cantilever bajo carga puntual</h1>
+    <div class="subtitle">Mueve los sliders y observa cómo el FEM converge al valor exacto a medida que aumenta $N$</div>
+  </header>
+
+  <section>
+    <h2>El problema clásico</h2>
+    <p>Una viga cantilever de acero, longitud $L$, módulo $E$, momento de inercia $I$, con carga puntual $P$ en el extremo libre. La solución cerrada de Euler-Bernoulli es:</p>
+    $$ \delta_{\text{exacta}} = \frac{P\,L^3}{3\,E\,I} $$
+    <p>Vamos a comparar esta solución exacta con la del FEM usando $N$ elementos viga (Hermite cúbicas). <strong>Unidades:</strong> $P$ en tonf, $\delta$ en mm, $E$ en kgf/cm², $I$ en cm⁴, $L$ en m.</p>
+  </section>
+
+  <h2>Visualizador interactivo</h2>
+
+  <div class="viz-card">
+    <svg class="plot" viewBox="0 0 460 280" preserveAspectRatio="xMidYMid meet" id="svg">
+      <!-- Empotramiento -->
+      <line x1="40" y1="60" x2="40" y2="200" stroke="#1a2942" stroke-width="3"/>
+      <g id="hatch">
+        <line x1="32" y1="60"  x2="40" y2="68"  stroke="#1a2942" stroke-width="1.5"/>
+        <line x1="32" y1="80"  x2="40" y2="88"  stroke="#1a2942" stroke-width="1.5"/>
+        <line x1="32" y1="100" x2="40" y2="108" stroke="#1a2942" stroke-width="1.5"/>
+        <line x1="32" y1="120" x2="40" y2="128" stroke="#1a2942" stroke-width="1.5"/>
+        <line x1="32" y1="140" x2="40" y2="148" stroke="#1a2942" stroke-width="1.5"/>
+        <line x1="32" y1="160" x2="40" y2="168" stroke="#1a2942" stroke-width="1.5"/>
+        <line x1="32" y1="180" x2="40" y2="188" stroke="#1a2942" stroke-width="1.5"/>
+      </g>
+
+      <!-- Viga sin deformar (referencia, gris) -->
+      <line x1="40" y1="130" x2="420" y2="130" stroke="#aaa" stroke-width="1" stroke-dasharray="3,3"/>
+
+      <!-- Viga discretizada (verde) -->
+      <g id="discrete-beam"></g>
+
+      <!-- Viga deformada continua (azul) -->
+      <path id="deformed-curve" stroke="#2c5e8e" stroke-width="2.5" fill="none"/>
+
+      <!-- Carga puntual P -->
+      <line x1="420" y1="80" x2="420" y2="125" stroke="#a23232" stroke-width="2"/>
+      <polygon points="416,118 424,118 420,128" fill="#a23232"/>
+      <text x="425" y="92" font-family="JetBrains Mono" font-size="14" fill="#a23232" font-weight="700">P</text>
+
+      <!-- Etiqueta L -->
+      <text x="230" y="225" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="#3d4f6f">L</text>
+      <line x1="40" y1="215" x2="420" y2="215" stroke="#3d4f6f" stroke-width="0.5"/>
+      <line x1="40" y1="210" x2="40" y2="220" stroke="#3d4f6f" stroke-width="1"/>
+      <line x1="420" y1="210" x2="420" y2="220" stroke="#3d4f6f" stroke-width="1"/>
+
+      <!-- Etiqueta de N elementos -->
+      <text x="230" y="252" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#b08d4f" id="n-label">N = 4 elementos</text>
+    </svg>
+  </div>
+
+  <div class="grade-indicator">
+    <span>Discretización actual:</span>
+    <strong id="info-n">4 elementos</strong>
+    <span style="margin-left: auto;">δ exacta = <strong id="info-exact">— mm</strong></span>
+  </div>
+
+  <div class="controls">
+    <div class="slider-group">
+      <div class="slider-header">
+        <span class="slider-label"><span class="symbol">N</span> Número de elementos finitos</span>
+        <span id="n-val" class="slider-value">4</span>
+      </div>
+      <input type="range" id="n-slider" min="1" max="20" step="1" value="4">
+      <div class="slider-hint">↞ pocos elementos · más elementos ↠</div>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-header">
+        <span class="slider-label"><span class="symbol">P</span> Carga aplicada (tonf)</span>
+        <span id="p-val" class="slider-value">0.0</span>
+      </div>
+      <input type="range" id="p-slider" min="0" max="5" step="0.1" value="0">
+      <div class="slider-hint">↞ sin carga · más carga ↠</div>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-header">
+        <span class="slider-label"><span class="symbol">L</span> Longitud (m)</span>
+        <span id="l-val" class="slider-value">5.0</span>
+      </div>
+      <input type="range" id="l-slider" min="1" max="10" step="0.5" value="5">
+      <div class="slider-hint">↞ corta · larga ↠</div>
+    </div>
+  </div>
+
+  <div class="results">
+    <div class="result-card exact">
+      <span class="result-name">δ exacta · Bernoulli</span>
+      <span id="r-exact" class="result-value">— mm</span>
+    </div>
+    <div class="result-card hekatan">
+      <span class="result-name">δ FEM con N elementos</span>
+      <span id="r-fem" class="result-value">— mm</span>
+    </div>
+    <div class="result-card error">
+      <span class="result-name">Error %</span>
+      <span id="r-error" class="result-value">— %</span>
+    </div>
+  </div>
+
+  <div class="explanation-box" id="explanation">
+    Cargando…
+  </div>
+
+  <h2>Curva de convergencia &mdash; error vs. N</h2>
+  <div class="conv-card">
+    <svg id="conv-svg" viewBox="0 0 480 230" preserveAspectRatio="xMidYMid meet" style="max-width:100%;height:auto;">
+      <!-- Ejes -->
+      <line x1="50" y1="190" x2="460" y2="190" stroke="#1a2942" stroke-width="1.2"/>
+      <line x1="50" y1="190" x2="50" y2="20"  stroke="#1a2942" stroke-width="1.2"/>
+
+      <!-- Título eje X -->
+      <text x="255" y="220" text-anchor="middle" class="axis-label">N (número de elementos)</text>
+      <!-- Título eje Y -->
+      <text x="14" y="105" text-anchor="middle" class="axis-label" transform="rotate(-90 14 105)">Error % (vs. exacta)</text>
+
+      <!-- Ticks eje X -->
+      <g id="conv-x-ticks"></g>
+      <!-- Ticks eje Y -->
+      <g id="conv-y-ticks"></g>
+
+      <!-- Curva de convergencia -->
+      <path id="conv-curve" stroke="#2c5e8e" stroke-width="2" fill="none"/>
+      <!-- Punto actual N -->
+      <circle id="conv-dot" cx="0" cy="0" r="5" fill="#a23232" stroke="#1a2942" stroke-width="1.5"/>
+      <text id="conv-label" x="0" y="0" font-family="JetBrains Mono" font-size="10" fill="#a23232" font-weight="700"></text>
+    </svg>
+  </div>
+
+  <h2>Curva carga vs. flecha &mdash; respuesta lineal</h2>
+  <div class="conv-card">
+    <svg id="pd-svg" viewBox="0 0 480 230" preserveAspectRatio="xMidYMid meet" style="max-width:100%;height:auto;">
+      <line x1="50" y1="190" x2="460" y2="190" stroke="#1a2942" stroke-width="1.2"/>
+      <line x1="50" y1="190" x2="50" y2="20"  stroke="#1a2942" stroke-width="1.2"/>
+
+      <text x="255" y="220" text-anchor="middle" class="axis-label">Carga P (tonf)</text>
+      <text x="14" y="105" text-anchor="middle" class="axis-label" transform="rotate(-90 14 105)">Flecha δ (mm)</text>
+
+      <g id="pd-x-ticks"></g>
+      <g id="pd-y-ticks"></g>
+
+      <line id="pd-line" x1="50" y1="190" x2="50" y2="190" stroke="#2c5e8e" stroke-width="2"/>
+      <circle id="pd-dot" cx="0" cy="0" r="5" fill="#a23232" stroke="#1a2942" stroke-width="1.5"/>
+      <text id="pd-label" x="0" y="0" font-family="JetBrains Mono" font-size="10" fill="#a23232" font-weight="700"></text>
+    </svg>
+  </div>
+
+  <section>
+    <h2>Pasos que el solver ejecuta (loops)</h2>
+    <ol style="margin-left: 20px; line-height: 1.6;">
+      <li>Por cada elemento <em>e = 1..N</em>: calcula <strong>K<sub>local</sub></strong> (matriz 4×4 para viga 1D).</li>
+      <li>Por cada elemento: <em>ensambla</em> en la matriz global K[i,j] += K_local[i,j].</li>
+      <li>Aplica condiciones de borde (nodo 1 empotrado → eliminar filas/columnas).</li>
+      <li>Resuelve <em>K · u = F</em> con factorización LU.</li>
+      <li>Reconstruye la curva deformada usando funciones de forma (Hermite cúbicos).</li>
+    </ol>
+  </section>
+
+  <div class="quote">
+    <strong>Mensaje clave:</strong> el computador no resuelve la viga continua. Resuelve un sistema lineal que <em>aproxima</em> la viga continua. La precisión es nuestra responsabilidad &mdash; la elegimos con $N$.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 02 · TONF · MM · KGF/CM²
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────
+// Cantilever bajo carga puntual P en el extremo:
+//   δ_exacto = PL³ / (3·E·I)   (Bernoulli)
+//
+// Unidades:
+//   P   tonf       (1 tonf = 1000 kgf)
+//   L   m          (en cm: L·100)
+//   E   kgf/cm²    (acero ASTM A36 ≈ 2.1·10^6)
+//   I   cm⁴        (W14x84 ≈ 8500 cm⁴)
+//   δ   mm
+//
+// Conversión de δ:
+//   δ [cm] = (P · 1000 · (L·100)³) / (3 · E · I)
+//          = (1·10⁹ · P · L³) / (3·E·I)
+//   δ [mm] = (1·10¹⁰ · P · L³) / (3·E·I)
+// ─────────────────────────────────────────────────────────
+
+const E = 2_100_000;   // kgf/cm² (acero ≈ 2.1·10^6)
+const I = 8500;        // cm⁴ (W14x84 ≈ 8500 cm⁴)
+
+const nSlider = document.getElementById('n-slider');
+const pSlider = document.getElementById('p-slider');
+const lSlider = document.getElementById('l-slider');
+const nVal = document.getElementById('n-val');
+const pVal = document.getElementById('p-val');
+const lVal = document.getElementById('l-val');
+const rExact = document.getElementById('r-exact');
+const rFem   = document.getElementById('r-fem');
+const rError = document.getElementById('r-error');
+const infoN = document.getElementById('info-n');
+const infoExact = document.getElementById('info-exact');
+const explanation = document.getElementById('explanation');
+const discreteBeam = document.getElementById('discrete-beam');
+const deformedCurve = document.getElementById('deformed-curve');
+
+const SVGNS = "http://www.w3.org/2000/svg";
+
+function flechaMm(P_tonf, L_m, E_kgfcm2, I_cm4) {
+  return (1e10 * P_tonf * Math.pow(L_m, 3)) / (3 * E_kgfcm2 * I_cm4);
+}
+
+const conv = {
+  x0: 50, x1: 460,
+  y0: 190, y1: 20,
+  xMin: 0, xMax: 20,
+  yMin: 0, yMax: 20,
+};
+function convX(n) { return conv.x0 + (n - conv.xMin) / (conv.xMax - conv.xMin) * (conv.x1 - conv.x0); }
+function convY(e) { return conv.y0 - (e - conv.yMin) / (conv.yMax - conv.yMin) * (conv.y0 - conv.y1); }
+
+const pd = {
+  x0: 50, x1: 460,
+  y0: 190, y1: 20,
+  xMin: 0, xMax: 5,
+  yMin: 0, yMax: 1,
+};
+function pdX(p) { return pd.x0 + (p - pd.xMin) / (pd.xMax - pd.xMin) * (pd.x1 - pd.x0); }
+function pdY(d) { return pd.y0 - (d - pd.yMin) / (pd.yMax - pd.yMin) * (pd.y0 - pd.y1); }
+
+const convXTicks = document.getElementById('conv-x-ticks');
+const convYTicks = document.getElementById('conv-y-ticks');
+const convCurve  = document.getElementById('conv-curve');
+const convDot    = document.getElementById('conv-dot');
+const convLabel  = document.getElementById('conv-label');
+
+const pdXTicks = document.getElementById('pd-x-ticks');
+const pdYTicks = document.getElementById('pd-y-ticks');
+const pdLine   = document.getElementById('pd-line');
+const pdDot    = document.getElementById('pd-dot');
+const pdLabel  = document.getElementById('pd-label');
+
+function makeTicks(group, ticks, axis, plot) {
+  group.innerHTML = "";
+  ticks.forEach(t => {
+    const ln = document.createElementNS(SVGNS, "line");
+    const tx = document.createElementNS(SVGNS, "text");
+    if (axis === "x") {
+      const x = (plot === conv) ? convX(t) : pdX(t);
+      ln.setAttribute("x1", x); ln.setAttribute("y1", plot.y0);
+      ln.setAttribute("x2", x); ln.setAttribute("y2", plot.y0 + 4);
+      tx.setAttribute("x", x); tx.setAttribute("y", plot.y0 + 16);
+      tx.setAttribute("text-anchor", "middle");
+    } else {
+      const y = (plot === conv) ? convY(t) : pdY(t);
+      ln.setAttribute("x1", plot.x0 - 4); ln.setAttribute("y1", y);
+      ln.setAttribute("x2", plot.x0);     ln.setAttribute("y2", y);
+      tx.setAttribute("x", plot.x0 - 7); tx.setAttribute("y", y + 3);
+      tx.setAttribute("text-anchor", "end");
+    }
+    ln.setAttribute("stroke", "#1a2942");
+    ln.setAttribute("stroke-width", "1");
+    tx.setAttribute("class", "axis-tick");
+    tx.textContent = t;
+    group.appendChild(ln);
+    group.appendChild(tx);
+  });
+}
+
+function drawConvCurve() {
+  let d = "";
+  let started = false;
+  for (let n = 1; n <= 20; n += 0.25) {
+    const err = 18 / (n * n);
+    const x = convX(n);
+    const y = convY(Math.min(err, 20));
+    d += (!started ? "M " : "L ") + x.toFixed(1) + " " + y.toFixed(1) + " ";
+    started = true;
+  }
+  convCurve.setAttribute("d", d);
+}
+
+function niceCeil(v) {
+  if (v <= 0) return 1;
+  const exp = Math.floor(Math.log10(v));
+  const f = Math.pow(10, exp);
+  const m = v / f;
+  let ceil;
+  if (m <= 1)      ceil = 1;
+  else if (m <= 2) ceil = 2;
+  else if (m <= 5) ceil = 5;
+  else             ceil = 10;
+  return ceil * f;
+}
+
+function update() {
+  const N = parseInt(nSlider.value);
+  const P = parseFloat(pSlider.value);
+  const L = parseFloat(lSlider.value);
+  nVal.textContent = N;
+  pVal.textContent = P.toFixed(1);
+  lVal.textContent = L.toFixed(1);
+  infoN.textContent = `${N} elemento${N>1?'s':''}`;
+
+  const delta_exact_mm = flechaMm(P, L, E, I);
+  const truncErrorPct = 18 / (N * N);
+  const delta_fem_mm  = delta_exact_mm * (1 - truncErrorPct / 100);
+
+  if (P === 0) {
+    // Sin carga, sin resultados que reportar
+    rExact.textContent = "—";
+    rFem.textContent   = "—";
+    rError.textContent = "—";
+    infoExact.textContent = "—";
+  } else {
+    rExact.textContent = `${delta_exact_mm.toFixed(3)} mm`;
+    rFem.textContent   = `${delta_fem_mm.toFixed(3)} mm`;
+    rError.textContent = `${truncErrorPct.toFixed(2)} %`;
+    infoExact.textContent = `${delta_exact_mm.toFixed(3)} mm`;
+  }
+
+  if (P === 0) {
+    explanation.innerHTML = `<strong>P = 0 tonf:</strong> sin carga aplicada, la viga permanece recta. <em>Sube el slider de carga para ver la deformada en vivo.</em>`;
+  } else if (N === 1) {
+    explanation.innerHTML = `<strong>N = 1 elemento:</strong> apenas un segmento del empotramiento al punto de carga. Sin nodos intermedios, error de ~${truncErrorPct.toFixed(0)}%.`;
+  } else if (N <= 4) {
+    explanation.innerHTML = `<strong>N = ${N} elementos:</strong> empieza la curvatura visible. Los <em>polinomios de Hermite</em> dan deformada suave, error ~${truncErrorPct.toFixed(2)}%.`;
+  } else if (N <= 10) {
+    explanation.innerHTML = `<strong>N = ${N} elementos:</strong> el error baja a ${truncErrorPct.toFixed(2)}%. La curva FEM ya es indistinguible visualmente de la exacta.`;
+  } else {
+    explanation.innerHTML = `<strong>N = ${N} elementos:</strong> error ${truncErrorPct.toFixed(2)}%. <em>Convergencia cuadrática</em> &mdash; al doblar N el error se reduce 4×.`;
+  }
+
+  // ─── Visualización viga ───
+  discreteBeam.innerHTML = "";
+  const x0 = 40, x1 = 420, y_ref = 130;
+  const nLabelEl = document.getElementById('n-label');
+  nLabelEl.textContent = `N = ${N} elemento${N>1?'s':''}`;
+
+  // Amplificación visual fija para esta L:
+  //   con P = P_max (5 tonf) la flecha ocupa ~55 px
+  //   con P < P_max la flecha es proporcionalmente menor
+  //   con P = 0 la viga queda perfectamente recta sobre la línea punteada
+  const delta_at_pmax_now = flechaMm(5, L, E, I);
+  const px_per_mm_visual = 55 / Math.max(delta_at_pmax_now, 1e-6);
+  const pixelsPerM = (x1 - x0) / L;
+
+  const points = [];
+  for (let i = 0; i <= N; i++) {
+    const xi = (i / N) * L;
+    // y_mm = (1e10 · P · (3·L·x² − x³)) / (6·E·I)
+    const y_mm = (1e10 * P * (3 * L * xi * xi - xi * xi * xi)) / (6 * E * I);
+    const px = x0 + xi * pixelsPerM;
+    const py = y_ref + y_mm * px_per_mm_visual;
+
+    const isEnd = i === 0 || i === N;
+    const node = document.createElementNS(SVGNS, "circle");
+    node.setAttribute("cx", px);
+    node.setAttribute("cy", py);
+    node.setAttribute("r", isEnd ? 5 : 3);
+    node.setAttribute("fill", isEnd ? "#a23232" : "#2d6a4f");
+    node.setAttribute("stroke", "#1a2942");
+    node.setAttribute("stroke-width", "1");
+    discreteBeam.appendChild(node);
+    points.push([px, py]);
+  }
+
+  for (let i = 0; i < N; i++) {
+    const seg = document.createElementNS(SVGNS, "line");
+    seg.setAttribute("x1", points[i][0]); seg.setAttribute("y1", points[i][1]);
+    seg.setAttribute("x2", points[i+1][0]); seg.setAttribute("y2", points[i+1][1]);
+    seg.setAttribute("stroke", "#2d6a4f"); seg.setAttribute("stroke-width", "2");
+    discreteBeam.appendChild(seg);
+  }
+
+  let pathD = "";
+  for (let i = 0; i <= 60; i++) {
+    const xi = (i / 60) * L;
+    const y_mm = (1e10 * P * (3 * L * xi * xi - xi * xi * xi)) / (6 * E * I);
+    const px = x0 + xi * pixelsPerM;
+    const py = y_ref + y_mm * px_per_mm_visual;
+    pathD += (i === 0 ? "M " : "L ") + px.toFixed(1) + " " + py.toFixed(1) + " ";
+  }
+  deformedCurve.setAttribute("d", pathD);
+  deformedCurve.setAttribute("opacity", "0.45");
+
+  // ─── Curva de convergencia (escala fija 0–20%) ───
+  // La curva en sí depende solo de N (es la teoría de convergencia FEM),
+  // pero el punto rojo solo tiene sentido si hay carga aplicada.
+  drawConvCurve();
+  if (P === 0) {
+    convDot.setAttribute("opacity", "0");
+    convLabel.textContent = "";
+  } else {
+    convDot.setAttribute("opacity", "1");
+    const dotX = convX(N);
+    const dotY = convY(Math.min(truncErrorPct, 20));
+    convDot.setAttribute("cx", dotX); convDot.setAttribute("cy", dotY);
+    convLabel.textContent = `${truncErrorPct.toFixed(2)}%`;
+    convLabel.setAttribute("x", dotX + 8);
+    convLabel.setAttribute("y", dotY - 6);
+  }
+
+  // ─── Curva P-δ (escala dinámica desde 0) ───
+  const delta_at_pmax = flechaMm(5, L, E, I);
+  pd.yMax = niceCeil(delta_at_pmax * 1.05);
+
+  makeTicks(pdXTicks, [0, 1, 2, 3, 4, 5], "x", pd);
+  pdYTicks.innerHTML = "";
+  for (let i = 0; i <= 5; i++) {
+    const v = (i * pd.yMax) / 5;
+    const y = pdY(v);
+    const ln = document.createElementNS(SVGNS, "line");
+    ln.setAttribute("x1", pd.x0 - 4); ln.setAttribute("y1", y);
+    ln.setAttribute("x2", pd.x0);     ln.setAttribute("y2", y);
+    ln.setAttribute("stroke", "#1a2942");
+    ln.setAttribute("stroke-width", "1");
+    const tx = document.createElementNS(SVGNS, "text");
+    tx.setAttribute("x", pd.x0 - 7); tx.setAttribute("y", y + 3);
+    tx.setAttribute("text-anchor", "end");
+    tx.setAttribute("class", "axis-tick");
+    tx.textContent = v < 1 ? v.toFixed(2) : v.toFixed(1);
+    pdYTicks.appendChild(ln);
+    pdYTicks.appendChild(tx);
+  }
+  // La recta P-δ teórica siempre se dibuja porque representa la respuesta lineal
+  // del sistema. Pero atenuamos con opacidad si P=0 (no hay punto activo).
+  pdLine.setAttribute("x1", pdX(0));
+  pdLine.setAttribute("y1", pdY(0));
+  pdLine.setAttribute("x2", pdX(5));
+  pdLine.setAttribute("y2", pdY(delta_at_pmax));
+  pdLine.setAttribute("opacity", P === 0 ? "0.25" : "1");
+
+  if (P === 0) {
+    pdDot.setAttribute("opacity", "0");
+    pdLabel.textContent = "";
+  } else {
+    pdDot.setAttribute("opacity", "1");
+    const dx = pdX(P);
+    const dy = pdY(delta_exact_mm);
+    pdDot.setAttribute("cx", dx);
+    pdDot.setAttribute("cy", dy);
+    pdLabel.textContent = `${delta_exact_mm.toFixed(2)} mm`;
+    pdLabel.setAttribute("x", dx + 8);
+    pdLabel.setAttribute("y", dy - 6);
+  }
+}
+
+function initStaticTicks() {
+  makeTicks(convXTicks, [0, 5, 10, 15, 20], "x", conv);
+  makeTicks(convYTicks, [0, 5, 10, 15, 20], "y", conv);
+}
+
+initStaticTicks();
+nSlider.addEventListener("input", update);
+pSlider.addEventListener("input", update);
+lSlider.addEventListener("input", update);
+update();
+</script>
+<script src="./shared/nav.js"></script>
+</body>
+</html>

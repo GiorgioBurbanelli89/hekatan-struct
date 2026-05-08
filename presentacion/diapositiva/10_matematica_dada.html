@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10 · La matemática ya está dada</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+<style>
+  .timeline {
+    position: relative;
+    padding: 14px 0;
+    margin: 18px 0;
+  }
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 60px;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: var(--ink);
+  }
+  .tl-event {
+    position: relative;
+    padding-left: 92px;
+    margin-bottom: 18px;
+  }
+  .tl-event::before {
+    content: "";
+    position: absolute;
+    left: 54px; top: 8px;
+    width: 14px; height: 14px;
+    background: var(--gold);
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+  }
+  .tl-year {
+    position: absolute;
+    left: 0; top: 4px;
+    width: 50px;
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: var(--gold);
+    font-size: 1rem;
+  }
+  .tl-author {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .tl-contribution {
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+    margin-top: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 10 · 70 años de teoría (contexto histórico)</div>
+    <h1>La matemática <em>ya está dada</em></h1>
+    <div class="subtitle">El software no inventa las ecuaciones — solo las ejecuta en bucles</div>
+  </header>
+
+  <section>
+    <h2>El mensaje de hoy</h2>
+    <div class="quote">
+      Cuando ETABS calcula una matriz de rigidez, está ejecutando la <strong>misma fórmula</strong> que Wilson escribió en 1971. Cuando OpenSees integra un paso de tiempo, está aplicando el mismo <strong>esquema Newmark de 1959</strong>. <em>Lo único nuevo es la velocidad de los bucles</em>.
+    </div>
+    <p>Como ingenieros, debemos entender de dónde vienen las ecuaciones — el computador no aporta criterio. Aquí van los hitos esenciales del FEM:</p>
+  </section>
+
+  <section>
+    <h2>Línea de tiempo del Método de Elementos Finitos</h2>
+
+    <div class="timeline">
+      <div class="tl-event">
+        <span class="tl-year">1909</span>
+        <div class="tl-author">Boris Galerkin</div>
+        <div class="tl-contribution">Método de los <strong>residuos ponderados</strong>: la base matemática que justifica que la solución FEM aproxime la solución exacta. Sin Galerkin no hay convergencia demostrable.</div>
+      </div>
+
+      <div class="tl-event">
+        <span class="tl-year">1943</span>
+        <div class="tl-author">Richard Courant</div>
+        <div class="tl-contribution">Aplicó <strong>cálculo variacional</strong> con funciones triangulares para resolver torsión de St. Venant — primer FEM práctico, antes de la palabra "FEM".</div>
+      </div>
+
+      <div class="tl-event">
+        <span class="tl-year">1956</span>
+        <div class="tl-author">Turner, Clough, Martin, Topp</div>
+        <div class="tl-contribution">Boeing publica el <em>stiffness method</em> matricial para alas de avión. Nace el FEM moderno con matriz de rigidez K elemental ensamblada.</div>
+      </div>
+
+      <div class="tl-event">
+        <span class="tl-year">1959</span>
+        <div class="tl-author">Nathan Newmark</div>
+        <div class="tl-contribution">Esquema <strong>Newmark-β</strong> para integración temporal — base de todos los análisis dinámicos no lineales que se hacen hoy en ETABS, OpenSees, ABAQUS.</div>
+      </div>
+
+      <div class="tl-event">
+        <span class="tl-year">1965</span>
+        <div class="tl-author">Olek Zienkiewicz</div>
+        <div class="tl-contribution">Primer libro: <em>The Finite Element Method in Structural Mechanics</em>. Sistematiza el FEM para ingeniería civil. Hasta 7 ediciones.</div>
+      </div>
+
+      <div class="tl-event">
+        <span class="tl-year">1971</span>
+        <div class="tl-author">Edward Wilson</div>
+        <div class="tl-contribution">Padre de SAP/SAP2000. <strong>Incompatible modes</strong> para Q4 plate-bending — la razón por la que un Q4 puede usarse en losas (sin shear locking).</div>
+      </div>
+
+      <div class="tl-event">
+        <span class="tl-year">1976</span>
+        <div class="tl-author">Klaus-Jürgen Bathe</div>
+        <div class="tl-contribution">Libro <em>Finite Element Procedures</em>. MIT. Fundamento teórico de ADINA, base implícita de ETABS. <strong>Aún en uso académico</strong>.</div>
+      </div>
+
+      <div class="tl-event">
+        <span class="tl-year">1985</span>
+        <div class="tl-author">Mario Paz · Young Hoon Kim</div>
+        <div class="tl-contribution"><em>Structural Dynamics: Theory &amp; Computation</em>. <strong>El libro de cabecera del curso</strong>. Sus scripts MATLAB son lo que vamos a correr en Octave hoy.</div>
+      </div>
+
+      <div class="tl-event">
+        <span class="tl-year">1997</span>
+        <div class="tl-author">Frank McKenna · UC Berkeley</div>
+        <div class="tl-contribution">Lanzamiento de <strong>OpenSees</strong> — código abierto en C++. La comunidad académica internacional lo adopta como referencia.</div>
+      </div>
+
+      <div class="tl-event">
+        <span class="tl-year">2026</span>
+        <div class="tl-author">Hekatan Struct</div>
+        <div class="tl-contribution">Workspace web FEM <strong>en el navegador</strong>. C++ Eigen → WebAssembly. Las mismas ecuaciones de Wilson, Bathe y Paz, ejecutadas a velocidad nativa, sin instalación.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Lo que el ingeniero necesita aportar</h2>
+    <p>El software resuelve $K\,u = F$, pero <strong>no decide</strong>:</p>
+    <table>
+      <tr>
+        <th>Decisión</th>
+        <th>Quién la toma</th>
+        <th>Ejemplo</th>
+      </tr>
+      <tr>
+        <td>Tipo de elemento</td>
+        <td><strong>Ingeniero</strong></td>
+        <td>¿Q4 thin, thick o membrana? ¿Frame o shell?</td>
+      </tr>
+      <tr>
+        <td>Discretización</td>
+        <td><strong>Ingeniero</strong></td>
+        <td>¿Cuántos elementos por luz? Convergencia.</td>
+      </tr>
+      <tr>
+        <td>Condiciones de borde</td>
+        <td><strong>Ingeniero</strong></td>
+        <td>¿Empotrado, articulado, resorte de Winkler?</td>
+      </tr>
+      <tr>
+        <td>Cargas y combinaciones</td>
+        <td><strong>Ingeniero</strong></td>
+        <td>NEC-SE-DS, ASCE 7, espectros de respuesta.</td>
+      </tr>
+      <tr>
+        <td>Resolver $K\,u = F$</td>
+        <td>Computador</td>
+        <td>SparseLU, Cholesky, SVD.</td>
+      </tr>
+      <tr>
+        <td>Ensamblar elementos</td>
+        <td>Computador</td>
+        <td>Bucles sobre los N elementos.</td>
+      </tr>
+      <tr>
+        <td>Integración numérica</td>
+        <td>Computador</td>
+        <td>Cuadratura de Gauss (ver diapositiva 5).</td>
+      </tr>
+    </table>
+  </section>
+
+  <div class="quote">
+    <strong>Conclusión:</strong> el FEM es una <em>colaboración</em>. La matemática rigurosa la ponen Galerkin, Wilson, Bathe y Paz. La velocidad la ponen los lenguajes (Fortran, C++, Julia). El criterio lo ponemos nosotros. Sin los tres, los resultados son <em>numéricamente correctos</em> pero <em>físicamente absurdos</em>.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 10 · 70 AÑOS DE FEM
+  </div>
+
+</div>
+
+<script src="./shared/nav.js"></script>
+</body>
+</html>

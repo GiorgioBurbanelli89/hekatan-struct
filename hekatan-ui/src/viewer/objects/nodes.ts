@@ -27,15 +27,33 @@ export function nodes(
     );
   });
 
-  // on derivedDisplayScale or gridSize update scale
-  // Reducido de 0.05 → 0.02 (factor base más chico, 40% del original)
-  // para que los node markers (cuadrados naranjas) no dominen el modelo.
+  // on derivedDisplayScale, gridSize or nodes change update scale
+  // Tamaño proporcional al EXTENT del modelo (consistente con loads/supports
+  // que usan 8% del extent). Antes era proporcional a gridSize (constante)
+  // lo que hacía los nodos minúsculos vs flechas en modelos pequeños.
   van.derive(() => {
     derivedDisplayScale.val; // trigger update
-    const size = 0.02 * settings.gridSize.val * 0.5;
+    derivedNodes.val;        // trigger update cuando cambia geometría
 
     if (!settings.nodes.rawVal) return;
 
+    // Calcular extent del modelo
+    const ns = derivedNodes.rawVal ?? [];
+    let extent = settings.gridSize.val * 0.5;  // fallback inicial
+    if (ns.length >= 2) {
+      const mins = [Infinity, Infinity, Infinity];
+      const maxs = [-Infinity, -Infinity, -Infinity];
+      for (const n of ns) {
+        for (let i = 0; i < 3; i++) {
+          mins[i] = Math.min(mins[i], n[i]);
+          maxs[i] = Math.max(maxs[i], n[i]);
+        }
+      }
+      extent = Math.max(maxs[0]-mins[0], maxs[1]-mins[1], maxs[2]-mins[2], 0.1);
+    }
+    // 3% del extent (vs flechas que usan 8% — los nodos quedan ~40% del tamaño
+    // de las flechas, proporcionalmente visibles sin dominar)
+    const size = 0.03 * extent;
     points.material.size = size * derivedDisplayScale.rawVal;
   });
 

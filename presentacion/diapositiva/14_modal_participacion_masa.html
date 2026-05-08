@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>14 · Análisis modal y participación de masa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+<style>
+  .step-card {
+    background: var(--paper-dark);
+    border: 1.5px solid var(--ink);
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin: 12px 0;
+    position: relative;
+  }
+  .step-card .step-tag {
+    position: absolute;
+    top: -10px; left: 14px;
+    background: var(--gold);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    padding: 2px 10px;
+    border-radius: 3px;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+  }
+  .step-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--blue);
+    margin: 4px 0 6px;
+  }
+  .step-card .note {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  .compare-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 8px 0;
+  }
+  .compare-2 > div {
+    background: var(--paper);
+    border: 1px solid var(--ink-fade);
+    border-radius: 3px;
+    padding: 10px 14px;
+  }
+  .compare-2 h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.16em;
+    color: var(--gold);
+    margin: 0 0 4px;
+    text-transform: uppercase;
+  }
+
+  .formula-box {
+    background: var(--paper-dark);
+    border-left: 4px solid var(--gold);
+    padding: 12px 18px;
+    border-radius: 0 4px 4px 0;
+    margin: 12px 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 14 · Bloque 4 — análisis dinámico</div>
+    <h1>Análisis modal &mdash; frecuencias, modos y participación de masa</h1>
+    <div class="subtitle">El corazón del análisis dinámico. Cómo se obtiene cada $\omega_i$, $\phi_i$ y el porcentaje de masa que participa por modo.</div>
+  </header>
+
+  <section>
+    <h2>El problema de autovalores generalizado</h2>
+    <p>Sin amortiguamiento ni fuerza externa, la ecuación dinámica:</p>
+    $$ \mathbf{M}\,\ddot{\mathbf{u}}(t) + \mathbf{K}\,\mathbf{u}(t) = \mathbf{0} $$
+    <p>admite soluciones armónicas $\mathbf{u}(t) = \boldsymbol{\phi}\,\sin(\omega t)$. Sustituyendo $\ddot{\mathbf{u}} = -\omega^2\,\boldsymbol{\phi}\sin(\omega t)$:</p>
+    <div class="formula-box">
+      $$ \boxed{\;(\mathbf{K} - \omega^2\,\mathbf{M})\,\boldsymbol{\phi} = \mathbf{0}\;} $$
+      <p style="font-size:0.88rem;margin-top:6px;color:var(--ink-soft)">
+        Problema de <em>autovalores generalizado</em>: encontrar pares $(\omega_i^2, \boldsymbol{\phi}_i)$ tales que la ecuación se satisface sin que $\boldsymbol{\phi}$ sea trivialmente cero. Cada par $(\omega_i, \boldsymbol{\phi}_i)$ es un <strong>modo natural</strong>.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Cómo se resuelve numéricamente</h2>
+    <p>Para sistemas grandes (miles de GDL) las matrices $\mathbf{K}$ y $\mathbf{M}$ son <em>dispersas</em> (sparse). Tres métodos clásicos:</p>
+    <table>
+      <tr>
+        <th>Método</th>
+        <th>Idea</th>
+        <th>Cuándo conviene</th>
+      </tr>
+      <tr>
+        <td>QR / Jacobi</td>
+        <td>Diagonalización completa</td>
+        <td>Sistemas pequeños (&lt; 100 DOFs)</td>
+      </tr>
+      <tr>
+        <td><strong>Lanczos</strong></td>
+        <td>Construye base de Krylov, extrae primeros autovalores</td>
+        <td>Sparse, cuando solo necesitas pocos modos</td>
+      </tr>
+      <tr>
+        <td>Arnoldi / Subspace</td>
+        <td>Extiende Lanczos a no simétricos</td>
+        <td>Buckling, problemas no-estructurales</td>
+      </tr>
+    </table>
+    <p><strong>Hekatan usa Spectra (basado en Lanczos):</strong></p>
+    <pre style="font-size:0.86rem"><code>// hekatan-fem/src/cpp/modal.cpp
+Spectra::SymGEigsShiftSolver&lt;double, Spectra::LARGEST_MAGN,
+                              Spectra::SparseSymMatProd&lt;double&gt;,
+                              Spectra::SparseCholesky&lt;double&gt;,
+                              Spectra::GEIGS_REGULAR_INVERSE&gt;
+    eigs(opK, opM, nModes, ncv);
+eigs.init();
+int nconv = eigs.compute(maxIter, tol);
+Eigen::VectorXd evalues  = eigs.eigenvalues();   // ω²
+Eigen::MatrixXd evectors = eigs.eigenvectors();  // φ por columna</code></pre>
+  </section>
+
+  <section>
+    <h2>Propiedades fundamentales de los modos</h2>
+
+    <div class="step-card">
+      <span class="step-tag">PROPIEDAD 1 · ORTOGONALIDAD</span>
+      <h3>Modos diferentes son $\mathbf{M}$- y $\mathbf{K}$-ortogonales</h3>
+      <div class="compare-2">
+        <div>
+          <h4>Respecto a la masa</h4>
+          $$ \boldsymbol{\phi}_i^T\,\mathbf{M}\,\boldsymbol{\phi}_j = 0 \;\;\text{ si } i \neq j $$
+        </div>
+        <div>
+          <h4>Respecto a la rigidez</h4>
+          $$ \boldsymbol{\phi}_i^T\,\mathbf{K}\,\boldsymbol{\phi}_j = 0 \;\;\text{ si } i \neq j $$
+        </div>
+      </div>
+      <p class="note">Esto permite <strong>desacoplar</strong> el sistema: cada modo se comporta como un oscilador 1-DOF independiente.</p>
+    </div>
+
+    <div class="step-card">
+      <span class="step-tag">PROPIEDAD 2 · NORMALIZACIÓN POR MASA</span>
+      <h3>$\boldsymbol{\phi}_i^T\,\mathbf{M}\,\boldsymbol{\phi}_i = 1$ (mass-normalized)</h3>
+      <p>Convención más usada (ETABS, SAP, OpenSees, Hekatan). Implica que $\boldsymbol{\phi}_i^T\,\mathbf{K}\,\boldsymbol{\phi}_i = \omega_i^2$ — la rigidez modal coincide con el cuadrado de la frecuencia.</p>
+    </div>
+
+    <div class="step-card">
+      <span class="step-tag">PROPIEDAD 3 · CAMBIO DE BASE</span>
+      <h3>Coordenadas modales $\mathbf{q}(t) = \mathbf{\Phi}^T\,\mathbf{M}\,\mathbf{u}(t)$</h3>
+      <p>Donde $\mathbf{\Phi} = [\boldsymbol{\phi}_1,\boldsymbol{\phi}_2,\ldots]$ es la <em>matriz modal</em>. Cualquier movimiento $\mathbf{u}(t) = \sum q_i(t)\,\boldsymbol{\phi}_i$ es una superposición de modos.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Factor de participación modal y masa efectiva</h2>
+    <p>Cuando la base se mueve con aceleración $\ddot{u}_g(t)$ (sismo), la fuerza inercial sobre la estructura es $\mathbf{f}(t) = -\mathbf{M}\,\mathbf{r}\,\ddot{u}_g(t)$, donde $\mathbf{r}$ es el <strong>vector de influencia</strong> (1 en los GDL traslacionales en la dirección del sismo, 0 en los demás).</p>
+
+    <div class="formula-box">
+      <h3 style="margin:0 0 4px;color:var(--blue);font-family:'Cormorant Garamond',serif">Factor de participación del modo $i$</h3>
+      $$ \Gamma_i = \frac{\boldsymbol{\phi}_i^T\,\mathbf{M}\,\mathbf{r}}{\boldsymbol{\phi}_i^T\,\mathbf{M}\,\boldsymbol{\phi}_i} $$
+      <p style="font-size:0.88rem;margin-top:6px;color:var(--ink-soft)">
+        Con normalización por masa el denominador es 1, así que $\Gamma_i = \boldsymbol{\phi}_i^T\,\mathbf{M}\,\mathbf{r}$.
+      </p>
+    </div>
+
+    <div class="formula-box">
+      <h3 style="margin:0 0 4px;color:var(--blue);font-family:'Cormorant Garamond',serif">Masa efectiva del modo $i$</h3>
+      $$ M_{\text{eff},i} = \Gamma_i^2 \,(\boldsymbol{\phi}_i^T\,\mathbf{M}\,\boldsymbol{\phi}_i) = (\boldsymbol{\phi}_i^T\,\mathbf{M}\,\mathbf{r})^2 $$
+      <p style="font-size:0.88rem;margin-top:6px;color:var(--ink-soft)">
+        Es la masa <em>traslacional</em> que el modo $i$ "moviliza" en la dirección del sismo.
+      </p>
+    </div>
+
+    <div class="formula-box">
+      <h3 style="margin:0 0 4px;color:var(--blue);font-family:'Cormorant Garamond',serif">Porcentaje de participación de masa</h3>
+      $$ \%M_i = \frac{M_{\text{eff},i}}{\mathbf{r}^T\,\mathbf{M}\,\mathbf{r}} \times 100\% $$
+      <p style="font-size:0.88rem;margin-top:6px;color:var(--ink-soft)">
+        El denominador es la <em>masa total movilizable</em> en esa dirección. La suma sobre todos los modos da 100 %.
+      </p>
+    </div>
+
+    <p><strong>Criterio normativo (NEC-SE-DS §6.4.2 / ASCE 7-22 §12.9.1.1):</strong></p>
+    $$ \sum_{i=1}^{N} \%M_i \;\geq\; 90\% $$
+    <p>en cada dirección horizontal. Si con 12 modos se llega al 90 %, basta. Si no, hay que pedir más modos.</p>
+  </section>
+
+  <section>
+    <h2>Ejemplo numérico — Paz 7.1 (2-story shear building)</h2>
+    <p>Edificio de cortante 2 pisos. Masas $m_1 = m_2 = 100$ kips·s²/in, rigideces $k_1 = k_2 = 200$ kips/in.</p>
+
+    <div class="step-card">
+      <span class="step-tag">PASO 1 · MATRICES</span>
+      <h3>Ensamblaje de $\mathbf{K}$ y $\mathbf{M}$ (2×2)</h3>
+      $$ \mathbf{M} = \begin{bmatrix} 100 & 0 \\ 0 & 100 \end{bmatrix}, \qquad \mathbf{K} = \begin{bmatrix} 400 & -200 \\ -200 & 200 \end{bmatrix} $$
+    </div>
+
+    <div class="step-card">
+      <span class="step-tag">PASO 2 · AUTOVALORES</span>
+      <h3>Resolver $\det(\mathbf{K} - \omega^2\,\mathbf{M}) = 0$</h3>
+      $$ \omega_1^2 = 0.764\;\text{rad}^2/\text{s}^2, \;\;\omega_2^2 = 5.236 \;\Rightarrow\; \omega_1 = 0.874,\; \omega_2 = 2.288\;\text{rad/s} $$
+      $$ T_1 = 7.190\;\text{s},\quad T_2 = 2.747\;\text{s} $$
+    </div>
+
+    <div class="step-card">
+      <span class="step-tag">PASO 3 · MODOS</span>
+      <h3>Formas modales mass-normalized</h3>
+      $$ \boldsymbol{\phi}_1 = \begin{bmatrix} 0.0438 \\ 0.0708 \end{bmatrix}, \qquad \boldsymbol{\phi}_2 = \begin{bmatrix} 0.0708 \\ -0.0438 \end{bmatrix} $$
+    </div>
+
+    <div class="step-card">
+      <span class="step-tag">PASO 4 · PARTICIPACIÓN</span>
+      <h3>Factor $\Gamma$ y masa efectiva</h3>
+      <p>Vector de influencia $\mathbf{r} = [1,1]^T$ (sismo horizontal, ambos pisos contribuyen).</p>
+      <table style="margin:8px 0;font-size:0.88rem">
+        <tr><th>Modo</th><th>$T$ (s)</th><th>$\Gamma$</th><th>$M_{\text{eff}}$</th><th>% masa</th></tr>
+        <tr><td>1</td><td>7.190</td><td>11.46</td><td>131.4</td><td><strong>65.7 %</strong></td></tr>
+        <tr><td>2</td><td>2.747</td><td>2.70</td><td>7.29</td><td><strong>3.6 %</strong></td></tr>
+        <tr><td>—</td><td>—</td><td>—</td><td>$\sum$</td><td>69.3 % ← <em>insuficiente</em></td></tr>
+      </table>
+      <p class="note">Solo con 2 modos no llegamos al 90 %. En este edificio simple es OK porque solo hay 2 GDL totales — la suma <em>real</em> con todos los GDL incluidos da 100 %. Para edificios reales con 100+ GDL, hay que verificar pisos a piso.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>API en Hekatan Struct</h2>
+    <pre><code>import { modalAnalysis } from "hekatan-fem";
+
+const r = modalAnalysis(nodes, elements, nodeInputs, elementInputs, 12);
+
+r.frequencies        // [ω/(2π)] en Hz, ascendente
+r.modeShapes         // [{ ux, uy, uz, rx, ry, rz }] por nodo, por modo
+r.massParticipation  // [{ ux, uy, uz, rx, ry, rz }] en %, por modo
+
+// Para verificar criterio 90%:
+const sumX = r.massParticipation.reduce((a, m) => a + m.ux, 0);
+const sumY = r.massParticipation.reduce((a, m) => a + m.uy, 0);
+console.log(`UX acumulado = ${sumX.toFixed(1)}%, UY = ${sumY.toFixed(1)}%`);</code></pre>
+  </section>
+
+  <div class="quote">
+    <strong>Mensaje para llevarse:</strong> el análisis modal no es magia — es un problema de autovalores generalizado bien definido. Las frecuencias salen del determinante, los modos del sistema lineal, la masa participante de un producto vectorial $\boldsymbol{\phi}^T \mathbf{M}\,\mathbf{r}$. Hekatan lo resuelve con Spectra/Lanczos en C++ y devuelve los datos al navegador para que los analices con sliders.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 14 · MODAL · (K − ω²M)φ = 0
+  </div>
+
+</div>
+
+<script src="./shared/nav.js"></script>
+</body>
+</html>

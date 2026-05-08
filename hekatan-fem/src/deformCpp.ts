@@ -162,7 +162,14 @@ export function deformCpp(
     elasticitiesOrthogonal.keysPtr,
     elasticitiesOrthogonal.valuesPtr,
     elasticitiesOrthogonal.size,
-    // NOTE: shearAreasY/Z, rigidOffsets, releases are handled by the TS solver
+    // shearAreasY/Z: As=0 (default) → Timoshenko 5/6·A; As<0 → Bernoulli puro
+    shearAreasY.keysPtr,
+    shearAreasY.valuesPtr,
+    shearAreasY.size,
+    shearAreasZ.keysPtr,
+    shearAreasZ.valuesPtr,
+    shearAreasZ.size,
+    // NOTE: rigidOffsets, releases are handled by the TS solver
     // Springs (Winkler): flat [node, dof, k, ...] array
     springsPtr,
     springs ? springs.length : 0,

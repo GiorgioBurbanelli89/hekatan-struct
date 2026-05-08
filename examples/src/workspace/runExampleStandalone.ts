@@ -12,6 +12,7 @@ import {
 } from "hekatan-fem";
 import { getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit } from "hekatan-ui";
 import type { ExampleDef, BuildStates } from "./exampleRegistry";
+import { attachInspect } from "../shared/attachInspect";
 import {
   forceUnit, dispUnit, fromKn, toKn, fromKnm, toKnm,
   forceUnitSuffix, momentUnitSuffix, dispUnitSuffix, stripUnitSuffix,
@@ -454,23 +455,29 @@ export function runExampleStandalone(ex: ExampleDef) {
   buildPane();
 
   // ── 3D viewer ────────────────────────────────────────────
+  const viewerElm = getViewer({
+    mesh: { nodes, elements, nodeInputs, elementInputs, deformOutputs, analyzeOutputs },
+    objects3D,
+    settingsObj: {
+      deformedShape: true,
+      displayScale: -1.5,    // markers y flechas a 0.5× (no tapan el modelo)
+      shellResults: (ex as any).defaultShellResult ?? "displacementZ",
+      gridSize: 10,
+      showCotas: true,
+    },
+  });
   document.body.append(
-    getViewer({
-      mesh: { nodes, elements, nodeInputs, elementInputs, deformOutputs, analyzeOutputs },
-      objects3D,
-      settingsObj: {
-        deformedShape: true,
-        displayScale: -1.5,    // markers y flechas a 0.5× (no tapan el modelo)
-        shellResults: (ex as any).defaultShellResult ?? "displacementZ",
-        gridSize: 10,
-        showCotas: true,
-      },
-    }),
+    viewerElm,
     getToolbar({
       sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct",
       author: "https://www.linkedin.com/in/jorge-burbano-213741138/",
     })
   );
+
+  // ── Botón Inspect (todos los ejemplos lo tienen ahora) ──────
+  attachInspect(viewerElm, {
+    nodes, elements, nodeInputs, elementInputs, deformOutputs, analyzeOutputs,
+  });
 
   rebuild();
 }

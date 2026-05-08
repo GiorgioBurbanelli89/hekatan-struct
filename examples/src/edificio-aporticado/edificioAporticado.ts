@@ -76,6 +76,31 @@ export const edificioAporticado: ExampleDef = {
     // abajo — SOLO se muestran los sliders de los pisos que realmente existen
     // según nPisos. Ya no hay slots fantasma colB_8 cuando el edificio tiene 3 pisos.
 
+    // ── Mesh subdivision (estilo FEM Studio "Div. Vigas/Columnas") ──
+    // Subdivide cada viga y columna en N segmentos para obtener resultados
+    // intermedios (diagrama de momentos suave, no solo en los extremos).
+    nDivBeam: P("Mesh", "Div. Vigas (segmentos)", 1, 1, 8, 1),
+    nDivCol:  P("Mesh", "Div. Columnas (segmentos)", 1, 1, 8, 1),
+
+    // ── Vigas Secundarias (FEM Studio: folder Vigas Secundarias) ──
+    vigSecActivar:   { ...PE("Vigas Secundarias", "Activar", 0, { "No": 0, "Sí": 1 }), regenOnChange: true },
+    vigSecDir:       PE("Vigas Secundarias", "Corren en", 0, { "X (entre ejes Y)": 0, "Y (entre ejes X)": 1 }),
+    vigSecCantidad:  P("Vigas Secundarias", "Cantidad/vano", 2, 1, 5, 1),
+    vigSecB:         P("Vigas Secundarias", "b sec (m)", 0.20, 0.10, 0.40, 0.05),
+    vigSecH:         P("Vigas Secundarias", "h sec (m)", 0.30, 0.20, 0.60, 0.05),
+
+    // ── Losas de Piso (FEM Studio: folder Losas de Piso) ──
+    losaActivar:     { ...PE("Losas de Piso", "Activar losas", 0, { "No": 0, "Sí": 1 }), regenOnChange: true },
+    losaEspesor:     P("Losas de Piso", "Espesor (m)", 0.15, 0.08, 0.40, 0.01),
+    losaSubdivX:     P("Losas de Piso", "Subdiv. X", 2, 1, 6, 1),
+    losaSubdivY:     P("Losas de Piso", "Subdiv. Y", 2, 1, 6, 1),
+
+    // ── Muros de Corte (FEM Studio: folder Muros de Corte) ──
+    muroActivar:     { ...PE("Muros de Corte", "Activar", 0, { "No": 0, "Perimetrales": 1, "Centro X": 2, "Centro Y": 3, "Doble central": 4 }), regenOnChange: true },
+    muroEspesor:     P("Muros de Corte", "Espesor (m)", 0.20, 0.10, 0.40, 0.01),
+    muroSubdivV:     P("Muros de Corte", "Subdiv. V (vert)", 2, 1, 6, 1),
+    muroSubdivH:     P("Muros de Corte", "Subdiv. H (horiz)", 2, 1, 6, 1),
+
     // ── Apoyo ──
     apoyo:    PE("Apoyo", "Tipo", 0, { "Empotrado": 0, "Articulado (3 DOFs)": 1, "Rótula completa": 2 }),
 

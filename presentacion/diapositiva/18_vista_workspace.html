@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18 · Vista rápida del workspace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+<style>
+  .examples-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 14px 0;
+  }
+  .ex-card {
+    background: var(--paper-dark);
+    border: 1.5px solid var(--ink-fade);
+    border-radius: 4px;
+    padding: 14px;
+    transition: all 0.2s;
+    text-decoration: none;
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+  }
+  .ex-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-2px);
+    background: var(--highlight);
+  }
+  .ex-card .ex-cat {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .ex-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.05rem;
+    color: var(--ink);
+    margin: 4px 0;
+  }
+  .ex-card .ex-desc {
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    flex: 1;
+  }
+  .ex-card .ex-elem {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 3px 8px;
+    border-radius: 3px;
+    margin-top: 8px;
+    display: inline-block;
+    align-self: flex-start;
+  }
+  .ex-card.shell .ex-elem { background: #2c5e8e; }
+  .ex-card.solid .ex-elem { background: #7c3aed; }
+  .ex-card.frame .ex-elem { background: #15803d; }
+  .ex-card.combined .ex-elem { background: #b08d4f; }
+
+  .category-section {
+    margin-top: 18px;
+  }
+  .category-section > h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    color: var(--ink);
+    border-left: 4px solid var(--gold);
+    padding-left: 10px;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 18 · Vista rápida</div>
+    <h1>El workspace en su totalidad</h1>
+    <div class="subtitle">Más allá del caso 1D &mdash; muestrario rápido de elementos 2D y 3D</div>
+  </header>
+
+  <section>
+    <h2>Lo que ya vimos hoy</h2>
+    <p>El foco de la sesión fue el <strong>caso 1D</strong> (frames y space frames como Paz &amp; Kim 6.3). Pero el workspace soporta mucho más. Vista rápida para los colegas que quieran explorar otras áreas:</p>
+  </section>
+
+  <div class="category-section">
+    <h3>🟦 Elementos 2D &mdash; Áreas (Shell Q4)</h3>
+    <p style="font-size:0.85rem;color:var(--ink-soft);font-style:italic;margin:0 0 8px 0">
+      Cada link abre el ejemplo benchmark del workspace. Validación contra SAP2000.
+    </p>
+    <div class="examples-grid">
+      <a class="ex-card shell" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=membrana" target="_blank">
+        <span class="ex-cat">MEMBRANA · PLANE STRESS</span>
+        <h3>Membrana 2D</h3>
+        <span class="ex-desc">Q4 plane stress puro (cargas en el plano del elemento). Validación Hekatan vs SAP &minus;0.23 %.</span>
+        <span class="ex-elem">Q4 · plane stress</span>
+      </a>
+      <a class="ex-card shell" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=plate-thin" target="_blank">
+        <span class="ex-cat">LOSA · KIRCHHOFF</span>
+        <h3>Plate Thin (Kirchhoff)</h3>
+        <span class="ex-desc">Losa delgada (h/L &lt; 1/20). Sin deformación por corte. Hekatan vs SAP &minus;0.32 %.</span>
+        <span class="ex-elem">Q4 · Kirchhoff</span>
+      </a>
+      <a class="ex-card shell" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=plate-thick" target="_blank">
+        <span class="ex-cat">LOSA · MINDLIN</span>
+        <h3>Plate Thick (Mindlin-Reissner)</h3>
+        <span class="ex-desc">Losa gruesa con corte transversal. Hekatan vs SAP +0.30 %.</span>
+        <span class="ex-elem">Q4 · Mindlin</span>
+      </a>
+      <a class="ex-card shell" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=shell-thin" target="_blank">
+        <span class="ex-cat">CÁSCARA · KIRCHHOFF-LOVE</span>
+        <h3>Shell Thin</h3>
+        <span class="ex-desc">Cáscara delgada con membrana + flexión acopladas. Hekatan vs SAP δ +4.31 % / M +0.47 %.</span>
+        <span class="ex-elem">Q4 · Kirchhoff-Love</span>
+      </a>
+      <a class="ex-card shell" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=shell-thick" target="_blank">
+        <span class="ex-cat">CÁSCARA · MITC4</span>
+        <h3>Shell Thick (MITC4)</h3>
+        <span class="ex-desc">Cáscara gruesa, MITC4 de Bathe. Hekatan vs SAP +0.30 %.</span>
+        <span class="ex-elem">Q4 · MITC4</span>
+      </a>
+      <a class="ex-card shell" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=layered-shell" target="_blank">
+        <span class="ex-cat">CÁSCARA · LAYERED</span>
+        <h3>Layered Shell (CLT)</h3>
+        <span class="ex-desc">Cáscara laminada con matriz ABBD. Hekatan vs SAP layered (ratios 0.7 %).</span>
+        <span class="ex-elem">Q4 · ABBD</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="category-section">
+    <h3>🟪 Elementos 3D &mdash; Cimentaciones y edificios (Shell + Frame + Springs)</h3>
+    <div class="examples-grid">
+      <a class="ex-card combined" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=zapata-aislada-validacion" target="_blank">
+        <span class="ex-cat">CIMENTACIÓN · BENCHMARK</span>
+        <h3>Zapata aislada (vs SAFE/Calcpad)</h3>
+        <span class="ex-desc">Zapata Q4 sobre resortes Winkler 3D. Validación contra SAFE y Calcpad-Bowles.</span>
+        <span class="ex-elem">Q4 + spring 3D</span>
+      </a>
+      <a class="ex-card combined" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=zapata-aislada" target="_blank">
+        <span class="ex-cat">CIMENTACIÓN · NEC-SE-GC</span>
+        <h3>Zapata aislada (Ecuador)</h3>
+        <span class="ex-desc">11 tipos de suelo precargados, q_adm, ks, presiones por nodo.</span>
+        <span class="ex-elem">Q4 + spring 3D</span>
+      </a>
+      <a class="ex-card combined" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=zapata-viga-amarre" target="_blank">
+        <span class="ex-cat">CIMENTACIÓN COMBINADA</span>
+        <h3>Zapata + viga de amarre + pedestal</h3>
+        <span class="ex-desc">Zapata medianera + viga + zapata centrada. Winkler 3D + frame.</span>
+        <span class="ex-elem">Q4 + frame + spring</span>
+      </a>
+      <a class="ex-card combined" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-aporticado" target="_blank">
+        <span class="ex-cat">EDIFICIO · ASCE 7</span>
+        <h3>Edificio aporticado</h3>
+        <span class="ex-desc">Paramétrico vanos × pisos × secciones, CM/CV/Ex/Ey, 14 combos.</span>
+        <span class="ex-elem">frame + Q4 + spring</span>
+      </a>
+      <a class="ex-card combined" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-con-muros" target="_blank">
+        <span class="ex-cat">EDIFICIO · MUROS DE CORTE</span>
+        <h3>Edificio con muros de corte</h3>
+        <span class="ex-desc">Frame + shells de muros estructurales (cargas laterales en el plano).</span>
+        <span class="ex-elem">frame + shell wall</span>
+      </a>
+      <a class="ex-card combined" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-dual" target="_blank">
+        <span class="ex-cat">EDIFICIO · DUAL</span>
+        <h3>Edificio dual (mixto + muros + diagonales)</h3>
+        <span class="ex-desc">Sistema dual columnas + muros + bracing. Mezcla acero/hormigón.</span>
+        <span class="ex-elem">frame + shell + brace</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="category-section">
+    <h3>🟧 Frames 3D y compuestos</h3>
+    <div class="examples-grid">
+      <a class="ex-card frame" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=tower-3d" target="_blank">
+        <span class="ex-cat">FRAME 3D · TORRE</span>
+        <h3>Torre 3D con diagonales</h3>
+        <span class="ex-desc">Estructura reticulada con diagonales. Análisis modal.</span>
+        <span class="ex-elem">frame 3D</span>
+      </a>
+      <a class="ex-card frame" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=galpon" target="_blank">
+        <span class="ex-cat">FRAME 3D · INDUSTRIAL</span>
+        <h3>Galpón (nave industrial)</h3>
+        <span class="ex-desc">Cubierta a 2 aguas, marcos transversales con correas.</span>
+        <span class="ex-elem">frame 3D</span>
+      </a>
+      <a class="ex-card frame" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=truss-gen" target="_blank">
+        <span class="ex-cat">CERCHA · WARREN</span>
+        <h3>Cercha (Warren)</h3>
+        <span class="ex-desc">Cercha plana paramétrica con generador de patrones triangulares.</span>
+        <span class="ex-elem">truss 2D</span>
+      </a>
+      <a class="ex-card frame" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=viga-medio-elastico" target="_blank">
+        <span class="ex-cat">VIGA · WINKLER</span>
+        <h3>Viga sobre medio elástico</h3>
+        <span class="ex-desc">Frame + resortes Winkler distribuidos. Caso longitudinal de cimentación.</span>
+        <span class="ex-elem">frame + spring</span>
+      </a>
+      <a class="ex-card solid" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=columna-cft" target="_blank">
+        <span class="ex-cat">COMPUESTA · CFT</span>
+        <h3>Columna CFT (AISC §I2)</h3>
+        <span class="ex-desc">HSS de acero + concreto encerrado. Filled Steel Tube.</span>
+        <span class="ex-elem">frame compuesto</span>
+      </a>
+      <a class="ex-card solid" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base" target="_blank">
+        <span class="ex-cat">CONEXIÓN · PLACA BASE</span>
+        <h3>Placa base anclada</h3>
+        <span class="ex-desc">Placa base con anclajes. AISC 360-22 §J8 + ACI 318.</span>
+        <span class="ex-elem">shell + bolts</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="category-section">
+    <h3>🏛 Casos didácticos</h3>
+    <div class="examples-grid">
+      <a class="ex-card frame" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=eiffel" target="_blank">
+        <span class="ex-cat">ICÓNICA · PARÍS</span>
+        <h3>Torre Eiffel</h3>
+        <span class="ex-desc">Estructura reticulada de 324 m. Análisis modal + cargas viento.</span>
+        <span class="ex-elem">frame 3D</span>
+      </a>
+      <a class="ex-card frame" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-ladera" target="_blank">
+        <span class="ex-cat">EDIFICIO · LADERA</span>
+        <h3>Edificio en ladera</h3>
+        <span class="ex-desc">Edificio con apoyos a distintas cotas. Demuestra columnas cortas y torsión.</span>
+        <span class="ex-elem">frame + shell</span>
+      </a>
+      <a class="ex-card combined" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=membrana-csi" target="_blank">
+        <span class="ex-cat">VALIDACIÓN · CSI</span>
+        <h3>Membrana con cargas tri/trap</h3>
+        <span class="ex-desc">Membrana CSI con cargas triangulares y trapezoidales. Test contra reportes.</span>
+        <span class="ex-elem">Q4 · cargas custom</span>
+      </a>
+      <a class="ex-card solid" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=conexion-rbs" target="_blank">
+        <span class="ex-cat">CONEXIÓN · AISC 358</span>
+        <h3>Conexión RBS (Reduced Beam Section)</h3>
+        <span class="ex-desc">Reducción geométrica de la viga junto a la columna. Protocolo K3.</span>
+        <span class="ex-elem">shell + frame</span>
+      </a>
+    </div>
+  </div>
+
+  <section>
+    <h2>Resumen del workspace</h2>
+    <div class="results">
+      <div class="result-card hekatan">
+        <span class="result-name">Total ejemplos</span>
+        <span class="result-value">~50</span>
+      </div>
+      <div class="result-card matlab">
+        <span class="result-name">Tipos de elemento</span>
+        <span class="result-value">10+</span>
+      </div>
+      <div class="result-card exact">
+        <span class="result-name">Benchmarks validados</span>
+        <span class="result-value">~25</span>
+      </div>
+      <div class="result-card hekatan">
+        <span class="result-name">Tiempo carga</span>
+        <span class="result-value">&lt; 5 s</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="quote">
+    <strong>Lo que verán los colegas:</strong> Hekatan Struct no es un experimento &mdash; cubre 1D, 2D y 3D, con benchmarks validados contra el libro Paz &amp; Kim, ETABS, SAP, OpenSees y Python. <em>El detalle teórico de cada tipo de elemento queda reservado para sesiones futuras si surge interés del grupo</em>.
+  </div>
+
+  <section>
+    <h2>Cierre</h2>
+    <p style="font-size:1.05rem;line-height:1.6">
+      Hekatan Struct + Hekatan Lab + validación cruzada con 5 fuentes = <strong>workspace FEM completo, gratuito, en el navegador</strong>. Disponible para que cualquier colega lo use como segunda opinión, herramienta de enseñanza o validación profesional.
+    </p>
+    <p style="text-align:center;font-family:'JetBrains Mono',monospace;color:var(--gold);margin-top:18px;font-size:1rem">
+      <strong>giorgioburbanelli89.github.io/hekatan-struct/workspace/</strong>
+    </p>
+    <p style="text-align:center;font-style:italic;color:var(--ink-soft);margin-top:8px">
+      ¡Gracias! Preguntas, comentarios, ideas para mejorar Hekatan: bienvenidas.
+    </p>
+  </section>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 18 · CIERRE · MAESTRÍA UPS · 8 MAYO 2026
+  </div>
+
+</div>
+
+<script src="./shared/nav.js"></script>
+</body>
+</html>

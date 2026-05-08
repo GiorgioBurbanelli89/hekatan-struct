@@ -1,0 +1,191 @@
+[
+  {
+    "areaType": "membrane",
+    "setup": "areaOnly",
+    "kpi": 0.12553293482729974,
+    "label": "ux_top [mm]",
+    "nodes": 25,
+    "shells": 16,
+    "frames": 0
+  },
+  {
+    "areaType": "membrane",
+    "setup": "perimFrames",
+    "kpi": 0.10083489955783813,
+    "label": "ux_top [mm]",
+    "nodes": 25,
+    "shells": 16,
+    "frames": 16
+  },
+  {
+    "areaType": "membrane",
+    "setup": "fullBuilding",
+    "kpi": 0.10083489955783813,
+    "label": "ux_top [mm]",
+    "nodes": 25,
+    "shells": 16,
+    "frames": 16
+  },
+  {
+    "areaType": "shellThin",
+    "setup": "areaOnly",
+    "kpi": -2.351562333098469,
+    "label": "w_centro [mm]",
+    "nodes": 25,
+    "shells": 16,
+    "frames": 0
+  },
+  {
+    "areaType": "shellThin",
+    "setup": "perimFrames",
+    "kpi": -3.083167021736159,
+    "label": "w_centro [mm]",
+    "nodes": 29,
+    "shells": 16,
+    "frames": 20
+  },
+  {
+    "areaType": "shellThin",
+    "setup": "fullBuilding",
+    "kpi": -0.09881641426580212,
+    "label": "w_centro [mm]",
+    "nodes": 30,
+    "shells": 16,
+    "frames": 29
+  },
+  {
+    "areaType": "shellThick",
+    "setup": "areaOnly",
+    "kpi": -2.351562333098469,
+    "label": "w_centro [mm]",
+    "nodes": 25,
+    "shells": 16,
+    "frames": 0
+  },
+  {
+    "areaType": "shellThick",
+    "setup": "perimFrames",
+    "kpi": -3.083167021736159,
+    "label": "w_centro [mm]",
+    "nodes": 29,
+    "shells": 16,
+    "frames": 20
+  },
+  {
+    "areaType": "shellThick",
+    "setup": "fullBuilding",
+    "kpi": -0.09881641426580212,
+    "label": "w_centro [mm]",
+    "nodes": 30,
+    "shells": 16,
+    "frames": 29
+  },
+  {
+    "areaType": "plateThin",
+    "setup": "areaOnly",
+    "kpi": -2.351562333098469,
+    "label": "w_centro [mm]",
+    "nodes": 25,
+    "shells": 16,
+    "frames": 0
+  },
+  {
+    "areaType": "plateThin",
+    "setup": "perimFrames",
+    "kpi": -3.083167021736159,
+    "label": "w_centro [mm]",
+    "nodes": 29,
+    "shells": 16,
+    "frames": 20
+  },
+  {
+    "areaType": "plateThin",
+    "setup": "fullBuilding",
+    "kpi": -0.09881641426580212,
+    "label": "w_centro [mm]",
+    "nodes": 30,
+    "shells": 16,
+    "frames": 29
+  },
+  {
+    "areaType": "plateThick",
+    "setup": "areaOnly",
+    "kpi": -2.351562333098469,
+    "label": "w_centro [mm]",
+    "nodes": 25,
+    "shells": 16,
+    "frames": 0
+  },
+  {
+    "areaType": "plateThick",
+    "setup": "perimFrames",
+    "kpi": -3.083167021736159,
+    "label": "w_centro [mm]",
+    "nodes": 29,
+    "shells": 16,
+    "frames": 20
+  },
+  {
+    "areaType": "plateThick",
+    "setup": "fullBuilding",
+    "kpi": -0.09881641426580212,
+    "label": "w_centro [mm]",
+    "nodes": 30,
+    "shells": 16,
+    "frames": 29
+  },
+  {
+    "areaType": "plane",
+    "setup": "areaOnly",
+    "kpi": 0.12553293482729974,
+    "label": "ux_top [mm]",
+    "nodes": 25,
+    "shells": 16,
+    "frames": 0
+  },
+  {
+    "areaType": "plane",
+    "setup": "perimFrames",
+    "kpi": 0.10083489955783813,
+    "label": "ux_top [mm]",
+    "nodes": 25,
+    "shells": 16,
+    "frames": 16
+  },
+  {
+    "areaType": "plane",
+    "setup": "fullBuilding",
+    "kpi": 0.10083489955783813,
+    "label": "ux_top [mm]",
+    "nodes": 25,
+    "shells": 16,
+    "frames": 16
+  },
+  {
+    "areaType": "layered",
+    "setup": "areaOnly",
+    "kpi": -2.351562333098469,
+    "label": "w_centro [mm]",
+    "nodes": 25,
+    "shells": 16,
+    "frames": 0
+  },
+  {
+    "areaType": "layered",
+    "setup": "perimFrames",
+    "kpi": -3.083167021736159,
+    "label": "w_centro [mm]",
+    "nodes": 29,
+    "shells": 16,
+    "frames": 20
+  },
+  {
+    "areaType": "layered",
+    "setup": "fullBuilding",
+    "kpi": -0.09881641426580212,
+    "label": "w_centro [mm]",
+    "nodes": 30,
+    "shells": 16,
+    "frames": 29
+  }
+]

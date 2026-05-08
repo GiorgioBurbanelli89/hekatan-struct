@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04 · Coordenadas naturales y Jacobiano</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+<style>
+  .deriv-card {
+    background: var(--paper-dark);
+    border-left: 4px solid var(--gold);
+    padding: 14px 18px;
+    margin: 12px 0;
+    border-radius: 0 4px 4px 0;
+  }
+  .deriv-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--blue);
+    margin: 0 0 6px;
+  }
+
+  .map-card {
+    background: var(--paper-dark);
+    border: 1.5px solid var(--ink);
+    border-radius: 4px;
+    padding: 14px;
+    margin: 12px 0;
+    text-align: center;
+  }
+
+  .num-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin: 12px 0;
+  }
+  .num-card {
+    background: var(--paper-dark);
+    border: 1px solid var(--ink-fade);
+    border-radius: 4px;
+    padding: 12px;
+  }
+  .num-card .lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .num-card .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.05rem;
+    color: var(--ink);
+    margin-top: 4px;
+  }
+  .num-card .desc {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 04 · Bloque 2 — derivación paso a paso</div>
+    <h1>Coordenadas naturales <em>ξ</em> y Jacobiano <em>J</em></h1>
+    <div class="subtitle">Por qué todos los elementos del FEM "viven" en $\xi \in [-1, +1]$ y cómo se mapean al elemento real.</div>
+  </header>
+
+  <section>
+    <h2>El problema: cada elemento tiene tamaño y orientación distintos</h2>
+    <p>Si ensamblamos 1000 elementos, sería absurdo derivar las funciones de forma <em>1000 veces</em>. La solución: trabajar siempre en un <strong>elemento de referencia</strong> $\xi \in [-1, +1]$ y mapear al elemento real con un cambio de variable.</p>
+  </section>
+
+  <section>
+    <h2>El mapeo isoparamétrico</h2>
+    <div class="deriv-card">
+      <h3>Coordenadas físicas como combinación de las nodales</h3>
+      $$ x(\xi) = \sum_{i=1}^{n} N_i(\xi)\,x_i $$
+      <p>Las <em>mismas</em> $N_i$ que interpolan el desplazamiento, interpolan también la geometría. <strong>Por eso se llama "isoparamétrico"</strong> (Iron-Zienkiewicz, años 60).</p>
+    </div>
+
+    <div class="map-card">
+      <svg viewBox="0 0 720 200" preserveAspectRatio="xMidYMid meet" style="max-width:100%;height:auto;">
+        <!-- Elemento de referencia (izquierda) -->
+        <text x="120" y="20" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#b08d4f" letter-spacing="2">ELEMENTO DE REFERENCIA</text>
+        <line x1="40" y1="100" x2="200" y2="100" stroke="#1a2942" stroke-width="2"/>
+        <circle cx="40"  cy="100" r="6" fill="#a23232" stroke="#1a2942"/>
+        <circle cx="200" cy="100" r="6" fill="#a23232" stroke="#1a2942"/>
+        <text x="40"  y="130" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#1a2942">ξ = −1</text>
+        <text x="200" y="130" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#1a2942">ξ = +1</text>
+        <text x="120" y="155" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#3d4f6f">"unidad" 2</text>
+
+        <!-- Flecha mapeo -->
+        <line x1="240" y1="100" x2="320" y2="100" stroke="#b08d4f" stroke-width="2"/>
+        <polygon points="318,95 328,100 318,105" fill="#b08d4f"/>
+        <text x="280" y="92" text-anchor="middle" font-family="Cormorant Garamond" font-size="14" fill="#1a2942" font-style="italic">x(ξ)</text>
+        <text x="280" y="120" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#3d4f6f">isoparametric</text>
+
+        <!-- Elemento físico (derecha) -->
+        <text x="540" y="20" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#b08d4f" letter-spacing="2">ELEMENTO FÍSICO</text>
+        <line x1="380" y1="100" x2="700" y2="100" stroke="#1a2942" stroke-width="2"/>
+        <circle cx="380" cy="100" r="6" fill="#a23232" stroke="#1a2942"/>
+        <circle cx="700" cy="100" r="6" fill="#a23232" stroke="#1a2942"/>
+        <text x="380" y="130" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#1a2942">x = x₁</text>
+        <text x="700" y="130" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#1a2942">x = x₂</text>
+        <text x="540" y="155" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#3d4f6f">longitud L = x₂ − x₁</text>
+      </svg>
+    </div>
+  </section>
+
+  <section>
+    <h2>Para una barra/viga 1D — caso simple</h2>
+    <p>Con Lagrange lineales $N_1 = \tfrac{1}{2}(1-\xi)$, $N_2 = \tfrac{1}{2}(1+\xi)$:</p>
+    $$ x(\xi) = \tfrac{1}{2}(1-\xi)\,x_1 \;+\; \tfrac{1}{2}(1+\xi)\,x_2 \;=\; \tfrac{x_1 + x_2}{2} + \tfrac{x_2 - x_1}{2}\,\xi $$
+
+    <div class="deriv-card">
+      <h3>Jacobiano $J = dx/d\xi$</h3>
+      $$ J = \frac{dx}{d\xi} = \frac{x_2 - x_1}{2} = \frac{L}{2} $$
+      <p>El Jacobiano es <strong>constante</strong> a lo largo del elemento (porque el mapeo es lineal). Su signo positivo indica que el elemento no está volteado.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Por qué necesitamos $J$ — dos usos clave</h2>
+
+    <div class="deriv-card">
+      <h3>Uso 1: derivadas en $x$ desde derivadas en $\xi$</h3>
+      $$ \frac{dN_i}{dx} = \frac{dN_i}{d\xi} \cdot \frac{d\xi}{dx} = \frac{1}{J} \frac{dN_i}{d\xi} $$
+      <p>Esto se usa para construir la matriz $\mathbf{B}$ que relaciona deformaciones con desplazamientos: $\boldsymbol{\varepsilon} = \mathbf{B}\,\mathbf{q}$.</p>
+    </div>
+
+    <div class="deriv-card">
+      <h3>Uso 2: cambio de variable en la integral</h3>
+      $$ \int_{x_1}^{x_2} f(x)\,dx \;=\; \int_{-1}^{+1} f(x(\xi))\,J\,d\xi $$
+      <p>Toda integral sobre un elemento real se transforma a una integral sobre $[-1, +1]$ &mdash; lista para <em>cuadratura de Gauss</em>.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ejemplo numérico interactivo — mueve los sliders</h2>
+    <p>Cambia la posición de los nodos y observa cómo se reconstruyen el mapeo, el Jacobiano y el factor de derivada. <em>Los valores se recalculan en vivo.</em></p>
+
+    <div class="controls">
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label"><span class="symbol">x₁</span> Coordenada nodo 1 (m)</span>
+          <span id="j-x1-val" class="slider-value">0.0</span>
+        </div>
+        <input type="range" id="j-x1-slider" min="0" max="5" step="0.5" value="0">
+        <div class="slider-hint">↞ inicio · más alejado ↠</div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label"><span class="symbol">L</span> Longitud del elemento (m)</span>
+          <span id="j-l-val" class="slider-value">5.0</span>
+        </div>
+        <input type="range" id="j-l-slider" min="1" max="10" step="0.5" value="5">
+        <div class="slider-hint">↞ corto · largo ↠</div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label"><span class="symbol">ξ</span> Punto de evaluación dentro del elemento</span>
+          <span id="j-xi-val" class="slider-value">0.0</span>
+        </div>
+        <input type="range" id="j-xi-slider" min="-1" max="1" step="0.1" value="0">
+        <div class="slider-hint">↞ nodo 1 (ξ=−1) · centro · nodo 2 (ξ=+1) ↠</div>
+      </div>
+    </div>
+
+    <div class="num-grid">
+      <div class="num-card">
+        <div class="lbl">Nodos físicos</div>
+        <div class="val" id="j-nodos">x₁ = 0, x₂ = 5 m</div>
+        <div class="desc">Coordenadas reales del elemento.</div>
+      </div>
+      <div class="num-card">
+        <div class="lbl">Mapeo x(ξ)</div>
+        <div class="val" id="j-mapeo">x(ξ) = 2.5 + 2.5·ξ</div>
+        <div class="desc" id="j-x-actual">En ξ = 0 ⇒ x = 2.5 m</div>
+      </div>
+      <div class="num-card">
+        <div class="lbl">Jacobiano</div>
+        <div class="val" id="j-jacob">J = L/2 = 2.5 m</div>
+        <div class="desc">Constante a lo largo del elemento.</div>
+      </div>
+      <div class="num-card">
+        <div class="lbl">Factor dN/dx</div>
+        <div class="val" id="j-factor">1 / J = 0.400 m⁻¹</div>
+        <div class="desc">Derivada física = derivada natural / J.</div>
+      </div>
+      <div class="num-card">
+        <div class="lbl">Integral de prueba</div>
+        <div class="val" id="j-integral">2 · J = 5.0 m</div>
+        <div class="desc">∫f·dx = J·∫f·dξ. Para f = 1, da la longitud.</div>
+      </div>
+      <div class="num-card">
+        <div class="lbl">N₁(ξ), N₂(ξ) lineales</div>
+        <div class="val" id="j-N">N₁ = 0.50, N₂ = 0.50</div>
+        <div class="desc">Lagrange evaluadas en ξ. Suman 1 (partición de unidad).</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Casos 2D / 3D &mdash; la generalización</h2>
+    <p>En elementos $Q4$ (placa 2D), $H8$ (sólido 3D), etc., el Jacobiano se vuelve una <em>matriz</em>:</p>
+    $$ \mathbf{J} = \begin{bmatrix} \partial x/\partial \xi & \partial y/\partial \xi \\ \partial x/\partial \eta & \partial y/\partial \eta \end{bmatrix}, \qquad d\Omega = \det(\mathbf{J})\,d\xi\,d\eta $$
+    <p>Si $\det(\mathbf{J}) \le 0$ en algún punto, el elemento está <strong>distorsionado o invertido</strong> &mdash; señal de malla mal generada. Hekatan (como ETABS, OpenSees) verifica esto en cada elemento antes de integrar.</p>
+  </section>
+
+  <div class="quote">
+    <strong>Idea para llevarse:</strong> el Jacobiano es el "factor de escala" que conecta el mundo natural $\xi \in [-1, 1]$ con el mundo físico. Sin él no podríamos integrar y derivar de forma uniforme sobre miles de elementos distintos.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 04 · J = dx/dξ
+  </div>
+
+</div>
+
+<script>
+// ────────────────────────────────────────────────────────────────
+// Slide 04 — mapeo isoparamétrico + Jacobiano en vivo
+// ────────────────────────────────────────────────────────────────
+const jX1 = document.getElementById('j-x1-slider');
+const jL  = document.getElementById('j-l-slider');
+const jXi = document.getElementById('j-xi-slider');
+
+const jX1Val   = document.getElementById('j-x1-val');
+const jLVal    = document.getElementById('j-l-val');
+const jXiVal   = document.getElementById('j-xi-val');
+const jNodos   = document.getElementById('j-nodos');
+const jMapeo   = document.getElementById('j-mapeo');
+const jXActual = document.getElementById('j-x-actual');
+const jJacob   = document.getElementById('j-jacob');
+const jFactor  = document.getElementById('j-factor');
+const jIntegral= document.getElementById('j-integral');
+const jN       = document.getElementById('j-N');
+
+function jUpdate() {
+  const x1 = parseFloat(jX1.value);
+  const L  = parseFloat(jL.value);
+  const xi = parseFloat(jXi.value);
+  const x2 = x1 + L;
+  const xCenter = (x1 + x2) / 2;
+  const halfL   = L / 2;
+  const J       = halfL;
+
+  jX1Val.textContent  = x1.toFixed(1);
+  jLVal.textContent   = L.toFixed(1);
+  jXiVal.textContent  = xi.toFixed(2);
+
+  jNodos.textContent  = `x₁ = ${x1.toFixed(1)}, x₂ = ${x2.toFixed(1)} m`;
+  jMapeo.textContent  = `x(ξ) = ${xCenter.toFixed(2)} + ${halfL.toFixed(2)}·ξ`;
+
+  const xActual = xCenter + halfL * xi;
+  jXActual.textContent = `En ξ = ${xi.toFixed(2)} ⇒ x = ${xActual.toFixed(3)} m`;
+
+  jJacob.textContent  = `J = L/2 = ${J.toFixed(2)} m`;
+  jFactor.textContent = `1 / J = ${(1/J).toFixed(3)} m⁻¹`;
+  jIntegral.textContent = `2 · J = ${(2*J).toFixed(2)} m`;
+
+  // Lagrange lineales evaluadas en ξ
+  const N1 = 0.5 * (1 - xi);
+  const N2 = 0.5 * (1 + xi);
+  jN.textContent = `N₁ = ${N1.toFixed(2)}, N₂ = ${N2.toFixed(2)}`;
+}
+
+jX1.addEventListener("input", jUpdate);
+jL.addEventListener("input",  jUpdate);
+jXi.addEventListener("input", jUpdate);
+jUpdate();
+</script>
+
+<script src="./shared/nav.js"></script>
+</body>
+</html>

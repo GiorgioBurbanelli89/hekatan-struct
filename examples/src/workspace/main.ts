@@ -22,7 +22,12 @@ import {
   DeformOutputs, AnalyzeOutputs,
   deform, analyze,
 } from "hekatan-fem";
-import { getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit, addCadPanel } from "hekatan-ui";
+import {
+  getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit, addCadPanel,
+  // 🛠 Orquestador unificado de Herramientas FEM (folder Tweakpane completo)
+  attachFemTools,
+} from "hekatan-ui";
+// import { attachInspect } from "../shared/attachInspect";  // DEPRECATED: ahora en hekatan-ui/femTools
 import { createModalPanel } from "../shared/renderModalTable";
 import { createModalAnimator, type ModalAnimator } from "../shared/animateMode";
 // createModalAnimator también se llama en buildParamsPane() para re-wirear el
@@ -557,6 +562,870 @@ function rebuild() {
 (window as any).__hekatanRebuild = rebuild;
 (window as any).__hekatanAutoFit = autoFitCamera;
 
+// ── Auto re-fit camera al cambiar de tamaño (mobile rotation) ──
+// El #viewer cambia de tamaño con CSS media queries (ej. en mobile
+// portrait el canvas pasa a 50vh) — el ResizeObserver del viewer
+// ya actualiza el aspect ratio de la cámara, pero NO refittea el
+// frustum sobre el modelo. Sin esto, al rotar el dispositivo o al
+// abrir la app en mobile, el modelo queda parcialmente clippeado.
+// Debouncing 200ms para no spammear cuando el browser dispara
+// múltiples resize events durante la rotación.
+let _refitTimer: ReturnType<typeof setTimeout> | null = null;
+const scheduleRefit = (delay = 200) => {
+  if (_refitTimer) clearTimeout(_refitTimer);
+  _refitTimer = setTimeout(() => {
+    try { autoFitCamera(); } catch {}
+    _refitTimer = null;
+  }, delay);
+};
+window.addEventListener("resize", () => scheduleRefit(200));
+window.addEventListener("orientationchange", () => scheduleRefit(350));
+
+// ── Wire de Properties Pane (hekatan-ui drawing.ts) → states FEM ──
+// El Properties Pane fires "hk:property-applied" cuando el usuario
+// configura DOFs/cargas/masa y aprieta "Aplicar". Aquí mantenemos
+// __hekatanManualSupports / __hekatanManualLoads / __hekatanManualMass
+// indexados por drawingPtIdx. Los ejemplos (newBlank.ts) los mergean
+// con apoyos automáticos en su build() matchando por coords.
+(window as any).__hekatanManualSupports = (window as any).__hekatanManualSupports
+  ?? new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
+(window as any).__hekatanManualLoads = (window as any).__hekatanManualLoads
+  ?? new Map<number, [number, number, number, number, number, number]>();
+(window as any).__hekatanManualMass = (window as any).__hekatanManualMass
+  ?? new Map<number, number>();
+// Manual sections asignadas a frames (segs). Key = "polylineIdx:segIdx", value =
+// propiedades de sección. newBlank.ts las mergea sobre las sec rectangular default.
+type SectionProps = { A: number; Iz: number; Iy: number; J: number; name?: string };
+(window as any).__hekatanManualSections = (window as any).__hekatanManualSections
+  ?? new Map<string, SectionProps>();
+// Manual joint springs (Kx, Ky, Kz, Krx, Kry, Krz). Key = drawingPtIdx.
+// Se convierte a deform() springsList = Array<{node, dof, k}> en newBlank.
+(window as any).__hekatanManualSprings = (window as any).__hekatanManualSprings
+  ?? new Map<number, [number, number, number, number, number, number]>();
+// Property modifiers (multipliers de A, Iz, Iy, J) por segmento.
+type FrameMods = { A: number; Iz: number; Iy: number; J: number };
+(window as any).__hekatanManualModifiers = (window as any).__hekatanManualModifiers
+  ?? new Map<string, FrameMods>();
+// Material override por segmento (afecta E, G, nu, ρ).
+(window as any).__hekatanManualMaterial = (window as any).__hekatanManualMaterial
+  ?? new Map<string, string>();
+// Releases I/J por segmento (booleans Mx/My/Mz × 2 ends).
+type FrameReleases = { i: [boolean, boolean, boolean]; j: [boolean, boolean, boolean] };
+(window as any).__hekatanManualReleases = (window as any).__hekatanManualReleases
+  ?? new Map<string, FrameReleases>();
+// Mass per length por segmento (kg/m).
+(window as any).__hekatanManualMassPerM = (window as any).__hekatanManualMassPerM
+  ?? new Map<string, number>();
+// Diaphragm assignment por nodo (string label, "Ninguno"|"D1 (rigid)"|...).
+(window as any).__hekatanManualDiaphragm = (window as any).__hekatanManualDiaphragm
+  ?? new Map<number, string>();
+// Hinges plastic por segmento (string identifier).
+(window as any).__hekatanManualHinges = (window as any).__hekatanManualHinges
+  ?? new Map<string, string>();
+// Insertion point + Local axes β por segmento.
+(window as any).__hekatanManualInsertionPoint = (window as any).__hekatanManualInsertionPoint
+  ?? new Map<string, string>();
+(window as any).__hekatanManualBeta = (window as any).__hekatanManualBeta
+  ?? new Map<string, number>();
+// Line springs (kN/m por m) Winkler distribuido por segmento.
+(window as any).__hekatanManualLineSprings = (window as any).__hekatanManualLineSprings
+  ?? new Map<string, [number, number, number]>();
+// ── Material database completo — estilo ETABS Material Property Data ──
+// Cada material tiene todos los campos del ETABS dialog: General, Weight/Mass,
+// Mechanical (E, ν, α, G), Design (Fy/Fu/fc según tipo), región/standard/grado.
+type MaterialType = "Steel" | "Concrete" | "Aluminum" | "ColdFormed" | "Rebar" | "Tendon" | "Masonry" | "Other";
+type Material = {
+  name: string;
+  type: MaterialType;
+  symmetry: "Isotropic" | "Orthotropic" | "Anisotropic";
+  color?: string;
+  weightDensity: number;   // kN/m³ (peso por unidad de volumen)
+  massDensity: number;     // kg/m³
+  E: number;               // Pa (módulo elasticidad)
+  nu: number;              // Poisson
+  alpha: number;           // 1/°C (expansión térmica)
+  G?: number;              // Pa (auto = E/(2(1+ν)) para isotrópico)
+  // Design properties (según tipo)
+  Fy?: number;             // Pa — yield stress (Steel/Rebar)
+  Fu?: number;             // Pa — ultimate stress (Steel/Rebar)
+  fc?: number;             // Pa — f'c (Concrete)
+  region?: string;
+  standard?: string;
+  grade?: string;
+};
+// Catálogo inicial estilo ETABS (US units convertidos a SI)
+const MATERIALS_INITIAL: Record<string, Material> = {
+  // ── Steel — USA ASTM ──
+  "A992Fy50": {
+    name: "A992Fy50", type: "Steel", symmetry: "Isotropic", color: "#3b82f6",
+    weightDensity: 76.97, massDensity: 7849, E: 199948e6, nu: 0.30, alpha: 1.17e-5,
+    Fy: 344.74e6, Fu: 448.16e6,
+    region: "United States", standard: "ASTM A992", grade: "Grade 50",
+  },
+  "A36": {
+    name: "A36", type: "Steel", symmetry: "Isotropic", color: "#3b82f6",
+    weightDensity: 76.97, massDensity: 7849, E: 199948e6, nu: 0.30, alpha: 1.17e-5,
+    Fy: 248.21e6, Fu: 399.90e6,
+    region: "United States", standard: "ASTM A36", grade: "—",
+  },
+  "A572Gr50": {
+    name: "A572Gr50", type: "Steel", symmetry: "Isotropic", color: "#3b82f6",
+    weightDensity: 76.97, massDensity: 7849, E: 199948e6, nu: 0.30, alpha: 1.17e-5,
+    Fy: 344.74e6, Fu: 448.16e6,
+    region: "United States", standard: "ASTM A572", grade: "Grade 50",
+  },
+  "A53Gr.B": {
+    name: "A53Gr.B", type: "Steel", symmetry: "Isotropic", color: "#3b82f6",
+    weightDensity: 76.97, massDensity: 7849, E: 199948e6, nu: 0.30, alpha: 1.17e-5,
+    Fy: 241.32e6, Fu: 413.69e6,
+    region: "United States", standard: "ASTM A53", grade: "Grade B",
+  },
+  "A500Gr.B-46": {
+    name: "A500Gr.B-46", type: "Steel", symmetry: "Isotropic", color: "#3b82f6",
+    weightDensity: 76.97, massDensity: 7849, E: 199948e6, nu: 0.30, alpha: 1.17e-5,
+    Fy: 317.16e6, Fu: 399.90e6,
+    region: "United States", standard: "ASTM A500", grade: "Grade B Fy=46",
+  },
+  "A913Gr65": {
+    name: "A913Gr65", type: "Steel", symmetry: "Isotropic", color: "#3b82f6",
+    weightDensity: 76.97, massDensity: 7849, E: 199948e6, nu: 0.30, alpha: 1.17e-5,
+    Fy: 448.16e6, Fu: 551.58e6,
+    region: "United States", standard: "ASTM A913", grade: "Grade 65",
+  },
+  // ── Concrete — USA ──
+  "4000Psi": {
+    name: "4000Psi", type: "Concrete", symmetry: "Isotropic", color: "#a3a3a3",
+    weightDensity: 23.563, massDensity: 2402.76, E: 24855.58e6, nu: 0.20, alpha: 9.9e-6,
+    fc: 27.58e6,  // 4000 psi
+    region: "United States", standard: "—", grade: "f'c=4000 psi",
+  },
+  "5000Psi": {
+    name: "5000Psi", type: "Concrete", symmetry: "Isotropic", color: "#a3a3a3",
+    weightDensity: 23.563, massDensity: 2402.76, E: 27801.39e6, nu: 0.20, alpha: 9.9e-6,
+    fc: 34.47e6,  // 5000 psi
+    region: "United States", standard: "—", grade: "f'c=5000 psi",
+  },
+  "concrete": {
+    name: "concrete", type: "Concrete", symmetry: "Isotropic", color: "#a3a3a3",
+    weightDensity: 23.563, massDensity: 2402.76, E: 24855.58e6, nu: 0.20, alpha: 9.9e-6,
+    fc: 27.58e6,
+    region: "User", standard: "—", grade: "Default",
+  },
+  // ── Concrete — EU ──
+  "C25/30": {
+    name: "C25/30", type: "Concrete", symmetry: "Isotropic", color: "#a3a3a3",
+    weightDensity: 24, massDensity: 2400, E: 31e9, nu: 0.20, alpha: 1.0e-5,
+    fc: 25e6,
+    region: "Europe", standard: "EN 1992", grade: "C25/30",
+  },
+  "C30/37": {
+    name: "C30/37", type: "Concrete", symmetry: "Isotropic", color: "#a3a3a3",
+    weightDensity: 24, massDensity: 2400, E: 33e9, nu: 0.20, alpha: 1.0e-5,
+    fc: 30e6,
+    region: "Europe", standard: "EN 1992", grade: "C30/37",
+  },
+  // ── Rebar — USA ──
+  "A615Gr60": {
+    name: "A615Gr60", type: "Rebar", symmetry: "Isotropic", color: "#dc2626",
+    weightDensity: 76.97, massDensity: 7849, E: 199948e6, nu: 0.30, alpha: 1.17e-5,
+    Fy: 413.69e6, Fu: 620.53e6,
+    region: "United States", standard: "ASTM A615", grade: "Grade 60",
+  },
+  "A615Gr40": {
+    name: "A615Gr40", type: "Rebar", symmetry: "Isotropic", color: "#dc2626",
+    weightDensity: 76.97, massDensity: 7849, E: 199948e6, nu: 0.30, alpha: 1.17e-5,
+    Fy: 275.79e6, Fu: 482.63e6,
+    region: "United States", standard: "ASTM A615", grade: "Grade 40",
+  },
+  // ── Tendon — USA ──
+  "A416Gr270": {
+    name: "A416Gr270", type: "Tendon", symmetry: "Isotropic", color: "#7c3aed",
+    weightDensity: 76.97, massDensity: 7849, E: 196500e6, nu: 0.30, alpha: 1.17e-5,
+    Fy: 1689.5e6, Fu: 1861.6e6,
+    region: "United States", standard: "ASTM A416", grade: "Grade 270 (low-relaxation)",
+  },
+};
+// Clonar a un Map mutable que el usuario puede modificar/expandir vía UI
+const _matMap: Map<string, Material> = new Map();
+for (const [k, v] of Object.entries(MATERIALS_INITIAL)) _matMap.set(k, { ...v });
+(window as any).__hekatanMaterials = _matMap;
+// Mantener __hekatanMaterialDB legacy (usado por newBlank.ts) — re-derived
+// como vista simplificada {E, nu, rho} desde __hekatanMaterials en cada acceso.
+const refreshMaterialDB = () => {
+  const db: Record<string, { E: number; nu: number; rho: number; G?: number; Fy?: number; Fu?: number; fc?: number }> = {};
+  for (const [name, m] of _matMap.entries()) {
+    db[name] = {
+      E: m.E, nu: m.nu, rho: m.massDensity,
+      G: m.G ?? m.E / (2 * (1 + m.nu)),
+      Fy: m.Fy, Fu: m.Fu, fc: m.fc,
+    };
+  }
+  (window as any).__hekatanMaterialDB = db;
+};
+refreshMaterialDB();
+(window as any).__hekatanRefreshMaterialDB = refreshMaterialDB;
+
+// ── Material Property Data editor (modal Tweakpane estilo ETABS) ──
+// Abre un overlay con TODOS los campos: nombre, tipo, simetría, color, densidades,
+// E, ν, α, G (auto), Fy/Fu/fc según tipo, región/standard/grado.
+// El nuevo material se guarda en __hekatanMaterials, refreshMaterialDB() para
+// que newBlank lo vea, y dispara rebuild.
+const openMaterialEditor = (existingName: string | null) => {
+  // Material a editar (clone) o nuevo con defaults
+  const isNew = !existingName;
+  const m: Material = isNew
+    ? {
+        name: "MAT", type: "Other", symmetry: "Isotropic", color: "#ec4899",
+        weightDensity: 0, massDensity: 0, E: 24855.58e6, nu: 0.20, alpha: 9.9e-6,
+        region: "User", standard: "—", grade: "—",
+      }
+    : { ...(_matMap.get(existingName!) as Material) };
+
+  // Backdrop
+  const backdrop = document.createElement("div");
+  backdrop.id = "hk-mat-editor-backdrop";
+  backdrop.style.cssText = [
+    "position:fixed", "inset:0", "background:rgba(0,0,0,0.5)",
+    "z-index:9999", "display:flex", "align-items:center", "justify-content:center",
+  ].join(";") + ";";
+  // Container
+  const cont = document.createElement("div");
+  cont.style.cssText = [
+    "width:min(420px, 95vw)", "max-height:90vh", "overflow-y:auto",
+    "background:rgba(20,20,20,0.96)", "border:1px solid rgba(255,255,255,0.15)",
+    "border-radius:8px", "box-shadow:0 12px 36px rgba(0,0,0,0.6)",
+    "color:#ddd",
+  ].join(";") + ";";
+  backdrop.appendChild(cont);
+
+  const editorPane = new Pane({ container: cont, title: isNew ? "🧱 Add New Material" : `🧱 Modify Material — ${existingName}` });
+
+  // ── General Data ──
+  const fGen = editorPane.addFolder({ title: "General Data" });
+  fGen.addBinding(m, "name", { label: "Name" });
+  fGen.addBinding(m, "type", {
+    label: "Type",
+    options: {
+      "Steel": "Steel", "Concrete": "Concrete", "Aluminum": "Aluminum",
+      "ColdFormed": "ColdFormed", "Rebar": "Rebar", "Tendon": "Tendon",
+      "Masonry": "Masonry", "Other": "Other",
+    },
+  });
+  fGen.addBinding(m, "symmetry", {
+    label: "Symmetry",
+    options: { "Isotropic": "Isotropic", "Orthotropic": "Orthotropic", "Anisotropic": "Anisotropic" },
+  });
+  fGen.addBinding(m, "color", { label: "Display Color", view: "color" });
+
+  // ── Weight and Mass ──
+  const fWM = fGen.addBlade ? fGen : editorPane.addFolder({ title: "Material Weight and Mass" });
+  if (fWM === fGen) {
+    // (no addBlade; skip)
+  }
+  const fWeight = editorPane.addFolder({ title: "Weight and Mass" });
+  fWeight.addBinding(m, "weightDensity", { label: "Weight (kN/m³)", min: 0, step: 0.1 });
+  fWeight.addBinding(m, "massDensity", { label: "Mass (kg/m³)", min: 0, step: 1 });
+
+  // ── Mechanical Property Data ──
+  const fMech = editorPane.addFolder({ title: "Mechanical Property Data" });
+  // Display E in MPa (divide by 1e6 internally)
+  const _eMPa = { E_MPa: m.E / 1e6 };
+  fMech.addBinding(_eMPa, "E_MPa", { label: "E (MPa)", min: 0, step: 100 }).on("change", (ev) => {
+    m.E = ev.value * 1e6;
+  });
+  fMech.addBinding(m, "nu", { label: "ν (Poisson)", min: 0, max: 0.5, step: 0.01 });
+  fMech.addBinding(m, "alpha", { label: "α (1/°C)", step: 1e-6 });
+  // Auto-calc G display
+  const _gMPa = { G_MPa: (m.E / (2 * (1 + m.nu))) / 1e6 };
+  fMech.addBinding(_gMPa, "G_MPa", { label: "G (MPa) auto", readonly: true });
+
+  // ── Design Property Data (depende del tipo) ──
+  const fDesign = editorPane.addFolder({ title: "Design Property Data" });
+  if (m.type === "Steel" || m.type === "Rebar" || m.type === "Tendon" || m.type === "ColdFormed") {
+    const _fyMPa = { Fy_MPa: (m.Fy ?? 0) / 1e6 };
+    const _fuMPa = { Fu_MPa: (m.Fu ?? 0) / 1e6 };
+    fDesign.addBinding(_fyMPa, "Fy_MPa", { label: "Fy (MPa)", min: 0, step: 5 }).on("change", (ev) => {
+      m.Fy = ev.value * 1e6;
+    });
+    fDesign.addBinding(_fuMPa, "Fu_MPa", { label: "Fu (MPa)", min: 0, step: 5 }).on("change", (ev) => {
+      m.Fu = ev.value * 1e6;
+    });
+  } else if (m.type === "Concrete" || m.type === "Masonry") {
+    const _fcMPa = { fc_MPa: (m.fc ?? 0) / 1e6 };
+    fDesign.addBinding(_fcMPa, "fc_MPa", { label: "f'c (MPa)", min: 0, step: 1 }).on("change", (ev) => {
+      m.fc = ev.value * 1e6;
+    });
+  } else {
+    const ph = { msg: "(sin propiedades de diseño)" };
+    fDesign.addBinding(ph, "msg", { readonly: true, label: "" });
+  }
+
+  // ── Standards reference ──
+  const fStd = editorPane.addFolder({ title: "Standards Reference", expanded: false });
+  fStd.addBinding(m, "region", { label: "Region" });
+  fStd.addBinding(m, "standard", { label: "Standard" });
+  fStd.addBinding(m, "grade", { label: "Grade" });
+
+  // ── Buttons ──
+  editorPane.addButton({ title: "✓ OK" }).on("click", () => {
+    // Si renombró, eliminar el viejo
+    if (existingName && existingName !== m.name) _matMap.delete(existingName);
+    _matMap.set(m.name, { ...m });
+    refreshMaterialDB();
+    document.body.removeChild(backdrop);
+    try { (window as any).__hekatanRebuild?.(); } catch {}
+  });
+  editorPane.addButton({ title: "✕ Cancel" }).on("click", () => {
+    document.body.removeChild(backdrop);
+  });
+
+  document.body.appendChild(backdrop);
+  // Click fuera del modal cierra
+  backdrop.addEventListener("click", (ev) => {
+    if (ev.target === backdrop) document.body.removeChild(backdrop);
+  });
+};
+(window as any).__hekatanOpenMaterialEditor = openMaterialEditor;
+
+// ── Define Materials list — TWEAKPANE puro ──
+let _mlPaneInstance: Pane | null = null;
+const openMaterialsList = () => {
+  const backdrop = document.createElement("div");
+  backdrop.id = "hk-mat-list-backdrop";
+  backdrop.style.cssText = [
+    "position:fixed", "inset:0", "background:rgba(0,0,0,0.5)",
+    "z-index:9998", "display:flex", "align-items:flex-start", "justify-content:center",
+    "padding-top:50px",
+  ].join(";") + ";";
+  const cont = document.createElement("div");
+  cont.style.cssText = [
+    "width:min(360px, 95vw)", "max-height:80vh", "overflow-y:auto",
+    "box-shadow:0 12px 36px rgba(0,0,0,0.6)",
+  ].join(";") + ";";
+  backdrop.appendChild(cont);
+
+  // Estado de selección
+  const sel = { selected: [..._matMap.keys()][0] ?? "" };
+
+  const buildPane = () => {
+    if (_mlPaneInstance) {
+      _mlPaneInstance.dispose();
+      _mlPaneInstance = null;
+    }
+    _mlPaneInstance = new Pane({
+      container: cont,
+      title: "🧱 Define Materials",
+    });
+    // Dropdown selector de material activo
+    const matNames = [..._matMap.keys()];
+    const matOptions: Record<string, string> = {};
+    for (const n of matNames) matOptions[n] = n;
+    _mlPaneInstance.addBinding(sel, "selected", {
+      label: "Material",
+      options: matOptions,
+    }).on("change", () => {
+      // Rebuild todo el pane para que las props readonly reflejen el nuevo material
+      buildPane();
+    });
+
+    // Resumen del material seleccionado
+    const fInfo = _mlPaneInstance.addFolder({ title: "ℹ Properties (read-only)" });
+    const m = _matMap.get(sel.selected);
+    const info = m ? {
+      type: m.type,
+      standard: m.standard ?? "—",
+      grade: m.grade ?? "—",
+      E_MPa: (m.E / 1e6).toFixed(0),
+      nu: m.nu.toFixed(2),
+      Fy_MPa: m.Fy ? (m.Fy / 1e6).toFixed(0) : "—",
+      Fu_MPa: m.Fu ? (m.Fu / 1e6).toFixed(0) : "—",
+      fc_MPa: m.fc ? (m.fc / 1e6).toFixed(1) : "—",
+    } : { type: "—", standard: "—", grade: "—", E_MPa: "—", nu: "—", Fy_MPa: "—", Fu_MPa: "—", fc_MPa: "—" };
+    fInfo.addBinding(info, "type", { readonly: true, label: "Type" });
+    fInfo.addBinding(info, "standard", { readonly: true, label: "Standard" });
+    fInfo.addBinding(info, "grade", { readonly: true, label: "Grade" });
+    fInfo.addBinding(info, "E_MPa", { readonly: true, label: "E (MPa)" });
+    fInfo.addBinding(info, "nu", { readonly: true, label: "ν" });
+    if (m?.type === "Steel" || m?.type === "Rebar" || m?.type === "Tendon") {
+      fInfo.addBinding(info, "Fy_MPa", { readonly: true, label: "Fy (MPa)" });
+      fInfo.addBinding(info, "Fu_MPa", { readonly: true, label: "Fu (MPa)" });
+    } else if (m?.type === "Concrete" || m?.type === "Masonry") {
+      fInfo.addBinding(info, "fc_MPa", { readonly: true, label: "f'c (MPa)" });
+    }
+
+    // Acciones
+    _mlPaneInstance.addButton({ title: "➕ Add New Material..." }).on("click", () => {
+      _mlPaneInstance?.dispose();
+      _mlPaneInstance = null;
+      document.body.removeChild(backdrop);
+      openMaterialEditor(null);
+    });
+    _mlPaneInstance.addButton({ title: "📋 Add Copy of Material..." }).on("click", () => {
+      if (!sel.selected) return;
+      const orig = _matMap.get(sel.selected);
+      if (!orig) return;
+      const copy = { ...orig, name: `${orig.name} (copy)` };
+      _matMap.set(copy.name, copy);
+      refreshMaterialDB();
+      sel.selected = copy.name;
+      buildPane();  // rebuild pane con la nueva lista
+    });
+    _mlPaneInstance.addButton({ title: "✏ Modify/Show Material..." }).on("click", () => {
+      if (!sel.selected) return;
+      _mlPaneInstance?.dispose();
+      _mlPaneInstance = null;
+      document.body.removeChild(backdrop);
+      openMaterialEditor(sel.selected);
+    });
+    _mlPaneInstance.addButton({ title: "🗑 Delete Material" }).on("click", () => {
+      if (!sel.selected) return;
+      if (_matMap.size <= 1) {
+        updateStatusGlobal("⚠ No podés borrar el último material");
+        return;
+      }
+      _matMap.delete(sel.selected);
+      refreshMaterialDB();
+      sel.selected = [..._matMap.keys()][0] ?? "";
+      buildPane();
+    });
+    _mlPaneInstance.addButton({ title: "✓ OK (cerrar)" }).on("click", () => {
+      _mlPaneInstance?.dispose();
+      _mlPaneInstance = null;
+      document.body.removeChild(backdrop);
+    });
+  };
+
+  buildPane();
+  document.body.appendChild(backdrop);
+  backdrop.addEventListener("click", (ev) => {
+    if (ev.target === backdrop) {
+      _mlPaneInstance?.dispose();
+      _mlPaneInstance = null;
+      document.body.removeChild(backdrop);
+    }
+  });
+};
+// Helper para mostrar status (busca el cad-status bar globalmente)
+const updateStatusGlobal = (msg: string) => {
+  const sb = document.getElementById("hk-cad-status");
+  if (sb) sb.textContent = msg;
+};
+(window as any).__hekatanOpenMaterialsList = openMaterialsList;
+
+// ── Display Units dialog estilo ETABS ──
+// Tabla con todas las categorías y cantidades, cada fila configurable con
+// Length Unit, Force Unit, Temperature Unit, Decimal Places, Min Sig Figures,
+// Zero Tolerance. El Units Label se computa automáticamente desde los 3
+// dropdowns. Persistencia por item en localStorage.
+type DisplayUnitItem = {
+  id: string;                  // "absDist", "force", etc
+  name: string;                // label en la UI
+  category: string;            // "Structure Dimensions", "Section Dimensions", ...
+  length?: "m" | "cm" | "mm" | "in" | "ft" | null;
+  force?: "tonf" | "kN" | "kgf" | "N" | "kip" | "lb" | null;
+  temp?: "C" | "F" | "K" | null;
+  decimals: number;
+  minSigFigs: number;
+  zeroTol: number;
+  // Cómo construir el label dinámico desde length/force/temp
+  formula: (l: string | null | undefined, f: string | null | undefined, t: string | null | undefined) => string;
+};
+const DEFAULT_DISPLAY_UNITS: DisplayUnitItem[] = [
+  // Structure Dimensions
+  { id: "absDist", name: "Absolute Distance", category: "Structure Dimensions",
+    length: "m", force: null, temp: null, decimals: 3, minSigFigs: 1, zeroTol: 5e-6,
+    formula: (l) => l! },
+  { id: "relDist", name: "Relative Distance", category: "Structure Dimensions",
+    length: null, force: null, temp: null, decimals: 4, minSigFigs: 1, zeroTol: 5e-7,
+    formula: () => "—" },
+  { id: "structArea", name: "Structure Area", category: "Structure Dimensions",
+    length: "m", force: null, temp: null, decimals: 1, minSigFigs: 1, zeroTol: 5e-4,
+    formula: (l) => `${l}2` },
+  { id: "angles", name: "Angles", category: "Structure Dimensions",
+    length: null, force: null, temp: null, decimals: 3, minSigFigs: 1, zeroTol: 5e-6,
+    formula: () => "deg" },
+  // Section Dimensions
+  { id: "secLength", name: "Length", category: "Section Dimensions",
+    length: "m", force: null, temp: null, decimals: 3, minSigFigs: 1, zeroTol: 5e-6,
+    formula: (l) => l! },
+  { id: "secArea", name: "Area", category: "Section Dimensions",
+    length: "cm", force: null, temp: null, decimals: 1, minSigFigs: 1, zeroTol: 5e-4,
+    formula: (l) => `${l}2` },
+  { id: "rebarArea", name: "Rebar Area", category: "Section Dimensions",
+    length: "cm", force: null, temp: null, decimals: 2, minSigFigs: 1, zeroTol: 5e-5,
+    formula: (l) => `${l}2` },
+  // Displacements
+  { id: "transDispl", name: "Translational Displ", category: "Displacements",
+    length: "mm", force: null, temp: null, decimals: 4, minSigFigs: 1, zeroTol: 1e-12,
+    formula: (l) => l! },
+  { id: "rotDispl", name: "Rotational Displ", category: "Displacements",
+    length: null, force: null, temp: null, decimals: 6, minSigFigs: 1, zeroTol: 1e-12,
+    formula: () => "rad" },
+  { id: "drift", name: "Drift", category: "Displacements",
+    length: null, force: null, temp: null, decimals: 6, minSigFigs: 1, zeroTol: 5e-9,
+    formula: () => "—" },
+  // Forces
+  { id: "force", name: "Force", category: "Forces",
+    length: null, force: "tonf", temp: null, decimals: 4, minSigFigs: 1, zeroTol: 5e-7,
+    formula: (_l, f) => f! },
+  { id: "forcePerL", name: "Force/Length", category: "Forces",
+    length: "m", force: "tonf", temp: null, decimals: 4, minSigFigs: 1, zeroTol: 5e-7,
+    formula: (l, f) => `${f}/${l}` },
+  { id: "forcePerA", name: "Force/Area", category: "Forces",
+    length: "m", force: "tonf", temp: null, decimals: 5, minSigFigs: 1, zeroTol: 5e-8,
+    formula: (l, f) => `${f}/${l}2` },
+  { id: "moment", name: "Moment", category: "Forces",
+    length: "m", force: "tonf", temp: null, decimals: 3, minSigFigs: 1, zeroTol: 5e-6,
+    formula: (l, f) => `${f}-${l}` },
+  { id: "momentPerL", name: "Moment/Length", category: "Forces",
+    length: "m", force: "tonf", temp: null, decimals: 4, minSigFigs: 1, zeroTol: 5e-7,
+    formula: (l, f) => `${f}-${l}/${l}` },
+  { id: "temp", name: "Temperature", category: "Forces",
+    length: null, force: null, temp: "C", decimals: 3, minSigFigs: 1, zeroTol: 5e-6,
+    formula: (_l, _f, t) => t! },
+  // Stresses
+  { id: "stressIn", name: "Stress Input", category: "Stresses",
+    length: "cm", force: "kgf", temp: null, decimals: 3, minSigFigs: 1, zeroTol: 5e-6,
+    formula: (l, f) => `${f}/${l}2` },
+  { id: "stressOut", name: "Stress Output", category: "Stresses",
+    length: "cm", force: "kgf", temp: null, decimals: 3, minSigFigs: 1, zeroTol: 5e-6,
+    formula: (l, f) => `${f}/${l}2` },
+  { id: "strain", name: "Strain", category: "Stresses",
+    length: "cm", force: null, temp: null, decimals: 6, minSigFigs: 1, zeroTol: 5e-9,
+    formula: (l) => `${l}/${l}` },
+  { id: "modulus", name: "Modulus", category: "Stresses",
+    length: "cm", force: "kgf", temp: null, decimals: 3, minSigFigs: 1, zeroTol: 5e-6,
+    formula: (l, f) => `${f}/${l}2` },
+  // Stiffness
+  { id: "transStiff", name: "Translational Stiffness", category: "Stiffness",
+    length: "m", force: "tonf", temp: null, decimals: 4, minSigFigs: 1, zeroTol: 5e-7,
+    formula: (l, f) => `${f}/${l}` },
+  { id: "rotStiff", name: "Rotational Stiffness", category: "Stiffness",
+    length: "m", force: "tonf", temp: null, decimals: 3, minSigFigs: 1, zeroTol: 5e-6,
+    formula: (l, f) => `${f}-${l}/rad` },
+  // Time Related
+  { id: "period", name: "Period", category: "Time Related",
+    length: null, force: null, temp: null, decimals: 3, minSigFigs: 1, zeroTol: 5e-6,
+    formula: () => "sec" },
+  { id: "freq", name: "Frequency", category: "Time Related",
+    length: null, force: null, temp: null, decimals: 3, minSigFigs: 1, zeroTol: 5e-6,
+    formula: () => "cyc/sec" },
+  { id: "accelTrans", name: "Acceleration-Trans", category: "Time Related",
+    length: "cm", force: null, temp: null, decimals: 3, minSigFigs: 1, zeroTol: 5e-6,
+    formula: (l) => `${l}/sec2` },
+  // Mass and Weight
+  { id: "mass", name: "Mass", category: "Mass and Weight",
+    length: "m", force: "tonf", temp: null, decimals: 6, minSigFigs: 1, zeroTol: 5e-9,
+    formula: (l, f) => `${f}-s2/${l}` },
+  { id: "weight", name: "Weight", category: "Mass and Weight",
+    length: null, force: "tonf", temp: null, decimals: 5, minSigFigs: 1, zeroTol: 5e-8,
+    formula: (_l, f) => f! },
+  { id: "weightPerL", name: "Weight/Length", category: "Mass and Weight",
+    length: "m", force: "tonf", temp: null, decimals: 4, minSigFigs: 1, zeroTol: 5e-7,
+    formula: (l, f) => `${f}/${l}` },
+  // Modal Factors
+  { id: "modalParticT", name: "Modal Participation - Trans", category: "Modal Factors",
+    length: "m", force: "tonf", temp: null, decimals: 6, minSigFigs: 1, zeroTol: 5e-9,
+    formula: (l, f) => `${f}-${l}` },
+  { id: "modalMass", name: "Modal Mass", category: "Modal Factors",
+    length: "m", force: "tonf", temp: null, decimals: 4, minSigFigs: 1, zeroTol: 5e-7,
+    formula: (l, f) => `${f}-${l}-s2` },
+  // Damping Items
+  { id: "dampRatio", name: "Damping Ratio", category: "Damping Items",
+    length: null, force: null, temp: null, decimals: 4, minSigFigs: 1, zeroTol: 5e-7,
+    formula: () => "—" },
+  // Miscellaneous
+  { id: "energy", name: "Energy", category: "Miscellaneous",
+    length: "cm", force: "tonf", temp: null, decimals: 3, minSigFigs: 1, zeroTol: 5e-6,
+    formula: (l, f) => `${f}-${l}` },
+];
+
+// Map de overrides persistidos en localStorage por id
+const _displayUnitsMap = new Map<string, Partial<DisplayUnitItem>>();
+try {
+  const raw = localStorage.getItem("hk_displayUnits");
+  if (raw) {
+    const parsed = JSON.parse(raw);
+    for (const [id, ovr] of Object.entries(parsed)) _displayUnitsMap.set(id, ovr as any);
+  }
+} catch {}
+const getDisplayUnit = (id: string): DisplayUnitItem => {
+  const def = DEFAULT_DISPLAY_UNITS.find(d => d.id === id);
+  if (!def) throw new Error(`Unknown unit id: ${id}`);
+  return { ...def, ...(_displayUnitsMap.get(id) ?? {}) };
+};
+(window as any).__hekatanGetDisplayUnit = getDisplayUnit;
+(window as any).__hekatanDisplayUnitsAll = DEFAULT_DISPLAY_UNITS;
+const persistDisplayUnits = () => {
+  const obj: Record<string, any> = {};
+  for (const [k, v] of _displayUnitsMap.entries()) obj[k] = v;
+  localStorage.setItem("hk_displayUnits", JSON.stringify(obj));
+};
+
+// Display Units dialog — TWEAKPANE puro (Pane + folders + bindings + buttons)
+let _duPaneInstance: Pane | null = null;
+const openDisplayUnitsDialog = () => {
+  // Backdrop overlay (sólo HTML para click-outside-to-close, no es contenido UI)
+  const backdrop = document.createElement("div");
+  backdrop.id = "hk-units-backdrop";
+  backdrop.style.cssText = [
+    "position:fixed", "inset:0", "background:rgba(0,0,0,0.55)",
+    "z-index:9997", "display:flex", "align-items:flex-start", "justify-content:center",
+    "padding-top:30px",
+  ].join(";") + ";";
+  const cont = document.createElement("div");
+  cont.style.cssText = [
+    "width:min(420px, 96vw)", "max-height:90vh", "overflow-y:auto",
+    "box-shadow:0 12px 40px rgba(0,0,0,0.6)",
+  ].join(";") + ";";
+  backdrop.appendChild(cont);
+
+  // Estado mutable que Tweakpane bindea (cada item flat con id como key)
+  type DUState = Record<string, {
+    length: string;
+    force: string;
+    temp: string;
+    decimals: number;
+    minSigFigs: number;
+    zeroTol: number;
+    label: string;
+  }>;
+  const duState: DUState = {};
+  for (const def of DEFAULT_DISPLAY_UNITS) {
+    const cur = getDisplayUnit(def.id);
+    duState[def.id] = {
+      length: cur.length ?? "—",
+      force: cur.force ?? "—",
+      temp: cur.temp ?? "—",
+      decimals: cur.decimals,
+      minSigFigs: cur.minSigFigs,
+      zeroTol: cur.zeroTol,
+      label: cur.formula(cur.length, cur.force, cur.temp),
+    };
+  }
+
+  // Estado de filtro: qué categoría mostrar
+  const filter = { category: "All" };
+
+  const buildPane = () => {
+    if (_duPaneInstance) {
+      _duPaneInstance.dispose();
+      _duPaneInstance = null;
+    }
+    _duPaneInstance = new Pane({
+      container: cont,
+      title: "📐 Display Units",
+    });
+
+    // ── Presets rápidos (1 click cambia todo) ──
+    const fPresets = _duPaneInstance.addFolder({ title: "🌐 Presets (1 click)", expanded: true });
+    fPresets.addButton({ title: "Metric MKS (cm + tonf)" }).on("click", () => applyPreset("cm", "tonf"));
+    fPresets.addButton({ title: "Metric SI (m + kN)" }).on("click", () => applyPreset("m", "kN"));
+    fPresets.addButton({ title: "U.S. Imperial (in + kip)" }).on("click", () => applyPreset("in", "kip"));
+
+    // ── Filtro de categoría ──
+    const allCats = ["All", ...new Set(DEFAULT_DISPLAY_UNITS.map(d => d.category))];
+    const catOpts: Record<string, string> = {};
+    for (const c of allCats) catOpts[c] = c;
+    _duPaneInstance.addBinding(filter, "category", {
+      label: "Categoría",
+      options: catOpts,
+    }).on("change", () => buildPane());
+
+    // ── Items planos (sin sub-folder por item) ──
+    // Agrupados por categoría con un mini-separador.
+    const lengthOpts = { "m": "m", "cm": "cm", "mm": "mm", "in": "in", "ft": "ft", "—": "—" };
+    const forceOpts = { "tonf": "tonf", "kN": "kN", "kgf": "kgf", "N": "N", "kip": "kip", "lb": "lb", "—": "—" };
+    const tempOpts = { "C": "C", "F": "F", "K": "K", "—": "—" };
+
+    const refreshLabel = (id: string) => {
+      const def = DEFAULT_DISPLAY_UNITS.find(d => d.id === id)!;
+      const s = duState[id];
+      const l = s.length === "—" ? null : s.length;
+      const f = s.force === "—" ? null : s.force;
+      const t = s.temp === "—" ? null : s.temp;
+      s.label = def.formula(l as any, f as any, t as any);
+      _duPaneInstance?.refresh();
+    };
+
+    // Filtrar items según categoría seleccionada
+    const visibleItems = filter.category === "All"
+      ? DEFAULT_DISPLAY_UNITS
+      : DEFAULT_DISPLAY_UNITS.filter(d => d.category === filter.category);
+
+    let lastCat = "";
+    for (const def of visibleItems) {
+      // Header de categoría sólo si "All" (al filtrar es redundante)
+      if (filter.category === "All" && def.category !== lastCat) {
+        _duPaneInstance.addBlade({ view: "separator" });
+        const catLabel = { name: `── ${def.category} ──` };
+        _duPaneInstance.addBinding(catLabel, "name", { readonly: true, label: "" });
+        lastCat = def.category;
+      }
+      // Item: 1 binding compacto que muestra el label dinámico, click expande controles
+      // Para minimizar profundidad: usamos un folder colapsado por defecto SOLO al filtrar
+      // todos. Cuando hay filtro, mostramos los controles directamente.
+      const s = duState[def.id];
+      if (filter.category === "All") {
+        // Modo "All" — sólo nombre + Units Label readonly, no controles inline
+        _duPaneInstance.addBinding(s, "label", { label: def.name, readonly: true });
+      } else {
+        // Modo filtrado — controles inline directos para cada item
+        const fItem = _duPaneInstance.addFolder({ title: def.name, expanded: true });
+        if (def.length !== null) {
+          fItem.addBinding(s, "length", { label: "Length", options: lengthOpts })
+            .on("change", () => { _displayUnitsMap.set(def.id, { ..._displayUnitsMap.get(def.id), length: s.length === "—" ? null : s.length as any }); refreshLabel(def.id); });
+        }
+        if (def.force !== null) {
+          fItem.addBinding(s, "force", { label: "Force", options: forceOpts })
+            .on("change", () => { _displayUnitsMap.set(def.id, { ..._displayUnitsMap.get(def.id), force: s.force === "—" ? null : s.force as any }); refreshLabel(def.id); });
+        }
+        if (def.temp !== null) {
+          fItem.addBinding(s, "temp", { label: "Temp", options: tempOpts })
+            .on("change", () => { _displayUnitsMap.set(def.id, { ..._displayUnitsMap.get(def.id), temp: s.temp === "—" ? null : s.temp as any }); refreshLabel(def.id); });
+        }
+        fItem.addBinding(s, "decimals", { label: "Decimales", min: 0, max: 10, step: 1 })
+          .on("change", () => { _displayUnitsMap.set(def.id, { ..._displayUnitsMap.get(def.id), decimals: s.decimals }); });
+        fItem.addBinding(s, "label", { label: "Label", readonly: true });
+      }
+    }
+
+    // Footer
+    _duPaneInstance.addBlade({ view: "separator" });
+    _duPaneInstance.addButton({ title: "↻ Reset Defaults" }).on("click", () => {
+      _displayUnitsMap.clear();
+      persistDisplayUnits();
+      for (const def of DEFAULT_DISPLAY_UNITS) {
+        duState[def.id] = {
+          length: def.length ?? "—", force: def.force ?? "—", temp: def.temp ?? "—",
+          decimals: def.decimals, minSigFigs: def.minSigFigs, zeroTol: def.zeroTol,
+          label: def.formula(def.length, def.force, def.temp),
+        };
+      }
+      buildPane();
+    });
+    _duPaneInstance.addButton({ title: "✓ OK" }).on("click", () => {
+      persistDisplayUnits();
+      _duPaneInstance?.dispose();
+      _duPaneInstance = null;
+      document.body.removeChild(backdrop);
+    });
+    _duPaneInstance.addButton({ title: "✕ Cancel" }).on("click", () => {
+      _duPaneInstance?.dispose();
+      _duPaneInstance = null;
+      document.body.removeChild(backdrop);
+    });
+  };
+
+  const applyPreset = (length: string, force: string) => {
+    for (const def of DEFAULT_DISPLAY_UNITS) {
+      const ovr = _displayUnitsMap.get(def.id) ?? {};
+      const s = duState[def.id];
+      if (def.length !== null) { ovr.length = length as any; s.length = length; }
+      if (def.force !== null) { ovr.force = force as any; s.force = force; }
+      _displayUnitsMap.set(def.id, ovr);
+      // Recompute label en el state
+      const newDef = getDisplayUnit(def.id);
+      s.label = newDef.formula(newDef.length, newDef.force, newDef.temp);
+    }
+    persistDisplayUnits();
+    _duPaneInstance?.refresh();
+  };
+
+  buildPane();
+  document.body.appendChild(backdrop);
+  backdrop.addEventListener("click", (ev) => {
+    if (ev.target === backdrop) {
+      _duPaneInstance?.dispose();
+      _duPaneInstance = null;
+      document.body.removeChild(backdrop);
+    }
+  });
+};
+(window as any).__hekatanOpenDisplayUnits = openDisplayUnitsDialog;
+// Base de datos básica de secciones (AISC + IPN/IPE/HEB típicas).
+// Valores en SI: A [m²], I [m⁴], J [m⁴]. Fuente: AISC Steel Manual + Eurocódigo.
+const SECTION_DB: Record<string, SectionProps> = {
+  "W14x84":   { A: 0.01613, Iz: 5.535e-4, Iy: 1.787e-4, J: 1.244e-6, name: "W14x84"   },
+  "W18x86":   { A: 0.01632, Iz: 1.158e-3, Iy: 7.534e-5, J: 1.119e-6, name: "W18x86"   },
+  "W24x146":  { A: 0.02781, Iz: 3.413e-3, Iy: 2.847e-4, J: 4.078e-6, name: "W24x146"  },
+  "HEB300":   { A: 0.01491, Iz: 2.517e-4, Iy: 8.563e-5, J: 1.852e-6, name: "HEB300"   },
+  "IPN300":   { A: 0.00692, Iz: 9.800e-5, Iy: 4.510e-6, J: 6.700e-7, name: "IPN300"   },
+  "IPE400":   { A: 0.00845, Iz: 2.313e-4, Iy: 1.318e-5, J: 5.180e-7, name: "IPE400"   },
+};
+(window as any).__hekatanSectionDB = SECTION_DB;
+window.addEventListener("hk:property-applied", (ev: any) => {
+  const { kind, ids, prop, value } = ev.detail || {};
+  if (kind === "nodes") {
+    const ptIdxs = (ids as string[]).filter(id => id.startsWith("pt:")).map(id => parseInt(id.slice(3)));
+    if (prop === "supports") {
+      const m = (window as any).__hekatanManualSupports as Map<number, any>;
+      for (const i of ptIdxs) m.set(i, [...(value as boolean[])]);
+    } else if (prop === "loads") {
+      const m = (window as any).__hekatanManualLoads as Map<number, any>;
+      for (const i of ptIdxs) m.set(i, [...(value as number[])]);
+    } else if (prop === "mass") {
+      const m = (window as any).__hekatanManualMass as Map<number, number>;
+      for (const i of ptIdxs) m.set(i, value as number);
+    } else if (prop === "springs") {
+      const m = (window as any).__hekatanManualSprings as Map<number, any>;
+      for (const i of ptIdxs) m.set(i, [...(value as number[])]);
+    } else if (prop === "diaphragm") {
+      const m = (window as any).__hekatanManualDiaphragm as Map<number, string>;
+      for (const i of ptIdxs) m.set(i, value as string);
+    }
+  } else if (kind === "segs") {
+    // ids viene como ["seg:P:S", ...]. Extraemos "P:S" como key.
+    const segKeys = (ids as string[]).filter(id => id.startsWith("seg:")).map(id => id.slice(4));
+    if (prop === "section") {
+      const m = (window as any).__hekatanManualSections as Map<string, SectionProps>;
+      const secProps = SECTION_DB[value as string];
+      if (secProps) {
+        for (const k of segKeys) m.set(k, { ...secProps });
+      }
+    } else if (prop === "material") {
+      const m = (window as any).__hekatanManualMaterial as Map<string, string>;
+      for (const k of segKeys) m.set(k, value as string);
+    } else if (prop === "modifiers") {
+      const m = (window as any).__hekatanManualModifiers as Map<string, FrameMods>;
+      for (const k of segKeys) m.set(k, { ...(value as FrameMods) });
+    } else if (prop === "releases") {
+      const m = (window as any).__hekatanManualReleases as Map<string, FrameReleases>;
+      const v = value as FrameReleases;
+      for (const k of segKeys) m.set(k, { i: [...v.i] as any, j: [...v.j] as any });
+    } else if (prop === "massPerM") {
+      const m = (window as any).__hekatanManualMassPerM as Map<string, number>;
+      for (const k of segKeys) m.set(k, value as number);
+    } else if (prop === "hinges") {
+      const m = (window as any).__hekatanManualHinges as Map<string, string>;
+      for (const k of segKeys) m.set(k, value as string);
+    } else if (prop === "insertionPoint") {
+      const m = (window as any).__hekatanManualInsertionPoint as Map<string, string>;
+      for (const k of segKeys) m.set(k, value as string);
+    } else if (prop === "beta") {
+      const m = (window as any).__hekatanManualBeta as Map<string, number>;
+      for (const k of segKeys) m.set(k, value as number);
+    } else if (prop === "lineSprings") {
+      const m = (window as any).__hekatanManualLineSprings as Map<string, any>;
+      for (const k of segKeys) m.set(k, [...(value as number[])]);
+    } else if (prop === "distLoad") {
+      // TODO: distLoad necesita lift al solver — por ahora sólo log
+      console.log(`[Props] distLoad ${segKeys.length} seg(s):`, value);
+    }
+  }
+  // Disparar rebuild para que el ejemplo procese los cambios manuales
+  try { (window as any).__hekatanRebuild?.(); } catch {}
+});
+// Primera carga: el CSS media query puede no haber aplicado aún
+// cuando autoFitCamera corre por primera vez en loadExample. Forzamos
+// un re-fit 300ms después del DOMContentLoaded para que el modelo
+// quede correctamente encuadrado en el área visible final.
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => scheduleRefit(300));
+} else {
+  scheduleRefit(300);
+}
+
 // ── Tweakpane panel (encima del viewer, ARRASTRABLE) ──
 const paneHost = document.createElement("div");
 // top: 96px para que el Tweakpane quede claramente debajo de la toolbar superior.
@@ -570,6 +1439,7 @@ const savedPos = (() => {
   } catch {}
   return null;
 })();
+paneHost.id = "hk-pane-host";
 paneHost.style.cssText =
   "position:fixed;" +
   (savedPos ? `left:${savedPos.left}px;top:${savedPos.top}px;right:auto;` : "top:96px;right:16px;") +
@@ -578,6 +1448,292 @@ paneHost.style.cssText =
   // Pequeña sombra y borde para indicar que es una ventana flotante
   "box-shadow:0 6px 24px rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);";
 document.body.appendChild(paneHost);
+
+// ── Mobile UX: bottom-drawer pattern + 2 FAB toggles ─────────────────
+// En viewports <= 600px (móvil), tanto #settings como #hk-pane-host
+// se ocultan por default (translateY(100%)) y se muestran cuando el
+// usuario toca su FAB correspondiente. Esto libera el canvas central
+// para dibujar con touch sin paneles tapando. Solo un panel abierto a
+// la vez (abrir uno cierra el otro).
+(function setupMobileDrawer() {
+  const styleEl = document.createElement("style");
+  // Mobile breakpoint cubre PORTRAIT (max-width 600) y LANDSCAPE
+  // (max-height 500) para que un móvil rotado a horizontal también
+  // use el drawer pattern (sino el panel fixed-position de 320px se
+  // sale o tapa media pantalla en 812×375).
+  // Mobile SPLIT LAYOUT — panes permanentemente visibles en una
+  // mitad de la pantalla, canvas en la otra. NO hay drawer ni FABs.
+  //
+  //   Portrait 375×812:
+  //     Settings  → top 0    – 25vh   (pane horizontal arriba)
+  //     Tools     → top 25vh – 50vh   (pane horizontal abajo)
+  //     Canvas    → 50vh    – 100vh   (modelo en mitad inferior)
+  //
+  //   Landscape 812×375:
+  //     Settings  → top 0    – 50vh   (pane vertical arriba derecha)
+  //     Tools     → top 50vh – 100vh  (pane vertical abajo derecha)
+  //     Canvas    → 0        – 55vw   (modelo en mitad izquierda)
+  //
+  // Esto da una experiencia tipo tablero CAD donde siempre se ve a la
+  // vez la herramienta + el modelo.
+  styleEl.textContent = `
+    /* ── FIX: orbit vertical (pitch) en mobile ───────────────────────
+     * Sin estos overrides, Chrome Android / Safari interceptan el
+     * swipe vertical en el canvas como pull-to-refresh u overscroll
+     * bounce ANTES de que llegue a OrbitControls — aunque el canvas
+     * tenga touch-action:none, el body con overscroll-behavior:auto
+     * deja que el browser robe el gesto. Forzamos:
+     *   - overscroll-behavior:none  → cancela pull-to-refresh
+     *   - touch-action:none en html/body → cancela scroll/zoom default
+     *   - height:100% + overflow:hidden → evita que el body crezca
+     *     fuera del viewport (causa de "scroll the body" disfrazado de
+     *     pinch). En desktop estos no afectan porque ya layout-fixed.
+     * Aplicamos siempre (no sólo mobile) porque el workspace es 100%
+     * canvas-driven, no hay scroll de página legítimo en ningún modo.
+     */
+    html, body {
+      overscroll-behavior: none !important;
+      touch-action: none !important;
+      height: 100% !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+    }
+    /* Pero los panes Tweakpane SÍ necesitan touch-action:auto para
+     * que su scroll interno funcione (especialmente en mobile donde
+     * tienen overflow-y:auto). Sin esto el usuario no podría
+     * scrollear la lista de herramientas/settings con el dedo. */
+    #settings, #hk-pane-host, #hk-pane-host * {
+      touch-action: pan-y pinch-zoom !important;
+    }
+    /* El canvas mantiene touch-action:none — OrbitControls maneja todo.
+     * cursor:crosshair en lugar de none — estilo AutoCAD: el puntero del
+     * SO se mantiene visible (crosshair) y el snap marker (axis cross)
+     * actúa como hint adicional cuando estás cerca de un grid/node.
+     * Esto es más natural para usuarios CAD: ves DÓNDE apuntás (cursor)
+     * Y DÓNDE va a caer el click (snap marker). */
+    canvas {
+      touch-action: none !important;
+      cursor: crosshair !important;
+    }
+
+    /* Portrait: Settings 0-25vh, Tools 25-50vh, Canvas 50-100vh.
+     * 3D abajo donde el pulgar lo manipula con touch+orbit, controles
+     * arriba accesibles desde la zona alta del pulgar. */
+    @media (max-width: 600px) and (orientation: portrait) {
+      #hk-pane-host {
+        position: fixed !important;
+        top: 25vh !important;
+        bottom: auto !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100vw !important;
+        max-width: 100vw !important;
+        max-height: 25vh !important;
+        height: 25vh !important;
+        font-size: 11px !important;
+        z-index: 199 !important;
+        background: rgba(20, 20, 20, 0.96);
+        backdrop-filter: blur(8px);
+        border: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        transform: none !important;
+      }
+      /* Toolbar (☀+logo) en BOTTOM-LEFT — sobre el canvas inferior,
+       * lejos del status bar (bottom right). */
+      #toolbar {
+        right: auto !important;
+        left: 4px !important;
+        top: auto !important;
+        bottom: 36px !important;
+      }
+    }
+
+    /* Landscape: pane Tools en mitad inferior derecha */
+    @media (max-height: 500px) and (orientation: landscape) {
+      #hk-pane-host {
+        position: fixed !important;
+        top: 50vh !important;
+        bottom: 0 !important;
+        left: auto !important;
+        right: 0 !important;
+        width: 45vw !important;
+        max-width: 380px !important;
+        min-width: 280px !important;
+        max-height: 50vh !important;
+        height: 50vh !important;
+        transform: none !important;
+        border: none;
+        border-left: 1px solid rgba(255, 255, 255, 0.12);
+        border-top: 1px solid rgba(255, 255, 255, 0.10);
+        border-radius: 0;
+        box-shadow: -4px 0 12px rgba(0, 0, 0, 0.4);
+        background: rgba(20, 20, 20, 0.96);
+        backdrop-filter: blur(8px);
+      }
+      /* Toolbar a top-LEFT en landscape (sobre el canvas) */
+      #toolbar {
+        right: auto !important;
+        left: 8px !important;
+        top: 4px !important;
+      }
+    }
+
+    /* En cualquier modo móvil: FABs y backdrop NO son necesarios.
+     * Los panes están permanentemente visibles. */
+    @media (max-width: 600px), (max-height: 500px) {
+      .hk-mobile-fab-row, .hk-mobile-backdrop {
+        display: none !important;
+      }
+      #hk-mobile-help {
+        /* Toast más compacto en mobile */
+        font-size: 11px !important;
+      }
+    }
+
+    /* Status bar: en mobile NO truncar el mensaje — permitir wrap a
+     * 2-3 líneas. El default desktop tiene white-space:nowrap +
+     * overflow:hidden + text-overflow:ellipsis (ver drawing.ts L2458)
+     * pero en pantalla angosta corta info importante (sintaxis CLI).
+     * IMPORTANTE: limitar max-width a calc(100vw - 180px) para dejar
+     * espacio al gizmo de cámara (↑⊕←⌂→↓) que está en bottom-right
+     * y mide ~150px. Sin esto, el status bar tapa los botones. */
+    @media (max-width: 600px) and (orientation: portrait) {
+      #hk-cad-status {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        max-width: calc(100vw - 180px) !important;
+        left: 4px !important;
+        right: auto !important;
+        transform: none !important;
+        line-height: 1.35 !important;
+        font-size: 10px !important;
+        padding: 4px 10px !important;
+        bottom: 4px !important;
+        text-align: left !important;
+      }
+    }
+    /* Landscape: status bar restringido a la mitad izquierda (canvas),
+     * sino el pane Tools a la derecha lo tapa. Wrap a múltiples líneas. */
+    @media (max-height: 500px) and (orientation: landscape) {
+      #hk-cad-status {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        max-width: 53vw !important;
+        left: 8px !important;
+        transform: none !important;
+        bottom: 4px !important;
+        line-height: 1.35 !important;
+        font-size: 10px !important;
+        padding: 4px 10px !important;
+        text-align: left !important;
+      }
+    }
+
+    /* Desktop: todo intacto */
+    @media (min-width: 601px) and (min-height: 501px) {
+      .hk-mobile-fab-row, .hk-mobile-backdrop { display: none !important; }
+    }
+  `;
+  document.head.appendChild(styleEl);
+
+  // Backdrop
+  const backdrop = document.createElement("div");
+  backdrop.className = "hk-mobile-backdrop";
+  document.body.appendChild(backdrop);
+
+  // FAB row con 2 botones: ⚙ Settings y 🛠 Tools
+  const fabRow = document.createElement("div");
+  fabRow.className = "hk-mobile-fab-row";
+  const fabSettings = document.createElement("button");
+  fabSettings.className = "hk-mobile-fab";
+  fabSettings.textContent = "⚙";
+  fabSettings.title = "Settings";
+  fabSettings.setAttribute("aria-label", "Toggle Settings");
+  const fabTools = document.createElement("button");
+  fabTools.className = "hk-mobile-fab";
+  fabTools.textContent = "🛠";
+  fabTools.title = "Herramientas CAD";
+  fabTools.setAttribute("aria-label", "Toggle CAD Tools");
+  fabRow.appendChild(fabSettings);
+  fabRow.appendChild(fabTools);
+  document.body.appendChild(fabRow);
+
+  const closeAll = () => {
+    document.getElementById("settings")?.classList.remove("hk-mobile-open");
+    document.getElementById("hk-pane-host")?.classList.remove("hk-mobile-open");
+    fabSettings.classList.remove("hk-active");
+    fabTools.classList.remove("hk-active");
+    backdrop.classList.remove("hk-active");
+  };
+  const toggle = (which: "settings" | "tools") => {
+    const settingsEl = document.getElementById("settings");
+    const toolsEl = document.getElementById("hk-pane-host");
+    const target = which === "settings" ? settingsEl : toolsEl;
+    if (!target) return;
+    const wasOpen = target.classList.contains("hk-mobile-open");
+    closeAll();
+    if (!wasOpen) {
+      target.classList.add("hk-mobile-open");
+      backdrop.classList.add("hk-active");
+      (which === "settings" ? fabSettings : fabTools).classList.add("hk-active");
+    }
+  };
+  fabSettings.addEventListener("click", () => toggle("settings"));
+  fabTools.addEventListener("click", () => toggle("tools"));
+  backdrop.addEventListener("click", () => closeAll());
+
+  // ── Onboarding: toast de ayuda la primera vez en móvil ──
+  // Muestra un mensaje breve apuntando a los 2 FABs explicando qué
+  // hacer. Se descarta al primer click en cualquier FAB o tras 8s,
+  // y se persiste con localStorage para no molestar en cargas
+  // siguientes. Solo aparece si la media query móvil aplica.
+  const HELP_KEY = "hk_mobile_help_seen_v1";
+  const isMobileNow = () =>
+    matchMedia("(max-width: 600px)").matches ||
+    matchMedia("(max-height: 500px)").matches;
+  const seen = (() => { try { return localStorage.getItem(HELP_KEY) === "1"; } catch { return false; } })();
+  if (isMobileNow() && !seen) {
+    const toast = document.createElement("div");
+    toast.id = "hk-mobile-help";
+    toast.style.cssText = [
+      "position:fixed",
+      "top:62px",
+      "left:8px",
+      "max-width:calc(100vw - 16px)",
+      "padding:10px 14px",
+      "background:rgba(34, 211, 238, 0.96)",
+      "color:#0a0a0a",
+      "border-radius:8px",
+      "font-family:system-ui,-apple-system,sans-serif",
+      "font-size:13px",
+      "line-height:1.4",
+      "z-index:260",
+      "box-shadow:0 6px 18px rgba(0,0,0,0.4)",
+      "transition:opacity 0.3s ease-out",
+    ].join(";") + ";";
+    toast.innerHTML = [
+      "<div style='font-weight:600;margin-bottom:4px'>👋 Bienvenido a Hekatan</div>",
+      "<div>Tocá <b>⚙</b> para ver/ocultar <b>Settings</b> (grid, vista, resultados).</div>",
+      "<div>Tocá <b>🛠</b> para abrir <b>Herramientas CAD</b> y empezar a dibujar.</div>",
+      "<div style='margin-top:6px;font-size:11px;opacity:0.85'>Tip: arrastrá con un dedo para orbitar la cámara, dos dedos para zoom/pan.</div>",
+      "<div style='margin-top:8px;text-align:right'><button id='hk-help-close' style='border:1px solid #0a0a0a;background:transparent;color:#0a0a0a;padding:4px 10px;border-radius:4px;cursor:pointer;font-weight:600'>Entendido</button></div>",
+    ].join("");
+    document.body.appendChild(toast);
+    const dismiss = () => {
+      toast.style.opacity = "0";
+      setTimeout(() => toast.remove(), 320);
+      try { localStorage.setItem(HELP_KEY, "1"); } catch {}
+    };
+    toast.querySelector<HTMLButtonElement>("#hk-help-close")?.addEventListener("click", dismiss);
+    fabSettings.addEventListener("click", dismiss, { once: true });
+    fabTools.addEventListener("click", dismiss, { once: true });
+    setTimeout(dismiss, 12000);  // auto-dismiss tras 12s
+  }
+})();
 
 /**
  * Convierte un elemento en arrastrable desde su "handle" (cualquier elemento
@@ -779,16 +1935,43 @@ function runCadDemo(): void {
     }
     status("Demo completo ✓ — pórtico de 4 puntos en planta dibujado");
     await sleep(3000);
+    // ── Cleanup: eliminar cursor fake + status + listener Escape ──
     if (statusEl) {
       statusEl.style.transition = "opacity 1.5s";
       statusEl.style.opacity = "0";
       setTimeout(() => statusEl?.remove(), 1500);
     }
+    if (cursor) {
+      cursor.style.transition = "opacity 1s";
+      cursor.style.opacity = "0";
+      setTimeout(() => cursor?.remove(), 1000);
+    }
+    cleanup();
   })().catch((e) => {
     status("Error: " + e.message);
     console.error("[Demo CAD]", e);
+    cursor?.remove();
+    statusEl?.remove();
+    cleanup();
   });
+
+  // Escape cancela la demo en cualquier momento
+  function escHandler(ev: KeyboardEvent) {
+    if (ev.key !== "Escape") return;
+    cursor?.remove();
+    statusEl?.remove();
+    cleanup();
+  }
+  function cleanup() {
+    window.removeEventListener("keydown", escHandler);
+  }
+  window.addEventListener("keydown", escHandler);
 }
+// API global para limpiar manualmente cursor/status si quedan colgados
+(window as any).__hekatanCleanupDemoCursor = () => {
+  document.getElementById("hk-fake-cursor")?.remove();
+  document.getElementById("hk-demo-status")?.remove();
+};
 
 function setView(preset: "iso" | "plan" | "elevX" | "elevY") {
   // Sincroniza plano CAD + drawing plane con la vista
@@ -890,6 +2073,7 @@ function applyHiddenBindings() {
   }
 }
 
+
 function buildParamsPane() {
   if (currentPane) {
     currentPane.dispose();
@@ -898,6 +2082,8 @@ function buildParamsPane() {
   paneHost.innerHTML = "";
   // Reset registro de bindings con hiddenIf (cada ejemplo declara los suyos)
   hiddenBindings = [];
+  // Reset singletons del Calc/CLI (los folders se recrean en cada rebuild)
+  // (singletons calc/cli viven ahora en hekatan-ui/femTools — nada que limpiar aquí)
   if (!currentExample) return;
   const pane = new Pane({ container: paneHost, title: currentExample.name });
   // Hacer el pane arrastrable desde su title-bar. El DOM del Tweakpane se
@@ -910,8 +2096,16 @@ function buildParamsPane() {
   // Categorías derivadas dinámicamente del registry (cada ExampleDef.category).
   const allCategories = Array.from(new Set(examplesRegistry.map((e) => e.category)));
   // Orden preferido de categorías (las primeras arriba, después alfabético)
+  // Los Benchmarks van PRIMEROS, divididos en 5 sub-categorías ordenadas
+  // (Frames → Áreas → Sólidos → Combinados → Layered).
   const categoryOrder = [
-    "🏁 Benchmarks",
+    "🏁 Benchmarks · 1️⃣ Frames",
+    "🏁 Benchmarks · 2️⃣ Áreas",
+    "🏁 Benchmarks · 3️⃣ Sólidos",
+    "🏁 Benchmarks · 4️⃣ Combinados",
+    "🏁 Benchmarks · 5️⃣ Layered",
+    "🏁 Benchmarks · 6️⃣ Paz",          // libro Mario Paz "Structural Dynamics" 6ª ed
+    "🏁 Benchmarks",                  // legacy (si quedó algún ejemplo sin re-categorizar)
     "Cimentaciones",
     "Frames 1D",
     "Pórticos 2D",
@@ -928,8 +2122,34 @@ function buildParamsPane() {
     ...allCategories.filter((c) => !categoryOrder.includes(c)).sort(),
   ];
   const ALL = "Todas";
+  const ALL_BENCHMARKS = "🏁 Benchmarks · TODOS";   // pseudo-categoría que muestra los 12 benchmarks juntos
+  // Mostrar las sub-categorías de Benchmarks con INDENTACIÓN visual (sub-folders):
+  //   🏁 Benchmarks (TODOS)         ← header del grupo (todos los benchmarks juntos)
+  //     ▸ 1️⃣ Frames                 ← sub-folder
+  //     ▸ 2️⃣ Áreas
+  //     ▸ 3️⃣ Sólidos
+  //     ▸ 4️⃣ Combinados
+  //     ▸ 5️⃣ Layered
+  // En Tweakpane: options = { "display label": "actual value" }
+  //   KEY = lo que el usuario VE en el dropdown
+  //   VALUE = lo que se almacena en selectorObj.category (usado para filtrar)
   const catOptions: Record<string, string> = { [ALL]: ALL };
-  for (const c of sortedCats) catOptions[c] = c;
+  let benchmarkHeaderInserted = false;
+  for (const c of sortedCats) {
+    if (c.startsWith("🏁 Benchmarks · ")) {
+      // Insertar el header "TODOS" antes de la primera sub-categoría
+      if (!benchmarkHeaderInserted) {
+        catOptions["🏁 Benchmarks (TODOS los 12)"] = ALL_BENCHMARKS;
+        benchmarkHeaderInserted = true;
+      }
+      // Sub-categoría con indentación visual: el LABEL tiene "▸ ", el VALUE
+      // mantiene la categoría completa para que el filter funcione.
+      const indentedLabel = c.replace("🏁 Benchmarks · ", "       ▸ ");
+      catOptions[indentedLabel] = c;
+    } else {
+      catOptions[c] = c;
+    }
+  }
 
   const selectorObj = { category: currentExample.category, id: currentExample.id };
 
@@ -938,10 +2158,28 @@ function buildParamsPane() {
   });
 
   // Helper: opciones del dropdown "Ejemplo" filtradas por la categoría seleccionada.
+  // Tweakpane normaliza las KEYS de options (strip whitespace al inicio), entonces
+  // las sub-categorías de Benchmarks se almacenan como "▸ 1️⃣ Frames" en lugar de
+  // "🏁 Benchmarks · 1️⃣ Frames". Necesitamos matchear ambos formatos.
+  const matchesCategory = (exampleCat: string | undefined, selectedCat: string): boolean => {
+    if (!exampleCat) return false;
+    if (exampleCat === selectedCat) return true;
+    // "▸ 1️⃣ Frames" matches "🏁 Benchmarks · 1️⃣ Frames"
+    if (selectedCat.startsWith("▸ ") && exampleCat.startsWith("🏁 Benchmarks · ")) {
+      return exampleCat.endsWith(selectedCat.replace(/^▸\s*/, ""));
+    }
+    return false;
+  };
   const buildExOptions = (cat: string) =>
     Object.fromEntries(
       examplesRegistry
-        .filter((e) => cat === ALL || e.category === cat)
+        .filter((e) => {
+          if (cat === ALL) return true;
+          if (cat === ALL_BENCHMARKS || cat === "🏁 Benchmarks (TODOS los 12)") {
+            return e.category?.startsWith("🏁 Benchmarks");
+          }
+          return matchesCategory(e.category, cat);
+        })
         .map((e) => [`${e.benchmark ? "🏁 " : ""}${e.name}`, e.id])
     );
 
@@ -991,6 +2229,22 @@ function buildParamsPane() {
   }
 
   // ── Reporte matemático FEM (estilo Calcpad) — pendiente módulo mathReport ──
+
+  // ── 🛠 Herramientas FEM (orquestador unificado en hekatan-ui) ──
+  // Una sola llamada agrega el folder completo:
+  //   🔍 Inspect / 📈 Modal+ (si hasModal) / 📜 Log / 🧮 Calc / 💻 CLI /
+  //   📄 Report / ▶ Calcular
+  // Todo el código de los paneles vive en `hekatan-ui/src/femTools/`
+  // (registry singletons + attach helper). El workspace solo conecta el
+  // contexto reactivo (states + ejemplo activo + onRebuild).
+  attachFemTools(pane, {
+    nodes, elements, nodeInputs, elementInputs,
+    deformOutputs, analyzeOutputs, objects3D,
+    currentExample: currentExample ?? undefined,
+    currentParams,
+    modalPanelLegacy: modalPanel,
+    onRebuild: () => { try { (window as any).__hekatanRebuild?.(); } catch {} },
+  });
 
   // ── Vista (planta / elevación / isométrica + ejes A,B,C / 1,2,3) ──
   const fView = pane.addFolder({ title: "Vista", expanded: false });
@@ -1622,24 +2876,30 @@ solve`;
     });
     fCli.addButton({ title: "📋 Pórtico 2D (bloques)" }).on("click", () => {
       // Sintaxis compacta tipo awatif: encabezado una vez y luego solo numeros.
-      // Util cuando hay muchas lineas seguidas del mismo tipo (nodos/elementos).
-      ta.value = `# Portico 2D — sintaxis bloque (estilo awatif, indices 0-based)
+      //
+      // IMPORTANTE — convención de IDs en bloques:
+      //   • `nodes` block — auto-ID 1,2,3,4 (1-based, parseador hace ++ ANTES de set)
+      //   • `elements` block — los pares `0 1`, `1 2`, ... son 0-based en la
+      //     LECTURA pero el parser los convierte a 1-based (nI = nums[0]+1)
+      //     antes de almacenar — así son consistentes con los IDs 1-based de nodes.
+      //   • `supports` y `loads` — usan IDs 1-based directamente (igual que inline).
+      ta.value = `# Portico 2D — sintaxis bloque (estilo awatif)
 nodes
-0 0 0
-0 0 3
-5 0 3
-5 0 0
+0 0 0      # se almacena como nodo ID=1
+0 0 3      # nodo ID=2
+5 0 3      # nodo ID=3
+5 0 0      # nodo ID=4
 
-elements
-0 1
-1 2
-2 3
+elements    # pares 0-based → parser convierte a 1-based
+0 1         # frame ID=1: nodos 1→2 (columna izq)
+1 2         # frame ID=2: nodos 2→3 (viga sup)
+2 3         # frame ID=3: nodos 3→4 (columna der)
 
-supports
+supports    # IDs 1-based
 1 fixed
 4 fixed
 
-loads
+loads       # IDs 1-based
 2 10 0 -50 0 0 0
 3 10 0 -50 0 0 0
 
@@ -3218,6 +4478,10 @@ const viewerElm = getViewer({
   },
 });
 
+// ── Inspect: ahora vive dentro de "🛠 Herramientas FEM" (Tweakpane) ──
+// El botón Inspect suelto top-center quedó eliminado — usar el folder
+// Tweakpane "Herramientas FEM" → "🔍 Inspect" para abrir el panel didáctico.
+
 // ── Sincronizar drawingPoints/polylines a window.__hekatanCliScript ──
 // Cada vez que el usuario dibuja un punto o polyline (con mouse en el
 // viewer), se regenera el script CLI con sintaxis awatif (bloques
@@ -3264,6 +4528,13 @@ document.body.append(
 );
 document.body.appendChild(modalPanel.div);
 
+// ═══════════════════════════════════════════════════════════════
+// ── 🛠 HEKATAN FEM TOOLS — orquestador unificado en hekatan-ui
+// Los singletons lazy (Inspect, Modal+, Calc, CLI, Log, Report) viven en
+// `hekatan-ui/src/femTools/`. El folder Tweakpane se agrega via
+// `attachFemTools(pane, ctx)` en buildParamsPane().
+// ═══════════════════════════════════════════════════════════════
+// (IIFE legacy removida — ahora se usa attachFemTools(pane, ctx) desde hekatan-ui/femTools)
 // ═══════════════════════════════════════════════════════════════
 // ── HOVER TOOLTIP GLOBAL para shell results en cualquier ejemplo ──
 // Al pasar el cursor sobre un shell Q4, busca por raycast el elemento
@@ -3357,7 +4628,9 @@ document.body.appendChild(modalPanel.div);
     const settings = (viewerElm as any).__settings;
     if (!ctx?.scene || !ctx?.camera) { tooltip.style.display = "none"; return; }
     const field = settings?.shellResults?.val ?? "none";
-    if (field === "none") { tooltip.style.display = "none"; return; }
+    // NOTA: ya NO retornamos cuando field === "none" — el tooltip se muestra
+    // SIEMPRE que el cursor esté sobre un shell, con o sin colormap activo.
+    // Cuando no hay field activo, mostramos solo info estructural (sección, nodo, Δ).
     // Convert mouse to NDC respecto al canvas del viewer
     const canvas = viewerElm.querySelector("canvas") as HTMLCanvasElement | null;
     if (!canvas) { tooltip.style.display = "none"; return; }
@@ -3365,32 +4638,52 @@ document.body.appendChild(modalPanel.div);
     pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     raycaster.setFromCamera(pointer, ctx.camera);
-    // Buscar shell meshes en la escena (los que tienen vertex colors)
+    // Buscar shell meshes EXACTOS en la escena.
+    // Filtro estricto: solo meshes marcados con userData.isShellArea = true
+    // (shellMesh y colorMap). Esto EXCLUYE:
+    //   - Cilindros 3D de frames (Sec.Columnas/Vigas)
+    //   - Markers de supports/loads
+    //   - Solids H8
+    // Sin este filtro, el cursor sobre un cilindro de frame se reportaba como Shell.
     const targets: THREE.Mesh[] = [];
     ctx.scene.traverse((o: any) => {
-      if (o.isMesh && o.geometry?.attributes?.color &&
-          o.geometry.attributes.position.count > 50) {
-        targets.push(o);
-      }
+      if (!o.isMesh || !o.geometry?.attributes?.position) return;
+      if (!o.userData?.isShellArea) return;   // SOLO áreas shell marcadas
+      if (!o.visible) return;                  // mesh oculta no debe contar
+      const count = o.geometry.attributes.position.count;
+      if (count < 3) return;
+      targets.push(o);
     });
-    if (!targets.length) { tooltip.style.display = "none"; return; }
+    if (!targets.length) { tooltip.style.display = "none"; (window as any).__hekatanShellTooltipVisible = false; return; }
     const hits = raycaster.intersectObjects(targets, false);
-    if (!hits.length) { tooltip.style.display = "none"; return; }
+    if (!hits.length) { tooltip.style.display = "none"; (window as any).__hekatanShellTooltipVisible = false; return; }
     const hit = hits[0];
     // Obtener el ÍNDICE del elemento Q4 a partir del face index
-    // Cada Q4 se triangula en 2 triangles (6 vertex indices), así
-    // faceIndex / 2 = elementIndex en la mesh shell.
     const faceIdx = hit.faceIndex ?? 0;
     const elemIdx = Math.floor(faceIdx / 2);
-    // Leer el valor del campo activo del analyzeOutputs
-    const ao = analyzeOutputs.rawVal as any;
-    const fieldMap = ao?.[field] as Map<number, number[]> | undefined;
-    if (!fieldMap || !fieldMap.size) {
+    // VALIDACIÓN: el elemIdx debe corresponder a un shell REAL del modelo.
+    // Si está fuera del rango o el elemento no es shell (length 3 o 4 nodos),
+    // ocultar el tooltip — evita "Shell #206 nodos: [?]" cuando el raycaster
+    // cae sobre triangulación auxiliar, plano del CAD, o áreas extendidas.
+    const elsCheck = elements.rawVal;
+    if (elemIdx < 0 || elemIdx >= elsCheck.length) {
       tooltip.style.display = "none";
+      (window as any).__hekatanShellTooltipVisible = false;
       return;
     }
-    const values = fieldMap.get(elemIdx);
-    if (!values?.length) { tooltip.style.display = "none"; return; }
+    const elemCheck = elsCheck[elemIdx];
+    // Solo shells: 3 nodos (CST tri) o 4 nodos (Q4). Frames (2) y solids (8) no.
+    if (!elemCheck || (elemCheck.length !== 3 && elemCheck.length !== 4)) {
+      tooltip.style.display = "none";
+      (window as any).__hekatanShellTooltipVisible = false;
+      return;
+    }
+    // Leer el valor del campo activo del analyzeOutputs (puede ser undefined)
+    const ao = analyzeOutputs.rawVal as any;
+    const fieldMap = (field !== "none") ? (ao?.[field] as Map<number, number[]> | undefined) : undefined;
+    const values = fieldMap?.get(elemIdx);
+    // Si no hay field activo o no hay valor, los valores son [0,0,0,0] para no romper interp
+    const safeValues = values ?? [0, 0, 0, 0];
     const els = elements.rawVal as Element[];
     const nds = nodes.rawVal as Node[];
     const elNodes = els[elemIdx];
@@ -3398,7 +4691,7 @@ document.body.appendChild(modalPanel.div);
     // Inferir las coordenadas naturales (ξ, η) ∈ [-1, 1] del punto del hit
     // dentro del Q4. Usamos solver de Newton-Raphson 2D simple sobre la
     // mapa isoparamétrica x(ξ,η) = Σ N_i(ξ,η)·x_i.
-    let valInterp = values[0], xi = 0, eta = 0;
+    let valInterp = safeValues[0], xi = 0, eta = 0;
     let closestCorner = 0;
     if (elNodes?.length === 4 && hit.point) {
       const corners = elNodes.map(ni => nds[ni]) as [number,number,number][];
@@ -3435,30 +4728,113 @@ document.body.appendChild(modalPanel.div);
       eta = Math.max(-1, Math.min(1, eta));
       // Interpolación bilineal del valor
       const Nv = N(xi, eta);
-      valInterp = values.reduce((s, v, i) => s + Nv[i] * v, 0);
+      valInterp = safeValues.reduce((s, v, i) => s + Nv[i] * v, 0);
       // El "corner más cercano" en (ξ, η)-space para info
       closestCorner = (xi >= 0 ? (eta >= 0 ? 2 : 1) : (eta >= 0 ? 3 : 0));
     }
     // Render tooltip — convierte SI base → unidad UI activa (forceUnit/dispUnit)
+    const hasField = field !== "none" && values != null;
     const lbl = FIELD_LABELS[field] ?? field;
     const kind = FIELD_KIND[field] ?? "force_per_area";
     const [valConv, unit] = formatValue(kind, valInterp);
     const xPos = hit.point?.x?.toFixed(2) ?? '?';
     const yPos = hit.point?.y?.toFixed(2) ?? '?';
     const zPos = hit.point?.z?.toFixed(2) ?? '?';
-    tooltip.innerHTML =
-      `<b>${lbl}</b> <span style="color:#888;font-size:10px">(interpolado)</span><br>` +
-      `Valor: <span style="color:#22d3ee;font-size:14px;">${valConv.toFixed(3)} ${unit}</span><br>` +
-      `Punto cursor: (${xPos}, ${yPos}, ${zPos}) m<br>` +
-      `Elem #${elemIdx} · ξ=${xi.toFixed(2)}, η=${eta.toFixed(2)}<br>` +
-      `Esquina ${closestCorner}: ${formatValue(kind, values[closestCorner] ?? 0)[0].toFixed(3)} ${unit}`;
+
+    // ── INFO DE SECCIÓN del shell (lee elementInputs.sectionInfo) ──
+    const ei = (window as any).__hekatanElementInputs ?? (ctx as any)?.mesh?.elementInputs?.rawVal;
+    const sInfo = (ei as any)?.sectionInfo?.get?.(elemIdx);
+    let sectionHTML = "";
+    if (sInfo) {
+      if (sInfo.name)  sectionHTML += `<br><span style="color:#888;font-size:10px">📋 ${sInfo.name}</span>`;
+      if (sInfo.shape) sectionHTML += ` <span style="color:#888;font-size:10px">[${sInfo.shape}]</span>`;
+      const isConcrete = /concrete|hormig|rect.*sólida/i.test(sInfo.shape || "");
+      const lenF = isConcrete ? 100 : 1000;
+      const lenU = isConcrete ? "cm" : "mm";
+      const fmtD = (v: number) => Math.abs(v*lenF - Math.round(v*lenF)) < 0.05 ? `${Math.round(v*lenF)}` : `${(v*lenF).toFixed(1)}`;
+      const dimParts: string[] = [];
+      if (sInfo.t  != null) dimParts.push(`t=${fmtD(sInfo.t)}`);
+      if (sInfo.D  != null) dimParts.push(`D=${fmtD(sInfo.D)}`);
+      if (sInfo.B  != null) dimParts.push(`B=${fmtD(sInfo.B)}`);
+      if (sInfo.TF != null) dimParts.push(`TF=${fmtD(sInfo.TF)}`);
+      if (sInfo.TW != null) dimParts.push(`TW=${fmtD(sInfo.TW)}`);
+      if (dimParts.length) sectionHTML += `<br><span style="color:#888;font-size:10px">Dim: ${dimParts.join(" ")} ${lenU}</span>`;
+      if (sInfo.material) sectionHTML += `<br><span style="color:#888;font-size:10px">Mat: ${sInfo.material}${sInfo.fillMaterial ? ` + FILL "${sInfo.fillMaterial}"` : ""}</span>`;
+    }
+
+    // ── EXTENSIÓN: agregar info del nodo más cercano (Δ desplaz + R reacciones) ──
+    const elem = elements.val[elemIdx];
+    let extraHTML = "";
+    if (elem) {
+      // Encontrar el nodo más cercano al punto cursor (en world coords)
+      let bestNode = -1;
+      let bestDist = Infinity;
+      for (const ni of elem) {
+        const n = nodes.val[ni];
+        if (!n || !hit.point) continue;
+        const dx = n[0] - hit.point.x;
+        const dy = n[1] - hit.point.y;
+        const dz = n[2] - hit.point.z;
+        const d2 = dx*dx + dy*dy + dz*dz;
+        if (d2 < bestDist) { bestDist = d2; bestNode = ni; }
+      }
+      if (bestNode >= 0) {
+        const def = deformOutputs.val;
+        const dispU  = (window as any).__hekatanDispUnit ?? "mm";
+        const forceU = (window as any).__hekatanForceUnit ?? "tonf";
+        const dF = { mm: 1000, cm: 100, m: 1, in: 39.3700787402 }[dispU as string] ?? 1000;
+        const fF = { kN: 1, tonf: 1/9.80665, kip: 1/4.4482216 }[forceU as string] ?? 1/9.80665;
+        const u = def?.deformations?.get(bestNode);
+        if (u) {
+          const dParts: string[] = [];
+          if (Math.abs(u[0]) > 1e-12) dParts.push(`Ux=${(u[0]*dF).toFixed(3)} ${dispU}`);
+          if (Math.abs(u[1]) > 1e-12) dParts.push(`Uy=${(u[1]*dF).toFixed(3)} ${dispU}`);
+          if (Math.abs(u[2]) > 1e-12) dParts.push(`Uz=${(u[2]*dF).toFixed(3)} ${dispU}`);
+          if (dParts.length === 0) dParts.push(`Ux=Uy=Uz=0`);
+          extraHTML += `<br><span style="color:#888;font-size:10px">Nodo ${bestNode}:</span> <span style="color:#ffd166;font-size:11px;">${dParts.join(" · ")}</span>`;
+          if (Math.abs(u[3]) > 1e-9 || Math.abs(u[4]) > 1e-9 || Math.abs(u[5]) > 1e-9) {
+            extraHTML += `<br><span style="color:#ffd166;font-size:11px;">Rx=${(u[3]*1000).toFixed(3)} Ry=${(u[4]*1000).toFixed(3)} Rz=${(u[5]*1000).toFixed(3)} mrad</span>`;
+          }
+        }
+        const r = def?.reactions?.get(bestNode);
+        if (r && (Math.abs(r[0]) > 1e-9 || Math.abs(r[1]) > 1e-9 || Math.abs(r[2]) > 1e-9
+                  || Math.abs(r[3]) > 1e-6 || Math.abs(r[4]) > 1e-6 || Math.abs(r[5]) > 1e-6)) {
+          const rParts: string[] = [];
+          if (Math.abs(r[0]) > 1e-6) rParts.push(`Fx=${(r[0]*fF).toFixed(3)}`);
+          if (Math.abs(r[1]) > 1e-6) rParts.push(`Fy=${(r[1]*fF).toFixed(3)}`);
+          if (Math.abs(r[2]) > 1e-6) rParts.push(`Fz=${(r[2]*fF).toFixed(3)}`);
+          extraHTML += `<br><span style="color:#888;font-size:10px">Reacción:</span> <span style="color:#ff8888;font-size:11px;">${rParts.join(" ")} ${forceU}</span>`;
+        }
+      }
+    }
+
+    let mainHTML: string;
+    if (hasField) {
+      // Con shell result activo: mostrar campo + valor + interpolación
+      mainHTML =
+        `<b>${lbl}</b> <span style="color:#888;font-size:10px">(interpolado)</span><br>` +
+        `Valor: <span style="color:#22d3ee;font-size:14px;">${valConv.toFixed(3)} ${unit}</span><br>` +
+        `Punto cursor: (${xPos}, ${yPos}, ${zPos}) m<br>` +
+        `Elem #${elemIdx} · ξ=${xi.toFixed(2)}, η=${eta.toFixed(2)}<br>` +
+        `Esquina ${closestCorner}: ${formatValue(kind, (values?.[closestCorner] ?? 0))[0].toFixed(3)} ${unit}`;
+    } else {
+      // Sin shell result activo: solo info estructural del shell
+      mainHTML =
+        `<b>Shell #${elemIdx}</b><br>` +
+        `Punto cursor: (${xPos}, ${yPos}, ${zPos}) m<br>` +
+        `nodos: [${elem?.join(", ") ?? "?"}]`;
+    }
+    tooltip.innerHTML = mainHTML + sectionHTML + extraHTML;
     tooltip.style.left = `${event.clientX + 12}px`;
     tooltip.style.top = `${event.clientY + 12}px`;
     tooltip.style.display = "block";
+    // Suprimir el tooltip pequeño de hover.ts cuando el grande está visible
+    (window as any).__hekatanShellTooltipVisible = true;
   };
 
   const onPointerLeave = () => {
     tooltip.style.display = "none";
+    (window as any).__hekatanShellTooltipVisible = false;
   };
 
   viewerElm.addEventListener("pointermove", onPointerMove);

@@ -23,6 +23,7 @@ import { nodeResults } from "./objects/nodeResults";
 import { drawing, Drawing } from "./drawing/drawing";
 import { shellResults } from "./objects/shellResults";
 import { frameColorMap } from "./objects/frameColorMap";
+import { setupHover } from "./objects/hover";
 
 import "./styles.css";
 import { getLegend } from "../color-map/getLegend";
@@ -581,6 +582,16 @@ export function getViewer({
       nodeResults(mesh, settings, derivedNodes, derivedDisplayScale),
       frameResults(mesh, settings, derivedNodes, derivedDisplayScale)
     );
+
+    // ── Hover-highlight global (nodos + elementos en cualquier ejemplo) ──
+    const hoverGroup = setupHover({
+      scene, rendererElm: renderer.domElement,
+      getActiveCamera: () => activeCamera,
+      derivedNodes, derivedDisplayScale,  // mismo scale que usan nodes.ts/loads.ts
+      mesh, settings,
+      render: viewerRender,
+    });
+    scene.add(hoverGroup);
 
     // Color map (shells)
     const colorMapValues = getColorMapValues(mesh, settings);

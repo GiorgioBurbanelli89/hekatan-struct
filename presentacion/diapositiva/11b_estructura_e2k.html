@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11b · Estructura del archivo .e2k</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<style>
+  .e2k-section {
+    background: var(--paper-dark);
+    border-left: 4px solid var(--gold);
+    border-radius: 0 4px 4px 0;
+    padding: 12px 16px;
+    margin: 10px 0;
+  }
+  .e2k-section h3 {
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--blue);
+    margin: 0 0 4px;
+    font-size: 1.05rem;
+  }
+  .e2k-section .e2k-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.1em;
+    display: inline-block;
+    margin-bottom: 4px;
+  }
+  .e2k-section pre {
+    background: var(--paper);
+    padding: 8px 12px;
+    margin: 6px 0;
+    font-size: 0.78rem;
+    border: 1px solid var(--ink-fade);
+    border-radius: 3px;
+    overflow-x: auto;
+  }
+  .e2k-section .desc {
+    font-size: 0.86rem;
+    color: var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 11b · Bloque 4 — formato de intercambio</div>
+    <h1>Estructura interna del archivo <code>.e2k</code> de ETABS</h1>
+    <div class="subtitle">Texto plano. Cada sección empieza con <code>$</code>. Un <code>.e2k</code> bien escrito se abre en ETABS, SAP, OpenSees y Hekatan sin convertir.</div>
+  </header>
+
+  <section>
+    <h2>Por qué texto plano</h2>
+    <p>Mientras que el formato nativo <code>.EDB</code> de ETABS es binario (rápido, propietario), el <code>.e2k</code> es <strong>texto ASCII</strong> con secciones delimitadas — equivalente a JSON pero específico para FEM estructural. Ventajas:</p>
+    <ul style="margin-left:20px;line-height:1.55">
+      <li><strong>Diff y merge</strong> con git — versionable.</li>
+      <li><strong>Editable a mano</strong> con cualquier editor (debugging rápido).</li>
+      <li><strong>Round-trip</strong>: cualquier programa que lo parsea correctamente lo reproduce.</li>
+      <li>Estándar de facto en la industria: ETABS, SAP2000 (S2K), SAFE (F2K) usan la misma sintaxis.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Las 24 secciones canónicas (en orden)</h2>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ PROGRAM INFORMATION</span>
+      <h3>1. Identificación del programa que generó el archivo</h3>
+      <pre>  PROGRAM  "ETABS"  VERSION "21.2.0"</pre>
+      <div class="desc">Hekatan emite <code>"AWATIF"  VERSION "1.0.0"</code> aquí.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ CONTROLS</span>
+      <h3>2. Sistema de unidades y título</h3>
+      <pre>  UNITS  "Tonf"  "m"  "C"
+  TITLE2  "Mi modelo - Hekatan export"</pre>
+      <div class="desc">Las unidades aplican a TODOS los valores numéricos. El orden es <em>fuerza · longitud · temperatura</em>.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ STORIES - IN SEQUENCE FROM TOP</span>
+      <h3>3. Pisos del edificio (de arriba hacia abajo)</h3>
+      <pre>  STORY "Roof"   HEIGHT 3.0  MASTERSTORY "Yes"
+  STORY "Story3" HEIGHT 3.0  MASTERSTORY "No"
+  STORY "Story2" HEIGHT 3.0
+  STORY "Base"   ELEV 0</pre>
+      <div class="desc">Cada nodo se identifica luego por (POINT, STORY). MASTERSTORY indica si es plantilla para los demás.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ GRIDS</span>
+      <h3>4. Líneas de grilla X e Y</h3>
+      <pre>  GRID "G1"  GRIDTYPE "Cartesian"
+  GRID "G1"  X1  -10  X2  20  Y1  -8  Y2  16
+  GRID "G1"  GRIDLINETYPE "X" ID "A" ORDINATE 0
+  GRID "G1"  GRIDLINETYPE "Y" ID "1" ORDINATE 0</pre>
+      <div class="desc">Solo para visualización en ETABS. Hekatan no usa grids (modela por coordenadas directas).</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ DIAPHRAGM NAMES</span>
+      <h3>5. Definición de diafragmas (rígido / semirígido)</h3>
+      <pre>  DIAPHRAGM "D1"   TYPE RIGID
+  DIAPHRAGM "D2"   TYPE SEMIRIGID</pre>
+      <div class="desc">Acopla nodos del piso con constraint master-slave. <strong>Hekatan aún no implementa este constraint</strong> (ver slide 15).</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ MATERIAL PROPERTIES</span>
+      <h3>6. Propiedades de cada material</h3>
+      <pre>  MATERIAL  "A572Gr50"  TYPE "Steel"  GRADE "Grade 50"  WEIGHTPERVOLUME 7.849
+  MATERIAL  "A572Gr50"  SYMTYPE "Isotropic"  E 2.04E+07  U 0.3  A 1.17E-05
+  MATERIAL  "A572Gr50"  FY 35153  FU 45699
+  MATERIAL  "Conc4000"  TYPE "Concrete"  WEIGHTPERVOLUME 2.4
+  MATERIAL  "Conc4000"  SYMTYPE "Isotropic"  E 2,549,000  U 0.2  A 1E-05
+  MATERIAL  "Conc4000"  FC 2,812</pre>
+      <div class="desc">$E$ en tonf/m², $\gamma$ en tonf/m³. <code>U</code> = ν Poisson. <code>A</code> = $\alpha$ térmico. Hekatan detecta Steel vs Concrete por valor de E.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ FRAME SECTIONS</span>
+      <h3>7. Perfiles de columnas y vigas</h3>
+      <pre>  FRAMESECTION  "W14X84"  MATERIAL "A572Gr50"  SHAPE "Steel I/Wide Flange"  D 0.358  B 0.262  TF 0.0193  TW 0.0114
+  FRAMESECTION  "C30x30"  MATERIAL "Conc4000"  SHAPE "Concrete Rectangular"  D 0.30  B 0.30
+  FRAMESECTION  "HSS300x300x12"  MATERIAL "A572Gr50"  SHAPE "Steel Tube"  D 0.30  B 0.30  TF 0.012  TW 0.012</pre>
+      <div class="desc">Tipos comunes: <code>Steel I/Wide Flange</code>, <code>Steel Tube</code>, <code>Steel Pipe</code>, <code>Concrete Rectangular</code>, <code>Concrete Circle</code>. ETABS calcula automáticamente A, I, J, S desde D, B, TF, TW.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ POINT COORDINATES</span>
+      <h3>8. Nodos en planta (solo X, Y)</h3>
+      <pre>  POINT "1"   0     0
+  POINT "2"   5.0   0
+  POINT "3"   5.0   4.0
+  POINT "4"   0     4.0</pre>
+      <div class="desc">La <strong>Z (altura)</strong> NO se especifica aquí — viene del STORY al que se asigne el punto. Por eso un mismo POINT "1" puede representar nodos en diferentes pisos.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ LINE CONNECTIVITIES</span>
+      <h3>9. Conectividad de frames</h3>
+      <pre>  LINE  "C1"  COLUMN  "1"  "1"  1     # Columna: pt1=pt2, nStories=1
+  LINE  "B1"  BEAM    "1"  "2"  0     # Viga: del pt1 al pt2 en el mismo story
+  LINE  "D1"  BRACE   "1"  "2"  1     # Diagonal</pre>
+      <div class="desc">Para columnas, ambos extremos usan el mismo POINT (la Z viene de los STORYs consecutivos). Para vigas, los dos POINTs son distintos.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ AREA CONNECTIVITIES</span>
+      <h3>10. Conectividad de elementos shell (Q4)</h3>
+      <pre>  AREA  "F1"  FLOOR  4  "1"  "2"  "3"  "4"  0  0  0  0     # Losa
+  AREA  "W1"  PANEL  4  "1"  "2"  "2"  "1"  1  1  0  0     # Muro</pre>
+      <div class="desc">Losas (<code>FLOOR</code>) usan 4 puntos distintos en el mismo story. Muros (<code>PANEL</code>) usan 2 puntos repetidos con altura por nStories.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ POINT ASSIGNS</span>
+      <h3>11. Restricciones (apoyos) y masas adicionales</h3>
+      <pre>  POINTASSIGN  "1"  "Base"  RESTRAINT "UX UY UZ RX RY RZ"     # Empotrado
+  POINTASSIGN  "2"  "Base"  RESTRAINT "UX UY UZ"               # Articulado
+  POINTASSIGN  "1"  "Roof"  ADDMASS  500                       # Masa adicional</pre>
+      <div class="desc">Combinaciones: <code>"UX UY UZ"</code> = articulado, <code>"UX UY UZ RX RY RZ"</code> = empotrado, <code>"UZ"</code> = solo restringe vertical.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ LINE ASSIGNS</span>
+      <h3>12. Asignar sección y modificadores a frames</h3>
+      <pre>  LINEASSIGN  "C1"  "Story1"  SECTION "W14X84"  ANG 0  RIGIDZONE 1  RELEASE "M2I M3I"
+              MAXSTASPC 0.4  AUTOMESH "YES"  MESHATINTERSECTIONS "YES"
+              PROPERTYMODIFIERS "AREA 0.5 I33 0.7 I22 0.7"</pre>
+      <div class="desc">El frame en story X1 hereda sección, releases (rótulas), modificadores de inercia, etc. Un mismo LINE en distintos stories puede tener secciones diferentes.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ LOAD PATTERNS</span>
+      <h3>13. Casos de carga base</h3>
+      <pre>  LOADPATTERN "Dead"  TYPE "Dead"   SELFWEIGHT 1
+  LOADPATTERN "Live"  TYPE "Live"   SELFWEIGHT 0
+  LOADPATTERN "Ex"    TYPE "Quake"  SELFWEIGHT 0  AUTOLOAD "ASCE 7-22"</pre>
+      <div class="desc">Si <code>SELFWEIGHT=1</code>, ETABS suma el peso propio automáticamente. Hekatan exporta <code>SELFWEIGHT 0</code> para evitar doble conteo (ya incluye peso propio como POINTLOAD).</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ POINT OBJECT LOADS</span>
+      <h3>14. Cargas puntuales en nodos</h3>
+      <pre>  POINTLOAD  "5"  "Roof"  "Dead"  TYPE "FORCE"   FX 0  FY 0  FZ -50
+  POINTLOAD  "5"  "Roof"  "Dead"  TYPE "MOMENT"  MX 0  MY 12  MZ 0</pre>
+      <div class="desc">Cada nodo (POINT, STORY) puede recibir múltiples cargas. <code>FZ negativo</code> = hacia abajo. Las unidades coinciden con las del header CONTROLS.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ FRAME OBJECT LOADS</span>
+      <h3>15. Cargas distribuidas en frames</h3>
+      <pre>  LINELOAD  "B1"  "Story1"  "Dead"  TYPE "DISTRIBUTED"  DIR "Z"  FSTART -2.5  FEND -2.5
+  LINELOAD  "B1"  "Story1"  "Live"  TYPE "DISTRIBUTED"  DIR "Z"  FSTART -1.0  FEND -1.0</pre>
+      <div class="desc">Distribuidas constantes (<code>FSTART = FEND</code>) o trapezoidales. Hekatan las convierte a nodal equivalente.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ SHELL OBJECT LOADS</span>
+      <h3>16. Cargas distribuidas en shells</h3>
+      <pre>  SHELLLOAD  "F1"  "Story2"  "Dead"  TYPE "UNIFORM"  DIR "GRAV"  VAL -3.5</pre>
+      <div class="desc"><code>VAL</code> negativo = hacia abajo. <code>DIR "GRAV"</code> = global Z gravedad.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ MASS SOURCE</span>
+      <h3>17. Cómo construir M para análisis modal</h3>
+      <pre>  MASSSOURCE  "MS"  ELEMENTS "Yes"  ADDITIONAL "Yes"  LOADS "Yes"
+  MASSSOURCE  "MS"  LOADPAT "Dead"  SF 1
+  MASSSOURCE  "MS"  LOADPAT "Live"  SF 0.25</pre>
+      <div class="desc">La masa sale del peso propio (ELEMENTS) + masas extras (ADDITIONAL) + parte de cargas vivas (LOADS · SF 0.25 = 25% de la viva).</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ LOAD CASES</span>
+      <h3>18. Tipos de análisis a correr</h3>
+      <pre>  LOADCASE "Dead"   TYPE "Linear Static"  INITCOND "PRESET"
+  LOADCASE "Dead"   LOADPAT "Dead"  SF 1
+  LOADCASE "Modal"  TYPE "Modal - Eigen"  MAXMODES 12  MINMODES 1
+  LOADCASE "Ex_RS" TYPE "Response Spectrum"  MODALCASE "Modal"  MODALCOMBO "CQC"</pre>
+      <div class="desc">Cada LoadCase es una corrida independiente. Linear Static = $K\,u = F$. Modal = $(K-\omega^2 M)\phi = 0$. Response Spectrum = combinación modal con $S_a(T)$.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ LOAD COMBINATIONS</span>
+      <h3>19. Combinaciones de carga normativas</h3>
+      <pre>  COMBO "1.4D"      TYPE "Linear Add"
+  COMBO "1.4D"      LOADCASE "Dead"  SF 1.4
+  COMBO "1.2D+1.6L" TYPE "Linear Add"
+  COMBO "1.2D+1.6L" LOADCASE "Dead"  SF 1.2
+  COMBO "1.2D+1.6L" LOADCASE "Live"  SF 1.6</pre>
+      <div class="desc">Combinaciones ASCE 7-22 / NEC-SE-CG. Pueden ser Linear Add (simple), SRSS, Envelope. Hekatan emite las dos básicas para que ETABS pueda diseñar.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Cierre del archivo</h2>
+    <pre>  END
+$ END OF MODEL FILE</pre>
+    <p>Línea final obligatoria. Sin ella, ETABS rechaza el archivo.</p>
+  </section>
+
+  <section>
+    <h2>Tamaño típico</h2>
+    <table>
+      <tr><th>Modelo</th><th>Líneas</th><th>Tamaño .e2k</th><th>Equivalente .EDB</th></tr>
+      <tr><td>Cantilever simple (1 col, 10 elem)</td><td>~80</td><td>3 KB</td><td>120 KB</td></tr>
+      <tr><td>Pórtico 2D (3 vanos × 5 pisos)</td><td>~600</td><td>25 KB</td><td>800 KB</td></tr>
+      <tr><td>Edificio aporticado (5×4 vanos × 10 pisos + losas)</td><td>~5000</td><td>180 KB</td><td>4 MB</td></tr>
+      <tr><td>Estadio o torre alta</td><td>~50000</td><td>2 MB</td><td>40 MB</td></tr>
+    </table>
+    <p style="font-size:0.85rem;color:var(--ink-soft);font-style:italic">
+      El .e2k es ~25× más liviano que el .EDB porque omite resultados, mallas auto-generadas y metadata gráfica. Para distribuir por correo o git, siempre prefieras .e2k.
+    </p>
+  </section>
+
+  <div class="quote">
+    <strong>Para llevarse:</strong> el <code>.e2k</code> no es magia binaria — es texto plano con 19 secciones bien definidas. Si entiendes la sintaxis, puedes leer / escribir / parchar archivos a mano. Hekatan implementa <code>parseE2k()</code> y <code>exportE2k()</code> en TypeScript siguiendo exactamente esta estructura. <em>El round-trip Hekatan ↔ ETABS es solo manipulación de strings disciplinada.</em>
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 11B · ANATOMÍA DEL .E2K
+  </div>
+
+</div>
+
+<script src="./shared/nav.js"></script>
+</body>
+</html>

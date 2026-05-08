@@ -1,0 +1,14 @@
+{
+    "shell_type":  "ShellThin",
+    "extracted_at":  "2026-05-07 19:10:00",
+    "units":  "kN, m, C",
+    "joint_displacements":  [
+
+                            ],
+    "joint_reactions":  [
+
+                        ],
+    "frame_forces":  [
+
+                     ]
+}

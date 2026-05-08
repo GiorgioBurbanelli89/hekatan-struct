@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>00 · Portada · Hekatan Struct</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<style>
+  .tema-card {
+    background: var(--ink);
+    color: var(--paper);
+    border: 2px solid var(--gold);
+    border-radius: 6px;
+    padding: 22px 26px;
+    margin: 28px 0 14px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  }
+  .tema-card .tema-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.32em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .tema-card .tema-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.55rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--paper);
+  }
+  .tema-card .tema-sub {
+    font-style: italic;
+    font-size: 0.95rem;
+    margin-top: 10px;
+    color: #d6c89d;
+  }
+
+  .portada-hero {
+    text-align: center;
+    padding: 30px 20px 14px;
+  }
+  .portada-hero h1 {
+    font-size: 2.6rem;
+    line-height: 1.05;
+  }
+  .portada-hero .tagline {
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--ink-soft);
+    margin-top: 14px;
+    line-height: 1.4;
+  }
+  .author-block {
+    margin-top: 24px;
+    padding: 18px;
+    border: 1.5px solid var(--ink);
+    border-radius: 4px;
+    background: var(--paper-dark);
+  }
+  .author-block .role {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .author-block .name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-top: 6px;
+  }
+  .author-block .institution {
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+  .author-block .date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--gold);
+    margin-top: 10px;
+  }
+
+  .stack-summary {
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .stack-pill {
+    text-align: center;
+    padding: 10px 6px;
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+  }
+  .stack-pill .icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="portada-hero">
+    <div class="pre-title">Charla invitada · Maestría UPS · Aplicaciones Computacionales</div>
+    <h1>Hekatan Struct</h1>
+    <div class="tagline" style="font-style:italic;font-size:1rem;color:var(--ink-soft);margin-top:10px;">
+      Una de las herramientas del ecosistema <strong style="color:var(--gold)">Hekatan Computers</strong>
+    </div>
+  </div>
+
+  <div class="tema-card">
+    <div class="tema-tag">Tema de la sesión</div>
+    <div class="tema-text">
+      Herramientas computacionales para el análisis sísmico:<br>
+      del Método de Elementos Finitos al workspace web
+    </div>
+    <div class="tema-sub">
+      Funciones de forma &nbsp;➜&nbsp; $K_e$, $M_e$ &nbsp;➜&nbsp; $K\,u = F$ y $(K - \omega^2 M)\phi = 0$ &nbsp;➜&nbsp; Pórtico 3D Paz &amp; Kim 6.3
+    </div>
+  </div>
+
+  <div class="author-block">
+    <div class="role">Ponente invitado · Fundador de Hekatan Computers</div>
+    <div class="name">Ing. Jorge Burbano</div>
+    <div class="institution">Hekatan Computers &mdash; suite de herramientas computacionales para análisis estructural</div>
+    <div class="institution"><em>Sesión presidida por Dra. Betzabeth Suquillo · Maestría UPS</em></div>
+    <div class="date">Viernes 8 de mayo de 2026 &middot; 18:00 &middot; Vía Zoom (CEDIA)</div>
+  </div>
+
+  <section style="margin-top:28px">
+    <h2>Stack tecnológico</h2>
+    <div class="stack-summary">
+      <div class="stack-pill"><span class="icon">📘</span>Paz &amp; Kim<br>6ª ed. Springer</div>
+      <div class="stack-pill"><span class="icon">⚙️</span>C++ Eigen<br>solver FEM</div>
+      <div class="stack-pill"><span class="icon">🌐</span>WebAssembly<br>navegador</div>
+      <div class="stack-pill"><span class="icon">📐</span>Octave<br>scripts libro</div>
+      <div class="stack-pill"><span class="icon">🏢</span>ETABS · SAP<br>validación</div>
+      <div class="stack-pill"><span class="icon">🔬</span>OpenSees<br>referencia</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Agenda &mdash; 90 a 120 min + Q&amp;A</h2>
+    <ol style="margin-left: 20px; line-height: 1.55;">
+      <li><strong>Fundamento del FEM</strong> (~15 min) — discretización, $K\,u = F$, convergencia con sliders.</li>
+      <li><strong>Derivación paso a paso</strong> (~35 min) — funciones de forma, coordenadas naturales, Jacobiano, $K_e$ y $M_e$ con cuadratura de Gauss.</li>
+      <li><strong>De la fórmula al código</strong> (~15 min) — MATLAB ≡ C++ ≡ WebAssembly: misma matemática, distinta velocidad.</li>
+      <li><strong>Demo en vivo Paz &amp; Kim 6.3</strong> (~15 min) — pórtico 3D, análisis modal, validación cruzada con ETABS/SAP/OpenSees.</li>
+      <li><strong>Hekatan Lab + workspace</strong> (~10 min) — Octave en el navegador, cierre con vista del ecosistema.</li>
+    </ol>
+    <p style="font-size:0.85rem;color:var(--ink-soft);font-style:italic;margin-top:8px">
+      Objetivo: que vean cómo se construye, desde cero, una herramienta computacional moderna para análisis sísmico.
+    </p>
+  </section>
+
+  <div class="quote">
+    El FEM <em>no es magia</em>. Es matemática rigurosa de hace 70 años + bucles que un computador ejecuta rápido. Lo que les voy a mostrar lo entendieron Galerkin (1909), Wilson (1971) y Bathe (1976) <strong>a mano</strong> — el software solo automatiza la suma.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · MAESTRÍA UPS · 8 MAYO 2026
+  </div>
+
+</div>
+
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+<script src="./shared/nav.js"></script>
+</body>
+</html>

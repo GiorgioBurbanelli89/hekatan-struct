@@ -7,3 +7,32 @@
   right: 0;
   z-index: 1; /* Always at the back */
 }
+
+/* ── Mobile portrait — el WebGL canvas ocupa SÓLO la mitad inferior
+ * (50vh-100vh). La mitad superior está reservada para los panes
+ * Settings + Tools. El ResizeObserver del viewer detecta el cambio
+ * y resizea automáticamente el renderer + cámara, así el modelo 3D
+ * se renderiza centrado dentro del área visible (no detrás de los
+ * paneles). */
+@media (max-width: 600px) and (orientation: portrait) {
+  #viewer {
+    top: 50vh;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50vh;
+  }
+}
+
+/* ── Mobile landscape — canvas ocupa la mitad izquierda (0-55vw).
+ * La mitad derecha está reservada para los panes Settings + Tools
+ * apilados. El renderer auto-resizea al área visible. */
+@media (max-height: 500px) and (orientation: landscape) {
+  #viewer {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 45vw;
+    width: 55vw;
+  }
+}

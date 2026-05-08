@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06 · Matriz de masa y análisis dinámico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+<style>
+  .step-card {
+    background: var(--paper-dark);
+    border: 1.5px solid var(--ink);
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin: 12px 0;
+    position: relative;
+  }
+  .step-card .step-tag {
+    position: absolute;
+    top: -10px; left: 14px;
+    background: var(--gold);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    padding: 2px 10px;
+    border-radius: 3px;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+  }
+  .step-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--blue);
+    margin: 4px 0 6px;
+  }
+  .step-card .note {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  .compare-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 10px 0;
+  }
+  .compare-2 > div {
+    background: var(--paper-dark);
+    border: 1px solid var(--ink-fade);
+    border-radius: 4px;
+    padding: 12px 14px;
+  }
+  .compare-2 h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin: 0 0 6px;
+  }
+
+  .seismic {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 14px 18px;
+    border-radius: 4px;
+    margin: 14px 0;
+    border-left: 4px solid var(--gold);
+  }
+  .seismic strong { color: var(--gold); }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 06 · Bloque 2 — para el análisis dinámico</div>
+    <h1>Matriz de masa $M_e$ y análisis modal sísmico</h1>
+    <div class="subtitle">Misma maquinaria del FEM → ahora aplicada a la <em>inercia</em>. Sin $M_e$ no hay frecuencias, modos ni espectros.</div>
+  </header>
+
+  <section>
+    <h2>De estática a dinámica — la ecuación cambia</h2>
+    <div class="compare-2">
+      <div>
+        <h4>Estática</h4>
+        $$ \mathbf{K}\,\mathbf{u} = \mathbf{F} $$
+        <p style="font-size:0.85rem;color:var(--ink-soft);margin:4px 0 0">Solo equilibrio elástico.</p>
+      </div>
+      <div>
+        <h4>Dinámica</h4>
+        $$ \mathbf{M}\,\ddot{\mathbf{u}} + \mathbf{C}\,\dot{\mathbf{u}} + \mathbf{K}\,\mathbf{u} = \mathbf{F}(t) $$
+        <p style="font-size:0.85rem;color:var(--ink-soft);margin:4px 0 0">Inercia + amortiguamiento + rigidez.</p>
+      </div>
+    </div>
+    <p>Para análisis modal y sísmico necesitamos las dos matrices globales: $\mathbf{K}$ (ya derivada) y $\mathbf{M}$ (la derivamos ahora).</p>
+  </section>
+
+  <section>
+    <h2>$M_e$ &mdash; mismo procedimiento que $K_e$</h2>
+
+    <div class="step-card">
+      <span class="step-tag">PASO 1 · ENERGÍA CINÉTICA</span>
+      <h3>De $T$ sale $M_e$</h3>
+      $$ T_e = \tfrac{1}{2}\,\dot{\mathbf{q}}^T\,\mathbf{M}_e\,\dot{\mathbf{q}}, \qquad \mathbf{M}_e = \int_{V_e} \rho\,\mathbf{N}^T\,\mathbf{N}\,dV $$
+      <p class="note">Note: aparecen las <strong>mismas $\mathbf{N}$</strong> de las funciones de forma, no sus derivadas. Por eso $\mathbf{M}_e$ se llama "consistente": consistente con la cinemática del elemento.</p>
+    </div>
+
+    <div class="step-card">
+      <span class="step-tag">PASO 2 · CAMBIO DE VARIABLE</span>
+      <h3>A coordenadas naturales</h3>
+      $$ \mathbf{M}_e = \int_{-1}^{+1} \rho\,A\,\mathbf{N}^T\,\mathbf{N}\,J\,d\xi $$
+      <p>Para una viga, $\rho A$ (masa por unidad de longitud) sale del producto $\rho \times A$ del material y la sección.</p>
+    </div>
+
+    <div class="step-card">
+      <span class="step-tag">PASO 3 · CUADRATURA</span>
+      <h3>$\mathbf{N}^T \mathbf{N}$ es polinomio grado 6 en $\xi$</h3>
+      <p>(Hermite cúbica × Hermite cúbica = grado 6). Con <strong>4 puntos de Gauss</strong> ($n = 4$ es exacto hasta grado $2n-1 = 7$), la integral se evalúa <em>exactamente</em>.</p>
+    </div>
+
+    <div class="step-card">
+      <span class="step-tag">PASO 4 · RESULTADO</span>
+      <h3>$\mathbf{M}_e$ consistente para viga Bernoulli</h3>
+      $$ \mathbf{M}_e^{\text{cons}} = \frac{\rho A L}{420}\begin{bmatrix} 156 & 22L & 54 & -13L \\ 22L & 4L^2 & 13L & -3L^2 \\ 54 & 13L & 156 & -22L \\ -13L & -3L^2 & -22L & 4L^2 \end{bmatrix} $$
+      <p class="note">El "420" del denominador sale del producto Hermite×Hermite. Mismo orden de matriz que $\mathbf{K}_e$ (4×4) para que se acoplen al ensamblar.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ejemplo numérico interactivo &mdash; mueve los sliders</h2>
+    <p>Cambia la densidad $\rho$, el área $A$ y la longitud $L$, y observa cómo se reconstruye $\mathbf{M}_e$ en vivo. Sistema: $\rho$ en kgf·s²/m⁴ (densidad másica), $A$ en cm², $L$ en m, resultado en <strong>tonf·s²/m</strong>.</p>
+
+    <div class="controls">
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label"><span class="symbol">ρ</span> Densidad másica (kgf·s²/m⁴)</span>
+          <span id="m-rho-val" class="slider-value">800</span>
+        </div>
+        <input type="range" id="m-rho-slider" min="200" max="800" step="50" value="800">
+        <div class="slider-hint">↞ aluminio ~275 · acero ~800 ↠</div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label"><span class="symbol">A</span> Área de sección (cm²)</span>
+          <span id="m-a-val" class="slider-value">160</span>
+        </div>
+        <input type="range" id="m-a-slider" min="20" max="500" step="10" value="160">
+        <div class="slider-hint">↞ pequeña · grande ↠</div>
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-header">
+          <span class="slider-label"><span class="symbol">L</span> Longitud del elemento (m)</span>
+          <span id="m-l-val" class="slider-value">5.0</span>
+        </div>
+        <input type="range" id="m-l-slider" min="1" max="10" step="0.5" value="5">
+        <div class="slider-hint">↞ corto · largo ↠</div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <span class="step-tag">PREFACTOR ρAL/420</span>
+      <h3>Cálculo paso a paso</h3>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.92rem;line-height:1.7;color:var(--ink);background:var(--paper);padding:12px 16px;border-radius:4px;border:1px solid var(--ink-fade)">
+        ρAL/420 &nbsp;=&nbsp; (<span id="m-rho" style="color:var(--blue);font-weight:700">800</span> &times; <span id="m-Am2" style="color:var(--blue);font-weight:700">0.0160</span> &times; <span id="m-Lm" style="color:var(--blue);font-weight:700">5.00</span>) / 420<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp; <span id="m-num" style="color:var(--gold)">64.000</span> / 420<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp; <strong id="m-pref" style="color:var(--green);font-size:1.05rem">0.1524 tonf·s²/m</strong>
+      </div>
+      <p class="note">Cada componente de $\mathbf{M}_e$ se obtiene multiplicando este prefactor por el coeficiente entero (156, 22L, 4L², ...). Recordatorio: ρ en kgf·s²/m⁴, A se convierte a m² (÷10000).</p>
+    </div>
+
+    <div class="step-card">
+      <span class="step-tag">VALORES NUMÉRICOS</span>
+      <h3>$\mathbf{M}_e$ &mdash; matriz 4×4 reconstruida en vivo</h3>
+      <div style="overflow-x:auto">
+        <table id="m-matrix" style="margin:0;font-family:'JetBrains Mono',monospace;font-size:0.88rem">
+          <thead>
+            <tr>
+              <th></th>
+              <th>v₁</th>
+              <th>θ₁</th>
+              <th>v₂</th>
+              <th>θ₂</th>
+            </tr>
+          </thead>
+          <tbody id="m-matrix-body"></tbody>
+        </table>
+      </div>
+      <p class="note">Filas/columnas <strong>v</strong> en <strong>tonf·s²/m</strong> (masa traslacional), filas/columnas <strong>θ</strong> en <strong>tonf·s²·m</strong> (inercia rotacional). $\mathbf{M}_e$ es <em>simétrica y definida positiva</em> (la energía cinética nunca es negativa).</p>
+    </div>
+
+    <div id="m-explanation" class="explanation-box" style="margin-top:14px"></div>
+  </section>
+
+  <section>
+    <h2>Consistente vs. concentrada (lumped)</h2>
+    <div class="compare-2">
+      <div>
+        <h4>Consistente (mejor precisión)</h4>
+        $$ \mathbf{M}_e^{\text{cons}} = \frac{\rho A L}{420}[\ldots] $$
+        <p style="font-size:0.85rem">Llena la matriz, integral exacta. Frecuencias <em>menos</em> sobreestimadas. Lo que usa Hekatan, ETABS y SAP por defecto.</p>
+      </div>
+      <div>
+        <h4>Concentrada / Diagonal (más rápida)</h4>
+        $$ \mathbf{M}_e^{\text{lump}} = \frac{\rho A L}{2}\,\text{diag}(1,\,0,\,1,\,0) $$
+        <p style="font-size:0.85rem">Toda la masa en los nodos, rotaciones sin masa. Excelente para integración explícita en transitorios, peor en modal.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Análisis modal &mdash; el problema de autovalores</h2>
+    <div class="step-card">
+      <span class="step-tag">ECUACIÓN GOBERNANTE</span>
+      <h3>Modos naturales sin amortiguamiento</h3>
+      <p>Buscando soluciones $\mathbf{u}(t) = \boldsymbol{\phi}\,\sin(\omega t)$ en la ecuación dinámica sin carga:</p>
+      $$ (\mathbf{K} - \omega^2\,\mathbf{M})\,\boldsymbol{\phi} = \mathbf{0} $$
+      <p>Cada solución $(\omega_i, \boldsymbol{\phi}_i)$ es un <strong>modo natural</strong>: una frecuencia y una forma de vibrar. La estructura tiene tantos modos como GDL libres.</p>
+    </div>
+
+    <div class="step-card">
+      <span class="step-tag">EJEMPLO PAZ &amp; KIM 6.3</span>
+      <h3>6 modos del space frame W24×146 / W14×84</h3>
+      <table style="margin:0;font-size:0.86rem">
+        <tr><th>Modo</th><th>$f$ (Hz)</th><th>$T$ (s)</th><th>Comportamiento</th></tr>
+        <tr><td>1</td><td>9.6780</td><td>0.1033</td><td>Traslación $u_y$ (99.8 %)</td></tr>
+        <tr><td>2</td><td>16.9874</td><td>0.0589</td><td>Rotación $r_z$ torsional</td></tr>
+        <tr><td>3</td><td>26.6149</td><td>0.0376</td><td>Traslación $u_x$ (94.3 %)</td></tr>
+        <tr><td>4</td><td>29.9497</td><td>0.0334</td><td>Antisimétrico</td></tr>
+        <tr><td>5</td><td>33.9929</td><td>0.0294</td><td>Rotación $r_z$ (14.2 %)</td></tr>
+        <tr><td>6</td><td>44.9332</td><td>0.0223</td><td>Traslación $u_z$ (26.9 %)</td></tr>
+      </table>
+      <p class="note">Estas frecuencias salen de resolver $(K - \omega^2 M)\phi = 0$ con $K$ y $M$ ensambladas a partir de los $K_e$ y $M_e$ derivados arriba. Son las que validamos contra ETABS, SAP, OpenSees y Python+SciPy.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>De los modos al análisis sísmico (NEC-SE-DS, ASCE 7)</h2>
+    <div class="seismic">
+      <strong>1.</strong> &nbsp;Calcular modos $\omega_i, \boldsymbol{\phi}_i$ con $(K - \omega_i^2 M)\boldsymbol{\phi}_i = 0$.<br><br>
+      <strong>2.</strong> &nbsp;Calcular masa participante por modo $\Gamma_i = \boldsymbol{\phi}_i^T\,\mathbf{M}\,\mathbf{1}$.<br><br>
+      <strong>3.</strong> &nbsp;Para cada modo, leer $S_a(T_i)$ del espectro de respuesta (NEC-SE-DS, ASCE 7-22, Eurocódigo 8).<br><br>
+      <strong>4.</strong> &nbsp;Fuerza modal $\mathbf{F}_i = \Gamma_i\,S_a(T_i)\,\mathbf{M}\,\boldsymbol{\phi}_i$. Resolver $\mathbf{K}\,\mathbf{u}_i = \mathbf{F}_i$.<br><br>
+      <strong>5.</strong> &nbsp;Combinar respuestas con SRSS o CQC. <em>Ese es el "análisis sísmico modal espectral" que pide la norma.</em>
+    </div>
+    <p>Cada paso, internamente, es una operación de álgebra lineal sobre las matrices $K$ y $M$ que acabamos de derivar. <strong>El criterio del ingeniero está en los pasos 3 y 5</strong> — qué espectro usar, qué combinación, qué reducción $R$. La matemática la resuelve la máquina.</p>
+  </section>
+
+  <div class="quote">
+    <strong>Mensaje clave para sísmico:</strong> $K$ y $M$ son las dos huellas del modelo. Una vez derivadas, todo el análisis modal espectral, time-history y push-over se reduce a operaciones algebraicas. <em>El ingeniero define el modelo y elige el espectro &mdash; el computador solo multiplica matrices.</em>
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 06 · M_e · (K − ω²M)φ = 0
+  </div>
+
+</div>
+
+<script>
+// ────────────────────────────────────────────────────────────────
+// Slide 06 — Matriz de masa M_e en vivo
+//   Unidades:
+//     ρ : kgf·s²/m⁴  (densidad másica, p.ej. acero ≈ 800)
+//     A : cm²         (luego convertida a m²: A_m2 = A_cm2 / 1e4)
+//     L : m
+//   Prefactor ρAL/420 en tonf·s²/m (1 tonf = 1000 kgf)
+//     pref = (ρ × A_m² × L) / 420 / 1000      [tonf·s²/m]
+// ────────────────────────────────────────────────────────────────
+const mRho = document.getElementById('m-rho-slider');
+const mA   = document.getElementById('m-a-slider');
+const mL   = document.getElementById('m-l-slider');
+
+const mRhoVal = document.getElementById('m-rho-val');
+const mAVal   = document.getElementById('m-a-val');
+const mLVal   = document.getElementById('m-l-val');
+
+const mRhoSpan = document.getElementById('m-rho');
+const mAm2Span = document.getElementById('m-Am2');
+const mLmSpan  = document.getElementById('m-Lm');
+const mNumSpan = document.getElementById('m-num');
+const mPrefSpan= document.getElementById('m-pref');
+
+const mMatrixBody = document.getElementById('m-matrix-body');
+const mExplanation= document.getElementById('m-explanation');
+
+function fmtNumM(v) {
+  if (Math.abs(v) >= 1000) return v.toFixed(0);
+  if (Math.abs(v) >= 100)  return v.toFixed(1);
+  if (Math.abs(v) >= 10)   return v.toFixed(2);
+  if (Math.abs(v) >= 1)    return v.toFixed(3);
+  if (Math.abs(v) >= 0.01) return v.toFixed(4);
+  if (Math.abs(v) >= 1e-6) return v.toExponential(2);
+  return "0";
+}
+
+function mUpdate() {
+  const rho   = parseFloat(mRho.value);
+  const A_cm2 = parseFloat(mA.value);
+  const L_m   = parseFloat(mL.value);
+  const A_m2  = A_cm2 / 1e4;
+
+  mRhoVal.textContent = rho.toString();
+  mAVal.textContent   = A_cm2.toString();
+  mLVal.textContent   = L_m.toFixed(1);
+
+  mRhoSpan.textContent = rho.toString();
+  mAm2Span.textContent = A_m2.toFixed(4);
+  mLmSpan.textContent  = L_m.toFixed(2);
+
+  // ρ A L  en kgf·s²/m  (porque ρ tiene s²/m⁴, A m², L m → s²·m·kgf)
+  const rhoAL = rho * A_m2 * L_m;
+  mNumSpan.textContent = rhoAL.toFixed(3);
+
+  // Prefactor en tonf·s²/m: divide por 420 y por 1000 (kgf → tonf)
+  const pref = rhoAL / 420 / 1000;
+  mPrefSpan.textContent = fmtNumM(pref) + " tonf·s²/m";
+
+  // Matriz simbólica M_e:
+  //   [156,    22L,      54,    -13L  ]
+  //   [22L,    4L²,     13L,    -3L²  ]
+  //   [54,     13L,     156,   -22L  ]
+  //   [-13L,  -3L²,    -22L,    4L²  ]
+  // Los componentes con L o L² introducen unidades extras de m (rotacional).
+  const symbolic = [
+    [156,        22*L_m,       54,         -13*L_m      ],
+    [22*L_m,     4*L_m*L_m,   13*L_m,     -3*L_m*L_m   ],
+    [54,         13*L_m,       156,       -22*L_m      ],
+    [-13*L_m,   -3*L_m*L_m,   -22*L_m,    4*L_m*L_m   ],
+  ];
+
+  const labels = ["v₁", "θ₁", "v₂", "θ₂"];
+  let html = "";
+  for (let i = 0; i < 4; i++) {
+    html += "<tr>";
+    html += `<th style="background:var(--paper-dark);color:var(--blue)">${labels[i]}</th>`;
+    for (let j = 0; j < 4; j++) {
+      const val = pref * symbolic[i][j];
+      const isDiag = i === j;
+      const color = val > 0 ? "var(--green)" : (val < 0 ? "var(--red)" : "var(--ink-fade)");
+      const fontWeight = isDiag ? "700" : "500";
+      html += `<td style="color:${color};font-weight:${fontWeight};text-align:center">${fmtNumM(val)}</td>`;
+    }
+    html += "</tr>";
+  }
+  mMatrixBody.innerHTML = html;
+
+  // Explicación dinámica
+  const massElement = rhoAL / 1000; // tonf·s²/m total
+  const m11 = pref * 156;
+  const m22 = pref * 4 * L_m * L_m;
+  mExplanation.innerHTML =
+    `Masa total del elemento = $\\rho A L = ${massElement.toFixed(4)}$ tonf·s²/m. ` +
+    `M(1,1) = 156·prefactor = <em>${fmtNumM(m11)} tonf·s²/m</em> (masa traslacional en el nodo 1) y ` +
+    `M(2,2) = 4·L²·prefactor = <em>${fmtNumM(m22)} tonf·s²·m</em> (inercia rotacional). ` +
+    `Notar que los términos fuera de la diagonal acoplan v y θ &mdash; eso es lo que distingue la <strong>matriz consistente</strong> de una matriz <em>lumped</em> donde los acoples son cero.`;
+  if (window.MathJax && window.MathJax.typesetPromise) {
+    window.MathJax.typesetPromise([mExplanation]).catch(() => {});
+  }
+}
+
+mRho.addEventListener("input", mUpdate);
+mA.addEventListener("input",   mUpdate);
+mL.addEventListener("input",   mUpdate);
+mUpdate();
+</script>
+
+<script src="./shared/nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12b · Paz 13.1 — Space Frame 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+<style>
+  .step-card {
+    background: var(--paper-dark);
+    border: 1.5px solid var(--ink);
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin: 12px 0;
+    position: relative;
+  }
+  .step-card .step-tag {
+    position: absolute;
+    top: -10px; left: 14px;
+    background: var(--gold);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    padding: 2px 10px;
+    border-radius: 3px;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+  }
+  .step-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--blue);
+    margin: 4px 0 6px;
+  }
+  .compare-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 8px 0;
+  }
+  .compare-2 > div {
+    background: var(--paper);
+    border: 1px solid var(--ink-fade);
+    border-radius: 3px;
+    padding: 10px 14px;
+  }
+  .compare-2 h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.16em;
+    color: var(--gold);
+    margin: 0 0 4px;
+    text-transform: uppercase;
+  }
+  .matrix-small {
+    font-size: 0.78rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 12b · Bloque 4 — ejemplo del libro</div>
+    <h1>Paz &amp; Kim Capítulo 13.1 &mdash; Space Frame 3D</h1>
+    <div class="subtitle">Pórtico espacial 5 nodos · 4 elementos · matriz consistente · F = 5000 lb impulso 0.1 s en dirección Z</div>
+  </header>
+
+  <section>
+    <h2>El problema (literal del libro)</h2>
+    <p>Pórtico tridimensional con <strong>4 elementos viga</strong> y <strong>5 nodos</strong>: nodo 1 central libre, nodos 2-5 empotrados en los extremos.</p>
+
+    <div class="compare-2">
+      <div>
+        <h4>Geometría de nodos (in)</h4>
+        <table style="margin:0;font-size:0.85rem">
+          <tr><th>Nodo</th><th>X</th><th>Y</th><th>Z</th></tr>
+          <tr><td>1</td><td>0</td><td>0</td><td>0</td></tr>
+          <tr><td>2</td><td>0</td><td>0</td><td>−200</td></tr>
+          <tr><td>3</td><td>0</td><td>200</td><td>0</td></tr>
+          <tr><td>4</td><td>−200</td><td>0</td><td>0</td></tr>
+          <tr><td>5</td><td>0</td><td>−200</td><td>0</td></tr>
+        </table>
+      </div>
+      <div>
+        <h4>Conectividad (4 elementos)</h4>
+        <table style="margin:0;font-size:0.85rem">
+          <tr><th>Elem</th><th>i</th><th>j</th><th>tipo</th></tr>
+          <tr><td>1</td><td>1</td><td>2</td><td>Vert. inf.</td></tr>
+          <tr><td>2</td><td>1</td><td>3</td><td>Lateral Y+</td></tr>
+          <tr><td>3</td><td>1</td><td>4</td><td>Lateral X−</td></tr>
+          <tr><td>4</td><td>1</td><td>5</td><td>Lateral Y−</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <p>Total: <strong>30 GDL</strong> (5 nodos × 6 GDL/nodo). Restringidos: <strong>24</strong> (nodos 2-5 empotrados). <strong>Libres: 6</strong> (nodo 1 con $u_x, u_y, u_z, r_x, r_y, r_z$).</p>
+  </section>
+
+  <section>
+    <h2>Datos de los miembros (Tabla 13.1)</h2>
+    <table>
+      <tr>
+        <th>Propiedad</th>
+        <th>Miembros 1, 3<br><em>(Iz=Iy grandes)</em></th>
+        <th>Miembros 2, 4<br><em>(Iz=Iy menores)</em></th>
+      </tr>
+      <tr><td>Módulo de elasticidad $E$ (psi)</td><td>$30\times10^6$</td><td>$30\times10^6$</td></tr>
+      <tr><td>Módulo de rigidez $G$ (psi)</td><td>$12\times10^6$</td><td>$12\times10^6$</td></tr>
+      <tr><td>Masa distribuida $\bar m$ (lb·s²/in/in)</td><td>0.2</td><td>0.1</td></tr>
+      <tr><td>$I_y$ — momento $y$ (in⁴)</td><td>200</td><td>64</td></tr>
+      <tr><td>$I_z$ — momento $z$ (in⁴)</td><td>200</td><td>64</td></tr>
+      <tr><td>$J$ — torsión (in⁴)</td><td>40.0</td><td>12.8</td></tr>
+      <tr><td>$A$ — área (in²)</td><td>50</td><td>28</td></tr>
+      <tr><td>$I_0$ — momento polar (in⁴)</td><td>205</td><td>68</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Paso 1 &mdash; Matriz de rigidez del elemento (simbólica)</h2>
+    <p>Para cada elemento del space frame, la matriz $\mathbf{K}_e$ es <strong>12×12</strong> (6 GDL por nodo × 2 nodos). Sus 4 bloques diagonales 6×6 contienen las contribuciones axial, flexional (2 ejes) y torsional:</p>
+
+    <div class="step-card">
+      <span class="step-tag">FORMA SIMBÓLICA · 12×12</span>
+      <h3>$\mathbf{K}_e$ en coordenadas locales</h3>
+      <p style="font-size:0.88rem;margin:0 0 6px">Con $L$ longitud, $E$ y $G$ módulos, $A$ área, $I_y, I_z$ inercias, $J$ torsión:</p>
+      <div class="matrix-small">
+        $$ \mathbf{K}_e = \begin{bmatrix} \dfrac{EA}{L} & 0 & 0 & 0 & 0 & 0 & -\dfrac{EA}{L} & 0 & 0 & 0 & 0 & 0 \\ 0 & \dfrac{12EI_z}{L^3} & 0 & 0 & 0 & \dfrac{6EI_z}{L^2} & 0 & -\dfrac{12EI_z}{L^3} & 0 & 0 & 0 & \dfrac{6EI_z}{L^2} \\ 0 & 0 & \dfrac{12EI_y}{L^3} & 0 & -\dfrac{6EI_y}{L^2} & 0 & 0 & 0 & -\dfrac{12EI_y}{L^3} & 0 & -\dfrac{6EI_y}{L^2} & 0 \\ 0 & 0 & 0 & \dfrac{GJ}{L} & 0 & 0 & 0 & 0 & 0 & -\dfrac{GJ}{L} & 0 & 0 \\ \cdots & \cdots & \cdots & \cdots & \cdots & \cdots & \cdots & \cdots & \cdots & \cdots & \cdots & \cdots \end{bmatrix} $$
+      </div>
+      <p style="font-size:0.85rem;color:var(--ink-soft);margin-top:6px;font-style:italic">
+        Las 4 contribuciones desacopladas: <strong>axial</strong> $EA/L$ · <strong>flexión Z</strong> $12EI_z/L^3$ · <strong>flexión Y</strong> $12EI_y/L^3$ · <strong>torsión</strong> $GJ/L$.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Paso 2 &mdash; Matriz de rigidez numérica (Miembro 1, $L=200$ in)</h2>
+    <p>Sustituyendo los valores de Miembros 1, 3:</p>
+
+    <div class="compare-2">
+      <div>
+        <h4>Coeficientes principales (lb, lb·in/rad)</h4>
+        <table style="margin:0;font-size:0.85rem">
+          <tr><td>$EA/L$</td><td>$30\!\cdot\!10^6 \cdot 50 / 200$</td><td>$= 7.5\!\cdot\!10^6$</td></tr>
+          <tr><td>$12EI_z/L^3$</td><td>$12 \cdot 30\!\cdot\!10^6 \cdot 200 / 200^3$</td><td>$= 9{,}000$</td></tr>
+          <tr><td>$12EI_y/L^3$</td><td>idem</td><td>$= 9{,}000$</td></tr>
+          <tr><td>$GJ/L$</td><td>$12\!\cdot\!10^6 \cdot 40 / 200$</td><td>$= 2.4\!\cdot\!10^6$</td></tr>
+          <tr><td>$6EI_z/L^2$</td><td>$6 \cdot 30\!\cdot\!10^6 \cdot 200 / 200^2$</td><td>$= 900{,}000$</td></tr>
+          <tr><td>$4EI_z/L$</td><td>$4 \cdot 30\!\cdot\!10^6 \cdot 200 / 200$</td><td>$= 120\!\cdot\!10^6$</td></tr>
+        </table>
+      </div>
+      <div>
+        <h4>Lo que pasa al ensamblar</h4>
+        <p style="font-size:0.85rem">Cada $\mathbf{K}_e$ (12×12, locales) se transforma a globales con $\mathbf{T}$ (orientación del elemento) y se ensambla en $\mathbf{K}$ (30×30):</p>
+        $$ \mathbf{K}^{\text{glob}}_e = \mathbf{T}^T\,\mathbf{K}^{\text{loc}}_e\,\mathbf{T} $$
+        $$ \mathbf{K}_{\text{global}} = \sum_{e=1}^{4} \mathbf{A}_e^T\,\mathbf{K}^{\text{glob}}_e\,\mathbf{A}_e $$
+        <p style="font-size:0.82rem;color:var(--ink-soft);margin-top:4px">
+          Restringimos los 24 GDL fijos → quedan 6×6.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Paso 3 &mdash; Matriz de masa consistente (simbólica)</h2>
+    <p>Para análisis dinámico, $\mathbf{M}_e$ del elemento (Paz, ec. 13.25):</p>
+    <div class="step-card">
+      <span class="step-tag">M_e CONSISTENTE · 12×12</span>
+      $$ \mathbf{M}_e = \dfrac{\bar m\,L}{420}\!\begin{bmatrix} 140 & 0 & 0 & 0 & 0 & 0 & 70 & 0 & 0 & 0 & 0 & 0 \\ 0 & 156 & 0 & 0 & 0 & 22L & 0 & 54 & 0 & 0 & 0 & -13L \\ 0 & 0 & 156 & 0 & -22L & 0 & 0 & 0 & 54 & 0 & 13L & 0 \\ 0 & 0 & 0 & 140\,I_0/A & 0 & 0 & 0 & 0 & 0 & 70\,I_0/A & 0 & 0 \\ \cdots & \cdots & \cdots & \cdots & \cdots & \cdots & \cdots & \cdots & \cdots & \cdots & \cdots & \cdots \end{bmatrix} $$
+      <p style="font-size:0.85rem;color:var(--ink-soft);margin-top:6px">
+        $\bar m$ = masa por unidad de longitud, $I_0$ = momento polar de inercia. La diagonal $140\,I_0/A$ es la masa rotacional torsional.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Paso 4 &mdash; Resolver el problema modal</h2>
+    <p>Con las matrices reducidas $\mathbf{K}_f$ y $\mathbf{M}_f$ (6×6 después de eliminar GDL fijos):</p>
+    $$ (\mathbf{K}_f - \omega^2\,\mathbf{M}_f)\,\boldsymbol{\phi} = \mathbf{0} $$
+    <p>Da las 6 frecuencias naturales y modos. En MATLAB del libro:</p>
+    <pre style="font-size:0.84rem"><code>[a, D] = eig(Kf, Mf);
+[omegas, ii] = sort(sqrt(diag(D)));     % rad/s
+T = 2*pi ./ omegas;                      % periodos s</code></pre>
+  </section>
+
+  <section>
+    <h2>Paso 5 &mdash; Respuesta dinámica</h2>
+    <p>Carga $F_z = 5000$ lb aplicada en nodo 1 dirección Z, durante 0.1 s. Integración Newmark-β.</p>
+    <p>Resultados máximos en el nodo 1 (Paz 13.1):</p>
+    $$ u_{1,\max} = 8.814 \times 10^{-5}\;\text{in}, \quad u_{2,\max} = 2.6552 \times 10^{-7}\;\text{in}, \quad u_{3,\max} = 0.9827\;\text{rad} $$
+    <p style="font-size:0.86rem;color:var(--ink-soft);font-style:italic">
+      $u_3$ es la rotación dominante — el impulso vertical en el extremo libre genera principalmente <em>rotación</em> alrededor del eje horizontal del nodo 1, no traslación.
+    </p>
+  </section>
+
+  <section>
+    <h2>El equivalente en Hekatan Struct</h2>
+    <div class="step-card">
+      <span class="step-tag">EJEMPLO ID · BENCHMARK-PAZ-13-1</span>
+      <h3>Pórtico 3D paramétrico — workspace público</h3>
+      <p>El ejemplo está disponible en:</p>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:0.92rem;color:var(--gold);background:var(--ink);color:var(--paper);padding:8px 12px;border-radius:3px">
+        <a href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-13-1" target="_blank" style="color:var(--gold)">giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-13-1</a>
+      </p>
+      <p>Genera la misma geometría (5 nodos, 4 elementos), aplica los datos exactos de la Tabla 13.1, ensambla $\mathbf{K}$ y $\mathbf{M}$ con el mismo procedimiento (B^T D B, Hermite cúbicas), y resuelve $(K-\omega^2 M)\phi=0$ con Spectra/Lanczos.</p>
+      <ul style="margin-left:18px;font-size:0.88rem">
+        <li>Ver matrices $K$ y $M$ ensambladas: panel <strong>📋 Calculadora FEM (MATLAB-style)</strong> → exportar a script Octave.</li>
+        <li>Ver modos: panel <strong>⚡ Modal+ ASCE 7-22</strong> → animación.</li>
+        <li>Ver respuesta time-history: panel <strong>📊 Newmark-β</strong> con $F_z = 5000$ lb durante 0.1 s.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="quote">
+    <strong>Mensaje:</strong> el ejemplo Paz 13.1 es <em>idéntico</em> en Hekatan — mismas matrices simbólicas, mismos coeficientes numéricos, misma respuesta dinámica. El libro lo programó en MATLAB en 2018, Hekatan lo ejecuta en C++ → WASM en el navegador en 2026, sin instalar nada. La matemática sigue siendo Wilson 1971 + Newmark 1959.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 12B · PAZ 13.1 SPACE FRAME 3D
+  </div>
+
+</div>
+
+<script src="./shared/nav.js"></script>
+</body>
+</html>

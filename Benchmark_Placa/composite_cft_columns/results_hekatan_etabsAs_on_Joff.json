@@ -1,0 +1,27 @@
+{
+  "rows": [
+    {
+      "setup": "cftNoSlab",
+      "nodes": 1093,
+      "shells": 0,
+      "frames": 132,
+      "kpi_node": 16,
+      "kpi_label": "w_midspan_beam",
+      "w_kpi_mm": -0.4970314683777633,
+      "sum_Rz_kN": 79.99999999999932
+    },
+    {
+      "setup": "cftDeckSlab",
+      "nodes": 1093,
+      "shells": 1024,
+      "frames": 132,
+      "kpi_node": 544,
+      "kpi_label": "w_centro",
+      "w_kpi_mm": -2.8959349332384514,
+      "sum_Rz_kN": 80.00000000013893
+    }
+  ],
+  "etabs_api": -2.9031,
+  "useEtabsAs": true,
+  "useEtabsJ": false
+}

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11c · Estructura del archivo .f2k (SAFE)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<style>
+  .e2k-section {
+    background: var(--paper-dark);
+    border-left: 4px solid var(--gold);
+    border-radius: 0 4px 4px 0;
+    padding: 12px 16px;
+    margin: 10px 0;
+  }
+  .e2k-section h3 {
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--blue);
+    margin: 0 0 4px;
+    font-size: 1.05rem;
+  }
+  .e2k-section .e2k-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.1em;
+    display: inline-block;
+    margin-bottom: 4px;
+  }
+  .e2k-section pre {
+    background: var(--paper);
+    padding: 8px 12px;
+    margin: 6px 0;
+    font-size: 0.78rem;
+    border: 1px solid var(--ink-fade);
+    border-radius: 3px;
+    overflow-x: auto;
+  }
+  .e2k-section .desc {
+    font-size: 0.86rem;
+    color: var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 11c · Bloque 4 — formato de intercambio</div>
+    <h1>Estructura del archivo <code>.f2k</code> de SAFE</h1>
+    <div class="subtitle">SAFE = <em>Slab Analysis by the Finite Element Method</em>. Específico para cimentaciones y losas con interacción suelo-estructura. Similar al .e2k pero con bloques propios de Winkler.</div>
+  </header>
+
+  <section>
+    <h2>Para qué usar SAFE (no ETABS)</h2>
+    <ul style="margin-left:20px;line-height:1.55">
+      <li><strong>Losas de cimentación</strong> sobre resortes Winkler 3D (zapatas, plateas, losas de fundación).</li>
+      <li><strong>Losas de piso</strong> con análisis detallado de momentos por punzonamiento.</li>
+      <li><strong>Diseño de armadura</strong> para flexión y corte siguiendo ACI 318, ACI 350, NTE.</li>
+      <li><strong>No es para edificios completos</strong> — SAFE solo modela el plano horizontal, ETABS hace el edificio entero.</li>
+    </ul>
+    <p>Hekatan Struct exporta <code>.f2k</code> desde los ejemplos <em>zapata-aislada</em>, <em>zapata-viga-amarre</em> (toggle en panel <strong>Cimentación (diseño + SAFE F2K)</strong>).</p>
+  </section>
+
+  <section>
+    <h2>Las 16 secciones del .f2k (en orden)</h2>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ PROGRAM INFORMATION</span>
+      <h3>1. Identificación</h3>
+      <pre>  PROGRAM  "SAFE"  VERSION "21.0.0"</pre>
+      <div class="desc">Hekatan emite <code>"AWATIF SAFE"</code>.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ CONTROLS</span>
+      <h3>2. Unidades y nombre del modelo</h3>
+      <pre>  UNITS  "Tonf"  "m"  "C"
+  TITLE  "Zapata aislada NEC-SE-GC"</pre>
+      <div class="desc">Mismo formato que el .e2k.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ MATERIAL PROPERTIES</span>
+      <h3>3. Hormigón y acero (mismo formato e2k)</h3>
+      <pre>  MATERIAL  "Conc4000"  TYPE "Concrete"  WEIGHTPERVOLUME 2.4
+  MATERIAL  "Conc4000"  SYMTYPE "Isotropic"  E 2,549,000  U 0.2
+  MATERIAL  "Conc4000"  FC 2,812</pre>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ SLAB PROPERTIES</span>
+      <h3>4. Espesor y tipo de losa</h3>
+      <pre>  SLABPROP  "Zapata50"   TYPE "Mat"   MATERIAL "Conc4000"  THICKNESS 0.50
+  SLABPROP  "Losa20"     TYPE "Slab"  MATERIAL "Conc4000"  THICKNESS 0.20</pre>
+      <div class="desc">Tipos: <code>Slab</code> (losa de piso), <code>Mat</code> (platea de cimentación), <code>Footing</code> (zapata aislada), <code>Drop</code> (capitel).</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ COLUMN PROPERTIES</span>
+      <h3>5. Columnas que llegan a la losa (cargan punzonamiento)</h3>
+      <pre>  COLUMNPROP  "C30x30"  MATERIAL "Conc4000"  WIDTH 0.30  DEPTH 0.30  HEIGHT 3.0</pre>
+      <div class="desc">SAFE usa la columna solo como geometría para análisis de punzonamiento. El cuerpo de la columna no se modela.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ POINT COORDINATES</span>
+      <h3>6. Nodos en plano X-Y</h3>
+      <pre>  POINT "1"   0     0    0
+  POINT "2"   3.0   0    0
+  POINT "3"   3.0   3.0  0
+  POINT "4"   0     3.0  0</pre>
+      <div class="desc">A diferencia del .e2k, SAFE no usa STORYs — coloca los nodos directamente con (X, Y, Z). La Z suele ser 0 (nivel de cimentación).</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ AREA OBJECTS</span>
+      <h3>7. Losas como elementos área</h3>
+      <pre>  AREA  "F1"  TYPE "Floor"     POINT1 "1"  POINT2 "2"  POINT3 "3"  POINT4 "4"
+  AREA  "Z1"  TYPE "Footing"   POINT1 "5"  POINT2 "6"  POINT3 "7"  POINT4 "8"</pre>
+      <div class="desc">Cada AREA es un cuadrilátero o triángulo. SAFE las malla automáticamente en Q4 / T3 según parámetros.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ POINT OBJECTS</span>
+      <h3>8. Cargas puntuales (típicamente columnas que descargan a la losa)</h3>
+      <pre>  POINT "C1"  X 1.5  Y 1.5  Z 0  COLUMN "C30x30"</pre>
+      <div class="desc">SAFE colapsa la columna a un punto sobre la losa. Las reacciones se transfieren como carga puntual.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ AREA ASSIGNS</span>
+      <h3>9. Asignar propiedades a cada AREA</h3>
+      <pre>  AREAASSIGN  "F1"  SECTION "Losa20"  EDGEDISCRET 0.30  AUTOMESH "YES"
+  AREAASSIGN  "Z1"  SECTION "Zapata50" EDGEDISCRET 0.20</pre>
+      <div class="desc"><code>EDGEDISCRET</code> = tamaño de malla deseado en el borde. Más fino en zonas críticas.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ SOIL PROPERTIES</span>
+      <h3>10. Suelo Winkler — coeficiente de balasto</h3>
+      <pre>  SOILPROP  "S1"  TYPE "Winkler"  MODULUS 1500       # k_s = 1500 tonf/m³
+  SOILPROP  "S2"  TYPE "Winkler"  MODULUS 800        # arena suelta
+  SOILPROP  "S3"  TYPE "Winkler"  MODULUS 5000       # roca</pre>
+      <div class="desc"><strong>Esto es lo que distingue al .f2k del .e2k.</strong> ETABS no tiene Winkler nativo — SAFE sí. Hekatan usa el mismo modelo: $k_s$ multiplicado por área tributaria de cada nodo da la rigidez del resorte vertical.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ AREA SPRINGS</span>
+      <h3>11. Asignación de Winkler a las zapatas</h3>
+      <pre>  AREASPRING  "Z1"  SOIL "S2"  DIR "GRAV"  COMPRESSIONONLY "Yes"</pre>
+      <div class="desc"><code>COMPRESSIONONLY="Yes"</code> = el resorte solo trabaja a compresión (la zapata no "tira" del suelo cuando se levanta). En Hekatan, esto se modela con springs activos solo si $u_z &lt; 0$.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ POINT ASSIGNS</span>
+      <h3>12. Restricciones puntuales (poco usadas en SAFE)</h3>
+      <pre>  POINTASSIGN  "1"  RESTRAINT "UX UY"</pre>
+      <div class="desc">SAFE típicamente <em>no</em> usa apoyos rígidos — toda la rigidez vertical viene de Winkler. Apoyos solo para fijar traslación lateral en algún punto (rotación rígida en plano).</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ LOAD PATTERNS</span>
+      <h3>13. Casos de carga (igual que e2k)</h3>
+      <pre>  LOADPATTERN "Dead"  TYPE "Dead"   SELFWEIGHT 1
+  LOADPATTERN "Live"  TYPE "Live"   SELFWEIGHT 0
+  LOADPATTERN "Wind"  TYPE "Wind"</pre>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ POINT LOADS</span>
+      <h3>14. Cargas de columnas</h3>
+      <pre>  POINTLOAD  "C1"  "Dead"  TYPE "FORCE"   FZ -50
+  POINTLOAD  "C1"  "Dead"  TYPE "MOMENT"  MX 1.5  MY -2.3
+  POINTLOAD  "C1"  "Live"  TYPE "FORCE"   FZ -25</pre>
+      <div class="desc">Bajada de cargas desde el ETABS del edificio. <code>FZ negativo</code> = compresión sobre la zapata.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ AREA LOADS</span>
+      <h3>15. Cargas distribuidas en losas</h3>
+      <pre>  AREALOAD  "F1"  "Dead"  TYPE "UNIFORM"  DIR "GRAV"  VAL -0.30   # peso propio + acabados
+  AREALOAD  "F1"  "Live"  TYPE "UNIFORM"  DIR "GRAV"  VAL -0.25   # 250 kgf/m²</pre>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">$ DESIGN PREFERENCES</span>
+      <h3>16. Norma de diseño y armadura</h3>
+      <pre>  DESIGN  CODE "ACI 318-19"
+  DESIGN  REBARSIZE "#5"  COVER 0.05  FY 4200  PHI_FLEX 0.9</pre>
+      <div class="desc">SAFE diseña la armadura automáticamente bajo la norma elegida. ACI 318 (US), Eurocódigo 2, NTE E.060 (Perú), NEC-SE-HM (Ecuador).</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Diferencias clave .f2k vs .e2k</h2>
+    <table>
+      <tr><th>Aspecto</th><th>.e2k (ETABS)</th><th>.f2k (SAFE)</th></tr>
+      <tr><td>Geometría</td><td>3D con STORYs</td><td>2D plano X-Y (Z = 0 típico)</td></tr>
+      <tr><td>Frames</td><td>Sí (COLUMN/BEAM/BRACE)</td><td>No (solo COLUMN como punto)</td></tr>
+      <tr><td>Shells</td><td>Sí (FLOOR/PANEL)</td><td>Sí (Floor/Mat/Footing)</td></tr>
+      <tr><td>Winkler</td><td>No nativo</td><td>$ SOIL PROPERTIES + $ AREA SPRINGS</td></tr>
+      <tr><td>Diseño</td><td>Vigas y columnas</td><td>Losas (flexión + punzonamiento)</td></tr>
+      <tr><td>Análisis modal</td><td>Sí</td><td>Sí pero raro (típicamente static)</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Hekatan ↔ SAFE round-trip</h2>
+    <pre style="font-size:0.86rem"><code>// hekatan-struct/examples/src/shared/f2kExporter.ts
+exportF2k({
+  nodes,                    // [[x,y,0], ...]
+  elements,                 // [[i,j,k,l], ...]  Q4 quads
+  nodeInputs,               // { supports, loads, springs }
+  elementInputs,            // { thicknesses, materialIDs }
+  soilProperties,           // { ks_kNm3, soilType }
+  pointColumns,             // [{ id, x, y, section, P_kN, Mx, My }]
+  units: { force: "Tonf", length: "m" },
+}) =&gt; "string .f2k completo"</code></pre>
+    <p>Botón en el workspace: <strong>Cimentación (diseño + SAFE F2K)</strong> → toggle <code>📤 Exportar .f2k</code>.</p>
+  </section>
+
+  <div class="quote">
+    <strong>Mensaje:</strong> el <code>.f2k</code> es como el <code>.e2k</code> pero <em>especializado</em> en cimentaciones. Lo que distingue es la sección <code>$ SOIL PROPERTIES</code> + <code>$ AREA SPRINGS</code> (Winkler). Si tu modelo es solo zapatas y losas, exportá a SAFE; si es edificio completo, a ETABS.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 11C · ANATOMÍA DEL .F2K (SAFE)
+  </div>
+
+</div>
+
+<script src="./shared/nav.js"></script>
+</body>
+</html>

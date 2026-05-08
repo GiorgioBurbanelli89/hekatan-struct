@@ -168,15 +168,20 @@ Eigen::MatrixXd getLocalStiffnessMatrixFrame(
     }
 
     // Timoshenko shear deformation: phi = 12EI/(G*As*L^2)
-    // Default: As = 5/6·A for rectangular sections (like ETABS default)
+    // Convention (ETABS-style section property modifiers):
+    //   As not provided / As = 0  → default Timoshenko 5/6·A (matches ETABS default)
+    //   As > 0                    → Timoshenko with that explicit shear area
+    //   As < 0 (sentinel)         → Bernoulli puro (phi = 0, no shear deformation)
+    // The negative-sentinel convention allows the FEM Studio modAs2/modAs3 = 0
+    // (Euler-Bernoulli) to be passed as As = -1 explicitly.
     double AsY = getMapValueOrDefault(elementInputs.shearAreasY, index, 0.0);
     double AsZ = getMapValueOrDefault(elementInputs.shearAreasZ, index, 0.0);
-    if (AsY < 1e-15 && AsZ < 1e-15 && A > 1e-15 && G > 1e-15)
-    {
-        AsY = AsZ = (5.0 / 6.0) * A; // rectangular default
-    }
-    double phiZ = (AsZ > 0 && G > 0) ? (12.0 * E * Iz) / (G * AsZ * L * L) : 0.0;
-    double phiY = (AsY > 0 && G > 0) ? (12.0 * E * Iy) / (G * AsY * L * L) : 0.0;
+    bool bernoulliY = (AsY < -1e-15);
+    bool bernoulliZ = (AsZ < -1e-15);
+    if (!bernoulliY && AsY < 1e-15 && A > 1e-15 && G > 1e-15) AsY = (5.0 / 6.0) * A;
+    if (!bernoulliZ && AsZ < 1e-15 && A > 1e-15 && G > 1e-15) AsZ = (5.0 / 6.0) * A;
+    double phiZ = (!bernoulliZ && AsZ > 0 && G > 0) ? (12.0 * E * Iz) / (G * AsZ * L * L) : 0.0;
+    double phiY = (!bernoulliY && AsY > 0 && G > 0) ? (12.0 * E * Iy) / (G * AsY * L * L) : 0.0;
 
     const double EA_L = E * A / L;
     const double GJ_L = G * J / L;

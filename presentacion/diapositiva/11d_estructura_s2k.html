@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11d · Estructura del archivo .s2k (SAP2000)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<style>
+  .e2k-section {
+    background: var(--paper-dark);
+    border-left: 4px solid var(--gold);
+    border-radius: 0 4px 4px 0;
+    padding: 12px 16px;
+    margin: 10px 0;
+  }
+  .e2k-section h3 {
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--blue);
+    margin: 0 0 4px;
+    font-size: 1.05rem;
+  }
+  .e2k-section .e2k-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.1em;
+    display: inline-block;
+    margin-bottom: 4px;
+  }
+  .e2k-section pre {
+    background: var(--paper);
+    padding: 8px 12px;
+    margin: 6px 0;
+    font-size: 0.78rem;
+    border: 1px solid var(--ink-fade);
+    border-radius: 3px;
+    overflow-x: auto;
+  }
+  .e2k-section .desc {
+    font-size: 0.86rem;
+    color: var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 11d · Bloque 4 — formato de intercambio</div>
+    <h1>Estructura del archivo <code>.s2k</code> de SAP2000</h1>
+    <div class="subtitle">SAP2000 = solver general de estructuras (puentes, torres, presas, naves). El .s2k es <em>tabular</em> con TABLES delimitadas, no por <code>$</code>.</div>
+  </header>
+
+  <section>
+    <h2>Para qué usar SAP2000 (no ETABS)</h2>
+    <ul style="margin-left:20px;line-height:1.55">
+      <li><strong>Puentes</strong> — vigas continuas, atirantados, colgantes con cables.</li>
+      <li><strong>Torres y antenas</strong> — celosías 3D con muchos diagonales.</li>
+      <li><strong>Estructuras industriales</strong> — galpones, naves, silos.</li>
+      <li><strong>Presas y muros de retención</strong> — sólidos H8 con interacción suelo.</li>
+      <li><strong>Análisis no lineales avanzados</strong> — pushover, time-history grandes.</li>
+      <li><em>SAP no asume "edificio"</em> — no obliga a tener STORYs. Es 3D libre.</li>
+    </ul>
+    <p>Hekatan Struct exporta <code>.s2k</code> desde el panel <strong>SAP</strong> del workspace para cualquier ejemplo no-zapata.</p>
+  </section>
+
+  <section>
+    <h2>Sintaxis: TABLES en lugar de secciones $</h2>
+    <p>El .s2k usa formato tabular. Cada bloque empieza con <code>TABLE: "Nombre"</code> seguido de filas con <code>Campo=Valor</code> separados por espacios:</p>
+    <pre style="background:var(--paper-dark);padding:12px;font-size:0.83rem"><code>TABLE:  "PROGRAM CONTROL"
+   ProgramName=SAP2000  Version=24.0.0  CurrUnits="Tonf, m, C"
+
+TABLE:  "JOINT COORDINATES"
+   Joint=1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0    Y=0    Z=0
+   Joint=2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=5    Y=0    Z=0
+   Joint=3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=5    Y=4    Z=3</code></pre>
+    <p>Esto es muy diferente al .e2k de ETABS. Cada TABLE es independiente.</p>
+  </section>
+
+  <section>
+    <h2>Las 18 TABLES principales del .s2k</h2>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 1</span>
+      <h3>"PROGRAM CONTROL" — header</h3>
+      <pre>TABLE:  "PROGRAM CONTROL"
+   ProgramName=SAP2000  Version=24.0.0
+   ProgLevel="Plus"     LicenseOS=No
+   CurrUnits="Tonf, m, C"</pre>
+      <div class="desc">Hekatan emite <code>ProgramName=AWATIF</code>.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 2</span>
+      <h3>"COORDINATE SYSTEMS" — sistema(s) de referencia</h3>
+      <pre>TABLE:  "COORDINATE SYSTEMS"
+   Name=GLOBAL  Type=Cartesian  X=0  Y=0  Z=0  AboutZ=0  AboutY=0  AboutX=0</pre>
+      <div class="desc">SAP soporta múltiples sistemas de coordenadas (cilíndrico, esférico). Hekatan usa solo GLOBAL cartesiano.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 3</span>
+      <h3>"JOINT COORDINATES" — nodos en 3D libre</h3>
+      <pre>TABLE:  "JOINT COORDINATES"
+   Joint=1  CoordSys=GLOBAL  CoordType=Cartesian  XorR=0    Y=0    Z=0
+   Joint=2  CoordSys=GLOBAL  CoordType=Cartesian  XorR=5    Y=0    Z=3
+   Joint=3  CoordSys=GLOBAL  CoordType=Cartesian  XorR=10   Y=2    Z=6</pre>
+      <div class="desc"><strong>X, Y, Z explícitos</strong> — no hay STORYs como en .e2k. Esto permite geometrías 3D arbitrarias (puentes inclinados, torres curvas).</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 4</span>
+      <h3>"MATERIAL PROPERTIES 02 - BASIC MECHANICAL"</h3>
+      <pre>TABLE:  "MATERIAL PROPERTIES 02 - BASIC MECHANICAL PROPERTIES"
+   Material=A572Gr50  Type=Steel       UnitWeight=7.849  E1=2.04E+07  G12=7.85E+06  U12=0.3
+   Material=Conc4000  Type=Concrete    UnitWeight=2.4    E1=2,549,000 G12=1,062,000 U12=0.2</pre>
+      <div class="desc">Más detallado que el .e2k: SAP separa propiedades isotrópicas, anisotrópicas, ortotrópicas en TABLES distintas.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 5</span>
+      <h3>"FRAME SECTION PROPERTIES" — perfiles</h3>
+      <pre>TABLE:  "FRAME SECTION PROPERTIES 01 - GENERAL"
+   SectionName=W14X84  Material=A572Gr50  Shape="I/Wide Flange"
+   t3=0.358  t2=0.262  tf=0.0193  tw=0.0114  Area=0.0156  TorsConst=2.66E-06  I33=4.16E-04  I22=4.16E-05</pre>
+      <div class="desc">SAP además acepta secciones <em>generales</em> (custom) con A, I, J, S directos sin shape. Útil para secciones no estándar.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 6</span>
+      <h3>"FRAME CONNECTIVITY" — frames como pares de nodos</h3>
+      <pre>TABLE:  "CONNECTIVITY - FRAME"
+   Frame=1   JointI=1   JointJ=2
+   Frame=2   JointI=2   JointJ=3
+   Frame=3   JointI=1   JointJ=3</pre>
+      <div class="desc">A diferencia del .e2k, no hay distinción COLUMN / BEAM / BRACE — todos son <em>frame</em>. La orientación se define con vector aparte.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 7</span>
+      <h3>"FRAME ASSIGNMENTS" — sección a cada frame</h3>
+      <pre>TABLE:  "FRAME SECTION ASSIGNMENTS"
+   Frame=1   AutoSelect=N.A.  AnalSect=W14X84   DesignSect=W14X84
+   Frame=2   AutoSelect=N.A.  AnalSect=W14X84   DesignSect=W14X84</pre>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 8</span>
+      <h3>"AREA SHAPES" — Shells (Q4 / Q8 / T3 / T6)</h3>
+      <pre>TABLE:  "CONNECTIVITY - AREA"
+   Area=1   NumJoints=4   Joint1=10  Joint2=11  Joint3=12  Joint4=13
+   Area=2   NumJoints=3   Joint1=20  Joint2=21  Joint3=22</pre>
+      <div class="desc">SAP soporta Q4, Q8, T3, T6 según el campo <code>NumJoints</code>. Hekatan usa Q4 (4 nodos) por defecto.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 9</span>
+      <h3>"SOLID SHAPES" — Sólidos H8 (sí, SAP los maneja)</h3>
+      <pre>TABLE:  "CONNECTIVITY - SOLID"
+   Solid=1  J1=100 J2=101 J3=102 J4=103 J5=104 J6=105 J7=106 J8=107</pre>
+      <div class="desc">SAP soporta H8 (8 nodos), H20, T4 (tetraedros). Hekatan exporta H8 desde los ejemplos sólidos.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 10</span>
+      <h3>"JOINT RESTRAINTS" — apoyos</h3>
+      <pre>TABLE:  "JOINT RESTRAINT ASSIGNMENTS"
+   Joint=1   U1=Yes  U2=Yes  U3=Yes  R1=Yes  R2=Yes  R3=Yes        # Empotrado
+   Joint=2   U1=Yes  U2=Yes  U3=Yes  R1=No   R2=No   R3=No         # Articulado</pre>
+      <div class="desc"><code>U1, U2, U3</code> = traslaciones X, Y, Z. <code>R1, R2, R3</code> = rotaciones.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 11</span>
+      <h3>"LINK / SUPPORT PROPERTIES" — links no lineales</h3>
+      <pre>TABLE:  "LINK PROPERTY DEFINITIONS"
+   Link=Spring1   PropType=Linear   DOF=U3   Effective="Yes"   k=1500</pre>
+      <div class="desc">SAP modela Winkler con <em>links</em> (resortes 1D) — distinto a SAFE que usa AREA SPRINGS. Hekatan los traduce.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 12</span>
+      <h3>"LOAD PATTERN DEFINITIONS"</h3>
+      <pre>TABLE:  "LOAD PATTERN DEFINITIONS"
+   LoadPat=Dead   DesignType=DEAD   SelfWtMult=1
+   LoadPat=Live   DesignType=LIVE   SelfWtMult=0
+   LoadPat=Ex     DesignType=QUAKE  SelfWtMult=0   AutoLoad="ASCE 7-22"</pre>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 13</span>
+      <h3>"JOINT LOADS - FORCE"</h3>
+      <pre>TABLE:  "JOINT LOADS - FORCE"
+   Joint=5   LoadPat=Dead   F1=0    F2=0    F3=-50    M1=0    M2=12   M3=0</pre>
+      <div class="desc"><code>F1, F2, F3</code> = fuerzas globales X, Y, Z. <code>M1, M2, M3</code> = momentos.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 14</span>
+      <h3>"FRAME LOADS - DISTRIBUTED"</h3>
+      <pre>TABLE:  "FRAME LOADS - DISTRIBUTED"
+   Frame=2   LoadPat=Dead  CoordSys=GLOBAL  Type=Force  Dir=Z  RelDistA=0  RelDistB=1  ValA=-2.5  ValB=-2.5</pre>
+      <div class="desc">Distribuidas con dos puntos (RelDistA/B en [0,1]) para crear trapezoidales.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 15</span>
+      <h3>"AREA LOADS - UNIFORM"</h3>
+      <pre>TABLE:  "AREA LOADS - UNIFORM"
+   Area=10   LoadPat=Dead   CoordSys=GLOBAL   Dir=GravProj   UnifLoad=-3.5</pre>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 16</span>
+      <h3>"MASS SOURCE"</h3>
+      <pre>TABLE:  "MASS SOURCE"
+   FromElem=Yes   FromAddedMass=Yes   FromLoadPat=Yes
+   LoadPat1=Dead     SF1=1
+   LoadPat2=Live     SF2=0.25</pre>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 17</span>
+      <h3>"LOAD CASE DEFINITIONS"</h3>
+      <pre>TABLE:  "LOAD CASE DEFINITIONS"
+   Case=Dead    Type=LinStatic     InitialCond=Zero
+   Case=Modal   Type=LinModal      MaxNumModes=12   MinNumModes=1
+   Case=Ex_RS   Type=LinRespSpec   ModalCase=Modal  ModalCombo=CQC</pre>
+      <div class="desc">SAP tiene MUCHOS tipos: LinStatic, LinModal, LinRespSpec, NonStatic (pushover), DirHistNonlinear (time-history no-lineal), Buckling, etc.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">TABLE 18</span>
+      <h3>"COMBINATION DEFINITIONS"</h3>
+      <pre>TABLE:  "COMBINATION DEFINITIONS"
+   ComboName=1.4D     ComboType=LinAdd   CaseType=LinStatic   CaseName=Dead    ScaleFactor=1.4
+   ComboName=1.2D+1.6L ComboType=LinAdd  CaseType=LinStatic   CaseName=Dead    ScaleFactor=1.2
+   ComboName=1.2D+1.6L ComboType=LinAdd  CaseType=LinStatic   CaseName=Live    ScaleFactor=1.6</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Diferencias clave .s2k vs .e2k</h2>
+    <table>
+      <tr><th>Aspecto</th><th>.e2k (ETABS)</th><th>.s2k (SAP2000)</th></tr>
+      <tr><td>Sintaxis</td><td>Bloques con <code>$</code></td><td>TABLES con campo=valor</td></tr>
+      <tr><td>Geometría</td><td>STORYs + POINT (X,Y)</td><td>JOINT (X,Y,Z) libre 3D</td></tr>
+      <tr><td>Frames</td><td>COLUMN/BEAM/BRACE</td><td>Solo "frame", orientación con vector</td></tr>
+      <tr><td>Sólidos</td><td>No</td><td>H8, H20, T4</td></tr>
+      <tr><td>Análisis no lineal</td><td>Limitado</td><td>Pushover, NL time-history, buckling</td></tr>
+      <tr><td>Diseño</td><td>Edificios (vigas, columnas)</td><td>General (puentes, torres)</td></tr>
+      <tr><td>Cuándo usar</td><td>Edificios convencionales</td><td>Estructuras singulares</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Comparación de tamaños del mismo modelo</h2>
+    <table>
+      <tr><th>Modelo</th><th>.e2k (ETABS)</th><th>.s2k (SAP)</th><th>.f2k (SAFE)</th></tr>
+      <tr><td>Cantilever simple</td><td>3 KB</td><td>5 KB</td><td>—</td></tr>
+      <tr><td>Edificio 5×4×10</td><td>180 KB</td><td>250 KB</td><td>—</td></tr>
+      <tr><td>Zapata aislada</td><td>—</td><td>—</td><td>8 KB</td></tr>
+      <tr><td>Puente 50 m</td><td>—</td><td>120 KB</td><td>—</td></tr>
+    </table>
+    <p style="font-size:0.85rem;color:var(--ink-soft);font-style:italic">
+      .s2k es ligeramente más verboso que .e2k porque cada TABLE repite los nombres de campo. A cambio, es <em>más auto-descriptivo</em> y no depende del orden.
+    </p>
+  </section>
+
+  <div class="quote">
+    <strong>Resumen de los 3 formatos:</strong> ETABS (<code>.e2k</code>) para edificios, SAP2000 (<code>.s2k</code>) para todo lo demás, SAFE (<code>.f2k</code>) para cimentaciones. Hekatan Struct exporta a los <em>tres</em> formatos desde el mismo modelo &mdash; el round-trip es garantizado para validación cruzada con cualquier suite CSI.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 11D · ANATOMÍA DEL .S2K (SAP2000)
+  </div>
+
+</div>
+
+<script src="./shared/nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12 · Paz &amp; Kim 6.3 Space Frame</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+<style>
+  .demo-link {
+    display: block;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 14px 18px;
+    border-radius: 4px;
+    text-decoration: none;
+    margin: 14px 0;
+    text-align: center;
+    transition: background 0.2s;
+  }
+  .demo-link:hover { background: var(--gold); color: var(--ink); }
+  .demo-link .url {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--gold);
+  }
+  .demo-link:hover .url { color: var(--ink); }
+  .demo-link .label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.15rem;
+    margin-bottom: 4px;
+  }
+
+  .step-card {
+    display: grid;
+    grid-template-columns: 50px 1fr;
+    gap: 14px;
+    background: var(--paper-dark);
+    border-left: 4px solid var(--gold);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin: 10px 0;
+  }
+  .step-card .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--gold);
+  }
+  .step-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .step-card .detail {
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+  }
+  .step-card .formula {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--blue);
+    background: var(--paper);
+    padding: 4px 8px;
+    border-radius: 3px;
+    margin-top: 6px;
+    display: inline-block;
+  }
+
+  .modes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 14px 0;
+  }
+  .mode-card {
+    background: var(--paper-dark);
+    border: 1.5px solid var(--ink-fade);
+    border-radius: 4px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .mode-card .mode-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+  }
+  .mode-card .mode-freq {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--blue);
+    margin: 6px 0 2px;
+  }
+  .mode-card .mode-period {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+  }
+  .mode-card .mode-desc {
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    margin-top: 6px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 12 · Demostración en vivo</div>
+    <h1>Paz &amp; Kim 6.3 — Space Frame 3D</h1>
+    <div class="subtitle">Modelado completo en Hekatan Struct · Análisis estático + modal · Validación cruzada</div>
+  </header>
+
+  <section>
+    <h2>El caso de estudio</h2>
+    <p>Ejemplo 6.3 del libro <strong>Paz &amp; Kim, "Structural Dynamics: Theory &amp; Computation", 6ª ed. (Springer, 2019)</strong>. Caso clásico de pórtico 3D de un piso con dos vanos:</p>
+    <ul style="margin-left:24px;line-height:1.7">
+      <li>4 columnas <strong>W24x146</strong> (acero AISC)</li>
+      <li>4 vigas <strong>W14x84</strong> (acero AISC)</li>
+      <li>Plan: <strong>114 in × 240 in</strong>, altura 180 in</li>
+      <li>Material: $E = 29{,}500$ ksi · $\rho_{acero} = 7.339 \times 10^{-7}$ kip·s²/in⁴</li>
+      <li>Carga puntual lateral $P = 10$ kip en el nodo del tope (dirección X)</li>
+      <li><strong>Ojo:</strong> el libro usa kip, in, sec — Hekatan respeta esas unidades</li>
+    </ul>
+  </section>
+
+  <a class="demo-link" href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-7-1" target="_blank">
+    <div class="label">▶ Abrir el ejemplo en Hekatan Struct</div>
+    <div class="url">giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-7-1</div>
+  </a>
+
+  <section>
+    <h2>Pasos del modelado en vivo</h2>
+
+    <div class="step-card">
+      <div class="num">1</div>
+      <div>
+        <h3>Geometría</h3>
+        <div class="detail">8 nodos: 4 en la base (Z=0) + 4 en el tope (Z=180 in). Conectados por 4 columnas verticales y 4 vigas perimetrales en el tope.</div>
+        <span class="formula">nodes = [[0,0,0], [0,bayY,0], ...]</span>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="num">2</div>
+      <div>
+        <h3>Secciones AISC</h3>
+        <div class="detail">W24x146 columnas (Iz=5630, Iy=391, J=34.8 in⁴) · W14x84 vigas (Iz=928, Iy=225, J=5.90 in⁴).</div>
+        <span class="formula">elementInputs.momentsOfInertiaY/Z = ...</span>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="num">3</div>
+      <div>
+        <h3>Apoyos y cargas</h3>
+        <div class="detail">4 nodos base empotrados (UX UY UZ RX RY RZ). Carga lateral P = 10 kip en uno de los nodos del tope, dirección X.</div>
+        <span class="formula">supports.set(0, [true,true,true,true,true,true])</span>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="num">4</div>
+      <div>
+        <h3>Análisis estático lineal</h3>
+        <div class="detail">Resuelve $K\,u = F$. Lectura de reacciones, desplazamientos en el tope, diagramas de fuerzas internas (N, V, M) en columnas y vigas.</div>
+        <span class="formula">deform(nodes, elements, nodeInputs, elementInputs)</span>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="num">5</div>
+      <div>
+        <h3>Análisis dinámico modal</h3>
+        <div class="detail">Resuelve el problema de autovalores $(K - \omega^2 M)\,\phi = 0$. Lectura de las 6 primeras frecuencias, períodos, modos de vibración y participación modal de masas (ASCE 7-22 §12.9.1).</div>
+        <span class="formula">modalAnalysis(nodes, elements, ni, ei, 6)</span>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="num">6</div>
+      <div>
+        <h3>Round-trip ETABS</h3>
+        <div class="detail">Toggle "📤 Exportar a .e2k" → archivo ETABS canónico. Los colegas pueden tomar su modelo de ETABS y abrirlo en Hekatan como segunda opinión, o exportar un modelo creado en Hekatan a ETABS para validación.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Frecuencias modales esperadas (libro Paz &amp; Kim p.166)</h2>
+    <div class="modes-grid">
+      <div class="mode-card">
+        <div class="mode-num">MODO 1</div>
+        <div class="mode-freq">9.6780 Hz</div>
+        <div class="mode-period">T = 0.1033 s</div>
+        <div class="mode-desc">Lateral Y (99.8% MPF)</div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-num">MODO 2</div>
+        <div class="mode-freq">16.987 Hz</div>
+        <div class="mode-period">T = 0.0589 s</div>
+        <div class="mode-desc">Torsión Rz</div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-num">MODO 3</div>
+        <div class="mode-freq">26.615 Hz</div>
+        <div class="mode-period">T = 0.0376 s</div>
+        <div class="mode-desc">Lateral X (94.3% MPF)</div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-num">MODO 4</div>
+        <div class="mode-freq">29.950 Hz</div>
+        <div class="mode-period">T = 0.0334 s</div>
+        <div class="mode-desc">Antisimétrico</div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-num">MODO 5</div>
+        <div class="mode-freq">33.993 Hz</div>
+        <div class="mode-period">T = 0.0294 s</div>
+        <div class="mode-desc">Rz secundario</div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-num">MODO 6</div>
+        <div class="mode-freq">44.933 Hz</div>
+        <div class="mode-period">T = 0.0223 s</div>
+        <div class="mode-desc">Vertical Uz</div>
+      </div>
+    </div>
+    <p style="text-align:center;font-style:italic;color:var(--ink-soft);margin-top:8px">
+      Estas son las frecuencias <strong>publicadas en el libro</strong> &mdash; en la próxima diapositiva veremos que las 5 fuentes (Octave, ETABS, SAP, OpenSees, Hekatan) <em>convergen exactamente</em>.
+    </p>
+  </section>
+
+  <section>
+    <h2>El truco: torsional inertia <code>Ip</code> ≠ <code>J</code></h2>
+    <p>Para los modos <em>torsionales</em> (modo 2 y 5), la masa consistente requiere $I_p = I_y + I_z$ (momento polar de inercia), <strong>NO</strong> $J$ (constante de St. Venant). OpenSees tiene un bug conocido donde usa $J$ → ~3% de error en modos torsionales. Hekatan, ETABS, SAP usan $I_p$ y dan resultado exacto.</p>
+    <div class="quote">
+      Detalle como este es <em>exactamente</em> lo que el ingeniero debe entender. El software no protege contra usar mal el solver — el ingeniero sí.
+    </div>
+  </section>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 12 · DEMO PAZ &amp; KIM 6.3
+  </div>
+
+</div>
+
+<script src="./shared/nav.js"></script>
+</body>
+</html>

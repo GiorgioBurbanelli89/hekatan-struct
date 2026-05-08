@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>08 · Loops del FEM en acción</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+<style>
+  .matrix-grid {
+    display: inline-grid;
+    gap: 2px;
+    margin: 0 auto;
+    background: var(--ink);
+    padding: 2px;
+    border-radius: 4px;
+  }
+  .cell {
+    width: 28px;
+    height: 28px;
+    background: var(--paper-dark);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+  }
+  .cell.empty { background: rgba(255,255,255,0.4); color: transparent; }
+  .cell.k1 { background: #f4d35e; color: var(--ink); }
+  .cell.k2 { background: #f4a261; color: var(--ink); }
+  .cell.k3 { background: #2a9d8f; color: var(--paper); }
+  .cell.k4 { background: #264653; color: var(--paper); }
+  .cell.overlap { background: var(--gold); color: var(--ink); }
+
+  .step-row {
+    display: flex; align-items: center; gap: 18px;
+    margin: 14px 0;
+    padding: 12px 14px;
+    background: var(--paper-dark);
+    border: 1px solid var(--ink-fade);
+    border-radius: 4px;
+  }
+  .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.3rem;
+    color: var(--gold);
+    font-weight: 700;
+    min-width: 32px;
+  }
+  .step-text { flex: 1; }
+
+  .play-btn {
+    background: var(--gold);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+    padding: 8px 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+  .play-btn:hover { background: var(--ink); color: var(--paper); }
+
+  .legend {
+    display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+    margin-top: 8px;
+    font-size: 0.8rem;
+  }
+  .legend .swatch {
+    display: inline-block; width: 16px; height: 16px; vertical-align: middle;
+    margin-right: 4px; border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 08 · El ensamblaje paso a paso</div>
+    <h1>Loops del FEM en acción</h1>
+    <div class="subtitle">Cómo el computador suma las matrices locales en la matriz global $K$</div>
+  </header>
+
+  <section>
+    <h2>El bucle fundamental</h2>
+    <p>Toda la "magia" del FEM se reduce a este pseudocódigo:</p>
+    <pre><code>K_global = zeros(N×N)              // matriz de ceros
+
+para cada elemento e = 1, 2, ..., n_elementos:
+    K_local = calcularKLocal(e)    // matriz pequeña (4×4 viga, 12×12 frame3D)
+
+    para cada par (i, j) en K_local:
+        I = índice_global(e, i)    // mapeo local → global
+        J = índice_global(e, j)
+        K_global[I, J] += K_local[i, j]   // ← SUMA, no asignación
+
+resolver K_global · u = F</code></pre>
+    <p>Eso es <strong>todo</strong>. La parte mágica es <code>+=</code> &mdash; los nodos compartidos entre elementos suman sus contribuciones, igual que <em>resortes en paralelo</em>.</p>
+  </section>
+
+  <section>
+    <h2>Visualización paso a paso — viga de 4 elementos</h2>
+    <p>4 elementos viga conectados → matriz global de 5×5 (5 nodos × 1 grado de libertad). Los colores muestran qué elemento aporta a cada celda:</p>
+
+    <div style="text-align:center;margin:18px 0">
+      <div id="matrix-container"></div>
+    </div>
+
+    <div class="legend">
+      <span><span class="swatch" style="background:#f4d35e"></span> Elemento 1 (nodos 1-2)</span>
+      <span><span class="swatch" style="background:#f4a261"></span> Elemento 2 (nodos 2-3)</span>
+      <span><span class="swatch" style="background:#2a9d8f"></span> Elemento 3 (nodos 3-4)</span>
+      <span><span class="swatch" style="background:#264653;color:white"></span> Elemento 4 (nodos 4-5)</span>
+      <span><span class="swatch" style="background:var(--gold)"></span> Suma (nodos compartidos)</span>
+    </div>
+
+    <div class="grade-indicator" style="margin-top:14px">
+      <span>Paso actual:</span>
+      <strong id="step-info">— de 5</strong>
+      <span style="margin-left:auto"><button class="play-btn" id="step-btn">▶ Siguiente paso</button></span>
+      <button class="play-btn" id="reset-btn" style="margin-left:8px;background:var(--paper);color:var(--ink)">↺</button>
+    </div>
+
+    <div class="explanation-box" id="explanation">
+      Click <strong>▶ Siguiente paso</strong> para ensamblar elemento por elemento.
+    </div>
+  </section>
+
+  <section>
+    <h2>Lo mismo en MATLAB y C++</h2>
+  </section>
+
+  <div class="side-by-side">
+    <div>
+      <div class="lang-header matlab">MATLAB / Octave</div>
+      <pre><code>nElem = 4;
+K_global = zeros(5, 5);
+
+for e = 1:nElem
+    Ke = beamK(E, I, L);
+    % Mapeo local→global:
+    %   nodo i del elem e → nodo e
+    %   nodo j del elem e → nodo e+1
+    K_global(e:e+1, e:e+1) = ...
+        K_global(e:e+1, e:e+1) + Ke;
+end
+
+% Aplicar BC, resolver
+K_red = K_global(2:end-1, 2:end-1);
+u = K_red \ F_red;</code></pre>
+    </div>
+    <div>
+      <div class="lang-header cpp">C++ con Eigen</div>
+      <pre><code>int nElem = 4;
+Eigen::MatrixXd K_global =
+    Eigen::MatrixXd::Zero(5, 5);
+
+for (int e = 0; e &lt; nElem; ++e) {
+    auto Ke = beamK(E, I, L);
+    // Mapeo local→global
+    K_global.block&lt;2,2&gt;(e, e) +=
+        Ke.block&lt;2,2&gt;(0, 0);
+}
+
+// Aplicar BC, resolver
+auto K_red = K_global.block(1, 1, 3, 3);
+auto u = K_red.lu().solve(F_red);</code></pre>
+    </div>
+  </div>
+
+  <p style="text-align:center;font-style:italic;color:var(--ink-soft)">↑ Mismo loop. Mismo orden. Misma suma. Solo cambia la sintaxis. ↑</p>
+
+  <section>
+    <h2>Por qué el loop es la verdadera "magia"</h2>
+    <p>Una estructura de 100 elementos × matriz local 12×12 = <strong>14,400 sumas</strong>. Una de 10,000 elementos × 12×12 = <strong>1,440,000 sumas</strong>. A mano sería imposible &mdash; el computador lo hace en milisegundos.</p>
+    <p>Pero <strong>cada suma es trivial</strong>. Lo único que cambia entre Galerkin (1909) y Hekatan (2026) es:</p>
+    <ul style="margin-left: 24px; line-height: 1.6;">
+      <li>Galerkin lo hizo a mano para problemas con 3-4 elementos.</li>
+      <li>Boeing 1956 lo programó en Fortran para 100 elementos &mdash; cambió la industria.</li>
+      <li>SAP/ETABS modernos hacen 100,000+ elementos en segundos &mdash; misma fórmula.</li>
+      <li>Hekatan lo hace <em>en el navegador</em> con WebAssembly &mdash; misma fórmula.</li>
+    </ul>
+  </section>
+
+  <div class="quote">
+    <strong>Conclusión:</strong> el loop es lo que diferencia el FEM "a mano" del FEM industrial. La matemática <em>no cambió</em>. Lo que cambió es la <em>velocidad de ejecución</em>. <strong>Por eso C++ → WebAssembly</strong>: ejecutar bucles a velocidad nativa, sin instalación.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 08 · LOOPS = LA VELOCIDAD
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────
+// Visualización de ensamblaje progresivo
+// 4 elementos viga, 5 nodos. Matrix 5×5.
+// Cada elemento aporta una sub-matriz 2×2 en la diagonal.
+// ─────────────────────────────────────────────────────────
+const N = 5;
+const elements = [
+  { from: 0, to: 1, color: "k1" },
+  { from: 1, to: 2, color: "k2" },
+  { from: 2, to: 3, color: "k3" },
+  { from: 3, to: 4, color: "k4" },
+];
+
+const container = document.getElementById("matrix-container");
+const stepBtn = document.getElementById("step-btn");
+const resetBtn = document.getElementById("reset-btn");
+const stepInfo = document.getElementById("step-info");
+const explanation = document.getElementById("explanation");
+
+let currentStep = 0;  // 0=vacío, 1..4=cada elem, 5=todos
+
+function buildMatrix() {
+  container.innerHTML = "";
+  const grid = document.createElement("div");
+  grid.className = "matrix-grid";
+  grid.style.gridTemplateColumns = `repeat(${N}, 28px)`;
+
+  // Acumulador de qué elementos tocan cada celda
+  const cellOwners = Array.from({length: N}, () => Array.from({length: N}, () => []));
+
+  // Llenar según paso actual
+  for (let s = 0; s < currentStep; s++) {
+    const el = elements[s];
+    for (let i = el.from; i <= el.to; i++) {
+      for (let j = el.from; j <= el.to; j++) {
+        cellOwners[i][j].push(s);
+      }
+    }
+  }
+
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const cell = document.createElement("div");
+      const owners = cellOwners[i][j];
+      if (owners.length === 0) {
+        cell.className = "cell empty";
+        cell.textContent = "·";
+      } else if (owners.length === 1) {
+        cell.className = "cell " + elements[owners[0]].color;
+        cell.textContent = "K" + (owners[0]+1);
+      } else {
+        cell.className = "cell overlap";
+        cell.textContent = "Σ" + owners.length;
+        cell.title = "Suma de elementos: " + owners.map(o => o+1).join("+");
+      }
+      grid.appendChild(cell);
+    }
+  }
+  container.appendChild(grid);
+}
+
+function updateStep() {
+  buildMatrix();
+  stepInfo.textContent = `${currentStep} de ${elements.length}`;
+
+  if (currentStep === 0) {
+    explanation.innerHTML = `<strong>Paso 0 &mdash; Inicio:</strong> matriz K_global = zeros(5×5). Lista para empezar el ensamblaje.`;
+  } else if (currentStep <= elements.length) {
+    const el = elements[currentStep - 1];
+    explanation.innerHTML =
+      `<strong>Paso ${currentStep}:</strong> elemento ${currentStep} (nodos ${el.from+1} → ${el.to+1}). ` +
+      `Su K_local 2×2 se suma a las celdas K[${el.from+1}..${el.to+1}, ${el.from+1}..${el.to+1}] de la matriz global. ` +
+      (currentStep > 1
+        ? `<em style="color:var(--gold)">Las celdas doradas (Σ) son nodos compartidos donde 2 elementos suman sus contribuciones.</em>`
+        : `Aún no hay solapamientos.`);
+  }
+
+  if (currentStep >= elements.length) {
+    stepBtn.textContent = "✓ Completo";
+    stepBtn.disabled = true;
+    explanation.innerHTML += `<br><br><strong>Resultado:</strong> matriz <em>tridiagonal por bloques</em> 5×5. Solo las celdas cercanas a la diagonal son no-cero (estructura <em>sparse</em>). Por eso los solvers usan <em>SparseLU</em> en vez de LU densa.`;
+  } else {
+    stepBtn.textContent = "▶ Siguiente paso";
+    stepBtn.disabled = false;
+  }
+}
+
+stepBtn.addEventListener("click", () => {
+  if (currentStep < elements.length) currentStep++;
+  updateStep();
+});
+
+resetBtn.addEventListener("click", () => {
+  currentStep = 0;
+  updateStep();
+});
+
+updateStep();
+</script>
+<script src="./shared/nav.js"></script>
+</body>
+</html>

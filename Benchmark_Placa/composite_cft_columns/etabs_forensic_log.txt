@@ -1,0 +1,126 @@
+================================================================================
+ETABS API FORENSIC: extraccion de parametros internos cftDeckSlab
+================================================================================
+[..] GetObject fallo (GetObject devolvio None). Probando CreateObject(EXE)...
+[..] CreateObject(EXE) fallo ((-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))). Probando CreateObjectProgID...
+[OK] ETABS lanzado via CreateObjectProgID
+[..] Abriendo modelo: composite_cft_cftDeckSlab.EDB
+[..] Ejecutando analisis...
+[OK] Analisis completado
+
+>>> 1) FRAME SECTION PROPERTIES
+
+  CFT_HSS250x10 (ETABS Filled Steel Tube nativo):
+          name = CFT_HSS250x10
+          Area = 1.621250e-02
+           As2 = 1.138396e-02
+           As3 = 1.135447e-02
+             J = 0.000000e+00
+           I22 = 1.214701e-04
+           I33 = 1.214701e-04
+           S22 = 9.717608e-04
+           S33 = 9.717608e-04
+           Z22 = 1.244719e-03
+           Z33 = 1.244719e-03
+           R22 = 8.655850e-02
+           R33 = 8.655850e-02
+
+  W360X60:
+          Area = 7.886000e-03
+           As2 = 2.793206e-03
+           As3 = 4.732053e-03
+             J = 3.551833e-07
+           I22 = 1.813900e-05
+           I33 = 1.748099e-04
+           S22 = 1.787094e-04
+           S33 = 9.932381e-04
+           Z22 = 2.730745e-04
+           Z33 = 1.107173e-03
+           R22 = 4.795990e-02
+           R33 = 1.488863e-01
+
+>>> 2) FRAME MODIFIERS (Stiffness Modifiers AISC §I1.5 / cracking)
+
+  CFT_HSS250x10:
+           A_mod = 0.0000
+         As2_mod = 0.0000
+         As3_mod = 0.0000
+           J_mod = 0.0000
+         I22_mod = 0.0000
+         I33_mod = 0.0000
+        Mass_mod = 0.0000
+      Weight_mod = 0.0000
+
+  W360X60:
+           A_mod = 0.0000
+         As2_mod = 0.0000
+         As3_mod = 0.0000
+           J_mod = 0.0000
+         I22_mod = 0.0000
+         I33_mod = 0.0000
+        Mass_mod = 0.0000
+      Weight_mod = 0.0000
+
+>>> 3) SHELL MODELING TYPE & MODIFIERS
+
+  Losa: {'name': 'Losa', 'GetShell_error': 'GetShell', 'TypeOAPI': [1, 0]}
+  Modifiers Losa:
+         f11_mod = 0.0000
+         f22_mod = 0.0000
+         f12_mod = 0.0000
+         m11_mod = 0.0000
+         m22_mod = 0.0000
+         m12_mod = 0.0000
+         V13_mod = 0.0000
+         V23_mod = 0.0000
+        Mass_mod = 0.0000
+      Weight_mod = 0.0000
+
+>>> 4) FILLED STEEL TUBE COMPOSITE INFO
+
+{
+  "GetTube_error": "unicode string expected instead of float instance",
+  "GetCompositeColumnRectangle_error": "GetCompositeColumnRectangle",
+  "TypeOAPI": [
+    29,
+    0
+  ]
+}
+
+>>> 5) JOINT DISPLACEMENTS (centro losa, dead)
+
+  Joint con maxima |Uz|: joint 13, Uz = -2.9468 mm
+  Hekatan Variant A: w_centro = -2.9001 mm
+  Hekatan Variant C: w_centro = -3.0963 mm
+  Reference (anterior): -3.0074 mm
+  Diff Hekatan A vs ETABS:   -1.58 %
+  Diff Hekatan C vs ETABS:   +5.07 %
+
+>>> 6) COMPARATIVA HEKATAN vs ETABS — PROPIEDADES SECCION CFT
+
+  Property   |        Hekatan |          ETABS |   Diff %
+  ------------------------------------------------------------
+  A          |     1.6212e-02 |     1.6213e-02 |   -0.00 %
+  I          |     1.2147e-04 |     1.2147e-04 |   -0.00 %
+  J          |     1.8464e-04 |     0.0000e+00 |      N/A
+  As2        |     1.3510e-02 |     1.1384e-02 |  +18.68 %
+
+[OK] JSON guardado en: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_internals_forensic.json
+Cannot open file
+BufferFileIn::BufferFileIn(): 
+fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_steelOnly.Y_
+Cannot open file
+BufferFileIn::BufferFileIn(): 
+fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_filled.Y_
+Cannot open file
+BufferFileIn::BufferFileIn(): 
+fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_concreteOnly.Y_
+Cannot open file
+BufferFileIn::BufferFileIn(): 
+fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_canonical\case_cantileverColumn.Y_
+Cannot open file
+BufferFileIn::BufferFileIn(): 
+fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_canonical\case_clampedClampedBeam.Y_
+Cannot open file
+BufferFileIn::BufferFileIn(): 
+fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_canonical\case_cantileverBeam.Y_

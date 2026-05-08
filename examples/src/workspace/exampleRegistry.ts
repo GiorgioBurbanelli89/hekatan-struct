@@ -197,6 +197,21 @@ import { plateThin } from "../plate-thin/plateThin";
 import { plateThick } from "../plate-thick/plateThick";
 import { membrana } from "../membrana-pstress/membrana";
 import { shellThin } from "../shell-thin/shellThin";
+import { benchmark3way } from "../benchmark-3way/benchmark3way";
+import { benchmarkCft } from "../benchmark-cft/benchmarkCft";
+import { benchmarkCftCantilever } from "../benchmark-cft-cantilever/benchmarkCftCantilever";
+import { benchmarkSteelCantilever } from "../benchmark-steel-cantilever/benchmarkSteelCantilever";
+import { benchmarkConcreteCantilever } from "../benchmark-concrete-cantilever/benchmarkConcreteCantilever";
+// ── Benchmarks Paz (validación contra "Structural Dynamics" 6ª ed) ──
+import { benchmarkPaz4_1 } from "../benchmark-paz-4-1/benchmarkPaz4_1";
+import { benchmarkPaz6_1 } from "../benchmark-paz-6-1/benchmarkPaz6_1";
+import { benchmarkPaz7_1 } from "../benchmark-paz-7-1/benchmarkPaz7_1";
+import { benchmarkPaz8_1 } from "../benchmark-paz-8-1/benchmarkPaz8_1";
+import { benchmarkPaz9_3 } from "../benchmark-paz-9-3/benchmarkPaz9_3";
+import { benchmarkPaz10_7 } from "../benchmark-paz-10-7/benchmarkPaz10_7";
+import { benchmarkPaz11_1 } from "../benchmark-paz-11-1/benchmarkPaz11_1";
+import { benchmarkPaz12_1 } from "../benchmark-paz-12-1/benchmarkPaz12_1";
+import { benchmarkPaz13_1 } from "../benchmark-paz-13-1/benchmarkPaz13_1";
 import { shellThick } from "../shell-thick/shellThick";
 import { layeredShell } from "../layered-shell/layeredShell";
 import { edificioAporticado } from "../edificio-aporticado/edificioAporticado";
@@ -224,7 +239,12 @@ import { mezanine } from "../mezanine/mezanine";
 // Lienzo en blanco para dibujar (CAD interactivo)
 import { newBlank } from "../new-blank/newBlank";
 // Legacy del upstream awatif (rebrandeados, abren standalone)
-import { legacyAwatifExamples } from "./legacyAwatif";
+import {
+  legacyAwatifExamples,
+  legacyBeams,           // Paz 6.3 Space Frame (FRAME 1D)
+  solidCubeFEM,          // Cubo H8 (SOLIDO)
+  bulboPresionesSuelo,   // Bulbo presiones (COMBINADO area+spring)
+} from "./legacyAwatif";
 
 export const examplesRegistry: ExampleDef[] = [
   // 📐 NewBlank — lienzo en blanco al inicio (más visible)
@@ -235,8 +255,7 @@ export const examplesRegistry: ExampleDef[] = [
   cliModeler,
   // CAD Drawer — dibujar con mouse + Tweakpane (sincronizado con CLI)
   cadDraw,
-  // Cimentaciones (validación primero — defecto del workspace)
-  zapataAisladaValidacion,
+  // Cimentaciones (zapataAisladaValidacion va en sección Benchmarks Combinados)
   zapataAislada,
   zapataVigaAmarre,
   vigaMedioElastico,
@@ -267,18 +286,61 @@ export const examplesRegistry: ExampleDef[] = [
   edificioConMuros,
   edifAcero,
   mezanine,
-  // Placas
-  plateThin,
-  plateThick,
+  // Placas (no-benchmark: triangularPlate, membranaCSI, plane)
   triangularPlate,
-  membrana,
   membranaCSI,
   plane,
-  // Cáscaras
-  shellThin,
-  shellThick,
-  layeredShell,         // CLT Q4 (TS puro) con presets isotropico/balanced/sandwich/asimetrico
 
-  // ── Legacy upstream awatif (abren su propia UI VanJS standalone) ──
-  ...legacyAwatifExamples,
+  // ════════════════════════════════════════════════════════════════════
+  // 🏁 BENCHMARKS — Validación cruzada Hekatan vs ETABS / OpenSees / analítico
+  // Orden visual en el dropdown (categoría "🏁 Benchmarks"):
+  //   1) FRAMES (1D)         — vigas, columnas, frame3D
+  //   2) ÁREAS (Shell 2D)    — placas, membranas, cáscaras
+  //   3) SÓLIDOS (3D)        — H8 cube
+  //   4) COMBINADOS          — Area + Spring + Frame (zapatas, bulbo, edificios)
+  //   5) LAYERED             — layered shells (CLT, sandwich, ABBD)
+  // ════════════════════════════════════════════════════════════════════
+
+  // ── 1) FRAMES (1D) ──────────────────────────────────────────────
+  benchmarkSteelCantilever,    // Frame · Columna ACERO Cantilever (HSS hueco)
+  benchmarkConcreteCantilever, // Frame · Columna HORMIGÓN Cantilever (rectangular)
+  benchmarkCftCantilever,      // Frame · Columna CFT Cantilever (HSS + concrete fill)
+  legacyBeams,                 // Paz 6.3 Space Frame (validación 4 solvers)
+  // ── 6) Benchmarks Paz (Mario Paz "Structural Dynamics" 6ª ed) ──
+  // 1-DOF / time history canónicos
+  benchmarkPaz4_1,             // 1-DOF rectangular impulse
+  benchmarkPaz6_1,             // Newmark-β canonical (trapezoidal load)
+  // Shear buildings (frame + DIAPHRAGM RIGID, sin shells)
+  benchmarkPaz7_1,             // 2-story shear building (modal + TH)
+  benchmarkPaz8_1,             // 2-DOF triangular impulse (mismo modelo 7.1)
+  benchmarkPaz9_3,             // 4-story uniform shear building (modal)
+  // Vigas y frames con datos completos
+  benchmarkPaz10_7,            // Fixed-fixed beam (4 elementos + TH)
+  benchmarkPaz11_1,            // Plane frame inclinado 45°
+  benchmarkPaz12_1,            // Grid frame 3D (parrilla horizontal)
+  benchmarkPaz13_1,            // Space frame 3D (5 nodos, 4 vigas radiando)
+
+  // ── 2) ÁREAS (Shell 2D) ─────────────────────────────────────────
+  plateThin,               // Plate Thin (Kirchhoff)
+  plateThick,              // Plate Thick (Mindlin-Reissner)
+  membrana,                // Membrana (Plane Stress)
+  shellThin,               // Shell Thin (Kirchhoff-Love)
+  shellThick,              // Shell Thick (MITC4)
+
+  // ── 3) SÓLIDOS (3D) ─────────────────────────────────────────────
+  solidCubeFEM,            // Cubo Sólido H8 (validación CalculiX)
+
+  // ── 4) COMBINADOS — Area + Spring + Frame ─────────────────────
+  zapataAisladaValidacion, // Zapata aislada (Area + Winkler springs + Frame)
+  bulboPresionesSuelo,     // Bulbo de Presiones — Serquen SF-70
+  benchmark3way,           // Shell+Frame DOF mismatch (Area + Frame)
+  benchmarkCft,            // CFT cols + I-beams + losa (Area + Frame composite)
+
+  // ── 5) LAYERED ──────────────────────────────────────────────────
+  layeredShell,            // CLT/Sandwich/ABBD multi-capa
+
+  // ── Legacy upstream awatif (resto que no son benchmarks) ────
+  ...legacyAwatifExamples.filter(e =>
+    e.id !== "beams" && e.id !== "solid-cube-fem" && e.id !== "bulbo-presiones-suelo"
+  ),
 ];
