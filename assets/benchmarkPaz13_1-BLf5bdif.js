@@ -1,6 +1,6 @@
-import { m as F, __tla as __tla_0 } from "./didacticCpp-BaiPjJ4y.js";
+import { m as E, __tla as __tla_0 } from "./didacticCpp-BaiPjJ4y.js";
 import { i as S, j as I, d as P, P as u, __tla as __tla_1 } from "./pazFrameE2k-CZP8Q2TF.js";
-import { a as L, z as y, p as $, r as k, n as v, g as A } from "./newmarkBeta-CZ1uRmPu.js";
+import { a as L, z as F, p as $, r as k, n as v, g as y } from "./newmarkBeta-CZ1uRmPu.js";
 let G;
 let __tla = Promise.all([
   (() => {
@@ -186,34 +186,34 @@ let __tla = Promise.all([
       }
     },
     hasModal: true,
-    onParamChange(e, l) {
-      if (e === "exportE2k" && l.exportE2k > 0.5) {
-        const c = E(l), { filename: t, content: r } = I(c, "Paz_13_1");
-        P(t, r), console.log(`[Paz 13.1] e2k exportado: ${t} (${r.length} bytes)`), l.exportE2k = 0;
+    onParamChange(e, s) {
+      if (e === "exportE2k" && s.exportE2k > 0.5) {
+        const c = A(s), { filename: o, content: i } = I(c, "Paz_13_1");
+        P(o, i), console.log(`[Paz 13.1] e2k exportado: ${o} (${i.length} bytes)`), s.exportE2k = 0;
       }
-      e === "showTH" && l.showTH < 0.5 && A().hide();
+      e === "showTH" && s.showTH < 0.5 && y().hide();
     },
-    build(e, l) {
-      const c = E(e);
-      S(c, l);
-      let t = `[Paz 13.1] Space Frame 3D \u2014 5 nodos
+    build(e, s) {
+      const c = A(e);
+      S(c, s);
+      let o = `[Paz 13.1] Space Frame 3D \u2014 5 nodos
 `;
       if (e.showTH > 0.5) {
-        const { K6: r, M6: m } = H(e);
+        const { K6: i, M6: r } = H(e);
         try {
-          const d = L(r, m);
-          t += `  Modal (solver matricial directo, 6 DOF nodo 1):
-`, d.freqs.forEach((o, s) => {
-            t += `    Modo ${s + 1}: f = ${o.toFixed(3)} Hz, \u03C9\xB2 = ${d.omega2[s].toFixed(2)}
+          const m = L(i, r);
+          o += `  Modal (solver matricial directo, 6 DOF nodo 1):
+`, m.freqs.forEach((t, a) => {
+            o += `    Modo ${a + 1}: f = ${t.toFixed(3)} Hz, \u03C9\xB2 = ${m.omega2[a].toFixed(2)}
 `;
           });
-          const b = Math.sqrt(d.omega2[0]), f = Math.sqrt(d.omega2[Math.min(5, d.omega2.length - 1)]), p = y(6), _ = 2 * e.xi * b * f / (b + f), z = 2 * e.xi / (b + f);
-          for (let o = 0; o < 6; o++) for (let s = 0; s < 6; s++) p[o][s] = _ * m[o][s] + z * r[o][s];
-          const x = $(k(e.F0_lb, 0, e.pulseDur_s), 2, 6), M = Math.floor(e.tEnd_s / e.dt_s), n = v({
-            M: m,
-            K: r,
-            C: p,
-            loadFunc: x,
+          const b = Math.sqrt(m.omega2[0]), f = Math.sqrt(m.omega2[Math.min(5, m.omega2.length - 1)]), z = F(6), _ = 2 * e.xi * b * f / (b + f), x = 2 * e.xi / (b + f);
+          for (let t = 0; t < 6; t++) for (let a = 0; a < 6; a++) z[t][a] = _ * r[t][a] + x * i[t][a];
+          const M = $(k(e.F0_lb, 0, e.pulseDur_s), 2, 6), g = Math.floor(e.tEnd_s / e.dt_s), n = v({
+            M: r,
+            K: i,
+            C: z,
+            loadFunc: M,
             u0: [
               0,
               0,
@@ -231,123 +231,123 @@ let __tla = Promise.all([
               0
             ],
             dt: e.dt_s,
-            nSteps: M
-          }), i = Math.max(...n.u.map((o) => Math.abs(o[2])));
-          t += `  Newmark-\u03B2 TH (F=${e.F0_lb} lb step ${e.pulseDur_s}s, \u03BE=${e.xi}):
-`, t += `    u_z_max nodo 1 = ${i.toExponential(4)} in
+            nSteps: g
+          }), d = Math.max(...n.u.map((t) => Math.abs(t[2])));
+          o += `  Newmark-\u03B2 TH (F=${e.F0_lb} lb step ${e.pulseDur_s}s, \u03BE=${e.xi}):
+`, o += `    u_z_max nodo 1 = ${d.toExponential(4)} in
 `;
-          const a = A(), h = Math.round(e.plotType ?? 0);
-          h === 0 ? (a.setTitle("Paz 13.1 \u2014 u_z(t) nodo 1"), a.setSeries([
+          const l = y(), p = Math.round(e.plotType ?? 0);
+          p === 0 ? (l.setTitle("Paz 13.1 \u2014 u_z(t) nodo 1"), l.setSeries([
             {
               label: "u_z(t)",
-              data: n.t.map((o, s) => [
-                o,
-                n.u[s][2]
+              data: n.t.map((t, a) => [
+                t,
+                n.u[a][2]
               ]),
               color: "#1a4d8c",
               width: 2
             }
-          ]), a.setAxes({
+          ]), l.setAxes({
             xLabel: "t (s)",
             yLabel: "u_z (in)",
             grid: true
-          })) : h === 1 ? (a.setTitle("Paz 13.1 \u2014 v_z(t) nodo 1"), a.setSeries([
+          })) : p === 1 ? (l.setTitle("Paz 13.1 \u2014 v_z(t) nodo 1"), l.setSeries([
             {
               label: "v_z(t)",
-              data: n.t.map((o, s) => [
-                o,
-                n.v[s][2]
+              data: n.t.map((t, a) => [
+                t,
+                n.v[a][2]
               ]),
               color: "#1a4d8c",
               width: 2
             }
-          ]), a.setAxes({
+          ]), l.setAxes({
             xLabel: "t (s)",
             yLabel: "v_z (in/s)",
             grid: true
-          })) : h === 2 ? (a.setTitle("Paz 13.1 \u2014 a_z(t) nodo 1"), a.setSeries([
+          })) : p === 2 ? (l.setTitle("Paz 13.1 \u2014 a_z(t) nodo 1"), l.setSeries([
             {
               label: "a_z(t)",
-              data: n.t.map((o, s) => [
-                o,
-                n.a[s][2]
+              data: n.t.map((t, a) => [
+                t,
+                n.a[a][2]
               ]),
               color: "#1a4d8c",
               width: 2
             }
-          ]), a.setAxes({
+          ]), l.setAxes({
             xLabel: "t (s)",
             yLabel: "a_z (in/s\xB2)",
             grid: true
-          })) : h === 3 ? (a.setTitle("Paz 13.1 \u2014 Carga F(t) nodo 1"), a.setSeries([
+          })) : p === 3 ? (l.setTitle("Paz 13.1 \u2014 Carga F(t) nodo 1"), l.setSeries([
             {
               label: "F_z(t)",
-              data: n.t.map((o) => [
-                o,
-                k(e.F0_lb, 0, e.pulseDur_s)(o)
+              data: n.t.map((t) => [
+                t,
+                k(e.F0_lb, 0, e.pulseDur_s)(t)
               ]),
               color: "#7d3c98"
             }
-          ]), a.setAxes({
+          ]), l.setAxes({
             xLabel: "t (s)",
             yLabel: "F (lb)",
             grid: true
-          })) : h === 4 && (a.setTitle("Paz 13.1 \u2014 Translaciones nodo 1"), a.setSeries([
+          })) : p === 4 && (l.setTitle("Paz 13.1 \u2014 Translaciones nodo 1"), l.setSeries([
             {
               label: "u_x(t)",
-              data: n.t.map((o, s) => [
-                o,
-                n.u[s][0]
+              data: n.t.map((t, a) => [
+                t,
+                n.u[a][0]
               ]),
               color: "#1a4d8c"
             },
             {
               label: "u_y(t)",
-              data: n.t.map((o, s) => [
-                o,
-                n.u[s][1]
+              data: n.t.map((t, a) => [
+                t,
+                n.u[a][1]
               ]),
               color: "#2d8659"
             },
             {
               label: "u_z(t)",
-              data: n.t.map((o, s) => [
-                o,
-                n.u[s][2]
+              data: n.t.map((t, a) => [
+                t,
+                n.u[a][2]
               ]),
               color: "#c0392b"
             }
-          ]), a.setAxes({
+          ]), l.setAxes({
             xLabel: "t (s)",
             yLabel: "u (in)",
             grid: true
-          })), a.show();
-        } catch (d) {
-          t += `  \u26A0\uFE0F Error TH: ${d.message}
+          })), l.show();
+        } catch (m) {
+          o += `  \u26A0\uFE0F Error TH: ${m.message}
 `;
         }
       }
-      console.log(t);
+      console.log(o);
     },
-    runModal(e, l, c) {
-      if (l.nodes.val.length) try {
-        const t = F(l.nodes.val, l.elements.val, l.nodeInputs.val, l.elementInputs.val, 6);
+    runModal(e, s, c) {
+      if (s.nodes.val.length) try {
+        const o = E(s.nodes.val, s.elements.val, s.nodeInputs.val, s.elementInputs.val, 6);
         console.log(`[Paz 13.1 \u2014 Modal Hekatan FEM 3D] frecuencias:
-` + t.frequencies.slice(0, 6).map((r, m) => `  Modo ${m + 1}: f = ${r.toFixed(3)} Hz   T = ${(1 / r).toFixed(4)} s`).join(`
-`)), (c == null ? void 0 : c.render) && c.render(t, {
+` + o.frequencies.slice(0, 6).map((i, r) => `  Modo ${r + 1}: f = ${i.toFixed(3)} Hz   T = ${(1 / i).toFixed(4)} s`).join(`
+`)), (c == null ? void 0 : c.render) && c.render(o, {
           title: "Paz 13.1 \u2014 Space frame 3D",
           properties: [
             `5 nodos: 1 libre + 4 empotrados radiando, L=${e.L_in}in`,
             `M1,3: A=${e.A1_in2} I=${e.I1_in4}; M2,4: A=${e.A2_in2} I=${e.I2_in4}`
           ]
         });
-      } catch (t) {
-        console.error("[Paz 13.1 Modal FEM] error:", t.message);
+      } catch (o) {
+        console.error("[Paz 13.1 Modal FEM] error:", o.message);
       }
     }
   };
-  function E(e) {
-    const l = u.in_to_m(e.L_in), c = u.psi_to_kNm2(e.E_psi), t = u.psi_to_kNm2(e.G_psi), r = u.in2_to_m2(e.A1_in2), m = u.in2_to_m2(e.A2_in2), d = u.in4_to_m4(e.I1_in4), b = u.in4_to_m4(e.I2_in4), f = u.in4_to_m4(e.J1_in4), p = u.in4_to_m4(e.J2_in4), _ = 386.088, z = e.mbar1 * _ / e.A1_in2 * 175.13 / 0.0254, x = e.mbar2 * _ / e.A2_in2 * 175.13 / 0.0254, M = [
+  function A(e) {
+    const s = u.in_to_m(e.L_in), c = u.psi_to_kNm2(e.E_psi), o = u.psi_to_kNm2(e.G_psi), i = u.in2_to_m2(e.A1_in2), r = u.in2_to_m2(e.A2_in2), m = u.in4_to_m4(e.I1_in4), b = u.in4_to_m4(e.I2_in4), f = u.in4_to_m4(e.J1_in4), z = u.in4_to_m4(e.J2_in4), _ = 386.088, x = e.mbar1 * _ / e.A1_in2 * 175.13 / 0.0254, M = e.mbar2 * _ / e.A2_in2 * 175.13 / 0.0254, g = [
       [
         0,
         0,
@@ -356,21 +356,21 @@ let __tla = Promise.all([
       [
         0,
         0,
-        -l
+        -s
       ],
       [
         0,
-        l,
+        s,
         0
       ],
       [
-        -l,
+        -s,
         0,
         0
       ],
       [
         0,
-        -l,
+        -s,
         0
       ]
     ], T = [
@@ -390,8 +390,8 @@ let __tla = Promise.all([
         0,
         4
       ]
-    ], g = /* @__PURE__ */ new Map();
-    for (let i = 1; i <= 4; i++) g.set(i, [
+    ], h = /* @__PURE__ */ new Map();
+    for (let t = 1; t <= 4; t++) h.set(t, [
       true,
       true,
       true,
@@ -399,22 +399,31 @@ let __tla = Promise.all([
       true,
       true
     ]);
-    const n = [
+    const d = (e.F0_lb ?? 5e3) * 444822e-8, l = /* @__PURE__ */ new Map();
+    l.set(0, [
+      0,
+      0,
+      d,
+      0,
+      0,
+      0
+    ]);
+    const p = [
       0,
       1,
       2,
       3
-    ].map((i) => {
-      const a = i === 0 || i === 2;
+    ].map((t) => {
+      const a = t === 0 || t === 2;
       return {
-        A: a ? r : m,
-        Iy: a ? d : b,
-        Iz: a ? d : b,
-        J: a ? f : p,
+        A: a ? i : r,
+        Iy: a ? m : b,
+        Iz: a ? m : b,
+        J: a ? f : z,
         E: c,
-        G: t,
-        rho: a ? z : x,
-        label: a ? `Member ${i + 1} (type 1)` : `Member ${i + 1} (type 2)`,
+        G: o,
+        rho: a ? x : M,
+        label: a ? `Member ${t + 1} (type 1)` : `Member ${t + 1} (type 2)`,
         e2kName: a ? "MEM_TYPE1" : "MEM_TYPE2",
         e2kShape: "Steel I/Wide Flange",
         e2kD: a ? 0.3 : 0.2,
@@ -424,28 +433,29 @@ let __tla = Promise.all([
       };
     });
     return {
-      nodes: M,
+      nodes: g,
       elements: T,
-      supports: g,
-      sectionByElement: n,
+      supports: h,
+      loads: l,
+      sectionByElement: p,
       materialName: "A992Fy50",
       materialType: "Steel"
     };
   }
   function H(e) {
-    const l = e.E_psi, c = e.G_psi, t = e.L_in, r = y(6), m = y(6);
-    function d(b, f, p, _, z) {
-      const x = l * b / t, M = 12 * l * f / Math.pow(t, 3), T = c * p / t, g = 4 * l * f / t;
-      r[_][_] += x;
-      for (let i = 0; i < 3; i++) i !== _ && (r[i][i] += M);
-      r[_ + 3][_ + 3] += T;
-      for (let i = 3; i < 6; i++) i !== _ + 3 && (r[i][i] += g);
-      const n = z * t / 2;
-      m[0][0] += n, m[1][1] += n, m[2][2] += n, m[3][3] += n * t * t * 1e-3, m[4][4] += n * t * t * 1e-3, m[5][5] += n * t * t * 1e-3;
+    const s = e.E_psi, c = e.G_psi, o = e.L_in, i = F(6), r = F(6);
+    function m(b, f, z, _, x) {
+      const M = s * b / o, g = 12 * s * f / Math.pow(o, 3), T = c * z / o, h = 4 * s * f / o;
+      i[_][_] += M;
+      for (let d = 0; d < 3; d++) d !== _ && (i[d][d] += g);
+      i[_ + 3][_ + 3] += T;
+      for (let d = 3; d < 6; d++) d !== _ + 3 && (i[d][d] += h);
+      const n = x * o / 2;
+      r[0][0] += n, r[1][1] += n, r[2][2] += n, r[3][3] += n * o * o * 1e-3, r[4][4] += n * o * o * 1e-3, r[5][5] += n * o * o * 1e-3;
     }
-    return d(e.A1_in2, e.I1_in4, e.J1_in4, 2, e.mbar1), d(e.A2_in2, e.I2_in4, e.J2_in4, 1, e.mbar2), d(e.A1_in2, e.I1_in4, e.J1_in4, 0, e.mbar1), d(e.A2_in2, e.I2_in4, e.J2_in4, 1, e.mbar2), {
-      K6: r,
-      M6: m
+    return m(e.A1_in2, e.I1_in4, e.J1_in4, 2, e.mbar1), m(e.A2_in2, e.I2_in4, e.J2_in4, 1, e.mbar2), m(e.A1_in2, e.I1_in4, e.J1_in4, 0, e.mbar1), m(e.A2_in2, e.I2_in4, e.J2_in4, 1, e.mbar2), {
+      K6: i,
+      M6: r
     };
   }
 });
