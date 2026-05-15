@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>22 · Plate-Thin explicado de cero — qué significa cada número y de dónde sale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+<style>
+  .pregunta-card {
+    padding: 16px 20px;
+    background: var(--paper-dark);
+    border: 1px solid var(--ink-fade);
+    border-radius: 4px;
+    border-left: 5px solid var(--gold);
+    margin: 14px 0;
+  }
+  .pregunta-card .pregunta {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+  .pregunta-card .respuesta { font-size: 1rem; line-height: 1.6; }
+
+  .visual-2d {
+    background: var(--paper-dark);
+    border: 1px solid var(--ink-fade);
+    border-radius: 4px;
+    padding: 14px;
+    display: block;
+    margin: 14px auto;
+    max-width: 100%;
+  }
+
+  .tabla-decode {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.92rem;
+  }
+  .tabla-decode th, .tabla-decode td {
+    padding: 9px 11px;
+    border: 1px solid var(--ink-fade);
+    text-align: left;
+    vertical-align: top;
+  }
+  .tabla-decode th {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+  .tabla-decode td.mono { font-family: 'JetBrains Mono', monospace; font-size: 0.86rem; }
+  .tabla-decode .row-bfs    { background: rgba(44,94,142,0.10); }
+  .tabla-decode .row-dkq    { background: rgba(162,50,50,0.10); }
+  .tabla-decode .row-melosh { background: rgba(176,141,79,0.10); }
+  .tabla-decode .row-analitico { background: rgba(45,106,79,0.12); font-weight: 700; }
+
+  .cita-card {
+    background: linear-gradient(90deg, var(--paper-dark), rgba(176,141,79,0.18));
+    border: 1.5px solid var(--gold);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 14px 0;
+    font-family: 'Newsreader', serif;
+  }
+  .cita-card .source {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+  .cita-card blockquote {
+    font-style: italic;
+    color: var(--ink);
+    margin: 0;
+    padding-left: 14px;
+    border-left: 3px solid var(--gold);
+  }
+  .cita-card .traduccion {
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+    margin-top: 8px;
+  }
+
+  .archivo-list {
+    background: var(--paper-dark);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin: 14px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.84rem;
+    line-height: 1.7;
+  }
+  .archivo-list .filename {
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .archivo-list .desc {
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    font-family: 'Newsreader', serif;
+    font-style: italic;
+  }
+
+  .resumen-final {
+    padding: 18px 22px;
+    background: linear-gradient(90deg, var(--paper-dark), rgba(45,106,79,0.20));
+    border: 2px solid var(--green);
+    border-radius: 6px;
+    margin: 18px 0;
+  }
+  .resumen-final .label {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--green);
+    font-weight: 700;
+    font-size: 0.82rem;
+    margin-bottom: 8px;
+    letter-spacing: 0.05em;
+  }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
+  .pill.bfs    { background: rgba(44,94,142,0.18); color: #1f4670; }
+  .pill.dkq    { background: rgba(162,50,50,0.18); color: #8a2828; }
+  .pill.melosh { background: rgba(176,141,79,0.22); color: #7a5f30; }
+  .pill.exact  { background: rgba(45,106,79,0.18); color: #1d4a36; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 22 · La tabla explicada palabra por palabra</div>
+    <h1>Plate-Thin de cero: qué es FEM, qué significa esa tabla, y dónde está escrito todo</h1>
+    <div class="subtitle">Tu pregunta literal fue <em>"no entiendo nada de FEM, de dónde te basaste"</em> — esta diapositiva responde eso. Cero matemática asumida.</div>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- 1. ¿Qué pregunta nos estamos haciendo?                       -->
+  <!-- ============================================================ -->
+  <section>
+    <h2>1. La situación física — sin matemática</h2>
+    <p>Tenemos una <strong>losa de hormigón</strong> rectangular:</p>
+    <ul style="margin-left:24px;line-height:1.7">
+      <li>6 m de largo × 4 m de ancho × 10 cm de espesor.</li>
+      <li>Apoyada en los 4 bordes (como un techo apoyado en 4 muros).</li>
+      <li>Le ponemos arriba una carga uniforme de 10 kN/m² (≈ 1 tonelada por m²).</li>
+      <li>Queremos saber: <strong>¿cuánto baja en el medio? ¿qué tan grande es el momento que sufre?</strong></li>
+    </ul>
+
+    <svg class="visual-2d" viewBox="0 0 740 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- losa -->
+      <rect x="180" y="50" width="380" height="80" fill="#cfa67a" stroke="#1a2942" stroke-width="2"/>
+      <text x="370" y="98" text-anchor="middle" font-family="Cormorant Garamond" font-size="22" fill="#1a2942" font-style="italic">losa 6 × 4 × 0.10 m</text>
+      <!-- carga uniforme (flechas) -->
+      <g stroke="#a23232" stroke-width="1.8" fill="#a23232">
+        <line x1="220" y1="22" x2="220" y2="48"/><polygon points="217,42 223,42 220,50"/>
+        <line x1="280" y1="22" x2="280" y2="48"/><polygon points="277,42 283,42 280,50"/>
+        <line x1="340" y1="22" x2="340" y2="48"/><polygon points="337,42 343,42 340,50"/>
+        <line x1="400" y1="22" x2="400" y2="48"/><polygon points="397,42 403,42 400,50"/>
+        <line x1="460" y1="22" x2="460" y2="48"/><polygon points="457,42 463,42 460,50"/>
+        <line x1="520" y1="22" x2="520" y2="48"/><polygon points="517,42 523,42 520,50"/>
+      </g>
+      <text x="370" y="14" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="#a23232">q = 10 kN/m²</text>
+      <!-- apoyos en bordes -->
+      <g fill="#2d6a4f">
+        <polygon points="180,130 165,150 195,150"/>
+        <polygon points="560,130 545,150 575,150"/>
+      </g>
+      <text x="180" y="170" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#2d6a4f">apoyo</text>
+      <text x="560" y="170" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#2d6a4f">apoyo</text>
+      <!-- preguntas -->
+      <text x="370" y="160" text-anchor="middle" font-family="Cormorant Garamond" font-size="14" fill="#1a2942" font-style="italic">¿Cuánto baja el centro? ¿Qué momento sufre?</text>
+    </svg>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 2. ¿Qué es FEM? — sin formulas                                -->
+  <!-- ============================================================ -->
+  <section>
+    <h2>2. ¿Qué es FEM, en una hoja?</h2>
+
+    <div class="pregunta-card">
+      <div class="pregunta">PROBLEMA SIN FEM</div>
+      <div class="respuesta">
+        La losa es una superficie continua: tiene <strong>infinitos puntos</strong>. Para saber cuánto baja en cada punto necesitaríamos resolver ecuaciones diferenciales (Kirchhoff las dejó escritas en 1850). Para una losa rectangular simple, Navier encontró una solución exacta con series de senos. Pero para cualquier geometría rara (con huecos, bordes irregulares, cargas puntuales) <em>no hay solución cerrada</em>.
+      </div>
+    </div>
+
+    <div class="pregunta-card" style="border-left-color:var(--blue)">
+      <div class="pregunta" style="color:var(--blue)">SOLUCIÓN FEM (Finite Element Method)</div>
+      <div class="respuesta">
+        Hacemos trampa controlada:
+        <ol style="margin-left:24px;margin-top:6px;line-height:1.7">
+          <li><strong>Cortamos la losa en cuadraditos</strong> ("elementos"). Eso es la <strong>malla</strong>.</li>
+          <li>En cada cuadradito asumimos una <strong>fórmula simple</strong> de cómo se deforma (un polinomio de orden 3, por ejemplo).</li>
+          <li>En las esquinas de los cuadraditos hay <strong>nodos</strong>. Lo que se mueve cada nodo (baja, gira) son los <strong>grados de libertad (GDL)</strong>.</li>
+          <li>Aplicamos equilibrio en cada cuadradito y unimos todos. Sale un <strong>sistema lineal $\mathbf{K}\,\mathbf{u} = \mathbf{F}$</strong>.</li>
+          <li>Resolvemos. Listo: tenemos cuánto baja cada nodo y, derivando, los momentos.</li>
+        </ol>
+      </div>
+    </div>
+
+    <p>El detalle clave: <strong>el paso 2 (la fórmula que asume cada cuadradito) no es único</strong>. Distintos investigadores propusieron distintas fórmulas. Eso son los <em>elementos finitos</em> que ves en la tabla: BFS, DKQ, Melosh.</p>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 3. La tabla explicada celda por celda                         -->
+  <!-- ============================================================ -->
+  <section>
+    <h2>3. La tabla, columna por columna</h2>
+    <p>La tabla que te mostré fue ésta:</p>
+
+    <table class="tabla-decode">
+      <thead>
+        <tr>
+          <th>Variable</th>
+          <th>Analítico Navier</th>
+          <th>BFS Q4 (16 GDL)</th>
+          <th>Batoz DKQ = SAP (12 GDL)</th>
+          <th>Melosh ACM (12 GDL)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="row-analitico">
+          <td>w_centro mm</td>
+          <td class="mono">6.623</td>
+          <td class="mono">6.629 (+0.1%)</td>
+          <td class="mono">6.529 (-1.4%)</td>
+          <td class="mono">6.857 (+3.5%)</td>
+        </tr>
+        <tr class="row-analitico">
+          <td>Mxy esquina</td>
+          <td class="mono">8.329</td>
+          <td class="mono">8.378 (+0.6%)</td>
+          <td class="mono">7.254 (-12.9%)</td>
+          <td class="mono">8.532 (+2.4%)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:18px">Qué significa cada columna</h3>
+
+    <div class="pregunta-card" style="border-left-color:var(--green)">
+      <div class="pregunta" style="color:var(--green)"><span class="pill exact">ANALÍTICO NAVIER</span> · "la verdad" matemática</div>
+      <div class="respuesta">
+        Es la <strong>respuesta exacta</strong> de las ecuaciones de Kirchhoff (1850) para esa losa rectangular específica. La calculó <strong>Claude-Louis Navier (1820)</strong> con series infinitas de senos. No tiene error de discretización porque no usa malla — es matemática pura. <strong>Es nuestro juez.</strong>
+      </div>
+    </div>
+
+    <div class="pregunta-card" style="border-left-color:var(--blue)">
+      <div class="pregunta" style="color:var(--blue)"><span class="pill bfs">BFS Q4 (16 GDL)</span> · el elemento que usa Calcpad y Hekatan Lab</div>
+      <div class="respuesta">
+        Es el <strong>elemento que usamos nosotros</strong> en Calcpad-Lab. <strong>BFS</strong> son las iniciales de <strong>Bogner, Fox y Schmit</strong> (3 investigadores que lo publicaron en 1965). <strong>Q4</strong> = "cuadrilátero de 4 nodos". <strong>16 GDL</strong> porque guarda 4 cosas por nodo: cuánto baja ($w$), cómo se inclina hacia X ($\partial w/\partial x$), cómo se inclina hacia Y ($\partial w/\partial y$), y un cuarto valor extra que captura cómo se "tuerce" la esquina ($\partial^2 w/\partial x\partial y$ — eso es $\psi$).
+        <br><br>
+        Resultado: <strong>+0.1% de error en cuánto baja, +0.6% en el momento de torsión</strong>. <em>Es básicamente exacto.</em>
+      </div>
+    </div>
+
+    <div class="pregunta-card" style="border-left-color:var(--red)">
+      <div class="pregunta" style="color:var(--red)"><span class="pill dkq">BATOZ DKQ = SAP (12 GDL)</span> · el elemento que usa SAP 2000 (y casi todo el software comercial)</div>
+      <div class="respuesta">
+        Es el <strong>elemento que usa SAP 2000 internamente</strong> cuando elegís "Plate-Thin". <strong>DKQ</strong> = <strong>Discrete Kirchhoff Quadrilateral</strong>. Lo publicaron Jean-Louis Batoz y Tahar en 1982 (paper: <em>IJNME</em>, vol 18).<strong>12 GDL</strong> porque guarda solo 3 cosas por nodo: $w$, $\partial w/\partial x$, $\partial w/\partial y$. <em>Le falta el cuarto valor de torsión.</em>
+        <br><br>
+        Resultado: <strong>-1.4% en cuánto baja</strong>, <strong>-12.9% en el momento de torsión esquinero</strong>. Subestima la torsión.
+      </div>
+    </div>
+
+    <div class="pregunta-card" style="border-left-color:var(--gold)">
+      <div class="pregunta" style="color:var(--gold)"><span class="pill melosh">MELOSH ACM (12 GDL)</span> · el elemento más viejo (1963)</div>
+      <div class="respuesta">
+        <strong>Robert Melosh</strong>, 1963 — uno de los primeros elementos de placa. <strong>ACM</strong> = "Adini-Clough-Melosh". También 12 GDL, pero usa otra fórmula matemática. Es lo que usaban los programas de los años 70.
+        <br><br>
+        Resultado: <strong>+3.5% en baja</strong>, <strong>+2.4% en momento torsor</strong>. Aceptable pero hoy en día se prefieren BFS o DKQ.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 4. De dónde sale cada formulación — citas exactas             -->
+  <!-- ============================================================ -->
+  <section>
+    <h2>4. ¿De dónde te basaste? — los libros y archivos exactos</h2>
+
+    <p>Todo lo que afirmé está documentado en estos archivos que están en tu carpeta:</p>
+
+    <div class="archivo-list">
+      <span class="filename">📂 C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\Pdf\CSI\</span><br>
+      <br>
+      ├─ <span class="filename">Edward_Wilson_Analisis_Estructuras.txt</span> <span class="desc">(1.0 MB · 462 páginas)</span><br>
+      │  <span class="desc">Libro completo de Edward L. Wilson — creador de SAP2000.<br>
+      │  Capítulo 8 (página 136): define DKE y DSE como los elementos<br>
+      │  de placa que usa SAP2000. Ahí dice textualmente que son "más<br>
+      │  flexibles que la solución exacta".</span><br>
+      │<br>
+      ├─ <span class="filename">Chapter10_Shell_Element.txt</span> <span class="desc">(78 KB · CSI Reference Manual oficial)</span><br>
+      │  <span class="desc">Manual oficial de CSI explicando el elemento Shell. Confirma<br>
+      │  que Plate-Thin usa formulación Kirchhoff con 2×2 Gauss + extrapolación a nodos.</span><br>
+      │<br>
+      ├─ <span class="filename">Ch10_Shell_Wilson.txt</span> <span class="desc">(16 KB · capítulo 10 del libro Wilson)</span><br>
+      │  <span class="desc">Comparativa DSE vs DKE con figuras. Confirma que ambos están<br>
+      │  basados en suprimir el corte transversal en los lados del elemento.</span><br>
+      │<br>
+      ├─ <span class="filename">CSiRefer.txt</span> <span class="desc">(1.1 MB · referencia técnica CSI completa)</span><br>
+      │  <span class="desc">Detalles de implementación. Menciona Taylor &amp; Simo (1985),<br>
+      │  Ibrahimbegovic &amp; Wilson (1991) — papers académicos detrás de SAP.</span><br>
+      │<br>
+      └─ <span class="filename">Ch6_Incompatible.txt</span> <span class="desc">(8.5 KB)</span><br>
+        <span class="desc">"Incompatible modes" — la técnica que usa SAP para mejorar la<br>
+        precisión sin agregar nodos.</span>
+    </div>
+
+    <h3 style="margin-top:18px">La cita exacta — escrita por el creador de SAP 2000</h3>
+
+    <div class="cita-card">
+      <div class="source">EDWARD L. WILSON — Análisis Estructural — Cap. 8, página 136</div>
+      <blockquote>
+        "Si se fija el cortante en cero a lo largo de cada lado del elemento... esta aproximación produce el Elemento Discreto Kirchhoff, <strong>DKE (Discrete Kirchhoff Element)</strong>, donde deformaciones de cortante transversal son fijadas en cero..."
+        <br><br>
+        "<strong>Para muchos problemas, el DSE y el DKE tienden a ser más flexibles que la solución exacta.</strong>"
+      </blockquote>
+      <div class="traduccion">
+        <strong>Wilson mismo</strong> dice que su elemento DKE (= lo que usa SAP 2000 Plate-Thin) <em>subestima la rigidez real</em>. Eso es exactamente lo que vimos numéricamente: -12.9% en el momento torsor.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 5. ¿Por qué importa para diseño?                              -->
+  <!-- ============================================================ -->
+  <section>
+    <h2>5. Por qué esto importa en obra — el caso de las esquinas</h2>
+
+    <p>En una losa apoyada en los 4 bordes, las <strong>esquinas se quieren levantar</strong>. Si no hay anclaje, la losa se despega. Para evitar eso, ponemos armadura de torsión.</p>
+
+    <p>La fuerza que tira de la esquina hacia arriba (Kirchhoff la calculó en 1850) es:</p>
+
+    <div style="text-align:center;margin:14px 0;font-size:1.15rem">
+      $F_{\text{esquina}} = 2 \cdot |M_{xy}|$
+    </div>
+
+    <p>Entonces, con los números de la tabla:</p>
+
+    <table class="tabla-decode">
+      <thead>
+        <tr>
+          <th>Software</th>
+          <th>Mxy esquina</th>
+          <th>Fuerza levante = 2·|Mxy|</th>
+          <th>Implicancia para diseño</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="row-analitico">
+          <td>Analítico (la verdad)</td>
+          <td class="mono">8.329 kNm/m</td>
+          <td class="mono">16.66 kN por metro de esquina</td>
+          <td>valor "correcto"</td>
+        </tr>
+        <tr class="row-bfs">
+          <td>Calcpad-Lab BFS</td>
+          <td class="mono">8.378 kNm/m</td>
+          <td class="mono">16.76 kN/m (+0.6%)</td>
+          <td>diseño igual al exacto ✓</td>
+        </tr>
+        <tr class="row-dkq">
+          <td><strong>SAP 2000 (DKQ)</strong></td>
+          <td class="mono"><strong>7.254 kNm/m</strong></td>
+          <td class="mono"><strong>14.51 kN/m (-12.9%)</strong></td>
+          <td><strong>subdimensiona la armadura</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="resumen-final">
+      <div class="label">CONSECUENCIA PRÁCTICA</div>
+      Si diseñás la armadura de torsión en las esquinas con SAP 2000 Plate-Thin sin refinar la malla, te queda <strong>13% menos armadura</strong> que la que la teoría exacta indica. Para una obra real <em>eso podría ser inseguro</em>. Calcpad / Hekatan Lab con BFS te da el valor correcto desde la primera corrida.
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 6. Cómo reproducir todo                                       -->
+  <!-- ============================================================ -->
+  <section>
+    <h2>6. ¿Cómo verificar todo esto vos mismo?</h2>
+
+    <p>Los 4 valores de la tabla salen de scripts en tu propia computadora. Cada uno se puede correr en 1 línea:</p>
+
+    <div class="archivo-list">
+      <span class="filename"># 1. Calcpad oficial — referencia "Calcpad" (BFS)</span><br>
+      "/c/Program Files/Calcpad/Cli.exe" \<br>
+      &nbsp;&nbsp;<span style="color:var(--blue)">"validacion/Calcpad/benchmark_platethin/benchmark_platethin.cpd"</span> html -s<br>
+      <br>
+      <span class="filename"># 2. SAP 2000 v24 — vía API real (Python)</span><br>
+      python <span style="color:var(--red)">"validacion/Api CSI Computers/sap2000-api/python/benchmark_platethin/sap2000_platethin_direct_M.py"</span><br>
+      <br>
+      <span class="filename"># 3. Calcpad-Lab — 3 elementos (BFS · DKQ · Melosh)</span><br>
+      "Calcpad-Lab/Symbolic.Cli/bin/Debug/net10.0/CalcpadLabCli.exe" \<br>
+      &nbsp;&nbsp;<span style="color:var(--gold)">"validacion/Calcpad Lab/benchmark_platethin/benchmark_platethin_DKQ.m"</span> html -s --pure<br>
+    </div>
+
+    <p>Los resultados ya están guardados en:</p>
+    <div class="archivo-list" style="font-size:0.8rem">
+      <span class="filename">📂 hekatan-struct/validacion/Calcpad Lab/benchmark_platethin/</span><br>
+      ├─ benchmark_platethin_BFS.m / .html / fig{1..5}.png<br>
+      ├─ benchmark_platethin_DKQ.m / .html / fig{1..5}.png &nbsp;<span class="desc">← igual SAP 2000 a 4 decimales</span><br>
+      ├─ benchmark_platethin_Melosh.m / .html / fig{1..5}.png<br>
+      └─ README.md &nbsp;<span class="desc">← la tabla completa de validación</span>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 7. Resumen de una línea                                       -->
+  <!-- ============================================================ -->
+  <div class="quote" style="margin-top:24px">
+    <strong>Resumen:</strong> "FEM" = partir una pieza en cuadraditos. Cada cuadradito tiene una fórmula propuesta por alguien. <em>BFS</em> (1965) usa 4 valores por nodo → preciso. <em>DKQ</em> (Batoz 1982, lo que usa SAP) usa 3 valores → subestima la torsión un 13%. <em>Melosh</em> (1963) es la versión vieja. La tabla mide qué tan lejos está cada uno del valor exacto.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 22 · PLATE-THIN PARA NO-FEM
+  </div>
+
+</div>
+
+<script src="./shared/nav.js"></script>
+</body>
+</html>

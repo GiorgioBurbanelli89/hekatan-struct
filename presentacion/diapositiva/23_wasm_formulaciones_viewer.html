@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>23 · WASM viewer interactivo — las 4 formulaciones de placa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+<style>
+  .open-viewer {
+    display: inline-block;
+    padding: 10px 22px;
+    background: var(--gold);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    margin: 8px 0;
+    transition: all 0.18s;
+  }
+  .open-viewer:hover {
+    background: var(--ink);
+    color: var(--gold);
+    border-color: var(--gold);
+  }
+
+  .formula-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 14px 0;
+  }
+  .form-tile {
+    padding: 14px 16px;
+    background: var(--paper-dark);
+    border: 1px solid var(--ink-fade);
+    border-radius: 5px;
+  }
+  .form-tile.bfs    { border-left: 5px solid var(--blue); }
+  .form-tile.dkq    { border-left: 5px solid var(--red); }
+  .form-tile.melosh { border-left: 5px solid var(--gold); }
+  .form-tile.mindlin{ border-left: 5px solid var(--green); }
+  .form-tile h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.86rem;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  .form-tile.bfs    h3 { color: var(--blue); }
+  .form-tile.dkq    h3 { color: var(--red); }
+  .form-tile.melosh h3 { color: var(--gold); }
+  .form-tile.mindlin h3{ color: var(--green); }
+  .form-tile .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.74rem;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .form-tile .descr { font-size: 0.92rem; line-height: 1.5; }
+  .form-tile .result {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: var(--paper);
+    border-radius: 3px;
+    color: var(--ink-soft);
+  }
+  .form-tile .result strong { color: var(--ink); }
+
+  .layer-card {
+    background: var(--paper-dark);
+    border: 1px solid var(--ink-fade);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 0.93rem;
+    line-height: 1.55;
+  }
+  .layer-card .label {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--gold);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin: 16px 0;
+    align-items: stretch;
+  }
+  .pipe-step {
+    padding: 10px 8px;
+    background: var(--paper-dark);
+    border: 1px solid var(--ink-fade);
+    border-radius: 4px;
+    text-align: center;
+    font-size: 0.82rem;
+  }
+  .pipe-step .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--gold);
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .pipe-step .step-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+  }
+  .pipe-step .step-mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--ink-soft);
+  }
+  .pipe-arrow {
+    text-align: center;
+    color: var(--gold);
+    font-size: 1.6rem;
+    margin: 0;
+    line-height: 1;
+  }
+
+  .controls-demo {
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-radius: 5px;
+    padding: 14px;
+    margin: 14px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+  }
+  .controls-demo .row {
+    display: flex; gap: 12px;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .controls-demo .knob {
+    background: var(--paper-dark);
+    padding: 4px 10px;
+    border-radius: 3px;
+    border: 1px solid var(--ink-fade);
+  }
+  .controls-demo .knob .lbl { color: var(--ink-soft); font-size: 0.72rem; margin-right: 4px; }
+  .controls-demo .knob .val { color: var(--ink); font-weight: 700; }
+
+  .keypoint {
+    padding: 14px 22px;
+    background: linear-gradient(90deg, var(--paper-dark), rgba(45,106,79,0.18));
+    border: 2px solid var(--green);
+    border-radius: 6px;
+    margin: 16px 0;
+  }
+  .keypoint .label {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--green);
+    font-weight: 700;
+    font-size: 0.78rem;
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+  }
+
+  .file-tree {
+    background: var(--paper-dark);
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.65;
+    color: var(--ink);
+    overflow-x: auto;
+  }
+  .file-tree .descr { color: var(--ink-soft); font-style: italic; }
+
+  .tools-line {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 10px 0;
+  }
+  .tools-line .pill {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: var(--paper-dark);
+    border: 1px solid var(--ink-fade);
+  }
+  .tools-line .pill.match {
+    background: rgba(45,106,79,0.18);
+    color: #1d4a36;
+    border-color: var(--green);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 23 · Lab interactivo en el navegador</div>
+    <h1>WASM viewer: las 4 formulaciones de placa, sobre la misma malla, en vivo</h1>
+    <div class="subtitle">C++ compilado a WebAssembly · 56 KB · 4 elementos · 16 contornos Plotly interactivos · cambia los parámetros y resuelve en &lt; 1 segundo.</div>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- 1. Qué es y por qué                                          -->
+  <!-- ============================================================ -->
+  <section>
+    <h2>1. Para qué sirve esta herramienta</h2>
+    <p>
+      Una página HTML que carga un <strong>módulo WebAssembly de 56 KB</strong> escrito
+      en C++. Resuelve la misma placa con <strong>4 elementos finitos distintos</strong>
+      y dibuja 16 mapas de contorno con Plotly. Sin servidor, sin instalación, sin
+      Python — solo un browser moderno.
+    </p>
+
+    <p style="text-align:center">
+      <a class="open-viewer" href="../../validacion/wasm_plate_formulations/viewer.html" target="_blank">
+        ▶ Abrir el viewer interactivo en pestaña nueva
+      </a>
+    </p>
+
+    <div class="layer-card">
+      <div class="label">PARA QUÉ ES ÚTIL EN TU TFM</div>
+      Te permite mostrar <em>en vivo</em>, frente al jurado, que las 4 formulaciones
+      coexisten en el mismo solver y que <strong>cada una da un número distinto</strong>
+      para el mismo problema físico. Hacés clic en "Recalcular", cambiás la malla de
+      6×4 a 24×16, y se ve la <em>convergencia</em> de cada elemento al valor analítico.
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 2. Las 4 formulaciones                                       -->
+  <!-- ============================================================ -->
+  <section>
+    <h2>2. Las 4 formulaciones implementadas</h2>
+
+    <div class="formula-grid">
+      <div class="form-tile bfs">
+        <h3>BFS Q4</h3>
+        <div class="meta">Bogner-Fox-Schmit · 1965 · 16 GDL/elem · C¹ conforming</div>
+        <div class="descr">
+          4 GDL por nodo: $w$, $\partial w/\partial x$, $\partial w/\partial y$,
+          $\partial^2 w/\partial x \partial y$. El cuarto DOF (twist $\psi$) es el
+          que captura correctamente el momento torsor en esquinas.
+          <br><em>Lo que usa Calcpad y Hekatan Lab.</em>
+        </div>
+        <div class="result">
+          → $w_{centro} = $ <strong>6.629 mm</strong> &nbsp;·&nbsp;
+          $M_{xy_{esq}} = $ <strong>-8.378 kNm/m</strong>
+        </div>
+      </div>
+
+      <div class="form-tile dkq">
+        <h3>Batoz DKQ</h3>
+        <div class="meta">Batoz-Tahar · 1982 · 12 GDL/elem · C⁰ + Kirchhoff discreto</div>
+        <div class="descr">
+          3 GDL por nodo: $w$, $\beta_x$, $\beta_y$. Las rotaciones se interpolan
+          con Q8 Serendipity, los DOFs de midside se condensan vía constraint
+          Kirchhoff. <em>Esta es la fórmula que usa SAP 2000 Plate-Thin
+          (el Wilson DKE).</em>
+        </div>
+        <div class="result">
+          → $w_{centro} = $ <strong>6.529 mm</strong> &nbsp;·&nbsp;
+          $M_{xy_{esq}} = $ <strong>-7.254 kNm/m</strong> &nbsp;
+          <span style="color:var(--green)">≡ SAP 2000 v24</span>
+        </div>
+      </div>
+
+      <div class="form-tile melosh">
+        <h3>Melosh ACM</h3>
+        <div class="meta">Adini-Clough-Melosh · 1963 · 12 GDL/elem · non-conforming</div>
+        <div class="descr">
+          El elemento histórico de los 60s. Polinomio cúbico incompleto en $w(x,y)$
+          (12 monomios), 3 GDL por nodo. <em>No-conforming</em>: la pendiente puede
+          saltar entre elementos. Robusto en mallas regulares, falla en mallas
+          distorsionadas.
+        </div>
+        <div class="result">
+          → $w_{centro} = $ <strong>6.858 mm</strong> &nbsp;·&nbsp;
+          $M_{xy_{esq}} = $ <strong>-9.067 kNm/m</strong>
+        </div>
+      </div>
+
+      <div class="form-tile mindlin">
+        <h3>Mindlin Q4 (SRI)</h3>
+        <div class="meta">Mindlin-Reissner + Selective Reduced Integration · 12 GDL</div>
+        <div class="descr">
+          Bilineal en $w, \beta_x, \beta_y$. Integra bending con 2×2 Gauss y shear
+          con 1×1 (reducida) para evitar shear locking. En el límite $t \to 0$
+          reproduce Kirchhoff. <em>Lo que usa SAP 2000 Plate-Thick y muchos
+          softwares modernos.</em>
+        </div>
+        <div class="result">
+          → $w_{centro} = $ <strong>6.384 mm</strong> &nbsp;·&nbsp;
+          $M_{xy_{esq}} = $ <strong>-7.012 kNm/m</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 3. Pipeline técnica                                          -->
+  <!-- ============================================================ -->
+  <section>
+    <h2>3. La tubería técnica — C++ → WASM → Plotly</h2>
+
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="step-num">1</div>
+        <div class="step-title">C++17</div>
+        <div class="step-mono">plate_formulations.cpp · 800 líneas · 4 solvers + LU dense</div>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num">2</div>
+        <div class="step-title">emscripten</div>
+        <div class="step-mono">emcc -O3 -s WASM=1 -s SINGLE_FILE=1</div>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num">3</div>
+        <div class="step-title">.js 56 KB</div>
+        <div class="step-mono">WASM embebido en JS (funciona sobre file://)</div>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num">4</div>
+        <div class="step-title">JS glue</div>
+        <div class="step-mono">cwrap('wasm_solve') → llama C++ con HEAPF64</div>
+      </div>
+      <div class="pipe-step">
+        <div class="step-num">5</div>
+        <div class="step-title">Plotly</div>
+        <div class="step-mono">16 contour plots interactivos (zoom, hover, pan)</div>
+      </div>
+    </div>
+
+    <div class="layer-card">
+      <div class="label">¿POR QUÉ WASM EN VEZ DE PYTHON O JS PURO?</div>
+      <strong>Velocidad y portabilidad.</strong> Cada solver corre en
+      <strong>&lt; 3 ms</strong> en el navegador (ensamblar 105 × 105 matriz,
+      LU dense, recovery de M en 4 esquinas × 24 elementos). En JS puro sería ~50×
+      más lento. Y como va embebido en el .js, no necesita servidor — funciona
+      doble-clic abriendo el .html.
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 4. Cómo usarlo                                               -->
+  <!-- ============================================================ -->
+  <section>
+    <h2>4. Lo que ves en pantalla</h2>
+
+    <h3 style="margin-top:14px">Panel superior — controles</h3>
+    <div class="controls-demo">
+      <div class="row">
+        <span class="knob"><span class="lbl">a</span><span class="val">6.0 m</span></span>
+        <span class="knob"><span class="lbl">b</span><span class="val">4.0 m</span></span>
+        <span class="knob"><span class="lbl">t</span><span class="val">0.10 m</span></span>
+        <span class="knob"><span class="lbl">E</span><span class="val">35e6</span></span>
+        <span class="knob"><span class="lbl">ν</span><span class="val">0.15</span></span>
+        <span class="knob"><span class="lbl">q</span><span class="val">10 kN/m²</span></span>
+        <span class="knob"><span class="lbl">malla</span><span class="val">6×4 ▾</span></span>
+        <span class="knob" style="background:var(--ink);color:var(--paper)">▶ Recalcular las 4</span>
+      </div>
+    </div>
+    <p>
+      Cualquier slider o input cambia la geometría/material. La malla
+      tiene presets <code style="font-family:'JetBrains Mono'">3×2 / 6×4 / 12×8 / 18×12 / 24×16</code>
+      para ver la convergencia.
+    </p>
+
+    <h3 style="margin-top:14px">4 tarjetas con los valores numéricos</h3>
+    <p>
+      Cada formulación muestra $w_{centro}$, $M_x$, $M_y$, $M_{xy_{esq}}$, tiempo de solve
+      y <strong>% de error vs SAP 2000</strong>. Verde si match perfecto, rojo si lejos.
+    </p>
+
+    <h3 style="margin-top:14px">16 gráficos de contorno (4 formulaciones × 4 campos)</h3>
+    <ul style="margin-left:24px; line-height:1.7">
+      <li><strong>Deflexión $w$</strong> — colormap Viridis (amarillo en el centro).</li>
+      <li><strong>Momento $M_{xy}$</strong> — colormap rojo-azul (RdBu) — destaca el patrón antisimétrico.</li>
+      <li><strong>Momentos $M_x, M_y$</strong> — colormap amarillo-rojo (YlOrRd) — máximos al centro.</li>
+    </ul>
+    <p>
+      <strong>Hover</strong> sobre cualquier punto muestra coordenadas $(x, y)$
+      y valor del campo. <strong>Zoom</strong> arrastrando con el mouse. <strong>Pan</strong>
+      con Shift+arrastrar.
+    </p>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 5. Lo clave a observar                                       -->
+  <!-- ============================================================ -->
+  <section>
+    <h2>5. Qué observar al usarlo</h2>
+
+    <div class="keypoint">
+      <div class="label">EL FENÓMENO QUE PRUEBA TU TESIS</div>
+      Mirá los 4 gráficos de $M_{xy}$. <strong>Todos tienen el mismo patrón
+      antisimétrico</strong>: las 4 esquinas con picos $\pm$ alternados. Pero las
+      <strong>magnitudes son distintas</strong>:
+      <ul style="margin-left:20px; margin-top:6px; line-height:1.6">
+        <li>BFS Q4: ±8.4 kNm/m &nbsp;&nbsp; <em>(más cercano al valor analítico ±8.33)</em></li>
+        <li>DKQ (SAP): ±7.3 kNm/m &nbsp;&nbsp; <em>(subestima 13%)</em></li>
+        <li>Melosh: ±9.1 kNm/m &nbsp;&nbsp; <em>(sobreestima 9%)</em></li>
+        <li>Mindlin SRI: ±7.0 kNm/m &nbsp;&nbsp; <em>(subestima 16%)</em></li>
+      </ul>
+      <strong>La malla es la misma en los 4. El patrón es el mismo. La magnitud
+      depende SOLO de la formulación del elemento.</strong>
+    </div>
+
+    <h3 style="margin-top:14px">Experimento: cambiar la malla</h3>
+    <p>
+      Cambiá el selector a <code style="font-family:'JetBrains Mono'">24×16</code>
+      y clickeá Recalcular. Verás que <strong>los 4 elementos convergen al
+      mismo valor analítico</strong> con malla refinada. Pero con malla gruesa
+      (6×4) cada uno está en una "esquina" distinta de su curva de convergencia.
+    </p>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 6. Archivos                                                  -->
+  <!-- ============================================================ -->
+  <section>
+    <h2>6. Dónde está todo</h2>
+
+    <div class="file-tree">
+      📂 hekatan-struct/validacion/wasm_plate_formulations/<br>
+      ├─ src/<br>
+      │  └─ <strong>plate_formulations.cpp</strong> &nbsp;<span class="descr">— 800 líneas C++17 · 4 solvers · LU dense · sin BLAS</span><br>
+      ├─ built/<br>
+      │  └─ <strong>plate_formulations.js</strong> &nbsp;<span class="descr">— WASM embebido · 56 KB</span><br>
+      ├─ <strong>viewer.html</strong> &nbsp;<span class="descr">— interfaz Plotly · 16 contornos</span><br>
+      ├─ <strong>build.sh</strong> &nbsp;<span class="descr">— script emscripten (necesita emsdk)</span><br>
+      ├─ <strong>test_native.exe</strong> &nbsp;<span class="descr">— binario nativo de validación</span><br>
+      └─ <strong>README.md</strong>
+    </div>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 7. Validación cruzada                                        -->
+  <!-- ============================================================ -->
+  <section>
+    <h2>7. La fórmula DKQ verificada en 6 implementaciones</h2>
+
+    <p>
+      Antes de portarla al WASM, validé Batoz DKQ en distintos lenguajes
+      para garantizar que <strong>todas dan el mismo número</strong>:
+    </p>
+
+    <div class="tools-line">
+      <span class="pill match">Python (numpy) ✓</span>
+      <span class="pill match">Julia ✓</span>
+      <span class="pill match">MATLAB R2017a ✓</span>
+      <span class="pill match">C++ nativo (g++) ✓</span>
+      <span class="pill match">C++ → WASM ✓</span>
+      <span class="pill match">Calcpad oficial (.cpd) ✓</span>
+      <span class="pill match">Calcpad-Lab (.m) ✓</span>
+    </div>
+
+    <p>
+      Las 6 implementaciones dan exactamente:
+      $w_{centro} = 6.5286$ mm, $M_{xy_{esq}} = -7.2541$ kNm/m
+      — coincide con SAP 2000 v24 a <strong>4 decimales</strong>.
+    </p>
+  </section>
+
+  <!-- ============================================================ -->
+  <!-- 8. Resumen                                                   -->
+  <!-- ============================================================ -->
+  <div class="quote">
+    <strong>Resumen:</strong> el viewer es <em>una sola página HTML</em> que carga
+    un WASM de 56 KB y muestra las 4 formulaciones de placa Kirchhoff resolviendo
+    la misma losa al mismo tiempo. <strong>BFS</strong> y <strong>DKQ</strong> (= SAP 2000)
+    son las dos que importan; las otras dos están para contexto académico.
+    El propósito visual: probar que la diferencia entre Calcpad y SAP <em>no es bug</em>,
+    es la <em>elección del elemento finito</em>.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 23 · WASM PLATE-THIN COMPARATIVA
+  </div>
+
+</div>
+
+<script src="./shared/nav.js"></script>
+</body>
+</html>

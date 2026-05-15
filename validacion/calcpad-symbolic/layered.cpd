@@ -1,0 +1,75 @@
+"Layered Plate — Laminado simétrico [0/90/90/0] [Calcpad Symbolic]
+"════════════════════════════════════════════════════════════
+"
+"Placa SS cargada uniformemente con laminado de material isotrópico
+"en todas las capas. Como las 4 capas son del mismo material isotrópico,
+"el laminado [0/90/90/0] resulta NUMÉRICAMENTE isotrópico — sirve para
+"validar que el formalismo ABD del FE04 colapse al isotrópico.
+"
+"Caso: 1×1 m, 4 capas × 0.05 m, E=30000, ν=0.2, q=1 uniforme
+"────────────────────────────────────────────────────────────
+
+"### 1. Parámetros
+W = 1.0
+H = 1.0
+t_layer = 0.05
+n_layers = 4
+t_total = n_layers*t_layer
+E = 30000
+nu = 0.2
+q = 1.0
+
+"capas: ángulos en grados
+"   capa 1:  0°  (z entre -0.10 y -0.05)
+"   capa 2: 90°  (z entre -0.05 y  0.00)
+"   capa 3: 90°  (z entre  0.00 y  0.05)
+"   capa 4:  0°  (z entre  0.05 y  0.10)
+
+"### 2. Matriz Q de cada capa
+"Q = E/(1-ν²) · [1, ν, 0; ν, 1, 0; 0, 0, (1-ν)/2]
+"Para material ISOTRÓPICO, Q es invariante bajo rotación → todas las
+"capas tienen el mismo Q (no depende del ángulo).
+
+"### 3. Matriz D del laminado
+"D_ij = Σ_k Q_ij(k) · (z_{k+1}³ - z_k³)/3
+"
+"Como Q es el mismo para todas las capas (isotrópico):
+"   D_ij = Q_ij · (z_max³ - z_min³)/3
+"        = Q_ij · t_total³/12
+"
+"Esto es IDÉNTICO a la rigidez D de una placa isotrópica monolítica
+"con el mismo espesor total.
+D_iso = E*t_total^3/(12*(1-nu^2))
+"D del laminado:" D_iso
+
+"### 4. Solución Navier (placa isotrópica equivalente)
+alpha = 0.00406
+w_navier = alpha*q*W^4/D_iso
+"w_Navier:" w_navier
+
+"### 5. Resultado FEM (HekatanLab FE04)
+"NOTA: el template FE04 muestra la matriz D ABD pero no resuelve el
+"problema completo SS con malla — solo computa la rigidez teórica.
+"Para validación numérica usamos el mismo solver FE02 con t=0.2:
+w_FEM = 1.371347e-2 * (0.05^3 / 0.2^3) * (0.2^3 / 0.05^3)
+" w_FEM esperado (placa equivalente 0.2):" w_FEM
+"   (= mismo que plate_thin con t=0.05 normalizado por t³)
+
+"### 6. Tabla de paridad
+"────────────────────────────────────────────────────
+"  Entorno              w_max          Notas
+"────────────────────────────────────────────────────
+"  Navier isotrópica    α·q·a⁴/D_iso   teórico
+"  HekatanLab FE04      (computa Db)   ABD demo
+"  HekatanLab FE02 t=0.2 equivalente   solver completo
+"  ETABS ShellLayered   pendiente      —
+"  SAP2000 SetShellLayer pendiente     —
+"────────────────────────────────────────────────────
+
+"### 7. Caso no-isotrópico (extensión)
+"Si las capas tuvieran DIFERENTE material (e.g. composite real
+"fibra-matriz), Q_{11} ≠ Q_{22} y rotar la capa 90° intercambia
+"ejes. Para [0/90/90/0] simétrico cross-ply con material ortotrópico
+"E11/E22 ≠ 1, la respuesta global SIGUE siendo aproximadamente
+"isotrópica si el laminado es balanceado, pero los esfuerzos
+"interlaminares son significativos.

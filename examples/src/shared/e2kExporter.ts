@@ -139,14 +139,21 @@ function exportFromScratch(input: ExportE2kInput): string {
   // Volume weight: kN/m³ → tonf/m³ = same factor as force (length cancels)
   const cWV = (kN_m3: number) => kN_m3 * forceFactor;
 
-  lines.push(`$ File exported from Awatif FEM Studio`);
+  // Header reconocido por ETABS 19/21+. PROGRAM debe decir "ETABS" exactamente
+  // o ETABS rechaza el archivo con "May not be a valid ETABS X.X.X text file".
+  // La versión se elige conservadora (19.1.0) para máxima compatibilidad.
+  const now = new Date();
+  const dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}  ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  lines.push(`$ File   "Hekatan_export.e2k"  saved ${dateStr} in ETABS 19.1.0`);
   lines.push(``);
   lines.push(`$ PROGRAM INFORMATION`);
-  lines.push(`  PROGRAM  "AWATIF"  VERSION "1.0.0"  `);
+  lines.push(`  PROGRAM  "ETABS"  VERSION "19.1.0"  `);
   lines.push(``);
   lines.push(`$ CONTROLS`);
   lines.push(`  UNITS  "${force}"  "${length}"  "C"  `);
+  lines.push(`  TITLE1  "Hekatan Struct export"  `);
   if (title) lines.push(`  TITLE2  "${title}"  `);
+  lines.push(`  PREFERENCE  MERGETOL 0.1  `);
   lines.push(``);
 
   // Stories from Z elevations.

@@ -1,0 +1,65 @@
+{
+  "timestamp": "2026-05-12T21:19:43.395Z",
+  "cases": [
+    {
+      "case": "plate_thin",
+      "metric": "w_max",
+      "hekatanStructValue": 0.012459088036478555,
+      "hekatanLabValue": 0.01371347,
+      "refTheoreticalValue": 0.012472319999999997,
+      "refTheoreticalName": "Navier",
+      "diffVsHekatanLab": -0.09147079211326126,
+      "diffVsTheoretical": -0.0010609063527429186
+    },
+    {
+      "case": "plate_thick",
+      "metric": "w_max",
+      "hekatanStructValue": 0.00014223321713368909,
+      "hekatanLabValue": 0.0001543172,
+      "refTheoreticalValue": 0.00012807936,
+      "refTheoreticalName": "Reissner",
+      "diffVsHekatanLab": -0.078306130919372,
+      "diffVsTheoretical": 0.11050849359091974
+    },
+    {
+      "case": "membrane",
+      "metric": "u_max",
+      "hekatanStructValue": 0.05879562029582231,
+      "hekatanLabValue": 0.057417,
+      "refTheoreticalValue": 0.01728,
+      "refTheoreticalName": "Viga Euler-B",
+      "diffVsHekatanLab": 0.024010664016272276,
+      "diffVsTheoretical": 2.402524322674902
+    },
+    {
+      "case": "layered",
+      "metric": "w_max",
+      "hekatanStructValue": 0.00027136249071668217,
+      "hekatanLabValue": null,
+      "refTheoreticalValue": 0.00019487999999999995,
+      "refTheoreticalName": "Navier iso",
+      "diffVsHekatanLab": null,
+      "diffVsTheoretical": 0.39245941459709677
+    },
+    {
+      "case": "shell_thin",
+      "metric": "u_max",
+      "hekatanStructValue": 0.001300989632991752,
+      "hekatanLabValue": 0.001261058,
+      "refTheoreticalValue": 0.001,
+      "refTheoreticalName": "Membrana axial",
+      "diffVsHekatanLab": 0.031665183513963635,
+      "diffVsTheoretical": 0.30098963299175185
+    },
+    {
+      "case": "shell_thick",
+      "metric": "u_max",
+      "hekatanStructValue": 0.012967838279009956,
+      "hekatanLabValue": 0.012528,
+      "refTheoreticalValue": 0.01,
+      "refTheoreticalName": "Membrana axial",
+      "diffVsHekatanLab": 0.035108419461203466,
+      "diffVsTheoretical": 0.29678382790099556
+    }
+  ]
+}

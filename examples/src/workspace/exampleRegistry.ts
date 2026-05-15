@@ -320,12 +320,13 @@ export const examplesRegistry: ExampleDef[] = [
   benchmarkPaz12_1,            // Grid frame 3D (parrilla horizontal)
   benchmarkPaz13_1,            // Space frame 3D (5 nodos, 4 vigas radiando)
 
-  // ── 2) ÁREAS (Shell 2D) ─────────────────────────────────────────
-  plateThin,               // Plate Thin (Kirchhoff)
-  plateThick,              // Plate Thick (Mindlin-Reissner)
-  membrana,                // Membrana (Plane Stress)
-  shellThin,               // Shell Thin (Kirchhoff-Love)
-  shellThick,              // Shell Thick (MITC4)
+  // ── 2) ÁREAS (Shell 2D) — orden canónico de los 6 benchmarks ──
+  plateThin,               // 1) Plate Thin (Kirchhoff)
+  plateThick,              // 2) Plate Thick (Mindlin-Reissner)
+  membrana,                // 3) Membrana (Plane Stress)
+  shellThin,               // 4) Shell Thin (Kirchhoff-Love)
+  shellThick,              // 5) Shell Thick (MITC4)
+  layeredShell,            // 6) Layered (CLT/Sandwich/ABBD multi-capa)
 
   // ── 3) SÓLIDOS (3D) ─────────────────────────────────────────────
   solidCubeFEM,            // Cubo Sólido H8 (validación CalculiX)
@@ -335,9 +336,6 @@ export const examplesRegistry: ExampleDef[] = [
   bulboPresionesSuelo,     // Bulbo de Presiones — Serquen SF-70
   benchmark3way,           // Shell+Frame DOF mismatch (Area + Frame)
   benchmarkCft,            // CFT cols + I-beams + losa (Area + Frame composite)
-
-  // ── 5) LAYERED ──────────────────────────────────────────────────
-  layeredShell,            // CLT/Sandwich/ABBD multi-capa
 
   // ── Legacy upstream awatif (resto que no son benchmarks) ────
   ...legacyAwatifExamples.filter(e =>

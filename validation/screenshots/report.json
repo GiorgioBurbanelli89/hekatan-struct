@@ -136,7 +136,9 @@
     "status": "OK",
     "pageErrors": [],
     "consoleErrors": [
-      "THREE.BufferGeometry.computeBoundingSphere(): Computed radius is NaN. The \"position\" attribute is likely to have NaN values. [object _BufferGeometry]"
+      "Warning: Kaa singular en getMembraneK, fallback a Q4 estandar.",
+      "Warning: Kaa singular en getBendingK_DSE_FULL, fallback a Kuu.",
+      "Warning: Kaa singular en getMembraneK, fallback a Q4 estandar."
     ],
     "consoleWarnings": [],
     "screenshot": "validation\\screenshots\\edificio-dual.png"

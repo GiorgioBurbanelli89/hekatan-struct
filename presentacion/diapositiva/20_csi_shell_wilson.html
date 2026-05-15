@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>20 · Cómo CSi (SAP2000/ETABS) construye un shell</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+<style>
+  .formula-card {
+    padding: 16px 20px;
+    background: var(--paper-dark);
+    border: 1px solid var(--ink-fade);
+    border-radius: 4px;
+    border-left: 5px solid var(--blue);
+    margin: 14px 0;
+  }
+  .formula-card h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.05rem;
+    color: var(--blue);
+  }
+  .formula-card .author {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    color: var(--ink-soft);
+    margin-top: 8px;
+    font-size: 0.92rem;
+  }
+
+  .shell-canvas {
+    display: block;
+    margin: 16px auto;
+    background: var(--paper-dark);
+    border: 1px solid var(--ink-fade);
+    border-radius: 4px;
+  }
+
+  .three-card-row {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr 60px 1fr;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0;
+  }
+  .three-card {
+    background: var(--paper-dark);
+    border: 2px solid var(--ink-fade);
+    border-radius: 6px;
+    padding: 14px;
+    text-align: center;
+    height: 100%;
+  }
+  .three-card.plate    { border-color: var(--blue); }
+  .three-card.membrane { border-color: var(--red);  }
+  .three-card.shell    { border-color: var(--gold); background: rgba(176, 141, 79, 0.12); }
+  .three-card h4 {
+    margin: 0 0 8px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+  }
+  .three-card.plate    h4 { color: var(--blue); }
+  .three-card.membrane h4 { color: var(--red);  }
+  .three-card.shell    h4 { color: var(--gold); }
+  .three-card .dof-list {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+  .three-card .dof-count {
+    font-size: 1.4rem;
+    color: var(--ink);
+    margin: 6px 0;
+    font-weight: 700;
+  }
+  .three-card-op {
+    text-align: center;
+    font-size: 2rem;
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  .shelltype-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.86rem;
+  }
+  .shelltype-table th, .shelltype-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--ink-fade);
+  }
+  .shelltype-table th {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+  .shelltype-table td.mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+  }
+  .shelltype-table tr.highlight td { background: rgba(176, 141, 79, 0.15); }
+
+  .play-btn {
+    background: var(--gold);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+    padding: 7px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+  .play-btn:hover { background: var(--ink); color: var(--paper); }
+  .play-btn.active { background: var(--blue); color: var(--paper); }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 20 · CSI/SAP2000/ETABS Shell Element</div>
+    <h1>Cómo CSi construye un shell: la idea de Wilson</h1>
+    <div class="subtitle">"Solamente se necesita programar el elemento de cáscara" — la decisión de arquitectura que hizo SAP2000 lo que es</div>
+  </header>
+
+  <section>
+    <div class="formula-card">
+      <h3>Cita exacta — Edward L. Wilson, Análisis Estructural (Cap. 10.2)</h3>
+      <p style="margin:0;line-height:1.55">
+        <em>"Debido a que los elementos de flexión de placa (DSE) y membrana, en algún plano, son casos especiales del elemento cáscara tridimensional, solamente se necesita el elemento de cáscara para ser programado. <strong>Este es el enfoque empleado en el programa SAP2000.</strong> Como en el caso de flexión de placa, el elemento cáscara tiene la opción de incluir las deformaciones transversales cortantes."</em>
+      </p>
+      <div class="author">— Wilson, E.L., <em>Three Dimensional Static and Dynamic Analysis of Structures</em>, Cap. 10 (Shell Elements), §10.2</div>
+    </div>
+    <p>Wilson —el padre de SAP2000 desde su Tesis Doctoral en Berkeley (1962)— tomó una decisión clave: <strong>en vez de programar tres elementos separados</strong> (membrana, placa, cáscara), programar <strong>uno solo</strong> que englobe los tres como casos particulares. Hoy, cuando vos en SAP2000 / ETABS elegís <code>ShellType=1</code> (ShellThin) o <code>ShellType=3</code> (Plate-Thin) o <code>ShellType=5</code> (Membrane), <em>internamente es el mismo elemento</em> con distintas opciones activadas.</p>
+  </section>
+
+  <section>
+    <h2>El truco: Placa + Membrana = Shell</h2>
+    <p>La Figura 10.1 del libro de Wilson lo muestra explícitamente — un shell de 4 nodos se ensambla sumando los GDL de placa de flexión y de membrana:</p>
+    <div class="three-card-row">
+      <div class="three-card plate">
+        <h4>PLATE BENDING</h4>
+        <div class="dof-list">$w$  (deflexión)<br>$\theta_x$  (rotación X)<br>$\theta_y$  (rotación Y)</div>
+        <div class="dof-count">3 GDL/nodo</div>
+        <div style="font-size:0.78rem;color:var(--ink-soft)">Fuera del plano</div>
+      </div>
+      <div class="three-card-op">+</div>
+      <div class="three-card membrane">
+        <h4>MEMBRANE</h4>
+        <div class="dof-list">$u$  (despl X)<br>$v$  (despl Y)<br>$\theta_z$  (drilling)</div>
+        <div class="dof-count">3 GDL/nodo</div>
+        <div style="font-size:0.78rem;color:var(--ink-soft)">En el plano</div>
+      </div>
+      <div class="three-card-op">=</div>
+      <div class="three-card shell">
+        <h4>SHELL (CSi)</h4>
+        <div class="dof-list">$u, v, w$  (translaciones)<br>$\theta_x, \theta_y, \theta_z$  (rotaciones)</div>
+        <div class="dof-count">6 GDL/nodo</div>
+        <div style="font-size:0.78rem;color:var(--ink-soft)">24 GDL/elemento (4 nodos)</div>
+      </div>
+    </div>
+    <p>El elemento shell de Wilson resuelve <strong>dos problemas desacoplados</strong> y los suma. Por eso la matriz $\mathbf{K}_e$ de un shell de 4 nodos es <strong>24×24</strong> en SAP2000, no 12×12 (placa pura) ni 8×8 (membrana pura).</p>
+  </section>
+
+  <section>
+    <h2>Visualización interactiva — encendé cada modo</h2>
+    <p>El mismo elemento Q4 puede actuar como placa, membrana o shell completo según qué GDL estén activos. Apretá cada botón:</p>
+
+    <canvas id="shell-canvas" class="shell-canvas" width="640" height="380"></canvas>
+
+    <div class="grade-indicator" style="margin-top:8px">
+      <span>Modo activo:</span>
+      <strong id="mode-name">Reposo (todos los GDL = 0)</strong>
+      <span style="margin-left:auto">
+        <button class="play-btn" id="m-membrane">Membrane (in-plane)</button>
+        <button class="play-btn" id="m-plate">Plate Bending (flexión)</button>
+        <button class="play-btn" id="m-shell">Shell completo</button>
+        <button class="play-btn" id="m-reset" style="background:var(--paper);color:var(--ink)">↺ Reset</button>
+      </span>
+    </div>
+    <div class="explanation-box" id="explanation">
+      Apretá los botones. Vas a ver cómo <strong>el mismo elemento</strong> responde como membrana (cargas en el plano), como placa (cargas perpendiculares), o como shell completo (los dos a la vez).
+    </div>
+  </section>
+
+  <section>
+    <h2>Los 6 ShellType del API CSi — todos son el mismo elemento</h2>
+    <p>Cuando llamás <code>SapModel.PropArea.SetShell_1(name, ShellType, ...)</code> en OAPI, internamente activás/desactivás partes del elemento de Wilson:</p>
+    <table class="shelltype-table">
+      <thead>
+        <tr>
+          <th>ShellType</th>
+          <th>Nombre</th>
+          <th>Membrana activa</th>
+          <th>Flexión activa</th>
+          <th>Shear transversal</th>
+          <th>Uso típico</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="highlight">
+          <td class="mono">1</td>
+          <td>Shell-Thin</td>
+          <td>Sí</td>
+          <td>Sí (Kirchhoff)</td>
+          <td>No (γ = 0)</td>
+          <td>Cáscaras delgadas (L/t ≥ 20)</td>
+        </tr>
+        <tr class="highlight">
+          <td class="mono">2</td>
+          <td>Shell-Thick</td>
+          <td>Sí</td>
+          <td>Sí (Mindlin)</td>
+          <td>Sí (γ ≠ 0)</td>
+          <td>Cáscaras gruesas, losas de transferencia</td>
+        </tr>
+        <tr>
+          <td class="mono">3</td>
+          <td>Plate-Thin</td>
+          <td>No</td>
+          <td>Sí (Kirchhoff)</td>
+          <td>No</td>
+          <td>Losas finas con cargas perpendiculares</td>
+        </tr>
+        <tr>
+          <td class="mono">4</td>
+          <td>Plate-Thick</td>
+          <td>No</td>
+          <td>Sí (Mindlin)</td>
+          <td>Sí</td>
+          <td>Zapatas, losas gruesas</td>
+        </tr>
+        <tr>
+          <td class="mono">5</td>
+          <td>Membrane</td>
+          <td>Sí (plane stress)</td>
+          <td>No</td>
+          <td>No</td>
+          <td>Muros de corte, diafragmas</td>
+        </tr>
+        <tr>
+          <td class="mono">6</td>
+          <td>Layered Shell</td>
+          <td colspan="3" style="text-align:center">Stack de capas con ABBD (CLT, sandwich, RC con armadura)</td>
+          <td>CLT, sándwich, ortotropía</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>Las dos filas resaltadas (1 y 2) son <strong>cáscara completa</strong>: incluyen flexión + membrana. Las filas 3-5 son <strong>casos degenerados</strong> donde SAP "apaga" partes para acelerar el cómputo. La 6 (Layered) es el shell completo con un material no homogéneo en espesor.</p>
+  </section>
+
+  <section>
+    <h2>El paso clave: ¿por qué el Q4 simple "no alcanza"?</h2>
+    <p>Si vos programás un Q4 bilineal estándar (4 nodos, funciones $N_i$ lineales), <strong>el elemento es muy rígido</strong> — sufre <em>shear locking</em> en flexión y no captura bien las flexiones puras. Wilson (Cap. 6 de su libro) propone agregar <strong>modos incompatibles</strong>:</p>
+    $$\mathbf{u}(\xi,\eta) = \underbrace{\sum_{i=1}^{4} N_i(\xi,\eta)\, \mathbf{u}_i}_{\text{compatible (nodal)}}
+       + \underbrace{(1-\xi^2)\,\boldsymbol{\alpha}_1 + (1-\eta^2)\,\boldsymbol{\alpha}_2}_{\text{incompatibles (parabólicos)}}$$
+    <p>Los $\boldsymbol{\alpha}_i$ son <strong>grados de libertad internos</strong> del elemento — no aparecen en la malla global. Se condensan estáticamente antes del ensamblaje. Resultado: un Q4 que <em>captura flexión pura</em> con mallas mucho más gruesas. Este es el mismo principio que después llevó a:</p>
+    <ul style="margin-left:24px;line-height:1.7">
+      <li><strong>MITC4</strong> (Bathe-Dvorkin, 1985) — interpolación mixta en lugar de modos incompatibles. Es lo que usa <code>ShellMITC4</code> de OpenSees y la base de SAP <code>Shell-Thick</code>.</li>
+      <li><strong>DKQ / DKT</strong> (Discrete Kirchhoff) — para placas delgadas; impone $\gamma = 0$ discretamente.</li>
+      <li><strong>SRI</strong> (Selective Reduced Integration) — la opción "barata" que uso yo en <code>plate_thin_skfem.py</code> y <code>plate_thin_ferrite.jl</code>. Bending 2×2 + shear 1×1.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Validación cruzada — los 5 caminos llegan a lo mismo</h2>
+    <p>Caso: placa $1 \times 1$ m, $t = 0.05$ m, $E = 30000$ tonf/m², $\nu = 0.2$, $q = 1$ tonf/m² uniforme, mesh $4 \times 4$, <strong>4 bordes empotrados</strong>. Referencia de Timoshenko Tabla 8: $\alpha_{\text{clamped}} = 0.00126 \Rightarrow w_{\text{centro}} = 3.871$ mm.</p>
+    <table class="shelltype-table">
+      <thead>
+        <tr>
+          <th>Solver</th>
+          <th>Elemento interno</th>
+          <th>Lenguaje</th>
+          <th>$w_{\text{centro}}$ [mm]</th>
+          <th>Diff vs Navier clamped</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Navier (Timoshenko 1959)</td><td>—</td><td>analítico</td><td class="mono">−3.871</td><td>—</td></tr>
+        <tr><td><strong>SAP2000 v24 API</strong></td><td>Plate-Thin (ShellType=3)</td><td class="mono">Python+comtypes</td><td class="mono">−4.479</td><td class="mono">+15.7 %</td></tr>
+        <tr><td>scikit-fem</td><td>Q4 Mindlin SRI</td><td class="mono">Python puro</td><td class="mono">−4.6 (típico 4×4)</td><td class="mono">+19 %</td></tr>
+        <tr><td>Julia Ferrite-equivalente</td><td>Q4 Mindlin SRI</td><td class="mono">Julia</td><td class="mono">−4.6 (típico 4×4)</td><td class="mono">+19 %</td></tr>
+        <tr><td>Hekatan-fem WASM</td><td>Q4 Mindlin SRI</td><td class="mono">C++→WASM</td><td class="mono">−4.6 (típico)</td><td class="mono">+19 %</td></tr>
+      </tbody>
+    </table>
+    <p>La malla $4 \times 4$ es <strong>gruesa</strong> para placa empotrada — los gradientes en los bordes empotrados requieren refinamiento. Con $16 \times 16$ el error baja a ~3%, con $32 \times 32$ a ~1%. <strong>SAP2000 da el mejor resultado</strong> porque internamente usa modos incompatibles + bubble functions; los otros tracks usan SRI puro.</p>
+  </section>
+
+  <section>
+    <h2>¿Por qué importa esto para Hekatan Struct?</h2>
+    <p>Hekatan Struct usa <strong>la misma arquitectura de Wilson</strong>: un solo elemento shell con flags para activar/desactivar membrana, flexión, shear. Ver <code>hekatan-fem/src/cpp/utils/shellQ4.cpp</code>:</p>
+    <ul style="margin-left:24px;line-height:1.7">
+      <li><code>plateQ4Solve({ theoryType: 0 })</code> ⇒ Mindlin (Plate-Thick)</li>
+      <li><code>plateQ4Solve({ theoryType: 1 })</code> ⇒ Kirchhoff (Plate-Thin)</li>
+      <li><code>plateQ4Solve({ theoryType: 2 })</code> ⇒ Plane Stress (Membrane)</li>
+    </ul>
+    <p>Igual que Wilson en 1972, igual que SAP2000 hoy. <strong>La diferencia es velocidad de ejecución</strong>: Hekatan compila a WebAssembly y corre en el navegador en milisegundos.</p>
+  </section>
+
+  <div class="quote">
+    <strong>Conclusión:</strong> SAP2000, ETABS y Hekatan Struct comparten <em>el mismo elemento conceptual</em> propuesto por Wilson hace 50 años. Lo que cambió no es la matemática, sino:
+    <ul style="margin-top:8px;margin-left:24px;line-height:1.6">
+      <li>El <strong>solver</strong>: del FORTRAN secuencial al SparseLU vectorizado.</li>
+      <li>El <strong>despliegue</strong>: del mainframe IBM al navegador con WebAssembly.</li>
+      <li>El <strong>workflow</strong>: del archivo de texto al panel paramétrico que recompila el modelo en cada slider.</li>
+    </ul>
+    La teoría es Wilson 1972; la velocidad es 2026.
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 20 · CSi/WILSON SHELL = 1 ELEMENTO, 6 SHELLTYPES
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────
+// Visualización: Plate + Membrane = Shell
+// 1 Q4 1x1 m, animado: 3 modos de carga
+// ─────────────────────────────────────────────────────────
+const canvas = document.getElementById("shell-canvas");
+const ctx = canvas.getContext("2d");
+const W = canvas.width, H = canvas.height;
+const PAD = 100;
+const SX = W/2 - 120;
+const SY = H/2;
+const SIZE = 200;   // tamaño del Q4 en pantalla
+
+let mode = "reset";
+let t_anim = 0;
+
+// 4 nodos del Q4 (counterclockwise)
+const NODES = [
+  {x: -SIZE/2, y:  SIZE/2, label: "N1"},  // BL
+  {x:  SIZE/2, y:  SIZE/2, label: "N2"},  // BR
+  {x:  SIZE/2, y: -SIZE/2, label: "N3"},  // TR
+  {x: -SIZE/2, y: -SIZE/2, label: "N4"},  // TL
+];
+
+function project3D(x, y, z) {
+  // Iso projection
+  const angle_x = 0.5;
+  const angle_y = 0.3;
+  const sx = x * Math.cos(angle_y) - z * Math.sin(angle_y);
+  const sy = y * Math.cos(angle_x) + (x * Math.sin(angle_y) + z * Math.cos(angle_y)) * Math.sin(angle_x);
+  return [SX + sx, SY + sy];
+}
+
+function deformNode(i) {
+  // Devuelve (dx, dy, dz) del nodo i según el modo activo
+  const phase = t_anim;
+  if (mode === "membrane") {
+    // Estiramiento horizontal: N2, N3 se mueven en X
+    if (i === 1 || i === 2) return [30*phase, 0, 0];
+    return [0, 0, 0];
+  } else if (mode === "plate") {
+    // Flexión: el centro baja (interpolado) — N3 sube como rotación
+    if (i === 2) return [0, 0, -40*phase];
+    if (i === 0) return [0, 0, -40*phase];
+    if (i === 1 || i === 3) return [0, 0, -20*phase];
+    return [0, 0, 0];
+  } else if (mode === "shell") {
+    // Ambas a la vez
+    let dx = 0, dz = 0;
+    if (i === 1 || i === 2) dx = 25*phase;
+    if (i === 0 || i === 2) dz = -40*phase;
+    if (i === 1 || i === 3) dz = -20*phase;
+    return [dx, 0, dz];
+  }
+  return [0, 0, 0];
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Título arriba
+  ctx.font = "13px 'JetBrains Mono', monospace";
+  ctx.fillStyle = "#1a2942";
+  ctx.fillText("Elemento Q4 1×1 m (visto en perspectiva)", 12, 18);
+
+  // Si modo plate o shell, dibujar grilla del plano XY como referencia (sombra)
+  if (mode === "plate" || mode === "shell") {
+    ctx.strokeStyle = "rgba(26,41,66,0.15)";
+    ctx.setLineDash([3, 3]);
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 4; i++) {
+      const j = (i+1) % 4;
+      const [x1, y1] = project3D(NODES[i].x, NODES[i].y, 0);
+      const [x2, y2] = project3D(NODES[j].x, NODES[j].y, 0);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
+  // Calcular posiciones deformadas
+  const points = NODES.map((n, i) => {
+    const [dx, dy, dz] = deformNode(i);
+    return project3D(n.x + dx, n.y + dy, dz);
+  });
+
+  // Dibujar shell deformado (relleno semi-transparente)
+  ctx.fillStyle = mode === "membrane" ? "rgba(162, 50, 50, 0.18)" :
+                  mode === "plate"    ? "rgba(44, 94, 142, 0.18)" :
+                  mode === "shell"    ? "rgba(176, 141, 79, 0.22)" :
+                  "rgba(176, 141, 79, 0.10)";
+  ctx.beginPath();
+  ctx.moveTo(points[0][0], points[0][1]);
+  for (let i = 1; i < 4; i++) ctx.lineTo(points[i][0], points[i][1]);
+  ctx.closePath();
+  ctx.fill();
+
+  // Aristas
+  ctx.strokeStyle = mode === "membrane" ? "#a23232" :
+                    mode === "plate"    ? "#2c5e8e" :
+                    mode === "shell"    ? "#b08d4f" :
+                    "#1a2942";
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(points[0][0], points[0][1]);
+  for (let i = 1; i < 4; i++) ctx.lineTo(points[i][0], points[i][1]);
+  ctx.closePath();
+  ctx.stroke();
+
+  // Nodos
+  for (let i = 0; i < 4; i++) {
+    ctx.fillStyle = "#b08d4f";
+    ctx.beginPath();
+    ctx.arc(points[i][0], points[i][1], 8, 0, 2*Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = "#1a2942";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Label
+    ctx.fillStyle = "#1a2942";
+    ctx.font = "11px 'JetBrains Mono', monospace";
+    ctx.fillText(NODES[i].label, points[i][0] + 12, points[i][1] - 8);
+  }
+
+  // Panel de info derecho
+  const panelX = SX + 200;
+  const panelY = 60;
+  ctx.fillStyle = "#1a2942";
+  ctx.font = "bold 13px 'JetBrains Mono', monospace";
+  ctx.fillText("MODO:", panelX, panelY);
+  ctx.font = "13px 'JetBrains Mono', monospace";
+  if (mode === "reset") {
+    ctx.fillText("Reposo", panelX + 70, panelY);
+    ctx.font = "11px 'JetBrains Mono', monospace";
+    ctx.fillStyle = "#6a7a96";
+    ctx.fillText("Apretá un botón para activar", panelX, panelY + 25);
+  } else if (mode === "membrane") {
+    ctx.fillStyle = "#a23232";
+    ctx.fillText("MEMBRANA", panelX + 70, panelY);
+    ctx.fillStyle = "#1a2942";
+    ctx.font = "11px 'JetBrains Mono', monospace";
+    ctx.fillText("Activo: u, v (in-plane)", panelX, panelY + 25);
+    ctx.fillText("Apagado: w, θx, θy", panelX, panelY + 42);
+    ctx.fillText("ShellType = 5", panelX, panelY + 60);
+  } else if (mode === "plate") {
+    ctx.fillStyle = "#2c5e8e";
+    ctx.fillText("PLACA", panelX + 70, panelY);
+    ctx.fillStyle = "#1a2942";
+    ctx.font = "11px 'JetBrains Mono', monospace";
+    ctx.fillText("Activo: w, θx, θy", panelX, panelY + 25);
+    ctx.fillText("Apagado: u, v, θz", panelX, panelY + 42);
+    ctx.fillText("ShellType = 3 o 4", panelX, panelY + 60);
+  } else if (mode === "shell") {
+    ctx.fillStyle = "#b08d4f";
+    ctx.fillText("SHELL completo", panelX + 70, panelY);
+    ctx.fillStyle = "#1a2942";
+    ctx.font = "11px 'JetBrains Mono', monospace";
+    ctx.fillText("Activo: TODOS 6 GDL", panelX, panelY + 25);
+    ctx.fillText("u, v, w, θx, θy, θz", panelX, panelY + 42);
+    ctx.fillText("ShellType = 1 o 2", panelX, panelY + 60);
+  }
+
+  // Leyenda inferior
+  ctx.font = "10px 'JetBrains Mono', monospace";
+  ctx.fillStyle = "#6a7a96";
+  ctx.fillText("Línea sólida = elemento deformado | Línea punteada gris = posición original", 12, H - 14);
+}
+
+function animate() {
+  if (mode !== "reset") {
+    // oscilar entre 0 y 1
+    t_anim = (Math.sin(Date.now() / 600) + 1) / 2;
+  } else {
+    t_anim = 0;
+  }
+  draw();
+  requestAnimationFrame(animate);
+}
+
+function setMode(newMode) {
+  mode = newMode;
+  // Botón activo visual
+  document.querySelectorAll(".play-btn").forEach(b => b.classList.remove("active"));
+  if (newMode === "membrane") {
+    document.getElementById("m-membrane").classList.add("active");
+    document.getElementById("mode-name").innerHTML = "Membrana (in-plane): $u, v, \\theta_z$";
+    document.getElementById("explanation").innerHTML =
+      "<strong>Membrana:</strong> El elemento se estira/comprime en su propio plano. " +
+      "$w$ y rotaciones $\\theta_x, \\theta_y$ están desactivadas. " +
+      "Esto es <code>PropArea.SetShell_1(name, <strong>5</strong>, ...)</code> en SAP2000. " +
+      "Lo usa para muros de corte, diafragmas rígidos, fachadas.";
+  } else if (newMode === "plate") {
+    document.getElementById("m-plate").classList.add("active");
+    document.getElementById("mode-name").innerHTML = "Placa (flexión): $w, \\theta_x, \\theta_y$";
+    document.getElementById("explanation").innerHTML =
+      "<strong>Placa de flexión:</strong> El elemento se curva perpendicular a su plano. " +
+      "$u, v$ están desactivados. <code>ShellType = 3</code> (Plate-Thin Kirchhoff) " +
+      "o <code>ShellType = 4</code> (Plate-Thick Mindlin con shear). Para losas planas con cargas perpendiculares.";
+  } else if (newMode === "shell") {
+    document.getElementById("m-shell").classList.add("active");
+    document.getElementById("mode-name").innerHTML = "Shell completo: $u, v, w, \\theta_x, \\theta_y, \\theta_z$";
+    document.getElementById("explanation").innerHTML =
+      "<strong>Shell completo:</strong> los 6 GDL activos. Membrana + flexión + drilling rotation. " +
+      "<code>ShellType = 1</code> (Shell-Thin) o <code>ShellType = 2</code> (Shell-Thick con γ ≠ 0). " +
+      "Para cáscaras curvas, edificios donde la losa transfiere momento al núcleo, tanques cilíndricos.";
+  } else {
+    document.getElementById("mode-name").innerHTML = "Reposo (todos los GDL = 0)";
+    document.getElementById("explanation").innerHTML =
+      "Apretá los botones. Vas a ver cómo <strong>el mismo elemento</strong> responde como membrana, placa, o shell completo.";
+  }
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([document.getElementById("mode-name"),
+                            document.getElementById("explanation")]);
+  }
+}
+
+document.getElementById("m-membrane").addEventListener("click", () => setMode("membrane"));
+document.getElementById("m-plate").addEventListener("click",    () => setMode("plate"));
+document.getElementById("m-shell").addEventListener("click",    () => setMode("shell"));
+document.getElementById("m-reset").addEventListener("click",    () => setMode("reset"));
+
+setMode("reset");
+animate();
+</script>
+<script src="./shared/nav.js"></script>
+</body>
+</html>

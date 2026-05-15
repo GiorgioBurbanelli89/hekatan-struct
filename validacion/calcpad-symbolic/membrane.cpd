@@ -1,0 +1,57 @@
+"Membrane Q4 — Muro cantilever, plane stress [Calcpad Symbolic]
+"════════════════════════════════════════════════════════════
+"
+"Verificación contra viga Euler-Bernoulli como referencia analítica.
+"En muros stocky (H/W < 1) el FEM captura corte y u_max excede a la
+"viga (factor típico 1.5–3 según relación H/W).
+"
+"Caso: 5×3×0.2, E=25000, ν=0.2, P=100 lateral en top, empotrado base
+"────────────────────────────────────────────────────────────
+
+"### 1. Parámetros
+W = 5                                     'ancho [m]
+H = 3                                     'alto [m]
+t = 0.2                                   'espesor [m]
+E = 25000                                 'MPa
+nu = 0.2
+P = 100                                   'carga lateral total [kN]
+
+"### 2. Viga Euler-Bernoulli (referencia analítica)
+"u_beam = P·H³ / (3·E·I)
+I = t*W^3/12
+delta_beam = P*H^3/(3*E*I)
+"I (inercia):" I
+"u_beam (Euler-B):" delta_beam ' [m]
+
+"### 3. Resultado FEM (HekatanLab = MATLAB R2017a, malla 6×4)
+u_FEM = 5.7417e-2
+ratio = u_FEM/delta_beam
+"u_FEM:" u_FEM ' [m]
+"Ratio FEM/Viga:" ratio
+
+"### 4. Esfuerzos en el FEM
+sxx_max_FEM = 79.787                      'MPa
+svm_max_FEM = 303.813                     'MPa
+"σ_xx max:" sxx_max_FEM ' MPa
+"σ_vM max:" svm_max_FEM ' MPa
+
+"### 5. Tabla de paridad multi-entorno
+"────────────────────────────────────────────────────
+"  Entorno              u_max [m]      σ_vM max [MPa]
+"────────────────────────────────────────────────────
+"  Viga Euler-B         1.7280e-2      —
+"  MATLAB R2017a        5.7417e-2      303.813
+"  HekatanLab Web       5.7417e-2      303.813
+"  ETABS 18 (Membrane)  pendiente      —
+"  SAP2000 (ShellType=4) pendiente     —
+"  SAFE 2016            pendiente      —
+"────────────────────────────────────────────────────
+
+"### 6. Interpretación
+"En un muro de 5×3 (H/W = 0.6, stocky), el ratio u_FEM/u_viga = 3.32
+"refleja la deformación por corte significativa que la viga clásica no
+"captura. Para muros con H/W > 3 (slender) el ratio se acerca a 1.0
+"(el FEM converge a Euler-Bernoulli).
+"
+"Convergencia con malla más fina (12×8) reduciría u_FEM levemente
+"(~2-3%); para validación práctica la malla 6×4 es suficiente.

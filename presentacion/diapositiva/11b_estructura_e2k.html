@@ -252,6 +252,74 @@ $ END OF MODEL FILE</pre>
     <p>Línea final obligatoria. Sin ella, ETABS rechaza el archivo.</p>
   </section>
 
+  <section style="background:#fef9e7;border:2px solid var(--gold);padding:14px 18px;border-radius:6px;margin-top:18px">
+    <h2 style="color:var(--blue);margin-top:0">Ejemplo concreto · Paz Ej. 13.1 (Space Frame 3D)</h2>
+    <p>El benchmark del libro de Paz cap. 13.7 (5 nodos · 4 vigas radiando · F=5000 lb step en Z) se expresa en <code>.e2k</code> así. <strong>Este archivo abre directamente en ETABS 19+</strong> y está versionado en <code>Etabs Powershell/Paz_13_1.e2k</code>:</p>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">Geometría · 5 nodos · 4 elementos</span>
+      <pre>$ POINT COORDINATES
+  POINT "1"  0       0
+  POINT "2"  0       5.08
+  POINT "3"  -5.08   0
+
+$ LINE CONNECTIVITIES
+  LINE "E1"  BEAM    "1"  "2"  0    $ vertical Y → BEAM en planta Story1
+  LINE "E2"  COLUMN  "1"  "1"  1    $ vertical Z+ → COLUMN Story1→Story2
+  LINE "E3"  BEAM    "1"  "3"  0    $ horizontal X → BEAM en Story1
+  LINE "E4"  COLUMN  "1"  "1"  1    $ vertical Z- → COLUMN Base→Story1</pre>
+      <div class="desc">El truco para mapear el espacio frame de Paz (eje Y up) a ETABS (eje Z up) es <strong>swappear Y↔Z</strong>: 200 in = 5.08 m. Los 4 nodos fijos se vuelven RESTRAINTs y el central queda libre.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">Material acero E=30·10⁶ psi → 2.11·10⁷ tonf/m²</span>
+      <pre>  MATERIAL "STEEL"  TYPE "Steel"  GRADE "Grade 50"  WEIGHTPERVOLUME 7.85
+  MATERIAL "STEEL"  SYMTYPE "Isotropic"  E 21093744  U 0.25  A 1.17E-05</pre>
+      <div class="desc">G = 12·10⁶ psi y E/G = 2.5 ⇒ ν = 0.25 (no 0.3). La densidad es realista para mostrar el modelo en ETABS — la masa de Paz se valida en Hekatan, no aquí.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">Secciones equivalentes a A · I del libro</span>
+      <pre>  FRAMESECTION "SEC1"  MATERIAL "STEEL"  SHAPE "Concrete Rectangular"  D 0.18 B 0.18  $ A=50, I=200 in⁴
+  FRAMESECTION "SEC2"  MATERIAL "STEEL"  SHAPE "Concrete Rectangular"  D 0.135 B 0.135 $ A=28, I=64 in⁴</pre>
+      <div class="desc">Calculamos b·h tal que <em>b·h = A</em> y <em>b·h³/12 = I</em>: para A=50 in², I=200 in⁴ → 0.18 m × 0.18 m.</div>
+    </div>
+
+    <div class="e2k-section">
+      <span class="e2k-tag">Restricciones · 4 nodos empotrados + 1 carga puntual</span>
+      <pre>  POINTASSIGN "2"  "Story1"  RESTRAINT "UX UY UZ RX RY RZ"
+  POINTASSIGN "3"  "Story1"  RESTRAINT "UX UY UZ RX RY RZ"
+  POINTASSIGN "1"  "Story2"  RESTRAINT "UX UY UZ RX RY RZ"
+  POINTASSIGN "1"  "Base"    RESTRAINT "UX UY UZ RX RY RZ"
+
+  POINTLOAD "1"  "Story1"  TYPE "FORCE"  LC "USER"  FX 0 FY -2.268 FZ 0  $ 5000 lb = 22.24 kN = 2.268 tonf</pre>
+      <div class="desc">El nodo central (POINT "1" en Story1) queda libre — recibe la carga step de 5000 lb (22.24 kN ≈ 2.268 tonf-fuerza).</div>
+    </div>
+
+    <h3 style="color:var(--blue);margin-top:16px">Ejecutar el ejemplo en ETABS desde PowerShell</h3>
+    <p>El script <code>correr_paz_13_1.ps1</code> automatiza: lanzar ETABS via OAPI → cargar el <code>.e2k</code> → guardar como <code>.EDB</code> → correr análisis modal + estático → imprimir las 6 frecuencias modales.</p>
+    <pre style="background:#1e1e1e;color:#d4d4d4;padding:14px;border-radius:4px;font-size:0.82rem;line-height:1.5">PS&gt; cd "C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Etabs Powershell"
+PS&gt; .\correr_paz_13_1.ps1
+
+[correr_paz_13_1] Archivo: ...\Paz_13_1.e2k
+[correr_paz_13_1] Lanzando ETABS...
+[correr_paz_13_1] Cargando modelo en ETABS...
+[correr_paz_13_1] Convertido a EDB
+[correr_paz_13_1] Corriendo analisis modal + estatico...
+[correr_paz_13_1] Analisis terminado
+
+============================================================
+   FRECUENCIAS MODALES - Paz 13.1
+============================================================
+   Modo   Periodo (s)    Frec (Hz)
+------------------------------------------------------------
+   1        0.0123        81.13
+   2        0.0098       102.04
+   ...
+============================================================</pre>
+    <div class="desc" style="margin-top:6px">El script usa <code>New-Object -ComObject "ETABSv1.Helper"</code> para conectarse a la API de ETABS, llama a <code>SapModel.File.OpenFile($e2kPath)</code> para parsear el texto, y extrae periodos con <code>Results.ModalPeriod()</code>. Ese mismo flujo se usa en producción para <strong>validar Hekatan vs ETABS</strong>: misma topología, mismas propiedades, comparamos $\omega_i$.</div>
+  </section>
+
   <section>
     <h2>Tamaño típico</h2>
     <table>

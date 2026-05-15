@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>19 · De la teoría de placas al código FEM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./shared/style.css">
+
+<script>
+MathJax = {
+  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+<style>
+  .timeline {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .era {
+    padding: 12px;
+    background: var(--paper-dark);
+    border: 1px solid var(--ink-fade);
+    border-radius: 4px;
+    border-left: 4px solid var(--gold);
+  }
+  .era .year {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  .era .who {
+    font-weight: 700;
+    margin: 4px 0;
+    font-size: 0.95rem;
+  }
+  .era .what {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    line-height: 1.4;
+  }
+
+  .plate-canvas {
+    display: block;
+    margin: 16px auto;
+    background: var(--paper-dark);
+    border: 1px solid var(--ink-fade);
+    border-radius: 4px;
+  }
+
+  .step-card {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 14px;
+    align-items: start;
+    padding: 14px 16px;
+    margin: 12px 0;
+    background: var(--paper-dark);
+    border: 1px solid var(--ink-fade);
+    border-radius: 4px;
+    border-left: 5px solid var(--gold);
+  }
+  .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.6rem;
+    color: var(--gold);
+    font-weight: 700;
+    text-align: center;
+  }
+  .step-body h3 {
+    margin: 0 0 6px 0;
+    font-size: 1.05rem;
+    color: var(--ink);
+  }
+  .step-body p {
+    margin: 6px 0;
+    font-size: 0.9rem;
+  }
+  .step-body code {
+    background: rgba(26,41,66,0.06);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin: 16px 0;
+  }
+  .three-col pre {
+    margin: 0;
+    font-size: 0.74rem;
+    overflow-x: auto;
+  }
+  .three-col .lang-header {
+    padding: 6px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 4px 4px 0 0;
+    letter-spacing: 0.05em;
+  }
+  .three-col .lang-header.python  { background: #2c5e8e; }
+  .three-col .lang-header.julia   { background: #9558b2; }
+  .three-col .lang-header.matlab  { background: #d97706; }
+
+  .result-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 0.88rem;
+  }
+  .result-table th, .result-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--ink-fade);
+  }
+  .result-table th {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .result-table td.mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+  }
+  .result-table tr.match td { background: rgba(45, 106, 79, 0.12); }
+
+  .legend-inline {
+    display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
+    margin: 10px 0; font-size: 0.82rem;
+  }
+  .swatch {
+    display: inline-block; width: 14px; height: 14px;
+    vertical-align: middle; margin-right: 5px; border-radius: 2px;
+  }
+
+  .play-btn {
+    background: var(--gold);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+    padding: 7px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+  .play-btn:hover { background: var(--ink); color: var(--paper); }
+  .play-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Diapositiva 19 · Cómo el computador resuelve una placa</div>
+    <h1>De la teoría de placas al código FEM</h1>
+    <div class="subtitle">Kirchhoff 1850 → Galerkin 1909 → Boeing 1956 → Hekatan 2026: <em>el mismo loop, en distinta velocidad</em></div>
+  </header>
+
+  <section>
+    <h2>175 años de teoría, condensados</h2>
+    <div class="timeline">
+      <div class="era">
+        <div class="year">1850</div>
+        <div class="who">Kirchhoff</div>
+        <div class="what">Hipótesis: las normales al plano medio permanecen rectas y perpendiculares tras deformar. Ecuación bi-armónica $\nabla^4 w = q/D$.</div>
+      </div>
+      <div class="era">
+        <div class="year">1945</div>
+        <div class="who">Reissner-Mindlin</div>
+        <div class="what">Generalización: las normales pueden rotar independiente del plano medio. Aparecen $\beta_x, \beta_y$ como GDL extras. Cubre placas gruesas.</div>
+      </div>
+      <div class="era">
+        <div class="year">1909</div>
+        <div class="who">Galerkin</div>
+        <div class="what">"En vez de resolver la PDE exacta, busquemos $w$ aproximado por combinación de funciones $\phi_i$." Nace el método de los residuos ponderados.</div>
+      </div>
+      <div class="era">
+        <div class="year">1956</div>
+        <div class="who">Boeing / Turner / Clough</div>
+        <div class="what">Discretizan el dominio en elementos pequeños. Cada uno aporta una matriz $K_e$ local. Las suman: <strong>nace el FEM industrial</strong>.</div>
+      </div>
+    </div>
+    <p>La pregunta del ingeniero estructural moderno no es <em>"¿cómo se deduce la teoría?"</em> (eso ya está hecho), sino <em>"¿cómo el computador la usa para resolverme una placa?"</em>. Esta diapositiva responde eso paso a paso.</p>
+  </section>
+
+  <section>
+    <h2>La ecuación que tenemos que resolver</h2>
+    <p>Para una placa delgada (<strong>Kirchhoff</strong>) cargada con presión $q$ perpendicular al plano:</p>
+    $$\frac{\partial^4 w}{\partial x^4} + 2\frac{\partial^4 w}{\partial x^2 \partial y^2} + \frac{\partial^4 w}{\partial y^4} = \frac{q(x,y)}{D},
+       \qquad D = \frac{E\,t^3}{12(1-\nu^2)}$$
+    <p>Para una placa gruesa (<strong>Reissner-Mindlin</strong>), separamos en dos rotaciones independientes $\beta_x(x,y)$ y $\beta_y(x,y)$ + deflexión $w(x,y)$:</p>
+    $$\boldsymbol{\kappa} = \begin{bmatrix} \partial_x \beta_x \\ \partial_y \beta_y \\ \partial_y \beta_x + \partial_x \beta_y \end{bmatrix}, \qquad
+       \boldsymbol{\gamma} = \begin{bmatrix} \partial_x w - \beta_x \\ \partial_y w - \beta_y \end{bmatrix}$$
+    <p>El computador <strong>no resuelve esa PDE directamente</strong>. La aproxima por una suma de funciones $\phi_i$ y resuelve un sistema lineal $\mathbf{K}\,\mathbf{u} = \mathbf{F}$. Eso es lo que viene.</p>
+  </section>
+
+  <section>
+    <h2>El loop conceptual — 7 pasos para resolver una placa</h2>
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Mallar la placa</h3>
+        <p>Dividir el dominio rectangular en una grilla de pequeños cuadriláteros <strong>Q4</strong>. Cada uno tiene 4 nodos. Para una placa $10 \times 10$ m con $16 \times 16$ elementos → <code>256 elementos, 289 nodos</code>.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Asignar grados de libertad por nodo</h3>
+        <p>Cada nodo guarda 3 incógnitas en placas Mindlin: $(w, \beta_x, \beta_y)$. Total de incógnitas globales: $3 \times 289 = 867$ GDL.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Funciones de forma Q4 bilineares</h3>
+        <p>Dentro de cada elemento, $w(\xi, \eta) \approx \sum_{i=1}^4 N_i(\xi,\eta)\, w_i$ con $N_i = \frac{1}{4}(1+\xi_i\xi)(1+\eta_i\eta)$. Lo mismo para $\beta_x$ y $\beta_y$. Estas $N_i$ permiten interpolar el campo dentro del elemento usando solo los 4 valores nodales.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>Matriz B (relación deformación-desplazamiento)</h3>
+        <p>Las curvaturas $\boldsymbol{\kappa}$ y cortantes $\boldsymbol{\gamma}$ se calculan derivando las $N_i$: $\boldsymbol{\kappa} = \mathbf{B}_b \cdot \mathbf{d}_e$, $\boldsymbol{\gamma} = \mathbf{B}_s \cdot \mathbf{d}_e$. Aquí $\mathbf{B}_b$ es $3 \times 12$ y $\mathbf{B}_s$ es $2 \times 12$ porque hay $4 \text{ nodos} \times 3 \text{ GDL} = 12$ GDL por elemento.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h3>Matriz de rigidez elemental $\mathbf{K}_e$ (12×12)</h3>
+        <p>Por el principio del trabajo virtual: $\mathbf{K}_e = \int_{\Omega_e} \mathbf{B}_b^T\,\mathbf{D}_b\,\mathbf{B}_b\,d\Omega + \int_{\Omega_e} \mathbf{B}_s^T\,\mathbf{D}_s\,\mathbf{B}_s\,d\Omega$.<br>La integral se evalúa por <strong>cuadratura de Gauss</strong>: bending con $2{\times}2$ puntos (full integration), shear con $1{\times}1$ (reduced integration, "SRI") para evitar <em>shear locking</em>.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <h3>Ensamblaje global → $\mathbf{K}\,\mathbf{u} = \mathbf{F}$</h3>
+        <p>Un solo doble-bucle (igual que <a href="08_loops_fem.html">Diapositiva 08</a>): para cada elemento, sumar su $\mathbf{K}_e$ en la matriz global $\mathbf{K}$ usando el mapeo local → global. Los nodos compartidos por varios elementos <strong>suman sus contribuciones</strong>. La matriz resultante es <em>sparse</em>: solo los nodos vecinos generan entradas no-cero.</p>
+      </div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <h3>Aplicar BC y resolver</h3>
+        <p>Para placa <strong>simplemente apoyada</strong> en los 4 bordes, imponer $w=0$ en los nodos del borde (método penalty: $K_{ii} \mathrel{+}= 10^{20}$). Resolver el sistema lineal con <code>scipy.spsolve</code> (Python), <code>K\F</code> (Julia), <code>K\F</code> (MATLAB) o <code>Eigen::SparseLU</code> (C++). Obtenemos las 867 incógnitas $\mathbf{u}$.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Visualización interactiva — qué hace la <strong>matriz B</strong></h2>
+    <p>$\mathbf{B}_b$ traduce <em>desplazamientos nodales</em> ($w, \beta_x, \beta_y$) en <em>curvaturas</em> ($\kappa_{xx}, \kappa_{yy}, \kappa_{xy}$) dentro del elemento. Movés un nodo y la placa se deforma. Las curvaturas en el centroide se actualizan en tiempo real:</p>
+
+    <canvas id="plate-canvas" class="plate-canvas" width="640" height="380"></canvas>
+
+    <div class="grade-indicator" style="margin-top:8px">
+      <span>Acción:</span>
+      <strong id="action-info">Movimiento puntual del nodo 3 (esquina superior derecha)</strong>
+      <span style="margin-left:auto">
+        <button class="play-btn" id="mode-w">$w_3$ subir</button>
+        <button class="play-btn" id="mode-bx">$\beta_{x,3}$</button>
+        <button class="play-btn" id="mode-by">$\beta_{y,3}$</button>
+        <button class="play-btn" id="mode-reset" style="background:var(--paper);color:var(--ink)">↺ Reset</button>
+      </span>
+    </div>
+    <div class="explanation-box" id="explanation">
+      Apretá cualquier botón para activar un GDL del nodo 3. Verás las curvaturas $\kappa_{xx}, \kappa_{yy}, \kappa_{xy}$ que se generan en el centroide del elemento.
+    </div>
+  </section>
+
+  <section>
+    <h2>El loop concreto — 3 lenguajes lado a lado</h2>
+    <p>Mismo algoritmo, mismas variables, mismo orden de operaciones. La diferencia es <em>sintaxis</em> y <em>runtime</em>.</p>
+    <div class="three-col">
+      <div>
+        <div class="lang-header python">Python (validacion/python-fem/)</div>
+<pre><code>K = lil_matrix((n_dof, n_dof))
+F = np.zeros(n_dof)
+
+for e in range(n_elems):
+    nc = coords[elements[e]]
+    Ke = element_stiffness(nc)
+    fe = element_load(nc, q)
+    dof_map = [3*n+d for n in elements[e]
+                       for d in range(3)]
+    for ii in range(12):
+        F[dof_map[ii]] += fe[ii]
+        for jj in range(12):
+            K[dof_map[ii],
+              dof_map[jj]] += Ke[ii, jj]
+
+# BC penalty + solve
+K = K.tocsr()
+u = spsolve(K, F)</code></pre>
+      </div>
+      <div>
+        <div class="lang-header julia">Julia (validacion/julia/)</div>
+<pre><code>I_rows, J_cols, K_vals = Int[], Int[], Float64[]
+F = zeros(n_dof)
+
+for e in 1:n_elems
+    nc = coords[elements[e, :], :]
+    Ke = element_stiffness(nc)
+    fe = element_load(nc, q)
+    dof_map = vcat([[3*(elements[e,i]-1)+d
+                     for d in 1:3]
+                     for i in 1:4]...)
+    for ii in 1:12
+        F[dof_map[ii]] += fe[ii]
+        for jj in 1:12
+            push!(I_rows, dof_map[ii])
+            push!(J_cols, dof_map[jj])
+            push!(K_vals, Ke[ii, jj])
+        end
+    end
+end
+K = sparse(I_rows, J_cols, K_vals,
+           n_dof, n_dof)
+# BC penalty + solve
+u = K \ F</code></pre>
+      </div>
+      <div>
+        <div class="lang-header matlab">MATLAB (Matlab/Rectangular_Slab_FEA.m)</div>
+<pre><code>K = zeros(n_dof, n_dof);
+F = zeros(n_dof, 1);
+
+for e = 1:n_elems
+    nc = coords(elements(e, :), :);
+    Ke = element_stiffness(nc);
+    fe = element_load(nc, q);
+    dof_map = zeros(1, 12);
+    for i = 1:4
+        for d = 1:3
+            dof_map(3*(i-1)+d) = ...
+              3*(elements(e,i)-1)+d;
+        end
+    end
+    for ii = 1:12
+        F(dof_map(ii)) = ...
+          F(dof_map(ii)) + fe(ii);
+        for jj = 1:12
+            K(dof_map(ii), dof_map(jj)) = ...
+              K(dof_map(ii), dof_map(jj)) ...
+              + Ke(ii, jj);
+        end
+    end
+end
+% BC penalty + solve
+u = K \ F;</code></pre>
+      </div>
+    </div>
+    <p style="text-align:center;font-style:italic;color:var(--ink-soft)">↑ El bucle <code>for e = 1:n_elems</code> es la columna vertebral del FEM. Sin él, el computador no sabría qué hacer. ↑</p>
+  </section>
+
+  <section>
+    <h2>Validación cruzada — los 4 solvers coinciden</h2>
+    <p>Caso canónico: placa $10 \times 10$ m, $t = 0.20$ m, $E = 30$ GPa, $\nu = 0.3$, carga $q = 10$ kN/m² uniforme, mesh $16 \times 16$ Q4, simplemente apoyada en los 4 bordes. Solución analítica de referencia: <strong>Navier series</strong> (Timoshenko 1959, Cap. 5).</p>
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>Solver</th>
+          <th>Lenguaje</th>
+          <th>$w_{\text{centro}}$ [mm]</th>
+          <th>$|M_{xx}|_{\max}$ [kN·m/m]</th>
+          <th>Error vs Navier (w)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Navier (analítico)</td><td>—</td><td class="mono">−18.484</td><td class="mono">47.887</td><td>—</td></tr>
+        <tr class="match"><td><strong>Hekatan-fem</strong> (WASM)</td><td>C++ → WASM</td><td class="mono">−18.819</td><td class="mono">48.068</td><td class="mono">1.82 %</td></tr>
+        <tr class="match"><td><strong>scikit-fem</strong></td><td>Python puro</td><td class="mono">−18.819</td><td class="mono">48.068</td><td class="mono">1.82 %</td></tr>
+        <tr class="match"><td><strong>Ferrite-equivalente</strong></td><td>Julia</td><td class="mono">−18.819</td><td class="mono">48.068</td><td class="mono">1.82 %</td></tr>
+        <tr><td><strong>OpenSeesPy</strong> (ShellMITC4)</td><td>Python + C++</td><td class="mono">−18.603</td><td class="mono">47.649</td><td class="mono">0.64 %</td></tr>
+      </tbody>
+    </table>
+    <div class="legend-inline">
+      <span><span class="swatch" style="background:rgba(45,106,79,0.4)"></span> filas verdes = misma formulación Q4 Mindlin SRI → resultados idénticos al bit</span>
+    </div>
+    <p>Los tres solvers con <em>Mindlin Q4 SRI</em> (Hekatan, scikit-fem, Julia) dan $w_{\text{centro}} = -1.881942 \times 10^{-2}$ m <em>exactamente</em>. OpenSees usa <strong>MITC4</strong> (interpolación mixta para evitar locking de forma distinta) y por eso difiere 0.5%. Todos están dentro del 2% de Navier para Lx/t = 50.</p>
+  </section>
+
+  <section>
+    <h2>Por qué funciona — la "magia" del loop revisitada</h2>
+    <p>Una placa <em>real</em> con $200 \times 200$ elementos tiene <strong>40,000 elementos × 144 = 5.76 millones de sumas</strong>. A mano sería físicamente imposible. El computador lo hace en milisegundos porque:</p>
+    <ul style="margin-left: 24px; line-height: 1.7;">
+      <li>El loop <code>for e = 1:n_elems</code> se vectoriza (en numpy/Julia) o se compila a SIMD (en C++).</li>
+      <li>La matriz $\mathbf{K}$ es <em>sparse</em>: solo ~1% de entradas son no-cero. El solver SparseLU explota eso.</li>
+      <li>Las funciones $N_i$ y la cuadratura de Gauss son <strong>fórmulas cerradas</strong> conocidas hace 200 años. El computador las evalúa en aritmética IEEE 754.</li>
+      <li>El método matemático <em>no cambió</em> entre Galerkin 1909 y Hekatan 2026. <strong>Solo cambió la velocidad de ejecución</strong>.</li>
+    </ul>
+  </section>
+
+  <div class="quote">
+    <strong>Conclusión:</strong> programar una placa por FEM es traducir <em>una integral de variables continuas</em> en <em>una suma finita de matrices locales</em>, y ensamblarlas con un bucle. Lo difícil no es la matemática (ya está resuelta desde 1909). Lo difícil es <strong>ejecutar el bucle suficientemente rápido</strong> para que el ingeniero modelo, vea resultados, y vuelva a modelar — en segundos. <em>Esa es la apuesta de Hekatan Struct: WebAssembly hace ese bucle en el navegador.</em>
+  </div>
+
+  <div class="footer-note">
+    HEKATAN STRUCT · DIAPOSITIVA 19 · TEORÍA → CÓDIGO → INDUSTRIA
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────
+// Visualización interactiva de Bb · d_e
+// 1 elemento Q4 de 1×1 m, valores discretos de wi, βx_i, βy_i
+// ─────────────────────────────────────────────────────────
+const canvas = document.getElementById("plate-canvas");
+const ctx = canvas.getContext("2d");
+const W = canvas.width, H = canvas.height;
+const PAD = 80;
+const PW = W - 2*PAD, PH = H - 2*PAD;
+const cx_canvas = W/2, cy_canvas = H/2;
+
+// Estado: 4 nodos, cada uno (w, bx, by)
+// Nodos: 1=BL, 2=BR, 3=TR, 4=TL
+let dofs = [
+  [0, 0, 0],  // node 1
+  [0, 0, 0],  // node 2
+  [0, 0, 0],  // node 3
+  [0, 0, 0],  // node 4
+];
+const NODE_COORDS = [[0,0],[1,0],[1,1],[0,1]];   // unit square
+
+function shapeN(xi, eta) {
+  const XI = [-1, 1, 1, -1];
+  const ETA = [-1, -1, 1, 1];
+  return XI.map((xi_i, i) => 0.25 * (1 + xi_i*xi) * (1 + ETA[i]*eta));
+}
+function shape_dN(xi, eta) {
+  const XI = [-1, 1, 1, -1];
+  const ETA = [-1, -1, 1, 1];
+  const dN = [];
+  for (let i = 0; i < 4; i++) {
+    dN.push([0.25 * XI[i] * (1 + ETA[i]*eta),
+             0.25 * ETA[i] * (1 + XI[i]*xi)]);
+  }
+  return dN;
+}
+
+function bendingCurvaturesAtCenter() {
+  // Jacobiano = identidad (elemento 1x1)
+  const dN = shape_dN(0, 0);
+  // kappa_xx = sum_i dNdx[i]*bx_i
+  // kappa_yy = sum_i dNdy[i]*by_i
+  // kappa_xy = sum_i dNdy[i]*bx_i + dNdx[i]*by_i
+  let kxx = 0, kyy = 0, kxy = 0;
+  for (let i = 0; i < 4; i++) {
+    const dx = dN[i][0];
+    const dy = dN[i][1];
+    kxx += dx * dofs[i][1];
+    kyy += dy * dofs[i][2];
+    kxy += dy * dofs[i][1] + dx * dofs[i][2];
+  }
+  return [kxx, kyy, kxy];
+}
+
+function nodeScreen(xi_nat, eta_nat) {
+  return [
+    cx_canvas - PW/2 + xi_nat * PW,
+    cy_canvas + PH/2 - eta_nat * PH
+  ];
+}
+
+function interpolateW(xi, eta) {
+  const N = shapeN(xi, eta);
+  let w = 0;
+  for (let i = 0; i < 4; i++) w += N[i] * dofs[i][0];
+  return w;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Ejes y leyenda
+  ctx.fillStyle = "#1a2942";
+  ctx.font = "12px 'JetBrains Mono', monospace";
+  ctx.fillText("Elemento Q4 1×1 m (sombreado = deflexión w)", 12, 18);
+
+  // Pintar campo w como heatmap
+  const NN = 24;
+  for (let i = 0; i < NN; i++) {
+    for (let j = 0; j < NN; j++) {
+      const xi = i/(NN-1);
+      const eta = j/(NN-1);
+      const w = interpolateW(xi, eta);
+      const intensity = Math.tanh(w * 3);
+      let r, g, b;
+      if (intensity > 0) {
+        r = 244 - intensity*100; g = 211 - intensity*50; b = 94 + intensity*0;
+      } else {
+        r = 44 + intensity*-30; g = 94 + intensity*30; b = 142 - intensity*-30;
+      }
+      const [px, py] = nodeScreen(xi, eta);
+      ctx.fillStyle = `rgb(${r|0},${g|0},${b|0})`;
+      ctx.fillRect(px - PW/(NN-1)/2 - 1, py - PH/(NN-1)/2 - 1,
+                   PW/(NN-1) + 2, PH/(NN-1) + 2);
+    }
+  }
+
+  // Borde del elemento
+  ctx.strokeStyle = "#1a2942";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(cx_canvas - PW/2, cy_canvas - PH/2, PW, PH);
+
+  // Dibujar los 4 nodos con sus DOF
+  const labels = ["N1 (BL)", "N2 (BR)", "N3 (TR)", "N4 (TL)"];
+  for (let i = 0; i < 4; i++) {
+    const xi = NODE_COORDS[i][0];
+    const eta = NODE_COORDS[i][1];
+    const [px, py] = nodeScreen(xi, eta);
+    ctx.fillStyle = "#b08d4f";
+    ctx.beginPath();
+    ctx.arc(px, py, 8, 0, 2*Math.PI);
+    ctx.fill();
+    ctx.strokeStyle = "#1a2942";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = "#1a2942";
+    ctx.font = "10px 'JetBrains Mono', monospace";
+    ctx.fillText(labels[i], px + 12, py - 6);
+    ctx.fillText(`w=${dofs[i][0].toFixed(2)}`, px + 12, py + 6);
+    ctx.fillText(`βx=${dofs[i][1].toFixed(2)}`, px + 12, py + 18);
+    ctx.fillText(`βy=${dofs[i][2].toFixed(2)}`, px + 12, py + 30);
+
+    // Vector de rotación βx (flecha pequeña)
+    if (Math.abs(dofs[i][1]) > 0.01) {
+      ctx.strokeStyle = "#a23232";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px, py - dofs[i][1] * 25);
+      ctx.stroke();
+    }
+    if (Math.abs(dofs[i][2]) > 0.01) {
+      ctx.strokeStyle = "#2d6a4f";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px + dofs[i][2] * 25, py);
+      ctx.stroke();
+    }
+  }
+
+  // Curvaturas en el centroide
+  const [kxx, kyy, kxy] = bendingCurvaturesAtCenter();
+  ctx.fillStyle = "#1a2942";
+  ctx.font = "bold 13px 'JetBrains Mono', monospace";
+  ctx.fillText("Curvaturas en el centroide (B·d):", 12, H - 56);
+  ctx.font = "12px 'JetBrains Mono', monospace";
+  ctx.fillStyle = "#a23232";
+  ctx.fillText(`κxx = ∂βx/∂x = ${kxx.toFixed(3)}`, 12, H - 38);
+  ctx.fillStyle = "#2d6a4f";
+  ctx.fillText(`κyy = ∂βy/∂y = ${kyy.toFixed(3)}`, 220, H - 38);
+  ctx.fillStyle = "#b08d4f";
+  ctx.fillText(`κxy = ∂βx/∂y + ∂βy/∂x = ${kxy.toFixed(3)}`, 12, H - 20);
+}
+
+function setMode(mode) {
+  // Reset
+  for (let i = 0; i < 4; i++) dofs[i] = [0, 0, 0];
+  if (mode === "w") {
+    dofs[2][0] = 0.6;  // node 3: w = 0.6
+    document.getElementById("action-info").innerHTML =
+      "$w_3 = 0.6$ (subir esquina TR) → genera curvaturas <em>de membrana</em> nulas si βx=βy=0, pero el patrón w no es plano.";
+    document.getElementById("explanation").innerHTML =
+      "<strong>Solo $w$:</strong> Levantar el nodo 3 sin rotar implica que las normales no se inclinan ($\\beta_x=\\beta_y=0$). Para Mindlin esto produce <em>cortante</em> $\\gamma \\neq 0$, no curvatura. Por eso necesitamos los $\\beta$ como GDL independientes.";
+  } else if (mode === "bx") {
+    dofs[2][1] = 0.4;
+    document.getElementById("action-info").innerHTML =
+      "$\\beta_{x,3} = 0.4$ → $\\kappa_{xx}$ y $\\kappa_{xy}$ se activan.";
+    document.getElementById("explanation").innerHTML =
+      "<strong>Solo $\\beta_x$:</strong> Rotar la normal del nodo 3 alrededor del eje $y$ genera curvatura $\\kappa_{xx}=\\partial_x \\beta_x$ y torsional $\\kappa_{xy}=\\partial_y \\beta_x$. Esto es lo que produce momento flector $M_{xx}$.";
+  } else if (mode === "by") {
+    dofs[2][2] = 0.4;
+    document.getElementById("action-info").innerHTML =
+      "$\\beta_{y,3} = 0.4$ → $\\kappa_{yy}$ y $\\kappa_{xy}$ se activan.";
+    document.getElementById("explanation").innerHTML =
+      "<strong>Solo $\\beta_y$:</strong> Rotar la normal del nodo 3 alrededor del eje $x$ genera $\\kappa_{yy}$ y torsional $\\kappa_{xy}$. Produce momento $M_{yy}$.";
+  } else if (mode === "reset") {
+    document.getElementById("action-info").innerHTML = "Estado inicial (todos los GDL = 0)";
+    document.getElementById("explanation").innerHTML =
+      "Apretá los botones para activar cada GDL y ver cómo $\\mathbf{B}_b \\cdot \\mathbf{d}_e$ genera curvaturas. Las flechas <span style='color:#a23232'>rojas</span> son $\\beta_x$, las <span style='color:#2d6a4f'>verdes</span> son $\\beta_y$.";
+  }
+  draw();
+  // Re-render MathJax inline
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([document.getElementById("action-info"),
+                            document.getElementById("explanation")]);
+  }
+}
+
+document.getElementById("mode-w").addEventListener("click", () => setMode("w"));
+document.getElementById("mode-bx").addEventListener("click", () => setMode("bx"));
+document.getElementById("mode-by").addEventListener("click", () => setMode("by"));
+document.getElementById("mode-reset").addEventListener("click", () => setMode("reset"));
+
+setMode("reset");
+</script>
+<script src="./shared/nav.js"></script>
+</body>
+</html>
