@@ -6,25 +6,101 @@ Hekatan Struct started as a fork of [awatif v2.0.0](https://github.com/madil4/aw
 
 🌐 **Live:** [https://giorgioburbanelli89.github.io/hekatan-struct/workspace/](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/)
 
-Jump directly to any example with `?t=<id>`, e.g.:
+Jump directly to any example with `?t=<id>` (102 examples total). The most relevant grouped by category:
+
 **Plates & Shells**
 - [`?t=plane`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=plane) — Plane Q4 cantilever wall (plane stress) w/ Wilson incompatible modes
-- [`?t=plate-thin`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=plate-thin) — Kirchhoff thin plate
+- [`?t=plate-thin`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=plate-thin) — Kirchhoff thin plate (BFS Q4, 16-DOF)
 - [`?t=plate-thick`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=plate-thick) — Mindlin-Reissner (MITC4)
+- [`?t=plate-thick-validacion`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=plate-thick-validacion) — MITC4 validation vs SAP 2000
+- [`?t=plate-q4`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=plate-q4) — Generic Q4 plate solver
+- [`?t=triangular-plate`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=triangular-plate) — DKT triangular plate element
+- [`?t=shell-thin`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=shell-thin) / [`?t=shell-thick`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=shell-thick) — Thin/Thick shell elements
+- [`?t=layered-shell`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=layered-shell) — Composite layered shell
 - [`?t=membrana-csi`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=membrana-csi) — CSI Shell-Membrane with drilling DOF
+- [`?t=membrana-pstress`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=membrana-pstress) — Plane-stress membrane
+- [`?t=shear-wall-q4`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=shear-wall-q4) — Shear wall meshed with Q4
+- [`?t=cantilever-beam-q4`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=cantilever-beam-q4) / [`?t=placa-cantilever-q4`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-cantilever-q4) — Cantilever benchmarks
 
-**Foundations**
+**Foundations & Soil**
 - [`?t=zapata-aislada`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=zapata-aislada) — Isolated footing + Winkler springs (11 soil types, NEC-SE-GC)
+- [`?t=zapata-aislada-validacion`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=zapata-aislada-validacion) — Isolated footing validation vs SAFE
 - [`?t=zapata-viga-amarre`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=zapata-viga-amarre) — Strap-beam footing
+- [`?t=placa-base`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base) — Steel column base plate
+- [`?t=placa-base-cft`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base-cft) — CFT column base plate
+- [`?t=placa-base-h`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base-h) / [`?t=placa-base-hueca`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base-hueca) — H + hollow profile bases
+- [`?t=viga-medio-elastico`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=viga-medio-elastico) — Beam on elastic foundation (Winkler)
+- [`?t=bulbo-presiones-suelo`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=bulbo-presiones-suelo) — Soil pressure bulb diagram
+- [`?t=slope-stability`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=slope-stability) — Slope stability analysis
 
-**Building variants** (per structural system, AISC 360-22 / ACI 318-22 / ASCE 7-22)
-- [`?t=edificio-hormigon`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-hormigon) — Pure concrete moment frame (IMF/SMF)
+**Building variants** (AISC 360-22 / ACI 318-22 / ASCE 7-22)
+- [`?t=edificio-hormigon`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-hormigon) — Concrete moment frame (IMF/SMF)
 - [`?t=edificio-acero-v2`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-acero-v2) — Steel W moment frame (OMF/IMF/SMF)
 - [`?t=edificio-mixto`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-mixto) — Composite (concrete columns + steel W beams)
 - [`?t=edificio-muros`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-muros) — Concrete + Special RC shear walls (ACI 318-22 §18.10)
 - [`?t=edificio-dual`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-dual) — Dual system (composite + walls + braces, R=7)
+- [`?t=edificio-aporticado`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-aporticado) — Generic frame building
+- [`?t=edificio-con-losa`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-con-losa) — Building with slab membrane
+- [`?t=edificio-con-muros`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-con-muros) — Variant with embedded walls
+- [`?t=edificio-ladera`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-ladera) — Building on slope (asymmetric supports)
+- [`?t=edificio-comparativa-fem`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-comparativa-fem) — Side-by-side FEM comparison
+- [`?t=edif-acero`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edif-acero) — Steel building (legacy)
+- [`?t=mezanine`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=mezanine) / [`?t=galpon`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=galpon) — Mezzanine + industrial warehouse
 
 All buildings support the **Rigid Diaphragm** toggle (ASCE 7-22 §12.3.1) in the *Avanzado* folder, adjustable *Secciones por Piso* / *Luces por Vano* via `dynamicParams`, and separate XY / Z deform scales in Settings.
+
+**Frames, beams & trusses**
+- [`?t=1d-mesh`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=1d-mesh) / [`?t=2d-mesh`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=2d-mesh) / [`?t=3d-structure`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=3d-structure) — Mesh tutorials (1D/2D/3D)
+- [`?t=truss`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=truss) / [`?t=advanced-truss`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=advanced-truss) / [`?t=truss-gen`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=truss-gen) — Truss systems
+- [`?t=portico-2d`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=portico-2d) — 2D portal frame
+- [`?t=beams`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=beams) / [`?t=viga-doble-t`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=viga-doble-t) — Beam elements
+- [`?t=axial-bar`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=axial-bar) / [`?t=barra-axial`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=barra-axial) — Axial bar elements
+- [`?t=releases-demo`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=releases-demo) — Member end releases
+
+**CFT (Concrete-Filled Tubes)**
+- [`?t=columna-cft`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=columna-cft) — CFT column (beam element, AISC 360-22 §I)
+- [`?t=columna-cft-h8`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=columna-cft-h8) — CFT column with H8 solid elements
+- [`?t=benchmark-cft`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-cft) / [`?t=benchmark-cft-cantilever`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-cft-cantilever) — Validation vs ETABS
+
+**Steel & RC connections**
+- [`?t=conexion-bfp`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=conexion-bfp) — Bolted Flange Plate (AISC 358 §7)
+- [`?t=conexion-rbs`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=conexion-rbs) — Reduced Beam Section (AISC 358 §5)
+- [`?t=conexion-end-plate`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=conexion-end-plate) — End-Plate Moment Connection
+- [`?t=conexion-diafragma-cft`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=conexion-diafragma-cft) — Diaphragm-through CFT connection
+- [`?t=bolt-hole-detail`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=bolt-hole-detail) — Bolt hole detail visualization
+
+**Benchmarks (validation against textbooks + commercial software)**
+- [`?t=benchmark-3way`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-3way) — 3-way comparison (Hekatan / ETABS / hand calc)
+- [`?t=benchmark-concrete-beam`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-concrete-beam) / [`?t=benchmark-concrete-cantilever`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-concrete-cantilever) — Concrete beam tests
+- [`?t=benchmark-steel-beam`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-steel-beam) / [`?t=benchmark-steel-cantilever`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-steel-cantilever) — Steel beam tests
+- [`?t=benchmark-paz-4-1`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-4-1) thru [`?t=benchmark-paz-13-1`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-13-1) — Mario Paz "Structural Dynamics" textbook examples (chapters 4 through 13)
+
+**Iconic 3D structures**
+- [`?t=burj-khalifa`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=burj-khalifa) / [`?t=twisted-tower`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=twisted-tower) / [`?t=tower-3d`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=tower-3d) — Tower models
+- [`?t=cable-stayed-bridge`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=cable-stayed-bridge) / [`?t=tablero-puente`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=tablero-puente) — Bridge models
+- [`?t=sydney-opera`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=sydney-opera) — Sydney Opera House shells
+- [`?t=gateway-arch`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=gateway-arch) — Gateway Arch catenary
+- [`?t=diagrid`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=diagrid) — Diagrid structural system
+- [`?t=pergola`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=pergola) — Pergola / canopy
+
+**Slabs & design**
+- [`?t=slab-designer`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=slab-designer) — Slab design module
+- [`?t=building`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=building) — Generic building generator
+- [`?t=solid-cube-fem`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=solid-cube-fem) — Solid H8 cube FEM
+
+**CAD & Modeling tools**
+- [`?t=new-blank`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=new-blank) — **Blank canvas** for drawing from scratch (see CAD Tools section below)
+- [`?t=cad-draw`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=cad-draw) / [`?t=cad-editor`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=cad-editor) — CAD-style drawing tools
+- [`?t=drawing`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=drawing) — Basic 2D drawing
+- [`?t=cli-modeler`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=cli-modeler) — CLI-style parametric modeling
+
+**Utilities & tutorials**
+- [`?t=fem-explained`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=fem-explained) — Step-by-step FEM explainer
+- [`?t=calc-editor`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=calc-editor) — Calc editor (Calcpad integration)
+- [`?t=report`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=report) — Auto-generated reports
+- [`?t=color-map`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=color-map) / [`?t=curves`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=curves) / [`?t=tables`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=tables) — UI components
+- [`?t=tutorials`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=tutorials) — Tutorial index
+- [`?t=csi-importer`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=csi-importer) — Import E2K / S2K files
 
 ## 📐 CAD Tools (new — NewBlank canvas)
 
