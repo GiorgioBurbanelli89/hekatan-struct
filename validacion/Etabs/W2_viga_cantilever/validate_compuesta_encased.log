@@ -1,0 +1,30 @@
+[1] Conectando a ETABS abierto...
+    OK - attached a instancia existente
+
+[2] Limpiando + aplicando POINTLOAD Fx=100 kN en POINT '2', pattern 'Live' (Replace=True)...
+    DeleteLoadForce previa OK
+    SetLoadForce ret=(0, <System.Double[] object at 0x000002514177C540>)
+
+[3] Save ret=0 → C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\validacion\Etabs\W2_viga_cantilever\W2_viga_compuesta_validado.EDB
+    RunAnalysis ret=0
+
+[4] Leyendo Ux en POINT 2 (case Live)...
+    SetCaseSelectedForOutput('Live') ret=0
+    JointDispl POINT 2 case Live: NR=1
+    Ux=0.02084 mm  Uy=0.00000e+00  Uz=0.00000e+00
+    Reacción base POINT 1: Fx=-100.0000 kN (esperado -100)
+
+[5] ANALÍTICO (transformed-section steel-equivalent):
+    A_outer (0.9×0.6) = 0.5400 m²
+    A_steel (IPE)     = 51.88 cm² (0.00519 m²)
+    A_concrete neto   = 5348.12 cm² (0.53481 m²)
+    n = E_s/E_c       = 8.006
+    A_eq (steel-eq)   = 719.86 cm² (0.07199 m²)
+    u_x = P·L/(E_s·A_eq) = 0.02084 mm
+
+[6] COMPARACIÓN:
+    ETABS    Ux = 0.02084 mm
+    Analítico Ux = 0.02084 mm
+    Δ = +0.000 %  [PASS]
+
+DONE — ETABS queda abierto.

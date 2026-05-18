@@ -266,6 +266,7 @@ import { barraAxial } from "../W1_barra_axial/barraAxial";
 import { vigaAxialCantilever } from "../W2_viga_axial_cantilever/vigaAxialCantilever";
 import { vigaAxialConcreteCantilever } from "../W2_viga_axial_concrete_cantilever/vigaAxialConcreteCantilever";
 import { vigaAxialCompositeCantilever } from "../W2_viga_axial_composite_cantilever/vigaAxialCompositeCantilever";
+import { vigaAxialCompositeEncasedCantilever } from "../W2_viga_axial_composite_encased_cantilever/vigaAxialCompositeEncasedCantilever";
 import { vigaFlexionConcreteCantilever } from "../W2_viga_flexion_concrete_cantilever/vigaFlexionConcreteCantilever";
 import { vigaFlexionSteelCantilever } from "../W2_viga_flexion_steel_cantilever/vigaFlexionSteelCantilever";
 import { portico2D } from "../portico-2d/portico2D";
@@ -301,7 +302,8 @@ export const examplesRegistry: ExampleDef[] = [
   barraAxial,                       // Barra axial horizontal genérica
   vigaAxialConcreteCantilever,      // Viga Hormigón 30×30 axial puntual
   vigaAxialCantilever,              // Viga Acero I-450 axial puntual
-  vigaAxialCompositeCantilever,     // Viga Compuesta (IPE+losa) axial puntual transformed-section
+  vigaAxialCompositeCantilever,        // Viga Compuesta Slab (IPE+losa colaborante) transformed-section
+  vigaAxialCompositeEncasedCantilever, // Viga Compuesta SRC Encased (bloque hormigón + IPE embed)
   // 2 DOF — Vigas flexión (peso propio + cargas verticales)
   vigaFlexionConcreteCantilever,    // Viga Hormigón 30×60 peso propio
   vigaFlexionSteelCantilever,       // Viga Acero IPE 300 peso propio

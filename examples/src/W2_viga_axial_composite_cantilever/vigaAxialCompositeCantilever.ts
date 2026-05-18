@@ -32,7 +32,7 @@ const rho_S = 7849.0;
 
 export const vigaAxialCompositeCantilever: ExampleDef = {
   id: "W2_viga_axial_composite_cantilever",
-  name: "Viga axial Compuesta (Acero+Losa) cantilever (1 DOF)",
+  name: "Viga axial Compuesta Slab colaborante (Acero+Losa) cantilever (1 DOF)",
   category: "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 1 DOF Axial",
   benchmark: true,
   defaultShellResult: "none",
