@@ -89,6 +89,8 @@ export default defineConfig({
         "W2_viga_axial_composite_encased_cantilever": "src/W2_viga_axial_composite_encased_cantilever/index.html",
         "W2_viga_flexion_concrete_cantilever": "src/W2_viga_flexion_concrete_cantilever/index.html",
         "W2_viga_flexion_steel_cantilever": "src/W2_viga_flexion_steel_cantilever/index.html",
+        "W2_viga_flexion_composite_slab_cantilever": "src/W2_viga_flexion_composite_slab_cantilever/index.html",
+        "W2_viga_flexion_composite_encased_cantilever": "src/W2_viga_flexion_composite_encased_cantilever/index.html",
         "portico-2d": "src/portico-2d/index.html",
         "tower-3d": "src/tower-3d/index.html",
         "galpon": "src/galpon/index.html",

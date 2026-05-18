@@ -269,6 +269,8 @@ import { vigaAxialCompositeCantilever } from "../W2_viga_axial_composite_cantile
 import { vigaAxialCompositeEncasedCantilever } from "../W2_viga_axial_composite_encased_cantilever/vigaAxialCompositeEncasedCantilever";
 import { vigaFlexionConcreteCantilever } from "../W2_viga_flexion_concrete_cantilever/vigaFlexionConcreteCantilever";
 import { vigaFlexionSteelCantilever } from "../W2_viga_flexion_steel_cantilever/vigaFlexionSteelCantilever";
+import { vigaFlexionCompositeSlabCantilever } from "../W2_viga_flexion_composite_slab_cantilever/vigaFlexionCompositeSlabCantilever";
+import { vigaFlexionCompositeEncasedCantilever } from "../W2_viga_flexion_composite_encased_cantilever/vigaFlexionCompositeEncasedCantilever";
 import { portico2D } from "../portico-2d/portico2D";
 import { tower3D } from "../tower-3d/tower3D";
 import { galpon } from "../galpon/galpon";
@@ -305,8 +307,10 @@ export const examplesRegistry: ExampleDef[] = [
   vigaAxialCompositeCantilever,        // Viga Compuesta Slab (IPE+losa colaborante) transformed-section
   vigaAxialCompositeEncasedCantilever, // Viga Compuesta SRC Encased (bloque hormigón + IPE embed)
   // 2 DOF — Vigas flexión (peso propio + cargas verticales)
-  vigaFlexionConcreteCantilever,    // Viga Hormigón 30×60 peso propio
-  vigaFlexionSteelCantilever,       // Viga Acero IPE 300 peso propio
+  vigaFlexionConcreteCantilever,        // Viga Hormigón 30×60 peso propio
+  vigaFlexionSteelCantilever,           // Viga Acero IPE 300 peso propio
+  vigaFlexionCompositeSlabCantilever,   // Viga Compuesta Slab (IPE+losa colaborante) peso propio
+  vigaFlexionCompositeEncasedCantilever,// Viga Compuesta SRC Encased (bloque hormigón + IPE) peso propio
   // Frames 1D (resto)
   trussGen,
   portico2D,
