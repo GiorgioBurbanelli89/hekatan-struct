@@ -32,6 +32,7 @@ import {
   buildCantileverModel,
   exportCantileverE2k,
 } from "../shared/cantileverE2k";
+import { getActiveSelfWeightMultiplier } from "../shared/loadCaseHelpers";
 
 export const benchmarkConcreteCantilever: ExampleDef = {
   id: "benchmark-concrete-cantilever",
@@ -98,7 +99,12 @@ export const benchmarkConcreteCantilever: ExampleDef = {
   },
 
   build(p, states) {
-    const { sec } = buildCantileverModel(adapt(p), states, 1);  // 1 = Hormigón
+    // Lee el case activo del panel 📊 Load Cases para escalar peso propio:
+    //   Dead (SW=1)  → swMult=1 → peso propio full
+    //   Live (SW=0)  → swMult=0 → no aplica peso propio
+    //   Modal/sin patterns → swMult=0
+    const swMult = getActiveSelfWeightMultiplier(states);
+    const { sec } = buildCantileverModel(adapt(p), states, 1, swMult);  // 1 = Hormigón
     const L = p.L;
     const nSeg = Math.max(1, Math.round(p.nSegments));
 

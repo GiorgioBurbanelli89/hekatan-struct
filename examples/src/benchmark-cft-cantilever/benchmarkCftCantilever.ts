@@ -33,6 +33,7 @@ import {
   exportCantileverE2k,
   type MaterialKey,
 } from "../shared/cantileverE2k";
+import { getActiveSelfWeightMultiplier } from "../shared/loadCaseHelpers";
 
 // ETABS API real — extraído del modelo Columna CFT Cantilivier.e2k
 const ETABS_REF = {
@@ -131,7 +132,9 @@ export const benchmarkCftCantilever: ExampleDef = {
 
   build(p, states) {
     const matKey = Math.round(p.materialType ?? 2) as MaterialKey;
-    const { sec } = buildCantileverModel(p as any, states, matKey);
+    // SW multiplier según case activo (Dead=1, Live=0, Modal=0)
+    const swMult = getActiveSelfWeightMultiplier(states);
+    const { sec } = buildCantileverModel(p as any, states, matKey, swMult);
     const L = p.L;
     const nSeg = Math.max(1, Math.round(p.nSegments));
 

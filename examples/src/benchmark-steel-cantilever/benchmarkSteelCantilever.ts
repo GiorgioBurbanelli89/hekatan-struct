@@ -27,6 +27,7 @@
 import { modalAnalysis } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import { formatDisp, formatForce, formatMoment } from "../workspace/units";
+import { getActiveSelfWeightMultiplier } from "../shared/loadCaseHelpers";
 import {
   buildCantileverModel,
   exportCantileverE2k,
@@ -100,7 +101,9 @@ export const benchmarkSteelCantilever: ExampleDef = {
   },
 
   build(p, states) {
-    const { sec } = buildCantileverModel(adapt(p), states, 0);  // 0 = Acero
+    // SW multiplier según case activo del panel Load Cases (Dead=1, Live=0, Modal=0).
+    const swMult = getActiveSelfWeightMultiplier(states);
+    const { sec } = buildCantileverModel(adapt(p), states, 0, swMult);  // 0 = Acero
     const L = p.L;
     const nSeg = Math.max(1, Math.round(p.nSegments));
 

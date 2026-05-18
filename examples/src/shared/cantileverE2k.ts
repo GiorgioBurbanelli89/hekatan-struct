@@ -146,11 +146,17 @@ export function computeCantileverSection(
 /**
  * Construye nodos, elementos, supports, loads, elementInputs para una columna
  * cantilever. Llama a deform() y popula `states`.
+ *
+ * @param swMultiplier  Multiplicador de peso propio (default 1.0). Si el
+ *   case activo del workspace es "Live" (SW=0) o "Modal" (sin patterns),
+ *   pasar 0 — entonces no se aplican cargas de peso propio nodal y solo
+ *   se respetan las cargas user-defined (P_lat, M_top).
  */
 export function buildCantileverModel(
   p: CantileverParams,
   states: BuildStates,
   matKey: MaterialKey,
+  swMultiplier: number = 1.0,
 ): { sec: CantileverSection } {
   const sec = computeCantileverSection(p, matKey);
   const L = p.L;
@@ -169,11 +175,14 @@ export function buildCantileverModel(
   const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
   supports.set(0, [true, true, true, true, true, true]);
 
-  // Cargas: equivalente nodal del peso propio uniforme + P_lat opcional en tope
+  // Cargas: equivalente nodal del peso propio uniforme × swMultiplier
+  // (swMult=0 → no aplica peso propio, p.ej. case "Live" o "Modal")
+  // + P_lat / M_top opcionales en cabeza (siempre aplicados, independientes
+  // del case activo — son cargas user-defined de la UI).
   const loads = new Map<number, [number, number, number, number, number, number]>();
   for (let i = 0; i <= nSeg; i++) {
     const isEnd = (i === 0 || i === nSeg);
-    const fz = -sec.q * dz * (isEnd ? 0.5 : 1.0);
+    const fz = -sec.q * dz * (isEnd ? 0.5 : 1.0) * swMultiplier;
     loads.set(i, [0, 0, fz, 0, 0, 0]);
   }
   // Carga + momentos en cabeza de columna (nodo top)
