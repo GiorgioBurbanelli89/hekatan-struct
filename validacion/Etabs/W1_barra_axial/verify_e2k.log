@@ -1,0 +1,30 @@
+[LOG] C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\validacion\Etabs\W1_barra_axial\verify_e2k.log
+[1] E2K = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\validacion\Etabs\W1_barra_axial\W1_barra_axial.e2k
+    exists? True  size=2003
+[2] Helper + ProgID + Start...
+    OK
+[3] SapModel + SetPresentUnits(kN_m_C)...
+    OK
+[4] OpenFile(C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\validacion\Etabs\W1_barra_axial\W1_barra_axial.e2k)...
+    ret=0
+[5] SetModelIsLocked(False) + SetPresentUnits...
+[6] Save EDB -> C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\validacion\Etabs\W1_barra_axial\W1_barra_axial_from_e2k.EDB
+    ret=0
+[7] RunAnalysis...
+    ret=0
+[8] Setup output AXIAL...
+[9] Inventario joints...
+    joints = ['1', '2']
+    1: (0.000, 0.000, 0.000)
+    2: (0.000, 0.000, 5.000)
+[10] Joint displacements + reactions:
+    Disp  1: Ux=0.00000 Uy=0.00000 Uz=0.00000 mm
+    React 1: FX=0.000 FY=0.000 FZ=-100.000 kN
+    Disp  2: Ux=0.00000 Uy=0.00000 Uz=0.25000 mm
+    React 2: FX=0.000 FY=0.000 FZ=0.000 kN
+
+=== VALIDACION ===
+Esperado en joint LIBRE (Z=5): Uz = 0.250000 mm
+Esperado en joint BASE  (Z=0): FZ = -100 kN
+
+DONE — ETABS queda abierto

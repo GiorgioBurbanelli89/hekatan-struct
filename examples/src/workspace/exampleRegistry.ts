@@ -230,7 +230,7 @@ import { conexionBfp } from "../conexion-bfp/conexionBfp";
 import { conexionEndPlate } from "../conexion-end-plate/conexionEndPlate";
 import { placaBase } from "../placa-base/placaBase";
 import { trussGen } from "../truss-gen/trussGen";
-import { barraAxial } from "../barra-axial/barraAxial";
+import { barraAxial } from "../W1_barra_axial/barraAxial";
 import { portico2D } from "../portico-2d/portico2D";
 import { tower3D } from "../tower-3d/tower3D";
 import { galpon } from "../galpon/galpon";

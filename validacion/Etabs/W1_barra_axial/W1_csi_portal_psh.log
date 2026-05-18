@@ -1,0 +1,11 @@
+Fatal error.
+0xC0000005
+   at ETABSv1.cFrameObj.GetPoints(System.String, System.String ByRef, System.String ByRef)
+   at ETABSv1.wFrameObj.GetPoints(System.String, System.String ByRef, System.String ByRef)
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(System.Object, IntPtr*)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(System.Object, System.Span`1<System.Object>, System.Reflection.BindingFlags)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(System.Object, System.Reflection.BindingFlags, System.Reflection.Binder, System.Object[], System.Globalization.CultureInfo)
+   at System.Reflection.RuntimeMethodInfo.Invoke(System.Object, System.Reflection.BindingFlags, System.Reflection.Binder, System.Object[], System.Globalization.CultureInfo)
+   at Python.Runtime.MethodBinder.Invoke(Python.Runtime.BorrowedReference, Python.Runtime.BorrowedReference, Python.Runtime.BorrowedReference, System.Reflection.MethodBase, System.Reflection.MethodBase[])
+   at Python.Runtime.MethodObject.Invoke(Python.Runtime.BorrowedReference, Python.Runtime.BorrowedReference, Python.Runtime.BorrowedReference, System.Reflection.MethodBase)
+   at Python.Runtime.MethodBinding.tp_call(Python.Runtime.BorrowedReference, Python.Runtime.BorrowedReference, Python.Runtime.BorrowedReference)

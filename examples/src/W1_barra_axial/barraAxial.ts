@@ -10,8 +10,8 @@ const Gs = Es / (2 * (1 + nu_s));
 const rho_s = 78;
 
 export const barraAxial: ExampleDef = {
-  id: "barra-axial",
-  name: "Barra axial (1D)",
+  id: "W1_barra_axial",
+  name: "W1 — Barra axial (1D)",
   category: "Frames 1D",
   defaultShellResult: "none",
   availableShellResults: [],

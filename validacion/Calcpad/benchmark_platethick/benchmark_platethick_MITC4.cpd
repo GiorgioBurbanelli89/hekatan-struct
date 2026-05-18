@@ -27,10 +27,8 @@
 n = 12
 n_dof = 3
 'Element dimensions -'a_1 = a/n_a', 'b_1 = b/n_b
-a_h = a_1/2
-b_h = b_1/2
+a_h = a_1/2';'b_h = b_1/2
 'Supported joints count -'n_s = 2*(n_a + n_b)
-
 #hide
 x_j = vector(n_j)','y_j = vector(n_j)
 x = 0', 'y = 0
@@ -92,24 +90,18 @@ gw = [1; 1]
 
 '<h4>Funciones de forma Q4 bilineales y MITC4 tying</h4>
 '<p><b>Q4 bilineales en (ξ, η) ∈ [-1, +1]:</b></p>
-N1(x; y) = (1 - x)*(1 - y)/4
-N2(x; y) = (1 + x)*(1 - y)/4
-N3(x; y) = (1 + x)*(1 + y)/4
-N4(x; y) = (1 - x)*(1 + y)/4
+N1(x; y) = (1 - x)*(1 - y)/4';'N2(x; y) = (1 + x)*(1 - y)/4
+N3(x; y) = (1 + x)*(1 + y)/4';'N4(x; y) = (1 - x)*(1 + y)/4
 
-dN1dx(x; y) = -(1 - y)/4
-dN2dx(x; y) =  (1 - y)/4
-dN3dx(x; y) =  (1 + y)/4
-dN4dx(x; y) = -(1 + y)/4
-dN1dy(x; y) = -(1 - x)/4
-dN2dy(x; y) = -(1 + x)/4
-dN3dy(x; y) =  (1 + x)/4
-dN4dy(x; y) =  (1 - x)/4
+dN1dx(x; y) = -(1 - y)/4';'dN2dx(x; y) = (1 - y)/4
+dN3dx(x; y) = (1 + y)/4';'dN4dx(x; y) = -(1 + y)/4
+dN1dy(x; y) = -(1 - x)/4';'dN2dy(x; y) = -(1 + x)/4
+dN3dy(x; y) = (1 + x)/4';'dN4dy(x; y) = (1 - x)/4
 
 '<p><b>Curvaturas (con operador $Slope para derivadas parciales)</b></p>
 '<p>Defino temporalmente funciones β para mostrar las fórmulas:</p>
-β_x_ej(x) = x^2  ' dummy para visualizar
-β_y_ej(y) = y^2  ' dummy para visualizar
+β_x_ej(x) = x^2' dummy para visualizar
+β_y_ej(y) = y^2' dummy para visualizar
 #noc
 κ_x = $Slope{β_x_ej(x) @ x = x_p}
 κ_y = $Slope{β_y_ej(y) @ y = y_p}
@@ -281,7 +273,7 @@ w(a/2; b/2)'mm
 '<p><b>Fórmula de recovery (Cook-Malkus-Plesha 1989; igual que SAP 2000):</b></p>
 '<p>Defino dummy <code>M_at_g(g)</code> = momento evaluado en Gauss point g (vector 3×1)
 'y <code>N_g(g; x_c; y_c)</code> = peso de extrapolación bilineal de cada Gauss point hacia la esquina (x_c, y_c):</p>
-M_at_g(g) = take(g; 1; 2; 3; 4)   ' dummy para visualización
+M_at_g(g) = take(g; 1; 2; 3; 4)' dummy para visualización
 N_g(g; x_c; y_c) = take(g; (1 + sqrt(3)*x_c)*(1 + sqrt(3)*y_c)/4; _
                             (1 - sqrt(3)*x_c)*(1 + sqrt(3)*y_c)/4; _
                             (1 + sqrt(3)*x_c)*(1 - sqrt(3)*y_c)/4; _
@@ -297,12 +289,12 @@ Z_e(e) = [Z_j(e_j.(e; 1)); Z_j(e_j.(e; 2)); Z_j(e_j.(e; 3)); Z_j(e_j.(e; 4))]
 
 #hide
 B_b_full(x; y) = [ _
-  Bb1(1;x;y); Bb1(2;x;y); Bb1(3;x;y); Bb1(4;x;y); Bb1(5;x;y); Bb1(6;x;y); _
-  Bb1(7;x;y); Bb1(8;x;y); Bb1(9;x;y); Bb1(10;x;y); Bb1(11;x;y); Bb1(12;x;y) | _
-  Bb2(1;x;y); Bb2(2;x;y); Bb2(3;x;y); Bb2(4;x;y); Bb2(5;x;y); Bb2(6;x;y); _
-  Bb2(7;x;y); Bb2(8;x;y); Bb2(9;x;y); Bb2(10;x;y); Bb2(11;x;y); Bb2(12;x;y) | _
-  Bb3(1;x;y); Bb3(2;x;y); Bb3(3;x;y); Bb3(4;x;y); Bb3(5;x;y); Bb3(6;x;y); _
-  Bb3(7;x;y); Bb3(8;x;y); Bb3(9;x;y); Bb3(10;x;y); Bb3(11;x;y); Bb3(12;x;y)]
+  Bb1(1; x; y); Bb1(2; x; y); Bb1(3; x; y); Bb1(4; x; y); Bb1(5; x; y); Bb1(6; x; y); _
+  Bb1(7; x; y); Bb1(8; x; y); Bb1(9; x; y); Bb1(10; x; y); Bb1(11; x; y); Bb1(12; x; y)| _
+  Bb2(1; x; y); Bb2(2; x; y); Bb2(3; x; y); Bb2(4; x; y); Bb2(5; x; y); Bb2(6; x; y); _
+  Bb2(7; x; y); Bb2(8; x; y); Bb2(9; x; y); Bb2(10; x; y); Bb2(11; x; y); Bb2(12; x; y)| _
+  Bb3(1; x; y); Bb3(2; x; y); Bb3(3; x; y); Bb3(4; x; y); Bb3(5; x; y); Bb3(6; x; y); _
+  Bb3(7; x; y); Bb3(8; x; y); Bb3(9; x; y); Bb3(10; x; y); Bb3(11; x; y); Bb3(12; x; y)]
 M_e_at(e; x; y) = -D_b*B_b_full(x; y)*Z_e(e)
 
 sqr3 = sqrt(3)
@@ -332,9 +324,9 @@ c_j = vector(n_j)
 			#end if
 		#end if
 		N_g1 = (1 + (-1)*sqr3*x_c)*(1 + (-1)*sqr3*y_c)/4
-		N_g2 = (1 + ( 1)*sqr3*x_c)*(1 + (-1)*sqr3*y_c)/4
-		N_g3 = (1 + (-1)*sqr3*x_c)*(1 + ( 1)*sqr3*y_c)/4
-		N_g4 = (1 + ( 1)*sqr3*x_c)*(1 + ( 1)*sqr3*y_c)/4
+		N_g2 = (1 + (1)*sqr3*x_c)*(1 + (-1)*sqr3*y_c)/4
+		N_g3 = (1 + (-1)*sqr3*x_c)*(1 + (1)*sqr3*y_c)/4
+		N_g4 = (1 + (1)*sqr3*x_c)*(1 + (1)*sqr3*y_c)/4
 		M_corner = N_g1*M_g1 + N_g2*M_g2 + N_g3*M_g3 + N_g4*M_g4
 		j_nod = e_j.(e; c)
 		M_j.(1; j_nod) = M_j.(1; j_nod) + M_corner.1

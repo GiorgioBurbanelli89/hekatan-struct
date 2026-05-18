@@ -139,12 +139,46 @@ __hekatanShowAxes(xs, ys, zMax) / __hekatanHideAxes()
 __hekatanShowRefPlanes(zLevels, sizeM, cx, cy)
 ```
 
+## 🏁 Benchmarks unificados (W##)
+
+Naming canonical para validación cruzada hekatan-struct ↔ ETABS / SAP2000 / SAFE / Octave / MATLAB / Calcpad-Lab. Cada **W##** vive con el mismo nombre en cada plataforma para encontrar el mismo benchmark en cualquier lado.
+
+| ID | Nombre | Wilson cap | Categoría | URL hekatan-web |
+|---|---|---|---|---|
+| **W1** | Barra axial 1D | 2/4 | Frames 1D | [`?t=W1_barra_axial`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=W1_barra_axial) |
+| **W2** | Viga Euler-Bernoulli | 4 | Frames 1D | (pendiente migración) |
+| **W3** | Armadura plana 2D | 2 | Trusses | (pendiente migración) |
+| **W4** | Pórtico plano 2D | 4 | Frames 2D | (pendiente migración) |
+| **W5** | Torre espacial 3D | — | Frames 3D | (pendiente migración) |
+| **W6** | Placa flexión Q4 | — | Shells | (pendiente migración) |
+
+**Mapa de archivos por benchmark** (ejemplo W1):
+
+| Plataforma | Path |
+|---|---|
+| hekatan-struct registry | `examples/src/W1_barra_axial/barraAxial.ts` |
+| hekatan-struct web | `?t=W1_barra_axial` |
+| ETABS API + E2K | `validacion/Etabs/W1_barra_axial/` (E2K + Python pythonnet validator) |
+| Calcpad-Lab | `Calcpad-Lab/Examples/Finite Elements/W1_barra_axial.cpd` |
+| Calcpad-Symbolic | `Calcpad-Symbolic/Examples/Finite Elements/W1_barra_axial.cpd` |
+| Octave reference | `validation/octave/W1_barra_axial.m` |
+| Markdown doc | `markdown/benchmarks/W1_BARRA_AXIAL.md` |
+| Files index | `markdown/benchmarks/W1_FILES_INDEX.md` |
+
+**Validación cruzada W1** (todos coinciden con 0% error):
+- Analítica Hooke 1D: δ = F·L/(A·E) = 0.250000 mm
+- ETABS API (pythonnet, .NET InterOp): 0.250000 mm ✓
+- ETABS via E2K → API: 0.250000 mm ✓
+- hekatan-struct FEM 1D: ✓
+
 ## 🔌 SAP2000 / ETABS / SAFE integration (PowerShell)
 
 **Imports (file → Hekatan):**
-- E2K (ETABS) — `csi-importer` example
-- S2K (SAP2000) — `csi-importer` example
+- E2K (ETABS) — **NEW**: any benchmark workspace now has 📥 Importar E2K button (in ETABS folder). Click → pick file → auto-redirect to `?t=new-blank` with the imported model loaded as drawing geometry. Round-trip: export from a benchmark, modify externally, import back.
+- S2K (SAP2000) — same flow with 📥 Importar S2K in SAP folder
+- F2K (SAFE) — for foundation benchmarks via `📥 Importar F2K cimentación COMPLETA` in Cimentación folder
 - Mesh, sections, loads, releases, supports parsed from text format
+- Round-trip implementation: `examples/src/workspace/main.ts` (handlers) + `examples/src/new-blank/newBlank.ts` (consumer)
 
 **Exports (Hekatan → file):**
 - E2K full export (compatible with ETABS 22+)

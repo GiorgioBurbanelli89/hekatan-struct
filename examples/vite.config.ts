@@ -82,7 +82,7 @@ export default defineConfig({
         "conexion-end-plate": "src/conexion-end-plate/index.html",
         "placa-base": "src/placa-base/index.html",
         "truss-gen": "src/truss-gen/index.html",
-        "barra-axial": "src/barra-axial/index.html",
+        "W1_barra_axial": "src/W1_barra_axial/index.html",
         "portico-2d": "src/portico-2d/index.html",
         "tower-3d": "src/tower-3d/index.html",
         "galpon": "src/galpon/index.html",

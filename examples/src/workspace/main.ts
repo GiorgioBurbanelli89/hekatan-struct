@@ -3943,11 +3943,36 @@ solve`;
         try {
           const text = await file.text();
           const model = parseE2k(text);
-          alert(`E2K parseado: ${file.name}\n` +
-                `Nodos: ${model.nodes?.length ?? 0}\n` +
-                `Elementos: ${model.elements?.length ?? 0}\n\n` +
-                `(Para cargar en el viewer hace falta un ejemplo "Importado E2K". Por ahora devuelve a consola.)`);
-          console.log("E2K parsed:", model);
+          // ── Carga el modelo en new-blank vía localStorage + navegación ──
+          // Convierte nodes/elements a drawingPoints/drawingPolylines y los
+          // persiste; new-blank al cargar los lee y construye el modelo FEM.
+          const points = model.nodes.map((n: number[]) => [n[0], n[1], n[2]]);
+          const polylines: number[][] = [];
+          const areas: number[] = [];
+          for (let i = 0; i < model.elements.length; i++) {
+            const elem = model.elements[i] as number[];
+            if (elem.length === 4) {
+              // Shell Q4 — guardar como polilínea cerrada + marcar como área
+              polylines.push([...elem, elem[0]]);
+              areas.push(polylines.length - 1);
+            } else {
+              // Frame — polilínea de 2 puntos
+              polylines.push([elem[0], elem[1]]);
+            }
+          }
+          localStorage.setItem("__hekatan_pending_import__", JSON.stringify({
+            source: "E2K",
+            filename: file.name,
+            nodes: points,
+            polylines,
+            areas,
+            timestamp: Date.now(),
+          }));
+          console.log(`✅ E2K importado: ${file.name} (${model.nodes.length} nodos, ${model.elements.length} elementos) → cargando en new-blank...`);
+          // Navegar a new-blank
+          const u = new URL(window.location.href);
+          u.searchParams.set("t", "new-blank");
+          window.location.href = u.toString();
         } catch (e: any) {
           alert(`Error importando E2K: ${e?.message ?? e}`); console.error(e);
         }
@@ -3979,10 +4004,31 @@ solve`;
         try {
           const text = await file.text();
           const model = parseS2k(text);
-          alert(`S2K parseado: ${file.name}\n` +
-                `Nodos: ${model.nodes?.length ?? 0}\n` +
-                `Elementos: ${model.elements?.length ?? 0}`);
-          console.log("S2K parsed:", model);
+          // Carga en new-blank igual que E2K
+          const points = (model.nodes ?? []).map((n: number[]) => [n[0], n[1], n[2]]);
+          const polylines: number[][] = [];
+          const areas: number[] = [];
+          for (let i = 0; i < (model.elements?.length ?? 0); i++) {
+            const elem = model.elements![i] as number[];
+            if (elem.length === 4) {
+              polylines.push([...elem, elem[0]]);
+              areas.push(polylines.length - 1);
+            } else {
+              polylines.push([elem[0], elem[1]]);
+            }
+          }
+          localStorage.setItem("__hekatan_pending_import__", JSON.stringify({
+            source: "S2K",
+            filename: file.name,
+            nodes: points,
+            polylines,
+            areas,
+            timestamp: Date.now(),
+          }));
+          console.log(`✅ S2K importado: ${file.name} (${model.nodes?.length ?? 0} nodos, ${model.elements?.length ?? 0} elementos) → cargando en new-blank...`);
+          const u = new URL(window.location.href);
+          u.searchParams.set("t", "new-blank");
+          window.location.href = u.toString();
         } catch (e: any) {
           alert(`Error importando S2K: ${e?.message ?? e}`); console.error(e);
         }
@@ -4849,6 +4895,27 @@ modalAnimator = createModalAnimator({
   viewerElm,
   scalePercent: 5,
 });
+
+// ── Hidratar drawing arrays globales desde localStorage si hay import pendiente ──
+// El handler de Importar E2K/S2K/F2K guarda el modelo parseado en
+// `__hekatan_pending_import__` y navega a ?t=new-blank. Acá lo leemos
+// ANTES de que cargue new-blank y populamos los globals que su `build()`
+// consume.
+try {
+  const pending = localStorage.getItem("__hekatan_pending_import__");
+  if (pending) {
+    const data = JSON.parse(pending);
+    (window as any).__hekatanDrawingPoints  = { val: data.nodes ?? [], rawVal: data.nodes ?? [] };
+    (window as any).__hekatanDrawingPolylines = { val: data.polylines ?? [], rawVal: data.polylines ?? [] };
+    (window as any).__hekatanDrawingAreas   = { val: data.areas ?? [], rawVal: data.areas ?? [] };
+    console.log(`[Import] Modelo restaurado desde ${data.source} "${data.filename}": ` +
+      `${(data.nodes ?? []).length} nodos, ${(data.polylines ?? []).length} polylines, ${(data.areas ?? []).length} áreas`);
+    // Limpiar para que un refresh no re-importe
+    localStorage.removeItem("__hekatan_pending_import__");
+  }
+} catch (e: any) {
+  console.warn("[Import] Error restaurando modelo pendiente:", e?.message ?? e);
+}
 
 // ── Cargar ejemplo inicial via ?t= o default ──
 // Default (sin ?t en URL): "new-blank" — lienzo CAD vacío en categoría
