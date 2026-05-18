@@ -105,3 +105,80 @@ export type ModalOutputs = {
   modeShapes?: number[][];   // mode shapes [mode_index][dof_index]
   massParticipation?: number[][]; // [mode_index][6] ratios (ux,uy,uz,rx,ry,rz)
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LOAD PATTERNS & LOAD CASES — equivalente conceptual al diálogo ETABS
+// ═══════════════════════════════════════════════════════════════════════════
+// Pattern = "origen físico" de la carga (Dead, Live, Wind, EQX, ...). Los
+//   códigos de diseño (ASCE/ACI/AISC/NEC) los combinan con factores
+//   distintos, por eso hay que mantenerlos separados desde el origen.
+// Case = "operación de análisis" (Linear Static, Modal, THA, RS, Pushover...)
+//   que aplica uno o más patterns con factores de escala. Un mismo pattern
+//   puede usarse en muchos cases (Dead service vs Dead pushover).
+
+export type LoadPatternType =
+  | "Dead"
+  | "Live"
+  | "Live (Roof)"
+  | "Wind"
+  | "Seismic"
+  | "Snow"
+  | "Rain"
+  | "Temperature"
+  | "Other";
+
+export type LoadPattern = {
+  /** Nombre único, e.g. "Dead", "Live", "EQX". Coincide con el `LC` que
+   *  pueden referenciar las cargas nodales (nodeInputs.loads → POINTLOAD).  */
+  name: string;
+  type: LoadPatternType;
+  /** Multiplicador de peso propio aplicado por el solver (γ·V·SW_mult).
+   *  Típicamente 1.0 para Dead, 0 para los demás. */
+  selfWeightMultiplier: number;
+  /** Auto-lateral load — string informativo por ahora (e.g. "ASCE 7-22",
+   *  "NSR-10", "None"). En el futuro: trigger de generación automática de
+   *  fuerzas estáticas equivalentes. */
+  autoLateralLoad?: string;
+};
+
+export type LoadCaseType =
+  | "Linear Static"
+  | "Modal - Eigen"
+  | "Modal - Ritz"
+  | "Response Spectrum"
+  | "Time History - Linear"
+  | "Time History - Nonlinear"
+  | "Nonlinear Static (Pushover)"
+  | "Buckling";
+
+export type LoadCase = {
+  name: string;
+  type: LoadCaseType;
+  /** Patterns aplicados con factor de escala. Vacío si el case no usa
+   *  patterns (e.g. Modal-Eigen). */
+  patterns?: Array<{ pattern: string; scaleFactor: number }>;
+  /** Condición inicial — "Zero" parte del estado descargado, "Preset"
+   *  hereda del case anterior (típico en multi-stage analyses). */
+  initialCondition?: "Zero" | "Preset";
+  /** Sólo para Modal cases — número máximo de modos a calcular. */
+  maxModes?: number;
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LOAD COMBINATIONS (combinaciones lineales de cases para diseño)
+// ═══════════════════════════════════════════════════════════════════════════
+// Combo = Σ (case_i × SF_i). No requiere re-análisis, solo suma de
+// resultados. Típico de códigos: ASCE 7-22 LRFD genera ~12 combos, ACI 318
+// otros ~8, AISC 360 LRFD/ASD ~10 cada uno.
+
+export type LoadCombinationType =
+  | "Linear Add"
+  | "Envelope"
+  | "Absolute Add"
+  | "SRSS";
+
+export type LoadCombination = {
+  name: string;          // e.g. "1.2D+1.6L", "0.9D+1.0W"
+  type: LoadCombinationType;
+  cases: Array<{ case: string; scaleFactor: number }>;
+};

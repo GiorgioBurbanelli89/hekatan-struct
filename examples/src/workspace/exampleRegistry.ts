@@ -7,6 +7,7 @@ import type * as THREE from "three";
 import type {
   Node, Element, NodeInputs, ElementInputs,
   DeformOutputs, AnalyzeOutputs,
+  LoadPattern, LoadCase, LoadCombination,
 } from "hekatan-fem";
 
 export interface ParamDef {
@@ -76,7 +77,38 @@ export interface BuildStates {
   deformOutputs: State<DeformOutputs>;
   analyzeOutputs: State<AnalyzeOutputs>;
   objects3D: State<THREE.Object3D[]>;
+  /** Load Patterns — definidos en el panel "📋 Load Patterns" del workspace.
+   *  Los ejemplos pueden leer `loadPatterns.val` para aplicar peso propio
+   *  según `selfWeightMultiplier` del pattern "Dead" (o el que corresponda). */
+  loadPatterns?: State<LoadPattern[]>;
+  /** Load Cases — definidos en el panel "📊 Load Cases". El case "activo"
+   *  se elige con un selector y determina qué patterns aplicar al `build()`. */
+  loadCases?: State<LoadCase[]>;
+  /** Case activo cuyos resultados se visualizan en el viewer. */
+  activeLoadCase?: State<string>;
+  /** Load Combinations — combos lineales de cases para diseño (ej. 1.2D+1.6L) */
+  loadCombinations?: State<LoadCombination[]>;
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Defaults ETABS-like (Dead/Live patterns + Dead/Live/Modal cases)
+// ═══════════════════════════════════════════════════════════════════════════
+export const DEFAULT_LOAD_PATTERNS: LoadPattern[] = [
+  { name: "Dead", type: "Dead", selfWeightMultiplier: 1, autoLateralLoad: "None" },
+  { name: "Live", type: "Live", selfWeightMultiplier: 0, autoLateralLoad: "None" },
+];
+
+export const DEFAULT_LOAD_CASES: LoadCase[] = [
+  { name: "Dead", type: "Linear Static", patterns: [{ pattern: "Dead", scaleFactor: 1 }], initialCondition: "Zero" },
+  { name: "Live", type: "Linear Static", patterns: [{ pattern: "Live", scaleFactor: 1 }], initialCondition: "Zero" },
+  { name: "Modal", type: "Modal - Eigen", initialCondition: "Zero", maxModes: 12 },
+];
+
+export const DEFAULT_LOAD_COMBINATIONS: LoadCombination[] = [
+  { name: "1.4D", type: "Linear Add", cases: [{ case: "Dead", scaleFactor: 1.4 }] },
+  { name: "1.2D+1.6L", type: "Linear Add", cases: [
+    { case: "Dead", scaleFactor: 1.2 }, { case: "Live", scaleFactor: 1.6 }] },
+];
 
 export interface ModalPanelApi {
   div: HTMLElement;

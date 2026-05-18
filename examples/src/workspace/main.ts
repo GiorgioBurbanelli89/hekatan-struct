@@ -32,7 +32,11 @@ import { createModalPanel } from "../shared/renderModalTable";
 import { createModalAnimator, type ModalAnimator } from "../shared/animateMode";
 // createModalAnimator también se llama en buildParamsPane() para re-wirear el
 // callback onStatusChange al folder "⚡ Modal + Animación" recién creado.
-import { examplesRegistry, activeExampleVersion, type ExampleDef } from "./exampleRegistry";
+import {
+  examplesRegistry, activeExampleVersion, type ExampleDef,
+  DEFAULT_LOAD_PATTERNS, DEFAULT_LOAD_CASES, DEFAULT_LOAD_COMBINATIONS,
+} from "./exampleRegistry";
+import { attachLoadPatternsPanel, loadPersistedLoadPatterns } from "./loadPatternsPanel";
 import { downloadZapataF2k } from "../zapata-aislada/f2kExporter";
 import { parseZapataF2k } from "../zapata-aislada/f2kImporter";
 import { exportEdificioCimentacionF2k, downloadEdificioCimentacionF2k } from "../shared/f2kCimentacionCompleta";
@@ -213,10 +217,24 @@ export interface BuildStates {
   deformOutputs: State<DeformOutputs>;
   analyzeOutputs: State<AnalyzeOutputs>;
   objects3D: State<THREE.Object3D[]>;
+  // Load Patterns/Cases (definidos vía panel "📋 Load Patterns" del workspace).
+  // Ver exampleRegistry.ts para tipos completos.
+  loadPatterns?: State<import("hekatan-fem").LoadPattern[]>;
+  loadCases?: State<import("hekatan-fem").LoadCase[]>;
+  loadCombinations?: State<import("hekatan-fem").LoadCombination[]>;
+  activeLoadCase?: State<string>;
 }
+// Load patterns/cases/combinations — defaults ETABS-like (Dead/Live/Modal)
+// Se cargan desde localStorage en loadExample() según el example actual.
+const loadPatterns = van.state<import("hekatan-fem").LoadPattern[]>([]);
+const loadCases = van.state<import("hekatan-fem").LoadCase[]>([]);
+const loadCombinations = van.state<import("hekatan-fem").LoadCombination[]>([]);
+const activeLoadCase = van.state<string>("Dead");
+
 const states: BuildStates = {
   nodes, elements, nodeInputs, elementInputs,
   deformOutputs, analyzeOutputs, objects3D,
+  loadPatterns, loadCases, loadCombinations, activeLoadCase,
 };
 
 // ── Example runner ──
@@ -256,6 +274,28 @@ function resetStates() {
 
 function loadExample(ex: ExampleDef) {
   currentExample = ex;
+  // ── Hidratar Load Patterns / Cases / Combinations desde localStorage ──
+  // Cada ejemplo tiene su propia configuración persistida por `ex.id`. Si
+  // no hay nada guardado, se usan los defaults ETABS-like (Dead + Live).
+  const persisted = loadPersistedLoadPatterns(ex.id);
+  if (persisted) {
+    loadPatterns.val = persisted.patterns;
+    loadCases.val = persisted.cases;
+    loadCombinations.val = persisted.combinations;
+  } else {
+    // Clonar defaults — si no, todos los ejemplos compartirían la misma ref
+    loadPatterns.val = DEFAULT_LOAD_PATTERNS.map(p => ({ ...p }));
+    loadCases.val = DEFAULT_LOAD_CASES.map(c => ({
+      ...c, patterns: c.patterns ? c.patterns.map(pp => ({ ...pp })) : undefined,
+    }));
+    loadCombinations.val = DEFAULT_LOAD_COMBINATIONS.map(cm => ({
+      ...cm, cases: cm.cases.map(c => ({ ...c })),
+    }));
+  }
+  // Default activeLoadCase = primer case (Dead) si no hay seleccionado
+  if (!loadCases.val.find(c => c.name === activeLoadCase.val)) {
+    activeLoadCase.val = loadCases.val[0]?.name ?? "Dead";
+  }
   // ── Ejemplos legacy del upstream awatif (1d-mesh, beams, plate-q4, etc.):
   // tienen su propia UI VanJS toolbar y no encajan en el flujo Tweakpane del
   // workspace. El pane solo muestra un botón "Abrir ejemplo →" que navega
@@ -3923,6 +3963,28 @@ solve`;
         window.location.href = url.toString();
       });
     }
+  }
+
+  // ── Load Patterns / Cases / Combinations (estilo ETABS) ──
+  // Folders editables que reflejan los conceptos clásicos de ETABS:
+  //   • Pattern = origen físico de la carga (Dead, Live, Wind, EQX, ...)
+  //   • Case    = operación de análisis (Linear Static, Modal, THA, ...)
+  //   • Combo   = suma lineal de cases (1.2D+1.6L, etc.) para diseño LRFD.
+  // Persisten en localStorage por exampleId. Los ejemplos pueden leer
+  // states.loadPatterns para aplicar peso propio según SW multiplier.
+  if (currentExample) {
+    attachLoadPatternsPanel({
+      pane,
+      exampleId: currentExample.id,
+      loadPatterns,
+      loadCases,
+      loadCombinations,
+      activeLoadCase,
+      onChange: () => {
+        // Re-build cuando cambia el case activo o el SW multiplier.
+        try { scheduleRebuild?.(); } catch {}
+      },
+    });
   }
 
   // ── ETABS .e2k / SAP2000 .s2k Export/Import ──
