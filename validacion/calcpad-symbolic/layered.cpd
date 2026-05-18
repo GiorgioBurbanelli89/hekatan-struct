@@ -24,38 +24,61 @@ q = 1.0
 "   capa 2: 90°  (z entre -0.05 y  0.00)
 "   capa 3: 90°  (z entre  0.00 y  0.05)
 "   capa 4:  0°  (z entre  0.05 y  0.10)
+theta = vector(n_layers)
+theta.1 = 0
+theta.2 = 90
+theta.3 = 90
+theta.4 = 0
 
-"### 2. Matriz Q de cada capa
-"Q = E/(1-ν²) · [1, ν, 0; ν, 1, 0; 0, 0, (1-ν)/2]
-"Para material ISOTRÓPICO, Q es invariante bajo rotación → todas las
-"capas tienen el mismo Q (no depende del ángulo).
+"z_bot.k y z_top.k para cada capa (origen en mitad del espesor total)
+z_bot = vector(n_layers)
+z_top = vector(n_layers)
+#for k = 1 : n_layers
+	z_bot.k = -t_total/2 + (k - 1)*t_layer
+	z_top.k = -t_total/2 + k*t_layer
+#loop
+'θ [°]:' theta
+'z_bot [m]:' z_bot
+'z_top [m]:' z_top
 
-"### 3. Matriz D del laminado
-"D_ij = Σ_k Q_ij(k) · (z_{k+1}³ - z_k³)/3
-"
-"Como Q es el mismo para todas las capas (isotrópico):
-"   D_ij = Q_ij · (z_max³ - z_min³)/3
-"        = Q_ij · t_total³/12
-"
-"Esto es IDÉNTICO a la rigidez D de una placa isotrópica monolítica
-"con el mismo espesor total.
-D_iso = E*t_total^3/(12*(1-nu^2))
-"D del laminado:" D_iso
+"### 2. Matriz Q de cada capa (Q_11 isotrópico)
+"Q_11 = E/(1-ν²) — para material ISOTRÓPICO es invariante bajo rotación
+"→ todas las capas tienen el mismo Q (no depende del ángulo).
+Q11_iso = E/(1 - nu^2)
+"Q_11 isotrópico:" Q11_iso
 
-"### 4. Solución Navier (placa isotrópica equivalente)
+"### 3. Loop sobre capas: contribución a D_11 = Σ_k Q_11(k)·(z_top³ - z_bot³)/3
+"Si Q_11 es el mismo en todas las capas → ∑ colapsa a Q_11·t_total³/12.
+D11_layer = vector(n_layers)
+D11_sum = 0
+#for k = 1 : n_layers
+	D11_layer.k = Q11_iso*(z_top.k^3 - z_bot.k^3)/3
+	D11_sum = D11_sum + D11_layer.k
+#loop
+'D_11 contribución por capa:' D11_layer
+'D_11 acumulado (suma loop):' D11_sum
+
+"### 4. Verificación: comparación con fórmula isotrópica monolítica
+D_iso = E*t_total^3/(12*(1 - nu^2))
+err_lam = (D11_sum/D_iso - 1)*100
+'D_iso (monolítico):' D_iso
+'Error layered vs monolítico [%]:' err_lam
+'<p><em>Si el error es prácticamente 0% (a precisión numérica),
+'el formalismo ABD colapsa correctamente al caso isotrópico.</em></p>
+
+"### 5. Solución Navier (placa isotrópica equivalente)
 alpha = 0.00406
 w_navier = alpha*q*W^4/D_iso
 "w_Navier:" w_navier
 
-"### 5. Resultado FEM (HekatanLab FE04)
+"### 6. Resultado FEM esperado
 "NOTA: el template FE04 muestra la matriz D ABD pero no resuelve el
 "problema completo SS con malla — solo computa la rigidez teórica.
-"Para validación numérica usamos el mismo solver FE02 con t=0.2:
-w_FEM = 1.371347e-2 * (0.05^3 / 0.2^3) * (0.2^3 / 0.05^3)
+"Para validación numérica usamos el mismo solver FE02 con t_total=0.2:
+w_FEM = 0.01371347
 " w_FEM esperado (placa equivalente 0.2):" w_FEM
-"   (= mismo que plate_thin con t=0.05 normalizado por t³)
 
-"### 6. Tabla de paridad
+"### 7. Tabla de paridad
 "────────────────────────────────────────────────────
 "  Entorno              w_max          Notas
 "────────────────────────────────────────────────────
@@ -66,7 +89,7 @@ w_FEM = 1.371347e-2 * (0.05^3 / 0.2^3) * (0.2^3 / 0.05^3)
 "  SAP2000 SetShellLayer pendiente     —
 "────────────────────────────────────────────────────
 
-"### 7. Caso no-isotrópico (extensión)
+"### 8. Caso no-isotrópico (extensión)
 "Si las capas tuvieran DIFERENTE material (e.g. composite real
 "fibra-matriz), Q_{11} ≠ Q_{22} y rotar la capa 90° intercambia
 "ejes. Para [0/90/90/0] simétrico cross-ply con material ortotrópico

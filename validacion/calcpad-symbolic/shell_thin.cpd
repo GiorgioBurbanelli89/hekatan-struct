@@ -37,20 +37,38 @@ delta_viga = P*W^3/(3*E*I_weak)
 "   (típicamente DOMINA bending sobre membrana cuando t/a << 1)
 
 "### 4. Resultado FEM (HekatanLab FE05 / MATLAB R2017a)
-u_FEM = 1.261058e-3
+u_FEM = 0.001261058
 "u_FEM:" u_FEM
 ratio_mem = u_FEM/delta_mem
 "Ratio FEM / Membrana axial:" ratio_mem
 "   (= 1.0 si fuera puramente axial; > 1.0 si captura otros modos)
 
-"### 5. Análisis del ratio
-"Como t/a = 0.005 (muy delgado), el shell se comporta casi-axial
-"para cargas in-plane. El ratio 1.261 indica que aún hay una pequeña
-"contribución de bending in-plane (~26% extra sobre la respuesta axial).
-"
-"Si la carga fuera OUT-OF-PLANE (perpendicular al shell), el shell se
-"comportaría como placa Kirchhoff/Mindlin y u_max sería mucho mayor
-"(dominado por bending).
+"### 5. Loop paramétrico: cómo escala u_axial con el espesor t
+"Demuestra que u_membrana ∝ 1/t (axial) mientras que u_viga ∝ 1/t³.
+"Esto explica por qué shell_thin (t=0.005) está cerca de axial pero
+"shell_thick (t=0.05) estaría dominado por bending.
+n_t = 4
+t_vec = vector(n_t)
+t_vec.1 = 0.005
+t_vec.2 = 0.01
+t_vec.3 = 0.025
+t_vec.4 = 0.05
+
+u_mem_vec = vector(n_t)
+u_vig_vec = vector(n_t)
+ratio_vec = vector(n_t)
+#for k = 1 : n_t
+	u_mem_vec.k = P*W/(E*H*t_vec.k)
+	u_vig_vec.k = P*W^3/(3*E*H*t_vec.k^3/12)
+	ratio_vec.k = u_vig_vec.k/u_mem_vec.k
+#loop
+'t [m]:' t_vec
+'u_membrana axial:' u_mem_vec
+'u_viga (bending eje débil):' u_vig_vec
+'Ratio bending/axial:' ratio_vec
+'<p><em>Ratio > 1 → bending domina. Ratio < 1 → membrana domina.
+'Para t=0.005, ratio ≈ 1.6×10⁵: bending sería ~160k× mayor SI la geometría
+'permitiera flexionar, pero el cantilever in-plane restringe a axial.</em></p>
 
 "### 6. Tabla de paridad
 "────────────────────────────────────────────────────

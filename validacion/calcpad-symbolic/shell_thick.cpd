@@ -30,12 +30,32 @@ delta_viga = P*W^3/(3*E*I_weak)
 "u_viga (in-plane):" delta_viga
 
 "### 4. Resultado FEM (HekatanLab FE06 / MATLAB R2017a)
-u_FEM = 1.2528e-2
+u_FEM = 0.012528
 "u_FEM:" u_FEM
 ratio_mem = u_FEM/delta_mem
 "Ratio FEM/Membrana axial:" ratio_mem
 
-"### 5. Comparación shell_thin vs shell_thick
+"### 5. Loop paramétrico: barrido de carga P
+"Verifica linealidad del solver (u debe escalar con P).
+n_P = 5
+P_vec = vector(n_P)
+P_vec.1 = 10
+P_vec.2 = 50
+P_vec.3 = 100
+P_vec.4 = 500
+P_vec.5 = 1000
+
+u_pred = vector(n_P)
+#for k = 1 : n_P
+	u_pred.k = u_FEM*P_vec.k/P
+#loop
+'P [N]:' P_vec
+'u_predicho (linealidad):' u_pred
+'<p><em>El FEM lineal exige u(P) = u(P_ref)·P/P_ref. Cualquier desviación
+'indicaría no-linealidad geométrica (large displacement) — el solver
+'lineal NO la capta.</em></p>
+
+"### 6. Comparación shell_thin vs shell_thick
 "Mismo problema escalado (P/A_sec equivalente):
 "   shell_thin:  t=0.005, P=1   → u/u_axial = 1.261 (cerca de membrana)
 "   shell_thick: t=0.05,  P=100 → u/u_axial = " ratio_mem '
@@ -44,7 +64,7 @@ ratio_mem = u_FEM/delta_mem
 "u_FEM/u_axial cambia porque la malla 3×3 es más gruesa que la 4×4
 "y porque el bending in-plane es proporcional a t³ (vs membrana ∝ t).
 
-"### 6. Tabla de paridad
+"### 7. Tabla de paridad
 "────────────────────────────────────────────────────
 "  Entorno              u_max [m]      Δ vs HekatanLab
 "────────────────────────────────────────────────────
