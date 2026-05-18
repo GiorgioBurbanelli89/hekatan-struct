@@ -28,7 +28,7 @@ const rho_S = gamma_S * 1000 / 9.80665; // ≈ 7849 kg/m³
 export const vigaFlexionSteelCantilever: ExampleDef = {
   id: "W2_viga_flexion_steel_cantilever",
   name: "Viga flexión Acero IPE 300 cantilever (2 DOF)",
-  category: "🏁 Benchmarks · 🎯 2 DOF Cantilever Flexión",
+  category: "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 2 DOF Flexión",
   benchmark: true,
   defaultShellResult: "none",
   availableShellResults: [],

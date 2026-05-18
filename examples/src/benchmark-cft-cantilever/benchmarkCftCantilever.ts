@@ -45,7 +45,7 @@ const ETABS_REF = {
 export const benchmarkCftCantilever: ExampleDef = {
   id: "benchmark-cft-cantilever",
   name: "🏁 Frame · Columna CFT Cantilever",
-  category: "🏁 Benchmarks · 🎯 1 DOF Cantilever Axial",
+  category: "🏁 Benchmarks · 1️⃣ Frames · 🏛 Columnas · 🎯 1 DOF Axial",
   benchmark: true,
   defaultShellResult: "none",
   guide: [

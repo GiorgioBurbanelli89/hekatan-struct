@@ -35,7 +35,7 @@ import {
 export const benchmarkSteelBeam: ExampleDef = {
   id: "benchmark-steel-beam",
   name: "🏁 Frame · Viga ACERO doblemente empotrada",
-  category: "🏁 Benchmarks · 🎯 2 DOF Cantilever Flexión",
+  category: "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 2 DOF Flexión",
   benchmark: true,
   defaultShellResult: "none",
   guide: [

@@ -2099,20 +2099,24 @@ function buildParamsPane() {
   // Los Benchmarks van PRIMEROS, divididos en 5 sub-categorías ordenadas
   // (Frames → Áreas → Sólidos → Combinados → Layered).
   const categoryOrder = [
-    // ── Benchmarks · sub-categorías por DOFs (ordenadas de menor a mayor complejidad) ──
-    "🏁 Benchmarks · 🎯 1 DOF Cantilever Axial",     // W1, W2 (axial puro)
-    "🏁 Benchmarks · 🎯 2 DOF Cantilever Flexión",   // vigas con flexión 2D (peso propio, lateral)
-    "🏁 Benchmarks · 🎯 3 DOF Biaxial",              // flexión biaxial, torsión simple
-    "🏁 Benchmarks · 🎯 6 DOF Multiaxial 3D",        // pórticos 3D completos
-    "🏁 Benchmarks · 🎯 n DOF Sistemas Múltiples",   // pórticos multi-elemento, edificios
-    // ── Benchmarks · sub-categorías por topología (legacy, mantener compatibilidad) ──
-    "🏁 Benchmarks · 1️⃣ Frames",
-    "🏁 Benchmarks · 2️⃣ Áreas",
-    "🏁 Benchmarks · 3️⃣ Sólidos",
+    // ── Benchmarks · jerarquía 3 niveles: topología → tipo elemento → DOFs ──
+    // Frames se divide en Columnas y Vigas (cargas y comportamiento típicos
+    // distintos), y dentro de cada uno por número de DOFs efectivos.
+    "🏁 Benchmarks · 1️⃣ Frames · 🏛 Columnas · 🎯 1 DOF Axial",       // peso propio
+    "🏁 Benchmarks · 1️⃣ Frames · 🏛 Columnas · 🎯 2 DOF Flexión",     // + carga lateral
+    "🏁 Benchmarks · 1️⃣ Frames · 🏛 Columnas · 🎯 3 DOF Biaxial",
+    "🏁 Benchmarks · 1️⃣ Frames · 🏛 Columnas · 🎯 6 DOF Multiaxial",
+    "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 1 DOF Axial",          // Px puntual sin peso propio
+    "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 2 DOF Flexión",        // peso propio / carga vertical
+    "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 3 DOF Biaxial",
+    "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 n DOF Sistemas",       // Paz 6.3 (space frame)
+    "🏁 Benchmarks · 1️⃣ Frames",                                      // legacy sin sub-clasificar
+    "🏁 Benchmarks · 2️⃣ Áreas",                                       // shells (5-6 DOFs intrínseco)
+    "🏁 Benchmarks · 3️⃣ Sólidos",                                     // H8 (3 DOFs/nodo)
     "🏁 Benchmarks · 4️⃣ Combinados",
     "🏁 Benchmarks · 5️⃣ Layered",
-    "🏁 Benchmarks · 6️⃣ Paz",          // libro Mario Paz "Structural Dynamics" 6ª ed
-    "🏁 Benchmarks",                  // legacy (si quedó algún ejemplo sin re-categorizar)
+    "🏁 Benchmarks · 6️⃣ Paz",
+    "🏁 Benchmarks",                  // legacy
     "Cimentaciones",
     "Frames 1D",
     "Pórticos 2D",
@@ -2149,9 +2153,17 @@ function buildParamsPane() {
         catOptions["🏁 Benchmarks (TODOS los 12)"] = ALL_BENCHMARKS;
         benchmarkHeaderInserted = true;
       }
-      // Sub-categoría con indentación visual: el LABEL tiene "▸ ", el VALUE
-      // mantiene la categoría completa para que el filter funcione.
-      const indentedLabel = c.replace("🏁 Benchmarks · ", "       ▸ ");
+      // Soporte jerarquía hasta 3 niveles:
+      //   "🏁 Benchmarks · X"             → "       ▸ X"
+      //   "🏁 Benchmarks · X · Y"         → "          ▸▸ Y"
+      //   "🏁 Benchmarks · X · Y · Z"     → "             ▸▸▸ Z"
+      const sansPrefix = c.replace("🏁 Benchmarks · ", "");
+      const segments = sansPrefix.split(" · ");
+      const last = segments[segments.length - 1];
+      let indentedLabel: string;
+      if (segments.length === 1)        indentedLabel = `       ▸ ${last}`;
+      else if (segments.length === 2)   indentedLabel = `          ▸▸ ${last}`;
+      else                              indentedLabel = `             ▸▸▸ ${last}`;
       catOptions[indentedLabel] = c;
     } else {
       catOptions[c] = c;
@@ -2171,9 +2183,14 @@ function buildParamsPane() {
   const matchesCategory = (exampleCat: string | undefined, selectedCat: string): boolean => {
     if (!exampleCat) return false;
     if (exampleCat === selectedCat) return true;
-    // "▸ 1️⃣ Frames" matches "🏁 Benchmarks · 1️⃣ Frames"
-    if (selectedCat.startsWith("▸ ") && exampleCat.startsWith("🏁 Benchmarks · ")) {
-      return exampleCat.endsWith(selectedCat.replace(/^▸\s*/, ""));
+    // Indentado (1, 2 o 3 niveles): el último segmento del label coincide con
+    // el último segmento de la categoría del ejemplo.
+    //   "▸ 1️⃣ Frames"          → matches "🏁 Benchmarks · 1️⃣ Frames"
+    //   "▸▸ 🏛 Columnas"       → matches "🏁 Benchmarks · 1️⃣ Frames · 🏛 Columnas"
+    //   "▸▸▸ 🎯 1 DOF Axial"   → matches "🏁 Benchmarks · 1️⃣ Frames · 🏛 Columnas · 🎯 1 DOF Axial"
+    if (selectedCat.startsWith("▸") && exampleCat.startsWith("🏁 Benchmarks · ")) {
+      const trimmed = selectedCat.replace(/^▸+\s*/, "");
+      return exampleCat.endsWith(trimmed);
     }
     return false;
   };
