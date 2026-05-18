@@ -17,6 +17,23 @@ export interface ExportE2kInput {
   title?: string;
   units?: { force: string; length: string };
   e2kModel?: E2kModel;
+  /**
+   * Modo de manejo de peso propio en el pattern Dead:
+   *  - "auto" (default): SELFWEIGHT=1 → ETABS computa γ·V de cada material
+   *    automáticamente. Se omiten cargas nodales FZ (asume que son self-weight).
+   *  - "manual": SELFWEIGHT=0 → el peso propio se emite como POINTLOAD nodal
+   *    (control fino del lumping). Para que ETABS resuelva las cargas
+   *    correctamente, se emite POINTASSIGN por cada (plan-point, story) con
+   *    carga o restraint, registrando el plan-point a esa altura.
+   */
+  weightMode?: "auto" | "manual";
+  /**
+   * Property modifiers por elemento (multipliers ETABS-style sobre A, I, etc).
+   * Si no se provee, hekatan asume que los valores en `elementInputs.areas/Iy/Iz`
+   * ya incluyen los modifiers baked-in y se emite `PROPMODIFIERS` = 1.0 (no-op).
+   * Formato: 8 valores [A, As2, As3, Torsion, I22, I33, Mass, Weight].
+   */
+  propertyModifiers?: Map<number, [number, number, number, number, number, number, number, number]>;
 }
 
 export function exportE2k(input: ExportE2kInput): string {
@@ -139,15 +156,15 @@ function exportFromScratch(input: ExportE2kInput): string {
   // Volume weight: kN/m³ → tonf/m³ = same factor as force (length cancels)
   const cWV = (kN_m3: number) => kN_m3 * forceFactor;
 
-  // Header reconocido por ETABS 19/21+. PROGRAM debe decir "ETABS" exactamente
+  // Header reconocido por ETABS 22.x. PROGRAM debe decir "ETABS" exactamente
   // o ETABS rechaza el archivo con "May not be a valid ETABS X.X.X text file".
-  // La versión se elige conservadora (19.1.0) para máxima compatibilidad.
+  // Ground truth: Benchmark_Placa/.../etabs_canonical/case_cantileverBeam.e2k (ETABS 22.6.0).
   const now = new Date();
   const dateStr = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}  ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-  lines.push(`$ File   "Hekatan_export.e2k"  saved ${dateStr} in ETABS 19.1.0`);
+  lines.push(`$ File   "Hekatan_export.e2k"  saved ${dateStr} in ETABS 22.6.0`);
   lines.push(``);
   lines.push(`$ PROGRAM INFORMATION`);
-  lines.push(`  PROGRAM  "ETABS"  VERSION "19.1.0"  `);
+  lines.push(`  PROGRAM  "ETABS"  VERSION "22.6.0"  `);
   lines.push(``);
   lines.push(`$ CONTROLS`);
   lines.push(`  UNITS  "${force}"  "${length}"  "C"  `);
@@ -198,14 +215,36 @@ function exportFromScratch(input: ExportE2kInput): string {
   const matNames = new Map<number, string>();
   const matIsSteel = new Map<number, boolean>();
   let miStl = 0, miCnc = 0;
+  // Buscar densidad real por valor de E (densities está en kg/m³ → kN/m³ × g)
+  // Si hekatan provee densidades por elemento, usamos la moda para el material
+  // que comparte ese E. Si no hay densidades, fallback a defaults estándar.
+  const G_KN_PER_KG = 9.80665e-3;  // kg/m³ → kN/m³
+  const wpvByE = new Map<number, number>();
+  if (elementInputs.densities && elementInputs.densities.size > 0) {
+    const densitiesByE = new Map<number, number[]>();
+    elementInputs.densities.forEach((rho, elemIdx) => {
+      const E = elementInputs.elasticities?.get(elemIdx);
+      if (E === undefined) return;
+      if (!densitiesByE.has(E)) densitiesByE.set(E, []);
+      densitiesByE.get(E)!.push(rho);
+    });
+    densitiesByE.forEach((arr, E) => {
+      // Promedio (todos los elementos del mismo E suelen compartir ρ)
+      const avg = arr.reduce((s, v) => s + v, 0) / arr.length;
+      // Heurística unidad: si avg > 100 → asumir kg/m³ (steel ≈ 7850), si < 100 → t/m³
+      const wpv = avg > 100 ? avg * G_KN_PER_KG : avg * 9.80665;
+      wpvByE.set(E, wpv);
+    });
+  }
   for (const E_kNm2 of uniqueE) {
     const isSteel = E_kNm2 >= 1e8;  // >= 100 GPa
     const name = isSteel ? `Steel_${++miStl}` : `Conc_${++miCnc}`;
     matNames.set(E_kNm2, name);
     matIsSteel.set(E_kNm2, isSteel);
 
-    // Weight per volume: steel ≈ 76.97 kN/m³ (7.85 t/m³), concrete ≈ 24 kN/m³ (2.4 t/m³)
-    const wpv_kN = isSteel ? 76.97 : 24.0;
+    // Weight per volume — usar densidad real de hekatan si está disponible;
+    // si no, fallback a defaults estándar (steel ≈ 76.97, concrete ≈ 24.0 kN/m³)
+    const wpv_kN = wpvByE.get(E_kNm2) ?? (isSteel ? 76.97 : 24.0);
     const E_out  = cE(E_kNm2);
     const wpv_out = cWV(wpv_kN);
     const nu = isSteel ? 0.3 : 0.2;
@@ -355,6 +394,56 @@ function exportFromScratch(input: ExportE2kInput): string {
     return { pt: xyToPoint.get(key) || "1", story: zToStory.get(rd(n[2])) || "Base" }; // Z = elevation
   };
 
+  // ── Helper: construir cláusulas extras de LINEASSIGN ────────────────
+  // Genera PROPMODIFIERS, RELEASE, CARDINALPT, LENGTHOFFI/J según lo que
+  // hekatan tenga en elementInputs[i]. Si no hay nada, devuelve "" y
+  // la línea queda con sólo SECTION + MINNUMSTA + AUTOMESH.
+  const buildLineExtras = (i: number): string => {
+    const parts: string[] = [];
+
+    // Property Modifiers (ETABS: 8 multipliers [A, As2, As3, J, I22, I33, Mass, Weight])
+    const mods = input.propertyModifiers?.get(i);
+    if (mods && mods.some((m: number) => Math.abs(m - 1) > 1e-9)) {
+      parts.push(`PROPMODIFIERS "${mods.map((m: number) => rd(m)).join(" ")}"`);
+    }
+
+    // End Releases — momentReleases puede ser 6 (rotacionales) o 12 (todos DOFs)
+    const rel = elementInputs.momentReleases?.get(i);
+    if (rel && rel.some(r => r)) {
+      // Mapeo a notación ETABS: I-end = "T M2 M3" (torsion, bending 22, bending 33)
+      // 6 flags [TI, M2I, M3I, TJ, M2J, M3J] o 12 flags [Fx..M3 I, Fx..M3 J]
+      const tokens: string[] = [];
+      if (rel.length === 12) {
+        // [FxI, FyI, FzI, TI, M2I, M3I, FxJ, FyJ, FzJ, TJ, M2J, M3J]
+        if (rel[0]) tokens.push("PI"); if (rel[1]) tokens.push("V2I"); if (rel[2]) tokens.push("V3I");
+        if (rel[3]) tokens.push("TI"); if (rel[4]) tokens.push("M2I"); if (rel[5]) tokens.push("M3I");
+        if (rel[6]) tokens.push("PJ"); if (rel[7]) tokens.push("V2J"); if (rel[8]) tokens.push("V3J");
+        if (rel[9]) tokens.push("TJ"); if (rel[10]) tokens.push("M2J"); if (rel[11]) tokens.push("M3J");
+      } else if (rel.length === 6) {
+        // [TI, M2I, M3I, TJ, M2J, M3J]
+        if (rel[0]) tokens.push("TI"); if (rel[1]) tokens.push("M2I"); if (rel[2]) tokens.push("M3I");
+        if (rel[3]) tokens.push("TJ"); if (rel[4]) tokens.push("M2J"); if (rel[5]) tokens.push("M3J");
+      }
+      if (tokens.length > 0) parts.push(`RELEASE "${tokens.join(" ")}"`);
+    }
+
+    // Insertion Point (Cardinal Point en ETABS, valor 1-11; 10 = centroid)
+    // hekatan guarda offset [dy, dz] del centroide; si es (0,0) → centroid (10).
+    const ip = elementInputs.insertionPoints?.get(i);
+    if (ip && (Math.abs(ip[0]) > 1e-9 || Math.abs(ip[1]) > 1e-9)) {
+      parts.push(`LATEROFFSET ${rd(ip[0])} TRANSOFFSET ${rd(ip[1])}`);
+    }
+
+    // End Length Offsets — rigidOffsets [offsetI, offsetJ] como factores 0-1
+    // RIGIDZONE es el factor (típico 0.5); LENGTHOFFI/J son las longitudes absolutas
+    const off = elementInputs.rigidOffsets?.get(i);
+    if (off && (Math.abs(off[0]) > 1e-9 || Math.abs(off[1]) > 1e-9)) {
+      parts.push(`LENGTHOFFI ${rd(off[0])} LENGTHOFFJ ${rd(off[1])} RIGIDZONE 0.5`);
+    }
+
+    return parts.length > 0 ? ` ${parts.join(" ")} ` : "";
+  };
+
   // Lines
   lines.push(`$ LINE CONNECTIVITIES`);
   const laEntries: string[] = [];
@@ -362,11 +451,12 @@ function exportFromScratch(input: ExportE2kInput): string {
     if (el.length !== 2) return;
     const type = guessElementType(nodes, el);
     const secName = elemToSecName.get(i) || `Sec_${i}`;
+    const extras = buildLineExtras(i);
 
     if (type === "BEAM") {
       const ps0 = nodeToPS(el[0]), ps1 = nodeToPS(el[1]);
       lines.push(`  LINE  "E${i + 1}"  BEAM  "${ps0.pt}"  "${ps1.pt}"  0`);
-      laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${ps0.story}"  SECTION "${secName}"  MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
+      laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${ps0.story}"  SECTION "${secName}" ${extras} MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
     } else {
       // COLUMN/BRACE: Z-up convention: n[2] = elevation
       // In e2k format, columns use the SAME plan point at both ends
@@ -382,14 +472,20 @@ function exportFromScratch(input: ExportE2kInput): string {
       for (let s = 0; s < nStories; s++) {
         const storyIdx = topIdx - s;
         if (storyIdx >= 0 && storyIdx < storyNames.length) {
-          laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${storyNames[storyIdx]}"  SECTION "${secName}"  MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
+          laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${storyNames[storyIdx]}"  SECTION "${secName}" ${extras} MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
         }
       }
     }
   });
   lines.push(``);
 
-  // Supports
+  // ── POINT ASSIGNS ────────────────────────────────────────────────
+  // Para Modo Manual emitimos POINTASSIGN por cada (plan-point, story)
+  // que tenga carga o restraint — así ETABS "registra" el plan-point en
+  // ese story y los POINTLOAD posteriores resuelven al joint correcto.
+  // Para Modo Auto (default) sólo emitimos restraints.
+  const weightMode = input.weightMode ?? "auto";
+  const emittedPointAssigns = new Set<string>(); // key: "pt@story"
   lines.push(`$ POINT ASSIGNS`);
   nodeInputs.supports?.forEach((sup, nodeIdx) => {
     const dofs: string[] = [];
@@ -398,8 +494,25 @@ function exportFromScratch(input: ExportE2kInput): string {
     if (dofs.length > 0) {
       const ps = nodeToPS(nodeIdx);
       lines.push(`  POINTASSIGN  "${ps.pt}"  "${ps.story}"  RESTRAINT "${dofs.join(" ")}"  `);
+      emittedPointAssigns.add(`${ps.pt}@${ps.story}`);
     }
   });
+  // En Modo Manual, asegurar POINTASSIGN existente para cada nodo con carga
+  // (el "  " vacío sirve para registrar el plan-point a esa story sin asignar
+  // restraint ni propiedad — necesario para que POINTLOAD resuelva).
+  if (weightMode === "manual" && nodeInputs.loads) {
+    nodeInputs.loads.forEach((_load, nodeIdx) => {
+      const ps = nodeToPS(nodeIdx);
+      const key = `${ps.pt}@${ps.story}`;
+      if (!emittedPointAssigns.has(key)) {
+        // Sólo necesitamos registrar la existencia — DIAPH "DISCONNECTED" es
+        // un no-op semántico válido en ETABS que asegura el plan-point esté
+        // ligado a esta story sin alterar diafragmas.
+        lines.push(`  POINTASSIGN  "${ps.pt}"  "${ps.story}"  DIAPH "DISCONNECTED"  `);
+        emittedPointAssigns.add(key);
+      }
+    });
+  }
   lines.push(``);
 
   // Line Assigns
@@ -482,40 +595,47 @@ function exportFromScratch(input: ExportE2kInput): string {
   }
 
   // ── LOAD PATTERNS ───────────────────────────────────────────────────
-  // SELFWEIGHT 0 porque Hekatan ya incluye el peso propio como POINTLOAD
-  // nodal equivalente cuando el ejemplo lo aplica. Así evitamos el doble
-  // conteo en ETABS.
+  // Dos modos según `weightMode`:
+  //   "auto" (default): SELFWEIGHT=1 → ETABS computa γ·V de cada material
+  //     automáticamente. Se omiten cargas nodales FZ (asumidas self-weight).
+  //     Se mantienen FX/FY (laterales) y momentos como POINTLOAD.
+  //   "manual": SELFWEIGHT=0 + emite TODAS las cargas nodales (incluyendo FZ).
+  //     Requiere que POINTASSIGN registre el plan-point en cada story con carga
+  //     (ya emitido arriba). El formato POINTLOAD usa sintaxis `LC "Dead"`
+  //     después de TYPE para mayor compatibilidad con ETABS.
+  const selfWt = weightMode === "manual" ? 0 : 1;
   lines.push(`$ LOAD PATTERNS`);
-  lines.push(`  LOADPATTERN "Dead"  TYPE  "Dead"  SELFWEIGHT  0`);
+  lines.push(`  LOADPATTERN "Dead"  TYPE  "Dead"  SELFWEIGHT  ${selfWt}`);
   lines.push(`  LOADPATTERN "Live"  TYPE  "Live"  SELFWEIGHT  0`);
   lines.push(``);
 
   // ── POINT OBJECT LOADS ─────────────────────────────────────────────
-  // Convertir kN → unidades de salida (Tonf/kgf/kip/etc).
+  const userLoadLines: string[] = [];
   if (nodeInputs.loads && nodeInputs.loads.size > 0) {
-    lines.push(`$ POINT OBJECT LOADS`);
     nodeInputs.loads.forEach((load, nodeIdx) => {
       const [fx, fy, fz] = load;
       const ps = nodeToPS(nodeIdx);
-      if (Math.abs(fx) > 1e-10) lines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  "Dead"  TYPE "FORCE"  FX ${rd(cF(fx))}`);
-      if (Math.abs(fy) > 1e-10) lines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  "Dead"  TYPE "FORCE"  FY ${rd(cF(fy))}`);
-      if (Math.abs(fz) > 1e-10) lines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  "Dead"  TYPE "FORCE"  FZ ${rd(cF(fz))}`);
+      if (Math.abs(fx) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "Dead"  FX ${rd(cF(fx))}  FY 0  FZ 0`);
+      if (Math.abs(fy) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "Dead"  FX 0  FY ${rd(cF(fy))}  FZ 0`);
+      // FZ: en modo "auto" se omite (lo computa ETABS via SELFWEIGHT=1);
+      // en modo "manual" se emite explícitamente.
+      if (weightMode === "manual" && Math.abs(fz) > 1e-10) {
+        userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "Dead"  FX 0  FY 0  FZ ${rd(cF(fz))}`);
+      }
     });
-    lines.push(``);
   }
-
-  // Momentos nodales si existen
   if ((nodeInputs as any).moments && (nodeInputs as any).moments.size > 0) {
-    if (!lines[lines.length - 1].startsWith("$ POINT OBJECT LOADS")) {
-      // ya emitido arriba; agregamos directamente más líneas
-    }
     (nodeInputs as any).moments.forEach((m: number[], nodeIdx: number) => {
       const [mx, my, mz] = m;
       const ps = nodeToPS(nodeIdx);
-      if (Math.abs(mx) > 1e-10) lines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  "Dead"  TYPE "MOMENT"  MX ${rd(cF(mx))}`);
-      if (Math.abs(my) > 1e-10) lines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  "Dead"  TYPE "MOMENT"  MY ${rd(cF(my))}`);
-      if (Math.abs(mz) > 1e-10) lines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  "Dead"  TYPE "MOMENT"  MZ ${rd(cF(mz))}`);
+      if (Math.abs(mx) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "Dead"  MX ${rd(cF(mx))}  MY 0  MZ 0`);
+      if (Math.abs(my) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "Dead"  MX 0  MY ${rd(cF(my))}  MZ 0`);
+      if (Math.abs(mz) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "Dead"  MX 0  MY 0  MZ ${rd(cF(mz))}`);
     });
+  }
+  if (userLoadLines.length > 0) {
+    lines.push(`$ POINT OBJECT LOADS`);
+    userLoadLines.forEach(l => lines.push(l));
     lines.push(``);
   }
 

@@ -3917,6 +3917,14 @@ solve`;
       document.body.appendChild(a); a.click();
       document.body.removeChild(a); URL.revokeObjectURL(url);
     };
+    // Modo de peso propio: "auto" → ETABS lo computa (SELFWEIGHT=1, sin cargas
+    // nodales FZ). "manual" → SELFWEIGHT=0 + cargas nodales FZ emitidas
+    // explícitamente (control fino del lumping). Default "auto".
+    const etabsExportCfg = { weightMode: "auto" as "auto" | "manual" };
+    fEtabs.addBinding(etabsExportCfg, "weightMode", {
+      label: "Peso propio",
+      options: { "Auto (SELFWEIGHT=1)": "auto", "Manual (POINTLOAD nodal)": "manual" },
+    });
     fEtabs.addButton({ title: "📤 Exportar E2K" }).on("click", () => {
       try {
         const text = exportE2k({
@@ -3926,10 +3934,11 @@ solve`;
           elementInputs: states.elementInputs.val,
           title: `${currentExample!.name} — Hekatan export`,
           units: { force: "Tonf", length: "m" },
+          weightMode: etabsExportCfg.weightMode,
         });
         const fname = `${currentExample!.id}_${Date.now()}.e2k`;
         downloadText(text, fname);
-        console.log(`✅ E2K exportado: ${text.length} bytes → ${fname}`);
+        console.log(`✅ E2K exportado (peso ${etabsExportCfg.weightMode}): ${text.length} bytes → ${fname}`);
         console.log(`Abrilo en ETABS: File → Import → ETABS .e2k Text File`);
       } catch (e: any) {
         console.error(`Error exportando E2K:`, e);
