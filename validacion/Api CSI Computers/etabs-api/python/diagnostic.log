@@ -1,0 +1,68 @@
+[19:02:10.525] ============================================================================
+[19:02:10.525]   DIAGNOSTIC FULL — ETABS API setup check
+[19:02:10.525]   Python: 3.12.7  | log → C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\validacion\Api CSI Computers\etabs-api\python\diagnostic.log
+[19:02:10.525] ============================================================================
+[19:02:10.525] 
+[1] ETABS instalaciones encontradas:
+[19:02:10.525]     ETABS 19: DLL=OK, EXE=OK
+[19:02:10.526]     ETABS 22: DLL=OK, EXE=OK
+[19:02:10.526] 
+[2] Procesos ETABS corriendo:
+[19:02:11.291]   ✗ tasklist → EXCEPCION:
+[19:02:11.296]       Traceback (most recent call last):
+[19:02:11.296]         File "C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\validacion\Api CSI Computers\etabs-api\python\diagnostic_full.py", line 61, in <module>
+[19:02:11.296]           out = subprocess.check_output("tasklist /FO CSV", shell=True, encoding="utf-8")
+[19:02:11.296]                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[19:02:11.296]         File "C:\Program Files\Python312\Lib\subprocess.py", line 466, in check_output
+[19:02:11.296]           return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+[19:02:11.296]                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[19:02:11.296]         File "C:\Program Files\Python312\Lib\subprocess.py", line 550, in run
+[19:02:11.296]           stdout, stderr = process.communicate(input, timeout=timeout)
+[19:02:11.296]                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[19:02:11.296]         File "C:\Program Files\Python312\Lib\subprocess.py", line 1196, in communicate
+[19:02:11.296]           stdout = self.stdout.read()
+[19:02:11.296]                    ^^^^^^^^^^^^^^^^^^
+[19:02:11.296]         File "<frozen codecs>", line 322, in decode
+[19:02:11.297]       UnicodeDecodeError: 'utf-8' codec can't decode byte 0xa2 in position 40: invalid start byte
+[19:02:11.297] 
+[3] Import comtypes:
+[19:02:11.473]     ✓ comtypes 1.4.14
+[19:02:11.473] 
+[4] CreateObject('ETABSv1.Helper'):
+[19:02:11.589]     ✓ helper raw = <POINTER(cHelper) ptr=0x1b231330020 at 1b2311742d0>
+[19:02:11.589] 
+[5] QueryInterface(cHelper):
+[19:02:11.589]     ✓ cHelper = <POINTER(cHelper) ptr=0x1b231330020 at 1b2310f3ad0>
+[19:02:11.589] 
+[6] Intentando enganchar a instancia abierta (helper.GetObject):
+[19:02:11.610]     helper.GetObject() devolvió: None
+[19:02:11.610]     Estado: NULL — no hay instancia API-registrada
+[19:02:11.610] 
+[7] No attach → spawning nueva instancia API:
+[19:02:11.954]     CreateObjectProgID OK → <POINTER(cOAPI) ptr=0x1b23133ffa0 at 1b2310f3f50>
+[19:02:11.954]     ApplicationStart()...
+[19:02:37.748]     ApplicationStart devolvió: -1
+[19:02:37.748]     Esperando 8 s para que ETABS inicie GUI completo...
+[19:02:45.749] 
+[8] Accediendo a ETABSObject.SapModel:
+[19:02:45.798]     intento 1: SapModel existe pero COMError: (-2146233077, None, ('No se pudo escribir en un puerto IPC : Se está cerrando la canalización.\r\n', 'mscorlib', None, 0, None))
+[19:02:46.800]     intento 2: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:02:47.802]     intento 3: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:02:48.803]     intento 4: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:02:49.805]     intento 5: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:02:50.806]     intento 6: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:02:51.808]     intento 7: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:02:52.810]     intento 8: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:02:53.811]     intento 9: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:02:54.812]     intento 10: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:02:55.813]     intento 11: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:02:56.815]     intento 12: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:02:57.816]     intento 13: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:02:58.818]     intento 14: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:02:59.819]     intento 15: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:03:00.821]     intento 16: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:03:01.821]     intento 17: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:03:02.822]     intento 18: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:03:03.824]     intento 19: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:03:04.826]     intento 20: SapModel existe pero COMError: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+[19:03:05.826]     ✗ SapModel NUNCA quedó utilizable. Abortando.

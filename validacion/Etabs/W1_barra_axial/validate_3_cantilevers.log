@@ -1,0 +1,31 @@
+[1] Helper + ProgID + Start...
+    OK
+
+============================================================
+  CASE: Concrete
+  File: test_concrete_cantilever_fixed.e2k
+  Hekatan Uz_top reported: -0.00424 mm
+============================================================
+
+[2-Concrete] SapModel + Open...
+    OpenFile ret=0
+
+[3-Concrete] Save EDB + Analyze...
+    Save ret=0
+    RunAnalysis ret=0
+
+[4-Concrete] Inventario + resultados Dead...
+    Base='1'  Top='11' @ Z=3.000m
+
+[5-Concrete] COMPARACIÓN:
+    Hekatan Uz_top : -0.00424 mm
+    ETABS   Uz_top : -0.00432 mm
+    Diferencia     : -1.927%  [FAIL]
+    ETABS   Fz_base: +6.4800 kN
+
+============================================================
+  RESUMEN
+============================================================
+  Concrete  : hekatan=-0.00424  ETABS=-0.00432  Δ=-1.927%
+
+DONE

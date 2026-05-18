@@ -53,6 +53,8 @@ export interface S2kExportInput {
   layeredSection?: S2kLayeredSection;
   /** Cargas uniformes sobre areas (q presion). */
   areaLoads?: S2kAreaLoad[];
+  /** Multiplicador de peso propio del LoadPat DEAD. Default 1 (SAP convencional). */
+  selfWtMult?: number;
 }
 
 export function exportS2k(input: S2kExportInput): string {
@@ -230,8 +232,9 @@ export function exportS2k(input: S2kExportInput): string {
   }
 
   // ── LOAD PATTERN DEFINITIONS ──
+  const selfWtMult = input.selfWtMult ?? 1;
   push(`TABLE:  "LOAD PATTERN DEFINITIONS"`);
-  push(`   LoadPat=DEAD   DesignType=Dead   SelfWtMult=0`);
+  push(`   LoadPat=DEAD   DesignType=Dead   SelfWtMult=${selfWtMult}`);
   blank();
 
   // ── LOAD CASE DEFINITIONS ──

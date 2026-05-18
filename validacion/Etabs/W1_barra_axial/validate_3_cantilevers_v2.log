@@ -1,0 +1,69 @@
+[1] Start ETABS...
+    OK
+
+============================================================
+  CASE: Concrete  gamma=23.56 kN/m3  E=24.98 GPa  A=0.0900 m2
+  Hekatan analytical Uz_top: -0.00424 mm
+============================================================
+  NewBlank ret=0
+  Material MAT_Concrete set: gamma=23.56 E=24980000.0
+  Section SEC_Concrete 30.00x30.00 cm
+  Frame: ret=0 name='C1'
+  Base='1'  Top='2'
+  Load patterns: ['Dead', 'Live']
+  Save ret=0
+  RunAnalysis ret=0
+
+  RESULTADO Concrete:
+    Hekatan Uz_top : -0.00424 mm
+    ETABS   Uz_top : -0.00424 mm
+    Diferencia     : -0.099%  [PASS]
+    ETABS   Fz_base: +6.3612 kN  (W_analitico=6.3612 kN)
+
+============================================================
+  CASE: Steel  gamma=76.97 kN/m3  E=200.00 GPa  A=0.0900 m2
+  Hekatan analytical Uz_top: -0.00173 mm
+============================================================
+  NewBlank ret=0
+  Material MAT_Steel set: gamma=76.97 E=200000000.0
+  Section SEC_Steel 30.00x30.00 cm
+  Frame: ret=0 name='C1'
+  Base='1'  Top='2'
+  Load patterns: ['Dead', 'Live']
+  Save ret=0
+  RunAnalysis ret=0
+
+  RESULTADO Steel:
+    Hekatan Uz_top : -0.00173 mm
+    ETABS   Uz_top : -0.00173 mm
+    Diferencia     : -0.105%  [PASS]
+    ETABS   Fz_base: +20.7819 kN  (W_analitico=20.7819 kN)
+
+============================================================
+  CASE: CFT_eq  gamma=31.76 kN/m3  E=51.71 GPa  A=0.0900 m2
+  Hekatan analytical Uz_top: -0.00276 mm
+============================================================
+  NewBlank ret=0
+  Material MAT_CFT_eq set: gamma=31.76 E=51710000.0
+  Section SEC_CFT_eq 30.00x30.00 cm
+  Frame: ret=0 name='C1'
+  Base='1'  Top='2'
+  Load patterns: ['Dead', 'Live']
+  Save ret=0
+  RunAnalysis ret=0
+
+  RESULTADO CFT_eq:
+    Hekatan Uz_top : -0.00276 mm
+    ETABS   Uz_top : -0.00276 mm
+    Diferencia     : -0.140%  [PASS]
+    ETABS   Fz_base: +8.5752 kN  (W_analitico=8.5752 kN)
+
+============================================================
+  RESUMEN FINAL
+============================================================
+  Caso          Hekatan(mm)      ETABS(mm)     Diff %
+  Concrete         -0.00424       -0.00424     -0.099
+  Steel            -0.00173       -0.00173     -0.105
+  CFT_eq           -0.00276       -0.00276     -0.140
+
+DONE

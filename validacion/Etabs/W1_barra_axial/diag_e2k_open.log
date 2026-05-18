@@ -1,0 +1,47 @@
+[1] Start ETABS...
+[2] OpenFile E2K = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\validacion\Etabs\W1_barra_axial\test_concrete_cantilever.e2k
+    ret=0
+[3] SetPresentUnits Tonf_m (5) — match E2K units...
+[4] LoadPatterns inventory...
+    2 patterns: ['Dead', 'Live']
+[5] LoadCases inventory...
+    3 cases: ['Modal', 'Dead', 'Live']
+[6] PointObj inventory + coords...
+    11 points
+      pt='1'  (0.000, 0.000, 0.000)
+      pt='2'  (0.000, 0.000, 300.000)
+      pt='3'  (0.000, 0.000, 600.000)
+      pt='4'  (0.000, 0.000, 900.000)
+      pt='5'  (0.000, 0.000, 1200.000)
+      pt='6'  (0.000, 0.000, 1500.000)
+      pt='7'  (0.000, 0.000, 1800.000)
+      pt='8'  (0.000, 0.000, 2100.000)
+      pt='9'  (0.000, 0.000, 2400.000)
+      pt='10'  (0.000, 0.000, 2700.000)
+      pt='11'  (0.000, 0.000, 3000.000)
+[7] Loads on each point (GetLoadForce)...
+      pt='1' GetLoadForce err: No method matches given arguments for cPointObj.GetLoadForce: (<class 'str'>, <class 'int'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'ETABSv1.eItemTypeElm'>)
+      pt='2' GetLoadForce err: No method matches given arguments for cPointObj.GetLoadForce: (<class 'str'>, <class 'int'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'ETABSv1.eItemTypeElm'>)
+      pt='3' GetLoadForce err: No method matches given arguments for cPointObj.GetLoadForce: (<class 'str'>, <class 'int'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'ETABSv1.eItemTypeElm'>)
+      pt='4' GetLoadForce err: No method matches given arguments for cPointObj.GetLoadForce: (<class 'str'>, <class 'int'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'ETABSv1.eItemTypeElm'>)
+      pt='5' GetLoadForce err: No method matches given arguments for cPointObj.GetLoadForce: (<class 'str'>, <class 'int'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'ETABSv1.eItemTypeElm'>)
+      pt='6' GetLoadForce err: No method matches given arguments for cPointObj.GetLoadForce: (<class 'str'>, <class 'int'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'ETABSv1.eItemTypeElm'>)
+      pt='7' GetLoadForce err: No method matches given arguments for cPointObj.GetLoadForce: (<class 'str'>, <class 'int'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'ETABSv1.eItemTypeElm'>)
+      pt='8' GetLoadForce err: No method matches given arguments for cPointObj.GetLoadForce: (<class 'str'>, <class 'int'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'ETABSv1.eItemTypeElm'>)
+      pt='9' GetLoadForce err: No method matches given arguments for cPointObj.GetLoadForce: (<class 'str'>, <class 'int'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'ETABSv1.eItemTypeElm'>)
+      pt='10' GetLoadForce err: No method matches given arguments for cPointObj.GetLoadForce: (<class 'str'>, <class 'int'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'ETABSv1.eItemTypeElm'>)
+      pt='11' GetLoadForce err: No method matches given arguments for cPointObj.GetLoadForce: (<class 'str'>, <class 'int'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'list'>, <class 'ETABSv1.eItemTypeElm'>)
+    TOTAL FZ load: 0.00000
+[8] Save EDB then RunAnalysis...
+    Save ret=0
+    RunAnalysis ret=0
+[9] Setup output for Dead case...
+    SetCaseSelectedForOutput('Dead') ret=0
+[10] JointDispl + JointReact for top + base...
+    base_pt='1'  top_pt='11'
+    top JointDispl: ret=0 NR=1
+      [0] case='Dead'  Uz=0.000000e+00  Ux=0.000000e+00
+    base JointReact: ret=0 NR=1
+      [0] case='Dead'  FZ=0.00000
+
+DONE

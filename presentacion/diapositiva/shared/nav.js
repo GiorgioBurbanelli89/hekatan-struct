@@ -31,6 +31,14 @@
     { file: "16_validacion_cruzada.html",            title: "16. Validación" },
     { file: "17_hekatan_lab.html",                   title: "17. Hekatan Lab" },
     { file: "18_vista_workspace.html",               title: "18. Vista 2D/3D" },
+    { file: "19_teoria_placas_a_codigo.html",        title: "19. Teoría → código" },
+    { file: "20_csi_shell_wilson.html",              title: "20. CSI Shell Wilson" },
+    { file: "21_bfs_vs_mitc4_misma_malla.html",      title: "21. BFS vs MITC4" },
+    { file: "22_platethin_explicado_cero.html",      title: "22. Plate-Thin cero" },
+    { file: "23_wasm_formulaciones_viewer.html",     title: "23. WASM viewer 4-form" },
+    { file: "25_elementos_2d_puro.html",             title: "25. Elementos 2D" },
+    { file: "26_wilson_libro_completo.html",         title: "26. Wilson 23 caps." },
+    { file: "27_matriz_rigidez_local.html",          title: "27. K_e MATLAB/C++/Py" },
   ];
 
   const path = window.location.pathname;
