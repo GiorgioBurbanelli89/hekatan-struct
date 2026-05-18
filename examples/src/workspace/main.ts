@@ -2216,14 +2216,17 @@ function buildParamsPane() {
       // Soporte jerarquía hasta 3 niveles:
       //   "🏁 Benchmarks · X"             → "       ▸ X"
       //   "🏁 Benchmarks · X · Y"         → "          ▸▸ Y"
-      //   "🏁 Benchmarks · X · Y · Z"     → "             ▸▸▸ Z"
+      //   "🏁 Benchmarks · X · Y · Z"     → "             ▸▸▸ Y · Z"
+      //     (3er nivel incluye el segmento padre para evitar colisiones cuando
+      //      el último segmento se repite — p.ej. Columnas·1DOFAxial vs
+      //      Vigas·1DOFAxial ambos terminarían en "🎯 1 DOF Axial").
       const sansPrefix = c.replace("🏁 Benchmarks · ", "");
       const segments = sansPrefix.split(" · ");
       const last = segments[segments.length - 1];
       let indentedLabel: string;
       if (segments.length === 1)        indentedLabel = `       ▸ ${last}`;
       else if (segments.length === 2)   indentedLabel = `          ▸▸ ${last}`;
-      else                              indentedLabel = `             ▸▸▸ ${last}`;
+      else                              indentedLabel = `             ▸▸▸ ${segments[segments.length - 2]} · ${last}`;
       catOptions[indentedLabel] = c;
     } else {
       catOptions[c] = c;
@@ -2243,11 +2246,11 @@ function buildParamsPane() {
   const matchesCategory = (exampleCat: string | undefined, selectedCat: string): boolean => {
     if (!exampleCat) return false;
     if (exampleCat === selectedCat) return true;
-    // Indentado (1, 2 o 3 niveles): el último segmento del label coincide con
-    // el último segmento de la categoría del ejemplo.
-    //   "▸ 1️⃣ Frames"          → matches "🏁 Benchmarks · 1️⃣ Frames"
-    //   "▸▸ 🏛 Columnas"       → matches "🏁 Benchmarks · 1️⃣ Frames · 🏛 Columnas"
-    //   "▸▸▸ 🎯 1 DOF Axial"   → matches "🏁 Benchmarks · 1️⃣ Frames · 🏛 Columnas · 🎯 1 DOF Axial"
+    // Indentado (1, 2 o 3 niveles): match si la categoría del ejemplo termina
+    // con el sufijo del label seleccionado.
+    //   "▸ 1️⃣ Frames"                       → matches "🏁 Benchmarks · 1️⃣ Frames"
+    //   "▸▸ 🏛 Columnas"                    → matches "...· 🏛 Columnas"
+    //   "▸▸▸ 🏛 Columnas · 🎯 1 DOF Axial"  → matches "...· 🏛 Columnas · 🎯 1 DOF Axial"
     if (selectedCat.startsWith("▸") && exampleCat.startsWith("🏁 Benchmarks · ")) {
       const trimmed = selectedCat.replace(/^▸+\s*/, "");
       return exampleCat.endsWith(trimmed);
