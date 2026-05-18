@@ -2099,6 +2099,13 @@ function buildParamsPane() {
   // Los Benchmarks van PRIMEROS, divididos en 5 sub-categorías ordenadas
   // (Frames → Áreas → Sólidos → Combinados → Layered).
   const categoryOrder = [
+    // 🎯 Benchmarks W## por grados de libertad — ordenados de menor a mayor complejidad
+    "🎯 1 DOF · Cantilever Axial",      // W1, W2 (axial puro, cantilever 1D)
+    "🎯 2 DOF · Cantilever Flexión",    // vigas/columnas con flexión 2D (peso propio + carga lateral)
+    "🎯 3 DOF · Biaxial",                // flexión biaxial, torsión simple
+    "🎯 6 DOF · Multiaxial 3D",          // pórticos 3D completos, torsión + flexión + axial
+    "🎯 n DOF · Sistemas Múltiples",     // pórticos multi-elemento, edificios, etc.
+    // Benchmarks legacy (Frames, Áreas, Sólidos, etc.)
     "🏁 Benchmarks · 1️⃣ Frames",
     "🏁 Benchmarks · 2️⃣ Áreas",
     "🏁 Benchmarks · 3️⃣ Sólidos",

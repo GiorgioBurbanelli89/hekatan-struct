@@ -231,6 +231,9 @@ import { conexionEndPlate } from "../conexion-end-plate/conexionEndPlate";
 import { placaBase } from "../placa-base/placaBase";
 import { trussGen } from "../truss-gen/trussGen";
 import { barraAxial } from "../W1_barra_axial/barraAxial";
+import { vigaAxialCantilever } from "../W2_viga_axial_cantilever/vigaAxialCantilever";
+import { vigaFlexionConcreteCantilever } from "../W2_viga_flexion_concrete_cantilever/vigaFlexionConcreteCantilever";
+import { vigaFlexionSteelCantilever } from "../W2_viga_flexion_steel_cantilever/vigaFlexionSteelCantilever";
 import { portico2D } from "../portico-2d/portico2D";
 import { tower3D } from "../tower-3d/tower3D";
 import { galpon } from "../galpon/galpon";
@@ -259,8 +262,14 @@ export const examplesRegistry: ExampleDef[] = [
   zapataAislada,
   zapataVigaAmarre,
   vigaMedioElastico,
-  // Frames 1D
-  barraAxial,
+  // 🎯 Benchmarks por DOFs — agrupados por número de grados de libertad efectivos
+  // 1 DOF — axial puro (cantilever horizontal con carga axial puntual)
+  barraAxial,                       // W1a · Barra axial horizontal genérica
+  vigaAxialCantilever,              // W2-1DOF · Viga I450 horizontal con carga axial 100 kN
+  // 2 DOF — flexión cantilever (Uz + Ry, peso propio o lateral)
+  vigaFlexionConcreteCantilever,    // W2a · Viga Hormigón 30×60 peso propio
+  vigaFlexionSteelCantilever,       // W2b · Viga Acero IPE 300 peso propio
+  // Frames 1D (resto)
   trussGen,
   portico2D,
   tower3D,

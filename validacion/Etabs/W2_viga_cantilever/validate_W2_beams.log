@@ -1,0 +1,89 @@
+======================================================================
+  W2 VIGA CANTILEVER — Setup analitico
+======================================================================
+
+  Concrete_30x60:
+    A = 1800.00 cm2,  I = 540000.00 cm4
+    q = gamma*A = 4.2408 kN/m,  W = q*L = 12.7224 kN
+    w_tip_EB     = 0.31831 mm
+    w_tip_shear  = 0.01222 mm
+    w_tip_total  = 0.33054 mm
+    M_base = 19.084 kN.m,  V_base = 12.722 kN
+
+  Steel_IPE300:
+    A = 53.81 cm2,  I = 8356.00 cm4
+    q = gamma*A = 0.4142 kN/m,  W = q*L = 1.2425 kN
+    w_tip_EB     = 0.25093 mm
+    w_tip_shear  = 0.01138 mm
+    w_tip_total  = 0.26230 mm
+    M_base = 1.864 kN.m,  V_base = 1.243 kN
+
+======================================================================
+  ETABS API conexion
+======================================================================
+  ApplicationStart OK
+
+======================================================================
+  CASE: Concrete_30x60
+======================================================================
+  Pre-InitializeNewModel...
+  InitializeNewModel ret=0
+  NewBlank ret=0
+  Material: MAT_Concrete_30x60  gamma=23.56  E=24.98 GPa
+  Section RECT: D=60.0 cm, B=30.0 cm
+    Set<Section> ret=0
+  Frame horizontal Z=3.0m  ret=0  name='VIGA'
+    pt='1'  (0.000, 0.000, 3.000)
+    pt='2'  (3.000, 0.000, 3.000)
+  Start (empotrada) = '1'   End (libre) = '2'
+  SetRestraint(start) ret=(0, <System.Boolean[] object at 0x0000017C31D2CB80>)
+  Save ret=0
+  RunAnalysis ret=0
+
+  RESULTADO Concrete_30x60:
+    Analitico EB         : -0.31831 mm
+    Analitico Timoshenko : -0.33054 mm  (EB + shear)
+    ETABS Uz_tip         : -0.33054 mm
+    Δ vs EB        : -3.840%
+    Δ vs Timoshenko: -0.000%  [PASS]
+    Reacciones base: Fz=+12.7224 kN (esperado 12.7224),  My=-19.0836 kNm (esperado -19.0836)
+
+======================================================================
+  CASE: Steel_IPE300
+======================================================================
+  Pre-InitializeNewModel...
+  InitializeNewModel ret=0
+  NewBlank ret=0
+  Material: MAT_Steel_IPE300  gamma=76.97  E=200.00 GPa
+  Section GENERAL: A=5.38100e-03  I33=8.35600e-05  As2=2.13000e-03
+    Set<Section> ret=0
+  Frame horizontal Z=3.0m  ret=0  name='VIGA'
+    pt='1'  (0.000, 0.000, 3.000)
+    pt='2'  (3.000, 0.000, 3.000)
+  Start (empotrada) = '1'   End (libre) = '2'
+  SetRestraint(start) ret=(0, <System.Boolean[] object at 0x0000017C31D2D480>)
+  Save ret=0
+  RunAnalysis ret=0
+
+  RESULTADO Steel_IPE300:
+    Analitico EB         : -0.25093 mm
+    Analitico Timoshenko : -0.26230 mm  (EB + shear)
+    ETABS Uz_tip         : -0.26230 mm
+    Δ vs EB        : -4.533%
+    Δ vs Timoshenko: +0.000%  [PASS]
+    Reacciones base: Fz=+1.2425 kN (esperado 1.2425),  My=-1.8638 kNm (esperado -1.8638)
+
+======================================================================
+  RESUMEN FINAL W2
+======================================================================
+  Caso                         Ana_EB      Ana_Tim        ETABS      ΔEB%     ΔTim%
+  Concrete_30x60             -0.31831     -0.33054     -0.33054    -3.840    -0.000
+  Steel_IPE300               -0.25093     -0.26230     -0.26230    -4.533    +0.000
+
+  Reacciones base:
+    Concrete_30x60         Fz: ETABS=+12.7224 ana=+12.7224  |  My: ETABS=-19.0836 ana=-19.0836
+    Steel_IPE300           Fz: ETABS=+1.2425 ana=+1.2425  |  My: ETABS=-1.8638 ana=-1.8638
+
+  ETABS cerrado.
+
+DONE
