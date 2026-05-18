@@ -170,7 +170,16 @@ function exportFromScratch(input: ExportE2kInput): string {
   lines.push(`  UNITS  "${force}"  "${length}"  "C"  `);
   lines.push(`  TITLE1  "Hekatan Struct export"  `);
   if (title) lines.push(`  TITLE2  "${title}"  `);
-  lines.push(`  PREFERENCE  MERGETOL 0.1  `);
+  // MERGETOL 0.001 (1mm) — match ETABS GUI default, evita over-merge de joints
+  // próximos en plan distinto. El 0.1 anterior era loose y podía mergear
+  // joints que no debían unirse.
+  lines.push(`  PREFERENCE  MERGETOL 0.001`);
+  lines.push(`  RLLF  METHOD "ASCE7-10"  USEDEFAULTMIN "YES"  `);
+  lines.push(``);
+
+  // GRIDSYSTEM básico para compatibilidad con ETABS GUI (no afecta análisis).
+  lines.push(`$ GRIDS`);
+  lines.push(`  GRIDSYSTEM "G1"  TYPE "CARTESIAN"  BUBBLESIZE 1.25 `);
   lines.push(``);
 
   // Stories from Z elevations.
@@ -196,9 +205,11 @@ function exportFromScratch(input: ExportE2kInput): string {
   if (sortedZ.length > 0) lines.push(`  STORY "Base"  ELEV ${sortedZ[0]} `);
   lines.push(``);
 
-  // Check if model has Q4 area elements (walls/slabs)
+  // DIAPHRAGM siempre — para ETABS-idiomatic export. Usado para asignar a
+  // top joints de columnas verticales (estándar ETABS) y para top joints de
+  // shells (losas / muros). Default RIGID (típico).
   const hasQ4 = elements.some(el => el.length === 4);
-  if (hasQ4) {
+  {
     lines.push(`$ DIAPHRAGM NAMES`);
     lines.push(`  DIAPHRAGM "D1"    TYPE RIGID`);
     lines.push(``);
@@ -459,11 +470,112 @@ function exportFromScratch(input: ExportE2kInput): string {
     return parts.length > 0 ? ` ${parts.join(" ")} ` : "";
   };
 
-  // Lines
-  lines.push(`$ LINE CONNECTIVITIES`);
-  const laEntries: string[] = [];
+  // ════════════════════════════════════════════════════════════════════
+  // CHAIN DETECTION para columnas verticales
+  // ════════════════════════════════════════════════════════════════════
+  // Si N elementos column comparten plan-point + sección + forman cadena
+  // vertical contigua, los emitimos como UN SOLO LINE element con auto-mesh
+  // interno (MINNUMSTA=N). Eso produce el formato ETABS-idiomatic que el
+  // usuario espera (1 columna con auto-mesh vs N elementos apilados).
+  //
+  // Heurística:
+  //   1. Para cada elemento COLUMN/BRACE, key = `${planPt}_${secName}_${type}`
+  //   2. Group elementos por key
+  //   3. Para cada group, sort por Z y check contiguidad (top de elem[i] == bot de elem[i+1])
+  //   4. Si contiguo → un chain
+  type Chain = {
+    elemIndices: number[];   // ordered bottom-up
+    planPt: string;
+    bottomNodeIdx: number;
+    topNodeIdx: number;
+    secName: string;
+    type: string;
+    nSegments: number;        // N elementos en la cadena → MINNUMSTA del LINEASSIGN
+  };
+  const chains: Chain[] = [];
+  const inChain = new Set<number>();   // elementos ya consolidados en chains
+
+  // Mapa intermedio: key → lista de elementos column candidatos (con sus Z bot/top)
+  type ColElem = { i: number; bot: number; top: number; zBot: number; zTop: number; planPt: string; secName: string; type: string };
+  const colByKey = new Map<string, ColElem[]>();
   elements.forEach((el, i) => {
     if (el.length !== 2) return;
+    const type = guessElementType(nodes, el);
+    if (type === "BEAM") return;  // solo column/brace son candidatos
+    const bot = nodes[el[0]][2] <= nodes[el[1]][2] ? el[0] : el[1];
+    const top = nodes[el[0]][2] <= nodes[el[1]][2] ? el[1] : el[0];
+    // Solo columnas verticales (mismo plan en ambos extremos)
+    if (Math.abs(nodes[bot][0] - nodes[top][0]) > 1e-6 || Math.abs(nodes[bot][1] - nodes[top][1]) > 1e-6) return;
+    const ps = nodeToPS(bot);   // mismo plan que top
+    const secName = elemToSecName.get(i) || `Sec_${i}`;
+    const key = `${ps.pt}_${secName}_${type}`;
+    if (!colByKey.has(key)) colByKey.set(key, []);
+    colByKey.get(key)!.push({
+      i, bot, top, zBot: rd(nodes[bot][2]), zTop: rd(nodes[top][2]),
+      planPt: ps.pt, secName, type,
+    });
+  });
+
+  colByKey.forEach((arr, _key) => {
+    arr.sort((a, b) => a.zBot - b.zBot);
+    // Si todos están contiguos (zTop[i] == zBot[i+1]), forman una sola chain
+    let chainStart = 0;
+    for (let k = 1; k <= arr.length; k++) {
+      const isBreak = (k === arr.length) ||
+                      (Math.abs(arr[k].zBot - arr[k - 1].zTop) > 1e-6);
+      if (isBreak) {
+        // Cerrar chain [chainStart..k-1]
+        const segment = arr.slice(chainStart, k);
+        if (segment.length >= 1) {
+          chains.push({
+            elemIndices: segment.map(s => s.i),
+            planPt: segment[0].planPt,
+            bottomNodeIdx: segment[0].bot,
+            topNodeIdx: segment[segment.length - 1].top,
+            secName: segment[0].secName,
+            type: segment[0].type,
+            nSegments: segment.length,
+          });
+          segment.forEach(s => inChain.add(s.i));
+        }
+        chainStart = k;
+      }
+    }
+  });
+
+  // ════════════════════════════════════════════════════════════════════
+  // EMIT LINE CONNECTIVITIES + LINE ASSIGNS
+  // ════════════════════════════════════════════════════════════════════
+  lines.push(`$ LINE CONNECTIVITIES`);
+  const laEntries: string[] = [];
+
+  // 1. Chains de columnas — UN solo LINE element por cadena
+  chains.forEach((ch, ci) => {
+    const eName = `C${ci + 1}`;
+    const psTop = nodeToPS(ch.topNodeIdx);
+    const psBot = nodeToPS(ch.bottomNodeIdx);
+    const zTop = rd(nodes[ch.topNodeIdx][2]);
+    const zBot = rd(nodes[ch.bottomNodeIdx][2]);
+    const topIdx = sortedZ.indexOf(zTop);
+    const botIdx = sortedZ.indexOf(zBot);
+    const nStories = Math.max(1, topIdx - botIdx);
+    // Extras usa el primer elemento de la cadena (asumimos uniforme)
+    const extras = buildLineExtras(ch.elemIndices[0]);
+
+    // LINE con nStories que abarca toda la cadena, con SAME plan-point en ambos extremos
+    lines.push(`  LINE  "${eName}"  ${ch.type}  "${psTop.pt}"  "${psTop.pt}"  ${nStories}`);
+
+    // UN solo LINEASSIGN al top-story (la columna span hacia abajo).
+    // MINNUMSTA = nSegments para que ETABS auto-mesh interno coincida con la
+    // discretización hekatan. RIGIDZONE 0.5 = default ETABS (zona rígida a 0.5
+    // del nudo). MAXSTASPC opcional para uniformizar el espaciado.
+    laEntries.push(`  LINEASSIGN  "${eName}"  "${psTop.story}"  SECTION "${ch.secName}" ${extras} RIGIDZONE 0.5 MAXSTASPC 0.5 MINNUMSTA ${ch.nSegments} AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
+  });
+
+  // 2. Elementos no-chain (beams + columnas sueltas/no-contiguas) — uno por uno
+  elements.forEach((el, i) => {
+    if (el.length !== 2) return;
+    if (inChain.has(i)) return;   // ya emitido como parte de un chain
     const type = guessElementType(nodes, el);
     const secName = elemToSecName.get(i) || `Sec_${i}`;
     const extras = buildLineExtras(i);
@@ -471,25 +583,17 @@ function exportFromScratch(input: ExportE2kInput): string {
     if (type === "BEAM") {
       const ps0 = nodeToPS(el[0]), ps1 = nodeToPS(el[1]);
       lines.push(`  LINE  "E${i + 1}"  BEAM  "${ps0.pt}"  "${ps1.pt}"  0`);
-      laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${ps0.story}"  SECTION "${secName}" ${extras} MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
+      laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${ps0.story}"  SECTION "${secName}" ${extras} RIGIDZONE 0.5 MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
     } else {
-      // COLUMN/BRACE: Z-up convention: n[2] = elevation
-      // In e2k format, columns use the SAME plan point at both ends
+      // Columna/brace suelta (no entra en ningún chain por estar aislada)
       const bot = nodes[el[0]][2] <= nodes[el[1]][2] ? el[0] : el[1];
       const top = nodes[el[0]][2] <= nodes[el[1]][2] ? el[1] : el[0];
-      const psBot = nodeToPS(bot), psTop = nodeToPS(top);
+      const psTop = nodeToPS(top);
       const zBot = rd(nodes[bot][2]), zTop = rd(nodes[top][2]);
       const botIdx = sortedZ.indexOf(zBot), topIdx = sortedZ.indexOf(zTop);
       const nStories = Math.max(1, topIdx >= 0 && botIdx >= 0 ? topIdx - botIdx : 1);
-      // Column: same point at top and bottom, nStories determines height
       lines.push(`  LINE  "E${i + 1}"  ${type}  "${psTop.pt}"  "${psTop.pt}"  ${nStories}`);
-      // Need LINEASSIGN for EACH story the column spans
-      for (let s = 0; s < nStories; s++) {
-        const storyIdx = topIdx - s;
-        if (storyIdx >= 0 && storyIdx < storyNames.length) {
-          laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${storyNames[storyIdx]}"  SECTION "${secName}" ${extras} MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
-        }
-      }
+      laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${psTop.story}"  SECTION "${secName}" ${extras} RIGIDZONE 0.5 MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
     }
   });
   lines.push(``);
@@ -502,14 +606,27 @@ function exportFromScratch(input: ExportE2kInput): string {
   const weightMode = input.weightMode ?? "auto";
   const emittedPointAssigns = new Set<string>(); // key: "pt@story"
   lines.push(`$ POINT ASSIGNS`);
+  // 1. Restraints (con DIAPH "DISCONNECTED" si está en story Base para
+  //    evitar que el rigid diaphragm afecte al empotramiento).
   nodeInputs.supports?.forEach((sup, nodeIdx) => {
     const dofs: string[] = [];
     if (sup[0]) dofs.push("UX"); if (sup[1]) dofs.push("UY"); if (sup[2]) dofs.push("UZ");
     if (sup[3]) dofs.push("RX"); if (sup[4]) dofs.push("RY"); if (sup[5]) dofs.push("RZ");
     if (dofs.length > 0) {
       const ps = nodeToPS(nodeIdx);
-      lines.push(`  POINTASSIGN  "${ps.pt}"  "${ps.story}"  RESTRAINT "${dofs.join(" ")}"  `);
+      const diaphClause = ps.story === "Base" ? ` DIAPH "DISCONNECTED" ` : "";
+      lines.push(`  POINTASSIGN  "${ps.pt}"  "${ps.story}"  RESTRAINT "${dofs.join(" ")}" ${diaphClause} `);
       emittedPointAssigns.add(`${ps.pt}@${ps.story}`);
+    }
+  });
+  // 2. Top joints de chains → asignar DIAPHRAGM D1 (ETABS-idiomatic — la
+  //    masa lateral se agrupa por nivel via el rigid diaphragm).
+  chains.forEach(ch => {
+    const psTop = nodeToPS(ch.topNodeIdx);
+    const key = `${psTop.pt}@${psTop.story}`;
+    if (!emittedPointAssigns.has(key) && psTop.story !== "Base") {
+      lines.push(`  POINTASSIGN  "${psTop.pt}"  "${psTop.story}"  DIAPH "D1"  `);
+      emittedPointAssigns.add(key);
     }
   });
   // En Modo Manual, asegurar POINTASSIGN existente para cada nodo con carga
@@ -653,6 +770,21 @@ function exportFromScratch(input: ExportE2kInput): string {
     userLoadLines.forEach(l => lines.push(l));
     lines.push(``);
   }
+
+  // ── ANALYSIS OPTIONS ────────────────────────────────────────────────
+  lines.push(`$ ANALYSIS OPTIONS`);
+  lines.push(`  ACTIVEDOF "UX UY UZ RX RY RZ"  `);
+  lines.push(`  PDELTA  METHOD "NONE"  `);
+  lines.push(``);
+
+  // ── MASS SOURCE ─────────────────────────────────────────────────────
+  // Define cómo ETABS computa la masa para modal/THA. INCLUDELOADS "Yes"
+  // + MASSSOURCELOAD "Dead" 1 → masa = peso propio (SELFWEIGHT) × 1g.
+  // LUMPATSTORIES "Yes" agrupa la masa al nivel del rigid diaphragm.
+  lines.push(`$ MASS SOURCE`);
+  lines.push(`  MASSSOURCE  "MsSrc1"    INCLUDEELEMENTS "No"    INCLUDEADDEDMASS "No"    INCLUDELOADS "Yes"    INCLUDEMOVE "No"    INCLUDELATERALMASS "Yes"    INCLUDEVERTICALMASS "No"    LUMPATSTORIES "Yes"    ISDEFAULT "Yes"  `);
+  lines.push(`  MASSSOURCELOAD  "MsSrc1"  "Dead"  1 `);
+  lines.push(``);
 
   // ── LOAD CASES (Linear Static) ─────────────────────────────────────
   // Sin esto ETABS NO corre análisis. Define Dead y Live como casos
