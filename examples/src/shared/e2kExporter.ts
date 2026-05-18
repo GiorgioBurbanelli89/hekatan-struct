@@ -177,9 +177,24 @@ function exportFromScratch(input: ExportE2kInput): string {
   lines.push(`  RLLF  METHOD "ASCE7-10"  USEDEFAULTMIN "YES"  `);
   lines.push(``);
 
-  // GRIDSYSTEM básico para compatibilidad con ETABS GUI (no afecta análisis).
+  // GRIDSYSTEM + GRID lines (X y Y) — ETABS-idiomatic, mejora UX en GUI.
+  // X grids → letras (A, B, C, ...) | Y grids → números (1, 2, 3, ...)
+  // No afectan el análisis pero hacen el modelo legible al abrir en GUI.
+  const xValuesSet = new Set<number>();
+  const yValuesSet = new Set<number>();
+  nodes.forEach(n => { xValuesSet.add(rd(n[0])); yValuesSet.add(rd(n[1])); });
+  const xValues = [...xValuesSet].sort((a, b) => a - b);
+  const yValues = [...yValuesSet].sort((a, b) => a - b);
   lines.push(`$ GRIDS`);
   lines.push(`  GRIDSYSTEM "G1"  TYPE "CARTESIAN"  BUBBLESIZE 1.25 `);
+  xValues.forEach((x, i) => {
+    // Letras A-Z, después AA, BB, ... (raro pasar de 26 grids)
+    const label = i < 26 ? String.fromCharCode(65 + i) : String.fromCharCode(65 + (i % 26)).repeat(Math.floor(i / 26) + 1);
+    lines.push(`  GRID "G1"  LABEL "${label}"  DIR "X"  COORD ${x}  GRIDTYPE "PRIMARY"  BUBBLELOC "DEFAULT"  GRIDHIDE "NO"  `);
+  });
+  yValues.forEach((y, i) => {
+    lines.push(`  GRID "G1"  LABEL "${i + 1}"  DIR "Y"  COORD ${y}  GRIDTYPE "PRIMARY"  BUBBLELOC "DEFAULT"  GRIDHIDE "NO"  `);
+  });
   lines.push(``);
 
   // Stories from Z elevations.
@@ -772,6 +787,13 @@ function exportFromScratch(input: ExportE2kInput): string {
   }
 
   // ── ANALYSIS OPTIONS ────────────────────────────────────────────────
+  // ACTIVEDOF: todos los 6 DOFs habilitados globalmente (frames 3D).
+  // PDELTA NONE: análisis lineal puro (no 2do orden geométrico).
+  //   Para análisis sísmico ASCE 7/NSR/NEC el usuario activaría manualmente
+  //   "Non-iterative Based on Mass" en ETABS GUI (Define → P-Delta Options).
+  //   Sintaxis E2K alternativa para activarlo:
+  //     PDELTA METHOD "NON_ITERATIVE_BASED_ON_MASS"  MASSSOURCE "MsSrc1"
+  //   Lo dejamos en NONE para el caso default lineal.
   lines.push(`$ ANALYSIS OPTIONS`);
   lines.push(`  ACTIVEDOF "UX UY UZ RX RY RZ"  `);
   lines.push(`  PDELTA  METHOD "NONE"  `);
@@ -795,8 +817,12 @@ function exportFromScratch(input: ExportE2kInput): string {
   lines.push(`  LOADCASE "Live"  TYPE  "Linear Static"  INITCOND  "PRESET"  `);
   lines.push(`  LOADCASE "Live"  LOADPAT  "Live"  SF 1 `);
   // Caso modal estándar (LTH para análisis dinámico) - opcional pero útil
+  // Modal-Eigen caso (default razonable: 3 modos suficientes para validar
+  // f₁/f₂/f₃ — ETABS reduce automáticamente a la cantidad de mass DOFs
+  // disponibles si el modelo tiene menos masa que modos pedidos).
+  // Para análisis sísmico real, el usuario subiría a 12+ con Ritz.
   lines.push(`  LOADCASE "Modal"  TYPE  "Modal - Eigen"  INITCOND  "PRESET"  `);
-  lines.push(`  LOADCASE "Modal"  MAXMODES 12  MINMODES 1  EIGENSHIFTFREQ 0  EIGENCUTOFFFREQ 0  EIGENTOL 1E-09  ALLOWAUTOFREQSHIFT "Yes"  `);
+  lines.push(`  LOADCASE "Modal"  MAXMODES 3  MINMODES 1  EIGENSHIFTFREQ 0  EIGENCUTOFFFREQ 0  EIGENTOL 1E-09  ALLOWAUTOFREQSHIFT "Yes"  `);
   lines.push(``);
 
   // ── LOAD COMBINATIONS ──────────────────────────────────────────────
