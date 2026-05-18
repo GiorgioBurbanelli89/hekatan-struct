@@ -65,7 +65,6 @@ export const benchmarkConcreteCantilever: ExampleDef = {
     M_top_y:  { default: 0, min: -100, max: 100, step: 0.5, label: "My top (alrededor Y global)", folder: "Cargas", unitType: "moment", rangeAdjustable: true },
     M_top_z:  { default: 0, min: -100, max: 100, step: 0.5, label: "Mz top (torsor)", folder: "Cargas", unitType: "moment", rangeAdjustable: true },
     nSegments: { default: 10, min: 1, max: 50, step: 1, label: "Segmentos columna", folder: "Mesh" },
-    exportE2k: { default: 0, boolean: true, label: "📤 Exportar a ETABS .e2k", folder: "Exportar" },
     // Internos no editables (requeridos por shape compartido)
     _t_HSS: { default: 0.012,  label: "(no usar)", folder: "Avanzado" },
     _E_s:   { default: 200e6,  label: "(no usar)", folder: "Avanzado" },
@@ -73,11 +72,10 @@ export const benchmarkConcreteCantilever: ExampleDef = {
   },
   hasModal: true,
 
-  onParamChange(changedKey, params) {
-    if (changedKey === "exportE2k" && params.exportE2k > 0.5) {
-      exportCantileverE2k(adapt(params), 1);  // matKey=1 (Hormigón)
-      params.exportE2k = 0;
-    }
+  // Exporter E2K específico: cantileverE2k.ts emite "Concrete Rectangular"
+  // con dimensiones reales (vs generic que deriva equivalente).
+  customE2kExport(params, _states) {
+    exportCantileverE2k(adapt(params), 1);  // matKey=1 (Hormigón)
   },
 
   computedLabels(p) {

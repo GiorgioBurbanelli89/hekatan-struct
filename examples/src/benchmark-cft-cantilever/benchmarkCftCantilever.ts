@@ -90,18 +90,14 @@ export const benchmarkCftCantilever: ExampleDef = {
     M_top_y:  { default: 0, min: -100, max: 100, step: 0.5, label: "My top (alrededor Y global)", folder: "Cargas", unitType: "moment", rangeAdjustable: true },
     M_top_z:  { default: 0, min: -100, max: 100, step: 0.5, label: "Mz top (torsor)", folder: "Cargas", unitType: "moment", rangeAdjustable: true },
     nSegments: { default: 10, min: 1, max: 50, step: 1, label: "Segmentos columna", folder: "Mesh" },
-    // Botón "click-to-trigger": al pasar de 0 a 1, dispara descarga e2k.
-    // El callback en onParamChange resetea a 0 inmediatamente.
-    exportE2k: { default: 0, boolean: true, label: "📤 Exportar a ETABS .e2k", folder: "Exportar" },
   },
   hasModal: true,
 
-  onParamChange(changedKey, params) {
-    if (changedKey === "exportE2k" && params.exportE2k > 0.5) {
-      const matKey = Math.round(params.materialType ?? 2) as MaterialKey;
-      exportCantileverE2k(params as any, matKey);
-      params.exportE2k = 0;  // reset toggle
-    }
+  // Exporter E2K específico: cantileverE2k.ts emite "Filled Steel Tube" CFT
+  // o "Concrete Rectangular" / "Steel Tube" según materialType.
+  customE2kExport(params, _states) {
+    const matKey = Math.round(params.materialType ?? 2) as MaterialKey;
+    exportCantileverE2k(params as any, matKey);
   },
 
   computedLabels(p) {

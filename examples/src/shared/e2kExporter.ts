@@ -348,20 +348,35 @@ function exportFromScratch(input: ExportE2kInput): string {
     if (writtenSections.has(secName)) return;
     writtenSections.add(secName);
 
-    // ETABS shape: alinear con material (acero usa shapes "Steel ...")
-    let etabsShape = "Concrete Rectangular";
-    if (isSteel) {
-      if      (stype === "I")    etabsShape = "Steel I/Wide Flange";
-      else if (stype === "HSS")  etabsShape = "Steel Tube";
-      else if (stype === "pipe") etabsShape = "Steel Pipe";
-      else if (stype === "L")    etabsShape = "Steel Angle";
-      else if (stype === "C")    etabsShape = "Steel Channel";
-      else if (stype === "2C")   etabsShape = "Steel Double Channel";
-      else                       etabsShape = "Steel Rectangular";
-    } else {
-      if      (stype === "circ") etabsShape = "Concrete Circle";
-      else                       etabsShape = "Concrete Rectangular";
-    }
+    // ETABS shape selection — IMPORTANTE:
+    //
+    // ETABS 22 NO acepta "Steel Rectangular" como SHAPE built-in (no existe).
+    // Para perfiles steel sólidos rectangulares, ETABS espera "Steel Plate"
+    // o un steel-tube degenerado. La opción más robusta y portable es usar
+    // "Concrete Rectangular" como shape geométrico — ETABS lo acepta y usa
+    // SOLO la geometría (D, B); el MATERIAL referenciado (Steel_1 con E=200GPa)
+    // determina las propiedades del análisis. El nombre "Concrete" es solo
+    // una etiqueta en el catálogo de shapes.
+    //
+    // Shapes válidos en ETABS E2K (verificados 22.6.0):
+    //   "Concrete Rectangular"  → rect sólido (cualquier material)
+    //   "Concrete Circle"       → circ sólido
+    //   "Steel I/Wide Flange"   → I beam (D B TF TW T2b TFb)
+    //   "Steel Tube"            → HSS rect hueco (D B TF, TF=wall thick)
+    //   "Steel Pipe"            → HSS circ hueco (D TF)
+    //   "Steel Channel"         → C
+    //   "Steel Angle"           → L
+    //   "Filled Steel Tube"     → CFT (D B TF + FILLMATERIAL)
+    let etabsShape: string;
+    if (stype === "I")          etabsShape = "Steel I/Wide Flange";
+    else if (stype === "HSS")   etabsShape = "Steel Tube";
+    else if (stype === "CFT")   etabsShape = "Filled Steel Tube";
+    else if (stype === "pipe")  etabsShape = "Steel Pipe";
+    else if (stype === "L")     etabsShape = "Steel Angle";
+    else if (stype === "C")     etabsShape = "Steel Channel";
+    else if (stype === "2C")    etabsShape = "Steel Double Channel";
+    else if (stype === "circ")  etabsShape = "Concrete Circle";
+    else                        etabsShape = "Concrete Rectangular";  // ← FIX: rect sólido siempre
 
     let line = `  FRAMESECTION  "${secName}"  MATERIAL "${matName}"  SHAPE "${etabsShape}"`;
     if (h) line += `  D ${rd(h)}`;

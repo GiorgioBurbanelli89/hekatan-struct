@@ -65,7 +65,6 @@ export const benchmarkSteelCantilever: ExampleDef = {
     M_top_y:  { default: 0, min: -100, max: 100, step: 0.5, label: "My top (alrededor Y global)", folder: "Cargas", unitType: "moment", rangeAdjustable: true },
     M_top_z:  { default: 0, min: -100, max: 100, step: 0.5, label: "Mz top (torsor)", folder: "Cargas", unitType: "moment", rangeAdjustable: true },
     nSegments: { default: 10, min: 1, max: 50, step: 1, label: "Segmentos columna", folder: "Mesh" },
-    exportE2k: { default: 0, boolean: true, label: "📤 Exportar a ETABS .e2k", folder: "Exportar" },
     // Constantes internas (no editables): E_c y gamma_c — usados sólo si la
     // función shared los requiere (no aplica a Acero puro, pero el shape
     // CantileverParams los necesita para tipo CFT). Hidden in pane.
@@ -74,11 +73,10 @@ export const benchmarkSteelCantilever: ExampleDef = {
   },
   hasModal: true,
 
-  onParamChange(changedKey, params) {
-    if (changedKey === "exportE2k" && params.exportE2k > 0.5) {
-      exportCantileverE2k(adapt(params), 0);  // matKey=0 (Acero)
-      params.exportE2k = 0;
-    }
+  // Exporter E2K específico: usa cantileverE2k.ts que emite "Steel Tube" HSS
+  // hueco correctamente (vs el generic que usaba "Steel Rectangular" inválido).
+  customE2kExport(params, _states) {
+    exportCantileverE2k(adapt(params), 0);  // matKey=0 (Acero HSS)
   },
 
   computedLabels(p) {

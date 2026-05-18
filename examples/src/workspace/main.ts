@@ -4035,6 +4035,17 @@ solve`;
       options: { "Auto (SELFWEIGHT=1)": "auto", "Manual (POINTLOAD nodal)": "manual" },
     });
     fEtabs.addButton({ title: "📤 Exportar E2K" }).on("click", () => {
+      // Delegación: si el ejemplo tiene un exporter custom (p.ej. cantileverE2k.ts
+      // para HSS hueco, CFT, etc.), usamos ese. Si no, fallback al generic.
+      if (currentExample?.customE2kExport) {
+        try {
+          currentExample.customE2kExport(toSIParams(), states);
+          console.log(`✅ E2K exportado via customE2kExport del ejemplo`);
+        } catch (e: any) {
+          console.error(`Error en customE2kExport:`, e);
+        }
+        return;
+      }
       try {
         const text = exportE2k({
           nodes: states.nodes.val,
@@ -4047,7 +4058,7 @@ solve`;
         });
         const fname = `${currentExample!.id}_${Date.now()}.e2k`;
         downloadText(text, fname);
-        console.log(`✅ E2K exportado (peso ${etabsExportCfg.weightMode}): ${text.length} bytes → ${fname}`);
+        console.log(`✅ E2K exportado generic (peso ${etabsExportCfg.weightMode}): ${text.length} bytes → ${fname}`);
         console.log(`Abrilo en ETABS: File → Import → ETABS .e2k Text File`);
       } catch (e: any) {
         console.error(`Error exportando E2K:`, e);

@@ -133,6 +133,16 @@ export interface ExampleDef {
    */
   benchmark?: boolean;
   /**
+   * Exportador E2K custom — si está definido, el botón "Exportar E2K" del
+   * toolbar ETABS lo invoca en vez del genérico `e2kExporter.ts`. Útil para
+   * benchmarks que necesitan emitir formato exacto de ETABS (p.ej. HSS hueco
+   * con `SHAPE "Steel Tube"`, CFT con `Filled Steel Tube`, etc.).
+   *
+   * La función debe encargarse de descargar el archivo (e.g. via Blob+
+   * download anchor) — el toolbar solo dispara la invocación.
+   */
+  customE2kExport?: (params: Record<string, number>, states: BuildStates) => void;
+  /**
    * Pasos numerados de uso del ejemplo. Se renderiza como folder "📖 Guía"
    * en Tweakpane, expandido por default cuando el ejemplo es nuevo para el
    * usuario (gobierno por localStorage flag por id).
