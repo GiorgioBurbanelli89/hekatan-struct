@@ -232,6 +232,8 @@ import { placaBase } from "../placa-base/placaBase";
 import { trussGen } from "../truss-gen/trussGen";
 import { barraAxial } from "../W1_barra_axial/barraAxial";
 import { vigaAxialCantilever } from "../W2_viga_axial_cantilever/vigaAxialCantilever";
+import { vigaAxialConcreteCantilever } from "../W2_viga_axial_concrete_cantilever/vigaAxialConcreteCantilever";
+import { vigaAxialCompositeCantilever } from "../W2_viga_axial_composite_cantilever/vigaAxialCompositeCantilever";
 import { vigaFlexionConcreteCantilever } from "../W2_viga_flexion_concrete_cantilever/vigaFlexionConcreteCantilever";
 import { vigaFlexionSteelCantilever } from "../W2_viga_flexion_steel_cantilever/vigaFlexionSteelCantilever";
 import { portico2D } from "../portico-2d/portico2D";
@@ -263,12 +265,14 @@ export const examplesRegistry: ExampleDef[] = [
   zapataVigaAmarre,
   vigaMedioElastico,
   // 🎯 Benchmarks por DOFs — agrupados por número de grados de libertad efectivos
-  // 1 DOF — axial puro (cantilever horizontal con carga axial puntual)
-  barraAxial,                       // W1a · Barra axial horizontal genérica
-  vigaAxialCantilever,              // W2-1DOF · Viga I450 horizontal con carga axial 100 kN
-  // 2 DOF — flexión cantilever (Uz + Ry, peso propio o lateral)
-  vigaFlexionConcreteCantilever,    // W2a · Viga Hormigón 30×60 peso propio
-  vigaFlexionSteelCantilever,       // W2b · Viga Acero IPE 300 peso propio
+  // 1 DOF — Vigas axial puro (carga puntual sin peso propio)
+  barraAxial,                       // Barra axial horizontal genérica
+  vigaAxialConcreteCantilever,      // Viga Hormigón 30×30 axial puntual
+  vigaAxialCantilever,              // Viga Acero I-450 axial puntual
+  vigaAxialCompositeCantilever,     // Viga Compuesta (IPE+losa) axial puntual transformed-section
+  // 2 DOF — Vigas flexión (peso propio + cargas verticales)
+  vigaFlexionConcreteCantilever,    // Viga Hormigón 30×60 peso propio
+  vigaFlexionSteelCantilever,       // Viga Acero IPE 300 peso propio
   // Frames 1D (resto)
   trussGen,
   portico2D,
