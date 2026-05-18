@@ -36,7 +36,7 @@ import {
 export const benchmarkConcreteCantilever: ExampleDef = {
   id: "benchmark-concrete-cantilever",
   name: "🏁 Frame · Columna HORMIGÓN Cantilever",
-  category: "🎯 1 DOF · Cantilever Axial",
+  category: "🏁 Benchmarks · 🎯 1 DOF Cantilever Axial",
   benchmark: true,
   defaultShellResult: "none",
   guide: [

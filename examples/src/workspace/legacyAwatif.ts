@@ -42,7 +42,7 @@ export const legacy3dStructure  = legacy("3d-structure",  "Hekatan – 3D Struct
 export const legacyAxialBar     = legacy("axial-bar",     "Hekatan – Axial Bar",        "Legacy · Frames");
 export const legacyTruss        = legacy("truss",         "Hekatan – Truss",            "Legacy · Frames");
 export const legacyAdvancedTruss= legacy("advanced-truss","Hekatan – Advanced Truss",   "Legacy · Frames");
-export const legacyBeams        = legacy("beams",         "Paz 6.3 Space Frame (validación 4 solvers)", "🏁 Benchmarks · 1️⃣ Frames", true);
+export const legacyBeams        = legacy("beams",         "Paz 6.3 Space Frame (validación 4 solvers)", "🏁 Benchmarks · 🎯 n DOF Sistemas Múltiples", true);
 
 // ─── Edificios ──────────────────────────────────────────────────────
 export const legacyBuilding     = legacy("building",      "Hekatan – Building (upstream)", "Legacy · Edificios");

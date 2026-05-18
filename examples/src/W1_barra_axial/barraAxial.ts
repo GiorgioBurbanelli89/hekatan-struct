@@ -12,7 +12,7 @@ const rho_s = 78;
 export const barraAxial: ExampleDef = {
   id: "W1_barra_axial",
   name: "W1 — Barra axial (1 DOF)",
-  category: "🎯 1 DOF · Cantilever Axial",
+  category: "🏁 Benchmarks · 🎯 1 DOF Cantilever Axial",
   benchmark: true,
   defaultShellResult: "none",
   availableShellResults: [],

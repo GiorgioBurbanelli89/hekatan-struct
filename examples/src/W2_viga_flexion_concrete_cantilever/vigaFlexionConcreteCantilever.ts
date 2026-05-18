@@ -27,7 +27,7 @@ const rho_C = gamma_C * 1000 / 9.80665; // kg/m³ ≈ 2401
 export const vigaFlexionConcreteCantilever: ExampleDef = {
   id: "W2_viga_flexion_concrete_cantilever",
   name: "Viga flexión Hormigón 30×60 cantilever (2 DOF)",
-  category: "🎯 2 DOF · Cantilever Flexión",
+  category: "🏁 Benchmarks · 🎯 2 DOF Cantilever Flexión",
   benchmark: true,
   defaultShellResult: "none",
   availableShellResults: [],
