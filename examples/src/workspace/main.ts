@@ -573,6 +573,26 @@ function rebuild() {
   if (!currentExample) return;
   resetStates();
   currentExample.build(toSIParams(), states, modalPanel);
+
+  // ── Active Case dispatcher ──
+  // Tras el build() estático, si el case activo es Modal-* y el ejemplo
+  // implementa runModal, lo invocamos automáticamente para que el viewer
+  // muestre los modos del case activo (no requiere botón "Run Modal"
+  // manual — el cambio en el dropdown "▶ Run case" lo dispara solo).
+  // Para cases Linear Static / Pushover etc se mantiene el build static.
+  try {
+    const activeName = activeLoadCase.val;
+    const active = loadCases.val.find(c => c.name === activeName);
+    if (active?.type.startsWith("Modal") && currentExample.runModal) {
+      currentExample.runModal(toSIParams(), states, modalPanel);
+      modalPanel.div.style.display = "";
+    } else {
+      modalPanel.div.style.display = "none";
+    }
+  } catch (e: any) {
+    console.warn(`[active case dispatcher] ${e?.message ?? e}`);
+  }
+
   // NO auto-escalar en rebuild — así cuando el usuario sube la carga,
   // la deformada crece visualmente (scale fijo × w creciente).
   // El auto-scale solo se llama en loadExample (primer build) para dar
