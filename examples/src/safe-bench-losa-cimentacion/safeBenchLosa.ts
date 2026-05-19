@@ -18,8 +18,8 @@ export const safeBenchLosa: ExampleDef = {
   name: "SAFE Benchmark · Losa Cimentación 6×8×0.50m, 6 cols (Δ +0.33%)",
   category: "Cimentaciones",
   benchmark: true,
-  defaultShellResult: "displacementZ",
-  availableShellResults: ["displacementZ", "bendingXX", "bendingYY", "vonMises"],
+  defaultShellResult: "bendingXX",
+  availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],
   hasModal: false,
   guide: [
     "Caso 2 del framework Hekatan vs SAFE 20 (paridad <0.33% en w_max)",
@@ -123,22 +123,19 @@ export const safeBenchLosa: ExampleDef = {
     }
     states.deformOutputs.val = { deformations, reactions: new Map() };
 
-    // Pressure map por elemento (q = ks·|w|) para el colormap
-    const pressure = new Map<number, number[]>();
-    const displacementZ = new Map<number, number[]>();
-    for (let e = 0; e < elements.length; ++e) {
-      const wPerNode: number[] = [];
-      const qPerNode: number[] = [];
-      for (const n of elements[e]) {
-        const r = result.nodeResults[n];
-        wPerNode.push(r.w * 1000);    // mm
-        qPerNode.push(ks * r.w);      // kN/m²
-      }
-      displacementZ.set(e, wPerNode);
-      pressure.set(e, qPerNode);
-    }
-    states.analyzeOutputs.val = {
-      displacementZ, pressure,
-    } as any;
+    // Bending + vonMises per-elemento (formato Map<elemIdx, [v_n0, v_n1, v_n2, v_n3]>)
+    const bendingXX = new Map<number, number[]>();
+    const bendingYY = new Map<number, number[]>();
+    const bendingXY = new Map<number, number[]>();
+    const vonMises = new Map<number, number[]>();
+    result.elementResults.forEach((er, i) => {
+      bendingXX.set(i, [er.Mxx, er.Mxx, er.Mxx, er.Mxx]);
+      bendingYY.set(i, [er.Myy, er.Myy, er.Myy, er.Myy]);
+      bendingXY.set(i, [er.Mxy, er.Mxy, er.Mxy, er.Mxy]);
+      const vm = Math.sqrt(er.Mxx**2 + er.Myy**2 - er.Mxx*er.Myy + 3*er.Mxy**2);
+      vonMises.set(i, [vm, vm, vm, vm]);
+    });
+    states.analyzeOutputs.val = { bendingXX, bendingYY, bendingXY, vonMises };
+    states.objects3D.val = [];
   },
 };

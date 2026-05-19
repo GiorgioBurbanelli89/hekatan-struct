@@ -12,8 +12,8 @@ export const safeBenchConectada: ExampleDef = {
   name: "SAFE Benchmark · Zapata Conectada 5×1m t variable (Δ -0.25%)",
   category: "Cimentaciones",
   benchmark: true,
-  defaultShellResult: "displacementZ",
-  availableShellResults: ["displacementZ", "bendingXX", "bendingYY", "vonMises"],
+  defaultShellResult: "bendingXX",
+  availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],
   hasModal: false,
   guide: [
     "Caso 4 del framework Hekatan vs SAFE — paridad -0.25%",
@@ -99,16 +99,18 @@ export const safeBenchConectada: ExampleDef = {
     const deformations = new Map<number, [number, number, number, number, number, number]>();
     for (const r of result.nodeResults) deformations.set(r.node, [0, 0, r.w, r.bx, r.by, 0]);
     states.deformOutputs.val = { deformations, reactions: new Map() };
-    const pressure = new Map<number, number[]>();
-    const displacementZ = new Map<number, number[]>();
-    for (let e = 0; e < elements.length; ++e) {
-      const w: number[] = [], q: number[] = [];
-      for (const n of elements[e]) {
-        const r = result.nodeResults[n];
-        w.push(r.w * 1000); q.push(ks * r.w);
-      }
-      displacementZ.set(e, w); pressure.set(e, q);
-    }
-    states.analyzeOutputs.val = { displacementZ, pressure } as any;
+    const bendingXX = new Map<number, number[]>();
+    const bendingYY = new Map<number, number[]>();
+    const bendingXY = new Map<number, number[]>();
+    const vonMises = new Map<number, number[]>();
+    result.elementResults.forEach((er, i) => {
+      bendingXX.set(i, [er.Mxx, er.Mxx, er.Mxx, er.Mxx]);
+      bendingYY.set(i, [er.Myy, er.Myy, er.Myy, er.Myy]);
+      bendingXY.set(i, [er.Mxy, er.Mxy, er.Mxy, er.Mxy]);
+      const vm = Math.sqrt(er.Mxx**2 + er.Myy**2 - er.Mxx*er.Myy + 3*er.Mxy**2);
+      vonMises.set(i, [vm, vm, vm, vm]);
+    });
+    states.analyzeOutputs.val = { bendingXX, bendingYY, bendingXY, vonMises };
+    states.objects3D.val = [];
   },
 };

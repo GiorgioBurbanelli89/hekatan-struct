@@ -164,8 +164,8 @@ export const safeBenchComparativa: ExampleDef = {
   name: "🎓 Zapata ISSE Comparativa: Empotrada vs Winkler vs Vesic (5 autores)",
   category: "Cimentaciones",
   benchmark: true,
-  defaultShellResult: "displacementZ",
-  availableShellResults: ["displacementZ", "bendingXX", "bendingYY", "vonMises"],
+  defaultShellResult: "bendingXX",
+  availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],
   hasModal: false,
   guide: [
     "Ejemplo didáctico para mostrar la EVOLUCIÓN HISTÓRICA de modelos ISSE",
@@ -292,18 +292,18 @@ export const safeBenchComparativa: ExampleDef = {
     }
     states.deformOutputs.val = { deformations, reactions: new Map() };
 
-    const pressure = new Map<number, number[]>();
-    const displacementZ = new Map<number, number[]>();
-    for (let e = 0; e < elements.length; ++e) {
-      const w: number[] = [], q: number[] = [];
-      for (const n of elements[e]) {
-        const nr = r.output.nodeResults[n];
-        w.push(nr.w * 1000);
-        q.push(ks_used * nr.w);
-      }
-      displacementZ.set(e, w);
-      pressure.set(e, q);
-    }
-    states.analyzeOutputs.val = { displacementZ, pressure } as any;
+    const bendingXX = new Map<number, number[]>();
+    const bendingYY = new Map<number, number[]>();
+    const bendingXY = new Map<number, number[]>();
+    const vonMises = new Map<number, number[]>();
+    r.output.elementResults.forEach((er, i) => {
+      bendingXX.set(i, [er.Mxx, er.Mxx, er.Mxx, er.Mxx]);
+      bendingYY.set(i, [er.Myy, er.Myy, er.Myy, er.Myy]);
+      bendingXY.set(i, [er.Mxy, er.Mxy, er.Mxy, er.Mxy]);
+      const vm = Math.sqrt(er.Mxx**2 + er.Myy**2 - er.Mxx*er.Myy + 3*er.Mxy**2);
+      vonMises.set(i, [vm, vm, vm, vm]);
+    });
+    states.analyzeOutputs.val = { bendingXX, bendingYY, bendingXY, vonMises };
+    states.objects3D.val = [];
   },
 };
