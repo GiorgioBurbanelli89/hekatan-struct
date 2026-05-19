@@ -64,12 +64,15 @@ n_frames = SM.FrameObj.Count()
 n_areas = SM.AreaObj.Count()
 print(f"    Points: {n_points}    Frames: {n_frames}    Areas: {n_areas}")
 
-# Lista de stories
-ret_st = SM.Story.GetStories()
-n_stories = ret_st[0]
-print(f"    Stories: {n_stories}")
-for i in range(n_stories):
-    print(f"      - {ret_st[1][i]}  elev={ret_st[2][i]:.3f} m")
+# Lista de stories — Story.GetStories() crashea en ETABS 19.1, lo omitimos
+try:
+    ret_st = SM.Story.GetStories()
+    n_stories = ret_st[0]
+    print(f"    Stories: {n_stories}")
+    for i in range(n_stories):
+        print(f"      - {ret_st[1][i]}  elev={ret_st[2][i]:.3f} m")
+except Exception as e:
+    print(f"    Stories: [API crash en ETABS 19.1, skip] {type(e).__name__}")
 
 # ─── Análisis ────────────────────────────────────────────────────────────
 print("\n  Desbloqueando + activando todos los casos…")
