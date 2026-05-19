@@ -239,6 +239,7 @@ import { safeBenchConectada } from "../safe-bench-zapata-conectada/safeBenchCone
 import { safeBenchComparativa } from "../safe-bench-zapata-comparativa/safeBenchComparativa";
 // ── Benchmarks libro Marcelo Guerra Avendaño MDI ──
 import { vigaCimGuerraEj7 } from "../viga-cim-guerra-ej7/vigaCimGuerra";
+import { vigaCimGuerraEj7Tinv } from "../viga-cim-guerra-ej7-tinv/vigaCimGuerraTinv";
 import { edificioConLosa } from "../edificio-con-losa/edificioConLosa";
 import { edificioConMuros } from "../edificio-con-muros/edificioConMuros";
 import { plane } from "../plane/plane";
@@ -326,6 +327,7 @@ export const examplesRegistry: ExampleDef[] = [
   safeBenchComparativa,
   // Libro Guerra MDI
   vigaCimGuerraEj7,
+  vigaCimGuerraEj7Tinv,
   // 🎯 Benchmarks por DOFs — agrupados por número de grados de libertad efectivos
   // 1 DOF — Vigas axial puro (carga puntual sin peso propio)
   barraAxial,                       // Barra axial horizontal genérica
