@@ -26,12 +26,21 @@ Jump directly to any example with `?t=<id>` (102 examples total). The most relev
 - [`?t=zapata-aislada`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=zapata-aislada) — Isolated footing + Winkler springs (11 soil types, NEC-SE-GC)
 - [`?t=zapata-aislada-validacion`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=zapata-aislada-validacion) — Isolated footing validation vs SAFE
 - [`?t=zapata-viga-amarre`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=zapata-viga-amarre) — Strap-beam footing
+- [`?t=safe-bench-viga-cimentacion`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=safe-bench-viga-cimentacion) — Strip footing: shell + frame beam + pedestals (composite model)
+- [`?t=viga-cim-guerra-ej7`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=viga-cim-guerra-ej7) — **Ejercicio 7 Libro Guerra MDI** (L=17.20m, 4 cols c/M, shell+frame model)
+- [`?t=viga-cim-guerra-ej7-tinv`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=viga-cim-guerra-ej7-tinv) — **Ej.7 Guerra, variante T invertida** (Hetényi · frame T-section + pedestales, sin shell)
+- [`?t=safe-bench-losa-cimentacion`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=safe-bench-losa-cimentacion) — Mat foundation 6×8m (cross-validated vs SAFE)
+- [`?t=safe-bench-zapata-combinada`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=safe-bench-zapata-combinada) — Combined footing 4×2m
+- [`?t=safe-bench-zapata-conectada`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=safe-bench-zapata-conectada) — Connected footings 5×1m, variable t
 - [`?t=placa-base`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base) — Steel column base plate
 - [`?t=placa-base-cft`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base-cft) — CFT column base plate
 - [`?t=placa-base-h`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base-h) / [`?t=placa-base-hueca`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base-hueca) — H + hollow profile bases
 - [`?t=viga-medio-elastico`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=viga-medio-elastico) — Beam on elastic foundation (Winkler)
 - [`?t=bulbo-presiones-suelo`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=bulbo-presiones-suelo) — Soil pressure bulb diagram
 - [`?t=slope-stability`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=slope-stability) — Slope stability analysis
+
+**Convención de modelado para cimentaciones compuestas (z=0 cara inferior):**
+Para `safe-bench-viga-cimentacion`, `viga-cim-guerra-ej7` y `viga-cim-guerra-ej7-tinv` (modelos shell+frame y T-section), todos los frames y el shell de la zapata comparten el plano `z=0` (cara INFERIOR de la cimentación, donde se anclan los aceros longitudinal de viga y vertical de columna). Cada elemento se extruye HACIA ARRIBA con sus dimensiones reales: zapata → z=t_zap, viga → z=h_viga, pedestal → z=h_viga+h_ped. La unión es automática por compartir nodos en z=0 (sin rigid links). Las cargas P,M se aplican en el TOP del pedestal. Ver `insertion-points-preview.html` para diagramas explicativos de la sección transversal y vista lateral.
 
 **Building variants** (AISC 360-22 / ACI 318-22 / ASCE 7-22)
 - [`?t=edificio-hormigon`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=edificio-hormigon) — Concrete moment frame (IMF/SMF)
@@ -407,7 +416,7 @@ End-to-end framework that runs Hekatan `plateQ4Solve` and SAFE 20 (vía `SAFEv1.
 | 2 | [Losa cimentación 6×8×0.50m, 6 cols 2×3](./benchmarks/safe/losa-cimentacion/) | 12×16 (192 Q4) | 6 | −1.5824 mm | −1.5870 mm | **+0.29%** |
 | 3 | [Zapata combinada 4×2×0.40m, 2 cols alineadas](./benchmarks/safe/zapata-combinada/) | 16×8 (128 Q4) | 2 | −3.8458 mm | −3.8490 mm | **+0.08%** |
 | 4 | [Zapata conectada 5×1m, t variable (0.40/0.20)](./benchmarks/safe/zapata-conectada/) | 20×4 (80 Q4) | 2 | −8.9003 mm | −8.898 mm | **−0.07%** |
-| 5 | [Viga de cimentación 8×1×0.50m, 4 cols alineadas](./benchmarks/safe/viga-cimentacion/) | 32×4 (128 Q4) | 4 | −5.1093 mm | −5.1100 mm | **+0.01%** |
+| 5 | [Viga de cimentación 8×1×0.50m, 4 cols alineadas](./benchmarks/safe/viga-cimentacion/) | 32×4 (128 Q4) | 4 | −5.1093 mm | −5.1100 mm | **+0.01%¹** |
 | 6 | [Edificio real 9 zap + 12 vigas amarre](./benchmarks/safe/edificio-cimentacion-real/) | 144 Q4 + 12 frames | 9 | −17.82 mm (col 3) | −27.12 mm | **pendiente¹** |
 
 **Casos 1-5 (plate-only): promedio Δ máx 0.14%, todos <0.33%.** Caso 6
@@ -415,6 +424,19 @@ End-to-end framework that runs Hekatan `plateQ4Solve` and SAFE 20 (vía `SAFEv1.
 DOF → frames horizontales no transfieren carga). Ver el
 [README del caso 6](./benchmarks/safe/edificio-cimentacion-real/README.md)
 con análisis de causa raíz y workaround propuesto. Documentación API SAFE (con 8 gotchas críticos, incluyendo el bug silencioso de `SubModulus` que produce gap del 38% si se usa `SetAreaSpringProp(U3=ks)` ingenuamente): [`benchmarks/safe/README.md`](./benchmarks/safe/README.md).
+
+¹ **Nota caso 5**: el modelo workspace `?t=safe-bench-viga-cimentacion` evolucionó al modelo compuesto realista (zapata corrida shell + viga frame + 4 pedestales frames), distinto al benchmark original de losa 8×1×0.50m pura. El benchmark `Δ +0.01%` se preserva en `/benchmarks/safe/viga-cimentacion/` (CLI standalone) y dejó de aplicar al workspace que muestra el modelo de viga de cimentación realista.
+
+### Benchmarks libro Marcelo Guerra Avendaño MDI
+
+Ejemplos de ejercicios resueltos del libro del Ing. Marcelo Guerra Avendaño (MDI), referencia ecuatoriana de cimentaciones.
+
+| Ejercicio | ID workspace | Modelo |
+|---|---|---|
+| **Ej.7 — Viga cimentación L=17.20m, 4 cols c/M** | [`viga-cim-guerra-ej7`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=viga-cim-guerra-ej7) | Shell zapata + frame viga + 4 frames pedestal |
+| **Ej.7 variante T-invertida** | [`viga-cim-guerra-ej7-tinv`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=viga-cim-guerra-ej7-tinv) | Frame T-section (ala B×t_zap + alma b_viga×h_viga) + frames pedestal · Hetényi sobre Winkler 1D |
+
+Ambos ejemplos cargan los datos exactos del libro (P_CM, P_CV, M_CM, M_CV por columna; f'c=240 kg/cm², q_adm=18 t/m²) y aplican la convención `z=0 cara inferior` con extrusión hacia arriba. Folder "📊 Calculados" muestra `ΣP`, `ΣM`, `A`, `q_med`, `ratio q_med/q_adm`, y (para la T-invertida) propiedades de la sección: `A_T`, `ȳ`, `Iy_T`, `Iz_T`.
 
 ## Stack
 
