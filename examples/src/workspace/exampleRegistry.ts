@@ -231,6 +231,11 @@ import { vigaMedioElastico } from "../viga-medio-elastico/vigaMedioElastico";
 import { zapataVigaAmarre } from "../zapata-viga-amarre/zapataVigaAmarre";
 import { zapataAislada } from "../zapata-aislada/zapataAislada";
 import { zapataAisladaValidacion } from "../zapata-aislada-validacion/zapataAisladaValidacion";
+// ── SAFE Benchmarks (validación cruzada Hekatan vs SAFE 20 API, paridad <0.33%) ──
+import { safeBenchLosa } from "../safe-bench-losa-cimentacion/safeBenchLosa";
+import { safeBenchViga } from "../safe-bench-viga-cimentacion/safeBenchViga";
+import { safeBenchCombinada } from "../safe-bench-zapata-combinada/safeBenchCombinada";
+import { safeBenchConectada } from "../safe-bench-zapata-conectada/safeBenchConectada";
 import { edificioConLosa } from "../edificio-con-losa/edificioConLosa";
 import { edificioConMuros } from "../edificio-con-muros/edificioConMuros";
 import { plane } from "../plane/plane";
@@ -309,6 +314,11 @@ export const examplesRegistry: ExampleDef[] = [
   zapataAislada,
   zapataVigaAmarre,
   vigaMedioElastico,
+  // SAFE Benchmarks (cross-validation Hekatan vs SAFE 20)
+  safeBenchLosa,
+  safeBenchViga,
+  safeBenchCombinada,
+  safeBenchConectada,
   // 🎯 Benchmarks por DOFs — agrupados por número de grados de libertad efectivos
   // 1 DOF — Vigas axial puro (carga puntual sin peso propio)
   barraAxial,                       // Barra axial horizontal genérica
