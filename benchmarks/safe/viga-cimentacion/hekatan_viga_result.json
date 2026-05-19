@@ -1,0 +1,166 @@
+{
+  "solver": "Hekatan plateQ4Solve (Mindlin Q4 + Winkler springs)",
+  "case": "Losa de Cimentación 6×8×0.50m, 6 columnas grilla 2×3",
+  "params": {
+    "Lz": 8,
+    "Bz": 1,
+    "tz": 0.5,
+    "E": 24855000,
+    "nu": 0.2,
+    "ks": 19613,
+    "P": 196.13299999999998,
+    "nx": 32,
+    "ny": 4
+  },
+  "columns": [
+    {
+      "x": 1,
+      "y": 0.5,
+      "P_kN": 196.13299999999998
+    },
+    {
+      "x": 3,
+      "y": 0.5,
+      "P_kN": 196.13299999999998
+    },
+    {
+      "x": 5,
+      "y": 0.5,
+      "P_kN": 196.13299999999998
+    },
+    {
+      "x": 7,
+      "y": 0.5,
+      "P_kN": 196.13299999999998
+    }
+  ],
+  "mesh": {
+    "nxn": 33,
+    "nyn": 5,
+    "totalNodes": 165,
+    "totalElements": 128
+  },
+  "theory": {
+    "P_total_kN": 784.5319999999999,
+    "A_total_m2": 8,
+    "w_avg_winkler_teo_mm": 5.0001
+  },
+  "results": {
+    "w_max_m": -0.005109267821849865,
+    "w_max_node": 78,
+    "Mxx_max_kNm_per_m": 41.06790231566857,
+    "Myy_max_kNm_per_m": 19.370574709084085,
+    "Mxy_max_kNm_per_m": -3.401711390107519,
+    "Qx_max_kN_per_m": 156.44486788855136,
+    "Qy_max_kN_per_m": -139.06228729428665,
+    "q_max_kN_m2": 100.2080697899414,
+    "q_max_tonf_m2": 10.218379343602699,
+    "runtime_ms": 7.1,
+    "samples_13pts": [
+      {
+        "label": "esquina (0,0)",
+        "node_idx": 0,
+        "x": 0,
+        "y": 0,
+        "w_mm": -4.7754,
+        "q_kNm2": 93.66
+      },
+      {
+        "label": "esquina (Lz,0)",
+        "node_idx": 32,
+        "x": 8,
+        "y": 0,
+        "w_mm": -4.7754,
+        "q_kNm2": 93.66
+      },
+      {
+        "label": "esquina (0,Bz)",
+        "node_idx": 132,
+        "x": 0,
+        "y": 1,
+        "w_mm": -4.7754,
+        "q_kNm2": 93.66
+      },
+      {
+        "label": "esquina (Lz,Bz)",
+        "node_idx": 164,
+        "x": 8,
+        "y": 1,
+        "w_mm": -4.7754,
+        "q_kNm2": 93.66
+      },
+      {
+        "label": "col_1 (1, Bz/2)",
+        "node_idx": 70,
+        "x": 1,
+        "y": 0.5,
+        "w_mm": -4.9644,
+        "q_kNm2": 97.37
+      },
+      {
+        "label": "col_2 (3, Bz/2)",
+        "node_idx": 78,
+        "x": 3,
+        "y": 0.5,
+        "w_mm": -5.1093,
+        "q_kNm2": 100.21
+      },
+      {
+        "label": "col_3 (5, Bz/2)",
+        "node_idx": 86,
+        "x": 5,
+        "y": 0.5,
+        "w_mm": -5.1093,
+        "q_kNm2": 100.21
+      },
+      {
+        "label": "col_4 (7, Bz/2)",
+        "node_idx": 94,
+        "x": 7,
+        "y": 0.5,
+        "w_mm": -4.9644,
+        "q_kNm2": 97.37
+      },
+      {
+        "label": "entre col 1-2 (2, Bz/2)",
+        "node_idx": 74,
+        "x": 2,
+        "y": 0.5,
+        "w_mm": -5.0195,
+        "q_kNm2": 98.45
+      },
+      {
+        "label": "entre col 2-3 (4, Bz/2)",
+        "node_idx": 82,
+        "x": 4,
+        "y": 0.5,
+        "w_mm": -5.0856,
+        "q_kNm2": 99.74
+      },
+      {
+        "label": "entre col 3-4 (6, Bz/2)",
+        "node_idx": 90,
+        "x": 6,
+        "y": 0.5,
+        "w_mm": -5.0195,
+        "q_kNm2": 98.45
+      },
+      {
+        "label": "voladizo izq (0, Bz/2)",
+        "node_idx": 66,
+        "x": 0,
+        "y": 0.5,
+        "w_mm": -4.7755,
+        "q_kNm2": 93.66
+      },
+      {
+        "label": "voladizo der (Lz, Bz/2)",
+        "node_idx": 98,
+        "x": 8,
+        "y": 0.5,
+        "w_mm": -4.7755,
+        "q_kNm2": 93.66
+      }
+    ]
+  }
+}

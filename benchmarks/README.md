@@ -13,6 +13,7 @@ solvers, los corre, extrae resultados nodales en puntos clave, y compara.
 | 2 | [losa-cimentacion](safe/losa-cimentacion/) — 6×8×0.50m, 6 cols 2×3 | 12×16 (192 Q4) | 6 | −1.5824 mm | −1.5870 mm | **+0.33%** | 12 ms / 46 s |
 | 3 | [zapata-combinada](safe/zapata-combinada/) — 4×2×0.40m, 2 cols alineadas | 16×8 (128 Q4) | 2 | −3.8458 mm | −3.8490 mm | **+0.08%** | 8 ms / 12 s |
 | 4 | [zapata-conectada](safe/zapata-conectada/) — 5×1m, t variable (0.40/0.20) | 20×4 (80 Q4) | 2 | −8.9003 mm⁺ | −8.8980 mm⁺ | **−0.25%** | 6 ms / 30 s |
+| 5 | [viga-cimentacion](safe/viga-cimentacion/) — 8×1×0.50m, 4 cols alineadas | 32×4 (128 Q4) | 4 | −5.1093 mm | −5.1100 mm | **+0.01%** | 7 ms / 22 s |
 
 ⁺ El w_max en zapata-conectada es en las esquinas (NO bajo columnas) por
 rotación de zapatas con viga delgada. Ver
@@ -20,10 +21,11 @@ rotación de zapatas con viga delgada. Ver
 físico — paridad del solver es excelente, pero el diseño con t_viga=0.20m
 es sub-óptimo y se manifiesta en w >> teórico Winkler.
 
-**Promedio Δ max: 0.17%.** Validación de solver completa para placa
-sobre Winkler (Mindlin-Reissner thick) con cargas puntuales, geometrías
-variadas (cuadrada, rectangular alargada, con espesor variable) y
-distribución de columnas variada (1, 2, 6, en línea o grilla).
+**Promedio Δ max: 0.14%, todos los casos <0.33%.** Validación de solver
+completa para placa sobre Winkler (Mindlin-Reissner thick) con cargas
+puntuales, geometrías variadas (cuadrada, rectangular alargada, con
+espesor variable) y distribución de columnas variada (1, 2, 4, 6, en
+línea o grilla).
 
 ### Tabla detallada por punto — todos los casos
 
@@ -59,6 +61,16 @@ distribución de columnas variada (1, 2, 6, en línea o grilla).
 | bordes zap-viga | −4.5478 mm | −4.5510 mm | +0.07% |
 | centro viga | −0.9444 mm | −0.9420 mm | −0.25% |
 | 1/4 y 3/4 viga | −1.9040 mm | −1.9020 mm | −0.10% |
+
+#### Caso 5: Viga de cimentación (8×1×0.50m, 4 cols alineadas, P=20tonf c/u)
+| Punto | Hekatan | SAFE | Δ |
+|---|---|---|---|
+| 4 esquinas | −4.7754 mm | −4.7750 mm | −0.01% |
+| col extremas (1, 4) | −4.9644 mm | −4.9650 mm | +0.01% |
+| col interiores (2, 3) | −5.1093 mm | −5.1100 mm | +0.01% |
+| entre cols vecinas | −5.0195 mm | −5.0190 mm | −0.01% |
+| centro de viga (entre 2-3) | −5.0856 mm | −5.0850 mm | −0.01% |
+| voladizos | −4.7755 mm | −4.7750 mm | −0.01% |
 
 ## Cómo usar el código para obtener valores de SAFE
 

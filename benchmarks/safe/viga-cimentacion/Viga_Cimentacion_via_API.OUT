@@ -1,0 +1,45 @@
+
+
+ SAFE Post Tensioning 64-bit 20.3.0 Build 2005 (Analysis Build 9904/64)         
+ File: C:\Users\j-b-j\Document...e\viga-cimentacion\Viga_Cimentacion_via_API.OUT
+                                                                     
+                                                                       
+
+ D I S P L A C E M E N T   D E G R E E S   O F   F R E E D O M
+
+         (A) = Active DOF, equilibrium equation
+         (-) = Restrained DOF, reaction computed
+         (+) = Constrained DOF
+         (>) = External substructure DOF
+         ( ) = Null DOF
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+       1 TO     165    A   A   A   A   A   A
+  2~Link TO 70~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ Col_1~L               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 72~Link TO 78~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ Col_2~L               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 80~Link TO 86~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ Col_3~L               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 88~Link TO 94~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ Col_4~L               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 96~Link TO 99~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 00~Link TO 65~Link    -   -   -   -   -   -

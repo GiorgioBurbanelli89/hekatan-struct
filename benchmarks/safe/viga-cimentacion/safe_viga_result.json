@@ -1,0 +1,156 @@
+{
+  "solver": "SAFE 20 via API (construido desde cero, mesh 16\u00d78 + SubModulus override)",
+  "case": "Viga de Cimentaci\u00f3n 8\u00d71\u00d70.50m, 4 columnas alineadas",
+  "saved_at": "C:\\Users\\j-b-j\\Documents\\Hekatan Calc 1.0.0\\hekatan-struct\\benchmarks\\safe\\viga-cimentacion\\Viga_Cimentacion_via_API.fdb",
+  "params": {
+    "Lz": 8.0,
+    "Bz": 1.0,
+    "tz": 0.5,
+    "E_kNm2": 24855000.0,
+    "nu": 0.2,
+    "rho_kNm3": 24.0,
+    "ks_kNm3": 19613.0,
+    "P_kN": 196.13299999999998,
+    "nx": 32,
+    "ny": 4
+  },
+  "columns": [
+    {
+      "x": 1.0,
+      "y": 0.5,
+      "P_kN": 196.13299999999998
+    },
+    {
+      "x": 3.0,
+      "y": 0.5,
+      "P_kN": 196.13299999999998
+    },
+    {
+      "x": 5.0,
+      "y": 0.5,
+      "P_kN": 196.13299999999998
+    },
+    {
+      "x": 7.0,
+      "y": 0.5,
+      "P_kN": 196.13299999999998
+    }
+  ],
+  "theory": {
+    "P_total_kN": 784.5319999999999,
+    "A_total_m2": 8.0,
+    "w_avg_winkler_teo_mm": 5.0001
+  },
+  "results": {
+    "w_max_m": -0.00511,
+    "w_max_joint": "PCol_2",
+    "q_max_calc_ks_w_kNm2": 100.22243,
+    "runtime_s": 21.81,
+    "samples_13pts": [
+      {
+        "label": "esquina (0,0)",
+        "joint": "1",
+        "x": 0.0,
+        "y": 0.0,
+        "w_mm": -4.775,
+        "q_kNm2": 93.65
+      },
+      {
+        "label": "esquina (Lz,0)",
+        "joint": "65",
+        "x": 8.0,
+        "y": 0.0,
+        "w_mm": -4.775,
+        "q_kNm2": 93.65
+      },
+      {
+        "label": "esquina (0,Bz)",
+        "joint": "134",
+        "x": 0.0,
+        "y": 1.0,
+        "w_mm": -4.775,
+        "q_kNm2": 93.65
+      },
+      {
+        "label": "esquina (Lz,Bz)",
+        "joint": "165",
+        "x": 8.0,
+        "y": 1.0,
+        "w_mm": -4.775,
+        "q_kNm2": 93.65
+      },
+      {
+        "label": "col_1 (1, Bz/2)",
+        "joint": "PCol_1",
+        "x": 1.0,
+        "y": 0.5,
+        "w_mm": -4.965,
+        "q_kNm2": 97.38
+      },
+      {
+        "label": "col_2 (3, Bz/2)",
+        "joint": "PCol_2",
+        "x": 3.0,
+        "y": 0.5,
+        "w_mm": -5.11,
+        "q_kNm2": 100.22
+      },
+      {
+        "label": "col_3 (5, Bz/2)",
+        "joint": "PCol_3",
+        "x": 5.0,
+        "y": 0.5,
+        "w_mm": -5.11,
+        "q_kNm2": 100.22
+      },
+      {
+        "label": "col_4 (7, Bz/2)",
+        "joint": "PCol_4",
+        "x": 7.000000000000001,
+        "y": 0.5,
+        "w_mm": -4.965,
+        "q_kNm2": 97.38
+      },
+      {
+        "label": "entre col 1-2 (2, Bz/2)",
+        "joint": "75",
+        "x": 2.0,
+        "y": 0.5,
+        "w_mm": -5.019,
+        "q_kNm2": 98.44
+      },
+      {
+        "label": "entre col 2-3 (4, Bz/2)",
+        "joint": "83",
+        "x": 4.0,
+        "y": 0.5,
+        "w_mm": -5.085,
+        "q_kNm2": 99.73
+      },
+      {
+        "label": "entre col 3-4 (6, Bz/2)",
+        "joint": "91",
+        "x": 6.0,
+        "y": 0.5,
+        "w_mm": -5.019,
+        "q_kNm2": 98.44
+      },
+      {
+        "label": "voladizo izq (0, Bz/2)",
+        "joint": "68",
+        "x": 0.0,
+        "y": 0.5,
+        "w_mm": -4.775,
+        "q_kNm2": 93.65
+      },
+      {
+        "label": "voladizo der (Lz, Bz/2)",
+        "joint": "99",
+        "x": 8.0,
+        "y": 0.5,
+        "w_mm": -4.775,
+        "q_kNm2": 93.65
+      }
+    ]
+  }
+}
