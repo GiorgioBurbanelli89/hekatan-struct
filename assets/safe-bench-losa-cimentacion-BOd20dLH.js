@@ -1,5 +1,5 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { s as o, __tla as __tla_0 } from "./safeBenchConectada-cLActlWT.js";
+import { s as o, __tla as __tla_0 } from "./safeBenchLosa-DtQkL0Yz.js";
 import { r, __tla as __tla_1 } from "./runExampleStandalone-CHdjzwDH.js";
 import { __tla as __tla_2 } from "./didacticCpp-BaiPjJ4y.js";
 import { __tla as __tla_3 } from "./deform-DcHCKCpm.js";
