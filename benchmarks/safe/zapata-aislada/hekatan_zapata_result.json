@@ -1,0 +1,108 @@
+{
+  "solver": "Hekatan plateQ4Solve (Mindlin Q4 + Winkler springs)",
+  "params": {
+    "Lz": 1.5,
+    "Bz": 1.5,
+    "tz": 0.3,
+    "E": 24855000,
+    "nu": 0.2,
+    "ks": 19613,
+    "P": 196.13299999999998,
+    "nx": 12,
+    "ny": 12
+  },
+  "mesh": {
+    "nxn": 13,
+    "nyn": 13,
+    "totalNodes": 169,
+    "totalElements": 144,
+    "centerNode": 84
+  },
+  "results": {
+    "w_max_m": -0.004535596522376898,
+    "w_max_node": 84,
+    "w_center_m": null,
+    "Mxx_max_kNm_per_m": 38.610012833398685,
+    "Myy_max_kNm_per_m": 38.61001283339753,
+    "Mxy_max_kNm_per_m": -5.405826161241445,
+    "Qx_max_kN_per_m": -301.65392013946655,
+    "Qy_max_kN_per_m": -301.65392013951146,
+    "q_max_kN_m2": 88.9566545933781,
+    "q_max_tonf_m2": 9.071054294114514,
+    "runtime_ms": 11.3,
+    "samples_9pts": [
+      {
+        "label": "esquina (0,0)",
+        "node_idx": 0,
+        "x": 0,
+        "y": 0,
+        "w_mm": -4.3849,
+        "q_kNm2": 86
+      },
+      {
+        "label": "esquina (Lz,0)",
+        "node_idx": 12,
+        "x": 1.5,
+        "y": 0,
+        "w_mm": -4.3849,
+        "q_kNm2": 86
+      },
+      {
+        "label": "esquina (0,Bz)",
+        "node_idx": 156,
+        "x": 0,
+        "y": 1.5,
+        "w_mm": -4.3849,
+        "q_kNm2": 86
+      },
+      {
+        "label": "esquina (Lz,Bz)",
+        "node_idx": 168,
+        "x": 1.5,
+        "y": 1.5,
+        "w_mm": -4.3849,
+        "q_kNm2": 86
+      },
+      {
+        "label": "medio-borde (Lz/2,0)",
+        "node_idx": 6,
+        "x": 0.75,
+        "y": 0,
+        "w_mm": -4.4263,
+        "q_kNm2": 86.81
+      },
+      {
+        "label": "medio-borde (Lz,Bz/2)",
+        "node_idx": 90,
+        "x": 1.5,
+        "y": 0.75,
+        "w_mm": -4.4263,
+        "q_kNm2": 86.81
+      },
+      {
+        "label": "medio-borde (Lz/2,Bz)",
+        "node_idx": 162,
+        "x": 0.75,
+        "y": 1.5,
+        "w_mm": -4.4263,
+        "q_kNm2": 86.81
+      },
+      {
+        "label": "medio-borde (0,Bz/2)",
+        "node_idx": 78,
+        "x": 0,
+        "y": 0.75,
+        "w_mm": -4.4263,
+        "q_kNm2": 86.81
+      },
+      {
+        "label": "centro (Lz/2,Bz/2)",
+        "node_idx": 84,
+        "x": 0.75,
+        "y": 0.75,
+        "w_mm": -4.5356,
+        "q_kNm2": 88.96
+      }
+    ]
+  }
+}
