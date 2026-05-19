@@ -99,10 +99,14 @@ export const safeBenchViga: ExampleDef = {
       return best;
     };
 
-    // ── Nodos top-pedestal (z=h_ped), uno por columna ──
+    // ── Nodos top-pedestal en posición física real (z = t_zap + h_viga + h_ped) ──
+    // El frame del pedestal FEM cubre toda la altura (zapata→viga→pedestal) como
+    // un único elemento — simplificación que hace coincidir las cargas verdes
+    // con el TOP REAL del pedestal en la visualización.
+    const zPedTop = t_zap + h_viga + h_ped;
     const colBaseIdx = colPositions.map(([cx, cy]) => findShellNode(cx, cy));
     const colTopIdx = colPositions.map(([cx, cy]) => {
-      nodes.push([cx, cy, h_ped]);
+      nodes.push([cx, cy, zPedTop]);
       return nodes.length - 1;
     });
 

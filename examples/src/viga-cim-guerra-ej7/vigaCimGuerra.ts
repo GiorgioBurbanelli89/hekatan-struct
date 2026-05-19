@@ -128,10 +128,15 @@ export const vigaCimGuerraEj7: ExampleDef = {
       return best;
     };
 
-    // Nodos top de pedestales (z = h_ped)
+    // Nodos top de pedestales en posición física real: z = t_zap + h_viga + h_ped
+    // (top zapata + canto viga + altura pedestal). El frame del pedestal FEM
+    // así abarca toda esa altura como un único elemento "vertical compuesto",
+    // simplificación válida para una viga de cimentación donde la rigidez del
+    // pedestal corto domina sobre la zapata flexible.
+    const zPedTop = t_zap + h_viga + h_ped;
     const colBaseIdx = colPositions.map(([cx, cy]) => findShellNode(cx, cy));
     const colTopIdx = colPositions.map(([cx, cy]) => {
-      nodes.push([cx, cy, h_ped]);
+      nodes.push([cx, cy, zPedTop]);
       return nodes.length - 1;
     });
 
