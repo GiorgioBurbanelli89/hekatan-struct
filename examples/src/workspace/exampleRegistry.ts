@@ -236,6 +236,7 @@ import { safeBenchLosa } from "../safe-bench-losa-cimentacion/safeBenchLosa";
 import { safeBenchViga } from "../safe-bench-viga-cimentacion/safeBenchViga";
 import { safeBenchCombinada } from "../safe-bench-zapata-combinada/safeBenchCombinada";
 import { safeBenchConectada } from "../safe-bench-zapata-conectada/safeBenchConectada";
+import { safeBenchComparativa } from "../safe-bench-zapata-comparativa/safeBenchComparativa";
 import { edificioConLosa } from "../edificio-con-losa/edificioConLosa";
 import { edificioConMuros } from "../edificio-con-muros/edificioConMuros";
 import { plane } from "../plane/plane";
@@ -319,6 +320,7 @@ export const examplesRegistry: ExampleDef[] = [
   safeBenchViga,
   safeBenchCombinada,
   safeBenchConectada,
+  safeBenchComparativa,
   // 🎯 Benchmarks por DOFs — agrupados por número de grados de libertad efectivos
   // 1 DOF — Vigas axial puro (carga puntual sin peso propio)
   barraAxial,                       // Barra axial horizontal genérica
