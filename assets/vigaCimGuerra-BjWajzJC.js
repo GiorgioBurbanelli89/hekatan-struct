@@ -1,7 +1,7 @@
 import { b as Q, E as U, c as $, L as ee } from "./Text-BmY6zyQy.js";
-import { a as de } from "./analyze-DNPn2SjO.js";
-import { d as fe, __tla as __tla_0 } from "./didacticCpp-BaiPjJ4y.js";
-let _e;
+import { a as fe } from "./analyze-DNPn2SjO.js";
+import { d as ue, __tla as __tla_0 } from "./didacticCpp-BaiPjJ4y.js";
+let be;
 let __tla = Promise.all([
   (() => {
     try {
@@ -11,25 +11,25 @@ let __tla = Promise.all([
   })()
 ]).then(async () => {
   const q = 9.80665;
-  function ue(t, s, u, m, a, i) {
-    const c = Math.abs(s - t), M = new Q(c, a, i), x = new U(M), g = new $(x, new ee({
+  function pe(t, s, u, c, a, i) {
+    const l = Math.abs(s - t), M = new Q(l, a, i), x = new U(M), g = new $(x, new ee({
       color: 8421504,
       linewidth: 2
     }));
-    return g.position.set((t + s) / 2, u, m + i / 2), [
+    return g.position.set((t + s) / 2, u, c + i / 2), [
       g
     ];
   }
-  function pe(t, s, u, m, a) {
-    const i = new Q(a, a, m), c = new U(i), M = new $(c, new ee({
+  function Me(t, s, u, c, a) {
+    const i = new Q(a, a, c), l = new U(i), M = new $(l, new ee({
       color: 8421504,
       linewidth: 2
     }));
-    return M.position.set(t, s, u + m / 2), [
+    return M.position.set(t, s, u + c / 2), [
       M
     ];
   }
-  _e = {
+  be = {
     id: "viga-cim-guerra-ej7",
     name: "Viga Cimentaci\xF3n \xB7 Ej.7 Guerra (L=17.20m, 4 cols c/M)",
     category: "Cimentaciones",
@@ -232,17 +232,17 @@ let __tla = Promise.all([
       }
     },
     computedLabels(t) {
-      const s = t.P1 + t.P2 + t.P3 + t.P4, u = t.M1 + t.M2 + t.M3 + t.M4, m = t.L * t.Bz, a = s / m;
+      const s = t.P1 + t.P2 + t.P3 + t.P4, u = t.M1 + t.M2 + t.M3 + t.M4, c = t.L * t.Bz, a = s / c;
       return {
         "\u03A3P (tonf)": s.toFixed(1),
         "\u03A3M (tonf\xB7m)": u.toFixed(2),
-        "\xC1rea zapata (m\xB2)": m.toFixed(2),
+        "\xC1rea zapata (m\xB2)": c.toFixed(2),
         "q_med = \u03A3P/A (tonf/m\xB2)": a.toFixed(2),
         "ratio q_med/q_adm": (a / t.q_adm).toFixed(3)
       };
     },
     build(t, s) {
-      const u = t.L, m = t.Bz, a = t.t_zap, i = t.b_viga, c = t.h_viga, M = t.h_ped, x = t.b_ped, g = t.ks_tonfm3 * q, v = Math.round(t.nx), w = Math.round(t.ny), r = v + 1, L = w + 1, D = u / v, E = m / w, b = m / 2, Y = Math.round(w / 2), j = [
+      const u = t.L, c = t.Bz, a = t.t_zap, i = t.b_viga, l = t.h_viga, M = t.h_ped, x = t.b_ped, g = t.ks_tonfm3 * q, v = Math.round(t.nx), w = Math.round(t.ny), r = v + 1, L = w + 1, D = u / v, E = c / w, b = c / 2, T = Math.round(w / 2), j = [
         [
           t.x1,
           b
@@ -276,17 +276,17 @@ let __tla = Promise.all([
         0
       ]);
       const ne = (e, o) => {
-        let n = -1, l = 1 / 0;
+        let n = -1, m = 1 / 0;
         for (let f = 0; f < r * L; ++f) {
           const _ = (p[f][0] - e) ** 2 + (p[f][1] - o) ** 2;
-          _ < l && (l = _, n = f);
+          _ < m && (m = _, n = f);
         }
         return n;
-      }, se = j.map(([e, o]) => ne(e, o)), J = j.map(([e, o]) => (p.push([
+      }, se = a + l + M, ae = j.map(([e, o]) => ne(e, o)), Y = j.map(([e, o]) => (p.push([
         e,
         o,
-        M
-      ]), p.length - 1)), d = [], T = 0;
+        se
+      ]), p.length - 1)), d = [], J = 0;
       for (let e = 0; e < w; ++e) for (let o = 0; o < v; ++o) {
         const n = e * r + o;
         d.push([
@@ -298,25 +298,25 @@ let __tla = Promise.all([
       }
       const B = d.length;
       for (let e = 0; e < v; ++e) {
-        const o = Y * r + e, n = Y * r + (e + 1);
+        const o = T * r + e, n = T * r + (e + 1);
         d.push([
           o,
           n
         ]);
       }
       const V = d.length;
-      se.forEach((e, o) => d.push([
+      ae.forEach((e, o) => d.push([
         e,
-        J[o]
+        Y[o]
       ]));
       const C = [];
       for (let e = 0; e < L; ++e) for (let o = 0; o < r; ++o) {
-        const n = o === 0 || o === r - 1, l = e === 0 || e === L - 1, f = n && l ? 0.25 : n || l ? 0.5 : 1, _ = D * E * f, h = e * r + o;
+        const n = o === 0 || o === r - 1, m = e === 0 || e === L - 1, f = n && m ? 0.25 : n || m ? 0.5 : 1, _ = D * E * f, h = e * r + o;
         if (C.push({
           node: h,
           dof: 2,
           k: g * _
-        }), n && l) {
+        }), n && m) {
           const P = 1e-6 * g * D * E;
           C.push({
             node: h,
@@ -330,7 +330,7 @@ let __tla = Promise.all([
         }
       }
       const W = /* @__PURE__ */ new Map();
-      J.forEach((e, o) => {
+      Y.forEach((e, o) => {
         W.set(e, [
           0,
           0,
@@ -340,10 +340,10 @@ let __tla = Promise.all([
           0
         ]);
       });
-      const y = 228e5, I = 0.2, X = y / (2 * (1 + I)), ae = i * c, le = i * c ** 3 / 12, me = c * i ** 3 / 12, ie = 0.28 * i * c ** 3, ce = x * x, Z = x ** 4 / 12, re = 0.141 * x ** 4, k = /* @__PURE__ */ new Map(), z = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), S = /* @__PURE__ */ new Map(), F = /* @__PURE__ */ new Map(), G = /* @__PURE__ */ new Map(), N = /* @__PURE__ */ new Map(), A = /* @__PURE__ */ new Map();
-      for (let e = T; e < B; ++e) k.set(e, y), z.set(e, I), H.set(e, a);
-      for (let e = B; e < V; ++e) k.set(e, y), z.set(e, I), S.set(e, ae), F.set(e, le), G.set(e, me), N.set(e, X), A.set(e, ie);
-      for (let e = V; e < d.length; ++e) k.set(e, y), z.set(e, I), S.set(e, ce), F.set(e, Z), G.set(e, Z), N.set(e, X), A.set(e, re);
+      const y = 228e5, I = 0.2, X = y / (2 * (1 + I)), le = i * l, me = i * l ** 3 / 12, ce = l * i ** 3 / 12, ie = 0.28 * i * l ** 3, re = x * x, Z = x ** 4 / 12, de = 0.141 * x ** 4, k = /* @__PURE__ */ new Map(), z = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), S = /* @__PURE__ */ new Map(), F = /* @__PURE__ */ new Map(), G = /* @__PURE__ */ new Map(), N = /* @__PURE__ */ new Map(), A = /* @__PURE__ */ new Map();
+      for (let e = J; e < B; ++e) k.set(e, y), z.set(e, I), H.set(e, a);
+      for (let e = B; e < V; ++e) k.set(e, y), z.set(e, I), S.set(e, le), F.set(e, me), G.set(e, ce), N.set(e, X), A.set(e, ie);
+      for (let e = V; e < d.length; ++e) k.set(e, y), z.set(e, I), S.set(e, re), F.set(e, Z), G.set(e, Z), N.set(e, X), A.set(e, de);
       const K = {
         supports: /* @__PURE__ */ new Map(),
         loads: W
@@ -359,18 +359,18 @@ let __tla = Promise.all([
       };
       s.nodes.val = p, s.elements.val = d, s.nodeInputs.val = K, s.elementInputs.val = O;
       try {
-        const e = fe(p, d, K, O, C);
+        const e = ue(p, d, K, O, C);
         s.deformOutputs.val = e;
-        const o = de(p, d, O, e), n = /* @__PURE__ */ new Map();
-        for (let l = T; l < B; ++l) {
-          const f = d[l];
+        const o = fe(p, d, O, e), n = /* @__PURE__ */ new Map();
+        for (let m = J; m < B; ++m) {
+          const f = d[m];
           if (f.length !== 4) continue;
           const _ = f.map((h) => {
             var _a;
             const P = (_a = e.deformations) == null ? void 0 : _a.get(h);
             return P ? g * P[2] : 0;
           });
-          n.set(l, _);
+          n.set(m, _);
         }
         o.pressure = n, o.colorMapRanges = {
           pressure: [
@@ -382,13 +382,13 @@ let __tla = Promise.all([
         console.error("viga-cim-guerra solver error:", e);
       }
       const R = [];
-      R.push(...ue(0, u, b, a, i, c));
-      for (const [e, o] of j) R.push(...pe(e, o, a + c, M, x));
+      R.push(...pe(0, u, b, a, i, l));
+      for (const [e, o] of j) R.push(...Me(e, o, a + l, M, x));
       s.objects3D.val = R;
     }
   };
 });
 export {
   __tla,
-  _e as v
+  be as v
 };

@@ -1,7 +1,7 @@
 import { b as U, E as $, c as ee, L as te } from "./Text-BmY6zyQy.js";
-import { a as pe } from "./analyze-DNPn2SjO.js";
-import { d as me, __tla as __tla_0 } from "./didacticCpp-BaiPjJ4y.js";
-let be;
+import { a as me } from "./analyze-DNPn2SjO.js";
+import { d as ue, __tla as __tla_0 } from "./didacticCpp-BaiPjJ4y.js";
+let ve;
 let __tla = Promise.all([
   (() => {
     try {
@@ -11,17 +11,17 @@ let __tla = Promise.all([
   })()
 ]).then(async () => {
   const Q = 9.80665;
-  function ue(n, o, u, f, p, l) {
-    const c = Math.abs(o - n), h = new U(c, p, l), g = new $(h), _ = new ee(g, new te({
+  function fe(n, o, u, f, p, c) {
+    const a = Math.abs(o - n), h = new U(a, p, c), g = new $(h), _ = new ee(g, new te({
       color: 8421504,
       linewidth: 2
     }));
-    return _.position.set((n + o) / 2, u, f + l / 2), [
+    return _.position.set((n + o) / 2, u, f + c / 2), [
       _
     ];
   }
-  function fe(n, o, u, f, p) {
-    const l = new U(p, p, f), c = new $(l), h = new ee(c, new te({
+  function he(n, o, u, f, p) {
+    const c = new U(p, p, f), a = new $(c), h = new ee(a, new te({
       color: 8421504,
       linewidth: 2
     }));
@@ -29,7 +29,7 @@ let __tla = Promise.all([
       h
     ];
   }
-  be = {
+  ve = {
     id: "safe-bench-viga-cimentacion",
     name: "Viga de Cimentaci\xF3n \xB7 Zapata corrida + Viga + Pedestales",
     category: "Cimentaciones",
@@ -138,33 +138,33 @@ let __tla = Promise.all([
       }
     },
     build(n, o) {
-      const u = n.Lz, f = n.Bz, p = n.t_zap, l = n.b_viga, c = n.h_viga, h = n.h_ped, g = n.b_ped, _ = n.ks_tonfm3 * Q, ne = n.P_tonf * Q, A = Math.round(n.nCols), w = Math.round(n.nx), M = Math.round(n.ny), i = w + 1, z = M + 1, j = u / w, C = f / M, G = f / 2, J = Math.round(M / 2), k = [];
-      for (let e = 1; e <= A; ++e) {
-        const t = e * u / (A + 1);
+      const u = n.Lz, f = n.Bz, p = n.t_zap, c = n.b_viga, a = n.h_viga, h = n.h_ped, g = n.b_ped, _ = n.ks_tonfm3 * Q, ne = n.P_tonf * Q, Z = Math.round(n.nCols), w = Math.round(n.nx), z = Math.round(n.ny), i = w + 1, M = z + 1, j = u / w, C = f / z, A = f / 2, G = Math.round(z / 2), k = [];
+      for (let e = 1; e <= Z; ++e) {
+        const t = e * u / (Z + 1);
         k.push([
           t,
-          G
+          A
         ]);
       }
       const m = [];
-      for (let e = 0; e < z; ++e) for (let t = 0; t < i; ++t) m.push([
+      for (let e = 0; e < M; ++e) for (let t = 0; t < i; ++t) m.push([
         t * j,
         e * C,
         0
       ]);
       const se = (e, t) => {
-        let s = -1, a = 1 / 0;
-        for (let d = 0; d < i * z; ++d) {
+        let s = -1, l = 1 / 0;
+        for (let d = 0; d < i * M; ++d) {
           const b = (m[d][0] - e) ** 2 + (m[d][1] - t) ** 2;
-          b < a && (a = b, s = d);
+          b < l && (l = b, s = d);
         }
         return s;
-      }, oe = k.map(([e, t]) => se(e, t)), R = k.map(([e, t]) => (m.push([
+      }, oe = p + a + h, ae = k.map(([e, t]) => se(e, t)), J = k.map(([e, t]) => (m.push([
         e,
         t,
-        h
-      ]), m.length - 1)), r = [], T = 0;
-      for (let e = 0; e < M; ++e) for (let t = 0; t < w; ++t) {
+        oe
+      ]), m.length - 1)), r = [], R = 0;
+      for (let e = 0; e < z; ++e) for (let t = 0; t < w; ++t) {
         const s = e * i + t;
         r.push([
           s,
@@ -175,25 +175,25 @@ let __tla = Promise.all([
       }
       const E = r.length;
       for (let e = 0; e < w; ++e) {
-        const t = J * i + e, s = J * i + (e + 1);
+        const t = G * i + e, s = G * i + (e + 1);
         r.push([
           t,
           s
         ]);
       }
       const X = r.length;
-      oe.forEach((e, t) => r.push([
+      ae.forEach((e, t) => r.push([
         e,
-        R[t]
+        J[t]
       ]));
       const y = [];
-      for (let e = 0; e < z; ++e) for (let t = 0; t < i; ++t) {
-        const s = t === 0 || t === i - 1, a = e === 0 || e === z - 1, d = s && a ? 0.25 : s || a ? 0.5 : 1, b = j * C * d, v = e * i + t;
+      for (let e = 0; e < M; ++e) for (let t = 0; t < i; ++t) {
+        const s = t === 0 || t === i - 1, l = e === 0 || e === M - 1, d = s && l ? 0.25 : s || l ? 0.5 : 1, b = j * C * d, v = e * i + t;
         if (y.push({
           node: v,
           dof: 2,
           k: _ * b
-        }), s && a) {
+        }), s && l) {
           const x = 1e-6 * _ * j * C;
           y.push({
             node: v,
@@ -207,7 +207,7 @@ let __tla = Promise.all([
         }
       }
       const D = /* @__PURE__ */ new Map();
-      R.forEach((e) => D.set(e, [
+      J.forEach((e) => D.set(e, [
         0,
         0,
         -ne,
@@ -215,50 +215,50 @@ let __tla = Promise.all([
         0,
         0
       ]));
-      const I = 24855e3, B = 0.2, q = I / (2 * (1 + B)), ae = l * c, le = l * c ** 3 / 12, ce = c * l ** 3 / 12, ie = 0.28 * l * c ** 3, re = g * g, F = g ** 4 / 12, de = 0.141 * g ** 4, L = /* @__PURE__ */ new Map(), P = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), N = /* @__PURE__ */ new Map(), S = /* @__PURE__ */ new Map(), O = /* @__PURE__ */ new Map(), V = /* @__PURE__ */ new Map(), W = /* @__PURE__ */ new Map();
-      for (let e = T; e < E; ++e) L.set(e, I), P.set(e, B), H.set(e, p);
-      for (let e = E; e < X; ++e) L.set(e, I), P.set(e, B), N.set(e, ae), S.set(e, le), O.set(e, ce), V.set(e, q), W.set(e, ie);
-      for (let e = X; e < r.length; ++e) L.set(e, I), P.set(e, B), N.set(e, re), S.set(e, F), O.set(e, F), V.set(e, q), W.set(e, de);
+      const I = 24855e3, P = 0.2, q = I / (2 * (1 + P)), le = c * a, ce = c * a ** 3 / 12, ie = a * c ** 3 / 12, re = 0.28 * c * a ** 3, de = g * g, F = g ** 4 / 12, pe = 0.141 * g ** 4, B = /* @__PURE__ */ new Map(), L = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), N = /* @__PURE__ */ new Map(), S = /* @__PURE__ */ new Map(), O = /* @__PURE__ */ new Map(), T = /* @__PURE__ */ new Map(), V = /* @__PURE__ */ new Map();
+      for (let e = R; e < E; ++e) B.set(e, I), L.set(e, P), H.set(e, p);
+      for (let e = E; e < X; ++e) B.set(e, I), L.set(e, P), N.set(e, le), S.set(e, ce), O.set(e, ie), T.set(e, q), V.set(e, re);
+      for (let e = X; e < r.length; ++e) B.set(e, I), L.set(e, P), N.set(e, de), S.set(e, F), O.set(e, F), T.set(e, q), V.set(e, pe);
       const K = {
         supports: /* @__PURE__ */ new Map(),
         loads: D
-      }, Y = {
-        elasticities: L,
-        poissonsRatios: P,
+      }, W = {
+        elasticities: B,
+        poissonsRatios: L,
         thicknesses: H,
         areas: N,
         momentsOfInertiaZ: S,
         momentsOfInertiaY: O,
-        shearModuli: V,
-        torsionalConstants: W
+        shearModuli: T,
+        torsionalConstants: V
       };
-      o.nodes.val = m, o.elements.val = r, o.nodeInputs.val = K, o.elementInputs.val = Y;
+      o.nodes.val = m, o.elements.val = r, o.nodeInputs.val = K, o.elementInputs.val = W;
       try {
-        const e = me(m, r, K, Y, y);
+        const e = ue(m, r, K, W, y);
         o.deformOutputs.val = e;
-        const t = pe(m, r, Y, e), s = /* @__PURE__ */ new Map();
-        for (let a = T; a < E; ++a) {
-          const d = r[a];
+        const t = me(m, r, W, e), s = /* @__PURE__ */ new Map();
+        for (let l = R; l < E; ++l) {
+          const d = r[l];
           if (d.length !== 4) continue;
           const b = d.map((v) => {
             var _a;
             const x = (_a = e.deformations) == null ? void 0 : _a.get(v);
             return x ? _ * x[2] : 0;
           });
-          s.set(a, b);
+          s.set(l, b);
         }
         t.pressure = s, o.analyzeOutputs.val = t;
       } catch (e) {
         console.error("safe-bench-viga solver error:", e);
       }
-      const Z = [];
-      Z.push(...ue(0, u, G, p, l, c));
-      for (const [e, t] of k) Z.push(...fe(e, t, p + c, h, g));
-      o.objects3D.val = Z;
+      const Y = [];
+      Y.push(...fe(0, u, A, p, c, a));
+      for (const [e, t] of k) Y.push(...he(e, t, p + a, h, g));
+      o.objects3D.val = Y;
     }
   };
 });
 export {
   __tla,
-  be as s
+  ve as s
 };
