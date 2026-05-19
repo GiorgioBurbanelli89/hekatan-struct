@@ -32,7 +32,8 @@ from SAFEv1 import (  # type: ignore
     eForce, eLength, eTemperature, eMatType, eSlabType, eShellType, eItemType,
     eLoadPatternType,
 )
-from System import Array, Double  # type: ignore
+from System import Array, Double, Boolean  # type: ignore
+import System
 
 args = sys.argv[1:]
 json_out = next((a.split("=", 1)[1] for a in args if a.startswith("--json=")), None)
@@ -50,7 +51,14 @@ P_GLOBAL = {
     "nu": 0.20,
     "rho_kNm3": 24.0,
     "ks_kNm3": 1030.0,                 # = 105 tonf/m³ del modelo real
-    "viga_b": 0.25, "viga_h": 0.40,    # sección viga amarre VAmarre
+    "viga_b": 0.25, "viga_h": 0.40,    # sección viga amarre VAmarre / cadenas
+    # ── V2: modelación estructural correcta ──────────────────────────
+    "h_ped": 0.50,                     # m altura pedestal (de z=-h_ped a z=0)
+    "ped_side": 0.40,                  # m lado pedestal cuadrado
+    # Niveles:
+    #   z=0     piso terminado → cadenas (vigas amarre horizontales)
+    #   z=-h_ped → zapatas (placas sobre Winkler)
+    # Cargas P+Mx+My aplicadas en TOPS de pedestales (z=0)
 }
 
 # 9 columnas en grilla 3×3 con sus dimensiones de zapata
@@ -130,13 +138,14 @@ parea.SetSlab(slab_name, eSlabType.Footing, eShellType.ShellThick,
 print(f"-> SetSlab({slab_name}) Footing/ShellThick t={P_GLOBAL['tz']}m")
 
 # ────────────────────────────────────────────────────────────────────
-# 4. Frame property VAmarre 0.25×0.40
+# 4. Frame properties: Cadena (VAmarre 0.25×0.40) + Pedestal (0.40×0.40)
 # ────────────────────────────────────────────────────────────────────
 pframe = cPropFrame(sap.PropFrame)
-frame_name = "VAmarre_0.250x0.400"
-ret = pframe.SetRectangle(frame_name, mat_name, P_GLOBAL["viga_h"], P_GLOBAL["viga_b"],
-                            -1, "", "")
-print(f"-> SetRectangle({frame_name}) {P_GLOBAL['viga_b']}×{P_GLOBAL['viga_h']}m ret={ret}")
+frame_cadena = "VAmarre_0.250x0.400"
+pframe.SetRectangle(frame_cadena, mat_name, P_GLOBAL["viga_h"], P_GLOBAL["viga_b"], -1, "", "")
+frame_pedestal = "Pedestal_0.400x0.400"
+pframe.SetRectangle(frame_pedestal, mat_name, P_GLOBAL["ped_side"], P_GLOBAL["ped_side"], -1, "", "")
+print(f"-> Frame props: {frame_cadena} (cadenas) + {frame_pedestal} (pedestales)")
 
 # ────────────────────────────────────────────────────────────────────
 # 5. Spring property (placeholder, real ks via DatabaseTables)
@@ -153,52 +162,79 @@ lpat.Add("Dead", eLoadPatternType.Dead, 0.0, True)   # SW=0 para matchear modelo
 print(f"-> LoadPattern Dead added")
 
 # ────────────────────────────────────────────────────────────────────
-# 7. Crear 9 zapatas como áreas (1 área cuadrada por zapata, centrada
-#    en su columna). SAFE auto-meshea internamente.
+# 7. Crear 9 zapatas EN z=0 (Floor level — SAFE las renderiza aquí).
+#    Pedestales suben de z=0 a z=+h_ped (TOP = nivel piso terminado).
 # ────────────────────────────────────────────────────────────────────
 ao = cAreaObj(sap.AreaObj)
+z_zap = 0.0                    # zapatas en Floor level (SAFE las espera aquí)
+z_top = P_GLOBAL["h_ped"]      # TOPs +h_ped arriba (z=+0.5m, nivel piso terminado)
 zapata_names = {}
 for cid, X, Y, Lz, Bz, rol in COLUMNS:
-    # Esquinas del polígono (sentido horario o antihorario)
     x0, x1 = X - Lz/2, X + Lz/2
     y0, y1 = Y - Bz/2, Y + Bz/2
     xs = Array[Double]([x0, x1, x1, x0])
     ys = Array[Double]([y0, y0, y1, y1])
-    zs = Array[Double]([0.0, 0.0, 0.0, 0.0])
+    zs = Array[Double]([z_zap, z_zap, z_zap, z_zap])
     ret, _x, _y, _z, aname = ao.AddByCoord(
         4, xs, ys, zs, "", slab_name, f"Zap_{cid}_{rol}", "Global")
     zapata_names[cid] = aname
-    # Spring assignment
     ao.SetSpringAssignment(aname, spring_name, eItemType.Objects)
-print(f"-> Creadas {len(zapata_names)} zapatas (4 esquinas 1.3×1.3, 4 medios 2.2×2.2, 1 centro 1.6×1.6)")
+print(f"-> 9 zapatas en z={z_zap}m (Floor level, SAFE-friendly)")
 
 # ────────────────────────────────────────────────────────────────────
-# 8. Crear 9 joints centrales (uno bajo cada columna) y aplicar cargas
+# 8. Crear joints en 2 niveles: TOP (z=0) + BASE (z=-h_ped)
+#    Pedestales conectan BASE→TOP. Cargas P+Mx+My en TOPS.
 # ────────────────────────────────────────────────────────────────────
 po = cPointObj(sap.PointObj)
-col_joints = {}
+joint_top = {}    # joint en z=0 (TOP del pedestal, donde van las cargas)
+joint_base = {}   # joint en z=-h_ped (BASE del pedestal, sobre la zapata)
 for cid, X, Y, Lz, Bz, rol in COLUMNS:
-    ret, pt_name = po.AddCartesian(X, Y, 0.0, "", f"PCol_{cid}", "Global", False, 0)
-    col_joints[cid] = pt_name
-    # Cargas P + Mx + My (FZ negativo = abajo)
+    # TOP en z_top (=+0.5m, piso terminado, donde van las cargas)
+    ret, top_name = po.AddCartesian(X, Y, z_top, "", f"PTop_{cid}", "Global", False, 0)
+    joint_top[cid] = top_name
+    # BASE en z_zap (=0, centro de la zapata, donde merge con mesh)
+    ret, base_name = po.AddCartesian(X, Y, z_zap, "", f"PBase_{cid}", "Global", False, 0)
+    joint_base[cid] = base_name
+    # SetSpecialPoint(True) → fuerza inclusión en el mesh de la zapata
+    # (auto-mesh respeta special points como nodos obligatorios)
+    po.SetSpecialPoint(base_name, True, eItemType.Objects)
+    # Cargas en TOP
     ld = LOADS[cid]
     load_vec = Array[Double]([0.0, 0.0, ld["FZ"], ld["MX"], ld["MY"], 0.0])
-    po.SetLoadForce(pt_name, "Dead", load_vec, True, "Global", eItemType.Objects)
-print(f"-> 9 joints centrales con cargas P+Mx+My aplicadas")
+    po.SetLoadForce(top_name, "Dead", load_vec, True, "Global", eItemType.Objects)
+print(f"-> 9 joint TOPs (z=0) con cargas + 9 joint BASEs (z={z_zap}) marcados SpecialPoint")
+
+# CRÍTICO: SubModulus solo da rigidez vertical (Uz). La estructura completa
+# tiene 3 modos rígidos horizontales (Ux, Uy, Rz) sin restricción → matriz
+# singular → análisis devuelve uz=0. Fix: empotrar Ux, Uy, Rz en el joint
+# base de la zapata centro (col_id=5). NO afecta Uz/Rx/Ry de los demás.
+center_base = joint_base[5]
+# Restraint vector [Ux, Uy, Uz, Rx, Ry, Rz] (True = empotrado)
+restraint = Array[System.Boolean]([True, True, False, False, False, True])
+po.SetRestraint(center_base, restraint, eItemType.Objects)
+print(f"-> SetRestraint({center_base}) Ux/Uy/Rz = TRUE (suprime modos rígidos horizontales)")
 
 # ────────────────────────────────────────────────────────────────────
-# 9. Crear 12 vigas amarre conectando los joints centrales
+# 9. Crear 9 pedestales verticales (BASE → TOP) usando AddByPoint
+#    para COMPARTIR joints ya creados con AddCartesian arriba.
 # ────────────────────────────────────────────────────────────────────
 fo = cFrameObj(sap.FrameObj)
-beam_names = []
+pedestal_names = []
+for cid, X, Y, Lz, Bz, rol in COLUMNS:
+    ret, name = fo.AddByPoint(joint_base[cid], joint_top[cid], "",
+                                frame_pedestal, f"Ped_{cid}")
+    pedestal_names.append(name)
+print(f"-> {len(pedestal_names)} pedestales verticales (h={P_GLOBAL['h_ped']}m) compartiendo joint_base/joint_top")
+
+# ────────────────────────────────────────────────────────────────────
+# 10. Crear 12 cadenas horizontales en z=0 (entre TOPS) — AddByPoint
+# ────────────────────────────────────────────────────────────────────
+cadena_names = []
 for (ci, cj) in BEAMS:
-    _, xi, yi, _, _, _ = next(c for c in COLUMNS if c[0] == ci)
-    _, xj, yj, _, _, _ = next(c for c in COLUMNS if c[0] == cj)
-    # AddByCoord(XI, YI, ZI, XJ, YJ, ZJ, Name&, PropName, UserName, CSys)
-    ret, name = fo.AddByCoord(xi, yi, 0.0, xj, yj, 0.0, "", frame_name,
-                                f"VA_{ci}-{cj}", "Global")
-    beam_names.append(name)
-print(f"-> {len(beam_names)} vigas amarre creadas")
+    ret, name = fo.AddByPoint(joint_top[ci], joint_top[cj], "",
+                                frame_cadena, f"Cad_{ci}-{cj}")
+    cadena_names.append(name)
+print(f"-> {len(cadena_names)} cadenas horizontales en z=0 (joint_top compartidos)")
 
 # ────────────────────────────────────────────────────────────────────
 # 10. Save .fdb + DatabaseTables override SubModulus + RunAnalysis
@@ -222,6 +258,36 @@ if n > 0:
         nfe = nem = nwm = nim = 0; ilog = ""
         db_pre.ApplyEditedTables(True, nfe, nem, nwm, nim, ilog)
         print(f"-> SubModulus override: 105 tonf/m³")
+
+# ────────────────────────────────────────────────────────────────────
+# Forzar IncludeInMesh=Yes en los 9 joint_base via DatabaseTables
+# (SetSpecialPoint solo controla visual; el mesh integration está en
+# tabla "Joint Assignments - Floor Meshing Option")
+# ────────────────────────────────────────────────────────────────────
+mesh_table = "Joint Assignments - Floor Meshing Option"
+fk = []; group = ""; ver = 0; fi = []; n = 0; td = []
+ret, ver, fi, n, td = db_pre.GetTableForEditingArray(mesh_table, group, ver, fi, n, td)
+fi = list(fi); td = list(td)
+print(f"-> Editing '{mesh_table}': existing rows={n}, headers={fi}")
+
+# Agregar 9 filas para joint_base (uno por zapata)
+cols = len(fi)
+name_col = next((i for i, h in enumerate(fi) if "name" in h.lower()), 0)
+inc_col = next((i for i, h in enumerate(fi) if "include" in h.lower() or "mesh" in h.lower()), 1)
+new_rows = []
+for cid in joint_base:
+    row = [""] * cols
+    row[name_col] = joint_base[cid]
+    row[inc_col] = "Yes"
+    new_rows.extend(row)
+
+new_td = td + new_rows
+new_n = n + len(joint_base)
+ret = db_pre.SetTableForEditingArray(mesh_table, ver, fi, new_n, new_td)
+print(f"   SetTableForEditingArray ret={ret} (added {len(joint_base)} joints)")
+nfe = nem = nwm = nim = 0; ilog = ""
+ret, nfe, nem, nwm, nim, ilog = db_pre.ApplyEditedTables(True, nfe, nem, nwm, nim, ilog)
+print(f"   ApplyEditedTables ret={ret} err={nfe} warn={nwm} info={nim}")
 
 print("-> RunAnalysis...")
 analyze = cAnalyze(sap.Analyze)
@@ -258,24 +324,29 @@ joint_c = col(jh, "UniqueName","Joint","Point","Label")
 samples_9cols = []
 po2 = cPointObj(sap.PointObj)
 for cid, X, Y, Lz, Bz, rol in COLUMNS:
-    pname = col_joints[cid]
-    # Buscar este joint en los rows
-    uz = ux = uy = 0.0
+    # Extraer uz tanto en BASE (zapata, sobre Winkler) como en TOP (pedestal)
+    base_name = joint_base[cid]
+    top_name = joint_top[cid]
+    uz_base = uz_top = ux = uy = 0.0
     for r in jr:
-        if str(r[joint_c]) == pname:
+        jn = str(r[joint_c])
+        if jn == base_name:
+            try: uz_base = float(r[uz_c])
+            except: pass
+        elif jn == top_name:
             try:
-                uz = float(r[uz_c]); ux = float(r[ux_c]); uy = float(r[uy_c])
-                break
+                uz_top = float(r[uz_c]); ux = float(r[ux_c]); uy = float(r[uy_c])
             except: pass
     samples_9cols.append({
         "col_id": cid, "rol": rol,
         "x": X, "y": Y, "Lz": Lz, "Bz": Bz,
         "FZ_tonf": LOADS[cid]["FZ"],
         "MX_tonfm": LOADS[cid]["MX"], "MY_tonfm": LOADS[cid]["MY"],
-        "ux_mm": round(ux * 1000, 4),
-        "uy_mm": round(uy * 1000, 4),
-        "uz_mm": round(uz * 1000, 4),
-        "q_tonfm2": round(P_GLOBAL["ks_kNm3"] * abs(uz) / 9.80665, 3),
+        "ux_top_mm": round(ux * 1000, 4),
+        "uy_top_mm": round(uy * 1000, 4),
+        "uz_top_mm": round(uz_top * 1000, 4),
+        "uz_base_mm": round(uz_base * 1000, 4),
+        "q_tonfm2": round(P_GLOBAL["ks_kNm3"] * abs(uz_base) / 9.80665, 3),
     })
 
 P_total_tonf = sum(l["FZ"] for l in LOADS.values())
@@ -310,9 +381,9 @@ print("="*78)
 print(f"  P_total: {P_total_tonf:.2f} tonf | A_total: {A_total:.1f} m² | w_teo: {w_avg_teo_mm:.3f} mm")
 print(f"  Runtime: {runtime_s:.2f}s")
 print("-"*78)
-print(f"  {'col':>3} {'rol':<13} {'pos':<10} {'dim':<10} {'FZ':>7} {'MY':>6} {'uz_mm':>9} {'q_tonfm2':>9}")
+print(f"  {'col':>3} {'rol':<13} {'pos':<10} {'dim':<10} {'FZ':>7} {'MY':>6} {'uz_base':>9} {'uz_top':>9} {'q_tonfm2':>9}")
 for s in samples_9cols:
-    print(f"  {s['col_id']:>3} {s['rol']:<13} ({s['x']:>2},{s['y']:>2})    {s['Lz']:.1f}×{s['Bz']:.1f}    {s['FZ_tonf']:>+6.2f} {s['MY_tonfm']:>+5.2f} {s['uz_mm']:>+8.3f} {s['q_tonfm2']:>9.2f}")
+    print(f"  {s['col_id']:>3} {s['rol']:<13} ({s['x']:>2},{s['y']:>2})    {s['Lz']:.1f}×{s['Bz']:.1f}    {s['FZ_tonf']:>+6.2f} {s['MY_tonfm']:>+5.2f} {s['uz_base_mm']:>+8.3f} {s['uz_top_mm']:>+8.3f} {s['q_tonfm2']:>9.2f}")
 print("="*78)
 
 if not keep_open:

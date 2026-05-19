@@ -6,18 +6,18 @@
 
 
 
- B E G I N   A N A L Y S I S                                2026/05/18  20:14:17
+ B E G I N   A N A L Y S I S                                2026/05/19  00:21:39
 
 
  RUNNING ANALYSIS AS A SEPARATE PROCESS
  USING THE ADVANCED SOLVER (PROVIDES LIMITED INSTABILITY INFORMATION)
 
- NUMBER OF JOINTS                          =         162
-    WITH RESTRAINTS                        =          81
-    WITH MASS                              =          81
- NUMBER OF FRAME/TENDON ELEMENTS           =          36
- NUMBER OF SHELL ELEMENTS                  =          45
- NUMBER OF LINK/SUPPORT ELEMENTS           =         162
+ NUMBER OF JOINTS                          =         171
+    WITH RESTRAINTS                        =          82
+    WITH MASS                              =          90
+ NUMBER OF FRAME/TENDON ELEMENTS           =          21
+ NUMBER OF SHELL ELEMENTS                  =          36
+ NUMBER OF LINK/SUPPORT ELEMENTS           =         144
  NUMBER OF LOAD PATTERNS                   =           3
  NUMBER OF ACCELERATION LOADS              =           9
  NUMBER OF LOAD CASES                      =           3
@@ -39,16 +39,16 @@
  NUMBER OF THREADS: FORM (AUTOMATIC)       =          16
 
 
- E L E M E N T   F O R M A T I O N                                      20:14:17
+ E L E M E N T   F O R M A T I O N                                      00:21:39
 
 
 
- L I N E A R   E Q U A T I O N   S O L U T I O N                        20:14:17
+ L I N E A R   E Q U A T I O N   S O L U T I O N                        00:21:39
 
  FORMING STIFFNESS AT ZERO (UNSTRESSED) INITIAL CONDITIONS
 
- TOTAL NUMBER OF EQUILIBRIUM EQUATIONS     =         486
- NUMBER OF NON-ZERO STIFFNESS TERMS        =        8289
+ TOTAL NUMBER OF EQUILIBRIUM EQUATIONS     =         537
+ NUMBER OF NON-ZERO STIFFNESS TERMS        =        8949
 
  ---------------------------------
  BASIC STABILITY CHECK FOR LINEAR LOAD CASES:
@@ -60,7 +60,7 @@
  ---------------------------------
 
 
- L I N E A R   S T A T I C   C A S E S                                  20:14:17
+ L I N E A R   S T A T I C   C A S E S                                  00:21:39
 
  USING STIFFNESS AT ZERO (UNSTRESSED) INITIAL CONDITIONS
 
@@ -74,4 +74,4 @@
  CASE: ~LLRF
 
 
- A N A L Y S I S   C O M P L E T E                          2026/05/18  20:14:17
+ A N A L Y S I S   C O M P L E T E                          2026/05/19  00:21:39

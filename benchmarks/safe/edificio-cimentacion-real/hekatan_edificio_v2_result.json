@@ -1,0 +1,346 @@
+{
+  "solver": "Hekatan deform() (shells + frames mixtos)",
+  "case": "Cimentación Edificio Real (9 zap + 12 vigas amarre)",
+  "params": {
+    "tz": 0.3,
+    "E_kNm2": 24855000,
+    "nu": 0.2,
+    "rho_kNm3": 24,
+    "ks_kNm3": 1030,
+    "viga_b": 0.25,
+    "viga_h": 0.4,
+    "h_ped": 0.5,
+    "ped_side": 0.4
+  },
+  "columns": [
+    {
+      "id": 1,
+      "x": 0,
+      "y": 0,
+      "Lz": 1.3,
+      "Bz": 1.3,
+      "rol": "esquina"
+    },
+    {
+      "id": 2,
+      "x": 5,
+      "y": 0,
+      "Lz": 2.2,
+      "Bz": 2.2,
+      "rol": "medio-borde"
+    },
+    {
+      "id": 3,
+      "x": 10,
+      "y": 0,
+      "Lz": 1.3,
+      "Bz": 1.3,
+      "rol": "esquina"
+    },
+    {
+      "id": 4,
+      "x": 0,
+      "y": 5,
+      "Lz": 2.2,
+      "Bz": 2.2,
+      "rol": "medio-borde"
+    },
+    {
+      "id": 5,
+      "x": 5,
+      "y": 5,
+      "Lz": 1.6,
+      "Bz": 1.6,
+      "rol": "centro"
+    },
+    {
+      "id": 6,
+      "x": 10,
+      "y": 5,
+      "Lz": 2.2,
+      "Bz": 2.2,
+      "rol": "medio-borde"
+    },
+    {
+      "id": 7,
+      "x": 0,
+      "y": 10,
+      "Lz": 1.3,
+      "Bz": 1.3,
+      "rol": "esquina"
+    },
+    {
+      "id": 8,
+      "x": 5,
+      "y": 10,
+      "Lz": 2.2,
+      "Bz": 2.2,
+      "rol": "medio-borde"
+    },
+    {
+      "id": 9,
+      "x": 10,
+      "y": 10,
+      "Lz": 1.3,
+      "Bz": 1.3,
+      "rol": "esquina"
+    }
+  ],
+  "loads_tonf": {
+    "1": {
+      "FZ": -0.6663,
+      "MX": 0.8439,
+      "MY": 2.2863
+    },
+    "2": {
+      "FZ": -2.1245,
+      "MX": 0.0003,
+      "MY": 2.5785
+    },
+    "3": {
+      "FZ": -3.6324,
+      "MX": -0.8442,
+      "MY": 2.291
+    },
+    "4": {
+      "FZ": -1.1218,
+      "MX": 0.9406,
+      "MY": 1.2984
+    },
+    "5": {
+      "FZ": -2.1401,
+      "MX": 0.0003,
+      "MY": 1.4681
+    },
+    "6": {
+      "FZ": -3.1612,
+      "MX": -0.9409,
+      "MY": 1.2987
+    },
+    "7": {
+      "FZ": -1.2892,
+      "MX": 0.8433,
+      "MY": 0.3505
+    },
+    "8": {
+      "FZ": -2.1399,
+      "MX": 0.0003,
+      "MY": 0.4073
+    },
+    "9": {
+      "FZ": -2.9936,
+      "MX": -0.8436,
+      "MY": 0.3505
+    }
+  },
+  "beams": [
+    [
+      1,
+      2
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      4,
+      5
+    ],
+    [
+      5,
+      6
+    ],
+    [
+      7,
+      8
+    ],
+    [
+      8,
+      9
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      4,
+      7
+    ],
+    [
+      2,
+      5
+    ],
+    [
+      5,
+      8
+    ],
+    [
+      3,
+      6
+    ],
+    [
+      6,
+      9
+    ]
+  ],
+  "mesh": {
+    "nLocal_per_zapata": 4,
+    "total_nodes": 234,
+    "total_q4": 153,
+    "total_frames": 12
+  },
+  "theory": {
+    "P_total_tonf": -19.269,
+    "A_total_m2": 28.680000000000007,
+    "w_avg_winkler_teo_mm": 6.3987
+  },
+  "results": {
+    "runtime_ms": 41.5,
+    "samples_9cols": [
+      {
+        "col_id": 1,
+        "rol": "esquina",
+        "x": 0,
+        "y": 0,
+        "Lz": 1.3,
+        "Bz": 1.3,
+        "FZ_tonf": -0.6663,
+        "MX_tonfm": 0.8439,
+        "MY_tonfm": 2.2863,
+        "ux_top_mm": 2.2825,
+        "uy_top_mm": -0.967,
+        "uz_top_mm": -1.1885,
+        "uz_base_mm": -1.1882,
+        "q_tonfm2": 0.125
+      },
+      {
+        "col_id": 2,
+        "rol": "medio-borde",
+        "x": 5,
+        "y": 0,
+        "Lz": 2.2,
+        "Bz": 2.2,
+        "FZ_tonf": -2.1245,
+        "MX_tonfm": 0.0003,
+        "MY_tonfm": 2.5785,
+        "ux_top_mm": 2.2825,
+        "uy_top_mm": -0.967,
+        "uz_top_mm": -5.4379,
+        "uz_base_mm": -5.4345,
+        "q_tonfm2": 0.571
+      },
+      {
+        "col_id": 3,
+        "rol": "esquina",
+        "x": 10,
+        "y": 0,
+        "Lz": 1.3,
+        "Bz": 1.3,
+        "FZ_tonf": -3.6324,
+        "MX_tonfm": -0.8442,
+        "MY_tonfm": 2.291,
+        "ux_top_mm": 2.2825,
+        "uy_top_mm": -0.967,
+        "uz_top_mm": -17.8335,
+        "uz_base_mm": -17.8296,
+        "q_tonfm2": 1.873
+      },
+      {
+        "col_id": 4,
+        "rol": "medio-borde",
+        "x": 0,
+        "y": 5,
+        "Lz": 2.2,
+        "Bz": 2.2,
+        "FZ_tonf": -1.1218,
+        "MX_tonfm": 0.9406,
+        "MY_tonfm": 1.2984,
+        "ux_top_mm": 2.2825,
+        "uy_top_mm": -0.967,
+        "uz_top_mm": -1.6253,
+        "uz_base_mm": -1.6243,
+        "q_tonfm2": 0.171
+      },
+      {
+        "col_id": 5,
+        "rol": "centro",
+        "x": 5,
+        "y": 5,
+        "Lz": 1.6,
+        "Bz": 1.6,
+        "FZ_tonf": -2.1401,
+        "MX_tonfm": 0.0003,
+        "MY_tonfm": 1.4681,
+        "ux_top_mm": 2.2825,
+        "uy_top_mm": -0.967,
+        "uz_top_mm": -5.557,
+        "uz_base_mm": -5.5551,
+        "q_tonfm2": 0.583
+      },
+      {
+        "col_id": 6,
+        "rol": "medio-borde",
+        "x": 10,
+        "y": 5,
+        "Lz": 2.2,
+        "Bz": 2.2,
+        "FZ_tonf": -3.1612,
+        "MX_tonfm": -0.9409,
+        "MY_tonfm": 1.2987,
+        "ux_top_mm": 2.2825,
+        "uy_top_mm": -0.967,
+        "uz_top_mm": -9.2992,
+        "uz_base_mm": -9.2934,
+        "q_tonfm2": 0.976
+      },
+      {
+        "col_id": 7,
+        "rol": "esquina",
+        "x": 0,
+        "y": 10,
+        "Lz": 1.3,
+        "Bz": 1.3,
+        "FZ_tonf": -1.2892,
+        "MX_tonfm": 0.8433,
+        "MY_tonfm": 0.3505,
+        "ux_top_mm": 2.2825,
+        "uy_top_mm": -0.967,
+        "uz_top_mm": -3.9123,
+        "uz_base_mm": -3.9114,
+        "q_tonfm2": 0.411
+      },
+      {
+        "col_id": 8,
+        "rol": "medio-borde",
+        "x": 5,
+        "y": 10,
+        "Lz": 2.2,
+        "Bz": 2.2,
+        "FZ_tonf": -2.1399,
+        "MX_tonfm": 0.0003,
+        "MY_tonfm": 0.4073,
+        "ux_top_mm": 2.2825,
+        "uy_top_mm": -0.967,
+        "uz_top_mm": -5.4546,
+        "uz_base_mm": -5.4512,
+        "q_tonfm2": 0.573
+      },
+      {
+        "col_id": 9,
+        "rol": "esquina",
+        "x": 10,
+        "y": 10,
+        "Lz": 1.3,
+        "Bz": 1.3,
+        "FZ_tonf": -2.9936,
+        "MX_tonfm": -0.8436,
+        "MY_tonfm": 0.3505,
+        "ux_top_mm": 2.2825,
+        "uy_top_mm": -0.967,
+        "uz_top_mm": -15.0604,
+        "uz_base_mm": -15.0572,
+        "q_tonfm2": 1.581
+      }
+    ]
+  }
+}

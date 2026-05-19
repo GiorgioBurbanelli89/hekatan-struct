@@ -1,4 +1,33 @@
-# Cimentación Edificio Real — Hekatan vs SAFE (validación PENDIENTE — bug Q4+frame identificado)
+# Cimentación Edificio Real — Hekatan vs SAFE (V2 en investigación)
+
+## Update 2026-05-19: intento V2 con modelación estructural correcta
+
+Tras feedback del usuario (cadenas a nivel piso terminado + pedestales
+verticales + zapatas abajo), reintenté el caso con la geometría real:
+- Zapatas en z=0 (Floor level, SAFE-friendly)
+- Pedestales verticales (frame 0.40×0.40m) de z=0 a z=+0.50m
+- Cadenas horizontales en z=+0.50m (frame 0.25×0.40m VAmarre)
+- Cargas P+Mx+My aplicadas en TOPs (z=+0.50m)
+
+**Resultado:** los 3 tipos de elementos se visualizan correctamente en
+SAFE GUI (zapatas+pedestales+cadenas conectados visualmente), pero todos
+los uz vuelven 0. Tras 6 iteraciones del fix (AddByPoint, SetSpecialPoint,
+SetRestraint, FLOOR MESHING OPTION via DatabaseTables), el merge entre
+joints aislados (joint_base/joint_top) y los nodos del mesh auto-generado
+de las áreas SIGUE sin funcionar.
+
+**Hipótesis actual**: SAFE auto-mesh ignora `SetSpecialPoint=True` cuando
+el modelo se construye 100% via API (vs GUI). El fix requiere un approach
+distinto: crear las zapatas como **mesh explícito Q4** (cada zapata =
+nx×ny áreas Q4 individuales compartiendo joints), no como áreas grandes
+auto-mesheadas.
+
+**Estado**: V2 commiteado pero NO validado. Volver con approach
+mesh-explícito en próxima iteración.
+
+---
+
+# (Documentación V1 — modelo simplificado plate-only con bug Q4 drilling)
 
 Reconstrucción 100% desde cero via API del modelo extraído de
 `examples/src/edificio-aporticado/sample_output/cimentacion_edificio_9zapatas_12vigas.f2k`

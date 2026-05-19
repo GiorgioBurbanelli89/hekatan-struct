@@ -1,0 +1,41 @@
+-> Cimentación edificio real: 9 zapatas (3 dims) + 12 vigas amarre
+   Suelo ks=1030 kN/m³, espesor 0.3m
+   Cargas: FZ totales = -19.27 tonf
+-> Lanzando SAFE 20...
+   Units: tonf, m, C
+-> Material 4000Psi: E=2534505 tonf/m², γ=2.447 tonf/m³
+-> SetSlab(Footing) Footing/ShellThick t=0.3m
+-> Frame props: VAmarre_0.250x0.400 (cadenas) + Pedestal_0.400x0.400 (pedestales)
+-> LoadPattern Dead added
+-> 9 zapatas en z=0.0m (Floor level, SAFE-friendly)
+-> 9 joint TOPs (z=0) con cargas + 9 joint BASEs (z=0.0) marcados SpecialPoint
+-> SetRestraint(PBase_5) Ux/Uy/Rz = TRUE (suprime modos rígidos horizontales)
+-> 9 pedestales verticales (h=0.5m) compartiendo joint_base/joint_top
+-> 12 cadenas horizontales en z=0 (joint_top compartidos)
+-> Save: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\benchmarks\safe\edificio-cimentacion-real\Edificio_Cimentacion_via_API.fdb
+-> SubModulus override: 105 tonf/m³
+-> Editing 'Joint Assignments - Floor Meshing Option': existing rows=0, headers=['UniqueName', 'IncludeInMesh']
+   SetTableForEditingArray ret=(0, 1, <System.String[] object at 0x0000019D5BD87200>, <System.String[] object at 0x0000019D5BD87280>) (added 9 joints)
+   ApplyEditedTables ret=0 err=0 warn=0 info=0
+-> RunAnalysis...
+   RunAnalysis ret=0 (28.43s)
+-> Joint Displacements: 108 rows
+-> JSON: safe_edificio_v2_result.json
+
+==============================================================================
+  SAFE API - Cimentación Edificio Real (9 zap + 12 vigas)
+==============================================================================
+  P_total: -19.27 tonf | A_total: 28.7 m² | w_teo: 6.399 mm
+  Runtime: 28.43s
+------------------------------------------------------------------------------
+  col rol           pos        dim             FZ     MY   uz_base    uz_top  q_tonfm2
+    1 esquina       ( 0, 0)    1.3×1.3     -0.67 +2.29   +0.000   +0.000      0.00
+    2 medio-borde   ( 5, 0)    2.2×2.2     -2.12 +2.58   +0.000   +0.000      0.00
+    3 esquina       (10, 0)    1.3×1.3     -3.63 +2.29   +0.000   +0.000      0.00
+    4 medio-borde   ( 0, 5)    2.2×2.2     -1.12 +1.30   +0.000   +0.000      0.00
+    5 centro        ( 5, 5)    1.6×1.6     -2.14 +1.47   +0.000   +0.000      0.00
+    6 medio-borde   (10, 5)    2.2×2.2     -3.16 +1.30   +0.000   +0.000      0.00
+    7 esquina       ( 0,10)    1.3×1.3     -1.29 +0.35   +0.000   +0.000      0.00
+    8 medio-borde   ( 5,10)    2.2×2.2     -2.14 +0.41   +0.000   +0.000      0.00
+    9 esquina       (10,10)    1.3×1.3     -2.99 +0.35   +0.000   +0.000      0.00
+==============================================================================

@@ -14,193 +14,201 @@
          ( ) = Null DOF
 
   JOINTS              UX  UY  UZ  RX  RY  RZ
-       1 TO     ~81    A   A   A   A   A   A
+       1 TO  PTop_5    A   A   A   A   A   A
+ PBase_5               -   -   A   A   A   -
+  PTop_6 TO     ~90    A   A   A   A   A   A
 
   JOINTS              UX  UY  UZ  RX  RY  RZ
- Col_1~L               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 58~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
-  4~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 70~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
-  1~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 71~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
-  2~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 46~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
-  3~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 47~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- Col_2~L               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 62~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
-  8~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 72~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
-  6~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 48~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
-  5~Link TO  7~Link    -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 49~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- Col_3~L               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 66~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 12~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 73~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 10~Link TO  9~Link    -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 74~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 11~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- Col_4~L               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 59~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 14~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 50~Link TO 75~Link    -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 13~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 60~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 16~Link TO 15~Link    -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 51~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- Col_5~L               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 64~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 20~Link TO 17~Link    -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 63~Link TO 52~Link    -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 19~Link TO 18~Link    -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 53~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- Col_6~L               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 68~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 24~Link TO 21~Link    -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 67~Link TO 76~Link    -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 23~Link TO 22~Link    -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- Col_7~L               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 61~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 26~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 54~Link TO 77~Link    -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 25~Link TO 28~Link    -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 78~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 27~Link TO 29~Link    -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- 65~Link               -   -   -   -   -   -
-
-  JOINTS              UX  UY  UZ  RX  RY  RZ
- Col_8~L               -   -   -   -   -   -
+ Base_1~               -   -   -   -   -   -
 
   JOINTS              UX  UY  UZ  RX  RY  RZ
  55~Link               -   -   -   -   -   -
 
   JOINTS              UX  UY  UZ  RX  RY  RZ
- 30~Link               -   -   -   -   -   -
+  2~Link               -   -   -   -   -   -
 
   JOINTS              UX  UY  UZ  RX  RY  RZ
- 56~Link TO 79~Link    -   -   -   -   -   -
+ 56~Link               -   -   -   -   -   -
 
   JOINTS              UX  UY  UZ  RX  RY  RZ
- 32~Link TO 33~Link    -   -   -   -   -   -
+  3~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 73~Link TO 74~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+  1~Link TO  4~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ Base_2~               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 57~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+  7~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 75~Link TO 76~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+  5~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 58~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+  8~Link TO  6~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 77~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 11~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 60~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ Base_3~               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 59~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 10~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 78~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+  9~Link TO 12~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ Base_4~               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 61~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 16~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 79~Link TO 80~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 14~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 62~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 13~Link TO 15~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ Base_5~               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 63~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 18~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 64~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 19~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 81~Link TO 82~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 17~Link TO 20~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ Base_6~               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 65~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 23~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 66~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 24~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 83~Link TO 84~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 22~Link TO 21~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 85~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 28~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 68~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ Base_7~               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 67~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 27~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 86~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 26~Link TO 25~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ Base_8~               -   -   -   -   -   -
 
   JOINTS              UX  UY  UZ  RX  RY  RZ
  69~Link               -   -   -   -   -   -
 
   JOINTS              UX  UY  UZ  RX  RY  RZ
- Col_9~L               -   -   -   -   -   -
+ 30~Link               -   -   -   -   -   -
 
   JOINTS              UX  UY  UZ  RX  RY  RZ
- 57~Link TO 80~Link    -   -   -   -   -   -
+ 70~Link               -   -   -   -   -   -
 
   JOINTS              UX  UY  UZ  RX  RY  RZ
- 35~Link TO 34~Link    -   -   -   -   -   -
+ 31~Link               -   -   -   -   -   -
 
   JOINTS              UX  UY  UZ  RX  RY  RZ
- 81~Link               -   -   -   -   -   -
+ 87~Link TO 88~Link    -   -   -   -   -   -
 
   JOINTS              UX  UY  UZ  RX  RY  RZ
- 36~Link               -   -   -   -   -   -
+ 29~Link TO 32~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ Base_9~               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 71~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 34~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 72~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 35~Link               -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 89~Link TO 90~Link    -   -   -   -   -   -
+
+  JOINTS              UX  UY  UZ  RX  RY  RZ
+ 33~Link TO 36~Link    -   -   -   -   -   -

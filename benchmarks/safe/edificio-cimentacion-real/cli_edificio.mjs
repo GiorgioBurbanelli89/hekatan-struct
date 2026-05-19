@@ -19,8 +19,11 @@ const TONF_TO_KN = 9.80665;
 // Mismos parámetros del SAFE script
 const P_GLOBAL = {
   tz: 0.30, E_kNm2: 24855e3, nu: 0.20, rho_kNm3: 24.0,
-  ks_kNm3: 1030.0,       // = 105 tonf/m³
-  viga_b: 0.25, viga_h: 0.40,
+  ks_kNm3: 1030.0,           // = 105 tonf/m³
+  viga_b: 0.25, viga_h: 0.40, // cadenas
+  // V2: modelación correcta
+  h_ped: 0.50,                // altura pedestal
+  ped_side: 0.40,             // sección cuadrada pedestal
 };
 
 // 9 columnas con dim de zapata
@@ -57,10 +60,15 @@ const BEAMS = [
 // ── Mesh: para cada zapata, generar grid 5×5 nodos (4×4 Q4) ─────────
 // Grid local en cada zapata centrada en (col.x, col.y) con extensión Lz×Bz.
 // Resolución: nLocal+1 nodos por lado, nLocal=4 elementos.
+// V2 modelación correcta:
+//   zapatas (shells) en z=-h_ped
+//   pedestales (frames verticales) de z=-h_ped a z=0
+//   cadenas (frames horizontales) en z=0 entre TOPS de pedestales
+const z_zap = -P_GLOBAL.h_ped;
 const nLocal = +(argMap.nLocal ?? 4);
 const nodes = [];               // [x, y, z]
-const elements = [];            // [n0, n1, n2, n3] for Q4 or [ni, nj] for frame
-const zapataNodes = new Map();  // col_id → { center_idx, all_node_indices[] }
+const elements = [];            // [n0, n1, n2, n3] Q4 o [ni, nj] frame
+const zapataNodes = new Map();  // col_id → { center_idx, top_idx, grid_start }
 
 for (const col of COLUMNS) {
   const nn = nLocal + 1;
@@ -69,36 +77,47 @@ for (const col of COLUMNS) {
   const start = nodes.length;
   for (let j = 0; j < nn; ++j)
     for (let i = 0; i < nn; ++i)
-      nodes.push([x0 + i*dx, y0 + j*dy, 0]);
-  // Q4 elements
+      nodes.push([x0 + i*dx, y0 + j*dy, z_zap]);   // zapata en z=-h_ped
   const elemStart = elements.length;
   for (let j = 0; j < nLocal; ++j)
     for (let i = 0; i < nLocal; ++i) {
       const n0 = start + j*nn + i;
       elements.push([n0, n0 + 1, n0 + nn + 1, n0 + nn]);
     }
-  // Center node index (asume nLocal par → centro exacto)
   const centerLocal = (nLocal/2) * nn + (nLocal/2);
   const centerIdx = start + centerLocal;
+  // TOP node (z=0) — destino del pedestal y origen de cadenas
+  const topIdx = nodes.length;
+  nodes.push([col.x, col.y, 0]);
   zapataNodes.set(col.id, {
     center_idx: centerIdx,
+    top_idx: topIdx,
     grid_start: start,
     grid_count: nn * nn,
     elem_start: elemStart,
     elem_count: nLocal * nLocal,
   });
 }
-console.log(`-> Mesh: ${nodes.length} nodos, ${elements.length} Q4 (zap), ${nLocal}×${nLocal} por zapata`);
+console.log(`-> Mesh: ${nodes.length} nodos, ${elements.length} Q4 (zap), ${nLocal}×${nLocal} por zapata + 9 nodos TOP en z=0`);
 
-// ── Frames de vigas amarre — conectan centros de zapatas ────────────
+// ── 9 pedestales verticales (frame: zapata_center → top) ────────────
+const pedElemStart = elements.length;
+for (const col of COLUMNS) {
+  const z = zapataNodes.get(col.id);
+  elements.push([z.center_idx, z.top_idx]);
+}
+const pedElemCount = elements.length - pedElemStart;
+console.log(`-> ${pedElemCount} pedestales verticales (h=${P_GLOBAL.h_ped}m)`);
+
+// ── 12 cadenas horizontales (frame en z=0 entre TOPS) ───────────────
 const beamElemStart = elements.length;
 for (const [ci, cj] of BEAMS) {
   const zi = zapataNodes.get(ci);
   const zj = zapataNodes.get(cj);
-  elements.push([zi.center_idx, zj.center_idx]);
+  elements.push([zi.top_idx, zj.top_idx]);
 }
 const beamElemCount = elements.length - beamElemStart;
-console.log(`-> ${beamElemCount} frames vigas amarre`);
+console.log(`-> ${beamElemCount} cadenas horizontales en z=0`);
 
 // ── Springs Winkler en cada nodo de las zapatas ─────────────────────
 const springs = [];
@@ -117,18 +136,18 @@ for (const col of COLUMNS) {
 }
 console.log(`-> ${springs.length} springs Winkler nodales`);
 
-// ── Cargas en los 9 centros (kN, kN·m) ──────────────────────────────
+// ── Cargas en los 9 TOPS de pedestales (z=0) en kN, kN·m ────────────
 const loads = new Map();
 for (const col of COLUMNS) {
   const z = zapataNodes.get(col.id);
   const L = LOADS_TONF[col.id];
-  loads.set(z.center_idx, [
-    0,                       // Fx
-    0,                       // Fy
-    L.FZ * TONF_TO_KN,       // Fz en kN (negativo = abajo)
-    L.MX * TONF_TO_KN,       // Mx en kN·m
-    L.MY * TONF_TO_KN,       // My en kN·m
-    0,                       // Mz
+  loads.set(z.top_idx, [
+    0,
+    0,
+    L.FZ * TONF_TO_KN,
+    L.MX * TONF_TO_KN,
+    L.MY * TONF_TO_KN,
+    0,
   ]);
 }
 
@@ -139,11 +158,17 @@ const E = P_GLOBAL.E_kNm2;
 const nu = P_GLOBAL.nu;
 const G = E / (2 * (1 + nu));
 
-// Frame VAmarre 0.25×0.40 (b × h):
+// Cadena VAmarre 0.25×0.40 (b × h):
 const A_v = P_GLOBAL.viga_b * P_GLOBAL.viga_h;
-const Iz_v = P_GLOBAL.viga_b * P_GLOBAL.viga_h**3 / 12;   // momento sobre eje fuerte
-const Iy_v = P_GLOBAL.viga_h * P_GLOBAL.viga_b**3 / 12;   // momento sobre eje débil
-const J_v  = 0.229 * P_GLOBAL.viga_b * P_GLOBAL.viga_h**3; // St-Venant aprox (b<h)
+const Iz_v = P_GLOBAL.viga_b * P_GLOBAL.viga_h**3 / 12;
+const Iy_v = P_GLOBAL.viga_h * P_GLOBAL.viga_b**3 / 12;
+const J_v  = 0.229 * P_GLOBAL.viga_b * P_GLOBAL.viga_h**3;
+
+// Pedestal 0.40×0.40 (cuadrado):
+const ps = P_GLOBAL.ped_side;
+const A_p = ps * ps;
+const I_p = ps**4 / 12;
+const J_p = 0.141 * ps**4;   // Saint-Venant rectangular cuadrado
 
 const elasticities = new Map();
 const poissonsRatios = new Map();
@@ -154,13 +179,23 @@ const momentsOfInertiaY = new Map();
 const shearModuli = new Map();
 const torsionalConstants = new Map();
 
-// Shells (zapatas Q4)
-for (let i = 0; i < beamElemStart; ++i) {
+// Shells (zapatas Q4): índices [0, pedElemStart)
+for (let i = 0; i < pedElemStart; ++i) {
   elasticities.set(i, E);
   poissonsRatios.set(i, nu);
   thicknesses.set(i, P_GLOBAL.tz);
 }
-// Frames (vigas amarre)
+// Pedestales (9 frames verticales): índices [pedElemStart, beamElemStart)
+for (let i = pedElemStart; i < beamElemStart; ++i) {
+  elasticities.set(i, E);
+  poissonsRatios.set(i, nu);
+  areas.set(i, A_p);
+  momentsOfInertiaZ.set(i, I_p);
+  momentsOfInertiaY.set(i, I_p);
+  shearModuli.set(i, G);
+  torsionalConstants.set(i, J_p);
+}
+// Cadenas horizontales (12 frames): índices [beamElemStart, elements.length)
 for (let i = beamElemStart; i < elements.length; ++i) {
   elasticities.set(i, E);
   poissonsRatios.set(i, nu);
@@ -185,23 +220,24 @@ const result = deform(nodes, elements, nodeInputs, elementInputs, springs);
 const t1 = performance.now();
 console.log(`   deform() OK in ${(t1-t0).toFixed(1)} ms`);
 
-// ── Extract uz en los 9 centros ─────────────────────────────────────
+// ── Extract uz en BASE (zapata sobre springs) y TOP (donde aplican cargas)
 const samples_9cols = [];
 for (const col of COLUMNS) {
   const z = zapataNodes.get(col.id);
-  const def = result.deformations.get(z.center_idx);
-  if (!def) continue;
-  const [ux, uy, uz, rx, ry, rz] = def;
+  const defBase = result.deformations.get(z.center_idx);
+  const defTop = result.deformations.get(z.top_idx);
+  if (!defBase || !defTop) continue;
   samples_9cols.push({
     col_id: col.id, rol: col.rol,
     x: col.x, y: col.y, Lz: col.Lz, Bz: col.Bz,
     FZ_tonf: LOADS_TONF[col.id].FZ,
     MX_tonfm: LOADS_TONF[col.id].MX,
     MY_tonfm: LOADS_TONF[col.id].MY,
-    ux_mm: +(ux * 1000).toFixed(4),
-    uy_mm: +(uy * 1000).toFixed(4),
-    uz_mm: +(uz * 1000).toFixed(4),
-    q_tonfm2: +(P_GLOBAL.ks_kNm3 * Math.abs(uz) / TONF_TO_KN).toFixed(3),
+    ux_top_mm:  +(defTop[0] * 1000).toFixed(4),
+    uy_top_mm:  +(defTop[1] * 1000).toFixed(4),
+    uz_top_mm:  +(defTop[2] * 1000).toFixed(4),
+    uz_base_mm: +(defBase[2] * 1000).toFixed(4),
+    q_tonfm2:   +(P_GLOBAL.ks_kNm3 * Math.abs(defBase[2]) / TONF_TO_KN).toFixed(3),
   });
 }
 
@@ -244,10 +280,10 @@ console.log("═".repeat(78));
 console.log(`  P_total: ${P_total_tonf.toFixed(2)} tonf | A_total: ${A_total.toFixed(1)} m² | w_teo: ${w_avg_teo_mm.toFixed(3)} mm`);
 console.log(`  Runtime: ${(t1-t0).toFixed(1)} ms`);
 console.log("─".repeat(78));
-console.log(`  ${"col".padStart(3)} ${"rol".padEnd(13)} ${"pos".padEnd(10)} ${"dim".padEnd(10)} ${"FZ".padStart(7)} ${"MY".padStart(6)} ${"uz_mm".padStart(9)} ${"q_tonfm2".padStart(9)}`);
+console.log(`  ${"col".padStart(3)} ${"rol".padEnd(13)} ${"pos".padEnd(10)} ${"dim".padEnd(10)} ${"FZ".padStart(7)} ${"MY".padStart(6)} ${"uz_base".padStart(9)} ${"uz_top".padStart(9)} ${"q_tonfm2".padStart(9)}`);
 for (const s of samples_9cols) {
   const pos = `(${s.x.toString().padStart(2)},${s.y.toString().padStart(2)})`;
   const dim = `${s.Lz}×${s.Bz}`;
-  console.log(`  ${s.col_id.toString().padStart(3)} ${s.rol.padEnd(13)} ${pos.padEnd(10)} ${dim.padEnd(10)} ${s.FZ_tonf.toFixed(2).padStart(7)} ${s.MY_tonfm.toFixed(2).padStart(6)} ${s.uz_mm.toFixed(3).padStart(8)} ${s.q_tonfm2.toFixed(2).padStart(9)}`);
+  console.log(`  ${s.col_id.toString().padStart(3)} ${s.rol.padEnd(13)} ${pos.padEnd(10)} ${dim.padEnd(10)} ${s.FZ_tonf.toFixed(2).padStart(7)} ${s.MY_tonfm.toFixed(2).padStart(6)} ${s.uz_base_mm.toFixed(3).padStart(8)} ${s.uz_top_mm.toFixed(3).padStart(8)} ${s.q_tonfm2.toFixed(2).padStart(9)}`);
 }
 console.log("═".repeat(78));
