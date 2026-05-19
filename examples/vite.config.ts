@@ -64,6 +64,7 @@ export default defineConfig({
         "safe-bench-zapata-combinada": "src/safe-bench-zapata-combinada/index.html",
         "safe-bench-zapata-conectada": "src/safe-bench-zapata-conectada/index.html",
         "safe-bench-zapata-comparativa": "src/safe-bench-zapata-comparativa/index.html",
+        "viga-cim-guerra-ej7": "src/viga-cim-guerra-ej7/index.html",
         "viga-medio-elastico": "src/viga-medio-elastico/index.html",
         "cli-modeler": "src/cli-modeler/index.html",
         "cad-draw": "src/cad-draw/index.html",
