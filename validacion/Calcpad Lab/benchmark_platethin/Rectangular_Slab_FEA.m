@@ -40,10 +40,10 @@ Phi_3 = 3*xi^2 - 2*xi^3          %-- w en nodo 1
 Phi_4 = -L*xi^2 + L*xi^3         %-- theta en nodo 1
 
 fprintf('=== Funciones de Hermite cúbicas en [0, 1] ===\n');
-fprintf('??(?) = %s\n', char(Phi_1));
-fprintf('??(?) = %s\n', char(Phi_2));
-fprintf('??(?) = %s\n', char(Phi_3));
-fprintf('??(?) = %s\n', char(Phi_4));
+fprintf('Phi_1(xi) = %s\n', char(Phi_1));
+fprintf('Phi_2(xi) = %s\n', char(Phi_2));
+fprintf('Phi_3(xi) = %s\n', char(Phi_3));
+fprintf('Phi_4(xi) = %s\n', char(Phi_4));
 
 %-- Primeras y segundas derivadas (simbolicas)
 dPhi_1 = diff(Phi_1, xi);   ddPhi_1 = diff(Phi_1, xi, 2);
@@ -52,8 +52,8 @@ dPhi_3 = diff(Phi_3, xi);   ddPhi_3 = diff(Phi_3, xi, 2);
 dPhi_4 = diff(Phi_4, xi);   ddPhi_4 = diff(Phi_4, xi, 2);
 
 fprintf('\n=== Segundas derivadas (necesarias para curvaturas) ===\n');
-fprintf('d²??/d?² = %s\n', char(ddPhi_1));
-fprintf('d²??/d?² = %s\n', char(ddPhi_2));
+fprintf('d^2 Phi_1/dxi^2 = %s\n', char(ddPhi_1));
+fprintf('d^2 Phi_2/dxi^2 = %s\n', char(ddPhi_2));
 
 %-- Verificacion analitica: int_0^1 (Phi1+Phi3) dxi = 1 (particion de unidad)
 %-- Calcpad-Lab MVP factoriza el polinomio antes de integrar, lo que hace
@@ -62,8 +62,8 @@ fprintf('d²??/d?² = %s\n', char(ddPhi_2));
 I1_val = 1/2;  % int_0^1 (1 - 3*xi^2 + 2*xi^3) dxi = 1 - 1 + 1/2 = 1/2
 I3_val = 1/2;  % int_0^1 (3*xi^2 - 2*xi^3) dxi = 1 - 1/2 = 1/2
 fprintf('\nVerificación partición de unidad (analítica):\n');
-fprintf('  ??¹ ??(?) d? = %g\n', I1_val);
-fprintf('  ??¹ ??(?) d? = %g\n', I3_val);
+fprintf('  int_0^1 Phi_1(xi) dxi = %g\n', I1_val);
+fprintf('  int_0^1 Phi_3(xi) dxi = %g\n', I3_val);
 fprintf('  Suma         = %g   (debe ser 1)\n', I1_val + I3_val);
 
 %% Matriz constitutiva D (placa delgada de Kirchhoff)
@@ -246,17 +246,17 @@ fprintf('Mxy_max = %.4f kNm/m  (ref Calcpad: 8.380)\n', max(abs(Mxy(:))));
 
 %-- IMPORTANTE: colormap() en Calcpad-Lab define el colormap ACTIVO para los
 %-- proximos plots. Por eso va ANTES de surf/contourf, no despues.
-%-- 'jet' produce blue ? cyan ? green ? yellow ? red = arcoiris canonico SAP/ETABS.
+%-- 'jet' produce blue -> cyan -> green -> yellow -> red = arcoiris canonico SAP/ETABS.
 colormap('jet');
 
 figure;
-%-- Deflexion: ploteamos |w| (magnitud) para que la placa "se vea" deformada
-%-- en sentido positivo. W es negativo (carga descendente); -W queda positivo.
+%-- Deflexion: signo real preservado. La carga q apunta hacia abajo (-z),
+%-- entonces W (deflexion) tambien es negativo. La placa se "hunde" en el plot.
 subplot(2, 2, 1);
 colormap('jet');
-surf(XX, YY, -W);
-xlabel('x [m]'); ylabel('y [m]'); zlabel('|w| [mm] (magnitud de deflexion)');
-title(sprintf('Deflexion BFS — |w|_{max} = %.3f mm hacia abajo', max(abs(W(:)))));
+surf(XX, YY, W);
+xlabel('x [m]'); ylabel('y [m]'); zlabel('w [mm] (deflexion, signo real)');
+title(sprintf('Deflexion BFS — w_{min} = %.3f mm (carga hacia abajo)', min(W(:))));
 shading('interp');
 colorbar;
 
@@ -300,7 +300,7 @@ fprintf('Match a < 1%% en w, Mx, My. Mxy depende de densidad de sampleo.\n');
 %  (Calcpad-Lab y Octave las aceptan en cualquier posicion).
 %% =========================================================================
 
-%-- Hermite cubica ?_k(u) sobre [0,1] con escala L (longitud del elemento)
+%-- Hermite cubica Phi_k(u) sobre [0,1] con escala L (longitud del elemento)
 function v = phi(k, u, L)
     if k == 1, v = 1 - u^2*(3 - 2*u);
     elseif k == 2, v = u*L*(1 - u*(2 - u));
@@ -309,7 +309,7 @@ function v = phi(k, u, L)
     end
 end
 
-%-- Primera derivada d?_k/du
+%-- Primera derivada dPhi_k/du
 function v = phi_d(k, u, L)
     if k == 1, v = -6/L*u*(1 - u);
     elseif k == 2, v = 1 - u*(4 - 3*u);
@@ -318,7 +318,7 @@ function v = phi_d(k, u, L)
     end
 end
 
-%-- Segunda derivada d²?_k/du²
+%-- Segunda derivada d^2 Phi_k/du^2
 function v = phi_dd(k, u, L)
     if k == 1, v = -6/L^2 + 12*u/L^2;
     elseif k == 2, v = (-4 + 6*u)/L;
@@ -327,7 +327,7 @@ function v = phi_dd(k, u, L)
     end
 end
 
-%-- B-matrix 3x16 (B1, B2, B3 = curvaturas ?_xx, ?_yy, ?_xy)
+%-- B-matrix 3x16 (B1, B2, B3 = curvaturas kappa_xx, kappa_yy, kappa_xy)
 function B = B_mat(u, v, a1, b1)
     pa = [phi(1,u,a1), phi(2,u,a1), phi(3,u,a1), phi(4,u,a1)];
     pb = [phi(1,v,b1), phi(2,v,b1), phi(3,v,b1), phi(4,v,b1)];
