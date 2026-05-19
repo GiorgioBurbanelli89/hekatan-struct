@@ -156,6 +156,8 @@ export default defineConfig({
         "placa-base-cft": "src/placa-base-cft/index.html",
         // ── Bulbo de presiones bajo carga rectangular (Serquen SF-70, hex8) ──
         "bulbo-presiones-suelo": "src/bulbo-presiones-suelo/index.html",
+        // ── Mesa de torsión: validación contra ETABS 19 (Gabriela/Seproinca 2020) ──
+        "mesa-torsion": "src/mesa-torsion/index.html",
       },
     },
   },

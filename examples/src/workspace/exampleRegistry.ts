@@ -260,6 +260,7 @@ import { benchmarkPaz10_7 } from "../benchmark-paz-10-7/benchmarkPaz10_7";
 import { benchmarkPaz11_1 } from "../benchmark-paz-11-1/benchmarkPaz11_1";
 import { benchmarkPaz12_1 } from "../benchmark-paz-12-1/benchmarkPaz12_1";
 import { benchmarkPaz13_1 } from "../benchmark-paz-13-1/benchmarkPaz13_1";
+import { mesaTorsion } from "../mesa-torsion/mesaTorsion";
 import { shellThick } from "../shell-thick/shellThick";
 import { layeredShell } from "../layered-shell/layeredShell";
 import { edificioAporticado } from "../edificio-aporticado/edificioAporticado";
@@ -409,6 +410,7 @@ export const examplesRegistry: ExampleDef[] = [
   bulboPresionesSuelo,     // Bulbo de Presiones — Serquen SF-70
   benchmark3way,           // Shell+Frame DOF mismatch (Area + Frame)
   benchmarkCft,            // CFT cols + I-beams + losa (Area + Frame composite)
+  mesaTorsion,             // 🌀 Mesa de torsión (validación ETABS — Gabriela/Seproinca 2020)
 
   // ── Legacy upstream awatif (resto que no son benchmarks) ────
   ...legacyAwatifExamples.filter(e =>
