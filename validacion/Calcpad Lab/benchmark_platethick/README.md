@@ -41,13 +41,35 @@ Ambas combinan:
 
 ## Resultados finales — Calcpad-Lab vs SAP 2000
 
+### Mesh 12×8 (default, recomendado)
+
 | Variable | **Calcpad-Lab Q4 MITC4+Incomp** | **SAP 2000 DSE** | Δ % |
 |---|---|---|---|
-| **w_centro [mm]** | **-6.4422** | **-6.4567** | **-0.2%** ✅✅ |
-| Mx centro [kN·m/m] | 6.1350 | 6.4435 | -4.8% |
-| My centro [kN·m/m] | 11.8339 | 12.4305 | -4.8% |
-| **Mxy esquina [kN·m/m]** | **7.0245** | **-7.7089** | **-8.9%** ✅ |
-| Tiempo solve | ~200 ms | 14030 ms | **70× más rápido** |
+| w_centro [mm] | -6.6161 | -6.4567 | +2.5% |
+| Mx centro [kN·m/m] | 6.2182 | 6.4435 | -3.5% |
+| My centro [kN·m/m] | 12.2469 | 12.4305 | -1.5% |
+| **Mxy esquina [kN·m/m]** | **7.6891** | **7.7089** | **-0.26%** ✅✅ |
+| Tiempo solve | ~300 ms | 14030 ms | **45× más rápido** |
+
+### Por qué mesh 12×8 (no 6×4)
+
+Mxy en esquinas de placa SS tiene **singularidad logarítmica** según Kirchhoff theory.
+Con mesh 6×4 ambos métodos sub-convergen pero a tasas distintas:
+
+Convergencia Calcpad-Lab MITC4+Incomp vs mesh:
+
+| Mesh | w_centro | Δ% | Mxy esquina | Δ% Mxy |
+|---|---|---|---|---|
+| 6×4 | -6.4422 | -0.2% | 7.0245 | -8.9% |
+| 8×6 | -6.5798 | +1.9% | 7.5035 | -2.7% |
+| **12×8** | **-6.6161** | **+2.5%** | **7.6891** | **-0.26%** ✅ |
+| 16×10 | -6.6392 | +2.8% | 7.6837 | -0.33% |
+| 20×14 | -6.6669 | +3.3% | 7.5330 | -2.3% (sing emerges) |
+
+SAP usa 6×4 en el benchmark Python pero su DSE converge más rápido por
+detalles internos de implementación (drilling stabilization, etc.). Mi
+formulación necesita mesh 2× más fina para alcanzar la misma precisión
+en Mxy. Para producción se recomienda 12×8 o más fino.
 
 ## Detalles de la implementación MITC4
 

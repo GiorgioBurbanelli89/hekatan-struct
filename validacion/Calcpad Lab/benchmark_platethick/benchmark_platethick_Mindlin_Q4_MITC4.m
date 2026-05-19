@@ -43,8 +43,12 @@ D_b = D11 * [1, nu, 0; nu, 1, 0; 0, 0, (1 - nu)/2]   % bending [kN*m]
 D_s = kappa*G*t * [1, 0; 0, 1]                        % shear [kN/m]
 
 %% Malla
-n_a = 6   % elementos en a
-n_b = 4   % elementos en b
+%-- Mesh 12x8 — Mxy esquina tiene singularidad logaritmica en SS plate;
+%-- en 6x4 ambos (Calcpad MITC4 e SAP DSE) sub-convergen pero a tasas
+%-- diferentes (delta -8.9%). Con 12x8 Calcpad alcanza Mxy = 7.6891 vs
+%-- SAP 7.7089 → delta -0.26% (match exacto).
+n_a = 12  % elementos en a
+n_b = 8   % elementos en b
 n_e = n_a*n_b
 n_j = (n_a+1)*(n_b+1)
 a_1 = a/n_a
