@@ -1,8 +1,6 @@
-%% Rectangular Slab FEA — Mindlin-Reissner Q4 (12 DOF/elem, SRI shear)
+%% Rectangular Slab FEA — Mindlin-Reissner Q4 MITC4 (12 DOF/elem)
 %-- Benchmark de placa rectangular simply-supported, carga uniforme q.
-%-- Teoria Mindlin-Reissner: incluye deformacion por corte transversal
-%-- (apropiada para placas medianas-gruesas). Para placas delgadas
-%-- (t/a < 1/20) converge al resultado Kirchhoff.
+%-- Replica SAP 2000 v24 Plate-Thick (Mindlin/MITC4) Shell Element.
 %--
 %-- Caso (placa simply-supported con carga uniforme):
 %--   a = 6 m   b = 4 m   t = 0.1 m   (t/a = 0.017 → DELGADA)
@@ -10,10 +8,17 @@
 %--
 %-- Element: Q4 bilinear, 3 DOF/nodo: w (deflexion), theta_x (rot x), theta_y (rot y)
 %-- Bending: B_b (3x12) integrado con Gauss 2x2 (full)
-%-- Shear:   B_s (2x12) integrado con Gauss 1x1 (SRI — evita shear locking)
+%-- Shear:   B_s (2x12) MITC4 (Bathe-Dvorkin 1985) integrado con Gauss 2x2 full
 %--
-%-- Resultado esperado (placas delgadas, ≈ Kirchhoff BFS):
-%--   w_centro ≈ -6.5 a -7.0 mm (slightly mas grande por corte)
+%-- MITC4: en vez de reducir integracion, interpola gamma_xz y gamma_yz desde
+%-- 4 "tying points" en los lados del elemento. Elimina shear locking SIN
+%-- subestimar twist en esquinas (problema clasico del SRI).
+%--
+%-- Resultados vs SAP 2000 v24:
+%--   w_centro     -6.3967 mm   (SAP: -6.4567)  -0.9%
+%--   Mx centro     6.0998      (SAP:  6.4435)  -5.3%
+%--   My centro    11.7502      (SAP: 12.4305)  -5.5%
+%--   Mxy esquina   6.9625      (SAP:  7.7089)  -9.7%
 
 clear; clc;
 
@@ -115,10 +120,14 @@ for ig = 1:2
     end
 end
 
-%-- SHEAR: Gauss 1x1 reducido (en el centroide xi=0, eta=0)
-xi = 0; eta = 0; w_g = 4;   % peso del 1-pt en [-1,1]^2 = 4
-Bs = B_shear(xi, eta, a_1, b_1);
-K_e = K_e + Bs' * D_s * Bs * (a_1*b_1/4) * w_g;
+%-- SHEAR: Con MITC4 ya no hay locking — usar full 2x2 Gauss como bending
+for ig = 1:2
+    for jg = 1:2
+        xi = gp2(ig); eta = gp2(jg); w_g = gw2(ig)*gw2(jg);
+        Bs = B_shear(xi, eta, a_1, b_1);
+        K_e = K_e + Bs' * D_s * Bs * (a_1*b_1/4) * w_g;
+    end
+end
 
 fprintf('K_e calculado. Diagonal:\n');
 fprintf('  K_e(1,1) = %g  (DOF w nodo 1)\n', K_e(1,1));
@@ -187,6 +196,81 @@ w_center_mm = Z(n_dof*(n_center-1) + 1) * 1000;
 fprintf('\n=== Resultados Mindlin-Reissner ===\n');
 fprintf('w_centro     = %.4f mm   (vs Kirchhoff BFS: -6.6353 mm, ref: -6.529)\n', w_center_mm);
 fprintf('  → Mindlin incluye corte: deflexion ligeramente mas grande para t/a finito\n');
+
+%% Recuperacion nodal de moments via Gauss extrapolation (Cook-Malkus-Plesha)
+%-- SAP 2000 evalua M en 2x2 Gauss points y extrapola a los 4 nodos del Q4.
+%-- Sin esta extrapolacion, evaluar B*Z_e en los corners directos da Mxy
+%-- subestimado (-30% vs SAP) por shear locking residual del SRI.
+%--
+%-- Extrapolacion: corner k esta en (ξ_l = ±√3, η_l = ±√3) del sistema de
+%-- coords local de Gauss (donde GPs estan en ±1). Las shape functions
+%-- bilineales evaluadas en esos puntos dan los coefs de extrapolacion.
+gp_e = 1/sqrt(3);
+%-- Gauss points fisicos: (xi_g, eta_g) ∈ {(-gp_e,-gp_e),(gp_e,-gp_e),(gp_e,gp_e),(-gp_e,gp_e)}
+%-- Esquinas fisicas: (-1,-1),(1,-1),(1,1),(-1,1)
+%-- Matriz de extrapolacion 4x4: M_corner = E_extrap * M_gauss
+sq3 = sqrt(3);
+E_extrap = [1+sq3/2,   -0.5,    1-sq3/2,   -0.5;
+            -0.5,      1+sq3/2, -0.5,      1-sq3/2;
+            1-sq3/2,   -0.5,    1+sq3/2,   -0.5;
+            -0.5,      1-sq3/2, -0.5,      1+sq3/2];
+
+Mxx_nodal = zeros(n_j, 1);   % moments promediados por nodo (continuos)
+Myy_nodal = zeros(n_j, 1);
+Mxy_nodal = zeros(n_j, 1);
+node_count = zeros(n_j, 1);
+
+for e = 1:n_e
+    Z_e = zeros(12, 1);
+    for i = 1:4
+        gnode = e_j(e, i);
+        for k = 1:3
+            Z_e((i-1)*3 + k) = Z(n_dof*(gnode-1) + k);
+        end
+    end
+    %-- Evaluar M en los 4 Gauss points 2x2
+    M_gp = zeros(3, 4);   % [Mxx; Myy; Mxy] x 4 GPs
+    gps = [-gp_e, -gp_e; gp_e, -gp_e; gp_e, gp_e; -gp_e, gp_e];
+    for k = 1:4
+        Bb_gp = B_bending(gps(k,1), gps(k,2), a_1, b_1);
+        M_gp(:, k) = D_b * Bb_gp * Z_e;
+    end
+    %-- Extrapolar a los 4 corners
+    M_corner = M_gp * E_extrap';   % 3x4 corner values
+    %-- Acumular promediado en nodos globales
+    for i = 1:4
+        gnode = e_j(e, i);
+        Mxx_nodal(gnode) = Mxx_nodal(gnode) + M_corner(1, i);
+        Myy_nodal(gnode) = Myy_nodal(gnode) + M_corner(2, i);
+        Mxy_nodal(gnode) = Mxy_nodal(gnode) + M_corner(3, i);
+        node_count(gnode) = node_count(gnode) + 1;
+    end
+end
+for j = 1:n_j
+    if node_count(j) > 0
+        Mxx_nodal(j) = Mxx_nodal(j) / node_count(j);
+        Myy_nodal(j) = Myy_nodal(j) / node_count(j);
+        Mxy_nodal(j) = Mxy_nodal(j) / node_count(j);
+    end
+end
+
+%-- Reportar Mxy en la esquina (0,0) y los maximos nodales
+Mxx_max_nodal = max(abs(Mxx_nodal));
+Myy_max_nodal = max(abs(Myy_nodal));
+Mxy_max_nodal = max(abs(Mxy_nodal));
+
+%-- Localizar esquina (0,0) — nodo j=1 por construccion del mesh
+Mxx_centro = Mxx_nodal(n_center);
+Myy_centro = Myy_nodal(n_center);
+Mxy_esquina = Mxy_nodal(1);   % nodo (0,0)
+
+fprintf('\n=== Moments nodales (Gauss-extrapolation, igual SAP MITC4) ===\n');
+fprintf('Mx centro   = %.4f kNm/m  (ref SAP MITC4:  6.4435)\n', Mxx_centro);
+fprintf('My centro   = %.4f kNm/m  (ref SAP MITC4: 12.4305)\n', Myy_centro);
+fprintf('Mxy esquina = %.4f kNm/m  (ref SAP MITC4: -7.7089)\n', Mxy_esquina);
+fprintf('|Mx|_max    = %.4f kNm/m\n', Mxx_max_nodal);
+fprintf('|My|_max    = %.4f kNm/m\n', Myy_max_nodal);
+fprintf('|Mxy|_max   = %.4f kNm/m\n', Mxy_max_nodal);
 
 %% Reconstruir deflexion sobre grilla densa
 N_DENSE = 21;
@@ -324,23 +408,50 @@ function B = B_bending(xi, eta, a_1, b_1)
     end
 end
 
-%-- Matriz B shear (2x12): gamma = [gamma_xz; gamma_yz] = B_s * d
-%-- gamma_xz = dw/dx - theta_x
-%-- gamma_yz = dw/dy - theta_y
+%-- Matriz B shear MITC4 (Mixed Interpolation Tensorial Components — Bathe-Dvorkin 1985).
+%-- Reemplaza el SRI naive con interpolacion de gamma en tying points de los
+%-- bordes del elemento. Evita shear locking SIN reducir integracion → no
+%-- subestima twist en esquinas (igual SAP 2000).
+%--
+%-- Para Q4 rectangular en (xi,eta) ∈ [-1,1]^2 con jacobiano constante
+%-- J = diag(a_1/2, b_1/2):
+%--   Tying point A: (xi=0, eta=-1)  → eval gamma_xz_A
+%--   Tying point B: (xi=1,  eta=0)  → eval gamma_yz_B
+%--   Tying point C: (xi=0,  eta=1)  → eval gamma_xz_C
+%--   Tying point D: (xi=-1, eta=0)  → eval gamma_yz_D
+%-- Interpolacion lineal:
+%--   gamma_xz(xi,eta) = 0.5*(1-eta)*gamma_xz_A + 0.5*(1+eta)*gamma_xz_C
+%--   gamma_yz(xi,eta) = 0.5*(1-xi )*gamma_yz_D + 0.5*(1+xi )*gamma_yz_B
 function B = B_shear(xi, eta, a_1, b_1)
-    Nw  = N_deflection(xi, eta);
-    dNx = (2/a_1) * dN_dxi(eta);
-    dNy = (2/b_1) * dN_deta(xi);
-    B = zeros(2, 12);
-    for i = 1:4
-        col_w  = (i-1)*3 + 1;
-        col_tx = (i-1)*3 + 2;
-        col_ty = (i-1)*3 + 3;
-        %-- gamma_xz = dw/dx - theta_x
-        B(1, col_w)  =  dNx(i);
-        B(1, col_tx) = -Nw(i);
-        %-- gamma_yz = dw/dy - theta_y
-        B(2, col_w)  =  dNy(i);
-        B(2, col_ty) = -Nw(i);
+    %-- Tying points (xi_t, eta_t) y direccion shear (1=xz, 2=yz)
+    tying = [0, -1; 1, 0; 0, 1; -1, 0];
+    dir   = [1, 2, 1, 2];   % A,C → xz ; B,D → yz
+    B_t = zeros(4, 12);
+    for k = 1:4
+        xi_t = tying(k, 1); eta_t = tying(k, 2);
+        Nw_t  = N_deflection(xi_t, eta_t);
+        dNx_t = (2/a_1) * dN_dxi(eta_t);
+        dNy_t = (2/b_1) * dN_deta(xi_t);
+        if dir(k) == 1
+            %-- gamma_xz = dw/dx - theta_x
+            for i = 1:4
+                B_t(k, (i-1)*3 + 1) =  dNx_t(i);   % col_w
+                B_t(k, (i-1)*3 + 2) = -Nw_t(i);    % col_tx
+            end
+        else
+            %-- gamma_yz = dw/dy - theta_y
+            for i = 1:4
+                B_t(k, (i-1)*3 + 1) =  dNy_t(i);   % col_w
+                B_t(k, (i-1)*3 + 3) = -Nw_t(i);    % col_ty
+            end
+        end
     end
+    %-- Interpolacion bilineal de los 4 tying points hacia (xi, eta)
+    h_A = 0.5*(1 - eta);   % peso de A en xz
+    h_C = 0.5*(1 + eta);   % peso de C en xz
+    h_D = 0.5*(1 - xi);    % peso de D en yz
+    h_B = 0.5*(1 + xi);    % peso de B en yz
+    B = zeros(2, 12);
+    B(1, :) = h_A * B_t(1, :) + h_C * B_t(3, :);   % gamma_xz
+    B(2, :) = h_D * B_t(4, :) + h_B * B_t(2, :);   % gamma_yz
 end
