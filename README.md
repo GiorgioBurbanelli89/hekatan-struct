@@ -397,6 +397,16 @@ Solver validated against ETABS 22.6 via Python API (comtypes), plus Paz & Leigh 
 | Modal analysis (6 modes) | 1.0000 |
 | Plane Q4 cantilever (flex+shear) | 1.10 FEM/teórico (expected for Q4 without incompatible modes) |
 
+### Cross-validation framework against SAFE 20 (automated via API)
+
+End-to-end framework that runs Hekatan `plateQ4Solve` and SAFE 20 (vía `SAFEv1.dll` + pythonnet) on the **exact same model** and compares 9 sampled points. Live in [`benchmarks/safe/`](./benchmarks/safe/).
+
+| Caso | Hekatan w_centro | SAFE w_centro | Δ |
+|------|:---:|:---:|:---:|
+| [Zapata aislada 1.5×1.5×0.30m + Winkler (mesh 12×12)](./benchmarks/safe/zapata-aislada/) | −4.5356 mm | −4.5370 mm | **+0.03%** |
+
+Documentación de la API SAFE (con 8 gotchas críticos, incluyendo el bug silencioso de `SubModulus` que produce gap del 38% si se usa `SetAreaSpringProp(U3=ks)` ingenuamente): [`benchmarks/safe/README.md`](./benchmarks/safe/README.md).
+
 ## Stack
 
 | Technology | Purpose |
