@@ -4,10 +4,21 @@
  * Caso 5 del framework Hekatan vs SAFE 20 (paridad <0.01% — mejor del set).
  * Ver benchmarks/safe/viga-cimentacion/ para detalles.
  */
+import * as THREE from "three";
 import { plateQ4Solve } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 const TONF_TO_KN = 9.80665;
+
+function buildPedestalFrame(x: number, y: number, h: number, side: number): THREE.Object3D[] {
+  // Pedestal como frame: solo aristas (wireframe del prisma corto), SIN mesh sólido.
+  // h pequeño (~0.5m) representa el pedestal que va por debajo del contrapiso.
+  const geom = new THREE.BoxGeometry(side, side, h);
+  const edges = new THREE.EdgesGeometry(geom);
+  const lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x808080, linewidth: 2 }));
+  lines.position.set(x, y, h / 2);
+  return [lines];
+}
 
 export const safeBenchViga: ExampleDef = {
   id: "safe-bench-viga-cimentacion",
@@ -33,6 +44,8 @@ export const safeBenchViga: ExampleDef = {
     nCols: { default: 4, min: 2, max: 8, step: 1, label: "N columnas" },
     nx: { default: 32, min: 8, max: 64, step: 4, label: "nx mesh (longitudinal)" },
     ny: { default: 4, min: 2, max: 10, step: 1, label: "ny mesh (transversal)" },
+    h_ped: { default: 0.5, min: 0.2, max: 1.5, step: 0.05, label: "Hp pedestal (m)" },
+    b_ped: { default: 0.40, min: 0.2, max: 0.8, step: 0.05, label: "lado pedestal (m)" },
   },
   build(p, states) {
     const Lz = p.Lz, Bz = p.Bz, tz = p.tz;
@@ -131,6 +144,8 @@ export const safeBenchViga: ExampleDef = {
       vonMises.set(i, [vm, vm, vm, vm]);
     });
     states.analyzeOutputs.val = { pressure, bendingXX, bendingYY, bendingXY, vonMises };
-    states.objects3D.val = [];
+    const objs: THREE.Object3D[] = [];
+    for (const [cx, cy] of colPositions) objs.push(...buildPedestalFrame(cx, cy, p.h_ped, p.b_ped));
+    states.objects3D.val = objs;
   },
 };

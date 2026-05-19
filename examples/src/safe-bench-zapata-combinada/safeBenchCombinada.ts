@@ -2,10 +2,20 @@
  * Zapata Combinada 4×2×0.40m, 2 cols alineadas (BENCHMARK SAFE).
  * Caso 3 — paridad <0.08% Hekatan vs SAFE 20.
  */
+import * as THREE from "three";
 import { plateQ4Solve } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 const TONF_TO_KN = 9.80665;
+
+function buildPedestalFrame(x: number, y: number, h: number, side: number): THREE.Object3D[] {
+  // Pedestal como frame: solo aristas (wireframe del prisma corto), SIN mesh sólido.
+  // h pequeño (~0.5m) representa el pedestal que va por debajo del contrapiso.
+  const geom = new THREE.BoxGeometry(side, side, h);
+  const lines = new THREE.LineSegments(new THREE.EdgesGeometry(geom), new THREE.LineBasicMaterial({ color: 0x808080, linewidth: 2 }));
+  lines.position.set(x, y, h / 2);
+  return [lines];
+}
 
 export const safeBenchCombinada: ExampleDef = {
   id: "safe-bench-zapata-combinada",
@@ -29,6 +39,8 @@ export const safeBenchCombinada: ExampleDef = {
     P_tonf: { default: 30, min: 1, max: 100, step: 1, label: "P por col (tonf)" },
     nx: { default: 16, min: 8, max: 32, step: 2, label: "nx mesh" },
     ny: { default: 8, min: 4, max: 16, step: 2, label: "ny mesh" },
+    h_ped: { default: 0.5, min: 0.2, max: 1.5, step: 0.05, label: "Hp pedestal (m)" },
+    b_ped: { default: 0.40, min: 0.2, max: 0.8, step: 0.05, label: "lado pedestal (m)" },
   },
   build(p, states) {
     const Lz = p.Lz, Bz = p.Bz, tz = p.tz;
@@ -110,6 +122,8 @@ export const safeBenchCombinada: ExampleDef = {
       vonMises.set(i, [vm, vm, vm, vm]);
     });
     states.analyzeOutputs.val = { pressure, bendingXX, bendingYY, bendingXY, vonMises };
-    states.objects3D.val = [];
+    const objs: THREE.Object3D[] = [];
+    for (const [cx, cy] of colPositions) objs.push(...buildPedestalFrame(cx, cy, p.h_ped, p.b_ped));
+    states.objects3D.val = objs;
   },
 };
