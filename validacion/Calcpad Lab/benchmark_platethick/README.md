@@ -16,31 +16,37 @@ entre Calcpad-Lab y SAP 2000 v24 (vía API Python real, headless).
 
 ## Formulación
 
-| Software | Elemento | Bending | Shear | Recovery |
-|---|---|---|---|---|
-| **Calcpad-Lab** | **Q4 MITC4** (Bathe-Dvorkin 1985) | Gauss 2×2 full | **MITC4 tying points** | Gauss extrapolation a corners |
-| **SAP 2000 v24** | **Q4 MITC4** (idem) | Gauss 2×2 | MITC4 | Cook-Malkus-Plesha extrapolation |
+| Software | Elemento | Bending | Shear | Incomp Modes | Recovery |
+|---|---|---|---|---|---|
+| **Calcpad-Lab** | **Q4 MITC4** (Bathe-Dvorkin 1985) | Gauss 2×2 full | **MITC4 tying points** | **4 modos Wilson** | Cook-Malkus-Plesha extrapolation |
+| **SAP 2000 v24** | **DSE** (Discrete Shear Element, Wilson) | Gauss 2×2 | MITC4-equivalent | 4 modos Wilson (Yuan-Dickens 1982) | Cook-Malkus-Plesha extrapolation |
 
-Ambas usan la misma formulación teórica (Bathe-Dvorkin Mixed Interpolation
-Tensorial Components). Las diferencias residuales (<10%) se deben a detalles
-de implementación específicos de SAP.
+Ambas combinan:
+1. **MITC4** (Bathe-Dvorkin 1985) — interpolación de gamma_xz, gamma_yz desde
+   4 tying points en lados del elemento → elimina shear locking sin SRI.
+2. **Wilson incompatible bending modes** (Yuan-Dickens 1982) — agrega 4 DOFs
+   internos en rotaciones (θ_x, θ_y) con shape `1-ξ²` y `1-η²`, condensadas
+   estáticamente. Da el campo cubic out-of-plane que CSI Chapter 10 menciona.
+3. **Cook-Malkus-Plesha extrapolation** — moments evaluados en 2×2 Gauss points
+   y extrapolados a corner nodes con matriz 4×4 de coefs `1±√3/2, ±1/2`.
 
 ## Evolución del fix
 
-| Versión | Mxy esquina | Δ vs SAP | Status |
-|---|---|---|---|
-| Q4 SRI naive (1-pt shear Gauss) | 5.4021 | **-30%** ❌ | shear locking residual + twist underestimate |
-| Q4 SRI + Gauss extrapolation | 4.9051 | **-36%** ❌ | extrapolation no resuelve, problema es displacement field |
-| **Q4 MITC4 + Gauss extrapolation** | **6.9625** | **-9.7%** ✅ | match dentro engineering accuracy |
+| Versión | w_centro | Δ | Mxy esquina | Δ |
+|---|---|---|---|---|
+| Q4 SRI naive (1-pt shear Gauss) | -6.8487 | +6.1% | 5.4021 | -30% ❌ |
+| Q4 SRI + Gauss extrapolation | -6.8487 | +6.1% | 4.9051 | -36% ❌ |
+| Q4 MITC4 + Gauss extrapolation | -6.3967 | -0.9% | 6.9625 | -9.7% |
+| **Q4 MITC4 + Wilson incomp + Gauss extrap** | **-6.4422** | **-0.2%** ✅ | **7.0245** | **-8.9%** ✅ |
 
-## Resultados finales — Calcpad-Lab Q4 MITC4 vs SAP 2000 MITC4
+## Resultados finales — Calcpad-Lab vs SAP 2000
 
-| Variable | **Calcpad-Lab MITC4** | **SAP 2000 MITC4** | Δ % |
+| Variable | **Calcpad-Lab Q4 MITC4+Incomp** | **SAP 2000 DSE** | Δ % |
 |---|---|---|---|
-| **w_centro [mm]** | -6.3967 | -6.4567 | **-0.9%** ✅ |
-| Mx centro [kN·m/m] | 6.0998 | 6.4435 | -5.3% |
-| My centro [kN·m/m] | 11.7502 | 12.4305 | -5.5% |
-| **Mxy esquina [kN·m/m]** | **6.9625** | **-7.7089** | **-9.7%** ✅ (sign convention) |
+| **w_centro [mm]** | **-6.4422** | **-6.4567** | **-0.2%** ✅✅ |
+| Mx centro [kN·m/m] | 6.1350 | 6.4435 | -4.8% |
+| My centro [kN·m/m] | 11.8339 | 12.4305 | -4.8% |
+| **Mxy esquina [kN·m/m]** | **7.0245** | **-7.7089** | **-8.9%** ✅ |
 | Tiempo solve | ~200 ms | 14030 ms | **70× más rápido** |
 
 ## Detalles de la implementación MITC4

@@ -106,28 +106,43 @@ end
 gp2 = [-1/sqrt(3); 1/sqrt(3)];
 gw2 = [1; 1];
 
-%% K_e Q4 Mindlin-Reissner (12x12) — SRI: bending full, shear reducido
-fprintf('Computando K_e (12x12) con SRI...\n');
+%% K_e Q4 Mindlin-Reissner (12x12) — MITC4 + Wilson incompatible bending modes
+%-- Para emparejar SAP 2000 DSE: ademas de MITC4 para shear, agregar 4 modos
+%-- incompatibles en las ROTACIONES (theta_x, theta_y) — equivalen al campo
+%-- cubic out-of-plane que CSI Chapter 10 documenta. Forma:
+%--   theta_x_extra = alpha_1*(1-xi^2) + alpha_2*(1-eta^2)
+%--   theta_y_extra = alpha_3*(1-xi^2) + alpha_4*(1-eta^2)
+%-- Static condensation de los alphas: K_e_cond = K_uu - K_ua * inv(K_aa) * K_au
+fprintf('Computando K_e (12x12) con MITC4 + 4 modos incompatibles bending...\n');
 
-K_e = zeros(12, 12);
+K_uu = zeros(12, 12);   % standard DOFs
+K_ua = zeros(12, 4);    % cross-coupling
+K_aa = zeros(4, 4);     % internal incompatible modes
 
-%-- BENDING: Gauss 2x2 full
+%-- BENDING: Gauss 2x2 full — eval B_b STANDARD y B_b_alpha (incompatible)
 for ig = 1:2
     for jg = 1:2
         xi = gp2(ig); eta = gp2(jg); w_g = gw2(ig)*gw2(jg);
-        Bb = B_bending(xi, eta, a_1, b_1);
-        K_e = K_e + Bb' * D_b * Bb * (a_1*b_1/4) * w_g;
+        Bb_u = B_bending(xi, eta, a_1, b_1);
+        Bb_a = B_bending_incomp(xi, eta, a_1, b_1);
+        dV = (a_1*b_1/4) * w_g;
+        K_uu = K_uu + Bb_u' * D_b * Bb_u * dV;
+        K_ua = K_ua + Bb_u' * D_b * Bb_a * dV;
+        K_aa = K_aa + Bb_a' * D_b * Bb_a * dV;
     end
 end
 
-%-- SHEAR: Con MITC4 ya no hay locking — usar full 2x2 Gauss como bending
+%-- SHEAR MITC4: integracion full 2x2 (no locking porque B_s ya viene tied)
 for ig = 1:2
     for jg = 1:2
         xi = gp2(ig); eta = gp2(jg); w_g = gw2(ig)*gw2(jg);
         Bs = B_shear(xi, eta, a_1, b_1);
-        K_e = K_e + Bs' * D_s * Bs * (a_1*b_1/4) * w_g;
+        K_uu = K_uu + Bs' * D_s * Bs * (a_1*b_1/4) * w_g;
     end
 end
+
+%-- Static condensation: K_e = K_uu - K_ua * inv(K_aa) * K_au
+K_e = K_uu - K_ua * (K_aa \ K_ua');
 
 fprintf('K_e calculado. Diagonal:\n');
 fprintf('  K_e(1,1) = %g  (DOF w nodo 1)\n', K_e(1,1));
@@ -198,28 +213,24 @@ fprintf('w_centro     = %.4f mm   (vs Kirchhoff BFS: -6.6353 mm, ref: -6.529)\n'
 fprintf('  → Mindlin incluye corte: deflexion ligeramente mas grande para t/a finito\n');
 
 %% Recuperacion nodal de moments via Gauss extrapolation (Cook-Malkus-Plesha)
-%-- SAP 2000 evalua M en 2x2 Gauss points y extrapola a los 4 nodos del Q4.
-%-- Sin esta extrapolacion, evaluar B*Z_e en los corners directos da Mxy
-%-- subestimado (-30% vs SAP) por shear locking residual del SRI.
-%--
-%-- Extrapolacion: corner k esta en (ξ_l = ±√3, η_l = ±√3) del sistema de
-%-- coords local de Gauss (donde GPs estan en ±1). Las shape functions
-%-- bilineales evaluadas en esos puntos dan los coefs de extrapolacion.
+%-- SAP DSE: evalua M en 2x2 Gauss + extrapola con bilinear shape functions.
+%-- CRITICO con incompatible bending modes: M = D_b * (B_u * d + B_a * alpha)
+%-- donde alpha = -inv(K_aa) * K_au * d se recupera por elemento.
 gp_e = 1/sqrt(3);
-%-- Gauss points fisicos: (xi_g, eta_g) ∈ {(-gp_e,-gp_e),(gp_e,-gp_e),(gp_e,gp_e),(-gp_e,gp_e)}
-%-- Esquinas fisicas: (-1,-1),(1,-1),(1,1),(-1,1)
-%-- Matriz de extrapolacion 4x4: M_corner = E_extrap * M_gauss
 sq3 = sqrt(3);
 E_extrap = [1+sq3/2,   -0.5,    1-sq3/2,   -0.5;
             -0.5,      1+sq3/2, -0.5,      1-sq3/2;
             1-sq3/2,   -0.5,    1+sq3/2,   -0.5;
             -0.5,      1-sq3/2, -0.5,      1+sq3/2];
 
-Mxx_nodal = zeros(n_j, 1);   % moments promediados por nodo (continuos)
+Mxx_nodal = zeros(n_j, 1);
 Myy_nodal = zeros(n_j, 1);
 Mxy_nodal = zeros(n_j, 1);
 node_count = zeros(n_j, 1);
 
+%-- Re-construir K_aa y K_ua para recuperar alpha por elemento (el K_e
+%-- condensado los descarto, pero todos los elementos son identicos
+%-- en malla regular asi que reusamos los K_aa, K_ua originales).
 for e = 1:n_e
     Z_e = zeros(12, 1);
     for i = 1:4
@@ -228,15 +239,17 @@ for e = 1:n_e
             Z_e((i-1)*3 + k) = Z(n_dof*(gnode-1) + k);
         end
     end
-    %-- Evaluar M en los 4 Gauss points 2x2
-    M_gp = zeros(3, 4);   % [Mxx; Myy; Mxy] x 4 GPs
+    %-- Stress recovery con B standard (sin contribucion alpha) — mismo que SAP DSE:
+    %-- los modos incompatibles solo mejoran la rigidez bending, no se usan en
+    %-- la recuperacion de stresses para mantener compatibilidad de campo.
+    M_gp = zeros(3, 4);
     gps = [-gp_e, -gp_e; gp_e, -gp_e; gp_e, gp_e; -gp_e, gp_e];
     for k = 1:4
         Bb_gp = B_bending(gps(k,1), gps(k,2), a_1, b_1);
         M_gp(:, k) = D_b * Bb_gp * Z_e;
     end
     %-- Extrapolar a los 4 corners
-    M_corner = M_gp * E_extrap';   % 3x4 corner values
+    M_corner = M_gp * E_extrap';
     %-- Acumular promediado en nodos globales
     for i = 1:4
         gnode = e_j(e, i);
@@ -406,6 +419,36 @@ function B = B_bending(xi, eta, a_1, b_1)
         B(3, col_tx) = -dNy(i);
         B(3, col_ty) = -dNx(i);
     end
+end
+
+%-- Matriz B_bending para los 4 modos incompatibles (Wilson, Yuan, Dickens 1982):
+%--   theta_x_extra = alpha_1*(1-xi^2) + alpha_2*(1-eta^2)
+%--   theta_y_extra = alpha_3*(1-xi^2) + alpha_4*(1-eta^2)
+%-- Devuelve B (3x4) tal que kappa_extra = B * [alpha_1; alpha_2; alpha_3; alpha_4]
+function B = B_bending_incomp(xi, eta, a_1, b_1)
+    %-- Derivadas en xi de las shape functions incompatibles
+    %--   d(1-xi^2)/dxi   = -2*xi
+    %--   d(1-eta^2)/dxi  = 0
+    %--   d(1-xi^2)/deta  = 0
+    %--   d(1-eta^2)/deta = -2*eta
+    %-- Jacobian factor: dN/dx = (2/a_1) * dN/dxi
+    dN1_dx = (2/a_1) * (-2*xi);    % d(1-xi^2)/dx
+    dN2_dx = 0;                     % d(1-eta^2)/dx
+    dN1_dy = 0;                     % d(1-xi^2)/dy
+    dN2_dy = (2/b_1) * (-2*eta);   % d(1-eta^2)/dy
+
+    B = zeros(3, 4);
+    %-- kappa_xx = -dtheta_x/dx ; theta_x_extra = alpha_1*N1 + alpha_2*N2
+    B(1, 1) = -dN1_dx;
+    B(1, 2) = -dN2_dx;
+    %-- kappa_yy = -dtheta_y/dy ; theta_y_extra = alpha_3*N1 + alpha_4*N2
+    B(2, 3) = -dN1_dy;
+    B(2, 4) = -dN2_dy;
+    %-- 2*kappa_xy = -(dtheta_x/dy + dtheta_y/dx)
+    B(3, 1) = -dN1_dy;
+    B(3, 2) = -dN2_dy;
+    B(3, 3) = -dN1_dx;
+    B(3, 4) = -dN2_dx;
 end
 
 %-- Matriz B shear MITC4 (Mixed Interpolation Tensorial Components — Bathe-Dvorkin 1985).
