@@ -41,7 +41,7 @@ import { b as ba, __tla as __tla_29 } from "./benchmarkPaz10_7-BgeJ4uX-.js";
 import { b as wa, __tla as __tla_30 } from "./benchmarkPaz11_1-CZpCxJje.js";
 import { b as va, __tla as __tla_31 } from "./benchmarkPaz12_1-cNMcafVo.js";
 import { b as ka, __tla as __tla_32 } from "./benchmarkPaz13_1-BLf5bdif.js";
-import { m as _a, __tla as __tla_33 } from "./mesaTorsion-DauhyBaA.js";
+import { m as _a, __tla as __tla_33 } from "./mesaTorsion-AKFyYo1e.js";
 import { s as Ma, __tla as __tla_34 } from "./shellThick-DzH1_-So.js";
 import { l as Sa, __tla as __tla_35 } from "./layeredShell-DHi0-D-n.js";
 import { e as Ea, __tla as __tla_36 } from "./edificioAporticado-DCFMgJMS.js";
