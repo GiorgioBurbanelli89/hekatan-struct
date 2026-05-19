@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Viga de Cimentación · Todo se extruye hacia arriba desde z=0</title>
+<style>
+  body { margin: 0; background: #1a1a1a; color: #eee; font-family: system-ui, sans-serif; padding: 24px; }
+  h1 { font-size: 22px; margin: 0 0 8px; color: #fff; }
+  h2 { font-size: 16px; margin: 0 0 12px; color: #fff; }
+  .sub { color: #aaa; font-size: 13px; margin-bottom: 24px; }
+  .row { display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; margin-bottom: 32px; }
+  .card { background: #232323; border: 1px solid #333; padding: 20px; border-radius: 8px; }
+  svg { background: #fff; border-radius: 4px; display: block; }
+  .legend { font-size: 13px; line-height: 1.7; }
+  .legend .dot { display: inline-block; width: 14px; height: 14px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+  table { border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  td, th { padding: 4px 12px; border-bottom: 1px solid #333; }
+  th { text-align: left; color: #aaa; font-weight: normal; }
+  .formula { font-family: ui-monospace, "Cascadia Code", monospace; background: #1a1a1a; padding: 8px 12px; border-radius: 4px; color: #ddd; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<h1>Viga de Cimentación · TODO extruido hacia ARRIBA desde z=0</h1>
+<div class="sub">Convención: z=0 está en la cara INFERIOR de todo. Zapata, viga y pedestal arrancan en z=0 y crecen hacia arriba (+z). Todos los nodos centrales comparten z=0 → unión natural sin rigid links.</div>
+
+<!-- ═══════════════════ VISTA 1: SECCIÓN TRANSVERSAL ═══════════════════ -->
+<h2>1 · Sección transversal (corte en YZ — eje X perpendicular al papel)</h2>
+<div class="row">
+
+  <div class="card">
+    <svg width="600" height="540" viewBox="0 0 600 540">
+      <defs>
+        <pattern id="hatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="6" stroke="#aaa" stroke-width="0.6" />
+        </pattern>
+        <marker id="arrowDownGreen" markerWidth="10" markerHeight="10" refX="3" refY="7" orient="auto">
+          <polygon points="0,0 6,0 3,8" fill="#00cc00"/>
+        </marker>
+      </defs>
+
+      <!-- Escala: 150 px/m. z=0 en y_svg=480. z+ va hacia arriba (y_svg disminuye) -->
+      <!-- t_zap=0.40 → 60px, h_viga=0.80 → 120px, h_ped=0.50 → 75px -->
+
+      <!-- Zapata corrida (gris claro) de z=0 a z=t_zap (60px arriba de y=480) -->
+      <rect x="100" y="420" width="300" height="60" fill="#d8d8d8" stroke="#222" stroke-width="1.5"/>
+      <text x="250" y="455" text-anchor="middle" font-size="14" fill="#222">Zapata corrida (shell)</text>
+
+      <!-- Viga (gris medio) de z=0 a z=h_viga (todo encima de z=0, mismo nivel de base que zapata) -->
+      <rect x="220" y="360" width="60" height="120" fill="#a8a8a8" stroke="#222" stroke-width="1.5" fill-opacity="0.85"/>
+      <text x="250" y="410" text-anchor="middle" font-size="13" fill="#222">Viga</text>
+      <text x="250" y="427" text-anchor="middle" font-size="10" fill="#222">(de z=0 a z=h_viga)</text>
+
+      <!-- Pedestal (gris oscuro) de z=0 a z=h_viga+h_ped -->
+      <rect x="205" y="285" width="90" height="195" fill="#808080" stroke="#222" stroke-width="1.5" fill-opacity="0.5"/>
+      <text x="250" y="380" text-anchor="middle" font-size="13" fill="#fff">Pedestal/Columna</text>
+      <text x="250" y="397" text-anchor="middle" font-size="10" fill="#fff">(de z=0 a z=h_viga+h_ped)</text>
+
+      <!-- Carga P -->
+      <line x1="250" y1="230" x2="250" y2="285" stroke="#00cc00" stroke-width="4" marker-end="url(#arrowDownGreen)"/>
+      <text x="260" y="240" font-size="14" fill="#00cc00" font-weight="bold">P</text>
+
+      <!-- Suelo -->
+      <rect x="60" y="480" width="380" height="20" fill="url(#hatch)" stroke="none"/>
+      <line x1="60" y1="480" x2="440" y2="480" stroke="#555" stroke-width="1.5"/>
+      <text x="60" y="518" font-size="11" fill="#666">suelo (Winkler springs en z=0)</text>
+
+      <!-- ═══ LÍNEA DE NODOS COMPARTIDOS (z=0) ═══ -->
+      <line x1="60" y1="480" x2="440" y2="480" stroke="#ff8c00" stroke-width="3.5"/>
+      <text x="450" y="484" font-size="12" fill="#ff8c00" font-weight="bold">z=0 — todos los nodos aquí</text>
+
+      <!-- Nodo viga (PUNTO marrón en y=B/2, z=0) -->
+      <circle cx="250" cy="480" r="9" fill="none" stroke="#8b0000" stroke-width="2.5"/>
+      <circle cx="250" cy="480" r="3" fill="#8b0000"/>
+      <text x="450" y="500" font-size="12" fill="#8b0000" font-weight="bold">nodo viga (eje sale en X)</text>
+
+      <!-- Frame pedestal: línea AZUL vertical de z=0 a z=h_viga+h_ped -->
+      <line x1="250" y1="480" x2="250" y2="285" stroke="#1e88e5" stroke-width="4"/>
+      <circle cx="250" cy="480" r="5" fill="#1e88e5" stroke="#fff" stroke-width="1"/>
+      <circle cx="250" cy="285" r="5" fill="#1e88e5" stroke="#fff" stroke-width="1"/>
+      <text x="305" y="380" font-size="12" fill="#1e88e5" font-weight="bold">frame pedestal</text>
+      <text x="305" y="395" font-size="10" fill="#1e88e5">(z=0 → z=h_viga+h_ped)</text>
+
+      <!-- Flechitas indicando extrusión hacia arriba -->
+      <g stroke="#444" stroke-width="1" fill="none">
+        <line x1="60" y1="480" x2="60" y2="420" stroke-dasharray="2,2"/>
+        <polygon points="55,425 60,415 65,425" fill="#444"/>
+        <text x="40" y="450" font-size="10" fill="#444">↑ extrusión</text>
+      </g>
+
+      <!-- COTAS -->
+      <line x1="100" y1="500" x2="400" y2="500" stroke="#444" stroke-width="0" stroke-opacity="0"/>
+
+      <line x1="220" y1="350" x2="280" y2="350" stroke="#666" stroke-width="1"/>
+      <line x1="220" y1="345" x2="220" y2="355" stroke="#666"/>
+      <line x1="280" y1="345" x2="280" y2="355" stroke="#666"/>
+      <text x="250" y="340" text-anchor="middle" font-size="11" fill="#666">b_viga = 0.40</text>
+
+      <line x1="205" y1="275" x2="295" y2="275" stroke="#666" stroke-width="1"/>
+      <line x1="205" y1="270" x2="205" y2="280" stroke="#666"/>
+      <line x1="295" y1="270" x2="295" y2="280" stroke="#666"/>
+      <text x="250" y="265" text-anchor="middle" font-size="11" fill="#666">b_ped = 0.60</text>
+
+      <line x1="450" y1="420" x2="450" y2="480" stroke="#444" stroke-width="1"/>
+      <line x1="445" y1="420" x2="455" y2="420" stroke="#444"/>
+      <line x1="445" y1="480" x2="455" y2="480" stroke="#444"/>
+      <text x="465" y="455" font-size="11" fill="#444">t_zap=0.40</text>
+
+      <line x1="500" y1="360" x2="500" y2="480" stroke="#444" stroke-width="1"/>
+      <line x1="495" y1="360" x2="505" y2="360" stroke="#444"/>
+      <line x1="495" y1="480" x2="505" y2="480" stroke="#444"/>
+      <text x="515" y="425" font-size="11" fill="#444">h_viga=0.80</text>
+
+      <line x1="550" y1="285" x2="550" y2="480" stroke="#444" stroke-width="1"/>
+      <line x1="545" y1="285" x2="555" y2="285" stroke="#444"/>
+      <line x1="545" y1="480" x2="555" y2="480" stroke="#444"/>
+      <text x="565" y="395" font-size="11" fill="#444">h_viga + h_ped = 1.30</text>
+
+      <!-- Etiqueta z=0 -->
+      <text x="48" y="484" text-anchor="middle" font-size="13" fill="#666" font-weight="bold">z=0</text>
+    </svg>
+  </div>
+
+  <div class="card" style="max-width: 380px;">
+    <h2>Convención de nodos</h2>
+    <div class="legend">
+      <div><span class="dot" style="background:#ff8c00;"></span><b>Plano z=0</b> (línea naranja)<br>
+        <span style="color:#aaa;">cara INFERIOR de todo. Aquí están TODOS los nodos centrales del modelo.</span></div>
+      <div style="margin-top: 12px;"><span class="dot" style="background:#8b0000;"></span><b>Nodo viga (frame)</b><br>
+        <span style="color:#aaa;">en y=B/2, z=0. Eje longitudinal sale en X. Sección b_viga × h_viga se extruye hacia arriba.</span></div>
+      <div style="margin-top: 12px;"><span class="dot" style="background:#1e88e5;"></span><b>Frame pedestal</b><br>
+        <span style="color:#aaa;">base en z=0, top en z=h_viga+h_ped. <b>Comparte el nodo base con el nodo viga</b> → unión automática sin rigid link.</span></div>
+    </div>
+
+    <h2 style="margin-top: 20px;">Niveles z (default Ej.7)</h2>
+    <table>
+      <thead><tr><th>Nivel</th><th>z (m)</th></tr></thead>
+      <tbody>
+        <tr><td>top pedestal (P, M aquí)</td><td>+1.30</td></tr>
+        <tr><td>top viga</td><td>+0.80</td></tr>
+        <tr><td>top zapata</td><td>+0.40</td></tr>
+        <tr><td><b>z=0 — TODOS LOS NODOS</b></td><td><b>0.00</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ VISTA 2: VISTA LATERAL (XZ) ═══════════════════ -->
+<h2>2 · Vista lateral / longitudinal (corte en XZ pasando por línea de columnas)</h2>
+<div class="row">
+
+  <div class="card">
+    <svg width="850" height="380" viewBox="0 0 850 380">
+      <defs>
+        <pattern id="hatch2" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="6" stroke="#aaa" stroke-width="0.6" />
+        </pattern>
+        <marker id="arrowDownGreen2" markerWidth="10" markerHeight="10" refX="3" refY="7" orient="auto">
+          <polygon points="0,0 6,0 3,8" fill="#00cc00"/>
+        </marker>
+      </defs>
+
+      <!-- z=0 en y_svg=310; z+ hacia arriba -->
+
+      <!-- Suelo -->
+      <rect x="40" y="310" width="800" height="20" fill="url(#hatch2)" stroke="none"/>
+      <line x1="40" y1="310" x2="840" y2="310" stroke="#555" stroke-width="1.5"/>
+
+      <!-- Zapata corrida — z=0 hacia arriba a z=t_zap (24px = 0.40m·60/m·escala) -->
+      <!-- Escala vertical 60px/m, escala horizontal 30px/m -->
+      <rect x="80" y="286" width="516" height="24" fill="#e0e0e0" stroke="#222" stroke-width="1.2"/>
+      <text x="338" y="302" text-anchor="middle" font-size="11" fill="#222">Zapata (z=0 → z=t_zap)</text>
+
+      <!-- Viga — z=0 hacia arriba a z=h_viga (48px = 0.80m) -->
+      <rect x="80" y="262" width="516" height="48" fill="#a8a8a8" stroke="#222" stroke-width="1.2" fill-opacity="0.85"/>
+      <text x="338" y="290" text-anchor="middle" font-size="11" fill="#222">Viga (z=0 → z=h_viga)</text>
+
+      <!-- 4 Pedestales — z=0 hacia arriba a z=h_viga+h_ped (78px = 1.30m) -->
+      <!-- col positions: x_svg = 80 + x_real*30 → 183, 287, 390, 493 -->
+      <rect x="174" y="232" width="18" height="78" fill="#808080" stroke="#222" stroke-width="1" fill-opacity="0.5"/>
+      <rect x="278" y="232" width="18" height="78" fill="#808080" stroke="#222" stroke-width="1" fill-opacity="0.5"/>
+      <rect x="381" y="232" width="18" height="78" fill="#808080" stroke="#222" stroke-width="1" fill-opacity="0.5"/>
+      <rect x="484" y="232" width="18" height="78" fill="#808080" stroke="#222" stroke-width="1" fill-opacity="0.5"/>
+
+      <!-- Cargas P verdes -->
+      <g stroke="#00cc00" stroke-width="3" marker-end="url(#arrowDownGreen2)">
+        <line x1="183" y1="180" x2="183" y2="232"/>
+        <line x1="287" y1="160" x2="287" y2="232"/>
+        <line x1="390" y1="155" x2="390" y2="232"/>
+        <line x1="493" y1="180" x2="493" y2="232"/>
+      </g>
+      <text x="183" y="174" text-anchor="middle" font-size="10" fill="#00cc00" font-weight="bold">P1=127.5t</text>
+      <text x="287" y="154" text-anchor="middle" font-size="10" fill="#00cc00" font-weight="bold">P2=187.5t</text>
+      <text x="390" y="149" text-anchor="middle" font-size="10" fill="#00cc00" font-weight="bold">P3=210t</text>
+      <text x="493" y="174" text-anchor="middle" font-size="10" fill="#00cc00" font-weight="bold">P4=128t</text>
+
+      <!-- ═══ ELEMENTOS FEM ═══ -->
+
+      <!-- Línea z=0 (shell + frame viga + base pedestales) en NARANJA -->
+      <line x1="80" y1="310" x2="596" y2="310" stroke="#ff8c00" stroke-width="3.5"/>
+      <text x="600" y="314" font-size="11" fill="#ff8c00" font-weight="bold">← z=0</text>
+
+      <!-- Frame viga: línea horizontal MARRÓN en z=0 -->
+      <line x1="80" y1="310" x2="596" y2="310" stroke="#8b0000" stroke-width="2" stroke-dasharray="5,2"/>
+
+      <!-- Nodos de viga en cada posición de columna -->
+      <g>
+        <circle cx="183" cy="310" r="5" fill="#8b0000" stroke="#fff" stroke-width="1.5"/>
+        <circle cx="287" cy="310" r="5" fill="#8b0000" stroke="#fff" stroke-width="1.5"/>
+        <circle cx="390" cy="310" r="5" fill="#8b0000" stroke="#fff" stroke-width="1.5"/>
+        <circle cx="493" cy="310" r="5" fill="#8b0000" stroke="#fff" stroke-width="1.5"/>
+      </g>
+
+      <!-- Frames pedestales: AZUL VERTICAL desde z=0 hasta z=h_viga+h_ped -->
+      <g>
+        <line x1="183" y1="310" x2="183" y2="232" stroke="#1e88e5" stroke-width="3.5"/>
+        <line x1="287" y1="310" x2="287" y2="232" stroke="#1e88e5" stroke-width="3.5"/>
+        <line x1="390" y1="310" x2="390" y2="232" stroke="#1e88e5" stroke-width="3.5"/>
+        <line x1="493" y1="310" x2="493" y2="232" stroke="#1e88e5" stroke-width="3.5"/>
+
+        <!-- Top pedestal nodes -->
+        <circle cx="183" cy="232" r="5" fill="#1e88e5" stroke="#fff" stroke-width="1.5"/>
+        <circle cx="287" cy="232" r="5" fill="#1e88e5" stroke="#fff" stroke-width="1.5"/>
+        <circle cx="390" cy="232" r="5" fill="#1e88e5" stroke="#fff" stroke-width="1.5"/>
+        <circle cx="493" cy="232" r="5" fill="#1e88e5" stroke="#fff" stroke-width="1.5"/>
+      </g>
+
+      <!-- Detalle ampliado de la unión en Col 2 -->
+      <g transform="translate(640, 30)">
+        <rect x="0" y="0" width="200" height="260" fill="#fff" stroke="#444" stroke-width="1"/>
+        <text x="100" y="16" text-anchor="middle" font-size="11" fill="#444" font-weight="bold">Detalle col 2</text>
+
+        <!-- Zapata -->
+        <rect x="20" y="200" width="160" height="30" fill="#e0e0e0" stroke="#222"/>
+        <text x="100" y="220" text-anchor="middle" font-size="9" fill="#444">Zapata (z=0 a z=t_zap)</text>
+
+        <!-- Viga (apilada con la zapata, comparten z=0) -->
+        <rect x="20" y="140" width="160" height="60" fill="#a8a8a8" stroke="#222" fill-opacity="0.85"/>
+        <text x="100" y="172" text-anchor="middle" font-size="9" fill="#444">Viga (z=0 a z=h_viga)</text>
+
+        <!-- Pedestal (comparte z=0) -->
+        <rect x="78" y="50" width="44" height="180" fill="#808080" stroke="#222" fill-opacity="0.5"/>
+        <text x="100" y="100" text-anchor="middle" font-size="9" fill="#fff">Pedestal</text>
+        <text x="100" y="115" text-anchor="middle" font-size="8" fill="#fff">(z=0 a</text>
+        <text x="100" y="125" text-anchor="middle" font-size="8" fill="#fff">z=h_viga+h_ped)</text>
+
+        <!-- Línea z=0 NARANJA al fondo -->
+        <line x1="10" y1="230" x2="190" y2="230" stroke="#ff8c00" stroke-width="3"/>
+
+        <!-- Frame pedestal AZUL -->
+        <line x1="100" y1="230" x2="100" y2="50" stroke="#1e88e5" stroke-width="4"/>
+        <circle cx="100" cy="230" r="7" fill="#1e88e5" stroke="#fff" stroke-width="1.5"/>
+        <circle cx="100" cy="50" r="7" fill="#1e88e5" stroke="#fff" stroke-width="1.5"/>
+
+        <!-- Nodo viga (anillo) -->
+        <circle cx="100" cy="230" r="10" fill="none" stroke="#8b0000" stroke-width="2.5"/>
+
+        <text x="115" y="232" font-size="9" fill="#222"><tspan fill="#ff8c00">●</tspan>+<tspan fill="#8b0000">○</tspan>+<tspan fill="#1e88e5">●</tspan> nodo z=0</text>
+        <text x="115" y="244" font-size="8" fill="#444">(shell+viga+ped comparten)</text>
+
+        <text x="115" y="56" font-size="9" fill="#1e88e5">top ped (P, M aplicada aquí)</text>
+
+        <text x="100" y="290" text-anchor="middle" font-size="9" fill="#666">unión automática: comparten nodo z=0</text>
+      </g>
+
+      <!-- Etiquetas inferiores -->
+      <text x="80" y="362" font-size="11" fill="#888">x=0</text>
+      <text x="183" y="362" text-anchor="middle" font-size="10" fill="#888">x=3.44m</text>
+      <text x="287" y="362" text-anchor="middle" font-size="10" fill="#888">x=6.88m</text>
+      <text x="390" y="362" text-anchor="middle" font-size="10" fill="#888">x=10.32m</text>
+      <text x="493" y="362" text-anchor="middle" font-size="10" fill="#888">x=13.76m</text>
+      <text x="596" y="362" text-anchor="end" font-size="11" fill="#888">L=17.20m</text>
+
+      <text x="610" y="314" font-size="10" fill="#666" font-weight="bold"></text>
+    </svg>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ EXPLICACIÓN ═══════════════════ -->
+<div class="row">
+  <div class="card" style="max-width: 720px;">
+    <h2>Modelo final · Todos los nodos centrales en z=0</h2>
+    <p style="color:#ccc; font-size:13px; line-height:1.6;">
+      Convención simple y limpia: el plano z=0 es la cara INFERIOR del sistema (donde apoya el suelo).
+      Todos los elementos arrancan ahí y se construyen hacia arriba:
+    </p>
+
+    <table>
+      <thead><tr><th>Elemento</th><th>Nodos FEM</th><th>Geometría visible</th><th>Cantidad</th></tr></thead>
+      <tbody>
+        <tr><td>Shell zapata (Q4)</td><td>en z=0 (todos en plano XY)</td><td>extruido hacia arriba z=0 → z=t_zap</td><td>nx·ny ≈ 192</td></tr>
+        <tr><td>Frame viga</td><td>en z=0 a lo largo de y=B/2 (compartidos con shell)</td><td>sección b_viga × h_viga extruida hacia arriba z=0 → z=h_viga</td><td>nx = 48</td></tr>
+        <tr><td>Frame pedestal</td><td>base en z=0 (compartido con shell) + top en z=h_viga+h_ped</td><td>vertical de z=0 hasta z=h_viga+h_ped</td><td>4</td></tr>
+      </tbody>
+    </table>
+
+    <h2 style="margin-top: 24px;">Unión zapata-viga-pedestal</h2>
+    <p style="color:#ccc; font-size:13px; line-height:1.6;">
+      En la posición de cada columna, <b>tres elementos comparten el mismo nodo en z=0</b>:
+    </p>
+    <ul style="color:#ccc; font-size:13px;">
+      <li>El shell de la zapata aporta rigidez de placa (bending, membrane)</li>
+      <li>El frame de la viga aporta rigidez longitudinal (axial, flexión h_viga)</li>
+      <li>El frame del pedestal aporta rigidez vertical y baja la carga P, M al nodo</li>
+    </ul>
+    <p style="color:#ccc; font-size:13px;">
+      El compartir el mismo nodo z=0 = unión rígida automática. No requiere rigid link adicional ni insertion points.
+    </p>
+
+    <h2 style="margin-top: 24px;">Resortes Winkler</h2>
+    <p style="color:#ccc; font-size:13px;">
+      Aplicados en los nodos del shell (z=0, plano XY) con dof=2 (uz). El suelo trabaja hacia abajo desde z=0, en compresión cuando el shell se hunde.
+    </p>
+
+    <div style="margin-top: 20px; padding: 12px; background: #1a1a1a; border-left: 3px solid #1e88e5; font-size: 12px; color: #ccc;">
+      <b>Notas de implementación:</b>
+      <ul style="margin: 6px 0 0 0; padding-left: 16px;">
+        <li>El viewer extruye automáticamente el shell con thickness (gracia al campo <code>thicknesses</code> en elementInputs).</li>
+        <li>Los frames se extruyen visualmente con su sección rectangular (b·h) si se configuran <code>sectionShapes</code>.</li>
+        <li>El frame del pedestal es un único elemento de longitud t_zap + h_viga + h_ped (no varios) — la rigidez axial y flexión incluye el tramo atravesando la zapata y la viga.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

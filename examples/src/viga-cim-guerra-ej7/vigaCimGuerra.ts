@@ -20,20 +20,31 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 
 const TONF_TO_KN = 9.80665;
 
-function buildBeamWireframe(x1: number, x2: number, yC: number, zBottom: number, b: number, h: number): THREE.Object3D[] {
+function buildBeamWireframe(x1: number, x2: number, yC: number, zBottom: number, b: number, h: number, color: number = 0x8b4513): THREE.Object3D[] {
   const Lx = Math.abs(x2 - x1);
   const geom = new THREE.BoxGeometry(Lx, b, h);
   const edges = new THREE.EdgesGeometry(geom);
-  const lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x808080, linewidth: 2 }));
+  const lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color, linewidth: 2 }));
   lines.position.set((x1 + x2) / 2, yC, zBottom + h / 2);
   return [lines];
 }
 
-function buildPedestalWireframe(x: number, y: number, zBottom: number, h: number, side: number): THREE.Object3D[] {
+function buildPedestalWireframe(x: number, y: number, zBottom: number, h: number, side: number, color: number = 0x4682b4): THREE.Object3D[] {
   const geom = new THREE.BoxGeometry(side, side, h);
   const edges = new THREE.EdgesGeometry(geom);
-  const lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x808080, linewidth: 2 }));
+  const lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color, linewidth: 2 }));
   lines.position.set(x, y, zBottom + h / 2);
+  return [lines];
+}
+
+function buildZapataWireframe(L: number, B: number, t: number, color: number = 0xff8c00): THREE.Object3D[] {
+  // Zapata corrida 3D: prisma extruido HACIA ARRIBA desde z=0 hasta z=t_zap.
+  // Convención: z=0 es la cara INFERIOR (base de la cimentación, donde se anclan
+  // los aceros de viga y columna). Todos los frames también arrancan en z=0.
+  const geom = new THREE.BoxGeometry(L, B, t);
+  const edges = new THREE.EdgesGeometry(geom);
+  const lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color, linewidth: 2 }));
+  lines.position.set(L / 2, B / 2, t / 2);
   return [lines];
 }
 
@@ -128,12 +139,12 @@ export const vigaCimGuerraEj7: ExampleDef = {
       return best;
     };
 
-    // Nodos top de pedestales en posición física real: z = t_zap + h_viga + h_ped
-    // (top zapata + canto viga + altura pedestal). El frame del pedestal FEM
-    // así abarca toda esa altura como un único elemento "vertical compuesto",
-    // simplificación válida para una viga de cimentación donde la rigidez del
-    // pedestal corto domina sobre la zapata flexible.
-    const zPedTop = t_zap + h_viga + h_ped;
+    // ── Nodos top de pedestales ──
+    // Convención: z=0 es la cara INFERIOR (base cimentación) — donde están TODOS
+    // los nodos del shell y la base de las columnas. Los pedestales se extruyen
+    // hacia arriba como un único frame de longitud (h_viga + h_ped) cuyo top
+    // queda justo encima del canto de la viga + altura expuesta del pedestal.
+    const zPedTop = h_viga + h_ped;
     const colBaseIdx = colPositions.map(([cx, cy]) => findShellNode(cx, cy));
     const colTopIdx = colPositions.map(([cx, cy]) => {
       nodes.push([cx, cy, zPedTop]);
@@ -264,11 +275,17 @@ export const vigaCimGuerraEj7: ExampleDef = {
       console.error("viga-cim-guerra solver error:", e);
     }
 
-    // Visualización: wireframes en posiciones físicas reales
+    // ── Visualización: wireframes extruidos HACIA ARRIBA desde z=0 ──
+    // Convención: z=0 es la cara INFERIOR de todo (base cimentación).
+    // Cada elemento parte de ahí y se extruye hacia arriba con sus dimensiones reales.
     const objs: THREE.Object3D[] = [];
-    objs.push(...buildBeamWireframe(0, L, yCenter, t_zap, b_viga, h_viga));
+    // Zapata corrida: prisma de z=0 a z=t_zap (naranja)
+    objs.push(...buildZapataWireframe(L, Bz, t_zap));
+    // Viga: prisma de z=0 a z=h_viga, ancho b_viga, en y=B/2 (marrón)
+    objs.push(...buildBeamWireframe(0, L, yCenter, 0, b_viga, h_viga));
+    // Pedestales: prismas de z=0 a z=h_viga+h_ped, en cada posición de columna (azul)
     for (const [cx, cy] of colPositions) {
-      objs.push(...buildPedestalWireframe(cx, cy, t_zap + h_viga, h_ped, b_ped));
+      objs.push(...buildPedestalWireframe(cx, cy, 0, h_viga + h_ped, b_ped));
     }
     states.objects3D.val = objs;
   },
