@@ -1,54 +1,71 @@
 /**
- * Viga de Cimentación 8×1×0.50m, 4 columnas alineadas (BENCHMARK SAFE).
+ * Viga de Cimentación: zapata corrida (shell) + viga (frame longitudinal) + pedestales (frames verticales).
  *
- * Caso 5 del framework Hekatan vs SAFE 20 (paridad <0.01% — mejor del set).
- * Ver benchmarks/safe/viga-cimentacion/ para detalles.
+ * Modelo estructural realista:
+ *   • Zapata corrida → shell Q4 sobre Winkler (z=0)
+ *   • Viga de cimentación → frame longitudinal corriendo a lo largo del eje central
+ *   • Pedestales → frames verticales cortos (debajo del contrapiso)
+ *
+ * Solver mixto deform+analyze (mismo enfoque que safe-bench-losa-cimentacion).
  */
 import * as THREE from "three";
-import { plateQ4Solve } from "hekatan-fem";
+import { deform, analyze } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 const TONF_TO_KN = 9.80665;
 
-function buildPedestalFrame(x: number, y: number, h: number, side: number): THREE.Object3D[] {
-  // Pedestal como frame: solo aristas (wireframe del prisma corto), SIN mesh sólido.
-  // h pequeño (~0.5m) representa el pedestal que va por debajo del contrapiso.
+function buildBeamWireframe(x1: number, x2: number, yC: number, zBottom: number, b: number, h: number): THREE.Object3D[] {
+  // Viga de cimentación: wireframe del prisma 3D en posición real (sobre la zapata).
+  const Lx = Math.abs(x2 - x1);
+  const geom = new THREE.BoxGeometry(Lx, b, h);
+  const edges = new THREE.EdgesGeometry(geom);
+  const lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x808080, linewidth: 2 }));
+  lines.position.set((x1 + x2) / 2, yC, zBottom + h / 2);
+  return [lines];
+}
+
+function buildPedestalWireframe(x: number, y: number, zBottom: number, h: number, side: number): THREE.Object3D[] {
+  // Pedestal corto como frame: wireframe del prisma, en posición real (sobre la viga).
   const geom = new THREE.BoxGeometry(side, side, h);
   const edges = new THREE.EdgesGeometry(geom);
   const lines = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x808080, linewidth: 2 }));
-  lines.position.set(x, y, h / 2);
+  lines.position.set(x, y, zBottom + h / 2);
   return [lines];
 }
 
 export const safeBenchViga: ExampleDef = {
   id: "safe-bench-viga-cimentacion",
-  name: "SAFE Benchmark · Viga Cimentación 8×1×0.50m, 4 cols (Δ +0.01%)",
+  name: "Viga de Cimentación · Zapata corrida + Viga + Pedestales",
   category: "Cimentaciones",
   benchmark: true,
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],
   hasModal: false,
   guide: [
-    "Caso 5 del framework Hekatan vs SAFE — PARIDAD CASI PERFECTA <0.01%",
-    "Viga corrida 8×1m × 0.50m espesor, 4 columnas alineadas en eje x",
-    "Cargas: 4 cols × 20 tonf en (1, 0.5), (3, 0.5), (5, 0.5), (7, 0.5)",
-    "Resultado: w_max bajo col interiores -5.11 mm (Hekatan = SAFE)",
-    "Comportamiento cuasi-rígido: ratio w_max/w_teorico ≈ 1.02",
+    "Modelo estructural compuesto típico de cimentación corrida:",
+    " • Zapata corrida → shell Q4 sobre Winkler springs (Lz × Bz × t_zap)",
+    " • Viga de cimentación → frame longitudinal a lo largo del eje central (b_viga × h_viga)",
+    " • Pedestales → frames verticales cortos debajo del contrapiso (b_ped × h_ped)",
+    "Las cargas P bajan por los pedestales → viga → distribuidas a la zapata vía Winkler.",
   ],
   params: {
     Lz: { default: 8.0, min: 4, max: 20, step: 0.5, label: "Lz longitudinal (m)" },
-    Bz: { default: 1.0, min: 0.5, max: 3, step: 0.25, label: "Bz ancho (m)" },
-    tz: { default: 0.50, min: 0.2, max: 1.5, step: 0.05, label: "t espesor (m)" },
+    Bz: { default: 1.0, min: 0.5, max: 3, step: 0.25, label: "Bz ancho zapata (m)" },
+    t_zap: { default: 0.40, min: 0.2, max: 1.0, step: 0.05, label: "t_zap espesor (m)" },
+    b_viga: { default: 0.30, min: 0.2, max: 0.6, step: 0.05, label: "b_viga ancho (m)" },
+    h_viga: { default: 0.50, min: 0.3, max: 1.0, step: 0.05, label: "h_viga canto (m)" },
+    h_ped: { default: 0.50, min: 0.2, max: 1.5, step: 0.05, label: "Hp pedestal (m)" },
+    b_ped: { default: 0.40, min: 0.2, max: 0.8, step: 0.05, label: "lado pedestal (m)" },
     ks_tonfm3: { default: 2000, min: 500, max: 10000, step: 100, label: "ks (tonf/m³)" },
     P_tonf: { default: 20, min: 1, max: 100, step: 1, label: "P por col (tonf)" },
-    nCols: { default: 4, min: 2, max: 8, step: 1, label: "N columnas" },
+    nCols: { default: 4, min: 2, max: 8, step: 1, label: "N pedestales" },
     nx: { default: 32, min: 8, max: 64, step: 4, label: "nx mesh (longitudinal)" },
     ny: { default: 4, min: 2, max: 10, step: 1, label: "ny mesh (transversal)" },
-    h_ped: { default: 0.5, min: 0.2, max: 1.5, step: 0.05, label: "Hp pedestal (m)" },
-    b_ped: { default: 0.40, min: 0.2, max: 0.8, step: 0.05, label: "lado pedestal (m)" },
   },
   build(p, states) {
-    const Lz = p.Lz, Bz = p.Bz, tz = p.tz;
+    const Lz = p.Lz, Bz = p.Bz, t_zap = p.t_zap;
+    const b_viga = p.b_viga, h_viga = p.h_viga;
+    const h_ped = p.h_ped, b_ped = p.b_ped;
     const ks = p.ks_tonfm3 * TONF_TO_KN;
     const P_kN = p.P_tonf * TONF_TO_KN;
     const nCols = Math.round(p.nCols);
@@ -56,24 +73,59 @@ export const safeBenchViga: ExampleDef = {
     const nxn = nx + 1, nyn = ny + 1;
     const dx = Lz / nx, dy = Bz / ny;
 
-    // Columnas equiespaciadas alineadas en línea media (y=Bz/2)
+    // Asegurar que ny es par para que exista la línea central exacta y=Bz/2
+    const yCenter = Bz / 2;
+    const jCenter = Math.round(ny / 2);   // índice fila central del shell (aprox)
+
+    // Pedestales equiespaciados a lo largo de la línea central
     const colPositions: Array<[number, number]> = [];
     for (let k = 1; k <= nCols; ++k) {
       const cx = (k * Lz) / (nCols + 1);
-      colPositions.push([cx, Bz / 2]);
+      colPositions.push([cx, yCenter]);
     }
 
-    const nodes: [number, number][] = [];
+    // ── Nodos shell (z=0) ──
+    const nodes: [number, number, number][] = [];
     for (let j = 0; j < nyn; ++j)
       for (let i = 0; i < nxn; ++i)
-        nodes.push([i * dx, j * dy]);
-    const elements: [number, number, number, number][] = [];
+        nodes.push([i * dx, j * dy, 0]);
+
+    const findShellNode = (xT: number, yT: number) => {
+      let best = -1, bestD = Infinity;
+      for (let k = 0; k < nxn * nyn; ++k) {
+        const d = (nodes[k][0] - xT) ** 2 + (nodes[k][1] - yT) ** 2;
+        if (d < bestD) { bestD = d; best = k; }
+      }
+      return best;
+    };
+
+    // ── Nodos top-pedestal (z=h_ped), uno por columna ──
+    const colBaseIdx = colPositions.map(([cx, cy]) => findShellNode(cx, cy));
+    const colTopIdx = colPositions.map(([cx, cy]) => {
+      nodes.push([cx, cy, h_ped]);
+      return nodes.length - 1;
+    });
+
+    // ── Elementos: shells Q4 + viga frame + pedestal frames ──
+    const elements: number[][] = [];
+    const elemStart_shell = 0;
     for (let j = 0; j < ny; ++j)
       for (let i = 0; i < nx; ++i) {
         const n0 = j * nxn + i;
         elements.push([n0, n0 + 1, n0 + nxn + 1, n0 + nxn]);
       }
+    const elemStart_viga = elements.length;
+    // Viga longitudinal: frames consecutivos en la línea central (j=jCenter)
+    for (let i = 0; i < nx; ++i) {
+      const n0 = jCenter * nxn + i;
+      const n1 = jCenter * nxn + (i + 1);
+      elements.push([n0, n1]);
+    }
+    const elemStart_ped = elements.length;
+    // Pedestales: frames verticales
+    colBaseIdx.forEach((bIdx, k) => elements.push([bIdx, colTopIdx[k]]));
 
+    // ── Winkler springs en nodos zapata (dof=2 = uz global) ──
     const springs: Array<{ node: number; dof: number; k: number }> = [];
     for (let j = 0; j < nyn; ++j)
       for (let i = 0; i < nxn; ++i) {
@@ -82,70 +134,111 @@ export const safeBenchViga: ExampleDef = {
         const factor = onEdgeI && onEdgeJ ? 0.25 : (onEdgeI || onEdgeJ ? 0.5 : 1.0);
         const A_trib = dx * dy * factor;
         const nodeIdx = j * nxn + i;
-        springs.push({ node: nodeIdx, dof: 0, k: ks * A_trib });
+        springs.push({ node: nodeIdx, dof: 2, k: ks * A_trib });
         if (onEdgeI && onEdgeJ) {
           const k_theta = 1e-6 * ks * dx * dy;
-          springs.push({ node: nodeIdx, dof: 1, k: k_theta });
-          springs.push({ node: nodeIdx, dof: 2, k: k_theta });
+          springs.push({ node: nodeIdx, dof: 3, k: k_theta });
+          springs.push({ node: nodeIdx, dof: 4, k: k_theta });
         }
       }
 
-    const findNode = (xT: number, yT: number) => {
-      let best = -1, bestD = Infinity;
-      for (let k = 0; k < nodes.length; ++k) {
-        const dxN = nodes[k][0] - xT, dyN = nodes[k][1] - yT;
-        const d = dxN * dxN + dyN * dyN;
-        if (d < bestD) { bestD = d; best = k; }
-      }
-      return best;
-    };
-    const pointLoads = colPositions.map(([cx, cy]) => ({
-      node: findNode(cx, cy),
-      dof: 0,
-      value: -P_kN,
-    }));
+    // ── Cargas P en top de pedestales (Fz negativo) ──
+    const loads = new Map<number, [number, number, number, number, number, number]>();
+    colTopIdx.forEach(idx => loads.set(idx, [0, 0, -P_kN, 0, 0, 0]));
 
-    const E_kNm2 = 24855e3;
-    const nu = 0.20;
+    // ── Propiedades de materiales y secciones ──
+    const E_kNm2 = 24855e3, nu = 0.20;
+    const G = E_kNm2 / (2 * (1 + nu));
+    const A_v = b_viga * h_viga;
+    const Iz_v = (b_viga * h_viga ** 3) / 12;     // flexión vertical (sobre eje horizontal)
+    const Iy_v = (h_viga * b_viga ** 3) / 12;     // flexión horizontal
+    const J_v = 0.28 * b_viga * h_viga ** 3;       // torsión rectangular aprox
+    const A_p = b_ped * b_ped;
+    const I_p = b_ped ** 4 / 12;
+    const J_p = 0.141 * b_ped ** 4;
 
-    const result = plateQ4Solve({
-      E: E_kNm2, nu, thickness: tz, theoryType: 0,
-      bcType: "none", nodes, elements,
-      bcs: [], pointLoads, springs,
-    });
+    const elasticities = new Map<number, number>();
+    const poissonsRatios = new Map<number, number>();
+    const thicknesses = new Map<number, number>();
+    const areas = new Map<number, number>();
+    const momentsOfInertiaZ = new Map<number, number>();
+    const momentsOfInertiaY = new Map<number, number>();
+    const shearModuli = new Map<number, number>();
+    const torsionalConstants = new Map<number, number>();
 
-    const N3D: [number, number, number][] = nodes.map(n => [n[0], n[1], 0]);
-    states.nodes.val = N3D;
-    states.elements.val = elements as unknown as number[][];
-    states.nodeInputs.val = { supports: new Map(), loads: new Map() };
-    states.elementInputs.val = {
-      elasticities: new Map(elements.map((_, i) => [i, E_kNm2])),
-      poissonsRatios: new Map(elements.map((_, i) => [i, nu])),
-      thicknesses: new Map(elements.map((_, i) => [i, tz])),
-    };
-    const deformations = new Map<number, [number, number, number, number, number, number]>();
-    for (const r of result.nodeResults) {
-      deformations.set(r.node, [0, 0, r.w, r.bx, r.by, 0]);
+    // Shells zapata corrida
+    for (let i = elemStart_shell; i < elemStart_viga; ++i) {
+      elasticities.set(i, E_kNm2);
+      poissonsRatios.set(i, nu);
+      thicknesses.set(i, t_zap);
     }
-    states.deformOutputs.val = { deformations, reactions: new Map() };
+    // Viga frame longitudinal
+    for (let i = elemStart_viga; i < elemStart_ped; ++i) {
+      elasticities.set(i, E_kNm2);
+      poissonsRatios.set(i, nu);
+      areas.set(i, A_v);
+      momentsOfInertiaZ.set(i, Iz_v);
+      momentsOfInertiaY.set(i, Iy_v);
+      shearModuli.set(i, G);
+      torsionalConstants.set(i, J_v);
+    }
+    // Pedestales frames verticales
+    for (let i = elemStart_ped; i < elements.length; ++i) {
+      elasticities.set(i, E_kNm2);
+      poissonsRatios.set(i, nu);
+      areas.set(i, A_p);
+      momentsOfInertiaZ.set(i, I_p);
+      momentsOfInertiaY.set(i, I_p);
+      shearModuli.set(i, G);
+      torsionalConstants.set(i, J_p);
+    }
 
-    const pressure = new Map<number, number[]>();
-    const bendingXX = new Map<number, number[]>();
-    const bendingYY = new Map<number, number[]>();
-    const bendingXY = new Map<number, number[]>();
-    const vonMises = new Map<number, number[]>();
-    elements.forEach((el, i) => {
-      pressure.set(i, el.map(n => ks * result.nodeResults[n].w));
-      const er = result.elementResults[i];
-      bendingXX.set(i, [er.Mxx, er.Mxx, er.Mxx, er.Mxx]);
-      bendingYY.set(i, [er.Myy, er.Myy, er.Myy, er.Myy]);
-      bendingXY.set(i, [er.Mxy, er.Mxy, er.Mxy, er.Mxy]);
-      const vm = Math.sqrt(er.Mxx**2 + er.Myy**2 - er.Mxx*er.Myy + 3*er.Mxy**2);
-      vonMises.set(i, [vm, vm, vm, vm]);
-    });
-    states.analyzeOutputs.val = { pressure, bendingXX, bendingYY, bendingXY, vonMises };
+    const nodeInputs = { supports: new Map(), loads };
+    const elementInputs = {
+      elasticities, poissonsRatios, thicknesses,
+      areas, momentsOfInertiaZ, momentsOfInertiaY,
+      shearModuli, torsionalConstants,
+    };
+
+    // ── Solver mixto shells + frames ──
+    states.nodes.val = nodes;
+    states.elements.val = elements;
+    states.nodeInputs.val = nodeInputs as any;
+    states.elementInputs.val = elementInputs;
+
+    try {
+      const r = deform(nodes, elements, nodeInputs as any, elementInputs, springs);
+      states.deformOutputs.val = r;
+      const ao = analyze(nodes, elements, elementInputs, r);
+
+      // Pressure custom: q = ks × w por nodo del shell
+      const pressure = new Map<number, number[]>();
+      for (let e = elemStart_shell; e < elemStart_viga; ++e) {
+        const el = elements[e];
+        if (el.length !== 4) continue;
+        const qPerNode = el.map(n => {
+          const d = r.deformations?.get(n);
+          return d ? ks * d[2] : 0;
+        });
+        pressure.set(e, qPerNode);
+      }
+      (ao as any).pressure = pressure;
+      states.analyzeOutputs.val = ao;
+    } catch (e) {
+      console.error("safe-bench-viga solver error:", e);
+    }
+
+    // ── Visualización 3D: wireframes en posiciones físicas reales ──
+    // El FEM tiene todos los nodos en z=0 (excepto top pedestal), pero la geometría
+    // real es zapata abajo → viga encima → pedestal arriba. Dibujo wireframes
+    // decorativos para que el usuario VEA esa estructura apilada.
     const objs: THREE.Object3D[] = [];
-    for (const [cx, cy] of colPositions) objs.push(...buildPedestalFrame(cx, cy, p.h_ped, p.b_ped));
+    // Viga real: a lo largo de toda la zapata, base z=t_zap, altura h_viga
+    objs.push(...buildBeamWireframe(0, Lz, yCenter, t_zap, b_viga, h_viga));
+    // Pedestales reales: sobre la viga, base z=t_zap+h_viga, altura h_ped
+    for (const [cx, cy] of colPositions) {
+      objs.push(...buildPedestalWireframe(cx, cy, t_zap + h_viga, h_ped, b_ped));
+    }
     states.objects3D.val = objs;
   },
 };
