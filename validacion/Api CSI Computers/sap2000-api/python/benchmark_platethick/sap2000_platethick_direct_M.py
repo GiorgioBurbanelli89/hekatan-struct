@@ -79,8 +79,29 @@ if not elem_names:
     [NA, AN, _] = SapModel.AreaObj.GetNameList(NA, AN)
     elem_names = list(AN)
 
+# CRITICO: deshabilitar auto-mesh por area (default SAP puede subdividir
+# las areas durante el analisis si tienen "internal mesh" habilitado).
+# SetAutoMesh(name, MeshType=0=None, n1=0, n2=0, MaxSize1=0, MaxSize2=0,
+#             PointOnEdgeFromLine=False, PointOnEdgeFromPoint=False,
+#             ExtendCookieCutLines=False, Rotation=0, MaxSizeGeneral=0,
+#             LocalAxesOnEdge=False, LocalAxesOnFace=False,
+#             RestraintsOnEdge=False, RestraintsOnFace=False,
+#             Group="ALL", SubMesh=False, SubMeshSize=0)
+print(f"  Disabling auto-mesh en las {len(elem_names)} areas...")
+for aName in elem_names:
+    try:
+        ret = SapModel.AreaObj.SetAutoMesh(aName, 0, 0, 0, 0, 0,
+            False, False, False, 0.0, 0.0, False, False, False, False,
+            "ALL", False, 0.0)
+    except Exception as e:
+        print(f"    SetAutoMesh fallo en {aName}: {e}")
+        break
+
+print(f"  Mesh REAL: {len(elem_names)} areas")
+
 NumberPoints, PointNames = 0, []
 [NumberPoints, PointNames, ret] = SapModel.PointObj.GetNameList(NumberPoints, PointNames)
+print(f"  Joints en el modelo: {NumberPoints} (esperado {(n_a+1)*(n_b+1)} si NO hay submesh)")
 point_coords = {}
 for pName in PointNames:
     [X, Y, Z, ret] = SapModel.PointObj.GetCoordCartesian(pName, 0.0, 0.0, 0.0)

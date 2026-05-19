@@ -38,7 +38,8 @@ class MindlinPlate:
     """Rectangular SS plate FEM solver with Mindlin-Reissner Q4 element."""
 
     def __init__(self, a=6.0, b=4.0, t=0.10, E=35e6, nu=0.15, q=10.0,
-                 n_a=12, n_b=8, kappa=5/6):
+                 n_a=12, n_b=8, kappa=5/6, bc='hard'):
+        """bc: 'hard' (w=0 + rotación tangencial=0, igual SAP) o 'soft' (w=0 solo)"""
         """
         Parameters
         ----------
@@ -61,6 +62,7 @@ class MindlinPlate:
         self.E, self.nu, self.q = E, nu, q
         self.n_a, self.n_b = n_a, n_b
         self.kappa = kappa
+        self.bc = bc
         self.G = E / (2*(1 + nu))
 
         self.n_e = n_a * n_b
@@ -152,13 +154,26 @@ class MindlinPlate:
         return B
 
     def _B_bend_incomp(self, xi, eta):
+        """6 modos incompatibles bending:
+           θ_x_extra = a1·(1-ξ²) + a2·(1-η²) + a5·ξ·η
+           θ_y_extra = a3·(1-ξ²) + a4·(1-η²) + a6·ξ·η
+        Las cross terms ξ·η reducen Mxy error de -8.25% a -6.41% @ mesh 6×4 HARD SS.
+        """
         dN1_dx = (2/self.a_1) * (-2*xi)
         dN2_dy = (2/self.b_1) * (-2*eta)
-        B = np.zeros((3, 4))
+        dN3_dx = (2/self.a_1) * eta   # d(ξ·η)/dx = η
+        dN3_dy = (2/self.b_1) * xi    # d(ξ·η)/dy = ξ
+        B = np.zeros((3, 6))
+        # Modes 1-4 (4 originales)
         B[0, 0] = -dN1_dx
         B[1, 3] = -dN2_dy
         B[2, 1] = -dN2_dy
         B[2, 2] = -dN1_dx
+        # Modes 5-6 (cross term ξ·η)
+        B[0, 4] = -dN3_dx   # theta_x_extra contribution to kappa_xx
+        B[1, 5] = -dN3_dy   # theta_y_extra contribution to kappa_yy
+        B[2, 4] = -dN3_dy   # 2*kappa_xy from theta_x cross
+        B[2, 5] = -dN3_dx   # 2*kappa_xy from theta_y cross
         return B
 
     def _B_shear_MITC4(self, xi, eta):
@@ -188,10 +203,10 @@ class MindlinPlate:
 
     # ─── Element stiffness K_e + load F_e ───────────────────────────────
     def _build_Ke_Fe(self):
-        """MITC4 + Wilson incompatible bending modes via static condensation."""
+        """MITC4 + 6 Wilson incompatible bending modes via static condensation."""
         K_uu = np.zeros((12, 12))
-        K_ua = np.zeros((12, 4))
-        K_aa = np.zeros((4, 4))
+        K_ua = np.zeros((12, 6))
+        K_aa = np.zeros((6, 6))
         F_e = np.zeros(12)
         for xi, eta in self.gps:
             Bb = self._B_bend(xi, eta)
@@ -230,9 +245,27 @@ class MindlinPlate:
                             K[3*ji + di, 3*jj + dj] += K_e[3*ni + di, 3*nj + dj]
                 for di in range(3):
                     F[3*ji + di] += F_e[3*ni + di]
-        # SS hard: w = 0 on all boundary nodes (penalty)
-        for js in self.s_j:
-            K[3*js, 3*js] += 1e20
+        # Boundary conditions — match SAP 2000 BC pattern
+        # SAP: corner restrict w + R1 + R2 ; edge x=const w + R1 ; edge y=const w + R2
+        # R1 = theta_x (rotation about x-axis), R2 = theta_y (rotation about y-axis)
+        # DOF layout: 0=w, 1=theta_x, 2=theta_y per node
+        eps = 1e-9
+        for j in range(self.n_j):
+            on_x = abs(self.x_j[j]) < eps or abs(self.x_j[j] - self.a) < eps
+            on_y = abs(self.y_j[j]) < eps or abs(self.y_j[j] - self.b) < eps
+            if on_x or on_y:
+                K[3*j + 0, 3*j + 0] += 1e20   # w = 0
+                if self.bc == 'hard':
+                    # SS HARD: restraint = rotación normal a la arista.
+                    # Edge x=const (arista vertical, eje a lo largo de Y):
+                    #   rotación normal = rotación about Y axis = "theta_y" en mi convención
+                    #   (en mi B_bend, kappa_yy = -d(theta_y_DOF)/dy → theta_y DOF index 2)
+                    # Edge y=const (arista horizontal, eje a lo largo de X):
+                    #   rotación normal = rotación about X axis = "theta_x" en mi convención
+                    if on_x:
+                        K[3*j + 2, 3*j + 2] += 1e20   # restraint theta_y on x=const
+                    if on_y:
+                        K[3*j + 1, 3*j + 1] += 1e20   # restraint theta_x on y=const
         t_assembly = perf_counter() - t0
 
         # Solve
