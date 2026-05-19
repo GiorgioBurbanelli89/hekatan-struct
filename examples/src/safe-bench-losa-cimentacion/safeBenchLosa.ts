@@ -18,8 +18,8 @@ export const safeBenchLosa: ExampleDef = {
   name: "SAFE Benchmark · Losa Cimentación 6×8×0.50m, 6 cols (Δ +0.33%)",
   category: "Cimentaciones",
   benchmark: true,
-  defaultShellResult: "bendingXX",
-  availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],
+  defaultShellResult: "pressure",
+  availableShellResults: ["pressure", "bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],
   hasModal: false,
   guide: [
     "Caso 2 del framework Hekatan vs SAFE 20 (paridad <0.33% en w_max)",
@@ -123,19 +123,23 @@ export const safeBenchLosa: ExampleDef = {
     }
     states.deformOutputs.val = { deformations, reactions: new Map() };
 
-    // Bending + vonMises per-elemento (formato Map<elemIdx, [v_n0, v_n1, v_n2, v_n3]>)
+    // Pressure (q=ks·|w|) + bending + vonMises per-elemento
+    const pressure = new Map<number, number[]>();
     const bendingXX = new Map<number, number[]>();
     const bendingYY = new Map<number, number[]>();
     const bendingXY = new Map<number, number[]>();
     const vonMises = new Map<number, number[]>();
-    result.elementResults.forEach((er, i) => {
+    elements.forEach((el, i) => {
+      const qPerNode = el.map(n => ks * result.nodeResults[n].w);  // kN/m²
+      pressure.set(i, qPerNode);
+      const er = result.elementResults[i];
       bendingXX.set(i, [er.Mxx, er.Mxx, er.Mxx, er.Mxx]);
       bendingYY.set(i, [er.Myy, er.Myy, er.Myy, er.Myy]);
       bendingXY.set(i, [er.Mxy, er.Mxy, er.Mxy, er.Mxy]);
       const vm = Math.sqrt(er.Mxx**2 + er.Myy**2 - er.Mxx*er.Myy + 3*er.Mxy**2);
       vonMises.set(i, [vm, vm, vm, vm]);
     });
-    states.analyzeOutputs.val = { bendingXX, bendingYY, bendingXY, vonMises };
+    states.analyzeOutputs.val = { pressure, bendingXX, bendingYY, bendingXY, vonMises };
     states.objects3D.val = [];
   },
 };
