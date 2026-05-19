@@ -1,4 +1,4 @@
-import { p as Y, __tla as __tla_0 } from "./didacticCpp-BaiPjJ4y.js";
+import { p as I, __tla as __tla_0 } from "./didacticCpp-BaiPjJ4y.js";
 let A;
 let __tla = Promise.all([
   (() => {
@@ -10,88 +10,88 @@ let __tla = Promise.all([
 ]).then(async () => {
   const j = 9.80665;
   function O(a, t, i, l) {
-    const _ = i + 1, u = l + 1, c = a / i, k = t / l, m = [];
-    for (let n = 0; n < u; ++n) for (let r = 0; r < _; ++r) m.push([
-      r * c,
+    const p = i + 1, d = l + 1, r = a / i, k = t / l, c = [];
+    for (let n = 0; n < d; ++n) for (let m = 0; m < p; ++m) c.push([
+      m * r,
       n * k
     ]);
-    const f = [];
-    for (let n = 0; n < l; ++n) for (let r = 0; r < i; ++r) {
-      const p = n * _ + r;
-      f.push([
-        p,
-        p + 1,
-        p + _ + 1,
-        p + _
+    const u = [];
+    for (let n = 0; n < l; ++n) for (let m = 0; m < i; ++m) {
+      const M = n * p + m;
+      u.push([
+        M,
+        M + 1,
+        M + p + 1,
+        M + p
       ]);
     }
     return {
-      nxn: _,
-      nyn: u,
-      dx: c,
+      nxn: p,
+      nyn: d,
+      dx: r,
       dy: k,
-      nodes: m,
-      elements: f
+      nodes: c,
+      elements: u
     };
   }
-  function S(a, t, i, l, _, u, c, k, m, f) {
-    const { nxn: n, nyn: r, dx: p, dy: V, nodes: L, elements: v } = O(t, i, m, f), h = [], w = [], N = Math.floor(m / 2), g = [
+  function V(a, t, i, l, p, d, r, k, c, u) {
+    const { nxn: n, nyn: m, dx: M, dy: L, nodes: P, elements: q } = O(t, i, c, u), x = [], w = [], W = Math.floor(c / 2), z = [
       {
-        node: Math.floor(f / 2) * n + N,
+        node: Math.floor(u / 2) * n + W,
         dof: 0,
         value: -k
       }
-    ], M = (s, d, C, D) => {
-      if (h.push({
+    ], f = (s, e, h, g) => {
+      if (x.push({
         node: s,
         dof: 0,
-        k: c * d
-      }), C) {
-        const z = 0.5 * c * d;
-        h.push({
+        k: r * e
+      }), h) {
+        const N = 0.5 * r * e;
+        x.push({
           node: s,
           dof: 1,
-          k: z * 1e-3
-        }), h.push({
+          k: N * 1e-3
+        }), x.push({
           node: s,
           dof: 2,
-          k: z * 1e-3
+          k: N * 1e-3
         });
       }
-      if (D) {
-        const z = 1e-6 * c * p * V;
-        h.push({
+      if (g) {
+        const N = 1e-6 * r * M * L;
+        x.push({
           node: s,
           dof: 1,
-          k: z
-        }), h.push({
+          k: N
+        }), x.push({
           node: s,
           dof: 2,
-          k: z
+          k: N
         });
       }
     };
-    for (let s = 0; s < r; ++s) for (let d = 0; d < n; ++d) {
-      const C = d === 0 || d === n - 1, D = s === 0 || s === r - 1, z = C && D ? 0.25 : C || D ? 0.5 : 1, U = p * V * z, R = s * n + d, X = C && D;
+    for (let s = 0; s < m; ++s) for (let e = 0; e < n; ++e) {
+      const h = e === 0 || e === n - 1, g = s === 0 || s === m - 1, N = h && g ? 0.25 : h || g ? 0.5 : 1, U = M * L * N, C = s * n + e, Y = h && g;
       switch (a) {
         case 0:
           w.push({
-            node: R,
+            node: C,
             dof: 0,
             value: 0
           });
           break;
         case 1:
-          M(R, U, false, false);
+          f(C, U, false, false);
           break;
         case 2:
-          M(R, U, true, false);
+          f(C, U, true, false);
           break;
         case 3:
-          M(R, U, false, false);
+          f(C, U, false, false);
           break;
         case 4:
-          M(R, U, false, X);
+          f(C, U, false, Y);
           break;
       }
     }
@@ -104,36 +104,36 @@ let __tla = Promise.all([
       dof: 2,
       value: 0
     }));
-    const o = Y({
-      E: _,
-      nu: u,
+    const o = I({
+      E: p,
+      nu: d,
       thickness: l,
       theoryType: 0,
       bcType: "none",
-      nodes: L,
-      elements: v,
+      nodes: P,
+      elements: q,
       bcs: w,
-      pointLoads: g,
-      springs: h
+      pointLoads: z,
+      springs: x
     });
-    let E = 0, b = 0, y = 1 / 0, P = 0, W = 0;
+    let E = 0, b = 0, v = 1 / 0, R = 0, S = 0;
     for (const s of o.nodeResults) {
       Math.abs(s.w) > Math.abs(E) && (E = s.w);
-      const d = c * Math.abs(s.w);
-      d > b && (b = d), d < y && d > 0 && (y = d), P += d, W++;
+      const e = r * Math.abs(s.w);
+      e > b && (b = e), e < v && e > 0 && (v = e), R += e, S++;
     }
-    isFinite(y) || (y = 0);
-    const e = W > 0 ? P / W : 0, x = b > 0 ? y / b : 1;
+    isFinite(v) || (v = 0);
+    const D = S > 0 ? R / S : 0, _ = b > 0 ? v / b : 1;
     return {
       w_max_mm: E * 1e3,
       q_max_kNm2: b,
-      q_avg_kNm2: e,
-      uniformidad: x,
+      q_avg_kNm2: D,
+      uniformidad: _,
       output: o
     };
   }
-  let I;
-  I = {
+  let T;
+  T = {
     0: "1\uFE0F\u20E3 Empotrada (UBC 1960)",
     1: "2\uFE0F\u20E3 Winkler vertical (1867)",
     2: "3\uFE0F\u20E3 Winkler 3D Bowles (1996)",
@@ -145,8 +145,9 @@ let __tla = Promise.all([
     name: "\u{1F393} Zapata ISSE Comparativa: Empotrada vs Winkler vs Vesic (5 autores)",
     category: "Cimentaciones",
     benchmark: true,
-    defaultShellResult: "bendingXX",
+    defaultShellResult: "pressure",
     availableShellResults: [
+      "pressure",
       "bendingXX",
       "bendingYY",
       "bendingXY",
@@ -246,29 +247,29 @@ let __tla = Promise.all([
       }
     },
     computedLabels(a) {
-      const t = a.Lz, i = a.Bz, l = a.tz, _ = a.q_adm_tonf * j, u = a.P_tonf * j, c = Math.round(a.nx), k = Math.round(a.ny), m = 24855e3, f = 0.2, n = _ * a.ks_factor_Bowles, r = a.E_suelo_kPa, p = a.nu_suelo, V = m, L = l ** 3 / 12, v = Math.min(t, i), w = 0.65 * Math.pow(r * v ** 4 / (V * L), 1 / 12) * r / (v * (1 - p * p)), N = S(0, t, i, l, m, f, n, u, c, k), q = S(1, t, i, l, m, f, n, u, c, k), B = S(2, t, i, l, m, f, n, u, c, k), g = S(3, t, i, l, m, f, w, u, c, k), M = S(4, t, i, l, m, f, n, u, c, k), o = (E, b = 2) => Number.isFinite(E) ? E.toFixed(b) : "\u2014";
+      const t = a.Lz, i = a.Bz, l = a.tz, p = a.q_adm_tonf * j, d = a.P_tonf * j, r = Math.round(a.nx), k = Math.round(a.ny), c = 24855e3, u = 0.2, n = p * a.ks_factor_Bowles, m = a.E_suelo_kPa, M = a.nu_suelo, L = c, P = l ** 3 / 12, q = Math.min(t, i), w = 0.65 * Math.pow(m * q ** 4 / (L * P), 1 / 12) * m / (q * (1 - M * M)), W = V(0, t, i, l, c, u, n, d, r, k), B = V(1, t, i, l, c, u, n, d, r, k), y = V(2, t, i, l, c, u, n, d, r, k), z = V(3, t, i, l, c, u, w, d, r, k), f = V(4, t, i, l, c, u, n, d, r, k), o = (E, b = 2) => Number.isFinite(E) ? E.toFixed(b) : "\u2014";
       return {
         "\u2500\u2500 \u{1F4DA} Comparativa ISSE 5 autores \u2500\u2500": "",
-        "Modelo activo (vista 3D)": I[a.model | 0] ?? "\u2014",
+        "Modelo activo (vista 3D)": T[a.model | 0] ?? "\u2014",
         "ks Bowles (kN/m\xB3)": o(n, 0),
         "ks Vesic (kN/m\xB3)": o(w, 0),
         "\u2500\u2500 w_max [mm] por modelo \u2500\u2500": "",
-        "1. Empotrada": `${o(Math.abs(N.w_max_mm), 4)} (rigid)`,
-        "2. Winkler vert.": o(Math.abs(q.w_max_mm), 4),
-        "3. Winkler 3D Bow.": o(Math.abs(B.w_max_mm), 4),
-        "4. Vesic ks-analit.": o(Math.abs(g.w_max_mm), 4),
-        "5. Winkler+antisig.": o(Math.abs(M.w_max_mm), 4),
+        "1. Empotrada": `${o(Math.abs(W.w_max_mm), 4)} (rigid)`,
+        "2. Winkler vert.": o(Math.abs(B.w_max_mm), 4),
+        "3. Winkler 3D Bow.": o(Math.abs(y.w_max_mm), 4),
+        "4. Vesic ks-analit.": o(Math.abs(z.w_max_mm), 4),
+        "5. Winkler+antisig.": o(Math.abs(f.w_max_mm), 4),
         "\u2500\u2500 q_max [kN/m\xB2] por modelo \u2500\u2500": "",
         "q_max 1. Empot.": "0 (no hay springs)",
-        "q_max 2. Winkler": o(q.q_max_kNm2, 2),
-        "q_max 3. W3D Bow.": o(B.q_max_kNm2, 2),
-        "q_max 4. Vesic": o(g.q_max_kNm2, 2),
-        "q_max 5. W+antis.": o(M.q_max_kNm2, 2),
+        "q_max 2. Winkler": o(B.q_max_kNm2, 2),
+        "q_max 3. W3D Bow.": o(y.q_max_kNm2, 2),
+        "q_max 4. Vesic": o(z.q_max_kNm2, 2),
+        "q_max 5. W+antis.": o(f.q_max_kNm2, 2),
         "\u2500\u2500 Uniformidad q_min/q_max \u2500\u2500": "",
-        "Unif. 2. Winkler": o(q.uniformidad, 3),
-        "Unif. 3. W3D Bow.": o(B.uniformidad, 3),
-        "Unif. 4. Vesic": o(g.uniformidad, 3),
-        "Unif. 5. W+antis.": o(M.uniformidad, 3),
+        "Unif. 2. Winkler": o(B.uniformidad, 3),
+        "Unif. 3. W3D Bow.": o(y.uniformidad, 3),
+        "Unif. 4. Vesic": o(z.uniformidad, 3),
+        "Unif. 5. W+antis.": o(f.uniformidad, 3),
         "\u2500\u2500 An\xE1lisis \u2500\u2500": "",
         "Era 1960 (1)": "Subestima asentamiento, sobreestima fuerzas en columna",
         "Era Bowles (2-3,5)": "Asentamiento realista, distribuci\xF3n uniforme",
@@ -277,71 +278,74 @@ let __tla = Promise.all([
       };
     },
     build(a, t) {
-      const i = a.Lz, l = a.Bz, _ = a.tz, u = 24855e3, c = 0.2, k = a.q_adm_tonf * j * a.ks_factor_Bowles, m = a.E_suelo_kPa, f = a.nu_suelo, n = u, r = _ ** 3 / 12, p = Math.min(i, l), L = 0.65 * Math.pow(m * p ** 4 / (n * r), 1 / 12) * m / (p * (1 - f * f)), v = Math.round(a.model), h = v === 3 ? L : k, w = a.P_tonf * j, N = Math.round(a.nx), q = Math.round(a.ny), B = S(v, i, l, _, u, c, h, w, N, q), { nodes: g, elements: M } = O(i, l, N, q), o = g.map((e) => [
-        e[0],
-        e[1],
+      const i = a.Lz, l = a.Bz, p = a.tz, d = 24855e3, r = 0.2, k = a.q_adm_tonf * j * a.ks_factor_Bowles, c = a.E_suelo_kPa, u = a.nu_suelo, n = d, m = p ** 3 / 12, M = Math.min(i, l), P = 0.65 * Math.pow(c * M ** 4 / (n * m), 1 / 12) * c / (M * (1 - u * u)), q = Math.round(a.model), x = q === 3 ? P : k, w = a.P_tonf * j, W = Math.round(a.nx), B = Math.round(a.ny), y = V(q, i, l, p, d, r, x, w, W, B), { nodes: z, elements: f } = O(i, l, W, B), o = z.map((_) => [
+        _[0],
+        _[1],
         0
       ]);
-      t.nodes.val = o, t.elements.val = M, t.nodeInputs.val = {
+      t.nodes.val = o, t.elements.val = f, t.nodeInputs.val = {
         supports: /* @__PURE__ */ new Map(),
         loads: /* @__PURE__ */ new Map()
       }, t.elementInputs.val = {
-        elasticities: new Map(M.map((e, x) => [
-          x,
-          u
+        elasticities: new Map(f.map((_, s) => [
+          s,
+          d
         ])),
-        poissonsRatios: new Map(M.map((e, x) => [
-          x,
-          c
+        poissonsRatios: new Map(f.map((_, s) => [
+          s,
+          r
         ])),
-        thicknesses: new Map(M.map((e, x) => [
-          x,
-          _
+        thicknesses: new Map(f.map((_, s) => [
+          s,
+          p
         ]))
       };
       const E = /* @__PURE__ */ new Map();
-      for (const e of B.output.nodeResults) E.set(e.node, [
+      for (const _ of y.output.nodeResults) E.set(_.node, [
         0,
         0,
-        e.w,
-        e.bx,
-        e.by,
+        _.w,
+        _.bx,
+        _.by,
         0
       ]);
       t.deformOutputs.val = {
         deformations: E,
         reactions: /* @__PURE__ */ new Map()
       };
-      const b = /* @__PURE__ */ new Map(), y = /* @__PURE__ */ new Map(), P = /* @__PURE__ */ new Map(), W = /* @__PURE__ */ new Map();
-      B.output.elementResults.forEach((e, x) => {
-        b.set(x, [
+      const b = /* @__PURE__ */ new Map(), v = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map(), S = /* @__PURE__ */ new Map(), D = /* @__PURE__ */ new Map();
+      f.forEach((_, s) => {
+        b.set(s, _.map((g) => x * y.output.nodeResults[g].w));
+        const e = y.output.elementResults[s];
+        v.set(s, [
           e.Mxx,
           e.Mxx,
           e.Mxx,
           e.Mxx
-        ]), y.set(x, [
+        ]), R.set(s, [
           e.Myy,
           e.Myy,
           e.Myy,
           e.Myy
-        ]), P.set(x, [
+        ]), S.set(s, [
           e.Mxy,
           e.Mxy,
           e.Mxy,
           e.Mxy
         ]);
-        const s = Math.sqrt(e.Mxx ** 2 + e.Myy ** 2 - e.Mxx * e.Myy + 3 * e.Mxy ** 2);
-        W.set(x, [
-          s,
-          s,
-          s,
-          s
+        const h = Math.sqrt(e.Mxx ** 2 + e.Myy ** 2 - e.Mxx * e.Myy + 3 * e.Mxy ** 2);
+        D.set(s, [
+          h,
+          h,
+          h,
+          h
         ]);
       }), t.analyzeOutputs.val = {
-        bendingXX: b,
-        bendingYY: y,
-        bendingXY: P,
-        vonMises: W
+        pressure: b,
+        bendingXX: v,
+        bendingYY: R,
+        bendingXY: S,
+        vonMises: D
       }, t.objects3D.val = [];
     }
   };

@@ -1,5 +1,5 @@
-import { p as O, __tla as __tla_0 } from "./didacticCpp-BaiPjJ4y.js";
-let q;
+import { p as P, __tla as __tla_0 } from "./didacticCpp-BaiPjJ4y.js";
+let D;
 let __tla = Promise.all([
   (() => {
     try {
@@ -8,15 +8,16 @@ let __tla = Promise.all([
     }
   })()
 ]).then(async () => {
-  let I;
-  I = 9.80665;
-  q = {
+  let T;
+  T = 9.80665;
+  D = {
     id: "safe-bench-zapata-conectada",
     name: "SAFE Benchmark \xB7 Zapata Conectada 5\xD71m t variable (\u0394 -0.25%)",
     category: "Cimentaciones",
     benchmark: true,
-    defaultShellResult: "bendingXX",
+    defaultShellResult: "pressure",
     availableShellResults: [
+      "pressure",
       "bendingXX",
       "bendingYY",
       "bendingXY",
@@ -95,144 +96,147 @@ let __tla = Promise.all([
         label: "ny mesh"
       }
     },
-    build(t, l) {
-      const x = t.Lz, M = t.Bz, z = t.t_zap, T = t.t_vig, m = t.Lzap, _ = t.ks_tonfm3 * I, k = t.P_tonf * I, r = Math.round(t.nx), y = Math.round(t.ny), c = r + 1, b = y + 1, p = x / r, h = M / y, d = [];
-      for (let n = 0; n < b; ++n) for (let e = 0; e < c; ++e) d.push([
-        e * p,
-        n * h
+    build(o, l) {
+      const u = o.Lz, x = o.Bz, k = o.t_zap, j = o.t_vig, r = o.Lzap, M = o.ks_tonfm3 * T, w = o.P_tonf * T, y = Math.round(o.nx), b = Math.round(o.ny), c = y + 1, h = b + 1, m = u / y, v = x / b, p = [];
+      for (let a = 0; a < h; ++a) for (let e = 0; e < c; ++e) p.push([
+        e * m,
+        a * v
       ]);
-      const i = [], v = [];
-      for (let n = 0; n < y; ++n) for (let e = 0; e < r; ++e) {
-        const a = n * c + e;
-        i.push([
-          a,
-          a + 1,
-          a + c + 1,
-          a + c
+      const d = [], g = [];
+      for (let a = 0; a < b; ++a) for (let e = 0; e < y; ++e) {
+        const n = a * c + e;
+        d.push([
+          n,
+          n + 1,
+          n + c + 1,
+          n + c
         ]);
-        const s = (e + 0.5) * p, o = s < m || s > x - m;
-        v.push(o ? z : T);
+        const t = (e + 0.5) * m, s = t < r || t > u - r;
+        g.push(s ? k : j);
       }
-      const f = [];
-      for (let n = 0; n < b; ++n) for (let e = 0; e < c; ++e) {
-        const a = e === 0 || e === c - 1, s = n === 0 || n === b - 1, o = a && s ? 0.25 : a || s ? 0.5 : 1, u = p * h * o, g = n * c + e;
-        if (f.push({
-          node: g,
+      const i = [];
+      for (let a = 0; a < h; ++a) for (let e = 0; e < c; ++e) {
+        const n = e === 0 || e === c - 1, t = a === 0 || a === h - 1, s = n && t ? 0.25 : n || t ? 0.5 : 1, f = m * v * s, _ = a * c + e;
+        if (i.push({
+          node: _,
           dof: 0,
-          k: _ * u
-        }), a && s) {
-          const C = 1e-6 * _ * p * h;
-          f.push({
-            node: g,
+          k: M * f
+        }), n && t) {
+          const I = 1e-6 * M * m * v;
+          i.push({
+            node: _,
             dof: 1,
-            k: C
-          }), f.push({
-            node: g,
+            k: I
+          }), i.push({
+            node: _,
             dof: 2,
-            k: C
+            k: I
           });
         }
       }
-      const w = (n, e) => {
-        let a = -1, s = 1 / 0;
-        for (let o = 0; o < d.length; ++o) {
-          const u = (d[o][0] - n) ** 2 + (d[o][1] - e) ** 2;
-          u < s && (s = u, a = o);
+      const L = (a, e) => {
+        let n = -1, t = 1 / 0;
+        for (let s = 0; s < p.length; ++s) {
+          const f = (p[s][0] - a) ** 2 + (p[s][1] - e) ** 2;
+          f < t && (t = f, n = s);
         }
-        return a;
-      }, j = [
+        return n;
+      }, A = [
         {
-          node: w(m / 2, M / 2),
+          node: L(r / 2, x / 2),
           dof: 0,
-          value: -k
+          value: -w
         },
         {
-          node: w(x - m / 2, M / 2),
+          node: L(u - r / 2, x / 2),
           dof: 0,
-          value: -k
+          value: -w
         }
-      ], L = 24855e3, E = 0.2, X = O({
-        E: L,
-        nu: E,
-        thickness: z,
+      ], E = 24855e3, R = 0.2, z = P({
+        E,
+        nu: R,
+        thickness: k,
         theoryType: 0,
         bcType: "none",
-        nodes: d,
-        elements: i,
+        nodes: p,
+        elements: d,
         bcs: [],
-        pointLoads: j,
-        springs: f,
-        thicknesses: v
-      }), A = d.map((n) => [
-        n[0],
-        n[1],
+        pointLoads: A,
+        springs: i,
+        thicknesses: g
+      }), O = p.map((a) => [
+        a[0],
+        a[1],
         0
       ]);
-      l.nodes.val = A, l.elements.val = i, l.nodeInputs.val = {
+      l.nodes.val = O, l.elements.val = d, l.nodeInputs.val = {
         supports: /* @__PURE__ */ new Map(),
         loads: /* @__PURE__ */ new Map()
       }, l.elementInputs.val = {
-        elasticities: new Map(i.map((n, e) => [
-          e,
-          L
-        ])),
-        poissonsRatios: new Map(i.map((n, e) => [
+        elasticities: new Map(d.map((a, e) => [
           e,
           E
         ])),
-        thicknesses: new Map(i.map((n, e) => [
+        poissonsRatios: new Map(d.map((a, e) => [
           e,
-          v[e]
+          R
+        ])),
+        thicknesses: new Map(d.map((a, e) => [
+          e,
+          g[e]
         ]))
       };
       const S = /* @__PURE__ */ new Map();
-      for (const n of X.nodeResults) S.set(n.node, [
+      for (const a of z.nodeResults) S.set(a.node, [
         0,
         0,
-        n.w,
-        n.bx,
-        n.by,
+        a.w,
+        a.bx,
+        a.by,
         0
       ]);
       l.deformOutputs.val = {
         deformations: S,
         reactions: /* @__PURE__ */ new Map()
       };
-      const B = /* @__PURE__ */ new Map(), N = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map();
-      X.elementResults.forEach((n, e) => {
-        B.set(e, [
+      const B = /* @__PURE__ */ new Map(), N = /* @__PURE__ */ new Map(), X = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), C = /* @__PURE__ */ new Map();
+      d.forEach((a, e) => {
+        B.set(e, a.map((s) => M * z.nodeResults[s].w));
+        const n = z.elementResults[e];
+        N.set(e, [
           n.Mxx,
           n.Mxx,
           n.Mxx,
           n.Mxx
-        ]), N.set(e, [
+        ]), X.set(e, [
           n.Myy,
           n.Myy,
           n.Myy,
           n.Myy
-        ]), R.set(e, [
+        ]), Y.set(e, [
           n.Mxy,
           n.Mxy,
           n.Mxy,
           n.Mxy
         ]);
-        const a = Math.sqrt(n.Mxx ** 2 + n.Myy ** 2 - n.Mxx * n.Myy + 3 * n.Mxy ** 2);
-        Y.set(e, [
-          a,
-          a,
-          a,
-          a
+        const t = Math.sqrt(n.Mxx ** 2 + n.Myy ** 2 - n.Mxx * n.Myy + 3 * n.Mxy ** 2);
+        C.set(e, [
+          t,
+          t,
+          t,
+          t
         ]);
       }), l.analyzeOutputs.val = {
-        bendingXX: B,
-        bendingYY: N,
-        bendingXY: R,
-        vonMises: Y
+        pressure: B,
+        bendingXX: N,
+        bendingYY: X,
+        bendingXY: Y,
+        vonMises: C
       }, l.objects3D.val = [];
     }
   };
 });
 export {
   __tla,
-  q as s
+  D as s
 };

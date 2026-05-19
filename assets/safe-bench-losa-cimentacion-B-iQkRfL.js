@@ -1,6 +1,6 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { s as r, __tla as __tla_0 } from "./safeBenchViga-Dc6a6-nh.js";
-import { r as m, __tla as __tla_1 } from "./runExampleStandalone-CHdjzwDH.js";
+import { s as o, __tla as __tla_0 } from "./safeBenchLosa-B5Op892C.js";
+import { r, __tla as __tla_1 } from "./runExampleStandalone-CHdjzwDH.js";
 import { __tla as __tla_2 } from "./didacticCpp-BaiPjJ4y.js";
 import { __tla as __tla_3 } from "./deform-DcHCKCpm.js";
 import "./preload-helper-DrUBW0xl.js";
@@ -35,5 +35,5 @@ Promise.all([
     }
   })()
 ]).then(async () => {
-  m(r);
+  r(o);
 });
