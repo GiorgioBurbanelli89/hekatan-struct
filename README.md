@@ -408,8 +408,13 @@ End-to-end framework that runs Hekatan `plateQ4Solve` and SAFE 20 (vía `SAFEv1.
 | 3 | [Zapata combinada 4×2×0.40m, 2 cols alineadas](./benchmarks/safe/zapata-combinada/) | 16×8 (128 Q4) | 2 | −3.8458 mm | −3.8490 mm | **+0.08%** |
 | 4 | [Zapata conectada 5×1m, t variable (0.40/0.20)](./benchmarks/safe/zapata-conectada/) | 20×4 (80 Q4) | 2 | −8.9003 mm | −8.898 mm | **−0.07%** |
 | 5 | [Viga de cimentación 8×1×0.50m, 4 cols alineadas](./benchmarks/safe/viga-cimentacion/) | 32×4 (128 Q4) | 4 | −5.1093 mm | −5.1100 mm | **+0.01%** |
+| 6 | [Edificio real 9 zap + 12 vigas amarre](./benchmarks/safe/edificio-cimentacion-real/) | 144 Q4 + 12 frames | 9 | −17.82 mm (col 3) | −27.12 mm | **pendiente¹** |
 
-**Promedio Δ máx 0.14%, todos los 5 casos <0.33%.** Documentación API SAFE (con 8 gotchas críticos, incluyendo el bug silencioso de `SubModulus` que produce gap del 38% si se usa `SetAreaSpringProp(U3=ks)` ingenuamente): [`benchmarks/safe/README.md`](./benchmarks/safe/README.md).
+**Casos 1-5 (plate-only): promedio Δ máx 0.14%, todos <0.33%.** Caso 6
+(shell+frame mixto) identifica límite del solver Q4 actual (sin drilling
+DOF → frames horizontales no transfieren carga). Ver el
+[README del caso 6](./benchmarks/safe/edificio-cimentacion-real/README.md)
+con análisis de causa raíz y workaround propuesto. Documentación API SAFE (con 8 gotchas críticos, incluyendo el bug silencioso de `SubModulus` que produce gap del 38% si se usa `SetAreaSpringProp(U3=ks)` ingenuamente): [`benchmarks/safe/README.md`](./benchmarks/safe/README.md).
 
 ## Stack
 

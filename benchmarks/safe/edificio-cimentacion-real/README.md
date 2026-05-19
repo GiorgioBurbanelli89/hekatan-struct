@@ -1,4 +1,4 @@
-# Cimentación Edificio Real — Hekatan vs SAFE (en investigación)
+# Cimentación Edificio Real — Hekatan vs SAFE (validación PENDIENTE — bug Q4+frame identificado)
 
 Reconstrucción 100% desde cero via API del modelo extraído de
 `examples/src/edificio-aporticado/sample_output/cimentacion_edificio_9zapatas_12vigas.f2k`
@@ -47,61 +47,116 @@ quizás 5% mejor, no cerrar 90%). Es un problema de **modelado estructural**.
 
 ## Análisis de la discrepancia
 
-Los 5 casos previos del framework (zapata aislada, losa, combinada, conectada,
-viga) tienen paridad **<0.33%** usando `plateQ4Solve`. Este caso 6 usa
-`deform()` (general FEM con shells + frames mixtos) para poder conectar las 9
-zapatas con las 12 vigas amarre. La hipótesis principal:
+### Test diagnóstico #1: zapata aislada via deform() (CASO BASE) ✅
 
-### Hipótesis 1: Formulación Q4 distinta entre `plateQ4Solve` y `deform()`
+Antes de investigar el modelo completo, validar que `deform()` Q4 funciona
+solo (sin frames):
 
-- `plateQ4Solve` implementa Mindlin/Reissner Q4 con integración selectiva
-  (validado <0.33% vs SAFE Shell-Thick en casos 1-5).
-- `deform()` puede usar Q4 con formulación más simple (Kirchhoff puro, sin
-  shear deformation) o con DOFs distintos (6 DOFs/nodo en lugar de 3).
-- El gap +37.8% del caso 1 con `eShellType.ShellThin` (Kirchhoff) vs corregido
-  a `ShellThick` (Mindlin) sugiere que en `deform()` también puede estar
-  usando Kirchhoff por default.
+| Solver/Modelo | uz centro | uz esquina |
+|---|---|---|
+| caso 1 con `plateQ4Solve` | -4.5356 mm | -4.3849 mm |
+| caso 1 con `deform()` (test diag) | **-4.5377 mm** | **-4.3846 mm** |
+| Δ vs plateQ4Solve | **+0.05%** | **-0.01%** |
+| SAFE referencia | -4.5370 mm | -4.3840 mm |
 
-### Hipótesis 2: Conexión shell-frame mal acoplada
+**Conclusión:** `deform()` Q4 reproduce `plateQ4Solve` con paridad <0.05%.
+La formulación shell, las springs nodales (dof=2 para uz en convención 6-DOF
+de `deform()`), y la transferencia de carga puntual funcionan perfecto.
 
-- Los nodos centrales de cada zapata son COMPARTIDOS entre Q4 shells (zapata)
-  y frames (vigas amarre).
-- Los shells tienen DOFs locales {w, βx, βy}; los frames {ux, uy, uz, rx, ry, rz}.
-- Si `deform()` no acopla correctamente βx/βy del shell con ry/rx del frame,
-  los momentos de las vigas no se transfieren a la zapata adecuadamente.
+### Causa raíz identificada: acoplamiento shell-frame en nodo compartido
 
-### Hipótesis 3: Springs Winkler aplicados a DOF distinto
+El problema NO es el solver Q4. Es el **acoplamiento Q4 + frame** cuando un
+nodo es compartido entre un shell (3 DOFs efectivos: w, βx, βy) y un frame
+(6 DOFs: ux, uy, uz, rx, ry, rz).
 
-- En `plateQ4Solve` springs son en dof=0 (w, primer DOF del shell).
-- En `deform()` springs son en dof=2 (uz, tercer DOF del nodo 6-DOF).
-- Si la enumeración cambia, las springs pueden estar en un DOF rígido en vez
-  del flexible → comportamiento "más rígido" = menor asentamiento. **Esta
-  hipótesis es la más probable dado el patrón observado.**
+Comportamiento observado en caso 6: cada zapata responde casi independiente
+de las vecinas (ratio uz_max/uz_min = 15× en Hekatan vs 2.5× en SAFE). Las
+vigas amarre no están transfiriendo carga lateralmente.
 
-## Próximos pasos (investigación)
+**Hipótesis específicas a investigar:**
 
-- [ ] Probar Hekatan SIN las 12 vigas amarre (solo 9 zapatas independientes).
-      Si Hekatan vs SAFE matchea ahora → problema es el acoplamiento shell-frame.
-- [ ] Probar Hekatan con mesh 12×12 por zapata (no 4×4) — descartar problema
-      de resolución de mesh.
-- [ ] Verificar la convención de DOF en `deform()` vs `plateQ4Solve` para
-      springs (dof=0 vs dof=2).
-- [ ] Comparar contra solución analítica simple: 1 zapata aislada con
-      `deform()` debería matchear el caso 1 (`plateQ4Solve`) ± un epsilon.
+1. **Frame axial DOF en z=0** — un frame horizontal en z=0 tiene axial DOF
+   en dirección horizontal (eje local x del frame). El nodo shell aporta
+   ux/uy en z=0. Si la transformación entre frame local y nodal global
+   no acopla bien, la carga axial del frame no se transmite.
+2. **Drilling DOF en shell Q4** — Q4 estándar tiene 3 DOFs efectivos por
+   nodo (w, βx, βy). Para conectar con frame, el shell necesita "drilling
+   DOF" (rz). Si está como rigid (sin rigidez real), el momento del frame
+   en z se "pierde".
+3. **Frames horizontales sin rigidez transversal vertical** — Las vigas
+   amarre en z=0 conectan nodos también en z=0. La rigidez del frame en su
+   eje Z local (perpendicular al frame, vertical) es la que evita giro
+   vertical de las zapatas, pero si los DOFs ux/uy del shell están "free",
+   los frames no aportan restricción vertical entre zapatas.
 
-## Estado actual
+## Tests diagnósticos ejecutados (bug confirmado)
+
+### Test #1: 1 zapata aislada via deform() (control) ✅
+- `deform()` Q4 da paridad <0.05% con `plateQ4Solve` Y SAFE.
+- Conclusión: el solver Q4 dentro de `deform()` funciona perfecto.
+
+### Test #2: 2 zapatas + 1 viga, cargas IGUALES ✅
+- Ambas zapatas dan uz = −7.97 mm (idéntico, simetría OK).
+- Esperado teórico Winkler aislado = 7.96 mm → paridad <0.13%.
+- No diagnóstico (cargas iguales → no diferencia con/sin viga).
+
+### Test #3: 2 zapatas + 1 viga, cargas DESIGUALES (1 vs 3 tonf) ❌
+- zap1 (P=−1 tonf): uz = −3.86 mm (vs esperado aislada −3.72)
+- zap2 (P=−3 tonf): uz = −11.04 mm (vs esperado aislada −11.16)
+- **Ratio uz1/uz2 = 0.349 ≈ ratio cargas (1/3 = 0.333)** → cada zapata
+  responde como aislada, la viga amarre NO transfiere carga.
+
+## Causa raíz: shell Q4 estándar sin drilling DOF
+
+El frame horizontal en z=0 tiene su DOF axial en dirección horizontal
+(ux/uy del nodo). El shell Q4 estándar en `deform()` no implementa
+**drilling DOFs** (rigidez en ux, uy, rz del plano del shell) — éste es
+el comportamiento clásico del Q4 Mindlin estándar.
+
+Resultado: el frame "trabaja contra DOFs liberados" del shell → la matriz
+de rigidez del frame no se conecta al sistema global → la viga se
+comporta como un elemento aislado que no transfiere carga.
+
+## Fix requerido
+
+Implementar **drilling DOF** en el shell Q4 del solver C++:
+- Allman triangle approach (1984)
+- MITC4 + drilling enhancement (Bathe)
+- Cook-Malkus flat shell formulation
+
+Esto requiere modificar `hekatan-fem/src/cpp/deform.cpp` y recompilar
+WASM. Estimado: 6+ horas de trabajo, fuera del scope de este benchmark
+framework.
+
+## Workaround para casos prácticos con vigas amarre
+
+En lugar de modelar las vigas amarre como frames separados, modelar la
+cimentación completa como **una losa continua con thickness variable**
+(igual que caso 4 conectada). Las "vigas amarre" se representan como
+bandas delgadas (e.g., t=0.10m) entre zapatas (t=0.30m). Este enfoque:
+- Funciona con `plateQ4Solve` (paridad <0.33% probada)
+- No requiere fix del solver
+- Modela físicamente la transferencia de carga
+- Requiere mesh continuo (no 9 áreas disjuntas)
+
+## Estado final (cerrado como "validation pendiente")
 
 ✅ Script SAFE (`safe_api_edificio.py`) funciona end-to-end, reconstruye
 modelo desde cero, aplica SubModulus override, corre análisis en ~12s.
-Resultados consistentes y físicamente razonables.
+Resultados consistentes y físicamente razonables. **Reusable para validar
+cualquier .fdb del usuario** (cambiar el dict de COLUMNS y LOADS).
 
 ✅ Script Hekatan (`cli_edificio.mjs`) funciona end-to-end via `deform()`,
 construye 144 Q4 + 12 frames + 225 springs en ~28 ms. Ejecuta sin errores.
+Los resultados son consistentes para el sub-modelo plate-only (zapata
+aislada via deform da paridad <0.05% con plateQ4Solve, ver test #1).
 
-⚠️ **Paridad solver pendiente de investigación**. Los números difieren
-significativamente; la metodología del framework SÍ es válida (los 5 casos
-anteriores prueban paridad <0.33%), pero este caso requiere debug del
-solver `deform()` para shells + frames mixtos con springs Winkler.
+❌ **Paridad shell-frame NO alcanzada** — limitación del solver Q4 sin
+drilling DOF. Bug identificado, causa raíz documentada, workaround
+propuesto. Fix requiere modificación del C++ solver (out of scope).
+
+✅ **Tests diagnósticos preservados** (`test_diag_*.mjs`) — útiles para
+re-verificar después del fix C++.
 
 ## Archivos
 

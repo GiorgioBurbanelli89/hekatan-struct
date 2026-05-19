@@ -14,6 +14,17 @@ solvers, los corre, extrae resultados nodales en puntos clave, y compara.
 | 3 | [zapata-combinada](safe/zapata-combinada/) — 4×2×0.40m, 2 cols alineadas | 16×8 (128 Q4) | 2 | −3.8458 mm | −3.8490 mm | **+0.08%** | 8 ms / 12 s |
 | 4 | [zapata-conectada](safe/zapata-conectada/) — 5×1m, t variable (0.40/0.20) | 20×4 (80 Q4) | 2 | −8.9003 mm⁺ | −8.8980 mm⁺ | **−0.25%** | 6 ms / 30 s |
 | 5 | [viga-cimentacion](safe/viga-cimentacion/) — 8×1×0.50m, 4 cols alineadas | 32×4 (128 Q4) | 4 | −5.1093 mm | −5.1100 mm | **+0.01%** | 7 ms / 22 s |
+| 6 | [edificio-cimentacion-real](safe/edificio-cimentacion-real/) — 9 zap dim variables + 12 vigas amarre | 144 Q4 + 12 frames | 9 | −17.82 mm (col 3) | −27.12 mm | **PENDIENTE¹** | 28 ms / 12 s |
+
+¹ **Caso 6 validation pendiente** — bug identificado: shells Q4 en `deform()` sin
+drilling DOF → frames horizontales no transfieren carga axial entre zapatas.
+Causa raíz documentada, workaround propuesto (modelar como losa continua con
+thickness variable). Fix requiere modificación del C++ solver
+(`hekatan-fem/src/cpp/deform.cpp`), out of scope. Ver
+[zapata-conectada/README.md](safe/edificio-cimentacion-real/README.md) para
+detalles. **El framework Hekatan-vs-SAFE SÍ está validado** (5 casos
+plate-only); solo modelos mixtos shell+frame con springs Winkler quedan
+pendientes hasta el fix C++.
 
 ⁺ El w_max en zapata-conectada es en las esquinas (NO bajo columnas) por
 rotación de zapatas con viga delgada. Ver
