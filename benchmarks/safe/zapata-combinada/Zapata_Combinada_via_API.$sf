@@ -1,0 +1,1661 @@
+File C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\benchmarks\safe\zapata-combinada\Zapata_Combinada_via_API.$sf was saved on 5/18/2026 at 7:35:42 PM
+ 
+TABLE:  "ANALYSIS MODELING OPTIONS"
+   "Two Dimensional Only"=No   "Rigid Diaphragm At Top"=No   "Ignore Vertical Offsets"=Yes
+ 
+TABLE:  "ANALYSIS OPTIONS - AUTOMATIC MESH SETTINGS FOR FLOORS"
+   "Mesh Option"=General   "Maximum Mesh Size"=48
+ 
+TABLE:  "ANALYSIS OPTIONS - AUTOMATIC RECTANGULAR MESH OPTIONS FOR WALLS"
+   "Maximum Mesh Size"=48
+ 
+TABLE:  "ANALYSIS OPTIONS - CRACKING ANALYSIS OPTIONS"
+   "Reinforcement Source"="User and Designed"   "Minimum Tension Ratio"=0.0018   "Minimum Compression Ratio"=0
+ 
+TABLE:  "ANALYSIS OPTIONS - DESIGN AND RESPONSE RECOVERY OPTIONS"
+   "Number Design Threads"=0   "Number Recovery Threads"=0   "Use Memory Mapped Files"="Program Determined"   "Allow Model Differences"=No
+ 
+TABLE:  "ANALYSIS OPTIONS - SAPFIRE OPTIONS"
+   "Solver Option"=Advanced   "Analysis Process"=Auto   "Number Analysis Threads"=0   "Max File Size"=0
+ 
+TABLE:  "AREA ASSIGNMENTS - AREA SPRINGS"
+   UniqueName=Q_00_00   "Spring Property"=AS_Winkler
+   UniqueName=Q_01_00   "Spring Property"=AS_Winkler
+   UniqueName=Q_02_00   "Spring Property"=AS_Winkler
+   UniqueName=Q_03_00   "Spring Property"=AS_Winkler
+   UniqueName=Q_04_00   "Spring Property"=AS_Winkler
+   UniqueName=Q_05_00   "Spring Property"=AS_Winkler
+   UniqueName=Q_06_00   "Spring Property"=AS_Winkler
+   UniqueName=Q_07_00   "Spring Property"=AS_Winkler
+   UniqueName=Q_08_00   "Spring Property"=AS_Winkler
+   UniqueName=Q_09_00   "Spring Property"=AS_Winkler
+   UniqueName=Q_10_00   "Spring Property"=AS_Winkler
+   UniqueName=Q_11_00   "Spring Property"=AS_Winkler
+   UniqueName=Q_12_00   "Spring Property"=AS_Winkler
+   UniqueName=Q_13_00   "Spring Property"=AS_Winkler
+   UniqueName=Q_14_00   "Spring Property"=AS_Winkler
+   UniqueName=Q_15_00   "Spring Property"=AS_Winkler
+   UniqueName=Q_00_01   "Spring Property"=AS_Winkler
+   UniqueName=Q_01_01   "Spring Property"=AS_Winkler
+   UniqueName=Q_02_01   "Spring Property"=AS_Winkler
+   UniqueName=Q_03_01   "Spring Property"=AS_Winkler
+   UniqueName=Q_04_01   "Spring Property"=AS_Winkler
+   UniqueName=Q_05_01   "Spring Property"=AS_Winkler
+   UniqueName=Q_06_01   "Spring Property"=AS_Winkler
+   UniqueName=Q_07_01   "Spring Property"=AS_Winkler
+   UniqueName=Q_08_01   "Spring Property"=AS_Winkler
+   UniqueName=Q_09_01   "Spring Property"=AS_Winkler
+   UniqueName=Q_10_01   "Spring Property"=AS_Winkler
+   UniqueName=Q_11_01   "Spring Property"=AS_Winkler
+   UniqueName=Q_12_01   "Spring Property"=AS_Winkler
+   UniqueName=Q_13_01   "Spring Property"=AS_Winkler
+   UniqueName=Q_14_01   "Spring Property"=AS_Winkler
+   UniqueName=Q_15_01   "Spring Property"=AS_Winkler
+   UniqueName=Q_00_02   "Spring Property"=AS_Winkler
+   UniqueName=Q_01_02   "Spring Property"=AS_Winkler
+   UniqueName=Q_02_02   "Spring Property"=AS_Winkler
+   UniqueName=Q_03_02   "Spring Property"=AS_Winkler
+   UniqueName=Q_04_02   "Spring Property"=AS_Winkler
+   UniqueName=Q_05_02   "Spring Property"=AS_Winkler
+   UniqueName=Q_06_02   "Spring Property"=AS_Winkler
+   UniqueName=Q_07_02   "Spring Property"=AS_Winkler
+   UniqueName=Q_08_02   "Spring Property"=AS_Winkler
+   UniqueName=Q_09_02   "Spring Property"=AS_Winkler
+   UniqueName=Q_10_02   "Spring Property"=AS_Winkler
+   UniqueName=Q_11_02   "Spring Property"=AS_Winkler
+   UniqueName=Q_12_02   "Spring Property"=AS_Winkler
+   UniqueName=Q_13_02   "Spring Property"=AS_Winkler
+   UniqueName=Q_14_02   "Spring Property"=AS_Winkler
+   UniqueName=Q_15_02   "Spring Property"=AS_Winkler
+   UniqueName=Q_00_03   "Spring Property"=AS_Winkler
+   UniqueName=Q_01_03   "Spring Property"=AS_Winkler
+   UniqueName=Q_02_03   "Spring Property"=AS_Winkler
+   UniqueName=Q_03_03   "Spring Property"=AS_Winkler
+   UniqueName=Q_04_03   "Spring Property"=AS_Winkler
+   UniqueName=Q_05_03   "Spring Property"=AS_Winkler
+   UniqueName=Q_06_03   "Spring Property"=AS_Winkler
+   UniqueName=Q_07_03   "Spring Property"=AS_Winkler
+   UniqueName=Q_08_03   "Spring Property"=AS_Winkler
+   UniqueName=Q_09_03   "Spring Property"=AS_Winkler
+   UniqueName=Q_10_03   "Spring Property"=AS_Winkler
+   UniqueName=Q_11_03   "Spring Property"=AS_Winkler
+   UniqueName=Q_12_03   "Spring Property"=AS_Winkler
+   UniqueName=Q_13_03   "Spring Property"=AS_Winkler
+   UniqueName=Q_14_03   "Spring Property"=AS_Winkler
+   UniqueName=Q_15_03   "Spring Property"=AS_Winkler
+   UniqueName=Q_00_04   "Spring Property"=AS_Winkler
+   UniqueName=Q_01_04   "Spring Property"=AS_Winkler
+   UniqueName=Q_02_04   "Spring Property"=AS_Winkler
+   UniqueName=Q_03_04   "Spring Property"=AS_Winkler
+   UniqueName=Q_04_04   "Spring Property"=AS_Winkler
+   UniqueName=Q_05_04   "Spring Property"=AS_Winkler
+   UniqueName=Q_06_04   "Spring Property"=AS_Winkler
+   UniqueName=Q_07_04   "Spring Property"=AS_Winkler
+   UniqueName=Q_08_04   "Spring Property"=AS_Winkler
+   UniqueName=Q_09_04   "Spring Property"=AS_Winkler
+   UniqueName=Q_10_04   "Spring Property"=AS_Winkler
+   UniqueName=Q_11_04   "Spring Property"=AS_Winkler
+   UniqueName=Q_12_04   "Spring Property"=AS_Winkler
+   UniqueName=Q_13_04   "Spring Property"=AS_Winkler
+   UniqueName=Q_14_04   "Spring Property"=AS_Winkler
+   UniqueName=Q_15_04   "Spring Property"=AS_Winkler
+   UniqueName=Q_00_05   "Spring Property"=AS_Winkler
+   UniqueName=Q_01_05   "Spring Property"=AS_Winkler
+   UniqueName=Q_02_05   "Spring Property"=AS_Winkler
+   UniqueName=Q_03_05   "Spring Property"=AS_Winkler
+   UniqueName=Q_04_05   "Spring Property"=AS_Winkler
+   UniqueName=Q_05_05   "Spring Property"=AS_Winkler
+   UniqueName=Q_06_05   "Spring Property"=AS_Winkler
+   UniqueName=Q_07_05   "Spring Property"=AS_Winkler
+   UniqueName=Q_08_05   "Spring Property"=AS_Winkler
+   UniqueName=Q_09_05   "Spring Property"=AS_Winkler
+   UniqueName=Q_10_05   "Spring Property"=AS_Winkler
+   UniqueName=Q_11_05   "Spring Property"=AS_Winkler
+   UniqueName=Q_12_05   "Spring Property"=AS_Winkler
+   UniqueName=Q_13_05   "Spring Property"=AS_Winkler
+   UniqueName=Q_14_05   "Spring Property"=AS_Winkler
+   UniqueName=Q_15_05   "Spring Property"=AS_Winkler
+   UniqueName=Q_00_06   "Spring Property"=AS_Winkler
+   UniqueName=Q_01_06   "Spring Property"=AS_Winkler
+   UniqueName=Q_02_06   "Spring Property"=AS_Winkler
+   UniqueName=Q_03_06   "Spring Property"=AS_Winkler
+   UniqueName=Q_04_06   "Spring Property"=AS_Winkler
+   UniqueName=Q_05_06   "Spring Property"=AS_Winkler
+   UniqueName=Q_06_06   "Spring Property"=AS_Winkler
+   UniqueName=Q_07_06   "Spring Property"=AS_Winkler
+   UniqueName=Q_08_06   "Spring Property"=AS_Winkler
+   UniqueName=Q_09_06   "Spring Property"=AS_Winkler
+   UniqueName=Q_10_06   "Spring Property"=AS_Winkler
+   UniqueName=Q_11_06   "Spring Property"=AS_Winkler
+   UniqueName=Q_12_06   "Spring Property"=AS_Winkler
+   UniqueName=Q_13_06   "Spring Property"=AS_Winkler
+   UniqueName=Q_14_06   "Spring Property"=AS_Winkler
+   UniqueName=Q_15_06   "Spring Property"=AS_Winkler
+   UniqueName=Q_00_07   "Spring Property"=AS_Winkler
+   UniqueName=Q_01_07   "Spring Property"=AS_Winkler
+   UniqueName=Q_02_07   "Spring Property"=AS_Winkler
+   UniqueName=Q_03_07   "Spring Property"=AS_Winkler
+   UniqueName=Q_04_07   "Spring Property"=AS_Winkler
+   UniqueName=Q_05_07   "Spring Property"=AS_Winkler
+   UniqueName=Q_06_07   "Spring Property"=AS_Winkler
+   UniqueName=Q_07_07   "Spring Property"=AS_Winkler
+   UniqueName=Q_08_07   "Spring Property"=AS_Winkler
+   UniqueName=Q_09_07   "Spring Property"=AS_Winkler
+   UniqueName=Q_10_07   "Spring Property"=AS_Winkler
+   UniqueName=Q_11_07   "Spring Property"=AS_Winkler
+   UniqueName=Q_12_07   "Spring Property"=AS_Winkler
+   UniqueName=Q_13_07   "Spring Property"=AS_Winkler
+   UniqueName=Q_14_07   "Spring Property"=AS_Winkler
+   UniqueName=Q_15_07   "Spring Property"=AS_Winkler
+ 
+TABLE:  "AREA ASSIGNMENTS - AUTO EDGE CONSTRAINTS"
+   UniqueName=Q_00_00   Constraint=Yes
+   UniqueName=Q_01_00   Constraint=Yes
+   UniqueName=Q_02_00   Constraint=Yes
+   UniqueName=Q_03_00   Constraint=Yes
+   UniqueName=Q_04_00   Constraint=Yes
+   UniqueName=Q_05_00   Constraint=Yes
+   UniqueName=Q_06_00   Constraint=Yes
+   UniqueName=Q_07_00   Constraint=Yes
+   UniqueName=Q_08_00   Constraint=Yes
+   UniqueName=Q_09_00   Constraint=Yes
+   UniqueName=Q_10_00   Constraint=Yes
+   UniqueName=Q_11_00   Constraint=Yes
+   UniqueName=Q_12_00   Constraint=Yes
+   UniqueName=Q_13_00   Constraint=Yes
+   UniqueName=Q_14_00   Constraint=Yes
+   UniqueName=Q_15_00   Constraint=Yes
+   UniqueName=Q_00_01   Constraint=Yes
+   UniqueName=Q_01_01   Constraint=Yes
+   UniqueName=Q_02_01   Constraint=Yes
+   UniqueName=Q_03_01   Constraint=Yes
+   UniqueName=Q_04_01   Constraint=Yes
+   UniqueName=Q_05_01   Constraint=Yes
+   UniqueName=Q_06_01   Constraint=Yes
+   UniqueName=Q_07_01   Constraint=Yes
+   UniqueName=Q_08_01   Constraint=Yes
+   UniqueName=Q_09_01   Constraint=Yes
+   UniqueName=Q_10_01   Constraint=Yes
+   UniqueName=Q_11_01   Constraint=Yes
+   UniqueName=Q_12_01   Constraint=Yes
+   UniqueName=Q_13_01   Constraint=Yes
+   UniqueName=Q_14_01   Constraint=Yes
+   UniqueName=Q_15_01   Constraint=Yes
+   UniqueName=Q_00_02   Constraint=Yes
+   UniqueName=Q_01_02   Constraint=Yes
+   UniqueName=Q_02_02   Constraint=Yes
+   UniqueName=Q_03_02   Constraint=Yes
+   UniqueName=Q_04_02   Constraint=Yes
+   UniqueName=Q_05_02   Constraint=Yes
+   UniqueName=Q_06_02   Constraint=Yes
+   UniqueName=Q_07_02   Constraint=Yes
+   UniqueName=Q_08_02   Constraint=Yes
+   UniqueName=Q_09_02   Constraint=Yes
+   UniqueName=Q_10_02   Constraint=Yes
+   UniqueName=Q_11_02   Constraint=Yes
+   UniqueName=Q_12_02   Constraint=Yes
+   UniqueName=Q_13_02   Constraint=Yes
+   UniqueName=Q_14_02   Constraint=Yes
+   UniqueName=Q_15_02   Constraint=Yes
+   UniqueName=Q_00_03   Constraint=Yes
+   UniqueName=Q_01_03   Constraint=Yes
+   UniqueName=Q_02_03   Constraint=Yes
+   UniqueName=Q_03_03   Constraint=Yes
+   UniqueName=Q_04_03   Constraint=Yes
+   UniqueName=Q_05_03   Constraint=Yes
+   UniqueName=Q_06_03   Constraint=Yes
+   UniqueName=Q_07_03   Constraint=Yes
+   UniqueName=Q_08_03   Constraint=Yes
+   UniqueName=Q_09_03   Constraint=Yes
+   UniqueName=Q_10_03   Constraint=Yes
+   UniqueName=Q_11_03   Constraint=Yes
+   UniqueName=Q_12_03   Constraint=Yes
+   UniqueName=Q_13_03   Constraint=Yes
+   UniqueName=Q_14_03   Constraint=Yes
+   UniqueName=Q_15_03   Constraint=Yes
+   UniqueName=Q_00_04   Constraint=Yes
+   UniqueName=Q_01_04   Constraint=Yes
+   UniqueName=Q_02_04   Constraint=Yes
+   UniqueName=Q_03_04   Constraint=Yes
+   UniqueName=Q_04_04   Constraint=Yes
+   UniqueName=Q_05_04   Constraint=Yes
+   UniqueName=Q_06_04   Constraint=Yes
+   UniqueName=Q_07_04   Constraint=Yes
+   UniqueName=Q_08_04   Constraint=Yes
+   UniqueName=Q_09_04   Constraint=Yes
+   UniqueName=Q_10_04   Constraint=Yes
+   UniqueName=Q_11_04   Constraint=Yes
+   UniqueName=Q_12_04   Constraint=Yes
+   UniqueName=Q_13_04   Constraint=Yes
+   UniqueName=Q_14_04   Constraint=Yes
+   UniqueName=Q_15_04   Constraint=Yes
+   UniqueName=Q_00_05   Constraint=Yes
+   UniqueName=Q_01_05   Constraint=Yes
+   UniqueName=Q_02_05   Constraint=Yes
+   UniqueName=Q_03_05   Constraint=Yes
+   UniqueName=Q_04_05   Constraint=Yes
+   UniqueName=Q_05_05   Constraint=Yes
+   UniqueName=Q_06_05   Constraint=Yes
+   UniqueName=Q_07_05   Constraint=Yes
+   UniqueName=Q_08_05   Constraint=Yes
+   UniqueName=Q_09_05   Constraint=Yes
+   UniqueName=Q_10_05   Constraint=Yes
+   UniqueName=Q_11_05   Constraint=Yes
+   UniqueName=Q_12_05   Constraint=Yes
+   UniqueName=Q_13_05   Constraint=Yes
+   UniqueName=Q_14_05   Constraint=Yes
+   UniqueName=Q_15_05   Constraint=Yes
+   UniqueName=Q_00_06   Constraint=Yes
+   UniqueName=Q_01_06   Constraint=Yes
+   UniqueName=Q_02_06   Constraint=Yes
+   UniqueName=Q_03_06   Constraint=Yes
+   UniqueName=Q_04_06   Constraint=Yes
+   UniqueName=Q_05_06   Constraint=Yes
+   UniqueName=Q_06_06   Constraint=Yes
+   UniqueName=Q_07_06   Constraint=Yes
+   UniqueName=Q_08_06   Constraint=Yes
+   UniqueName=Q_09_06   Constraint=Yes
+   UniqueName=Q_10_06   Constraint=Yes
+   UniqueName=Q_11_06   Constraint=Yes
+   UniqueName=Q_12_06   Constraint=Yes
+   UniqueName=Q_13_06   Constraint=Yes
+   UniqueName=Q_14_06   Constraint=Yes
+   UniqueName=Q_15_06   Constraint=Yes
+   UniqueName=Q_00_07   Constraint=Yes
+   UniqueName=Q_01_07   Constraint=Yes
+   UniqueName=Q_02_07   Constraint=Yes
+   UniqueName=Q_03_07   Constraint=Yes
+   UniqueName=Q_04_07   Constraint=Yes
+   UniqueName=Q_05_07   Constraint=Yes
+   UniqueName=Q_06_07   Constraint=Yes
+   UniqueName=Q_07_07   Constraint=Yes
+   UniqueName=Q_08_07   Constraint=Yes
+   UniqueName=Q_09_07   Constraint=Yes
+   UniqueName=Q_10_07   Constraint=Yes
+   UniqueName=Q_11_07   Constraint=Yes
+   UniqueName=Q_12_07   Constraint=Yes
+   UniqueName=Q_13_07   Constraint=Yes
+   UniqueName=Q_14_07   Constraint=Yes
+   UniqueName=Q_15_07   Constraint=Yes
+ 
+TABLE:  "AREA ASSIGNMENTS - FLOOR AUTO MESH OPTIONS"
+   UniqueName=Q_00_00   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_01_00   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_02_00   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_03_00   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_04_00   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_05_00   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_06_00   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_07_00   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_08_00   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_09_00   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_10_00   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_11_00   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_12_00   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_13_00   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_14_00   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_15_00   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_00_01   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_01_01   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_02_01   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_03_01   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_04_01   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_05_01   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_06_01   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_07_01   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_08_01   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_09_01   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_10_01   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_11_01   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_12_01   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_13_01   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_14_01   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_15_01   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_00_02   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_01_02   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_02_02   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_03_02   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_04_02   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_05_02   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_06_02   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_07_02   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_08_02   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_09_02   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_10_02   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_11_02   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_12_02   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_13_02   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_14_02   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_15_02   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_00_03   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_01_03   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_02_03   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_03_03   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_04_03   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_05_03   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_06_03   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_07_03   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_08_03   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_09_03   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_10_03   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_11_03   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_12_03   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_13_03   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_14_03   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_15_03   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_00_04   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_01_04   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_02_04   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_03_04   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_04_04   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_05_04   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_06_04   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_07_04   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_08_04   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_09_04   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_10_04   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_11_04   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_12_04   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_13_04   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_14_04   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_15_04   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_00_05   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_01_05   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_02_05   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_03_05   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_04_05   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_05_05   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_06_05   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_07_05   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_08_05   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_09_05   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_10_05   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_11_05   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_12_05   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_13_05   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_14_05   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_15_05   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_00_06   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_01_06   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_02_06   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_03_06   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_04_06   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_05_06   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_06_06   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_07_06   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_08_06   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_09_06   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_10_06   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_11_06   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_12_06   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_13_06   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_14_06   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_15_06   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_00_07   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_01_07   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_02_07   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_03_07   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_04_07   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_05_07   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_06_07   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_07_07   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_08_07   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_09_07   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_10_07   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_11_07   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_12_07   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_13_07   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_14_07   "Mesh Option"=Default   "Add Restraints"=No
+   UniqueName=Q_15_07   "Mesh Option"=Default   "Add Restraints"=No
+ 
+TABLE:  "AREA ASSIGNMENTS - INSERTION POINT"
+   UniqueName=Q_00_00   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_01_00   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_02_00   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_03_00   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_04_00   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_05_00   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_06_00   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_07_00   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_08_00   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_09_00   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_10_00   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_11_00   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_12_00   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_13_00   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_14_00   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_15_00   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_00_01   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_01_01   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_02_01   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_03_01   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_04_01   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_05_01   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_06_01   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_07_01   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_08_01   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_09_01   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_10_01   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_11_01   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_12_01   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_13_01   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_14_01   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_15_01   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_00_02   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_01_02   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_02_02   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_03_02   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_04_02   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_05_02   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_06_02   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_07_02   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_08_02   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_09_02   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_10_02   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_11_02   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_12_02   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_13_02   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_14_02   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_15_02   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_00_03   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_01_03   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_02_03   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_03_03   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_04_03   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_05_03   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_06_03   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_07_03   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_08_03   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_09_03   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_10_03   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_11_03   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_12_03   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_13_03   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_14_03   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_15_03   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_00_04   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_01_04   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_02_04   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_03_04   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_04_04   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_05_04   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_06_04   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_07_04   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_08_04   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_09_04   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_10_04   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_11_04   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_12_04   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_13_04   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_14_04   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_15_04   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_00_05   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_01_05   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_02_05   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_03_05   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_04_05   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_05_05   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_06_05   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_07_05   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_08_05   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_09_05   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_10_05   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_11_05   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_12_05   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_13_05   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_14_05   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_15_05   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_00_06   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_01_06   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_02_06   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_03_06   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_04_06   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_05_06   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_06_06   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_07_06   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_08_06   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_09_06   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_10_06   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_11_06   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_12_06   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_13_06   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_14_06   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_15_06   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_00_07   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_01_07   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_02_07   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_03_07   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_04_07   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_05_07   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_06_07   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_07_07   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_08_07   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_09_07   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_10_07   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_11_07   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_12_07   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_13_07   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_14_07   "Cardinal Point"=Middle   Transform=No
+   UniqueName=Q_15_07   "Cardinal Point"=Middle   Transform=No
+ 
+TABLE:  "AREA ASSIGNMENTS - SECTION PROPERTIES"
+   UniqueName=Q_00_00   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_01_00   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_02_00   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_03_00   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_04_00   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_05_00   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_06_00   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_07_00   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_08_00   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_09_00   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_10_00   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_11_00   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_12_00   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_13_00   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_14_00   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_15_00   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_00_01   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_01_01   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_02_01   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_03_01   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_04_01   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_05_01   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_06_01   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_07_01   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_08_01   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_09_01   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_10_01   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_11_01   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_12_01   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_13_01   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_14_01   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_15_01   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_00_02   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_01_02   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_02_02   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_03_02   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_04_02   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_05_02   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_06_02   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_07_02   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_08_02   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_09_02   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_10_02   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_11_02   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_12_02   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_13_02   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_14_02   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_15_02   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_00_03   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_01_03   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_02_03   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_03_03   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_04_03   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_05_03   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_06_03   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_07_03   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_08_03   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_09_03   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_10_03   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_11_03   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_12_03   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_13_03   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_14_03   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_15_03   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_00_04   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_01_04   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_02_04   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_03_04   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_04_04   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_05_04   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_06_04   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_07_04   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_08_04   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_09_04   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_10_04   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_11_04   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_12_04   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_13_04   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_14_04   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_15_04   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_00_05   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_01_05   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_02_05   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_03_05   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_04_05   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_05_05   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_06_05   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_07_05   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_08_05   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_09_05   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_10_05   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_11_05   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_12_05   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_13_05   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_14_05   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_15_05   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_00_06   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_01_06   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_02_06   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_03_06   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_04_06   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_05_06   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_06_06   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_07_06   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_08_06   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_09_06   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_10_06   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_11_06   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_12_06   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_13_06   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_14_06   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_15_06   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_00_07   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_01_07   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_02_07   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_03_07   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_04_07   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_05_07   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_06_07   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_07_07   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_08_07   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_09_07   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_10_07   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_11_07   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_12_07   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_13_07   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_14_07   "Section Property"=ZapataCombinada   "Property Type"=Slab
+   UniqueName=Q_15_07   "Section Property"=ZapataCombinada   "Property Type"=Slab
+ 
+TABLE:  "COMPOSITE BEAM DESIGN PREFERENCES - AISC 360-16"
+   Shored?=No   "Middle Range"=70   "Pattern Live Load Factor"=0.75   "D/C Ratio Limit"=1   "Minimum PCC"=25   "Maximum PCC"=100   "Single Segment?"=No   "Min. Long. Spacing"=4.5   "Max. Long. Spacing"=36   "Min. Trans. Spacing"=3 _
+        "Max. Studs Per Row"=3   "Position of Studs"="Middle of the Ribs"   Camber?=Yes   "Camber DL"=80   "Min. Beam Depth"=13.5   "Min. Web Thick."=0.25   "Min. Beam Span"=288   "Min. Camber, abs"=0.75   "Minimum Camber, L/"=900 _
+        "Camber Abs. Max Limit"=6   "Camber Max Ratio"=180   "Camber Interval"=0.25   "Round Camber Down?"=Yes   "Pre-Comp DL Ratio"=0   "SDL+LL Ratio"=240   "LL Ratio"=360   "Net Ratio"=240   "Ieff reduction Factor"=1 _
+        "Vibration Criterion"=Walking   "Occupancy Category"="Paper Office"   "Walking Acceleration Limit, a0/g"=0.005   "Damping Ratio - Walking"=0.025   "Optimize Price?"=Yes   "Steel Price ($)"=1   "Stud Price ($)"=2 _
+        "Camber Price ($)"=0.1   phi-b=0.9   phi-bcpp=0.9   phi-v=0.9   "Reaction Factor"=1
+ 
+TABLE:  "CONCRETE SLAB DESIGN OVERWRITES - FINITE ELEMENT BASED"
+   "Unique Name"=Q_00_00   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_01_00   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_02_00   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_03_00   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_04_00   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_05_00   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_06_00   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_07_00   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_08_00   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_09_00   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_10_00   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_11_00   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_12_00   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_13_00   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_14_00   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_15_00   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_00_01   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_01_01   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_02_01   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_03_01   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_04_01   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_05_01   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_06_01   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_07_01   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_08_01   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_09_01   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_10_01   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_11_01   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_12_01   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_13_01   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_14_01   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_15_01   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_00_02   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_01_02   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_02_02   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_03_02   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_04_02   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_05_02   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_06_02   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_07_02   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_08_02   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_09_02   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_10_02   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_11_02   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_12_02   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_13_02   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_14_02   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_15_02   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_00_03   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_01_03   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_02_03   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_03_03   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_04_03   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_05_03   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_06_03   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_07_03   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_08_03   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_09_03   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_10_03   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_11_03   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_12_03   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_13_03   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_14_03   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_15_03   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_00_04   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_01_04   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_02_04   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_03_04   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_04_04   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_05_04   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_06_04   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_07_04   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_08_04   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_09_04   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_10_04   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_11_04   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_12_04   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_13_04   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_14_04   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_15_04   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_00_05   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_01_05   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_02_05   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_03_05   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_04_05   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_05_05   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_06_05   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_07_05   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_08_05   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_09_05   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_10_05   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_11_05   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_12_05   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_13_05   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_14_05   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_15_05   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_00_06   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_01_06   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_02_06   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_03_06   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_04_06   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_05_06   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_06_06   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_07_06   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_08_06   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_09_06   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_10_06   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_11_06   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_12_06   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_13_06   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_14_06   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_15_06   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_00_07   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_01_07   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_02_07   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_03_07   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_04_07   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_05_07   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_06_07   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_07_07   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_08_07   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_09_07   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_10_07   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_11_07   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_12_07   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_13_07   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_14_07   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+   "Unique Name"=Q_15_07   "Cover Specification Type"="From Preferences"   LLRF=1   Design?=Yes   "Ignote PT?"=No
+ 
+TABLE:  "CONCRETE SLAB DESIGN PREFERENCES - ACI 318-19"
+   PhiTen=0.9   PhiComp=0.65   PhiShear=0.75   "Increase Flexural Rebar?"=No   "Ignore Pu?"=Yes   CoverTop=0.75   CoverBot=0.75   BarSize=#6   InnerLayer="Layer B"   PTCGSTop=1   PTCGSBotExt=1.75   PTCGSBotInt=1   SlabType="Two Way" _
+        "Cover Beam Top"=1.5   "Cover Beam Bottom"=1.5   "Bar Size Beam Flexure"=#9   "Bar Size Beam Shear"=#4   "PTCGS Beam Top"=2   "PTCGS Beam Bottom"=2   UserStress=No   InitConcRat=0.8   LLFraction=0.5
+ 
+TABLE:  "DECK PROPERTY DEFINITIONS"
+   Name=Deck1   "Deck Type"=Filled   "Slab Material"=4000Psi   "Deck Material"=A992Fy50   "Slab Depth"=3.5   "Rib Depth"=3   "Rib Width Top"=7   "Rib Width Bottom"=5   "Rib Spacing"=12   "Deck Shear Thickness"=0.035 _
+        "Deck Unit Weight"=0.0159722222222222   "Shear Stud Diameter"=0.75   "Shear Stud Height"=6   "Shear Stud Tensile Strength"=65000   "f11 Modifier"=1   "f22 Modifier"=1   "f12 Modifier"=1   "m11 Modifier"=1   "m22 Modifier"=1 _
+        "m12 Modifier"=1   "v13 Modifier"=1   "v23 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=34eb94af-0061-4f3e-84cf-8c7301ba4abb
+ 
+TABLE:  "FLOOR OBJECT CONNECTIVITY"
+   "Unique Name"=Q_00_00   UniquePt1=1   UniquePt2=2   UniquePt3=3   UniquePt4=4   GUID=2d0b2720-fa33-4b6d-b91f-f80cd6403ff2
+   "Unique Name"=Q_01_00   UniquePt1=2   UniquePt2=5   UniquePt3=6   UniquePt4=3   GUID=84031e46-49e0-467a-a37f-ae4b01a058d6
+   "Unique Name"=Q_02_00   UniquePt1=5   UniquePt2=7   UniquePt3=8   UniquePt4=6   GUID=46198197-0a38-489c-b87a-04090fd2805d
+   "Unique Name"=Q_03_00   UniquePt1=7   UniquePt2=9   UniquePt3=10   UniquePt4=8   GUID=2512f91b-e96e-453f-9feb-5bbcfec76a66
+   "Unique Name"=Q_04_00   UniquePt1=9   UniquePt2=11   UniquePt3=12   UniquePt4=10   GUID=88614483-10e3-45f8-9abe-0448e2ba2501
+   "Unique Name"=Q_05_00   UniquePt1=11   UniquePt2=13   UniquePt3=14   UniquePt4=12   GUID=7b28725c-f125-4603-afdf-458cb2cfc90f
+   "Unique Name"=Q_06_00   UniquePt1=13   UniquePt2=15   UniquePt3=16   UniquePt4=14   GUID=e2729d17-fa18-4ed8-9c50-059022093eef
+   "Unique Name"=Q_07_00   UniquePt1=15   UniquePt2=17   UniquePt3=18   UniquePt4=16   GUID=2e740adf-2b8a-4f7b-a4f7-6cf338e9066e
+   "Unique Name"=Q_08_00   UniquePt1=17   UniquePt2=19   UniquePt3=20   UniquePt4=18   GUID=13069f39-2beb-4737-9929-4da5cc7fbd59
+   "Unique Name"=Q_09_00   UniquePt1=19   UniquePt2=21   UniquePt3=22   UniquePt4=20   GUID=17e3d2cf-7611-422d-b623-b2f5052aa773
+   "Unique Name"=Q_10_00   UniquePt1=21   UniquePt2=23   UniquePt3=24   UniquePt4=22   GUID=c082068d-4809-45b9-b02a-448a8447d62e
+   "Unique Name"=Q_11_00   UniquePt1=23   UniquePt2=25   UniquePt3=26   UniquePt4=24   GUID=a2077b4e-5968-43ba-85db-27a0745867bd
+   "Unique Name"=Q_12_00   UniquePt1=25   UniquePt2=27   UniquePt3=28   UniquePt4=26   GUID=9db5c5ec-8922-4259-a07e-eb296d2a3464
+   "Unique Name"=Q_13_00   UniquePt1=27   UniquePt2=29   UniquePt3=30   UniquePt4=28   GUID=bfe4159c-356c-4b82-bbef-41cee790b19c
+   "Unique Name"=Q_14_00   UniquePt1=29   UniquePt2=31   UniquePt3=32   UniquePt4=30   GUID=21944c8b-ad71-408c-943e-a025099a0dba
+   "Unique Name"=Q_15_00   UniquePt1=31   UniquePt2=33   UniquePt3=34   UniquePt4=32   GUID=4ea74481-135d-4d45-bf03-dc9efc639d87
+   "Unique Name"=Q_00_01   UniquePt1=4   UniquePt2=3   UniquePt3=35   UniquePt4=36   GUID=7d97db5b-3ee2-4509-b37f-ad9802f5ba85
+   "Unique Name"=Q_01_01   UniquePt1=3   UniquePt2=6   UniquePt3=37   UniquePt4=35   GUID=68b28c90-7a2c-45bf-8d08-211b591c9e13
+   "Unique Name"=Q_02_01   UniquePt1=6   UniquePt2=8   UniquePt3=38   UniquePt4=37   GUID=05b90862-9dff-42d3-ac80-e1b03ab2cc16
+   "Unique Name"=Q_03_01   UniquePt1=8   UniquePt2=10   UniquePt3=39   UniquePt4=38   GUID=cbfd7898-becd-4585-bb38-6667394a38a2
+   "Unique Name"=Q_04_01   UniquePt1=10   UniquePt2=12   UniquePt3=40   UniquePt4=39   GUID=6bde5ee9-76a4-41b6-9caa-5f8454e1ffba
+   "Unique Name"=Q_05_01   UniquePt1=12   UniquePt2=14   UniquePt3=41   UniquePt4=40   GUID=7fc7a92c-95bb-41cc-b894-19a265672c74
+   "Unique Name"=Q_06_01   UniquePt1=14   UniquePt2=16   UniquePt3=42   UniquePt4=41   GUID=2a6715d9-2c9b-4acc-827b-8a5d7d83f33d
+   "Unique Name"=Q_07_01   UniquePt1=16   UniquePt2=18   UniquePt3=43   UniquePt4=42   GUID=eed34c6b-8857-43db-907d-a0dee7a83ec8
+   "Unique Name"=Q_08_01   UniquePt1=18   UniquePt2=20   UniquePt3=44   UniquePt4=43   GUID=d58c6769-70b9-4917-992b-8999de277772
+   "Unique Name"=Q_09_01   UniquePt1=20   UniquePt2=22   UniquePt3=45   UniquePt4=44   GUID=ccbf6cde-320a-4ebd-87c9-9ddf94ce2270
+   "Unique Name"=Q_10_01   UniquePt1=22   UniquePt2=24   UniquePt3=46   UniquePt4=45   GUID=f6cdf1e6-d2f0-4137-93c0-919c8d10181b
+   "Unique Name"=Q_11_01   UniquePt1=24   UniquePt2=26   UniquePt3=47   UniquePt4=46   GUID=74233ebb-574a-4e85-8c60-862b19a9eada
+   "Unique Name"=Q_12_01   UniquePt1=26   UniquePt2=28   UniquePt3=48   UniquePt4=47   GUID=ec7fae93-3b13-408e-92d6-67e73c7e4672
+   "Unique Name"=Q_13_01   UniquePt1=28   UniquePt2=30   UniquePt3=49   UniquePt4=48   GUID=f5bda78d-2258-4a1f-8271-9ecbf0dfcb65
+   "Unique Name"=Q_14_01   UniquePt1=30   UniquePt2=32   UniquePt3=50   UniquePt4=49   GUID=2c99559e-00af-4302-af25-56ac565675ba
+   "Unique Name"=Q_15_01   UniquePt1=32   UniquePt2=34   UniquePt3=51   UniquePt4=50   GUID=70819ed3-0b43-459d-87e1-caa76bdcae48
+   "Unique Name"=Q_00_02   UniquePt1=36   UniquePt2=35   UniquePt3=52   UniquePt4=53   GUID=886c47ef-1bea-46e2-9cae-42cf54fefe2d
+   "Unique Name"=Q_01_02   UniquePt1=35   UniquePt2=37   UniquePt3=54   UniquePt4=52   GUID=35481f10-9714-4184-ae2a-b869cbdfcf23
+   "Unique Name"=Q_02_02   UniquePt1=37   UniquePt2=38   UniquePt3=55   UniquePt4=54   GUID=20e73bdc-8976-4b3b-9606-cdd20c72548b
+   "Unique Name"=Q_03_02   UniquePt1=38   UniquePt2=39   UniquePt3=56   UniquePt4=55   GUID=7a98b1bf-da46-47d3-a8aa-8ce75b1d6319
+   "Unique Name"=Q_04_02   UniquePt1=39   UniquePt2=40   UniquePt3=57   UniquePt4=56   GUID=2c1ae9a3-19d8-4c83-a5fe-15c9e915255f
+   "Unique Name"=Q_05_02   UniquePt1=40   UniquePt2=41   UniquePt3=58   UniquePt4=57   GUID=fecc2308-f06c-437c-9b29-4b04318e0b5e
+   "Unique Name"=Q_06_02   UniquePt1=41   UniquePt2=42   UniquePt3=59   UniquePt4=58   GUID=f84d64c7-fbc9-46fa-9241-fd83294671d3
+   "Unique Name"=Q_07_02   UniquePt1=42   UniquePt2=43   UniquePt3=60   UniquePt4=59   GUID=b29286c5-5208-4ebb-86ad-67d7e7990d08
+   "Unique Name"=Q_08_02   UniquePt1=43   UniquePt2=44   UniquePt3=61   UniquePt4=60   GUID=4c0df8c9-a116-4a41-b862-6fee33df050b
+   "Unique Name"=Q_09_02   UniquePt1=44   UniquePt2=45   UniquePt3=62   UniquePt4=61   GUID=eda0f48f-dce9-4426-a61b-9e178e74b676
+   "Unique Name"=Q_10_02   UniquePt1=45   UniquePt2=46   UniquePt3=63   UniquePt4=62   GUID=54db6d7b-7c52-4187-9c0c-9cfd1022ca3d
+   "Unique Name"=Q_11_02   UniquePt1=46   UniquePt2=47   UniquePt3=64   UniquePt4=63   GUID=3b5355cb-53fe-45a4-83ce-a59a82496508
+   "Unique Name"=Q_12_02   UniquePt1=47   UniquePt2=48   UniquePt3=65   UniquePt4=64   GUID=14d867de-3b47-4641-8db3-55da88b279fc
+   "Unique Name"=Q_13_02   UniquePt1=48   UniquePt2=49   UniquePt3=66   UniquePt4=65   GUID=8f26c26b-f23d-4ad2-9fc0-17420c63b6ea
+   "Unique Name"=Q_14_02   UniquePt1=49   UniquePt2=50   UniquePt3=67   UniquePt4=66   GUID=ea0299f1-645f-4d48-a606-e4fa6e403673
+   "Unique Name"=Q_15_02   UniquePt1=50   UniquePt2=51   UniquePt3=68   UniquePt4=67   GUID=19b44dda-5eef-4143-8882-751ce012cb6c
+   "Unique Name"=Q_00_03   UniquePt1=53   UniquePt2=52   UniquePt3=69   UniquePt4=70   GUID=79f53e29-83f1-4f8a-8109-0d5b04e6015e
+   "Unique Name"=Q_01_03   UniquePt1=52   UniquePt2=54   UniquePt3=71   UniquePt4=69   GUID=d5b4cbb7-54a1-4d66-bc70-870ecec04979
+   "Unique Name"=Q_02_03   UniquePt1=54   UniquePt2=55   UniquePt3=72   UniquePt4=71   GUID=51bf00ad-cd65-4bfe-ad2d-1343a5abf0c2
+   "Unique Name"=Q_03_03   UniquePt1=55   UniquePt2=56   UniquePt3=PCol_1   UniquePt4=72   GUID=f3550831-8176-4dbf-8818-972d405381c0
+   "Unique Name"=Q_04_03   UniquePt1=56   UniquePt2=57   UniquePt3=74   UniquePt4=PCol_1   GUID=a906df27-b985-49dd-bcf5-d2eefd580856
+   "Unique Name"=Q_05_03   UniquePt1=57   UniquePt2=58   UniquePt3=75   UniquePt4=74   GUID=363a8d9c-2be6-4884-a3fb-74e61502c544
+   "Unique Name"=Q_06_03   UniquePt1=58   UniquePt2=59   UniquePt3=76   UniquePt4=75   GUID=18360208-aa8e-4ce8-88e3-ab107a9ca4d9
+   "Unique Name"=Q_07_03   UniquePt1=59   UniquePt2=60   UniquePt3=77   UniquePt4=76   GUID=11f0ae7a-27b1-469c-881c-2b21347616d7
+   "Unique Name"=Q_08_03   UniquePt1=60   UniquePt2=61   UniquePt3=78   UniquePt4=77   GUID=ce458a41-df89-4b87-baa4-9a4099ac570b
+   "Unique Name"=Q_09_03   UniquePt1=61   UniquePt2=62   UniquePt3=79   UniquePt4=78   GUID=82e2d994-8931-431c-9688-439225cb448b
+   "Unique Name"=Q_10_03   UniquePt1=62   UniquePt2=63   UniquePt3=80   UniquePt4=79   GUID=58e9c582-33b7-4976-9d08-f11c74814c23
+   "Unique Name"=Q_11_03   UniquePt1=63   UniquePt2=64   UniquePt3=PCol_2   UniquePt4=80   GUID=b0c9a941-fa9d-458b-8fc0-9709811f288c
+   "Unique Name"=Q_12_03   UniquePt1=64   UniquePt2=65   UniquePt3=82   UniquePt4=PCol_2   GUID=44e6c807-2c45-4bbb-843d-9c4218cf48d1
+   "Unique Name"=Q_13_03   UniquePt1=65   UniquePt2=66   UniquePt3=83   UniquePt4=82   GUID=10e7dc9a-e84f-4d22-a57c-00faea05d86e
+   "Unique Name"=Q_14_03   UniquePt1=66   UniquePt2=67   UniquePt3=84   UniquePt4=83   GUID=f9fa5c8b-762f-4022-a054-7ccd0a654d89
+   "Unique Name"=Q_15_03   UniquePt1=67   UniquePt2=68   UniquePt3=85   UniquePt4=84   GUID=02888d47-3d21-451b-a8fc-2de9170fea41
+   "Unique Name"=Q_00_04   UniquePt1=70   UniquePt2=69   UniquePt3=86   UniquePt4=87   GUID=56717a29-c56f-478d-ae58-036f8b206a49
+   "Unique Name"=Q_01_04   UniquePt1=69   UniquePt2=71   UniquePt3=88   UniquePt4=86   GUID=768397f9-894d-4ba6-8918-9b60ddd2b049
+   "Unique Name"=Q_02_04   UniquePt1=71   UniquePt2=72   UniquePt3=89   UniquePt4=88   GUID=3e46fb1d-1d57-48a6-839a-f027b486aba5
+   "Unique Name"=Q_03_04   UniquePt1=72   UniquePt2=PCol_1   UniquePt3=90   UniquePt4=89   GUID=83f5ad24-6e7c-40ee-8e5c-a3bfb62e2539
+   "Unique Name"=Q_04_04   UniquePt1=PCol_1   UniquePt2=74   UniquePt3=91   UniquePt4=90   GUID=07b38be8-7f3c-44de-ab4e-8a81965a7e0e
+   "Unique Name"=Q_05_04   UniquePt1=74   UniquePt2=75   UniquePt3=92   UniquePt4=91   GUID=c58ef1b3-3672-4b79-bc71-f0e46c7255a4
+   "Unique Name"=Q_06_04   UniquePt1=75   UniquePt2=76   UniquePt3=93   UniquePt4=92   GUID=e7245fa2-bb34-421c-bfd7-2196e19cacb0
+   "Unique Name"=Q_07_04   UniquePt1=76   UniquePt2=77   UniquePt3=94   UniquePt4=93   GUID=ff49bbc1-f532-4247-ab09-46b05040a42b
+   "Unique Name"=Q_08_04   UniquePt1=77   UniquePt2=78   UniquePt3=95   UniquePt4=94   GUID=abe69716-7abe-4c8a-9f79-0126bd882d0e
+   "Unique Name"=Q_09_04   UniquePt1=78   UniquePt2=79   UniquePt3=96   UniquePt4=95   GUID=8a41cfea-c241-407a-bad6-0f39c6ddd57d
+   "Unique Name"=Q_10_04   UniquePt1=79   UniquePt2=80   UniquePt3=97   UniquePt4=96   GUID=950781ab-b410-48d0-8418-260e8ce7c832
+   "Unique Name"=Q_11_04   UniquePt1=80   UniquePt2=PCol_2   UniquePt3=98   UniquePt4=97   GUID=6486f2c5-cb1e-486a-8b78-8f168056a8f3
+   "Unique Name"=Q_12_04   UniquePt1=PCol_2   UniquePt2=82   UniquePt3=99   UniquePt4=98   GUID=e0a7db17-98d7-4782-9c2b-e3098ace828a
+   "Unique Name"=Q_13_04   UniquePt1=82   UniquePt2=83   UniquePt3=100   UniquePt4=99   GUID=bc3c410d-2fd0-4966-8240-7ad8e831128d
+   "Unique Name"=Q_14_04   UniquePt1=83   UniquePt2=84   UniquePt3=101   UniquePt4=100   GUID=6ea4f60f-d90b-4c63-8d85-de7c4cc54df9
+   "Unique Name"=Q_15_04   UniquePt1=84   UniquePt2=85   UniquePt3=102   UniquePt4=101   GUID=e09d98b0-661e-4c57-abf2-ed323babd325
+   "Unique Name"=Q_00_05   UniquePt1=87   UniquePt2=86   UniquePt3=103   UniquePt4=104   GUID=23295482-bcba-456f-a053-ab3edfaeb4bb
+   "Unique Name"=Q_01_05   UniquePt1=86   UniquePt2=88   UniquePt3=105   UniquePt4=103   GUID=aff32cf1-ca47-4703-900a-4e918c18798f
+   "Unique Name"=Q_02_05   UniquePt1=88   UniquePt2=89   UniquePt3=106   UniquePt4=105   GUID=fc57839f-0933-4462-a06f-f75d2694e282
+   "Unique Name"=Q_03_05   UniquePt1=89   UniquePt2=90   UniquePt3=107   UniquePt4=106   GUID=635b849f-8a30-4115-8d5a-6a9311b82ee9
+   "Unique Name"=Q_04_05   UniquePt1=90   UniquePt2=91   UniquePt3=108   UniquePt4=107   GUID=598eb45e-0e03-4880-8633-8675c72752af
+   "Unique Name"=Q_05_05   UniquePt1=91   UniquePt2=92   UniquePt3=109   UniquePt4=108   GUID=7f22384f-3a91-414b-b250-f2142276a9f1
+   "Unique Name"=Q_06_05   UniquePt1=92   UniquePt2=93   UniquePt3=110   UniquePt4=109   GUID=c806be71-f94f-4d5d-b4fa-e82f08cb5ea9
+   "Unique Name"=Q_07_05   UniquePt1=93   UniquePt2=94   UniquePt3=111   UniquePt4=110   GUID=8a442a85-4519-4c10-8894-c01c916893a1
+   "Unique Name"=Q_08_05   UniquePt1=94   UniquePt2=95   UniquePt3=112   UniquePt4=111   GUID=0d516ab8-b532-49f9-ba32-8bcd9f133db5
+   "Unique Name"=Q_09_05   UniquePt1=95   UniquePt2=96   UniquePt3=113   UniquePt4=112   GUID=829a95fb-013f-474b-8870-20cd2e9dea8b
+   "Unique Name"=Q_10_05   UniquePt1=96   UniquePt2=97   UniquePt3=114   UniquePt4=113   GUID=4d36807f-0e47-4bf5-8a7e-b5a0a32839e3
+   "Unique Name"=Q_11_05   UniquePt1=97   UniquePt2=98   UniquePt3=115   UniquePt4=114   GUID=31097ee3-6776-4d9e-9822-110761946b72
+   "Unique Name"=Q_12_05   UniquePt1=98   UniquePt2=99   UniquePt3=116   UniquePt4=115   GUID=5870d412-260a-4fae-9fa5-d4e16486b3e1
+   "Unique Name"=Q_13_05   UniquePt1=99   UniquePt2=100   UniquePt3=117   UniquePt4=116   GUID=28749d6b-508a-4655-ab98-c7a1ac04feb1
+   "Unique Name"=Q_14_05   UniquePt1=100   UniquePt2=101   UniquePt3=118   UniquePt4=117   GUID=f8586828-a59b-4646-b5c5-9c218d681894
+   "Unique Name"=Q_15_05   UniquePt1=101   UniquePt2=102   UniquePt3=119   UniquePt4=118   GUID=71404348-2282-4e92-bf3d-690e71346e7e
+   "Unique Name"=Q_00_06   UniquePt1=104   UniquePt2=103   UniquePt3=120   UniquePt4=121   GUID=caa9cc92-2157-48f5-b34c-02e7fc738ed8
+   "Unique Name"=Q_01_06   UniquePt1=103   UniquePt2=105   UniquePt3=122   UniquePt4=120   GUID=2c25d427-7f43-4e78-94be-cb8ab2f8034b
+   "Unique Name"=Q_02_06   UniquePt1=105   UniquePt2=106   UniquePt3=123   UniquePt4=122   GUID=80217076-691e-4b46-a5c0-3767f892ccb8
+   "Unique Name"=Q_03_06   UniquePt1=106   UniquePt2=107   UniquePt3=124   UniquePt4=123   GUID=68ff7108-6db5-4e80-8a8e-5c4efab6d503
+   "Unique Name"=Q_04_06   UniquePt1=107   UniquePt2=108   UniquePt3=125   UniquePt4=124   GUID=dd51b62e-1542-4476-a6ee-17c233a11bc0
+   "Unique Name"=Q_05_06   UniquePt1=108   UniquePt2=109   UniquePt3=126   UniquePt4=125   GUID=972ef078-2c4b-47ac-a6b3-de8ba49262a6
+   "Unique Name"=Q_06_06   UniquePt1=109   UniquePt2=110   UniquePt3=127   UniquePt4=126   GUID=cca0957b-1a25-4260-9962-a0ca91db1e80
+   "Unique Name"=Q_07_06   UniquePt1=110   UniquePt2=111   UniquePt3=128   UniquePt4=127   GUID=13c55ccd-7057-409f-8404-9f4efec6fcde
+   "Unique Name"=Q_08_06   UniquePt1=111   UniquePt2=112   UniquePt3=129   UniquePt4=128   GUID=90d33967-ddca-41c4-8301-96d21b807b96
+   "Unique Name"=Q_09_06   UniquePt1=112   UniquePt2=113   UniquePt3=130   UniquePt4=129   GUID=eeaeceb3-6c5c-4941-968e-b2cde728b272
+   "Unique Name"=Q_10_06   UniquePt1=113   UniquePt2=114   UniquePt3=131   UniquePt4=130   GUID=b0beb6d1-4db0-4f81-b103-a3b4e8a6479b
+   "Unique Name"=Q_11_06   UniquePt1=114   UniquePt2=115   UniquePt3=132   UniquePt4=131   GUID=4acfe37c-12e5-434f-ad79-af1a2d8a7017
+   "Unique Name"=Q_12_06   UniquePt1=115   UniquePt2=116   UniquePt3=133   UniquePt4=132   GUID=07e81221-4909-4b61-ba10-c411b05e8db0
+   "Unique Name"=Q_13_06   UniquePt1=116   UniquePt2=117   UniquePt3=134   UniquePt4=133   GUID=c43d0a21-a2ce-4d8c-a744-71f6e73d5829
+   "Unique Name"=Q_14_06   UniquePt1=117   UniquePt2=118   UniquePt3=135   UniquePt4=134   GUID=136bc883-7066-4cf6-91d9-517c5372f8ab
+   "Unique Name"=Q_15_06   UniquePt1=118   UniquePt2=119   UniquePt3=136   UniquePt4=135   GUID=aa2e7e6f-1221-4d0c-b517-6e7378b0550d
+   "Unique Name"=Q_00_07   UniquePt1=121   UniquePt2=120   UniquePt3=137   UniquePt4=138   GUID=b0a57eb1-6c43-4ee8-a22c-4589bf584424
+   "Unique Name"=Q_01_07   UniquePt1=120   UniquePt2=122   UniquePt3=139   UniquePt4=137   GUID=fedd48fd-b1a1-4581-b033-6b9f4489dd9c
+   "Unique Name"=Q_02_07   UniquePt1=122   UniquePt2=123   UniquePt3=140   UniquePt4=139   GUID=d6e31607-f549-4f0c-bf8b-c63cf8c8d638
+   "Unique Name"=Q_03_07   UniquePt1=123   UniquePt2=124   UniquePt3=141   UniquePt4=140   GUID=42ed8c80-a609-4e13-abc8-dc1a6e1e6825
+   "Unique Name"=Q_04_07   UniquePt1=124   UniquePt2=125   UniquePt3=142   UniquePt4=141   GUID=0097f2b9-6003-4e29-b45f-349ff4c6ffa4
+   "Unique Name"=Q_05_07   UniquePt1=125   UniquePt2=126   UniquePt3=143   UniquePt4=142   GUID=ab04e4b6-f9dd-4506-b766-5df8c1fcde72
+   "Unique Name"=Q_06_07   UniquePt1=126   UniquePt2=127   UniquePt3=144   UniquePt4=143   GUID=65c70e15-26b3-4989-b4dc-be355d232eb7
+   "Unique Name"=Q_07_07   UniquePt1=127   UniquePt2=128   UniquePt3=145   UniquePt4=144   GUID=8ac88e58-e815-442f-b69e-b84baa286048
+   "Unique Name"=Q_08_07   UniquePt1=128   UniquePt2=129   UniquePt3=146   UniquePt4=145   GUID=780a8ed2-598b-4083-a3f3-c9dd284577e6
+   "Unique Name"=Q_09_07   UniquePt1=129   UniquePt2=130   UniquePt3=147   UniquePt4=146   GUID=0deba727-b2bd-47ca-8e9b-039a6a333b57
+   "Unique Name"=Q_10_07   UniquePt1=130   UniquePt2=131   UniquePt3=148   UniquePt4=147   GUID=64445795-8cf6-4d84-a39b-3e632acd7391
+   "Unique Name"=Q_11_07   UniquePt1=131   UniquePt2=132   UniquePt3=149   UniquePt4=148   GUID=3d00701a-58e7-4906-9847-2a100302949d
+   "Unique Name"=Q_12_07   UniquePt1=132   UniquePt2=133   UniquePt3=150   UniquePt4=149   GUID=c3872eaa-d6d6-4c7e-ad9a-677ec3f96004
+   "Unique Name"=Q_13_07   UniquePt1=133   UniquePt2=134   UniquePt3=151   UniquePt4=150   GUID=3127023e-3904-459e-96ce-c6fd42ff2fa9
+   "Unique Name"=Q_14_07   UniquePt1=134   UniquePt2=135   UniquePt3=152   UniquePt4=151   GUID=ae62bc1e-6abf-45df-a3d1-e66ef3848f49
+   "Unique Name"=Q_15_07   UniquePt1=135   UniquePt2=136   UniquePt3=153   UniquePt4=152   GUID=003c552f-bc3d-4593-8937-8ee0195da41d
+ 
+TABLE:  "FRAME SECTION PROPERTY DEFINITIONS - AUTO SELECT LIST"
+   Name=A-CompBm   DesignType=Steel   "From File?"=Yes   "File Name"=AISC14   "Starting Section"=Median   "Included Section"=W27X84   GUID=680961a8-b75a-4fb8-bd59-64aacc94341b
+   Name=A-CompBm   "Included Section"=W24X76
+   Name=A-CompBm   "Included Section"=W24X68
+   Name=A-CompBm   "Included Section"=W24X62
+   Name=A-CompBm   "Included Section"=W24X55
+   Name=A-CompBm   "Included Section"=W21X62
+   Name=A-CompBm   "Included Section"=W21X57
+   Name=A-CompBm   "Included Section"=W21X55
+   Name=A-CompBm   "Included Section"=W21X50
+   Name=A-CompBm   "Included Section"=W21X44
+   Name=A-CompBm   "Included Section"=W18X50
+   Name=A-CompBm   "Included Section"=W18X40
+   Name=A-CompBm   "Included Section"=W18X35
+   Name=A-CompBm   "Included Section"=W16X31
+   Name=A-CompBm   "Included Section"=W16X26
+   Name=A-CompBm   "Included Section"=W14X30
+   Name=A-CompBm   "Included Section"=W14X26
+   Name=A-CompBm   "Included Section"=W14X22
+   Name=A-CompBm   "Included Section"=W12X26
+   Name=A-CompBm   "Included Section"=W12X22
+   Name=A-CompBm   "Included Section"=W12X19
+   Name=A-CompBm   "Included Section"=W12X16
+   Name=A-CompBm   "Included Section"=W12X14
+   Name=A-CompBm   "Included Section"=W10X19
+   Name=A-CompBm   "Included Section"=W10X17
+   Name=A-CompBm   "Included Section"=W10X15
+   Name=A-CompBm   "Included Section"=W10X12
+   Name=A-CompBm   "Included Section"=W36X135
+   Name=A-CompBm   "Included Section"=W33X118
+   Name=A-CompBm   "Included Section"=W30X108
+   Name=A-CompBm   "Included Section"=W30X99
+   Name=A-CompBm   "Included Section"=W30X90
+   Name=A-CompBm   "Included Section"=W27X102
+   Name=A-CompBm   "Included Section"=W27X94
+   Name=A-CompBm   "Included Section"=W18X46
+   Name=A-GravBm   DesignType=Steel   "From File?"=Yes   "File Name"=AISC14   "Starting Section"=Median   "Included Section"=W33X118   GUID=520c44c5-18b5-43af-8577-6a70ea3479f8
+   Name=A-GravBm   "Included Section"=W30X116
+   Name=A-GravBm   "Included Section"=W30X108
+   Name=A-GravBm   "Included Section"=W30X99
+   Name=A-GravBm   "Included Section"=W30X90
+   Name=A-GravBm   "Included Section"=W27X94
+   Name=A-GravBm   "Included Section"=W27X84
+   Name=A-GravBm   "Included Section"=W24X76
+   Name=A-GravBm   "Included Section"=W24X68
+   Name=A-GravBm   "Included Section"=W24X62
+   Name=A-GravBm   "Included Section"=W24X55
+   Name=A-GravBm   "Included Section"=W21X57
+   Name=A-GravBm   "Included Section"=W21X50
+   Name=A-GravBm   "Included Section"=W21X44
+   Name=A-GravBm   "Included Section"=W18X46
+   Name=A-GravBm   "Included Section"=W18X40
+   Name=A-GravBm   "Included Section"=W18X35
+   Name=A-GravBm   "Included Section"=W16X36
+   Name=A-GravBm   "Included Section"=W16X31
+   Name=A-GravBm   "Included Section"=W16X26
+   Name=A-GravBm   "Included Section"=W14X38
+   Name=A-GravBm   "Included Section"=W14X34
+   Name=A-GravBm   "Included Section"=W14X30
+   Name=A-GravBm   "Included Section"=W12X30
+   Name=A-GravBm   "Included Section"=W12X26
+   Name=A-GravCol   DesignType=Steel   "From File?"=Yes   "File Name"=AISC14   "Starting Section"=Median   "Included Section"=W14X211   GUID=a5bf5256-d5dc-4438-a171-c88a0487875a
+   Name=A-GravCol   "Included Section"=W14X193
+   Name=A-GravCol   "Included Section"=W14X176
+   Name=A-GravCol   "Included Section"=W14X159
+   Name=A-GravCol   "Included Section"=W14X145
+   Name=A-GravCol   "Included Section"=W14X132
+   Name=A-GravCol   "Included Section"=W14X120
+   Name=A-GravCol   "Included Section"=W14X109
+   Name=A-GravCol   "Included Section"=W14X82
+   Name=A-GravCol   "Included Section"=W14X74
+   Name=A-GravCol   "Included Section"=W14X68
+   Name=A-GravCol   "Included Section"=W14X61
+   Name=A-GravCol   "Included Section"=W12X120
+   Name=A-GravCol   "Included Section"=W12X106
+   Name=A-GravCol   "Included Section"=W12X96
+   Name=A-GravCol   "Included Section"=W12X87
+   Name=A-GravCol   "Included Section"=W12X79
+   Name=A-GravCol   "Included Section"=W12X72
+   Name=A-GravCol   "Included Section"=W12X58
+   Name=A-GravCol   "Included Section"=W12X53
+   Name=A-GravCol   "Included Section"=W10X60
+   Name=A-GravCol   "Included Section"=W10X45
+   Name=A-GravCol   "Included Section"=W10X39
+   Name=A-GravCol   "Included Section"=W10X33
+   Name=A-LatBm   DesignType=Steel   "From File?"=Yes   "File Name"=AISC14   "Starting Section"=Median   "Included Section"=W36X182   GUID=b0f820ce-a91b-43b9-a306-c91a7f60b242
+   Name=A-LatBm   "Included Section"=W36X170
+   Name=A-LatBm   "Included Section"=W36X160
+   Name=A-LatBm   "Included Section"=W36X150
+   Name=A-LatBm   "Included Section"=W33X152
+   Name=A-LatBm   "Included Section"=W33X141
+   Name=A-LatBm   "Included Section"=W33X130
+   Name=A-LatBm   "Included Section"=W30X132
+   Name=A-LatBm   "Included Section"=W30X124
+   Name=A-LatBm   "Included Section"=W30X116
+   Name=A-LatBm   "Included Section"=W30X108
+   Name=A-LatBm   "Included Section"=W27X129
+   Name=A-LatBm   "Included Section"=W27X114
+   Name=A-LatBm   "Included Section"=W27X102
+   Name=A-LatBm   "Included Section"=W27X94
+   Name=A-LatBm   "Included Section"=W24X94
+   Name=A-LatBm   "Included Section"=W24X84
+   Name=A-LatBm   "Included Section"=W24X76
+   Name=A-LatBm   "Included Section"=W24X62
+   Name=A-LatBm   "Included Section"=W21X68
+   Name=A-LatBm   "Included Section"=W21X62
+   Name=A-LatBm   "Included Section"=W21X57
+   Name=A-LatBm   "Included Section"=W21X55
+   Name=A-LatBm   "Included Section"=W18X60
+   Name=A-LatBm   "Included Section"=W18X55
+   Name=A-LatBm   "Included Section"=W18X50
+   Name=A-LatBm   "Included Section"=W36X135
+   Name=A-LatBm   "Included Section"=W33X118
+   Name=A-LatBm   "Included Section"=W30X99
+   Name=A-LatBm   "Included Section"=W30X90
+   Name=A-LatBm   "Included Section"=W24X55
+   Name=A-LatBm   "Included Section"=W21X50
+   Name=A-LatBm   "Included Section"=W18X46
+   Name=A-LatBm   "Included Section"=W18X40
+   Name=A-LatBm   "Included Section"=W18X35
+   Name=A-LatCol   DesignType=Steel   "From File?"=Yes   "File Name"=AISC14   "Starting Section"=Median   "Included Section"=W14X500   GUID=547eb0f0-afda-44f4-bb4b-2214ce90348b
+   Name=A-LatCol   "Included Section"=W14X455
+   Name=A-LatCol   "Included Section"=W14X426
+   Name=A-LatCol   "Included Section"=W14X398
+   Name=A-LatCol   "Included Section"=W14X370
+   Name=A-LatCol   "Included Section"=W14X342
+   Name=A-LatCol   "Included Section"=W14X311
+   Name=A-LatCol   "Included Section"=W14X283
+   Name=A-LatCol   "Included Section"=W14X257
+   Name=A-LatCol   "Included Section"=W14X233
+   Name=A-LatCol   "Included Section"=W14X211
+   Name=A-LatCol   "Included Section"=W14X193
+   Name=A-LatCol   "Included Section"=W14X176
+   Name=A-LatCol   "Included Section"=W14X159
+   Name=A-LatCol   "Included Section"=W14X145
+   Name=A-LatCol   "Included Section"=W14X132
+   Name=A-LatCol   "Included Section"=W12X210
+   Name=A-LatCol   "Included Section"=W12X190
+   Name=A-LatCol   "Included Section"=W12X170
+   Name=A-LatCol   "Included Section"=W12X152
+   Name=A-LatCol   "Included Section"=W12X136
+   Name=A-LatCol   "Included Section"=W12X120
+   Name=A-LatCol   "Included Section"=W12X106
+   Name=A-LatCol   "Included Section"=W12X96
+   Name=A-LatCol   "Included Section"=W14X120
+   Name=A-LatCol   "Included Section"=W14X109
+   Name=A-LatCol   "Included Section"=W14X99
+   Name=A-LatCol   "Included Section"=W14X90
+   Name=A-LatCol   "Included Section"=W14X68
+   Name=A-LatCol   "Included Section"=W14X61
+   Name=A-LatCol   "Included Section"=W14X53
+   Name=A-LatCol   "Included Section"=W14X48
+   Name=A-LatCol   "Included Section"=W14X43
+   Name=A-LatCol   "Included Section"=W12X87
+   Name=A-LatCol   "Included Section"=W12X79
+   Name=A-LatCol   "Included Section"=W12X72
+   Name=A-LatCol   "Included Section"=W12X65
+   Name=A-LatCol   "Included Section"=W12X58
+   Name=A-LatCol   "Included Section"=W12X53
+   Name=A-LatCol   "Included Section"=W12X50
+   Name=A-LatCol   "Included Section"=W12X45
+   Name=A-LatCol   "Included Section"=W12X40
+   Name=A-LatCol   "Included Section"=W10X112
+   Name=A-LatCol   "Included Section"=W10X100
+   Name=A-LatCol   "Included Section"=W10X88
+   Name=A-LatCol   "Included Section"=W10X77
+   Name=A-LatCol   "Included Section"=W10X68
+   Name=A-LatCol   "Included Section"=W10X60
+   Name=A-LatCol   "Included Section"=W10X54
+   Name=A-LatCol   "Included Section"=W10X49
+   Name=A-LatCol   "Included Section"=W10X45
+   Name=A-LatCol   "Included Section"=W10X39
+   Name=A-LatCol   "Included Section"=W10X33
+   Name=A-LatCol   "Included Section"=W8X67
+   Name=A-LatCol   "Included Section"=W8X58
+   Name=A-LatCol   "Included Section"=W8X48
+   Name=A-LatCol   "Included Section"=W8X40
+   Name=A-LatCol   "Included Section"=W8X35
+   Name=A-LatCol   "Included Section"=W8X31
+ 
+TABLE:  "FRAME SECTION PROPERTY DEFINITIONS - CONCRETE RECTANGULAR"
+   Name=ConcBm   Material=4000Psi   "From File?"=No   Depth=24   Width=18   "Rigid Zone?"=No   "Notional Size Type"=Auto   "Notional Auto Factor"=1   "Section Type"=Beam   "Longitudinal Rebar Material"=A615Gr60 _
+        "Shear Rebar Material"=A615Gr60   "Flange Dimension Option"="Analysis Property"   "Cover Top"=2.5   "Cover Bottom"=2.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1 _
+        "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=d44c25dd-7e94-4d32-9e07-1c62b309cb3b
+   Name=ConcCol   Material=4000Psi   "From File?"=No   Depth=18   Width=18   "Rigid Zone?"=No   "Notional Size Type"=Auto   "Notional Auto Factor"=1   "Section Type"=Column   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1 _
+        "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=ed350293-a61b-4ac5-a846-abf26a0fe1bc
+ 
+TABLE:  "FRAME SECTION PROPERTY DEFINITIONS - STEEL I/WIDE FLANGE"
+   Name=SteelBm   Material=A992Fy50   "From File?"=No   "Total Depth"=18   "Top Flange Width"=6   "Top Flange Thickness"=0.5   "Web Thickness"=0.25   "Bottom Flange Width"=6   "Bottom Flange Thickness"=0.5   "Fillet Radius"=0 _
+        "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=4cde1270-b414-40f9-b17c-ea606cabb390
+   Name=SteelCol   Material=A992Fy50   "From File?"=No   "Total Depth"=18   "Top Flange Width"=18   "Top Flange Thickness"=1   "Web Thickness"=0.5   "Bottom Flange Width"=18   "Bottom Flange Thickness"=1   "Fillet Radius"=0 _
+        "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=6f30b5fb-8cd0-4e7b-b045-a4b543f9bb2f
+   Name=W10X100   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W10X100   "Total Depth"=11.1   "Top Flange Width"=10.3   "Top Flange Thickness"=1.12   "Web Thickness"=0.68   "Bottom Flange Width"=10.3 _
+        "Bottom Flange Thickness"=1.12   "Fillet Radius"=0.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=27766835-2b7d-457a-abb6-2c538c830661
+   Name=W10X112   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W10X112   "Total Depth"=11.4   "Top Flange Width"=10.4   "Top Flange Thickness"=1.25   "Web Thickness"=0.755   "Bottom Flange Width"=10.4 _
+        "Bottom Flange Thickness"=1.25   "Fillet Radius"=0.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=a1b1b821-aef3-4184-8bfe-a67996f70aa1
+   Name=W10X12   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W10X12   "Total Depth"=9.87   "Top Flange Width"=3.96   "Top Flange Thickness"=0.21   "Web Thickness"=0.19   "Bottom Flange Width"=3.96 _
+        "Bottom Flange Thickness"=0.21   "Fillet Radius"=0.3   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=5db42aec-94aa-45a0-a5f1-3f914ed4ebc7
+   Name=W10X15   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W10X15   "Total Depth"=9.99   "Top Flange Width"=4   "Top Flange Thickness"=0.27   "Web Thickness"=0.23   "Bottom Flange Width"=4 _
+        "Bottom Flange Thickness"=0.27   "Fillet Radius"=0.3   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=31a1d309-9578-4208-999b-b2b944298f3e
+   Name=W10X17   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W10X17   "Total Depth"=10.1   "Top Flange Width"=4.01   "Top Flange Thickness"=0.33   "Web Thickness"=0.24   "Bottom Flange Width"=4.01 _
+        "Bottom Flange Thickness"=0.33   "Fillet Radius"=0.3   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=2c88b08a-3b89-462f-b50d-963ff9a944a5
+   Name=W10X19   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W10X19   "Total Depth"=10.2   "Top Flange Width"=4.02   "Top Flange Thickness"=0.395   "Web Thickness"=0.25   "Bottom Flange Width"=4.02 _
+        "Bottom Flange Thickness"=0.395   "Fillet Radius"=0.3   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=6f0e3168-150d-4962-a15e-1579bd1651ff
+   Name=W10X33   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W10X33   "Total Depth"=9.73   "Top Flange Width"=7.96   "Top Flange Thickness"=0.435   "Web Thickness"=0.29   "Bottom Flange Width"=7.96 _
+        "Bottom Flange Thickness"=0.435   "Fillet Radius"=0.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=287677c0-636a-4776-8ab8-2b04f69c7cb7
+   Name=W10X39   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W10X39   "Total Depth"=9.92   "Top Flange Width"=7.99   "Top Flange Thickness"=0.53   "Web Thickness"=0.315   "Bottom Flange Width"=7.99 _
+        "Bottom Flange Thickness"=0.53   "Fillet Radius"=0.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=ed27ffc5-655c-4521-9941-e66bd8273b8c
+   Name=W10X45   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W10X45   "Total Depth"=10.1   "Top Flange Width"=8.02   "Top Flange Thickness"=0.62   "Web Thickness"=0.35   "Bottom Flange Width"=8.02 _
+        "Bottom Flange Thickness"=0.62   "Fillet Radius"=0.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=3a69d624-d329-440d-b25d-b5d8d51506d6
+   Name=W10X49   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W10X49   "Total Depth"=10   "Top Flange Width"=10   "Top Flange Thickness"=0.56   "Web Thickness"=0.34   "Bottom Flange Width"=10 _
+        "Bottom Flange Thickness"=0.56   "Fillet Radius"=0.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=92f1c416-aab7-4b8a-b8cd-4579875feb21
+   Name=W10X54   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W10X54   "Total Depth"=10.1   "Top Flange Width"=10   "Top Flange Thickness"=0.615   "Web Thickness"=0.37   "Bottom Flange Width"=10 _
+        "Bottom Flange Thickness"=0.615   "Fillet Radius"=0.505   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=ac392a5a-70f6-439d-a529-58f78c2e70ac
+   Name=W10X60   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W10X60   "Total Depth"=10.2   "Top Flange Width"=10.1   "Top Flange Thickness"=0.68   "Web Thickness"=0.42   "Bottom Flange Width"=10.1 _
+        "Bottom Flange Thickness"=0.68   "Fillet Radius"=0.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=9c7ffbec-1d31-41b8-8cf8-8acbc41e0700
+   Name=W10X68   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W10X68   "Total Depth"=10.4   "Top Flange Width"=10.1   "Top Flange Thickness"=0.77   "Web Thickness"=0.47   "Bottom Flange Width"=10.1 _
+        "Bottom Flange Thickness"=0.77   "Fillet Radius"=0.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=649c1ff7-49cb-4e15-b9b0-930237e8c615
+   Name=W10X77   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W10X77   "Total Depth"=10.6   "Top Flange Width"=10.2   "Top Flange Thickness"=0.87   "Web Thickness"=0.53   "Bottom Flange Width"=10.2 _
+        "Bottom Flange Thickness"=0.87   "Fillet Radius"=0.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=b9e57ff2-289a-4245-a158-4a44470baa70
+   Name=W10X88   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W10X88   "Total Depth"=10.8   "Top Flange Width"=10.3   "Top Flange Thickness"=0.99   "Web Thickness"=0.605   "Bottom Flange Width"=10.3 _
+        "Bottom Flange Thickness"=0.99   "Fillet Radius"=0.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=94729925-5366-4f5d-b83c-57c0b02fdea8
+   Name=W12X106   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X106   "Total Depth"=12.9   "Top Flange Width"=12.2   "Top Flange Thickness"=0.99   "Web Thickness"=0.61   "Bottom Flange Width"=12.2 _
+        "Bottom Flange Thickness"=0.99   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=ea7aefb2-a47f-45c0-acad-ddcf603af46f
+   Name=W12X120   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X120   "Total Depth"=13.1   "Top Flange Width"=12.3   "Top Flange Thickness"=1.11   "Web Thickness"=0.71   "Bottom Flange Width"=12.3 _
+        "Bottom Flange Thickness"=1.11   "Fillet Radius"=0.59   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=fe66ccdf-1880-43fc-87a1-b4ec4550cdca
+   Name=W12X136   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X136   "Total Depth"=13.4   "Top Flange Width"=12.4   "Top Flange Thickness"=1.25   "Web Thickness"=0.79   "Bottom Flange Width"=12.4 _
+        "Bottom Flange Thickness"=1.25   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=11e4aec5-6348-43fb-a3bb-02e24ef2daf7
+   Name=W12X14   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X14   "Total Depth"=11.9   "Top Flange Width"=3.97   "Top Flange Thickness"=0.225   "Web Thickness"=0.2   "Bottom Flange Width"=3.97 _
+        "Bottom Flange Thickness"=0.225   "Fillet Radius"=0.3   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=68a460fc-05e8-4bfe-92ec-d0fc842a9d5d
+   Name=W12X152   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X152   "Total Depth"=13.7   "Top Flange Width"=12.5   "Top Flange Thickness"=1.4   "Web Thickness"=0.87   "Bottom Flange Width"=12.5 _
+        "Bottom Flange Thickness"=1.4   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=de28bfaf-fa2f-4dcd-b83b-ecdb541afdf1
+   Name=W12X16   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X16   "Total Depth"=12   "Top Flange Width"=3.99   "Top Flange Thickness"=0.265   "Web Thickness"=0.22   "Bottom Flange Width"=3.99 _
+        "Bottom Flange Thickness"=0.265   "Fillet Radius"=0.3   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=19446801-fe51-4fe6-ba79-43c2a5248909
+   Name=W12X170   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X170   "Total Depth"=14   "Top Flange Width"=12.6   "Top Flange Thickness"=1.56   "Web Thickness"=0.96   "Bottom Flange Width"=12.6 _
+        "Bottom Flange Thickness"=1.56   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=57864085-4a5d-4c8e-a2b6-d96df38119b4
+   Name=W12X19   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X19   "Total Depth"=12.2   "Top Flange Width"=4.01   "Top Flange Thickness"=0.35   "Web Thickness"=0.235   "Bottom Flange Width"=4.01 _
+        "Bottom Flange Thickness"=0.35   "Fillet Radius"=0.3   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=a9fd9d75-0f93-46bb-95da-89c8680e8081
+   Name=W12X190   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X190   "Total Depth"=14.4   "Top Flange Width"=12.7   "Top Flange Thickness"=1.74   "Web Thickness"=1.06   "Bottom Flange Width"=12.7 _
+        "Bottom Flange Thickness"=1.74   "Fillet Radius"=0.59   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=f0ae7435-48a0-4575-a269-8bf8a35f6ec3
+   Name=W12X210   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X210   "Total Depth"=14.7   "Top Flange Width"=12.8   "Top Flange Thickness"=1.9   "Web Thickness"=1.18   "Bottom Flange Width"=12.8 _
+        "Bottom Flange Thickness"=1.9   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=3b85d21b-3498-4acc-9dbf-ea2d0ed46af7
+   Name=W12X22   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X22   "Total Depth"=12.3   "Top Flange Width"=4.03   "Top Flange Thickness"=0.425   "Web Thickness"=0.26   "Bottom Flange Width"=4.03 _
+        "Bottom Flange Thickness"=0.425   "Fillet Radius"=0.3   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=8166f722-9b5e-47f3-bb8e-9b283f597176
+   Name=W12X26   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X26   "Total Depth"=12.2   "Top Flange Width"=6.49   "Top Flange Thickness"=0.38   "Web Thickness"=0.23   "Bottom Flange Width"=6.49 _
+        "Bottom Flange Thickness"=0.38   "Fillet Radius"=0.3   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=92e17073-f796-42e9-b96a-2093fece689c
+   Name=W12X30   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X30   "Total Depth"=12.3   "Top Flange Width"=6.52   "Top Flange Thickness"=0.44   "Web Thickness"=0.26   "Bottom Flange Width"=6.52 _
+        "Bottom Flange Thickness"=0.44   "Fillet Radius"=0.3   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=0277ac7b-5621-41ce-b990-3d1ceecfec35
+   Name=W12X40   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X40   "Total Depth"=11.9   "Top Flange Width"=8.01   "Top Flange Thickness"=0.515   "Web Thickness"=0.295   "Bottom Flange Width"=8.01 _
+        "Bottom Flange Thickness"=0.515   "Fillet Radius"=0.505   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=d0b57da8-66d5-45ef-8e5e-7ef0114fe8b2
+   Name=W12X45   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X45   "Total Depth"=12.1   "Top Flange Width"=8.05   "Top Flange Thickness"=0.575   "Web Thickness"=0.335   "Bottom Flange Width"=8.05 _
+        "Bottom Flange Thickness"=0.575   "Fillet Radius"=0.505   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=3756e959-96ee-41f3-ba8e-81b571ea8ab5
+   Name=W12X50   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X50   "Total Depth"=12.2   "Top Flange Width"=8.08   "Top Flange Thickness"=0.64   "Web Thickness"=0.37   "Bottom Flange Width"=8.08 _
+        "Bottom Flange Thickness"=0.64   "Fillet Radius"=0.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=f644ded1-353f-4e32-9ca1-fae96ba11954
+   Name=W12X53   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X53   "Total Depth"=12.1   "Top Flange Width"=10   "Top Flange Thickness"=0.575   "Web Thickness"=0.345   "Bottom Flange Width"=10 _
+        "Bottom Flange Thickness"=0.575   "Fillet Radius"=0.605   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=395558de-8ecb-40a0-b4f6-509d98cff393
+   Name=W12X58   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X58   "Total Depth"=12.2   "Top Flange Width"=10   "Top Flange Thickness"=0.64   "Web Thickness"=0.36   "Bottom Flange Width"=10 _
+        "Bottom Flange Thickness"=0.64   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=dfe5cb94-cd68-4977-9f83-970c89e7ee29
+   Name=W12X65   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X65   "Total Depth"=12.1   "Top Flange Width"=12   "Top Flange Thickness"=0.605   "Web Thickness"=0.39   "Bottom Flange Width"=12 _
+        "Bottom Flange Thickness"=0.605   "Fillet Radius"=0.595   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=daabdecc-53a2-4511-8c91-31b5f7e05d71
+   Name=W12X72   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X72   "Total Depth"=12.3   "Top Flange Width"=12   "Top Flange Thickness"=0.67   "Web Thickness"=0.43   "Bottom Flange Width"=12 _
+        "Bottom Flange Thickness"=0.67   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=43cdfc56-3fc4-4a77-bc5b-e0cd7fbde10f
+   Name=W12X79   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X79   "Total Depth"=12.4   "Top Flange Width"=12.1   "Top Flange Thickness"=0.735   "Web Thickness"=0.47   "Bottom Flange Width"=12.1 _
+        "Bottom Flange Thickness"=0.735   "Fillet Radius"=0.595   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=49c01745-debf-4e3b-a3e2-95a8d6cd655a
+   Name=W12X87   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X87   "Total Depth"=12.5   "Top Flange Width"=12.1   "Top Flange Thickness"=0.81   "Web Thickness"=0.515   "Bottom Flange Width"=12.1 _
+        "Bottom Flange Thickness"=0.81   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=964d7b53-fc9e-4bca-937f-c2451359dc27
+   Name=W12X96   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W12X96   "Total Depth"=12.7   "Top Flange Width"=12.2   "Top Flange Thickness"=0.9   "Web Thickness"=0.55   "Bottom Flange Width"=12.2 _
+        "Bottom Flange Thickness"=0.9   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=10910e4c-de66-44bf-a76f-d1b2e8bbe5c4
+   Name=W14X109   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X109   "Total Depth"=14.3   "Top Flange Width"=14.6   "Top Flange Thickness"=0.86   "Web Thickness"=0.525   "Bottom Flange Width"=14.6 _
+        "Bottom Flange Thickness"=0.86   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=a607cc83-dd6d-499b-b7eb-ecf4cd3ef53b
+   Name=W14X120   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X120   "Total Depth"=14.5   "Top Flange Width"=14.7   "Top Flange Thickness"=0.94   "Web Thickness"=0.59   "Bottom Flange Width"=14.7 _
+        "Bottom Flange Thickness"=0.94   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=4a73f8bb-78a3-4f03-9a40-b6b505877855
+   Name=W14X132   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X132   "Total Depth"=14.7   "Top Flange Width"=14.7   "Top Flange Thickness"=1.03   "Web Thickness"=0.645   "Bottom Flange Width"=14.7 _
+        "Bottom Flange Thickness"=1.03   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=232818c0-0cd7-44e3-89e6-2f939873138b
+   Name=W14X145   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X145   "Total Depth"=14.8   "Top Flange Width"=15.5   "Top Flange Thickness"=1.09   "Web Thickness"=0.68   "Bottom Flange Width"=15.5 _
+        "Bottom Flange Thickness"=1.09   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=af6c24b3-9217-4279-a942-cde29f8116bb
+   Name=W14X159   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X159   "Total Depth"=15   "Top Flange Width"=15.6   "Top Flange Thickness"=1.19   "Web Thickness"=0.745   "Bottom Flange Width"=15.6 _
+        "Bottom Flange Thickness"=1.19   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=27ccb85a-a91f-47df-b4c8-ffbde48c290c
+   Name=W14X176   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X176   "Total Depth"=15.2   "Top Flange Width"=15.7   "Top Flange Thickness"=1.31   "Web Thickness"=0.83   "Bottom Flange Width"=15.7 _
+        "Bottom Flange Thickness"=1.31   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=aab193f7-394f-49ce-947e-a7abfba255a1
+   Name=W14X193   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X193   "Total Depth"=15.5   "Top Flange Width"=15.7   "Top Flange Thickness"=1.44   "Web Thickness"=0.89   "Bottom Flange Width"=15.7 _
+        "Bottom Flange Thickness"=1.44   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=1eb469a6-1a26-4e51-a4cf-c2a2d7c1aaee
+   Name=W14X211   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X211   "Total Depth"=15.7   "Top Flange Width"=15.8   "Top Flange Thickness"=1.56   "Web Thickness"=0.98   "Bottom Flange Width"=15.8 _
+        "Bottom Flange Thickness"=1.56   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=b81bbdb3-6bd2-4d4f-b254-437ce7a6fc42
+   Name=W14X22   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X22   "Total Depth"=13.7   "Top Flange Width"=5   "Top Flange Thickness"=0.335   "Web Thickness"=0.23   "Bottom Flange Width"=5 _
+        "Bottom Flange Thickness"=0.335   "Fillet Radius"=0.4   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=1e8d0d71-5999-4dc7-80cb-95d4485de8c8
+   Name=W14X233   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X233   "Total Depth"=16   "Top Flange Width"=15.9   "Top Flange Thickness"=1.72   "Web Thickness"=1.07   "Bottom Flange Width"=15.9 _
+        "Bottom Flange Thickness"=1.72   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=c10f187c-18fb-4c44-84bb-ad3946f6c20e
+   Name=W14X257   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X257   "Total Depth"=16.4   "Top Flange Width"=16   "Top Flange Thickness"=1.89   "Web Thickness"=1.18   "Bottom Flange Width"=16 _
+        "Bottom Flange Thickness"=1.89   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=730d11bf-1015-4d66-9f18-e9945422e82b
+   Name=W14X26   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X26   "Total Depth"=13.9   "Top Flange Width"=5.03   "Top Flange Thickness"=0.42   "Web Thickness"=0.255   "Bottom Flange Width"=5.03 _
+        "Bottom Flange Thickness"=0.42   "Fillet Radius"=0.4   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=73118403-256e-4d78-8c62-613e5e94c1e0
+   Name=W14X283   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X283   "Total Depth"=16.7   "Top Flange Width"=16.1   "Top Flange Thickness"=2.07   "Web Thickness"=1.29   "Bottom Flange Width"=16.1 _
+        "Bottom Flange Thickness"=2.07   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=df64361e-2b1c-441f-839f-2d2b90f7e7bc
+   Name=W14X30   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X30   "Total Depth"=13.8   "Top Flange Width"=6.73   "Top Flange Thickness"=0.385   "Web Thickness"=0.27   "Bottom Flange Width"=6.73 _
+        "Bottom Flange Thickness"=0.385   "Fillet Radius"=0.4   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=1e560bb3-7270-4d71-a6e7-a1a707692460
+   Name=W14X311   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X311   "Total Depth"=17.1   "Top Flange Width"=16.2   "Top Flange Thickness"=2.26   "Web Thickness"=1.41   "Bottom Flange Width"=16.2 _
+        "Bottom Flange Thickness"=2.26   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=c06ce945-ea63-4bcc-a00a-c4409982543d
+   Name=W14X34   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X34   "Total Depth"=14   "Top Flange Width"=6.75   "Top Flange Thickness"=0.455   "Web Thickness"=0.285   "Bottom Flange Width"=6.75 _
+        "Bottom Flange Thickness"=0.455   "Fillet Radius"=0.4   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=16b49d93-60c0-4fc7-a72d-60ed5493a354
+   Name=W14X342   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X342   "Total Depth"=17.5   "Top Flange Width"=16.4   "Top Flange Thickness"=2.47   "Web Thickness"=1.54   "Bottom Flange Width"=16.4 _
+        "Bottom Flange Thickness"=2.47   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=a1632f05-583a-4270-b98e-4cc16f338d59
+   Name=W14X370   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X370   "Total Depth"=17.9   "Top Flange Width"=16.5   "Top Flange Thickness"=2.66   "Web Thickness"=1.66   "Bottom Flange Width"=16.5 _
+        "Bottom Flange Thickness"=2.66   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=0b5eb84f-ec2b-48bf-a176-7a67a32f2083
+   Name=W14X38   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X38   "Total Depth"=14.1   "Top Flange Width"=6.77   "Top Flange Thickness"=0.515   "Web Thickness"=0.31   "Bottom Flange Width"=6.77 _
+        "Bottom Flange Thickness"=0.515   "Fillet Radius"=0.4   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=fb8710a5-d0c6-4833-96b0-f41451408049
+   Name=W14X398   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X398   "Total Depth"=18.3   "Top Flange Width"=16.6   "Top Flange Thickness"=2.85   "Web Thickness"=1.77   "Bottom Flange Width"=16.6 _
+        "Bottom Flange Thickness"=2.85   "Fillet Radius"=0.59   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=57d070d4-2237-4037-865f-e0bc6b4219ad
+   Name=W14X426   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X426   "Total Depth"=18.7   "Top Flange Width"=16.7   "Top Flange Thickness"=3.04   "Web Thickness"=1.88   "Bottom Flange Width"=16.7 _
+        "Bottom Flange Thickness"=3.04   "Fillet Radius"=0.59   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=cac6cb3b-9091-4626-9e04-d824954c9f2c
+   Name=W14X43   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X43   "Total Depth"=13.7   "Top Flange Width"=8   "Top Flange Thickness"=0.53   "Web Thickness"=0.305   "Bottom Flange Width"=8 _
+        "Bottom Flange Thickness"=0.53   "Fillet Radius"=0.59   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=805ab0f0-8370-4c2f-8b58-1a45f9df0633
+   Name=W14X455   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X455   "Total Depth"=19   "Top Flange Width"=16.8   "Top Flange Thickness"=3.21   "Web Thickness"=2.02   "Bottom Flange Width"=16.8 _
+        "Bottom Flange Thickness"=3.21   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=487c44e8-53bd-45e6-a09b-89033869f3dc
+   Name=W14X48   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X48   "Total Depth"=13.8   "Top Flange Width"=8.03   "Top Flange Thickness"=0.595   "Web Thickness"=0.34   "Bottom Flange Width"=8.03 _
+        "Bottom Flange Thickness"=0.595   "Fillet Radius"=0.595   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=42532775-9db2-4385-83c7-8e6813abaaf2
+   Name=W14X500   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X500   "Total Depth"=19.6   "Top Flange Width"=17   "Top Flange Thickness"=3.5   "Web Thickness"=2.19   "Bottom Flange Width"=17 _
+        "Bottom Flange Thickness"=3.5   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=929ced5e-f3f1-44e4-9cea-36a4210192e6
+   Name=W14X53   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X53   "Total Depth"=13.9   "Top Flange Width"=8.06   "Top Flange Thickness"=0.66   "Web Thickness"=0.37   "Bottom Flange Width"=8.06 _
+        "Bottom Flange Thickness"=0.66   "Fillet Radius"=0.59   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=14ed95e4-d865-4f49-8cc3-d90e351b8543
+   Name=W14X61   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X61   "Total Depth"=13.9   "Top Flange Width"=10   "Top Flange Thickness"=0.645   "Web Thickness"=0.375   "Bottom Flange Width"=10 _
+        "Bottom Flange Thickness"=0.645   "Fillet Radius"=0.595   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=9981c8f8-1ed4-44f0-a51b-f8e633640574
+   Name=W14X68   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X68   "Total Depth"=14   "Top Flange Width"=10   "Top Flange Thickness"=0.72   "Web Thickness"=0.415   "Bottom Flange Width"=10 _
+        "Bottom Flange Thickness"=0.72   "Fillet Radius"=0.59   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=509f06da-1f0b-4638-ae74-2f75443ac6ad
+   Name=W14X74   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X74   "Total Depth"=14.2   "Top Flange Width"=10.1   "Top Flange Thickness"=0.785   "Web Thickness"=0.45   "Bottom Flange Width"=10.1 _
+        "Bottom Flange Thickness"=0.785   "Fillet Radius"=0.595   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=9c5b5760-da29-41f1-9222-a44ed10c44b4
+   Name=W14X82   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X82   "Total Depth"=14.3   "Top Flange Width"=10.1   "Top Flange Thickness"=0.855   "Web Thickness"=0.51   "Bottom Flange Width"=10.1 _
+        "Bottom Flange Thickness"=0.855   "Fillet Radius"=0.595   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=6d2b89f6-4d1f-4689-8afb-c3fb0944d1e8
+   Name=W14X90   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X90   "Total Depth"=14   "Top Flange Width"=14.5   "Top Flange Thickness"=0.71   "Web Thickness"=0.44   "Bottom Flange Width"=14.5 _
+        "Bottom Flange Thickness"=0.71   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=86013e8f-f886-46be-857f-af6b11faea3f
+   Name=W14X99   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W14X99   "Total Depth"=14.2   "Top Flange Width"=14.6   "Top Flange Thickness"=0.78   "Web Thickness"=0.485   "Bottom Flange Width"=14.6 _
+        "Bottom Flange Thickness"=0.78   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=8aa0116f-65ee-4a46-a8a9-b81bd38b7eb8
+   Name=W16X26   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W16X26   "Total Depth"=15.7   "Top Flange Width"=5.5   "Top Flange Thickness"=0.345   "Web Thickness"=0.25   "Bottom Flange Width"=5.5 _
+        "Bottom Flange Thickness"=0.345   "Fillet Radius"=0.402   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=5fe644a0-34bd-42e5-8654-c12785972f01
+   Name=W16X31   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W16X31   "Total Depth"=15.9   "Top Flange Width"=5.53   "Top Flange Thickness"=0.44   "Web Thickness"=0.275   "Bottom Flange Width"=5.53 _
+        "Bottom Flange Thickness"=0.44   "Fillet Radius"=0.402   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=eaf7575d-2f25-4e28-8324-1d36657670c5
+   Name=W16X36   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W16X36   "Total Depth"=15.9   "Top Flange Width"=6.99   "Top Flange Thickness"=0.43   "Web Thickness"=0.295   "Bottom Flange Width"=6.99 _
+        "Bottom Flange Thickness"=0.43   "Fillet Radius"=0.402   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=d96fcbf3-e0a4-4315-9c81-736ec96c5130
+   Name=W18X35   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W18X35   "Total Depth"=17.7   "Top Flange Width"=6   "Top Flange Thickness"=0.425   "Web Thickness"=0.3   "Bottom Flange Width"=6 _
+        "Bottom Flange Thickness"=0.425   "Fillet Radius"=0.402   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=c1a7bae0-85ba-403a-b412-e6a1fe6ae433
+   Name=W18X40   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W18X40   "Total Depth"=17.9   "Top Flange Width"=6.02   "Top Flange Thickness"=0.525   "Web Thickness"=0.315   "Bottom Flange Width"=6.02 _
+        "Bottom Flange Thickness"=0.525   "Fillet Radius"=0.402   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=bc40b63d-9f79-4bd0-bead-d7df9dae3b3d
+   Name=W18X46   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W18X46   "Total Depth"=18.1   "Top Flange Width"=6.06   "Top Flange Thickness"=0.605   "Web Thickness"=0.36   "Bottom Flange Width"=6.06 _
+        "Bottom Flange Thickness"=0.605   "Fillet Radius"=0.405   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=8f21cfa7-93eb-4a1d-8757-84776b318dfe
+   Name=W18X50   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W18X50   "Total Depth"=18   "Top Flange Width"=7.5   "Top Flange Thickness"=0.57   "Web Thickness"=0.355   "Bottom Flange Width"=7.5 _
+        "Bottom Flange Thickness"=0.57   "Fillet Radius"=0.402   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=2bac97dc-3827-4750-92bb-33d2360a1d27
+   Name=W18X55   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W18X55   "Total Depth"=18.1   "Top Flange Width"=7.53   "Top Flange Thickness"=0.63   "Web Thickness"=0.39   "Bottom Flange Width"=7.53 _
+        "Bottom Flange Thickness"=0.63   "Fillet Radius"=0.4   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=505f64cd-9570-4e3d-9e83-03aa18c4460f
+   Name=W18X60   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W18X60   "Total Depth"=18.2   "Top Flange Width"=7.56   "Top Flange Thickness"=0.695   "Web Thickness"=0.415   "Bottom Flange Width"=7.56 _
+        "Bottom Flange Thickness"=0.695   "Fillet Radius"=0.405   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=bf2b7d75-3f32-4695-9fc3-b015c714bb49
+   Name=W21X44   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W21X44   "Total Depth"=20.7   "Top Flange Width"=6.5   "Top Flange Thickness"=0.45   "Web Thickness"=0.35   "Bottom Flange Width"=6.5 _
+        "Bottom Flange Thickness"=0.45   "Fillet Radius"=0.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=8498afe0-d068-4bcf-a9c7-7149996e0383
+   Name=W21X50   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W21X50   "Total Depth"=20.8   "Top Flange Width"=6.53   "Top Flange Thickness"=0.535   "Web Thickness"=0.38   "Bottom Flange Width"=6.53 _
+        "Bottom Flange Thickness"=0.535   "Fillet Radius"=0.505   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=ad556617-4641-4d09-9774-3b83ca417894
+   Name=W21X55   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W21X55   "Total Depth"=20.8   "Top Flange Width"=8.22   "Top Flange Thickness"=0.522   "Web Thickness"=0.375   "Bottom Flange Width"=8.22 _
+        "Bottom Flange Thickness"=0.522   "Fillet Radius"=0.498   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=798e447e-aad9-4af7-b2be-f6d4a14ae974
+   Name=W21X57   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W21X57   "Total Depth"=21.1   "Top Flange Width"=6.56   "Top Flange Thickness"=0.65   "Web Thickness"=0.405   "Bottom Flange Width"=6.56 _
+        "Bottom Flange Thickness"=0.65   "Fillet Radius"=0.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=9837b000-96da-43aa-8cf8-999dbcb258fe
+   Name=W21X62   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W21X62   "Total Depth"=21   "Top Flange Width"=8.24   "Top Flange Thickness"=0.615   "Web Thickness"=0.4   "Bottom Flange Width"=8.24 _
+        "Bottom Flange Thickness"=0.615   "Fillet Radius"=0.505   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=ef640b46-984f-4c13-a1d7-ead5f78c549a
+   Name=W21X68   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W21X68   "Total Depth"=21.1   "Top Flange Width"=8.27   "Top Flange Thickness"=0.685   "Web Thickness"=0.43   "Bottom Flange Width"=8.27 _
+        "Bottom Flange Thickness"=0.685   "Fillet Radius"=0.505   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=90043c18-a41c-4701-aac1-9ae2a9221f9e
+   Name=W24X55   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W24X55   "Total Depth"=23.6   "Top Flange Width"=7.01   "Top Flange Thickness"=0.505   "Web Thickness"=0.395   "Bottom Flange Width"=7.01 _
+        "Bottom Flange Thickness"=0.505   "Fillet Radius"=0.505   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=6b22eda8-8240-49ea-be92-17c438bc25b6
+   Name=W24X62   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W24X62   "Total Depth"=23.7   "Top Flange Width"=7.04   "Top Flange Thickness"=0.59   "Web Thickness"=0.43   "Bottom Flange Width"=7.04 _
+        "Bottom Flange Thickness"=0.59   "Fillet Radius"=0.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=dd792ad6-23f1-435d-a8bc-497b01252325
+   Name=W24X68   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W24X68   "Total Depth"=23.7   "Top Flange Width"=8.97   "Top Flange Thickness"=0.585   "Web Thickness"=0.415   "Bottom Flange Width"=8.97 _
+        "Bottom Flange Thickness"=0.585   "Fillet Radius"=0.505   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=662398cd-d075-4ba2-82f3-5376980b6eed
+   Name=W24X76   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W24X76   "Total Depth"=23.9   "Top Flange Width"=8.99   "Top Flange Thickness"=0.68   "Web Thickness"=0.44   "Bottom Flange Width"=8.99 _
+        "Bottom Flange Thickness"=0.68   "Fillet Radius"=0.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=30883cc8-eb5c-4923-a129-25a921a160bc
+   Name=W24X84   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W24X84   "Total Depth"=24.1   "Top Flange Width"=9.02   "Top Flange Thickness"=0.77   "Web Thickness"=0.47   "Bottom Flange Width"=9.02 _
+        "Bottom Flange Thickness"=0.77   "Fillet Radius"=0.5   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=9777b120-5b73-431c-9c49-a4c2bebde6a7
+   Name=W24X94   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W24X94   "Total Depth"=24.3   "Top Flange Width"=9.07   "Top Flange Thickness"=0.875   "Web Thickness"=0.515   "Bottom Flange Width"=9.07 _
+        "Bottom Flange Thickness"=0.875   "Fillet Radius"=0.505   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=dd69eabd-c921-4c87-93fc-8558466fd345
+   Name=W27X102   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W27X102   "Total Depth"=27.1   "Top Flange Width"=10   "Top Flange Thickness"=0.83   "Web Thickness"=0.515   "Bottom Flange Width"=10 _
+        "Bottom Flange Thickness"=0.83   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=a648b8b0-690a-4932-a313-05b01ed7d6ad
+   Name=W27X114   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W27X114   "Total Depth"=27.3   "Top Flange Width"=10.1   "Top Flange Thickness"=0.93   "Web Thickness"=0.57   "Bottom Flange Width"=10.1 _
+        "Bottom Flange Thickness"=0.93   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=f083b6b7-9127-485f-81b4-c57a96bae812
+   Name=W27X129   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W27X129   "Total Depth"=27.6   "Top Flange Width"=10   "Top Flange Thickness"=1.1   "Web Thickness"=0.61   "Bottom Flange Width"=10 _
+        "Bottom Flange Thickness"=1.1   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=0d7c0dea-c543-4df1-a8b9-fc4d1c6d1ed0
+   Name=W27X84   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W27X84   "Total Depth"=26.7   "Top Flange Width"=10   "Top Flange Thickness"=0.64   "Web Thickness"=0.46   "Bottom Flange Width"=10 _
+        "Bottom Flange Thickness"=0.64   "Fillet Radius"=0.6   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=2398ac90-df00-43b1-9e7d-b78667bea6c8
+   Name=W27X94   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W27X94   "Total Depth"=26.9   "Top Flange Width"=10   "Top Flange Thickness"=0.745   "Web Thickness"=0.49   "Bottom Flange Width"=10 _
+        "Bottom Flange Thickness"=0.745   "Fillet Radius"=0.595   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=90f1bd99-982f-4b39-a406-c5dced7a23fe
+   Name=W30X108   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W30X108   "Total Depth"=29.8   "Top Flange Width"=10.5   "Top Flange Thickness"=0.76   "Web Thickness"=0.545   "Bottom Flange Width"=10.5 _
+        "Bottom Flange Thickness"=0.76   "Fillet Radius"=0.65   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=46eaff51-ab72-4331-8d17-311d105d80f9
+   Name=W30X116   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W30X116   "Total Depth"=30   "Top Flange Width"=10.5   "Top Flange Thickness"=0.85   "Web Thickness"=0.565   "Bottom Flange Width"=10.5 _
+        "Bottom Flange Thickness"=0.85   "Fillet Radius"=0.65   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=27a8ed8e-19c7-4a0c-ab94-fc6eb593fea3
+   Name=W30X124   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W30X124   "Total Depth"=30.2   "Top Flange Width"=10.5   "Top Flange Thickness"=0.93   "Web Thickness"=0.585   "Bottom Flange Width"=10.5 _
+        "Bottom Flange Thickness"=0.93   "Fillet Radius"=0.65   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=756d4a7e-ef30-4678-8d2b-e6da8778b184
+   Name=W30X132   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W30X132   "Total Depth"=30.3   "Top Flange Width"=10.5   "Top Flange Thickness"=1   "Web Thickness"=0.615   "Bottom Flange Width"=10.5 _
+        "Bottom Flange Thickness"=1   "Fillet Radius"=0.65   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=67e7775c-cd60-4bb9-ab66-ef708bcfd30f
+   Name=W30X90   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W30X90   "Total Depth"=29.5   "Top Flange Width"=10.4   "Top Flange Thickness"=0.61   "Web Thickness"=0.47   "Bottom Flange Width"=10.4 _
+        "Bottom Flange Thickness"=0.61   "Fillet Radius"=0.65   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=b73aa7a6-5da4-495a-848c-30c8250db287
+   Name=W30X99   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W30X99   "Total Depth"=29.7   "Top Flange Width"=10.5   "Top Flange Thickness"=0.67   "Web Thickness"=0.52   "Bottom Flange Width"=10.5 _
+        "Bottom Flange Thickness"=0.67   "Fillet Radius"=0.65   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=99ed067a-6b20-4fde-a3e2-2deb920e38f7
+   Name=W33X118   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W33X118   "Total Depth"=32.9   "Top Flange Width"=11.5   "Top Flange Thickness"=0.74   "Web Thickness"=0.55   "Bottom Flange Width"=11.5 _
+        "Bottom Flange Thickness"=0.74   "Fillet Radius"=0.7   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=c17cbf95-7faa-42d3-9e67-2ec4993fe78e
+   Name=W33X130   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W33X130   "Total Depth"=33.1   "Top Flange Width"=11.5   "Top Flange Thickness"=0.855   "Web Thickness"=0.58   "Bottom Flange Width"=11.5 _
+        "Bottom Flange Thickness"=0.855   "Fillet Radius"=0.705   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=00093eba-f312-4dc5-a9d4-45880714073c
+   Name=W33X141   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W33X141   "Total Depth"=33.3   "Top Flange Width"=11.5   "Top Flange Thickness"=0.96   "Web Thickness"=0.605   "Bottom Flange Width"=11.5 _
+        "Bottom Flange Thickness"=0.96   "Fillet Radius"=0.7   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=fc292b4b-516a-4811-bb49-427000cbbe2a
+   Name=W33X152   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W33X152   "Total Depth"=33.5   "Top Flange Width"=11.6   "Top Flange Thickness"=1.06   "Web Thickness"=0.635   "Bottom Flange Width"=11.6 _
+        "Bottom Flange Thickness"=1.06   "Fillet Radius"=0.7   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=3060ea12-2442-4a08-9fb6-6673e294a7a8
+   Name=W36X135   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W36X135   "Total Depth"=35.6   "Top Flange Width"=12   "Top Flange Thickness"=0.79   "Web Thickness"=0.6   "Bottom Flange Width"=12 _
+        "Bottom Flange Thickness"=0.79   "Fillet Radius"=0.75   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=d4bcf014-a5cf-4b1a-9e99-c6b33f600441
+   Name=W36X150   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W36X150   "Total Depth"=35.9   "Top Flange Width"=12   "Top Flange Thickness"=0.94   "Web Thickness"=0.625   "Bottom Flange Width"=12 _
+        "Bottom Flange Thickness"=0.94   "Fillet Radius"=0.75   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=962e8a60-bdbc-493d-9ddf-65541b9e3690
+   Name=W36X160   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W36X160   "Total Depth"=36   "Top Flange Width"=12   "Top Flange Thickness"=1.02   "Web Thickness"=0.65   "Bottom Flange Width"=12 _
+        "Bottom Flange Thickness"=1.02   "Fillet Radius"=0.75   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=4f023056-637a-4af2-9d2a-0b47abde12cf
+   Name=W36X170   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W36X170   "Total Depth"=36.2   "Top Flange Width"=12   "Top Flange Thickness"=1.1   "Web Thickness"=0.68   "Bottom Flange Width"=12 _
+        "Bottom Flange Thickness"=1.1   "Fillet Radius"=0.75   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=67d937a1-1a53-478c-9d39-19d53dc28300
+   Name=W36X182   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W36X182   "Total Depth"=36.3   "Top Flange Width"=12.1   "Top Flange Thickness"=1.18   "Web Thickness"=0.725   "Bottom Flange Width"=12.1 _
+        "Bottom Flange Thickness"=1.18   "Fillet Radius"=0.75   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=5528f4a7-a1db-4f3c-ba11-bf41effe2e08
+   Name=W8X31   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W8X31   "Total Depth"=8   "Top Flange Width"=8   "Top Flange Thickness"=0.435   "Web Thickness"=0.285   "Bottom Flange Width"=8 _
+        "Bottom Flange Thickness"=0.435   "Fillet Radius"=0.394   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=54201679-3e61-4e8f-85ba-2483074bd270
+   Name=W8X35   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W8X35   "Total Depth"=8.12   "Top Flange Width"=8.02   "Top Flange Thickness"=0.495   "Web Thickness"=0.31   "Bottom Flange Width"=8.02 _
+        "Bottom Flange Thickness"=0.495   "Fillet Radius"=0.394   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=057b8b9d-0cb8-4742-8586-7db535e3849a
+   Name=W8X40   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W8X40   "Total Depth"=8.25   "Top Flange Width"=8.07   "Top Flange Thickness"=0.56   "Web Thickness"=0.36   "Bottom Flange Width"=8.07 _
+        "Bottom Flange Thickness"=0.56   "Fillet Radius"=0.394   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=bb617174-17dd-44a2-9e87-f614263f0d21
+   Name=W8X48   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W8X48   "Total Depth"=8.5   "Top Flange Width"=8.11   "Top Flange Thickness"=0.685   "Web Thickness"=0.4   "Bottom Flange Width"=8.11 _
+        "Bottom Flange Thickness"=0.685   "Fillet Radius"=0.395   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Cyan   GUID=2aa1258d-23da-46cd-90c1-676e530e9f26
+   Name=W8X58   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W8X58   "Total Depth"=8.75   "Top Flange Width"=8.22   "Top Flange Thickness"=0.81   "Web Thickness"=0.51   "Bottom Flange Width"=8.22 _
+        "Bottom Flange Thickness"=0.81   "Fillet Radius"=0.39   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Green   GUID=1c085727-412c-490b-84b5-1c15de78a6e5
+   Name=W8X67   Material=A992Fy50   "From File?"=Yes   "File Name"=AISC14   "Section in File"=W8X67   "Total Depth"=9   "Top Flange Width"=8.28   "Top Flange Thickness"=0.935   "Web Thickness"=0.57   "Bottom Flange Width"=8.28 _
+        "Bottom Flange Thickness"=0.935   "Fillet Radius"=0.395   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Blue   GUID=a4467ed5-4f8e-4de3-bf7d-9cb7fe8516eb
+ 
+TABLE:  "GRID DEFINITIONS - GENERAL"
+   Name=G1   Type=Cartesian   Ux=0   Uy=0   Rz=0   "Datum Name"=Base   "Story Name Above"=Story1   "Model Datum"=0   "Story Height Above"=12   "Bubble Size"=60   Color=Gray6   GUID=a552e93c-240c-40a7-a297-54f0803ef31e
+ 
+TABLE:  "GRID DEFINITIONS - GRID LINES"
+   Name=G1   "Grid Line Type"="X (Cartesian)"   ID=A   Ordinate=0   "Bubble Location"=End   Visible=Yes
+   Name=G1   "Grid Line Type"="Y (Cartesian)"   ID=1   Ordinate=0   "Bubble Location"=Start   Visible=Yes
+ 
+TABLE:  "GROUP DEFINITIONS"
+   Name=All   Color=Yellow   "Steel Design?"=No   "Concrete Design?"=No   "Composite Design?"=No   GUID=38fed7ba-8646-4530-ac07-1bcd5cc6ee76
+ 
+TABLE:  "JOINT LOADS ASSIGNMENTS - FORCE"
+   UniqueName=PCol_1   "Load Pattern"=P_Test   FX=0   FY=0   FZ=-66138.6729349389   MX=0   MY=0   MZ=0   "X Dimension"=0   "Y Dimension"=0   GUID=230e91be-78c3-4e9c-ac13-1881e10b51d2
+   UniqueName=PCol_2   "Load Pattern"=P_Test   FX=0   FY=0   FZ=-66138.6729349389   MX=0   MY=0   MZ=0   "X Dimension"=0   "Y Dimension"=0   GUID=5135fdd8-1e81-47ff-8070-58382dc880c8
+ 
+TABLE:  "LOAD CASE DEFINITIONS - LINEAR STATIC"
+   Name=Dead   "Exclude Group"=None   "Initial Condition"=Unstressed   "Load Type"=Load   "Load Name"=Dead   "Load SF"=1   "Design Type"="Program Determined"   GUID=05d087a2-3a87-41dc-b398-c1134b6fc89d
+   Name=Live   "Exclude Group"=None   "Initial Condition"=Unstressed   "Load Type"=Load   "Load Name"=Live   "Load SF"=1   "Design Type"="Program Determined"   GUID=aa8a0bad-868d-4e8b-bc10-e5be299e2043
+   Name=P_Test   "Exclude Group"=None   "Initial Condition"="Nonlinear Case"   "Nonlinear Case"=None   "Load Type"=Load   "Load Name"=P_Test   "Load SF"=1   "Design Type"="Program Determined"   GUID=58c00adb-a68f-4f6f-aeec-e72817393a8b
+ 
+TABLE:  "LOAD PATTERN DEFINITIONS"
+   Name=~LLRF   "Is Auto Load"=No   Type=Other   "Self Weight Multiplier"=0   GUID=14bc35a5-6c52-4f16-98ee-9e306ea85f5c
+   Name=Dead   "Is Auto Load"=No   Type=Dead   "Self Weight Multiplier"=1   GUID=308b4b55-2b4a-4c3e-b5c5-6d9918adfa18
+   Name=Live   "Is Auto Load"=No   Type=Live   "Self Weight Multiplier"=0   GUID=14f477d7-9d94-4661-82e3-62c2be03d978
+   Name=P_Test   "Is Auto Load"=No   Type=Other   "Self Weight Multiplier"=0   GUID=37c4cddd-f83f-43c0-b924-1a4f7d5c75cf
+ 
+TABLE:  "MASS SOURCE DEFINITION"
+   Name=MsSrc1   "Is Default"=Yes   "Include Lateral Mass?"=No   "Include Vertical Mass?"=Yes   "Lump Mass?"=Yes   "Source Self Mass?"=Yes   "Source Added Mass?"=Yes   "Source Load Patterns?"=No   "Move Mass Centroid?"=No   GUID=a20a87e6-3334-403a-8c01-1c205027a5d1
+ 
+TABLE:  "MATERIAL PROPERTIES - BASIC MECHANICAL PROPERTIES"
+   Material=4000Psi   DensityType=Weight   UnitWeight=0.08680555556   UnitMass=0.0002248332521   E1=3604996.5   G12=1502081.875   U12=0.2   A1=5.5E-06
+   Material=A416Gr270   DensityType=Weight   UnitWeight=0.283564814814815   UnitMass=0.000734455290352564   E1=28500000   A1=6.5E-06
+   Material=A615Gr60   DensityType=Weight   UnitWeight=0.283564814814815   UnitMass=0.000734455290352564   E1=29000000   A1=6.5E-06
+   Material=A992Fy50   DensityType=Weight   UnitWeight=0.283564814814815   UnitMass=0.000734455290352564   E1=29000000   G12=11153846.1538462   U12=0.3   A1=6.5E-06
+   Material=Conc25   DensityType=Weight   UnitWeight=0.0884149972730678   UnitMass=0.000229001839060807   E1=3604912.65948507   G12=1502081.875   U12=0.2   A1=5.55555555555556E-06
+ 
+TABLE:  "MATERIAL PROPERTIES - CONCRETE DATA"
+   Material=4000Psi   Fc=4000   LtWtConc=No   IsUserFr=No   SSCurveOpt=Mander   SSHysType=Concrete   SFc=0.00221914   SCap=0.005   FinalSlope=-0.1   FAngle=0   DAngle=0
+   Material=Conc25   Fc=4000   LtWtConc=No   IsUserFr=No   SSCurveOpt=Mander   SSHysType=Concrete   SFc=0.00221914   SCap=0.005   FinalSlope=-0.1   FAngle=0   DAngle=0
+ 
+TABLE:  "MATERIAL PROPERTIES - GENERAL"
+   Material=4000Psi   Type=Concrete   SymType=Isotropic   Grade="f'c 4000 psi"   Color=Gray8Dark
+   Material=A416Gr270   Type=Tendon   SymType=Uniaxial   Grade="Grade 270"   Color=Red
+   Material=A615Gr60   Type=Rebar   SymType=Uniaxial   Grade="Grade 60"   Color=Green
+   Material=A992Fy50   Type=Steel   SymType=Isotropic   Grade="Grade 50"   Color=Magenta   GUID=2c258c86-f45b-4653-b79c-1c6889907171
+   Material=Conc25   Type=Concrete   SymType=Isotropic   Grade="f'c 4000 psi"   Color=Green   GUID=0c88a706-e5e5-4b88-9ada-9374e082dedc
+ 
+TABLE:  "MATERIAL PROPERTIES - REBAR DATA"
+   Material=A615Gr60   Fy=60000   Fu=90000   Fye=66000   Fue=99000   SSCurveOpt=Simple   SSHysType=Kinematic   SHard=0.01   SCap=0.09   FinalSlope=-0.1
+ 
+TABLE:  "MATERIAL PROPERTIES - STEEL DATA"
+   Material=A992Fy50   Fy=50000   Fu=65000   Fye=55000   Fue=71500   SSCurveOpt=Simple   SSHysType=Kinematic   SHard=0.015   SMax=0.11   SRup=0.17   FinalSlope=-0.1
+ 
+TABLE:  "MATERIAL PROPERTIES - TENDON DATA"
+   Material=A416Gr270   Fy=245100   Fu=270000   SSCurveOpt="270 ksi"   SSHysType=Kinematic   FinalSlope=-0.1
+ 
+TABLE:  "MISCELLANEOUS OPTIONS"
+   "Start Page"=Yes   "Value at Cursor"=Yes   "Frame Info"=Yes   "Bounding Plane"=No   "Architectural Dimensioning"=No   "Moments on Tension Side"=Yes   "Animation Sound"=Yes   "Auto Save"=No   Crosshairs=No   "Model Explorer"=Yes
+ 
+TABLE:  "OPTIONS - COLORS - DISPLAY"
+   "Device Type"=Screen   ColorColumns=10507331   ColorBeams=10507331   ColorBraces=10507331   ColorLinks=10507331   ColorSprings=Black   ColorTendons=DarkCyan   ColorSlabPanels=Green   ColorWalls=Red   ColorFloors=Gray4 _
+        ColorNullObjects=Gray8Dark   ColorOpenings=Black   ColorColStripA=Red   ColorColStripB=Blue   ColorMidStripA=Yellow   ColorMidStripB=Cyan   ColorStripEdge=16744703   ColorOtherStripFill=Green   ColorSupportLines=13816320 _
+        ColorDimLines=10461087   ColorText=2105376   ColorGridLines=Gray6   ColorBackground=White   ColorUserMeshEdge=5065984   ColorStlDesign=DarkCyan   ColorCompDesign=Cyan   ColorConcDesign=4227327   ColorNoDesign=4227327 _
+        TransColumns=0.5   TransBeams=0.5   TransBraces=0.5   TransFloors=0.5   TransWalls=0.4   TransLinks=0.5   Darkness=0.3
+   "Device Type"=Printer   ColorColumns=Black   ColorBeams=Black   ColorBraces=Black   ColorLinks=Gray8Dark   ColorSprings=Gray8Dark   ColorTendons=Black   ColorSlabPanels=Green   ColorWalls=Gray4   ColorFloors=Gray4 _
+        ColorNullObjects=Gray4   ColorOpenings=Gray8Dark   ColorColStripA=Black   ColorColStripB=Black   ColorMidStripA=Black   ColorMidStripB=Black   ColorStripEdge=Black   ColorOtherStripFill=Black   ColorSupportLines=Black _
+        ColorDimLines=Gray4   ColorText=Black   ColorGridLines=Gray4   ColorBackground=White   ColorUserMeshEdge=Gray4   ColorStlDesign=Black   ColorCompDesign=Gray4   ColorConcDesign=Gray8Dark   ColorNoDesign=Gray4   TransColumns=0.5 _
+        TransBeams=0.5   TransBraces=0.5   TransFloors=0.5   TransWalls=0.4   TransLinks=0.5   Darkness=0.5
+   "Device Type"="Color Printer"   ColorColumns=Blue   ColorBeams=Blue   ColorBraces=Blue   ColorLinks=10516060   ColorSprings=DarkCyan   ColorTendons=DarkCyan   ColorSlabPanels=Green   ColorWalls=14865869   ColorFloors=Gray4 _
+        ColorNullObjects=Gray8Dark   ColorOpenings=Black   ColorColStripA=DarkCyan   ColorColStripB=DarkCyan   ColorMidStripA=DarkCyan   ColorMidStripB=DarkCyan   ColorStripEdge=DarkCyan   ColorOtherStripFill=DarkCyan _
+        ColorSupportLines=DarkCyan   ColorDimLines=10461087   ColorText=Black   ColorGridLines=Gray8Dark   ColorBackground=White   ColorUserMeshEdge=5065984   ColorStlDesign=DarkCyan   ColorCompDesign=Cyan   ColorConcDesign=4227327 _
+        ColorNoDesign=4227327   TransColumns=0.5   TransBeams=0.5   TransBraces=0.5   TransFloors=0.5   TransWalls=0.4   TransLinks=0.5   Darkness=0.3
+ 
+TABLE:  "OPTIONS - COLORS - OUTPUT"
+   "Device Type"="Screen Classic"   Contour1=13107400   Contour2=6553828   Contour3=Red   Contour4=16639   Contour5=Orange   Contour6=43775   Contour7=54527   Contour8=Yellow   Contour9=65408   Contour10=Green   Contour11=8453888 _
+        Contour12=Cyan   Contour13=16755200   Contour14=16733440   Contour15=Blue   TransContours=0   Ratio1=Cyan   Ratio2=Green   Ratio3=Yellow   Ratio4=Magenta   Ratio5=Red   RatioNotD=Gray4   RatioVal1=0.5   RatioVal2=0.7   RatioVal3=0.9 _
+        RatioVal4=1   HState1=Gray4   HState2=Green   HState3=Cyan   HState4=Magenta   HState5=Red   HStatus1=Gray4   HStatus2=Green   HStatus3=Cyan   HStatus4=Red   DFillPos=Yellow   DFillNeg=Red   DFillRange=Blue   TransDiag=0.2
+   "Device Type"="Screen GrayScale"   Contour1=Black   Contour2=3158064   Contour3=4210752   Contour4=5263440   Contour5=6316128   Contour6=7368816   Contour7=Gray8Dark   Contour8=Gray7   Contour9=Gray6   Contour10=Gray5   Contour11=Gray4 _
+        Contour12=Gray3   Contour13=Gray2   Contour14=Gray1Light   Contour15=White   TransContours=0   Ratio1=Gray2   Ratio2=Gray4   Ratio3=Gray8Dark   Ratio4=4210752   Ratio5=Black   RatioNotD=Gray4   RatioVal1=0.5   RatioVal2=0.7 _
+        RatioVal3=0.9   RatioVal4=1   HState1=Gray2   HState2=Gray4   HState3=Gray8Dark   HState4=4210752   HState5=Black   HStatus1=Gray2   HStatus2=Gray4   HStatus3=Gray8Dark   HStatus4=4210752   DFillPos=Gray8Dark   DFillNeg=Gray4 _
+        DFillRange=Gray8Dark   TransDiag=0.2
+   "Device Type"=Printer   Contour1=Black   Contour2=3158064   Contour3=4210752   Contour4=5263440   Contour5=6316128   Contour6=7368816   Contour7=Gray8Dark   Contour8=Gray7   Contour9=Gray6   Contour10=Gray5   Contour11=Gray4 _
+        Contour12=Gray3   Contour13=Gray2   Contour14=Gray1Light   Contour15=White   TransContours=0   Ratio1=Gray2   Ratio2=Gray4   Ratio3=Gray8Dark   Ratio4=4210752   Ratio5=Black   RatioNotD=Gray4   RatioVal1=0.5   RatioVal2=0.7 _
+        RatioVal3=0.9   RatioVal4=1   HState1=Gray2   HState2=Gray4   HState3=Gray8Dark   HState4=4210752   HState5=Black   HStatus1=Gray2   HStatus2=Gray4   HStatus3=Gray8Dark   HStatus4=4210752   DFillPos=Gray8Dark   DFillNeg=Gray8Dark _
+        DFillRange=4210752   TransDiag=0.2
+   "Device Type"="Color Printer"   Contour1=13107400   Contour2=6553828   Contour3=Red   Contour4=16639   Contour5=Orange   Contour6=43775   Contour7=54527   Contour8=Yellow   Contour9=65408   Contour10=Green   Contour11=8453888 _
+        Contour12=Cyan   Contour13=16755200   Contour14=16733440   Contour15=Blue   TransContours=0   Ratio1=Cyan   Ratio2=Green   Ratio3=Yellow   Ratio4=Magenta   Ratio5=Red   RatioNotD=Gray4   RatioVal1=0.5   RatioVal2=0.7   RatioVal3=0.9 _
+        RatioVal4=1   HState1=Gray4   HState2=Green   HState3=Cyan   HState4=Magenta   HState5=Red   HStatus1=Gray4   HStatus2=Green   HStatus3=Cyan   HStatus4=Red   DFillPos=Yellow   DFillNeg=Red   DFillRange=Blue   TransDiag=0.2
+ 
+TABLE:  "POINT OBJECT CONNECTIVITY"
+   UniqueName=1   "Is Auto Point"=No   IsSpecial=No   X=0   Y=0   Z=0   GUID=5aba8765-68b4-46a8-bfe6-1cb1acb52010
+   UniqueName=2   "Is Auto Point"=No   IsSpecial=No   X=9.84251968503937   Y=0   Z=0   GUID=3923b18f-8195-47c5-b520-01f1aa431493
+   UniqueName=3   "Is Auto Point"=No   IsSpecial=No   X=9.84251968503937   Y=9.84251968503937   Z=0   GUID=bcbc92a7-7158-488d-8f8d-2633c28e2002
+   UniqueName=4   "Is Auto Point"=No   IsSpecial=No   X=0   Y=9.84251968503937   Z=0   GUID=20806f89-fd50-4141-a372-faf51d76ea9a
+   UniqueName=5   "Is Auto Point"=No   IsSpecial=No   X=19.6850393700787   Y=0   Z=0   GUID=972573e2-cb9a-4e02-9785-b85d3409d81b
+   UniqueName=6   "Is Auto Point"=No   IsSpecial=No   X=19.6850393700787   Y=9.84251968503937   Z=0   GUID=5bea4c19-2f94-412d-a35a-5887b6b73c98
+   UniqueName=7   "Is Auto Point"=No   IsSpecial=No   X=29.5275590551181   Y=0   Z=0   GUID=ea54fa01-706d-4ee0-9a62-31048fed53ce
+   UniqueName=8   "Is Auto Point"=No   IsSpecial=No   X=29.5275590551181   Y=9.84251968503937   Z=0   GUID=7f59f031-7508-41bf-b0a6-10cf6ab707da
+   UniqueName=9   "Is Auto Point"=No   IsSpecial=No   X=39.3700787401575   Y=0   Z=0   GUID=c069b866-20ca-40a6-848f-29bf2ce91e27
+   UniqueName=10   "Is Auto Point"=No   IsSpecial=No   X=39.3700787401575   Y=9.84251968503937   Z=0   GUID=15bc2269-3855-41f0-9044-164d0c727ae3
+   UniqueName=11   "Is Auto Point"=No   IsSpecial=No   X=49.2125984251969   Y=0   Z=0   GUID=6f9c94fb-3d6a-4176-8ef4-7e8a46346679
+   UniqueName=12   "Is Auto Point"=No   IsSpecial=No   X=49.2125984251969   Y=9.84251968503937   Z=0   GUID=608b7bbe-5b9c-47a2-9d5c-cc2a9bc837bd
+   UniqueName=13   "Is Auto Point"=No   IsSpecial=No   X=59.0551181102362   Y=0   Z=0   GUID=10cf7c0b-a699-4cec-a59e-22778ebb690c
+   UniqueName=14   "Is Auto Point"=No   IsSpecial=No   X=59.0551181102362   Y=9.84251968503937   Z=0   GUID=0b5bfb8f-e055-4095-8317-adf5571702e9
+   UniqueName=15   "Is Auto Point"=No   IsSpecial=No   X=68.8976377952756   Y=0   Z=0   GUID=e5b41969-57e4-453f-aaf3-b8819131b1b0
+   UniqueName=16   "Is Auto Point"=No   IsSpecial=No   X=68.8976377952756   Y=9.84251968503937   Z=0   GUID=906582f1-16cc-4cde-a9f8-dbcee710151a
+   UniqueName=17   "Is Auto Point"=No   IsSpecial=No   X=78.740157480315   Y=0   Z=0   GUID=32cab6c7-2ed9-4a7a-b033-4f4cc36d238b
+   UniqueName=18   "Is Auto Point"=No   IsSpecial=No   X=78.740157480315   Y=9.84251968503937   Z=0   GUID=0a631033-7d4c-40db-9d16-11eab0d885c0
+   UniqueName=19   "Is Auto Point"=No   IsSpecial=No   X=88.5826771653543   Y=0   Z=0   GUID=0c4ee9e3-089b-494c-bea8-77f902cb606b
+   UniqueName=20   "Is Auto Point"=No   IsSpecial=No   X=88.5826771653543   Y=9.84251968503937   Z=0   GUID=819fefae-9e15-4299-a758-88ae707f17a3
+   UniqueName=21   "Is Auto Point"=No   IsSpecial=No   X=98.4251968503937   Y=0   Z=0   GUID=8d4c5025-c2d7-4f63-9145-193fa9aa05bb
+   UniqueName=22   "Is Auto Point"=No   IsSpecial=No   X=98.4251968503937   Y=9.84251968503937   Z=0   GUID=57321aeb-0207-411c-be5b-81278078f902
+   UniqueName=23   "Is Auto Point"=No   IsSpecial=No   X=108.267716535433   Y=0   Z=0   GUID=3ab466ff-2033-4dc4-913a-3dcfdfd41dd9
+   UniqueName=24   "Is Auto Point"=No   IsSpecial=No   X=108.267716535433   Y=9.84251968503937   Z=0   GUID=25a59f43-77f6-4d0a-b592-d9e839b9c120
+   UniqueName=25   "Is Auto Point"=No   IsSpecial=No   X=118.110236220472   Y=0   Z=0   GUID=b08ab023-fe6c-4d88-8577-1b5f5e6591a3
+   UniqueName=26   "Is Auto Point"=No   IsSpecial=No   X=118.110236220472   Y=9.84251968503937   Z=0   GUID=874ff236-b45f-4c73-b952-13f1c6c3cfb7
+   UniqueName=27   "Is Auto Point"=No   IsSpecial=No   X=127.952755905512   Y=0   Z=0   GUID=7f52c13f-a7aa-47ec-8ef4-14ec94391953
+   UniqueName=28   "Is Auto Point"=No   IsSpecial=No   X=127.952755905512   Y=9.84251968503937   Z=0   GUID=0df65ba6-fe16-467d-9ec3-25ac4dcfc423
+   UniqueName=29   "Is Auto Point"=No   IsSpecial=No   X=137.795275590551   Y=0   Z=0   GUID=f763c24b-4835-4867-8fd5-b2f07849fd80
+   UniqueName=30   "Is Auto Point"=No   IsSpecial=No   X=137.795275590551   Y=9.84251968503937   Z=0   GUID=b4a627ca-c437-4991-85cb-20335fdaadfb
+   UniqueName=31   "Is Auto Point"=No   IsSpecial=No   X=147.637795275591   Y=0   Z=0   GUID=c8a838e5-9808-47cd-a8dd-2e6f89b15472
+   UniqueName=32   "Is Auto Point"=No   IsSpecial=No   X=147.637795275591   Y=9.84251968503937   Z=0   GUID=f64f07b2-e748-4997-92ba-42f380bc8d04
+   UniqueName=33   "Is Auto Point"=No   IsSpecial=No   X=157.48031496063   Y=0   Z=0   GUID=1fe8156f-a30b-424a-9ebf-9b56e0a56f29
+   UniqueName=34   "Is Auto Point"=No   IsSpecial=No   X=157.48031496063   Y=9.84251968503937   Z=0   GUID=e429a093-a090-49eb-9b4f-c37cf3ef3455
+   UniqueName=35   "Is Auto Point"=No   IsSpecial=No   X=9.84251968503937   Y=19.6850393700787   Z=0   GUID=4b51a730-8491-4946-8134-b680d9a1996d
+   UniqueName=36   "Is Auto Point"=No   IsSpecial=No   X=0   Y=19.6850393700787   Z=0   GUID=fd727742-8f20-4166-990e-a09700f24d55
+   UniqueName=37   "Is Auto Point"=No   IsSpecial=No   X=19.6850393700787   Y=19.6850393700787   Z=0   GUID=419b6e1f-e4ae-4707-a26c-b7d3893fee0b
+   UniqueName=38   "Is Auto Point"=No   IsSpecial=No   X=29.5275590551181   Y=19.6850393700787   Z=0   GUID=7552a9ca-71a9-4fc0-ad2e-11942fbaf7cc
+   UniqueName=39   "Is Auto Point"=No   IsSpecial=No   X=39.3700787401575   Y=19.6850393700787   Z=0   GUID=ea516d4c-7f84-453f-9c80-f984e3096616
+   UniqueName=40   "Is Auto Point"=No   IsSpecial=No   X=49.2125984251969   Y=19.6850393700787   Z=0   GUID=b73f1bd3-0108-40fe-a4bb-fa2bfc8c3906
+   UniqueName=41   "Is Auto Point"=No   IsSpecial=No   X=59.0551181102362   Y=19.6850393700787   Z=0   GUID=cba8f020-34e8-4a84-99f2-8c98ec0cf746
+   UniqueName=42   "Is Auto Point"=No   IsSpecial=No   X=68.8976377952756   Y=19.6850393700787   Z=0   GUID=b7c6db50-fb21-49d7-b4fb-8ec672a5e7a1
+   UniqueName=43   "Is Auto Point"=No   IsSpecial=No   X=78.740157480315   Y=19.6850393700787   Z=0   GUID=87aa04cc-db20-4ada-a0d7-950bfa66975a
+   UniqueName=44   "Is Auto Point"=No   IsSpecial=No   X=88.5826771653543   Y=19.6850393700787   Z=0   GUID=ba594944-429b-41b3-9400-a35e6adc4cb3
+   UniqueName=45   "Is Auto Point"=No   IsSpecial=No   X=98.4251968503937   Y=19.6850393700787   Z=0   GUID=0ce6871d-191e-4c9f-8a80-80e34aaac194
+   UniqueName=46   "Is Auto Point"=No   IsSpecial=No   X=108.267716535433   Y=19.6850393700787   Z=0   GUID=5e47c69e-4d15-496e-9afb-ff661cc019c3
+   UniqueName=47   "Is Auto Point"=No   IsSpecial=No   X=118.110236220472   Y=19.6850393700787   Z=0   GUID=2abe998b-05b5-4769-b56b-2cfaf3f17966
+   UniqueName=48   "Is Auto Point"=No   IsSpecial=No   X=127.952755905512   Y=19.6850393700787   Z=0   GUID=252a28a7-1f5d-4672-9e03-1f6c5539ce58
+   UniqueName=49   "Is Auto Point"=No   IsSpecial=No   X=137.795275590551   Y=19.6850393700787   Z=0   GUID=24b00913-51ac-49b4-bfc8-264ca5e91473
+   UniqueName=50   "Is Auto Point"=No   IsSpecial=No   X=147.637795275591   Y=19.6850393700787   Z=0   GUID=d9c3071d-c6fd-4884-b365-405781f7bf2d
+   UniqueName=51   "Is Auto Point"=No   IsSpecial=No   X=157.48031496063   Y=19.6850393700787   Z=0   GUID=856619cf-7fe8-4a04-85ea-42d56a5f9a18
+   UniqueName=52   "Is Auto Point"=No   IsSpecial=No   X=9.84251968503937   Y=29.5275590551181   Z=0   GUID=088add79-e9fc-45ca-92da-5bad530d0357
+   UniqueName=53   "Is Auto Point"=No   IsSpecial=No   X=0   Y=29.5275590551181   Z=0   GUID=76d07d3b-4ae4-46f6-b32e-51bd25d62059
+   UniqueName=54   "Is Auto Point"=No   IsSpecial=No   X=19.6850393700787   Y=29.5275590551181   Z=0   GUID=0db61e17-7b8b-4dde-9c27-44575b7e0bb8
+   UniqueName=55   "Is Auto Point"=No   IsSpecial=No   X=29.5275590551181   Y=29.5275590551181   Z=0   GUID=d968ff38-99c8-422a-a814-ad7c7320481e
+   UniqueName=56   "Is Auto Point"=No   IsSpecial=No   X=39.3700787401575   Y=29.5275590551181   Z=0   GUID=4fbeb56c-c196-4c2c-a304-9872cb181474
+   UniqueName=57   "Is Auto Point"=No   IsSpecial=No   X=49.2125984251969   Y=29.5275590551181   Z=0   GUID=a060310c-6e0b-4495-965c-71dde719903e
+   UniqueName=58   "Is Auto Point"=No   IsSpecial=No   X=59.0551181102362   Y=29.5275590551181   Z=0   GUID=e0966a42-ea70-4ed2-afc0-cf8877df8583
+   UniqueName=59   "Is Auto Point"=No   IsSpecial=No   X=68.8976377952756   Y=29.5275590551181   Z=0   GUID=d9d296b5-8936-44da-a713-b4844b400cbd
+   UniqueName=60   "Is Auto Point"=No   IsSpecial=No   X=78.740157480315   Y=29.5275590551181   Z=0   GUID=44361574-de85-40f8-b29f-88e0afeb710b
+   UniqueName=61   "Is Auto Point"=No   IsSpecial=No   X=88.5826771653543   Y=29.5275590551181   Z=0   GUID=866c895e-00b5-4cc2-9a02-fda6252fde46
+   UniqueName=62   "Is Auto Point"=No   IsSpecial=No   X=98.4251968503937   Y=29.5275590551181   Z=0   GUID=67ef2b2f-dc93-4654-b499-e2882d02025a
+   UniqueName=63   "Is Auto Point"=No   IsSpecial=No   X=108.267716535433   Y=29.5275590551181   Z=0   GUID=cd401aef-2b5a-40d2-bf8a-2daf92987db8
+   UniqueName=64   "Is Auto Point"=No   IsSpecial=No   X=118.110236220472   Y=29.5275590551181   Z=0   GUID=04bc2a74-a102-43f2-be7a-57304b80eeeb
+   UniqueName=65   "Is Auto Point"=No   IsSpecial=No   X=127.952755905512   Y=29.5275590551181   Z=0   GUID=06527beb-d1ae-4fe5-8147-af6aebadab4a
+   UniqueName=66   "Is Auto Point"=No   IsSpecial=No   X=137.795275590551   Y=29.5275590551181   Z=0   GUID=f48575ba-eaf3-4f55-8ebd-10d18996cd58
+   UniqueName=67   "Is Auto Point"=No   IsSpecial=No   X=147.637795275591   Y=29.5275590551181   Z=0   GUID=49c9b9a1-b525-4020-9566-19a4b064b74a
+   UniqueName=68   "Is Auto Point"=No   IsSpecial=No   X=157.48031496063   Y=29.5275590551181   Z=0   GUID=d51fa138-2241-4bec-a194-ecdabeab9d30
+   UniqueName=69   "Is Auto Point"=No   IsSpecial=No   X=9.84251968503937   Y=39.3700787401575   Z=0   GUID=4671f0c8-7052-4e89-b132-5dcf401bbd9c
+   UniqueName=70   "Is Auto Point"=No   IsSpecial=No   X=0   Y=39.3700787401575   Z=0   GUID=7d01f341-dd9e-438e-820e-a76fda67d235
+   UniqueName=71   "Is Auto Point"=No   IsSpecial=No   X=19.6850393700787   Y=39.3700787401575   Z=0   GUID=25ba8317-9f91-44df-a8f2-4e76f1fa102c
+   UniqueName=72   "Is Auto Point"=No   IsSpecial=No   X=29.5275590551181   Y=39.3700787401575   Z=0   GUID=4c5d42d2-6162-47df-bf41-6a6800def8b0
+   UniqueName=PCol_1   "Is Auto Point"=No   IsSpecial=No   X=39.3700787401575   Y=39.3700787401575   Z=0   GUID=00d52d18-6d74-441d-950f-bc01d51d7d15
+   UniqueName=74   "Is Auto Point"=No   IsSpecial=No   X=49.2125984251969   Y=39.3700787401575   Z=0   GUID=3e2e1ce3-cf54-4e21-b6f5-2c15df1a10d8
+   UniqueName=75   "Is Auto Point"=No   IsSpecial=No   X=59.0551181102362   Y=39.3700787401575   Z=0   GUID=09967e03-cfb8-4b69-a40d-f7da617c59be
+   UniqueName=76   "Is Auto Point"=No   IsSpecial=No   X=68.8976377952756   Y=39.3700787401575   Z=0   GUID=e9592886-5913-47c4-8486-e09fe8d60e4b
+   UniqueName=77   "Is Auto Point"=No   IsSpecial=No   X=78.740157480315   Y=39.3700787401575   Z=0   GUID=9b03429f-b902-4ee0-a813-353b2cf65196
+   UniqueName=78   "Is Auto Point"=No   IsSpecial=No   X=88.5826771653543   Y=39.3700787401575   Z=0   GUID=f35014f0-ede9-4923-b51c-86b34ec88186
+   UniqueName=79   "Is Auto Point"=No   IsSpecial=No   X=98.4251968503937   Y=39.3700787401575   Z=0   GUID=da3b9141-c178-4d19-bedd-54a0591ec38a
+   UniqueName=80   "Is Auto Point"=No   IsSpecial=No   X=108.267716535433   Y=39.3700787401575   Z=0   GUID=9aa785a7-a939-4e26-8f96-79b3799dec83
+   UniqueName=PCol_2   "Is Auto Point"=No   IsSpecial=No   X=118.110236220472   Y=39.3700787401575   Z=0   GUID=1f9ea2f2-3610-4bf6-973a-7bc7866f5568
+   UniqueName=82   "Is Auto Point"=No   IsSpecial=No   X=127.952755905512   Y=39.3700787401575   Z=0   GUID=19a7a897-4838-46df-8796-2cadd3ad775f
+   UniqueName=83   "Is Auto Point"=No   IsSpecial=No   X=137.795275590551   Y=39.3700787401575   Z=0   GUID=9c9255af-121a-4b92-a95c-472ea520ea5e
+   UniqueName=84   "Is Auto Point"=No   IsSpecial=No   X=147.637795275591   Y=39.3700787401575   Z=0   GUID=d014722e-3455-4629-9246-482d241dc23e
+   UniqueName=85   "Is Auto Point"=No   IsSpecial=No   X=157.48031496063   Y=39.3700787401575   Z=0   GUID=87f73640-892d-44a8-bbe2-0a0dda52238e
+   UniqueName=86   "Is Auto Point"=No   IsSpecial=No   X=9.84251968503937   Y=49.2125984251969   Z=0   GUID=d8cdf2ad-dd51-4a7b-9b3e-2b74a0510076
+   UniqueName=87   "Is Auto Point"=No   IsSpecial=No   X=0   Y=49.2125984251969   Z=0   GUID=0b8e9816-dd6d-40b5-a13b-e4f867cdcef3
+   UniqueName=88   "Is Auto Point"=No   IsSpecial=No   X=19.6850393700787   Y=49.2125984251969   Z=0   GUID=e6aadddf-3d56-4fea-b924-2f3acbb93e4b
+   UniqueName=89   "Is Auto Point"=No   IsSpecial=No   X=29.5275590551181   Y=49.2125984251969   Z=0   GUID=79eb653f-0167-47b2-9396-7ce14310b140
+   UniqueName=90   "Is Auto Point"=No   IsSpecial=No   X=39.3700787401575   Y=49.2125984251969   Z=0   GUID=ff279088-0149-4b3c-a2b8-3b97c486ef44
+   UniqueName=91   "Is Auto Point"=No   IsSpecial=No   X=49.2125984251969   Y=49.2125984251969   Z=0   GUID=130aecb6-f07e-4b33-aec6-37fdc088a8f0
+   UniqueName=92   "Is Auto Point"=No   IsSpecial=No   X=59.0551181102362   Y=49.2125984251969   Z=0   GUID=2c5edf38-089d-47f4-94a3-b3f9830df55b
+   UniqueName=93   "Is Auto Point"=No   IsSpecial=No   X=68.8976377952756   Y=49.2125984251969   Z=0   GUID=99cc89b2-186c-4899-a89d-0f19af46c98d
+   UniqueName=94   "Is Auto Point"=No   IsSpecial=No   X=78.740157480315   Y=49.2125984251969   Z=0   GUID=db80fc19-91d3-4daf-b65f-364315c5aa16
+   UniqueName=95   "Is Auto Point"=No   IsSpecial=No   X=88.5826771653543   Y=49.2125984251969   Z=0   GUID=2175d3aa-212b-4ec6-a570-7a5d6e907ca8
+   UniqueName=96   "Is Auto Point"=No   IsSpecial=No   X=98.4251968503937   Y=49.2125984251969   Z=0   GUID=b9b14d8d-12a5-41ca-8d64-78edb3d99945
+   UniqueName=97   "Is Auto Point"=No   IsSpecial=No   X=108.267716535433   Y=49.2125984251969   Z=0   GUID=805264d1-837b-443d-b25e-87774b0c6479
+   UniqueName=98   "Is Auto Point"=No   IsSpecial=No   X=118.110236220472   Y=49.2125984251969   Z=0   GUID=2cb3fab8-4099-4d79-9213-e6cc9897321b
+   UniqueName=99   "Is Auto Point"=No   IsSpecial=No   X=127.952755905512   Y=49.2125984251969   Z=0   GUID=5929ffab-6d48-4d00-9202-0a5ddb1b0765
+   UniqueName=100   "Is Auto Point"=No   IsSpecial=No   X=137.795275590551   Y=49.2125984251969   Z=0   GUID=641e5492-4460-4f51-b5dc-11411da0afb6
+   UniqueName=101   "Is Auto Point"=No   IsSpecial=No   X=147.637795275591   Y=49.2125984251969   Z=0   GUID=1de10434-d444-4eaa-aa5a-59b58e269ca7
+   UniqueName=102   "Is Auto Point"=No   IsSpecial=No   X=157.48031496063   Y=49.2125984251969   Z=0   GUID=0b580f46-58db-427a-8448-d14e249f8d98
+   UniqueName=103   "Is Auto Point"=No   IsSpecial=No   X=9.84251968503937   Y=59.0551181102362   Z=0   GUID=582997e2-231f-42c6-ac0d-62a66f64220a
+   UniqueName=104   "Is Auto Point"=No   IsSpecial=No   X=0   Y=59.0551181102362   Z=0   GUID=302b0be2-4a47-4565-ac2a-c2b1250fa81d
+   UniqueName=105   "Is Auto Point"=No   IsSpecial=No   X=19.6850393700787   Y=59.0551181102362   Z=0   GUID=260d70c7-7f7f-44c7-b037-396fc285eb1d
+   UniqueName=106   "Is Auto Point"=No   IsSpecial=No   X=29.5275590551181   Y=59.0551181102362   Z=0   GUID=562c4cb7-1374-4a1d-bb71-c0a10fe1baa0
+   UniqueName=107   "Is Auto Point"=No   IsSpecial=No   X=39.3700787401575   Y=59.0551181102362   Z=0   GUID=78619201-b58a-4a49-8a84-e519ffefc298
+   UniqueName=108   "Is Auto Point"=No   IsSpecial=No   X=49.2125984251969   Y=59.0551181102362   Z=0   GUID=baf2e013-0b69-4298-a9db-32524049efa6
+   UniqueName=109   "Is Auto Point"=No   IsSpecial=No   X=59.0551181102362   Y=59.0551181102362   Z=0   GUID=85842479-0221-4eb7-a1e4-d39090e33f1e
+   UniqueName=110   "Is Auto Point"=No   IsSpecial=No   X=68.8976377952756   Y=59.0551181102362   Z=0   GUID=a08aa721-daa1-49bf-acb6-911ceece1046
+   UniqueName=111   "Is Auto Point"=No   IsSpecial=No   X=78.740157480315   Y=59.0551181102362   Z=0   GUID=ff0711ef-b528-4d61-8eee-a324a708cffe
+   UniqueName=112   "Is Auto Point"=No   IsSpecial=No   X=88.5826771653543   Y=59.0551181102362   Z=0   GUID=801b8652-b324-4454-a98f-5b31724dd95e
+   UniqueName=113   "Is Auto Point"=No   IsSpecial=No   X=98.4251968503937   Y=59.0551181102362   Z=0   GUID=d12f8908-4d00-43b0-be09-1ec1a3dd9fb1
+   UniqueName=114   "Is Auto Point"=No   IsSpecial=No   X=108.267716535433   Y=59.0551181102362   Z=0   GUID=bd280fa4-fd67-4cc7-9c30-ec1caed63e51
+   UniqueName=115   "Is Auto Point"=No   IsSpecial=No   X=118.110236220472   Y=59.0551181102362   Z=0   GUID=5632bdbd-3f48-42c4-ae58-4848f1e18fde
+   UniqueName=116   "Is Auto Point"=No   IsSpecial=No   X=127.952755905512   Y=59.0551181102362   Z=0   GUID=9ca8985f-9a64-4e2b-a2df-6b6247bef948
+   UniqueName=117   "Is Auto Point"=No   IsSpecial=No   X=137.795275590551   Y=59.0551181102362   Z=0   GUID=ce815700-bd1d-4500-8160-09b3808fce80
+   UniqueName=118   "Is Auto Point"=No   IsSpecial=No   X=147.637795275591   Y=59.0551181102362   Z=0   GUID=aba48e60-a4f2-4a76-bec9-8c64769a96db
+   UniqueName=119   "Is Auto Point"=No   IsSpecial=No   X=157.48031496063   Y=59.0551181102362   Z=0   GUID=6391af19-deba-4961-a83a-a7d63d8ded1c
+   UniqueName=120   "Is Auto Point"=No   IsSpecial=No   X=9.84251968503937   Y=68.8976377952756   Z=0   GUID=7ea80c5f-b277-4f78-bf53-e94b4e097d04
+   UniqueName=121   "Is Auto Point"=No   IsSpecial=No   X=0   Y=68.8976377952756   Z=0   GUID=bb2bbdcd-ffe3-4a4d-8740-78cf7c383a0a
+   UniqueName=122   "Is Auto Point"=No   IsSpecial=No   X=19.6850393700787   Y=68.8976377952756   Z=0   GUID=0125a5ae-19bc-4cf8-920c-e7bb86fb3191
+   UniqueName=123   "Is Auto Point"=No   IsSpecial=No   X=29.5275590551181   Y=68.8976377952756   Z=0   GUID=dbb3e96f-6932-467f-b716-ec04ecafa7f8
+   UniqueName=124   "Is Auto Point"=No   IsSpecial=No   X=39.3700787401575   Y=68.8976377952756   Z=0   GUID=3147729d-492f-4e57-a307-54b487a5e7ca
+   UniqueName=125   "Is Auto Point"=No   IsSpecial=No   X=49.2125984251969   Y=68.8976377952756   Z=0   GUID=4aff2225-5395-41dd-b9bc-114f4e985fd9
+   UniqueName=126   "Is Auto Point"=No   IsSpecial=No   X=59.0551181102362   Y=68.8976377952756   Z=0   GUID=88824cc5-5c26-4cd4-831c-4575b8bd1065
+   UniqueName=127   "Is Auto Point"=No   IsSpecial=No   X=68.8976377952756   Y=68.8976377952756   Z=0   GUID=9c362962-31c4-47ec-8d15-28d74b7437ee
+   UniqueName=128   "Is Auto Point"=No   IsSpecial=No   X=78.740157480315   Y=68.8976377952756   Z=0   GUID=cc5b6bb6-2444-4b6f-b8b2-b76a871463de
+   UniqueName=129   "Is Auto Point"=No   IsSpecial=No   X=88.5826771653543   Y=68.8976377952756   Z=0   GUID=6f9610b7-2a2a-49a1-95f1-c4115762477a
+   UniqueName=130   "Is Auto Point"=No   IsSpecial=No   X=98.4251968503937   Y=68.8976377952756   Z=0   GUID=e1f8e028-71c4-477b-8232-22d5713ac962
+   UniqueName=131   "Is Auto Point"=No   IsSpecial=No   X=108.267716535433   Y=68.8976377952756   Z=0   GUID=330421a6-f975-42ab-9bc9-0097d8e86042
+   UniqueName=132   "Is Auto Point"=No   IsSpecial=No   X=118.110236220472   Y=68.8976377952756   Z=0   GUID=5ae8c5ff-2538-4c44-9474-cf5ac020bfe7
+   UniqueName=133   "Is Auto Point"=No   IsSpecial=No   X=127.952755905512   Y=68.8976377952756   Z=0   GUID=0411206e-cf78-47bf-8b09-696985a0fcb6
+   UniqueName=134   "Is Auto Point"=No   IsSpecial=No   X=137.795275590551   Y=68.8976377952756   Z=0   GUID=ef9c72f8-11a2-448e-a34b-322fa6941c5c
+   UniqueName=135   "Is Auto Point"=No   IsSpecial=No   X=147.637795275591   Y=68.8976377952756   Z=0   GUID=561b2b87-f9ef-428d-83ba-06ed1ca0df99
+   UniqueName=136   "Is Auto Point"=No   IsSpecial=No   X=157.48031496063   Y=68.8976377952756   Z=0   GUID=6ca3d28f-b051-493f-9ede-2004941e4745
+   UniqueName=137   "Is Auto Point"=No   IsSpecial=No   X=9.84251968503937   Y=78.740157480315   Z=0   GUID=6a48d869-be55-490d-b082-8bda30fdc5b8
+   UniqueName=138   "Is Auto Point"=No   IsSpecial=No   X=0   Y=78.740157480315   Z=0   GUID=cfae9a60-7623-4e6f-8621-b500a73620fa
+   UniqueName=139   "Is Auto Point"=No   IsSpecial=No   X=19.6850393700787   Y=78.740157480315   Z=0   GUID=57f6e53e-29b7-4c95-914c-72a405dd5659
+   UniqueName=140   "Is Auto Point"=No   IsSpecial=No   X=29.5275590551181   Y=78.740157480315   Z=0   GUID=8d695d0a-c7bc-4326-9133-ad4c6ceff2f9
+   UniqueName=141   "Is Auto Point"=No   IsSpecial=No   X=39.3700787401575   Y=78.740157480315   Z=0   GUID=f6e12992-f5dc-45f4-852b-db6aebbe1924
+   UniqueName=142   "Is Auto Point"=No   IsSpecial=No   X=49.2125984251969   Y=78.740157480315   Z=0   GUID=fd8bd2a0-7593-4794-81cd-c4b41c201dd9
+   UniqueName=143   "Is Auto Point"=No   IsSpecial=No   X=59.0551181102362   Y=78.740157480315   Z=0   GUID=d024da52-69c0-4694-9b1c-8e608f36f969
+   UniqueName=144   "Is Auto Point"=No   IsSpecial=No   X=68.8976377952756   Y=78.740157480315   Z=0   GUID=22b50411-5a1d-403b-80c9-95f71f641dda
+   UniqueName=145   "Is Auto Point"=No   IsSpecial=No   X=78.740157480315   Y=78.740157480315   Z=0   GUID=40da87d0-bbf1-4b93-a378-f88469fd14b2
+   UniqueName=146   "Is Auto Point"=No   IsSpecial=No   X=88.5826771653543   Y=78.740157480315   Z=0   GUID=5d825e74-bfc4-4a20-a1db-2d87bb489e92
+   UniqueName=147   "Is Auto Point"=No   IsSpecial=No   X=98.4251968503937   Y=78.740157480315   Z=0   GUID=3f5e798f-455d-4518-a7a4-70e42d81db32
+   UniqueName=148   "Is Auto Point"=No   IsSpecial=No   X=108.267716535433   Y=78.740157480315   Z=0   GUID=525d0685-9b7f-4247-894b-7d5320557aae
+   UniqueName=149   "Is Auto Point"=No   IsSpecial=No   X=118.110236220472   Y=78.740157480315   Z=0   GUID=5a4d0d3b-e46a-4fa6-96b6-2aa9c7a30488
+   UniqueName=150   "Is Auto Point"=No   IsSpecial=No   X=127.952755905512   Y=78.740157480315   Z=0   GUID=759e3f47-0ff9-40d6-8e06-63586619125d
+   UniqueName=151   "Is Auto Point"=No   IsSpecial=No   X=137.795275590551   Y=78.740157480315   Z=0   GUID=92262d12-077f-41c2-b053-5b2adcd77d8c
+   UniqueName=152   "Is Auto Point"=No   IsSpecial=No   X=147.637795275591   Y=78.740157480315   Z=0   GUID=177ced43-b063-486d-a230-2d1b4e685014
+   UniqueName=153   "Is Auto Point"=No   IsSpecial=No   X=157.48031496063   Y=78.740157480315   Z=0   GUID=10ea1a26-2f95-4e48-a353-5c2a43446f19
+ 
+TABLE:  "PREFERENCES - GRAPHICS"
+   MaxFontSize=8   MinFontSize=3   MinSLineThick=1   MinPLineThick=4   AntiAliasing?=Yes   ConstantLineThick?=Yes   ShadingWithinElement?=No   AutoZoomStep=10   ShrinkFactor=70
+ 
+TABLE:  "PREFERENCES - TOLERANCE"
+   MergeTol=0.1   MaxInclVertCol=1   MaxInclHorzBmFlr=20
+ 
+TABLE:  "PROGRAM CONTROL"
+   ProgramName=SAFE   Version=20.3.0   CurrUnits="lb, in, F"   CompBmCode="AISC 360-16"   ConcFrmCode="ACI 318-19"   ConcSlbCode="ACI 318-19"
+ 
+TABLE:  "PROJECT INFORMATION"
+   "Company Name"=.   "Revision Number"=0
+ 
+TABLE:  "REINFORCING BAR SIZES"
+   Name=#2   Diameter=0.25   Area=0.05
+   Name=#3   Diameter=0.375   Area=0.109999999403954
+   Name=#4   Diameter=0.5   Area=0.200000002980232
+   Name=#5   Diameter=0.625   Area=0.310000002384186
+   Name=#6   Diameter=0.75   Area=0.439999997615814
+   Name=#7   Diameter=0.875   Area=0.600000023841858
+   Name=#8   Diameter=1   Area=0.790000021457672
+   Name=#9   Diameter=1.12800002098083   Area=1
+   Name=#10   Diameter=1.26999998092651   Area=1.26999998092651
+   Name=#11   Diameter=1.4099999666214   Area=1.55999994277954
+   Name=#14   Diameter=1.692999958992   Area=2.25
+   Name=#18   Diameter=2.25699996948242   Area=4
+ 
+TABLE:  "SLAB PROPERTY DEFINITIONS"
+   Name=Plank1   "Modeling Type"=Membrane   "Property Type"=Slab   Material=4000Psi   "Slab Thickness"=8   "One Way Load Distribution?"=Yes   "Notional Size Type"=Auto   "Notional Auto Factor"=1   "f11 Modifier"=1   "f22 Modifier"=1 _
+        "f12 Modifier"=1   "m11 Modifier"=1   "m22 Modifier"=1   "m12 Modifier"=1   "v13 Modifier"=1   "v23 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Gray8Dark   GUID=90bed025-1861-4be8-9459-01ca23e9129e   Orthotropic?=No
+   Name=Slab1   "Modeling Type"=Shell-Thin   "Property Type"=Slab   Material=4000Psi   "Slab Thickness"=8   "Notional Size Type"=Auto   "Notional Auto Factor"=1   "f11 Modifier"=1   "f22 Modifier"=1   "f12 Modifier"=1   "m11 Modifier"=1 _
+        "m22 Modifier"=1   "m12 Modifier"=1   "v13 Modifier"=1   "v23 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=46d41a01-9354-45a3-ba2d-8ee05e7cb0c8   Orthotropic?=No
+   Name=ZapataCombinada   "Modeling Type"=Shell-Thick   "Property Type"=Mat   Material=Conc25   "Slab Thickness"=15.748031496063   "Notional Size Type"=Auto   "Notional Auto Factor"=1   "f11 Modifier"=1   "f22 Modifier"=1   "f12 Modifier"=1 _
+        "m11 Modifier"=1   "m22 Modifier"=1   "m12 Modifier"=1   "v13 Modifier"=1   "v23 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Red   GUID=e5e7c5c6-dcb5-4fec-baac-6ec793d065bd   Orthotropic?=No
+ 
+TABLE:  "SPRING PROPERTY DEFINITIONS - AREA SPRINGS"
+   Name=AS_Winkler   "Subgrade Modulus"=72.2534725631949   "Nonlinear Option"="Compression Only"   Color=Black   GUID=e50bea12-2be3-4ecd-80d8-2384213e0979
+ 
+TABLE:  "TENDON SECTION PROPERTIES"
+   Name=Tendon1   Material=A416Gr270   StrandArea=0.153   Color=Green   GUID=a7b40c0f-10c6-449b-ad11-b539e2c6c817
+ 
+TABLE:  "WALL PROPERTY DEFINITIONS - SPECIFIED"
+   Name=Wall1   "Modeling Type"=Shell-Thin   Material=4000Psi   "Wall Thickness"=12   "Include Auto Rigid Zone?"=No   "Notional Size Type"=Auto   "Notional Auto Factor"=1   "f11 Modifier"=1   "f22 Modifier"=1   "f12 Modifier"=1 _
+        "m11 Modifier"=1   "m22 Modifier"=1   "m12 Modifier"=1   "v13 Modifier"=1   "v23 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Yellow   GUID=9b91dc4d-6674-441c-8294-5a4efb82d7ac
+ 
+END TABLE DATA

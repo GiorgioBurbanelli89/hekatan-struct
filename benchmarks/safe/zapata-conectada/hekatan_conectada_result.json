@@ -1,0 +1,146 @@
+{
+  "solver": "Hekatan plateQ4Solve (Mindlin Q4 + Winkler springs + thicknesses[])",
+  "case": "Zapata Conectada 5×1m, 2 zapatas (t=0.40) + viga (t=0.20)",
+  "params": {
+    "Lz": 5,
+    "Bz": 1,
+    "t_zap": 0.4,
+    "t_vig": 0.2,
+    "Lzap": 1,
+    "E": 24855000,
+    "nu": 0.2,
+    "ks": 19613,
+    "P": 196.13299999999998,
+    "nx": 20,
+    "ny": 4
+  },
+  "columns": [
+    {
+      "x": 0.5,
+      "y": 0.5,
+      "P_kN": 196.13299999999998
+    },
+    {
+      "x": 4.5,
+      "y": 0.5,
+      "P_kN": 196.13299999999998
+    }
+  ],
+  "mesh": {
+    "nxn": 21,
+    "nyn": 5,
+    "totalNodes": 105,
+    "totalElements": 80
+  },
+  "thicknesses_zonas": {
+    "zapatas_count": 32,
+    "viga_count": 48
+  },
+  "theory": {
+    "P_total_kN": 392.26599999999996,
+    "A_total_m2": 5,
+    "w_avg_winkler_teo_mm": 4.0001
+  },
+  "results": {
+    "w_max_m": -0.008908624719927781,
+    "w_max_node": 42,
+    "Mxx_max_kNm_per_m": -57.663201282214246,
+    "Myy_max_kNm_per_m": 22.501763649757848,
+    "Mxy_max_kNm_per_m": 3.8297478903299074,
+    "Qx_max_kN_per_m": -164.20845977279356,
+    "Qy_max_kN_per_m": -142.33791753704966,
+    "q_max_kN_m2": 174.72485663194357,
+    "q_max_tonf_m2": 17.816976911783694,
+    "runtime_ms": 5.7,
+    "samples_11pts": [
+      {
+        "label": "esquina (0,0)",
+        "node_idx": 0,
+        "x": 0,
+        "y": 0,
+        "w_mm": -8.9003,
+        "q_kNm2": 174.56
+      },
+      {
+        "label": "esquina (Lz,0)",
+        "node_idx": 20,
+        "x": 5,
+        "y": 0,
+        "w_mm": -8.9003,
+        "q_kNm2": 174.56
+      },
+      {
+        "label": "esquina (0,Bz)",
+        "node_idx": 84,
+        "x": 0,
+        "y": 1,
+        "w_mm": -8.9003,
+        "q_kNm2": 174.56
+      },
+      {
+        "label": "esquina (Lz,Bz)",
+        "node_idx": 104,
+        "x": 5,
+        "y": 1,
+        "w_mm": -8.9003,
+        "q_kNm2": 174.56
+      },
+      {
+        "label": "col_izq (0.5, Bz/2)",
+        "node_idx": 44,
+        "x": 0.5,
+        "y": 0.5,
+        "w_mm": -6.7579,
+        "q_kNm2": 132.54
+      },
+      {
+        "label": "col_der (4.5, Bz/2)",
+        "node_idx": 60,
+        "x": 4.5,
+        "y": 0.5,
+        "w_mm": -6.7579,
+        "q_kNm2": 132.54
+      },
+      {
+        "label": "borde zap-viga izq (1, Bz/2)",
+        "node_idx": 46,
+        "x": 1,
+        "y": 0.5,
+        "w_mm": -4.5478,
+        "q_kNm2": 89.2
+      },
+      {
+        "label": "borde zap-viga der (4, Bz/2)",
+        "node_idx": 58,
+        "x": 4,
+        "y": 0.5,
+        "w_mm": -4.5478,
+        "q_kNm2": 89.2
+      },
+      {
+        "label": "centro viga (2.5, Bz/2)",
+        "node_idx": 52,
+        "x": 2.5,
+        "y": 0.5,
+        "w_mm": -0.9444,
+        "q_kNm2": 18.52
+      },
+      {
+        "label": "1/4 viga (1.75, Bz/2)",
+        "node_idx": 49,
+        "x": 1.75,
+        "y": 0.5,
+        "w_mm": -1.904,
+        "q_kNm2": 37.34
+      },
+      {
+        "label": "3/4 viga (3.25, Bz/2)",
+        "node_idx": 55,
+        "x": 3.25,
+        "y": 0.5,
+        "w_mm": -1.904,
+        "q_kNm2": 37.34
+      }
+    ]
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "solver": "SAFE 20 via API (mesh 20\u00d74 + 2 slab properties + SubModulus override)",
+  "case": "Zapata Conectada 5\u00d71m, 2 zapatas (t=0.40) + viga (t=0.20)",
+  "saved_at": "C:\\Users\\j-b-j\\Documents\\Hekatan Calc 1.0.0\\hekatan-struct\\benchmarks\\safe\\zapata-conectada\\Zapata_Conectada_via_API.fdb",
+  "params": {
+    "Lz": 5.0,
+    "Bz": 1.0,
+    "t_zap": 0.4,
+    "t_vig": 0.2,
+    "Lzap": 1.0,
+    "E_kNm2": 24855000.0,
+    "nu": 0.2,
+    "rho_kNm3": 24.0,
+    "ks_kNm3": 19613.0,
+    "P_kN": 196.13299999999998,
+    "nx": 20,
+    "ny": 4
+  },
+  "columns": [
+    {
+      "x": 0.5,
+      "y": 0.5,
+      "P_kN": 196.13299999999998
+    },
+    {
+      "x": 4.5,
+      "y": 0.5,
+      "P_kN": 196.13299999999998
+    }
+  ],
+  "theory": {
+    "P_total_kN": 392.26599999999996,
+    "A_total_m2": 5.0,
+    "w_avg_winkler_teo_mm": 4.0001
+  },
+  "results": {
+    "w_max_m": -0.008906,
+    "w_max_joint": "44",
+    "q_max_calc_ks_w_kNm2": 174.673378,
+    "runtime_s": 29.7,
+    "samples_11pts": [
+      {
+        "label": "esquina (0,0)",
+        "joint": "1",
+        "x": 0.0,
+        "y": 0.0,
+        "w_mm": -8.898,
+        "q_kNm2": 174.52
+      },
+      {
+        "label": "esquina (Lz,0)",
+        "joint": "41",
+        "x": 5.0,
+        "y": 0.0,
+        "w_mm": -8.897,
+        "q_kNm2": 174.5
+      },
+      {
+        "label": "esquina (0,Bz)",
+        "joint": "86",
+        "x": 0.0,
+        "y": 1.0,
+        "w_mm": -8.894,
+        "q_kNm2": 174.44
+      },
+      {
+        "label": "esquina (Lz,Bz)",
+        "joint": "105",
+        "x": 5.0,
+        "y": 1.0,
+        "w_mm": -8.895,
+        "q_kNm2": 174.46
+      },
+      {
+        "label": "col_izq (0.5, Bz/2)",
+        "joint": "PCol_1",
+        "x": 0.5,
+        "y": 0.5,
+        "w_mm": -6.76,
+        "q_kNm2": 132.58
+      },
+      {
+        "label": "col_der (4.5, Bz/2)",
+        "joint": "PCol_2",
+        "x": 4.5,
+        "y": 0.5,
+        "w_mm": -6.76,
+        "q_kNm2": 132.58
+      },
+      {
+        "label": "borde zap-viga izq (1, Bz/2)",
+        "joint": "47",
+        "x": 1.0,
+        "y": 0.5,
+        "w_mm": -4.551,
+        "q_kNm2": 89.26
+      },
+      {
+        "label": "borde zap-viga der (4, Bz/2)",
+        "joint": "59",
+        "x": 4.0,
+        "y": 0.5,
+        "w_mm": -4.551,
+        "q_kNm2": 89.26
+      },
+      {
+        "label": "centro viga (2.5, Bz/2)",
+        "joint": "53",
+        "x": 2.5,
+        "y": 0.5,
+        "w_mm": -0.942,
+        "q_kNm2": 18.48
+      },
+      {
+        "label": "1/4 viga (1.75, Bz/2)",
+        "joint": "50",
+        "x": 1.7500000000000002,
+        "y": 0.5,
+        "w_mm": -1.902,
+        "q_kNm2": 37.3
+      },
+      {
+        "label": "3/4 viga (3.25, Bz/2)",
+        "joint": "56",
+        "x": 3.25,
+        "y": 0.5,
+        "w_mm": -1.902,
+        "q_kNm2": 37.3
+      }
+    ]
+  }
+}

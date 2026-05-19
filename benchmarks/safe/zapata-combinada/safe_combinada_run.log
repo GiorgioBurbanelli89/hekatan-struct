@@ -1,0 +1,45 @@
+-> Caso: losa 4.0×2.0×0.4m + 2 columnas P=294.20 kN c/u
+-> Lanzando SAFE 20...
+   NewBlank ret=0
+   SetUnits kN/m/C ret=0
+-> Material Conc25 OK
+-> SetSlab(ZapataCombinada) Mat/ShellThick(Mindlin) t=0.4 ret=0
+-> SetAreaSpringProp(AS_Winkler) ret=0 (U3 será sobreescrito)
+-> LoadPatterns.Add(P_Test) ret=0
+-> Creando 128 áreas Q4 (mesh 16x8) ...
+   Creadas 128 áreas en 0.3s
+-> Asignando spring Winkler a las 128 áreas...
+-> Creadas 2 columnas con P=294.20 kN c/u
+-> Save: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\benchmarks\safe\zapata-combinada\Zapata_Combinada_via_API.fdb
+   Save ret=0
+-> Editing 'Spring Property Definitions - Area Springs': rows=1 cols=10
+   SubModulus override: ks=19613.0 ret=0 err=0 warn=0
+-> RunAnalysis...
+   RunAnalysis ret=0 (12.42s)
+-> Joint Displacements...
+   rows=459
+-> Sampling 17 puntos clave...
+-> JSON: safe_combinada_result.json
+
+==========================================================
+  SAFE API - Zapata Combinada 4.0×2.0×0.4m, 2 col × 294.2 kN
+==========================================================
+  w_teo:     3.7501 mm (Winkler uniforme)
+  w_max:     -3.8490 mm  (joint PCol_1)
+  q_max:     75.49 kN/m² (ks*|w|)
+  Runtime:   12.42s
+----------------------------------------------------------
+  11 puntos clave:
+  label                                   w_mm      q_kNm2
+  esquina (0,0)                        -3.6120       70.84
+  esquina (Lz,0)                       -3.6120       70.84
+  esquina (0,Bz)                       -3.6120       70.84
+  esquina (Lz,Bz)                      -3.6120       70.84
+  col_1 (1.0, 1.0)                     -3.8490       75.49
+  col_2 (3.0, 1.0)                     -3.8490       75.49
+  centro (Lz/2, Bz/2)                  -3.8030       74.59
+  voladizo izq (0, Bz/2)               -3.6600       71.78
+  voladizo der (Lz, Bz/2)              -3.6600       71.78
+  mid-borde sup (Lz/2, 0)              -3.7520       73.59
+  mid-borde inf (Lz/2, Bz)             -3.7520       73.59
+==========================================================

@@ -1,0 +1,140 @@
+{
+  "solver": "Hekatan plateQ4Solve (Mindlin Q4 + Winkler springs)",
+  "case": "Losa de Cimentación 6×8×0.50m, 6 columnas grilla 2×3",
+  "params": {
+    "Lz": 4,
+    "Bz": 2,
+    "tz": 0.4,
+    "E": 24855000,
+    "nu": 0.2,
+    "ks": 19613,
+    "P": 294.1995,
+    "nx": 16,
+    "ny": 8
+  },
+  "columns": [
+    {
+      "x": 1,
+      "y": 1,
+      "P_kN": 294.1995
+    },
+    {
+      "x": 3,
+      "y": 1,
+      "P_kN": 294.1995
+    }
+  ],
+  "mesh": {
+    "nxn": 17,
+    "nyn": 9,
+    "totalNodes": 153,
+    "totalElements": 128
+  },
+  "theory": {
+    "P_total_kN": 588.399,
+    "A_total_m2": 8,
+    "w_avg_winkler_teo_mm": 3.7501
+  },
+  "results": {
+    "w_max_m": -0.0038458315508269163,
+    "w_max_node": 80,
+    "Mxx_max_kNm_per_m": 46.428255800279594,
+    "Myy_max_kNm_per_m": 46.782885127898744,
+    "Mxy_max_kNm_per_m": -7.095502837888493,
+    "Qx_max_kN_per_m": 225.35493412743526,
+    "Qy_max_kN_per_m": 224.1983644984232,
+    "q_max_kN_m2": 75.4282942063683,
+    "q_max_tonf_m2": 7.69154545195029,
+    "runtime_ms": 7.5,
+    "samples_11pts": [
+      {
+        "label": "esquina (0,0)",
+        "node_idx": 0,
+        "x": 0,
+        "y": 0,
+        "w_mm": -3.6138,
+        "q_kNm2": 70.88
+      },
+      {
+        "label": "esquina (Lz,0)",
+        "node_idx": 16,
+        "x": 4,
+        "y": 0,
+        "w_mm": -3.6138,
+        "q_kNm2": 70.88
+      },
+      {
+        "label": "esquina (0,Bz)",
+        "node_idx": 136,
+        "x": 0,
+        "y": 2,
+        "w_mm": -3.6138,
+        "q_kNm2": 70.88
+      },
+      {
+        "label": "esquina (Lz,Bz)",
+        "node_idx": 152,
+        "x": 4,
+        "y": 2,
+        "w_mm": -3.6138,
+        "q_kNm2": 70.88
+      },
+      {
+        "label": "col_1 (1.0, 1.0)",
+        "node_idx": 72,
+        "x": 1,
+        "y": 1,
+        "w_mm": -3.8458,
+        "q_kNm2": 75.43
+      },
+      {
+        "label": "col_2 (3.0, 1.0)",
+        "node_idx": 80,
+        "x": 3,
+        "y": 1,
+        "w_mm": -3.8458,
+        "q_kNm2": 75.43
+      },
+      {
+        "label": "centro (Lz/2, Bz/2)",
+        "node_idx": 76,
+        "x": 2,
+        "y": 1,
+        "w_mm": -3.803,
+        "q_kNm2": 74.59
+      },
+      {
+        "label": "voladizo izq (0, Bz/2)",
+        "node_idx": 68,
+        "x": 0,
+        "y": 1,
+        "w_mm": -3.6597,
+        "q_kNm2": 71.78
+      },
+      {
+        "label": "voladizo der (Lz, Bz/2)",
+        "node_idx": 84,
+        "x": 4,
+        "y": 1,
+        "w_mm": -3.6597,
+        "q_kNm2": 71.78
+      },
+      {
+        "label": "mid-borde sup (Lz/2, 0)",
+        "node_idx": 8,
+        "x": 2,
+        "y": 0,
+        "w_mm": -3.7535,
+        "q_kNm2": 73.62
+      },
+      {
+        "label": "mid-borde inf (Lz/2, Bz)",
+        "node_idx": 144,
+        "x": 2,
+        "y": 2,
+        "w_mm": -3.7535,
+        "q_kNm2": 73.62
+      }
+    ]
+  }
+}

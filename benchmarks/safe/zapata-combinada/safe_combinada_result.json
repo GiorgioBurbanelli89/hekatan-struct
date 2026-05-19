@@ -1,0 +1,130 @@
+{
+  "solver": "SAFE 20 via API (construido desde cero, mesh 16\u00d78 + SubModulus override)",
+  "case": "Zapata Combinada 4\u00d72\u00d70.40m, 2 columnas",
+  "saved_at": "C:\\Users\\j-b-j\\Documents\\Hekatan Calc 1.0.0\\hekatan-struct\\benchmarks\\safe\\zapata-combinada\\Zapata_Combinada_via_API.fdb",
+  "params": {
+    "Lz": 4.0,
+    "Bz": 2.0,
+    "tz": 0.4,
+    "E_kNm2": 24855000.0,
+    "nu": 0.2,
+    "rho_kNm3": 24.0,
+    "ks_kNm3": 19613.0,
+    "P_kN": 294.1995,
+    "nx": 16,
+    "ny": 8
+  },
+  "columns": [
+    {
+      "x": 1.0,
+      "y": 1.0,
+      "P_kN": 294.1995
+    },
+    {
+      "x": 3.0,
+      "y": 1.0,
+      "P_kN": 294.1995
+    }
+  ],
+  "theory": {
+    "P_total_kN": 588.399,
+    "A_total_m2": 8.0,
+    "w_avg_winkler_teo_mm": 3.7501
+  },
+  "results": {
+    "w_max_m": -0.003849,
+    "w_max_joint": "PCol_1",
+    "q_max_calc_ks_w_kNm2": 75.490437,
+    "runtime_s": 12.42,
+    "samples_11pts": [
+      {
+        "label": "esquina (0,0)",
+        "joint": "1",
+        "x": 0.0,
+        "y": 0.0,
+        "w_mm": -3.612,
+        "q_kNm2": 70.84
+      },
+      {
+        "label": "esquina (Lz,0)",
+        "joint": "33",
+        "x": 4.0,
+        "y": 0.0,
+        "w_mm": -3.612,
+        "q_kNm2": 70.84
+      },
+      {
+        "label": "esquina (0,Bz)",
+        "joint": "138",
+        "x": 0.0,
+        "y": 2.0,
+        "w_mm": -3.612,
+        "q_kNm2": 70.84
+      },
+      {
+        "label": "esquina (Lz,Bz)",
+        "joint": "153",
+        "x": 4.0,
+        "y": 2.0,
+        "w_mm": -3.612,
+        "q_kNm2": 70.84
+      },
+      {
+        "label": "col_1 (1.0, 1.0)",
+        "joint": "PCol_1",
+        "x": 1.0,
+        "y": 1.0,
+        "w_mm": -3.849,
+        "q_kNm2": 75.49
+      },
+      {
+        "label": "col_2 (3.0, 1.0)",
+        "joint": "PCol_2",
+        "x": 3.0,
+        "y": 1.0,
+        "w_mm": -3.849,
+        "q_kNm2": 75.49
+      },
+      {
+        "label": "centro (Lz/2, Bz/2)",
+        "joint": "77",
+        "x": 2.0,
+        "y": 1.0,
+        "w_mm": -3.803,
+        "q_kNm2": 74.59
+      },
+      {
+        "label": "voladizo izq (0, Bz/2)",
+        "joint": "70",
+        "x": 0.0,
+        "y": 1.0,
+        "w_mm": -3.66,
+        "q_kNm2": 71.78
+      },
+      {
+        "label": "voladizo der (Lz, Bz/2)",
+        "joint": "85",
+        "x": 4.0,
+        "y": 1.0,
+        "w_mm": -3.66,
+        "q_kNm2": 71.78
+      },
+      {
+        "label": "mid-borde sup (Lz/2, 0)",
+        "joint": "17",
+        "x": 2.0,
+        "y": 0.0,
+        "w_mm": -3.752,
+        "q_kNm2": 73.59
+      },
+      {
+        "label": "mid-borde inf (Lz/2, Bz)",
+        "joint": "145",
+        "x": 2.0,
+        "y": 2.0,
+        "w_mm": -3.752,
+        "q_kNm2": 73.59
+      }
+    ]
+  }
+}

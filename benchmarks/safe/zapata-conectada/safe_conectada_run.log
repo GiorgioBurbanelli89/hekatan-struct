@@ -1,0 +1,32 @@
+-> Zapata conectada 5.0×1.0m: ext t=0.4 / viga t=0.2, 2 cols P=196.13 kN
+-> Lanzando SAFE 20...
+-> SetSlab ZapataExt(t=0.4) + VigaConex(t=0.2)
+-> Creando 80 áreas Q4 con slab variable según x...
+   80 áreas creadas (32 zapatas + 48 viga)
+-> 2 columnas creadas
+-> Save: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\benchmarks\safe\zapata-conectada\Zapata_Conectada_via_API.fdb
+-> SubModulus override: ks=19613.0
+-> RunAnalysis...
+   RunAnalysis ret=0 (29.70s)
+-> JSON: safe_conectada_result.json
+
+==========================================================
+  SAFE API - Zapata Conectada (zap t=0.4, vig t=0.2)
+==========================================================
+  w_teo:     4.0001 mm | w_max: -8.9060 mm (44)
+  Runtime:   29.70s
+----------------------------------------------------------
+  11 puntos clave:
+  label                                   w_mm      q_kNm2
+  esquina (0,0)                        -8.8980      174.52
+  esquina (Lz,0)                       -8.8970      174.50
+  esquina (0,Bz)                       -8.8940      174.44
+  esquina (Lz,Bz)                      -8.8950      174.46
+  col_izq (0.5, Bz/2)                  -6.7600      132.58
+  col_der (4.5, Bz/2)                  -6.7600      132.58
+  borde zap-viga izq (1, Bz/2)         -4.5510       89.26
+  borde zap-viga der (4, Bz/2)         -4.5510       89.26
+  centro viga (2.5, Bz/2)              -0.9420       18.48
+  1/4 viga (1.75, Bz/2)                -1.9020       37.30
+  3/4 viga (3.25, Bz/2)                -1.9020       37.30
+==========================================================

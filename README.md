@@ -399,14 +399,16 @@ Solver validated against ETABS 22.6 via Python API (comtypes), plus Paz & Leigh 
 
 ### Cross-validation framework against SAFE 20 (automated via API)
 
-End-to-end framework that runs Hekatan `plateQ4Solve` and SAFE 20 (vía `SAFEv1.dll` + pythonnet) on the **exact same model** and compares 9 sampled points. Live in [`benchmarks/safe/`](./benchmarks/safe/).
+End-to-end framework that runs Hekatan `plateQ4Solve` and SAFE 20 (vía `SAFEv1.dll` + pythonnet) on the **exact same model** and compares N sampled points. Live in [`benchmarks/`](./benchmarks/) (índice y guía de uso) + [`benchmarks/safe/`](./benchmarks/safe/) (casos resueltos).
 
-| Caso | Hekatan w_max | SAFE w_max | Δ |
-|------|:---:|:---:|:---:|
-| [Zapata aislada 1.5×1.5×0.30m + Winkler (mesh 12×12)](./benchmarks/safe/zapata-aislada/) | −4.5356 mm | −4.5370 mm | **+0.03%** |
-| [Losa cimentación 6×8×0.50m + 6 columnas grilla 2×3 (mesh 12×16)](./benchmarks/safe/losa-cimentacion/) | −1.5824 mm | −1.5870 mm | **+0.29%** |
+| # | Caso | Mesh | Cols | w_max Hekatan | w_max SAFE | Δ |
+|---|------|:---:|:---:|:---:|:---:|:---:|
+| 1 | [Zapata aislada 1.5×1.5×0.30m](./benchmarks/safe/zapata-aislada/) | 12×12 (144 Q4) | 1 | −4.5356 mm | −4.5370 mm | **+0.03%** |
+| 2 | [Losa cimentación 6×8×0.50m, 6 cols 2×3](./benchmarks/safe/losa-cimentacion/) | 12×16 (192 Q4) | 6 | −1.5824 mm | −1.5870 mm | **+0.29%** |
+| 3 | [Zapata combinada 4×2×0.40m, 2 cols alineadas](./benchmarks/safe/zapata-combinada/) | 16×8 (128 Q4) | 2 | −3.8458 mm | −3.8490 mm | **+0.08%** |
+| 4 | [Zapata conectada 5×1m, t variable (0.40/0.20)](./benchmarks/safe/zapata-conectada/) | 20×4 (80 Q4) | 2 | −8.9003 mm | −8.898 mm | **−0.07%** |
 
-Documentación de la API SAFE (con 8 gotchas críticos, incluyendo el bug silencioso de `SubModulus` que produce gap del 38% si se usa `SetAreaSpringProp(U3=ks)` ingenuamente): [`benchmarks/safe/README.md`](./benchmarks/safe/README.md).
+**Promedio Δ máx 0.17%, todos los casos <0.33%.** Documentación API SAFE (con 8 gotchas críticos, incluyendo el bug silencioso de `SubModulus` que produce gap del 38% si se usa `SetAreaSpringProp(U3=ks)` ingenuamente): [`benchmarks/safe/README.md`](./benchmarks/safe/README.md).
 
 ## Stack
 
