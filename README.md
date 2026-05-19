@@ -401,9 +401,10 @@ Solver validated against ETABS 22.6 via Python API (comtypes), plus Paz & Leigh 
 
 End-to-end framework that runs Hekatan `plateQ4Solve` and SAFE 20 (vía `SAFEv1.dll` + pythonnet) on the **exact same model** and compares 9 sampled points. Live in [`benchmarks/safe/`](./benchmarks/safe/).
 
-| Caso | Hekatan w_centro | SAFE w_centro | Δ |
+| Caso | Hekatan w_max | SAFE w_max | Δ |
 |------|:---:|:---:|:---:|
 | [Zapata aislada 1.5×1.5×0.30m + Winkler (mesh 12×12)](./benchmarks/safe/zapata-aislada/) | −4.5356 mm | −4.5370 mm | **+0.03%** |
+| [Losa cimentación 6×8×0.50m + 6 columnas grilla 2×3 (mesh 12×16)](./benchmarks/safe/losa-cimentacion/) | −1.5824 mm | −1.5870 mm | **+0.29%** |
 
 Documentación de la API SAFE (con 8 gotchas críticos, incluyendo el bug silencioso de `SubModulus` que produce gap del 38% si se usa `SetAreaSpringProp(U3=ks)` ingenuamente): [`benchmarks/safe/README.md`](./benchmarks/safe/README.md).
 

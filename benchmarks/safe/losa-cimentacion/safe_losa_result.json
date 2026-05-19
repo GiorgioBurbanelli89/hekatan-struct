@@ -1,0 +1,198 @@
+{
+  "solver": "SAFE 20 via API (construido desde cero, mesh 12\u00d716 + SubModulus override)",
+  "case": "Losa de Cimentaci\u00f3n 6\u00d78\u00d70.50m, 6 columnas",
+  "saved_at": "C:\\Users\\j-b-j\\Documents\\Hekatan Calc 1.0.0\\hekatan-struct\\benchmarks\\safe\\losa-cimentacion\\Losa_Hekatan_via_API.fdb",
+  "params": {
+    "Lz": 6.0,
+    "Bz": 8.0,
+    "tz": 0.5,
+    "E_kNm2": 24855000.0,
+    "nu": 0.2,
+    "rho_kNm3": 24.0,
+    "ks_kNm3": 19613.0,
+    "P_kN": 196.13299999999998,
+    "nx": 12,
+    "ny": 16
+  },
+  "columns": [
+    {
+      "x": 1.5,
+      "y": 2.0,
+      "P_kN": 196.13299999999998
+    },
+    {
+      "x": 1.5,
+      "y": 4.0,
+      "P_kN": 196.13299999999998
+    },
+    {
+      "x": 1.5,
+      "y": 6.0,
+      "P_kN": 196.13299999999998
+    },
+    {
+      "x": 4.5,
+      "y": 2.0,
+      "P_kN": 196.13299999999998
+    },
+    {
+      "x": 4.5,
+      "y": 4.0,
+      "P_kN": 196.13299999999998
+    },
+    {
+      "x": 4.5,
+      "y": 6.0,
+      "P_kN": 196.13299999999998
+    }
+  ],
+  "theory": {
+    "P_total_kN": 1176.7979999999998,
+    "A_total_m2": 48.0,
+    "w_avg_winkler_teo_mm": 1.25
+  },
+  "results": {
+    "w_max_m": -0.001587,
+    "w_max_joint": "PCol_2",
+    "q_max_calc_ks_w_kNm2": 31.125831,
+    "runtime_s": 45.76,
+    "samples_17pts": [
+      {
+        "label": "esquina (0,0)",
+        "joint": "1",
+        "x": 0.0,
+        "y": 0.0,
+        "w_mm": -0.696,
+        "q_kNm2": 13.65
+      },
+      {
+        "label": "esquina (Lz,0)",
+        "joint": "25",
+        "x": 6.0,
+        "y": 0.0,
+        "w_mm": -0.696,
+        "q_kNm2": 13.65
+      },
+      {
+        "label": "esquina (0,Bz)",
+        "joint": "210",
+        "x": 0.0,
+        "y": 8.0,
+        "w_mm": -0.696,
+        "q_kNm2": 13.65
+      },
+      {
+        "label": "esquina (Lz,Bz)",
+        "joint": "221",
+        "x": 6.0,
+        "y": 8.0,
+        "w_mm": -0.696,
+        "q_kNm2": 13.65
+      },
+      {
+        "label": "col_1 (1.5, 2.0)",
+        "joint": "PCol_1",
+        "x": 1.5,
+        "y": 2.0,
+        "w_mm": -1.357,
+        "q_kNm2": 26.61
+      },
+      {
+        "label": "col_2 (4.5, 2.0)",
+        "joint": "PCol_4",
+        "x": 4.5,
+        "y": 2.0,
+        "w_mm": -1.357,
+        "q_kNm2": 26.61
+      },
+      {
+        "label": "col_3 (1.5, 4.0)",
+        "joint": "PCol_2",
+        "x": 1.5,
+        "y": 4.0,
+        "w_mm": -1.587,
+        "q_kNm2": 31.13
+      },
+      {
+        "label": "col_4 (4.5, 4.0)",
+        "joint": "PCol_5",
+        "x": 4.5,
+        "y": 4.0,
+        "w_mm": -1.587,
+        "q_kNm2": 31.13
+      },
+      {
+        "label": "col_5 (1.5, 6.0)",
+        "joint": "PCol_3",
+        "x": 1.5,
+        "y": 6.0,
+        "w_mm": -1.357,
+        "q_kNm2": 26.61
+      },
+      {
+        "label": "col_6 (4.5, 6.0)",
+        "joint": "PCol_6",
+        "x": 4.5,
+        "y": 6.0,
+        "w_mm": -1.357,
+        "q_kNm2": 26.61
+      },
+      {
+        "label": "entre col 1-2 (3.0, 2.0)",
+        "joint": "59",
+        "x": 3.0,
+        "y": 2.0,
+        "w_mm": -1.324,
+        "q_kNm2": 25.97
+      },
+      {
+        "label": "entre col 3-4 (3.0, 4.0)",
+        "joint": "111",
+        "x": 3.0,
+        "y": 4.0,
+        "w_mm": -1.553,
+        "q_kNm2": 30.46
+      },
+      {
+        "label": "entre col 5-6 (3.0, 6.0)",
+        "joint": "163",
+        "x": 3.0,
+        "y": 6.0,
+        "w_mm": -1.324,
+        "q_kNm2": 25.97
+      },
+      {
+        "label": "entre col 1-3 (1.5, 3.0)",
+        "joint": "82",
+        "x": 1.5,
+        "y": 3.0,
+        "w_mm": -1.497,
+        "q_kNm2": 29.36
+      },
+      {
+        "label": "entre col 3-5 (1.5, 5.0)",
+        "joint": "134",
+        "x": 1.5,
+        "y": 5.0,
+        "w_mm": -1.497,
+        "q_kNm2": 29.36
+      },
+      {
+        "label": "centro losa (3.0, 4.0)",
+        "joint": "111",
+        "x": 3.0,
+        "y": 4.0,
+        "w_mm": -1.553,
+        "q_kNm2": 30.46
+      },
+      {
+        "label": "mid-borde (3.0, 0)",
+        "joint": "13",
+        "x": 3.0,
+        "y": 0.0,
+        "w_mm": -0.766,
+        "q_kNm2": 15.02
+      }
+    ]
+  }
+}
