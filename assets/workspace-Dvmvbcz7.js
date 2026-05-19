@@ -15,7 +15,7 @@ import { z as Ko, __tla as __tla_3 } from "./zapataVigaAmarre-BZNRA5jo.js";
 import { z as Yo, __tla as __tla_4 } from "./zapataAislada-CarUEIoM.js";
 import { z as Wo, __tla as __tla_5 } from "./zapataAisladaValidacion-CQPQfD2d.js";
 import { s as Xo, __tla as __tla_6 } from "./safeBenchLosa-QbFveoW5.js";
-import { s as Zo, __tla as __tla_7 } from "./safeBenchViga-CBaJTrlz.js";
+import { s as Zo, __tla as __tla_7 } from "./safeBenchViga-D7I0O0FZ.js";
 import { s as Jo, __tla as __tla_8 } from "./safeBenchCombinada-6cAZBM90.js";
 import { s as Qo, __tla as __tla_9 } from "./safeBenchConectada-Tl9FR4IO.js";
 import { s as ea, __tla as __tla_10 } from "./safeBenchComparativa-BgStXwKz.js";
