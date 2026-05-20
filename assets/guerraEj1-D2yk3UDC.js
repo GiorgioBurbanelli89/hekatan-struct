@@ -254,7 +254,7 @@ let __tla = Promise.all([
       };
       const W = /* @__PURE__ */ new Map(), $ = /* @__PURE__ */ new Map(), j = /* @__PURE__ */ new Map(), B = /* @__PURE__ */ new Map(), C = /* @__PURE__ */ new Map();
       x.forEach((a, n) => {
-        W.set(n, a.map((c) => f * S.nodeResults[c].w));
+        W.set(n, a.map((c) => -Math.abs(f * S.nodeResults[c].w)));
         const e = S.elementResults[n];
         $.set(n, [
           e.Mxx,
