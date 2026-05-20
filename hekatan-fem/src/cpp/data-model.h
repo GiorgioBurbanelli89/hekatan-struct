@@ -42,6 +42,12 @@ struct ElementInputs
     // sin crear elementos distintos.
     std::map<int, double> membraneModifiers;
     std::map<int, double> bendingModifiers;
+    // Plate formulation switch (per shell element):
+    //   0 = Mindlin-Reissner (Shell-Thick, DSE Wilson Ch10)        [default]
+    //   1 = MZC Kirchhoff    (Shell-Thin,  DKE Wilson Ch10 / ETABS Shell-Thin)
+    // Para Mesa Torsión (t/L=0.017, t=0.10m sobre slab 6m) el Mindlin
+    // sufre shear locking severo; el MZC Kirchhoff matchea ETABS Shell-Thin <1.5%.
+    std::map<int, int> plateFormulations;
 };
 
 struct NodeInputs

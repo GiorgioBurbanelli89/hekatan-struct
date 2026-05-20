@@ -22,8 +22,14 @@ Eigen::MatrixXd getLocalStiffnessMatrixInterface(
     const ElementInputs &elementInputs,
     int index);
 
-// Shell Q4 (4-node) for shear walls — defined in shellQ4.cpp
+// Shell Q4 (4-node) Mindlin-Reissner = ETABS Shell-Thick (DSE Wilson Ch10) — shellQ4.cpp
 Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
+    const std::vector<Node> &nodes,
+    const ElementInputs &elementInputs,
+    int index);
+
+// Shell Thin (4-node) MZC Kirchhoff = ETABS Shell-Thin (DKE Wilson Ch10) — shellThin.cpp
+Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
     const std::vector<Node> &nodes,
     const ElementInputs &elementInputs,
     int index);
@@ -126,6 +132,13 @@ Eigen::MatrixXd getLocalStiffnessMatrix(
         auto itT = elementInputs.thicknesses.find(elementIndex);
         if (itT != elementInputs.thicknesses.end() && itT->second > 1e-12)
         {
+            // Dispatch entre Shell-Thick (Mindlin) y Shell-Thin (Kirchhoff MZC)
+            // según plateFormulations[idx]: 0=Mindlin, 1=Kirchhoff Shell-Thin
+            auto itPF = elementInputs.plateFormulations.find(elementIndex);
+            if (itPF != elementInputs.plateFormulations.end() && itPF->second == 1)
+            {
+                return getLocalStiffnessMatrixShellThin(elementNodes, elementInputs, elementIndex);
+            }
             return getLocalStiffnessMatrixShellQ4(elementNodes, elementInputs, elementIndex);
         }
         return getLocalStiffnessMatrixInterface(elementNodes, elementInputs, elementIndex);
