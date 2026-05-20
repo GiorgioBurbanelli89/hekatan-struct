@@ -83,8 +83,8 @@ function tSectionProps(B: number, t_zap: number, b_viga: number, h_viga: number)
 
 export const vigaCimGuerraEj7Tinv: ExampleDef = {
   id: "viga-cim-guerra-ej7-tinv",
-  name: "Viga Cimentación · Ej.7 Guerra (T invertida + pedestales)",
-  category: "Cimentaciones",
+  name: "Ej.7 · Viga Cimentación (T invertida + pedestales)",
+  category: "📚 Libros · SAFE - Marcelo Guerra",
   defaultShellResult: "displacementZ",
   availableShellResults: ["displacementZ"],
   hasModal: false,

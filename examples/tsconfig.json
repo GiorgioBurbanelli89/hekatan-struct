@@ -3,6 +3,7 @@
     "target": "ES2015",
     "module": "ES2015",
     "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
     "noEmit": true
   }
 }

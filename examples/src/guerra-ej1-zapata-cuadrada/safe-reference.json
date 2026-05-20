@@ -1,0 +1,39 @@
+{
+  "_meta": {
+    "source": "Guerra MDI - 'Cimentaciones Sismo Resistentes utilizando SAFE' (2013), pag. 17-42",
+    "exercise": "EJERCICIO 1 — Zapata Aislada Cuadrada",
+    "status": "manual_from_book",
+    "_note": "Valores extraidos directamente del libro. Cuando se corra ej1_zapata_cuadrada.py contra SAFE 20, ese script regenera este JSON con los valores actuales del solver SAFE."
+  },
+  "inputs": {
+    "B_m": 3.45,
+    "L_m": 3.45,
+    "h_m": 0.45,
+    "col_size_m": 0.45,
+    "fc_kgcm2": 280,
+    "E_kgcm2": 235938,
+    "nu": 0.20,
+    "ks_tm3": 2920,
+    "q_adm_tm2": 14.0,
+    "P_dead_tonf": 91.0, "M_dead_tonfm": 12.0,
+    "P_live_tonf": 30.0, "M_live_tonfm": 5.0,
+    "combo_servicio": "1.0*D + 1.0*L",
+    "combo_ultimo": "1.4*D + 1.7*L"
+  },
+  "manual_libro_pag_19": {
+    "P_servicio_tonf": 121.0,
+    "M_servicio_tonfm": 17.0,
+    "sigma_max_tm2": 13.94,
+    "sigma_min_tm2": 8.28
+  },
+  "safe_libro_pag_36": {
+    "sigma_max_servicio_tm2": 13.163,
+    "_note": "Único valor numerico que el libro reporta directamente del modelo SAFE para servicio. σ_min no se imprime en la pag. 36."
+  },
+  "manual_libro_pag_20": {
+    "P_ultimo_tonf": 178.40,
+    "M_ultimo_tonfm": 25.30,
+    "sigma_max_ult_tm2": 20.61,
+    "sigma_min_ult_tm2": 12.16
+  }
+}

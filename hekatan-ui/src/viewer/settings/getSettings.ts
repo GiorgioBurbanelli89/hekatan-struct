@@ -54,6 +54,10 @@ export type Settings = {
   elementsIndexes: State<boolean>;
   orientations: State<boolean>;
   sections: State<boolean>;
+  /** Toggle independiente para los chips de texto "30x50" / "40x40" que se dibujan
+   *  sobre las secciones celestes. Si false, las formas siguen visibles pero los
+   *  textos se ocultan. Solo aplica si `sections` también es true. */
+  sectionLabels: State<boolean>;
   secColumns: State<boolean>;
   secBeams: State<boolean>;
   secFloor: State<number>;  // -1=all, 0=piso1, 1=piso2...
@@ -106,6 +110,7 @@ export type SettingsObj = {
   elementsIndexes?: boolean;
   orientations?: boolean;
   sections?: boolean;
+  sectionLabels?: boolean;
   secColumns?: boolean;
   secBeams?: boolean;
   secFloor?: number;
@@ -280,6 +285,9 @@ export function getSettings(
     pane.addBinding(settings.sections, "val", {
       label: "Sections",
     });
+    pane.addBinding(settings.sectionLabels, "val", {
+      label: "  Sec. Labels (30x50)",
+    });
     pane.addBinding(settings.secColumns, "val", {
       label: "  Sec. Columnas",
     });
@@ -444,6 +452,7 @@ export function getDefaultSettings(settingsObj: SettingsObj): Settings {
     elementsIndexes: van.state(settingsObj?.elementsIndexes ?? false),
     orientations: van.state(settingsObj?.orientations ?? false),
     sections: van.state(settingsObj?.sections ?? true),
+    sectionLabels: van.state(settingsObj?.sectionLabels ?? true),
     secColumns: van.state(settingsObj?.secColumns ?? true),
     secBeams: van.state(settingsObj?.secBeams ?? true),
     secFloor: van.state(settingsObj?.secFloor ?? -1),

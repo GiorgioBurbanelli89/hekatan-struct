@@ -238,6 +238,7 @@ import { safeBenchCombinada } from "../safe-bench-zapata-combinada/safeBenchComb
 import { safeBenchConectada } from "../safe-bench-zapata-conectada/safeBenchConectada";
 import { safeBenchComparativa } from "../safe-bench-zapata-comparativa/safeBenchComparativa";
 // ── Benchmarks libro Marcelo Guerra Avendaño MDI ──
+import { guerraEj1ZapataCuadrada } from "../guerra-ej1-zapata-cuadrada/guerraEj1";
 import { vigaCimGuerraEj7 } from "../viga-cim-guerra-ej7/vigaCimGuerra";
 import { vigaCimGuerraEj7Tinv } from "../viga-cim-guerra-ej7-tinv/vigaCimGuerraTinv";
 import { edificioConLosa } from "../edificio-con-losa/edificioConLosa";
@@ -325,7 +326,8 @@ export const examplesRegistry: ExampleDef[] = [
   safeBenchCombinada,
   safeBenchConectada,
   safeBenchComparativa,
-  // Libro Guerra MDI
+  // Libro Guerra MDI — categoría "📚 Libros · SAFE - Marcelo Guerra"
+  guerraEj1ZapataCuadrada,
   vigaCimGuerraEj7,
   vigaCimGuerraEj7Tinv,
   // 🎯 Benchmarks por DOFs — agrupados por número de grados de libertad efectivos

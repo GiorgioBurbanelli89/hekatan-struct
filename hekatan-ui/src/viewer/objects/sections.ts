@@ -32,6 +32,12 @@ export function sections(
   derivedDisplayScale?: State<number>
 ): THREE.Group {
   const group = new THREE.Group();
+  // Sub-grupo dedicado solo a los chips de texto "30x50" / "40x40" — su visibilidad
+  // se gobierna independiente del resto del grupo (formas celestes) con
+  // `settings.sectionLabels`. Si `settings.sections=true` y `sectionLabels=false`,
+  // las formas se ven pero los textos no.
+  const labelsGroup = new THREE.Group();
+  group.add(labelsGroup);
 
   // ── Shape builders: return { fill: BufferGeometry, outline: BufferGeometry } ──
 
@@ -541,7 +547,8 @@ export function sections(
         group.add(line);
       }
 
-      // Label
+      // Label — va al sub-grupo `labelsGroup` para que su visibilidad sea
+      // independiente de las formas (ver settings.sectionLabels).
       const label = getSectionLabel(shape);
       if (label) {
         const steelTypes = ["I", "HSS", "CFT", "L", "2L", "C", "2C", "T", "pipe", "coldC"];
@@ -550,7 +557,7 @@ export function sections(
         text.position.set(mid[0], mid[1], mid[2]);
         const size = 0.05 * settings.gridSize.rawVal * 0.5;
         text.updateScale(size * (derivedDisplayScale?.rawVal ?? 1));
-        group.add(text);
+        labelsGroup.add(text);
       }
     });
   });
@@ -561,7 +568,7 @@ export function sections(
       derivedDisplayScale.val;
       if (!settings.sections.rawVal) return;
       const size = 0.05 * settings.gridSize.val * 0.5;
-      group.children.forEach((c) => {
+      labelsGroup.children.forEach((c) => {
         if (c instanceof Text) (c as Text).updateScale(size * derivedDisplayScale.rawVal);
       });
     });
@@ -569,6 +576,12 @@ export function sections(
 
   van.derive(() => {
     group.visible = settings.sections.val;
+  });
+  // Visibility independiente para los chips de texto. Notar que aunque
+  // sectionLabels esté en true, si sections=false el group entero está
+  // oculto, así que los labels también; eso es el comportamiento deseado.
+  van.derive(() => {
+    labelsGroup.visible = settings.sectionLabels.val;
   });
 
   return group;

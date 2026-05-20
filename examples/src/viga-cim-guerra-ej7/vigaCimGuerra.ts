@@ -50,8 +50,8 @@ function buildZapataWireframe(L: number, B: number, t: number, color: number = 0
 
 export const vigaCimGuerraEj7: ExampleDef = {
   id: "viga-cim-guerra-ej7",
-  name: "Viga Cimentación · Ej.7 Guerra (L=17.20m, 4 cols c/M)",
-  category: "Cimentaciones",
+  name: "Ej.7 · Viga Cimentación (L=17.20m, 4 cols c/M)",
+  category: "📚 Libros · SAFE - Marcelo Guerra",
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],
   hasModal: false,
