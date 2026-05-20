@@ -19,7 +19,7 @@ import { s as Zo, __tla as __tla_7 } from "./safeBenchViga-B1PsuD6h.js";
 import { s as Jo, __tla as __tla_8 } from "./safeBenchCombinada-LQpm60J3.js";
 import { s as Qo, __tla as __tla_9 } from "./safeBenchConectada-tyzdse9R.js";
 import { s as ea, __tla as __tla_10 } from "./safeBenchComparativa-CfcbLZfB.js";
-import { g as ta, __tla as __tla_11 } from "./guerraEj1-Bh_xXEBY.js";
+import { g as ta, __tla as __tla_11 } from "./guerraEj1-BDGPv52e.js";
 import { v as na, __tla as __tla_12 } from "./vigaCimGuerra-pdxc1H2S.js";
 import { v as oa, __tla as __tla_13 } from "./vigaCimGuerraTinv-CyhSQTPJ.js";
 import { e as aa, __tla as __tla_14 } from "./edificioConLosa-CIZZ2yx3.js";
