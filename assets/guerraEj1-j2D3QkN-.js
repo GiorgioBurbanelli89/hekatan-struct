@@ -1,6 +1,6 @@
-import { b as H, c as X, E as Y, L as $ } from "./Text-BmY6zyQy.js";
-import { p as G, __tla as __tla_0 } from "./didacticCpp-CLixJGob.js";
-let ae;
+import { b as C, c as X, E as Y, L as G } from "./Text-BmY6zyQy.js";
+import { p as Z, __tla as __tla_0 } from "./didacticCpp-CLixJGob.js";
+let ne;
 let __tla = Promise.all([
   (() => {
     try {
@@ -9,25 +9,29 @@ let __tla = Promise.all([
     }
   })()
 ]).then(async () => {
-  const Z = {
+  const q = {
+    sigma_max_servicio_tm2: 12.94,
+    sigma_min_servicio_tm2: 8.204
+  }, J = {
     sigma_max_tm2: 13.94,
     sigma_min_tm2: 8.28
-  }, q = {
+  }, K = {
     sigma_max_servicio_tm2: 13.163
-  }, J = {
-    manual_libro_pag_19: Z,
-    safe_libro_pag_36: q
-  }, O = 9.80665, K = 1 / O;
-  function Q(t, o, d, s) {
-    const m = new H(s, s, d), i = new X(new Y(m), new $({
+  }, Q = {
+    safe_api_live: q,
+    manual_libro_pag_19: J,
+    safe_libro_pag_36: K
+  }, H = 9.80665, W = 1 / H;
+  function U(t, i, d, s) {
+    const m = new C(s, s, d), o = new X(new Y(m), new G({
       color: 11579568,
       linewidth: 2
     }));
-    return i.position.set(t, o, d / 2), [
-      i
+    return o.position.set(t, i, d / 2), [
+      o
     ];
   }
-  ae = {
+  ne = {
     id: "guerra-ej1-zapata-cuadrada",
     name: "Ej.1 \xB7 Zapata Aislada Cuadrada (3.45\xD73.45\xD70.45)",
     category: "\u{1F4DA} Libros \xB7 SAFE - Marcelo Guerra",
@@ -139,95 +143,95 @@ let __tla = Promise.all([
         label: "Hcol viz (m)"
       }
     },
-    build(t, o) {
-      const d = t.B, s = t.B, m = t.h, i = Math.round(t.nx), x = Math.round(t.ny), c = i + 1, M = x + 1, _ = d / i, f = s / x, u = t.P_dead + t.P_live, b = t.M_dead + t.M_live, w = t.ks_tm3 * O, F = 14100 * Math.sqrt(t.fc_kgcm2) * 98.0665, N = 0.2, g = [];
-      for (let a = 0; a < M; ++a) for (let n = 0; n < c; ++n) g.push([
-        n * _,
-        a * f
+    build(t, i) {
+      const d = t.B, s = t.B, m = t.h, o = Math.round(t.nx), p = Math.round(t.ny), c = o + 1, x = p + 1, M = d / o, b = s / p, u = t.P_dead + t.P_live, y = t.M_dead + t.M_live, _ = t.ks_tm3 * H, A = 14100 * Math.sqrt(t.fc_kgcm2) * 98.0665, S = 0.2, g = [];
+      for (let a = 0; a < x; ++a) for (let n = 0; n < c; ++n) g.push([
+        n * M,
+        a * b
       ]);
-      const p = [];
-      for (let a = 0; a < x; ++a) for (let n = 0; n < i; ++n) {
+      const f = [];
+      for (let a = 0; a < p; ++a) for (let n = 0; n < o; ++n) {
         const e = a * c + n;
-        p.push([
+        f.push([
           e,
           e + 1,
           e + c + 1,
           e + c
         ]);
       }
-      const h = [];
-      for (let a = 0; a < M; ++a) for (let n = 0; n < c; ++n) {
-        const e = n === 0 || n === c - 1, l = a === 0 || a === M - 1, r = e && l ? 0.25 : e || l ? 0.5 : 1, k = _ * f * r, y = a * c + n;
-        if (h.push({
-          node: y,
+      const E = [];
+      for (let a = 0; a < x; ++a) for (let n = 0; n < c; ++n) {
+        const e = n === 0 || n === c - 1, l = a === 0 || a === x - 1, r = e && l ? 0.25 : e || l ? 0.5 : 1, F = M * b * r, v = a * c + n;
+        if (E.push({
+          node: v,
           dof: 0,
-          k: w * k
+          k: _ * F
         }), e && l) {
-          const v = 1e-6 * w * _ * f;
-          h.push({
-            node: y,
+          const k = 1e-6 * _ * M * b;
+          E.push({
+            node: v,
             dof: 1,
-            k: v
-          }), h.push({
-            node: y,
+            k
+          }), E.push({
+            node: v,
             dof: 2,
-            k: v
+            k
           });
         }
       }
-      const L = d / 2, S = s / 2, T = ((a, n) => {
+      const N = d / 2, I = s / 2, P = ((a, n) => {
         let e = -1, l = 1 / 0;
         for (let r = 0; r < g.length; ++r) {
-          const k = g[r][0] - a, y = g[r][1] - n, v = k * k + y * y;
-          v < l && (l = v, e = r);
+          const F = g[r][0] - a, v = g[r][1] - n, k = F * F + v * v;
+          k < l && (l = k, e = r);
         }
         return e;
-      })(L, S), R = [
+      })(N, I), O = [
         {
-          node: T,
+          node: P,
           dof: 0,
           value: -u
         },
         {
-          node: T,
+          node: P,
           dof: 2,
-          value: b
+          value: y
         }
-      ], E = G({
-        E: F,
-        nu: N,
+      ], w = Z({
+        E: A,
+        nu: S,
         thickness: m,
         theoryType: 0,
         bcType: "none",
         nodes: g,
-        elements: p,
+        elements: f,
         bcs: [],
-        pointLoads: R,
-        springs: h
-      }), C = g.map((a) => [
+        pointLoads: O,
+        springs: E
+      }), R = g.map((a) => [
         a[0],
         a[1],
         0
       ]);
-      o.nodes.val = C, o.elements.val = p, o.nodeInputs.val = {
+      i.nodes.val = R, i.elements.val = f, i.nodeInputs.val = {
         supports: /* @__PURE__ */ new Map(),
         loads: /* @__PURE__ */ new Map()
-      }, o.elementInputs.val = {
-        elasticities: new Map(p.map((a, n) => [
+      }, i.elementInputs.val = {
+        elasticities: new Map(f.map((a, n) => [
           n,
-          F
+          A
         ])),
-        poissonsRatios: new Map(p.map((a, n) => [
+        poissonsRatios: new Map(f.map((a, n) => [
           n,
-          N
+          S
         ])),
-        thicknesses: new Map(p.map((a, n) => [
+        thicknesses: new Map(f.map((a, n) => [
           n,
           m
         ]))
       };
-      const z = /* @__PURE__ */ new Map();
-      for (const a of E.nodeResults) z.set(a.node, [
+      const L = /* @__PURE__ */ new Map();
+      for (const a of w.nodeResults) L.set(a.node, [
         0,
         0,
         a.w,
@@ -235,15 +239,15 @@ let __tla = Promise.all([
         a.by,
         0
       ]);
-      o.deformOutputs.val = {
-        deformations: z,
+      i.deformOutputs.val = {
+        deformations: L,
         reactions: /* @__PURE__ */ new Map()
       };
-      const I = /* @__PURE__ */ new Map(), P = /* @__PURE__ */ new Map(), j = /* @__PURE__ */ new Map(), A = /* @__PURE__ */ new Map(), D = /* @__PURE__ */ new Map();
-      p.forEach((a, n) => {
-        I.set(n, a.map((r) => w * E.nodeResults[r].w));
-        const e = E.elementResults[n];
-        P.set(n, [
+      const T = /* @__PURE__ */ new Map(), z = /* @__PURE__ */ new Map(), j = /* @__PURE__ */ new Map(), D = /* @__PURE__ */ new Map(), $ = /* @__PURE__ */ new Map();
+      f.forEach((a, n) => {
+        T.set(n, a.map((r) => _ * w.nodeResults[r].w));
+        const e = w.elementResults[n];
+        z.set(n, [
           e.Mxx,
           e.Mxx,
           e.Mxx,
@@ -253,53 +257,57 @@ let __tla = Promise.all([
           e.Myy,
           e.Myy,
           e.Myy
-        ]), A.set(n, [
+        ]), D.set(n, [
           e.Mxy,
           e.Mxy,
           e.Mxy,
           e.Mxy
         ]);
         const l = Math.sqrt(e.Mxx ** 2 + e.Myy ** 2 - e.Mxx * e.Myy + 3 * e.Mxy ** 2);
-        D.set(n, [
+        $.set(n, [
           l,
           l,
           l,
           l
         ]);
-      }), o.analyzeOutputs.val = {
-        pressure: I,
-        bendingXX: P,
+      }), i.analyzeOutputs.val = {
+        pressure: T,
+        bendingXX: z,
         bendingYY: j,
-        bendingXY: A,
-        vonMises: D
+        bendingXY: D,
+        vonMises: $
       };
       const B = [];
-      B.push(...Q(L, S, t.h_col, t.col_size)), o.objects3D.val = B;
+      B.push(...U(N, I, t.h_col, t.col_size)), i.objects3D.val = B;
     },
-    computedLabels(t, o) {
-      var _a, _b, _c;
-      const d = o.analyzeOutputs.val.pressure;
+    computedLabels(t, i) {
+      var _a, _b, _c, _d, _e;
+      const d = i.analyzeOutputs.val.pressure;
       let s = -1 / 0, m = 1 / 0;
-      if (d) for (const f of d.values()) for (const u of f) {
-        const b = Math.abs(u) * K;
-        b > s && (s = b), b < m && (m = b);
+      if (d) for (const y of d.values()) for (const _ of y) {
+        const h = Math.abs(_) * W;
+        h > s && (s = h), h < m && (m = h);
       }
       s === -1 / 0 && (s = 0, m = 0);
-      const i = J, x = (_a = i == null ? void 0 : i.safe_libro_pag_36) == null ? void 0 : _a.sigma_max_servicio_tm2, c = (_b = i == null ? void 0 : i.manual_libro_pag_19) == null ? void 0 : _b.sigma_max_tm2, M = (_c = i == null ? void 0 : i.manual_libro_pag_19) == null ? void 0 : _c.sigma_min_tm2, _ = (f, u) => u === void 0 || u === 0 ? "\u2014" : `${((f - u) / u * 100).toFixed(2)} %`;
+      const o = Q, p = (_a = o == null ? void 0 : o.safe_api_live) == null ? void 0 : _a.sigma_max_servicio_tm2, c = (_b = o == null ? void 0 : o.safe_api_live) == null ? void 0 : _b.sigma_min_servicio_tm2, x = (_c = o == null ? void 0 : o.safe_libro_pag_36) == null ? void 0 : _c.sigma_max_servicio_tm2, M = (_d = o == null ? void 0 : o.manual_libro_pag_19) == null ? void 0 : _d.sigma_max_tm2, b = (_e = o == null ? void 0 : o.manual_libro_pag_19) == null ? void 0 : _e.sigma_min_tm2, u = (y, _) => _ === void 0 || _ === 0 ? "\u2014" : `${((y - _) / _ * 100).toFixed(2)} %`;
       return {
         "\u{1F4CA} \u03C3_max Hekatan": `${s.toFixed(3)} t/m\xB2`,
+        "\u{1F7E2} \u03C3_max SAFE API (live)": `${p.toFixed(3)} t/m\xB2`,
         "\u{1F4DA} \u03C3_max SAFE (libro p.36)": `${x.toFixed(3)} t/m\xB2`,
-        "\u{1F4D8} \u03C3_max manual (libro p.19)": `${c.toFixed(3)} t/m\xB2`,
-        "\u0394 Hekatan vs SAFE": _(s, x),
-        "\u0394 Hekatan vs manual": _(s, c),
+        "\u{1F4D8} \u03C3_max manual (libro p.19)": `${M.toFixed(3)} t/m\xB2`,
+        "\u0394 Hekatan vs SAFE API": u(s, p),
+        "\u0394 Hekatan vs SAFE libro": u(s, x),
+        "\u0394 Hekatan vs manual": u(s, M),
         "\u{1F4CA} \u03C3_min Hekatan": `${m.toFixed(3)} t/m\xB2`,
-        "\u{1F4D8} \u03C3_min manual (libro p.19)": `${M.toFixed(3)} t/m\xB2`,
-        "\u0394 \u03C3_min vs manual": _(m, M)
+        "\u{1F7E2} \u03C3_min SAFE API (live)": `${c.toFixed(3)} t/m\xB2`,
+        "\u{1F4D8} \u03C3_min manual (libro p.19)": `${b.toFixed(3)} t/m\xB2`,
+        "\u0394 \u03C3_min vs SAFE API": u(m, c),
+        "\u0394 \u03C3_min vs manual": u(m, b)
       };
     }
   };
 });
 export {
   __tla,
-  ae as g
+  ne as g
 };
