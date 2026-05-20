@@ -1,6 +1,6 @@
 {
   "_meta": {
-    "generated_utc": "2026-05-20T16:33:10.351667Z",
+    "generated_utc": "2026-05-20T17:04:31.005843Z",
     "tool": "SAFE 20 via Python API (CSI.SAFE.API.ETABSObject)",
     "script": "ej1_zapata_cuadrada.py",
     "safe_version": "20"
@@ -26,9 +26,9 @@
     "combo_ultimo": "1.4*Dead + 1.7*Live"
   },
   "results_safe": {
-    "sigma_max_servicio_tm2": 11.86,
-    "sigma_min_servicio_tm2": 7.124,
-    "uz_max_abs_m": -0.003999,
+    "sigma_max_servicio_tm2": 12.907,
+    "sigma_min_servicio_tm2": 8.168,
+    "uz_max_abs_m": -0.004382,
     "n_soil_rows": 144,
     "n_disp_rows": 20,
     "n_slab_rows": 0

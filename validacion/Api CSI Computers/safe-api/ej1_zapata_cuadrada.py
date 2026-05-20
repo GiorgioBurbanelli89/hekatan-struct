@@ -193,8 +193,8 @@ def build_model_from_api(sap):
     # ---- 2) Slab section MAT45 (Mat foundation, Shell-Thin) ----------------
     PA = cPropArea(sap.PropArea)
     SLAB = "MAT45"
-    _try("PropArea.SetSlab(MAT45, Mat, ShellThin, h=0.45)",
-         lambda: PA.SetSlab(SLAB, eSlabType.Mat, eShellType.ShellThin, MAT, H_FOOTING, -1, "", ""))
+    _try("PropArea.SetSlab(MAT45, Mat, ShellThick, h=0.45)",
+         lambda: PA.SetSlab(SLAB, eSlabType.Mat, eShellType.ShellThick, MAT, H_FOOTING, -1, "", ""))
 
     # ---- 3) Area object: rectangulo 3.45x3.45 a z=0 ------------------------
     AO = cAreaObj(sap.AreaObj)

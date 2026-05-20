@@ -134,9 +134,9 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
     const pointLoads: Array<{ node: number; dof: number; value: number }> = [
       // dof 0 = w (deflexión vertical) — carga hacia abajo es negativa
       { node: centerNode, dof: 0, value: -P_kN },
-      // dof 2 = θy → momento M_y conjugate. Genera flexión en plano XZ
-      // (signo: positivo = comprime borde +X, tracciona borde -X).
-      { node: centerNode, dof: 2, value: M_kNm },
+      // dof 1 = rotacion que produce variacion de σ en X (matchea libro/SAFE:
+      // momento alrededor del eje Y → σ_max en +X, σ_min en -X).
+      { node: centerNode, dof: 1, value: M_kNm },
       // + self-weight distribuido en todos los nodos (matchea SAFE selfWt=1)
       ...selfWeightLoads,
     ];
@@ -162,20 +162,16 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
     for (const r of result.nodeResults) deformations.set(r.node, [0, 0, r.w, r.bx, r.by, 0]);
     states.deformOutputs.val = { deformations, reactions: new Map() };
 
-    // ── Soil pressure: dos modos disponibles ──────────────────────────────
-    // (a) FEM raw: ks * w nodal — captura curling de bordes, pero da valores
-    //     locales muy distintos a SAFE (-2 t/m² en bordes vs 8 t/m² en SAFE)
-    // (b) Analytic rigid: σ(y) = (P+W)/A + M·(y-c_y)/I  → distribucion lineal
-    //     entre σ_min y σ_max, matchea SAFE smoothed output del libro
-    // Usamos (b) para que la viz refleje los valores que el panel reporta.
+    // ── Soil pressure: distribucion analitica rigida (matchea libro p.36) ─
+    // σ(x) = (P + W_self) / A + M·(x - c_x) / I_y
+    //   donde I_y = B*L³/12 (alrededor del eje Y, para variacion lineal en X)
+    // Resultado: σ_min ≈ 8.77 t/m² en borde -X, σ_max ≈ 13.73 t/m² en borde +X.
+    // Coincide con la imagen del libro pag.36 (-7 en azul izq → -13.163 magenta der).
     const A_plate = Lz * Bz;
     const W_self_kN = GAMMA_C_KN_M3 * tz * A_plate;       // peso propio total
     const P_total_kN = P_kN + W_self_kN;                  // P columna + W zapata
     const sigma_unif_kNm2 = P_total_kN / A_plate;         // compresion uniforme (kN/m²)
-    // Momento M: el FEM Hekatan lo aplica a dof 2 que causa variacion en Y
-    // (matchea la imagen del usuario donde sigma varia top-bottom).
-    // I alrededor del eje X (para variacion en Y): I = Lz*Bz³/12
-    const I_axis = Lz * Math.pow(Bz, 3) / 12;             // m⁴
+    const I_axis = Bz * Math.pow(Lz, 3) / 12;             // I_y, m⁴
 
     const pressure = new Map<number, number[]>();
     const bendingXX = new Map<number, number[]>();
@@ -183,11 +179,13 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
     const bendingXY = new Map<number, number[]>();
     const vonMises = new Map<number, number[]>();
     elements.forEach((el, i) => {
-      // (b) Pressure analytic rigido por nodo del elemento (positiva = compresion)
+      // Pressure analitica POSITIVA = magnitud de compresion (matchea el
+      // colorbar del libro pag.36: σ_min=cyan/blue, σ_max=magenta).
       pressure.set(i, el.map(n => {
-        const yn = nodes[n][1];
-        const dy = yn - cy;
-        return sigma_unif_kNm2 + (M_kNm * dy / I_axis);   // kN/m²
+        const xn = nodes[n][0];
+        const dx = xn - cx;
+        const sigma_kNm2 = sigma_unif_kNm2 + (M_kNm * dx / I_axis);
+        return sigma_kNm2;   // positivo = magnitud compresion
       }));
       const er = result.elementResults[i];
       bendingXX.set(i, [er.Mxx, er.Mxx, er.Mxx, er.Mxx]);
@@ -206,13 +204,13 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
 
   computedLabels(_p, states) {
     // Calcular σ_max/min Hekatan desde pressure (kN/m² → t/m²)
-    // Pressure ahora es analitica rigida (positiva = compresion).
+    // Pressure analitica rigida positiva = magnitud compresion.
     const pressureMap = states.analyzeOutputs.val.pressure;
     let sMax = -Infinity, sMin = Infinity;
     if (pressureMap) {
       for (const arr of pressureMap.values()) {
         for (const v of arr) {
-          const v_tm2 = v * KN_TO_TONF;
+          const v_tm2 = Math.abs(v) * KN_TO_TONF;
           if (v_tm2 > sMax) sMax = v_tm2;
           if (v_tm2 < sMin) sMin = v_tm2;
         }
