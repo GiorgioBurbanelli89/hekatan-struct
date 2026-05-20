@@ -88,8 +88,15 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
         elements.push([n0, n0 + 1, n0 + nxn + 1, n0 + nxn]);
       }
 
-    // ── Resortes Winkler (kᵢ = ks·A_trib) ─────────────────────────────────
+    // ── Self-weight de la zapata (h·γ_c uniforme) ─────────────────────────
+    // SAFE incluye automáticamente self-weight (SelfWtMult=1 default en Dead).
+    // Convertir γ_c=2.4 tonf/m³ → kN/m³.
+    const GAMMA_C_KN_M3 = 2.4 * TONF_TO_KN;        // kN/m³
+    const sw_pressure_kN_m2 = GAMMA_C_KN_M3 * tz;  // h·γ_c en kN/m²
+
+    // ── Resortes Winkler (kᵢ = ks·A_trib) + self-weight distribuido ───────
     const springs: Array<{ node: number; dof: number; k: number }> = [];
+    const selfWeightLoads: Array<{ node: number; dof: number; value: number }> = [];
     for (let j = 0; j < nyn; ++j)
       for (let i = 0; i < nxn; ++i) {
         const onEdgeI = (i === 0 || i === nxn - 1);
@@ -98,6 +105,8 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
         const A_trib = dx * dy * factor;
         const nodeIdx = j * nxn + i;
         springs.push({ node: nodeIdx, dof: 0, k: ks_kNm3 * A_trib });
+        // Self-weight nodal = pressure · A_trib (negativo = downward)
+        selfWeightLoads.push({ node: nodeIdx, dof: 0, value: -sw_pressure_kN_m2 * A_trib });
         if (onEdgeI && onEdgeJ) {
           const k_theta = 1e-6 * ks_kNm3 * dx * dy;
           springs.push({ node: nodeIdx, dof: 1, k: k_theta });
@@ -125,6 +134,8 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
       // dof 2 = θy → momento M_y conjugate. Genera flexión en plano XZ
       // (signo: positivo = comprime borde +X, tracciona borde -X).
       { node: centerNode, dof: 2, value: M_kNm },
+      // + self-weight distribuido en todos los nodos (matchea SAFE selfWt=1)
+      ...selfWeightLoads,
     ];
 
     // ── Solve ──────────────────────────────────────────────────────────────
@@ -189,8 +200,9 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
     if (sMax === -Infinity) { sMax = 0; sMin = 0; }
 
     const ref = safeRef as any;
-    const sigmaApi   = ref?.safe_api_live?.sigma_max_servicio_tm2 as number | undefined;
-    const sigmaMinApi = ref?.safe_api_live?.sigma_min_servicio_tm2 as number | undefined;
+    const sigmaApiSW   = ref?.safe_api_live?.with_self_weight?.sigma_max_servicio_tm2 as number | undefined;
+    const sigmaMinApiSW = ref?.safe_api_live?.with_self_weight?.sigma_min_servicio_tm2 as number | undefined;
+    const sigmaApiNoSW = ref?.safe_api_live?.without_self_weight?.sigma_max_servicio_tm2 as number | undefined;
     const sigmaSafe  = ref?.safe_libro_pag_36?.sigma_max_servicio_tm2 as number | undefined;
     const sigmaManual = ref?.manual_libro_pag_19?.sigma_max_tm2 as number | undefined;
     const sigmaMinManual = ref?.manual_libro_pag_19?.sigma_min_tm2 as number | undefined;
@@ -199,17 +211,18 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
       (b === undefined || b === 0) ? "—" : `${((a - b) / b * 100).toFixed(2)} %`;
 
     return {
-      "📊 σ_max Hekatan":             `${sMax.toFixed(3)} t/m²`,
-      "🟢 σ_max SAFE API (live)":     sigmaApi !== undefined ? `${sigmaApi.toFixed(3)} t/m²` : "—",
+      "📊 σ_max Hekatan (con SW)":    `${sMax.toFixed(3)} t/m²`,
+      "🟢 σ_max SAFE API (con SW)":   sigmaApiSW !== undefined ? `${sigmaApiSW.toFixed(3)} t/m²` : "—",
+      "🟡 σ_max SAFE API (sin SW)":   sigmaApiNoSW !== undefined ? `${sigmaApiNoSW.toFixed(3)} t/m²` : "—",
       "📚 σ_max SAFE (libro p.36)":   sigmaSafe !== undefined ? `${sigmaSafe.toFixed(3)} t/m²` : "—",
       "📘 σ_max manual (libro p.19)": sigmaManual !== undefined ? `${sigmaManual.toFixed(3)} t/m²` : "—",
-      "Δ Hekatan vs SAFE API":        diffPct(sMax, sigmaApi),
+      "Δ Hekatan vs SAFE API":        diffPct(sMax, sigmaApiSW),
       "Δ Hekatan vs SAFE libro":      diffPct(sMax, sigmaSafe),
       "Δ Hekatan vs manual":          diffPct(sMax, sigmaManual),
       "📊 σ_min Hekatan":             `${sMin.toFixed(3)} t/m²`,
-      "🟢 σ_min SAFE API (live)":     sigmaMinApi !== undefined ? `${sigmaMinApi.toFixed(3)} t/m²` : "—",
+      "🟢 σ_min SAFE API (con SW)":   sigmaMinApiSW !== undefined ? `${sigmaMinApiSW.toFixed(3)} t/m²` : "—",
       "📘 σ_min manual (libro p.19)": sigmaMinManual !== undefined ? `${sigmaMinManual.toFixed(3)} t/m²` : "—",
-      "Δ σ_min vs SAFE API":          diffPct(sMin, sigmaMinApi),
+      "Δ σ_min vs SAFE API":          diffPct(sMin, sigmaMinApiSW),
       "Δ σ_min vs manual":            diffPct(sMin, sigmaMinManual),
     };
   },

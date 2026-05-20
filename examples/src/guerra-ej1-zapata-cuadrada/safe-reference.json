@@ -2,32 +2,35 @@
   "_meta": {
     "source": "Guerra MDI - 'Cimentaciones Sismo Resistentes utilizando SAFE' (2013), pag. 17-42",
     "exercise": "EJERCICIO 1 — Zapata Aislada Cuadrada",
-    "status": "safe_api_live + manual_from_book",
-    "_note": "Bloques disponibles: safe_api_live (SAFE 20 corrido localmente via pythonnet, ej1_zapata_cuadrada.py), manual_libro_pag_19 (formula clasica P/A ± Mc/I), safe_libro_pag_36 (valor que reporta el libro como salida SAFE)."
+    "status": "safe_api_live (2 escenarios self-weight) + manual_from_book",
+    "_finding": "La diff de ~1 t/m² entre Hekatan v1 (sin self-weight) y SAFE es EXACTAMENTE h·γ_c = 0.45·2.4 = 1.08 t/m² (verificado con SAFE selfWt=0 forzado). Hekatan ahora incluye self-weight para matchear SAFE default."
   },
   "inputs": {
-    "B_m": 3.45,
-    "L_m": 3.45,
-    "h_m": 0.45,
-    "col_size_m": 0.45,
-    "fc_kgcm2": 280,
-    "E_kgcm2": 235938,
-    "nu": 0.20,
-    "ks_tm3": 2920,
-    "q_adm_tm2": 14.0,
+    "B_m": 3.45, "L_m": 3.45, "h_m": 0.45, "col_size_m": 0.45,
+    "fc_kgcm2": 280, "E_kgcm2": 235938, "nu": 0.20,
+    "ks_tm3": 2920, "q_adm_tm2": 14.0,
+    "gamma_c_tm3": 2.4,
+    "self_weight_per_area_tm2": 1.08,
     "P_dead_tonf": 91.0, "M_dead_tonfm": 12.0,
     "P_live_tonf": 30.0, "M_live_tonfm": 5.0,
     "combo_servicio": "1.0*D + 1.0*L",
     "combo_ultimo": "1.4*D + 1.7*L"
   },
   "safe_api_live": {
-    "_generated_utc": "2026-05-20T16:22:51Z",
-    "_method": "BUILD_FROM_API via SAFEv1.dll + pythonnet (ver script ej1_zapata_cuadrada.py)",
-    "sigma_max_servicio_tm2": 12.94,
-    "sigma_min_servicio_tm2": 8.204,
-    "uz_max_abs_m": -0.004389,
-    "n_soil_rows": 144,
-    "n_disp_rows": 20
+    "_generated_utc": "2026-05-20T16:33:10Z",
+    "_method": "BUILD_FROM_API via SAFEv1.dll + pythonnet (ej1_zapata_cuadrada.py)",
+    "with_self_weight": {
+      "sigma_max_servicio_tm2": 12.94,
+      "sigma_min_servicio_tm2": 8.204,
+      "uz_max_abs_m": -0.004389,
+      "_note": "SelfWtMult=1 (default SAFE). Coincide con el libro p.36 (13.163) con -1.7% de error de discretizacion."
+    },
+    "without_self_weight": {
+      "sigma_max_servicio_tm2": 11.86,
+      "sigma_min_servicio_tm2": 7.124,
+      "uz_max_abs_m": -0.003999,
+      "_note": "SelfWtMult=0 forzado via SetSelfWTMultiplier. Caso teorico sin peso propio."
+    }
   },
   "manual_libro_pag_19": {
     "P_servicio_tonf": 121.0,
@@ -37,7 +40,7 @@
   },
   "safe_libro_pag_36": {
     "sigma_max_servicio_tm2": 13.163,
-    "_note": "Único valor numerico que el libro reporta directamente del modelo SAFE para servicio. σ_min no se imprime en la pag. 36."
+    "_note": "Único valor numerico que el libro reporta directamente del modelo SAFE para servicio (incluye self-weight default)."
   },
   "manual_libro_pag_20": {
     "P_ultimo_tonf": 178.40,

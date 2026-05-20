@@ -54,6 +54,14 @@ ATTACH_TO_RUNNING = False
 EXIT_ON_FINISH    = True
 RESULTS_JSON      = Path(__file__).parent / "results" / "ej1_zapata_cuadrada.json"
 
+# Multiplicador de peso propio para el load pattern Dead.
+#   0.0  -> NO incluye peso propio (matchea Hekatan-struct).
+#   1.0  -> incluye peso propio (default tipico SAFE). Esperado:
+#           Δσ ≈ h·γ_c = 0.45·2.4 = 1.08 t/m² extra uniforme.
+SELF_WEIGHT_MULT  = 1.0   # 1.0 = incluye peso propio (match libro p.36 SAFE)
+                          # 0.0 = sin peso propio (sigma_max ≈ 11.86)
+                          # Diff = h·γ_c = 0.45·2.4 = 1.08 t/m² (verificado).
+
 # ---- Geometria / cargas / suelo (datos del libro pag. 17, 31) --------------
 B          = 3.45       # m (lado de la zapata)
 H_FOOTING  = 0.45       # m (espesor)
@@ -240,11 +248,25 @@ def build_model_from_api(sap):
         pt_name = "COL_CTR"
 
     # ---- 6) Load patterns Dead, Live ---------------------------------------
+    # NOTA: SAFE NewBlank crea "Dead" por default con SelfWtMult=1.0. LP.Add
+    # con un name existente retorna ret=1 SIN modificarlo. Hay que forzar
+    # con SetSelfWTMultiplier() despues.
     LP = cLoadPatterns(sap.LoadPatterns)
-    _try("LoadPatterns.Add(Dead)",
-         lambda: LP.Add("Dead", eLoadPatternType.Dead, 0.0, True))
+    _try(f"LoadPatterns.Add(Dead, selfWt={SELF_WEIGHT_MULT})",
+         lambda: LP.Add("Dead", eLoadPatternType.Dead, SELF_WEIGHT_MULT, True))
+    _try(f"LoadPatterns.SetSelfWTMultiplier(Dead, {SELF_WEIGHT_MULT})",
+         lambda: LP.SetSelfWTMultiplier("Dead", SELF_WEIGHT_MULT))
     _try("LoadPatterns.Add(Live)",
          lambda: LP.Add("Live", eLoadPatternType.Live, 0.0, True))
+    _try("LoadPatterns.SetSelfWTMultiplier(Live, 0)",
+         lambda: LP.SetSelfWTMultiplier("Live", 0.0))
+    # Read-back para confirmar
+    try:
+        ret, mDead = LP.GetSelfWTMultiplier("Dead", 0.0)
+        ret, mLive = LP.GetSelfWTMultiplier("Live", 0.0)
+        print(f"  [API] Confirmado: Dead.selfWt={mDead}, Live.selfWt={mLive}")
+    except Exception as e:
+        print(f"  [API] GetSelfWTMultiplier read-back fail: {e}")
 
     # ---- 7) Cargas concentradas en el punto columna ------------------------
     # SetLoadForce(name, loadPat, value[6]={Fx,Fy,Fz,Mx,My,Mz}, replace, csys, itemType)
