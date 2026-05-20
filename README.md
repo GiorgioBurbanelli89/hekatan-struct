@@ -319,6 +319,8 @@ Every example exports an `ExampleDef` with:
 | `hekatan-fem` | FEM solver: `deform()`, `analyze()`, `modalAnalysis()`, `plateQ4Solve()`, `planeQ4Solve()`, C++/WASM bindings |
 | `hekatan-ui` | UI: `getViewer()` (Three.js + colormap + legend), `getToolbar()`; exports reactive `colorMapForceUnit`, `colorMapDispUnit` |
 | `examples` | Unified workspace + 25+ self-contained examples + `getCad3d.ts` legacy FEM Studio (being phased out) |
+| `awatif-py` | **Python port de awatif v2** — pure numpy/scipy, API 1:1 (deform/analyze/modal_analysis), PyVista viewer, Qt + trame GUIs, 8 tests pytest |
+| `hekatan-struct-py` | **Hekatan extensions sobre awatif-py** — selfweight automation, rigid diaphragm constraint, Cardinal Point offsets, MZC Kirchhoff plate, stiffness modifiers, Mesa Torsión paramétrica, iterator framework |
 
 ### C++ Solver (hekatan-fem/src/cpp/)
 
@@ -332,8 +334,9 @@ Every example exports an `ExampleDef` with:
 | `utils/getLocalStiffnessMatrix.cpp` | K_local 12×12 (Timoshenko) + Q4 shell |
 | `utils/getTransformationMatrix.cpp` | T matrix (3D rotation) |
 | `utils/getGlobalStiffnessMatrix.cpp` | Assembly with rigid offsets + releases |
-| `utils/shellQ4.cpp` | Shell Q4: membrane (Wilson incompatible modes) + Mindlin plate + drilling DOF |
-| `plate_q4/kirchhoff_q4.cpp` | Dedicated Mindlin / Kirchhoff plate solver |
+| `utils/shellQ4.cpp` | Shell Q4: membrane (Wilson incompatible modes) + Mindlin plate + drilling DOF — **= ETABS Shell-Thick (DSE Wilson Ch10)** |
+| `utils/shellThin.cpp` | **NUEVO: Shell Q4 Kirchhoff** = ETABS Shell-Thin (DKE Wilson Ch10), MZC plate bending puro, libre de shear locking. Validated <1.5% vs ETABS Mesa Torsión |
+| `plate_q4/kirchhoff_q4.cpp` | Dedicated Mindlin / Kirchhoff plate solver (legacy, separate API) |
 
 ### Pure-TS solvers (no WASM)
 
@@ -426,6 +429,40 @@ DOF → frames horizontales no transfieren carga). Ver el
 con análisis de causa raíz y workaround propuesto. Documentación API SAFE (con 8 gotchas críticos, incluyendo el bug silencioso de `SubModulus` que produce gap del 38% si se usa `SetAreaSpringProp(U3=ks)` ingenuamente): [`benchmarks/safe/README.md`](./benchmarks/safe/README.md).
 
 ¹ **Nota caso 5**: el modelo workspace `?t=safe-bench-viga-cimentacion` evolucionó al modelo compuesto realista (zapata corrida shell + viga frame + 4 pedestales frames), distinto al benchmark original de losa 8×1×0.50m pura. El benchmark `Δ +0.01%` se preserva en `/benchmarks/safe/viga-cimentacion/` (CLI standalone) y dejó de aplicar al workspace que muestra el modelo de viga de cimentación realista.
+
+### 🌀 Mesa de Torsión — validación ETABS 19.1 Shell-Thin (DKE Kirchhoff)
+
+Modelo CSI ETABS 19.1 (Gabriela/Seproinca 2020): pórtico 6×6 m × 4 m alto,
+4 columnas C40×40 pinned-base, 4 vigas V30×50 perimetrales, losa 10 cm ShellThin,
+diafragma rígido. Validado end-to-end vs ETABS API (modal + frame forces).
+
+**Discretización auto-confirmada vía API**: 25 Q4 (5×5), 24 LineElm (4 cols + 4×5 vigas), 40 nodos.
+
+| Componente | Hekatan (Shell-Thin DKE) | ETABS 19.1 | Δ% |
+|---|---|---|---|
+| T₁ lateral X | 0.343 s | 0.343 s | < 1% ✓ |
+| T₂ lateral Y | 0.343 s | 0.343 s | < 1% ✓ |
+| T₃ torsión Rz | 0.288 s | 0.288 s | < 1% ✓ |
+| Dead V₂/V₃ | 0.444 t | 0.450 t | **−1.3% ✓** |
+| Dead M₃ | 2.407 t·m | 2.430 t·m | −0.9% ✓ |
+| UDCon2 P axial | 24.11 t | 24.86 t | −3% ✓ |
+| UDCon2 M₃ | 15.49 t·m | 15.48 t·m | +0.05% ✓ |
+
+**Score promedio: 0.036 (3.6%) — 26/30 cantidades dentro de ±5%.**
+
+| Componente C++/WASM | Rol |
+|---|---|
+| `shellQ4.cpp` | Mindlin-Reissner = ETABS Shell-Thick (DSE Wilson Ch10) — default |
+| `shellThin.cpp` ← NUEVO | MZC Kirchhoff = ETABS Shell-Thin (DKE Wilson Ch10) |
+| `getLocalStiffnessMatrix.cpp` | Dispatcher según `ElementInputs.plateFormulations[idx]` (0/1) |
+| `plate_mzc.py` (`hekatan-struct-py`) | Reference implementation puro numpy — validada primero |
+
+**Live**:
+- Workspace: [`?t=mesa-torsion`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=mesa-torsion)
+- Standalone: [`/mesa-torsion/`](https://giorgioburbanelli89.github.io/hekatan-struct/mesa-torsion/)
+- Validación cruzada Python: [`hekatan-struct-py/examples/mesa_torsion_iterate.py`](./hekatan-struct-py/examples/mesa_torsion_iterate.py)
+- ETABS API scripts: [`validacion/Api CSI Computers/etabs-api/python-verificado/`](./validacion/Api%20CSI%20Computers/etabs-api/python-verificado/) (15_mesa_torsion.py + 16_mesa_torsion_frame_forces.py)
+- Reporte completo: [`validacion/Api CSI Computers/etabs-api/GUIA_API_ETABS.md`](./validacion/Api%20CSI%20Computers/etabs-api/GUIA_API_ETABS.md)
 
 ### Benchmarks libro Marcelo Guerra Avendaño MDI
 
