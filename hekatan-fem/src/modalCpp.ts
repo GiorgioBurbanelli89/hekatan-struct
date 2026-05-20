@@ -71,6 +71,15 @@ export function modalCpp(
   const poissons = processElementInput((elementInputs as any).poissonsRatios);
   const memMods = processElementInput((elementInputs as any).membraneModifiers);
   const bendMods = processElementInput((elementInputs as any).bendingModifiers);
+  // plateFormulations: Map<number, number> (0=Mindlin, 1=Kirchhoff Shell-Thin)
+  // Procesado manualmente (valores son INT, no double como processElementInput)
+  const plateFormMap = (elementInputs as any).plateFormulations as Map<number, number> | undefined;
+  const plateFormKeys = plateFormMap ? Array.from(plateFormMap.keys()) : [];
+  const plateFormValues = plateFormMap ? Array.from(plateFormMap.values()) : [];
+  const plateFormKeysPtr = allocate(plateFormKeys, Uint32Array, mod.HEAPU32);
+  gc.push(plateFormKeysPtr);
+  const plateFormValuesPtr = allocate(plateFormValues, Uint32Array, mod.HEAPU32);
+  gc.push(plateFormValuesPtr);
 
   // Output pointers
   const freqPtrOut = mod._malloc(4);
@@ -137,6 +146,10 @@ export function modalCpp(
     bendMods.keysPtr,
     bendMods.valuesPtr,
     bendMods.size,
+    // plateFormulations (Shell-Thin DKE Kirchhoff vs Shell-Thick DSE Mindlin)
+    plateFormKeysPtr,
+    plateFormValuesPtr,
+    plateFormKeys.length,
     // control
     numModes,
     // output pointers

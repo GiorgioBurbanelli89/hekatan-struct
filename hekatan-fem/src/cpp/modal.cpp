@@ -35,6 +35,8 @@ extern "C"
         int *poisson_keys_ptr, double *poisson_values_ptr, int num_poissons,
         int *memmod_keys_ptr, double *memmod_values_ptr, int num_memmods,
         int *bendmod_keys_ptr, double *bendmod_values_ptr, int num_bendmods,
+        // Plate formulation per shell: 0=Mindlin (Shell-Thick DSE), 1=Kirchhoff MZC (Shell-Thin DKE)
+        int *plateForm_keys_ptr, int *plateForm_values_ptr, int num_plateForm,
 
         // Control
         int num_modes, // number of modes to return (0 = all)
@@ -81,6 +83,7 @@ extern "C"
         elementInputs.poissonsRatios = parseMapFromFlat(poisson_keys_ptr, poisson_values_ptr, num_poissons);
         elementInputs.membraneModifiers = parseMapFromFlat(memmod_keys_ptr, memmod_values_ptr, num_memmods);
         elementInputs.bendingModifiers = parseMapFromFlat(bendmod_keys_ptr, bendmod_values_ptr, num_bendmods);
+        elementInputs.plateFormulations = parseMapIntFromFlat(plateForm_keys_ptr, plateForm_values_ptr, num_plateForm);
 
         // --- 2. Assemble K and M ---
         int dof = num_nodes * 6;
