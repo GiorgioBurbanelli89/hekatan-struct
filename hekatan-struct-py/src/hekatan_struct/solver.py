@@ -18,6 +18,10 @@ from .elements.frame import (
     frame_local_axes_csi, frame_stiffness_local, frame_T, rigid_arm_transform,
 )
 from .elements.shell import shell_q4_stiffness
+from .elements.plate_mzc import mzc_plate_stiffness, mzc_to_shell_q4_24
+
+# Global flag — usar MZC Kirchhoff (= ETABS Shell-Thin / DKE) en vez de Mindlin Q4 (= DSE)
+USE_KIRCHHOFF_MZC = False
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -70,7 +74,14 @@ def _assemble_K(
             E = element_inputs.elasticities[idx]
             nu = element_inputs.poissons_ratios.get(idx, 0.2)
             t = element_inputs.thicknesses[idx]
-            k_loc = shell_q4_stiffness(coords_xy, E, nu, t)
+            if USE_KIRCHHOFF_MZC:
+                # ETABS Shell-Thin = DKE Kirchhoff: MZC plate bending + Mindlin membrana
+                k_loc = shell_q4_stiffness(coords_xy, E, nu, t,
+                                            include_membrane=True, include_bending=False)
+                k_plate = mzc_plate_stiffness(coords_xy, E, nu, t)
+                k_loc = k_loc + mzc_to_shell_q4_24(k_plate)
+            else:
+                k_loc = shell_q4_stiffness(coords_xy, E, nu, t)
             dofs = []
             for n_idx in conn:
                 dofs += list(range(6*n_idx, 6*n_idx+6))

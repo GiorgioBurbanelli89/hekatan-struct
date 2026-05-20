@@ -263,6 +263,10 @@ def evaluate_variant(variant: dict) -> tuple[dict, float]:
 if __name__ == "__main__":
     import sys
     sys.stdout.reconfigure(encoding="utf-8")
+    # ETABS Shell-Thin = DKE Kirchhoff → activar MZC plate bending
+    import hekatan_struct.solver as solver
+    solver.USE_KIRCHHOFF_MZC = True
+    print("USE_KIRCHHOFF_MZC = True (ETABS Shell-Thin / DKE Wilson)")
     print("="*108)
     print("  Mesa Torsión — hekatan-struct-py vs ETABS Reference")
     print("  Iteración de variantes hasta minimizar score")
