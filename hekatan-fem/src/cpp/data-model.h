@@ -73,6 +73,7 @@ struct ModalOutputs
 std::map<int, double> parseMapFromFlat(int *keys, double *values, int count);
 std::map<int, std::vector<double>> parseMapVecFromFlat(int *keys, double *values, int count, int vecSize);
 std::map<int, std::vector<bool>> parseMapBoolVecFromFlat(int *keys, bool *values, int count, int vecSize);
+std::map<int, int> parseMapIntFromFlat(int *keys, int *values, int count);
 Eigen::VectorXd getForces(const NodeInputs &nodeInputs, int dof);
 std::vector<int> getFreeIndices(const NodeInputs &nodeInputs, int dof);
 std::vector<int> getZerosIndices(const Eigen::SparseMatrix<double> &matrix);

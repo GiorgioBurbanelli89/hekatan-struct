@@ -14,6 +14,16 @@ std::map<int, double> parseMapFromFlat(int *keys_ptr, double *values_ptr, int si
     return map_data;
 }
 
+std::map<int, int> parseMapIntFromFlat(int *keys_ptr, int *values_ptr, int size)
+{
+    std::map<int, int> map_data;
+    for (int i = 0; i < size; ++i)
+    {
+        map_data[keys_ptr[i]] = values_ptr[i];
+    }
+    return map_data;
+}
+
 std::map<int, std::vector<double>> parseMapVecFromFlat(int *keys_ptr, double *values_ptr, int size, int value_size)
 {
     std::map<int, std::vector<double>> map_data;

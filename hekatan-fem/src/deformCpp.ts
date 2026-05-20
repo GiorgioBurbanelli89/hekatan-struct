@@ -121,6 +121,18 @@ export function deformCpp(
   );
   gc.push(springsPtr);
 
+  // Plate formulation per shell: 0=Mindlin (Shell-Thick), 1=Kirchhoff MZC (Shell-Thin)
+  // Map<elemIdx, int>
+  const plateFormulations = (elementInputs as any).plateFormulations as
+    | Map<number, number> | undefined;
+  const plateFormKeys = plateFormulations ? Array.from(plateFormulations.keys()) : [];
+  const plateFormValues = plateFormulations ? Array.from(plateFormulations.values()) : [];
+  const plateFormKeysPtr = allocate(plateFormKeys, Uint32Array, mod.HEAPU32);
+  gc.push(plateFormKeysPtr);
+  // C++ espera int* — usamos HEAPU32 ya que valores son 0/1 (positivos)
+  const plateFormValuesPtr = allocate(plateFormValues, Uint32Array, mod.HEAPU32);
+  gc.push(plateFormValuesPtr);
+
   // 2- Call C++ Function
   mod._deform(
     nodesPtr,
@@ -173,6 +185,10 @@ export function deformCpp(
     // Springs (Winkler): flat [node, dof, k, ...] array
     springsPtr,
     springs ? springs.length : 0,
+    // Plate formulation switch (Shell-Thin vs Shell-Thick): map<elemIdx, int>
+    plateFormKeysPtr,
+    plateFormValuesPtr,
+    plateFormKeys.length,
     // Output pointers
     deformationsDataPtrOutPtr,
     deformationsSizeOutPtr,

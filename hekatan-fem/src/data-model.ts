@@ -66,6 +66,14 @@ export type ElementInputs = {
   partialFixitySprings?: Map<number, number[]>;
   insertionPoints?: Map<number, [number, number]>; // [dy, dz] offset from centroid in local coords
   sectionShapes?: Map<number, SectionShape>; // visual section data for rendering
+  /** Plate formulation per shell element:
+   *   0 (default) = Mindlin-Reissner = ETABS "Shell-Thick" (DSE Wilson Ch10)
+   *   1           = MZC Kirchhoff    = ETABS "Shell-Thin"  (DKE Wilson Ch10)
+   *
+   * Para Mesa Torsión (slab delgado t/L=0.017) usar 1 → matchea ETABS Shell-Thin
+   * dentro de < 1.5% en V/M/T (validado vs hekatan-struct-py).
+   */
+  plateFormulations?: Map<number, number>;
 };
 
 export type DeformOutputs = {

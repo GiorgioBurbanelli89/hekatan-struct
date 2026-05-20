@@ -38,6 +38,10 @@ extern "C"
         // Flat layout: [node0, dof0, k0, node1, dof1, k1, ...]  length = 3 * num_springs
         double *springs_flat_ptr, int num_springs,
 
+        // Plate formulation per shell element: 0=Mindlin (Shell-Thick DSE), 1=Kirchhoff MZC (Shell-Thin DKE)
+        // Map<elemIdx, int>
+        int *plateForm_keys_ptr, int *plateForm_values_ptr, int num_plateForm,
+
         // --- Output Pointers (to be allocated by C++ and filled) ---
         // These are pointers *to* pointers. C++ allocates memory using malloc
         // and writes the address of the allocated block into these pointers.
@@ -83,6 +87,7 @@ extern "C"
         // means Bernoulli (phi=0). As>0 explícito → usar ese valor.
         elementInputs.shearAreasY = parseMapFromFlat(shear_area_y_keys_ptr, shear_area_y_values_ptr, num_shear_area_y);
         elementInputs.shearAreasZ = parseMapFromFlat(shear_area_z_keys_ptr, shear_area_z_values_ptr, num_shear_area_z);
+        elementInputs.plateFormulations = parseMapIntFromFlat(plateForm_keys_ptr, plateForm_values_ptr, num_plateForm);
 
         // --- 2. Core FEA Calculation using Eigen ---
         int dof = num_nodes * 6; // Total degrees of freedom

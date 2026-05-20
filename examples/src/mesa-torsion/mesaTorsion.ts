@@ -175,12 +175,15 @@ export const mesaTorsion: ExampleDef = {
     const densities      = new Map<number, number>();
     const sections       = new Map<number, any>();
     const rigidOffsets   = new Map<number, [number, number]>();
+    // ETABS Mesa Torsión usa Shell-Thin (Kirchhoff DKE) — flag por shell
+    const plateFormulations = new Map<number, number>();
 
     for (let i = 0; i < shellCount; i++) {
       thicknesses.set(i, p.tLosa);
       elasticities.set(i, E_kNm2);
       poissons.set(i, p.nu);
       densities.set(i, RHO);
+      plateFormulations.set(i, 1);  // 1 = Shell-Thin Kirchhoff MZC (= ETABS Shell-Thin)
     }
     // Cols
     const Ac = p.bCol * p.hCol;
@@ -238,6 +241,8 @@ export const mesaTorsion: ExampleDef = {
       areas, momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy, torsionalConstants: J_t,
       thicknesses, densities, sectionShapes: sections,
       rigidOffsets: rigidOffsets.size > 0 ? rigidOffsets : undefined,
+      // ETABS Shell-Thin (DKE Kirchhoff) — matchea ETABS exacto < 1.5%
+      plateFormulations,
     };
 
     // ─── Helper para construir cargas por caso ────────────────────────
