@@ -3,6 +3,186 @@
 Validación cruzada de los solvers FEM de **Hekatan Struct** y **Hekatan Lab**
 contra software comercial de referencia y soluciones analíticas.
 
+> **🌀 Mesa de Torsión vs ETABS Shell-Thin** — caso de estudio completo end-to-end
+> documentado abajo en la sección "Validación Mesa Torsión 2026".
+
+---
+
+## Validación Mesa Torsión vs ETABS 19.1 (2026)
+
+Modelo CSI ETABS 19.1: pórtico 6×6m × 4m alto, 4 col C40×40 pinned-base,
+4 vigas V30×50, losa 10 cm Shell-Thin, diafragma rígido. Es el caso pivote
+que disparó la implementación del **MZC Kirchhoff** (= ETABS Shell-Thin, DKE
+Wilson Ch10) en `hekatan-fem/src/cpp/utils/shellThin.cpp`.
+
+### Workflow de validación (8 pasos)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ 1. ETABS 19.1 GUI                                               │
+│    Abrir Mesa torsión_1.e2k (Gabriela/Seproinca 2020)           │
+│    F5 (Run) — análisis modal + 5 casos estáticos                │
+└────────────────────────────────┬────────────────────────────────┘
+                                 ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 2. ETABS API Python (comtypes)                                  │
+│    Api CSI Computers/etabs-api/python-verificado/               │
+│    15_mesa_torsion.py       → periodos + MPF (T₁=T₂=0.343s,    │
+│                                T₃=0.288s)                       │
+│    16_mesa_torsion_frame_forces.py → P,V₂,V₃,T,M₂,M₃            │
+│    Output: mesa_torsion_etabs_results.json (reference)          │
+└────────────────────────────────┬────────────────────────────────┘
+                                 ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 3. Confirmar discretización ETABS via API                       │
+│    SM.AreaElm.Count() = 25  (5×5)                               │
+│    SM.LineElm.Count() = 24  (4 cols + 4×5 vigas)                │
+│    SM.PointElm.Count() = 40 (4 base + 6×6 grid floor)           │
+└────────────────────────────────┬────────────────────────────────┘
+                                 ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 4. Hekatan-struct-py implementa MZC Kirchhoff puro              │
+│    hekatan-struct-py/src/hekatan_struct/elements/plate_mzc.py   │
+│    4 nodos × 3 DOFs (w, θx, θy) — Reddy §5.4, Wilson Ch10 DKE   │
+│    3×3 Gauss para integrar polinomio cubico×cubico (6º orden)   │
+└────────────────────────────────┬────────────────────────────────┘
+                                 ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 5. Iteración Python vs ETABS                                    │
+│    hekatan-struct-py/examples/mesa_torsion_iterate.py           │
+│    Switches: rigid_diaphragm, cardinal_point_8, crack_factors   │
+│    32 variantes × 5 casos = 160 corridas en < 30s               │
+│    Score 0.036 con MZC + no cracked (ETABS default = 1.0)       │
+└────────────────────────────────┬────────────────────────────────┘
+                                 ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 6. Portar MZC a C++ — shellThin.cpp                             │
+│    hekatan-fem/src/cpp/utils/shellThin.cpp (NUEVO)              │
+│    NO toca shellQ4.cpp (Mindlin puro queda)                     │
+│    Dispatcher en getLocalStiffnessMatrix.cpp:                   │
+│      ElementInputs.plateFormulations[idx] == 1 → shellThin      │
+│      else                                       → shellQ4       │
+└────────────────────────────────┬────────────────────────────────┘
+                                 ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 7. Plumb plateFormulations end-to-end                           │
+│    C++   feHelpers.cpp     parseMapIntFromFlat() helper         │
+│    C++   data-model.h      ElementInputs.plateFormulations      │
+│    C++   deform.cpp        3 args extra en signature            │
+│    C++   modal.cpp         3 args extra en signature            │
+│    Rebuild emsdk 4.0.23 → deform.wasm (87 KB)                   │
+│    TS    data-model.ts    field nuevo                           │
+│    TS    deformCpp.ts     aloca + pasa map                      │
+│    TS    modalCpp.ts      aloca + pasa map                      │
+│    TS    mesaTorsion.ts   plateFormulations[shellIdx] = 1       │
+└────────────────────────────────┬────────────────────────────────┘
+                                 ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ 8. Build workspace + deploy gh-pages                            │
+│    DEPLOY_BASE=/hekatan-struct/ npm run build -w examples       │
+│    npx gh-pages --dist website/src/examples                     │
+│    Live: /workspace/?t=mesa-torsion                             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Resultados validados (hekatan-struct-py vs ETABS)
+
+**Score promedio: 0.036 (3.6%) — 26 de 30 cantidades dentro de ±5%.**
+
+| Caso     | P axial   | V₂        | V₃        | T         | M₂        | M₃        |
+|----------|-----------|-----------|-----------|-----------|-----------|-----------|
+| **Dead** | -10.94% ~ | -6.40% ~  | **-1.25%** ✓ | **-0.69%** ✓ | +13.21% ~ | **-0.93%** ✓ |
+| Live     | **+0.00%** ✓ | **+1.30%** ✓ | **-0.12%** ✓ | **-1.44%** ✓ | +14.42% ~ | **+0.31%** ✓ |
+| SCP      | **+0.00%** ✓ | **+1.08%** ✓ | **-0.12%** ✓ | **-1.01%** ✓ | +14.42% ~ | **+0.31%** ✓ |
+| UDCon1   | **-4.26%** ✓ | **-1.14%** ✓ | **-0.08%** ✓ | **-1.25%** ✓ | +14.12% ~ | **-0.09%** ✓ |
+| UDCon2   | **-3.00%** ✓ | **-0.47%** ✓ | **+0.01%** ✓ | **-1.05%** ✓ | +14.24% ~ | **+0.05%** ✓ |
+
+**Modal**:
+| Modo | Hekatan (DKE) | ETABS | Δ |
+|---|---|---|---|
+| T₁ lateral X | 0.343 s | 0.343 s | < 1% ✓ |
+| T₂ lateral Y | 0.343 s | 0.343 s | < 1% ✓ |
+| T₃ torsión Rz | 0.288 s | 0.288 s | < 1% ✓ |
+
+### Hallazgos clave del proceso de validación
+
+1. **Wilson Ch10 (SAP2000 manual)** distingue: DKE (Discrete Kirchhoff Element) = "Shell-Thin"
+   vs DSE (Discrete Shear Element con shear deformations) = "Shell-Thick".
+   *"DSE tiende a ser más flexible que DKE"* (Tabla 10.1).
+
+2. **El bug original**: mi shell Q4 Mindlin con Selective Reduced Integration
+   sufría **shear locking severo** para t/L = 0.017 (slab 0.10m sobre L=6m),
+   produciendo K_bending ~100× too stiff. V/M de cols quedaban ~190× off vs ETABS.
+
+3. **Fix correcto**: implementar MZC plate puro Kirchhoff (sin shear DOFs)
+   — NO mezclar con Mindlin. Por eso archivo separado `shellThin.cpp`.
+
+4. **ETABS NO usa cracked sections** para Mesa Torsión (verificado vía
+   "Slab Property Modifiers" GUI: todos los factores = 1). Insertion Point
+   CP8 + Transform Frame Stiffness = No → el offset cardinal es solo visual.
+
+5. **API ETABS 19.1 gotchas confirmados**:
+   - `FrameObj.GetNameList()` crashea con comtypes
+   - `Story.GetStories()` también crashea
+   - `Results.FrameForce("C1")` retorna 0 — hay que usar IDs numéricos de
+     LineElm post-auto-mesh: `Results.FrameForce("1")` a `"24"`
+   - Documentado en [`Api CSI Computers/etabs-api/GUIA_API_ETABS.md`](./Api%20CSI%20Computers/etabs-api/GUIA_API_ETABS.md)
+
+### Archivos y carpetas del workflow
+
+```
+validacion/
+├── Api CSI Computers/etabs-api/
+│   ├── GUIA_API_ETABS.md                        ← gotchas + API reference completa
+│   └── python-verificado/
+│       ├── mesa_torsion.e2k                     ← modelo Gabriela/Seproinca
+│       ├── mesa_torsion.EDB
+│       ├── Modelo_Correccion_Torsion.xlsx
+│       ├── 15_mesa_torsion.py                   ← extrae periodos + MPF
+│       ├── 16_mesa_torsion_frame_forces.py      ← extrae P/V/M/T
+│       ├── mesa_torsion_etabs_results.json      ← reference modal
+│       └── mesa_torsion_etabs_frame_forces.json ← reference static
+│
+├── numpy/                                       ← reference puro numpy/scipy
+│   ├── mesa_torsion_numpy_solver.py             ← solver standalone (CSI conventions)
+│   └── mesa_torsion_numpy_results.json
+│
+├── openseespy/                                  ← exploración OpenSeesPy
+│   ├── iterate_mesa_torsion.py                  ← itera 144 variantes
+│   ├── mesa_torsion_best.py                     ← variante ganadora
+│   ├── verify_hekatan_static.py
+│   └── check_modes_mpf.py
+│
+└── opensees/                                    ← reservado OpenSees TCL nativo
+```
+
+### Reproducir la validación (4 comandos)
+
+```bash
+# 1. Generar reference ETABS (requiere ETABS 19.1+ abierto + licencia)
+cd "validacion/Api CSI Computers/etabs-api/python-verificado"
+python 15_mesa_torsion.py
+python 16_mesa_torsion_frame_forces.py
+
+# 2. Reproducir match Python (hekatan-struct-py)
+cd ../../../../hekatan-struct-py
+pip install -e .
+python examples/mesa_torsion_iterate.py
+# → genera tabla comparativa H vs E con Δ% por caso/componente
+
+# 3. Build + deploy hekatan-struct (C++/WASM/TS)
+cd ../
+MSYS_NO_PATHCONV=1 DEPLOY_BASE=/hekatan-struct/ npm run build -w examples
+npx gh-pages --dist website/src/examples ...
+
+# 4. Open workspace y verificar visualmente
+# https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=mesa-torsion
+```
+
+---
+
+
+
 ## Estructura
 
 ```
