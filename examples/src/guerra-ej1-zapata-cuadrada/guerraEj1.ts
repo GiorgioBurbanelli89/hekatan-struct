@@ -40,9 +40,9 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
     "Zapata cuadrada 3.45×3.45 m, h=0.45 m, sobre Winkler ks=2920 t/m³",
     "Cargas: D=91tonf+12tonf·m, L=30tonf+5tonf·m (sobre columna 45×45cm)",
     "Combo servicio: 1.0D+1.0L → σ_max libro = 13.163 t/m² (SAFE) vs 13.94 t/m² (manual)",
-    "Pressure colormap: distribucion analitica rigida σ = (P+W)/A ± M·c/I",
-    "  → σ_max ≈ 12.94 t/m² en un borde, σ_min ≈ 8.20 t/m² en el opuesto",
-    "  Coincide con SAFE (Soil Pressures smoothed) y libro (formula clasica).",
+    "Pressure colormap: FEM raw (ks·w nodal) → patron CURVADO/radial como SAFE.",
+    "  La placa flexible concentra la presion cerca de la columna y decae.",
+    "  σ_max al lado +X (magenta, max compresion), σ_min al -X (cyan).",
     "Bending Mxx/Myy/Mxy: salida FEM cruda (plate Q4 Hekatan).",
   ],
   params: {
@@ -166,31 +166,19 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
     for (const r of result.nodeResults) deformations.set(r.node, [0, 0, r.w, r.bx, r.by, 0]);
     states.deformOutputs.val = { deformations, reactions: new Map() };
 
-    // ── Soil pressure: distribucion analitica rigida (matchea libro p.36) ─
-    // σ(x) = (P + W_self) / A + M·(x - c_x) / I_y
-    //   donde I_y = B*L³/12 (alrededor del eje Y, para variacion lineal en X)
-    // Resultado: σ_min ≈ 8.77 t/m² en borde -X, σ_max ≈ 13.73 t/m² en borde +X.
-    // Coincide con la imagen del libro pag.36 (-7 en azul izq → -13.163 magenta der).
-    const A_plate = Lz * Bz;
-    const W_self_kN = GAMMA_C_KN_M3 * tz * A_plate;       // peso propio total
-    const P_total_kN = P_kN + W_self_kN;                  // P columna + W zapata
-    const sigma_unif_kNm2 = P_total_kN / A_plate;         // compresion uniforme (kN/m²)
-    const I_axis = Bz * Math.pow(Lz, 3) / 12;             // I_y, m⁴
-
+    // ── Soil pressure: FEM raw (ks·w nodal). El patrón es CURVADO/RADIAL
+    // como SAFE/libro pag.36 — la flexibilidad de la placa concentra la
+    // presión cerca de la columna y la decae radialmente. Self-weight aplica
+    // compresión uniforme en todo el dominio (evita uplift en bordes libres).
+    // Convención: NEGATIVO = compresión (matchea SAP/libro: σ_max = -13.163).
     const pressure = new Map<number, number[]>();
     const bendingXX = new Map<number, number[]>();
     const bendingYY = new Map<number, number[]>();
     const bendingXY = new Map<number, number[]>();
     const vonMises = new Map<number, number[]>();
     elements.forEach((el, i) => {
-      // Pressure analitica POSITIVA = magnitud de compresion (matchea el
-      // colorbar del libro pag.36: σ_min=cyan/blue, σ_max=magenta).
-      pressure.set(i, el.map(n => {
-        const xn = nodes[n][0];
-        const dx = xn - cx;
-        const sigma_kNm2 = sigma_unif_kNm2 + (M_kNm * dx / I_axis);
-        return sigma_kNm2;   // positivo = magnitud compresion
-      }));
+      // ks * w = reacción del resorte. w<0 (placa baja) → ks·w<0 (compresion soil).
+      pressure.set(i, el.map(n => ks_kNm3 * result.nodeResults[n].w));
       const er = result.elementResults[i];
       bendingXX.set(i, [er.Mxx, er.Mxx, er.Mxx, er.Mxx]);
       bendingYY.set(i, [er.Myy, er.Myy, er.Myy, er.Myy]);
