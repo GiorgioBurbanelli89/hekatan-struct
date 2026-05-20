@@ -50,10 +50,12 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
     h:        { default: 0.45, min: 0.30, max: 0.80, step: 0.05, label: "h espesor (m)" },
     col_size: { default: 0.45, min: 0.20, max: 0.80, step: 0.05, label: "col lado (m)" },
     ks_tm3:   { default: 2920, min: 500, max: 8000, step: 50, label: "ks (tonf/m³)" },
-    P_dead:   { default: 91.0, min: 0, max: 300, step: 1, label: "P_D (tonf)", unitType: "force" },
-    M_dead:   { default: 12.0, min: -40, max: 40, step: 0.5, label: "M_D (tonf·m)", unitType: "moment" },
-    P_live:   { default: 30.0, min: 0, max: 200, step: 1, label: "P_L (tonf)", unitType: "force" },
-    M_live:   { default: 5.0,  min: -40, max: 40, step: 0.5, label: "M_L (tonf·m)", unitType: "moment" },
+    // P/M sin unitType: siempre interpretados como tonf/tonf·m (datos del libro).
+    // Conversion explicita a kN/kN·m en build() para evitar bug con forceUnit="kN".
+    P_dead:   { default: 91.0, min: 0, max: 300, step: 1, label: "P_D (tonf)" },
+    M_dead:   { default: 12.0, min: -40, max: 40, step: 0.5, label: "M_D (tonf·m)" },
+    P_live:   { default: 30.0, min: 0, max: 200, step: 1, label: "P_L (tonf)" },
+    M_live:   { default: 5.0,  min: -40, max: 40, step: 0.5, label: "M_L (tonf·m)" },
     fc_kgcm2: { default: 280,  min: 175, max: 600, step: 5, label: "f'c (kg/cm²)" },
     nx:       { default: 16,   min: 8, max: 32, step: 2, label: "nx mesh" },
     ny:       { default: 16,   min: 8, max: 32, step: 2, label: "ny mesh" },
@@ -66,10 +68,12 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
     const nxn = nx + 1, nyn = ny + 1;
     const dx = Lz / nx, dy = Bz / ny;
 
-    // Cargas combo servicio = 1.0*D + 1.0*L (los params están en SI base: kN, kN·m)
-    // Cuando unitType="force", el workspace ya convierte tonf→kN antes de llegar acá.
-    const P_kN = p.P_dead + p.P_live;
-    const M_kNm = p.M_dead + p.M_live;
+    // Cargas combo servicio = 1.0*D + 1.0*L
+    // p.P_dead/P_live/M_dead/M_live están SIEMPRE en tonf y tonf·m (no usan
+    // unitType para evitar el bug donde forceUnit="kN" hace que 91 → 91 kN
+    // en vez de 892 kN). Conversion explicita aca:
+    const P_kN = (p.P_dead + p.P_live) * TONF_TO_KN;
+    const M_kNm = (p.M_dead + p.M_live) * TONF_TO_KN;
     // ks: el slider está en tonf/m³ (sin unitType, queda raw). Convertir a kN/m³.
     const ks_kNm3 = p.ks_tm3 * TONF_TO_KN;
 
