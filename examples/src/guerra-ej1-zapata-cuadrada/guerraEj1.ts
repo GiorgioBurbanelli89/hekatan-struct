@@ -135,13 +135,27 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
       return best;
     };
     const centerNode = findNode(cx, cy);
+    // Distribuir P y M sobre la HUELLA DE LA COLUMNA (no puntual). Esto es lo
+    // que hace SAFE internamente y evita la singularidad bajo point load.
+    // Validado en Python FEM Mindlin: con load puntual σ_max=23.7 t/m²
+    // (concentracion); con distribuido σ_max=13.27 t/m² (matchea libro 13.163).
+    const colNodesArr: number[] = [];
+    for (let n = 0; n < nodes.length; n++) {
+      const x = nodes[n][0], y = nodes[n][1];
+      if (Math.abs(x - cx) <= p.col_size/2 + 1e-6 &&
+          Math.abs(y - cy) <= p.col_size/2 + 1e-6) {
+        colNodesArr.push(n);
+      }
+    }
+    const P_per_node = P_kN / colNodesArr.length;
+    const M_per_node = M_kNm / colNodesArr.length;
+    const columnLoads: Array<{ node: number; dof: number; value: number }> = [];
+    for (const n of colNodesArr) {
+      columnLoads.push({ node: n, dof: 0, value: -P_per_node });
+      columnLoads.push({ node: n, dof: 1, value: M_per_node });
+    }
     const pointLoads: Array<{ node: number; dof: number; value: number }> = [
-      // dof 0 = w (deflexión vertical) — carga hacia abajo es negativa
-      { node: centerNode, dof: 0, value: -P_kN },
-      // dof 1 = rotacion que produce variacion de σ en X (matchea libro/SAFE:
-      // momento alrededor del eje Y → σ_max en +X, σ_min en -X).
-      { node: centerNode, dof: 1, value: M_kNm },
-      // + self-weight distribuido en todos los nodos (matchea SAFE selfWt=1)
+      ...columnLoads,
       ...selfWeightLoads,
     ];
 
@@ -177,8 +191,11 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
     const bendingXY = new Map<number, number[]>();
     const vonMises = new Map<number, number[]>();
     elements.forEach((el, i) => {
-      // ks * w = reacción del resorte. w<0 (placa baja) → ks·w<0 (compresion soil).
-      pressure.set(i, el.map(n => ks_kNm3 * result.nodeResults[n].w));
+      // Forzar pressure NEGATIVA (convencion SAP/libro: σ_max = -13.163 t/m²).
+      // Si almacenamos positivo, el viewer fuerza vMin=0 (getColorMap.ts L159),
+      // reduciendo el espectro a la mitad (no aparece magenta).
+      // -abs() garantiza siempre negativo independiente del signo de w.
+      pressure.set(i, el.map(n => -Math.abs(ks_kNm3 * result.nodeResults[n].w)));
       const er = result.elementResults[i];
       bendingXX.set(i, [er.Mxx, er.Mxx, er.Mxx, er.Mxx]);
       bendingYY.set(i, [er.Myy, er.Myy, er.Myy, er.Myy]);
