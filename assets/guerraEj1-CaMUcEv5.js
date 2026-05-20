@@ -11,8 +11,8 @@ let __tla = Promise.all([
 ]).then(async () => {
   const ee = {
     with_self_weight: {
-      sigma_max_servicio_tm2: 12.94,
-      sigma_min_servicio_tm2: 8.204
+      sigma_max_servicio_tm2: 12.907,
+      sigma_min_servicio_tm2: 8.168
     },
     without_self_weight: {
       sigma_max_servicio_tm2: 11.86
