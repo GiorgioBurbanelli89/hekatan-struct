@@ -189,7 +189,9 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
     if (sMax === -Infinity) { sMax = 0; sMin = 0; }
 
     const ref = safeRef as any;
-    const sigmaSafe = ref?.safe_libro_pag_36?.sigma_max_servicio_tm2 as number | undefined;
+    const sigmaApi   = ref?.safe_api_live?.sigma_max_servicio_tm2 as number | undefined;
+    const sigmaMinApi = ref?.safe_api_live?.sigma_min_servicio_tm2 as number | undefined;
+    const sigmaSafe  = ref?.safe_libro_pag_36?.sigma_max_servicio_tm2 as number | undefined;
     const sigmaManual = ref?.manual_libro_pag_19?.sigma_max_tm2 as number | undefined;
     const sigmaMinManual = ref?.manual_libro_pag_19?.sigma_min_tm2 as number | undefined;
 
@@ -197,14 +199,18 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
       (b === undefined || b === 0) ? "—" : `${((a - b) / b * 100).toFixed(2)} %`;
 
     return {
-      "📊 σ_max Hekatan":          `${sMax.toFixed(3)} t/m²`,
-      "📚 σ_max SAFE (libro p.36)": sigmaSafe !== undefined ? `${sigmaSafe.toFixed(3)} t/m²` : "—",
+      "📊 σ_max Hekatan":             `${sMax.toFixed(3)} t/m²`,
+      "🟢 σ_max SAFE API (live)":     sigmaApi !== undefined ? `${sigmaApi.toFixed(3)} t/m²` : "—",
+      "📚 σ_max SAFE (libro p.36)":   sigmaSafe !== undefined ? `${sigmaSafe.toFixed(3)} t/m²` : "—",
       "📘 σ_max manual (libro p.19)": sigmaManual !== undefined ? `${sigmaManual.toFixed(3)} t/m²` : "—",
-      "Δ Hekatan vs SAFE":          diffPct(sMax, sigmaSafe),
-      "Δ Hekatan vs manual":        diffPct(sMax, sigmaManual),
-      "📊 σ_min Hekatan":          `${sMin.toFixed(3)} t/m²`,
+      "Δ Hekatan vs SAFE API":        diffPct(sMax, sigmaApi),
+      "Δ Hekatan vs SAFE libro":      diffPct(sMax, sigmaSafe),
+      "Δ Hekatan vs manual":          diffPct(sMax, sigmaManual),
+      "📊 σ_min Hekatan":             `${sMin.toFixed(3)} t/m²`,
+      "🟢 σ_min SAFE API (live)":     sigmaMinApi !== undefined ? `${sigmaMinApi.toFixed(3)} t/m²` : "—",
       "📘 σ_min manual (libro p.19)": sigmaMinManual !== undefined ? `${sigmaMinManual.toFixed(3)} t/m²` : "—",
-      "Δ σ_min vs manual":          diffPct(sMin, sigmaMinManual),
+      "Δ σ_min vs SAFE API":          diffPct(sMin, sigmaMinApi),
+      "Δ σ_min vs manual":            diffPct(sMin, sigmaMinManual),
     };
   },
 };

@@ -1,59 +1,63 @@
 """
-EJERCICIO 1 — Zapata Aislada Cuadrada (Guerra MDI, pag. 17-42)
+EJERCICIO 1 - Zapata Aislada Cuadrada (Guerra MDI, pag. 17-42)
+
+Script SELF-CONTAINED: arma el modelo SAFE 20 desde cero via API (pythonnet),
+corre el analisis, extrae σ_max/σ_min y Uz del combo CARGA VERTICAL, y dumpea
+results/ej1_zapata_cuadrada.json.
 
 Datos:
-  B = L = 3.45 m
-  h = 0.45 m
-  Columna: 0.45 x 0.45 m (centrada)
-  Material:  f'c = 280 kg/cm^2 -> E = 14100*sqrt(f'c) = 235938 kg/cm^2 ~ 23.13 GPa
-             gamma_c = 2.4 t/m^3, nu = 0.20
-  Suelo:     q_adm = 14 t/m^2, ks = 2920 t/m^3
-  Cargas (sobre columna):
+  B = L = 3.45 m, h = 0.45 m, columna 0.45x0.45 m centrada
+  f'c = 280 kg/cm^2  ->  E = 14100*sqrt(f'c) = 235938 kg/cm^2 (~ 23.13 GPa)
+  gamma_c = 2.4 t/m^3, nu = 0.20
+  Suelo: q_adm = 14 t/m^2, ks = 2920 t/m^3 (Winkler)
+  Cargas en columna (servicio):
      Dead: P=91 t, M=12 t.m
-     Live: P=30 t, M=5 t.m
+     Live: P=30 t, M=5  t.m
   Combos:
-     CARGA VERTICAL = 1.0*D + 1.0*L   (servicio)
-     CARGA ULTIMA   = 1.4*D + 1.7*L   (ultimo)
+     CARGA VERTICAL = 1.0*D + 1.0*L
+     CARGA ULTIMA   = 1.4*D + 1.7*L
 
-MODOS:
-  BUILD_FROM_API = True   -> arma el modelo desde cero via SAFE API (default)
-  BUILD_FROM_API = False  -> abre un .fdb pre-armado en MODEL_PATH
+REQUISITOS:
+  - SAFE 20 instalado (C:\\Program Files\\Computers and Structures\\SAFE 20\\)
+  - Python 3.10+ con pythonnet:  pip install pythonnet
 
-Salida: ./results/ej1_zapata_cuadrada.json
-        El JSON se consume desde el ejemplo hekatan-struct:
-          examples/src/guerra-ej1-zapata-cuadrada/safe-reference.json
-
-Uso:
+USO:
   python ej1_zapata_cuadrada.py
 """
-import os, sys
+import os, sys, json
+from datetime import datetime
 from pathlib import Path
+import clr
 
-sys.path.insert(0, str(Path(__file__).parent))
-from _common import (connect_safe, set_units_tonf_m, get_table, dump_results_json,
-                     cFile, cAnalyze, cSapModel)
-import clr  # noqa: F401
-# Re-importar simbolos SAFE directamente para acceder a clases adicionales que
-# _common no re-exporta explicitamente (cPropMaterial, eMatType, etc.).
+# ============================================================================
+# IMPORTS SAFE API (pythonnet -> .NET via SAFEv1.dll)
+# ============================================================================
+clr.AddReference("System.Runtime.InteropServices")
+from System.Runtime.InteropServices import Marshal  # noqa: F401
+
+SAFE_DLL = r"C:\Program Files\Computers and Structures\SAFE 20\SAFEv1.dll"
+clr.AddReference(SAFE_DLL)
 from SAFEv1 import (  # noqa: F401
+    cHelper, Helper, cOAPI, cSapModel, cFile, cAnalyze, cDatabaseTables,
     cPropMaterial, cPropArea, cAreaObj, cPointObj, cLoadPatterns, cCombo,
-    cPropAreaSpring, eMatType, eForce, eLength, eTemperature,
-    eSlabType, eShellType, eLoadPatternType, eItemType, eCNameType,
+    cPropAreaSpring,
+    eForce, eLength, eTemperature, eMatType, eSlabType, eShellType,
+    eLoadPatternType, eItemType, eCNameType,
 )
+
 
 # ============================================================================
 # CONFIG
 # ============================================================================
 MODEL_PATH        = r"C:\CSi_SAFE_API_Example\guerra_ej1.fdb"
-BUILD_FROM_API    = True   # True = arma todo el modelo via API (default)
 ATTACH_TO_RUNNING = False
 EXIT_ON_FINISH    = True
 RESULTS_JSON      = Path(__file__).parent / "results" / "ej1_zapata_cuadrada.json"
 
 # ---- Geometria / cargas / suelo (datos del libro pag. 17, 31) --------------
 B          = 3.45       # m (lado de la zapata)
-H_FOOTING  = 0.45       # m (espesor; el libro itera a 0.55 si falla punzonamiento)
-COL_SIZE   = 0.45       # m
+H_FOOTING  = 0.45       # m (espesor)
+COL_SIZE   = 0.45       # m (lado columna)
 FC_KGCM2   = 280        # kg/cm^2
 NU         = 0.20
 GAMMA_C    = 2.4        # tonf/m^3
@@ -62,20 +66,88 @@ P_DEAD, M_DEAD = 91.0, 12.0    # tonf, tonf.m
 P_LIVE, M_LIVE = 30.0, 5.0
 
 # E del concreto (ACI: E = 14100*sqrt(f'c) con f'c en kg/cm^2)
-E_KGCM2  = 14100.0 * (FC_KGCM2 ** 0.5)         # ~ 235938 kg/cm^2
-E_TM2    = E_KGCM2 * 10.0                       # 1 kgf/cm^2 = 10 tonf/m^2 -> ~ 2,359,000 tonf/m^2
-FC_TM2   = FC_KGCM2 * 10.0                      # f'c en tonf/m^2 para SetOConcrete
+E_KGCM2  = 14100.0 * (FC_KGCM2 ** 0.5)        # ~ 235938 kg/cm^2
+E_TM2    = E_KGCM2 * 10.0                      # 1 kgf/cm^2 = 10 tonf/m^2
+FC_TM2   = FC_KGCM2 * 10.0
 
 
 # ============================================================================
-# CONSTRUCCION VIA API
+# HELPERS
 # ============================================================================
+def connect_safe(attach=False):
+    """Arranca SAFE 20 o se attachea a una instancia abierta.
+    Returns: (SapModel, helper, mySAFEObject, started_new)."""
+    helper = cHelper(Helper())
+    if attach:
+        try:
+            mySAFE = cOAPI(helper.GetObject("CSI.SAFE.API.ETABSObject"))
+            return cSapModel(mySAFE.SapModel), helper, mySAFE, False
+        except Exception as e:
+            print(f"No hay instancia de SAFE corriendo ({e}). Iniciando una nueva...")
+    try:
+        mySAFE = cOAPI(helper.CreateObjectProgID("CSI.SAFE.API.ETABSObject"))
+        mySAFE.ApplicationStart()
+        return cSapModel(mySAFE.SapModel), helper, mySAFE, True
+    except Exception as e:
+        print(f"FATAL: no se pudo iniciar SAFE 20: {e}")
+        sys.exit(1)
+
+
+def set_units_tonf_m(sap):
+    """Setea unidades a tonf, m, C."""
+    sap.SetPresentUnits_2(eForce.tonf, eLength.m, eTemperature.C)
+
+
+def get_table(sap, table_name, group=""):
+    """Lee tabla SAFE como lista de dicts. Retorna [] si vacia o no existe."""
+    db = cDatabaseTables(sap.DatabaseTables)
+    TableVersion = 0
+    FieldsKeysIncluded = []
+    NumberRecords = 0
+    TableData = []
+    FieldKeyList = []
+    try:
+        ret, _, TableVersion, FieldsKeysIncluded, NumberRecords, TableData = \
+            db.GetTableForDisplayArray(table_name, FieldKeyList, group,
+                                       TableVersion, FieldsKeysIncluded, NumberRecords, TableData)
+    except Exception as e:
+        print(f"  WARN: GetTableForDisplayArray('{table_name}') fallo: {e}")
+        return []
+    if ret != 0 or NumberRecords == 0:
+        return []
+    fields = list(FieldsKeysIncluded)
+    ncols = len(fields)
+    rows = []
+    for i in range(NumberRecords):
+        row = {}
+        for j, k in enumerate(fields):
+            idx = i * ncols + j
+            row[k] = TableData[idx] if idx < len(TableData) else None
+        rows.append(row)
+    return rows
+
+
+def dump_results_json(out_path, payload, source_meta=None):
+    """Escribe results JSON con header standard."""
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+    header = {
+        "_meta": {
+            "generated_utc": datetime.utcnow().isoformat() + "Z",
+            "tool": "SAFE 20 via Python API (CSI.SAFE.API.ETABSObject)",
+            "script": Path(sys.argv[0]).name,
+            **(source_meta or {}),
+        },
+    }
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump({**header, **payload}, f, indent=2, ensure_ascii=False)
+    print(f"OK -> {out_path}  ({Path(out_path).stat().st_size/1024:.1f} KB)")
+
+
 def _try(label, fn):
-    """Wrapper que loggea ret y no aborta si una llamada falla; util para
-    metodos cuya firma puede variar entre versiones de SAFE 20."""
+    """Wrapper que loggea ret. No aborta si falla; util para metodos con
+    firmas que pueden variar entre versiones de SAFE 20."""
     try:
         ret = fn()
-        # Algunas APIs devuelven int, otras tuple (ret, out1, out2, ...)
         if isinstance(ret, tuple):
             print(f"  [API] {label}: ret={ret[0]}  (out={ret[1:]})")
             return ret
@@ -86,13 +158,15 @@ def _try(label, fn):
         return None
 
 
+# ============================================================================
+# CONSTRUCCION DEL MODELO VIA API
+# ============================================================================
 def build_model_from_api(sap):
     print("\n>>> BUILD_FROM_API: armando modelo Ej.1 desde cero")
 
     File = cFile(sap.File)
     _try("File.NewBlank", lambda: File.NewBlank())
 
-    # Units tonf, m, C
     set_units_tonf_m(sap)
     print("  Units: tonf, m, C")
 
@@ -105,16 +179,12 @@ def build_model_from_api(sap):
          lambda: Mat.SetMPIsotropic(MAT, E_TM2, NU, 1.0e-5))
     _try("SetWeightAndMass(weight=gamma_c)",
          lambda: Mat.SetWeightAndMass(MAT, 1, GAMMA_C))
-    # f'c para diseño (opcional, no afecta análisis lineal pero llena tablas)
     _try("SetOConcrete(f'c)",
          lambda: Mat.SetOConcrete(MAT, FC_TM2, False, 0.0, 1, 1, 0.002, 0.005, 0.0))
 
     # ---- 2) Slab section MAT45 (Mat foundation, Shell-Thin) ----------------
     PA = cPropArea(sap.PropArea)
     SLAB = "MAT45"
-    # SetSlab(name, slabType, shellType, matProp, thickness, color, notes, GUID)
-    #  slabType:  0=Slab, 1=Drop, 2=Stiff, 3=Ribbed, 4=Waffle, 5=Mat
-    #  shellType: 1=Shell-Thin, 2=Shell-Thick, 3=Plate-Thin, 4=Plate-Thick, 5=Membrane
     _try("PropArea.SetSlab(MAT45, Mat, ShellThin, h=0.45)",
          lambda: PA.SetSlab(SLAB, eSlabType.Mat, eShellType.ShellThin, MAT, H_FOOTING, -1, "", ""))
 
@@ -123,12 +193,12 @@ def build_model_from_api(sap):
     xs = [0.0, B,   B,   0.0]
     ys = [0.0, 0.0, B,   B]
     zs = [0.0, 0.0, 0.0, 0.0]
-    # AddByCoord(numberPoints, x[], y[], z[], name, propName, userName, csys)
     area_name = ""
     try:
         ret_tuple = AO.AddByCoord(4, xs, ys, zs, area_name, SLAB, "FOOT", "Global")
         if isinstance(ret_tuple, tuple):
-            ret, area_name = ret_tuple[0], ret_tuple[-1] if isinstance(ret_tuple[-1], str) else "FOOT"
+            ret = ret_tuple[0]
+            area_name = ret_tuple[-1] if isinstance(ret_tuple[-1], str) else "FOOT"
         else:
             ret = ret_tuple
             area_name = "FOOT"
@@ -137,17 +207,13 @@ def build_model_from_api(sap):
         print(f"  [API] AreaObj.AddByCoord EXCEPTION -> {e}")
         area_name = "FOOT"
 
-    # Asegurar asignacion de seccion (por si la firma de AddByCoord la ignoro)
     _try("AreaObj.SetProperty(MAT45)",
          lambda: AO.SetProperty(area_name, SLAB, eItemType.Objects))
 
     # ---- 4) Suelo Winkler ks (subgrade modulus) ----------------------------
-    # SAFE 20: definir PropAreaSpring con stiffness vertical (U3) = ks, luego asignarlo.
     # SetAreaSpringProp(Name, U1, U2, U3, NonlinearOption3, SpringOption, SoilProfile,
     #                   EndLengthRatio, Period, color, notes, iGUID)
-    #   U1, U2, U3: stiffness en cada DOF translacional. U3 = ks (vertical normal)
-    #   NonlinearOption3: 0=Linear, 1=Compression Only, 2=Tension Only. 0 = matchea Hekatan lineal.
-    #   SpringOption: 0=User-defined, 1=Soil Profile
+    #   U3 = ks (vertical normal). NonlinearOption3=0 (Linear), SpringOption=0 (UserDef).
     try:
         PAS = cPropAreaSpring(sap.PropAreaSpring)
         ret = PAS.SetAreaSpringProp("SOIL_KS", 0.0, 0.0, KS_TM3, 0, 0, "", 0.0, 0.0, -1, "", "")
@@ -161,7 +227,6 @@ def build_model_from_api(sap):
     PO = cPointObj(sap.PointObj)
     pt_name = ""
     try:
-        # AddCartesian(x, y, z, name, userName, csys, mergeOff, mergeNumber)
         ret_tuple = PO.AddCartesian(B/2, B/2, 0.0, pt_name, "COL_CTR", "Global", False, 0)
         if isinstance(ret_tuple, tuple):
             ret = ret_tuple[0]
@@ -176,16 +241,14 @@ def build_model_from_api(sap):
 
     # ---- 6) Load patterns Dead, Live ---------------------------------------
     LP = cLoadPatterns(sap.LoadPatterns)
-    # Add(name, MyType, SelfWtMultiplier, AddLoadCase)
-    # MyType: 1=Dead, 3=Live
     _try("LoadPatterns.Add(Dead)",
-         lambda: LP.Add("Dead", eLoadPatternType.Dead, 0.0, True))  # selfWtMult=0 para matchear Hekatan
+         lambda: LP.Add("Dead", eLoadPatternType.Dead, 0.0, True))
     _try("LoadPatterns.Add(Live)",
          lambda: LP.Add("Live", eLoadPatternType.Live, 0.0, True))
 
     # ---- 7) Cargas concentradas en el punto columna ------------------------
-    # PointObj.SetLoadForce(name, loadPat, value[6]={Fx,Fy,Fz,Mx,My,Mz}, replace, csys, itemType)
-    # Hekatan aplica M sobre theta_y -> momento alrededor del eje Y => My
+    # SetLoadForce(name, loadPat, value[6]={Fx,Fy,Fz,Mx,My,Mz}, replace, csys, itemType)
+    # M sobre theta_y -> momento alrededor del eje Y => My
     # Fz negativo = gravedad
     vals_dead = [0.0, 0.0, -P_DEAD, 0.0, M_DEAD, 0.0]
     vals_live = [0.0, 0.0, -P_LIVE, 0.0, M_LIVE, 0.0]
@@ -196,10 +259,8 @@ def build_model_from_api(sap):
 
     # ---- 8) Combos servicio y ultimo ---------------------------------------
     RC = cCombo(sap.RespCombo)
-    # Add(name, comboType): 0=Linear Add, 1=Envelope, 2=Absolute Add, 3=SRSS, 4=Range Add
     _try("RespCombo.Add(CARGA VERTICAL, Linear Add)",
          lambda: RC.Add("CARGA VERTICAL", 0))
-    # SetCaseList(comboName, CNameType, CName, SF). CNameType: LoadCase=0, LoadCombo=1
     _try("CARGA VERTICAL <- 1.0*Dead",
          lambda: RC.SetCaseList("CARGA VERTICAL", eCNameType.LoadCase, "Dead", 1.0))
     _try("CARGA VERTICAL <- 1.0*Live",
@@ -224,18 +285,8 @@ def build_model_from_api(sap):
 def main():
     sap, helper, mySAFE, started = connect_safe(attach=ATTACH_TO_RUNNING)
 
-    if BUILD_FROM_API:
-        sap.InitializeNewModel()
-        build_model_from_api(sap)
-    else:
-        if not Path(MODEL_PATH).exists():
-            print(f"FATAL: no encuentro {MODEL_PATH}")
-            print("       Arma el modelo manualmente (libro pag. 29-38) o seteá BUILD_FROM_API=True.")
-            sys.exit(1)
-        File = cFile(sap.File)
-        File.OpenFile(MODEL_PATH)
-        print(f"Modelo abierto: {MODEL_PATH}")
-        set_units_tonf_m(sap)
+    sap.InitializeNewModel()
+    build_model_from_api(sap)
 
     # ---- Run analysis -------------------------------------------------------
     Analyze = cAnalyze(sap.Analyze)
@@ -243,19 +294,7 @@ def main():
     ret = Analyze.RunAnalysis()
     print(f"RunAnalysis: ret={ret}")
 
-    # ---- Listar tablas disponibles para diagnostico ------------------------
-    db = sap.DatabaseTables
-    try:
-        NumberTables = 0; TableKey = []; TableName = []; ImportType = []; IsEmpty = []
-        ret, NumberTables, TableKey, TableName, ImportType, IsEmpty = \
-            db.GetAllTables(NumberTables, TableKey, TableName, ImportType, IsEmpty)
-        print(f"\nTablas disponibles ({NumberTables}):")
-        for k, n in zip(list(TableKey)[:80], list(TableName)[:80]):
-            print(f"  - {k}  ::  {n}")
-    except Exception as e:
-        print(f"WARN al listar tablas: {e}")
-
-    # ---- Extraer tablas clave (probamos varios nombres) --------------------
+    # ---- Extraer tablas clave ----------------------------------------------
     soil_rows = (get_table(sap, "Soil Pressures")
                  or get_table(sap, "Slab Bearing Pressures")
                  or get_table(sap, "Soil Bearing Pressures")
@@ -278,8 +317,7 @@ def main():
                            or r.get("SoilPress") or r.get("P") or r.get("SoilPressure"))
                   for r in soil_serv]
     sigma_vals = [v for v in sigma_vals if v is not None]
-    # SAFE devuelve soil pressure NEGATIVA en compresion. Reportamos como valor
-    # absoluto (convencion ingenieril: presion de contacto siempre positiva en compresion).
+    # SAFE devuelve soil pressure NEGATIVA en compresion. Reportamos magnitudes.
     sigma_abs = [abs(v) for v in sigma_vals]
     sigma_max = max(sigma_abs) if sigma_abs else None    # mas compresiva
     sigma_min = min(sigma_abs) if sigma_abs else None    # menos compresiva
@@ -291,7 +329,7 @@ def main():
 
     payload = {
         "exercise": "Guerra MDI Ej.1 - Zapata Aislada Cuadrada",
-        "build_method": "BUILD_FROM_API" if BUILD_FROM_API else "OpenFile",
+        "build_method": "BUILD_FROM_API",
         "model_path": MODEL_PATH,
         "inputs": {
             "B_m": B, "L_m": B, "h_m": H_FOOTING, "col_size_m": COL_SIZE,
