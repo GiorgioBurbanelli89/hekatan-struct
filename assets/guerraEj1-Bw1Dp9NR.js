@@ -26,7 +26,7 @@ let __tla = Promise.all([
     safe_api_live: ee,
     manual_libro_pag_19: ae,
     safe_libro_pag_36: te
-  }, S = 9.80665, se = 1 / S;
+  }, E = 9.80665, se = 1 / E;
   function oe(n, m, _, s) {
     const o = new q(s, s, _), i = new J(new Q(o), new U({
       color: 11579568,
@@ -95,32 +95,28 @@ let __tla = Promise.all([
         min: 0,
         max: 300,
         step: 1,
-        label: "P_D (tonf)",
-        unitType: "force"
+        label: "P_D (tonf)"
       },
       M_dead: {
         default: 12,
         min: -40,
         max: 40,
         step: 0.5,
-        label: "M_D (tonf\xB7m)",
-        unitType: "moment"
+        label: "M_D (tonf\xB7m)"
       },
       P_live: {
         default: 30,
         min: 0,
         max: 200,
         step: 1,
-        label: "P_L (tonf)",
-        unitType: "force"
+        label: "P_L (tonf)"
       },
       M_live: {
         default: 5,
         min: -40,
         max: 40,
         step: 0.5,
-        label: "M_L (tonf\xB7m)",
-        unitType: "moment"
+        label: "M_L (tonf\xB7m)"
       },
       fc_kgcm2: {
         default: 280,
@@ -152,10 +148,10 @@ let __tla = Promise.all([
       }
     },
     build(n, m) {
-      const _ = n.B, s = n.B, o = n.h, i = Math.round(n.nx), g = Math.round(n.ny), c = i + 1, w = g + 1, b = _ / i, y = s / g, A = n.P_dead + n.P_live, u = n.M_dead + n.M_live, v = n.ks_tm3 * S, p = 14100 * Math.sqrt(n.fc_kgcm2) * 98.0665, N = 0.2, x = [];
+      const _ = n.B, s = n.B, o = n.h, i = Math.round(n.nx), g = Math.round(n.ny), c = i + 1, w = g + 1, b = _ / i, v = s / g, A = (n.P_dead + n.P_live) * E, u = (n.M_dead + n.M_live) * E, h = n.ks_tm3 * E, p = 14100 * Math.sqrt(n.fc_kgcm2) * 98.0665, N = 0.2, x = [];
       for (let a = 0; a < w; ++a) for (let t = 0; t < c; ++t) x.push([
         t * b,
-        a * y
+        a * v
       ]);
       const M = [];
       for (let a = 0; a < g; ++a) for (let t = 0; t < i; ++t) {
@@ -167,38 +163,38 @@ let __tla = Promise.all([
           e + c
         ]);
       }
-      const P = 2.4 * S, R = P * o, E = [], I = [];
+      const P = 2.4 * E, T = P * o, F = [], I = [];
       for (let a = 0; a < w; ++a) for (let t = 0; t < c; ++t) {
-        const e = t === 0 || t === c - 1, l = a === 0 || a === w - 1, r = e && l ? 0.25 : e || l ? 0.5 : 1, h = b * y * r, d = a * c + t;
-        if (E.push({
+        const e = t === 0 || t === c - 1, l = a === 0 || a === w - 1, r = e && l ? 0.25 : e || l ? 0.5 : 1, y = b * v * r, d = a * c + t;
+        if (F.push({
           node: d,
           dof: 0,
-          k: v * h
+          k: h * y
         }), I.push({
           node: d,
           dof: 0,
-          value: -R * h
+          value: -T * y
         }), e && l) {
-          const k = 1e-6 * v * b * y;
-          E.push({
+          const k = 1e-6 * h * b * v;
+          F.push({
             node: d,
             dof: 1,
             k
-          }), E.push({
+          }), F.push({
             node: d,
             dof: 2,
             k
           });
         }
       }
-      const F = _ / 2, L = s / 2, W = ((a, t) => {
+      const S = _ / 2, L = s / 2, W = ((a, t) => {
         let e = -1, l = 1 / 0;
         for (let r = 0; r < x.length; ++r) {
-          const h = x[r][0] - a, d = x[r][1] - t, k = h * h + d * d;
+          const y = x[r][0] - a, d = x[r][1] - t, k = y * y + d * d;
           k < l && (l = k, e = r);
         }
         return e;
-      })(F, L), X = [
+      })(S, L), X = [
         {
           node: W,
           dof: 0,
@@ -210,7 +206,7 @@ let __tla = Promise.all([
           value: u
         },
         ...I
-      ], T = V({
+      ], z = V({
         E: p,
         nu: N,
         thickness: o,
@@ -220,7 +216,7 @@ let __tla = Promise.all([
         elements: M,
         bcs: [],
         pointLoads: X,
-        springs: E
+        springs: F
       }), Y = x.map((a) => [
         a[0],
         a[1],
@@ -243,8 +239,8 @@ let __tla = Promise.all([
           o
         ]))
       };
-      const z = /* @__PURE__ */ new Map();
-      for (const a of T.nodeResults) z.set(a.node, [
+      const $ = /* @__PURE__ */ new Map();
+      for (const a of z.nodeResults) $.set(a.node, [
         0,
         0,
         a.w,
@@ -253,68 +249,68 @@ let __tla = Promise.all([
         0
       ]);
       m.deformOutputs.val = {
-        deformations: z,
+        deformations: $,
         reactions: /* @__PURE__ */ new Map()
       };
-      const $ = _ * s, G = P * o * $, Z = (A + G) / $, K = s * Math.pow(_, 3) / 12, j = /* @__PURE__ */ new Map(), B = /* @__PURE__ */ new Map(), D = /* @__PURE__ */ new Map(), C = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map();
+      const j = _ * s, G = P * o * j, Z = (A + G) / j, K = s * Math.pow(_, 3) / 12, B = /* @__PURE__ */ new Map(), D = /* @__PURE__ */ new Map(), C = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), O = /* @__PURE__ */ new Map();
       M.forEach((a, t) => {
-        j.set(t, a.map((r) => {
-          const d = x[r][0] - F;
+        B.set(t, a.map((r) => {
+          const d = x[r][0] - S;
           return Z + u * d / K;
         }));
-        const e = T.elementResults[t];
-        B.set(t, [
+        const e = z.elementResults[t];
+        D.set(t, [
           e.Mxx,
           e.Mxx,
           e.Mxx,
           e.Mxx
-        ]), D.set(t, [
+        ]), C.set(t, [
           e.Myy,
           e.Myy,
           e.Myy,
           e.Myy
-        ]), C.set(t, [
+        ]), H.set(t, [
           e.Mxy,
           e.Mxy,
           e.Mxy,
           e.Mxy
         ]);
         const l = Math.sqrt(e.Mxx ** 2 + e.Myy ** 2 - e.Mxx * e.Myy + 3 * e.Mxy ** 2);
-        H.set(t, [
+        O.set(t, [
           l,
           l,
           l,
           l
         ]);
       }), m.analyzeOutputs.val = {
-        pressure: j,
-        bendingXX: B,
-        bendingYY: D,
-        bendingXY: C,
-        vonMises: H
+        pressure: B,
+        bendingXX: D,
+        bendingYY: C,
+        bendingXY: H,
+        vonMises: O
       };
-      const O = [];
-      O.push(...oe(F, L, n.h_col, n.col_size)), m.objects3D.val = O;
+      const R = [];
+      R.push(...oe(S, L, n.h_col, n.col_size)), m.objects3D.val = R;
     },
     computedLabels(n, m) {
       var _a, _b, _c, _d, _e, _f, _g, _h, _i;
       const _ = m.analyzeOutputs.val.pressure;
       let s = -1 / 0, o = 1 / 0;
-      if (_) for (const v of _.values()) for (const f of v) {
+      if (_) for (const h of _.values()) for (const f of h) {
         const p = Math.abs(f) * se;
         p > s && (s = p), p < o && (o = p);
       }
       s === -1 / 0 && (s = 0, o = 0);
-      const i = ne, g = (_b = (_a = i == null ? void 0 : i.safe_api_live) == null ? void 0 : _a.with_self_weight) == null ? void 0 : _b.sigma_max_servicio_tm2, c = (_d = (_c = i == null ? void 0 : i.safe_api_live) == null ? void 0 : _c.with_self_weight) == null ? void 0 : _d.sigma_min_servicio_tm2, w = (_f = (_e = i == null ? void 0 : i.safe_api_live) == null ? void 0 : _e.without_self_weight) == null ? void 0 : _f.sigma_max_servicio_tm2, b = (_g = i == null ? void 0 : i.safe_libro_pag_36) == null ? void 0 : _g.sigma_max_servicio_tm2, y = (_h = i == null ? void 0 : i.manual_libro_pag_19) == null ? void 0 : _h.sigma_max_tm2, A = (_i = i == null ? void 0 : i.manual_libro_pag_19) == null ? void 0 : _i.sigma_min_tm2, u = (v, f) => f === void 0 || f === 0 ? "\u2014" : `${((v - f) / f * 100).toFixed(2)} %`;
+      const i = ne, g = (_b = (_a = i == null ? void 0 : i.safe_api_live) == null ? void 0 : _a.with_self_weight) == null ? void 0 : _b.sigma_max_servicio_tm2, c = (_d = (_c = i == null ? void 0 : i.safe_api_live) == null ? void 0 : _c.with_self_weight) == null ? void 0 : _d.sigma_min_servicio_tm2, w = (_f = (_e = i == null ? void 0 : i.safe_api_live) == null ? void 0 : _e.without_self_weight) == null ? void 0 : _f.sigma_max_servicio_tm2, b = (_g = i == null ? void 0 : i.safe_libro_pag_36) == null ? void 0 : _g.sigma_max_servicio_tm2, v = (_h = i == null ? void 0 : i.manual_libro_pag_19) == null ? void 0 : _h.sigma_max_tm2, A = (_i = i == null ? void 0 : i.manual_libro_pag_19) == null ? void 0 : _i.sigma_min_tm2, u = (h, f) => f === void 0 || f === 0 ? "\u2014" : `${((h - f) / f * 100).toFixed(2)} %`;
       return {
         "\u{1F4CA} \u03C3_max Hekatan (con SW)": `${s.toFixed(3)} t/m\xB2`,
         "\u{1F7E2} \u03C3_max SAFE API (con SW)": `${g.toFixed(3)} t/m\xB2`,
         "\u{1F7E1} \u03C3_max SAFE API (sin SW)": `${w.toFixed(3)} t/m\xB2`,
         "\u{1F4DA} \u03C3_max SAFE (libro p.36)": `${b.toFixed(3)} t/m\xB2`,
-        "\u{1F4D8} \u03C3_max manual (libro p.19)": `${y.toFixed(3)} t/m\xB2`,
+        "\u{1F4D8} \u03C3_max manual (libro p.19)": `${v.toFixed(3)} t/m\xB2`,
         "\u0394 Hekatan vs SAFE API": u(s, g),
         "\u0394 Hekatan vs SAFE libro": u(s, b),
-        "\u0394 Hekatan vs manual": u(s, y),
+        "\u0394 Hekatan vs manual": u(s, v),
         "\u{1F4CA} \u03C3_min Hekatan": `${o.toFixed(3)} t/m\xB2`,
         "\u{1F7E2} \u03C3_min SAFE API (con SW)": `${c.toFixed(3)} t/m\xB2`,
         "\u{1F4D8} \u03C3_min manual (libro p.19)": `${A.toFixed(3)} t/m\xB2`,
