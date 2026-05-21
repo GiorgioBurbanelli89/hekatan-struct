@@ -1,0 +1,31 @@
+{
+  "_meta": {
+    "source": "Guerra MDI - 'Cimentaciones Sismo Resistentes utilizando SAFE' (2013), pag. 69-72",
+    "exercise": "EJERCICIO 3 - Zapata Rectangular EXCENTRICIDAD GRANDE",
+    "status": "book_values + safe_api_live",
+    "_note": "Misma geometria que Ej.2 (L=4.60, B=4.00) pero M_live mayor (96 vs 36) y q_adm=20 (vs 14). Excentricidad muy grande e=1.289m >> L/6=0.767m. Zona de despegue importante."
+  },
+  "inputs": {
+    "L_m": 4.60, "B_m": 4.00, "h_m": 0.55,
+    "col_size_x_m": 1.20, "col_size_y_m": 0.60,
+    "fc_kgcm2": 280, "E_kgcm2": 235938, "nu": 0.20,
+    "ks_tm3": 4400,
+    "q_adm_tm2": 20.0,
+    "gamma_c_tm3": 2.4,
+    "P_dead_tonf": 91.0, "M_dead_tonfm": 60.0,
+    "P_live_tonf": 30.0, "M_live_tonfm": 96.0,
+    "P_sismo_tonf": 3.0, "M_sismo_tonfm": 9.0,
+    "combo_servicio": "1.0*D + 1.0*L",
+    "combo_servicio_sismo": "1.0*D + 1.0*L + 1.0*S"
+  },
+  "manual_libro": {
+    "P_servicio_DL_tonf": 121.0,
+    "M_servicio_DL_tonfm": 156.0,
+    "e_DL_m": 1.289,
+    "P_servicio_DLS_tonf": 124.0,
+    "M_servicio_DLS_tonfm": 165.0,
+    "e_DLS_m": 1.331,
+    "L_sobre_6_m": 0.767,
+    "_note": "Excentricidad >> L/6 → zona de despegue muy grande. σ_max localmente alta porque carga se concentra en la zona en contacto."
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "_meta": {
+    "source": "Guerra MDI - 'Cimentaciones Sismo Resistentes utilizando SAFE' (2013), pag. 74-90",
+    "exercise": "EJERCICIO 4 - Zapata Combinada Rectangular (2 columnas)"
+  },
+  "inputs": {
+    "L_m": 7.50, "B_m": 2.50, "h_m": 0.50,
+    "col1_x_m": 1.00, "col2_x_m": 6.50,
+    "col_size_m": 0.45,
+    "fc_kgcm2": 240, "E_kgcm2": 218377, "nu": 0.20,
+    "ks_tm3": 3640, "q_adm_tm2": 18.0,
+    "P_dead_col1_tonf": 90.0, "M_dead_col1_tonfm": 7.0,
+    "P_live_col1_tonf": 23.0, "M_live_col1_tonfm": 3.0,
+    "P_dead_col2_tonf": 100.0, "M_dead_col2_tonfm": 14.0,
+    "P_live_col2_tonf": 30.0, "M_live_col2_tonfm": 4.0
+  },
+  "manual_libro": {
+    "R_servicio_tonf": 243.0,
+    "x_centroide_m": 3.04,
+    "sigma_max_servicio_tm2": 16.018,
+    "sigma_min_servicio_tm2": 9.901,
+    "_note": "Libro pag.76 iter final: B=2.50m. σ_max < q_adm=18 ✓"
+  }
+}
