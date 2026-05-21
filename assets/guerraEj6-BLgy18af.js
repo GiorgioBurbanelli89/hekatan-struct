@@ -43,22 +43,20 @@ let __tla = Promise.all([
       Bz2: r(a.params.Bz2, 2.45),
       tz: r(a.params.tz, 0.55),
       bc: r(a.params.bc, 0.5),
-      Hp: r(a.params.Hp, 1),
+      Hp: r(a.params.Hp, 0.01, {
+        min: 0.01,
+        max: 2,
+        step: 0.01
+      }),
       ks: r(a.params.ks, 37461, {
         max: 6e4
       }),
       P1: r(a.params.P1, 110),
       M1x: r(a.params.M1x, 0),
-      M1y: r(a.params.M1y, -50, {
-        min: -150,
-        max: 150
-      }),
+      M1y: r(a.params.M1y, 0),
       P2: r(a.params.P2, 140),
       M2x: r(a.params.M2x, 0),
-      M2y: r(a.params.M2y, 20, {
-        min: -100,
-        max: 100
-      })
+      M2y: r(a.params.M2y, 0)
     }
   };
 });
