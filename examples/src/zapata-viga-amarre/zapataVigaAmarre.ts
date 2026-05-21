@@ -139,23 +139,15 @@ export const zapataVigaAmarre: ExampleDef = {
         thicknesses.set(e, tz); elasticities.set(e, Ec); poissons.set(e, nu_c); densities.set(e, rho);
       }
 
-    // Pedestales + viga
-    const vigaLevel = Math.round(p.vigaLevel);
-    const zViga = vigaLevel === 0 ? tz : Hp;
-    const nCol1Bot = addNode(xC1, yC1, 0);
-    const nCol1Top = addNode(xC1, yC1, zViga);
-    const nCol2Bot = addNode(xC2, yC2, 0);
-    const nCol2Top = addNode(xC2, yC2, zViga);
-    for (const [a, b] of [[nCol1Bot, nCol1Top], [nCol2Bot, nCol2Top]]) {
-      const e = elsEl.length;
-      elsEl.push([a, b]);
-      elasticities.set(e, Ec); poissons.set(e, nu_c); Gm.set(e, Gc);
-      areas.set(e, bc * bc); Iz.set(e, bc ** 4 / 12); Iy.set(e, bc ** 4 / 12);
-      J.set(e, 0.14 * bc ** 4); densities.set(e, rho);
-      sections.set(e, { type: "rect", b: bc, h: bc });
-    }
+    // Viga de amarre DIRECTA entre columnas (sin pedestal vertical).
+    // Match libro Guerra Fig.151: solo zapatas (shells) + viga frame; la viga
+    // conecta los nodos de columna en la zapata sin column-stub intermedio.
+    // El nivel de la viga es el plano medio del shell (z=0) para coupling
+    // directo con el shell sin offset vertical.
+    const nCol1 = addNode(xC1, yC1, 0);
+    const nCol2 = addNode(xC2, yC2, 0);
     const eViga = elsEl.length;
-    elsEl.push([nCol1Top, nCol2Top]);
+    elsEl.push([nCol1, nCol2]);
     elasticities.set(eViga, Ec); poissons.set(eViga, nu_c); Gm.set(eViga, Gc);
     areas.set(eViga, Bv * Hv);
     Iz.set(eViga, (Bv * Hv ** 3) / 12);
@@ -164,8 +156,8 @@ export const zapataVigaAmarre: ExampleDef = {
     densities.set(eViga, rho);
     sections.set(eViga, { type: "rect", b: Bv, h: Hv });
 
-    loads.set(nCol1Top, [0, 0, -P1, M1x, M1y, 0]);
-    loads.set(nCol2Top, [0, 0, -P2, M2x, M2y, 0]);
+    loads.set(nCol1, [0, 0, -P1, M1x, M1y, 0]);
+    loads.set(nCol2, [0, 0, -P2, M2x, M2y, 0]);
 
     // ── Winkler SSI completo: resortes en X, Y, Z en cada nodo ──
     // kh = ks_horizontal ≈ 0.5 × ks_vertical (fricción suelo-zapata tipo Bowles).
