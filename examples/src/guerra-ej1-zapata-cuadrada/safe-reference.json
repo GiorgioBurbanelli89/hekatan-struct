@@ -17,14 +17,20 @@
     "combo_ultimo": "1.4*D + 1.7*L"
   },
   "safe_api_live": {
-    "_generated_utc": "2026-05-20T17:04:31Z",
+    "_generated_utc": "2026-05-20T18:30:00Z",
     "_method": "BUILD_FROM_API via SAFEv1.dll + pythonnet (ej1_zapata_cuadrada.py)",
     "_shell_type": "ShellThick (Mindlin, apropiado para h/B=0.13)",
+    "_mesh": "MaxMeshSize=B/16=0.21625m forzado via DatabaseTable (default SAFE era 1.2192m=4ft!)",
     "with_self_weight": {
+      "sigma_max_servicio_tm2": 13.264,
+      "sigma_min_servicio_tm2": 7.305,
+      "uz_max_abs_m": -0.004382,
+      "_note": "ShellThick + SelfWtMult=1 + mesh 16x16. Match libro p.36 (13.163) +0.77%. Match Hekatan 16x16 dentro de 0.05%."
+    },
+    "with_self_weight_coarse_mesh": {
       "sigma_max_servicio_tm2": 12.907,
       "sigma_min_servicio_tm2": 8.168,
-      "uz_max_abs_m": -0.004382,
-      "_note": "ShellThick + SelfWtMult=1. Coincide con libro p.36 (13.163) -1.9%."
+      "_note": "SAFE default mesh 4ft (1.2192m): da -1.9% vs libro por discretizacion."
     },
     "with_self_weight_thin": {
       "sigma_max_servicio_tm2": 12.94,

@@ -294,7 +294,38 @@ def build_model_from_api(sap):
     _try("CARGA ULTIMA <- 1.7*Live",
          lambda: RC.SetCaseList("CARGA ULTIMA", eCNameType.LoadCase, "Live", 1.7))
 
-    # ---- 9) Save ------------------------------------------------------------
+    # ---- 9) Forzar mesh GLOBAL (Analysis Options) ~ B/16 = 0.21625 m -------
+    # Edita la tabla GLOBAL para que TODOS los slabs usen este max size.
+    try:
+        from SAFEv1 import cDatabaseTables
+        db = cDatabaseTables(sap.DatabaseTables)
+        tname = "Analysis Options - Automatic Mesh Settings for Floors"
+        Tver = 0; FKI = []; nR = 0; TData = []
+        ret, Tver, FKI, nR, TData = db.GetTableForEditingArray(tname, "", Tver, FKI, nR, TData)
+        print(f"  [TBL] {tname}: ret={ret}, rows={nR}")
+        print(f"  [TBL] Fields: {list(FKI)}, current data: {list(TData)}")
+        # Modificar MaxMeshSize a B/16 ≈ 0.21625 m
+        # Fields: MeshOpt, Localized, MergeJoints, MaxMeshSize
+        target_size = B / 16
+        new_data = list(TData)
+        if len(new_data) >= 4:
+            new_data[3] = f"{target_size:.6f}"
+        else:
+            new_data = ["1", "No", "Yes", f"{target_size:.6f}"]
+        ret = db.SetTableForEditingArray(tname, Tver, FKI, max(nR, 1), new_data)
+        print(f"  [TBL] SetTableForEditingArray: ret type={type(ret).__name__}")
+        nFatal = 0; nErr = 0; nWarn = 0; nInfo = 0; impLog = ""
+        ret, nFatal, nErr, nWarn, nInfo, impLog = db.ApplyEditedTables(
+            True, nFatal, nErr, nWarn, nInfo, impLog)
+        print(f"  [TBL] Apply: ret={ret}, fatal={nFatal}, err={nErr}, warn={nWarn}")
+        if impLog and nErr > 0:
+            print(f"  [TBL] LOG FULL:\n{impLog[:2000]}")
+        elif impLog:
+            print(f"  [TBL] log: {impLog[:300]}")
+    except Exception as e:
+        print(f"  [TBL] WARN: {e}")
+
+    # ---- 10) Save ------------------------------------------------------------
     Path(MODEL_PATH).parent.mkdir(parents=True, exist_ok=True)
     _try(f"File.Save({MODEL_PATH})", lambda: File.Save(MODEL_PATH))
     print(">>> Modelo construido OK")
