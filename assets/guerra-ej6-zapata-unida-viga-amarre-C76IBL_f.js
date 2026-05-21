@@ -1,5 +1,5 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { g as r, __tla as __tla_0 } from "./guerraEj6-DsGj3i_m.js";
+import { g as r, __tla as __tla_0 } from "./guerraEj6-DK_HHVOc.js";
 import { r as m, __tla as __tla_1 } from "./runExampleStandalone-BRuCCjKI.js";
 import { __tla as __tla_2 } from "./zapataVigaAmarre-CkGp7hM-.js";
 import "./Text-BmY6zyQy.js";
