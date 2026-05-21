@@ -55,9 +55,13 @@ export const guerraEj6ZapataUnida: ExampleDef = {
     // (excentricidad ~0.94m × P1), M2 contrario en Col2 (balance frame).
     // Sin estos momentos, Z2 queda uniforme (libro Fig.180 muestra gradiente).
     M1x: overrideParam(zapataVigaAmarre.params.M1x, 0),
-    M1y: overrideParam(zapataVigaAmarre.params.M1y, 50, { min: -150, max: 150 }),
+    // Col1 esta en borde IZQUIERDO de Z1 (medianera, x=0.2). Eccentricidad
+    // hacia -X → moment de la carga es NEGATIVO en y-axis → σ_max en LEFT side
+    // (matchea libro Fig.180: rojo a la izquierda de Z1).
+    M1y: overrideParam(zapataVigaAmarre.params.M1y, -50, { min: -150, max: 150 }),
     P2:  overrideParam(zapataVigaAmarre.params.P2,  140),
     M2x: overrideParam(zapataVigaAmarre.params.M2x, 0),
-    M2y: overrideParam(zapataVigaAmarre.params.M2y, -20, { min: -100, max: 100 }),
+    // Viga amarre transmite moment positivo a Col2 (balance frame)
+    M2y: overrideParam(zapataVigaAmarre.params.M2y, 20, { min: -100, max: 100 }),
   },
 };

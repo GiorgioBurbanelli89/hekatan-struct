@@ -64,9 +64,12 @@ export const zapataVigaAmarre: ExampleDef = {
     const M2x = (p.M2x ?? 0) * TONF_TO_KN, M2y = (p.M2y ?? 0) * TONF_TO_KN;
     const nSubX = Math.round(p.nSubX), nSubY = Math.round(p.nSubY);
 
+    // Offset Y para alinear centros de las 2 zapatas (la viga amarre debe
+    // pasar por el centro de AMBAS, asi como en el libro Guerra Fig.179).
+    const yOff2 = (Bz1 - Bz2) / 2;
     const xC1 = 0.2, yC1 = Bz1 / 2;
-    const xC2 = Lz1 + Lv + Lz2 / 2, yC2 = Bz2 / 2;
-    const yViga = (yC1 + yC2) / 2;
+    const xC2 = Lz1 + Lv + Lz2 / 2, yC2 = Bz2 / 2 + yOff2;  // = yC1 = Bz1/2
+    const yViga = yC1;  // la viga es horizontal en Y centro
 
     function buildGridX(xMin: number, xMax: number, forced: number[], nSub: number): number[] {
       const all = [xMin, ...forced.filter((x) => x > xMin && x < xMax), xMax].sort((a, b) => a - b);
@@ -82,7 +85,7 @@ export const zapataVigaAmarre: ExampleDef = {
     const xs1 = buildGridX(0, Lz1, [xC1], nSubX);
     const ys1 = buildGridX(0, Bz1, [yC1, yViga], nSubY);
     const xs2 = buildGridX(Lz1 + Lv, Lz1 + Lv + Lz2, [xC2], nSubX);
-    const ys2 = buildGridX(0, Bz2, [yC2, yViga], nSubY);
+    const ys2 = buildGridX(yOff2, yOff2 + Bz2, [yC2, yViga], nSubY);
 
     const N: [number, number, number][] = [];
     const elsEl: number[][] = [];
