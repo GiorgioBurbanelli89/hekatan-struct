@@ -2,16 +2,36 @@
   "_meta": {
     "source": "Guerra MDI pag.113-130",
     "exercise": "EJERCICIO 6 - Zapata Unida con Viga de Amarre",
-    "_note": "Dos zapatas separadas conectadas por viga de amarre. L entre cols = 5.00m. Cols 50×50cm. f'c=290, q_adm=19."
+    "_note": "DOS ZAPATAS SEPARADAS (medianera + interna) conectadas por viga de amarre. Cada zapata trabaja independiente; la viga transmite momentos entre ellas pero NO esfuerzos al suelo. L entre ejes columnas = 5.00m. Total L=6.47m."
   },
   "inputs": {
-    "L_entre_ejes_m": 5.00,
-    "col_size_m": 0.50,
-    "fc_kgcm2": 290, "q_adm_tm2": 19.0, "ks_tm3": 3800,
-    "B1_m": 2.50, "L1_m": 3.15,
-    "B2_m": 2.50, "L2_m": 2.50,
-    "h_m": 0.50,
-    "P_col1_tonf": 110.0, "P_col2_tonf": 140.0,
-    "_note": "Zapata1 medianera (3.15×2.50) y Zapata2 interna (2.50×2.50)."
+    "L_total_m": 6.47,
+    "_zapata1_medianera": {
+      "L1_m": 2.38, "B1_m": 3.00,
+      "col1_x_m": 0.25, "col1_y_m": 1.50,
+      "P_dead_tonf": 70.0, "P_live_tonf": 40.0
+    },
+    "_zapata2_interna": {
+      "L2_m": 2.45, "B2_m": 2.45,
+      "col2_x_m": 5.245, "col2_y_m": 1.5,
+      "P_dead_tonf": 89.0, "P_live_tonf": 51.0
+    },
+    "_viga_amarre": {
+      "L_viga_m": 1.64,
+      "b_x_h_cm": "45x95",
+      "_note": "Conecta Zapata1 con Zapata2. Solo flexion - no apoya en suelo."
+    },
+    "col_size_m": 0.50, "h_zapata_m": 0.55,
+    "fc_kgcm2": 210, "q_adm_tm2": 19.0, "ks_tm3": 3820,
+    "gamma_c_tm3": 2.4
+  },
+  "manual_libro": {
+    "R1_tonf": 110.0,
+    "R2_tonf": 140.0,
+    "sigma_max_zapata1_tm2": 26.179,
+    "sigma_min_zapata1_tm2": 15.386,
+    "sigma_zapata2_avg_tm2": 16.734,
+    "sigma_range_libro": "Figura 180: σ libro entre -12 (cyan, esquina far Z2) y -26 (magenta, borde Z1 ext)",
+    "_note": "Libro pag.118+: σ_max=26.18 t/m² en Zapata1 borde exterior. Cumple q_adm=19 con criterio de incrementar dimensiones por sismo."
   }
 }

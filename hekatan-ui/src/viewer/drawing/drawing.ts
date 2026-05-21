@@ -1699,22 +1699,20 @@ export function drawing({
   (window as any).__hekatanRenderAuxPoints = renderAuxPoints;
 
   // ── Snap 3D Indicator ──
-  // Tamaño FIJO — consistente con node markers (~2 cm). Sin auto-escalado
-  // para evitar inconsistencia: si bajás displayScale los nodos/cargas no
-  // cambian, así que el snap tampoco debería. Sphere 2 cm + halo 4 cm +
-  // cruz 0.15 m → visible pero discreto, sin dominar la pantalla.
+  // Tamaño REDUCIDO: sphere 1 cm + halo 1.5 cm + cruz 0.08 m. El scale
+  // tiene cap _snapMaxScale para evitar cursor gigante en plan view.
   const snapMarker = new THREE.Group();
   const snapSphere = new THREE.Mesh(
-    new THREE.SphereGeometry(0.02, 12, 12),
+    new THREE.SphereGeometry(0.010, 12, 12),
     new THREE.MeshBasicMaterial({ color: 0xff3344, transparent: true, opacity: 0.95 }),
   );
   const snapHalo = new THREE.Mesh(
-    new THREE.SphereGeometry(0.04, 12, 12),
-    new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.25, depthWrite: false }),
+    new THREE.SphereGeometry(0.015, 12, 12),
+    new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.20, depthWrite: false }),
   );
   snapMarker.add(snapSphere, snapHalo);
-  // Cruz de ejes 0.15 m — apenas más larga que el halo para diferenciarse
-  const axisLen = 0.15;
+  // Cruz de ejes 0.08 m — más chica
+  const axisLen = 0.08;
   const mkLine = (a: [number, number, number], b: [number, number, number], col: number) => {
     const g = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(...a), new THREE.Vector3(...b),
@@ -1732,8 +1730,8 @@ export function drawing({
   // 3D world-space). Calculamos el scale = distancia/factor para que el
   // tamaño aparente en píxeles quede igual a cualquier zoom.
   // Calibración: a 10m de la cámara, scale=1 (sphere=2cm, cruz=15cm).
-  const _snapBaseDist = 25;   // factor mayor → sphere mas chica al alejar
-  const _snapMaxScale = 4.0;  // cap max para evitar cursor gigante en plan view
+  const _snapBaseDist = 40;   // factor mayor → sphere mas chica al alejar
+  const _snapMaxScale = 2.5;  // cap mas agresivo para plan view de modelos grandes
   const updateSnapMarkerScale = () => {
     if (!snapMarker.visible) return;
     const cam = getActiveCamera();
