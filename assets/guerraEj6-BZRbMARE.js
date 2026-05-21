@@ -1,4 +1,4 @@
-import { z as a, __tla as __tla_0 } from "./zapataVigaAmarre-CkGp7hM-.js";
+import { z as a, __tla as __tla_0 } from "./zapataVigaAmarre-e1h1zTJn.js";
 let t;
 let __tla = Promise.all([
   (() => {
@@ -49,13 +49,13 @@ let __tla = Promise.all([
       }),
       P1: r(a.params.P1, 110),
       M1x: r(a.params.M1x, 0),
-      M1y: r(a.params.M1y, 50, {
+      M1y: r(a.params.M1y, -50, {
         min: -150,
         max: 150
       }),
       P2: r(a.params.P2, 140),
       M2x: r(a.params.M2x, 0),
-      M2y: r(a.params.M2y, -20, {
+      M2y: r(a.params.M2y, 20, {
         min: -100,
         max: 100
       })
