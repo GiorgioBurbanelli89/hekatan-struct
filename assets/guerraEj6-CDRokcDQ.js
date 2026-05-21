@@ -43,10 +43,10 @@ let __tla = Promise.all([
       Bz2: r(a.params.Bz2, 2.45),
       tz: r(a.params.tz, 0.55),
       bc: r(a.params.bc, 0.5),
-      Hp: r(a.params.Hp, 0.01, {
+      Hp: r(a.params.Hp, 0.5, {
         min: 0.01,
         max: 2,
-        step: 0.01
+        step: 0.05
       }),
       ks: r(a.params.ks, 37461, {
         max: 6e4
