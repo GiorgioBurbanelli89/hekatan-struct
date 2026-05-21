@@ -11,8 +11,8 @@ let __tla = Promise.all([
 ]).then(async () => {
   const U = {
     with_self_weight: {
-      sigma_max_servicio_tm2: 12.907,
-      sigma_min_servicio_tm2: 8.168
+      sigma_max_servicio_tm2: 13.264,
+      sigma_min_servicio_tm2: 7.305
     },
     without_self_weight: {
       sigma_max_servicio_tm2: 11.86
