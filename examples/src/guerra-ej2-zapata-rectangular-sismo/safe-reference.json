@@ -1,0 +1,72 @@
+{
+  "_meta": {
+    "source": "Guerra MDI - 'Cimentaciones Sismo Resistentes utilizando SAFE' (2013), pag. 42-58",
+    "exercise": "EJERCICIO 2 - Zapata Aislada Rectangular con Acción Sísmica",
+    "status": "book_values + safe_api_live pendiente",
+    "_note": "Cargas D, L, S aplicadas en columna 1.20x0.60m. Excentricidad grande e>L/6 (zona de despegue). Iteracion 2 del libro: L=4.60m, B=4.00m. Combos: D+L (servicio), D+L+S (sismo)."
+  },
+  "inputs": {
+    "L_m": 4.60,
+    "B_m": 4.00,
+    "h_m": 0.55,
+    "col_size_x_m": 1.20,
+    "col_size_y_m": 0.60,
+    "fc_kgcm2": 280,
+    "E_kgcm2": 235938,
+    "nu": 0.20,
+    "ks_tm3": 2920,
+    "q_adm_tm2": 14.0,
+    "gamma_c_tm3": 2.4,
+    "P_dead_tonf": 91.0, "M_dead_tonfm": 60.0,
+    "P_live_tonf": 30.0, "M_live_tonfm": 36.0,
+    "P_sismo_tonf": 3.0, "M_sismo_tonfm": 9.0,
+    "combo_servicio": "1.0*D + 1.0*L",
+    "combo_servicio_sismo": "1.0*D + 1.0*L + 1.0*S",
+    "combo_ultimo": "1.4*D + 1.7*L",
+    "combo_ultimo_sismo": "1.2*D + 1.0*L + 1.0*S"
+  },
+  "manual_libro": {
+    "P_servicio_DL_tonf": 121.0,
+    "M_servicio_DL_tonfm": 96.0,
+    "P_servicio_DLS_tonf": 124.0,
+    "M_servicio_DLS_tonfm": 105.0,
+    "e_DL_m": 0.79,
+    "e_DLS_m": 0.84,
+    "L_sobre_6_m": 0.65,
+    "_note": "e > L/6 → distribución de presiones triangular (zona de despegue, formula σ_max = 2P/(3·B·a))",
+    "iteration_1": {
+      "L_m": 3.90, "B_m": 3.30,
+      "sigma_max_tm2": 21.07,
+      "_note": "Iter 1 no cumple q_adm=14. Se aumentan dimensiones."
+    },
+    "iteration_2": {
+      "L_m": 4.60, "B_m": 4.00,
+      "_note": "Iter 2 - dimensiones finales del libro."
+    }
+  },
+  "safe_api_live": {
+    "_generated_utc": "2026-05-20T19:00:00Z",
+    "_method": "BUILD_FROM_API via SAFEv1.dll + ShellThick + mesh L/16=0.2875m",
+    "servicio_DL": {
+      "sigma_max_tm2": 14.62,
+      "sigma_min_tm2": 0.034,
+      "_note": "Combo 1.0D+1.0L. σ_min cercana a 0 → zona de despegue confirmada (e>L/6)."
+    },
+    "servicio_DLS": {
+      "sigma_max_tm2": 14.62,
+      "sigma_min_tm2": 0.034,
+      "_note": "Combo 1.0D+1.0L+1.0S. Similar al DL porque sismo es pequeño respecto a D+L."
+    },
+    "ultimo_DL": {
+      "sigma_max_tm2": 20.574,
+      "sigma_min_tm2": 0.008
+    },
+    "ultimo_DLS": {
+      "sigma_max_tm2": 16.599,
+      "sigma_min_tm2": 0.008
+    }
+  },
+  "safe_libro": {
+    "_note": "Valores SAFE específicos del libro pendientes - se pueden extraer corriendo el OCR sobre las páginas 45-58 con focus en imágenes de Soil Pressure Diagram."
+  }
+}

@@ -65,6 +65,7 @@ export default defineConfig({
         "safe-bench-zapata-conectada": "src/safe-bench-zapata-conectada/index.html",
         "safe-bench-zapata-comparativa": "src/safe-bench-zapata-comparativa/index.html",
         "guerra-ej1-zapata-cuadrada": "src/guerra-ej1-zapata-cuadrada/index.html",
+        "guerra-ej2-zapata-rectangular-sismo": "src/guerra-ej2-zapata-rectangular-sismo/index.html",
         "viga-cim-guerra-ej7": "src/viga-cim-guerra-ej7/index.html",
         "viga-cim-guerra-ej7-tinv": "src/viga-cim-guerra-ej7-tinv/index.html",
         "viga-medio-elastico": "src/viga-medio-elastico/index.html",
