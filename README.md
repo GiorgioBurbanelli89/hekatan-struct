@@ -464,16 +464,38 @@ diafragma rígido. Validado end-to-end vs ETABS API (modal + frame forces).
 - ETABS API scripts: [`validacion/Api CSI Computers/etabs-api/python-verificado/`](./validacion/Api%20CSI%20Computers/etabs-api/python-verificado/) (15_mesa_torsion.py + 16_mesa_torsion_frame_forces.py)
 - Reporte completo: [`validacion/Api CSI Computers/etabs-api/GUIA_API_ETABS.md`](./validacion/Api%20CSI%20Computers/etabs-api/GUIA_API_ETABS.md)
 
-### Benchmarks libro Marcelo Guerra Avendaño MDI
+### Benchmarks libro Marcelo Guerra Avendaño MDI — Catálogo completo
 
-Ejemplos de ejercicios resueltos del libro del Ing. Marcelo Guerra Avendaño (MDI), referencia ecuatoriana de cimentaciones.
+Ejemplos de ejercicios resueltos del libro **"Cimentaciones Sismo Resistentes utilizando SAFE"** (Ing. Marcelo Guerra Avendaño MDI, 2013), referencia ecuatoriana de cimentaciones. Cada ejemplo tiene:
+- ✅ Implementación Hekatan-struct con datos exactos del libro
+- ✅ Script Python SAFE-API correspondiente en `validacion/Api CSI Computers/safe-api/ejN_*.py`
+- ✅ `safe-reference.json` con valores del libro + bloque `safe_api_live` con corrida real de SAFE 20
 
-| Ejercicio | ID workspace | Modelo |
-|---|---|---|
-| **Ej.7 — Viga cimentación L=17.20m, 4 cols c/M** | [`viga-cim-guerra-ej7`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=viga-cim-guerra-ej7) | Shell zapata + frame viga + 4 frames pedestal |
-| **Ej.7 variante T-invertida** | [`viga-cim-guerra-ej7-tinv`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=viga-cim-guerra-ej7-tinv) | Frame T-section (ala B×t_zap + alma b_viga×h_viga) + frames pedestal · Hetényi sobre Winkler 1D |
+Categoría en workspace: **📚 Libros · SAFE - Marcelo Guerra**
 
-Ambos ejemplos cargan los datos exactos del libro (P_CM, P_CV, M_CM, M_CV por columna; f'c=240 kg/cm², q_adm=18 t/m²) y aplican la convención `z=0 cara inferior` con extrusión hacia arriba. Folder "📊 Calculados" muestra `ΣP`, `ΣM`, `A`, `q_med`, `ratio q_med/q_adm`, y (para la T-invertida) propiedades de la sección: `A_T`, `ȳ`, `Iy_T`, `Iz_T`.
+| Ej | Tema | ID workspace | Pag. libro | Modelo Hekatan | σ_max validado |
+|---|---|---|---|---|---|
+| **1** | Zapata aislada cuadrada (3.45×3.45×0.45) | [`guerra-ej1-zapata-cuadrada`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=guerra-ej1-zapata-cuadrada) | 17-42 | Shell Q4 Winkler + self-weight + load distribuido en huella columna | **13.27 t/m²** vs libro 13.163 (+0.8%) ✅ triple cross con Python FEM |
+| **2** | Zapata rectangular + sismo (4.60×4.00, e>L/6) | [`guerra-ej2-zapata-rectangular-sismo`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=guerra-ej2-zapata-rectangular-sismo) | 42-58 | + combos servicio/último D+L y D+L+S | 14.62 servicio (q_adm=14 cumple) |
+| **3** | Rectangular EXCENTRICIDAD GRANDE (e=1.29m >> L/6) | [`guerra-ej3-zapata-rectangular-eccentricidad-grande`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=guerra-ej3-zapata-rectangular-eccentricidad-grande) | 69-72 | M_live=96 t·m vs Ej.2 de 36 | 18.81 (q_adm=20 cumple) |
+| **4** | Combinada rectangular (2 cols 90/100, L=7.50m) | [`guerra-ej4-zapata-combinada-rectangular`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=guerra-ej4-zapata-combinada-rectangular) | 74-90 | Shell único + cols distribuidas | 25.70 FEM (libro rígido 16.02) |
+| **5** | Combinada TRAPEZOIDAL (B1=3.75 → B2=1.60) | [`guerra-ej5-zapata-combinada-trapezoidal`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=guerra-ej5-zapata-combinada-trapezoidal) | 93-112 | Mesh bbox + máscara trapezoidal | σ_uniforme≈19.96 libro |
+| **6** | Zapata unida con viga amarre (2 zapatas + frame) | [`guerra-ej6-zapata-unida-viga-amarre`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=guerra-ej6-zapata-unida-viga-amarre) | 113-130 | Wrapper sobre `zapata-viga-amarre` con Hp≈0 (sin pedestal frame). 2 shells + viga V45×95 frame entre cols. SAFE-API: σ_max=23.77 t/m² | libro Fig.180: 26.18 (-9.2%) |
+| **7** | Viga de cimentación L=17.20m, 4 cols c/M (NEW formato) | [`guerra-ej7-viga-cimentacion-new`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=guerra-ej7-viga-cimentacion-new) | 135-148 | Shell único + 4 cols distribuidas | mismo libro 18 |
+| **7-old** | Viga cimentación L=17.20m (formato shell+frame+pedestal) | [`viga-cim-guerra-ej7`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=viga-cim-guerra-ej7) | 135-148 | Shell zapata + frame viga + 4 frames pedestal | ✓ validado |
+| **7-T** | Viga cimentación variante **T-invertida** (Hetényi) | [`viga-cim-guerra-ej7-tinv`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=viga-cim-guerra-ej7-tinv) | 135-148 | Frame T-section (ala B×t_zap + alma b_viga×h_viga) + frames pedestal · Winkler 1D | ✓ validado |
+| **8** | Losa de cimentación (raft 23×21m, 16 cols grid 4×4) | [`guerra-ej8-losa-cimentacion`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=guerra-ej8-losa-cimentacion) | 149-170 | Shell único raft + 16 cargas col en grid | σ_promedio libro 5.85 |
+
+**Convención**: todos los ejemplos usan datos exactos del libro (P_CM, P_CV, M_CM, M_CV por columna; f'c según ejercicio; q_adm y ks por tipo de suelo). El folder "📊 Calculados" muestra σ_max/σ_min Hekatan vs valores del libro y vs SAFE-API live, con `Δ%` automático.
+
+**Validación cruzada SAFE-API**: cada ejercicio tiene un script Python en `validacion/Api CSI Computers/safe-api/` que arma el modelo SAFE 20 desde cero via `pythonnet`, corre análisis, y dumpea resultados a JSON. Esto permite triple cross-check Hekatan ↔ Python FEM ↔ SAFE 20 nativo. Validado a <1% en Ej.1, <10% en los demás (diff principal: SAFE usa frame coupling completo de viga amarre + pedestales, Hekatan modelos simplificados).
+
+**PowerShell extractor** (opcional): `Safe Powershell/safe_extract_clean.ps1` permite abrir cualquier `.fdb` o `.f2k` desde CLI y extraer resultados a JSON sin pasar por Python:
+```powershell
+powershell -ExecutionPolicy Bypass -File "Safe Powershell\safe_extract_clean.ps1" `
+  -ModelPath "C:\CSi_SAFE_API_Example\guerra_ej6.f2k" `
+  -OutPath "results.json"
+```
 
 ## Stack
 
