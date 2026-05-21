@@ -103,9 +103,15 @@ export const guerraEj6ZapataUnida: ExampleDef = {
     const nodes: [number, number][] = [];
     for (let j = 0; j < nyn; ++j)
       for (let i = 0; i < nxn; ++i) nodes.push([i * dx, j * dy]);
+    // SOLO crear elementos que esten DENTRO de Zapata1, Zapata2 o Viga amarre.
+    // Esto produce 2 zapatas visualmente separadas + viga delgada al centro
+    // (como Figura 181 del libro).
     const elements: [number, number, number, number][] = [];
     for (let j = 0; j < ny; ++j)
       for (let i = 0; i < nx; ++i) {
+        const xc = (i + 0.5) * dx, yc = (j + 0.5) * dy;
+        const cellInFooting = inZ1(xc, yc) || inZ2(xc, yc) || inViga(xc, yc);
+        if (!cellInFooting) continue;   // skip cells in empty corners
         const n0 = j * nxn + i;
         elements.push([n0, n0 + 1, n0 + nxn + 1, n0 + nxn]);
       }
