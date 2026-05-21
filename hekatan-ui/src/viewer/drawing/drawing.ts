@@ -1732,12 +1732,13 @@ export function drawing({
   // 3D world-space). Calculamos el scale = distancia/factor para que el
   // tamaño aparente en píxeles quede igual a cualquier zoom.
   // Calibración: a 10m de la cámara, scale=1 (sphere=2cm, cruz=15cm).
-  const _snapBaseDist = 10;
+  const _snapBaseDist = 25;   // factor mayor → sphere mas chica al alejar
+  const _snapMaxScale = 4.0;  // cap max para evitar cursor gigante en plan view
   const updateSnapMarkerScale = () => {
     if (!snapMarker.visible) return;
     const cam = getActiveCamera();
     const dist = cam.position.distanceTo(snapMarker.position);
-    const s = Math.max(0.05, dist / _snapBaseDist);
+    const s = Math.max(0.05, Math.min(_snapMaxScale, dist / _snapBaseDist));
     snapMarker.scale.setScalar(s);
   };
   // Helper compartido: re-escala cada esfera de selección (cyan) según
