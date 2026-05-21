@@ -30,18 +30,19 @@ from scipy.sparse.linalg import spsolve
 # ============================================================================
 # INPUTS (modelo SAFE real Ejm6.fdb + Fig.163 + Fig.151)
 # ============================================================================
-# IMPORTANTE: El modelo SAFE del usuario usa Thickness=0.6m (NO 0.55 del libro).
+# Modelo SAFE: Shell-Thin (Kirchhoff plate, NO shear deformation)
 # Stiff slab (SAFE Footing type=Stiff) = región 0.5×0.5cm RIGIDA en col loc
 # Footing slab (SAFE type=Footing)     = región flexible zapata
-# Ambos modelados como Shell-Thin de 0.6m con Hormigón 210.
-# El "Stiff" se emula via mi rigid-plate constraint (footprint=0.5×0.5m).
-H_ZAPATA = 0.60       # SAFE modelo: 0.6m (libro citaba 0.55)
+# Ambos modelados como Shell-Thin de 0.55m con Hormigón 210.
+# Self-weight INCLUIDO en Dead load pattern (Self Weight Multiplier=1)
+H_ZAPATA = 0.55       # libro PDF + SAFE modelo
 BC       = 0.50       # columna 50×50 cm = stiff slab footprint
 STIFF_SIZE = 0.50     # Stiff region (Joint Load X/Y Dimension)
 FC_KGCM2 = 210
 GAMMA_C  = 2.4
 NU       = 0.20
 KS_TM3   = 3820       # ks Winkler [t/m³]
+SHELL_THIN = True     # True=Kirchhoff (no shear), False=Mindlin (con shear)
 
 E = 14100 * np.sqrt(FC_KGCM2) * 10   # t/m² ≈ 235,000 kgf/cm² × 10
 
@@ -88,30 +89,50 @@ def shape_q4(xi, eta):
     return N, dN_dxi, dN_deta
 
 def mindlin_q4(xy, h, E_val, nu_val):
+    """Mindlin Q4 ShellThick / Selectivve-Reduced ShellThin.
+    Si SHELL_THIN=True: shear con 1×1 Gauss (avoid shear locking + Kirchhoff limit)
+    Si SHELL_THIN=False: shear con 2×2 Gauss (full Mindlin)
+    Bending siempre con 2×2 Gauss (full integration).
+    """
     D = E_val * h**3 / (12 * (1 - nu_val**2))
     Db = D * np.array([[1, nu_val, 0], [nu_val, 1, 0], [0, 0, (1-nu_val)/2]])
     G_  = E_val / (2*(1+nu_val))
     Ds = 5/6 * G_ * h
     Ke = np.zeros((12, 12))
-    gp = [(-1/np.sqrt(3), 1.0), (1/np.sqrt(3), 1.0)]
-    for xi_g, w_xi in gp:
-        for eta_g, w_eta in gp:
+    # Bending — full integration 2×2
+    gp_bend = [(-1/np.sqrt(3), 1.0), (1/np.sqrt(3), 1.0)]
+    for xi_g, w_xi in gp_bend:
+        for eta_g, w_eta in gp_bend:
             N, dN_dxi, dN_deta = shape_q4(xi_g, eta_g)
             J = np.array([[dN_dxi @ xy[:,0], dN_dxi @ xy[:,1]],
                           [dN_deta @ xy[:,0], dN_deta @ xy[:,1]]])
-            detJ = np.linalg.det(J)
-            Jinv = np.linalg.inv(J)
+            detJ = np.linalg.det(J); Jinv = np.linalg.inv(J)
             dN_dx = Jinv[0,0]*dN_dxi + Jinv[0,1]*dN_deta
             dN_dy = Jinv[1,0]*dN_dxi + Jinv[1,1]*dN_deta
-            Bb = np.zeros((3, 12)); Bs = np.zeros((2, 12))
+            Bb = np.zeros((3, 12))
             for k in range(4):
                 Bb[0, 3*k+1] = dN_dx[k]
                 Bb[1, 3*k+2] = dN_dy[k]
                 Bb[2, 3*k+1] = dN_dy[k]
                 Bb[2, 3*k+2] = dN_dx[k]
+            Ke += Bb.T @ Db @ Bb * detJ * w_xi * w_eta
+    # Shear — Si SHELL_THIN reducida 1×1 (Kirchhoff-like, no shear locking)
+    if SHELL_THIN:
+        gp_shear = [(0.0, 2.0)]   # 1×1 Gauss
+    else:
+        gp_shear = gp_bend         # 2×2 Gauss
+    for xi_g, w_xi in gp_shear:
+        for eta_g, w_eta in gp_shear:
+            N, dN_dxi, dN_deta = shape_q4(xi_g, eta_g)
+            J = np.array([[dN_dxi @ xy[:,0], dN_dxi @ xy[:,1]],
+                          [dN_deta @ xy[:,0], dN_deta @ xy[:,1]]])
+            detJ = np.linalg.det(J); Jinv = np.linalg.inv(J)
+            dN_dx = Jinv[0,0]*dN_dxi + Jinv[0,1]*dN_deta
+            dN_dy = Jinv[1,0]*dN_dxi + Jinv[1,1]*dN_deta
+            Bs = np.zeros((2, 12))
+            for k in range(4):
                 Bs[0, 3*k+0] = dN_dx[k]; Bs[0, 3*k+1] = -N[k]
                 Bs[1, 3*k+0] = dN_dy[k]; Bs[1, 3*k+2] = -N[k]
-            Ke += Bb.T @ Db @ Bb * detJ * w_xi * w_eta
             Ke += Bs.T @ (Ds * np.eye(2)) @ Bs * detJ * w_xi * w_eta
     return Ke
 
