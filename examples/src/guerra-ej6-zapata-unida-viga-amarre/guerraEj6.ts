@@ -47,21 +47,22 @@ export const guerraEj6ZapataUnida: ExampleDef = {
     Bz2: overrideParam(zapataVigaAmarre.params.Bz2, 2.45),
     tz:  overrideParam(zapataVigaAmarre.params.tz,  0.55),
     bc:  overrideParam(zapataVigaAmarre.params.bc,  0.50),
-    Hp:  overrideParam(zapataVigaAmarre.params.Hp,  1.00),
+    // SAFE Ej.6 no tiene pedestales: solo 2 shells + viga frame entre zapatas.
+    // Hp casi-cero → pedestal invisible, viga queda al nivel de zapatas.
+    Hp:  overrideParam(zapataVigaAmarre.params.Hp,  0.01, { min: 0.01, max: 2.0, step: 0.01 }),
     ks:  overrideParam(zapataVigaAmarre.params.ks,  37461, { max: 60000 }),
     P1:  overrideParam(zapataVigaAmarre.params.P1,  110),
     // Momentos: la viga amarre transmite eccentricidad de Col1 (medianera, en
     // borde de Z1) hacia Col2 via viga rigida. Aproximacion: M1 grande en Col1
     // (excentricidad ~0.94m × P1), M2 contrario en Col2 (balance frame).
     // Sin estos momentos, Z2 queda uniforme (libro Fig.180 muestra gradiente).
+    // Momentos = 0 (libro Fig.163: Single Footing dialog Mx=0, My=0).
+    // La eccentricidad de Col1 (medianera, Left=0.25 vs Right=2.13) genera
+    // automaticamente el gradiente en Z1. Z2 con col centrada → uniforme.
     M1x: overrideParam(zapataVigaAmarre.params.M1x, 0),
-    // Col1 esta en borde IZQUIERDO de Z1 (medianera, x=0.2). Eccentricidad
-    // hacia -X → moment de la carga es NEGATIVO en y-axis → σ_max en LEFT side
-    // (matchea libro Fig.180: rojo a la izquierda de Z1).
-    M1y: overrideParam(zapataVigaAmarre.params.M1y, -50, { min: -150, max: 150 }),
+    M1y: overrideParam(zapataVigaAmarre.params.M1y, 0),
     P2:  overrideParam(zapataVigaAmarre.params.P2,  140),
     M2x: overrideParam(zapataVigaAmarre.params.M2x, 0),
-    // Viga amarre transmite moment positivo a Col2 (balance frame)
-    M2y: overrideParam(zapataVigaAmarre.params.M2y, 20, { min: -100, max: 100 }),
+    M2y: overrideParam(zapataVigaAmarre.params.M2y, 0),
   },
 };
