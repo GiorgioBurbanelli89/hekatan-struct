@@ -103,15 +103,12 @@ export const guerraEj6ZapataUnida: ExampleDef = {
     const nodes: [number, number][] = [];
     for (let j = 0; j < nyn; ++j)
       for (let i = 0; i < nxn; ++i) nodes.push([i * dx, j * dy]);
-    // SOLO crear elementos que esten DENTRO de Zapata1, Zapata2 o Viga amarre.
-    // Esto produce 2 zapatas visualmente separadas + viga delgada al centro
-    // (como Figura 181 del libro).
+    // Mesh COMPLETA (sin trim) para evitar singularidad de nodos huerfanos.
+    // La "separacion visual" entre zapatas la da el ks=0 + bajo self-weight
+    // afuera de footings → σ ~ 0 → color azul/transparente.
     const elements: [number, number, number, number][] = [];
     for (let j = 0; j < ny; ++j)
       for (let i = 0; i < nx; ++i) {
-        const xc = (i + 0.5) * dx, yc = (j + 0.5) * dy;
-        const cellInFooting = inZ1(xc, yc) || inZ2(xc, yc) || inViga(xc, yc);
-        if (!cellInFooting) continue;   // skip cells in empty corners
         const n0 = j * nxn + i;
         elements.push([n0, n0 + 1, n0 + nxn + 1, n0 + nxn]);
       }
@@ -182,13 +179,23 @@ export const guerraEj6ZapataUnida: ExampleDef = {
     const bendingXY = new Map<number, number[]>();
     const vonMises = new Map<number, number[]>();
     elements.forEach((el, i) => {
-      pressure.set(i, el.map(n => -Math.abs(ks_kNm3 * result.nodeResults[n].w)));
+      // Centro del elemento para chequear si esta dentro de Z1/Z2/Viga
+      const xc = (nodes[el[0]][0] + nodes[el[2]][0]) / 2;
+      const yc = (nodes[el[0]][1] + nodes[el[2]][1]) / 2;
+      const inFooting = inZ1(xc, yc) || inZ2(xc, yc);
+      const inVigaArea = inViga(xc, yc) && !inFooting;
+      // Pressure: solo en zapatas (con valor real). Viga + corners = NaN → gris.
+      pressure.set(i, el.map(n =>
+        inFooting ? -Math.abs(ks_kNm3 * result.nodeResults[n].w) : NaN
+      ));
       const er = result.elementResults[i];
-      bendingXX.set(i, [er.Mxx, er.Mxx, er.Mxx, er.Mxx]);
-      bendingYY.set(i, [er.Myy, er.Myy, er.Myy, er.Myy]);
-      bendingXY.set(i, [er.Mxy, er.Mxy, er.Mxy, er.Mxy]);
+      // Bending: visible en zapatas Y viga (la viga tiene flexion real).
+      const showBending = inFooting || inVigaArea;
+      bendingXX.set(i, [er.Mxx, er.Mxx, er.Mxx, er.Mxx].map(v => showBending ? v : NaN));
+      bendingYY.set(i, [er.Myy, er.Myy, er.Myy, er.Myy].map(v => showBending ? v : NaN));
+      bendingXY.set(i, [er.Mxy, er.Mxy, er.Mxy, er.Mxy].map(v => showBending ? v : NaN));
       const vm = Math.sqrt(er.Mxx**2 + er.Myy**2 - er.Mxx*er.Myy + 3*er.Mxy**2);
-      vonMises.set(i, [vm, vm, vm, vm]);
+      vonMises.set(i, [vm, vm, vm, vm].map(v => showBending ? v : NaN));
     });
 
     const N3D: [number, number, number][] = nodes.map(n => [n[0], n[1], 0]);
