@@ -47,9 +47,11 @@ export const guerraEj6ZapataUnida: ExampleDef = {
     Bz2: overrideParam(zapataVigaAmarre.params.Bz2, 2.45),
     tz:  overrideParam(zapataVigaAmarre.params.tz,  0.55),
     bc:  overrideParam(zapataVigaAmarre.params.bc,  0.50),
-    // SAFE Ej.6 no tiene pedestales: solo 2 shells + viga frame entre zapatas.
-    // Hp casi-cero → pedestal invisible, viga queda al nivel de zapatas.
-    Hp:  overrideParam(zapataVigaAmarre.params.Hp,  0.01, { min: 0.01, max: 2.0, step: 0.01 }),
+    // Hp=0.5: pedestal corto pero suficiente para frame coupling entre Z1↔Z2.
+    // Con Hp=0 (sin pedestal) la viga amarre NO transmite momentos → Z2 queda
+    // uniforme. Con Hp=0.5 la eccentricidad de Col1 (medianera) se transfiere
+    // parcialmente a Z2 via frame, generando gradiente visible como libro Fig.180.
+    Hp:  overrideParam(zapataVigaAmarre.params.Hp,  0.5, { min: 0.01, max: 2.0, step: 0.05 }),
     ks:  overrideParam(zapataVigaAmarre.params.ks,  37461, { max: 60000 }),
     P1:  overrideParam(zapataVigaAmarre.params.P1,  110),
     // Momentos: la viga amarre transmite eccentricidad de Col1 (medianera, en
