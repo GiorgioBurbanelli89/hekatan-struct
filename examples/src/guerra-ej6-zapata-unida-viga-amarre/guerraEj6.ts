@@ -50,10 +50,14 @@ export const guerraEj6ZapataUnida: ExampleDef = {
     Hp:  overrideParam(zapataVigaAmarre.params.Hp,  1.00),
     ks:  overrideParam(zapataVigaAmarre.params.ks,  37461, { max: 60000 }),
     P1:  overrideParam(zapataVigaAmarre.params.P1,  110),
+    // Momentos: la viga amarre transmite eccentricidad de Col1 (medianera, en
+    // borde de Z1) hacia Col2 via viga rigida. Aproximacion: M1 grande en Col1
+    // (excentricidad ~0.94m × P1), M2 contrario en Col2 (balance frame).
+    // Sin estos momentos, Z2 queda uniforme (libro Fig.180 muestra gradiente).
     M1x: overrideParam(zapataVigaAmarre.params.M1x, 0),
-    M1y: overrideParam(zapataVigaAmarre.params.M1y, 0),
+    M1y: overrideParam(zapataVigaAmarre.params.M1y, 50, { min: -150, max: 150 }),
     P2:  overrideParam(zapataVigaAmarre.params.P2,  140),
     M2x: overrideParam(zapataVigaAmarre.params.M2x, 0),
-    M2y: overrideParam(zapataVigaAmarre.params.M2y, 0),
+    M2y: overrideParam(zapataVigaAmarre.params.M2y, -20, { min: -100, max: 100 }),
   },
 };
