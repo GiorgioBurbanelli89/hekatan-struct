@@ -24,7 +24,7 @@ import { g as na, __tla as __tla_12 } from "./guerraEj2-B1S6OquI.js";
 import { g as oa, __tla as __tla_13 } from "./guerraEj3-BAOhO2EX.js";
 import { g as aa, __tla as __tla_14 } from "./guerraEj4-B6oVtp_a.js";
 import { g as ia, __tla as __tla_15 } from "./guerraEj5-DeixUAPM.js";
-import { g as sa, __tla as __tla_16 } from "./guerraEj6-CDRokcDQ.js";
+import { g as sa, __tla as __tla_16 } from "./guerraEj6-M9umC7yF.js";
 import { g as ra, __tla as __tla_17 } from "./guerraEj7-aIaWHygb.js";
 import { g as la, __tla as __tla_18 } from "./guerraEj8-Cak2WJ03.js";
 import { v as da, __tla as __tla_19 } from "./vigaCimGuerra-pdxc1H2S.js";
