@@ -68,9 +68,11 @@ export const guerraEj6ZapataUnida: ExampleDef = {
     M1y: overrideParam(zapataVigaAmarre.params.M1y, 0),
     P2:  overrideParam(zapataVigaAmarre.params.P2,  140),
     M2x: overrideParam(zapataVigaAmarre.params.M2x, 0),
-    // M2y = -15 t·m: invertido respecto a Col1 (frame counter-moment). Da
-    // gradiente visible en Z2 (~σ=20 borde izq, σ=14 borde der). Ajustable
-    // via slider en runtime.
-    M2y: overrideParam(zapataVigaAmarre.params.M2y, -15, { min: -50, max: 50 }),
+    // M2y = -35 t·m: counter-moment de Col1 medianera, calibrado para que Z2
+    // muestre σ_min ~15.4 (borde ext) y σ_max ~31 (borde int), matcheando el
+    // gradiente del libro Fig.180 (σ_min libro = 15.39 t/m² en borde ext Z2).
+    // Cálculo: P2/(A2)=23.3, libro σ_min=15.39 → ΔE/2≈8 → M=6·e·A→M≈38 t·m.
+    // -35 lo dejo conservador. Ajustable via slider [-100, 100].
+    M2y: overrideParam(zapataVigaAmarre.params.M2y, -35, { min: -100, max: 100 }),
   },
 };
