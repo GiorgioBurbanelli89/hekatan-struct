@@ -1,0 +1,21 @@
+{
+  "_meta": {
+    "source": "Guerra MDI pag.135-148",
+    "exercise": "EJERCICIO 7 - Vigas de Cimentación (formato Ej.1-4)",
+    "_note": "Viga L=17.20m con 4 columnas. f'c=240, q_adm=18, cols 60×60cm."
+  },
+  "inputs": {
+    "L_m": 17.20, "B_m": 1.50, "h_m": 0.85,
+    "col_size_m": 0.60,
+    "col1_x_m": 0.30, "col2_x_m": 5.30, "col3_x_m": 11.30, "col4_x_m": 16.90,
+    "fc_kgcm2": 240, "q_adm_tm2": 18.0, "ks_tm3": 3640,
+    "P_dead_col1": 90.0, "M_dead_col1": 3.0, "P_live_col1": 37.50, "M_live_col1": 1.50,
+    "P_dead_col2": 130.0, "M_dead_col2": 4.0, "P_live_col2": 57.50, "M_live_col2": 2.75,
+    "P_dead_col3": 145.0, "M_dead_col3": -6.0, "P_live_col3": 65.0, "M_live_col3": -3.0,
+    "P_dead_col4": 95.0, "M_dead_col4": -3.0, "P_live_col4": 33.0, "M_live_col4": -1.50
+  },
+  "manual_libro": {
+    "Ru_tonf": 971.85,
+    "x_centroide_m": 8.514
+  }
+}

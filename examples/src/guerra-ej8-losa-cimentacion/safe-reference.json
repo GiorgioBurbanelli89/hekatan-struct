@@ -1,0 +1,24 @@
+{
+  "_meta": {
+    "source": "Guerra MDI pag.149-170",
+    "exercise": "EJERCICIO 8 - Losa de Cimentación (Raft)",
+    "_note": "Losa 4×4 columnas (16 cols). f'c=240, q_adm=7 t/m². Cols 60×60cm cuadradas + 60Ø circulares mezcladas. Cargas totales D=1891t, L=644t, R=2535t."
+  },
+  "inputs": {
+    "L_total_m": 23.00, "B_total_m": 21.00, "h_m": 0.80,
+    "col_size_m": 0.60,
+    "fc_kgcm2": 240, "q_adm_tm2": 7.0, "ks_tm3": 1500,
+    "_columnas": "4×4 grid en x=[-10.25,-4.25,3.75,10.25] y=[9.40,3.90,-2.90,-9.40]",
+    "P_total_dead_tonf": 1891.0,
+    "P_total_live_tonf": 644.0,
+    "R_total_servicio_tonf": 2535.0
+  },
+  "manual_libro": {
+    "x_centroide_m": 10.43,
+    "y_centroide_m": 9.405,
+    "ex_m": 0.18,
+    "ey_m": 0.005,
+    "sigma_promedio_tm2": 5.85,
+    "_note": "Libro pag.151: σ esfuerzos por columna entre 5.45-6.01 t/m² (cumple q_adm=7)."
+  }
+}

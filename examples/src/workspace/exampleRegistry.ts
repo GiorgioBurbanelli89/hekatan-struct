@@ -242,6 +242,10 @@ import { guerraEj1ZapataCuadrada } from "../guerra-ej1-zapata-cuadrada/guerraEj1
 import { guerraEj2ZapataRectangular } from "../guerra-ej2-zapata-rectangular-sismo/guerraEj2";
 import { guerraEj3ZapataRectangularEccGrande } from "../guerra-ej3-zapata-rectangular-eccentricidad-grande/guerraEj3";
 import { guerraEj4ZapataCombinada } from "../guerra-ej4-zapata-combinada-rectangular/guerraEj4";
+import { guerraEj5ZapataTrapezoidal } from "../guerra-ej5-zapata-combinada-trapezoidal/guerraEj5";
+import { guerraEj6ZapataUnida } from "../guerra-ej6-zapata-unida-viga-amarre/guerraEj6";
+import { guerraEj7VigaCimentacion } from "../guerra-ej7-viga-cimentacion-new/guerraEj7";
+import { guerraEj8LosaCimentacion } from "../guerra-ej8-losa-cimentacion/guerraEj8";
 import { vigaCimGuerraEj7 } from "../viga-cim-guerra-ej7/vigaCimGuerra";
 import { vigaCimGuerraEj7Tinv } from "../viga-cim-guerra-ej7-tinv/vigaCimGuerraTinv";
 import { edificioConLosa } from "../edificio-con-losa/edificioConLosa";
@@ -334,6 +338,10 @@ export const examplesRegistry: ExampleDef[] = [
   guerraEj2ZapataRectangular,
   guerraEj3ZapataRectangularEccGrande,
   guerraEj4ZapataCombinada,
+  guerraEj5ZapataTrapezoidal,
+  guerraEj6ZapataUnida,
+  guerraEj7VigaCimentacion,
+  guerraEj8LosaCimentacion,
   vigaCimGuerraEj7,
   vigaCimGuerraEj7Tinv,
   // 🎯 Benchmarks por DOFs — agrupados por número de grados de libertad efectivos

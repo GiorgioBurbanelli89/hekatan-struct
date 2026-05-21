@@ -1,0 +1,22 @@
+{
+  "_meta": {
+    "source": "Guerra MDI pag.93-112",
+    "exercise": "EJERCICIO 5 - Zapata Combinada Trapezoidal",
+    "_note": "L=5m, B1=3.75m (col1 lado izq) → B2=1.60m (col2 lado der). Cols 50x50cm en x=0.25 y x=4.75."
+  },
+  "inputs": {
+    "L_m": 5.00, "B1_m": 3.75, "B2_m": 1.60, "h_m": 1.15,
+    "col1_x_m": 0.25, "col2_x_m": 4.75, "col_size_m": 0.50,
+    "fc_kgcm2": 210, "ks_tm3": 2920, "q_adm_tm2": 20.0,
+    "P_dead_col1_tonf": 108.0, "M_dead_col1_tonfm": -4.3,
+    "P_live_col1_tonf": 45.0, "M_live_col1_tonfm": -2.0,
+    "P_dead_col2_tonf": 78.0, "M_dead_col2_tonfm": 3.2,
+    "P_live_col2_tonf": 36.0, "M_live_col2_tonfm": 2.4
+  },
+  "manual_libro": {
+    "R_servicio_tonf": 267.0,
+    "x_centroide_m": 2.0,
+    "sigma_uniforme_tm2": 19.96,
+    "_note": "Libro pag.95: σ uniforme=19.96 t/m² < q_adm=20 (cumple ajustado). Trapezoidal: B(x) varia lineal de B1 a B2."
+  }
+}

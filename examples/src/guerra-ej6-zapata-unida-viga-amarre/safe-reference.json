@@ -1,0 +1,17 @@
+{
+  "_meta": {
+    "source": "Guerra MDI pag.113-130",
+    "exercise": "EJERCICIO 6 - Zapata Unida con Viga de Amarre",
+    "_note": "Dos zapatas separadas conectadas por viga de amarre. L entre cols = 5.00m. Cols 50×50cm. f'c=290, q_adm=19."
+  },
+  "inputs": {
+    "L_entre_ejes_m": 5.00,
+    "col_size_m": 0.50,
+    "fc_kgcm2": 290, "q_adm_tm2": 19.0, "ks_tm3": 3800,
+    "B1_m": 2.50, "L1_m": 3.15,
+    "B2_m": 2.50, "L2_m": 2.50,
+    "h_m": 0.50,
+    "P_col1_tonf": 110.0, "P_col2_tonf": 140.0,
+    "_note": "Zapata1 medianera (3.15×2.50) y Zapata2 interna (2.50×2.50)."
+  }
+}
