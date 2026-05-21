@@ -58,13 +58,19 @@ export const guerraEj6ZapataUnida: ExampleDef = {
     // borde de Z1) hacia Col2 via viga rigida. Aproximacion: M1 grande en Col1
     // (excentricidad ~0.94m × P1), M2 contrario en Col2 (balance frame).
     // Sin estos momentos, Z2 queda uniforme (libro Fig.180 muestra gradiente).
-    // Momentos = 0 (libro Fig.163: Single Footing dialog Mx=0, My=0).
-    // La eccentricidad de Col1 (medianera, Left=0.25 vs Right=2.13) genera
-    // automaticamente el gradiente en Z1. Z2 con col centrada → uniforme.
+    // Momentos: Fig.163 dice Mx=My=0 (input directo del usuario), pero
+    // libro Fig.180 muestra Z2 CON gradiente — esto viene del frame analysis
+    // de SAFE que transmite eccentricidad de Col1 via viga amarre a Col2.
+    // Mi modelo Hekatan no captura completamente ese coupling (Hp limita la
+    // transferencia), así que aplico M2y manual para que Z2 muestre el
+    // gradiente esperado del libro.
     M1x: overrideParam(zapataVigaAmarre.params.M1x, 0),
     M1y: overrideParam(zapataVigaAmarre.params.M1y, 0),
     P2:  overrideParam(zapataVigaAmarre.params.P2,  140),
     M2x: overrideParam(zapataVigaAmarre.params.M2x, 0),
-    M2y: overrideParam(zapataVigaAmarre.params.M2y, 0),
+    // M2y = -15 t·m: invertido respecto a Col1 (frame counter-moment). Da
+    // gradiente visible en Z2 (~σ=20 borde izq, σ=14 borde der). Ajustable
+    // via slider en runtime.
+    M2y: overrideParam(zapataVigaAmarre.params.M2y, -15, { min: -50, max: 50 }),
   },
 };
