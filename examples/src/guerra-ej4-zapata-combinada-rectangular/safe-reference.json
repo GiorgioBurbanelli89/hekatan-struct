@@ -19,6 +19,12 @@
     "x_centroide_m": 3.04,
     "sigma_max_servicio_tm2": 16.018,
     "sigma_min_servicio_tm2": 9.901,
-    "_note": "Libro pag.76 iter final: B=2.50m. σ_max < q_adm=18 ✓"
+    "_note": "Libro pag.76 iter final: B=2.50m. σ_max < q_adm=18 ✓ (formula rigida P/A ± Mc/I)"
+  },
+  "safe_api_live": {
+    "_method": "BUILD_FROM_API ShellThick mesh B/8=0.31m",
+    "servicio": {"sigma_max_tm2": 25.695, "sigma_min_tm2": 6.803},
+    "ultimo":   {"sigma_max_tm2": 37.773, "sigma_min_tm2": 9.967},
+    "_note": "FEM con plate flexible da concentracion bajo columnas (25.7 vs libro 16). El libro usa fórmula rigida; SAFE FEM redistribuye con menor area efectiva bajo cada col → σ local mayor. Diff esperada en zapatas combinadas con plate flexible vs análisis simplificado."
   }
 }
