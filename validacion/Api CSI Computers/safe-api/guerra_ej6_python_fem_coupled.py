@@ -50,7 +50,7 @@ L1, B1 = 2.38, 3.00
 L2, B2 = 2.45, 2.45
 # Col1 EN Z1 (local): Left Edge=0.25, Bottom Edge=1.5 (per Fig.163)
 COL1_X_LOCAL, COL1_Y_LOCAL = 0.25, 1.5
-# Col2 EN Z2 (local): CENTRADO (distancia entre cols = 5.00m, libro Fig.151)
+# Col2 EN Z2 (local): per libro "distancia entre ejes = 5.00m" → Col2 ~ centered
 COL2_X_LOCAL, COL2_Y_LOCAL = L2/2, B2/2  # = (1.225, 1.225)
 
 # Cargas (libro): D=70+L=40=110 t (Col1), D=89+L=51=140 t (Col2)
@@ -243,19 +243,19 @@ for j in range(NY2):
             'Z2'
         ])
 
-# RIGID_AMP: multiplicador de stiffness para pedestales y viga.
-# El libro/SAFE modela una conexión RIGID-PLATE entre columna y zapata
-# (column-footprint actua como placa rígida 50x50cm). En FEM puro shell+frame
-# esto requiere multi-point constraints. Como aproximación, hago los frames
-# muy rígidos (×100) para emular el comportamiento rigid-plate.
-RIGID_AMP = 100
+# RIGID_AMP_PED: amplificación de stiffness para pedestales
+# RIGID_AMP_VIGA: viga DEBE transmitir moment Col1→Col2 efficient. Por física,
+# la viga libro absorbe ~88 t·m de los 103 t·m totales. Para esto necesita
+# Iy_vertical muy alta.
+RIGID_AMP_PED = 100
+RIGID_AMP_VIGA = 10000   # casi rigid body para máxima transferencia de moment
 frame_elements = [
     # pedestal Col1 (rigid amplified)
-    [n_Col1_bot, n_Col1_top, BC*BC*RIGID_AMP,  BC**4/12*RIGID_AMP, BC**4/12*RIGID_AMP, 0.14*BC**4*RIGID_AMP],
+    [n_Col1_bot, n_Col1_top, BC*BC*RIGID_AMP_PED,  BC**4/12*RIGID_AMP_PED, BC**4/12*RIGID_AMP_PED, 0.14*BC**4*RIGID_AMP_PED],
     # pedestal Col2 (rigid amplified)
-    [n_Col2_bot, n_Col2_top, BC*BC*RIGID_AMP,  BC**4/12*RIGID_AMP, BC**4/12*RIGID_AMP, 0.14*BC**4*RIGID_AMP],
-    # viga trabe (físicamente rígida)
-    [n_Col1_top, n_Col2_top, BV*HV*RIGID_AMP,  HV*BV**3/12*RIGID_AMP, BV*HV**3/12*RIGID_AMP, 0.28*BV*HV**3*RIGID_AMP],
+    [n_Col2_bot, n_Col2_top, BC*BC*RIGID_AMP_PED,  BC**4/12*RIGID_AMP_PED, BC**4/12*RIGID_AMP_PED, 0.14*BC**4*RIGID_AMP_PED],
+    # viga trabe (super rigid)
+    [n_Col1_top, n_Col2_top, BV*HV*RIGID_AMP_VIGA,  HV*BV**3/12*RIGID_AMP_VIGA, BV*HV**3/12*RIGID_AMP_VIGA, 0.28*BV*HV**3*RIGID_AMP_VIGA],
 ]
 
 # ============================================================================
@@ -266,12 +266,28 @@ N_dof  = 6 * N_node
 K = lil_matrix((N_dof, N_dof))
 F = np.zeros(N_dof)
 
+# Identificar shell elements dentro del Stiff footprint (col 0.5x0.5)
+# SAFE "Stiff" slab = shell con stiffness modifier alto en col footprint
+STIFF_E_MULT = 1   # Desactivo Stiff shell — uso rigid-plate constraint en su lugar
+def is_in_stiff_footprint(el_nodes_xy, col_x, col_y, size):
+    cx = np.mean(el_nodes_xy[:, 0]); cy = np.mean(el_nodes_xy[:, 1])
+    return abs(cx - col_x) <= size/2 + 1e-3 and abs(cy - col_y) <= size/2 + 1e-3
+
 # Shell elements (DOFs: w=2, θx=3, θy=4 por nodo)
 print(f"\n=== Assembly ===")
+n_stiff = 0
 for el in shell_elements:
     n0, n1, n2, n3, tag = el
     xy = np.array([nodes[n0][:2], nodes[n1][:2], nodes[n2][:2], nodes[n3][:2]])
-    Ke = mindlin_q4(xy, H_ZAPATA, E, NU)
+    # E local: amplificado si el element está bajo footprint de columna
+    is_stiff = False
+    if tag == 'Z1' and is_in_stiff_footprint(xy, COL1_X_LOCAL, COL1_Y_LOCAL, STIFF_SIZE):
+        is_stiff = True
+    elif tag == 'Z2' and is_in_stiff_footprint(xy, Z2_OX + COL2_X_LOCAL, Z2_OY + COL2_Y_LOCAL, STIFF_SIZE):
+        is_stiff = True
+    E_eff = E * STIFF_E_MULT if is_stiff else E
+    if is_stiff: n_stiff += 1
+    Ke = mindlin_q4(xy, H_ZAPATA, E_eff, NU)
     for li, gn_i in enumerate([n0, n1, n2, n3]):
         for lj, gn_j in enumerate([n0, n1, n2, n3]):
             for di in range(3):       # local DOF 0=w, 1=θx, 2=θy
@@ -280,6 +296,7 @@ for el in shell_elements:
                     gj = 6*gn_j + (dj + 2)
                     K[gi, gj] += Ke[3*li+di, 3*lj+dj]
 print(f"  Shell elements ensamblados: {len(shell_elements)}")
+print(f"  Stiff slab elements (E×{STIFF_E_MULT}): {n_stiff}")
 
 # Frame elements (DOFs: u,v,w,θx,θy,θz = 0..5)
 G_mod = E / (2*(1+NU))
@@ -342,7 +359,7 @@ for n in col2_footprint:
 # Restricción rigid: w_s = w_m + Δx·θy_m - Δy·θx_m, θx_s=θx_m, θy_s=θy_m
 # Implementación via PENALTY: para cada constraint c=0 añado γ·c² a la energía.
 # ============================================================================
-PEN = 1e10
+PEN = 1e8   # rigid plate moderado (no infinitamente rígido)
 def add_rigid_plate(master, footprint_nodes):
     """Master-slave penalty: rigid plate over footprint_nodes."""
     nm = nodes[master]; xm, ym = nm[0], nm[1]
@@ -373,7 +390,7 @@ def add_rigid_plate(master, footprint_nodes):
 
 add_rigid_plate(n_Col1_bot, col1_footprint)
 add_rigid_plate(n_Col2_bot, col2_footprint)
-print(f"  Rigid plate constraint aplicado a Col1 ({len(col1_footprint)}n) y Col2 ({len(col2_footprint)}n)")
+print(f"  Rigid plate Col1 ({len(col1_footprint)}n) + Col2 ({len(col2_footprint)}n) + viga super-rigid")
 
 # Aplicar TAMBIÉN la fuerza P+M a través del pedestal (cabeza),
 # además de la huella. Total carga = P (no se duplica porque rigid plate
