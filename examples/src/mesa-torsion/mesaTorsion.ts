@@ -183,13 +183,22 @@ export const mesaTorsion: ExampleDef = {
       elasticities.set(i, E_kNm2);
       poissons.set(i, p.nu);
       densities.set(i, RHO);
-      plateFormulations.set(i, 1);  // 1 = Shell-Thin Kirchhoff MZC (= ETABS Shell-Thin)
+      plateFormulations.set(i, 1);  // 1 = Shell-Thin Kirchhoff MZC (= ETABS Slab1 Shell-Thin t=100mm confirmado)
     }
     // Cols
     const Ac = p.bCol * p.hCol;
     const Izc = (p.bCol * Math.pow(p.hCol, 3)) / 12;
     const Iyc = (p.hCol * Math.pow(p.bCol, 3)) / 12;
-    const Jc = 0.28 * Math.min(p.bCol, p.hCol) * Math.pow(Math.max(p.bCol, p.hCol), 3);
+    // Saint-Venant J para sección rectangular a×b con a >= b:
+    //   J = β · a · b^3  (cubo del lado CORTO, no del largo).
+    //   β = 1/3 · (1 - 0.21·(b/a)·(1 - (b/a)^4 / 12))   — Roark/Timoshenko cerrada.
+    const stVenantJ = (b: number, h: number) => {
+      const a = Math.max(b, h), s = Math.min(b, h);
+      const r = s / a;
+      const beta = (1 / 3) * (1 - 0.21 * r * (1 - Math.pow(r, 4) / 12));
+      return beta * a * Math.pow(s, 3);
+    };
+    const Jc = stVenantJ(p.bCol, p.hCol);
     const colRigidTopFrac = p.rigidOffsets > 0.5 ? (p.hViga / 2) / H : 0;  // top offset
     for (let i = colStart; i < colEnd; i++) {
       elasticities.set(i, E_kNm2);
@@ -207,7 +216,7 @@ export const mesaTorsion: ExampleDef = {
     const Av = p.bViga * p.hViga;
     const Izv = (p.bViga * Math.pow(p.hViga, 3)) / 12;
     const Iyv = (p.hViga * Math.pow(p.bViga, 3)) / 12;
-    const Jv = 0.28 * Math.min(p.bViga, p.hViga) * Math.pow(Math.max(p.bViga, p.hViga), 3);
+    const Jv = stVenantJ(p.bViga, p.hViga);
     const beamSegL = Lx / nMesh;  // long de cada segmento de viga = dx (= dy)
     // Rigid offset solo en los segmentos EXTREMOS (los que tocan col):
     //   - primer segmento de cada lado: offset I = b_col/2 / segLen
@@ -349,16 +358,24 @@ export const mesaTorsion: ExampleDef = {
     lines.push(`  Discretización: ${shellCount} shells losa, 4 cols, ${beamEnd - beamStart} segs viga`);
     lines.push(`  Rigid offsets: ${p.rigidOffsets > 0.5 ? `ON (col top -${(p.hViga/2).toFixed(2)}m, viga ends -${(p.bCol/2).toFixed(2)}m)` : "OFF"}`);
     lines.push(``);
-    lines.push(`  Picks por caso — Hekatan vs ETABS (Δ% relativo):`);
+    lines.push(`  Picks por caso — Hekatan vs ETABS (Δ% relativo, con SWAP V2↔V3 y M2↔M3 por convención awatif Z-up vs ETABS):`);
     lines.push(`  ${"Case".padEnd(8)} ${"Comp".padEnd(4)} ${"Hekatan".padStart(10)} ${"ETABS".padStart(10)} ${"Δ%".padStart(8)}`);
+    // Mapping: ejes locales Hekatan (awatif Z-up) están rotados 90° vs ETABS frame local.
+    //   Hekatan V2 ↔ ETABS V3, Hekatan V3 ↔ ETABS V2
+    //   Hekatan M2 ↔ ETABS M3, Hekatan M3 ↔ ETABS M2
+    const COMP_SWAP: Record<string, "P" | "V2" | "V3" | "T" | "M2" | "M3"> = {
+      P: "P", T: "T", V2: "V3", V3: "V2", M2: "M3", M3: "M2",
+    };
     for (const c of cases) {
       const hk = framePicks[c.name];
       const et = ETABS_PICKS[c.name];
       if (!hk || !et) continue;
       for (const comp of ["P", "V2", "V3", "T", "M2", "M3"] as const) {
-        const h = hk[comp], e = et[comp];
+        const h = hk[comp];
+        const e = et[COMP_SWAP[comp]];
         const d = e !== 0 ? ((h - e) / e * 100) : 0;
-        lines.push(`  ${c.name.padEnd(8)} ${comp.padEnd(4)} ${h.toFixed(3).padStart(10)} ${e.toFixed(3).padStart(10)} ${(d >= 0 ? "+" : "") + d.toFixed(1).padStart(7)}%`);
+        const tag = comp !== COMP_SWAP[comp] ? ` (↔ETABS ${COMP_SWAP[comp]})` : "";
+        lines.push(`  ${c.name.padEnd(8)} ${comp.padEnd(4)} ${h.toFixed(3).padStart(10)} ${e.toFixed(3).padStart(10)} ${(d >= 0 ? "+" : "") + d.toFixed(1).padStart(7)}%${tag}`);
       }
     }
     console.log(lines.join("\n"));
