@@ -42,6 +42,16 @@ extern "C"
         // Map<elemIdx, int>
         int *plateForm_keys_ptr, int *plateForm_values_ptr, int num_plateForm,
 
+        // Drilling DOF formulation per shell element:
+        //   0=penalty1e-6 (legacy), 1=PyNite weak (min(diagRot)/1000),
+        //   2=Hughes-Brezzi 1989 / Ibrahimbegovic-Taylor-Wilson 1990 [DEFAULT]
+        // Mapa puede estar vacío (num=0) → todos los shells usan 2 (HB).
+        int *drillType_keys_ptr, int *drillType_values_ptr, int num_drillType,
+
+        // Drilling penalty scale per shell element (gamma scale on G·t for type=2)
+        // Default 1.0 si no está. Map<elemIdx, double>.
+        int *drillScale_keys_ptr, double *drillScale_values_ptr, int num_drillScale,
+
         // --- Output Pointers (to be allocated by C++ and filled) ---
         // These are pointers *to* pointers. C++ allocates memory using malloc
         // and writes the address of the allocated block into these pointers.
@@ -88,6 +98,8 @@ extern "C"
         elementInputs.shearAreasY = parseMapFromFlat(shear_area_y_keys_ptr, shear_area_y_values_ptr, num_shear_area_y);
         elementInputs.shearAreasZ = parseMapFromFlat(shear_area_z_keys_ptr, shear_area_z_values_ptr, num_shear_area_z);
         elementInputs.plateFormulations = parseMapIntFromFlat(plateForm_keys_ptr, plateForm_values_ptr, num_plateForm);
+        elementInputs.drillingTypes = parseMapIntFromFlat(drillType_keys_ptr, drillType_values_ptr, num_drillType);
+        elementInputs.drillingPenaltyScales = parseMapFromFlat(drillScale_keys_ptr, drillScale_values_ptr, num_drillScale);
 
         // --- 2. Core FEA Calculation using Eigen ---
         int dof = num_nodes * 6; // Total degrees of freedom

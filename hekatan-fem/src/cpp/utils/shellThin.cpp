@@ -228,12 +228,6 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
     Km *= mFactor;
     Kb *= bFactor;
 
-    // Drilling stiffness penalty (Rz)
-    double drill = 0;
-    for (int i = 0; i < 8; i++) drill += std::abs(Km(i, i));
-    drill *= 1e-6 / 8.0;
-    if (drill < 1e-15) drill = E * t * 1e-6 * std::max(mFactor, 1e-6);
-
     // Ensamblar en 24×24 (orden DOFs: [u, v, w, θx, θy, θz] por nodo)
     Eigen::MatrixXd K = Eigen::MatrixXd::Zero(24, 24);
     for (int ni = 0; ni < 4; ni++) for (int nj = 0; nj < 4; nj++) {
@@ -246,8 +240,33 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
             K(ni*6 + 2 + di, nj*6 + 2 + dj) = Kb(ni*3 + di, nj*3 + dj);
         }
     }
-    // Drilling: θz=6i+5
-    for (int i = 0; i < 4; i++) K(i*6 + 5, i*6 + 5) = drill;
+
+    // ── Drilling DOF (θz=6i+5) — dispatcher según drillingTypes ────────────
+    //   0 = penalty 1e-6 legacy
+    //   1 = PyNite weak (min(diagRot)/1000)
+    //   2 = Hughes-Brezzi 1989 / Ibrahimbegovic-Taylor-Wilson 1990  [DEFAULT]
+    int drillingType = getMapValST(elementInputs.drillingTypes, index, 2);
+    double drillScale = getMapValST(elementInputs.drillingPenaltyScales, index, 1.0);
+
+    if (drillingType == 2) {
+        K += mFactor * getDrillingK_HughesBrezzi(x, y, E, nu, t, drillScale);
+    } else if (drillingType == 1) {
+        double minRot = 1e18;
+        for (int ni = 0; ni < 4; ni++) {
+            double dx = std::abs(K(ni*6 + 3, ni*6 + 3));
+            double dy = std::abs(K(ni*6 + 4, ni*6 + 4));
+            if (dx > 1e-15 && dx < minRot) minRot = dx;
+            if (dy > 1e-15 && dy < minRot) minRot = dy;
+        }
+        double drill = (minRot < 1e17) ? minRot * 1e-3 : E * t * 1e-6 * std::max(mFactor, 1e-6);
+        for (int i = 0; i < 4; i++) K(i*6 + 5, i*6 + 5) = drill;
+    } else {
+        double drill = 0;
+        for (int i = 0; i < 8; i++) drill += std::abs(Km(i, i));
+        drill *= 1e-6 / 8.0;
+        if (drill < 1e-15) drill = E * t * 1e-6 * std::max(mFactor, 1e-6);
+        for (int i = 0; i < 4; i++) K(i*6 + 5, i*6 + 5) = drill;
+    }
 
     return K;
 }

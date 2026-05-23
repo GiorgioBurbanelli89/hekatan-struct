@@ -184,6 +184,10 @@ export const mesaTorsion: ExampleDef = {
       poissons.set(i, p.nu);
       densities.set(i, RHO);
       plateFormulations.set(i, 1);  // 1 = Shell-Thin Kirchhoff MZC (= ETABS Slab1 Shell-Thin t=100mm confirmado)
+      // drillingType default = 2 (Hughes-Brezzi) via C++ → no requiere setear aquí.
+      // Para este modelo (losa horizontal + viga horizontal), drilling shell (Rz)
+      // y torsión viga (Rx local) son DOFs distintos, por lo que HB tiene efecto
+      // mínimo. Útil para shells verticales (muros) acoplados a columnas.
     }
     // Cols
     const Ac = p.bCol * p.hCol;

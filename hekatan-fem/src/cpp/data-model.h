@@ -48,6 +48,16 @@ struct ElementInputs
     // Para Mesa Torsión (t/L=0.017, t=0.10m sobre slab 6m) el Mindlin
     // sufre shear locking severo; el MZC Kirchhoff matchea ETABS Shell-Thin <1.5%.
     std::map<int, int> plateFormulations;
+    // Drilling DOF formulation (per shell element):
+    //   0 = penalty 1e-6 (legacy, weak — drilling efectivamente desacoplado)
+    //   1 = PyNite weak spring  (k_Rz = min(diag_rot)/1000)
+    //   2 = Hughes-Brezzi 1989 / Ibrahimbegovic-Taylor-Wilson 1990 [DEFAULT]
+    //       penalty acoplado al residual θz - 0.5·(∂v/∂x - ∂u/∂y),
+    //       γ = G·t · drillingPenaltyScales[idx] (default scale=1.0).
+    //       Único modo que transmite torsión losa↔viga consistente con ETABS/SAP
+    //       (referencia: CSI Analysis Reference Manual §10.1.1; Wilson Cap 9).
+    std::map<int, int> drillingTypes;
+    std::map<int, double> drillingPenaltyScales; // factor sobre γ=G·t (Hughes-Brezzi)
 };
 
 struct NodeInputs
@@ -124,3 +134,12 @@ Eigen::SparseMatrix<double> getGlobalMassMatrixPaz(
     const std::vector<unsigned int> &elementSizes,
     const ElementInputs &elementInputs,
     int dof);
+
+// Drilling DOF helper (Hughes-Brezzi 1989 / Ibrahimbegovic-Taylor-Wilson 1990).
+// Devuelve K_drill (24×24) sobre los DOFs [u, v, w, θx, θy, θz] por nodo, con
+// contribución sólo en u, v, θz (los otros 12 índices quedan 0). Para usar:
+// sumar al K local del shell antes de la transformación a coords globales.
+Eigen::MatrixXd getDrillingK_HughesBrezzi(
+    const double x[4], const double y[4],
+    double E, double nu, double t,
+    double gamma_scale);

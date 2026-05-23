@@ -133,6 +133,29 @@ export function deformCpp(
   const plateFormValuesPtr = allocate(plateFormValues, Uint32Array, mod.HEAPU32);
   gc.push(plateFormValuesPtr);
 
+  // Drilling DOF formulation per shell:
+  //   0 = penalty 1e-6 legacy, 1 = PyNite weak, 2 = Hughes-Brezzi (default C++)
+  // Mapa puede estar vacío → C++ usa default = 2 (Hughes-Brezzi) en todos los shells.
+  const drillingTypes = (elementInputs as any).drillingTypes as
+    | Map<number, number> | undefined;
+  const drillTypeKeys = drillingTypes ? Array.from(drillingTypes.keys()) : [];
+  const drillTypeValues = drillingTypes ? Array.from(drillingTypes.values()) : [];
+  const drillTypeKeysPtr = allocate(drillTypeKeys, Uint32Array, mod.HEAPU32);
+  gc.push(drillTypeKeysPtr);
+  const drillTypeValuesPtr = allocate(drillTypeValues, Uint32Array, mod.HEAPU32);
+  gc.push(drillTypeValuesPtr);
+
+  // Drilling penalty scale (factor sobre γ=G·t para Hughes-Brezzi)
+  // Map vacío → default 1.0 (HB original).
+  const drillingPenaltyScales = (elementInputs as any).drillingPenaltyScales as
+    | Map<number, number> | undefined;
+  const drillScaleKeys = drillingPenaltyScales ? Array.from(drillingPenaltyScales.keys()) : [];
+  const drillScaleValues = drillingPenaltyScales ? Array.from(drillingPenaltyScales.values()) : [];
+  const drillScaleKeysPtr = allocate(drillScaleKeys, Uint32Array, mod.HEAPU32);
+  gc.push(drillScaleKeysPtr);
+  const drillScaleValuesPtr = allocate(drillScaleValues, Float64Array, mod.HEAPF64);
+  gc.push(drillScaleValuesPtr);
+
   // 2- Call C++ Function
   mod._deform(
     nodesPtr,
@@ -189,6 +212,14 @@ export function deformCpp(
     plateFormKeysPtr,
     plateFormValuesPtr,
     plateFormKeys.length,
+    // Drilling DOF: 0=penalty1e6, 1=PyNiteWeak, 2=Hughes-Brezzi (default si map vacío)
+    drillTypeKeysPtr,
+    drillTypeValuesPtr,
+    drillTypeKeys.length,
+    // Drilling penalty scale (factor sobre γ=G·t)
+    drillScaleKeysPtr,
+    drillScaleValuesPtr,
+    drillScaleKeys.length,
     // Output pointers
     deformationsDataPtrOutPtr,
     deformationsSizeOutPtr,

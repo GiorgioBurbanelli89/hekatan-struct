@@ -74,6 +74,21 @@ export type ElementInputs = {
    * dentro de < 1.5% en V/M/T (validado vs hekatan-struct-py).
    */
   plateFormulations?: Map<number, number>;
+  /** Drilling DOF (rotación θz normal al shell) por elemento:
+   *   0 = penalty 1e-6 legacy (drilling efectivamente desacoplado — usar para
+   *       compatibilidad con resultados previos)
+   *   1 = PyNite weak spring (k_Rz = min(diag_rot)/1000)
+   *   2 = Hughes-Brezzi 1989 / Ibrahimbegovic-Taylor-Wilson 1990  [DEFAULT]
+   *       penalty acoplado al residual θz - 0.5·(∂v/∂x − ∂u/∂y),
+   *       γ = G·t · drillingPenaltyScales[idx] (default scale=1.0).
+   *
+   * El modo 2 es el ÚNICO que transmite torsión losa↔viga consistente con
+   * ETABS/SAP (referencia: CSI Analysis Reference Manual §10.1.1 cita
+   * Taylor & Simo 1985 / Ibrahimbegovic & Wilson 1991; Wilson Cap 9
+   * "Elemento de Membrana con Rotaciones Normales").
+   */
+  drillingTypes?: Map<number, number>;
+  drillingPenaltyScales?: Map<number, number>;
 };
 
 export type DeformOutputs = {

@@ -943,13 +943,6 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     Km *= mFactor;
     Kb *= bFactor;
 
-    // Drilling stiffness (small artificial value, escalada por modifier para
-    // preservar la consistencia: si Membrane=0 → drilling también casi 0)
-    double drill = 0;
-    for (int i = 0; i < 8; i++) drill += std::abs(Km(i, i));
-    drill *= 1e-6 / 8.0;
-    if (drill < 1e-15) drill = E * t * 1e-6 * std::max(mFactor, 1e-6);
-
     // Assemble into 24×24
     // DOFs per node: [u, v, w, θx, θy, θz] = indices [0,1,2,3,4,5]
     Eigen::MatrixXd K = Eigen::MatrixXd::Zero(24, 24);
@@ -976,9 +969,35 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
         }
     }
 
-    // Drilling: θz=6i+5
-    for (int i = 0; i < 4; i++) {
-        K(i*6 + 5, i*6 + 5) = drill;
+    // ── Drilling DOF (θz=6i+5) — dispatcher según drillingTypes ────────────
+    //   0 = penalty 1e-6 legacy (drilling efectivamente desacoplado)
+    //   1 = PyNite weak spring (k = min(diagRot)/1000)
+    //   2 = Hughes-Brezzi 1989 / Ibrahimbegovic-Taylor-Wilson 1990  [DEFAULT]
+    int drillingType = getMapVal(elementInputs.drillingTypes, index, 2);
+    double drillScale = getMapVal(elementInputs.drillingPenaltyScales, index, 1.0);
+
+    if (drillingType == 2) {
+        // Hughes-Brezzi: penalty acoplado al residual θz - 0.5(∂v/∂x - ∂u/∂y)
+        // Escalar por mFactor para consistencia con membrana (si membrane=0 → drill=0)
+        K += mFactor * getDrillingK_HughesBrezzi(x, y, E, nu, t, drillScale);
+    } else if (drillingType == 1) {
+        // PyNite-style weak spring sobre el menor θ diagonal del bending K
+        double minRot = 1e18;
+        for (int ni = 0; ni < 4; ni++) {
+            double dx = std::abs(K(ni*6 + 3, ni*6 + 3));
+            double dy = std::abs(K(ni*6 + 4, ni*6 + 4));
+            if (dx > 1e-15 && dx < minRot) minRot = dx;
+            if (dy > 1e-15 && dy < minRot) minRot = dy;
+        }
+        double drill = (minRot < 1e17) ? minRot * 1e-3 : E * t * 1e-6 * std::max(mFactor, 1e-6);
+        for (int i = 0; i < 4; i++) K(i*6 + 5, i*6 + 5) = drill;
+    } else {
+        // 0 = legacy penalty 1e-6 (compatibilidad hacia atrás)
+        double drill = 0;
+        for (int i = 0; i < 8; i++) drill += std::abs(Km(i, i));
+        drill *= 1e-6 / 8.0;
+        if (drill < 1e-15) drill = E * t * 1e-6 * std::max(mFactor, 1e-6);
+        for (int i = 0; i < 4; i++) K(i*6 + 5, i*6 + 5) = drill;
     }
 
     return K;
