@@ -39,6 +39,19 @@ Jump directly to any example with `?t=<id>` (122 examples total). The most relev
 - [`?t=safe-bench-zapata-combinada`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=safe-bench-zapata-combinada) — Combined footing 4×2m
 - [`?t=safe-bench-zapata-conectada`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=safe-bench-zapata-conectada) — Connected footings 5×1m, variable t
 - [`?t=safe-bench-zapata-comparativa`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=safe-bench-zapata-comparativa) — 🎓 ISSE comparativa: Empotrada vs Winkler vs Vesic (5 autores)
+
+**📚 Libros · SAFE - Marcelo Guerra MDI** (cimentaciones validadas contra libro Guerra)
+- [`?t=guerra-ej1-zapata-cuadrada`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=guerra-ej1-zapata-cuadrada) — Ej.1 · Zapata aislada cuadrada 3.45×3.45×0.45m
+- [`?t=guerra-ej2-zapata-rectangular-sismo`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=guerra-ej2-zapata-rectangular-sismo) — Ej.2 · Zapata rectangular + sismo 4.60×4.00 (e>L/6)
+- [`?t=guerra-ej3-zapata-rectangular-eccentricidad-grande`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=guerra-ej3-zapata-rectangular-eccentricidad-grande) — Ej.3 · Excentricidad GRANDE (e=1.29m, M_live=96 t·m)
+- [`?t=guerra-ej4-zapata-combinada-rectangular`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=guerra-ej4-zapata-combinada-rectangular) — Ej.4 · Combinada rectangular (2 cols 90/100, L=7.50m)
+- [`?t=guerra-ej5-zapata-combinada-trapezoidal`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=guerra-ej5-zapata-combinada-trapezoidal) — Ej.5 · Combinada **trapezoidal** (B1=3.75 → B2=1.60)
+- [`?t=guerra-ej6-zapata-unida-viga-amarre`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=guerra-ej6-zapata-unida-viga-amarre) — Ej.6 · Zapata unida con **viga de amarre** (2 zapatas + frame V45×95)
+- [`?t=guerra-ej7-viga-cimentacion-new`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=guerra-ej7-viga-cimentacion-new) — Ej.7 NEW · Viga de cimentación L=17.20m, 4 cols (shell único)
+- [`?t=viga-cim-guerra-ej7`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=viga-cim-guerra-ej7) — Ej.7 · Variante shell+frame+pedestal
+- [`?t=viga-cim-guerra-ej7-tinv`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=viga-cim-guerra-ej7-tinv) — Ej.7 · Variante **T invertida** (Hetényi)
+- [`?t=guerra-ej8-losa-cimentacion`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=guerra-ej8-losa-cimentacion) — Ej.8 · Losa de cimentación (raft 23×21m, 16 cols grid 4×4)
+
 - [`?t=placa-base`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base) — Steel column base plate
 - [`?t=placa-base-cft`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base-cft) — CFT column base plate
 - [`?t=placa-base-h`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base-h) / [`?t=placa-base-hueca`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base-hueca) — H + hollow profile bases
