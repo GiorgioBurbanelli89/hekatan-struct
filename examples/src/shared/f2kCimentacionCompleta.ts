@@ -114,14 +114,27 @@ export function exportEdificioCimentacionF2k(data: F2kCimentacionData): string {
   L.push(` `);
 
   // ── MATERIAL PROPERTIES ──
+  // 4000Psi: concrete f'c=4000psi para slabs/frames de cimentación.
+  // A615Gr60: rebar ASTM A615 Grade 60 — requerido por SAFE 20.3 como
+  // "Longitudinal Rebar Material" en cualquier sección CONCRETE RECTANGULAR
+  // (sin esto, SAFE descarta la sección al importar el F2K y la viga de
+  // amarre queda con sección default → bug reportado en deploy).
   L.push(`TABLE:  "MATERIAL PROPERTIES - GENERAL"`);
   L.push(`   Material=4000Psi   Type=Concrete   SymType=Isotropic   Grade="f'c 4000 psi"   Color=Gray8Dark   GUID=${guid()}`);
+  L.push(`   Material=A615Gr60   Type=Rebar   SymType=Uniaxial   Grade="Grade 60"   Color=Green   GUID=${guid()}`);
   L.push(` `);
   L.push(`TABLE:  "MATERIAL PROPERTIES - BASIC MECHANICAL PROPERTIES"`);
   L.push(`   Material=4000Psi   DensityType=Weight   UnitWeight=${fmt(UnitWeight)}   UnitMass=${fmt(UnitMass)}   E1=${fmt(E_tonf_m2)}   G12=${fmt(G12_tonf_m2)}   U12=0.2   A1=9.9E-06`);
+  // Rebar: peso 7849 kg/m³ ≈ 7.849 tonf/m³, E=200 GPa ≈ 20,389,019 tonf/m²,
+  // α térmico ≈ 6.5E-6 /°C (ASTM). Sin G12/U12 (Uniaxial).
+  L.push(`   Material=A615Gr60   DensityType=Weight   UnitWeight=7.849   UnitMass=0.800380   E1=20389019.16   A1=6.5E-06`);
   L.push(` `);
   L.push(`TABLE:  "MATERIAL PROPERTIES - CONCRETE DATA"`);
   L.push(`   Material=4000Psi   Fc=${fmt(Fc_tonf_m2)}   LtWtConc=No   IsUserFr=No   SSCurveOpt=Mander   SSHysType=Concrete   SFc=0.00221914   SCap=0.005   FinalSlope=-0.1   FAngle=0   DAngle=0`);
+  L.push(` `);
+  // Rebar data: Fy=420 MPa ≈ 42,184 tonf/m² (Grade 60 nominal), Fu=630 MPa ≈ 63,276 tonf/m².
+  L.push(`TABLE:  "MATERIAL PROPERTIES - REBAR DATA"`);
+  L.push(`   Material=A615Gr60   Fy=42184.18   Fu=63276.27   Fye=46402.60   Fue=69603.89   SSCurveOpt=Simple   SSHysType=Kinematic   SHard=0.01   SCap=0.09   FinalSlope=-0.1`);
   L.push(` `);
 
   // ── AREA SECTION + SLAB PROPERTIES ──
@@ -368,9 +381,14 @@ export function exportEdificioCimentacionF2k(data: F2kCimentacionData): string {
     L.push(` `);
 
     // FRAME SECTION PROPERTY DEFINITIONS - CONCRETE RECTANGULAR
+    // Campos `Longitudinal/Shear Rebar Material` y `Flange Dimension Option` +
+    // `Cover Top/Bottom` son REQUERIDOS por SAFE 20.3. Sin ellos la sección
+    // se descarta al importar (error "Error reading field; record skipped") y
+    // la asignación de viga cae a sección default (warning posterior).
+    // Cover default 6.35cm (2.5") — típico de cimentación expuesta al suelo.
     L.push(`TABLE:  "FRAME SECTION PROPERTY DEFINITIONS - CONCRETE RECTANGULAR"`);
     for (const [key, dim] of sectionsCreated) {
-      L.push(`   Name=VAmarre_${key}   Material=4000Psi   "From File?"=No   Depth=${fmt(dim.h)}   Width=${fmt(dim.b)}   "Rigid Zone?"=No   "Notional Size Type"=User   "Notional User Size"=0.1   "Section Type"=Beam   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=${guid()}`);
+      L.push(`   Name=VAmarre_${key}   Material=4000Psi   "From File?"=No   Depth=${fmt(dim.h)}   Width=${fmt(dim.b)}   "Rigid Zone?"=No   "Notional Size Type"=User   "Notional User Size"=0.1   "Section Type"=Beam   "Longitudinal Rebar Material"=A615Gr60   "Shear Rebar Material"=A615Gr60   "Flange Dimension Option"="Analysis Property"   "Cover Top"=0.0635   "Cover Bottom"=0.0635   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=${guid()}`);
     }
     L.push(` `);
 
