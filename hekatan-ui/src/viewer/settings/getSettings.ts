@@ -50,6 +50,18 @@ export type Settings = {
   faces: State<boolean>;
   elemColumns: State<boolean>;
   elemBeams: State<boolean>;
+  /** Toggle padre: show/hide TODOS los frames (cols + vigas) de un golpe.
+   *  Default true. Si false, ignora elemColumns/elemBeams. */
+  elemFrames: State<boolean>;
+  /** Toggle: shells de cimentación (zapatas, losas a z ≤ 0). Default true. */
+  elemZapatas: State<boolean>;
+  /** Toggle: shells de losa superior (z > 0). Default true. */
+  elemLosas: State<boolean>;
+  /** Master toggle: cuando ON, pinta cada tipo de elemento de un color fijo
+   *  (columnas naranja, vigas cyan, zapatas verde, losas azul). Cuando OFF,
+   *  todos usan el color neutro del tema. Útil para distinguir visualmente
+   *  qué es qué cuando hay muchos elementos. Default false. */
+  colorByType: State<boolean>;
   nodesIndexes: State<boolean>;
   elementsIndexes: State<boolean>;
   orientations: State<boolean>;
@@ -106,6 +118,10 @@ export type SettingsObj = {
   faces?: boolean;
   elemColumns?: boolean;
   elemBeams?: boolean;
+  elemFrames?: boolean;
+  elemZapatas?: boolean;
+  elemLosas?: boolean;
+  colorByType?: boolean;
   nodesIndexes?: boolean;
   elementsIndexes?: boolean;
   orientations?: boolean;
@@ -221,7 +237,7 @@ export function getSettings(
       label: "Display scale",
       min: -10,
       max: 10,
-      step: 1,
+      step: 0.5,   // permite valores fraccionales (-1.5, -2.5, etc.)
     });
     // ── Folder "Grid" agrupa todas las opciones del grid ──
     // Tamaño, paso, visibilidad, opacidad, planos XY/XZ/YZ — son varios
@@ -267,11 +283,23 @@ export function getSettings(
     pane.addBinding(settings.faces, "val", {
       label: "  Caras (fill)",
     });
+    pane.addBinding(settings.elemFrames, "val", {
+      label: "  Frames (todos)",
+    });
     pane.addBinding(settings.elemColumns, "val", {
-      label: "  Columnas",
+      label: "    Columnas",
     });
     pane.addBinding(settings.elemBeams, "val", {
-      label: "  Vigas",
+      label: "    Vigas",
+    });
+    pane.addBinding(settings.elemZapatas, "val", {
+      label: "  Zapatas (shells z≤0)",
+    });
+    pane.addBinding(settings.elemLosas, "val", {
+      label: "  Losas (shells z>0)",
+    });
+    pane.addBinding(settings.colorByType, "val", {
+      label: "  🎨 Color por tipo",
     });
     pane.addBinding(settings.nodesIndexes, "val", {
       label: "Nodes indexes",
@@ -315,8 +343,8 @@ export function getSettings(
     outputs.addBinding(settings.nodeResults, "val", {
       options: {
         none: "none",
-        deformations: "deformations",
-        reactions: "reactions",
+        "U (deformations)": "deformations",   // SAP: U1 U2 U3 + R1 R2 R3 = 6 DOF
+        "R (reactions)":    "reactions",      // SAP: F1 F2 F3 + M1 M2 M3 en restraints
       },
       label: "Node results",
     });
@@ -324,18 +352,20 @@ export function getSettings(
     outputs.addBinding(settings.frameResults, "val", {
       options: {
         none: "none",
-        normals: "normals",
-        shearsY: "shearsY",
-        shearsZ: "shearsZ",
-        torsions: "torsions",
-        bendingsY: "bendingsY",
-        bendingsZ: "bendingsZ",
-        "contour:normals": "contour:normals",
-        "contour:shearsY": "contour:shearsY",
-        "contour:shearsZ": "contour:shearsZ",
-        "contour:torsions": "contour:torsions",
-        "contour:bendingsY": "contour:bendingsY",
-        "contour:bendingsZ": "contour:bendingsZ",
+        // Frame internal forces (convención SAP2000/ETABS, ejes locales 1-2-3)
+        "P (normals)":     "normals",       // axial (eje longitudinal 1)
+        "V2 (shearY)":     "shearsY",       // cortante en eje local 2
+        "V3 (shearZ)":     "shearsZ",       // cortante en eje local 3
+        "T (torsion)":     "torsions",      // torsión (sobre eje 1)
+        "M2 (bendingY)":   "bendingsY",     // momento sobre eje local 2 (eje fuerte vigas)
+        "M3 (bendingZ)":   "bendingsZ",     // momento sobre eje local 3 (eje débil vigas)
+        // Diagramas tipo contour (envolvente sobre la viga)
+        "contour P":   "contour:normals",
+        "contour V2":  "contour:shearsY",
+        "contour V3":  "contour:shearsZ",
+        "contour T":   "contour:torsions",
+        "contour M2":  "contour:bendingsY",
+        "contour M3":  "contour:bendingsZ",
       },
       label: "Frame results",
     });
@@ -343,15 +373,24 @@ export function getSettings(
     outputs.addBinding(settings.shellResults, "val", {
       options: {
         none: "none",
-        bendingXX: "bendingXX",
-        bendingYY: "bendingYY",
-        bendingXY: "bendingXY",
-        membraneXX: "membraneXX",
-        membraneYY: "membraneYY",
-        membraneXY: "membraneXY",
-        shearX: "tranverseShearX",
-        shearY: "tranverseShearY",
-        vonMises: "vonMises",
+        // Membrana (in-plane forces) — SAP F11/F22/F12 + FMax/FMin
+        "F11 (membraneXX)": "membraneXX",
+        "F22 (membraneYY)": "membraneYY",
+        "F12 (membraneXY)": "membraneXY",
+        "FMax (principal)": "membranePrincipalMax",
+        "FMin (principal)": "membranePrincipalMin",
+        // Flexión (plate bending moments) — SAP M11/M22/M12 + MMax/MMin
+        "M11 (bendingXX)": "bendingXX",
+        "M22 (bendingYY)": "bendingYY",
+        "M12 (bendingXY)": "bendingXY",
+        "MMax (principal)": "bendingPrincipalMax",
+        "MMin (principal)": "bendingPrincipalMin",
+        // Cortantes transversos — SAP V13/V23/VMax
+        "V13 (shearX)": "tranverseShearX",
+        "V23 (shearY)": "tranverseShearY",
+        "VMax (magnitud)": "transverseShearMax",
+        // Otros
+        "Von Mises": "vonMises",
         pressure: "pressure",
         displacementX: "displacementX",
         displacementY: "displacementY",
@@ -439,7 +478,7 @@ export function getDefaultSettings(settingsObj: SettingsObj): Settings {
     gridMajor: van.state(settingsObj?.gridMajor ?? 1),
     cursorSnap: van.state(settingsObj?.cursorSnap ?? 0.5),
     gridXY: van.state(settingsObj?.gridXY ?? true),
-    gridXZ: van.state(settingsObj?.gridXZ ?? false),
+    gridXZ: van.state(settingsObj?.gridXZ ?? true),
     gridYZ: van.state(settingsObj?.gridYZ ?? false),
     displayScale: van.state(settingsObj?.displayScale ?? 1),
     nodes: van.state(settingsObj?.nodes ?? true),
@@ -448,6 +487,10 @@ export function getDefaultSettings(settingsObj: SettingsObj): Settings {
     faces: van.state(settingsObj?.faces ?? true),
     elemColumns: van.state(settingsObj?.elemColumns ?? true),
     elemBeams: van.state(settingsObj?.elemBeams ?? true),
+    elemFrames: van.state(settingsObj?.elemFrames ?? true),
+    elemZapatas: van.state(settingsObj?.elemZapatas ?? true),
+    elemLosas: van.state(settingsObj?.elemLosas ?? true),
+    colorByType: van.state(settingsObj?.colorByType ?? false),
     nodesIndexes: van.state(settingsObj?.nodesIndexes ?? false),
     elementsIndexes: van.state(settingsObj?.elementsIndexes ?? false),
     orientations: van.state(settingsObj?.orientations ?? false),
