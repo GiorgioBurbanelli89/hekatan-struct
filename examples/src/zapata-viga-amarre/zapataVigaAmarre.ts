@@ -477,10 +477,14 @@ export const zapataVigaAmarre: ExampleDef = {
         label: 2,
       },
     ];
-    // Viga de amarre: borde dcho de Z1 → borde izq de Z2, ambos a mid-Y.
+    // Viga de amarre: de COLUMNA a COLUMNA (convención SAFE habitual).
+    // Conecta el centro de la columna sobre Z1 con el centro de la columna
+    // sobre Z2 — atraviesa las zapatas longitudinalmente. El exporter
+    // f2kCimentacionCompleta reusa el joint de la columna en cada extremo
+    // (findOrCreateJoint) para compartir DOFs entre slab + frame en SAFE.
     const vigasAmarre = [{
-      x1: Lz1, y1: yCol1,
-      x2: Lz1 + Lv, y2: yCol2,
+      x1: xCol1, y1: yCol1,
+      x2: xCol2, y2: yCol2,
       h: Hv, b: Bv, z: 0,
     }];
     try {
