@@ -29,54 +29,99 @@ export const zapataVigaAmarre: ExampleDef = {
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "displacementZ", "vonMises"],
   hasModal: true,
   params: {
-    Lz1: { default: 2.0, min: 1.0, max: 4.0, step: 0.1, label: "Lz1 (m)" },
-    Bz1: { default: 2.0, min: 1.0, max: 4.0, step: 0.1, label: "Bz1 (m)" },
-    Lv:  { default: 3.0, min: 1.0, max: 6.0, step: 0.1, label: "Lv (m)" },
-    Bv:  { default: 0.25, min: 0.2, max: 0.8, step: 0.05, label: "Bv (m)" },
-    Hv:  { default: 0.30, min: 0.2, max: 0.8, step: 0.05, label: "Hv canto (m)" },
-    Lz2: { default: 2.5, min: 1.0, max: 4.0, step: 0.1, label: "Lz2 (m)" },
-    Bz2: { default: 2.0, min: 1.0, max: 4.0, step: 0.1, label: "Bz2 (m)" },
-    tz:  { default: 0.5, min: 0.2, max: 1.0, step: 0.05, label: "tz (m)" },
-    bc:  { default: 0.4, min: 0.2, max: 0.8, step: 0.05, label: "bc columna (m)" },
-    Hp:  { default: 0.8, min: 0.3, max: 2.0, step: 0.1, label: "Hp pedestal (m)" },
-    vigaLevel: { default: 0, min: 0, max: 1, step: 1, label: "Viga: 0=baja 1=alta" },
-    ks:  { default: 2000, min: 500, max: 30000, step: 500, label: "ks Winkler (kN/m³)" },
-    // Cargas lógicas: reacción típica de columna en edificio 4-8 pisos (medianera + centrada).
-    // Verificado con edificio-aporticado 4 pisos: Fz≈5 tonf, Mx≈1, My≈2.5 tonf·m con
-    // CM/CV por-nodo; valores default representan edificio 8-10 pisos con CM real en kN/m².
-    // Cargas Dead (CM) por columna. Default no incluye Live para no duplicar
-    // si el usuario pone solo "P1 total" sin separar D/L (compat. legacy).
-    P1:  { default: 25,  min: 1,  max: 200, step: 1,   label: "P1 Dead (tonf)" },
-    M1x: { default: 1,   min: -5, max: 5,   step: 0.1, label: "M1x Dead (tonf·m)" },
-    M1y: { default: 2.5, min: -5, max: 5,   step: 0.1, label: "M1y Dead (tonf·m)" },
-    P2:  { default: 40,  min: 1,  max: 200, step: 1,   label: "P2 Dead (tonf)" },
-    M2x: { default: 1,   min: -5, max: 5,   step: 0.1, label: "M2x Dead (tonf·m)" },
-    M2y: { default: 2.5, min: -5, max: 5,   step: 0.1, label: "M2y Dead (tonf·m)" },
-    // Cargas Live (CV) por columna — combo D+L se aplica en el build, y se
-    // exportan separadas al F2K junto con la combinación Pu=1.4D+1.7L.
-    P1_L:  { default: 0, min: 0,  max: 200, step: 1,   label: "P1 Live (tonf)" },
-    M1x_L: { default: 0, min: -5, max: 5,   step: 0.1, label: "M1x Live (tonf·m)" },
-    M1y_L: { default: 0, min: -5, max: 5,   step: 0.1, label: "M1y Live (tonf·m)" },
-    P2_L:  { default: 0, min: 0,  max: 200, step: 1,   label: "P2 Live (tonf)" },
-    M2x_L: { default: 0, min: -5, max: 5,   step: 0.1, label: "M2x Live (tonf·m)" },
-    M2y_L: { default: 0, min: -5, max: 5,   step: 0.1, label: "M2y Live (tonf·m)" },
-    nSubX: { default: 4, min: 2, max: 8, step: 1, label: "nx subdiv" },
-    nSubY: { default: 4, min: 2, max: 8, step: 1, label: "ny subdiv" },
+    // ── 📐 Geometría zapatas ─────────────────────────────────────
+    Lz1: { default: 2.0, min: 1.0, max: 4.0, step: 0.1, label: "Lz1 (m)", folder: "📐 Geometría zapatas",
+      description: "Lado X de la Zapata 1 (medianera). Dimensión paralela al eje viga amarre. Típico 2-4 m." },
+    Bz1: { default: 2.0, min: 1.0, max: 4.0, step: 0.1, label: "Bz1 (m)", folder: "📐 Geometría zapatas",
+      description: "Lado Y de la Zapata 1. Dimensión perpendicular al eje viga amarre. Típico 2-4 m." },
+    Lz2: { default: 2.5, min: 1.0, max: 4.0, step: 0.1, label: "Lz2 (m)", folder: "📐 Geometría zapatas",
+      description: "Lado X de la Zapata 2 (interna). Dimensión paralela al eje viga amarre." },
+    Bz2: { default: 2.0, min: 1.0, max: 4.0, step: 0.1, label: "Bz2 (m)", folder: "📐 Geometría zapatas",
+      description: "Lado Y de la Zapata 2. Dimensión perpendicular al eje viga amarre." },
+    tz:  { default: 0.5, min: 0.2, max: 1.0, step: 0.05, label: "tz espesor (m)", folder: "📐 Geometría zapatas",
+      description: "Espesor (canto) común de ambas zapatas, en metros. Típico 0.30-0.80 m. Afecta rigidez flexural y peso propio del slab." },
+    // ── 🏗 Viga de amarre ────────────────────────────────────────
+    Lv:  { default: 3.0, min: 1.0, max: 6.0, step: 0.1, label: "Lv claro (m)", folder: "🏗 Viga de amarre",
+      description: "Distancia LIBRE entre borde derecho de Z1 y borde izquierdo de Z2 (el gap). NO es la longitud total de la viga (que va col-a-col, atravesando ambas zapatas)." },
+    Bv:  { default: 0.25, min: 0.2, max: 0.8, step: 0.05, label: "Bv ancho (m)", folder: "🏗 Viga de amarre",
+      description: "Ancho (dimensión horizontal) de la sección rectangular de la viga de amarre. Típico 0.25-0.45 m." },
+    Hv:  { default: 0.30, min: 0.2, max: 0.8, step: 0.05, label: "Hv canto (m)", folder: "🏗 Viga de amarre",
+      description: "Canto (dimensión vertical) de la sección rectangular de la viga. Mayor canto = más rigidez flexural. Típico 0.40-0.95 m." },
+    vigaLevel: { default: 0, min: 0, max: 1, step: 1, label: "Viga: 0=baja 1=alta", folder: "🏗 Viga de amarre",
+      description: "0 = viga al nivel del slab (z=0). 1 = viga elevada al nivel del pedestal. La convención SAFE es 0 (mismo plano que la zapata)." },
+    // ── 🏛 Columna + pedestal ────────────────────────────────────
+    bc:  { default: 0.4, min: 0.2, max: 0.8, step: 0.05, label: "bc columna (m)", folder: "🏛 Columna + pedestal",
+      description: "Lado de la sección CUADRADA de la columna. La columna NO va como frame: se modela como un Stiff patch en el slab (área rígida que distribuye la carga axial)." },
+    Hp:  { default: 0.8, min: 0.3, max: 2.0, step: 0.1, label: "Hp pedestal (m)", folder: "🏛 Columna + pedestal",
+      description: "Altura del pedestal (frame vertical) sobre la zapata, en metros. Las cargas P/M se aplican en el TOPE del pedestal a z=Hp." },
+    // ── 🌍 Suelo (Winkler) ───────────────────────────────────────
+    ks:  { default: 2000, min: 500, max: 30000, step: 500, label: "ks Winkler (kN/m³)", folder: "🌍 Suelo",
+      description: "Módulo de balasto vertical kv del suelo (modelo Winkler). Típico: 10000 (suelo blando) - 50000 kN/m³ (suelo denso). Para Guerra Ej6 = 37461 kN/m³." },
+    // ── 🔴 Cargas Dead (CM) ──────────────────────────────────────
+    useDead: { default: 1, boolean: true, label: "Activar Dead (CM)", folder: "🔴 Cargas Dead (CM)",
+      description: "Activa/desactiva el patrón Dead. Si OFF las cargas P_dead/M_dead se ignoran en el análisis Y en el F2K. Default ON." },
+    P1:  { default: 25,  min: 1,  max: 200, step: 1,   label: "P1 Dead (tonf)",   folder: "🔴 Cargas Dead (CM)",
+      hiddenIf: (p) => (p.useDead ?? 1) < 0.5,
+      description: "Carga axial muerta (peso propio + CM) sobre Columna 1, en tonf. +compresión. Para Guerra Ej6 Col1 = 70 t." },
+    M1x: { default: 1,   min: -5, max: 5,   step: 0.1, label: "M1x Dead (tonf·m)", folder: "🔴 Cargas Dead (CM)",
+      hiddenIf: (p) => (p.useDead ?? 1) < 0.5,
+      description: "Momento muerto en eje X de Columna 1, tonf·m. Genera flexión My en la zapata." },
+    M1y: { default: 2.5, min: -5, max: 5,   step: 0.1, label: "M1y Dead (tonf·m)", folder: "🔴 Cargas Dead (CM)",
+      hiddenIf: (p) => (p.useDead ?? 1) < 0.5,
+      description: "Momento muerto en eje Y de Columna 1, tonf·m. Genera flexión Mx en la zapata." },
+    P2:  { default: 40,  min: 1,  max: 200, step: 1,   label: "P2 Dead (tonf)",   folder: "🔴 Cargas Dead (CM)",
+      hiddenIf: (p) => (p.useDead ?? 1) < 0.5,
+      description: "Carga axial muerta sobre Columna 2. Para Guerra Ej6 Col2 = 89 t." },
+    M2x: { default: 1,   min: -5, max: 5,   step: 0.1, label: "M2x Dead (tonf·m)", folder: "🔴 Cargas Dead (CM)",
+      hiddenIf: (p) => (p.useDead ?? 1) < 0.5,
+      description: "Momento muerto en eje X de Columna 2." },
+    M2y: { default: 2.5, min: -5, max: 5,   step: 0.1, label: "M2y Dead (tonf·m)", folder: "🔴 Cargas Dead (CM)",
+      hiddenIf: (p) => (p.useDead ?? 1) < 0.5,
+      description: "Momento muerto en eje Y de Columna 2." },
+    // ── 🔵 Cargas Live (CV) ──────────────────────────────────────
+    useLive: { default: 1, boolean: true, label: "Activar Live (CV)", folder: "🔵 Cargas Live (CV)",
+      description: "Activa/desactiva el patrón Live. Si OFF las cargas P_live/M_live se ignoran en análisis Y en F2K. La combinación Pu=1.4D+1.7L solo aplica si ambos están activos." },
+    P1_L:  { default: 0, min: 0,  max: 200, step: 1,   label: "P1 Live (tonf)",   folder: "🔵 Cargas Live (CV)",
+      hiddenIf: (p) => (p.useLive ?? 1) < 0.5,
+      description: "Carga axial viva (CV) sobre Columna 1. Para Guerra Ej6 Col1 = 40 t." },
+    M1x_L: { default: 0, min: -5, max: 5,   step: 0.1, label: "M1x Live (tonf·m)", folder: "🔵 Cargas Live (CV)",
+      hiddenIf: (p) => (p.useLive ?? 1) < 0.5,
+      description: "Momento vivo en eje X de Columna 1." },
+    M1y_L: { default: 0, min: -5, max: 5,   step: 0.1, label: "M1y Live (tonf·m)", folder: "🔵 Cargas Live (CV)",
+      hiddenIf: (p) => (p.useLive ?? 1) < 0.5,
+      description: "Momento vivo en eje Y de Columna 1." },
+    P2_L:  { default: 0, min: 0,  max: 200, step: 1,   label: "P2 Live (tonf)",   folder: "🔵 Cargas Live (CV)",
+      hiddenIf: (p) => (p.useLive ?? 1) < 0.5,
+      description: "Carga axial viva sobre Columna 2. Para Guerra Ej6 Col2 = 51 t." },
+    M2x_L: { default: 0, min: -5, max: 5,   step: 0.1, label: "M2x Live (tonf·m)", folder: "🔵 Cargas Live (CV)",
+      hiddenIf: (p) => (p.useLive ?? 1) < 0.5,
+      description: "Momento vivo en eje X de Columna 2." },
+    M2y_L: { default: 0, min: -5, max: 5,   step: 0.1, label: "M2y Live (tonf·m)", folder: "🔵 Cargas Live (CV)",
+      hiddenIf: (p) => (p.useLive ?? 1) < 0.5,
+      description: "Momento vivo en eje Y de Columna 2." },
+    // ── 🔧 Mallado FEM ───────────────────────────────────────────
+    nSubX: { default: 4, min: 2, max: 8, step: 1, label: "nx subdivisiones", folder: "🔧 Mallado FEM",
+      description: "Número de subdivisiones del mesh shell Q4 en dirección X. Más subdivisiones = más precisión pero mayor cómputo. Típico 4-8." },
+    nSubY: { default: 4, min: 2, max: 8, step: 1, label: "ny subdivisiones", folder: "🔧 Mallado FEM",
+      description: "Subdivisiones en dirección Y. Típico 4-8." },
   },
   build(p, states) {
     const Lz1 = p.Lz1, Bz1 = p.Bz1, Lv = p.Lv, Bv = p.Bv, Hv = p.Hv;
     const Lz2 = p.Lz2, Bz2 = p.Bz2, tz = p.tz, bc = p.bc, Hp = p.Hp;
     // Conversión tonf → kN (para el solver que trabaja en SI kN/m).
-    // Aplicamos el combo D+L (servicio) como carga total en el FEM. Para
-    // diseño LRFD el exporter F2K agrega también combo Pu=1.4D+1.7L.
+    // Aplicamos el combo D+L (servicio) como carga total en el FEM, respetando
+    // los toggles useDead/useLive. Para diseño LRFD el exporter F2K agrega la
+    // combo Pu=1.4D+1.7L.
     const TONF_TO_KN = 9.80665;
-    const P1 = (p.P1 + (p.P1_L ?? 0)) * TONF_TO_KN;
-    const P2 = (p.P2 + (p.P2_L ?? 0)) * TONF_TO_KN;
+    const fD = (p.useDead ?? 1) >= 0.5 ? 1 : 0;
+    const fL = (p.useLive ?? 1) >= 0.5 ? 1 : 0;
+    const P1 = (fD * (p.P1 ?? 0) + fL * (p.P1_L ?? 0)) * TONF_TO_KN;
+    const P2 = (fD * (p.P2 ?? 0) + fL * (p.P2_L ?? 0)) * TONF_TO_KN;
     const ks = p.ks;
-    const M1x = ((p.M1x ?? 0) + (p.M1x_L ?? 0)) * TONF_TO_KN;
-    const M1y = ((p.M1y ?? 0) + (p.M1y_L ?? 0)) * TONF_TO_KN;
-    const M2x = ((p.M2x ?? 0) + (p.M2x_L ?? 0)) * TONF_TO_KN;
-    const M2y = ((p.M2y ?? 0) + (p.M2y_L ?? 0)) * TONF_TO_KN;
+    const M1x = (fD * (p.M1x ?? 0) + fL * (p.M1x_L ?? 0)) * TONF_TO_KN;
+    const M1y = (fD * (p.M1y ?? 0) + fL * (p.M1y_L ?? 0)) * TONF_TO_KN;
+    const M2x = (fD * (p.M2x ?? 0) + fL * (p.M2x_L ?? 0)) * TONF_TO_KN;
+    const M2y = (fD * (p.M2y ?? 0) + fL * (p.M2y_L ?? 0)) * TONF_TO_KN;
     const nSubX = Math.round(p.nSubX), nSubY = Math.round(p.nSubY);
 
     // Offset Y para alinear centros de las 2 zapatas (la viga amarre debe
@@ -492,27 +537,30 @@ export const zapataVigaAmarre: ExampleDef = {
     // Centros físicos de cada rectángulo de zapata (xC, yC del API F2K).
     const xC_Z1 = Lz1 / 2,                yC_Z1 = Bz1 / 2;
     const xC_Z2 = Lz1 + Lv + Lz2 / 2,     yC_Z2 = yOff2 + Bz2 / 2;
+    // Gating Dead/Live según toggles del usuario (default ambos ON)
+    const fD = (p.useDead ?? 1) >= 0.5 ? 1 : 0;
+    const fL = (p.useLive ?? 1) >= 0.5 ? 1 : 0;
     const zapatas = [
       {
         xC: xC_Z1, yC: yC_Z1, xCol: xCol1, yCol: yCol1,
         Lz: Lz1, Bz: Bz1, tz, bc,
-        P_dead_kN: (p.P1 ?? 0) * TONF_TO_KN,
-        Mx_dead_kNm: (p.M1x ?? 0) * TONF_TO_KN,
-        My_dead_kNm: (p.M1y ?? 0) * TONF_TO_KN,
-        P_live_kN: (p.P1_L ?? 0) * TONF_TO_KN,
-        Mx_live_kNm: (p.M1x_L ?? 0) * TONF_TO_KN,
-        My_live_kNm: (p.M1y_L ?? 0) * TONF_TO_KN,
+        P_dead_kN: fD * (p.P1 ?? 0) * TONF_TO_KN,
+        Mx_dead_kNm: fD * (p.M1x ?? 0) * TONF_TO_KN,
+        My_dead_kNm: fD * (p.M1y ?? 0) * TONF_TO_KN,
+        P_live_kN: fL * (p.P1_L ?? 0) * TONF_TO_KN,
+        Mx_live_kNm: fL * (p.M1x_L ?? 0) * TONF_TO_KN,
+        My_live_kNm: fL * (p.M1y_L ?? 0) * TONF_TO_KN,
         label: 1,
       },
       {
         xC: xC_Z2, yC: yC_Z2, xCol: xCol2, yCol: yCol2,
         Lz: Lz2, Bz: Bz2, tz, bc,
-        P_dead_kN: (p.P2 ?? 0) * TONF_TO_KN,
-        Mx_dead_kNm: (p.M2x ?? 0) * TONF_TO_KN,
-        My_dead_kNm: (p.M2y ?? 0) * TONF_TO_KN,
-        P_live_kN: (p.P2_L ?? 0) * TONF_TO_KN,
-        Mx_live_kNm: (p.M2x_L ?? 0) * TONF_TO_KN,
-        My_live_kNm: (p.M2y_L ?? 0) * TONF_TO_KN,
+        P_dead_kN: fD * (p.P2 ?? 0) * TONF_TO_KN,
+        Mx_dead_kNm: fD * (p.M2x ?? 0) * TONF_TO_KN,
+        My_dead_kNm: fD * (p.M2y ?? 0) * TONF_TO_KN,
+        P_live_kN: fL * (p.P2_L ?? 0) * TONF_TO_KN,
+        Mx_live_kNm: fL * (p.M2x_L ?? 0) * TONF_TO_KN,
+        My_live_kNm: fL * (p.M2y_L ?? 0) * TONF_TO_KN,
         label: 2,
       },
     ];

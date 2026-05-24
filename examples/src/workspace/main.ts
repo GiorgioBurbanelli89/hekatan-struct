@@ -198,7 +198,7 @@ van.derive(() => {
 });
 // Grid centrado en el origen mundial (convención CAD).
 const drawingGridTarget: State<{ position: [number,number,number]; rotation: [number,number,number] }> =
-  van.state({ position: [0, 0, 0], rotation: [Math.PI/2, 0, 0] });
+  van.state({ position: [0, 0, 0], rotation: [0, 0, 0] });
 // Expongo los van states a globals para que ejemplos (newBlank, etc.)
 // puedan LEER los puntos/polylines dibujados con mouse y construir
 // nodes/elements del FEM directamente.
@@ -2830,7 +2830,7 @@ function buildParamsPane() {
       const st = (window as any).__hekatanCadState?.get?.();
       if (st) st.workZ = ev.value;
       // Re-posicionar el plano XY (si está activo) a esa Z
-      const curPlane = ((window as any).__hekatanCadState?.get?.())?.workPlane ?? "xy";
+      const curPlane = ((window as any).__hekatanCadState?.get?.())?.workPlane ?? "xz";
       if (curPlane === "xy") setPlane("xy", ev.value, false); // no re-sync cámara en cada tick
       try { (window as any).__hekatanRebuild?.(); } catch {}
     });
@@ -4495,6 +4495,11 @@ solve`;
       currentBinding = fTarget.addBinding(currentParams, key, rebuiltOpts);
       // Registrar visibilidad dinamica si el param tiene hiddenIf
       if (p.hiddenIf) hiddenBindings.push({ binding: currentBinding, hiddenIf: p.hiddenIf });
+      // Tooltip nativo browser via title attribute — aparece al hover sin
+      // librerías extra. Texto declarado en ParamDef.description.
+      if (p.description && currentBinding?.element) {
+        try { (currentBinding.element as HTMLElement).title = p.description; } catch {}
+      }
       currentBinding.on("change", (ev: any) => {
         if (currentExample?.onParamChange) {
           currentExample.onParamChange(key, currentParams);
@@ -5200,6 +5205,13 @@ if (initialEx) {
   // comprimidos/extendidos según la deformada (como en croquis clásicos de ingeniería).
   if (initialEx.id === "zapata-aislada" || initialEx.id === "zapata-aislada-validacion" || initialEx.id === "zapata-viga-amarre") {
     setTimeout(() => setView("iso"), 200);
+  } else if (initialEx.id === "new-blank") {
+    // NewBlank arranca con workPlane="xz" (default CAD). La cámara debe
+    // mirar el XZ de frente (Elev. X) para que el raycaster proyecte los
+    // clicks correctamente sobre el plano de trabajo — desde vista iso o
+    // planta el ray sale casi paralelo al XZ y los clicks degeneran al
+    // mismo punto.
+    setTimeout(() => setView("elevX"), 200);
   }
   // ── Pre-fill desde URL params ──
   // Si vienes de un edificio (?t=zapata-aislada-validacion&P=23.5&Mx=1.2&My=-0.8&from=edificio-aporticado)

@@ -67,6 +67,11 @@ export interface ParamDef {
    *  Se re-evalúa en cada rebuild. Útil para mostrar `ks_factor` solo en Custom,
    *  o sliders de carga simple solo si useSimple=ON. */
   hiddenIf?: (params: Record<string, number>) => boolean;
+  /** Tooltip que aparece en hover sobre el binding. Aplicado como `title`
+   *  attribute en el DOM. Texto plano (no HTML). Útil para explicar qué
+   *  representa el parámetro, sus unidades, y orden de magnitud típico.
+   *  Ej: "Distancia entre ejes de columnas, en metros. Típico 3-6 m." */
+  description?: string;
 }
 
 export interface BuildStates {
