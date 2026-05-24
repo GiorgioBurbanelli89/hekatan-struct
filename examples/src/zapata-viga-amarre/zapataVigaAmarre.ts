@@ -139,26 +139,25 @@ export const zapataVigaAmarre: ExampleDef = {
         thicknesses.set(e, tz); elasticities.set(e, Ec); poissons.set(e, nu_c); densities.set(e, rho);
       }
 
-    // Pedestales + viga de amarre — match libro Guerra Fig.151 + SAFE ref.
+    // Pedestales + viga de amarre — convención SAFE col-a-col.
     //
     // PEDESTALES (frame vertical):  conectan el shell de la zapata con el
     //   tope donde aterriza la columna. Cargas P+M se aplican en el TOPE.
     //
-    // VIGA DE AMARRE (tie beam):  va al NIVEL DEL SLAB (z=0), conectando
-    //   los BORDES adyacentes de Z1 y Z2 directamente — NO los topes de
-    //   columna. Longitud REAL = Lv (1.64 m en libro Guerra Ej.6).
-    //   Per safe-reference.json: "Conecta Zapata1 con Zapata2. Solo flexion
-    //   - no apoya en suelo".
+    // VIGA DE AMARRE (tie beam):  va al NIVEL DEL SLAB (z=0) conectando
+    //   las DOS COLUMNAS (xCol1, yCol1) → (xCol2, yCol2). Atraviesa
+    //   longitudinalmente ambas zapatas. Esta es la convención SAFE
+    //   habitual: en el modelo SAFE el beam atraviesa los slabs y comparte
+    //   los joints de columna.
     //
     // Topología correcta:
     //   nCol*_Bot (z=0, shell de zapata) ─[pedestal frame bc×bc]─ nCol*_Top (z=Hp)
     //                                                              ↑ aquí P+M
-    //   nVigaStart (Lz1, yC1, 0)  ─[viga frame Bv×Hv, len=Lv]─  nVigaEnd (Lz1+Lv, yC2, 0)
-    //   ┕━ borde derecho de Z1               borde izquierdo de Z2 ━┙
+    //   nCol1Bot ──────[viga frame Bv×Hv, len = xCol2-xCol1]──────── nCol2Bot
     //
-    // La transferencia de momento Col1→Col2 ahora va: Col1 P+M → pedestal →
-    // Z1 plate → borde Z1 → viga amarre → borde Z2 → Z2 plate → Col2 base.
-    // Sin trampas de rigidez infinita.
+    // La transferencia de momento Col1→Col2 va: Col1 P+M → pedestal →
+    // nCol1Bot → viga frame directa → nCol2Bot → pedestal → Col2.
+    // Los rigid links de la columna al shell distribuyen carga al slab.
     const nCol1Bot = addNode(xC1, yC1, 0);
     const nCol1Top = addNode(xC1, yC1, Hp);
     const nCol2Bot = addNode(xC2, yC2, 0);
@@ -171,14 +170,11 @@ export const zapataVigaAmarre: ExampleDef = {
       J.set(e, 0.14 * bc ** 4); densities.set(e, rho);
       sections.set(e, { type: "rect", b: bc, h: bc });
     }
-    // Viga de amarre — bordes adyacentes a z=0 (NO column tops a z=Hp).
-    // Lz1 y Lz1+Lv ya están en xs1/xs2 (buildGridX incluye endpoints), y
-    // yC1=yC2=Bz1/2 está en ys1/ys2 (forced point), así que estos nodos
-    // ya existen en la malla shell — addNode reusa por key (x,y,z).
-    const nVigaStart = addNode(Lz1, yC1, 0);          // borde derecho de Z1, mid-Y
-    const nVigaEnd   = addNode(Lz1 + Lv, yC2, 0);     // borde izquierdo de Z2, mid-Y
+    // Viga de amarre — DE COLUMNA A COLUMNA. nCol1Bot ya existe sobre Z1
+    // (con rigid links al shell de Z1) y nCol2Bot sobre Z2 (idem). La viga
+    // es un único frame entre estos dos nodos.
     const eViga = elsEl.length;
-    elsEl.push([nVigaStart, nVigaEnd]);
+    elsEl.push([nCol1Bot, nCol2Bot]);
     elasticities.set(eViga, Ec); poissons.set(eViga, nu_c); Gm.set(eViga, Gc);
     areas.set(eViga, Bv * Hv);
     Iz.set(eViga, (Bv * Hv ** 3) / 12);
@@ -187,11 +183,13 @@ export const zapataVigaAmarre: ExampleDef = {
     densities.set(eViga, rho);
     sections.set(eViga, { type: "rect", b: Bv, h: Hv });
 
-    // ── Rigid links zone (SAFE "Stiff Slab" + viga rigid joint) ──
-    // Per libro Guerra Fig.180: la viga NO se conecta a UN solo nodo del borde,
-    // sino a una ZONA ~0.5×0.5m del slab (monolítica concreta entre viga y zapata).
-    // Igual para la columna sobre la zapata. Modelado con frames rígidos (E×1000)
-    // desde master node (col bot / viga end) a shell nodes dentro de ±STIFF/2.
+    // ── Rigid links zone (SAFE "Stiff Slab") ──
+    // Per libro Guerra Fig.180: la columna NO se conecta a UN solo nodo del
+    // shell, sino a una ZONA ~0.5×0.5m del slab (monolítica concreta entre
+    // columna y zapata). Modelado con frames rígidos (E×1000) desde el
+    // nCol*Bot a shell nodes dentro de ±STIFF/2. La viga col-a-col se ancla
+    // a nCol1Bot/nCol2Bot, así que estos rigid links también transmiten la
+    // carga de la viga al slab de cada zapata.
     const STIFF_SIZE = 0.50;
     const E_RIG  = Ec * 1000;
     const G_RIG  = Gc * 1000;
@@ -219,11 +217,9 @@ export const zapataVigaAmarre: ExampleDef = {
       }
       return added;
     }
-    const nLinks1 = addRigidLinks(nCol1Bot,   xC1,        yC1, xs1, ys1, idx1);
-    const nLinks2 = addRigidLinks(nCol2Bot,   xC2,        yC2, xs2, ys2, idx2);
-    const nLinksV1 = addRigidLinks(nVigaStart, Lz1,        yC1, xs1, ys1, idx1);
-    const nLinksV2 = addRigidLinks(nVigaEnd,   Lz1 + Lv,   yC2, xs2, ys2, idx2);
-    console.log(`[Rigid links] Col1:${nLinks1} Col2:${nLinks2} VigaZ1:${nLinksV1} VigaZ2:${nLinksV2}`);
+    const nLinks1 = addRigidLinks(nCol1Bot, xC1, yC1, xs1, ys1, idx1);
+    const nLinks2 = addRigidLinks(nCol2Bot, xC2, yC2, xs2, ys2, idx2);
+    console.log(`[Rigid links] Col1:${nLinks1} Col2:${nLinks2}  (viga col-a-col directa nCol1Bot↔nCol2Bot)`);
 
     loads.set(nCol1Top, [0, 0, -P1, M1x, M1y, 0]);
     loads.set(nCol2Top, [0, 0, -P2, M2x, M2y, 0]);
