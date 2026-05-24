@@ -139,15 +139,46 @@ export const zapataVigaAmarre: ExampleDef = {
         thicknesses.set(e, tz); elasticities.set(e, Ec); poissons.set(e, nu_c); densities.set(e, rho);
       }
 
-    // Viga de amarre DIRECTA entre columnas (sin pedestal vertical).
-    // Match libro Guerra Fig.151: solo zapatas (shells) + viga frame; la viga
-    // conecta los nodos de columna en la zapata sin column-stub intermedio.
-    // El nivel de la viga es el plano medio del shell (z=0) para coupling
-    // directo con el shell sin offset vertical.
-    const nCol1 = addNode(xC1, yC1, 0);
-    const nCol2 = addNode(xC2, yC2, 0);
+    // Pedestales + viga de amarre — match libro Guerra Fig.151 + SAFE ref.
+    //
+    // PEDESTALES (frame vertical):  conectan el shell de la zapata con el
+    //   tope donde aterriza la columna. Cargas P+M se aplican en el TOPE.
+    //
+    // VIGA DE AMARRE (tie beam):  va al NIVEL DEL SLAB (z=0), conectando
+    //   los BORDES adyacentes de Z1 y Z2 directamente — NO los topes de
+    //   columna. Longitud REAL = Lv (1.64 m en libro Guerra Ej.6).
+    //   Per safe-reference.json: "Conecta Zapata1 con Zapata2. Solo flexion
+    //   - no apoya en suelo".
+    //
+    // Topología correcta:
+    //   nCol*_Bot (z=0, shell de zapata) ─[pedestal frame bc×bc]─ nCol*_Top (z=Hp)
+    //                                                              ↑ aquí P+M
+    //   nVigaStart (Lz1, yC1, 0)  ─[viga frame Bv×Hv, len=Lv]─  nVigaEnd (Lz1+Lv, yC2, 0)
+    //   ┕━ borde derecho de Z1               borde izquierdo de Z2 ━┙
+    //
+    // La transferencia de momento Col1→Col2 ahora va: Col1 P+M → pedestal →
+    // Z1 plate → borde Z1 → viga amarre → borde Z2 → Z2 plate → Col2 base.
+    // Sin trampas de rigidez infinita.
+    const nCol1Bot = addNode(xC1, yC1, 0);
+    const nCol1Top = addNode(xC1, yC1, Hp);
+    const nCol2Bot = addNode(xC2, yC2, 0);
+    const nCol2Top = addNode(xC2, yC2, Hp);
+    for (const [a, b] of [[nCol1Bot, nCol1Top], [nCol2Bot, nCol2Top]]) {
+      const e = elsEl.length;
+      elsEl.push([a, b]);
+      elasticities.set(e, Ec); poissons.set(e, nu_c); Gm.set(e, Gc);
+      areas.set(e, bc * bc); Iz.set(e, bc ** 4 / 12); Iy.set(e, bc ** 4 / 12);
+      J.set(e, 0.14 * bc ** 4); densities.set(e, rho);
+      sections.set(e, { type: "rect", b: bc, h: bc });
+    }
+    // Viga de amarre — bordes adyacentes a z=0 (NO column tops a z=Hp).
+    // Lz1 y Lz1+Lv ya están en xs1/xs2 (buildGridX incluye endpoints), y
+    // yC1=yC2=Bz1/2 está en ys1/ys2 (forced point), así que estos nodos
+    // ya existen en la malla shell — addNode reusa por key (x,y,z).
+    const nVigaStart = addNode(Lz1, yC1, 0);          // borde derecho de Z1, mid-Y
+    const nVigaEnd   = addNode(Lz1 + Lv, yC2, 0);     // borde izquierdo de Z2, mid-Y
     const eViga = elsEl.length;
-    elsEl.push([nCol1, nCol2]);
+    elsEl.push([nVigaStart, nVigaEnd]);
     elasticities.set(eViga, Ec); poissons.set(eViga, nu_c); Gm.set(eViga, Gc);
     areas.set(eViga, Bv * Hv);
     Iz.set(eViga, (Bv * Hv ** 3) / 12);
@@ -156,8 +187,46 @@ export const zapataVigaAmarre: ExampleDef = {
     densities.set(eViga, rho);
     sections.set(eViga, { type: "rect", b: Bv, h: Hv });
 
-    loads.set(nCol1, [0, 0, -P1, M1x, M1y, 0]);
-    loads.set(nCol2, [0, 0, -P2, M2x, M2y, 0]);
+    // ── Rigid links zone (SAFE "Stiff Slab" + viga rigid joint) ──
+    // Per libro Guerra Fig.180: la viga NO se conecta a UN solo nodo del borde,
+    // sino a una ZONA ~0.5×0.5m del slab (monolítica concreta entre viga y zapata).
+    // Igual para la columna sobre la zapata. Modelado con frames rígidos (E×1000)
+    // desde master node (col bot / viga end) a shell nodes dentro de ±STIFF/2.
+    const STIFF_SIZE = 0.50;
+    const E_RIG  = Ec * 1000;
+    const G_RIG  = Gc * 1000;
+    const A_RIG  = bc * bc * 100;
+    const I_RIG  = (bc ** 4 / 12) * 100;
+    const J_RIG  = 0.14 * bc ** 4 * 100;
+    function addRigidLinks(masterNode: number, masterX: number, masterY: number,
+                            xs: number[], ys: number[], idx: number[][]): number {
+      let added = 0;
+      for (let j = 0; j < ys.length; j++) {
+        for (let i = 0; i < xs.length; i++) {
+          const x = xs[i], y = ys[j];
+          if (Math.abs(x - masterX) > STIFF_SIZE / 2 + 1e-6) continue;
+          if (Math.abs(y - masterY) > STIFF_SIZE / 2 + 1e-6) continue;
+          const slave = idx[j][i];
+          if (slave === masterNode) continue;
+          const e = elsEl.length;
+          elsEl.push([masterNode, slave]);
+          elasticities.set(e, E_RIG); poissons.set(e, nu_c); Gm.set(e, G_RIG);
+          areas.set(e, A_RIG); Iz.set(e, I_RIG); Iy.set(e, I_RIG);
+          J.set(e, J_RIG); densities.set(e, 0);   // densidad 0 → sin peso propio
+          sections.set(e, { type: "rect", b: bc, h: bc });
+          added++;
+        }
+      }
+      return added;
+    }
+    const nLinks1 = addRigidLinks(nCol1Bot,   xC1,        yC1, xs1, ys1, idx1);
+    const nLinks2 = addRigidLinks(nCol2Bot,   xC2,        yC2, xs2, ys2, idx2);
+    const nLinksV1 = addRigidLinks(nVigaStart, Lz1,        yC1, xs1, ys1, idx1);
+    const nLinksV2 = addRigidLinks(nVigaEnd,   Lz1 + Lv,   yC2, xs2, ys2, idx2);
+    console.log(`[Rigid links] Col1:${nLinks1} Col2:${nLinks2} VigaZ1:${nLinksV1} VigaZ2:${nLinksV2}`);
+
+    loads.set(nCol1Top, [0, 0, -P1, M1x, M1y, 0]);
+    loads.set(nCol2Top, [0, 0, -P2, M2x, M2y, 0]);
 
     // ── Winkler SSI completo: resortes en X, Y, Z en cada nodo ──
     // kh = ks_horizontal ≈ 0.5 × ks_vertical (fricción suelo-zapata tipo Bowles).
@@ -217,21 +286,37 @@ export const zapataVigaAmarre: ExampleDef = {
         states.elementInputs.val, states.deformOutputs.val
       );
       // ── Presión de contacto Winkler: q = ks × w (kN/m²), por elemento shell ──
-      // Se inyecta en el slot dedicado `pressure` del viewer (seleccionable en Shell results)
+      // CONVENCIÓN libro Guerra / SAFE / Calcpad: compresión = NEGATIVA.
+      // Match con zapata-aislada.ts línea 718: q = ks * w (sin negar).
+      // Cuando w < 0 (suelo se hunde), q < 0 (compresión).
       const deformsMap = states.deformOutputs.rawVal.deformations;
       const pressureMap = new Map<number, number[]>();
+      let qMin_kN = 0;   // mínimo (más negativo) = pico de compresión
+      let qMax_kN = 0;   // máximo (menos negativo) = bordes
       states.elements.rawVal.forEach((el, eIdx) => {
         if (el.length !== 4) return;            // solo shells Q4
         const qPerNode: number[] = [];
         for (const n of el) {
           const d = deformsMap?.get(n);
           const w = d ? d[2] : 0;
-          // q = -ks × w (kN/m²). w negativo (baja) → q positiva (compresión del suelo)
-          qPerNode.push(-ks * w);
+          const q_kN = ks * w;                  // kN/m², compresión NEGATIVA
+          qPerNode.push(q_kN);
+          if (q_kN < qMin_kN) qMin_kN = q_kN;
+          if (q_kN > qMax_kN) qMax_kN = q_kN;
         }
         pressureMap.set(eIdx, qPerNode);
       });
       (ao as any).pressure = pressureMap;  // 👈 slot dedicado "pressure" en shellResults
+
+      // Fijar rango de colormap al rango libro Fig.180 (≈ -12 a -26 t/m² compresión).
+      // Si el usuario está en libro Ej.6 Guerra (P1≈110t, P2≈140t, ks=37461), los σ
+      // resultantes deben caer en ese rango → colormap muestra full jet_r spectrum.
+      // Auto-extiende si los datos exceden esos límites.
+      const TONF_TO_KN = 9.80665;
+      const vCyan = Math.min(-12 * TONF_TO_KN, qMax_kN);   // tope = -12 t/m² o más
+      const vRed  = Math.max(-26 * TONF_TO_KN, qMin_kN);   // fondo = -26 t/m² o menos
+      (ao as any).colorMapRanges = { pressure: [vCyan, vRed] };
+
       states.analyzeOutputs.val = ao;
     } catch (e) {
       console.error("Solver error:", e);
@@ -353,5 +438,68 @@ export const zapataVigaAmarre: ExampleDef = {
       });
       console.log(`[Zapata+Viga Modal] f₁=${out.frequencies[0]?.toFixed(4)} Hz`);
     } catch (e: any) { console.warn("Modal zapata-viga error:", e.message); }
+  },
+  // Exporta el modelo "tal como se ve": 2 zapatas + viga de amarre en UN solo
+  // F2K SAFE. Reusa downloadEdificioCimentacionF2k (mismo exporter que usan
+  // los edificios con cimentación) pero leyendo la geometría directamente
+  // desde los params del ejemplo, NO desde reacciones de superestructura.
+  // Aplicado vía herencia spread a Guerra Ej.6 (mismo modelo, otros defaults).
+  async exportF2k(p) {
+    const { downloadEdificioCimentacionF2k } = await import("../shared/f2kCimentacionCompleta");
+    const TONF_TO_KN = 9.80665;
+    const Lz1 = p.Lz1, Bz1 = p.Bz1, Lv = p.Lv, Bv = p.Bv, Hv = p.Hv;
+    const Lz2 = p.Lz2, Bz2 = p.Bz2, tz = p.tz, bc = p.bc;
+    const ks = p.ks;  // ya en kN/m³
+    // Mismas coordenadas que en build(): la columna sobre Z1 está en
+    // (xC1=0.2, yC1=Bz1/2) — borde izq de Z1 (medianera). La col sobre Z2
+    // está en el centro de Z2. El offset Y de Z2 alinea la viga horizontal.
+    const yOff2 = (Bz1 - Bz2) / 2;
+    const xCol1 = 0.2,                    yCol1 = Bz1 / 2;
+    const xCol2 = Lz1 + Lv + Lz2 / 2,     yCol2 = Bz2 / 2 + yOff2;
+    // Centros físicos de cada rectángulo de zapata (xC, yC del API F2K).
+    const xC_Z1 = Lz1 / 2,                yC_Z1 = Bz1 / 2;
+    const xC_Z2 = Lz1 + Lv + Lz2 / 2,     yC_Z2 = yOff2 + Bz2 / 2;
+    const zapatas = [
+      {
+        xC: xC_Z1, yC: yC_Z1, xCol: xCol1, yCol: yCol1,
+        Lz: Lz1, Bz: Bz1, tz, bc,
+        P_dead_kN: (p.P1 ?? 0) * TONF_TO_KN,
+        Mx_dead_kNm: (p.M1x ?? 0) * TONF_TO_KN,
+        My_dead_kNm: (p.M1y ?? 0) * TONF_TO_KN,
+        label: 1,
+      },
+      {
+        xC: xC_Z2, yC: yC_Z2, xCol: xCol2, yCol: yCol2,
+        Lz: Lz2, Bz: Bz2, tz, bc,
+        P_dead_kN: (p.P2 ?? 0) * TONF_TO_KN,
+        Mx_dead_kNm: (p.M2x ?? 0) * TONF_TO_KN,
+        My_dead_kNm: (p.M2y ?? 0) * TONF_TO_KN,
+        label: 2,
+      },
+    ];
+    // Viga de amarre: borde dcho de Z1 → borde izq de Z2, ambos a mid-Y.
+    const vigasAmarre = [{
+      x1: Lz1, y1: yCol1,
+      x2: Lz1 + Lv, y2: yCol2,
+      h: Hv, b: Bv, z: 0,
+    }];
+    try {
+      downloadEdificioCimentacionF2k(
+        { zapatas, vigasAmarre, ks_kNm3: ks, Z: 0 },
+        `ZapataVigaAmarre_Hekatan_${Date.now()}.f2k`,
+      );
+      alert(
+        `✅ F2K exportado con 2 zapatas + 1 viga de amarre:\n` +
+        `• Z1 ${Lz1}×${Bz1} m, P=${p.P1} tonf, Mx=${p.M1x}, My=${p.M1y} tonf·m\n` +
+        `• Z2 ${Lz2}×${Bz2} m, P=${p.P2} tonf, Mx=${p.M2x}, My=${p.M2y} tonf·m\n` +
+        `• Viga amarre ${Bv}×${Hv} m, Lv=${Lv} m\n` +
+        `• ks = ${ks.toFixed(0)} kN/m³\n\n` +
+        `Abrilo en SAFE 20.x: File → Import → SAFE Text File (.f2k)`,
+      );
+      console.log(`[F2K Zapata+Viga] exportado: Z1=${Lz1}×${Bz1}, Z2=${Lz2}×${Bz2}, ks=${ks} kN/m³`);
+    } catch (e: any) {
+      alert(`❌ Error exportando F2K: ${e.message}`);
+      console.error(e);
+    }
   },
 };

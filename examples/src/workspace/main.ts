@@ -272,8 +272,46 @@ function resetStates() {
   states.analyzeOutputs.val = {};
 }
 
+/**
+ * Flag de interacción manual con la cámara (OrbitControls).
+ * Se setea a `true` la primera vez que el usuario hace pan/zoom/orbit;
+ * mientras esté en `true`, los `rebuild()` causados por sliders NO ejecutan
+ * `autoFitCamera()` — así la vista del usuario no se "resetea" en cada cambio
+ * de parámetro. Se resetea a `false` en cada `loadExample()`.
+ */
+let userCameraInteracted = false;
+
+/**
+ * Estado expanded/collapsed de los folders del Tweakpane.
+ * Persistido a nivel de módulo (sobrevive a `buildParamsPane()` que dispose
+ * + recrea el pane entero por `regenOnChange`). Se resetea al cambiar de
+ * ejemplo. Llave: título del folder, valor: expanded.
+ */
+const folderExpandedState = new Map<string, boolean>();
+
+/**
+ * Referencia a la última `folderMap` creada por buildParamsPane.
+ * Antes de cada dispose() leemos `.expanded` de cada folder y lo persistimos
+ * en folderExpandedState. Más fiable que un MutationObserver de clases.
+ */
+let lastFolderMap: Map<string, any> | null = null;
+
+function captureFolderExpandedState() {
+  if (!lastFolderMap) return;
+  for (const [title, folder] of lastFolderMap.entries()) {
+    try {
+      const exp = (folder as any).expanded;
+      if (typeof exp === "boolean") folderExpandedState.set(title, exp);
+    } catch {}
+  }
+}
+
 function loadExample(ex: ExampleDef) {
   currentExample = ex;
+  // Nuevo ejemplo cargado: permitir auto-fit inicial.
+  userCameraInteracted = false;
+  // Reset estado de folders (cada ejemplo tiene su propio layout).
+  folderExpandedState.clear();
   // ── Hidratar Load Patterns / Cases / Combinations desde localStorage ──
   // Cada ejemplo tiene su propia configuración persistida por `ex.id`. Si
   // no hay nada guardado, se usan los defaults ETABS-like (Dead + Live).
@@ -599,7 +637,10 @@ function rebuild() {
   // una escala inicial razonable; después el usuario puede ajustarla
   // manualmente desde el slider "Deform scale".
   // autoScaleDeformedShape();   ← REMOVIDO
-  autoFitCamera();
+  // Sólo recentrar cámara si el usuario NO ha tocado los OrbitControls.
+  // Esto permite mover sliders (nVanos, q, secciones, etc.) en modo "live
+  // calc" sin que la vista se resetee a iso en cada drag.
+  if (!userCameraInteracted) autoFitCamera();
   // Refrescar el folder "📊 Calculados" con los nuevos valores derivados
   if (currentExample.computedLabels && computedObj) {
     const latest = currentExample.computedLabels(currentParams, states);
@@ -2135,16 +2176,34 @@ function applyHiddenBindings() {
 
 
 function buildParamsPane() {
+  // ANTES de dispose: capturar el estado expanded de cada folder del pane
+  // anterior, para restaurarlo en el pane nuevo (preserva la UX del usuario
+  // cuando un slider con regenOnChange como `nVanos` recrea el pane).
+  captureFolderExpandedState();
+  // Capturar también el scroll vertical para no resetear al tope tras rebuild.
+  // El paneHost o su scrollContainer interno guardan la posición del usuario.
+  const prevScrollTop = paneHost.scrollTop;
+  // Algunos navegadores ponen el scroll en un wrapper interno
+  const innerScroller = paneHost.querySelector(".tp-dfwv") as HTMLElement | null;
+  const prevInnerScrollTop = innerScroller?.scrollTop ?? 0;
   if (currentPane) {
     currentPane.dispose();
     currentPane = null;
   }
+  lastFolderMap = null;
   paneHost.innerHTML = "";
   // Reset registro de bindings con hiddenIf (cada ejemplo declara los suyos)
   hiddenBindings = [];
   // Reset singletons del Calc/CLI (los folders se recrean en cada rebuild)
   // (singletons calc/cli viven ahora en hekatan-ui/femTools — nada que limpiar aquí)
   if (!currentExample) return;
+  // Detector de "ejemplo cimentación pura" (el modelo ES la zapata, no hay
+  // superestructura encima). Incluye zapata-aislada, zapata-viga-amarre y
+  // las series guerra-ej* (Libro Marcelo Guerra) y safe-bench-* (benchmarks
+  // contra SAFE). Sin este check, esos ejemplos se clasifican como
+  // edificio y muestran botones inválidos (Volver a vista superestructura,
+  // F2K cimentación COMPLETA, ETABS, SAP) que esperan reacciones de columnas.
+  const isFoundation = /^(zapata|guerra-ej|safe-bench-)/.test(currentExample.id);
   const pane = new Pane({ container: paneHost, title: currentExample.name });
   // Hacer el pane arrastrable desde su title-bar. El DOM del Tweakpane se
   // crea de forma síncrona, así que el handle ya está disponible al llamar.
@@ -3045,13 +3104,23 @@ solve`;
     });
   }
 
-  // ── SAFE F2K Export/Import (solo para zapatas) ──
+  // ── SAFE F2K Export/Import (solo para ejemplos de cimentación pura) ──
   // Permite roundtrip Hekatan ↔ SAFE para validación cruzada.
-  if (currentExample && currentExample.id.startsWith("zapata")) {
+  // Cubre zapata-aislada, zapata-viga-amarre, Guerra Ej.1-8 y safe-bench-*.
+  if (isFoundation) {
     const fF2K = pane.addFolder({ title: "SAFE", expanded: false });
     fF2K.addButton({ title: "📤 Exportar F2K" }).on("click", () => {
       try {
         const p = currentParams;
+        // 1) Si el ejemplo provee su propio exportador (zapata + viga de amarre,
+        //    losa de cimentación, zapata combinada, etc.), lo invocamos.
+        if (typeof currentExample?.exportF2k === "function") {
+          currentExample.exportF2k(p);
+          console.log(`✅ F2K exportado vía exportF2k custom del ejemplo`);
+          return;
+        }
+        // 2) Fallback: zapata simple (zapata-aislada y guerra-ej1/ej2/ej3 que
+        //    son una sola zapata con params Lz/Bz/tz/bc).
         // Calcular ks en kN/m³ desde params actuales
         const ks_factor = p.ks_factor ?? 10.5;
         const q_adm_tonf = p.q_adm ?? 20;
@@ -3133,8 +3202,8 @@ solve`;
   // la reacción máxima de base y la pasa via URL al ejemplo zapata-aislada-validacion.
   // Si es zapata y URL trae ?from=...: botón "← Volver" que regresa.
   if (currentExample) {
-    const isBuilding = !currentExample.id.startsWith("zapata");
-    const isFooting  = currentExample.id.startsWith("zapata");
+    const isBuilding = !isFoundation;
+    const isFooting  = isFoundation;
     const urlFrom    = new URLSearchParams(window.location.search).get("from");
 
     if (isBuilding) {
@@ -4015,7 +4084,8 @@ solve`;
   // edificios, pórticos, placas, cáscaras, mezzanines, galpones, etc.
   // Permite roundtrip Hekatan ↔ ETABS/SAP para validación cruzada de
   // edificios duales, modal y participación de masa.
-  if (currentExample && !currentExample.id.startsWith("zapata")) {
+  // Se excluyen cimentaciones puras (zapata*, guerra-ej*, safe-bench-*).
+  if (currentExample && !isFoundation) {
     const fEtabs = pane.addFolder({ title: "ETABS", expanded: false });
     const fSap   = pane.addFolder({ title: "SAP",   expanded: false });
     const downloadText = (text: string, filename: string) => {
@@ -4294,10 +4364,18 @@ solve`;
     /combinaci/i.test(title);
   const getFolder = (title: string) => {
     if (!folderMap.has(title)) {
-      folderMap.set(title, pane.addFolder({ title, expanded: isExpandedByDefault(title) }));
+      // Respetar la elección del usuario si ya tocó este folder en un rebuild
+      // previo (capturada antes del último dispose). Sino, default del ejemplo.
+      const savedExpanded = folderExpandedState.get(title);
+      const expanded = savedExpanded !== undefined ? savedExpanded : isExpandedByDefault(title);
+      const f = pane.addFolder({ title, expanded });
+      folderMap.set(title, f);
     }
     return folderMap.get(title);
   };
+  // Exponer la folderMap del rebuild actual para que el SIGUIENTE rebuild
+  // pueda capturar el estado expanded justo antes del dispose.
+  lastFolderMap = folderMap;
   let timer: number | null = null;
   const scheduleRebuild = () => {
     if (timer !== null) clearTimeout(timer);
@@ -4417,7 +4495,7 @@ solve`;
       currentBinding = fTarget.addBinding(currentParams, key, rebuiltOpts);
       // Registrar visibilidad dinamica si el param tiene hiddenIf
       if (p.hiddenIf) hiddenBindings.push({ binding: currentBinding, hiddenIf: p.hiddenIf });
-      currentBinding.on("change", () => {
+      currentBinding.on("change", (ev: any) => {
         if (currentExample?.onParamChange) {
           currentExample.onParamChange(key, currentParams);
           pane.refresh();
@@ -4426,10 +4504,17 @@ solve`;
         applyHiddenBindings();
         // Si este param regenera dynamicParams (nPisos, nVanos, etc.),
         // reconstruir el pane ENTERO para que aparezcan los nuevos sliders
-        // Piso 1, Piso 2, Piso 3... automáticamente.
+        // Piso 1, Piso 2, Piso 3... automáticamente — PERO sólo cuando el
+        // usuario suelta el slider (ev.last === true), no durante el drag.
+        // Durante el drag mantenemos el pane intacto y solo recomputamos el
+        // modelo en live (scheduleRebuild). Esto evita que el slider se cierre
+        // / pierda foco a mitad del arrastre.
         if (p.regenOnChange) {
-          // debounce pequeño para que el slider no haga flicker
-          window.setTimeout(() => { buildParamsPane(); rebuild(); }, 80);
+          if (ev?.last === false) {
+            scheduleRebuild();   // live calc sin tocar el pane
+          } else {
+            window.setTimeout(() => { buildParamsPane(); rebuild(); }, 80);
+          }
         } else {
           scheduleRebuild();
         }
@@ -4625,6 +4710,32 @@ solve`;
   // Sin esto, todos los params hiddenIf se muestran al cargar (solo se ocultan
   // tras el primer cambio de slider).
   applyHiddenBindings();
+
+  // Restaurar el scroll vertical capturado antes del dispose. El layout del
+  // pane Tweakpane se completa a lo largo de varios frames (folders se
+  // expanden/colapsan, contenido async). Estrategia: múltiples intentos a
+  // distintos tiempos + ResizeObserver para captar el momento en que el
+  // contenido alcanza su altura final.
+  const restoreScroll = () => {
+    if (prevScrollTop > 0) paneHost.scrollTop = prevScrollTop;
+    if (prevInnerScrollTop > 0) {
+      const scroller = paneHost.querySelector(".tp-dfwv") as HTMLElement | null;
+      if (scroller) scroller.scrollTop = prevInnerScrollTop;
+    }
+  };
+  restoreScroll();
+  requestAnimationFrame(restoreScroll);
+  requestAnimationFrame(() => requestAnimationFrame(restoreScroll));
+  setTimeout(restoreScroll, 0);
+  setTimeout(restoreScroll, 50);
+  setTimeout(restoreScroll, 150);
+  // ResizeObserver: cuando paneHost cambia de tamaño (Tweakpane termina de
+  // renderizar sus folders) restaurar el scroll. Cleanup a los 500 ms.
+  try {
+    const ro = new ResizeObserver(restoreScroll);
+    ro.observe(paneHost);
+    setTimeout(() => ro.disconnect(), 500);
+  } catch {}
 }
 
 // ── Settings del viewer ──
@@ -4652,6 +4763,17 @@ const viewerElm = getViewer({
     gridTarget: drawingGridTarget,
   },
 });
+
+// ── Hook OrbitControls "start": detectar primera interacción manual ──
+// Una vez que el usuario hace pan/zoom/orbit, `userCameraInteracted` queda
+// en `true` hasta que cambie el ejemplo (loadExample lo resetea). Esto evita
+// que el rebuild() de cada slider recentre la cámara.
+{
+  const _ctx: any = (viewerElm as any).__ctx;
+  if (_ctx?.controls) {
+    _ctx.controls.addEventListener("start", () => { userCameraInteracted = true; });
+  }
+}
 
 // ── Inspect: ahora vive dentro de "🛠 Herramientas FEM" (Tweakpane) ──
 // El botón Inspect suelto top-center quedó eliminado — usar el folder

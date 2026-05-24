@@ -146,14 +146,21 @@ export function runExampleStandalone(ex: ExampleDef) {
       });
     }, 0);
 
-    // ── SAFE F2K Export/Import (solo zapatas) ─────────────────
+    // ── SAFE F2K Export/Import (solo cimentaciones puras) ─────
     // Mismo behavior que el workspace: roundtrip Hekatan ↔ SAFE para validación.
-    if (ex.id.startsWith("zapata")) {
+    // Cubre zapata*, guerra-ej* y safe-bench-* (el modelo ES la zapata).
+    if (/^(zapata|guerra-ej|safe-bench-)/.test(ex.id)) {
       const fF2K = pane.addFolder({ title: "📄 SAFE F2K", expanded: false });
       fF2K.addButton({ title: "📤 Exportar a SAFE (.f2k)" }).on("click", async () => {
         try {
-          const { downloadZapataF2k } = await import("../zapata-aislada/f2kExporter");
           const p = currentParams;
+          // Si el ejemplo provee su propio exportador (compuesto, losa, viga
+          // de cimentación, etc.), lo usamos en vez del genérico de zapata única.
+          if (typeof ex.exportF2k === "function") {
+            ex.exportF2k(p);
+            return;
+          }
+          const { downloadZapataF2k } = await import("../zapata-aislada/f2kExporter");
           const ks_factor = p.ks_factor ?? 10.5;
           const q_adm_tonf = p.q_adm ?? 20;
           const ks_kNm3 = ks_factor * q_adm_tonf * 9.80665;

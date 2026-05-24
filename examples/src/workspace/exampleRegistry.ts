@@ -143,6 +143,17 @@ export interface ExampleDef {
    */
   customE2kExport?: (params: Record<string, number>, states: BuildStates) => void;
   /**
+   * Exportador F2K (SAFE) custom — si está definido, el botón "📤 Exportar F2K"
+   * del folder SAFE lo invoca en vez del genérico `downloadZapataF2k` (que solo
+   * sabe de zapatas individuales con `p.Lz`, `p.Bz`).
+   *
+   * Útil para ejemplos de cimentación con geometría compuesta (zapata + viga de
+   * amarre, losa de cimentación, viga de cimentación, zapata combinada, etc.).
+   * La función recibe los params actuales del Tweakpane y se encarga de
+   * descargar el archivo (típicamente vía `downloadEdificioCimentacionF2k`).
+   */
+  exportF2k?: (params: Record<string, number>) => void | Promise<void>;
+  /**
    * Pasos numerados de uso del ejemplo. Se renderiza como folder "📖 Guía"
    * en Tweakpane, expandido por default cuando el ejemplo es nuevo para el
    * usuario (gobierno por localStorage flag por id).
@@ -244,6 +255,8 @@ import { guerraEj3ZapataRectangularEccGrande } from "../guerra-ej3-zapata-rectan
 import { guerraEj4ZapataCombinada } from "../guerra-ej4-zapata-combinada-rectangular/guerraEj4";
 import { guerraEj5ZapataTrapezoidal } from "../guerra-ej5-zapata-combinada-trapezoidal/guerraEj5";
 import { guerraEj6ZapataUnida } from "../guerra-ej6-zapata-unida-viga-amarre/guerraEj6";
+import { benchmarkSafeEx01Plate } from "../benchmark-safe-ex01-plate/benchmarkSafeEx01Plate";
+import { benchmarkSafeEx04PlateBeams } from "../benchmark-safe-ex04-plate-beams/benchmarkSafeEx04PlateBeams";
 import { guerraEj7VigaCimentacion } from "../guerra-ej7-viga-cimentacion-new/guerraEj7";
 import { guerraEj8LosaCimentacion } from "../guerra-ej8-losa-cimentacion/guerraEj8";
 import { vigaCimGuerraEj7 } from "../viga-cim-guerra-ej7/vigaCimGuerra";
@@ -253,6 +266,8 @@ import { edificioConMuros } from "../edificio-con-muros/edificioConMuros";
 import { plane } from "../plane/plane";
 import { membranaCSI } from "../membrana-csi/membranaCSI";
 import { plateThin } from "../plate-thin/plateThin";
+import { plateWithBeams } from "../plate-with-beams/plateWithBeams";
+import { slabBeamsColumns } from "../slab-beams-columns/slabBeamsColumns";
 import { plateThick } from "../plate-thick/plateThick";
 import { membrana } from "../membrana-pstress/membrana";
 import { shellThin } from "../shell-thin/shellThin";
@@ -300,6 +315,7 @@ import { vigaFlexionSteelCantilever } from "../W2_viga_flexion_steel_cantilever/
 import { vigaFlexionCompositeSlabCantilever } from "../W2_viga_flexion_composite_slab_cantilever/vigaFlexionCompositeSlabCantilever";
 import { vigaFlexionCompositeEncasedCantilever } from "../W2_viga_flexion_composite_encased_cantilever/vigaFlexionCompositeEncasedCantilever";
 import { portico2D } from "../portico-2d/portico2D";
+import { cerramiento } from "../cerramiento/cerramiento";
 import { tower3D } from "../tower-3d/tower3D";
 import { galpon } from "../galpon/galpon";
 import { edifAcero } from "../edif-acero/edifAcero";
@@ -340,6 +356,8 @@ export const examplesRegistry: ExampleDef[] = [
   guerraEj4ZapataCombinada,
   guerraEj5ZapataTrapezoidal,
   guerraEj6ZapataUnida,
+  benchmarkSafeEx01Plate,
+  benchmarkSafeEx04PlateBeams,
   guerraEj7VigaCimentacion,
   guerraEj8LosaCimentacion,
   vigaCimGuerraEj7,
@@ -356,6 +374,8 @@ export const examplesRegistry: ExampleDef[] = [
   vigaFlexionSteelCantilever,           // Viga Acero IPE 300 peso propio
   vigaFlexionCompositeSlabCantilever,   // Viga Compuesta Slab (IPE+losa colaborante) peso propio
   vigaFlexionCompositeEncasedCantilever,// Viga Compuesta SRC Encased (bloque hormigón + IPE) peso propio
+  // 🧱 Construcción — cerramientos / pórticos planos de uso cotidiano
+  cerramiento,
   // Frames 1D (resto)
   trussGen,
   portico2D,
@@ -423,6 +443,8 @@ export const examplesRegistry: ExampleDef[] = [
   shellThin,               // 4) Shell Thin (Kirchhoff-Love)
   shellThick,              // 5) Shell Thick (MITC4)
   layeredShell,            // 6) Layered (CLT/Sandwich/ABBD multi-capa)
+  plateWithBeams,          // 7) Placa + vigas perimetrales (vs SAP benchmark)
+  slabBeamsColumns,        // 8) Slab + vigas perimetrales + columnas (edificio 1 piso)
 
   // ── 3) SÓLIDOS (3D) ─────────────────────────────────────────────
   solidCubeFEM,            // Cubo Sólido H8 (validación CalculiX)
