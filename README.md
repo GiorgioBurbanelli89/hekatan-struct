@@ -6,7 +6,7 @@ Hekatan Struct started as a fork of [awatif v2.0.0](https://github.com/madil4/aw
 
 🌐 **Live:** [https://giorgioburbanelli89.github.io/hekatan-struct/workspace/](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/)
 
-Jump directly to any example with `?t=<id>` (102 examples total). The most relevant grouped by category:
+Jump directly to any example with `?t=<id>` (122 examples total). The most relevant grouped by category:
 
 **Plates & Shells**
 - [`?t=plane`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=plane) — Plane Q4 cantilever wall (plane stress) w/ Wilson incompatible modes
@@ -21,6 +21,12 @@ Jump directly to any example with `?t=<id>` (102 examples total). The most relev
 - [`?t=membrana-pstress`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=membrana-pstress) — Plane-stress membrane
 - [`?t=shear-wall-q4`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=shear-wall-q4) — Shear wall meshed with Q4
 - [`?t=cantilever-beam-q4`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=cantilever-beam-q4) / [`?t=placa-cantilever-q4`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-cantilever-q4) — Cantilever benchmarks
+- [`?t=membrana`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=membrana) — Membrane (plane stress) — Hekatan vs SAP -0.23%
+- [`?t=plate-with-beams`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=plate-with-beams) — Plate + perimeter beams (vs SAP benchmark)
+- [`?t=slab-beams-columns`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=slab-beams-columns) — Slab + perimeter beams + columns (1-story benchmark)
+- [`?t=benchmark-safe-ex01-plate`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-safe-ex01-plate) — SAFE Ex.1 · Rectangular SS plate (Timoshenko)
+- [`?t=benchmark-safe-ex04-plate-beams`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-safe-ex04-plate-beams) — SAFE Ex.4 · Plate + elastic beams (Timoshenko, λ=4)
+- [`?t=plate`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=plate) — Generic plate (legacy)
 
 **Foundations & Soil**
 - [`?t=zapata-aislada`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=zapata-aislada) — Isolated footing + Winkler springs (11 soil types, NEC-SE-GC)
@@ -32,6 +38,7 @@ Jump directly to any example with `?t=<id>` (102 examples total). The most relev
 - [`?t=safe-bench-losa-cimentacion`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=safe-bench-losa-cimentacion) — Mat foundation 6×8m (cross-validated vs SAFE)
 - [`?t=safe-bench-zapata-combinada`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=safe-bench-zapata-combinada) — Combined footing 4×2m
 - [`?t=safe-bench-zapata-conectada`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=safe-bench-zapata-conectada) — Connected footings 5×1m, variable t
+- [`?t=safe-bench-zapata-comparativa`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=safe-bench-zapata-comparativa) — 🎓 ISSE comparativa: Empotrada vs Winkler vs Vesic (5 autores)
 - [`?t=placa-base`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base) — Steel column base plate
 - [`?t=placa-base-cft`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base-cft) — CFT column base plate
 - [`?t=placa-base-h`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base-h) / [`?t=placa-base-hueca`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=placa-base-hueca) — H + hollow profile bases
@@ -65,6 +72,7 @@ All buildings support the **Rigid Diaphragm** toggle (ASCE 7-22 §12.3.1) in the
 - [`?t=beams`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=beams) / [`?t=viga-doble-t`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=viga-doble-t) — Beam elements
 - [`?t=axial-bar`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=axial-bar) / [`?t=barra-axial`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=barra-axial) — Axial bar elements
 - [`?t=releases-demo`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=releases-demo) — Member end releases
+- [`?t=cerramiento`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=cerramiento) — Cerramiento (pórtico plano N vanos, construcción cotidiana)
 
 **CFT (Concrete-Filled Tubes)**
 - [`?t=columna-cft`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=columna-cft) — CFT column (beam element, AISC 360-22 §I)
@@ -82,7 +90,28 @@ All buildings support the **Rigid Diaphragm** toggle (ASCE 7-22 §12.3.1) in the
 - [`?t=benchmark-3way`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-3way) — 3-way comparison (Hekatan / ETABS / hand calc)
 - [`?t=benchmark-concrete-beam`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-concrete-beam) / [`?t=benchmark-concrete-cantilever`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-concrete-cantilever) — Concrete beam tests
 - [`?t=benchmark-steel-beam`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-steel-beam) / [`?t=benchmark-steel-cantilever`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-steel-cantilever) — Steel beam tests
-- [`?t=benchmark-paz-4-1`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-4-1) thru [`?t=benchmark-paz-13-1`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-13-1) — Mario Paz "Structural Dynamics" textbook examples (chapters 4 through 13)
+
+*Vigas W1 / W2 — n-DOF axial & flexion benchmarks*
+- [`?t=W1_barra_axial`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=W1_barra_axial) — W1 · Barra axial genérica (1 DOF)
+- [`?t=W2_viga_axial_concrete_cantilever`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=W2_viga_axial_concrete_cantilever) — Viga axial Hormigón 30×30 (1 DOF)
+- [`?t=W2_viga_axial_cantilever`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=W2_viga_axial_cantilever) — Viga axial Acero I-450 (1 DOF)
+- [`?t=W2_viga_axial_composite_cantilever`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=W2_viga_axial_composite_cantilever) — Viga axial Compuesta Slab (IPE+losa colaborante) (1 DOF)
+- [`?t=W2_viga_axial_composite_encased_cantilever`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=W2_viga_axial_composite_encased_cantilever) — Viga axial Compuesta SRC Encased (1 DOF)
+- [`?t=W2_viga_flexion_concrete_cantilever`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=W2_viga_flexion_concrete_cantilever) — Viga flexión Hormigón 30×60 (2 DOF)
+- [`?t=W2_viga_flexion_steel_cantilever`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=W2_viga_flexion_steel_cantilever) — Viga flexión Acero IPE 300 (2 DOF)
+- [`?t=W2_viga_flexion_composite_slab_cantilever`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=W2_viga_flexion_composite_slab_cantilever) — Viga flexión Compuesta Slab (2 DOF)
+- [`?t=W2_viga_flexion_composite_encased_cantilever`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=W2_viga_flexion_composite_encased_cantilever) — Viga flexión Compuesta SRC Encased (2 DOF)
+
+*Mario Paz "Structural Dynamics" 6ª ed.*
+- [`?t=benchmark-paz-4-1`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-4-1) — Paz 4.1 (1-DOF rectangular impulse)
+- [`?t=benchmark-paz-6-1`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-6-1) — Paz 6.1 (Newmark-β canónico 1-DOF)
+- [`?t=benchmark-paz-7-1`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-7-1) — Paz 7.1 (2-story shear building)
+- [`?t=benchmark-paz-8-1`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-8-1) — Paz 8.1 (2-DOF triangular impulse)
+- [`?t=benchmark-paz-9-3`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-9-3) — Paz 9.3 (4-story uniform shear building)
+- [`?t=benchmark-paz-10-7`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-10-7) — Paz 10.7 (fixed-fixed beam, 4 elementos)
+- [`?t=benchmark-paz-11-1`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-11-1) — Paz 11.1 (plane frame inclinado 45°)
+- [`?t=benchmark-paz-12-1`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-12-1) — Paz 12.1 (grid frame 3D horizontal)
+- [`?t=benchmark-paz-13-1`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-13-1) — Paz 13.1 (space frame 3D, 5 nodos)
 
 **Iconic 3D structures**
 - [`?t=burj-khalifa`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=burj-khalifa) / [`?t=twisted-tower`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=twisted-tower) / [`?t=tower-3d`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=tower-3d) — Tower models
