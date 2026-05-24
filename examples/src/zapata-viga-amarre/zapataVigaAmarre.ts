@@ -44,24 +44,39 @@ export const zapataVigaAmarre: ExampleDef = {
     // Cargas lógicas: reacción típica de columna en edificio 4-8 pisos (medianera + centrada).
     // Verificado con edificio-aporticado 4 pisos: Fz≈5 tonf, Mx≈1, My≈2.5 tonf·m con
     // CM/CV por-nodo; valores default representan edificio 8-10 pisos con CM real en kN/m².
-    P1:  { default: 25,  min: 1,  max: 200, step: 1,   label: "P1 axial (tonf)" },
-    M1x: { default: 1,   min: -5, max: 5,   step: 0.1, label: "M1x (tonf·m)" },
-    M1y: { default: 2.5, min: -5, max: 5,   step: 0.1, label: "M1y (tonf·m)" },
-    P2:  { default: 40,  min: 1,  max: 200, step: 1,   label: "P2 axial (tonf)" },
-    M2x: { default: 1,   min: -5, max: 5,   step: 0.1, label: "M2x (tonf·m)" },
-    M2y: { default: 2.5, min: -5, max: 5,   step: 0.1, label: "M2y (tonf·m)" },
+    // Cargas Dead (CM) por columna. Default no incluye Live para no duplicar
+    // si el usuario pone solo "P1 total" sin separar D/L (compat. legacy).
+    P1:  { default: 25,  min: 1,  max: 200, step: 1,   label: "P1 Dead (tonf)" },
+    M1x: { default: 1,   min: -5, max: 5,   step: 0.1, label: "M1x Dead (tonf·m)" },
+    M1y: { default: 2.5, min: -5, max: 5,   step: 0.1, label: "M1y Dead (tonf·m)" },
+    P2:  { default: 40,  min: 1,  max: 200, step: 1,   label: "P2 Dead (tonf)" },
+    M2x: { default: 1,   min: -5, max: 5,   step: 0.1, label: "M2x Dead (tonf·m)" },
+    M2y: { default: 2.5, min: -5, max: 5,   step: 0.1, label: "M2y Dead (tonf·m)" },
+    // Cargas Live (CV) por columna — combo D+L se aplica en el build, y se
+    // exportan separadas al F2K junto con la combinación Pu=1.4D+1.7L.
+    P1_L:  { default: 0, min: 0,  max: 200, step: 1,   label: "P1 Live (tonf)" },
+    M1x_L: { default: 0, min: -5, max: 5,   step: 0.1, label: "M1x Live (tonf·m)" },
+    M1y_L: { default: 0, min: -5, max: 5,   step: 0.1, label: "M1y Live (tonf·m)" },
+    P2_L:  { default: 0, min: 0,  max: 200, step: 1,   label: "P2 Live (tonf)" },
+    M2x_L: { default: 0, min: -5, max: 5,   step: 0.1, label: "M2x Live (tonf·m)" },
+    M2y_L: { default: 0, min: -5, max: 5,   step: 0.1, label: "M2y Live (tonf·m)" },
     nSubX: { default: 4, min: 2, max: 8, step: 1, label: "nx subdiv" },
     nSubY: { default: 4, min: 2, max: 8, step: 1, label: "ny subdiv" },
   },
   build(p, states) {
     const Lz1 = p.Lz1, Bz1 = p.Bz1, Lv = p.Lv, Bv = p.Bv, Hv = p.Hv;
     const Lz2 = p.Lz2, Bz2 = p.Bz2, tz = p.tz, bc = p.bc, Hp = p.Hp;
-    // Conversión tonf → kN (para el solver que trabaja en SI kN/m)
+    // Conversión tonf → kN (para el solver que trabaja en SI kN/m).
+    // Aplicamos el combo D+L (servicio) como carga total en el FEM. Para
+    // diseño LRFD el exporter F2K agrega también combo Pu=1.4D+1.7L.
     const TONF_TO_KN = 9.80665;
-    const P1 = p.P1 * TONF_TO_KN, P2 = p.P2 * TONF_TO_KN;
+    const P1 = (p.P1 + (p.P1_L ?? 0)) * TONF_TO_KN;
+    const P2 = (p.P2 + (p.P2_L ?? 0)) * TONF_TO_KN;
     const ks = p.ks;
-    const M1x = (p.M1x ?? 0) * TONF_TO_KN, M1y = (p.M1y ?? 0) * TONF_TO_KN;
-    const M2x = (p.M2x ?? 0) * TONF_TO_KN, M2y = (p.M2y ?? 0) * TONF_TO_KN;
+    const M1x = ((p.M1x ?? 0) + (p.M1x_L ?? 0)) * TONF_TO_KN;
+    const M1y = ((p.M1y ?? 0) + (p.M1y_L ?? 0)) * TONF_TO_KN;
+    const M2x = ((p.M2x ?? 0) + (p.M2x_L ?? 0)) * TONF_TO_KN;
+    const M2y = ((p.M2y ?? 0) + (p.M2y_L ?? 0)) * TONF_TO_KN;
     const nSubX = Math.round(p.nSubX), nSubY = Math.round(p.nSubY);
 
     // Offset Y para alinear centros de las 2 zapatas (la viga amarre debe
@@ -484,6 +499,9 @@ export const zapataVigaAmarre: ExampleDef = {
         P_dead_kN: (p.P1 ?? 0) * TONF_TO_KN,
         Mx_dead_kNm: (p.M1x ?? 0) * TONF_TO_KN,
         My_dead_kNm: (p.M1y ?? 0) * TONF_TO_KN,
+        P_live_kN: (p.P1_L ?? 0) * TONF_TO_KN,
+        Mx_live_kNm: (p.M1x_L ?? 0) * TONF_TO_KN,
+        My_live_kNm: (p.M1y_L ?? 0) * TONF_TO_KN,
         label: 1,
       },
       {
@@ -492,6 +510,9 @@ export const zapataVigaAmarre: ExampleDef = {
         P_dead_kN: (p.P2 ?? 0) * TONF_TO_KN,
         Mx_dead_kNm: (p.M2x ?? 0) * TONF_TO_KN,
         My_dead_kNm: (p.M2y ?? 0) * TONF_TO_KN,
+        P_live_kN: (p.P2_L ?? 0) * TONF_TO_KN,
+        Mx_live_kNm: (p.M2x_L ?? 0) * TONF_TO_KN,
+        My_live_kNm: (p.M2y_L ?? 0) * TONF_TO_KN,
         label: 2,
       },
     ];
@@ -510,12 +531,18 @@ export const zapataVigaAmarre: ExampleDef = {
         { zapatas, vigasAmarre, ks_kNm3: ks, Z: 0 },
         `ZapataVigaAmarre_Hekatan_${Date.now()}.f2k`,
       );
+      const P1tot = (p.P1 ?? 0) + (p.P1_L ?? 0);
+      const P2tot = (p.P2 ?? 0) + (p.P2_L ?? 0);
+      const Pu1 = 1.4 * (p.P1 ?? 0) + 1.7 * (p.P1_L ?? 0);
+      const Pu2 = 1.4 * (p.P2 ?? 0) + 1.7 * (p.P2_L ?? 0);
       alert(
-        `✅ F2K exportado con 2 zapatas + 1 viga de amarre:\n` +
-        `• Z1 ${Lz1}×${Bz1} m, P=${p.P1} tonf, Mx=${p.M1x}, My=${p.M1y} tonf·m\n` +
-        `• Z2 ${Lz2}×${Bz2} m, P=${p.P2} tonf, Mx=${p.M2x}, My=${p.M2y} tonf·m\n` +
+        `✅ F2K exportado con 2 zapatas + viga de amarre:\n\n` +
+        `• Z1 ${Lz1}×${Bz1} m — PD=${p.P1} + PL=${p.P1_L ?? 0} = ${P1tot} tonf | Pu=${Pu1.toFixed(1)} tonf\n` +
+        `• Z2 ${Lz2}×${Bz2} m — PD=${p.P2} + PL=${p.P2_L ?? 0} = ${P2tot} tonf | Pu=${Pu2.toFixed(1)} tonf\n` +
         `• Viga amarre ${Bv}×${Hv} m, Lv=${Lv} m\n` +
         `• ks = ${ks.toFixed(0)} kN/m³\n\n` +
+        `Patrones de carga incluidos: Dead (+peso propio), Live\n` +
+        `Combinación: Pu = 1.4D + 1.7L (ACI 318 nominal Guerra MDI)\n\n` +
         `Abrilo en SAFE 20.x: File → Import → SAFE Text File (.f2k)`,
       );
       console.log(`[F2K Zapata+Viga] exportado: Z1=${Lz1}×${Bz1}, Z2=${Lz2}×${Bz2}, ks=${ks} kN/m³`);

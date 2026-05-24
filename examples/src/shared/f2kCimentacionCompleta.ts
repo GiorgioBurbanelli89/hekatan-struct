@@ -54,6 +54,10 @@ export interface ZapataItem {
   P_dead_kN: number;
   Mx_dead_kNm?: number;
   My_dead_kNm?: number;
+  /** Carga axial viva (kN, +compresión). Default 0. */
+  P_live_kN?: number;
+  Mx_live_kNm?: number;
+  My_live_kNm?: number;
   /** Identificador (NodeIdx del edificio) — solo para logging/etiqueta */
   label?: string | number;
 }
@@ -161,18 +165,31 @@ export function exportEdificioCimentacionF2k(data: F2kCimentacionData): string {
   L.push(`   Name=ASpr1   "Subgrade Modulus"=${fmt(ks_tonf_m3)}   "Nonlinear Option"="Compression Only"   Color=Green   GUID=${guid()}`);
   L.push(` `);
 
-  // ── LOAD PATTERN + CASE + MASS SOURCE ──
+  // ── LOAD PATTERN + CASE + MASS SOURCE + COMBO ──
+  // Dead: peso propio (Self Weight Multiplier=1) + cargas P_dead/Mx/My por col.
+  // Live: solo cargas P_live/Mx/My por col. NO incluye peso propio.
+  // Combo "Pu = 1.4D + 1.7L" (ACI 318 nominal Guerra MDI / antiguo) para
+  // diseño LRFD. SAFE 20.x lo aplica automáticamente al diseñar.
   L.push(`TABLE:  "LOAD PATTERN DEFINITIONS"`);
   L.push(`   Name=Dead   "Is Auto Load"=No   Type=Dead   "Self Weight Multiplier"=1   GUID=${guid()}`);
+  L.push(`   Name=Live   "Is Auto Load"=No   Type=Live   "Self Weight Multiplier"=0   GUID=${guid()}`);
   L.push(` `);
   L.push(`TABLE:  "LOAD CASE DEFINITIONS - SUMMARY"`);
   L.push(`   Name=Dead   Type="Linear Static"   GUID=${guid()}`);
+  L.push(`   Name=Live   Type="Linear Static"   GUID=${guid()}`);
   L.push(` `);
   L.push(`TABLE:  "LOAD CASE DEFINITIONS - LINEAR STATIC"`);
   L.push(`   Name=Dead   "Exclude Group"=None   "Mass Source"=MsSrc1   "Initial Condition"=Unstressed   "Load Type"=Load   "Load Name"=Dead   "Load SF"=1   "Design Type"="Program Determined"   GUID=${guid()}`);
+  L.push(`   Name=Live   "Exclude Group"=None   "Mass Source"=MsSrc1   "Initial Condition"=Unstressed   "Load Type"=Load   "Load Name"=Live   "Load SF"=1   "Design Type"="Program Determined"   GUID=${guid()}`);
   L.push(` `);
   L.push(`TABLE:  "MASS SOURCE DEFINITION"`);
   L.push(`   Name=MsSrc1   "Is Default"=Yes   "Include Lateral Mass?"=No   "Include Vertical Mass?"=Yes   "Lump Mass?"=Yes   "Source Self Mass?"=Yes   "Source Added Mass?"=Yes   "Source Load Patterns?"=No   "Move Mass Centroid?"=No   GUID=${guid()}`);
+  L.push(` `);
+  // ── LOAD COMBINATIONS (LRFD) ──
+  // Pu = 1.4D + 1.7L (ACI 318 antiguo, usado por Guerra MDI).
+  L.push(`TABLE:  "COMBINATION DEFINITIONS"`);
+  L.push(`   Name=Pu_1.4D+1.7L   Type="Linear Add"   "Is Auto"=No   "Load Name"=Dead   "Scale Factor"=1.4   GUID=${guid()}`);
+  L.push(`   Name=Pu_1.4D+1.7L   "Load Name"=Live   "Scale Factor"=1.7`);
   L.push(` `);
 
   // ── POINT OBJECT CONNECTIVITY: TODOS los joints en UNA sola tabla ──
@@ -251,7 +268,7 @@ export function exportEdificioCimentacionF2k(data: F2kCimentacionData): string {
   }
   L.push(` `);
 
-  // ── JOINT LOADS — P, Mx, My por columna ──
+  // ── JOINT LOADS — P, Mx, My por columna, separados por Dead y Live ──
   L.push(`TABLE:  "JOINT LOADS ASSIGNMENTS - FORCE"`);
   for (let i = 0; i < Nz; i++) {
     const z = zapatas[i];
@@ -261,6 +278,12 @@ export function exportEdificioCimentacionF2k(data: F2kCimentacionData): string {
     const My_d = (z.My_dead_kNm ?? 0) * KN_TO_TONF;
     if (P_d !== 0 || Mx_d !== 0 || My_d !== 0) {
       L.push(`   UniqueName=${offset+9}   "Load Pattern"=Dead   FX=0   FY=0   FZ=${fmt(-P_d)}   MX=${fmt(Mx_d)}   MY=${fmt(My_d)}   MZ=0   "X Dimension"=${fmt(z.bc)}   "Y Dimension"=${fmt(z.bc)}   GUID=${guid()}`);
+    }
+    const P_l = (z.P_live_kN ?? 0) * KN_TO_TONF;
+    const Mx_l = (z.Mx_live_kNm ?? 0) * KN_TO_TONF;
+    const My_l = (z.My_live_kNm ?? 0) * KN_TO_TONF;
+    if (P_l !== 0 || Mx_l !== 0 || My_l !== 0) {
+      L.push(`   UniqueName=${offset+9}   "Load Pattern"=Live   FX=0   FY=0   FZ=${fmt(-P_l)}   MX=${fmt(Mx_l)}   MY=${fmt(My_l)}   MZ=0   "X Dimension"=${fmt(z.bc)}   "Y Dimension"=${fmt(z.bc)}   GUID=${guid()}`);
     }
   }
   L.push(` `);

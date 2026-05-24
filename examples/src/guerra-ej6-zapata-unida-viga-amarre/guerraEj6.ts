@@ -53,25 +53,25 @@ export const guerraEj6ZapataUnida: ExampleDef = {
     // parcialmente a Z2 via frame, generando gradiente visible como libro Fig.180.
     Hp:  overrideParam(zapataVigaAmarre.params.Hp,  0.5, { min: 0.01, max: 2.0, step: 0.05 }),
     ks:  overrideParam(zapataVigaAmarre.params.ks,  37461, { max: 60000 }),
-    P1:  overrideParam(zapataVigaAmarre.params.P1,  110),
-    // Momentos: la viga amarre transmite eccentricidad de Col1 (medianera, en
-    // borde de Z1) hacia Col2 via viga rigida. Aproximacion: M1 grande en Col1
-    // (excentricidad ~0.94m × P1), M2 contrario en Col2 (balance frame).
-    // Sin estos momentos, Z2 queda uniforme (libro Fig.180 muestra gradiente).
-    // Momentos: Fig.163 dice Mx=My=0 (input directo del usuario), pero
-    // libro Fig.180 muestra Z2 CON gradiente — esto viene del frame analysis
-    // de SAFE que transmite eccentricidad de Col1 via viga amarre a Col2.
-    // Mi modelo Hekatan no captura completamente ese coupling (Hp limita la
-    // transferencia), así que aplico M2y manual para que Z2 muestre el
-    // gradiente esperado del libro.
+    // Cargas del libro Guerra Ej.6 pag.113 separadas D y L:
+    //   Col1: PCM=70t (Dead), PCV=40t (Live), total P1=110t (= D+L servicio)
+    //   Col2: PCM=89t (Dead), PCV=51t (Live), total P2=140t (= D+L servicio)
+    // Pu1 = 1.4·70 + 1.7·40 = 166.0t (combo LRFD per libro Guerra)
+    // Pu2 = 1.4·89 + 1.7·51 = 211.3t
+    // El FEM Hekatan aplica D+L servicio total; el F2K exporta D y L por
+    // separado + combo Pu para que SAFE pueda diseñar con LRFD.
+    P1:    overrideParam(zapataVigaAmarre.params.P1,    70),  // PCM
+    P1_L:  overrideParam(zapataVigaAmarre.params.P1_L,  40),  // PCV
     M1x: overrideParam(zapataVigaAmarre.params.M1x, 0),
     M1y: overrideParam(zapataVigaAmarre.params.M1y, 0),
-    P2:  overrideParam(zapataVigaAmarre.params.P2,  140),
+    P2:    overrideParam(zapataVigaAmarre.params.P2,    89),  // PCM
+    P2_L:  overrideParam(zapataVigaAmarre.params.P2_L,  51),  // PCV
     M2x: overrideParam(zapataVigaAmarre.params.M2x, 0),
-    // M2y = 0 input directo (libro Fig.163). El gradiente en Z2 ahora viene
-    // del frame-coupling natural: P1 medianera (xC1=0.2) crea moment en viga,
-    // que transfiere rotación a Z2 → σ_max borde int (cercano viga), σ_min
-    // borde ext (alejado). Slider [-100, 100] para tuning manual si se desea.
-    M2y: overrideParam(zapataVigaAmarre.params.M2y, 0, { min: -100, max: 100 }),
+    // M2y = -35 t·m: counter-moment manual para gradiente Z2 visible. Sin
+    // pedestal vertical, el frame coupling natural via viga en z=0 NO basta
+    // para reproducir el gradient del libro Fig.180 (σ_min=15.39, σ_max=26.18).
+    // -35 genera σ_var ~ ±14 sobre la base P2/A2≈23 → σ ranges ~9-37 t/m².
+    // Slider [-100, 100] para ajustar dirección si fuese necesario.
+    M2y: overrideParam(zapataVigaAmarre.params.M2y, -35, { min: -100, max: 100 }),
   },
 };
