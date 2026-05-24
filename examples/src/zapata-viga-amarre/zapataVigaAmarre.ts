@@ -173,18 +173,37 @@ export const zapataVigaAmarre: ExampleDef = {
       J.set(e, 0.14 * bc ** 4); densities.set(e, rho);
       sections.set(e, { type: "rect", b: bc, h: bc });
     }
-    // Viga de amarre — DE COLUMNA A COLUMNA. nCol1Bot ya existe sobre Z1
-    // (con rigid links al shell de Z1) y nCol2Bot sobre Z2 (idem). La viga
-    // es un único frame entre estos dos nodos.
-    const eViga = elsEl.length;
-    elsEl.push([nCol1Bot, nCol2Bot]);
-    elasticities.set(eViga, Ec); poissons.set(eViga, nu_c); Gm.set(eViga, Gc);
-    areas.set(eViga, Bv * Hv);
-    Iz.set(eViga, (Bv * Hv ** 3) / 12);
-    Iy.set(eViga, (Hv * Bv ** 3) / 12);
-    J.set(eViga, 0.28 * Bv * Hv ** 3);
-    densities.set(eViga, rho);
-    sections.set(eViga, { type: "rect", b: Bv, h: Hv });
+    // Viga de amarre — DE COLUMNA A COLUMNA, SUBDIVIDIDA por nodos del slab.
+    //
+    // Topología: la viga atraviesa Z1 (de x=0 a x=Lz1), salta el gap entre
+    // zapatas (de x=Lz1 a x=Lz1+Lv), y atraviesa Z2 (de x=Lz1+Lv a
+    // x=Lz1+Lv+Lz2). En cada zapata la viga COMPARTE NODOS con el slab a
+    // lo largo de su path en y=yC1. Esto hace que la viga "engaje" todo
+    // el slab, no solo los nodos de columna — sin esto la zapata se inclina
+    // y "flota" porque el frame solo tira de los 2 endpoints.
+    //
+    // Implementación: para cada x del mesh shell (xs1, xs2) a y=yC1,
+    // creamos un segmento de viga consecutivo. addNode reusa los nodos
+    // existentes del slab.
+    const vigaPathNodes: number[] = [];
+    for (const x of xs1) vigaPathNodes.push(addNode(x, yC1, 0));
+    for (const x of xs2) vigaPathNodes.push(addNode(x, yC2, 0));
+    let nVigaSegments = 0;
+    for (let i = 0; i < vigaPathNodes.length - 1; i++) {
+      const a = vigaPathNodes[i], b = vigaPathNodes[i + 1];
+      if (a === b) continue;  // dedup
+      const eViga = elsEl.length;
+      elsEl.push([a, b]);
+      elasticities.set(eViga, Ec); poissons.set(eViga, nu_c); Gm.set(eViga, Gc);
+      areas.set(eViga, Bv * Hv);
+      Iz.set(eViga, (Bv * Hv ** 3) / 12);
+      Iy.set(eViga, (Hv * Bv ** 3) / 12);
+      J.set(eViga, 0.28 * Bv * Hv ** 3);
+      densities.set(eViga, rho);
+      sections.set(eViga, { type: "rect", b: Bv, h: Hv });
+      nVigaSegments++;
+    }
+    console.log(`[viga amarre] ${nVigaSegments} segmentos col-a-col compartiendo nodos con slab`);
 
     // ── Rigid links zone (SAFE "Stiff Slab") ──
     // Per libro Guerra Fig.180: la columna NO se conecta a UN solo nodo del
