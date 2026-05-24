@@ -66,8 +66,11 @@ export const zapataVigaAmarre: ExampleDef = {
 
     // Offset Y para alinear centros de las 2 zapatas (la viga amarre debe
     // pasar por el centro de AMBAS, asi como en el libro Guerra Fig.179).
+    // xC1 = bc/2: Col Z1 es MEDIANERA — cara izq de columna flush con borde
+    // izq de zapata (convención Guerra Fig.179). Antes hardcoded 0.2 → con
+    // bc=0.5 el Stiff patch xCol±bc/2 sobresalía 5cm fuera del slab.
     const yOff2 = (Bz1 - Bz2) / 2;
-    const xC1 = 0.2, yC1 = Bz1 / 2;
+    const xC1 = bc / 2, yC1 = Bz1 / 2;
     const xC2 = Lz1 + Lv + Lz2 / 2, yC2 = Bz2 / 2 + yOff2;  // = yC1 = Bz1/2
     const yViga = yC1;  // la viga es horizontal en Y centro
 
@@ -446,11 +449,11 @@ export const zapataVigaAmarre: ExampleDef = {
     const Lz1 = p.Lz1, Bz1 = p.Bz1, Lv = p.Lv, Bv = p.Bv, Hv = p.Hv;
     const Lz2 = p.Lz2, Bz2 = p.Bz2, tz = p.tz, bc = p.bc;
     const ks = p.ks;  // ya en kN/m³
-    // Mismas coordenadas que en build(): la columna sobre Z1 está en
-    // (xC1=0.2, yC1=Bz1/2) — borde izq de Z1 (medianera). La col sobre Z2
-    // está en el centro de Z2. El offset Y de Z2 alinea la viga horizontal.
+    // Mismas coordenadas que en build(): Col Z1 MEDIANERA (xCol1 = bc/2 →
+    // cara izq de columna FLUSH con borde izq de Z1, como Guerra Fig.179).
+    // Col Z2 en el centro de Z2. El offset Y de Z2 alinea la viga horizontal.
     const yOff2 = (Bz1 - Bz2) / 2;
-    const xCol1 = 0.2,                    yCol1 = Bz1 / 2;
+    const xCol1 = bc / 2,                 yCol1 = Bz1 / 2;
     const xCol2 = Lz1 + Lv + Lz2 / 2,     yCol2 = Bz2 / 2 + yOff2;
     // Centros físicos de cada rectángulo de zapata (xC, yC del API F2K).
     const xC_Z1 = Lz1 / 2,                yC_Z1 = Bz1 / 2;
