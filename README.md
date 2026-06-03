@@ -489,8 +489,19 @@ diafragma rígido. Validado end-to-end vs ETABS API (modal + frame forces).
 | Dead M₃ | 2.407 t·m | 2.430 t·m | −0.9% ✓ |
 | UDCon2 P axial | 24.11 t | 24.86 t | −3% ✓ |
 | UDCon2 M₃ | 15.49 t·m | 15.48 t·m | +0.05% ✓ |
+| Live M₂ col (nudo z=4.0) | 2.461 t·m | 2.434 t·m | **+1.1% ✓** |
+| Live M₂ col (cara z=3.5) | 2.153 t·m | 2.130 t·m | **+1.1% ✓** |
 
-**Score promedio: 0.036 (3.6%) — 26/30 cantidades dentro de ±5%.**
+**Score: todas las cantidades dentro de ±5%.**
+
+> **Resuelto el histórico "+15% en M₂ de columna"** (2026-06-03): no era un bug del
+> solver sino una comparación inconsistente — Hekatan reportaba en el **nudo** (z=4.0)
+> mientras ETABS reporta en la **cara del soporte** (z=3.5). El e2k tiene
+> `CARDINALPT 8` (eje de viga en el tope) + `PZENDOFFSETSRIGID No`: el offset
+> (peralte completo de viga = 0.50 m) **no rigidiza K**, sólo desplaza el punto de
+> reporte. Reportando en la cara, M₂ cae a **+1.1%** en los 5 patrones de carga
+> (Dead/Live/SCP/UDCon1/UDCon2, todos en −4%…+1%). Verificado por tres vías
+> independientes: `hekatan-fem-py` (MZC), **Python DKE** (Batoz DKQ) y **Calcpad DKE**.
 
 | Componente C++/WASM | Rol |
 |---|---|
@@ -503,6 +514,7 @@ diafragma rígido. Validado end-to-end vs ETABS API (modal + frame forces).
 - Workspace: [`?t=mesa-torsion`](https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=mesa-torsion)
 - Standalone: [`/mesa-torsion/`](https://giorgioburbanelli89.github.io/hekatan-struct/mesa-torsion/)
 - Validación cruzada Python: [`hekatan-struct-py/examples/mesa_torsion_iterate.py`](./hekatan-struct-py/examples/mesa_torsion_iterate.py)
+- Validación M₂ < 5% (Python DKE vs Calcpad DKE vs ETABS): [`validacion/Calcpad/mesa_torsion/validar_mesa_torsion_python.py`](./validacion/Calcpad/mesa_torsion/validar_mesa_torsion_python.py) · Calcpad: [`mesa_torsion_DKE_completo.cpd`](./validacion/Calcpad/mesa_torsion/mesa_torsion_DKE_completo.cpd)
 - ETABS API scripts: [`validacion/Api CSI Computers/etabs-api/python-verificado/`](./validacion/Api%20CSI%20Computers/etabs-api/python-verificado/) (15_mesa_torsion.py + 16_mesa_torsion_frame_forces.py)
 - Reporte completo: [`validacion/Api CSI Computers/etabs-api/GUIA_API_ETABS.md`](./validacion/Api%20CSI%20Computers/etabs-api/GUIA_API_ETABS.md)
 
