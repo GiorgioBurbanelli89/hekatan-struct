@@ -18,16 +18,16 @@ N_5(ξ; η) = (1 - ξ^2)*(1 - η)/2
 dN1_dξ = $Slope{N_1(ξ; η) @ ξ = a}
 dN1_dη = $Slope{N_1(ξ; η) @ η = b}
 '<h4>Jacobiano del elemento</h4>
-'<p>J transforma del espacio natural (ξ,η) al espacio fisico (x,y):</p>
-J = [$Slope{x(ξ; η) @ ξ = a}; $Slope{y(ξ; η) @ ξ = a}|$Slope{x(ξ; η) @ η = b}; $Slope{y(ξ; η) @ η = b}]
+'<p>J_e transforma del espacio natural (ξ,η) al espacio fisico (x,y):</p>
+J_e = [$Slope{x(ξ; η) @ ξ = a}; $Slope{y(ξ; η) @ ξ = a}|$Slope{x(ξ; η) @ η = b}; $Slope{y(ξ; η) @ η = b}]
 '<h4>Matriz de rigidez flexural D</h4>
 '<p>Relacion constitutiva placa Kirchhoff:</p>
 D_flex = E*t^3/(12*(1 - ν^2))*[1; ν; 0|ν; 1; 0|0; 0; (1 - ν)/2]
 '<h4>Rigidez elemental K (integral doble)</h4>
 '<p>K_ij se obtiene integrando B&rsquo;&middot;D&middot;B sobre el elemento:</p>
-K_ij = $Area{$Area{B_i(ξ; η)*D*B_j(ξ; η)*det_J @ ξ = -1 : 1} @ η = -1 : 1}
+K_ij = $Area{$Area{B_i(ξ; η)*D*B_j(ξ; η)*det_Je @ ξ = -1 : 1} @ η = -1 : 1}
 '<h4>Vector de fuerzas nodales (carga distribuida)</h4>
-F_i = $Area{$Area{N_i(ξ; η)*q*det_J @ ξ = -1 : 1} @ η = -1 : 1}
+F_i = $Area{$Area{N_i(ξ; η)*q*det_Je @ ξ = -1 : 1} @ η = -1 : 1}
 '<h4>Viga Euler-Bernoulli 3D — rigidez elemental</h4>
 '<p>DOFs por nodo: [u, v, w, θx, θy, θz]. Terminos principales:</p>
 K_axial = E*A/L*[1; -1|-1; 1]
