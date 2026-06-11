@@ -2429,9 +2429,11 @@ export function drawing({
         const a = pts[poly[j]], b = pts[poly[j + 1]];
         if (!a || !b) continue;
         const sa = projectToScreen(a), sb = projectToScreen(b);
-        const matches = isCrossing
-          ? (inRect(sa) || inRect(sb) || segCrosses(sa, sb))
-          : (inRect(sa) && inRect(sb));
+        // Window (L→R) y Crossing (R→L) ahora ambos seleccionan si el
+        // segmento TOCA el recuadro (un extremo dentro o lo cruza). Antes
+        // window exigía AMBOS extremos adentro → con objetos grandes no
+        // seleccionaba nada (parecía que "izq→der no funciona").
+        const matches = inRect(sa) || inRect(sb) || segCrosses(sa, sb);
         if (matches) {
           if (isArea) { polyMatches = true; break; }
           selection.add(`seg:${i}:${j}`); added++;
@@ -2446,9 +2448,7 @@ export function drawing({
       if (!ln || ln.length !== 6) continue;
       const sa = projectToScreen([ln[0], ln[1], ln[2]]);
       const sb = projectToScreen([ln[3], ln[4], ln[5]]);
-      const matches = isCrossing
-        ? (inRect(sa) || inRect(sb) || segCrosses(sa, sb))
-        : (inRect(sa) && inRect(sb));
+      const matches = inRect(sa) || inRect(sb) || segCrosses(sa, sb);
       if (matches) { selection.add(`aux:${i}`); added++; }
     }
     refreshSelectionGroup();
