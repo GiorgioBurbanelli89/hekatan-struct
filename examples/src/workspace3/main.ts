@@ -593,7 +593,6 @@ function autoFitCamera() {
   const s = (viewerElm as any).__settings;
   const gridSz = s?.gridSize?.rawVal ?? 10;
   const nodesArr = states.nodes.rawVal || [];
-  // Bounding box del modelo (si hay nodos)
   let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
   for (const n of nodesArr) {
     if (n[0]<minX) minX=n[0]; if (n[0]>maxX) maxX=n[0];
@@ -607,10 +606,6 @@ function autoFitCamera() {
   const dy = nodesArr.length ? maxY-minY : 0;
   const dz = nodesArr.length ? maxZ-minZ : 0;
   const modelExtent = Math.sqrt(dx*dx+dy*dy+dz*dz);
-  // ── Lienzo vacío o modelo más chico que la grilla → encuadrar la GRILLA ──
-  // (sin esto la cámara colapsaba sobre el origen y la grilla quedaba invisible
-  //  + se encogía a tamaño 2; el usuario veía todo negro). Encuadramos la
-  //  grilla centrada en el origen y NO la encogemos.
   const frameGrid = nodesArr.length === 0 || modelExtent < gridSz * 0.5;
   if (frameGrid) { cx = 0; cy = 0; cz = 0; }
   const extent = Math.max(frameGrid ? gridSz : modelExtent, 1);
@@ -629,7 +624,6 @@ function autoFitCamera() {
     orthoCamera.updateProjectionMatrix();
     controls.update();
     render?.();
-    // Solo ajustar el tamaño de grilla cuando el modelo es MÁS GRANDE que ella.
     if (!frameGrid && s?.gridSize) s.gridSize.val = Math.max(Math.ceil(Math.max(dx, dy) * 1.2), 2);
     return;
   }
@@ -1600,9 +1594,7 @@ window.addEventListener("hk:property-applied", (ev: any) => {
       console.log(`[Props] distLoad ${segKeys.length} seg(s):`, value);
     }
   }
-  // ── Cartel de confirmación visible (muchas props NO cambian el dibujo:
-  // sección/material/modifiers solo afectan el ANÁLISIS, el frame sigue siendo
-  // una línea → sin feedback el usuario cree que "no se aplicó"). ──
+  // ── Cartel de confirmación visible ──
   try {
     const nItems = Array.isArray(ids) ? ids.length : 0;
     const LABELS: Record<string, string> = {
@@ -2936,8 +2928,7 @@ function buildParamsPane() {
     // Cuando OFF, el cursor ignora el grid (Snap 2D / Snap 3D) y queda en
     // la coordenada raw del raycaster. OSnap (endpoint/midpoint/etc.) sigue
     // funcionando — esto solo controla el snap a la malla cuadriculada.
-    // El toggle de grid snap + atajo F9 vive ahora en getCadPanel.ts (el panel
-    // CAD real). Acá solo dejamos el binding legacy por compatibilidad.
+    // El toggle de grid snap + atajo F9 vive ahora en getCadPanel.ts.
     (window as any).__hekatanSnapEnabled = true;
     const proxySnapToggle = { snapEnabled: true };
     fCad.addBinding(proxySnapToggle, "snapEnabled", { label: "🧲 Grid snap (F9)" }).on("change", (ev: any) => {
@@ -5208,9 +5199,7 @@ const viewerElm = getViewer({
     });
     if (changed) render();
   };
-  // Un solo listener de pointermove para clamp del cursor.
-  // (capOrthoFills se removió: ahora QUEREMOS ver los planos de referencia
-  //  tenues como guía de dibujo — antes les forzaba opacidad 0.)
+  // Un solo listener de pointermove para cap de planos + clamp del cursor.
   viewerElm.addEventListener("pointermove", () => { clampCursorMarkers(); });
 
   // ── DIBUJO DETERMINISTA EN ISO: click solo sobre el PLANO DE TRABAJO ──
@@ -5223,18 +5212,14 @@ const viewerElm = getViewer({
   // estos flags solo controlan los planos invisibles de raycast). Para dibujar
   // en otra orientación se cambia el Plano de trabajo (XY/XZ/YZ).
   const forceSinglePlaneRaycast = () => {
-    // Planos de raycast PRIORITY 2 (grids XZ/YZ).
     (window as any).__hekatanGridPlaneXZ = false;
     (window as any).__hekatanGridPlaneYZ = false;
-    // Planos ortogonales del último punto (refFillXY/XZ/YZ): los MOSTRAMOS
-    // tenues como guía, pero SIN que intercepten el rayo (orthoRaycast=false),
-    // así el click cae SOLO en el plano de trabajo (no en el plano equivocado
-    // en iso). Desacople hecho en drawing.ts/intersectWorkPlane.
-    (window as any).__hekatanShowOrthoPlanes = true;   // VISIBLES (tenues)
-    (window as any).__hekatanOrthoRaycast = false;     // pero NO raycast
+    // Planos de referencia VISIBLES (guía) pero SIN raycast (click cae en el
+    // plano de trabajo). Desacople en drawing.ts/intersectWorkPlane.
+    (window as any).__hekatanShowOrthoPlanes = true;
+    (window as any).__hekatanOrthoRaycast = false;
   };
   forceSinglePlaneRaycast();
-  // mostrar las mallas de esos planos de referencia (visual)
   try { (window as any).__hekatanSetOrthoPlanes?.(true); } catch {}
   // Re-asegurar en cada interacción (la app los re-setea desde settings al
   // togglear grids). Capture-phase para ganar antes del handler de la app.
@@ -5278,7 +5263,6 @@ const viewerElm = getViewer({
     aux: "┊ Línea auxiliar", auxp: "✦ Punto auxiliar", extend: "↗ Prolongar",
     axis: "📐 Eje", chaflan: "▱ Losa con chaflanes",
   };
-  // Nombre canónico (palabra completa) por herramienta — para el autocompletar.
   const TOOL_CANON: Record<string, string> = {
     line: "line", node: "node", area: "area", polyline: "polyline", rect: "rectangle",
     circle: "circle", arc: "arc", col: "column", wall: "wall", delete: "delete",
@@ -5287,9 +5271,7 @@ const viewerElm = getViewer({
   };
   const ALL_CANON = [...new Set(Object.values(TOOL_CANON))];
 
-  // ── UI: barra de comando estilo AutoCAD — FIJA abajo-centro ──
-  // (Antes seguía al cursor; molestaba para clickear. La fijamos abajo, como la
-  //  command line de AutoCAD. El seguir-al-cursor queda para más adelante.)
+  // ── UI: barra de comando estilo AutoCAD — DYNAMIC INPUT (sigue al cursor) ──
   const bar = document.createElement("div");
   bar.id = "hk3-cmdline";
   bar.style.cssText = [
@@ -5311,8 +5293,6 @@ const viewerElm = getViewer({
   input.placeholder = "line, l, node, circle, rec, area, col…";
   input.autocomplete = "off";
   input.spellcheck = false;
-  // La caja visual vive en el wrapper; el input queda TRANSPARENTE encima del
-  // ghost de autocompletar. Mismo padding/font para que el texto se alinee.
   const cmdWrap = document.createElement("div");
   cmdWrap.style.cssText = [
     "position:relative", "display:inline-block",
@@ -5321,7 +5301,6 @@ const viewerElm = getViewer({
   ].join(";") + ";";
   const baseTxt = "padding:4px 8px;font-family:Consolas,monospace;font-size:13px;line-height:18px;white-space:pre;box-sizing:border-box;";
   input.style.cssText = baseTxt + "background:transparent;border:none;color:#cdeefb;width:100%;height:100%;outline:none;position:relative;z-index:2;";
-  // Ghost = texto fantasma gris detrás (prefijo transparente + sufijo faded)
   const ghost = document.createElement("div");
   ghost.id = "hk3-cmd-ghost";
   ghost.style.cssText = baseTxt + "position:absolute;left:0;top:0;width:100%;height:100%;color:#4a6a7a;pointer-events:none;z-index:1;overflow:hidden;";
@@ -5335,23 +5314,17 @@ const viewerElm = getViewer({
   // La barra se posiciona al lado del puntero. Mientras tipeás (input enfocado)
   // se CONGELA donde estaba, para que no se mueva mientras escribís. Al
   // soltar el foco vuelve a seguir el cursor.
-  // La barra queda FIJA (abajo-centro). El seguir-al-cursor se desactivó por
-  // pedido del usuario (molestaba para clickear); se podrá reactivar después.
-
-  // ── SIEMPRE en modo edición: caret parpadeando, listo para escribir ──
-  // Mantenemos el input enfocado para poder tipear comandos sin clickear,
-  // EXCEPTO cuando: (a) hay otro input/textarea activo (Tweakpane), o (b) estás
-  // dibujando (ahí manda la cajita de coordenadas #hk-rubber-label).
+  // Barra FIJA (abajo-centro). Seguir-al-cursor desactivado por pedido.
+  // SIEMPRE en modo edición: caret listo para escribir comandos sin clickear.
   const keepCmdFocus = () => {
     const ae = document.activeElement as HTMLElement | null;
     if (ae && ae !== input && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) return;
     const rl = document.getElementById("hk-rubber-label") as HTMLElement | null;
-    if (rl && rl.style.display === "block") return; // dibujando → coords manda
+    if (rl && rl.style.display === "block") return;
     try { input.focus({ preventScroll: true }); } catch {}
   };
   input.addEventListener("blur", () => setTimeout(keepCmdFocus, 60));
-  setTimeout(keepCmdFocus, 500);                       // foco inicial
-  // Re-tomar el foco SOLO si no hay nada enfocado (body) — no roba a nadie.
+  setTimeout(keepCmdFocus, 500);
   setInterval(() => {
     const ae = document.activeElement;
     if (!ae || ae === document.body) keepCmdFocus();
@@ -5383,9 +5356,6 @@ const viewerElm = getViewer({
   };
 
   // ── Autocompletar fantasma (ghost) estilo AutoCAD ──
-  // Sugiere para CUALQUIER comando: primero el nombre canónico completo
-  // (line, rectangle, column, chamfer…), y si no, cualquier alias que extienda
-  // lo tipeado (l, rec, co, n, del, ax…). Garantiza ghost para todo prefijo.
   const suggestFor = (t: string): string => {
     const lc = t.trim().toLowerCase();
     if (!lc) return "";
@@ -5399,16 +5369,12 @@ const viewerElm = getViewer({
     return cand || "";
   };
   const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-  // Ghost genérico para cualquier input+ghost.
   const updateGhostFor = (inp: HTMLInputElement, gh: HTMLElement) => {
     const v = inp.value; const sug = suggestFor(v);
     gh.innerHTML = (sug && v.length)
       ? `<span style="color:transparent">${esc(v)}</span>${esc(sug.slice(v.length))}` : "";
   };
-
-  // ── 2ª consola: Dynamic Input PEGADA AL CURSOR (estilo AutoCAD) ──
-  // pointer-events:none en TODO → el click pasa al lienzo (no bloquea como
-  // antes). El input se enfoca por código, así el caret queda en el cursor.
+  // 2ª consola: Dynamic Input pegada al cursor (pointer-events:none).
   const dyn = document.createElement("div");
   dyn.id = "hk-dyn";
   dyn.style.cssText = [
@@ -5429,8 +5395,6 @@ const viewerElm = getViewer({
   dynWrap.appendChild(dynGhost); dynWrap.appendChild(dynInput);
   dyn.appendChild(dynWrap);
   document.body.appendChild(dyn);
-
-  // Sincronizar texto entre las DOS consolas (sin loop).
   let _sync = false;
   const setCmdText = (v: string) => {
     _sync = true;
@@ -5438,12 +5402,10 @@ const viewerElm = getViewer({
     updateGhostFor(input, ghost); updateGhostFor(dynInput, dynGhost);
     _sync = false;
   };
-
-  // Wire de teclado COMPARTIDO (misma lógica para abajo y cursor).
   const wireKeys = (inp: HTMLInputElement) => {
     inp.addEventListener("input", () => { if (!_sync) setCmdText(inp.value); });
     inp.addEventListener("keydown", (ev) => {
-      ev.stopPropagation(); // que X/Y/Z/F8 no se disparen mientras tipeás
+      ev.stopPropagation();
       const sug = suggestFor(inp.value);
       if ((ev.key === "Tab" || (ev.key === "ArrowRight" && inp.selectionStart === inp.value.length)) && sug) {
         setCmdText(sug); ev.preventDefault(); return;
@@ -5459,15 +5421,10 @@ const viewerElm = getViewer({
   };
   wireKeys(input);
   wireKeys(dynInput);
-
-  // ¿estamos tipeando coordenadas (dibujando)? → ahí manda #hk-rubber-label.
   const isDrawingCoords = () => {
     const rl = document.getElementById("hk-rubber-label") as HTMLElement | null;
     return !!(rl && rl.style.display === "block");
   };
-  // Posicionar + mostrar el Dynamic Input al lado del cursor; enfocarlo para
-  // que el caret quede ahí. Mientras está VACÍO sigue al cursor; al tipear se
-  // congela (para no moverse). Si dibujás, se oculta (la cajita de coords manda).
   viewerElm.addEventListener("pointermove", (e: PointerEvent) => {
     if (isDrawingCoords()) { dyn.style.display = "none"; return; }
     if (dynInput.value.length === 0) {
@@ -5488,19 +5445,15 @@ const viewerElm = getViewer({
     dyn.style.display = "none";
     try { input.focus({ preventScroll: true }); } catch {}
   });
-
   // ── Auto-focus al empezar a tipear letras (estilo AutoCAD) ──
   window.addEventListener("keydown", (ev) => {
     const ae = document.activeElement as HTMLElement | null;
-    // Si YA hay un input/textarea enfocado (incluidos nuestros 2 inputs de
-    // comando), NO interceptar → la tecla se agrega normal al input enfocado.
-    // Sólo arrancamos la palabra cuando NADA está enfocado.
     if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) return;
     if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
     if (/^[a-zA-Z]$/.test(ev.key)) {
       const target = (dyn.style.display !== "none") ? dynInput : input;
       target.focus();
-      setCmdText(ev.key);   // primer carácter arranca la palabra
+      setCmdText(ev.key);
       ev.preventDefault();
     }
   }, { capture: true });

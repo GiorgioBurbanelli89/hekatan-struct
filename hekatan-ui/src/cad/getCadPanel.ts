@@ -223,9 +223,39 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
   // Toggle global de grid snap
   (window as any).__hekatanSnapEnabled = true;
   const proxySnapToggle = { snapEnabled: true };
-  fCad.addBinding(proxySnapToggle, "snapEnabled", { label: "🧲 Grid snap ON/OFF" }).on("change", (ev: any) => {
+  const snapToggleBinding = fCad.addBinding(proxySnapToggle, "snapEnabled", { label: "🧲 Grid snap (F9)" }).on("change", (ev: any) => {
     (window as any).__hekatanSnapEnabled = !!ev.value;
   });
+  // ── Atajo F9 = togglear grid snap (estándar AutoCAD) ──
+  // Con snap ON el cursor se PEGA al paso de grilla (0.5m) → no podés poner
+  // nodos entre líneas, y a veces el punto cae sobre un nodo existente y el
+  // segmento se vuelve degenerado ("no se puede dibujar"). F9 lo apaga/enciende
+  // al vuelo, con cartel en pantalla. OSnap (endpoint/etc.) sigue funcionando.
+  (window as any).__hekatanToggleSnap = () => {
+    const next = !((window as any).__hekatanSnapEnabled !== false);
+    (window as any).__hekatanSnapEnabled = next;
+    proxySnapToggle.snapEnabled = next;
+    try { snapToggleBinding.refresh(); } catch {}
+    let toast = document.getElementById("hk-snap-toast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "hk-snap-toast";
+      toast.style.cssText = "position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99999;padding:8px 18px;border-radius:8px;font:600 14px system-ui;color:#fff;pointer-events:none;transition:opacity .25s;box-shadow:0 4px 16px rgba(0,0,0,.4)";
+      document.body.appendChild(toast);
+    }
+    toast.textContent = next ? "🧲 Grid snap ON — el cursor se pega a la grilla" : "🆓 Grid snap OFF — dibujo libre (cualquier punto)";
+    toast.style.background = next ? "rgba(37,99,235,0.95)" : "rgba(16,185,129,0.95)";
+    toast.style.opacity = "1";
+    const w = window as any;
+    clearTimeout(w.__hekatanSnapToastT);
+    w.__hekatanSnapToastT = setTimeout(() => { if (toast) toast.style.opacity = "0"; }, 1600);
+  };
+  if (!(window as any).__hekatanF9Bound) {
+    (window as any).__hekatanF9Bound = true;
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "F9") { e.preventDefault(); (window as any).__hekatanToggleSnap?.(); }
+    }, true);
+  }
   // Selector discreto de paso de snap
   const proxySnapStep = { step: 0.5 };
   fCad.addBinding(proxySnapStep, "step", {
@@ -260,7 +290,7 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
   fCad.addBinding(proxyPlane, "workZ", { min: -10, max: 50, step: 0.1, label: "Cota Z (m)" }).on("change", (ev: any) => {
     const st = (window as any).__hekatanCadState?.get?.();
     if (st) st.workZ = ev.value;
-    const curPlane = ((window as any).__hekatanCadState?.get?.())?.workPlane ?? "xy";
+    const curPlane = ((window as any).__hekatanCadState?.get?.())?.workPlane ?? "xz";
     if (curPlane === "xy") setPlane("xy", ev.value, false);
     hooks.onRebuild?.();
   });

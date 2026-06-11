@@ -137,8 +137,13 @@ export function drawing({
     // band debe caer ahí, no en el plano global XY (que es gigante 10000m
     // y siempre "gana" por estar más cerca a la cámara). Sin esta
     // priorización, ORTO siempre detecta X o Y (nunca Z) en iso.
-    const showOrtho = (window as any).__hekatanShowOrthoPlanes !== false;
-    if (showOrtho && refFillXY.visible) {
+    // DESACOPLADO: los planos de referencia pueden estar VISIBLES (visual)
+    // sin INTERCEPTAR el rayo. El raycast de los planos ortogonales es opt-in
+    // (__hekatanOrthoRaycast === true). Por defecto OFF → el click cae en el
+    // plano de trabajo (evita que en iso el rayo enganche el plano equivocado),
+    // mientras los planos siguen viéndose tenues como guía.
+    const orthoRaycast = (window as any).__hekatanOrthoRaycast === true;
+    if (orthoRaycast && refFillXY.visible) {
       const orthoHits = raycaster.intersectObjects(
         [refFillXY, refFillXZ, refFillYZ], false,
       );
@@ -203,6 +208,9 @@ export function drawing({
     "transform:translate(-50%,-50%)", "white-space:nowrap",
     "outline:none", "width:80px", "text-align:center",
     "display:none",
+    // CLAVE: el click pasa al lienzo (está justo en el punto donde clickeás).
+    // El input se enfoca por código, así que no necesita recibir el click.
+    "pointer-events:none",
   ].join(";") + ";";
   document.body.appendChild(rubberLabelInput);
   // State para "AutoCAD direct distance entry":
@@ -702,7 +710,7 @@ export function drawing({
   const setRefPlaneHover = (hovered: "xy" | "xz" | "yz" | null) => {
     // Más sutil: dim 0.04 (casi invisible para no-hover), hover 0.22 (antes
     // 0.45 era demasiado fuerte y tapaba el modelo). Sigue siendo distinguible.
-    const dimO = 0.04, hiO = 0.22;
+    const dimO = 0.04, hiO = 0.14;
     (refFillXY.material as THREE.MeshBasicMaterial).opacity = hovered === "xy" ? hiO : dimO;
     (refFillXZ.material as THREE.MeshBasicMaterial).opacity = hovered === "xz" ? hiO : dimO;
     (refFillYZ.material as THREE.MeshBasicMaterial).opacity = hovered === "yz" ? hiO : dimO;
@@ -762,6 +770,10 @@ export function drawing({
   // Esc o repetir la misma tecla libera el lock.
   let axisLock: "x" | "y" | "z" | null = null;
   (window as any).__hekatanAxisLock = () => axisLock;  // getter para debug
+  // Punto enganchado por el SNAP A EJES 3D (pointermove). El click lo usa para
+  // que el commit coincida con lo que se ve (evita el "2 cursores"). null = sin
+  // enganche de eje en este frame.
+  let _axisSnapPoint: THREE.Vector3 | null = null;
   // Label DOM que muestra qué eje está bloqueado
   const axisLockBadge = document.createElement("div");
   axisLockBadge.id = "hk-axis-lock-badge";
@@ -926,16 +938,26 @@ export function drawing({
   hoverPtHL.renderOrder = 998;
   hoverPtHL.visible = false;
   scene.add(hoverPtHL);
-  // Helper: actualiza el scale del hoverPtHL para mantener tamaño aparente
-  // constante. Se llama en pointermove cuando se setea su posición.
+  // Helper compartido: factor de escala para markers point-like (spheres
+  // de hover, selection, aux points) que deben verse de tamaño aparente
+  // constante en pantalla. Funciona con cámara perspective (usa distance
+  // al worldPos) y ortográfica (usa frustum height — distance no afecta
+  // tamaño aparente en orto: la cámara queda a D=1000m en setView pero
+  // el frustum suele ser ~20m). Sin este ajuste todos los markers se ven
+  // como bloques de varios metros en vista elevX/plan/elevY.
+  const markerScreenScale = (worldPos: THREE.Vector3): number => {
+    const cam = getActiveCamera();
+    if ((cam as any).isOrthographicCamera) {
+      const o = cam as THREE.OrthographicCamera;
+      const H = (o.top - o.bottom) / o.zoom;
+      return Math.max(0.05, H * 0.006);  // ~0.6% del alto del frustum
+    }
+    const dist = cam.position.distanceTo(worldPos);
+    return Math.max(0.05, dist / 10);    // perspective: 10m → scale 1
+  };
   const updateHoverPtScale = () => {
     if (!hoverPtHL.visible) return;
-    const cam = getActiveCamera();
-    const dist = cam.position.distanceTo(hoverPtHL.position);
-    // factor 10 → a 10m la sphere es ~2cm; al alejarse crece para que
-    // siga viéndose como punto (~6px en pantalla).
-    const s = Math.max(0.05, dist / 10);
-    hoverPtHL.scale.setScalar(s);
+    hoverPtHL.scale.setScalar(markerScreenScale(hoverPtHL.position));
   };
   // Grupo CYAN para todos los items SELECCIONADOS (líneas + spheres)
   const selectionGroup = new THREE.Group();
@@ -1673,10 +1695,7 @@ export function drawing({
       );
       m.position.set(p[0], p[1], p[2]);
       m.renderOrder = 996;
-      // Escala dinámica para tamaño constante en pantalla
-      const cam = getActiveCamera();
-      const dist = cam.position.distanceTo(m.position);
-      m.scale.setScalar(Math.max(0.05, dist / 10));
+      m.scale.setScalar(markerScreenScale(m.position));
       auxPointsGroup.add(m);
     }
   };
@@ -1690,10 +1709,8 @@ export function drawing({
   });
   // Re-escalar al cambiar cámara
   controls.addEventListener("change", () => {
-    const cam = getActiveCamera();
     auxPointsGroup.children.forEach((m: any) => {
-      const d = cam.position.distanceTo(m.position);
-      m.scale.setScalar(Math.max(0.05, d / 10));
+      m.scale.setScalar(markerScreenScale(m.position));
     });
   });
   (window as any).__hekatanRenderAuxPoints = renderAuxPoints;
@@ -1744,14 +1761,10 @@ export function drawing({
   // también justo después de refreshSelectionGroup().
   const updateSelectionPtScale = () => {
     if (selectionGroup.children.length === 0) return;
-    const cam = getActiveCamera();
     selectionGroup.children.forEach((child) => {
       if (!(child as any).__isSelectionPt) return;
-      const dist = cam.position.distanceTo((child as THREE.Mesh).position);
-      // factor 10 → a 10m escala 1 (sphere=2.5cm). Mayor distancia ⇒ más
-      // escala para preservar tamaño aparente en pantalla.
-      const s = Math.max(0.05, dist / 10);
-      (child as THREE.Mesh).scale.setScalar(s);
+      const m = child as THREE.Mesh;
+      m.scale.setScalar(markerScreenScale(m.position));
     });
   };
   (window as any).__hekatanUpdateSelectionPtScale = updateSelectionPtScale;
@@ -1760,11 +1773,9 @@ export function drawing({
     updateSnapMarkerScale();
     // hoverPtHL — el indicador amarillo de selección de nodo (hover) también
     // debe mantener tamaño constante en pantalla. Sin esto se ve enorme al
-    // zoom in (la geometría es 0.02m world-space).
-    if (hoverPtHL.visible) {
-      const dh = getActiveCamera().position.distanceTo(hoverPtHL.position);
-      hoverPtHL.scale.setScalar(Math.max(0.05, dh / 10));
-    }
+    // zoom in (la geometría es 0.02m world-space). Usar la función definida
+    // arriba que también maneja cámara ortográfica.
+    if (hoverPtHL.visible) updateHoverPtScale();
     // Mismo tratamiento para osnapMarker (Endpoint/Mid/Per/etc.) creado más
     // abajo. Lo referenciamos por window porque la closure todavía no lo tiene.
     const om = (window as any).__hekatanOsnapMarkerRef as THREE.Group | undefined;
@@ -1975,17 +1986,54 @@ export function drawing({
       if (lastPoly.length > 0 && allPts[lastPoly[lastPoly.length - 1]]) {
         const lastIdx = lastPoly[lastPoly.length - 1];
         const lastPt = allPts[lastIdx];
-        // ── AXIS LOCK manual (X/Y/Z) ──
-        // Si hay tecla X/Y/Z presionada, proyectar el cursor sobre el eje
-        // correspondiente desde el último punto.
-        // ── ORTO mode (F8) ──
-        // Si está activo Y no hay axis lock manual, AUTO-DETECTAR el eje
-        // más cercano (X/Y/Z) según |Δx|/|Δy|/|Δz| del cursor al lastPt y
-        // snappear a ese eje. Si el cursor está sobre un plano ortogonal
-        // específico (XY/XZ/YZ), ORTO solo elige entre los 2 ejes del
-        // plano (el tercero está fijo por la intersección).
-        const orthoOn = !!(window as any).__hekatanOrthoMode;
         let effectiveLock = axisLock;
+        _axisSnapPoint = null; // reset por frame
+        // ── SNAP a EJES auxiliares en 3D (X/Y/Z desde el último punto) ──
+        // Si el mouse pasa CERCA (en pantalla) de la LÍNEA de un eje, engancha
+        // el punto al punto de ESE eje 3D más cercano al rayo de cámara. Permite
+        // alinear al eje Z (vertical) aunque el plano de trabajo sea XY, y a X/Y
+        // en cualquier vista. Tiene prioridad sobre ORTO/polar.
+        if (!effectiveLock && (window as any).__hekatanAxisSnap !== false) {
+          const rectAx = rendererElm.getBoundingClientRect();
+          const mx = event.clientX, my = event.clientY;
+          const Lax = (settings.gridSize?.rawVal ?? 10);
+          const P0 = new THREE.Vector3(lastPt[0], lastPt[1], lastPt[2]);
+          const axDirs: Array<["x" | "y" | "z", THREE.Vector3]> = [
+            ["x", new THREE.Vector3(1, 0, 0)],
+            ["y", new THREE.Vector3(0, 1, 0)],
+            ["z", new THREE.Vector3(0, 0, 1)],
+          ];
+          const toScreenAx = (v: THREE.Vector3) => {
+            const c = v.clone().project(_camForRay);
+            return { x: (c.x * 0.5 + 0.5) * rectAx.width + rectAx.left,
+                     y: (-c.y * 0.5 + 0.5) * rectAx.height + rectAx.top };
+          };
+          let bestAx: { axis: "x" | "y" | "z"; dpx: number; pt: THREE.Vector3 } | null = null;
+          for (const [axis, u] of axDirs) {
+            const aS = toScreenAx(P0.clone().addScaledVector(u, -Lax));
+            const bS = toScreenAx(P0.clone().addScaledVector(u, Lax));
+            const vx = bS.x - aS.x, vy = bS.y - aS.y, wx = mx - aS.x, wy = my - aS.y;
+            const len2 = vx * vx + vy * vy || 1;
+            let t = (wx * vx + wy * vy) / len2; t = Math.max(0, Math.min(1, t));
+            const dpx = Math.hypot(mx - (aS.x + t * vx), my - (aS.y + t * vy));
+            if (bestAx === null || dpx < bestAx.dpx) {
+              // punto del eje más cercano al rayo de cámara (line-line closest)
+              const ray = raycaster.ray;
+              const w0 = P0.clone().sub(ray.origin);
+              const b = u.dot(ray.direction), d_ = u.dot(w0), e = ray.direction.dot(w0);
+              const denom = 1 - b * b;
+              const s = Math.abs(denom) < 1e-6 ? -d_ : (b * e - d_) / denom;
+              bestAx = { axis, dpx, pt: P0.clone().addScaledVector(u, s) };
+            }
+          }
+          if (bestAx && bestAx.dpx <= 12) {   // ≤12 px del eje → engancha
+            p.copy(bestAx.pt);
+            effectiveLock = bestAx.axis;
+            _axisSnapPoint = bestAx.pt.clone(); // el click commitea acá
+          }
+        }
+        // ── ORTO mode (F8) ── auto-detecta el eje dominante si está activo.
+        const orthoOn = !!(window as any).__hekatanOrthoMode;
         if (!effectiveLock && orthoOn) {
           const dx = Math.abs(p.x - lastPt[0]);
           const dy = Math.abs(p.y - lastPt[1]);
@@ -2006,6 +2054,26 @@ export function drawing({
             effectiveLock = dy >= dz ? "y" : "z";
           } else {
             effectiveLock = dx >= dy && dx >= dz ? "x" : (dy >= dz ? "y" : "z");
+          }
+        }
+        // ── POLAR TRACKING automático (estilo AutoCAD) ──
+        // Si NO hay lock manual ni ORTO, pero el cursor está CERCA (dentro de
+        // una tolerancia angular) de uno de los ejes X/Y/Z desde el último
+        // punto → enganchar a ese eje. Eso lo RESALTA (la lógica de abajo lo
+        // pinta) y hace que al clickear el punto caiga JUSTO sobre el eje.
+        const polarOn = (window as any).__hekatanPolarTrack !== false; // default ON
+        if (!effectiveLock && polarOn) {
+          const dxr = p.x - lastPt[0], dyr = p.y - lastPt[1], dzr = p.z - lastPt[2];
+          const len = Math.hypot(dxr, dyr, dzr);
+          if (len > 1e-3) {
+            const TOL_DEG = 6;                                  // ± grados de enganche
+            const band = Math.tan(TOL_DEG * Math.PI / 180) * len; // banda perp. proporcional
+            const perpX = Math.hypot(dyr, dzr);                 // dist al eje X
+            const perpY = Math.hypot(dxr, dzr);                 // dist al eje Y
+            const perpZ = Math.hypot(dxr, dyr);                 // dist al eje Z
+            const cands: Array<["x" | "y" | "z", number]> = [["x", perpX], ["y", perpY], ["z", perpZ]];
+            cands.sort((a, b) => a[1] - b[1]);
+            if (cands[0][1] <= band) effectiveLock = cands[0][0]; // dentro de tolerancia → engancha
           }
         }
         if (effectiveLock) {
@@ -2687,10 +2755,16 @@ export function drawing({
     const polyIds = ids.filter(id => id.startsWith("poly:"));
     const auxIds = ids.filter(id => id.startsWith("aux:"));
 
-    const onlyNodes = nodeIds.length === ids.length && nodeIds.length > 0;
-    const onlySegs = segIds.length === ids.length && segIds.length > 0;
-    const onlyPolys = polyIds.length === ids.length && polyIds.length > 0;
-    const isMixed = !onlyNodes && !onlySegs && !onlyPolys;
+    // NOTA: antes el panel era excluyente (onlyNodes / onlySegs / onlyPolys /
+    // isMixed) y una selección mixta (ej. nodos + segmentos) no mostraba NADA
+    // editable. Ahora cada TIPO presente en la selección muestra su propia
+    // sección con su botón "Aplicar" que opera SOLO sobre su subconjunto de
+    // ids. Así podés seleccionar nodos + frames juntos y asignar restricciones
+    // a los nodos y secciones a los frames sin deseleccionar.
+    const hasNodes = nodeIds.length > 0;
+    const hasSegs = segIds.length > 0;
+    const hasPolys = polyIds.length > 0;
+    const noneEditable = !hasNodes && !hasSegs && !hasPolys; // solo aux / vacío
 
     // Título: resumen por tipo
     const parts: string[] = [];
@@ -2702,9 +2776,9 @@ export function drawing({
 
     propsPaneInstance = new Pane({ container: propsContainer, title });
 
-    if (onlyNodes) {
+    if (hasNodes) {
       // ── Joint > Restraints (Apoyos) ──
-      const fApoyo = propsPaneInstance.addFolder({ title: "📌 Restraints (DOFs)" });
+      const fApoyo = propsPaneInstance.addFolder({ title: `📌 Restraints (DOFs) — ${nodeIds.length} nodo(s)` });
       fApoyo.addBinding(propsState, "Ux");
       fApoyo.addBinding(propsState, "Uy");
       fApoyo.addBinding(propsState, "Uz");
@@ -2746,29 +2820,48 @@ export function drawing({
         },
       });
 
-      propsPaneInstance.addButton({ title: "✓ Aplicar a nodos seleccionados" }).on("click", () => {
+      propsPaneInstance.addButton({ title: `✓ Aplicar a ${nodeIds.length} nodo(s) seleccionado(s)` }).on("click", () => {
+        let applied = 0;
         const dofs = [propsState.Ux, propsState.Uy, propsState.Uz,
                       propsState.Rx, propsState.Ry, propsState.Rz];
-        if (dofs.some(d => d)) fireProp("nodes", nodeIds, "supports", dofs);
+        if (dofs.some(d => d)) { fireProp("nodes", nodeIds, "supports", dofs); applied++; }
 
         const loads = [propsState.Fx, propsState.Fy, propsState.Fz,
                        propsState.Mx, propsState.My, propsState.Mz];
-        if (loads.some(v => v !== 0)) fireProp("nodes", nodeIds, "loads", loads);
+        if (loads.some(v => v !== 0)) { fireProp("nodes", nodeIds, "loads", loads); applied++; }
 
         const springs = [propsState.Kx, propsState.Ky, propsState.Kz,
                          propsState.Krx, propsState.Kry, propsState.Krz];
-        if (springs.some(k => k !== 0)) fireProp("nodes", nodeIds, "springs", springs);
+        if (springs.some(k => k !== 0)) { fireProp("nodes", nodeIds, "springs", springs); applied++; }
 
-        if (propsState.mass !== 0) fireProp("nodes", nodeIds, "mass", propsState.mass);
+        if (propsState.mass !== 0) { fireProp("nodes", nodeIds, "mass", propsState.mass); applied++; }
 
         if (propsState.diaphragm !== "Ninguno") {
-          fireProp("nodes", nodeIds, "diaphragm", propsState.diaphragm);
+          fireProp("nodes", nodeIds, "diaphragm", propsState.diaphragm); applied++;
         }
 
-        updateStatus(`✓ Propiedades aplicadas a ${nodeIds.length} nodo(s)`);
+        if (applied === 0) {
+          // Nada marcado → avisar fuerte en vez de mentir con "aplicadas".
+          updateStatus("⚠ Nada que aplicar — marcá un DOF (Ux…Rz) para apoyo, o un valor de carga/resorte/masa, y volvé a aplicar.");
+          let toast = document.getElementById("hk-prop-toast");
+          if (!toast) {
+            toast = document.createElement("div");
+            toast.id = "hk-prop-toast";
+            toast.style.cssText = "position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:99999;padding:9px 20px;border-radius:8px;font:600 14px system-ui;color:#fff;pointer-events:none;transition:opacity .25s;box-shadow:0 4px 16px rgba(0,0,0,.4)";
+            document.body.appendChild(toast);
+          }
+          toast.textContent = "⚠ Nada que aplicar — marcá un DOF (Ux…Rz) para empotrado/articulado, después Aplicar";
+          toast.style.background = "rgba(217,119,6,0.97)";
+          toast.style.opacity = "1";
+          clearTimeout((window as any).__hekatanPropToastT);
+          (window as any).__hekatanPropToastT = setTimeout(() => { if (toast) toast.style.opacity = "0"; }, 3200);
+        } else {
+          updateStatus(`✓ Propiedades aplicadas a ${nodeIds.length} nodo(s)`);
+        }
       });
-    } else if (onlySegs) {
-      const fSec = propsPaneInstance.addFolder({ title: "📏 Sección frame" });
+    }
+    if (hasSegs) {
+      const fSec = propsPaneInstance.addFolder({ title: `📏 Sección frame — ${segIds.length} seg(s)` });
       fSec.addBinding(propsState, "section", {
         label: "Sección",
         options: {
@@ -2891,8 +2984,9 @@ export function drawing({
 
         updateStatus(`✓ Propiedades aplicadas a ${segIds.length} segmento(s)`);
       });
-    } else if (onlyPolys) {
-      const fShell = propsPaneInstance.addFolder({ title: "▭ Shell / Área" });
+    }
+    if (hasPolys) {
+      const fShell = propsPaneInstance.addFolder({ title: `▭ Shell / Área — ${polyIds.length}` });
       fShell.addBinding(propsState, "shellType", {
         label: "Tipo",
         options: {
@@ -2924,10 +3018,11 @@ export function drawing({
         }
         updateStatus(`✓ Propiedades aplicadas a ${polyIds.length} área(s)/shell(s)`);
       });
-    } else if (isMixed) {
-      // Selección mixta — sólo mostrar info
-      const fInfo = propsPaneInstance.addFolder({ title: "ℹ Selección mixta" });
-      const infoState = { msg: "Selecciona un solo tipo para editar propiedades" };
+    }
+    if (noneEditable) {
+      // Solo elementos auxiliares (o nada editable) — mostrar info
+      const fInfo = propsPaneInstance.addFolder({ title: "ℹ Selección" });
+      const infoState = { msg: "Seleccioná nodos, frames o áreas para editar" };
       fInfo.addBinding(infoState, "msg", { readonly: true, label: "" });
     }
 
@@ -2974,6 +3069,12 @@ export function drawing({
     if (ev.button === 2) {
       const wasTap = rcDownPos !== null && !rcDragged;
       rcDownPos = null;
+      // Si hover.ts marcó que el right-click cayó sobre un nodo/elemento,
+      // saltamos el cancel para que el context menu (Asignar / Ver info)
+      // pueda mostrarse sin que se cierre la selección.
+      const rcOnElement = (window as any).__hekatanRClickOnElement === true;
+      (window as any).__hekatanRClickOnElement = false;  // reset
+      if (rcOnElement) return;
       if (wasTap) {
         // Right-click TAP → cancel jerárquico (estilo AutoCAD):
         //   1. Si hay rect-select pendiente → cancelar SOLO eso
@@ -3380,22 +3481,30 @@ export function drawing({
         }
       }
     }
-    // OSNAP primero (prioridad sobre grid snap)
-    const osnapTol = ((window as any).__hekatanSnap2D ?? 0.5) * 1.2;
-    const osnap = (window as any).__hekatanOsnapCompute?.(point.x, point.y, point.z, osnapTol);
-    if (osnap) {
-      point = new THREE.Vector3(osnap.x, osnap.y, osnap.z);
-      updateStatus(`🎯 Snap [${osnap.type.toUpperCase()}] → (${point.x.toFixed(2)}, ${point.y.toFixed(2)}, ${point.z.toFixed(2)})`);
+    // Si el pointermove enganchó a un EJE 3D auxiliar, commitear EXACTAMENTE
+    // ahí (coincide con lo que se ve; evita el "2 cursores" y permite columnas
+    // verticales por Z aunque el plano de trabajo sea XY).
+    if (_axisSnapPoint) {
+      point = _axisSnapPoint.clone();
+      updateStatus(`📐 Eje → (${point.x.toFixed(2)}, ${point.y.toFixed(2)}, ${point.z.toFixed(2)})`);
     } else {
-      // Si no hay osnap, aplicar grid snap 2D — solo si toggle ON.
-      const snapEnabled = (window as any).__hekatanSnapEnabled !== false;
-      const snap = (window as any).__hekatanSnap2D ?? 0;
-      if (snapEnabled && snap > 0) {
-        point = new THREE.Vector3(
-          Math.round(point.x / snap) * snap,
-          Math.round(point.y / snap) * snap,
-          Math.round(point.z / snap) * snap,
-        );
+      // OSNAP primero (prioridad sobre grid snap)
+      const osnapTol = ((window as any).__hekatanSnap2D ?? 0.5) * 1.2;
+      const osnap = (window as any).__hekatanOsnapCompute?.(point.x, point.y, point.z, osnapTol);
+      if (osnap) {
+        point = new THREE.Vector3(osnap.x, osnap.y, osnap.z);
+        updateStatus(`🎯 Snap [${osnap.type.toUpperCase()}] → (${point.x.toFixed(2)}, ${point.y.toFixed(2)}, ${point.z.toFixed(2)})`);
+      } else {
+        // Si no hay osnap, aplicar grid snap 2D — solo si toggle ON.
+        const snapEnabled = (window as any).__hekatanSnapEnabled !== false;
+        const snap = (window as any).__hekatanSnap2D ?? 0;
+        if (snapEnabled && snap > 0) {
+          point = new THREE.Vector3(
+            Math.round(point.x / snap) * snap,
+            Math.round(point.y / snap) * snap,
+            Math.round(point.z / snap) * snap,
+          );
+        }
       }
     }
 

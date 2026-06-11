@@ -274,24 +274,15 @@ export const newBlank: ExampleDef = {
     }
     // ── Apoyos manuales (vía Properties Pane → "hk:property-applied") ──
     // window.__hekatanManualSupports es un Map<drawingPtIdx, [Ux,Uy,Uz,Rx,Ry,Rz]>.
-    // Aquí lo merged por COORDS en el array de nodes FEM (matching por
-    // posición porque el orden de nodes puede diferir de drawingPoints).
-    // Sobrescribe apoyos automáticos en los mismos nodos.
+    // `nodes = drawPoints.map(...)` es 1:1 (mismo índice y orden), así que el
+    // drawIdx ES directamente el índice del nodo FEM. Usamos índice DIRECTO —
+    // NO matchear por coordenadas (fallaba con Y≠0 en modo 2D, donde el nodo se
+    // aplasta a Y=0, y con cualquier diferencia > 1 mm).
     const manualSup: Map<number, [boolean,boolean,boolean,boolean,boolean,boolean]> | undefined =
       (window as any).__hekatanManualSupports;
-    const drawPts: [number, number, number][] | undefined =
-      (window as any).__hekatanDrawingPoints?.rawVal;
-    if (manualSup && manualSup.size > 0 && drawPts) {
+    if (manualSup && manualSup.size > 0) {
       for (const [drawIdx, dofs] of manualSup.entries()) {
-        const dp = drawPts[drawIdx];
-        if (!dp) continue;
-        // Buscar el nodo FEM más cercano por coordenadas
-        let bestIdx = -1, bestD = 1e-3;
-        for (let i = 0; i < nodes.length; i++) {
-          const d = Math.hypot(nodes[i][0] - dp[0], nodes[i][1] - dp[1], nodes[i][2] - dp[2]);
-          if (d < bestD) { bestD = d; bestIdx = i; }
-        }
-        if (bestIdx >= 0) supports.set(bestIdx, [...dofs]);
+        if (drawIdx >= 0 && drawIdx < nodes.length) supports.set(drawIdx, [...dofs]);
       }
     }
 
@@ -305,19 +296,12 @@ export const newBlank: ExampleDef = {
         if (Math.abs(nodes[i][2] - zMax) < 1e-6) loads.set(i, [Fx, 0, Fz, 0, 0, 0]);
       }
     }
-    // ── Cargas manuales (vía Properties Pane) ──
+    // ── Cargas manuales (vía Properties Pane) — índice DIRECTO (ver apoyos) ──
     const manualLoads: Map<number, [number,number,number,number,number,number]> | undefined =
       (window as any).__hekatanManualLoads;
-    if (manualLoads && manualLoads.size > 0 && drawPts) {
+    if (manualLoads && manualLoads.size > 0) {
       for (const [drawIdx, lds] of manualLoads.entries()) {
-        const dp = drawPts[drawIdx];
-        if (!dp) continue;
-        let bestIdx = -1, bestD = 1e-3;
-        for (let i = 0; i < nodes.length; i++) {
-          const d = Math.hypot(nodes[i][0] - dp[0], nodes[i][1] - dp[1], nodes[i][2] - dp[2]);
-          if (d < bestD) { bestD = d; bestIdx = i; }
-        }
-        if (bestIdx >= 0) loads.set(bestIdx, [...lds]);
+        if (drawIdx >= 0 && drawIdx < nodes.length) loads.set(drawIdx, [...lds]);
       }
     }
 
@@ -338,19 +322,12 @@ export const newBlank: ExampleDef = {
     const springsList: Array<{ node: number; dof: number; k: number }> = [];
     const manualSprings: Map<number, [number, number, number, number, number, number]> | undefined =
       (window as any).__hekatanManualSprings;
-    if (manualSprings && manualSprings.size > 0 && drawPts) {
+    if (manualSprings && manualSprings.size > 0) {
       for (const [drawIdx, kArr] of manualSprings.entries()) {
-        const dp = drawPts[drawIdx];
-        if (!dp) continue;
-        let bestIdx = -1, bestD = 1e-3;
-        for (let i = 0; i < nodes.length; i++) {
-          const d = Math.hypot(nodes[i][0] - dp[0], nodes[i][1] - dp[1], nodes[i][2] - dp[2]);
-          if (d < bestD) { bestD = d; bestIdx = i; }
-        }
-        if (bestIdx < 0) continue;
+        if (drawIdx < 0 || drawIdx >= nodes.length) continue; // índice DIRECTO (ver apoyos)
         // dof: 0=Ux, 1=Uy, 2=Uz, 3=Rx, 4=Ry, 5=Rz
         for (let dof = 0; dof < 6; dof++) {
-          if (kArr[dof] !== 0) springsList.push({ node: bestIdx, dof, k: kArr[dof] });
+          if (kArr[dof] !== 0) springsList.push({ node: drawIdx, dof, k: kArr[dof] });
         }
       }
     }
