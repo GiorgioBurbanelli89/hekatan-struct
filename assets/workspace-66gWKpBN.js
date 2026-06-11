@@ -5761,7 +5761,7 @@ Datos en window.__hekatanImportedCim. Para re-exportar el mismo modelo: window._
           0,
           0
         ]
-      }, wt("iso"), (_c = window.__hekatanSetOrthoExt) == null ? void 0 : _c.call(window, 2.6);
+      }, wt("iso"), (_c = window.__hekatanSetOrthoExt) == null ? void 0 : _c.call(window, 3.2);
     }, 200);
     const e = new URLSearchParams(window.location.search), t = parseFloat(e.get("P") || ""), a = parseFloat(e.get("Mx") || ""), r = parseFloat(e.get("My") || ""), o = e.get("from");
     Tt.id.startsWith("zapata") && (!isNaN(t) || !isNaN(a) || !isNaN(r)) && setTimeout(() => {
