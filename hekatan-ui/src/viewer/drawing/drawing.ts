@@ -397,6 +397,31 @@ export function drawing({
     viewerRender();
   };
 
+  // Exponer para que la barra de comandos pueda colocar un punto desde una
+  // COORDENADA tipeada: "1,1,1" (abs), "@5,3" (rel), "5<45" (polar), "5" (DDE).
+  // Devuelve true si pudo ubicar el punto.
+  (window as any).__hekatanTypeCoord = (raw: string): boolean => {
+    const parsed = parseAutoCadInput(raw);
+    if (!parsed) return false;
+    if (parsed.kind === "length") { commitTypedDistance(parsed.L); return true; }
+    const pt = resolveParsedInput(parsed);
+    if (!pt) return false;
+    commitAbsolutePoint(pt);
+    // Auto-cierre del ÁREA al 4º punto tipeado (igual que con clicks).
+    const tool = (window as any).__hekatanCadState?.get?.()?.tool;
+    if (tool === "area" && drawingObj.polylines) {
+      const polys = drawingObj.polylines.rawVal;
+      const li = polys.length - 1;
+      const last = polys[li] ?? [];
+      if (last.length === 4) {
+        drawingObj.polylines.val = [...polys.slice(0, -1), [...last, last[0]], []];
+        if (drawingObj.areas) drawingObj.areas.val = [...drawingObj.areas.rawVal, li];
+        try { (window as any).__hekatanRebuild?.(); } catch {}
+      }
+    }
+    return true;
+  };
+
   // Keydown del input — Enter confirma, Esc finaliza, X/Y/Z se delegan al
   // handler global para axis lock, y cualquier dígito marca "userEditing"
   // para que el value no se pise con la cota live mientras el user tipea.

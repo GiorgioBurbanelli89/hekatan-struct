@@ -5347,6 +5347,12 @@ const viewerElm = getViewer({
   const run = (raw: string) => {
     const cmd = raw.trim().toLowerCase();
     if (!cmd) return;
+    // ¿Es una COORDENADA en vez de un comando? (1,1,1 abs · @5,3 rel · 5<45
+    // polar · 5 DDE) → colocar el punto en vez de "comando desconocido".
+    if (/^@?-?[\d.]/.test(cmd)) {
+      const ok = (window as any).__hekatanTypeCoord?.(raw.trim());
+      if (ok) { flash("✓ punto colocado", true); return; }
+    }
     const tool = ALIASES[cmd];
     if (!tool) { flash(`✕ "${cmd}" desconocido`, false); return; }
     try {
