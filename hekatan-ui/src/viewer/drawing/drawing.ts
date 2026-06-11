@@ -563,19 +563,40 @@ export function drawing({
   // hasta cerrar — así evitamos nodos huérfanos si se cancela).
   let polyAreaPts: [number, number, number][] = [];
 
-  // ── PLANO DE TRABAJO INCLINADO — guía visible ──
-  // Quad relleno semitransparente + borde que se orienta al plano inclinado
-  // (UCS por 3 puntos), para que el usuario VEA sobre qué plano está dibujando.
+  // ── PLANO DE TRABAJO INCLINADO — guía visible (GRILLA de referencia) ──
+  // Relleno semitransparente + borde + LÍNEAS DE GRILLA cada 1 m, orientado al
+  // plano inclinado (UCS por 3 puntos). Sirve de REFERENCIA para dibujar
+  // (líneas, áreas, todo) sobre ese plano. Las geometrías se reconstruyen al
+  // tamaño real en __hekatanSetInclinedPlaneFrom3 (sin escalar el grupo, para
+  // que el paso de 1 m sea real).
   const inclinedHelper = new THREE.Group();
   const inclinedFill = new THREE.Mesh(
     new THREE.PlaneGeometry(1, 1),
-    new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.10, side: THREE.DoubleSide, depthWrite: false }),
+    new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.08, side: THREE.DoubleSide, depthWrite: false }),
   );
   const inclinedBorder = new THREE.LineSegments(
     new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, 1)),
-    new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.8 }),
+    new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.85 }),
   );
-  inclinedHelper.add(inclinedFill, inclinedBorder);
+  const inclinedGrid = new THREE.LineSegments(
+    new THREE.BufferGeometry(),
+    new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.30 }),
+  );
+  // Rellena la geometría del grid en el plano XY local (z=0), de -half..half
+  // cada `step`, para que el grupo (orientado al plano) lo muestre inclinado.
+  const buildInclinedGrid = (half: number, step: number) => {
+    const verts: number[] = [];
+    const n = Math.ceil(half / step);
+    for (let i = -n; i <= n; i++) {
+      const c = i * step;
+      verts.push(-half, c, 0, half, c, 0);   // líneas paralelas al eje u
+      verts.push(c, -half, 0, c, half, 0);   // líneas paralelas al eje v
+    }
+    inclinedGrid.geometry.dispose();
+    inclinedGrid.geometry = new THREE.BufferGeometry();
+    inclinedGrid.geometry.setAttribute("position", new THREE.Float32BufferAttribute(verts, 3));
+  };
+  inclinedHelper.add(inclinedFill, inclinedBorder, inclinedGrid);
   inclinedHelper.visible = false;
   inclinedHelper.frustumCulled = false;
   scene.add(inclinedHelper);
@@ -1685,12 +1706,19 @@ export function drawing({
       };
     }
     // Guía visible: centrar en el centroide de los 3 puntos, orientar al plano,
-    // dimensionar ~ al tamaño del triángulo (con margen).
+    // dimensionar ~ al tamaño del triángulo (con margen). Reconstruimos las
+    // geometrías al tamaño real (sin escalar el grupo → paso de grilla = 1 m).
     const ctr = new THREE.Vector3().addVectors(a, b).add(c).multiplyScalar(1 / 3);
     const size = Math.max(a.distanceTo(b), a.distanceTo(c), b.distanceTo(c)) * 2.2 + 4;
+    const half = size / 2;
+    inclinedFill.geometry.dispose();
+    inclinedFill.geometry = new THREE.PlaneGeometry(size, size);
+    inclinedBorder.geometry.dispose();
+    inclinedBorder.geometry = new THREE.EdgesGeometry(new THREE.PlaneGeometry(size, size));
+    buildInclinedGrid(half, 1);
     inclinedHelper.position.copy(ctr);
     inclinedHelper.quaternion.copy(q);
-    inclinedHelper.scale.set(size, size, 1);
+    inclinedHelper.scale.set(1, 1, 1);
     inclinedHelper.visible = true;
     try { (window as any).__hekatanRefreshStatus?.(); } catch {}
     viewerRender();
