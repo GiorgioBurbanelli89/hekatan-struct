@@ -2723,27 +2723,39 @@ export function drawing({
       const p = pts[i]; if (!p) continue;
       if (inRect(projectToScreen(p))) { selection.add(`pt:${i}`); added++; }
     }
+    // ── Regla estilo AutoCAD ──
+    //   WINDOW (izq→der, azul):  selecciona SOLO si está COMPLETAMENTE dentro
+    //                            (ambos extremos del segmento adentro).
+    //   CROSSING (der→izq, verde): selecciona si TOCA el recuadro (un extremo
+    //                            adentro o lo cruza).
+    const segMatch = (sa: { x: number; y: number }, sb: { x: number; y: number }) =>
+      isCrossing
+        ? (inRect(sa) || inRect(sb) || segCrosses(sa, sb))
+        : (inRect(sa) && inRect(sb));
     const polys = drawingObj.polylines?.rawVal ?? [];
     const areas = drawingObj.areas?.rawVal ?? [];
     for (let i = 0; i < polys.length; i++) {
       const poly = polys[i];
       const isArea = areas.includes(i);
-      let polyMatches = false;
-      for (let j = 0; j < poly.length - 1; j++) {
-        const a = pts[poly[j]], b = pts[poly[j + 1]];
-        if (!a || !b) continue;
-        const sa = projectToScreen(a), sb = projectToScreen(b);
-        // Window (L→R) y Crossing (R→L) ahora ambos seleccionan si el
-        // segmento TOCA el recuadro (un extremo dentro o lo cruza). Antes
-        // window exigía AMBOS extremos adentro → con objetos grandes no
-        // seleccionaba nada (parecía que "izq→der no funciona").
-        const matches = inRect(sa) || inRect(sb) || segCrosses(sa, sb);
-        if (matches) {
-          if (isArea) { polyMatches = true; break; }
-          selection.add(`seg:${i}:${j}`); added++;
+      if (isArea) {
+        // Window: TODOS los vértices del área adentro. Crossing: cualquier arista toca.
+        let areaMatch: boolean;
+        if (!isCrossing) {
+          areaMatch = poly.every((idx) => { const p = pts[idx]; return !!p && inRect(projectToScreen(p)); });
+        } else {
+          areaMatch = false;
+          for (let j = 0; j < poly.length - 1; j++) {
+            const a = pts[poly[j]], b = pts[poly[j + 1]]; if (!a || !b) continue;
+            if (segMatch(projectToScreen(a), projectToScreen(b))) { areaMatch = true; break; }
+          }
+        }
+        if (areaMatch) { selection.add(`poly:${i}`); added++; }
+      } else {
+        for (let j = 0; j < poly.length - 1; j++) {
+          const a = pts[poly[j]], b = pts[poly[j + 1]]; if (!a || !b) continue;
+          if (segMatch(projectToScreen(a), projectToScreen(b))) { selection.add(`seg:${i}:${j}`); added++; }
         }
       }
-      if (isArea && polyMatches) { selection.add(`poly:${i}`); added++; }
     }
     const auxState = (window as any).__hekatanDrawingAuxLines;
     const aux: number[][] = auxState?.rawVal ?? [];
@@ -2752,8 +2764,7 @@ export function drawing({
       if (!ln || ln.length !== 6) continue;
       const sa = projectToScreen([ln[0], ln[1], ln[2]]);
       const sb = projectToScreen([ln[3], ln[4], ln[5]]);
-      const matches = inRect(sa) || inRect(sb) || segCrosses(sa, sb);
-      if (matches) { selection.add(`aux:${i}`); added++; }
+      if (segMatch(sa, sb)) { selection.add(`aux:${i}`); added++; }
     }
     refreshSelectionGroup();
     updateStatus(
