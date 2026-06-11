@@ -118,6 +118,11 @@ export function drawing({
   // Para YZ → rotY=π/2 (así la normal apunta a +X y el plano queda en YZ).
   const planeXZ = mkInvisiblePlane(Math.PI / 2, 0, 0);
   const planeYZ = mkInvisiblePlane(0, Math.PI / 2, 0);
+  // Flag: el plano de trabajo está INCLINADO (no axis-aligned). Lo setea la
+  // van.derive de gridTarget según la normal. Cuando es true, el raycast usa
+  // SOLO el plano de trabajo inclinado (ignora los planos de referencia
+  // horizontales, que sino interceptan el click más cerca y aplastan el área).
+  let inclinedPlaneActive = false;
   // Helper: raycast contra el plano de trabajo activo + los planos de
   // referencia visibles. El cursor cae sobre el plano que el rayo de cámara
   // intersecta primero (el "más al frente"). Esto incluye:
@@ -129,6 +134,12 @@ export function drawing({
   // si el cursor está sobre el plano XZ del último punto, el `point` tendrá
   // variación en X y Z (no solo en X como con el plane global XY).
   const intersectWorkPlane = () => {
+    // PLANO INCLINADO activo → raycast SOLO el plano de trabajo (que ya está
+    // inclinado vía gridTarget). Ignoramos planos de referencia/grid para que
+    // el click caiga sobre la inclinación y el área salga inclinada de verdad.
+    if (inclinedPlaneActive) {
+      return raycaster.intersectObjects([plane], false);
+    }
     // Sincronizar visibilidad de planeXZ/YZ con flags globales
     planeXZ.visible = !!(window as any).__hekatanGridPlaneXZ;
     planeYZ.visible = !!(window as any).__hekatanGridPlaneYZ;
@@ -2548,6 +2559,13 @@ export function drawing({
       new THREE.Euler(...drawingObj.gridTarget.val.rotation)
     );
     plane.updateMatrixWorld(); // to fix intersect object
+    // ¿El plano quedó INCLINADO (normal no axis-aligned)? Si sí, el raycast
+    // usará solo este plano (ver intersectWorkPlane). Las orientaciones
+    // ortogonales (XY/XZ/YZ) tienen la normal en ±X/±Y/±Z → NO inclinado.
+    const nrm = new THREE.Vector3(0, 0, 1).applyEuler(
+      new THREE.Euler(...drawingObj.gridTarget.val.rotation)
+    );
+    inclinedPlaneActive = !(Math.abs(nrm.x) > 0.999 || Math.abs(nrm.y) > 0.999 || Math.abs(nrm.z) > 0.999);
   });
 
   // On points change, update points positions for intersections
