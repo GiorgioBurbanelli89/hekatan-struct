@@ -1732,6 +1732,7 @@ export function drawing({
         rotation: [e.x, e.y, e.z],
       };
     }
+    inclinedPlaneActive = true;   // síncrono (la derive de gridTarget es async)
     // Guía visible: centrar en el centroide de los 3 puntos, orientar al plano,
     // dimensionar ~ al tamaño del triángulo (con margen). Reconstruimos las
     // geometrías al tamaño real (sin escalar el grupo → paso de grilla = 1 m).
@@ -1754,6 +1755,7 @@ export function drawing({
   // Resetear el plano de trabajo a horizontal (XY, Z=0).
   (window as any).__hekatanResetPlaneXY = () => {
     if (drawingObj.gridTarget) drawingObj.gridTarget.val = { position: [0, 0, 0], rotation: [0, 0, 0] };
+    inclinedPlaneActive = false;   // síncrono
     inclinedHelper.visible = false;
     viewerRender();
   };
