@@ -644,9 +644,9 @@ export function drawing({
       new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0),
     ]);
     const mat = new THREE.LineBasicMaterial({
-      // Bordes de los planos ortogonales — antes 0.9 (muy fuertes).
-      // Bajado a 0.45 para que sean sutiles, no compitan con la geometría.
-      color: col, transparent: true, opacity: 0.45,
+      // Bordes de los planos ortogonales — antes 0.9, luego 0.45. Bajado a
+      // 0.20: que sean una guía MUY sutil, sin tapar ni dominar la vista.
+      color: col, transparent: true, opacity: 0.20,
       depthTest: false,
     });
     const loop = new THREE.LineLoop(geo, mat);
@@ -759,9 +759,9 @@ export function drawing({
       // Opacity inicial: muy transparente (0.10) para que no domine la
       // escena. El borde + el tinte sutil son suficientes para identificar
       // los planos sin tapar la geometría detrás. Hover sube a 0.25.
-      (refFillXY.material as THREE.MeshBasicMaterial).opacity = 0.10;
-      (refFillXZ.material as THREE.MeshBasicMaterial).opacity = 0.10;
-      (refFillYZ.material as THREE.MeshBasicMaterial).opacity = 0.10;
+      (refFillXY.material as THREE.MeshBasicMaterial).opacity = 0.05;
+      (refFillXZ.material as THREE.MeshBasicMaterial).opacity = 0.05;
+      (refFillYZ.material as THREE.MeshBasicMaterial).opacity = 0.05;
     } else {
       const badge = document.getElementById("hk-refplane-badge");
       if (badge) badge.style.display = "none";
@@ -797,7 +797,7 @@ export function drawing({
   const setRefPlaneHover = (hovered: "xy" | "xz" | "yz" | null) => {
     // Más sutil: dim 0.04 (casi invisible para no-hover), hover 0.22 (antes
     // 0.45 era demasiado fuerte y tapaba el modelo). Sigue siendo distinguible.
-    const dimO = 0.04, hiO = 0.14;
+    const dimO = 0.025, hiO = 0.09;
     (refFillXY.material as THREE.MeshBasicMaterial).opacity = hovered === "xy" ? hiO : dimO;
     (refFillXZ.material as THREE.MeshBasicMaterial).opacity = hovered === "xz" ? hiO : dimO;
     (refFillYZ.material as THREE.MeshBasicMaterial).opacity = hovered === "yz" ? hiO : dimO;
