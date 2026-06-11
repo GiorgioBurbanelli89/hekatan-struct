@@ -1568,7 +1568,23 @@ export function drawing({
     const x1 = p1[0], y1 = p1[1], z1 = p1[2];
     const x2 = p2[0], y2 = p2[1], z2 = p2[2];
     let pts: [number, number, number][];
-    if (Math.abs(z1 - z2) < 1e-6) pts = [[x1, y1, z1], [x2, y1, z1], [x2, y2, z1], [x1, y2, z1]];
+    if (inclinedPlaneActive && drawingObj.gridTarget) {
+      // PLANO INCLINADO: construir el rectángulo EN la base (u,v) del plano,
+      // así las 2 esquinas opuestas dan un rectángulo limpio sobre la
+      // inclinación (no un cuadrilátero raro). u,v = ejes locales del plano.
+      const gt = drawingObj.gridTarget.rawVal;
+      const e = new THREE.Euler(...gt.rotation);
+      const u = new THREE.Vector3(1, 0, 0).applyEuler(e);
+      const v = new THREE.Vector3(0, 1, 0).applyEuler(e);
+      const O = new THREE.Vector3(...gt.position);
+      const A = new THREE.Vector3(x1, y1, z1), C = new THREE.Vector3(x2, y2, z2);
+      const au = A.clone().sub(O).dot(u), av = A.clone().sub(O).dot(v);
+      const cu = C.clone().sub(O).dot(u), cv = C.clone().sub(O).dot(v);
+      const mk = (uu: number, vv: number): [number, number, number] =>
+        O.clone().addScaledVector(u, uu).addScaledVector(v, vv).toArray() as [number, number, number];
+      pts = [mk(au, av), mk(cu, av), mk(cu, cv), mk(au, cv)];
+    }
+    else if (Math.abs(z1 - z2) < 1e-6) pts = [[x1, y1, z1], [x2, y1, z1], [x2, y2, z1], [x1, y2, z1]];
     else if (Math.abs(y1 - y2) < 1e-6) pts = [[x1, y1, z1], [x2, y1, z1], [x2, y1, z2], [x1, y1, z2]];
     else pts = [[x1, y1, z1], [x1, y2, z1], [x1, y2, z2], [x1, y1, z2]];
     if ((window as any).__hekatanPushUndo) (window as any).__hekatanPushUndo();
