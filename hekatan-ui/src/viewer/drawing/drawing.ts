@@ -3636,6 +3636,22 @@ export function drawing({
     const intersect = intersectWorkPlane();
     if (!intersect.length) return;
 
+    // GUARD anti-click RASANTE: el plano de trabajo es gigante (10000 m), así
+    // que un rayo casi paralelo lo intersecta a miles de metros → metía nodos
+    // basura (ej. 2847 m) que disparaban la cámara lejísimos y dejaban TODOS
+    // los ejemplos invisibles. Si el impacto cae mucho más lejos que la
+    // distancia cámara→objetivo, lo descartamos.
+    {
+      const camTgtDist = _camForRay.position.distanceTo(controls.target) || 1;
+      const hitDist = intersect[0].distance ?? _camForRay.position.distanceTo(intersect[0].point);
+      const p0 = intersect[0].point;
+      if (!isFinite(p0.x) || !isFinite(p0.y) || !isFinite(p0.z) ||
+          hitDist > Math.max(camTgtDist * 12, 300)) {
+        updateStatus("⚠ Click rasante descartado — cayó demasiado lejos. Acercá la vista o clickeá sobre la grilla.");
+        return;
+      }
+    }
+
     let point = intersect[0].point;
     if (event.ctrlKey || event.metaKey) {
       point = new THREE.Vector3(

@@ -595,6 +595,7 @@ function autoFitCamera() {
   const nodesArr = states.nodes.rawVal || [];
   let minX=Infinity,minY=Infinity,minZ=Infinity,maxX=-Infinity,maxY=-Infinity,maxZ=-Infinity;
   for (const n of nodesArr) {
+    if (!isFinite(n[0]) || !isFinite(n[1]) || !isFinite(n[2])) continue;
     if (n[0]<minX) minX=n[0]; if (n[0]>maxX) maxX=n[0];
     if (n[1]<minY) minY=n[1]; if (n[1]>maxY) maxY=n[1];
     if (n[2]<minZ) minZ=n[2]; if (n[2]>maxZ) maxZ=n[2];
