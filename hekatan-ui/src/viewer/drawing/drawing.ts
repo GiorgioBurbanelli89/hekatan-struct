@@ -550,6 +550,19 @@ export function drawing({
   rubberBand.visible = false;
   scene.add(rubberBand);
 
+  // ── PREVIEW del ÁREA LIBRE (polígono) ──
+  // Línea cyan que muestra el contorno del polígono mientras se clickea.
+  const polyAreaPreview = new THREE.Line(
+    new THREE.BufferGeometry(),
+    new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.9 }),
+  );
+  polyAreaPreview.frustumCulled = false;
+  polyAreaPreview.visible = false;
+  scene.add(polyAreaPreview);
+  // Vértices del polígono de área libre en curso (NO se agregan a drawingObj
+  // hasta cerrar — así evitamos nodos huérfanos si se cancela).
+  let polyAreaPts: [number, number, number][] = [];
+
   // ── EJES DE PROLONGACIÓN (Ortho/Polar tracking) ──
   // Líneas dashed desde el último punto en direcciones X/Y/Z + diagonales
   // 45°. Aparecen cuando el cursor está cerca de uno de esos ángulos.
@@ -829,6 +842,14 @@ export function drawing({
     if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")
         && ae !== rubberLabelInput) return;
     const k = ev.key.toLowerCase();
+    const curToolKd = (window as any).__hekatanCadState?.get?.()?.tool;
+    if (ev.key === "Enter" && curToolKd === "polyarea" && polyAreaPts.length >= 3) {
+      // Enter cierra y mallar el ÁREA LIBRE en curso.
+      const cnt = finalizePolyArea();
+      updateStatus(`✓ Área libre mallada — ${cnt} shells Q4 creados.`);
+      ev.preventDefault();
+      return;
+    }
     if (k === "x" || k === "y" || k === "z") {
       // Toggle: si ya estaba en ese eje, libera; si no, cambia a ese eje
       axisLock = (axisLock === k) ? null : (k as "x" | "y" | "z");
@@ -1486,6 +1507,140 @@ export function drawing({
       drawingObj.polylines.val = [...polys.slice(0, -1), rectPoly, []];
     }
   };
+
+  // ── ÁREA RECTANGULAR: 2 clicks (esquinas opuestas) → shell Q4 marcado como
+  // ÁREA. Igual que __hekatanDrawRect pero lo registra en drawingObj.areas
+  // para que newBlank lo construya como shell (no como frames de borde).
+  (window as any).__hekatanDrawRectArea = (
+    p1: [number, number, number],
+    p2: [number, number, number],
+  ) => {
+    const baseIdx = drawingObj.points.rawVal.length;
+    const x1 = p1[0], y1 = p1[1], z1 = p1[2];
+    const x2 = p2[0], y2 = p2[1], z2 = p2[2];
+    let pts: [number, number, number][];
+    if (Math.abs(z1 - z2) < 1e-6) pts = [[x1, y1, z1], [x2, y1, z1], [x2, y2, z1], [x1, y2, z1]];
+    else if (Math.abs(y1 - y2) < 1e-6) pts = [[x1, y1, z1], [x2, y1, z1], [x2, y1, z2], [x1, y1, z2]];
+    else pts = [[x1, y1, z1], [x1, y2, z1], [x1, y2, z2], [x1, y1, z2]];
+    if ((window as any).__hekatanPushUndo) (window as any).__hekatanPushUndo();
+    drawingObj.points.val = [...drawingObj.points.rawVal, ...pts];
+    if (drawingObj.polylines) {
+      const polys = drawingObj.polylines.rawVal;
+      const newAt = polys.length - 1;  // posición del [] final que reemplazamos
+      const rectPoly = [baseIdx, baseIdx + 1, baseIdx + 2, baseIdx + 3, baseIdx];
+      drawingObj.polylines.val = [...polys.slice(0, -1), rectPoly, []];
+      if (drawingObj.areas) drawingObj.areas.val = [...drawingObj.areas.rawVal, newAt];
+    }
+    try { (window as any).__hekatanRebuild?.(); } catch {}
+    viewerRender();
+  };
+
+  // ── ÁREA LIBRE: polígono arbitrario (N vértices, incluso cóncavo tipo
+  // escalera/L) → MALLA de shells Q4. El FEM solo soporta Q4, así que
+  // dividimos el polígono en una grilla de cuadritos en SU PROPIO plano y
+  // conservamos las celdas cuyo centro cae dentro del polígono
+  // (point-in-polygon por ray-casting). Devuelve la cantidad de shells.
+  (window as any).__hekatanMeshPolyArea = (
+    verts3d: [number, number, number][],
+    spacingOpt?: number,
+  ): number => {
+    const n = verts3d.length;
+    if (n < 3) return 0;
+    // Normal del polígono (método de Newell — robusto para polígonos planos).
+    let nx = 0, ny = 0, nz = 0;
+    for (let i = 0; i < n; i++) {
+      const a = verts3d[i], b = verts3d[(i + 1) % n];
+      nx += (a[1] - b[1]) * (a[2] + b[2]);
+      ny += (a[2] - b[2]) * (a[0] + b[0]);
+      nz += (a[0] - b[0]) * (a[1] + b[1]);
+    }
+    const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+    // u = dirección del primer borde (alinea la grilla con la forma → tiles
+    // exactos en escaleras/L axis-aligned). v = n × u.
+    let ux = verts3d[1][0] - verts3d[0][0], uy = verts3d[1][1] - verts3d[0][1], uz = verts3d[1][2] - verts3d[0][2];
+    const ul = Math.hypot(ux, uy, uz) || 1; ux /= ul; uy /= ul; uz /= ul;
+    let vx = ny * uz - nz * uy, vy = nz * ux - nx * uz, vz = nx * uy - ny * ux;
+    const vln = Math.hypot(vx, vy, vz) || 1; vx /= vln; vy /= vln; vz /= vln;
+    const O = verts3d[0];
+    const to2d = (p: number[]): [number, number] => [
+      (p[0] - O[0]) * ux + (p[1] - O[1]) * uy + (p[2] - O[2]) * uz,
+      (p[0] - O[0]) * vx + (p[1] - O[1]) * vy + (p[2] - O[2]) * vz,
+    ];
+    const to3d = (s: number, t: number): [number, number, number] => [
+      O[0] + s * ux + t * vx, O[1] + s * uy + t * vy, O[2] + s * uz + t * vz,
+    ];
+    const poly2d = verts3d.map(to2d);
+    let minS = Infinity, maxS = -Infinity, minT = Infinity, maxT = -Infinity;
+    for (const [s, t] of poly2d) {
+      if (s < minS) minS = s; if (s > maxS) maxS = s;
+      if (t < minT) minT = t; if (t > maxT) maxT = t;
+    }
+    const w = maxS - minS, h = maxT - minT;
+    if (w < 1e-6 || h < 1e-6) return 0;
+    // Espaciado: default 0.5 m, duplicando si se generarían demasiadas celdas.
+    let step = spacingOpt && spacingOpt > 0 ? spacingOpt : 0.5;
+    while ((w / step) * (h / step) > 2500) step *= 2;
+    step = Math.min(step, Math.min(w, h));
+    const inside = (s: number, t: number): boolean => {
+      let c = false;
+      for (let i = 0, j = poly2d.length - 1; i < poly2d.length; j = i++) {
+        const [si, ti] = poly2d[i], [sj, tj] = poly2d[j];
+        if (((ti > t) !== (tj > t)) && (s < (sj - si) * (t - ti) / (tj - ti) + si)) c = !c;
+      }
+      return c;
+    };
+    const ns = Math.max(1, Math.round(w / step));
+    const nt = Math.max(1, Math.round(h / step));
+    const ds = w / ns, dt = h / nt;
+    // Nodos de grilla compartidos (solo los usados por celdas internas).
+    const nodeKey = new Map<string, number>();
+    const newPts: [number, number, number][] = [];
+    const baseIdx = drawingObj.points.rawVal.length;
+    const getNode = (gi: number, gj: number): number => {
+      const k = gi + "," + gj;
+      const ex = nodeKey.get(k);
+      if (ex !== undefined) return ex;
+      const idx = baseIdx + newPts.length;
+      newPts.push(to3d(minS + gi * ds, minT + gj * dt));
+      nodeKey.set(k, idx);
+      return idx;
+    };
+    const quads: number[][] = [];
+    for (let gi = 0; gi < ns; gi++) {
+      for (let gj = 0; gj < nt; gj++) {
+        if (!inside(minS + (gi + 0.5) * ds, minT + (gj + 0.5) * dt)) continue;
+        const a = getNode(gi, gj), b = getNode(gi + 1, gj);
+        const cc = getNode(gi + 1, gj + 1), d = getNode(gi, gj + 1);
+        quads.push([a, b, cc, d]);
+      }
+    }
+    if (!quads.length) return 0;
+    if ((window as any).__hekatanPushUndo) (window as any).__hekatanPushUndo();
+    drawingObj.points.val = [...drawingObj.points.rawVal, ...newPts];
+    if (drawingObj.polylines && drawingObj.areas) {
+      let polys = drawingObj.polylines.rawVal.slice();
+      if (polys.length && polys[polys.length - 1].length === 0) polys = polys.slice(0, -1);
+      const areaIdxs: number[] = [];
+      for (const q of quads) { areaIdxs.push(polys.length); polys.push([q[0], q[1], q[2], q[3], q[0]]); }
+      polys.push([]);
+      drawingObj.polylines.val = polys;
+      drawingObj.areas.val = [...drawingObj.areas.rawVal, ...areaIdxs];
+    }
+    try { (window as any).__hekatanRebuild?.(); } catch {}
+    viewerRender();
+    return quads.length;
+  };
+
+  // Finaliza el ÁREA LIBRE en curso: malla los puntos clickeados y limpia.
+  const finalizePolyArea = (): number => {
+    if (polyAreaPts.length < 3) { polyAreaPts = []; polyAreaPreview.visible = false; viewerRender(); return 0; }
+    const cnt = (window as any).__hekatanMeshPolyArea(polyAreaPts.slice());
+    polyAreaPts = [];
+    polyAreaPreview.visible = false;
+    viewerRender();
+    return cnt;
+  };
+  (window as any).__hekatanFinalizePolyArea = finalizePolyArea;
 
   // ── Ejes A/B/C + 1/2/3 estilo CAD/FEM Studio ──
   // Dibuja líneas verticales en X=xs[i] (etiquetadas A, B, C...) y
@@ -3380,6 +3535,9 @@ export function drawing({
   // Reset pendingClicks cuando el usuario cambia de tool
   (window as any).__hekatanCadResetPending = () => {
     pendingClicks = [];
+    polyAreaPts = [];
+    polyAreaPreview.visible = false;
+    viewerRender();
     updateStatus("🛠 Tool cambiado — clicks pendientes limpiados");
   };
 
@@ -3696,6 +3854,34 @@ export function drawing({
       try { (window as any).__hekatanRebuild?.(); } catch {}
       return;
     }
+    if (tool === "rectarea") {
+      // 2 clicks (esquinas opuestas) → shell Q4 marcado como ÁREA.
+      pendingClicks.push([point.x, point.y, point.z]);
+      if (pendingClicks.length === 1) {
+        updateStatus(`▭ Área rectangular — click 1/2 OK (esquina). Marcá la esquina opuesta.`);
+        return;
+      }
+      const [a, b] = pendingClicks;
+      (window as any).__hekatanDrawRectArea?.(a, b);
+      updateStatus(`✓ Área rectangular (shell Q4) creada — (${a[0].toFixed(1)},${a[1].toFixed(1)}) → (${b[0].toFixed(1)},${b[1].toFixed(1)})`);
+      pendingClicks = [];
+      return;
+    }
+    if (tool === "polyarea") {
+      // Polígono LIBRE (N vértices): acumula clicks; Enter o click-derecho
+      // cierra y mallar en shells Q4. Usa array propio (sin nodos huérfanos).
+      polyAreaPts.push([point.x, point.y, point.z]);
+      polyAreaPreview.geometry.setFromPoints(
+        polyAreaPts.map((q) => new THREE.Vector3(q[0], q[1], q[2])),
+      );
+      polyAreaPreview.visible = polyAreaPts.length >= 1;
+      updateStatus(
+        `▰ Área libre — ${polyAreaPts.length} punto(s). Click más vértices, o ` +
+        `Enter / click-derecho para cerrar y mallar (mín. 3).`,
+      );
+      viewerRender();
+      return;
+    }
     if (tool === "col") {
       // 1 click + tipear altura + Enter → frame vertical (columna).
       // Si solo hace 1 click sin tipear, usa altura default 3m.
@@ -3963,7 +4149,15 @@ export function drawing({
   });
 
   // On contextmenu, add a new empty polyline
-  rendererElm.addEventListener("contextmenu", () => {
+  rendererElm.addEventListener("contextmenu", (ev: Event) => {
+    // ÁREA LIBRE: click-derecho cierra el polígono y lo mallar en shells Q4.
+    const curToolCm = (window as any).__hekatanCadState?.get?.()?.tool;
+    if (curToolCm === "polyarea" && polyAreaPts.length >= 3) {
+      ev.preventDefault();
+      const cnt = finalizePolyArea();
+      updateStatus(`✓ Área libre mallada — ${cnt} shells Q4 creados.`);
+      return;
+    }
     if (
       !drawingObj.polylines ||
       drawingObj.polylines.rawVal[drawingObj.polylines.rawVal.length - 1]

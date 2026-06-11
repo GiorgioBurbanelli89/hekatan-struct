@@ -104,7 +104,9 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
   fCad.addButton({ title: "🖱 Seleccionar" }).on("click", () => setActiveTool("select"));
   fCad.addButton({ title: "● Nodo" }).on("click", () => setActiveTool("node"));
   fCad.addButton({ title: "／ Línea (frame)" }).on("click", () => setActiveTool("line"));
-  fCad.addButton({ title: "▭ Área (shell Q4)" }).on("click", () => setActiveTool("area"));
+  fCad.addButton({ title: "▦ Área 4-clics (shell Q4)" }).on("click", () => setActiveTool("area"));
+  fCad.addButton({ title: "▭ Área rectangular (2 clics)" }).on("click", () => setActiveTool("rectarea"));
+  fCad.addButton({ title: "⬡ Área libre (polígono → malla)" }).on("click", () => setActiveTool("polyarea"));
   fCad.addButton({ title: "▌ Columna 3D (1 click + altura)" }).on("click", () => setActiveTool("col"));
   fCad.addButton({ title: "▥ Pared Q4 3D (2 clicks + altura)" }).on("click", () => setActiveTool("wall"));
   fCad.addButton({ title: "⌒ Polilínea" }).on("click", () => setActiveTool("polyline"));

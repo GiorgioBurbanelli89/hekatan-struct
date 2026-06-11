@@ -2736,7 +2736,9 @@ function buildParamsPane() {
     fCad.addButton({ title: "🖱 Seleccionar" }).on("click", () => setActiveTool("select"));
     fCad.addButton({ title: "● Nodo" }).on("click", () => setActiveTool("node"));
     fCad.addButton({ title: "／ Línea (frame)" }).on("click", () => setActiveTool("line"));
-    fCad.addButton({ title: "▭ Área (shell Q4)" }).on("click", () => setActiveTool("area"));
+    fCad.addButton({ title: "▦ Área 4-clics (shell Q4)" }).on("click", () => setActiveTool("area"));
+    fCad.addButton({ title: "▭ Área rectangular (2 clics)" }).on("click", () => setActiveTool("rectarea"));
+    fCad.addButton({ title: "⬡ Área libre (polígono → malla)" }).on("click", () => setActiveTool("polyarea"));
     // Tools 3D dedicados — para dibujar SOLO desde vista isométrica sin
     // tener que cambiar Cota Z entre clicks. Internamente:
     //   col  → 1 click + altura → frame vertical (columna)
@@ -5249,6 +5251,9 @@ const viewerElm = getViewer({
     line: "line", l: "line", linea: "line", "línea": "line",
     node: "node", n: "node", point: "node", po: "node", punto: "node", nodo: "node",
     area: "area", shell: "area", "área": "area",
+    rectarea: "rectarea", ra: "rectarea", "rectárea": "rectarea", arearect: "rectarea",
+    polyarea: "polyarea", pa: "polyarea", "polígono": "polyarea", poligono: "polyarea",
+    arealibre: "polyarea", "área-libre": "polyarea", freearea: "polyarea",
     polyline: "polyline", pline: "polyline", pl: "polyline", polilinea: "polyline",
     rectangle: "rect", rec: "rect", rectang: "rect", rectangulo: "rect", rect: "rect",
     circle: "circle", c: "circle", circ: "circle", circulo: "circle",
@@ -5263,7 +5268,8 @@ const viewerElm = getViewer({
     chamfer: "chaflan", chaflan: "chaflan", chaf: "chaflan", losa: "chaflan", slab: "chaflan",
   };
   const TOOL_LABEL: Record<string, string> = {
-    line: "／ Línea", node: "● Nodo", area: "▭ Área", polyline: "⌒ Polilínea",
+    line: "／ Línea", node: "● Nodo", area: "▦ Área 4-clics", polyline: "⌒ Polilínea",
+    rectarea: "▭ Área rectangular", polyarea: "⬡ Área libre",
     rect: "▭ Rectángulo", circle: "○ Círculo", arc: "⌒ Arco", col: "▌ Columna 3D",
     wall: "▥ Pared Q4", delete: "🗑 Borrar", select: "🖱 Seleccionar",
     aux: "┊ Línea auxiliar", auxp: "✦ Punto auxiliar", extend: "↗ Prolongar",
@@ -5271,6 +5277,7 @@ const viewerElm = getViewer({
   };
   const TOOL_CANON: Record<string, string> = {
     line: "line", node: "node", area: "area", polyline: "polyline", rect: "rectangle",
+    rectarea: "rectarea", polyarea: "polyarea",
     circle: "circle", arc: "arc", col: "column", wall: "wall", delete: "delete",
     select: "select", aux: "auxline", auxp: "auxpoint", extend: "extend",
     axis: "axis", chaflan: "chamfer",
@@ -5429,6 +5436,11 @@ const viewerElm = getViewer({
       }
       if (ev.key === "Enter") {
         const v = inp.value.trim();
+        // Enter vacío con ÁREA LIBRE activa → cerrar y mallar el polígono.
+        if (!v && (window as any).__hekatanCadState?.get?.()?.tool === "polyarea") {
+          (window as any).__hekatanFinalizePolyArea?.();
+          setCmdText(""); ev.preventDefault(); return;
+        }
         const cmd = ALIASES[v.toLowerCase()] ? v : (sug || v);
         run(cmd); setCmdText(""); ev.preventDefault();
       } else if (ev.key === "Escape") {
