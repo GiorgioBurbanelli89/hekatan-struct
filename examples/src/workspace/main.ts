@@ -5354,7 +5354,11 @@ const viewerElm = getViewer({
   // dibujando (ahí manda la cajita de coordenadas #hk-rubber-label).
   const keepCmdFocus = () => {
     const ae = document.activeElement as HTMLElement | null;
-    if (ae && ae !== input && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) return;
+    // SOLO re-enfocar si NADA tiene el foco (body/null). Si hay un select
+    // (ej. dropdown "Categoría"), botón, slider o cualquier control de
+    // Tweakpane enfocado → NO robar el foco (sino se cierra y no se puede
+    // clickear/usar).
+    if (ae && ae !== document.body && ae !== input) return;
     const rl = document.getElementById("hk-rubber-label") as HTMLElement | null;
     if (rl && rl.style.display === "block") return; // dibujando → coords manda
     try { input.focus({ preventScroll: true }); } catch {}

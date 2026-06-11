@@ -5324,7 +5324,9 @@ const viewerElm = getViewer({
   // SIEMPRE en modo edición: caret listo para escribir comandos sin clickear.
   const keepCmdFocus = () => {
     const ae = document.activeElement as HTMLElement | null;
-    if (ae && ae !== input && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) return;
+    // SOLO re-enfocar si NADA tiene el foco (body/null). No robar foco a
+    // selects/botones/sliders de Tweakpane (ej. dropdown "Categoría").
+    if (ae && ae !== document.body && ae !== input) return;
     const rl = document.getElementById("hk-rubber-label") as HTMLElement | null;
     if (rl && rl.style.display === "block") return;
     try { input.focus({ preventScroll: true }); } catch {}
