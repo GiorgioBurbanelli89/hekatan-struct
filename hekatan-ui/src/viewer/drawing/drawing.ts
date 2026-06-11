@@ -905,13 +905,12 @@ export function drawing({
       updateAxisLockBadge();
       ev.preventDefault();
     } else if (ev.key === "Escape") {
-      // Esc → finalizar dibujo: termina polilínea, libera lock, esconde guías.
-      // También blur cualquier input editable (rubber label, etc.).
+      // Esc → cancelar acción + DESELECCIONAR. También blur cualquier input.
       const ae = document.activeElement;
       if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) {
         (ae as HTMLElement).blur();
       }
-      finalizeDraw();
+      escapeCancel();
       ev.preventDefault();
     } else if (ev.key === "F8") {
       // F8 → toggle ORTO mode (AutoCAD-style). Restringe el rubber band al
@@ -3038,6 +3037,8 @@ export function drawing({
     shellType: "Mindlin (FSDT)", thickness: 0.20,
     material_shell: "Concreto C25", surfLoad: 0,
   };
+  // Estado de la categoría EDITAR (replicar / mover la selección).
+  const editState = { dx: 0, dy: 0, dz: 3, copias: 1 };
   let propsPaneInstance: Pane | null = null;
 
   const fireProp = (kind: string, ids: string[], prop: string, value: any) => {
@@ -3083,6 +3084,33 @@ export function drawing({
     const title = `🎯 ${selection.size} item(s) — ${parts.join(", ")}`;
 
     propsPaneInstance = new Pane({ container: propsContainer, title });
+
+    // ── CATEGORÍA "✏️ Editar" (Replicar / Mover) ──
+    // Arriba del todo, como segunda categoría junto a "Asignar" (Restraints/
+    // Loads/Section). Colapsada por defecto para no estorbar. Permite REPLICAR
+    // la estructura seleccionada (dx,dy,dz × copias) y togglear el snap.
+    {
+      const fEdit = propsPaneInstance.addFolder({ title: "✏️ Editar — Replicar / Mover", expanded: false });
+      fEdit.addBinding(editState, "dx", { label: "Δx (m)", step: 0.1 });
+      fEdit.addBinding(editState, "dy", { label: "Δy (m)", step: 0.1 });
+      fEdit.addBinding(editState, "dz", { label: "Δz (m)", step: 0.1 });
+      fEdit.addBinding(editState, "copias", { label: "Copias", min: 1, max: 50, step: 1 });
+      fEdit.addButton({ title: "⧉ Replicar selección" }).on("click", () => {
+        const n = (window as any).__hekatanReplicateSelection?.(editState.dx, editState.dy, editState.dz, editState.copias);
+        updateStatus(n ? `⧉ Replicado ×${n} (Δ ${editState.dx},${editState.dy},${editState.dz} m)` : "⚠ Nada que replicar — seleccioná nodos/frames/áreas");
+      });
+      fEdit.addButton({ title: "→ Mover selección (1 copia, sin duplicar geometría base)" }).on("click", () => {
+        // Mover = replicar 1 y borrar original sería complejo; por ahora replica.
+        const n = (window as any).__hekatanReplicateSelection?.(editState.dx, editState.dy, editState.dz, 1);
+        updateStatus(n ? `→ Copia desplazada Δ ${editState.dx},${editState.dy},${editState.dz} m` : "⚠ Nada seleccionado");
+      });
+      const fSnap = fEdit.addFolder({ title: "🧲 Snap", expanded: false });
+      fSnap.addButton({ title: "Snap a grilla ON/OFF (F9)" }).on("click", () => (window as any).__hekatanToggleSnap?.());
+      fSnap.addButton({ title: "OSNAP (endpoints/medios) ON/OFF" }).on("click", () => {
+        (window as any).__hekatanOsnapOn = !((window as any).__hekatanOsnapOn ?? true);
+        updateStatus(`🧲 OSNAP ${(window as any).__hekatanOsnapOn ? "ON" : "OFF"}`);
+      });
+    }
 
     if (hasNodes) {
       // ── Joint > Restraints (Apoyos) ──
@@ -3746,6 +3774,77 @@ export function drawing({
     viewerRender();
   };
   (window as any).__hekatanFinalizeDraw = finalizeDraw;
+
+  // ⎋ ESC universal: cancela la acción en curso Y deselecciona. Antes ESC solo
+  // finalizaba el dibujo (no limpiaba la selección) y encima el command bar se
+  // lo comía → "ESC no servía". Esto limpia clicks pendientes, polígono libre,
+  // selección + panel de propiedades, y finaliza el dibujo.
+  const escapeCancel = () => {
+    pendingClicks = [];
+    polyAreaPts = [];
+    polyAreaPreview.visible = false;
+    let hadSel = false;
+    if (selection.size) { selection.clear(); refreshSelectionGroup(); hadSel = true; }
+    finalizeDraw();
+    updateStatus(hadSel ? "⎋ Selección cancelada" : "⎋ Acción cancelada");
+    viewerRender();
+  };
+  (window as any).__hekatanEscapeCancel = escapeCancel;
+
+  // ── REPLICAR selección (estilo ETABS "Replicate Linear") ──
+  // Clona los nodos + frames/áreas seleccionados `count` veces, cada copia
+  // desplazada (dx·i, dy·i, dz·i). Permite duplicar/extender la estructura.
+  (window as any).__hekatanReplicateSelection = (
+    dx: number, dy: number, dz: number, count: number,
+  ): number => {
+    count = Math.max(1, Math.round(count || 1));
+    const ids = [...selection];
+    const pts = drawingObj.points.rawVal;
+    const polys = drawingObj.polylines?.rawVal ?? [];
+    const areaSet = new Set(drawingObj.areas?.rawVal ?? []);
+    const nodeSet = new Set<number>();
+    const polyIdxSet = new Set<number>();
+    const segPairs: [number, number][] = [];
+    ids.forEach((id) => {
+      if (id.startsWith("pt:")) nodeSet.add(+id.slice(3));
+      else if (id.startsWith("poly:")) {
+        const p = +id.slice(5); polyIdxSet.add(p);
+        (polys[p] || []).forEach((n) => nodeSet.add(n));
+      } else if (id.startsWith("seg:")) {
+        const parts = id.split(":"); const P = +parts[1], S = +parts[2];
+        const poly = polys[P] || []; const a = poly[S], b = poly[S + 1];
+        if (a != null && b != null) { segPairs.push([a, b]); nodeSet.add(a); nodeSet.add(b); }
+      }
+    });
+    if (!nodeSet.size) return 0;
+    pushUndo();
+    const newPts = [...pts];
+    let newPolys = polys.slice();
+    if (newPolys.length && newPolys[newPolys.length - 1].length === 0) newPolys = newPolys.slice(0, -1);
+    const newAreas = [...(drawingObj.areas?.rawVal ?? [])];
+    const origNodes = [...nodeSet];
+    for (let i = 1; i <= count; i++) {
+      const ox = dx * i, oy = dy * i, oz = dz * i;
+      const map = new Map<number, number>();
+      origNodes.forEach((n) => {
+        map.set(n, newPts.length);
+        newPts.push([pts[n][0] + ox, pts[n][1] + oy, pts[n][2] + oz]);
+      });
+      polyIdxSet.forEach((p) => {
+        const cloned = polys[p].map((n) => (map.has(n) ? map.get(n)! : n));
+        const at = newPolys.length; newPolys.push(cloned);
+        if (areaSet.has(p)) newAreas.push(at);
+      });
+      segPairs.forEach(([a, b]) => { newPolys.push([map.get(a)!, map.get(b)!]); });
+    }
+    newPolys.push([]);
+    drawingObj.points.val = newPts;
+    if (drawingObj.polylines) drawingObj.polylines.val = newPolys;
+    if (drawingObj.areas) drawingObj.areas.val = newAreas;
+    try { (window as any).__hekatanRebuild?.(); } catch {}
+    viewerRender();
+    return count;
+  };
 
   rendererElm.addEventListener("click", (event: PointerEvent) => {
     // Ignorar click que viene de drag (rotación)

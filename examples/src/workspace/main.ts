@@ -5492,7 +5492,9 @@ const viewerElm = getViewer({
         const cmd = ALIASES[v.toLowerCase()] ? v : (sug || v);
         run(cmd); setCmdText(""); ev.preventDefault();
       } else if (ev.key === "Escape") {
-        setCmdText(""); (inp as HTMLInputElement).blur(); ev.preventDefault();
+        setCmdText(""); (inp as HTMLInputElement).blur();
+        (window as any).__hekatanEscapeCancel?.();   // ESC también deselecciona/cancela
+        ev.preventDefault();
       }
     });
   };
