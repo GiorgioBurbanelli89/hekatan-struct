@@ -2912,7 +2912,7 @@ function buildParamsPane() {
     //    detalle (zapata) hasta edificio entero.
     // 2) Tamaño del grid mallado (la "plataforma" que se ve en el viewer).
     //    Tira de settings.gridSize del viewer interno (default 10).
-    const proxySizes = { orthoExt: 2.6, gridSize: 10 };
+    const proxySizes = { orthoExt: 3.2, gridSize: 10 };
     const orthoExtBinding = fPlane.addBinding(proxySizes, "orthoExt", {
       min: 1, max: 50, step: 0.5, label: "Tamaño área planos ref. (m)",
     }).on("change", (ev: any) => {
@@ -5926,7 +5926,7 @@ if (initialEx) {
       setView("iso");
       // Tamaño por defecto de los planos de referencia ortogonales = 2.6 m
       // (valor elegido por el usuario: chico y prolijo alrededor del origen).
-      (window as any).__hekatanSetOrthoExt?.(2.6);
+      (window as any).__hekatanSetOrthoExt?.(3.2);
     }, 200);
   }
   // ── Pre-fill desde URL params ──
