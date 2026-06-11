@@ -2740,6 +2740,8 @@ function buildParamsPane() {
     fCad.addButton({ title: "▦ Área 4-clics (shell Q4)" }).on("click", () => setActiveTool("area"));
     fCad.addButton({ title: "▭ Área rectangular (2 clics)" }).on("click", () => setActiveTool("rectarea"));
     fCad.addButton({ title: "⬡ Área libre (polígono → malla)" }).on("click", () => setActiveTool("polyarea"));
+    fCad.addButton({ title: "◣ Plano inclinado (3 puntos)" }).on("click", () => setActiveTool("plane3"));
+    fCad.addButton({ title: "⬛ Plano XY (reset horizontal)" }).on("click", () => (window as any).__hekatanResetPlaneXY?.());
     // Tools 3D dedicados — para dibujar SOLO desde vista isométrica sin
     // tener que cambiar Cota Z entre clicks. Internamente:
     //   col  → 1 click + altura → frame vertical (columna)
@@ -5255,6 +5257,7 @@ const viewerElm = getViewer({
     rectarea: "rectarea", ra: "rectarea", "rectárea": "rectarea", arearect: "rectarea",
     polyarea: "polyarea", pa: "polyarea", "polígono": "polyarea", poligono: "polyarea",
     arealibre: "polyarea", "área-libre": "polyarea", freearea: "polyarea",
+    plane3: "plane3", ucs: "plane3", plano3: "plane3", inclinar: "plane3", incline: "plane3",
     polyline: "polyline", pline: "polyline", pl: "polyline", polilinea: "polyline",
     rectangle: "rect", rec: "rect", rectang: "rect", rectangulo: "rect", rect: "rect",
     circle: "circle", c: "circle", circ: "circle", circulo: "circle",
@@ -5270,7 +5273,7 @@ const viewerElm = getViewer({
   };
   const TOOL_LABEL: Record<string, string> = {
     line: "／ Línea", node: "● Nodo", area: "▦ Área 4-clics", polyline: "⌒ Polilínea",
-    rectarea: "▭ Área rectangular", polyarea: "⬡ Área libre",
+    rectarea: "▭ Área rectangular", polyarea: "⬡ Área libre", plane3: "◣ Plano inclinado",
     rect: "▭ Rectángulo", circle: "○ Círculo", arc: "⌒ Arco", col: "▌ Columna 3D",
     wall: "▥ Pared Q4", delete: "🗑 Borrar", select: "🖱 Seleccionar",
     aux: "┊ Línea auxiliar", auxp: "✦ Punto auxiliar", extend: "↗ Prolongar",
@@ -5278,7 +5281,7 @@ const viewerElm = getViewer({
   };
   const TOOL_CANON: Record<string, string> = {
     line: "line", node: "node", area: "area", polyline: "polyline", rect: "rectangle",
-    rectarea: "rectarea", polyarea: "polyarea",
+    rectarea: "rectarea", polyarea: "polyarea", plane3: "plane3",
     circle: "circle", arc: "arc", col: "column", wall: "wall", delete: "delete",
     select: "select", aux: "auxline", auxp: "auxpoint", extend: "extend",
     axis: "axis", chaflan: "chamfer",

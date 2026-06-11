@@ -563,6 +563,23 @@ export function drawing({
   // hasta cerrar — así evitamos nodos huérfanos si se cancela).
   let polyAreaPts: [number, number, number][] = [];
 
+  // ── PLANO DE TRABAJO INCLINADO — guía visible ──
+  // Quad relleno semitransparente + borde que se orienta al plano inclinado
+  // (UCS por 3 puntos), para que el usuario VEA sobre qué plano está dibujando.
+  const inclinedHelper = new THREE.Group();
+  const inclinedFill = new THREE.Mesh(
+    new THREE.PlaneGeometry(1, 1),
+    new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.10, side: THREE.DoubleSide, depthWrite: false }),
+  );
+  const inclinedBorder = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, 1)),
+    new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.8 }),
+  );
+  inclinedHelper.add(inclinedFill, inclinedBorder);
+  inclinedHelper.visible = false;
+  inclinedHelper.frustumCulled = false;
+  scene.add(inclinedHelper);
+
   // ── EJES DE PROLONGACIÓN (Ortho/Polar tracking) ──
   // Líneas dashed desde el último punto en direcciones X/Y/Z + diagonales
   // 45°. Aparecen cuando el cursor está cerca de uno de esos ángulos.
@@ -1641,6 +1658,50 @@ export function drawing({
     return cnt;
   };
   (window as any).__hekatanFinalizePolyArea = finalizePolyArea;
+
+  // ── PLANO DE TRABAJO INCLINADO (UCS por 3 puntos) ──
+  // El plano de trabajo se orienta vía drawingObj.gridTarget {position, rotation}.
+  // A partir de 3 puntos calculamos la normal y el Euler para inclinar el plano
+  // (y la grilla) a CUALQUIER orientación → los clicks posteriores caen sobre
+  // ese plano inclinado, así se dibujan áreas/shells inclinados.
+  (window as any).__hekatanSetInclinedPlaneFrom3 = (
+    p1: [number, number, number],
+    p2: [number, number, number],
+    p3: [number, number, number],
+  ): boolean => {
+    const a = new THREE.Vector3(p1[0], p1[1], p1[2]);
+    const b = new THREE.Vector3(p2[0], p2[1], p2[2]);
+    const c = new THREE.Vector3(p3[0], p3[1], p3[2]);
+    const N = new THREE.Vector3().subVectors(b, a)
+      .cross(new THREE.Vector3().subVectors(c, a));
+    if (N.lengthSq() < 1e-9) return false;   // 3 puntos colineales
+    N.normalize();
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), N);
+    const e = new THREE.Euler().setFromQuaternion(q);
+    if (drawingObj.gridTarget) {
+      drawingObj.gridTarget.val = {
+        position: [a.x, a.y, a.z],
+        rotation: [e.x, e.y, e.z],
+      };
+    }
+    // Guía visible: centrar en el centroide de los 3 puntos, orientar al plano,
+    // dimensionar ~ al tamaño del triángulo (con margen).
+    const ctr = new THREE.Vector3().addVectors(a, b).add(c).multiplyScalar(1 / 3);
+    const size = Math.max(a.distanceTo(b), a.distanceTo(c), b.distanceTo(c)) * 2.2 + 4;
+    inclinedHelper.position.copy(ctr);
+    inclinedHelper.quaternion.copy(q);
+    inclinedHelper.scale.set(size, size, 1);
+    inclinedHelper.visible = true;
+    try { (window as any).__hekatanRefreshStatus?.(); } catch {}
+    viewerRender();
+    return true;
+  };
+  // Resetear el plano de trabajo a horizontal (XY, Z=0).
+  (window as any).__hekatanResetPlaneXY = () => {
+    if (drawingObj.gridTarget) drawingObj.gridTarget.val = { position: [0, 0, 0], rotation: [0, 0, 0] };
+    inclinedHelper.visible = false;
+    viewerRender();
+  };
 
   // ── Ejes A/B/C + 1/2/3 estilo CAD/FEM Studio ──
   // Dibuja líneas verticales en X=xs[i] (etiquetadas A, B, C...) y
@@ -3896,6 +3957,25 @@ export function drawing({
         `Enter / click-derecho para cerrar y mallar (mín. 3).`,
       );
       viewerRender();
+      return;
+    }
+    if (tool === "plane3") {
+      // PLANO INCLINADO por 3 puntos: clickeá 3 puntos (cambiando Cota Z entre
+      // clicks, o enganchando nodos existentes a distintas alturas) → el plano
+      // de trabajo + grilla se inclinan a esa orientación. Después dibujás el
+      // área con ese plano inclinado activo → shell inclinado.
+      pendingClicks.push([point.x, point.y, point.z]);
+      if (pendingClicks.length < 3) {
+        updateStatus(`◣ Plano inclinado — punto ${pendingClicks.length}/3. ` +
+          `Tip: cambiá la Cota Z (o enganchá un nodo) entre clicks para darle inclinación.`);
+        return;
+      }
+      const [a, b, c] = pendingClicks;
+      const ok = (window as any).__hekatanSetInclinedPlaneFrom3?.(a, b, c);
+      updateStatus(ok
+        ? `✓ Plano de trabajo INCLINADO activo. Dibujá el área (▭/⬡) sobre él. (XY para resetear)`
+        : `⚠ Los 3 puntos son colineales — no definen un plano. Reintentá.`);
+      pendingClicks = [];
       return;
     }
     if (tool === "col") {
