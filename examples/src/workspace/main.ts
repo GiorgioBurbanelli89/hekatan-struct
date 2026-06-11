@@ -5457,7 +5457,10 @@ const viewerElm = getViewer({
   const wireKeys = (inp: HTMLInputElement) => {
     inp.addEventListener("input", () => { if (!_sync) setCmdText(inp.value); });
     inp.addEventListener("keydown", (ev) => {
-      ev.stopPropagation(); // que X/Y/Z/F8 no se disparen mientras tipeás
+      // Dejar pasar Delete/Backspace al canvas cuando el comando está VACÍO
+      // (para que borren la selección). Si hay texto, proteger el tipeo.
+      const passDel = (ev.key === "Delete" || ev.key === "Backspace") && inp.value.length === 0;
+      if (!passDel) ev.stopPropagation(); // que X/Y/Z/F8 no se disparen mientras tipeás
       const sug = suggestFor(inp.value);
       if ((ev.key === "Tab" || (ev.key === "ArrowRight" && inp.selectionStart === inp.value.length)) && sug) {
         setCmdText(sug); ev.preventDefault(); return;

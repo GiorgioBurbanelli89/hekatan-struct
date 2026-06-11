@@ -2600,10 +2600,13 @@ export function drawing({
 
   window.addEventListener("keydown", (ev: KeyboardEvent) => {
     if (ev.key !== "Delete" && ev.key !== "Backspace") return;
-    // Ignorar si hay input/textarea enfocado (no robar typing)
-    const ae = document.activeElement;
-    if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || (ae as HTMLElement).isContentEditable)) {
-      return;
+    const ae = document.activeElement as HTMLElement | null;
+    // La barra de comandos (siempre enfocada) y su input al cursor NO deben
+    // bloquear el Delete si están VACÍOS → permitir borrar la selección.
+    const isEmptyCmd = ae && (ae.id === "hk3-cmd-input" || ae.id === "hk-dyn-input")
+      && (ae as HTMLInputElement).value === "";
+    if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable) && !isEmptyCmd) {
+      return; // editando texto real → no borrar la selección
     }
     if (selection.size === 0) return;
     ev.preventDefault();
