@@ -1654,7 +1654,17 @@ const PANE_POS_KEY = "hk_paneHostPos";
 const savedPos = (() => {
   try {
     const raw = localStorage.getItem(PANE_POS_KEY);
-    if (raw) return JSON.parse(raw) as { left: number; top: number };
+    if (raw) {
+      const p = JSON.parse(raw) as { left: number; top: number };
+      // CLAMP a la ventana visible: una posición guardada en un monitor ANCHO
+      // (ej. left:1917 al arrastrar el panel) quedaba FUERA de pantalla en
+      // ventanas más chicas y el panel "desaparecía". Lo traemos siempre a la
+      // vista (mínimo 60px del borde).
+      const pw = Math.min(320, window.innerWidth - 32);
+      p.left = Math.max(0, Math.min(p.left, window.innerWidth - pw));
+      p.top = Math.max(0, Math.min(p.top, window.innerHeight - 60));
+      return p;
+    }
   } catch {}
   return null;
 })();

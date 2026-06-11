@@ -1646,7 +1646,13 @@ const PANE_POS_KEY = "hk_paneHostPos";
 const savedPos = (() => {
   try {
     const raw = localStorage.getItem(PANE_POS_KEY);
-    if (raw) return JSON.parse(raw) as { left: number; top: number };
+    if (raw) {
+      const p = JSON.parse(raw) as { left: number; top: number };
+      const pw = Math.min(320, window.innerWidth - 32);
+      p.left = Math.max(0, Math.min(p.left, window.innerWidth - pw));
+      p.top = Math.max(0, Math.min(p.top, window.innerHeight - 60));
+      return p;
+    }
   } catch {}
   return null;
 })();

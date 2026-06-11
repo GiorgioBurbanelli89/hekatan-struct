@@ -5,7 +5,7 @@ import path from "path";
 export default defineConfig({
   server: {
     port: 4600,
-    open: "workspace/index.html",
+    open: "workspace3/index.html",
   },
   // Resolve base path. Fix MSYS/Git-Bash path mangling: si DEPLOY_BASE fue
   // convertido a "C:/Program Files/Git/hekatan-struct/" (conversión POSIX→Windows
@@ -40,6 +40,7 @@ export default defineConfig({
         "advanced-truss": "src/advanced-truss/index.html",
         beams: "src/beams/index.html",
         workspace: "src/workspace/index.html",
+        workspace3: "src/workspace3/index.html",
         curves: "src/curves/index.html",
         "1d-mesh": "src/1d-mesh/index.html",
         truss: "src/truss/index.html",
@@ -70,6 +71,8 @@ export default defineConfig({
         "guerra-ej4-zapata-combinada-rectangular": "src/guerra-ej4-zapata-combinada-rectangular/index.html",
         "guerra-ej5-zapata-combinada-trapezoidal": "src/guerra-ej5-zapata-combinada-trapezoidal/index.html",
         "guerra-ej6-zapata-unida-viga-amarre": "src/guerra-ej6-zapata-unida-viga-amarre/index.html",
+        "benchmark-safe-ex01-plate": "src/benchmark-safe-ex01-plate/index.html",
+        "benchmark-safe-ex04-plate-beams": "src/benchmark-safe-ex04-plate-beams/index.html",
         "guerra-ej7-viga-cimentacion-new": "src/guerra-ej7-viga-cimentacion-new/index.html",
         "guerra-ej8-losa-cimentacion": "src/guerra-ej8-losa-cimentacion/index.html",
         "viga-cim-guerra-ej7": "src/viga-cim-guerra-ej7/index.html",
@@ -107,6 +110,7 @@ export default defineConfig({
         "W2_viga_flexion_composite_slab_cantilever": "src/W2_viga_flexion_composite_slab_cantilever/index.html",
         "W2_viga_flexion_composite_encased_cantilever": "src/W2_viga_flexion_composite_encased_cantilever/index.html",
         "portico-2d": "src/portico-2d/index.html",
+        "cerramiento": "src/cerramiento/index.html",
         "tower-3d": "src/tower-3d/index.html",
         "galpon": "src/galpon/index.html",
         "edif-acero": "src/edif-acero/index.html",
@@ -117,6 +121,8 @@ export default defineConfig({
         "shell-thin": "src/shell-thin/index.html",
         "shell-thick": "src/shell-thick/index.html",
         "layered-shell": "src/layered-shell/index.html",
+        "plate-with-beams": "src/plate-with-beams/index.html",
+        "slab-beams-columns": "src/slab-beams-columns/index.html",
         "benchmark-3way": "src/benchmark-3way/index.html",
         "benchmark-cft": "src/benchmark-cft/index.html",
         "benchmark-cft-cantilever": "src/benchmark-cft-cantilever/index.html",
