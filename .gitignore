@@ -38,3 +38,41 @@ Etabs Powershell/*_results.json
 *.Y04
 *.Y05
 *.Y06
+
+# ─── INVESTIGACIÓN / VALIDACIÓN (NO publicar) ──────────────────────────────
+# Carpeta de investigación personal (252 MB). Contiene material propietario de
+# CSI (.chm, .EDB, .FDB) que NO debe ir a un repo público MIT. Se mantiene local
+# (y/o en repo privado separado). Excluida del público por decisión 21-jun-2026.
+validacion/
+
+# Copia duplicada del paquete hekatan-fem dentro de cli/ (con su node_modules)
+cli/hekatan-fem/
+
+# ─── ARTEFACTOS REGENERABLES / BASURA ─────────────────────────────────────
+*.exe
+*.log
+*.LOG
+*.OUT
+__pycache__/
+*.pyc
+*.bak
+*.bak.*
+
+# Binarios temporales de CSI (ETABS / SAFE / SAP2000)
+*.Y
+*.Y_
+*.Y_1
+*.msh
+*.ico
+*.K_L
+*.$sf
+*.$et
+*.EDB
+*.FDB
+*.ebk
+*.tlog
+
+# Capturas y chunks sueltos en la raíz / assets de build
+/*.png
+/*.svg
+assets/*.js
