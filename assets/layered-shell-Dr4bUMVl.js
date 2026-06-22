@@ -1,0 +1,40 @@
+import "./modulepreload-polyfill-B5Qt9EMX.js";
+import { l as r, __tla as __tla_0 } from "./layeredShell-C9YSoUwJ.js";
+import { r as m, __tla as __tla_1 } from "./runExampleStandalone-C3qGIHK0.js";
+import { __tla as __tla_2 } from "./didacticCpp-C0Qfkfmr.js";
+import { __tla as __tla_3 } from "./deform-yikvckPF.js";
+import "./preload-helper-DrUBW0xl.js";
+import "./layeredQ4-ouweqKYj.js";
+import "./theme-BUyDDEHW.js";
+import "./getViewer-BP1guy5F.js";
+import "./Text-DR6pe57W.js";
+import "./styles-tOu98xnK.js";
+import "./units-DXgS9gy0.js";
+Promise.all([
+  (() => {
+    try {
+      return __tla_0;
+    } catch {
+    }
+  })(),
+  (() => {
+    try {
+      return __tla_1;
+    } catch {
+    }
+  })(),
+  (() => {
+    try {
+      return __tla_2;
+    } catch {
+    }
+  })(),
+  (() => {
+    try {
+      return __tla_3;
+    } catch {
+    }
+  })()
+]).then(async () => {
+  m(r);
+});
