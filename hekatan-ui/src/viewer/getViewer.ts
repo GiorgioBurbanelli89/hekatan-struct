@@ -171,12 +171,15 @@ export function getViewer({
   (window as any).__hekatanClipApply = applyClipping;
 
   const settings = getDefaultSettings(settingsObj);
+  // Mapeo slider → escala. Antes era piecewise (s>0 ? s : -1/s) con una
+  // discontinuidad en 0 y una zona muerta en el centro: s=-1, s=0 y s=+1 daban
+  // TODOS 1, y entre -1 y +1 la escala rebotaba (1→2→1→0.5→1) → el slider
+  // "no modificaba la escala" de forma coherente cerca del centro.
+  // Ahora 10^(s/10): monótona y continua en todo el rango [-10, 10],
+  // conservando los extremos del comportamiento previo (s=-10 → 0.1×,
+  // s=0 → 1×, s=+10 → 10×). Cada paso del slider cambia la escala suavemente.
   const derivedDisplayScale = van.derive(() =>
-    settings.displayScale.val === 0
-      ? 1
-      : settings.displayScale.val > 0
-      ? settings.displayScale.val
-      : -1 / settings.displayScale.val
+    Math.pow(10, settings.displayScale.val / 10)
   );
   const derivedNodes = deriveNodes(mesh, settings);
   // Helper para construir la lista de planos activos según los toggles.

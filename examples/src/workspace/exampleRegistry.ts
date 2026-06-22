@@ -275,6 +275,7 @@ import { plateWithBeams } from "../plate-with-beams/plateWithBeams";
 import { slabBeamsColumns } from "../slab-beams-columns/slabBeamsColumns";
 import { plateThick } from "../plate-thick/plateThick";
 import { membrana } from "../membrana-pstress/membrana";
+import { drillingDof } from "../test/drillingDof";
 import { shellThin } from "../shell-thin/shellThin";
 import { benchmark3way } from "../benchmark-3way/benchmark3way";
 import { benchmarkCft } from "../benchmark-cft/benchmarkCft";
@@ -325,6 +326,8 @@ import { tower3D } from "../tower-3d/tower3D";
 import { galpon } from "../galpon/galpon";
 import { edifAcero } from "../edif-acero/edifAcero";
 import { mezanine } from "../mezanine/mezanine";
+// 🎓 Test M — modelos de los objetivos específicos de la tesis
+import { edificioFrameNec } from "../edificio-frame-nec/edificioFrameNec";
 // Lienzo en blanco para dibujar (CAD interactivo)
 import { newBlank } from "../new-blank/newBlank";
 // Legacy del upstream awatif (rebrandeados, abren standalone)
@@ -336,6 +339,10 @@ import {
 } from "./legacyAwatif";
 
 export const examplesRegistry: ExampleDef[] = [
+  // 🎓 TEST M — modelos de los objetivos específicos de la tesis de maestría
+  edificioFrameNec,       // Edificio pórtico paramétrico (frame puro) + carga lateral NEC
+  // 🧪 TEST — casos de prueba / desarrollo (categoría "test")
+  drillingDof,            // 2 muros + viga de acople (drilling DOF + test exportador e2k)
   // 📐 NewBlank — lienzo en blanco al inicio (más visible)
   newBlank,
   // Importador CSI (F2K/E2K/S2K) — al inicio para acceso rápido

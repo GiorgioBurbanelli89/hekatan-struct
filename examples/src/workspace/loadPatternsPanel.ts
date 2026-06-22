@@ -16,6 +16,7 @@ import type {
   LoadPattern, LoadPatternType, LoadCase, LoadCaseType,
   LoadCombination,
 } from "hekatan-fem";
+import { generateNecSeCgCombos, mergeCombos } from "../shared/necCombos";
 
 type Pane = any; // Tweakpane Pane type (evita import circular)
 
@@ -309,6 +310,20 @@ export function attachLoadPatternsPanel(opts: {
         type: "Linear Add",
         cases: [{ case: firstCase, scaleFactor: 1.0 }],
       }];
+      rebuildCombos();
+      persist();
+    });
+
+    // ── OPCIONAL: generar combinaciones NEC-SE-CG (Módulo 2) ──
+    const necBtn = combosFolder.addButton({ title: "⚡ Generar NEC-SE-CG" });
+    try { necBtn.element?.classList?.add("hk-combo-add"); } catch {}
+    necBtn.on("click", () => {
+      const gen = generateNecSeCgCombos(loadCases.val, loadPatterns.val);
+      if (gen.length === 0) {
+        try { necBtn.title = "⚠️ Define cases (D, L, E...) primero"; setTimeout(() => { necBtn.title = "⚡ Generar NEC-SE-CG"; }, 2500); } catch {}
+        return;
+      }
+      loadCombinations.val = mergeCombos(loadCombinations.val, gen);
       rebuildCombos();
       persist();
     });

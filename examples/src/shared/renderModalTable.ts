@@ -30,6 +30,32 @@ export function createModalPanel() {
     min-width: 400px; min-height: 200px;
   `;
 
+  // ── Drag por la cabecera (#modal-header) — el panel tapaba el modelo y no se
+  //    podía mover. La cabecera se re-crea en cada render(), por eso el listener
+  //    vive en el `div` persistente y detecta el header con closest(). ──
+  {
+    let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+    div.addEventListener("mousedown", (e) => {
+      const t = e.target as HTMLElement;
+      if (!t.closest("#modal-header")) return;   // solo arrastra por la cabecera
+      if (t.closest("button")) return;            // no sobre los botones (copiar/minimizar)
+      dragging = true;
+      const r = div.getBoundingClientRect();
+      sx = e.clientX; sy = e.clientY; ox = r.left; oy = r.top;
+      div.style.bottom = "auto"; div.style.right = "auto";
+      div.style.left = `${r.left}px`; div.style.top = `${r.top}px`;
+      e.preventDefault();
+    });
+    document.addEventListener("mousemove", (e) => {
+      if (!dragging) return;
+      let nl = ox + (e.clientX - sx), nt = oy + (e.clientY - sy);
+      nl = Math.max(-div.offsetWidth + 80, Math.min(window.innerWidth - 80, nl));
+      nt = Math.max(0, Math.min(window.innerHeight - 30, nt));
+      div.style.left = `${nl}px`; div.style.top = `${nt}px`;
+    });
+    document.addEventListener("mouseup", () => { dragging = false; });
+  }
+
   let minimized = false;
   const ASCE_THRESHOLD = 0.90; // 90 % per ASCE 7-22 §12.9.1.1
 
@@ -96,8 +122,8 @@ export function createModalPanel() {
 </div>`;
     })();
 
-    let html = `<div id="modal-header" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px;">
-  <b style="color:#ff0">⚡ MODAL ANALYSIS — ${config.title}</b>
+    let html = `<div id="modal-header" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; cursor:move; user-select:none;" title="Arrastra para mover">
+  <b style="color:#ff0">✥ ⚡ MODAL ANALYSIS — ${config.title}</b>
   <div style="display:flex; gap:4px; margin-left:12px;">
     <button id="modal-copy" style="padding:2px 8px; font-size:10px; cursor:pointer;
       background:#2d6a4f; color:#fff; border:1px solid #40916c; border-radius:3px;" title="Copiar tabla">📋</button>

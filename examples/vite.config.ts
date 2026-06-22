@@ -174,6 +174,12 @@ export default defineConfig({
         "bulbo-presiones-suelo": "src/bulbo-presiones-suelo/index.html",
         // ── Mesa de torsión: validación contra ETABS 19 (Gabriela/Seproinca 2020) ──
         "mesa-torsion": "src/mesa-torsion/index.html",
+        // ── Módulo 1 NEC: Espectro de diseño NEC-SE-DS (peligro sísmico) ──
+        "espectro-nec": "src/espectro-nec/index.html",
+        // ── Módulo 3 NEC: Cortante basal y distribución de fuerzas sísmicas ──
+        "cortante-basal": "src/cortante-basal/index.html",
+        // ── Edificio pórtico paramétrico (frame-only) con carga lateral NEC ──
+        "edificio-frame-nec": "src/edificio-frame-nec/index.html",
       },
     },
   },

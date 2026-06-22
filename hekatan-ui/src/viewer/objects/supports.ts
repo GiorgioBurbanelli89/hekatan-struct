@@ -46,10 +46,12 @@ export function supports(
   // = ~1.25% del extent del modelo. Para spanTotal=12m → cubo ~0.15m,
   // marcador discreto que NO domina la vista.
   const computeSize = () => 0.08 * computeExtent();
-  // El display scale puede ser <1 (ej. -3 → 0.333) y dejaría los apoyos
-  // invisiblemente chicos. Los apoyos son marcadores IMPORTANTES → nunca se
-  // encogen por debajo de 1× (sí pueden crecer si el usuario sube el slider).
-  const effScale = () => Math.max(derivedDisplayScale.rawVal, 1);
+  // El display scale escala TODOS los marcadores por igual, incluidos los
+  // apoyos. Antes había un piso Math.max(...,1) que los congelaba en 1× para
+  // cualquier escala <1 (mitad inferior del slider) → el usuario veía un
+  // "punto que no cambia" al bajar la escala. Ahora escalan proporcional al
+  // slider como nodos, cargas y etiquetas, manteniendo el control coherente.
+  const effScale = () => derivedDisplayScale.rawVal;
 
   // on settings.support & deformedShape, and model clear and create visuals
   van.derive(() => {
