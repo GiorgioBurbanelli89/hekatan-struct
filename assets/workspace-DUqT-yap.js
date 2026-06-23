@@ -1689,7 +1689,7 @@ Promise.all([
   window.__hekatanDownloadF2kCim = is;
   (() => {
     const e = "ontouchstart" in window || navigator.maxTouchPoints > 0, t = document.createElement("div");
-    t.id = "hk-dropdbg", t.style.cssText = "position:fixed;left:4px;bottom:4px;z-index:2147483647;max-width:96vw;max-height:40vh;overflow:auto;background:rgba(0,0,0,0.9);color:#0f0;font:10px/1.3 monospace;padding:4px 6px;border:1px solid #0f0;border-radius:4px;white-space:pre-wrap;";
+    t.id = "hk-dropdbg", t.style.cssText = "position:fixed;top:2px;left:50%;transform:translateX(-50%);z-index:2147483647;width:auto;max-width:70vw;max-height:30vh;overflow:auto;background:rgba(0,0,0,0.9);color:#0f0;font:10px/1.3 monospace;padding:3px 6px;border:1px solid #0f0;border-radius:4px;white-space:pre-wrap;pointer-events:none;";
     const a = [];
     let s = 0;
     const o = (d) => {
