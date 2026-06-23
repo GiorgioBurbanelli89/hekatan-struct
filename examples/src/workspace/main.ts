@@ -5363,7 +5363,33 @@ const viewerElm = getViewer({
   // Mantenemos el input enfocado para poder tipear comandos sin clickear,
   // EXCEPTO cuando: (a) hay otro input/textarea activo (Tweakpane), o (b) estás
   // dibujando (ahí manda la cajita de coordenadas #hk-rubber-label).
+  // ── Infra para NO cerrar los <select> nativos (Shell/Frame results) ──
+  // Ningún focus-stealer roba el foco mientras un <select> esté (o haya estado
+  // en los últimos 4s) enfocado, ni durante la interacción con Tweakpane. Cierra
+  // la carrera que en producción (minificado) cerraba el dropdown al instante.
+  let tpInteractUntil = 0, selectFocusUntil = 0;
+  const isTouch = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+  const inTweakpane = (el: HTMLElement | null): boolean => {
+    for (let n: HTMLElement | null = el; n; n = n.parentElement) {
+      if (n.tagName === "SELECT") return true;
+      const c = n.className;
+      if (typeof c === "string" && /(^|\s)tp-/.test(c)) return true;
+    }
+    return false;
+  };
+  document.addEventListener("pointerdown", (e) => {
+    if (inTweakpane(e.target as HTMLElement | null)) tpInteractUntil = Date.now() + 5000;
+  }, true);
+  document.addEventListener("focusin", (e) => {
+    if ((e.target as HTMLElement | null)?.tagName === "SELECT") selectFocusUntil = Date.now() + 4000;
+  }, true);
+  const stealBlocked = (): boolean => {
+    if (Date.now() < tpInteractUntil || Date.now() < selectFocusUntil) return true;
+    const a = document.activeElement as HTMLElement | null;
+    return !!(a && a.tagName === "SELECT");
+  };
   const keepCmdFocus = () => {
+    if (stealBlocked()) return;
     const ae = document.activeElement as HTMLElement | null;
     // SOLO re-enfocar si NADA tiene el foco (body/null). Si hay un select
     // (ej. dropdown "Categoría"), botón, slider o cualquier control de
@@ -5374,13 +5400,15 @@ const viewerElm = getViewer({
     if (rl && rl.style.display === "block") return; // dibujando → coords manda
     try { input.focus({ preventScroll: true }); } catch {}
   };
-  input.addEventListener("blur", () => setTimeout(keepCmdFocus, 60));
-  setTimeout(keepCmdFocus, 500);                       // foco inicial
-  // Re-tomar el foco SOLO si no hay nada enfocado (body) — no roba a nadie.
-  setInterval(() => {
-    const ae = document.activeElement;
-    if (!ae || ae === document.body) keepCmdFocus();
-  }, 900);
+  if (!isTouch) {
+    input.addEventListener("blur", () => setTimeout(keepCmdFocus, 60));
+    setTimeout(keepCmdFocus, 500);                       // foco inicial
+    // Re-tomar el foco SOLO si no hay nada enfocado (body) — no roba a nadie.
+    setInterval(() => {
+      const ae = document.activeElement;
+      if (!ae || ae === document.body) keepCmdFocus();
+    }, 900);
+  }
 
   const flash = (msg: string, ok: boolean) => {
     label.textContent = msg;
@@ -5520,13 +5548,18 @@ const viewerElm = getViewer({
       dyn.style.top = Math.max(4, y) + "px";
     }
     dyn.style.display = "flex";
+    // CRÍTICO: si interactuás con un <select> de Tweakpane (Shell/Frame results),
+    // NO robar el foco — sino el pointermove/pointerleave cierra la lista nativa.
+    if (stealBlocked()) return;
     const ae = document.activeElement as HTMLElement | null;
+    if (ae && ae.tagName === "BUTTON") return;
     if (ae !== dynInput && !(ae && ae.tagName === "INPUT" && ae !== input)) {
       try { dynInput.focus({ preventScroll: true }); } catch {}
     }
   });
   viewerElm.addEventListener("pointerleave", () => {
     dyn.style.display = "none";
+    if (stealBlocked()) return;   // select abierto → NO robar foco (cerraba el popup)
     try { input.focus({ preventScroll: true }); } catch {}
   });
 
@@ -5536,7 +5569,8 @@ const viewerElm = getViewer({
     // Si YA hay un input/textarea enfocado (incluidos nuestros 2 inputs de
     // comando), NO interceptar → la tecla se agrega normal al input enfocado.
     // Sólo arrancamos la palabra cuando NADA está enfocado.
-    if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")) return;
+    if (ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.tagName === "SELECT")) return;
+    if (stealBlocked()) return;   // tocando un select de Tweakpane → no interceptar
     if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
     if (/^[a-zA-Z]$/.test(ev.key)) {
       const target = (dyn.style.display !== "none") ? dynInput : input;
