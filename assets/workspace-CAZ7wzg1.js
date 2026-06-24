@@ -5227,13 +5227,16 @@ High-level generators:
     return t;
   }
   const Po = {
-    defaultShellResult: "displacementZ",
+    defaultShellResult: "vonMises",
     availableShellResults: [
+      "vonMises",
+      "membraneXX",
+      "membraneYY",
+      "membraneXY",
       "displacementZ",
       "bendingXX",
       "bendingYY",
-      "bendingXY",
-      "vonMises"
+      "bendingXY"
     ]
   }, lr = {
     id: "test-m-portico",
