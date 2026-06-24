@@ -1,0 +1,11 @@
+import "./modulepreload-polyfill-B5Qt9EMX.js";
+import { c as r } from "./cadDraw-DBIkLn52.js";
+import { r as m } from "./runExampleStandalone-Bo0f2DNc.js";
+import "./preload-helper-DrUBW0xl.js";
+import "./theme-Cr2LU0HL.js";
+import "./tweakpane-BXg6ZhiP.js";
+import "./getViewer-47A703vK.js";
+import "./Text-BbGxMO8j.js";
+import "./styles-ChEEn6BP.js";
+import "./units-VZqt9QNE.js";
+m(r);
