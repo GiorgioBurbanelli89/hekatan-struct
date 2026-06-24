@@ -1,5 +1,5 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { e as o, __tla as __tla_0 } from "./edificioMuros-CBbWasQb.js";
+import { e as o, __tla as __tla_0 } from "./edificioMuros-CsvVmuUk.js";
 import { r, __tla as __tla_1 } from "./runExampleStandalone-Bo0f2DNc.js";
 import { __tla as __tla_2 } from "./edificioAporticado-C5S53gxc.js";
 import "./analyze-CWooBpVN.js";

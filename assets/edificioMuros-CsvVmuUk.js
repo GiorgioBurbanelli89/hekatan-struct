@@ -1,5 +1,5 @@
-import { e as l, __tla as __tla_0 } from "./edificioAporticado-C5S53gxc.js";
-let o;
+import { e as i, __tla as __tla_0 } from "./edificioAporticado-C5S53gxc.js";
+let d;
 let __tla = Promise.all([
   (() => {
     try {
@@ -8,7 +8,7 @@ let __tla = Promise.all([
     }
   })()
 ]).then(async () => {
-  const a = l.params, e = {
+  const a = i.params, e = {
     ...a
   };
   e.matCol = {
@@ -17,10 +17,6 @@ let __tla = Promise.all([
   };
   e.matViga = {
     ...a.matViga,
-    default: 1
-  };
-  e.colShape = {
-    ...a.colShape,
     default: 0
   };
   e.slabOn = {
@@ -29,11 +25,11 @@ let __tla = Promise.all([
   };
   e.bracesMode = {
     ...a.bracesMode,
-    default: 2
+    default: 1
   };
   e.slabT = {
     ...a.slabT,
-    default: 0.12
+    default: 0.15
   };
   e.fcConcr = {
     ...a.fcConcr,
@@ -41,28 +37,36 @@ let __tla = Promise.all([
   };
   e.nPisos = {
     ...a.nPisos,
-    default: 10
+    default: 6
   };
-  o = {
-    id: "edificio-dual",
-    name: "Edificio Dual (Mixto + Muros + Diagonales)",
+  e.diafragmaRigido = {
+    ...a.diafragmaRigido,
+    default: 1
+  };
+  d = {
+    id: "edificio-muros",
+    name: "Edificio con Muros de Corte (Hormig\xF3n)",
     category: "Edificios",
-    defaultShellResult: "bendingXX",
+    defaultShellResult: "vonMises",
     availableShellResults: [
+      "vonMises",
+      "membraneXX",
+      "membraneYY",
+      "membraneXY",
       "bendingXX",
       "bendingYY",
-      "displacementZ",
-      "vonMises"
+      "bendingXY",
+      "displacementZ"
     ],
     hasModal: true,
     params: e,
-    build: l.build,
-    runModal: l.runModal,
-    computedLabels: l.computedLabels,
-    dynamicParams: l.dynamicParams
+    build: i.build,
+    runModal: i.runModal,
+    computedLabels: i.computedLabels,
+    dynamicParams: i.dynamicParams
   };
 });
 export {
   __tla,
-  o as e
+  d as e
 };

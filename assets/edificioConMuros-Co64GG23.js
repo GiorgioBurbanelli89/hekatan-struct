@@ -31,13 +31,16 @@ let __tla = Promise.all([
     id: "edificio-con-muros",
     name: "Edificio con Muros de corte",
     category: "Edificios",
-    defaultShellResult: "bendingXX",
+    defaultShellResult: "vonMises",
     availableShellResults: [
+      "vonMises",
+      "membraneXX",
+      "membraneYY",
+      "membraneXY",
       "bendingXX",
       "bendingYY",
       "bendingXY",
-      "displacementZ",
-      "vonMises"
+      "displacementZ"
     ],
     hasModal: true,
     params: a,
