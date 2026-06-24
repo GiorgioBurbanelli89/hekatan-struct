@@ -31662,7 +31662,7 @@ Abrilo en SAFE 20.x: File \u2192 Import \u2192 SAFE Text File (.f2k)`), console.
     const t = ct.querySelectorAll("select"), n = Array.from(t).find((s) => Array.from(s.options).some((a) => a.value === "bendingXX"));
     if (!n) return;
     for (const s of Array.from(n.options)) {
-      const a = s.value === "none" || !e || e.includes(s.value);
+      const a = s.value === "none" ? true : s.value === "pressure" ? (e == null ? void 0 : e.includes("pressure")) ?? false : !e || e.includes(s.value);
       s.hidden = !a, s.disabled = !a;
     }
     const o = ct.__settings;
