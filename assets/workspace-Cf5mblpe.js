@@ -4426,20 +4426,17 @@ High-level generators:
       }
     };
   }
-  const Yi = (e) => new Promise((t) => setTimeout(t, e));
-  function Xi(e) {
+  const mo = (e) => new Promise((t) => setTimeout(t, e));
+  function Yi(e) {
     return e.__ctx;
   }
-  function mo() {
-    return new Promise((e) => requestAnimationFrame(() => requestAnimationFrame(() => e())));
-  }
-  function Wi(e, t) {
+  function Xi(e, t) {
     const o = Math.min(1, t / e.width), s = Math.max(2, Math.round(e.width * o)), a = Math.max(2, Math.round(e.height * o)), n = document.createElement("canvas");
     n.width = s, n.height = a;
     const r = n.getContext("2d");
     return r.drawImage(e, 0, 0, s, a), r.getImageData(0, 0, s, a);
   }
-  function Zi(e, t) {
+  function Wi(e, t) {
     if (e.length === 0) return [
       [
         0,
@@ -4490,7 +4487,7 @@ High-level generators:
       ];
     });
   }
-  function Ji(e) {
+  function Zi(e) {
     const t = /* @__PURE__ */ new Map();
     return (o, s, a) => {
       const n = o << 16 | s << 8 | a, r = t.get(n);
@@ -4503,7 +4500,7 @@ High-level generators:
       return t.set(n, i), i;
     };
   }
-  class Qi {
+  class Ji {
     constructor() {
       this.bytes = [];
     }
@@ -4517,7 +4514,7 @@ High-level generators:
       for (let o = 0; o < t.length; o++) this.byte(t.charCodeAt(o));
     }
   }
-  function er(e, t, o) {
+  function Qi(e, t, o) {
     const s = 1 << t, a = s + 1;
     let n = t + 1, r = a + 1, i = /* @__PURE__ */ new Map();
     const l = [];
@@ -4544,8 +4541,8 @@ High-level generators:
     }
     e.byte(0);
   }
-  function tr(e, t, o, s, a) {
-    const n = new Qi();
+  function er(e, t, o, s, a) {
+    const n = new Ji();
     n.str("GIF89a"), n.word(o), n.word(s);
     let r = 1;
     for (; 1 << r < t.length; ) r++;
@@ -4561,18 +4558,18 @@ High-level generators:
     }
     n.byte(33), n.byte(255), n.byte(11), n.str("NETSCAPE2.0"), n.byte(3), n.byte(1), n.word(0), n.byte(0);
     const l = Math.max(2, r);
-    for (const c of e) n.byte(33), n.byte(249), n.byte(4), n.byte(0), n.word(a), n.byte(0), n.byte(0), n.byte(44), n.word(0), n.word(0), n.word(o), n.word(s), n.byte(0), n.byte(l), er(n, l, c);
+    for (const c of e) n.byte(33), n.byte(249), n.byte(4), n.byte(0), n.word(a), n.byte(0), n.byte(0), n.byte(44), n.word(0), n.word(0), n.word(o), n.word(s), n.byte(0), n.byte(l), Qi(n, l, c);
     return n.byte(59), new Blob([
       new Uint8Array(n.bytes)
     ], {
       type: "image/gif"
     });
   }
-  async function nr(e) {
+  async function tr(e) {
     var _a2, _b, _c;
     const { mesh: t, viewerElm: o, results: s, mode: a } = e, n = e.scalePercent ?? 6, r = e.frames ?? 24, i = Math.max(2, Math.round((e.delayMs ?? 60) / 10)), l = e.maxWidth ?? 560, c = (_a2 = s == null ? void 0 : s.modeShapes) == null ? void 0 : _a2[a];
     if (!c || !c.length) return console.warn("[GIF] sin modeShape para modo", a), null;
-    const m = Xi(o), x = (_b = m == null ? void 0 : m.renderer) == null ? void 0 : _b.domElement;
+    const m = Yi(o), x = (_b = m == null ? void 0 : m.renderer) == null ? void 0 : _b.domElement;
     if (!x || !(m == null ? void 0 : m.render)) return console.warn("[GIF] sin canvas/render"), null;
     console.log("[GIF] arrancando captura:", e.frames ?? 24, "frames, canvas", x.width, "x", x.height);
     const d = t.nodes.rawVal.map((G) => [
@@ -4597,11 +4594,11 @@ High-level generators:
           ue[2] + (c[se * 6 + 2] || 0) * K
         ];
       }
-      t.nodes.val = V, await mo(), m.render(), z.push(Wi(x, l)), (_c = e.onProgress) == null ? void 0 : _c.call(e, G + 1, r), await Yi(0);
+      t.nodes.val = V, await mo(35), m.render(), z.push(Xi(x, l)), (_c = e.onProgress) == null ? void 0 : _c.call(e, G + 1, r);
     }
     t.nodes.val = d.map((G) => [
       ...G
-    ]), await mo(), m.render();
+    ]), await mo(35), m.render();
     const I = z[0].width, R = z[0].height, D = [], H = Math.max(1, Math.floor(I * R * r / 12e3));
     for (const G of z) {
       const K = G.data;
@@ -4611,14 +4608,14 @@ High-level generators:
         K[V + 2]
       ]);
     }
-    const ce = Zi(D, 256), ie = Ji(ce), $ = z.map((G) => {
+    const ce = Wi(D, 256), ie = Zi(ce), $ = z.map((G) => {
       const K = G.data, V = new Uint8Array(I * R);
       for (let se = 0, ue = 0; se < K.length; se += 4, ue++) V[ue] = ie(K[se], K[se + 1], K[se + 2]);
       return V;
-    }), O = tr($, ce, I, R, i), ae = URL.createObjectURL(O), U = document.createElement("a");
+    }), O = er($, ce, I, R, i), ae = URL.createObjectURL(O), U = document.createElement("a");
     return U.href = ae, U.download = e.filename ?? "modo_vibracion.gif", document.body.appendChild(U), U.click(), U.remove(), setTimeout(() => URL.revokeObjectURL(ae), 4e3), O;
   }
-  const or = {
+  const nr = {
     id: "csi-importer",
     name: "Importar CSI (F2K/E2K/S2K)",
     category: "Importar",
@@ -4718,7 +4715,7 @@ High-level generators:
         poissonsRatios: /* @__PURE__ */ new Map()
       }, t.objects3D.val = n, console.log(`[CSI Importer] Renderizadas ${o.zapatas.length} zapatas + ${((_b = o.vigasAmarre) == null ? void 0 : _b.length) ?? 0} vigas.`);
     }
-  }, ar = {
+  }, or = {
     id: "drilling-dof",
     name: "Drilling DOF \u2014 2 muros + viga de acople",
     category: "test",
@@ -4916,8 +4913,8 @@ High-level generators:
       }
       t.objects3D.val = [];
     }
-  }, $o = 2534564, Lo = 0.2, sr = 2.40277, ir = $o / (2 * (1 + Lo)), uo = 6, rr = 8;
-  function lr(e) {
+  }, $o = 2534564, Lo = 0.2, ar = 2.40277, sr = $o / (2 * (1 + Lo)), uo = 6, ir = 8;
+  function rr(e) {
     const t = e.nbx | 0, o = e.nby | 0, s = e.nFloors | 0, a = Array.from({
       length: t
     }, (l, c) => e[`svx_${c + 1}`] ?? 5), n = Array.from({
@@ -4940,7 +4937,7 @@ High-level generators:
     };
   }
   function Hn(e, t, o) {
-    const { bCol: s, bBeam: a, hBeam: n, tSlab: r, tWall: i, ms: l, q: c } = e, { nbx: m, nby: x, nF: d, xC: f, yC: k, zC: h } = lr(e);
+    const { bCol: s, bBeam: a, hBeam: n, tSlab: r, tWall: i, ms: l, q: c } = e, { nbx: m, nby: x, nF: d, xC: f, yC: k, zC: h } = rr(e);
     f[m], k[x];
     const w = [], u = /* @__PURE__ */ new Map(), M = (J, ee, Y) => {
       const fe = `${J.toFixed(3)},${ee.toFixed(3)},${Y.toFixed(3)}`;
@@ -5002,7 +4999,7 @@ High-level generators:
     }
     const v = s * s, z = s ** 4 / 12, I = 0.141 * s ** 4, R = a * n, D = a * n ** 3 / 12, H = n * a ** 3 / 12, ce = a * n ** 3 / 12 + n * a ** 3 / 12, ie = () => /* @__PURE__ */ new Map(), $ = ie(), O = ie(), ae = ie(), U = ie(), G = ie(), K = ie(), V = ie(), se = ie(), ue = ie(), ge = ie(), qe = ie();
     p.forEach((J, ee) => {
-      $.set(ee, $o), O.set(ee, Lo), U.set(ee, sr), ae.set(ee, ir), J === "slab" || J === "wall" ? (ue.set(ee, J === "wall" ? i : r), ge.set(ee, 1), qe.set(ee, 2)) : J === "col" ? (G.set(ee, v), K.set(ee, z), V.set(ee, z), se.set(ee, I)) : (G.set(ee, R), K.set(ee, D), V.set(ee, H), se.set(ee, ce));
+      $.set(ee, $o), O.set(ee, Lo), U.set(ee, ar), ae.set(ee, sr), J === "slab" || J === "wall" ? (ue.set(ee, J === "wall" ? i : r), ge.set(ee, 1), qe.set(ee, 2)) : J === "col" ? (G.set(ee, v), K.set(ee, z), V.set(ee, z), se.set(ee, I)) : (G.set(ee, R), K.set(ee, D), V.set(ee, H), se.set(ee, ce));
     });
     const Ge = /* @__PURE__ */ new Map();
     w.forEach((J, ee) => {
@@ -5135,7 +5132,7 @@ High-level generators:
     nFloors: {
       default: 4,
       min: 1,
-      max: rr,
+      max: ir,
       step: 1,
       label: "N\xB0 pisos",
       folder: "Geometr\xEDa"
@@ -5236,7 +5233,7 @@ High-level generators:
       "bendingXY",
       "vonMises"
     ]
-  }, cr = {
+  }, lr = {
     id: "test-m-portico",
     name: "\u{1F393} Test M \u2014 Solo p\xF3rticos (sin losa)",
     category: "\u{1F393} Test M",
@@ -5254,7 +5251,7 @@ High-level generators:
     runModal(e, t, o) {
       Un(t, o, "Test M \u2014 Solo p\xF3rticos");
     }
-  }, dr = {
+  }, cr = {
     id: "test-m-losa",
     name: "\u{1F393} Test M \u2014 Solo con losa (p\xF3rtico + losa)",
     category: "\u{1F393} Test M",
@@ -5273,7 +5270,7 @@ High-level generators:
     runModal(e, t, o) {
       Un(t, o, "Test M \u2014 P\xF3rtico + losa");
     }
-  }, pr = {
+  }, dr = {
     id: "test-m-dual",
     name: "\u{1F393} Test M \u2014 Dual (p\xF3rtico + losa + muros)",
     category: "\u{1F393} Test M",
@@ -5302,14 +5299,15 @@ High-level generators:
       standaloneUrl: `../${e}/`
     };
   }
-  const mr = Fe("1d-mesh", "Hekatan \u2013 1D Mesh", "Legacy \xB7 FEM b\xE1sico"), ur = Fe("2d-mesh", "Hekatan \u2013 2D Mesh", "Legacy \xB7 FEM b\xE1sico"), fr = Fe("3d-structure", "Hekatan \u2013 3D Structure", "Legacy \xB7 FEM b\xE1sico"), hr = Fe("axial-bar", "Hekatan \u2013 Axial Bar", "Legacy \xB7 Frames"), gr = Fe("truss", "Hekatan \u2013 Truss", "Legacy \xB7 Frames"), xr = Fe("advanced-truss", "Hekatan \u2013 Advanced Truss", "Legacy \xB7 Frames"), To = Fe("beams", "Paz 6.3 Space Frame (validaci\xF3n 4 solvers)", "\u{1F3C1} Benchmarks \xB7 1\uFE0F\u20E3 Frames \xB7 \u{1F3D7} Vigas \xB7 \u{1F3AF} n DOF Sistemas", true), yr = Fe("building", "Hekatan \u2013 Building (upstream)", "Legacy \xB7 Edificios"), br = Fe("plate", "Hekatan \u2013 Plate (legacy)", "Legacy \xB7 Placas"), wr = Fe("plate-q4", "Hekatan \u2013 Plate Q4 Studio", "Legacy \xB7 Placas"), vr = Fe("color-map", "Hekatan \u2013 Color Map demo", "Legacy \xB7 Visualizaci\xF3n"), kr = Fe("curves", "Hekatan \u2013 Curves demo", "Legacy \xB7 Visualizaci\xF3n"), _r = Fe("drawing", "Hekatan \u2013 Drawing canvas", "Legacy \xB7 Visualizaci\xF3n"), Mr = Fe("tables", "Hekatan \u2013 Tables demo", "Legacy \xB7 Visualizaci\xF3n"), Sr = Fe("cad-editor", "Hekatan \u2013 CAD Editor", "Legacy \xB7 Editores"), Er = Fe("calc-editor", "Hekatan \u2013 Calc Editor", "Legacy \xB7 Editores"), Cr = Fe("slab-designer", "Hekatan \u2013 Slab Designer", "Legacy \xB7 Editores"), Fr = Fe("fem-explained", "Hekatan \u2013 FEM Explained", "Legacy \xB7 Educativo"), Ir = Fe("report", "Hekatan \u2013 Report (Calcpad)", "Legacy \xB7 Educativo"), $r = Fe("gateway-arch", "Gateway Arch", "Estructuras emblem\xE1ticas"), Lr = Fe("cable-stayed-bridge", "Puente Atirantado", "Estructuras emblem\xE1ticas"), Pr = Fe("twisted-tower", "Torre Retorcida", "Estructuras emblem\xE1ticas"), Tr = Fe("burj-khalifa", "Burj Khalifa style", "Estructuras emblem\xE1ticas"), zr = Fe("sydney-opera", "Sydney Opera House", "Estructuras emblem\xE1ticas"), Br = Fe("diagrid", "Diagrid (Gherkin) style", "Estructuras emblem\xE1ticas"), Ar = Fe("pergola", "P\xE9rgola de acero", "Estructuras emblem\xE1ticas"), Dr = Fe("shear-wall-q4", "Muro de Corte Q4", "Demos FEM Q4"), Or = Fe("cantilever-beam-q4", "Viga Cantilever Q4", "Demos FEM Q4"), Rr = Fe("placa-cantilever-q4", "Placa Cantilever XY Q4", "Demos FEM Q4"), jr = Fe("slope-stability", "Estabilidad de Talud (SRM)", "Geot\xE9cnico"), Nr = Fe("placa-base-h", "Placa Base + Columna H (CBFEM)", "Conexiones"), Vr = Fe("bolt-hole-detail", "Detalle Perno + Orificio (Kirsch)", "Conexiones"), qr = Fe("conexion-diafragma-cft", "Conexi\xF3n Viga-Columna CFT con Diafragma (Cervantes)", "Conexiones"), Hr = Fe("placa-base-hueca", "Placa Base + Columna HSS Hueca (acero)", "Conexiones"), Ur = Fe("placa-base-cft", "Placa Base + Columna CFT (rellena de concreto)", "Conexiones"), Gr = Fe("columna-cft-h8", "Columna CFT con s\xF3lidos H8", "Columnas FEM 3D"), Kr = Fe("viga-doble-t", "Viga Doble-T (perfil W)", "Vigas / Perfiles"), Yr = Fe("tablero-puente", "Tablero Puente (3 vigas+losa, test Solar)", "Puentes"), zo = Fe("solid-cube-fem", "Cubo S\xF3lido H8 (validaci\xF3n CalculiX)", "\u{1F3C1} Benchmarks \xB7 3\uFE0F\u20E3 S\xF3lidos", true), Bo = Fe("bulbo-presiones-suelo", "Bulbo de Presiones \u2014 Serquen SF-70", "\u{1F3C1} Benchmarks \xB7 4\uFE0F\u20E3 Combinados", true), Xr = [
+  const pr = Fe("1d-mesh", "Hekatan \u2013 1D Mesh", "Legacy \xB7 FEM b\xE1sico"), mr = Fe("2d-mesh", "Hekatan \u2013 2D Mesh", "Legacy \xB7 FEM b\xE1sico"), ur = Fe("3d-structure", "Hekatan \u2013 3D Structure", "Legacy \xB7 FEM b\xE1sico"), fr = Fe("axial-bar", "Hekatan \u2013 Axial Bar", "Legacy \xB7 Frames"), hr = Fe("truss", "Hekatan \u2013 Truss", "Legacy \xB7 Frames"), gr = Fe("advanced-truss", "Hekatan \u2013 Advanced Truss", "Legacy \xB7 Frames"), To = Fe("beams", "Paz 6.3 Space Frame (validaci\xF3n 4 solvers)", "\u{1F3C1} Benchmarks \xB7 1\uFE0F\u20E3 Frames \xB7 \u{1F3D7} Vigas \xB7 \u{1F3AF} n DOF Sistemas", true), xr = Fe("building", "Hekatan \u2013 Building (upstream)", "Legacy \xB7 Edificios"), yr = Fe("plate", "Hekatan \u2013 Plate (legacy)", "Legacy \xB7 Placas"), br = Fe("plate-q4", "Hekatan \u2013 Plate Q4 Studio", "Legacy \xB7 Placas"), wr = Fe("color-map", "Hekatan \u2013 Color Map demo", "Legacy \xB7 Visualizaci\xF3n"), vr = Fe("curves", "Hekatan \u2013 Curves demo", "Legacy \xB7 Visualizaci\xF3n"), kr = Fe("drawing", "Hekatan \u2013 Drawing canvas", "Legacy \xB7 Visualizaci\xF3n"), _r = Fe("tables", "Hekatan \u2013 Tables demo", "Legacy \xB7 Visualizaci\xF3n"), Mr = Fe("cad-editor", "Hekatan \u2013 CAD Editor", "Legacy \xB7 Editores"), Sr = Fe("calc-editor", "Hekatan \u2013 Calc Editor", "Legacy \xB7 Editores"), Er = Fe("slab-designer", "Hekatan \u2013 Slab Designer", "Legacy \xB7 Editores"), Cr = Fe("fem-explained", "Hekatan \u2013 FEM Explained", "Legacy \xB7 Educativo"), Fr = Fe("report", "Hekatan \u2013 Report (Calcpad)", "Legacy \xB7 Educativo"), Ir = Fe("gateway-arch", "Gateway Arch", "Estructuras emblem\xE1ticas"), $r = Fe("cable-stayed-bridge", "Puente Atirantado", "Estructuras emblem\xE1ticas"), Lr = Fe("twisted-tower", "Torre Retorcida", "Estructuras emblem\xE1ticas"), Pr = Fe("burj-khalifa", "Burj Khalifa style", "Estructuras emblem\xE1ticas"), Tr = Fe("sydney-opera", "Sydney Opera House", "Estructuras emblem\xE1ticas"), zr = Fe("diagrid", "Diagrid (Gherkin) style", "Estructuras emblem\xE1ticas"), Br = Fe("pergola", "P\xE9rgola de acero", "Estructuras emblem\xE1ticas"), Ar = Fe("shear-wall-q4", "Muro de Corte Q4", "Demos FEM Q4"), Dr = Fe("cantilever-beam-q4", "Viga Cantilever Q4", "Demos FEM Q4"), Or = Fe("placa-cantilever-q4", "Placa Cantilever XY Q4", "Demos FEM Q4"), Rr = Fe("slope-stability", "Estabilidad de Talud (SRM)", "Geot\xE9cnico"), jr = Fe("placa-base-h", "Placa Base + Columna H (CBFEM)", "Conexiones"), Nr = Fe("bolt-hole-detail", "Detalle Perno + Orificio (Kirsch)", "Conexiones"), Vr = Fe("conexion-diafragma-cft", "Conexi\xF3n Viga-Columna CFT con Diafragma (Cervantes)", "Conexiones"), qr = Fe("placa-base-hueca", "Placa Base + Columna HSS Hueca (acero)", "Conexiones"), Hr = Fe("placa-base-cft", "Placa Base + Columna CFT (rellena de concreto)", "Conexiones"), Ur = Fe("columna-cft-h8", "Columna CFT con s\xF3lidos H8", "Columnas FEM 3D"), Gr = Fe("viga-doble-t", "Viga Doble-T (perfil W)", "Vigas / Perfiles"), Kr = Fe("tablero-puente", "Tablero Puente (3 vigas+losa, test Solar)", "Puentes"), zo = Fe("solid-cube-fem", "Cubo S\xF3lido H8 (validaci\xF3n CalculiX)", "\u{1F3C1} Benchmarks \xB7 3\uFE0F\u20E3 S\xF3lidos", true), Bo = Fe("bulbo-presiones-suelo", "Bulbo de Presiones \u2014 Serquen SF-70", "\u{1F3C1} Benchmarks \xB7 4\uFE0F\u20E3 Combinados", true), Yr = [
+    pr,
     mr,
     ur,
     fr,
     hr,
     gr,
-    xr,
     To,
+    xr,
     yr,
     br,
     wr,
@@ -5340,10 +5338,9 @@ High-level generators:
     Ur,
     Gr,
     Kr,
-    Yr,
     zo,
     Bo
-  ], Wr = [
+  ], Xr = [
     {
       name: "Dead",
       type: "Dead",
@@ -5356,7 +5353,7 @@ High-level generators:
       selfWeightMultiplier: 0,
       autoLateralLoad: "None"
     }
-  ], Zr = [
+  ], Wr = [
     {
       name: "Dead",
       type: "Linear Static",
@@ -5385,7 +5382,7 @@ High-level generators:
       initialCondition: "Zero",
       maxModes: 12
     }
-  ], Jr = [
+  ], Zr = [
     {
       name: "1.4D",
       type: "Linear Add",
@@ -5411,9 +5408,9 @@ High-level generators:
       ]
     }
   ], Ft = [
-    ar,
-    Vs,
     or,
+    Vs,
+    nr,
     ha,
     ga,
     ba,
@@ -5464,9 +5461,9 @@ High-level generators:
     xs,
     ys,
     bs,
+    lr,
     cr,
     dr,
-    pr,
     Oa,
     Ra,
     js,
@@ -5501,8 +5498,8 @@ High-level generators:
     Ya,
     Xa,
     ls,
-    ...Xr.filter((e) => e.id !== "beams" && e.id !== "solid-cube-fem" && e.id !== "bulbo-presiones-suelo")
-  ], Ao = "hk_loadPatterns_v1", Qr = {
+    ...Yr.filter((e) => e.id !== "beams" && e.id !== "solid-cube-fem" && e.id !== "bulbo-presiones-suelo")
+  ], Ao = "hk_loadPatterns_v1", Jr = {
     Dead: "Dead",
     Live: "Live",
     "Live (Roof)": "Live (Roof)",
@@ -5512,7 +5509,7 @@ High-level generators:
     Rain: "Rain",
     Temperature: "Temperature",
     Other: "Other"
-  }, el = {
+  }, Qr = {
     "Linear Static": "Linear Static",
     "Modal - Eigen": "Modal - Eigen",
     "Modal - Ritz": "Modal - Ritz",
@@ -5521,16 +5518,16 @@ High-level generators:
     "Time History - Nonlinear": "Time History - Nonlinear",
     "Nonlinear Static (Pushover)": "Nonlinear Static (Pushover)",
     Buckling: "Buckling"
-  }, tl = {
+  }, el = {
     None: "None",
     "ASCE 7-22": "ASCE 7-22",
     "NSR-10": "NSR-10",
     "NEC-SE-DS": "NEC-SE-DS"
-  }, nl = {
+  }, tl = {
     Zero: "Zero",
     Preset: "Preset"
   };
-  function ol(e, t, o, s) {
+  function nl(e, t, o, s) {
     try {
       const a = `${Ao}_${e}`;
       localStorage.setItem(a, JSON.stringify({
@@ -5541,7 +5538,7 @@ High-level generators:
     } catch {
     }
   }
-  function al(e) {
+  function ol(e) {
     try {
       const t = `${Ao}_${e}`, o = localStorage.getItem(t);
       if (!o) return null;
@@ -5555,9 +5552,9 @@ High-level generators:
       return null;
     }
   }
-  function sl(e) {
+  function al(e) {
     const { pane: t, exampleId: o, loadPatterns: s, loadCases: a, loadCombinations: n, activeLoadCase: r, onChange: i } = e, l = () => {
-      ol(o, s.val, a.val, n.val), i == null ? void 0 : i();
+      nl(o, s.val, a.val, n.val), i == null ? void 0 : i();
     }, c = t.addFolder({
       title: "\u{1F4CB} Load Patterns",
       expanded: false
@@ -5590,7 +5587,7 @@ High-level generators:
           g.title = `\u25B8 ${b.name} (${b.type})  SW=${b.selfWeightMultiplier}`, l();
         }), g.addBinding(b, "type", {
           label: "Type",
-          options: Qr
+          options: Jr
         }).on("change", () => {
           g.title = `\u25B8 ${b.name} (${b.type})  SW=${b.selfWeightMultiplier}`, l();
         }), g.addBinding(b, "selfWeightMultiplier", {
@@ -5602,7 +5599,7 @@ High-level generators:
           g.title = `\u25B8 ${b.name} (${b.type})  SW=${b.selfWeightMultiplier}`, l();
         }), b.autoLateralLoad ?? (b.autoLateralLoad = "None"), g.addBinding(b, "autoLateralLoad", {
           label: "Auto Lateral",
-          options: tl
+          options: el
         }).on("change", () => l()), g.addButton({
           title: "\u{1F5D1} Delete pattern"
         }).on("click", () => {
@@ -5674,12 +5671,12 @@ High-level generators:
           R.title = `\u25B8 ${v.name} (${v.type})`, k(), u(), l();
         }), R.addBinding(v, "type", {
           label: "Type",
-          options: el
+          options: Qr
         }).on("change", () => {
           R.title = `\u25B8 ${v.name} (${v.type})`, l();
         }), v.initialCondition ?? (v.initialCondition = "Zero"), R.addBinding(v, "initialCondition", {
           label: "Initial Cond.",
-          options: nl
+          options: tl
         }).on("change", () => l()), v.patterns ?? (v.patterns = []);
         const D = {
           value: I
@@ -5901,7 +5898,7 @@ High-level generators:
   Ze.derive(() => {
     ra.val = en.val;
   });
-  const xt = Ze.state([]), Pt = Ze.state([]), Kn = Ze.state({}), Yn = Ze.state({}), kt = Ze.state({}), Ht = Ze.state({}), Xn = Ze.state([]), Oo = "hk_drawingPoints", Ro = "hk_drawingPolylines", jo = "hk_drawingAreas", il = () => {
+  const xt = Ze.state([]), Pt = Ze.state([]), Kn = Ze.state({}), Yn = Ze.state({}), kt = Ze.state({}), Ht = Ze.state({}), Xn = Ze.state([]), Oo = "hk_drawingPoints", Ro = "hk_drawingPolylines", jo = "hk_drawingAreas", sl = () => {
     try {
       const e = localStorage.getItem(Oo), t = localStorage.getItem(Ro), o = localStorage.getItem(jo);
       if (e && t) {
@@ -5921,7 +5918,7 @@ High-level generators:
       ],
       areas: []
     };
-  }, Wn = il(), Ut = Ze.state(Wn.pts), Gt = Ze.state(Wn.polys), sn = Ze.state(Wn.areas), No = Ze.state([]), rl = Ze.state([]);
+  }, Wn = sl(), Ut = Ze.state(Wn.pts), Gt = Ze.state(Wn.polys), sn = Ze.state(Wn.areas), No = Ze.state([]), il = Ze.state([]);
   Ze.derive(() => {
     try {
       localStorage.setItem(Oo, JSON.stringify(Ut.val)), localStorage.setItem(Ro, JSON.stringify(Gt.val)), localStorage.setItem(jo, JSON.stringify(sn.val));
@@ -5944,7 +5941,7 @@ High-level generators:
   window.__hekatanDrawingPolylines = Gt;
   window.__hekatanDrawingAreas = sn;
   window.__hekatanDrawingAuxLines = No;
-  window.__hekatanDrawingAuxPoints = rl;
+  window.__hekatanDrawingAuxPoints = il;
   window.__hekatanDrawingGridTarget = Rt;
   const yn = Ze.state([]), Dt = Ze.state([]), bn = Ze.state([]), nn = Ze.state("Dead"), pe = {
     nodes: xt,
@@ -5972,7 +5969,7 @@ High-level generators:
   let Zn = false;
   const Jn = /* @__PURE__ */ new Map();
   let wn = null;
-  function ll() {
+  function rl() {
     if (wn) for (const [e, t] of wn.entries()) try {
       const o = t.expanded;
       typeof o == "boolean" && Jn.set(e, o);
@@ -5982,15 +5979,15 @@ High-level generators:
   function Qt(e) {
     var _a2, _b, _c, _d, _e, _f;
     Q = e, Zn = false, Jn.clear();
-    const t = al(e.id);
-    if (t ? (yn.val = t.patterns, Dt.val = t.cases, bn.val = t.combinations) : (yn.val = Wr.map((n) => ({
+    const t = ol(e.id);
+    if (t ? (yn.val = t.patterns, Dt.val = t.cases, bn.val = t.combinations) : (yn.val = Xr.map((n) => ({
       ...n
-    })), Dt.val = Zr.map((n) => ({
+    })), Dt.val = Wr.map((n) => ({
       ...n,
       patterns: n.patterns ? n.patterns.map((r) => ({
         ...r
       })) : void 0
-    })), bn.val = Jr.map((n) => ({
+    })), bn.val = Zr.map((n) => ({
       ...n,
       cases: n.cases.map((r) => ({
         ...r
@@ -6235,7 +6232,7 @@ High-level generators:
   window.__hekatanManualInsertionPoint = window.__hekatanManualInsertionPoint ?? /* @__PURE__ */ new Map();
   window.__hekatanManualBeta = window.__hekatanManualBeta ?? /* @__PURE__ */ new Map();
   window.__hekatanManualLineSprings = window.__hekatanManualLineSprings ?? /* @__PURE__ */ new Map();
-  const cl = {
+  const ll = {
     A992Fy50: {
       name: "A992Fy50",
       type: "Steel",
@@ -6456,7 +6453,7 @@ High-level generators:
       grade: "Grade 270 (low-relaxation)"
     }
   }, gt = /* @__PURE__ */ new Map();
-  for (const [e, t] of Object.entries(cl)) gt.set(e, {
+  for (const [e, t] of Object.entries(ll)) gt.set(e, {
     ...t
   });
   window.__hekatanMaterials = gt;
@@ -6657,7 +6654,7 @@ High-level generators:
   };
   window.__hekatanOpenMaterialEditor = jn;
   let rt = null;
-  const dl = () => {
+  const cl = () => {
     const e = document.createElement("div");
     e.id = "hk-mat-list-backdrop", e.style.cssText = [
       "position:fixed",
@@ -6764,7 +6761,7 @@ High-level generators:
       }).on("click", () => {
         if (o.selected) {
           if (gt.size <= 1) {
-            pl("\u26A0 No pod\xE9s borrar el \xFAltimo material");
+            dl("\u26A0 No pod\xE9s borrar el \xFAltimo material");
             return;
           }
           gt.delete(o.selected), an(), o.selected = [
@@ -6780,11 +6777,11 @@ High-level generators:
     s(), document.body.appendChild(e), e.addEventListener("click", (a) => {
       a.target === e && (rt == null ? void 0 : rt.dispose(), rt = null, document.body.removeChild(e));
     });
-  }, pl = (e) => {
+  }, dl = (e) => {
     const t = document.getElementById("hk-cad-status");
     t && (t.textContent = e);
   };
-  window.__hekatanOpenMaterialsList = dl;
+  window.__hekatanOpenMaterialsList = cl;
   const Ct = [
     {
       id: "absDist",
@@ -7195,7 +7192,7 @@ High-level generators:
     localStorage.setItem("hk_displayUnits", JSON.stringify(e));
   };
   let tt = null;
-  const ml = () => {
+  const pl = () => {
     const e = document.createElement("div");
     e.id = "hk-units-backdrop", e.style.cssText = [
       "position:fixed",
@@ -7380,7 +7377,7 @@ High-level generators:
       r.target === e && (tt == null ? void 0 : tt.dispose(), tt = null, document.body.removeChild(e));
     });
   };
-  window.__hekatanOpenDisplayUnits = ml;
+  window.__hekatanOpenDisplayUnits = pl;
   const Ho = {
     W14x84: {
       A: 0.01613,
@@ -7836,7 +7833,7 @@ High-level generators:
       }
     });
   }
-  function ul() {
+  function ml() {
     let e = document.getElementById("hk-fake-cursor");
     e || (e = document.createElement("div"), e.id = "hk-fake-cursor", e.style.cssText = [
       "position:fixed",
@@ -8022,7 +8019,7 @@ High-level generators:
   }
   function Lt() {
     var _a2, _b;
-    ll();
+    rl();
     const e = yt.scrollTop, o = ((_a2 = yt.querySelector(".tp-dfwv")) == null ? void 0 : _a2.scrollTop) ?? 0;
     if (Et && (Et.dispose(), Et = null), wn = null, yt.innerHTML = "", Jt = [], !Q) return;
     const s = /^(zapata|guerra-ej|safe-bench-)/.test(Q.id), a = new kn({
@@ -8203,7 +8200,7 @@ High-level generators:
       title: "\u{1F504} Re-encuadrar derecha"
     }).on("click", g), window.__hekatanRefreshSplit = g, window.__hekatanSplitState = b, u.addButton({
       title: "\u{1F3AC} Demo simulador CAD"
-    }).on("click", () => ul());
+    }).on("click", () => ml());
     const v = u.addFolder({
       title: "\u{1F4CD} Ejes (frames individuales)",
       expanded: false
@@ -9223,7 +9220,7 @@ Datos en window.__hekatanImportedCim. Para re-exportar el mismo modelo: window._
         F.searchParams.set("t", B), F.searchParams.delete("P"), F.searchParams.delete("Mx"), F.searchParams.delete("My"), F.searchParams.delete("from"), window.location.href = F.toString();
       });
     }
-    if (Q && sl({
+    if (Q && al({
       pane: a,
       exampleId: Q.id,
       loadPatterns: yn,
@@ -9750,7 +9747,7 @@ Datos en window.__hekatanImportedCim. Para re-exportar el mismo modelo: window._
         const X = Math.round(Bn == null ? void 0 : Bn.modeIdx), re = Math.min(T.modeShapes.length - 1, Math.max(0, (Number.isFinite(X) ? X : 1) - 1));
         console.log("[GIF] generando modo", re + 1, "de", T.modeShapes.length), ft.stop(), F(false);
         try {
-          await nr({
+          await tr({
             mesh: {
               nodes: xt
             },
@@ -9780,7 +9777,7 @@ Datos en window.__hekatanImportedCim. Para re-exportar el mismo modelo: window._
     } catch {
     }
   }
-  const fl = {
+  const ul = {
     deformedShape: true,
     displayScale: -3,
     shellResults: "pressure",
@@ -9796,7 +9793,7 @@ Datos en window.__hekatanImportedCim. Para re-exportar el mismo modelo: window._
       analyzeOutputs: Ht
     },
     objects3D: Xn,
-    settingsObj: fl,
+    settingsObj: ul,
     drawingObj: {
       points: Ut,
       polylines: Gt,
