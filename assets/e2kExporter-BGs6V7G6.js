@@ -1,7 +1,7 @@
 const kt = { v: 0 };
 function Bt() {
-  const $ = document.createElement("div");
-  $.id = "modal-results", $.style.cssText = `
+  const g = document.createElement("div");
+  g.id = "modal-results", g.style.cssText = `
     position: fixed; bottom: 10px; left: 10px; z-index: 9999;
     background: rgba(0,0,0,0.92); color: #0f0; font-family: monospace;
     font-size: 12px; border-radius: 6px;
@@ -12,12 +12,12 @@ function Bt() {
     resize: both;
     min-width: 340px; min-height: 120px;
   `;
-  let N = false;
+  let $ = false;
   const C = 0.9;
   function L(O, v) {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c, _d, _e, _f;
     if (!O.frequencies || O.frequencies.length === 0) {
-      $.innerHTML = "<b style='padding:12px;display:block'>Modal: no results</b>";
+      g.innerHTML = "<b style='padding:12px;display:block'>Modal: no results</b>";
       return;
     }
     const K = ["Ux", "Uy", "Uz", "Rx", "Ry", "Rz"], H = [0, 0, 0, 0, 0, 0], M = O.frequencies.length;
@@ -56,6 +56,8 @@ function Bt() {
       background:#2d6a4f; color:#fff; border:1px solid #40916c; border-radius:3px;" title="Copiar tabla">\u{1F4CB}</button>
     <button id="modal-minimize" style="padding:2px 8px; font-size:10px; cursor:pointer;
       background:#555; color:#fff; border:1px solid #777; border-radius:3px;" title="Minimizar">\u25AC</button>
+    <button id="modal-close" style="padding:2px 8px; font-size:10px; cursor:pointer;
+      background:#7a2d2d; color:#fff; border:1px solid #b04545; border-radius:3px;" title="Cerrar (ocultar ventana)">\u2715</button>
   </div>
 </div>`;
     if (o += '<div id="modal-body" style="flex:1 1 auto; min-height:0; overflow:auto; padding:6px 12px 10px 12px;">', o += `<div style="padding:6px 0; font-weight:bold; font-size:13px;">${T}</div>`, o += h, v.properties) for (const n of v.properties) o += `<span style="color:#888">${n}</span>
@@ -96,25 +98,27 @@ function Bt() {
     }), o += `</table>
 <div style="margin-top:6px; font-size:10px; color:#888;">
   \u2605 = primer modo donde \u03A3Ux y \u03A3Uy \u2265 90 %  \xB7  Tipos: <span style="color:#0f0">Ux/Uy</span>=lateral \xB7 <span style="color:#0ff">Rz</span>=torsional \xB7 <span style="color:#fa0">Uz</span>=vertical (no relevante para sismo)
-</div>`, o += "</div>", $.innerHTML = o, N) {
-      const n = $.querySelector("#modal-body"), E = $.querySelector("#modal-minimize");
+</div>`, o += "</div>", g.innerHTML = o, $) {
+      const n = g.querySelector("#modal-body"), E = g.querySelector("#modal-minimize");
       n && (n.style.display = "none"), E && (E.textContent = "\u25A2", E.title = "Restaurar");
     }
-    (_c = $.querySelector("#modal-minimize")) == null ? void 0 : _c.addEventListener("click", () => {
-      N = !N;
-      const n = $.querySelector("#modal-body"), E = $.querySelector("#modal-minimize");
-      N ? (n.style.display = "none", E.textContent = "\u25A2", E.title = "Restaurar") : (n.style.display = "block", E.textContent = "\u25AC", E.title = "Minimizar");
-    }), (_d = $.querySelector("#modal-header")) == null ? void 0 : _d.addEventListener("mousedown", (n) => {
+    (_c = g.querySelector("#modal-minimize")) == null ? void 0 : _c.addEventListener("click", () => {
+      $ = !$;
+      const n = g.querySelector("#modal-body"), E = g.querySelector("#modal-minimize");
+      $ ? (n.style.display = "none", E.textContent = "\u25A2", E.title = "Restaurar") : (n.style.display = "block", E.textContent = "\u25AC", E.title = "Minimizar");
+    }), (_d = g.querySelector("#modal-close")) == null ? void 0 : _d.addEventListener("click", () => {
+      g.style.display = "none";
+    }), (_e = g.querySelector("#modal-header")) == null ? void 0 : _e.addEventListener("mousedown", (n) => {
       if (n.target.tagName === "BUTTON") return;
-      const E = $.getBoundingClientRect();
-      $.style.bottom = "auto", $.style.top = `${E.top}px`, $.style.left = `${E.left}px`;
+      const E = g.getBoundingClientRect();
+      g.style.bottom = "auto", g.style.top = `${E.top}px`, g.style.left = `${E.left}px`;
       const S = n.clientX - E.left, F = n.clientY - E.top, x = (P) => {
-        $.style.left = `${Math.max(0, P.clientX - S)}px`, $.style.top = `${Math.max(0, P.clientY - F)}px`;
+        g.style.left = `${Math.max(0, P.clientX - S)}px`, g.style.top = `${Math.max(0, P.clientY - F)}px`;
       }, w = () => {
         document.removeEventListener("mousemove", x), document.removeEventListener("mouseup", w);
       };
       document.addEventListener("mousemove", x), document.addEventListener("mouseup", w), n.preventDefault();
-    }), (_e = $.querySelector("#modal-copy")) == null ? void 0 : _e.addEventListener("click", () => {
+    }), (_f = g.querySelector("#modal-copy")) == null ? void 0 : _f.addEventListener("click", () => {
       const n = [];
       n.push(`Modal Analysis \u2014 ${v.title}`), n.push(T.replace(/<[^>]+>/g, ""));
       const E = `Mode  Freq(Hz)  Period(s)  \u03C9(rad/s)  ${K.join("     ")}  \u03A3Ux    \u03A3Uy    \u03A3Rz   Tipo`;
@@ -130,18 +134,18 @@ function Bt() {
         n.push(`${String(w + 1).padStart(4)}  ${x.toFixed(4).padStart(9)}  ${P.toFixed(4).padStart(9)}  ${et.toFixed(2).padStart(9)}  ${dt}  ${(S[0] * 100).toFixed(1).padStart(5)}%  ${(S[1] * 100).toFixed(1).padStart(5)}%  ${(S[5] * 100).toFixed(1).padStart(5)}%  ${at}`);
       }), navigator.clipboard.writeText(n.join(`
 `));
-      const F = $.querySelector("#modal-copy");
+      const F = g.querySelector("#modal-copy");
       F.textContent = "\u2713", setTimeout(() => F.textContent = "\u{1F4CB}", 1500);
     });
   }
-  return { div: $, render: L };
+  return { div: g, render: L };
 }
-function vt($) {
+function vt(g) {
   var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w;
-  const N = $.split(/\r?\n/), C = { force: "TONF", length: "M" }, L = [], O = /* @__PURE__ */ new Map(), v = /* @__PURE__ */ new Map(), K = /* @__PURE__ */ new Map(), H = [], M = [], b = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new Map(), A = [], q = /* @__PURE__ */ new Map(), V = /* @__PURE__ */ new Map(), Z = [], J = /* @__PURE__ */ new Map(), W = /* @__PURE__ */ new Map(), y = /* @__PURE__ */ new Map(), T = /* @__PURE__ */ new Map(), h = /* @__PURE__ */ new Map(), o = [];
+  const $ = g.split(/\r?\n/), C = { force: "TONF", length: "M" }, L = [], O = /* @__PURE__ */ new Map(), v = /* @__PURE__ */ new Map(), K = /* @__PURE__ */ new Map(), H = [], M = [], b = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new Map(), A = [], q = /* @__PURE__ */ new Map(), V = /* @__PURE__ */ new Map(), Z = [], J = /* @__PURE__ */ new Map(), W = /* @__PURE__ */ new Map(), y = /* @__PURE__ */ new Map(), T = /* @__PURE__ */ new Map(), h = /* @__PURE__ */ new Map(), o = [];
   let l = "", n = "";
   const E = /* @__PURE__ */ new Map(), S = /* @__PURE__ */ new Map();
-  for (const i of N) {
+  for (const i of $) {
     const r = i.trim();
     if (r.startsWith("$ ")) {
       n = r.substring(2).trim(), E.has(n) || E.set(n, []), S.has(n) || S.set(n, i);
@@ -449,13 +453,13 @@ function vt($) {
     }
     t.modI2 && (st *= t.modI2), t.modI3 && (B *= t.modI3), Rt.set(i, Y), mt.set(i, B), e.set(i, st), f.set(i, it), nt > 0 && Lt.set(i, nt), pt > 0 && xt.set(i, pt), u.set(i, { type: Et, b: p || void 0, h: s || void 0, d: Et === "circ" || Et === "pipe" ? s : void 0, tw: m || void 0, tf: I || void 0, r: t.R, name: r });
   }
-  const d = /* @__PURE__ */ new Map(), D = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map(), g = /* @__PURE__ */ new Map();
+  const d = /* @__PURE__ */ new Map(), D = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map(), N = /* @__PURE__ */ new Map();
   for (const [i, r] of yt) {
     const t = V.get(r);
     if (!t) continue;
     d.set(i, t.thickness);
     const a = O.get(t.material);
-    a && (It.set(i, a.E), Tt.set(i, a.G), D.set(i, a.nu), a.density !== void 0 && g.set(i, a.density)), R.set(i, t.modelingType === "ShellThin" ? 1 : 0);
+    a && (It.set(i, a.E), Tt.set(i, a.G), D.set(i, a.nu), a.density !== void 0 && N.set(i, a.density)), R.set(i, t.modelingType === "ShellThin" ? 1 : 0);
   }
   const _ = /* @__PURE__ */ new Map();
   for (const [i, r] of b) {
@@ -487,7 +491,7 @@ function vt($) {
     const a = O.get(t.material);
     (a == null ? void 0 : a.density) && z.set(i, a.density);
   }
-  for (const [i, r] of g) z.set(i, r);
+  for (const [i, r] of N) z.set(i, r);
   for (const [i, r] of gt) {
     const t = U.get(i) || [0, 0, 0, 0, 0, 0];
     U.set(i, [t[0] + r[0], t[1] + r[1], t[2] + r[2], t[3] + r[3], t[4] + r[4], t[5] + r[5]]);
@@ -507,33 +511,33 @@ function vt($) {
   }
   return { units: C, stories: L.reverse(), materials: O, frameSections: v, nodes: w, nodeNames: P, nodeNameToIdx: et, elements: at, elementNames: dt, elementTypes: ot, elementStories: St, elementSections: Q, nodeInputs: { supports: _, loads: U }, elementInputs: { elasticities: It, shearModuli: Tt, areas: Rt, momentsOfInertiaZ: mt, momentsOfInertiaY: e, torsionalConstants: f, shearAreasY: Lt, shearAreasZ: xt, rigidOffsets: $t, momentReleases: rt, densities: z, sectionShapes: u, thicknesses: d, poissonsRatios: D, plateFormulations: R }, sectionShapes: u, grids: o, springsList: Mt, info: { nNodes: w.length, nFrames: at.length, nAreas: M.length, title: l }, rawSections: E, rawSectionHeaders: S };
 }
-function G($) {
-  return $ && parseFloat($) || 0;
+function G(g) {
+  return g && parseFloat(g) || 0;
 }
-function Dt($) {
-  const N = /* @__PURE__ */ new Map(), C = /(\w+)\s*=\s*(?:"([^"]*?)"|(\S+))/g;
+function Dt(g) {
+  const $ = /* @__PURE__ */ new Map(), C = /(\w+)\s*=\s*(?:"([^"]*?)"|(\S+))/g;
   let L;
-  for (; (L = C.exec($)) !== null; ) N.set(L[1], L[2] !== void 0 ? L[2] : L[3]);
-  return N;
+  for (; (L = C.exec(g)) !== null; ) $.set(L[1], L[2] !== void 0 ? L[2] : L[3]);
+  return $;
 }
-function Gt($) {
-  const N = $.split(/\r?\n/);
-  return N.some((L) => L.trim().startsWith("TABLE:")) ? bt(N) : wt(N);
+function Gt(g) {
+  const $ = g.split(/\r?\n/);
+  return $.some((L) => L.trim().startsWith("TABLE:")) ? bt($) : wt($);
 }
-function bt($) {
+function bt(g) {
   var _a, _b, _c, _d, _e, _f;
-  const N = [];
+  const $ = [];
   let C = "";
-  for (const W of $) {
+  for (const W of g) {
     const y = W.trimEnd();
-    y.endsWith("_") ? C += y.slice(0, -1) + " " : (C += y, N.push(C), C = "");
+    y.endsWith("_") ? C += y.slice(0, -1) + " " : (C += y, $.push(C), C = "");
   }
-  C && N.push(C);
+  C && $.push(C);
   const L = { force: "KN", length: "m" };
   let O = "UX,UY,UZ,RX,RY,RZ";
   const v = /* @__PURE__ */ new Map(), K = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), M = /* @__PURE__ */ new Map(), b = [], c = [], A = /* @__PURE__ */ new Map(), q = /* @__PURE__ */ new Map(), V = /* @__PURE__ */ new Map(), Z = [];
   let J = "";
-  for (const W of N) {
+  for (const W of $) {
     const y = W.trim();
     if (!y || y.startsWith(";") || y.startsWith("File ")) continue;
     if (y.startsWith("TABLE:")) {
@@ -635,12 +639,12 @@ function bt($) {
   }
   return Pt(L, O, v, K, H, M, b, c, A, q, V, Z);
 }
-function wt($) {
-  const N = { force: "KN", length: "m" };
+function wt(g) {
+  const $ = { force: "KN", length: "m" };
   let C = "UX,UY,UZ,RX,RY,RZ";
   const L = /* @__PURE__ */ new Map(), O = /* @__PURE__ */ new Map(), v = /* @__PURE__ */ new Map(), K = /* @__PURE__ */ new Map(), H = [], M = [], b = /* @__PURE__ */ new Map(), c = [];
   let A = "", q = "";
-  for (const J of $) {
+  for (const J of g) {
     const W = J.trim();
     if (!W || W.startsWith(";")) continue;
     if (!J.startsWith(" ") && !J.startsWith("	")) {
@@ -655,9 +659,9 @@ function wt($) {
         const h = y.get("DOF");
         h && (C = h);
         const o = y.get("LENGTH");
-        o && (N.length = o);
+        o && ($.length = o);
         const l = y.get("FORCE");
-        l && (N.force = l);
+        l && ($.force = l);
         break;
       }
       case "JOINT": {
@@ -715,9 +719,9 @@ function wt($) {
       }
     }
   }
-  return Pt(N, C, L, O, v, K, H, M, b, /* @__PURE__ */ new Map(), /* @__PURE__ */ new Map(), c);
+  return Pt($, C, L, O, v, K, H, M, b, /* @__PURE__ */ new Map(), /* @__PURE__ */ new Map(), c);
 }
-function Pt($, N, C, L, O, v, K, H, M, b, c, A) {
+function Pt(g, $, C, L, O, v, K, H, M, b, c, A) {
   var _a;
   const q = [], V = /* @__PURE__ */ new Map(), Z = [];
   for (const [S, F] of v) V.set(S, Z.length), q.push(S), Z.push(F);
@@ -764,11 +768,11 @@ function Pt($, N, C, L, O, v, K, H, M, b, c, A) {
       x[0] += S.fx, x[1] += S.fy, x[2] += S.fz, x[3] += S.mx, x[4] += S.my, x[5] += S.mz, E.forces.set(F, x);
     }
   }
-  return { units: $, dof: N, materials: C, frameSections: L, shellSections: O, nodes: Z, nodeNames: q, nodeNameToIdx: V, elements: J, elementNames: W, elementSections: y, nodeInputs: E, elementInputs: o, sectionShapes: l, info: { nNodes: Z.length, nFrames: T, nShells: h, title: `SAP2000 (${T} frames, ${h} shells)` } };
+  return { units: g, dof: $, materials: C, frameSections: L, shellSections: O, nodes: Z, nodeNames: q, nodeNameToIdx: V, elements: J, elementNames: W, elementSections: y, nodeInputs: E, elementInputs: o, sectionShapes: l, info: { nNodes: Z.length, nFrames: T, nShells: h, title: `SAP2000 (${T} frames, ${h} shells)` } };
 }
-function zt($) {
+function zt(g) {
   var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k;
-  const { nodes: N, elements: C, nodeInputs: L, elementInputs: O } = $, v = $.units || { force: "KN", length: "m" }, K = $.title || "Awatif Model", H = [], M = (o) => H.push(o), b = () => H.push(" ");
+  const { nodes: $, elements: C, nodeInputs: L, elementInputs: O } = g, v = g.units || { force: "KN", length: "m" }, K = g.title || "Awatif Model", H = [], M = (o) => H.push(o), b = () => H.push(" ");
   M(`File ${K}.$2k was saved on m/d/yy at h:mm:ss`), b(), M('TABLE:  "ACTIVE DEGREES OF FREEDOM"'), M("   UX=Yes   UY=Yes   UZ=Yes   RX=Yes   RY=Yes   RZ=Yes"), b();
   const c = [], A = [];
   if (C.forEach((o, l) => {
@@ -818,7 +822,7 @@ function zt($) {
     }
     b();
   }
-  const Z = !!$.layeredSection && A.length > 0, J = $.layeredSection, W = /* @__PURE__ */ new Map(), y = /* @__PURE__ */ new Map();
+  const Z = !!g.layeredSection && A.length > 0, J = g.layeredSection, W = /* @__PURE__ */ new Map(), y = /* @__PURE__ */ new Map();
   if (!Z) for (const o of A) {
     const l = ((_f = O.thicknesses) == null ? void 0 : _f.get(o)) || 0.1, n = ((_g = O.elasticities) == null ? void 0 : _g.get(o)) || 0, E = `MAT_${Math.round(n)}`, S = `t${l.toPrecision(6)}`;
     W.has(S) || W.set(S, { t: l, matKey: E });
@@ -849,8 +853,8 @@ function zt($) {
     }
   }
   M('TABLE:  "JOINT COORDINATES"');
-  for (let o = 0; o < N.length; o++) {
-    const l = N[o];
+  for (let o = 0; o < $.length; o++) {
+    const l = $[o];
     M(`   Joint=${o + 1}   CoordSys=GLOBAL   CoordType=Cartesian   XorR=${j(l[0])}   Y=${j(l[1])}   Z=${j(l[2])}   SpecialJt=No`);
   }
   if (b(), L.supports && L.supports.size > 0) {
@@ -862,7 +866,7 @@ function zt($) {
     }
     b();
   }
-  const T = $.selfWtMult ?? 1;
+  const T = g.selfWtMult ?? 1;
   if (M('TABLE:  "LOAD PATTERN DEFINITIONS"'), M(`   LoadPat=DEAD   DesignType=Dead   SelfWtMult=${T}`), b(), M('TABLE:  "LOAD CASE DEFINITIONS"'), M('   Case=DEAD   Type=LinStatic   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Dead   DesActOpt="Prog Det"   DesignAct=Non-Composite   AutoType=None   RunCase=Yes'), b(), M('TABLE:  "CASE - STATIC 1 - LOAD ASSIGNMENTS"'), M('   Case=DEAD   LoadType="Load pattern"   LoadName=DEAD   LoadSF=1'), b(), L.loads && L.loads.size > 0) {
     M('TABLE:  "JOINT LOADS - FORCE"');
     for (const [o, l] of L.loads) l.some((n) => Math.abs(n) > 1e-12) && M(`   Joint=${o + 1}   LoadPat=DEAD   CoordSys=GLOBAL   F1=${j(l[0])}   F2=${j(l[1])}   F3=${j(l[2])}   M1=${j(l[3])}   M2=${j(l[4])}   M3=${j(l[5])}`);
@@ -882,31 +886,31 @@ function zt($) {
   return b(), M('TABLE:  "PROGRAM CONTROL"'), M(`   ProgramName=SAP2000   Version=24.1.0   CurrUnits="${v.force}, ${v.length}, C"   SteelCode="AISC 360-16"   ConcCode="ACI 318-19"   AlumCode="AA 2015"   ColdCode=AISI-16   RegenHinge=Yes`), b(), M("END TABLE DATA"), M(""), H.join(`\r
 `);
 }
-function j($) {
-  return $ === 0 || Math.abs($) < 1e-15 ? "0" : Math.abs($) >= 1e6 || Math.abs($) < 1e-3 && Math.abs($) > 0 ? $.toExponential(8) : parseFloat($.toPrecision(10)).toString();
+function j(g) {
+  return g === 0 || Math.abs(g) < 1e-15 ? "0" : Math.abs(g) >= 1e6 || Math.abs(g) < 1e-3 && Math.abs(g) > 0 ? g.toExponential(8) : parseFloat(g.toPrecision(10)).toString();
 }
-function Ht($) {
-  const { nodes: N, elements: C, nodeInputs: L, elementInputs: O, title: v, e2kModel: K } = $, H = K == null ? void 0 : K.rawSections;
-  return H && H.size > 0 ? Yt(H, K) : Ut($);
+function Ht(g) {
+  const { nodes: $, elements: C, nodeInputs: L, elementInputs: O, title: v, e2kModel: K } = g, H = K == null ? void 0 : K.rawSections;
+  return H && H.size > 0 ? Yt(H, K) : Ut(g);
 }
-function Yt($, N) {
-  const C = [], L = N == null ? void 0 : N.rawSectionHeaders;
-  for (const [O, v] of $) {
+function Yt(g, $) {
+  const C = [], L = $ == null ? void 0 : $.rawSectionHeaders;
+  for (const [O, v] of g) {
     C.push((L == null ? void 0 : L.get(O)) ?? `$ ${O}`);
     for (const K of v) C.push(K);
   }
-  return $.has("END OF MODEL FILE") || (C.push("  END"), C.push("$ END OF MODEL FILE")), C.join(`\r
+  return g.has("END OF MODEL FILE") || (C.push("  END"), C.push("$ END OF MODEL FILE")), C.join(`\r
 `);
 }
-function Ut($) {
+function Ut(g) {
   var _a, _b, _c;
-  const { nodes: N, elements: C, nodeInputs: L, elementInputs: O, title: v, units: K } = $, H = $.rigidDiaphragm ?? false, M = (K == null ? void 0 : K.force) || "Tonf", b = (K == null ? void 0 : K.length) || "m", c = [], A = (e) => Math.round(e * 1e4) / 1e4, q = (() => {
+  const { nodes: $, elements: C, nodeInputs: L, elementInputs: O, title: v, units: K } = g, H = g.rigidDiaphragm ?? false, M = (K == null ? void 0 : K.force) || "Tonf", b = (K == null ? void 0 : K.length) || "m", c = [], A = (e) => Math.round(e * 1e4) / 1e4, q = (() => {
     const e = (M || "Tonf").toLowerCase();
     return e === "tonf" || e === "tonf-f" ? 1 / 9.80665 : e === "kn" || e === "kn-f" ? 1 : e === "kgf" || e === "kg" ? 1 / 980665e-8 : e === "kip" || e === "kips" ? 1 / 4.44822 : 1;
   })(), V = (e) => e * q, Z = (e) => e * q, J = (e) => e * q, W = /* @__PURE__ */ new Date(), y = `${W.getMonth() + 1}/${W.getDate()}/${W.getFullYear()}  ${W.getHours()}:${String(W.getMinutes()).padStart(2, "0")}:${String(W.getSeconds()).padStart(2, "0")}`;
   c.push(`$ File   "Hekatan_export.e2k"  saved ${y} in ETABS 22.6.0`), c.push(""), c.push("$ PROGRAM INFORMATION"), c.push('  PROGRAM  "ETABS"  VERSION "22.6.0"  '), c.push(""), c.push("$ CONTROLS"), c.push(`  UNITS  "${M}"  "${b}"  "C"  `), c.push('  TITLE1  "Hekatan Struct export"  '), v && c.push(`  TITLE2  "${v}"  `), c.push("  PREFERENCE  MERGETOL 0.001"), c.push('  RLLF  METHOD "ASCE7-10"  USEDEFAULTMIN "YES"  '), c.push("");
   const T = /* @__PURE__ */ new Set(), h = /* @__PURE__ */ new Set();
-  N.forEach((e) => {
+  $.forEach((e) => {
     T.add(A(e[0])), h.add(A(e[1]));
   });
   const o = [...T].sort((e, f) => e - f), l = [...h].sort((e, f) => e - f);
@@ -917,7 +921,7 @@ function Ut($) {
     c.push(`  GRID "G1"  LABEL "${f + 1}"  DIR "Y"  COORD ${e}  GRIDTYPE "PRIMARY"  BUBBLELOC "DEFAULT"  GRIDHIDE "NO"  `);
   }), c.push("");
   const n = /* @__PURE__ */ new Set();
-  N.forEach((e) => n.add(A(e[2])));
+  $.forEach((e) => n.add(A(e[2])));
   let E = [...n].sort((e, f) => e - f);
   if (E.length === 1) {
     const e = E[0];
@@ -944,19 +948,19 @@ function Ut($) {
       const d = (_a2 = O.elasticities) == null ? void 0 : _a2.get(u);
       d !== void 0 && (e.has(d) || e.set(d, []), e.get(d).push(f));
     }), e.forEach((f, u) => {
-      const d = f.reduce((R, g) => R + g, 0) / f.length, D = d > 100 ? d * ct : d * 9.80665;
+      const d = f.reduce((R, N) => R + N, 0) / f.length, D = d > 100 ? d * ct : d * 9.80665;
       ft.set(u, D);
     });
   }
   for (const e of x) {
     const f = e >= 1e8, u = f ? `Steel_${++et}` : `Conc_${++X}`;
     w.set(e, u), P.set(e, f);
-    const d = ft.get(e) ?? (f ? 76.97 : 24), D = Z(e), R = J(d), g = [];
+    const d = ft.get(e) ?? (f ? 76.97 : 24), D = Z(e), R = J(d), N = [];
     (_b = O.poissonsRatios) == null ? void 0 : _b.forEach((k, z) => {
       var _a2;
-      ((_a2 = O.elasticities) == null ? void 0 : _a2.get(z)) === e && g.push(k);
+      ((_a2 = O.elasticities) == null ? void 0 : _a2.get(z)) === e && N.push(k);
     });
-    const _ = g.length > 0 ? g.reduce((k, z) => k + z, 0) / g.length : f ? 0.3 : 0.2, U = f ? 117e-7 : 1e-5;
+    const _ = N.length > 0 ? N.reduce((k, z) => k + z, 0) / N.length : f ? 0.3 : 0.2, U = f ? 117e-7 : 1e-5;
     if (f) {
       c.push(`  MATERIAL  "${u}"    TYPE "Steel"    GRADE "Grade 50"    WEIGHTPERVOLUME ${A(R)}`), c.push(`  MATERIAL  "${u}"    SYMTYPE "Isotropic"  E ${A(D)}  U ${_}  A ${U}`);
       const k = 345e3, z = 45e4;
@@ -968,11 +972,11 @@ function Ut($) {
   C.forEach((e, f) => {
     var _a2, _b2, _c2, _d, _e, _f;
     if (e.length !== 2) return;
-    const u = (_a2 = O.sectionShapes) == null ? void 0 : _a2.get(f), d = ((_b2 = O.elasticities) == null ? void 0 : _b2.get(f)) ?? 0, D = w.get(d) || "Conc_1", R = P.get(d) ?? d >= 1e8, g = ((_c2 = O.areas) == null ? void 0 : _c2.get(f)) ?? 0, _ = ((_d = O.momentsOfInertiaY) == null ? void 0 : _d.get(f)) ?? 0;
+    const u = (_a2 = O.sectionShapes) == null ? void 0 : _a2.get(f), d = ((_b2 = O.elasticities) == null ? void 0 : _b2.get(f)) ?? 0, D = w.get(d) || "Conc_1", R = P.get(d) ?? d >= 1e8, N = ((_c2 = O.areas) == null ? void 0 : _c2.get(f)) ?? 0, _ = ((_d = O.momentsOfInertiaY) == null ? void 0 : _d.get(f)) ?? 0;
     (_e = O.momentsOfInertiaZ) == null ? void 0 : _e.get(f), (_f = O.torsionalConstants) == null ? void 0 : _f.get(f);
     let U = (u == null ? void 0 : u.type) || "rect", k = (u == null ? void 0 : u.h) ?? 0, z = (u == null ? void 0 : u.b) ?? 0, ut = (u == null ? void 0 : u.d) ?? 0;
     const Nt = (u == null ? void 0 : u.tf) ?? 0, tt = (u == null ? void 0 : u.tw) ?? 0;
-    k <= 0 && z <= 0 && ut <= 0 && g > 0 && (_ > 0 ? (k = Math.sqrt(12 * _ / g), z = g / k) : k = z = Math.sqrt(g), (!isFinite(k) || k < St) && (k = St), (!isFinite(z) || z < St) && (z = St), U = "rect"), k <= 0 && z <= 0 && ut <= 0 && (k = 0.3, z = 0.3, U = "rect");
+    k <= 0 && z <= 0 && ut <= 0 && N > 0 && (_ > 0 ? (k = Math.sqrt(12 * _ / N), z = N / k) : k = z = Math.sqrt(N), (!isFinite(k) || k < St) && (k = St), (!isFinite(z) || z < St) && (z = St), U = "rect"), k <= 0 && z <= 0 && ut <= 0 && (k = 0.3, z = 0.3, U = "rect");
     const lt = `${U}_${A(k)}_${A(z)}_${A(ut)}_${A(Nt)}_${A(tt)}_${D}`;
     (u == null ? void 0 : u.name) && !ot.has(lt) && ot.set(lt, u.name);
     let i = ot.get(lt);
@@ -989,7 +993,7 @@ function Ut($) {
   }), c.push("");
   const Q = /* @__PURE__ */ new Map();
   let $t = 0;
-  N.forEach((e) => {
+  $.forEach((e) => {
     const f = `${A(e[0])},${A(e[1])}`;
     Q.has(f) || Q.set(f, `${++$t}`);
   }), c.push("$ POINT COORDINATES");
@@ -999,16 +1003,16 @@ function Ut($) {
   }
   c.push("");
   const rt = (e) => {
-    const f = N[e], u = `${A(f[0])},${A(f[1])}`;
+    const f = $[e], u = `${A(f[0])},${A(f[1])}`;
     return { pt: Q.get(u) || "1", story: F.get(A(f[2])) || "Base" };
   }, yt = (e) => {
     var _a2, _b2, _c2, _d;
-    const f = [], u = (_a2 = $.propertyModifiers) == null ? void 0 : _a2.get(e);
-    u && u.some((g) => Math.abs(g - 1) > 1e-9) && f.push(`PROPMODIFIERS "${u.map((g) => A(g)).join(" ")}"`);
+    const f = [], u = (_a2 = g.propertyModifiers) == null ? void 0 : _a2.get(e);
+    u && u.some((N) => Math.abs(N - 1) > 1e-9) && f.push(`PROPMODIFIERS "${u.map((N) => A(N)).join(" ")}"`);
     const d = (_b2 = O.momentReleases) == null ? void 0 : _b2.get(e);
-    if (d && d.some((g) => g)) {
-      const g = [];
-      d.length === 12 ? (d[0] && g.push("PI"), d[1] && g.push("V2I"), d[2] && g.push("V3I"), d[3] && g.push("TI"), d[4] && g.push("M2I"), d[5] && g.push("M3I"), d[6] && g.push("PJ"), d[7] && g.push("V2J"), d[8] && g.push("V3J"), d[9] && g.push("TJ"), d[10] && g.push("M2J"), d[11] && g.push("M3J")) : d.length === 6 && (d[0] && g.push("TI"), d[1] && g.push("M2I"), d[2] && g.push("M3I"), d[3] && g.push("TJ"), d[4] && g.push("M2J"), d[5] && g.push("M3J")), g.length > 0 && f.push(`RELEASE "${g.join(" ")}"`);
+    if (d && d.some((N) => N)) {
+      const N = [];
+      d.length === 12 ? (d[0] && N.push("PI"), d[1] && N.push("V2I"), d[2] && N.push("V3I"), d[3] && N.push("TI"), d[4] && N.push("M2I"), d[5] && N.push("M3I"), d[6] && N.push("PJ"), d[7] && N.push("V2J"), d[8] && N.push("V3J"), d[9] && N.push("TJ"), d[10] && N.push("M2J"), d[11] && N.push("M3J")) : d.length === 6 && (d[0] && N.push("TI"), d[1] && N.push("M2I"), d[2] && N.push("M3I"), d[3] && N.push("TJ"), d[4] && N.push("M2J"), d[5] && N.push("M3J")), N.length > 0 && f.push(`RELEASE "${N.join(" ")}"`);
     }
     const D = (_c2 = O.insertionPoints) == null ? void 0 : _c2.get(e);
     D && (Math.abs(D[0]) > 1e-9 || Math.abs(D[1]) > 1e-9) && f.push(`LATEROFFSET ${A(D[0])} TRANSOFFSET ${A(D[1])}`);
@@ -1017,38 +1021,38 @@ function Ut($) {
   }, Ct = [], Ot = /* @__PURE__ */ new Set(), At = /* @__PURE__ */ new Map();
   C.forEach((e, f) => {
     if (e.length !== 2) return;
-    const u = Ft(N, e);
+    const u = Ft($, e);
     if (u === "BEAM") return;
-    const d = N[e[0]][2] <= N[e[1]][2] ? e[0] : e[1], D = N[e[0]][2] <= N[e[1]][2] ? e[1] : e[0];
-    if (Math.abs(N[d][0] - N[D][0]) > 1e-6 || Math.abs(N[d][1] - N[D][1]) > 1e-6) return;
-    const R = rt(d), g = dt.get(f) || `Sec_${f}`, _ = `${R.pt}_${g}_${u}`;
-    At.has(_) || At.set(_, []), At.get(_).push({ i: f, bot: d, top: D, zBot: A(N[d][2]), zTop: A(N[D][2]), planPt: R.pt, secName: g, type: u });
+    const d = $[e[0]][2] <= $[e[1]][2] ? e[0] : e[1], D = $[e[0]][2] <= $[e[1]][2] ? e[1] : e[0];
+    if (Math.abs($[d][0] - $[D][0]) > 1e-6 || Math.abs($[d][1] - $[D][1]) > 1e-6) return;
+    const R = rt(d), N = dt.get(f) || `Sec_${f}`, _ = `${R.pt}_${N}_${u}`;
+    At.has(_) || At.set(_, []), At.get(_).push({ i: f, bot: d, top: D, zBot: A($[d][2]), zTop: A($[D][2]), planPt: R.pt, secName: N, type: u });
   }), At.forEach((e, f) => {
     e.sort((d, D) => d.zBot - D.zBot);
     let u = 0;
     for (let d = 1; d <= e.length; d++) if (d === e.length || Math.abs(e[d].zBot - e[d - 1].zTop) > 1e-6) {
       const R = e.slice(u, d);
-      R.length >= 1 && (Ct.push({ elemIndices: R.map((g) => g.i), planPt: R[0].planPt, bottomNodeIdx: R[0].bot, topNodeIdx: R[R.length - 1].top, secName: R[0].secName, type: R[0].type, nSegments: R.length }), R.forEach((g) => Ot.add(g.i))), u = d;
+      R.length >= 1 && (Ct.push({ elemIndices: R.map((N) => N.i), planPt: R[0].planPt, bottomNodeIdx: R[0].bot, topNodeIdx: R[R.length - 1].top, secName: R[0].secName, type: R[0].type, nSegments: R.length }), R.forEach((N) => Ot.add(N.i))), u = d;
     }
   }), c.push("$ LINE CONNECTIVITIES");
   const Mt = [];
   Ct.forEach((e, f) => {
     const u = `C${f + 1}`, d = rt(e.topNodeIdx);
     rt(e.bottomNodeIdx);
-    const D = A(N[e.topNodeIdx][2]), R = A(N[e.bottomNodeIdx][2]), g = E.indexOf(D), _ = E.indexOf(R), U = Math.max(1, g - _), k = yt(e.elemIndices[0]);
+    const D = A($[e.topNodeIdx][2]), R = A($[e.bottomNodeIdx][2]), N = E.indexOf(D), _ = E.indexOf(R), U = Math.max(1, N - _), k = yt(e.elemIndices[0]);
     c.push(`  LINE  "${u}"  ${e.type}  "${d.pt}"  "${d.pt}"  ${U}`), Mt.push(`  LINEASSIGN  "${u}"  "${d.story}"  SECTION "${e.secName}" ${k} RIGIDZONE 0 MAXSTASPC 0.5 MINNUMSTA ${e.nSegments} AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
   }), C.forEach((e, f) => {
     if (e.length !== 2 || Ot.has(f)) return;
-    const u = Ft(N, e), d = dt.get(f) || `Sec_${f}`, D = yt(f);
+    const u = Ft($, e), d = dt.get(f) || `Sec_${f}`, D = yt(f);
     if (u === "BEAM") {
-      const R = rt(e[0]), g = rt(e[1]);
-      c.push(`  LINE  "E${f + 1}"  BEAM  "${R.pt}"  "${g.pt}"  0`), Mt.push(`  LINEASSIGN  "E${f + 1}"  "${R.story}"  SECTION "${d}" ${D} RIGIDZONE 0 MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
+      const R = rt(e[0]), N = rt(e[1]);
+      c.push(`  LINE  "E${f + 1}"  BEAM  "${R.pt}"  "${N.pt}"  0`), Mt.push(`  LINEASSIGN  "E${f + 1}"  "${R.story}"  SECTION "${d}" ${D} RIGIDZONE 0 MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
     } else {
-      const R = N[e[0]][2] <= N[e[1]][2] ? e[0] : e[1], g = N[e[0]][2] <= N[e[1]][2] ? e[1] : e[0], _ = rt(g), U = A(N[R][2]), k = A(N[g][2]), z = E.indexOf(U), ut = E.indexOf(k), Nt = Math.max(1, ut >= 0 && z >= 0 ? ut - z : 1);
+      const R = $[e[0]][2] <= $[e[1]][2] ? e[0] : e[1], N = $[e[0]][2] <= $[e[1]][2] ? e[1] : e[0], _ = rt(N), U = A($[R][2]), k = A($[N][2]), z = E.indexOf(U), ut = E.indexOf(k), Nt = Math.max(1, ut >= 0 && z >= 0 ? ut - z : 1);
       c.push(`  LINE  "E${f + 1}"  ${u}  "${_.pt}"  "${_.pt}"  ${Nt}`), Mt.push(`  LINEASSIGN  "E${f + 1}"  "${_.story}"  SECTION "${d}" ${D} RIGIDZONE 0 MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
     }
   }), c.push("");
-  const gt = $.weightMode ?? "auto", It = /* @__PURE__ */ new Set();
+  const gt = g.weightMode ?? "auto", It = /* @__PURE__ */ new Set();
   c.push("$ POINT ASSIGNS"), (_c = L.supports) == null ? void 0 : _c.forEach((e, f) => {
     const u = [];
     if (e[0] && u.push("UX"), e[1] && u.push("UY"), e[2] && u.push("UZ"), e[3] && u.push("RX"), e[4] && u.push("RY"), e[5] && u.push("RZ"), u.length > 0) {
@@ -1065,7 +1069,7 @@ function Ut($) {
   const Tt = [];
   C.forEach((e, f) => {
     if (e.length === 4) {
-      const u = N[e[0]], d = N[e[1]], D = N[e[2]], R = [d[0] - u[0], d[1] - u[1], d[2] - u[2]], g = [D[0] - u[0], D[1] - u[1], D[2] - u[2]], _ = R[1] * g[2] - R[2] * g[1], U = R[2] * g[0] - R[0] * g[2], k = R[0] * g[1] - R[1] * g[0], z = Math.sqrt(_ * _ + U * U + k * k), ut = z > 1e-10 && Math.abs(k) / z < 0.5;
+      const u = $[e[0]], d = $[e[1]], D = $[e[2]], R = [d[0] - u[0], d[1] - u[1], d[2] - u[2]], N = [D[0] - u[0], D[1] - u[1], D[2] - u[2]], _ = R[1] * N[2] - R[2] * N[1], U = R[2] * N[0] - R[0] * N[2], k = R[0] * N[1] - R[1] * N[0], z = Math.sqrt(_ * _ + U * U + k * k), ut = z > 1e-10 && Math.abs(k) / z < 0.5;
       Tt.push({ idx: f, el: e, isWall: ut });
     }
   });
@@ -1094,14 +1098,14 @@ function Ut($) {
     c.push("$ AREA CONNECTIVITIES");
     const e = [];
     Tt.forEach((f, u) => {
-      const { el: d, isWall: D } = f, R = D ? `W${u + 1}` : `F${u + 1}`, g = D ? "PANEL" : "FLOOR", _ = d.map((U) => rt(U));
+      const { el: d, isWall: D } = f, R = D ? `W${u + 1}` : `F${u + 1}`, N = D ? "PANEL" : "FLOOR", _ = d.map((U) => rt(U));
       if (D) {
-        const U = N[d[0]][2] <= N[d[2]][2] ? 0 : 2, k = N[d[1]][2] <= N[d[3]][2] ? 1 : 3;
-        c.push(`  AREA "${R}"  ${g}  4  "${_[U].pt}"  "${_[k].pt}"  "${_[k].pt}"  "${_[U].pt}"  1  1  0  0  `);
+        const U = $[d[0]][2] <= $[d[2]][2] ? 0 : 2, k = $[d[1]][2] <= $[d[3]][2] ? 1 : 3;
+        c.push(`  AREA "${R}"  ${N}  4  "${_[U].pt}"  "${_[k].pt}"  "${_[k].pt}"  "${_[U].pt}"  1  1  0  0  `);
         const z = _[U === 0 ? 2 : 0].story;
         e.push(`  AREAASSIGN  "${R}"  "${z}"  SECTION "Muro"  OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "MIDDLE"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
       } else {
-        c.push(`  AREA "${R}"  ${g}  4  "${_[0].pt}"  "${_[1].pt}"  "${_[2].pt}"  "${_[3].pt}"  0  0  0  0  `);
+        c.push(`  AREA "${R}"  ${N}  4  "${_[0].pt}"  "${_[1].pt}"  "${_[2].pt}"  "${_[3].pt}"  0  0  0  0  `);
         const U = H ? ' DIAPH  "D1" ' : "";
         e.push(`  AREAASSIGN  "${R}"  "${_[0].story}"  SECTION "Losa" ${U} OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "TOP"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
       }
@@ -1119,8 +1123,8 @@ function Ut($) {
   }), mt.length > 0 && (c.push("$ POINT OBJECT LOADS"), mt.forEach((e) => c.push(e)), c.push("")), c.push("$ ANALYSIS OPTIONS"), c.push('  ACTIVEDOF "UX UY UZ RX RY RZ"  '), c.push('  PDELTA  METHOD "NONE"  '), c.push(""), c.push("$ MASS SOURCE"), c.push('  MASSSOURCE  "MsSrc1"    INCLUDEELEMENTS "No"    INCLUDEADDEDMASS "No"    INCLUDELOADS "Yes"    INCLUDEMOVE "No"    INCLUDELATERALMASS "Yes"    INCLUDEVERTICALMASS "No"    LUMPATSTORIES "Yes"    ISDEFAULT "Yes"  '), c.push('  MASSSOURCELOAD  "MsSrc1"  "Dead"  1 '), c.push(""), c.push("$ LOAD CASES"), c.push('  LOADCASE "Dead"  TYPE  "Linear Static"  INITCOND  "PRESET"  '), c.push('  LOADCASE "Dead"  LOADPAT  "Dead"  SF 1 '), c.push('  LOADCASE "Live"  TYPE  "Linear Static"  INITCOND  "PRESET"  '), c.push('  LOADCASE "Live"  LOADPAT  "Live"  SF 1 '), c.push('  LOADCASE "Modal"  TYPE  "Modal - Eigen"  INITCOND  "PRESET"  '), c.push('  LOADCASE "Modal"  MAXMODES 3  MINMODES 1  EIGENSHIFTFREQ 0  EIGENCUTOFFFREQ 0  EIGENTOL 1E-09  ALLOWAUTOFREQSHIFT "Yes"  '), c.push(""), c.push("$ LOAD COMBINATIONS"), c.push('  COMBO "1.4D"  TYPE "Linear Add"  '), c.push('  COMBO "1.4D"  LOADCASE  "Dead"  SF 1.4 '), c.push('  COMBO "1.2D+1.6L"  TYPE "Linear Add"  '), c.push('  COMBO "1.2D+1.6L"  LOADCASE  "Dead"  SF 1.2 '), c.push('  COMBO "1.2D+1.6L"  LOADCASE  "Live"  SF 1.6 '), c.push(""), c.push("  END"), c.push("$ END OF MODEL FILE"), c.join(`\r
 `);
 }
-function Ft($, N) {
-  const C = $[N[0]], L = $[N[1]], O = Math.abs(L[2] - C[2]), v = Math.sqrt((L[0] - C[0]) ** 2 + (L[1] - C[1]) ** 2), K = O > v * 0.5;
+function Ft(g, $) {
+  const C = g[$[0]], L = g[$[1]], O = Math.abs(L[2] - C[2]), v = Math.sqrt((L[0] - C[0]) ** 2 + (L[1] - C[1]) ** 2), K = O > v * 0.5;
   return K && v > 0.01 ? "BRACE" : K ? "COLUMN" : "BEAM";
 }
 export {
