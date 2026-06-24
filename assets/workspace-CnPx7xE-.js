@@ -24743,17 +24743,7 @@ Abrilo en SAFE 20.x: File \u2192 Import \u2192 SAFE Text File (.f2k)`), console.
     return t;
   }
   const lc = {
-    defaultShellResult: "vonMises",
-    availableShellResults: [
-      "vonMises",
-      "membraneXX",
-      "membraneYY",
-      "membraneXY",
-      "displacementZ",
-      "bendingXX",
-      "bendingYY",
-      "bendingXY"
-    ]
+    defaultShellResult: "vonMises"
   }, Vf = {
     id: "test-m-portico",
     name: "\u{1F393} Test M \u2014 Solo p\xF3rticos (sin losa)",
