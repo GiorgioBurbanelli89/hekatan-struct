@@ -24394,10 +24394,10 @@ Abrilo en SAFE 20.x: File \u2192 Import \u2192 SAFE Text File (.f2k)`), console.
       folder: "Geometr\xEDa"
     },
     ms: {
-      default: 2.5,
+      default: 1.25,
       min: 0.5,
       max: 2.5,
-      step: 0.5,
+      step: 0.25,
       label: "Malla shell [m]",
       folder: "Geometr\xEDa"
     },
