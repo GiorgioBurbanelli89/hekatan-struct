@@ -36,6 +36,40 @@ export interface ExportE2kInput {
   propertyModifiers?: Map<number, [number, number, number, number, number, number, number, number]>;
 }
 
+/**
+ * Bloque e2k de una función de espectro de respuesta USER (puntos T,Sa).
+ * Formato real de ETABS (verificado por RE):
+ *   FUNCTION "<n>"  FUNCTYPE "SPECTRUM"  DAMPRATIO 0.05  SPECTYPE "USER"
+ *   FUNCTION "<n>"  TIMEVAL "T1 Sa1  T2 Sa2  ..."
+ * Lo lee CUALQUIER ETABS (19/22) y SAP2000 — NO depende de la NEC nativa
+ * (`SPECTYPE "ECUADOR..."` solo abre en versiones que la traigan). Los puntos
+ * salen del espectro NEC de Hekatan, que coincide 0.00% con la NEC nativa.
+ */
+export function necUserSpectrumE2k(
+  name: string, points: [number, number][], dampRatio = 0.05,
+): string[] {
+  const pairs = points.map(([T, Sa]) => `${(+T).toFixed(4)} ${(+Sa).toFixed(5)}`).join("  ");
+  return [
+    `  FUNCTION "${name}"  FUNCTYPE "SPECTRUM"  DAMPRATIO ${dampRatio}  SPECTYPE "USER"  `,
+    `  FUNCTION "${name}"  TIMEVAL "${pairs}"  `,
+  ];
+}
+
+/**
+ * Bloque e2k de un caso Response Spectrum (modal). Patrón verificado en modelos
+ * reales de ETABS:  TYPE "Response Spectrum" + MODALCASE + ACCEL U1/U2 con FUNC y SF.
+ * SF típico = g/(R·φP·φE) para pasar Sa[g]→fuerza (o ×V/Vt del control NEC §6.2.2).
+ */
+export function responseSpectrumCaseE2k(opt: {
+  name: string; func: string; modalCase?: string; sfX?: number; sfY?: number;
+}): string[] {
+  const { name, func, modalCase = "Modal", sfX = 9.81, sfY = 9.81 } = opt;
+  const L = [`  LOADCASE "${name}"  TYPE  "Response Spectrum"  MODALCASE  "${modalCase}"  `];
+  if (sfX) L.push(`  LOADCASE "${name}"  ACCEL  "U1"  FUNC  "${func}"  SF  ${sfX}  `);
+  if (sfY) L.push(`  LOADCASE "${name}"  ACCEL  "U2"  FUNC  "${func}"  SF  ${sfY}  `);
+  return L;
+}
+
 export function exportE2k(input: ExportE2kInput): string {
   const { nodes, elements, nodeInputs, elementInputs, title, e2kModel } = input;
   const raw = e2kModel?.rawSections;
