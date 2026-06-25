@@ -209,9 +209,12 @@ export function parseE2k(text: string): E2kModel {
 
     // ── AREA CONNECTIVITIES ──
     if (currentSection === "AREA CONNECTIVITIES") {
-      const am = line.match(/AREA\s+"([^"]+)"\s+\d+\s+(.+)/);
+      // ETABS: AREA "F1" FLOOR 4 "1" "6" "7" "2" 0 0 0 0  (tipo FLOOR/PANEL/RAMP
+      // OPCIONAL entre el nombre y el contador). El regex anterior exigía un dígito
+      // justo tras el nombre → no matcheaba NINGÚN área con tipo (losas/muros reales).
+      const am = line.match(/AREA\s+"([^"]+)"\s+(?:([A-Za-z]\w*)\s+)?\d+\s+(.+)/);
       if (am) {
-        const pts = am[2].match(/"([^"]+)"/g)?.map(s => s.replace(/"/g, "")) || [];
+        const pts = am[3].match(/"([^"]+)"/g)?.map(s => s.replace(/"/g, "")) || [];
         areaConns.push({ name: am[1], pts, nStories: 0 });
       }
     }
