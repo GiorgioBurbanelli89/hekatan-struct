@@ -34,6 +34,21 @@ export interface ExportE2kInput {
    * Formato: 8 valores [A, As2, As3, Torsion, I22, I33, Mass, Weight].
    */
   propertyModifiers?: Map<number, [number, number, number, number, number, number, number, number]>;
+  /**
+   * Sísmico NEC opcional: si se provee, el e2k exportado trae el espectro NEC
+   * como función USER-defined (portable a cualquier ETABS/SAP) + un caso
+   * Response Spectrum. `points` = pares (T, Sa) del espectro NEC elástico
+   * (el caller los muestrea de espectroNEC.necSpectrum). Validado: ETABS lee
+   * los puntos exactos. La R suele ir en sfX/sfY (= g/(R·φ)).
+   */
+  seismicNEC?: {
+    points: [number, number][];
+    name?: string;        // nombre de la función (default "NEC")
+    dampRatio?: number;   // default 0.05
+    caseName?: string;    // nombre del caso RS (default "Sismo NEC")
+    modalCase?: string;   // caso modal de referencia (default "Modal")
+    sfX?: number; sfY?: number;
+  };
 }
 
 /**
@@ -71,20 +86,37 @@ export function responseSpectrumCaseE2k(opt: {
 }
 
 export function exportE2k(input: ExportE2kInput): string {
-  const { nodes, elements, nodeInputs, elementInputs, title, e2kModel } = input;
-  const raw = e2kModel?.rawSections;
+  const raw = input.e2kModel?.rawSections;
+  // Raw round-trip (preserva ETABS) o reconstrucción sintética.
+  let e2k = (raw && raw.size > 0) ? exportFromRaw(raw, input.e2kModel!) : exportFromScratch(input);
+  // Inyectar el sísmico NEC (función USER + caso RS) si se pidió. Sirve para
+  // ambos modos: post-procesa la salida insertando en FUNCTIONS y LOAD CASES.
+  if (input.seismicNEC) e2k = injectNecSeismic(e2k, input.seismicNEC);
+  return e2k;
+}
 
-  // ═══════════════════════════════════════════
-  // If we have raw sections from the original file, re-emit them verbatim
-  // ═══════════════════════════════════════════
-  if (raw && raw.size > 0) {
-    return exportFromRaw(raw, e2kModel!);
-  }
+/** Inserta el espectro NEC USER-defined + caso Response Spectrum en un e2k ya armado. */
+function injectNecSeismic(e2k: string, nec: NonNullable<ExportE2kInput["seismicNEC"]>): string {
+  const nl = e2k.includes("\r\n") ? "\r\n" : "\n";
+  const lines = e2k.split(/\r?\n/);
+  const funcName = nec.name ?? "NEC";
+  const fnLines = necUserSpectrumE2k(funcName, nec.points, nec.dampRatio ?? 0.05);
+  const lcLines = responseSpectrumCaseE2k({
+    name: nec.caseName ?? "Sismo NEC", func: funcName,
+    modalCase: nec.modalCase, sfX: nec.sfX, sfY: nec.sfY,
+  });
+  insertAfterSection(lines, "FUNCTIONS", fnLines);
+  insertAfterSection(lines, "LOAD CASES", lcLines);
+  return lines.join(nl);
+}
 
-  // ═══════════════════════════════════════════
-  // Otherwise, reconstruct from scratch (best-effort)
-  // ═══════════════════════════════════════════
-  return exportFromScratch(input);
+/** Inserta `payload` tras el header `$ <section>`; si la sección no existe, la crea antes de END. */
+function insertAfterSection(lines: string[], section: string, payload: string[]): void {
+  const i = lines.findIndex((l) => l.trim() === `$ ${section}`);
+  if (i >= 0) { lines.splice(i + 1, 0, ...payload); return; }
+  const endIdx = lines.findIndex((l) => l.trim() === "END");
+  const at = endIdx >= 0 ? endIdx : lines.length;
+  lines.splice(at, 0, `$ ${section}`, ...payload, ``);
 }
 
 /**
