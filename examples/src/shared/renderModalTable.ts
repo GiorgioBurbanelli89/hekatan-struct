@@ -5,6 +5,8 @@ export interface ModalTableConfig {
   title: string;
   /** Optional property lines shown below the title */
   properties?: string[];
+  /** SVG del espectro NEC-15 (Sa vs T) insertado en el cuerpo del panel. */
+  spectrumHtml?: string;
 }
 
 /**
@@ -144,6 +146,8 @@ export function createModalPanel() {
         html += `<span style="color:#888">${line}</span>\n`;
       }
     }
+    // Gráfica del espectro NEC-15 (Sa vs T) con T₁ del modal marcado.
+    if (config.spectrumHtml) html += config.spectrumHtml;
 
     html += `<table style="border-collapse:collapse; color:#0f0; font-size:11px; margin-top:4px">
 <tr style="color:#ff0; border-bottom:1px solid #ff03">

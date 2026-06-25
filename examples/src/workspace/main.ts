@@ -6011,7 +6011,8 @@ if (urlT === "zapata-aislada") {
   } catch { /* no-op */ }
 }
 if (!urlT) {
-  urlT = "new-blank";
+  // Default del workspace: Test M — Dual (edificio didáctico NEC-15 completo).
+  urlT = "test-m-dual";
   try {
     const u = new URL(window.location.href);
     u.searchParams.set("t", urlT);

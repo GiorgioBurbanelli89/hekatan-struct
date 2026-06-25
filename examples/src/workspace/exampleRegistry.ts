@@ -330,6 +330,8 @@ import { mezanine } from "../mezanine/mezanine";
 import { edificioFrameNec } from "../edificio-frame-nec/edificioFrameNec";
 // Lienzo en blanco para dibujar (CAD interactivo)
 import { newBlank } from "../new-blank/newBlank";
+// 🎓 Test M — edificio paramétrico (pórticos / +losa / dual) con sísmico NEC-15 + selector NEC/ASCE
+import { testMPortico, testMLosa, testMDual } from "../test-m/testM";
 // Legacy del upstream awatif (rebrandeados, abren standalone)
 import {
   legacyAwatifExamples,
@@ -340,6 +342,9 @@ import {
 
 export const examplesRegistry: ExampleDef[] = [
   // 🎓 TEST M — modelos de los objetivos específicos de la tesis de maestría
+  testMDual,              // Dual (pórtico+losa+muros) — sísmico NEC-15 completo + selector NEC/ASCE
+  testMPortico,           // Solo pórticos (sin losa)
+  testMLosa,              // Pórtico + losa
   edificioFrameNec,       // Edificio pórtico paramétrico (frame puro) + carga lateral NEC
   // 🧪 TEST — casos de prueba / desarrollo (categoría "test")
   drillingDof,            // 2 muros + viga de acople (drilling DOF + test exportador e2k)
