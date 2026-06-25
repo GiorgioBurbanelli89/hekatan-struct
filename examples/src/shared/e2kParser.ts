@@ -298,6 +298,11 @@ export function parseE2k(text: string): E2kModel {
   const elementTypes: string[] = [];
   const elementStoriesArr: string[] = [];
   const elementSections = new Map<number, string>();
+  // Declarados ANTES del loop: el loop los puebla (rigidZone/releases). Estaban
+  // más abajo y daban TDZ "Cannot access 'rigidOffsets' before initialization"
+  // al parsear cualquier e2k con brazos rígidos o liberaciones (ej. BARRIO CENTRAL).
+  const rigidOffsets = new Map<number, [number, number]>();
+  const momentReleases = new Map<number, boolean[]>();
 
   for (const lc of lineConns) {
     for (const [key, la] of lineAssigns) {
@@ -357,8 +362,6 @@ export function parseE2k(text: string): E2kModel {
   const areas = new Map<number, number>();
   const shearAreasY = new Map<number, number>();
   const shearAreasZ = new Map<number, number>();
-  const rigidOffsets = new Map<number, [number, number]>();
-  const momentReleases = new Map<number, boolean[]>();
   const momentsOfInertiaZ = new Map<number, number>();
   const momentsOfInertiaY = new Map<number, number>();
   const torsionalConstants = new Map<number, number>();
