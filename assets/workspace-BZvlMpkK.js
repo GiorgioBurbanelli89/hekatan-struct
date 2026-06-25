@@ -5976,7 +5976,7 @@ ${_}
       }, _ = {};
       a.val.forEach((v) => _[v.name] = v.name), Object.keys(_).length === 0 && (_["(ninguno)"] = "");
       const p = d.addBinding(M, "case", {
-        label: "\u25B6 Run case",
+        label: "\u25B6 Result case",
         options: _
       });
       try {
