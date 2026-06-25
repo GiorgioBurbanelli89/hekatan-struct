@@ -36,7 +36,7 @@ function Lt() {
       return;
     }
     const w = ["Ux", "Uy", "Uz", "Rx", "Ry", "Rz"], v = [0, 0, 0, 0, 0, 0], N = m.frequencies.length;
-    let s = -1, S = -1, Y = -1, H = 0, Z = 0;
+    let s = -1, S = -1, Y = -1, H = 0, W = 0;
     {
       const e = [0, 0, 0, 0, 0, 0];
       for (let l = 0; l < N; l++) {
@@ -44,7 +44,7 @@ function Lt() {
         for (let f = 0; f < 6; f++) e[f] += x[f];
         s < 0 && e[0] >= $ && (s = l + 1), S < 0 && e[1] >= $ && (S = l + 1), Y < 0 && e[0] >= $ && e[1] >= $ && (Y = l + 1);
       }
-      H = e[0], Z = e[1];
+      H = e[0], W = e[1];
     }
     let B = -1, U = -1, J = -1;
     const C = 0.1;
@@ -52,7 +52,7 @@ function Lt() {
       const l = ((_b = m.massParticipation) == null ? void 0 : _b[e]) || [0, 0, 0, 0, 0, 0];
       B < 0 && l[0] > C && (B = e + 1), U < 0 && l[1] > C && (U = e + 1), J < 0 && l[5] > C && (J = e + 1);
     }
-    const I = Y > 0 ? `<span style="color:#0f0">\u2713 ASCE 7-22 \xA712.9.1.1 \u2014 90 % alcanzado en X e Y al modo ${Y} de ${N}</span>` : s > 0 && S < 0 ? `<span style="color:#fa0">\u26A0 X cumple en modo ${s}, Y todav\xEDa en ${(Z * 100).toFixed(1)} % \u2014 aumentar nModes</span>` : S > 0 && s < 0 ? `<span style="color:#fa0">\u26A0 Y cumple en modo ${S}, X todav\xEDa en ${(H * 100).toFixed(1)} % \u2014 aumentar nModes</span>` : `<span style="color:#f44">\u2717 ASCE 7-22 NO cumplido en ${N} modos \xB7 \u03A3Ux=${(H * 100).toFixed(1)} % \xB7 \u03A3Uy=${(Z * 100).toFixed(1)} % \u2014 aumentar nModes</span>`, p = (() => {
+    const I = Y > 0 ? `<span style="color:#0f0">\u2713 ASCE 7-22 \xA712.9.1.1 \u2014 90 % alcanzado en X e Y al modo ${Y} de ${N}</span>` : s > 0 && S < 0 ? `<span style="color:#fa0">\u26A0 X cumple en modo ${s}, Y todav\xEDa en ${(W * 100).toFixed(1)} % \u2014 aumentar nModes</span>` : S > 0 && s < 0 ? `<span style="color:#fa0">\u26A0 Y cumple en modo ${S}, X todav\xEDa en ${(H * 100).toFixed(1)} % \u2014 aumentar nModes</span>` : `<span style="color:#f44">\u2717 ASCE 7-22 NO cumplido en ${N} modos \xB7 \u03A3Ux=${(H * 100).toFixed(1)} % \xB7 \u03A3Uy=${(W * 100).toFixed(1)} % \u2014 aumentar nModes</span>`, p = (() => {
       const e = (l, x) => {
         var _a2;
         if (l < 0) return `<span style="color:#f44">${x}: no encontrado en ${N} modos</span>`;
@@ -144,7 +144,7 @@ function Lt() {
 function yt(d) {
   var _a;
   const E = d.split(/\r?\n/), $ = { force: "TONF", length: "M" }, T = [], m = /* @__PURE__ */ new Map(), y = /* @__PURE__ */ new Map(), w = /* @__PURE__ */ new Map(), v = [], N = [], s = /* @__PURE__ */ new Map(), S = /* @__PURE__ */ new Map(), Y = [], H = [];
-  let Z = "", B = "";
+  let W = "", B = "";
   const U = /* @__PURE__ */ new Map();
   for (const M of E) {
     const g = M.trim();
@@ -156,7 +156,7 @@ function yt(d) {
       const c = g.match(/UNITS\s+"([^"]+)"\s+"([^"]+)"/);
       c && ($.force = c[1], $.length = c[2]);
       const R = g.match(/TITLE2\s+"([^"]+)"/);
-      R && (Z = R[1]);
+      R && (W = R[1]);
     }
     if (B === "STORIES - IN SEQUENCE FROM TOP") {
       const c = g.match(/STORY\s+"([^"]+)"\s+(?:HEIGHT\s+([\d.]+)|ELEV\s+([-\d.]+))/);
@@ -243,9 +243,9 @@ function yt(d) {
       c && Y.push({ line: c[1], story: c[2], type: c[3], dir: c[4], lc: c[5], val: parseFloat(c[6]) });
     }
     if (B === "AREA CONNECTIVITIES") {
-      const c = g.match(/AREA\s+"([^"]+)"\s+\d+\s+(.+)/);
+      const c = g.match(/AREA\s+"([^"]+)"\s+(?:([A-Za-z]\w*)\s+)?\d+\s+(.+)/);
       if (c) {
-        const R = ((_a = c[2].match(/"([^"]+)"/g)) == null ? void 0 : _a.map((i) => i.replace(/"/g, ""))) || [];
+        const R = ((_a = c[3].match(/"([^"]+)"/g)) == null ? void 0 : _a.map((i) => i.replace(/"/g, ""))) || [];
         N.push({ name: c[1], pts: R, nStories: 0 });
       }
     }
@@ -369,7 +369,7 @@ function yt(d) {
     const R = m.get(c.material);
     (R == null ? void 0 : R.density) && rt.set(M, R.density);
   }
-  return { units: $, stories: T.reverse(), materials: m, frameSections: y, nodes: C, nodeNames: I, nodeNameToIdx: p, elements: x, elementNames: f, elementTypes: D, elementStories: P, elementSections: _, nodeInputs: { supports: ft, loads: ct }, elementInputs: { elasticities: q, shearModuli: tt, areas: et, momentsOfInertiaZ: it, momentsOfInertiaY: V, torsionalConstants: lt, shearAreasY: at, shearAreasZ: j, rigidOffsets: k, momentReleases: X, densities: rt, sectionShapes: Q }, sectionShapes: Q, grids: H, info: { nNodes: C.length, nFrames: x.length, nAreas: N.length, title: Z }, rawSections: U };
+  return { units: $, stories: T.reverse(), materials: m, frameSections: y, nodes: C, nodeNames: I, nodeNameToIdx: p, elements: x, elementNames: f, elementTypes: D, elementStories: P, elementSections: _, nodeInputs: { supports: ft, loads: ct }, elementInputs: { elasticities: q, shearModuli: tt, areas: et, momentsOfInertiaZ: it, momentsOfInertiaY: V, torsionalConstants: lt, shearAreasY: at, shearAreasZ: j, rigidOffsets: k, momentReleases: X, densities: rt, sectionShapes: Q }, sectionShapes: Q, grids: H, info: { nNodes: C.length, nFrames: x.length, nAreas: N.length, title: W }, rawSections: U };
 }
 function G(d) {
   return d && parseFloat(d) || 0;
@@ -395,7 +395,7 @@ function Mt(d) {
   $ && E.push($);
   const T = { force: "KN", length: "m" };
   let m = "UX,UY,UZ,RX,RY,RZ";
-  const y = /* @__PURE__ */ new Map(), w = /* @__PURE__ */ new Map(), v = /* @__PURE__ */ new Map(), N = /* @__PURE__ */ new Map(), s = [], S = [], Y = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), Z = /* @__PURE__ */ new Map(), B = [];
+  const y = /* @__PURE__ */ new Map(), w = /* @__PURE__ */ new Map(), v = /* @__PURE__ */ new Map(), N = /* @__PURE__ */ new Map(), s = [], S = [], Y = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), W = /* @__PURE__ */ new Map(), B = [];
   let U = "";
   for (const J of E) {
     const C = J.trim();
@@ -487,7 +487,7 @@ function Mt(d) {
       }
       case "AREA SECTION ASSIGNMENTS": {
         const p = I.get("Area"), o = I.get("Section");
-        p && o && Z.set(p, o);
+        p && o && W.set(p, o);
         break;
       }
       case "JOINT LOADS - FORCE": {
@@ -497,7 +497,7 @@ function Mt(d) {
       }
     }
   }
-  return It(T, m, y, w, v, N, s, S, Y, H, Z, B);
+  return It(T, m, y, w, v, N, s, S, Y, H, W, B);
 }
 function $t(d) {
   const E = { force: "KN", length: "m" };
@@ -583,11 +583,11 @@ function $t(d) {
 }
 function It(d, E, $, T, m, y, w, v, N, s, S, Y) {
   var _a;
-  const H = [], Z = /* @__PURE__ */ new Map(), B = [];
-  for (const [f, D] of y) Z.set(f, B.length), H.push(f), B.push(D);
+  const H = [], W = /* @__PURE__ */ new Map(), B = [];
+  for (const [f, D] of y) W.set(f, B.length), H.push(f), B.push(D);
   const U = [], J = [], C = /* @__PURE__ */ new Map();
   for (const f of w) {
-    const D = Z.get(f.j1), P = Z.get(f.j2);
+    const D = W.get(f.j1), P = W.get(f.j2);
     if (D !== void 0 && P !== void 0) {
       const _ = U.length;
       U.push([D, P]), J.push(f.name);
@@ -597,7 +597,7 @@ function It(d, E, $, T, m, y, w, v, N, s, S, Y) {
   }
   const I = U.length;
   for (const f of v) {
-    const D = f.joints.map((P) => Z.get(P)).filter((P) => P !== void 0);
+    const D = f.joints.map((P) => W.get(P)).filter((P) => P !== void 0);
     if (D.length >= 3) {
       const P = U.length;
       U.push(D), J.push(f.name);
@@ -618,17 +618,17 @@ function It(d, E, $, T, m, y, w, v, N, s, S, Y) {
   }
   const x = { supports: /* @__PURE__ */ new Map(), forces: /* @__PURE__ */ new Map() };
   for (const [f, D] of N) {
-    const P = Z.get(f);
+    const P = W.get(f);
     P !== void 0 && x.supports.set(P, D);
   }
   for (const f of Y) {
-    const D = Z.get(f.joint);
+    const D = W.get(f.joint);
     if (D !== void 0) {
       const P = x.forces.get(D) || [0, 0, 0, 0, 0, 0];
       P[0] += f.fx, P[1] += f.fy, P[2] += f.fz, P[3] += f.mx, P[4] += f.my, P[5] += f.mz, x.forces.set(D, P);
     }
   }
-  return { units: d, dof: E, materials: $, frameSections: T, shellSections: m, nodes: B, nodeNames: H, nodeNameToIdx: Z, elements: U, elementNames: J, elementSections: C, nodeInputs: x, elementInputs: o, sectionShapes: e, info: { nNodes: B.length, nFrames: I, nShells: p, title: `SAP2000 (${I} frames, ${p} shells)` } };
+  return { units: d, dof: E, materials: $, frameSections: T, shellSections: m, nodes: B, nodeNames: H, nodeNameToIdx: W, elements: U, elementNames: J, elementSections: C, nodeInputs: x, elementInputs: o, sectionShapes: e, info: { nNodes: B.length, nFrames: I, nShells: p, title: `SAP2000 (${I} frames, ${p} shells)` } };
 }
 function Dt(d) {
   var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k;
@@ -654,7 +654,7 @@ function Dt(d) {
     s();
   }
   N('TABLE:  "COORDINATE SYSTEMS"'), N("   Name=GLOBAL   Type=Cartesian   X=0   Y=0   Z=0   AboutZ=0   AboutY=0   AboutX=0"), s(), N('TABLE:  "DATABASE FORMAT TYPES"'), N("   UnitsCurr=Yes   OverrideE=No"), s();
-  const H = /* @__PURE__ */ new Map(), Z = /* @__PURE__ */ new Map();
+  const H = /* @__PURE__ */ new Map(), W = /* @__PURE__ */ new Map();
   for (const o of S) {
     const e = ((_a = m.areas) == null ? void 0 : _a.get(o)) || 0, l = ((_b = m.momentsOfInertiaZ) == null ? void 0 : _b.get(o)) || 0, x = ((_c = m.momentsOfInertiaY) == null ? void 0 : _c.get(o)) || 0, f = ((_d = m.torsionalConstants) == null ? void 0 : _d.get(o)) || 0, D = ((_e = m.elasticities) == null ? void 0 : _e.get(o)) || 0, P = `MAT_${Math.round(D)}`, _ = `A${e.toPrecision(6)}_Iz${l.toPrecision(6)}`;
     if (!H.has(_)) {
@@ -662,12 +662,12 @@ function Dt(d) {
       e > 0 && l > 0 && (X = Math.sqrt(12 * l / e), q = e / X), H.set(_, { A: e, Iz: l, Iy: x, J: f, b: q, h: X, matKey: P });
     }
     const k = [...H.keys()].indexOf(_) + 1;
-    Z.set(o, `SEC${k}`);
+    W.set(o, `SEC${k}`);
   }
   if (S.length > 0) {
     N('TABLE:  "FRAME SECTION ASSIGNMENTS"');
     for (const o of S) {
-      const e = Z.get(o) || "SEC1";
+      const e = W.get(o) || "SEC1";
       N(`   Frame=${o + 1}   AutoSelect=N.A.   AnalSect=${e}   MatProp=Default`);
     }
     s();
@@ -678,7 +678,7 @@ function Dt(d) {
     for (const [, e] of H) {
       o++;
       const l = e.A * 5 / 6;
-      N(`   SectionName=SEC${o}   Material=${e.matKey}   Shape=Rectangular   t3=${W(e.h)}   t2=${W(e.b)}   Area=${W(e.A)}   TorsConst=${W(e.J)}   I33=${W(e.Iz)}   I22=${W(e.Iy)}   I23=0   AS2=${W(l)}   AS3=${W(l)} _`), N("        Color=Blue   FromFile=No   AMod=1   A2Mod=1   A3Mod=1   JMod=1   I2Mod=1   I3Mod=1   MMod=1   WMod=1");
+      N(`   SectionName=SEC${o}   Material=${e.matKey}   Shape=Rectangular   t3=${Z(e.h)}   t2=${Z(e.b)}   Area=${Z(e.A)}   TorsConst=${Z(e.J)}   I33=${Z(e.Iz)}   I22=${Z(e.Iy)}   I23=0   AS2=${Z(l)}   AS3=${Z(l)} _`), N("        Color=Blue   FromFile=No   AMod=1   A2Mod=1   A3Mod=1   JMod=1   I2Mod=1   I3Mod=1   MMod=1   WMod=1");
     }
     s();
   }
@@ -697,17 +697,17 @@ function Dt(d) {
     }
     if (s(), N('TABLE:  "AREA SECTION PROPERTIES"'), B) {
       const o = U, e = ((_h = o.layers[0]) == null ? void 0 : _h.material) || "MAT_DEFAULT";
-      N(`   Section=${o.name}   Material=${e}   MatAngle=0   AreaType=Shell   Type=Shell-Layered   Thickness=${W(o.totalThickness)}   BendThick=${W(o.totalThickness)}   Color=Magenta`);
+      N(`   Section=${o.name}   Material=${e}   MatAngle=0   AreaType=Shell   Type=Shell-Layered   Thickness=${Z(o.totalThickness)}   BendThick=${Z(o.totalThickness)}   Color=Magenta`);
     } else {
       let o = 0;
-      for (const [, e] of J) o++, N(`   Section=SSEC${o}   Material=${e.matKey}   MatAngle=0   AreaType=Shell   Type=ShellThin   DrillDOF=Yes   Thickness=${W(e.t)}   BendThick=${W(e.t)}   Color=Cyan`);
+      for (const [, e] of J) o++, N(`   Section=SSEC${o}   Material=${e.matKey}   MatAngle=0   AreaType=Shell   Type=ShellThin   DrillDOF=Yes   Thickness=${Z(e.t)}   BendThick=${Z(e.t)}   Color=Cyan`);
     }
     if (s(), B) {
       N('TABLE:  "AREA SECTION PROPERTY LAYERS"');
       const o = U;
       for (const e of o.layers) {
         const l = e.angle ?? 0, x = e.numIntPts ?? 3;
-        N(`   Section=${o.name}   LayerName=${e.name}   Distance=${W(e.distance)}   Thickness=${W(e.thickness)}   Type=Shell   NumIntPts=${x}   Material=${e.material}   MatAngle=${W(l * 180 / Math.PI)}   MatBehave=Directional   S11Opt=Linear   S22Opt=Linear   S12Opt=Linear`);
+        N(`   Section=${o.name}   LayerName=${e.name}   Distance=${Z(e.distance)}   Thickness=${Z(e.thickness)}   Type=Shell   NumIntPts=${x}   Material=${e.material}   MatAngle=${Z(l * 180 / Math.PI)}   MatBehave=Directional   S11Opt=Linear   S22Opt=Linear   S12Opt=Linear`);
       }
       s();
     }
@@ -715,7 +715,7 @@ function Dt(d) {
   N('TABLE:  "JOINT COORDINATES"');
   for (let o = 0; o < E.length; o++) {
     const e = E[o];
-    N(`   Joint=${o + 1}   CoordSys=GLOBAL   CoordType=Cartesian   XorR=${W(e[0])}   Y=${W(e[1])}   Z=${W(e[2])}   SpecialJt=No`);
+    N(`   Joint=${o + 1}   CoordSys=GLOBAL   CoordType=Cartesian   XorR=${Z(e[0])}   Y=${Z(e[1])}   Z=${Z(e[2])}   SpecialJt=No`);
   }
   if (s(), T.supports && T.supports.size > 0) {
     N('TABLE:  "JOINT RESTRAINT ASSIGNMENTS"');
@@ -729,7 +729,7 @@ function Dt(d) {
   const I = d.selfWtMult ?? 1;
   if (N('TABLE:  "LOAD PATTERN DEFINITIONS"'), N(`   LoadPat=DEAD   DesignType=Dead   SelfWtMult=${I}`), s(), N('TABLE:  "LOAD CASE DEFINITIONS"'), N('   Case=DEAD   Type=LinStatic   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Dead   DesActOpt="Prog Det"   DesignAct=Non-Composite   AutoType=None   RunCase=Yes'), s(), N('TABLE:  "CASE - STATIC 1 - LOAD ASSIGNMENTS"'), N('   Case=DEAD   LoadType="Load pattern"   LoadName=DEAD   LoadSF=1'), s(), T.forces && T.forces.size > 0) {
     N('TABLE:  "JOINT LOADS - FORCE"');
-    for (const [o, e] of T.forces) e.some((l) => Math.abs(l) > 1e-12) && N(`   Joint=${o + 1}   LoadPat=DEAD   CoordSys=GLOBAL   F1=${W(e[0])}   F2=${W(e[1])}   F3=${W(e[2])}   M1=${W(e[3])}   M2=${W(e[4])}   M3=${W(e[5])}`);
+    for (const [o, e] of T.forces) e.some((l) => Math.abs(l) > 1e-12) && N(`   Joint=${o + 1}   LoadPat=DEAD   CoordSys=GLOBAL   F1=${Z(e[0])}   F2=${Z(e[1])}   F3=${Z(e[2])}   M1=${Z(e[3])}   M2=${Z(e[4])}   M3=${Z(e[5])}`);
     s();
   }
   const p = /* @__PURE__ */ new Map();
@@ -740,13 +740,13 @@ function Dt(d) {
   N('TABLE:  "MATERIAL PROPERTIES 01 - GENERAL"');
   for (const [o] of p) N(`   Material=${o}   Type=Concrete   SymType=Isotropic   TempDepend=No   Color=Green`);
   s(), N('TABLE:  "MATERIAL PROPERTIES 02 - BASIC MECHANICAL PROPERTIES"');
-  for (const [o, e] of p) N(`   Material=${o}   UnitWeight=${W(e.rho * 9.81)}   UnitMass=${W(e.rho)}   E1=${W(e.E)}   G12=${W(e.G)}   U12=${W(e.nu)}   A1=9.9E-06`);
+  for (const [o, e] of p) N(`   Material=${o}   UnitWeight=${Z(e.rho * 9.81)}   UnitMass=${Z(e.rho)}   E1=${Z(e.E)}   G12=${Z(e.G)}   U12=${Z(e.nu)}   A1=9.9E-06`);
   s(), N('TABLE:  "MATERIAL PROPERTIES 03B - CONCRETE DATA"');
   for (const [o] of p) N(`   Material=${o}   Fc=27579   eFc=27579   LtWtConc=No   SSCurveOpt=Mander   SSHysType=Takeda   SFc=0.00222   SCap=0.005   FinalSlope=-0.1   FAngle=0   DAngle=0`);
   return s(), N('TABLE:  "PROGRAM CONTROL"'), N(`   ProgramName=SAP2000   Version=24.1.0   CurrUnits="${y.force}, ${y.length}, C"   SteelCode="AISC 360-16"   ConcCode="ACI 318-19"   AlumCode="AA 2015"   ColdCode=AISI-16   RegenHinge=Yes`), s(), N("END TABLE DATA"), N(""), v.join(`\r
 `);
 }
-function W(d) {
+function Z(d) {
   return d === 0 || Math.abs(d) < 1e-15 ? "0" : Math.abs(d) >= 1e6 || Math.abs(d) < 1e-3 && Math.abs(d) > 0 ? d.toExponential(8) : parseFloat(d.toPrecision(10)).toString();
 }
 function Nt(d, E, $ = 0.05) {
@@ -803,7 +803,7 @@ function Ct(d) {
   const { nodes: E, elements: $, nodeInputs: T, elementInputs: m, title: y, units: w } = d, v = (w == null ? void 0 : w.force) || "Tonf", N = (w == null ? void 0 : w.length) || "m", s = [], S = (t) => Math.round(t * 1e4) / 1e4, Y = (() => {
     const t = (v || "Tonf").toLowerCase();
     return t === "tonf" || t === "tonf-f" ? 1 / 9.80665 : t === "kn" || t === "kn-f" ? 1 : t === "kgf" || t === "kg" ? 1 / 980665e-8 : t === "kip" || t === "kips" ? 1 / 4.44822 : 1;
-  })(), H = (t) => t * Y, Z = (t) => t * Y, B = (t) => t * Y, U = /* @__PURE__ */ new Date(), J = `${U.getMonth() + 1}/${U.getDate()}/${U.getFullYear()}  ${U.getHours()}:${String(U.getMinutes()).padStart(2, "0")}:${String(U.getSeconds()).padStart(2, "0")}`;
+  })(), H = (t) => t * Y, W = (t) => t * Y, B = (t) => t * Y, U = /* @__PURE__ */ new Date(), J = `${U.getMonth() + 1}/${U.getDate()}/${U.getFullYear()}  ${U.getHours()}:${String(U.getMinutes()).padStart(2, "0")}:${String(U.getSeconds()).padStart(2, "0")}`;
   s.push(`$ File   "Hekatan_export.e2k"  saved ${J} in ETABS 22.6.0`), s.push(""), s.push("$ PROGRAM INFORMATION"), s.push('  PROGRAM  "ETABS"  VERSION "22.6.0"  '), s.push(""), s.push("$ CONTROLS"), s.push(`  UNITS  "${v}"  "${N}"  "C"  `), s.push('  TITLE1  "Hekatan Struct export"  '), y && s.push(`  TITLE2  "${y}"  `), s.push("  PREFERENCE  MERGETOL 0.001"), s.push('  RLLF  METHOD "ASCE7-10"  USEDEFAULTMIN "YES"  '), s.push("");
   const C = /* @__PURE__ */ new Set(), I = /* @__PURE__ */ new Set();
   E.forEach((t) => {
@@ -846,12 +846,12 @@ function Ct(d) {
   for (const t of D) {
     const n = t >= 1e8, r = n ? `Steel_${++k}` : `Conc_${++X}`;
     P.set(t, r), _.set(t, n);
-    const a = tt.get(t) ?? (n ? 76.97 : 24), O = Z(t), h = B(a), A = n ? 0.3 : 0.2, b = n ? 117e-7 : 1e-5;
+    const a = tt.get(t) ?? (n ? 76.97 : 24), O = W(t), h = B(a), A = n ? 0.3 : 0.2, b = n ? 117e-7 : 1e-5;
     if (n) {
       s.push(`  MATERIAL  "${r}"    TYPE "Steel"    GRADE "Grade 50"    WEIGHTPERVOLUME ${S(h)}`), s.push(`  MATERIAL  "${r}"    SYMTYPE "Isotropic"  E ${S(O)}  U ${A}  A ${b}`);
       const F = 345e3, z = 45e4;
-      s.push(`  MATERIAL  "${r}"  FY ${S(Z(F))}  FU ${S(Z(z))}  FYE ${S(Z(F * 1.1))}  FUE ${S(Z(z * 1.1))}`);
-    } else s.push(`  MATERIAL  "${r}"    TYPE "Concrete"    WEIGHTPERVOLUME ${S(h)}`), s.push(`  MATERIAL  "${r}"    SYMTYPE "Isotropic"  E ${S(O)}  U ${A}  A ${b}`), s.push(`  MATERIAL  "${r}"    FC ${S(Z(24e3))}`);
+      s.push(`  MATERIAL  "${r}"  FY ${S(W(F))}  FU ${S(W(z))}  FYE ${S(W(F * 1.1))}  FUE ${S(W(z * 1.1))}`);
+    } else s.push(`  MATERIAL  "${r}"    TYPE "Concrete"    WEIGHTPERVOLUME ${S(h)}`), s.push(`  MATERIAL  "${r}"    SYMTYPE "Isotropic"  E ${S(O)}  U ${A}  A ${b}`), s.push(`  MATERIAL  "${r}"    FC ${S(W(24e3))}`);
   }
   s.push(""), s.push("$ FRAME SECTIONS");
   const et = /* @__PURE__ */ new Set(), at = /* @__PURE__ */ new Map(), j = /* @__PURE__ */ new Map(), it = 0.05;
