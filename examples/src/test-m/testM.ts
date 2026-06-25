@@ -218,10 +218,22 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
           const uxL = zl.map((z) => { const ids = idsAt(z); return ids.reduce((s: number, idx: number) => s + ux(idx), 0) / Math.max(ids.length, 1); });
           // amplificación elástico→inelástico:  NEC ΔM=0.75·R·ΔE  ·  ASCE δx=Cd·δxe/Ie
           const ampD = esAsce ? (Cd / Math.max(I, 1e-6)) : (0.75 * R);
-          let pu = 0, pz = 0, dmax = 0;
-          zl.forEach((z, k) => { const dM = ampD * (uxL[k] - pu), dr = Math.abs(dM) / Math.max(z - pz, 1e-6); dmax = Math.max(dmax, dr); pu = uxL[k]; pz = z; });
           const dForm = esAsce ? `δx=Cd·δxe/Ie (Cd=${Cd}, Ie=${I}) · ASCE §12.8.6` : `ΔM=0.75·R·ΔE (R=${R}) · NEC §6.3.9`;
-          dynLines.push(`── DERIVAS DE PISO (${dForm}) ──  máx = ${(dmax * 100).toFixed(2)} %  ${dmax <= 0.02 ? "✓ ≤ 2%" : "✗ > 2% (no cumple)"}`);
+          // ── TABLA POR PISO (de arriba hacia abajo, como ETABS) ──
+          // Fx = fuerza lateral del piso (NEC §6.3.5) · Vx = cortante de piso = Σ Fx por encima
+          // δ = desplazamiento elástico · ΔM = deriva inelástica · deriva% = ΔM/h_piso ≤ 2%
+          const pad = (s: any, n: number) => String(s).padStart(n);
+          dynLines.push(`── DERIVAS Y CORTANTE POR PISO (${dForm}) ──`);
+          dynLines.push(`Piso   z(m)  Fx(kN)  Vx(kN)   δ(mm)  ΔM(mm)  deriva%`);
+          let dmax = 0;
+          for (let k = zl.length - 1; k >= 0; k--) {                 // arriba → abajo
+            const z = zl[k], zPrev = k > 0 ? zl[k - 1] : 0, dPrev = k > 0 ? uxL[k - 1] : 0;
+            const Vx_k = Fx.slice(k).reduce((s: number, v: number) => s + v, 0);   // cortante de piso
+            const dM = ampD * (uxL[k] - dPrev), dr = Math.abs(dM) / Math.max(z - zPrev, 1e-6);
+            dmax = Math.max(dmax, dr);
+            dynLines.push(`${pad(k + 1, 3)}  ${pad(z.toFixed(2), 6)} ${pad(Fx[k].toFixed(1), 7)} ${pad(Vx_k.toFixed(1), 7)} ${pad((uxL[k] * 1000).toFixed(1), 7)} ${pad((dM * 1000).toFixed(1), 7)} ${pad((dr * 100).toFixed(2), 7)} ${dr <= 0.02 ? "✓" : "✗"}`);
+          }
+          dynLines.push(`máx deriva = ${(dmax * 100).toFixed(2)} %  ${dmax <= 0.02 ? "✓ ≤ 2%" : "✗ > 2% (no cumple)"}   ·   V base = ${Vest.toFixed(1)} kN (= Σ Fx)`);
         }
       } catch (e: any) { console.warn("derivas:", e?.message); }
       // ── COMBINACIONES DE CARGA SÍSMICA (NEC-SE-CG §3.4.3 / NEC-SE-DS) ──
