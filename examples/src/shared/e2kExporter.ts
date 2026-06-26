@@ -132,11 +132,18 @@ function injectNecSeismic(e2k: string, nec: NonNullable<ExportE2kInput["seismicN
     name: nec.caseName ?? "Sismo NEC", func: funcName,
     modalCase: modalName, sfX: nec.sfX, sfY: nec.sfY,
   });
-  // Caso Modal (Eigen/Ritz). Solo si el e2k aún no lo trae (round-trip ETABS ya lo tiene).
-  const yaTieneModal = lines.some((l) => new RegExp(`LOADCASE\\s+"${modalName}"\\s+TYPE\\s+"Modal`).test(l));
-  const modalLines = yaTieneModal ? [] : modalCaseE2k({
-    name: modalName, ritz: !!nec.modal?.ritz, nModes: nec.modal?.nModes,
-  });
+  // Caso Modal (Eigen/Ritz) según Settings.
+  let modalLines: string[] = [];
+  const tieneModal = (re: RegExp) => lines.some((l) => re.test(l));
+  if (nec.modal) {
+    // El usuario eligió método / N° de modos en Settings → REEMPLAZAR cualquier Modal case
+    // por default (exportFromScratch pone MAXMODES 3) con el de Settings.
+    const reDel = new RegExp(`^\\s*LOADCASE\\s+"${modalName}"\\s+(TYPE\\s+"Modal|MAXMODES|MINMODES|EIGEN|LOADTYPE|RITZ)`, "i");
+    for (let k = lines.length - 1; k >= 0; k--) if (reDel.test(lines[k])) lines.splice(k, 1);
+    modalLines = modalCaseE2k({ name: modalName, ritz: !!nec.modal.ritz, nModes: nec.modal.nModes });
+  } else if (!tieneModal(new RegExp(`LOADCASE\\s+"${modalName}"\\s+TYPE\\s+"Modal`))) {
+    modalLines = modalCaseE2k({ name: modalName });
+  }
   insertAfterSection(lines, "FUNCTIONS", fnLines);
   // El caso Modal va ANTES del RS (el RS lo referencia con MODALCASE).
   insertAfterSection(lines, "LOAD CASES", [...modalLines, ...lcLines]);
