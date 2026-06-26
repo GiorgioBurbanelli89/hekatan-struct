@@ -716,33 +716,49 @@ function autoFitCamera() {
 /** Oculta opciones no aplicables del <select> "Shell results" del Settings HTML
  *  y sincroniza su display con el estado actual de shellResults. */
 function filterShellResultOptions(allowed?: string[]) {
-  // Busca el select que contiene "bendingXX" para distinguirlo de los otros dropdowns.
   const selects = viewerElm.querySelectorAll<HTMLSelectElement>("select");
+  // OJO: el `value` del <option> del DOM es el LABEL de Tweakpane (estilo ETABS:
+  // "M11 (bendingXX)", "Von Mises", "pressure"); el ESTADO usa el nombre interno
+  // (bendingXX, vonMises, pressure). El shell select es el único que tiene "pressure".
   const shellSelect = Array.from(selects).find((s) =>
-    Array.from(s.options).some((o) => o.value === "bendingXX")
+    Array.from(s.options).some((o) => o.value === "pressure")
   );
   if (!shellSelect) return;
+  // LABEL del DOM → nombre interno. "M11 (bendingXX)"→bendingXX, "Von Mises"→vonMises,
+  // "pressure"/"displacementZ" quedan igual.
+  const internalOf = (label: string): string => {
+    if (label === "none") return "none";
+    if (label === "Von Mises") return "vonMises";
+    const m = label.match(/\(([a-zA-Z]+)\)/);
+    return m ? m[1] : label;
+  };
   for (const opt of Array.from(shellSelect.options)) {
-    // "none" siempre. "pressure" es de FUNDACIÓN (presión del suelo Winkler) → solo se
-    // ofrece si el ejemplo lo declara explícitamente (no en losas/muros). El resto: si
-    // está en la lista, o si el ejemplo no declaró lista (entonces tabla completa).
-    const show = opt.value === "none"
+    const internal = internalOf(opt.value);
+    // "none" siempre. "pressure" es de FUNDACIÓN (presión del suelo Winkler) → solo si el
+    // ejemplo lo declara (NO en losas/muros). El resto: si está en la lista, o si el
+    // ejemplo no declaró lista (tabla completa estilo ETABS).
+    const show = internal === "none"
       ? true
-      : opt.value === "pressure"
+      : internal === "pressure"
         ? !!allowed?.includes("pressure")
-        : (!allowed || allowed.includes(opt.value));
+        : (!allowed || allowed.includes(internal));
     opt.hidden = !show;
     opt.disabled = !show;
   }
-  // Sincronizar el valor mostrado con el estado actual (Tweakpane no lo hace solo).
   const s = (viewerElm as any).__settings;
   if (s?.shellResults) {
-    // Si el valor actual quedó OCULTO (p.ej. 'pressure' heredado en un ejemplo sin
-    // fundación) → caer al default del ejemplo (o vonMises).
-    const curOpt = Array.from(shellSelect.options).find((o) => o.value === s.shellResults.val);
-    if (curOpt?.hidden) s.shellResults.val = currentExample?.defaultShellResult || "vonMises";
-    shellSelect.value = s.shellResults.val;
-    shellSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    // Si el estado quedó en una opción OCULTA (p.ej. 'pressure' heredado en losas/muros)
+    // → caer al default del ejemplo (o vonMises). El estado usa el NOMBRE INTERNO.
+    const visibles = Array.from(shellSelect.options).filter((o) => !o.hidden).map((o) => internalOf(o.value));
+    if (!visibles.includes(s.shellResults.val)) {
+      s.shellResults.val = currentExample?.defaultShellResult || "vonMises";
+    }
+    // Forzar el <select> del DOM a la opción correcta (su value es el LABEL, no el interno).
+    const idx = Array.from(shellSelect.options).findIndex((o) => internalOf(o.value) === s.shellResults.val && !o.hidden);
+    if (idx >= 0 && shellSelect.selectedIndex !== idx) {
+      shellSelect.selectedIndex = idx;
+      try { shellSelect.dispatchEvent(new Event("change", { bubbles: true })); } catch {}
+    }
   }
 }
 
