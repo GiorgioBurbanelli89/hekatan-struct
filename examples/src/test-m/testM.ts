@@ -11,6 +11,7 @@ import type { ExampleDef, ParamDef } from "../workspace/exampleRegistry";
 import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import { necSpectrum, cortanteBasal, periodoAproximado, espectroSvg, distribucionVertical, type SoilType, type Region } from "../shared/espectroNEC";
 import { combineModal } from "../shared/responseSpectrum";
+import { ritzModal, withMissingMass } from "../shared/ritzModal";
 
 const SOILS: SoilType[] = ["A", "B", "C", "D", "E"];
 const REGS: Region[] = ["Costa", "Sierra", "Oriente"];
@@ -167,7 +168,15 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
   const eiMass = { ...ei, densities: new Map([...ei.densities].map(([k, v]: [number, number]) => [k, v / 9.80665])) };
   try {
     const nModes = Math.max(1, (p.nModes ?? 12) | 0);
-    const out = modalAnalysis(nodes, elements, ni, eiMass, nModes);
+    // Método modal: 0=autovectores (Eigen) · 1=Eigen + masa faltante (A) · 2=Ritz (B, como ETABS)
+    const metodo = (p.modalMethod ?? 1) | 0;
+    let out: any;
+    if (metodo === 2) {
+      out = ritzModal(nodes, elements, ni, eiMass, nModes, [0, 1]);   // B
+    } else {
+      out = modalAnalysis(nodes, elements, ni, eiMass, nModes);
+      if (metodo === 1) out = withMissingMass(out);                    // A
+    }
     const T1 = out.frequencies?.[0] ? 1 / out.frequencies[0] : undefined;
     const nec = necLineas(p, nodes, elements, ei, T1);
     // Gráfica del espectro NEC-15 + ANÁLISIS DINÁMICO (espectro de respuesta).
@@ -323,6 +332,7 @@ const BASE: Record<string, ParamDef> = {
   irregular: { default: 0, boolean: true, label: "¿Irregular? → control 85% (NEC)", folder: "Sísmico NEC" },
   cd:        { default: 5.5, min: 3, max: 6.5, step: 0.5, label: "ASCE Cd (amplif. deriva)", folder: "Sísmico NEC" },
   nModes:    { default: 12, min: 6, max: 36, step: 1, label: "N° modos (subir si masa <90%)", folder: "Sísmico NEC" },
+  modalMethod: { default: 1, options: { "Eigen": 0, "Eigen+masa faltante": 1, "Ritz (como ETABS)": 2 }, label: "Método modal (masa ≥90%)", folder: "Sísmico NEC" },
 };
 
 // dynamicParams: agrega svx_i / svy_j / sp_k según nbx, nby, nFloors (vectores de Aguiar)
