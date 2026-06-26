@@ -517,6 +517,33 @@ function loadExample(ex: ExampleDef) {
  * loadExample (las opciones de caso cambian por ejemplo).
  */
 let __caseResultsBinding: any = null;
+
+// ── Panel flotante de tablas de resultados (estilo ETABS → Analysis Results) ──
+let __tablesPanel: HTMLDivElement | null = null;
+function showResultsTable(title: string, html: string) {
+  if (!__tablesPanel) {
+    __tablesPanel = document.createElement("div");
+    __tablesPanel.style.cssText = "position:fixed; bottom:10px; right:10px; z-index:9999; background:rgba(0,0,0,0.92); color:#0f0; font:12px monospace; border:1px solid #0f06; border-radius:6px; padding:8px 12px; max-width:46vw; max-height:60vh; overflow:auto; box-shadow:0 4px 20px rgba(0,0,0,0.5);";
+    document.body.appendChild(__tablesPanel);
+  }
+  __tablesPanel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="color:#ff0">📋 ${title}</b><button id="__tclose" style="background:#7a2d2d;color:#fff;border:1px solid #b04545;border-radius:3px;cursor:pointer;font-size:10px;padding:2px 8px">✕</button></div>${html}`;
+  __tablesPanel.style.display = "block";
+  __tablesPanel.querySelector("#__tclose")?.addEventListener("click", () => { if (__tablesPanel) __tablesPanel.style.display = "none"; });
+}
+function __sd(): any { return (window as any).__hekatanSeismic; }
+function __tbl(headers: string[], rows: (string | number)[][]): string {
+  const th = headers.map((h) => `<th style="padding:2px 8px;border-bottom:1px solid #ff03;color:#ff0;text-align:right">${h}</th>`).join("");
+  const tr = rows.map((r) => `<tr>${r.map((c) => `<td style="padding:1px 8px;text-align:right">${c}</td>`).join("")}</tr>`).join("");
+  return `<table style="border-collapse:collapse"><tr>${th}</tr>${tr}</table>`;
+}
+const __needModal = "Poné <b>Case results = Modal</b> primero para correr el sísmico.";
+const RESULT_TABLES: Record<string, () => void> = {
+  "Base Reactions": () => { const d = __sd(); if (!d) return showResultsTable("Base Reactions", __needModal); showResultsTable(`Base Reactions — ${d.tag}`, __tbl(["Caso", "Fx (kN)", "Fy (kN)", "V (kN)"], [["Estático", d.base.Vest.toFixed(1), "—", d.base.Vest.toFixed(1)], ["Dinámico", d.base.Vx.toFixed(1), d.base.Vy.toFixed(1), d.base.Vdin.toFixed(1)]]) + `<div style="margin-top:5px;color:#888">Vdin/Vest = ${(d.base.ratio * 100).toFixed(0)} %  ·  E diseño = ${d.base.Edis.toFixed(1)} kN  ·  Ev = ${d.base.Ev.toFixed(1)} kN</div>`); },
+  "Modal Periods & Mass": () => { const d = __sd(); if (!d) return showResultsTable("Modal", __needModal); const rows = d.modal.freqs.map((f: number, i: number) => [i + 1, f.toFixed(3), (f > 0 ? 1 / f : 0).toFixed(3), ((d.modal.massPart[i]?.[0] ?? 0) * 100).toFixed(1), ((d.modal.massPart[i]?.[1] ?? 0) * 100).toFixed(1), ((d.modal.massPart[i]?.[5] ?? 0) * 100).toFixed(1)]); showResultsTable("Modal Periods & Participating Mass", __tbl(["Modo", "f (Hz)", "T (s)", "Ux %", "Uy %", "Rz %"], rows)); },
+  "Story Forces": () => { const d = __sd(); if (!d?.story?.length) return showResultsTable("Story Forces", __needModal); showResultsTable("Story Forces", __tbl(["Piso", "z (m)", "Fx (kN)", "Vx (kN)"], d.story.map((s: any) => [s.piso, s.z.toFixed(2), s.Fx.toFixed(1), s.Vx.toFixed(1)]))); },
+  "Story Drifts": () => { const d = __sd(); if (!d?.story?.length) return showResultsTable("Story Drifts", __needModal); showResultsTable("Story Drifts (ΔM=0.75·R·ΔE ≤ 2%)", __tbl(["Piso", "z (m)", "δ (mm)", "ΔM (mm)", "deriva %", ""], d.story.map((s: any) => [s.piso, s.z.toFixed(2), s.delta.toFixed(1), s.dM.toFixed(1), s.drift.toFixed(2), s.ok ? "✓" : "✗"]))); },
+};
+
 function mountCaseResultsInSettings() {
   try {
     const folder = (window as any).__hekatanOutputsFolder;
@@ -529,6 +556,14 @@ function mountCaseResultsInSettings() {
     const obj = { case: activeLoadCase.val };
     __caseResultsBinding = folder.addBinding(obj, "case", { label: "Case results", options: caseOptions, index: 0 });
     __caseResultsBinding.on("change", (e: any) => { activeLoadCase.val = e.value; rebuild(); });
+    // 📋 Tablas de resultados (estilo ETABS Analysis Results) — agregar una sola vez por folder.
+    const hasTables = (folder.children || []).some((c: any) => { try { return c.title === "📋 Tablas"; } catch { return false; } });
+    if (!hasTables) {
+      const tf = folder.addFolder({ title: "📋 Tablas", expanded: false, index: 1 });
+      for (const name of Object.keys(RESULT_TABLES)) {
+        tf.addButton({ title: name }).on("click", () => RESULT_TABLES[name]());
+      }
+    }
   } catch (e: any) { console.warn("[Case results en Settings]", e?.message ?? e); }
 }
 

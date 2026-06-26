@@ -205,6 +205,7 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
         `ESTÁTICO V = ${Vest.toFixed(1)} kN  ·  DINÁMICO Vx=${Vx.toFixed(1)} Vy=${Vy.toFixed(1)} → V=${Vdin.toFixed(1)} kN  (CQC+SRSS, ζ=${zeta})`,
         `CONTROL Vdin/Vest = ${(ratio * 100).toFixed(0)} %  ${ratio >= minR ? `✓ ≥ ${(minR * 100).toFixed(0)}%` : `✗ < ${(minR * 100).toFixed(0)}% → escalar ×${fEsc.toFixed(2)}`}  (${esAsce ? "ASCE 7-22 §12.9.1.4" : `NEC-15 §6.2.2.b ${irregular ? "irregular" : "regular"}`})`,
       ];
+      const storyTable: { piso: number; z: number; Fx: number; Vx: number; delta: number; dM: number; drift: number; ok: boolean }[] = [];
       // ── DERIVAS DE PISO: V estático distribuido en altura → resolver → ΔM = 0.75·R·ΔE ≤ 2% ──
       try {
         const zl = [...new Set(nodes.map((n: number[]) => +n[2].toFixed(2)))].sort((a: number, b: number) => a - b).filter((z: number) => z > 0.05);
@@ -231,6 +232,7 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
             const Vx_k = Fx.slice(k).reduce((s: number, v: number) => s + v, 0);   // cortante de piso
             const dM = ampD * (uxL[k] - dPrev), dr = Math.abs(dM) / Math.max(z - zPrev, 1e-6);
             dmax = Math.max(dmax, dr);
+            storyTable.push({ piso: k + 1, z, Fx: Fx[k], Vx: Vx_k, delta: uxL[k] * 1000, dM: dM * 1000, drift: dr * 100, ok: dr <= 0.02 });
             dynLines.push(`${pad(k + 1, 3)}  ${pad(z.toFixed(2), 6)} ${pad(Fx[k].toFixed(1), 7)} ${pad(Vx_k.toFixed(1), 7)} ${pad((uxL[k] * 1000).toFixed(1), 7)} ${pad((dM * 1000).toFixed(1), 7)} ${pad((dr * 100).toFixed(2), 7)} ${dr <= 0.02 ? "✓" : "✗"}`);
           }
           dynLines.push(`máx deriva = ${(dmax * 100).toFixed(2)} %  ${dmax <= 0.02 ? "✓ ≤ 2%" : "✗ > 2% (no cumple)"}   ·   V base = ${Vest.toFixed(1)} kN (= Σ Fx)`);
@@ -252,6 +254,13 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
         `C7:  0.9 D + 1.0 E                (vuelco · gravedad mínima)`,
         `   E = ρ·V_din${fEsc > 1.001 ? `·fEsc` : ""} = ${rho.toFixed(1)}·${Vdin.toFixed(1)}${fEsc > 1.001 ? `·${fEsc.toFixed(2)}` : ""} = ${Edis.toFixed(1)} kN  (ρ=${rho.toFixed(1)}${esAsce ? " ASCE" : " NEC"}) ;  Ev ≈ ${Ev.toFixed(1)} kN  [${evForm}]`,
       );
+      // Tablas estructuradas para el menú "📋 Tablas" de Analysis Outputs (estilo ETABS).
+      (window as any).__hekatanSeismic = {
+        tag: esAsce ? "ASCE 7-22" : "NEC-15", label,
+        base: { Vest, Vx, Vy, Vdin, ratio, fEsc, Edis, Ev },
+        modal: { freqs: out.frequencies ?? [], periods: out.periods ?? [], massPart: out.massParticipation ?? [] },
+        story: storyTable,   // top → bottom (como ETABS)
+      };
     } catch (e: any) { console.warn("dinámico espectral:", e?.message); }
     modalPanel.render(out, { title: label, spectrumHtml, properties: [
       `Modal animado en malla gruesa ms=${MODAL_MS}m (${dof} GDL). El colormap estático usa malla fina ms=${p.ms}m.`,
