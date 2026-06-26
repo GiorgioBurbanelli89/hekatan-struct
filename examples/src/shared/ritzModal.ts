@@ -109,7 +109,9 @@ export function ritzModal(
   const solveK = (f: number[][]) => {
     const loads = new Map<number, number[]>();
     for (let n = 0; n < N; n++) if (f[n].some((v) => v !== 0)) loads.set(n, f[n].slice());
-    return deform(nodes, elements, { supports, loads }, ei).deformations as number[][];
+    // deform().deformations es un Map<nodo,[6]> → lo paso a array por-nudo
+    const def = deform(nodes, elements, { supports, loads }, ei).deformations as Map<number, number[]> | undefined;
+    return nodes.map((_, n) => ((def?.get(n) as number[]) || [0, 0, 0, 0, 0, 0]).slice());
   };
   for (const dir of dirs) {
     // semilla f = M·r_dir  (r_dir = traslación rígida en 'dir')
