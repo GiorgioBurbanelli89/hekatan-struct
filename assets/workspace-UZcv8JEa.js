@@ -10422,16 +10422,15 @@ Datos en window.__hekatanImportedCim. Para re-exportar el mismo modelo: window._
         interval: 0
       });
     } else Vt = null;
-    if (ae.hasModal) {
-      const b = window.__hekatanOutputsFolder;
-      if (kn) {
-        try {
-          kn.dispose();
-        } catch {
-        }
-        kn = null;
+    if (kn) {
+      try {
+        kn.dispose();
+      } catch {
       }
-      const w = b ? b.addFolder({
+      kn = null;
+    }
+    if (ae.hasModal) {
+      const b = window.__hekatanOutputsFolder, w = b ? b.addFolder({
         title: "\u26A1 Modal + Animaci\xF3n",
         expanded: true,
         index: 2
