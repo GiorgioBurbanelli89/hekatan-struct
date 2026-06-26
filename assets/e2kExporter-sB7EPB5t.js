@@ -52,7 +52,7 @@ function Lt() {
       const l = ((_b = m.massParticipation) == null ? void 0 : _b[e]) || [0, 0, 0, 0, 0, 0];
       B < 0 && l[0] > C && (B = e + 1), U < 0 && l[1] > C && (U = e + 1), J < 0 && l[5] > C && (J = e + 1);
     }
-    const I = Y > 0 ? `<span style="color:#0f0">\u2713 ASCE 7-22 \xA712.9.1.1 \u2014 90 % alcanzado en X e Y al modo ${Y} de ${N}</span>` : s > 0 && S < 0 ? `<span style="color:#fa0">\u26A0 X cumple en modo ${s}, Y todav\xEDa en ${(W * 100).toFixed(1)} % \u2014 aumentar nModes</span>` : S > 0 && s < 0 ? `<span style="color:#fa0">\u26A0 Y cumple en modo ${S}, X todav\xEDa en ${(H * 100).toFixed(1)} % \u2014 aumentar nModes</span>` : `<span style="color:#f44">\u2717 ASCE 7-22 NO cumplido en ${N} modos \xB7 \u03A3Ux=${(H * 100).toFixed(1)} % \xB7 \u03A3Uy=${(W * 100).toFixed(1)} % \u2014 aumentar nModes</span>`, p = (() => {
+    const I = Y > 0 ? `<span style="color:#0f0">\u2713 ASCE 7-22 \xA712.9.1.1 \u2014 90 % alcanzado en X e Y al modo ${Y} de ${N}</span>` : s > 0 && S < 0 ? `<span style="color:#fa0">\u26A0 X cumple en modo ${s}, Y todav\xEDa en ${(W * 100).toFixed(1)} % \u2014 sub\xED \xABN\xB0 modos\xBB en Settings \u25B8 S\xEDsmico NEC</span>` : S > 0 && s < 0 ? `<span style="color:#fa0">\u26A0 Y cumple en modo ${S}, X todav\xEDa en ${(H * 100).toFixed(1)} % \u2014 sub\xED \xABN\xB0 modos\xBB en Settings \u25B8 S\xEDsmico NEC</span>` : `<span style="color:#f44">\u2717 ASCE 7-22 NO cumplido en ${N} modos \xB7 \u03A3Ux=${(H * 100).toFixed(1)} % \xB7 \u03A3Uy=${(W * 100).toFixed(1)} % \u2014 sub\xED \xABN\xB0 modos\xBB en Settings \u25B8 S\xEDsmico NEC</span>`, p = (() => {
       const e = (l, x) => {
         var _a2;
         if (l < 0) return `<span style="color:#f44">${x}: no encontrado en ${N} modos</span>`;
