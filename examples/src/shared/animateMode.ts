@@ -172,7 +172,11 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
     const baseFreq = results.frequencies?.[0] || 1;
     const visFreq = Math.max(visMin, Math.min(visMax, freq / baseFreq));
 
-    originalNodes = mesh.nodes.rawVal.map((n) => [...n] as Node);
+    // BASE de la animación = SIEMPRE los verdaderos originales (no los nodos
+    // actuales, que pueden estar mid-animación de otro modo). Sin esto, cambiar
+    // de modo mientras anima ACUMULA la deformada del modo anterior → al volver
+    // al modo 1 se ve una deformada "sumada" horrible.
+    originalNodes = (trueOriginalNodes.length > 0 ? trueOriginalNodes : mesh.nodes.rawVal).map((n) => [...n] as Node);
     const nNodes = originalNodes.length;
 
     // Amplitud = scalePct% del diagonal del modelo / maxDisp del modo
