@@ -792,7 +792,7 @@ function Tt(S, p, I) {
 }
 function Lt(S, p) {
   const I = [], A = ["PROGRAM INFORMATION", "CONTROLS", "STORIES - IN SEQUENCE FROM TOP", "GRIDS", "DIAPHRAGM NAMES", "MATERIAL PROPERTIES", "REBAR DEFINITIONS", "FRAME SECTIONS", "AUTO SELECT SECTION LISTS", "CONCRETE SECTIONS", "WALL/SLAB/DECK SECTIONS", "POINT COORDINATES", "LINE CONNECTIVITIES", "AREA CONNECTIVITIES", "POINT ASSIGNS", "LINE ASSIGNS", "AREA ASSIGNS", "LOAD PATTERNS", "POINT OBJECT LOADS", "FRAME OBJECT LOADS", "SHELL OBJECT LOADS", "ANALYSIS OPTIONS", "MASS SOURCE", "FUNCTIONS", "LOAD CASES", "LOAD COMBINATIONS"];
-  I.push("$ File exported from Awatif FEM Studio (round-trip)"), I.push("");
+  I.push("$ File exported from Hekatan Struct (round-trip)"), I.push("");
   for (const m of A) {
     const y = S.get(m);
     if (!(!y || y.length === 0)) {
