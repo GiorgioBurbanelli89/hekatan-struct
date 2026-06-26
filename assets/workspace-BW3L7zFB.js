@@ -4353,7 +4353,7 @@ High-level generators:
       if (!i || !i.modeShapes || i.modeShapes.length === 0 || !i.modeShapes[l]) return;
       u(false);
       const y = i.modeShapes[l], E = ((_a2 = i.frequencies) == null ? void 0 : _a2[l]) || 1, M = ((_b = i.frequencies) == null ? void 0 : _b[0]) || 1, p = Math.max(a, Math.min(r, E / M));
-      x = t.nodes.rawVal.map((O) => [
+      x = (h.length > 0 ? h : t.nodes.rawVal).map((O) => [
         ...O
       ]);
       const v = x.length;
