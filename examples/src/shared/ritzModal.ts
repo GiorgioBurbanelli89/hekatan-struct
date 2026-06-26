@@ -153,3 +153,117 @@ export function ritzModal(
   }
   return { frequencies, modeShapes, massParticipation, periods: frequencies.map((f) => 1 / f) };
 }
+
+// ──────────────────── C) Diafragma rígido (como ETABS) ────────────────────
+/**
+ * Modal con DIAFRAGMA RÍGIDO: cada piso se condensa a 3 GDL (Ux, Uy, Rz) — el piso
+ * es infinitamente rígido EN SU PLANO (como ETABS por default). Así los modos son
+ * SOLO laterales/torsionales (no aparecen modos verticales de flexión de losa que
+ * "ocupan cupos"), y ΣUx/ΣUy llegan al 100% en muy pocos modos.
+ *
+ * Método de FLEXIBILIDAD (no necesita K explícita): para cada piso y dirección se
+ * aplica una carga unitaria repartida por masa (con `deform`) y se reduce el campo
+ * de desplazamientos al movimiento de cuerpo rígido del piso → matriz de flexibilidad
+ * F (3·nPisos). Luego eigen generalizado [√M·F·√M] → periodos + participación 100%.
+ * Los periodos laterales coinciden con el modelo completo (la rigidez lateral es la
+ * misma: columnas+muros); solo se elimina la flexibilidad EN EL PLANO de la losa.
+ */
+export function rigidDiaphragmModal(
+  nodes: Node[], elements: Element[], nodeInputs: any, ei: any, nVec = 12
+): any {
+  const N = nodes.length;
+  const M = lumpedMass(nodes, elements, ei);          // masa nodal lumpeada [6]
+  const supports = nodeInputs.supports;
+  const mass = (n: number) => M[n][0];                 // mx = my = mz (lumpeada)
+  // ── agrupar nudos en pisos por cota z; el nivel más bajo = base (empotrada) ──
+  const zOf = (n: number) => Math.round(nodes[n][2] * 1e3) / 1e3;
+  const zs = [...new Set(nodes.map((_, n) => zOf(n)))].sort((a, b) => a - b);
+  const zBase = zs[0];
+  const levels = zs.filter((z) => z > zBase + 1e-6);   // pisos (sin base)
+  const floors = levels.map((z) => {
+    const ns = nodes.map((_, n) => n).filter((n) => Math.abs(zOf(n) - z) < 1e-6 && mass(n) > 0);
+    let Mj = 0, cx = 0, cy = 0;
+    for (const n of ns) { const m = mass(n); Mj += m; cx += m * nodes[n][0]; cy += m * nodes[n][1]; }
+    cx /= Mj || 1; cy /= Mj || 1;
+    let Ij = 0; for (const n of ns) { const dx = nodes[n][0] - cx, dy = nodes[n][1] - cy; Ij += mass(n) * (dx * dx + dy * dy); }
+    return { z, ns, Mj, cx, cy, Ij: Ij || Mj };
+  }).filter((f) => f.Mj > 0);
+  const nf = floors.length;
+  if (nf === 0) return { frequencies: [], modeShapes: [], massParticipation: [], periods: [] };
+  const ndof = 3 * nf;                                 // [Ux,Uy,Rz] por piso
+
+  // reduce un campo de desplazamientos nodal a los 3 GDL de cuerpo rígido de cada piso
+  const reduce = (u: number[][]): number[] => {
+    const q = new Array(ndof).fill(0);
+    floors.forEach((f, j) => {
+      let ux = 0, uy = 0, rz = 0;
+      for (const n of f.ns) {
+        const m = mass(n); const dx = nodes[n][0] - f.cx, dy = nodes[n][1] - f.cy;
+        ux += m * u[n][0]; uy += m * u[n][1]; rz += m * (dx * u[n][1] - dy * u[n][0]);
+      }
+      q[3 * j] = ux / f.Mj; q[3 * j + 1] = uy / f.Mj; q[3 * j + 2] = rz / f.Ij;
+    });
+    return q;
+  };
+  const solveK = (loads: Map<number, number[]>): number[][] => {
+    const def = deform(nodes, elements, { supports, loads }, ei).deformations as Map<number, number[]> | undefined;
+    return nodes.map((_, n) => ((def?.get(n) as number[]) || [0, 0, 0, 0, 0, 0]).slice());
+  };
+
+  // ── matriz de flexibilidad F (ndof×ndof): columna = carga unitaria de cuerpo rígido ──
+  const F: number[][] = Array.from({ length: ndof }, () => new Array(ndof).fill(0));
+  for (let j = 0; j < nf; j++) {
+    const f = floors[j];
+    for (let c = 0; c < 3; c++) {                       // 0=Ux,1=Uy,2=Rz
+      const loads = new Map<number, number[]>();
+      for (const n of f.ns) {
+        const m = mass(n); const dx = nodes[n][0] - f.cx, dy = nodes[n][1] - f.cy;
+        let fx = 0, fy = 0;
+        if (c === 0) fx = m / f.Mj;                      // fuerza Ux unitaria (Σ=1)
+        else if (c === 1) fy = m / f.Mj;                 // fuerza Uy unitaria
+        else { fx = -m * dy / f.Ij; fy = m * dx / f.Ij; } // torque Rz unitario
+        loads.set(n, [fx, fy, 0, 0, 0, 0]);
+      }
+      const q = reduce(solveK(loads));
+      for (let r = 0; r < ndof; r++) F[r][3 * j + c] = q[r];
+    }
+  }
+  for (let i = 0; i < ndof; i++) for (let k = i + 1; k < ndof; k++) { const v = (F[i][k] + F[k][i]) / 2; F[i][k] = F[k][i] = v; }
+
+  // ── M_lat (diagonal) + eigen generalizado vía A = √M·F·√M  (λ = 1/ω²) ──
+  const Md = new Array(ndof);
+  floors.forEach((f, j) => { Md[3 * j] = f.Mj; Md[3 * j + 1] = f.Mj; Md[3 * j + 2] = f.Ij; });
+  const sq = Md.map(Math.sqrt);
+  const A = F.map((row, i) => row.map((v, k) => sq[i] * v * sq[k]));
+  const { val, vec } = jacobiEig(A);                   // val = 1/ω²
+  const order = val.map((_, i) => i).sort((a, b) => val[b] - val[a]);  // λ grande = ω chico
+
+  // direcciones de participación: r_x, r_y, r_rz en GDL maestros
+  const rX = new Array(ndof).fill(0), rY = new Array(ndof).fill(0), rR = new Array(ndof).fill(0);
+  for (let j = 0; j < nf; j++) { rX[3 * j] = 1; rY[3 * j + 1] = 1; rR[3 * j + 2] = 1; }
+  const Mtot = (r: number[]) => { let s = 0; for (let i = 0; i < ndof; i++) s += Md[i] * r[i] * r[i]; return s || 1; };
+  const MtX = Mtot(rX), MtY = Mtot(rY), MtR = Mtot(rR);
+
+  const frequencies: number[] = [], massParticipation: number[][] = [], modeShapes: number[][] = [];
+  const take = Math.min(nVec, ndof);
+  let cnt = 0;
+  for (const idx of order) {
+    if (cnt >= take) break;
+    const lam = val[idx]; if (!(lam > 1e-12)) continue;
+    const w = 1 / Math.sqrt(lam), fr = w / (2 * Math.PI);
+    if (!isFinite(fr) || fr <= 1e-6) continue;
+    // φ (GDL maestros) M-normalizado:  φ = √M⁻¹ ψ
+    const phi = new Array(ndof); for (let i = 0; i < ndof; i++) phi[i] = vec[i][idx] / sq[i];
+    const L = (r: number[]) => { let s = 0; for (let i = 0; i < ndof; i++) s += Md[i] * phi[i] * r[i]; return s; };
+    const part = new Array(NDOF).fill(0);
+    part[0] = L(rX) * L(rX) / MtX; part[1] = L(rY) * L(rY) / MtY; part[5] = L(rR) * L(rR) / MtR;
+    // expandir a forma modal nodal (cuerpo rígido por piso) para el visor
+    const shape = zero(N);
+    floors.forEach((f, j) => {
+      const ux = phi[3 * j], uy = phi[3 * j + 1], rz = phi[3 * j + 2];
+      for (const n of f.ns) { const dx = nodes[n][0] - f.cx, dy = nodes[n][1] - f.cy; shape[n][0] = ux - rz * dy; shape[n][1] = uy + rz * dx; }
+    });
+    frequencies.push(fr); massParticipation.push(part); modeShapes.push(shape.flat()); cnt++;
+  }
+  return { frequencies, modeShapes, massParticipation, periods: frequencies.map((f) => 1 / f) };
+}

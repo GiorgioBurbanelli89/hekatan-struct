@@ -11,7 +11,7 @@ import type { ExampleDef, ParamDef } from "../workspace/exampleRegistry";
 import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import { necSpectrum, cortanteBasal, periodoAproximado, espectroSvg, distribucionVertical, type SoilType, type Region } from "../shared/espectroNEC";
 import { combineModal } from "../shared/responseSpectrum";
-import { ritzModal, withMissingMass } from "../shared/ritzModal";
+import { ritzModal, withMissingMass, rigidDiaphragmModal } from "../shared/ritzModal";
 
 const SOILS: SoilType[] = ["A", "B", "C", "D", "E"];
 const REGS: Region[] = ["Costa", "Sierra", "Oriente"];
@@ -171,7 +171,11 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
     // Método modal: 0=autovectores (Eigen) · 1=Eigen + masa faltante (A) · 2=Ritz (B, como ETABS)
     const metodo = (p.modalMethod ?? 1) | 0;
     let out: any;
-    if (metodo === 2) {
+    if (p.diafragmaRigido) {
+      // C) Diafragma rígido (como ETABS): piso condensado a 3 GDL → modos solo
+      //    laterales/torsionales, ΣUx/ΣUy → 100% sin modos verticales que roben cupos.
+      out = rigidDiaphragmModal(nodes, elements, ni, eiMass, nModes);
+    } else if (metodo === 2) {
       out = ritzModal(nodes, elements, ni, eiMass, nModes, [0, 1]);   // B
     } else {
       out = modalAnalysis(nodes, elements, ni, eiMass, nModes);
@@ -333,6 +337,7 @@ const BASE: Record<string, ParamDef> = {
   cd:        { default: 5.5, min: 3, max: 6.5, step: 0.5, label: "ASCE Cd (amplif. deriva)", folder: "Sísmico NEC" },
   nModes:    { default: 12, min: 6, max: 60, step: 1, label: "N° de modos (subir si masa <90%)", inModal: true },
   modalMethod: { default: 1, options: { "Eigen": 0, "Eigen+masa faltante": 1, "Ritz (como ETABS)": 2 }, label: "Método modal (masa ≥90%)", inModal: true },
+  diafragmaRigido: { default: 0, boolean: true, label: "Diafragma rígido (como ETABS) → ΣU≈100%", inModal: true },
 };
 
 // dynamicParams: agrega svx_i / svy_j / sp_k según nbx, nby, nFloors (vectores de Aguiar)

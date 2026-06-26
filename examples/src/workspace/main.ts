@@ -4972,7 +4972,14 @@ solve`;
     // re-corre el modal con el nuevo valor.
     for (const [mkey, mp] of Object.entries(currentExample.params)) {
       if (!(mp as any).inModal) continue;
-      if (mp.options) {
+      if ((mp as any).boolean) {
+        // Checkbox (Diafragma rígido) — re-corre el modal al cambiar.
+        const bx: Record<string, boolean> = { [mkey]: currentParams[mkey] >= 0.5 };
+        fModal.addBinding(bx, mkey, { label: mp.label ?? mkey }).on("change", (e: any) => {
+          currentParams[mkey] = e.value ? 1 : 0;
+          runModalAnimate();
+        });
+      } else if (mp.options) {
         // Dropdown (Método modal)
         fModal.addBinding(currentParams, mkey, { label: mp.label ?? mkey, options: mp.options })
           .on("change", () => runModalAnimate());
