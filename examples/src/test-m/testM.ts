@@ -175,6 +175,11 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
       // C) Diafragma rígido (como ETABS): piso condensado a 3 GDL → modos solo
       //    laterales/torsionales, ΣUx/ΣUy → 100% sin modos verticales que roben cupos.
       out = rigidDiaphragmModal(nodes, elements, ni, eiMass, nModes);
+    } else if (metodo === 3) {
+      // D) ETABS exacto: modelo flexible (shell completo) PERO masa solo lateral
+      //    (= mass source de ETABS, INCLUDEVERTICALMASS "No") → SumUZ=0, los modos
+      //    son laterales y ΣUy llega a ~99% como en la tabla de ETABS. Reproduce el Eigen.
+      out = ritzModal(nodes, elements, ni, eiMass, nModes, [0, 1], true);
     } else if (metodo === 2) {
       out = ritzModal(nodes, elements, ni, eiMass, nModes, [0, 1]);   // B
     } else {
@@ -336,7 +341,7 @@ const BASE: Record<string, ParamDef> = {
   irregular: { default: 0, boolean: true, label: "¿Irregular? → control 85% (NEC)", folder: "Sísmico NEC" },
   cd:        { default: 5.5, min: 3, max: 6.5, step: 0.5, label: "ASCE Cd (amplif. deriva)", folder: "Sísmico NEC" },
   nModes:    { default: 12, min: 6, max: 60, step: 1, label: "N° de modos (subir si masa <90%)", inModal: true },
-  modalMethod: { default: 1, options: { "Eigen": 0, "Eigen+masa faltante": 1, "Ritz (como ETABS)": 2 }, label: "Método modal (masa ≥90%)", inModal: true },
+  modalMethod: { default: 1, options: { "Eigen": 0, "Eigen+masa faltante": 1, "Ritz (como ETABS)": 2, "ETABS exacto (masa solo lateral)": 3 }, label: "Método modal (masa ≥90%)", inModal: true },
   diafragmaRigido: { default: 0, boolean: true, label: "Diafragma rígido (como ETABS) → ΣU≈100%", inModal: true },
 };
 

@@ -15,8 +15,10 @@ import { deform, type Node, type Element } from "hekatan-fem";
 type Vec6 = [number, number, number, number, number, number];
 const NDOF = 6;
 
-/** Masa lumpeada por nudo [mx,my,mz,0,0,0]. ei.densities ya es densidad de MASA (peso/g). */
-export function lumpedMass(nodes: Node[], elements: Element[], ei: any): number[][] {
+/** Masa lumpeada por nudo [mx,my,mz,0,0,0]. ei.densities ya es densidad de MASA (peso/g).
+ *  lateralOnly=true → solo masa Ux,Uy (mz=0), como el mass source de ETABS por default
+ *  (INCLUDEVERTICALMASS "No") → sin inercia vertical no hay modos verticales. */
+export function lumpedMass(nodes: Node[], elements: Element[], ei: any, lateralOnly = false): number[][] {
   const M = nodes.map(() => [0, 0, 0, 0, 0, 0]);
   const d3 = (a: number[], b: number[]) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
   elements.forEach((el: number[], e: number) => {
@@ -38,6 +40,7 @@ export function lumpedMass(nodes: Node[], elements: Element[], ei: any): number[
       for (const n of el) for (let d = 0; d < 3; d++) M[n][d] += me;
     }
   });
+  if (lateralOnly) for (const m of M) m[2] = 0;   // excluir masa vertical (= ETABS)
   return M;
 }
 
@@ -101,10 +104,11 @@ function jacobiEig(A: number[][]): { val: number[]; vec: number[][] } {
  * dirs = direcciones semilla (0=X,1=Y,2=Z). nRitz = vectores por dirección (aprox).
  */
 export function ritzModal(
-  nodes: Node[], elements: Element[], nodeInputs: any, ei: any, nVec = 12, dirs = [0, 1]
+  nodes: Node[], elements: Element[], nodeInputs: any, ei: any, nVec = 12, dirs = [0, 1],
+  lateralOnly = false
 ): any {
   const N = nodes.length;
-  const M = lumpedMass(nodes, elements, ei);
+  const M = lumpedMass(nodes, elements, ei, lateralOnly);
   const supports = nodeInputs.supports;
   // base de Ritz M-ortonormal + su K·ψ (para armar Kr exacto sin K explícita)
   const PSI: number[][][] = [], KPSI: number[][][] = [];
