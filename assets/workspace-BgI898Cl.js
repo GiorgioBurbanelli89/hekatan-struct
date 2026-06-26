@@ -6949,14 +6949,15 @@ ${M}
     t.position.set(f + R, k - R, x + R), t.up.set(0, 0, 1), t.isPerspectiveCamera && (t.near = I * 1e-3, t.far = I * 50), t.updateProjectionMatrix(), t.lookAt(f, k, x), o.update(), s == null ? void 0 : s(), !y && (r == null ? void 0 : r.gridSize) && (r.gridSize.val = Math.max(Math.ceil(Math.max(S, M) * 1.2), 2));
   }
   function ma(e) {
+    var _a2;
     const t = ge.querySelectorAll("select"), o = Array.from(t).find((a) => Array.from(a.options).some((n) => n.value === "bendingXX"));
     if (!o) return;
     for (const a of Array.from(o.options)) {
-      const n = a.value === "none" || !e || e.includes(a.value);
+      const n = a.value === "none" ? true : a.value === "pressure" ? !!(e == null ? void 0 : e.includes("pressure")) : !e || e.includes(a.value);
       a.hidden = !n, a.disabled = !n;
     }
     const s = ge.__settings;
-    (s == null ? void 0 : s.shellResults) && (o.value = s.shellResults.val, o.dispatchEvent(new Event("change", {
+    (s == null ? void 0 : s.shellResults) && (((_a2 = Array.from(o.options).find((n) => n.value === s.shellResults.val)) == null ? void 0 : _a2.hidden) && (s.shellResults.val = (ae == null ? void 0 : ae.defaultShellResult) || "vonMises"), o.value = s.shellResults.val, o.dispatchEvent(new Event("change", {
       bubbles: true
     })));
   }
