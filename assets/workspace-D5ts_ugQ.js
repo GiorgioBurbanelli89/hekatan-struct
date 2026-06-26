@@ -3871,7 +3871,7 @@ High-level generators:
     o.length > 40 && i.push(`<tr><td colspan="3" style="text-align:center;font-style:italic">... ${o.length - 40} m\xE1s</td></tr>`), i.push("</table>"), i.push("<h3>1.3 Section Properties (Frames)</h3>"), i.push("<table><tr><th>Element</th><th>E</th><th>A</th><th>I<sub>y</sub></th><th>I<sub>z</sub></th><th>J</th></tr>");
     for (let d = 0; d < Math.min(l, 30); d++) {
       const m = (_a2 = a.elasticities) == null ? void 0 : _a2.get(d), v = (_b = a.areas) == null ? void 0 : _b.get(d), f = (_c = a.momentsOfInertiaY) == null ? void 0 : _c.get(d), k = (_d = a.momentsOfInertiaZ) == null ? void 0 : _d.get(d), x = (_e = a.torsionalConstants) == null ? void 0 : _e.get(d);
-      i.push(`<tr><td>${d}</td><td>${Nt(m)}</td><td>${Nt(v)}</td><td>${Nt(f)}</td><td>${Nt(k)}</td><td>${Nt(x)}</td></tr>`);
+      i.push(`<tr><td>${d}</td><td>${Rt(m)}</td><td>${Rt(v)}</td><td>${Rt(f)}</td><td>${Rt(k)}</td><td>${Rt(x)}</td></tr>`);
     }
     if (l > 30 && i.push(`<tr><td colspan="6" style="text-align:center;font-style:italic">... ${l - 30} m\xE1s</td></tr>`), i.push("</table>"), i.push("<h3>1.4 Boundary Conditions (Supports)</h3>"), s.supports && s.supports.size > 0) {
       i.push("<table><tr><th>Node</th><th>U<sub>x</sub></th><th>U<sub>y</sub></th><th>U<sub>z</sub></th><th>R<sub>x</sub></th><th>R<sub>y</sub></th><th>R<sub>z</sub></th></tr>");
@@ -3911,13 +3911,13 @@ High-level generators:
       let d = 0;
       for (const [m, v] of n.deformations) {
         if (d >= 30) break;
-        i.push(`<tr><td>${m}</td>${v.map((f) => `<td>${Nt(f)}</td>`).join("")}</tr>`), d++;
+        i.push(`<tr><td>${m}</td>${v.map((f) => `<td>${Rt(f)}</td>`).join("")}</tr>`), d++;
       }
       n.deformations.size > 30 && i.push(`<tr><td colspan="7" style="text-align:center;font-style:italic">... ${n.deformations.size - 30} m\xE1s</td></tr>`), i.push("</table>");
     }
     if (n == null ? void 0 : n.reactions) {
       i.push("<h2>5. Support Reactions</h2>"), i.push('<div class="latex">$$ F_{\\text{reaction}} = K_{\\text{fixed-fixed}} \\cdot u_{\\text{free}} - F_{\\text{ext, fixed}} $$</div>'), i.push("<table><tr><th>Node</th><th>F<sub>x</sub></th><th>F<sub>y</sub></th><th>F<sub>z</sub></th><th>M<sub>x</sub></th><th>M<sub>y</sub></th><th>M<sub>z</sub></th></tr>");
-      for (const [d, m] of n.reactions) i.push(`<tr><td>${d}</td>${m.map((v) => `<td>${Nt(v)}</td>`).join("")}</tr>`);
+      for (const [d, m] of n.reactions) i.push(`<tr><td>${d}</td>${m.map((v) => `<td>${Rt(v)}</td>`).join("")}</tr>`);
       i.push("</table>");
     }
     if (r == null ? void 0 : r.frequencies) {
@@ -3942,7 +3942,7 @@ High-level generators:
   function vn(e) {
     return e == null ? "\u2014" : Math.abs(e) < 1e-12 ? "0" : Math.abs(e) >= 1e5 || Math.abs(e) < 1e-3 ? e.toExponential(3) : parseFloat(e.toFixed(4)).toString();
   }
-  function Nt(e) {
+  function Rt(e) {
     return e == null ? "\u2014" : Math.abs(e) < 1e-12 ? "0" : e.toExponential(3);
   }
   function ko(e, t, o) {
@@ -4919,7 +4919,7 @@ ${M}
     }
     return Math.sqrt(Math.max(a, 0));
   }
-  const Dt = 6;
+  const Ht = 6;
   function Er(e, t, o) {
     const s = e.map(() => [
       0,
@@ -4950,8 +4950,8 @@ ${M}
     var _a2, _b;
     const t = e.massParticipation ?? [];
     if (!t.length) return e;
-    const o = new Array(Dt).fill(0);
-    for (let n = 0; n < Dt; n++) {
+    const o = new Array(Ht).fill(0);
+    for (let n = 0; n < 3; n++) {
       let r = 0;
       for (const i of t) r += i[n] || 0;
       o[n] = Math.max(0, 1 - r);
@@ -4980,16 +4980,16 @@ ${M}
   }
   const Mo = (e, t, o) => {
     let s = 0;
-    for (let a = 0; a < e.length; a++) for (let n = 0; n < Dt; n++) s += o[a][n] * e[a][n] * t[a][n];
+    for (let a = 0; a < e.length; a++) for (let n = 0; n < Ht; n++) s += o[a][n] * e[a][n] * t[a][n];
     return s;
   }, $r = (e, t) => {
     let o = 0;
-    for (let s = 0; s < e.length; s++) for (let a = 0; a < Dt; a++) o += e[s][a] * t[s][a];
+    for (let s = 0; s < e.length; s++) for (let a = 0; a < Ht; a++) o += e[s][a] * t[s][a];
     return o;
   }, So = (e, t, o) => {
-    for (let s = 0; s < e.length; s++) for (let a = 0; a < Dt; a++) e[s][a] += t * o[s][a];
+    for (let s = 0; s < e.length; s++) for (let a = 0; a < Ht; a++) e[s][a] += t * o[s][a];
   }, Eo = (e, t) => {
-    for (let o = 0; o < e.length; o++) for (let s = 0; s < Dt; s++) e[o][s] *= t;
+    for (let o = 0; o < e.length; o++) for (let s = 0; s < Ht; s++) e[o][s] *= t;
   }, Lr = (e) => e.map((t) => t.slice()), Un = (e) => Array.from({
     length: e
   }, () => [
@@ -5093,9 +5093,9 @@ ${M}
       const F = Un(r);
       for (let T = 0; T < d; T++) {
         const N = f[T][h];
-        for (let G = 0; G < r; G++) for (let oe = 0; oe < Dt; oe++) F[G][oe] += N * c[T][G][oe];
+        for (let G = 0; G < r; G++) for (let oe = 0; oe < Ht; oe++) F[G][oe] += N * c[T][G][oe];
       }
-      const R = new Array(Dt).fill(0);
+      const R = new Array(Ht).fill(0);
       for (let T = 0; T < 3; T++) {
         let N = 0;
         for (let G = 0; G < r; G++) N += i[G][T] * F[G][T];
@@ -6543,7 +6543,7 @@ ${M}
     } catch {
     }
   });
-  const qt = Je.state({
+  const Vt = Je.state({
     position: [
       0,
       0,
@@ -6560,7 +6560,7 @@ ${M}
   window.__hekatanDrawingAreas = hn;
   window.__hekatanDrawingAuxLines = da;
   window.__hekatanDrawingAuxPoints = Rl;
-  window.__hekatanDrawingGridTarget = qt;
+  window.__hekatanDrawingGridTarget = Vt;
   const Fn = Je.state([]), Mt = Je.state([]), $n = Je.state([]), It = Je.state("Dead"), ce = {
     nodes: yt,
     elements: zt,
@@ -6578,7 +6578,7 @@ ${M}
   const $o = {
     modeIdx: 1
   };
-  let ft, Vt = null, Wt = null, cn = [];
+  let ft, jt = null, Wt = null, cn = [];
   const bt = Pa();
   bt.div.style.display = "none";
   function Zn() {
@@ -6978,9 +6978,9 @@ ${M}
       } catch (e) {
         console.warn(`[active case dispatcher] ${(e == null ? void 0 : e.message) ?? e}`);
       }
-      if (lo || gn(), ae.computedLabels && Vt) {
+      if (lo || gn(), ae.computedLabels && jt) {
         const e = ae.computedLabels(he, ce);
-        for (const t of Object.keys(Vt)) t in e && (Vt[t] = e[t]);
+        for (const t of Object.keys(jt)) t in e && (jt[t] = e[t]);
       }
       if (ae.inlineComputed && Wt) for (const e of ae.inlineComputed) {
         const t = `__inline_${e.after}_${e.label}`;
@@ -8724,7 +8724,7 @@ ${M}
   function kt(e) {
     var _a2, _b;
     const t = (_b = (_a2 = window.__hekatanCadState) == null ? void 0 : _a2.get) == null ? void 0 : _b.call(_a2);
-    t && (e === "plan" ? t.workPlane = "xy" : e === "elevX" ? t.workPlane = "xz" : e === "elevY" && (t.workPlane = "yz")), e === "plan" ? qt.val = {
+    t && (e === "plan" ? t.workPlane = "xy" : e === "elevX" ? t.workPlane = "xz" : e === "elevY" && (t.workPlane = "yz")), e === "plan" ? Vt.val = {
       position: [
         0,
         0,
@@ -8735,7 +8735,7 @@ ${M}
         0,
         0
       ]
-    } : e === "elevX" ? qt.val = {
+    } : e === "elevX" ? Vt.val = {
       position: [
         0,
         0,
@@ -8746,7 +8746,7 @@ ${M}
         0,
         0
       ]
-    } : e === "elevY" && (qt.val = {
+    } : e === "elevY" && (Vt.val = {
       position: [
         0,
         0,
@@ -9049,7 +9049,7 @@ ${M}
         polylines: Jt,
         areas: hn,
         auxLines: da,
-        gridTarget: qt
+        gridTarget: Vt
       },
       hooks: {
         setView: kt,
@@ -9450,12 +9450,12 @@ Los sliders del Tweakpane se actualizaron a estos valores.`);
               xe.position.set(Ke, dt, _e), Fe.push(xe);
               const it = ye / ie, Ve = ke / ie, Me = [];
               for (let ct = 0; ct <= ie; ct++) {
-                const Rt = -ye / 2 + ct * it;
-                Me.push(new z.Vector3(Ke + Rt, dt - ke / 2, _e), new z.Vector3(Ke + Rt, dt + ke / 2, _e));
+                const Ot = -ye / 2 + ct * it;
+                Me.push(new z.Vector3(Ke + Ot, dt - ke / 2, _e), new z.Vector3(Ke + Ot, dt + ke / 2, _e));
               }
               for (let ct = 0; ct <= ie; ct++) {
-                const Rt = -ke / 2 + ct * Ve;
-                Me.push(new z.Vector3(Ke - ye / 2, dt + Rt, _e), new z.Vector3(Ke + ye / 2, dt + Rt, _e));
+                const Ot = -ke / 2 + ct * Ve;
+                Me.push(new z.Vector3(Ke - ye / 2, dt + Ot, _e), new z.Vector3(Ke + ye / 2, dt + Ot, _e));
               }
               Fe.push(new z.LineSegments(new z.BufferGeometry().setFromPoints(Me), Xe));
               const at = [
@@ -9477,8 +9477,8 @@ Los sliders del Tweakpane se actualizaron a estos valores.`);
                 ]
               ], wt = [];
               for (let ct = 0; ct < 4; ct++) {
-                const [Rt, ga] = at[ct], [xa, ya] = at[(ct + 1) % 4];
-                wt.push(new z.Vector3(Ke + Rt, dt + ga, _e), new z.Vector3(Ke + xa, dt + ya, _e));
+                const [Ot, ga] = at[ct], [xa, ya] = at[(ct + 1) % 4];
+                wt.push(new z.Vector3(Ke + Ot, dt + ga, _e), new z.Vector3(Ke + xa, dt + ya, _e));
               }
               Fe.push(new z.LineSegments(new z.BufferGeometry().setFromPoints(wt), Ue));
               const Ie = new z.BoxGeometry(He, He, me), Be = new z.Mesh(Ie, ze.clone());
@@ -9488,10 +9488,10 @@ Los sliders del Tweakpane se actualizaron a estos valores.`);
               const ut = [
                 new z.Vector3(ne.x, ne.y, 0),
                 new z.Vector3(ne.x, ne.y, -me)
-              ], Ot = new z.BufferGeometry().setFromPoints(ut), Qt = new z.LineBasicMaterial({
+              ], Dt = new z.BufferGeometry().setFromPoints(ut), Qt = new z.LineBasicMaterial({
                 color: 16763904,
                 linewidth: 3
-              }), xn = new z.Line(Ot, Qt);
+              }), xn = new z.Line(Dt, Qt);
               Fe.push(xn);
               const en = new z.SphereGeometry(0.05, 8, 8), Ye = new z.MeshBasicMaterial({
                 color: 1096065
@@ -9568,8 +9568,8 @@ Los sliders del Tweakpane se actualizaron a estos valores.`);
                 ]
               ], wt = [];
               for (let Ie = 0; Ie < 4; Ie++) {
-                const [Be, Ze] = at[Ie], [ut, Ot] = at[(Ie + 1) % 4];
-                wt.push(new z.Vector3(Be, Ze, Ke), new z.Vector3(ut, Ot, Ke));
+                const [Be, Ze] = at[Ie], [ut, Dt] = at[(Ie + 1) % 4];
+                wt.push(new z.Vector3(Be, Ze, Ke), new z.Vector3(ut, Dt, Ke));
               }
               Fe.push(new z.LineSegments(new z.BufferGeometry().setFromPoints(wt), Ue.clone()));
             }
@@ -9723,20 +9723,20 @@ Us\xE1 el bot\xF3n "\u{1F3E2} Volver a vista superestructura" para restaurar.`),
                 true,
                 true
               ]);
-              let Ot = 0, Qt = 0, xn = 1 / 0;
+              let Dt = 0, Qt = 0, xn = 1 / 0;
               for (let Ye = 0; Ye <= re; Ye++) for (let et = 0; et <= re; et++) {
                 const pt = ut[Ye][et], Tt = Math.hypot(ze[pt][0] - le.x, ze[pt][1] - le.y);
-                Tt < xn && (xn = Tt, Ot = Ye, Qt = et);
+                Tt < xn && (xn = Tt, Dt = Ye, Qt = et);
               }
               const en = z.find((Ye) => Ye.idx === le.idx);
-              nt.set(ut[Ot][Qt], [
+              nt.set(ut[Dt][Qt], [
                 0,
                 0,
                 -en.P_kN,
                 en.Mx_kN,
                 en.My_kN,
                 0
-              ]), le._nFootCol = ut[Ot][Qt], le._zMid = Ie;
+              ]), le._nFootCol = ut[Dt][Qt], le._zMid = Ie;
             }
             const Ne = Math.round(q.sistemaCimentacion ?? 0);
             if (Ne === 1) {
@@ -10413,15 +10413,15 @@ Datos en window.__hekatanImportedCim. Para re-exportar el mismo modelo: window._
         title: "\u{1F4CA} Calculados",
         expanded: true
       }), w = ae.computedLabels(he, ce);
-      Vt = {
+      jt = {
         ...w
-      }, console.log("[Calculados]", Vt);
-      for (const C of Object.keys(w)) b.addBinding(Vt, C, {
+      }, console.log("[Calculados]", jt);
+      for (const C of Object.keys(w)) b.addBinding(jt, C, {
         readonly: true,
         view: "text",
         interval: 0
       });
-    } else Vt = null;
+    } else jt = null;
     if (kn) {
       try {
         kn.dispose();
@@ -10564,7 +10564,7 @@ Datos en window.__hekatanImportedCim. Para re-exportar el mismo modelo: window._
       points: Zt,
       polylines: Jt,
       areas: hn,
-      gridTarget: qt
+      gridTarget: Vt
     }
   });
   {
@@ -11266,29 +11266,29 @@ Datos en window.__hekatanImportedCim. Para re-exportar el mismo modelo: window._
   } catch (e) {
     console.warn("[Import] Error restaurando modelo pendiente:", (e == null ? void 0 : e.message) ?? e);
   }
-  let Ht = new URLSearchParams(window.location.search).get("t");
-  if (Ht === "zapata-aislada") {
-    Ht = "zapata-aislada-validacion";
+  let qt = new URLSearchParams(window.location.search).get("t");
+  if (qt === "zapata-aislada") {
+    qt = "zapata-aislada-validacion";
     try {
       const e = new URL(window.location.href);
-      e.searchParams.set("t", Ht), window.history.replaceState(null, "", e.toString());
+      e.searchParams.set("t", qt), window.history.replaceState(null, "", e.toString());
     } catch {
     }
   }
-  if (!Ht) {
-    Ht = "test-m-dual";
+  if (!qt) {
+    qt = "test-m-dual";
     try {
       const e = new URL(window.location.href);
-      e.searchParams.set("t", Ht), window.history.replaceState(null, "", e.toString());
+      e.searchParams.set("t", qt), window.history.replaceState(null, "", e.toString());
     } catch {
     }
   }
-  const jt = Lt.find((e) => e.id === Ht) || Lt.find((e) => e.id === "new-blank") || Lt[0];
-  if (jt) {
-    dn(jt), jt.id === "zapata-aislada" || jt.id === "zapata-aislada-validacion" || jt.id === "zapata-viga-amarre" ? setTimeout(() => kt("iso"), 200) : jt.id === "new-blank" && setTimeout(() => {
+  const Nt = Lt.find((e) => e.id === qt) || Lt.find((e) => e.id === "new-blank") || Lt[0];
+  if (Nt) {
+    dn(Nt), Nt.id === "zapata-aislada" || Nt.id === "zapata-aislada-validacion" || Nt.id === "zapata-viga-amarre" ? setTimeout(() => kt("iso"), 200) : Nt.id === "new-blank" && setTimeout(() => {
       var _a2, _b, _c;
       const n = (_b = (_a2 = window.__hekatanCadState) == null ? void 0 : _a2.get) == null ? void 0 : _b.call(_a2);
-      n && (n.workPlane = "xy"), qt.val = {
+      n && (n.workPlane = "xy"), Vt.val = {
         position: [
           0,
           0,
@@ -11302,7 +11302,7 @@ Datos en window.__hekatanImportedCim. Para re-exportar el mismo modelo: window._
       }, kt("iso"), (_c = window.__hekatanSetOrthoExt) == null ? void 0 : _c.call(window, 3.2);
     }, 200);
     const e = new URLSearchParams(window.location.search), t = parseFloat(e.get("P") || ""), o = parseFloat(e.get("Mx") || ""), s = parseFloat(e.get("My") || ""), a = e.get("from");
-    jt.id.startsWith("zapata") && (!isNaN(t) || !isNaN(o) || !isNaN(s)) && setTimeout(() => {
+    Nt.id.startsWith("zapata") && (!isNaN(t) || !isNaN(o) || !isNaN(s)) && setTimeout(() => {
       isNaN(t) || (he.P_simple = t), isNaN(o) || (he.Mx_simple = o), isNaN(s) || (he.My_simple = s), Bt(), mt(), console.log(`\u2705 Zapata pre-cargada desde ${a || "URL"}: P=${t}, Mx=${o}, My=${s}`);
     }, 300);
   }
