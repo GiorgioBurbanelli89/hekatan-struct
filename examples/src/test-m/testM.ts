@@ -166,7 +166,8 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
   }
   const eiMass = { ...ei, densities: new Map([...ei.densities].map(([k, v]: [number, number]) => [k, v / 9.80665])) };
   try {
-    const out = modalAnalysis(nodes, elements, ni, eiMass, 12);
+    const nModes = Math.max(1, (p.nModes ?? 12) | 0);
+    const out = modalAnalysis(nodes, elements, ni, eiMass, nModes);
     const T1 = out.frequencies?.[0] ? 1 / out.frequencies[0] : undefined;
     const nec = necLineas(p, nodes, elements, ei, T1);
     // Gráfica del espectro NEC-15 + ANÁLISIS DINÁMICO (espectro de respuesta).
@@ -321,6 +322,7 @@ const BASE: Record<string, ParamDef> = {
   norma:     { default: 0, options: { "NEC-15 (Ecuador)": 0, "ASCE 7-22 (factores)": 1 }, label: "Normativa (factores)", folder: "Sísmico NEC" },
   irregular: { default: 0, boolean: true, label: "¿Irregular? → control 85% (NEC)", folder: "Sísmico NEC" },
   cd:        { default: 5.5, min: 3, max: 6.5, step: 0.5, label: "ASCE Cd (amplif. deriva)", folder: "Sísmico NEC" },
+  nModes:    { default: 12, min: 6, max: 36, step: 1, label: "N° modos (subir si masa <90%)", folder: "Sísmico NEC" },
 };
 
 // dynamicParams: agrega svx_i / svy_j / sp_k según nbx, nby, nFloors (vectores de Aguiar)

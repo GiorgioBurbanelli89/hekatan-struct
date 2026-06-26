@@ -103,10 +103,10 @@ export function createModalPanel() {
       if (modeAt90Both > 0)
         return `<span style="color:#0f0">✓ ASCE 7-22 §12.9.1.1 — 90 % alcanzado en X e Y al modo ${modeAt90Both} de ${N}</span>`;
       if (modeAt90X > 0 && modeAt90Y < 0)
-        return `<span style="color:#fa0">⚠ X cumple en modo ${modeAt90X}, Y todavía en ${(totalY * 100).toFixed(1)} % — aumentar nModes</span>`;
+        return `<span style="color:#fa0">⚠ X cumple en modo ${modeAt90X}, Y todavía en ${(totalY * 100).toFixed(1)} % — subí «N° modos» en Settings ▸ Sísmico NEC</span>`;
       if (modeAt90Y > 0 && modeAt90X < 0)
-        return `<span style="color:#fa0">⚠ Y cumple en modo ${modeAt90Y}, X todavía en ${(totalX * 100).toFixed(1)} % — aumentar nModes</span>`;
-      return `<span style="color:#f44">✗ ASCE 7-22 NO cumplido en ${N} modos · ΣUx=${(totalX * 100).toFixed(1)} % · ΣUy=${(totalY * 100).toFixed(1)} % — aumentar nModes</span>`;
+        return `<span style="color:#fa0">⚠ Y cumple en modo ${modeAt90Y}, X todavía en ${(totalX * 100).toFixed(1)} % — subí «N° modos» en Settings ▸ Sísmico NEC</span>`;
+      return `<span style="color:#f44">✗ ASCE 7-22 NO cumplido en ${N} modos · ΣUx=${(totalX * 100).toFixed(1)} % · ΣUy=${(totalY * 100).toFixed(1)} % — subí «N° modos» en Settings ▸ Sísmico NEC</span>`;
     })();
 
     // ── Resumen 3 modos principales (estilo ETABS) ──
