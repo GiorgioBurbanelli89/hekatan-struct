@@ -196,7 +196,7 @@ function exportFromRaw(raw: Map<string, string[]>, model: E2kModel): string {
     "LOAD COMBINATIONS",
   ];
 
-  out.push(`$ File exported from Awatif FEM Studio (round-trip)`);
+  out.push(`$ File exported from Hekatan Struct (round-trip)`);
   out.push(``);
 
   for (const secName of sectionOrder) {
