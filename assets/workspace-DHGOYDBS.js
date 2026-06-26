@@ -5281,7 +5281,7 @@ ${_}
       C
     ]);
     h.sort((E, C) => i[C[0]][C[1]] - i[E[0]][E[1]]);
-    const d = Math.min(a + 8, h.length);
+    const d = Math.min(2 * a + 4, h.length);
     if (d < 1) return {
       frequencies: [],
       modeShapes: [],
