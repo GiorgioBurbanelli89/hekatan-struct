@@ -4979,7 +4979,7 @@ solve`;
     // Selector dinámico de modo — el usuario gira el slider y la animación
     // cambia al nuevo modo en tiempo real.
     fModal.addBinding(animCtrl, "modeIdx", {
-      label: "Modo #", min: 1, max: 30, step: 1,
+      label: "Modo #", min: 1, max: 60, step: 1,
     }).on("change", (e) => {
       if (!lastModalResults) return;
       modalAnimator.setMode(Math.round(e.value) - 1);

@@ -331,7 +331,7 @@ const BASE: Record<string, ParamDef> = {
   norma:     { default: 0, options: { "NEC-15 (Ecuador)": 0, "ASCE 7-22 (factores)": 1 }, label: "Normativa (factores)", folder: "Sísmico NEC" },
   irregular: { default: 0, boolean: true, label: "¿Irregular? → control 85% (NEC)", folder: "Sísmico NEC" },
   cd:        { default: 5.5, min: 3, max: 6.5, step: 0.5, label: "ASCE Cd (amplif. deriva)", folder: "Sísmico NEC" },
-  nModes:    { default: 12, min: 6, max: 36, step: 1, label: "N° de modos (subir si masa <90%)", inModal: true },
+  nModes:    { default: 12, min: 6, max: 60, step: 1, label: "N° de modos (subir si masa <90%)", inModal: true },
   modalMethod: { default: 1, options: { "Eigen": 0, "Eigen+masa faltante": 1, "Ritz (como ETABS)": 2 }, label: "Método modal (masa ≥90%)", inModal: true },
 };
 
