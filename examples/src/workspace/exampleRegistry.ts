@@ -25,6 +25,9 @@ export interface ParamDef {
   /** Folder del Tweakpane donde va (e.g. "Geometría", "Luces", "Cargas").
    *  Si no se define, va en el folder raíz "Parámetros". */
   folder?: string;
+  /** Si true, el param NO va en el panel de parámetros; se rinde dentro del folder
+   *  "⚡ Modal + Animación" en Settings (p.ej. N° de modos, Método modal). */
+  inModal?: boolean;
   /**
    * Si `true`, el workspace agrega en el folder "📏 Rangos" (o el folder
    * equivalente) dos sliders readonly "<label> min" y "<label> max" que le

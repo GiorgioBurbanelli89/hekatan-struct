@@ -4703,6 +4703,9 @@ solve`;
   const allParams: Record<string, ParamDef> = { ...currentExample.params, ...dyn };
 
   for (const [key, p] of Object.entries(allParams)) {
+    // Params marcados inModal (N° de modos, Método modal) NO van en el panel de
+    // parámetros — se rinden dentro del folder "⚡ Modal + Animación" en Settings.
+    if ((p as any).inModal) continue;
     const folderTitle = p.folder ?? defaultFolderTitle;
     const fTarget = getFolder(folderTitle);
     if (p.boolean) {
@@ -4959,9 +4962,19 @@ solve`;
       if (currentExample!.runModal) currentExample!.runModal(toSIParams(), states, captureModalPanel);
     };
     fModal.addButton({ title: "▶ Correr modal + animar" }).on("click", runModalAnimate);
-    // Exponer para el botón gemelo en Settings → Analysis Outputs (🎬 Animación).
     (window as any).__hekatanRunModalAnimate = runModalAnimate;
     (window as any).__hekatanModalStop = () => { try { modalAnimator.stop(); } catch {} };
+
+    // Params del modal (N° de modos, Método modal) — marcados inModal → se rinden ACÁ,
+    // en Settings junto a la ejecución, NO en el panel de parámetros. Al cambiarlos se
+    // re-corre el modal con el nuevo valor.
+    for (const [mkey, mp] of Object.entries(currentExample.params)) {
+      if (!(mp as any).inModal) continue;
+      const mo: any = { label: mp.label ?? mkey };
+      if (mp.options) mo.options = mp.options;
+      else { if (mp.min !== undefined) mo.min = mp.min; if (mp.max !== undefined) mo.max = mp.max; if (mp.step !== undefined) mo.step = mp.step; }
+      fModal.addBinding(currentParams, mkey, mo).on("change", () => runModalAnimate());
+    }
 
     // Selector dinámico de modo — el usuario gira el slider y la animación
     // cambia al nuevo modo en tiempo real.
