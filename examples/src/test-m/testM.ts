@@ -154,14 +154,20 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
   // y si la malla mostrada fuera la fina (~900 nodos) y el modo de la gruesa (~110), los
   // nodos sobrantes darían NaN y la animación se rompería. La malla fina estática se
   // restaura al volver al caso "Linear Static" (que reconstruye con el ms fino del display).
-  try { buildEdificio({ ...p, ms: MODAL_MS }, states, sys); }
-  catch (e: any) { console.warn("[Test M Modal] build coarse:", e?.message); return; }
+  // El método "ETABS exacto" (3) usa EIGEN por subespacio (escala mejor que el solver
+  // denso) → le damos malla FINA para que el cortante en el plano del muro/losa coincida
+  // con ETABS (period→0.48, SumUy→99%). Los demás métodos siguen en malla gruesa (cap denso).
+  const etabsExacto = !p.diafragmaRigido && ((p.modalMethod ?? 1) | 0) === 3;
+  const ms = etabsExacto ? 1.25 : MODAL_MS;
+  const dofCap = etabsExacto ? 4000 : MAX_MODAL_DOF;
+  try { buildEdificio({ ...p, ms }, states, sys); }
+  catch (e: any) { console.warn("[Test M Modal] build:", e?.message); return; }
   const nodes = states.nodes.val, elements = states.elements.val;
   const ni = states.nodeInputs.val, ei = states.elementInputs.val;
   if (!nodes?.length || !ei?.densities?.size) return;
   const dof = nodes.length * 6;
-  if (dof > MAX_MODAL_DOF) {
-    const msg = `Modal omitido: ${dof} GDL > ${MAX_MODAL_DOF} aún con malla gruesa (ms=${MODAL_MS}m). Bajá vanos/pisos.`;
+  if (dof > dofCap) {
+    const msg = `Modal omitido: ${dof} GDL > ${dofCap} (ms=${ms}m). Bajá vanos/pisos.`;
     try { modalPanel.render({ frequencies: [], modeShapes: [], massParticipation: [] }, { title: label, properties: [msg] }); } catch {}
     return;
   }
