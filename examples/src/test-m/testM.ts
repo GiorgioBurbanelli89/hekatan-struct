@@ -158,19 +158,21 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
   // y si la malla mostrada fuera la fina (~900 nodos) y el modo de la gruesa (~110), los
   // nodos sobrantes darían NaN y la animación se rompería. La malla fina estática se
   // restaura al volver al caso "Linear Static" (que reconstruye con el ms fino del display).
-  // NOTA: refinar la malla acercaría el cortante del muro/losa a ETABS (cerraría el ~3% de
-  // SumUy y el +4% de periodos), PERO `lateralEigen` llama `deform` ~300 veces y deform
-  // RE-FACTORIZA K cada vez → mallas finas congelan. ETABS factoriza K una sola vez (LDLᵀ de
-  // columna activa) y reusa el factor en toda la iteración de subespacio (lo vimos en la RE de
-  // SAPFire). Cerrar el 3% pide exponer/reusar ese factor en el C++. Por eso quedamos en 2.5m.
-  try { buildEdificio({ ...p, ms: MODAL_MS }, states, sys); }
+  // El método "ETABS exacto" (3) usa Eigen C++ con condensación de Guyan (el eigen va solo
+  // sobre los GDL laterales → rápido aun a malla fina). Le damos malla FINA para que el
+  // cortante del muro/losa y el periodo converjan a ETABS. Los demás métodos (solver denso
+  // completo, o lateralEigen) siguen en malla gruesa por el cap de GDL.
+  const etabsExacto = !p.diafragmaRigido && ((p.modalMethod ?? 1) | 0) === 3;
+  const ms = etabsExacto ? 1.0 : MODAL_MS;
+  const dofCap = etabsExacto ? 8000 : MAX_MODAL_DOF;
+  try { buildEdificio({ ...p, ms }, states, sys); }
   catch (e: any) { console.warn("[Test M Modal] build:", e?.message); return; }
   const nodes = states.nodes.val, elements = states.elements.val;
   const ni = states.nodeInputs.val, ei = states.elementInputs.val;
   if (!nodes?.length || !ei?.densities?.size) return;
   const dof = nodes.length * 6;
-  if (dof > MAX_MODAL_DOF) {
-    const msg = `Modal omitido: ${dof} GDL > ${MAX_MODAL_DOF} (ms=${MODAL_MS}m). Bajá vanos/pisos.`;
+  if (dof > dofCap) {
+    const msg = `Modal omitido: ${dof} GDL > ${dofCap} (ms=${ms}m). Bajá vanos/pisos.`;
     try { modalPanel.render({ frequencies: [], modeShapes: [], massParticipation: [] }, { title: label, properties: [msg] }); } catch {}
     return;
   }
