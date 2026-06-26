@@ -5558,7 +5558,7 @@ ${_}
   const Ao = 2.5;
   function ro(e, t, n, s, o) {
     var _a2, _b, _c, _d;
-    const a = !e.diafragmaRigido && ((e.modalMethod ?? 1) | 0) === 3, r = a ? 1.25 : Ao, i = a ? 4e3 : Nr;
+    const a = !e.diafragmaRigido && ((e.modalMethod ?? 1) | 0) === 3, r = a ? 2 : Ao, i = a ? 2200 : Nr;
     try {
       Dn({
         ...e,
