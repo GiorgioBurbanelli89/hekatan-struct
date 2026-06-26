@@ -565,6 +565,13 @@ function mountCaseResultsInSettings() {
         tf.addButton({ title: name }).on("click", () => RESULT_TABLES[name]());
       }
     }
+    // 🎬 Animación + cálculo modal — botón gemelo del folder "⚡ Modal + Animación".
+    const hasAnim = (folder.children || []).some((c: any) => { try { return c.title === "🎬 Animación"; } catch { return false; } });
+    if (!hasAnim) {
+      const af = folder.addFolder({ title: "🎬 Animación", expanded: false, index: 2 });
+      af.addButton({ title: "▶ Correr modal + animar" }).on("click", () => (window as any).__hekatanRunModalAnimate?.());
+      af.addButton({ title: "⏹ Detener" }).on("click", () => (window as any).__hekatanModalStop?.());
+    }
   } catch (e: any) { console.warn("[Case results en Settings]", e?.message ?? e); }
 }
 
@@ -4911,7 +4918,7 @@ solve`;
       },
     };
 
-    fModal.addButton({ title: "▶ Correr modal + animar" }).on("click", () => {
+    const runModalAnimate = () => {
       // Detener y restaurar CUALQUIER animación en curso antes de correr el
       // nuevo análisis — si el usuario click-click-click este botón, queremos
       // que cada corrida parta limpia del modelo sin deformar (evita que se
@@ -4919,7 +4926,11 @@ solve`;
       modalAnimator.stop();
       modalPanel.div.style.display = "block";
       if (currentExample!.runModal) currentExample!.runModal(toSIParams(), states, captureModalPanel);
-    });
+    };
+    fModal.addButton({ title: "▶ Correr modal + animar" }).on("click", runModalAnimate);
+    // Exponer para el botón gemelo en Settings → Analysis Outputs (🎬 Animación).
+    (window as any).__hekatanRunModalAnimate = runModalAnimate;
+    (window as any).__hekatanModalStop = () => { try { modalAnimator.stop(); } catch {} };
 
     // Selector dinámico de modo — el usuario gira el slider y la animación
     // cambia al nuevo modo en tiempo real.
