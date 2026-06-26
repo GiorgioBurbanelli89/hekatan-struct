@@ -565,13 +565,7 @@ function mountCaseResultsInSettings() {
         tf.addButton({ title: name }).on("click", () => RESULT_TABLES[name]());
       }
     }
-    // 🎬 Animación + cálculo modal — botón gemelo del folder "⚡ Modal + Animación".
-    const hasAnim = (folder.children || []).some((c: any) => { try { return c.title === "🎬 Animación"; } catch { return false; } });
-    if (!hasAnim) {
-      const af = folder.addFolder({ title: "🎬 Animación", expanded: false, index: 2 });
-      af.addButton({ title: "▶ Correr modal + animar" }).on("click", () => (window as any).__hekatanRunModalAnimate?.());
-      af.addButton({ title: "⏹ Detener" }).on("click", () => (window as any).__hekatanModalStop?.());
-    }
+    // (El modal + animación viven en su único folder "⚡ Modal + Animación" — sin duplicar acá.)
   } catch (e: any) { console.warn("[Case results en Settings]", e?.message ?? e); }
 }
 
