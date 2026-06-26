@@ -5669,7 +5669,7 @@ ${M}
     nModes: {
       default: 12,
       min: 6,
-      max: 36,
+      max: 60,
       step: 1,
       label: "N\xB0 de modos (subir si masa <90%)",
       inModal: true
@@ -10515,7 +10515,7 @@ Datos en window.__hekatanImportedCim. Para re-exportar el mismo modelo: window._
       w.addBinding($o, "modeIdx", {
         label: "Modo #",
         min: 1,
-        max: 30,
+        max: 60,
         step: 1
       }).on("change", (A) => {
         P && ft.setMode(Math.round(A.value) - 1);
