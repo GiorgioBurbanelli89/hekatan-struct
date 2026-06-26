@@ -166,13 +166,14 @@ export function createModalPanel() {
     m.frequencies.forEach((freq, i) => {
       const T = freq > 0 ? 1 / freq : 0;
       const omega = freq * 2 * Math.PI;
+      const isMF = freq >= 500;   // pseudo-modo rígido = corrección de masa faltante (A)
       const mp = m.massParticipation?.[i] || [0, 0, 0, 0, 0, 0];
       for (let d = 0; d < 6; d++) sumP[d] += mp[d];
 
       // Clasificar modo: cuál DOF domina (mayor MPF)
       let domDir = 0, domVal = mp[0];
       for (let d = 1; d < 6; d++) if (mp[d] > domVal) { domVal = mp[d]; domDir = d; }
-      const tipoLabel = domVal < 0.05 ? "—" : `${dirs[domDir]} (${(domVal * 100).toFixed(0)} %)`;
+      const tipoLabel = isMF ? "masa faltante (rígida)" : domVal < 0.05 ? "—" : `${dirs[domDir]} (${(domVal * 100).toFixed(0)} %)`;
       const tipoColor =
         domDir === 0 || domDir === 1
           ? "#0f0"
@@ -192,11 +193,11 @@ export function createModalPanel() {
         ? "background:rgba(255,200,0,0.1);"
         : "";
 
-      html += `<tr style="border-bottom:1px solid #fff1; ${rowBg}">
-  <td style="padding:2px 6px; text-align:center">${i + 1}${isAt90Both ? " ★" : ""}</td>
-  <td style="padding:2px 6px; text-align:right">${freq.toFixed(4)}</td>
-  <td style="padding:2px 6px; text-align:right">${T.toFixed(4)}</td>
-  <td style="padding:2px 6px; text-align:right">${omega.toFixed(2)}</td>`;
+      html += `<tr style="border-bottom:1px solid #fff1; ${isMF ? "background:rgba(0,180,255,0.12);" : rowBg}">
+  <td style="padding:2px 6px; text-align:center">${isMF ? "MF" : (i + 1) + (isAt90Both ? " ★" : "")}</td>
+  <td style="padding:2px 6px; text-align:right">${isMF ? "rígido" : freq.toFixed(4)}</td>
+  <td style="padding:2px 6px; text-align:right">${isMF ? "≈0" : T.toFixed(4)}</td>
+  <td style="padding:2px 6px; text-align:right">${isMF ? "—" : omega.toFixed(2)}</td>`;
 
       for (let d = 0; d < 6; d++) {
         const pct = (mp[d] * 100).toFixed(1);
