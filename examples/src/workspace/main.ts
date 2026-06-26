@@ -519,6 +519,7 @@ function loadExample(ex: ExampleDef) {
 let __caseResultsBinding: any = null;
 let __modalSettingsFolder: any = null;   // folder "⚡ Modal + Animación" dentro de Settings (Analysis Outputs)
 let __lastModalResults: any = null;      // resultados modales (para listar los modos en "Case results")
+let __loadPanel: any = null;             // panel de Load Patterns/Cases (pane derecho) para sincronizar "Caso activo"
 
 // ── Panel flotante de tablas de resultados (estilo ETABS → Analysis Results) ──
 let __tablesPanel: HTMLDivElement | null = null;
@@ -572,6 +573,8 @@ function mountCaseResultsInSettings() {
         try { modalAnimator?.showStatic(idx); } catch (err) { console.warn("showStatic", err); }
       } else {
         activeLoadCase.val = e.value; rebuild();
+        // Sincronizar el "Caso activo" del pane derecho (Load Cases) con esta selección.
+        try { __loadPanel?.rebuildCases(); } catch {}
       }
     });
     // 📋 Tablas de resultados (estilo ETABS Analysis Results) — agregar una sola vez por folder.
@@ -4338,7 +4341,7 @@ solve`;
   // Persisten en localStorage por exampleId. Los ejemplos pueden leer
   // states.loadPatterns para aplicar peso propio según SW multiplier.
   if (currentExample) {
-    attachLoadPatternsPanel({
+    __loadPanel = attachLoadPatternsPanel({
       pane,
       exampleId: currentExample.id,
       loadPatterns,
@@ -4348,6 +4351,8 @@ solve`;
       onChange: () => {
         // Re-build cuando cambia el case activo o el SW multiplier.
         try { scheduleRebuild?.(); } catch {}
+        // Sincronizar el selector "Case results" (pane Settings) con el "Caso activo" (pane derecho).
+        try { mountCaseResultsInSettings(); } catch {}
       },
     });
   }
