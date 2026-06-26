@@ -518,6 +518,7 @@ function loadExample(ex: ExampleDef) {
  */
 let __caseResultsBinding: any = null;
 let __modalSettingsFolder: any = null;   // folder "⚡ Modal + Animación" dentro de Settings (Analysis Outputs)
+let __lastModalResults: any = null;      // resultados modales (para listar los modos en "Case results")
 
 // ── Panel flotante de tablas de resultados (estilo ETABS → Analysis Results) ──
 let __tablesPanel: HTMLDivElement | null = null;
@@ -555,9 +556,24 @@ function mountCaseResultsInSettings() {
     loadCases.val.forEach((c) => { caseOptions[c.name] = c.name; });
     if (!Object.keys(caseOptions).length) return;
     if (!loadCases.val.find((c) => c.name === activeLoadCase.val)) activeLoadCase.val = loadCases.val[0].name;
+    // Modos de vibración (como ETABS Case/Combo/MODE): al elegir un modo se ve su deformada.
+    const freqs: number[] = __lastModalResults?.frequencies ?? [];
+    freqs.forEach((f: number, i: number) => {
+      const T = f > 0 ? 1 / f : 0;
+      caseOptions[`◈ Modo ${i + 1} (T=${T.toFixed(3)}s)`] = `__mode_${i}`;
+    });
     const obj = { case: activeLoadCase.val };
     __caseResultsBinding = folder.addBinding(obj, "case", { label: "Case results", options: caseOptions, index: 0 });
-    __caseResultsBinding.on("change", (e: any) => { activeLoadCase.val = e.value; rebuild(); });
+    __caseResultsBinding.on("change", (e: any) => {
+      const v = String(e.value);
+      if (v.startsWith("__mode_")) {
+        // MODE: mostrar la deformada estática de ese modo (sin rebuild) — como ETABS.
+        const idx = parseInt(v.slice(7), 10) || 0;
+        try { modalAnimator?.showStatic(idx); } catch (err) { console.warn("showStatic", err); }
+      } else {
+        activeLoadCase.val = e.value; rebuild();
+      }
+    });
     // 📋 Tablas de resultados (estilo ETABS Analysis Results) — agregar una sola vez por folder.
     const hasTables = (folder.children || []).some((c: any) => { try { return c.title === "📋 Tablas"; } catch { return false; } });
     if (!hasTables) {
@@ -4943,6 +4959,7 @@ solve`;
       div: modalPanel.div,
       render: (out: any, meta: any) => {
         lastModalResults = out;
+        __lastModalResults = out;
         modalPanel.render(out, meta);
         if (out?.frequencies?.length) {
           modalAnimator.setResults(out);
@@ -4950,6 +4967,8 @@ solve`;
           modalAnimator.play();
           animCtrl.modeIdx = 1;
           try { fModal.refresh(); } catch {}
+          // Re-montar "Case results" para que liste los modos (como Case/Mode de ETABS).
+          try { mountCaseResultsInSettings(); } catch {}
         }
       },
     };

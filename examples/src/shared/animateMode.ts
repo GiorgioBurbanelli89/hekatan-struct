@@ -67,6 +67,9 @@ export interface ModalAnimator {
   setResults(out: ModalOutputs): void;
   /** Selecciona el modo a animar (0-indexed) */
   setMode(i: number): void;
+  /** Muestra el modo i ESTÁTICO (deformada congelada, sin animar) — como ETABS al
+   *  elegir un Mode en el selector de resultados. */
+  showStatic(i: number): void;
   /** Inicia la animación del modo actual */
   play(): void;
   /** Detiene la animación y restaura nodos a posiciones originales */
@@ -231,6 +234,29 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
     fireStatus();
   }
 
+  // Muestra el modo i ESTÁTICO (una posición congelada en la amplitud pico), sin RAF.
+  function showStaticInternal(i: number) {
+    if (!results || !results.modeShapes || !results.modeShapes[i]) return;
+    stopInternal(false);
+    const st = getSettings();
+    if (st?.deformedShape) { if (savedDeformedShape === null) savedDeformedShape = st.deformedShape.val; st.deformedShape.val = false; }
+    mode = Math.max(0, Math.min((results.frequencies?.length ?? 1) - 1, i));
+    const shape = results.modeShapes[mode];
+    const base = (trueOriginalNodes.length > 0 ? trueOriginalNodes : mesh.nodes.rawVal).map((n) => [...n] as Node);
+    const nNodes = base.length;
+    let xMin = Infinity, yMin = Infinity, zMin = Infinity, xMax = -Infinity, yMax = -Infinity, zMax = -Infinity;
+    for (const n of base) { if (n[0] < xMin) xMin = n[0]; if (n[0] > xMax) xMax = n[0]; if (n[1] < yMin) yMin = n[1]; if (n[1] > yMax) yMax = n[1]; if (n[2] < zMin) zMin = n[2]; if (n[2] > zMax) zMax = n[2]; }
+    const extent = Math.sqrt((xMax - xMin) ** 2 + (yMax - yMin) ** 2 + (zMax - zMin) ** 2) || 1;
+    let maxDisp = 0;
+    for (let k = 0; k < nNodes; k++) { const dx = shape[k * 6] || 0, dy = shape[k * 6 + 1] || 0, dz = shape[k * 6 + 2] || 0; const m = Math.sqrt(dx * dx + dy * dy + dz * dz); if (m > maxDisp) maxDisp = m; }
+    const mScale = maxDisp > 1e-12 ? (extent * scalePct / 100) / maxDisp : 1;
+    const newNodes: Node[] = new Array(nNodes);
+    for (let k = 0; k < nNodes; k++) { const o = base[k]; newNodes[k] = [o[0] + (shape[k * 6] || 0) * mScale, o[1] + (shape[k * 6 + 1] || 0) * mScale, o[2] + (shape[k * 6 + 2] || 0) * mScale]; }
+    mesh.nodes.val = newNodes;
+    getCtx()?.render();
+    fireStatus();
+  }
+
   return {
     setResults(out) {
       results = out;
@@ -248,6 +274,7 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
       if (rafId !== 0) startInternal();
       else fireStatus();
     },
+    showStatic(i) { showStaticInternal(i); },
     play() {
       if (!results) return;
       if (rafId === 0) startInternal();
