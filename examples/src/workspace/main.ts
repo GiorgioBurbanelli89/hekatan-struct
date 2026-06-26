@@ -723,14 +723,24 @@ function filterShellResultOptions(allowed?: string[]) {
   );
   if (!shellSelect) return;
   for (const opt of Array.from(shellSelect.options)) {
-    // "none" siempre disponible; resto solo si está en la lista (o si no se declaró).
-    const show = opt.value === "none" || !allowed || allowed.includes(opt.value);
+    // "none" siempre. "pressure" es de FUNDACIÓN (presión del suelo Winkler) → solo se
+    // ofrece si el ejemplo lo declara explícitamente (no en losas/muros). El resto: si
+    // está en la lista, o si el ejemplo no declaró lista (entonces tabla completa).
+    const show = opt.value === "none"
+      ? true
+      : opt.value === "pressure"
+        ? !!allowed?.includes("pressure")
+        : (!allowed || allowed.includes(opt.value));
     opt.hidden = !show;
     opt.disabled = !show;
   }
   // Sincronizar el valor mostrado con el estado actual (Tweakpane no lo hace solo).
   const s = (viewerElm as any).__settings;
   if (s?.shellResults) {
+    // Si el valor actual quedó OCULTO (p.ej. 'pressure' heredado en un ejemplo sin
+    // fundación) → caer al default del ejemplo (o vonMises).
+    const curOpt = Array.from(shellSelect.options).find((o) => o.value === s.shellResults.val);
+    if (curOpt?.hidden) s.shellResults.val = currentExample?.defaultShellResult || "vonMises";
     shellSelect.value = s.shellResults.val;
     shellSelect.dispatchEvent(new Event("change", { bubbles: true }));
   }
