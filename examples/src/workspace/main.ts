@@ -4970,10 +4970,26 @@ solve`;
     // re-corre el modal con el nuevo valor.
     for (const [mkey, mp] of Object.entries(currentExample.params)) {
       if (!(mp as any).inModal) continue;
-      const mo: any = { label: mp.label ?? mkey };
-      if (mp.options) mo.options = mp.options;
-      else { if (mp.min !== undefined) mo.min = mp.min; if (mp.max !== undefined) mo.max = mp.max; if (mp.step !== undefined) mo.step = mp.step; }
-      fModal.addBinding(currentParams, mkey, mo).on("change", () => runModalAnimate());
+      if (mp.options) {
+        // Dropdown (Método modal)
+        fModal.addBinding(currentParams, mkey, { label: mp.label ?? mkey, options: mp.options })
+          .on("change", () => runModalAnimate());
+      } else {
+        // Numérico (N° de modos) con TOPE editable: sub-folder con "cantidad" + "tope (máx)".
+        // Al cambiar el tope se recrea el slider con el nuevo límite (estilo "📏 Rangos").
+        const fN = fModal.addFolder({ title: "🔢 " + (mp.label ?? mkey), expanded: true });
+        const lim = { max: mp.max ?? 60 };
+        let nb: any = null;
+        const rebuildN = () => {
+          if (nb) { try { nb.dispose(); } catch {} }
+          if (currentParams[mkey] > lim.max) currentParams[mkey] = lim.max;
+          nb = fN.addBinding(currentParams, mkey, { label: "cantidad", min: mp.min ?? 1, max: lim.max, step: mp.step ?? 1, index: 0 });
+          nb.on("change", () => runModalAnimate());
+        };
+        rebuildN();
+        fN.addBinding(lim, "max", { label: "tope (máx)", min: mp.max ?? 60, max: 600, step: 10 })
+          .on("change", () => rebuildN());
+      }
     }
 
     // Selector dinámico de modo — el usuario gira el slider y la animación
