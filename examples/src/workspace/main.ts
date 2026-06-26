@@ -4877,12 +4877,14 @@ solve`;
   // Modal trigger + animación visual del modo (todo dentro del Tweakpane — sin
   // ventanas flotantes custom). El status (modo, frecuencia, período, dirección
   // dominante) se muestra como bindings readonly que se refrescan en vivo.
+  // Limpiar SIEMPRE el folder modal-en-Settings de la corrida/ejemplo anterior — aunque el
+  // ejemplo nuevo NO tenga modal — si no, queda huérfano en Settings al cambiar de ejemplo.
+  if (__modalSettingsFolder) { try { __modalSettingsFolder.dispose(); } catch {} __modalSettingsFolder = null; }
   if (currentExample.hasModal) {
     // El modal (EJECUCIÓN + RESULTADOS) vive en Settings ▸ Analysis Outputs (panel izquierdo),
     // NO en el panel de parámetros (derecho). Settings persiste entre rebuilds → dispose-then-add
     // para no duplicar. Fallback al params pane si Settings aún no existe.
     const outputsFolder = (window as any).__hekatanOutputsFolder;
-    if (__modalSettingsFolder) { try { __modalSettingsFolder.dispose(); } catch {} __modalSettingsFolder = null; }
     const fModal = outputsFolder
       ? outputsFolder.addFolder({ title: "⚡ Modal + Animación", expanded: true, index: 2 })
       : pane.addFolder({ title: "⚡ Modal + Animación", expanded: true });
