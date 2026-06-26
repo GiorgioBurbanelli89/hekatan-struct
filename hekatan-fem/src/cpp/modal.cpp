@@ -103,22 +103,23 @@ extern "C"
         // verticales reales y los modos son laterales/torsionales, como en la tabla de ETABS.
         if (lateral_mass)
         {
+            // Lumpeo por suma de filas (como ETABS LUMPATSTORIES): la masa lateral queda
+            // DIAGONAL en Ux,Uy (suma de la fila consistente = masa traslacional total del GDL).
+            // Uz y rotaciones → 0 + regularización ε. Da los periodos de ETABS (masa lumpeada)
+            // y, con el eigensolver exacto, SumUy≈99%.
+            Eigen::VectorXd rowsum = Eigen::VectorXd::Zero(dof);
+            for (int k = 0; k < M_global.outerSize(); ++k)
+                for (Eigen::SparseMatrix<double>::InnerIterator it(M_global, k); it; ++it)
+                    rowsum(it.row()) += it.value();
             double mLat = 0.0; int nLat = 0;
-            for (int i = 0; i < num_nodes; ++i) {
-                mLat += M_global.coeff(i * 6 + 0, i * 6 + 0) + M_global.coeff(i * 6 + 1, i * 6 + 1);
-                nLat += 2;
-            }
+            for (int i = 0; i < num_nodes; ++i) { mLat += std::max(rowsum(i*6+0),0.0) + std::max(rowsum(i*6+1),0.0); nLat += 2; }
             double eps = (nLat > 0 ? mLat / nLat : 1.0) * 1e-8;
             std::vector<Eigen::Triplet<double>> trips;
-            for (int k = 0; k < M_global.outerSize(); ++k)
-                for (Eigen::SparseMatrix<double>::InnerIterator it(M_global, k); it; ++it) {
-                    int rr = it.row() % 6, cc = it.col() % 6;
-                    if ((rr == 0 || rr == 1) && (cc == 0 || cc == 1))
-                        trips.emplace_back(it.row(), it.col(), it.value());  // bloque Ux,Uy
-                }
-            for (int i = 0; i < num_nodes; ++i)
-                for (int d = 2; d < 6; ++d)
-                    trips.emplace_back(i * 6 + d, i * 6 + d, eps);           // regularización
+            for (int i = 0; i < num_nodes; ++i) {
+                trips.emplace_back(i*6+0, i*6+0, std::max(rowsum(i*6+0), 0.0));  // Ux lumpeada
+                trips.emplace_back(i*6+1, i*6+1, std::max(rowsum(i*6+1), 0.0));  // Uy lumpeada
+                for (int d = 2; d < 6; ++d) trips.emplace_back(i*6+d, i*6+d, eps);  // sin masa + ε
+            }
             Eigen::SparseMatrix<double> M_lat(dof, dof);
             M_lat.setFromTriplets(trips.begin(), trips.end());
             M_global = M_lat;
