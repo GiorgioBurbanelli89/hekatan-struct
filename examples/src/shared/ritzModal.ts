@@ -312,7 +312,7 @@ export function lateralEigen(
   const massDofs: Array<[number, number]> = [];
   for (let n = 0; n < N; n++) for (let d = 0; d < 3; d++) if (M[n][d] > 0) massDofs.push([n, d]);
   massDofs.sort((a, b) => M[b[0]][b[1]] - M[a[0]][a[1]]);
-  const q = Math.min(nModes + 8, massDofs.length);
+  const q = Math.min(2 * nModes + 4, massDofs.length);   // subespacio amplio → no se salta modos cercanos
   if (q < 1) return { frequencies: [], modeShapes: [], massParticipation: [], periods: [] };
   // subespacio inicial: r_x, r_y + vectores unitarios en los DOFs más pesados
   let X: number[][][] = [];
