@@ -254,12 +254,40 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
         `C7:  0.9 D + 1.0 E                (vuelco · gravedad mínima)`,
         `   E = ρ·V_din${fEsc > 1.001 ? `·fEsc` : ""} = ${rho.toFixed(1)}·${Vdin.toFixed(1)}${fEsc > 1.001 ? `·${fEsc.toFixed(2)}` : ""} = ${Edis.toFixed(1)} kN  (ρ=${rho.toFixed(1)}${esAsce ? " ASCE" : " NEC"}) ;  Ev ≈ ${Ev.toFixed(1)} kN  [${evForm}]`,
       );
+      // Centros de masa (CM) y rigidez (CR) por piso. CM = centroide del piso;
+      // CR = centroide ponderado por la rigidez lateral de los verticales
+      // (columnas peso 1, muros peso 10·largo). e = CR−CM (excentricidad → torsión).
+      const cmcr = (() => {
+        const zls = [...new Set(nodes.map((n: number[]) => +n[2].toFixed(2)))].sort((a: number, b: number) => a - b).filter((z: number) => z > 0.05);
+        return zls.map((z, k) => {
+          const fn = nodes.filter((n: number[]) => Math.abs(n[2] - z) < 0.02);
+          const CMx = fn.reduce((s, n) => s + n[0], 0) / Math.max(fn.length, 1);
+          const CMy = fn.reduce((s, n) => s + n[1], 0) / Math.max(fn.length, 1);
+          let sw = 0, swx = 0, swy = 0;
+          for (const e of elements) {
+            if (e.length === 2) {                                   // columna vertical
+              const a = nodes[e[0]], b = nodes[e[1]];
+              if (Math.abs(a[0] - b[0]) < 0.01 && Math.abs(a[1] - b[1]) < 0.01 && Math.max(a[2], b[2]) >= z - 0.01 && Math.min(a[2], b[2]) <= z - 0.01) { sw += 1; swx += a[0]; swy += a[1]; }
+            } else if (e.length === 4) {                             // muro vertical (shell)
+              const q = e.map((i: number) => nodes[i]); const zs = q.map((p: number[]) => p[2]);
+              if (Math.max(...zs) - Math.min(...zs) > 0.5 && Math.max(...zs) >= z - 0.01 && Math.min(...zs) <= z - 0.01) {
+                const cx = q.reduce((s: number, p: number[]) => s + p[0], 0) / 4, cy = q.reduce((s: number, p: number[]) => s + p[1], 0) / 4;
+                const len = (Math.max(...q.map((p: number[]) => p[0])) - Math.min(...q.map((p: number[]) => p[0]))) + (Math.max(...q.map((p: number[]) => p[1])) - Math.min(...q.map((p: number[]) => p[1])));
+                const w = 10 * (len || 0.3); sw += w; swx += w * cx; swy += w * cy;
+              }
+            }
+          }
+          const CRx = sw > 0 ? swx / sw : CMx, CRy = sw > 0 ? swy / sw : CMy;
+          return { piso: k + 1, z, CMx, CMy, CRx, CRy, ex: CRx - CMx, ey: CRy - CMy };
+        }).reverse();
+      })();
       // Tablas estructuradas para el menú "📋 Tablas" de Analysis Outputs (estilo ETABS).
       (window as any).__hekatanSeismic = {
         tag: esAsce ? "ASCE 7-22" : "NEC-15", label,
         base: { Vest, Vx, Vy, Vdin, ratio, fEsc, Edis, Ev },
         modal: { freqs: out.frequencies ?? [], periods: out.periods ?? [], massPart: out.massParticipation ?? [] },
         story: storyTable,   // top → bottom (como ETABS)
+        cmcr,
       };
     } catch (e: any) { console.warn("dinámico espectral:", e?.message); }
     modalPanel.render(out, { title: label, spectrumHtml, properties: [
