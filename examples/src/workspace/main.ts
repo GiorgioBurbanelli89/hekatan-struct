@@ -798,6 +798,8 @@ function toSIParams(): Record<string, number> {
 function rebuild() {
   if (!currentExample) return;
   resetStates();
+  // Caso activo accesible al build del ejemplo (para aplicar cargas por caso: Dead/Live/…).
+  (window as any).__hekatanActiveCase = activeLoadCase.val;
   currentExample.build(toSIParams(), states, modalPanel);
 
   // ── Active Case dispatcher ──
