@@ -154,12 +154,13 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
   // y si la malla mostrada fuera la fina (~900 nodos) y el modo de la gruesa (~110), los
   // nodos sobrantes darían NaN y la animación se rompería. La malla fina estática se
   // restaura al volver al caso "Linear Static" (que reconstruye con el ms fino del display).
-  // El método "ETABS exacto" (3) usa EIGEN por subespacio (escala mejor que el solver
-  // denso) → le damos malla FINA para que el cortante en el plano del muro/losa coincida
-  // con ETABS (period→0.48, SumUy→99%). Los demás métodos siguen en malla gruesa (cap denso).
+  // El método "ETABS exacto" (3) usa malla un poco más fina (el subespacio escala mejor que
+  // el solver denso), pero acotada: `deform` re-factoriza K en cada solve del subespacio, así
+  // que mallas muy finas congelan. 1.67m da ~1470 GDL — más cortante de muro/losa hacia ETABS
+  // sin colgar. (Cerrar el último 3% pediría reusar el factor LDLᵀ, como ETABS.)
   const etabsExacto = !p.diafragmaRigido && ((p.modalMethod ?? 1) | 0) === 3;
-  const ms = etabsExacto ? 1.25 : MODAL_MS;
-  const dofCap = etabsExacto ? 4000 : MAX_MODAL_DOF;
+  const ms = etabsExacto ? 2.0 : MODAL_MS;
+  const dofCap = etabsExacto ? 2200 : MAX_MODAL_DOF;
   try { buildEdificio({ ...p, ms }, states, sys); }
   catch (e: any) { console.warn("[Test M Modal] build:", e?.message); return; }
   const nodes = states.nodes.val, elements = states.elements.val;
