@@ -355,21 +355,39 @@ function dynParams(p: Record<string, number>): Record<string, ParamDef> {
 // (filterShellResultOptions) oculta SOLO 'pressure' porque no es fundación.
 const shellRes = { defaultShellResult: "vonMises" };
 
+// Sismo NEC para el e2k: espectro USER elástico Sa(T) + caso Modal (Eigen/Ritz según el
+// "Método modal" de Settings) + caso Response Spectrum. Así el e2k exportado trae el MISMO
+// sismo y el mismo modal (método + N° de modos) que Hekatan corre en Settings.
+const e2kSeismicCfg = {
+  e2kSeismic: (p: any) => {
+    const Z = p.necZ ?? 0.40, R = p.necR ?? 8, I = p.necI ?? 1.0;
+    const soil = SOILS[(p.necSoil ?? 4) | 0], region = REGS[(p.necReg ?? 0) | 0];
+    const sp = necSpectrum({ Z, soil, region, I, R, phiP: 1, phiE: 1 });
+    const points: [number, number][] = [];
+    for (let t = 0; t <= 4.0001; t += 0.05) points.push([+t.toFixed(2), +sp.Sa(t).toFixed(5)]);  // Sa elástico [g]
+    return {
+      points, caseName: "Sismo NEC",
+      sfX: 9.80665 * I / R, sfY: 9.80665 * I / R,   // SF = g·I/R (NEC §6.3: V=I·Sa/R·W)
+      modal: { ritz: ((p.modalMethod ?? 1) | 0) === 2, nModes: Math.max(1, (p.nModes ?? 12) | 0) },
+    };
+  },
+};
+
 export const testMPortico: ExampleDef = {
   id: "test-m-portico", name: "🎓 Test M — Solo pórticos (sin losa)", category: "🎓 Test M",
-  params: { ...BASE }, dynamicParams: dynParams, hasModal: true,
+  params: { ...BASE }, dynamicParams: dynParams, hasModal: true, ...e2kSeismicCfg,
   build(p, states) { buildEdificio(p, states, { slab: false, walls: false }); },
   runModal(_p, states, modalPanel) { runModalEdificio(_p, states, modalPanel, "Test M — Solo pórticos", { slab: false, walls: false }); },
 };
 export const testMLosa: ExampleDef = {
   id: "test-m-losa", name: "🎓 Test M — Solo con losa (pórtico + losa)", category: "🎓 Test M",
-  params: { ...BASE }, dynamicParams: dynParams, hasModal: true, ...shellRes,
+  params: { ...BASE }, dynamicParams: dynParams, hasModal: true, ...shellRes, ...e2kSeismicCfg,
   build(p, states) { buildEdificio(p, states, { slab: true, walls: false }); },
   runModal(_p, states, modalPanel) { runModalEdificio(_p, states, modalPanel, "Test M — Pórtico + losa", { slab: true, walls: false }); },
 };
 export const testMDual: ExampleDef = {
   id: "test-m-dual", name: "🎓 Test M — Dual (pórtico + losa + muros)", category: "🎓 Test M",
-  params: { ...BASE }, dynamicParams: dynParams, hasModal: true, ...shellRes,
+  params: { ...BASE }, dynamicParams: dynParams, hasModal: true, ...shellRes, ...e2kSeismicCfg,
   build(p, states) { buildEdificio(p, states, { slab: true, walls: true }); },
   runModal(_p, states, modalPanel) { runModalEdificio(_p, states, modalPanel, "Test M — Dual (pórtico+losa+muros)", { slab: true, walls: true }); },
 };

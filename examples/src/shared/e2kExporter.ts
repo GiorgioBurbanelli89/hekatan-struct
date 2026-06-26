@@ -48,6 +48,9 @@ export interface ExportE2kInput {
     caseName?: string;    // nombre del caso RS (default "Sismo NEC")
     modalCase?: string;   // caso modal de referencia (default "Modal")
     sfX?: number; sfY?: number;
+    /** Define el caso Modal en el e2k (Eigen o Ritz + N° de modos), para que el RS
+     *  tenga su MODALCASE y ETABS/SAP corran el mismo modal que Hekatan en Settings. */
+    modal?: { ritz?: boolean; nModes?: number };
   };
 }
 
@@ -85,6 +88,29 @@ export function responseSpectrumCaseE2k(opt: {
   return L;
 }
 
+/**
+ * Bloque e2k del caso Modal (Eigen o Ritz). Sintaxis verificada en e2k reales de ETABS:
+ *   LOADCASE "Modal"  TYPE  "Modal - Eigen"  INITCOND  "PRESET"
+ *   LOADCASE "Modal"  MAXMODES n MINMODES 1 EIGENSHIFTFREQ 0 EIGENCUTOFF 0 EIGENTOL 1E-09
+ * Ritz: TYPE "Modal - Ritz" + vectores de carga por aceleración (UX/UY/UZ) — como ETABS.
+ */
+export function modalCaseE2k(opt: { name?: string; ritz?: boolean; nModes?: number }): string[] {
+  const { name = "Modal", ritz = false, nModes = 12 } = opt;
+  if (ritz) {
+    return [
+      `  LOADCASE "${name}"  TYPE  "Modal - Ritz"  INITCOND  "PRESET"  `,
+      `  LOADCASE "${name}"  MAXMODES  ${nModes} MINMODES  1 `,
+      `  LOADCASE "${name}"  LOADTYPE  "Accel"  LOADNAME  "UX"  RITZMAXCYCLES  0 `,
+      `  LOADCASE "${name}"  LOADTYPE  "Accel"  LOADNAME  "UY"  RITZMAXCYCLES  0 `,
+      `  LOADCASE "${name}"  LOADTYPE  "Accel"  LOADNAME  "UZ"  RITZMAXCYCLES  0 `,
+    ];
+  }
+  return [
+    `  LOADCASE "${name}"  TYPE  "Modal - Eigen"  INITCOND  "PRESET"  `,
+    `  LOADCASE "${name}"  MAXMODES  ${nModes} MINMODES  1 EIGENSHIFTFREQ  0 EIGENCUTOFF  0 EIGENTOL  1E-09 `,
+  ];
+}
+
 export function exportE2k(input: ExportE2kInput): string {
   const raw = input.e2kModel?.rawSections;
   // Raw round-trip (preserva ETABS) o reconstrucción sintética.
@@ -101,12 +127,19 @@ function injectNecSeismic(e2k: string, nec: NonNullable<ExportE2kInput["seismicN
   const lines = e2k.split(/\r?\n/);
   const funcName = nec.name ?? "NEC";
   const fnLines = necUserSpectrumE2k(funcName, nec.points, nec.dampRatio ?? 0.05);
+  const modalName = nec.modalCase ?? "Modal";
   const lcLines = responseSpectrumCaseE2k({
     name: nec.caseName ?? "Sismo NEC", func: funcName,
-    modalCase: nec.modalCase, sfX: nec.sfX, sfY: nec.sfY,
+    modalCase: modalName, sfX: nec.sfX, sfY: nec.sfY,
+  });
+  // Caso Modal (Eigen/Ritz). Solo si el e2k aún no lo trae (round-trip ETABS ya lo tiene).
+  const yaTieneModal = lines.some((l) => new RegExp(`LOADCASE\\s+"${modalName}"\\s+TYPE\\s+"Modal`).test(l));
+  const modalLines = yaTieneModal ? [] : modalCaseE2k({
+    name: modalName, ritz: !!nec.modal?.ritz, nModes: nec.modal?.nModes,
   });
   insertAfterSection(lines, "FUNCTIONS", fnLines);
-  insertAfterSection(lines, "LOAD CASES", lcLines);
+  // El caso Modal va ANTES del RS (el RS lo referencia con MODALCASE).
+  insertAfterSection(lines, "LOAD CASES", [...modalLines, ...lcLines]);
   return lines.join(nl);
 }
 

@@ -150,6 +150,9 @@ export interface ExampleDef {
    * download anchor) — el toolbar solo dispara la invocación.
    */
   customE2kExport?: (params: Record<string, number>, states: BuildStates) => void;
+  /** Devuelve el bloque sísmico NEC (espectro USER + caso Modal Eigen/Ritz + RS) para
+   *  inyectar en el e2k del export genérico — así el e2k trae el mismo sismo/modal que Settings. */
+  e2kSeismic?: (params: Record<string, number>, states: BuildStates) => any;
   /**
    * Exportador F2K (SAFE) custom — si está definido, el botón "📤 Exportar F2K"
    * del folder SAFE lo invoca en vez del genérico `downloadZapataF2k` (que solo

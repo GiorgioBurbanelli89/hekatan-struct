@@ -4380,6 +4380,8 @@ solve`;
           title: `${currentExample!.name} — Hekatan export`,
           units: { force: "Tonf", length: "m" },
           weightMode: etabsExportCfg.weightMode,
+          // Sismo NEC (espectro USER + caso Modal Eigen/Ritz + RS) si el ejemplo lo provee.
+          seismicNEC: currentExample!.e2kSeismic?.(toSIParams(), states),
         });
         const fname = `${currentExample!.id}_${Date.now()}.e2k`;
         downloadText(text, fname);
