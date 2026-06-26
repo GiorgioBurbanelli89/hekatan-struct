@@ -198,7 +198,7 @@ export function attachLoadPatternsPanel(opts: {
     loadCases.val.forEach(c => caseOptions[c.name] = c.name);
     if (Object.keys(caseOptions).length === 0) caseOptions["(ninguno)"] = "";
     const activeBinding = casesFolder.addBinding(activeObj, "case", {
-      label: "Case results", options: caseOptions,
+      label: "▶ Caso activo", options: caseOptions,
     });
     try { activeBinding.element?.classList?.add("hk-case-active"); } catch {}
     activeBinding.on("change", (e: any) => {

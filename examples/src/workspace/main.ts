@@ -506,6 +506,30 @@ function loadExample(ex: ExampleDef) {
   autoScaleDeformedShape();
   autoFitCamera();
   buildParamsPane();
+  mountCaseResultsInSettings();   // "Case results" (Dead/Live/Modal) junto a Frame/Shell results
+}
+
+/**
+ * Inyecta el selector "Case results" (Dead/Live/Modal) DENTRO del folder
+ * "Analysis Outputs" del panel Settings, junto a Node/Frame/Shell results.
+ * Reusa `activeLoadCase` + `rebuild()` (la misma lógica del panel Load Cases),
+ * para que los tres selectores de resultado queden juntos. Se re-monta en cada
+ * loadExample (las opciones de caso cambian por ejemplo).
+ */
+let __caseResultsBinding: any = null;
+function mountCaseResultsInSettings() {
+  try {
+    const folder = (window as any).__hekatanOutputsFolder;
+    if (!folder) return;
+    if (__caseResultsBinding) { try { __caseResultsBinding.dispose(); } catch {} __caseResultsBinding = null; }
+    const caseOptions: Record<string, string> = {};
+    loadCases.val.forEach((c) => { caseOptions[c.name] = c.name; });
+    if (!Object.keys(caseOptions).length) return;
+    if (!loadCases.val.find((c) => c.name === activeLoadCase.val)) activeLoadCase.val = loadCases.val[0].name;
+    const obj = { case: activeLoadCase.val };
+    __caseResultsBinding = folder.addBinding(obj, "case", { label: "Case results", options: caseOptions, index: 0 });
+    __caseResultsBinding.on("change", (e: any) => { activeLoadCase.val = e.value; rebuild(); });
+  } catch (e: any) { console.warn("[Case results en Settings]", e?.message ?? e); }
 }
 
 /**

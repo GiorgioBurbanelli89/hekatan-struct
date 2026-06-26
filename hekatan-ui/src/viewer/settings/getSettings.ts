@@ -339,6 +339,9 @@ export function getSettings(
 
   if (mesh?.deformOutputs || mesh?.analyzeOutputs) {
     const outputs = pane.addFolder({ title: "Analysis Outputs" });
+    // Exponer el folder para que el workspace inyecte "Case results" (Dead/Live/Modal)
+    // junto a Node/Frame/Shell results — los selectores de resultado quedan juntos.
+    (window as any).__hekatanOutputsFolder = outputs;
 
     outputs.addBinding(settings.nodeResults, "val", {
       options: {
