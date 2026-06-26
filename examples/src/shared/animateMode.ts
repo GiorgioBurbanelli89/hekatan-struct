@@ -104,6 +104,12 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
   // al último frame corrompido por una animación anterior.
   let trueOriginalNodes: Node[] = [];
   let originalNodes: Node[] = [];
+  // Guarda el estado de deformedShape del viewer para restaurarlo al detener: durante la
+  // animación modal hay que APAGARLO, si no el viewer SUMA la deformada estática (Dead) sobre
+  // los nodos que la animación ya movió → deformada "horrible".
+  let savedDeformedShape: boolean | null = null;
+
+  function getSettings(): any { return (viewerElm as any).__settings ?? (viewerElm as any).__ctx?.settings; }
 
   function fireStatus() { onStatusChange?.(); }
 
@@ -148,6 +154,9 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
   function stopInternal(restore: boolean) {
     if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
     if (restore) {
+      // Restaurar deformedShape al valor que tenía el usuario antes de animar.
+      const st = getSettings();
+      if (st?.deformedShape && savedDeformedShape !== null) { st.deformedShape.val = savedDeformedShape; savedDeformedShape = null; }
       // Siempre restaurar a los TRUE originals (no al último snapshot del start,
       // que podría estar corrompido si el usuario encadenó play→stop→play).
       // Forzamos render inmediato para que el canvas Three.js refleje los nodos
@@ -164,6 +173,10 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
     if (!results || !results.modeShapes || results.modeShapes.length === 0) return;
     if (!results.modeShapes[mode]) return;
     stopInternal(false);
+    // Apagar deformedShape mientras animamos (guardar el valor del usuario una sola vez) para
+    // que el viewer muestre el modo PURO, sin sumarle la deformada estática (Dead).
+    const st = getSettings();
+    if (st?.deformedShape) { if (savedDeformedShape === null) savedDeformedShape = st.deformedShape.val; st.deformedShape.val = false; }
 
     const shape = results.modeShapes[mode];
     const freq = results.frequencies?.[mode] || 1;
