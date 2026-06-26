@@ -11,7 +11,7 @@ import type { ExampleDef, ParamDef } from "../workspace/exampleRegistry";
 import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import { necSpectrum, cortanteBasal, periodoAproximado, espectroSvg, distribucionVertical, type SoilType, type Region } from "../shared/espectroNEC";
 import { combineModal } from "../shared/responseSpectrum";
-import { ritzModal, withMissingMass, rigidDiaphragmModal } from "../shared/ritzModal";
+import { ritzModal, withMissingMass, rigidDiaphragmModal, lateralEigen } from "../shared/ritzModal";
 
 const SOILS: SoilType[] = ["A", "B", "C", "D", "E"];
 const REGS: Region[] = ["Costa", "Sierra", "Oriente"];
@@ -176,10 +176,10 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
       //    laterales/torsionales, ΣUx/ΣUy → 100% sin modos verticales que roben cupos.
       out = rigidDiaphragmModal(nodes, elements, ni, eiMass, nModes);
     } else if (metodo === 3) {
-      // D) ETABS exacto: modelo flexible (shell completo) PERO masa solo lateral
-      //    (= mass source de ETABS, INCLUDEVERTICALMASS "No") → SumUZ=0, los modos
-      //    son laterales y ΣUy llega a ~99% como en la tabla de ETABS. Reproduce el Eigen.
-      out = ritzModal(nodes, elements, ni, eiMass, nModes, [0, 1], true);
+      // D) ETABS exacto: EIGEN real (iteración de subespacio) sobre el modelo flexible,
+      //    con masa solo lateral (= mass source ETABS, INCLUDEVERTICALMASS "No") →
+      //    SumUZ=0 y ΣUy≈99% en 12 modos, igual que la tabla Eigen de ETABS.
+      out = lateralEigen(nodes, elements, ni, eiMass, nModes, true);
     } else if (metodo === 2) {
       out = ritzModal(nodes, elements, ni, eiMass, nModes, [0, 1]);   // B
     } else {

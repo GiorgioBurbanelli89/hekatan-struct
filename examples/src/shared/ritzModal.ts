@@ -271,3 +271,89 @@ export function rigidDiaphragmModal(
   }
   return { frequencies, modeShapes, massParticipation, periods: frequencies.map((f) => 1 / f) };
 }
+
+// ──────────────── D) EIGEN real (iteración de subespacio de Bathe) ────────────────
+const matMul = (A: number[][], B: number[][]): number[][] => {
+  const n = A.length, m = B[0].length, p = B.length;
+  const C = Array.from({ length: n }, () => new Array(m).fill(0));
+  for (let i = 0; i < n; i++) for (let k = 0; k < p; k++) { const a = A[i][k]; if (a) for (let j = 0; j < m; j++) C[i][j] += a * B[k][j]; }
+  return C;
+};
+/** Eigen generalizado simétrico K Q = M Q Λ (pequeño q×q) vía M^(-1/2). */
+function genEigSym(K: number[][], M: number[][]): { lam: number[]; Q: number[][] } {
+  const q = K.length;
+  const { val: dM, vec: U } = jacobiEig(M);                  // M = U dM Uᵀ
+  const is = dM.map((v) => 1 / Math.sqrt(Math.max(v, 1e-300)));
+  const P = Array.from({ length: q }, () => new Array(q).fill(0));   // P = M^(-1/2)
+  for (let i = 0; i < q; i++) for (let j = 0; j < q; j++) { let s = 0; for (let k = 0; k < q; k++) s += U[i][k] * is[k] * U[j][k]; P[i][j] = s; }
+  const { val: lam, vec: W } = jacobiEig(matMul(P, matMul(K, P)));   // A = P K P
+  return { lam, Q: matMul(P, W) };                            // Q = P W
+}
+/**
+ * Modal por AUTOVECTORES reales (iteración de subespacio, Bathe) — el método EIGEN,
+ * no Ritz. Resuelve K·X̄ = M·X con `deform` e itera el subespacio hasta converger a
+ * los autovectores exactos. Con masa solo lateral (lateralOnly) reproduce la tabla de
+ * ETABS: SumUZ=0 y SumUy≈99% en 12 modos (los modos laterales reales).
+ */
+export function lateralEigen(
+  nodes: Node[], elements: Element[], nodeInputs: any, ei: any, nModes = 12, lateralOnly = true
+): any {
+  const N = nodes.length;
+  const M = lumpedMass(nodes, elements, ei, lateralOnly);
+  const supports = nodeInputs.supports;
+  const solveK = (F: number[][]) => {
+    const loads = new Map<number, number[]>();
+    for (let n = 0; n < N; n++) if (F[n].some((v) => v !== 0)) loads.set(n, F[n].slice());
+    const def = deform(nodes, elements, { supports, loads }, ei).deformations as Map<number, number[]> | undefined;
+    return nodes.map((_, n) => ((def?.get(n) as number[]) || [0, 0, 0, 0, 0, 0]).slice());
+  };
+  const applyM = (x: number[][]) => x.map((row, n) => row.map((v, d) => M[n][d] * v));
+  // DOFs con masa (lateral), del más pesado al más liviano
+  const massDofs: Array<[number, number]> = [];
+  for (let n = 0; n < N; n++) for (let d = 0; d < 3; d++) if (M[n][d] > 0) massDofs.push([n, d]);
+  massDofs.sort((a, b) => M[b[0]][b[1]] - M[a[0]][a[1]]);
+  const q = Math.min(nModes + 8, massDofs.length);
+  if (q < 1) return { frequencies: [], modeShapes: [], massParticipation: [], periods: [] };
+  // subespacio inicial: r_x, r_y + vectores unitarios en los DOFs más pesados
+  let X: number[][][] = [];
+  const rx = zero(N), ry = zero(N);
+  for (let n = 0; n < N; n++) { if (M[n][0] > 0) rx[n][0] = 1; if (M[n][1] > 0) ry[n][1] = 1; }
+  X.push(rx); X.push(ry);
+  for (let k = 0; X.length < q; k++) { const [n, d] = massDofs[k % massDofs.length]; const e = zero(N); e[n][d] = 1; X.push(e); }
+  // iteración de subespacio
+  let Lam: number[] = [];
+  for (let iter = 0; iter < 16; iter++) {
+    const Xbar = X.map((xk) => solveK(applyM(xk)));            // K X̄ = M X
+    const Kt = Array.from({ length: q }, () => new Array(q).fill(0));
+    const Mt = Array.from({ length: q }, () => new Array(q).fill(0));
+    for (let i = 0; i < q; i++) for (let j = i; j < q; j++) {
+      let kij = 0, mij = 0;
+      for (let n = 0; n < N; n++) for (let dd = 0; dd < NDOF; dd++) {
+        kij += Xbar[i][n][dd] * M[n][dd] * X[j][n][dd];        // K̃ = X̄ᵀ M X
+        mij += Xbar[i][n][dd] * M[n][dd] * Xbar[j][n][dd];     // M̃ = X̄ᵀ M X̄
+      }
+      Kt[i][j] = Kt[j][i] = kij; Mt[i][j] = Mt[j][i] = mij;
+    }
+    const { lam, Q } = genEigSym(Kt, Mt);
+    const Xnew: number[][][] = Array.from({ length: q }, () => zero(N));   // X = X̄ Q
+    for (let kk = 0; kk < q; kk++) for (let j = 0; j < q; j++) { const qjk = Q[j][kk]; if (qjk) for (let n = 0; n < N; n++) for (let dd = 0; dd < NDOF; dd++) Xnew[kk][n][dd] += qjk * Xbar[j][n][dd]; }
+    X = Xnew;
+    const conv = Lam.length && lam.slice(0, nModes).every((v, i) => Math.abs(v - (Lam[i] ?? 0)) <= 1e-6 * Math.abs(v) + 1e-12);
+    Lam = lam;
+    if (conv) break;
+  }
+  const Mt3 = [0, 1, 2].map((d) => massTotal(M, d) || 1);
+  const order = Lam.map((_, i) => i).sort((a, b) => Lam[a] - Lam[b]);
+  const frequencies: number[] = [], massParticipation: number[][] = [], modeShapes: number[][] = [];
+  let cnt = 0;
+  for (const idx of order) {
+    if (cnt >= nModes) break;
+    const w2 = Math.max(Lam[idx], 0); const f = Math.sqrt(w2) / (2 * Math.PI);
+    if (!isFinite(f) || f <= 1e-6) continue;
+    const phi = X[idx];
+    const part = new Array(NDOF).fill(0);
+    for (let d = 0; d < 3; d++) { let L = 0; for (let n = 0; n < N; n++) L += M[n][d] * phi[n][d]; part[d] = (L * L) / Mt3[d]; }
+    frequencies.push(f); massParticipation.push(part); modeShapes.push(phi.flat()); cnt++;
+  }
+  return { frequencies, modeShapes, massParticipation, periods: frequencies.map((f) => 1 / f) };
+}
