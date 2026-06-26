@@ -517,6 +517,7 @@ function loadExample(ex: ExampleDef) {
  * loadExample (las opciones de caso cambian por ejemplo).
  */
 let __caseResultsBinding: any = null;
+let __modalSettingsFolder: any = null;   // folder "⚡ Modal + Animación" dentro de Settings (Analysis Outputs)
 
 // ── Panel flotante de tablas de resultados (estilo ETABS → Analysis Results) ──
 let __tablesPanel: HTMLDivElement | null = null;
@@ -4877,7 +4878,15 @@ solve`;
   // ventanas flotantes custom). El status (modo, frecuencia, período, dirección
   // dominante) se muestra como bindings readonly que se refrescan en vivo.
   if (currentExample.hasModal) {
-    const fModal = pane.addFolder({ title: "⚡ Modal + Animación", expanded: true });
+    // El modal (EJECUCIÓN + RESULTADOS) vive en Settings ▸ Analysis Outputs (panel izquierdo),
+    // NO en el panel de parámetros (derecho). Settings persiste entre rebuilds → dispose-then-add
+    // para no duplicar. Fallback al params pane si Settings aún no existe.
+    const outputsFolder = (window as any).__hekatanOutputsFolder;
+    if (__modalSettingsFolder) { try { __modalSettingsFolder.dispose(); } catch {} __modalSettingsFolder = null; }
+    const fModal = outputsFolder
+      ? outputsFolder.addFolder({ title: "⚡ Modal + Animación", expanded: true, index: 2 })
+      : pane.addFolder({ title: "⚡ Modal + Animación", expanded: true });
+    if (outputsFolder) __modalSettingsFolder = fModal;
 
     // Status object: el animador dispara `onStatusChange` → pane.refresh() lo actualiza.
     const status = { mode: "—", frequency: "—", period: "—", dominant: "—", state: "⏸ Detenido" };
@@ -4893,7 +4902,7 @@ solve`;
         status.period = s.period;
         status.dominant = s.dominant;
         status.state = s.state;
-        currentPane?.refresh();
+        try { fModal.refresh(); } catch {}
       },
     });
     let lastModalResults: any = null;
@@ -4907,7 +4916,7 @@ solve`;
           modalAnimator.setMode(0);
           modalAnimator.play();
           animCtrl.modeIdx = 1;
-          currentPane?.refresh();
+          try { fModal.refresh(); } catch {}
         }
       },
     };
