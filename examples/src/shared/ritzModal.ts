@@ -49,7 +49,9 @@ export function withMissingMass(out: any): any {
   const mp: number[][] = out.massParticipation ?? [];
   if (!mp.length) return out;
   const res = new Array(NDOF).fill(0);
-  for (let d = 0; d < NDOF; d++) { let s = 0; for (const m of mp) s += m[d] || 0; res[d] = Math.max(0, 1 - s); }
+  // SOLO translacional (Ux,Uy,Uz). La participación rotacional Rx/Ry (cabeceo) es ~0 por
+  // diseño en base empotrada → su residual daría 100% ESPURIO. No se corrige (queda en 0).
+  for (let d = 0; d < 3; d++) { let s = 0; for (const m of mp) s += m[d] || 0; res[d] = Math.max(0, 1 - s); }
   if (res[0] < 0.005 && res[1] < 0.005 && res[2] < 0.005) return out;  // ya capturada
   const F_RIG = 1000;  // 1000 Hz → T=0.001 s → Sa(T)≈PGA (modo rígido)
   const nCols = out.modeShapes?.[0]?.length ?? 0;
