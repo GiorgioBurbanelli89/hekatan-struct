@@ -1,6 +1,7 @@
 #include "data-model.h"
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <algorithm>
 #include <cmath>
 #include <Eigen/Dense>
@@ -11,6 +12,27 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
+
+// Extrae el sub-bloque A(rows, cols) de una matriz dispersa (índices globales → locales).
+static Eigen::SparseMatrix<double> extractBlock(
+    const Eigen::SparseMatrix<double> &A,
+    const std::vector<int> &rows, const std::vector<int> &cols)
+{
+    std::unordered_map<int, int> rmap, cmap;
+    for (int i = 0; i < (int)rows.size(); ++i) rmap[rows[i]] = i;
+    for (int j = 0; j < (int)cols.size(); ++j) cmap[cols[j]] = j;
+    std::vector<Eigen::Triplet<double>> trips;
+    for (int k = 0; k < A.outerSize(); ++k)
+        for (Eigen::SparseMatrix<double>::InnerIterator it(A, k); it; ++it)
+        {
+            auto ri = rmap.find(it.row()); if (ri == rmap.end()) continue;
+            auto ci = cmap.find(it.col()); if (ci == cmap.end()) continue;
+            trips.emplace_back(ri->second, ci->second, it.value());
+        }
+    Eigen::SparseMatrix<double> B((int)rows.size(), (int)cols.size());
+    B.setFromTriplets(trips.begin(), trips.end());
+    return B;
+}
 
 extern "C"
 {
@@ -105,56 +127,84 @@ extern "C"
         {
             // Lumpeo por suma de filas (como ETABS LUMPATSTORIES): la masa lateral queda
             // DIAGONAL en Ux,Uy (suma de la fila consistente = masa traslacional total del GDL).
-            // Uz y rotaciones → 0 + regularización ε. Da los periodos de ETABS (masa lumpeada)
-            // y, con el eigensolver exacto, SumUy≈99%.
+            // Uz y rotaciones → SIN masa (se condensan después por Guyan, no necesitan ε).
             Eigen::VectorXd rowsum = Eigen::VectorXd::Zero(dof);
             for (int k = 0; k < M_global.outerSize(); ++k)
                 for (Eigen::SparseMatrix<double>::InnerIterator it(M_global, k); it; ++it)
                     rowsum(it.row()) += it.value();
-            double mLat = 0.0; int nLat = 0;
-            for (int i = 0; i < num_nodes; ++i) { mLat += std::max(rowsum(i*6+0),0.0) + std::max(rowsum(i*6+1),0.0); nLat += 2; }
-            double eps = (nLat > 0 ? mLat / nLat : 1.0) * 1e-8;
             std::vector<Eigen::Triplet<double>> trips;
             for (int i = 0; i < num_nodes; ++i) {
                 trips.emplace_back(i*6+0, i*6+0, std::max(rowsum(i*6+0), 0.0));  // Ux lumpeada
                 trips.emplace_back(i*6+1, i*6+1, std::max(rowsum(i*6+1), 0.0));  // Uy lumpeada
-                for (int d = 2; d < 6; ++d) trips.emplace_back(i*6+d, i*6+d, eps);  // sin masa + ε
+                // Uz,Rx,Ry,Rz → masa 0 (condensados por Guyan)
             }
             Eigen::SparseMatrix<double> M_lat(dof, dof);
             M_lat.setFromTriplets(trips.begin(), trips.end());
             M_global = M_lat;
         }
 
-        // --- 3. Apply boundary conditions ---
+        // --- 3. Apply boundary conditions + reducción ---
         std::vector<int> freeIndices = getFreeIndices(nodeInputs, dof);
         std::vector<int> zeroIndicesK = getZerosIndices(K_global);
-        std::vector<int> zeroIndicesM = getZerosIndices(M_global);
+        std::sort(zeroIndicesK.begin(), zeroIndicesK.end());
 
-        std::vector<int> allZeroIndices;
-        allZeroIndices.insert(allZeroIndices.end(), zeroIndicesK.begin(), zeroIndicesK.end());
-        allZeroIndices.insert(allZeroIndices.end(), zeroIndicesM.begin(), zeroIndicesM.end());
-        std::sort(allZeroIndices.begin(), allZeroIndices.end());
-        allZeroIndices.erase(std::unique(allZeroIndices.begin(), allZeroIndices.end()), allZeroIndices.end());
+        std::vector<int> reducedIndices;   // GDL sobre los que se resuelve el eigen
+        Eigen::MatrixXd K_dense, M_dense;
 
-        std::vector<int> reducedIndices;
-        for (int idx : freeIndices)
+        if (lateral_mass)
         {
-            if (!std::binary_search(allZeroIndices.begin(), allZeroIndices.end(), idx))
+            // --- CONDENSACIÓN DE GUYAN ---
+            // master = GDL libres CON masa (Ux,Uy); slave = GDL libres SIN masa (Uz, rotaciones).
+            // Se eliminan los slaves: K_hat = Kmm − Kms·Kss⁻¹·Ksm,  M_hat = Mmm (diagonal lateral).
+            // El eigen queda solo sobre los GDL laterales → chico y rápido aun a malla fina, y
+            // los periodos convergen a ETABS (la rigidez de la losa/muro se conserva en K_hat).
+            double mMax = 0.0;
+            for (int i = 0; i < dof; ++i) mMax = std::max(mMax, M_global.coeff(i, i));
+            double mEps = mMax * 1e-9;
+            std::vector<int> master, slave;
+            for (int idx : freeIndices)
             {
-                reducedIndices.push_back(idx);
+                if (std::binary_search(zeroIndicesK.begin(), zeroIndicesK.end(), idx)) continue; // sin rigidez → fuera
+                if (M_global.coeff(idx, idx) > mEps) master.push_back(idx);
+                else slave.push_back(idx);
             }
+            int nm = (int)master.size(), ns = (int)slave.size();
+            if (nm == 0) return;
+            Eigen::SparseMatrix<double> Kmm = extractBlock(K_global, master, master);
+            if (ns > 0)
+            {
+                Eigen::SparseMatrix<double> Kss = extractBlock(K_global, slave, slave);
+                Eigen::SparseMatrix<double> Ksm = extractBlock(K_global, slave, master);
+                Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> chol(Kss);
+                if (chol.info() != Eigen::Success) return;
+                Eigen::MatrixXd X = chol.solve(Eigen::MatrixXd(Ksm));          // Kss⁻¹·Ksm  (ns×nm)
+                K_dense = Eigen::MatrixXd(Kmm) - Eigen::MatrixXd(Ksm).transpose() * X; // Kmm − Kms·X
+            }
+            else
+                K_dense = Eigen::MatrixXd(Kmm);
+            M_dense = Eigen::MatrixXd::Zero(nm, nm);
+            for (int k = 0; k < nm; ++k) M_dense(k, k) = M_global.coeff(master[k], master[k]);
+            reducedIndices = master;
+        }
+        else
+        {
+            std::vector<int> zeroIndicesM = getZerosIndices(M_global);
+            std::vector<int> allZeroIndices;
+            allZeroIndices.insert(allZeroIndices.end(), zeroIndicesK.begin(), zeroIndicesK.end());
+            allZeroIndices.insert(allZeroIndices.end(), zeroIndicesM.begin(), zeroIndicesM.end());
+            std::sort(allZeroIndices.begin(), allZeroIndices.end());
+            allZeroIndices.erase(std::unique(allZeroIndices.begin(), allZeroIndices.end()), allZeroIndices.end());
+            for (int idx : freeIndices)
+                if (!std::binary_search(allZeroIndices.begin(), allZeroIndices.end(), idx))
+                    reducedIndices.push_back(idx);
+            if (reducedIndices.empty()) return;
+            K_dense = Eigen::MatrixXd(getReducedMatrix(K_global, reducedIndices));
+            M_dense = Eigen::MatrixXd(getReducedMatrix(M_global, reducedIndices));
         }
 
-        int reducedSize = reducedIndices.size();
+        int reducedSize = (int)reducedIndices.size();
         if (reducedSize == 0)
             return;
-
-        Eigen::SparseMatrix<double> K_reduced = getReducedMatrix(K_global, reducedIndices);
-        Eigen::SparseMatrix<double> M_reduced = getReducedMatrix(M_global, reducedIndices);
-
-        // --- 4. Convert to dense for eigenvalue solver ---
-        Eigen::MatrixXd K_dense = Eigen::MatrixXd(K_reduced);
-        Eigen::MatrixXd M_dense = Eigen::MatrixXd(M_reduced);
 
         // --- 5. Solve generalized eigenvalue problem: K*phi = omega^2 * M*phi ---
         Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> solver(K_dense, M_dense);
