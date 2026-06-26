@@ -45,16 +45,20 @@ function buildEdificio(p: any, states: any, sys: Sys) {
   // columnas en cada nudo del grid, todos los pisos
   for (let i = 0; i <= nbx; i++) for (let j = 0; j <= nby; j++)
     for (let f = 0; f < nF; f++) { elements.push([nid(xC[i], yC[j], zC[f]), nid(xC[i], yC[j], zC[f + 1])]); kinds.push("col"); }
-  // vigas sobre las líneas del grid, por piso
-  for (let f = 1; f <= nF; f++) {
-    const z = zC[f];
-    for (let i = 0; i <= nbx; i++) for (let j = 0; j < nby; j++) { elements.push([nid(xC[i], yC[j], z), nid(xC[i], yC[j + 1], z)]); kinds.push("beam"); }
-    for (let j = 0; j <= nby; j++) for (let i = 0; i < nbx; i++) { elements.push([nid(xC[i], yC[j], z), nid(xC[i + 1], yC[j], z)]); kinds.push("beam"); }
-  }
   // grilla de mallado de losa: subdivide cada vano en ~ms
   const meshLine = (c: number[]) => { const out = [c[0]]; for (let i = 0; i < c.length - 1; i++) { const n = Math.max(1, Math.round((c[i + 1] - c[i]) / ms)); for (let s = 1; s <= n; s++) out.push(c[i] + (c[i + 1] - c[i]) * s / n); } return out; };
+  const xm = meshLine(xC), ym = meshLine(yC);
+  // vigas por piso. Si hay losa, las vigas se SUBDIVIDEN en los MISMOS nodos que la malla de
+  // losa (como MESHATINTERSECTIONS de ETABS) → el borde de la losa se ata a la viga en TODOS
+  // los nodos, no solo en las esquinas del paño (sin nodos colgados → diafragma correcto).
+  // Esos nodos de borde YA existen (los crea la losa), así que NO se agregan GDL, solo elementos.
+  const bxm = sys.slab ? xm : xC, bym = sys.slab ? ym : yC;
+  for (let f = 1; f <= nF; f++) {
+    const z = zC[f];
+    for (let i = 0; i <= nbx; i++) for (let j = 0; j < bym.length - 1; j++) { elements.push([nid(xC[i], bym[j], z), nid(xC[i], bym[j + 1], z)]); kinds.push("beam"); }
+    for (let j = 0; j <= nby; j++) for (let i = 0; i < bxm.length - 1; i++) { elements.push([nid(bxm[i], yC[j], z), nid(bxm[i + 1], yC[j], z)]); kinds.push("beam"); }
+  }
   if (sys.slab) {
-    const xm = meshLine(xC), ym = meshLine(yC);
     for (let f = 1; f <= nF; f++) { const z = zC[f];
       for (let i = 0; i < xm.length - 1; i++) for (let j = 0; j < ym.length - 1; j++) {
         elements.push([nid(xm[i], ym[j], z), nid(xm[i + 1], ym[j], z), nid(xm[i + 1], ym[j + 1], z), nid(xm[i], ym[j + 1], z)]); kinds.push("slab");
