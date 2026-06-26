@@ -154,21 +154,19 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
   // y si la malla mostrada fuera la fina (~900 nodos) y el modo de la gruesa (~110), los
   // nodos sobrantes darían NaN y la animación se rompería. La malla fina estática se
   // restaura al volver al caso "Linear Static" (que reconstruye con el ms fino del display).
-  // El método "ETABS exacto" (3) usa malla un poco más fina (el subespacio escala mejor que
-  // el solver denso), pero acotada: `deform` re-factoriza K en cada solve del subespacio, así
-  // que mallas muy finas congelan. 1.67m da ~1470 GDL — más cortante de muro/losa hacia ETABS
-  // sin colgar. (Cerrar el último 3% pediría reusar el factor LDLᵀ, como ETABS.)
-  const etabsExacto = !p.diafragmaRigido && ((p.modalMethod ?? 1) | 0) === 3;
-  const ms = etabsExacto ? 2.0 : MODAL_MS;
-  const dofCap = etabsExacto ? 2200 : MAX_MODAL_DOF;
-  try { buildEdificio({ ...p, ms }, states, sys); }
+  // NOTA: refinar la malla acercaría el cortante del muro/losa a ETABS (cerraría el ~3% de
+  // SumUy y el +4% de periodos), PERO `lateralEigen` llama `deform` ~300 veces y deform
+  // RE-FACTORIZA K cada vez → mallas finas congelan. ETABS factoriza K una sola vez (LDLᵀ de
+  // columna activa) y reusa el factor en toda la iteración de subespacio (lo vimos en la RE de
+  // SAPFire). Cerrar el 3% pide exponer/reusar ese factor en el C++. Por eso quedamos en 2.5m.
+  try { buildEdificio({ ...p, ms: MODAL_MS }, states, sys); }
   catch (e: any) { console.warn("[Test M Modal] build:", e?.message); return; }
   const nodes = states.nodes.val, elements = states.elements.val;
   const ni = states.nodeInputs.val, ei = states.elementInputs.val;
   if (!nodes?.length || !ei?.densities?.size) return;
   const dof = nodes.length * 6;
-  if (dof > dofCap) {
-    const msg = `Modal omitido: ${dof} GDL > ${dofCap} (ms=${ms}m). Bajá vanos/pisos.`;
+  if (dof > MAX_MODAL_DOF) {
+    const msg = `Modal omitido: ${dof} GDL > ${MAX_MODAL_DOF} (ms=${MODAL_MS}m). Bajá vanos/pisos.`;
     try { modalPanel.render({ frequencies: [], modeShapes: [], massParticipation: [] }, { title: label, properties: [msg] }); } catch {}
     return;
   }
