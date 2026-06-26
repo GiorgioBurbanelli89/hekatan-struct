@@ -185,10 +185,10 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
       //    laterales/torsionales, ΣUx/ΣUy → 100% sin modos verticales que roben cupos.
       out = rigidDiaphragmModal(nodes, elements, ni, eiMass, nModes);
     } else if (metodo === 3) {
-      // D) ETABS exacto: EIGEN real (iteración de subespacio) sobre el modelo flexible,
-      //    con masa solo lateral (= mass source ETABS, INCLUDEVERTICALMASS "No") →
-      //    SumUZ=0 y ΣUy≈99% en 12 modos, igual que la tabla Eigen de ETABS.
-      out = lateralEigen(nodes, elements, ni, eiMass, nModes, true);
+      // D) ETABS exacto: EIGEN C++ (rápido, compilado) con MASA SOLO LATERAL (= mass source
+      //    de ETABS, INCLUDEVERTICALMASS "No") → SumUZ=0 y ΣUy≈99% en 12 modos como la tabla
+      //    Eigen de ETABS. El C++ resuelve denso una sola vez (no re-factoriza como lateralEigen).
+      out = modalAnalysis(nodes, elements, ni, eiMass, nModes, 1);
     } else if (metodo === 2) {
       out = ritzModal(nodes, elements, ni, eiMass, nModes, [0, 1]);   // B
     } else {

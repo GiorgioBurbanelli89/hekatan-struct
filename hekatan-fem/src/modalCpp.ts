@@ -15,7 +15,8 @@ export function modalCpp(
   elements: Element[],
   nodeInputs: NodeInputs,
   elementInputs: ElementInputs,
-  numModes: number = 10
+  numModes: number = 10,
+  lateralMass: number = 0   // 1 = solo masa lateral Ux,Uy (como ETABS INCLUDEVERTICALMASS No)
 ): ModalOutputs {
   if (nodes.length === 0) return { frequencies: [], modeShapes: [], massParticipation: [] };
 
@@ -152,6 +153,7 @@ export function modalCpp(
     plateFormKeys.length,
     // control
     numModes,
+    lateralMass,
     // output pointers
     freqPtrOut,
     numFreqOut,

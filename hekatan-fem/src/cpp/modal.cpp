@@ -39,7 +39,8 @@ extern "C"
         int *plateForm_keys_ptr, int *plateForm_values_ptr, int num_plateForm,
 
         // Control
-        int num_modes, // number of modes to return (0 = all)
+        int num_modes,   // number of modes to return (0 = all)
+        int lateral_mass, // 1 = masa solo lateral Ux,Uy (ETABS INCLUDEVERTICALMASS No)
 
         // Outputs
         double **frequencies_ptr_out, int *num_frequencies_out,
@@ -93,6 +94,35 @@ extern "C"
 
         Eigen::SparseMatrix<double> M_global = getGlobalMassMatrix(
             nodes, element_indices, element_sizes, elementInputs, dof);
+
+        // --- 2b. Masa solo lateral (ETABS INCLUDEVERTICALMASS "No") ---
+        // Conserva SOLO la masa de los GDL Ux,Uy (bloque lateral, incluido el acoplamiento
+        // consistente de los frames). La masa de Uz y rotaciones (Rx,Ry,Rz) se elimina y esos
+        // GDL reciben una regularización ε para que M siga definida-positiva (sus modos quedan
+        // a frecuencia muy alta → fuera de los primeros num_modes). Así NO aparecen modos
+        // verticales reales y los modos son laterales/torsionales, como en la tabla de ETABS.
+        if (lateral_mass)
+        {
+            double mLat = 0.0; int nLat = 0;
+            for (int i = 0; i < num_nodes; ++i) {
+                mLat += M_global.coeff(i * 6 + 0, i * 6 + 0) + M_global.coeff(i * 6 + 1, i * 6 + 1);
+                nLat += 2;
+            }
+            double eps = (nLat > 0 ? mLat / nLat : 1.0) * 1e-8;
+            std::vector<Eigen::Triplet<double>> trips;
+            for (int k = 0; k < M_global.outerSize(); ++k)
+                for (Eigen::SparseMatrix<double>::InnerIterator it(M_global, k); it; ++it) {
+                    int rr = it.row() % 6, cc = it.col() % 6;
+                    if ((rr == 0 || rr == 1) && (cc == 0 || cc == 1))
+                        trips.emplace_back(it.row(), it.col(), it.value());  // bloque Ux,Uy
+                }
+            for (int i = 0; i < num_nodes; ++i)
+                for (int d = 2; d < 6; ++d)
+                    trips.emplace_back(i * 6 + d, i * 6 + d, eps);           // regularización
+            Eigen::SparseMatrix<double> M_lat(dof, dof);
+            M_lat.setFromTriplets(trips.begin(), trips.end());
+            M_global = M_lat;
+        }
 
         // --- 3. Apply boundary conditions ---
         std::vector<int> freeIndices = getFreeIndices(nodeInputs, dof);
