@@ -28,18 +28,35 @@ const SAP2000_PALETTE: [number, number, number, number][] = [
   [1.000,   0,   0, 180],  // azul oscuro (mín compresión)
 ];
 
-/** Lookup en la palette interpolando linealmente entre stops. */
+// Paletas seleccionables. "csi" = la de SAFE/ETABS (magenta→azul, el colormap CSI real).
+// Las demás son alternativas perceptuales/clásicas para quien prefiera.
+const PALETTES: Record<string, [number, number, number, number][]> = {
+  csi: SAP2000_PALETTE,                                  // SAFE · ETABS (magenta→azul)
+  jet_r: [                                               // rojo(máx)→azul(mín), sin magenta
+    [0.0, 200, 0, 0], [0.15, 255, 80, 0], [0.32, 255, 200, 0], [0.48, 180, 255, 0],
+    [0.6, 0, 230, 90], [0.74, 0, 220, 230], [0.88, 0, 110, 255], [1.0, 0, 0, 180]],
+  jet: [                                                 // azul(mín)→rojo(máx)
+    [0.0, 0, 0, 180], [0.12, 0, 110, 255], [0.26, 0, 220, 230], [0.4, 0, 230, 90],
+    [0.52, 180, 255, 0], [0.68, 255, 200, 0], [0.85, 255, 80, 0], [1.0, 200, 0, 0]],
+  viridis: [
+    [0.0, 68, 1, 84], [0.25, 59, 82, 139], [0.5, 33, 145, 140], [0.75, 94, 201, 98], [1.0, 253, 231, 37]],
+};
+/** Paleta activa (seleccionable desde Settings). Por defecto la CSI de SAFE/ETABS. */
+export const colorMapPalette: State<string> = van.state("csi");
+
+/** Lookup en la palette ACTIVA interpolando linealmente entre stops. */
 function sap2000Color(t: number): [number, number, number] {
   t = Math.max(0, Math.min(1, t));
-  for (let i = 0; i < SAP2000_PALETTE.length - 1; i++) {
-    const [t0, r0, g0, b0] = SAP2000_PALETTE[i];
-    const [t1, r1, g1, b1] = SAP2000_PALETTE[i + 1];
+  const pal = PALETTES[colorMapPalette.val] ?? SAP2000_PALETTE;
+  for (let i = 0; i < pal.length - 1; i++) {
+    const [t0, r0, g0, b0] = pal[i];
+    const [t1, r1, g1, b1] = pal[i + 1];
     if (t <= t1) {
       const f = (t - t0) / (t1 - t0);
       return [r0 + (r1 - r0) * f, g0 + (g1 - g0) * f, b0 + (b1 - b0) * f];
     }
   }
-  const last = SAP2000_PALETTE[SAP2000_PALETTE.length - 1];
+  const last = pal[pal.length - 1];
   return [last[1], last[2], last[3]];
 }
 
@@ -116,6 +133,14 @@ export function getColorMap(
     clipping: true,  // habilitar soporte de clipping planes en ShaderMaterial
     depthWrite: true,
     depthTest: true,
+  });
+
+  // Reconstruir la textura del colormap cuando el usuario cambia la paleta en Settings.
+  van.derive(() => {
+    void colorMapPalette.val;  // dependencia
+    const old = material.uniforms.cmap.value as THREE.DataTexture;
+    material.uniforms.cmap.value = buildSap2000Texture();
+    old?.dispose?.();
   });
 
   const colorMap = new THREE.Mesh(new THREE.BufferGeometry(), material);

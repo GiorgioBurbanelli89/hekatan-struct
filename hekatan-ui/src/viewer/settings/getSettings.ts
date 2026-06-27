@@ -1,6 +1,7 @@
 import van, { State } from "vanjs-core";
 import { Pane } from "tweakpane";
 import { Mesh } from "hekatan-fem";
+import { colorMapPalette } from "../../color-map/getColorMap";
 
 import "./styles.css";
 
@@ -399,6 +400,17 @@ export function getSettings(
         "Uz": "displacementZ",
       },
       label: "Shell results",
+    });
+
+    // Selector de PALETA de colores del colormap. Por defecto la CSI (SAFE · ETABS).
+    outputs.addBinding(colorMapPalette, "val", {
+      options: {
+        "SAFE · ETABS (CSI)": "csi",
+        "Jet_r (rojo→azul)": "jet_r",
+        "Jet (azul→rojo)": "jet",
+        "Viridis": "viridis",
+      },
+      label: "🎨 Paleta colores",
     });
 
     // Solid results (elementos H8 sólidos: columna+viga, cubos, etc.)
