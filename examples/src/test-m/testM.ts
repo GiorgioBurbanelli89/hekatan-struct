@@ -65,9 +65,10 @@ function buildEdificio(p: any, states: any, sys: Sys) {
       }
     }
   }
-  // muro de corte (dual): plano x=0, primer vano en Y, toda la altura
+  // muro de corte (dual): plano x=0, ABARCA p.nWallY vanos en Y (parametrizable), toda la altura.
   if (sys.walls) {
-    const ym = meshLine([yC[0], yC[1]]), zm = meshLine(zC);
+    const nW = Math.max(1, Math.min((p.nWallY ?? 1) | 0, nby));
+    const ym = meshLine([yC[0], yC[nW]]), zm = meshLine(zC);
     for (let j = 0; j < ym.length - 1; j++) for (let k = 0; k < zm.length - 1; k++) {
       elements.push([nid(0, ym[j], zm[k]), nid(0, ym[j + 1], zm[k]), nid(0, ym[j + 1], zm[k + 1]), nid(0, ym[j], zm[k + 1])]); kinds.push("wall");
     }
@@ -355,8 +356,11 @@ const BASE: Record<string, ParamDef> = {
   nby:     { default: 2, min: 1, max: MAXB, step: 1, label: "N° vanos Y", folder: "Geometría" },
   nFloors: { default: 4, min: 1, max: MAXF, step: 1, label: "N° pisos", folder: "Geometría" },
   ms:      { default: 0.75, min: 0.5, max: 2.5, step: 0.25, label: "Malla shell [m] (ETABS≈0.6)", folder: "Geometría" },
-  tSlab:   { default: 0.20, min: 0.10, max: 0.35, step: 0.01, label: "Espesor losa [m]", folder: "Secciones" },
-  tWall:   { default: 0.25, min: 0.15, max: 0.40, step: 0.05, label: "Espesor muro [m]", folder: "Secciones" },
+  // — Muros de corte (parametrizados: ancho en vanos Y + espesor) —
+  nWallY:  { default: 1, min: 1, max: MAXB, step: 1, label: "Ancho muro (vanos Y)", folder: "🧱 Muros de corte" },
+  tWall:   { default: 0.25, min: 0.15, max: 0.40, step: 0.05, label: "Espesor muro [m]", folder: "🧱 Muros de corte" },
+  // — Losas —
+  tSlab:   { default: 0.20, min: 0.10, max: 0.35, step: 0.01, label: "Espesor losa [m]", folder: "🟦 Losas" },
   bCol:    { default: 0.40, min: 0.25, max: 0.70, step: 0.05, label: "Columna b [m]", folder: "Secciones" },
   bBeam:   { default: 0.30, min: 0.20, max: 0.50, step: 0.05, label: "Viga b [m]", folder: "Secciones" },
   hBeam:   { default: 0.50, min: 0.30, max: 0.80, step: 0.05, label: "Viga h [m]", folder: "Secciones" },
