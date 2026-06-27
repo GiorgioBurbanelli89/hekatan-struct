@@ -329,7 +329,13 @@ function loadExample(ex: ExampleDef) {
   if (persisted) {
     loadPatterns.val = persisted.patterns;
     loadCases.val = persisted.cases;
-    loadCombinations.val = persisted.combinations;
+    // Merge: agregar los combos default que falten (ej. "Servicio D+L" nuevo) aunque el
+    // usuario tenga combos viejos cacheados en localStorage — sino nunca verían el de servicio.
+    const haveNames = new Set(persisted.combinations.map((c: any) => c.name));
+    const missingDefaults = DEFAULT_LOAD_COMBINATIONS
+      .filter(cm => !haveNames.has(cm.name))
+      .map(cm => ({ ...cm, cases: cm.cases.map(c => ({ ...c })) }));
+    loadCombinations.val = [...missingDefaults, ...persisted.combinations];
   } else {
     // Clonar defaults — si no, todos los ejemplos compartirían la misma ref
     loadPatterns.val = DEFAULT_LOAD_PATTERNS.map(p => ({ ...p }));

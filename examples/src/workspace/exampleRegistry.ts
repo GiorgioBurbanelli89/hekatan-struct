@@ -113,9 +113,16 @@ export const DEFAULT_LOAD_CASES: LoadCase[] = [
 ];
 
 export const DEFAULT_LOAD_COMBINATIONS: LoadCombination[] = [
+  // Servicio = "CARGA VERTICAL" del libro Guerra/SAFE (1.0D+1.0L). Es la combinación con la
+  // que se verifica la PRESIÓN del suelo vs q_adm (Figura 180 del libro = CARGA VERTICAL).
+  { name: "Servicio D+L", type: "Linear Add", cases: [
+    { case: "Dead", scaleFactor: 1.0 }, { case: "Live", scaleFactor: 1.0 }] },
   { name: "1.4D", type: "Linear Add", cases: [{ case: "Dead", scaleFactor: 1.4 }] },
   { name: "1.2D+1.6L", type: "Linear Add", cases: [
     { case: "Dead", scaleFactor: 1.2 }, { case: "Live", scaleFactor: 1.6 }] },
+  // Última = "CARGA ÚLTIMA" del libro (ACI 318 clásico, 1.4D+1.7L) — para el diseño estructural.
+  { name: "1.4D+1.7L", type: "Linear Add", cases: [
+    { case: "Dead", scaleFactor: 1.4 }, { case: "Live", scaleFactor: 1.7 }] },
 ];
 
 export interface ModalPanelApi {
