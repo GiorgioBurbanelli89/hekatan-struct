@@ -353,51 +353,50 @@ export function getSettings(
     });
 
     outputs.addBinding(settings.frameResults, "val", {
+      // Componentes del "Member Force Diagram for Frames" de ETABS (ejes locales 1-2-3).
       options: {
         none: "none",
-        // Frame internal forces (convención SAP2000/ETABS, ejes locales 1-2-3)
-        "P (normals)":     "normals",       // axial (eje longitudinal 1)
-        "V2 (shearY)":     "shearsY",       // cortante en eje local 2
-        "V3 (shearZ)":     "shearsZ",       // cortante en eje local 3
-        "T (torsion)":     "torsions",      // torsión (sobre eje 1)
-        "M2 (bendingY)":   "bendingsY",     // momento sobre eje local 2 (eje fuerte vigas)
-        "M3 (bendingZ)":   "bendingsZ",     // momento sobre eje local 3 (eje débil vigas)
+        "Axial Force": "normals",   // P (eje longitudinal 1)
+        "Torsion": "torsions",      // T (sobre eje 1)
+        "Shear 2-2": "shearsY",     // V2 (eje local 2)
+        "Shear 3-3": "shearsZ",     // V3 (eje local 3)
+        "Moment 2-2": "bendingsY",  // M2 (eje fuerte vigas)
+        "Moment 3-3": "bendingsZ",  // M3 (eje débil vigas)
         // Diagramas tipo contour (envolvente sobre la viga)
-        "contour P":   "contour:normals",
-        "contour V2":  "contour:shearsY",
-        "contour V3":  "contour:shearsZ",
-        "contour T":   "contour:torsions",
-        "contour M2":  "contour:bendingsY",
-        "contour M3":  "contour:bendingsZ",
+        "Axial Force (diagram)":  "contour:normals",
+        "Shear 2-2 (diagram)":    "contour:shearsY",
+        "Shear 3-3 (diagram)":    "contour:shearsZ",
+        "Torsion (diagram)":      "contour:torsions",
+        "Moment 2-2 (diagram)":   "contour:bendingsY",
+        "Moment 3-3 (diagram)":   "contour:bendingsZ",
       },
       label: "Frame results",
     });
 
     outputs.addBinding(settings.shellResults, "val", {
+      // Componentes del diálogo "Shell Forces/Stresses" de ETABS, en su mismo orden:
+      // F11 F22 F12 FMax FMin FVM · V13 V23 VMax · M11 M22 M12 MMax MMin.
       options: {
         none: "none",
-        // Membrana (in-plane forces) — SAP F11/F22/F12 + FMax/FMin
-        "F11 (membraneXX)": "membraneXX",
-        "F22 (membraneYY)": "membraneYY",
-        "F12 (membraneXY)": "membraneXY",
-        "FMax (principal)": "membranePrincipalMax",
-        "FMin (principal)": "membranePrincipalMin",
-        // Flexión (plate bending moments) — SAP M11/M22/M12 + MMax/MMin
-        "M11 (bendingXX)": "bendingXX",
-        "M22 (bendingYY)": "bendingYY",
-        "M12 (bendingXY)": "bendingXY",
-        "MMax (principal)": "bendingPrincipalMax",
-        "MMin (principal)": "bendingPrincipalMin",
-        // Cortantes transversos — SAP V13/V23/VMax
-        "V13 (shearX)": "tranverseShearX",
-        "V23 (shearY)": "tranverseShearY",
-        "VMax (magnitud)": "transverseShearMax",
-        // Otros
-        "Von Mises": "vonMises",
-        pressure: "pressure",
-        displacementX: "displacementX",
-        displacementY: "displacementY",
-        displacementZ: "displacementZ",
+        "F11": "membraneXX",
+        "F22": "membraneYY",
+        "F12": "membraneXY",
+        "FMax": "membranePrincipalMax",
+        "FMin": "membranePrincipalMin",
+        "FVM": "vonMises",
+        "V13": "tranverseShearX",
+        "V23": "tranverseShearY",
+        "VMax": "transverseShearMax",
+        "M11": "bendingXX",
+        "M22": "bendingYY",
+        "M12": "bendingXY",
+        "MMax": "bendingPrincipalMax",
+        "MMin": "bendingPrincipalMin",
+        // Extras de Hekatan (no en el diálogo ETABS): presión de suelo + desplazamientos.
+        "Pressure (suelo)": "pressure",
+        "Ux": "displacementX",
+        "Uy": "displacementY",
+        "Uz": "displacementZ",
       },
       label: "Shell results",
     });

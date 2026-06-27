@@ -744,18 +744,23 @@ function filterShellResultOptions(allowed?: string[]) {
   // OJO: el `value` del <option> del DOM es el LABEL de Tweakpane (estilo ETABS:
   // "M11 (bendingXX)", "Von Mises", "pressure"); el ESTADO usa el nombre interno
   // (bendingXX, vonMises, pressure). El shell select es el único que tiene "pressure".
+  // El value del <option> del DOM es el LABEL de Tweakpane (formato ETABS: "M11", "F11",
+  // "FVM", "Pressure (suelo)"…). Mapeamos label → nombre interno del estado.
+  const LABEL2INTERNAL: Record<string, string> = {
+    none: "none",
+    F11: "membraneXX", F22: "membraneYY", F12: "membraneXY",
+    FMax: "membranePrincipalMax", FMin: "membranePrincipalMin", FVM: "vonMises",
+    V13: "tranverseShearX", V23: "tranverseShearY", VMax: "transverseShearMax",
+    M11: "bendingXX", M22: "bendingYY", M12: "bendingXY",
+    MMax: "bendingPrincipalMax", MMin: "bendingPrincipalMin",
+    "Pressure (suelo)": "pressure", Ux: "displacementX", Uy: "displacementY", Uz: "displacementZ",
+  };
+  const internalOf = (label: string): string => LABEL2INTERNAL[label] ?? label;
+  // El shell select es el único con la opción "M11" (flexión de placa).
   const shellSelect = Array.from(selects).find((s) =>
-    Array.from(s.options).some((o) => o.value === "pressure")
+    Array.from(s.options).some((o) => o.value === "M11")
   );
   if (!shellSelect) return;
-  // LABEL del DOM → nombre interno. "M11 (bendingXX)"→bendingXX, "Von Mises"→vonMises,
-  // "pressure"/"displacementZ" quedan igual.
-  const internalOf = (label: string): string => {
-    if (label === "none") return "none";
-    if (label === "Von Mises") return "vonMises";
-    const m = label.match(/\(([a-zA-Z]+)\)/);
-    return m ? m[1] : label;
-  };
   for (const opt of Array.from(shellSelect.options)) {
     const internal = internalOf(opt.value);
     // "none" siempre. "pressure" es de FUNDACIÓN (presión del suelo Winkler) → solo si el
