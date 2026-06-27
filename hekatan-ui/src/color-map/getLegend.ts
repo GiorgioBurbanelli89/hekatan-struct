@@ -1,5 +1,6 @@
 import van, { State } from "vanjs-core";
 import { fixedColorMapRange, colorMapUnit } from "../viewer/getViewer";
+import { colorMapPalette, legendGradientCss } from "./getColorMap";
 
 import "./styles.css";
 
@@ -9,6 +10,11 @@ export function getLegend(
 ): HTMLDivElement {
   const legendElm = document.createElement("div");
   legendElm.id = "legend";
+  // La barra de color usa la PALETA ACTIVA (no el gradiente hardcodeado del CSS) y se
+  // actualiza al cambiar la paleta desde Settings — así la leyenda coincide con la malla.
+  setTimeout(() => {
+    van.derive(() => { void colorMapPalette.val; legendElm.style.background = legendGradientCss(); });
+  });
 
   // Etiqueta de unidad arriba del legend (mm, kN/m², etc.).
   const unitLabel = document.createElement("div");

@@ -31,18 +31,18 @@ const SAP2000_PALETTE: [number, number, number, number][] = [
 // Paletas seleccionables. "csi" = la de SAFE/ETABS (magenta→azul, el colormap CSI real).
 // Las demás son alternativas perceptuales/clásicas para quien prefiera.
 const PALETTES: Record<string, [number, number, number, number][]> = {
-  // SAFE — Soil Pressure Diagram (Figura 180 del libro Guerra). MAGENTA(máx compresión)
-  // → rojo → naranja → amarillo → verde → CIAN(mín). NO llega al azul: termina en cian.
+  // SAFE — Soil Pressure Diagram (Figura 180), RGB MUESTREADO con Python de la leyenda
+  // real del libro. MAGENTA(máx compresión) → rojo → naranja → amarillo → verde → AZUL(mín).
   safe: [
-    [0.00, 236,   0, 140],  // magenta (máx compresión)
-    [0.13, 250,  25,  25],  // rojo
-    [0.28, 255, 100,   0],  // naranja-rojo
-    [0.42, 255, 165,   0],  // naranja
-    [0.55, 245, 230,   0],  // amarillo
-    [0.70, 120, 230,   0],  // amarillo-verde
-    [0.83,   0, 230,  75],  // verde
-    [0.93,   0, 225, 165],  // verde-cian
-    [1.00,   0, 205, 235],  // cian (mín compresión)
+    [0.00, 224,  13, 107],  // magenta (máx compresión)
+    [0.13, 221,  20,  50],  // rojo
+    [0.27, 252,  99,  39],  // naranja-rojo
+    [0.40, 254, 161,  47],  // naranja
+    [0.52, 238, 234,  25],  // amarillo
+    [0.64,   5, 193,  69],  // verde
+    [0.78,   7, 178, 244],  // cian-azul
+    [0.90,   4, 132, 213],  // azul
+    [1.00,  90, 175, 230],  // azul claro (mín compresión)
   ],
   csi: SAP2000_PALETTE,                                  // ETABS / CSI completo (magenta→azul)
   jet_r: [                                               // rojo(máx)→azul(mín)
@@ -92,6 +92,18 @@ function buildSap2000Texture(): THREE.DataTexture {
   tex.wrapT = THREE.ClampToEdgeWrapping;
   tex.needsUpdate = true;
   return tex;
+}
+
+/** Gradiente CSS de la leyenda, construido de la paleta ACTIVA (top=t=1 → bottom=t=0,
+ *  igual orientación que los markers de valor). Reemplaza el gradiente hardcodeado. */
+export function legendGradientCss(): string {
+  const N = 12, stops: string[] = [];
+  for (let i = 0; i <= N; i++) {
+    const t = 1 - i / N;                       // top (i=0) = t=1, bottom (i=N) = t=0
+    const [r, g, b] = sap2000Color(t);
+    stops.push(`rgb(${r | 0},${g | 0},${b | 0}) ${((i / N) * 100).toFixed(0)}%`);
+  }
+  return `linear-gradient(${stops.join(",")})`;
 }
 
 export function getColorMap(
