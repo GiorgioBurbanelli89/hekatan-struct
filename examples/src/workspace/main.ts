@@ -520,6 +520,19 @@ let __caseResultsBinding: any = null;
 let __modalSettingsFolder: any = null;   // folder "⚡ Modal + Animación" dentro de Settings (Analysis Outputs)
 let __lastModalResults: any = null;      // resultados modales (para listar los modos en "Case results")
 let __modalTableShown = false;           // el panel/tabla modal solo se muestra si el usuario lo activa
+let __spectrumShown = false;             // el espectro de diseño solo se muestra si el usuario lo activa
+let __lastSpectrumHtml = "";             // último SVG del espectro NEC (para el panel separado)
+let __spectrumPanel: HTMLDivElement | null = null;
+function renderSpectrumPanel() {
+  if (!__spectrumPanel) {
+    __spectrumPanel = document.createElement("div");
+    __spectrumPanel.style.cssText = "position:fixed; bottom:10px; left:10px; z-index:9998; background:rgba(0,0,0,0.92); border:1px solid #ff06; border-radius:6px; padding:8px 10px; box-shadow:0 4px 20px rgba(0,0,0,0.5);";
+    document.body.appendChild(__spectrumPanel);
+  }
+  __spectrumPanel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><b style="color:#ff0;font:12px monospace">📈 Espectro de diseño NEC-15</b><button id="__spclose" style="background:#7a2d2d;color:#fff;border:1px solid #b04545;border-radius:3px;cursor:pointer;font-size:10px;padding:2px 8px">✕</button></div>${__lastSpectrumHtml || "<div style='color:#888;font:11px monospace'>Corré el modal primero.</div>"}`;
+  __spectrumPanel.style.display = __spectrumShown ? "block" : "none";
+  __spectrumPanel.querySelector("#__spclose")?.addEventListener("click", () => { __spectrumShown = false; if (__spectrumPanel) __spectrumPanel.style.display = "none"; });
+}
 let __loadPanel: any = null;             // panel de Load Patterns/Cases (pane derecho) para sincronizar "Caso activo"
 
 // ── Panel flotante de tablas de resultados (estilo ETABS → Analysis Results) ──
@@ -4991,7 +5004,9 @@ solve`;
       render: (out: any, meta: any) => {
         lastModalResults = out;
         __lastModalResults = out;
-        modalPanel.render(out, meta);
+        // Espectro de diseño → su propio panel on-demand; se quita de la tabla (no duplicar).
+        if (meta?.spectrumHtml) { __lastSpectrumHtml = meta.spectrumHtml; try { renderSpectrumPanel(); } catch {} }
+        modalPanel.render(out, { ...meta, spectrumHtml: undefined });
         if (out?.frequencies?.length) {
           modalAnimator.setResults(out);
           modalAnimator.setMode(0);
@@ -5020,6 +5035,12 @@ solve`;
     fModal.addBinding(__tblProxy, "show", { label: "📋 Mostrar tabla" }).on("change", (e: any) => {
       __modalTableShown = !!e.value;
       try { modalPanel.div.style.display = __modalTableShown ? "block" : "none"; } catch {}
+    });
+    // Toggle "Mostrar espectro": el espectro de diseño NEC solo aparece si el usuario lo activa.
+    const __espProxy = { show: __spectrumShown };
+    fModal.addBinding(__espProxy, "show", { label: "📈 Mostrar espectro" }).on("change", (e: any) => {
+      __spectrumShown = !!e.value;
+      try { renderSpectrumPanel(); } catch {}
     });
     (window as any).__hekatanRunModalAnimate = runModalAnimate;
     (window as any).__hekatanModalStop = () => { try { modalAnimator.stop(); } catch {} };
