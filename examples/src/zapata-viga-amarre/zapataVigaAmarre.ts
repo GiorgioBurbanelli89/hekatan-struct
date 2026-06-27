@@ -391,9 +391,11 @@ export const zapataVigaAmarre: ExampleDef = {
       // resultantes deben caer en ese rango → colormap muestra full jet_r spectrum.
       // Auto-extiende si los datos exceden esos límites.
       const TONF_TO_KN = 9.80665;
-      const vCyan = Math.min(-12 * TONF_TO_KN, qMax_kN);   // tope = -12 t/m² o más
-      const vRed  = Math.max(-26 * TONF_TO_KN, qMin_kN);   // fondo = -26 t/m² o menos
-      (ao as any).colorMapRanges = { pressure: [vCyan, vRed] };
+      const vCyan = Math.min(-12 * TONF_TO_KN, qMax_kN);   // mín compresión (≈ -12) → AZUL
+      const vRed  = Math.max(-26 * TONF_TO_KN, qMin_kN);   // máx compresión (≈ -26) → MAGENTA/ROJO
+      // Orden [vRed, vCyan] (más-negativo primero) → SAFE: máx compresión = magenta (t=0),
+      // mín = azul (t=1). Antes estaba [vCyan, vRed] → quedaba invertido (mín=magenta).
+      (ao as any).colorMapRanges = { pressure: [vRed, vCyan] };
 
       states.analyzeOutputs.val = ao;
     } catch (e) {
