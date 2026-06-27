@@ -4369,6 +4369,9 @@ solve`;
         try { mountCaseResultsInSettings(); } catch {}
       },
     });
+    // Re-montar "Case results" ahora que loadCombinations ya está poblado → los combos
+    // (Σ 1.4D, Σ 1.2D+1.6L) aparecen en el selector (en el primer mount estaban vacíos).
+    try { mountCaseResultsInSettings(); } catch {}
   }
 
   // ── ETABS .e2k / SAP2000 .s2k Export/Import ──
