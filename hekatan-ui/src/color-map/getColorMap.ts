@@ -31,8 +31,21 @@ const SAP2000_PALETTE: [number, number, number, number][] = [
 // Paletas seleccionables. "csi" = la de SAFE/ETABS (magenta→azul, el colormap CSI real).
 // Las demás son alternativas perceptuales/clásicas para quien prefiera.
 const PALETTES: Record<string, [number, number, number, number][]> = {
-  csi: SAP2000_PALETTE,                                  // SAFE · ETABS (magenta→azul)
-  jet_r: [                                               // rojo(máx)→azul(mín), sin magenta
+  // SAFE — Soil Pressure Diagram (Figura 180 del libro Guerra). MAGENTA(máx compresión)
+  // → rojo → naranja → amarillo → verde → CIAN(mín). NO llega al azul: termina en cian.
+  safe: [
+    [0.00, 236,   0, 140],  // magenta (máx compresión)
+    [0.13, 250,  25,  25],  // rojo
+    [0.28, 255, 100,   0],  // naranja-rojo
+    [0.42, 255, 165,   0],  // naranja
+    [0.55, 245, 230,   0],  // amarillo
+    [0.70, 120, 230,   0],  // amarillo-verde
+    [0.83,   0, 230,  75],  // verde
+    [0.93,   0, 225, 165],  // verde-cian
+    [1.00,   0, 205, 235],  // cian (mín compresión)
+  ],
+  csi: SAP2000_PALETTE,                                  // ETABS / CSI completo (magenta→azul)
+  jet_r: [                                               // rojo(máx)→azul(mín)
     [0.0, 200, 0, 0], [0.15, 255, 80, 0], [0.32, 255, 200, 0], [0.48, 180, 255, 0],
     [0.6, 0, 230, 90], [0.74, 0, 220, 230], [0.88, 0, 110, 255], [1.0, 0, 0, 180]],
   jet: [                                                 // azul(mín)→rojo(máx)
@@ -41,8 +54,8 @@ const PALETTES: Record<string, [number, number, number, number][]> = {
   viridis: [
     [0.0, 68, 1, 84], [0.25, 59, 82, 139], [0.5, 33, 145, 140], [0.75, 94, 201, 98], [1.0, 253, 231, 37]],
 };
-/** Paleta activa (seleccionable desde Settings). Por defecto la CSI de SAFE/ETABS. */
-export const colorMapPalette: State<string> = van.state("csi");
+/** Paleta activa (seleccionable desde Settings). Por defecto la de SAFE (cimentaciones). */
+export const colorMapPalette: State<string> = van.state("safe");
 
 /** Lookup en la palette ACTIVA interpolando linealmente entre stops. */
 function sap2000Color(t: number): [number, number, number] {

@@ -405,7 +405,8 @@ export function getSettings(
     // Selector de PALETA de colores del colormap. Por defecto la CSI (SAFE · ETABS).
     outputs.addBinding(colorMapPalette, "val", {
       options: {
-        "SAFE · ETABS (CSI)": "csi",
+        "SAFE (cimentación)": "safe",
+        "ETABS / CSI (magenta→azul)": "csi",
         "Jet_r (rojo→azul)": "jet_r",
         "Jet (azul→rojo)": "jet",
         "Viridis": "viridis",
