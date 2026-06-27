@@ -524,8 +524,8 @@ let __tla = Promise.all([
         const m = 9.80665, c = Math.min(-12 * m, l), u = Math.max(-26 * m, t);
         a.colorMapRanges = {
           pressure: [
-            c,
-            u
+            u,
+            c
           ]
         }, s.analyzeOutputs.val = a;
       } catch (a) {
