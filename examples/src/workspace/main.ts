@@ -557,6 +557,8 @@ function mountCaseResultsInSettings() {
     loadCases.val.forEach((c) => { caseOptions[c.name] = c.name; });
     if (!Object.keys(caseOptions).length) return;
     if (!loadCases.val.find((c) => c.name === activeLoadCase.val)) activeLoadCase.val = loadCases.val[0].name;
+    // Combinaciones (como ETABS Case/COMBO/Mode): Σ factores × cargas de caso (1.4D, 1.2D+1.6L…).
+    loadCombinations.val.forEach((cm: any) => { caseOptions[`Σ ${cm.name}`] = `__combo_${cm.name}`; });
     // Modos de vibración (como ETABS Case/Combo/MODE): al elegir un modo se ve su deformada.
     const freqs: number[] = __lastModalResults?.frequencies ?? [];
     freqs.forEach((f: number, i: number) => {
@@ -571,6 +573,9 @@ function mountCaseResultsInSettings() {
         // MODE: mostrar la deformada estática de ese modo (sin rebuild) — como ETABS.
         const idx = parseInt(v.slice(7), 10) || 0;
         try { modalAnimator?.showStatic(idx); } catch (err) { console.warn("showStatic", err); }
+      } else if (v.startsWith("__combo_")) {
+        // COMBO: rebuild() detecta el combo desde activeLoadCase y aplica Σ factores.
+        activeLoadCase.val = v.slice(8); rebuild();
       } else {
         activeLoadCase.val = e.value; rebuild();
         // Sincronizar el "Caso activo" del pane derecho (Load Cases) con esta selección.
@@ -803,6 +808,15 @@ function rebuild() {
   resetStates();
   // Caso activo accesible al build del ejemplo (para aplicar cargas por caso: Dead/Live/…).
   (window as any).__hekatanActiveCase = activeLoadCase.val;
+  // Si el caso activo es una COMBINACIÓN, exponer sus factores (Σ deadF·Dead + liveF·Live).
+  const __cm = loadCombinations.val.find((c: any) => c.name === activeLoadCase.val);
+  if (__cm) {
+    let deadF = 0, liveF = 0;
+    __cm.cases.forEach((cc: any) => { if (cc.case === "Dead") deadF += cc.scaleFactor; else if (cc.case === "Live") liveF += cc.scaleFactor; });
+    (window as any).__hekatanActiveCombo = { deadF, liveF };
+  } else {
+    (window as any).__hekatanActiveCombo = null;
+  }
   currentExample.build(toSIParams(), states, modalPanel);
 
   // ── Active Case dispatcher ──

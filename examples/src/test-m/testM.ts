@@ -90,28 +90,29 @@ function buildEdificio(p: any, states: any, sys: Sys) {
   const supports = new Map<number, boolean[]>();
   nodes.forEach((pt, i) => { if (Math.abs(pt[2]) < 1e-9) supports.set(i, [true, true, true, true, true, true]); });
   const loads = new Map<number, number[]>();
-  // CARGAS POR CASO (como ETABS): Dead = peso propio (RHO·volumen), Live = carga de piso q,
-  // combinaciones = ambos. Así al cambiar el caso en "Case results" cambian los resultados.
+  // CARGAS POR CASO/COMBO (como ETABS): Dead = peso propio (RHO·volumen), Live = carga de piso q.
+  // Combos = Σ factores (ej. 1.2·Dead + 1.6·Live). Así al cambiar Case/Combo cambian los resultados.
+  const combo = (globalThis as any).__hekatanActiveCombo;
   const activeCase = String((globalThis as any).__hekatanActiveCase ?? "Dead");
-  const isLive = activeCase === "Live";
-  const isCombo = /\+|combo|envolvente|U *=/i.test(activeCase);
-  const addLive = isLive || isCombo;
-  const addDead = !isLive || isCombo;   // Dead salvo que sea Live PURO
+  let deadF = 0, liveF = 0;
+  if (combo) { deadF = combo.deadF || 0; liveF = combo.liveF || 0; }
+  else if (activeCase === "Live") liveF = 1;
+  else deadF = 1;   // Dead (peso propio) por default
   const addN = (n: number, fz: number) => { const c = loads.get(n) ?? [0, 0, 0, 0, 0, 0]; c[2] -= fz; loads.set(n, c); };
-  // — DEAD: peso propio de cada elemento —
-  if (addDead) kinds.forEach((k, e) => {
+  // — DEAD: peso propio de cada elemento × deadF —
+  if (deadF) kinds.forEach((k, e) => {
     if (k === "slab" || k === "wall") {
       const pp = elements[e].map(n => nodes[n]); const a = Math.hypot(pp[1][0] - pp[0][0], pp[1][1] - pp[0][1]); const b = Math.hypot(pp[3][0] - pp[0][0], pp[3][1] - pp[0][1]);
-      const wt = RHO * (k === "wall" ? tWall : tSlab) * a * b; for (const n of elements[e]) addN(n, wt / 4);
+      const wt = deadF * RHO * (k === "wall" ? tWall : tSlab) * a * b; for (const n of elements[e]) addN(n, wt / 4);
     } else {
       const L = Math.hypot(...[0, 1, 2].map(d => nodes[elements[e][1]][d] - nodes[elements[e][0]][d]));
-      const wt = RHO * (k === "col" ? A_c : A_v) * L; for (const n of elements[e]) addN(n, wt / 2);
+      const wt = deadF * RHO * (k === "col" ? A_c : A_v) * L; for (const n of elements[e]) addN(n, wt / 2);
     }
   });
-  // — LIVE: carga de piso q (en losas; en pórtico-solo va a las vigas) —
-  if (addLive) {
-    if (sys.slab) kinds.forEach((k, e) => { if (k !== "slab") return; const pp = elements[e].map(n => nodes[n]); const a = Math.hypot(pp[1][0] - pp[0][0], pp[1][1] - pp[0][1]); const b = Math.hypot(pp[3][0] - pp[0][0], pp[3][1] - pp[0][1]); const me = q * a * b / 4; for (const n of elements[e]) addN(n, me); });
-    else kinds.forEach((k, e) => { if (k !== "beam") return; const L = Math.hypot(...[0, 1, 2].map(d => nodes[elements[e][1]][d] - nodes[elements[e][0]][d])); const w = q * 2.5 * L / 2; for (const n of elements[e]) addN(n, w); });
+  // — LIVE: carga de piso q × liveF (en losas; en pórtico-solo va a las vigas) —
+  if (liveF) {
+    if (sys.slab) kinds.forEach((k, e) => { if (k !== "slab") return; const pp = elements[e].map(n => nodes[n]); const a = Math.hypot(pp[1][0] - pp[0][0], pp[1][1] - pp[0][1]); const b = Math.hypot(pp[3][0] - pp[0][0], pp[3][1] - pp[0][1]); const me = liveF * q * a * b / 4; for (const n of elements[e]) addN(n, me); });
+    else kinds.forEach((k, e) => { if (k !== "beam") return; const L = Math.hypot(...[0, 1, 2].map(d => nodes[elements[e][1]][d] - nodes[elements[e][0]][d])); const w = liveF * q * 2.5 * L / 2; for (const n of elements[e]) addN(n, w); });
   }
 
   states.nodes.val = nodes;
