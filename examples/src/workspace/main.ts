@@ -4216,7 +4216,7 @@ solve`;
               // Override colormap range para pressure (hasta -q_adm)
               const q_adm_kPa = q_adm * 9.80665;  // tonf/m² → kN/m² ≈ kPa
               if (aout.colorMapRanges == null) aout.colorMapRanges = {};
-              aout.colorMapRanges.pressure = [0, -q_adm_kPa];
+              aout.colorMapRanges.pressure = [-q_adm_kPa, 0];  // máx compresión = magenta (como SAFE)
               states.analyzeOutputs.val = aout;
               // ── Activar visualización: shell results = pressure + deformed
               // shape + elementos visibles. CRÍTICO: settings son van states,

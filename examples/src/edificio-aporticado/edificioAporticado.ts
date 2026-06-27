@@ -1803,7 +1803,7 @@ export const edificioAporticado: ExampleDef = {
             states.deformOutputs.val = { deformations: allDeforms, reactions: new Map() } as any;
             states.analyzeOutputs.val = {
               pressure: pressureMap,
-              colorMapRanges: { pressure: [0, -q_admC] },
+              colorMapRanges: { pressure: [-q_admC, 0] },  // máx compresión = magenta (como SAFE)
             } as any;
             // Reemplazar también las cotas (ocultar superestructura)
             states.objects3D.val = cotas2;

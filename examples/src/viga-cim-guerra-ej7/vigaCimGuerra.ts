@@ -268,8 +268,9 @@ export const vigaCimGuerraEj7: ExampleDef = {
         pressure.set(e, qPerNode);
       }
       (ao as any).pressure = pressure;
-      // Override range del colormap para fijar tope en q_adm (negativo, compresión)
-      (ao as any).colorMapRanges = { pressure: [0, -p.q_adm * TONF_TO_KN] };
+      // Override range del colormap. Orden [-q_adm, 0] (más-negativo primero) → máx
+      // compresión = magenta (como SAFE/ETABS). [0,-q_adm] quedaba invertido (máx=azul).
+      (ao as any).colorMapRanges = { pressure: [-p.q_adm * TONF_TO_KN, 0] };
       states.analyzeOutputs.val = ao;
     } catch (e) {
       console.error("viga-cim-guerra solver error:", e);
