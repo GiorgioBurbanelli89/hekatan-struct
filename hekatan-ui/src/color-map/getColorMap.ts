@@ -5,25 +5,26 @@ import { Lut } from "three/addons/math/Lut.js";
 import van, { State } from "vanjs-core";
 import { fixedColorMapRange } from "../viewer/getViewer";
 
-// SAP2000 default contour colormap — replica EXACTA del "Display Deformed Shape →
-// Contours" de SAP2000/CSiBridge/ETABS. 14 stops del clásico industrial:
-//   min(t=0)=magenta → rosa → rojo → naranja → amarillo → verde → cian → azul oscuro(t=1)
-// Adaptado de calcpad-viz/src/utils/colormap.ts (Calcpad-Symbolic).
+// SAFE / CSI soil-pressure contour colormap — MUESTREADO de la leyenda real de SAFE
+// (libro Guerra "Cimentaciones Sismo Resistentes utilizando SAFE", Soil Pressure Diagram
+// Figura 180, p.128). Es un JET_r SIN magenta: el extremo (t=0) = ROJO → naranja →
+// amarillo → verde → cian → AZUL (t=1). La paleta anterior (magenta→azul-oscuro) NO
+// coincidía con SAFE; ésta replica el contorno real para que las cimentaciones se vean
+// idénticas a SAFE. Convención: para presión (rango invertido), t=0 = MÁX compresión.
 const SAP2000_PALETTE: [number, number, number, number][] = [
-  [0.000, 255,   0, 255],  // magenta (min)
-  [0.077, 255,   0, 180],  // rosa
-  [0.154, 255,   0,   0],  // rojo
-  [0.231, 255,  80,   0],  // rojo-naranja
-  [0.308, 255, 140,   0],  // naranja
-  [0.385, 255, 190,   0],  // amarillo-naranja
-  [0.462, 255, 255,   0],  // amarillo
-  [0.538, 180, 255,   0],  // amarillo-verde
-  [0.615,   0, 255,   0],  // verde
-  [0.692,   0, 255, 180],  // verde-cian
-  [0.769,   0, 255, 255],  // cian
-  [0.846,   0, 180, 255],  // cian-azul
-  [0.923,   0,   0, 255],  // azul
-  [1.000,   0,   0, 180],  // azul oscuro (max)
+  [0.000, 222,  20,  55],  // rojo (extremo / máx compresión)
+  [0.083, 248,  62,  42],  // rojo-naranja
+  [0.166, 253, 112,  45],  // naranja
+  [0.250, 254, 152,  46],  // naranja-amarillo
+  [0.333, 248, 196,  50],  // amarillo-naranja
+  [0.416, 236, 232,  48],  // amarillo
+  [0.500, 200, 226,  22],  // amarillo-verde
+  [0.583, 100, 212,  28],  // verde
+  [0.666,   8, 202,  62],  // verde-cian
+  [0.750,   0, 196, 150],  // cian-verde
+  [0.833,   0, 188, 218],  // cian
+  [0.916,   6, 158, 230],  // celeste
+  [1.000,  10, 125, 205],  // azul (mín compresión)
 ];
 
 /** Lookup en la palette interpolando linealmente entre stops. */

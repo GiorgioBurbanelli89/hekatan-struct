@@ -74,4 +74,24 @@ export const guerraEj6ZapataUnida: ExampleDef = {
     // Slider [-100, 100] para ajustar dirección si fuese necesario.
     M2y: overrideParam(zapataVigaAmarre.params.M2y, -35, { min: -100, max: 100 }),
   },
+  // Surfacea σ_max/σ_min de Hekatan + comparación con el libro (Fig.180), para
+  // que Ej.6 muestre su resultado como el resto de los ejemplos Guerra.
+  computedLabels(_p: any, states: any) {
+    const KN_TO_TONF = 1 / 9.80665;
+    const pmap = states.analyzeOutputs?.val?.pressure;
+    let sMax = -Infinity, sMin = Infinity;
+    if (pmap) for (const arr of pmap.values()) for (const v of arr) {
+      const t = Math.abs(v) * KN_TO_TONF;
+      if (t > sMax) sMax = t; if (t < sMin) sMin = t;
+    }
+    if (sMax === -Infinity) { sMax = 0; sMin = 0; }
+    const SAFE_LIBRO = 24.179, MANUAL_LIBRO = 26.179;
+    return {
+      "📊 σ_max Hekatan": `${sMax.toFixed(3)} t/m²`,
+      "📊 σ_min Hekatan": `${sMin.toFixed(3)} t/m²`,
+      "📚 σ_max SAFE (libro)": `${SAFE_LIBRO} t/m²`,
+      "📘 σ_max manual (Fig.180)": `${MANUAL_LIBRO} t/m²`,
+      "Δ vs SAFE libro": `${((sMax - SAFE_LIBRO) / SAFE_LIBRO * 100).toFixed(1)} %`,
+    };
+  },
 };
