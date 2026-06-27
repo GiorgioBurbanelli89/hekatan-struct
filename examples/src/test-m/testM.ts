@@ -65,12 +65,16 @@ function buildEdificio(p: any, states: any, sys: Sys) {
       }
     }
   }
-  // muro de corte (dual): plano x=0, ABARCA p.nWallY vanos en Y (parametrizable), toda la altura.
+  // muro de corte (dual): UBICACIÓN parametrizable — sobre la línea X = p.wallX (0..nbx),
+  // arranca en el vano Y = p.wallY0 y ABARCA p.nWallY vanos en Y, toda la altura.
   if (sys.walls) {
-    const nW = Math.max(1, Math.min((p.nWallY ?? 1) | 0, nby));
-    const ym = meshLine([yC[0], yC[nW]]), zm = meshLine(zC);
+    const wx = Math.max(0, Math.min((p.wallX ?? 0) | 0, nbx));
+    const j0 = Math.max(0, Math.min((p.wallY0 ?? 0) | 0, nby - 1));
+    const nW = Math.max(1, Math.min((p.nWallY ?? 1) | 0, nby - j0));
+    const xw = xC[wx];
+    const ym = meshLine([yC[j0], yC[j0 + nW]]), zm = meshLine(zC);
     for (let j = 0; j < ym.length - 1; j++) for (let k = 0; k < zm.length - 1; k++) {
-      elements.push([nid(0, ym[j], zm[k]), nid(0, ym[j + 1], zm[k]), nid(0, ym[j + 1], zm[k + 1]), nid(0, ym[j], zm[k + 1])]); kinds.push("wall");
+      elements.push([nid(xw, ym[j], zm[k]), nid(xw, ym[j + 1], zm[k]), nid(xw, ym[j + 1], zm[k + 1]), nid(xw, ym[j], zm[k + 1])]); kinds.push("wall");
     }
   }
 
@@ -356,7 +360,9 @@ const BASE: Record<string, ParamDef> = {
   nby:     { default: 2, min: 1, max: MAXB, step: 1, label: "N° vanos Y", folder: "Geometría" },
   nFloors: { default: 4, min: 1, max: MAXF, step: 1, label: "N° pisos", folder: "Geometría" },
   ms:      { default: 0.75, min: 0.5, max: 2.5, step: 0.25, label: "Malla shell [m] (ETABS≈0.6)", folder: "Geometría" },
-  // — Muros de corte (parametrizados: ancho en vanos Y + espesor) —
+  // — Muros de corte (parametrizados: ubicación + ancho + espesor) —
+  wallX:   { default: 0, min: 0, max: MAXB, step: 1, label: "Posición muro (línea X)", folder: "🧱 Muros de corte" },
+  wallY0:  { default: 0, min: 0, max: MAXB, step: 1, label: "Vano Y inicial", folder: "🧱 Muros de corte" },
   nWallY:  { default: 1, min: 1, max: MAXB, step: 1, label: "Ancho muro (vanos Y)", folder: "🧱 Muros de corte" },
   tWall:   { default: 0.25, min: 0.15, max: 0.40, step: 0.05, label: "Espesor muro [m]", folder: "🧱 Muros de corte" },
   // — Losas —
