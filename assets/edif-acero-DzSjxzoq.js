@@ -1,7 +1,7 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { e as o, __tla as __tla_0 } from "./edificioMuros-B8UKKFbo.js";
-import { r, __tla as __tla_1 } from "./runExampleStandalone-BK1Rk3-u.js";
-import { __tla as __tla_2 } from "./edificioAporticado-1q-FNVtK.js";
+import { e as r, __tla as __tla_0 } from "./edifAcero-CD0c5rE7.js";
+import { r as o, __tla as __tla_1 } from "./runExampleStandalone-BK1Rk3-u.js";
+import { __tla as __tla_2 } from "./edificioAporticado-BYQVsU8Z.js";
 import "./analyze-DoaxThCI.js";
 import "./pureFunctionsAny.generated-cNLQlHDB.js";
 import { __tla as __tla_3 } from "./didacticCpp-q5lN0Q74.js";
@@ -46,5 +46,5 @@ Promise.all([
     }
   })()
 ]).then(async () => {
-  r(o);
+  o(r);
 });

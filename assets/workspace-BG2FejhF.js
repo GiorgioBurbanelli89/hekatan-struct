@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/edificioAporticado-1q-FNVtK.js","assets/analyze-DoaxThCI.js","assets/pureFunctionsAny.generated-cNLQlHDB.js","assets/didacticCpp-q5lN0Q74.js","assets/deform-Cj9M_0na.js","assets/preload-helper-DrUBW0xl.js","assets/cotas3D-ChjswSxQ.js","assets/theme-Cr2LU0HL.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/edificioAporticado-BYQVsU8Z.js","assets/analyze-DoaxThCI.js","assets/pureFunctionsAny.generated-cNLQlHDB.js","assets/didacticCpp-q5lN0Q74.js","assets/deform-Cj9M_0na.js","assets/preload-helper-DrUBW0xl.js","assets/cotas3D-ChjswSxQ.js","assets/theme-Cr2LU0HL.js"])))=>i.map(i=>d[i]);
 import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { _ as Lt } from "./preload-helper-DrUBW0xl.js";
 import { Z as xn, B as so, V as st, L as Vo, a as qo, C as Ho, b as Ko, S as Uo, c as Go, a1 as Ia, p as Ta, a3 as Yo, v as Je, d as In, g as wo, ah as vo, h as Pa, R as Aa, i as ko, D as Ba, f as za, r as Xo, m as Wo, P as Da, N as Oa, U as Ra } from "./theme-Cr2LU0HL.js";
@@ -29,10 +29,10 @@ import { b as ms, __tla as __tla_17 } from "./benchmarkSafeEx01Plate-BmVMDWzU.js
 import { b as us, __tla as __tla_18 } from "./benchmarkSafeEx04PlateBeams-BOPEg4hp.js";
 import { g as fs, __tla as __tla_19 } from "./guerraEj7-D1iA3j0W.js";
 import { g as hs, __tla as __tla_20 } from "./guerraEj8-DIkkiC2u.js";
-import { v as gs, __tla as __tla_21 } from "./vigaCimGuerra-DGBDWEog.js";
+import { v as gs, __tla as __tla_21 } from "./vigaCimGuerra-C_w4k2pb.js";
 import { v as xs, __tla as __tla_22 } from "./vigaCimGuerraTinv-B-Hx9NSw.js";
-import { e as ys, __tla as __tla_23 } from "./edificioConLosa-Dx569b0j.js";
-import { e as bs, __tla as __tla_24 } from "./edificioConMuros-CYyxwPNL.js";
+import { e as ys, __tla as __tla_23 } from "./edificioConLosa-BLe8Ghmh.js";
+import { e as bs, __tla as __tla_24 } from "./edificioConMuros-Lbae91e6.js";
 import { p as ws, __tla as __tla_25 } from "./plane-CDnBAZDA.js";
 import { m as vs, __tla as __tla_26 } from "./membranaCSI-DYx4kbpc.js";
 import { p as ks, __tla as __tla_27 } from "./plateThin-BuLSJqxf.js";
@@ -58,14 +58,14 @@ import { b as js, __tla as __tla_46 } from "./benchmarkPaz13_1-Bo6yUWl4.js";
 import { m as Vs, __tla as __tla_47 } from "./mesaTorsion-quPXEImm.js";
 import { s as qs, __tla as __tla_48 } from "./shellThick-DT10MJi1.js";
 import { l as Hs, __tla as __tla_49 } from "./layeredShell-DSvWgfiJ.js";
-import { e as Ks, __tla as __tla_50 } from "./edificioAporticado-1q-FNVtK.js";
+import { e as Ks, __tla as __tla_50 } from "./edificioAporticado-BYQVsU8Z.js";
 import { e as Us, __tla as __tla_51 } from "./edificioLadera-C3JXKWuu.js";
-import { e as Gs, __tla as __tla_52 } from "./edificioComparativaFem-D34qsuxb.js";
-import { e as Ys, __tla as __tla_53 } from "./edificioHormigon-B-91h73h.js";
-import { e as Xs, __tla as __tla_54 } from "./edificioAceroV2-6-P0bNyg.js";
-import { e as Ws, __tla as __tla_55 } from "./edificioMixto-BH2Sw9kU.js";
-import { e as Zs, __tla as __tla_56 } from "./edificioMuros-B8UKKFbo.js";
-import { e as Js, __tla as __tla_57 } from "./edificioDual-DxOwiK7s.js";
+import { e as Gs, __tla as __tla_52 } from "./edificioComparativaFem-D_ZBwcFF.js";
+import { e as Ys, __tla as __tla_53 } from "./edificioHormigon-Byw-DRYE.js";
+import { e as Xs, __tla as __tla_54 } from "./edificioAceroV2-B5ufGf_d.js";
+import { e as Ws, __tla as __tla_55 } from "./edificioMixto-BxyGk8v4.js";
+import { e as Zs, __tla as __tla_56 } from "./edificioMuros-CJauwDAW.js";
+import { e as Js, __tla as __tla_57 } from "./edificioDual-B1ScppK_.js";
 import { c as Qs, __tla as __tla_58 } from "./columnaCft-QoVQPNux.js";
 import { t as ei, __tla as __tla_59 } from "./triangularPlate-CSV015_V.js";
 import { c as ti, __tla as __tla_60 } from "./conexionRbs-5rfaHS-E.js";
@@ -86,8 +86,8 @@ import { p as hi, __tla as __tla_74 } from "./portico2D-DfnUXtOF.js";
 import { c as gi, __tla as __tla_75 } from "./cerramiento-BAAfvWdM.js";
 import { t as xi, __tla as __tla_76 } from "./tower3D-jFQJCd3A.js";
 import { g as yi, __tla as __tla_77 } from "./galpon-CXUfDNYT.js";
-import { e as bi, __tla as __tla_78 } from "./edifAcero-DpuwG2lw.js";
-import { m as wi, __tla as __tla_79 } from "./mezanine-Dk0px7mx.js";
+import { e as bi, __tla as __tla_78 } from "./edifAcero-CD0c5rE7.js";
+import { m as wi, __tla as __tla_79 } from "./mezanine-CZhustLD.js";
 import { e as vi, __tla as __tla_80 } from "./edificioFrameNec-luWb4AcC.js";
 import { n as ki, __tla as __tla_81 } from "./newBlank-CwVVDso7.js";
 import { downloadZapataF2k as _i } from "./f2kExporter-COIU6xYe.js";
@@ -6683,7 +6683,7 @@ ${y}
       error: "No hay apoyos en z=0"
     };
     const { designAllFootings: o } = await Lt(async () => {
-      const { designAllFootings: p } = await import("./edificioAporticado-1q-FNVtK.js").then(async (m2) => {
+      const { designAllFootings: p } = await import("./edificioAporticado-BYQVsU8Z.js").then(async (m2) => {
         await m2.__tla;
         return m2;
       }).then((h) => h.f);
@@ -9760,7 +9760,7 @@ Los sliders del Tweakpane se actualizaron a estos valores.`);
               return;
             }
             const { designAllFootings: I } = await Lt(async () => {
-              const { designAllFootings: ae } = await import("./edificioAporticado-1q-FNVtK.js").then(async (m2) => {
+              const { designAllFootings: ae } = await import("./edificioAporticado-BYQVsU8Z.js").then(async (m2) => {
                 await m2.__tla;
                 return m2;
               }).then((Ee) => Ee.f);
@@ -10005,7 +10005,7 @@ Us\xE1 el bot\xF3n "\u{1F3E2} Volver a vista superestructura" para restaurar.`),
               return;
             }
             const { designAllFootings: We } = await Lt(async () => {
-              const { designAllFootings: me } = await import("./edificioAporticado-1q-FNVtK.js").then(async (m2) => {
+              const { designAllFootings: me } = await import("./edificioAporticado-BYQVsU8Z.js").then(async (m2) => {
                 await m2.__tla;
                 return m2;
               }).then((Ie) => Ie.f);
@@ -10161,8 +10161,8 @@ Us\xE1 el bot\xF3n "\u{1F3E2} Volver a vista superestructura" para restaurar.`),
               ue.deformOutputs.val = me;
               const Ie = Nn(je, Ae, ue.elementInputs.val, me), $e = G * 9.80665;
               Ie.colorMapRanges == null && (Ie.colorMapRanges = {}), Ie.colorMapRanges.pressure = [
-                0,
-                -$e
+                -$e,
+                0
               ], ue.analyzeOutputs.val = Ie;
               const Me = _e.__settings;
               Me ? (((_b2 = Me.elements) == null ? void 0 : _b2.val) !== void 0 && (Me.elements.val = true), ((_c = Me.nodes) == null ? void 0 : _c.val) !== void 0 && (Me.nodes.val = true), ((_d = Me.elemColumns) == null ? void 0 : _d.val) !== void 0 && (Me.elemColumns.val = false), ((_e2 = Me.elemBeams) == null ? void 0 : _e2.val) !== void 0 && (Me.elemBeams.val = false), ((_f = Me.sections) == null ? void 0 : _f.val) !== void 0 && (Me.sections.val = false), ((_g = Me.secColumns) == null ? void 0 : _g.val) !== void 0 && (Me.secColumns.val = false), ((_h = Me.secBeams) == null ? void 0 : _h.val) !== void 0 && (Me.secBeams.val = false), ((_i2 = Me.secFloor) == null ? void 0 : _i2.val) !== void 0 && (Me.secFloor.val = false), ((_j = Me.supports) == null ? void 0 : _j.val) !== void 0 && (Me.supports.val = true), ((_k = Me.loads) == null ? void 0 : _k.val) !== void 0 && (Me.loads.val = true), ((_l2 = Me.shellResults) == null ? void 0 : _l2.val) !== void 0 && (Me.shellResults.val = "pressure"), ((_m = Me.deformedShape) == null ? void 0 : _m.val) !== void 0 && (Me.deformedShape.val = true), ((_n2 = Me.custom3D) == null ? void 0 : _n2.val) !== void 0 && (Me.custom3D.val = true)) : console.warn("[FEM Cim] viewerElm.__settings no disponible \u2014 shell results no auto-activado");
@@ -10224,7 +10224,7 @@ Activ\xE1 Deformed shape para ver la deformaci\xF3n.`), console.log(`[FEM Cim] $
               return;
             }
             const { designAllFootings: De } = await Lt(async () => {
-              const { designAllFootings: oe } = await import("./edificioAporticado-1q-FNVtK.js").then(async (m2) => {
+              const { designAllFootings: oe } = await import("./edificioAporticado-BYQVsU8Z.js").then(async (m2) => {
                 await m2.__tla;
                 return m2;
               }).then((Oe) => Oe.f);

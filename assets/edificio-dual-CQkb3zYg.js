@@ -1,7 +1,7 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { e as o, __tla as __tla_0 } from "./edificioConLosa-Dx569b0j.js";
+import { e as o, __tla as __tla_0 } from "./edificioDual-B1ScppK_.js";
 import { r, __tla as __tla_1 } from "./runExampleStandalone-BK1Rk3-u.js";
-import { __tla as __tla_2 } from "./edificioAporticado-1q-FNVtK.js";
+import { __tla as __tla_2 } from "./edificioAporticado-BYQVsU8Z.js";
 import "./analyze-DoaxThCI.js";
 import "./pureFunctionsAny.generated-cNLQlHDB.js";
 import { __tla as __tla_3 } from "./didacticCpp-q5lN0Q74.js";

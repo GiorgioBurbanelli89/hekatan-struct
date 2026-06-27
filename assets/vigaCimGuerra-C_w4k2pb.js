@@ -383,8 +383,8 @@ let __tla = Promise.all([
         }
         o.pressure = s, o.colorMapRanges = {
           pressure: [
-            0,
-            -t.q_adm * q
+            -t.q_adm * q,
+            0
           ]
         }, n.analyzeOutputs.val = o;
       } catch (e) {

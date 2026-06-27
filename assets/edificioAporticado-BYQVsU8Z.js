@@ -1483,8 +1483,8 @@ let __tla = Promise.all([
               pressure: _t,
               colorMapRanges: {
                 pressure: [
-                  0,
-                  -C
+                  -C,
+                  0
                 ]
               }
             }, e.objects3D.val = Mt, console.log(`[Modo Cimentaci\xF3n] ${a.length} zapatas + pedestales (Hf=${l} m, t=${Q} m, q_adm=${C} tonf/m\xB2, ks=${r} kN/m\xB3) \u2014 reemplaza superestructura`);
