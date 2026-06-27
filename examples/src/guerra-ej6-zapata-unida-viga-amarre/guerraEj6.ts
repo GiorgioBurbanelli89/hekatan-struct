@@ -67,12 +67,11 @@ export const guerraEj6ZapataUnida: ExampleDef = {
     P2:    overrideParam(zapataVigaAmarre.params.P2,    89),  // PCM
     P2_L:  overrideParam(zapataVigaAmarre.params.P2_L,  51),  // PCV
     M2x: overrideParam(zapataVigaAmarre.params.M2x, 0),
-    // M2y = -35 t·m: counter-moment manual para gradiente Z2 visible. Sin
-    // pedestal vertical, el frame coupling natural via viga en z=0 NO basta
-    // para reproducir el gradient del libro Fig.180 (σ_min=15.39, σ_max=26.18).
-    // -35 genera σ_var ~ ±14 sobre la base P2/A2≈23 → σ ranges ~9-37 t/m².
-    // Slider [-100, 100] para ajustar dirección si fuese necesario.
-    M2y: overrideParam(zapataVigaAmarre.params.M2y, -35, { min: -100, max: 100 }),
+    // M2y = 0: SIN fudge. El gradiente de presión debe salir NATURAL de la
+    // excentricidad de la columna medianera (al borde de Z1) + el acople de la
+    // viga de amarre y los pedestales (Hp=0.8). Antes había un -35 manual para
+    // forzar la figura del libro; lo quitamos para que el modelo sea físico.
+    M2y: overrideParam(zapataVigaAmarre.params.M2y, 0, { min: -100, max: 100 }),
   },
   // Surfacea σ_max/σ_min de Hekatan + comparación con el libro (Fig.180), para
   // que Ej.6 muestre su resultado como el resto de los ejemplos Guerra.
