@@ -24,7 +24,7 @@ import { g as rs, __tla as __tla_12 } from "./guerraEj2-MPtfIhoJ.js";
 import { g as ls, __tla as __tla_13 } from "./guerraEj3-CLwObCXL.js";
 import { g as cs, __tla as __tla_14 } from "./guerraEj4-DpChC3C_.js";
 import { g as ds, __tla as __tla_15 } from "./guerraEj5-BLPaReen.js";
-import { g as ps, __tla as __tla_16 } from "./guerraEj6-DeQdXC5U.js";
+import { g as ps, __tla as __tla_16 } from "./guerraEj6-DNRrSe1a.js";
 import { b as ms, __tla as __tla_17 } from "./benchmarkSafeEx01Plate-BmVMDWzU.js";
 import { b as us, __tla as __tla_18 } from "./benchmarkSafeEx04PlateBeams-BOPEg4hp.js";
 import { g as fs, __tla as __tla_19 } from "./guerraEj7-D1iA3j0W.js";

@@ -58,7 +58,7 @@ let __tla = Promise.all([
       P2: r(a.params.P2, 89),
       P2_L: r(a.params.P2_L, 51),
       M2x: r(a.params.M2x, 0),
-      M2y: r(a.params.M2y, -35, {
+      M2y: r(a.params.M2y, 0, {
         min: -100,
         max: 100
       })
