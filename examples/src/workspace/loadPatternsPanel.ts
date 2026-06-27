@@ -192,19 +192,9 @@ export function attachLoadPatternsPanel(opts: {
       });
     } catch {}
 
-    // Selector "Active Case" (al inicio del folder)
-    const activeObj = { case: activeLoadCase.val };
-    const caseOptions: Record<string, string> = {};
-    loadCases.val.forEach(c => caseOptions[c.name] = c.name);
-    if (Object.keys(caseOptions).length === 0) caseOptions["(ninguno)"] = "";
-    const activeBinding = casesFolder.addBinding(activeObj, "case", {
-      label: "▶ Caso activo", options: caseOptions,
-    });
-    try { activeBinding.element?.classList?.add("hk-case-active"); } catch {}
-    activeBinding.on("change", (e: any) => {
-      activeLoadCase.val = e.value;
-      onChange?.();   // trigger re-build con el nuevo case activo
-    });
+    // NOTA: el selector de "Caso activo" (qué resultado VISUALIZAR) vive SOLO en el panel
+    // Settings ("Case results"). Acá el pane derecho solo DEFINE los cases (no selecciona el
+    // activo) — separación: derecho = definiciones, izquierdo (Settings) = visualización.
 
     loadCases.val.forEach((cs, idx) => {
       const patternsTxt = (cs.patterns ?? []).map(p => `${p.pattern}×${p.scaleFactor}`).join(", ") || "(none)";
