@@ -519,6 +519,7 @@ function loadExample(ex: ExampleDef) {
 let __caseResultsBinding: any = null;
 let __modalSettingsFolder: any = null;   // folder "⚡ Modal + Animación" dentro de Settings (Analysis Outputs)
 let __lastModalResults: any = null;      // resultados modales (para listar los modos en "Case results")
+let __modalTableShown = false;           // el panel/tabla modal solo se muestra si el usuario lo activa
 let __loadPanel: any = null;             // panel de Load Patterns/Cases (pane derecho) para sincronizar "Caso activo"
 
 // ── Panel flotante de tablas de resultados (estilo ETABS → Analysis Results) ──
@@ -835,7 +836,8 @@ function rebuild() {
     const active = loadCases.val.find(c => c.name === activeName);
     if (active?.type.startsWith("Modal") && currentExample.runModal) {
       currentExample.runModal(toSIParams(), states, modalPanel);
-      modalPanel.div.style.display = "";
+      // Solo mostrar el panel/tabla si el usuario activó "Mostrar tabla" (Settings).
+      modalPanel.div.style.display = __modalTableShown ? "block" : "none";
     } else {
       modalPanel.div.style.display = "none";
     }
@@ -5008,10 +5010,17 @@ solve`;
       // que cada corrida parta limpia del modelo sin deformar (evita que se
       // capturen "originals" corruptos con el último frame animado anterior).
       modalAnimator.stop();
-      modalPanel.div.style.display = "block";
+      // El panel/tabla modal solo se muestra si el usuario activó "Mostrar tabla" (Settings).
+      modalPanel.div.style.display = __modalTableShown ? "block" : "none";
       if (currentExample!.runModal) currentExample!.runModal(toSIParams(), states, captureModalPanel);
     };
     fModal.addButton({ title: "▶ Correr modal + animar" }).on("click", runModalAnimate);
+    // Toggle "Mostrar tabla": el panel/tabla modal solo aparece si el usuario lo activa.
+    const __tblProxy = { show: __modalTableShown };
+    fModal.addBinding(__tblProxy, "show", { label: "📋 Mostrar tabla" }).on("change", (e: any) => {
+      __modalTableShown = !!e.value;
+      try { modalPanel.div.style.display = __modalTableShown ? "block" : "none"; } catch {}
+    });
     (window as any).__hekatanRunModalAnimate = runModalAnimate;
     (window as any).__hekatanModalStop = () => { try { modalAnimator.stop(); } catch {} };
 
