@@ -529,9 +529,52 @@ function renderSpectrumPanel() {
     __spectrumPanel.style.cssText = "position:fixed; bottom:10px; left:10px; z-index:9998; background:rgba(0,0,0,0.92); border:1px solid #ff06; border-radius:6px; padding:8px 10px; box-shadow:0 4px 20px rgba(0,0,0,0.5);";
     document.body.appendChild(__spectrumPanel);
   }
-  __spectrumPanel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><b style="color:#ff0;font:12px monospace">📈 Espectro de diseño NEC-15</b><button id="__spclose" style="background:#7a2d2d;color:#fff;border:1px solid #b04545;border-radius:3px;cursor:pointer;font-size:10px;padding:2px 8px">✕</button></div>${__lastSpectrumHtml || "<div style='color:#888;font:11px monospace'>Corré el modal primero.</div>"}`;
+  __spectrumPanel.innerHTML = `<div class="hk-sp-hdr" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;cursor:move;user-select:none"><b style="color:#ff0;font:12px monospace">📈 Espectro de diseño NEC-15</b><button id="__spclose" style="background:#7a2d2d;color:#fff;border:1px solid #b04545;border-radius:3px;cursor:pointer;font-size:10px;padding:2px 8px">✕</button></div>${__lastSpectrumHtml || "<div style='color:#888;font:11px monospace'>Corré el modal primero.</div>"}`;
   __spectrumPanel.style.display = __spectrumShown ? "block" : "none";
   __spectrumPanel.querySelector("#__spclose")?.addEventListener("click", () => { __spectrumShown = false; if (__spectrumPanel) __spectrumPanel.style.display = "none"; });
+  // VENTANA ARRASTRABLE por el header.
+  const hdr = __spectrumPanel.querySelector(".hk-sp-hdr") as HTMLElement | null;
+  if (hdr) hdr.onmousedown = (ev: MouseEvent) => {
+    if ((ev.target as HTMLElement)?.id === "__spclose") return;
+    ev.preventDefault();
+    const p = __spectrumPanel!; const r = p.getBoundingClientRect();
+    p.style.bottom = "auto"; p.style.left = r.left + "px"; p.style.top = r.top + "px";
+    const ox = ev.clientX - r.left, oy = ev.clientY - r.top;
+    const mv = (e: MouseEvent) => { p.style.left = (e.clientX - ox) + "px"; p.style.top = (e.clientY - oy) + "px"; };
+    const up = () => { document.removeEventListener("mousemove", mv); document.removeEventListener("mouseup", up); };
+    document.addEventListener("mousemove", mv); document.addEventListener("mouseup", up);
+  };
+  // HOVER en la gráfica: crosshair + lectura (T, Sa).
+  const svg = __spectrumPanel.querySelector(".hk-spectrum-svg") as SVGSVGElement | null;
+  if (svg) attachSpectrumHover(svg);
+}
+
+function attachSpectrumHover(svg: SVGSVGElement) {
+  const d = (k: string) => parseFloat(svg.getAttribute("data-" + k) || "0");
+  const mL = d("ml"), mR = d("mr"), mT = d("mt"), mB = d("mb"), W = d("w"), H = d("h"), Tmax = d("tmax"), saMax = d("samax"), n = d("n");
+  const saArr = (svg.getAttribute("data-sa") || "").split(",").map(Number);
+  const X = (T: number) => mL + (T / Tmax) * (W - mL - mR);
+  const Y = (sa: number) => H - mB - (sa / saMax) * (H - mB - mT);
+  const ns = "http://www.w3.org/2000/svg";
+  let g = svg.querySelector(".hk-hover") as SVGGElement | null;
+  if (!g) { g = document.createElementNS(ns, "g"); g.setAttribute("class", "hk-hover"); (g.style as any).pointerEvents = "none"; svg.appendChild(g); }
+  svg.style.cursor = "crosshair";
+  svg.onmousemove = (e: MouseEvent) => {
+    const r = svg.getBoundingClientRect();
+    const sx = (e.clientX - r.left) * (W / (r.width || W));   // px pantalla → coord SVG
+    let T = (sx - mL) / (W - mL - mR) * Tmax;
+    T = Math.max(0, Math.min(Tmax, T));
+    const fi = T / Tmax * n, i0 = Math.floor(fi), i1 = Math.min(i0 + 1, saArr.length - 1), f = fi - i0;
+    const sa = (saArr[i0] ?? 0) * (1 - f) + (saArr[i1] ?? 0) * f;
+    const xx = X(T), yy = Y(sa), bx = Math.min(xx + 5, W - 64);
+    g!.innerHTML =
+      `<line x1="${xx.toFixed(1)}" y1="${mT}" x2="${xx.toFixed(1)}" y2="${H - mB}" stroke="#f0f" stroke-width="0.8"/>` +
+      `<circle cx="${xx.toFixed(1)}" cy="${yy.toFixed(1)}" r="3" fill="#f0f"/>` +
+      `<rect x="${bx.toFixed(1)}" y="${mT}" width="60" height="22" rx="3" fill="#000d" stroke="#f0f8"/>` +
+      `<text x="${(bx + 4).toFixed(1)}" y="${mT + 9}" fill="#f8f" font-size="8">T=${T.toFixed(2)} s</text>` +
+      `<text x="${(bx + 4).toFixed(1)}" y="${mT + 18}" fill="#f8f" font-size="8">Sa=${sa.toFixed(3)} g</text>`;
+  };
+  svg.onmouseleave = () => { if (g) g.innerHTML = ""; };
 }
 let __loadPanel: any = null;             // panel de Load Patterns/Cases (pane derecho) para sincronizar "Caso activo"
 

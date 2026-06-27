@@ -139,7 +139,9 @@ export function espectroSvg(sp: NecSpectrum, T1?: number): string {
     const x = X(T1).toFixed(1), y = Y(sp.Sa(T1)).toFixed(1);
     t1 = `<line x1="${x}" y1="${mT}" x2="${x}" y2="${H - mB}" stroke="#0ff" stroke-width="1.3"/><circle cx="${x}" cy="${y}" r="3.5" fill="#0ff"/><text x="${(+x + 5).toFixed(1)}" y="${(+y - 5).toFixed(1)}" fill="#0ff" font-size="9">T1=${T1.toFixed(2)}s</text>`;
   }
-  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="background:#0a0e12;border:1px solid #234;border-radius:4px;margin:6px 0;max-width:100%">
+  // Datos embebidos para el HOVER (el panel lee estos data-* y dibuja crosshair + lectura).
+  const saVals = pts.map((p) => p[1].toFixed(4)).join(",");
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" class="hk-spectrum-svg" data-ml="${mL}" data-mr="${mR}" data-mt="${mT}" data-mb="${mB}" data-w="${W}" data-h="${H}" data-tmax="${Tmax}" data-samax="${saMax}" data-n="${n}" data-sa="${saVals}" style="background:#0a0e12;border:1px solid #234;border-radius:4px;margin:6px 0;max-width:100%">
 <text x="${W / 2}" y="11" fill="#cde" font-size="10" text-anchor="middle">Espectro NEC-15 — Sa(T) [g]</text>
 ${dash}
 <line x1="${mL}" y1="${H - mB}" x2="${W - mR}" y2="${H - mB}" stroke="#567"/><line x1="${mL}" y1="${mT}" x2="${mL}" y2="${H - mB}" stroke="#567"/>
