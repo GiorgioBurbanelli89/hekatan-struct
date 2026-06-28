@@ -253,8 +253,13 @@ export const zapataVigaAmarre: ExampleDef = {
       elsEl.push([a, b]);
       elasticities.set(eViga, Ec); poissons.set(eViga, nu_c); Gm.set(eViga, Gc);
       areas.set(eViga, Bv * Hv);
-      Iz.set(eViga, (Bv * Hv ** 3) / 12);
-      Iy.set(eViga, (Hv * Bv ** 3) / 12);
+      // BUG-FIX (vuelco): la viga es HORIZONTAL (a lo largo de x) → local_z=global Z (vertical),
+      // local_y=global Y (horizontal). En la K del frame, Iy gobierna la flexión VERTICAL (x-z)
+      // y Iz la horizontal (x-y). El canto Hv=0.95 debe resistir el vuelco → ese inercia (Bv·Hv³/12)
+      // va en Iy, NO en Iz. Antes estaba al revés → la viga aguantaba el vuelco con el eje débil
+      // (ancho³) → la zapata medianera basculaba ~2× de más vs SAFE. Validado nodo-a-nodo.
+      Iy.set(eViga, (Bv * Hv ** 3) / 12);   // FUERTE (canto³) → flexión vertical = restringe vuelco
+      Iz.set(eViga, (Hv * Bv ** 3) / 12);   // débil (ancho³) → flexión horizontal
       J.set(eViga, 0.28 * Bv * Hv ** 3);
       densities.set(eViga, rho);
       sections.set(eViga, { type: "rect", b: Bv, h: Hv });
