@@ -1,11 +1,10 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { e as o, __tla as __tla_0 } from "./edificioAceroV2-DXcykjee.js";
+import { e as o, __tla as __tla_0 } from "./edificioAporticado-1mXNWi1w.js";
 import { r, __tla as __tla_1 } from "./runExampleStandalone-C7LW1noB.js";
-import { __tla as __tla_2 } from "./edificioAporticado-DooqTy06.js";
 import "./analyze-DoaxThCI.js";
 import "./pureFunctionsAny.generated-cNLQlHDB.js";
-import { __tla as __tla_3 } from "./didacticCpp-q5lN0Q74.js";
-import { __tla as __tla_4 } from "./deform-Cj9M_0na.js";
+import { __tla as __tla_2 } from "./didacticCpp-q5lN0Q74.js";
+import { __tla as __tla_3 } from "./deform-Cj9M_0na.js";
 import "./preload-helper-DrUBW0xl.js";
 import "./cotas3D-CwFKudIf.js";
 import "./theme-Buj43zQ_.js";
@@ -36,12 +35,6 @@ Promise.all([
   (() => {
     try {
       return __tla_3;
-    } catch {
-    }
-  })(),
-  (() => {
-    try {
-      return __tla_4;
     } catch {
     }
   })()

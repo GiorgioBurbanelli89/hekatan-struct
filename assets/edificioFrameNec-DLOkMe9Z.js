@@ -102,7 +102,7 @@ let __tla = Promise.all([
         ]);
       }
       const j = o.colB * o.colH, k = o.colB * o.colH ** 3 / 12, F = o.colH * o.colB ** 3 / 12, R = 0.14 * Math.pow(Math.min(o.colB, o.colH), 4), T = o.vigaB * o.vigaH, b = o.vigaB * o.vigaH ** 3 / 12, L = o.vigaH * o.vigaB ** 3 / 12, Y = 0.21 * Math.pow(Math.min(o.vigaB, o.vigaH), 3) * Math.max(o.vigaB, o.vigaH), E = /* @__PURE__ */ new Map(), N = /* @__PURE__ */ new Map(), g = /* @__PURE__ */ new Map(), M = /* @__PURE__ */ new Map(), p = /* @__PURE__ */ new Map(), w = /* @__PURE__ */ new Map(), $ = /* @__PURE__ */ new Map(), z = /* @__PURE__ */ new Map();
-      for (let e = 0; e < m.length; e++) E.set(e, P), N.set(e, A), z.set(e, G), $.set(e, J), H.has(e) ? (g.set(e, j), M.set(e, k), p.set(e, F), w.set(e, R)) : (g.set(e, T), M.set(e, b), p.set(e, L), w.set(e, Y));
+      for (let e = 0; e < m.length; e++) E.set(e, P), N.set(e, A), z.set(e, G), $.set(e, J), H.has(e) ? (g.set(e, j), M.set(e, k), p.set(e, F), w.set(e, R)) : (g.set(e, T), M.set(e, L), p.set(e, b), w.set(e, Y));
       s.nodes.val = h, s.elements.val = m, s.nodeInputs.val = {
         supports: x,
         loads: y

@@ -1,4 +1,4 @@
-import { e as s, __tla as __tla_0 } from "./edificioAporticado-DooqTy06.js";
+import { e as s, __tla as __tla_0 } from "./edificioAporticado-1mXNWi1w.js";
 let r;
 let __tla = Promise.all([
   (() => {

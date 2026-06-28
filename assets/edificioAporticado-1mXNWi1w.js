@@ -875,8 +875,8 @@ let __tla = Promise.all([
         const n = pe[o] ?? t.vigaB, a = xe[o] ?? t.vigaH;
         return {
           A: n * a,
-          Iz: n * a ** 3 / 12,
-          Iy: a * n ** 3 / 12,
+          Iy: n * a ** 3 / 12,
+          Iz: a * n ** 3 / 12,
           J: 0.21 * Math.pow(Math.min(n, a), 3) * Math.max(n, a)
         };
       }, ye = t.matCol < 0.5 ? D : X, be = t.matCol < 0.5 ? at : ut, Ce = t.matCol < 0.5 ? R : G, we = t.matViga < 0.5 ? D : X, ze = t.matViga < 0.5 ? at : ut, $e = t.matViga < 0.5 ? R : G, xo = /* @__PURE__ */ new Map(), _o = /* @__PURE__ */ new Map(), ko = /* @__PURE__ */ new Map(), Oo = /* @__PURE__ */ new Map(), Po = /* @__PURE__ */ new Map(), Fo = /* @__PURE__ */ new Map(), vo = /* @__PURE__ */ new Map(), Lo = /* @__PURE__ */ new Map(), Uo = /* @__PURE__ */ new Map(), Qo = /* @__PURE__ */ new Map(), Wo = /* @__PURE__ */ new Map(), te = Math.round(t.slabType), Se = te === 2 ? 0 : 1, ke = te === 1 ? 0 : 1, Eo = t.crackedSections > 0.5, oe = t.matCol < 0.5 && Eo ? 0.7 : 1, ee = t.matViga < 0.5 && Eo ? 0.35 : 1, Oe = Eo ? 0.25 : 1, Pe = 1, Ro = t.massSource > 0.5, Fe = t.qDead + 0.25 * t.qLive, Le = Ro ? Fe / Me / Math.max(t.slabT, 0.05) : uo;
