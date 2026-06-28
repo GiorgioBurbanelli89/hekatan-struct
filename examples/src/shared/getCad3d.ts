@@ -35,6 +35,7 @@ import { parseE2k, type E2kModel } from "./e2kParser";
 import { parseS2k } from "./s2kParser";
 import { exportS2k } from "./s2kExporter";
 import { exportE2k } from "./e2kExporter";
+import { rectSection, circSection, iParamSection, hollowRectSection, cftSection } from "./cadSections";
 import { exportOpenSeesPy, exportOpenSeesTcl, importOpenSeesPy, importOpenSeesTcl } from "./openseesIO";
 import { parseIfcToAnalytical } from "./ifcAnalyticalParser";
 import { loadIfcToScene, filterIfcByPreset, type IfcLoadResult, type IfcDetailCategory } from "./Draw3DIfc";
@@ -6247,84 +6248,8 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
     }
   }
 
-  /** Compute section properties from dimensions */
-  function rectSection(b: number, h: number) {
-    const A = b * h;
-    const Iz = b * h * h * h / 12;  // strong axis (about z, bending in h direction)
-    const Iy = h * b * b * b / 12;  // weak axis
-    const a = Math.min(b, h), bv = Math.max(b, h);
-    const J = a * a * a * bv * (1 / 3 - 0.21 * a / bv * (1 - a * a * a * a / (12 * bv * bv * bv * bv)));
-    return { A, Iz, Iy, J };
-  }
-  function circSection(d: number) {
-    const r = d / 2;
-    const A = Math.PI * r * r;
-    const I = Math.PI * r * r * r * r / 4;
-    const J = Math.PI * r * r * r * r / 2;
-    return { A, Iz: I, Iy: I, J };
-  }
-
-  /** I-beam paramétrica: bf=flange width, h=total depth, tf=flange thickness, tw=web thickness */
-  function iParamSection(bf: number, h: number, tf: number, tw: number) {
-    const hw = h - 2 * tf; // web height
-    const A = 2 * bf * tf + hw * tw;
-    // Strong axis (about z, bending in h direction)
-    const Iz = (bf * h * h * h - (bf - tw) * hw * hw * hw) / 12;
-    // Weak axis
-    const Iy = (2 * tf * bf * bf * bf + hw * tw * tw * tw) / 12;
-    // Torsion (open section approximation)
-    const J = (2 * bf * tf * tf * tf + hw * tw * tw * tw) / 3;
-    return { A, Iz, Iy, J };
-  }
-
-  /** Tubular hueca rectangular: b=width, h=height, t=wall thickness */
-  function hollowRectSection(b: number, h: number, t: number) {
-    const bi = b - 2 * t; // inner width
-    const hi = h - 2 * t; // inner height
-    const A = b * h - bi * hi;
-    const Iz = (b * h * h * h - bi * hi * hi * hi) / 12;
-    const Iy = (h * b * b * b - hi * bi * bi * bi) / 12;
-    // Torsion (Bredt formula for thin-walled closed section)
-    const Am = (b - t) * (h - t); // area enclosed by midline
-    const perim = 2 * ((b - t) / t + (h - t) / t);
-    const J = 4 * Am * Am / (perim > 0 ? perim : 1);
-    return { A, Iz, Iy, J };
-  }
-
-  /** CFT: Concrete-Filled Tube — transformed section (equivalent steel)
-   *  b, h = outer dims, t = wall thickness
-   *  Es = steel E (kN/m²), nuS = steel ν, fc = f'c concrete (kN/m²), nuC = concrete ν */
-  function cftSection(b: number, h: number, t: number, Es: number, nuS: number, fc: number, nuC: number) {
-    const Ec = 4700 * Math.sqrt(fc / 1000) * 1000; // kN/m²
-    const n = Ec / Es; // modular ratio
-
-    // Steel tube
-    const bi = b - 2 * t, hi = h - 2 * t;
-    const A_steel = b * h - bi * hi;
-    const Iz_steel = (b * h * h * h - bi * hi * hi * hi) / 12;
-    const Iy_steel = (h * b * b * b - hi * bi * bi * bi) / 12;
-
-    // Concrete core
-    const A_conc = bi * hi;
-    const Iz_conc = bi * hi * hi * hi / 12;
-    const Iy_conc = hi * bi * bi * bi / 12;
-
-    // Transformed (equivalent steel)
-    const A = A_steel + n * A_conc;
-    const Iz = Iz_steel + n * Iz_conc;
-    const Iy = Iy_steel + n * Iy_conc;
-
-    // G: steel and concrete shear moduli
-    const Gs = Es / (2 * (1 + nuS));
-    const Gc = Ec / (2 * (1 + nuC));
-
-    // Torsion (Bredt for steel tube only — conservative)
-    const Am = (b - t) * (h - t);
-    const perim = 2 * ((b - t) / t + (h - t) / t);
-    const J = 4 * Am * Am / (perim > 0 ? perim : 1);
-
-    return { A, Iz, Iy, J, Es, Gs, A_steel, A_conc };
-  }
+  // Helpers de sección (rectSection/circSection/iParamSection/hollowRectSection/cftSection)
+  // extraídos a ./cadSections.ts — convención Iz=fuerte, Iy=débil (ver toLocalInertia).
 
   /** Set default element properties (E, A, Iz, Iy, J, ρ) using active unit system */
   function setDefaultElementInputs() {
