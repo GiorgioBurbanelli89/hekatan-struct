@@ -90,8 +90,10 @@ export const portico2D: ExampleDef = {
     const cIy = (p.colH * p.colB ** 3) / 12;
     const cJ = 0.14 * Math.pow(Math.min(p.colB, p.colH), 4);
     const vA = p.vigaB * p.vigaH;
-    const vIz = (p.vigaB * p.vigaH ** 3) / 12;
-    const vIy = (p.vigaH * p.vigaB ** 3) / 12;
+    // FIX flexión viga: viga horizontal → local_z=global Z, Iy gobierna la flexión VERTICAL.
+    // El canto³ debe ir en Iy (antes estaba en Iz → la viga resistía gravedad/deriva con el eje débil).
+    const vIy = (p.vigaB * p.vigaH ** 3) / 12;   // FUERTE (canto³) → flexión vertical (gravedad + deriva)
+    const vIz = (p.vigaH * p.vigaB ** 3) / 12;   // débil (ancho³) → flexión horizontal
     const vJ = 0.21 * Math.pow(Math.min(p.vigaB, p.vigaH), 3) * Math.max(p.vigaB, p.vigaH);
 
     const elasticities = new Map<number, number>();

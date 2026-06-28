@@ -105,8 +105,9 @@ export const tower3D: ExampleDef = {
     const cIy = cIz;
     const cJ = 0.14 * Math.pow(p.colSize, 4);
     const vA = p.vigaB * p.vigaH;
-    const vIz = (p.vigaB * p.vigaH ** 3) / 12;
-    const vIy = (p.vigaH * p.vigaB ** 3) / 12;
+    // FIX flexión viga: viga horizontal → Iy gobierna la flexión VERTICAL (canto³ va en Iy).
+    const vIy = (p.vigaB * p.vigaH ** 3) / 12;   // FUERTE (canto³) → flexión vertical
+    const vIz = (p.vigaH * p.vigaB ** 3) / 12;   // débil (ancho³) → flexión horizontal
     const vJ = 0.21 * Math.pow(Math.min(p.vigaB, p.vigaH), 3) * Math.max(p.vigaB, p.vigaH);
 
     const elasticities = new Map<number, number>();

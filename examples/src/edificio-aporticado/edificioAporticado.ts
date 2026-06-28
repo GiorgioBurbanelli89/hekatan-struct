@@ -680,7 +680,9 @@ export const edificioAporticado: ExampleDef = {
     };
     const vigaPropsAt = (floor: number) => {
       const b = vigaB_piso[floor] ?? p.vigaB, h = vigaH_piso[floor] ?? p.vigaH;
-      return { A: b*h, Iz: (b*h**3)/12, Iy: (h*b**3)/12, J: 0.21 * Math.pow(Math.min(b,h), 3) * Math.max(b,h) };
+      // FIX flexión viga: viga horizontal → Iy gobierna flexión VERTICAL (canto³ va en Iy).
+      // Antes Iz=b·h³ → las vigas resistían gravedad/deriva con el eje débil → deriva sobrestimada.
+      return { A: b*h, Iy: (b*h**3)/12, Iz: (h*b**3)/12, J: 0.21 * Math.pow(Math.min(b,h), 3) * Math.max(b,h) };
     };
 
     const matColE = p.matCol < 0.5 ? Ec : Es;

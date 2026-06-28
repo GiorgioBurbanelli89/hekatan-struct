@@ -76,7 +76,8 @@ export const edificioFrameNec: ExampleDef = {
     // Secciones
     const cA = p.colB * p.colH, cIz = p.colB * p.colH ** 3 / 12, cIy = p.colH * p.colB ** 3 / 12;
     const cJ = 0.14 * Math.pow(Math.min(p.colB, p.colH), 4);
-    const vA = p.vigaB * p.vigaH, vIz = p.vigaB * p.vigaH ** 3 / 12, vIy = p.vigaH * p.vigaB ** 3 / 12;
+    // FIX flexión viga: viga horizontal → Iy gobierna flexión VERTICAL (canto³ en Iy, no en Iz)
+    const vA = p.vigaB * p.vigaH, vIy = p.vigaB * p.vigaH ** 3 / 12, vIz = p.vigaH * p.vigaB ** 3 / 12;
     const vJ = 0.21 * Math.pow(Math.min(p.vigaB, p.vigaH), 3) * Math.max(p.vigaB, p.vigaH);
 
     const E = new Map<number, number>(), G = new Map<number, number>(), A = new Map<number, number>();
