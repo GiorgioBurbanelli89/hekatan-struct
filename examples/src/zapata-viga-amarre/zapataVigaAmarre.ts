@@ -100,10 +100,10 @@ export const zapataVigaAmarre: ExampleDef = {
       hiddenIf: (p) => (p.useLive ?? 1) < 0.5,
       description: "Momento vivo en eje Y de Columna 2." },
     // ── 🔧 Mallado FEM ───────────────────────────────────────────
-    nSubX: { default: 4, min: 2, max: 8, step: 1, label: "nx subdivisiones", folder: "🔧 Mallado FEM",
-      description: "Número de subdivisiones del mesh shell Q4 en dirección X. Más subdivisiones = más precisión pero mayor cómputo. Típico 4-8." },
-    nSubY: { default: 4, min: 2, max: 8, step: 1, label: "ny subdivisiones", folder: "🔧 Mallado FEM",
-      description: "Subdivisiones en dirección Y. Típico 4-8." },
+    nSubX: { default: 8, min: 2, max: 12, step: 1, label: "nx subdivisiones", folder: "🔧 Mallado FEM",
+      description: "Subdivisiones del mesh Q4 en X. El pico del borde de la medianera es SINGULAR: con 4×4 se subestima (~18); con 8×8 llega a ~26 como el libro (validado nodo-a-nodo vs SAFE)." },
+    nSubY: { default: 8, min: 2, max: 12, step: 1, label: "ny subdivisiones", folder: "🔧 Mallado FEM",
+      description: "Subdivisiones en Y. 8×8 reproduce el pico del libro (24-26 t/m²); 4×4 lo subestima." },
   },
   build(p, states) {
     const Lz1 = p.Lz1, Bz1 = p.Bz1, Lv = p.Lv, Bv = p.Bv, Hv = p.Hv;
@@ -135,7 +135,10 @@ export const zapataVigaAmarre: ExampleDef = {
     const yViga = yC1;  // la viga es horizontal en Y centro
 
     function buildGridX(xMin: number, xMax: number, forced: number[], nSub: number): number[] {
-      const all = [xMin, ...forced.filter((x) => x > xMin && x < xMax), xMax].sort((a, b) => a - b);
+      const raw = [xMin, ...forced.filter((x) => x > xMin && x < xMax), xMax].sort((a, b) => a - b);
+      // dedup con tolerancia: si se fuerzan 2 líneas casi iguales (yC1≈yViga) se duplicaba
+      // la fila → shells degenerados. Lo evitamos.
+      const all = raw.filter((x, i) => i === 0 || x - raw[i - 1] > 1e-6);
       const out: number[] = [];
       for (let i = 0; i < all.length - 1; i++) {
         const a = all[i], b = all[i + 1];
