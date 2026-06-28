@@ -82,7 +82,7 @@ import { v as pi, __tla as __tla_70 } from "./vigaFlexionConcreteCantilever-CsSF
 import { v as mi, __tla as __tla_71 } from "./vigaFlexionSteelCantilever-CO6hKFvA.js";
 import { v as ui, __tla as __tla_72 } from "./vigaFlexionCompositeSlabCantilever-C-q-a33E.js";
 import { v as fi, __tla as __tla_73 } from "./vigaFlexionCompositeEncasedCantilever-C52w6uu0.js";
-import { p as hi, __tla as __tla_74 } from "./portico2D-D2I1fM4u.js";
+import { p as hi, __tla as __tla_74 } from "./portico2D-DzAmk22I.js";
 import { c as gi, __tla as __tla_75 } from "./cerramiento-CYiZLPEB.js";
 import { t as xi, __tla as __tla_76 } from "./tower3D-DatbyvO5.js";
 import { g as yi, __tla as __tla_77 } from "./galpon-CXUfDNYT.js";

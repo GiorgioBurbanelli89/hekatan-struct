@@ -6771,7 +6771,7 @@ let __tla = Promise.all([
           b: s,
           h: d,
           name: `BR${o}`
-        })) : (j.set(R, S), N.set(R, x), Q.set(R, z), ee.set(R, O), de.set(R, {
+        })) : (j.set(R, S), N.set(R, z), Q.set(R, x), ee.set(R, O), de.set(R, {
           type: "rect",
           b: a,
           h: i,
@@ -7025,7 +7025,7 @@ VIEW:
           b: i,
           h: p,
           name: `COL${s}`
-        })) : (Q.set(W, z), ee.set(W, O), de.set(W, D), be.set(W, Y), R.set(W, {
+        })) : (Q.set(W, z), ee.set(W, D), de.set(W, O), be.set(W, Y), R.set(W, {
           type: "rect",
           b: r,
           h: c,
