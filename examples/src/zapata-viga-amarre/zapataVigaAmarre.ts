@@ -221,18 +221,12 @@ export const zapataVigaAmarre: ExampleDef = {
     // La transferencia de momento Col1→Col2 va: Col1 P+M → pedestal →
     // nCol1Bot → viga frame directa → nCol2Bot → pedestal → Col2.
     // Los rigid links de la columna al shell distribuyen carga al slab.
+    // SIN PEDESTAL (como SAFE, Fig.163): la carga de columna va DIRECTO sobre el slab,
+    // en la huella stiff (z=0). El pedestal elevado dispersaba la excentricidad y aplanaba
+    // el pico de la medianera. La rigidez de la columna queda dada por los rigid-links
+    // (la zona stiff de 0.5m), igual que el "Stiff Footing" de SAFE.
     const nCol1Bot = addNode(xC1, yC1, 0);
-    const nCol1Top = addNode(xC1, yC1, Hp);
     const nCol2Bot = addNode(xC2, yC2, 0);
-    const nCol2Top = addNode(xC2, yC2, Hp);
-    for (const [a, b] of [[nCol1Bot, nCol1Top], [nCol2Bot, nCol2Top]]) {
-      const e = elsEl.length;
-      elsEl.push([a, b]);
-      elasticities.set(e, Ec); poissons.set(e, nu_c); Gm.set(e, Gc);
-      areas.set(e, bc * bc); Iz.set(e, bc ** 4 / 12); Iy.set(e, bc ** 4 / 12);
-      J.set(e, 0.14 * bc ** 4); densities.set(e, rho);
-      sections.set(e, { type: "rect", b: bc, h: bc });
-    }
     // Viga de amarre — DE COLUMNA A COLUMNA, SUBDIVIDIDA por nodos del slab.
     //
     // Topología: la viga atraviesa Z1 (de x=0 a x=Lz1), salta el gap entre
@@ -303,8 +297,8 @@ export const zapataVigaAmarre: ExampleDef = {
     const nLinks2 = addRigidLinks(nCol2Bot, xC2, yC2, xs2, ys2, idx2);
     console.log(`[Rigid links] Col1:${nLinks1} Col2:${nLinks2}  (viga col-a-col directa nCol1Bot↔nCol2Bot)`);
 
-    loads.set(nCol1Top, [0, 0, -P1, M1x, M1y, 0]);
-    loads.set(nCol2Top, [0, 0, -P2, M2x, M2y, 0]);
+    loads.set(nCol1Bot, [0, 0, -P1, M1x, M1y, 0]);
+    loads.set(nCol2Bot, [0, 0, -P2, M2x, M2y, 0]);
 
     // ── Winkler SSI completo: resortes en X, Y, Z en cada nodo ──
     // kh = ks_horizontal ≈ 0.5 × ks_vertical (fricción suelo-zapata tipo Bowles).
