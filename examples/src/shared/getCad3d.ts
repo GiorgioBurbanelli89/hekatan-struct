@@ -1080,7 +1080,8 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
       // Section properties
       const colA = colB * colH, colIz = colB * colH ** 3 / 12, colIy = colH * colB ** 3 / 12;
       const colJ = colB * colH * (colB ** 2 + colH ** 2) / 12;
-      const vigaA = vigaB * vigaH, vigaIz = vigaB * vigaH ** 3 / 12, vigaIy = vigaH * vigaB ** 3 / 12;
+      // viga horizontal → eje fuerte (canto³) va en momentsOfInertiaY (gobierna flexión vertical)
+      const vigaA = vigaB * vigaH, vigaIy = vigaB * vigaH ** 3 / 12, vigaIz = vigaH * vigaB ** 3 / 12;
       const vigaJ = vigaB * vigaH * (vigaB ** 2 + vigaH ** 2) / 12;
 
       const elasticities = new Map<number, number>();
@@ -1412,7 +1413,8 @@ VIEW:
       // Section properties
       const colA = colB * colH, colIz = colB * colH ** 3 / 12, colIy = colH * colB ** 3 / 12;
       const colJ = colB * colH * (colB ** 2 + colH ** 2) / 12;
-      const vigaA = vigaB * vigaH, vigaIz = vigaB * vigaH ** 3 / 12, vigaIy = vigaH * vigaB ** 3 / 12;
+      // viga horizontal → eje fuerte (canto³) va en momentsOfInertiaY (gobierna flexión vertical)
+      const vigaA = vigaB * vigaH, vigaIy = vigaB * vigaH ** 3 / 12, vigaIz = vigaH * vigaB ** 3 / 12;
       const vigaJ = vigaB * vigaH * (vigaB ** 2 + vigaH ** 2) / 12;
 
       // Build elementInputs

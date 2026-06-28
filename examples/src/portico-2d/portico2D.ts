@@ -86,8 +86,10 @@ export const portico2D: ExampleDef = {
     const nu = p.mat < 0.5 ? nu_c : nu_s;
     const rho = p.mat < 0.5 ? rho_c : rho_s;
     const cA = p.colB * p.colH;
-    const cIz = (p.colB * p.colH ** 3) / 12;
-    const cIy = (p.colH * p.colB ** 3) / 12;
+    // Marco 2D en plano X-Z, carga lateral Ex → la columna resiste el sway EN EL PLANO (X)
+    // con Iy (columna vertical: local_z=-X → Iy gobierna X-sway). El canto fuerte va en Iy.
+    const cIy = (p.colB * p.colH ** 3) / 12;   // FUERTE (canto³) → sway en el plano (X)
+    const cIz = (p.colH * p.colB ** 3) / 12;   // débil → sway fuera del plano (Y, sin carga)
     const cJ = 0.14 * Math.pow(Math.min(p.colB, p.colH), 4);
     const vA = p.vigaB * p.vigaH;
     // FIX flexión viga: viga horizontal → local_z=global Z, Iy gobierna la flexión VERTICAL.
