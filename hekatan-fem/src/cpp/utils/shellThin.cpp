@@ -225,9 +225,12 @@ static Eigen::MatrixXd getBendingK_DKE(const double x[4], const double y[4],
         }
         K += (B.transpose()*D*B)*a_h*b_h;   // pesos Gauss = 1
     }
-    // T_bend: mapear DKE natural [w,bx,by] → shell [w,rx,ry]  (CLAVE — el bug previo)
+    // T_bend: mapear DKE natural [w,bx,by] → shell [w,rx,ry].
+    // SIGNO INVERTIDO vs el .m: Hekatan define la convención de rotación con el MZC
+    // (θx=∂w/∂y, θy=-∂w/∂x); el T_bend del .m da el signo OPUESTO → acople w-rot invertido
+    // → −41% en mesa-torsión. Verificado numéricamente: este T_bend matchea los signos del MZC.
     Eigen::MatrixXd Tf=Eigen::MatrixXd::Zero(12,12);
-    Eigen::Matrix3d Tb; Tb<<1,0,0, 0,0,1, 0,-1,0;
+    Eigen::Matrix3d Tb; Tb<<1,0,0, 0,0,-1, 0,1,0;
     for (int n=0;n<4;n++) Tf.block<3,3>(3*n,3*n)=Tb;
     return Tf.transpose()*K*Tf;
 }
