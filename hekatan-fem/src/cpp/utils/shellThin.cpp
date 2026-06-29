@@ -178,6 +178,63 @@ static Eigen::MatrixXd getBendingK_MZC(const double x[4], const double y[4],
     return K;
 }
 
+// ─── DKQ-Batoz Plate Bending (12×12) — el elemento EXACTO de ETABS/SAFE ShellThin ──
+// Discrete Kirchhoff Quadrilateral (Batoz & Tahar 1982). Capturado del binario CsiGo2
+// (csi-debug: B de flexión = DKQ-Batoz, no MZC). Validado vs SAP2000 en python_dkq.py.
+// DOFs por nodo: [w, θx, θy] con θx=∂w/∂y, θy=-∂w/∂x (β_x=θy, β_y=-θx) — IGUAL que MZC.
+// Versión rectangular: dx,dy = dimensiones COMPLETAS del elemento.
+static Eigen::MatrixXd dkqBmatrix_ST(double xi, double eta, double dx, double dy)
+{
+    Eigen::MatrixXd B = Eigen::MatrixXd::Zero(3, 12);
+    // Row 1: kappa_x = ∂(βx)/∂x = ∂(θy)/∂x
+    double Rx_w1 =  3.0*xi*(1.0-eta)/(dx*dx),  Rx_t1 = (1.0-eta)*(3.0*xi-1.0)/(2.0*dx);
+    double Rx_w2 = -3.0*xi*(1.0-eta)/(dx*dx),  Rx_t2 = (1.0-eta)*(1.0+3.0*xi)/(2.0*dx);
+    double Rx_w3 = -3.0*xi*(1.0+eta)/(dx*dx),  Rx_t3 = (1.0+eta)*(1.0+3.0*xi)/(2.0*dx);
+    double Rx_w4 =  3.0*xi*(1.0+eta)/(dx*dx),  Rx_t4 = (1.0+eta)*(3.0*xi-1.0)/(2.0*dx);
+    // Row 2: kappa_y = ∂(βy)/∂y = -∂(θx)/∂y
+    double Ry_w1 =  3.0*(1.0-xi)*eta/(dy*dy),  Ry_t1 = (1.0-xi)*(3.0*eta-1.0)/(2.0*dy);
+    double Ry_w2 =  3.0*(1.0+xi)*eta/(dy*dy),  Ry_t2 = (1.0+xi)*(3.0*eta-1.0)/(2.0*dy);
+    double Ry_w3 = -3.0*(1.0+xi)*eta/(dy*dy),  Ry_t3 = (1.0+xi)*(1.0+3.0*eta)/(2.0*dy);
+    double Ry_w4 = -3.0*(1.0-xi)*eta/(dy*dy),  Ry_t4 = (1.0-xi)*(1.0+3.0*eta)/(2.0*dy);
+    // Row 3: 2*kappa_xy
+    double TT = 3.0*(2.0 - xi*xi - eta*eta)/(2.0*dx*dy);
+    double Rxy_bx1 =  (1.0-xi)*(1.0+3.0*xi)/(4.0*dy),  Rxy_by1 =  (1.0-eta)*(1.0+3.0*eta)/(4.0*dx);
+    double Rxy_bx2 =  (1.0+xi)*(1.0-3.0*xi)/(4.0*dy),  Rxy_by2 = -(1.0-eta)*(1.0+3.0*eta)/(4.0*dx);
+    double Rxy_bx3 =  (1.0+xi)*(3.0*xi-1.0)/(4.0*dy),  Rxy_by3 =  (1.0+eta)*(3.0*eta-1.0)/(4.0*dx);
+    double Rxy_bx4 = -(1.0-xi)*(1.0+3.0*xi)/(4.0*dy),  Rxy_by4 =  (1.0+eta)*(1.0-3.0*eta)/(4.0*dx);
+    // Row 1: [Rx_w, 0, Rx_t] por nodo
+    B(0,0)=Rx_w1; B(0,2)=Rx_t1; B(0,3)=Rx_w2; B(0,5)=Rx_t2;
+    B(0,6)=Rx_w3; B(0,8)=Rx_t3; B(0,9)=Rx_w4; B(0,11)=Rx_t4;
+    // Row 2: [Ry_w, -Ry_t, 0] por nodo
+    B(1,0)=Ry_w1; B(1,1)=-Ry_t1; B(1,3)=Ry_w2; B(1,4)=-Ry_t2;
+    B(1,6)=Ry_w3; B(1,7)=-Ry_t3; B(1,9)=Ry_w4; B(1,10)=-Ry_t4;
+    // Row 3: [±TT, -Rxy_by, Rxy_bx] por nodo
+    B(2,0)= TT; B(2,1)=-Rxy_by1; B(2,2)=Rxy_bx1;  B(2,3)=-TT; B(2,4)=-Rxy_by2; B(2,5)=Rxy_bx2;
+    B(2,6)= TT; B(2,7)=-Rxy_by3; B(2,8)=Rxy_bx3;  B(2,9)=-TT; B(2,10)=-Rxy_by4; B(2,11)=Rxy_bx4;
+    return B;
+}
+
+static Eigen::MatrixXd getBendingK_DKQ_Batoz(const double x[4], const double y[4],
+                                              double E, double nu, double t)
+{
+    double xmin=x[0],xmax=x[0],ymin=y[0],ymax=y[0];
+    for (int i=1;i<4;i++){ if(x[i]<xmin)xmin=x[i]; if(x[i]>xmax)xmax=x[i];
+                           if(y[i]<ymin)ymin=y[i]; if(y[i]>ymax)ymax=y[i]; }
+    double dx = xmax - xmin, dy = ymax - ymin;   // dimensiones COMPLETAS
+    double D0 = E*t*t*t/(12.0*(1.0-nu*nu));
+    Eigen::Matrix3d D;
+    D << D0, D0*nu, 0,  D0*nu, D0, 0,  0, 0, D0*(1.0-nu)/2.0;
+    double g = 1.0/std::sqrt(3.0);
+    double gp[2] = {-g, g};
+    double Jdet = (dx/2.0)*(dy/2.0);
+    Eigen::MatrixXd K = Eigen::MatrixXd::Zero(12,12);
+    for (int ix=0; ix<2; ix++) for (int iy=0; iy<2; iy++) {
+        Eigen::MatrixXd B = dkqBmatrix_ST(gp[ix], gp[iy], dx, dy);
+        K += B.transpose() * D * B * Jdet;   // pesos Gauss = 1
+    }
+    return K;
+}
+
 // ─── Public API: 24×24 K matrix para Shell-Thin element ────────────────────
 // Ensamble: Membrane (Ux, Uy) + MZC Bending (Uz, Rx, Ry) + drilling penalty (Rz)
 Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
@@ -224,7 +281,7 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
     double bFactor = getMapValST(elementInputs.bendingModifiers, index, 1.0);
 
     Eigen::MatrixXd Km = getMembraneK_Thin(x, y, E, nu, t);   // 8×8
-    Eigen::MatrixXd Kb = getBendingK_MZC(x, y, E, nu, t);     // 12×12 Kirchhoff
+    Eigen::MatrixXd Kb = getBendingK_DKQ_Batoz(x, y, E, nu, t); // 12×12 DKQ-Batoz (= ETABS/SAFE ShellThin)
     Km *= mFactor;
     Kb *= bFactor;
 
