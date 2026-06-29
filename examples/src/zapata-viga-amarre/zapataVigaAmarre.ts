@@ -349,16 +349,15 @@ export const zapataVigaAmarre: ExampleDef = {
     states.nodes.val = N.map((n) => [n[0], n[1], n[2]] as Node);
     states.elements.val = elsEl;
     states.nodeInputs.val = { supports, loads };
-    // Usar Shell-Thin DKQ-Batoz (= el elemento EXACTO de SAFE ShellThin) en las zapatas,
-    // en vez del default Mindlin (shellQ4). Cierra el residuo ~7% de presión vs SAFE.
-    const plateFormulations = new Map<number, number>();
-    for (const e of thicknesses.keys()) plateFormulations.set(e, 1);
+    // Elemento: Mindlin-Reissner (shellQ4, default). SAFE/ETABS ShellThin TAMBIÉN tiene
+    // cortante Mindlin (capturado del binario: G·t·5/6 = 88005.7), NO es Kirchhoff puro.
+    // El Mindlin de Hekatan ya matchea σ_max de SAFE (24.1 vs 24.18, 0.4%). El DKQ thin
+    // (sin cortante) sobre-rigidiza la zapata gruesa (h/L=0.23) → descartado.
     states.elementInputs.val = {
       elasticities, poissonsRatios: poissons,
       areas, momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy,
       torsionalConstants: J, shearModuli: Gm,
       thicknesses, densities, sectionShapes: sections,
-      plateFormulations,
     };
     try {
       states.deformOutputs.val = deform(
