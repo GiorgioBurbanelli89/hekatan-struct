@@ -9582,7 +9582,7 @@ solve`, v();
             const $ = await F.text();
             if (A === "f2k") {
               const { parseEdificioCimentacionF2k: S } = await Lt(async () => {
-                const { parseEdificioCimentacionF2k: G } = await import("./f2kCimentacionImporter-By4w3rir.js");
+                const { parseEdificioCimentacionF2k: G } = await import("./f2kCimentacionImporter-ChNV1Qr2.js");
                 return {
                   parseEdificioCimentacionF2k: G
                 };
@@ -10314,7 +10314,7 @@ Activ\xE1 Deformed shape para ver la deformaci\xF3n.`), console.log(`[FEM Cim] $
               const H = (_a3 = j.target.files) == null ? void 0 : _a3[0];
               if (H) try {
                 const G = await H.text(), { parseEdificioCimentacionF2k: ee } = await Lt(async () => {
-                  const { parseEdificioCimentacionF2k: xe } = await import("./f2kCimentacionImporter-By4w3rir.js");
+                  const { parseEdificioCimentacionF2k: xe } = await import("./f2kCimentacionImporter-ChNV1Qr2.js");
                   return {
                     parseEdificioCimentacionF2k: xe
                   };
