@@ -281,7 +281,7 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
     double bFactor = getMapValST(elementInputs.bendingModifiers, index, 1.0);
 
     Eigen::MatrixXd Km = getMembraneK_Thin(x, y, E, nu, t);   // 8×8
-    Eigen::MatrixXd Kb = getBendingK_DKQ_Batoz(x, y, E, nu, t); // 12×12 DKQ-Batoz (= ETABS/SAFE ShellThin)
+    Eigen::MatrixXd Kb = getBendingK_MZC(x, y, E, nu, t);     // 12×12 Kirchhoff (validado mesa-torsión)
     Km *= mFactor;
     Kb *= bFactor;
 
