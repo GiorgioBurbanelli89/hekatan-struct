@@ -1,4 +1,4 @@
-import { z as a, __tla as __tla_0 } from "./zapataVigaAmarre-C3yYRYBR.js";
+import { z as a, __tla as __tla_0 } from "./zapataVigaAmarre-DuPWrkc6.js";
 let u;
 let __tla = Promise.all([
   (() => {
@@ -23,7 +23,7 @@ let __tla = Promise.all([
     guide: [
       "EJ.6 Guerra MDI pag.113-130. Zapata unida con viga de amarre.",
       "Zapata 1 (medianera): 2.38\xD73.00m. Zapata 2 (interna): 2.45\xD72.45m.",
-      "Viga amarre Lv=1.64m, Bv=0.45m, Hv=0.95m. h_zapatas=0.51m.",
+      "Viga amarre Lv=1.64m, Bv=0.45m, Hv=0.95m. h_zapatas=0.55m.",
       "Cargas: Col1 P=110t (D=70+L=40). Col2 P=140t (D=89+L=51).",
       "f'c=210 kg/cm\xB2, q_adm=19 t/m\xB2, ks=3820 t/m\xB3.",
       "Libro Fig.180: \u03C3_max=26.179 t/m\xB2 (Z1 borde ext, col lindero)."
@@ -41,7 +41,7 @@ let __tla = Promise.all([
       }),
       Lz2: r(a.params.Lz2, 2.45),
       Bz2: r(a.params.Bz2, 2.45),
-      tz: r(a.params.tz, 0.51),
+      tz: r(a.params.tz, 0.55),
       bc: r(a.params.bc, 0.5),
       Hp: r(a.params.Hp, 0.5, {
         min: 0.01,
