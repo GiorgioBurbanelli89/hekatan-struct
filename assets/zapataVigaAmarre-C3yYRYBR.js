@@ -13,7 +13,7 @@ let __tla = Promise.all([
   })()
 ]).then(async () => {
   let ae, oe, Xe, ke, ya, ka, Ye, Ia, wa, Na;
-  ae = 25e6;
+  ae = 2004e4;
   oe = 0.2;
   Xe = ae / (2 * (1 + oe));
   ke = 24;
