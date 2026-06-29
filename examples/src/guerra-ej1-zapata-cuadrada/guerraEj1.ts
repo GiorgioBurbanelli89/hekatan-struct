@@ -170,7 +170,17 @@ export const guerraEj1ZapataCuadrada: ExampleDef = {
     const N3D: [number, number, number][] = nodes.map(n => [n[0], n[1], 0]);
     states.nodes.val = N3D;
     states.elements.val = elements as unknown as number[][];
-    states.nodeInputs.val = { supports: new Map(), loads: new Map() };
+    // Poblar loads para que el VIEWER dibuje las flechas de carga de columna.
+    // El solver recibe las cargas por pointLoads; esto es solo para visualización.
+    // Convención plateQ4 {w,bx,by}=dof 0,1,2 → viewer [Fx,Fy,Fz,Mx,My,Mz]: 0→Fz,1→Mx,2→My.
+    const viewerLoads = new Map<number, [number, number, number, number, number, number]>();
+    const dofToViewer = [2, 3, 4];
+    for (const cl of columnLoads) {
+      const c = viewerLoads.get(cl.node) ?? [0, 0, 0, 0, 0, 0] as [number, number, number, number, number, number];
+      c[dofToViewer[cl.dof] ?? 2] += cl.value;
+      viewerLoads.set(cl.node, c);
+    }
+    states.nodeInputs.val = { supports: new Map(), loads: viewerLoads };
     states.elementInputs.val = {
       elasticities: new Map(elements.map((_, i) => [i, E_kNm2])),
       poissonsRatios: new Map(elements.map((_, i) => [i, nu])),
