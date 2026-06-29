@@ -178,61 +178,58 @@ static Eigen::MatrixXd getBendingK_MZC(const double x[4], const double y[4],
     return K;
 }
 
-// ─── DKQ-Batoz Plate Bending (12×12) — el elemento EXACTO de ETABS/SAFE ShellThin ──
-// Discrete Kirchhoff Quadrilateral (Batoz & Tahar 1982). Capturado del binario CsiGo2
-// (csi-debug: B de flexión = DKQ-Batoz, no MZC). Validado vs SAP2000 en python_dkq.py.
-// DOFs por nodo: [w, θx, θy] con θx=∂w/∂y, θy=-∂w/∂x (β_x=θy, β_y=-θx) — IGUAL que MZC.
-// Versión rectangular: dx,dy = dimensiones COMPLETAS del elemento.
-static Eigen::MatrixXd dkqBmatrix_ST(double xi, double eta, double dx, double dy)
-{
-    Eigen::MatrixXd B = Eigen::MatrixXd::Zero(3, 12);
-    // Row 1: kappa_x = ∂(βx)/∂x = ∂(θy)/∂x
-    double Rx_w1 =  3.0*xi*(1.0-eta)/(dx*dx),  Rx_t1 = (1.0-eta)*(3.0*xi-1.0)/(2.0*dx);
-    double Rx_w2 = -3.0*xi*(1.0-eta)/(dx*dx),  Rx_t2 = (1.0-eta)*(1.0+3.0*xi)/(2.0*dx);
-    double Rx_w3 = -3.0*xi*(1.0+eta)/(dx*dx),  Rx_t3 = (1.0+eta)*(1.0+3.0*xi)/(2.0*dx);
-    double Rx_w4 =  3.0*xi*(1.0+eta)/(dx*dx),  Rx_t4 = (1.0+eta)*(3.0*xi-1.0)/(2.0*dx);
-    // Row 2: kappa_y = ∂(βy)/∂y = -∂(θx)/∂y
-    double Ry_w1 =  3.0*(1.0-xi)*eta/(dy*dy),  Ry_t1 = (1.0-xi)*(3.0*eta-1.0)/(2.0*dy);
-    double Ry_w2 =  3.0*(1.0+xi)*eta/(dy*dy),  Ry_t2 = (1.0+xi)*(3.0*eta-1.0)/(2.0*dy);
-    double Ry_w3 = -3.0*(1.0+xi)*eta/(dy*dy),  Ry_t3 = (1.0+xi)*(1.0+3.0*eta)/(2.0*dy);
-    double Ry_w4 = -3.0*(1.0-xi)*eta/(dy*dy),  Ry_t4 = (1.0-xi)*(1.0+3.0*eta)/(2.0*dy);
-    // Row 3: 2*kappa_xy
-    double TT = 3.0*(2.0 - xi*xi - eta*eta)/(2.0*dx*dy);
-    double Rxy_bx1 =  (1.0-xi)*(1.0+3.0*xi)/(4.0*dy),  Rxy_by1 =  (1.0-eta)*(1.0+3.0*eta)/(4.0*dx);
-    double Rxy_bx2 =  (1.0+xi)*(1.0-3.0*xi)/(4.0*dy),  Rxy_by2 = -(1.0-eta)*(1.0+3.0*eta)/(4.0*dx);
-    double Rxy_bx3 =  (1.0+xi)*(3.0*xi-1.0)/(4.0*dy),  Rxy_by3 =  (1.0+eta)*(3.0*eta-1.0)/(4.0*dx);
-    double Rxy_bx4 = -(1.0-xi)*(1.0+3.0*xi)/(4.0*dy),  Rxy_by4 =  (1.0+eta)*(1.0-3.0*eta)/(4.0*dx);
-    // Row 1: [Rx_w, 0, Rx_t] por nodo
-    B(0,0)=Rx_w1; B(0,2)=Rx_t1; B(0,3)=Rx_w2; B(0,5)=Rx_t2;
-    B(0,6)=Rx_w3; B(0,8)=Rx_t3; B(0,9)=Rx_w4; B(0,11)=Rx_t4;
-    // Row 2: [Ry_w, -Ry_t, 0] por nodo
-    B(1,0)=Ry_w1; B(1,1)=-Ry_t1; B(1,3)=Ry_w2; B(1,4)=-Ry_t2;
-    B(1,6)=Ry_w3; B(1,7)=-Ry_t3; B(1,9)=Ry_w4; B(1,10)=-Ry_t4;
-    // Row 3: [±TT, -Rxy_by, Rxy_bx] por nodo
-    B(2,0)= TT; B(2,1)=-Rxy_by1; B(2,2)=Rxy_bx1;  B(2,3)=-TT; B(2,4)=-Rxy_by2; B(2,5)=Rxy_bx2;
-    B(2,6)= TT; B(2,7)=-Rxy_by3; B(2,8)=Rxy_bx3;  B(2,9)=-TT; B(2,10)=-Rxy_by4; B(2,11)=Rxy_bx4;
-    return B;
+// ─── DKE Plate Bending (12×12) — el elemento EXACTO de ETABS/SAFE ShellThin ──
+// Discrete Kirchhoff Element (Batoz & Tahar 1982 = Wilson Ch8). Funciones de forma
+// Q8 Serendipity. DOFs naturales [w, bx=∂w/∂x, by=∂w/∂y], luego transformados al
+// shell [w, rx, ry] vía T_bend. Portado de mesa_dke.py — VALIDADO vs ETABS (Live
+// M2 −3.4%, V3 +0.2%, T +4%) Y vs el C++ aislado al 5to decimal (K[0,0]=15070.40895).
+// EL T_bend ES CLAVE: sin él, los DOF quedan swapeados → −41% (bug del intento previo).
+static void dNq_dxi_DKE(double x, double y, double dN[8]) {
+    dN[0]=(1-y)*(2*x+y)/4; dN[1]=(1-y)*(2*x-y)/4; dN[2]=(1+y)*(2*x+y)/4; dN[3]=(1+y)*(2*x-y)/4;
+    dN[4]=-x*(1-y); dN[5]=(1-y*y)/2; dN[6]=-x*(1+y); dN[7]=-(1-y*y)/2;
 }
-
-static Eigen::MatrixXd getBendingK_DKQ_Batoz(const double x[4], const double y[4],
-                                              double E, double nu, double t)
+static void dNq_deta_DKE(double x, double y, double dN[8]) {
+    dN[0]=(1-x)*(x+2*y)/4; dN[1]=(1+x)*(-x+2*y)/4; dN[2]=(1+x)*(x+2*y)/4; dN[3]=(1-x)*(-x+2*y)/4;
+    dN[4]=-(1-x*x)/2; dN[5]=-y*(1+x); dN[6]=(1-x*x)/2; dN[7]=-y*(1-x);
+}
+static double Hx_sw_DKE(int j, const double dN[8], double c_a) { switch(j){
+    case 1:return -c_a*dN[4]; case 2:return dN[0]-0.25*dN[4]+0.5*dN[7]; case 3:return 0; case 4:return c_a*dN[4];
+    case 5:return dN[1]-0.25*dN[4]+0.5*dN[5]; case 6:return 0; case 7:return c_a*dN[6]; case 8:return dN[2]+0.5*dN[5]-0.25*dN[6];
+    case 9:return 0; case 10:return -c_a*dN[6]; case 11:return dN[3]-0.25*dN[6]+0.5*dN[7]; case 12:return 0;} return 0;
+}
+static double Hy_sw_DKE(int j, const double dN[8], double c_b) { switch(j){
+    case 1:return -c_b*dN[7]; case 2:return 0; case 3:return dN[0]+0.5*dN[4]-0.25*dN[7]; case 4:return -c_b*dN[5];
+    case 5:return 0; case 6:return dN[1]+0.5*dN[4]-0.25*dN[5]; case 7:return c_b*dN[5]; case 8:return 0;
+    case 9:return dN[2]-0.25*dN[5]+0.5*dN[6]; case 10:return c_b*dN[7]; case 11:return 0; case 12:return dN[3]+0.5*dN[6]-0.25*dN[7];} return 0;
+}
+static Eigen::MatrixXd getBendingK_DKE(const double x[4], const double y[4],
+                                        double E, double nu, double t)
 {
     double xmin=x[0],xmax=x[0],ymin=y[0],ymax=y[0];
     for (int i=1;i<4;i++){ if(x[i]<xmin)xmin=x[i]; if(x[i]>xmax)xmax=x[i];
                            if(y[i]<ymin)ymin=y[i]; if(y[i]>ymax)ymax=y[i]; }
-    double dx = xmax - xmin, dy = ymax - ymin;   // dimensiones COMPLETAS
-    double D0 = E*t*t*t/(12.0*(1.0-nu*nu));
-    Eigen::Matrix3d D;
-    D << D0, D0*nu, 0,  D0*nu, D0, 0,  0, 0, D0*(1.0-nu)/2.0;
-    double g = 1.0/std::sqrt(3.0);
-    double gp[2] = {-g, g};
-    double Jdet = (dx/2.0)*(dy/2.0);
-    Eigen::MatrixXd K = Eigen::MatrixXd::Zero(12,12);
-    for (int ix=0; ix<2; ix++) for (int iy=0; iy<2; iy++) {
-        Eigen::MatrixXd B = dkqBmatrix_ST(gp[ix], gp[iy], dx, dy);
-        K += B.transpose() * D * B * Jdet;   // pesos Gauss = 1
+    double dx=xmax-xmin, dy=ymax-ymin;
+    double a_h=dx/2.0, b_h=dy/2.0, c_a=1.5/dx, c_b=1.5/dy;
+    double Df=E*t*t*t/(12.0*(1.0-nu*nu));
+    Eigen::Matrix3d D; D<<Df,Df*nu,0, Df*nu,Df,0, 0,0,Df*(1.0-nu)/2.0;
+    double g=1.0/std::sqrt(3.0); double gp[2]={-g,g};
+    Eigen::MatrixXd K=Eigen::MatrixXd::Zero(12,12);
+    for (int ig=0;ig<2;ig++) for (int jg=0;jg<2;jg++) {
+        double xi=gp[ig], eta=gp[jg]; double dNx[8],dNe[8];
+        dNq_dxi_DKE(xi,eta,dNx); dNq_deta_DKE(xi,eta,dNe);
+        Eigen::MatrixXd B=Eigen::MatrixXd::Zero(3,12);
+        for (int k=1;k<=12;k++){
+            B(0,k-1)=Hx_sw_DKE(k,dNx,c_a)/a_h;
+            B(1,k-1)=Hy_sw_DKE(k,dNe,c_b)/b_h;
+            B(2,k-1)=Hx_sw_DKE(k,dNe,c_a)/b_h + Hy_sw_DKE(k,dNx,c_b)/a_h;
+        }
+        K += (B.transpose()*D*B)*a_h*b_h;   // pesos Gauss = 1
     }
-    return K;
+    // T_bend: mapear DKE natural [w,bx,by] → shell [w,rx,ry]  (CLAVE — el bug previo)
+    Eigen::MatrixXd Tf=Eigen::MatrixXd::Zero(12,12);
+    Eigen::Matrix3d Tb; Tb<<1,0,0, 0,0,1, 0,-1,0;
+    for (int n=0;n<4;n++) Tf.block<3,3>(3*n,3*n)=Tb;
+    return Tf.transpose()*K*Tf;
 }
 
 // ─── Public API: 24×24 K matrix para Shell-Thin element ────────────────────
@@ -281,7 +278,7 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
     double bFactor = getMapValST(elementInputs.bendingModifiers, index, 1.0);
 
     Eigen::MatrixXd Km = getMembraneK_Thin(x, y, E, nu, t);   // 8×8
-    Eigen::MatrixXd Kb = getBendingK_MZC(x, y, E, nu, t);     // 12×12 Kirchhoff (validado mesa-torsión)
+    Eigen::MatrixXd Kb = getBendingK_DKE(x, y, E, nu, t);     // 12×12 DKE (= ETABS/SAFE ShellThin, validado vs ETABS en Python)
     Km *= mFactor;
     Kb *= bFactor;
 
