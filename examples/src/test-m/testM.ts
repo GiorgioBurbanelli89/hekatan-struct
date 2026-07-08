@@ -18,8 +18,34 @@ const REGS: Region[] = ["Costa", "Sierra", "Oriente"];
 
 const E = 2534564, NU = 0.20, RHO = 2.40277, G = E / (2 * (1 + NU));
 const MAXB = 6, MAXF = 8;   // tope de vanos/pisos para los params
+const MAXWALLS = 6;         // tope de muros de corte parametrizados
 
 interface Sys { slab: boolean; walls: boolean; }
+
+// MUROS DE CORTE parametrizados: lee p.nWalls + por-muro (wDir/wLine/wStart/wSpan + off/extra).
+// Cada muro vive en UNA línea del grid y se extiende `span` vanos a toda la altura.
+//   dir=0 → línea X = xC[line], el muro se EXTIENDE EN Y (plano YZ).
+//   dir=1 → línea Y = yC[line], el muro se EXTIENDE EN X (plano XZ).
+// POSICIÓN/LARGO: base por VANOS (start, span) + AJUSTE FINO en metros (off = corre
+//   el muro a lo largo del eje; extra = alarga/acorta el extremo). El muro comparte
+//   los nodos de malla de losa dentro de su tramo → queda conectado al marco.
+// Así se pueden poner varios muros, en ambas direcciones y en cualquier eje
+// (fachadas, núcleos en L/U). El muro #1 default reproduce el muro único previo.
+function wallsFrom(p: any) {
+  const nW = Math.max(0, Math.min((p.nWalls ?? 1) | 0, MAXWALLS));
+  const walls: { dir: number; line: number; start: number; span: number; off: number; extra: number }[] = [];
+  for (let k = 1; k <= nW; k++) {
+    walls.push({
+      dir:   (p[`wDir_${k}`] ?? 0) | 0,
+      line:  (p[`wLine_${k}`] ?? 0) | 0,
+      start: (p[`wStart_${k}`] ?? 0) | 0,
+      span:  Math.max(1, (p[`wSpan_${k}`] ?? 1) | 0),
+      off:   +(p[`wOff_${k}`] ?? 0),     // ajuste fino de POSICIÓN [m]
+      extra: +(p[`wExtra_${k}`] ?? 0),   // ajuste fino de LARGO [m]
+    });
+  }
+  return walls;
+}
 
 // vectores de vanos/alturas desde los params (svx_i, svy_j, sp_k); fallback al default
 function coordsFrom(p: any) {
@@ -65,16 +91,37 @@ function buildEdificio(p: any, states: any, sys: Sys) {
       }
     }
   }
-  // muro de corte (dual): UBICACIÓN parametrizable — sobre la línea X = p.wallX (0..nbx),
-  // arranca en el vano Y = p.wallY0 y ABARCA p.nWallY vanos en Y, toda la altura.
+  // MUROS DE CORTE (dual): N muros parametrizados (ver wallsFrom). Cada muro en una
+  // línea del grid, posición/largo por VANOS + ajuste fino en METROS, toda la altura.
   if (sys.walls) {
-    const wx = Math.max(0, Math.min((p.wallX ?? 0) | 0, nbx));
-    const j0 = Math.max(0, Math.min((p.wallY0 ?? 0) | 0, nby - 1));
-    const nW = Math.max(1, Math.min((p.nWallY ?? 1) | 0, nby - j0));
-    const xw = xC[wx];
-    const ym = meshLine([yC[j0], yC[j0 + nW]]), zm = meshLine(zC);
-    for (let j = 0; j < ym.length - 1; j++) for (let k = 0; k < zm.length - 1; k++) {
-      elements.push([nid(xw, ym[j], zm[k]), nid(xw, ym[j + 1], zm[k]), nid(xw, ym[j + 1], zm[k + 1]), nid(xw, ym[j], zm[k + 1])]); kinds.push("wall");
+    const zm = meshLine(zC);
+    const clampI = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v | 0, hi));
+    for (const w of wallsFrom(p)) {
+      const alongY = w.dir === 0;                 // dir0 = línea X, el muro se extiende en Y
+      const axisC = alongY ? yC : xC;             // coords de las líneas de grid del eje de extensión
+      const axisMesh = alongY ? ym : xm;          // malla fina de la losa en ese eje (para compartir nodos)
+      const axisMax = axisC[axisC.length - 1];
+      const lineMax = alongY ? nbx : nby;         // línea perpendicular (eje del muro)
+      const spanMax = alongY ? nby : nbx;
+      const lineCoord = alongY ? xC[clampI(w.line, 0, lineMax)] : yC[clampI(w.line, 0, lineMax)];
+      const s0 = clampI(w.start, 0, spanMax - 1);
+      const nv = Math.max(1, Math.min(w.span, spanMax - s0));
+      // base por vanos + ajuste fino (off = corre posición, extra = alarga el extremo)
+      let a0 = axisC[s0] + w.off;
+      let a1 = axisC[s0 + nv] + w.off + w.extra;
+      a0 = Math.max(0, Math.min(a0, axisMax));
+      a1 = Math.max(a0 + 0.1, Math.min(a1, axisMax));  // largo mínimo 0.1 m
+      // nodos del muro a lo largo del eje = nodos de malla de losa dentro de (a0,a1) +
+      // extremos exactos → comparte nodos con la losa/vigas (conectado), con largo preciso.
+      const inRange = axisMesh.filter((c: number) => c > a0 + 1e-6 && c < a1 - 1e-6);
+      const axisNodes = [a0, ...inRange, a1];
+      const N4 = (s: number, z: number): [number, number, number] => alongY ? [lineCoord, s, z] : [s, lineCoord, z];
+      for (let j = 0; j < axisNodes.length - 1; j++) for (let k = 0; k < zm.length - 1; k++) {
+        elements.push([
+          nid(...N4(axisNodes[j], zm[k])), nid(...N4(axisNodes[j + 1], zm[k])),
+          nid(...N4(axisNodes[j + 1], zm[k + 1])), nid(...N4(axisNodes[j], zm[k + 1])),
+        ]); kinds.push("wall");
+      }
     }
   }
 
@@ -189,7 +236,7 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
   // sobre los GDL laterales → rápido aun a malla fina). Le damos malla FINA para que el
   // cortante del muro/losa y el periodo converjan a ETABS. Los demás métodos (solver denso
   // completo, o lateralEigen) siguen en malla gruesa por el cap de GDL.
-  const etabsExacto = !p.diafragmaRigido && ((p.modalMethod ?? 1) | 0) === 3;
+  const etabsExacto = !p.diafragmaRigido && ((p.modalMethod ?? 3) | 0) === 3;
   const ms = etabsExacto ? 1.0 : MODAL_MS;
   const dofCap = etabsExacto ? 8000 : MAX_MODAL_DOF;
   try { buildEdificio({ ...p, ms }, states, sys); }
@@ -207,7 +254,7 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
   try {
     const nModes = Math.max(1, (p.nModes ?? 12) | 0);
     // Método modal: 0=autovectores (Eigen) · 1=Eigen + masa faltante (A) · 2=Ritz (B, como ETABS)
-    const metodo = (p.modalMethod ?? 1) | 0;
+    const metodo = (p.modalMethod ?? 3) | 0;
     let out: any;
     if (p.diafragmaRigido) {
       // C) Diafragma rígido (como ETABS): piso condensado a 3 GDL → modos solo
@@ -347,8 +394,11 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
         cmcr,
       };
     } catch (e: any) { console.warn("dinámico espectral:", e?.message); }
+    const metodoTxt = etabsExacto
+      ? `Modal tipo ETABS (masa solo lateral, condensación) en malla ms=${ms}m (${dof} GDL).`
+      : `Modal animado en malla gruesa ms=${ms}m (${dof} GDL).`;
     modalPanel.render(out, { title: label, spectrumHtml, properties: [
-      `Modal animado en malla gruesa ms=${MODAL_MS}m (${dof} GDL). El colormap estático usa malla fina ms=${p.ms}m.`,
+      `${metodoTxt} El colormap estático usa malla fina ms=${p.ms}m.`,
       ...nec, ...dynLines] });
     console.log(`[Test M Modal] ${label} — f₁=${out.frequencies?.[0]?.toFixed(4)} Hz (coarse ${dof} GDL)`);
   } catch (e: any) { console.warn("Modal Test M error:", e?.message); }
@@ -356,14 +406,13 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
 
 // params base (siempre visibles)
 const BASE: Record<string, ParamDef> = {
-  nbx:     { default: 2, min: 1, max: MAXB, step: 1, label: "N° vanos X", folder: "Geometría" },
-  nby:     { default: 2, min: 1, max: MAXB, step: 1, label: "N° vanos Y", folder: "Geometría" },
-  nFloors: { default: 4, min: 1, max: MAXF, step: 1, label: "N° pisos", folder: "Geometría" },
+  nbx:     { default: 2, min: 1, max: MAXB, step: 1, label: "N° vanos X", folder: "Geometría", regenOnChange: true },
+  nby:     { default: 2, min: 1, max: MAXB, step: 1, label: "N° vanos Y", folder: "Geometría", regenOnChange: true },
+  nFloors: { default: 4, min: 1, max: MAXF, step: 1, label: "N° pisos", folder: "Geometría", regenOnChange: true },
   ms:      { default: 0.75, min: 0.5, max: 2.5, step: 0.25, label: "Malla shell [m] (ETABS≈0.6)", folder: "Geometría" },
-  // — Muros de corte (parametrizados: ubicación + ancho + espesor) —
-  wallX:   { default: 0, min: 0, max: MAXB, step: 1, label: "Posición muro (línea X)", folder: "🧱 Muros de corte" },
-  wallY0:  { default: 0, min: 0, max: MAXB, step: 1, label: "Vano Y inicial", folder: "🧱 Muros de corte" },
-  nWallY:  { default: 1, min: 1, max: MAXB, step: 1, label: "Ancho muro (vanos Y)", folder: "🧱 Muros de corte" },
+  // — Muros de corte: N muros parametrizados. Cambiar "N° de muros" agrega/quita
+  //   los sliders por-muro (dirección/línea/vano inicial/ancho) vía dynamicParams.
+  nWalls:  { default: 1, min: 0, max: MAXWALLS, step: 1, label: "N° de muros", folder: "🧱 Muros de corte", regenOnChange: true },
   tWall:   { default: 0.25, min: 0.15, max: 0.40, step: 0.05, label: "Espesor muro [m]", folder: "🧱 Muros de corte" },
   // — Losas —
   tSlab:   { default: 0.20, min: 0.10, max: 0.35, step: 0.01, label: "Espesor losa [m]", folder: "🟦 Losas" },
@@ -384,7 +433,7 @@ const BASE: Record<string, ParamDef> = {
   irregular: { default: 0, boolean: true, label: "¿Irregular? → control 85% (NEC)", folder: "Sísmico NEC" },
   cd:        { default: 5.5, min: 3, max: 6.5, step: 0.5, label: "ASCE Cd (amplif. deriva)", folder: "Sísmico NEC" },
   nModes:    { default: 12, min: 6, max: 60, step: 1, label: "N° de modos (subir si masa <90%)", inModal: true },
-  modalMethod: { default: 1, options: { "Eigen": 0, "Eigen+masa faltante": 1, "Ritz (como ETABS)": 2, "ETABS exacto (masa solo lateral)": 3 }, label: "Método modal (masa ≥90%)", inModal: true },
+  modalMethod: { default: 3, options: { "Eigen": 0, "Eigen+masa faltante": 1, "Ritz (como ETABS)": 2, "ETABS exacto (masa solo lateral)": 3 }, label: "Método modal (masa ≥90%)", inModal: true },
   diafragmaRigido: { default: 0, boolean: true, label: "Diafragma rígido (como ETABS) → ΣU≈100%", inModal: true },
 };
 
@@ -395,6 +444,25 @@ function dynParams(p: Record<string, number>): Record<string, ParamDef> {
   for (let i = 1; i <= nbx; i++) out[`svx_${i}`] = { default: 5, min: 2, max: 9, step: 0.25, label: `Vano X-${i} [m]`, folder: "Vanos X (svx)" };
   for (let j = 1; j <= nby; j++) out[`svy_${j}`] = { default: 5, min: 2, max: 9, step: 0.25, label: `Vano Y-${j} [m]`, folder: "Vanos Y (svy)" };
   for (let k = 1; k <= nF; k++) out[`sp_${k}`] = { default: 3, min: 2.4, max: 4.5, step: 0.05, label: `Piso ${k} h [m]`, folder: "Alturas (sp)" };
+  // ── Muros de corte: 4 sliders por muro (k = 1..nWalls) ──
+  // dirección (en qué plano), línea del grid donde se ancla, vano inicial y ancho (vanos).
+  // DEFAULTS: Muro 1 = idéntico al muro único previo (⟂X, línea 0, 1 vano). Los muros
+  // 2+ se REPARTEN (alternan dirección y cara, ancho = lado completo) para no encimarse:
+  // 2=⟂Y cara 0, 3=⟂X cara lejana, 4=⟂Y cara lejana → L, C, tubo perimetral.
+  const nW = Math.max(0, Math.min((p.nWalls ?? 1) | 0, MAXWALLS));
+  const nbxD = (p.nbx ?? 2) | 0, nbyD = (p.nby ?? 2) | 0;
+  for (let k = 1; k <= nW; k++) {
+    const dirD = k === 1 ? 0 : (k % 2 === 1 ? 0 : 1);            // ⟂X impares, ⟂Y pares
+    const lineMaxD = dirD === 0 ? nbxD : nbyD;
+    const lineD = k === 1 ? 0 : (Math.floor((k - 1) / 2) % 2 === 0 ? 0 : lineMaxD);  // cara 0 / cara lejana
+    const spanD = k === 1 ? 1 : (dirD === 0 ? nbyD : nbxD);      // muros 2+ abarcan el lado completo
+    out[`wDir_${k}`]   = { default: dirD,  options: { "⟂X (se extiende en Y)": 0, "⟂Y (se extiende en X)": 1 }, label: `Muro ${k} · dirección`, folder: "🧱 Muros de corte" };
+    out[`wLine_${k}`]  = { default: lineD, min: 0, max: MAXB, step: 1, label: `Muro ${k} · línea (eje)`, folder: "🧱 Muros de corte" };
+    out[`wStart_${k}`] = { default: 0,     min: 0, max: MAXB, step: 1, label: `Muro ${k} · vano inicial`, folder: "🧱 Muros de corte" };
+    out[`wSpan_${k}`]  = { default: spanD, min: 1, max: MAXB, step: 1, label: `Muro ${k} · ancho (vanos)`, folder: "🧱 Muros de corte" };
+    out[`wOff_${k}`]   = { default: 0,     min: -6, max: 6, step: 0.05, label: `Muro ${k} · ⤺ posición fina [m]`, folder: "🧱 Muros de corte" };
+    out[`wExtra_${k}`] = { default: 0,     min: -6, max: 6, step: 0.05, label: `Muro ${k} · ⟷ largo fino [m]`, folder: "🧱 Muros de corte" };
+  }
   return out;
 }
 
@@ -421,7 +489,7 @@ const e2kSeismicCfg = {
     return {
       points, caseName: "Sismo NEC",
       sfX: 9.80665 * I / R, sfY: 9.80665 * I / R,   // SF = g·I/R (NEC §6.3: V=I·Sa/R·W)
-      modal: { ritz: ((p.modalMethod ?? 1) | 0) === 2, nModes: Math.max(1, (p.nModes ?? 12) | 0) },
+      modal: { ritz: ((p.modalMethod ?? 3) | 0) === 2, nModes: Math.max(1, (p.nModes ?? 12) | 0) },
     };
   },
 };
