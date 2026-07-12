@@ -312,7 +312,16 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
       const storyTable: { piso: number; z: number; Fx: number; Vx: number; delta: number; dM: number; drift: number; ok: boolean }[] = [];
       // ── DERIVAS DE PISO: V estático distribuido en altura → resolver → ΔM = 0.75·R·ΔE ≤ 2% ──
       try {
-        const zl = [...new Set(nodes.map((n: number[]) => +n[2].toFixed(2)))].sort((a: number, b: number) => a - b).filter((z: number) => z > 0.05);
+        // NIVELES DE PISO REALES (no cada nivel de malla): z de las vigas HORIZONTALES
+        // (2 nodos, mismo z) = donde están los diafragmas/losas. Con ms<3 la malla crea
+        // nodos intermedios en z (1,2,…) que NO son pisos → antes repartía W entre ellos
+        // y calculaba la deriva sobre 1 m en vez de la altura de piso (3 m). Ahora la
+        // "deriva de piso" es por piso arquitectónico, como ETABS.
+        const zl = [...new Set(
+          elements
+            .filter((e: number[]) => e.length === 2 && Math.abs(nodes[e[0]][2] - nodes[e[1]][2]) < 1e-6 && nodes[e[0]][2] > 0.05)
+            .map((e: number[]) => +nodes[e[0]][2].toFixed(2))
+        )].sort((a: number, b: number) => a - b);
         const idsAt = (z: number) => nodes.map((n: number[], idx: number) => [n[2], idx]).filter((o: number[]) => Math.abs(o[0] - z) < 0.02).map((o: number[]) => o[1]);
         if (zl.length) {
           const Fx = distribucionVertical(Vest, zl.map(() => W / zl.length), zl, Tap);
