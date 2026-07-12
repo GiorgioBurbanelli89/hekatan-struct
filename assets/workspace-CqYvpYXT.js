@@ -5594,8 +5594,8 @@ ${y}
         const Ae = [];
         try {
           const P = [
-            ...new Set(r.map((w) => +w[2].toFixed(2)))
-          ].sort((w, E) => w - E).filter((w) => w > 0.05), I = (w) => r.map((E, $) => [
+            ...new Set(c.filter((w) => w.length === 2 && Math.abs(r[w[0]][2] - r[w[1]][2]) < 1e-6 && r[w[0]][2] > 0.05).map((w) => +r[w[0]][2].toFixed(2)))
+          ].sort((w, E) => w - E), I = (w) => r.map((E, $) => [
             E[2],
             $
           ]).filter((E) => Math.abs(E[0] - w) < 0.02).map((E) => E[1]);
