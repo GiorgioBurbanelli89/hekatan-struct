@@ -196,7 +196,7 @@ function exportFromRaw(raw: Map<string, string[]>, model: E2kModel): string {
     "LOAD COMBINATIONS",
   ];
 
-  out.push(`$ File exported from Hekatan Struct (round-trip)`);
+  out.push(`$ File exported from Hekatan Struct Lineal (round-trip)`);
   out.push(``);
 
   for (const secName of sectionOrder) {
@@ -274,7 +274,7 @@ function exportFromScratch(input: ExportE2kInput): string {
   lines.push(``);
   lines.push(`$ CONTROLS`);
   lines.push(`  UNITS  "${force}"  "${length}"  "C"  `);
-  lines.push(`  TITLE1  "Hekatan Struct export"  `);
+  lines.push(`  TITLE1  "Hekatan Struct Lineal export"  `);
   if (title) lines.push(`  TITLE2  "${title}"  `);
   // MERGETOL 0.001 (1mm) — match ETABS GUI default, evita over-merge de joints
   // próximos en plan distinto. El 0.1 anterior era loose y podía mergear

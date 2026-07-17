@@ -763,7 +763,7 @@ van.derive(() => {
 
 document.body.append(
   getParameters(parameters), viewerEl,
-  getToolbar({ sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct/blob/main/examples/src/placa-base-cft/main.ts" }),
+  getToolbar({ sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal/blob/main/examples/src/placa-base-cft/main.ts" }),
 );
 
 setTimeout(() => enableDraggableAllPanes(), 200);

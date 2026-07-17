@@ -4,7 +4,7 @@ Hekatan-struct incluye **3 carpetas PowerShell** para extraer resultados
 de los productos CSI vía OAPI sin necesidad de Python ni GUI manual.
 
 ```
-hekatan-struct/
+hekatan-struct-lineal/
 ├── Etabs Powershell/         ← .EDB / .e2k → JSON
 ├── Sap2000 Powershell/       ← .sdb / .s2k → JSON
 └── Safe Powershell/          ← .FDB / .f2k → JSON
@@ -25,14 +25,14 @@ Los 3 launchers aceptan **2 formatos**:
 | SAP2000 | `.sdb` | `.s2k` ⭐ |
 | SAFE | `.FDB` | `.f2k` ⭐ |
 
-**Esto cierra el ciclo con hekatan-struct**:
+**Esto cierra el ciclo con hekatan-struct-lineal**:
 
 ```
-hekatan-struct/examples/    →  exporta .e2k / .s2k / .f2k
+hekatan-struct-lineal/examples/    →  exporta .e2k / .s2k / .f2k
                                        ↓
-hekatan-struct/<X> Powershell/  →  importa, analiza, extrae JSON
+hekatan-struct-lineal/<X> Powershell/  →  importa, analiza, extrae JSON
                                        ↓
-hekatan-struct/examples/    ←  comparador: hekatan-fem vs CSI
+hekatan-struct-lineal/examples/    ←  comparador: hekatan-fem vs CSI
 ```
 
 ## Workflow tipo: 5 pasos
@@ -40,7 +40,7 @@ hekatan-struct/examples/    ←  comparador: hekatan-fem vs CSI
 ### Para edificios (ETABS)
 
 ```
-1. En hekatan-struct workspace:
+1. En hekatan-struct-lineal workspace:
    - Cargar ejemplo "edificio-aporticado" (o cualquier otro edificio)
    - Click "📤 Exportar E2K"
    → genera modelo.e2k
@@ -49,7 +49,7 @@ hekatan-struct/examples/    ←  comparador: hekatan-fem vs CSI
    → ETABS arranca, importa, corre F5 automaticamente
    → genera modelo_results.json (~30-60 segundos)
 
-3. En hekatan-struct workspace:
+3. En hekatan-struct-lineal workspace:
    - Click "📊 Cargar resultados ETABS"
    - Subir modelo_results.json
 
@@ -158,6 +158,6 @@ Si la RAM está apretada:
 
 ## Próximo paso
 
-Implementar parser TS en hekatan-struct browser
+Implementar parser TS en hekatan-struct-lineal browser
 (`examples/src/shared/csiResultsLoader.ts`) que cargue cualquiera de los 3
 JSONs y compare contra `deformOutputs` / `analyzeOutputs` de hekatan-fem.

@@ -12,7 +12,7 @@
 -> SetRestraint(PBase_5) Ux/Uy/Rz = TRUE (suprime modos rígidos horizontales)
 -> 9 pedestales verticales (h=0.5m) compartiendo joint_base/joint_top
 -> 12 cadenas horizontales en z=0 (joint_top compartidos)
--> Save: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\benchmarks\safe\edificio-cimentacion-real\Edificio_Cimentacion_via_API.fdb
+-> Save: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\benchmarks\safe\edificio-cimentacion-real\Edificio_Cimentacion_via_API.fdb
 -> SubModulus override: 105 tonf/m³
 -> Editing 'Joint Assignments - Floor Meshing Option': existing rows=0, headers=['UniqueName', 'IncludeInMesh']
    SetTableForEditingArray ret=(0, 1, <System.String[] object at 0x0000019D5BD87200>, <System.String[] object at 0x0000019D5BD87280>) (added 9 joints)

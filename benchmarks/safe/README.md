@@ -2,7 +2,7 @@
 
 Este directorio documenta cómo automatizar la validación contra **SAFE 20**
 usando su API .NET pública (`SAFEv1.dll`) desde Python (vía pythonnet).
-El script de referencia es `hekatan-struct/cli/safe_api_zapata.py`.
+El script de referencia es `hekatan-struct-lineal/cli/safe_api_zapata.py`.
 
 ## ¿Por qué API y no manual?
 
@@ -274,7 +274,7 @@ El script genera `safe_zapata_result.json` con el mismo schema que
 `hekatan_zapata_result.json`. Para comparar manualmente:
 
 ```bash
-cd hekatan-struct/cli
+cd hekatan-struct-lineal/cli
 diff <(jq .results.samples_9pts hekatan_zapata_result.json) \
      <(jq .results.samples_9pts safe_zapata_result.json)
 ```

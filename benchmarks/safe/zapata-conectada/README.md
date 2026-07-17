@@ -31,7 +31,7 @@ viga de amarre, pero modelado en plate-only (sin frames separados).
 ## Reproducir
 
 ```bash
-cd hekatan-struct/benchmarks/safe/zapata-conectada
+cd hekatan-struct-lineal/benchmarks/safe/zapata-conectada
 npx tsx ./cli_conectada.mjs --json=hekatan_conectada_result.json
 PYTHONIOENCODING=utf-8 python -X utf8 safe_api_conectada.py --json=safe_conectada_result.json
 ```

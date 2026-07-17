@@ -67,7 +67,7 @@
       <li><strong>Diseño de armadura</strong> para flexión y corte siguiendo ACI 318, ACI 350, NTE.</li>
       <li><strong>No es para edificios completos</strong> — SAFE solo modela el plano horizontal, ETABS hace el edificio entero.</li>
     </ul>
-    <p>Hekatan Struct exporta <code>.f2k</code> desde los ejemplos <em>zapata-aislada</em>, <em>zapata-viga-amarre</em> (toggle en panel <strong>Cimentación (diseño + SAFE F2K)</strong>).</p>
+    <p>Hekatan Struct Lineal exporta <code>.f2k</code> desde los ejemplos <em>zapata-aislada</em>, <em>zapata-viga-amarre</em> (toggle en panel <strong>Cimentación (diseño + SAFE F2K)</strong>).</p>
   </section>
 
   <section>
@@ -215,7 +215,7 @@
 
   <section>
     <h2>Hekatan ↔ SAFE round-trip</h2>
-    <pre style="font-size:0.86rem"><code>// hekatan-struct/examples/src/shared/f2kExporter.ts
+    <pre style="font-size:0.86rem"><code>// hekatan-struct-lineal/examples/src/shared/f2kExporter.ts
 exportF2k({
   nodes,                    // [[x,y,0], ...]
   elements,                 // [[i,j,k,l], ...]  Q4 quads

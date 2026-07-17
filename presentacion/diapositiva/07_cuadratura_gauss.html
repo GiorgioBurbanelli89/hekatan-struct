@@ -8,13 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 
-<script>
-MathJax = {
-  tex: { inlineMath: [['$', '$']], displayMath: [['$$', '$$']] },
-  svg: { fontCache: 'global' }
-};
-</script>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
 
 <style>
   :root {
@@ -365,7 +358,113 @@ MathJax = {
     letter-spacing: 0.05em;
   }
 
-  mjx-container { font-size: 105% !important; }
+  /* Ecuaciones en HTML/CSS puro (sin MathJax) */
+  .eq {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.15rem;
+    margin: 16px 0;
+    color: var(--ink);
+  }
+  .eq .big { font-size: 1.5rem; vertical-align: -0.15em; }
+  .eq sub { font-size: 0.62em; } .eq sup { font-size: 0.62em; }
+
+  /* Mini-gráfica con coordenadas dentro de cada paso de la derivación */
+  .ministep {
+    display: block; width: 100%; max-width: 290px; height: auto;
+    margin: 10px auto 2px; background: #fbf6e9;
+    border: 1px solid var(--ink-fade); border-radius: 4px;
+  }
+
+  /* ── Derivación de la raíz de 3 (HTML/CSS puro, sin MathJax) ── */
+  .deriv-intro {
+    background: rgba(176, 141, 79, 0.10);
+    border-left: 4px solid var(--gold);
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border-radius: 0 4px 4px 0;
+  }
+  .frac {
+    display: inline-flex;
+    flex-direction: column;
+    vertical-align: middle;
+    text-align: center;
+    margin: 0 3px;
+    line-height: 1.05;
+  }
+  .frac .num { border-bottom: 1.4px solid var(--ink); padding: 0 4px; }
+  .frac .den { padding: 0 4px; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  .deriv-step {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 12px;
+    align-items: start;
+    background: rgba(255,255,255,0.45);
+    border: 1px solid var(--ink-fade);
+    border-radius: 4px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .deriv-step .badge {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem;
+  }
+  .deriv-step.win .badge { background: var(--green); }
+  .deriv-step .body { font-size: 0.95rem; }
+  .deriv-step .calc {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.92rem;
+    background: var(--paper);
+    border: 1px solid var(--ink-fade);
+    border-radius: 3px;
+    padding: 6px 10px;
+    margin-top: 6px;
+    display: inline-block;
+  }
+  .deriv-step .ok { color: var(--green); font-weight: 700; }
+  .deriv-step .hit { color: var(--red); font-weight: 700; }
+
+  .discover-readout {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin: 10px 0 4px;
+  }
+  .discover-readout .cell {
+    text-align: center;
+    border: 1.5px solid var(--ink-fade);
+    border-radius: 4px;
+    padding: 8px 4px;
+  }
+  .discover-readout .cell .lbl {
+    font-family: 'Newsreader', serif; font-style: italic;
+    font-size: 0.78rem; color: var(--ink-soft); display: block;
+  }
+  .discover-readout .cell .num2 {
+    font-family: 'JetBrains Mono', monospace; font-weight: 700;
+    font-size: 1.15rem; display: block; margin-top: 2px;
+  }
+  .discover-readout .cell.hit-zero { border-color: var(--green); background: rgba(45,106,79,0.10); }
+  .discover-readout .cell.hit-zero .num2 { color: var(--green); }
+  .rect-left  { fill: rgba(176,141,79,0.30); stroke: var(--gold); stroke-width: 1; }
+  .rect-right { fill: rgba(176,141,79,0.30); stroke: var(--gold); stroke-width: 1; }
+  .magic-line { stroke: var(--green); stroke-width: 1.6; stroke-dasharray: 4 3; }
+  .verdict {
+    margin-top: 8px; padding: 10px 14px; border-radius: 4px;
+    font-size: 0.95rem; text-align: center;
+    background: var(--ink); color: var(--paper);
+  }
+  .verdict.win { background: var(--green); }
+  .verdict strong { color: var(--gold); }
+  .verdict.win strong { color: #d8f3dc; }
 
   @media (max-width: 380px) {
     h1 { font-size: 1.65rem; }
@@ -387,8 +486,213 @@ MathJax = {
   <section>
     <h2>La idea en una línea</h2>
     <p>Quieres calcular el área bajo una curva sin hacer la integral a mano. Gauss dice: <strong>elige unos pocos puntos especiales y sumas sus valores con pesos.</strong> Resultado:</p>
-    $$ \int_{-1}^{1} f(\xi)\, d\xi \;\approx\; \sum_{i=1}^{n} w_i \cdot f(\xi_i) $$
-    <p>Con $n$ puntos, integra <strong>exacto</strong> cualquier polinomio de grado $\leq 2n-1$. Esa es la regla mágica.</p>
+    <div class="eq">
+      <span class="big">∫</span><sub>−1</sub><sup>1</sup> f(ξ) dξ &nbsp;≈&nbsp;
+      <span class="big">Σ</span><sub>i=1</sub><sup>n</sup> w<sub>i</sub> · f(ξ<sub>i</sub>)
+    </div>
+    <p>Con <span class="mono">n</span> puntos, integra <strong>exacto</strong> cualquier polinomio de grado <span class="mono">≤ 2n−1</span>. Esa es la regla mágica.</p>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  DERIVACIÓN: ¿de dónde sale la raíz de 3?                  -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section>
+    <h2>¿De dónde sale la raíz de 3?</h2>
+
+    <div class="deriv-intro">
+      Casi todos usan el número <span class="mono">1/√3 ≈ 0.5774</span> sin saber de dónde viene.
+      No es un número mágico ni una constante de CSI: es el <strong>único sitio</strong> donde puedes
+      poner los dos puntos y acertar el área <em>exacta</em>. Vamos a deducirlo nosotros.
+    </div>
+
+    <p>Trabajamos en el intervalo de <span class="mono">−1</span> a <span class="mono">+1</span>.
+    Con <strong>2 puntos</strong>, la receta de Gauss pone uno en <span class="mono">x = −a</span> y otro en
+    <span class="mono">x = +a</span>, y suma sus alturas (peso 1 cada uno):</p>
+
+    <p style="text-align:center; font-size:1.1rem; margin:14px 0;" class="mono">
+      Área ≈ f(−a) + f(+a)
+    </p>
+
+    <p>La pregunta es: <strong>¿qué valor de <span class="mono">a</span> hace esto exacto?</strong>
+    Se lo exigimos a curvas cada vez más difíciles. Comparamos el área real (la de verdad)
+    contra lo que da la receta:</p>
+
+    <!-- Paso 1 -->
+    <div class="deriv-step win">
+      <div class="badge">1</div>
+      <div class="body">
+        <svg class="ministep" id="ms1"></svg>
+        Curva plana <span class="mono">f(x) = 1</span>. El área real de −1 a 1 es un rectángulo de base 2, altura 1 → <span class="mono">2</span>.
+        <div class="calc">receta: 1 + 1 = <span class="ok">2</span> ✓ siempre acierta</div>
+      </div>
+    </div>
+
+    <!-- Paso 2 -->
+    <div class="deriv-step win">
+      <div class="badge">2</div>
+      <div class="body">
+        <svg class="ministep" id="ms2"></svg>
+        Recta inclinada <span class="mono">f(x) = x</span>. Sube tanto a la derecha como baja a la izquierda → área real <span class="mono">0</span>.
+        <div class="calc">receta: (−a) + (+a) = <span class="ok">0</span> ✓ siempre acierta</div>
+      </div>
+    </div>
+
+    <!-- Paso 3 — el decisivo -->
+    <div class="deriv-step">
+      <div class="badge">3</div>
+      <div class="body">
+        <svg class="ministep" id="ms3"></svg>
+        Parábola <span class="mono">f(x) = x²</span>. Aquí el área real es
+        <span class="frac"><span class="num">2</span><span class="den">3</span></span>.
+        La receta da <span class="mono">a² + a² = 2a²</span>. Para que acierten, los igualamos:
+        <div class="calc">
+          2a² =
+          <span class="frac"><span class="num">2</span><span class="den">3</span></span>
+          &nbsp;→&nbsp; a² =
+          <span class="frac"><span class="num">1</span><span class="den">3</span></span>
+          &nbsp;→&nbsp; a =
+          <span class="frac"><span class="num">1</span><span class="den" style="white-space:nowrap;">√3</span></span>
+          <span class="hit"> = 0.5774</span>
+        </div>
+        <span style="font-size:0.85rem; color:var(--ink-soft);">← <strong>aquí nació la raíz de 3.</strong></span>
+      </div>
+    </div>
+
+    <!-- Paso 4 -->
+    <div class="deriv-step win">
+      <div class="badge">4</div>
+      <div class="body">
+        <svg class="ministep" id="ms4"></svg>
+        Cúbica <span class="mono">f(x) = x³</span>. Otra vez sube y baja simétrico → área real <span class="mono">0</span>.
+        <div class="calc">receta: (−a)³ + (+a)³ = <span class="ok">0</span> ✓ acierta con cualquier a</div>
+      </div>
+    </div>
+
+    <p>Resultado: con los puntos en <span class="mono">±1/√3</span>, dos mediciones bastan para
+    acertar el área <strong>exacta</strong> de cualquier curva hasta grado 3. Esa es toda la magia.</p>
+
+    <!-- ── Widget: descúbrelo tú ── -->
+    <h2 style="margin-top:22px;">Descúbrelo tú: mueve el punto</h2>
+    <p>Abajo está la parábola <span class="mono">f(x) = x²</span>. Los dos rectángulos dorados
+    son la receta de Gauss. <strong>Arrastra el slider</strong> y mira el error: solo toca cero
+    cuando llegas a <span class="mono">1/√3</span> (la línea verde).</p>
+
+    <div class="viz-card">
+      <svg class="plot" viewBox="0 0 400 260" preserveAspectRatio="xMidYMid meet" id="svg2">
+        <g id="grid2"></g>
+        <line class="axis-line" x1="40" y1="220" x2="380" y2="220"/>
+        <line class="axis-line" x1="210" y1="220" x2="210" y2="20"/>
+        <text class="axis-label" x="378" y="236" text-anchor="end">x</text>
+        <text class="axis-label" x="218" y="26" text-anchor="start">f(x)=x²</text>
+        <g id="dynamic2"></g>
+      </svg>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-header">
+        <span class="slider-label"><span class="symbol">a</span> Posición de los puntos</span>
+        <span id="a-val" class="slider-value">0.5774</span>
+      </div>
+      <input type="range" id="a-slider" min="0.05" max="0.98" step="0.0001" value="0.57735">
+      <div class="slider-hint">↞ puntos juntos · puntos separados ↠</div>
+    </div>
+
+    <div class="discover-readout">
+      <div class="cell"><span class="lbl">Área exacta (2/3)</span><span class="num2" id="d-exact">0.6667</span></div>
+      <div class="cell" id="d-gauss-cell"><span class="lbl">Área Gauss (2a²)</span><span class="num2" id="d-gauss">0.6667</span></div>
+      <div class="cell" id="d-err-cell"><span class="lbl">Error</span><span class="num2" id="d-err">0.0000</span></div>
+    </div>
+
+    <div class="verdict" id="d-verdict">Mueve el slider…</div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!--  VERSIÓN MATEMÁTICA FORMAL: por qué exactamente √3         -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- ¿Por qué el área es 2/3? — rebanadas -->
+  <section>
+    <h2>¿Por qué el área vale 2/3? (rebanadas)</h2>
+    <p>El <span class="mono">2/3</span> no es inventado: es lo que sale al sumar <strong>rebanadas
+    finitas</strong> bajo la parábola. Cada rebanada mide alto × ancho. <strong>Mueve el slider</strong>
+    y mira la suma acercarse a <span class="mono">0.667</span>.</p>
+
+    <div class="viz-card">
+      <svg class="plot" viewBox="0 0 400 250" preserveAspectRatio="xMidYMid meet" id="svgReb">
+        <g id="gridReb"></g>
+        <g id="dynReb"></g>
+        <line class="axis-line" x1="42" y1="210" x2="385" y2="210"/>
+        <line class="axis-line" x1="42" y1="210" x2="42" y2="20"/>
+        <text class="axis-label" x="383" y="206" text-anchor="end">x →</text>
+        <text class="axis-label" x="48" y="30">y = x²</text>
+      </svg>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-header">
+        <span class="slider-label"><span class="symbol">N</span> Número de rebanadas</span>
+        <span id="reb-val" class="slider-value">6</span>
+      </div>
+      <input type="range" id="reb-slider" min="2" max="40" step="1" value="6">
+    </div>
+
+    <div class="discover-readout">
+      <div class="cell"><span class="lbl">Suma de rebanadas</span><span class="num2" id="reb-sum">—</span></div>
+      <div class="cell"><span class="lbl">Valor exacto (2/3)</span><span class="num2">0.6667</span></div>
+      <div class="cell" id="reb-err-cell"><span class="lbl">Diferencia</span><span class="num2" id="reb-err">—</span></div>
+    </div>
+    <div class="verdict" id="reb-verdict">Mueve el slider…</div>
+  </section>
+
+  <section>
+    <h2>Versión matemática (el método formal)</h2>
+    <div class="deriv-intro">
+      Lo de arriba lo dedujimos "probando curvas". Aquí está el <strong>método numérico formal</strong>
+      con el que se obtiene <span class="mono">1/√3</span> de verdad — hay dos caminos y dan lo mismo.
+    </div>
+
+    <!-- Camino 1 -->
+    <div class="deriv-step">
+      <div class="badge">A</div>
+      <div class="body">
+        <strong>Igualar momentos (coeficientes indeterminados).</strong> Buscamos posición <span class="mono">a</span>
+        y peso <span class="mono">w</span> tales que la receta acierte <span class="mono">∫x⁰, ∫x¹, ∫x², ∫x³</span>.
+        Por simetría los puntos van en <span class="mono">±a</span> con peso <span class="mono">w</span>. La condición que manda es la de <span class="mono">x²</span>:
+        <div class="calc">
+          ∫<sub>−1</sub><sup>1</sup> x² dx =
+          <span class="frac"><span class="num">2</span><span class="den">3</span></span>
+          &nbsp;&nbsp;y la receta da&nbsp;&nbsp; w·a² + w·a² = 2a²
+          &nbsp;→&nbsp; (con w=1) &nbsp; 2a² =
+          <span class="frac"><span class="num">2</span><span class="den">3</span></span>
+          &nbsp;→&nbsp; a =
+          <span class="frac"><span class="num">1</span><span class="den">√3</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Camino 2 -->
+    <div class="deriv-step win">
+      <div class="badge">B</div>
+      <div class="body">
+        <strong>Raíces del polinomio de Legendre (el motivo profundo).</strong> Existe una familia de
+        polinomios especiales (de <em>Legendre</em>). El de grado 2 es:
+        <div class="calc">P₂(x) =
+          <span class="frac"><span class="num">3x² − 1</span><span class="den">2</span></span>
+        </div>
+        Los puntos de Gauss son <strong>las raíces de ese polinomio</strong>. Resolviéndolo:
+        <div class="calc">
+          P₂(x) = 0 &nbsp;→&nbsp; 3x² − 1 = 0 &nbsp;→&nbsp; x² =
+          <span class="frac"><span class="num">1</span><span class="den">3</span></span>
+          &nbsp;→&nbsp; x = ±
+          <span class="frac"><span class="num">1</span><span class="den">√3</span></span>
+        </div>
+        <span style="font-size:0.85rem; color:var(--ink-soft);">Por eso <strong>nunca cambia</strong>: los
+        puntos de Gauss SIEMPRE son las raíces de los polinomios de Legendre (con 3 puntos salen de P₃, etc.).</span>
+      </div>
+    </div>
+
+    <p style="font-size:0.9rem;">En notación general, la regla de Gauss de <span class="mono">n</span> puntos es
+    <span class="mono">∫<sub>−1</sub><sup>1</sup> f(x)dx ≈ Σ wᵢ·f(xᵢ)</span>, donde los <span class="mono">xᵢ</span> son
+    las raíces de <span class="mono">Pₙ(x)</span> y los pesos <span class="mono">wᵢ</span> se calculan a partir de ellas.</p>
   </section>
 
   <h2>Visualizador interactivo</h2>
@@ -471,12 +775,47 @@ MathJax = {
 
   <!-- Aplicación al FEM -->
   <section>
-    <h2>¿Para qué sirve esto en el FEM?</h2>
-    <p>Cuando un solver calcula la matriz de rigidez de un elemento, hace esta integral:</p>
-    $$ K_e = \int_{-1}^{1} B^T \cdot E \cdot B \cdot A \cdot J \, d\xi $$
-    <p>Y por dentro la convierte en una sumatoria con Gauss:</p>
-    $$ K_e \approx \sum_{i=1}^{n} B^T(\xi_i) \cdot E \cdot B(\xi_i) \cdot A \cdot J(\xi_i) \cdot w_i $$
-    <p>Es decir: <strong>cada vez que ETABS, OpenSees o Hekatan calcula una matriz de rigidez, está ejecutando lo mismo que ves arriba con los puntos dorados</strong>. Solo cambia que en lugar de números escalares (como ξ²) son matrices (B^T·E·B·A·J).</p>
+    <h2>¿Por qué el FEM necesita el área bajo la curva?</h2>
+
+    <p>El FEM calcula <strong>cuánto se deforma</strong> una estructura. Para eso necesita una sola
+    cosa por cada pedazo (elemento): su <strong>rigidez K</strong>. La rigidez es como la pendiente
+    de una recta <span class="mono">y = m·x</span>:</p>
+    <div class="eq">Fuerza = Rigidez × Desplazamiento &nbsp;&nbsp;(F = K · d)</div>
+    <p><span class="mono">K</span> grande → duro (se mueve poco). <span class="mono">K</span> chico → blando.</p>
+
+    <div class="deriv-intro">
+      <strong>El problema:</strong> en un elemento real (una viga, una placa) la rigidez <strong>no es un
+      solo número</strong>: está <em>repartida por todo el cuerpo</em> y <em>cambia en cada punto</em>.
+      Para sacar la rigidez total, hay que <strong>sumar la contribución de cada punto</strong> — y sumar
+      infinitos puntos es exactamente <strong>el área bajo una curva</strong> (la integral).
+    </div>
+
+    <p><strong>Analogía:</strong> el peso de una barra más gorda en un extremo que en el otro. No mides
+    el grosor en un punto y multiplicas; <strong>sumas el peso de cada rebanada</strong> = el área bajo
+    la "curva de grosor". La rigidez del elemento funciona igual.</p>
+
+    <h2 style="margin-top:18px;">La curva que el solver integra</h2>
+    <p>Dentro del elemento, lo que se llama <span class="mono">Bᵀ·E·B</span> (cuánto se estira el
+    material en cada punto) <strong>cambia con la posición</strong>. Eso dibuja una curva. La rigidez
+    total <span class="mono">K</span> es <strong>el área bajo esa curva</strong>, y se calcula con los
+    <strong>puntos de Gauss</strong> (los rojos):</p>
+
+    <div class="viz-card">
+      <svg class="plot" viewBox="0 0 400 250" preserveAspectRatio="xMidYMid meet" id="svgFEM">
+        <g id="gridFEM"></g>
+        <line class="axis-line" x1="42" y1="210" x2="385" y2="210"/>
+        <line class="axis-line" x1="42" y1="210" x2="42" y2="20"/>
+        <text class="axis-label" x="383" y="206" text-anchor="end">ξ →</text>
+        <g id="dynFEM"></g>
+      </svg>
+    </div>
+
+    <div class="eq">K<sub>e</sub> = <span class="big">∫</span><sub>−1</sub><sup>1</sup> B<sup>T</sup>·E·B dξ &nbsp;≈&nbsp; <span class="big">Σ</span> B<sup>T</sup>(ξ<sub>i</sub>)·E·B(ξ<sub>i</sub>)·w<sub>i</sub></div>
+
+    <p>Es decir: <strong>cada vez que ETABS, OpenSees o Hekatan calcula la rigidez de un elemento,
+    está midiendo esta curva en los puntos de Gauss y sumando — para obtener el área = K.</strong>
+    Lo único distinto frente al ejemplo de <span class="mono">x²</span> es que aquí, en vez de números,
+    son matrices.</p>
   </section>
 
   <!-- Cómo experimentar -->
@@ -710,6 +1049,170 @@ document.getElementById('ng-slider').addEventListener('input', (e) => {
 });
 
 redraw();
+</script>
+
+<script>
+// =====================================================================
+// WIDGET "DESCÚBRELO TÚ": parábola f(x)=x², usuario mueve el punto a.
+// Área exacta = 2/3.  Área Gauss = 2a².  Error 0 exactamente en a=1/√3.
+// =====================================================================
+(function(){
+  const P2 = { xMin:-1.15, xMax:1.15, pxL:40, pxR:380, pxT:25, pxB:220 };
+  const yMin = -0.15, yMax = 1.25;       // rango fijo para x² en [-1,1]
+  const MAGIC = 1/Math.sqrt(3);
+
+  function sx(x){ return P2.pxL + (x-P2.xMin)/(P2.xMax-P2.xMin)*(P2.pxR-P2.pxL); }
+  function sy(y){ return P2.pxB - (y-yMin)/(yMax-yMin)*(P2.pxB-P2.pxT); }
+  function el(n,a){ const e=document.createElementNS('http://www.w3.org/2000/svg',n); for(const k in a) e.setAttribute(k,a[k]); return e; }
+
+  function grid2(){
+    const g=document.getElementById('grid2'); g.innerHTML='';
+    for(const x of [-1,0,1]){
+      g.appendChild(el('line',{class:'grid-line',x1:sx(x),x2:sx(x),y1:P2.pxT,y2:P2.pxB}));
+      if(x!==0){ const t=el('text',{class:'axis-label',x:sx(x),y:P2.pxB+14,'text-anchor':'middle'}); t.textContent=x; g.appendChild(t); }
+    }
+    g.appendChild(el('line',{class:'grid-line',x1:P2.pxL,x2:P2.pxR,y1:sy(0),y2:sy(0),opacity:0.4}));
+  }
+
+  function draw(a){
+    const dyn=document.getElementById('dynamic2'); dyn.innerHTML='';
+    grid2();
+    const f = x => x*x;
+
+    // dos rectángulos de la receta de Gauss: ancho 1 cada uno, altura f(±a)
+    const hL=f(-a), hR=f(a);
+    dyn.appendChild(el('rect',{class:'rect-left',
+      x:sx(-1), y:sy(hL), width:sx(0)-sx(-1), height:sy(0)-sy(hL)}));
+    dyn.appendChild(el('rect',{class:'rect-right',
+      x:sx(0),  y:sy(hR), width:sx(1)-sx(0), height:sy(0)-sy(hR)}));
+
+    // área real bajo la parábola
+    const N=120, pts=[];
+    for(let i=0;i<=N;i++){ const x=-1+2*i/N; pts.push([sx(x),sy(f(x))]); }
+    const areaPath=[`M ${sx(-1)} ${sy(0)}`,...pts.map(p=>`L ${p[0]} ${p[1]}`),`L ${sx(1)} ${sy(0)} Z`].join(' ');
+    dyn.appendChild(el('path',{class:'area-true',d:areaPath}));
+    dyn.appendChild(el('path',{class:'curve-true',d:pts.map((p,i)=>(i?'L':'M')+` ${p[0]} ${p[1]}`).join(' ')}));
+
+    // línea mágica en 1/√3
+    for(const s of [-1,1]){
+      dyn.appendChild(el('line',{class:'magic-line',x1:sx(s*MAGIC),x2:sx(s*MAGIC),y1:P2.pxT,y2:P2.pxB}));
+    }
+    const tm=el('text',{class:'axis-label',x:sx(MAGIC)+3,y:P2.pxT+10,fill:'#2d6a4f'}); tm.textContent='1/√3'; dyn.appendChild(tm);
+
+    // puntos de Gauss (rojos) y tallos
+    for(const s of [-1,1]){
+      dyn.appendChild(el('line',{class:'point-stem',x1:sx(s*a),y1:sy(0),x2:sx(s*a),y2:sy(f(s*a))}));
+      dyn.appendChild(el('circle',{class:'gauss-point',cx:sx(s*a),cy:sy(f(s*a)),r:6,fill:'#a23232'}));
+    }
+  }
+
+  function update(a){
+    draw(a);
+    const exact=2/3, gauss=2*a*a, err=gauss-exact;
+    document.getElementById('a-val').textContent=a.toFixed(4);
+    document.getElementById('d-exact').textContent=exact.toFixed(4);
+    document.getElementById('d-gauss').textContent=gauss.toFixed(4);
+    const near=Math.abs(a-MAGIC)<0.004;
+    document.getElementById('d-err').textContent = near ? '≈ 0' : (err>=0?'+':'')+err.toFixed(4);
+    const errCell=document.getElementById('d-err-cell');
+    const gCell=document.getElementById('d-gauss-cell');
+    errCell.classList.toggle('hit-zero',near);
+    gCell.classList.toggle('hit-zero',near);
+
+    const v=document.getElementById('d-verdict');
+    if(near){
+      v.classList.add('win');
+      v.innerHTML='✓ <strong>a = 1/√3 = 0.5774</strong> — el error es CERO. Los dos rectángulos compensan exacto lo que les sobra arriba con lo que les falta abajo. <strong>Esto es lo que usa ETABS.</strong>';
+    } else if(a<MAGIC){
+      v.classList.remove('win');
+      v.innerHTML='Los puntos están muy <strong>juntos</strong>: los rectángulos se quedan cortos, Gauss da <em>menos</em> que el área real. Sepáralos un poco más…';
+    } else {
+      v.classList.remove('win');
+      v.innerHTML='Los puntos están muy <strong>separados</strong>: los rectángulos se pasan, Gauss da <em>más</em> que el área real. Júntalos un poco…';
+    }
+  }
+
+  const sl=document.getElementById('a-slider');
+  sl.addEventListener('input',e=>update(parseFloat(e.target.value)));
+  update(parseFloat(sl.value));
+})();
+</script>
+
+<script>
+// Mini-gráficas de los 4 pasos de la derivación de la raíz de 3
+(function(){
+  const el=(n,a)=>{const e=document.createElementNS('http://www.w3.org/2000/svg',n); for(const k in a) e.setAttribute(k,a[k]); return e;};
+  const A=1/Math.sqrt(3);
+  function draw(id,f,rects){
+    const svg=document.getElementById(id); if(!svg) return;
+    svg.setAttribute('viewBox','0 0 240 150');
+    const xL=26,xR=228,yB=118,yT=14;
+    const ys=[]; for(let i=0;i<=40;i++) ys.push(f(-1+2*i/40));
+    let ymin=Math.min(0,...ys), ymax=Math.max(...ys);
+    if(ymax-ymin<0.5){ ymin-=0.6; ymax+=0.6; }
+    const pad=(ymax-ymin)*0.15; ymin-=pad; ymax+=pad;
+    const X=x=>xL+(x+1)/2*(xR-xL), Y=y=>yB-(y-ymin)/(ymax-ymin)*(yB-yT);
+    const T=(x,y,s,col,sz,an)=>{const t=el('text',{x:x,y:y,'text-anchor':an||'middle','font-family':'JetBrains Mono, monospace','font-size':sz||9,'fill':col||'#3d4f6f'}); t.textContent=s; svg.appendChild(t);};
+    // eje Y (vertical en x=0) y eje X (horizontal en y=0)
+    svg.appendChild(el('line',{x1:X(0),y1:yT,x2:X(0),y2:yB,stroke:'#9aa7bd','stroke-width':0.7}));
+    svg.appendChild(el('line',{x1:xL,y1:Y(0),x2:xR,y2:Y(0),stroke:'#1a2942','stroke-width':1}));
+    T(xR,Y(0)-4,'x','#6a7a96',9,'end');
+    T(X(0)+4,yT+8,'y','#6a7a96',9,'start');
+    // marcas y números del eje x: -1, 0, 1
+    for(const xt of [-1,0,1]){ svg.appendChild(el('line',{x1:X(xt),y1:Y(0)-2.5,x2:X(xt),y2:Y(0)+2.5,stroke:'#1a2942','stroke-width':1})); T(X(xt),yB+12,String(xt)); }
+    // rectángulos de la receta (solo paso 3)
+    if(rects){
+      svg.appendChild(el('rect',{x:X(-1),y:Y(f(-A)),width:X(0)-X(-1),height:Y(0)-Y(f(-A)),fill:'rgba(176,141,79,0.28)',stroke:'#b08d4f','stroke-width':0.5}));
+      svg.appendChild(el('rect',{x:X(0),y:Y(f(A)),width:X(1)-X(0),height:Y(0)-Y(f(A)),fill:'rgba(176,141,79,0.28)',stroke:'#b08d4f','stroke-width':0.5}));
+    }
+    // curva azul
+    const pts=[]; for(let i=0;i<=60;i++){const x=-1+2*i/60; pts.push(X(x)+','+Y(f(x)));}
+    svg.appendChild(el('polyline',{points:pts.join(' '),fill:'none',stroke:'#2c5e8e','stroke-width':2}));
+    // puntos de Gauss en ±a, con tallo punteado y etiqueta
+    for(const s of [-1,1]){
+      svg.appendChild(el('line',{x1:X(s*A),y1:Y(0),x2:X(s*A),y2:Y(f(s*A)),stroke:'#a23232','stroke-width':0.8,'stroke-dasharray':'2 2'}));
+      svg.appendChild(el('circle',{cx:X(s*A),cy:Y(f(s*A)),r:3.4,fill:'#a23232',stroke:'#1a2942','stroke-width':0.5}));
+    }
+    T(X(-A),yB+12,'−a','#a23232',8); T(X(A),yB+12,'+a','#a23232',8);
+  }
+  draw('ms1', x=>1, false);
+  draw('ms2', x=>x, false);
+  draw('ms3', x=>x*x, true);
+  draw('ms4', x=>x*x*x, false);
+})();
+</script>
+
+<script>
+// Gráfica FEM: curva de "rigidez en cada punto" (BᵀEB) + área = K + puntos de Gauss
+(function(){
+  const el=(n,a)=>{const e=document.createElementNS('http://www.w3.org/2000/svg',n); for(const k in a) e.setAttribute(k,a[k]); return e;};
+  const g = x => 1 + 0.5*x + x*x;          // curva ilustrativa de BᵀEB (positiva, varía)
+  const A=1/Math.sqrt(3);
+  const dyn=document.getElementById('dynFEM'); if(!dyn) return;
+  const xL=42,xR=385,yB=210,yT=25, ymin=0,ymax=2.8;
+  const X=x=>xL+(x+1)/2*(xR-xL), Y=y=>yB-(y-ymin)/(ymax-ymin)*(yB-yT);
+
+  // grid x
+  const grid=document.getElementById('gridFEM');
+  for(const x of [-1,0,1]){ grid.appendChild(el('line',{class:'grid-line',x1:X(x),x2:X(x),y1:yT,y2:yB}));
+    const t=el('text',{class:'axis-label',x:X(x),y:yB+15,'text-anchor':'middle'}); t.textContent=x; grid.appendChild(t); }
+
+  // área bajo la curva (= K)
+  const pts=[]; for(let i=0;i<=100;i++){const x=-1+2*i/100; pts.push([X(x),Y(g(x))]);}
+  const areaPath=['M '+X(-1)+' '+Y(0), ...pts.map(p=>'L '+p[0]+' '+p[1]), 'L '+X(1)+' '+Y(0)+' Z'].join(' ');
+  dyn.appendChild(el('path',{class:'area-true',d:areaPath}));
+  // curva
+  dyn.appendChild(el('path',{class:'curve-true',d:pts.map((p,i)=>(i?'L':'M')+' '+p[0]+' '+p[1]).join(' ')}));
+  // puntos de Gauss + tallos
+  for(const s of [-1,1]){
+    dyn.appendChild(el('line',{class:'point-stem',x1:X(s*A),y1:Y(0),x2:X(s*A),y2:Y(g(s*A))}));
+    dyn.appendChild(el('circle',{class:'gauss-point',cx:X(s*A),cy:Y(g(s*A)),r:7}));
+  }
+  // etiquetas
+  const lblArea=el('text',{x:X(-0.1),y:Y(0.55),'text-anchor':'middle','font-family':'Newsreader, serif','font-style':'italic','font-size':'13','fill':'#2c5e8e'}); lblArea.textContent='área = K del elemento'; dyn.appendChild(lblArea);
+  const lblY=el('text',{x:54,y:34,'font-family':'JetBrains Mono, monospace','font-size':'11','fill':'#3d4f6f'}); lblY.textContent='rigidez en cada punto (BᵀEB)'; dyn.appendChild(lblY);
+  const lblG=el('text',{x:X(A),y:Y(g(A))-12,'text-anchor':'middle','font-family':'JetBrains Mono, monospace','font-size':'10','fill':'#a23232','font-weight':'700'}); lblG.textContent='Gauss'; dyn.appendChild(lblG);
+})();
 </script>
 
 <script src="./shared/nav.js"></script>

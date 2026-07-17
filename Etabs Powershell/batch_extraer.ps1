@@ -8,7 +8,7 @@ param(
     [string] $Folder
 )
 
-$ScriptPath = "C:\Users\Backup-PC\Documents\Hekatan Corporacion\Heka\hekatan-struct\Etabs Powershell\etabs_extract.ps1"
+$ScriptPath = "C:\Users\Backup-PC\Documents\Hekatan Corporacion\Heka\hekatan-struct-lineal\Etabs Powershell\etabs_extract.ps1"
 
 if (-not (Test-Path $Folder)) {
     Write-Error "No existe la carpeta: $Folder"

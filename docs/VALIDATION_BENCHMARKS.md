@@ -8,7 +8,7 @@ Lista completa de **ejemplos del workspace que incluyen comparación numérica**
 > ✗ **FALLA** si > 5%
 
 > **Cómo correr**: abrir el ejemplo en el browser, F12 → Console para ver el log con Δ%
-> URLs: `https://giorgioburbanelli89.github.io/hekatan-struct/<id>/` (individual) o `/workspace/?t=<id>` (en workspace)
+> URLs: `https://giorgioburbanelli89.github.io/hekatan-struct-lineal/<id>/` (individual) o `/workspace/?t=<id>` (en workspace)
 
 ---
 
@@ -186,7 +186,7 @@ Lista completa de **ejemplos del workspace que incluyen comparación numérica**
 
 ## En el navegador (manual)
 
-1. Abrir el ejemplo: `https://giorgioburbanelli89.github.io/hekatan-struct/<id>/`
+1. Abrir el ejemplo: `https://giorgioburbanelli89.github.io/hekatan-struct-lineal/<id>/`
 2. **F12** → tab Console
 3. Ver log con `─── BENCHMARK ──` y Δ%
 4. Modificar parámetros (mesh, cargas) y observar convergencia

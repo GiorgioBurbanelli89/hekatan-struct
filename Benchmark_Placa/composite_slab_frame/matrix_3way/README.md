@@ -87,7 +87,7 @@ Documentado en detalle en `../BUG_ANALYSIS_shell_frame_dof_mismatch.md`:
 ## Cómo correr la matriz
 
 ```bash
-cd hekatan-struct
+cd hekatan-struct-lineal
 
 # Toda la matriz (21 celdas, output CSV+JSON)
 node Benchmark_Placa/composite_slab_frame/matrix_3way/run_matrix.mjs

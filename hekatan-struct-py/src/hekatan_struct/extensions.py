@@ -1,4 +1,4 @@
-"""Extensiones hekatan-struct — helpers no-awatif-core para construir modelos."""
+"""Extensiones hekatan-struct-lineal — helpers no-awatif-core para construir modelos."""
 from __future__ import annotations
 from typing import Sequence
 import numpy as np

@@ -119,7 +119,7 @@ export function exportZapataF2k(data: ZapataF2kData): string {
 
   const fmt = n;
   const L: string[] = [];
-  L.push(`File "Zapata_Hekatan.f2k" exportado desde Hekatan Struct ${new Date().toISOString().slice(0, 10)} at ${new Date().toLocaleTimeString()}`);
+  L.push(`File "Zapata_Hekatan.f2k" exportado desde Hekatan Struct Lineal ${new Date().toISOString().slice(0, 10)} at ${new Date().toLocaleTimeString()}`);
   L.push(` `);
 
   // ── PROGRAM CONTROL ──

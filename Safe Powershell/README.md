@@ -75,7 +75,7 @@ Si modelaste vigas de amarre entre zapatas, te da P, V2, V3, M2, M3 por estació
    convierte automáticamente a springs nodales. Hekatan-struct hace lo mismo
    manualmente con `springsList` en `deform.cpp`.
 
-## Workflow integrado con hekatan-struct
+## Workflow integrado con hekatan-struct-lineal
 
 ```
 1. Hekatan-struct: zapata-aislada o edificio con cimentación
@@ -108,7 +108,7 @@ SAFE no está instalado o no se registró el COM. Como administrador:
 "C:\Program Files\Computers and Structures\SAFE 20\SAFE.exe" /regserver
 ```
 
-### "OpenFile retorno 1" con .f2k generado por hekatan-struct
+### "OpenFile retorno 1" con .f2k generado por hekatan-struct-lineal
 SAFE puede ser estricto con tablas obligatorias. Verificá que tu `.f2k` tenga:
 - `MATERIAL PROPERTIES`
 - `FRAME SECTIONS` (si tienes vigas amarre)

@@ -638,8 +638,14 @@ function mountCaseResultsInSettings() {
         try { modalAnimator?.showStatic(idx); } catch (err) { console.warn("showStatic", err); }
       } else if (v.startsWith("__combo_")) {
         // COMBO: rebuild() detecta el combo desde activeLoadCase y aplica Σ factores.
+        // Es un caso estático → detener la animación modal si estaba corriendo.
+        try { if (modalAnimator?.isPlaying?.()) modalAnimator.stop(); } catch {}
         activeLoadCase.val = v.slice(8); rebuild();
       } else {
+        // Si el caso elegido NO es modal, detener la animación para ver el resultado
+        // estático (sin esto, rebuild() la re-animaría por el disparador isPlaying()).
+        const selCase = loadCases.val.find((c) => c.name === e.value);
+        if (!selCase?.type?.startsWith("Modal")) { try { if (modalAnimator?.isPlaying?.()) modalAnimator.stop(); } catch {} }
         activeLoadCase.val = e.value; rebuild();
         // Sincronizar el "Caso activo" del pane derecho (Load Cases) con esta selección.
         try { __loadPanel?.rebuildCases(); } catch {}
@@ -896,8 +902,22 @@ function rebuild() {
   try {
     const activeName = activeLoadCase.val;
     const active = loadCases.val.find(c => c.name === activeName);
-    if (active?.type.startsWith("Modal") && currentExample.runModal) {
-      currentExample.runModal(toSIParams(), states, modalPanel);
+    const isModalCase = !!active?.type.startsWith("Modal");
+    // ¿La animación modal está corriendo? Si el usuario corrió el modal y mueve
+    // un slider, queremos recomputar Y re-animar con el modelo nuevo — AUNQUE el
+    // selector de resultados activo no se llame literalmente "Modal-…" (el nombre
+    // del caso es frágil). isPlaying() es el disparador robusto.
+    let modalPlaying = false;
+    try { modalPlaying = !!modalAnimator?.isPlaying?.(); } catch {}
+    if ((isModalCase || modalPlaying) && currentExample.runModal) {
+      // Re-correr el modal Y re-animar con el MODELO NUEVO. Antes esto llamaba al
+      // `modalPanel` pelado, que actualiza la tabla pero NO el animador → al mover
+      // un slider la animación se quedaba con el modo viejo. Ruteamos por
+      // `__hekatanRunModalAnimate` (= captureModalPanel → setResults+play), que
+      // re-snapshotea los nodos rehechos y re-anima el modo 1. Fallback al pelado.
+      const animate = (window as any).__hekatanRunModalAnimate;
+      if (typeof animate === "function") animate();
+      else currentExample.runModal(toSIParams(), states, modalPanel);
       // Solo mostrar el panel/tabla si el usuario activó "Mostrar tabla" (Settings).
       modalPanel.div.style.display = __modalTableShown ? "block" : "none";
     } else {
@@ -4897,7 +4917,14 @@ solve`;
           if (ev?.last === false) {
             scheduleRebuild();   // live calc sin tocar el pane
           } else {
-            window.setTimeout(() => { buildParamsPane(); rebuild(); }, 80);
+            // Si el modal estaba animando, recordarlo: buildParamsPane() recrea el
+            // animador (lo dispone) → la animación se perdería al cambiar N° de
+            // muros/pisos/vanos. Tras regenerar + rebuild, la re-lanzamos.
+            const wasPlaying = (() => { try { return !!modalAnimator?.isPlaying?.(); } catch { return false; } })();
+            window.setTimeout(() => {
+              buildParamsPane(); rebuild();
+              if (wasPlaying) { const a = (window as any).__hekatanRunModalAnimate; if (typeof a === "function") setTimeout(a, 0); }
+            }, 80);
           }
         } else {
           scheduleRebuild();
@@ -5914,7 +5941,7 @@ van.derive(() => {
 document.body.append(
   viewerElm,
   getToolbar({
-    sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct",
+    sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal",
     author: "https://www.linkedin.com/in/jorge-burbano-213741138/",
   })
 );

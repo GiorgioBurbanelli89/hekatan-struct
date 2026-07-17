@@ -1,6 +1,6 @@
 # 🏆 FEM Studio — Inventario completo de herramientas
 
-> Auditoría visual del DOM de https://giorgioburbanelli89.github.io/hekatan-struct/beams/
+> Auditoría visual del DOM de https://giorgioburbanelli89.github.io/hekatan-struct-lineal/beams/
 > Fecha: 8 may 2026 — sesión browser-driven (clicks reales en cada botón)
 > Objetivo: identificar herramientas que **NO** están en el workspace y portarlas.
 

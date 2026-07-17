@@ -14,7 +14,7 @@ Caso de prueba (idéntico en ambos):
 ## Reproducir
 
 ```bash
-cd hekatan-struct/cli
+cd hekatan-struct-lineal/cli
 # Hekatan (Node + tsx + WASM, ~10 ms)
 npx tsx ./cli_zapata.mjs --json=hekatan_zapata_result.json
 
@@ -124,7 +124,7 @@ capturan idénticamente.
 ## Archivos generados
 
 ```
-hekatan-struct/
+hekatan-struct-lineal/
 ├── cli/
 │   ├── cli_zapata.mjs                   # Hekatan WASM CLI
 │   ├── safe_api_zapata.py               # SAFE API runner (final v13)

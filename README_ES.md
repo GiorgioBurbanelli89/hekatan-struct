@@ -1,4 +1,4 @@
-# Hekatan Struct -- Analisis Estructural Open Source
+# Hekatan Struct Lineal -- Analisis Estructural Open Source
 
 [![Licencia: MIT](https://img.shields.io/badge/Licencia-MIT-blue.svg)](LICENSE)
 [![Demo](https://img.shields.io/badge/demo-GitHub%20Pages-green)](https://giorgioburbanelli89.github.io/awatif-workspace/workspace/)
@@ -18,7 +18,7 @@ Basado en [awatif v2.0.0](https://github.com/madil4/awatif/tree/v2.0.0) de Moham
 - **UI bilingue** -- soporte completo espanol/ingles en toda la interfaz
 - **Importar/Exportar** -- ETABS (E2K), SAP2000 (S2K), SAFE (F2K), IFC (Revit/ArchiCAD), OpenSees (Python/Tcl)
 - **Import auto-load** -- al importar E2K/S2K en cualquier ejemplo se navega a `?t=new-blank` con el modelo cargado como geometria CAD editable
-- **Benchmarks W##** -- naming unificado (W1=barra axial, W2=viga, W3=armadura, W4=portico 2D, W5=torre 3D, W6=placa) que matchea entre hekatan-struct, ETABS, SAP2000, SAFE, Octave, MATLAB y Calcpad-Lab
+- **Benchmarks W##** -- naming unificado (W1=barra axial, W2=viga, W3=armadura, W4=portico 2D, W5=torre 3D, W6=placa) que matchea entre hekatan-struct-lineal, ETABS, SAP2000, SAFE, Octave, MATLAB y Calcpad-Lab
 - **Panel de calculo** -- calculadora tipo MATLAB con math.js, renderizado KaTeX y matematica simbolica (nerdamer)
 - **Analisis no lineal** -- pushover Newton-Raphson y pushover ciclico
 - **Brazos rigidos y releases** -- condensacion estatica para conexiones realistas

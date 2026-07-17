@@ -4,7 +4,7 @@
 -> Creando 80 áreas Q4 con slab variable según x...
    80 áreas creadas (32 zapatas + 48 viga)
 -> 2 columnas creadas
--> Save: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\benchmarks\safe\zapata-conectada\Zapata_Conectada_via_API.fdb
+-> Save: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\benchmarks\safe\zapata-conectada\Zapata_Conectada_via_API.fdb
 -> SubModulus override: ks=19613.0
 -> RunAnalysis...
    RunAnalysis ret=0 (29.70s)

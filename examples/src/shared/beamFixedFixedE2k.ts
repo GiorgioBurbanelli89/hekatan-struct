@@ -261,7 +261,7 @@ export function generateBeamE2k(
   lines.push(``);
   lines.push(`$ CONTROLS`);
   lines.push(`  UNITS  "TONF"  "M"  "C"  `);
-  lines.push(`  TITLE1  "Hekatan Struct — Fixed-Fixed Beam ${sec.materialType}"  `);
+  lines.push(`  TITLE1  "Hekatan Struct Lineal — Fixed-Fixed Beam ${sec.materialType}"  `);
   lines.push(`  TITLE2  "Validacion vs ETABS"  `);
   lines.push(``);
 

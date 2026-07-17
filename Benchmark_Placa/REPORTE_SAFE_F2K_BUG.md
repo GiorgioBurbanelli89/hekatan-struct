@@ -21,7 +21,7 @@ El método retorna ret=0 (éxito), pero el modelo queda VACÍO.
 ```
 
 Probado con:
-- `Zapata_Hekatan_1777645102733.f2k` (generado por hekatan-struct, 6.2 KB)
+- `Zapata_Hekatan_1777645102733.f2k` (generado por hekatan-struct-lineal, 6.2 KB)
 - `cimentacion_edificio_9_zapatas.f2k` (F2K de SAFE GUI, 310 lineas) — MISMO RESULTADO
 
 Confirma que el bug está en el OAPI, no en nuestro F2K.

@@ -1,7 +1,7 @@
 /**
  * Drilling DOF — 2 muros de cortante (membrana Q4) + VIGA DE ACOPLE (frame).
  *
- * Caso para validar el drilling DOF y el EXPORTADOR e2k de Hekatan Struct:
+ * Caso para validar el drilling DOF y el EXPORTADOR e2k de Hekatan Struct Lineal:
  *   - 2 machones verticales en plano X-Z (y=0), empotrados en la base.
  *   - Abertura entre ellos; una viga de acople (frame peraltado, mismo ancho que el muro)
  *     une el tope interior de un machón con el del otro.

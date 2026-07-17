@@ -49,7 +49,7 @@ Reconstrucción 100% desde cero via API del modelo extraído de
 ## Reproducir
 
 ```bash
-cd hekatan-struct/benchmarks/safe/edificio-cimentacion-real
+cd hekatan-struct-lineal/benchmarks/safe/edificio-cimentacion-real
 npx tsx ./cli_edificio.mjs --json=hekatan_edificio_result.json
 PYTHONIOENCODING=utf-8 python -X utf8 safe_api_edificio.py --json=safe_edificio_result.json
 ```

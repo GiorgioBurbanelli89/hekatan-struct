@@ -7,7 +7,7 @@
  *   q = 10 kN/m² uniform pressure
  *   E = 35000 MPa, ν = 0.15
  *   Simply supported along all four edges
- * Purpose: allow direct comparison between Hekatan Struct and Calcpad FEM.
+ * Purpose: allow direct comparison between Hekatan Struct Lineal and Calcpad FEM.
  */
 import { plateQ4Solve, modalAnalysis, type Node } from "awatif-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";

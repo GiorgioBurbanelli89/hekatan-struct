@@ -1,5 +1,5 @@
 /**
- * 🏁 Benchmark 3-way (Hekatan Struct vs MATLAB vs ETABS) — Matriz 7×3
+ * 🏁 Benchmark 3-way (Hekatan Struct Lineal vs MATLAB vs ETABS) — Matriz 7×3
  *
  * Cubre el coupling shell+frame para identificar exactamente dónde aparece
  * el bug DOF-mismatch del Q4 Mindlin-MITC4 (ver

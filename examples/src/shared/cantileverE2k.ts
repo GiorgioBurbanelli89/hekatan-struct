@@ -339,7 +339,7 @@ export function generateCantileverE2k(
   lines.push(``);
   lines.push(`$ CONTROLS`);
   lines.push(`  UNITS  "TONF"  "M"  "C"  `);
-  lines.push(`  TITLE1  "Hekatan Struct — Cantilever ${sec.materialType}"  `);
+  lines.push(`  TITLE1  "Hekatan Struct Lineal — Cantilever ${sec.materialType}"  `);
   lines.push(`  TITLE2  "Validacion vs ETABS"  `);
   lines.push(``);
 

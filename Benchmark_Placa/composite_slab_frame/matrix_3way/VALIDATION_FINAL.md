@@ -120,7 +120,7 @@ CREADO:
 
 ```bash
 # 1. Hekatan WASM
-cd hekatan-struct
+cd hekatan-struct-lineal
 node Benchmark_Placa/composite_slab_frame/matrix_3way/run_matrix.mjs shellThin perimFrames
 # → w_centro = -3.0832 mm
 

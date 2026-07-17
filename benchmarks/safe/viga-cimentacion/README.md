@@ -33,7 +33,7 @@ longitudinal de cargas.
 ## Reproducir
 
 ```bash
-cd hekatan-struct/benchmarks/safe/viga-cimentacion
+cd hekatan-struct-lineal/benchmarks/safe/viga-cimentacion
 npx tsx ./cli_viga.mjs --json=hekatan_viga_result.json
 PYTHONIOENCODING=utf-8 python -X utf8 safe_api_viga.py --json=safe_viga_result.json
 ```

@@ -1,4 +1,4 @@
-$ File C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_canonical\case_cantileverBeam.$et saved 5/8/2026 1:07:02 AM
+$ File C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\Benchmark_Placa\composite_cft_columns\etabs_canonical\case_cantileverBeam.$et saved 5/8/2026 1:07:02 AM
  
 $ PROGRAM INFORMATION
   PROGRAM  "ETABS"  VERSION "19.1.0"  
@@ -176,8 +176,8 @@ $ PROJECT INFORMATION
 $ LOG
   STARTCOMMENTS  
 ETABS Ultimate 19.1.0 File imported from  (Untitled) at  5/8/2026 1:06:55 AM
-ETABS Ultimate  19.1.0 File saved as C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_canonical\case_cantileverBeam.EDB at 5/8/2026 1:06:57 AM
-ETABS Ultimate  19.1.0 File saved as C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_canonical\case_cantileverBeam.EDB at 5/8/2026 1:07:02 AM
+ETABS Ultimate  19.1.0 File saved as C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\Benchmark_Placa\composite_cft_columns\etabs_canonical\case_cantileverBeam.EDB at 5/8/2026 1:06:57 AM
+ETABS Ultimate  19.1.0 File saved as C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\Benchmark_Placa\composite_cft_columns\etabs_canonical\case_cantileverBeam.EDB at 5/8/2026 1:07:02 AM
   ENDCOMMENTS  
 
   END

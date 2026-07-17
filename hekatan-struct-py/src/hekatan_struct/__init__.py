@@ -1,4 +1,4 @@
-"""hekatan-struct — Extensiones de awatif-py para análisis estructural avanzado.
+"""hekatan-struct-lineal — Extensiones de awatif-py para análisis estructural avanzado.
 
 Re-exporta API awatif (embebida) + agrega:
   - apply_selfweight()       — selfweight automático lumped a nodos (CSI mass source pattern)

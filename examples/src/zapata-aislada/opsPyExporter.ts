@@ -40,7 +40,7 @@ export function exportZapataOpsPy(data: ZapataOpsPyData): string {
   const Mx_d = data.Mx_dead_kNm ?? 0;
   const My_d = data.My_dead_kNm ?? 0;
 
-  return `# OpenSeesPy — Zapata Aislada (exportada desde Hekatan Struct)
+  return `# OpenSeesPy — Zapata Aislada (exportada desde Hekatan Struct Lineal)
 # Generado: ${new Date().toISOString()}
 # Modelo: ShellMITC4 sobre Winkler springs zeroLength
 # Unidades: kN, m
@@ -191,7 +191,7 @@ total_Fz = sum(ops.nodeReaction(1000 + n)[2] for n in range(1, N_slab + 1))
 P_total_aplicada = ${(P_d + P_l).toFixed(2)}   # kN total aplicado (Dead + Live)
 print(f"\\nSum reaccion Z = {total_Fz:.4f} kN  (debe = +{P_total_aplicada:.2f} kN aplicada)")
 
-print("\\n[OK] Análisis completo. Comparar con Hekatan Struct y SAFE.")
+print("\\n[OK] Análisis completo. Comparar con Hekatan Struct Lineal y SAFE.")
 ops.wipe()
 `;
 }

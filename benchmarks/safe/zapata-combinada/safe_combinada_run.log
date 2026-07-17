@@ -10,7 +10,7 @@
    Creadas 128 áreas en 0.3s
 -> Asignando spring Winkler a las 128 áreas...
 -> Creadas 2 columnas con P=294.20 kN c/u
--> Save: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\benchmarks\safe\zapata-combinada\Zapata_Combinada_via_API.fdb
+-> Save: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\benchmarks\safe\zapata-combinada\Zapata_Combinada_via_API.fdb
    Save ret=0
 -> Editing 'Spring Property Definitions - Area Springs': rows=1 cols=10
    SubModulus override: ks=19613.0 ret=0 err=0 warn=0

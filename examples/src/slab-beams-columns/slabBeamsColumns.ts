@@ -1,6 +1,6 @@
 /**
  * Slab + Vigas perimetrales + Columnas en esquinas
- * Hekatan Struct — equivalente a un edificio de 1 piso completo.
+ * Hekatan Struct Lineal — equivalente a un edificio de 1 piso completo.
  *
  * Geometria:
  *   Losa horizontal Lx x Ly a elevacion h (Z = h)

@@ -220,18 +220,20 @@ export function parseEdificioCimentacionF2k(text: string): ImportedCimentacion {
     if (a && s) areaSpringMap.set(a, s);
   }
 
-  // ── 7. JOINT LOADS ASSIGNMENTS - FORCE → cargas por joint ──
-  const jointLoads = new Map<number, JointLoad>();
+  // ── 7. JOINT LOADS ASSIGNMENTS - FORCE → cargas por joint Y patrón ──
+  // Un mismo joint tiene filas SEPARADAS Dead y Live (SAFE las lista en filas
+  // distintas con el mismo UniqueName). Indexar solo por joint pisaba Dead con
+  // Live → se perdía la carga muerta (BUG). Indexamos por (joint, patrón).
+  const jointLoadsByPattern = new Map<number, Map<string, JointLoad>>();
   for (const row of getTableBlock(text, "JOINT LOADS ASSIGNMENTS - FORCE")) {
     const r = parseRow(row);
     const uid = parseInt(r["UniqueName"], 10);
     if (!isFinite(uid)) continue;
-    jointLoads.set(uid, {
-      joint: uid,
-      pattern: r["Load Pattern"] ?? "Dead",
-      fz: num(r["FZ"]),
-      mx: num(r["MX"]),
-      my: num(r["MY"]),
+    const pattern = r["Load Pattern"] ?? "Dead";
+    if (!jointLoadsByPattern.has(uid)) jointLoadsByPattern.set(uid, new Map());
+    jointLoadsByPattern.get(uid)!.set(pattern, {
+      joint: uid, pattern,
+      fz: num(r["FZ"]), mx: num(r["MX"]), my: num(r["MY"]),
     });
   }
 
@@ -373,13 +375,17 @@ export function parseEdificioCimentacionF2k(text: string): ImportedCimentacion {
     const sec = areaSection.get(z.footingArea);
     if (sec && slabProps.has(sec)) tz = slabProps.get(sec)!.thickness;
 
-    // Cargas: del joint center
+    // Cargas: del joint center, separando Dead y Live por patrón.
     let P_dead_kN = 0, Mx_dead_kNm = 0, My_dead_kNm = 0;
-    if (z.centerJoint && jointLoads.has(z.centerJoint.uid)) {
-      const jl = jointLoads.get(z.centerJoint.uid)!;
-      P_dead_kN = Math.abs(jl.fz) * u.forceToKn;
-      Mx_dead_kNm = jl.mx * u.momentToKnm;
-      My_dead_kNm = jl.my * u.momentToKnm;
+    let P_live_kN = 0, Mx_live_kNm = 0, My_live_kNm = 0;
+    if (z.centerJoint && jointLoadsByPattern.has(z.centerJoint.uid)) {
+      for (const [pat, jl] of jointLoadsByPattern.get(z.centerJoint.uid)!) {
+        const P = Math.abs(jl.fz) * u.forceToKn;
+        const Mx = (jl.mx || 0) * u.momentToKnm;
+        const My = (jl.my || 0) * u.momentToKnm;
+        if (/live/i.test(pat)) { P_live_kN += P; Mx_live_kNm += Mx; My_live_kNm += My; }
+        else { P_dead_kN += P; Mx_dead_kNm += Mx; My_dead_kNm += My; }
+      }
     }
 
     // ks: del area spring asignado
@@ -392,6 +398,7 @@ export function parseEdificioCimentacionF2k(text: string): ImportedCimentacion {
     zapatas.push({
       xC, yC, xCol, yCol, Lz, Bz, tz, bc,
       P_dead_kN, Mx_dead_kNm, My_dead_kNm,
+      P_live_kN, Mx_live_kNm, My_live_kNm,
       label: z.footingArea,
     });
   }
@@ -480,6 +487,15 @@ export function parseEdificioCimentacionF2k(text: string): ImportedCimentacion {
     }
   }
 
+  // Shape de cada sección (Concrete Rectangular vs Steel I/Wide Flange...) para
+  // descartar frames de acero (columnas) que NO son vigas de amarre de hormigón.
+  const sectionShape = new Map<string, string>();
+  for (const row of getTableBlock(text, "FRAME SECTION PROPERTY DEFINITIONS - SUMMARY")) {
+    const r = parseRow(row);
+    const name = r["Name"];
+    if (name && r["Shape"]) sectionShape.set(name, r["Shape"]);
+  }
+
   // Asignación frame → section: primero FRAME ASSIGNMENTS (real SAFE)
   const lineSec = new Map<string, string>();
   for (const row of getTableBlock(text, "FRAME ASSIGNMENTS - SECTION PROPERTIES")) {
@@ -506,19 +522,24 @@ export function parseEdificioCimentacionF2k(text: string): ImportedCimentacion {
     if (!j1 || !j2) continue;
     const secName = lineSec.get(ln.name);
     const dim = secName ? frameSec.get(secName) : undefined;
-    // Filtrar columnas: si el frame es vertical (mismo X,Y diferente Z), o si
-    // la sección es de tipo Column, lo excluimos de vigas de amarre.
     const dx = j2.x - j1.x, dy = j2.y - j1.y, dz = j2.z - j1.z;
     const isVertical = Math.abs(dz) > Math.max(Math.abs(dx), Math.abs(dy));
-    const isColumnSection = dim?.type === "Column";
-    if (isVertical || isColumnSection) {
+    // Viga de amarre = frame HORIZONTAL con sección de HORMIGÓN rectangular (dim
+    // leído de CONCRETE RECTANGULAR). SAFE marca las vigas de cimentación como
+    // Section Type=Column → NO se filtra por eso (antes descartaba la viga real).
+    // Las columnas reales son verticales; los frames de ACERO (Steel I/Wide
+    // Flange...) se descartan en vez de aceptarse con dims default (antes la
+    // columna de acero se colaba como viga 0.25×0.4).
+    const shape = secName ? (sectionShape.get(secName) ?? "") : "";
+    const isSteel = /steel|flange|angle|channel|\bpipe\b|\btube\b/i.test(shape);
+    if (isVertical || isSteel || !dim) {
       nVigasIgnoradasColumna++;
       continue;
     }
     vigasAmarrePush({
       x1: j1.x, y1: j1.y, x2: j2.x, y2: j2.y,
-      h: dim?.h ?? 0.4,
-      b: dim?.b ?? 0.25,
+      h: dim.h,
+      b: dim.b,
       z: j1.z,
     });
   }

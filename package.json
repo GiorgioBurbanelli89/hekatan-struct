@@ -1,9 +1,9 @@
 {
-  "name": "hekatan-struct",
-  "description": "Hekatan Struct — Parametric Structural FEM (fork of awatif by Mohamed Adil)",
+  "name": "hekatan-struct-lineal",
+  "description": "Hekatan Struct Lineal — Parametric Structural FEM (fork of awatif by Mohamed Adil)",
   "keywords": [
     "hekatan",
-    "hekatan-struct",
+    "hekatan-struct-lineal",
     "parametricdesign",
     "computationaldesign",
     "structuralengineering",
@@ -12,10 +12,10 @@
   ],
   "author": "Giorgio Burbanelli (fork) — original: Mohamed Adil",
   "license": "MIT",
-  "homepage": "https://giorgioburbanelli89.github.io/hekatan-struct/workspace/",
+  "homepage": "https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/GiorgioBurbanelli89/hekatan-struct"
+    "url": "https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal"
   },
   "scripts": {
     "dev:fem": "npm run dev -w hekatan-fem",
@@ -24,7 +24,7 @@
     "dev:ui": "npm run dev -w hekatan-ui",
     "dev:examples": "npm run dev -w examples",
     "build:examples": "npm run build -w examples",
-    "build:deploy": "cross-env DEPLOY_BASE=/hekatan-struct/ npm run build -w examples",
+    "build:deploy": "cross-env DEPLOY_BASE=/hekatan-struct-lineal/ npm run build -w examples",
     "dev:website": "npm run dev -w website",
     "build:website": "npm run build -w website",
     "dedupe": "npm dedupe && echo 'Optimize build size when using same package in multiple packages'",

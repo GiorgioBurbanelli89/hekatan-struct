@@ -99,7 +99,7 @@ const e2k = exportE2k({
     areas, momentsOfInertiaY, momentsOfInertiaZ, torsionalConstants,
     shearModuli, orientations, sectionShapes,
   } as any,
-  title: "Drilling DOF — 2 muros + viga de acople (Hekatan Struct)",
+  title: "Drilling DOF — 2 muros + viga de acople (Hekatan Struct Lineal)",
   units: { force: "KN", length: "M" },
 });
 

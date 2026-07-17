@@ -42,7 +42,7 @@ export function getToolbar({
       <a
         href="${sourceCode ? sourceCode : "https://github.com/GiorgioBurbanelli89/awatif-workspace"}"
         class="dropdown-link"
-        >Hekatan Struct — Source Code</a
+        >Hekatan Struct Lineal — Source Code</a
       >
       ${author
         ? html`<a href="${author}" class="dropdown-link">Contact Author</a>`
@@ -91,14 +91,14 @@ export function getToolbar({
 function getAwatifSvg(): TemplateResult {
   // El logo vive en la raíz del site, NO en la subcarpeta del ejemplo actual.
   //   dev:       /img/hekatan-logo.png
-  //   gh-pages:  /hekatan-struct/img/hekatan-logo.png
+  //   gh-pages:  /hekatan-struct-lineal/img/hekatan-logo.png
   //
   // Antes usábamos una heurística sobre window.location.pathname pero fallaba
   // cuando la URL incluía "/index.html" explícito (pathname con 2 segmentos →
   // base = `/<page>/` incorrecto → 404).
   //
   // Solución: import.meta.env.BASE_URL de Vite, que se inyecta correctamente
-  // en dev ("/") y en builds con DEPLOY_BASE ("/hekatan-struct/").
+  // en dev ("/") y en builds con DEPLOY_BASE ("/hekatan-struct-lineal/").
   const base = (import.meta as any).env?.BASE_URL ?? "/";
   return html`<img src="${base}img/hekatan-logo.png" alt="Hekatan" style="width:22px;height:22px;border-radius:4px;">`;
 }

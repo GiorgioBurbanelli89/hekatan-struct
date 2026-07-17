@@ -20,7 +20,7 @@ para setup general de la API SAFE (8 gotchas + workaround `SubModulus`).
 ## Reproducir
 
 ```bash
-cd hekatan-struct/benchmarks/safe/losa-cimentacion
+cd hekatan-struct-lineal/benchmarks/safe/losa-cimentacion
 # Hekatan (~12 ms)
 npx tsx ./cli_losa.mjs --json=hekatan_losa_result.json
 # SAFE (~50 s incl. spin-up GUI)

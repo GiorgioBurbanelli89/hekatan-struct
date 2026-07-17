@@ -5,7 +5,7 @@ fix unidades tonf/kN, layered shell ABBD, Winkler springs.
 
 ## 🌐 Deploy LIVE
 
-**https://giorgioburbanelli89.github.io/hekatan-struct/workspace/**
+**https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/**
 
 Branch repo: `awatif-fem-v2-shells-nonlinear`
 Último commit: `bb024bbf` (a la fecha 2026-05-01)
@@ -147,8 +147,8 @@ con rango 2000-200000 step 100. Internamente se convierte ks_tonf × 9.81 → kN
 # 1. Clonar
 mkdir "C:\Hekatan"
 cd "C:\Hekatan"
-git clone https://github.com/GiorgioBurbanelli89/hekatan-struct.git
-cd hekatan-struct
+git clone https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal.git
+cd hekatan-struct-lineal
 git checkout awatif-fem-v2-shells-nonlinear
 git pull
 
@@ -161,12 +161,12 @@ cd examples && npm install && cd ..
 npm run dev:examples
 
 # 4. Build producción + deploy
-MSYS_NO_PATHCONV=1 DEPLOY_BASE=/hekatan-struct/ npm run build -w examples
+MSYS_NO_PATHCONV=1 DEPLOY_BASE=/hekatan-struct-lineal/ npm run build -w examples
 
 # 5. Deploy gh-pages
 GIT_AUTHOR_NAME="..." GIT_AUTHOR_EMAIL="..." \
   npx gh-pages --dist website/src/examples \
-    --repo https://github.com/GiorgioBurbanelli89/hekatan-struct.git \
+    --repo https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal.git \
     --branch gh-pages --dotfiles \
     --message "deploy: ..."
 ```
@@ -204,7 +204,7 @@ GIT_AUTHOR_NAME="..." GIT_AUTHOR_EMAIL="..." \
 ## 📂 Archivos clave de la sesión
 
 ```
-hekatan-struct/
+hekatan-struct-lineal/
 ├── PROMPT_CONTINUACION_v3.md                       ← este archivo (NUEVO)
 ├── PROMPT_CONTINUACION_v2.md                       ← versión anterior (sesión)
 ├── PROMPT_CONTINUACION.md                          ← versión inicial (multi-PC)
@@ -247,7 +247,7 @@ hekatan-struct/
 
 > Continuo Hekatan-struct, branch `awatif-fem-v2-shells-nonlinear`,
 > último commit `bb024bbf`. Estado completo en `PROMPT_CONTINUACION_v3.md`.
-> Deploy live: https://giorgioburbanelli89.github.io/hekatan-struct/workspace/
+> Deploy live: https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/
 >
 > Pendientes priorizados:
 > 1. Debug SAFE F2K (RunAnalysis ret=1, descarta tablas al Save)

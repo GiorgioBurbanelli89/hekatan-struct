@@ -1,5 +1,5 @@
 /**
- * i18n — Internationalization for Hekatan Struct
+ * i18n — Internationalization for Hekatan Struct Lineal
  * Supports: ES (Spanish) and EN (English)
  */
 export type Lang = "es" | "en";

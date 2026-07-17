@@ -1,8 +1,8 @@
-# Hekatan Struct
+# Hekatan Struct Lineal
 
 Fork de [awatif v2.0.0](https://github.com/madil4/awatif) extendido con análisis modal, Winkler springs nativos en C++, ejemplos parametrizados (zapatas, placas, cáscaras, pórticos, edificios) y un **workspace unificado** con Tweakpane para cargar cualquier ejemplo por selector o URL `?t=<id>`.
 
-**Deploy público:** https://giorgioburbanelli89.github.io/hekatan-struct/workspace/
+**Deploy público:** https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/
 
 ## Arquitectura del workspace
 
@@ -139,7 +139,7 @@ El viewer filtra NaN en min/max (nodos fuera del plato reciben NaN). `getColorMa
 
 ## Ejes locales (Three.js Y-up)
 
-**CRÍTICO**: awatif usa convención Three.js (`THREE.Object3D.DEFAULT_UP = (0,0,1)` — Z-up en hekatan-struct).
+**CRÍTICO**: awatif usa convención Three.js (`THREE.Object3D.DEFAULT_UP = (0,0,1)` — Z-up en hekatan-struct-lineal).
 
 Para columnas verticales (elemento a lo largo de +Z):
 ```
@@ -204,12 +204,12 @@ Mode   Freq (Hz)   Dominant
 npm run dev:examples
 
 # Build de producción (output en website/src/examples/)
-MSYS_NO_PATHCONV=1 DEPLOY_BASE=/hekatan-struct/ npm run build -w examples
+MSYS_NO_PATHCONV=1 DEPLOY_BASE=/hekatan-struct-lineal/ npm run build -w examples
 
 # Deploy a GitHub Pages (branch gh-pages)
 GIT_AUTHOR_NAME="..." GIT_AUTHOR_EMAIL="..." \
   npx gh-pages --dist website/src/examples \
-    --repo https://github.com/GiorgioBurbanelli89/hekatan-struct.git \
+    --repo https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal.git \
     --branch gh-pages --dotfiles \
     --message "..."
 ```
@@ -261,15 +261,15 @@ source /c/Users/j-b-j/emsdk/emsdk_env.sh
 ## Git remotes
 
 ```
-hekatan-struct  https://github.com/GiorgioBurbanelli89/hekatan-struct.git  (MAIN)
+hekatan-struct-lineal  https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal.git  (MAIN)
   main       ← source
   gh-pages   ← bundle compilado (deploy)
 ```
 
 Otra compu:
 ```bash
-git clone https://github.com/GiorgioBurbanelli89/hekatan-struct.git
-cd hekatan-struct && npm install && npm run dev:examples
+git clone https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal.git
+cd hekatan-struct-lineal && npm install && npm run dev:examples
 ```
 
 ## Gotchas
@@ -279,5 +279,5 @@ cd hekatan-struct && npm install && npm run dev:examples
 - `activeExampleVersion` invalida van.derive stale al cambiar de ejemplo — NO remover
 - `colorMapRanges` es por-campo (`{ pressure: [min,max] }`), no global — otros shell results mantienen auto-escala
 - `deformScale` se auto-computa en cada `loadExample`/`rebuild` — el usuario puede sobreescribir desde el slider pero se pierde al siguiente rebuild
-- Git-Bash de Windows convierte `/hekatan-struct/` a ruta absoluta Windows — usar `MSYS_NO_PATHCONV=1` al build
+- Git-Bash de Windows convierte `/hekatan-struct-lineal/` a ruta absoluta Windows — usar `MSYS_NO_PATHCONV=1` al build
 - El servidor dev corre en **localhost:4600** (no 4640 como el awatif original)

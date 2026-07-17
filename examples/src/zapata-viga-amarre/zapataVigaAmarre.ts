@@ -8,7 +8,9 @@ import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan
 import type { ExampleDef, BuildStates } from "../exampleRegistry";
 import { activeExampleVersion } from "../workspace/exampleVersion";
 
-const Ec = 25e6;
+// f'c=210 kg/cm² → E=14100·√210=2043284.12 t/m²=20.04e6 kN/m² (valor del libro/SAFE Ej.6).
+// Antes 25e6 (≈f'c 327): más rígido que el libro, repartía la presión ~4% más plano.
+const Ec = 20.04e6;
 const nu_c = 0.2;
 const Gc = Ec / (2 * (1 + nu_c));
 const rho = 24;
@@ -242,9 +244,16 @@ export const zapataVigaAmarre: ExampleDef = {
     // Implementación: para cada x del mesh shell (xs1, xs2) a y=yC1,
     // creamos un segmento de viga consecutivo. addNode reusa los nodos
     // existentes del slab.
+    // CLIP COLUMNA-A-COLUMNA (como el libro Guerra y el f2k nativo de SAFE):
+    // la viga va SOLO de xCol1 a xCol2. NO se extiende a los bordes exteriores
+    // de las zapatas — más allá de la columna no hay viga física. En Z2 la
+    // columna está al CENTRO → la viga termina en el centro, no en el borde
+    // derecho (antes sobraba Lz2/2 de "viga fantasma"). El f2k nativo Ejm6
+    // tiene la viga 0→5.94 (col-a-col). El slab sigue compartiendo nodos en el
+    // tramo entre columnas + rigid-links bajo cada columna → no "flota".
     const vigaPathNodes: number[] = [];
-    for (const x of xs1) vigaPathNodes.push(addNode(x, yC1, 0));
-    for (const x of xs2) vigaPathNodes.push(addNode(x, yC2, 0));
+    for (const x of xs1) if (x >= xC1 - 1e-6) vigaPathNodes.push(addNode(x, yC1, 0));
+    for (const x of xs2) if (x <= xC2 + 1e-6) vigaPathNodes.push(addNode(x, yC2, 0));
     let nVigaSegments = 0;
     for (let i = 0; i < vigaPathNodes.length - 1; i++) {
       const a = vigaPathNodes[i], b = vigaPathNodes[i + 1];
@@ -584,7 +593,10 @@ export const zapataVigaAmarre: ExampleDef = {
     }];
     try {
       downloadEdificioCimentacionF2k(
-        { zapatas, vigasAmarre, ks_kNm3: ks, Z: 0 },
+        // E_concreto_MPa = Ec del ejemplo (kN/m² → MPa). Para Guerra Ej.6 (f'c=210)
+        // Ec=20.04e6 kN/m² → 20040 MPa, así el f2k exportado lleva el E del libro
+        // (antes el exporter usaba su default 24855 MPa ≈ f'c 4000psi → E equivocado).
+        { zapatas, vigasAmarre, ks_kNm3: ks, Z: 0, E_concreto_MPa: Ec / 1000 },
         `ZapataVigaAmarre_Hekatan_${Date.now()}.f2k`,
       );
       const P1tot = (p.P1 ?? 0) + (p.P1_L ?? 0);

@@ -46,7 +46,7 @@ El script `sap2000_test_solar_bridge.py` usa tu `SAP2000Bridge` client + `inicia
 2. **Click derecho** en `iniciar_bridge.bat` (en la carpeta de arriba) → **"Ejecutar como administrador"**. La consola del bridge mostrará "Servidor listo".
 3. **Correr el script** (sin elevar):
 ```bash
-cd "C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\examples\src\tablero-puente"
+cd "C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\examples\src\tablero-puente"
 python sap2000_test_solar_bridge.py
 ```
 

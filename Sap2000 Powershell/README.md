@@ -118,7 +118,7 @@ springsList.push_back({ node, dof: 2, k: kvz });
 //                                       kvz = ks * A_trib (pre-calculado en TS)
 ```
 
-Para mostrar `pressure` en el viewer, hekatan-struct hace post-process:
+Para mostrar `pressure` en el viewer, hekatan-struct-lineal hace post-process:
 ```ts
 pressure_kPa = -reaction_kN_z / A_trib_m2
 ```

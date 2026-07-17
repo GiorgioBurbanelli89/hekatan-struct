@@ -21,7 +21,7 @@ tonf/kN, Winkler springs scaling, S2K format, comparación SAFE.
 
 ## 🌐 Deploy LIVE
 
-**https://giorgioburbanelli89.github.io/hekatan-struct/workspace/**
+**https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/**
 
 Ya tiene todos los fixes. Probá:
 - `?t=zapata-aislada-validacion` — labels en tonf/m², σ_max=10.6, σ/q_adm=1.06 ⚠
@@ -123,8 +123,8 @@ en SAFE GUI manualmente, save .FDB, después usar OAPI para correr.
 # Clonar
 mkdir "C:\Hekatan"
 cd "C:\Hekatan"
-git clone https://github.com/GiorgioBurbanelli89/hekatan-struct.git
-cd hekatan-struct
+git clone https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal.git
+cd hekatan-struct-lineal
 git checkout awatif-fem-v2-shells-nonlinear
 
 # Deps
@@ -139,7 +139,7 @@ npm run dev:examples
 ## 📂 Archivos clave de esta sesión
 
 ```
-hekatan-struct/
+hekatan-struct-lineal/
 ├── PROMPT_CONTINUACION_v2.md                       ← este archivo
 ├── examples/src/
 │   ├── layered-shell/                              ← NUEVO ejemplo workspace
@@ -175,7 +175,7 @@ hekatan-struct/
 
 > Sigo el trabajo de validación FEM Hekatan-struct vs SAP2000/SAFE.
 > Estado en `PROMPT_CONTINUACION_v2.md`. Último commit: `fc4bd7ba`.
-> Deploy live: https://giorgioburbanelli89.github.io/hekatan-struct/workspace/
+> Deploy live: https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/
 >
 > Próximas acciones por prioridad:
 > 1. Debug F2K SAFE para que RunAnalysis funcione (solo conserva LOAD CASE)

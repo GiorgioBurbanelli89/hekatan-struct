@@ -18,7 +18,7 @@ if not "%~1"=="" (
 
 echo.
 echo ============================================================
-echo   EXTRACCION DE RESULTADOS ETABS — hekatan-struct
+echo   EXTRACCION DE RESULTADOS ETABS — hekatan-struct-lineal
 echo ============================================================
 echo.
 echo  Arrastra tu archivo .EDB (analizado) o .e2k (texto)

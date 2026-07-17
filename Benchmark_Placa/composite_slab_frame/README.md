@@ -94,13 +94,13 @@ Navier exacta más cerca por su DKQ.
 ```bash
 cd hekatanlab-web
 node --import ./hkl-bootstrap.mjs hkl.mjs --load \
-  ../hekatan-struct/Benchmark_Placa/matlab_lib/lib \
-  ../hekatan-struct/Benchmark_Placa/matlab_lib/composite_slab_thin_frame.m
+  ../hekatan-struct-lineal/Benchmark_Placa/matlab_lib/lib \
+  ../hekatan-struct-lineal/Benchmark_Placa/matlab_lib/composite_slab_thin_frame.m
 ```
 
 ### Hekatan Struct CLI (WASM Eigen C++)
 ```bash
-cd hekatan-struct
+cd hekatan-struct-lineal
 node Benchmark_Placa/composite_slab_frame/run_composite_slab_thin_frame.mjs
 node Benchmark_Placa/composite_slab_frame/run_composite_slab_thick_frame.mjs
 node Benchmark_Placa/composite_slab_frame/run_composite_wall_membrane_frame.mjs
@@ -112,7 +112,7 @@ Paso 1 — Generar `.e2k`:
 ```bash
 cd hekatanlab-web
 node --import tsx/esm \
-  ../hekatan-struct/Benchmark_Placa/composite_slab_frame/export_e2k_thin_frame.mjs \
+  ../hekatan-struct-lineal/Benchmark_Placa/composite_slab_frame/export_e2k_thin_frame.mjs \
   ShellThin   # o ShellThick / Membrane
 ```
 

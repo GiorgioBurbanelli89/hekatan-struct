@@ -8,7 +8,7 @@
 │  Solver lineal completo  │    │  + Solver no-lineal      │
 │  Workspace web abierto   │    │  + Damage / Fractura     │
 │  GitHub público          │    │  + Soporte técnico       │
-│  hekatan-struct (repo)   │    │  hekatan-pro-struct      │
+│  hekatan-struct-lineal (repo)   │    │  hekatan-pro-struct      │
 └──────────────────────────┘    └──────────────────────────┘
 ```
 
@@ -16,7 +16,7 @@
 ## Estrategia
 
 ```
-hekatan-struct/                  ← Repo público (github.com/GiorgioBurbanelli89/hekatan-struct)
+hekatan-struct-lineal/                  ← Repo público (github.com/GiorgioBurbanelli89/hekatan-struct-lineal)
 │
 ├── LICENSE                      ← MIT (todo lo público)
 ├── hekatan-fem/                  ← Solver lineal MIT
@@ -96,14 +96,14 @@ Capacidades en desarrollo:
 
 ```bash
 # Trabajar en código público (lineal, abierto)
-cd hekatan-struct/
+cd hekatan-struct-lineal/
 git checkout main
 # ... editar hekatan-fem/, examples/, docs/
-git push hekatan-struct main      # → repo público
+git push hekatan-struct-lineal main      # → repo público
 
 # Trabajar en código Pro (no-lineal, privado)
-# El folder vive AL LADO de hekatan-struct, no dentro:
-#   ~/Documents/Hekatan Calc 1.0.0/hekatan-struct/        (público)
+# El folder vive AL LADO de hekatan-struct-lineal, no dentro:
+#   ~/Documents/Hekatan Calc 1.0.0/hekatan-struct-lineal/        (público)
 #   ~/Documents/Hekatan Calc 1.0.0/hekatan-pro-struct/    (privado)
 cd ../hekatan-pro-struct/
 # ... editar nonlinear.cpp, etc.

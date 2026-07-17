@@ -408,7 +408,7 @@ export const zapataAisladaValidacion: ExampleDef = {
       );
 
       // Helper: mapa de presiones (σ_z = ks × w, en kN/m² — unidad SI base
-      // de hekatan-struct, el colormap legend la convierte al unit elegido
+      // de hekatan-struct-lineal, el colormap legend la convierte al unit elegido
       // por el usuario via colorMapForceUnit). σ<0 = compresion (hacia abajo).
       const computePressure = (defs?: Map<number, number[]>): Map<number, number[]> => {
         const pm = new Map<number, number[]>();

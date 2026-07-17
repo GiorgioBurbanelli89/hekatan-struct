@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Antes de Gauss · La historia de medir áreas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --paper:        #f4ecd8;
+    --paper-dark:   #e8dcc0;
+    --ink:          #1a2942;
+    --ink-soft:     #3d4f6f;
+    --ink-fade:     #6a7a96;
+    --gold:         #b08d4f;
+    --green:        #2d6a4f;
+    --red:          #a23232;
+    --blue:         #2c5e8e;
+    --grid:         rgba(26, 41, 66, 0.07);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  .nav-bar {
+    position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px; background: var(--ink); padding: 6px 10px;
+    border-radius: 30px; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+  .nav-bar a {
+    color: var(--paper); text-decoration: none; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; padding: 4px 12px; border-radius: 16px; transition: background 0.2s;
+  }
+  .nav-bar a:hover, .nav-bar a.current { background: var(--gold); color: var(--ink); }
+  .nav-bar .nav-prev::before { content: "← "; }
+  .nav-bar .nav-next::after { content: " →"; }
+  .nav-bar .nav-home { font-weight: 700; }
+  @media print { .nav-bar { display: none; } }
+
+  html, body {
+    background: var(--paper); color: var(--ink);
+    font-family: 'Newsreader', Georgia, serif; font-size: 16px; line-height: 1.5; overflow-x: hidden;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(176, 141, 79, 0.06) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(26, 41, 66, 0.04) 0%, transparent 40%),
+      repeating-linear-gradient(90deg, transparent 0, transparent 39px, var(--grid) 39px, var(--grid) 40px),
+      repeating-linear-gradient(0deg, transparent 0, transparent 39px, var(--grid) 39px, var(--grid) 40px);
+    pointer-events: none; z-index: 0;
+  }
+
+  .container { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 24px 18px 60px; }
+
+  header { text-align: center; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1.5px solid var(--ink); }
+  .pre-title {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--gold); margin-bottom: 8px;
+  }
+  h1 { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 2.1rem; line-height: 1.1; }
+  .subtitle { font-style: italic; color: var(--ink-soft); margin-top: 8px; font-size: 1rem; }
+
+  section { margin-bottom: 22px; }
+  h2 {
+    font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 1.4rem; color: var(--ink);
+    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px dashed var(--ink-fade);
+  }
+  p { margin-bottom: 10px; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Línea de tiempo */
+  .timeline { display: flex; flex-direction: column; gap: 12px; margin: 6px 0 18px; }
+  .tl-item {
+    display: grid; grid-template-columns: 96px 1fr; gap: 14px; align-items: start;
+    background: rgba(255,255,255,0.45); border: 1px solid var(--ink-fade);
+    border-left: 4px solid var(--gold); border-radius: 4px; padding: 12px 14px;
+  }
+  .tl-when {
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.95rem;
+    color: var(--gold); text-align: right;
+  }
+  .tl-who { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 1.15rem; }
+  .tl-body { font-size: 0.93rem; }
+  .tl-item.arq { border-left-color: var(--blue); } .tl-item.arq .tl-when { color: var(--blue); }
+  .tl-item.nc  { border-left-color: var(--gold); }
+  .tl-item.gauss { border-left-color: var(--green); } .tl-item.gauss .tl-when { color: var(--green); }
+
+  /* Tira de progresión (4 paneles) */
+  .strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 8px 0 6px; }
+  .panel {
+    background: #fbf6e9; border: 1.5px solid var(--ink); border-radius: 4px; padding: 6px 6px 8px;
+    box-shadow: 2px 2px 0 var(--ink); text-align: center;
+  }
+  .panel svg { width: 100%; height: auto; display: block; }
+  .panel .cap { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; margin-top: 4px; color: var(--ink-soft); }
+  .panel .who { font-weight: 700; font-size: 0.66rem; color: var(--ink); }
+  .panel.best { box-shadow: 2px 2px 0 var(--green); border-color: var(--green); }
+  @media (max-width: 540px){ .strip { grid-template-columns: repeat(2, 1fr); } }
+
+  /* Widget */
+  .viz-card { background: #fbf6e9; border: 1.5px solid var(--ink); border-radius: 4px; padding: 14px; margin-bottom: 14px; box-shadow: 3px 3px 0 var(--ink); }
+  .viz-card svg { width: 100%; height: auto; display: block; }
+  .axis-line { stroke: var(--ink); stroke-width: 1.2; }
+  .grid-line { stroke: var(--ink); stroke-width: 0.4; opacity: 0.15; }
+  .axis-label { font-family: 'JetBrains Mono', monospace; font-size: 11px; fill: var(--ink-soft); }
+  .curve-true { stroke: var(--blue); stroke-width: 2.5; fill: none; }
+  .piece { fill: rgba(176,141,79,0.28); stroke: var(--gold); stroke-width: 1; }
+  .gp { fill: var(--red); stroke: var(--ink); stroke-width: 1.2; }
+
+  .method-tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .method-tabs button {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; padding: 7px 12px;
+    border: 1.5px solid var(--ink); background: var(--paper); color: var(--ink);
+    border-radius: 4px; cursor: pointer; box-shadow: 2px 2px 0 var(--ink); transition: all .12s;
+  }
+  .method-tabs button.on { background: var(--ink); color: var(--paper); }
+  .method-tabs button.gauss.on { background: var(--green); border-color: var(--green); box-shadow: 2px 2px 0 var(--gold); }
+
+  .slider-group { background: rgba(255,255,255,0.45); border: 1px solid var(--ink-fade); border-radius: 4px; padding: 12px 16px; margin-bottom: 12px; }
+  .slider-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .slider-label { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.1rem; }
+  .slider-value { font-family: 'JetBrains Mono', monospace; font-weight: 700; background: var(--paper); padding: 3px 11px; border: 1px solid var(--ink); border-radius: 3px; min-width: 70px; text-align: center; }
+  input[type="range"]{ -webkit-appearance:none; appearance:none; width:100%; height:34px; background:transparent; outline:none; }
+  input[type="range"]::-webkit-slider-runnable-track{ height:5px; background:var(--ink); border-radius:3px; }
+  input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none; width:30px; height:30px; background:var(--gold); border:2.5px solid var(--ink); border-radius:50%; margin-top:-13px; box-shadow:2px 2px 0 var(--ink); }
+  input[type="range"]::-moz-range-track{ height:5px; background:var(--ink); border-radius:3px; }
+  input[type="range"]::-moz-range-thumb{ width:28px; height:28px; background:var(--gold); border:2.5px solid var(--ink); border-radius:50%; }
+
+  .readout { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 4px 0; }
+  .readout .cell { text-align: center; border: 1.5px solid var(--ink-fade); border-radius: 4px; padding: 8px 4px; }
+  .readout .cell .lbl { font-family:'Newsreader',serif; font-style:italic; font-size:0.76rem; color:var(--ink-soft); display:block; }
+  .readout .cell .num2 { font-family:'JetBrains Mono',monospace; font-weight:700; font-size:1.1rem; display:block; margin-top:2px; }
+  .readout .cell.good { border-color: var(--green); background: rgba(45,106,79,0.10); } .readout .cell.good .num2 { color: var(--green); }
+  .readout .cell.bad  { border-color: var(--red); background: rgba(162,50,50,0.06); } .readout .cell.bad .num2 { color: var(--red); }
+
+  .verdict { margin-top: 10px; padding: 11px 14px; border-radius: 4px; font-size: 0.95rem; text-align: center; background: var(--ink); color: var(--paper); }
+  .verdict.win { background: var(--green); }
+  .verdict strong { color: var(--gold); } .verdict.win strong { color: #d8f3dc; }
+
+  .footer-note { margin-top: 26px; padding-top: 18px; border-top: 1px dashed var(--ink-fade); font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--ink-soft); text-align: center; letter-spacing: 0.05em; }
+  @media (max-width: 380px){ h1{ font-size:1.65rem; } .container{ padding:18px 14px 50px; } }
+
+  /* Vista lado a lado trapecio vs Simpson */
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+  @media (max-width: 540px){ .duo { grid-template-columns: 1fr; } }
+  .duo .pan { background:#fbf6e9; border:1.5px solid var(--ink); border-radius:4px; padding:8px; box-shadow:2px 2px 0 var(--ink); }
+  .duo .pan h4 { font-family:'Cormorant Garamond',serif; font-weight:600; font-size:1.05rem; text-align:center; margin-bottom:4px; }
+  .duo .pan svg { width:100%; height:auto; display:block; }
+  .duo .pan .err { font-family:'JetBrains Mono',monospace; font-size:0.8rem; text-align:center; margin-top:5px; color:var(--ink-soft); }
+  .duo .pan .err b { color:var(--red); }
+  .duo .pan.win { border-color:var(--green); box-shadow:2px 2px 0 var(--green); }
+  .duo .pan.win .err b { color:var(--green); }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="pre-title">Bloque 3 · Antes de la cuadratura de Gauss</div>
+    <h1>2000 años midiendo áreas</h1>
+    <div class="subtitle">De Arquímedes a Gauss: cómo aprendimos a integrar sin el símbolo ∫</div>
+  </header>
+
+  <section>
+    <h2>El problema, siempre el mismo</h2>
+    <p>Medir el <strong>área bajo una curva</strong> es uno de los problemas más viejos de las
+    matemáticas — mucho más viejo que el símbolo <span class="mono">∫</span> y que cualquier
+    computadora. La palabra <em>cuadratura</em> significa, literalmente, "convertir un área curva
+    en un cuadrado equivalente". Aquí está la carrera de 2000 años para resolverlo, cada vez con
+    <strong>menos mediciones</strong>.</p>
+  </section>
+
+  <!-- ── Línea de tiempo ── -->
+  <section>
+    <h2>La línea de tiempo</h2>
+    <div class="timeline">
+      <div class="tl-item arq">
+        <div class="tl-when">~250 a.C.</div>
+        <div class="tl-body">
+          <div class="tl-who">Arquímedes — triángulos</div>
+          Metía <strong>un triángulo</strong> dentro de la parábola, y rellenaba los huecos con
+          triángulos cada vez más pequeños, sin parar. Esa suma infinita de triangulitos da el área
+          <em>exacta</em>. Fue la primera "integración" de la historia — sin integral, a mano,
+          con geometría griega.
+        </div>
+      </div>
+      <div class="tl-item nc">
+        <div class="tl-when">~1700</div>
+        <div class="tl-body">
+          <div class="tl-who">Newton &amp; Cotes — tapas que imitan la curva</div>
+          En vez de muchos rectángulos planos, usaron <strong>pocas piezas con la tapa pegada a la
+          curva</strong>: la <em>regla del trapecio</em> (tapa recta) y la <em>regla de Simpson</em>
+          (tapa curva). Menos piezas, mejor resultado. Todo a mano.
+        </div>
+      </div>
+      <div class="tl-item gauss">
+        <div class="tl-when">1814</div>
+        <div class="tl-body">
+          <div class="tl-who">Carl F. Gauss — pocos puntos mágicos</div>
+          Dijo: <strong>ni siquiera espacíes los puntos igual</strong>. Pon 2 puntos en
+          <span class="mono">±1/√3</span> y aciertas exacto cualquier curva hasta grado 3.
+          Lo calculó <em>a mano, 130 años antes del primer ordenador</em>.
+        </div>
+      </div>
+    </div>
+    <p style="font-size:0.85rem; color:var(--ink-soft);">El ordenador (1940s) no inventó nada de
+    esto: encontró las recetas ya listas en los libros y las programó. Solo trajo un límite nuevo,
+    el redondeo de ~16 dígitos (estándar mundial IEEE 754, 1985).</p>
+  </section>
+
+  <!-- ── Tira de progresión ── -->
+  <section>
+    <h2>La misma idea, cada vez más fina</h2>
+    <p>Mira cómo la "tapa" de cada pieza imita mejor a la curva azul. Más parecido a la curva =
+    menos piezas necesitas.</p>
+    <div class="strip">
+      <div class="panel">
+        <svg viewBox="0 0 120 90" id="p-rect"></svg>
+        <div class="who">Rectángulos</div>
+        <div class="cap">Riemann · tapa plana</div>
+      </div>
+      <div class="panel">
+        <svg viewBox="0 0 120 90" id="p-trap"></svg>
+        <div class="who">Trapecios</div>
+        <div class="cap">Newton-Cotes · tapa recta</div>
+      </div>
+      <div class="panel">
+        <svg viewBox="0 0 120 90" id="p-simp"></svg>
+        <div class="who">Simpson</div>
+        <div class="cap">T. Simpson · tapa parábola</div>
+      </div>
+      <div class="panel best">
+        <svg viewBox="0 0 120 90" id="p-gauss"></svg>
+        <div class="who">Gauss</div>
+        <div class="cap">Gauss · 2 puntos mágicos</div>
+      </div>
+    </div>
+    <p style="font-size:0.85rem; color:var(--ink-soft);">
+      <strong>¿De quién es cada uno?</strong> Los <strong>rectángulos</strong> son la <em>suma de Riemann</em>
+      (B. Riemann, 1854) — la definición de libro del integral. El <strong>trapecio</strong> y <strong>Simpson</strong>
+      son de la familia <em>Newton-Cotes</em> (Newton y Roger Cotes, ~1700); la de tapa parábola lleva el nombre de
+      <em>Thomas Simpson</em> (1743). Y los <strong>puntos mágicos</strong> son de <em>Gauss</em> (1814).
+    </p>
+  </section>
+
+  <!-- ── Arquímedes interactivo ── -->
+  <section>
+    <h2>El método de Arquímedes (triángulos)</h2>
+    <p>El más viejo y distinto: en vez de medir bajo la curva, Arquímedes <strong>rellenó</strong> la
+    parábola con triángulos. Uno grande, luego dos en los huecos, luego cuatro… Mueve el slider de
+    <strong>rondas</strong> y mira el área acercarse al valor exacto <span class="mono">4/3 ≈ 1.3333</span>.</p>
+    <div class="viz-card">
+      <svg viewBox="0 0 400 230" preserveAspectRatio="xMidYMid meet" id="svgA">
+        <g id="triA"></g>
+        <g id="curveA"></g>
+      </svg>
+    </div>
+    <div class="slider-group">
+      <div class="slider-header">
+        <span class="slider-label"><span class="symbol">&#8635;</span> Rondas de triángulos</span>
+        <span id="a-dval" class="slider-value">0</span>
+      </div>
+      <input type="range" id="a-depth" min="0" max="6" step="1" value="0">
+    </div>
+    <div class="readout">
+      <div class="cell"><span class="lbl">Área exacta (4/3)</span><span class="num2">1.3333</span></div>
+      <div class="cell" id="a-area-cell"><span class="lbl">Área con triángulos</span><span class="num2" id="a-area">1.0000</span></div>
+      <div class="cell"><span class="lbl">Triángulos usados</span><span class="num2" id="a-count">1</span></div>
+    </div>
+    <div class="verdict" id="a-verdict">Ronda 0: un solo triángulo grande…</div>
+  </section>
+
+  <!-- ── Widget interactivo ── -->
+  <section>
+    <h2>Compáralos tú mismo</h2>
+    <p>Curva difícil: <span class="mono">f(x) = e^x</span> (no es un polinomio, así que ningún
+    método da exacto). Elige un método y mueve el slider. Mira cuántas <strong>mediciones</strong>
+    necesita cada uno para el mismo error. <strong>Gauss gana con 2.</strong></p>
+
+    <div class="method-tabs" id="tabs">
+      <button data-m="rect" class="on">Rectángulos</button>
+      <button data-m="trap">Trapecios</button>
+      <button data-m="simp">Simpson</button>
+      <button data-m="gauss" class="gauss">Gauss</button>
+    </div>
+
+    <div class="viz-card">
+      <svg viewBox="0 0 400 240" preserveAspectRatio="xMidYMid meet" id="svgW">
+        <g id="gridW"></g>
+        <g id="piecesW"></g>
+        <line class="axis-line" x1="40" y1="205" x2="385" y2="205"/>
+        <line class="axis-line" x1="42" y1="205" x2="42" y2="20"/>
+        <text class="axis-label" x="383" y="221" text-anchor="end">x</text>
+        <text class="axis-label" x="48" y="28">f(x)=eˣ</text>
+        <g id="curveW"></g>
+      </svg>
+    </div>
+
+    <div class="slider-group">
+      <div class="slider-header">
+        <span class="slider-label" id="n-label">Número de piezas</span>
+        <span id="n-val" class="slider-value">4</span>
+      </div>
+      <input type="range" id="n-slider" min="1" max="24" step="1" value="4">
+    </div>
+
+    <div class="readout">
+      <div class="cell"><span class="lbl">Mediciones usadas</span><span class="num2" id="r-meas">5</span></div>
+      <div class="cell"><span class="lbl">Área exacta</span><span class="num2" id="r-exact">2.3504</span></div>
+      <div class="cell" id="err-cell"><span class="lbl">Error</span><span class="num2" id="r-err">—</span></div>
+    </div>
+
+    <div class="verdict" id="verdict">Elige un método y mueve el slider…</div>
+  </section>
+
+  <!-- ── Trapecio vs Simpson lado a lado ── -->
+  <section>
+    <h2>Trapecio vs Simpson, lado a lado</h2>
+    <p>Aquí se entiende de un vistazo. <strong>El mismo número de piezas</strong> en los dos, sobre la
+    misma curva. La única diferencia: el trapecio tapa con <strong>rectas</strong> (deja huecos contra
+    la curva), Simpson tapa con <strong>parábolas</strong> (se pega casi perfecto). Mira el error de cada uno.</p>
+
+    <div class="slider-group">
+      <div class="slider-header">
+        <span class="slider-label"><span class="symbol">n</span> Piezas (igual en los dos)</span>
+        <span id="duo-val" class="slider-value">2</span>
+      </div>
+      <input type="range" id="duo-slider" min="2" max="20" step="2" value="2">
+    </div>
+
+    <div class="duo">
+      <div class="pan" id="pan-trap">
+        <h4>Trapecios (tapa recta)</h4>
+        <svg viewBox="0 0 200 150" preserveAspectRatio="xMidYMid meet"><g id="gDT"></g></svg>
+        <div class="err" id="errDT">error —</div>
+      </div>
+      <div class="pan" id="pan-simp">
+        <h4>Simpson (tapa parábola)</h4>
+        <svg viewBox="0 0 200 150" preserveAspectRatio="xMidYMid meet"><g id="gDS"></g></svg>
+        <div class="err" id="errDS">error —</div>
+      </div>
+    </div>
+
+    <div class="verdict" id="duo-verdict">Mueve el slider…</div>
+  </section>
+
+  <section>
+    <h2>La moraleja para Hekatan</h2>
+    <p>La carrera no la ganó quien tenía más fuerza, sino quien tuvo el <strong>método más listo</strong>.
+    Gauss con 2 puntos le gana a 20 trapecios. Esa es, en una frase, la apuesta de Hekatan:
+    <em>no la máquina más potente, sino la matemática mejor elegida</em>. Y la siguiente diapositiva
+    muestra justo de dónde sale ese <span class="mono">1/√3</span>.</p>
+  </section>
+
+  <div class="footer-note">HEKATAN STRUCTURE · MATERIAL EDUCATIVO</div>
+
+</div>
+
+<script>
+// ────────────────────────────────────────────────────────────────
+//  Tablas de Gauss-Legendre (sobre [-1, 1])
+// ────────────────────────────────────────────────────────────────
+const GAUSS = {
+  1:{xi:[0],w:[2]},
+  2:{xi:[-1/Math.sqrt(3),1/Math.sqrt(3)],w:[1,1]},
+  3:{xi:[-Math.sqrt(3/5),0,Math.sqrt(3/5)],w:[5/9,8/9,5/9]},
+  4:{xi:[-0.861136311594053,-0.339981043584856,0.339981043584856,0.861136311594053],
+     w:[0.347854845137454,0.652145154862546,0.652145154862546,0.347854845137454]},
+  5:{xi:[-0.906179845938664,-0.538469310105683,0,0.538469310105683,0.906179845938664],
+     w:[0.236926885056189,0.478628670499366,0.568888888888889,0.478628670499366,0.236926885056189]}
+};
+
+function svgEl(name,attrs){ const e=document.createElementNS('http://www.w3.org/2000/svg',name); for(const k in attrs) e.setAttribute(k,attrs[k]); return e; }
+
+// ────────────────────────────────────────────────────────────────
+//  Tira de progresión (4 mini-paneles, estáticos, f(x)=x² en [-1,1])
+// ────────────────────────────────────────────────────────────────
+(function(){
+  const W=120,H=90, x0=10,x1=112, y0=82,yt=12;
+  const f=x=>x*x, yMin=0,yMax=1.05;
+  const SX=x=>x0+(x+1)/2*(x1-x0);
+  const SY=y=>y0-(y-yMin)/(yMax-yMin)*(y0-yt);
+  function curve(svg){
+    const pts=[]; for(let i=0;i<=60;i++){const x=-1+2*i/60; pts.push(SX(x)+','+SY(f(x)));}
+    svg.appendChild(svgEl('polyline',{points:pts.join(' '),fill:'none',stroke:'#2c5e8e','stroke-width':1.6}));
+    svg.appendChild(svgEl('line',{x1:x0,y1:SY(0),x2:x1,y2:SY(0),stroke:'#1a2942','stroke-width':0.8}));
+  }
+  // rectángulos
+  (function(){const svg=document.getElementById('p-rect'); const n=6;
+    for(let i=0;i<n;i++){const xa=-1+2*i/n, xb=-1+2*(i+1)/n, xm=(xa+xb)/2, h=f(xm);
+      svg.appendChild(svgEl('rect',{x:SX(xa),y:SY(h),width:SX(xb)-SX(xa),height:SY(0)-SY(h),fill:'rgba(176,141,79,0.30)',stroke:'#b08d4f','stroke-width':0.6}));}
+    curve(svg);})();
+  // trapecios
+  (function(){const svg=document.getElementById('p-trap'); const n=5;
+    for(let i=0;i<n;i++){const xa=-1+2*i/n, xb=-1+2*(i+1)/n;
+      svg.appendChild(svgEl('polygon',{points:`${SX(xa)},${SY(0)} ${SX(xa)},${SY(f(xa))} ${SX(xb)},${SY(f(xb))} ${SX(xb)},${SY(0)}`,fill:'rgba(176,141,79,0.30)',stroke:'#b08d4f','stroke-width':0.6}));}
+    curve(svg);})();
+  // Simpson: la tapa ES la curva (parábolas), lo mostramos como relleno bajo la curva
+  (function(){const svg=document.getElementById('p-simp');
+    const pts=['%s,%s'.replace('%s',SX(-1)).replace('%s',SY(0))];
+    for(let i=0;i<=60;i++){const x=-1+2*i/60; pts.push(SX(x)+','+SY(f(x)));}
+    pts.push(SX(1)+','+SY(0));
+    svg.appendChild(svgEl('polygon',{points:pts.join(' '),fill:'rgba(176,141,79,0.30)',stroke:'#b08d4f','stroke-width':0.6}));
+    // 3 puntos de muestreo
+    for(const x of [-1,0,1]) svg.appendChild(svgEl('circle',{cx:SX(x),cy:SY(f(x)),r:2.4,fill:'#b08d4f'}));
+    curve(svg);})();
+  // Gauss: 2 rectángulos en ±1/√3
+  (function(){const svg=document.getElementById('p-gauss'); const a=1/Math.sqrt(3);
+    svg.appendChild(svgEl('rect',{x:SX(-1),y:SY(f(-a)),width:SX(0)-SX(-1),height:SY(0)-SY(f(-a)),fill:'rgba(45,106,79,0.22)',stroke:'#2d6a4f','stroke-width':0.7}));
+    svg.appendChild(svgEl('rect',{x:SX(0),y:SY(f(a)),width:SX(1)-SX(0),height:SY(0)-SY(f(a)),fill:'rgba(45,106,79,0.22)',stroke:'#2d6a4f','stroke-width':0.7}));
+    curve(svg);
+    for(const s of [-1,1]) svg.appendChild(svgEl('circle',{cx:SX(s*a),cy:SY(f(s*a)),r:2.8,fill:'#a23232',stroke:'#1a2942','stroke-width':0.6}));})();
+})();
+
+// ────────────────────────────────────────────────────────────────
+//  Widget interactivo:  f(x)=e^x en [-1,1].  Área exacta = e - 1/e
+// ────────────────────────────────────────────────────────────────
+(function(){
+  const f=Math.exp, A=-1,B=1, EXACT=Math.E-1/Math.E;
+  const yMin=0, yMax=2.9;
+  const G={xL:42,xR:385,yB:205,yT:20};
+  const SX=x=>G.xL+(x-A)/(B-A)*(G.xR-G.xL);
+  const SY=y=>G.yB-(y-yMin)/(yMax-yMin)*(G.yB-G.yT);
+  let method='rect', n=4;
+
+  function grid(){
+    const g=document.getElementById('gridW'); g.innerHTML='';
+    for(const x of [-1,0,1]){ g.appendChild(svgEl('line',{class:'grid-line',x1:SX(x),x2:SX(x),y1:G.yT,y2:G.yB}));
+      const t=svgEl('text',{class:'axis-label',x:SX(x),y:G.yB+15,'text-anchor':'middle'}); t.textContent=x; g.appendChild(t); }
+  }
+  function drawCurve(){
+    const c=document.getElementById('curveW'); c.innerHTML='';
+    const pts=[]; for(let i=0;i<=120;i++){const x=A+(B-A)*i/120; pts.push(SX(x)+','+SY(f(x)));}
+    c.appendChild(svgEl('polyline',{class:'curve-true',points:pts.join(' ')}));
+  }
+
+  function compute(){
+    const P=document.getElementById('piecesW'); P.innerHTML='';
+    let approx=0, meas=0;
+    if(method==='rect'){
+      const h=(B-A)/n; meas=n;
+      for(let i=0;i<n;i++){ const xa=A+i*h, xm=xa+h/2, hh=f(xm); approx+=hh*h;
+        P.appendChild(svgEl('rect',{class:'piece',x:SX(xa),y:SY(hh),width:SX(xa+h)-SX(xa),height:SY(0)-SY(hh)})); }
+    } else if(method==='trap'){
+      const h=(B-A)/n; meas=n+1;
+      for(let i=0;i<n;i++){ const xa=A+i*h, xb=xa+h; approx+=(f(xa)+f(xb))/2*h;
+        P.appendChild(svgEl('polygon',{class:'piece',points:`${SX(xa)},${SY(0)} ${SX(xa)},${SY(f(xa))} ${SX(xb)},${SY(f(xb))} ${SX(xb)},${SY(0)}`})); }
+    } else if(method==='simp'){
+      let m=n; if(m%2!==0) m++;            // Simpson exige nº par de tramos
+      const h=(B-A)/m; meas=m+1;
+      let s=f(A)+f(B);
+      for(let i=1;i<m;i++){ s += (i%2?4:2)*f(A+i*h); }
+      approx = s*h/3;
+      // dibujo: parábola interpoladora por cada par de tramos (Lagrange)
+      for(let i=0;i<m;i+=2){
+        const x0=A+i*h, x1=x0+h, x2=x0+2*h, y0=f(x0), y1=f(x1), y2=f(x2);
+        const pts=[SX(x0)+','+SY(0)];
+        for(let t=0;t<=14;t++){ const x=x0+(x2-x0)*t/14;
+          const L0=((x-x1)*(x-x2))/((x0-x1)*(x0-x2));
+          const L1=((x-x0)*(x-x2))/((x1-x0)*(x1-x2));
+          const L2=((x-x0)*(x-x1))/((x2-x0)*(x2-x1));
+          pts.push(SX(x)+','+SY(y0*L0+y1*L1+y2*L2)); }
+        pts.push(SX(x2)+','+SY(0));
+        P.appendChild(svgEl('polygon',{class:'piece',points:pts.join(' ')}));
+      }
+    } else { // gauss
+      const ng=Math.max(1,Math.min(5,n)); meas=ng; const G2=GAUSS[ng];
+      // dominio ya es [-1,1] -> sin escalado
+      for(let i=0;i<ng;i++){ approx+=G2.w[i]*f(G2.xi[i]); }
+      // dibujo: rectángulos de ancho w_i centrados en xi (representación visual del peso)
+      let acc=A;
+      for(let i=0;i<ng;i++){ const wpx=G2.w[i], xL=acc, xR=acc+wpx; acc=xR; const hh=f(G2.xi[i]);
+        P.appendChild(svgEl('rect',{class:'piece',x:SX(xL),y:SY(hh),width:SX(xR)-SX(xL),height:SY(0)-SY(hh),fill:'rgba(45,106,79,0.20)',stroke:'#2d6a4f'}));
+        P.appendChild(svgEl('line',{x1:SX(G2.xi[i]),y1:SY(0),x2:SX(G2.xi[i]),y2:SY(hh),stroke:'#a23232','stroke-width':1.4,'stroke-dasharray':'3 2'}));
+        P.appendChild(svgEl('circle',{class:'gp',cx:SX(G2.xi[i]),cy:SY(hh),r:5})); }
+    }
+    return {approx,meas};
+  }
+
+  function trapNeededFor(targetErr){
+    // cuántos trapecios harían falta para igualar el error de Gauss (estimación)
+    for(let m=1;m<=100000;m++){ const h=(B-A)/m; let s=0; for(let i=0;i<m;i++){const xa=A+i*h; s+=(f(xa)+f(xa+h))/2*h;} if(Math.abs(s-EXACT)<=targetErr) return m; }
+    return Infinity;
+  }
+
+  function render(){
+    grid(); drawCurve();
+    const {approx,meas}=compute();
+    const err=Math.abs(approx-EXACT);
+    let shown = n; if(method==='gauss') shown=Math.max(1,Math.min(5,n)); if(method==='simp') shown=meas-1;
+    document.getElementById('n-val').textContent = shown;
+    document.getElementById('n-label').textContent = method==='gauss' ? 'Número de PUNTOS de Gauss' : (method==='simp' ? 'Número de piezas (par)' : 'Número de piezas');
+    document.getElementById('r-meas').textContent = meas;
+    document.getElementById('r-exact').textContent = EXACT.toFixed(4);
+    const errStr = err<5e-5 ? '≈ 0' : err.toExponential(2);
+    document.getElementById('r-err').textContent = errStr;
+
+    const ec=document.getElementById('err-cell'); ec.classList.remove('good','bad');
+    if(err<1e-3) ec.classList.add('good'); else if(err>0.05) ec.classList.add('bad');
+
+    const v=document.getElementById('verdict'); v.classList.remove('win');
+    if(method==='gauss'){
+      const ng=Math.max(1,Math.min(5,n));
+      const need = err>0 ? trapNeededFor(err) : Infinity;
+      v.classList.add('win');
+      if(ng===1){ v.innerHTML='Con <strong>1 punto</strong> Gauss ya se acerca. Sube a 2…'; }
+      else { v.innerHTML=`✓ <strong>${ng} puntos</strong> de Gauss → error ${errStr}. Para igualarlo con <strong>trapecios</strong> necesitarías <strong>${isFinite(need)?need:'miles de'}</strong> piezas. <em>Pocas mediciones, máxima precisión.</em>`; }
+    } else if(method==='rect'){
+      v.innerHTML = err>0.05
+        ? `Rectángulos con ${n} piezas: error ${errStr}. La tapa plana es burda — <strong>necesitas muchísimas piezas</strong>. Prueba Trapecios o Gauss.`
+        : `Mejor, pero te costó ${meas} mediciones. <strong>Gauss llega ahí con 2 ó 3.</strong>`;
+    } else if(method==='simp'){
+      v.innerHTML = `Simpson con ${meas-1} piezas (tapa de <strong>parábola</strong>): error ${errStr}. <strong>Mucho más preciso que el trapecio</strong> con las mismas mediciones — pero Gauss aún gana con menos puntos.`;
+    } else {
+      v.innerHTML = err>0.01
+        ? `Trapecios con ${n} piezas: error ${errStr}. La tapa recta sigue mejor la curva que el rectángulo. <strong>Sigue subiendo o prueba Gauss.</strong>`
+        : `Trapecios con ${meas} mediciones: error ${errStr}. Bien — pero <strong>Gauss logra esto con 2 ó 3 puntos.</strong>`;
+    }
+  }
+
+  // tabs
+  document.querySelectorAll('#tabs button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on'); method=b.dataset.m;
+      const sl=document.getElementById('n-slider');
+      if(method==='gauss'){ sl.min=1; sl.max=5; if(n>5) n=2; sl.value=n; }
+      else { sl.min=1; sl.max=24; sl.value=n; }
+      render();
+    });
+  });
+  document.getElementById('n-slider').addEventListener('input',e=>{ n=parseInt(e.target.value); render(); });
+  render();
+})();
+</script>
+
+<script>
+// ────────────────────────────────────────────────────────────────
+//  Arquímedes: rellenar la parábola f(x)=1-x^2 con triángulos.
+//  Área exacta del segmento parabólico = 4/3.
+// ────────────────────────────────────────────────────────────────
+(function(){
+  const f=x=>1-x*x, EXACT=4/3;
+  const G={xL:30,xR:385,yB:200,yT:22}, yMin=-0.05, yMax=1.12, XL=-1.12, XR=1.12;
+  const SX=x=>G.xL+(x-XL)/(XR-XL)*(G.xR-G.xL);
+  const SY=y=>G.yB-(y-yMin)/(yMax-yMin)*(G.yB-G.yT);
+  const el=(n,a)=>{const e=document.createElementNS('http://www.w3.org/2000/svg',n); for(const k in a) e.setAttribute(k,a[k]); return e;};
+
+  function tris(maxLvl){
+    const out=[];
+    (function rec(xa,xb,lvl){
+      const xm=(xa+xb)/2;
+      out.push({p:[[xa,f(xa)],[xm,f(xm)],[xb,f(xb)]], lvl});
+      if(lvl<maxLvl){ rec(xa,xm,lvl+1); rec(xm,xb,lvl+1); }
+    })(-1,1,0);
+    return out;
+  }
+  const area=t=>{ const[a,b,c]=t.p; return Math.abs((b[0]-a[0])*(c[1]-a[1])-(c[0]-a[0])*(b[1]-a[1]))/2; };
+
+  function render(d){
+    const T=document.getElementById('triA'); T.innerHTML='';
+    const C=document.getElementById('curveA'); C.innerHTML='';
+    C.appendChild(el('line',{x1:SX(-1.1),y1:SY(0),x2:SX(1.1),y2:SY(0),stroke:'#1a2942','stroke-width':1}));
+    const list=tris(d); let tot=0;
+    list.forEach(t=>{ tot+=area(t);
+      const op=Math.max(0.12, 0.42 - t.lvl*0.06);
+      T.appendChild(el('polygon',{points:t.p.map(q=>SX(q[0])+','+SY(q[1])).join(' '),
+        fill:'rgba(176,141,79,'+op+')', stroke:'#b08d4f', 'stroke-width':0.5})); });
+    const pts=[]; for(let i=0;i<=80;i++){const x=-1+2*i/80; pts.push(SX(x)+','+SY(f(x)));}
+    C.appendChild(el('polyline',{points:pts.join(' '),fill:'none',stroke:'#2c5e8e','stroke-width':2.2}));
+
+    document.getElementById('a-dval').textContent=d;
+    document.getElementById('a-area').textContent=tot.toFixed(4);
+    document.getElementById('a-count').textContent=list.length;
+    const err=EXACT-tot;
+    document.getElementById('a-area-cell').classList.toggle('good', err<0.01);
+    const v=document.getElementById('a-verdict');
+    if(d===0){ v.classList.remove('win'); v.innerHTML='Ronda 0: <strong>un triángulo</strong>, área 1.0. Faltan los huecos entre el triángulo y la curva. Sube el slider…'; }
+    else if(err<0.01){ v.classList.add('win'); v.innerHTML='&#10003; Ronda '+d+': '+list.length+' triángulos &rarr; área '+tot.toFixed(4)+', casi clavada en <strong>4/3</strong>. Así Arquímedes integró <em>sin integral</em>, hace ~2270 años.'; }
+    else { v.classList.remove('win'); v.innerHTML='Ronda '+d+': '+list.length+' triángulos, área '+tot.toFixed(4)+'. Cada ronda añade triángulos más pequeños que tapan los huecos &rarr; se acerca a <strong>4/3 = 1.3333</strong>.'; }
+  }
+  const sl=document.getElementById('a-depth');
+  sl.addEventListener('input',e=>render(parseInt(e.target.value)));
+  render(0);
+})();
+</script>
+
+<script>
+// ────────────────────────────────────────────────────────────────
+//  Trapecio vs Simpson lado a lado · f(x)=e^x en [-1,1]
+// ────────────────────────────────────────────────────────────────
+(function(){
+  const f=Math.exp, A=-1, B=1, EXACT=Math.E-1/Math.E;
+  const el=(n,a)=>{const e=document.createElementNS('http://www.w3.org/2000/svg',n); for(const k in a) e.setAttribute(k,a[k]); return e;};
+
+  function panel(gid, kind, n){
+    const g=document.getElementById(gid); g.innerHTML='';
+    const xL=20,xR=192,yB=128,yT=12, yMin=0,yMax=2.9;
+    const X=x=>xL+(x-A)/(B-A)*(xR-xL), Y=y=>yB-(y-yMin)/(yMax-yMin)*(yB-yT);
+    g.appendChild(el('line',{x1:xL,y1:Y(0),x2:xR,y2:Y(0),stroke:'#1a2942','stroke-width':0.7}));
+    const h=(B-A)/n; let val=0;
+    if(kind==='trap'){
+      for(let i=0;i<n;i++){ const xa=A+i*h, xb=xa+h; val+=(f(xa)+f(xb))/2*h;
+        g.appendChild(el('polygon',{points:X(xa)+','+Y(0)+' '+X(xa)+','+Y(f(xa))+' '+X(xb)+','+Y(f(xb))+' '+X(xb)+','+Y(0),
+          fill:'rgba(176,141,79,0.30)',stroke:'#b08d4f','stroke-width':0.5})); }
+    } else {
+      let s=f(A)+f(B); for(let i=1;i<n;i++) s+=(i%2?4:2)*f(A+i*h); val=s*h/3;
+      for(let i=0;i<n;i+=2){ const x0=A+i*h,x1=x0+h,x2=x0+2*h,y0=f(x0),y1=f(x1),y2=f(x2);
+        const pts=[X(x0)+','+Y(0)];
+        for(let t=0;t<=12;t++){ const x=x0+(x2-x0)*t/12;
+          const L0=((x-x1)*(x-x2))/((x0-x1)*(x0-x2)),L1=((x-x0)*(x-x2))/((x1-x0)*(x1-x2)),L2=((x-x0)*(x-x1))/((x2-x0)*(x2-x1));
+          pts.push(X(x)+','+Y(y0*L0+y1*L1+y2*L2)); }
+        pts.push(X(x2)+','+Y(0));
+        g.appendChild(el('polygon',{points:pts.join(' '),fill:'rgba(176,141,79,0.30)',stroke:'#b08d4f','stroke-width':0.5})); }
+    }
+    const cp=[]; for(let i=0;i<=80;i++){const x=A+(B-A)*i/80; cp.push(X(x)+','+Y(f(x)));}
+    g.appendChild(el('polyline',{points:cp.join(' '),fill:'none',stroke:'#2c5e8e','stroke-width':1.6}));
+    return val;
+  }
+
+  function update(n){
+    document.getElementById('duo-val').textContent=n;
+    const vt=panel('gDT','trap',n), vs=panel('gDS','simp',n);
+    const et=Math.abs(vt-EXACT), es=Math.abs(vs-EXACT);
+    document.getElementById('errDT').innerHTML='error <b>'+et.toExponential(1)+'</b>';
+    document.getElementById('errDS').innerHTML='error <b>'+(es<5e-5?'≈0':es.toExponential(1))+'</b>';
+    document.getElementById('pan-simp').classList.add('win');
+    document.getElementById('pan-trap').classList.remove('win');
+    const ratio = es>1e-12 ? Math.round(et/es) : Infinity;
+    document.getElementById('duo-verdict').innerHTML='Con <strong>'+n+' piezas</strong> en ambos, Simpson es ~<strong>'+(isFinite(ratio)?ratio:'miles de')+'×</strong> más preciso que el trapecio. <em>Misma cantidad de mediciones, mejor tapa.</em>';
+  }
+  const sl=document.getElementById('duo-slider');
+  sl.addEventListener('input',e=>update(parseInt(e.target.value)));
+  update(2);
+})();
+</script>
+
+<script src="./shared/nav.js"></script>
+</body>
+</html>

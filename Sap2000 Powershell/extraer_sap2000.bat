@@ -18,7 +18,7 @@ if not "%~1"=="" (
 
 echo.
 echo ============================================================
-echo   EXTRACCION DE RESULTADOS SAP2000 — hekatan-struct
+echo   EXTRACCION DE RESULTADOS SAP2000 — hekatan-struct-lineal
 echo ============================================================
 echo.
 echo  Arrastra tu archivo .sdb (analizado) o .s2k (texto)

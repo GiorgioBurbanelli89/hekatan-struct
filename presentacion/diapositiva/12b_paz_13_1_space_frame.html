@@ -206,13 +206,13 @@ T = 2*pi ./ omegas;                      % periodos s</code></pre>
   </section>
 
   <section>
-    <h2>El equivalente en Hekatan Struct</h2>
+    <h2>El equivalente en Hekatan Struct Lineal</h2>
     <div class="step-card">
       <span class="step-tag">EJEMPLO ID · BENCHMARK-PAZ-13-1</span>
       <h3>Pórtico 3D paramétrico — workspace público</h3>
       <p>El ejemplo está disponible en:</p>
       <p style="font-family:'JetBrains Mono',monospace;font-size:0.92rem;color:var(--gold);background:var(--ink);color:var(--paper);padding:8px 12px;border-radius:3px">
-        <a href="https://giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-13-1" target="_blank" style="color:var(--gold)">giorgioburbanelli89.github.io/hekatan-struct/workspace/?t=benchmark-paz-13-1</a>
+        <a href="https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/?t=benchmark-paz-13-1" target="_blank" style="color:var(--gold)">giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/?t=benchmark-paz-13-1</a>
       </p>
       <p>Genera la misma geometría (5 nodos, 4 elementos), aplica los datos exactos de la Tabla 13.1, ensambla $\mathbf{K}$ y $\mathbf{M}$ con el mismo procedimiento (B^T D B, Hermite cúbicas), y resuelve $(K-\omega^2 M)\phi=0$ con Spectra/Lanczos.</p>
       <ul style="margin-left:18px;font-size:0.88rem">
@@ -226,7 +226,7 @@ T = 2*pi ./ omegas;                      % periodos s</code></pre>
   <section style="background:#fef9e7;border:2px solid var(--gold);padding:14px 18px;border-radius:6px;margin-top:18px">
     <h2 style="color:var(--blue);margin-top:0">Validación cruzada en ETABS · 1 comando PowerShell</h2>
     <p>El mismo modelo se exporta a <code>.e2k</code> y se abre en ETABS para validar el solver. El archivo está versionado en <code>Etabs Powershell/Paz_13_1.e2k</code>:</p>
-    <pre style="background:#1e1e1e;color:#d4d4d4;padding:14px;border-radius:4px;font-size:0.82rem">PS&gt; cd "C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Etabs Powershell"
+    <pre style="background:#1e1e1e;color:#d4d4d4;padding:14px;border-radius:4px;font-size:0.82rem">PS&gt; cd "C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\Etabs Powershell"
 PS&gt; .\correr_paz_13_1.ps1   # lanza ETABS, carga .e2k, corre modal, imprime frecuencias</pre>
     <p style="font-size:0.88rem;color:var(--ink-soft);margin-top:8px">El script usa la <strong>OAPI de ETABS</strong> (<code>CSI.ETABS.API.ETABSObject</code>) para automatizar: <code>InitializeNewModel(12)</code> → <code>File.OpenFile()</code> → <code>Analyze.RunAnalysis()</code> → <code>Results.ModalPeriod()</code>. Las 6 primeras frecuencias deben coincidir con las del libro (con la masa concentrada de Paz) o con Hekatan (cuando se usan las mismas propiedades).</p>
     <p style="font-size:0.85rem">Detalle de mapeo de ejes para que ETABS lo acepte: Paz usa <em>Y vertical up</em>, ETABS usa <em>Z vertical up</em>. El swap es Paz(X,Y,Z) → ETABS(X, −Z, Y). Los 5 nodos de Paz quedan distribuidos en 3 stories (Base/Story1/Story2) y los 4 elementos como 2 BEAMs horizontales en Story1 + 2 COLUMNs verticales (Base→Story1 y Story1→Story2). Ver slide 11b para la sintaxis completa.</p>

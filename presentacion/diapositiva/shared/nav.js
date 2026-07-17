@@ -15,6 +15,7 @@
     { file: "04_jacobiano_natural.html",             title: "4. Jacobiano · ξ" },
     { file: "05_matriz_rigidez_paso.html",           title: "5. K_e paso a paso" },
     { file: "06_matriz_masa_dinamica.html",          title: "6. M_e + dinámico" },
+    { file: "06b_historia_cuadratura.html",          title: "6b. Antes de Gauss" },
     { file: "07_cuadratura_gauss.html",              title: "7. Gauss" },
     { file: "08_loops_fem.html",                     title: "8. Loops FEM" },
     { file: "09_cpp_vs_matlab.html",                 title: "9. C++ vs MATLAB" },

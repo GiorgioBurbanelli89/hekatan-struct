@@ -304,8 +304,8 @@ MathJax = {
   </section>
 
   <section>
-    <h2>¿Por qué importa esto para Hekatan Struct?</h2>
-    <p>Hekatan Struct usa <strong>la misma arquitectura de Wilson</strong>: un solo elemento shell con flags para activar/desactivar membrana, flexión, shear. Ver <code>hekatan-fem/src/cpp/utils/shellQ4.cpp</code>:</p>
+    <h2>¿Por qué importa esto para Hekatan Struct Lineal?</h2>
+    <p>Hekatan Struct Lineal usa <strong>la misma arquitectura de Wilson</strong>: un solo elemento shell con flags para activar/desactivar membrana, flexión, shear. Ver <code>hekatan-fem/src/cpp/utils/shellQ4.cpp</code>:</p>
     <ul style="margin-left:24px;line-height:1.7">
       <li><code>plateQ4Solve({ theoryType: 0 })</code> ⇒ Mindlin (Plate-Thick)</li>
       <li><code>plateQ4Solve({ theoryType: 1 })</code> ⇒ Kirchhoff (Plate-Thin)</li>
@@ -315,7 +315,7 @@ MathJax = {
   </section>
 
   <div class="quote">
-    <strong>Conclusión:</strong> SAP2000, ETABS y Hekatan Struct comparten <em>el mismo elemento conceptual</em> propuesto por Wilson hace 50 años. Lo que cambió no es la matemática, sino:
+    <strong>Conclusión:</strong> SAP2000, ETABS y Hekatan Struct Lineal comparten <em>el mismo elemento conceptual</em> propuesto por Wilson hace 50 años. Lo que cambió no es la matemática, sino:
     <ul style="margin-top:8px;margin-left:24px;line-height:1.6">
       <li>El <strong>solver</strong>: del FORTRAN secuencial al SparseLU vectorizado.</li>
       <li>El <strong>despliegue</strong>: del mainframe IBM al navegador con WebAssembly.</li>

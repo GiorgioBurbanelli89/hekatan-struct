@@ -139,9 +139,9 @@ import { layeredQ4Solve, computeABBD, type LayerDef } from "hekatan-fem";
 mkdir "C:\Hekatan"
 cd "C:\Hekatan"
 
-# Clonar hekatan-struct (rama awatif-fem-v2-shells-nonlinear)
-git clone https://github.com/GiorgioBurbanelli89/hekatan-struct.git
-cd hekatan-struct
+# Clonar hekatan-struct-lineal (rama awatif-fem-v2-shells-nonlinear)
+git clone https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal.git
+cd hekatan-struct-lineal
 git checkout awatif-fem-v2-shells-nonlinear
 git pull origin awatif-fem-v2-shells-nonlinear
 cd ..
@@ -152,8 +152,8 @@ cd Calcpad-Symbolic
 git pull origin main
 cd ..
 
-# Setup hekatan-struct dependencies (Node.js)
-cd hekatan-struct
+# Setup hekatan-struct-lineal dependencies (Node.js)
+cd hekatan-struct-lineal
 npm install
 cd hekatan-fem && npm install && cd ..
 cd examples && npm install && cd ..
@@ -162,8 +162,8 @@ cd examples && npm install && cd ..
 ### Actualizar (sync) en computadora YA clonada
 
 ```powershell
-# hekatan-struct
-cd C:\Hekatan\hekatan-struct  # o donde lo tengas
+# hekatan-struct-lineal
+cd C:\Hekatan\hekatan-struct-lineal  # o donde lo tengas
 git fetch
 git pull origin awatif-fem-v2-shells-nonlinear
 
@@ -173,7 +173,7 @@ git fetch
 git pull origin main
 
 # Re-instalar deps si cambiaron
-cd hekatan-struct
+cd hekatan-struct-lineal
 npm install
 cd hekatan-fem && npm install && cd ..
 cd examples && npm install && cd ..
@@ -217,7 +217,7 @@ PC-A (cuando regresas):
 ## 🚀 Verificación rápida de instalación (cualquier PC)
 
 ```powershell
-cd C:\Hekatan\hekatan-struct
+cd C:\Hekatan\hekatan-struct-lineal
 
 # Test que hekatan-fem funcione
 cd Benchmark_Placa
@@ -244,7 +244,7 @@ npm run dev
 ## 📂 Archivos clave del proyecto (ubicación en repo)
 
 ```
-hekatan-struct/
+hekatan-struct-lineal/
 ├── BENCHMARK_GUIDE.md                              # Guía 3 productos CSI
 ├── PROMPT_CONTINUACION.md                          # Este archivo
 │
@@ -288,7 +288,7 @@ hekatan-struct/
 ### Para crear ejemplo `layered-shell` (Acción #1)
 
 ```powershell
-cd C:\Hekatan\hekatan-struct\examples\src
+cd C:\Hekatan\hekatan-struct-lineal\examples\src
 mkdir layered-shell
 # Copiar plate-thick como template:
 xcopy /E plate-thick layered-shell
@@ -302,7 +302,7 @@ cd layered-shell
 ```powershell
 # 1. Abrir SAP2000 manualmente (queda esperando)
 # 2. En PowerShell:
-cd C:\Hekatan\hekatan-struct\Benchmark_Placa
+cd C:\Hekatan\hekatan-struct-lineal\Benchmark_Placa
 & powershell -ExecutionPolicy Bypass -File correr_todos_tipos.ps1
 # Genera sap2000_consolidado.json con 5 tipos
 
@@ -314,7 +314,7 @@ npx tsx benchmark_placa_hekatan.mjs
 ### Para extraer resultados de un .EDB existente
 
 ```powershell
-cd C:\Hekatan\hekatan-struct\Etabs Powershell\
+cd C:\Hekatan\hekatan-struct-lineal\Etabs Powershell\
 & .\extraer_etabs.bat
 # Drag-and-drop el .EDB → genera *_results.json
 ```
@@ -353,12 +353,12 @@ elementInputs.rigidOffsets = new Map([
 
 | Repo | URL | Branch | Acceso |
 |---|---|---|---|
-| hekatan-struct | https://github.com/GiorgioBurbanelli89/hekatan-struct | `awatif-fem-v2-shells-nonlinear` | Privado |
+| hekatan-struct-lineal | https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal | `awatif-fem-v2-shells-nonlinear` | Privado |
 | Calcpad-Symbolic | https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic | `main` | Privado |
 
 **Comandos git remotes** (ya configurados al clonar, solo de referencia):
 ```
-hekatan-struct  https://github.com/GiorgioBurbanelli89/hekatan-struct.git
+hekatan-struct-lineal  https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal.git
 origin (Calcpad)  https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic.git
 ```
 
@@ -368,7 +368,7 @@ origin (Calcpad)  https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic.git
 
 Copia y pega lo siguiente al inicio de la próxima sesión:
 
-> Estoy continuando el trabajo de validación FEM de hekatan-struct vs SAP2000/ETABS/SAFE.
+> Estoy continuando el trabajo de validación FEM de hekatan-struct-lineal vs SAP2000/ETABS/SAFE.
 > El estado anterior está documentado en `PROMPT_CONTINUACION.md` (en la raíz del repo).
 >
 > Acciones pendientes prioritarias:

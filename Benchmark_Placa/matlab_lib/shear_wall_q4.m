@@ -11,7 +11,7 @@
 % Carga: P = 100 kN repartido en los nodos del top
 % Mesh: nx x ny elementos Q4
 %
-% Valores de referencia (Ux nodo top center) - de hekatan-struct shear-wall-q4:
+% Valores de referencia (Ux nodo top center) - de hekatan-struct-lineal shear-wall-q4:
 %   OpenSees TCL : 4.602e-5 m
 %   SAP2000      : 4.629e-5 m
 %   ETABS        : 4.582e-5 m

@@ -3,7 +3,7 @@
  *
  * Demuestra el solver MITC3+ (Kim-Bathe 2014) sobre una placa rectangular
  * mallada en triángulos. Usa el módulo pure-TS `mitc3Solve` recién añadido
- * a Hekatan Struct.
+ * a Hekatan Struct Lineal.
  *
  * Caso: placa cuadrada empotrada en 4 bordes (clamped plate) bajo carga
  * distribuida, comparada con:

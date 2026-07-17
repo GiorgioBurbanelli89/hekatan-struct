@@ -14,7 +14,7 @@
    144/144 áreas con spring asignado
 -> AddCartesian (0.75,0.75,0) ret=0 name=PCenter
    SetLoadForce P=-196.13 kN ret=0
--> Save: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\benchmarks\safe\zapata-aislada\Zapata_Hekatan_via_API.fdb
+-> Save: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\benchmarks\safe\zapata-aislada\Zapata_Hekatan_via_API.fdb
    Save ret=0
 -> Editing table 'Spring Property Definitions - Area Springs': rows=1 cols=10 headers=['Name', 'SubModulus', 'NonlinOpt', 'EPCompStiff', 'EPCompStrength', 'EPTensStiff', 'EPTensStrength', 'Color', 'GUID', 'Notes']
    Subgrade column index: 1 (SubModulus)

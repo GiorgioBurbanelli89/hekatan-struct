@@ -46,7 +46,7 @@ export function exportZapataTcl(data: ZapataTclData): string {
   const My_d = data.My_dead_kNm ?? 0;
 
   const L: string[] = [];
-  L.push(`# OpenSees TCL — Zapata Aislada (exportada desde Hekatan Struct)`);
+  L.push(`# OpenSees TCL — Zapata Aislada (exportada desde Hekatan Struct Lineal)`);
   L.push(`# Generado: ${new Date().toISOString()}`);
   L.push(`# Modelo: ShellMITC4 sobre Winkler springs zeroLength`);
   L.push(`# Unidades: kN, m`);

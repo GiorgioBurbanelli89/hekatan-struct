@@ -40,7 +40,7 @@ marp clase_ups_2026-05-08.md --html --allow-local-files
 
 ## 🎬 Plan del live-demo (Slide 17)
 
-1. Abrir https://giorgioburbanelli89.github.io/hekatan-struct/workspace/
+1. Abrir https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/
 2. Dropdown categoría → **🏁 Benchmarks · 1️⃣ Frames**
 3. Seleccionar **benchmark-cft-cantilever**
 4. Mover slider `L` (3 → 5 m) → ver re-cálculo en vivo

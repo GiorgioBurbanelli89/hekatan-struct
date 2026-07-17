@@ -4,8 +4,8 @@
 #                    extrae los resultados a un JSON al lado.
 # ============================================================================
 
-# IMPORTANTE: ajustá esta ruta UNA vez si moves la carpeta hekatan-struct.
-$ScriptPath = "C:\Users\Backup-PC\Documents\Hekatan Corporacion\Heka\hekatan-struct\Etabs Powershell\etabs_extract.ps1"
+# IMPORTANTE: ajustá esta ruta UNA vez si moves la carpeta hekatan-struct-lineal.
+$ScriptPath = "C:\Users\Backup-PC\Documents\Hekatan Corporacion\Heka\hekatan-struct-lineal\Etabs Powershell\etabs_extract.ps1"
 
 if (-not (Test-Path $ScriptPath)) {
     Write-Host "ERROR: no se encuentra etabs_extract.ps1 en:" -ForegroundColor Red
@@ -29,7 +29,7 @@ $Out = Join-Path $PSScriptRoot ($Edb.BaseName + "_results.json")
 
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host " EXTRACCION DE RESULTADOS ETABS — hekatan-struct" -ForegroundColor Cyan
+Write-Host " EXTRACCION DE RESULTADOS ETABS — hekatan-struct-lineal" -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Modelo:  $($Edb.Name)" -ForegroundColor Green

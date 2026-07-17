@@ -17,7 +17,7 @@ if not "%~1"=="" (
 
 echo.
 echo ============================================================
-echo   EXTRACCION DE RESULTADOS SAFE — hekatan-struct
+echo   EXTRACCION DE RESULTADOS SAFE — hekatan-struct-lineal
 echo ============================================================
 echo.
 echo  Arrastra tu archivo .FDB (analizado) o .f2k (texto)

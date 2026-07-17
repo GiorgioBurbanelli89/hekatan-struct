@@ -96,7 +96,7 @@ línea o grilla).
 ### Workflow típico (3 comandos por caso)
 
 ```bash
-cd hekatan-struct/benchmarks/safe/<caso>
+cd hekatan-struct-lineal/benchmarks/safe/<caso>
 
 # 1) Hekatan (WASM, ~10 ms): genera modelo + resuelve + JSON
 npx tsx ./cli_<caso>.mjs --json=hekatan_<caso>_result.json

@@ -8,15 +8,15 @@ export default defineConfig({
     open: "workspace/index.html",
   },
   // Resolve base path. Fix MSYS/Git-Bash path mangling: si DEPLOY_BASE fue
-  // convertido a "C:/Program Files/Git/hekatan-struct/" (conversión POSIX→Windows
+  // convertido a "C:/Program Files/Git/hekatan-struct-lineal/" (conversión POSIX→Windows
   // de la shell de Git Bash), lo restauramos al path que esperamos.
-  // También soporta DEPLOY_BASE con doble slash inicial ("//hekatan-struct/")
+  // También soporta DEPLOY_BASE con doble slash inicial ("//hekatan-struct-lineal/")
   // que evita la conversión.
   base: (() => {
     let b = process.env.DEPLOY_BASE || "./";
     // 1) Quitar prefijo "C:/Program Files/Git" o similar (conversión MSYS)
     b = b.replace(/^[A-Z]:\/Program Files\/Git/i, "");
-    // 2) Normalizar doble slash inicial ("//hekatan-struct/" → "/hekatan-struct/")
+    // 2) Normalizar doble slash inicial ("//hekatan-struct-lineal/" → "/hekatan-struct-lineal/")
     b = b.replace(/^\/\//, "/");
     return b || "./";
   })(), // to resolve assets

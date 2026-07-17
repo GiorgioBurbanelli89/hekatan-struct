@@ -10,7 +10,7 @@
    Creadas 192 áreas en 1.0s
 -> Asignando spring Winkler a las 192 áreas...
 -> Creadas 6 columnas con P=196.13 kN c/u
--> Save: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\benchmarks\safe\losa-cimentacion\Losa_Hekatan_via_API.fdb
+-> Save: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\benchmarks\safe\losa-cimentacion\Losa_Hekatan_via_API.fdb
    Save ret=0
 -> Editing 'Spring Property Definitions - Area Springs': rows=1 cols=10
    SubModulus override: ks=19613.0 ret=0 err=0 warn=0

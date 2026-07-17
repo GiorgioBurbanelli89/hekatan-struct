@@ -416,7 +416,7 @@ van.derive(() => {
 
 document.body.append(
   getParameters(parameters), viewerEl,
-  getToolbar({ sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct/blob/main/examples/src/bulbo-presiones-suelo/main.ts" }),
+  getToolbar({ sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal/blob/main/examples/src/bulbo-presiones-suelo/main.ts" }),
 );
 
 setTimeout(() => enableDraggableAllPanes(), 200);

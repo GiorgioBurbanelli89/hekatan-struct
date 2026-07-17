@@ -9,7 +9,7 @@
  *    target=0.50 m → 10 elementos (dx=0.500 m)
  *    target=0.25 m → 20 elementos (dx=0.250 m)
  *
- *  Este helper replica ese comportamiento para Hekatan Struct. Usado por
+ *  Este helper replica ese comportamiento para Hekatan Struct Lineal. Usado por
  *  edificio-con-losa, edificio-con-muros y las variantes de edificio que
  *  tienen paneles shell (losas o muros de corte).
  * =============================================================================

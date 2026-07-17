@@ -15,10 +15,10 @@
     "finiteelementmethod"
   ],
   "author": "Giorgio Burbanelli (fork) — original: Mohamed Adil",
-  "homepage": "https://github.com/GiorgioBurbanelli89/hekatan-struct/tree/main/hekatan-fem",
+  "homepage": "https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal/tree/main/hekatan-fem",
   "repository": {
     "type": "git",
-    "url": "https://github.com/GiorgioBurbanelli89/hekatan-struct"
+    "url": "https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal"
   },
   "scripts": {
     "dev": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js --watch",

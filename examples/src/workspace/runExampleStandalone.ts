@@ -476,7 +476,7 @@ export function runExampleStandalone(ex: ExampleDef) {
   document.body.append(
     viewerElm,
     getToolbar({
-      sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct",
+      sourceCode: "https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal",
       author: "https://www.linkedin.com/in/jorge-burbano-213741138/",
     })
   );

@@ -10,7 +10,7 @@ resultados a un único `.json`. **Cero instalaciones**: PowerShell + ETABS.
 | `.EDB` | Binario | Si ya está analizado, extrae directo |
 | `.e2k` | **Texto** | **Auto-importa + auto-corre F5 + extrae** ⭐ |
 
-Esto significa que podés generar un `.e2k` desde hekatan-struct (o cualquier
+Esto significa que podés generar un `.e2k` desde hekatan-struct-lineal (o cualquier
 fuente) y obtener resultados de ETABS **sin abrir el GUI**.
 
 ## Archivos
@@ -66,7 +66,7 @@ Cerrá Chrome/otras instancias antes para liberar RAM.
 | Story drifts (NEC ≤ 2%) | 50–1 000 |
 | Frame forces | 1 000–500 000 (samplea 1 000) |
 
-## Workflow integrado con hekatan-struct
+## Workflow integrado con hekatan-struct-lineal
 
 ```
 1. Hekatan-struct exporta .e2k (boton "Exportar E2K")

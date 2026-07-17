@@ -114,7 +114,7 @@ Editá `CSI_APPS["etabs"]["exe"]` en `csi_launcher.py` con tu ruta real.
 
 ### "OpenFile retornó != 0"
 - Para `.e2k` malformados (p.ej. de exportadores third-party como
-  hekatan-struct con bugs), abrí en ETABS GUI primero, guardá como
+  hekatan-struct-lineal con bugs), abrí en ETABS GUI primero, guardá como
   `.EDB`, y a partir de ahí usá el binario.
 - Si la instancia ETABS está "zombie" (no responde), cerrá con Task
   Manager y reabrí.

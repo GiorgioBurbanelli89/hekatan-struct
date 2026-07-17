@@ -1,5 +1,5 @@
 /**
- * AI Assistant para Hekatan Struct — provider-agnostic con 4 backends GRATIS.
+ * AI Assistant para Hekatan Struct Lineal — provider-agnostic con 4 backends GRATIS.
  *
  * Stack gratuito:
  *   1. 🦙 Ollama (local, sin API key, sin internet, sin rate limits)
@@ -279,8 +279,8 @@ export const OpenRouterProvider: AIProvider = {
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "content-type": "application/json",
-        "HTTP-Referer": "https://giorgioburbanelli89.github.io/hekatan-struct/",
-        "X-Title": "Hekatan Struct",
+        "HTTP-Referer": "https://giorgioburbanelli89.github.io/hekatan-struct-lineal/",
+        "X-Title": "Hekatan Struct Lineal",
       },
       body: JSON.stringify({
         model,
@@ -364,7 +364,7 @@ export function blobToBase64(blob: Blob): Promise<string> {
 // ─────────────────────────────────────────────────────────────────────
 
 export const HEKATAN_SYSTEM_PROMPT = `Eres un asistente experto en estructuras y FEM que ayuda al usuario a generar modelos
-en Hekatan Struct. Tu salida debe ser SIEMPRE un script CLI ejecutable, sin
+en Hekatan Struct Lineal. Tu salida debe ser SIEMPRE un script CLI ejecutable, sin
 explicaciones extra (a menos que el user pida explicación).
 
 DSL CLI de Hekatan:

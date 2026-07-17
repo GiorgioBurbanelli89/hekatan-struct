@@ -1,5 +1,5 @@
 /**
- * Plate with Perimeter Beams — Hekatan Struct
+ * Plate with Perimeter Beams — Hekatan Struct Lineal
  * Placa horizontal Lx x Ly con vigas perimetrales (sin columnas).
  * 4 esquinas empotradas. Carga q uniforme.
  *

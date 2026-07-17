@@ -9,10 +9,10 @@
  *  Zapata 1 (medianera): Lz1=2.38m × Bz1=3.00m
  *  Zapata 2 (interna):   Lz2=2.45m × Bz2=2.45m
  *  Viga amarre:          Lv=1.64m, Bv=0.45m, Hv=0.95m
- *  Espesor zapatas:      tz=0.55m
+ *  Espesor zapatas:      tz=0.55m (Footing Thickness del f2k SAFE Ejm6 = h adoptado libro)
  *  Columna:              50×50cm
  *  Cargas:  Col1 P=110t (D=70 + L=40), Col2 P=140t (D=89 + L=51)
- *  f'c=210 kg/cm² → E≈25 GPa (default del ejemplo base)
+ *  f'c=210 kg/cm² → E=20.04 GPa (=14100·√210, valor del libro/SAFE)
  *  Suelo: q_adm=19 t/m², ks=3820 t/m³ = 37461 kN/m³
  */
 import { zapataVigaAmarre } from "../zapata-viga-amarre/zapataVigaAmarre";

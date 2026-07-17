@@ -108,7 +108,7 @@ export function exportEdificioCimentacionF2k(data: F2kCimentacionData): string {
 
   const fmt = n;
   const L: string[] = [];
-  L.push(`File "Cimentacion_Edificio_Hekatan.f2k" exportado desde Hekatan Struct ${new Date().toISOString().slice(0, 10)} at ${new Date().toLocaleTimeString()}`);
+  L.push(`File "Cimentacion_Edificio_Hekatan.f2k" exportado desde Hekatan Struct Lineal ${new Date().toISOString().slice(0, 10)} at ${new Date().toLocaleTimeString()}`);
   L.push(`File contains ${Nz} zapatas en un solo modelo SAFE.`);
   L.push(` `);
 

@@ -105,22 +105,22 @@ ETABS API FORENSIC: extraccion de parametros internos cftDeckSlab
   J          |     1.8464e-04 |     0.0000e+00 |      N/A
   As2        |     1.3510e-02 |     1.1384e-02 |  +18.68 %
 
-[OK] JSON guardado en: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_internals_forensic.json
+[OK] JSON guardado en: C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\Benchmark_Placa\composite_cft_columns\etabs_internals_forensic.json
 Cannot open file
 BufferFileIn::BufferFileIn(): 
-fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_steelOnly.Y_
+fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_steelOnly.Y_
 Cannot open file
 BufferFileIn::BufferFileIn(): 
-fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_filled.Y_
+fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_filled.Y_
 Cannot open file
 BufferFileIn::BufferFileIn(): 
-fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_concreteOnly.Y_
+fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\Benchmark_Placa\composite_cft_columns\etabs_3cases\case_concreteOnly.Y_
 Cannot open file
 BufferFileIn::BufferFileIn(): 
-fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_canonical\case_cantileverColumn.Y_
+fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\Benchmark_Placa\composite_cft_columns\etabs_canonical\case_cantileverColumn.Y_
 Cannot open file
 BufferFileIn::BufferFileIn(): 
-fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_canonical\case_clampedClampedBeam.Y_
+fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\Benchmark_Placa\composite_cft_columns\etabs_canonical\case_clampedClampedBeam.Y_
 Cannot open file
 BufferFileIn::BufferFileIn(): 
-fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\Benchmark_Placa\composite_cft_columns\etabs_canonical\case_cantileverBeam.Y_
+fileName = C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct-lineal\Benchmark_Placa\composite_cft_columns\etabs_canonical\case_cantileverBeam.Y_

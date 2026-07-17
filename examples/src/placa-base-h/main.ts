@@ -599,7 +599,7 @@ document.body.append(
   viewerEl,
   getToolbar({
     sourceCode:
-      "https://github.com/GiorgioBurbanelli89/hekatan-struct/blob/main/examples/src/placa-base-h/main.ts",
+      "https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal/blob/main/examples/src/placa-base-h/main.ts",
   }),
 );
 

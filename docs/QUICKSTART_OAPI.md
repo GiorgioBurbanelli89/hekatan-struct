@@ -10,7 +10,7 @@ Cheat sheet rápido para usar PowerShell + OAPI desde cualquier computadora.
 |---|---|---|
 | ETABS / SAP2000 / SAFE instalado | `Get-Process` (busca instancia abierta) | Instalar producto CSI |
 | PowerShell 5.1+ | `$PSVersionTable.PSVersion` | Win10/11 viene incluido |
-| Repo hekatan-struct clonado | `Test-Path "C:\Hekatan\hekatan-struct"` | Ver sección "Setup" abajo |
+| Repo hekatan-struct-lineal clonado | `Test-Path "C:\Hekatan\hekatan-struct-lineal"` | Ver sección "Setup" abajo |
 
 ---
 
@@ -19,7 +19,7 @@ Cheat sheet rápido para usar PowerShell + OAPI desde cualquier computadora.
 ### **ETABS — extraer .EDB o .e2k**
 
 ```powershell
-cd "C:\Hekatan\hekatan-struct\Etabs Powershell"
+cd "C:\Hekatan\hekatan-struct-lineal\Etabs Powershell"
 .\extraer_etabs.bat
 ```
 
@@ -45,7 +45,7 @@ cd "C:\Hekatan\hekatan-struct\Etabs Powershell"
 ### **SAP2000 — extraer .sdb o .s2k**
 
 ```powershell
-cd "C:\Hekatan\hekatan-struct\Sap2000 Powershell"
+cd "C:\Hekatan\hekatan-struct-lineal\Sap2000 Powershell"
 .\extraer_sap2000.bat
 ```
 
@@ -65,7 +65,7 @@ cd "C:\Hekatan\hekatan-struct\Sap2000 Powershell"
 ### **SAFE — extraer .FDB o .f2k**
 
 ```powershell
-cd "C:\Hekatan\hekatan-struct\Safe Powershell"
+cd "C:\Hekatan\hekatan-struct-lineal\Safe Powershell"
 .\extraer_safe.bat
 ```
 
@@ -111,7 +111,7 @@ cd "C:\Hekatan\hekatan-struct\Safe Powershell"
 ### Procesar MUCHOS archivos en lote (ETABS)
 
 ```powershell
-cd "C:\Hekatan\hekatan-struct\Etabs Powershell"
+cd "C:\Hekatan\hekatan-struct-lineal\Etabs Powershell"
 
 # Proceso recursivo de todos los .EDB de una carpeta
 .\batch_extraer.ps1 -Folder "C:\proyectos\edificios"
@@ -123,19 +123,19 @@ cd "C:\Hekatan\hekatan-struct\Etabs Powershell"
 ```powershell
 # ETABS
 powershell -ExecutionPolicy Bypass `
-  -File "C:\Hekatan\hekatan-struct\Etabs Powershell\etabs_extract.ps1" `
+  -File "C:\Hekatan\hekatan-struct-lineal\Etabs Powershell\etabs_extract.ps1" `
   -ModelPath "C:\modelos\edificio.EDB" `
   -OutPath "C:\modelos\edificio.json"
 
 # SAP2000
 powershell -ExecutionPolicy Bypass `
-  -File "C:\Hekatan\hekatan-struct\Sap2000 Powershell\sap2000_extract.ps1" `
+  -File "C:\Hekatan\hekatan-struct-lineal\Sap2000 Powershell\sap2000_extract.ps1" `
   -ModelPath "C:\modelos\portico.sdb" `
   -OutPath "C:\modelos\portico.json"
 
 # SAFE
 powershell -ExecutionPolicy Bypass `
-  -File "C:\Hekatan\hekatan-struct\Safe Powershell\safe_extract.ps1" `
+  -File "C:\Hekatan\hekatan-struct-lineal\Safe Powershell\safe_extract.ps1" `
   -ModelPath "C:\modelos\zapata.FDB" `
   -OutPath "C:\modelos\zapata.json"
 ```
@@ -193,8 +193,8 @@ powershell -ExecutionPolicy Bypass `
 ```powershell
 mkdir C:\Hekatan
 cd C:\Hekatan
-git clone https://github.com/GiorgioBurbanelli89/hekatan-struct.git
-cd hekatan-struct
+git clone https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal.git
+cd hekatan-struct-lineal
 git checkout awatif-fem-v2-shells-nonlinear
 ```
 
@@ -202,7 +202,7 @@ git checkout awatif-fem-v2-shells-nonlinear
 
 ```powershell
 # Solo si vas a correr benchmarks Hekatan vs SAP/ETABS/SAFE
-cd C:\Hekatan\hekatan-struct
+cd C:\Hekatan\hekatan-struct-lineal
 npm install
 cd hekatan-fem && npm install && cd ..
 cd examples && npm install && cd ..
@@ -212,7 +212,7 @@ cd examples && npm install && cd ..
 
 ```powershell
 # Las herramientas PowerShell funcionan SIN instalar nada Node.js:
-cd "C:\Hekatan\hekatan-struct\Etabs Powershell"
+cd "C:\Hekatan\hekatan-struct-lineal\Etabs Powershell"
 .\extraer_etabs.bat
 ```
 
@@ -223,7 +223,7 @@ cd "C:\Hekatan\hekatan-struct\Etabs Powershell"
 ### Antes de empezar a trabajar (en CUALQUIER PC):
 
 ```powershell
-cd C:\Hekatan\hekatan-struct
+cd C:\Hekatan\hekatan-struct-lineal
 git pull origin awatif-fem-v2-shells-nonlinear
 ```
 
@@ -232,7 +232,7 @@ git pull origin awatif-fem-v2-shells-nonlinear
 ```powershell
 git add .
 git commit -m "qué hiciste"
-git push hekatan-struct awatif-fem-v2-shells-nonlinear
+git push hekatan-struct-lineal awatif-fem-v2-shells-nonlinear
 ```
 
 ### Si tu otra PC ya hizo commits divergentes:
@@ -253,15 +253,15 @@ git push
 ╠════════════════════════════════════════════════════════════════╣
 ║                                                                  ║
 ║  ETABS (.EDB / .e2k):                                          ║
-║    cd "C:\Hekatan\hekatan-struct\Etabs Powershell"              ║
+║    cd "C:\Hekatan\hekatan-struct-lineal\Etabs Powershell"              ║
 ║    .\extraer_etabs.bat       → arrastra .EDB                    ║
 ║                                                                  ║
 ║  SAP2000 (.sdb / .s2k):                                        ║
-║    cd "C:\Hekatan\hekatan-struct\Sap2000 Powershell"            ║
+║    cd "C:\Hekatan\hekatan-struct-lineal\Sap2000 Powershell"            ║
 ║    .\extraer_sap2000.bat     → arrastra .sdb                    ║
 ║                                                                  ║
 ║  SAFE (.FDB / .f2k):                                           ║
-║    cd "C:\Hekatan\hekatan-struct\Safe Powershell"               ║
+║    cd "C:\Hekatan\hekatan-struct-lineal\Safe Powershell"               ║
 ║    .\extraer_safe.bat        → arrastra .FDB                    ║
 ║                                                                  ║
 ║  ──────────────────────────────────────────────────────────     ║
@@ -272,7 +272,7 @@ git push
 ║  ──────────────────────────────────────────────────────────     ║
 ║                                                                  ║
 ║  Repos:                                                          ║
-║    https://github.com/GiorgioBurbanelli89/hekatan-struct        ║
+║    https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal        ║
 ║      branch: awatif-fem-v2-shells-nonlinear                     ║
 ║    https://github.com/GiorgioBurbanelli89/Calcpad-Symbolic      ║
 ║      branch: main                                               ║

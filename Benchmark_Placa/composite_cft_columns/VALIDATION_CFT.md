@@ -523,7 +523,7 @@ y el setup más realista de ingeniería (con losa) coincide al 0.17%.
 ### 1. Hekatan WASM CLI
 
 ```bash
-cd hekatan-struct
+cd hekatan-struct-lineal
 node Benchmark_Placa/composite_cft_columns/run_matrix_cft.mjs              # ambos
 node Benchmark_Placa/composite_cft_columns/run_matrix_cft.mjs cftDeckSlab  # uno solo
 ```

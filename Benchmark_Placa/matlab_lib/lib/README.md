@@ -66,7 +66,7 @@ Regla rápida:  t/L < 1/20  → thin (Kirchhoff)
 
 ## Validación
 
-Estas funciones reproducen los benchmarks del repo `hekatan-struct`:
+Estas funciones reproducen los benchmarks del repo `hekatan-struct-lineal`:
 
 - `shear-wall-q4` (W=5×3, t=0.2, P=100kN) → `q4_membrane` → Ux = 4.646e-05 m
   - vs ETABS  4.582e-05 m (1.40%)
