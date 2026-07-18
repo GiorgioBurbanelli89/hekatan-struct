@@ -3362,6 +3362,29 @@ function buildParamsPane() {
       (window as any).__hekatanCliScript = "";
       applyCliScript();
     });
+    // ── Formato nativo de texto .heks (Hekatan Struct): abrir / guardar ──
+    const heksInput = document.createElement("input");
+    heksInput.type = "file";
+    heksInput.accept = ".heks,.txt";
+    heksInput.style.display = "none";
+    heksInput.addEventListener("change", () => {
+      const file = heksInput.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => { ta.value = String(reader.result ?? ""); applyCliScript(); };
+      reader.readAsText(file);
+      heksInput.value = "";
+    });
+    taContainer.appendChild(heksInput);
+    fCli.addButton({ title: "📂 Abrir .heks" }).on("click", () => heksInput.click());
+    fCli.addButton({ title: "💾 Guardar .heks" }).on("click", () => {
+      const blob = new Blob([ta.value], { type: "text/plain" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "modelo.heks";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    });
     // Ejemplos: el usuario elige inline o bloque.
     // - Inline = una linea por entidad ("node 1 0 0 0"). Comodo para
     //   modelos pequeños o cuando se mezclan tipos.
