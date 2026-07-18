@@ -1,5 +1,5 @@
 import { d as S, __tla as __tla_0 } from "./didacticCpp-CCShk1kX.js";
-let _;
+let _, $;
 let __tla = Promise.all([
   (() => {
     try {
@@ -60,7 +60,7 @@ let __tla = Promise.all([
     if (/^[01]+$/.test(s) && s.length <= 6) for (let a = 0; a < s.length; a++) r[a] = s[a] === "1";
     return r;
   }
-  function $(F) {
+  $ = function(F) {
     const s = {
       nodes: /* @__PURE__ */ new Map(),
       frames: [],
@@ -253,7 +253,7 @@ let __tla = Promise.all([
       }
     }
     return s;
-  }
+  };
   let L;
   L = `# CLI Modeler \u2014 escrib\xED comandos para construir un modelo
 # Ejemplo: p\xF3rtico 2D con carga lateral
@@ -371,5 +371,6 @@ solve
 });
 export {
   __tla,
-  _ as c
+  _ as c,
+  $ as p
 };
