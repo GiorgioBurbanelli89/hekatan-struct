@@ -131,6 +131,7 @@ import { exportEdificioCimentacionF2k, downloadEdificioCimentacionF2k } from "..
   return { f2k, n_zapatas: zapatas.length, n_vigas: vigasAmarre.length };
 };
 import { exportE2k } from "../shared/e2kExporter";
+import { exportTclFromCli, importTclToCli } from "../shared/tclIO";
 import { parseE2k } from "../shared/e2kParser";
 import { exportS2k } from "../shared/s2kExporter";
 import { parseS2k } from "../shared/s2kParser";
@@ -3384,6 +3385,34 @@ function buildParamsPane() {
       a.download = "modelo.heks";
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    });
+    // ── OpenSees Tcl: importar / exportar ──
+    const tclInput = document.createElement("input");
+    tclInput.type = "file";
+    tclInput.accept = ".tcl,.txt";
+    tclInput.style.display = "none";
+    tclInput.addEventListener("change", () => {
+      const file = tclInput.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try { ta.value = importTclToCli(String(reader.result ?? "")); applyCliScript(); }
+        catch (e: any) { alert("Error importando .tcl: " + e?.message); }
+      };
+      reader.readAsText(file);
+      tclInput.value = "";
+    });
+    taContainer.appendChild(tclInput);
+    fCli.addButton({ title: "📂 Importar .tcl (OpenSees)" }).on("click", () => tclInput.click());
+    fCli.addButton({ title: "💾 Exportar .tcl (OpenSees)" }).on("click", () => {
+      try {
+        const blob = new Blob([exportTclFromCli(ta.value)], { type: "text/plain" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "modelo.tcl";
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      } catch (e: any) { alert("Error exportando .tcl: " + e?.message); }
     });
     // Ejemplos: el usuario elige inline o bloque.
     // - Inline = una linea por entidad ("node 1 0 0 0"). Comodo para
