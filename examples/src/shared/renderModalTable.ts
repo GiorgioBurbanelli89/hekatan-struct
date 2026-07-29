@@ -62,8 +62,20 @@ export function createModalPanel() {
   const ASCE_THRESHOLD = 0.90; // 90 % per ASCE 7-22 §12.9.1.1
 
   function render(m: ModalOutputs, config: ModalTableConfig) {
+    // Sin frecuencias = el modal NO corrió (típicamente por el tope de GDL). El motivo
+    // técnico viene en config.properties — antes se perdía tras un "no results" mudo y el
+    // usuario apretaba "Correr modal" sin enterarse de por qué no pasaba nada.
     if (!m.frequencies || m.frequencies.length === 0) {
-      div.innerHTML = "<b style='padding:12px;display:block'>Modal: no results</b>";
+      const motivo = config.properties?.length
+        ? config.properties.map((l) => `<div>${l}</div>`).join("")
+        : "<div>El solver no devolvió modos.</div>";
+      div.innerHTML = `<div id="modal-header" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; cursor:move; user-select:none;" title="Arrastra para mover">
+  <b style="color:#ff0">✥ ⚡ MODAL — ${config.title}</b>
+</div>
+<div id="modal-body" style="padding:0 12px 10px 12px;">
+  <div style="color:#f44; font-weight:bold; font-size:13px; padding:6px 0">✗ El análisis modal NO se ejecutó</div>
+  <div style="color:#fa0; font-size:11px; line-height:1.5">${motivo}</div>
+</div>`;
       return;
     }
 
@@ -87,41 +99,17 @@ export function createModalPanel() {
       totalX = s[0]; totalY = s[1]; totalZ = s[2]; totalRz = s[5];
     }
 
-    // ── Detección de los 3 modos sísmicos principales (Ux, Uy, Rz) ──
-    // El primer modo donde cada DOF tiene MPF > 0.10 (10 %)
-    let primaryUx = -1, primaryUy = -1, primaryRz = -1;
-    const primaryThreshold = 0.10;
-    for (let i = 0; i < N; i++) {
-      const mp = m.massParticipation?.[i] || [0, 0, 0, 0, 0, 0];
-      if (primaryUx < 0 && mp[0] > primaryThreshold) primaryUx = i + 1;
-      if (primaryUy < 0 && mp[1] > primaryThreshold) primaryUy = i + 1;
-      if (primaryRz < 0 && mp[5] > primaryThreshold) primaryRz = i + 1;
-    }
-
-    // ── Header con dictamen ASCE ──
+    // ── Aviso técnico de masa participativa (NEC-15 §6.2.2 / ASCE 7-22 §12.9.1.1) ──
+    // Es el ÚNICO texto que queda en el panel: dice si faltan modos y cuántos faltan.
     const dictamen = (() => {
+      const falta = (tot: number) => `${((ASCE_THRESHOLD - tot) * 100).toFixed(1)} %`;
       if (modeAt90Both > 0)
-        return `<span style="color:#0f0">✓ ASCE 7-22 §12.9.1.1 — 90 % alcanzado en X e Y al modo ${modeAt90Both} de ${N}</span>`;
+        return `<span style="color:#0f0">✓ Masa participativa ≥ 90 % en X e Y al modo ${modeAt90Both} de ${N} · ΣUx=${(totalX * 100).toFixed(1)} % ΣUy=${(totalY * 100).toFixed(1)} % (NEC-15 §6.2.2 / ASCE 7-22 §12.9.1.1)</span>`;
       if (modeAt90X > 0 && modeAt90Y < 0)
-        return `<span style="color:#fa0">⚠ X cumple en modo ${modeAt90X}, Y todavía en ${(totalY * 100).toFixed(1)} % — subí «N° modos» en Settings ▸ Sísmico NEC</span>`;
+        return `<span style="color:#fa0">⚠ FALTAN MODOS EN Y — ΣUy=${(totalY * 100).toFixed(1)} % en ${N} modos (faltan ${falta(totalY)} para el 90 % que exige NEC-15 §6.2.2). X cumple en el modo ${modeAt90X}. Subí «N° de modos» en Settings ▸ ⚡ Modal + Animación.</span>`;
       if (modeAt90Y > 0 && modeAt90X < 0)
-        return `<span style="color:#fa0">⚠ Y cumple en modo ${modeAt90Y}, X todavía en ${(totalX * 100).toFixed(1)} % — subí «N° modos» en Settings ▸ Sísmico NEC</span>`;
-      return `<span style="color:#f44">✗ ASCE 7-22 NO cumplido en ${N} modos · ΣUx=${(totalX * 100).toFixed(1)} % · ΣUy=${(totalY * 100).toFixed(1)} % — subí «N° modos» en Settings ▸ Sísmico NEC</span>`;
-    })();
-
-    // ── Resumen 3 modos principales (estilo ETABS) ──
-    const primaryBlock = (() => {
-      const fmt = (idx: number, dir: string) => {
-        if (idx < 0) return `<span style="color:#f44">${dir}: no encontrado en ${N} modos</span>`;
-        const mp = m.massParticipation?.[idx - 1] || [0, 0, 0, 0, 0, 0];
-        const dDir = dir === "Ux" ? 0 : dir === "Uy" ? 1 : 5;
-        const T = m.frequencies[idx - 1] > 0 ? 1 / m.frequencies[idx - 1] : 0;
-        return `<span style="color:#0f0">${dir}: modo ${idx}, T=${T.toFixed(3)} s, MPF=${(mp[dDir] * 100).toFixed(1)} %</span>`;
-      };
-      return `<div style="margin:4px 0; padding:4px 6px; background:rgba(0,255,255,0.05); border-left:2px solid #0ff; font-size:11px;">
-  🎯 <b>Modos sísmicos principales</b> (ASCE 7-22 §12.9.1):<br>
-  ${fmt(primaryUx, "Ux")} · ${fmt(primaryUy, "Uy")} · ${fmt(primaryRz, "Rz")}
-</div>`;
+        return `<span style="color:#fa0">⚠ FALTAN MODOS EN X — ΣUx=${(totalX * 100).toFixed(1)} % en ${N} modos (faltan ${falta(totalX)} para el 90 % que exige NEC-15 §6.2.2). Y cumple en el modo ${modeAt90Y}. Subí «N° de modos» en Settings ▸ ⚡ Modal + Animación.</span>`;
+      return `<span style="color:#f44">✗ FALTAN MODOS EN AMBAS DIRECCIONES — ΣUx=${(totalX * 100).toFixed(1)} % · ΣUy=${(totalY * 100).toFixed(1)} % en ${N} modos. NEC-15 §6.2.2 exige ≥ 90 %: el cortante dinámico sale bajo y el control Vdin/Vest no es representativo. Subí «N° de modos» en Settings ▸ ⚡ Modal + Animación.</span>`;
     })();
 
     let html = `<div id="modal-header" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; cursor:move; user-select:none;" title="Arrastra para mover">
@@ -136,18 +124,11 @@ export function createModalPanel() {
 
     html += `<div id="modal-body" style="padding:0 12px 10px 12px;">`;
 
-    // Dictamen arriba
-    html += `<div style="padding:6px 0; font-weight:bold; font-size:13px;">${dictamen}</div>`;
-    // Resumen 3 modos principales (Ux, Uy, Rz)
-    html += primaryBlock;
-
-    if (config.properties) {
-      for (const line of config.properties) {
-        html += `<span style="color:#888">${line}</span>\n`;
-      }
-    }
-    // Gráfica del espectro NEC-15 (Sa vs T) con T₁ del modal marcado.
-    if (config.spectrumHtml) html += config.spectrumHtml;
+    // El panel es SOLO LA TABLA: el único texto es el aviso técnico de masa participativa
+    // (si faltan modos hay que enterarse acá). El resumen de modos principales, las líneas
+    // de NEC/cortante/derivas/combos (config.properties) y el espectro NO se renderizan —
+    // viven en el menú "📋 Tablas" de Analysis Outputs y en el panel de espectro.
+    html += `<div style="padding:6px 0; font-weight:bold; font-size:12px; line-height:1.4">${dictamen}</div>`;
 
     html += `<table style="border-collapse:collapse; color:#0f0; font-size:11px; margin-top:4px">
 <tr style="color:#ff0; border-bottom:1px solid #ff03">

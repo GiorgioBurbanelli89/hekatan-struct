@@ -1,0 +1,5 @@
+# artefactos generados por los scripts de medición (se regeneran solos)
+deform.js
+deform.wasm
+panel.js
+panel_page.html

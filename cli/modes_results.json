@@ -1,0 +1,47 @@
+[
+ {
+  "nF": 2,
+  "nModes": 12,
+  "T1": 0.2406,
+  "sumUx": 95.6,
+  "sumUy": 94.3,
+  "ok": true,
+  "ms": 144
+ },
+ {
+  "nF": 4,
+  "nModes": 12,
+  "T1": 0.4825,
+  "sumUx": 97.5,
+  "sumUy": 96.9,
+  "ok": true,
+  "ms": 101
+ },
+ {
+  "nF": 6,
+  "nModes": 12,
+  "T1": 0.7307,
+  "sumUx": 98.2,
+  "sumUy": 83.4,
+  "ok": false,
+  "ms": 125
+ },
+ {
+  "nF": 6,
+  "nModes": 18,
+  "T1": 0.7307,
+  "sumUx": 98.3,
+  "sumUy": 98,
+  "ok": true,
+  "ms": 256
+ },
+ {
+  "nF": 8,
+  "nModes": 12,
+  "T1": 0.9842,
+  "sumUx": 97.5,
+  "sumUy": 92.8,
+  "ok": true,
+  "ms": 148
+ }
+]

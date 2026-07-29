@@ -57,7 +57,9 @@ function coordsFrom(p: any) {
   return { nbx, nby, nF, svx, svy, sp, xC: cum(svx), yC: cum(svy), zC: cum(sp) };
 }
 
-function buildEdificio(p: any, states: any, sys: Sys) {
+// opts.soloGeometria = armar nodos/elementos SIN resolver. Sirve para saber cuántos GDL
+// tiene el modelo (y estimar cuánto va a tardar) ANTES de pagar el análisis completo.
+function buildEdificio(p: any, states: any, sys: Sys, opts?: { soloGeometria?: boolean }) {
   const { bCol, bBeam, hBeam, tSlab, tWall, ms, q } = p;
   const { nbx, nby, nF, xC, yC, zC } = coordsFrom(p);
   const Lx = xC[nbx], Ly = yC[nby];
@@ -172,6 +174,7 @@ function buildEdificio(p: any, states: any, sys: Sys) {
   states.nodeInputs.val = { supports, loads };
   states.elementInputs.val = { elasticities, poissonsRatios, shearModuli, densities, areas, momentsOfInertiaY, momentsOfInertiaZ, torsionalConstants, thicknesses, plateFormulations, drillingTypes, shearAreasY, shearAreasZ };
 
+  if (opts?.soloGeometria) return;
   // ── Resolver y recuperar resultados → así se VE el aporte de losa/muros (shell results).
   try {
     states.deformOutputs.val = deform(nodes, elements, states.nodeInputs.val, states.elementInputs.val);
@@ -226,6 +229,19 @@ function necLineas(p: any, nodes: any, elements: any, ei: any, T1?: number): str
 // malla (la rigidez lateral la dan pórtico+muro, no el refinamiento de la losa), así que
 // correr el modal sobre una malla gruesa aparte da el mismo T₁ y cortante NEC, sin colgar.
 const MODAL_MS = 2.5;
+
+// ── Estimación de cuánto va a tardar, ANTES de correr ────────────────────────────────
+// Sin tope de GDL el usuario puede pedir modelos enormes, y todo el FEM corre en el hilo
+// principal: la pestaña queda congelada mientras dura. Antes de bloquearla medio minuto
+// conviene decir cuánto va a costar. Las constantes salen de medir el WASM del bundle en
+// Chrome (cli/browser_limit_run.mjs), ley de potencia t = a·GDL^b ajustada a:
+//   deform: 41 706 GDL → 7.2 s · 90 234 → 38 s · 157 626 → 109 s   (b ≈ 2.0)
+//   modal:  21 918 → 3.2 s · 47 022 → 9.9 s · 81 774 → 54 s · 126 174 → 152 s  (b ≈ 2.5)
+// Es un orden de magnitud, no un cronómetro: depende de la máquina. Se muestra como "~".
+const segDeform = (dof: number) => 4.67e-9 * Math.pow(dof, 2.0);
+const segModal  = (dof: number) => 2.07e-11 * Math.pow(dof, 2.5);
+// Por encima de esto se pide confirmación en vez de congelar la pestaña sin avisar.
+const SEG_CONFIRMAR = 20;
 function runModalEdificio(p: any, states: any, modalPanel: any, label: string, sys: Sys) {
   // Reconstruye el modelo en malla GRUESA dentro del estado REAL del viewer. Así el modal
   // Y su animación usan la MISMA malla: el animador deforma la malla mostrada con el modo,
@@ -238,15 +254,52 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
   // completo, o lateralEigen) siguen en malla gruesa por el cap de GDL.
   const etabsExacto = !p.diafragmaRigido && ((p.modalMethod ?? 3) | 0) === 3;
   const ms = etabsExacto ? 1.0 : MODAL_MS;
-  const dofCap = etabsExacto ? 8000 : MAX_MODAL_DOF;
+  // SIN TOPE ARTIFICIAL DE GDL en el método 3. El tope viejo (8000) venía de cuando el
+  // eigensolver era denso O(n³); con la condensación de Guyan + SimplicialLDLT sparse ya no
+  // aplica, y bloqueaba modelos que corren de sobra. Medido en Chrome con el WASM del bundle
+  // (cli/browser_limit_run.mjs): el modal de 47 022 GDL resuelve en segundos, y el que topa
+  // primero es el `deform` estático (aguanta hasta ~157 600 GDL / 2048 MB, el techo del
+  // WASM32). Los OTROS métodos (0/1/2) sí siguen con tope: son densos o re-factorizan K.
+  // Si el WASM se queda sin memoria, se avisa con el error real en vez de adivinar un número.
+  const dofCap = etabsExacto ? Infinity : MAX_MODAL_DOF;
+
+  // ── Estimar ANTES de resolver ──
+  // Se arma sólo la geometría (barato) para contar GDL y saber cuánto va a tardar. Si el
+  // costo es alto se pide confirmación: sin esto la pestaña se congela sin explicación, y
+  // el usuario no puede distinguir "está calculando" de "se colgó".
+  let dofPrevio = 0, segEstim = 0;
+  try {
+    buildEdificio({ ...p, ms }, states, sys, { soloGeometria: true });
+    dofPrevio = (states.nodes.val?.length ?? 0) * 6;
+    segEstim = segDeform(dofPrevio) + segModal(dofPrevio);
+    if (segEstim > SEG_CONFIRMAR && typeof confirm === "function") {
+      const seguir = confirm(
+        `Modelo grande: ${dofPrevio.toLocaleString()} grados de libertad ` +
+        `(${(states.nodes.val?.length ?? 0).toLocaleString()} nudos, malla ${ms} m).\n\n` +
+        `El análisis va a tardar ~${Math.round(segEstim)} s y la página queda sin responder ` +
+        `mientras calcula (el solver corre en el hilo principal).\n\n` +
+        `¿Continuar? — Cancelar y bajar vanos/pisos, o subir «Malla shell [m]», lo hace mucho más rápido.`
+      );
+      if (!seguir) {
+        const msg = `Análisis cancelado: ${dofPrevio.toLocaleString()} GDL, ~${Math.round(segEstim)} s estimados. Bajá vanos/pisos o subí «Malla shell [m]».`;
+        try { modalPanel.render({ frequencies: [], modeShapes: [], massParticipation: [] }, { title: label, properties: [msg] }); } catch {}
+        return;
+      }
+    }
+  } catch { /* si la estimación falla, seguimos igual: es solo informativa */ }
+
   try { buildEdificio({ ...p, ms }, states, sys); }
-  catch (e: any) { console.warn("[Test M Modal] build:", e?.message); return; }
+  catch (e: any) {
+    const msg = `El modelo no se pudo construir/resolver: ${e?.message ?? e}`;
+    try { modalPanel.render({ frequencies: [], modeShapes: [], massParticipation: [] }, { title: label, properties: [msg] }); } catch {}
+    console.warn("[Test M Modal] build:", e?.message); return;
+  }
   const nodes = states.nodes.val, elements = states.elements.val;
   const ni = states.nodeInputs.val, ei = states.elementInputs.val;
   if (!nodes?.length || !ei?.densities?.size) return;
   const dof = nodes.length * 6;
   if (dof > dofCap) {
-    const msg = `Modal omitido: ${dof} GDL > ${dofCap} (ms=${ms}m). Bajá vanos/pisos.`;
+    const msg = `Modal omitido: ${dof} GDL > ${dofCap} (ms=${ms}m) con el método modal elegido. Usá «ETABS exacto» (sin tope) o bajá vanos/pisos.`;
     try { modalPanel.render({ frequencies: [], modeShapes: [], massParticipation: [] }, { title: label, properties: [msg] }); } catch {}
     return;
   }
@@ -406,11 +459,26 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
     const metodoTxt = etabsExacto
       ? `Modal tipo ETABS (masa solo lateral, condensación) en malla ms=${ms}m (${dof} GDL).`
       : `Modal animado en malla gruesa ms=${ms}m (${dof} GDL).`;
+    if (segEstim > 5) console.log(`[Test M Modal] ${dof} GDL — costo estimado ~${Math.round(segEstim)} s`);
     modalPanel.render(out, { title: label, spectrumHtml, properties: [
       `${metodoTxt} El colormap estático usa malla fina ms=${p.ms}m.`,
       ...nec, ...dynLines] });
     console.log(`[Test M Modal] ${label} — f₁=${out.frequencies?.[0]?.toFixed(4)} Hz (coarse ${dof} GDL)`);
-  } catch (e: any) { console.warn("Modal Test M error:", e?.message); }
+  } catch (e: any) {
+    // Sin tope artificial, el límite lo pone el WASM. Si revienta hay que DECIRLO con los
+    // datos técnicos, no dejar el botón mudo. El caso típico es quedarse sin memoria:
+    // emscripten tira "Cannot enlarge memory… limit is 2147483648" (2 GB, techo de wasm32)
+    // y aborta. Medido: el estático aguanta hasta ~157 600 GDL / 2048 MB en Chrome.
+    const err = String(e?.message ?? e);
+    const sinMemoria = /enlarge memory|out of memory|Aborted|bad_alloc/i.test(err);
+    const msg = sinMemoria
+      ? `Sin memoria en el solver WASM con ${dof} GDL (${nodes.length} nudos, ms=${ms} m). ` +
+        `El techo de WebAssembly 32-bit son 2 GB; medido en Chrome, el análisis estático llega ` +
+        `hasta ~157 600 GDL. Bajá vanos/pisos o subí «Malla shell [m]». Error: ${err}`
+      : `El análisis modal falló con ${dof} GDL: ${err}`;
+    try { modalPanel.render({ frequencies: [], modeShapes: [], massParticipation: [] }, { title: label, properties: [msg] }); } catch {}
+    console.warn("Modal Test M error:", err);
+  }
 }
 
 // params base (siempre visibles)
@@ -441,7 +509,15 @@ const BASE: Record<string, ParamDef> = {
   norma:     { default: 0, options: { "NEC-15 (Ecuador)": 0, "ASCE 7-22 (factores)": 1 }, label: "Normativa (factores)", folder: "Sísmico NEC" },
   irregular: { default: 0, boolean: true, label: "¿Irregular? → control 85% (NEC)", folder: "Sísmico NEC" },
   cd:        { default: 5.5, min: 3, max: 6.5, step: 0.5, label: "ASCE Cd (amplif. deriva)", folder: "Sísmico NEC" },
-  nModes:    { default: 12, min: 6, max: 60, step: 1, label: "N° de modos (subir si masa <90%)", inModal: true },
+  // 24 = 3 modos por piso en el edificio más alto que admite el ejemplo (MAXF=8), la regla
+  // habitual de ETABS. Con 12 (el default anterior) la masa participativa NO llegaba al 90%
+  // que exige NEC-15 §6.2.2 en varios tamaños — medido contra ETABS 22, que da lo mismo:
+  //   2x2x6 → ΣUy 83.4% con 12 modos (ETABS 84.0%)  ·  98.0% con 18
+  //   2x2x8 → ΣUy 92.8% con 12       (ETABS 82.8%)  ·  98.5% con 24
+  //   6x6x8 → ΣUy 94.9% con 12       (ETABS 95.2%)  ·  99.2% con 24
+  // Costo: pasar de 12 a 24 modos ~duplica el tiempo del eigen (barato salvo en los
+  // modelos más grandes). Si falta masa, el panel modal lo avisa y hay que subir esto.
+  nModes:    { default: 24, min: 6, max: 60, step: 1, label: "N° de modos (subir si masa <90%)", inModal: true },
   modalMethod: { default: 3, options: { "Eigen": 0, "Eigen+masa faltante": 1, "Ritz (como ETABS)": 2, "ETABS exacto (masa solo lateral)": 3 }, label: "Método modal (masa ≥90%)", inModal: true },
   diafragmaRigido: { default: 0, boolean: true, label: "Diafragma rígido (como ETABS) → ΣU≈100%", inModal: true },
 };

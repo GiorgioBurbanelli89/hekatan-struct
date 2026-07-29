@@ -527,6 +527,17 @@ let __caseResultsBinding: any = null;
 let __modalSettingsFolder: any = null;   // folder "⚡ Modal + Animación" dentro de Settings (Analysis Outputs)
 let __lastModalResults: any = null;      // resultados modales (para listar los modos en "Case results")
 let __modalTableShown = false;           // el panel/tabla modal solo se muestra si el usuario lo activa
+// ── Estado EXPLÍCITO del modo modal ──────────────────────────────────────────
+// Antes "¿el modal está activo?" se deducía de modalAnimator.isPlaying(), que es
+// `rafId !== 0`. Eso lo apagaba solo en dos casos muy comunes:
+//   (a) el modal no devolvió modos (tope de GDL) → el animador nunca arranca → rafId=0;
+//   (b) el usuario pausó la animación.
+// En ambos, el siguiente movimiento de slider dejaba de re-correr el modal Y ocultaba la
+// tabla, sin forma de volver salvo apretar el botón otra vez. Con un flag explícito, una
+// vez que se corre el modal queda activo: al cambiar pisos/vanos se recalcula con las
+// dimensiones nuevas y la tabla solo se actualiza. Se apaga únicamente al elegir un caso
+// no-modal (estático/combo), que es cuando el usuario realmente pidió otra cosa.
+let __modalActivo = false;
 let __spectrumShown = false;             // el espectro de diseño solo se muestra si el usuario lo activa
 let __lastSpectrumHtml = "";             // último SVG del espectro NEC (para el panel separado)
 let __spectrumPanel: HTMLDivElement | null = null;
@@ -641,12 +652,16 @@ function mountCaseResultsInSettings() {
         // COMBO: rebuild() detecta el combo desde activeLoadCase y aplica Σ factores.
         // Es un caso estático → detener la animación modal si estaba corriendo.
         try { if (modalAnimator?.isPlaying?.()) modalAnimator.stop(); } catch {}
+        __modalActivo = false;   // el usuario pidió un combo estático → salir del modo modal
         activeLoadCase.val = v.slice(8); rebuild();
       } else {
         // Si el caso elegido NO es modal, detener la animación para ver el resultado
         // estático (sin esto, rebuild() la re-animaría por el disparador isPlaying()).
         const selCase = loadCases.val.find((c) => c.name === e.value);
-        if (!selCase?.type?.startsWith("Modal")) { try { if (modalAnimator?.isPlaying?.()) modalAnimator.stop(); } catch {} }
+        if (!selCase?.type?.startsWith("Modal")) {
+          try { if (modalAnimator?.isPlaying?.()) modalAnimator.stop(); } catch {}
+          __modalActivo = false;   // caso estático elegido → salir del modo modal
+        } else __modalActivo = true;
         activeLoadCase.val = e.value; rebuild();
         // Sincronizar el "Caso activo" del pane derecho (Load Cases) con esta selección.
         try { __loadPanel?.rebuildCases(); } catch {}
@@ -910,7 +925,9 @@ function rebuild() {
     // del caso es frágil). isPlaying() es el disparador robusto.
     let modalPlaying = false;
     try { modalPlaying = !!modalAnimator?.isPlaying?.(); } catch {}
-    if ((isModalCase || modalPlaying) && currentExample.runModal) {
+    // __modalActivo se mantiene aunque el modal no haya devuelto modos o la animación
+    // esté pausada → el modal sigue "puesto" y acompaña a los sliders.
+    if ((isModalCase || modalPlaying || __modalActivo) && currentExample.runModal) {
       // Re-correr el modal Y re-animar con el MODELO NUEVO. Antes esto llamaba al
       // `modalPanel` pelado, que actualiza la tabla pero NO el animador → al mover
       // un slider la animación se quedaba con el modo viejo. Ruteamos por
@@ -921,7 +938,10 @@ function rebuild() {
       else currentExample.runModal(toSIParams(), states, modalPanel);
       // Solo mostrar el panel/tabla si el usuario activó "Mostrar tabla" (Settings).
       modalPanel.div.style.display = __modalTableShown ? "block" : "none";
-    } else {
+    } else if (!__modalTableShown) {
+      // Ocultar SOLO si el usuario no dejó la tabla abierta. Antes esto la cerraba de
+      // golpe en cuanto el modal dejaba de estar activo (p.ej. al pasarse del tope de
+      // GDL): la tabla debe quedarse y limitarse a actualizarse.
       modalPanel.div.style.display = "none";
     }
   } catch (e: any) {
@@ -5153,6 +5173,9 @@ solve`;
       // que cada corrida parta limpia del modelo sin deformar (evita que se
       // capturen "originals" corruptos con el último frame animado anterior).
       modalAnimator.stop();
+      // A partir de acá el modo modal queda ACTIVO: los cambios de pisos/vanos lo
+      // recalculan solo (ver __modalActivo en el dispatcher de rebuild()).
+      __modalActivo = true;
       // El panel/tabla modal solo se muestra si el usuario activó "Mostrar tabla" (Settings).
       modalPanel.div.style.display = __modalTableShown ? "block" : "none";
       if (currentExample!.runModal) currentExample!.runModal(toSIParams(), states, captureModalPanel);
@@ -5883,7 +5906,16 @@ const viewerElm = getViewer({
   // Posicionar + mostrar el Dynamic Input al lado del cursor; enfocarlo para
   // que el caret quede ahí. Mientras está VACÍO sigue al cursor; al tipear se
   // congela (para no moverse). Si dibujás, se oculta (la cajita de coords manda).
+  // ── TÁCTIL: nunca robar el foco ──────────────────────────────────────────────
+  // El "Dynamic Input" estilo AutoCAD sigue al cursor y se auto-enfoca para capturar
+  // el tecleo. Con mouse es invisible; en un MÓVIL es un bug grave: `pointermove` se
+  // dispara al arrastrar el dedo y `pointerleave` al levantarlo, así que cualquier
+  // toque sobre el modelo enfocaba un <input> y el navegador abría el TECLADO VIRTUAL
+  // encima del viewer. En táctil no hay teclado físico que capturar → no aplica.
+  const esTactil = (e: PointerEvent) => e.pointerType === "touch" || e.pointerType === "pen";
+
   viewerElm.addEventListener("pointermove", (e: PointerEvent) => {
+    if (esTactil(e)) { dyn.style.display = "none"; return; }
     if (isDrawingCoords()) { dyn.style.display = "none"; return; }
     if (dynInput.value.length === 0) {
       let x = e.clientX + 16, y = e.clientY + 14;
@@ -5903,8 +5935,9 @@ const viewerElm = getViewer({
       try { dynInput.focus({ preventScroll: true }); } catch {}
     }
   });
-  viewerElm.addEventListener("pointerleave", () => {
+  viewerElm.addEventListener("pointerleave", (e: PointerEvent) => {
     dyn.style.display = "none";
+    if (esTactil(e)) return;      // móvil: levantar el dedo abriría el teclado virtual
     if (stealBlocked()) return;   // select abierto → NO robar foco (cerraba el popup)
     try { input.focus({ preventScroll: true }); } catch {}
   });

@@ -1,0 +1,145 @@
+[
+ {
+  "tag": "2x2x4",
+  "dof": 3270,
+  "nModes": 12,
+  "T1": 0.4825,
+  "sumUx": 97.5,
+  "sumUy": 96.9,
+  "ok": true,
+  "ms": 245,
+  "regla": 12
+ },
+ {
+  "tag": "2x2x6",
+  "dof": 4866,
+  "nModes": 12,
+  "T1": 0.7307,
+  "sumUx": 98.2,
+  "sumUy": 83.4,
+  "ok": false,
+  "ms": 172,
+  "regla": 18
+ },
+ {
+  "tag": "2x2x6",
+  "dof": 4866,
+  "nModes": 18,
+  "T1": 0.7307,
+  "sumUx": 98.3,
+  "sumUy": 98,
+  "ok": true,
+  "ms": 349,
+  "regla": 18
+ },
+ {
+  "tag": "2x2x8",
+  "dof": 6462,
+  "nModes": 12,
+  "T1": 0.9842,
+  "sumUx": 97.5,
+  "sumUy": 92.8,
+  "ok": true,
+  "ms": 200,
+  "regla": 24
+ },
+ {
+  "tag": "2x2x8",
+  "dof": 6462,
+  "nModes": 24,
+  "T1": 0.9842,
+  "sumUx": 98.7,
+  "sumUy": 98.5,
+  "ok": true,
+  "ms": 670,
+  "regla": 24
+ },
+ {
+  "tag": "3x3x6",
+  "dof": 9768,
+  "nModes": 12,
+  "T1": 0.7687,
+  "sumUx": 98.5,
+  "sumUy": 95,
+  "ok": true,
+  "ms": 352,
+  "regla": 18
+ },
+ {
+  "tag": "3x3x6",
+  "dof": 9768,
+  "nModes": 18,
+  "T1": 0.7687,
+  "sumUx": 98.8,
+  "sumUy": 98.4,
+  "ok": true,
+  "ms": 652,
+  "regla": 18
+ },
+ {
+  "tag": "3x3x8",
+  "dof": 12984,
+  "nModes": 12,
+  "T1": 1.0291,
+  "sumUx": 98,
+  "sumUy": 93.7,
+  "ok": true,
+  "ms": 1143,
+  "regla": 24
+ },
+ {
+  "tag": "3x3x8",
+  "dof": 12984,
+  "nModes": 24,
+  "T1": 1.0291,
+  "sumUx": 99.1,
+  "sumUy": 98.8,
+  "ok": true,
+  "ms": 3731,
+  "regla": 24
+ },
+ {
+  "tag": "4x4x8",
+  "dof": 21918,
+  "nModes": 12,
+  "T1": 1.0568,
+  "sumUx": 98.3,
+  "sumUy": 94.2,
+  "ok": true,
+  "ms": 3484,
+  "regla": 24
+ },
+ {
+  "tag": "4x4x8",
+  "dof": 21918,
+  "nModes": 24,
+  "T1": 1.0568,
+  "sumUx": 99.2,
+  "sumUy": 99,
+  "ok": true,
+  "ms": 6510,
+  "regla": 24
+ },
+ {
+  "tag": "6x6x8",
+  "dof": 47022,
+  "nModes": 12,
+  "T1": 1.0883,
+  "sumUx": 98.5,
+  "sumUy": 94.9,
+  "ok": true,
+  "ms": 11376,
+  "regla": 24
+ },
+ {
+  "tag": "6x6x8",
+  "dof": 47022,
+  "nModes": 24,
+  "T1": 1.0883,
+  "sumUx": 99.4,
+  "sumUy": 99.2,
+  "ok": true,
+  "ms": 19617,
+  "regla": 24
+ }
+]
