@@ -281,33 +281,138 @@ export async function exportModeAnimationGif(opts: GifExportOpts): Promise<Blob 
     ctx.render();
   }
 
-  // 2. Paleta global (muestreo de todos los frames)
+  const blob = gifDesdeFrames(imgs, delayCs);
+  if (blob) descargar(blob, opts.filename ?? "modo_vibracion.gif");
+  return blob;
+}
+
+// ===========================================================================
+//  De aqui para abajo: lo que hace falta para que el workspace tenga PNG y GIF
+//  como el visor web de DWG. El codificador (paleta + LZW + GIF89a) ya estaba
+//  escrito para los modos de vibracion; se saco a `gifDesdeFrames` para no
+//  tener dos codificadores distintos conviviendo.
+// ===========================================================================
+
+/** ImageData[] -> Blob GIF animado (paleta global de 256 por median-cut). */
+export function gifDesdeFrames(imgs: ImageData[], delayCs: number): Blob | null {
+  if (!imgs.length) return null;
   const w = imgs[0].width, h = imgs[0].height;
   const samples: number[][] = [];
-  const step = Math.max(1, Math.floor((w * h * nFrames) / 12000)); // ~12k muestras
-  let si = 0;
+  const step = Math.max(1, Math.floor((w * h * imgs.length) / 12000)); // ~12k muestras
   for (const im of imgs) {
     const d = im.data;
-    for (let p = 0; p < d.length; p += 4 * step) {
-      samples.push([d[p], d[p + 1], d[p + 2]]); si++;
-    }
+    for (let p = 0; p < d.length; p += 4 * step) samples.push([d[p], d[p + 1], d[p + 2]]);
   }
   const palette = medianCutPalette(samples, 256);
   const nearest = makeNearest(palette);
-
-  // 3. Mapear cada frame a índices
   const frames: Uint8Array[] = imgs.map((im) => {
     const d = im.data; const idx = new Uint8Array(w * h);
     for (let p = 0, q = 0; p < d.length; p += 4, q++) idx[q] = nearest(d[p], d[p + 1], d[p + 2]);
     return idx;
   });
+  return buildGif(frames, palette, w, h, delayCs);
+}
 
-  // 4. Construir + descargar
-  const blob = buildGif(frames, palette, w, h, delayCs);
+export function descargar(blob: Blob, nombre: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = opts.filename ?? "modo_vibracion.gif";
+  a.href = url; a.download = nombre;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+/**
+ * PNG de la vista tal como esta, a resolucion completa del lienzo.
+ *
+ * OJO con el WebGL: el buffer de dibujo se limpia cuando el navegador compone
+ * la pagina, asi que un `toBlob` suelto sale NEGRO. Hay que renderizar y
+ * capturar en la MISMA tarea — por eso el `ctx.render()` pegado al `toBlob`.
+ * (`preserveDrawingBuffer` ya viene en true desde getViewer, pero aun asi el
+ * orden importa cuando hay varias capturas seguidas.)
+ */
+export async function pngBlob(viewerElm: HTMLElement): Promise<Blob | null> {
+  const ctx = getCtx(viewerElm);
+  const canvas: HTMLCanvasElement | undefined = ctx?.renderer?.domElement;
+  if (!canvas || !ctx?.render) { console.warn("[PNG] sin canvas/render"); return null; }
+  ctx.render();
+  return await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/png"));
+}
+
+export async function exportarPng(
+  viewerElm: HTMLElement, filename = "hekatan_struct.png"
+): Promise<Blob | null> {
+  const b = await pngBlob(viewerElm);
+  if (b) descargar(b, filename);
+  return b;
+}
+
+export interface OrbitaGifOpts {
+  vueltas?: number;      // vueltas completas (default 1)
+  frames?: number;       // frames por vuelta (default 36 -> 10 grados)
+  delayMs?: number;      // default 80
+  maxWidth?: number;     // default 560
+  filename?: string;
+  onProgress?: (done: number, total: number) => void;
+}
+
+/**
+ * GIF orbitando el modelo: la camara gira alrededor del objetivo de los
+ * controles, sobre el eje `camera.up` (asi da igual si el modelo es Z-arriba o
+ * Y-arriba). Al terminar deja la camara EXACTAMENTE donde estaba.
+ */
+export async function exportarOrbitaGif(
+  viewerElm: HTMLElement, opts: OrbitaGifOpts = {}
+): Promise<Blob | null> {
+  const nFrames = opts.frames ?? 36;
+  const vueltas = opts.vueltas ?? 1;
+  const delayCs = Math.max(2, Math.round((opts.delayMs ?? 80) / 10));
+  const maxWidth = opts.maxWidth ?? 560;
+
+  const ctx = getCtx(viewerElm);
+  const canvas: HTMLCanvasElement | undefined = ctx?.renderer?.domElement;
+  const cam = ctx?.camera;
+  if (!canvas || !ctx?.render || !cam) { console.warn("[GIF] sin canvas/camara"); return null; }
+
+  const ctrl = ctx.controls;
+  const t = ctrl?.target ?? { x: 0, y: 0, z: 0 };
+  const eje = cam.up ? [cam.up.x, cam.up.y, cam.up.z] : [0, 0, 1];
+  const n = Math.hypot(eje[0], eje[1], eje[2]) || 1;
+  const u = [eje[0] / n, eje[1] / n, eje[2] / n];
+  const p0 = [cam.position.x - t.x, cam.position.y - t.y, cam.position.z - t.z];
+
+  const imgs: ImageData[] = [];
+  try {
+    for (let f = 0; f < nFrames; f++) {
+      const a = (2 * Math.PI * vueltas * f) / nFrames;
+      const c = Math.cos(a), s = Math.sin(a);
+      // Rodrigues: giro de p0 un angulo `a` alrededor del eje unitario u
+      const dot = u[0] * p0[0] + u[1] * p0[1] + u[2] * p0[2];
+      const cr = [u[1] * p0[2] - u[2] * p0[1],
+                  u[2] * p0[0] - u[0] * p0[2],
+                  u[0] * p0[1] - u[1] * p0[0]];
+      const p = [0, 1, 2].map((i) => p0[i] * c + cr[i] * s + u[i] * dot * (1 - c));
+      cam.position.set(t.x + p[0], t.y + p[1], t.z + p[2]);
+      cam.lookAt(t.x, t.y, t.z);
+      ctrl?.update?.();
+      await sleep(20);
+      ctx.render();
+      imgs.push(captureFrame(canvas, maxWidth));
+      opts.onProgress?.(f + 1, nFrames);
+    }
+  } finally {
+    // devolver la camara a donde estaba: si el GIF se corta a la mitad, el
+    // usuario no tiene por que quedarse con la vista movida.
+    cam.position.set(t.x + p0[0], t.y + p0[1], t.z + p0[2]);
+    cam.lookAt(t.x, t.y, t.z);
+    ctrl?.update?.();
+    ctx.render();
+  }
+
+  const blob = gifDesdeFrames(imgs, delayCs);
+  // filename: "" -> NO descargar (lo pide una verificacion headless, que solo
+  // quiere el Blob; si se descargara, el navegador guardaria un archivo sin
+  // nombre en cada corrida de la prueba).
+  const nom = opts.filename ?? "hekatan_struct_orbita.gif";
+  if (blob && nom) descargar(blob, nom);
   return blob;
 }

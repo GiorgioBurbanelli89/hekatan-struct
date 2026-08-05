@@ -25,6 +25,24 @@ import {
 import { autoMeshShells } from "../shared/e2kAutoMesh";
 
 // ── Auto-mesh shells toggle (global, persistido localStorage) ──
+// ?heks=<url> — se captura AQUI, al cargar el modulo, y no donde se usa: el
+// workspace reescribe la URL al arrancar (fija «t» y borra parametros), asi
+// que si se lee mas tarde ya no esta y el modelo nunca se abre.
+// ?m=<codigo> — ENLACE DE COMPARTIR, igual que el /id/<codigo> del visor DWG.
+// El modelo vive en `m/<codigo>/modelo.heks` dentro del propio deploy, con el
+// codigo generado al azar (crear_share_struct.py). Se resuelve contra
+// BASE_URL porque en el deploy la app cuelga de /hekatan-struct-lineal/, no de
+// la raiz: con una ruta absoluta el fetch daria 404.
+// OJO, no es control de acceso: el codigo es impredecible y robots.txt tapa
+// /m/, pero cualquiera que TENGA el enlace ve el modelo. Para privacidad de
+// verdad haria falta autenticacion en el hosting.
+const _qs = new URLSearchParams(window.location.search);
+const _codigo = _qs.get("m");
+const URL_HEKS = _codigo
+  ? `${import.meta.env.BASE_URL}m/${encodeURIComponent(_codigo)}/modelo.heks`
+      .replace(/([^:])\/\//g, "$1/")
+  : _qs.get("heks");
+
 const AUTO_MESH_KEY = "hekatan.workspace.autoMeshShells";
 const autoMeshShellsEnabled = van.state<boolean>(
   localStorage.getItem(AUTO_MESH_KEY) === "true"
@@ -38,6 +56,7 @@ import {
   attachFemTools,
 } from "hekatan-ui";
 // import { attachInspect } from "../shared/attachInspect";  // DEPRECATED: ahora en hekatan-ui/femTools
+import { exportarPng, exportarOrbitaGif, pngBlob } from "../shared/gifExport";
 import { createModalPanel } from "../shared/renderModalTable";
 import { createModalAnimator, type ModalAnimator } from "../shared/animateMode";
 // createModalAnimator también se llama en buildParamsPane() para re-wirear el
@@ -2761,6 +2780,55 @@ function buildParamsPane() {
   fView.addButton({ title: "→ Elevación X (frente)" }).on("click", () => setView("elevX"));
   fView.addButton({ title: "↑ Elevación Y (lado)" }).on("click", () => setView("elevY"));
 
+  // ── 📷 PNG y 🎞 GIF, como el visor web de DWG ──
+  // Hasta ahora el workspace no tenía forma de sacar una imagen: para meter el
+  // modelo en un informe había que recortar una captura de pantalla, que trae
+  // los paneles y sale a la resolución de la ventana. El PNG sale del lienzo
+  // (sin paneles) y el GIF orbita el modelo, que es lo que se manda por chat.
+  const fImg = fView.addFolder({ title: "📷 Imagen y GIF", expanded: true });
+  const bPng = fImg.addButton({ title: "📷 PNG de la vista" });
+  bPng.on("click", async () => {
+    bPng.title = "📷 guardando…";
+    const b = await exportarPng(viewerElm as HTMLElement, "hekatan_struct.png");
+    bPng.title = b ? "📷 PNG de la vista" : "📷 PNG — falló";
+  });
+  const gifCfg = { frames: 36, vueltas: 1, ms: 80 };
+  fImg.addBinding(gifCfg, "frames", { min: 8, max: 72, step: 4, label: "frames" });
+  fImg.addBinding(gifCfg, "ms", { min: 40, max: 200, step: 10, label: "ms/frame" });
+  const bGif = fImg.addButton({ title: "🎞 GIF orbitando" });
+  bGif.on("click", async () => {
+    const b = await exportarOrbitaGif(viewerElm as HTMLElement, {
+      frames: gifCfg.frames, vueltas: gifCfg.vueltas, delayMs: gifCfg.ms,
+      filename: "hekatan_struct_orbita.gif",
+      onProgress: (d, t) => { bGif.title = `🎞 GIF ${d}/${t}`; },
+    });
+    bGif.title = b ? "🎞 GIF orbitando" : "🎞 GIF — falló";
+  });
+
+  // Para verificar de fuera (headless) sin depender de un diálogo de descarga:
+  // devuelve el PNG/GIF como data URL y se comprueba el TAMAÑO y la cabecera,
+  // no una captura de pantalla.
+  (window as any).hekatanStruct = {
+    ...((window as any).hekatanStruct || {}),
+    pngDataUrl: async () => {
+      const b = await pngBlob(viewerElm as HTMLElement);
+      if (!b) return null;
+      return await new Promise<string>((res) => {
+        const r = new FileReader(); r.onload = () => res(String(r.result));
+        r.readAsDataURL(b);
+      });
+    },
+    gifDataUrl: async (frames = 12) => {
+      const b = await exportarOrbitaGif(viewerElm as HTMLElement,
+        { frames, filename: "" });
+      if (!b) return null;
+      return await new Promise<string>((res) => {
+        const r = new FileReader(); r.onload = () => res(String(r.result));
+        r.readAsDataURL(b);
+      });
+    },
+  };
+
   // ── 🔀 Vista doble (split): izq dibujable + der preview ──
   // Renderiza el scene dos veces lado a lado. El usuario dibuja en el
   // panel izquierdo (vista activa); el panel derecho muestra el modelo
@@ -3348,6 +3416,10 @@ function buildParamsPane() {
         statusLine.textContent =
           `${stats.nodes} nodos · ${stats.frames} frames · ${stats.shells} shells · ` +
           `${stats.solved ? "solve OK" : "(sin solve)"}` +
+          // El resultado a la vista: si ΣRz no da la carga aplicada, o la
+          // flecha sale en metros, el modelo está mal apoyado o suelto.
+          (stats.solved && stats.maxUzMm !== undefined
+            ? ` · Uz max ${stats.maxUzMm} mm · ΣRz ${stats.sumRz} kN` : "") +
           (errs?.length ? ` · ⚠ ${errs.length} err` : "");
         statusLine.style.color = errs?.length ? "#f87171" : "#94a3b8";
       }
@@ -3398,6 +3470,32 @@ function buildParamsPane() {
     });
     taContainer.appendChild(heksInput);
     fCli.addButton({ title: "📂 Abrir .heks" }).on("click", () => heksInput.click());
+
+    // ── ?heks=<url> — abrir un modelo por ENLACE ──
+    // El botón de arriba abre un diálogo del sistema: sirve para trabajar, pero
+    // no para mandarle a alguien "mirá este modelo", ni para las pruebas
+    // headless (ahí no hay diálogo que pulsar). Con el parámetro, el workspace
+    // se trae el .heks y lo aplica solo.
+    const urlHeks = URL_HEKS;
+    if (urlHeks) {
+      fetch(urlHeks)
+        .then((r) => {
+          if (!r.ok) throw new Error(r.status + " " + r.statusText);
+          return r.text();
+        })
+        .then((txt) => {
+          // Se aplica DESPUES de que termine de arrancar el workspace: si se
+          // hace aqui mismo, el ejemplo por defecto se carga detras y pisa el
+          // modelo (el texto quedaba puesto y el lienzo vacio).
+          setTimeout(() => {
+            ta.value = txt;
+            applyCliScript();
+          }, 1500);
+        })
+        .catch((e) =>
+          alert("No se pudo abrir «" + urlHeks + "»: " + e.message)
+        );
+    }
     fCli.addButton({ title: "💾 Guardar .heks" }).on("click", () => {
       const blob = new Blob([ta.value], { type: "text/plain" });
       const a = document.createElement("a");
@@ -6381,6 +6479,19 @@ try {
 // el lienzo vacío listo para dibujar, sin tener que navegar al ejemplo.
 // Backward-compat: ?t=zapata-aislada (legacy) → zapata-aislada-validacion.
 let urlT = new URLSearchParams(window.location.search).get("t");
+// ?heks= MANDA sobre cualquier ?t=. El workspace se reescribe la URL al
+// arrancar y le pega «&t=test-m-dual»; en cuanto se recarga esa pestaña, el
+// ?t= ya viene puesto y un guardia sobre «si no hay ?t=» no se entera. Por eso
+// aqui se pisa: si llega un modelo por enlace, se arranca con el lienzo VACIO
+// y el ejemplo por defecto no compite con el .heks (ganaba el ejemplo).
+if (URL_HEKS) {
+  urlT = "new-blank";
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set("t", urlT);
+    window.history.replaceState(null, "", u.toString());
+  } catch { /* no-op */ }
+}
 if (urlT === "zapata-aislada") {
   urlT = "zapata-aislada-validacion";
   try {
@@ -6390,8 +6501,13 @@ if (urlT === "zapata-aislada") {
   } catch { /* no-op */ }
 }
 if (!urlT) {
+  // Con ?heks= el modelo llega por enlace: hay que arrancar con el lienzo
+  // VACÍO. Si se carga el ejemplo por defecto, termina de armarse DESPUÉS que
+  // el .heks y lo pisa — el texto quedaba puesto y en pantalla salía Test M.
+  // Retrasar la aplicación del .heks no alcanza: es una carrera, y la ganaba
+  // el ejemplo. Así no hay carrera.
   // Default del workspace: Test M — Dual (edificio didáctico NEC-15 completo).
-  urlT = "test-m-dual";
+  urlT = URL_HEKS ? "new-blank" : "test-m-dual";
   try {
     const u = new URL(window.location.href);
     u.searchParams.set("t", urlT);
