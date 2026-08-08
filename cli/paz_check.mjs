@@ -1,8 +1,19 @@
 #!/usr/bin/env node
-// Regresion: frame Paz 6.3 por el camino NO-lateral (denso).
-// Referencia REAL, arbitrada con ETABS 22 (cli/paz_etabs.py):
-//   ETABS   9.0903  14.9739  24.9465  25.8520  164.3495  164.5541
-//   Hekatan 8.8358  14.5551  24.2228  25.1038  159.6530  159.8523   (-2.85 % uniforme)
+// Regresion: frame Paz 6.3, contra ETABS 22 con el MISMO modelo.
+//
+// Referencia REAL (cli/paz_masa_etabs.py, ETABS con los brazos rigidos
+// automaticos ANULADOS, que es el modelo que Hekatan resuelve):
+//   ETABS off=0  8.8305  14.5459  24.2336  25.1132  159.6525  159.8513
+//   Hekatan      igual al 0.06 % por el camino denso, e IDENTICO a 4 decimales
+//                por el de subespacio.
+//
+// Con los brazos rigidos que ETABS pone SOLO da 9.0903 ... 164.5541, un +2.88 %
+// uniforme, y no es el solver: ETABS no pesa el tramo de barra que cae dentro
+// del brazo rigido. Medido con AssembledJointMass: descuenta 1857.4 in3, que es
+// exactamente 2*24.7*24.7 + 2*24.7*12.9, los offsets de las VIGAS (los de
+// columna no los descuenta). Masa total ETABS off=0 = 3.555392e-2 contra
+// 3.555400e-2 de Hekatan: 0.002 %.
+//
 // La vieja "ref nativa" (9.6780 ... 33.9929 44.9332) es FALSA: solo la da un
 // .exe del 17-may compilado de codigo que nunca se subio, y sus modos 5-6 no
 // existen. No perseguirla.
@@ -40,9 +51,22 @@ const elements = [[0, 1], [2, 3], [4, 5], [6, 7], [1, 5], [3, 7], [1, 3], [5, 7]
 const ni = { supports: new Map([[0, [1, 1, 1, 1, 1, 1].map(Boolean)], [2, [1, 1, 1, 1, 1, 1].map(Boolean)], [4, [1, 1, 1, 1, 1, 1].map(Boolean)], [6, [1, 1, 1, 1, 1, 1].map(Boolean)]]) };
 const eM = (c, g) => new Map(elements.map((_, i) => [i, i < 4 ? c : g]));
 const ei = { elasticities: eM(E, E), shearModuli: eM(G, G), areas: eM(43.0, 24.7), momentsOfInertiaY: eM(391, 225), momentsOfInertiaZ: eM(5630, 928), torsionalConstants: eM(34.8, 5.90), densities: new Map(elements.map((_, i) => [i, RHO])) };
+// ETABS 22 con los brazos rigidos anulados = el mismo modelo que resuelve Hekatan
+const ETABS = [8.8305, 14.5459, 24.2336, 25.1132, 159.6525, 159.8513];
+const TOL = 0.1;   // %
+
 const f0 = modal(nodes, elements, ni, ei, 6, 0);
-console.log("Paz 6.3  DENSO (lat=0)      — f(Hz):", f0.map(x => x.toFixed(4)).join("  "));
 const f1 = modal(nodes, elements, ni, ei, 6, 1);
+console.log("Paz 6.3  DENSO (lat=0)      — f(Hz):", f0.map(x => x.toFixed(4)).join("  "));
 console.log("Paz 6.3  SUBESPACIO (lat=1) — f(Hz):", f1.map(x => x.toFixed(4)).join("  "));
-console.log("ETABS 22 (arbitro):                  9.0903  14.9739  24.9465  25.8520  164.3495  164.5541");
-console.log("(dif esperada: -2.85 % uniforme, por masa consistente vs agrupada)");
+console.log("ETABS 22 (offsets = 0)      — f(Hz):", ETABS.map(x => x.toFixed(4)).join("  "));
+
+let malos = 0;
+for (const [nombre, f] of [["denso", f0], ["subespacio", f1]]) {
+  for (let k = 0; k < ETABS.length; k++) {
+    const d = 100 * (f[k] - ETABS[k]) / ETABS[k];
+    if (!(Math.abs(d) <= TOL)) { console.log(`  FALLA ${nombre} modo ${k + 1}: ${f[k]?.toFixed(4)} vs ${ETABS[k]} (${d.toFixed(3)} %)`); malos++; }
+  }
+}
+console.log(malos ? `\nFALLA: ${malos} modos fuera de ${TOL} %` : `\nOK: los 12 modos (denso y subespacio) dentro de ${TOL} % de ETABS`);
+process.exit(malos ? 1 : 0);

@@ -186,7 +186,7 @@ WASM) y `hekatan-fem/src/didacticSolver.ts`.
 
 La masa consistente usa `Ip = Iy + Iz` (momento polar de inercia) para DOFs torsionales, NO `J` (constante de Saint-Venant). OpenSees tiene un bug conocido donde usa J en vez de Ip — causa ~3% de error en modos torsionales.
 
-## Validación del solver modal (4 solvers, 0.00% diferencia)
+## Validación del solver modal contra ETABS 22
 
 Ejemplo de referencia: **Paz & Leigh 6.3 Space Frame** (`examples/src/beams/main.ts`).
 
@@ -199,18 +199,43 @@ Ejemplo de referencia: **Paz & Leigh 6.3 Space Frame** (`examples/src/beams/main
 
 Modos del Example 6.3 (W24x146 columnas, W14x84 vigas, kip/in/sec):
 
-| Modo | ETABS 22 | Hekatan | dif |
-|---|---|---|---|
-| 1 | 9.0903 | 8.8358 | −2.80 % |
-| 2 | 14.9739 | 14.5551 | −2.80 % |
-| 3 | 24.9465 | 24.2228 | −2.90 % |
-| 4 | 25.8520 | 25.1038 | −2.89 % |
-| 5 | 164.3495 | 159.6530 | −2.86 % |
-| 6 | 164.5541 | 159.8523 | −2.86 % |
+| Modo | ETABS 22 (offsets=0) | Hekatan denso | Hekatan subespacio | dif |
+|---|---|---|---|---|
+| 1 | 8.8305 | 8.8358 | 8.8305 | 0.06 % / **0.00 %** |
+| 2 | 14.5459 | 14.5551 | 14.5459 | 0.06 % / **0.00 %** |
+| 3 | 24.2336 | 24.2228 | 24.2336 | −0.04 % / **0.00 %** |
+| 4 | 25.1132 | 25.1038 | 25.1132 | −0.04 % / **0.00 %** |
+| 5 | 159.6525 | 159.6530 | 159.6525 | 0.00 % |
+| 6 | 159.8513 | 159.8523 | 159.8513 | 0.00 % |
 
-Arbitrado con `cli/paz_etabs.py` (mismas secciones por `SetGeneral`, misma
-densidad). La diferencia es **uniforme**, o sea masa: (9.0903/8.8358)² = 1.058,
-5.8 % más masa en Hekatan — la firma de masa consistente contra agrupada.
+El camino de **subespacio** de Hekatan sale idéntico a ETABS en los **cuatro
+decimales de los seis modos**. Arbitrado con `cli/paz_etabs.py` (mismas secciones
+por `SetGeneral`, misma densidad) y `cli/paz_masa_etabs.py`. Test de regresión:
+`node cli/paz_check.mjs` (tolerancia 0.1 %, sale con código ≠ 0 si falla).
+
+### ⚠️ Por qué "offsets = 0": ETABS no pesa el brazo rígido
+
+Tal cual, ETABS da `9.0903 … 164.5541`, un **+2.88 % uniforme**. **No es el
+solver**: ETABS pone brazos rígidos automáticos (`auto = SI`, RZ = 0) también
+aquí — 14.20 in en el tope de cada columna, 12.35 y 6.45 en los extremos de las
+vigas — y **descuenta del peso propio el tramo que cae dentro del brazo**.
+Medido con `AssembledJointMass`:
+
+| | ETABS auto | ETABS offsets=0 | Hekatan |
+|---|---|---|---|
+| masa nudo libre | 5.707652e−3 | — | 6.048429e−3 (−5.63 %) |
+| masa nudo base | 2.840051e−3 | — | 2.840090e−3 |
+| masa total | 3.419081e−2 | 3.555392e−2 | 3.555400e−2 |
+
+Lo que descuenta son **1857.4 in³ exactos** = `2·24.7·24.7 + 2·24.7·12.9`, o sea
+los offsets **de las vigas** (los de columna no los descuenta). Y √(6.048429 /
+5.707652) = 1.0294, que es el +2.88 % observado. Hekatan lumpea `ρ·A·L/2` con L
+de nudo a nudo (`getGlobalMassMatrix.cpp`, HRZ, igual que CSI): con offsets = 0
+la masa total coincide al **0.002 %**.
+
+Corolario: **Hekatan Struct no tiene end length offsets**, y ETABS los pone por
+defecto. Cualquier comparación contra ETABS los tiene que anular
+(`FrameObj.SetEndLengthOffset(nm, False, 0,0,0)`) o mide otra estructura.
 
 ⚠️ **La tabla que estaba aquí antes era falsa** (`9.6780 / 16.9874 / 26.6149 /
 29.9497 / 33.9929 / 44.9332`, atribuida a "4 solvers de acuerdo"). Solo la
