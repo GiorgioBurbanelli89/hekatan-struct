@@ -240,8 +240,8 @@ export const edificioLadera: ExampleDef = {
     const elasticities = new Map<number, number>();
     const poissonsRatios = new Map<number, number>();
     const areas = new Map<number, number>();
-    const momentsOfInertiaY = new Map<number, number>();
     const momentsOfInertiaZ = new Map<number, number>();
+    const momentsOfInertiaY = new Map<number, number>();
     const torsionalConstants = new Map<number, number>();
     const shearModuli = new Map<number, number>();
     const densities = new Map<number, number>();
@@ -252,7 +252,7 @@ export const edificioLadera: ExampleDef = {
       elements.push([a, b]);
       elasticities.set(e, Ec); poissonsRatios.set(e, nu);
       areas.set(e, Acol);
-      momentsOfInertiaZ.set(e, Iz_col); momentsOfInertiaY.set(e, Iy_col);
+      momentsOfInertiaY.set(e, Iz_col); momentsOfInertiaZ.set(e, Iy_col);
       torsionalConstants.set(e, J_col); shearModuli.set(e, Gc);
       densities.set(e, rho_c);
       sectionShapes.set(e, { type: "rect", b: p.colSize, h: p.colSize });
@@ -262,7 +262,7 @@ export const edificioLadera: ExampleDef = {
       elements.push([a, b]);
       elasticities.set(e, Ec); poissonsRatios.set(e, nu);
       areas.set(e, Aviga);
-      momentsOfInertiaZ.set(e, Iz_viga); momentsOfInertiaY.set(e, Iy_viga);
+      momentsOfInertiaY.set(e, Iz_viga); momentsOfInertiaZ.set(e, Iy_viga);
       torsionalConstants.set(e, J_viga); shearModuli.set(e, Gc);
       densities.set(e, rho_c);
       sectionShapes.set(e, { type: "rect", b: p.vigaB, h: p.vigaH });

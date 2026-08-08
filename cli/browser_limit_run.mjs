@@ -38,8 +38,7 @@ const URL_ = `http://localhost:${PORT}/`;
 const FASE = process.argv[2] || "ambas";
 // Tamaños crecientes. ms=0.75 es el default del display; el modal usa 1.0 m.
 const CASES = [
-  [2,2,4],[3,3,4],[3,3,8],[4,4,8],[5,5,8],[6,6,8],
-  [6,6,8,0.5],[8,8,8,0.75],[8,8,8,0.5],[10,10,8,0.75],[12,12,8,0.75],
+  [12,12,8,0.75],[16,16,8,0.75],[20,20,8,0.75],[16,16,8,0.5],
 ];
 
 const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox"] });

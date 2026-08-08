@@ -770,7 +770,7 @@ export const edificioAporticado: ExampleDef = {
       // Mergear propiedades de los links (areas, E, Iy/Iz, J, G, ρ=0)
       const elementInputsObj: any = {
         elasticities, shearModuli, areas,
-        momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy, torsionalConstants: J,
+        momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy, torsionalConstants: J,
         densities, poissonsRatios: poissons, thicknesses,
       };
       mergeDiaphragmProps(dia, elementInputsObj, baseElemOffset);
@@ -783,7 +783,7 @@ export const edificioAporticado: ExampleDef = {
     states.nodeInputs.val = { supports, loads };
     states.elementInputs.val = {
       elasticities, shearModuli, areas,
-      momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy, torsionalConstants: J,
+      momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy, torsionalConstants: J,
       densities, poissonsRatios: poissons, thicknesses,
       membraneModifiers, bendingModifiers,
     } as any;
@@ -1795,8 +1795,8 @@ export const edificioAporticado: ExampleDef = {
               elasticities: elasticities2,
               shearModuli: shearModuli2,
               areas: areas2,
-              momentsOfInertiaZ: Iz2,
-              momentsOfInertiaY: Iy2,
+              momentsOfInertiaY: Iz2,
+              momentsOfInertiaZ: Iy2,
               torsionalConstants: J2,
               densities: densities2,
               poissonsRatios: poissons2,

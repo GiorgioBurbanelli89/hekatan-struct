@@ -197,8 +197,8 @@ van.derive(() => {
   const elementInputs: any = {
     elasticities: new Map(), poissonsRatios: new Map(),
     thicknesses: new Map(), shearModuli: new Map(), densities: new Map(),
-    areas: new Map(), momentsOfInertiaY: new Map(),
-    momentsOfInertiaZ: new Map(), torsionalConstants: new Map(),
+    areas: new Map(), momentsOfInertiaZ: new Map(),
+    momentsOfInertiaY: new Map(), torsionalConstants: new Map(),
   };
   function addBoundaryFace(a: number, b: number, c: number, d: number) {
     visualElements.push([a, b, c, d]);
@@ -208,8 +208,8 @@ van.derive(() => {
     elementInputs.thicknesses.set(i, 0.001);
     elementInputs.shearModuli.set(i, Es / (2 * (1 + nu)));
     elementInputs.densities.set(i, 18 / 9.80665);  // suelo ~18 kN/m³
-    elementInputs.areas.set(i, 0); elementInputs.momentsOfInertiaY.set(i, 0);
-    elementInputs.momentsOfInertiaZ.set(i, 0); elementInputs.torsionalConstants.set(i, 0);
+    elementInputs.areas.set(i, 0); elementInputs.momentsOfInertiaZ.set(i, 0);
+    elementInputs.momentsOfInertiaY.set(i, 0); elementInputs.torsionalConstants.set(i, 0);
   }
   // Render mode:
   //   showSlice=true  → SOLO la rebanada XZ central j=ny/2 (estilo Calcpad)

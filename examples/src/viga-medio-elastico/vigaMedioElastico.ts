@@ -196,7 +196,7 @@ export const vigaMedioElastico: ExampleDef = {
     const ni: NodeInputs = { supports, loads };
     const ei: ElementInputs = {
       elasticities, shearModuli, areas,
-      momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy,
+      momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy,
       torsionalConstants: Jc, densities, poissonsRatios: poissons,
     } as any;
     states.nodeInputs.val = ni;

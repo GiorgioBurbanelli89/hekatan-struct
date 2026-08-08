@@ -344,7 +344,7 @@ export const benchmarkCft: ExampleDef = {
     states.nodeInputs.val = { supports, loads };
     states.elementInputs.val = {
       elasticities, poissonsRatios: poissons, thicknesses, shearModuli,
-      areas, momentsOfInertiaY: Iy_map, momentsOfInertiaZ: Iz_map,
+      areas, momentsOfInertiaZ: Iy_map, momentsOfInertiaY: Iz_map,
       torsionalConstants: J_map, densities,
       shearAreasY, shearAreasZ,
     };

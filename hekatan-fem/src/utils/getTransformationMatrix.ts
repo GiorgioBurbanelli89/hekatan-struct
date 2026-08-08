@@ -19,6 +19,29 @@ export function getTransformationMatrix(nodes: Node[]): number[][] {
   if (nodes.length === 4) return getTransformationMatrixShellQ4(nodes);
 }
 
+/**
+ * Ejes locales de barra, convención CSI (SAP2000 / ETABS):
+ *
+ *   eje 1 (x) = del nudo i al nudo j
+ *   eje 2 (y) = en el plano vertical que contiene la barra, hacia ARRIBA.
+ *               Si la barra es vertical no hay tal plano: se toma el +X global.
+ *   eje 3 (z) = eje1 × eje2  (queda horizontal en barras no verticales)
+ *
+ * Antes la tríada era otra: y = (-m/D, l/D, 0) horizontal y z hacia arriba.
+ * Las dos son dextrógiras y las dos resuelven igual, pero respecto a CSI la
+ * vieja giraba 90° EN UN SENTIDO en las vigas y en el CONTRARIO en las
+ * columnas (viga: y=-eje3, z=+eje2; columna: y=+eje3, z=-eje2). O sea que no
+ * había un mapeo único para leer las fuerzas de barra contra ETABS, y el
+ * signo de V y M cambiaba según el tipo de barra. Medido contra
+ * FrameObj.GetTransformationMatrix del propio ETABS.
+ *
+ * CONSECUENCIA EN LOS DATOS DE ENTRADA: al girar los ejes, la inercia que
+ * gobierna cada plano cambia de casillero.
+ *   momentsOfInertiaZ = I33 (flexión en el plano 1-2: V2 y M3)
+ *   momentsOfInertiaY = I22 (flexión en el plano 1-3: V3 y M2)
+ * Con la tríada vieja era justo al revés. Los modelos que pasan las dos
+ * inercias distintas hay que cruzarlos.
+ */
 function getTransformationMatrixFrame(nodes: Node[]): number[][] {
   const vector = subtract(nodes[1], nodes[0]) as number[];
   const length = norm(vector) as number;
@@ -26,27 +49,25 @@ function getTransformationMatrixFrame(nodes: Node[]): number[][] {
   const m = dot(vector, [0, 1, 0]) / length;
   const n = dot(vector, [0, 0, 1]) / length;
   const D = Math.sqrt(l ** 2 + m ** 2);
-  let lambda = [
+
+  // Vertical: el plano vertical no define nada, CSI fija el eje 2 en +X global.
+  // Se compara con tolerancia, no con ===: un nudo escrito con 6 decimales deja
+  // n = 0.9999999999 y caía en la rama general, que con D→0 da infinitos.
+  if (D < 1e-9) {
+    const s = n > 0 ? 1 : -1;
+    const lambda = [
+      [0, 0, s],        // eje 1: a lo largo de la barra
+      [1, 0, 0],        // eje 2: +X global
+      [0, s, 0],        // eje 3 = eje1 × eje2
+    ];
+    return kron(identity(4) as MathCollection, lambda).toArray() as number[][];
+  }
+
+  const lambda = [
     [l, m, n],
-    [-m / D, l / D, 0],
     [(-l * n) / D, (-m * n) / D, D],
+    [m / D, -l / D, 0],
   ];
-
-  if (n === 1) {
-    lambda = [
-      [0, 0, 1],
-      [0, 1, 0],
-      [-1, 0, 0],
-    ];
-  }
-
-  if (n === -1) {
-    lambda = [
-      [0, 0, -1],
-      [0, 1, 0],
-      [1, 0, 0],
-    ];
-  }
 
   return kron(identity(4) as MathCollection, lambda).toArray() as number[][];
 }

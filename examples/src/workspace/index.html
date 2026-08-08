@@ -45,6 +45,14 @@
     <script src="../web-ifc-api-iife.js"></script>
   </head>
   <body>
-    <script type="module" src="./main.ts?v=cursorfix29"></script>
+    <!-- OJO: NO poner aqui un sello de version a mano (antes decia
+         ?v=cursorfix29). Como ese texto no cambia al editar main.ts, el
+         navegador se queda con el modulo cacheado PARA SIEMPRE: se edita el
+         codigo, el servidor sirve lo nuevo, y en pantalla sigue lo viejo.
+         Costo horas: el galpon no cargaba y salia Test M, con el arreglo ya
+         hecho y funcionando en headless.
+         Vite ya versiona los modulos por su cuenta en desarrollo, y en el
+         build les pone hash en el nombre. No hace falta nada. -->
+    <script type="module" src="./main.ts"></script>
   </body>
 </html>

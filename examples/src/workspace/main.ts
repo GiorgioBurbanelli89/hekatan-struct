@@ -37,6 +37,31 @@ import { autoMeshShells } from "../shared/e2kAutoMesh";
 // /m/, pero cualquiera que TENGA el enlace ve el modelo. Para privacidad de
 // verdad haria falta autenticacion en el hosting.
 const _qs = new URLSearchParams(window.location.search);
+
+// Velo de carga. Se crea AQUI, al cargar el modulo, porque creandolo mas
+// tarde (dentro del panel CLI) llegaba despues de que el CAD ya hubiera
+// dibujado sus planos de trabajo, sus ejes y la rejilla — y eso es lo que se
+// veia «antes del modelo».
+let _velo: HTMLDivElement | null = null;
+function quitarVelo() {
+  try { _velo?.remove(); } catch { /* no-op */ }
+  _velo = null;
+}
+if (_qs.get("heks") || _qs.get("m")) {
+  _velo = document.createElement("div");
+  _velo.textContent = "Cargando modelo…";
+  _velo.style.cssText = [
+    "position:fixed", "inset:0", "z-index:9000",
+    "display:flex", "align-items:center", "justify-content:center",
+    "background:#1b1e24", "color:#7f8a9a",
+    "font:13px ui-monospace,Consolas,monospace", "pointer-events:none",
+  ].join(";");
+  const poner = () => document.body && document.body.appendChild(_velo!);
+  if (document.body) poner();
+  else document.addEventListener("DOMContentLoaded", poner);
+  // red de seguridad: si el modelo no llega, no dejarlo tapado para siempre
+  setTimeout(quitarVelo, 15000);
+}
 const _codigo = _qs.get("m");
 const URL_HEKS = _codigo
   ? `${import.meta.env.BASE_URL}m/${encodeURIComponent(_codigo)}/modelo.heks`
@@ -349,13 +374,26 @@ function loadExample(ex: ExampleDef) {
   if (persisted) {
     loadPatterns.val = persisted.patterns;
     loadCases.val = persisted.cases;
-    // Merge: agregar los combos default que falten (ej. "Servicio D+L" nuevo) aunque el
-    // usuario tenga combos viejos cacheados en localStorage — sino nunca verían el de servicio.
-    const haveNames = new Set(persisted.combinations.map((c: any) => c.name));
-    const missingDefaults = DEFAULT_LOAD_COMBINATIONS
-      .filter(cm => !haveNames.has(cm.name))
-      .map(cm => ({ ...cm, cases: cm.cases.map(c => ({ ...c })) }));
-    loadCombinations.val = [...missingDefaults, ...persisted.combinations];
+    // ARCHIVO YA HECHO vs ARCHIVO NUEVO. La plantilla (Dead, Live, Modal y los
+    // combos tipicos) es correcta para un archivo NUEVO — ETABS tambien arranca
+    // con Dead y Live definidos. Pero cuando se ABRE un modelo tienen que
+    // mandar LOS SUYOS, igual que en ETABS: abris un archivo y el desplegable
+    // muestra sus casos, no unos de fabrica.
+    // Antes habia un merge que reinyectaba la plantilla SIEMPRE, asi que un
+    // archivo hecho no podia ganarle: se veian «Servicio D+L», «1.4D»,
+    // «1.2D+1.6L» y «1.4D+1.7L» aunque el modelo no tuviera ninguna combinacion
+    // — y de hecho el e2k del galpon no trae ni un solo $ LOAD COMBINATIONS.
+    const traeCombos = Array.isArray(persisted.combinations) &&
+                       persisted.combinations.length > 0;
+    if (traeCombos || URL_HEKS) {
+      // el modelo manda: se respeta lo que trae, aunque sea una lista vacia
+      loadCombinations.val = (persisted.combinations ?? []).map((cm: any) => ({
+        ...cm, cases: (cm.cases ?? []).map((c: any) => ({ ...c })),
+      }));
+    } else {
+      loadCombinations.val = DEFAULT_LOAD_COMBINATIONS
+        .map(cm => ({ ...cm, cases: cm.cases.map(c => ({ ...c })) }));
+    }
   } else {
     // Clonar defaults — si no, todos los ejemplos compartirían la misma ref
     loadPatterns.val = DEFAULT_LOAD_PATTERNS.map(p => ({ ...p }));
@@ -711,6 +749,19 @@ function mountCaseResultsInSettings() {
  * la carga (rebuild con mismos parámetros geométricos), deformScale se re-ajusta,
  * pero el usuario puede fijar un valor manual desde el slider "Deform scale".
  */
+// Objetivo de la escala AUTOMATICA de la deformada, como fraccion de la
+// diagonal del modelo. ETABS tiene su propio «Automatic» y NO esta en las
+// cadenas del binario — el criterio vive en el codigo compilado. Se estimo
+// comparando dos capturas del MISMO modelo y la MISMA vista, una con
+// «User Defined = 20» y otra con «Automatic»: la automatica da del orden de 5
+// a 6 para un Uz de 187 mm sobre 14.2 m de diagonal, o sea ~7 %.
+// Struct venia con 15 % y por eso se veia el doble de exagerado que ETABS.
+// OJO: 0.07 es una ESTIMACION de imagenes, no una medida. Para fijarlo bien
+// hay que capturar las dos vistas al mismo zoom y medir en pixeles.
+// Se puede mover a mano desde Settings -> deformScale, que es lo que
+// finalmente manda.
+const OBJETIVO_DEFORMADA = 0.07;
+
 function autoScaleDeformedShape() {
   const s = (viewerElm as any).__settings;
   if (!s?.deformScale) return;
@@ -747,7 +798,7 @@ function autoScaleDeformedShape() {
     // 400 kN → acortamiento elástico ~0.1 mm/m, totalmente imperceptible en la
     // realidad. Amplificar Uz con el mismo factor XY las hace ver como 'alfeñique'.
     if (maxUh > 1e-9) {
-      scale = Math.min(5000, Math.max(1, (0.10 * diag) / maxUh));
+      scale = Math.min(5000, Math.max(1, (OBJETIVO_DEFORMADA * diag) / maxUh));
     } else {
       scale = 10;  // caso gravitacional puro, scale fijo conservador
     }
@@ -759,7 +810,7 @@ function autoScaleDeformedShape() {
     // el usuario VEA claramente la deformada, que es el objetivo didáctico.
     const refDef = Math.max(maxUh, maxUz);
     if (refDef < 1e-30) { s.deformScale.val = 1; return; }
-    scale = Math.min(50000, Math.max(1, (0.15 * diag) / refDef));
+    scale = Math.min(50000, Math.max(1, (OBJETIVO_DEFORMADA * diag) / refDef));
     scaleZfactor = 1.0;   // Uz = XY: zapatas/placas muestran la deformada completa
   }
   s.deformScale.val = Math.max(1, scale);
@@ -2556,6 +2607,164 @@ function applyHiddenBindings() {
 }
 
 
+
+// ─────────────────────────────────────────────────────────────────────────
+//  Menu contextual estilo ETABS (clic derecho sobre el modelo)
+//
+//  El Tweakpane tenia TODO desplegado siempre — Vista, Split, Ejes, CAD,
+//  OSNAP, plano de trabajo, CLI, cimentacion, patrones, casos, combinaciones,
+//  ETABS, SAP, unidades... Para quien no armo el programa es ilegible: no hay
+//  forma de saber que mirar.
+//  Ahora el panel arranca plegado y el clic derecho abre SOLO lo que aplica a
+//  lo que se selecciono, igual que el menu Assign de ETABS.
+// ─────────────────────────────────────────────────────────────────────────
+let paneActual: any = null;
+
+function carpetas(p: any, out: any[] = []): any[] {
+  for (const c of (p?.children ?? [])) {
+    if (typeof c.title === "string" && c.children) { out.push(c); carpetas(c, out); }
+  }
+  return out;
+}
+
+function plegarTodo(p: any) {
+  for (const f of carpetas(p)) { try { f.expanded = false; } catch { /* no-op */ } }
+}
+
+/** Abre la carpeta cuyo titulo contenga `txt` y pliega las demas de su nivel. */
+function abrirCarpeta(txt: string) {
+  if (!paneActual) return false;
+  const todas = carpetas(paneActual);
+  const buscada = todas.find((f) =>
+    String(f.title).toLowerCase().includes(txt.toLowerCase()));
+  if (!buscada) return false;
+  plegarTodo(paneActual);
+  // abrir la buscada y toda su cadena de padres
+  let f: any = buscada;
+  const vistos = new Set<any>();
+  while (f && !vistos.has(f)) {
+    vistos.add(f);
+    try { f.expanded = true; } catch { /* no-op */ }
+    f = todas.find((c) => (c.children ?? []).includes(f));
+  }
+  try {
+    (buscada as any).element?.scrollIntoView?.({ block: "nearest" });
+  } catch { /* no-op */ }
+  return true;
+}
+
+/** Que se puede hacer segun lo que se selecciono. Los nombres son los de
+ *  ETABS a proposito: quien lo usa ahi lo encuentra sin buscar. */
+const MENU: Record<string, Array<[string, string]>> = {
+  frame: [
+    ["Assign ▸ Frame ▸ Section Property", "Secciones"],
+    ["Assign ▸ Frame ▸ Local Axes", "Ejes"],
+    ["Display ▸ Frame Forces", "Tablas"],
+  ],
+  area: [
+    ["Assign ▸ Area ▸ Deck Section", "Deck"],
+    ["Assign ▸ Area ▸ Local Axes", "Ejes"],
+    ["Assign ▸ Area ▸ Uniform Load", "Load Patterns"],
+    ["Assign ▸ Area ▸ Stiffness Modifiers", "Deck"],
+  ],
+  joint: [
+    ["Assign ▸ Joint ▸ Restraints", "Herramientas FEM"],
+    ["Assign ▸ Joint ▸ Loads", "Load Patterns"],
+  ],
+  nada: [
+    ["Vista", "Vista"],
+    ["Imagen y GIF", "Imagen"],
+    ["Herramientas CAD", "CAD"],
+    ["CLI Comandos", "CLI"],
+    ["Load Patterns", "Load Patterns"],
+    ["Exportar a ETABS", "ETABS"],
+    ["Unidades", "Unidades"],
+    ["— desplegar todo —", ""],
+  ],
+};
+
+function montarMenuContextual(pane: any) {
+  const v = viewerElm as HTMLElement;
+  if (!v || (v as any).__menuPuesto) return;
+  (v as any).__menuPuesto = true;
+
+  const menu = document.createElement("div");
+  menu.style.cssText = [
+    "position:fixed", "z-index:99999", "display:none",
+    "background:#22252a", "color:#e6e6e6",
+    "border:1px solid #3a3f47", "border-radius:6px",
+    "box-shadow:0 6px 24px rgba(0,0,0,.5)",
+    "font:12px ui-monospace,Consolas,monospace", "padding:4px 0",
+    "min-width:230px",
+  ].join(";");
+  document.body.appendChild(menu);
+
+  const cerrar = () => { menu.style.display = "none"; };
+  window.addEventListener("click", cerrar);
+  window.addEventListener("blur", cerrar);
+
+  // capture:true + stopPropagation: el modo CAD usa el boton derecho para
+  // cerrar polilinea y se comia el menu antes de que llegara aca.
+  // El menu sale con un clic derecho CORTO y sin arrastrar. Si se mantiene
+  // apretado para orbitar, no debe aparecer: se estorbarian.
+  let dxDer = 0, dyDer = 0, tDer = 0;
+  v.addEventListener("pointerdown", (e: PointerEvent) => {
+    if (e.button === 2) { dxDer = e.clientX; dyDer = e.clientY; tDer = Date.now(); }
+  }, true);
+
+  v.addEventListener("contextmenu", (ev: MouseEvent) => {
+    ev.preventDefault();
+    const arrastro = Math.hypot(ev.clientX - dxDer, ev.clientY - dyDer) > 5;
+    const largo = Date.now() - tDer > 400;
+    if (arrastro || largo) return;      // estaba orbitando: no molestar
+    ev.stopPropagation();
+    // Que hay bajo el cursor. Sin picking fino todavia: si el modelo tiene
+    // areas se ofrecen las de area, y siempre las generales.
+    const tieneAreas = (states.elements.rawVal ?? []).some((e: any) => e.length >= 3);
+    const tipo = tieneAreas ? "area" : "frame";
+    const items = [...MENU[tipo], ["", ""] as [string, string], ...MENU.nada];
+
+    menu.innerHTML = "";
+    const cab = document.createElement("div");
+    cab.textContent = tieneAreas ? "AREA / SHELL" : "FRAME";
+    cab.style.cssText = "padding:5px 12px;color:#8a94a6;font-size:11px;" +
+                        "border-bottom:1px solid #3a3f47;margin-bottom:3px";
+    menu.appendChild(cab);
+
+    for (const [texto, destino] of items) {
+      if (!texto) {
+        const hr = document.createElement("div");
+        hr.style.cssText = "height:1px;background:#3a3f47;margin:4px 0";
+        menu.appendChild(hr);
+        continue;
+      }
+      const it = document.createElement("div");
+      it.textContent = texto;
+      it.style.cssText = "padding:5px 12px;cursor:pointer;white-space:nowrap";
+      it.onmouseenter = () => { it.style.background = "#2f3742"; };
+      it.onmouseleave = () => { it.style.background = "transparent"; };
+      it.onclick = (e) => {
+        e.stopPropagation();
+        cerrar();
+        if (!destino) {
+          for (const f of carpetas(paneActual)) {
+            try { f.expanded = true; } catch { /* no-op */ }
+          }
+          return;
+        }
+        if (!abrirCarpeta(destino)) {
+          console.warn("[menu] no encontre la carpeta:", destino);
+        }
+      };
+      menu.appendChild(it);
+    }
+    menu.style.left = Math.min(ev.clientX, window.innerWidth - 250) + "px";
+    menu.style.top = Math.min(ev.clientY, window.innerHeight - 340) + "px";
+    menu.style.display = "block";
+  }, true);
+  console.log("[menu] clic derecho sobre el modelo -> Assign estilo ETABS");
+}
+
 function buildParamsPane() {
   // ANTES de dispose: capturar el estado expanded de cada folder del pane
   // anterior, para restaurarlo en el pane nuevo (preserva la UX del usuario
@@ -2586,6 +2795,12 @@ function buildParamsPane() {
   // F2K cimentación COMPLETA, ETABS, SAP) que esperan reacciones de columnas.
   const isFoundation = /^(zapata|guerra-ej|safe-bench-)/.test(currentExample.id);
   const pane = new Pane({ container: paneHost, title: currentExample.name });
+  paneActual = pane;
+  // El panel arranca PLEGADO: con veinte carpetas abiertas a la vez nadie
+  // entiende que mirar. Se abre lo que haga falta desde el menu del clic
+  // derecho, como el Assign de ETABS.
+  plegarTodo(pane);
+  montarMenuContextual(pane);
   // Hacer el pane arrastrable desde su title-bar. El DOM del Tweakpane se
   // crea de forma síncrona, así que el handle ya está disponible al llamar.
   setTimeout(() => makePaneDraggable(paneHost), 0);
@@ -2810,6 +3025,32 @@ function buildParamsPane() {
   // no una captura de pantalla.
   (window as any).hekatanStruct = {
     ...((window as any).hekatanStruct || {}),
+    // Desplazamientos NODO POR NODO, para comparar contra ETABS de fuera.
+    // Se devuelven con la COORDENADA, no con el indice: los dos programas
+    // numeran distinto, y lo unico que comparten es el punto del espacio.
+    desplazamientos: () => {
+      const nodes = states.nodes.rawVal as number[][];
+      const def = (states.deformOutputs.rawVal as any)?.deformations;
+      if (!nodes || !def) return null;
+      const out: any[] = [];
+      for (let i = 0; i < nodes.length; i++) {
+        const d = def.get ? def.get(i) : def[i];
+        if (!d) continue;
+        out.push({ x: nodes[i][0], y: nodes[i][1], z: nodes[i][2],
+                   ux: d[0], uy: d[1], uz: d[2] });
+      }
+      return out;
+    },
+    // Modal: periodos y forma de cada modo, tambien por coordenada.
+    modal: () => {
+      const m = (states as any).modalOutputs?.rawVal
+             || (states as any).analyzeOutputs?.rawVal?.modal;
+      if (!m) return null;
+      const nodes = states.nodes.rawVal as number[][];
+      return { periodos: m.periods ?? m.T ?? null,
+               nNodos: nodes ? nodes.length : 0,
+               modos: m.modeShapes ? m.modeShapes.length : 0 };
+    },
     pngDataUrl: async () => {
       const b = await pngBlob(viewerElm as HTMLElement);
       if (!b) return null;
@@ -3484,17 +3725,32 @@ function buildParamsPane() {
           return r.text();
         })
         .then((txt) => {
-          // Se aplica DESPUES de que termine de arrancar el workspace: si se
-          // hace aqui mismo, el ejemplo por defecto se carga detras y pisa el
-          // modelo (el texto quedaba puesto y el lienzo vacio).
+          // Se aplica CUANTO ANTES. El retraso de 1500 ms era para que el
+          // ejemplo por defecto no pisara el modelo; ya no hace falta porque
+          // `new-blank` no dibuja nada cuando el modelo viene por enlace. Con
+          // el retraso se veian primero los planos de trabajo del CAD y el
+          // modelo aparecia despues, como si cargara dos veces.
+          ta.value = txt;
           setTimeout(() => {
-            ta.value = txt;
             applyCliScript();
-          }, 1500);
+            // recien ahora se destapa: hasta aca solo se veian las ayudas de
+            // dibujo del CAD (planos de trabajo, triada de ejes, rejilla) y
+            // parecia que la pagina cargaba algo antes del modelo.
+            quitarVelo();
+          }, 0);
+          // y se apagan los planos de trabajo del CAD, que son ayuda para
+          // dibujar y aqui solo estorban al mirar un modelo ya hecho
+          try {
+            const st = (window as any).__hekatanCadState?.get?.();
+            if (st) { st.showPlanes = false; }
+            const sv = (viewerElm as any).__settings;
+            if (sv && "custom3D" in sv) sv.custom3D = true;
+          } catch { /* no-op */ }
         })
-        .catch((e) =>
-          alert("No se pudo abrir «" + urlHeks + "»: " + e.message)
-        );
+        .catch((e) => {
+          quitarVelo();
+          alert("No se pudo abrir «" + urlHeks + "»: " + e.message);
+        });
     }
     fCli.addButton({ title: "💾 Guardar .heks" }).on("click", () => {
       const blob = new Blob([ta.value], { type: "text/plain" });
@@ -4395,7 +4651,7 @@ solve`;
             states.elementInputs.val = {
               elasticities: elasticities2, shearModuli: shearModuli2,
               poissonsRatios: poissons2, densities: densities2,
-              areas: areas2, momentsOfInertiaY: Iy2, momentsOfInertiaZ: Iz2,
+              areas: areas2, momentsOfInertiaZ: Iy2, momentsOfInertiaY: Iz2,
               torsionalConstants: J2, thicknesses: thicknesses2,
             };
             states.objects3D.val = colObjs;
@@ -4679,6 +4935,14 @@ solve`;
           title: `${currentExample!.name} — Hekatan export`,
           units: { force: "Tonf", length: "m" },
           weightMode: etabsExportCfg.weightMode,
+          // Las combinaciones del MODELO, no las que traia escritas el exportador.
+          loadCombinations: loadCombinations.val,
+          loadPatterns: loadPatterns.val,
+          loadCases: loadCases.val,
+          // El CLI Modeler modela EXACTAMENTE lo escrito: si el script no pide
+          // diafragma, el e2k no debe inventarlo (rigidiza lateralmente). Los
+          // ejemplos de edificio si lo llevan — asi se validaron contra ETABS.
+          diaphragm: currentExample?.id === "cli-modeler" ? "none" : "auto",
           // Sismo NEC (espectro USER + caso Modal Eigen/Ritz + RS) si el ejemplo lo provee.
           seismicNEC: currentExample!.e2kSeismic?.(toSIParams(), states),
         });
@@ -6514,12 +6778,27 @@ if (!urlT) {
     window.history.replaceState(null, "", u.toString());
   } catch { /* no-op */ }
 }
+// Con modelo por ENLACE no se carga NINGUN ejemplo. `new-blank` no esta
+// vacio: dibuja un modelo de demostracion (4 nodos, 2 columnas, 1 viga), y se
+// veia aparecer primero ese y despues el modelo de verdad — parecia que la
+// pagina cargaba tres veces. Sin ejemplo, se dibuja una sola cosa: la tuya.
 const initialEx =
   examplesRegistry.find((e) => e.id === urlT) ||
   examplesRegistry.find((e) => e.id === "new-blank") ||
   examplesRegistry[0];
 if (initialEx) {
   loadExample(initialEx);
+  // `new-blank` NO esta vacio: dibuja un modelo de demostracion (4 nodos, 2
+  // columnas, 1 viga). Con modelo por enlace se veia aparecer ese primero y
+  // despues el de verdad — parecia que la pagina cargaba tres veces. Se
+  // limpia, pero SIN saltarse loadExample: es el que arma el panel, y con el
+  // el handler de ?heks= que trae el modelo.
+  if (URL_HEKS) {
+    states.nodes.val = [];
+    states.elements.val = [];
+    states.objects3D.val = [];
+    states.deformOutputs.val = {};
+  }
   // Zapata: vista isométrica por default — se ven los resortes Winkler en elevación
   // comprimidos/extendidos según la deformada (como en croquis clásicos de ingeniería).
   if (initialEx.id === "zapata-aislada" || initialEx.id === "zapata-aislada-validacion" || initialEx.id === "zapata-viga-amarre") {

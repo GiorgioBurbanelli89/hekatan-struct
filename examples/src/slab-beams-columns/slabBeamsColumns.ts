@@ -111,8 +111,8 @@ export const slabBeamsColumns: ExampleDef = {
     const poissons           = new Map<number, number>();
     const densities          = new Map<number, number>();
     const areas              = new Map<number, number>();
-    const momentsOfInertiaY  = new Map<number, number>();
     const momentsOfInertiaZ  = new Map<number, number>();
+    const momentsOfInertiaY  = new Map<number, number>();
     const torsionalConstants = new Map<number, number>();
     const orientations       = new Map<number, [number, number, number]>();
     const shearModuli        = new Map<number, number>();
@@ -140,8 +140,8 @@ export const slabBeamsColumns: ExampleDef = {
       poissons.set(idx, p.nu);
       densities.set(idx, 24);
       areas.set(idx, A_b);
-      momentsOfInertiaY.set(idx, Iy_b);
-      momentsOfInertiaZ.set(idx, Iz_b);
+      momentsOfInertiaZ.set(idx, Iy_b);
+      momentsOfInertiaY.set(idx, Iz_b);
       torsionalConstants.set(idx, J_b);
       shearModuli.set(idx, G);
       sections.set(idx, [p.bH, p.bW]);
@@ -158,8 +158,8 @@ export const slabBeamsColumns: ExampleDef = {
       poissons.set(idx, p.nu);
       densities.set(idx, 24);
       areas.set(idx, A_c);
-      momentsOfInertiaY.set(idx, I_c);
       momentsOfInertiaZ.set(idx, I_c);
+      momentsOfInertiaY.set(idx, I_c);
       torsionalConstants.set(idx, J_c);
       shearModuli.set(idx, G);
       sections.set(idx, [p.cS, p.cS]);

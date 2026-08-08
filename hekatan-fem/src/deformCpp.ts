@@ -156,6 +156,39 @@ export function deformCpp(
   const drillScaleValuesPtr = allocate(drillScaleValues, Float64Array, mod.HEAPF64);
   gc.push(drillScaleValuesPtr);
 
+  // Property Modifiers estilo ETABS: multiplican la rigidez de membrana y de
+  // flexion del shell. Existian en el C++ y los aplicaba shellQ4, pero SOLO
+  // llegaban por el camino modal — el estatico no los recibia y valian 1.0.
+  // Sin ellos no se puede representar un deck (poca flexion) ni una membrana.
+  const memMods = (elementInputs as any).membraneModifiers as Map<number, number> | undefined;
+  const bendMods = (elementInputs as any).bendingModifiers as Map<number, number> | undefined;
+  const memModKeys = memMods ? Array.from(memMods.keys()) : [];
+  const memModValues = memMods ? Array.from(memMods.values()) : [];
+  const memModKeysPtr = allocate(memModKeys, Uint32Array, mod.HEAPU32);
+  gc.push(memModKeysPtr);
+  const memModValuesPtr = allocate(memModValues, Float64Array, mod.HEAPF64);
+  gc.push(memModValuesPtr);
+  const bendModKeys = bendMods ? Array.from(bendMods.keys()) : [];
+  const bendModValues = bendMods ? Array.from(bendMods.values()) : [];
+  const bendModKeysPtr = allocate(bendModKeys, Uint32Array, mod.HEAPU32);
+  gc.push(bendModKeysPtr);
+  const bendModValuesPtr = allocate(bendModValues, Float64Array, mod.HEAPF64);
+  gc.push(bendModValuesPtr);
+
+  // Modificadores DIRECCIONALES: 8 valores por elemento, en el orden del e2k
+  // de ETABS -> F11 F22 F12 M11 M22 M12 V13 V23.
+  const dirMods = (elementInputs as any).shellModifiers as Map<number, number[]> | undefined;
+  const dirModKeys = dirMods ? Array.from(dirMods.keys()) : [];
+  const dirModValues: number[] = [];
+  if (dirMods) for (const k of dirModKeys) {
+    const v8 = dirMods.get(k) as number[];
+    for (let i = 0; i < 8; i++) dirModValues.push(v8[i] ?? 1);
+  }
+  const dirModKeysPtr = allocate(dirModKeys, Uint32Array, mod.HEAPU32);
+  gc.push(dirModKeysPtr);
+  const dirModValuesPtr = allocate(dirModValues, Float64Array, mod.HEAPF64);
+  gc.push(dirModValuesPtr);
+
   // 2- Call C++ Function
   mod._deform(
     nodesPtr,
@@ -220,6 +253,17 @@ export function deformCpp(
     drillScaleKeysPtr,
     drillScaleValuesPtr,
     drillScaleKeys.length,
+    // Property modifiers (membrana / flexion)
+    memModKeysPtr,
+    memModValuesPtr,
+    memModKeys.length,
+    bendModKeysPtr,
+    bendModValuesPtr,
+    bendModKeys.length,
+    // Modificadores direccionales (8 por elemento)
+    dirModKeysPtr,
+    dirModValuesPtr,
+    dirModKeys.length,
     // Output pointers
     deformationsDataPtrOutPtr,
     deformationsSizeOutPtr,
@@ -309,8 +353,18 @@ function allocate<T extends TypedArrayConstructor>(
 ): number {
   const buffer = new TypedArrayCtor(data);
   const pointer = mod._malloc(buffer.length * buffer.BYTES_PER_ELEMENT);
-
-  heapTypedArray.set(buffer, pointer / buffer.BYTES_PER_ELEMENT);
+  // Releer la vista del heap DESPUES del _malloc. Con -s ALLOW_MEMORY_GROWTH, si el
+  // malloc necesita agrandar la memoria, emscripten crea un ArrayBuffer NUEVO y todas
+  // las vistas viejas (mod.HEAPF64, HEAPU32, HEAPU8) quedan DETACHED. Como el argumento
+  // `heapTypedArray` se evalua en el sitio de llamada (antes del malloc), usarlo tal cual
+  // lanza "Cannot perform %TypedArray%.prototype.set on a detached ArrayBuffer" — y pasa
+  // justo con los modelos grandes, que son los que obligan a crecer el heap.
+  const heap: any =
+    (TypedArrayCtor as any) === Float64Array ? mod.HEAPF64 :
+    (TypedArrayCtor as any) === Uint32Array  ? mod.HEAPU32 :
+    (TypedArrayCtor as any) === Uint8Array   ? mod.HEAPU8  :
+    heapTypedArray;
+  heap.set(buffer, pointer / buffer.BYTES_PER_ELEMENT);
 
   return pointer;
 }

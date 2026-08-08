@@ -95,18 +95,18 @@ van.derive(() => {
   const eMap = (colVal: number, girVal: number) =>
     new Map(elements.val.map((_, i) => [i, i < 4 ? colVal : girVal]));
 
-  // IMPORTANT: awatif local axes for vertical columns (n≈1):
-  //   local x = Z (along element), local y = Y, local z = -X
-  //   → Iz governs Y-sway, Iy governs X-sway
+  // IMPORTANT: local axes are CSI convention. For vertical columns (n≈1):
+  //   local x = Z (along element), local 2 = +X global, local 3 = +Y global
+  //   → I33 (momentsOfInertiaZ) governs X-sway, I22 (momentsOfInertiaY) Y-sway
   // For standard W-section orientation (strong axis resists X-sway):
-  //   momentsOfInertiaY = AISC Ix (strong axis)
-  //   momentsOfInertiaZ = AISC Iy (weak axis)
+  //   momentsOfInertiaZ = AISC Ix (strong axis)
+  //   momentsOfInertiaY = AISC Iy (weak axis)
   elementInputs.val = {
     elasticities:      eMap(E, E),
     shearModuli:       eMap(G, G),
     areas:             eMap(COL_A, GIR_A),
-    momentsOfInertiaZ: eMap(COL_Iy, GIR_Iy),  // weak axis → Iz
-    momentsOfInertiaY: eMap(COL_Iz, GIR_Iz),  // strong axis → Iy
+    momentsOfInertiaY: eMap(COL_Iy, GIR_Iy),  // weak axis → I22
+    momentsOfInertiaZ: eMap(COL_Iz, GIR_Iz),  // strong axis → I33
     torsionalConstants: eMap(COL_J, GIR_J),
     densities:         new Map(elements.val.map((_, i) => [i, RHO_STEEL])),
   };

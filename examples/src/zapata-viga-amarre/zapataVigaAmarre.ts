@@ -364,7 +364,7 @@ export const zapataVigaAmarre: ExampleDef = {
     // (sin cortante) sobre-rigidiza la zapata gruesa (h/L=0.23) → descartado.
     states.elementInputs.val = {
       elasticities, poissonsRatios: poissons,
-      areas, momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy,
+      areas, momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy,
       torsionalConstants: J, shearModuli: Gm,
       thicknesses, densities, sectionShapes: sections,
     };

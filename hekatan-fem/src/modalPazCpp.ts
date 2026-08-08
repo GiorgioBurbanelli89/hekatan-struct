@@ -240,6 +240,18 @@ function allocate<T extends TypedArrayConstructor>(
 ): number {
   const buffer = new TypedArrayCtor(data);
   const pointer = mod._malloc(buffer.length * buffer.BYTES_PER_ELEMENT);
-  heapTypedArray.set(buffer, pointer / buffer.BYTES_PER_ELEMENT);
+  // Releer la vista del heap DESPUES del _malloc. Con -s ALLOW_MEMORY_GROWTH, si el
+  // malloc necesita agrandar la memoria, emscripten crea un ArrayBuffer NUEVO y todas
+  // las vistas viejas (mod.HEAPF64, HEAPU32, HEAPU8) quedan DETACHED. Como el argumento
+  // `heapTypedArray` se evalua en el sitio de llamada (antes del malloc), usarlo tal cual
+  // lanza "Cannot perform %TypedArray%.prototype.set on a detached ArrayBuffer" — y pasa
+  // justo con los modelos grandes, que son los que obligan a crecer el heap.
+  const heap: any =
+    (TypedArrayCtor as any) === Float64Array ? mod.HEAPF64 :
+    (TypedArrayCtor as any) === Uint32Array  ? mod.HEAPU32 :
+    (TypedArrayCtor as any) === Uint8Array   ? mod.HEAPU8  :
+    heapTypedArray;
+  heap.set(buffer, pointer / buffer.BYTES_PER_ELEMENT);
+
   return pointer;
 }

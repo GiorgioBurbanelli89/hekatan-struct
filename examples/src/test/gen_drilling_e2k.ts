@@ -69,8 +69,8 @@ const elasticities = new Map<number, number>();
 const poissons = new Map<number, number>();
 const densities = new Map<number, number>();
 const areas = new Map<number, number>();
-const momentsOfInertiaY = new Map<number, number>();
 const momentsOfInertiaZ = new Map<number, number>();
+const momentsOfInertiaY = new Map<number, number>();
 const torsionalConstants = new Map<number, number>();
 const shearModuli = new Map<number, number>();
 const orientations = new Map<number, [number, number, number]>();
@@ -82,8 +82,8 @@ for (let e = 0; e < beamElemStart; e++) {
 const b = t, h = bH, G = E / (2 * (1 + nu));
 for (let e = beamElemStart; e < elements.length; e++) {
   areas.set(e, b * h);
-  momentsOfInertiaY.set(e, b * h ** 3 / 12);
-  momentsOfInertiaZ.set(e, h * b ** 3 / 12);
+  momentsOfInertiaZ.set(e, b * h ** 3 / 12);
+  momentsOfInertiaY.set(e, h * b ** 3 / 12);
   torsionalConstants.set(e, b * h ** 3 / 12 + h * b ** 3 / 12);
   elasticities.set(e, E); shearModuli.set(e, G); densities.set(e, 24);
   orientations.set(e, [0, 0, 1]);

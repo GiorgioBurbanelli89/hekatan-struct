@@ -228,8 +228,8 @@ van.derive(() => {
   const elementInputs: any = {
     elasticities: new Map(), poissonsRatios: new Map(),
     thicknesses: new Map(), shearModuli: new Map(), densities: new Map(),
-    areas: new Map(), momentsOfInertiaY: new Map(),
-    momentsOfInertiaZ: new Map(), torsionalConstants: new Map(),
+    areas: new Map(), momentsOfInertiaZ: new Map(),
+    momentsOfInertiaY: new Map(), torsionalConstants: new Map(),
   };
   // Detección de caras boundary: cuento cuántas veces aparece cada cara;
   // si aparece 1 vez = boundary, si 2 = interior.
@@ -261,8 +261,8 @@ van.derive(() => {
     elementInputs.shearModuli.set(i, E / (2 * (1 + nu)));
     elementInputs.densities.set(i, 24 / 9.80665);  // concreto
     elementInputs.areas.set(i, 0);
-    elementInputs.momentsOfInertiaY.set(i, 0);
     elementInputs.momentsOfInertiaZ.set(i, 0);
+    elementInputs.momentsOfInertiaY.set(i, 0);
     elementInputs.torsionalConstants.set(i, 0);
   }
   for (const { face, count } of faceCount.values()) {

@@ -208,9 +208,9 @@ export const cerramiento: ExampleDef = {
     const rho = p.rho;
 
     // Secciones — convención Hekatan (Paz 6.3 benchmark):
-    //   momentsOfInertiaY = AISC Iz = eje FUERTE (perpendicular al alma)
+    //   momentsOfInertiaZ = I33 = AISC Iz = eje FUERTE (perpendicular al alma)
     //                       → controla la flexión en el plano del pórtico (vertical para vigas, sway-X para cols)
-    //   momentsOfInertiaZ = AISC Iy = eje DÉBIL (paralelo al alma)
+    //   momentsOfInertiaY = I22 = AISC Iy = eje DÉBIL (paralelo al alma)
     //                       → controla la flexión out-of-plane
     // Para una sección rectangular (b ancho × h alto):
     //   I_strong = b·h³/12  (resistencia a flexión donde h es la dimensión perpendicular al eje)
@@ -250,7 +250,7 @@ export const cerramiento: ExampleDef = {
     states.nodeInputs.val = { supports, loads };
     states.elementInputs.val = {
       elasticities, shearModuli, areas,
-      momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy, torsionalConstants: J,
+      momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy, torsionalConstants: J,
       densities, poissonsRatios: poissons,
     };
 

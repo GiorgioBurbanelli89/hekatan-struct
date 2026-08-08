@@ -1,0 +1,29 @@
+Ovidio, resumen técnico de VB en Linux:
+
+1) LENGUAJE vs UI son cosas distintas.
+   - VB.NET (el lenguaje) SI es multiplataforma. Consola, librerias y ASP.NET
+     compilan y corren en Linux con dotnet build / dotnet run.
+
+2) EL BLOQUEO es WinForms/WPF, no VB.
+   - Nuestros formularios (frmInicio.vb, StatusStrip, ContextMenuStrip, ToolTip)
+     son WinForms, y WinForms se apoya en Win32 + GDI+, APIs nativas de Windows.
+     Microsoft nunca las porto a Linux -> la capa grafica revienta fuera de Windows.
+
+3) ALTERNATIVAS de UI multiplataforma (ninguna es un WinForms para Linux):
+   - Avalonia UI: moderno, render propio (Skia). Real multiplataforma, pero es
+     C#-first; VB queda de segunda y sin diseñador drag-and-drop.
+   - GTK# / Gtk4: nativo Linux, diseño con Glade, code-behind VB. Integracion manual.
+   - Mono + GTK# (Stetic): historicamente ERA "VB + diseñador + GUI Linux". Hoy abandonado.
+   - Wine: corre el .exe WinForms sin recompilar (traduce las llamadas Win32).
+     No es emulacion; por eso a veces falla en controles especificos.
+
+4) LA ARQUITECTURA que rompe la dependencia del SO:
+   Separar MOTOR de UI. El solver portado a .NET multiplataforma o a WASM, y la
+   interfaz como frontend web (HTML/JS). El calculo corre en cualquier runtime y
+   la UI vive en el navegador: Linux, Windows, Mac y movil con el mismo codigo.
+   Bonus: si el solver queda en el servidor, ni hace falta ofuscar (el binario
+   nunca se distribuye).
+
+RESUMEN: VB.NET es cross-platform; WinForms/WPF NO. Para GUI de escritorio nativa,
+VB sigue atado a Windows. Para "que corra en todos lados", lo correcto es desacoplar
+el motor y llevar la UI a web, no buscar un clon de WinForms en Linux.

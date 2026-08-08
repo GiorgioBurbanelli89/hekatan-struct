@@ -94,7 +94,7 @@ export const cadDraw: ExampleDef = {
     states.nodeInputs.val = { supports: new Map(), loads: new Map() };
     states.elementInputs.val = {
       elasticities, shearModuli, areas,
-      momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy,
+      momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy,
       torsionalConstants: J, densities, poissonsRatios: poissons, thicknesses,
     } as any;
     states.objects3D.val = [];

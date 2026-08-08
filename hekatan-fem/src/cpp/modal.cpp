@@ -308,12 +308,26 @@ extern "C"
         }
 
         // Masa total por dirección: M_total_j = r_jᵀ · M · r_j   (M sparse)
+        //
+        // El divisor tiene que ser la masa que PUEDE participar, o sea la de
+        // los grados LIBRES. Con M_global entera entraba tambien la masa
+        // agrupada en los apoyos, que no se mueve nunca: todas las
+        // participaciones salian bajas por el mismo factor (masa libre / masa
+        // total). Medido en el mezanine: 0.9663 = 26.790 / 27.724 t, o sea
+        // -3.4 % en UX y UY y -6.1 % en RZ, donde el factor es mayor porque la
+        // masa anclada esta en las bases de las columnas, lejos del centro.
+        // El numerador (Gamma) ya estaba bien: el autovector vale 0 en los
+        // apoyos, asi que solo suma grados libres.
+        Eigen::VectorXd libre = Eigen::VectorXd::Zero(dof);
+        for (int j = 0; j < reducedSize; ++j) libre(reducedIndices[j]) = 1.0;
+
         std::vector<double> M_total(6, 0.0);
         std::vector<Eigen::VectorXd> Mr(6);
         for (int j = 0; j < 6; ++j)
         {
-            Mr[j] = M_global * r_full[j];
-            M_total[j] = r_full[j].dot(Mr[j]);
+            Eigen::VectorXd r_libre = r_full[j].cwiseProduct(libre);
+            Mr[j] = M_global * r_libre;
+            M_total[j] = r_libre.dot(Mr[j]);
         }
 
         // Por modo: mapear autovector a GDL completos, participación con M sparse

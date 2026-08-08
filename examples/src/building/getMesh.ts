@@ -33,8 +33,8 @@ export function getMesh(
     shearModuli: new Map(),
     areas: new Map(),
     torsionalConstants: new Map(),
-    momentsOfInertiaY: new Map(),
     momentsOfInertiaZ: new Map(),
+    momentsOfInertiaY: new Map(),
   };
   const bottomColumnNodesIndicesByStory: Map<
     number,
@@ -215,8 +215,8 @@ export function getMesh(
         elementInputs.shearModuli.set(lastIndex + elementIndex, 1e6);
         elementInputs.areas.set(lastIndex + elementIndex, 1e6);
         elementInputs.torsionalConstants.set(lastIndex + elementIndex, 1e6);
-        elementInputs.momentsOfInertiaY.set(lastIndex + elementIndex, 1e6);
         elementInputs.momentsOfInertiaZ.set(lastIndex + elementIndex, 1e6);
+        elementInputs.momentsOfInertiaY.set(lastIndex + elementIndex, 1e6);
       });
 
       nodes = [...nodes, ...intermediateColumnNodes];

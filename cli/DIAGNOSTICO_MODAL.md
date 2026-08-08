@@ -214,8 +214,44 @@ memoria permite.
    estático o un combo.
 6. `main.ts` — la tabla ya no se oculta sola si el usuario la dejó abierta.
 
-**Pendientes** (no aplicados): subir el tope de GDL del modal, chequearlo antes de
-resolver, `SimplicialLDLT` en `deform.cpp`, flags de memoria del WASM y Web Worker.
+## Tanda 2 — solver y binding (recompilando el WASM)
+
+**`deform.cpp`: `SparseLU` → `SimplicialLDLT`** (con fallback a LU si K no resulta
+definida positiva, para no romper nada que hoy funcione). Resultados **numéricamente
+idénticos** — diferencia relativa 1e-13…1e-14 (redondeo de doble precisión) y T₁ con
+diferencia exactamente 0. La comparación contra ETABS 22 no se movió (−0.19 %…−0.55 %).
+
+| caso | GDL | heap antes → después | deform antes → después |
+|---|---|---|---|
+| 2×2×4 | 6 066 | 87 → **16 MB** (5.4×) | 224 → 164 ms |
+| 3×3×4 | 12 324 | 149 → **30 MB** (5.0×) | 367 → 198 ms |
+| 4×4×8 | 41 706 | 602 → **132 MB** (4.6×) | 2 249 → 809 ms (2.8×) |
+| 6×6×8 | 90 234 | 1 104 → **274 MB** (4.0×) | 16 715 → 5 047 ms (3.3×) |
+
+La memoria es determinista y se repite exacta entre corridas; **los tiempos varían
+bastante** según lo que esté haciendo la máquina (el 6×6×8 dio 5.0 s y 9.4 s en dos
+corridas), así que tómense como orden de magnitud.
+
+**Techo del estático: 157 626 → 349 002 GDL** (12×12×8 con 1 376 MB). Y el fallo pasó de
+`Aborted(… exception catching is not enabled)` — irrecuperable — a un **`std::bad_alloc`**
+atrapable, gracias a `-fexceptions`.
+
+**Bug del binding JS (encontrado buscando el techo nuevo).** En los 5 archivos
+`*Cpp.ts` (`deform`, `modal`, `modalPaz`, `didactic`, `plateQ4`):
+
+```ts
+const nodesPtr = allocate(nodes.flat(), Float64Array, mod.HEAPF64);
+//                                                    ↑ se evalúa ANTES de entrar
+```
+
+Dentro de `allocate`, `_malloc` puede hacer crecer el heap; con `ALLOW_MEMORY_GROWTH`
+emscripten crea un **ArrayBuffer nuevo** y la vista ya pasada queda *detached* → el `.set()`
+lanza `Cannot perform %TypedArray%.prototype.set on a detached ArrayBuffer`. **Se dispara
+justo con los modelos grandes**, que son los que obligan a crecer el heap. Es un fallo
+distinto del OOM. Arreglado releyendo la vista después del `malloc`, sin tocar las 51
+llamadas.
+
+**Pendiente**: Web Worker (lo único que queda para que la UI no se congele).
 
 ## Arreglos propuestos (por orden de impacto)
 

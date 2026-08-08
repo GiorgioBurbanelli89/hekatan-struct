@@ -69,7 +69,7 @@ export function makeSimpleExample(args: SimpleGenArgs): ExampleDef {
       states.nodeInputs.val = { supports, loads };
       states.elementInputs.val = {
         elasticities, shearModuli, areas,
-        momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy, torsionalConstants: J,
+        momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy, torsionalConstants: J,
         densities, poissonsRatios: poissons, thicknesses,
       };
       try {

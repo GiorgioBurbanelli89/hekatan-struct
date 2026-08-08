@@ -391,7 +391,7 @@ export const zapataAisladaValidacion: ExampleDef = {
     states.nodeInputs.val = { supports, loads: loadsCombo };
     states.elementInputs.val = {
       elasticities, poissonsRatios: poissons,
-      areas, momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy,
+      areas, momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy,
       torsionalConstants: J, shearModuli: Gm,
       thicknesses, densities, sectionShapes: sections,
     };

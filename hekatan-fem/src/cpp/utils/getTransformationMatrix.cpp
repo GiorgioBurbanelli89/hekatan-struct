@@ -77,25 +77,26 @@ Eigen::MatrixXd getTransformationMatrixFrame(const Node &n0, const Node &n1)
     double n = vector.z() / length;
     double D = std::sqrt(l * l + m * m);
 
+    // Ejes locales, convencion CSI (SAP2000 / ETABS). Tiene que ser IDENTICA a
+    // getTransformationMatrix.ts y a didacticSolver.ts: si las tres no coinciden,
+    // la deformada (C++) y las fuerzas de barra (TS) salen de marcos distintos.
+    //   eje 1 = del nudo i al j
+    //   eje 2 = en el plano vertical de la barra, hacia arriba (vertical: +X global)
+    //   eje 3 = eje1 x eje2
     Eigen::Matrix3d lambda; // Direction cosine matrix
 
-    if (std::abs(n - 1.0) < 1e-9) // Corresponds to n === 1 in TS
+    if (D < 1e-9) // barra vertical: el plano vertical no define nada
     {
-        lambda << 0, 0, 1,
-            0, 1, 0,
-            -1, 0, 0;
-    }
-    else if (std::abs(n + 1.0) < 1e-9) // Corresponds to n === -1 in TS
-    {
-        lambda << 0, 0, -1,
-            0, 1, 0,
-            1, 0, 0;
+        double s = (n > 0.0) ? 1.0 : -1.0;
+        lambda << 0, 0, s,
+            1, 0, 0,
+            0, s, 0;
     }
     else
-    { // General case
+    {
         lambda << l, m, n,
-            -m / D, l / D, 0,
-            (-l * n) / D, (-m * n) / D, D;
+            (-l * n) / D, (-m * n) / D, D,
+            m / D, -l / D, 0;
     }
 
     // Construct the 12x12 transformation matrix T

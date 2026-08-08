@@ -104,8 +104,8 @@ van.derive(() => {
   const elementInputs: ElementInputs = {
     elasticities: new Map(elements.map((_, i) => [i, E])),
     areas: new Map(elements.map((_, i) => [i, A])),
-    momentsOfInertiaZ: new Map(elements.map((_, i) => [i, Iz])),
-    momentsOfInertiaY: new Map(elements.map((_, i) => [i, Iy])),
+    momentsOfInertiaY: new Map(elements.map((_, i) => [i, Iz])),
+    momentsOfInertiaZ: new Map(elements.map((_, i) => [i, Iy])),
     shearModuli: new Map(elements.map((_, i) => [i, G])),
     torsionalConstants: new Map(elements.map((_, i) => [i, J])),
   };

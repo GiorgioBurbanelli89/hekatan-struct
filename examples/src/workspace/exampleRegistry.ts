@@ -337,6 +337,7 @@ import { portico2D } from "../portico-2d/portico2D";
 import { cerramiento } from "../cerramiento/cerramiento";
 import { tower3D } from "../tower-3d/tower3D";
 import { galpon } from "../galpon/galpon";
+import { galponBodega } from "../galpon-bodega/galponBodega";
 import { edifAcero } from "../edif-acero/edifAcero";
 import { mezanine } from "../mezanine/mezanine";
 // 🎓 Test M — modelos de los objetivos específicos de la tesis
@@ -411,6 +412,7 @@ export const examplesRegistry: ExampleDef[] = [
   portico2D,
   tower3D,
   galpon,
+  galponBodega,
   // Columnas (diseño individual)
   columnaCft,
   // Conexiones (prequalificación sísmica)

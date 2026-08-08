@@ -185,13 +185,15 @@ export function computeBeamSteps(
   });
 
   // --- STEP 6: Transformation Matrix T ---
+  // Convencion CSI: fila 1 = eje de la barra, fila 2 = eje 2 (plano vertical
+  // hacia arriba; vertical: +X global), fila 3 = eje 3 = eje1 x eje2.
   let lambdaFormula: string;
   if (Math.abs(n) > 0.999) {
     lambdaFormula = n > 0
-      ? `\\lambda = \\begin{bmatrix} 0 & 0 & 1 \\\\ 0 & 1 & 0 \\\\ -1 & 0 & 0 \\end{bmatrix} \\quad \\text{(vertical, n=1)}`
-      : `\\lambda = \\begin{bmatrix} 0 & 0 & -1 \\\\ 0 & 1 & 0 \\\\ 1 & 0 & 0 \\end{bmatrix} \\quad \\text{(vertical, n=-1)}`;
+      ? `\\lambda = \\begin{bmatrix} 0 & 0 & 1 \\\\ 1 & 0 & 0 \\\\ 0 & 1 & 0 \\end{bmatrix} \\quad \\text{(vertical, n=1)}`
+      : `\\lambda = \\begin{bmatrix} 0 & 0 & -1 \\\\ 1 & 0 & 0 \\\\ 0 & -1 & 0 \\end{bmatrix} \\quad \\text{(vertical, n=-1)}`;
   } else {
-    lambdaFormula = `\\lambda = \\begin{bmatrix} l & m & n \\\\ -m/D & l/D & 0 \\\\ -ln/D & -mn/D & D \\end{bmatrix}`;
+    lambdaFormula = `\\lambda = \\begin{bmatrix} l & m & n \\\\ -ln/D & -mn/D & D \\\\ m/D & -l/D & 0 \\end{bmatrix}`;
   }
 
   steps.push({

@@ -76,6 +76,22 @@ function modalAnalysis(nodes, elements, nodeInputs, elementInputs, numModes) {
   const torsion = processInput(elementInputs.torsionalConstants);
   const densities = processInput(elementInputs.densities);
 
+  // Estos cinco los pide modal() desde que se le anadieron los shells y sus
+  // modificadores. Este CLI no los pasaba y el WASM leia fuera de memoria
+  // ("memory access out of bounds"). El modelo de Paz es todo barras, asi que
+  // van vacios — pero tienen que ir.
+  const thicknesses = processInput(elementInputs.thicknesses);
+  const poissons = processInput(elementInputs.poissonsRatios);
+  const memmods = processInput(elementInputs.membraneModifiers);
+  const bendmods = processInput(elementInputs.bendingModifiers);
+  const plateFormKeysPtr = allocate([], Uint32Array, mod.HEAPU32);
+  gc.push(plateFormKeysPtr);
+  // HEAP32 no esta exportado por el build; el array va vacio, asi que no se
+  // escribe nada y HEAPU32 sirve igual para reservar el puntero.
+  const plateFormValsPtr = allocate([], Uint32Array, mod.HEAPU32);
+  gc.push(plateFormValsPtr);
+  const LATERAL_MASS = 0;   // masa 3D completa, no la lateral por piso de ETABS
+
   // Output pointers
   const freqPtrOut = mod._malloc(4); gc.push(freqPtrOut);
   const numFreqOut = mod._malloc(4); gc.push(numFreqOut);
@@ -99,7 +115,12 @@ function modalAnalysis(nodes, elements, nodeInputs, elementInputs, numModes) {
     shearMod.keysPtr, shearMod.valuesPtr, shearMod.size,
     torsion.keysPtr, torsion.valuesPtr, torsion.size,
     densities.keysPtr, densities.valuesPtr, densities.size,
-    numModes,
+    thicknesses.keysPtr, thicknesses.valuesPtr, thicknesses.size,
+    poissons.keysPtr, poissons.valuesPtr, poissons.size,
+    memmods.keysPtr, memmods.valuesPtr, memmods.size,
+    bendmods.keysPtr, bendmods.valuesPtr, bendmods.size,
+    plateFormKeysPtr, plateFormValsPtr, 0,
+    numModes, LATERAL_MASS,
     freqPtrOut, numFreqOut,
     modesPtrOut, modesRowsOut, modesColsOut,
     massPtrOut, massRowsOut, massColsOut
@@ -183,8 +204,8 @@ const elementInputs = {
   elasticities:       eMap(E, E),
   shearModuli:        eMap(G_val, G_val),
   areas:              eMap(COL_A, GIR_A),
-  momentsOfInertiaZ:  eMap(COL_Iy, GIR_Iy),
-  momentsOfInertiaY:  eMap(COL_Iz, GIR_Iz),
+  momentsOfInertiaY:  eMap(COL_Iy, GIR_Iy),   // debil  -> I22
+  momentsOfInertiaZ:  eMap(COL_Iz, GIR_Iz),   // fuerte -> I33
   torsionalConstants: eMap(COL_J, GIR_J),
   densities:          new Map(elements.map((_, i) => [i, RHO])),
 };

@@ -131,15 +131,15 @@ function buildEdificio(p: any, states: any, sys: Sys, opts?: { soloGeometria?: b
   const A_v = bBeam * hBeam, Iy_v = bBeam * hBeam ** 3 / 12, Iz_v = hBeam * bBeam ** 3 / 12, J_v = bBeam * hBeam ** 3 / 12 + hBeam * bBeam ** 3 / 12;
   const m = <T,>() => new Map<number, T>();
   const elasticities = m<number>(), poissonsRatios = m<number>(), shearModuli = m<number>(), densities = m<number>(),
-    areas = m<number>(), momentsOfInertiaY = m<number>(), momentsOfInertiaZ = m<number>(), torsionalConstants = m<number>(),
+    areas = m<number>(), momentsOfInertiaZ = m<number>(), momentsOfInertiaY = m<number>(), torsionalConstants = m<number>(),
     thicknesses = m<number>(), plateFormulations = m<number>(), drillingTypes = m<number>(),
     shearAreasY = m<number>(), shearAreasZ = m<number>();
   kinds.forEach((k, e) => {
     elasticities.set(e, E); poissonsRatios.set(e, NU); densities.set(e, RHO); shearModuli.set(e, G);
     // ETABS: losa/muro = ShellThin DKE → plateFormulation 2 (DKMQ Katili). Frame = Timoshenko (As=5/6·A).
     if (k === "slab" || k === "wall") { thicknesses.set(e, k === "wall" ? tWall : tSlab); plateFormulations.set(e, 2); drillingTypes.set(e, 2); }
-    else if (k === "col") { areas.set(e, A_c); momentsOfInertiaY.set(e, I_c); momentsOfInertiaZ.set(e, I_c); torsionalConstants.set(e, J_c); shearAreasY.set(e, 5/6*A_c); shearAreasZ.set(e, 5/6*A_c); }
-    else { areas.set(e, A_v); momentsOfInertiaY.set(e, Iy_v); momentsOfInertiaZ.set(e, Iz_v); torsionalConstants.set(e, J_v); shearAreasY.set(e, 5/6*A_v); shearAreasZ.set(e, 5/6*A_v); }
+    else if (k === "col") { areas.set(e, A_c); momentsOfInertiaZ.set(e, I_c); momentsOfInertiaY.set(e, I_c); torsionalConstants.set(e, J_c); shearAreasY.set(e, 5/6*A_c); shearAreasZ.set(e, 5/6*A_c); }
+    else { areas.set(e, A_v); momentsOfInertiaZ.set(e, Iy_v); momentsOfInertiaY.set(e, Iz_v); torsionalConstants.set(e, J_v); shearAreasY.set(e, 5/6*A_v); shearAreasZ.set(e, 5/6*A_v); }
   });
   const supports = new Map<number, boolean[]>();
   nodes.forEach((pt, i) => { if (Math.abs(pt[2]) < 1e-9) supports.set(i, [true, true, true, true, true, true]); });
@@ -235,10 +235,13 @@ const MODAL_MS = 2.5;
 // principal: la pestaña queda congelada mientras dura. Antes de bloquearla medio minuto
 // conviene decir cuánto va a costar. Las constantes salen de medir el WASM del bundle en
 // Chrome (cli/browser_limit_run.mjs), ley de potencia t = a·GDL^b ajustada a:
-//   deform: 41 706 GDL → 7.2 s · 90 234 → 38 s · 157 626 → 109 s   (b ≈ 2.0)
+//   deform (ya con SimplicialLDLT): 41 706 GDL → 1.2 s · 90 234 → 5.4 s · 157 626 → 20 s
+//                                   · 243 882 → 45 s   (b ≈ 2.05)
 //   modal:  21 918 → 3.2 s · 47 022 → 9.9 s · 81 774 → 54 s · 126 174 → 152 s  (b ≈ 2.5)
-// Es un orden de magnitud, no un cronómetro: depende de la máquina. Se muestra como "~".
-const segDeform = (dof: number) => 4.67e-9 * Math.pow(dof, 2.0);
+// El estático se recalibró tras pasar de SparseLU a LDLT (3.3x más rápido); el modal no
+// cambió porque ya usaba LDLT. Es un orden de magnitud, no un cronómetro: depende de la
+// máquina — en un móvil es bastante más lento. Se muestra como "~".
+const segDeform = (dof: number) => 3.77e-10 * Math.pow(dof, 2.05);
 const segModal  = (dof: number) => 2.07e-11 * Math.pow(dof, 2.5);
 // Por encima de esto se pide confirmación en vez de congelar la pestaña sin avisar.
 const SEG_CONFIRMAR = 20;
@@ -474,7 +477,7 @@ function runModalEdificio(p: any, states: any, modalPanel: any, label: string, s
     const msg = sinMemoria
       ? `Sin memoria en el solver WASM con ${dof} GDL (${nodes.length} nudos, ms=${ms} m). ` +
         `El techo de WebAssembly 32-bit son 2 GB; medido en Chrome, el análisis estático llega ` +
-        `hasta ~157 600 GDL. Bajá vanos/pisos o subí «Malla shell [m]». Error: ${err}`
+        `hasta ~349 000 GDL. Bajá vanos/pisos o subí «Malla shell [m]». Error: ${err}`
       : `El análisis modal falló con ${dof} GDL: ${err}`;
     try { modalPanel.render({ frequencies: [], modeShapes: [], massParticipation: [] }, { title: label, properties: [msg] }); } catch {}
     console.warn("Modal Test M error:", err);

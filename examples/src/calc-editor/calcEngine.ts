@@ -662,8 +662,8 @@ function buildFemHelpers(scope: Record<string, any>) {
       const ei = md.elementInputs;
       if (!ei.elasticities) ei.elasticities = new Map();
       if (!ei.areas) ei.areas = new Map();
-      if (!ei.momentsOfInertiaZ) ei.momentsOfInertiaZ = new Map();
       if (!ei.momentsOfInertiaY) ei.momentsOfInertiaY = new Map();
+      if (!ei.momentsOfInertiaZ) ei.momentsOfInertiaZ = new Map();
       if (!ei.shearModuli) ei.shearModuli = new Map();
       if (!ei.torsionalConstants) ei.torsionalConstants = new Map();
       if (!ei.thicknesses) ei.thicknesses = new Map();
@@ -777,8 +777,8 @@ function getElementInputsFromScope(scope: Record<string, any>): ElementInputs {
 
   ei.elasticities = mapProp("E", true);  // E applies to frames; shells use E_shell
   ei.areas = mapProp("A", true);
-  ei.momentsOfInertiaZ = mapProp("Iz", true);
-  ei.momentsOfInertiaY = mapProp("Iy", true);
+  ei.momentsOfInertiaY = mapProp("Iz", true);
+  ei.momentsOfInertiaZ = mapProp("Iy", true);
   ei.shearModuli = mapProp("G", true);
   ei.torsionalConstants = mapProp("J", true);
   ei.thicknesses = mapProp("t", false);   // shell property

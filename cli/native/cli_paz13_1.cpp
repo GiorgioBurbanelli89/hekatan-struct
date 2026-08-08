@@ -311,8 +311,8 @@ int main()
         elementInputs.areas[i]        = type13 ? A1 : A2;
         // awatif convention: momentsOfInertiaZ/Y
         // Since Iy=Iz for all elements, orientation doesn't matter
-        elementInputs.momentsOfInertiaZ[i] = type13 ? Iz1 : Iz2;
-        elementInputs.momentsOfInertiaY[i] = type13 ? Iy1 : Iy2;
+        elementInputs.momentsOfInertiaY[i] = type13 ? Iz1 : Iz2;
+        elementInputs.momentsOfInertiaZ[i] = type13 ? Iy1 : Iy2;
         elementInputs.torsionalConstants[i] = type13 ? J1 : J2;
         // density = m_bar / A
         elementInputs.densities[i] = type13 ? (m_bar1 / A1) : (m_bar2 / A2);

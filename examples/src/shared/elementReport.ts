@@ -386,14 +386,15 @@ function buildMath(d: ElementData): string {
   h += `<div class="er-eq">${KD(`l = \\frac{x_j - x_i}{L} = ${f4(d.l)} \\qquad m = \\frac{y_j - y_i}{L} = ${f4(d.m)} \\qquad n = \\frac{z_j - z_i}{L} = ${f4(d.n)}`)}</div>`;
   h += `<div class="er-eq">${KD(`D = \\sqrt{l^2 + m^2} = ${f4(d.D)}`)}</div>`;
 
+  // Convencion CSI: las filas son los ejes locales 1, 2 y 3 en ejes globales.
   if (Math.abs(d.n) > 0.999) {
-    h += `<p>Caso especial: elemento vertical (${K(`n \\approx ${d.n > 0 ? "+1" : "-1"}`)}):</p>`;
+    h += `<p>Caso especial: elemento vertical (${K(`n \\approx ${d.n > 0 ? "+1" : "-1"}`)}), el eje 2 se fija en el +X global:</p>`;
     const lam = d.n > 0
-      ? `\\boldsymbol{\\lambda} = \\begin{bmatrix} 0 & 0 & 1 \\\\ 0 & 1 & 0 \\\\ -1 & 0 & 0 \\end{bmatrix}`
-      : `\\boldsymbol{\\lambda} = \\begin{bmatrix} 0 & 0 & -1 \\\\ 0 & 1 & 0 \\\\ 1 & 0 & 0 \\end{bmatrix}`;
+      ? `\\boldsymbol{\\lambda} = \\begin{bmatrix} 0 & 0 & 1 \\\\ 1 & 0 & 0 \\\\ 0 & 1 & 0 \\end{bmatrix}`
+      : `\\boldsymbol{\\lambda} = \\begin{bmatrix} 0 & 0 & -1 \\\\ 1 & 0 & 0 \\\\ 0 & -1 & 0 \\end{bmatrix}`;
     h += `<div class="er-eq">${KD(lam)}</div>`;
   } else {
-    h += `<div class="er-eq">${KD(`\\boldsymbol{\\lambda} = \\begin{bmatrix} l & m & n \\\\ -m/D & l/D & 0 \\\\ -ln/D & -mn/D & D \\end{bmatrix}`)}</div>`;
+    h += `<div class="er-eq">${KD(`\\boldsymbol{\\lambda} = \\begin{bmatrix} l & m & n \\\\ -ln/D & -mn/D & D \\\\ m/D & -l/D & 0 \\end{bmatrix}`)}</div>`;
   }
   h += `<div class="er-eq er-eq-main">${KD(`\\mathbf{T} = \\mathbf{I}_4 \\otimes \\boldsymbol{\\lambda} \\quad \\text{(Kronecker product} \\rightarrow 12 \\times 12 \\text{ bloque-diagonal)}`)}</div>`;
 

@@ -309,7 +309,7 @@ van.derive(() => {
   const nodeInputs: NodeInputs = { supports, loads };
   const elementInputs: ElementInputs = {
     elasticities, poissonsRatios, densities, shearModuli, thicknesses,
-    areas: dummyA, momentsOfInertiaY: dummyIy, momentsOfInertiaZ: dummyIz, torsionalConstants: dummyJ,
+    areas: dummyA, momentsOfInertiaZ: dummyIy, momentsOfInertiaY: dummyIz, torsionalConstants: dummyJ,
   };
 
   let deformOutputs: DeformOutputs = {} as DeformOutputs;

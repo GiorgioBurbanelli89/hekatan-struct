@@ -63,8 +63,14 @@ export function exportOpenSeesPy(input: OpenseesModel): string {
     const E = elementInputs.elasticities?.get(i) ?? 200000;
     const G = elementInputs.shearModuli?.get(i) ?? 80000;
     const J = elementInputs.torsionalConstants?.get(i) ?? 1;
-    const Iy = elementInputs.momentsOfInertiaY?.get(i) ?? 1;
-    const Iz = elementInputs.momentsOfInertiaZ?.get(i) ?? 1;
+    // OJO con los ejes: OpenSees define su z con el vecxz de la geomTransf y su
+    // y = z x x. Con vecxz (0,0,1) para vigas y (-1,0,0) para columnas, su z cae
+    // sobre el eje 2 de CSI y su y sobre el 3 (salvo signo, que no afecta a una
+    // inercia). O sea que su Iz es I22 y su Iy es I33 — al reves de como se
+    // llaman aqui. Con la triada vieja de Hekatan coincidian y por eso iba
+    // directo; ahora hay que cruzarlos.
+    const Iy = elementInputs.momentsOfInertiaZ?.get(i) ?? 1;   // I33
+    const Iz = elementInputs.momentsOfInertiaY?.get(i) ?? 1;   // I22
 
     lines.push(`ops.element('elasticBeamColumn', ${i + 1}, ${el[0] + 1}, ${el[1] + 1}, ${A}, ${E}, ${G}, ${J}, ${Iy}, ${Iz}, ${transf})`);
   });
@@ -156,8 +162,14 @@ export function exportOpenSeesTcl(input: OpenseesModel): string {
     const E = elementInputs.elasticities?.get(i) ?? 200000;
     const G = elementInputs.shearModuli?.get(i) ?? 80000;
     const J = elementInputs.torsionalConstants?.get(i) ?? 1;
-    const Iy = elementInputs.momentsOfInertiaY?.get(i) ?? 1;
-    const Iz = elementInputs.momentsOfInertiaZ?.get(i) ?? 1;
+    // OJO con los ejes: OpenSees define su z con el vecxz de la geomTransf y su
+    // y = z x x. Con vecxz (0,0,1) para vigas y (-1,0,0) para columnas, su z cae
+    // sobre el eje 2 de CSI y su y sobre el 3 (salvo signo, que no afecta a una
+    // inercia). O sea que su Iz es I22 y su Iy es I33 — al reves de como se
+    // llaman aqui. Con la triada vieja de Hekatan coincidian y por eso iba
+    // directo; ahora hay que cruzarlos.
+    const Iy = elementInputs.momentsOfInertiaZ?.get(i) ?? 1;   // I33
+    const Iz = elementInputs.momentsOfInertiaY?.get(i) ?? 1;   // I22
 
     lines.push(`element elasticBeamColumn ${i + 1} ${el[0] + 1} ${el[1] + 1} ${A} ${E} ${G} ${J} ${Iy} ${Iz} ${transf}`);
   });
@@ -256,8 +268,9 @@ export function importOpenSeesPy(text: string): OpenseesModel {
         elasticities.set(idx, parseFloat(em[5]));
         shearModuli.set(idx, parseFloat(em[6]));
         torsionalConstants.set(idx, parseFloat(em[7]));
-        momentsOfInertiaY.set(idx, parseFloat(em[8]));
-        momentsOfInertiaZ.set(idx, parseFloat(em[9]));
+        // em[8] = Iy de OpenSees = I33 ; em[9] = Iz de OpenSees = I22
+        momentsOfInertiaZ.set(idx, parseFloat(em[8]));
+        momentsOfInertiaY.set(idx, parseFloat(em[9]));
       }
       continue;
     }

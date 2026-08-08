@@ -305,12 +305,25 @@ export const newBlank: ExampleDef = {
       }
     }
 
+    // Con modelo por ENLACE (?heks= / ?m=) el lienzo tiene que quedarse VACIO.
+    // `new-blank` dibuja un modelo de demostracion (4 nodos, 2 columnas, 1
+    // viga) y se veia aparecer ese primero y despues el de verdad: parecian
+    // dos cargas. Limpiarlo desde fuera no alcanza porque este derive vuelve a
+    // correr y lo repone — hay que cortarlo aca, en el origen.
+    if (new URLSearchParams(window.location.search).get("heks") ||
+        new URLSearchParams(window.location.search).get("m")) {
+      states.nodes.val = [];
+      states.elements.val = [];
+      states.nodeInputs.val = { supports: new Map(), loads: new Map() };
+      return;
+    }
+
     states.nodes.val = nodes;
     states.elements.val = elements;
     states.nodeInputs.val = { supports, loads };
     states.elementInputs.val = {
       elasticities, shearModuli, areas,
-      momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy,
+      momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy,
       torsionalConstants: J, densities, poissonsRatios: poissons,
       thicknesses,
     } as any;

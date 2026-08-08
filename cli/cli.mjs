@@ -283,8 +283,8 @@ function generateEdificio(params = {}) {
   const eMap = (v) => new Map(elements.map((_, i) => [i, v]));
   const elementInputs = {
     elasticities: eMap(mat.E), shearModuli: eMap(mat.G),
-    areas: eMap(mat.A), momentsOfInertiaZ: eMap(mat.Iz),
-    momentsOfInertiaY: eMap(mat.Iy), torsionalConstants: eMap(mat.J),
+    areas: eMap(mat.A), momentsOfInertiaY: eMap(mat.Iz),
+    momentsOfInertiaZ: eMap(mat.Iy), torsionalConstants: eMap(mat.J),
     densities: eMap(mat.rho),
   };
 
@@ -332,8 +332,8 @@ function generateFrame(params = {}) {
   const eMap = (v) => new Map(elements.map((_, i) => [i, v]));
   const elementInputs = {
     elasticities: eMap(mat.E), shearModuli: eMap(mat.G),
-    areas: eMap(mat.A), momentsOfInertiaZ: eMap(mat.Iz),
-    momentsOfInertiaY: eMap(mat.Iy), torsionalConstants: eMap(mat.J),
+    areas: eMap(mat.A), momentsOfInertiaY: eMap(mat.Iz),
+    momentsOfInertiaZ: eMap(mat.Iy), torsionalConstants: eMap(mat.J),
     densities: eMap(mat.rho),
   };
 

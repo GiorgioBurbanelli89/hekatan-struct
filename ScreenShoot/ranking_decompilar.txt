@@ -1,0 +1,41 @@
+Ovidio, te paso el ranking real de qué tan difícil es desarmar cada formato, de lo más fácil a lo más blindado:
+
+===========================================
+FÁCIL — se abren casi como el código original:
+===========================================
+- .NET (.exe/.dll de VB o C#)  -> lo tuyo. Guarda nombres y estructura, decompila casi perfecto con JustDecompile/dnSpy.
+- Java (.jar)                  -> igual de fácil.
+- Python (.pyc)               -> se revierte con herramientas gratis.
+(Ofuscar con renombrado los sube un poquito, pero siguen en FÁCIL.)
+
+===========================================
+MEDIO — ya cuesta, sale sopa ilegible:
+===========================================
+- .NET Reactor / con control-flow + cifrado de strings -> decompila enredado, cuesta seguirlo.
+- WASM (WebAssembly)                                    -> sin nombres ni metadatos, queda como pseudocódigo feo.
+
+===========================================
+DIFÍCIL — lo que hace la gente de RE seria:
+===========================================
+- Código nativo C/C++ (.exe de máquina, no .NET) -> sin metadatos, solo pseudo-C sucio en Ghidra/IDA. Es lo que uno pelea con GEO5, Abaqus, etc.
+
+===========================================
+MUY DIFÍCIL — semi-blindado:
+===========================================
+- Nativo + VMProtect / Themida -> convierten tu código en una "máquina virtual" propia. Desarmarlo son semanas de trabajo experto.
+
+===========================================
+IMPOSIBLE — no hay nada que desarmar:
+===========================================
+- Solver en el servidor (web) -> el código nunca sale de tu máquina. El usuario solo manda datos y recibe el resultado. Caja negra total.
+
+-------------------------------------------
+MORALEJA:
+Pasaste de FÁCIL (lo más fácil que existe) y con ofuscar apenas te moviste.
+El salto grande es dejar el motor en el SERVIDOR -> ahí ya no importa ni ofuscar.
+
+DATO CLAVE:
+Tu .exe .NET está en el escalón más fácil de todos porque .NET no es código
+de máquina, es un "intermedio" (IL) que carga la estructura casi entera. Por eso
+decompila tan limpio. Un .exe de C/C++ nativo está 2-3 escalones más arriba
+SIN ofuscar nada.

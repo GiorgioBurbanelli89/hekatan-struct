@@ -10,6 +10,10 @@ export function getLegend(
 ): HTMLDivElement {
   const legendElm = document.createElement("div");
   legendElm.id = "legend";
+  // Nº de intervalos → CSS var, para que los markers se espacien contra la
+  // ALTURA REAL de la barra (--legend-h, que cambia en móvil) y no contra un
+  // 50vh hardcodeado. Ver styles.css.
+  legendElm.style.setProperty("--legend-n", String(numMarkerIntervals));
   // La barra de color usa la PALETA ACTIVA (no el gradiente hardcodeado del CSS) y se
   // actualiza al cambiar la paleta desde Settings — así la leyenda coincide con la malla.
   setTimeout(() => {
@@ -37,7 +41,7 @@ export function getLegend(
     markerElem.id = `marker-${i}`;
     markerElem.className = "marker";
     markerElem.style.marginTop =
-      i == 0 ? `0px` : `calc(${50 / numMarkerIntervals}vh - 1px)`;
+      i == 0 ? `0px` : `calc(var(--legend-h) / var(--legend-n) - 1px)`;
 
     markerText = document.createElement("p");
     markerText.id = `marker-text-${i}`;

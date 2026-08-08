@@ -162,7 +162,7 @@ export const membranaCSI: ExampleDef = {
     states.nodeInputs.val = { supports, loads };
     states.elementInputs.val = {
       elasticities, poissonsRatios: poissons, shearModuli: Gm,
-      areas, momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy, torsionalConstants: J,
+      areas, momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy, torsionalConstants: J,
       thicknesses, densities, sectionShapes: sections,
     };
 

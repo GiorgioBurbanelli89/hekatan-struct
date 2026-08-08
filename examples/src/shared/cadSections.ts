@@ -8,8 +8,10 @@
  *    Iy = eje DÉBIL  (flexión en la dirección del ancho b)
  *
  * IMPORTANTE — convención de ejes locales del solver (ver CLAUDE.md "Ejes locales"):
- * al asignar al solver, el eje FUERTE (Iz aquí) debe ir en `momentsOfInertiaY` y el
- * débil (Iy aquí) en `momentsOfInertiaZ`. Para no equivocarse, usar `toLocalInertia()`.
+ * los ejes locales son ahora los de CSI (eje 2 = plano vertical hacia arriba), así
+ * que al asignar al solver el eje FUERTE (Iz aquí) va en `momentsOfInertiaZ` = I33
+ * y el débil (Iy aquí) en `momentsOfInertiaY` = I22. Antes era al revés.
+ * Para no equivocarse, usar `toLocalInertia()`.
  */
 
 export interface SectionProps {
@@ -20,9 +22,9 @@ export interface SectionProps {
 }
 
 /** Mapea las inercias de sección (Iz=fuerte, Iy=débil) a los ejes LOCALES del solver.
- *  Convención Hekatan/awatif: el fuerte va en momentsOfInertiaY. */
+ *  Convención CSI: el fuerte es I33 y va en momentsOfInertiaZ. */
 export function toLocalInertia(sec: SectionProps): { moiZ: number; moiY: number } {
-  return { moiZ: sec.Iy, moiY: sec.Iz }; // débil→Z, fuerte→Y
+  return { moiZ: sec.Iz, moiY: sec.Iy }; // fuerte→Z (I33), débil→Y (I22)
 }
 
 /** Sección rectangular maciza. b=ancho, h=canto. */

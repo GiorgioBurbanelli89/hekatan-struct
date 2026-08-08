@@ -1081,7 +1081,7 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
       // Section properties
       const colA = colB * colH, colIz = colB * colH ** 3 / 12, colIy = colH * colB ** 3 / 12;
       const colJ = colB * colH * (colB ** 2 + colH ** 2) / 12;
-      // viga horizontal → eje fuerte (canto³) va en momentsOfInertiaY (gobierna flexión vertical)
+      // viga horizontal → eje fuerte (canto³) va en momentsOfInertiaZ = I33 (gobierna flexión vertical)
       const vigaA = vigaB * vigaH, vigaIy = vigaB * vigaH ** 3 / 12, vigaIz = vigaH * vigaB ** 3 / 12;
       const vigaJ = vigaB * vigaH * (vigaB ** 2 + vigaH ** 2) / 12;
 
@@ -1118,7 +1118,7 @@ export function getCad3d(mesh: Cad3dMesh): HTMLElement {
       mesh.nodes.val = nodes;
       mesh.elements!.val = elements;
       mesh.nodeInputs!.val = { supports, loads: new Map() };
-      mesh.elementInputs!.val = { elasticities, shearModuli, areas, momentsOfInertiaZ: moiZ, momentsOfInertiaY: moiY, torsionalConstants: torsion, sectionShapes };
+      mesh.elementInputs!.val = { elasticities, shearModuli, areas, momentsOfInertiaY: moiZ, momentsOfInertiaZ: moiY, torsionalConstants: torsion, sectionShapes };
       colElementIndices = newColIndices;
       beamElementIndices = newBeamIndices;
       elementFloor = newElementFloor;
@@ -1414,7 +1414,7 @@ VIEW:
       // Section properties
       const colA = colB * colH, colIz = colB * colH ** 3 / 12, colIy = colH * colB ** 3 / 12;
       const colJ = colB * colH * (colB ** 2 + colH ** 2) / 12;
-      // viga horizontal → eje fuerte (canto³) va en momentsOfInertiaY (gobierna flexión vertical)
+      // viga horizontal → eje fuerte (canto³) va en momentsOfInertiaZ = I33 (gobierna flexión vertical)
       const vigaA = vigaB * vigaH, vigaIy = vigaB * vigaH ** 3 / 12, vigaIz = vigaH * vigaB ** 3 / 12;
       const vigaJ = vigaB * vigaH * (vigaB ** 2 + vigaH ** 2) / 12;
 
@@ -1451,7 +1451,7 @@ VIEW:
       mesh.nodes.val = nodes;
       mesh.elements!.val = elements;
       mesh.nodeInputs!.val = { supports, loads: new Map() };
-      mesh.elementInputs!.val = { elasticities, shearModuli, areas, momentsOfInertiaZ: moiZ, momentsOfInertiaY: moiY, torsionalConstants: torsion, sectionShapes };
+      mesh.elementInputs!.val = { elasticities, shearModuli, areas, momentsOfInertiaY: moiZ, momentsOfInertiaZ: moiY, torsionalConstants: torsion, sectionShapes };
 
       // Set up grid axes and floor buttons
       colElementIndices = newColIndices;
@@ -6260,8 +6260,8 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
       elasticities: new Map(),
       shearModuli: new Map(),
       areas: new Map(),
-      momentsOfInertiaZ: new Map(),
       momentsOfInertiaY: new Map(),
+      momentsOfInertiaZ: new Map(),
       torsionalConstants: new Map(),
       densities: new Map(),
       sectionShapes: new Map(),
@@ -6587,12 +6587,12 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
       function makeFrameInputs(nElms: number, colIdx: number[], beamIdx: number[]) {
         const ei: any = {
           elasticities: new Map(), shearModuli: new Map(), areas: new Map(),
-          momentsOfInertiaZ: new Map(), momentsOfInertiaY: new Map(),
+          momentsOfInertiaY: new Map(), momentsOfInertiaZ: new Map(),
           torsionalConstants: new Map(), shearAreasY: new Map(), shearAreasZ: new Map(),
         };
         for (const i of colIdx) {
           ei.elasticities.set(i, E_conc); ei.shearModuli.set(i, G); ei.areas.set(i, Ac);
-          ei.momentsOfInertiaZ.set(i, Ic); ei.momentsOfInertiaY.set(i, Ic);
+          ei.momentsOfInertiaY.set(i, Ic); ei.momentsOfInertiaZ.set(i, Ic);
           ei.torsionalConstants.set(i, Jc); ei.shearAreasY.set(i, AsC); ei.shearAreasZ.set(i, AsC);
         }
         for (const i of beamIdx) {
@@ -6602,8 +6602,8 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
           // Iz controls bending in local_z → deflection in global_Y (out of plane, weak)
           // Iy controls bending in local_y → deflection in global_Z (vertical, strong)
           // For portal in XZ plane: Iy = strong axis (D=0.4), Iz = weak axis (B=0.25)
-          ei.momentsOfInertiaZ.set(i, Iyb); // weak axis → out-of-plane
-          ei.momentsOfInertiaY.set(i, Izb); // strong axis → in-plane (XZ portal)
+          ei.momentsOfInertiaY.set(i, Iyb); // weak axis → out-of-plane
+          ei.momentsOfInertiaZ.set(i, Izb); // strong axis → in-plane (XZ portal)
           ei.torsionalConstants.set(i, Jb); ei.shearAreasY.set(i, AsB); ei.shearAreasZ.set(i, AsB);
         }
         return ei;
@@ -6625,7 +6625,7 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
         const elements: Element[] = [[0, 1]];
         const ei = makeFrameInputs(1, [], []);
         ei.elasticities.set(0, E_conc); ei.shearModuli.set(0, G); ei.areas.set(0, Ac);
-        ei.momentsOfInertiaZ.set(0, Ic); ei.momentsOfInertiaY.set(0, Ic); ei.torsionalConstants.set(0, Jc);
+        ei.momentsOfInertiaY.set(0, Ic); ei.momentsOfInertiaZ.set(0, Ic); ei.torsionalConstants.set(0, Jc);
         const r = deform(nodes, elements, {
           supports: new Map([[0, [true, true, true, true, true, true]]]),
           loads: new Map([[1, [0, 0, P, 0, 0, 0]]]),  // Fz = P (vertical)
@@ -7324,7 +7324,7 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
         const ifcElements: number[][] = [];
         const ifcEI: any = {
           elasticities: new Map(), shearModuli: new Map(), areas: new Map(),
-          momentsOfInertiaZ: new Map(), momentsOfInertiaY: new Map(),
+          momentsOfInertiaY: new Map(), momentsOfInertiaZ: new Map(),
           torsionalConstants: new Map(), densities: new Map(),
           sectionShapes: new Map(),
         };
@@ -7345,8 +7345,8 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
             ifcEI.elasticities.set(ei, mat.E);
             ifcEI.shearModuli.set(ei, G);
             ifcEI.areas.set(ei, A);
-            ifcEI.momentsOfInertiaZ.set(ei, Iy);
-            ifcEI.momentsOfInertiaY.set(ei, Iz);
+            ifcEI.momentsOfInertiaY.set(ei, Iy);
+            ifcEI.momentsOfInertiaZ.set(ei, Iz);
             ifcEI.torsionalConstants.set(ei, J);
             ifcEI.densities.set(ei, mat.rho);
             ifcEI.sectionShapes.set(ei, { type: "rect", b, h, name: elem.sectionName });
@@ -9906,8 +9906,8 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
       elasticities: new Map(elements.map((_,i) => [i, E])),
       shearModuli: new Map(elements.map((_,i) => [i, G])),
       areas: new Map(elements.map((_,i) => [i, A])),
-      momentsOfInertiaZ: new Map(elements.map((_,i) => [i, I])),
       momentsOfInertiaY: new Map(elements.map((_,i) => [i, I])),
+      momentsOfInertiaZ: new Map(elements.map((_,i) => [i, I])),
       torsionalConstants: new Map(elements.map((_,i) => [i, J])),
     };
     if (mesh.elementInputs) mesh.elementInputs.val = ei;
@@ -9973,8 +9973,8 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
       elasticities: new Map(elements.map((_,i) => [i, E])),
       shearModuli: new Map(elements.map((_,i) => [i, G])),
       areas: new Map(elements.map((_,i) => [i, A])),
-      momentsOfInertiaZ: new Map(elements.map((_,i) => [i, I])),
       momentsOfInertiaY: new Map(elements.map((_,i) => [i, I])),
+      momentsOfInertiaZ: new Map(elements.map((_,i) => [i, I])),
       torsionalConstants: new Map(elements.map((_,i) => [i, J])),
     };
     if (mesh.elementInputs) mesh.elementInputs.val = ei;
@@ -10081,8 +10081,8 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
       elasticities: new Map(elements.map((_,i) => [i, E])),
       shearModuli: new Map(elements.map((_,i) => [i, G])),
       areas: new Map(elements.map((_,i) => [i, i < (nSpanDiv * 3 + 1) ? 200e-4 : 10e-4])),
-      momentsOfInertiaZ: new Map(elements.map((_,i) => [i, 5000e-8])),
-      momentsOfInertiaY: new Map(elements.map((_,i) => [i, 2000e-8])),
+      momentsOfInertiaY: new Map(elements.map((_,i) => [i, 5000e-8])),
+      momentsOfInertiaZ: new Map(elements.map((_,i) => [i, 2000e-8])),
       torsionalConstants: new Map(elements.map((_,i) => [i, 1000e-8])),
     };
     if (mesh.elementInputs) mesh.elementInputs.val = ei;
@@ -10183,8 +10183,8 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
       elasticities: new Map(elements.map((_,i) => [i, E])),
       shearModuli: new Map(elements.map((_,i) => [i, G])),
       areas: new Map(elements.map((_,i) => [i, A])),
-      momentsOfInertiaZ: new Map(elements.map((_,i) => [i, I])),
       momentsOfInertiaY: new Map(elements.map((_,i) => [i, I])),
+      momentsOfInertiaZ: new Map(elements.map((_,i) => [i, I])),
       torsionalConstants: new Map(elements.map((_,i) => [i, J])),
     };
     if (mesh.elementInputs) mesh.elementInputs.val = ei;
@@ -10269,7 +10269,7 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
     mesh.nodes.val = nodes; mesh.elements.val = elements;
     if (mesh.nodeInputs) mesh.nodeInputs.val = { supports, loads } as any;
     const E = 35e6, G = 14e6, A = 200e-4, I = 5000e-8, J = 2000e-8; // hormigon
-    const ei: any = { elasticities: new Map(elements.map((_,i) => [i, E])), shearModuli: new Map(elements.map((_,i) => [i, G])), areas: new Map(elements.map((_,i) => [i, A])), momentsOfInertiaZ: new Map(elements.map((_,i) => [i, I])), momentsOfInertiaY: new Map(elements.map((_,i) => [i, I])), torsionalConstants: new Map(elements.map((_,i) => [i, J])) };
+    const ei: any = { elasticities: new Map(elements.map((_,i) => [i, E])), shearModuli: new Map(elements.map((_,i) => [i, G])), areas: new Map(elements.map((_,i) => [i, A])), momentsOfInertiaY: new Map(elements.map((_,i) => [i, I])), momentsOfInertiaZ: new Map(elements.map((_,i) => [i, I])), torsionalConstants: new Map(elements.map((_,i) => [i, J])) };
     if (mesh.elementInputs) mesh.elementInputs.val = ei;
     try { const dOut = deform(nodes, elements, { supports, loads } as any, ei); if (dOut && mesh.deformOutputs) mesh.deformOutputs.val = dOut; } catch (e: any) { console.warn("Burj:", e.message); }
     setTimeout(() => autoFitGridSize(), 50); updatePanel();
@@ -10413,7 +10413,7 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
     if (mesh.nodeInputs) mesh.nodeInputs.val = { supports, loads } as any;
 
     const E = 200e6, G = 77e6, A = 60e-4, I = 800e-8, J = 400e-8; // acero
-    const ei: any = { elasticities: new Map(elements.map((_,i) => [i, E])), shearModuli: new Map(elements.map((_,i) => [i, G])), areas: new Map(elements.map((_,i) => [i, A])), momentsOfInertiaZ: new Map(elements.map((_,i) => [i, I])), momentsOfInertiaY: new Map(elements.map((_,i) => [i, I])), torsionalConstants: new Map(elements.map((_,i) => [i, J])) };
+    const ei: any = { elasticities: new Map(elements.map((_,i) => [i, E])), shearModuli: new Map(elements.map((_,i) => [i, G])), areas: new Map(elements.map((_,i) => [i, A])), momentsOfInertiaY: new Map(elements.map((_,i) => [i, I])), momentsOfInertiaZ: new Map(elements.map((_,i) => [i, I])), torsionalConstants: new Map(elements.map((_,i) => [i, J])) };
     if (mesh.elementInputs) mesh.elementInputs.val = ei;
     try { const dOut = deform(nodes, elements, { supports, loads } as any, ei); if (dOut && mesh.deformOutputs) mesh.deformOutputs.val = dOut; } catch (e: any) { console.warn("Diagrid:", e.message); }
     setTimeout(() => autoFitGridSize(), 50); updatePanel();
@@ -10826,7 +10826,7 @@ Util:     cad.info()  cad.clear()  cad.help()  cad.helpFull()
     const nFrames = elements.filter(e => e.length === 2).length;
     const ei: any = {
       elasticities, shearModuli, areas,
-      momentsOfInertiaZ: moiZ, momentsOfInertiaY: moiY,
+      momentsOfInertiaY: moiZ, momentsOfInertiaZ: moiY,
       torsionalConstants: torsion, sectionShapes, momentReleases, densities,
     };
     // Shell-specific: thicknesses & poissonsRatios for Q4 elements

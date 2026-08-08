@@ -220,8 +220,8 @@ export const vigaCimGuerraEj7Tinv: ExampleDef = {
     const elasticities = new Map<number, number>();
     const poissonsRatios = new Map<number, number>();
     const areas = new Map<number, number>();
-    const momentsOfInertiaZ = new Map<number, number>();
     const momentsOfInertiaY = new Map<number, number>();
+    const momentsOfInertiaZ = new Map<number, number>();
     const shearModuli = new Map<number, number>();
     const torsionalConstants = new Map<number, number>();
 
@@ -230,8 +230,8 @@ export const vigaCimGuerraEj7Tinv: ExampleDef = {
       elasticities.set(i, E_kNm2);
       poissonsRatios.set(i, nu);
       areas.set(i, T.A);
-      momentsOfInertiaZ.set(i, T.Iz);     // flexión horizontal (lateral)
-      momentsOfInertiaY.set(i, T.Iy);     // flexión vertical (sobre eje horizontal)
+      momentsOfInertiaY.set(i, T.Iz);     // flexión horizontal (lateral)
+      momentsOfInertiaZ.set(i, T.Iy);     // flexión vertical (sobre eje horizontal)
       shearModuli.set(i, G);
       torsionalConstants.set(i, T.J);
     }
@@ -240,8 +240,8 @@ export const vigaCimGuerraEj7Tinv: ExampleDef = {
       elasticities.set(i, E_kNm2);
       poissonsRatios.set(i, nu);
       areas.set(i, A_p);
-      momentsOfInertiaZ.set(i, I_p);
       momentsOfInertiaY.set(i, I_p);
+      momentsOfInertiaZ.set(i, I_p);
       shearModuli.set(i, G);
       torsionalConstants.set(i, J_p);
     }

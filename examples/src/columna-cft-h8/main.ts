@@ -208,7 +208,7 @@ van.derive(() => {
     densities: shellRho,
     shearModuli: shellG,
     thicknesses: shellThicknesses,
-    areas: dummyA, momentsOfInertiaY: dummyIy, momentsOfInertiaZ: dummyIz, torsionalConstants: dummyJ,
+    areas: dummyA, momentsOfInertiaZ: dummyIy, momentsOfInertiaY: dummyIz, torsionalConstants: dummyJ,
   };
 
   let deformOutputs: DeformOutputs = {} as DeformOutputs;

@@ -52,6 +52,19 @@ extern "C"
         // Default 1.0 si no está. Map<elemIdx, double>.
         int *drillScale_keys_ptr, double *drillScale_values_ptr, int num_drillScale,
 
+        // Property Modifiers estilo ETABS (Assign -> Area -> Stiffness Modifiers).
+        // Multiplican la rigidez de MEMBRANA y de FLEXION del shell; por defecto
+        // 1.0. Ya existian en el modelo de datos y los usaba shellQ4.cpp, pero
+        // SOLO llegaban por el camino modal: el estatico nunca los recibia, asi
+        // que aqui valian siempre 1.0. Sin esto un deck no se puede representar
+        // (aporta poca flexion) y el entrepiso sale rigido de mas.
+        int *memmod_keys_ptr, double *memmod_values_ptr, int num_memmods,
+        int *bendmod_keys_ptr, double *bendmod_values_ptr, int num_bendmods,
+
+        // Modificadores DIRECCIONALES: 8 valores por elemento
+        //   F11 F22 F12  M11 M22 M12  V13 V23   (el orden del e2k de ETABS)
+        int *shellmod_keys_ptr, double *shellmod_values_ptr, int num_shellmods,
+
         // --- Output Pointers (to be allocated by C++ and filled) ---
         // These are pointers *to* pointers. C++ allocates memory using malloc
         // and writes the address of the allocated block into these pointers.
@@ -98,6 +111,9 @@ extern "C"
         elementInputs.shearAreasY = parseMapFromFlat(shear_area_y_keys_ptr, shear_area_y_values_ptr, num_shear_area_y);
         elementInputs.shearAreasZ = parseMapFromFlat(shear_area_z_keys_ptr, shear_area_z_values_ptr, num_shear_area_z);
         elementInputs.plateFormulations = parseMapIntFromFlat(plateForm_keys_ptr, plateForm_values_ptr, num_plateForm);
+        elementInputs.membraneModifiers = parseMapFromFlat(memmod_keys_ptr, memmod_values_ptr, num_memmods);
+        elementInputs.bendingModifiers = parseMapFromFlat(bendmod_keys_ptr, bendmod_values_ptr, num_bendmods);
+        elementInputs.shellModifiers = parseMapVecFromFlat(shellmod_keys_ptr, shellmod_values_ptr, num_shellmods, 8);
         elementInputs.drillingTypes = parseMapIntFromFlat(drillType_keys_ptr, drillType_values_ptr, num_drillType);
         elementInputs.drillingPenaltyScales = parseMapFromFlat(drillScale_keys_ptr, drillScale_values_ptr, num_drillScale);
 
@@ -135,29 +151,57 @@ extern "C"
         Eigen::SparseMatrix<double> K_reduced = getReducedMatrix(K_global, reducedIndices);
         Eigen::VectorXd F_reduced = getReducedVector(F_global, reducedIndices);
 
-        // SparseLU: direct solver, more robust than CG for shells and mixed models
-        Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
-        solver.compute(K_reduced);
-
-        if (solver.info() != Eigen::Success)
+        // SimplicialLDLT (Cholesky) instead of SparseLU: K is SYMMETRIC POSITIVE DEFINITE
+        // after removing supported/zero DOFs, so LU is the wrong tool — it stores L and U
+        // separately and orders with COLAMD (meant for unsymmetric matrices). Measured on
+        // the same 90,234-DOF matrix: LDLT 317 MB vs LU 1,230 MB (~4x), and Cholesky is
+        // about half the flops. This is what raises the ceiling before WASM32 hits its 2 GB
+        // limit (see cli/DIAGNOSTICO_MODAL.md). modal.cpp already used LDLT.
+        //
+        // FALLBACK: if K is not positive definite (a mechanism, an element with no
+        // stiffness), LDLT fails where LU might still produce something. In that case we
+        // fall back to SparseLU so nothing that works today stops working.
+        Eigen::VectorXd U_reduced;
+        bool solved = false;
         {
-            std::cerr << "Error: Matrix decomposition failed during solve." << std::endl;
-            *deformations_data_ptr_out = nullptr;
-            *deformations_size_out = 0;
-            *reactions_data_ptr_out = nullptr;
-            *reactions_size_out = 0;
-            return;
+            Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> chol;
+            chol.compute(K_reduced);
+            if (chol.info() == Eigen::Success)
+            {
+                U_reduced = chol.solve(F_reduced);
+                if (chol.info() == Eigen::Success && U_reduced.allFinite())
+                    solved = true;
+            }
+            if (!solved)
+                std::cerr << "Warning: LDLT failed (K may not be positive definite); "
+                             "falling back to SparseLU." << std::endl;
         }
-        Eigen::VectorXd U_reduced = solver.solve(F_reduced);
-        if (solver.info() != Eigen::Success)
+
+        if (!solved)
         {
-            std::cerr << "Error: Matrix solving failed." << std::endl;
-            // Handle error
-            *deformations_data_ptr_out = nullptr;
-            *deformations_size_out = 0;
-            *reactions_data_ptr_out = nullptr;
-            *reactions_size_out = 0;
-            return;
+            Eigen::SparseLU<Eigen::SparseMatrix<double>> solver;
+            solver.compute(K_reduced);
+
+            if (solver.info() != Eigen::Success)
+            {
+                std::cerr << "Error: Matrix decomposition failed during solve." << std::endl;
+                *deformations_data_ptr_out = nullptr;
+                *deformations_size_out = 0;
+                *reactions_data_ptr_out = nullptr;
+                *reactions_size_out = 0;
+                return;
+            }
+            U_reduced = solver.solve(F_reduced);
+            if (solver.info() != Eigen::Success)
+            {
+                std::cerr << "Error: Matrix solving failed." << std::endl;
+                // Handle error
+                *deformations_data_ptr_out = nullptr;
+                *deformations_size_out = 0;
+                *reactions_data_ptr_out = nullptr;
+                *reactions_size_out = 0;
+                return;
+            }
         }
 
         // Map reduced deformations (U_reduced) back to the full deformation vector (U_global)

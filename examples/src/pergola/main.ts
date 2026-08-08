@@ -190,7 +190,7 @@ van.derive(() => {
   }
   const elementInputs: ElementInputs = {
     elasticities, shearModuli, areas,
-    momentsOfInertiaZ: moiZ, momentsOfInertiaY: moiY,
+    momentsOfInertiaY: moiZ, momentsOfInertiaZ: moiY,
     torsionalConstants: torsion, densities,
     thicknesses, poissonsRatios,
   };

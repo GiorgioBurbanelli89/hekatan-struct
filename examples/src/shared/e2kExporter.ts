@@ -41,6 +41,44 @@ export interface ExportE2kInput {
    * (el caller los muestrea de espectroNEC.necSpectrum). Validado: ETABS lee
    * los puntos exactos. La R suele ir en sfX/sfY (= g/(R·φ)).
    */
+  /**
+   * Combinaciones del MODELO. Antes el exportador escribia 1.4D y 1.2D+1.6L
+   * a mano, siempre, hubiera o no combinaciones — y el e2k que saca ETABS del
+   * mismo modelo no trae el bloque. Si no se pasa nada, no se emite nada.
+   */
+  loadCombinations?: Array<{ name: string; type?: string; cases?: Array<{ case: string; scaleFactor: number }> }>;
+  /**
+   * Patrones y casos del MODELO. Igual que las combinaciones, estaban escritos
+   * a mano: todo e2k salia con "Dead" y "Live" aunque el modelo tuviera otros.
+   * Si no se pasan, se mantiene ese par por defecto — las cargas nodales
+   * necesitan un LC al que referirse.
+   */
+  loadPatterns?: Array<{ name: string; type?: string; selfWeightMultiplier?: number }>;
+  loadCases?: Array<{ name: string; type?: string; patterns?: Array<{ pattern: string; scaleFactor: number }> }>;
+  /**
+   * Carga de SUPERFICIE por elemento shell, tal como se asigno — no ya
+   * convertida a nodal. Hekatan la reparte a los nudos con el vector de carga
+   * consistente antes de resolver, asi que al llegar aca ya no existe: el e2k
+   * salia con POINTLOAD donde ETABS pone AREALOAD. Se pasa aparte para poder
+   * escribir el bloque que ETABS escribe.
+   *   value = fuerza por unidad de AREA (mismas unidades que el resto)
+   *   dir   = "GRAV" (default), "Z", "X", ... segun el eje al que va
+   */
+  shellLoads?: Map<number, { value: number; dir?: string; pattern?: string }>;
+  /**
+   * Diafragma rigido en los nudos de cabeza de columna y en las losas.
+   *  - "auto" (default): se asigna DIAPH "D1", que es lo idiomatico en ETABS
+   *    para un edificio y es como se validaron los ejemplos de edificio.
+   *  - "none": no se asigna ninguno. Para modelos que NO lo declaran — el
+   *    CLI Modeler, por ejemplo, donde el modelo es exactamente lo escrito.
+   *    Ponerlo igual no era cosmetico: un diafragma rigido que el modelo
+   *    original no tiene lo rigidiza lateralmente, asi que el e2k reimportado
+   *    daba OTRA estructura.
+   */
+  diaphragm?: "auto" | "none";
+  /** Angulo del eje local 1 de cada shell, en grados. Es lo que decide a que
+   *  vigas les entrega la carga un deck de un solo sentido. */
+  shellAngles?: Map<number, number>;
   seismicNEC?: {
     points: [number, number][];
     name?: string;        // nombre de la función (default "NEC")
@@ -237,10 +275,43 @@ function exportFromRaw(raw: Map<string, string[]>, model: E2kModel): string {
  */
 function exportFromScratch(input: ExportE2kInput): string {
   const { nodes, elements, nodeInputs, elementInputs, title, units } = input;
+  // Si el llamador no los pasa aparte, salen de elementInputs — que es donde
+  // los deja el modelador, igual que los modificadores de shell.
+  const shellLoadsRaw = input.shellLoads
+    ?? (elementInputs as any).shellSurfaceLoads as Map<number, number> | undefined;
+  type QArea = { value: number; dir?: string; pattern?: string };
+  let shellLoads: Map<number, QArea> | undefined;
+  if (shellLoadsRaw instanceof Map) {
+    shellLoads = new Map<number, QArea>();
+    shellLoadsRaw.forEach((v: number | QArea, k: number) => {
+      shellLoads!.set(k, typeof v === "number" ? { value: v } : v);
+    });
+  }
+  const shellAngles = input.shellAngles
+    ?? (elementInputs as any).shellAngles as Map<number, number> | undefined;
+  // La parte de la carga nodal que vino de un area NO se emite como POINTLOAD:
+  // ya sale como AREALOAD sobre el objeto, y emitir las dos la duplica. Este
+  // es el criterio unico — lo usan tanto POINT ASSIGNS (para no registrar
+  // plan-points que no van a llevar nada) como POINT OBJECT LOADS.
+  const deArea = (elementInputs as any).cargaDeArea as Map<number, number> | undefined;
+  const hayAreaLoads = !!(shellLoads && shellLoads.size > 0);
+  /** Carga nodal que de verdad se va a escribir, ya descontada la del area. */
+  const cargaPropia = (nodeIdx: number, load: readonly number[]): [number, number, number] =>
+    [load[0], load[1], load[2] - (hayAreaLoads ? (deArea?.get(nodeIdx) ?? 0) : 0)];
   const force = units?.force || "Tonf";
   const length = units?.length || "m";
   const lines: string[] = [];
   const rd = (v: number) => Math.round(v * 10000) / 10000;
+  /**
+   * Para PROPIEDADES DE SECCION, no coordenadas. `rd` redondea a 4 decimales,
+   * que en metros esta bien para una longitud pero aniquila una inercia: I de
+   * un perfil de 25 cm vale 3.1e-5 m^4 y salia como "0". El e2k exportado
+   * llevaba I33 0 e I22 0, o sea barras sin rigidez a flexion.
+   */
+  const rp = (v: number) => {
+    if (!isFinite(v) || v === 0) return "0";
+    return Number(v.toPrecision(10)).toString();
+  };
 
   // ── UNIT CONVERSION (internal kN-m → target force-length) ────────────
   // Hekatan-Struct stores everything in kN-m internally. ETABS .e2k accepts
@@ -431,19 +502,47 @@ function exportFromScratch(input: ExportE2kInput): string {
     const isSteel = matIsSteel.get(E_kNm2) ?? (E_kNm2 >= 1e8);
 
     const A      = elementInputs.areas?.get(i) ?? 0;
-    const I33    = elementInputs.momentsOfInertiaY?.get(i) ?? 0;
-    const I22    = elementInputs.momentsOfInertiaZ?.get(i) ?? 0;
+    // Ejes locales en convencion CSI: momentsOfInertiaZ ES I33 y la Y es I22.
+    // Antes iban cruzados porque la triada de Hekatan tambien lo estaba.
+    const I33    = elementInputs.momentsOfInertiaZ?.get(i) ?? 0;
+    const I22    = elementInputs.momentsOfInertiaY?.get(i) ?? 0;
     const J      = elementInputs.torsionalConstants?.get(i) ?? 0;
 
-    let stype = shape?.type || "rect";
+    // "general" no es una forma geometrica sino "sin forma, con propiedades":
+    // por eso se ensancha el tipo mas alla de las de SectionShape.
+    let stype: SectionShape["type"] | "general" = shape?.type || "rect";
     let h     = shape?.h ?? 0;
     let b     = shape?.b ?? 0;
     let d     = shape?.d ?? 0;
     const tfw = shape?.tf ?? 0;
     const tww = shape?.tw ?? 0;
 
-    // Si no hay shape válido, derivar h, b equivalentes desde A, I
-    if (h <= 0 && b <= 0 && d <= 0 && A > 0) {
+    // Si no hay shape pero SI hay propiedades, se exporta la seccion GENERAL
+    // con A, I33, I22 y J tal cual. Antes se invertia A e I33 para inventar un
+    // rectangulo equivalente — y un rectangulo no puede casar las CUATRO: el
+    // I22 y el J salian los del rectangulo, no los del perfil. Medido: el
+    // mezanine reimportado daba -88.4 mm contra los -2.7 mm del modelo nativo,
+    // 32 veces mas blando. ETABS acepta SHAPE "General" con estos valores
+    // exactos — es lo que usa su propia API (SetGeneral).
+    const sinForma = !shape && h <= 0 && b <= 0 && d <= 0;
+    const general = sinForma && A > 0 && I33 > 0 && I22 > 0;
+    if (general) {
+      // D y B no entran en la rigidez (mandan AREA/I33/I22/TORSION), pero
+      // ETABS saca de ellos los BRAZOS de los extremos. Si el modelo declara
+      // el canto real se usa ese; si no, hay que caer en el rectangulo
+      // equivalente — y para un perfil I eso da otro canto (VA-250: 0.357 m
+      // en vez de 0.250), asi que el brazo sale mayor y los momentos se
+      // reportan en otro sitio. La rigidez no cambia: el factor de zona
+      // rigida es 0 por defecto (medido en re_brazos_rigidos_etabs.py).
+      const dDecl = (elementInputs as any).cantos?.get(i) as number | undefined;
+      const bDecl = (elementInputs as any).anchos?.get(i) as number | undefined;
+      h = dDecl && dDecl > 0 ? dDecl : Math.sqrt(12 * I33 / A);
+      b = bDecl && bDecl > 0 ? bDecl : A / h;
+      if (!isFinite(h) || h < minDim) h = minDim;
+      if (!isFinite(b) || b < minDim) b = minDim;
+      stype = "general";
+    }
+    else if (h <= 0 && b <= 0 && d <= 0 && A > 0) {
       if (I33 > 0) {
         h = Math.sqrt(12 * I33 / A);
         b = A / h;
@@ -468,7 +567,8 @@ function exportFromScratch(input: ExportE2kInput): string {
     let secName = shapeKeyToSecName.get(shapeKey);
     if (!secName) {
       const tag = isSteel ? "S" : "C";
-      if (stype === "rect")     secName = `${tag}_R${Math.round(b*100)}x${Math.round(h*100)}`;
+      if (stype === "general")  secName = `${tag}_G${writtenSections.size + 1}`;
+      else if (stype === "rect")secName = `${tag}_R${Math.round(b*100)}x${Math.round(h*100)}`;
       else if (stype === "circ")secName = `${tag}_C_D${Math.round(d*100)}`;
       else if (stype === "I")   secName = `${tag}_I${Math.round(h*100)}x${Math.round(b*100)}`;
       else if (stype === "HSS") secName = `${tag}_HSS${Math.round(b*100)}x${Math.round(h*100)}x${Math.round(tww*1000)}`;
@@ -500,7 +600,8 @@ function exportFromScratch(input: ExportE2kInput): string {
     //   "Steel Angle"           → L
     //   "Filled Steel Tube"     → CFT (D B TF + FILLMATERIAL)
     let etabsShape: string;
-    if (stype === "I")          etabsShape = "Steel I/Wide Flange";
+    if (stype === "general")    etabsShape = "General";
+    else if (stype === "I")     etabsShape = "Steel I/Wide Flange";
     else if (stype === "HSS")   etabsShape = "Steel Tube";
     else if (stype === "CFT")   etabsShape = "Filled Steel Tube";
     else if (stype === "pipe")  etabsShape = "Steel Pipe";
@@ -511,6 +612,20 @@ function exportFromScratch(input: ExportE2kInput): string {
     else                        etabsShape = "Concrete Rectangular";  // ← FIX: rect sólido siempre
 
     let line = `  FRAMESECTION  "${secName}"  MATERIAL "${matName}"  SHAPE "${etabsShape}"`;
+    if (stype === "general") {
+      // AS2/AS3: si el modelo no da area de cortante, se usa la de ETABS por
+      // defecto para rectangulo (5/6·A). No inventa rigidez de flexion.
+      const as2 = elementInputs.shearAreasY?.get(i) || A * 5 / 6;
+      const as3 = elementInputs.shearAreasZ?.get(i) || A * 5 / 6;
+      line += `  D ${rd(h)} B ${rd(b)} AREA ${rp(A)} AS2 ${rp(as2)} AS3 ${rp(as3)}`
+            + ` I33 ${rp(I33)} I22 ${rp(I22)} TORSION ${rp(J || I33 + I22)}`
+            + ` S33POS ${rp(2 * I33 / h)} S33NEG ${rp(2 * I33 / h)}`
+            + ` S22POS ${rp(2 * I22 / b)} S22NEG ${rp(2 * I22 / b)}`
+            + ` Z33 ${rp(2 * I33 / h)} Z22 ${rp(2 * I22 / b)}`
+            + ` R33 ${rp(Math.sqrt(I33 / A))} R22 ${rp(Math.sqrt(I22 / A))} `;
+      lines.push(line);
+      return;
+    }
     if (h) line += `  D ${rd(h)}`;
     if (b) line += `  B ${rd(b)}`;
     if (d && !h) line += `  D ${rd(d)}`;
@@ -688,9 +803,13 @@ function exportFromScratch(input: ExportE2kInput): string {
 
     // UN solo LINEASSIGN al top-story (la columna span hacia abajo).
     // MINNUMSTA = nSegments para que ETABS auto-mesh interno coincida con la
-    // discretización hekatan. RIGIDZONE 0.5 = default ETABS (zona rígida a 0.5
-    // del nudo). MAXSTASPC opcional para uniformizar el espaciado.
-    laEntries.push(`  LINEASSIGN  "${eName}"  "${psTop.story}"  SECTION "${ch.secName}" ${extras} RIGIDZONE 0.5 MAXSTASPC 0.5 MINNUMSTA ${ch.nSegments} AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
+    // discretización hekatan.
+    // NO se emite RIGIDZONE: no es el default de ETABS (el e2k que el mismo
+    // escribe no lo lleva) sino una zona rigida en los extremos de CADA barra,
+    // que el modelo no pidio. Medido: rigidizaba el mezanine un 10 % (-178.2
+    // contra -186.9 mm del nativo). Solo se emite si el modelo trae
+    // rigidOffsets, y eso ya lo hace buildLineExtras.
+    laEntries.push(`  LINEASSIGN  "${eName}"  "${psTop.story}"  SECTION "${ch.secName}" ${extras} MINNUMSTA ${ch.nSegments} AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
   });
 
   // 2. Elementos no-chain (beams + columnas sueltas/no-contiguas) — uno por uno
@@ -704,7 +823,7 @@ function exportFromScratch(input: ExportE2kInput): string {
     if (type === "BEAM") {
       const ps0 = nodeToPS(el[0]), ps1 = nodeToPS(el[1]);
       lines.push(`  LINE  "E${i + 1}"  BEAM  "${ps0.pt}"  "${ps1.pt}"  0`);
-      laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${ps0.story}"  SECTION "${secName}" ${extras} RIGIDZONE 0.5 MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
+      laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${ps0.story}"  SECTION "${secName}" ${extras} MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
     } else {
       // Columna/brace suelta (no entra en ningún chain por estar aislada)
       const bot = nodes[el[0]][2] <= nodes[el[1]][2] ? el[0] : el[1];
@@ -714,7 +833,7 @@ function exportFromScratch(input: ExportE2kInput): string {
       const botIdx = sortedZ.indexOf(zBot), topIdx = sortedZ.indexOf(zTop);
       const nStories = Math.max(1, topIdx >= 0 && botIdx >= 0 ? topIdx - botIdx : 1);
       lines.push(`  LINE  "E${i + 1}"  ${type}  "${psTop.pt}"  "${psTop.pt}"  ${nStories}`);
-      laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${psTop.story}"  SECTION "${secName}" ${extras} RIGIDZONE 0.5 MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
+      laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${psTop.story}"  SECTION "${secName}" ${extras} MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
     }
   });
   lines.push(``);
@@ -742,7 +861,8 @@ function exportFromScratch(input: ExportE2kInput): string {
   });
   // 2. Top joints de chains → asignar DIAPHRAGM D1 (ETABS-idiomatic — la
   //    masa lateral se agrupa por nivel via el rigid diaphragm).
-  chains.forEach(ch => {
+  const usarDiafragma = (input.diaphragm ?? "auto") !== "none";
+  if (usarDiafragma) chains.forEach(ch => {
     const psTop = nodeToPS(ch.topNodeIdx);
     const key = `${psTop.pt}@${psTop.story}`;
     if (!emittedPointAssigns.has(key) && psTop.story !== "Base") {
@@ -755,6 +875,11 @@ function exportFromScratch(input: ExportE2kInput): string {
   // restraint ni propiedad — necesario para que POINTLOAD resuelva).
   if (weightMode === "manual" && nodeInputs.loads) {
     nodeInputs.loads.forEach((_load, nodeIdx) => {
+      // Solo si al nudo le queda carga PROPIA. La que vino del deck se escribe
+      // como AREALOAD, asi que registrar su plan-point no sirve de nada: eran
+      // 116 POINTASSIGN contra los 6 de ETABS, todos inertes.
+      const [px, py, pz] = cargaPropia(nodeIdx, _load);
+      if (Math.abs(px) < 1e-10 && Math.abs(py) < 1e-10 && Math.abs(pz) < 1e-10) return;
       const ps = nodeToPS(nodeIdx);
       const key = `${ps.pt}@${ps.story}`;
       if (!emittedPointAssigns.has(key)) {
@@ -777,6 +902,16 @@ function exportFromScratch(input: ExportE2kInput): string {
   // AREA ELEMENTS (Q4 shells: walls + slabs)
   // ═══════════════════════════════════════════
   const areaElements: { idx: number; el: number[]; isWall: boolean }[] = [];
+  // Areas COMO LAS DIBUJO el usuario. Si el modelo las trae, se exporta el
+  // objeto y NO sus celdas: ETABS guarda 1 area y la malla el solo. Exportar
+  // las 90 celdas daba un modelo que analiza igual pero con la malla
+  // congelada — al reimportarlo ya no se puede remallar ni cambiar el borde.
+  const areaObjects = (elementInputs as any).areaObjects as
+    Array<{ nodes: number[]; cells: number[]; q?: number; ang?: number }> | undefined;
+  const celdaDeObjeto = new Set<number>();
+  const qDeObjeto = new Map<number, number>();
+  const angDeObjeto = new Map<number, number>();
+  areaObjects?.forEach(o => o.cells.forEach(c => celdaDeObjeto.add(c)));
   elements.forEach((el, i) => {
     if (el.length === 4) {
       // Determine if wall (vertical) or slab (horizontal) by normal direction.
@@ -793,6 +928,7 @@ function exportFromScratch(input: ExportE2kInput): string {
       const isWall = nLen > 1e-10 && (Math.abs(nz) / nLen) < 0.5;
       // |nz|/|n| close to 1 → horizontal slab; close to 0 → vertical wall.
       areaElements.push({ idx: i, el, isWall });
+      if (celdaDeObjeto.has(i)) areaElements.pop();   // la cubre su objeto padre
     }
   });
 
@@ -803,10 +939,51 @@ function exportFromScratch(input: ExportE2kInput): string {
     return matNames.values().next().value || "Conc_1";
   })();
 
+  areaObjects?.forEach((o, k) => {
+    areaElements.push({ idx: o.cells[0], el: o.nodes, isWall: false });
+    if (o.q !== undefined) qDeObjeto.set(o.cells[0], o.q);
+    if (o.ang !== undefined) angDeObjeto.set(o.cells[0], o.ang);
+  });
+  const DECK_SEC = "DECK";
+  let esMembrana = false;
+  const areaLoadRefs: { name: string; story: string; idx: number }[] = [];
   if (areaElements.some(a => !a.isWall)) {
-    lines.push(`$ SLAB PROPERTIES`);
+    // .LOSA o DECK? Se decide por el modificador de FLEXION: si es ~0 el area
+    // es una MEMBRANA, y en ETABS eso es un DECK, no una losa. Exportarlo
+    // siempre como `Slab` hacia que al reimportar volviera con flexion — o
+    // sea, lo contrario de lo que el modelo dice. Y ETABS es tajante: un deck
+    // queda en ShellType 3 (Membrane) le pidas lo que le pidas (medido).
+    const bmods = (elementInputs as any).bendingModifiers as Map<number, number> | undefined;
+    const dmods = (elementInputs as any).shellModifiers as Map<number, number[]> | undefined;
+    esMembrana = (() => {
+      for (const a of areaElements) {
+        if (a.isWall) continue;
+        const d = dmods?.get(a.idx);
+        if (d && Math.abs(d[3]) < 1e-9 && Math.abs(d[4]) < 1e-9) return true;
+        const b = bmods?.get(a.idx);
+        if (b !== undefined && Math.abs(b) < 1e-9) return true;
+      }
+      return false;
+    })();
     const t_slab = elementInputs.thicknesses?.values().next().value ?? 0.15;
-    lines.push(`  SHELLPROP  "Losa"  PROPTYPE  "Slab"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "ShellThin"  SLABTYPE "Slab"  SLABTHICKNESS ${rd(t_slab)} `);
+    if (esMembrana) {
+      // Tokens copiados del e2k que escribe ETABS para el mismo modelo. No son
+      // los de una losa con otro nombre: llevan el prefijo DECK y describen el
+      // perfil de la lamina (nervio, paso, conectores). ETABS los exige — con
+      // SLABDEPTH/MODELINGTYPE, que era lo que yo suponia, no lee el bloque.
+      // El espesor `t` de Hekatan es el TOTAL, y en ETABS el total es
+      // DECKSLABDEPTH + DECKRIBDEPTH: el primero es SOLO el hormigon por
+      // encima del nervio. Poniendo el total en DECKSLABDEPTH y ademas un
+      // nervio salia un deck de 22 cm donde el modelo pedia 12 — mas rigido.
+      // Las proporciones son las del deck real del mezanine: 65/55 de 120.
+      // El DECKUNITWEIGHT es el peso de la lamina (0.11 kN/m2), convertido:
+      // estaba copiado tal cual del e2k de ETABS, que va en N/mm.
+      lines.push(`$ DECK PROPERTIES`);
+      lines.push(`  SHELLPROP  "${DECK_SEC}"  PROPTYPE  "Deck"  DECKTYPE "Filled"  CONCMATERIAL "${defaultShellMat}"  DECKMATERIAL "${defaultShellMat}"  DECKSLABDEPTH ${rp(t_slab * 65 / 120)} DECKRIBDEPTH ${rp(t_slab * 55 / 120)} DECKRIBWIDTHTOP ${rp(t_slab * 150 / 120)} DECKRIBWIDTHBOTTOM ${rp(t_slab * 100 / 120)} DECKRIBSPACING ${rp(t_slab * 200 / 120)} DECKSHEARTHICKNESS ${rp(t_slab * 0.76 / 120)} DECKUNITWEIGHT ${rp(cF(0.11012))} SHEARSTUDDIAM ${rp(t_slab * 19 / 120)} SHEARSTUDHEIGHT ${rp(t_slab * 100 / 120)} SHEARSTUDFU 400 `);
+    } else {
+      lines.push(`$ SLAB PROPERTIES`);
+      lines.push(`  SHELLPROP  "Losa"  PROPTYPE  "Slab"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "ShellThin"  SLABTYPE "Slab"  SLABTHICKNESS ${rd(t_slab)} `);
+    }
     lines.push(``);
   }
   if (areaElements.some(a => a.isWall)) {
@@ -837,7 +1014,15 @@ function exportFromScratch(input: ExportE2kInput): string {
       } else {
         // FLOOR: pt1 pt2 pt3 pt4 0 0 0 0
         lines.push(`  AREA "${aName}"  ${aType}  4  "${ps[0].pt}"  "${ps[1].pt}"  "${ps[2].pt}"  "${ps[3].pt}"  0  0  0  0  `);
-        aaEntries.push(`  AREAASSIGN  "${aName}"  "${ps[0].story}"  SECTION "Losa"  DIAPH  "D1"  OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "TOP"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
+        // Un deck se asigna por su propio nombre de seccion y con ANG: el eje
+        // local decide A QUIEN le entrega la carga (salva perpendicular a las
+        // secundarias). Sin el ANG la reparte al reves. Y no lleva DIAPH ni
+        // ADDRESTRAINT "Yes" — asi lo escribe ETABS.
+        const ang = angDeObjeto.get(ae.idx) ?? shellAngles?.get(ae.idx);
+        aaEntries.push(esMembrana
+          ? `  AREAASSIGN  "${aName}"  "${ps[0].story}"  SECTION "${DECK_SEC}"  ANG ${rd(ang ?? 0)} OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "No"  CARDINALPOINT "MIDDLE"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `
+          : `  AREAASSIGN  "${aName}"  "${ps[0].story}"  SECTION "Losa" ${usarDiafragma ? ` DIAPH  "D1" ` : ""} OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "TOP"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
+        areaLoadRefs.push({ name: aName, story: ps[0].story, idx: ae.idx });
       }
     });
     lines.push(``);
@@ -854,26 +1039,37 @@ function exportFromScratch(input: ExportE2kInput): string {
   //     Se mantienen FX/FY (laterales) y momentos como POINTLOAD.
   //   "manual": SELFWEIGHT=0 + emite TODAS las cargas nodales (incluyendo FZ).
   //     Requiere que POINTASSIGN registre el plan-point en cada story con carga
-  //     (ya emitido arriba). El formato POINTLOAD usa sintaxis `LC "Dead"`
+  //     (ya emitido arriba). El formato POINTLOAD usa sintaxis `LC "${patronGravedad}"`
   //     después de TYPE para mayor compatibilidad con ETABS.
   const selfWt = weightMode === "manual" ? 0 : 1;
   lines.push(`$ LOAD PATTERNS`);
-  lines.push(`  LOADPATTERN "Dead"  TYPE  "Dead"  SELFWEIGHT  ${selfWt}`);
-  lines.push(`  LOADPATTERN "Live"  TYPE  "Live"  SELFWEIGHT  0`);
+  const pats = input.loadPatterns?.length
+    ? input.loadPatterns
+    : [{ name: "Dead", type: "Dead", selfWeightMultiplier: selfWt },
+       { name: "Live", type: "Live", selfWeightMultiplier: 0 }];
+  for (const lp of pats) {
+    const sw = lp.type === "Dead" ? (weightMode === "manual" ? 0 : (lp.selfWeightMultiplier ?? 1))
+                                  : (lp.selfWeightMultiplier ?? 0);
+    lines.push(`  LOADPATTERN "${lp.name}"  TYPE  "${lp.type ?? "Other"}"  SELFWEIGHT  ${sw}`);
+  }
   lines.push(``);
+  // El LC al que se cuelgan las cargas nodales: el primer patron de gravedad
+  // del modelo. Antes era la cadena "Dead" fija, asi que si el modelo llamaba
+  // a su patron de otra forma, ETABS importaba cargas huerfanas.
+  const patronGravedad = pats.find(p => p.type === "Dead")?.name ?? pats[0].name;
 
   // ── POINT OBJECT LOADS ─────────────────────────────────────────────
   const userLoadLines: string[] = [];
   if (nodeInputs.loads && nodeInputs.loads.size > 0) {
     nodeInputs.loads.forEach((load, nodeIdx) => {
-      const [fx, fy, fz] = load;
+      const [fx, fy, fz] = cargaPropia(nodeIdx, load);
       const ps = nodeToPS(nodeIdx);
-      if (Math.abs(fx) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "Dead"  FX ${rd(cF(fx))}  FY 0  FZ 0`);
-      if (Math.abs(fy) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "Dead"  FX 0  FY ${rd(cF(fy))}  FZ 0`);
+      if (Math.abs(fx) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX ${rd(cF(fx))}  FY 0  FZ 0`);
+      if (Math.abs(fy) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX 0  FY ${rd(cF(fy))}  FZ 0`);
       // FZ: en modo "auto" se omite (lo computa ETABS via SELFWEIGHT=1);
       // en modo "manual" se emite explícitamente.
       if (weightMode === "manual" && Math.abs(fz) > 1e-10) {
-        userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "Dead"  FX 0  FY 0  FZ ${rd(cF(fz))}`);
+        userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX 0  FY 0  FZ ${rd(cF(fz))}`);
       }
     });
   }
@@ -881,15 +1077,42 @@ function exportFromScratch(input: ExportE2kInput): string {
     (nodeInputs as any).moments.forEach((m: number[], nodeIdx: number) => {
       const [mx, my, mz] = m;
       const ps = nodeToPS(nodeIdx);
-      if (Math.abs(mx) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "Dead"  MX ${rd(cF(mx))}  MY 0  MZ 0`);
-      if (Math.abs(my) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "Dead"  MX 0  MY ${rd(cF(my))}  MZ 0`);
-      if (Math.abs(mz) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "Dead"  MX 0  MY 0  MZ ${rd(cF(mz))}`);
+      if (Math.abs(mx) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "${patronGravedad}"  MX ${rd(cF(mx))}  MY 0  MZ 0`);
+      if (Math.abs(my) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "${patronGravedad}"  MX 0  MY ${rd(cF(my))}  MZ 0`);
+      if (Math.abs(mz) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "${patronGravedad}"  MX 0  MY 0  MZ ${rd(cF(mz))}`);
     });
   }
   if (userLoadLines.length > 0) {
     lines.push(`$ POINT OBJECT LOADS`);
     userLoadLines.forEach(l => lines.push(l));
     lines.push(``);
+  }
+
+  // ── SHELL OBJECT LOADS ─────────────────────────────────────────────
+  // La carga de superficie tal cual, sin repartir. Hekatan la convierte a
+  // nodal para resolver (vector consistente), pero si la exporta ya repartida
+  // el e2k deja de parecerse al de ETABS y, peor, al reimportarlo la carga
+  // queda clavada en los nudos: cambias la malla y ya no se redistribuye.
+  //   TYPE "UNIFF"  DIR "GRAV"  — asi lo escribe ETABS (medido, no supuesto).
+  if (shellLoads && shellLoads.size > 0 && areaLoadRefs.length > 0) {
+    const shellLoadLines: string[] = [];
+    for (const ref of areaLoadRefs) {
+      const qObj = qDeObjeto.get(ref.idx);
+      const q = qObj !== undefined ? { value: qObj } : shellLoads.get(ref.idx);
+      if (!q || Math.abs(q.value) < 1e-12) continue;
+      // Ojo con el signo: en Hekatan (Z arriba) la carga hacia abajo es
+      // NEGATIVA, pero DIR "GRAV" de ETABS YA apunta hacia abajo. Pasarle el
+      // -0.0093 tal cual la levantaria. Medido en re_carga_inclinada_etabs.py.
+      const dir = q.dir ?? "GRAV";
+      const fval = dir === "GRAV" ? Math.abs(q.value) : q.value;
+      shellLoadLines.push(
+        `  AREALOAD  "${ref.name}"  "${ref.story}"  TYPE "UNIFF"  DIR "${dir}"  LC "${q.pattern ?? patronGravedad}"  FVAL ${rd(cF(fval))}`);
+    }
+    if (shellLoadLines.length > 0) {
+      lines.push(`$ SHELL OBJECT LOADS`);
+      shellLoadLines.forEach(l => lines.push(l));
+      lines.push(``);
+    }
   }
 
   // ── ANALYSIS OPTIONS ────────────────────────────────────────────────
@@ -918,10 +1141,16 @@ function exportFromScratch(input: ExportE2kInput): string {
   // Sin esto ETABS NO corre análisis. Define Dead y Live como casos
   // estáticos lineales independientes.
   lines.push(`$ LOAD CASES`);
-  lines.push(`  LOADCASE "Dead"  TYPE  "Linear Static"  INITCOND  "PRESET"  `);
-  lines.push(`  LOADCASE "Dead"  LOADPAT  "Dead"  SF 1 `);
-  lines.push(`  LOADCASE "Live"  TYPE  "Linear Static"  INITCOND  "PRESET"  `);
-  lines.push(`  LOADCASE "Live"  LOADPAT  "Live"  SF 1 `);
+  const casos = input.loadCases?.length
+    ? input.loadCases
+    : pats.map(p => ({ name: p.name, type: "Linear Static",
+                       patterns: [{ pattern: p.name, scaleFactor: 1 }] }));
+  for (const lc of casos) {
+    lines.push(`  LOADCASE "${lc.name}"  TYPE  "${lc.type ?? "Linear Static"}"  INITCOND  "PRESET"  `);
+    for (const pp of lc.patterns ?? []) {
+      lines.push(`  LOADCASE "${lc.name}"  LOADPAT  "${pp.pattern}"  SF ${pp.scaleFactor} `);
+    }
+  }
   // Caso modal estándar (LTH para análisis dinámico) - opcional pero útil
   // Modal-Eigen caso (default razonable: 3 modos suficientes para validar
   // f₁/f₂/f₃ — ETABS reduce automáticamente a la cantidad de mass DOFs
@@ -932,15 +1161,22 @@ function exportFromScratch(input: ExportE2kInput): string {
   lines.push(``);
 
   // ── LOAD COMBINATIONS ──────────────────────────────────────────────
-  // Combo básico ASCE: 1.4D y 1.2D + 1.6L, por si el usuario quiere ver
-  // el comportamiento factorizado en ETABS sin tener que crearlo a mano.
-  lines.push(`$ LOAD COMBINATIONS`);
-  lines.push(`  COMBO "1.4D"  TYPE "Linear Add"  `);
-  lines.push(`  COMBO "1.4D"  LOADCASE  "Dead"  SF 1.4 `);
-  lines.push(`  COMBO "1.2D+1.6L"  TYPE "Linear Add"  `);
-  lines.push(`  COMBO "1.2D+1.6L"  LOADCASE  "Dead"  SF 1.2 `);
-  lines.push(`  COMBO "1.2D+1.6L"  LOADCASE  "Live"  SF 1.6 `);
-  lines.push(``);
+  // SOLO las que trae el modelo. Antes estaban ESCRITAS A MANO aqui (1.4D y
+  // 1.2D+1.6L fijas), asi que todo e2k exportado las llevaba aunque el modelo
+  // no tuviera ninguna — y el e2k que escribe ETABS para el mismo modelo no
+  // trae `$ LOAD COMBINATIONS` en absoluto. Eso rompia la ida y vuelta:
+  // exportabas, reimportabas, y aparecian combinaciones de la nada.
+  const combos = input.loadCombinations;
+  if (combos && combos.length) {
+    lines.push(`$ LOAD COMBINATIONS`);
+    for (const cm of combos) {
+      lines.push(`  COMBO "${cm.name}"  TYPE "${cm.type ?? "Linear Add"}"  `);
+      for (const c of cm.cases ?? []) {
+        lines.push(`  COMBO "${cm.name}"  LOADCASE  "${c.case}"  SF ${c.scaleFactor} `);
+      }
+    }
+    lines.push(``);
+  }
 
   lines.push(`  END`);
   lines.push(`$ END OF MODEL FILE`);

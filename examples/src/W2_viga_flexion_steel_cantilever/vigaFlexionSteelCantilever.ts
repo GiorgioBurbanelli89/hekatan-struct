@@ -135,7 +135,7 @@ export const vigaFlexionSteelCantilever: ExampleDef = {
     states.nodeInputs.val = { supports, loads };
     states.elementInputs.val = {
       elasticities, shearModuli, areas,
-      momentsOfInertiaY: Iy_map, momentsOfInertiaZ: Iz_map, torsionalConstants: J_map,
+      momentsOfInertiaZ: Iy_map, momentsOfInertiaY: Iz_map, torsionalConstants: J_map,
       shearAreasY: As2map, shearAreasZ: As3map,
       densities, poissonsRatios: poissons,
     };

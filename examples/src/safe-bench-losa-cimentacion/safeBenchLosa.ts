@@ -116,8 +116,8 @@ export const safeBenchLosa: ExampleDef = {
     const poissonsRatios = new Map<number, number>();
     const thicknesses = new Map<number, number>();
     const areas = new Map<number, number>();
-    const momentsOfInertiaZ = new Map<number, number>();
     const momentsOfInertiaY = new Map<number, number>();
+    const momentsOfInertiaZ = new Map<number, number>();
     const shearModuli = new Map<number, number>();
     const torsionalConstants = new Map<number, number>();
 
@@ -132,8 +132,8 @@ export const safeBenchLosa: ExampleDef = {
       elasticities.set(i, E_kNm2);
       poissonsRatios.set(i, nu);
       areas.set(i, A_c);
-      momentsOfInertiaZ.set(i, I_c);
       momentsOfInertiaY.set(i, I_c);
+      momentsOfInertiaZ.set(i, I_c);
       shearModuli.set(i, G);
       torsionalConstants.set(i, J_c);
     }

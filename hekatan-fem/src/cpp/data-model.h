@@ -42,6 +42,15 @@ struct ElementInputs
     // sin crear elementos distintos.
     std::map<int, double> membraneModifiers;
     std::map<int, double> bendingModifiers;
+    // Property Modifiers DIRECCIONALES, como los de ETABS:
+    //   [0..2] F11MOD F22MOD F12MOD   membrana (directo 11, directo 22, cortante)
+    //   [3..5] M11MOD M22MOD M12MOD   flexion
+    //   [6..7] V13MOD V23MOD          cortante transversal
+    // Es lo que define un DECK: rigido en el sentido del nervio (M11 ~ 1) y
+    // blando cruzado (M22 ~ 0). Con un escalar no se puede expresar — o se
+    // multiplica todo o nada, y poniendo 0 la matriz sale singular.
+    // Si un elemento no esta en este mapa se usan los escalares de arriba.
+    std::map<int, std::vector<double>> shellModifiers;
     // Plate formulation switch (per shell element):
     //   0 = Mindlin-Reissner (Shell-Thick, DSE Wilson Ch10)        [default]
     //   1 = MZC Kirchhoff    (Shell-Thin,  DKE Wilson Ch10 / ETABS Shell-Thin)

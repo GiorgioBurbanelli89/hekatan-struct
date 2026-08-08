@@ -74,8 +74,8 @@ export const plateWithBeams: ExampleDef = {
     const poissons = new Map<number, number>();
     const densities = new Map<number, number>();
     const areas = new Map<number, number>();
-    const momentsOfInertiaY = new Map<number, number>();
     const momentsOfInertiaZ = new Map<number, number>();
+    const momentsOfInertiaY = new Map<number, number>();
     const torsionalConstants = new Map<number, number>();
     const orientations = new Map<number, [number, number, number]>();
     const sections = new Map<number, [number, number]>();
@@ -91,7 +91,7 @@ export const plateWithBeams: ExampleDef = {
     // Frame section bW (width horizontal) x bH (height vertical) — viga horizontal en XY.
     // Convencion Hekatan-FEM frame horizontal (eje local x a lo largo, sin orientations):
     //   default eje local y = horizontal perpendicular, eje local z = vertical (+Z global)
-    //   momentsOfInertiaY (alrededor de eje y local, horizontal) → controla FLEXION VERTICAL (fuerte)
+    //   momentsOfInertiaZ = I33 (flexion en el plano 1-2) → controla FLEXION VERTICAL (fuerte)
     //   momentsOfInertiaZ (alrededor de eje z local, vertical)   → controla flexion horizontal (debil)
     // Para una viga rectangular bW x bH acostada con altura bH:
     //   I respecto eje horizontal perpendicular: bW * bH^3 / 12  (FUERTE → vertical)
@@ -116,8 +116,8 @@ export const plateWithBeams: ExampleDef = {
       poissons.set(idx, p.nu);
       densities.set(idx, 24);
       areas.set(idx, A_b);
-      momentsOfInertiaY.set(idx, Iy_b);
-      momentsOfInertiaZ.set(idx, Iz_b);
+      momentsOfInertiaZ.set(idx, Iy_b);
+      momentsOfInertiaY.set(idx, Iz_b);
       torsionalConstants.set(idx, J_b);
       shearModuli.set(idx, G_b);              // necesario para Timoshenko correction
       sections.set(idx, [p.bH, p.bW]);

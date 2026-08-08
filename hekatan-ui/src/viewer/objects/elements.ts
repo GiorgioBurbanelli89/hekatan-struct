@@ -37,6 +37,88 @@ function isFooting(zAvg: number): boolean {
   return zAvg <= 1e-3;
 }
 
+
+/**
+ * Deformada CURVA de una barra, como la dibuja ETABS con «Cubic Curve».
+ *
+ * Un nudo de portico no solo se desplaza: tambien GIRA. Con dos nudos hay
+ * cuatro datos por plano — desplazamiento y giro en cada extremo — y eso
+ * determina un polinomio de TERCER grado, que es la forma que toma una viga
+ * elastica. No es una aproximacion para que quede lindo: son las funciones de
+ * forma de Hermite, las MISMAS con las que el FEM armo la matriz de rigidez.
+ *
+ *   N1 = 1 - 3s^2 + 2s^3        N3 = 3s^2 - 2s^3
+ *   N2 = L(s - 2s^2 + s^3)      N4 = L(-s^2 + s^3)
+ *
+ * Uniendo los extremos con una RECTA la columna sale derecha aunque los giros
+ * de sus nudos digan otra cosa: se pierde justo lo que se quiere ver.
+ */
+function curvaHermite(
+  pi: Node, pj: Node,
+  di: number[] | undefined, dj: number[] | undefined,
+  sXY: number, sZ: number, n = 8
+): number[][] {
+  const P = (p: Node, d: number[] | undefined): [number, number, number] => {
+    const u = d ?? [0, 0, 0];
+    return [p[0] + (u[0] || 0) * sXY,
+            p[1] + (u[1] || 0) * sXY,
+            p[2] + (u[2] || 0) * sZ];
+  };
+  const A = P(pi, di), B = P(pj, dj);
+  const rotI = di && di.length >= 6 ? [di[3], di[4], di[5]] : null;
+  const rotJ = dj && dj.length >= 6 ? [dj[3], dj[4], dj[5]] : null;
+  if (!rotI && !rotJ) return [A, B];          // sin giros no hay curva
+
+  // eje local x de la barra SIN deformar (la curva se monta sobre el)
+  const ex = [pj[0] - pi[0], pj[1] - pi[1], pj[2] - pi[2]];
+  const L = Math.hypot(ex[0], ex[1], ex[2]);
+  if (L < 1e-9) return [A, B];
+  ex[0] /= L; ex[1] /= L; ex[2] /= L;
+  // dos perpendiculares cualesquiera, estables para barras verticales
+  const ref: [number, number, number] =
+    Math.abs(ex[2]) > 0.98 ? [0, 1, 0] : [0, 0, 1];
+  const cross = (a: number[], b: number[]) =>
+    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  let ey = cross(ref, ex);
+  const ny = Math.hypot(ey[0], ey[1], ey[2]) || 1;
+  ey = [ey[0] / ny, ey[1] / ny, ey[2] / ny];
+  const ez = cross(ex, ey);
+
+  const dot = (a: number[], b: number[]) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const desp = (d: number[] | undefined) => {
+    const u = d ?? [0, 0, 0];
+    return [(u[0] || 0) * sXY, (u[1] || 0) * sXY, (u[2] || 0) * sZ];
+  };
+  const ui = desp(di), uj = desp(dj);
+  // componentes transversales y giros alrededor de los ejes perpendiculares
+  const vI = dot(ui, ey), vJ = dot(uj, ey);
+  const wI = dot(ui, ez), wJ = dot(uj, ez);
+  const tzI = rotI ? dot(rotI, ez) * sXY : 0;
+  const tzJ = rotJ ? dot(rotJ, ez) * sXY : 0;
+  const tyI = rotI ? dot(rotI, ey) * sXY : 0;
+  const tyJ = rotJ ? dot(rotJ, ey) * sXY : 0;
+  const aI = dot(ui, ex), aJ = dot(uj, ex);       // axial: va lineal
+
+  const pts: number[][] = [];
+  for (let k = 0; k <= n; k++) {
+    const t = k / n;
+    const N1 = 1 - 3 * t * t + 2 * t * t * t;
+    const N2 = L * (t - 2 * t * t + t * t * t);
+    const N3 = 3 * t * t - 2 * t * t * t;
+    const N4 = L * (-t * t + t * t * t);
+    const v = N1 * vI + N2 * tzI + N3 * vJ + N4 * tzJ;   // plano x-y:  v' =  θz
+    const w = N1 * wI - N2 * tyI + N3 * wJ - N4 * tyJ;   // plano x-z:  w' = -θy
+    const a = aI + (aJ - aI) * t;
+    const base = [pi[0] + ex[0] * (t * L + a),
+                  pi[1] + ex[1] * (t * L + a),
+                  pi[2] + ex[2] * (t * L + a)];
+    pts.push([base[0] + ey[0] * v + ez[0] * w,
+              base[1] + ey[1] * v + ez[1] * w,
+              base[2] + ey[2] * v + ez[2] * w]);
+  }
+  return pts;
+}
+
 export function elements(
   mesh: Mesh,
   settings: Settings,
@@ -163,6 +245,30 @@ export function elements(
           }
         } else if (e.length === 3) {
           edgeColor = COLOR_TRI;
+        }
+      }
+      // BARRAS con la deformada encendida: se dibujan CURVAS (Hermite), como
+      // el «Cubic Curve» de ETABS. Con una recta entre los extremos la columna
+      // sale derecha aunque sus nudos hayan girado.
+      if (e.length === 2 && settings.deformedShape.val) {
+        const orig = mesh.nodes?.val ?? [];
+        const defs = mesh.deformOutputs?.val?.deformations;
+        const pi = orig[e[0]], pj = orig[e[1]];
+        if (pi && pj && defs) {
+          const sXY = Number.isFinite(settings.deformScale.val)
+            ? settings.deformScale.val : 1;
+          const sZ = sXY * (Number.isFinite(settings.deformScaleZ.val)
+            ? settings.deformScaleZ.val : 1);
+          const pts = curvaHermite(pi, pj, defs.get(e[0]), defs.get(e[1]),
+                                   sXY, sZ);
+          for (let k = 0; k < pts.length - 1; k++) {
+            wireVerts.push(...pts[k], ...pts[k + 1]);
+            if (colorByType && edgeColor) {
+              wireCols.push(edgeColor.r, edgeColor.g, edgeColor.b);
+              wireCols.push(edgeColor.r, edgeColor.g, edgeColor.b);
+            }
+          }
+          continue;
         }
       }
       for (const edge of elementToEdges(e)) {

@@ -271,16 +271,17 @@ function computeFrameElement(
   const l = vec[0] / L, m = vec[1] / L, n = vec[2] / L;
   const D = Math.sqrt(l ** 2 + m ** 2);
 
+  // Ejes locales, convencion CSI. Copia exacta de getTransformationMatrix.ts:
+  // eje1 = i->j, eje2 = plano vertical hacia arriba (vertical: +X), eje3 = 1x2.
   let lambda: number[][];
-  if (Math.abs(n - 1) < 1e-8) {
-    lambda = [[0, 0, 1], [0, 1, 0], [-1, 0, 0]];
-  } else if (Math.abs(n + 1) < 1e-8) {
-    lambda = [[0, 0, -1], [0, 1, 0], [1, 0, 0]];
+  if (D < 1e-9) {
+    const s = n > 0 ? 1 : -1;
+    lambda = [[0, 0, s], [1, 0, 0], [0, s, 0]];
   } else {
     lambda = [
       [l, m, n],
-      [-m / D, l / D, 0],
       [(-l * n) / D, (-m * n) / D, D],
+      [m / D, -l / D, 0],
     ];
   }
 

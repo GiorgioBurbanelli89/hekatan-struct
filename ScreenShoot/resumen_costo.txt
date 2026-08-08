@@ -1,0 +1,38 @@
+RESUMEN DE COSTOS (ofuscar + llevar a Linux/web)
+Nota: los precios con (~) son aproximados; confirmar en la web oficial.
+
+===========================================
+OFUSCADORES
+===========================================
+- Dotfuscator Community ....... GRATIS (viene con VS). Solo renombrado basico.
+- ConfuserEx / Obfuscar ....... GRATIS (open source). Mas fuerte que Dotfuscator CE. Sin soporte.
+- Eazfuscator.NET (el de Ovidio) ~US$400 perpetuo. Comercial, bueno, con soporte.
+- VMProtect / Themida ......... ~US$200-500. Blindaje nativo (no .NET directo). Nivel serio.
+
+===========================================
+HERRAMIENTAS DE DESARROLLO
+===========================================
+- .NET SDK (VB, dotnet build/run) ... GRATIS
+- VS Code (editor liviano) .......... GRATIS
+- Visual Studio Community ............ GRATIS (ya lo tienes)
+- Avalonia / GTK# / Wine ............. GRATIS (open source)
+
+===========================================
+LLEVAR LA APP A LINUX / WEB
+(el costo real es TIEMPO, no dinero)
+===========================================
+- Wine (correr el .exe en Linux) .... $0 | Esfuerzo BAJO. Fragil.
+- Reescribir en Avalonia/GTK ........ $0 | Esfuerzo ALTO (rehacer UI + pasar a C#).
+- Interfaz web (motor + navegador) .. $0 software / ~US$5-20 al mes hosting | Esfuerzo MEDIO-ALTO,
+                                       pero corre en TODO (Linux/Windows/Mac/movil).
+
+===========================================
+CONCLUSION DE COSTO
+===========================================
+- Software: casi todo GRATIS. Solo se pagan los ofuscadores comerciales
+  (Eazfuscator, VMProtect) y, si usas web, el servidor mensual (~US$5-20).
+- El costo verdadero es TU TIEMPO, no la licencia. Reescribir la interfaz es
+  el gasto grande de todos.
+- Mas rentable a largo plazo: la WEB. Pagas hosting barato, dejas de ofuscar
+  (el motor no se distribuye) y corre en Linux/Windows/Mac/movil con una sola
+  version. Gasto chico que elimina varios problemas de golpe.

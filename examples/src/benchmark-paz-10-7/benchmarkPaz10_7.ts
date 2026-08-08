@@ -142,7 +142,7 @@ export const benchmarkPaz10_7: ExampleDef = {
     states.nodeInputs.val = { supports, loads };
     states.elementInputs.val = {
       elasticities, shearModuli, areas,
-      momentsOfInertiaY: Iy, momentsOfInertiaZ: Iz,
+      momentsOfInertiaZ: Iy, momentsOfInertiaY: Iz,
       torsionalConstants: J,
       shearAreasY: sAY, shearAreasZ: sAZ, densities: dens,
       sectionLabels: sLab, materialTypes: matT, sectionInfo: sInfo,

@@ -20,9 +20,14 @@ const wasmPath = join(__dirname, "hekatan-fem", "src", "cpp", "built", "deform.w
 const createModule = (await import(pathToFileURL(jsPath).href)).default;
 const mod = await createModule({ wasmBinary: readFileSync(wasmPath) });
 
-function allocate(data, Ctor, heap) {
+function allocate(data, Ctor, _heap) {
   const buf = new Ctor(data);
   const ptr = mod._malloc(buf.length * buf.BYTES_PER_ELEMENT);
+  // Vista RELEIDA tras el malloc: con ALLOW_MEMORY_GROWTH el buffer previo queda
+  // detached si la memoria creció (mismo bug que había en hekatan-fem/src/*Cpp.ts).
+  const heap = Ctor === Float64Array ? mod.HEAPF64
+             : Ctor === Uint32Array  ? mod.HEAPU32
+             : Ctor === Uint8Array   ? mod.HEAPU8 : _heap;
   heap.set(buf, ptr / buf.BYTES_PER_ELEMENT);
   return ptr;
 }

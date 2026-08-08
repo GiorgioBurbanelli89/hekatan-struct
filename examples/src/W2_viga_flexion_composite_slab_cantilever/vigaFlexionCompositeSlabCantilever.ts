@@ -171,7 +171,7 @@ export const vigaFlexionCompositeSlabCantilever: ExampleDef = {
     states.nodeInputs.val = { supports, loads };
     states.elementInputs.val = {
       elasticities, shearModuli, areas,
-      momentsOfInertiaY: Iy_map, momentsOfInertiaZ: Iz_map, torsionalConstants: J_map,
+      momentsOfInertiaZ: Iy_map, momentsOfInertiaY: Iz_map, torsionalConstants: J_map,
       shearAreasY: As2map,
       densities, poissonsRatios: poissons,
     };

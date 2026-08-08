@@ -94,7 +94,7 @@ export const edificioFrameNec: ExampleDef = {
     states.nodeInputs.val = { supports, loads };
     states.elementInputs.val = {
       elasticities: E, shearModuli: G, areas: A,
-      momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy, torsionalConstants: J,
+      momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy, torsionalConstants: J,
       densities: dens, poissonsRatios: nu,
     };
     const deformOut = deform(nodes, elements, states.nodeInputs.val, states.elementInputs.val);

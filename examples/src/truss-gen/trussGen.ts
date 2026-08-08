@@ -74,7 +74,7 @@ export const trussGen: ExampleDef = {
     states.nodeInputs.val = { supports, loads };
     states.elementInputs.val = {
       elasticities, shearModuli, areas,
-      momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy, torsionalConstants: J,
+      momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy, torsionalConstants: J,
       densities, poissonsRatios: poissons,
     };
     const deformOut = deform(nodes, elements, states.nodeInputs.val, states.elementInputs.val);

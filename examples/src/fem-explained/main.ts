@@ -56,8 +56,8 @@ const elementInputs: State<ElementInputs> = van.state({
   elasticities: new Map([[0, E], [1, E]]),
   shearModuli: new Map([[0, G], [1, G]]),
   areas: new Map([[0, A], [1, A]]),
-  momentsOfInertiaZ: new Map([[0, Iz], [1, Iz]]),
-  momentsOfInertiaY: new Map([[0, Iy], [1, Iy]]),
+  momentsOfInertiaY: new Map([[0, Iz], [1, Iz]]),
+  momentsOfInertiaZ: new Map([[0, Iy], [1, Iy]]),
   torsionalConstants: new Map([[0, J], [1, J]]),
 });
 

@@ -101,8 +101,8 @@ export const drillingDof: ExampleDef = {
     const poissons = new Map<number, number>();
     const densities = new Map<number, number>();
     const areas = new Map<number, number>();
-    const momentsOfInertiaY = new Map<number, number>();
     const momentsOfInertiaZ = new Map<number, number>();
+    const momentsOfInertiaY = new Map<number, number>();
     const torsionalConstants = new Map<number, number>();
     const shearModuli = new Map<number, number>();
     const orientations = new Map<number, [number, number, number]>();
@@ -120,8 +120,8 @@ export const drillingDof: ExampleDef = {
     const G = p.E / (2 * (1 + p.nu));
     for (let e = beamElemStart; e < elements.length; e++) {
       areas.set(e, b * h);
-      momentsOfInertiaY.set(e, b * h ** 3 / 12);   // flexión vertical (en el plano del muro)
-      momentsOfInertiaZ.set(e, h * b ** 3 / 12);
+      momentsOfInertiaZ.set(e, b * h ** 3 / 12);   // flexión vertical (en el plano del muro)
+      momentsOfInertiaY.set(e, h * b ** 3 / 12);
       torsionalConstants.set(e, b * h ** 3 / 12 + h * b ** 3 / 12);
       elasticities.set(e, p.E);
       shearModuli.set(e, G);

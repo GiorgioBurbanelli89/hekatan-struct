@@ -112,6 +112,7 @@ export default defineConfig({
         "cerramiento": "src/cerramiento/index.html",
         "tower-3d": "src/tower-3d/index.html",
         "galpon": "src/galpon/index.html",
+        "galpon-bodega": "src/galpon-bodega/index.html",
         "edif-acero": "src/edif-acero/index.html",
         "mezanine": "src/mezanine/index.html",
         "plate-thin": "src/plate-thin/index.html",

@@ -91,9 +91,9 @@ int main()
         elementInputs.elasticities[i] = E;
         elementInputs.shearModuli[i]  = G;
         elementInputs.areas[i]        = isCol ? COL_A : GIR_A;
-        // awatif convention: momentsOfInertiaZ = weak axis, momentsOfInertiaY = strong axis
-        elementInputs.momentsOfInertiaZ[i] = isCol ? COL_Iy : GIR_Iy;
-        elementInputs.momentsOfInertiaY[i] = isCol ? COL_Iz : GIR_Iz;
+        // convencion CSI: momentsOfInertiaY = I22 (debil), momentsOfInertiaZ = I33 (fuerte)
+        elementInputs.momentsOfInertiaY[i] = isCol ? COL_Iy : GIR_Iy;
+        elementInputs.momentsOfInertiaZ[i] = isCol ? COL_Iz : GIR_Iz;
         elementInputs.torsionalConstants[i] = isCol ? COL_J : GIR_J;
         elementInputs.densities[i] = RHO;
     }

@@ -32,7 +32,7 @@ export const csiImporter: ExampleDef = {
       states.nodeInputs.val = { supports: new Map(), loads: new Map() };
       states.elementInputs.val = {
         elasticities: new Map(), shearModuli: new Map(), areas: new Map(),
-        momentsOfInertiaZ: new Map(), momentsOfInertiaY: new Map(),
+        momentsOfInertiaY: new Map(), momentsOfInertiaZ: new Map(),
         torsionalConstants: new Map(), densities: new Map(), poissonsRatios: new Map(),
       };
       states.objects3D.val = [];
@@ -100,7 +100,7 @@ export const csiImporter: ExampleDef = {
     states.nodeInputs.val = { supports: new Map(), loads: new Map() };
     states.elementInputs.val = {
       elasticities: new Map(), shearModuli: new Map(), areas: new Map(),
-      momentsOfInertiaZ: new Map(), momentsOfInertiaY: new Map(),
+      momentsOfInertiaY: new Map(), momentsOfInertiaZ: new Map(),
       torsionalConstants: new Map(), densities: new Map(), poissonsRatios: new Map(),
     };
     states.objects3D.val = objects3D;

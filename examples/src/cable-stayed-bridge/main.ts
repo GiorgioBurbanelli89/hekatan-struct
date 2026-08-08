@@ -123,8 +123,8 @@ van.derive(() => {
     shearModuli:        new Map(elements.map((_, i) => [i, Gs])),
     // Tablero/torres = secciones grandes; cables = secciones pequeñas
     areas:              new Map(elements.map((_, i) => [i, i < nDeckEls ? 200e-4 : 10e-4])),
-    momentsOfInertiaZ:  new Map(elements.map((_, i) => [i, 5000e-8])),
-    momentsOfInertiaY:  new Map(elements.map((_, i) => [i, 2000e-8])),
+    momentsOfInertiaY:  new Map(elements.map((_, i) => [i, 5000e-8])),
+    momentsOfInertiaZ:  new Map(elements.map((_, i) => [i, 2000e-8])),
     torsionalConstants: new Map(elements.map((_, i) => [i, 1000e-8])),
     densities:          new Map(elements.map((_, i) => [i, rho_s])),
     poissonsRatios:     new Map(elements.map((_, i) => [i, nu_s])),

@@ -88,8 +88,8 @@ van.derive(() => {
     shearModuli: new Map(elements.map((_, i) => [i, 10])),
     areas: new Map(elements.map((_, i) => [i, 10])),
     torsionalConstants: new Map(elements.map((_, i) => [i, 10])),
-    momentsOfInertiaY: new Map(elements.map((_, i) => [i, 10])),
     momentsOfInertiaZ: new Map(elements.map((_, i) => [i, 10])),
+    momentsOfInertiaY: new Map(elements.map((_, i) => [i, 10])),
   };
 
   const deformOutputs = deform(nodes, elements, nodeInputs, elementInputs);

@@ -278,8 +278,8 @@ export function buildShearBuildingModel(p: ShearBuildingParams, states: BuildSta
   states.nodeInputs.val = { supports, loads };
   states.elementInputs.val = {
     elasticities, shearModuli, areas,
-    momentsOfInertiaY: Iy_map,
-    momentsOfInertiaZ: Iz_map,
+    momentsOfInertiaZ: Iy_map,
+    momentsOfInertiaY: Iz_map,
     torsionalConstants: J_map,
     shearAreasY, shearAreasZ, densities,
     sectionLabels, materialTypes, sectionInfo,
@@ -496,8 +496,8 @@ export function buildSpaceFrameModel(p: SpaceFrameParams, states: BuildStates) {
   states.nodeInputs.val = { supports: p.supports, loads };
   states.elementInputs.val = {
     elasticities, shearModuli, areas,
-    momentsOfInertiaY: Iy_map,
-    momentsOfInertiaZ: Iz_map,
+    momentsOfInertiaZ: Iy_map,
+    momentsOfInertiaY: Iz_map,
     torsionalConstants: J_map,
     shearAreasY, shearAreasZ, densities,
     sectionLabels, materialTypes, sectionInfo,

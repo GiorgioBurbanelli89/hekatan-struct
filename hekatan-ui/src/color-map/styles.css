@@ -1,7 +1,19 @@
+/* Barra de color (leyenda del colormap).
+ *
+ * Altura y nº de intervalos viven en variables CSS para que los markers se
+ * espacien SIEMPRE en función de la altura real de la barra:
+ *   gap = --legend-h / --legend-n
+ * Así un media query sólo cambia --legend-h y los markers siguen alineados
+ * con el gradiente (antes el gap estaba hardcodeado a 50vh/N en el JS y al
+ * encoger la barra los números se salían).
+ */
 #legend,
 #frame-legend {
+  --legend-h: 50vh;
+  --legend-n: 8;
+  --legend-font: 14px;
   width: 20px;
-  height: 50vh;
+  height: var(--legend-h);
   background: linear-gradient(
     #ff0000,
     #ffff00 20%,
@@ -13,6 +25,13 @@
   right: 100px;
   bottom: 25vh;
   z-index: 2; /* On top of the viewer */
+  /* La barra es puramente informativa: NO debe hacer NADA con el dedo/mouse.
+   * Sin esto, en móvil el gesto que cae encima de la barra se lo come el div
+   * (o lo interpreta el navegador como zoom de página) en vez de llegar al
+   * canvas y orbitar/zoomear el modelo. */
+  pointer-events: none;
+  touch-action: none;
+  user-select: none;
 }
 
 #legend .marker,
@@ -28,10 +47,64 @@
 #frame-legend .marker p {
   position: absolute;
   color: var(--awatif-legend-color, white);
-  font-size: 14px;
+  font-size: var(--legend-font, 14px);
   top: -7px;
   left: 15px;
   margin: 0px;
   font-family: "Courier New";
   font-weight: 500;
+}
+
+/* ───────────────────── Móvil portrait ─────────────────────
+ * El layout móvil pone Settings 0–25vh y Herramientas 25–50vh: el canvas
+ * sólo vive de 50vh a 100vh. Una barra de 50vh anclada en bottom:25vh
+ * arrancaba en 25vh → la mitad de arriba quedaba TAPADA por los panes y la
+ * barra se veía cortada (y desproporcionadamente grande, casi toda la
+ * pantalla). Se encoge y se ancla DENTRO de la banda del canvas, dejando
+ * libre el gizmo de cámara (bottom-right) y la status bar (bottom). */
+@media (max-width: 600px) and (orientation: portrait) {
+  #legend,
+  #frame-legend {
+    --legend-h: 24vh;
+    --legend-font: 11px;
+    width: 14px;
+    right: 72px;
+    bottom: 22vh;
+  }
+  #legend .marker,
+  #frame-legend .marker {
+    width: 8px;
+    margin-left: 14px;
+  }
+  #legend .marker p,
+  #frame-legend .marker p {
+    left: 11px;
+    top: -6px;
+  }
+}
+
+/* ───────────────────── Móvil landscape ─────────────────────
+ * En landscape el pane de herramientas ocupa la mitad inferior DERECHA
+ * (45vw), justo donde caía la barra con right:100px. Se pasa a la izquierda,
+ * entre el toolbar (top-left) y la status bar (bottom-left). */
+@media (max-height: 500px) and (orientation: landscape) {
+  #legend,
+  #frame-legend {
+    --legend-h: 34vh;
+    --legend-font: 10px;
+    width: 12px;
+    left: 10px;
+    right: auto;
+    bottom: 32vh;
+  }
+  #legend .marker,
+  #frame-legend .marker {
+    width: 8px;
+    margin-left: 12px;
+  }
+  #legend .marker p,
+  #frame-legend .marker p {
+    left: 11px;
+    top: -6px;
+  }
 }

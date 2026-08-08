@@ -209,7 +209,9 @@ export const mesaTorsion: ExampleDef = {
       poissons.set(i, p.nu);
       Gm.set(i, Gmod);
       areas.set(i, Ac);
-      Iz.set(i, Iyc);   // weak axis → Iz local (swap por convención awatif Z-up)
+      // Los Map locales se llaman Iz/Iy por la sección (AISC), no por el eje
+      // local: el débil acaba en momentsOfInertiaY = I22 (ver la línea 254).
+      Iz.set(i, Iyc);   // weak axis → I22
       Iy.set(i, Izc);
       J_t.set(i, Jc);
       densities.set(i, RHO);
@@ -251,7 +253,7 @@ export const mesaTorsion: ExampleDef = {
     states.elements.val = elements;
     states.elementInputs.val = {
       elasticities, poissonsRatios: poissons, shearModuli: Gm,
-      areas, momentsOfInertiaZ: Iz, momentsOfInertiaY: Iy, torsionalConstants: J_t,
+      areas, momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy, torsionalConstants: J_t,
       thicknesses, densities, sectionShapes: sections,
       rigidOffsets: rigidOffsets.size > 0 ? rigidOffsets : undefined,
       // ETABS Shell-Thin (DKE Kirchhoff) — matchea ETABS exacto < 1.5%

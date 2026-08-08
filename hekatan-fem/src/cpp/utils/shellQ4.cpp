@@ -94,13 +94,28 @@ static const double gp2x2[4][2] = {
 //   - CSI Analysis Reference Manual §10.1.1 (formulación del shell de ETABS)
 // ───────────────────────────────────────────────────────────────────────────
 static Eigen::MatrixXd getMembraneK(const double x[4], const double y[4],
-                                     double E, double nu, double t)
+                                     double E, double nu, double t,
+                                     const double *mod = nullptr)
 {
     double factor = E / (1.0 - nu * nu);
     Eigen::Matrix3d Dm;
     Dm << factor,       factor * nu, 0,
           factor * nu,  factor,      0,
           0,            0,           factor * (1 - nu) / 2.0;
+    // Modificadores DIRECCIONALES sobre la matriz constitutiva, que es donde
+    // los aplica ETABS — no sobre la K ya ensamblada. Multiplicar la K entera
+    // es todo-o-nada; aqui se puede dejar rigido en 11 y blando en 22, que es
+    // exactamente lo que hace a un deck comportarse como deck.
+    // El termino de acoplamiento va con la media geometrica para que la
+    // matriz siga siendo simetrica y semidefinida positiva.
+    if (mod) {
+        double f11 = mod[0], f22 = mod[1], f12 = mod[2];
+        Dm(0, 0) *= f11;
+        Dm(1, 1) *= f22;
+        Dm(2, 2) *= f12;
+        double c = std::sqrt(std::max(0.0, f11 * f22));
+        Dm(0, 1) *= c;  Dm(1, 0) *= c;
+    }
 
     // ── J0: Jacobiano en el centro (ξ=η=0) — Taylor 1976 correction ──
     double Jinv0[2][2];
@@ -206,7 +221,8 @@ static Eigen::MatrixXd getMembraneK(const double x[4], const double y[4],
 // son evaluados después con J₀ Taylor 1976, dando contribución residual
 // que mantenemos en el bending, no en el shear MITC4).
 static Eigen::MatrixXd getBendingK(const double x[4], const double y[4],
-                                    double E, double nu, double t)
+                                    double E, double nu, double t,
+                                    const double *mod = nullptr)
 {
     double D0 = E * t * t * t / (12.0 * (1.0 - nu * nu));
     Eigen::Matrix3d Db;
@@ -219,6 +235,18 @@ static Eigen::MatrixXd getBendingK(const double x[4], const double y[4],
     Eigen::Matrix2d Ds;
     Ds << ks * G * t, 0,
           0,          ks * G * t;
+    // M11MOD M22MOD M12MOD sobre la flexion, V13MOD V23MOD sobre el cortante
+    // transversal. Un deck lleva M22 chico: no rigidiza cruzado al nervio.
+    if (mod) {
+        double m11 = mod[3], m22 = mod[4], m12 = mod[5];
+        Db(0, 0) *= m11;
+        Db(1, 1) *= m22;
+        Db(2, 2) *= m12;
+        double c = std::sqrt(std::max(0.0, m11 * m22));
+        Db(0, 1) *= c;  Db(1, 0) *= c;
+        Ds(0, 0) *= mod[6];
+        Ds(1, 1) *= mod[7];
+    }
 
     // Taylor 1976: J₀ del centro para mapear derivadas de N₅, N₆
     double Jinv0[2][2];
@@ -931,14 +959,39 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     //   Por defecto ambos = 1.0 → Shell completo
     double mFactor = getMapVal(elementInputs.membraneModifiers, index, 1.0);
     double bFactor = getMapVal(elementInputs.bendingModifiers, index, 1.0);
+    // Si hay modificadores DIRECCIONALES para este elemento, mandan ellos y
+    // los escalares quedan en 1.0 (si no, se multiplicaria dos veces).
+    const double *dmod = nullptr;
+    auto itMod = elementInputs.shellModifiers.find(index);
+    if (itMod != elementInputs.shellModifiers.end() && itMod->second.size() >= 8) {
+        dmod = itMod->second.data();
+        mFactor = 1.0;
+        bFactor = 1.0;
+    }
 
-    Eigen::MatrixXd Km = getMembraneK(x, y, E, nu, t);   // 8×8
+    // .Flexion practicamente nula? Entonces NO se ensambla, en vez de armarla
+    // y multiplicarla por cero. Multiplicando por cero la matriz Db queda nula,
+    // la de modos incompatibles (Kaa) sale singular y el elemento se cae a un
+    // Q4 estandar con un aviso — o sea que NO se comporta como membrana, que
+    // era justo lo que se le pedia. ETABS hace esto: un deck es ShellType
+    // Membrane y la flexion no existe, no vale cero.
+    bool sinFlexion = false;
+    if (dmod) {
+        sinFlexion = (std::fabs(dmod[3]) < 1e-9 && std::fabs(dmod[4]) < 1e-9 &&
+                      std::fabs(dmod[5]) < 1e-9);
+    } else {
+        sinFlexion = (std::fabs(bFactor) < 1e-9);
+    }
+
+    Eigen::MatrixXd Km = getMembraneK(x, y, E, nu, t, dmod);   // 8×8
     #if HK_BENDING_FORMULATION == 2
         Eigen::MatrixXd Kb = getBendingK_DSE_FULL(x, y, E, nu, t);  // 12×12 (Wilson DSE Cap 8 completo, Variant C)
     #elif HK_BENDING_FORMULATION == 1
         Eigen::MatrixXd Kb = getBendingK_DSE(x, y, E, nu, t);       // 12×12 (DSE-bending + MITC4-shear, Variant B)
     #else
-        Eigen::MatrixXd Kb = getBendingK(x, y, E, nu, t);           // 12×12 (MITC4 + Wilson α, Variant A)
+        Eigen::MatrixXd Kb = sinFlexion
+        ? Eigen::MatrixXd::Zero(12, 12)
+        : getBendingK(x, y, E, nu, t, dmod);     // 12×12 (MITC4 + Wilson α, Variant A)
     #endif
     Km *= mFactor;
     Kb *= bFactor;

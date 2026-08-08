@@ -118,7 +118,7 @@ export const columnaCft: ExampleDef = {
       poissons.set(i, 0.20);
     }
     states.elementInputs.val = {
-      areas, momentsOfInertiaY: Iy, momentsOfInertiaZ: Iz, torsionalConstants: J,
+      areas, momentsOfInertiaZ: Iy, momentsOfInertiaY: Iz, torsionalConstants: J,
       elasticities, shearModuli, densities, thicknesses, poissonsRatios: poissons,
     };
 

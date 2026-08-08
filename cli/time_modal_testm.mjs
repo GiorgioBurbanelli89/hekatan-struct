@@ -110,7 +110,7 @@ function build(ms) {
     ei.elasticities.set(e, E); ei.poissonsRatios.set(e, NU); ei.densities.set(e, RHO / GRAV); ei.shearModuli.set(e, G);
     if (k === "slab" || k === "wall") { ei.thicknesses.set(e, k === "wall" ? tWall : tSlab); ei.plateFormulations.set(e, 2); }
     else if (k === "col") { ei.areas.set(e, A_c); ei.momentsOfInertiaY.set(e, I_c); ei.momentsOfInertiaZ.set(e, I_c); ei.torsionalConstants.set(e, J_c); }
-    else { ei.areas.set(e, A_v); ei.momentsOfInertiaY.set(e, Iy_v); ei.momentsOfInertiaZ.set(e, Iz_v); ei.torsionalConstants.set(e, J_v); }
+    else { ei.areas.set(e, A_v); ei.momentsOfInertiaZ.set(e, Iy_v); ei.momentsOfInertiaY.set(e, Iz_v); ei.torsionalConstants.set(e, J_v); }
   });
   const supports = new Map();
   nodes.forEach((p, i) => { if (Math.abs(p[2]) < 1e-9) supports.set(i, [true, true, true, true, true, true]); });

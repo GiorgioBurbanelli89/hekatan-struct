@@ -132,7 +132,7 @@ export const vigaAxialCantilever: ExampleDef = {
     states.nodeInputs.val = { supports, loads };
     states.elementInputs.val = {
       elasticities, shearModuli, areas,
-      momentsOfInertiaY: Iy, momentsOfInertiaZ: Iz, torsionalConstants: J,
+      momentsOfInertiaZ: Iy, momentsOfInertiaY: Iz, torsionalConstants: J,
       shearAreasY: As2, shearAreasZ: As3,
       densities, poissonsRatios: poissons,
     };

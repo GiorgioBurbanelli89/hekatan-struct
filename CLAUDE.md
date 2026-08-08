@@ -137,26 +137,50 @@ Override de rango: un ejemplo puede setear `analyzeOutputs.colorMapRanges = { pr
 
 El viewer filtra NaN en min/max (nodos fuera del plato reciben NaN). `getColorMap` soporta rangos invertidos (vMin > vMax) para convenciones de signo negativo.
 
-## Ejes locales (Three.js Y-up)
+## Ejes locales de barra — convención CSI (SAP2000 / ETABS)
 
-**CRÍTICO**: awatif usa convención Three.js (`THREE.Object3D.DEFAULT_UP = (0,0,1)` — Z-up en hekatan-struct-lineal).
+```
+eje 1 (x) = del nudo i al nudo j
+eje 2 (y) = en el plano vertical que contiene la barra, hacia ARRIBA
+            (barra vertical: no hay tal plano → se toma el +X global)
+eje 3 (z) = eje1 × eje2
+```
 
 Para columnas verticales (elemento a lo largo de +Z):
 ```
 local_x = [0, 0, 1]   → global Z (eje del elemento)
-local_y = [0, 1, 0]   → global Y
-local_z = [-1, 0, 0]  → global -X
+local_y = [1, 0, 0]   → global X
+local_z = [0, 1, 0]   → global Y
 ```
 
 Esto significa:
-- `momentsOfInertiaZ` = eje débil (Iy AISC) → controla sway en Y
-- `momentsOfInertiaY` = eje fuerte (Iz AISC) → controla sway en X
+- `momentsOfInertiaZ` = **I33** = flexión en el plano 1-2 (V2, M3). En una viga
+  horizontal es la flexión VERTICAL, o sea el eje FUERTE (Iz AISC).
+- `momentsOfInertiaY` = **I22** = flexión en el plano 1-3 (V3, M2), el débil.
 
 En `beams/main.ts`:
 ```typescript
-momentsOfInertiaZ: eMap(COL_Iy, GIR_Iy),  // weak axis → Iz local
-momentsOfInertiaY: eMap(COL_Iz, GIR_Iz),  // strong axis → Iy local
+momentsOfInertiaY: eMap(COL_Iy, GIR_Iy),  // weak axis → I22
+momentsOfInertiaZ: eMap(COL_Iz, GIR_Iz),  // strong axis → I33
 ```
+
+**Antes** la tríada era otra (`y` horizontal, `z` hacia arriba) y las dos
+inercias iban en el casillero contrario. Las dos convenciones son dextrógiras y
+resuelven igual, pero respecto a CSI la vieja giraba 90° **en un sentido en las
+vigas y en el contrario en las columnas**, así que no había un mapeo único para
+leer las fuerzas de barra contra ETABS. Con la actual: `Vy`≡V2, `Vz`≡V3,
+`My`≡M2, `Mz`≡M3, sin cruzar y sin cambio de signo por tipo de barra.
+
+Queda una diferencia que **no** es de ejes y no se corrige: CSI dibuja `M2` y
+`M3` los dos "positivo = sagging" en su plano, y en el plano 1-3 eso sale al
+revés del momento vectorial sobre el eje 2. Al comparar contra ETABS hay que
+emitir `M2` con signo cambiado. Y `analyze()` devuelve **fuerzas de extremo**
+(`f = k·u`), no el diagrama: en el extremo i el diagrama es el negativo.
+
+Las tres copias de la tríada tienen que decir lo mismo:
+`hekatan-fem/src/utils/getTransformationMatrix.ts`,
+`hekatan-fem/src/cpp/utils/getTransformationMatrix.cpp` (necesita recompilar
+WASM) y `hekatan-fem/src/didacticSolver.ts`.
 
 ## Masa torsional: Ip vs J
 
@@ -174,15 +198,26 @@ Ejemplo de referencia: **Paz & Leigh 6.3 Space Frame** (`examples/src/beams/main
 | Python/SciPy | `test_modal_comparison.py` | Reimplementación + K de OpenSees |
 
 Modos del Example 6.3 (W24x146 columnas, W14x84 vigas, kip/in/sec):
-```
-Mode   Freq (Hz)   Dominant
-  1     9.6780     Uy (99.8%)
-  2    16.9874     Rz torsional
-  3    26.6149     Ux (94.3%)
-  4    29.9497     antisimétrico
-  5    33.9929     Rz (14.2%)
-  6    44.9332     Uz (26.9%)
-```
+
+| Modo | ETABS 22 | Hekatan | dif |
+|---|---|---|---|
+| 1 | 9.0903 | 8.8358 | −2.80 % |
+| 2 | 14.9739 | 14.5551 | −2.80 % |
+| 3 | 24.9465 | 24.2228 | −2.90 % |
+| 4 | 25.8520 | 25.1038 | −2.89 % |
+| 5 | 164.3495 | 159.6530 | −2.86 % |
+| 6 | 164.5541 | 159.8523 | −2.86 % |
+
+Arbitrado con `cli/paz_etabs.py` (mismas secciones por `SetGeneral`, misma
+densidad). La diferencia es **uniforme**, o sea masa: (9.0903/8.8358)² = 1.058,
+5.8 % más masa en Hekatan — la firma de masa consistente contra agrupada.
+
+⚠️ **La tabla que estaba aquí antes era falsa** (`9.6780 / 16.9874 / 26.6149 /
+29.9497 / 33.9929 / 44.9332`, atribuida a "4 solvers de acuerdo"). Solo la
+reproduce `cli/native/cli_modal_native.exe`, un binario del 17-may compilado de
+código que **nunca se subió**: el árbol de ese mismo commit, recompilado, da
+8.8412. Y sus modos 5-6 (33.99 / 44.93) no existen — ETABS también los pone a
+~164 Hz. `cli/paz_check.mjs` venía fallando contra esa referencia falsa.
 
 ## Zapata Aislada (Ecuador NEC-SE-GC)
 
