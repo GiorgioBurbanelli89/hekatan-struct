@@ -204,7 +204,8 @@ tests/
   lib/comparar.mjs     fuerzas de barra vs ETABS (extremo→diagrama, signo de M2)
   casos/paz_6_3.mjs            6 modos × 2 caminos vs ETABS 22
   casos/mezanine_fuerzas.mjs   133 barras × 6 campos vs ETABS 22
-  casos/safe_ex01_placa.mjs    flecha vs Navier analítico y vs SAFE
+  casos/safe_ex01_placa.mjs        flecha vs Navier analítico y vs SAFE
+  casos/safe_ex04_placa_vigas.mjs  placa sobre vigas: shells y barras JUNTOS
   datos/               el .heks y el JSON de referencia
 ```
 
