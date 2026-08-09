@@ -364,24 +364,29 @@ export const mesaTorsion: ExampleDef = {
     lines.push(`  Discretización: ${shellCount} shells losa, 4 cols, ${beamEnd - beamStart} segs viga`);
     lines.push(`  Rigid offsets: ${p.rigidOffsets > 0.5 ? `ON (col top -${(p.hViga/2).toFixed(2)}m, viga ends -${(p.bCol/2).toFixed(2)}m)` : "OFF"}`);
     lines.push(``);
-    lines.push(`  Picks por caso — Hekatan vs ETABS (Δ% relativo, con SWAP V2↔V3 y M2↔M3 por convención awatif Z-up vs ETABS):`);
+    // Comparación DIRECTA, componente contra su homónima. Aquí había un swap
+    // V2↔V3 / M2↔M3 "por convención awatif Z-up vs ETABS" que dejó de aplicar
+    // cuando la tríada de barra pasó a ser la de CSI: eje 1 = i→j, eje 2 = plano
+    // vertical hacia arriba, eje 3 = eje1 × eje2. Medido con los defaults, el
+    // swap empeoraba la comparación de 16.9 % a 65.7 % de |Δ| medio, y además
+    // contradecía a `computedLabels`, que siempre comparó directo.
+    //
+    // ⚠️ PENDIENTE DE RE-ARBITRAR: aun sin swap quedan M2 ≈ +52 % y V3 ≈ +33 %.
+    // Estos ETABS_PICKS son |max| GLOBALES sobre columnas + vigas juntas, que es
+    // una comparación floja (un máximo puede venir de otra barra). Hay que
+    // volver al modelo de ETABS y sacar la referencia barra a barra, como se
+    // hizo en el mezanine, antes de dar el ejemplo por validado.
+    lines.push(`  Picks por caso — Hekatan vs ETABS (Δ% relativo, sin remapear componentes):`);
     lines.push(`  ${"Case".padEnd(8)} ${"Comp".padEnd(4)} ${"Hekatan".padStart(10)} ${"ETABS".padStart(10)} ${"Δ%".padStart(8)}`);
-    // Mapping: ejes locales Hekatan (awatif Z-up) están rotados 90° vs ETABS frame local.
-    //   Hekatan V2 ↔ ETABS V3, Hekatan V3 ↔ ETABS V2
-    //   Hekatan M2 ↔ ETABS M3, Hekatan M3 ↔ ETABS M2
-    const COMP_SWAP: Record<string, "P" | "V2" | "V3" | "T" | "M2" | "M3"> = {
-      P: "P", T: "T", V2: "V3", V3: "V2", M2: "M3", M3: "M2",
-    };
     for (const c of cases) {
       const hk = framePicks[c.name];
       const et = ETABS_PICKS[c.name];
       if (!hk || !et) continue;
       for (const comp of ["P", "V2", "V3", "T", "M2", "M3"] as const) {
         const h = hk[comp];
-        const e = et[COMP_SWAP[comp]];
+        const e = et[comp];
         const d = e !== 0 ? ((h - e) / e * 100) : 0;
-        const tag = comp !== COMP_SWAP[comp] ? ` (↔ETABS ${COMP_SWAP[comp]})` : "";
-        lines.push(`  ${c.name.padEnd(8)} ${comp.padEnd(4)} ${h.toFixed(3).padStart(10)} ${e.toFixed(3).padStart(10)} ${(d >= 0 ? "+" : "") + d.toFixed(1).padStart(7)}%${tag}`);
+        lines.push(`  ${c.name.padEnd(8)} ${comp.padEnd(4)} ${h.toFixed(3).padStart(10)} ${e.toFixed(3).padStart(10)} ${(d >= 0 ? "+" : "") + d.toFixed(1).padStart(7)}%`);
       }
     }
     console.log(lines.join("\n"));
