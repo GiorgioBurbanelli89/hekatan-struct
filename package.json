@@ -18,6 +18,7 @@
     "url": "https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal"
   },
   "scripts": {
+    "test": "node tests/run.mjs",
     "dev:fem": "npm run dev -w hekatan-fem",
     "build:fem": "npm run build -w hekatan-fem",
     "dev:mesh": "npm run dev -w hekatan-mesh",

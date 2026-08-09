@@ -186,6 +186,41 @@ WASM) y `hekatan-fem/src/didacticSolver.ts`.
 
 La masa consistente usa `Ip = Iy + Iz` (momento polar de inercia) para DOFs torsionales, NO `J` (constante de Saint-Venant). OpenSees tiene un bug conocido donde usa J en vez de Ip — causa ~3% de error en modos torsionales.
 
+## Suite de regresión: `npm test`
+
+```
+npm test                 # todos los casos
+node tests/run.mjs paz   # solo los que lleven "paz" en el nombre
+```
+
+Sale con **código 1** si algo se pasa de su límite. Hoy: **25/25 en 12 s**.
+
+```
+tests/
+  run.mjs              runner: descubre tests/casos/*.mjs, tabla, exit code
+  lib/wasm.mjs         llama a _modal del WASM directo (modelo definido a mano)
+  lib/heks.mjs         resuelve un .heks por cliModeler, empaquetado con esbuild
+  lib/comparar.mjs     fuerzas de barra vs ETABS (extremo→diagrama, signo de M2)
+  casos/paz_6_3.mjs            6 modos × 2 caminos vs ETABS 22
+  casos/mezanine_fuerzas.mjs   133 barras × 6 campos vs ETABS 22
+  datos/               el .heks y el JSON de referencia
+```
+
+Un caso exporta `{ nombre, descripcion, correr() }` y `correr()` devuelve filas
+`{ que, medido, limite, ok, detalle }`. **La referencia de un caso tiene que ser
+otro PROGRAMA** (ETABS, SAP2000, SAFE) con el mismo modelo, la misma malla nodo
+a nodo y los brazos rígidos anulados — nunca una cuenta a mano ni un número
+heredado sin fuente reproducible: así fue como se coló la referencia falsa del
+Paz 6.3 y estuvo meses dando por buena una regresión que no existía.
+
+`lib/heks.mjs` va **por `cliModeler`** a propósito, no llamando al solver a
+pelo: así el test cubre también el lector del `.heks` y el armado del modelo,
+que es donde vive el cruce I22/I33 de la convención CSI.
+
+⚠️ Pendiente: faltan casos de placa/cáscara contra SAFE y SAP2000 (mesa-torsión,
+zapatas Guerra, `benchmark-safe-*`). Sus números están en comentarios dentro de
+cada ejemplo, sin forma de re-verificarlos solos.
+
 ## Validación del solver modal contra ETABS 22
 
 Ejemplo de referencia: **Paz & Leigh 6.3 Space Frame** (`examples/src/beams/main.ts`).
