@@ -193,16 +193,18 @@ npm test                 # todos los casos
 node tests/run.mjs paz   # solo los que lleven "paz" en el nombre
 ```
 
-Sale con **código 1** si algo se pasa de su límite. Hoy: **25/25 en 12 s**.
+Sale con **código 1** si algo se pasa de su límite. Hoy: **30/30**.
 
 ```
 tests/
   run.mjs              runner: descubre tests/casos/*.mjs, tabla, exit code
+  lib/bundle.mjs       empaqueta TS del repo con esbuild y lo importa (cachea)
   lib/wasm.mjs         llama a _modal del WASM directo (modelo definido a mano)
-  lib/heks.mjs         resuelve un .heks por cliModeler, empaquetado con esbuild
+  lib/heks.mjs         resuelve un .heks por cliModeler
   lib/comparar.mjs     fuerzas de barra vs ETABS (extremo→diagrama, signo de M2)
   casos/paz_6_3.mjs            6 modos × 2 caminos vs ETABS 22
   casos/mezanine_fuerzas.mjs   133 barras × 6 campos vs ETABS 22
+  casos/safe_ex01_placa.mjs    flecha vs Navier analítico y vs SAFE
   datos/               el .heks y el JSON de referencia
 ```
 
@@ -217,9 +219,14 @@ Paz 6.3 y estuvo meses dando por buena una regresión que no existía.
 pelo: así el test cubre también el lector del `.heks` y el armado del modelo,
 que es donde vive el cruce I22/I33 de la convención CSI.
 
-⚠️ Pendiente: faltan casos de placa/cáscara contra SAFE y SAP2000 (mesa-torsión,
-zapatas Guerra, `benchmark-safe-*`). Sus números están en comentarios dentro de
-cada ejemplo, sin forma de re-verificarlos solos.
+Un caso puede tener **dos árbitros** y conviene: `safe_ex01_placa` compara contra
+la serie de Navier (analítica) **y** contra SAFE. Ojo con la malla: los puntos
+x = 60″ de la tabla del PDF **no caen en nodo** con malla uniforme 8×8 (360/8 =
+45″), porque la del PDF es no uniforme con los bordes finos. Por eso contra
+Navier va 12×12 y contra SAFE solo el centro.
+
+⚠️ Pendiente: mesa-torsión (hay que re-arbitrarla barra a barra, sus picks son
+|max| globales) y las zapatas Guerra contra SAFE.
 
 ## Validación del solver modal contra ETABS 22
 

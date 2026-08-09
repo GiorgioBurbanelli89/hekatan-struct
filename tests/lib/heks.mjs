@@ -6,29 +6,12 @@
  * cubre tambien el lector del .heks y el armado del modelo, que es donde vive
  * el cruce I22/I33 de la convencion CSI.
  */
-import { readFileSync, writeFileSync, mkdtempSync, copyFileSync, existsSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { pathToFileURL } from "node:url";
-import { RAIZ } from "./wasm.mjs";
+import { readFileSync } from "node:fs";
+import { empaquetar, R } from "./bundle.mjs";
 
-let cliModelerCache = null;
-
-async function cargarCliModeler() {
-  if (cliModelerCache) return cliModelerCache;
-  const { build } = await import(pathToFileURL(join(RAIZ, "node_modules/esbuild/lib/main.js")).href);
-  const dir = mkdtempSync(join(tmpdir(), "hkTest-"));
-  writeFileSync(join(dir, "entry.ts"),
-    `export { cliModeler } from "${RAIZ.replace(/\\/g, "/")}/examples/src/cli-modeler/cliModeler";\n`, "utf-8");
-  const wasm = join(RAIZ, "hekatan-fem/src/cpp/built/deform.wasm");
-  if (!existsSync(wasm)) throw new Error("falta " + wasm + " — compilar el WASM primero");
-  copyFileSync(wasm, join(dir, "deform.wasm"));
-  const outfile = join(dir, "bundle.mjs");
-  await build({ entryPoints: [join(dir, "entry.ts")], bundle: true, format: "esm",
-                platform: "node", outfile, logLevel: "error" });
-  cliModelerCache = (await import(pathToFileURL(outfile).href)).cliModeler;
-  return cliModelerCache;
-}
+const cargarCliModeler = async () =>
+  (await empaquetar(`export { cliModeler } from "${R}/examples/src/cli-modeler/cliModeler";\n`,
+                    "cliModeler")).cliModeler;
 
 /** Devuelve { nodes, elements, deformOutputs, analyzeOutputs }. */
 export async function resolverHeks(rutaHeks) {
