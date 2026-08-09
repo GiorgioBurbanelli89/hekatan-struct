@@ -235,8 +235,15 @@ export const mesaTorsion: ExampleDef = {
         poissons.set(bIdx, p.nu);
         Gm.set(bIdx, Gmod);
         areas.set(bIdx, Av);
-        Iz.set(bIdx, Izv);
-        Iy.set(bIdx, Iyv);
+        // Mismo criterio que las columnas (ver línea 214): el Map `Iz` guarda la
+        // inercia DÉBIL (acaba en momentsOfInertiaY = I22) y el Map `Iy` la
+        // FUERTE (momentsOfInertiaZ = I33). En una viga horizontal la flexión
+        // vertical de gravedad es I33 (plano local 1-2), o sea la fuerte Izv.
+        // Antes estaban cruzadas: la viga flexionaba en gravedad con la inercia
+        // débil (2.78× más flexible), soltaba momento a las columnas y su M3
+        // salía ~0.70× el de ETABS y el de las columnas ~1.33×.
+        Iz.set(bIdx, Iyv);   // débil → I22
+        Iy.set(bIdx, Izv);   // fuerte → I33
         J_t.set(bIdx, Jv);
         densities.set(bIdx, RHO);
         sections.set(bIdx, { type: "rect", b: p.bViga, h: p.hViga });

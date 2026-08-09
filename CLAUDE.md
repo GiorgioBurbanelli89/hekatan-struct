@@ -193,7 +193,7 @@ npm test                 # todos los casos
 node tests/run.mjs paz   # solo los que lleven "paz" en el nombre
 ```
 
-Sale con **código 1** si algo se pasa de su límite. Hoy: **30/30**.
+Sale con **código 1** si algo se pasa de su límite. Hoy: **49/49**.
 
 ```
 tests/
@@ -206,7 +206,9 @@ tests/
   casos/mezanine_fuerzas.mjs   133 barras × 6 campos vs ETABS 22
   casos/safe_ex01_placa.mjs        flecha vs Navier analítico y vs SAFE
   casos/safe_ex04_placa_vigas.mjs  placa sobre vigas: shells y barras JUNTOS
+  casos/mesa_torsion_fuerzas.mjs   24 barras vs ETABS 19.1 (SCP, mismas cargas)
   datos/               el .heks y el JSON de referencia
+  datos/gen_mesa_solver_ref.py     genera la referencia ETABS de mesa-torsión
 ```
 
 Un caso exporta `{ nombre, descripcion, correr() }` y `correr()` devuelve filas
@@ -226,8 +228,13 @@ x = 60″ de la tabla del PDF **no caen en nodo** con malla uniforme 8×8 (360/8
 45″), porque la del PDF es no uniforme con los bordes finos. Por eso contra
 Navier va 12×12 y contra SAFE solo el centro.
 
-⚠️ Pendiente: mesa-torsión (hay que re-arbitrarla barra a barra, sus picks son
-|max| globales) y las zapatas Guerra contra SAFE.
+mesa-torsión ya está arbitrada barra a barra (2026-08-09): el caso SCP (misma
+carga nodal, sin diafragma, offsets=0) cierra < 1 % salvo torsión (~4 %, J
+Saint-Venant vs ETABS). Por el camino cazó un cruce I22/I33 vivo en
+`mesaTorsion.ts`: las vigas tenían la inercia FUERTE en I22, flexionaban en
+gravedad 2.78× más flojas, y su M3 salía 0.70× / las columnas 1.33× el de ETABS.
+
+⚠️ Pendiente: las zapatas Guerra contra SAFE.
 
 ## Validación del solver modal contra ETABS 22
 
