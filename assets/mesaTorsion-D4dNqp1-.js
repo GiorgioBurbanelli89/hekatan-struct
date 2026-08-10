@@ -1,5 +1,5 @@
-import { a as ge } from "./analyze-CDRzE7vM.js";
-import { m as Ce, d as ve, __tla as __tla_0 } from "./didacticCpp-BTBicwl0.js";
+import { a as be } from "./analyze-CDRzE7vM.js";
+import { m as ge, d as Ce, __tla as __tla_0 } from "./didacticCpp-BTBicwl0.js";
 let xe;
 let __tla = Promise.all([
   (() => {
@@ -9,9 +9,9 @@ let __tla = Promise.all([
     }
   })()
 ]).then(async () => {
-  let V, de, T;
-  V = 9.80665;
-  de = {
+  let E, ce, T;
+  E = 9.80665;
+  ce = {
     Dead: {
       P: 5.72,
       V2: 2.05,
@@ -236,100 +236,100 @@ let __tla = Promise.all([
         folder: "Modal"
       }
     },
-    computedLabels(o, i) {
-      const s = {}, d = i._mesaTorsionCases;
-      if (!d) return s;
+    computedLabels(o, l) {
+      const s = {}, c = l._mesaTorsionCases;
+      if (!c) return s;
       s["\u2014\u2014 ETABS ref T\u2081 Ux \u2014\u2014"] = `${T[0].toFixed(4)} s`, s["\u2014\u2014 ETABS ref T\u2082 Uy \u2014\u2014"] = `${T[1].toFixed(4)} s`, s["\u2014\u2014 ETABS ref T\u2083 Rz \u2014\u2014"] = `${T[2].toFixed(4)} s`;
-      for (const l of [
+      for (const i of [
         "Dead",
         "Live",
         "SCP",
         "UDCon1",
         "UDCon2"
       ]) {
-        const a = d[l], r = de[l];
+        const a = c[i], r = ce[i];
         if (!a || !r) continue;
-        const m = (P, S) => {
+        const d = (P, S) => {
           const w = S !== 0 ? (P - S) / S * 100 : 0;
           return `H=${P.toFixed(2)}  E=${S.toFixed(2)}  \u0394=${w >= 0 ? "+" : ""}${w.toFixed(1)}%`;
         };
-        s[`${l} |P|`] = m(a.P, r.P), s[`${l} |V\u2082|`] = m(a.V2, r.V2), s[`${l} |V\u2083|`] = m(a.V3, r.V3), s[`${l} |T|`] = m(a.T, r.T), s[`${l} |M\u2082|`] = m(a.M2, r.M2), s[`${l} |M\u2083|`] = m(a.M3, r.M3);
+        s[`${i} |P|`] = d(a.P, r.P), s[`${i} |V\u2082|`] = d(a.V2, r.V2), s[`${i} |V\u2083|`] = d(a.V3, r.V3), s[`${i} |T|`] = d(a.T, r.T), s[`${i} |M\u2082|`] = d(a.M2, r.M2), s[`${i} |M\u2083|`] = d(a.M3, r.M3);
       }
       return s;
     },
-    build(o, i) {
-      const s = Math.round(o.nMesh), d = o.Lx, l = o.Ly, a = o.H, r = d / s, m = l / s, P = o.gamma_kNm3 / 9.81, S = [
+    build(o, l) {
+      const s = Math.round(o.nMesh), c = o.Lx, i = o.Ly, a = o.H, r = c / s, d = i / s, P = o.gamma_kNm3 / 9.81, S = [
         [
           0,
           0,
           0
         ],
         [
-          d,
+          c,
           0,
           0
         ],
         [
-          d,
-          l,
+          c,
+          i,
           0
         ],
         [
           0,
-          l,
+          i,
           0
         ]
       ], w = 4;
       for (let e = 0; e <= s; e++) for (let t = 0; t <= s; t++) S.push([
         t * r,
-        e * m,
+        e * d,
         a
       ]);
-      const n = (e, t) => w + t * (s + 1) + e, f = [];
-      for (let e = 0; e < s; e++) for (let t = 0; t < s; t++) f.push([
+      const n = (e, t) => w + t * (s + 1) + e, m = [];
+      for (let e = 0; e < s; e++) for (let t = 0; t < s; t++) m.push([
         n(t, e),
         n(t + 1, e),
         n(t + 1, e + 1),
         n(t, e + 1)
       ]);
-      const I = f.length;
-      f.push([
+      const U = m.length;
+      m.push([
         0,
         n(0, 0)
-      ]), f.push([
+      ]), m.push([
         1,
         n(s, 0)
-      ]), f.push([
+      ]), m.push([
         2,
         n(s, s)
-      ]), f.push([
+      ]), m.push([
         3,
         n(0, s)
       ]);
-      const K = I, Q = f.length;
-      for (let e = 0; e < s; e++) f.push([
+      const K = U, W = m.length;
+      for (let e = 0; e < s; e++) m.push([
         n(e, 0),
         n(e + 1, 0)
       ]);
-      for (let e = 0; e < s; e++) f.push([
+      for (let e = 0; e < s; e++) m.push([
         n(s, e),
         n(s, e + 1)
       ]);
-      for (let e = 0; e < s; e++) f.push([
+      for (let e = 0; e < s; e++) m.push([
         n(e, s),
         n(e + 1, s)
       ]);
-      for (let e = 0; e < s; e++) f.push([
+      for (let e = 0; e < s; e++) m.push([
         n(0, e),
         n(0, e + 1)
       ]);
-      const U = Q, ee = f.length, z = /* @__PURE__ */ new Map(), me = o.apoyo < 0.5;
+      const B = W, Q = m.length, z = /* @__PURE__ */ new Map(), de = o.apoyo < 0.5;
       for (const e of [
         0,
         1,
         2,
         3
-      ]) z.set(e, me ? [
+      ]) z.set(e, de ? [
         true,
         true,
         true,
@@ -344,53 +344,53 @@ let __tla = Promise.all([
         true,
         true
       ]);
-      const A = o.E_GPa * 1e6, oe = A / (2 * (1 + o.nu)), se = /* @__PURE__ */ new Map(), L = /* @__PURE__ */ new Map(), y = /* @__PURE__ */ new Map(), O = /* @__PURE__ */ new Map(), N = /* @__PURE__ */ new Map(), G = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map(), q = /* @__PURE__ */ new Map(), D = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), F = /* @__PURE__ */ new Map(), te = /* @__PURE__ */ new Map();
-      for (let e = 0; e < I; e++) se.set(e, o.tLosa), L.set(e, A), y.set(e, o.nu), D.set(e, P), te.set(e, 1);
-      const ne = o.bCol * o.hCol, fe = o.bCol * Math.pow(o.hCol, 3) / 12, ue = o.hCol * Math.pow(o.bCol, 3) / 12, ae = (e, t) => {
-        const M = Math.max(e, t), c = Math.min(e, t), b = c / M;
-        return 1 / 3 * (1 - 0.21 * b * (1 - Math.pow(b, 4) / 12)) * M * Math.pow(c, 3);
-      }, Me = ae(o.bCol, o.hCol), ie = o.rigidOffsets > 0.5 ? o.hViga / 2 / a : 0;
-      for (let e = K; e < Q; e++) L.set(e, A), y.set(e, o.nu), q.set(e, oe), O.set(e, ne), N.set(e, ue), G.set(e, fe), R.set(e, Me), D.set(e, P), H.set(e, {
+      const L = o.E_GPa * 1e6, ee = L / (2 * (1 + o.nu)), oe = /* @__PURE__ */ new Map(), D = /* @__PURE__ */ new Map(), y = /* @__PURE__ */ new Map(), O = /* @__PURE__ */ new Map(), N = /* @__PURE__ */ new Map(), G = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map(), q = /* @__PURE__ */ new Map(), F = /* @__PURE__ */ new Map(), H = /* @__PURE__ */ new Map(), A = /* @__PURE__ */ new Map(), se = /* @__PURE__ */ new Map();
+      for (let e = 0; e < U; e++) oe.set(e, o.tLosa), D.set(e, L), y.set(e, o.nu), F.set(e, P), se.set(e, 1);
+      const te = o.bCol * o.hCol, me = o.bCol * Math.pow(o.hCol, 3) / 12, fe = o.hCol * Math.pow(o.bCol, 3) / 12, ne = (e, t) => {
+        const h = Math.max(e, t), f = Math.min(e, t), M = f / h;
+        return 1 / 3 * (1 - 0.21 * M * (1 - Math.pow(M, 4) / 12)) * h * Math.pow(f, 3);
+      }, ue = ne(o.bCol, o.hCol), ae = o.rigidOffsets > 0.5 ? o.hViga / 2 / a : 0;
+      for (let e = K; e < W; e++) D.set(e, L), y.set(e, o.nu), q.set(e, ee), O.set(e, te), N.set(e, fe), G.set(e, me), R.set(e, ue), F.set(e, P), H.set(e, {
         type: "rect",
         b: o.bCol,
         h: o.hCol
-      }), ie > 0 && F.set(e, [
+      }), ae > 0 && A.set(e, [
         0,
-        ie
+        ae
       ]);
-      const le = o.bViga * o.hViga, he = o.bViga * Math.pow(o.hViga, 3) / 12, pe = o.hViga * Math.pow(o.bViga, 3) / 12, be = ae(o.bViga, o.hViga), re = d / s, Y = o.rigidOffsets > 0.5 ? o.bCol / 2 / re : 0;
-      let C = U;
+      const le = o.bViga * o.hViga, he = o.bViga * Math.pow(o.hViga, 3) / 12, pe = o.hViga * Math.pow(o.bViga, 3) / 12, Me = ne(o.bViga, o.hViga), ie = c / s, Y = o.rigidOffsets > 0.5 ? o.bCol / 2 / ie : 0;
+      let g = B;
       for (let e = 0; e < 4; e++) for (let t = 0; t < s; t++) {
-        if (L.set(C, A), y.set(C, o.nu), q.set(C, oe), O.set(C, le), N.set(C, he), G.set(C, pe), R.set(C, be), D.set(C, P), H.set(C, {
+        if (D.set(g, L), y.set(g, o.nu), q.set(g, ee), O.set(g, le), N.set(g, pe), G.set(g, he), R.set(g, Me), F.set(g, P), H.set(g, {
           type: "rect",
           b: o.bViga,
           h: o.hViga
         }), Y > 0) {
-          const M = t === 0 ? Y : 0, c = t === s - 1 ? Y : 0;
-          M + c > 0 && F.set(C, [
-            M,
-            c
+          const h = t === 0 ? Y : 0, f = t === s - 1 ? Y : 0;
+          h + f > 0 && A.set(g, [
+            h,
+            f
           ]);
         }
-        C++;
+        g++;
       }
-      i.nodes.val = S, i.elements.val = f, i.elementInputs.val = {
-        elasticities: L,
+      l.nodes.val = S, l.elements.val = m, l.elementInputs.val = {
+        elasticities: D,
         poissonsRatios: y,
         shearModuli: q,
         areas: O,
         momentsOfInertiaY: N,
         momentsOfInertiaZ: G,
         torsionalConstants: R,
-        thicknesses: se,
-        densities: D,
+        thicknesses: oe,
+        densities: F,
         sectionShapes: H,
-        rigidOffsets: F.size > 0 ? F : void 0,
-        plateFormulations: te
+        rigidOffsets: A.size > 0 ? A : void 0,
+        plateFormulations: se
       };
-      function ce(e, t, M) {
-        const c = /* @__PURE__ */ new Map(), b = (u, h) => {
-          const v = c.get(u) || [
+      function re(e, t, h) {
+        const f = /* @__PURE__ */ new Map(), M = (u, C) => {
+          const v = f.get(u) || [
             0,
             0,
             0,
@@ -398,26 +398,26 @@ let __tla = Promise.all([
             0,
             0
           ];
-          c.set(u, [
+          f.set(u, [
             v[0],
             v[1],
-            v[2] + h,
+            v[2] + C,
             v[3],
             v[4],
             v[5]
           ]);
         };
         if (e !== 0) {
-          for (let g = 0; g < s; g++) for (let p = 0; p < s; p++) {
-            const W = -(o.tLosa * r * m * o.gamma_kNm3 * e) / 4;
-            for (const B of [
-              n(p, g),
-              n(p + 1, g),
-              n(p + 1, g + 1),
-              n(p, g + 1)
-            ]) b(B, W);
+          for (let b = 0; b < s; b++) for (let p = 0; p < s; p++) {
+            const Z = -(o.tLosa * r * d * o.gamma_kNm3 * e) / 4;
+            for (const I of [
+              n(p, b),
+              n(p + 1, b),
+              n(p + 1, b + 1),
+              n(p, b + 1)
+            ]) M(I, Z);
           }
-          const u = ne * a * o.gamma_kNm3 * e, h = [
+          const u = te * a * o.gamma_kNm3 * e, C = [
             [
               0,
               n(0, 0)
@@ -435,21 +435,21 @@ let __tla = Promise.all([
               n(0, s)
             ]
           ];
-          for (const [g, p] of h) b(g, -u / 2), b(p, -u / 2);
-          let v = U;
-          for (let g = 0; g < 4; g++) for (let p = 0; p < s; p++) {
-            const [k, W] = f[v], B = le * re * o.gamma_kNm3 * e;
-            b(k, -B / 2), b(W, -B / 2), v++;
+          for (const [b, p] of C) M(b, -u / 2), M(p, -u / 2);
+          let v = B;
+          for (let b = 0; b < 4; b++) for (let p = 0; p < s; p++) {
+            const [k, Z] = m[v], I = le * ie * o.gamma_kNm3 * e;
+            M(k, -I / 2), M(Z, -I / 2), v++;
           }
         }
-        const x = (t + M) * V;
-        if (x !== 0) for (let u = 0; u <= s; u++) for (let h = 0; h <= s; h++) {
-          const p = (h === 0 || h === s) && (u === 0 || u === s) ? 0.25 : h === 0 || h === s || u === 0 || u === s ? 0.5 : 1, k = -x * r * m * p;
-          b(n(h, u), k);
+        const $ = (t + h) * E;
+        if ($ !== 0) for (let u = 0; u <= s; u++) for (let C = 0; C <= s; C++) {
+          const p = (C === 0 || C === s) && (u === 0 || u === s) ? 0.25 : C === 0 || C === s || u === 0 || u === s ? 0.5 : 1, k = -$ * r * d * p;
+          M(n(C, u), k);
         }
-        return c;
+        return f;
       }
-      const E = [
+      const V = [
         {
           name: "Dead",
           sw: 1,
@@ -481,46 +481,38 @@ let __tla = Promise.all([
           live: 1.6 * o.q_Live
         }
       ], j = {}, X = {};
-      for (const e of E) {
-        const t = ce(e.sw, e.scp, e.live);
+      for (const e of V) {
+        const t = re(e.sw, e.scp, e.live);
         try {
-          const M = ve(S, f, {
+          const h = Ce(S, m, {
             supports: z,
             loads: t
-          }, i.elementInputs.val), c = ge(S, f, i.elementInputs.val, M);
+          }, l.elementInputs.val), f = be(S, m, l.elementInputs.val, h);
           j[e.name] = {
-            deform: M,
-            analyze: c
-          }, X[e.name] = Se(c, K, ee);
-        } catch (M) {
-          console.warn(`[Mesa torsi\xF3n] caso ${e.name} fall\xF3:`, M.message);
+            deform: h,
+            analyze: f
+          }, X[e.name] = ve(f, K, Q);
+        } catch (h) {
+          console.warn(`[Mesa torsi\xF3n] caso ${e.name} fall\xF3:`, h.message);
         }
       }
-      i._mesaTorsionCases = X, i._mesaTorsionAllResults = j;
+      l._mesaTorsionCases = X, l._mesaTorsionAllResults = j;
       const _ = [
         "Dead",
         "Live",
         "SCP",
         "UDCon1",
         "UDCon2"
-      ][Math.round(o.activeCase)] || "UDCon2", Z = j[_];
-      Z && (i.deformOutputs.val = Z.deform, i.analyzeOutputs.val = Z.analyze), i.nodeInputs.val = {
+      ][Math.round(o.activeCase)] || "UDCon2", J = j[_];
+      J && (l.deformOutputs.val = J.deform, l.analyzeOutputs.val = J.analyze), l.nodeInputs.val = {
         supports: z,
-        loads: ce(E.find((e) => e.name === _).sw, E.find((e) => e.name === _).scp, E.find((e) => e.name === _).live)
+        loads: re(V.find((e) => e.name === _).sw, V.find((e) => e.name === _).scp, V.find((e) => e.name === _).live)
       };
-      const $ = [];
-      $.push(`[Mesa torsi\xF3n] Caso visualizado: ${_}`), $.push(`  Discretizaci\xF3n: ${I} shells losa, 4 cols, ${ee - U} segs viga`), $.push(`  Rigid offsets: ${o.rigidOffsets > 0.5 ? `ON (col top -${(o.hViga / 2).toFixed(2)}m, viga ends -${(o.bCol / 2).toFixed(2)}m)` : "OFF"}`), $.push(""), $.push("  Picks por caso \u2014 Hekatan vs ETABS (\u0394% relativo, con SWAP V2\u2194V3 y M2\u2194M3 por convenci\xF3n awatif Z-up vs ETABS):"), $.push(`  ${"Case".padEnd(8)} ${"Comp".padEnd(4)} ${"Hekatan".padStart(10)} ${"ETABS".padStart(10)} ${"\u0394%".padStart(8)}`);
-      const J = {
-        P: "P",
-        T: "T",
-        V2: "V3",
-        V3: "V2",
-        M2: "M3",
-        M3: "M2"
-      };
-      for (const e of E) {
-        const t = X[e.name], M = de[e.name];
-        if (!(!t || !M)) for (const c of [
+      const x = [];
+      x.push(`[Mesa torsi\xF3n] Caso visualizado: ${_}`), x.push(`  Discretizaci\xF3n: ${U} shells losa, 4 cols, ${Q - B} segs viga`), x.push(`  Rigid offsets: ${o.rigidOffsets > 0.5 ? `ON (col top -${(o.hViga / 2).toFixed(2)}m, viga ends -${(o.bCol / 2).toFixed(2)}m)` : "OFF"}`), x.push(""), x.push("  Picks por caso \u2014 Hekatan vs ETABS (\u0394% relativo, sin remapear componentes):"), x.push(`  ${"Case".padEnd(8)} ${"Comp".padEnd(4)} ${"Hekatan".padStart(10)} ${"ETABS".padStart(10)} ${"\u0394%".padStart(8)}`);
+      for (const e of V) {
+        const t = X[e.name], h = ce[e.name];
+        if (!(!t || !h)) for (const f of [
           "P",
           "V2",
           "V3",
@@ -528,53 +520,53 @@ let __tla = Promise.all([
           "M2",
           "M3"
         ]) {
-          const b = t[c], x = M[J[c]], u = x !== 0 ? (b - x) / x * 100 : 0, h = c !== J[c] ? ` (\u2194ETABS ${J[c]})` : "";
-          $.push(`  ${e.name.padEnd(8)} ${c.padEnd(4)} ${b.toFixed(3).padStart(10)} ${x.toFixed(3).padStart(10)} ${(u >= 0 ? "+" : "") + u.toFixed(1).padStart(7)}%${h}`);
+          const M = t[f], $ = h[f], u = $ !== 0 ? (M - $) / $ * 100 : 0;
+          x.push(`  ${e.name.padEnd(8)} ${f.padEnd(4)} ${M.toFixed(3).padStart(10)} ${$.toFixed(3).padStart(10)} ${(u >= 0 ? "+" : "") + u.toFixed(1).padStart(7)}%`);
         }
       }
-      console.log($.join(`
-`)), i.objects3D.val = [];
+      console.log(x.join(`
+`)), l.objects3D.val = [];
     },
-    runModal(o, i, s) {
-      if (!i.nodes.val.length) return;
-      const d = Math.round(o.nModos);
+    runModal(o, l, s) {
+      if (!l.nodes.val.length) return;
+      const c = Math.round(o.nModos);
       try {
-        const l = Ce(i.nodes.val, i.elements.val, i.nodeInputs.val, i.elementInputs.val, d), a = [];
-        a.push(`[Mesa torsi\xF3n Modal Hekatan FEM 3D] ${d} modos:`);
-        for (let r = 0; r < Math.min(d, 6); r++) {
-          const m = 1 / l.frequencies[r];
-          a.push(`  Modo ${r + 1}: T = ${m.toFixed(4)} s   f = ${l.frequencies[r].toFixed(3)} Hz`);
+        const i = ge(l.nodes.val, l.elements.val, l.nodeInputs.val, l.elementInputs.val, c), a = [];
+        a.push(`[Mesa torsi\xF3n Modal Hekatan FEM 3D] ${c} modos:`);
+        for (let r = 0; r < Math.min(c, 6); r++) {
+          const d = 1 / i.frequencies[r];
+          a.push(`  Modo ${r + 1}: T = ${d.toFixed(4)} s   f = ${i.frequencies[r].toFixed(3)} Hz`);
         }
         a.push(""), a.push("ETABS 19.1 reference:"), a.push(`  Modo 1 T\u2081 Ux = ${T[0].toFixed(4)} s`), a.push(`  Modo 2 T\u2082 Uy = ${T[1].toFixed(4)} s`), a.push(`  Modo 3 T\u2083 Rz = ${T[2].toFixed(4)} s`), console.log(a.join(`
-`)), (s == null ? void 0 : s.render) && s.render(l, {
+`)), (s == null ? void 0 : s.render) && s.render(i, {
           title: `Mesa de Torsi\xF3n \u2014 ${o.Lx}\xD7${o.Ly}m, ${o.H}m alto`,
           properties: [
             `${o.apoyo < 0.5 ? "Pinned base" : "Empotrado"}  E=${o.E_GPa} GPa  \u03BD=${o.nu}`,
             `ETABS ref: T\u2081=${T[0]}s  T\u2082=${T[1]}s  T\u2083=${T[2]}s`
           ]
         });
-      } catch (l) {
-        console.error("[Mesa torsi\xF3n Modal] error:", l.message);
+      } catch (i) {
+        console.error("[Mesa torsi\xF3n Modal] error:", i.message);
       }
     }
   };
-  function Se(o, i, s) {
-    const d = (l) => {
-      if (!l) return 0;
+  function ve(o, l, s) {
+    const c = (i) => {
+      if (!i) return 0;
       let a = 0;
-      for (let r = i; r < s; r++) {
-        const m = l.get(r);
-        m && (a = Math.max(a, Math.abs(m[0]), Math.abs(m[1])));
+      for (let r = l; r < s; r++) {
+        const d = i.get(r);
+        d && (a = Math.max(a, Math.abs(d[0]), Math.abs(d[1])));
       }
       return a;
     };
     return {
-      P: d(o.normals) / V,
-      V2: d(o.shearsY) / V,
-      V3: d(o.shearsZ) / V,
-      T: d(o.torsions) / V,
-      M2: d(o.bendingsY) / V,
-      M3: d(o.bendingsZ) / V
+      P: c(o.normals) / E,
+      V2: c(o.shearsY) / E,
+      V3: c(o.shearsZ) / E,
+      T: c(o.torsions) / E,
+      M2: c(o.bendingsY) / E,
+      M3: c(o.bendingsZ) / E
     };
   }
 });
