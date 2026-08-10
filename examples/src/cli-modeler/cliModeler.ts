@@ -25,6 +25,12 @@
  *       canto y se declara con la densidad homogeneizada.
  *   support nodeID DOFs        (DOFs = "fixed" o "pinned" o "uxuyuz")
  *   load nodeID FX FY FZ MX MY MZ
+ *   frameload frameID WX WY WZ (carga repartida sobre la barra, kN/m, globales)
+ *       Es el `SetLoadDistributed` de ETABS. Se convierte a las fuerzas Y
+ *       MOMENTOS de empotramiento de la barra, que es exacto para los
+ *       desplazamientos y las reacciones. Usarlo en vez de repartir a mano por
+ *       ancho tributario: el tributario ignora que la viga es CONTINUA sobre
+ *       sus apoyos y se equivoca al lado de un vano ancho.
  *   spring nodeID dof k        (Winkler nodal, dof: ux/uy/uz/rx/ry/rz)
  *   solve                      (corre el FEM)
  *   reset                      (limpia todo)
@@ -77,6 +83,13 @@ interface ParsedModel {
   areaObjs: Array<{ id: number; pts: number[]; cells: number[] }>;
   supports: Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>;
   loads: Map<number, [number, number, number, number, number, number]>;
+  /** Carga uniformemente repartida sobre una BARRA, kN/m, en ejes GLOBALES.
+   *  Es el `SetLoadDistributed` de ETABS. Hasta ahora solo habia carga nodal,
+   *  asi que quien generaba el modelo tenia que repartir la carga a mano por
+   *  ancho tributario — y eso IGNORA que la viga es continua sobre sus apoyos:
+   *  medido contra ETABS, un tributario simple manda 16 % menos carga al apoyo
+   *  interior del vano ancho y 23 % mas al extremo. */
+  frameLoads: Map<number, [number, number, number]>;
   springs: Array<{ node: number; dof: number; k: number }>;
   doSolve: boolean;
   errors: string[];
@@ -117,6 +130,7 @@ export function parseCliCommands(text: string): ParsedModel {
     areaObjs: [],
     supports: new Map(),
     loads: new Map(),
+    frameLoads: new Map(),
     springs: [],
     doSolve: false,
     errors: [],
@@ -346,6 +360,17 @@ export function parseCliCommands(text: string): ParsedModel {
           m.loads.set(nodeId, [fx, fy, fz, mx, my, mz]);
           break;
         }
+        case "frameload":
+        case "fl": {
+          // frameload frameID wx wy wz   (kN/m, ejes globales)
+          const fid = parseInt(tokens[1], 10);
+          const wx = parseFloat(tokens[2] ?? "0");
+          const wy = parseFloat(tokens[3] ?? "0");
+          const wz = parseFloat(tokens[4] ?? "0");
+          const ant = m.frameLoads.get(fid) ?? [0, 0, 0];
+          m.frameLoads.set(fid, [ant[0] + wx, ant[1] + wy, ant[2] + wz]);
+          break;
+        }
         case "spring": {
           const nodeId = parseInt(tokens[1], 10);
           const dofName = (tokens[2] ?? "uz").toLowerCase();
@@ -363,7 +388,8 @@ export function parseCliCommands(text: string): ParsedModel {
         case "reset":
         case "clear":
           m.nodes.clear(); m.frames.length = 0; m.shells.length = 0;
-          m.supports.clear(); m.loads.clear(); m.springs.length = 0;
+          m.supports.clear(); m.loads.clear(); m.frameLoads.clear();
+          m.springs.length = 0;
           break;
         default:
           m.errors.push(`L${lineNo+1}: comando desconocido "${cmd}"`);
@@ -495,7 +521,45 @@ export const cliModeler: ExampleDef = {
     const loads = new Map<number, [number,number,number,number,number,number]>();
     for (const [id, ld] of m.loads.entries()) {
       const idx = idToIdx.get(id);
-      if (idx !== undefined) loads.set(idx, ld);
+      if (idx !== undefined) loads.set(idx, [...ld]);
+    }
+
+    // ── frameload -> cargas nodales CONSISTENTES (fuerzas + momentos) ────────
+    // Una carga repartida w sobre una barra de longitud L se sustituye por sus
+    // fuerzas de empotramiento perfecto:
+    //     F_i = F_j = w·L/2
+    //     M_i = +(L²/12)·(t × w)      M_j = −(L²/12)·(t × w)
+    // con t = versor de la barra. Esto es EXACTO para los desplazamientos y las
+    // reacciones nodales, y es lo que distingue una viga continua de un reparto
+    // por ancho tributario: sin los MOMENTOS, el apoyo interior de un vano ancho
+    // recibe de menos y el extremo de mas (medido: −16 % y +23 % en el galpon).
+    // Comprobacion del signo, viga en +x con carga hacia abajo w=(0,0,−q):
+    // t×w = (0,+q,0) -> M_i = +qL²/12 alrededor de +y, que es el empotramiento
+    // que da la teoria de vigas.
+    if (m.frameLoads.size) {
+      const acum = (idx: number, v: number[]) => {
+        const a = loads.get(idx) ?? [0, 0, 0, 0, 0, 0];
+        loads.set(idx, [a[0]+v[0], a[1]+v[1], a[2]+v[2],
+                        a[3]+v[3], a[4]+v[4], a[5]+v[5]] as
+                       [number,number,number,number,number,number]);
+      };
+      for (const [fid, w] of m.frameLoads.entries()) {
+        const f = m.frames.find(fr => fr.id === fid);
+        if (!f) { m.errors.push(`frameload ${fid}: no existe esa barra`); continue; }
+        const iI = idToIdx.get(f.nI), iJ = idToIdx.get(f.nJ);
+        if (iI === undefined || iJ === undefined) continue;
+        const a = nodes[iI], b = nodes[iJ];
+        const d = [b[0]-a[0], b[1]-a[1], b[2]-a[2]];
+        const L = Math.hypot(d[0], d[1], d[2]);
+        if (L < 1e-9) continue;
+        const t = [d[0]/L, d[1]/L, d[2]/L];
+        const c = L*L/12;
+        const txw = [t[1]*w[2] - t[2]*w[1],
+                     t[2]*w[0] - t[0]*w[2],
+                     t[0]*w[1] - t[1]*w[0]];
+        acum(iI, [w[0]*L/2, w[1]*L/2, w[2]*L/2,  c*txw[0],  c*txw[1],  c*txw[2]]);
+        acum(iJ, [w[0]*L/2, w[1]*L/2, w[2]*L/2, -c*txw[0], -c*txw[1], -c*txw[2]]);
+      }
     }
 
     // ── CARGA DE SUPERFICIE -> vector de fuerzas nodales CONSISTENTE ────────
