@@ -1066,6 +1066,20 @@ function exportFromScratch(input: ExportE2kInput): string {
       const ps = nodeToPS(nodeIdx);
       if (Math.abs(fx) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX ${rd(cF(fx))}  FY 0  FZ 0`);
       if (Math.abs(fy) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX 0  FY ${rd(cF(fy))}  FZ 0`);
+      // ── MOMENTOS ────────────────────────────────────────────────────
+      // Sin esto el e2k exportado NO reproduce el modelo. Una carga REPARTIDA
+      // sobre barra (`frameload` del CLI) se convierte a fuerzas Y MOMENTOS de
+      // empotramiento, y los momentos son justo lo que distingue una viga
+      // continua de un reparto nodal: omitirlos manda 16 % menos carga al apoyo
+      // interior de un vano ancho y 23 % mas al extremo.
+      // El formato sale de un e2k real:
+      //   POINTLOAD "3" "Level_1" LC "Dead" TYPE "FORCE" FX 0 FY 0 FZ -20 MX 0 MY 0 MZ 0
+      // Las coordenadas se escriben siempre en metros, asi que el momento
+      // (fuerza x longitud) convierte con el mismo factor que la fuerza.
+      const mx = load[3] ?? 0, my = load[4] ?? 0, mz = load[5] ?? 0;
+      if (Math.abs(mx) > 1e-10 || Math.abs(my) > 1e-10 || Math.abs(mz) > 1e-10) {
+        userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX 0  FY 0  FZ 0  MX ${rd(cF(mx))}  MY ${rd(cF(my))}  MZ ${rd(cF(mz))}`);
+      }
       // FZ: en modo "auto" se omite (lo computa ETABS via SELFWEIGHT=1);
       // en modo "manual" se emite explícitamente.
       if (weightMode === "manual" && Math.abs(fz) > 1e-10) {
