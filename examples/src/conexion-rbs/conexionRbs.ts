@@ -47,7 +47,7 @@ import * as THREE from "three";
 export const conexionRbs: ExampleDef = {
   id: "conexion-rbs",
   name: "Conexión RBS (AISC 358-22 · Protocolo K3)",
-  category: "Conexiones",
+  category: "🔩 Conexiones",
   hasModal: false,
   defaultShellResult: "vonMises",
   availableShellResults: [

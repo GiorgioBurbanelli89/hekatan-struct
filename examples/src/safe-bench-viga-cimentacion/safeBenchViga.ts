@@ -44,7 +44,7 @@ function buildZapataWireframe(L: number, B: number, t: number, color: number = 0
 export const safeBenchViga: ExampleDef = {
   id: "safe-bench-viga-cimentacion",
   name: "Viga de Cimentación · Zapata corrida + Viga + Pedestales",
-  category: "Cimentaciones",
+  category: "🧰 Cimentaciones",
   benchmark: true,
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],

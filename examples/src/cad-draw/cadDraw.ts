@@ -28,7 +28,7 @@ import { getState } from "./cadDrawState";
 export const cadDraw: ExampleDef = {
   id: "cad-draw",
   name: "CAD Drawer (mouse + Tweakpane)",
-  category: "Modelar",
+  category: "🧪 Utilidades",
   defaultShellResult: "none",
   availableShellResults: [],
   params: {},

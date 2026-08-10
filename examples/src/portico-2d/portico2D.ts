@@ -17,7 +17,7 @@ const PE = (folder: string, label: string, def: number, options: Record<string, 
 export const portico2D: ExampleDef = {
   id: "portico-2d",
   name: "Pórtico 2D (un piso)",
-  category: "Frames 1D",
+  category: "🏗 Pórticos y barras",
   defaultShellResult: "none",
   availableShellResults: [],
   hasModal: true,

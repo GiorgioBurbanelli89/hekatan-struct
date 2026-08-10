@@ -29,7 +29,7 @@ import { cftCapacity, cftCheck, type CftSectionInput } from "../shared/cftDesign
 export const columnaCft: ExampleDef = {
   id: "columna-cft",
   name: "Columna CFT (AISC 360-22 §I2)",
-  category: "Columnas",
+  category: "🏗 Pórticos y barras",
   hasModal: false,
   params: {
     // ── Sección ──

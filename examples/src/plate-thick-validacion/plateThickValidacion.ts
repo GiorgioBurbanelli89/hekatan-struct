@@ -15,7 +15,7 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 export const plateThickValidacion: ExampleDef = {
   id: "plate-thick-validacion",
   name: "Rectangular Slab — Mindlin (Calcpad validation)",
-  category: "Plates",
+  category: "🧱 Losas y cáscaras",
   defaultShellResult: "displacementZ",
   availableShellResults: ["displacementZ", "bendingXX", "bendingYY", "bendingXY", "shearX", "shearY"],
   hasModal: false,

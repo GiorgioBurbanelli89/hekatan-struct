@@ -30,7 +30,7 @@ params.slabT      = { ...base.slabT,      default: 0.12 };  // 5-cm deck + 7-cm 
 export const edificioAceroV2: ExampleDef = {
   id: "edificio-acero-v2",
   name: "Edificio Acero (W profiles)",
-  category: "Edificios",
+  category: "🏢 Edificios",
   defaultShellResult: "bendingXX",
   availableShellResults: ["bendingXX", "bendingYY", "displacementZ", "vonMises"],
   hasModal: true,

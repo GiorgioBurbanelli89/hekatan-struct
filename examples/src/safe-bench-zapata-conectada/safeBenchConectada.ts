@@ -10,7 +10,7 @@ const TONF_TO_KN = 9.80665;
 export const safeBenchConectada: ExampleDef = {
   id: "safe-bench-zapata-conectada",
   name: "SAFE Benchmark · Zapata Conectada 5×1m t variable (Δ -0.25%)",
-  category: "Cimentaciones",
+  category: "🧰 Cimentaciones",
   benchmark: true,
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],

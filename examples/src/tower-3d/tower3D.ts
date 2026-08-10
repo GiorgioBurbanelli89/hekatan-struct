@@ -13,7 +13,7 @@ const P = (folder: string, label: string, def: number, min: number, max: number,
 export const tower3D: ExampleDef = {
   id: "tower-3d",
   name: "Torre 3D (con diagonales)",
-  category: "Frames 1D",
+  category: "🏗 Pórticos y barras",
   defaultShellResult: "none",
   availableShellResults: [],
   hasModal: true,

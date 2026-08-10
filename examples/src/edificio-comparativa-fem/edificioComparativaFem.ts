@@ -57,7 +57,7 @@ params.slabOn   = { ...base.slabOn,   default: 0 };  // Default OFF (frame puro 
 export const edificioComparativaFem: ExampleDef = {
   id: "edificio-comparativa-fem",
   name: "Edificio · Comparativa FEM cruzada",
-  category: "Edificios",
+  category: "🏢 Edificios",
   benchmark: true,  // 🏁 Comparativa cruzada Hekatan vs OpenSees / CalculiX / Code Aster
   defaultShellResult: "vonMises",
   availableShellResults: ["vonMises", "bendingXX", "bendingYY", "displacementZ"],

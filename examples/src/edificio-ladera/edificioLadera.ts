@@ -25,7 +25,7 @@ const PE = (folder: string, label: string, def: number, options: Record<string, 
 export const edificioLadera: ExampleDef = {
   id: "edificio-ladera",
   name: "Edificio en Ladera",
-  category: "Edificios",
+  category: "🏢 Edificios",
   defaultShellResult: "none",
   availableShellResults: [],
   hasModal: true,

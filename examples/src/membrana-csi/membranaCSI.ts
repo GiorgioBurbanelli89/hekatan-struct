@@ -43,7 +43,7 @@ const rho_c = 24;  // kN/m³ (hormigón)
 export const membranaCSI: ExampleDef = {
   id: "membrana-csi",
   name: "Membrana CSI (Shell-Membrane + tri/trap load)",
-  category: "Placas",
+  category: "🧱 Losas y cáscaras",
   defaultShellResult: "vonMises",
   availableShellResults: ["vonMises", "membraneXX", "membraneYY", "membraneXY", "displacementX", "displacementY", "displacementZ"],
   hasModal: true,

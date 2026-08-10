@@ -15,7 +15,7 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 export const csiImporter: ExampleDef = {
   id: "csi-importer",
   name: "Importar CSI (F2K/E2K/S2K)",
-  category: "Importar",
+  category: "🧪 Utilidades",
   defaultShellResult: "none",
   availableShellResults: [],
   params: {},

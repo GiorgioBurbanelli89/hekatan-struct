@@ -111,7 +111,7 @@ const SPRING_COMPRESSION_FRACTION = 0.8;
 export const zapataAislada: ExampleDef = {
   id: "zapata-aislada",
   name: "Zapata Aislada (Ecuador q_adm tonf/m²)",
-  category: "Cimentaciones",
+  category: "🧰 Cimentaciones",
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "displacementZ", "vonMises"],
   hasModal: true,

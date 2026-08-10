@@ -162,7 +162,7 @@ const MODEL_NAMES: Record<number, string> = {
 export const safeBenchComparativa: ExampleDef = {
   id: "safe-bench-zapata-comparativa",
   name: "🎓 Zapata ISSE Comparativa: Empotrada vs Winkler vs Vesic (5 autores)",
-  category: "Cimentaciones",
+  category: "🧰 Cimentaciones",
   benchmark: true,
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],

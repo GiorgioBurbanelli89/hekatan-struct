@@ -34,14 +34,14 @@ function legacy(id: string, name: string, category: string, benchmark = false): 
 }
 
 // ─── FEM básico ──────────────────────────────────────────────────────
-export const legacy1dMesh       = legacy("1d-mesh",       "Hekatan – 1D Mesh",          "Legacy · FEM básico");
-export const legacy2dMesh       = legacy("2d-mesh",       "Hekatan – 2D Mesh",          "Legacy · FEM básico");
-export const legacy3dStructure  = legacy("3d-structure",  "Hekatan – 3D Structure",     "Legacy · FEM básico");
+export const legacy1dMesh       = legacy("1d-mesh",       "Hekatan – 1D Mesh",          "🗄 Legacy · FEM básico");
+export const legacy2dMesh       = legacy("2d-mesh",       "Hekatan – 2D Mesh",          "🗄 Legacy · FEM básico");
+export const legacy3dStructure  = legacy("3d-structure",  "Hekatan – 3D Structure",     "🗄 Legacy · FEM básico");
 
 // ─── Frames y trusses ────────────────────────────────────────────────
-export const legacyAxialBar     = legacy("axial-bar",     "Hekatan – Axial Bar",        "Legacy · Frames");
-export const legacyTruss        = legacy("truss",         "Hekatan – Truss",            "Legacy · Frames");
-export const legacyAdvancedTruss= legacy("advanced-truss","Hekatan – Advanced Truss",   "Legacy · Frames");
+export const legacyAxialBar     = legacy("axial-bar",     "Hekatan – Axial Bar",        "🏗 Pórticos y barras");
+export const legacyTruss        = legacy("truss",         "Hekatan – Truss",            "🏗 Pórticos y barras");
+export const legacyAdvancedTruss= legacy("advanced-truss","Hekatan – Advanced Truss",   "🏗 Pórticos y barras");
 export const legacyBeams        = legacy("beams",         "Paz 6.3 Space Frame (validación 4 solvers)", "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 n DOF Sistemas", true);
 
 // ─── Edificios ──────────────────────────────────────────────────────
@@ -52,33 +52,33 @@ export const legacyPlate        = legacy("plate",         "Hekatan – Plate (le
 export const legacyPlateQ4      = legacy("plate-q4",      "Hekatan – Plate Q4 Studio",  "Legacy · Placas");
 
 // ─── Visualización / didácticos ─────────────────────────────────────
-export const legacyColorMap     = legacy("color-map",     "Hekatan – Color Map demo",   "Legacy · Visualización");
-export const legacyCurves       = legacy("curves",        "Hekatan – Curves demo",      "Legacy · Visualización");
-export const legacyDrawing      = legacy("drawing",       "Hekatan – Drawing canvas",   "Legacy · Visualización");
-export const legacyTables       = legacy("tables",        "Hekatan – Tables demo",      "Legacy · Visualización");
+export const legacyColorMap     = legacy("color-map",     "Hekatan – Color Map demo",   "🗄 Legacy · Visualización");
+export const legacyCurves       = legacy("curves",        "Hekatan – Curves demo",      "🗄 Legacy · Visualización");
+export const legacyDrawing      = legacy("drawing",       "Hekatan – Drawing canvas",   "🗄 Legacy · Visualización");
+export const legacyTables       = legacy("tables",        "Hekatan – Tables demo",      "🗄 Legacy · Visualización");
 
 // ─── Editores (CAD / cálculo / losas) ───────────────────────────────
-export const legacyCadEditor    = legacy("cad-editor",    "Hekatan – CAD Editor",       "Legacy · Editores");
-export const legacyCalcEditor   = legacy("calc-editor",   "Hekatan – Calc Editor",      "Legacy · Editores");
-export const legacySlabDesigner = legacy("slab-designer", "Hekatan – Slab Designer",    "Legacy · Editores");
+export const legacyCadEditor    = legacy("cad-editor",    "Hekatan – CAD Editor",       "🧪 Utilidades");
+export const legacyCalcEditor   = legacy("calc-editor",   "Hekatan – Calc Editor",      "🧪 Utilidades");
+export const legacySlabDesigner = legacy("slab-designer", "Hekatan – Slab Designer",    "🧪 Utilidades");
 
 // ─── Educativo ──────────────────────────────────────────────────────
 export const legacyFemExplained = legacy("fem-explained", "Hekatan – FEM Explained",    "Legacy · Educativo");
 export const legacyReport       = legacy("report",        "Hekatan – Report (Calcpad)", "Legacy · Educativo");
 
 // ─── Estructuras emblemáticas (extraídas de getCad3d.ts) ────────────
-export const iconicGatewayArch  = legacy("gateway-arch",         "Gateway Arch",                "Estructuras emblemáticas");
-export const iconicCableBridge  = legacy("cable-stayed-bridge",  "Puente Atirantado",           "Estructuras emblemáticas");
-export const iconicTwistedTower = legacy("twisted-tower",        "Torre Retorcida",             "Estructuras emblemáticas");
-export const iconicBurjKhalifa  = legacy("burj-khalifa",         "Burj Khalifa style",          "Estructuras emblemáticas");
-export const iconicSydneyOpera  = legacy("sydney-opera",         "Sydney Opera House",          "Estructuras emblemáticas");
+export const iconicGatewayArch  = legacy("gateway-arch",         "Gateway Arch",                "🗽 Icónicos");
+export const iconicCableBridge  = legacy("cable-stayed-bridge",  "Puente Atirantado",           "🗽 Icónicos");
+export const iconicTwistedTower = legacy("twisted-tower",        "Torre Retorcida",             "🗽 Icónicos");
+export const iconicBurjKhalifa  = legacy("burj-khalifa",         "Burj Khalifa style",          "🗽 Icónicos");
+export const iconicSydneyOpera  = legacy("sydney-opera",         "Sydney Opera House",          "🗽 Icónicos");
 export const iconicDiagrid      = legacy("diagrid",              "Diagrid (Gherkin) style",     "Estructuras emblemáticas");
-export const iconicPergola      = legacy("pergola",              "Pérgola de acero",            "Estructuras emblemáticas");
+export const iconicPergola      = legacy("pergola",              "Pérgola de acero",            "🗽 Icónicos");
 
 // ─── Demos FEM Q4 (validación contra OpenSees/SAP/ETABS) ────────────
-export const demoShearWallQ4    = legacy("shear-wall-q4",        "Muro de Corte Q4",            "Demos FEM Q4");
-export const demoCantileverQ4   = legacy("cantilever-beam-q4",   "Viga Cantilever Q4",          "Demos FEM Q4");
-export const demoPlacaQ4        = legacy("placa-cantilever-q4",  "Placa Cantilever XY Q4",      "Demos FEM Q4");
+export const demoShearWallQ4    = legacy("shear-wall-q4",        "Muro de Corte Q4",            "🗄 Legacy · FEM Q4");
+export const demoCantileverQ4   = legacy("cantilever-beam-q4",   "Viga Cantilever Q4",          "🗄 Legacy · FEM Q4");
+export const demoPlacaQ4        = legacy("placa-cantilever-q4",  "Placa Cantilever XY Q4",      "🗄 Legacy · FEM Q4");
 
 // ─── Geotécnico ────────────────────────────────────────────────────
 export const demoSlope          = legacy("slope-stability",      "Estabilidad de Talud (SRM)",  "Geotécnico");

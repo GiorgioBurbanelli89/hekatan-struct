@@ -43,7 +43,7 @@ const PE = (folder: string, label: string, def: number, options: Record<string, 
 export const vigaMedioElastico: ExampleDef = {
   id: "viga-medio-elastico",
   name: "Viga sobre Medio Elástico (Winkler)",
-  category: "Cimentaciones",
+  category: "🧰 Cimentaciones",
   defaultShellResult: "none",
   availableShellResults: [],
   hasModal: true,

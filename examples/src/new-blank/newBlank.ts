@@ -35,7 +35,7 @@ const PE = (folder: string, label: string, def: number, options: Record<string, 
 export const newBlank: ExampleDef = {
   id: "new-blank",
   name: "📄 Archivo nuevo (lienzo CAD 2D/3D)",
-  category: "Archivo nuevo",
+  category: "🧪 Utilidades",
   defaultShellResult: "none",
   availableShellResults: [],
   hasModal: false,

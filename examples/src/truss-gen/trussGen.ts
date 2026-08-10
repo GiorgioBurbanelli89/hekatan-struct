@@ -13,7 +13,7 @@ const rho_s = 78;       // kN/m³
 export const trussGen: ExampleDef = {
   id: "truss-gen",
   name: "Cercha (Warren)",
-  category: "Frames 1D",
+  category: "🏗 Pórticos y barras",
   defaultShellResult: "none",
   availableShellResults: [],
   hasModal: true,

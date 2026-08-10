@@ -18,7 +18,7 @@ const P = (folder: string, label: string, def: number, min: number, max: number,
 export const eiffel = makeSimpleExample({
   id: "eiffel",
   name: "Torre Eiffel",
-  category: "Icónicos",
+  category: "🗽 Icónicos",
   params: {
     H:     P("Geometría", "Altura total (m)", 30, 10, 80, 1),
     baseW: P("Geometría", "Base (m)", 15, 5, 30, 1),
@@ -60,7 +60,7 @@ export const eiffel = makeSimpleExample({
 export const arco = makeSimpleExample({
   id: "arco",
   name: "Arco (Gateway)",
-  category: "Icónicos",
+  category: "🗽 Icónicos",
   params: {
     span:  P("Geometría", "Luz (m)", 40, 10, 100, 2),
     rise:  P("Geometría", "Flecha (m)", 20, 5, 60, 1),
@@ -92,7 +92,7 @@ export const arco = makeSimpleExample({
 export const puente = makeSimpleExample({
   id: "puente",
   name: "Puente reticular",
-  category: "Icónicos",
+  category: "🗽 Icónicos",
   params: {
     span:   P("Geometría", "Luz (m)", 30, 10, 80, 2),
     height: P("Geometría", "Canto (m)", 4, 1, 10, 0.5),
@@ -128,7 +128,7 @@ export const puente = makeSimpleExample({
 export const burj = makeSimpleExample({
   id: "burj",
   name: "Burj (torre esbelta)",
-  category: "Icónicos",
+  category: "🗽 Icónicos",
   params: {
     H:       P("Geometría", "Altura (m)", 100, 30, 300, 5),
     baseW:   P("Geometría", "Base (m)", 20, 5, 40, 1),
@@ -168,7 +168,7 @@ export const burj = makeSimpleExample({
 export const twisted = makeSimpleExample({
   id: "twisted",
   name: "Twisted (Turning Torso)",
-  category: "Icónicos",
+  category: "🗽 Icónicos",
   params: {
     H:         P("Geometría", "Altura (m)", 80, 20, 200, 5),
     baseW:     P("Geometría", "Lado (m)", 15, 5, 30, 1),
@@ -211,7 +211,7 @@ export const twisted = makeSimpleExample({
 export const diagrid = makeSimpleExample({
   id: "diagrid",
   name: "Diagrid (Gherkin)",
-  category: "Icónicos",
+  category: "🗽 Icónicos",
   params: {
     H:      P("Geometría", "Altura (m)", 60, 20, 150, 5),
     R:      P("Geometría", "Radio base (m)", 10, 3, 30, 0.5),
@@ -259,7 +259,7 @@ export const diagrid = makeSimpleExample({
 export const opera = makeSimpleExample({
   id: "opera",
   name: "Opera Sydney (esquemático)",
-  category: "Icónicos",
+  category: "🗽 Icónicos",
   params: {
     span:    P("Geometría", "Luz concha (m)", 30, 10, 60, 2),
     rise:    P("Geometría", "Altura concha (m)", 20, 5, 40, 1),
@@ -347,7 +347,7 @@ export const edifMixto: ExampleDef = {
 export const losaRect = makeSimpleExample({
   id: "losa-rect",
   name: "Losa Rectangular",
-  category: "Placas Q4",
+  category: "🧱 Losas y cáscaras",
   params: {
     Lx: P("Geometría", "Lx (m)", 6, 2, 15, 0.5),
     Ly: P("Geometría", "Ly (m)", 4, 2, 15, 0.5),
@@ -392,7 +392,7 @@ export const losaRect = makeSimpleExample({
 export const vigaAlta = makeSimpleExample({
   id: "viga-alta",
   name: "Viga alta (Deep Beam)",
-  category: "Placas Q4",
+  category: "🧱 Losas y cáscaras",
   params: {
     L:  P("Geometría", "Luz (m)", 4, 1, 10, 0.5),
     H:  P("Geometría", "Altura (m)", 2, 0.5, 5, 0.1),
@@ -435,7 +435,7 @@ export const vigaAlta = makeSimpleExample({
 export const muroContencion = makeSimpleExample({
   id: "muro-contencion",
   name: "Muro de contención",
-  category: "Placas Q4",
+  category: "🧱 Losas y cáscaras",
   params: {
     H:  P("Geometría", "H (m)", 4, 2, 10, 0.25),
     W:  P("Geometría", "Ancho base (m)", 3, 1, 8, 0.25),
@@ -477,7 +477,7 @@ export const muroContencion = makeSimpleExample({
 export const muroQ4 = makeSimpleExample({
   id: "muro-q4",
   name: "Muro Q4 (cantiléver)",
-  category: "Placas Q4",
+  category: "🧱 Losas y cáscaras",
   params: {
     W:  P("Geometría", "Ancho (m)", 3, 1, 8, 0.25),
     H:  P("Geometría", "Altura (m)", 5, 2, 15, 0.5),
@@ -514,7 +514,7 @@ export const muroQ4 = makeSimpleExample({
 export const vigaQ4 = makeSimpleExample({
   id: "viga-q4",
   name: "Viga Q4 (cantiléver)",
-  category: "Placas Q4",
+  category: "🧱 Losas y cáscaras",
   params: {
     L:  P("Geometría", "L (m)", 4, 1, 10, 0.5),
     H:  P("Geometría", "H (m)", 0.6, 0.2, 2, 0.1),
@@ -546,7 +546,7 @@ export const vigaQ4 = makeSimpleExample({
 export const pergola = makeSimpleExample({
   id: "pergola",
   name: "Pérgola",
-  category: "Estructuras varias",
+  category: "🏗 Pórticos y barras",
   params: {
     W:  P("Geometría", "Ancho (m)", 4, 2, 10, 0.25),
     L:  P("Geometría", "Largo (m)", 5, 2, 12, 0.5),
@@ -579,7 +579,7 @@ export const pergola = makeSimpleExample({
 export const colPlacaBase = makeSimpleExample({
   id: "col-placa",
   name: "Columna + Placa Base",
-  category: "Placas Q4",
+  category: "🧱 Losas y cáscaras",
   params: {
     Lx: P("Geometría", "Lx placa (m)", 0.40, 0.20, 1.0, 0.05),
     Ly: P("Geometría", "Ly placa (m)", 0.40, 0.20, 1.0, 0.05),
@@ -624,7 +624,7 @@ export const colPlacaBase = makeSimpleExample({
 export const placaOrificios = makeSimpleExample({
   id: "placa-orificios",
   name: "Placa con orificios",
-  category: "Placas Q4",
+  category: "🧱 Losas y cáscaras",
   params: {
     Lx: P("Geometría", "Lx (m)", 0.50, 0.2, 1.5, 0.05),
     Ly: P("Geometría", "Ly (m)", 0.50, 0.2, 1.5, 0.05),
@@ -665,7 +665,7 @@ export const placaOrificios = makeSimpleExample({
 export const placaXY = makeSimpleExample({
   id: "placa-xy",
   name: "Placa XY (cantiléver)",
-  category: "Placas Q4",
+  category: "🧱 Losas y cáscaras",
   params: {
     Lx: P("Geometría", "Lx (m)", 4, 1, 10, 0.5),
     Ly: P("Geometría", "Ly (m)", 2, 1, 6, 0.25),
@@ -701,7 +701,7 @@ export const placaXY = makeSimpleExample({
 export const losaPlana = makeSimpleExample({
   id: "losa-plana",
   name: "Losa plana (con columnas internas)",
-  category: "Placas Q4",
+  category: "🧱 Losas y cáscaras",
   params: {
     Lx: P("Geometría", "Lx (m)", 8, 3, 16, 0.5),
     Ly: P("Geometría", "Ly (m)", 6, 3, 16, 0.5),
@@ -748,7 +748,7 @@ export const losaPlana = makeSimpleExample({
 export const talud = makeSimpleExample({
   id: "talud",
   name: "Talud (slope)",
-  category: "Placas Q4",
+  category: "🧱 Losas y cáscaras",
   params: {
     L:  P("Geometría", "Longitud (m)", 20, 5, 50, 1),
     H:  P("Geometría", "Altura (m)", 10, 2, 30, 0.5),

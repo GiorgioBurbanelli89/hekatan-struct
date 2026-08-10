@@ -27,7 +27,7 @@ params.nPisos     = { ...baseParams.nPisos,     default: 6 };
 export const edificioConMuros: ExampleDef = {
   id: "edificio-con-muros",
   name: "Edificio con Muros de corte",
-  category: "Edificios",
+  category: "🏢 Edificios",
   defaultShellResult: "bendingXX",
   availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "displacementZ", "vonMises"],
   hasModal: true,

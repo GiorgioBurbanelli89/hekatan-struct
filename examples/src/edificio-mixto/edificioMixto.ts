@@ -31,7 +31,7 @@ params.fcConcr    = { ...base.fcConcr,    default: 280 };  // f'c típico compos
 export const edificioMixto: ExampleDef = {
   id: "edificio-mixto",
   name: "Edificio Mixto (Col Hormigón + Viga Acero)",
-  category: "Edificios",
+  category: "🏢 Edificios",
   defaultShellResult: "bendingXX",
   availableShellResults: ["bendingXX", "bendingYY", "displacementZ", "vonMises"],
   hasModal: true,
