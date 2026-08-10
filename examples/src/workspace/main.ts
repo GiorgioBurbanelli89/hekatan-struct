@@ -4962,35 +4962,40 @@ solve`;
         try {
           const text = await file.text();
           const model = parseE2k(text);
-          // ── Carga el modelo en new-blank vía localStorage + navegación ──
-          // Convierte nodes/elements a drawingPoints/drawingPolylines y los
-          // persiste; new-blank al cargar los lee y construye el modelo FEM.
-          const points = model.nodes.map((n: number[]) => [n[0], n[1], n[2]]);
-          const polylines: number[][] = [];
-          const areas: number[] = [];
-          for (let i = 0; i < model.elements.length; i++) {
-            const elem = model.elements[i] as number[];
-            if (elem.length === 4) {
-              // Shell Q4 — guardar como polilínea cerrada + marcar como área
-              polylines.push([...elem, elem[0]]);
-              areas.push(polylines.length - 1);
-            } else {
-              // Frame — polilínea de 2 puntos
-              polylines.push([elem[0], elem[1]]);
-            }
+          // ── El modelo va ENTERO al importador, no a `new-blank` ──────────
+          // Antes se guardaban SOLO los puntos y las lineas y se navegaba a
+          // `new-blank`, o sea al ARCHIVO NUEVO: se tiraban las secciones, los
+          // materiales, los apoyos y las cargas que el parser ya habia leido,
+          // y el modelo importado acababa mostrando las secciones y cargas por
+          // defecto del archivo nuevo (bCol, hCol, bViga, hViga, tShell, Fz,
+          // Fx). Un archivo EXISTENTE tiene que mostrar SUS datos.
+          const ei: Record<string, [number, number][]> = {};
+          for (const [k, v] of Object.entries(model.elementInputs ?? {})) {
+            if (v instanceof Map) ei[k] = [...v.entries()] as [number, number][];
           }
-          localStorage.setItem("__hekatan_pending_import__", JSON.stringify({
-            source: "E2K",
-            filename: file.name,
-            nodes: points,
-            polylines,
-            areas,
-            timestamp: Date.now(),
-          }));
-          console.log(`✅ E2K importado: ${file.name} (${model.nodes.length} nodos, ${model.elements.length} elementos) → cargando en new-blank...`);
-          // Navegar a new-blank
+          (window as any).__hekatanImportedModel = {
+            fuente: "E2K",
+            archivo: file.name,
+            nodes: model.nodes,
+            elements: model.elements,
+            tipos: model.elements.map((e: number[], i: number) =>
+              e.length === 4 ? "AREA" : (model.elementTypes?.[i] ?? "BEAM")),
+            secciones: model.elements.map((_e: number[], i: number) =>
+              model.elementSections?.get(i) ?? "—"),
+            plantas: model.elementStories ?? [],
+            supports: [...((model.nodeInputs?.supports as Map<number, boolean[]>) ?? new Map()).entries()],
+            loads: [...((model.nodeInputs?.loads as Map<number, number[]>) ?? new Map()).entries()],
+            elementInputs: ei,
+            info: model.info,
+          };
+          const nSec = new Set(model.elements.map((_e: number[], i: number) =>
+            model.elementSections?.get(i))).size;
+          console.log(`✅ E2K importado: ${file.name} — ${model.nodes.length} nudos, `
+            + `${model.elements.length} elementos, ${nSec} secciones, `
+            + `${(model.nodeInputs?.supports as Map<number, boolean[]>)?.size ?? 0} apoyos. `
+            + `Se muestra en «Importar CSI» con SUS datos.`);
           const u = new URL(window.location.href);
-          u.searchParams.set("t", "new-blank");
+          u.searchParams.set("t", "csi-importer");
           window.location.href = u.toString();
         } catch (e: any) {
           alert(`Error importando E2K: ${e?.message ?? e}`); console.error(e);
