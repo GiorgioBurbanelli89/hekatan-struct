@@ -40,6 +40,10 @@ export default defineConfig({
         "advanced-truss": "src/advanced-truss/index.html",
         beams: "src/beams/index.html",
         workspace: "src/workspace/index.html",
+        // plantilla para MODELOS EXISTENTES (.heks) — panel compacto,
+        // sin selector de ejemplos ni sliders de geometria
+        modelo: "src/modelo/index.html",
+        nuevo: "src/nuevo/index.html",
         curves: "src/curves/index.html",
         "1d-mesh": "src/1d-mesh/index.html",
         truss: "src/truss/index.html",

@@ -245,7 +245,7 @@ export function getSettings(
     // controles relacionados, así que viven en un folder colapsable para
     // no ocupar espacio en el panel principal. Default colapsado para vista
     // limpia; el usuario lo expande cuando quiere ajustar.
-    const gridFolder = pane.addFolder({ title: "📐 Grid", expanded: true });
+    const gridFolder = pane.addFolder({ title: "📐 Grid", expanded: false });
     // Etiquetas claras:
     //  - Dimensión   = tamaño TOTAL del grid (cuántos metros mide cada lado)
     //  - Separación  = distancia entre LÍNEAS (cada cuánto se dibuja una)
@@ -274,63 +274,68 @@ export function getSettings(
     gridFolder.addBinding(settings.gridYZ, "val", { label: "Plano YZ (lateral)" });
     // NOTA: deformScale XY/Z se bindean en Analysis Outputs JUNTO al toggle
     // "Deformed shape" para evitar duplicacion y mantener UX coherente.
-    pane.addBinding(settings.nodes, "val", { label: "Nodes" });
-    pane.addBinding(settings.elements, "val", {
+    // ── QUE SE VE ──
+    // Estos 20 interruptores colgaban SUELTOS del panel y lo dejaban
+    // kilometrico: Jorge, 2026-08-12, "no me gusta que el tweakpane se vea
+    // enorme". Van en su propio folder y CERRADO: se abren cuando hacen falta.
+    const verFolder = pane.addFolder({ title: "👁 Ver", expanded: false });
+    verFolder.addBinding(settings.nodes, "val", { label: "Nodes" });
+    verFolder.addBinding(settings.elements, "val", {
       label: "Elements",
     });
-    pane.addBinding(settings.edges, "val", {
+    verFolder.addBinding(settings.edges, "val", {
       label: "  Edges (delim.)",
     });
-    pane.addBinding(settings.faces, "val", {
+    verFolder.addBinding(settings.faces, "val", {
       label: "  Caras (fill)",
     });
-    pane.addBinding(settings.elemFrames, "val", {
+    verFolder.addBinding(settings.elemFrames, "val", {
       label: "  Frames (todos)",
     });
-    pane.addBinding(settings.elemColumns, "val", {
+    verFolder.addBinding(settings.elemColumns, "val", {
       label: "    Columnas",
     });
-    pane.addBinding(settings.elemBeams, "val", {
+    verFolder.addBinding(settings.elemBeams, "val", {
       label: "    Vigas",
     });
-    pane.addBinding(settings.elemZapatas, "val", {
+    verFolder.addBinding(settings.elemZapatas, "val", {
       label: "  Zapatas (shells z≤0)",
     });
-    pane.addBinding(settings.elemLosas, "val", {
+    verFolder.addBinding(settings.elemLosas, "val", {
       label: "  Losas (shells z>0)",
     });
-    pane.addBinding(settings.colorByType, "val", {
+    verFolder.addBinding(settings.colorByType, "val", {
       label: "  🎨 Color por tipo",
     });
-    pane.addBinding(settings.nodesIndexes, "val", {
+    verFolder.addBinding(settings.nodesIndexes, "val", {
       label: "Nodes indexes",
     });
-    pane.addBinding(settings.elementsIndexes, "val", {
+    verFolder.addBinding(settings.elementsIndexes, "val", {
       label: "Elements indexes",
     });
-    pane.addBinding(settings.orientations, "val", {
+    verFolder.addBinding(settings.orientations, "val", {
       label: "Orientations",
     });
-    pane.addBinding(settings.sections, "val", {
+    verFolder.addBinding(settings.sections, "val", {
       label: "Sections",
     });
-    pane.addBinding(settings.sectionLabels, "val", {
+    verFolder.addBinding(settings.sectionLabels, "val", {
       label: "  Sec. Labels (30x50)",
     });
-    pane.addBinding(settings.secColumns, "val", {
+    verFolder.addBinding(settings.secColumns, "val", {
       label: "  Sec. Columnas",
     });
-    pane.addBinding(settings.secBeams, "val", {
+    verFolder.addBinding(settings.secBeams, "val", {
       label: "  Sec. Vigas",
     });
-    pane.addBinding(settings.secFloor, "val", {
+    verFolder.addBinding(settings.secFloor, "val", {
       label: "  Sec. Piso",
       options: { 'Todos': -1, 'Piso 1': 0, 'Piso 2': 1, 'Piso 3': 2, 'Piso 4': 3, 'Piso 5': 4 },
     });
   }
 
   if (mesh?.nodeInputs || mesh?.elementInputs) {
-    const inputs = pane.addFolder({ title: "Analysis Inputs" });
+    const inputs = pane.addFolder({ title: "📌 Analysis Inputs", expanded: false });
 
     inputs.addBinding(settings.supports, "val", { label: "Supports" });
     inputs.addBinding(settings.loads, "val", { label: "Loads" });
@@ -339,7 +344,10 @@ export function getSettings(
   }
 
   if (mesh?.deformOutputs || mesh?.analyzeOutputs) {
-    const outputs = pane.addFolder({ title: "Analysis Outputs" });
+    // El folder donde vive TODO lo de analizar: los resultados por tipo
+    // (node / frame / shell), el caso activo, las tablas y el modal. Antes el
+    // modal estaba en otro panel y habia que buscarlo.
+    const outputs = pane.addFolder({ title: "🔬 Analyze", expanded: true });
     // Exponer el folder para que el workspace inyecte "Case results" (Dead/Live/Modal)
     // junto a Node/Frame/Shell results — los selectores de resultado quedan juntos.
     (window as any).__hekatanOutputsFolder = outputs;

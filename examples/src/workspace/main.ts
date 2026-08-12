@@ -2890,7 +2890,14 @@ function buildParamsPane() {
 
   const selectorObj = { category: currentExample.category, id: currentExample.id };
 
-  const catBinding = pane.addBinding(selectorObj, "category", {
+  // Con un modelo cargado por URL, el selector Categoria/Ejemplo cambiaria el
+  // modelo por otro: es lo ultimo que se quiere tener a mano. Va dentro de un
+  // folder cerrado en vez de ocupar las dos primeras filas del panel.
+  const selHost = URL_HEKS
+    ? pane.addFolder({ title: "📂 Cambiar de ejemplo", expanded: false })
+    : pane;
+
+  const catBinding = selHost.addBinding(selectorObj, "category", {
     label: "Categoría", options: catOptions,
   });
 
@@ -2925,7 +2932,7 @@ function buildParamsPane() {
         .map((e) => [`${e.benchmark ? "🏁 " : ""}${e.name}`, e.id])
     );
 
-  let exBinding = pane.addBinding(selectorObj, "id", {
+  let exBinding = selHost.addBinding(selectorObj, "id", {
     label: "Ejemplo", options: buildExOptions(selectorObj.category),
   });
   exBinding.on("change", (e) => {
@@ -2945,7 +2952,7 @@ function buildParamsPane() {
     // disponer y recrear. Usamos el orden actual (después de category, antes de
     // que termine el constructor del pane).
     try { exBinding.dispose(); } catch {}
-    exBinding = pane.addBinding(selectorObj, "id", {
+    exBinding = selHost.addBinding(selectorObj, "id", {
       label: "Ejemplo", options: newOptions, index: 2,  // colocar justo después de Categoría
     });
     exBinding.on("change", (ev) => {
@@ -5192,11 +5199,18 @@ solve`;
   //  - "Parámetros" (raíz)
   //  - Cualquier folder con "Modo" en el título (el selector Simple/D/L/S/Combinación)
   //  - Folder "Combinación" dentro de cargas (para ver factores fD/fL/fS al vuelo)
+  // MODELO EXISTENTE (?heks= o ?m=): el panel de parametros NO aplica.
+  // Jorge, 2026-08-12: *"para modelos ya existentes no debe ir tanta cosa, sino
+  // lo que uno necesita para cambiar rapido; el workspace de un modelo
+  // existente debe ser algo diferente"*. Un .heks ya trae su geometria hecha:
+  // los sliders de un ejemplo parametrico no la tocan, solo estorban. Se dejan
+  // accesibles pero CERRADOS, y quien manda es 🔬 Analyze.
   const isExpandedByDefault = (title: string) =>
-    title === defaultFolderTitle ||
-    /\bmodo\b/i.test(title) ||
-    /activar/i.test(title) ||       // "Cargas — Activar" (toggles D/L/S)
-    /combinaci/i.test(title);
+    !URL_HEKS && (
+      title === defaultFolderTitle ||
+      /\bmodo\b/i.test(title) ||
+      /activar/i.test(title) ||     // "Cargas — Activar" (toggles D/L/S)
+      /combinaci/i.test(title));
   const getFolder = (title: string) => {
     if (!folderMap.has(title)) {
       // Respetar la elección del usuario si ya tocó este folder en un rebuild
