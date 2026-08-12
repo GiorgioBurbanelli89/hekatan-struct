@@ -1,5 +1,5 @@
 /**
- * PLANTILLA DE MODELO EXISTENTE — `/modelo/?heks=...`
+ * PLANTILLA DE MODELO EXISTENTE — `/workspace_existent/?heks=...`
  *
  * Jorge, 2026-08-12: *"debemos usar otro workspace, es una plantilla de modelo
  * existente"*, y antes: *"para modelos ya existentes no debe ir tanta cosa,
@@ -20,8 +20,8 @@
  *      SIN el selector de ejemplos ni el panel de parámetros.
  *
  * Uso:
- *   /modelo/?heks=/galpon_validado.heks
- *   /modelo/                              → abre vacío y se arrastra un .heks
+ *   /workspace_existent/?heks=/galpon_validado.heks
+ *   /workspace_existent/                              → abre vacío y se arrastra un .heks
  */
 import { cliModeler } from "../cli-modeler/cliModeler";
 import { runExampleStandalone } from "../workspace/runExampleStandalone";

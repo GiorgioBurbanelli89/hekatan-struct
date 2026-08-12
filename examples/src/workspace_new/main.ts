@@ -1,5 +1,5 @@
 /**
- * PLANTILLA DE MODELO NUEVO — `/nuevo/`
+ * PLANTILLA DE MODELO NUEVO — `/workspace_new/`
  *
  * Jorge, 2026-08-12: *"las plantillas son nuevo y existente, y de pronto otro
  * que se me ocurra"* — y *"ya hay un workspace, ese no debe ser una plantilla
@@ -9,8 +9,8 @@
  * selector Categoría → Ejemplo y sus sliders paramétricos), y las plantillas
  * son otra cosa, montadas aparte:
  *
- *   /nuevo/            → empezar un modelo de cero        (esta)
- *   /modelo/?heks=…    → abrir uno que ya existe
+ *   /workspace_new/            → empezar un modelo de cero        (esta)
+ *   /workspace_existent/?heks=…    → abrir uno que ya existe
  *
  * Las dos comparten motor: el mismo `cliModeler` que lee los comandos, el mismo
  * solver y los mismos resultados. Lo único que cambia es el panel — que era el
