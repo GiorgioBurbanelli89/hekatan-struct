@@ -487,4 +487,48 @@ export function runExampleStandalone(ex: ExampleDef) {
   });
 
   rebuild();
+
+  // ── ENCUADRAR EL MODELO ──────────────────────────────────────────────
+  // `rebuild()` construye la geometria pero NADIE movia la camara: el
+  // workspace tiene su `autoFitCamera()` y aqui no habia equivalente. Con un
+  // ejemplo chico no se notaba (cabe en la grilla de 10 m), pero un modelo
+  // importado de verdad -el galpon son 26.63 x 14.74- quedaba FUERA del
+  // encuadre: el panel lo contaba bien (412 nudos, 726 elementos) y en
+  // pantalla solo se veia la grilla vacia.
+  const encuadrar = () => {
+    const ctx = (viewerElm as any).__ctx;
+    const ns = nodes.rawVal || [];
+    if (!ctx || !ns.length) return;
+    let mnX = Infinity, mnY = Infinity, mnZ = Infinity;
+    let mxX = -Infinity, mxY = -Infinity, mxZ = -Infinity;
+    for (const n of ns) {
+      if (!isFinite(n[0]) || !isFinite(n[1]) || !isFinite(n[2])) continue;
+      if (n[0] < mnX) mnX = n[0]; if (n[0] > mxX) mxX = n[0];
+      if (n[1] < mnY) mnY = n[1]; if (n[1] > mxY) mxY = n[1];
+      if (n[2] < mnZ) mnZ = n[2]; if (n[2] > mxZ) mxZ = n[2];
+    }
+    if (!isFinite(mnX)) return;
+    const cx = (mnX + mxX) / 2, cy = (mnY + mxY) / 2, cz = (mnZ + mxZ) / 2;
+    const d = Math.hypot(mxX - mnX, mxY - mnY, mxZ - mnZ) || 10;
+    // la grilla, al menos tan grande como el modelo (10 m por defecto se queda
+    // corta para cualquier edificio)
+    try {
+      const s = (viewerElm as any).__settings;
+      if (s?.gridSize) s.gridSize.val = Math.max(10, Math.ceil(d));
+    } catch { /* no-op */ }
+    const { camera, controls, render } = ctx;
+    // El TARGET va primero: OrbitControls recalcula la orientacion en su
+    // update() a partir de el, asi que un lookAt() puesto antes se pierde.
+    if (controls?.target) controls.target.set(cx, cy, cz);
+    // 1.4 x la diagonal: con 0.9 el modelo entraba pero recortado por arriba.
+    const k = d * 1.4;
+    camera.position.set(cx + k * 0.8, cy - k * 0.8, cz + k * 0.6);  // isometrica
+    camera.up?.set?.(0, 0, 1);          // Z arriba, como todo el visor
+    camera.lookAt?.(cx, cy, cz);
+    camera.updateProjectionMatrix?.();
+    controls?.update?.();
+    render?.();
+  };
+  // tras un frame: el viewer necesita haber montado su escena
+  requestAnimationFrame(() => requestAnimationFrame(encuadrar));
 }
