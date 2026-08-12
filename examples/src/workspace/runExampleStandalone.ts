@@ -501,26 +501,88 @@ export function runExampleStandalone(ex: ExampleDef) {
       const cfg = { modos: 12 };
       fm.addBinding(cfg, "modos", { min: 1, max: 60, step: 1, label: "Nº de modos" });
       let panel: { div: HTMLElement; render: Function } | null = null;
-      fm.addButton({ title: "▶ Correr modal" }).on("click", async () => {
+      const btnModal = fm.addButton({ title: "▶ Correr modal" });
+      btnModal.on("click", async () => {
         const ns = nodes.rawVal || [];
         const es = elements.rawVal || [];
-        const ni = nodeInputs.rawVal || {};
-        const ei = elementInputs.rawVal || {};
+        const ni: any = nodeInputs.rawVal || {};
+        const ei: any = elementInputs.rawVal || {};
         if (!ns.length || !es.length) { alert("No hay modelo que analizar."); return; }
-        if (!(ni as any).supports?.size) { alert("El modelo no tiene apoyos: sin ellos el modal no tiene sentido."); return; }
-        if (!(ei as any).densities?.size) { alert("Las barras no tienen densidad: sin masa no hay modos."); return; }
+        if (!ni.supports?.size) { alert("El modelo no tiene apoyos: sin ellos el modal no tiene sentido."); return; }
+        if (!ei.densities?.size) { alert("Las barras no tienen densidad: sin masa no hay modos."); return; }
+        if (!panel) { panel = createModalPanel(); document.body.appendChild(panel.div); }
+        const titulo = (btnModal as any).title;
+        const fin = (t: string) => { try { (btnModal as any).title = t; } catch {} };
         try {
           // Si el ejemplo trae su propio runModal (los edificios filtran losas
-          // y lumpean masa como ETABS), se respeta el suyo.
-          if (!panel) { panel = createModalPanel(); document.body.appendChild(panel.div); }
+          // y lumpean masa como ETABS), se respeta el suyo — va en el hilo
+          // principal porque manipula `states`.
           if (typeof (ex as any).runModal === "function") {
+            fin("⏳ calculando…");
+            await new Promise((r) => setTimeout(r, 30));   // que se pinte el aviso
             (ex as any).runModal(toSIParams(), states, panel);
+            fin(titulo);
             return;
           }
-          const { modalAnalysis } = await import("hekatan-fem");
-          const m = (modalAnalysis as any)(ns, es, ni, ei, cfg.modos);
-          panel.render(m, { title: ex.name, properties: [] } as any);
+          // EN UN WORKER: el modal es sincrono y bloqueaba la pagina entera
+          // mientras resolvia (medido: 431 nudos y 12 modos = mas de 30 s con
+          // la UI congelada, sin responder ni al raton).
+          fin("⏳ calculando…");
+          const w = new Worker(new URL("../shared/modal.worker.ts", import.meta.url),
+                               { type: "module" });
+          const aPares = (o: any) => {
+            const out: Record<string, [number, unknown][]> = {};
+            for (const [k, v] of Object.entries(o ?? {})) {
+              if (v instanceof Map) out[k] = [...v.entries()] as [number, unknown][];
+            }
+            return out;
+          };
+          // RESPALDO. El worker evita que la pagina se congele, pero si por lo
+          // que sea no contesta —el WASM tiene que cargarse otra vez dentro del
+          // worker y puede no arrancar— NO se puede dejar al usuario sin
+          // resultado: se resuelve en el hilo principal, como antes. Vale mas
+          // una pagina trabada unos segundos que un boton que no hace nada.
+          let contesto = false;
+          const enElHilo = async (motivo: string) => {
+            if (contesto) return;
+            contesto = true;
+            try { w.terminate(); } catch { /* ya terminado */ }
+            console.warn(`[modal] ${motivo}: se resuelve en el hilo principal`);
+            fin("⏳ calculando (sin worker)…");
+            await new Promise((r) => setTimeout(r, 30));
+            try {
+              const { modalAnalysis } = await import("hekatan-fem");
+              const m = (modalAnalysis as any)(ns, es, ni, ei, cfg.modos);
+              panel!.render(m, { title: ex.name, properties: [] } as any);
+            } catch (e2: any) {
+              console.error("[modal]", e2);
+              alert(`El modal fallo: ${e2?.message ?? e2}`);
+            }
+            fin(titulo);
+          };
+          const reloj = setTimeout(() => enElHilo("el worker no contesto en 20 s"), 20000);
+          w.onmessage = (evt: MessageEvent) => {
+            if (contesto) return;
+            contesto = true;
+            clearTimeout(reloj);
+            const { ok, m, error } = evt.data ?? {};
+            fin(titulo);
+            w.terminate();
+            if (!ok) { console.error("[modal]", error); alert(`El modal fallo: ${error}`); return; }
+            panel!.render(m, { title: ex.name, properties: [] } as any);
+          };
+          w.onerror = (err) => {
+            clearTimeout(reloj);
+            console.error("[modal worker]", err);
+            enElHilo("el worker fallo al arrancar");
+          };
+          w.postMessage({
+            nodes: ns, elements: es,
+            nodeInputs: aPares(ni), elementInputs: aPares(ei),
+            nModes: cfg.modos,
+          });
         } catch (err: any) {
+          fin(titulo);
           console.error("[modal]", err);
           alert(`El modal fallo: ${err?.message ?? err}`);
         }
