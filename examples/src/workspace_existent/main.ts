@@ -136,6 +136,23 @@ async function arrancar() {
     } finally {
       setTimeout(() => v.remove(), 300);
     }
+  } else if (sessionStorage.getItem("hekatan.abrir.texto")) {
+    // Viene de la portada (/inicio/): el archivo ya se leyó allí y se pasó por
+    // sessionStorage, para no tener que pedirlo dos veces.
+    const txt = sessionStorage.getItem("hekatan.abrir.texto") || "";
+    const nom = sessionStorage.getItem("hekatan.abrir.nombre") || "archivo";
+    sessionStorage.removeItem("hekatan.abrir.texto");
+    sessionStorage.removeItem("hekatan.abrir.nombre");
+    if (/\.heks$/i.test(nom)) {
+      base = cliModeler;
+      (window as any).__hekatanCliScript = txt;
+      const n = (txt.match(/^\s*node\s+/gm) ?? []).length;
+      const f = (txt.match(/^\s*frame\s+/gm) ?? []).length;
+      titulo = `${nom} — ${n} nudos · ${f} barras`;
+    } else {
+      const c = cargarE2k(txt, nom);
+      titulo = `${nom} — ${c.n} nudos · ${c.e} elementos · ${c.s} secciones`;
+    }
   } else if ((window as any).__hekatanImportedModel) {
     const m = (window as any).__hekatanImportedModel;
     titulo = `${m.archivo} — ${m.nodes?.length ?? 0} nudos · ${m.elements?.length ?? 0} elementos`;

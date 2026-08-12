@@ -42,6 +42,8 @@ export default defineConfig({
         workspace: "src/workspace/index.html",
         // plantilla para MODELOS EXISTENTES (.heks) — panel compacto,
         // sin selector de ejemplos ni sliders de geometria
+        // portada: donde el usuario elige nuevo / existente / ejemplos
+        inicio: "src/inicio/index.html",
         workspace_new: "src/workspace_new/index.html",
         workspace_existent: "src/workspace_existent/index.html",
         curves: "src/curves/index.html",
