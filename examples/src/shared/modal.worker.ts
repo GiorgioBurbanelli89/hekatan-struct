@@ -9,11 +9,17 @@
  * Los Map no viajan por `postMessage` sin más: se mandan como pares
  * [clave, valor] y se rearman a este lado.
  */
+import { modalAnalysis } from "hekatan-fem";
+
 type Pares = [number, unknown][];
 
 function aMapa(p: Pares | undefined): Map<number, any> | undefined {
   return p ? new Map(p as [number, any][]) : undefined;
 }
+
+// Señal de vida: si esto no llega, el worker ni siquiera arrancó (fallo al
+// resolver el módulo, no al calcular) y hay que mirar el bundler, no el solver.
+(self as any).postMessage({ vivo: true });
 
 self.onmessage = async (ev: MessageEvent) => {
   const { nodes, elements, nodeInputs, elementInputs, nModes } = ev.data ?? {};
@@ -26,7 +32,6 @@ self.onmessage = async (ev: MessageEvent) => {
     for (const [k, v] of Object.entries(elementInputs ?? {})) {
       ei[k] = aMapa(v as Pares);
     }
-    const { modalAnalysis } = await import("hekatan-fem");
     const m = (modalAnalysis as any)(nodes, elements, ni, ei, nModes);
     // Las salidas también pueden traer Map: se aplanan igual.
     const plano: any = {

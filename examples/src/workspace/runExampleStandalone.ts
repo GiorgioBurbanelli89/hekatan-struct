@@ -560,7 +560,11 @@ export function runExampleStandalone(ex: ExampleDef) {
             }
             fin(titulo);
           };
-          const reloj = setTimeout(() => enElHilo("el worker no contesto en 20 s"), 20000);
+          // 20 s se quedaban CORTOS: el worker si funciona —comprobado con un
+          // modelo chico, contesta— pero un galpon de 1028 barras tarda mas, y
+          // el respaldo saltaba antes de tiempo y bloqueaba la pagina para
+          // nada. 3 minutos: si de verdad esta roto, se nota igual.
+          const reloj = setTimeout(() => enElHilo("el worker no contesto en 180 s"), 180000);
           w.onmessage = (evt: MessageEvent) => {
             if (contesto) return;
             contesto = true;
