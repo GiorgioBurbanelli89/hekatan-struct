@@ -378,9 +378,47 @@ function exportFromScratch(input: ExportE2kInput): string {
   // Hekatan-Struct uses Z-up convention (CLAUDE.md: THREE.Object3D.DEFAULT_UP=(0,0,1)).
   // Node = [x_horizontal, y_horizontal, z_vertical]. ETABS .e2k POINT format
   // is (id, X, Y) with Z derived from STORY assignment.
+  // UNA PLANTA POR NIVEL REAL, no una por cada cota de nudo.
+  //
+  // Antes se creaba un `Level_i` por CADA z distinta. En una nave con la
+  // cubierta inclinada y una rampa eso da 52 plantas (medido en el galpon:
+  // Level_1 a 0.1471 m, Level_10 a 0.0884...) contra las 4 que escribe ETABS.
+  // Y no es cosmetico: ETABS reparte la masa POR PISO, asi que 52 pisos de dos
+  // nudos cada uno destrozan el modal.
+  //
+  // Criterio: es PLANTA la cota que reune al menos `MIN_NUDOS` nudos. Las
+  // demas —la rampa subiendo, el faldon de cubierta— cuelgan de la planta
+  // inmediatamente superior con un DESCENSO, que es exactamente como lo
+  // resuelve ETABS (el 3er campo del POINT).
+  const MIN_NUDOS = 3;
+  const TOL_PLANTA = 0.5;      // m: cotas mas juntas que esto son la MISMA planta
+  const cuenta = new Map<number, number>();
+  nodes.forEach(n => {
+    const z = rd(n[2]);
+    cuenta.set(z, (cuenta.get(z) ?? 0) + 1);
+  });
   const zSet = new Set<number>();
-  nodes.forEach(n => zSet.add(rd(n[2]))); // Z = vertical elevation
-  const sortedZ = [...zSet].sort((a, b) => a - b);
+  nodes.forEach(n => zSet.add(rd(n[2])));
+  const todasZ = [...zSet].sort((a, b) => a - b);
+  let sortedZ = todasZ.filter(z => (cuenta.get(z) ?? 0) >= MIN_NUDOS);
+  // Fusionar cotas casi iguales: las 12 correas de una cubierta inclinada
+  // tienen muchos nudos cada una y estan a 9 cm de distancia — con el filtro de
+  // MIN_NUDOS solo, salian 15 plantas de 0.0921 m de altura. Se conserva la
+  // mas ALTA del grupo, y las de abajo cuelgan de ella con descenso.
+  if (sortedZ.length > 1) {
+    const fus: number[] = [sortedZ[0]];
+    for (const z of sortedZ.slice(1)) {
+      if (z - fus[fus.length - 1] < TOL_PLANTA) fus[fus.length - 1] = z;
+      else fus.push(z);
+    }
+    sortedZ = fus;
+  }
+  // siempre la mas baja (la base) y la mas alta (para que nada quede huerfano)
+  if (!sortedZ.length) sortedZ = todasZ.slice();
+  if (sortedZ[0] !== todasZ[0]) sortedZ.unshift(todasZ[0]);
+  if (sortedZ[sortedZ.length - 1] !== todasZ[todasZ.length - 1])
+    sortedZ.push(todasZ[todasZ.length - 1]);
+
   const storyNames: string[] = [];
   const zToStory = new Map<number, string>();
   storyNames.push("Base");
@@ -390,6 +428,18 @@ function exportFromScratch(input: ExportE2kInput): string {
     storyNames.push(name);
     zToStory.set(sortedZ[i], name);
   }
+  /** Planta de una cota cualquiera: la primera >= z (se cuelga con descenso). */
+  const plantaDe = (z: number): { story: string; dz: number } => {
+    const zz = rd(z);
+    if (zToStory.has(zz)) return { story: zToStory.get(zz)!, dz: 0 };
+    for (let i = 0; i < sortedZ.length; i++) {
+      if (sortedZ[i] >= zz) return { story: zToStory.get(sortedZ[i])!,
+                                     dz: rd(sortedZ[i] - zz) };
+    }
+    const ult = sortedZ[sortedZ.length - 1];
+    return { story: zToStory.get(ult)!, dz: rd(ult - zz) };
+  };
+
   lines.push(`$ STORIES - IN SEQUENCE FROM TOP`);
   for (let i = sortedZ.length - 1; i >= 1; i--) {
     lines.push(`  STORY "${storyNames[i]}"  HEIGHT ${rd(sortedZ[i] - sortedZ[i - 1])} MASTERSTORY "Yes"  `);
@@ -560,7 +610,14 @@ function exportFromScratch(input: ExportE2kInput): string {
       h = 0.30; b = 0.30; stype = "rect";
     }
 
-    const shapeKey = `${stype}_${rd(h)}_${rd(b)}_${rd(d)}_${rd(tfw)}_${rd(tww)}_${matName}`;
+    // El NOMBRE entra en la clave: dos secciones que se llaman distinto son
+    // secciones distintas, aunque sus dimensiones no se conozcan. Sin esto,
+    // todas las que traen D/B sin declarar caian en la misma clave
+    // (`general_NaN_NaN_...`) y se fundian en una sola: medido, las 723 barras
+    // del galpon salian con 2 secciones y COL-150 se comia 609 de ellas.
+    const shapeKey = shape?.name
+      ? `NAME_${shape.name}`
+      : `${stype}_${rd(h)}_${rd(b)}_${rd(d)}_${rd(tfw)}_${rd(tww)}_${matName}`;
     if (shape?.name && !shapeKeyToSecName.has(shapeKey)) {
       shapeKeyToSecName.set(shapeKey, shape.name);
     }
@@ -640,20 +697,28 @@ function exportFromScratch(input: ExportE2kInput): string {
   const xyToPoint = new Map<string, string>();
   let ptIdx = 0;
   nodes.forEach(n => {
-    const key = `${rd(n[0])},${rd(n[1])}`; // X, Y = plan coords
+    // La clave del POINT es (X, Y, DESCENSO), no solo (X, Y). Un e2k de ETABS
+    // lleva el descenso como TERCER campo del POINT, y dos nudos en la misma
+    // vertical que cuelguen distinto de su planta son DOS puntos distintos.
+    // Agrupando solo por (X, Y) se fundian en uno y se perdian nudos: medido,
+    // 293 puntos contra los 333 que escribe ETABS del mismo modelo.
+    const { dz } = plantaDe(n[2]);
+    const key = `${rd(n[0])},${rd(n[1])},${dz}`;
     if (!xyToPoint.has(key)) xyToPoint.set(key, `${++ptIdx}`);
   });
   lines.push(`$ POINT COORDINATES`);
   for (const [key, ptName] of xyToPoint) {
-    const [x, y] = key.split(",").map(Number);
-    lines.push(`  POINT "${ptName}"  ${x} ${y} `);
+    const [x, y, dz] = key.split(",").map(Number);
+    lines.push(dz ? `  POINT "${ptName}"  ${x} ${y} ${dz} `
+                  : `  POINT "${ptName}"  ${x} ${y} `);
   }
   lines.push(``);
 
   const nodeToPS = (ni: number): { pt: string; story: string } => {
     const n = nodes[ni];
-    const key = `${rd(n[0])},${rd(n[1])}`; // X, Y = plan coords
-    return { pt: xyToPoint.get(key) || "1", story: zToStory.get(rd(n[2])) || "Base" }; // Z = elevation
+    const { story, dz } = plantaDe(n[2]);
+    const key = `${rd(n[0])},${rd(n[1])},${dz}`;
+    return { pt: xyToPoint.get(key) || "1", story };
   };
 
   // ── Helper: construir cláusulas extras de LINEASSIGN ────────────────
@@ -667,6 +732,16 @@ function exportFromScratch(input: ExportE2kInput): string {
     const mods = input.propertyModifiers?.get(i);
     if (mods && mods.some((m: number) => Math.abs(m - 1) > 1e-9)) {
       parts.push(`PROPMODIFIERS "${mods.map((m: number) => rd(m)).join(" ")}"`);
+    }
+
+    // ANGULO LOCAL (el "local axis angle" de CSI). Sin esto, un e2k exportado
+    // desde Hekatan salia con ANG 0 en TODAS las barras mientras el de ETABS
+    // del mismo modelo llevaba 294 con ANG 90 — los cordones de cercha en C y
+    // sus diagonales 2L, que con angulo 0 quedan con la hendidura mirando fuera
+    // del plano de la cercha.
+    const angL = (elementInputs as any).localAngles?.get(i);
+    if (angL !== undefined && isFinite(angL) && Math.abs(angL) > 1e-9) {
+      parts.push(`ANG ${rd(angL)}`);
     }
 
     // End Releases — momentReleases puede ser 6 (rotacionales) o 12 (todos DOFs)

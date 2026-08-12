@@ -55,6 +55,8 @@ interface ParsedModel {
     Iy?: number; J?: number; nu?: number; rho?: number;
     /** canto y ancho reales; solo para exportar (brazos de ETABS), no para calcular */
     D?: number; B?: number;
+    /** nombre de la seccion, del comentario `# VA-250`. Solo para exportar. */
+    sec?: string;
   }>;
   shells: Array<{ id: number; pts: number[]; t: number; E: number; rho?: number }>;
   /** Carga de SUPERFICIE por shell, en kN/m2 (+z arriba). Ver areaload. */
@@ -75,6 +77,8 @@ interface ParsedModel {
    *  deck. Sin declararlo, el e2k exportado sale con ANG 0 y en ETABS el deck
    *  salva al reves. */
   shellAngles: Map<number, number>;
+  /** angulo local de cada barra, en grados (comando `ang`) */
+  frameAngles: Map<number, number>;
   /** Objetos de area: el area COMO LA DIBUJO el usuario, antes de mallarla.
    *  Hekatan resuelve con las celdas (`shells`), pero ETABS guarda UN objeto y
    *  lo malla por dentro. Sin esto el e2k exportado saca 90 areas donde ETABS
@@ -127,6 +131,7 @@ export function parseCliCommands(text: string): ParsedModel {
     shellMods: new Map(),
     shellModsDir: new Map(),
     shellAngles: new Map(),
+    frameAngles: new Map(),
     areaObjs: [],
     supports: new Map(),
     loads: new Map(),
@@ -257,7 +262,29 @@ export function parseCliCommands(text: string): ParsedModel {
           // momentos y cortantes, o sea el diseno.
           const D = tokens[11] !== undefined ? parseFloat(tokens[11]) : undefined;
           const B = tokens[12] !== undefined ? parseFloat(tokens[12]) : undefined;
-          m.frames.push({ id, nI, nJ, E, A, I, Iy, J, nu, rho, D, B });
+          // NOMBRE de la seccion, del comentario de la linea: `... # VA-250`.
+          // No entra al calculo, pero sin el, el exportador de e2k no tiene con
+          // que nombrar las secciones y las saca como S_G1..S_G7 — un modelo
+          // reimportado en ETABS con secciones anonimas, imposible de casar
+          // contra el original. El tokenizador no descarta el comentario
+          // inline (solo salta las lineas que EMPIEZAN por #), asi que esta ahi.
+          const iCom = tokens.indexOf("#");
+          const sec = iCom >= 0 && tokens[iCom + 1] ? tokens[iCom + 1] : undefined;
+          m.frames.push({ id, nI, nJ, E, A, I, Iy, J, nu, rho, D, B, sec });
+          break;
+        }
+        // ── ANGULO LOCAL de una barra: `ang <frameID> <grados>` ──
+        // Es el "local axis angle" de CSI: gira la seccion alrededor del eje de
+        // la barra. Hace falta para las cerchas de cordon en C — con angulo 0 la
+        // hendidura de la C mira fuera del plano de la cercha y el alma no
+        // sujeta las diagonales 2L. Sin este comando no habia forma de decirlo
+        // en un .heks y el e2k exportado salia con ANG 0 en todas las barras,
+        // mientras el de ETABS llevaba 294 con ANG 90.
+        case "ang":
+        case "localaxis": {
+          const fid = parseInt(tokens[1], 10);
+          const g = parseFloat(tokens[2] ?? "0");
+          if (isFinite(fid) && isFinite(g)) m.frameAngles.set(fid, g);
           break;
         }
         case "shell":
@@ -465,6 +492,8 @@ export const cliModeler: ExampleDef = {
     // J), solo al e2k — ETABS saca de ahi los brazos de los extremos.
     const cantos = new Map<number, number>();
     const anchos = new Map<number, number>();
+    const sectionShapes = new Map<number, any>();
+    const localAngles = new Map<number, number>();
     const poissons = new Map<number, number>();
     const thicknesses = new Map<number, number>();
 
@@ -495,6 +524,18 @@ export const cliModeler: ExampleDef = {
       poissons.set(eIdx, nu);
       if (f.D !== undefined && isFinite(f.D)) cantos.set(eIdx, f.D);
       if (f.B !== undefined && isFinite(f.B)) anchos.set(eIdx, f.B);
+      const angF = m.frameAngles.get(f.id);
+      if (angF !== undefined && isFinite(angF)) localAngles.set(eIdx, angF);
+      // Forma de la seccion CON SU NOMBRE, para el exportador de e2k. Sin esto
+      // sale `S_G1..S_G7` y el modelo reimportado en ETABS no se puede casar
+      // contra el original.
+      if (f.sec || (f.D !== undefined && f.B !== undefined)) {
+        const sh: any = { type: "general" };
+        if (f.sec) sh.name = f.sec;
+        if (f.D !== undefined && isFinite(f.D)) sh.h = f.D;
+        if (f.B !== undefined && isFinite(f.B)) sh.b = f.B;
+        sectionShapes.set(eIdx, sh);
+      }
     }
     for (const s of m.shells) {
       const idxs = s.pts.map(id => idToIdx.get(id));
@@ -670,7 +711,7 @@ export const cliModeler: ExampleDef = {
       momentsOfInertiaY: I22, momentsOfInertiaZ: I33,
       torsionalConstants: J, densities, poissonsRatios: poissons, thicknesses,
       membraneModifiers, bendingModifiers, shellModifiers,
-      shellSurfaceLoads, shellAngles, cargaDeArea, cantos, anchos,
+      shellSurfaceLoads, shellAngles, cargaDeArea, cantos, anchos, sectionShapes, localAngles,
       areaObjects: m.areaObjs.map(o => ({
         nodes: o.pts.map(id => idToIdx.get(id)).filter(i => i !== undefined) as number[],
         cells: o.cells.map(id => shellIdxOf.get(id)).filter(i => i !== undefined) as number[],
