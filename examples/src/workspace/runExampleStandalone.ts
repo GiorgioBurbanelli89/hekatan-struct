@@ -13,6 +13,7 @@ import {
 import { getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit } from "hekatan-ui";
 import type { ExampleDef, BuildStates } from "./exampleRegistry";
 import { attachInspect } from "../shared/attachInspect";
+import { createModalPanel } from "../shared/renderModalTable";
 import {
   forceUnit, dispUnit, fromKn, toKn, fromKnm, toKnm,
   forceUnitSuffix, momentUnitSuffix, dispUnitSuffix, stripUnitSuffix,
@@ -487,6 +488,45 @@ export function runExampleStandalone(ex: ExampleDef) {
   });
 
   rebuild();
+
+  // ── ⚡ MODAL ─────────────────────────────────────────────────────────
+  // Jorge: *"no veo el analisis modal ... creamos un tweakpane que indique
+  // analyze y dentro frame results, shell results, etc."*. En el workspace el
+  // modal vive en su propio folder y hay que ir a buscarlo; aqui va DENTRO del
+  // panel, junto a los resultados, que es donde se lo espera.
+  try {
+    const paneAny = currentPaneRef as any;
+    if (paneAny?.addFolder) {
+      const fm = paneAny.addFolder({ title: "⚡ Modal", expanded: false });
+      const cfg = { modos: 12 };
+      fm.addBinding(cfg, "modos", { min: 1, max: 60, step: 1, label: "Nº de modos" });
+      let panel: { div: HTMLElement; render: Function } | null = null;
+      fm.addButton({ title: "▶ Correr modal" }).on("click", async () => {
+        const ns = nodes.rawVal || [];
+        const es = elements.rawVal || [];
+        const ni = nodeInputs.rawVal || {};
+        const ei = elementInputs.rawVal || {};
+        if (!ns.length || !es.length) { alert("No hay modelo que analizar."); return; }
+        if (!(ni as any).supports?.size) { alert("El modelo no tiene apoyos: sin ellos el modal no tiene sentido."); return; }
+        if (!(ei as any).densities?.size) { alert("Las barras no tienen densidad: sin masa no hay modos."); return; }
+        try {
+          // Si el ejemplo trae su propio runModal (los edificios filtran losas
+          // y lumpean masa como ETABS), se respeta el suyo.
+          if (!panel) { panel = createModalPanel(); document.body.appendChild(panel.div); }
+          if (typeof (ex as any).runModal === "function") {
+            (ex as any).runModal(toSIParams(), states, panel);
+            return;
+          }
+          const { modalAnalysis } = await import("hekatan-fem");
+          const m = (modalAnalysis as any)(ns, es, ni, ei, cfg.modos);
+          panel.render(m, { title: ex.name, properties: [] } as any);
+        } catch (err: any) {
+          console.error("[modal]", err);
+          alert(`El modal fallo: ${err?.message ?? err}`);
+        }
+      });
+    }
+  } catch (e: any) { console.warn("[modal] no se pudo montar:", e?.message ?? e); }
 
   // ── ENCUADRAR EL MODELO ──────────────────────────────────────────────
   // `rebuild()` construye la geometria pero NADIE movia la camara: el
