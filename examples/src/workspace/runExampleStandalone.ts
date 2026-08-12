@@ -594,6 +594,209 @@ export function runExampleStandalone(ex: ExampleDef) {
     }
   } catch (e: any) { console.warn("[modal] no se pudo montar:", e?.message ?? e); }
 
+  // ── 🔧 DESIGN ────────────────────────────────────────────────────────
+  // Primer ladrillo del modulo de diseno. Hoy comprueba SERVICIO —la flecha
+  // contra L/360, L/240 y L/180, y la esbeltez L/d de cada barra—, que es
+  // justo lo que destapo que el entrepiso del galpon no cumplia: bajaba
+  // 237.8 mm con una I de 25 cm, NUEVE veces el limite.
+  // Lo que NO hace todavia y hay que decirlo: resistencia AISC 360 (P-M,
+  // pandeo, cortante) y composite beam. Eso es el siguiente paso.
+  try {
+    const paneAny = currentPaneRef as any;
+    if (paneAny?.addFolder) {
+      const fd = paneAny.addFolder({ title: "🔧 Design", expanded: false });
+      const cfgD = { limite: 360 };
+      fd.addBinding(cfgD, "limite", {
+        options: { "L/360 (entrepiso)": 360, "L/240": 240, "L/180 (cubierta)": 180 },
+        label: "Límite de flecha",
+      });
+      fd.addButton({ title: "▶ Comprobar servicio" }).on("click", () => {
+        const ns = nodes.rawVal || [];
+        const es = elements.rawVal || [];
+        const df: any = deformOutputs.rawVal || {};
+        const defs = df.deformations;
+        if (!defs || !defs.size) { alert("Primero hay que resolver el modelo."); return; }
+        // LA FLECHA SE MIDE POR VANO, RELATIVA A SU CUERDA.
+        //
+        // Barra a barra no vale: un tramo de 0.51 m en una zona que baja 15 mm
+        // salia con "ratio 10.52, NO CUMPLE" cuando su flecha propia es casi
+        // cero. Lo que limita la norma es cuanto se separa el centro del vano
+        // de la RECTA que une sus apoyos.
+        //
+        // Un vano es una cadena de barras colineales; se corta donde llega
+        // otra barra que no sigue la misma direccion (una columna, una viga
+        // transversal), que es donde de verdad esta apoyada.
+        const filas: string[] = [];
+        const dirDe = (e: any) => {
+          const a = ns[e[0]], b = ns[e[1]];
+          const L = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+          return L < 1e-9 ? null : [(b[0] - a[0]) / L, (b[1] - a[1]) / L, (b[2] - a[2]) / L];
+        };
+        const enNudo = new Map<number, number[]>();
+        es.forEach((e: any, i: number) => {
+          if (!e || e.length !== 2) return;
+          for (const n of e) {
+            if (!enNudo.has(n)) enNudo.set(n, []);
+            enNudo.get(n)!.push(i);
+          }
+        });
+        const visto = new Set<number>();
+        let peor: any = null;
+        for (let i = 0; i < es.length; i++) {
+          const e: any = es[i];
+          if (!e || e.length !== 2 || visto.has(i)) continue;
+          const d0 = dirDe(e);
+          if (!d0) continue;
+          // crecer la cadena por los dos extremos mientras siga recta
+          const cadena = [i]; visto.add(i);
+          const extremos = [e[0], e[1]];
+          for (let lado = 0; lado < 2; lado++) {
+            let n = extremos[lado];
+            for (;;) {
+              const sig = (enNudo.get(n) || []).filter((j) => !visto.has(j))
+                .find((j) => {
+                  const dj = dirDe(es[j]);
+                  if (!dj) return false;
+                  const dot = Math.abs(dj[0] * d0[0] + dj[1] * d0[1] + dj[2] * d0[2]);
+                  return dot > 0.999;                 // colineal
+                });
+              if (sig === undefined) break;
+              visto.add(sig); cadena.push(sig);
+              const ej: any = es[sig];
+              n = ej[0] === n ? ej[1] : ej[0];
+              extremos[lado] = n;
+            }
+          }
+          const A = ns[extremos[0]], B = ns[extremos[1]];
+          const L = Math.hypot(B[0] - A[0], B[1] - A[1], B[2] - A[2]);
+          if (L < 1.0) continue;
+          const uA = (defs.get(extremos[0]) || [0, 0, 0])[2];
+          const uB = (defs.get(extremos[1]) || [0, 0, 0])[2];
+          // el nudo del vano que mas se separa de la cuerda A-B
+          let f = 0;
+          for (const j of cadena) {
+            for (const n of es[j] as any) {
+              const P = ns[n];
+              const t = L < 1e-9 ? 0 : (
+                (P[0] - A[0]) * (B[0] - A[0]) + (P[1] - A[1]) * (B[1] - A[1])
+                + (P[2] - A[2]) * (B[2] - A[2])) / (L * L);
+              const uCuerda = uA + (uB - uA) * t;
+              const rel = Math.abs(((defs.get(n) || [0, 0, 0])[2]) - uCuerda) * 1000;
+              if (rel > f) f = rel;
+            }
+          }
+          const lim = L / cfgD.limite * 1000;
+          const r = f / lim;
+          if (!peor || r > peor.r) peor = { i, L, f, lim, r };
+        }
+        if (!peor) { alert("No hay barras con luz suficiente que comprobar."); return; }
+        const ok = peor.r <= 1;
+        filas.push(`Límite: L/${cfgD.limite}`);
+        filas.push(`Barra más solicitada: luz ${peor.L.toFixed(2)} m`);
+        filas.push(`   flecha ${peor.f.toFixed(1)} mm  ·  límite ${peor.lim.toFixed(1)} mm`);
+        filas.push(`   ratio ${peor.r.toFixed(2)}  ->  ${ok ? "CUMPLE" : "NO CUMPLE"}`);
+        filas.push("");
+        filas.push("Falta: resistencia AISC 360 (P-M, pandeo, cortante)");
+        filas.push("y composite beam. Esto comprueba SERVICIO.");
+        alert(filas.join("\n"));
+      });
+    }
+  } catch (e: any) { console.warn("[design] no se pudo montar:", e?.message ?? e); }
+
+  // ── CLIC DERECHO: menu tipo «Assign» de ETABS ────────────────────────
+  // Jorge: *"cuando presione clic derecho debe salir Design"*. El workspace de
+  // ejemplos ya tenia un menu asi; las plantillas no tenian ninguno.
+  try {
+    const rend = viewerElm as HTMLElement;
+    const MENU: Array<[string, string]> = [
+      ["Design ▸ Steel Frame Design", "Design"],
+      ["Design ▸ Composite Beam Design", "Design"],
+      ["", ""],
+      ["Assign ▸ Frame ▸ Section Property", "Ver"],
+      ["Assign ▸ Frame ▸ Local Axes", "Ver"],
+      ["Display ▸ Frame Forces", "Analyze"],
+      ["Display ▸ Shell Forces", "Analyze"],
+      ["", ""],
+      ["Analyze ▸ Run Modal", "Modal"],
+      ["Analyze ▸ Tablas", "Analyze"],
+    ];
+    const menu = document.createElement("div");
+    menu.style.cssText = [
+      "position:fixed", "display:none", "z-index:9500", "min-width:230px",
+      "background:#232a35", "border:1px solid #3a4150", "border-radius:6px",
+      "padding:4px 0", "color:#cfd6e0",
+      "font:12px ui-monospace,Consolas,monospace",
+      "box-shadow:0 8px 28px rgba(0,0,0,.45)",
+    ].join(";");
+    document.body.appendChild(menu);
+    const cerrar = () => { menu.style.display = "none"; };
+    window.addEventListener("click", cerrar);
+    window.addEventListener("blur", cerrar);
+
+    /** Abre el folder del panel cuyo titulo contenga `txt`. */
+    const abrir = (txt: string): boolean => {
+      const rec = (p: any): boolean => {
+        for (const c of (p?.children ?? [])) {
+          if (typeof c.title === "string" && c.children) {
+            if (c.title.toLowerCase().includes(txt.toLowerCase())) {
+              try { c.expanded = true; } catch { /* no-op */ }
+              try { (c as any).element?.scrollIntoView?.({ block: "nearest" }); } catch {}
+              return true;
+            }
+            if (rec(c)) return true;
+          }
+        }
+        return false;
+      };
+      return rec(currentPaneRef);
+    };
+
+    // Si estaba orbitando con el boton derecho, no molestar con el menu.
+    let xD = 0, yD = 0, tD = 0;
+    rend.addEventListener("pointerdown", (e: PointerEvent) => {
+      if (e.button === 2) { xD = e.clientX; yD = e.clientY; tD = Date.now(); }
+    }, true);
+    rend.addEventListener("contextmenu", (ev: MouseEvent) => {
+      ev.preventDefault();
+      if (Math.hypot(ev.clientX - xD, ev.clientY - yD) > 5 || Date.now() - tD > 400) return;
+      ev.stopPropagation();
+      menu.innerHTML = "";
+      const cab = document.createElement("div");
+      cab.textContent = (nodes.rawVal || []).length
+        ? `${(nodes.rawVal || []).length} nudos · ${(elements.rawVal || []).length} elementos`
+        : "sin modelo";
+      cab.style.cssText = "padding:5px 12px;color:#8a94a6;font-size:11px;"
+                        + "border-bottom:1px solid #3a4150;margin-bottom:3px";
+      menu.appendChild(cab);
+      for (const [texto, destino] of MENU) {
+        if (!texto) {
+          const hr = document.createElement("div");
+          hr.style.cssText = "height:1px;background:#3a4150;margin:4px 0";
+          menu.appendChild(hr);
+          continue;
+        }
+        const it = document.createElement("div");
+        it.textContent = texto;
+        it.style.cssText = "padding:5px 12px;cursor:pointer;white-space:nowrap";
+        it.onmouseenter = () => { it.style.background = "#2f3742"; };
+        it.onmouseleave = () => { it.style.background = "transparent"; };
+        it.onclick = (e) => {
+          e.stopPropagation();
+          cerrar();
+          if (!abrir(destino)) {
+            console.warn("[menu] no hay carpeta:", destino);
+            alert(`«${texto}» todavía no está: falta la carpeta "${destino}".`);
+          }
+        };
+        menu.appendChild(it);
+      }
+      menu.style.left = Math.min(ev.clientX, window.innerWidth - 250) + "px";
+      menu.style.top = Math.min(ev.clientY, window.innerHeight - 320) + "px";
+      menu.style.display = "block";
+    });
+    console.log("[menu] clic derecho sobre el modelo -> Design / Assign / Analyze");
+  } catch (e: any) { console.warn("[menu] no se pudo montar:", e?.message ?? e); }
+
   // ── ENCUADRAR EL MODELO ──────────────────────────────────────────────
   // `rebuild()` construye la geometria pero NADIE movia la camara: el
   // workspace tiene su `autoFitCamera()` y aqui no habia equivalente. Con un
