@@ -248,9 +248,17 @@ extern "C"
                 std::vector<double> node_react(6);
                 for (int j = 0; j < 6; ++j)
                 {
-                    // Note: R_global = K*U. FEM reactions are often defined as internal forces balancing external loads.
-                    // However, to match the JS implementation which returns K*U at supports, we use R_global directly.
-                    node_react[j] = R_global(i * 6 + j);
+                    // R = K·U − F_ext.  K·U solo trae lo que el RESTO de la
+                    // estructura empuja contra el apoyo; la carga aplicada
+                    // ENCIMA del propio nudo apoyado la absorbe el apoyo
+                    // tambien y hay que sumarla, o desaparece del equilibrio.
+                    //
+                    // Medido (2026-08-12): 4 shells, 9 nudos, 8 apoyados y uno
+                    // libre en el centro, 160 kN de carga de superficie ->
+                    // sumRz daba 40.00 kN, EXACTAMENTE el cuarto que pasa por
+                    // el unico nudo libre. En el galpon eran 206 kN perdidos
+                    // (5.1 %) porque la rampa arranca en z=0, sobre apoyos.
+                    node_react[j] = R_global(i * 6 + j) - F_global(i * 6 + j);
                 }
                 outputs.reactions[i] = node_react;
             }
