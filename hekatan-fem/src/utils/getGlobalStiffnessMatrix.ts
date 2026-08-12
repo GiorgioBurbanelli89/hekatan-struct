@@ -16,7 +16,10 @@ export function getGlobalStiffnessMatrix(
   elements.forEach((e, i) => {
     const elmNodes = e.map((e) => nodes[e]);
     const kLocal = getLocalStiffnessMatrix(elmNodes, elementInputs, i);
-    const T = getTransformationMatrix(elmNodes);
+    const T = getTransformationMatrix(
+        elmNodes,
+        elementInputs?.localAngles?.get(i) ?? 0
+      );
 
     let kGlobal = multiply(transpose(T), multiply(kLocal, T)) as number[][];
 

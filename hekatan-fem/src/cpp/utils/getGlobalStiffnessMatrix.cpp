@@ -41,7 +41,14 @@ Eigen::SparseMatrix<double> getGlobalStiffnessMatrix(
         Eigen::MatrixXd kLocal = getLocalStiffnessMatrix(elmNodes, elementInputs, i);
 
         // Calculate the transformation matrix (T) for the element
-        Eigen::MatrixXd T = getTransformationMatrix(elmNodes);
+        // El angulo de eje local de la barra entra AQUI: gira el marco local
+        // antes de llevar kLocal a globales.
+        double angEl = 0.0;
+        {
+            auto itA = elementInputs.localAngles.find(i);
+            if (itA != elementInputs.localAngles.end()) angEl = itA->second;
+        }
+        Eigen::MatrixXd T = getTransformationMatrix(elmNodes, angEl);
 
         // Transform the local stiffness matrix to global coordinates: K_global_element = T^T * kLocal * T
         Eigen::MatrixXd kGlobalElement = T.transpose() * kLocal * T;

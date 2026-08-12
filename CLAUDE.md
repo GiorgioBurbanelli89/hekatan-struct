@@ -182,6 +182,39 @@ Las tres copias de la tríada tienen que decir lo mismo:
 `hekatan-fem/src/cpp/utils/getTransformationMatrix.cpp` (necesita recompilar
 WASM) y `hekatan-fem/src/didacticSolver.ts`.
 
+### Ángulo de eje local (`ang`) y áreas de cortante (`as`)
+
+Dos cosas que el motor **no tenía** y que hacían imposible reproducir un modelo
+de ETABS nudo a nudo, por mucho que las secciones coincidieran:
+
+```
+ang <frameID> <grados>          # local axis angle de CSI, giro sobre el eje 1
+as  <frameID> <As2> <As3>       # áreas de cortante en m2 (As2→V2, As3→V3)
+```
+
+`localAngles` y `shearAreasY/Z` viajan en `elementInputs` hasta el C++
+(`getTransformationMatrixFrame` gira el par eje2/eje3; `getLocalStiffnessMatrix`
+ya usaba las As). Las **tres** copias de la tríada tienen que girar igual:
+`getTransformationMatrix.ts`, `getTransformationMatrix.cpp` (recompilar WASM) y
+`didacticSolver.ts`.
+
+Por qué importa, medido en el galpón (1120 barras, misma malla de ETABS):
+
+| | dentro del 1 % nodal | p95 | flecha máx |
+|---|---|---|---|
+| sin `ang` ni `as` | 16.4 % | 22.5 % | 13.6 % |
+| con `ang` | 27.2 % | 7.9 % | 0.42 % |
+| con `ang` + `as` | **49.9 %** | 4.6 % | 0.89 % |
+
+- Una C 200×50 girada 90° pasa de I = 6.20e6 a 0.53e6 mm⁴: **once veces más
+  floja**. El galpón lleva 471 barras a 90° (cordones en C y diagonales 2L).
+- Sin `as`, Hekatan supone `5/6·A`. En una VA-250 el alma son 1170 mm² y
+  `5/6·A` son 2442: el doble. Por eso salía **sistemáticamente más rígido**,
+  siempre en el mismo sentido — la firma de un término de cortante que falta.
+
+⚠️ `ang` **ya no es alias de `shellang`**. Lo fue; al añadirse para barras, el
+`case` de shell quedó inalcanzable. El ángulo de cáscara es `shellang`.
+
 ## Masa torsional: Ip vs J
 
 La masa consistente usa `Ip = Iy + Iz` (momento polar de inercia) para DOFs torsionales, NO `J` (constante de Saint-Venant). OpenSees tiene un bug conocido donde usa J en vez de Ip — causa ~3% de error en modos torsionales.

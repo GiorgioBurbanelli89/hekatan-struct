@@ -65,6 +65,13 @@ extern "C"
         //   F11 F22 F12  M11 M22 M12  V13 V23   (el orden del e2k de ETABS)
         int *shellmod_keys_ptr, double *shellmod_values_ptr, int num_shellmods,
 
+        // ANGULO DE EJE LOCAL de cada barra, en GRADOS (Map<elemIdx, deg>).
+        // Es el "local axis angle" de CSI: gira la seccion alrededor del eje de
+        // la barra. Hekatan no lo tenia, y un modelo importado de ETABS con
+        // perfiles en C o angulos 2L girados 90 grados NO era la misma
+        // estructura por mucho que las secciones coincidieran.
+        int *localang_keys_ptr, double *localang_values_ptr, int num_localang,
+
         // --- Output Pointers (to be allocated by C++ and filled) ---
         // These are pointers *to* pointers. C++ allocates memory using malloc
         // and writes the address of the allocated block into these pointers.
@@ -114,6 +121,7 @@ extern "C"
         elementInputs.membraneModifiers = parseMapFromFlat(memmod_keys_ptr, memmod_values_ptr, num_memmods);
         elementInputs.bendingModifiers = parseMapFromFlat(bendmod_keys_ptr, bendmod_values_ptr, num_bendmods);
         elementInputs.shellModifiers = parseMapVecFromFlat(shellmod_keys_ptr, shellmod_values_ptr, num_shellmods, 8);
+        elementInputs.localAngles = parseMapFromFlat(localang_keys_ptr, localang_values_ptr, num_localang);
         elementInputs.drillingTypes = parseMapIntFromFlat(drillType_keys_ptr, drillType_values_ptr, num_drillType);
         elementInputs.drillingPenaltyScales = parseMapFromFlat(drillScale_keys_ptr, drillScale_values_ptr, num_drillScale);
 

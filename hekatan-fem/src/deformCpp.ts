@@ -189,6 +189,17 @@ export function deformCpp(
   const dirModValuesPtr = allocate(dirModValues, Float64Array, mod.HEAPF64);
   gc.push(dirModValuesPtr);
 
+  // Angulo de eje local por barra, en grados (Map<elemIdx, deg>). Sin esto el
+  // C++ montaba todas las barras sin girar y un modelo venido de ETABS con
+  // perfiles en C o 2L a 90 grados no era la misma estructura.
+  const locAng = (elementInputs as any).localAngles as Map<number, number> | undefined;
+  const locAngKeys = locAng ? Array.from(locAng.keys()) : [];
+  const locAngValues = locAng ? Array.from(locAng.values()) : [];
+  const locAngKeysPtr = allocate(locAngKeys, Uint32Array, mod.HEAPU32);
+  gc.push(locAngKeysPtr);
+  const locAngValuesPtr = allocate(locAngValues, Float64Array, mod.HEAPF64);
+  gc.push(locAngValuesPtr);
+
   // 2- Call C++ Function
   mod._deform(
     nodesPtr,
@@ -264,6 +275,10 @@ export function deformCpp(
     dirModKeysPtr,
     dirModValuesPtr,
     dirModKeys.length,
+    // Angulo de eje local por barra (grados)
+    locAngKeysPtr,
+    locAngValuesPtr,
+    locAngKeys.length,
     // Output pointers
     deformationsDataPtrOutPtr,
     deformationsSizeOutPtr,

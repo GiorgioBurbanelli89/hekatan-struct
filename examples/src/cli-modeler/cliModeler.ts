@@ -79,6 +79,12 @@ interface ParsedModel {
   shellAngles: Map<number, number>;
   /** angulo local de cada barra, en grados (comando `ang`) */
   frameAngles: Map<number, number>;
+  /** areas de CORTANTE de cada barra: [As2, As3] en m2 (comando `as`).
+   *  Sin ellas Hekatan supone 5/6*A, que para un perfil abierto es el doble o
+   *  mas de lo real — en una VA-250 el alma son 1170 mm2 y 5/6*A son 2442. Los
+   *  programas CSI usan el area real, asi que Hekatan salia sistematicamente
+   *  MAS RIGIDO, hasta un 14 % nudo a nudo en el galpon. */
+  frameShearAreas: Map<number, [number, number]>;
   /** Objetos de area: el area COMO LA DIBUJO el usuario, antes de mallarla.
    *  Hekatan resuelve con las celdas (`shells`), pero ETABS guarda UN objeto y
    *  lo malla por dentro. Sin esto el e2k exportado saca 90 areas donde ETABS
@@ -132,6 +138,7 @@ export function parseCliCommands(text: string): ParsedModel {
     shellModsDir: new Map(),
     shellAngles: new Map(),
     frameAngles: new Map(),
+    frameShearAreas: new Map(),
     areaObjs: [],
     supports: new Map(),
     loads: new Map(),
@@ -280,6 +287,18 @@ export function parseCliCommands(text: string): ParsedModel {
         // sujeta las diagonales 2L. Sin este comando no habia forma de decirlo
         // en un .heks y el e2k exportado salia con ANG 0 en todas las barras,
         // mientras el de ETABS llevaba 294 con ANG 90.
+        // ── AREAS DE CORTANTE de una barra: `as <frameID> <As2> <As3>` ──
+        // As2 resiste V2 (plano 1-2, el de I33) y As3 resiste V3 (plano 1-3,
+        // el de I22), como en CSI. En m2. Un valor negativo = Bernoulli puro.
+        case "as":
+        case "shearareas": {
+          const fid = parseInt(tokens[1], 10);
+          const a2 = parseFloat(tokens[2] ?? "0");
+          const a3 = parseFloat(tokens[3] ?? "0");
+          if (isFinite(fid) && isFinite(a2) && isFinite(a3))
+            m.frameShearAreas.set(fid, [a2, a3]);
+          break;
+        }
         case "ang":
         case "localaxis": {
           const fid = parseInt(tokens[1], 10);
@@ -345,9 +364,12 @@ export function parseCliCommands(text: string): ParsedModel {
           m.areaObjs.push({ id, pts: [a1, a2, a3, a4], cells });
           break;
         }
-        case "shellang":
-        case "ang": {
+        case "shellang": {
           // shellang ID grados — angulo del eje local 1 (como SetLocalAxes de ETABS)
+          // OJO: `ang` NO es alias de esto. Lo fue, y al añadirse `ang` para el
+          // angulo local de BARRA (mas arriba en este mismo switch) el alias
+          // quedo inalcanzable — el primer `case` gana. Se quita para que no
+          // parezca que sigue existiendo: el angulo de cascara es `shellang`.
           const id = parseInt(tokens[1], 10);
           const deg = parseFloat(tokens[2]);
           if (!isFinite(id) || !isFinite(deg)) {
@@ -494,6 +516,9 @@ export const cliModeler: ExampleDef = {
     const anchos = new Map<number, number>();
     const sectionShapes = new Map<number, any>();
     const localAngles = new Map<number, number>();
+    // AsY va con Iy (plano 1-3) = As3 de CSI; AsZ va con Iz (plano 1-2) = As2.
+    const shearAreasY = new Map<number, number>();
+    const shearAreasZ = new Map<number, number>();
     const poissons = new Map<number, number>();
     const thicknesses = new Map<number, number>();
 
@@ -526,6 +551,11 @@ export const cliModeler: ExampleDef = {
       if (f.B !== undefined && isFinite(f.B)) anchos.set(eIdx, f.B);
       const angF = m.frameAngles.get(f.id);
       if (angF !== undefined && isFinite(angF)) localAngles.set(eIdx, angF);
+      const asF = m.frameShearAreas.get(f.id);
+      if (asF) {
+        shearAreasZ.set(eIdx, asF[0]);   // As2 -> V2, plano 1-2 (I33)
+        shearAreasY.set(eIdx, asF[1]);   // As3 -> V3, plano 1-3 (I22)
+      }
       // Forma de la seccion CON SU NOMBRE, para el exportador de e2k. Sin esto
       // sale `S_G1..S_G7` y el modelo reimportado en ETABS no se puede casar
       // contra el original.
@@ -712,6 +742,7 @@ export const cliModeler: ExampleDef = {
       torsionalConstants: J, densities, poissonsRatios: poissons, thicknesses,
       membraneModifiers, bendingModifiers, shellModifiers,
       shellSurfaceLoads, shellAngles, cargaDeArea, cantos, anchos, sectionShapes, localAngles,
+      shearAreasY, shearAreasZ,
       areaObjects: m.areaObjs.map(o => ({
         nodes: o.pts.map(id => idToIdx.get(id)).filter(i => i !== undefined) as number[],
         cells: o.cells.map(id => shellIdxOf.get(id)).filter(i => i !== undefined) as number[],

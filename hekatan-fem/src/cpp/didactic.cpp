@@ -33,8 +33,9 @@ Eigen::MatrixXd getLocalStiffnessMatrix(
     const ElementInputs &elementInputs,
     int elementIndex);
 
-Eigen::MatrixXd getTransformationMatrix(
-    const std::vector<Node> &elementNodes);
+// getTransformationMatrix ya viene declarada en data-model.h, con el angulo de
+// eje local como 2o argumento por defecto. Repetirla aqui SIN ese argumento
+// creaba dos sobrecargas y la llamada salia ambigua.
 
 Eigen::SparseMatrix<double> getGlobalStiffnessMatrix(
     const std::vector<Node> &nodes,

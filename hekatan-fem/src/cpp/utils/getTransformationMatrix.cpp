@@ -7,7 +7,8 @@
 #include <stdexcept>
 
 // Declarations
-Eigen::MatrixXd getTransformationMatrixFrame(const Node &n0, const Node &n1);
+Eigen::MatrixXd getTransformationMatrixFrame(const Node &n0, const Node &n1,
+                                             double angleDeg = 0.0);
 Eigen::MatrixXd getTransformationMatrixShell(const Node &n0, const Node &n1, const Node &n2);
 
 // Shell Q4 transformation — defined in shellQ4.cpp
@@ -36,11 +37,12 @@ static bool isShellQ4(const std::vector<Node> &nodes)
 }
 
 // Main dispatch function based on number of nodes
-Eigen::MatrixXd getTransformationMatrix(const std::vector<Node> &nodes)
+Eigen::MatrixXd getTransformationMatrix(const std::vector<Node> &nodes,
+                                        double frameAngleDeg)
 {
     if (nodes.size() == 2)
     {
-        return getTransformationMatrixFrame(nodes[0], nodes[1]);
+        return getTransformationMatrixFrame(nodes[0], nodes[1], frameAngleDeg);
     }
 
     if (nodes.size() == 3)
@@ -62,7 +64,19 @@ Eigen::MatrixXd getTransformationMatrix(const std::vector<Node> &nodes)
 }
 
 // Transformation matrix for 2-node frame/truss elements
-Eigen::MatrixXd getTransformationMatrixFrame(const Node &n0, const Node &n1)
+//
+// `angleDeg` es el ANGULO DE EJE LOCAL de CSI: gira la seccion alrededor del
+// eje 1 (el propio eje de la barra), en grados y en sentido antihorario mirando
+// desde j hacia i, igual que `FrameObj.SetLocalAxes` de ETABS.
+//
+// Antes no existia: el marco local salia solo de los dos nudos y TODAS las
+// barras se montaban sin girar. En el galpon eso no era un detalle — ETABS
+// lleva 294 barras con ANG 90 (los cordones en C de las cerchas y las 157
+// diagonales 2L), y una C 200x50 girada 90 grados pasa de I = 6.20e6 a 0.53e6
+// mm4. Con las secciones cuadrando al 0.0 % y la misma malla, la flecha seguia
+// separandose un 13.6 % de ETABS porque no era la misma estructura.
+Eigen::MatrixXd getTransformationMatrixFrame(const Node &n0, const Node &n1,
+                                             double angleDeg)
 {
     Eigen::Vector3d vector(n1[0] - n0[0], n1[1] - n0[1], n1[2] - n0[2]);
     double length = vector.norm();
@@ -97,6 +111,20 @@ Eigen::MatrixXd getTransformationMatrixFrame(const Node &n0, const Node &n1)
         lambda << l, m, n,
             (-l * n) / D, (-m * n) / D, D,
             m / D, -l / D, 0;
+    }
+
+    // Giro del angulo local alrededor del eje 1: se rota el par (eje2, eje3)
+    // dejando el eje 1 quieto. Rz(a) por la IZQUIERDA sobre lambda, porque las
+    // filas de lambda SON los ejes locales expresados en globales.
+    if (std::fabs(angleDeg) > 1e-12)
+    {
+        const double a = angleDeg * M_PI / 180.0;
+        const double ca = std::cos(a), sa = std::sin(a);
+        Eigen::Matrix3d R;
+        R << 1, 0, 0,
+            0, ca, sa,
+            0, -sa, ca;
+        lambda = R * lambda;
     }
 
     // Construct the 12x12 transformation matrix T

@@ -43,7 +43,12 @@ Eigen::SparseMatrix<double> getGlobalMassMatrixPaz(
 
         // Use Paz local mass matrix (with explicit I0)
         Eigen::MatrixXd mLocal = getLocalMassMatrixPaz(elmNodes, elementInputs, i);
-        Eigen::MatrixXd T = getTransformationMatrix(elmNodes);
+        double angEl = 0.0;
+        {
+            auto itA = elementInputs.localAngles.find(i);
+            if (itA != elementInputs.localAngles.end()) angEl = itA->second;
+        }
+        Eigen::MatrixXd T = getTransformationMatrix(elmNodes, angEl);
 
         // M_global_element = T^T * mLocal * T
         Eigen::MatrixXd mGlobalElement = T.transpose() * mLocal * T;

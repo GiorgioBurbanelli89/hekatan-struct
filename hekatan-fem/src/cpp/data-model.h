@@ -27,6 +27,9 @@ struct ElementInputs
     std::map<int, double> shearAreasY; // As_y for Timoshenko beams
     std::map<int, double> shearAreasZ; // As_z for Timoshenko beams
     std::map<int, std::vector<double>> rigidOffsets; // [factorI, factorJ] rigid zone factors
+    // Angulo de eje local de barra, en GRADOS, alrededor del eje 1 — el "local
+    // axis angle" de CSI (`FrameObj.SetLocalAxes` de ETABS). Ausente = 0.
+    std::map<int, double> localAngles;
     // Releases via static condensation. Two formats:
     //  6 flags: [TI,M2I,M3I, TJ,M2J,M3J]  (rotational only, legacy)
     // 12 flags: [FxI,FyI,FzI,TI,M2I,M3I, FxJ,FyJ,FzJ,TJ,M2J,M3J] (all DOFs)
@@ -110,7 +113,8 @@ Eigen::MatrixXd getLocalStiffnessMatrix(
     int elementIndex);
 
 Eigen::MatrixXd getTransformationMatrix(
-    const std::vector<Node> &elementNodes);
+    const std::vector<Node> &elementNodes,
+    double frameAngleDeg = 0.0);
 
 Eigen::SparseMatrix<double> getGlobalStiffnessMatrix(
     const std::vector<Node> &nodes,

@@ -13,8 +13,12 @@ import {
 import { getTransformationMatrixShellQ4 } from "./shellQ4";
 
 // from global to local
-export function getTransformationMatrix(nodes: Node[]): number[][] {
-  if (nodes.length === 2) return getTransformationMatrixFrame(nodes);
+export function getTransformationMatrix(
+  nodes: Node[],
+  frameAngleDeg: number = 0
+): number[][] {
+  if (nodes.length === 2)
+    return getTransformationMatrixFrame(nodes, frameAngleDeg);
   if (nodes.length === 3) return getTransformationMatrixShell(nodes);
   if (nodes.length === 4) return getTransformationMatrixShellQ4(nodes);
 }
@@ -42,7 +46,24 @@ export function getTransformationMatrix(nodes: Node[]): number[][] {
  * Con la tríada vieja era justo al revés. Los modelos que pasan las dos
  * inercias distintas hay que cruzarlos.
  */
-function getTransformationMatrixFrame(nodes: Node[]): number[][] {
+function getTransformationMatrixFrame(
+  nodes: Node[],
+  angleDeg: number = 0
+): number[][] {
+  // Gira el par (eje2, eje3) alrededor del eje 1, dejando el eje 1 quieto: es
+  // el "local axis angle" de CSI. Tiene que hacer LO MISMO que la copia C++ de
+  // getTransformationMatrix.cpp, o la deformada (C++) y las fuerzas de barra
+  // (este TS) salen de marcos distintos.
+  const girar = (lam: number[][]): number[][] => {
+    if (Math.abs(angleDeg) < 1e-12) return lam;
+    const a = (angleDeg * Math.PI) / 180;
+    const ca = Math.cos(a), sa = Math.sin(a);
+    return [
+      lam[0],
+      [ca * lam[1][0] + sa * lam[2][0], ca * lam[1][1] + sa * lam[2][1], ca * lam[1][2] + sa * lam[2][2]],
+      [-sa * lam[1][0] + ca * lam[2][0], -sa * lam[1][1] + ca * lam[2][1], -sa * lam[1][2] + ca * lam[2][2]],
+    ];
+  };
   const vector = subtract(nodes[1], nodes[0]) as number[];
   const length = norm(vector) as number;
   const l = dot(vector, [1, 0, 0]) / length;
@@ -60,7 +81,7 @@ function getTransformationMatrixFrame(nodes: Node[]): number[][] {
       [1, 0, 0],        // eje 2: +X global
       [0, s, 0],        // eje 3 = eje1 × eje2
     ];
-    return kron(identity(4) as MathCollection, lambda).toArray() as number[][];
+    return kron(identity(4) as MathCollection, girar(lambda)).toArray() as number[][];
   }
 
   const lambda = [
@@ -69,7 +90,7 @@ function getTransformationMatrixFrame(nodes: Node[]): number[][] {
     [m / D, -l / D, 0],
   ];
 
-  return kron(identity(4) as MathCollection, lambda).toArray() as number[][];
+  return kron(identity(4) as MathCollection, girar(lambda)).toArray() as number[][];
 }
 
 function getTransformationMatrixShell(nodes: Node[]): number[][] {

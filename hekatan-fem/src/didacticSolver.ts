@@ -285,6 +285,22 @@ function computeFrameElement(
     ];
   }
 
+  // Giro del ANGULO DE EJE LOCAL (el "local axis angle" de CSI): rota el par
+  // eje2/eje3 alrededor del eje 1. Tiene que hacer lo MISMO que las otras dos
+  // copias de la triada — getTransformationMatrix.ts y su gemela en C++ — o el
+  // paso a paso didactico enseñaria un marco distinto del que resuelve.
+  const angDeg = ei.localAngles?.get(idx) ?? 0;
+  if (Math.abs(angDeg) > 1e-12) {
+    const a = (angDeg * Math.PI) / 180;
+    const ca = Math.cos(a), sa = Math.sin(a);
+    const e2 = lambda[1], e3 = lambda[2];
+    lambda = [
+      lambda[0],
+      [ca * e2[0] + sa * e3[0], ca * e2[1] + sa * e3[1], ca * e2[2] + sa * e3[2]],
+      [-sa * e2[0] + ca * e3[0], -sa * e2[1] + ca * e3[1], -sa * e2[2] + ca * e3[2]],
+    ];
+  }
+
   // Build 12x12 T from lambda (kronecker product with I4)
   const T: number[][] = Array.from({ length: 12 }, () => Array(12).fill(0));
   for (let block = 0; block < 4; block++) {

@@ -55,6 +55,14 @@ export type ElementInputs = {
   shearAreasY?: Map<number, number>; // shear area in Y direction (Timoshenko beam)
   shearAreasZ?: Map<number, number>; // shear area in Z direction (Timoshenko beam)
   rigidOffsets?: Map<number, [number, number]>; // [offsetI, offsetJ] rigid zone factors (0-1) at each end
+  /**
+   * Angulo de eje local de barra, en GRADOS, alrededor del eje 1 — el "local
+   * axis angle" de CSI (`FrameObj.SetLocalAxes` de ETABS). Ausente = 0.
+   * Gira la seccion sin mover la barra: una C 200x50 a 90 grados pasa de
+   * I = 6.20e6 a 0.53e6 mm4, asi que sin esto un modelo importado de ETABS no
+   * es la misma estructura por mucho que las secciones coincidan.
+   */
+  localAngles?: Map<number, number>;
   // Frame releases via static condensation. Two formats:
   //  6 flags: [TI,M2I,M3I, TJ,M2J,M3J]  (rotational only, legacy)
   // 12 flags: [FxI,FyI,FzI,TI,M2I,M3I, FxJ,FyJ,FzJ,TJ,M2J,M3J] (all DOFs, like ETABS)

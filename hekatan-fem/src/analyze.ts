@@ -72,7 +72,10 @@ export function analyze(
 
     if (e.length === 2) {
       // Frame element
-      const T = getTransformationMatrix(elmNodes);
+      const T = getTransformationMatrix(
+        elmNodes,
+        elementInputs?.localAngles?.get(i) ?? 0
+      );
       const dxLocal = multiply(T, dxGlobal);
       const kLocal = getLocalStiffnessMatrix(elmNodes, elementInputs, i);
       let fLocal = multiply(kLocal, dxLocal);
@@ -97,7 +100,10 @@ export function analyze(
       analyzeOutputsElements.vonMises.set(i, q4Results.vonMises);
     } else if (e.length === 3) {
       // CST triangle element
-      const T = getTransformationMatrix(elmNodes);
+      const T = getTransformationMatrix(
+        elmNodes,
+        elementInputs?.localAngles?.get(i) ?? 0
+      );
       const dxLocal = multiply(T, dxGlobal);
 
       const materialStiffness3x3Matrix = getMaterialStiffnessMatrix3x3(
