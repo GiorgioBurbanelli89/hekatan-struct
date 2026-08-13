@@ -361,21 +361,34 @@ function computeQ4ShellStresses(
   const Ny = Dm[1][0]*epsXX + Dm[1][1]*epsYY;
   const Nxy = Dm[2][2]*gammaXY;
 
-  // --- Bending curvatures (Mindlin) ---
-  // Convencion del solver shellQ4.cpp:
-  //   d[3] (theta_x output) = -dw/dx
-  //   d[4] (theta_y output) = -dw/dy
-  // Por lo tanto:
-  //   kappaXX = d²w/dx² = -d(theta_x)/dx
-  //   kappaYY = d²w/dy² = -d(theta_y)/dy
-  //   kappaXY = 2·d²w/dxdy = -d(theta_x)/dy - d(theta_y)/dx
+  // --- Curvaturas de flexion (Mindlin) ---
+  //
+  // theta_x es el giro ALREDEDOR DEL EJE x y theta_y alrededor del y, que es lo
+  // que devuelve el solver. Con eso:
+  //
+  //     dw/dx =  theta_y        dw/dy = -theta_x
+  //
+  //     kappaXX =  d(theta_y)/dx
+  //     kappaYY = -d(theta_x)/dy
+  //     kappaXY =  d(theta_y)/dy - d(theta_x)/dx      (= 2*d²w/dxdy)
+  //
+  // ANTES esto usaba `-d(theta_x)/dx` y `-d(theta_y)/dy`, o sea las derivadas
+  // CRUZADAS. Con los giros de verdad eso vale +w,xy y -w,xy: dos numeros
+  // iguales y opuestos, y nulos en el centro de una placa por simetria. Es
+  // exactamente lo que salia — en la cascara de esquina M11 = +4.76 y
+  // M22 = -4.76, y en el centro las dos CERO donde la serie de Navier da -7.07.
+  // Se estaba midiendo la torsion de la placa y llamandola flexion.
+  //
+  // La FLECHA siempre estuvo bien (0.700 mm contra 0.681 de Navier, la
+  // diferencia es el cortante de Mindlin): el fallo vivia solo en la
+  // recuperacion de esfuerzos, no en el solver.
   let kappaXX = 0, kappaYY = 0, kappaXY = 0;
   for (let n = 0; n < 4; n++) {
     const thetaX = uLocal[n*6 + 3];
     const thetaY = uLocal[n*6 + 4];
-    kappaXX += -dNdx[n] * thetaX;
-    kappaYY += -dNdy[n] * thetaY;
-    kappaXY += -dNdy[n] * thetaX - dNdx[n] * thetaY;
+    kappaXX +=  dNdx[n] * thetaY;
+    kappaYY += -dNdy[n] * thetaX;
+    kappaXY +=  dNdy[n] * thetaY - dNdx[n] * thetaX;
   }
 
   const Mx = Db[0][0]*kappaXX + Db[0][1]*kappaYY;
