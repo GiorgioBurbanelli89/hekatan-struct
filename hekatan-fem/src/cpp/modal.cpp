@@ -533,13 +533,44 @@ extern "C"
             if (cuantos > 0) {
                 media /= cuantos;
                 const double MINIMO = 1e-12 * media;
+
+                // GRADOS DESCONECTADOS: sin masa y con TODA la fila despreciable.
+                //
+                // El de arriba mira solo la diagonal y no basta. Los END RELEASES
+                // de ETABS crean juntas donde TODAS las barras que llegan sueltan
+                // M2 y M3 en ese extremo: al condensar, esas barras dejan la fila
+                // a cero y lo unico que queda es la torsion de algun perfil
+                // abierto — 0.005 a 0.023 kN.m/rad contra una media de 1e6. No es
+                // cero, asi que la regla de la diagonal no lo caza, pero deja K
+                // sin poder factorizar (ETABS avisa de lo mismo en su .LOG:
+                // "THE STRUCTURE IS UNSTABLE OR ILL-CONDITIONED").
+                //
+                // Quitarlos NO cambia nada: un grado sin masa y sin rigidez ni
+                // transmite fuerza ni vibra. Su omega^2 = k/m con m = 0 se va al
+                // infinito, o sea que ningun modo finito depende de el.
+                //
+                // Se exige SIN MASA a proposito. Un grado flojo PERO CON MASA si
+                // es un modo de verdad —el poste de 4 t sobre la correa del
+                // CIMENTAC, a 0.1 Hz— y ese tiene que salir, no taparse.
+                const double DESCONECTADO = 1e-6 * media;
                 std::vector<int> conRigidez;
                 conRigidez.reserve(freeIndices.size());
-                int fuera = 0;
+                int fuera = 0, sueltos = 0;
                 for (int c : freeIndices) {
-                    if (K_global.coeff(c, c) > MINIMO) conRigidez.push_back(c);
-                    else fuera++;
+                    if (K_global.coeff(c, c) <= MINIMO) { fuera++; continue; }
+                    if (M_global.coeff(c, c) <= 0.0) {
+                        double fila = 0.0;
+                        for (Eigen::SparseMatrix<double>::InnerIterator it(K_global, c); it; ++it)
+                            fila = std::max(fila, std::abs(it.value()));
+                        if (fila < DESCONECTADO) { sueltos++; continue; }
+                    }
+                    conRigidez.push_back(c);
                 }
+                if (sueltos > 0)
+                    std::cout << "modal: " << sueltos
+                              << " grados desconectados (sin masa y sin rigidez) quedan fuera"
+                              << std::endl;
+                fuera += sueltos;
                 if (fuera > 0) {
                     std::cout << "modal: " << fuera
                               << " grados sin rigidez quedan fuera (no pueden vibrar)"
@@ -598,6 +629,8 @@ extern "C"
             for (int i = 0; i < n; ++i) Md(i) = std::max(M_global.coeff(keep[i], keep[i]), 0.0);
 
             Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> chol(Kf);
+            Eigen::SparseLU<Eigen::SparseMatrix<double>> lu;
+            bool usarLU = false;
             if (chol.info() != Eigen::Success)
             {
                 // NO devolver en silencio. Un `return` mudo aqui es una hora
@@ -640,7 +673,19 @@ extern "C"
                     std::cout << "   nudo " << (g / 6) + 1 << " " << DIR[g % 6]
                               << "   k = " << flojos[k].first << std::endl;
                 }
-                return;
+                // Se SIGUE con SparseLU, que es lo que ya hacia el estatico en
+                // este mismo caso. LDLT exige definida positiva; LU no, y una
+                // junta muy floja —que es lo que sale con los end releases de
+                // ETABS puestos— la resuelve igual. Es mas lento, pero lo otro
+                // es no dar resultado.
+                lu.compute(Kf);
+                if (lu.info() != Eigen::Success) {
+                    std::cout << "modal: tampoco se pudo con SparseLU — la "
+                                 "rigidez es singular de verdad." << std::endl;
+                    return;
+                }
+                usarLU = true;
+                std::cout << "modal: se sigue con SparseLU." << std::endl;
             }
 
             // ── vectores iniciales (Bathe): col 0 = diagonal de masa; resto = e_j en los GDL CON
@@ -655,13 +700,13 @@ extern "C"
                 }
             }
             int nMass = (int)ratio.size();
-            if (nMass == 0) return;                      // sin masa → sin modos
+            if (nMass == 0) { std::cout << "modal: no hay ni un grado libre CON MASA" << std::endl; return; }
             std::sort(ratio.begin(), ratio.end(), [](auto &a, auto &b){ return a.first > b.first; });
 
             int nmodes = (num_modes > 0) ? num_modes : 10;
             // q acotado por el nº de GDL con masa: no hay más modos laterales que GDL de masa.
             int q = std::min(n, std::min(2 * nmodes + 8, nMass));
-            if (q < 1) return;
+            if (q < 1) { std::cout << "modal: el subespacio se quedo sin vectores (q < 1)" << std::endl; return; }
 
             Eigen::MatrixXd X = Eigen::MatrixXd::Zero(n, q);
             for (int i = 0; i < n; ++i) X(i, 0) = Md(i);                  // col 0 = diagonal de masa
@@ -674,14 +719,22 @@ extern "C"
             for (int iter = 0; iter < 30; ++iter)
             {
                 Eigen::MatrixXd MX = Md.asDiagonal() * X;      // M·X
-                Xbar = chol.solve(MX);                         // X̄ = K⁻¹·M·X (barra de inversa)
+                // X̄ = K⁻¹·M·X (barra de inversa). Con if/else y no con `?:`:
+                // Eigen devuelve un tipo de EXPRESION distinto por cada solver y el
+                // ternario no los puede unificar.
+                if (usarLU) Xbar = lu.solve(MX);
+                else        Xbar = chol.solve(MX);
                 Eigen::MatrixXd MXbar = Md.asDiagonal() * Xbar;
                 Eigen::MatrixXd Kbar = Xbar.transpose() * MX;  // X̄ᵀ·M·X = X̄ᵀ·K·X̄
                 Eigen::MatrixXd Mbar = Xbar.transpose() * MXbar; // X̄ᵀ·M·X̄
                 Kbar = 0.5 * (Kbar + Kbar.transpose());
                 Mbar = 0.5 * (Mbar + Mbar.transpose());
                 Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> ges(Kbar, Mbar);
-                if (ges.info() != Eigen::Success) break;
+                if (ges.info() != Eigen::Success) {
+                    std::cout << "modal: el problema reducido del subespacio no se "
+                                 "pudo resolver en la iteracion " << iter << std::endl;
+                    break;
+                }
                 lam = ges.eigenvalues();                       // ω² ascendente
                 Q = ges.eigenvectors();                        // Mbar-ortonormal
                 X = Xbar * Q;                                  // nuevo subespacio (= autovectores aprox)
@@ -695,7 +748,7 @@ extern "C"
                 }
                 if (iter > 0 && err < 1e-7) break;
             }
-            if (lam.size() == 0) return;
+            if (lam.size() == 0) { std::cout << "modal: la iteracion de subespacio no dio ni un autovalor" << std::endl; return; }
 
             // autovectores M-ortonormales: φ = X̄·Q  (φᵀMφ = QᵀMbarQ = I)
             eigenvectors = Xbar * Q;
