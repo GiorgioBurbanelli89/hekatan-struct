@@ -146,7 +146,31 @@ extern "C"
         Eigen::VectorXd eigenvalues;       // ω² (ascendente)
         Eigen::MatrixXd eigenvectors;      // reducedSize × nComputed (M-ortonormal)
 
-        if (lateral_mass)
+        // ── QUE CAMINO: subespacio o denso ──
+        //
+        // Lo decide el TAMAÑO del modelo, no el tipo de masa. Antes lo decidia
+        // `lateral_mass`, que es otra cosa —si la masa va solo en Ux,Uy o
+        // tambien en Uz—, y como llega en 0 por defecto TODO modelo caia en el
+        // camino denso. Medido en el galpon (609 nudos, 3486 GDL libres):
+        //
+        //    denso:      matriz 3486 x 3486 = 97 MB, eigen completo,
+        //                ~4.2e10 operaciones  ->  3 min 38 s en Node
+        //    subespacio: K sparse factorizada UNA vez + 32 vectores,
+        //                ~2.0e8 operaciones   ->  211 veces menos
+        //
+        // O sea se estaban calculando los 3486 modos para quedarse con 12.
+        // ETABS nunca hace eso. El subespacio vale igual con masa 3D porque la
+        // masa es lumped (HRZ): M ya es DIAGONAL, que es lo que este codigo
+        // necesita.
+        //
+        // El denso se queda para modelos chicos: ahi da lo mismo en tiempo y
+        // sirve de contraste — es el que valida el Paz 6.3 contra ETABS al
+        // cuarto decimal, y conviene no tocarlo.
+        const int GDL_DENSO = 400;         // por encima de esto, subespacio
+        int nLibres = (int)freeIndices.size();
+        bool usarSubespacio = lateral_mass || nLibres > GDL_DENSO;
+
+        if (usarSubespacio)
         {
             // ================= ITERACIÓN DE SUBESPACIO (Bathe) — como ETABS/SAPFire =================
             // Se resuelve K·φ = ω²·M·φ sobre la MALLA FINA COMPLETA (todos los GDL libres con rigidez),
