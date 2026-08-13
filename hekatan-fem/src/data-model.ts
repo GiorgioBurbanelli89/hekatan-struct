@@ -20,6 +20,25 @@ export type NodeInputs = {
     [boolean, boolean, boolean, boolean, boolean, boolean]
   >;
   loads?: Map<number, [number, number, number, number, number, number]>;
+  /**
+   * Masa concentrada en el nudo, en toneladas. La que NO sale del peso propio
+   * de los elementos.
+   *
+   * En ETABS la fuente de masa son dos interruptores independientes:
+   * `INCLUDEELEMENTS` (rho*A*L) e `INCLUDELOADS` (patrones de carga entre g).
+   * El CIMENTAC del GAD RIOCHICO tiene el primero en "No" y el segundo en "Yes"
+   * con PP y SCP: alli la masa no es el peso propio, son las cargas.
+   */
+  masses?: Map<number, number>;
+  /**
+   * Diafragma rigido al que pertenece cada nudo (0 o ausente = ninguno).
+   *
+   * Un diafragma rigido ata Ux, Uy y Rz de todos los nudos del mismo id: la
+   * planta se mueve como un solido en su plano. ETABS lo pone como
+   * RESTRICCION, no como rigidez, y sin el un modelo con losas de diafragma
+   * sale mucho mas flexible.
+   */
+  diaphragms?: Map<number, number>;
 };
 
 export type SectionShape = {

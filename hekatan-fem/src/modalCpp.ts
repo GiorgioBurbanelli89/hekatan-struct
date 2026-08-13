@@ -17,7 +17,18 @@ export function modalCpp(
   elementInputs: ElementInputs,
   numModes: number = 10,
   lateralMass: number = 0,  // 1 = solo masa lateral Ux,Uy (como ETABS INCLUDEVERTICALMASS No)
-  lumpStories: number = 0   // 1 = agrupar la masa por pisos (como ETABS LUMPATSTORIES Yes)
+  lumpStories: number = 0,  // 1 = agrupar la masa por pisos (como ETABS LUMPATSTORIES Yes)
+  // La fuente de masa de ETABS son DOS interruptores independientes, y hasta
+  // ahora Hekatan solo sabia hacer el primero:
+  //    INCLUDEELEMENTS   la masa de los elementos, rho*A*L
+  //    INCLUDELOADS      patrones de carga convertidos en masa (carga / g)
+  // El CIMENTAC del GAD RIOCHICO tiene INCLUDEELEMENTS "No" e INCLUDELOADS
+  // "Yes" con PP y SCP: alli la masa NO es el peso propio, son las cargas.
+  includeElements: number = 1,
+  // Diafragma rigido por nudo: Map<nudo, idDiafragma>. 0 o ausente = ninguno.
+  // Ata Ux, Uy y Rz de todos los nudos del mismo id, que es lo que hace ETABS
+  // con sus diafragmas (el CIMENTAC del GAD RIOCHICO tiene dos, D1 y D2).
+  diaphragms?: Map<number, number>
 ): ModalOutputs {
   if (nodes.length === 0) return { frequencies: [], modeShapes: [], massParticipation: [] };
 
@@ -93,6 +104,11 @@ export function modalCpp(
   const shearAreasZ = processElementInput(elementInputs.shearAreasZ);
   const localAngles = processElementInput(
     (elementInputs as any).localAngles as Map<number, number> | undefined);
+
+  // Masa nodal en toneladas: la que NO sale del peso propio (ver includeElements).
+  // Va indexada por NUDO, no por elemento, pero el empaquetado es el mismo.
+  const nodalMasses = processElementInput(nodeInputs.masses);
+  const diaph = processElementInput(diaphragms ?? (nodeInputs as any).diaphragms);
 
   // Output pointers
   const freqPtrOut = mod._malloc(4);
@@ -173,6 +189,14 @@ export function modalCpp(
     localAngles.keysPtr,
     localAngles.valuesPtr,
     localAngles.size,
+    // masa nodal (t) + si se cuenta o no la masa de los elementos
+    nodalMasses.keysPtr,
+    nodalMasses.valuesPtr,
+    nodalMasses.size,
+    includeElements,
+    diaph.keysPtr,
+    diaph.valuesPtr,
+    diaph.size,
     // control
     numModes,
     lateralMass,

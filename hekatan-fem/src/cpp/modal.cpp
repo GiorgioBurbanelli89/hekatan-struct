@@ -69,6 +69,23 @@ extern "C"
         int *shearY_keys_ptr, double *shearY_values_ptr, int num_shearY,
         int *shearZ_keys_ptr, double *shearZ_values_ptr, int num_shearZ,
         int *locang_keys_ptr, double *locang_values_ptr, int num_locang,
+        // MASA NODAL en toneladas, la que NO sale del peso propio.
+        //
+        // Es la fuente de masa de ETABS. Su MASSSOURCE tiene dos interruptores
+        // independientes y hasta ahora Hekatan solo sabia hacer el primero:
+        //
+        //    INCLUDEELEMENTS  la masa de los elementos, rho*A*L
+        //    INCLUDELOADS     patrones de carga convertidos en masa (carga/g)
+        //
+        // El CIMENTAC del GAD RIOCHICO tiene INCLUDEELEMENTS "No" e
+        // INCLUDELOADS "Yes" con PP y SCP: ahi la masa NO es el peso propio de
+        // los elementos, son las cargas. Sin esto no hay forma de que cuadre por
+        // muy bien que este el solver.
+        int *nodemass_keys_ptr, double *nodemass_values_ptr, int num_nodemass,
+        int include_elements,   // 0 = ignorar rho*A*L (ETABS INCLUDEELEMENTS No)
+        // DIAFRAGMA RIGIDO por nudo: 0 = ninguno, 1..n = a que diafragma
+        // pertenece. Ata Ux, Uy y Rz de todos los nudos del grupo.
+        int *diaph_keys_ptr, double *diaph_values_ptr, int num_diaph,
 
         // Control
         int num_modes,   // number of modes to return (0 = all)
@@ -130,6 +147,32 @@ extern "C"
 
         Eigen::SparseMatrix<double> M_global = getGlobalMassMatrix(
             nodes, element_indices, element_sizes, elementInputs, dof);
+
+        // --- 2a. Fuente de masa estilo ETABS: elementos y/o masa nodal ---
+        // `include_elements = 0` tira la masa de rho*A*L, que es lo que hace
+        // ETABS con INCLUDEELEMENTS "No"; la masa nodal se anade siempre.
+        {
+            std::map<int, double> masaNodal =
+                parseMapFromFlat(nodemass_keys_ptr, nodemass_values_ptr, num_nodemass);
+            if (!include_elements)
+                M_global.setZero();
+            if (!masaNodal.empty())
+            {
+                std::vector<Eigen::Triplet<double>> tri;
+                tri.reserve(masaNodal.size() * 3);
+                for (const auto &kv : masaNodal)
+                {
+                    const int i = kv.first;
+                    if (i < 0 || i >= num_nodes || kv.second <= 0.0) continue;
+                    tri.emplace_back(i * 6 + 0, i * 6 + 0, kv.second);
+                    tri.emplace_back(i * 6 + 1, i * 6 + 1, kv.second);
+                    tri.emplace_back(i * 6 + 2, i * 6 + 2, kv.second);
+                }
+                Eigen::SparseMatrix<double> M_nod(dof, dof);
+                M_nod.setFromTriplets(tri.begin(), tri.end());
+                M_global += M_nod;
+            }
+        }
 
         // --- 2b. Masa solo lateral (ETABS INCLUDEVERTICALMASS "No") ---
         // Conserva SOLO la masa de los GDL Ux,Uy (lumpeo por suma de filas = ETABS LUMPATSTORIES).
@@ -325,8 +368,117 @@ extern "C"
             }
         }
 
+        // --- 2d. DIAFRAGMAS RIGIDOS ---
+        //
+        // Un diafragma rigido ata todos los nudos de una planta a moverse como
+        // un solido en su plano: se mueven juntos en Ux y Uy y giran juntos en
+        // Rz. ETABS lo pone como restriccion, no como rigidez, y sin el un
+        // modelo con losas de diafragma sale MUCHO mas flexible. El CIMENTAC del
+        // GAD RIOCHICO tiene dos (D1 y D2).
+        //
+        // Se hace con una matriz de transformacion T: los GDL de los nudos
+        // esclavos dejan de ser incognita y quedan escritos en funcion de los
+        // tres del maestro,
+        //
+        //     ux_i = ux_m - (y_i - y_m) * rz_m
+        //     uy_i = uy_m + (x_i - x_m) * rz_m
+        //     rz_i = rz_m
+        //
+        // y el problema se resuelve en las coordenadas reducidas:
+        // K_r = T^T K T,  M_r = T^T M T. Se elige de maestro el PRIMER nudo del
+        // diafragma; da igual cual sea, el movimiento del conjunto es el mismo.
+        Eigen::SparseMatrix<double> T_dia;      // dof_completo x dof_reducido
+        bool hayDiafragma = false;
+        const int dofCompleto = dof;
+        std::vector<int> colDe;                 // GDL completo -> GDL reducido
+        std::vector<int> diaDe(num_nodes, -1);
+        {
+            std::map<int, double> diafr =
+                parseMapFromFlat(diaph_keys_ptr, diaph_values_ptr, num_diaph);
+            std::map<int, std::vector<int>> grupos;
+            for (const auto &kv : diafr) {
+                if (kv.first < 0 || kv.first >= num_nodes) continue;
+                const int g = (int)std::llround(kv.second);
+                if (g <= 0) continue;            // 0 = sin diafragma
+                grupos[g].push_back(kv.first);
+                diaDe[kv.first] = g;
+            }
+            // un diafragma de un solo nudo no ata nada
+            for (auto it = grupos.begin(); it != grupos.end(); ) {
+                if (it->second.size() < 2) {
+                    for (int i : it->second) diaDe[i] = -1;
+                    it = grupos.erase(it);
+                } else ++it;
+            }
+            if (!grupos.empty())
+            {
+                hayDiafragma = true;
+                // GDL que sobreviven: todos menos ux, uy, rz de los esclavos
+                std::vector<int> maestro;         // por grupo, el nudo maestro
+                std::map<int, int> maestroDe;     // grupo -> nudo maestro
+                for (const auto &g : grupos) maestroDe[g.first] = g.second.front();
+
+                colDe.assign(dof, -1);
+                int nred = 0;
+                for (int i = 0; i < num_nodes; ++i)
+                    for (int k = 0; k < 6; ++k) {
+                        const bool atado = (diaDe[i] > 0) &&
+                                           (k == 0 || k == 1 || k == 5) &&
+                                           (i != maestroDe[diaDe[i]]);
+                        if (!atado) colDe[i * 6 + k] = nred++;
+                    }
+                std::vector<Eigen::Triplet<double>> tt;
+                tt.reserve(dof * 2);
+                for (int i = 0; i < num_nodes; ++i) {
+                    const int g = diaDe[i];
+                    const int m = (g > 0) ? maestroDe[g] : -1;
+                    for (int k = 0; k < 6; ++k) {
+                        const int fila = i * 6 + k;
+                        if (colDe[fila] >= 0) { tt.emplace_back(fila, colDe[fila], 1.0); continue; }
+                        // esclavo: se escribe en funcion del maestro
+                        const double dx = nodes[i][0] - nodes[m][0];
+                        const double dy = nodes[i][1] - nodes[m][1];
+                        if (k == 0) {                      // ux = ux_m - dy*rz_m
+                            tt.emplace_back(fila, colDe[m * 6 + 0], 1.0);
+                            tt.emplace_back(fila, colDe[m * 6 + 5], -dy);
+                        } else if (k == 1) {               // uy = uy_m + dx*rz_m
+                            tt.emplace_back(fila, colDe[m * 6 + 1], 1.0);
+                            tt.emplace_back(fila, colDe[m * 6 + 5], dx);
+                        } else {                           // rz = rz_m
+                            tt.emplace_back(fila, colDe[m * 6 + 5], 1.0);
+                        }
+                    }
+                }
+                T_dia.resize(dof, nred);
+                T_dia.setFromTriplets(tt.begin(), tt.end());
+                K_global = (T_dia.transpose() * K_global * T_dia).pruned();
+                M_global = (T_dia.transpose() * M_global * T_dia).pruned();
+                dof = nred;
+            }
+        }
+
         // --- 3. Apply boundary conditions + reducción ---
-        std::vector<int> freeIndices = getFreeIndices(nodeInputs, dof);
+        //
+        // Con diafragma los GDL ya NO son i*6+k, asi que los apoyos hay que
+        // traducirlos con `colDe`. Un GDL apoyado que ademas sea esclavo del
+        // diafragma se ignora: apoyar en Ux un nudo atado al diafragma ataria
+        // toda la planta, y eso no es lo que quiere decir el modelo.
+        std::vector<int> freeIndices;
+        if (hayDiafragma) {
+            std::vector<bool> fijo(dof, false);
+            for (const auto &kv : nodeInputs.supports) {
+                const int i = kv.first;
+                if (i < 0 || i * 6 + 5 >= dofCompleto) continue;
+                for (int k = 0; k < 6 && k < (int)kv.second.size(); ++k) {
+                    if (!kv.second[k]) continue;
+                    const int c = colDe[i * 6 + k];
+                    if (c >= 0) fijo[c] = true;
+                }
+            }
+            for (int c = 0; c < dof; ++c) if (!fijo[c]) freeIndices.push_back(c);
+        } else {
+            freeIndices = getFreeIndices(nodeInputs, dof);
+        }
         std::vector<int> zeroIndicesK = getZerosIndices(K_global);
         std::sort(zeroIndicesK.begin(), zeroIndicesK.end());
 
@@ -569,16 +721,22 @@ extern "C"
         for (int i = 0; i < numValidModes; ++i)
             (*frequencies_ptr_out)[i] = freqVec[i];
 
+        // Con diafragma, el eigen vive en las coordenadas REDUCIDAS. Las formas
+        // hay que devolverlas en las completas —seis por nudo— o el visor no
+        // sabe dibujarlas y el nodo a nodo contra ETABS no se puede cruzar.
+        // Deshacerlo es multiplicar por la misma T que las redujo.
+        const int dofSalida = hayDiafragma ? dofCompleto : dof;
         *mode_shapes_rows_out = numValidModes;
-        *mode_shapes_cols_out = dof;
-        *mode_shapes_ptr_out = (double *)malloc(numValidModes * dof * sizeof(double));
+        *mode_shapes_cols_out = dofSalida;
+        *mode_shapes_ptr_out = (double *)malloc(numValidModes * dofSalida * sizeof(double));
         for (int m = 0; m < numValidModes; ++m)
         {
-            Eigen::VectorXd fullMode = fullModes[m];
+            Eigen::VectorXd fullMode = hayDiafragma ? (T_dia * fullModes[m]).eval()
+                                                    : fullModes[m];
             double maxVal = fullMode.cwiseAbs().maxCoeff();  // normalizar a máx = 1 (para el visor)
             if (maxVal > 1e-15) fullMode /= maxVal;
-            for (int d = 0; d < dof; ++d)
-                (*mode_shapes_ptr_out)[m * dof + d] = fullMode(d);
+            for (int d = 0; d < dofSalida; ++d)
+                (*mode_shapes_ptr_out)[m * dofSalida + d] = fullMode(d);
         }
 
         *mass_participation_rows_out = numValidModes;

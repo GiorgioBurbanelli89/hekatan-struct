@@ -71,6 +71,8 @@ export async function modal(nodes, elements, nodeInputs, elementInputs, numModes
   // como si fuera ese entero y todo lo de detras iba corrido. El sintoma fue
   // "memory access out of bounds" en paz-6-3-modal.
   const sy = P(ei.shearAreasY), sz = P(ei.shearAreasZ), la = P(ei.localAngles);
+  const nm = P(nodeInputs.masses);
+  const dia = P(nodeInputs.diaphragms);   // diafragma rigido por nudo   // masa nodal (t), la que no sale del peso propio
 
   mod._modal(nP, nodes.length, eP, eI.length, eS, elements.length, sKp, sVp, sK.length,
     el.kp, el.vp, el.size, ar.kp, ar.vp, ar.size, mz.kp, mz.vp, mz.size, my.kp, my.vp, my.size,
@@ -78,6 +80,8 @@ export async function modal(nodes, elements, nodeInputs, elementInputs, numModes
     th.kp, th.vp, th.size, po.kp, po.vp, po.size, mm.kp, mm.vp, mm.size, bm.kp, bm.vp, bm.size,
     pfKp, pfVp, 0,
     sy.kp, sy.vp, sy.size, sz.kp, sz.vp, sz.size, la.kp, la.vp, la.size,
+    nm.kp, nm.vp, nm.size, 1 /* includeElements */,
+    dia.kp, dia.vp, dia.size,
     numModes, lateral, 0 /* lumpStories */,
     fo, nfo, moo, mro, mco, mao, maro, maco);
 

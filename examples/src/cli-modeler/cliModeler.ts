@@ -101,6 +101,15 @@ interface ParsedModel {
    *  interior del vano ancho y 23 % mas al extremo. */
   frameLoads: Map<number, [number, number, number]>;
   springs: Array<{ node: number; dof: number; k: number }>;
+  /** Masa concentrada en un nudo, en toneladas — la que NO sale del peso propio.
+   *  En ETABS la fuente de masa son dos interruptores: `INCLUDEELEMENTS`
+   *  (rho*A*L) e `INCLUDELOADS` (patrones de carga entre g). El CIMENTAC del GAD
+   *  RIOCHICO tiene el primero en "No": alli la masa son las CARGAS, no el peso
+   *  propio, y sin poder darla a mano no hay forma de reproducir su modal. */
+  masses: Map<number, number>;
+  // Diafragma rigido por nudo: id del diafragma al que pertenece (0 = ninguno).
+  // Ata Ux, Uy y Rz de todos los nudos con el mismo id, como ETABS.
+  diaphragms: Map<number, number>;
   doSolve: boolean;
   errors: string[];
 }
@@ -144,6 +153,8 @@ export function parseCliCommands(text: string): ParsedModel {
     loads: new Map(),
     frameLoads: new Map(),
     springs: [],
+    masses: new Map(),
+    diaphragms: new Map(),
     doSolve: false,
     errors: [],
   };
@@ -428,6 +439,24 @@ export function parseCliCommands(text: string): ParsedModel {
           m.springs.push({ node: nodeId, dof, k });
           break;
         }
+        // diaph <nudo> <idDiafragma>  — diafragma rigido (ata Ux, Uy, Rz)
+        case "diaph":
+        case "diaphragm": {
+          const nodeId = parseInt(tokens[1], 10);
+          const d = parseInt(tokens[2] ?? "1", 10);
+          if (isFinite(nodeId) && isFinite(d) && d > 0) m.diaphragms.set(nodeId, d);
+          break;
+        }
+        case "mass": {
+          // mass <nudo> <m>   masa concentrada en toneladas
+          const nodeId = parseInt(tokens[1], 10);
+          const mm = parseFloat(tokens[2] ?? "0");
+          if (Number.isFinite(nodeId) && Number.isFinite(mm))
+            m.masses.set(nodeId, (m.masses.get(nodeId) ?? 0) + mm);
+          else
+            m.errors.push(`L${lineNo+1}: mass necesita <nudo> <toneladas>`);
+          break;
+        }
         case "solve":
         case "run":
         case "analyze": {
@@ -438,7 +467,7 @@ export function parseCliCommands(text: string): ParsedModel {
         case "clear":
           m.nodes.clear(); m.frames.length = 0; m.shells.length = 0;
           m.supports.clear(); m.loads.clear(); m.frameLoads.clear();
-          m.springs.length = 0;
+          m.springs.length = 0; m.masses.clear(); m.diaphragms.clear();
           break;
         default:
           m.errors.push(`L${lineNo+1}: comando desconocido "${cmd}"`);
@@ -594,6 +623,16 @@ export const cliModeler: ExampleDef = {
       const idx = idToIdx.get(id);
       if (idx !== undefined) loads.set(idx, [...ld]);
     }
+    const diaphragms = new Map<number, number>();
+    for (const [id, d] of m.diaphragms.entries()) {
+      const idx = idToIdx.get(id);
+      if (idx !== undefined) diaphragms.set(idx, d);
+    }
+    const masses = new Map<number, number>();
+    for (const [id, mm] of m.masses.entries()) {
+      const idx = idToIdx.get(id);
+      if (idx !== undefined) masses.set(idx, mm);
+    }
 
     // ── frameload -> cargas nodales CONSISTENTES (fuerzas + momentos) ────────
     // Una carga repartida w sobre una barra de longitud L se sustituye por sus
@@ -691,7 +730,7 @@ export const cliModeler: ExampleDef = {
 
     states.nodes.val = nodes;
     states.elements.val = elements;
-    states.nodeInputs.val = { supports, loads };
+    states.nodeInputs.val = { supports, loads, masses, diaphragms } as any;
     // Modificadores por elemento, indexados como los shells en `elements`
     const membraneModifiers = new Map<number, number>();
     const bendingModifiers = new Map<number, number>();
