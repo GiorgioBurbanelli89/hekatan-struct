@@ -124,13 +124,31 @@ function parseSupportSpec(spec: string): [boolean, boolean, boolean, boolean, bo
   if (s === "fixed" || s === "empotrado") return [true, true, true, true, true, true];
   if (s === "pinned" || s === "articulado") return [true, true, true, false, false, false];
   if (s === "roller" || s === "rodillo") return [false, false, true, false, false, false];
-  // DOFs explícitos: "uxuyuz" o "ux,uy,uz" o "1,1,1,0,0,0"
+  // DOFs explícitos: "uxuyuz" o "ux,uy,uz" o "111000" o "1 1 1 0 0 0"
   const out: [boolean, boolean, boolean, boolean, boolean, boolean] = [false,false,false,false,false,false];
-  const tokens = s.split(/[\s,]+/);
+  const tokens = s.split(/[\s,]+/).filter(Boolean);
+
+  // UN BIT POR GDL, separados: "1 1 1 0 0 0" o "1,1,1,0,0,0". Es lo que escribe
+  // el importador de ETABS (`edb_a_heks.py`, que copia el Restraint de la OAPI)
+  // y lo que NO se entendia: el patron compacto se probaba con /^[01]+$/ sobre
+  // la cadena ENTERA, asi que cualquier separador lo tumbaba y el apoyo salia
+  // LIBRE en los seis grados, sin un solo aviso.
+  //
+  // Lo que costo: el CIMENTAC del GAD RIOCHICO tiene 29 apoyos escritos asi.
+  // Ninguno llegaba al solver, y el modal daba tres modos de frecuencia ~0 con
+  // participacion UX 0.99 / UY 0.99 / RZ 0.79 — el edificio entero trasladando
+  // y girando como un solido libre, porque no habia nada que lo sujetara. El
+  // estatico tampoco chistaba: los 612 resortes de balasto le daban rigidez
+  // vertical suficiente para "resolver" y devolver numeros sin sentido.
+  if (tokens.length > 1 && tokens.length <= 6 &&
+      tokens.every((t) => t === "0" || t === "1")) {
+    tokens.forEach((t, i) => { out[i] = t === "1"; });
+    return out;
+  }
   for (const t of tokens) {
     if (DOF_NAMES[t] !== undefined) out[DOF_NAMES[t]] = true;
   }
-  // 6-bit pattern "111000"
+  // patron compacto "111000"
   if (/^[01]+$/.test(s) && s.length <= 6) {
     for (let i = 0; i < s.length; i++) out[i] = s[i] === "1";
   }
