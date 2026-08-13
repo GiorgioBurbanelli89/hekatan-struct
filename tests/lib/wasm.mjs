@@ -64,11 +64,22 @@ export async function modal(nodes, elements, nodeInputs, elementInputs, numModes
   const O = () => { const p = mod._malloc(4); gc.push(p); return p; };
   const fo = O(), nfo = O(), moo = O(), mro = O(), mco = O(), mao = O(), maro = O(), maco = O();
 
+  // Areas de cortante (As2/As3) y angulo de eje local: vacios aqui, pero TIENEN
+  // que ir, porque _modal los pide. Esta llamada lleva la lista de argumentos a
+  // mano y por eso se desincroniza cada vez que el C++ cambia: cuando se anadio
+  // `lumpStories` no se actualizo, asi que el puntero `fo` se estaba leyendo
+  // como si fuera ese entero y todo lo de detras iba corrido. El sintoma fue
+  // "memory access out of bounds" en paz-6-3-modal.
+  const sy = P(), sz = P(), la = P();
+
   mod._modal(nP, nodes.length, eP, eI.length, eS, elements.length, sKp, sVp, sK.length,
     el.kp, el.vp, el.size, ar.kp, ar.vp, ar.size, mz.kp, mz.vp, mz.size, my.kp, my.vp, my.size,
     sh.kp, sh.vp, sh.size, to.kp, to.vp, to.size, de.kp, de.vp, de.size,
     th.kp, th.vp, th.size, po.kp, po.vp, po.size, mm.kp, mm.vp, mm.size, bm.kp, bm.vp, bm.size,
-    pfKp, pfVp, 0, numModes, lateral, fo, nfo, moo, mro, mco, mao, maro, maco);
+    pfKp, pfVp, 0,
+    sy.kp, sy.vp, sy.size, sz.kp, sz.vp, sz.size, la.kp, la.vp, la.size,
+    numModes, lateral, 0 /* lumpStories */,
+    fo, nfo, moo, mro, mco, mao, maro, maco);
 
   const fp = mod.HEAPU32[fo / 4], nf = mod.HEAPU32[nfo / 4];
   let f = [];

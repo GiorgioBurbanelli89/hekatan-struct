@@ -59,10 +59,21 @@ extern "C"
         int *bendmod_keys_ptr, double *bendmod_values_ptr, int num_bendmods,
         // Plate formulation per shell: 0=Mindlin (Shell-Thick DSE), 1=Kirchhoff MZC (Shell-Thin DKE)
         int *plateForm_keys_ptr, int *plateForm_values_ptr, int num_plateForm,
+        // Areas de cortante y angulo de eje local. El estatico ya las recibia y
+        // el modal NO, asi que los dos armaban una K DISTINTA del mismo modelo:
+        // sin `as` se supone 5/6*A (el doble del alma real en estos perfiles) y
+        // sin `ang` los perfiles quedan mal orientados — una C 200x50 girada 90
+        // grados es ONCE veces mas floja. Medido en el galpon: el modal salia
+        // rigido de mas del modo 2 en adelante (modo 3: 5.01 Hz contra 3.70 de
+        // ETABS) mientras el estatico cerraba al 0.9 %.
+        int *shearY_keys_ptr, double *shearY_values_ptr, int num_shearY,
+        int *shearZ_keys_ptr, double *shearZ_values_ptr, int num_shearZ,
+        int *locang_keys_ptr, double *locang_values_ptr, int num_locang,
 
         // Control
         int num_modes,   // number of modes to return (0 = all)
         int lateral_mass, // 1 = masa solo lateral Ux,Uy (ETABS INCLUDEVERTICALMASS No)
+        int lump_stories, // 1 = agrupar la masa por PISOS (ETABS LUMPATSTORIES Yes)
 
         // Outputs
         double **frequencies_ptr_out, int *num_frequencies_out,
@@ -107,6 +118,9 @@ extern "C"
         elementInputs.membraneModifiers = parseMapFromFlat(memmod_keys_ptr, memmod_values_ptr, num_memmods);
         elementInputs.bendingModifiers = parseMapFromFlat(bendmod_keys_ptr, bendmod_values_ptr, num_bendmods);
         elementInputs.plateFormulations = parseMapIntFromFlat(plateForm_keys_ptr, plateForm_values_ptr, num_plateForm);
+        elementInputs.shearAreasY = parseMapFromFlat(shearY_keys_ptr, shearY_values_ptr, num_shearY);
+        elementInputs.shearAreasZ = parseMapFromFlat(shearZ_keys_ptr, shearZ_values_ptr, num_shearZ);
+        elementInputs.localAngles = parseMapFromFlat(locang_keys_ptr, locang_values_ptr, num_locang);
 
         // --- 2. Assemble K and M ---
         int dof = num_nodes * 6;
@@ -135,6 +149,119 @@ extern "C"
             Eigen::SparseMatrix<double> M_lat(dof, dof);
             M_lat.setFromTriplets(trips.begin(), trips.end());
             M_global = M_lat;
+        }
+
+        // --- 2c. LUMPATSTORIES: agrupar la masa por PISOS ---
+        //
+        // El MASSSOURCE del galpon en ETABS dice, literal:
+        //    INCLUDEELEMENTS "Yes"  INCLUDELOADS "No"
+        //    INCLUDELATERALMASS "Yes"  INCLUDEVERTICALMASS "No"
+        //    LUMPATSTORIES "Yes"
+        //
+        // Las dos primeras ya las hacia Hekatan; esta no. ETABS coge la masa de
+        // cada nivel y la CONCENTRA en los nudos de ese nivel, en vez de dejarla
+        // donde cae por elemento (rho*A*L/2 en cada extremo). Con la misma masa
+        // total repartida distinto, los modos salen distintos — y ese era el
+        // desacuerdo que quedaba: modo 3 ETABS 3.70 Hz contra 4.86 de Hekatan.
+        //
+        // Los niveles no se declaran en el .heks, hay que detectarlos. Y un piso
+        // NO es "una cota Z cualquiera": es una cota donde coincide MUCHA gente.
+        // Medido en el galpon: z = 4.00 tiene 218 nudos y z = 8.00 tiene 90,
+        // mientras las demas cotas tienen 1, 2 o 6.
+        //
+        // Antes agrupaba con 30 cm de tolerancia y encadenando, y eso rompia
+        // justo aqui: los nudos de la cercha inclinada estan a 8.00, 8.09,
+        // 8.18 ... 9.11, o sea a 9 cm unos de otros, asi que se fundian TODOS en
+        // un solo nivel cuyo centro iba derivando hacia arriba. Con eso movia
+        // masa de mas y la frecuencia empeoraba (3.2994 -> 2.7575 Hz contra
+        // 3.2648 de ETABS) aunque la participacion de masa mejorara.
+        //
+        // Ahora: se cuentan los nudos por cota (juntando solo lo que esta a
+        // menos de 5 cm, que es ruido de modelado, no una rampa) y se queda con
+        // las cotas POBLADAS — las que llegan al 10 % de la mas poblada. Una
+        // cercha inclinada no pasa ese filtro; un piso, si. Un nudo que no cae
+        // en un piso manda su masa al nivel MAS CERCANO.
+        if (lump_stories)
+        {
+            std::vector<double> zs;
+            zs.reserve(num_nodes);
+            for (int i = 0; i < num_nodes; ++i) zs.push_back(nodes[i][2]);
+            std::sort(zs.begin(), zs.end());
+
+            // 1) agrupar cotas practicamente iguales (ruido de modelado)
+            const double TOL_Z = 0.05;               // m
+            std::vector<double> cota;                // centro de cada grupo
+            std::vector<int>    cuantos;             // nudos en el grupo
+            for (double z : zs) {
+                if (cota.empty() || z - cota.back() > TOL_Z) {
+                    cota.push_back(z);
+                    cuantos.push_back(1);
+                } else {
+                    // media corrida: el centro no deriva con el tamano del grupo
+                    cuantos.back()++;
+                    cota.back() += (z - cota.back()) / cuantos.back();
+                }
+            }
+            // 2) quedarse con las POBLADAS
+            int masPoblada = 0;
+            for (int c : cuantos) masPoblada = std::max(masPoblada, c);
+            const int MINIMO = std::max(2, masPoblada / 10);
+            std::vector<double> niveles;
+            for (size_t k = 0; k < cota.size(); ++k)
+                if (cuantos[k] >= MINIMO) niveles.push_back(cota[k]);
+
+            if (niveles.size() >= 2)
+            {
+                // a que nivel va cada nudo
+                std::vector<int> nivelDe(num_nodes, 0);
+                for (int i = 0; i < num_nodes; ++i) {
+                    double z = nodes[i][2];
+                    int mejor = 0; double d = std::abs(z - niveles[0]);
+                    for (size_t k = 1; k < niveles.size(); ++k) {
+                        double dk = std::abs(z - niveles[k]);
+                        if (dk < d) { d = dk; mejor = (int)k; }
+                    }
+                    nivelDe[i] = mejor;
+                }
+                // nudos que ESTAN en su nivel (los que reciben la masa)
+                std::vector<std::vector<int>> enNivel(niveles.size());
+                for (int i = 0; i < num_nodes; ++i)
+                    if (std::abs(nodes[i][2] - niveles[nivelDe[i]]) <= TOL_Z)
+                        enNivel[nivelDe[i]].push_back(i);
+
+                // masa nodal actual (M es diagonal: lumped HRZ)
+                std::vector<double> mNodo(num_nodes, 0.0);
+                for (int i = 0; i < num_nodes; ++i)
+                    mNodo[i] = std::max(M_global.coeff(i * 6 + 0, i * 6 + 0), 0.0);
+
+                // se reparte la masa de cada nudo entre los nudos de su nivel,
+                // en proporcion a la que ya tienen (si el nivel no tiene masa,
+                // por partes iguales)
+                std::vector<double> nueva(num_nodes, 0.0);
+                for (size_t k = 0; k < niveles.size(); ++k) {
+                    const auto &dest = enNivel[k];
+                    if (dest.empty()) continue;
+                    double total = 0.0, pesoDest = 0.0;
+                    for (int i = 0; i < num_nodes; ++i)
+                        if (nivelDe[i] == (int)k) total += mNodo[i];
+                    for (int i : dest) pesoDest += mNodo[i];
+                    for (int i : dest)
+                        nueva[i] += (pesoDest > 1e-12)
+                            ? total * (mNodo[i] / pesoDest)
+                            : total / (double)dest.size();
+                }
+
+                std::vector<Eigen::Triplet<double>> tri;
+                for (int i = 0; i < num_nodes; ++i) {
+                    if (nueva[i] <= 0.0) continue;
+                    tri.emplace_back(i*6+0, i*6+0, nueva[i]);
+                    tri.emplace_back(i*6+1, i*6+1, nueva[i]);
+                    if (!lateral_mass) tri.emplace_back(i*6+2, i*6+2, nueva[i]);
+                }
+                Eigen::SparseMatrix<double> M_lump(dof, dof);
+                M_lump.setFromTriplets(tri.begin(), tri.end());
+                M_global = M_lump;
+            }
         }
 
         // --- 3. Apply boundary conditions + reducción ---

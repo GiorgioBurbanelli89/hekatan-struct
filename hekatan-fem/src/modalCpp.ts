@@ -16,7 +16,8 @@ export function modalCpp(
   nodeInputs: NodeInputs,
   elementInputs: ElementInputs,
   numModes: number = 10,
-  lateralMass: number = 0   // 1 = solo masa lateral Ux,Uy (como ETABS INCLUDEVERTICALMASS No)
+  lateralMass: number = 0,  // 1 = solo masa lateral Ux,Uy (como ETABS INCLUDEVERTICALMASS No)
+  lumpStories: number = 0   // 1 = agrupar la masa por pisos (como ETABS LUMPATSTORIES Yes)
 ): ModalOutputs {
   if (nodes.length === 0) return { frequencies: [], modeShapes: [], massParticipation: [] };
 
@@ -81,6 +82,17 @@ export function modalCpp(
   gc.push(plateFormKeysPtr);
   const plateFormValuesPtr = allocate(plateFormValues, Uint32Array, mod.HEAPU32);
   gc.push(plateFormValuesPtr);
+
+  // Areas de cortante y angulo de eje local. El estatico (deformCpp) ya las
+  // mandaba y el modal NO, asi que los dos armaban una K DISTINTA del mismo
+  // modelo. Sin `as` el motor supone 5/6*A —el doble del alma real en estos
+  // perfiles— y sin `ang` los perfiles van mal orientados: una C 200x50 girada
+  // 90 grados es once veces mas floja. Por eso el modal del galpon salia rigido
+  // de mas del modo 2 en adelante mientras el estatico cerraba al 0.9 %.
+  const shearAreasY = processElementInput(elementInputs.shearAreasY);
+  const shearAreasZ = processElementInput(elementInputs.shearAreasZ);
+  const localAngles = processElementInput(
+    (elementInputs as any).localAngles as Map<number, number> | undefined);
 
   // Output pointers
   const freqPtrOut = mod._malloc(4);
@@ -151,9 +163,20 @@ export function modalCpp(
     plateFormKeysPtr,
     plateFormValuesPtr,
     plateFormKeys.length,
+    // areas de cortante (As=0 → Timoshenko 5/6·A; As<0 → Bernoulli) y angulo local
+    shearAreasY.keysPtr,
+    shearAreasY.valuesPtr,
+    shearAreasY.size,
+    shearAreasZ.keysPtr,
+    shearAreasZ.valuesPtr,
+    shearAreasZ.size,
+    localAngles.keysPtr,
+    localAngles.valuesPtr,
+    localAngles.size,
     // control
     numModes,
     lateralMass,
+    lumpStories,
     // output pointers
     freqPtrOut,
     numFreqOut,
