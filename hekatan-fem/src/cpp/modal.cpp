@@ -86,6 +86,15 @@ extern "C"
         // DIAFRAGMA RIGIDO por nudo: 0 = ninguno, 1..n = a que diafragma
         // pertenece. Ata Ux, Uy y Rz de todos los nudos del grupo.
         int *diaph_keys_ptr, double *diaph_values_ptr, int num_diaph,
+        // RESORTES NODALES (Winkler). Plano: [nudo0, gdl0, k0, nudo1, ...].
+        //
+        // El estatico ya los recibia y el modal NO — el tercer caso del mismo
+        // molde, despues de las areas de cortante y los angulos de eje local.
+        // La cimentacion del CIMENTAC del GAD RIOCHICO se apoya en 612 resortes
+        // verticales de balasto: sin ellos el modelo FLOTA y salian periodos de
+        // 71.675 s. Y no avisa nada, porque un modelo sin sujecion sigue
+        // teniendo solucion, solo que sin sentido.
+        double *springs_flat_ptr, int num_springs,
 
         // Control
         int num_modes,   // number of modes to return (0 = all)
@@ -144,6 +153,15 @@ extern "C"
 
         Eigen::SparseMatrix<double> K_global = getGlobalStiffnessMatrix(
             nodes, element_indices, element_sizes, elementInputs, dof);
+
+        // Resortes a la diagonal de K, ANTES de reducir por diafragma.
+        for (int i = 0; i < num_springs; ++i) {
+            const int nodo = (int)springs_flat_ptr[3 * i];
+            const int d    = (int)springs_flat_ptr[3 * i + 1];
+            const double k = springs_flat_ptr[3 * i + 2];
+            if (nodo < 0 || nodo >= num_nodes || d < 0 || d > 5 || k == 0.0) continue;
+            K_global.coeffRef(nodo * 6 + d, nodo * 6 + d) += k;
+        }
 
         Eigen::SparseMatrix<double> M_global = getGlobalMassMatrix(
             nodes, element_indices, element_sizes, elementInputs, dof);
@@ -388,6 +406,7 @@ extern "C"
         // K_r = T^T K T,  M_r = T^T M T. Se elige de maestro el PRIMER nudo del
         // diafragma; da igual cual sea, el movimiento del conjunto es el mismo.
         Eigen::SparseMatrix<double> T_dia;      // dof_completo x dof_reducido
+        Eigen::SparseMatrix<double> M_completa; // M antes de reducir
         bool hayDiafragma = false;
         const int dofCompleto = dof;
         std::vector<int> colDe;                 // GDL completo -> GDL reducido
@@ -451,6 +470,7 @@ extern "C"
                 }
                 T_dia.resize(dof, nred);
                 T_dia.setFromTriplets(tt.begin(), tt.end());
+                M_completa = M_global;      // hace falta para el centro de masa
                 K_global = (T_dia.transpose() * K_global * T_dia).pruned();
                 M_global = (T_dia.transpose() * M_global * T_dia).pruned();
                 dof = nred;
@@ -646,10 +666,14 @@ extern "C"
 
         // --- 7. Participación de masa (con M_global sparse, en GDL completos) ---
         // Centro de masa desde la diagonal de M (GDL Ux).
+        // La masa nodal se lee de M SIN REDUCIR: con diafragma, M_global ya no
+        // tiene seis GDL por nudo y `coeff(i*6, i*6)` se sale de la matriz
+        // (assertion en Eigen).
+        const Eigen::SparseMatrix<double> &M_nod = hayDiafragma ? M_completa : M_global;
         double sum_m = 0.0, sum_mx = 0.0, sum_my = 0.0;
         for (int i = 0; i < num_nodes; ++i)
         {
-            double mi = M_global.coeff(i * 6, i * 6);
+            double mi = M_nod.coeff(i * 6, i * 6);
             sum_m  += mi;
             sum_mx += mi * nodes[i][0];
             sum_my += mi * nodes[i][1];
@@ -657,8 +681,11 @@ extern "C"
         double x_cm = (sum_m > 1e-30) ? sum_mx / sum_m : 0.0;
         double y_cm = (sum_m > 1e-30) ? sum_my / sum_m : 0.0;
 
-        // 6 vectores de influencia en GDL completos
-        std::vector<Eigen::VectorXd> r_full(6, Eigen::VectorXd::Zero(dof));
+        // 6 vectores de influencia. Se arman SIEMPRE en GDL completos y, si hay
+        // diafragma, se traducen a los reducidos quedandose con el valor de cada
+        // GDL que sobrevivio: los esclavos no hacen falta porque su movimiento
+        // ya lo genera T a partir del maestro.
+        std::vector<Eigen::VectorXd> r_full(6, Eigen::VectorXd::Zero(dofCompleto));
         for (int i = 0; i < num_nodes; ++i)
         {
             r_full[0](i * 6 + 0) = 1.0;  // Ux
@@ -669,6 +696,16 @@ extern "C"
             r_full[5](i * 6 + 0) = -(nodes[i][1] - y_cm);  // Rz (torsión CM): Ux = -(y-y_cm)
             r_full[5](i * 6 + 1) = +(nodes[i][0] - x_cm);  //                  Uy = +(x-x_cm)
             r_full[5](i * 6 + 5) = 1.0;
+        }
+        if (hayDiafragma)
+        {
+            std::vector<Eigen::VectorXd> r_red(6, Eigen::VectorXd::Zero(dof));
+            for (int d = 0; d < dofCompleto; ++d) {
+                const int c = colDe[d];
+                if (c < 0) continue;
+                for (int j = 0; j < 6; ++j) r_red[j](c) = r_full[j](d);
+            }
+            r_full.swap(r_red);
         }
 
         // Masa total por dirección: M_total_j = r_jᵀ · M · r_j   (M sparse)

@@ -82,6 +82,7 @@ export async function modal(nodes, elements, nodeInputs, elementInputs, numModes
     sy.kp, sy.vp, sy.size, sz.kp, sz.vp, sz.size, la.kp, la.vp, la.size,
     nm.kp, nm.vp, nm.size, 1 /* includeElements */,
     dia.kp, dia.vp, dia.size,
+    alloc([0], Float64Array, mod.HEAPF64), 0,   // resortes: ninguno
     numModes, lateral, 0 /* lumpStories */,
     fo, nfo, moo, mro, mco, mao, maro, maco);
 

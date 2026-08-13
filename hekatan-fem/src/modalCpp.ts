@@ -28,7 +28,10 @@ export function modalCpp(
   // Diafragma rigido por nudo: Map<nudo, idDiafragma>. 0 o ausente = ninguno.
   // Ata Ux, Uy y Rz de todos los nudos del mismo id, que es lo que hace ETABS
   // con sus diafragmas (el CIMENTAC del GAD RIOCHICO tiene dos, D1 y D2).
-  diaphragms?: Map<number, number>
+  diaphragms?: Map<number, number>,
+  // Resortes nodales (Winkler). El estatico ya los recibia y el modal no: sin
+  // ellos, un modelo apoyado en balasto FLOTA y da periodos absurdos.
+  springs?: Array<{ node: number; dof: number; k: number }>
 ): ModalOutputs {
   if (nodes.length === 0) return { frequencies: [], modeShapes: [], massParticipation: [] };
 
@@ -109,6 +112,12 @@ export function modalCpp(
   // Va indexada por NUDO, no por elemento, pero el empaquetado es el mismo.
   const nodalMasses = processElementInput(nodeInputs.masses);
   const diaph = processElementInput(diaphragms ?? (nodeInputs as any).diaphragms);
+  const resortes = springs ?? (nodeInputs as any).springs;
+  const springsFlat: number[] = resortes
+    ? resortes.flatMap((s: any) => [s.node, s.dof, s.k]) : [];
+  const springsPtr = allocate(springsFlat.length > 0 ? springsFlat : [0],
+                              Float64Array, mod.HEAPF64);
+  gc.push(springsPtr);
 
   // Output pointers
   const freqPtrOut = mod._malloc(4);
@@ -197,6 +206,8 @@ export function modalCpp(
     diaph.keysPtr,
     diaph.valuesPtr,
     diaph.size,
+    springsPtr,
+    resortes ? resortes.length : 0,
     // control
     numModes,
     lateralMass,

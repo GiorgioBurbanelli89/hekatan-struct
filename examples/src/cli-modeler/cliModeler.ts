@@ -730,7 +730,13 @@ export const cliModeler: ExampleDef = {
 
     states.nodes.val = nodes;
     states.elements.val = elements;
-    states.nodeInputs.val = { supports, loads, masses, diaphragms } as any;
+    // Los resortes van DENTRO de nodeInputs. Antes `springsList` era una
+    // variable local que solo se le pasaba a `deform`, asi que el modal no podia
+    // verlos por mucho que el .heks los trajera: la cimentacion del RIOCHICO se
+    // apoya en 612 resortes de balasto y el modal la veia flotando.
+    states.nodeInputs.val = { supports, loads, masses, diaphragms,
+                              springs: springsList } as any;
+    if ((states as any).springs) (states as any).springs.val = springsList;
     // Modificadores por elemento, indexados como los shells en `elements`
     const membraneModifiers = new Map<number, number>();
     const bendingModifiers = new Map<number, number>();
