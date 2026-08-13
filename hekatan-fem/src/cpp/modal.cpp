@@ -502,6 +502,46 @@ extern "C"
         std::vector<int> zeroIndicesK = getZerosIndices(K_global);
         std::sort(zeroIndicesK.begin(), zeroIndicesK.end());
 
+        // --- 3b. Grados SIN RIGIDEZ: fuera del modal ---
+        //
+        // Un grado con rigidez cero no puede vibrar: si ademas tiene masa, sale
+        // omega = 0, o sea periodo infinito. Y no es un fallo del solver, es que
+        // esa incognita no pertenece a la estructura.
+        //
+        // Pasa de verdad: el CIMENTAC del GAD RIOCHICO trae DOS NUDOS SUELTOS,
+        // sin ninguna barra ni cascara, y uno de ellos con 1.48 t de masa. Con
+        // ellos dentro, el modal daba periodos de 241.000 s y las
+        // participaciones salian identicas en todos los modos —los autovectores
+        // no valian nada—. ETABS los quita solo; aqui tambien.
+        //
+        // Se mira la DIAGONAL de K: si es practicamente cero comparada con la
+        // media, ese grado no esta sujeto a nada.
+        {
+            double media = 0.0;
+            int cuantos = 0;
+            for (int c : freeIndices) {
+                const double k = K_global.coeff(c, c);
+                if (k > 0) { media += k; cuantos++; }
+            }
+            if (cuantos > 0) {
+                media /= cuantos;
+                const double MINIMO = 1e-12 * media;
+                std::vector<int> conRigidez;
+                conRigidez.reserve(freeIndices.size());
+                int fuera = 0;
+                for (int c : freeIndices) {
+                    if (K_global.coeff(c, c) > MINIMO) conRigidez.push_back(c);
+                    else fuera++;
+                }
+                if (fuera > 0) {
+                    std::cout << "modal: " << fuera
+                              << " grados sin rigidez quedan fuera (no pueden vibrar)"
+                              << std::endl;
+                    freeIndices.swap(conRigidez);
+                }
+            }
+        }
+
         std::vector<int> reducedIndices;   // GDL sobre los que vive el eigen (columnas de eigenvectors)
         Eigen::VectorXd eigenvalues;       // ω² (ascendente)
         Eigen::MatrixXd eigenvectors;      // reducedSize × nComputed (M-ortonormal)
