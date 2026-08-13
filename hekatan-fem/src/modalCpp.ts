@@ -6,6 +6,7 @@ import {
   ModalOutputs,
 } from "./data-model.js";
 import createModule from "./cpp/built/deform.js";
+import { releasesA12 } from "./utils/releasesA12";
 
 // @ts-ignore, load wasm
 const mod = await createModule();
@@ -108,6 +109,20 @@ export function modalCpp(
   const localAngles = processElementInput(
     (elementInputs as any).localAngles as Map<number, number> | undefined);
 
+  // END RELEASES: 12 banderas por barra, [U1 U2 U3 R1 R2 R3] en I + en J.
+  // El sexto dato de la lista, y el unico que hasta ahora no aplicaba NINGUNO
+  // de los dos solvers: una barra biarticulada entraba empotrada en todo el
+  // programa, porque `deformCpp.ts` preparaba los punteros y luego decia que de
+  // los releases se encargaba "el solver de TS" — y todo va por WASM.
+  const releaseKeys = elementInputs.momentReleases
+    ? Array.from(elementInputs.momentReleases.keys()) : [];
+  const releaseValues = elementInputs.momentReleases
+    ? Array.from(elementInputs.momentReleases.values()).flatMap(releasesA12) : [];
+  const releaseKeysPtr = allocate(releaseKeys, Uint32Array, mod.HEAPU32);
+  gc.push(releaseKeysPtr);
+  const releaseValuesPtr = allocate(releaseValues, Uint8Array, mod.HEAPU8);
+  gc.push(releaseValuesPtr);
+
   // Masa nodal en toneladas: la que NO sale del peso propio (ver includeElements).
   // Va indexada por NUDO, no por elemento, pero el empaquetado es el mismo.
   const nodalMasses = processElementInput(nodeInputs.masses);
@@ -198,6 +213,10 @@ export function modalCpp(
     localAngles.keysPtr,
     localAngles.valuesPtr,
     localAngles.size,
+    // end releases: 12 banderas por barra
+    releaseKeysPtr,
+    releaseValuesPtr,
+    releaseKeys.length,
     // masa nodal (t) + si se cuenta o no la masa de los elementos
     nodalMasses.keysPtr,
     nodalMasses.valuesPtr,

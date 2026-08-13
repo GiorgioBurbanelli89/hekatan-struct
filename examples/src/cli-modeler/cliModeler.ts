@@ -32,6 +32,9 @@
  *       ancho tributario: el tributario ignora que la viga es CONTINUA sobre
  *       sus apoyos y se equivoca al lado de un vano ancho.
  *   spring nodeID dof k        (Winkler nodal, dof: ux/uy/uz/rx/ry/rz)
+ *   release frameID <12 bits>  (end releases, orden ETABS: U1 U2 U3 R1 R2 R3
+ *                               en el nudo I y los mismos seis en el J)
+ *   release frameID pin fix    (forma corta: articula un extremo, M2 y M3)
  *   solve                      (corre el FEM)
  *   reset                      (limpia todo)
  *
@@ -85,6 +88,10 @@ interface ParsedModel {
    *  programas CSI usan el area real, asi que Hekatan salia sistematicamente
    *  MAS RIGIDO, hasta un 14 % nudo a nudo en el galpon. */
   frameShearAreas: Map<number, [number, number]>;
+  /** End releases por barra: 12 banderas [U1 U2 U3 R1 R2 R3]_I + _J, el orden
+   *  de ETABS. Una bandera en true libera ese grado LOCAL por condensacion
+   *  estatica. Ver el comando `release`. */
+  frameReleases: Map<number, boolean[]>;
   /** Objetos de area: el area COMO LA DIBUJO el usuario, antes de mallarla.
    *  Hekatan resuelve con las celdas (`shells`), pero ETABS guarda UN objeto y
    *  lo malla por dentro. Sin esto el e2k exportado saca 90 areas donde ETABS
@@ -166,6 +173,7 @@ export function parseCliCommands(text: string): ParsedModel {
     shellAngles: new Map(),
     frameAngles: new Map(),
     frameShearAreas: new Map(),
+    frameReleases: new Map(),
     areaObjs: [],
     supports: new Map(),
     loads: new Map(),
@@ -326,6 +334,43 @@ export function parseCliCommands(text: string): ParsedModel {
           const a3 = parseFloat(tokens[3] ?? "0");
           if (isFinite(fid) && isFinite(a2) && isFinite(a3))
             m.frameShearAreas.set(fid, [a2, a3]);
+          break;
+        }
+        // ── END RELEASES: `release <frameID> <12 banderas>` ──
+        // El orden es el de ETABS: U1 U2 U3 R1 R2 R3 en el nudo I y los mismos
+        // seis en el nudo J. Se admite tambien la palabra `pin` en un extremo,
+        // que es lo de siempre: libera los tres momentos de ese lado.
+        //
+        //   release 17 0 0 0 0 1 1 0 0 0 0 1 1     (biarticulada)
+        //   release 17 pin pin                      (lo mismo, corto)
+        //   release 17 pin fix                      (rotula solo en I)
+        case "release":
+        case "rel": {
+          const fid = parseInt(tokens[1], 10);
+          const resto = tokens.slice(2).map((t) => t.toLowerCase());
+          if (!isFinite(fid) || resto.length === 0) {
+            m.errors.push(`release: se esperaba "release frameID <12 bits> | pin fix"`);
+            break;
+          }
+          const v = new Array<boolean>(12).fill(false);
+          if (resto.length === 2 && resto.every((t) => /^(pin|fix|libre|rigido)$/.test(t))) {
+            // extremo articulado = los TRES momentos sueltos (R1,R2,R3 no: la
+            // torsion se deja tomada, como hace ETABS con "Moment 22/33")
+            resto.forEach((t, lado) => {
+              if (t === "pin" || t === "libre") {
+                v[lado * 6 + 4] = true;   // M2
+                v[lado * 6 + 5] = true;   // M3
+              }
+            });
+          } else {
+            const bits = resto.filter((t) => t === "0" || t === "1");
+            if (bits.length !== 12) {
+              m.errors.push(`release ${fid}: hacen falta 12 banderas (U1 U2 U3 R1 R2 R3 en I y en J), llegaron ${bits.length}`);
+              break;
+            }
+            for (let i = 0; i < 12; i++) v[i] = bits[i] === "1";
+          }
+          if (v.some(Boolean)) m.frameReleases.set(fid, v);
           break;
         }
         case "ang":
@@ -563,6 +608,7 @@ export const cliModeler: ExampleDef = {
     const anchos = new Map<number, number>();
     const sectionShapes = new Map<number, any>();
     const localAngles = new Map<number, number>();
+    const momentReleases = new Map<number, boolean[]>();
     // AsY va con Iy (plano 1-3) = As3 de CSI; AsZ va con Iz (plano 1-2) = As2.
     const shearAreasY = new Map<number, number>();
     const shearAreasZ = new Map<number, number>();
@@ -598,6 +644,8 @@ export const cliModeler: ExampleDef = {
       if (f.B !== undefined && isFinite(f.B)) anchos.set(eIdx, f.B);
       const angF = m.frameAngles.get(f.id);
       if (angF !== undefined && isFinite(angF)) localAngles.set(eIdx, angF);
+      const relF = m.frameReleases.get(f.id);
+      if (relF) momentReleases.set(eIdx, relF);
       const asF = m.frameShearAreas.get(f.id);
       if (asF) {
         shearAreasZ.set(eIdx, asF[0]);   // As2 -> V2, plano 1-2 (I33)
@@ -805,7 +853,7 @@ export const cliModeler: ExampleDef = {
       torsionalConstants: J, densities, poissonsRatios: poissons, thicknesses,
       membraneModifiers, bendingModifiers, shellModifiers,
       shellSurfaceLoads, shellAngles, cargaDeArea, cantos, anchos, sectionShapes, localAngles,
-      shearAreasY, shearAreasZ,
+      shearAreasY, shearAreasZ, momentReleases,
       areaObjects: m.areaObjs.map(o => ({
         nodes: o.pts.map(id => idToIdx.get(id)).filter(i => i !== undefined) as number[],
         cells: o.cells.map(id => shellIdxOf.get(id)).filter(i => i !== undefined) as number[],

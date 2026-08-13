@@ -22,6 +22,20 @@ export async function cargarWasm() {
   return mod;
 }
 
+/** Los releases al C++ van SIEMPRE con 12 banderas por barra, en el orden de
+ *  ETABS: [U1 U2 U3 R1 R2 R3] en I + los mismos seis en J. La forma corta de 6
+ *  —solo rotaciones— se expande a las posiciones locales 3,4,5 y 9,10,11.
+ *  Es la misma cuenta que `hekatan-fem/src/utils/releasesA12.ts`; aqui se repite
+ *  a proposito, porque este fichero llama al WASM a pelo, sin pasar por el TS. */
+function aDoce(v) {
+  const out = new Array(12).fill(0);
+  if (!v) return out;
+  if (v.length >= 12) { for (let i = 0; i < 12; i++) out[i] = v[i] ? 1 : 0; return out; }
+  const pos = [3, 4, 5, 9, 10, 11];
+  for (let i = 0; i < 6 && i < v.length; i++) if (v[i]) out[pos[i]] = 1;
+  return out;
+}
+
 function alloc(datos, Tipo, heap) {
   const b = new Tipo(datos);
   const p = mod._malloc(b.length * b.BYTES_PER_ELEMENT);
@@ -71,6 +85,17 @@ export async function modal(nodes, elements, nodeInputs, elementInputs, numModes
   // como si fuera ese entero y todo lo de detras iba corrido. El sintoma fue
   // "memory access out of bounds" en paz-6-3-modal.
   const sy = P(ei.shearAreasY), sz = P(ei.shearAreasZ), la = P(ei.localAngles);
+  // End releases: van con VALORES BOOLEANOS (Uint8), no doubles, asi que no
+  // sirve el `P` de los demas mapas.
+  const relMap = ei.momentReleases;
+  const relKeys = relMap ? Array.from(relMap.keys()) : [];
+  const relVals = relMap ? Array.from(relMap.values()).flatMap(aDoce) : [];
+  const rel = {
+    kp: alloc(relKeys, Uint32Array, mod.HEAPU32),
+    vp: alloc(relVals, Uint8Array, mod.HEAPU8),
+    size: relKeys.length,
+  };
+  gc.push(rel.kp, rel.vp);
   const nm = P(nodeInputs.masses);
   const dia = P(nodeInputs.diaphragms);   // diafragma rigido por nudo   // masa nodal (t), la que no sale del peso propio
 
@@ -80,6 +105,7 @@ export async function modal(nodes, elements, nodeInputs, elementInputs, numModes
     th.kp, th.vp, th.size, po.kp, po.vp, po.size, mm.kp, mm.vp, mm.size, bm.kp, bm.vp, bm.size,
     pfKp, pfVp, 0,
     sy.kp, sy.vp, sy.size, sz.kp, sz.vp, sz.size, la.kp, la.vp, la.size,
+    rel.kp, rel.vp, rel.size,                   // end releases: 12 banderas/barra
     nm.kp, nm.vp, nm.size, 1 /* includeElements */,
     dia.kp, dia.vp, dia.size,
     alloc([0], Float64Array, mod.HEAPF64), 0,   // resortes: ninguno

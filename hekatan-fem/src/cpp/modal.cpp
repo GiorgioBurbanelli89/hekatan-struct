@@ -69,6 +69,12 @@ extern "C"
         int *shearY_keys_ptr, double *shearY_values_ptr, int num_shearY,
         int *shearZ_keys_ptr, double *shearZ_values_ptr, int num_shearZ,
         int *locang_keys_ptr, double *locang_values_ptr, int num_locang,
+        // END RELEASES, 12 banderas por barra en el orden de ETABS:
+        //   [U1 U2 U3 R1 R2 R3] en I + los mismos seis en J.
+        // El SEXTO dato que el estatico recibia y el modal no. Aqui es peor que
+        // en los otros cinco: hasta ahora NINGUNO de los dos los aplicaba, asi
+        // que una barra biarticulada entraba empotrada en todo el programa.
+        int *release_keys_ptr, bool *release_values_ptr, int num_releases,
         // MASA NODAL en toneladas, la que NO sale del peso propio.
         //
         // Es la fuente de masa de ETABS. Su MASSSOURCE tiene dos interruptores
@@ -147,6 +153,7 @@ extern "C"
         elementInputs.shearAreasY = parseMapFromFlat(shearY_keys_ptr, shearY_values_ptr, num_shearY);
         elementInputs.shearAreasZ = parseMapFromFlat(shearZ_keys_ptr, shearZ_values_ptr, num_shearZ);
         elementInputs.localAngles = parseMapFromFlat(locang_keys_ptr, locang_values_ptr, num_locang);
+        elementInputs.momentReleases = parseMapBoolVecFromFlat(release_keys_ptr, release_values_ptr, num_releases, 12);
 
         // --- 2. Assemble K and M ---
         int dof = num_nodes * 6;

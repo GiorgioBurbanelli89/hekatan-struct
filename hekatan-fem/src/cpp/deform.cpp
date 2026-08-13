@@ -72,6 +72,18 @@ extern "C"
         // estructura por mucho que las secciones coincidieran.
         int *localang_keys_ptr, double *localang_values_ptr, int num_localang,
 
+        // END RELEASES por barra: 12 banderas, el orden de ETABS
+        //   [U1 U2 U3 R1 R2 R3] en el nudo I  +  los mismos seis en el nudo J
+        // Una bandera en true libera ese grado LOCAL por condensacion estatica
+        // (`applyReleases` en getLocalStiffnessMatrix.cpp).
+        //
+        // La condensacion llevaba anos escrita y NADIE la llamaba por el camino
+        // WASM: `deformCpp.ts` preparaba los punteros y a continuacion decia
+        // "rigidOffsets, releases are handled by the TS solver" — pero todo va
+        // por WASM. O sea que una barra biarticulada entraba EMPOTRADA, tanto en
+        // el estatico como en el modal.
+        int *release_keys_ptr, bool *release_values_ptr, int num_releases,
+
         // --- Output Pointers (to be allocated by C++ and filled) ---
         // These are pointers *to* pointers. C++ allocates memory using malloc
         // and writes the address of the allocated block into these pointers.
@@ -122,6 +134,7 @@ extern "C"
         elementInputs.bendingModifiers = parseMapFromFlat(bendmod_keys_ptr, bendmod_values_ptr, num_bendmods);
         elementInputs.shellModifiers = parseMapVecFromFlat(shellmod_keys_ptr, shellmod_values_ptr, num_shellmods, 8);
         elementInputs.localAngles = parseMapFromFlat(localang_keys_ptr, localang_values_ptr, num_localang);
+        elementInputs.momentReleases = parseMapBoolVecFromFlat(release_keys_ptr, release_values_ptr, num_releases, 12);
         elementInputs.drillingTypes = parseMapIntFromFlat(drillType_keys_ptr, drillType_values_ptr, num_drillType);
         elementInputs.drillingPenaltyScales = parseMapFromFlat(drillScale_keys_ptr, drillScale_values_ptr, num_drillScale);
 

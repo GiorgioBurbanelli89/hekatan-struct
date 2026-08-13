@@ -6,6 +6,7 @@ import {
   DeformOutputs,
 } from "./data-model.js";
 import createModule from "./cpp/built/deform.js";
+import { releasesA12 } from "./utils/releasesA12";
 
 // @ts-ignore, load wasm
 const mod = await createModule();
@@ -94,9 +95,14 @@ export function deformCpp(
   const rigidOffsetKeysPtr = allocate(rigidOffsetKeys, Uint32Array, mod.HEAPU32); gc.push(rigidOffsetKeysPtr);
   const rigidOffsetValuesPtr = allocate(rigidOffsetValues, Float64Array, mod.HEAPF64); gc.push(rigidOffsetValuesPtr);
 
-  // Moment releases: Map<number, [TI,M2I,M3I,TJ,M2J,M3J]> → flat booleans
+  // END RELEASES. Al C++ van SIEMPRE 12 banderas por barra, en el orden de
+  // ETABS: [U1 U2 U3 R1 R2 R3] en el nudo I + los mismos seis en el nudo J.
+  // El modelo de datos admite ademas la forma corta de 6 —solo rotaciones,
+  // [TI,M2I,M3I,TJ,M2J,M3J]—, asi que aqui se expande a las 12 posiciones.
   const releaseKeys = elementInputs.momentReleases ? Array.from(elementInputs.momentReleases.keys()) : [];
-  const releaseValues = elementInputs.momentReleases ? Array.from(elementInputs.momentReleases.values()).flat().map(b => b ? 1 : 0) : [];
+  const releaseValues = elementInputs.momentReleases
+    ? Array.from(elementInputs.momentReleases.values()).flatMap(releasesA12)
+    : [];
   const releaseKeysPtr = allocate(releaseKeys, Uint32Array, mod.HEAPU32); gc.push(releaseKeysPtr);
   const releaseValuesPtr = allocate(releaseValues, Uint8Array, mod.HEAPU8); gc.push(releaseValuesPtr);
 
@@ -248,7 +254,9 @@ export function deformCpp(
     shearAreasZ.keysPtr,
     shearAreasZ.valuesPtr,
     shearAreasZ.size,
-    // NOTE: rigidOffsets, releases are handled by the TS solver
+    // NOTE: rigidOffsets sigue sin llegar al C++ (los brazos rigidos no
+    // existen en Hekatan). Los RELEASES si: van mas abajo, detras del angulo
+    // de eje local.
     // Springs (Winkler): flat [node, dof, k, ...] array
     springsPtr,
     springs ? springs.length : 0,
@@ -279,6 +287,10 @@ export function deformCpp(
     locAngKeysPtr,
     locAngValuesPtr,
     locAngKeys.length,
+    // End releases: 12 banderas por barra [U1 U2 U3 R1 R2 R3]_I + _J
+    releaseKeysPtr,
+    releaseValuesPtr,
+    releaseKeys.length,
     // Output pointers
     deformationsDataPtrOutPtr,
     deformationsSizeOutPtr,
