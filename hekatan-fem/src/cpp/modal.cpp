@@ -212,43 +212,104 @@ extern "C"
 
             if (niveles.size() >= 2)
             {
-                // a que nivel va cada nudo
-                std::vector<int> nivelDe(num_nodes, 0);
-                for (int i = 0; i < num_nodes; ++i) {
-                    double z = nodes[i][2];
-                    int mejor = 0; double d = std::abs(z - niveles[0]);
-                    for (size_t k = 1; k < niveles.size(); ++k) {
-                        double dk = std::abs(z - niveles[k]);
-                        if (dk < d) { d = dk; mejor = (int)k; }
-                    }
-                    nivelDe[i] = mejor;
-                }
-                // nudos que ESTAN en su nivel (los que reciben la masa)
+                // A que nivel va cada nudo: al PISO DE ARRIBA, no al mas
+                // cercano. Preguntado a ETABS (`PointObj.GetLabelFromName`
+                // devuelve el piso de cada nudo), en el galpon sale que cada
+                // piso posee desde justo encima del piso de abajo hasta su
+                // propia cota:
+                //
+                //    Base           28 nudos    z de 0.000 a 0.000
+                //    CordonInf 3.00 131 nudos   z de 0.147 a 3.000
+                //    Entrepiso 4.00 202 nudos   z de 3.055 a 4.000
+                //
+                // "Al mas cercano" partia el tramo 0-3 por la mitad y mandaba
+                // media columna a la base, que esta empotrada: esa masa
+                // desaparecia y las frecuencias SUBIAN. En ETABS agrupar las
+                // BAJA (modo 3: 4.4312 -> 3.7036), porque concentra la masa
+                // arriba, que es donde los modos se mueven.
+                //
+                // Por encima del ultimo nivel no hay piso de arriba: esa masa se
+                // queda en el ultimo, que es tambien lo que hace ETABS (el
+                // Cumbrero a 9.11 no recibe nada; todo lo de encima de 8.00
+                // acaba en 8.00).
+                // nudos que ESTAN en cada piso (los que reciben la masa)
                 std::vector<std::vector<int>> enNivel(niveles.size());
                 for (int i = 0; i < num_nodes; ++i)
-                    if (std::abs(nodes[i][2] - niveles[nivelDe[i]]) <= TOL_Z)
-                        enNivel[nivelDe[i]].push_back(i);
+                    for (size_t k = 0; k < niveles.size(); ++k)
+                        if (std::abs(nodes[i][2] - niveles[k]) <= TOL_Z)
+                            { enNivel[k].push_back(i); break; }
 
                 // masa nodal actual (M es diagonal: lumped HRZ)
                 std::vector<double> mNodo(num_nodes, 0.0);
                 for (int i = 0; i < num_nodes; ++i)
                     mNodo[i] = std::max(M_global.coeff(i * 6 + 0, i * 6 + 0), 0.0);
 
-                // se reparte la masa de cada nudo entre los nudos de su nivel,
-                // en proporcion a la que ya tienen (si el nivel no tiene masa,
-                // por partes iguales)
+                // Radio para decidir que es "la misma vertical". Fijo en metros
+                // no vale para cualquier modelo, asi que se escala con el
+                // tamano en planta.
+                double xmin = nodes[0][0], xmax = nodes[0][0];
+                double ymin = nodes[0][1], ymax = nodes[0][1];
+                for (int i = 1; i < num_nodes; ++i) {
+                    xmin = std::min(xmin, nodes[i][0]); xmax = std::max(xmax, nodes[i][0]);
+                    ymin = std::min(ymin, nodes[i][1]); ymax = std::max(ymax, nodes[i][1]);
+                }
+                const double diag = std::sqrt((xmax-xmin)*(xmax-xmin) + (ymax-ymin)*(ymax-ymin));
+                const double RADIO = std::max(0.10, 0.01 * diag);
+
+                // el nudo del piso k que cae mas cerca EN PLANTA, o -1
+                auto enLaVertical = [&](size_t k, double x, double y) -> int {
+                    int mejor = -1; double dmin = RADIO * RADIO;
+                    for (int j : enNivel[k]) {
+                        double dx = nodes[j][0] - x, dy = nodes[j][1] - y;
+                        double d = dx*dx + dy*dy;
+                        if (d <= dmin) { dmin = d; mejor = j; }
+                    }
+                    return mejor;
+                };
+
+                // La masa de cada nudo sube y baja POR SU PROPIA VERTICAL, y se
+                // parte entre los dos pisos que lo encierran por BRAZO DE
+                // PALANCA, como una carga puntual entre dos apoyos. Medido en el
+                // galpon: la columna en (2.00, 12.43) acumula 4.4520 t en sus
+                // tres nudos entre 0 y 3, y ETABS pone 3.8843 t en el nudo de esa
+                // MISMA columna a z = 3. El nudo gordo esta a 2.65, o sea
+                // 2.65/3 = 88.3 % arriba: 4.2877 * 0.883 = 3.786, mas lo suyo.
+                //
+                // Antes repartia la masa del nivel entre TODOS los nudos de ese
+                // nivel, en proporcion a la que ya tenian. Eso desparrama por la
+                // planta lo que en realidad se queda en su columna, y cambia los
+                // modos torsionales y laterales: el modo 3 salia a 4.43 Hz
+                // contra 3.70 de ETABS. Comprobado nudo a nudo, esta regla
+                // acierta el 74 % de los nudos dentro del 5 %.
                 std::vector<double> nueva(num_nodes, 0.0);
-                for (size_t k = 0; k < niveles.size(); ++k) {
-                    const auto &dest = enNivel[k];
-                    if (dest.empty()) continue;
-                    double total = 0.0, pesoDest = 0.0;
-                    for (int i = 0; i < num_nodes; ++i)
-                        if (nivelDe[i] == (int)k) total += mNodo[i];
-                    for (int i : dest) pesoDest += mNodo[i];
-                    for (int i : dest)
-                        nueva[i] += (pesoDest > 1e-12)
-                            ? total * (mNodo[i] / pesoDest)
-                            : total / (double)dest.size();
+                for (int i = 0; i < num_nodes; ++i) {
+                    const double m = mNodo[i];
+                    if (m <= 1e-12) continue;
+                    const double z = nodes[i][2];
+                    // .entre que dos pisos cae?
+                    size_t ka = niveles.size() - 1;
+                    for (size_t k = 0; k < niveles.size(); ++k)
+                        if (z <= niveles[k] + TOL_Z) { ka = k; break; }
+
+                    // reparto: (nivel, fraccion)
+                    double fa = 1.0;
+                    bool hayAbajo = (ka > 0) && (std::abs(z - niveles[ka]) > TOL_Z);
+                    if (hayAbajo) {
+                        const double za = niveles[ka], zb = niveles[ka - 1];
+                        fa = (za > zb) ? (z - zb) / (za - zb) : 1.0;
+                        if (fa < 0.0) fa = 0.0;
+                        if (fa > 1.0) fa = 1.0;
+                    }
+                    double repartida = 0.0;
+                    int da = enLaVertical(ka, nodes[i][0], nodes[i][1]);
+                    if (da >= 0) { nueva[da] += m * fa; repartida += m * fa; }
+                    if (hayAbajo) {
+                        int db = enLaVertical(ka - 1, nodes[i][0], nodes[i][1]);
+                        if (db >= 0) { nueva[db] += m * (1.0 - fa); repartida += m * (1.0 - fa); }
+                    }
+                    // lo que no encuentre nudo en su vertical se queda donde
+                    // esta: perderlo cambiaria la masa total del modelo
+                    if (repartida < m - 1e-12) nueva[i] += m - repartida;
                 }
 
                 std::vector<Eigen::Triplet<double>> tri;

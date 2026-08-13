@@ -70,7 +70,7 @@ export async function modal(nodes, elements, nodeInputs, elementInputs, numModes
   // `lumpStories` no se actualizo, asi que el puntero `fo` se estaba leyendo
   // como si fuera ese entero y todo lo de detras iba corrido. El sintoma fue
   // "memory access out of bounds" en paz-6-3-modal.
-  const sy = P(), sz = P(), la = P();
+  const sy = P(ei.shearAreasY), sz = P(ei.shearAreasZ), la = P(ei.localAngles);
 
   mod._modal(nP, nodes.length, eP, eI.length, eS, elements.length, sKp, sVp, sK.length,
     el.kp, el.vp, el.size, ar.kp, ar.vp, ar.size, mz.kp, mz.vp, mz.size, my.kp, my.vp, my.size,
