@@ -609,6 +609,10 @@ export const cliModeler: ExampleDef = {
     const sectionShapes = new Map<number, any>();
     const localAngles = new Map<number, number>();
     const momentReleases = new Map<number, boolean[]>();
+    // Carga de vano por ELEMENTO (globales). No la usa el solver —esa carga
+    // entra como fuerzas nodales equivalentes— sino `analyze()`, para poder
+    // sumar las fuerzas de empotramiento al recuperar los esfuerzos.
+    const frameLoadsElem = new Map<number, [number, number, number]>();
     // AsY va con Iy (plano 1-3) = As3 de CSI; AsZ va con Iz (plano 1-2) = As2.
     const shearAreasY = new Map<number, number>();
     const shearAreasZ = new Map<number, number>();
@@ -646,6 +650,8 @@ export const cliModeler: ExampleDef = {
       if (angF !== undefined && isFinite(angF)) localAngles.set(eIdx, angF);
       const relF = m.frameReleases.get(f.id);
       if (relF) momentReleases.set(eIdx, relF);
+      const wF = m.frameLoads.get(f.id);
+      if (wF) frameLoadsElem.set(eIdx, wF);
       const asF = m.frameShearAreas.get(f.id);
       if (asF) {
         shearAreasZ.set(eIdx, asF[0]);   // As2 -> V2, plano 1-2 (I33)
@@ -854,6 +860,7 @@ export const cliModeler: ExampleDef = {
       membraneModifiers, bendingModifiers, shellModifiers,
       shellSurfaceLoads, shellAngles, cargaDeArea, cantos, anchos, sectionShapes, localAngles,
       shearAreasY, shearAreasZ, momentReleases,
+      frameLoads: frameLoadsElem,
       areaObjects: m.areaObjs.map(o => ({
         nodes: o.pts.map(id => idToIdx.get(id)).filter(i => i !== undefined) as number[],
         cells: o.cells.map(id => shellIdxOf.get(id)).filter(i => i !== undefined) as number[],

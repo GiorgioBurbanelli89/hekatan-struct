@@ -80,6 +80,49 @@ export function analyze(
       const kLocal = getLocalStiffnessMatrix(elmNodes, elementInputs, i);
       let fLocal = multiply(kLocal, dxLocal);
 
+      // ── FUERZAS DE EMPOTRAMIENTO PERFECTO ──
+      //
+      // Los esfuerzos de una barra con carga EN EL VANO son
+      //
+      //     f = k*u + f_empotramiento
+      //
+      // y aqui solo se hacia `k*u`. La carga repartida entra al sistema como
+      // fuerzas nodales equivalentes —eso ya estaba bien, y por eso los
+      // DESPLAZAMIENTOS salian exactos— pero al recuperar el esfuerzo de la
+      // barra faltaba el termino del vano entero.
+      //
+      // Medido en el peldano 1 de la escalera de validacion, viga de 5 m con
+      // 20 kN/m: Hekatan daba V = 3.71 donde ETABS da 53.71 (faltaban los
+      // wL/2 = 50) y M = 15.06 donde ETABS da 45.17 (faltaban los
+      // wL^2/12 = 41.67). N, V3 y M2 cuadraban al cuarto decimal, porque esos
+      // no tienen carga en su plano — la firma exacta de este fallo.
+      //
+      // Signo: la carga nodal EQUIVALENTE que se aplica a la estructura es
+      // -f_empotramiento. Aqui se arma f_empotramiento directamente, o sea con
+      // el signo contrario al del reparto a los nudos.
+      const w = elementInputs?.frameLoads?.get(i);
+      if (w && (w[0] || w[1] || w[2])) {
+        const a = elmNodes[0], b = elmNodes[1];
+        const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+        const L = Math.hypot(d[0], d[1], d[2]);
+        if (L > 1e-9) {
+          const t = [d[0] / L, d[1] / L, d[2] / L];
+          const c = (L * L) / 12;
+          // t x w: el eje del momento de empotramiento
+          const txw = [t[1] * w[2] - t[2] * w[1],
+                       t[2] * w[0] - t[0] * w[2],
+                       t[0] * w[1] - t[1] * w[0]];
+          const feGlobal = [
+            -w[0] * L / 2, -w[1] * L / 2, -w[2] * L / 2,
+            -c * txw[0], -c * txw[1], -c * txw[2],
+            -w[0] * L / 2, -w[1] * L / 2, -w[2] * L / 2,
+            +c * txw[0], +c * txw[1], +c * txw[2],
+          ];
+          const feLocal = multiply(T, feGlobal);
+          fLocal = fLocal.map((v: number, k: number) => v + feLocal[k]);
+        }
+      }
+
       analyzeOutputs.normals!.set(i, [fLocal[0], fLocal[6]]);
       analyzeOutputs.shearsY!.set(i, [fLocal[1], fLocal[7]]);
       analyzeOutputs.shearsZ!.set(i, [fLocal[2], fLocal[8]]);

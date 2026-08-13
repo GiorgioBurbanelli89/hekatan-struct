@@ -73,6 +73,16 @@ export type ElementInputs = {
   polarMomentsOfInertia?: Map<number, number>; // I0 (polar moment of inertia, Paz formulation)
   shearAreasY?: Map<number, number>; // shear area in Y direction (Timoshenko beam)
   shearAreasZ?: Map<number, number>; // shear area in Z direction (Timoshenko beam)
+  /** Carga uniformemente repartida sobre la barra, [wx, wy, wz] en GLOBALES.
+   *
+   *  No la usa el solver —esa carga entra al sistema como fuerzas nodales
+   *  equivalentes, que es lo correcto y ya se hacia— sino `analyze()`, para
+   *  poder devolver los esfuerzos de verdad. Sin ella, `analyze()` daba solo
+   *  k*u y le faltaba el termino de EMPOTRAMIENTO PERFECTO: en una viga de 5 m
+   *  con 20 kN/m salia V = 3.71 donde ETABS da 53.71, porque faltaban los
+   *  wL/2 = 50, y M = 15.06 donde ETABS da 45.17, porque faltaban los
+   *  wL^2/12 = 41.67. Los desplazamientos si eran exactos. */
+  frameLoads?: Map<number, [number, number, number]>;
   rigidOffsets?: Map<number, [number, number]>; // [offsetI, offsetJ] rigid zone factors (0-1) at each end
   /**
    * Angulo de eje local de barra, en GRADOS, alrededor del eje 1 — el "local
