@@ -31,6 +31,7 @@
  *       desplazamientos y las reacciones. Usarlo en vez de repartir a mano por
  *       ancho tributario: el tributario ignora que la viga es CONTINUA sobre
  *       sus apoyos y se equivoca al lado de un vano ancho.
+ *   shelltype shellID thin|thick  (ShellType de ETABS: Kirchhoff o Mindlin)
  *   spring nodeID dof k        (Winkler nodal, dof: ux/uy/uz/rx/ry/rz)
  *   release frameID <12 bits>  (end releases, orden ETABS: U1 U2 U3 R1 R2 R3
  *                               en el nudo I y los mismos seis en el J)
@@ -68,6 +69,10 @@ interface ParsedModel {
    *  Es el «Assign -> Area -> Stiffness Modifiers» de ETABS. Un DECK aporta
    *  poca flexion: con bending 0 trabaja como membrana y entrega la carga a
    *  las secundarias, en vez de rigidizar como losa maciza en dos sentidos. */
+  /** Formulacion de placa por cascara: 0 = Mindlin (Shell-Thick, con cortante),
+   *  1 = Kirchhoff (Shell-Thin). Es el ShellType de ETABS. Sin declararlo,
+   *  Hekatan usa su defecto (Mindlin). */
+  shellTypes: Map<number, number>;
   shellMods: Map<number, [number, number]>;
   /** Modificadores DIRECCIONALES por shell, 8 valores en el orden del e2k
    *  de ETABS: F11 F22 F12 M11 M22 M12 V13 V23. Es lo que define un DECK:
@@ -168,6 +173,7 @@ export function parseCliCommands(text: string): ParsedModel {
     frames: [],
     shells: [],
     shellLoads: new Map(),
+    shellTypes: new Map(),
     shellMods: new Map(),
     shellModsDir: new Map(),
     shellAngles: new Map(),
@@ -410,6 +416,29 @@ export function parseCliCommands(text: string): ParsedModel {
         // que una losa habia que repartirla a mano entre sus nudos: eso ignora
         // la forma del area, los huecos y a quien le toca cargar.
         // shellmod ID mem bend  — modificadores de rigidez del shell
+        // ── FORMULACION DE PLACA: `shelltype <shellID> thin|thick` ──
+        // Es el ShellType de ETABS. `thin` = Kirchhoff (Shell-Thin), que
+        // desprecia la deformacion por cortante; `thick` = Mindlin
+        // (Shell-Thick), que la incluye. Son dos TEORIAS distintas y dan
+        // resultados distintos: sin poder declararlo, un modelo importado de
+        // ETABS con losas Shell-Thin entraba por el defecto de Hekatan, Mindlin,
+        // y la losa salia mas rigida — medido en el peldaño 2 de la escalera,
+        // 4 % menos de flecha en los nudos de losa y +1.1 % en el modo 1.
+        case "shelltype":
+        case "plateform": {
+          const id = parseInt(tokens[1], 10);
+          const q = (tokens[2] ?? "").toLowerCase();
+          if (!isFinite(id)) break;
+          let v: number | undefined;
+          if (q === "thin" || q === "delgada" || q === "kirchhoff" || q === "1") v = 1;
+          else if (q === "thick" || q === "gruesa" || q === "mindlin" || q === "0") v = 0;
+          if (v === undefined) {
+            m.errors.push(`shelltype ${id}: se esperaba thin o thick`);
+            break;
+          }
+          m.shellTypes.set(id, v);
+          break;
+        }
         case "shellmod": {
           // Dos formas:
           //   shellmod ID membrana flexion                       (escalar)
@@ -609,6 +638,8 @@ export const cliModeler: ExampleDef = {
     const sectionShapes = new Map<number, any>();
     const localAngles = new Map<number, number>();
     const momentReleases = new Map<number, boolean[]>();
+    // 0 = Mindlin (defecto del C++), 1 = Kirchhoff Shell-Thin
+    const plateFormulations = new Map<number, number>();
     // Carga de vano por ELEMENTO (globales). No la usa el solver —esa carga
     // entra como fuerzas nodales equivalentes— sino `analyze()`, para poder
     // sumar las fuerzas de empotramiento al recuperar los esfuerzos.
@@ -682,6 +713,8 @@ export const cliModeler: ExampleDef = {
       thicknesses.set(eIdx, s.t);
       densities.set(eIdx, s.rho ?? 2.45);
       poissons.set(eIdx, 0.2);
+      const tipo = m.shellTypes.get(s.id);
+      if (tipo !== undefined) plateFormulations.set(eIdx, tipo);
     }
 
     // Supports/loads/springs: traducir IDs a indices internos
@@ -859,7 +892,7 @@ export const cliModeler: ExampleDef = {
       torsionalConstants: J, densities, poissonsRatios: poissons, thicknesses,
       membraneModifiers, bendingModifiers, shellModifiers,
       shellSurfaceLoads, shellAngles, cargaDeArea, cantos, anchos, sectionShapes, localAngles,
-      shearAreasY, shearAreasZ, momentReleases,
+      shearAreasY, shearAreasZ, momentReleases, plateFormulations,
       frameLoads: frameLoadsElem,
       areaObjects: m.areaObjs.map(o => ({
         nodes: o.pts.map(id => idToIdx.get(id)).filter(i => i !== undefined) as number[],

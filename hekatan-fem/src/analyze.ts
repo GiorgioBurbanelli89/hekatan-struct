@@ -279,12 +279,49 @@ function computeQ4ShellStresses(
   if (magLy < 1e-14) magLy = 1;
   localY = [localY[0]/magLy, localY[1]/magLy, localY[2]/magLy];
 
-  // Re-orthogonalize localX
-  localX = [
-    localY[1]*localZ[2] - localY[2]*localZ[1],
-    localY[2]*localZ[0] - localY[0]*localZ[2],
-    localY[0]*localZ[1] - localY[1]*localZ[0]
-  ];
+  // ── EJES LOCALES DE LA CASCARA: la regla de CSI, no el orden de los nudos ──
+  //
+  // Antes el eje 1 se sacaba de la direccion del primer lado (v01 + v32), o sea
+  // que dependia de COMO estuviera numerado el elemento. Para reportar M11 y M22
+  // eso no vale: ETABS malla sus losas y numera cada celda como le toca, asi que
+  // dos celdas vecinas de la MISMA losa salian con el eje 1 girado 90 grados una
+  // respecto de la otra. Medido en el peldano 2 de la escalera: la celda `19-1`
+  // va de (5,0) a (5,1), o sea que su "eje 1" apuntaba a +Y mientras el de ETABS
+  // apunta a +X, y M11 y M22 salian cruzados en unas celdas si y en otras no.
+  // Ninguna hipotesis global lo arreglaba porque el giro cambiaba por elemento.
+  //
+  // La regla de CSI (Area Local Axes, angulo 0) es:
+  //   · eje 3 = normal al elemento
+  //   · si el elemento es HORIZONTAL (normal vertical), eje 1 = +X global
+  //   · si no, eje 1 = horizontal = Z x n, y el eje 2 apunta hacia arriba
+  //
+  // Esto solo toca lo que se REPORTA. La rigidez la arma el C++ con su propio
+  // marco, y el resultado del solver no depende de el.
+  {
+    const vertical = Math.abs(localZ[2]);
+    if (vertical > 1 - 1e-6) {
+      // elemento horizontal: eje 1 = +X global
+      localX = [1, 0, 0];
+    } else {
+      // eje 1 horizontal, perpendicular a la normal: Z x n
+      const h = [-localZ[1], localZ[0], 0];
+      const mh = Math.hypot(h[0], h[1], h[2]) || 1;
+      localX = [h[0]/mh, h[1]/mh, h[2]/mh];
+    }
+    // eje 2 = eje 3 x eje 1, y se reortogonaliza el 1 por si acaso
+    localY = [
+      localZ[1]*localX[2] - localZ[2]*localX[1],
+      localZ[2]*localX[0] - localZ[0]*localX[2],
+      localZ[0]*localX[1] - localZ[1]*localX[0]
+    ];
+    const my2 = Math.hypot(localY[0], localY[1], localY[2]) || 1;
+    localY = [localY[0]/my2, localY[1]/my2, localY[2]/my2];
+    localX = [
+      localY[1]*localZ[2] - localY[2]*localZ[1],
+      localY[2]*localZ[0] - localY[0]*localZ[2],
+      localY[0]*localZ[1] - localY[1]*localZ[0]
+    ];
+  }
 
   const cx = 0.25*(p0[0]+p1[0]+p2[0]+p3[0]);
   const cy = 0.25*(p0[1]+p1[1]+p2[1]+p3[1]);
