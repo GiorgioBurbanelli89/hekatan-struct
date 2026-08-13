@@ -598,7 +598,50 @@ extern "C"
             for (int i = 0; i < n; ++i) Md(i) = std::max(M_global.coeff(keep[i], keep[i]), 0.0);
 
             Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> chol(Kf);
-            if (chol.info() != Eigen::Success) return;
+            if (chol.info() != Eigen::Success)
+            {
+                // NO devolver en silencio. Un `return` mudo aqui es una hora
+                // perdida: arriba se ve "MODAL puro: 0.09 s" y ni una
+                // frecuencia, y no hay forma de saber si el modelo esta mal, si
+                // el dato no llego o si el solver reviento.
+                //
+                // Si la factorizacion falla es que K no es definida positiva:
+                // la estructura tiene un MECANISMO. Se busca donde mirando la
+                // diagonal, que en un grado suelto se queda muy por debajo de
+                // la media, y se dicen los peores por NUDO y DIRECCION.
+                double media = 0.0;
+                for (int i = 0; i < n; ++i) media += Kf.coeff(i, i);
+                media = (n > 0) ? media / n : 0.0;
+                std::vector<std::pair<double, int>> flojos;
+                for (int i = 0; i < n; ++i) {
+                    const double d = Kf.coeff(i, i);
+                    if (d < 1e-8 * media) flojos.push_back({d, keep[i]});
+                }
+                std::sort(flojos.begin(), flojos.end());
+                std::cout << "modal: la rigidez no se pudo factorizar — la "
+                             "estructura tiene un mecanismo (K no definida "
+                             "positiva). " << flojos.size()
+                          << " grados con rigidez casi nula." << std::endl;
+                // Con diafragma los indices YA NO son i*6+k, asi que hay que
+                // deshacer `colDe` antes de nombrar el nudo. Sin esto el aviso
+                // senala nudos que no tienen nada que ver y manda a buscar al
+                // sitio equivocado.
+                std::vector<int> deCol;
+                if (hayDiafragma) {
+                    deCol.assign(dof, -1);
+                    for (int g = 0; g < dofCompleto; ++g)
+                        if (colDe[g] >= 0) deCol[colDe[g]] = g;
+                }
+                const char *DIR[6] = {"Ux", "Uy", "Uz", "Rx", "Ry", "Rz"};
+                for (size_t k = 0; k < flojos.size() && k < 10; ++k) {
+                    const int c = flojos[k].second;
+                    const int g = hayDiafragma ? deCol[c] : c;
+                    if (g < 0) { std::cout << "   (grado maestro de diafragma)" << std::endl; continue; }
+                    std::cout << "   nudo " << (g / 6) + 1 << " " << DIR[g % 6]
+                              << "   k = " << flojos[k].first << std::endl;
+                }
+                return;
+            }
 
             // ── vectores iniciales (Bathe): col 0 = diagonal de masa; resto = e_j en los GDL CON
             //    MASA de mayor razón masa/rigidez. Solo GDL con masa → el subespacio nunca degenera
