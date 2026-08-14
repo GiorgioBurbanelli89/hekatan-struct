@@ -14,6 +14,7 @@ import { getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit } from "heka
 import type { ExampleDef, BuildStates } from "./exampleRegistry";
 import { attachInspect } from "../shared/attachInspect";
 import { createModalPanel } from "../shared/renderModalTable";
+import { createModalAnimator, type ModalAnimator } from "../shared/animateMode";
 import {
   forceUnit, dispUnit, fromKn, toKn, fromKnm, toKnm,
   forceUnitSuffix, momentUnitSuffix, dispUnitSuffix, stripUnitSuffix,
@@ -489,16 +490,80 @@ export function runExampleStandalone(ex: ExampleDef) {
 
   rebuild();
 
+  // Donde cuelgan Modal y Design.
+  //
+  // Estaban en el panel del EJEMPLO (arriba a la derecha), que en un modelo
+  // importado sale casi vacio —solo Unidades, Modal y Design— mientras que
+  // "🔬 Analyze", con los resultados, vive en el panel de Settings del viewer,
+  // al otro lado de la pantalla. Repartidos asi no se encuentran: Jorge, con el
+  // galpon abierto, dijo *"el tweakpane, el modal, la animacion y la ejecucion
+  // no lo veo"*. El viewer ya expone su folder Analyze en
+  // `window.__hekatanOutputsFolder` justo para esto, asi que Modal y Design van
+  // DENTRO de el, junto a los resultados. Si no existe (un ejemplo sin salidas)
+  // se cae al panel del ejemplo, como antes.
+  const folderAnalisis = (): any =>
+    (window as any).__hekatanOutputsFolder ?? (currentPaneRef as any);
+
+  // ── ▶ EJECUTAR ───────────────────────────────────────────────────────
+  // El modelo se resuelve solo al construirse y al mover cualquier parametro,
+  // asi que no habia boton de correr: si algo no cuadraba, la unica forma de
+  // rehacer el analisis era tocar un slider y devolverlo. Un boton explicito
+  // cuesta cuatro lineas y es lo que se busca cuando se abre un modelo.
+  try {
+    const fa = folderAnalisis();
+    if (fa?.addButton) {
+      const btnRun = fa.addButton({ title: "▶ Ejecutar analisis", index: 0 });
+      btnRun.on("click", async () => {
+        const t = (btnRun as any).title;
+        try {
+          (btnRun as any).title = "⏳ resolviendo…";
+          await new Promise((r) => setTimeout(r, 30));   // que se pinte el aviso
+          rebuild();
+        } catch (e: any) {
+          console.error("[ejecutar]", e);
+          alert(`El analisis fallo: ${e?.message ?? e}`);
+        } finally {
+          (btnRun as any).title = t;
+        }
+      });
+    }
+  } catch (e: any) { console.warn("[ejecutar] no se pudo montar:", e?.message ?? e); }
+
   // ── ⚡ MODAL ─────────────────────────────────────────────────────────
   // Jorge: *"no veo el analisis modal ... creamos un tweakpane que indique
   // analyze y dentro frame results, shell results, etc."*. En el workspace el
   // modal vive en su propio folder y hay que ir a buscarlo; aqui va DENTRO del
   // panel, junto a los resultados, que es donde se lo espera.
   try {
-    const paneAny = currentPaneRef as any;
+    const paneAny = folderAnalisis();
     if (paneAny?.addFolder) {
       const fm = paneAny.addFolder({ title: "⚡ Modal", expanded: false });
       const cfg = { modos: 12 };
+
+      // ANIMACION de los modos. `shared/animateMode.ts` ya existia y solo la
+      // usaba el hub (`workspace/main.ts`): las paginas standalone y las
+      // plantillas nueva/existente corrian el modal y enseñaban la TABLA, pero
+      // no habia forma de VER moverse el modo. Es lo primero que se mira de un
+      // modal, y lo que Jorge echaba en falta.
+      let animador: ModalAnimator | null = null;
+      const estado = { modo: 1, info: "—", freq: "—", periodo: "—", dir: "—" };
+      const verAnim = () => {
+        if (!animador) return;
+        const st = animador.getStatus();
+        estado.info = st.state; estado.freq = st.frequency;
+        estado.periodo = st.period; estado.dir = st.dominant;
+        try { fm.refresh(); } catch { /* el folder puede estar cerrado */ }
+      };
+      const daAnimador = (): ModalAnimator => {
+        if (!animador) {
+          animador = createModalAnimator({
+            mesh: { nodes, elements, deformOutputs, analyzeOutputs },
+            viewerElm,
+            onStatusChange: verAnim,
+          });
+        }
+        return animador;
+      };
       fm.addBinding(cfg, "modos", { min: 1, max: 60, step: 1, label: "Nº de modos" });
       let panel: { div: HTMLElement; render: Function } | null = null;
       const btnModal = fm.addButton({ title: "▶ Correr modal" });
@@ -543,6 +608,7 @@ export function runExampleStandalone(ex: ExampleDef) {
           // resultado: se resuelve en el hilo principal, como antes. Vale mas
           // una pagina trabada unos segundos que un boton que no hace nada.
           let contesto = false;
+          let arranco = false;      // el worker dio señal de vida
           const enElHilo = async (motivo: string) => {
             if (contesto) return;
             contesto = true;
@@ -554,29 +620,58 @@ export function runExampleStandalone(ex: ExampleDef) {
               const { modalAnalysis } = await import("hekatan-fem");
               const m = (modalAnalysis as any)(ns, es, ni, ei, cfg.modos);
               panel!.render(m, { title: ex.name, properties: [] } as any);
+            try { daAnimador().setResults(m); verAnim(); } catch { /* sin animar */ }
             } catch (e2: any) {
               console.error("[modal]", e2);
               alert(`El modal fallo: ${e2?.message ?? e2}`);
             }
             fin(titulo);
           };
-          // 20 s se quedaban CORTOS: el worker si funciona —comprobado con un
-          // modelo chico, contesta— pero un galpon de 1028 barras tarda mas, y
-          // el respaldo saltaba antes de tiempo y bloqueaba la pagina para
-          // nada. 3 minutos: si de verdad esta roto, se nota igual.
-          const reloj = setTimeout(() => enElHilo("el worker no contesto en 180 s"), 180000);
+          // NO hay reloj contra el CALCULO, solo contra el ARRANQUE.
+          //
+          // Antes habia uno de 180 s. Medido con este mismo galpon (609 nudos,
+          // 1256 elementos, 12 modos), el modal tarda 3 min 38 s: el reloj
+          // saltaba a falta de veinte segundos, mataba al worker que estaba a
+          // punto de terminar y rehacia los tres minutos y medio enteros en el
+          // hilo principal, con la pagina congelada. Lo peor de las dos cosas.
+          //
+          // Con la señal de vida ya se distingue lo que hacia falta distinguir:
+          // si el worker ARRANCO, esta calculando y se le deja acabar —para eso
+          // esta, la pagina sigue viva—; si a los 8 s no ha dado señal, es que
+          // el modulo no resolvio y ahi si vale la pena el respaldo.
+          const reloj = setTimeout(() => {
+            if (!arranco && !contesto) enElHilo("el worker no dio señal de vida en 8 s");
+          }, 8000);
+          // Y que se vea que avanza: tres minutos con un boton quieto parecen
+          // un cuelgue.
+          const t0 = Date.now();
+          const cronometro = setInterval(() => {
+            if (contesto) { clearInterval(cronometro); return; }
+            fin(`⏳ calculando… ${Math.round((Date.now() - t0) / 1000)} s`);
+          }, 1000);
           w.onmessage = (evt: MessageEvent) => {
             if (contesto) return;
+            // SEÑAL DE VIDA. El worker manda `{vivo:true}` nada mas arrancar,
+            // ANTES de calcular, para poder distinguir "no arranco" de "esta
+            // tardando". Este handler la tomaba como si fuera el resultado:
+            // `ok` venia undefined y el modal moria siempre con
+            // "El modal fallo: undefined", pasara lo que pasara despues. Por
+            // eso el modal "no funcionaba" — y no era el solver, que ni
+            // llegaba a devolver nada.
+            if (evt.data?.vivo) { arranco = true; return; }
             contesto = true;
             clearTimeout(reloj);
+            clearInterval(cronometro);
             const { ok, m, error } = evt.data ?? {};
             fin(titulo);
             w.terminate();
             if (!ok) { console.error("[modal]", error); alert(`El modal fallo: ${error}`); return; }
             panel!.render(m, { title: ex.name, properties: [] } as any);
+            try { daAnimador().setResults(m); verAnim(); } catch { /* sin animar */ }
           };
           w.onerror = (err) => {
             clearTimeout(reloj);
+            clearInterval(cronometro);
             console.error("[modal worker]", err);
             enElHilo("el worker fallo al arrancar");
           };
@@ -591,6 +686,42 @@ export function runExampleStandalone(ex: ExampleDef) {
           alert(`El modal fallo: ${err?.message ?? err}`);
         }
       });
+
+      // ── ver el modo: estatico, animado, y por que modo ──
+      fm.addBinding(estado, "modo", {
+        min: 1, max: 60, step: 1, label: "Modo a ver",
+      }).on("change", (ev: any) => {
+        if (!animador || animador.modeCount() === 0) return;
+        const i = Math.min(Math.max(1, Math.round(ev.value)), animador.modeCount()) - 1;
+        // Si esta animando, cambia el modo sin parar; si no, lo deja congelado
+        // como hace ETABS al elegir un Mode en el selector de resultados.
+        if (animador.isPlaying()) animador.setMode(i);
+        else animador.showStatic(i);
+        verAnim();
+      });
+      const btnAnim = fm.addButton({ title: "▶ Animar modo" });
+      btnAnim.on("click", () => {
+        const a = daAnimador();
+        if (a.modeCount() === 0) {
+          alert("Primero hay que correr el modal: no hay modos que animar.");
+          return;
+        }
+        if (a.isPlaying()) {
+          a.stop();
+          try { (btnAnim as any).title = "▶ Animar modo"; } catch {}
+        } else {
+          a.setMode(Math.min(Math.max(1, estado.modo), a.modeCount()) - 1);
+          a.play();
+          try { (btnAnim as any).title = "⏹ Parar animacion"; } catch {}
+        }
+        verAnim();
+      });
+      // Lo que esta pasando, en texto: sin esto la animacion se ve pero no se
+      // sabe QUE modo es ni a que frecuencia.
+      fm.addBinding(estado, "freq", { readonly: true, label: "Frecuencia" });
+      fm.addBinding(estado, "periodo", { readonly: true, label: "Periodo" });
+      fm.addBinding(estado, "dir", { readonly: true, label: "Direccion" });
+      fm.addBinding(estado, "info", { readonly: true, label: "Estado" });
     }
   } catch (e: any) { console.warn("[modal] no se pudo montar:", e?.message ?? e); }
 
@@ -602,7 +733,7 @@ export function runExampleStandalone(ex: ExampleDef) {
   // Lo que NO hace todavia y hay que decirlo: resistencia AISC 360 (P-M,
   // pandeo, cortante) y composite beam. Eso es el siguiente paso.
   try {
-    const paneAny = currentPaneRef as any;
+    const paneAny = folderAnalisis();
     if (paneAny?.addFolder) {
       const fd = paneAny.addFolder({ title: "🔧 Design", expanded: false });
       const cfgD = { limite: 360 };

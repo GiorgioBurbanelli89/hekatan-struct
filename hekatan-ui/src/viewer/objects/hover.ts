@@ -139,40 +139,36 @@ export function setupHover(ctx: HoverContext): THREE.Group {
   const selNodeMat = new THREE.MeshBasicMaterial({
     color: SELECT_COLOR, transparent: true, opacity: 0.95, depthTest: false,
   });
-  const selNodeHL = new THREE.Mesh(nodeGeom, selNodeMat);
-  selNodeHL.visible = false;
-  selNodeHL.renderOrder = 101;
-  group.add(selNodeHL);
-
   const selTubeMat = new THREE.MeshBasicMaterial({
     color: SELECT_COLOR, transparent: true, opacity: 0.85, depthTest: false,
   });
-  const selTubeHL = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 12), selTubeMat);
-  selTubeHL.visible = false;
-  selTubeHL.renderOrder = 101;
-  group.add(selTubeHL);
-
-  const selShellGeom = new THREE.BufferGeometry();
+  const selCylGeom = new THREE.CylinderGeometry(1, 1, 1, 12);
   const selShellMat = new THREE.MeshBasicMaterial({
     color: SELECT_COLOR, transparent: true, opacity: 0.55,
     side: THREE.DoubleSide, depthTest: false,
   });
-  const selShellHL = new THREE.Mesh(selShellGeom, selShellMat);
-  selShellHL.visible = false;
-  selShellHL.renderOrder = 101;
-  group.add(selShellHL);
-
-  const selSolidGeom = new THREE.BufferGeometry();
   const selSolidMat = new THREE.LineBasicMaterial({
     color: SELECT_COLOR, linewidth: 4, transparent: true, opacity: 1.0, depthTest: false,
   });
-  const selSolidHL = new THREE.LineSegments(selSolidGeom, selSolidMat);
-  selSolidHL.visible = false;
-  selSolidHL.renderOrder = 101;
-  group.add(selSolidHL);
 
-  // Estado de selección persistente
-  let selected: { type: "node" | "frame" | "shell" | "solid"; idx: number } | null = null;
+  // ── EL CONJUNTO DE SELECCIÓN, con las reglas de AutoCAD ──────────────────
+  // Antes esto era UN solo objeto y cada click reemplazaba al anterior, que es
+  // el comportamiento de PICKADD = 0. AutoCAD 2027 viene con PICKADD = 2
+  // (comprobado en el registro de la instalación real,
+  // HKCU\Software\Autodesk\AutoCAD\R26.0\...\SysvarMonitor): cada designación
+  // SUMA al conjunto y Mayús QUITA. Así se selecciona igual que en el visor DWG
+  // y que en AutoCAD.
+  type SelItem = { type: "node" | "frame" | "shell" | "solid"; idx: number };
+  const selSet: SelItem[] = [];
+  // Expuesto igual que `__hekatanSelection` de drawing.ts: lo leen las pruebas
+  // y quien quiera saber qué hay designado del MODELO (nodos, barras, shells).
+  (window as any).__hekatanModelSelection = selSet;
+  const selGroup = new THREE.Group();
+  selGroup.renderOrder = 101;
+  group.add(selGroup);
+  // `selected` = el ÚLTIMO designado. Lo leen el panel de propiedades y el
+  // re-render de la deformada, que solo necesitan uno.
+  let selected: SelItem | null = null;
 
   // ── Tooltip flotante (DOM, no THREE) ──
   const tooltip = document.createElement("div");
@@ -732,8 +728,22 @@ export function setupHover(ctx: HoverContext): THREE.Group {
   ctx.rendererElm.addEventListener("pointerenter", onPointerEnter);
 
   // ── Click handler: SELECCIÓN PERSISTENTE ──
-  // Click sobre nodo/elemento → highlight verde queda fijo hasta el siguiente click
-  // Click sobre vacío → deselecciona
+  // Click sobre nodo/elemento → se DESIGNA y se suma al conjunto (PICKADD = 2)
+  // Mayús+click → lo quita · Click sobre vacío → vacía el conjunto · Esc → igual
+
+  /** ¿Se puede designar ahora mismo?
+   *
+   *  Este era el bug: el manejador NO miraba qué comando estaba activo, así que
+   *  un click seleccionaba también mientras se dibujaba, se borraba o se medía.
+   *  Jorge: *"cuando hago click sigue seleccionando sea lo que esté haciendo"*.
+   *  La condición es la misma que ya usaba `drawing.ts` para su propia
+   *  selección: sólo con la herramienta «select» (o ninguna).
+   */
+  function sePuedeDesignar(): boolean {
+    const tool = ((window as any).__hekatanCadState?.get?.() as any)?.tool ?? "select";
+    return tool === "select" || tool === "none" || !tool;
+  }
+
   let pointerDownPos: { x: number; y: number } | null = null;
   ctx.rendererElm.addEventListener("pointerdown", (e: PointerEvent) => {
     if (e.button !== 0) return;  // solo left click
@@ -746,74 +756,81 @@ export function setupHover(ctx: HoverContext): THREE.Group {
     const dy = e.clientY - pointerDownPos.y;
     pointerDownPos = null;
     if (dx * dx + dy * dy > 9) return;  // > 3 px = drag, no click
+    if (!sePuedeDesignar()) return;     // hay un comando en marcha: no se designa
 
     const hover = findHovered(e.clientX, e.clientY);
     if (hover) {
-      selected = { type: hover.type, idx: hover.idx };
+      designar({ type: hover.type, idx: hover.idx }, e.shiftKey);
       updateSelection();
     } else {
-      // Click en vacío → deselect
-      selected = null;
-      updateSelection();
+      limpiarSeleccion();               // click en vacío → conjunto vacío
     }
   });
 
+  // Esc vacía el conjunto, como en AutoCAD.
+  //
+  // Va en fase de CAPTURA a propósito: la barra de comandos (`hk3-cmd-input`)
+  // tiene el foco SIEMPRE —es el sumidero de teclado, igual que la línea de
+  // comandos de AutoCAD— y su propio manejador corta la propagación, así que
+  // en fase de burbuja este Escape no llegaba nunca y la selección no se
+  // vaciaba. La condición de "campo de texto de verdad" es la misma que ya usa
+  // `drawing.ts` para el Delete: los dos inputs de comando, si están vacíos,
+  // no cuentan como escritura.
+  window.addEventListener("keydown", (e: KeyboardEvent) => {
+    if (e.key !== "Escape" || !selSet.length) return;
+    const ae = document.activeElement as HTMLElement | null;
+    const cmdVacio = !!ae && (ae.id === "hk3-cmd-input" || ae.id === "hk-dyn-input")
+      && (ae as HTMLInputElement).value === "";
+    const escribiendo = !!ae
+      && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA" || ae.isContentEditable)
+      && !cmdVacio;
+    if (escribiendo) return;
+    limpiarSeleccion();
+  }, { capture: true });
+
   // ── Update visual de la SELECCIÓN PERSISTENTE ──
-  function updateSelection() {
-    selNodeHL.visible = false;
-    selTubeHL.visible = false;
-    selShellHL.visible = false;
-    selSolidHL.visible = false;
-    if (!selected || !ctx.mesh) {
-      ctx.render();
-      return;
+  /** Borra los resaltados y libera las geometrías propias de cada uno. */
+  function limpiarResaltados() {
+    for (const o of selGroup.children.slice()) {
+      selGroup.remove(o);
+      const g = (o as THREE.Mesh).geometry;
+      // nodeGeom y selCylGeom son compartidas: esas no se tiran
+      if (g && g !== nodeGeom && g !== selCylGeom) g.dispose();
     }
-    const elements = ctx.mesh.elements?.rawVal;
-    if (selected.type === "node") {
-      const p = nodePos(selected.idx);
-      if (p) {
-        // Tamaño = consistente con nodes.ts (radio = diámetro/2 * 1.7 = más grande
-        // que el hover para distinguir selección persistente)
-        const ns = ctx.derivedNodes.rawVal ?? [];
-        let extent = 1.0;
-        if (ns.length >= 2) {
-          let mn = [Infinity, Infinity, Infinity];
-          let mx = [-Infinity, -Infinity, -Infinity];
-          for (const n of ns) {
-            for (let i = 0; i < 3; i++) {
-              if (n[i] < mn[i]) mn[i] = n[i];
-              if (n[i] > mx[i]) mx[i] = n[i];
-            }
-          }
-          extent = Math.max(mx[0]-mn[0], mx[1]-mn[1], mx[2]-mn[2], 0.1);
-        }
-        const ds = ctx.derivedDisplayScale?.rawVal ?? 1;
-        const sz = 0.025 * extent * ds;
-        selNodeHL.position.copy(p);
-        selNodeHL.scale.setScalar(sz);
-        selNodeHL.visible = true;
-      }
-    } else if (selected.type === "frame" && elements) {
-      const el = elements[selected.idx];
+  }
+
+  /** Dibuja el resaltado de UN objeto designado. */
+  function resaltar(sel: SelItem, extent: number) {
+    const elements = ctx.mesh?.elements?.rawVal;
+    if (sel.type === "node") {
+      const p = nodePos(sel.idx);
+      if (!p) return;
+      // Tamaño = consistente con nodes.ts (radio = diámetro/2 * 1.7 = más grande
+      // que el hover para distinguir selección persistente)
+      const ds = ctx.derivedDisplayScale?.rawVal ?? 1;
+      const m = new THREE.Mesh(nodeGeom, selNodeMat);
+      m.position.copy(p);
+      m.scale.setScalar(0.025 * extent * ds);
+      m.renderOrder = 101;
+      selGroup.add(m);
+    } else if (sel.type === "frame" && elements) {
+      const el = elements[sel.idx];
       const p1 = nodePos(el[0]);
       const p2 = nodePos(el[1]);
-      if (p1 && p2) {
-        const mid = p1.clone().add(p2).multiplyScalar(0.5);
-        const dir = p2.clone().sub(p1);
-        const len = dir.length();
-        const camera = ctx.getActiveCamera();
-        const dist = camera.position.distanceTo(mid);
-        const radius = dist * 0.0035;
-        selTubeHL.position.copy(mid);
-        const up = new THREE.Vector3(0, 1, 0);
-        const axis = up.clone().cross(dir).normalize();
-        const angle = up.angleTo(dir);
-        selTubeHL.quaternion.setFromAxisAngle(axis, angle);
-        selTubeHL.scale.set(radius, len, radius);
-        selTubeHL.visible = true;
-      }
-    } else if (selected.type === "shell" && elements) {
-      const el = elements[selected.idx];
+      if (!p1 || !p2) return;
+      const mid = p1.clone().add(p2).multiplyScalar(0.5);
+      const dir = p2.clone().sub(p1);
+      const len = dir.length();
+      const dist = ctx.getActiveCamera().position.distanceTo(mid);
+      const m = new THREE.Mesh(selCylGeom, selTubeMat);
+      m.position.copy(mid);
+      const up = new THREE.Vector3(0, 1, 0);
+      m.quaternion.setFromAxisAngle(up.clone().cross(dir).normalize(), up.angleTo(dir));
+      m.scale.set(dist * 0.0035, len, dist * 0.0035);
+      m.renderOrder = 101;
+      selGroup.add(m);
+    } else if (sel.type === "shell" && elements) {
+      const el = elements[sel.idx];
       const positions: number[] = [];
       const indices: number[] = [];
       for (const ni of el) {
@@ -823,12 +840,15 @@ export function setupHover(ctx: HoverContext): THREE.Group {
       }
       if (el.length === 4) indices.push(0, 1, 2, 0, 2, 3);
       else if (el.length === 3) indices.push(0, 1, 2);
-      selShellGeom.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-      selShellGeom.setIndex(indices);
-      selShellGeom.computeVertexNormals();
-      selShellHL.visible = true;
-    } else if (selected.type === "solid" && elements) {
-      const el = elements[selected.idx];
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      g.setIndex(indices);
+      g.computeVertexNormals();
+      const m = new THREE.Mesh(g, selShellMat);
+      m.renderOrder = 101;
+      selGroup.add(m);
+    } else if (sel.type === "solid" && elements) {
+      const el = elements[sel.idx];
       const edges: [number, number][] = [
         [0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7],
       ];
@@ -838,16 +858,61 @@ export function setupHover(ctx: HoverContext): THREE.Group {
         const pb = nodePos(el[b]);
         if (pa && pb) positions.push(pa.x, pa.y, pa.z, pb.x, pb.y, pb.z);
       }
-      selSolidGeom.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-      selSolidHL.visible = true;
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      const m = new THREE.LineSegments(g, selSolidMat);
+      m.renderOrder = 101;
+      selGroup.add(m);
     }
+  }
+
+  function updateSelection() {
+    limpiarResaltados();
+    if (!selSet.length || !ctx.mesh) {
+      ctx.render();
+      return;
+    }
+    // La extensión del modelo se calcula UNA vez, no por objeto designado
+    const ns = ctx.derivedNodes.rawVal ?? [];
+    let extent = 1.0;
+    if (ns.length >= 2) {
+      const mn = [Infinity, Infinity, Infinity];
+      const mx = [-Infinity, -Infinity, -Infinity];
+      for (const n of ns) {
+        for (let i = 0; i < 3; i++) {
+          if (n[i] < mn[i]) mn[i] = n[i];
+          if (n[i] > mx[i]) mx[i] = n[i];
+        }
+      }
+      extent = Math.max(mx[0]-mn[0], mx[1]-mn[1], mx[2]-mn[2], 0.1);
+    }
+    for (const s of selSet) resaltar(s, extent);
     ctx.render();
+  }
+
+  /** Mete o saca un objeto del conjunto, con las reglas de PICKADD = 2.
+   *  Suma; con Mayús quita; volver a pinchar lo mismo también quita (AutoCAD
+   *  no admite duplicados en el conjunto). */
+  function designar(item: SelItem, conMayus: boolean) {
+    const i = selSet.findIndex((s) => s.type === item.type && s.idx === item.idx);
+    if (i >= 0) {
+      selSet.splice(i, 1);
+    } else if (!conMayus) {
+      selSet.push(item);
+    }
+    selected = selSet.length ? selSet[selSet.length - 1] : null;
+  }
+
+  function limpiarSeleccion() {
+    selSet.length = 0;
+    selected = null;
+    updateSelection();
   }
 
   // Re-render selección cuando cambia la cámara o nodos (deformed shape)
   van.derive(() => {
     ctx.derivedNodes.val;  // trigger
-    if (selected) updateSelection();
+    if (selSet.length) updateSelection();
   });
 
   // El group debe llevar el mismo "onBeforeRender" del scene para garantía de

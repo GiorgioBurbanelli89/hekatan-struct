@@ -96,11 +96,28 @@ function botonAbrir() {
   document.body.appendChild(b);
 }
 
+/** Rotulo con la cuenta del modelo, debajo del titulo del panel. */
+function rotulo(txt: string) {
+  const d = document.createElement("div");
+  d.textContent = txt;
+  d.style.cssText = [
+    "position:fixed", "top:44px", "right:16px", "z-index:101",
+    "padding:2px 8px", "border-radius:4px", "background:rgba(20,24,31,0.85)",
+    "color:#8b95a5", "font:11px ui-monospace,Consolas,monospace",
+    "pointer-events:none", "max-width:min(320px,calc(100vw - 32px))",
+  ].join(";");
+  document.body.appendChild(d);
+}
+
 async function arrancar() {
   const urlE2k = qs.get("e2k");
   const urlHeks = qs.get("heks");
   let base: ExampleDef = csiImporter;
   let titulo = "Modelo existente";
+  // El titulo del panel se corta a los 320 px de ancho: "galpon_validado.heks —
+  // 609 nudos · 1140 barras · 116 shells" salia truncado a media palabra. El
+  // nombre va en el titulo y la cuenta debajo, donde cabe.
+  let detalle = "";
 
   if (urlE2k) {
     const v = velo("Importando e2k…");
@@ -109,7 +126,8 @@ async function arrancar() {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const nom = urlE2k.split("/").pop() || urlE2k;
       const c = cargarE2k(await r.text(), nom);
-      titulo = `${nom} — ${c.n} nudos · ${c.e} elementos · ${c.s} secciones`;
+      titulo = nom;
+      detalle = `${c.n} nudos · ${c.e} elementos · ${c.s} secciones`;
     } catch (e: any) {
       v.textContent = `No se pudo importar ${urlE2k} — ${e?.message ?? e}`;
       setTimeout(() => v.remove(), 5000);
@@ -129,7 +147,8 @@ async function arrancar() {
       const n = (txt.match(/^\s*node\s+/gm) ?? []).length;
       const f = (txt.match(/^\s*frame\s+/gm) ?? []).length;
       const s = (txt.match(/^\s*shell\s+/gm) ?? []).length;
-      titulo = `${nom} — ${n} nudos · ${f} barras · ${s} shells`;
+      titulo = nom;
+      detalle = `${n} nudos · ${f} barras · ${s} shells`;
     } catch (e: any) {
       v.textContent = `No se pudo cargar ${urlHeks} — ${e?.message ?? e}`;
       setTimeout(() => v.remove(), 5000);
@@ -148,14 +167,17 @@ async function arrancar() {
       (window as any).__hekatanCliScript = txt;
       const n = (txt.match(/^\s*node\s+/gm) ?? []).length;
       const f = (txt.match(/^\s*frame\s+/gm) ?? []).length;
-      titulo = `${nom} — ${n} nudos · ${f} barras`;
+      titulo = nom;
+      detalle = `${n} nudos · ${f} barras`;
     } else {
       const c = cargarE2k(txt, nom);
-      titulo = `${nom} — ${c.n} nudos · ${c.e} elementos · ${c.s} secciones`;
+      titulo = nom;
+      detalle = `${c.n} nudos · ${c.e} elementos · ${c.s} secciones`;
     }
   } else if ((window as any).__hekatanImportedModel) {
     const m = (window as any).__hekatanImportedModel;
-    titulo = `${m.archivo} — ${m.nodes?.length ?? 0} nudos · ${m.elements?.length ?? 0} elementos`;
+    titulo = m.archivo;
+    detalle = `${m.nodes?.length ?? 0} nudos · ${m.elements?.length ?? 0} elementos`;
   } else if ((window as any).__hekatanCliScript) {
     base = cliModeler;
   } else {
@@ -173,6 +195,7 @@ async function arrancar() {
     params: base === csiImporter ? base.params : {},
   };
   runExampleStandalone(def);
+  if (detalle) rotulo(detalle);
 }
 
 arrancar();
