@@ -1,0 +1,10 @@
+[log] [menu] clic derecho sobre el modelo -> Assign estilo ETABS
+[warn] [.WebGL-0x44cc0298fc00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[warn] [.WebGL-0x44cc0298fc00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[warn] [.WebGL-0x44cc0298fc00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[warn] [.WebGL-0x44cc0298fc00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+[log] [AI] Ollama no detectado → default a Gemini Flash
+[error] Failed to load resource: net::ERR_CONNECTION_REFUSED
+[error] Failed to load resource: net::ERR_ADDRESS_INVALID
+[error] Failed to load resource: net::ERR_ADDRESS_INVALID
+[log] [Test M Modal] Test M — Dual (pórtico+losa+muros) — f₁=2.0726 Hz (coarse 3270 GDL)
