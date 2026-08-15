@@ -175,7 +175,8 @@ static double Hy_sw_DKE(int j, const double dN[8], double c_b) { switch(j){
     case 9:return dN[2]-0.25*dN[5]+0.5*dN[6]; case 10:return c_b*dN[7]; case 11:return 0; case 12:return dN[3]+0.5*dN[6]-0.25*dN[7];} return 0;
 }
 static Eigen::MatrixXd getBendingK_DKE(const double x[4], const double y[4],
-                                        double E, double nu, double t)
+                                        double E, double nu, double t,
+                                        const double *mod = nullptr)
 {
     double xmin=x[0],xmax=x[0],ymin=y[0],ymax=y[0];
     for (int i=1;i<4;i++){ if(x[i]<xmin)xmin=x[i]; if(x[i]>xmax)xmax=x[i];
@@ -184,6 +185,26 @@ static Eigen::MatrixXd getBendingK_DKE(const double x[4], const double y[4],
     double a_h=dx/2.0, b_h=dy/2.0, c_a=1.5/dx, c_b=1.5/dy;
     double Df=E*t*t*t/(12.0*(1.0-nu*nu));
     Eigen::Matrix3d D; D<<Df,Df*nu,0, Df*nu,Df,0, 0,0,Df*(1.0-nu)/2.0;
+    // Modificadores DIRECCIONALES de flexion (M11MOD M22MOD M12MOD), sobre la
+    // matriz constitutiva y no sobre la K ya ensamblada — el mismo sitio y la
+    // misma forma que `getBendingK` de shellQ4.cpp, para que thin y thick
+    // respondan igual al mismo dato. Un deck lleva M22 chico: no rigidiza
+    // cruzado al nervio, y multiplicar la K entera por un escalar no sabe
+    // hacer eso. El acoplamiento va con la media geometrica para que D siga
+    // simetrica y semidefinida positiva.
+    //
+    // V13MOD/V23MOD (mod[6], mod[7]) NO se aplican aqui a proposito: son los
+    // modificadores del CORTANTE TRANSVERSAL, y el DKE es Kirchhoff — no tiene
+    // deformacion por cortante que modificar. En ETABS pasa lo mismo: a un
+    // Shell-Thin esos dos no le hacen nada.
+    if (mod) {
+        double m11 = mod[3], m22 = mod[4], m12 = mod[5];
+        D(0, 0) *= m11;
+        D(1, 1) *= m22;
+        D(2, 2) *= m12;
+        double c = std::sqrt(std::max(0.0, m11 * m22));
+        D(0, 1) *= c;  D(1, 0) *= c;
+    }
     double g=1.0/std::sqrt(3.0); double gp[2]={-g,g};
     Eigen::MatrixXd K=Eigen::MatrixXd::Zero(12,12);
     for (int ig=0;ig<2;ig++) for (int jg=0;jg<2;jg++) {
@@ -255,22 +276,32 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
     // y Shell-Thin los ignoraba por completo, asi que un deck definido por
     // direccion se comportaba como una losa isotropa.
     //
-    // Se aplican SOLO a la membrana, que es donde la nueva `getMembraneK` los
-    // sabe meter (dentro de la matriz constitutiva, como ETABS). El `mFactor`
-    // escalar pasa a 1.0 para no multiplicar dos veces. La FLEXION sigue con su
-    // factor escalar: `getBendingK_DKE` no acepta modificadores por direccion
-    // todavia — queda anotado, no se finge que si.
+    // Se aplican dentro de la matriz constitutiva, como ETABS: a la membrana en
+    // `getMembraneK` y a la flexion en `getBendingK_DKE`. Los dos escalares
+    // pasan a 1.0 para no multiplicar dos veces.
     const double *dmod = nullptr;
     {
         auto itMod = elementInputs.shellModifiers.find(index);
         if (itMod != elementInputs.shellModifiers.end() && itMod->second.size() >= 8) {
             dmod = itMod->second.data();
             mFactor = 1.0;
+            bFactor = 1.0;
         }
     }
 
+    // .Flexion practicamente nula (un deck: ShellType Membrane) → NO se
+    // ensambla, en vez de armarla y multiplicarla por cero. Lo mismo que hace
+    // shellQ4.cpp; aqui el DKE con D=0 ya daria la matriz nula, pero el criterio
+    // se escribe una sola vez y se lee igual en los dos archivos.
+    bool sinFlexion = dmod
+        ? (std::fabs(dmod[3]) < 1e-9 && std::fabs(dmod[4]) < 1e-9 &&
+           std::fabs(dmod[5]) < 1e-9)
+        : (std::fabs(bFactor) < 1e-9);
+
     Eigen::MatrixXd Km = getMembraneK(x, y, E, nu, t, dmod);   // 8×8
-    Eigen::MatrixXd Kb = getBendingK_DKE(x, y, E, nu, t);     // 12×12 DKE (= ETABS/SAFE ShellThin, validado vs ETABS en Python)
+    Eigen::MatrixXd Kb = sinFlexion
+        ? Eigen::MatrixXd::Zero(12, 12)
+        : getBendingK_DKE(x, y, E, nu, t, dmod);   // 12×12 DKE (= ETABS/SAFE ShellThin, validado vs ETABS en Python)
     Km *= mFactor;
     Kb *= bFactor;
 
