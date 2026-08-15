@@ -27,6 +27,7 @@ export async function resolverHeks(rutaHeks) {
     nodes: states.nodes.val,
     elements: states.elements.val,
     nodeInputs: states.nodeInputs.val,
+    elementInputs: states.elementInputs.val,
     deformOutputs: states.deformOutputs.val ?? {},
     analyzeOutputs: states.analyzeOutputs.val ?? {},
   };

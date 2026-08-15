@@ -8,6 +8,7 @@
 #include <Eigen/Sparse>
 #include <Eigen/Eigenvalues>
 #include <iostream>
+#include <limits>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -34,8 +35,316 @@ static Eigen::SparseMatrix<double> extractBlock(
     return B;
 }
 
+// ── LA MASA, EN UN SOLO SITIO ────────────────────────────────────────────
+// El ensamblaje de M vivia dentro de modal() y no habia forma de mirarlo sin
+// resolver los modos. Es la mitad del problema (K u = w2 M u) y la que no
+// cierra contra ETABS, asi que ahora se arma aparte y se puede PESAR nudo a
+// nudo con `assembled_joint_mass` — que es la tabla que ETABS publica con ese
+// mismo nombre. Los pasos son los de ETABS y en su orden:
+//   2a. fuente de masa   (INCLUDEELEMENTS + masa nodal)
+//   2b. solo lateral     (INCLUDEVERTICALMASS "No")
+//   2c. LUMPATSTORIES    (concentrar por pisos)
+// El diafragma (2d) NO entra aca: eso ya no es masa, es una restriccion.
+static Eigen::SparseMatrix<double> ensamblarMasa(
+    const std::vector<Node> &nodes,
+    const std::vector<unsigned int> &element_indices,
+    const std::vector<unsigned int> &element_sizes,
+    const ElementInputs &elementInputs,
+    const std::map<int, double> &masaNodal,
+    int num_nodes, int dof,
+    int include_elements, int lateral_mass, int lump_stories)
+{
+    Eigen::SparseMatrix<double> M_global = getGlobalMassMatrix(
+        nodes, element_indices, element_sizes, elementInputs, dof);
+
+    // --- 2a. Fuente de masa estilo ETABS: elementos y/o masa nodal ---
+    // `include_elements = 0` tira la masa de rho*A*L, que es lo que hace
+    // ETABS con INCLUDEELEMENTS "No"; la masa nodal se anade siempre.
+    {
+        if (!include_elements)
+            M_global.setZero();
+        if (!masaNodal.empty())
+        {
+            std::vector<Eigen::Triplet<double>> tri;
+            tri.reserve(masaNodal.size() * 3);
+            for (const auto &kv : masaNodal)
+            {
+                const int i = kv.first;
+                if (i < 0 || i >= num_nodes || kv.second <= 0.0) continue;
+                tri.emplace_back(i * 6 + 0, i * 6 + 0, kv.second);
+                tri.emplace_back(i * 6 + 1, i * 6 + 1, kv.second);
+                tri.emplace_back(i * 6 + 2, i * 6 + 2, kv.second);
+            }
+            Eigen::SparseMatrix<double> M_nod(dof, dof);
+            M_nod.setFromTriplets(tri.begin(), tri.end());
+            M_global += M_nod;
+        }
+    }
+
+    // --- 2b. Masa solo lateral (ETABS INCLUDEVERTICALMASS "No") ---
+    // Conserva SOLO la masa de los GDL Ux,Uy (lumpeo por suma de filas = ETABS LUMPATSTORIES).
+    // Uz y rotaciones → masa 0. Con la iteración de subespacio (abajo) esos GDL siguen en la
+    // malla (rigidez completa) pero no cargan masa → los modos salen laterales/torsionales.
+    if (lateral_mass)
+    {
+        Eigen::VectorXd rowsum = Eigen::VectorXd::Zero(dof);
+        for (int k = 0; k < M_global.outerSize(); ++k)
+            for (Eigen::SparseMatrix<double>::InnerIterator it(M_global, k); it; ++it)
+                rowsum(it.row()) += it.value();
+        std::vector<Eigen::Triplet<double>> trips;
+        for (int i = 0; i < num_nodes; ++i) {
+            trips.emplace_back(i*6+0, i*6+0, std::max(rowsum(i*6+0), 0.0));  // Ux lumpeada
+            trips.emplace_back(i*6+1, i*6+1, std::max(rowsum(i*6+1), 0.0));  // Uy lumpeada
+        }
+        Eigen::SparseMatrix<double> M_lat(dof, dof);
+        M_lat.setFromTriplets(trips.begin(), trips.end());
+        M_global = M_lat;
+    }
+
+    // --- 2c. LUMPATSTORIES: agrupar la masa por PISOS ---
+    //
+    // El MASSSOURCE del galpon en ETABS dice, literal:
+    //    INCLUDEELEMENTS "Yes"  INCLUDELOADS "No"
+    //    INCLUDELATERALMASS "Yes"  INCLUDEVERTICALMASS "No"
+    //    LUMPATSTORIES "Yes"
+    //
+    // Las dos primeras ya las hacia Hekatan; esta no. ETABS coge la masa de
+    // cada nivel y la CONCENTRA en los nudos de ese nivel, en vez de dejarla
+    // donde cae por elemento (rho*A*L/2 en cada extremo). Con la misma masa
+    // total repartida distinto, los modos salen distintos — y ese era el
+    // desacuerdo que quedaba: modo 3 ETABS 3.70 Hz contra 4.86 de Hekatan.
+    //
+    // Los niveles no se declaran en el .heks, hay que detectarlos. Y un piso
+    // NO es "una cota Z cualquiera": es una cota donde coincide MUCHA gente.
+    // Medido en el galpon: z = 4.00 tiene 218 nudos y z = 8.00 tiene 90,
+    // mientras las demas cotas tienen 1, 2 o 6.
+    //
+    // Antes agrupaba con 30 cm de tolerancia y encadenando, y eso rompia
+    // justo aqui: los nudos de la cercha inclinada estan a 8.00, 8.09,
+    // 8.18 ... 9.11, o sea a 9 cm unos de otros, asi que se fundian TODOS en
+    // un solo nivel cuyo centro iba derivando hacia arriba. Con eso movia
+    // masa de mas y la frecuencia empeoraba (3.2994 -> 2.7575 Hz contra
+    // 3.2648 de ETABS) aunque la participacion de masa mejorara.
+    //
+    // Ahora: se cuentan los nudos por cota (juntando solo lo que esta a
+    // menos de 5 cm, que es ruido de modelado, no una rampa) y se queda con
+    // las cotas POBLADAS — las que llegan al 10 % de la mas poblada. Una
+    // cercha inclinada no pasa ese filtro; un piso, si. Un nudo que no cae
+    // en un piso manda su masa al nivel MAS CERCANO.
+    if (lump_stories)
+    {
+        std::vector<double> zs;
+        zs.reserve(num_nodes);
+        for (int i = 0; i < num_nodes; ++i) zs.push_back(nodes[i][2]);
+        std::sort(zs.begin(), zs.end());
+
+        // 1) agrupar cotas practicamente iguales (ruido de modelado)
+        const double TOL_Z = 0.05;               // m
+        std::vector<double> cota;                // centro de cada grupo
+        std::vector<int>    cuantos;             // nudos en el grupo
+        for (double z : zs) {
+            if (cota.empty() || z - cota.back() > TOL_Z) {
+                cota.push_back(z);
+                cuantos.push_back(1);
+            } else {
+                // media corrida: el centro no deriva con el tamano del grupo
+                cuantos.back()++;
+                cota.back() += (z - cota.back()) / cuantos.back();
+            }
+        }
+        // 2) quedarse con las POBLADAS
+        int masPoblada = 0;
+        for (int c : cuantos) masPoblada = std::max(masPoblada, c);
+        const int MINIMO = std::max(2, masPoblada / 10);
+        std::vector<double> niveles;
+        for (size_t k = 0; k < cota.size(); ++k)
+            if (cuantos[k] >= MINIMO) niveles.push_back(cota[k]);
+
+        if (niveles.size() >= 2)
+        {
+            // A que nivel va cada nudo: al PISO DE ARRIBA, no al mas
+            // cercano. Preguntado a ETABS (`PointObj.GetLabelFromName`
+            // devuelve el piso de cada nudo), en el galpon sale que cada
+            // piso posee desde justo encima del piso de abajo hasta su
+            // propia cota:
+            //
+            //    Base           28 nudos    z de 0.000 a 0.000
+            //    CordonInf 3.00 131 nudos   z de 0.147 a 3.000
+            //    Entrepiso 4.00 202 nudos   z de 3.055 a 4.000
+            //
+            // "Al mas cercano" partia el tramo 0-3 por la mitad y mandaba
+            // media columna a la base, que esta empotrada: esa masa
+            // desaparecia y las frecuencias SUBIAN. En ETABS agrupar las
+            // BAJA (modo 3: 4.4312 -> 3.7036), porque concentra la masa
+            // arriba, que es donde los modos se mueven.
+            //
+            // Por encima del ultimo nivel no hay piso de arriba: esa masa se
+            // queda en el ultimo, que es tambien lo que hace ETABS (el
+            // Cumbrero a 9.11 no recibe nada; todo lo de encima de 8.00
+            // acaba en 8.00).
+            // nudos que ESTAN en cada piso (los que reciben la masa)
+            std::vector<std::vector<int>> enNivel(niveles.size());
+            for (int i = 0; i < num_nodes; ++i)
+                for (size_t k = 0; k < niveles.size(); ++k)
+                    if (std::abs(nodes[i][2] - niveles[k]) <= TOL_Z)
+                        { enNivel[k].push_back(i); break; }
+
+            // masa nodal actual (M es diagonal: lumped HRZ)
+            std::vector<double> mNodo(num_nodes, 0.0);
+            for (int i = 0; i < num_nodes; ++i)
+                mNodo[i] = std::max(M_global.coeff(i * 6 + 0, i * 6 + 0), 0.0);
+
+            // Radio para decidir que es "la misma vertical". Fijo en metros
+            // no vale para cualquier modelo, asi que se escala con el
+            // tamano en planta.
+            double xmin = nodes[0][0], xmax = nodes[0][0];
+            double ymin = nodes[0][1], ymax = nodes[0][1];
+            for (int i = 1; i < num_nodes; ++i) {
+                xmin = std::min(xmin, nodes[i][0]); xmax = std::max(xmax, nodes[i][0]);
+                ymin = std::min(ymin, nodes[i][1]); ymax = std::max(ymax, nodes[i][1]);
+            }
+            const double diag = std::sqrt((xmax-xmin)*(xmax-xmin) + (ymax-ymin)*(ymax-ymin));
+            const double RADIO = std::max(0.10, 0.01 * diag);
+
+            // el nudo del piso k que cae mas cerca EN PLANTA, o -1
+            auto enLaVertical = [&](size_t k, double x, double y) -> int {
+                int mejor = -1; double dmin = RADIO * RADIO;
+                for (int j : enNivel[k]) {
+                    double dx = nodes[j][0] - x, dy = nodes[j][1] - y;
+                    double d = dx*dx + dy*dy;
+                    if (d <= dmin) { dmin = d; mejor = j; }
+                }
+                return mejor;
+            };
+
+            // Y si en su vertical no hay nadie: el nudo mas cercano de ese
+            // piso, sin limite de distancia. Ninguna masa se queda a media
+            // altura — medido con AssembledJointMass, ETABS tiene CERO masa
+            // fuera de las cotas de piso, y la de Hekatan se quedaba
+            // desparramada en 40 cotas intermedias.
+            auto masCercanoDelPiso = [&](size_t k, double x, double y) -> int {
+                int mejor = -1; double dmin = std::numeric_limits<double>::max();
+                for (int j : enNivel[k]) {
+                    double dx = nodes[j][0] - x, dy = nodes[j][1] - y;
+                    double d = dx*dx + dy*dy;
+                    if (d < dmin) { dmin = d; mejor = j; }
+                }
+                return mejor;
+            };
+
+            // La masa de cada nudo sube y baja POR SU PROPIA VERTICAL, y se
+            // parte entre los dos pisos que lo encierran por BRAZO DE
+            // PALANCA, como una carga puntual entre dos apoyos. Medido en el
+            // galpon: la columna en (2.00, 12.43) acumula 4.4520 t en sus
+            // tres nudos entre 0 y 3, y ETABS pone 3.8843 t en el nudo de esa
+            // MISMA columna a z = 3. El nudo gordo esta a 2.65, o sea
+            // 2.65/3 = 88.3 % arriba: 4.2877 * 0.883 = 3.786, mas lo suyo.
+            //
+            // Antes repartia la masa del nivel entre TODOS los nudos de ese
+            // nivel, en proporcion a la que ya tenian. Eso desparrama por la
+            // planta lo que en realidad se queda en su columna, y cambia los
+            // modos torsionales y laterales: el modo 3 salia a 4.43 Hz
+            // contra 3.70 de ETABS. Comprobado nudo a nudo, esta regla
+            // acierta el 74 % de los nudos dentro del 5 %.
+            std::vector<double> nueva(num_nodes, 0.0);
+            for (int i = 0; i < num_nodes; ++i) {
+                const double m = mNodo[i];
+                if (m <= 1e-12) continue;
+                const double z = nodes[i][2];
+                // .entre que dos pisos cae?
+                size_t ka = niveles.size() - 1;
+                for (size_t k = 0; k < niveles.size(); ++k)
+                    if (z <= niveles[k] + TOL_Z) { ka = k; break; }
+
+                // reparto: (nivel, fraccion)
+                double fa = 1.0;
+                bool hayAbajo = (ka > 0) && (std::abs(z - niveles[ka]) > TOL_Z);
+                if (hayAbajo) {
+                    const double za = niveles[ka], zb = niveles[ka - 1];
+                    fa = (za > zb) ? (z - zb) / (za - zb) : 1.0;
+                    if (fa < 0.0) fa = 0.0;
+                    if (fa > 1.0) fa = 1.0;
+                }
+                // Cada mitad va al nudo de su vertical; si esa vertical no
+                // llega al piso (un nudo de arriostre, la punta de una
+                // diagonal), al nudo mas cercano de ese piso. Antes se
+                // quedaba a media altura, y eso son 2.4249 t del galpon
+                // — el 1.7 % del modelo — repartidas en 40 cotas donde
+                // ETABS no pone absolutamente nada.
+                double repartida = 0.0;
+                int da = enLaVertical(ka, nodes[i][0], nodes[i][1]);
+                if (da < 0) da = masCercanoDelPiso(ka, nodes[i][0], nodes[i][1]);
+                if (da >= 0) { nueva[da] += m * fa; repartida += m * fa; }
+                if (hayAbajo) {
+                    int db = enLaVertical(ka - 1, nodes[i][0], nodes[i][1]);
+                    if (db < 0) db = masCercanoDelPiso(ka - 1, nodes[i][0], nodes[i][1]);
+                    if (db >= 0) { nueva[db] += m * (1.0 - fa); repartida += m * (1.0 - fa); }
+                }
+                // si ni asi hay a donde mandarla (un piso vacio), se queda
+                // donde esta: perderla cambiaria la masa total del modelo
+                if (repartida < m - 1e-12) nueva[i] += m - repartida;
+            }
+
+            std::vector<Eigen::Triplet<double>> tri;
+            for (int i = 0; i < num_nodes; ++i) {
+                if (nueva[i] <= 0.0) continue;
+                tri.emplace_back(i*6+0, i*6+0, nueva[i]);
+                tri.emplace_back(i*6+1, i*6+1, nueva[i]);
+                if (!lateral_mass) tri.emplace_back(i*6+2, i*6+2, nueva[i]);
+            }
+            Eigen::SparseMatrix<double> M_lump(dof, dof);
+            M_lump.setFromTriplets(tri.begin(), tri.end());
+            M_global = M_lump;
+        }
+    }
+
+    return M_global;
+}
+
 extern "C"
 {
+    // La masa ensamblada nudo a nudo, que es la tabla `AssembledJointMass` de
+    // ETABS. Sale por `mass_out`, 6 huecos por nudo (Ux Uy Uz Rx Ry Rz) en el
+    // orden de los nudos de entrada. No resuelve nada: solo pesa.
+    void assembled_joint_mass(
+        double *nodes_flat_ptr, int num_nodes,
+        unsigned int *element_indices_ptr, int num_element_indices,
+        unsigned int *element_sizes_ptr, int num_elements,
+        int *area_keys_ptr, double *area_values_ptr, int num_areas,
+        int *density_keys_ptr, double *density_values_ptr, int num_densities,
+        int *thickness_keys_ptr, double *thickness_values_ptr, int num_thicknesses,
+        int *nodemass_keys_ptr, double *nodemass_values_ptr, int num_nodemass,
+        int include_elements, int lateral_mass, int lump_stories,
+        double *mass_out)
+    {
+        std::vector<Node> nodes(num_nodes, Node(3));
+        for (int i = 0; i < num_nodes; ++i) {
+            nodes[i][0] = nodes_flat_ptr[i * 3 + 0];
+            nodes[i][1] = nodes_flat_ptr[i * 3 + 1];
+            nodes[i][2] = nodes_flat_ptr[i * 3 + 2];
+        }
+        std::vector<unsigned int> element_indices(element_indices_ptr, element_indices_ptr + num_element_indices);
+        std::vector<unsigned int> element_sizes(element_sizes_ptr, element_sizes_ptr + num_elements);
+
+        ElementInputs elementInputs;
+        elementInputs.areas = parseMapFromFlat(area_keys_ptr, area_values_ptr, num_areas);
+        elementInputs.densities = parseMapFromFlat(density_keys_ptr, density_values_ptr, num_densities);
+        elementInputs.thicknesses = parseMapFromFlat(thickness_keys_ptr, thickness_values_ptr, num_thicknesses);
+
+        const int dof = num_nodes * 6;
+        std::map<int, double> masaNodal =
+            parseMapFromFlat(nodemass_keys_ptr, nodemass_values_ptr, num_nodemass);
+
+        Eigen::SparseMatrix<double> M = ensamblarMasa(
+            nodes, element_indices, element_sizes, elementInputs, masaNodal,
+            num_nodes, dof, include_elements, lateral_mass, lump_stories);
+
+        for (int i = 0; i < num_nodes * 6; ++i) mass_out[i] = 0.0;
+        for (int k = 0; k < M.outerSize(); ++k)
+            for (Eigen::SparseMatrix<double>::InnerIterator it(M, k); it; ++it)
+                if (it.row() == it.col()) mass_out[it.row()] = it.value();
+    }
+
     void modal(
         // Geometry
         double *nodes_flat_ptr, int num_nodes,
@@ -189,227 +498,17 @@ extern "C"
             K_global.coeffRef(nodo * 6 + d, nodo * 6 + d) += k;
         }
 
-        Eigen::SparseMatrix<double> M_global = getGlobalMassMatrix(
-            nodes, element_indices, element_sizes, elementInputs, dof);
-
-        // --- 2a. Fuente de masa estilo ETABS: elementos y/o masa nodal ---
-        // `include_elements = 0` tira la masa de rho*A*L, que es lo que hace
-        // ETABS con INCLUDEELEMENTS "No"; la masa nodal se anade siempre.
+        // La masa se arma en ensamblarMasa() (arriba): los mismos pasos 2a,
+        // 2b y 2c de ETABS, ahora en una funcion que tambien puede llamarse
+        // sola desde fuera (assembled_joint_mass) para PESAR el modelo nudo a
+        // nudo sin resolver los modos.
+        Eigen::SparseMatrix<double> M_global;
         {
             std::map<int, double> masaNodal =
                 parseMapFromFlat(nodemass_keys_ptr, nodemass_values_ptr, num_nodemass);
-            if (!include_elements)
-                M_global.setZero();
-            if (!masaNodal.empty())
-            {
-                std::vector<Eigen::Triplet<double>> tri;
-                tri.reserve(masaNodal.size() * 3);
-                for (const auto &kv : masaNodal)
-                {
-                    const int i = kv.first;
-                    if (i < 0 || i >= num_nodes || kv.second <= 0.0) continue;
-                    tri.emplace_back(i * 6 + 0, i * 6 + 0, kv.second);
-                    tri.emplace_back(i * 6 + 1, i * 6 + 1, kv.second);
-                    tri.emplace_back(i * 6 + 2, i * 6 + 2, kv.second);
-                }
-                Eigen::SparseMatrix<double> M_nod(dof, dof);
-                M_nod.setFromTriplets(tri.begin(), tri.end());
-                M_global += M_nod;
-            }
-        }
-
-        // --- 2b. Masa solo lateral (ETABS INCLUDEVERTICALMASS "No") ---
-        // Conserva SOLO la masa de los GDL Ux,Uy (lumpeo por suma de filas = ETABS LUMPATSTORIES).
-        // Uz y rotaciones → masa 0. Con la iteración de subespacio (abajo) esos GDL siguen en la
-        // malla (rigidez completa) pero no cargan masa → los modos salen laterales/torsionales.
-        if (lateral_mass)
-        {
-            Eigen::VectorXd rowsum = Eigen::VectorXd::Zero(dof);
-            for (int k = 0; k < M_global.outerSize(); ++k)
-                for (Eigen::SparseMatrix<double>::InnerIterator it(M_global, k); it; ++it)
-                    rowsum(it.row()) += it.value();
-            std::vector<Eigen::Triplet<double>> trips;
-            for (int i = 0; i < num_nodes; ++i) {
-                trips.emplace_back(i*6+0, i*6+0, std::max(rowsum(i*6+0), 0.0));  // Ux lumpeada
-                trips.emplace_back(i*6+1, i*6+1, std::max(rowsum(i*6+1), 0.0));  // Uy lumpeada
-            }
-            Eigen::SparseMatrix<double> M_lat(dof, dof);
-            M_lat.setFromTriplets(trips.begin(), trips.end());
-            M_global = M_lat;
-        }
-
-        // --- 2c. LUMPATSTORIES: agrupar la masa por PISOS ---
-        //
-        // El MASSSOURCE del galpon en ETABS dice, literal:
-        //    INCLUDEELEMENTS "Yes"  INCLUDELOADS "No"
-        //    INCLUDELATERALMASS "Yes"  INCLUDEVERTICALMASS "No"
-        //    LUMPATSTORIES "Yes"
-        //
-        // Las dos primeras ya las hacia Hekatan; esta no. ETABS coge la masa de
-        // cada nivel y la CONCENTRA en los nudos de ese nivel, en vez de dejarla
-        // donde cae por elemento (rho*A*L/2 en cada extremo). Con la misma masa
-        // total repartida distinto, los modos salen distintos — y ese era el
-        // desacuerdo que quedaba: modo 3 ETABS 3.70 Hz contra 4.86 de Hekatan.
-        //
-        // Los niveles no se declaran en el .heks, hay que detectarlos. Y un piso
-        // NO es "una cota Z cualquiera": es una cota donde coincide MUCHA gente.
-        // Medido en el galpon: z = 4.00 tiene 218 nudos y z = 8.00 tiene 90,
-        // mientras las demas cotas tienen 1, 2 o 6.
-        //
-        // Antes agrupaba con 30 cm de tolerancia y encadenando, y eso rompia
-        // justo aqui: los nudos de la cercha inclinada estan a 8.00, 8.09,
-        // 8.18 ... 9.11, o sea a 9 cm unos de otros, asi que se fundian TODOS en
-        // un solo nivel cuyo centro iba derivando hacia arriba. Con eso movia
-        // masa de mas y la frecuencia empeoraba (3.2994 -> 2.7575 Hz contra
-        // 3.2648 de ETABS) aunque la participacion de masa mejorara.
-        //
-        // Ahora: se cuentan los nudos por cota (juntando solo lo que esta a
-        // menos de 5 cm, que es ruido de modelado, no una rampa) y se queda con
-        // las cotas POBLADAS — las que llegan al 10 % de la mas poblada. Una
-        // cercha inclinada no pasa ese filtro; un piso, si. Un nudo que no cae
-        // en un piso manda su masa al nivel MAS CERCANO.
-        if (lump_stories)
-        {
-            std::vector<double> zs;
-            zs.reserve(num_nodes);
-            for (int i = 0; i < num_nodes; ++i) zs.push_back(nodes[i][2]);
-            std::sort(zs.begin(), zs.end());
-
-            // 1) agrupar cotas practicamente iguales (ruido de modelado)
-            const double TOL_Z = 0.05;               // m
-            std::vector<double> cota;                // centro de cada grupo
-            std::vector<int>    cuantos;             // nudos en el grupo
-            for (double z : zs) {
-                if (cota.empty() || z - cota.back() > TOL_Z) {
-                    cota.push_back(z);
-                    cuantos.push_back(1);
-                } else {
-                    // media corrida: el centro no deriva con el tamano del grupo
-                    cuantos.back()++;
-                    cota.back() += (z - cota.back()) / cuantos.back();
-                }
-            }
-            // 2) quedarse con las POBLADAS
-            int masPoblada = 0;
-            for (int c : cuantos) masPoblada = std::max(masPoblada, c);
-            const int MINIMO = std::max(2, masPoblada / 10);
-            std::vector<double> niveles;
-            for (size_t k = 0; k < cota.size(); ++k)
-                if (cuantos[k] >= MINIMO) niveles.push_back(cota[k]);
-
-            if (niveles.size() >= 2)
-            {
-                // A que nivel va cada nudo: al PISO DE ARRIBA, no al mas
-                // cercano. Preguntado a ETABS (`PointObj.GetLabelFromName`
-                // devuelve el piso de cada nudo), en el galpon sale que cada
-                // piso posee desde justo encima del piso de abajo hasta su
-                // propia cota:
-                //
-                //    Base           28 nudos    z de 0.000 a 0.000
-                //    CordonInf 3.00 131 nudos   z de 0.147 a 3.000
-                //    Entrepiso 4.00 202 nudos   z de 3.055 a 4.000
-                //
-                // "Al mas cercano" partia el tramo 0-3 por la mitad y mandaba
-                // media columna a la base, que esta empotrada: esa masa
-                // desaparecia y las frecuencias SUBIAN. En ETABS agrupar las
-                // BAJA (modo 3: 4.4312 -> 3.7036), porque concentra la masa
-                // arriba, que es donde los modos se mueven.
-                //
-                // Por encima del ultimo nivel no hay piso de arriba: esa masa se
-                // queda en el ultimo, que es tambien lo que hace ETABS (el
-                // Cumbrero a 9.11 no recibe nada; todo lo de encima de 8.00
-                // acaba en 8.00).
-                // nudos que ESTAN en cada piso (los que reciben la masa)
-                std::vector<std::vector<int>> enNivel(niveles.size());
-                for (int i = 0; i < num_nodes; ++i)
-                    for (size_t k = 0; k < niveles.size(); ++k)
-                        if (std::abs(nodes[i][2] - niveles[k]) <= TOL_Z)
-                            { enNivel[k].push_back(i); break; }
-
-                // masa nodal actual (M es diagonal: lumped HRZ)
-                std::vector<double> mNodo(num_nodes, 0.0);
-                for (int i = 0; i < num_nodes; ++i)
-                    mNodo[i] = std::max(M_global.coeff(i * 6 + 0, i * 6 + 0), 0.0);
-
-                // Radio para decidir que es "la misma vertical". Fijo en metros
-                // no vale para cualquier modelo, asi que se escala con el
-                // tamano en planta.
-                double xmin = nodes[0][0], xmax = nodes[0][0];
-                double ymin = nodes[0][1], ymax = nodes[0][1];
-                for (int i = 1; i < num_nodes; ++i) {
-                    xmin = std::min(xmin, nodes[i][0]); xmax = std::max(xmax, nodes[i][0]);
-                    ymin = std::min(ymin, nodes[i][1]); ymax = std::max(ymax, nodes[i][1]);
-                }
-                const double diag = std::sqrt((xmax-xmin)*(xmax-xmin) + (ymax-ymin)*(ymax-ymin));
-                const double RADIO = std::max(0.10, 0.01 * diag);
-
-                // el nudo del piso k que cae mas cerca EN PLANTA, o -1
-                auto enLaVertical = [&](size_t k, double x, double y) -> int {
-                    int mejor = -1; double dmin = RADIO * RADIO;
-                    for (int j : enNivel[k]) {
-                        double dx = nodes[j][0] - x, dy = nodes[j][1] - y;
-                        double d = dx*dx + dy*dy;
-                        if (d <= dmin) { dmin = d; mejor = j; }
-                    }
-                    return mejor;
-                };
-
-                // La masa de cada nudo sube y baja POR SU PROPIA VERTICAL, y se
-                // parte entre los dos pisos que lo encierran por BRAZO DE
-                // PALANCA, como una carga puntual entre dos apoyos. Medido en el
-                // galpon: la columna en (2.00, 12.43) acumula 4.4520 t en sus
-                // tres nudos entre 0 y 3, y ETABS pone 3.8843 t en el nudo de esa
-                // MISMA columna a z = 3. El nudo gordo esta a 2.65, o sea
-                // 2.65/3 = 88.3 % arriba: 4.2877 * 0.883 = 3.786, mas lo suyo.
-                //
-                // Antes repartia la masa del nivel entre TODOS los nudos de ese
-                // nivel, en proporcion a la que ya tenian. Eso desparrama por la
-                // planta lo que en realidad se queda en su columna, y cambia los
-                // modos torsionales y laterales: el modo 3 salia a 4.43 Hz
-                // contra 3.70 de ETABS. Comprobado nudo a nudo, esta regla
-                // acierta el 74 % de los nudos dentro del 5 %.
-                std::vector<double> nueva(num_nodes, 0.0);
-                for (int i = 0; i < num_nodes; ++i) {
-                    const double m = mNodo[i];
-                    if (m <= 1e-12) continue;
-                    const double z = nodes[i][2];
-                    // .entre que dos pisos cae?
-                    size_t ka = niveles.size() - 1;
-                    for (size_t k = 0; k < niveles.size(); ++k)
-                        if (z <= niveles[k] + TOL_Z) { ka = k; break; }
-
-                    // reparto: (nivel, fraccion)
-                    double fa = 1.0;
-                    bool hayAbajo = (ka > 0) && (std::abs(z - niveles[ka]) > TOL_Z);
-                    if (hayAbajo) {
-                        const double za = niveles[ka], zb = niveles[ka - 1];
-                        fa = (za > zb) ? (z - zb) / (za - zb) : 1.0;
-                        if (fa < 0.0) fa = 0.0;
-                        if (fa > 1.0) fa = 1.0;
-                    }
-                    double repartida = 0.0;
-                    int da = enLaVertical(ka, nodes[i][0], nodes[i][1]);
-                    if (da >= 0) { nueva[da] += m * fa; repartida += m * fa; }
-                    if (hayAbajo) {
-                        int db = enLaVertical(ka - 1, nodes[i][0], nodes[i][1]);
-                        if (db >= 0) { nueva[db] += m * (1.0 - fa); repartida += m * (1.0 - fa); }
-                    }
-                    // lo que no encuentre nudo en su vertical se queda donde
-                    // esta: perderlo cambiaria la masa total del modelo
-                    if (repartida < m - 1e-12) nueva[i] += m - repartida;
-                }
-
-                std::vector<Eigen::Triplet<double>> tri;
-                for (int i = 0; i < num_nodes; ++i) {
-                    if (nueva[i] <= 0.0) continue;
-                    tri.emplace_back(i*6+0, i*6+0, nueva[i]);
-                    tri.emplace_back(i*6+1, i*6+1, nueva[i]);
-                    if (!lateral_mass) tri.emplace_back(i*6+2, i*6+2, nueva[i]);
-                }
-                Eigen::SparseMatrix<double> M_lump(dof, dof);
-                M_lump.setFromTriplets(tri.begin(), tri.end());
-                M_global = M_lump;
-            }
+            M_global = ensamblarMasa(
+                nodes, element_indices, element_sizes, elementInputs, masaNodal,
+                num_nodes, dof, include_elements, lateral_mass, lump_stories);
         }
 
         // --- 2d. DIAFRAGMAS RIGIDOS ---

@@ -46,6 +46,18 @@ extern "C" void modal(
     double **mode_shapes_ptr_out, int *mode_shapes_rows_out, int *mode_shapes_cols_out,
     double **mass_participation_ptr_out, int *mass_participation_rows_out, int *mass_participation_cols_out);
 
+// La bascula: masa ensamblada por nudo, 6 huecos por nudo (Ux Uy Uz Rx Ry Rz).
+extern "C" void assembled_joint_mass(
+    double *nodes_flat_ptr, int num_nodes,
+    unsigned int *element_indices_ptr, int num_element_indices,
+    unsigned int *element_sizes_ptr, int num_elements,
+    int *area_keys_ptr, double *area_values_ptr, int num_areas,
+    int *density_keys_ptr, double *density_values_ptr, int num_densities,
+    int *thickness_keys_ptr, double *thickness_values_ptr, int num_thicknesses,
+    int *nodemass_keys_ptr, double *nodemass_values_ptr, int num_nodemass,
+    int include_elements, int lateral_mass, int lump_stories,
+    double *mass_out);
+
 // ── lector binario ────────────────────────────────────────────────────
 struct Reader {
     const uint8_t *p;
@@ -158,6 +170,43 @@ int main(int argc, char **argv) {
     auto ptrBool = [&](std::vector<uint8_t> &v) -> bool * {
         return v.empty() ? nullptr : (bool *)v.data();
     };
+
+    // ── modo BASCULA: pesar el modelo nudo a nudo y salir ──────────────
+    // `modal_native.exe entrada.bin salida.json masa.csv` NO resuelve los
+    // modos: solo escribe la masa ensamblada de cada nudo, que es la tabla
+    // AssembledJointMass de ETABS, para poder comparar las dos basculas antes
+    // de discutir de frecuencias.
+    if (argc > 3) {
+        const char *masaPath = argv[3];
+        std::vector<double> masa((size_t)numNodes * 6, 0.0);
+        assembled_joint_mass(
+            ptrF64(nodesFlat), numNodes,
+            ptrU32(elementIndices), (int)elementIndices.size(),
+            ptrU32(elementSizes), (int)elementSizes.size(),
+            ptrI32(eKeys[1]), ptrF64(eVals[1]), (int)eVals[1].size(),   // areas
+            ptrI32(eKeys[6]), ptrF64(eVals[6]), (int)eVals[6].size(),   // densidades
+            ptrI32(eKeys[7]), ptrF64(eVals[7]), (int)eVals[7].size(),   // espesores
+            ptrI32(nmKeys), ptrF64(nmVals), (int)nmVals.size(),         // masa nodal
+            inclElem, lateral, lump,
+            masa.data());
+        FILE *mo = fopen(masaPath, "wb");
+        if (!mo) { fprintf(stderr, "no se pudo escribir %s\n", masaPath); return 2; }
+        fprintf(mo, "nudo,x,y,z,mUx,mUy,mUz,mRx,mRy,mRz\n");
+        double total = 0.0;
+        for (int i = 0; i < numNodes; ++i) {
+            fprintf(mo, "%d,%s,%s,%s", i,
+                    jsonNumber(nodesFlat[i*3+0]).c_str(),
+                    jsonNumber(nodesFlat[i*3+1]).c_str(),
+                    jsonNumber(nodesFlat[i*3+2]).c_str());
+            for (int k = 0; k < 6; ++k) fprintf(mo, ",%s", jsonNumber(masa[(size_t)i*6+k]).c_str());
+            fprintf(mo, "\n");
+            total += masa[(size_t)i*6+0];
+        }
+        fclose(mo);
+        printf("%s: %d nudos · masa total (Ux) = %.9g · flags lateral=%d lump=%d inclElem=%d\n",
+               masaPath, numNodes, total, lateral, lump, inclElem);
+        return 0;
+    }
 
     double *freqOut = nullptr; int nFreq = 0;
     double *modesOut = nullptr; int mRows = 0, mCols = 0;

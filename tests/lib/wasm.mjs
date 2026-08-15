@@ -131,3 +131,48 @@ export async function modal(nodes, elements, nodeInputs, elementInputs, numModes
   gc.forEach(p => mod._free(p));
   return f;
 }
+
+/**
+ * La masa ensamblada nudo a nudo — la tabla `AssembledJointMass` de ETABS.
+ *
+ * Llama a `_assembled_joint_mass`, que usa la MISMA `ensamblarMasa()` de
+ * `modal.cpp` que arma la M del problema de valores propios. No es una copia de
+ * la cuenta: es el motor. Devuelve un array de `nodes.length` con la masa en Ux
+ * de cada nudo (que con masa lumped es la misma de Uy y Uz).
+ *
+ *   lateral = 1  → ETABS INCLUDEVERTICALMASS "No"
+ *   lump    = 1  → ETABS LUMPATSTORIES "Yes"
+ */
+export async function masaEnsamblada(nodes, elements, elementInputs,
+                                     { lateral = 0, lump = 0, incluyeElementos = 1,
+                                       masaNodal = null } = {}) {
+  await cargarWasm();
+  const gc = [];
+  const nP = alloc(nodes.flat(), Float64Array, mod.HEAPF64); gc.push(nP);
+  const eI = elements.flat();
+  const eP = alloc(eI, Uint32Array, mod.HEAPU32); gc.push(eP);
+  const eS = alloc(elements.map(e => e.length), Uint32Array, mod.HEAPU32); gc.push(eS);
+  const P = (m) => {
+    const k = m ? [...m.keys()] : [];
+    const v = m ? [...m.values()] : [];
+    const kp = alloc(k, Uint32Array, mod.HEAPU32); gc.push(kp);
+    const vp = alloc(v, Float64Array, mod.HEAPF64); gc.push(vp);
+    return { kp, vp, size: k.length };
+  };
+  const ar = P(elementInputs.areas);
+  const de = P(elementInputs.densities);
+  const th = P(elementInputs.thicknesses);
+  const nm = P(masaNodal);
+  const out = mod._malloc(nodes.length * 6 * 8); gc.push(out);
+
+  mod._assembled_joint_mass(
+    nP, nodes.length, eP, eI.length, eS, elements.length,
+    ar.kp, ar.vp, ar.size, de.kp, de.vp, de.size, th.kp, th.vp, th.size,
+    nm.kp, nm.vp, nm.size,
+    incluyeElementos, lateral, lump, out);
+
+  const m = new Float64Array(mod.HEAPF64.buffer, out, nodes.length * 6);
+  const ux = Array.from({ length: nodes.length }, (_, i) => m[i * 6]);
+  gc.forEach(p => mod._free(p));
+  return ux;
+}

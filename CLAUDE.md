@@ -219,6 +219,32 @@ Por qué importa, medido en el galpón (1120 barras, misma malla de ETABS):
 
 La masa consistente usa `Ip = Iy + Iz` (momento polar de inercia) para DOFs torsionales, NO `J` (constante de Saint-Venant). OpenSees tiene un bug conocido donde usa J en vez de Ip — causa ~3% de error en modos torsionales.
 
+⚠️ Pero el modal **no pasa por ahí**: `getGlobalMassMatrix.cpp` es masa LUMPED
+(la de CSI), con la masa rotacional a `1e-9·m`. `getLocalMassMatrix.cpp` (la
+consistente, la del `Ip`) hoy no la usa el modal. O sea que `Ip` vs `J` no puede
+explicar ninguna diferencia de masa contra ETABS.
+
+## Pesar el modelo: `assembled_joint_mass`
+
+La M se arma en `ensamblarMasa()` (`modal.cpp`), fuera de `modal()`, con los tres
+pasos de ETABS en su orden: **2a** fuente de masa (`INCLUDEELEMENTS` + masa
+nodal) · **2b** solo lateral (`INCLUDEVERTICALMASS "No"`) · **2c**
+`LUMPATSTORIES`. El diafragma no entra ahí: eso es una restricción, no masa.
+
+La misma función se expone como `assembled_joint_mass()`, que es la tabla
+`AssembledJointMass` de ETABS y **no resuelve nada, solo pesa**:
+
+```bash
+# C++ nativo — el TERCER argumento activa el modo báscula
+node cli/native/dump_modal_input.mjs modelo.heks e.bin 12 "1,1,1"  # lateral,lump,inclElem
+cli/native/modal_native.exe e.bin nada.json masa.csv               # nudo,x,y,z,mUx..mRz
+```
+
+Desde JS: `masaEnsamblada()` en `tests/lib/wasm.mjs`. Test de regresión:
+`node tests/run.mjs masa` (caso `masa_lump_etabs`, árbitro ETABS 22 sobre el
+galpón). **No** rehacer la cuenta en JavaScript para "comprobar": eso mide una
+copia, y así se estuvo mirando meses una masa que no era la del solver.
+
 ## Suite de regresión: `npm test`
 
 ```
@@ -226,7 +252,7 @@ npm test                 # todos los casos
 node tests/run.mjs paz   # solo los que lleven "paz" en el nombre
 ```
 
-Sale con **código 1** si algo se pasa de su límite. Hoy: **49/49**.
+Sale con **código 1** si algo se pasa de su límite. Hoy: **102/102**.
 
 ```
 tests/
@@ -240,6 +266,7 @@ tests/
   casos/safe_ex01_placa.mjs        flecha vs Navier analítico y vs SAFE
   casos/safe_ex04_placa_vigas.mjs  placa sobre vigas: shells y barras JUNTOS
   casos/mesa_torsion_fuerzas.mjs   24 barras vs ETABS 19.1 (SCP, mismas cargas)
+  casos/masa_lump_etabs.mjs        la BASCULA: masa nudo a nudo vs AssembledJointMass
   datos/               el .heks y el JSON de referencia
   datos/gen_mesa_solver_ref.py     genera la referencia ETABS de mesa-torsión
 ```
