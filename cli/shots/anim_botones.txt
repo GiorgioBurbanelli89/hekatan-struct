@@ -1,0 +1,196 @@
+🎓 Test M — Dual (pórtico + losa + muros)
+🛠 Herramientas FEM
+🔍 Inspect — derivación FEM por elemento
+📈 Modal+ ASCE 7-22 §12.9.1
+📜 Solver Log + tiempos
+🧮 Calculadora FEM (MATLAB-style)
+💻 CLI cad.* (terminal)
+📄 Report Explained (PDF imprimible)
+▶ Calcular (forzar re-build)
+Vista
+🏗 Isométrica
+⬇ Planta (X-Y)
+→ Elevación X (frente)
+↑ Elevación Y (lado)
+📷 Imagen y GIF
+📷 PNG de la vista
+🎞 GIF orbitando
+🔀 Vista doble (split)
+🔄 Re-encuadrar derecha
+🎬 Demo simulador CAD
+📍 Ejes (frames individuales)
+Eje A (X=0.00 m)
+Eje B (X=0.71 m)
+Eje C (X=1.43 m)
+Eje D (X=2.14 m)
+Eje E (X=2.86 m)
+Eje F (X=3.57 m)
+Eje G (X=4.29 m)
+Eje H (X=5.00 m)
+Eje I (X=5.71 m)
+Eje J (X=6.43 m)
+Eje K (X=7.14 m)
+Eje L (X=7.86 m)
+Eje M (X=8.57 m)
+Eje N (X=9.29 m)
+Eje O (X=10.00 m)
+Eje 1 (Y=0.00 m)
+Eje 2 (Y=0.71 m)
+Eje 3 (Y=1.43 m)
+Eje 4 (Y=2.14 m)
+Eje 5 (Y=2.86 m)
+Eje 6 (Y=3.57 m)
+Eje 7 (Y=4.29 m)
+Eje 8 (Y=5.00 m)
+Eje 9 (Y=5.71 m)
+Eje 10 (Y=6.43 m)
+Eje 11 (Y=7.14 m)
+Eje 12 (Y=7.86 m)
+Eje 13 (Y=8.57 m)
+Eje 14 (Y=9.29 m)
+Eje 15 (Y=10.00 m)
+✏ Herramientas CAD
+🖱 Seleccionar
+● Nodo
+／ Línea (frame)
+▦ Área 4-clics (shell Q4)
+▭ Área rectangular (2 clics)
+⬡ Área libre (polígono → malla)
+◣ Plano inclinado (3 puntos)
+⬛ Plano XY (reset horizontal)
+▌ Columna 3D (1 click + altura)
+▥ Pared Q4 3D (2 clicks + altura)
+⌒ Polilínea
+▭ Rectángulo
+○ Círculo
+⌒ Arco (3 ptos)
+┊ Línea auxiliar
+✦ Punto auxiliar
+↗ Prolongar línea
+▱ Losa con chaflanes (rect + arcos)
+🗑 Borrar (hover + click)
+🎯 Modos de dibujo
+🎯 Object Snap (OSNAP)
+📐 Plano de trabajo
+Plano XY (planta)
+Plano XZ (elevación frontal)
+Plano YZ (elevación lateral)
+🧊 Vista isométrica (3D)
+🔀 Vista doble (planta + iso)
+📐 Mostrar/ocultar planos de ref. (Z=0,3,6,9,12)
+▦ Planos ref. ortogonales (XY/XZ/YZ del último pto)
+🛠 Acciones
+⏹ Finalizar dibujo (Esc)
+🗑 Limpiar todo
+📋 Copiar comandos a CLI
+🏢 Plantas de pisos
+Piso a Z=0m
+Piso a Z=3m
+Piso a Z=6m
+Piso a Z=9m
+Piso a Z=12m
+📍 Ejes y Niveles (Revit)
+➕ Eje (letra A,B,C...)
+➕ Eje (número 1,2,3...)
+🗑 Limpiar ejes
+➕ Agregar nivel a la cota Z elegida
+🏢 Niveles típicos (0,3,6,9,12 m)
+🗑 Limpiar niveles
+🎯 Acciones de selección
+✂ Mallar línea seleccionada (N divisiones)
+📌 Aplicar apoyo a nodos seleccionados
+🔓 Liberar apoyos de nodos seleccionados
+🗑 Limpiar selección
+⬆ Extruir nodo→frame (1 nodo seleccionado + altura)
+⬆ Extruir frame→área (1+ segmentos seleccionados + altura)
+💬 AI Assistant (gratis)
+▶ Generar
+✗ Limpiar imágenes
+✓ Ejecutar como comandos CLI
+🔌 Test conexión
+💻 CLI Comandos
+▶ Ejecutar ahora (Ctrl+Enter)
+🗑 Limpiar comandos
+📂 Abrir .heks
+💾 Guardar .heks
+📂 Importar .tcl (OpenSees)
+💾 Exportar .tcl (OpenSees)
+📋 Pórtico 2D (inline)
+📋 Cantilever (inline)
+📋 Pórtico 2D (bloques)
+🪨 Cimentación (diseño + SAFE F2K)
+👁 Calcular y ver cimentación
+🏢 Volver a vista superestructura
+🧮 Análisis FEM solo cimentación
+📤 Exportar F2K cimentación COMPLETA
+📥 Importar F2K cimentación COMPLETA
+📋 Load Patterns
+▸ Dead (Dead)  SW=1
+🗑 Delete pattern
+▸ Live (Live)  SW=0
+🗑 Delete pattern
++ Add New Pattern
+📊 Load Cases
+▸ Dead (Linear Static)
+🗑 Delete case
+▸ Live (Linear Static)
+🗑 Delete case
+▸ Modal (Modal - Eigen)
+🗑 Delete case
++ Add New Case
+Σ Load Combinations
+▸ Servicio D+L: 1·Dead + 1·Live
+🗑 Delete combo
+▸ 1.4D: 1.4·Dead
+🗑 Delete combo
+▸ 1.2D+1.6L: 1.2·Dead + 1.6·Live
+🗑 Delete combo
+▸ 1.4D+1.7L: 1.4·Dead + 1.7·Live
+🗑 Delete combo
++ Add New Combo
+⚡ Generar NEC-SE-CG
+ETABS
+📤 Exportar E2K
+📥 Importar E2K
+SAP
+📤 Exportar S2K
+📥 Importar S2K
+Unidades
+🌐 Sistema (preset)
+📐 Display Units (granular)
+Geometría
+🧱 Muros de corte
+🟦 Losas
+Secciones
+Cargas
+Sísmico NEC
+Vanos X (svx)
+Vanos Y (svy)
+Alturas (sp)
+⚙
+🛠
+Settings
+📐 Grid
+👁 Ver
+📌 Analysis Inputs
+🔬 Analyze
+📋 Tablas
+Base Reactions
+Modal Periods & Mass
+Story Forces
+Story Drifts
+Centers of Mass & Rigidity
+⚡ Modal + Animación
+▶ Correr modal + animar
+🔢 N° de modos (subir si masa <90%)
+⏹ Detener y restaurar
+▶ Reanudar
+✂️ Cortes X/Y/Z
+↑
+⊕
+←
+⌂
+→
+⊖
+↓
+☀
