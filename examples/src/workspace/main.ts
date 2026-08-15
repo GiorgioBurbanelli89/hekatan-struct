@@ -2322,6 +2322,37 @@ function makePaneDraggable(host: HTMLElement) {
   });
 }
 
+// ── MENÚ DE ENTRADA ─────────────────────────────────────────────
+// Sin ?t= en la URL ni modelo por enlace (?heks= / ?m=) el workspace arranca
+// con el Tweakpane mostrando un MENÚ limpio en vez de cargar un ejemplo por
+// defecto con todas las carpetas desplegadas: 📐 Nuevo archivo / 📂 Archivo
+// existente / 🧪 Ejemplos. Recién al elegir se cargan las herramientas del
+// pane (loadExample → buildParamsPane).
+function showMenu() {
+  currentExample = null;
+  activeExampleVersion.v++;
+  resetStates();
+  if (currentPane) { currentPane.dispose(); currentPane = null; }
+  lastFolderMap = null;
+  paneHost.innerHTML = "";
+  const pane = new Pane({ container: paneHost, title: "Hekatan Struct" });
+  paneActual = pane;
+  const fMenu = pane.addFolder({ title: "¿Con qué vas a trabajar?", expanded: true });
+  fMenu.addButton({ title: "📐 Nuevo archivo" }).on("click", () => {
+    const ex = examplesRegistry.find((e) => e.id === "new-blank");
+    if (ex) loadExample(ex);
+  });
+  fMenu.addButton({ title: "📂 Archivo existente" }).on("click", () => {
+    const ex = examplesRegistry.find((e) => e.id === "csi-importer");
+    if (ex) loadExample(ex);
+  });
+  fMenu.addButton({ title: "🧪 Ejemplos" }).on("click", () => {
+    const ex = examplesRegistry.find((e) => e.id === "test-m-dual");
+    if (ex) loadExample(ex);
+  });
+  setTimeout(() => makePaneDraggable(paneHost), 0);
+}
+
 // Helper de vistas — usa contexto Three.js del viewer (camera + controls)
 // ════════════════════════════════════════════════════════════════════════
 // Simulador de mouse — Demo CAD interactivo
@@ -6783,28 +6814,18 @@ if (urlT === "zapata-aislada") {
     window.history.replaceState(null, "", u.toString());
   } catch { /* no-op */ }
 }
+// Sin ?t= ni modelo por enlace: MENÚ DE ENTRADA. Nada de cargar un ejemplo
+// por defecto: el usuario elige entre Nuevo archivo / Archivo existente /
+// Ejemplos y recién ahí se abren las herramientas del pane. Con ?heks= el
+// modelo llega por enlace y hay que arrancar con el lienzo VACÍO (urlT ya se
+// pisó a "new-blank" arriba), así que el menú solo aplica cuando no hay nada.
 if (!urlT) {
-  // Con ?heks= el modelo llega por enlace: hay que arrancar con el lienzo
-  // VACÍO. Si se carga el ejemplo por defecto, termina de armarse DESPUÉS que
-  // el .heks y lo pisa — el texto quedaba puesto y en pantalla salía Test M.
-  // Retrasar la aplicación del .heks no alcanza: es una carrera, y la ganaba
-  // el ejemplo. Así no hay carrera.
-  // Default del workspace: Test M — Dual (edificio didáctico NEC-15 completo).
-  urlT = URL_HEKS ? "new-blank" : "test-m-dual";
-  try {
-    const u = new URL(window.location.href);
-    u.searchParams.set("t", urlT);
-    window.history.replaceState(null, "", u.toString());
-  } catch { /* no-op */ }
-}
-// Con modelo por ENLACE no se carga NINGUN ejemplo. `new-blank` no esta
-// vacio: dibuja un modelo de demostracion (4 nodos, 2 columnas, 1 viga), y se
-// veia aparecer primero ese y despues el modelo de verdad — parecia que la
-// pagina cargaba tres veces. Sin ejemplo, se dibuja una sola cosa: la tuya.
-const initialEx =
-  examplesRegistry.find((e) => e.id === urlT) ||
-  examplesRegistry.find((e) => e.id === "new-blank") ||
-  examplesRegistry[0];
+  showMenu();
+} else {
+  const initialEx =
+    examplesRegistry.find((e) => e.id === urlT) ||
+    examplesRegistry.find((e) => e.id === "new-blank") ||
+    examplesRegistry[0];
 if (initialEx) {
   loadExample(initialEx);
   // `new-blank` NO esta vacio: dibuja un modelo de demostracion (4 nodos, 2
@@ -6853,5 +6874,6 @@ if (initialEx) {
       rebuild();
       console.log(`✅ Zapata pre-cargada desde ${urlFrom || "URL"}: P=${urlP}, Mx=${urlMx}, My=${urlMy}`);
     }, 300);
+  }
   }
 }
