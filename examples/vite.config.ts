@@ -192,5 +192,15 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ["hekatan-fem", "hekatan-mesh", "hekatan-ui"],
   },
+  // El worker del modal (src/shared/modal.worker.ts) importa hekatan-fem, que
+  // carga el WASM con un await de nivel superior. Vite compila los workers en
+  // `iife`, que NO admite ese await, y el build de produccion moria ahi:
+  //   Module format "iife" does not support top-level await
+  // El pipeline de plugins del worker es APARTE del de arriba, asi que hay que
+  // volver a poner topLevelAwait aca (en Vite 5 `worker.plugins` es una funcion).
+  worker: {
+    format: "es",
+    plugins: () => [topLevelAwait()],
+  },
   plugins: [topLevelAwait()], // used by hekatan-fem & hekatan-mesh to load wasm at top level
 });
