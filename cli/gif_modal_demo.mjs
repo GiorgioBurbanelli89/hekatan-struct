@@ -56,7 +56,31 @@ async function servirLocal() {
 const arg = process.argv[2];
 const URL_BASE = (!arg || arg === "local") ? await servirLocal() : arg;
 const EJEMPLOS = (process.argv[3] ||
-  "test-m-dual,edificio-aporticado,galpon,mesa-torsion").split(",");
+  "beams,galpon-bodega,test-m-dual,mesa-torsion").split(",");
+
+// ── Frecuencias de ETABS 22, SOLO donde existe una referencia de verdad ──
+// Nada de numeros de memoria: cada lista viene de una corrida de ETABS sobre el
+// MISMO modelo, con los brazos rigidos anulados, y esta reproducida en el repo.
+// Donde no hay referencia se deja vacio y el rotulo lo dice, en vez de inventar
+// una comparacion.
+const ETABS = {
+  // Paz & Leigh 6.3 Space Frame — tests/casos/paz_6_3.mjs (ETABS 22, offsets=0)
+  "beams": { f: [8.8305, 14.5459, 24.2336, 25.1132, 159.6525, 159.8513],
+             nota: "ETABS 22 · offsets = 0 · tests/casos/paz_6_3.mjs" },
+};
+
+// ⚠️ `galpon-bodega` NO esta en esa tabla, y estuvo a punto de estarlo. El
+// encabezado de `galponBodega.ts` dice que el modelo "es EL MISMO que se
+// exporta a ETABS", pero contado:
+//
+//     ejemplo del workspace   448 nudos ·  992 barras ·   0 cascaras
+//     galpon_bodega.EDB       599 nudos · 1140 barras · 116 cascaras
+//
+// y esas 116 cascaras (deck + zinc) llevan 100.5 t de las 140.8 t del modelo.
+// Poner al lado las frecuencias de ETABS daba -27.3 / +16.5 / +14.6 %, y eso
+// no mide dos solvers: mide dos estructuras distintas. Es exactamente la
+// trampa contra la que avisa la regla de oro del CLAUDE.md. Para que entre
+// aca hace falta el mismo modelo nudo a nudo, no uno parecido.
 
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -214,6 +238,8 @@ for (const EJ of EJEMPLOS) {
     await rotulo("6 · el cursor mueve el slider «Modo #»");
     await viajar(pm, 6);
   }
+  const ref = ETABS[EJ];
+  const comp = [];
   for (let m = 1; m <= 5; m++) {
     await pag.evaluate((n) => {
       const f = window.__fila("Modo #");
@@ -228,11 +254,26 @@ for (const EJ of EJEMPLOS) {
     const st = await pag.evaluate(() => {
       const v = (t) => { const f = window.__fila(t); const e = f && f.querySelector("input");
                          return e ? e.value : "?"; };
-      return `${v("Frecuencia")} · T=${v("Período")} · ${v("Dominante")}`;
+      return { f: v("Frecuencia"), T: v("Período"), dom: v("Dominante") };
     });
-    await rotulo(`7 · Modo ${m} — ${st}`);
-    console.log(`  modo ${m}: ${st}`);
+    const fHK = parseFloat(String(st.f).replace(/[^0-9.]/g, ""));
+    const fET = ref && ref.f[m - 1];
+    let linea;
+    if (fET) {
+      const dif = 100 * (fHK - fET) / fET;
+      linea = `${fHK.toFixed(4)} Hz  ·  ETABS ${fET.toFixed(4)} Hz  ·  ${dif >= 0 ? "+" : ""}${dif.toFixed(2)} %`;
+      comp.push({ m, hk: fHK, et: fET, dif });
+    } else {
+      linea = `${st.f} · T=${st.T} · ${st.dom}   (sin referencia de ETABS para este modelo)`;
+    }
+    await rotulo(`7 · Modo ${m} — Hekatan ${linea}`);
+    console.log(`  modo ${m}: ${linea}`);
     await quieto(3, 300);
+  }
+  if (comp.length) {
+    const peor = comp.reduce((a, b) => Math.abs(b.dif) > Math.abs(a.dif) ? b : a);
+    await rotulo(`✓ ${nombre || EJ} vs ETABS 22 — peor modo: ${peor.dif >= 0 ? "+" : ""}${peor.dif.toFixed(2)} %  (${ref.nota})`);
+    await quieto(5, 400);
   }
 
   await rotulo(`✓ ${nombre || EJ} — el modal corrió, la tabla salió y los modos se animan`);
@@ -246,7 +287,7 @@ for (const EJ of EJEMPLOS) {
     gif], { stdio: "pipe" });
   const kb = statSync(gif).size / 1024;
   console.log(`  ${k} cuadros → demo_${EJ}.gif (${kb.toFixed(0)} KB)`);
-  gifs.push({ ej: EJ, nombre: nombre || EJ, gif: `demo_${EJ}.gif`, kb, k });
+  gifs.push({ ej: EJ, nombre: nombre || EJ, gif: `demo_${EJ}.gif`, kb, k, comp, ref });
 }
 
 await navegador.close();
@@ -262,6 +303,9 @@ writeFileSync(join(OUT, "ver_gifs.html"), `<!doctype html>
  p{margin:0 0 12px;color:#9aa1ad;max-width:1000px}
  img{width:100%;max-width:1100px;border:1px solid #2c2f38;border-radius:6px;display:block;background:#000}
  b{color:#e6e9ef}
+ table{border-collapse:collapse;margin:6px 0 4px}
+ td,th{padding:3px 18px 3px 0;text-align:left}
+ th{color:#7dd3a0;border-bottom:1px solid #2c2f38}
 </style>
 <h1>El modal del workspace, paso a paso</h1>
 <p>Grabado del bundle publicado con un navegador de verdad. El <b>punto rojo con
