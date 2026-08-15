@@ -93,9 +93,14 @@ static const double gp2x2[4][2] = {
 //   - Cook, Malkus, Plesha, Witt (2002), §6.6
 //   - CSI Analysis Reference Manual §10.1.1 (formulación del shell de ETABS)
 // ───────────────────────────────────────────────────────────────────────────
-static Eigen::MatrixXd getMembraneK(const double x[4], const double y[4],
-                                     double E, double nu, double t,
-                                     const double *mod = nullptr)
+// NO es `static` a proposito: shellThin.cpp la usa tambien. Tenia su propio Q4
+// bilineal sin modos incompatibles, y contra ETABS salia 22-26 % mas rigido en
+// su plano (medido en una celda de 1x1 m). Con esta, la MISMA membrana para
+// Shell-Thin y Shell-Thick, que es lo que hace ETABS: thin/thick solo cambia la
+// FLEXION (cortante transversal), la membrana es la misma.
+Eigen::MatrixXd getMembraneK(const double x[4], const double y[4],
+                             double E, double nu, double t,
+                             const double *mod)
 {
     double factor = E / (1.0 - nu * nu);
     Eigen::Matrix3d Dm;

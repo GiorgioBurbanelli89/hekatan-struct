@@ -32,62 +32,34 @@ static V getMapValST(const std::map<K, V> &map, const K &key, const V &defaultVa
     return (it != map.end()) ? it->second : defaultValue;
 }
 
-// ─── Shape functions Q4 ──────────────────────────────────────────────────────
-static void shapeFunctionsQ4_ST(double xi, double eta,
-                                 double N[4], double dNdxi[4], double dNdeta[4])
-{
-    N[0] = 0.25 * (1 - xi) * (1 - eta);
-    N[1] = 0.25 * (1 + xi) * (1 - eta);
-    N[2] = 0.25 * (1 + xi) * (1 + eta);
-    N[3] = 0.25 * (1 - xi) * (1 + eta);
-    dNdxi[0] = -0.25 * (1 - eta); dNdxi[1] = 0.25 * (1 - eta);
-    dNdxi[2] = 0.25 * (1 + eta);  dNdxi[3] = -0.25 * (1 + eta);
-    dNdeta[0] = -0.25 * (1 - xi); dNdeta[1] = -0.25 * (1 + xi);
-    dNdeta[2] = 0.25 * (1 + xi);  dNdeta[3] = 0.25 * (1 - xi);
-}
+// (Aqui vivia `shapeFunctionsQ4_ST`, las funciones de forma bilineales que solo
+//  usaba la membrana propia de este archivo. Al pasar la membrana a la de
+//  shellQ4.cpp se quedo sin usar y se borra: dejarla es codigo muerto que
+//  aparenta que este archivo sigue teniendo su propio Q4.)
 
-// ─── Plane stress Membrane K (8×8) ──────────────────────────────────────────
-static Eigen::MatrixXd getMembraneK_Thin(const double x[4], const double y[4],
-                                          double E, double nu, double t)
-{
-    Eigen::Matrix3d Em;
-    double c = E / (1 - nu * nu);
-    Em << c,      c * nu, 0,
-          c * nu, c,      0,
-          0,      0,      c * (1 - nu) / 2.0;
-
-    // 2x2 Gauss
-    double gp[2] = {-1.0/std::sqrt(3.0), 1.0/std::sqrt(3.0)};
-    double gw[2] = {1.0, 1.0};
-
-    Eigen::MatrixXd K = Eigen::MatrixXd::Zero(8, 8);
-    for (int ix = 0; ix < 2; ix++) for (int iy = 0; iy < 2; iy++) {
-        double xi = gp[ix], eta = gp[iy];
-        double N[4], dNdxi[4], dNdeta[4];
-        shapeFunctionsQ4_ST(xi, eta, N, dNdxi, dNdeta);
-        // Jacobiano
-        double J11 = 0, J12 = 0, J21 = 0, J22 = 0;
-        for (int i = 0; i < 4; i++) {
-            J11 += dNdxi[i]  * x[i]; J12 += dNdxi[i]  * y[i];
-            J21 += dNdeta[i] * x[i]; J22 += dNdeta[i] * y[i];
-        }
-        double detJ = J11 * J22 - J12 * J21;
-        double Jinv11 =  J22 / detJ, Jinv12 = -J12 / detJ;
-        double Jinv21 = -J21 / detJ, Jinv22 =  J11 / detJ;
-        // B (3 × 8)
-        Eigen::MatrixXd B = Eigen::MatrixXd::Zero(3, 8);
-        for (int i = 0; i < 4; i++) {
-            double dNdx = Jinv11 * dNdxi[i] + Jinv12 * dNdeta[i];
-            double dNdy = Jinv21 * dNdxi[i] + Jinv22 * dNdeta[i];
-            B(0, 2*i)   = dNdx;
-            B(1, 2*i+1) = dNdy;
-            B(2, 2*i)   = dNdy;
-            B(2, 2*i+1) = dNdx;
-        }
-        K += gw[ix] * gw[iy] * B.transpose() * Em * B * t * detJ;
-    }
-    return K;
-}
+// ─── Membrana: la MISMA que Shell-Thick (shellQ4.cpp) ───────────────────────
+//
+// Aqui habia un Q4 bilineal propio, sin modos incompatibles. Medido contra
+// ETABS en una celda de 1x1 m (t=0.20, E=22e6, nu=0.20), con el bloque EN SU
+// PLANO aislado (U1, U2 y el drilling R3 libres; lo de fuera del plano sujeto):
+//
+//            flexibilidad U1        U2
+//   ETABS      1.353869e-06   9.019470e-07
+//   thin       1.059679e-06   6.693545e-07   -21.7 %  -25.8 %   <- este Q4
+//   thick      1.245317e-06   8.600742e-07    -8.0 %   -4.6 %   <- con Wilson
+//
+// Empujar el nudo libre con la arista de abajo empotrada es FLEXION EN EL PLANO
+// de un panel: justo donde un Q4 bilineal se atasca (shear locking) y sale
+// demasiado rigido. Los modos incompatibles de Wilson 1971 (+ la correccion de
+// Taylor 1976 para que pase el patch test) lo curan, y `shellQ4.cpp` ya los
+// tenia — solo que Shell-Thin no los usaba.
+//
+// En ETABS thin/thick cambia la FLEXION (cortante transversal), no la membrana:
+// las dos formulaciones tienen que compartirla. Por eso se llama a la de
+// shellQ4.cpp en vez de duplicarla — una sola copia, un solo sitio que tocar.
+Eigen::MatrixXd getMembraneK(const double x[4], const double y[4],
+                             double E, double nu, double t,
+                             const double *mod);
 
 // ─── MZC Kirchhoff Plate Bending (12×12) — el corazón Shell-Thin ────────────
 // DOFs por nodo: [w, θx, θy] donde θx = ∂w/∂y, θy = -∂w/∂x
@@ -279,8 +251,25 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
     // ETABS Property Modifiers
     double mFactor = getMapValST(elementInputs.membraneModifiers, index, 1.0);
     double bFactor = getMapValST(elementInputs.bendingModifiers, index, 1.0);
+    // Modificadores DIRECCIONALES (los 8 de ETABS). Shell-Thick ya los aplicaba
+    // y Shell-Thin los ignoraba por completo, asi que un deck definido por
+    // direccion se comportaba como una losa isotropa.
+    //
+    // Se aplican SOLO a la membrana, que es donde la nueva `getMembraneK` los
+    // sabe meter (dentro de la matriz constitutiva, como ETABS). El `mFactor`
+    // escalar pasa a 1.0 para no multiplicar dos veces. La FLEXION sigue con su
+    // factor escalar: `getBendingK_DKE` no acepta modificadores por direccion
+    // todavia — queda anotado, no se finge que si.
+    const double *dmod = nullptr;
+    {
+        auto itMod = elementInputs.shellModifiers.find(index);
+        if (itMod != elementInputs.shellModifiers.end() && itMod->second.size() >= 8) {
+            dmod = itMod->second.data();
+            mFactor = 1.0;
+        }
+    }
 
-    Eigen::MatrixXd Km = getMembraneK_Thin(x, y, E, nu, t);   // 8×8
+    Eigen::MatrixXd Km = getMembraneK(x, y, E, nu, t, dmod);   // 8×8
     Eigen::MatrixXd Kb = getBendingK_DKE(x, y, E, nu, t);     // 12×12 DKE (= ETABS/SAFE ShellThin, validado vs ETABS en Python)
     Km *= mFactor;
     Kb *= bFactor;

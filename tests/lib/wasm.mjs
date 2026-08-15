@@ -74,6 +74,17 @@ export async function modal(nodes, elements, nodeInputs, elementInputs, numModes
         de = P(ei.densities), th = P(), po = P(), mm = P(), bm = P();
   const pfKp = alloc([], Uint32Array, mod.HEAPU32); gc.push(pfKp);
   const pfVp = alloc([], Uint32Array, mod.HEAPU32); gc.push(pfVp);
+  // Drilling: tipo (int) y escala (double). Si el modelo no los trae van
+  // vacios y el C++ usa el defecto (tipo 2 Hughes-Brezzi, escala 1.0).
+  const PI = (m) => {   // como P pero con valores ENTEROS
+    const k = m ? [...m.keys()] : [];
+    const v = m ? [...m.values()] : [];
+    const kp = alloc(k, Uint32Array, mod.HEAPU32); gc.push(kp);
+    const vp = alloc(v, Uint32Array, mod.HEAPU32); gc.push(vp);
+    return { kp, vp, size: k.length };
+  };
+  const dt = PI(ei.drillingTypes);
+  const ds = P(ei.drillingPenaltyScales);
 
   const O = () => { const p = mod._malloc(4); gc.push(p); return p; };
   const fo = O(), nfo = O(), moo = O(), mro = O(), mco = O(), mao = O(), maro = O(), maco = O();
@@ -104,6 +115,8 @@ export async function modal(nodes, elements, nodeInputs, elementInputs, numModes
     sh.kp, sh.vp, sh.size, to.kp, to.vp, to.size, de.kp, de.vp, de.size,
     th.kp, th.vp, th.size, po.kp, po.vp, po.size, mm.kp, mm.vp, mm.size, bm.kp, bm.vp, bm.size,
     pfKp, pfVp, 0,
+    dt.kp, dt.vp, dt.size,                      // drilling: tipo
+    ds.kp, ds.vp, ds.size,                      // drilling: escala de γ=G·t
     sy.kp, sy.vp, sy.size, sz.kp, sz.vp, sz.size, la.kp, la.vp, la.size,
     rel.kp, rel.vp, rel.size,                   // end releases: 12 banderas/barra
     nm.kp, nm.vp, nm.size, 1 /* includeElements */,

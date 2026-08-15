@@ -59,6 +59,23 @@ extern "C"
         int *bendmod_keys_ptr, double *bendmod_values_ptr, int num_bendmods,
         // Plate formulation per shell: 0=Mindlin (Shell-Thick DSE), 1=Kirchhoff MZC (Shell-Thin DKE)
         int *plateForm_keys_ptr, int *plateForm_values_ptr, int num_plateForm,
+        // DRILLING DOF (el giro normal al plano del shell, theta_z).
+        //   tipo:   0 = penalty 1e-6 legacy, 1 = muelle debil PyNite,
+        //           2 = Hughes-Brezzi  [DEFECTO si el mapa viene vacio]
+        //   escala: factor sobre gamma = G*t del penalty Hughes-Brezzi.
+        //
+        // El SEPTIMO dato del mismo molde: el estatico lo recibia (deformCpp.ts
+        // lo empaqueta) y el modal NO, asi que armaban una K distinta del mismo
+        // modelo. Se caza con la prueba mas barata que hay — cambiar el dato y
+        // ver si el resultado se mueve: `--drill 100` y `--nodrill` daban las
+        // MISMAS frecuencias hasta la ultima cifra.
+        //
+        // Con el defecto (tipo 2, escala 1.0) no cambia ningun resultado ya
+        // validado; lo que cambia es que ahora se PUEDE tocar, y que un modelo
+        // con drillingTypes (una membrana pura pide tipo 0) deja de resolver
+        // dos matrices distintas segun quien pregunte.
+        int *drillType_keys_ptr, int *drillType_values_ptr, int num_drillType,
+        int *drillScale_keys_ptr, double *drillScale_values_ptr, int num_drillScale,
         // Areas de cortante y angulo de eje local. El estatico ya las recibia y
         // el modal NO, asi que los dos armaban una K DISTINTA del mismo modelo:
         // sin `as` se supone 5/6*A (el doble del alma real en estos perfiles) y
@@ -150,6 +167,8 @@ extern "C"
         elementInputs.membraneModifiers = parseMapFromFlat(memmod_keys_ptr, memmod_values_ptr, num_memmods);
         elementInputs.bendingModifiers = parseMapFromFlat(bendmod_keys_ptr, bendmod_values_ptr, num_bendmods);
         elementInputs.plateFormulations = parseMapIntFromFlat(plateForm_keys_ptr, plateForm_values_ptr, num_plateForm);
+        elementInputs.drillingTypes = parseMapIntFromFlat(drillType_keys_ptr, drillType_values_ptr, num_drillType);
+        elementInputs.drillingPenaltyScales = parseMapFromFlat(drillScale_keys_ptr, drillScale_values_ptr, num_drillScale);
         elementInputs.shearAreasY = parseMapFromFlat(shearY_keys_ptr, shearY_values_ptr, num_shearY);
         elementInputs.shearAreasZ = parseMapFromFlat(shearZ_keys_ptr, shearZ_values_ptr, num_shearZ);
         elementInputs.localAngles = parseMapFromFlat(locang_keys_ptr, locang_values_ptr, num_locang);
@@ -606,7 +625,29 @@ extern "C"
         // cuarto decimal, y conviene no tocarlo.
         const int GDL_DENSO = 400;         // por encima de esto, subespacio
         int nLibres = (int)freeIndices.size();
-        bool usarSubespacio = lateral_mass || nLibres > GDL_DENSO;
+
+        // El camino denso (abajo) descarta los GDL libres con masa CERO
+        // (típico de la masa nodal lumped: solo Ux,Uy,Uz tienen masa). Pero
+        // descartarlos los FIJA, y un GDL sin masa que tiene rigidez NO está
+        // fijo: se condensa estáticamente (Guyan), su rigidez acoplada debe
+        // seguir actuando sobre los GDL con masa. El Paz 6.3 nunca lo mostró
+        // porque usa masa consistente (densidades), donde ningún GDL libre
+        // tiene masa nula. Con masa lumped un voladizo (columna con punta
+        // libre, masa en el nudo superior) daba 9.78 Hz = biempotrada en vez de
+        // 5.01 Hz = voladizo: la rotación de punta, sin masa, se estaba
+        // anulando. La iteración de subespacio SÍ los conserva en la malla
+        // (resuelve K·φ=ω²M·φ sobre todo el DOF con rigidez, la masa cero se
+        // condensa implícitamente vía K⁻¹M, igual que ETABS). Por eso, si hay
+        // algún GDL libre con rigidez y masa nula, hay que ir por subespacio.
+        bool hayGDLsinMasa = false;
+        for (int idx : freeIndices)
+            if (!std::binary_search(zeroIndicesK.begin(), zeroIndicesK.end(), idx))
+                if (std::abs(M_global.coeff(idx, idx)) < 1e-12)
+                {
+                    hayGDLsinMasa = true;
+                    break;
+                }
+        bool usarSubespacio = lateral_mass || nLibres > GDL_DENSO || hayGDLsinMasa;
 
         if (usarSubespacio)
         {

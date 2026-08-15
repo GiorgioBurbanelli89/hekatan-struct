@@ -98,6 +98,36 @@ export function modalCpp(
   const plateFormValuesPtr = allocate(plateFormValues, Uint32Array, mod.HEAPU32);
   gc.push(plateFormValuesPtr);
 
+  // DRILLING DOF (theta_z, el giro normal al plano del shell).
+  //   drillingTypes:          0 = penalty 1e-6, 1 = muelle debil PyNite,
+  //                           2 = Hughes-Brezzi  [defecto en C++ si va vacio]
+  //   drillingPenaltyScales:  factor sobre gamma = G*t
+  //
+  // El SEPTIMO dato que el estatico recibia y el modal no (as, ang, masa nodal,
+  // diafragma, resortes, releases... y este). Se caza cambiando el dato y
+  // mirando si el resultado se mueve: con escala 100 y con escala 0 el modal
+  // daba las MISMAS frecuencias hasta la ultima cifra, porque no llegaba.
+  //
+  // Importa aunque el defecto no cambie nada: medido contra ETABS en una celda
+  // de 1x1 m, el drilling de Hekatan es 2.03 veces el suyo, y sin este
+  // parametro no habia forma de tocarlo desde el modal.
+  const drillingTypes = (elementInputs as any).drillingTypes as
+    | Map<number, number> | undefined;
+  const drillTypeKeys = drillingTypes ? Array.from(drillingTypes.keys()) : [];
+  const drillTypeValues = drillingTypes ? Array.from(drillingTypes.values()) : [];
+  const drillTypeKeysPtr = allocate(drillTypeKeys, Uint32Array, mod.HEAPU32);
+  gc.push(drillTypeKeysPtr);
+  const drillTypeValuesPtr = allocate(drillTypeValues, Uint32Array, mod.HEAPU32);
+  gc.push(drillTypeValuesPtr);
+  const drillingPenaltyScales = (elementInputs as any).drillingPenaltyScales as
+    | Map<number, number> | undefined;
+  const drillScaleKeys = drillingPenaltyScales ? Array.from(drillingPenaltyScales.keys()) : [];
+  const drillScaleValues = drillingPenaltyScales ? Array.from(drillingPenaltyScales.values()) : [];
+  const drillScaleKeysPtr = allocate(drillScaleKeys, Uint32Array, mod.HEAPU32);
+  gc.push(drillScaleKeysPtr);
+  const drillScaleValuesPtr = allocate(drillScaleValues, Float64Array, mod.HEAPF64);
+  gc.push(drillScaleValuesPtr);
+
   // Areas de cortante y angulo de eje local. El estatico (deformCpp) ya las
   // mandaba y el modal NO, asi que los dos armaban una K DISTINTA del mismo
   // modelo. Sin `as` el motor supone 5/6*A —el doble del alma real en estos
@@ -203,6 +233,13 @@ export function modalCpp(
     plateFormKeysPtr,
     plateFormValuesPtr,
     plateFormKeys.length,
+    // drilling: tipo (0/1/2, defecto 2 Hughes-Brezzi) y escala del penalty γ=G·t
+    drillTypeKeysPtr,
+    drillTypeValuesPtr,
+    drillTypeKeys.length,
+    drillScaleKeysPtr,
+    drillScaleValuesPtr,
+    drillScaleKeys.length,
     // areas de cortante (As=0 → Timoshenko 5/6·A; As<0 → Bernoulli) y angulo local
     shearAreasY.keysPtr,
     shearAreasY.valuesPtr,
