@@ -181,6 +181,12 @@ import { exportS2k } from "../shared/s2kExporter";
 import { parseS2k } from "../shared/s2kParser";
 import {
   forceUnit, dispUnit, fromKn, toKn, fromKnm, toKnm,
+  // `mToDisp` lo usa el tooltip del visor (kind === "displacement") y NO estaba
+  // importado: al pasar el mouse por encima del modelo saltaba
+  // "mToDisp is not defined" y el tooltip moria. No se veia probando a mano
+  // porque el error va a la consola, no a la pantalla; lo destapo el cursor de
+  // `cli/gif_modal_demo.mjs`, que recorre el canvas de verdad.
+  mToDisp,
   forceUnitSuffix, momentUnitSuffix, dispUnitSuffix, stripUnitSuffix,
   // SAFE-style granular units + presets
   stressUnit, subgradeUnit, stiffTransUnit, lengthSectionUnit,
