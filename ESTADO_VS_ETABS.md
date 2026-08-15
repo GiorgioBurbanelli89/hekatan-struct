@@ -41,7 +41,7 @@ distintas.
 |---|---|---|---|---|
 | **Cáscara — membrana** | rigidez en su plano | muro 4 cáscaras · ETABS | **−8.0 / −4.6 %** (antes −21.7 / −25.8) | El Q4 de Hekatan no lleva los modos incompatibles completos de CSI. Sale más RÍGIDO en su plano. |
 | **Cáscara — drilling** | penalty del giro normal | 1 celda · ETABS | Hekatan **2.03×** el de ETABS | Equivale a `gamma_scale ≈ 0.49`, pero **ni con la misma forma**: no basta con cambiar el defecto, hay que saber qué penalty usa ETABS. Mueve poco (0.03 % en el modo torsional del `pm`). |
-| **Masa — total** | Σ masa Ux | galpón · `AssembledJointMass` | **+0.545 %** (140.755 vs 139.992 t) | NO son brazos rígidos (el e2k no trae un solo `RIGIDZONE`) ni nudos sueltos (4 nudos, 0.084 t). 0.53 de las 0.76 t están en el entrepiso → el **deck nervado**: ETABS pesa la geometría del nervio, Hekatan un `ρ·t·A` liso. |
+| **Masa — total** | Σ masa Ux | galpón · `AssembledJointMass` | **+0.545 %** (140.755 vs 139.992 t) | Cercado por descarte (ver tabla 3): no son brazos rígidos, ni el material, ni el área de cáscara, ni el deck nervado (su densidad equivalente 3.84623 t/m³ sale **exacta** de `DECKSLABDEPTH` + nervios + `DECKUNITWEIGHT`). Quedan las **barras**: Hekatan pone 40.2524 t de las 140.7551. Midiendo `ρ·A·L` barra a barra en ETABS (`masa_barras_etabs.py`). |
 | **Masa — nudo a nudo** | reparto de LUMPATSTORIES | galpón · ETABS 22 | **77.4 %** de los nudos dentro del 5 % (antes 64.5) | La regla acierta la planta y la vertical; lo que queda es a qué punto exacto del piso manda ETABS la masa de un nudo cuya vertical no llega. |
 | **Modal — galpón entero** | 4 primeros modos con masa | galpón · ETABS 22 (lateral + lump) | −1.96 / −0.75 / **+0.45** / **−3.46 %** | El modo 3 ya cerró. El 4 empeoró tres décimas al arreglar la masa: había algo que la masa mal repartida tapaba. |
 | **Modal — galpón, modos bajos** | uno a uno en 4–6 Hz | galpón · ETABS 22, masa 3D | **Hekatan parte en dos** lo que ETABS da como un modo | Nudos del entrepiso colgados de un solo paño (giros casi sin rigidez). Es un defecto de la MALLA del modelo, y lo delatan los dos programas. Lo limpio es arreglar la malla. |
@@ -60,6 +60,8 @@ distintas.
 | «se acumula memoria / es el WASM» | **No.** El heap sigue el pico del modelo actual; y el C++ nativo da lo mismo que el WASM a 13 decimales. |
 | «la ref del Paz 6.3 (9.6780 / 16.9874 …)» | **Falsa.** Solo la reproduce un `.exe` del 17-may compilado de código que nunca se subió; sus modos 5–6 no existen. |
 | «los brazos rígidos explican el +0.545 % del galpón» | **No aquí.** Sí explicaban el +2.88 % del Paz 6.3 (ETABS descuenta 1857.4 in³ del peso propio), pero el e2k del galpón no tiene offsets. |
+| «ETABS usa una masa de material distinta de `w/g`» | **No.** Preguntado con `PropMaterial.GetWeightAndMass` (`masa_material_etabs.py`): en los 7 materiales `m = w/g` **exacto**, y los valores son los mismos del `.heks` hasta la última cifra (ACERO 7.951071 · ZINC 7.953786 · hormigón 2.402770). Parecía prometedor —explicaba 0.549 de las 0.763 t— y es falso. |
+| «Hekatan cubre más metros cuadrados de cáscara» | **No.** Sumando los `AreaElm` de la malla de análisis (`area_cascaras_etabs.py`): **785.6131 m² los dos**, hasta la última cifra. |
 
 ## 4. Dónde está el detalle de cada cosa
 
