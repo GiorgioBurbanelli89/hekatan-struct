@@ -1,12 +1,21 @@
 /**
  * La BÁSCULA: masa ensamblada nudo a nudo contra `AssembledJointMass` de ETABS.
  *
- * Árbitro: ETABS 22 sobre `galpon_bodega.EDB` (599 nudos de análisis), con la
- * hipótesis de masa que el modelo trae de fábrica:
+ * Árbitro: ETABS 22 sobre `galpon_bodega_sinoff.EDB` (599 nudos de análisis),
+ * con la hipótesis de masa que el modelo trae de fábrica:
  *
  *   INCLUDEELEMENTS "Yes"  INCLUDEVERTICALMASS "No"  LUMPATSTORIES "Yes"
  *
- * La referencia la vuelca `galpon-bodega-electoral/masa_nodal_etabs.py`
+ * ⚠️ **`_sinoff` = con los brazos rígidos ANULADOS**, que es la regla de oro de
+ * este repo. Los 1028 objetos de barra del galpón traen brazo rígido
+ * AUTOMÁTICO — el `.e2k` no escribe ni un `RIGIDZONE` porque es el DEFECTO de
+ * ETABS, así que `grep` no lo ve; hay que preguntárselo al modelo con
+ * `FrameObj.GetEndLengthOffset`. Con ellos puestos, ETABS **no pesa el tramo de
+ * VIGA que cae dentro del brazo** (los de columna sí los pesa) y el modelo sale
+ * 0.7628 t más liviano: un +0.545 % que parecía un error de Hekatan y no lo era.
+ *
+ * La referencia la vuelcan `galpon-bodega-electoral/masa_sin_offsets_etabs.py`
+ * (anula los offsets y reanaliza) + `masa_nodal_etabs.py`
  * (`Results.AssembledJointMass_1`, grupo "ALL", ItemTypeElm = 2).
  *
  * Por qué existe este caso: hasta el 2026-08-15 la masa se comprobaba solo por
@@ -69,10 +78,13 @@ export async function correr() {
   const tHK = nodos.reduce((s, r) => s + r.m, 0);
   const tET = et.reduce((s, r) => s + r.ux, 0);
   const difTotal = (100 * (tHK - tET)) / tET;
+  // Con los brazos rígidos anulados esto cierra a la CUARTA cifra
+  // (140.755089 contra 140.755038): el límite es apretado a propósito, porque
+  // aquí ya no hay hipótesis de por medio — son los mismos kilos.
   filas.push({
-    que: "masa total vs ETABS", medido: difTotal, limite: 1.0,
-    ok: Math.abs(difTotal) <= 1.0,
-    detalle: `${tHK.toFixed(4)} t contra ${tET.toFixed(4)} t`,
+    que: "masa total vs ETABS", medido: difTotal, limite: 0.01,
+    ok: Math.abs(difTotal) <= 0.01,
+    detalle: `${tHK.toFixed(6)} t contra ${tET.toFixed(6)} t (con offsets: +0.545 %)`,
   });
 
   // ── 3. masa por cota de piso ──────────────────────────────────────
@@ -82,18 +94,18 @@ export async function correr() {
     const b = et.filter((r) => Math.abs(r.z - zp) <= TOL_Z)
                 .reduce((s, r) => s + r.ux, 0);
     const d = (100 * (a - b)) / b;
-    // El entrepiso (z=4) carga el deck nervado, que ETABS pesa por la geometria
-    // del nervio y Hekatan como rho*t*A liso: ahi se afloja a 2 %.
-    const lim = Math.abs(zp - 4.0) < 0.01 ? 2.0 : 1.5;
+    // Aquí ya no se mide cuánta masa hay —eso cierra al 0.0000 %— sino DÓNDE la
+    // pone la regla de LUMPATSTORIES. Lo que queda (≤ 0.30 %) es el reparto en
+    // los nudos cuya vertical no llega al piso.
     filas.push({
-      que: `masa en la cota z=${zp.toFixed(2)}`, medido: d, limite: lim,
-      ok: Math.abs(d) <= lim,
+      que: `masa en la cota z=${zp.toFixed(2)}`, medido: d, limite: 0.5,
+      ok: Math.abs(d) <= 0.5,
       detalle: `${a.toFixed(4)} t contra ${b.toFixed(4)} t`,
     });
   }
 
   // ── 4. nudo a nudo, cruzando por coordenada ───────────────────────
-  let conMasa = 0, dentro = 0;
+  let conMasa = 0, dentro5 = 0, dentro01 = 0;
   for (const r of nodos) {
     let par = null, dmin = 0.01 * 0.01;
     for (const s of et) {
@@ -103,13 +115,23 @@ export async function correr() {
     if (!par) continue;
     if (Math.max(r.m, par.ux) <= 1e-6) continue;
     conMasa++;
-    if ((100 * Math.abs(r.m - par.ux)) / Math.max(par.ux, 1e-12) <= 5.0) dentro++;
+    const e = (100 * Math.abs(r.m - par.ux)) / Math.max(par.ux, 1e-12);
+    if (e <= 5.0) dentro5++;
+    if (e <= 0.1) dentro01++;
   }
-  const pct = (100 * dentro) / conMasa;
   filas.push({
-    que: "nudos dentro del 5 % (mas es mejor)", medido: pct, limite: 75.0,
-    ok: pct >= 75.0,
-    detalle: `${dentro} de ${conMasa} nudos con masa (con el fallo: 64.5 %)`,
+    que: "nudos dentro del 5 % (mas es mejor)",
+    medido: (100 * dentro5) / conMasa, limite: 80.0,
+    ok: (100 * dentro5) / conMasa >= 80.0,
+    detalle: `${dentro5} de ${conMasa} nudos con masa (con el fallo del lump: 64.5 %)`,
+  });
+  // El 0.1 % es el que delata si la regla de reparto se degrada: son los nudos
+  // donde Hekatan y ETABS ponen EL MISMO kilo, no uno parecido.
+  filas.push({
+    que: "nudos dentro del 0.1 % (mas es mejor)",
+    medido: (100 * dentro01) / conMasa, limite: 70.0,
+    ok: (100 * dentro01) / conMasa >= 70.0,
+    detalle: `${dentro01} de ${conMasa} (con offsets en la referencia: 21.4 %)`,
   });
 
   return filas;
