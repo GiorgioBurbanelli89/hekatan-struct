@@ -96,7 +96,7 @@ import { n as Xi, __tla as __tla_82 } from "./newBlank-D5HNbDWp.js";
 import { downloadZapataF2k as Zi } from "./f2kExporter-CcrVIqWt.js";
 import { parseZapataF2k as Ji } from "./f2kImporter-Cp9ARV1y.js";
 import { exportEdificioCimentacionF2k as xa, downloadEdificioCimentacionF2k as Qi } from "./f2kCimentacionCompleta-DmhBNXL6.js";
-import { e as er, a as tr, p as nr } from "./e2kExporter-D2mmk9Kh.js";
+import { e as er, a as tr, p as nr } from "./e2kExporter-D1l5Qwce.js";
 import { p as or } from "./e2kParser-CUYa3XgL.js";
 import { a as bo } from "./exampleVersion-D1A_5i59.js";
 import "./pureFunctionsAny.generated-DeJSBP3k.js";
