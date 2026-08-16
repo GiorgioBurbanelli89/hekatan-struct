@@ -5601,10 +5601,19 @@ solve`;
     fModal.addButton({ title: "▶ Correr modal + animar" }).on("click", runModalAnimate);
     // Toggle "Mostrar tabla": el panel/tabla modal solo aparece si el usuario lo activa.
     const __tblProxy = { show: __modalTableShown };
-    fModal.addBinding(__tblProxy, "show", { label: "📋 Mostrar tabla" }).on("change", (e: any) => {
+    const __tblBind = fModal.addBinding(__tblProxy, "show",
+      { label: "📋 Tabla de modos" }).on("change", (e: any) => {
       __modalTableShown = !!e.value;
       try { modalPanel.div.style.display = __modalTableShown ? "block" : "none"; } catch {}
     });
+    // El panel tiene su propio "✕": cuando se cierra desde ahí hay que
+    // destildar ESTA casilla, o queda marcada con la tabla cerrada y el
+    // usuario tiene que apagarla y encenderla para que vuelva.
+    (window as any).__hekatanModalTablaCerrada = () => {
+      __modalTableShown = false;
+      __tblProxy.show = false;
+      try { __tblBind.refresh(); } catch {}
+    };
     // Toggle "Mostrar espectro": el espectro de diseño NEC solo aparece si el usuario lo activa.
     const __espProxy = { show: __spectrumShown };
     fModal.addBinding(__espProxy, "show", { label: "📈 Mostrar espectro" }).on("change", (e: any) => {
@@ -5719,19 +5728,52 @@ const settingsObj: Record<string, any> = {
 };
 
 // ── Build UI ──
-const viewerElm = getViewer({
-  mesh: { nodes, elements, nodeInputs, elementInputs, deformOutputs, analyzeOutputs },
-  objects3D,
-  settingsObj,
-  // Drawing nativo de hekatan-ui (awatif). Mouse handler + raycaster + snap
-  // a grid + plane indicator funcionan automáticamente. Solo activo en cad-draw.
-  drawingObj: {
-    points: drawingPoints,
-    polylines: drawingPolylines,
-    areas: drawingAreas,
-    gridTarget: drawingGridTarget,
-  },
-});
+// SIN WebGL el workspace se quedaba EN NEGRO, entero. `getViewer` crea el
+// renderer de three.js y, si el navegador no puede dar un contexto WebGL,
+// tira "Error creating WebGL context" — una excepción que subía hasta acá y
+// mataba TODO lo que se arma después: el Tweakpane, el panel de comandos, la
+// tabla modal. Y nada de eso necesita WebGL para funcionar.
+//
+// Visto en una máquina con el proceso de GPU roto (`GL_VENDOR = Disabled`,
+// `Sandboxed = yes`, `BindToCurrentSequence failed`): la página cargaba, el
+// fondo se pintaba, y no aparecía un solo control. Sin mensaje: había que
+// abrir la consola para enterarse.
+//
+// Ahora el visor se arma aparte: si falla, se avisa EN PANTALLA y el resto de
+// la interfaz se construye igual — se puede correr el modal, ver la tabla de
+// participación de masa y copiarla, aunque no se vea el modelo en 3D.
+let viewerElm: HTMLElement;
+try {
+  viewerElm = getViewer({
+    mesh: { nodes, elements, nodeInputs, elementInputs, deformOutputs, analyzeOutputs },
+    objects3D,
+    settingsObj,
+    // Drawing nativo de hekatan-ui (awatif). Mouse handler + raycaster + snap
+    // a grid + plane indicator funcionan automáticamente. Solo activo en cad-draw.
+    drawingObj: {
+      points: drawingPoints,
+      polylines: drawingPolylines,
+      areas: drawingAreas,
+      gridTarget: drawingGridTarget,
+    },
+  }) as HTMLElement;
+} catch (err: any) {
+  console.error("getViewer falló (¿WebGL no disponible?):", err);
+  const aviso = document.createElement("div");
+  aviso.id = "hk-sin-webgl";
+  aviso.style.cssText = `position:absolute; inset:0; display:flex; align-items:center;
+    justify-content:center; padding:32px; color:#e8c07a; background:#15161a;
+    font:14px/1.7 ui-monospace,Consolas,monospace; text-align:center;`;
+  aviso.innerHTML = `<div style="max-width:640px">
+    <div style="font-size:17px; color:#ef4444; margin-bottom:10px">⚠ Tu navegador no pudo crear un contexto WebGL</div>
+    <div>El <b>visor 3D queda deshabilitado</b>, pero el resto sí funciona: podés correr
+    el análisis, abrir la tabla de modos y copiarla.</div>
+    <div style="margin-top:12px; color:#9aa1ad">Suele ser la aceleración por hardware del
+    navegador. Mirá <code>edge://gpu</code> o <code>chrome://gpu</code> → «Problems Detected».</div>
+    <div style="margin-top:10px; color:#6b7280; font-size:12px">${String(err?.message || err).slice(0, 160)}</div>
+  </div>`;
+  viewerElm = aviso;
+}
 
 // ── Hook OrbitControls "start": detectar primera interacción manual ──
 // Una vez que el usuario hace pan/zoom/orbit, `userCameraInteracted` queda

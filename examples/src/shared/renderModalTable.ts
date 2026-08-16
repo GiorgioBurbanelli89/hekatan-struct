@@ -20,16 +20,23 @@ export interface ModalTableConfig {
 export function createModalPanel() {
   const div = document.createElement("div");
   div.id = "modal-results";
+  // ⚠️ El tamaño: `resize: both` estaba puesto desde siempre y NO funcionaba
+  // para agrandar. La culpa era de `max-width: 760px; max-height: 60vh`: el
+  // `max-*` le gana al tamaño que fija el usuario al arrastrar la esquina, así
+  // que el panel solo podía ACHICARSE. Ahora el tope es la pantalla (96vw/92vh)
+  // y el tamaño inicial va en `width`/`height`, que sí es lo que el arrastre
+  // sobrescribe.
   div.style.cssText = `
     position: fixed; bottom: 10px; left: 10px; z-index: 9999;
     background: rgba(0,0,0,0.92); color: #0f0; font-family: monospace;
     font-size: 12px; border-radius: 6px;
-    max-width: 760px; max-height: 60vh;
+    width: 760px; height: 60vh;
+    max-width: 96vw; max-height: 92vh;
     overflow-x: auto; overflow-y: auto;
     pointer-events: auto;
     border: 1px solid #0f03;
     resize: both;
-    min-width: 400px; min-height: 200px;
+    min-width: 360px; min-height: 160px;
   `;
 
   // ── Drag por la cabecera (#modal-header) — el panel tapaba el modelo y no se
@@ -59,6 +66,8 @@ export function createModalPanel() {
   }
 
   let minimized = false;
+  // Tamaño guardado antes de "⤢ Ancho", para poder volver.
+  let anchoPrev: { w: string; h: string; l: string; t: string; bo: string; r: string } | null = null;
   const ASCE_THRESHOLD = 0.90; // 90 % per ASCE 7-22 §12.9.1.1
 
   function render(m: ModalOutputs, config: ModalTableConfig) {
@@ -112,13 +121,20 @@ export function createModalPanel() {
       return `<span style="color:#f44">✗ FALTAN MODOS EN AMBAS DIRECCIONES — ΣUx=${(totalX * 100).toFixed(1)} % · ΣUy=${(totalY * 100).toFixed(1)} % en ${N} modos. NEC-15 §6.2.2 exige ≥ 90 %: el cortante dinámico sale bajo y el control Vdin/Vest no es representativo. Subí «N° de modos» en Settings ▸ ⚡ Modal + Animación.</span>`;
     })();
 
-    let html = `<div id="modal-header" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; cursor:move; user-select:none;" title="Arrastra para mover">
+    // Los botones llevan TEXTO, no solo el icono: con "📋" a secas nadie
+    // adivina que se puede copiar la tabla, y esa fue justo la pregunta
+    // («alguien que quiera copiar la tabla, cómo hace»).
+    const btn = (id: string, txt: string, tip: string, bg: string, bd: string) =>
+      `<button id="${id}" title="${tip}" style="padding:3px 9px; font-size:10px;
+        cursor:pointer; background:${bg}; color:#fff; border:1px solid ${bd};
+        border-radius:3px; font-family:monospace; white-space:nowrap;">${txt}</button>`;
+    let html = `<div id="modal-header" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; cursor:move; user-select:none;" title="Arrastrá desde acá para mover la ventana">
   <b style="color:#ff0">✥ ⚡ MODAL ANALYSIS — ${config.title}</b>
   <div style="display:flex; gap:4px; margin-left:12px;">
-    <button id="modal-copy" style="padding:2px 8px; font-size:10px; cursor:pointer;
-      background:#2d6a4f; color:#fff; border:1px solid #40916c; border-radius:3px;" title="Copiar tabla">📋</button>
-    <button id="modal-minimize" style="padding:2px 8px; font-size:10px; cursor:pointer;
-      background:#555; color:#fff; border:1px solid #777; border-radius:3px;" title="Minimizar">▬</button>
+    ${btn("modal-copy", "📋 Copiar", "Copiar la tabla al portapapeles — se pega en Excel en columnas", "#2d6a4f", "#40916c")}
+    ${btn("modal-wide", "⤢ Ancho", "Agrandar la ventana a casi toda la pantalla", "#33507a", "#4a6fa5")}
+    ${btn("modal-minimize", "▬", "Minimizar", "#555", "#777")}
+    ${btn("modal-close", "✕", "Cerrar (se vuelve a abrir con «📋 Mostrar tabla» en Settings)", "#7a3333", "#a54a4a")}
   </div>
 </div>`;
 
@@ -216,14 +232,52 @@ export function createModalPanel() {
       else { body.style.display = "block"; btn.textContent = "▬"; btn.title = "Minimizar"; }
     });
 
+    // ⤢ Ancho: arrastrar la esquina funciona, pero con 24 modos y 13 columnas
+    // lo que uno quiere es la tabla ENTERA de un golpe. Segundo clic la
+    // devuelve al tamaño de antes.
+    div.querySelector("#modal-wide")?.addEventListener("click", () => {
+      const b = div.querySelector("#modal-wide") as HTMLElement;
+      if (!anchoPrev) {
+        anchoPrev = { w: div.style.width, h: div.style.height,
+                      l: div.style.left, t: div.style.top,
+                      bo: div.style.bottom, r: div.style.right };
+        div.style.width = "96vw"; div.style.height = "88vh";
+        div.style.left = "2vw"; div.style.top = "5vh";
+        div.style.bottom = "auto"; div.style.right = "auto";
+        b.textContent = "⤡ Reducir"; b.title = "Volver al tamaño anterior";
+      } else {
+        div.style.width = anchoPrev.w; div.style.height = anchoPrev.h;
+        div.style.left = anchoPrev.l; div.style.top = anchoPrev.t;
+        div.style.bottom = anchoPrev.bo; div.style.right = anchoPrev.r;
+        anchoPrev = null;
+        b.textContent = "⤢ Ancho"; b.title = "Agrandar la ventana a casi toda la pantalla";
+      }
+    });
+
+    // ✕ Cerrar. Además de ocultar, avisa al workspace para que el toggle
+    // «📋 Mostrar tabla» de Settings se destilde solo: si no, la casilla queda
+    // marcada con la tabla cerrada y hay que apagarla y encenderla para que
+    // vuelva — el clásico interruptor que miente.
+    div.querySelector("#modal-close")?.addEventListener("click", () => {
+      div.style.display = "none";
+      try { (window as any).__hekatanModalTablaCerrada?.(); } catch { /* standalone */ }
+    });
+
     div.querySelector("#modal-copy")?.addEventListener("click", () => {
-      const lines: string[] = [];
-      lines.push(`Modal Analysis — ${config.title}`);
-      lines.push(dictamen.replace(/<[^>]+>/g, ""));
-      const hdr = `Mode  Freq(Hz)  Period(s)  ω(rad/s)  ${dirs.join("     ")}  ΣUx    ΣUy    ΣRz   Tipo`;
-      lines.push(hdr);
-      lines.push("-".repeat(hdr.length));
+      // ── Se copia en TSV, no en ancho fijo ──
+      // El formato viejo alineaba con espacios: se lee lindo en un .txt y en
+      // Excel cae TODO en una sola columna, que es donde va a parar el 90 % de
+      // las veces. Con TAB, Excel/Sheets lo abren en columnas solo.
+      // Y los números van SIN el "%" y con punto decimal: con el símbolo Excel
+      // los toma como texto y después no se pueden sumar ni graficar.
+      const tsv: string[] = [];
+      tsv.push(`Modal Analysis\t${config.title}`);
+      tsv.push(dictamen.replace(/<[^>]+>/g, "").trim());
+      tsv.push("");
+      tsv.push(["Modo", "Freq (Hz)", "Periodo (s)", "w (rad/s)",
+                ...dirs, "SUx", "SUy", "SRz", "Tipo"].join("\t"));
       const sp2 = [0, 0, 0, 0, 0, 0];
+      const filasHtml: string[] = [];
       m.frequencies.forEach((freq, i) => {
         const T = freq > 0 ? 1 / freq : 0;
         const omega = freq * 2 * Math.PI;
@@ -232,13 +286,43 @@ export function createModalPanel() {
         let domDir = 0, domVal = mp[0];
         for (let d = 1; d < 6; d++) if (mp[d] > domVal) { domVal = mp[d]; domDir = d; }
         const tipoLabel = domVal < 0.05 ? "—" : `${dirs[domDir]} (${(domVal * 100).toFixed(0)}%)`;
-        const mpStr = mp.map(v => ((v * 100).toFixed(1) + "%").padStart(6)).join(" ");
-        lines.push(`${String(i + 1).padStart(4)}  ${freq.toFixed(4).padStart(9)}  ${T.toFixed(4).padStart(9)}  ${omega.toFixed(2).padStart(9)}  ${mpStr}  ${(sp2[0] * 100).toFixed(1).padStart(5)}%  ${(sp2[1] * 100).toFixed(1).padStart(5)}%  ${(sp2[5] * 100).toFixed(1).padStart(5)}%  ${tipoLabel}`);
+        const celdas = [String(i + 1), freq.toFixed(4), T.toFixed(4), omega.toFixed(2),
+                        ...mp.map(v => (v * 100).toFixed(1)),
+                        (sp2[0] * 100).toFixed(1), (sp2[1] * 100).toFixed(1),
+                        (sp2[5] * 100).toFixed(1), tipoLabel];
+        tsv.push(celdas.join("\t"));
+        filasHtml.push("<tr>" + celdas.map(c => `<td>${c}</td>`).join("") + "</tr>");
       });
-      navigator.clipboard.writeText(lines.join("\n"));
+      const texto = tsv.join("\n");
+      // Además del TSV se pone una tabla HTML en el portapapeles: pegando en
+      // Word o en un correo sale con bordes en vez de un bloque de texto.
+      const html2 = `<table border="1" cellspacing="0" cellpadding="3">
+<caption>Modal Analysis — ${config.title}</caption>
+<tr>${["Modo", "Freq (Hz)", "Periodo (s)", "w (rad/s)", ...dirs, "SUx", "SUy", "SRz", "Tipo"]
+  .map(h => `<th>${h}</th>`).join("")}</tr>
+${filasHtml.join("\n")}</table>`;
       const btn = div.querySelector("#modal-copy") as HTMLElement;
-      btn.textContent = "✓";
-      setTimeout(() => btn.textContent = "📋", 1500);
+      const listo = (ok: boolean) => {
+        btn.textContent = ok ? "✓ Copiada" : "✗ no se pudo";
+        setTimeout(() => { btn.textContent = "📋 Copiar"; }, 1600);
+      };
+      (async () => {
+        try {
+          // `ClipboardItem` no está en todos los navegadores; si falla, TSV pelado.
+          if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+            await navigator.clipboard.write([new ClipboardItem({
+              "text/plain": new Blob([texto], { type: "text/plain" }),
+              "text/html": new Blob([html2], { type: "text/html" }),
+            })]);
+          } else {
+            await navigator.clipboard.writeText(texto);
+          }
+          listo(true);
+        } catch {
+          try { await navigator.clipboard.writeText(texto); listo(true); }
+          catch { listo(false); }
+        }
+      })();
     });
   }
 
