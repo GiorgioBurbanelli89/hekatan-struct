@@ -370,14 +370,24 @@ export const edificioLadera: ExampleDef = {
     }
   },
 
-  runModal(p, states) {
+  runModal(p, states, modalPanel) {
     try {
       const out = modalAnalysis(
         states.nodes.val, states.elements.val,
         states.nodeInputs.val, states.elementInputs.val, 12,
       );
-      (states as any).modalOutputs.val = out;
-      console.log(`✅ Modal: ${out.frequencies.length} modos, f1=${out.frequencies[0]?.toFixed(3)} Hz`);
+      // `states.modalOutputs` no siempre existe: al asignarle `.val` a secas
+      // saltaba "Cannot set properties of undefined" ANTES de dibujar el
+      // panel, asi que el modal moria sin decir nada visible.
+      const mo = (states as any).modalOutputs;
+      if (mo) mo.val = out;
+      // Faltaba esto: el resultado se guardaba y se escribia en la CONSOLA, y
+      // el panel de modos se quedaba vacio. El usuario apretaba "Correr modal"
+      // y no pasaba nada visible.
+      modalPanel?.render(out, {
+        title: `Edificio en ladera — ${Math.round(p.nPisos)} pisos`,
+        properties: [`${states.nodes.val.length} nudos · ${states.elements.val.length} elementos`],
+      });
     } catch (e) {
       console.error("[edificio-ladera] modal failed:", e);
     }

@@ -687,7 +687,14 @@ export const zapataAislada: ExampleDef = {
     // Commit estados
     states.nodes.val = N.map((n) => [n[0], n[1], n[2]] as Node);
     states.elements.val = els;
-    states.nodeInputs.val = { supports: new Map(), loads };
+
+    // Los RESORTES tambien van en nodeInputs, no solo a `deform()`:
+    // `modalCpp` los busca ahi (`springs ?? nodeInputs.springs`) y sin ellos
+    // el modal corre con la zapata FLOTANDO en el aire. Se veia en las
+    // frecuencias: 1.6e-5 Hz el primer modo -solido rigido- y 1.9e+10 el
+    // segundo, que ya es basura numerica. El estatico si los recibia, asi que
+    // el modelo parecia bueno hasta que se pedia el modal.
+    states.nodeInputs.val = { supports: new Map(), loads, springs: springsList } as any;
     states.elementInputs.val = {
       elasticities, poissonsRatios: poissons,
       areas, momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy,

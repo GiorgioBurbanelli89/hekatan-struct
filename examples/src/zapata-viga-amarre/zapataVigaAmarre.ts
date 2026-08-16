@@ -357,7 +357,14 @@ export const zapataVigaAmarre: ExampleDef = {
     // Commit
     states.nodes.val = N.map((n) => [n[0], n[1], n[2]] as Node);
     states.elements.val = elsEl;
-    states.nodeInputs.val = { supports, loads };
+
+    // Los RESORTES tambien van en nodeInputs, no solo a `deform()`:
+    // `modalCpp` los busca ahi (`springs ?? nodeInputs.springs`) y sin ellos
+    // el modal corre con la zapata FLOTANDO en el aire. Se veia en las
+    // frecuencias: 1.6e-5 Hz el primer modo -solido rigido- y 1.9e+10 el
+    // segundo, que ya es basura numerica. El estatico si los recibia, asi que
+    // el modelo parecia bueno hasta que se pedia el modal.
+    states.nodeInputs.val = { supports, loads, springs: springsList } as any;
     // Elemento: Mindlin-Reissner (shellQ4, default). SAFE/ETABS ShellThin TAMBIÉN tiene
     // cortante Mindlin (capturado del binario: G·t·5/6 = 88005.7), NO es Kirchhoff puro.
     // El Mindlin de Hekatan ya matchea σ_max de SAFE (24.1 vs 24.18, 0.4%). El DKQ thin

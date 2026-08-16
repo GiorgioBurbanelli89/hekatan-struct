@@ -35,7 +35,7 @@
  *  - Con geometría cuadrada → 4 triángulos isósceles (CSI auto)
  *  - Con rectangular → 2 triángulos + 2 trapecios
  */
-import { deform, analyze, type Node, type Element } from "hekatan-fem";
+import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 const gamma_c = 24, G_GRAVITY = 9.81, rho_c = gamma_c / G_GRAVITY;  // 2.446 t/m3 (masa)
@@ -191,18 +191,19 @@ export const membranaCSI: ExampleDef = {
     states.objects3D.val = [];
   },
   runModal: function(p, states, modalPanel) {
-    // Modal desacoplado del build — usar modalAnalysis si está disponible
-    import("hekatan-fem").then(({ modalAnalysis }) => {
-      try {
-        const out = modalAnalysis(
-          states.nodes.val, states.elements.val,
-          states.nodeInputs.val, states.elementInputs.val, 12,
-        );
-        modalPanel.render(out, {
-          title: `Membrana CSI ${p.Lx}×${p.Ly}m t=${p.t}m`,
-          properties: [`E=${(p.E / 1e6).toFixed(1)} GPa  ν=${p.nu}  γ=${gamma_c} kN/m³`],
-        });
-      } catch (e: any) { console.warn("Modal membrana CSI error:", e.message); }
-    });
+    // `modalAnalysis` va en el import de arriba, como en el resto de ejemplos.
+    // Antes se cargaba con un `import()` DINAMICO dentro del runModal: la
+    // promesa resolvia despues de que la funcion volviera, asi que el panel se
+    // rellenaba tarde y cualquier comprobacion automatica lo veia vacio.
+    try {
+      const out = modalAnalysis(
+        states.nodes.val, states.elements.val,
+        states.nodeInputs.val, states.elementInputs.val, 12,
+      );
+      modalPanel.render(out, {
+        title: `Membrana CSI ${p.Lx}×${p.Ly}m t=${p.t}m`,
+        properties: [`E=${(p.E / 1e6).toFixed(1)} GPa  ν=${p.nu}  γ=${gamma_c} kN/m³`],
+      });
+    } catch (e: any) { console.warn("Modal membrana CSI error:", e.message); }
   },
 };

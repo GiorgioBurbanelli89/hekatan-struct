@@ -257,6 +257,38 @@ export function exportS2k(input: S2kExportInput): string {
     blank();
   }
 
+  // ── FRAME LOADS - DISTRIBUTED ──
+  // Sin esta tabla el .s2k salia SIN CARGA en cuanto el modelo cargaba por
+  // `frameload` en vez de por fuerzas nodales: el galpon tiene 195 frameload y
+  // 0 force, o sea que se perdian los 4078 kN enteros y SAP abria el modelo con
+  // cero carga. Y no da error: da un modelo que resuelve y sale todo a cero.
+  //
+  // `elementInputs.frameLoads` viene en GLOBALES (kN/m), que es como lo guarda
+  // el cliModeler, asi que se escribe una fila por componente no nula con
+  // CoordSys=GLOBAL y Dir=X/Y/Z. La carga es uniforme (FOverLA = FOverLB) y va
+  // de extremo a extremo, que es lo que genera el comando `frameload`.
+  const fLoads: Map<number, [number, number, number]> | undefined =
+    (elementInputs as any).frameLoads;
+  if (fLoads && fLoads.size > 0) {
+    push(`TABLE:  "FRAME LOADS - DISTRIBUTED"`);
+    for (const [idx, w] of fLoads) {
+      const el = elements[idx];
+      if (!el || el.length !== 2) continue;
+      const a = nodes[el[0]], b = nodes[el[1]];
+      const L = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+      // Numeracion de SAP: el Frame=N de CONNECTIVITY - FRAME es el indice del
+      // elemento +1, el mismo que ya usa FRAME SECTION ASSIGNMENTS.
+      (["X", "Y", "Z"] as const).forEach((dir, k) => {
+        if (Math.abs(w[k]) < 1e-12) return;
+        push(`   Frame=${idx + 1}   LoadPat=DEAD   CoordSys=GLOBAL   Type=Force   Dir=${dir}` +
+             `   DistType=RelDist   RelDistA=0   RelDistB=1` +
+             `   AbsDistA=0   AbsDistB=${fmt(L)}` +
+             `   FOverLA=${fmt(w[k])}   FOverLB=${fmt(w[k])}`);
+      });
+    }
+    blank();
+  }
+
   // ── Collect unique materials ──
   const matSet = new Map<string, { E: number; nu: number; G: number; rho: number }>();
   for (let i = 0; i < elements.length; i++) {
