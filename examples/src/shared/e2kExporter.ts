@@ -860,31 +860,59 @@ function exportFromScratch(input: ExportE2kInput): string {
   lines.push(`$ LINE CONNECTIVITIES`);
   const laEntries: string[] = [];
 
+  /**
+   * Indice de una planta dentro de la pila (0 = Base). El salto de plantas de
+   * una LINE se cuenta en PLANTAS, no en cotas distintas de nudo: `sortedZ` y
+   * `storyNames` van a la par, pero un nudo que cuelga con descenso NO tiene
+   * entrada en `sortedZ`, y buscarlo ahi devolvia -1.
+   */
+  const idxDe = (story: string) => storyNames.indexOf(story);
+
+  /**
+   * Escribe una LINE que puede estar INCLINADA.
+   *
+   * Antes se ponia el MISMO punto de planta en los dos extremos
+   * (`"${psTop.pt}"  "${psTop.pt}"`), y eso solo sabe describir una barra
+   * VERTICAL: ETABS le pone al extremo de abajo la x,y del de arriba. En un
+   * edificio no se nota —las columnas son verticales—, pero en una nave con
+   * arco se lleva por delante la geometria: medido en el galpon, **42 de las
+   * 102 barras** caian fuera del modelo (los tramos del arco salian verticales
+   * y las cotas intermedias inventadas). Se veia al abrirlo en ETABS 19.
+   *
+   * La regla del formato: el SEGUNDO punto es el que esta EN la planta del
+   * objeto (la del LINEASSIGN) y el PRIMERO baja `nStories` plantas. Asi que
+   * basta con dar los dos puntos de verdad y contar el salto entre sus plantas.
+   */
+  const emitirLinea = (eName: string, tipo: string, botNode: number, topNode: number,
+                       secName: string, extras: string, minNumSta: number) => {
+    const psTop = nodeToPS(topNode);
+    const psBot = nodeToPS(botNode);
+    const salto = idxDe(psTop.story) - idxDe(psBot.story);
+    if (salto <= 0) {
+      // Los dos extremos cuelgan de la MISMA planta (cada uno con su descenso):
+      // eso en el e2k es una BEAM, aunque la barra suba.
+      lines.push(`  LINE  "${eName}"  BEAM  "${psBot.pt}"  "${psTop.pt}"  0`);
+    } else {
+      lines.push(`  LINE  "${eName}"  ${tipo}  "${psBot.pt}"  "${psTop.pt}"  ${salto}`);
+    }
+    laEntries.push(`  LINEASSIGN  "${eName}"  "${psTop.story}"  SECTION "${secName}" ${extras} MINNUMSTA ${minNumSta} AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
+  };
+
   // 1. Chains de columnas — UN solo LINE element por cadena
+  //
+  // MINNUMSTA = nSegments para que el auto-mesh interno de ETABS coincida con
+  // la discretización de hekatan.
+  //
+  // NO se emite RIGIDZONE: no es el default de ETABS (el e2k que él mismo
+  // escribe no lo lleva) sino una zona rígida en los extremos de CADA barra,
+  // que el modelo no pidió. Medido: rigidizaba el mezanine un 10 % (-178.2
+  // contra -186.9 mm del nativo). Solo se emite si el modelo trae
+  // rigidOffsets, y eso ya lo hace buildLineExtras.
   chains.forEach((ch, ci) => {
-    const eName = `C${ci + 1}`;
-    const psTop = nodeToPS(ch.topNodeIdx);
-    const psBot = nodeToPS(ch.bottomNodeIdx);
-    const zTop = rd(nodes[ch.topNodeIdx][2]);
-    const zBot = rd(nodes[ch.bottomNodeIdx][2]);
-    const topIdx = sortedZ.indexOf(zTop);
-    const botIdx = sortedZ.indexOf(zBot);
-    const nStories = Math.max(1, topIdx - botIdx);
     // Extras usa el primer elemento de la cadena (asumimos uniforme)
     const extras = buildLineExtras(ch.elemIndices[0]);
-
-    // LINE con nStories que abarca toda la cadena, con SAME plan-point en ambos extremos
-    lines.push(`  LINE  "${eName}"  ${ch.type}  "${psTop.pt}"  "${psTop.pt}"  ${nStories}`);
-
-    // UN solo LINEASSIGN al top-story (la columna span hacia abajo).
-    // MINNUMSTA = nSegments para que ETABS auto-mesh interno coincida con la
-    // discretización hekatan.
-    // NO se emite RIGIDZONE: no es el default de ETABS (el e2k que el mismo
-    // escribe no lo lleva) sino una zona rigida en los extremos de CADA barra,
-    // que el modelo no pidio. Medido: rigidizaba el mezanine un 10 % (-178.2
-    // contra -186.9 mm del nativo). Solo se emite si el modelo trae
-    // rigidOffsets, y eso ya lo hace buildLineExtras.
-    laEntries.push(`  LINEASSIGN  "${eName}"  "${psTop.story}"  SECTION "${ch.secName}" ${extras} MINNUMSTA ${ch.nSegments} AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
+    emitirLinea(`C${ci + 1}`, ch.type, ch.bottomNodeIdx, ch.topNodeIdx,
+                ch.secName, extras, ch.nSegments);
   });
 
   // 2. Elementos no-chain (beams + columnas sueltas/no-contiguas) — uno por uno
@@ -895,21 +923,13 @@ function exportFromScratch(input: ExportE2kInput): string {
     const secName = elemToSecName.get(i) || `Sec_${i}`;
     const extras = buildLineExtras(i);
 
-    if (type === "BEAM") {
-      const ps0 = nodeToPS(el[0]), ps1 = nodeToPS(el[1]);
-      lines.push(`  LINE  "E${i + 1}"  BEAM  "${ps0.pt}"  "${ps1.pt}"  0`);
-      laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${ps0.story}"  SECTION "${secName}" ${extras} MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
-    } else {
-      // Columna/brace suelta (no entra en ningún chain por estar aislada)
-      const bot = nodes[el[0]][2] <= nodes[el[1]][2] ? el[0] : el[1];
-      const top = nodes[el[0]][2] <= nodes[el[1]][2] ? el[1] : el[0];
-      const psTop = nodeToPS(top);
-      const zBot = rd(nodes[bot][2]), zTop = rd(nodes[top][2]);
-      const botIdx = sortedZ.indexOf(zBot), topIdx = sortedZ.indexOf(zTop);
-      const nStories = Math.max(1, topIdx >= 0 && botIdx >= 0 ? topIdx - botIdx : 1);
-      lines.push(`  LINE  "E${i + 1}"  ${type}  "${psTop.pt}"  "${psTop.pt}"  ${nStories}`);
-      laEntries.push(`  LINEASSIGN  "E${i + 1}"  "${psTop.story}"  SECTION "${secName}" ${extras} MINNUMSTA 3 AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
-    }
+    // Ordenados por cota: el de arriba manda la planta del objeto.
+    const bot = nodes[el[0]][2] <= nodes[el[1]][2] ? el[0] : el[1];
+    const top = nodes[el[0]][2] <= nodes[el[1]][2] ? el[1] : el[0];
+    // Un BEAM cuyos extremos caen en plantas DISTINTAS no es un beam para el
+    // e2k (un beam vive dentro de una planta): sale como BRACE con su salto, y
+    // `emitirLinea` lo devuelve a BEAM si al final los dos cuelgan de la misma.
+    emitirLinea(`E${i + 1}`, type === "BEAM" ? "BRACE" : type, bot, top, secName, extras, 3);
   });
   lines.push(``);
 
