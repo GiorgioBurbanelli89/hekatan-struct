@@ -1,0 +1,4 @@
+# Los .edb son binarios de ETABS: pesan, git no los puede diferenciar y se
+# regeneran en un minuto desde los .e2k (que sí están versionados).
+*
+!.gitignore

@@ -76,3 +76,10 @@ __pycache__/
 /*.png
 /*.svg
 assets/*.js
+
+# ─── Modelos de ETABS ───────────────────────────────────────────────────
+# Los .e2k SÍ se versionan (texto, se ve el diff, formato de intercambio).
+# Los .edb NO: son binarios, git no los puede diferenciar y se regeneran en un
+# minuto desde el .e2k con `e2k_a_edb.py`. Ver modelos-etabs/LEEME.md.
+modelos-etabs/edb/**
+!modelos-etabs/edb/.gitignore
