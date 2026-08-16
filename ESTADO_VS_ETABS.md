@@ -5,7 +5,7 @@ Este archivo es **el hilo**: se actualiza cada vez que se mide algo contra ETABS
 número de aquí es **medido y reproducible**, no un límite del test ni una cuenta
 a mano. La columna «cómo repetirlo» tiene el comando exacto.
 
-**Última medida: 2026-08-15** · suite `npm test` → **103/103** · WASM y C++
+**Última medida: 2026-08-15** · suite `npm test` → **106/106** · WASM y C++
 nativo idénticos a 13 decimales.
 
 **Regla de oro** para que la comparación signifique algo: mismo modelo, misma
@@ -42,6 +42,7 @@ Hekatan, cuando eran los 78.6876 m de viga que ETABS no pesa.
 | **Placa** | flecha y momentos | Navier analítico + SAFE 8×8 | −0.04 a +2.34 % | `node tests/run.mjs safe` |
 | **Ejes locales, `ang`, `as`** | frecuencia contra fórmula | voladizo · analítico | −0.48 / −0.33 % | `node tests/run.mjs modal-as-ang` |
 | **End releases** | flecha y frecuencia | viga · analítico | 0.03 / 0.01 % | `node tests/run.mjs end-releases` |
+| **Unidades de la masa** | `c = √(E/ρ)` de cada ejemplo con modal | 39 ejemplos · velocidad de onda del material + voladizo Euler-Bernoulli | los 39 dentro de **1500–8000 m/s**; el voladizo de acero cierra al **1.5 %** | `node tests/run.mjs unidades` |
 | **UI — botón «Correr modal + animar»** | ¿el modelo se mueve de verdad? | bundle de deploy · Test M — Dual | **sí**: 8/8 frames distintos, panel con Modo 1/24, 2.0726 Hz, T = 0.4825 s, Ux 84 % | `node cli/shot_modal_anim.mjs local` |
 
 ## 2. Lo que TODAVÍA no
@@ -53,6 +54,8 @@ Hekatan, cuando eran los 78.6876 m de viga que ETABS no pesa.
 | **Modal — galpón entero** | 4 primeros modos con masa | galpón · ETABS 22 (lateral + lump), **offsets = 0** | −1.60 / −0.58 / +0.78 / **−2.99 %** · MAC 0.970 / 0.902 / 0.929 / **0.723** | Con la masa cerrada al 0.00004 %, lo que queda es rigidez. Y el MAC dice que el −2.99 % del modo 4 **no es una frecuencia mal calculada**: Hekatan PARTE en dos el modo 4 de ETABS — sus modos 4 (4.2821) y 5 (4.6424) apuntan los dos al mismo, con MAC **0.723 + 0.271 = 0.994**. Arreglar eso es arreglar la malla (nudos colgados de un solo paño), no el solver. |
 | **Modal — galpón, modos altos** | emparejados por forma | galpón · ETABS 22, offsets = 0 | modo 11 Hek ↔ modo 7 ETABS: **MAC 0.9997**, −0.06 % | Cuando la forma es la misma, la frecuencia coincide. Lo de abajo es reordenamiento por modos locales, no error del solver. |
 | **Modal — galpón, modos bajos** | uno a uno en 4–6 Hz | galpón · ETABS 22, masa 3D | **Hekatan parte en dos** lo que ETABS da como un modo | Nudos del entrepiso colgados de un solo paño (giros casi sin rigidez). Es un defecto de la MALLA del modelo, y lo delatan los dos programas. Lo limpio es arreglar la malla. |
+| **Masa por material en los edificios** | `c = √(E/ρ)` | `edif-acero`, `edificio-acero-v2`, `edificio-mixto`, `edificio-dual`, `mezanine` | **9042 m/s** (acero real: 5048) | `edificioAporticado.ts` pone `rho_c` a TODAS las barras sin mirar `matCol`/`matViga`: el acero entra pesando 2.446 t/m³ en vez de 7.951, o sea **3.25× menos**. Los cinco heredan ese `build`. |
+| **Modal de los `benchmark-paz-*`** | f₁ contra el libro | Paz & Leigh 11.1 | libro **4.02 Hz** · ejemplo **0.0858 Hz** | Dos cosas a la vez: pasan `rho_kgm3` con E en kN/m² (**1000×**) y, aun corrigiendo eso (2.71 Hz), el libro usa masa **consistente** (156 / 22L / 4L²) y el motor **lumped**; encima el ejemplo se inventa `Iz = 0.3·I` y `J = 0.05·I`. |
 | **Torsión de barra** | T, 24 barras | mesa-torsión · ETABS 19.1 | medio 2.09 %, **máx 3.72 %** | `J` de Saint-Venant contra el que usa ETABS. |
 | **Losa waffle 2D** | flecha máxima | mezanine · ETABS 22 | **3.99 %** | El único tipo de losa por encima del 2 %. |
 | **Masa — el resto de recetas** | — | — | sin medir | Falta decidir **qué receta usar en producción** según el `MASSSOURCE` de cada modelo, en vez de elegirla a mano por corrida. |
@@ -61,6 +64,7 @@ Hekatan, cuando eran los 78.6876 m de viga que ETABS no pesa.
 
 | sospecha | veredicto |
 |---|---|
+| «los ejemplos del workspace dan periodos raros porque hay un mecanismo» | **Falso en el `galpon`.** El modo 1 a 0.0855 Hz (T = 11.7 s) movía **45 de 55 nudos en bloque**, con el 98.3 % de la forma en X: eso es el modo lateral global, no un nudo suelto. Eran dos cosas y ninguna del solver: `densities = 78` (peso, no masa → 9.81× → f/3.13) e `I = A²/12`, la inercia de un cuadrado macizo de 4.47 cm de lado (un IPE 160 de la misma área tiene **26×** más). Con las dos arregladas: **T₁ = 0.73 s**, visto en el PNG de la app. |
 | «`Ip = Iy+Iz` vs `J` en la masa torsional» | **No aplica.** El modal usa masa LUMPED (`getGlobalMassMatrix.cpp`), con masa rotacional `1e-9·m`. La masa consistente —la del `Ip`— hoy no la toca el modal. |
 | «los shellmods de ETABS cambian la masa» | **No en estos modelos.** `galpon_bodega.e2k` no trae ni un `MASSMODIFIER` ni `WEIGHTMODIFIER`; los `shellmod` del `.heks` son de rigidez. |
 | «los shells no aportan masa» | **Sí aportan.** `getGlobalMassMatrix.cpp` pesa Q4 y triángulos (`ρ·t·A`, repartido entre sus nudos). |

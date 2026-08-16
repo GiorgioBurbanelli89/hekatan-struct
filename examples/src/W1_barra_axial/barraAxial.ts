@@ -7,7 +7,7 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 
 const Es = 200e6, nu_s = 0.3;
 const Gs = Es / (2 * (1 + nu_s));
-const rho_s = 78;
+const gamma_s = 78, G_GRAVITY = 9.81, rho_s = gamma_s / G_GRAVITY;  // 7.951 t/m3 (masa)
 
 export const barraAxial: ExampleDef = {
   id: "W1_barra_axial",

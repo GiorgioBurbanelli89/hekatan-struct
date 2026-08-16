@@ -5,7 +5,8 @@
 import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
-const Ec = 25e6, nu_c = 0.2, Gc = Ec / (2 * (1 + nu_c)), rho_c = 24;
+const G_GRAVITY = 9.81;
+const Ec = 25e6, nu_c = 0.2, Gc = Ec / (2 * (1 + nu_c)), rho_c = 24 / G_GRAVITY;
 
 const P = (folder: string, label: string, def: number, min: number, max: number, step: number) =>
   ({ default: def, min, max, step, label, folder });

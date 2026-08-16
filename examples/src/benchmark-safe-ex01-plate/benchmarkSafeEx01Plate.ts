@@ -117,7 +117,7 @@ export const benchmarkSafeEx01Plate: ExampleDef = {
     const poissons     = new Map<number, number>();
     const densities    = new Map<number, number>();
     elems.forEach((_, i) => {
-      elasticities.set(i, E); poissons.set(i, nu); densities.set(i, 24);
+      elasticities.set(i, E); poissons.set(i, nu); densities.set(i, 24 / 9.81);
     });
 
     // ── Supports/loads para visualización ──

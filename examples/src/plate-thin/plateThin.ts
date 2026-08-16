@@ -80,7 +80,7 @@ export const plateThin: ExampleDef = {
     const elasticities = new Map<number, number>();
     const poissons = new Map<number, number>();
     const densities = new Map<number, number>();
-    elems.forEach((_, i) => { elasticities.set(i, p.E); poissons.set(i, p.nu); densities.set(i, 24); });
+    elems.forEach((_, i) => { elasticities.set(i, p.E); poissons.set(i, p.nu); densities.set(i, 24 / 9.81); });
     states.elementInputs.val = { thicknesses, elasticities, poissonsRatios: poissons, densities };
     states.objects3D.val = [];
   },

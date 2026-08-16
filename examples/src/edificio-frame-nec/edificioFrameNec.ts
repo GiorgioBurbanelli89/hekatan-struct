@@ -10,7 +10,8 @@ import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import { computeCortanteBasal } from "../espectro-nec/espectroNec";
 
-const Ec = 24.9e6, nu_c = 0.2, Gc = Ec / (2 * (1 + nu_c)), rho_c = 24; // HA f'c=24, kN/m
+const G_GRAVITY = 9.81;
+const Ec = 24.9e6, nu_c = 0.2, Gc = Ec / (2 * (1 + nu_c)), rho_c = 24 / G_GRAVITY; // 2.446 t/m3 de MASA (gamma = 24 kN/m
 
 const P = (folder: string, label: string, def: number, min: number, max: number, step: number) =>
   ({ default: def, min, max, step, label, folder });

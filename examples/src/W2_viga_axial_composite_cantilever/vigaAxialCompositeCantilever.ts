@@ -28,7 +28,7 @@ const E_S = 200e6;   // kN/m² acero
 const E_C = 24.98e6; // kN/m² hormigón
 const nu_S = 0.3;
 const G_S = E_S / (2 * (1 + nu_S));
-const rho_S = 7849.0;
+const rho_S = 76.97 / 9.80665;  // t/m3 de MASA: E va en kN/m2, asi que la masa va en toneladas (kg/m3 pesaba 1000x)
 
 export const vigaAxialCompositeCantilever: ExampleDef = {
   id: "W2_viga_axial_composite_cantilever",

@@ -205,7 +205,7 @@ export const cerramiento: ExampleDef = {
     const E = E_kgfcm2 * KGFCM2_TO_KNM2;
     const nu = p.nu;
     const G = E / (2 * (1 + nu));
-    const rho = p.rho;
+    const rho = p.rho / 9.81;   // el parametro es gamma (kN/m3); densities es MASA (t/m3)
 
     // Secciones — convención Hekatan (Paz 6.3 benchmark):
     //   momentsOfInertiaZ = I33 = AISC Iz = eje FUERTE (perpendicular al alma)

@@ -86,7 +86,7 @@ export const membrana: ExampleDef = {
       thicknesses.set(i, p.t);
       elasticities.set(i, p.E);
       poissons.set(i, p.nu);
-      densities.set(i, 24);
+      densities.set(i, 24 / 9.81);   // t/m3 de MASA, no kN/m3
     });
 
     states.nodes.val = nodes;

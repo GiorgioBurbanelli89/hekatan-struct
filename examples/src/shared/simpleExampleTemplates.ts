@@ -5,8 +5,9 @@
 import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef, BuildStates, ModalPanelApi } from "../workspace/exampleRegistry";
 
-const Ec = 25e6, nu_c = 0.2, Gc = Ec / (2 * (1 + nu_c)), rho_c = 24;
-const Es = 200e6, nu_s = 0.3, Gs = Es / (2 * (1 + nu_s)), rho_s = 78;
+const G_GRAVITY = 9.81;
+const Ec = 25e6, nu_c = 0.2, Gc = Ec / (2 * (1 + nu_c)), rho_c = 24 / G_GRAVITY;
+const Es = 200e6, nu_s = 0.3, Gs = Es / (2 * (1 + nu_s)), rho_s = 78 / G_GRAVITY;
 
 export interface SimpleGenArgs {
   id: string;

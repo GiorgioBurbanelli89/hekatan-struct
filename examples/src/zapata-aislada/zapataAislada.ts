@@ -14,7 +14,8 @@ import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import { activeExampleVersion } from "../workspace/exampleVersion";
 
-const Ec = 25e6, nu_c = 0.2, Gc = Ec / (2 * (1 + nu_c)), rho = 24;
+const G_GRAVITY = 9.81;
+const Ec = 25e6, nu_c = 0.2, Gc = Ec / (2 * (1 + nu_c)), rho = 24 / G_GRAVITY;
 const TONF_TO_KN = 9.80665;
 
 /**

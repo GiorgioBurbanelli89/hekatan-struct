@@ -13,7 +13,7 @@ import { activeExampleVersion } from "../workspace/exampleVersion";
 const Ec = 20.04e6;
 const nu_c = 0.2;
 const Gc = Ec / (2 * (1 + nu_c));
-const rho = 24;
+const G_GRAVITY = 9.81, rho = 24 / G_GRAVITY;  // 2.446 t/m3 (masa)
 
 // ── Parámetros visuales de resortes 3D (igual estilo que zapata-aislada) ──
 const SPRING_HEIGHT = 0.20;

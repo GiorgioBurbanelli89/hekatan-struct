@@ -38,7 +38,7 @@
 import { deform, analyze, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
-const rho_c = 24;  // kN/m³ (hormigón)
+const gamma_c = 24, G_GRAVITY = 9.81, rho_c = gamma_c / G_GRAVITY;  // 2.446 t/m3 (masa)
 
 export const membranaCSI: ExampleDef = {
   id: "membrana-csi",
@@ -200,7 +200,7 @@ export const membranaCSI: ExampleDef = {
         );
         modalPanel.render(out, {
           title: `Membrana CSI ${p.Lx}×${p.Ly}m t=${p.t}m`,
-          properties: [`E=${(p.E / 1e6).toFixed(1)} GPa  ν=${p.nu}  ρ=${rho_c} kN/m³`],
+          properties: [`E=${(p.E / 1e6).toFixed(1)} GPa  ν=${p.nu}  γ=${gamma_c} kN/m³`],
         });
       } catch (e: any) { console.warn("Modal membrana CSI error:", e.message); }
     });

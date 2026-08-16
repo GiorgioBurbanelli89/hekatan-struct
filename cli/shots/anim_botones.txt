@@ -1,4 +1,4 @@
-🎓 Test M — Dual (pórtico + losa + muros)
+Galpón (nave industrial)
 🛠 Herramientas FEM
 🔍 Inspect — derivación FEM por elemento
 📈 Modal+ ASCE 7-22 §12.9.1
@@ -20,35 +20,19 @@ Vista
 🎬 Demo simulador CAD
 📍 Ejes (frames individuales)
 Eje A (X=0.00 m)
-Eje B (X=0.71 m)
-Eje C (X=1.43 m)
-Eje D (X=2.14 m)
-Eje E (X=2.86 m)
-Eje F (X=3.57 m)
-Eje G (X=4.29 m)
-Eje H (X=5.00 m)
-Eje I (X=5.71 m)
-Eje J (X=6.43 m)
-Eje K (X=7.14 m)
-Eje L (X=7.86 m)
-Eje M (X=8.57 m)
-Eje N (X=9.29 m)
-Eje O (X=10.00 m)
+Eje B (X=1.50 m)
+Eje C (X=3.00 m)
+Eje D (X=4.50 m)
+Eje E (X=6.00 m)
+Eje F (X=7.50 m)
+Eje G (X=9.00 m)
+Eje H (X=10.50 m)
+Eje I (X=12.00 m)
 Eje 1 (Y=0.00 m)
-Eje 2 (Y=0.71 m)
-Eje 3 (Y=1.43 m)
-Eje 4 (Y=2.14 m)
-Eje 5 (Y=2.86 m)
-Eje 6 (Y=3.57 m)
-Eje 7 (Y=4.29 m)
-Eje 8 (Y=5.00 m)
-Eje 9 (Y=5.71 m)
-Eje 10 (Y=6.43 m)
-Eje 11 (Y=7.14 m)
-Eje 12 (Y=7.86 m)
-Eje 13 (Y=8.57 m)
-Eje 14 (Y=9.29 m)
-Eje 15 (Y=10.00 m)
+Eje 2 (Y=5.00 m)
+Eje 3 (Y=10.00 m)
+Eje 4 (Y=15.00 m)
+Eje 5 (Y=20.00 m)
 ✏ Herramientas CAD
 🖱 Seleccionar
 ● Nodo
@@ -159,14 +143,8 @@ Unidades
 🌐 Sistema (preset)
 📐 Display Units (granular)
 Geometría
-🧱 Muros de corte
-🟦 Losas
 Secciones
 Cargas
-Sísmico NEC
-Vanos X (svx)
-Vanos Y (svy)
-Alturas (sp)
 ⚙
 🛠
 Settings
@@ -182,7 +160,6 @@ Story Drifts
 Centers of Mass & Rigidity
 ⚡ Modal + Animación
 ▶ Correr modal + animar
-🔢 N° de modos (subir si masa <90%)
 ⏹ Detener y restaurar
 ▶ Reanudar
 ✂️ Cortes X/Y/Z

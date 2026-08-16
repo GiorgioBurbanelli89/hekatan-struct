@@ -22,7 +22,7 @@ const E_C = 24.98e6;   // kN/m²
 const nu_C = 0.2;
 const G_C = E_C / (2 * (1 + nu_C));
 const gamma_C = 23.56; // kN/m³
-const rho_C = gamma_C * 1000 / 9.80665; // kg/m³ ≈ 2401
+const rho_C = gamma_C / 9.80665;  // t/m3 de MASA: E va en kN/m2, asi que la masa va en toneladas (kg/m3 pesaba 1000x)
 
 export const vigaFlexionConcreteCantilever: ExampleDef = {
   id: "W2_viga_flexion_concrete_cantilever",

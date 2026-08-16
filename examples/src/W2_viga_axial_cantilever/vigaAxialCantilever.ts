@@ -21,7 +21,7 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 const E_A36 = 199.94e6;   // kN/m²  (= 20389020 Tonf/m² × 9.80665)
 const nu_A36 = 0.3;
 const G_A36 = E_A36 / (2 * (1 + nu_A36));
-const rho_A36 = 7849.0;   // kg/m³  (γ = 76.97 kN/m³ ÷ 9.80665 m/s² × 1000)
+const rho_A36 = 76.97 / 9.80665;  // t/m3 de MASA: E va en kN/m2, asi que la masa va en toneladas (kg/m3 pesaba 1000x)
 
 // Calcula A, I, As de un I custom dado D, B, TF, TW
 function iSectionProps(D: number, B: number, TF: number, TW: number) {

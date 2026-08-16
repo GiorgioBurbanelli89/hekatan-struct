@@ -134,7 +134,7 @@ export const vigaFlexionCompositeEncasedCantilever: ExampleDef = {
       loads.set(i, [0, 0, fz, 0, 0, 0]);
     }
 
-    const rho_eq = q_real / (A_eq * 9.80665) * 1000;
+    const rho_eq = q_real / (A_eq * 9.80665);  // t/m3 de MASA: E va en kN/m2, asi que la masa va en toneladas (kg/m3 pesaba 1000x)
 
     const elasticities = new Map<number, number>();
     const shearModuli = new Map<number, number>();

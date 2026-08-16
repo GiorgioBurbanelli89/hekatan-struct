@@ -18,7 +18,7 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 const E_C = 24.98e6;   // kN/m²
 const nu_C = 0.2;
 const G_C = E_C / (2 * (1 + nu_C));
-const rho_C = 23.56 * 1000 / 9.80665;  // ≈ 2402 kg/m³ (solo para mass info, no se usa en static)
+const rho_C = 23.56 / 9.80665;  // ≈ 2402 kg/m³ (solo para mass info, no se usa en static)
 
 export const vigaAxialConcreteCantilever: ExampleDef = {
   id: "W2_viga_axial_concrete_cantilever",

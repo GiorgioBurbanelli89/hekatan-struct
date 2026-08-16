@@ -5,7 +5,14 @@
 import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
-const Es = 200e6, nu_s = 0.3, Gs = Es / (2 * (1 + nu_s)), rho_s = 78;
+const Es = 200e6, nu_s = 0.3, Gs = Es / (2 * (1 + nu_s));
+/**
+ * ⚠️ `densities` es masa, NO peso. Con E en kN/m² y coordenadas en m, la masa
+ * tiene que ir en toneladas: `ρ = γ/g`. El motor lumpea `m = ρ·A·L`
+ * (`getGlobalMassMatrix.cpp`), así que poner 78 (kN/m³) pesaba 9.81× de más y
+ * el modo 1 salía a 0.0855 Hz (T = 11.7 s) en vez de a 0.268 Hz: √9.81 = 3.1321.
+ */
+const gamma_s = 78, G_GRAVITY = 9.81, rho_s = gamma_s / G_GRAVITY;  // 7.951 t/m³
 
 const P = (folder: string, label: string, def: number, min: number, max: number, step: number) =>
   ({ default: def, min, max, step, label, folder });
@@ -25,6 +32,7 @@ export const galpon: ExampleDef = {
     xDiv:     P("Geometría", "Div. X (arco)", 8, 4, 20, 1),
     yDiv:     P("Geometría", "Div. Y (longitud)", 4, 2, 12, 1),
     barA:     P("Secciones", "Área barra (m²)", 0.002, 0.0005, 0.02, 0.0005),
+    barI:     P("Secciones", "Inercia barra (cm⁴)", 869, 10, 20000, 10),
     CM:       P("Cargas", "CM por nodo (kN)", -1, -10, 0, 0.1),
   },
   build(p, states) {
@@ -83,7 +91,15 @@ export const galpon: ExampleDef = {
 
     // Propiedades (perfil metálico uniforme)
     const A = p.barA;
-    const I = A * A / 12;
+    /**
+     * Antes era `I = A²/12`, o sea la inercia de un CUADRADO MACIZO de lado √A:
+     * con A = 20 cm² eso son 4.47×4.47 cm → I = 3.33e-7 m⁴. Un perfil real de la
+     * misma área (IPE 160, A = 20.1 cm²) tiene 869 cm⁴ = 8.69e-6 m⁴, **26 veces
+     * más**, y √26 = 5.1 es justo lo que le faltaba al periodo. Ahora la inercia
+     * es un parámetro: 869 cm⁴ (IPE 160) da T₁ = 0.73 s, dentro del 0.3–0.8 s
+     * que se espera de una nave de acero.
+     */
+    const I = (p.barI ?? 869) * 1e-8;
     const elasticities = new Map<number, number>();
     const shearModuli = new Map<number, number>();
     const areas = new Map<number, number>();
