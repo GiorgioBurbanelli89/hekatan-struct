@@ -323,7 +323,13 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
     //   1 = PyNite weak (min(diagRot)/1000)
     //   2 = Hughes-Brezzi 1989 / Ibrahimbegovic-Taylor-Wilson 1990  [DEFAULT]
     int drillingType = getMapValST(elementInputs.drillingTypes, index, 2);
-    double drillScale = getMapValST(elementInputs.drillingPenaltyScales, index, 1.0);
+    // 0.05, el MISMO defecto que shellQ4.cpp (ver el comentario largo de alli).
+    // Cuando solo se bajo en shellQ4, el caso `membrana-thin-thick` lo canto en
+    // el acto: Shell-Thin daba 5.3728 mm y Shell-Thick 5.9139 en el MISMO muro
+    // cargado en su plano, cuando en ETABS thin/thick solo cambia la FLEXION y
+    // la membrana es identica. Dos ficheros con la misma constante escrita a
+    // mano en cada uno: si se toca, se tocan los dos.
+    double drillScale = getMapValST(elementInputs.drillingPenaltyScales, index, 0.05);
 
     if (drillingType == 2) {
         K += mFactor * getDrillingK_HughesBrezzi(x, y, E, nu, t, drillScale);

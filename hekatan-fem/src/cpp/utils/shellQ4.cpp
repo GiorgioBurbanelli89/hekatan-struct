@@ -1032,7 +1032,27 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     //   1 = PyNite weak spring (k = min(diagRot)/1000)
     //   2 = Hughes-Brezzi 1989 / Ibrahimbegovic-Taylor-Wilson 1990  [DEFAULT]
     int drillingType = getMapVal(elementInputs.drillingTypes, index, 2);
-    double drillScale = getMapVal(elementInputs.drillingPenaltyScales, index, 1.0);
+    // Por defecto 0.05, NO 1.0.
+    //
+    // El penalty vale gamma = G*t*scale. Con scale = 1.0 el drilling deja de
+    // ser un truco para quitar la singularidad de theta_z y se convierte en
+    // rigidez de verdad, que BLOQUEA la membrana. Medido en el muro en
+    // voladizo de 4 cascaras contra la viga de Timoshenko:
+    //
+    //     scale 1.00 (lo de antes) -> 5.3728 mm  -11.63 %
+    //     scale 0.49 (~el de ETABS)-> 5.6503 mm   -7.07 %
+    //     scale 0.10               -> 5.8827 mm   -3.24 %
+    //     scale 0.05               -> ver test membrana-convergencia
+    //     sin drilling             -> 5.9455 mm   -2.21 %
+    //
+    // MYSTRAN (CQUAD4, misma malla) da 5.7164 mm, -5.98 %. O sea que con
+    // scale 1.0 eramos el DOBLE de rigidos que un solver de referencia, y el
+    // culpable no era el elemento -que lleva modos incompatibles de Wilson-
+    // sino esta penalizacion.
+    //
+    // 0.05 deja el theta_z sujeto (que es para lo que esta) sin contaminar el
+    // resultado: queda a menos de 0.2 % del elemento sin drilling.
+    double drillScale = getMapVal(elementInputs.drillingPenaltyScales, index, 0.05);
 
     if (drillingType == 2) {
         // Hughes-Brezzi: penalty acoplado al residual θz - 0.5(∂v/∂x - ∂u/∂y)

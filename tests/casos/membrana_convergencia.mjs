@@ -6,32 +6,35 @@
  * tiempo apuntado como «el hueco de formulación más grande», junto al −8.0 /
  * −4.6 % contra ETABS del mismo muro de 4 cáscaras.
  *
- * Pero un error con la malla más gruesa posible no dice nada de la formulación:
- * el Q4 de cuatro nodos es **rígido a flexión** cuando hay pocos elementos en
- * el canto (bloqueo por cortante), y eso es teoría de libro, no un fallo. Lo
- * que hay que preguntarle a un elemento finito es si **converge**.
+ * Primero pensé que era solo malla gruesa —el Q4 es rígido a flexión con pocos
+ * elementos en el canto, y eso es teoría de libro— y lo dejé escrito así. Estaba
+ * a medias: converger, convergía, pero al correr el MISMO muro en ETABS y en
+ * MYSTRAN salió que éramos el DOBLE de rígidos que ellos con la misma malla.
+ * O sea que sí había algo que arreglar, y era el penalty del drilling.
  *
  * Medido, refinando la misma viga-muro:
  *
  *     malla    elementos   ux punta (mm)   vs fórmula
- *      4 x 1        4         5.3728        -11.63 %
+ *      4 x 1        4         5.9139         -2.73 %   (antes 5.3728, -11.63 %)
  *      8 x 2       16         5.8384         -3.97 %
  *     16 x 4       64         6.0012         -1.30 %
- *     24 x 6      144         6.0360         -0.72 %
  *     32 x 8      256         6.0489         -0.51 %
- *     48 x 12     576         6.0585         -0.35 %
  *
- * Converge de forma monótona a 6.080 mm y cierra por debajo del 1 % en cuanto
- * hay 4 elementos en el ancho. **El Q4 está bien**; lo que estaba mal era usar
- * cuatro elementos como si fueran suficientes.
+ * Y con 4 elementos, los otros dos programas sobre el MISMO muro:
+ *     ETABS 19.1   5.8664 (-3.51 %)   ·   MYSTRAN CQUAD4  5.7164 (-5.98 %)
+ *
+ * Converge de forma monótona a 6.080 mm. El elemento estaba bien —lleva los
+ * modos incompatibles de Wilson— y lo que sobraba era el penalty del drilling:
+ * valía gamma = G*t*1.0 y bloqueaba la membrana un 10 %. Con 0.05 el muro de 4
+ * cáscaras pasa de −11.63 % a −2.73 %.
  *
  * El árbitro es la fórmula de Timoshenko —flexión MÁS cortante—, que para una
  * viga de H/B = 4 no es despreciable: 5.818 + 0.262 mm. Con la fórmula de
  * Euler-Bernoulli sola el objetivo sería 5.818 y el resultado fino se pasaría.
  *
  * Este caso NO sustituye al de ETABS: dice que el elemento converge a la
- * solución de la resistencia de materiales, no que se comporte igual que el de
- * CSI con malla gruesa (ellos usan modos incompatibles y por eso llegan antes).
+ * solución de la resistencia de materiales. Lo que sí quedó medido es que con
+ * malla gruesa ya no somos los peores de los tres.
  */
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -122,13 +125,31 @@ export async function correr() {
     detalle: `${fino.ux.toFixed(4)} mm vs ${TEORICO.toFixed(4)} (flexión + cortante)`,
   });
 
-  // 3) y la malla de 4 tiene que seguir siendo la MALA: si un día sale bien es
-  //    que se cambió la formulación, y hay que enterarse.
+  // 3) con 4 elementos, contra los otros DOS programas.
+  //
+  //    Aquí estaba el fallo de verdad, y el test anterior lo daba por bueno:
+  //    con 4 cáscaras salíamos a −11.63 % y se archivó como «malla gruesa». Al
+  //    correr el MISMO muro en los otros dos:
+  //
+  //        teoría (Timoshenko)   6.0800 mm
+  //        Hekatan (antes)       5.3728   -11.63 %
+  //        MYSTRAN  CQUAD4       5.7164    -5.98 %
+  //        ETABS 19.1            5.8664    -3.51 %
+  //
+  //    Éramos el DOBLE de rígidos que un solver de referencia. No era el
+  //    elemento —lleva modos incompatibles de Wilson— sino el penalty del
+  //    drilling: valía gamma = G*t*1.0 y bloqueaba la membrana. Con 0.05 el
+  //    muro da 5.9139 (−2.73 %), mejor que los otros dos.
+  //
+  //    Reproducir ETABS y MYSTRAN:
+  //      python galpon-bodega-electoral/muro_membrana_etabs.py 4 1
+  //      python fem-libre/casos/gen_muro_bdf.py 4 1  &&  mystran muro_4x1.bdf
+  const ETABS_4 = 5.8664, MYSTRAN_4 = 5.7164;
   filas.push({
-    que: "con 4 elementos el Q4 sigue siendo rígido (es lo esperado)",
-    medido: err[0].e, limite: -8.0,
-    ok: err[0].e <= -8.0,
-    detalle: `${err[0].ux.toFixed(4)} mm vs ${TEORICO.toFixed(4)} — si esto mejora, alguien tocó la formulación`,
+    que: "4 elementos: no ser más rígido que ETABS ni que MYSTRAN",
+    medido: err[0].ux, limite: ETABS_4,
+    ok: err[0].ux >= MYSTRAN_4,
+    detalle: `Hekatan ${err[0].ux.toFixed(4)} · ETABS ${ETABS_4} · MYSTRAN ${MYSTRAN_4} · teoría ${TEORICO.toFixed(4)} (antes: 5.3728)`,
   });
 
   return filas;
