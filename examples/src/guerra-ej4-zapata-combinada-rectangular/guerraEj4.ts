@@ -177,7 +177,11 @@ export const guerraEj4ZapataCombinada: ExampleDef = {
       thicknesses: new Map(elements.map((_, i) => [i, tz])),
     };
     const deformations = new Map<number, [number, number, number, number, number, number]>();
-    for (const r of result.nodeResults) deformations.set(r.node, [0, 0, r.w, r.bx, r.by, 0]);
+    // `PlateQ4NodeResult` es {x, y, w, bx, by}: NO trae `node`. Poniendo
+    // `r.node` (undefined) las 289 deformaciones se guardaban todas bajo la
+    // MISMA clave y el visor no encontraba ninguna: la zapata salia PLANA con
+    // la deformada encendida. El indice del array es el del nudo.
+    result.nodeResults.forEach((r, i) => deformations.set(i, [0, 0, r.w, r.bx, r.by, 0]));
     states.deformOutputs.val = { deformations, reactions: new Map() };
     states.analyzeOutputs.val = { pressure, bendingXX, bendingYY, bendingXY, vonMises };
 

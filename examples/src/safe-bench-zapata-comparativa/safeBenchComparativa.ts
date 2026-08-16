@@ -287,9 +287,10 @@ export const safeBenchComparativa: ExampleDef = {
       thicknesses: new Map(elements.map((_, i) => [i, tz])),
     };
     const deformations = new Map<number, [number, number, number, number, number, number]>();
-    for (const nr of r.output.nodeResults) {
-      deformations.set(nr.node, [0, 0, nr.w, nr.bx, nr.by, 0]);
-    }
+    r.output.nodeResults.forEach((nr, iNr) => {
+      // nr.node no existe en PlateQ4NodeResult: es el indice del array.
+      deformations.set(iNr, [0, 0, nr.w, nr.bx, nr.by, 0]);
+    })
     states.deformOutputs.val = { deformations, reactions: new Map() };
 
     const pressure = new Map<number, number[]>();
