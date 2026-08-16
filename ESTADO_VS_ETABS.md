@@ -5,7 +5,7 @@ Este archivo es **el hilo**: se actualiza cada vez que se mide algo contra ETABS
 número de aquí es **medido y reproducible**, no un límite del test ni una cuenta
 a mano. La columna «cómo repetirlo» tiene el comando exacto.
 
-**Última medida: 2026-08-15** · suite `npm test` → **106/106** · WASM y C++
+**Última medida: 2026-08-15** · suite `npm test` → **130/130** · WASM y C++
 nativo idénticos a 13 decimales.
 
 **Regla de oro** para que la comparación signifique algo: mismo modelo, misma
@@ -42,6 +42,7 @@ Hekatan, cuando eran los 78.6876 m de viga que ETABS no pesa.
 | **Placa** | flecha y momentos | Navier analítico + SAFE 8×8 | −0.04 a +2.34 % | `node tests/run.mjs safe` |
 | **Ejes locales, `ang`, `as`** | frecuencia contra fórmula | voladizo · analítico | −0.48 / −0.33 % | `node tests/run.mjs modal-as-ang` |
 | **End releases** | flecha y frecuencia | viga · analítico | 0.03 / 0.01 % | `node tests/run.mjs end-releases` |
+| **Cáscara — membrana, CONVERGENCIA** | `ux` de la punta refinando la malla | viga-muro en voladizo · viga de Timoshenko (flexión + cortante) | 4 elem −11.63 % → 16: −3.97 → 64: −1.30 → 256: **−0.51 %** · 576: −0.35 % | `node tests/run.mjs membrana-conv` |
 | **Unidades de la masa** | `c = √(E/ρ)` de cada ejemplo con modal | 39 ejemplos · velocidad de onda del material + voladizo Euler-Bernoulli | los 39 dentro de **1500–8000 m/s**; el voladizo de acero cierra al **1.5 %** | `node tests/run.mjs unidades` |
 | **UI — botón «Correr modal + animar»** | ¿el modelo se mueve de verdad? | bundle de deploy · Test M — Dual | **sí**: 8/8 frames distintos, panel con Modo 1/24, 2.0726 Hz, T = 0.4825 s, Ux 84 % | `node cli/shot_modal_anim.mjs local` |
 
@@ -49,7 +50,7 @@ Hekatan, cuando eran los 78.6876 m de viga que ETABS no pesa.
 
 | capa | qué se midió | modelo · árbitro | medido | por qué / qué falta |
 |---|---|---|---|---|
-| **Cáscara — membrana** | rigidez en su plano | muro 4 cáscaras · ETABS | **−8.0 / −4.6 %** (antes −21.7 / −25.8) | El Q4 de Hekatan no lleva los modos incompatibles completos de CSI. Sale más RÍGIDO en su plano. |
+| **Cáscara — membrana, con MALLA GRUESA** | rigidez en su plano | muro **4 cáscaras** · ETABS | −8.0 / −4.6 % | **No es un hueco de formulación: es convergencia.** El Q4 converge a la viga de Timoshenko (fila de arriba), pero con 4 elementos va −11.6 % y CSI llega antes porque añade modos incompatibles. O sea que la diferencia contra ETABS es de VELOCIDAD de convergencia con malla pobre, no de resultado. Con 4 elementos en el ancho los dos deberían coincidir; falta medirlo en ETABS con la malla fina. |
 | **Cáscara — drilling** | penalty del giro normal | 1 celda · ETABS | Hekatan **2.03×** el de ETABS | Equivale a `gamma_scale ≈ 0.49`, pero **ni con la misma forma**: no basta con cambiar el defecto, hay que saber qué penalty usa ETABS. Mueve poco (0.03 % en el modo torsional del `pm`). |
 | **Modal — galpón entero** | 4 primeros modos con masa | galpón · ETABS 22 (lateral + lump), **offsets = 0** | −1.60 / −0.58 / +0.78 / **−2.99 %** · MAC 0.970 / 0.902 / 0.929 / **0.723** | Con la masa cerrada al 0.00004 %, lo que queda es rigidez. Y el MAC dice que el −2.99 % del modo 4 **no es una frecuencia mal calculada**: Hekatan PARTE en dos el modo 4 de ETABS — sus modos 4 (4.2821) y 5 (4.6424) apuntan los dos al mismo, con MAC **0.723 + 0.271 = 0.994**. Arreglar eso es arreglar la malla (nudos colgados de un solo paño), no el solver. |
 | **Modal — galpón, modos altos** | emparejados por forma | galpón · ETABS 22, offsets = 0 | modo 11 Hek ↔ modo 7 ETABS: **MAC 0.9997**, −0.06 % | Cuando la forma es la misma, la frecuencia coincide. Lo de abajo es reordenamiento por modos locales, no error del solver. |
