@@ -18,6 +18,15 @@ import * as THREE from "three";
 // factor g → períodos modales sale × √9.81 ≈ 3.13× más largos que ETABS.
 const G_GRAVITY = 9.81;
 const rho_c = 24 / G_GRAVITY; // ≈ 2.447 ton/m³
+/**
+ * Densidad del ACERO. Faltaba, y por eso las columnas y vigas de acero
+ * entraban con la del hormigón: **3.25 veces menos masa de la que tienen**
+ * (2.447 contra 7.951 t/m³). Afectaba al modal de todo lo que clona este
+ * ejemplo con `matCol`/`matViga` en Acero W: `edif-acero`,
+ * `edificio-acero-v2`, `edificio-mixto`, `edificio-dual` y `mezanine`.
+ * Lo cazo el test de `c = √(E/ρ)`: salía 9042 m/s donde el acero real da 5048.
+ */
+const rho_s = 78 / G_GRAVITY; // ≈ 7.951 ton/m³
 
 // Helper para crear params con folder
 const P = (folder: string, label: string, def: number, min: number, max: number, step: number) =>
@@ -743,9 +752,13 @@ export const edificioAporticado: ExampleDef = {
     const matColE = p.matCol < 0.5 ? Ec : Es;
     const matColG = p.matCol < 0.5 ? Gc : Gs;
     const matColNu = p.matCol < 0.5 ? nu_c : nu_s;
+    // La DENSIDAD tambien va por material, no solo E, G y nu. Antes se ponia
+    // `rho_c` a todo y una columna de acero pesaba lo que una de hormigon.
+    const matColRho = p.matCol < 0.5 ? rho_c : rho_s;
     const matVigaE = p.matViga < 0.5 ? Ec : Es;
     const matVigaG = p.matViga < 0.5 ? Gc : Gs;
     const matVigaNu = p.matViga < 0.5 ? nu_c : nu_s;
+    const matVigaRho = p.matViga < 0.5 ? rho_c : rho_s;
 
     const elasticities = new Map<number, number>();
     const shearModuli = new Map<number, number>();
@@ -797,14 +810,14 @@ export const edificioAporticado: ExampleDef = {
         areas.set(i, cp.A);
         Iz.set(i, cp.Iz * fCol_I); Iy.set(i, cp.Iy * fCol_I); J.set(i, cp.J);
         // Si Mass Source = Loads, density de cols = 0 (la masa va solo en losa)
-        densities.set(i, useMassFromLoads ? 0 : rho_c);
+        densities.set(i, useMassFromLoads ? 0 : matColRho);
       } else {
         const vp = vigaPropsAt(Math.min(floor, 7));
         elasticities.set(i, matVigaE); shearModuli.set(i, matVigaG); poissons.set(i, matVigaNu);
         areas.set(i, vp.A);
         Iz.set(i, vp.Iz * fVig_I); Iy.set(i, vp.Iy * fVig_I); J.set(i, vp.J);
         // Si Mass Source = Loads, density de vigas = 0 (la masa va solo en losa)
-        densities.set(i, useMassFromLoads ? 0 : rho_c);
+        densities.set(i, useMassFromLoads ? 0 : matVigaRho);
       }
     }
 

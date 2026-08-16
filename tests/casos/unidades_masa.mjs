@@ -46,12 +46,7 @@ const EXENTOS = {
  * numero. No se tapan — la ultima fila del caso falla si aparece uno nuevo o
  * si esta lista deja de estar al dia.
  *
- * 1) Los edificios (c hasta 9042 m/s): las barras de ACERO reciben la densidad
- *    del HORMIGON. `edificioAporticado.ts` hace `densities.set(i, rho_c)` sin
- *    mirar `matCol`/`matViga`, y `edif-acero`, `edificio-acero-v2`,
- *    `edificio-mixto`, `edificio-dual` y `mezanine` reutilizan ese build. El
- *    acero pesa 3.25 veces mas que ese valor (7.951 vs 2.446 t/m3). Hay que
- *    repartir por material, no dividir por g.
+ * 1) [ARREGLADO] Los edificios daban al acero la densidad del hormigon.
  *
  * 2) Los `benchmark-paz-*` con modal: convierten a kg/m3 (`rho_kgm3`) y lo
  *    pasan con E en kN/m2, o sea 1000x. Pero corregir eso NO los cierra contra
@@ -62,7 +57,10 @@ const EXENTOS = {
  *    aparte y con arbitro: el libro.
  */
 const PENDIENTES = [
-  "edif-acero", "edificio-acero-v2", "edificio-mixto", "edificio-dual", "mezanine",
+  // (1) ARREGLADO: los cinco edificios daban al acero la densidad del hormigon.
+  //     `edificioAporticado.ts` ponia `rho_c` a todo sin mirar `matCol`/`matViga`,
+  //     asi que una columna de acero pesaba 2.447 t/m3 en vez de 7.951: 3.25
+  //     veces menos masa. Ahora la densidad va por material, como E, G y nu.
   "benchmark-paz-7-1", "benchmark-paz-9-3", "benchmark-paz-10-7",
   "benchmark-paz-11-1", "benchmark-paz-12-1", "benchmark-paz-13-1",
 ];
