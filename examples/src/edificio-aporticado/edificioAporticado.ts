@@ -399,13 +399,29 @@ export const edificioAporticado: ExampleDef = {
     const Gc = Ec / (2 * (1 + nu_c));
     const Gs = Es / (2 * (1 + nu_s));
 
-    // Arrays de luces individuales
-    const svX = [p.svX_1, p.svX_2, p.svX_3, p.svX_4, p.svX_5, p.svX_6]
-      .slice(0, nvx).map(v => (v > 0 ? v : p.spanX));
-    const svY = [p.svY_1, p.svY_2, p.svY_3, p.svY_4, p.svY_5, p.svY_6]
-      .slice(0, nvy).map(v => (v > 0 ? v : p.spanY));
-    const hpisos = [p.hP_1, p.hP_2, p.hP_3, p.hP_4, p.hP_5, p.hP_6, p.hP_7, p.hP_8]
-      .slice(0, np).map(v => (v > 0 ? v : p.hPiso));
+    /**
+     * Luces y alturas, una por vano y por piso.
+     *
+     * Antes eran arrays LITERALES de 6 y de 8 (`[p.hP_1 … p.hP_8]`) y luego un
+     * `.slice(0, np)`. Con más pisos que huecos el slice no rellena nada: el
+     * array se queda corto, las cotas de los pisos que sobran se calculan con
+     * `undefined` y salen **NaN**. Es lo que le pasaba a `edificio-dual`, que
+     * pide 10 pisos: **450 nudos con z = NaN** desde el nudo 81 (el primero del
+     * piso 9), el solver tiraba «Matrix decomposition failed» y ETABS importaba
+     * joints con la coordenada NaN. El `.slice` escondía el problema porque
+     * nunca falla: solo devuelve menos.
+     *
+     * `dynamicParams` ya genera `hP_i` y `svX_i` para todos los que haga falta,
+     * así que se leen por nombre y no de una lista escrita a mano.
+     */
+    const porIndice = (prefijo: string, n: number, porDefecto: number) =>
+      Array.from({ length: n }, (_, i) => {
+        const v = (p as any)[`${prefijo}${i + 1}`];
+        return typeof v === "number" && v > 0 ? v : porDefecto;
+      });
+    const svX = porIndice("svX_", nvx, p.spanX);
+    const svY = porIndice("svY_", nvy, p.spanY);
+    const hpisos = porIndice("hP_", np, p.hPiso);
 
     // Grid coords
     const xCoords: number[] = [];
@@ -489,11 +505,50 @@ export const edificioAporticado: ExampleDef = {
     // Vigas secundarias
     if (p.vSecOn >= 0.5 && p.nVSec >= 1) {
       const nVSec = Math.round(p.nVSec);
+      /**
+       * Parte en dos cualquier barra que PASE por este nudo sin tenerlo de
+       * extremo.
+       *
+       * Sin esto, la viga secundaria nacía en un nudo NUEVO sobre la viga
+       * principal —(0, 1.67, 3), por ejemplo— y esa viga principal seguía
+       * yendo de esquina a esquina sin enterarse: la secundaria entera quedaba
+       * FLOTANDO, sin tocar nada. Seis grados de libertad de sólido rígido, o
+       * sea matriz SINGULAR. `edif-acero` (que trae `vSecOn` encendido) no
+       * resolvía: 0 deformaciones, ΣRz = 0 y el solver avisando «LDLT failed…
+       * Matrix decomposition failed». Medido: con `vSecOn=0` resolvía y
+       * equilibraba exacto; con las secundarias, 24 nudos tocaban un solo
+       * elemento — los dos extremos de 12 vigas colgadas de la nada.
+       */
+      const partirBarrasEn = (ni: number) => {
+        const P = nodes[ni];
+        for (let e = elements.length - 1; e >= 0; e--) {
+          const el = elements[e];
+          if (el.length !== 2) continue;
+          const [a, b] = el;
+          if (a === ni || b === ni) continue;
+          const A = nodes[a], B = nodes[b];
+          const d = [B[0]-A[0], B[1]-A[1], B[2]-A[2]];
+          const v = [P[0]-A[0], P[1]-A[1], P[2]-A[2]];
+          const L2 = d[0]**2 + d[1]**2 + d[2]**2;
+          if (L2 < 1e-12) continue;
+          const t = (v[0]*d[0] + v[1]*d[1] + v[2]*d[2]) / L2;
+          if (t < 1e-6 || t > 1 - 1e-6) continue;          // el nudo es un extremo
+          if (Math.hypot(v[0]-t*d[0], v[1]-t*d[1], v[2]-t*d[2]) > 1e-6) continue;
+          elements[e] = [a, ni];
+          const nuevo = elements.length;
+          elements.push([ni, b]);
+          // el trozo nuevo es del mismo tipo que el que se partió
+          if (beamIdx.has(e)) beamIdx.add(nuevo);
+          if (colIdx.has(e)) colIdx.add(nuevo);
+        }
+      };
       const findOrCreateNode = (x: number, y: number, z: number): number => {
         for (let ni = 0; ni < nodes.length; ni++) {
           if (Math.abs(nodes[ni][0]-x)<1e-6 && Math.abs(nodes[ni][1]-y)<1e-6 && Math.abs(nodes[ni][2]-z)<1e-6) return ni;
         }
-        const idx = nodes.length; nodes.push([x, y, z]); return idx;
+        const idx = nodes.length; nodes.push([x, y, z]);
+        partirBarrasEn(idx);      // que la viga principal se entere
+        return idx;
       };
       const dir = p.vSecDir < 0.5 ? 'x' : 'y';
       for (let iz = 1; iz < zCoords.length; iz++) {

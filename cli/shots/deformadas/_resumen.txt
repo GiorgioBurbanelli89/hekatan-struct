@@ -1,1 +1,2 @@
-guerra-ej1-zapata-cuadrada             encendida   errores JS: 0
+edif-acero                             encendida   errores JS: 0
+edificio-dual                          encendida   errores JS: 0
