@@ -1,2 +1,1 @@
-edif-acero                             encendida   errores JS: 0
-edificio-dual                          encendida   errores JS: 0
+galpon                                 encendida   errores JS: 0

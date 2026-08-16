@@ -4,6 +4,9 @@
  */
 import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
+import { paramsSeccion, seccionDe, etiquetasSeccion, nombreSeccion, toLocalInertia, FORMAS }
+  from "../shared/paramsSeccion";
+
 
 const Es = 200e6;       // acero kN/m²
 const nu_s = 0.3;
@@ -21,7 +24,10 @@ export const trussGen: ExampleDef = {
     span:       { default: 12, min: 4, max: 30, step: 0.5, label: "Luz (m)", folder: "Geometría" },
     divisions:  { default: 6,  min: 2, max: 20, step: 1,   label: "Divisiones", folder: "Geometría" },
     height:     { default: 1.5, min: 0.5, max: 5, step: 0.1, label: "Altura cercha (m)", folder: "Geometría" },
-    barA:       { default: 0.004, min: 0.001, max: 0.02, step: 0.001, label: "Área barra (m²)", folder: "Secciones" },
+    // Forma y dimensiones, no un area suelta: `I = A^2/12` era la inercia de
+    // un cuadrado macizo de lado sqrt(A), o sea una seccion de juguete.
+    // Tubo 100x100x4, tipico de cercha de acero.
+    ...paramsSeccion("Secciones", { forma: FORMAS["Tubo rectangular"], h: 100, b: 100, t: 4 }),
     CM:         { default: -2, min: -20, max: 0, step: 0.5, label: "CM por nodo (kN)", folder: "Cargas" },
     CV:         { default: -1, min: -20, max: 0, step: 0.5, label: "CV por nodo (kN)", folder: "Cargas" },
   },
@@ -61,12 +67,13 @@ export const trussGen: ExampleDef = {
     const J = new Map<number, number>();
     const densities = new Map<number, number>();
     const poissons = new Map<number, number>();
-    const A = p.barA;
-    const I = A * A / 12;
+    const sec = seccionDe(p);
+    const A = sec.A;
+    const { moiZ, moiY } = toLocalInertia(sec);
     for (let i = 0; i < elements.length; i++) {
       elasticities.set(i, Es); shearModuli.set(i, Gs); poissons.set(i, nu_s);
       densities.set(i, rho_s);
-      areas.set(i, A); Iz.set(i, I); Iy.set(i, I); J.set(i, 2 * I);
+      areas.set(i, A); Iz.set(i, moiZ); Iy.set(i, moiY); J.set(i, sec.J);
     }
 
     states.nodes.val = nodes;
@@ -74,7 +81,8 @@ export const trussGen: ExampleDef = {
     states.nodeInputs.val = { supports, loads };
     states.elementInputs.val = {
       elasticities, shearModuli, areas,
-      momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy, torsionalConstants: J,
+      // I33 (fuerte) va en momentsOfInertiaZ; I22 (debil) en momentsOfInertiaY.
+      momentsOfInertiaY: Iy, momentsOfInertiaZ: Iz, torsionalConstants: J,
       densities, poissonsRatios: poissons,
     };
     const deformOut = deform(nodes, elements, states.nodeInputs.val, states.elementInputs.val);
@@ -82,6 +90,8 @@ export const trussGen: ExampleDef = {
     states.analyzeOutputs.val = analyze(nodes, elements, states.elementInputs.val, deformOut);
     states.objects3D.val = [];
   },
+  /** Lo que sale de la forma y las dimensiones, a la vista. */
+  computedLabels: (p) => etiquetasSeccion(p),
   runModal(p, states, modalPanel) {
     const nodes = states.nodes.val;
     const elements = states.elements.val;
@@ -92,7 +102,7 @@ export const trussGen: ExampleDef = {
       const out = modalAnalysis(nodes, elements, ni, ei, 12);
       modalPanel.render(out, {
         title: `Cercha Warren L=${p.span}m h=${p.height}m`,
-        properties: [`E=200 GPa (acero) ρ=78 kN/m³  A=${(p.barA*1e4).toFixed(0)} cm²`],
+        properties: [`E=200 GPa (acero)  ${nombreSeccion(p)}  A=${(seccionDe(p).A*1e4).toFixed(1)} cm²`],
       });
     } catch (e: any) { console.warn("Modal truss error:", e.message); }
   },

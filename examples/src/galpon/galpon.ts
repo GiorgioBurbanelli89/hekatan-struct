@@ -4,6 +4,8 @@
  */
 import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
+import { paramsSeccion, seccionDe, etiquetasSeccion, nombreSeccion, toLocalInertia, FORMAS }
+  from "../shared/paramsSeccion";
 
 const Es = 200e6, nu_s = 0.3, Gs = Es / (2 * (1 + nu_s));
 /**
@@ -31,8 +33,20 @@ export const galpon: ExampleDef = {
     archRise: P("Geometría", "Flecha arco (m)", 3, 0.5, 8, 0.25),
     xDiv:     P("Geometría", "Div. X (arco)", 8, 4, 20, 1),
     yDiv:     P("Geometría", "Div. Y (longitud)", 4, 2, 12, 1),
-    barA:     P("Secciones", "Área barra (m²)", 0.002, 0.0005, 0.02, 0.0005),
-    barI:     P("Secciones", "Inercia barra (cm⁴)", 869, 10, 20000, 10),
+    /**
+     * La sección se define por su FORMA y sus DIMENSIONES, no por un área
+     * suelta: con 20 cm² cabe un cuadrado de 4.47 cm, un IPE 160 o un tubo, y
+     * su inercia se diferencia en veintiséis veces.
+     *
+     * Por defecto **tubo 150×150×6**, que es lo que se usa en una nave: sus dos
+     * inercias son iguales, así que no depende de cómo esté girado el perfil.
+     * Medido: T₁ = 0.82 s, dentro del 0.3–0.8 s que se espera de una nave de
+     * acero. Con un IPE 160 —seleccionable— sale T₁ = 1.76 s, porque su eje
+     * débil es **12 veces más flojo** y aquí las barras también flectan en él;
+     * para usarlo de verdad haría falta orientar cada perfil con `ang`.
+     */
+    ...paramsSeccion("Secciones", { forma: FORMAS["Tubo rectangular"], h: 150, b: 150, t: 6,
+                                    tf: 7.4, tw: 5.0 }),
     CM:       P("Cargas", "CM por nodo (kN)", -1, -10, 0, 0.1),
   },
   build(p, states) {
@@ -89,29 +103,34 @@ export const galpon: ExampleDef = {
           loads.set(nid[iy][i], [0, 0, p.CM, 0, 0, 0]);
     }
 
-    // Propiedades (perfil metálico uniforme)
-    const A = p.barA;
     /**
-     * Antes era `I = A²/12`, o sea la inercia de un CUADRADO MACIZO de lado √A:
-     * con A = 20 cm² eso son 4.47×4.47 cm → I = 3.33e-7 m⁴. Un perfil real de la
-     * misma área (IPE 160, A = 20.1 cm²) tiene 869 cm⁴ = 8.69e-6 m⁴, **26 veces
-     * más**, y √26 = 5.1 es justo lo que le faltaba al periodo. Ahora la inercia
-     * es un parámetro: 869 cm⁴ (IPE 160) da T₁ = 0.73 s, dentro del 0.3–0.8 s
-     * que se espera de una nave de acero.
+     * Perfil metálico uniforme. Antes esto era `A = p.barA` con
+     * `I = A²/12` — la inercia de un CUADRADO MACIZO de lado √A: con 20 cm²,
+     * 4.47×4.47 cm. Un IPE 160 de la MISMA área tiene 26 veces más inercia, y
+     * √26 = 5.1 es justo lo que le faltaba al periodo (11.7 s contra 0.73 s).
+     * Ahora la sección se define por su forma y sus dimensiones, y A, I33, I22
+     * y J salen de las fórmulas de `cadSections.ts`.
      */
-    const I = (p.barI ?? 869) * 1e-8;
+    const sec = seccionDe(p);
+    const A = sec.A;
+    const { moiZ, moiY } = toLocalInertia(sec);
     const elasticities = new Map<number, number>();
     const shearModuli = new Map<number, number>();
     const areas = new Map<number, number>();
-    const Iz = new Map<number, number>();
-    const Iy = new Map<number, number>();
+    // Nombrados por lo que SON en la convencion CSI (ver CLAUDE.md): I33 es el
+    // eje fuerte y va en `momentsOfInertiaZ`; I22 el debil, en
+    // `momentsOfInertiaY`. Antes los mapas se llamaban Iz/Iy y se asignaban
+    // CRUZADOS; con las dos inercias iguales no se notaba, pero con un perfil
+    // de verdad el eje fuerte habria acabado flectando por el debil.
+    const I33 = new Map<number, number>();
+    const I22 = new Map<number, number>();
     const J = new Map<number, number>();
     const densities = new Map<number, number>();
     const poissons = new Map<number, number>();
     for (let i = 0; i < elements.length; i++) {
       elasticities.set(i, Es); shearModuli.set(i, Gs); poissons.set(i, nu_s);
       densities.set(i, rho_s);
-      areas.set(i, A); Iz.set(i, I); Iy.set(i, I); J.set(i, 2 * I);
+      areas.set(i, A); I33.set(i, moiZ); I22.set(i, moiY); J.set(i, sec.J);
     }
 
     states.nodes.val = nodes;
@@ -119,7 +138,7 @@ export const galpon: ExampleDef = {
     states.nodeInputs.val = { supports, loads };
     states.elementInputs.val = {
       elasticities, shearModuli, areas,
-      momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy, torsionalConstants: J,
+      momentsOfInertiaY: I22, momentsOfInertiaZ: I33, torsionalConstants: J,
       densities, poissonsRatios: poissons,
     };
     const deformOut = deform(nodes, elements, states.nodeInputs.val, states.elementInputs.val);
@@ -127,6 +146,8 @@ export const galpon: ExampleDef = {
     states.analyzeOutputs.val = analyze(nodes, elements, states.elementInputs.val, deformOut);
     states.objects3D.val = [];
   },
+  /** Lo que sale de la forma y las dimensiones, a la vista. */
+  computedLabels: (p) => etiquetasSeccion(p),
   runModal(p, states, modalPanel) {
     const nodes = states.nodes.val;
     const elements = states.elements.val;
@@ -137,7 +158,7 @@ export const galpon: ExampleDef = {
       const out = modalAnalysis(nodes, elements, ni, ei, 12);
       modalPanel.render(out, {
         title: `Galpón L=${p.span}m largo=${p.length}m`,
-        properties: [`Altura ${p.height}m + arco ${p.archRise}m  perfil A=${(p.barA*1e4).toFixed(1)} cm²  acero`],
+        properties: [`Altura ${p.height}m + arco ${p.archRise}m  ·  ${nombreSeccion(p)}  ·  A=${(seccionDe(p).A*1e4).toFixed(1)} cm²  acero`],
       });
     } catch (e: any) { console.warn("Modal galpón error:", e.message); }
   },
