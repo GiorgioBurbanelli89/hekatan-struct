@@ -33,5 +33,8 @@ export const edifAcero: ExampleDef = {
   ...edificioAporticado,
   id: "edif-acero",
   name: "Edificio de Acero (W + deck)",
+  // Propia, NO la del edificio base: con `slabOn: 1` este trae 1200 cascaras
+  // ademas de las 87 barras, o sea que es MIXTO y el padre no.
+  category: "4️⃣ Mixtos · 🏢 Edificios",
   params: cloneParams(),
 };

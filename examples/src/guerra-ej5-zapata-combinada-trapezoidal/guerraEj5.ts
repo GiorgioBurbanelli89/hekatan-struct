@@ -28,7 +28,7 @@ function buildColumnFrame(x: number, y: number, h: number, s: number): THREE.Obj
 export const guerraEj5ZapataTrapezoidal: ExampleDef = {
   id: "guerra-ej5-zapata-combinada-trapezoidal",
   name: "Ej.5 · Zapata Trapezoidal (L=5, B1=3.75→B2=1.60)",
-  category: "📚 Libros · SAFE - Marcelo Guerra",
+  category: "2️⃣ Shells · 🧰 Cimentaciones",
   benchmark: true,
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],

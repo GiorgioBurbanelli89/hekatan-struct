@@ -30,7 +30,7 @@ import * as THREE from "three";
 export const placaBase: ExampleDef = {
   id: "placa-base",
   name: "Placa base anclada (AISC 360-22 §J8 + ACI 318)",
-  category: "🔩 Conexiones",
+  category: "2️⃣ Shells · 🔩 Conexiones",
   hasModal: false,
   defaultShellResult: "vonMises",
   availableShellResults: ["vonMises", "bendingXX", "bendingYY", "bendingXY", "membraneXX", "membraneYY", "displacementZ"],

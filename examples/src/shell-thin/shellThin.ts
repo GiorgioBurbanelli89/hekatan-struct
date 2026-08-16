@@ -9,7 +9,7 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 export const shellThin: ExampleDef = {
   id: "shell-thin",
   name: "Shell Thin (Kirchhoff-Love) — Hekatan vs SAP δ+4.31% M+0.47%",
-  category: "🏁 Benchmarks · 2️⃣ Áreas",
+  category: "2️⃣ Shells · 🐚 Cáscaras",
   benchmark: true,
   defaultShellResult: "displacementZ",
   availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "membraneXX", "membraneYY", "membraneXY", "vonMises", "displacementZ"],

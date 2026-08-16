@@ -23,7 +23,7 @@ import * as THREE from "three";
 export const conexionEndPlate: ExampleDef = {
   id: "conexion-end-plate",
   name: "Conexión End Plate 4E/4ES (AISC 358 §6)",
-  category: "🔩 Conexiones",
+  category: "2️⃣ Shells · 🔩 Conexiones",
   hasModal: false,
   defaultShellResult: "vonMises",
   availableShellResults: ["vonMises", "membraneXX", "membraneYY", "displacementZ"],

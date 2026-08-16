@@ -48,7 +48,7 @@ import {
 export const benchmarkPaz13_1: ExampleDef = {
   id: "benchmark-paz-13-1",
   name: "🏁 Frame · Paz 13.1 (Space Frame 3D — 4 vigas radiando)",
-  category: "🏁 Benchmarks · 6️⃣ Paz",
+  category: "1️⃣ Frames · 🎯 6 GDL Espacial",
   benchmark: true,
   defaultShellResult: "none",
   guide: [

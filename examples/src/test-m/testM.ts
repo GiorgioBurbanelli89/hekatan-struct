@@ -583,19 +583,19 @@ const e2kSeismicCfg = {
 };
 
 export const testMPortico: ExampleDef = {
-  id: "test-m-portico", name: "🎓 Test M — Solo pórticos (sin losa)", category: "🎓 Test M",
+  id: "test-m-portico", name: "🎓 Test M — Solo pórticos (sin losa)", category: "1️⃣ Frames · 🎯 n GDL Sistemas",
   params: { ...BASE }, dynamicParams: dynParams, hasModal: true, ...e2kSeismicCfg,
   build(p, states) { buildEdificio(p, states, { slab: false, walls: false }); },
   runModal(_p, states, modalPanel) { runModalEdificio(_p, states, modalPanel, "Test M — Solo pórticos", { slab: false, walls: false }); },
 };
 export const testMLosa: ExampleDef = {
-  id: "test-m-losa", name: "🎓 Test M — Solo con losa (pórtico + losa)", category: "🎓 Test M",
+  id: "test-m-losa", name: "🎓 Test M — Solo con losa (pórtico + losa)", category: "4️⃣ Mixtos · 🏢 Edificios",
   params: { ...BASE }, dynamicParams: dynParams, hasModal: true, ...shellRes, ...e2kSeismicCfg,
   build(p, states) { buildEdificio(p, states, { slab: true, walls: false }); },
   runModal(_p, states, modalPanel) { runModalEdificio(_p, states, modalPanel, "Test M — Pórtico + losa", { slab: true, walls: false }); },
 };
 export const testMDual: ExampleDef = {
-  id: "test-m-dual", name: "🎓 Test M — Dual (pórtico + losa + muros)", category: "🎓 Test M",
+  id: "test-m-dual", name: "🎓 Test M — Dual (pórtico + losa + muros)", category: "4️⃣ Mixtos · 🏢 Edificios",
   params: { ...BASE }, dynamicParams: dynParams, hasModal: true, ...shellRes, ...e2kSeismicCfg,
   build(p, states) { buildEdificio(p, states, { slab: true, walls: true }); },
   runModal(_p, states, modalPanel) { runModalEdificio(_p, states, modalPanel, "Test M — Dual (pórtico+losa+muros)", { slab: true, walls: true }); },

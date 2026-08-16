@@ -63,7 +63,7 @@ const ETABS_FIXED_REF: Record<string, number> = {
 export const benchmarkCft: ExampleDef = {
   id: "benchmark-cft",
   name: "🏁 Benchmark CFT (cols + I-beams + losa)",
-  category: "🏁 Benchmarks · 4️⃣ Combinados",
+  category: "4️⃣ Mixtos · 🔀 Losas con vigas",
   benchmark: true,
   defaultShellResult: "displacementZ",
   availableShellResults: ["displacementZ", "bendingXX", "bendingYY", "bendingXY", "vonMises"],

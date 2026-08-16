@@ -61,7 +61,7 @@ const NAVIER_UL = {
 export const benchmarkSafeEx01Plate: ExampleDef = {
   id: "benchmark-safe-ex01-plate",
   name: "SAFE Ex.1 · Placa SS rectangular (Timoshenko)",
-  category: "🏁 Benchmarks · 2️⃣ Áreas · 📘 SAFE",
+  category: "2️⃣ Shells · 🧱 Placas",
   benchmark: true,
   defaultShellResult: "displacementZ",
   availableShellResults: ["displacementZ", "bendingXX", "bendingYY", "bendingXY",

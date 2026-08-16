@@ -14,7 +14,7 @@ const P = (folder: string, label: string, def: number, min: number, max: number,
 export const tower3D: ExampleDef = {
   id: "tower-3d",
   name: "Torre 3D (con diagonales)",
-  category: "🏗 Pórticos y barras",
+  category: "1️⃣ Frames · 🎯 6 GDL Espacial",
   defaultShellResult: "none",
   availableShellResults: [],
   hasModal: true,

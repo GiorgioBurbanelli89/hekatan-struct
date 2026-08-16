@@ -23,7 +23,7 @@ const rho_C = 23.56 / 9.80665;  // ≈ 2402 kg/m³ (solo para mass info, no se u
 export const vigaAxialConcreteCantilever: ExampleDef = {
   id: "W2_viga_axial_concrete_cantilever",
   name: "Viga axial Hormigón 30×30 cantilever (1 DOF)",
-  category: "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 1 DOF Axial",
+  category: "1️⃣ Frames · 🎯 1 GDL Axial",
   benchmark: true,
   defaultShellResult: "none",
   availableShellResults: [],

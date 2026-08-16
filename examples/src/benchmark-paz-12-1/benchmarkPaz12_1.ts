@@ -30,7 +30,7 @@ const PAZ_REF = {
 export const benchmarkPaz12_1: ExampleDef = {
   id: "benchmark-paz-12-1",
   name: "🏁 Frame · Paz 12.1 (grid frame 3D — L horizontal)",
-  category: "🏁 Benchmarks · 6️⃣ Paz",
+  category: "1️⃣ Frames · 🎯 3 GDL Pórtico plano",
   benchmark: true,
   defaultShellResult: "none",
   guide: [

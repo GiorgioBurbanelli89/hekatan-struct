@@ -11,7 +11,7 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 export const plateWithBeams: ExampleDef = {
   id: "plate-with-beams",
   name: "Plate + Perimeter Beams (vs SAP)",
-  category: "🏁 Benchmarks · 2️⃣ Áreas",
+  category: "4️⃣ Mixtos · 🔀 Losas con vigas",
   benchmark: true,
   defaultShellResult: "bendingXX",
   availableShellResults: ["bendingXX", "bendingYY", "bendingXY",

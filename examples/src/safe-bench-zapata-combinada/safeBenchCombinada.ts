@@ -20,7 +20,7 @@ function buildPedestalFrame(x: number, y: number, h: number, side: number): THRE
 export const safeBenchCombinada: ExampleDef = {
   id: "safe-bench-zapata-combinada",
   name: "SAFE Benchmark · Zapata Combinada 4×2×0.40m, 2 cols (Δ +0.08%)",
-  category: "🧰 Cimentaciones",
+  category: "2️⃣ Shells · 🧰 Cimentaciones",
   benchmark: true,
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],

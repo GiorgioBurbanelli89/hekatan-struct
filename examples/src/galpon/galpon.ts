@@ -20,7 +20,7 @@ const P = (folder: string, label: string, def: number, min: number, max: number,
 export const galpon: ExampleDef = {
   id: "galpon",
   name: "Galpón (nave industrial)",
-  category: "🏗 Pórticos y barras",
+  category: "1️⃣ Frames · 🎯 n GDL Sistemas",
   defaultShellResult: "none",
   availableShellResults: [],
   hasModal: true,

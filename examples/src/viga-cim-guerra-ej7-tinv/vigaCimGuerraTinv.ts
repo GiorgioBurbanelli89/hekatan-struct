@@ -84,7 +84,9 @@ function tSectionProps(B: number, t_zap: number, b_viga: number, h_viga: number)
 export const vigaCimGuerraEj7Tinv: ExampleDef = {
   id: "viga-cim-guerra-ej7-tinv",
   name: "Ej.7 · Viga Cimentación (T invertida + pedestales)",
-  category: "📚 Libros · SAFE - Marcelo Guerra",
+  // Medido: 52 BARRAS y ninguna cascara. La viga T invertida esta modelada
+  // con frames sobre resortes, no con placas.
+  category: "1️⃣ Frames · 🎯 2 GDL Flexión",
   defaultShellResult: "displacementZ",
   availableShellResults: ["displacementZ"],
   hasModal: false,

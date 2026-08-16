@@ -26,7 +26,7 @@ const MAT_GROUND = new THREE.LineBasicMaterial({ color: 0x00cc00, linewidth: 2 }
 export const zapataVigaAmarre: ExampleDef = {
   id: "zapata-viga-amarre",
   name: "Zapata + Viga de Amarre + Pedestal",
-  category: "🧰 Cimentaciones",
+  category: "4️⃣ Mixtos · 🧰 Cimentaciones",
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "displacementZ", "vonMises"],
   hasModal: true,

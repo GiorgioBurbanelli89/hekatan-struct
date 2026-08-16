@@ -28,7 +28,7 @@ const PE = (folder: string, label: string, def: number, options: Record<string, 
 export const edificioAporticado: ExampleDef = {
   id: "edificio-aporticado",
   name: "Edificio Aporticado",
-  category: "🏢 Edificios",
+  category: "1️⃣ Frames · 🎯 n GDL Sistemas",
   // Edificio aporticado: por defecto sin shell colormap (modelo 1D), pero si
   // el usuario activa losas (slabOn) o el modo "Solo cimentación" tendremos
   // elementos shell Q4 cuyos resultados (pressure, bending, displacement) sí

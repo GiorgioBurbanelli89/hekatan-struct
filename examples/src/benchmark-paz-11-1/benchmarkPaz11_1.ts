@@ -38,7 +38,7 @@ const PAZ_REF = {
 export const benchmarkPaz11_1: ExampleDef = {
   id: "benchmark-paz-11-1",
   name: "🏁 Frame · Paz 11.1 (plane frame inclinado 45°)",
-  category: "🏁 Benchmarks · 6️⃣ Paz",
+  category: "1️⃣ Frames · 🎯 3 GDL Pórtico plano",
   benchmark: true,
   defaultShellResult: "none",
   guide: [

@@ -30,7 +30,7 @@ function buildColumnFrame(x: number, y: number, h: number, side: number): THREE.
 export const guerraEj1ZapataCuadrada: ExampleDef = {
   id: "guerra-ej1-zapata-cuadrada",
   name: "Ej.1 · Zapata Aislada Cuadrada (3.45×3.45×0.45)",
-  category: "📚 Libros · SAFE - Marcelo Guerra",
+  category: "2️⃣ Shells · 🧰 Cimentaciones",
   benchmark: true,
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],

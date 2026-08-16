@@ -29,7 +29,7 @@ const P = (folder: string, label: string, def: number, min: number, max: number,
 export const cerramiento: ExampleDef = {
   id: "cerramiento",
   name: "Cerramiento (pórtico plano N vanos)",
-  category: "🏢 Edificios",
+  category: "1️⃣ Frames · 🎯 n GDL Sistemas",
   defaultShellResult: "none",
   availableShellResults: [],
   hasModal: true,

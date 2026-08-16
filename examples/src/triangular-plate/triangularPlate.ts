@@ -22,7 +22,7 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 export const triangularPlate: ExampleDef = {
   id: "triangular-plate",
   name: "Placa Triangular MITC3 (Bathe)",
-  category: "🧱 Losas y cáscaras",
+  category: "2️⃣ Shells · 🧱 Placas",
   defaultShellResult: "displacementZ",
   availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "displacementZ", "vonMises"],
   hasModal: false,

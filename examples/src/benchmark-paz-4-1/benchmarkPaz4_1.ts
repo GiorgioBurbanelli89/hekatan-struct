@@ -43,7 +43,7 @@ const PAZ_REF = {
 export const benchmarkPaz4_1: ExampleDef = {
   id: "benchmark-paz-4-1",
   name: "🏁 Frame · Paz 4.1 (1-DOF rectangular impulse)",
-  category: "🏁 Benchmarks · 6️⃣ Paz",
+  category: "1️⃣ Frames · 🎯 3 GDL Pórtico plano",
   benchmark: true,
   defaultShellResult: "none",
   guide: [

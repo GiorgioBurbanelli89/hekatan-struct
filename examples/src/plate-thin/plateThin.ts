@@ -8,7 +8,7 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 export const plateThin: ExampleDef = {
   id: "plate-thin",
   name: "Plate Thin (Kirchhoff) — Hekatan vs SAP -0.32%",
-  category: "🏁 Benchmarks · 2️⃣ Áreas",
+  category: "2️⃣ Shells · 🧱 Placas",
   benchmark: true,
   defaultShellResult: "bendingXX",
   availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "displacementZ"],

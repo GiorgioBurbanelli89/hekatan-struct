@@ -1,0 +1,23 @@
+Todas
+1️⃣ Frames (todos: 41)
+▸ 🎯 1 GDL Axial
+▸ 🎯 2 GDL Flexión
+▸ 🎯 3 GDL Pórtico plano
+▸ 🎯 6 GDL Espacial
+▸ 🎯 n GDL Sistemas
+2️⃣ Shells (todos: 36)
+▸ 🧱 Placas
+▸ 🕸 Membranas
+▸ 🐚 Cáscaras
+▸ 🥞 Layered
+▸ 🧰 Cimentaciones
+▸ 🔩 Conexiones
+3️⃣ Sólidos
+4️⃣ Mixtos (todos: 34)
+▸ 🏢 Edificios
+▸ 🧰 Cimentaciones (4️⃣)
+▸ 🔀 Losas con vigas
+▸ 🌉 Puentes e icónicos
+🧪 Utilidades
+🗄 Legacy
+🏁 Benchmarks (todos: 51)

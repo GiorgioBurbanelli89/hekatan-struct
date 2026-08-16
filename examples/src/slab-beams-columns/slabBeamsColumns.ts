@@ -16,7 +16,7 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 export const slabBeamsColumns: ExampleDef = {
   id: "slab-beams-columns",
   name: "Slab + Vigas + Columnas (1 piso completo)",
-  category: "🏁 Benchmarks · 2️⃣ Áreas",
+  category: "4️⃣ Mixtos · 🔀 Losas con vigas",
   benchmark: true,
   defaultShellResult: "bendingXX",
   availableShellResults: ["bendingXX", "bendingYY", "bendingXY",

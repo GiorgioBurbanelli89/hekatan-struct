@@ -12,7 +12,7 @@ const gamma_s = 78, G_GRAVITY = 9.81, rho_s = gamma_s / G_GRAVITY;  // 7.951 t/m
 export const barraAxial: ExampleDef = {
   id: "W1_barra_axial",
   name: "W1 — Barra axial (1 DOF)",
-  category: "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 1 DOF Axial",
+  category: "1️⃣ Frames · 🎯 1 GDL Axial",
   benchmark: true,
   defaultShellResult: "none",
   availableShellResults: [],

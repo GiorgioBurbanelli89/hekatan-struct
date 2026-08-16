@@ -37,7 +37,7 @@ const ETABS_PERIODS_S = [0.34337, 0.34337, 0.28756];  // T1 Ux, T2 Uy, T3 Rz
 export const mesaTorsion: ExampleDef = {
   id: "mesa-torsion",
   name: "🌀 Mesa de Torsión (ETABS Gabriela/Seproinca)",
-  category: "🏁 Benchmarks · 4️⃣ Combinados",
+  category: "4️⃣ Mixtos · 🔀 Losas con vigas",
   benchmark: true,
   defaultShellResult: "displacementZ",
   availableShellResults: [

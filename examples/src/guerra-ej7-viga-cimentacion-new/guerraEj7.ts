@@ -24,7 +24,7 @@ interface ColData { x: number; P: number; M: number; }
 export const guerraEj7VigaCimentacion: ExampleDef = {
   id: "guerra-ej7-viga-cimentacion-new",
   name: "Ej.7 NEW · Viga Cimentación L=17.20m (4 cols)",
-  category: "📚 Libros · SAFE - Marcelo Guerra",
+  category: "2️⃣ Shells · 🧰 Cimentaciones",
   benchmark: true,
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],

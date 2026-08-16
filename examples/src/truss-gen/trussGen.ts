@@ -13,7 +13,7 @@ const gamma_s = 78, G_GRAVITY = 9.81, rho_s = gamma_s / G_GRAVITY;  // 7.951 t/m
 export const trussGen: ExampleDef = {
   id: "truss-gen",
   name: "Cercha (Warren)",
-  category: "🏗 Pórticos y barras",
+  category: "1️⃣ Frames · 🎯 6 GDL Espacial",
   defaultShellResult: "none",
   availableShellResults: [],
   hasModal: true,

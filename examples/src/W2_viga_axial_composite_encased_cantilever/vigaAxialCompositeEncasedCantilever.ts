@@ -35,7 +35,7 @@ const rho_S = 76.97 / 9.80665;  // t/m3 de MASA: E va en kN/m2, asi que la masa 
 export const vigaAxialCompositeEncasedCantilever: ExampleDef = {
   id: "W2_viga_axial_composite_encased_cantilever",
   name: "Viga axial Compuesta SRC Encased cantilever (1 DOF)",
-  category: "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 1 DOF Axial",
+  category: "1️⃣ Frames · 🎯 1 GDL Axial",
   benchmark: true,
   defaultShellResult: "none",
   availableShellResults: [],

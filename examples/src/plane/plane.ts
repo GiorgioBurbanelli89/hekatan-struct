@@ -34,7 +34,7 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 export const plane: ExampleDef = {
   id: "plane",
   name: "Plane Element (Q4 plane stress)",
-  category: "🧱 Losas y cáscaras",
+  category: "2️⃣ Shells · 🕸 Membranas",
   defaultShellResult: "vonMises",
   availableShellResults: ["vonMises", "membraneXX", "membraneYY", "membraneXY", "displacementX", "displacementZ"],
   hasModal: true,

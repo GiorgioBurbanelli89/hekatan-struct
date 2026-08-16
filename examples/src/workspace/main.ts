@@ -2850,35 +2850,40 @@ function buildParamsPane() {
   // Orden preferido de categorías (las primeras arriba, después alfabético)
   // Los Benchmarks van PRIMEROS, divididos en 5 sub-categorías ordenadas
   // (Frames → Áreas → Sólidos → Combinados → Layered).
+  // El árbol lo manda el TIPO DE ELEMENTO, y dentro de Frames los GRADOS DE
+  // LIBERTAD, que es el orden en que se estudia: 1 GDL axial → 2 GDL flexión →
+  // 3 GDL pórtico plano → 6 GDL espacial → n GDL sistemas.
+  //
+  // Antes el primer nivel era la PROCEDENCIA del ejemplo (Benchmarks, Libros,
+  // Icónicos, Edificios…), o sea de dónde salió y no qué es: el mismo voladizo
+  // de acero vivía en tres cajones según quién lo hubiera metido, y para buscar
+  // "una placa" había que mirar en cinco sitios. Los benchmarks NO se pierden:
+  // llevan el flag `benchmark` (el selector les pone 🏁 delante) y siguen
+  // teniendo su filtro propio que los junta a todos.
+  //
+  // Quién es frame, shell o sólido se midió construyendo cada ExampleDef y
+  // contando sus elementos por número de nodos (2 / 3-4 / 8), no a ojo. Se
+  // mantiene con `ordenar_categorias.py`.
   const categoryOrder = [
-    // ── Benchmarks · jerarquía 3 niveles: topología → tipo elemento → DOFs ──
-    // Frames se divide en Columnas y Vigas (cargas y comportamiento típicos
-    // distintos), y dentro de cada uno por número de DOFs efectivos.
-    "🏁 Benchmarks · 1️⃣ Frames · 🏛 Columnas · 🎯 1 DOF Axial",       // peso propio
-    "🏁 Benchmarks · 1️⃣ Frames · 🏛 Columnas · 🎯 2 DOF Flexión",     // + carga lateral
-    "🏁 Benchmarks · 1️⃣ Frames · 🏛 Columnas · 🎯 3 DOF Biaxial",
-    "🏁 Benchmarks · 1️⃣ Frames · 🏛 Columnas · 🎯 6 DOF Multiaxial",
-    "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 1 DOF Axial",          // Px puntual sin peso propio
-    "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 2 DOF Flexión",        // peso propio / carga vertical
-    "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 3 DOF Biaxial",
-    "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 n DOF Sistemas",       // Paz 6.3 (space frame)
-    "🏁 Benchmarks · 1️⃣ Frames",                                      // legacy sin sub-clasificar
-    "🏁 Benchmarks · 2️⃣ Áreas",                                       // shells (5-6 DOFs intrínseco)
-    "🏁 Benchmarks · 3️⃣ Sólidos",                                     // H8 (3 DOFs/nodo)
-    "🏁 Benchmarks · 4️⃣ Combinados",
-    "🏁 Benchmarks · 5️⃣ Layered",
-    "🏁 Benchmarks · 6️⃣ Paz",
-    "🏁 Benchmarks",                  // legacy
-    "Cimentaciones",
-    "Frames 1D",
-    "Pórticos 2D",
-    "Pórticos 3D",
-    "Edificios",
-    "Placas",
-    "Cáscaras",
-    "Sólidos",
-    "Conexiones",
-    "Columnas",
+    "1️⃣ Frames · 🎯 1 GDL Axial",
+    "1️⃣ Frames · 🎯 2 GDL Flexión",
+    "1️⃣ Frames · 🎯 3 GDL Pórtico plano",
+    "1️⃣ Frames · 🎯 6 GDL Espacial",
+    "1️⃣ Frames · 🎯 n GDL Sistemas",
+    "2️⃣ Shells · 🧱 Placas",
+    "2️⃣ Shells · 🕸 Membranas",
+    "2️⃣ Shells · 🐚 Cáscaras",
+    "2️⃣ Shells · 🥞 Layered",
+    "2️⃣ Shells · 🧰 Cimentaciones",
+    "2️⃣ Shells · 🔩 Conexiones",
+    "3️⃣ Sólidos",
+    "4️⃣ Mixtos · 🏢 Edificios",
+    "4️⃣ Mixtos · 🧰 Cimentaciones",
+    "4️⃣ Mixtos · 🔩 Conexiones",
+    "4️⃣ Mixtos · 🔀 Losas con vigas",
+    "4️⃣ Mixtos · 🌉 Puentes e icónicos",
+    "🧪 Utilidades",
+    "🗄 Legacy",
   ];
   const sortedCats = [
     ...categoryOrder.filter((c) => allCategories.includes(c)),
@@ -2896,34 +2901,38 @@ function buildParamsPane() {
   // En Tweakpane: options = { "display label": "actual value" }
   //   KEY = lo que el usuario VE en el dropdown
   //   VALUE = lo que se almacena en selectorObj.category (usado para filtrar)
+  //
+  // La jerarquía es GENÉRICA: la marca el separador " · " de la propia
+  // categoría, valga para la familia que valga. Antes solo la entendían las que
+  // empezaban por "🏁 Benchmarks · " y el resto salía en plano — por eso el
+  // árbol nuevo no se veía por ningún lado aunque las categorías ya lo
+  // dijeran. Cada raíz ("1️⃣ Frames") aparece como cabecera que muestra TODO lo
+  // suyo, y debajo van sus hojas indentadas.
   const catOptions: Record<string, string> = { [ALL]: ALL };
-  let benchmarkHeaderInserted = false;
+  const raicesPuestas = new Set<string>();
   for (const c of sortedCats) {
-    if (c.startsWith("🏁 Benchmarks · ")) {
-      // Insertar el header "TODOS" antes de la primera sub-categoría
-      if (!benchmarkHeaderInserted) {
-        catOptions["🏁 Benchmarks (TODOS los 12)"] = ALL_BENCHMARKS;
-        benchmarkHeaderInserted = true;
-      }
-      // Soporte jerarquía hasta 3 niveles:
-      //   "🏁 Benchmarks · X"             → "       ▸ X"
-      //   "🏁 Benchmarks · X · Y"         → "          ▸▸ Y"
-      //   "🏁 Benchmarks · X · Y · Z"     → "             ▸▸▸ Y · Z"
-      //     (3er nivel incluye el segmento padre para evitar colisiones cuando
-      //      el último segmento se repite — p.ej. Columnas·1DOFAxial vs
-      //      Vigas·1DOFAxial ambos terminarían en "🎯 1 DOF Axial").
-      const sansPrefix = c.replace("🏁 Benchmarks · ", "");
-      const segments = sansPrefix.split(" · ");
-      const last = segments[segments.length - 1];
-      let indentedLabel: string;
-      if (segments.length === 1)        indentedLabel = `       ▸ ${last}`;
-      else if (segments.length === 2)   indentedLabel = `          ▸▸ ${last}`;
-      else                              indentedLabel = `             ▸▸▸ ${segments[segments.length - 2]} · ${last}`;
-      catOptions[indentedLabel] = c;
-    } else {
-      catOptions[c] = c;
+    const segments = c.split(" · ");
+    if (segments.length === 1) { catOptions[c] = c; continue; }
+    const raiz = segments[0];
+    if (!raicesPuestas.has(raiz)) {
+      const nEnRaiz = examplesRegistry.filter((e) => e.category?.startsWith(raiz + " · ")).length;
+      catOptions[`${raiz}  (todos: ${nEnRaiz})`] = raiz;   // cabecera del grupo
+      raicesPuestas.add(raiz);
     }
+    const last = segments[segments.length - 1];
+    // La KEY es lo que se VE y tiene que ser única: "🧰 Cimentaciones" está en
+    // Shells (zapatas de solo placa) y en Mixtos (con pedestal y vigas), y si
+    // las dos hojas se llamaran igual una pisaría a la otra en el objeto de
+    // opciones y una rama entera desaparecería del desplegable.
+    let indent = segments.length === 2
+      ? `       ▸ ${last}`
+      : `          ▸▸ ${segments[segments.length - 2]} · ${last}`;
+    if (indent in catOptions) indent = `${indent}  (${raiz.split(" ")[0]})`;
+    catOptions[indent] = c;
   }
+  // Los benchmarks ya no son un cajón del árbol (están repartidos por tipo de
+  // elemento), pero siguen siendo un filtro útil: se listan por su FLAG.
+  catOptions[`🏁 Benchmarks (todos: ${examplesRegistry.filter((e) => e.benchmark).length})`] = ALL_BENCHMARKS;
 
   const selectorObj = { category: currentExample.category, id: currentExample.id };
 
@@ -2945,12 +2954,13 @@ function buildParamsPane() {
   const matchesCategory = (exampleCat: string | undefined, selectedCat: string): boolean => {
     if (!exampleCat) return false;
     if (exampleCat === selectedCat) return true;
-    // Indentado (1, 2 o 3 niveles): match si la categoría del ejemplo termina
-    // con el sufijo del label seleccionado.
-    //   "▸ 1️⃣ Frames"                       → matches "🏁 Benchmarks · 1️⃣ Frames"
-    //   "▸▸ 🏛 Columnas"                    → matches "...· 🏛 Columnas"
-    //   "▸▸▸ 🏛 Columnas · 🎯 1 DOF Axial"  → matches "...· 🏛 Columnas · 🎯 1 DOF Axial"
-    if (selectedCat.startsWith("▸") && exampleCat.startsWith("🏁 Benchmarks · ")) {
+    // Cabecera de grupo ("1️⃣ Frames"): entra todo lo que cuelgue de ella.
+    if (exampleCat.startsWith(selectedCat + " · ")) return true;
+    // Hoja indentada: Tweakpane recorta los espacios del principio de la KEY,
+    // así que llega como "▸ 🎯 1 GDL Axial". Vale con que la categoría del
+    // ejemplo termine en ese sufijo — el 2º nivel lleva su padre delante para
+    // que "🧰 Cimentaciones" de Shells no se cruce con el de Mixtos.
+    if (selectedCat.startsWith("▸")) {
       const trimmed = selectedCat.replace(/^▸+\s*/, "");
       return exampleCat.endsWith(trimmed);
     }

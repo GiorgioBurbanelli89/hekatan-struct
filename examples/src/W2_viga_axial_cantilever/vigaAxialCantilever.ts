@@ -48,7 +48,7 @@ function iSectionProps(D: number, B: number, TF: number, TW: number) {
 export const vigaAxialCantilever: ExampleDef = {
   id: "W2_viga_axial_cantilever",
   name: "Viga axial Acero I-450 cantilever (1 DOF)",
-  category: "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 1 DOF Axial",
+  category: "1️⃣ Frames · 🎯 1 GDL Axial",
   benchmark: true,
   defaultShellResult: "none",
   availableShellResults: [],

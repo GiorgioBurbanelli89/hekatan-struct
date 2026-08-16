@@ -12,7 +12,7 @@ let ultimoError = "";
 export const galponBodega: ExampleDef = {
   id: "galpon-bodega",
   name: "Galpon bodega 2 plantas (analitico del DWG)",
-  category: "🏗 Pórticos y barras",
+  category: "1️⃣ Frames · 🎯 n GDL Sistemas",
   defaultShellResult: "none",
   availableShellResults: [],
   hasModal: true,

@@ -27,7 +27,7 @@ export const guerraEj6ZapataUnida: ExampleDef = {
   ...zapataVigaAmarre,
   id: "guerra-ej6-zapata-unida-viga-amarre",
   name: "Ej.6 · Zapata Unida con Viga de Amarre (Guerra MDI pag.113)",
-  category: "📚 Libros · SAFE - Marcelo Guerra",
+  category: "4️⃣ Mixtos · 🧰 Cimentaciones",
   guide: [
     "EJ.6 Guerra MDI pag.113-130. Zapata unida con viga de amarre.",
     "Zapata 1 (medianera): 2.38×3.00m. Zapata 2 (interna): 2.45×2.45m.",

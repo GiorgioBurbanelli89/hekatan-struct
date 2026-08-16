@@ -16,7 +16,7 @@ const TONF_TO_KN = 9.80665;
 export const safeBenchLosa: ExampleDef = {
   id: "safe-bench-losa-cimentacion",
   name: "SAFE Benchmark · Losa Cimentación 6×8×0.50m, 6 cols (Δ +0.33%)",
-  category: "🧰 Cimentaciones",
+  category: "4️⃣ Mixtos · 🧰 Cimentaciones",
   benchmark: true,
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],

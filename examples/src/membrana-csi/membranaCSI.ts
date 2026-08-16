@@ -43,7 +43,7 @@ const gamma_c = 24, G_GRAVITY = 9.81, rho_c = gamma_c / G_GRAVITY;  // 2.446 t/m
 export const membranaCSI: ExampleDef = {
   id: "membrana-csi",
   name: "Membrana CSI (Shell-Membrane + tri/trap load)",
-  category: "🧱 Losas y cáscaras",
+  category: "4️⃣ Mixtos · 🔀 Losas con vigas",
   defaultShellResult: "vonMises",
   availableShellResults: ["vonMises", "membraneXX", "membraneYY", "membraneXY", "displacementX", "displacementY", "displacementZ"],
   hasModal: true,

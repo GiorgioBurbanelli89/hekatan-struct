@@ -42,7 +42,7 @@ const COL_GRID = [
 export const guerraEj8LosaCimentacion: ExampleDef = {
   id: "guerra-ej8-losa-cimentacion",
   name: "Ej.8 · Losa de Cimentación (Raft 23×21m, 16 cols)",
-  category: "📚 Libros · SAFE - Marcelo Guerra",
+  category: "2️⃣ Shells · 🧰 Cimentaciones",
   benchmark: true,
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],

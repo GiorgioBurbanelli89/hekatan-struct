@@ -40,7 +40,7 @@ const MAT_GROUND = new THREE.LineBasicMaterial({ color: 0x00cc00, linewidth: 2 }
 export const zapataAisladaValidacion: ExampleDef = {
   id: "zapata-aislada-validacion",
   name: "Zapata Aislada — Hekatan vs SAFE/Calcpad (Bowles)",
-  category: "🏁 Benchmarks · 4️⃣ Combinados",
+  category: "4️⃣ Mixtos · 🧰 Cimentaciones",
   benchmark: true,  // 🏁 Validación Bowles 1996 — referencia Winkler clásica
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "displacementZ", "vonMises"],

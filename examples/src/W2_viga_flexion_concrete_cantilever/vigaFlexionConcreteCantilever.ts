@@ -27,7 +27,7 @@ const rho_C = gamma_C / 9.80665;  // t/m3 de MASA: E va en kN/m2, asi que la mas
 export const vigaFlexionConcreteCantilever: ExampleDef = {
   id: "W2_viga_flexion_concrete_cantilever",
   name: "Viga flexión Hormigón 30×60 cantilever (2 DOF)",
-  category: "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 2 DOF Flexión",
+  category: "1️⃣ Frames · 🎯 2 GDL Flexión",
   benchmark: true,
   defaultShellResult: "none",
   availableShellResults: [],

@@ -50,7 +50,7 @@ const MATLAB_REF: Record<string, number> = {
 export const benchmark3way: ExampleDef = {
   id: "benchmark-3way",
   name: "🏁 Benchmark 3-way (Shell+Frame DOF mismatch)",
-  category: "🏁 Benchmarks · 4️⃣ Combinados",
+  category: "4️⃣ Mixtos · 🔀 Losas con vigas",
   benchmark: true,
   defaultShellResult: "displacementZ",
   availableShellResults: ["displacementZ", "displacementX", "bendingXX", "bendingYY", "bendingXY", "membraneXX", "membraneYY", "vonMises"],

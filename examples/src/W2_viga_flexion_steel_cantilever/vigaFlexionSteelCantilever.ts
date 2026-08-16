@@ -28,7 +28,7 @@ const rho_S = gamma_S / 9.80665;  // t/m3 de MASA: E va en kN/m2, asi que la mas
 export const vigaFlexionSteelCantilever: ExampleDef = {
   id: "W2_viga_flexion_steel_cantilever",
   name: "Viga flexión Acero IPE 300 cantilever (2 DOF)",
-  category: "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 2 DOF Flexión",
+  category: "1️⃣ Frames · 🎯 2 GDL Flexión",
   benchmark: true,
   defaultShellResult: "none",
   availableShellResults: [],

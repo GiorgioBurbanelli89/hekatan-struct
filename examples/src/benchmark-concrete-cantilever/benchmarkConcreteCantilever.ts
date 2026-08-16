@@ -37,7 +37,7 @@ import { getActiveSelfWeightMultiplier } from "../shared/loadCaseHelpers";
 export const benchmarkConcreteCantilever: ExampleDef = {
   id: "benchmark-concrete-cantilever",
   name: "🏁 Frame · Columna HORMIGÓN Cantilever",
-  category: "🏁 Benchmarks · 1️⃣ Frames · 🏛 Columnas · 🎯 1 DOF Axial",
+  category: "1️⃣ Frames · 🎯 2 GDL Flexión",
   benchmark: true,
   defaultShellResult: "none",
   guide: [

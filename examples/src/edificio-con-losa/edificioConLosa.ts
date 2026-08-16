@@ -27,7 +27,7 @@ params.slabT    = { ...baseParams.slabT,    default: 0.15 };
 export const edificioConLosa: ExampleDef = {
   id: "edificio-con-losa",
   name: "Edificio con Losa (sin muros)",
-  category: "🏢 Edificios",
+  category: "4️⃣ Mixtos · 🏢 Edificios",
   defaultShellResult: "bendingXX",
   availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "displacementZ", "vonMises"],
   hasModal: true,

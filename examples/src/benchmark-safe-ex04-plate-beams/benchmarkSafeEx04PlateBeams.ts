@@ -55,7 +55,7 @@ const SAFE_8x8_THIN = { "P1": 0.1848, "P2": 0.1523, "P3": 0.0722 };
 export const benchmarkSafeEx04PlateBeams: ExampleDef = {
   id: "benchmark-safe-ex04-plate-beams",
   name: "SAFE Ex.4 · Placa SS + vigas elásticas (Timoshenko, λ=4)",
-  category: "🏁 Benchmarks · 2️⃣ Áreas · 📘 SAFE",
+  category: "4️⃣ Mixtos · 🧰 Cimentaciones",
   benchmark: true,
   defaultShellResult: "displacementZ",
   availableShellResults: ["displacementZ", "bendingXX", "bendingYY", "bendingXY",

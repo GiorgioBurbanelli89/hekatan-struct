@@ -36,7 +36,7 @@ import {
 export const benchmarkSteelCantilever: ExampleDef = {
   id: "benchmark-steel-cantilever",
   name: "🏁 Frame · Columna ACERO Cantilever",
-  category: "🏁 Benchmarks · 1️⃣ Frames · 🏛 Columnas · 🎯 1 DOF Axial",
+  category: "1️⃣ Frames · 🎯 2 GDL Flexión",
   benchmark: true,
   defaultShellResult: "none",
   guide: [

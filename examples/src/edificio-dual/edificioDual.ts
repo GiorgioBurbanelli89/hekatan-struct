@@ -41,7 +41,7 @@ params.nPisos     = { ...base.nPisos,     default: 10 };
 export const edificioDual: ExampleDef = {
   id: "edificio-dual",
   name: "Edificio Dual (Mixto + Muros + Diagonales)",
-  category: "🏢 Edificios",
+  category: "4️⃣ Mixtos · 🏢 Edificios",
   defaultShellResult: "bendingXX",
   availableShellResults: ["bendingXX", "bendingYY", "displacementZ", "vonMises"],
   hasModal: true,

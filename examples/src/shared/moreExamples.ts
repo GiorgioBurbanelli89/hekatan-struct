@@ -18,7 +18,7 @@ const P = (folder: string, label: string, def: number, min: number, max: number,
 export const eiffel = makeSimpleExample({
   id: "eiffel",
   name: "Torre Eiffel",
-  category: "🗽 Icónicos",
+  category: "4️⃣ Mixtos · 🌉 Puentes e icónicos",
   params: {
     H:     P("Geometría", "Altura total (m)", 30, 10, 80, 1),
     baseW: P("Geometría", "Base (m)", 15, 5, 30, 1),
@@ -60,7 +60,7 @@ export const eiffel = makeSimpleExample({
 export const arco = makeSimpleExample({
   id: "arco",
   name: "Arco (Gateway)",
-  category: "🗽 Icónicos",
+  category: "4️⃣ Mixtos · 🌉 Puentes e icónicos",
   params: {
     span:  P("Geometría", "Luz (m)", 40, 10, 100, 2),
     rise:  P("Geometría", "Flecha (m)", 20, 5, 60, 1),
@@ -92,7 +92,7 @@ export const arco = makeSimpleExample({
 export const puente = makeSimpleExample({
   id: "puente",
   name: "Puente reticular",
-  category: "🗽 Icónicos",
+  category: "4️⃣ Mixtos · 🌉 Puentes e icónicos",
   params: {
     span:   P("Geometría", "Luz (m)", 30, 10, 80, 2),
     height: P("Geometría", "Canto (m)", 4, 1, 10, 0.5),
@@ -546,7 +546,7 @@ export const vigaQ4 = makeSimpleExample({
 export const pergola = makeSimpleExample({
   id: "pergola",
   name: "Pérgola",
-  category: "🏗 Pórticos y barras",
+  category: "4️⃣ Mixtos · 🌉 Puentes e icónicos",
   params: {
     W:  P("Geometría", "Ancho (m)", 4, 2, 10, 0.25),
     L:  P("Geometría", "Largo (m)", 5, 2, 12, 0.5),

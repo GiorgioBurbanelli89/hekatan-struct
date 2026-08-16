@@ -19,7 +19,7 @@ import type { ExampleDef } from "../workspace/exampleRegistry";
 export const drillingDof: ExampleDef = {
   id: "drilling-dof",
   name: "Drilling DOF — 2 muros + viga de acople",
-  category: "🧪 Utilidades",
+  category: "4️⃣ Mixtos · 🔀 Losas con vigas",
   defaultShellResult: "membraneXX",
   availableShellResults: ["membraneXX", "membraneYY", "membraneXY", "vonMises", "displacementX"],
   params: {

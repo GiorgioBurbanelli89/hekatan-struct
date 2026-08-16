@@ -60,7 +60,7 @@ const PAZ_REF = {
 export const benchmarkPaz9_3: ExampleDef = {
   id: "benchmark-paz-9-3",
   name: "🏁 Frame · Paz 9.3 (4-story uniform shear bldg)",
-  category: "🏁 Benchmarks · 6️⃣ Paz",
+  category: "1️⃣ Frames · 🎯 3 GDL Pórtico plano",
   benchmark: true,
   defaultShellResult: "none",
   guide: [

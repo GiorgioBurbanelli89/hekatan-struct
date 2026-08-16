@@ -37,7 +37,7 @@ import {
 export const benchmarkPaz8_1: ExampleDef = {
   id: "benchmark-paz-8-1",
   name: "🏁 Frame · Paz 8.1 (2-DOF triangular impulse)",
-  category: "🏁 Benchmarks · 6️⃣ Paz",
+  category: "1️⃣ Frames · 🎯 3 GDL Pórtico plano",
   benchmark: true,
   defaultShellResult: "none",
   guide: [

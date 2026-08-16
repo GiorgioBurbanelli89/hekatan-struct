@@ -22,7 +22,7 @@ import * as THREE from "three";
 export const conexionBfp: ExampleDef = {
   id: "conexion-bfp",
   name: "Conexión BFP (Bolted Flange Plate · AISC 358 §7)",
-  category: "🔩 Conexiones",
+  category: "2️⃣ Shells · 🔩 Conexiones",
   hasModal: false,
   defaultShellResult: "vonMises",
   availableShellResults: ["vonMises", "membraneXX", "membraneYY", "displacementZ"],

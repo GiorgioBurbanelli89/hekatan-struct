@@ -28,7 +28,7 @@ import { newmarkBeta } from "../shared/newmarkBeta";
 export const benchmarkPaz10_7: ExampleDef = {
   id: "benchmark-paz-10-7",
   name: "🏁 Frame · Paz 10.7 (fixed-fixed beam — 4 elementos)",
-  category: "🏁 Benchmarks · 6️⃣ Paz",
+  category: "1️⃣ Frames · 🎯 3 GDL Pórtico plano",
   benchmark: true,
   defaultShellResult: "none",
   guide: [

@@ -29,7 +29,7 @@ function buildColumnFrame(x: number, y: number, h: number, s: number): THREE.Obj
 export const guerraEj4ZapataCombinada: ExampleDef = {
   id: "guerra-ej4-zapata-combinada-rectangular",
   name: "Ej.4 · Zapata Combinada Rectangular (7.50×2.50)",
-  category: "📚 Libros · SAFE - Marcelo Guerra",
+  category: "2️⃣ Shells · 🧰 Cimentaciones",
   benchmark: true,
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],

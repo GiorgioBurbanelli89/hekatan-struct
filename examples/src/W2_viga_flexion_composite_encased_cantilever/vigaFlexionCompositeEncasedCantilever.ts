@@ -30,7 +30,7 @@ const nu_S = 0.3;
 export const vigaFlexionCompositeEncasedCantilever: ExampleDef = {
   id: "W2_viga_flexion_composite_encased_cantilever",
   name: "Viga flexión Compuesta SRC Encased cantilever (2 DOF)",
-  category: "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 2 DOF Flexión",
+  category: "1️⃣ Frames · 🎯 2 GDL Flexión",
   benchmark: true,
   defaultShellResult: "none",
   availableShellResults: [],

@@ -31,7 +31,7 @@ function buildColumnFrame(x: number, y: number, h: number, sx: number, sy: numbe
 export const guerraEj3ZapataRectangularEccGrande: ExampleDef = {
   id: "guerra-ej3-zapata-rectangular-eccentricidad-grande",
   name: "Ej.3 · Zapata Rectangular EXCENTRICIDAD GRANDE (4.60×4.00×0.55)",
-  category: "📚 Libros · SAFE - Marcelo Guerra",
+  category: "2️⃣ Shells · 🧰 Cimentaciones",
   benchmark: true,
   defaultShellResult: "pressure",
   availableShellResults: ["pressure", "bendingXX", "bendingYY", "bendingXY", "vonMises", "displacementZ"],

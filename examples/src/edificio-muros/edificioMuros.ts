@@ -36,7 +36,7 @@ params.diafragmaRigido = { ...base.diafragmaRigido, default: 1 };  // ASCE 7-22 
 export const edificioMuros: ExampleDef = {
   id: "edificio-muros",
   name: "Edificio con Muros de Corte (Hormigón)",
-  category: "🏢 Edificios",
+  category: "4️⃣ Mixtos · 🏢 Edificios",
   defaultShellResult: "bendingXX",
   availableShellResults: ["bendingXX", "bendingYY", "displacementZ", "vonMises"],
   hasModal: true,

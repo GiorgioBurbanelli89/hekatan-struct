@@ -30,5 +30,8 @@ export const mezanine: ExampleDef = {
   ...edificioAporticado,
   id: "mezanine",
   name: "Mezanine (1 piso acero + deck)",
+  // Propia, NO la del edificio base del que clona: con el deck puesto trae
+  // 720 cascaras ademas de las 81 barras, o sea MIXTO.
+  category: "4️⃣ Mixtos · 🏢 Edificios",
   params: cloneParams(),
 };

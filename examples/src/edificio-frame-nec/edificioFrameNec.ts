@@ -19,7 +19,7 @@ const P = (folder: string, label: string, def: number, min: number, max: number,
 export const edificioFrameNec: ExampleDef = {
   id: "edificio-frame-nec",
   name: "Edificio pórtico · carga lateral NEC",
-  category: "🎓 Test M",
+  category: "1️⃣ Frames · 🎯 n GDL Sistemas",
   defaultShellResult: "none",
   availableShellResults: [],
   hasModal: true,

@@ -34,7 +34,7 @@ params.fcConcr    = { ...base.fcConcr,    default: 240 };
 export const edificioHormigon: ExampleDef = {
   id: "edificio-hormigon",
   name: "Edificio Hormigón (puro)",
-  category: "🏢 Edificios",
+  category: "4️⃣ Mixtos · 🏢 Edificios",
   defaultShellResult: "bendingXX",
   availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "displacementZ", "vonMises"],
   hasModal: true,

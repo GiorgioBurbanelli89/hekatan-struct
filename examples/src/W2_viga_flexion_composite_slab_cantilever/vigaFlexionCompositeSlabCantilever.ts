@@ -34,7 +34,7 @@ const nu_S = 0.3;
 export const vigaFlexionCompositeSlabCantilever: ExampleDef = {
   id: "W2_viga_flexion_composite_slab_cantilever",
   name: "Viga flexión Compuesta Slab colaborante cantilever (2 DOF)",
-  category: "🏁 Benchmarks · 1️⃣ Frames · 🏗 Vigas · 🎯 2 DOF Flexión",
+  category: "1️⃣ Frames · 🎯 2 GDL Flexión",
   benchmark: true,
   defaultShellResult: "none",
   availableShellResults: [],

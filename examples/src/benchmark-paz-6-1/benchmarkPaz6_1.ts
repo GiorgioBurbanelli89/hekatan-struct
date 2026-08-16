@@ -34,7 +34,7 @@ import { newmarkBeta } from "../shared/newmarkBeta";
 export const benchmarkPaz6_1: ExampleDef = {
   id: "benchmark-paz-6-1",
   name: "🏁 Frame · Paz 6.1 (Newmark-β canónico 1-DOF)",
-  category: "🏁 Benchmarks · 6️⃣ Paz",
+  category: "1️⃣ Frames · 🎯 3 GDL Pórtico plano",
   benchmark: true,
   defaultShellResult: "none",
   guide: [
