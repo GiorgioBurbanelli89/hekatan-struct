@@ -93,7 +93,11 @@ export function generar(id) {
   const e2k = exportE2k({ nodes: st.nodes.val, elements: st.elements.val,
     nodeInputs: st.nodeInputs.val, elementInputs: st.elementInputs.val,
     title: id, units: { force: "Tonf", length: "m" }, weightMode: "manual" });
-  return { e2k, nodes: st.nodes.val, elements: st.elements.val };
+  const ni = st.nodeInputs.val;
+  let sumaFZ = 0, nCargas = 0;
+  for (const [, v] of (ni.loads ?? [])) { if (v[2]) { sumaFZ += v[2]; nCargas++; } }
+  return { e2k, nodes: st.nodes.val, elements: st.elements.val,
+           nApoyos: ni.supports ? ni.supports.size : 0, nCargas, sumaFZ };
 }`;
 
 /** Relee el e2k con la regla del formato y devuelve los extremos de cada barra. */
@@ -142,7 +146,19 @@ function leerE2k(txt) {
     const a = P.get(b.p1), c = P.get(b.p2);
     barras.push([[a.x, a.y, zde(b.p1, abajo)], [c.x, c.y, zde(b.p2, b.story)]]);
   }
-  return barras;
+
+  // Los apoyos y las cargas van explícitos en el fichero (no dependen de la
+  // regla de plantas), así que aquí basta con leerlos.
+  let nApoyos = 0;
+  for (const l of L) if (/^\s*POINTASSIGN\b.*\bRESTRAINT\s+"[^"]*[UR]/.test(l)) nApoyos++;
+  let sumaFZ = 0, nCargas = 0;
+  for (const l of L) {
+    const m = l.match(/^\s*POINTLOAD\b.*\bFZ\s+(-?[\d.eE+-]+)/);
+    if (m) { sumaFZ += +m[1]; nCargas++; }
+  }
+  // El e2k va en Tonf y el modelo en kN.
+  const enTonf = /UNITS\s+"Tonf"/i.test(txt);
+  return { barras, nApoyos, nCargas, sumaFZ: sumaFZ * (enTonf ? 9.80665 : 1) };
 }
 
 export const nombre = "e2k-geometria";
@@ -166,14 +182,25 @@ function enSegmento(P, A, B) {
 export async function correr() {
   const mod = await empaquetar(FUENTE, "e2k-geometria");
   const filas = [];
+  const apoyosMal = [], cargasMal = [];
   const k = (p) => p.map((v) => v.toFixed(3)).join(",");
 
   for (const caso of CASOS) {
     let pExtremos = 0, pCobertura = 0, det1 = "", det2 = "";
     try {
-      const { e2k, nodes, elements } = mod.generar(caso.id);
+      const g = mod.generar(caso.id);
+      const { e2k, nodes, elements } = g;
       const nudos = new Set(nodes.map((n) => k(n)));
-      const leidas = leerE2k(e2k);
+      const rel = leerE2k(e2k);
+      const leidas = rel.barras;
+      // apoyos y carga vertical: el e2k tiene que llevarlos, y completos
+      if (rel.nApoyos !== g.nApoyos)
+        apoyosMal.push(`${caso.id}: modelo ${g.nApoyos} apoyos, e2k ${rel.nApoyos}`);
+      if (g.nCargas) {
+        const dif = Math.abs(rel.sumaFZ - g.sumaFZ) / Math.abs(g.sumaFZ);
+        if (dif > 1e-4)
+          cargasMal.push(`${caso.id}: ΣFZ modelo ${g.sumaFZ.toFixed(3)} kN, e2k ${rel.sumaFZ.toFixed(3)} (${(100*dif).toFixed(3)} %)`);
+      }
 
       // A) extremos sobre un nudo del modelo
       let extOk = 0;
@@ -207,5 +234,22 @@ export async function correr() {
       ok: pCobertura >= LIMITE_COBERTURA, detalle: det2,
     });
   }
+  // Apoyos y cargas: la geometria puede estar perfecta y el analisis dar otra
+  // cosa si un empotramiento entra como articulado o falta media carga.
+  // Arbitrado en ETABS sobre el galpon: 10 de 10 apoyos identicos en sus 6
+  // bits, 45 de 45 cargas y SumaFZ -45.0000 kN contra -45.0000 (0.000 %). Y de
+  // paso salio que las cargas se redondeaban a 4 decimales: -1 kN se escribia
+  // como -0.1020 tonf = -1.00028 kN, un +0.028 % en toda la carga del modelo.
+  filas.push({
+    que: "e2k: los apoyos del modelo estan en el fichero",
+    medido: apoyosMal.length, limite: 0, ok: apoyosMal.length === 0,
+    detalle: apoyosMal.length ? apoyosMal.join(" · ") : `los ${CASOS.length} ejemplos`,
+  });
+  filas.push({
+    que: "e2k: la carga vertical total no se pierde ni se redondea",
+    medido: cargasMal.length, limite: 0, ok: cargasMal.length === 0,
+    detalle: cargasMal.length ? cargasMal.join(" · ") : "SumaFZ igual al modelo en todos",
+  });
+
   return filas;
 }

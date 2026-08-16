@@ -303,6 +303,13 @@ function exportFromScratch(input: ExportE2kInput): string {
   const lines: string[] = [];
   const rd = (v: number) => Math.round(v * 10000) / 10000;
   /**
+   * Las CARGAS tampoco pueden ir por `rd`: al pasar de kN a tonf, una carga de
+   * -1 kN queda en -0.1020 tonf, que son -1.00028 kN. Medido contra ETABS: la
+   * suma de FZ del galpon salia -45.0125 en vez de -45.0000, un +0.028 %. Poco,
+   * pero es un error que se mete SOLO por como se escribe el fichero, y encima
+   * crece si las unidades del e2k son mas grandes que las del modelo.
+   */
+  /**
    * Para PROPIEDADES DE SECCION, no coordenadas. `rd` redondea a 4 decimales,
    * que en metros esta bien para una longitud pero aniquila una inercia: I de
    * un perfil de 25 cm vale 3.1e-5 m^4 y salia como "0". El e2k exportado
@@ -1159,8 +1166,8 @@ function exportFromScratch(input: ExportE2kInput): string {
     nodeInputs.loads.forEach((load, nodeIdx) => {
       const [fx, fy, fz] = cargaPropia(nodeIdx, load);
       const ps = nodeToPS(nodeIdx);
-      if (Math.abs(fx) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX ${rd(cF(fx))}  FY 0  FZ 0`);
-      if (Math.abs(fy) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX 0  FY ${rd(cF(fy))}  FZ 0`);
+      if (Math.abs(fx) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX ${rp(cF(fx))}  FY 0  FZ 0`);
+      if (Math.abs(fy) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX 0  FY ${rp(cF(fy))}  FZ 0`);
       // ── MOMENTOS ────────────────────────────────────────────────────
       // Sin esto el e2k exportado NO reproduce el modelo. Una carga REPARTIDA
       // sobre barra (`frameload` del CLI) se convierte a fuerzas Y MOMENTOS de
@@ -1173,12 +1180,12 @@ function exportFromScratch(input: ExportE2kInput): string {
       // (fuerza x longitud) convierte con el mismo factor que la fuerza.
       const mx = load[3] ?? 0, my = load[4] ?? 0, mz = load[5] ?? 0;
       if (Math.abs(mx) > 1e-10 || Math.abs(my) > 1e-10 || Math.abs(mz) > 1e-10) {
-        userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX 0  FY 0  FZ 0  MX ${rd(cF(mx))}  MY ${rd(cF(my))}  MZ ${rd(cF(mz))}`);
+        userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX 0  FY 0  FZ 0  MX ${rp(cF(mx))}  MY ${rp(cF(my))}  MZ ${rp(cF(mz))}`);
       }
       // FZ: en modo "auto" se omite (lo computa ETABS via SELFWEIGHT=1);
       // en modo "manual" se emite explícitamente.
       if (weightMode === "manual" && Math.abs(fz) > 1e-10) {
-        userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX 0  FY 0  FZ ${rd(cF(fz))}`);
+        userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX 0  FY 0  FZ ${rp(cF(fz))}`);
       }
     });
   }
@@ -1186,9 +1193,9 @@ function exportFromScratch(input: ExportE2kInput): string {
     (nodeInputs as any).moments.forEach((m: number[], nodeIdx: number) => {
       const [mx, my, mz] = m;
       const ps = nodeToPS(nodeIdx);
-      if (Math.abs(mx) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "${patronGravedad}"  MX ${rd(cF(mx))}  MY 0  MZ 0`);
-      if (Math.abs(my) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "${patronGravedad}"  MX 0  MY ${rd(cF(my))}  MZ 0`);
-      if (Math.abs(mz) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "${patronGravedad}"  MX 0  MY 0  MZ ${rd(cF(mz))}`);
+      if (Math.abs(mx) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "${patronGravedad}"  MX ${rp(cF(mx))}  MY 0  MZ 0`);
+      if (Math.abs(my) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "${patronGravedad}"  MX 0  MY ${rp(cF(my))}  MZ 0`);
+      if (Math.abs(mz) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "${patronGravedad}"  MX 0  MY 0  MZ ${rp(cF(mz))}`);
     });
   }
   if (userLoadLines.length > 0) {
@@ -1215,7 +1222,7 @@ function exportFromScratch(input: ExportE2kInput): string {
       const dir = q.dir ?? "GRAV";
       const fval = dir === "GRAV" ? Math.abs(q.value) : q.value;
       shellLoadLines.push(
-        `  AREALOAD  "${ref.name}"  "${ref.story}"  TYPE "UNIFF"  DIR "${dir}"  LC "${q.pattern ?? patronGravedad}"  FVAL ${rd(cF(fval))}`);
+        `  AREALOAD  "${ref.name}"  "${ref.story}"  TYPE "UNIFF"  DIR "${dir}"  LC "${q.pattern ?? patronGravedad}"  FVAL ${rp(cF(fval))}`);
     }
     if (shellLoadLines.length > 0) {
       lines.push(`$ SHELL OBJECT LOADS`);
