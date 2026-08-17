@@ -5027,10 +5027,24 @@ solve`;
     // Modo de peso propio: "auto" → ETABS lo computa (SELFWEIGHT=1, sin cargas
     // nodales FZ). "manual" → SELFWEIGHT=0 + cargas nodales FZ emitidas
     // explícitamente (control fino del lumping). Default "auto".
-    const etabsExportCfg = { weightMode: "auto" as "auto" | "manual" };
+    const etabsExportCfg = { weightMode: "auto" as "auto" | "manual",
+                             patronCargas: "Dead" };
     fEtabs.addBinding(etabsExportCfg, "weightMode", {
       label: "Peso propio",
       options: { "Auto (SELFWEIGHT=1)": "auto", "Manual (POINTLOAD nodal)": "manual" },
+    });
+    // ── A QUE PATRON van las cargas del usuario ─────────────────────────────
+    // Iban SIEMPRE a Dead, y Dead lleva `SELFWEIGHT 1`: o sea que el caso Dead
+    // quedaba con peso propio MAS sobrecarga sumados, y el caso Live salia con
+    // los desplazamientos en 0.000 en todos los nudos. Comprobado abriendo el
+    // e2k en ETABS: «3-D View - Displacements (Live)» con Ux = Uy = Uz = 0.
+    //
+    // Dead es el peso de la estructura; lo que uno aplica encima es otra cosa.
+    // Se deja "Dead" por defecto para no cambiar lo ya exportado y validado,
+    // pero con un clic se manda a Live.
+    fEtabs.addBinding(etabsExportCfg, "patronCargas", {
+      label: "Cargas aplicadas a",
+      options: { "Dead (con el peso propio)": "Dead", "Live (separadas)": "Live" },
     });
     fEtabs.addButton({ title: "📤 Exportar E2K" }).on("click", () => {
       // Delegación: si el ejemplo tiene un exporter custom (p.ej. cantileverE2k.ts
@@ -5053,6 +5067,7 @@ solve`;
           title: `${currentExample!.name} — Hekatan export`,
           units: { force: "Tonf", length: "m" },
           weightMode: etabsExportCfg.weightMode,
+          loadPatternDestino: etabsExportCfg.patronCargas,
           // Las combinaciones del MODELO, no las que traia escritas el exportador.
           loadCombinations: loadCombinations.val,
           loadPatterns: loadPatterns.val,

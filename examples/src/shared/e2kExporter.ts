@@ -54,6 +54,20 @@ export interface ExportE2kInput {
    * necesitan un LC al que referirse.
    */
   loadPatterns?: Array<{ name: string; type?: string; selfWeightMultiplier?: number }>;
+  /**
+   * A que PATRON se cuelgan las cargas aplicadas por el usuario (nodales, de
+   * vano y de superficie). Por defecto, el primer patron de tipo "Dead".
+   *
+   * ⚠️ Ese defecto SUMA DOS COSAS. Si el patron Dead lleva `SELFWEIGHT 1`,
+   * ETABS ya le mete el peso propio de la estructura; si ademas se le cuelgan
+   * ahi las cargas del usuario, el caso Dead es peso propio + sobrecarga, y el
+   * caso Live sale con desplazamientos 0.000 en todos los nudos. Verificado en
+   * ETABS sobre un modelo exportado: «3-D View - Displacements (Live)» con
+   * Ux = Uy = Uz = 0.
+   *
+   * Para separarlos: `loadPatternDestino: "Live"`.
+   */
+  loadPatternDestino?: string;
   loadCases?: Array<{ name: string; type?: string; patterns?: Array<{ pattern: string; scaleFactor: number }> }>;
   /**
    * Carga de SUPERFICIE por elemento shell, tal como se asigno — no ya
@@ -1158,7 +1172,13 @@ function exportFromScratch(input: ExportE2kInput): string {
   // El LC al que se cuelgan las cargas nodales: el primer patron de gravedad
   // del modelo. Antes era la cadena "Dead" fija, asi que si el modelo llamaba
   // a su patron de otra forma, ETABS importaba cargas huerfanas.
-  const patronGravedad = pats.find(p => p.type === "Dead")?.name ?? pats[0].name;
+  // El patron al que van las cargas del USUARIO. Por defecto el de gravedad
+  // (compatibilidad con todo lo exportado hasta ahora), pero se puede mandar a
+  // "Live" para separarlo del peso propio — ver `loadPatternDestino`.
+  const patronGravedad = input.loadPatternDestino
+    && pats.some(p => p.name === input.loadPatternDestino)
+      ? input.loadPatternDestino
+      : (pats.find(p => p.type === "Dead")?.name ?? pats[0].name);
 
   // ── POINT OBJECT LOADS ─────────────────────────────────────────────
   const userLoadLines: string[] = [];
@@ -1182,9 +1202,17 @@ function exportFromScratch(input: ExportE2kInput): string {
       if (Math.abs(mx) > 1e-10 || Math.abs(my) > 1e-10 || Math.abs(mz) > 1e-10) {
         userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX 0  FY 0  FZ 0  MX ${rp(cF(mx))}  MY ${rp(cF(my))}  MZ ${rp(cF(mz))}`);
       }
-      // FZ: en modo "auto" se omite (lo computa ETABS via SELFWEIGHT=1);
-      // en modo "manual" se emite explícitamente.
-      if (weightMode === "manual" && Math.abs(fz) > 1e-10) {
+      // FZ: en modo "auto" se omite porque se da por hecho que ESA carga
+      // vertical ES el peso propio, y ETABS ya lo mete por `SELFWEIGHT 1`.
+      // En modo "manual" se emite explicitamente.
+      //
+      // ⚠️ Y SIEMPRE que las cargas NO vayan al patron del peso propio. Si se
+      // mandan a Live, la excusa desaparece: Live lleva `SELFWEIGHT 0`, asi que
+      // omitir la FZ deja el caso Live sin una sola carga y ETABS lo resuelve
+      // con los desplazamientos en 0.000. Era lo que pasaba.
+      const esPatronDePesoPropio = patronGravedad
+        === (pats.find(p => p.type === "Dead")?.name ?? pats[0].name);
+      if ((weightMode === "manual" || !esPatronDePesoPropio) && Math.abs(fz) > 1e-10) {
         userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX 0  FY 0  FZ ${rp(cF(fz))}`);
       }
     });
