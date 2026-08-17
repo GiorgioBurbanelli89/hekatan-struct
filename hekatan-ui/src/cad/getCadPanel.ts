@@ -101,28 +101,52 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
     }
     console.log(`[CAD] Tool activo: ${tool} — ${instr}`);
   };
-  fCad.addButton({ title: "🖱 Seleccionar" }).on("click", () => setActiveTool("select"));
-  fCad.addButton({ title: "● Nodo" }).on("click", () => setActiveTool("node"));
-  fCad.addButton({ title: "／ Línea (frame)" }).on("click", () => setActiveTool("line"));
-  fCad.addButton({ title: "▦ Área 4-clics (shell Q4)" }).on("click", () => setActiveTool("area"));
-  fCad.addButton({ title: "▭ Área rectangular (2 clics)" }).on("click", () => setActiveTool("rectarea"));
-  fCad.addButton({ title: "⬡ Área libre (polígono → malla)" }).on("click", () => setActiveTool("polyarea"));
-  fCad.addButton({ title: "◣ Plano inclinado (3 puntos)" }).on("click", () => setActiveTool("plane3"));
-  fCad.addButton({ title: "⬛ Plano XY (reset horizontal)" }).on("click", () => (window as any).__hekatanResetPlaneXY?.());
-  fCad.addButton({ title: "▌ Columna 3D (1 click + altura)" }).on("click", () => setActiveTool("col"));
-  fCad.addButton({ title: "▥ Pared Q4 3D (2 clicks + altura)" }).on("click", () => setActiveTool("wall"));
-  fCad.addButton({ title: "⌒ Polilínea" }).on("click", () => setActiveTool("polyline"));
-  fCad.addButton({ title: "▭ Rectángulo" }).on("click", () => setActiveTool("rect"));
-  fCad.addButton({ title: "○ Círculo" }).on("click", () => setActiveTool("circle"));
-  fCad.addButton({ title: "⌒ Arco (3 ptos)" }).on("click", () => setActiveTool("arc"));
-  fCad.addButton({ title: "┊ Línea auxiliar" }).on("click", () => setActiveTool("aux"));
-  fCad.addButton({ title: "✦ Punto auxiliar" }).on("click", () => setActiveTool("auxp"));
-  fCad.addButton({ title: "↗ Prolongar línea" }).on("click", () => setActiveTool("extend"));
-  fCad.addButton({ title: "▱ Losa con chaflanes (rect + arcos)" }).on("click", () => setActiveTool("chaflan"));
-  fCad.addButton({ title: "🗑 Borrar (hover + click)" }).on("click", () => setActiveTool("delete"));
+  // ── Las herramientas, AGRUPADAS por lo que hacen ───────────────────────────
+  // Antes eran 19 botones sueltos colgando de "Herramientas CAD", y debajo
+  // seguian los sliders de snap, las carpetas de planos, ejes, niveles y
+  // seleccion: una lista plana que no cabia en la pantalla, con "▭ Área
+  // rectangular" y "▭ Rectángulo" a diez botones de distancia aunque hagan
+  // cosas distintas. Cuatro cajones, y solo el primero abierto: lo que se usa
+  // el 90 % del tiempo (nudo, linea, polilinea) queda a un clic, y lo demas
+  // esta donde uno lo va a buscar.
+  const fDib = fCad.addFolder({ title: "✏ Dibujar", expanded: true });
+  fDib.addButton({ title: "● Nodo" }).on("click", () => setActiveTool("node"));
+  fDib.addButton({ title: "／ Línea (frame)" }).on("click", () => setActiveTool("line"));
+  fDib.addButton({ title: "⌒ Polilínea" }).on("click", () => setActiveTool("polyline"));
+  fDib.addButton({ title: "▭ Rectángulo" }).on("click", () => setActiveTool("rect"));
+  fDib.addButton({ title: "○ Círculo" }).on("click", () => setActiveTool("circle"));
+  fDib.addButton({ title: "⌒ Arco (3 ptos)" }).on("click", () => setActiveTool("arc"));
+  fDib.addButton({ title: "┊ Línea auxiliar" }).on("click", () => setActiveTool("aux"));
+  fDib.addButton({ title: "✦ Punto auxiliar" }).on("click", () => setActiveTool("auxp"));
+
+  const fArea = fCad.addFolder({ title: "▦ Áreas (shells)", expanded: false });
+  fArea.addButton({ title: "▦ Área 4-clics (shell Q4)" }).on("click", () => setActiveTool("area"));
+  fArea.addButton({ title: "▭ Área rectangular (2 clics)" }).on("click", () => setActiveTool("rectarea"));
+  fArea.addButton({ title: "⬡ Área libre (polígono → malla)" }).on("click", () => setActiveTool("polyarea"));
+  fArea.addButton({ title: "▱ Losa con chaflanes (rect + arcos)" }).on("click", () => setActiveTool("chaflan"));
+
+  const f3D = fCad.addFolder({ title: "🧊 En 3D", expanded: false });
+  f3D.addButton({ title: "▌ Columna 3D (1 click + altura)" }).on("click", () => setActiveTool("col"));
+  f3D.addButton({ title: "▥ Pared Q4 3D (2 clicks + altura)" }).on("click", () => setActiveTool("wall"));
+  f3D.addButton({ title: "◣ Plano inclinado (3 puntos)" }).on("click", () => setActiveTool("plane3"));
+  // OJO: este NO es el "Plano XY (planta)" de la carpeta Plano de trabajo. Este
+  // solo endereza el plano de dibujo; aquel ademas pone la camara en planta.
+  // Con los dos empezando por "Plano XY" se agarraba uno creyendo el otro.
+  f3D.addButton({ title: "⬛ Enderezar plano a XY (sin mover camara)" }).on("click", () => (window as any).__hekatanResetPlaneXY?.());
+
+  const fMod = fCad.addFolder({ title: "✂ Modificar", expanded: false });
+  fMod.addButton({ title: "🖱 Seleccionar" }).on("click", () => setActiveTool("select"));
+  fMod.addButton({ title: "↗ Prolongar línea" }).on("click", () => setActiveTool("extend"));
+  fMod.addButton({ title: "🗑 Borrar (hover + click)" }).on("click", () => setActiveTool("delete"));
+
+  // ── PRECISION: todo lo que decide DONDE cae el clic, en un solo sitio ──────
+  // ORTO, OSNAP y los tres snaps estaban repartidos entre dos carpetas y cuatro
+  // sliders sueltos al final del panel. Son lo mismo —como se pone un punto
+  // exacto— y a escala de plano un pixel puede ser medio centimetro.
+  const fPrec = fCad.addFolder({ title: "🎯 Precisión (snap, orto, osnap)", expanded: false });
 
   // ── Modos de dibujo (ORTO/POLAR/segs) ──
-  const fModes = fCad.addFolder({ title: "🎯 Modos de dibujo", expanded: true });
+  const fModes = fPrec.addFolder({ title: "Modos de dibujo", expanded: true });
   const proxyModes = { ortho: false, polar: false, segs: 12 };
   fModes.addBinding(proxyModes, "ortho", { label: "ORTO (90°)" }).on("change", (ev: any) => {
     (window as any).__hekatanOrtho = ev.value;
@@ -140,7 +164,7 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
   (window as any).__hekatanChaflanR = 1.0;
 
   // ── Object Snap (OSNAP) — estilo AutoCAD ──
-  const fOsnap = fCad.addFolder({ title: "🎯 Object Snap (OSNAP)", expanded: false });
+  const fOsnap = fPrec.addFolder({ title: "Object Snap (OSNAP)", expanded: false });
   const osnapState = (window as any).__hekatanOsnap ?? {
     end: true, mid: true, node: true, cen: true,
     per: false, nea: false, int: false,
@@ -227,7 +251,7 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
   // Toggle global de grid snap
   (window as any).__hekatanSnapEnabled = true;
   const proxySnapToggle = { snapEnabled: true };
-  const snapToggleBinding = fCad.addBinding(proxySnapToggle, "snapEnabled", { label: "🧲 Grid snap (F9)" }).on("change", (ev: any) => {
+  const snapToggleBinding = fPrec.addBinding(proxySnapToggle, "snapEnabled", { label: "🧲 Grid snap (F9)" }).on("change", (ev: any) => {
     (window as any).__hekatanSnapEnabled = !!ev.value;
   });
   // ── Atajo F9 = togglear grid snap (estándar AutoCAD) ──
@@ -262,7 +286,7 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
   }
   // Selector discreto de paso de snap
   const proxySnapStep = { step: 0.5 };
-  fCad.addBinding(proxySnapStep, "step", {
+  fPrec.addBinding(proxySnapStep, "step", {
     label: "Paso snap (m)",
     options: {
       "0.01 m (mm)":  0.01,
@@ -283,15 +307,15 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
   });
   // Snap fino + 3D + cota Z
   const proxyCAD = { snap2D: 0.5, snap3D: 0.25, workZ: 0 };
-  fCad.addBinding(proxyCAD, "snap2D", { min: 0, max: 5, step: 0.05, label: "Snap 2D fino (m)" }).on("change", (ev: any) => {
+  fPrec.addBinding(proxyCAD, "snap2D", { min: 0, max: 5, step: 0.05, label: "Snap 2D fino (m)" }).on("change", (ev: any) => {
     const st = (window as any).__hekatanCadState?.get?.();
     if (st) st.snap = ev.value;
     (window as any).__hekatanSnap2D = ev.value;
   });
-  fCad.addBinding(proxyCAD, "snap3D", { min: 0, max: 5, step: 0.05, label: "Snap 3D (m)" }).on("change", (ev: any) => {
+  fPrec.addBinding(proxyCAD, "snap3D", { min: 0, max: 5, step: 0.05, label: "Snap 3D (m)" }).on("change", (ev: any) => {
     (window as any).__hekatanSnap3D = ev.value;
   });
-  fCad.addBinding(proxyPlane, "workZ", { min: -10, max: 50, step: 0.1, label: "Cota Z (m)" }).on("change", (ev: any) => {
+  fPlane.addBinding(proxyPlane, "workZ", { min: -10, max: 50, step: 0.1, label: "Cota Z (m)" }).on("change", (ev: any) => {
     const st = (window as any).__hekatanCadState?.get?.();
     if (st) st.workZ = ev.value;
     const curPlane = ((window as any).__hekatanCadState?.get?.())?.workPlane ?? "xz";
