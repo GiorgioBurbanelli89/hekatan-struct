@@ -3561,7 +3561,7 @@ function buildParamsPane() {
     //    detalle (zapata) hasta edificio entero.
     // 2) Tamaño del grid mallado (la "plataforma" que se ve en el viewer).
     //    Tira de settings.gridSize del viewer interno (default 10).
-    const proxySizes = { orthoExt: 3.2, gridSize: 10 };
+    const proxySizes = { orthoExt: 3.2, gridSize: 30 };
     const orthoExtBinding = fPlane.addBinding(proxySizes, "orthoExt", {
       min: 1, max: 50, step: 0.5, label: "Tamaño área planos ref. (m)",
     }).on("change", (ev: any) => {
@@ -5769,7 +5769,9 @@ const settingsObj: Record<string, any> = {
   deformedShape: true,
   displayScale: -3,         // default -3 (markers/arrows pequeños — no dominan modelo)
   shellResults: "pressure",
-  gridSize: 10,
+  // 30 m de lado, no 10: una planta corriente (la rejilla de ejemplo mide
+  // 24x15) se salia de la plataforma del grid y se dibujaba en el vacio.
+  gridSize: 30,
   showCotas: true,
 };
 

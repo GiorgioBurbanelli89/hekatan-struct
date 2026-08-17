@@ -173,9 +173,21 @@ for (const [dx, dy] of esq) {
   await new Promise((r) => setTimeout(r, 480));
   await foto(`clic ${n} de ${esq.length}`);
 }
+// Esc cierra el dibujo, como en AutoCAD.
+await pag.keyboard.press("Escape");
+await new Promise((r) => setTimeout(r, 700));
 const m1 = await modelo();
 anota("los clics crean nudos", m1.nodos > m0.nodos, `${m0.nodos} -> ${m1.nodos}`);
-anota("los clics crean tramos", m1.tramos > 0, `${m1.tramos} tramos`);
+// La herramienta Linea ENCADENA: 5 clics = UNA polilinea de 5 puntos y 4
+// tramos. Antes cortaba cada 2 clics y daba [2],[2],[1] — un rectangulo
+// costaba 8 clics repitiendo cada esquina, y quedaba una huerfana de 1 punto.
+const utiles = m1.polilineas.filter((n) => n >= 2);
+anota("la Linea encadena: 5 clics = 1 polilinea de 5 puntos",
+      utiles.length === 1 && utiles[0] === 5,
+      `polilineas utiles = [${utiles}]`);
+anota("4 tramos, no 2", m1.tramos === 4, `${m1.tramos} tramos`);
+anota("sin polilineas huerfanas de 1 punto",
+      !m1.polilineas.some((n) => n === 1), `[${m1.polilineas}]`);
 
 // ── 4) Columnas: subir a 3D con la herramienta de columna ───────────────────
 await carpeta("En 3D");

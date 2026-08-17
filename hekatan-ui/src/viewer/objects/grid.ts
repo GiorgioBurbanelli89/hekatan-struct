@@ -137,9 +137,45 @@ export function grid(
   // Opacities sutiles — antes 0.30/0.80 era demasiado fuerte (dominaba la
   // escena especialmente con los 3 planos activos). Bajado a 0.12/0.40 para
   // que el grid sea referencia visual sin tapar la geometría / colormap.
+  // ── Las dos líneas del ORIGEN, en color ───────────────────────────────────
+  // Todas las líneas del grid eran del mismo gris, así que no había forma de
+  // saber dónde está el (0,0) ni hacia dónde crece cada eje: en una isométrica
+  // la cuadrícula es simétrica y no dice nada. AutoCAD, Revit y SketchUp
+  // pintan los dos ejes del origen, y el color es el mismo del gizmo de la
+  // esquina — rojo X, verde Y, azul Z — para que no haya que traducir nada.
+  const ejeOrigen = (plane: GridPlane, cual: "u" | "v", color: number) => {
+    const mapper: (u: number, v: number) => [number, number, number] =
+      plane === "xy" ? (u, v) => [u, v, 0]
+      : plane === "xz" ? (u, v) => [u, 0, v]
+      : (u, v) => [0, u, v];
+    const p = cual === "u"
+      ? [...mapper(-halfSize, 0), ...mapper(halfSize, 0)]
+      : [...mapper(0, -halfSize), ...mapper(0, halfSize)];
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(p, 3));
+    // Opacidad baja a propósito: tienen que ORIENTAR, no competir con el
+    // modelo. Un eje rojo saturado bajo una barra roja la esconde.
+    const seg = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({
+      color, transparent: true, opacity: 0.45, depthWrite: false,
+    }));
+    seg.name = `grid-${plane}-eje-${cual}`;
+    seg.renderOrder = 1;
+    return seg;
+  };
+  // Qué eje global es cada dirección del plano: xy → X e Y; xz → X y Z;
+  // yz → Y y Z.
+  const COLOR_EJE: Record<GridPlane, [number, number]> = {
+    xy: [0xd6455b, 0x4ea96a],   // X rojo, Y verde
+    xz: [0xd6455b, 0x4a7fd6],   // X rojo, Z azul
+    yz: [0x4ea96a, 0x4a7fd6],   // Y verde, Z azul
+  };
+
   for (const plane of planes) {
     group.add(buildPlaneGrid(plane, minorStep, minorColor, 0.12));
     group.add(buildPlaneGrid(plane, majorStep, majorColor, 0.40));
+    const [cu, cv] = COLOR_EJE[plane];
+    group.add(ejeOrigen(plane, "u", cu));
+    group.add(ejeOrigen(plane, "v", cv));
     // Borde perimetral del grid — SIEMPRE resaltado (rectángulo cerrado
     // con los 4 lados del plano). Independiente del multiplicador major.
     // Usa la misma escala de opacity que las mayores pero con renderOrder

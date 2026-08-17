@@ -494,14 +494,29 @@ export function getSettings(
 // Utils
 export function getDefaultSettings(settingsObj: SettingsObj): Settings {
   return {
-    gridSize: van.state(settingsObj?.gridSize ?? 20),
+    // ── El grid por defecto, pensado para ESTRUCTURAS ────────────────────────
+    // Antes: 20 m de lado, menores cada 0.5 y mayores cada 1, con los planos
+    // XY y XZ encendidos. Tres cosas que estorbaban:
+    //
+    //  · Mayor = 2× menor no es una jerarquía: se ve una malla uniforme y
+    //    densa, no una cuadrícula que se pueda contar. La convención CAD de
+    //    toda la vida es 1 y 5 — cuentas de cinco en cinco y un vano de 6 m se
+    //    lee de un vistazo. Y 0.5 m es paso de detalle de armadura, no de
+    //    estructura: con 20 m de lado son 80 líneas por eje, que de lejos se
+    //    funden en una plancha gris (se ve en cli/shots/ctl_ribbon/frame_07).
+    //  · `gridXZ: true` mete un segundo plano VERTICAL sin pedirlo, que en
+    //    isométrica corta el modelo por la mitad. Los planos se encienden
+    //    cuando se dibuja en ellos (teclas 1/2/3 del ribbon), no de entrada.
+    //  · 20 m no cubren una planta corriente: la rejilla de ejemplo mide
+    //    24×15 y la estructura se salía de la plataforma.
+    gridSize: van.state(settingsObj?.gridSize ?? 30),
     gridVisible: van.state(settingsObj?.gridVisible ?? true),
     gridOpacity: van.state(settingsObj?.gridOpacity ?? 1.0),
-    gridStep: van.state(settingsObj?.gridStep ?? 0.5),
-    gridMajor: van.state(settingsObj?.gridMajor ?? 1),
+    gridStep: van.state(settingsObj?.gridStep ?? 1),
+    gridMajor: van.state(settingsObj?.gridMajor ?? 5),
     cursorSnap: van.state(settingsObj?.cursorSnap ?? 0.5),
     gridXY: van.state(settingsObj?.gridXY ?? true),
-    gridXZ: van.state(settingsObj?.gridXZ ?? true),
+    gridXZ: van.state(settingsObj?.gridXZ ?? false),
     gridYZ: van.state(settingsObj?.gridYZ ?? false),
     displayScale: van.state(settingsObj?.displayScale ?? 1),
     nodes: van.state(settingsObj?.nodes ?? true),

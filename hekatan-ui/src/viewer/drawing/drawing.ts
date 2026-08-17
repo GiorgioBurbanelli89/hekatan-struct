@@ -3701,9 +3701,26 @@ export function drawing({
     pendingClicks = [];
     polyAreaPts = [];
     polyAreaPreview.visible = false;
+    cerrarPolilinea();
     viewerRender();
     updateStatus("🛠 Tool cambiado — clicks pendientes limpiados");
   };
+
+  /**
+   * Cierra la polilínea en curso y tira las que no llegan a ser nada.
+   *
+   * Una polilínea de 0 ó 1 punto NO es ningún frame: es el hueco que queda al
+   * cambiar de herramienta a medio dibujar. Se acumulaban en la lista
+   * ([0,2,2,1,2,...]) y ensuciaban el modelo y cualquier recuento. Y hace
+   * falta dejar SIEMPRE una vacía al final, porque el clic escribe sobre la
+   * última de la lista.
+   */
+  function cerrarPolilinea(): void {
+    if (!drawingObj.polylines) return;
+    const buenas = drawingObj.polylines.rawVal.filter((p) => p.length >= 2);
+    drawingObj.polylines.val = [...buenas, []];
+  }
+  (window as any).__hekatanCerrarPolilinea = cerrarPolilinea;
 
   // ── UNDO STACK (Ctrl+Z) ──
   // Snapshot del estado de drawing ANTES de cada modificación. Ctrl+Z hace
@@ -3766,14 +3783,11 @@ export function drawing({
   // siguiente click como inicio de algo nuevo".
   const finalizeDraw = () => {
     pendingClicks = [];
-    if (drawingObj.polylines) {
-      const polys = drawingObj.polylines.rawVal;
-      const last = polys[polys.length - 1];
-      // Si la última polilínea tiene puntos, push una vacía nueva
-      if (last && last.length > 0) {
-        drawingObj.polylines.val = [...polys, []];
-      }
-    }
+    // Cierra la polilínea en curso Y descarta las que se quedaron en 0 ó 1
+    // punto: eso no es ningún frame, es el hueco de haber cambiado de
+    // herramienta a medio dibujar. Antes solo se añadía una vacía al final y
+    // las huérfanas se iban acumulando en la lista.
+    cerrarPolilinea();
     // Liberar axis lock
     axisLock = null;
     updateAxisLockBadge();
@@ -4383,10 +4397,23 @@ export function drawing({
       const lastIdx = polysNow.length - 1;
       const last = polysNow[lastIdx] ?? [];
 
-      if (tool === "line" && last.length === 2) {
-        // 2 clicks → 1 frame, auto-corta y arranca polilínea nueva
-        drawingObj.polylines.val = [...polysNow, []];
-        updateStatus(`／ Línea creada (frame). Marcá 2 puntos más para otro frame.`);
+      // ⚠️ La herramienta Línea ENCADENA, como el LINE de AutoCAD: cada clic
+      // continúa desde el punto anterior y se termina con Esc o clic derecho.
+      //
+      // Antes cortaba cada 2 clics y arrancaba una polilínea nueva. Con eso un
+      // rectángulo de 4 lados costaba 8 clics —repitiendo cada esquina— en vez
+      // de 5, y el modelo quedaba troceado: 5 clics daban polilíneas
+      // [2],[2],[1], con una huérfana de un punto que no es ningún frame.
+      // Medido en cli/ctl_cad.mjs: [0,2,2,1,2,2,2,2,0].
+      //
+      // Y lo peor es que el programa ya prometía encadenar: el mensaje de la
+      // barra decía "Continuá clickeando para extender la polilínea" y la
+      // ayuda del botón, "sigue encadenando". El corte era el error, no el
+      // texto. Para hacer tramos sueltos se pulsa Esc entre uno y otro, que es
+      // lo que se hace en AutoCAD.
+      if (tool === "line" && last.length >= 2) {
+        updateStatus(`／ Línea — ${last.length - 1} tramo${last.length === 2 ? "" : "s"}. ` +
+                     `Seguí marcando puntos; Esc o clic derecho para terminar.`);
         try { (window as any).__hekatanRebuild?.(); } catch {}
         return;
       }
