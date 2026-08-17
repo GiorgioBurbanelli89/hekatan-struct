@@ -494,6 +494,120 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
     levelList.length = 0;
     refreshLevelRender();
   });
+  // ── REJILLA COMPLETA DE UNA VEZ (lo que hace rápido a Revit) ──────────────
+  //
+  // Los botones de arriba ponen UN eje por vez, a dos clics. Eso no es lo que
+  // hace rápido a Revit: en Revit un eje es un DATUM del modelo con extensión
+  // 3D, no un dibujo por vista, y lo que ahorra el trabajo es definir la
+  // retícula entera y que todo lo demás se cuelgue de ella
+  // (`Grid.Create` + `Maximize3DExtents` + `PropagateToViews`, leído en
+  // `C:\Program Files\Autodesk\Revit 2027\RevitAPI.xml`).
+  //
+  // Aquí: se escriben los vanos y salen los ejes, los niveles y —si se pide—
+  // las columnas en todos los cruces. Un pórtico de 4x3 vanos y 4 pisos son
+  // tres campos y un botón, en vez de 20 ejes a dos clics y 60 columnas.
+  //
+  // Los vanos se escriben como LISTA ("6,6,5,6"), no como "nº x separación":
+  // ninguna estructura real tiene todos los vanos iguales, y obligar a que lo
+  // sean es justo lo que hace que se abandone la herramienta. Un solo número
+  // ("6") vale para todos si se da también la cantidad.
+  const fGrid = fCad.addFolder({ title: "🏗 Rejilla (ejes + niveles de una vez)", expanded: false });
+  const proxyGrid = { vanosX: "6,6,6", vanosY: "5,5", pisos: "3,3,3", columnas: true };
+  fGrid.addBinding(proxyGrid, "vanosX", { label: "Vanos X (m)" });
+  fGrid.addBinding(proxyGrid, "vanosY", { label: "Vanos Y (m)" });
+  fGrid.addBinding(proxyGrid, "pisos", { label: "Alturas de piso (m)" });
+  fGrid.addBinding(proxyGrid, "columnas", { label: "Columnas en los cruces" });
+
+  /** "6,6,5" o "3x6" → [6,6,5]. Devuelve [] si no hay nada legible. */
+  const leerVanos = (txt: string): number[] => {
+    const t = String(txt || "").trim();
+    const rep = t.match(/^(\d+)\s*[x*@]\s*([\d.]+)$/i);      // "4x6" = 4 vanos de 6
+    if (rep) return new Array(parseInt(rep[1], 10)).fill(parseFloat(rep[2]));
+    return t.split(/[,;\s]+/).map(Number).filter((n) => isFinite(n) && n > 0);
+  };
+  /** Acumulado: [6,6,5] → [0,6,12,17]. Son las COTAS de los ejes. */
+  const cotas = (v: number[]): number[] =>
+    v.reduce((a, d) => [...a, a[a.length - 1] + d], [0]);
+
+  fGrid.addButton({ title: "🏗 Generar rejilla" }).on("click", () => {
+    const vx = leerVanos(proxyGrid.vanosX), vy = leerVanos(proxyGrid.vanosY);
+    const vz = leerVanos(proxyGrid.pisos);
+    if (!vx.length || !vy.length) {
+      alert("Escribí los vanos, por ejemplo  6,6,5  o  4x6  (4 vanos de 6 m).");
+      return;
+    }
+    const X = cotas(vx), Y = cotas(vy), Z = cotas(vz.length ? vz : [3]);
+    // Los ejes se estiran a TODA la retícula, como el Maximize3DExtents de
+    // Revit: un eje que no cruza la planta entera no sirve para acotar.
+    const x0 = X[0], x1 = X[X.length - 1], y0 = Y[0], y1 = Y[Y.length - 1];
+    axisList.length = 0;
+    // Ejes con LETRA = los de X (van de lado a lado en Y), como en el gremio.
+    X.forEach((x, i) => axisList.push({
+      label: nextAxisLabel(axisList.filter((a) => !/^\d+$/.test(a.label)).map((a) => a.label)),
+      start: [x, y0, 0], end: [x, y1, 0],
+    }));
+    // Ejes con NUMERO = los de Y.
+    Y.forEach((y, i) => axisList.push({
+      label: String(i + 1), start: [x0, y, 0], end: [x1, y, 0],
+    }));
+    refreshAxisRender();
+    // Niveles: uno por cota, incluido el 0.
+    levelList.length = 0;
+    Z.forEach((z) => levelList.push({ label: `N+${z.toFixed(2)}`, z }));
+    refreshLevelRender();
+
+    if (proxyGrid.columnas) {
+      // Una columna por cruce y por entrepiso. Se parte piso a piso a propósito
+      // y NO de la base al techo: sin nudo en cada nivel las vigas llegarían a
+      // media columna y quedarían colgando — el error de las uniones en T que
+      // ya costó un galpón (−5913 mm en vez de −7.44, y el equilibrio ni se
+      // enteraba).
+      //
+      // ⚠️ `polylines` son ÍNDICES a `points`, no coordenadas
+      // (`State<number[][]>` en viewer/drawing/drawing.ts). Metiendo los puntos
+      // directamente se dibujan los nudos y NINGUNA línea: se veía la nube de
+      // puntos de la retícula sin una sola columna.
+      const pts = drawing.points.val.slice();
+      const pls = drawing.polylines.val.slice();
+      // Un nudo por posición, reutilizado: la cabeza de la columna de un piso
+      // es la base de la de arriba. Duplicarlos deja las columnas sueltas unas
+      // de otras aunque se vean pegadas.
+      const idx = new Map<string, number>();
+      pts.forEach((p, i) => idx.set(`${p[0]},${p[1]},${p[2]}`, i));
+      const nudo = (p: [number, number, number]): number => {
+        const k = `${p[0]},${p[1]},${p[2]}`;
+        let i = idx.get(k);
+        if (i === undefined) { i = pts.length; pts.push(p); idx.set(k, i); }
+        return i;
+      };
+      for (const x of X) for (const y of Y) {
+        for (let k = 0; k + 1 < Z.length; k++) {
+          pls.push([nudo([x, y, Z[k]]), nudo([x, y, Z[k + 1]])]);
+        }
+      }
+      drawing.points.val = pts;
+      drawing.polylines.val = pls;
+      hooks.onRebuild?.();
+    }
+    const nCol = proxyGrid.columnas ? X.length * Y.length * Math.max(0, Z.length - 1) : 0;
+    console.log(`[Rejilla] ${X.length} ejes de letra x ${Y.length} de número, ` +
+                `${Z.length} niveles, ${nCol} tramos de columna`);
+    const st = document.getElementById("hk-cad-status");
+    if (st) st.textContent = `🏗 Rejilla: ${X.length}x${Y.length} ejes · ` +
+      `${Z.length} niveles · ${nCol} tramos de columna`;
+  });
+  fGrid.addButton({ title: "🗑 Limpiar rejilla (ejes y niveles)" }).on("click", () => {
+    axisList.length = 0; levelList.length = 0;
+    refreshAxisRender(); refreshLevelRender();
+  });
+  (window as any).__hekatanGenerarRejilla = (vx: string, vy: string, vz: string, col = true) => {
+    proxyGrid.vanosX = vx; proxyGrid.vanosY = vy; proxyGrid.pisos = vz; proxyGrid.columnas = col;
+    const b = Array.from(document.querySelectorAll<HTMLButtonElement>("button.tp-btnv_b"))
+      .find((e) => (e.textContent || "").includes("Generar rejilla"));
+    b?.click();
+    return { ejes: axisList.length, niveles: levelList.length };
+  };
+
   // Helpers expuestos al window para programmatic + debug
   (window as any).__hekatanRefreshAxes = refreshAxisRender;
   (window as any).__hekatanRefreshLevels = refreshLevelRender;
