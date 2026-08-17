@@ -864,9 +864,16 @@ function autoFitCamera() {
   // (sin esto la cámara colapsaba sobre el origen y la grilla quedaba invisible
   //  + se encogía a tamaño 2; el usuario veía todo negro). Encuadramos la
   //  grilla centrada en el origen y NO la encogemos.
-  const frameGrid = nodesArr.length === 0 || modelExtent < gridSz * 0.5;
+  //
+  // ⚠️ El umbral era `modelExtent < gridSz * 0.5`. Con la grilla a 10 m se
+  // notaba poco, pero al subirla a 30 —para que cubriera una planta corriente—
+  // CUALQUIER estructura de menos de 15 m se encuadraba sobre la grilla y
+  // quedaba diminuta en el centro: un portico de 5x3 m salia del tamano de una
+  // moneda (cli/shots/modelado/f_0173.png). Si hay modelo se encuadra el
+  // MODELO; la grilla solo manda cuando no hay nada que mirar.
+  const frameGrid = nodesArr.length === 0 || modelExtent < 1e-6;
   if (frameGrid) { cx = 0; cy = 0; cz = 0; }
-  const extent = Math.max(frameGrid ? gridSz : modelExtent, 1);
+  const extent = Math.max(frameGrid ? gridSz : modelExtent, 2);
   controls.target.set(cx, cy, cz);
 
   // Si la cámara activa es ortográfica, sólo recalcular frustum (preservar

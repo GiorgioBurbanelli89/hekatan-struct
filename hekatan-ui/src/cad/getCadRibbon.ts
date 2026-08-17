@@ -72,6 +72,21 @@ const GRUPOS: Array<{ titulo: string; items: Herr[] }> = [
     ],
   },
   {
+    // ── Lo que convierte un DIBUJO en un MODELO ──────────────────────────────
+    // Se podian dibujar las nueve herramientas y el modelo no se resolvia
+    // nunca, porque no habia forma de poner un apoyo ni una carga sin salir
+    // del ribbon: 145 nudos, 121 tramos y cero resultados
+    // (`node cli/ctl_solo_botones.mjs`). Una estructura sin apoyos no tiene
+    // solucion — la matriz es singular — y sin cargas no se mueve.
+    titulo: "Analizar",
+    items: [
+      { id: "apoyo", icono: "▲", nombre: "Apoyo", tecla: "F",
+        ayuda: "clic sobre un nudo: lo empotra. Sin apoyos no hay solucion." },
+      { id: "carga", icono: "↓", nombre: "Carga", tecla: "W",
+        ayuda: "clic sobre un nudo: le pone la carga vertical de la casilla." },
+    ],
+  },
+  {
     titulo: "Modificar",
     items: [
       { id: "select", icono: "🖱", nombre: "Selec.", tecla: "S", ayuda: "clic sobre un elemento. Ventana: arrastra." },
@@ -99,7 +114,10 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
   const pintarActivo = () => {
     const t = hooks.getTool();
     for (const [id, b] of botones) {
-      const on = id === t;
+      // Apoyo y carga no son un tool del motor (van por seleccion), asi que su
+      // boton se enciende con el modo, no con `getTool()`.
+      const on = (id === "apoyo" || id === "carga") ? modoAplicar === id
+               : (modoAplicar === null && id === t);
       b.style.background = on ? "#0e7490" : "transparent";
       b.style.borderColor = on ? "#22d3ee" : "transparent";
       b.style.color = on ? "#ecfeff" : "#cbd5e1";
@@ -144,7 +162,46 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
   // que no pasan por aquí: se relee en vez de intentar enterarse de cada sitio.
   setInterval(refrescar, 600);
 
+  // ── Apoyo y carga: se aplican al nudo que se clique ───────────────────────
+  //
+  // No son herramientas de dibujo, asi que no crean un tool nuevo en el motor:
+  // encienden la SELECCION —que ya sabe encontrar el nudo bajo el cursor— y en
+  // cuanto hay algo seleccionado le aplican la propiedad por el mismo evento
+  // `hk:property-applied` que usa el panel de propiedades. Reusar ese camino
+  // evita una segunda forma de poner apoyos que despues no coincida con la
+  // primera.
+  let modoAplicar: "apoyo" | "carga" | null = null;
+  const cargaVert = { kN: -10 };
+  const aplicarASeleccion = () => {
+    if (!modoAplicar) return;
+    const sel = (window as any).__hekatanSelection as Set<string> | undefined;
+    if (!sel || sel.size === 0) return;
+    const pts = [...sel].filter((s) => s.startsWith("pt:"));
+    if (!pts.length) return;
+    const detail = modoAplicar === "apoyo"
+      ? { kind: "nodes", ids: pts, prop: "supports",
+          value: [true, true, true, true, true, true] }
+      : { kind: "nodes", ids: pts, prop: "loads",
+          value: [0, 0, cargaVert.kN, 0, 0, 0] };
+    window.dispatchEvent(new CustomEvent("hk:property-applied", { detail }));
+    decir(modoAplicar === "apoyo"
+      ? `Apoyo puesto en ${pts.length} nudo${pts.length === 1 ? "" : "s"}. Segui clicando.`
+      : `Carga de ${cargaVert.kN} kN en ${pts.length} nudo${pts.length === 1 ? "" : "s"}.`);
+    sel.clear();
+    try { (window as any).__hekatanRefreshSelection?.(); } catch {}
+    try { (window as any).__hekatanRebuild?.(); } catch {}
+  };
+
   const usar = (h: Herr) => {
+    if (h.id === "apoyo" || h.id === "carga") {
+      modoAplicar = h.id as "apoyo" | "carga";
+      hooks.setTool("select");
+      (window as any).__hekatanRectSelectExplicit = false;
+      pintarActivo();
+      decir(`${h.nombre} — ${h.ayuda}`);
+      return;
+    }
+    modoAplicar = null;
     hooks.setTool(h.id);
     pintarActivo();
     decir(`${h.nombre} — ${h.ayuda}`);
@@ -226,6 +283,25 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
   rotG.style.cssText = "font-size:9px;color:#64748b;margin-top:2px;letter-spacing:.4px";
   cajaG.append(filaG, rotG);
   barra.appendChild(cajaG);
+
+  // Cuanta carga pone el boton Carga. Sin la casilla habria que adivinar el
+  // valor o irse al panel: la carga es un NUMERO, no un gesto.
+  const cajaC = document.createElement("div");
+  cajaC.style.cssText = "display:flex;flex-direction:column;align-items:center;padding:0 7px;";
+  const inC = document.createElement("input");
+  inC.type = "text"; inC.value = "-10";
+  inC.title = "Carga vertical por nudo, en kN. Negativa = hacia abajo.";
+  inC.style.cssText = "width:58px;height:26px;background:#0a1622;border:1px solid #1e3a4a;" +
+    "border-radius:5px;color:#cdeefb;font:12px Consolas,monospace;text-align:center;outline:none;";
+  inC.addEventListener("change", () => {
+    const v = parseFloat(inC.value);
+    if (isFinite(v)) cargaVert.kN = v; else inC.value = String(cargaVert.kN);
+  });
+  const rotC = document.createElement("div");
+  rotC.textContent = "Carga (kN)";
+  rotC.style.cssText = "font-size:9px;color:#64748b;margin-top:2px;letter-spacing:.4px";
+  cajaC.append(inC, rotC);
+  barra.appendChild(cajaC);
 
   const sep2 = document.createElement("div");
   sep2.style.cssText = "width:1px;background:#1e3a4a;margin:4px 0;";
@@ -359,6 +435,15 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
   ].join(";") + ";";
   estado.textContent = "Teclea una letra o elige arriba — L línea · P polilínea · R rectángulo · K columna · G rejilla";
 
+  // El motor selecciona DESPUES de procesar el clic, asi que se mira un
+  // instante mas tarde. 120 ms basta y no se nota.
+  host.addEventListener("click", (e) => {
+    if (!modoAplicar) return;
+    const t = e.target as HTMLElement | null;
+    if (t && (t.closest("#hk-ribbon") || t.closest("#hk-ribbon-guia"))) return;
+    setTimeout(aplicarASeleccion, 120);
+  }, true);
+
   if (getComputedStyle(host).position === "static") host.style.position = "relative";
   host.appendChild(barra);
   host.appendChild(estado);
@@ -433,6 +518,10 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
 
   (window as any).__hekatanRibbon = {
     guia: verGuia,
+    modo: () => modoAplicar,
+    aplicar: aplicarASeleccion,
+    cargaKN: (v?: number) => { if (v !== undefined) { cargaVert.kN = v; inC.value = String(v); }
+                               return cargaVert.kN; },
     guiaVisible: () => guia.style.display !== "none",
     usar: (id: string) => {
       for (const g of GRUPOS) for (const h of g.items) if (h.id === id) usar(h);
