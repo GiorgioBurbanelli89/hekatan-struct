@@ -27,7 +27,15 @@ export function getActiveSelfWeightMultiplier(states: BuildStates): number {
   let total = 0;
   for (const pp of activeCase.patterns) {
     const pat = states.loadPatterns?.val.find(p => p.name === pp.pattern);
-    if (pat) total += (pat.selfWeightMultiplier ?? 0) * (pp.scaleFactor ?? 1);
+    if (!pat) continue;
+    // ── El peso propio SOLO cuenta en los patrones de tipo Dead ─────────────
+    // Es el peso de la estructura. Un patrón Live (o de viento, o de sismo)
+    // con `selfWeightMultiplier` distinto de 0 estaría metiendo la estructura
+    // otra vez, y al combinarlo con Dead se contaría dos veces. Se ignora aquí
+    // igual que en el exportador de e2k, para que Hekatan y ETABS pesen lo
+    // mismo: si los dos no aplican el mismo criterio, no se pueden comparar.
+    if ((pat as any).type !== undefined && (pat as any).type !== "Dead") continue;
+    total += (pat.selfWeightMultiplier ?? 0) * (pp.scaleFactor ?? 1);
   }
   return total;
 }

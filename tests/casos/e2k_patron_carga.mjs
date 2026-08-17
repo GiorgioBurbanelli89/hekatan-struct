@@ -103,6 +103,32 @@ export async function correr() {
     detalle: "Dead es el peso de la estructura, no la sobrecarga",
   });
 
+  // ── El PESO PROPIO va SOLO en Dead ────────────────────────────────────────
+  // Aunque el modelo pida lo contrario. Un Live con SELFWEIGHT 1 mete el peso
+  // de la estructura otra vez y, combinado con Dead, lo cuenta dos veces.
+  const forzado = exportE2k({
+    ...modelo(), title: "live con peso propio pedido",
+    loadPatterns: [{ name: "Dead", type: "Dead", selfWeightMultiplier: 1 },
+                   { name: "Live", type: "Live", selfWeightMultiplier: 1 }],
+  });
+  const swLive = (forzado.match(/LOADPATTERN\s+"Live"[^\r\n]*SELFWEIGHT\s+([\d.]+)/i) ?? [])[1];
+  filas.push({
+    que: "un Live que pide SELFWEIGHT 1 se exporta con 0", crudo: true,
+    medido: swLive ?? "sin patron Live", limite: "0", ok: swLive === "0",
+    detalle: "el peso propio es de la estructura: solo va en Dead",
+  });
+  // Y sigue siendo OPCIONAL en Dead.
+  const sinPeso = exportE2k({
+    ...modelo(), title: "dead sin peso propio",
+    loadPatterns: [{ name: "Dead", type: "Dead", selfWeightMultiplier: 0 }],
+  });
+  const swDead0 = (sinPeso.match(/LOADPATTERN\s+"Dead"[^\r\n]*SELFWEIGHT\s+([\d.]+)/i) ?? [])[1];
+  filas.push({
+    que: "en Dead el peso propio se puede apagar", crudo: true,
+    medido: swDead0 ?? "sin patron Dead", limite: "0", ok: swDead0 === "0",
+    detalle: "opcional, pero es el UNICO sitio donde puede estar",
+  });
+
   // Las cargas NO pueden quedar en los dos sitios a la vez.
   filas.push({
     que: "no quedan cargas duplicadas en Dead", crudo: true,
