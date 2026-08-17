@@ -128,9 +128,15 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
     // La cota solo manda en planta; en un alzado el plano es vertical y pasa
     // por el origen, así que anunciar "Z=0" allí despistaría.
     const cota = plano === "xy" ? ` · cota Z = ${z.toFixed(2)} m` : "";
+    // El plano vertical se ancla al ultimo punto dibujado, asi que hay que
+    // decir POR DONDE corta: "alzado frontal" a secas no dice nada si no se
+    // sabe a que Y esta. Es la pregunta de «no se por donde dibujar».
+    const r = (window as any).__hekatanPuntoRef as number[] | undefined;
+    const corte = plano === "xz" && r ? ` · pasa por Y = ${r[1].toFixed(2)} m`
+                : plano === "yz" && r ? ` · pasa por X = ${r[0].toFixed(2)} m` : "";
     e.innerHTML =
       `<b style="color:#22d3ee">Dibujando en ${nombre}</b>` +
-      `<span style="color:#64748b">${cota}</span>` +
+      `<span style="color:#64748b">${cota}${corte}</span>` +
       `<span style="color:#334155"> │ </span><span>${prompt}</span>`;
   };
   const decir = (txt: string) => { prompt = txt; refrescar(); };
@@ -263,6 +269,7 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
   // los atajos, ni —lo más importante— que el clic cae SIEMPRE sobre el plano
   // de trabajo. Es la primera pregunta que hace cualquiera y no estaba escrita
   // en ningún sitio de la pantalla.
+  const bAyuda = document.createElement("button");
   const guia = document.createElement("div");
   guia.id = "hk-ribbon-guia";
   guia.style.cssText = [
@@ -321,8 +328,16 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
     const on = v ?? (guia.style.display === "none");
     guia.style.display = on ? "block" : "none";
   };
+  // Un clic en cualquier otro sitio la cierra. Sin esto la guia se abre sola
+  // encima del lienzo y SE COME LOS CLICS: se intenta dibujar, no pasa nada, y
+  // no hay forma evidente de quitarla. Lo cazó el test del panel viejo, que se
+  // quedaba en 0 nudos.
+  window.addEventListener("pointerdown", (e) => {
+    if (guia.style.display === "none") return;
+    if (guia.contains(e.target as Node) || bAyuda.contains(e.target as Node)) return;
+    verGuia(false);
+  }, true);
 
-  const bAyuda = document.createElement("button");
   bAyuda.type = "button";
   bAyuda.textContent = "?";
   bAyuda.title = "Cómo dibujar aquí (F1)";

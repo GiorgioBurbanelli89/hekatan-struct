@@ -98,7 +98,7 @@ const objs = await pag.evaluate(() => {
     const mm = Array.isArray(o.material) ? o.material[0] : o.material;
     if (!mm || !mm.color) return;
     const hex = mm.color.getHexString();
-    if (!/22d3ee|00ffff|06b6d4|67e8f9/i.test(hex)) return;
+    if (!/34d399|ff3344|60a5fa/i.test(hex)) return;
     const g = o.geometry;
     const pos = g && g.attributes && g.attributes.position;
     let ext = null;
@@ -108,9 +108,9 @@ const objs = await pag.evaluate(() => {
         for (let k = 0; k < 3; k++) { if (a[i+k] < mn[k]) mn[k] = a[i+k]; if (a[i+k] > mx[k]) mx[k] = a[i+k]; }
       ext = mn.map((v, k) => +(mx[k] - v).toFixed(1));
     }
-    cian.push({ tipo: o.type, visible: o.visible, hex,
+    cian.push({ nombre: o.name || "(sin nombre)", tipo: o.type, visible: o.visible, hex,
       vertices: pos ? pos.count : 0, extension: ext,
-      opacidad: mm.opacity, padre: o.parent && o.parent.name });
+      opacidad: mm.opacity, padre: (o.parent && (o.parent.name || o.parent.type)) || null, visiblePadre: o.parent ? o.parent.visible : null });
   });
   window.__cian = cian;
 

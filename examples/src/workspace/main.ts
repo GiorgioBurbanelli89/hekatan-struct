@@ -2551,16 +2551,33 @@ function setView(preset: "iso" | "plan" | "elevX" | "elevY") {
     else if (preset === "elevX") cadSt.workPlane = "xz";
     else if (preset === "elevY") cadSt.workPlane = "yz";
   }
-  // Grid centrado en el origen mundial (convención CAD).
+  // ── El plano de trabajo se ancla al PUNTO DE REFERENCIA ──────────────────
+  //
+  // Iba siempre a [0,0,0]. Cambiar a un alzado te dejaba dibujando en un plano
+  // que corta por el origen: si la planta va de y = 0 a y = 15, el alzado
+  // cortaba por y = 0 y no habia forma de saber por donde. Ahora pasa por el
+  // ultimo punto dibujado, que es "sigo desde donde estaba".
+  //
+  // ⚠️ Esto tiene que estar AQUI ademas de en `setPlane` del panel: `setPlane`
+  // fija el grid y despues llama a `setView`, que lo volvia a poner en el
+  // origen. El marcador y la barra ya decian Y = 15 y el plano seguia en 0.
+  const pRef = ((window as any).__hekatanPuntoRef as number[] | undefined)
+            ?? (() => { const p = drawingPoints.rawVal ?? [];
+                        return p.length ? p[p.length - 1] : [0, 0, 0]; })();
   if (preset === "plan") {
-    drawingGridTarget.val = { position: [0, 0, 0], rotation: [Math.PI/2, 0, 0] };
+    const wz = (window as any).__hekatanCadState?.get?.()?.workZ ?? 0;
+    drawingGridTarget.val = { position: [0, 0, wz], rotation: [Math.PI/2, 0, 0] };
   } else if (preset === "elevX") {
-    drawingGridTarget.val = { position: [0, 0, 0], rotation: [0, 0, 0] };
+    drawingGridTarget.val = { position: [0, pRef[1] ?? 0, 0], rotation: [0, 0, 0] };
   } else if (preset === "elevY") {
     // YZ: rotZ(π/2) — combinada con la pre-rot rotX(π/2) de la geometría
     // del plano da normal +X (vertical YZ). rotY no servía porque rotY
     // sobre +Y deja +Y → plano queda horizontal y el raycaster falla.
-    drawingGridTarget.val = { position: [0, 0, 0], rotation: [0, 0, Math.PI/2] };
+    drawingGridTarget.val = { position: [pRef[0] ?? 0, 0, 0], rotation: [0, 0, Math.PI/2] };
+  }
+  if (preset !== "iso") {
+    const k = preset === "plan" ? "xy" : preset === "elevX" ? "xz" : "yz";
+    try { (window as any).__hekatanMarcarRef?.(k, pRef); } catch {}
   }
   console.log(`[Vista ↔ CAD] preset=${preset}, workPlane=${cadSt?.workPlane ?? "n/a"}`);
 
@@ -3307,7 +3324,12 @@ function buildParamsPane() {
     // FILA pegada al lienzo con la letra del atajo a la vista, para trabajar
     // como en AutoCAD (mano izquierda en el teclado). Los dos encendidos se
     // pueden comparar con el mismo modelo antes de tirar ninguno.
-    if (new URLSearchParams(location.search).has("ribbon")
+    // Encendido POR DEFECTO. Nació detrás de `?ribbon=1` para poder comparar,
+    // pero es lo único de la pantalla que dice qué hacer: lleva la guía (? y
+    // F1) y la barra que anuncia contra qué plano y a qué cota se está
+    // dibujando. Sin él se entra a un lienzo 3D vacío sin una sola indicación.
+    // `?ribbon=0` lo apaga y queda el Tweakpane solo.
+    if (new URLSearchParams(location.search).get("ribbon") !== "0"
         && !document.getElementById("hk-ribbon")) {
       const host = (viewerElm.parentElement ?? viewerElm) as HTMLElement;
       addCadRibbon(host, {
@@ -3539,9 +3561,15 @@ function buildParamsPane() {
       }
     });
     // Toggle de planos ORTOGONALES del último punto (XY/XZ/YZ que aparecen
-    // durante el rubber band para guía visual + snap). Default ON.
-    (window as any).__hekatanShowOrthoPlanes = true;
-    let orthoPlanesVisible = true;
+    // durante el rubber band para guía visual + snap).
+    //
+    // Default OFF. Venían encendidos, y en un lienzo vacío aparecen dos planos
+    // de color atravesando la pantalla sin que nadie los haya pedido: lo
+    // primero que se ve al entrar es un adorno que no se sabe qué es ni cómo
+    // se quita. Son una guía para afinar un punto, así que se encienden cuando
+    // hagan falta, desde este mismo botón.
+    (window as any).__hekatanShowOrthoPlanes = false;
+    let orthoPlanesVisible = false;
     fPlane.addButton({ title: "▦ Planos ref. ortogonales (XY/XZ/YZ del último pto)" }).on("click", () => {
       orthoPlanesVisible = !orthoPlanesVisible;
       // Llamar al setter expuesto para que el cambio se aplique YA, sin
@@ -6118,16 +6146,20 @@ try {
     // Planos de raycast PRIORITY 2 (grids XZ/YZ).
     (window as any).__hekatanGridPlaneXZ = false;
     (window as any).__hekatanGridPlaneYZ = false;
-    // Planos ortogonales del último punto (refFillXY/XZ/YZ): los MOSTRAMOS
-    // tenues como guía, pero SIN que intercepten el rayo (orthoRaycast=false),
-    // así el click cae SOLO en el plano de trabajo (no en el plano equivocado
-    // en iso). Desacople hecho en drawing.ts/intersectWorkPlane.
-    (window as any).__hekatanShowOrthoPlanes = true;   // VISIBLES (tenues)
-    (window as any).__hekatanOrthoRaycast = false;     // pero NO raycast
+    // Planos ortogonales del último punto (refFillXY/XZ/YZ): que NO intercepten
+    // el rayo, así el click cae SOLO en el plano de trabajo y no en el plano
+    // equivocado en iso. Desacople hecho en drawing.ts/intersectWorkPlane.
+    (window as any).__hekatanOrthoRaycast = false;
+    // ⚠️ Aquí NO se toca la VISIBILIDAD de esos planos, que es harina de otro
+    // costal. Esta función se dispara en cada `pointermove` y `pointerdown` en
+    // fase de CAPTURA, así que ponía `__hekatanShowOrthoPlanes = true` unas
+    // cien veces por segundo: ganaba siempre, y el default del panel y el
+    // propio botón "▦ Planos ref. ortogonales" no servían de nada. Se apagaba
+    // el flag, se reconstruía, y los tres planos de color seguían saliendo
+    // sobre el lienzo vacío. Lo que arregla el clic es el `orthoRaycast` de
+    // arriba; enseñarlos no hacía falta para eso.
   };
   forceSinglePlaneRaycast();
-  // mostrar las mallas de esos planos de referencia (visual)
-  try { (window as any).__hekatanSetOrthoPlanes?.(true); } catch {}
   // Re-asegurar en cada interacción (la app los re-setea desde settings al
   // togglear grids). Capture-phase para ganar antes del handler de la app.
   viewerElm.addEventListener("pointermove", forceSinglePlaneRaycast, true);

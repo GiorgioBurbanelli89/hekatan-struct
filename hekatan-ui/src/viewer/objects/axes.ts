@@ -5,7 +5,15 @@ import { getTheme } from "../../theme";
 export function axes(gridSize: number, flipAxes: boolean): THREE.Group {
   // init
   const axes = new THREE.Group();
-  const size = 0.05 * gridSize * 1; // 0.05 to convert to unit size based on grid size of 20
+  // El gizmo de ejes NO puede crecer con el grid sin tope.
+  //
+  // Era `0.05 * gridSize`: con el grid a 10 m salía de 0.5, pero al subir el
+  // grid a 30 —para que cubriera una planta corriente— pasó a 1.5, y las
+  // letras X/Y/Z aparecían enormes en medio del lienzo vacío, con sus conos
+  // flotando. Es un indicador de orientación: tiene que estar en un rincón y
+  // no competir con nada. Se le pone un techo de 0.6 m, que es lo que medía
+  // con el grid de 12 m.
+  const size = Math.min(0.05 * gridSize, 0.6);
   const t = getTheme();
 
   const xText = new Text("X", "red", "transparent");

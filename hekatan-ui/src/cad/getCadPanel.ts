@@ -181,17 +181,84 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
   // ── Plano de trabajo + vistas + planos de referencia ──
   const fPlane = fCad.addFolder({ title: "📐 Plano de trabajo", expanded: true });
   const proxyPlane = { workZ: 0 };
+  // ── Marcador del PUNTO DE REFERENCIA ──────────────────────────────────────
+  //
+  // Una cruz de tres brazos (X rojo, Y verde, Z azul) sobre el punto que ancla
+  // el plano de trabajo, con el tamaño medido en pantalla para que se vea
+  // igual de cerca que de lejos. Sin esto, cambiar de plano es a ciegas: el
+  // programa sabía por dónde cortaba y no lo enseñaba en ninguna parte.
+  const refGroup = new THREE.Group();
+  refGroup.name = "punto-referencia";
+  refGroup.visible = false;
+  const mkBrazo = (dir: [number, number, number], color: number) => {
+    const g = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(...dir),
+    ]);
+    return new THREE.Line(g, new THREE.LineBasicMaterial({
+      color, transparent: true, opacity: 0.95, depthTest: false,
+    }));
+  };
+  const brazoX = mkBrazo([1, 0, 0], 0xff5566);
+  const brazoY = mkBrazo([0, 1, 0], 0x4ade80);
+  const brazoZ = mkBrazo([0, 0, 1], 0x60a5fa);
+  refGroup.add(brazoX, brazoY, brazoZ);
+  refGroup.renderOrder = 999;
+  /** Coloca el marcador y ajusta su tamaño a la escala del modelo. */
+  const marcarRef = (kind: "xy" | "xz" | "yz", p: [number, number, number]) => {
+    // Acceso directo al ctx, sin pasar por los helpers `getScene`/`getRender`:
+    // se declaran mas abajo con `const` y esto correria en su zona muerta.
+    const ctx = (viewerElm as any).__ctx;
+    const sc = ctx?.scene as THREE.Scene | undefined;
+    if (!sc) return;
+    if (!refGroup.parent) sc.add(refGroup);
+    refGroup.position.set(p[0], p[1], p[2]);
+    // Los brazos miden ~1/12 del grid: bastante para verse, poco para estorbar.
+    const gs = ((viewerElm as any).__settings?.gridSize?.rawVal ?? 30) / 12;
+    refGroup.scale.set(gs, gs, gs);
+    // Se resalta el brazo NORMAL al plano: es el que dice por dónde corta.
+    brazoX.visible = true; brazoY.visible = true; brazoZ.visible = true;
+    refGroup.visible = true;
+    (window as any).__hekatanPuntoRef = p;
+    (window as any).__hekatanPlanoRef = kind;
+    ctx?.render?.();
+  };
+  (window as any).__hekatanMarcarRef = marcarRef;
+
+  /**
+   * El PUNTO DE REFERENCIA: el último punto dibujado, o el origen si no hay
+   * nada. Es lo que ancla el plano de trabajo.
+   */
+  const puntoRef = (): [number, number, number] => {
+    const pts = drawing.points.rawVal ?? [];
+    const p = pts[pts.length - 1];
+    return p ? [p[0], p[1], p[2]] : [0, 0, 0];
+  };
+
   const setPlane = (kind: "xy" | "xz" | "yz", z?: number, syncCam = true) => {
     const st = (window as any).__hekatanCadState?.get?.();
     if (st) st.workPlane = kind;
+    // ── El plano se ANCLA al último punto dibujado, no al origen ────────────
+    //
+    // «Dibujo en el plano XY y luego en Z y no se entiende por dónde dibujar.»
+    // Pasaba esto: los planos verticales se colocaban SIEMPRE en [0,0,0], o
+    // sea que el alzado cortaba por y = 0. Si la planta se dibujó de y = 0 a
+    // y = 15, al cambiar a alzado te ponías a dibujar en un plano que no toca
+    // casi nada de lo dibujado, y sin ninguna señal de por dónde cortaba.
+    //
+    // Ahora el alzado frontal pasa por la Y del último punto y el lateral por
+    // su X, que es lo que uno espera: "sigo desde donde estaba". La cota Z de
+    // la planta se puede seguir fijando a mano con el slider.
+    const r = puntoRef();
     const wz = z ?? proxyPlane.workZ;
     if (kind === "xy") {
       drawing.gridTarget.val = { position: [0, 0, wz], rotation: [Math.PI/2, 0, 0] };
     } else if (kind === "xz") {
-      drawing.gridTarget.val = { position: [0, 0, 0], rotation: [0, 0, 0] };
+      drawing.gridTarget.val = { position: [0, r[1], 0], rotation: [0, 0, 0] };
     } else {
-      drawing.gridTarget.val = { position: [0, 0, 0], rotation: [0, 0, Math.PI/2] };
+      drawing.gridTarget.val = { position: [r[0], 0, 0], rotation: [0, 0, Math.PI/2] };
     }
+    marcarRef(kind, kind === "xy" ? [r[0], r[1], wz] : r);
     if (syncCam) {
       if (kind === "xy") hooks.setView("plan");
       else if (kind === "xz") hooks.setView("elevX");
@@ -220,8 +287,18 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
   });
 
   // Planos ortogonales del último punto (XY/XZ/YZ rubber band guide)
-  (window as any).__hekatanShowOrthoPlanes = true;
-  let orthoPlanesVisible = true;
+  // Default OFF. Venian encendidos, y en un lienzo vacio aparecen tres planos
+  // de color atravesando la pantalla sin que nadie los haya pedido: lo primero
+  // que se ve al entrar es un adorno que no se sabe que es ni como se quita.
+  // Son una guia para afinar un punto — se encienden con este boton cuando
+  // hagan falta.
+  //
+  // ⚠️ El default hay que ponerlo AQUI. En main.ts hay una copia de esta misma
+  // carpeta dentro de un `if (false && currentExample)` —el bloque legacy— y
+  // cambiarlo alli no hace absolutamente nada: se edito, se reconstruyo, y los
+  // planos seguian saliendo.
+  (window as any).__hekatanShowOrthoPlanes = false;
+  let orthoPlanesVisible = false;
   fPlane.addButton({ title: "▦ Planos ref. ortogonales (XY/XZ/YZ del último pto)" }).on("click", () => {
     orthoPlanesVisible = !orthoPlanesVisible;
     const fn = (window as any).__hekatanSetOrthoPlanes;

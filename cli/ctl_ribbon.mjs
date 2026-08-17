@@ -41,7 +41,8 @@ await pag.setViewport({ width: 1500, height: 1000 });
 const errores = [], consola = [];
 pag.on("pageerror", (e) => errores.push(e.message));
 pag.on("console", (m) => consola.push(`[${m.type()}] ${m.text()}`));
-await pag.goto(`http://localhost:4709${BASE}workspace/?t=new-blank&ribbon=1`,
+// SIN `&ribbon=1` a proposito: se prueba lo que ve quien entra normal.
+await pag.goto(`http://localhost:4709${BASE}workspace/?t=new-blank`,
                { waitUntil: "networkidle2", timeout: 120000 });
 await new Promise((r) => setTimeout(r, 8000));
 
@@ -80,7 +81,7 @@ const modelo = () => pag.evaluate(() => {
            niveles: (window.__hekatanLevels || []).length };
 });
 
-anota("el ribbon aparece con ?ribbon=1",
+anota("el ribbon sale POR DEFECTO, sin parametro en la URL",
       await pag.evaluate(() => !!document.getElementById("hk-ribbon")), "");
 // La guia se abre sola la PRIMERA vez: quien entra no sabe ni que existe.
 anota("la guia se abre sola la primera vez",
@@ -115,6 +116,46 @@ anota("un boton levanta la estructura", m1.ejes === 9 && m1.tramos === 80,
 await pag.evaluate(() => window.__hekatanAutoFit?.());
 await new Promise((r) => setTimeout(r, 1200));
 await foto("9 ejes · 5 niveles · 80 columnas, de un boton");
+
+// ── 1b) El PUNTO DE REFERENCIA al cambiar de plano ─────────────────────────
+// Dibujar en planta y pasar al alzado dejaba el plano vertical SIEMPRE en el
+// origen: si la planta va de y=0 a y=15, el alzado cortaba por y=0 y no habia
+// nada que dijera por donde. Ahora se ancla al ultimo punto dibujado.
+{
+  const ref = await pag.evaluate(() => {
+    const pts = window.__hekatanDrawingPoints?.val ?? [];
+    return pts.length ? pts[pts.length - 1] : null;
+  });
+  await pag.evaluate(() => {
+    const b = Array.from(document.querySelectorAll("button.tp-btnv_b"))
+      .find((e) => (e.textContent || "").includes("Plano XZ"));
+    b && b.click();
+  });
+  await new Promise((r) => setTimeout(r, 1400));
+  const st = await pag.evaluate(() => ({
+    grid: window.__hekatanDrawingGridTarget?.val?.position ?? null,
+    ref: window.__hekatanPuntoRef ?? null,
+    barra: document.getElementById("hk-ribbon-estado")?.textContent || "",
+  }));
+  anota("el alzado se ancla al ultimo punto, no al origen",
+        !!ref && !!st.grid && Math.abs(st.grid[1] - ref[1]) < 1e-6,
+        `ultimo punto Y=${ref ? ref[1].toFixed(2) : "?"} · plano en Y=${st.grid ? st.grid[1].toFixed(2) : "?"}`);
+  anota("la barra dice por donde corta", /pasa por Y/.test(st.barra), st.barra.slice(0, 70));
+  anota("hay marcador del punto de referencia",
+        await pag.evaluate(() => {
+          const ctx = document.querySelector("#viewer")?.__ctx;
+          let v = false;
+          ctx?.scene.traverse((o) => { if (o.name === "punto-referencia" && o.visible) v = true; });
+          return v;
+        }), "");
+  await foto("Alzado anclado al ultimo punto — la barra dice por donde corta");
+  await pag.evaluate(() => {
+    const b = Array.from(document.querySelectorAll("button.tp-btnv_b"))
+      .find((e) => (e.textContent || "").includes("Plano XY (planta)"));
+    b && b.click();
+  });
+  await new Promise((r) => setTimeout(r, 1200));
+}
 
 // ── 2) Las TECLAS, como AutoCAD ─────────────────────────────────────────────
 for (const [k, esperado, txt] of [["l","line","Tecla L → Linea"],
