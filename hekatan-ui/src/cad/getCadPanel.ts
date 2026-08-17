@@ -199,10 +199,37 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
       color, transparent: true, opacity: 0.95, depthTest: false,
     }));
   };
+  // ── Rotulo del plano de trabajo, PEGADO al punto de referencia ───────────
+  // «¿Qué es eso, una plataforma vertical?» — es el grid del plano de trabajo
+  // puesto de canto, o sea la pared donde van a caer los clics. Sin un rotulo
+  // es un panel enorme que aparece sin explicacion. Ahora dice lo que es y por
+  // donde corta.
+  const rotulo = new THREE.Sprite(new THREE.SpriteMaterial({
+    depthTest: false, sizeAttenuation: false,
+  }));
+  rotulo.scale.set(0.17, 0.028, 1);
+  const pintarRotulo = (txt: string) => {
+    const c = document.createElement("canvas");
+    c.width = 512; c.height = 84;
+    const x = c.getContext("2d")!;
+    x.fillStyle = "rgba(15,23,42,0.94)";
+    x.fillRect(0, 0, 512, 84);
+    x.strokeStyle = "#fbbf24"; x.lineWidth = 4; x.strokeRect(2, 2, 508, 80);
+    x.fillStyle = "#fbbf24";
+    x.font = "bold 34px Consolas, monospace";
+    x.textAlign = "center"; x.textBaseline = "middle";
+    x.fillText(txt, 256, 46);
+    const t = new THREE.CanvasTexture(c);
+    t.minFilter = THREE.LinearFilter;
+    (rotulo.material as THREE.SpriteMaterial).map?.dispose();
+    (rotulo.material as THREE.SpriteMaterial).map = t;
+    (rotulo.material as THREE.SpriteMaterial).needsUpdate = true;
+  };
+
   const brazoX = mkBrazo([1, 0, 0], 0xff5566);
   const brazoY = mkBrazo([0, 1, 0], 0x4ade80);
   const brazoZ = mkBrazo([0, 0, 1], 0x60a5fa);
-  refGroup.add(brazoX, brazoY, brazoZ);
+  refGroup.add(brazoX, brazoY, brazoZ, rotulo);
   refGroup.renderOrder = 999;
   /** Coloca el marcador y ajusta su tamaño a la escala del modelo. */
   const marcarRef = (kind: "xy" | "xz" | "yz", p: [number, number, number]) => {
@@ -218,6 +245,13 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
     refGroup.scale.set(gs, gs, gs);
     // Se resalta el brazo NORMAL al plano: es el que dice por dónde corta.
     brazoX.visible = true; brazoY.visible = true; brazoZ.visible = true;
+    // El rotulo dice QUE plano es y POR DONDE corta, que es la pregunta.
+    const txt = kind === "xy" ? `PLANTA  Z = ${p[2].toFixed(2)}`
+              : kind === "xz" ? `ALZADO X-Z  Y = ${p[1].toFixed(2)}`
+              :                 `ALZADO Y-Z  X = ${p[0].toFixed(2)}`;
+    pintarRotulo(txt);
+    // Justo encima del punto, en unidades del grupo (que va escalado).
+    rotulo.position.set(0, 0, 1.35);
     refGroup.visible = true;
     (window as any).__hekatanPuntoRef = p;
     (window as any).__hekatanPlanoRef = kind;
