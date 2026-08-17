@@ -297,6 +297,11 @@ const states: BuildStates = {
   deformOutputs, analyzeOutputs, objects3D,
   loadPatterns, loadCases, loadCombinations, activeLoadCase,
 };
+// Los states del modelo, expuestos para poder COMPROBARLOS desde fuera (los
+// arneses `cli/ctl_*.mjs`). Sin esto no hay forma de mirar cuantas cargas o
+// apoyos quedaron aplicados: solo se ve el dibujo, y el dibujo no dice si el
+// modelo se puede calcular.
+(window as any).__hekatanStates = states;
 
 // ── Example runner ──
 let currentExample: ExampleDef | null = null;

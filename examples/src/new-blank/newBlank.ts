@@ -71,6 +71,11 @@ export const newBlank: ExampleDef = {
     // Default OFF — el lienzo arranca limpio. El usuario activa cargas
     // explícitamente cuando ya tenga geometría dibujada.
     aplicarCargas: PE("Cargas", "Aplicar cargas auto", 0, { "Sí": 1, "No": 0 }),
+    // A que PATRON pertenecen las cargas de este modelo. Sin esto, el selector
+    // "Case results" solo apagaba el peso propio y las cargas se aplicaban en
+    // TODOS los casos por igual: poner Live no cambiaba nada salvo quitar el
+    // peso, y el modelo aparecia casi vacio.
+    patronCargas: PE("Cargas", "Pertenecen al patron", 0, { "Dead": 0, "Live": 1 }),
     Fz: P("Cargas", "Fz vertical/nodo (kN)", -10, -200, 0, 1),
     Fx: P("Cargas", "Fx lateral/nodo (kN)", 0, -100, 100, 1),
 
@@ -286,9 +291,32 @@ export const newBlank: ExampleDef = {
       }
     }
 
+    // ── ¿Este caso incluye el patrón al que pertenecen las cargas? ──────────
+    //
+    // El selector "Case results" (Settings → Analyze) elegia el caso, pero las
+    // cargas no pertenecian a ningun patron: se aplicaban SIEMPRE. Poner Live
+    // solo quitaba el peso propio, asi que el modelo salia sin nada — que es
+    // justo lo que se veia.
+    //
+    // Ahora las cargas declaran su patron y se aplican solo si el caso activo
+    // lo usa. Con "Case results = Live" y cargas de patron Live, se ven; con
+    // cargas de Dead, no, que es lo correcto: una sobrecarga de uso no actua en
+    // el caso de peso propio.
+    const patronDeLasCargas = Math.round(p.patronCargas ?? 0) === 1 ? "Live" : "Dead";
+    const casoActivo = (window as any).__hekatanActiveCase as string | undefined;
+    const patronesDelCaso: string[] = (() => {
+      const cs = (states as any).loadCases?.val ?? [];
+      const c = cs.find((x: any) => x.name === casoActivo);
+      if (!c) return [];                       // sin casos definidos: no se filtra
+      return (c.patterns ?? []).map((pp: any) => pp.pattern);
+    })();
+    // Si el modelo no define casos, se comporta como siempre (aplicar cargas).
+    const cargasActivas = patronesDelCaso.length === 0
+      || patronesDelCaso.includes(patronDeLasCargas);
+
     // ── Cargas automáticas en nodos del Z máximo ──
     const loads = new Map<number, [number,number,number,number,number,number]>();
-    if (Math.round(p.aplicarCargas ?? 1) === 1 && nodes.length > 0) {
+    if (cargasActivas && Math.round(p.aplicarCargas ?? 1) === 1 && nodes.length > 0) {
       const zMax = Math.max(...nodes.map(n => n[2]));
       const Fx = (p.Fx ?? 0) as number;
       const Fz = (p.Fz ?? -10) as number;
@@ -299,7 +327,7 @@ export const newBlank: ExampleDef = {
     // ── Cargas manuales (vía Properties Pane) — índice DIRECTO (ver apoyos) ──
     const manualLoads: Map<number, [number,number,number,number,number,number]> | undefined =
       (window as any).__hekatanManualLoads;
-    if (manualLoads && manualLoads.size > 0) {
+    if (cargasActivas && manualLoads && manualLoads.size > 0) {
       for (const [drawIdx, lds] of manualLoads.entries()) {
         if (drawIdx >= 0 && drawIdx < nodes.length) loads.set(drawIdx, [...lds]);
       }
