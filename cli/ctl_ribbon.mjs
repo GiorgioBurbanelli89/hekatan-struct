@@ -82,6 +82,17 @@ const modelo = () => pag.evaluate(() => {
 
 anota("el ribbon aparece con ?ribbon=1",
       await pag.evaluate(() => !!document.getElementById("hk-ribbon")), "");
+// La guia se abre sola la PRIMERA vez: quien entra no sabe ni que existe.
+anota("la guia se abre sola la primera vez",
+      await pag.evaluate(() => window.__hekatanRibbon?.guiaVisible?.() === true), "");
+await foto("La guia se abre sola: que es el plano de trabajo y como empezar");
+await pag.keyboard.press("Escape");
+await new Promise((r) => setTimeout(r, 500));
+anota("Esc cierra la guia",
+      await pag.evaluate(() => window.__hekatanRibbon?.guiaVisible?.() === false), "");
+// La barra tiene que decir SIEMPRE contra que plano y a que cota se dibuja.
+const ref = await pag.evaluate(() => document.getElementById("hk-ribbon-estado")?.textContent || "");
+anota("la barra dice el plano y la cota", /PLANTA|ALZADO/.test(ref) && /cota Z/.test(ref), ref.slice(0, 60));
 await foto("El ribbon: una FILA pegada al lienzo, con la letra del atajo");
 
 // ── 1) La rejilla desde la propia barra ─────────────────────────────────────

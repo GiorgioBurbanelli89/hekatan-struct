@@ -106,10 +106,37 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
     }
   };
 
-  const decir = (txt: string) => {
+  // ── La REFERENCIA, siempre visible ────────────────────────────────────────
+  //
+  // «Uso la línea y dónde me referencio, no sé.» Al dibujar en una pantalla 3D
+  // un clic es un rayo, no un punto: hasta que no se sabe CONTRA QUÉ PLANO
+  // choca y a QUÉ COTA, no se sabe dónde cae. El programa lo sabía —lo tenía en
+  // `workPlane` y `workZ`— y no lo decía en ninguna parte.
+  //
+  // Así que la barra dice siempre las tres cosas, en este orden: en qué plano
+  // se está dibujando, a qué cota, y qué se espera ahora. Es lo que hace la
+  // línea de estado de AutoCAD.
+  let prompt = "Elige una herramienta arriba, o teclea su letra.";
+  const refrescar = () => {
     const e = document.getElementById("hk-ribbon-estado");
-    if (e) e.textContent = txt;
+    if (!e) return;
+    const st = (window as any).__hekatanCadState?.get?.();
+    const plano = st?.workPlane ?? "xy";
+    const nombre = plano === "xy" ? "PLANTA (X-Y)"
+                 : plano === "xz" ? "ALZADO FRONTAL (X-Z)" : "ALZADO LATERAL (Y-Z)";
+    const z = Number(st?.workZ ?? 0);
+    // La cota solo manda en planta; en un alzado el plano es vertical y pasa
+    // por el origen, así que anunciar "Z=0" allí despistaría.
+    const cota = plano === "xy" ? ` · cota Z = ${z.toFixed(2)} m` : "";
+    e.innerHTML =
+      `<b style="color:#22d3ee">Dibujando en ${nombre}</b>` +
+      `<span style="color:#64748b">${cota}</span>` +
+      `<span style="color:#334155"> │ </span><span>${prompt}</span>`;
   };
+  const decir = (txt: string) => { prompt = txt; refrescar(); };
+  // El plano y la cota cambian desde el Tweakpane y desde las teclas 1/2/3,
+  // que no pasan por aquí: se relee en vez de intentar enterarse de cada sitio.
+  setInterval(refrescar, 600);
 
   const usar = (h: Herr) => {
     hooks.setTool(h.id);
@@ -230,6 +257,81 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
   cajaV.append(filaV, rotV);
   barra.appendChild(cajaV);
 
+  // ── GUÍA dentro del programa (botón ? y F1) ───────────────────────────────
+  //
+  // Sin esto hay que adivinar: no se sabe por dónde empezar, ni que existen
+  // los atajos, ni —lo más importante— que el clic cae SIEMPRE sobre el plano
+  // de trabajo. Es la primera pregunta que hace cualquiera y no estaba escrita
+  // en ningún sitio de la pantalla.
+  const guia = document.createElement("div");
+  guia.id = "hk-ribbon-guia";
+  guia.style.cssText = [
+    "position:absolute", "top:50%", "left:50%", "transform:translate(-50%,-50%)",
+    "z-index:70", "display:none", "max-width:640px", "padding:20px 24px",
+    "background:rgba(10,18,32,.97)", "border:1px solid #22d3ee",
+    "border-radius:12px", "box-shadow:0 10px 40px rgba(0,0,0,.6)",
+    "color:#cbd5e1", "font:13px/1.65 system-ui,-apple-system,Segoe UI,sans-serif",
+  ].join(";") + ";";
+  guia.innerHTML = `
+    <div style="font:600 16px inherit;color:#22d3ee;margin-bottom:2px">Cómo dibujar aquí</div>
+    <div style="color:#64748b;font-size:11px;margin-bottom:14px">? o F1 para abrir y cerrar · Esc también cierra</div>
+
+    <div style="color:#e2e8f0;font-weight:600;margin-bottom:4px">1 · Lo primero: el plano de trabajo</div>
+    <p style="margin:0 0 12px">
+      La pantalla es 3D, así que un clic no es un punto: es un rayo. Cae siempre
+      sobre el <b style="color:#22d3ee">plano de trabajo</b>, que es el que dice
+      la barra de abajo. Con <b>1</b> dibujas en planta a la cota Z que marque;
+      con <b>2</b> y <b>3</b>, en los dos alzados. <b>4</b> gira a 3D para mirar
+      —no para dibujar.
+    </p>
+
+    <div style="color:#e2e8f0;font-weight:600;margin-bottom:4px">2 · El camino corto: la rejilla</div>
+    <p style="margin:0 0 12px">
+      Escribe los vanos arriba —<code style="color:#22d3ee">4x6</code> son 4 de
+      6 m, y <code style="color:#22d3ee">6,6,5</code> son tres vanos
+      distintos— y aprieta <b>🏗 Rejilla</b>. Salen los ejes A,B,C… y 1,2,3…, los
+      niveles y las columnas en cada cruce. Es la forma rápida de arrancar.
+    </p>
+
+    <div style="color:#e2e8f0;font-weight:600;margin-bottom:4px">3 · Dibujar a mano</div>
+    <p style="margin:0 0 12px">
+      Teclea <b>L</b> y haz clic: la línea <b>encadena</b>, cada clic sigue del
+      anterior. <b>Esc</b> la corta. Para medidas exactas no uses el ojo:
+      escribe en la caja de comandos de abajo
+      <code style="color:#22d3ee">6,0,0</code> (punto exacto),
+      <code style="color:#22d3ee">@6,0</code> (desde el último) o
+      <code style="color:#22d3ee">@6&lt;45</code> (distancia y ángulo).
+    </p>
+
+    <div style="color:#e2e8f0;font-weight:600;margin-bottom:4px">Las teclas</div>
+    <table style="border-collapse:collapse;font-size:12px">
+      <tr><td style="padding:1px 14px 1px 0"><b>L</b> línea · <b>P</b> polilínea · <b>R</b> rectángulo</td>
+          <td><b>K</b> columna · <b>M</b> muro · <b>Q</b> losa</td></tr>
+      <tr><td style="padding:1px 14px 1px 0"><b>C</b> círculo · <b>A</b> arco · <b>S</b> seleccionar</td>
+          <td><b>E</b> borrar · <b>G</b> rejilla · <b>Esc</b> terminar</td></tr>
+      <tr><td style="padding:1px 14px 1px 0"><b>1</b> planta · <b>2</b> frente · <b>3</b> lado · <b>4</b> 3D</td>
+          <td><b>F8</b> orto · <b>F9</b> imán · <b>Ctrl+Z</b> deshacer</td></tr>
+    </table>
+    <div style="margin-top:14px;color:#64748b;font-size:11px">
+      El imán engancha a nudos y puntos medios. Si te roba el clic donde no
+      quieres, apagalo con F9.
+    </div>`;
+
+  const verGuia = (v?: boolean) => {
+    const on = v ?? (guia.style.display === "none");
+    guia.style.display = on ? "block" : "none";
+  };
+
+  const bAyuda = document.createElement("button");
+  bAyuda.type = "button";
+  bAyuda.textContent = "?";
+  bAyuda.title = "Cómo dibujar aquí (F1)";
+  bAyuda.style.cssText = "width:26px;height:26px;margin-left:6px;cursor:pointer;" +
+    "background:transparent;border:1px solid #22d3ee;border-radius:50%;color:#22d3ee;" +
+    "font:600 13px inherit;align-self:center;";
+  bAyuda.addEventListener("click", () => verGuia());
+  barra.appendChild(bAyuda);
+
   // ── Barra de estado: qué se espera AHORA (el Dynamic Prompt) ──────────────
   const estado = document.createElement("div");
   estado.id = "hk-ribbon-estado";
@@ -245,6 +347,17 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
   if (getComputedStyle(host).position === "static") host.style.position = "relative";
   host.appendChild(barra);
   host.appendChild(estado);
+  host.appendChild(guia);
+  // Se abre sola la PRIMERA vez y nunca mas: quien entra por primera vez no
+  // sabe ni que existe la tecla ?, y quien ya la leyo no quiere volver a
+  // cerrarla en cada carga.
+  try {
+    if (!localStorage.getItem("hk_guia_vista")) {
+      verGuia(true);
+      localStorage.setItem("hk_guia_vista", "1");
+    }
+  } catch { /* sin localStorage: no se abre sola */ }
+  refrescar();
 
   // ── Atajos de una tecla, como AutoCAD ─────────────────────────────────────
   // No se disparan si el foco está en una caja de texto: la de comandos de
@@ -284,6 +397,12 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
     if (g) g.innerHTML = "";
   };
   window.addEventListener("keydown", (e) => {
+    // F1 y ? funcionan SIEMPRE, tambien escribiendo en la caja de comandos:
+    // la ayuda es lo unico que hay que poder pedir estando perdido.
+    if (e.key === "F1" || e.key === "?") { e.preventDefault(); verGuia(); return; }
+    if (e.key === "Escape" && guia.style.display !== "none") {
+      e.preventDefault(); verGuia(false); return;
+    }
     if (e.ctrlKey || e.altKey || e.metaKey || enCampo(e.target)) return;
     const k = e.key.toLowerCase();
     const h = TECLA.get(k);
@@ -298,6 +417,8 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
   }, true);
 
   (window as any).__hekatanRibbon = {
+    guia: verGuia,
+    guiaVisible: () => guia.style.display !== "none",
     usar: (id: string) => {
       for (const g of GRUPOS) for (const h of g.items) if (h.id === id) usar(h);
     },
