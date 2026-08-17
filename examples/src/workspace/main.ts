@@ -76,7 +76,7 @@ van.derive(() => {
   localStorage.setItem(AUTO_MESH_KEY, String(autoMeshShellsEnabled.val));
 });
 import {
-  getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit, addCadPanel,
+  getToolbar, getViewer, colorMapForceUnit, colorMapDispUnit, addCadPanel, addCadRibbon,
   // 🛠 Orquestador unificado de Herramientas FEM (folder Tweakpane completo)
   attachFemTools,
 } from "hekatan-ui";
@@ -3300,6 +3300,42 @@ function buildParamsPane() {
         onRebuild: () => { try { (window as any).__hekatanRebuild?.(); } catch {} },
       },
     });
+
+    // ── Ribbon CAD, empezado de cero — `?ribbon=1` ──────────────────────────
+    // Conviven a propósito: el Tweakpane es una COLUMNA que no cabe en la
+    // pantalla y obliga a viajar con el ratón hasta el borde; el ribbon es una
+    // FILA pegada al lienzo con la letra del atajo a la vista, para trabajar
+    // como en AutoCAD (mano izquierda en el teclado). Los dos encendidos se
+    // pueden comparar con el mismo modelo antes de tirar ninguno.
+    if (new URLSearchParams(location.search).has("ribbon")
+        && !document.getElementById("hk-ribbon")) {
+      const host = (viewerElm.parentElement ?? viewerElm) as HTMLElement;
+      addCadRibbon(host, {
+        setTool: (t) => {
+          try { (window as any).__hekatanCadState?.setTool?.(t); } catch {}
+          try { (window as any).__hekatanCadResetPending?.(); } catch {}
+          (window as any).__hekatanRectSelectExplicit = (t === "select");
+        },
+        getTool: () => (window as any).__hekatanCadState?.get?.()?.tool ?? null,
+        setView,
+        setPlane: (k) => {
+          const st = (window as any).__hekatanCadState?.get?.();
+          if (st) st.workPlane = k;
+          const wz = st?.workZ ?? 0;
+          drawingGridTarget.val = k === "xy"
+            ? { position: [0, 0, wz], rotation: [Math.PI / 2, 0, 0] }
+            : k === "xz"
+              ? { position: [0, 0, 0], rotation: [0, 0, 0] }
+              : { position: [0, 0, 0], rotation: [0, 0, Math.PI / 2] };
+        },
+        grid: (vx, vy, vz, col) => (window as any).__hekatanGenerarRejilla?.(vx, vy, vz, col),
+        finish: () => { try { (window as any).__hekatanCadResetPending?.(); } catch {} },
+        clear: () => {
+          drawingPoints.val = []; drawingPolylines.val = []; drawingAreas.val = [];
+          (window as any).__hekatanRebuild?.();
+        },
+      });
+    }
   }
   // ── BLOQUE INLINE LEGACY (será removido al confirmarse el move) ──
   if (false && currentExample) {

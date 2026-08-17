@@ -14,6 +14,8 @@ export { getToolbar } from "./toolbar/getToolbar";
 export { getDialog } from "./dialog/getDialog";
 export { getReport } from "./report/getReport";
 export { addCadPanel } from "./cad/getCadPanel";
+export { addCadRibbon } from "./cad/getCadRibbon";
+export type { RibbonHooks } from "./cad/getCadRibbon";
 export type { CadPanelOptions, GridTargetVal } from "./cad/getCadPanel";
 export {
   buildAxisGridMesh, buildLevelMesh,

@@ -121,14 +121,25 @@ export function buildAxisGridMesh(axis: AxisGrid): THREE.Group {
   ctx.fillText(axis.label, 64, 68);
   const tex = new THREE.CanvasTexture(canvas);
   tex.minFilter = THREE.LinearFilter;
-  const spriteMat = new THREE.SpriteMaterial({ map: tex, depthTest: false });
+  // `sizeAttenuation: false` = el tamaño es EN PANTALLA, no en metros.
+  //
+  // Con la escala en world units la burbuja crecia al acercar la camara, y con
+  // `depthTest: false` ademas se pinta siempre por delante: las dos juntas
+  // llenaban el viewport de rosa y azul y tapaban la estructura entera. Se
+  // estuvo buscando "el plano cian que tapa" durante dos builds y no habia
+  // ningun plano — eran estas etiquetas a pantalla completa
+  // (cli/shots/ctl_ribbon/frame_08.png).
+  //
+  // En Revit la burbuja de un eje mide lo mismo en pantalla siempre, se este
+  // mirando la planta entera o un nudo: es un simbolo, no un objeto. Con
+  // sizeAttenuation la escala pasa a ser fraccion de la altura del viewport,
+  // asi que 0.3 m -> 0.045 de pantalla (~45 px en 1000).
+  const spriteMat = new THREE.SpriteMaterial({ map: tex, depthTest: false, sizeAttenuation: false });
   const sprite = new THREE.Sprite(spriteMat);
   sprite.position.set(...axis.end);
-  // Tamaño en world units — sprite.scale = 0.3m. Si la cámara está cerca
-  // del eje, la burbuja se ve grande (estilo Revit zoom-in); si está lejos,
-  // chica (Three.js Sprite mantiene la escala world). Usuario puede ajustar
-  // con __hekatanAxisLabelScale (próxima feature).
-  sprite.scale.set(0.3, 0.3, 1);
+  // 0.028 = 2.8 % de la altura del viewport, ~28 px en una pantalla de 1000.
+  // Con 0.045 (45 px) las burbujas de ejes contiguos se tocaban entre si.
+  sprite.scale.set(0.028, 0.028, 1);
   sprite.userData.isAxisLabel = true;
   g.add(sprite);
   return g;
@@ -169,10 +180,14 @@ export function buildLevelMesh(lvl: Level, extent: number = 20): THREE.Group {
   ctx.fillText(lvl.label, 128, 36);
   const tex = new THREE.CanvasTexture(canvas);
   tex.minFilter = THREE.LinearFilter;
-  const spriteMat = new THREE.SpriteMaterial({ map: tex, depthTest: false });
+  // Igual que la burbuja: tamano en pantalla, no en metros. La etiqueta es
+  // 4:1 (256x64 px), asi que la escala mantiene esa proporcion.
+  const spriteMat = new THREE.SpriteMaterial({ map: tex, depthTest: false, sizeAttenuation: false });
   const sprite = new THREE.Sprite(spriteMat);
   sprite.position.set(extent + 1, 0, lvl.z);
-  sprite.scale.set(2, 0.5, 1);
+  // ~80x20 px. Con 0.16 (160 px de ancho) las cinco etiquetas de un edificio
+  // de 4 pisos se apilaban una encima de otra y tapaban el centro del modelo.
+  sprite.scale.set(0.08, 0.02, 1);
   sprite.userData.isLevelLabel = true;
   g.add(sprite);
   return g;

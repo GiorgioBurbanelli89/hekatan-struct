@@ -376,24 +376,20 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
   // (cubrían el viewport en el demo). Ahora ajustamos su scale a una
   // fracción de la distancia cámara→sprite para mantener tamaño aparente
   // constante en pantalla (~40px). Se invoca al render y al cambiar cámara.
-  const _axisBaseScale = 0.025;  // factor para burbuja circular
-  const _levelBaseScaleW = 0.083;  // factor para etiqueta rectangular (W)
-  const _levelBaseScaleH = 0.021;  // ídem (H)
-  const updateAxisLabelScales = () => {
-    const cam = getCamera();
-    if (!cam) return;
-    axisGroup.traverse((o: any) => {
-      if (!o.userData?.isAxisLabel) return;
-      const dist = cam.position.distanceTo(o.position);
-      const s = Math.max(0.1, dist * _axisBaseScale);
-      o.scale.set(s, s, 1);
-    });
-    levelGroup.traverse((o: any) => {
-      if (!o.userData?.isLevelLabel) return;
-      const dist = cam.position.distanceTo(o.position);
-      o.scale.set(dist * _levelBaseScaleW, dist * _levelBaseScaleH, 1);
-    });
-  };
+  //
+  // ⚠️ YA NO SE RE-ESCALA A MANO. Las etiquetas se crean con
+  // `sizeAttenuation: false` (axisLevels.ts), o sea con el tamaño medido en
+  // PANTALLA, que es lo que hace Revit: la burbuja de un eje mide lo mismo se
+  // esté mirando la planta entera o un nudo. Corregir la escala aquí, a partir
+  // de la distancia de cámara, era perseguir el problema en vez de quitarlo:
+  // dependía de que el hook corriera DESPUÉS de cada cambio de cámara, y tras
+  // un `autoFitCamera()` no corría — las etiquetas quedaban a pantalla completa
+  // y tapaban la estructura (cli/shots/ctl_ribbon/frame_08.png, y el "plano
+  // cian" que se buscó durante dos builds).
+  //
+  // Se deja la función porque el resto la llama en varios sitios; ahora no
+  // toca la escala.
+  const updateAxisLabelScales = () => { /* sizeAttenuation:false lo resuelve */ };
   // Hookear al cambio de cámara (orbit/zoom) — controls del viewer.
   const ctrl = (viewerElm as any).__ctx?.controls;
   if (ctrl?.addEventListener) {
