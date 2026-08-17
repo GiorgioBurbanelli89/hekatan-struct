@@ -207,7 +207,10 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
   const rotulo = new THREE.Sprite(new THREE.SpriteMaterial({
     depthTest: false, sizeAttenuation: false,
   }));
-  rotulo.scale.set(0.17, 0.028, 1);
+  // 0.09 = 9 % del alto del viewport, ~90 px de ancho. Con 0.17 el rotulo salia
+  // de 400 px y tapaba media pantalla — el mismo error de escala que ya habian
+  // dado las etiquetas de nivel. Se ve en cli/shots/ctl_ribbon/frame_09.png.
+  rotulo.scale.set(0.09, 0.015, 1);
   const pintarRotulo = (txt: string) => {
     const c = document.createElement("canvas");
     c.width = 512; c.height = 84;
