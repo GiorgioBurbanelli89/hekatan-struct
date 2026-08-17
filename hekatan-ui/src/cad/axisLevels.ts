@@ -33,10 +33,34 @@ export interface Level {
   z: number;
 }
 
-const AXIS_COLOR = 0xfb7185;       // rosa coral
-const AXIS_LABEL_BG = "rgba(251,113,133,0.92)";
+// ── Los ejes se dibujan como EJES, no como barras ──────────────────────────
+//
+// Estaban en rosa coral saturado y con línea CONTINUA a opacidad 0.85. Dos
+// cosas mal:
+//
+//  · Un eje de replanteo se dibuja desde siempre con línea de eje, a
+//    RAYA-PUNTO. Es lo que lo distingue a simple vista de una barra de la
+//    estructura; con línea continua un eje parece una viga más.
+//  · Un rosa saturado por delante de todo compite con el modelo, que es lo
+//    que se está mirando. El eje es una referencia: tiene que estar y no
+//    llamar la atención.
+//
+// Gris azulado tenue y trazo raya-punto, como en Revit y en cualquier plano.
+const AXIS_COLOR = 0x8fa3b8;
+const AXIS_LABEL_BG = "rgba(15,23,42,0.92)";   // burbuja oscura, borde claro
+const AXIS_LABEL_FG = "#cbd5e1";
+/** Raya-punto: [raya, hueco, punto, hueco] en metros. */
+const AXIS_DASH = 0.55, AXIS_GAP = 0.28;
+/**
+ * Cuánto SOBRESALE el eje del modelo antes de la burbuja, en metros.
+ * La burbuja iba justo en el extremo del eje, que es el borde de la planta,
+ * así que caía encima de las columnas de esquina. En un plano la burbuja
+ * siempre queda fuera del dibujo, colgando de una prolongación.
+ */
+const AXIS_VUELO = 1.6;
 const LEVEL_COLOR = 0x60a5fa;      // azul cielo
-const LEVEL_LABEL_BG = "rgba(96,165,250,0.92)";
+const LEVEL_LABEL_BG = "rgba(15,23,42,0.92)";
+const LEVEL_LABEL_FG = "#bfdbfe";
 
 /**
  * Genera el siguiente label automático tipo Revit:
@@ -92,29 +116,41 @@ export function buildAxisGridMesh(axis: AxisGrid): THREE.Group {
   const g = new THREE.Group();
   g.name = `axis-${axis.label}`;
 
-  // Línea principal
-  const lineGeo = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(...axis.start),
-    new THREE.Vector3(...axis.end),
-  ]);
-  const lineMat = new THREE.LineBasicMaterial({
-    color: AXIS_COLOR, transparent: true, opacity: 0.85,
+  // ── La línea, a raya-punto y con vuelo en los dos extremos ───────────────
+  const A = new THREE.Vector3(...axis.start);
+  const B = new THREE.Vector3(...axis.end);
+  const dir = new THREE.Vector3().subVectors(B, A);
+  const largo = dir.length() || 1;
+  dir.divideScalar(largo);
+  const a = A.clone().addScaledVector(dir, -AXIS_VUELO);
+  const b = B.clone().addScaledVector(dir, AXIS_VUELO);
+
+  const lineGeo = new THREE.BufferGeometry().setFromPoints([a, b]);
+  // `LineDashedMaterial` NO dibuja los trazos si falta `computeLineDistances()`:
+  // sale una línea continua, exactamente igual que antes y sin ningún aviso.
+  const lineMat = new THREE.LineDashedMaterial({
+    color: AXIS_COLOR, transparent: true, opacity: 0.55,
+    dashSize: AXIS_DASH, gapSize: AXIS_GAP,
   });
   const line = new THREE.Line(lineGeo, lineMat);
+  line.computeLineDistances();
   g.add(line);
 
   // Sprite con círculo + letra en el EXTREMO end (estilo Revit)
   const canvas = document.createElement("canvas");
   canvas.width = 128; canvas.height = 128;
   const ctx = canvas.getContext("2d")!;
+  // Burbuja OSCURA con aro claro y la letra clara, en vez de un disco rosa
+  // relleno. Sobre el modelo, un circulo de color solido es una mancha; el aro
+  // deja ver lo que hay detras y sigue leyendose.
   ctx.fillStyle = AXIS_LABEL_BG;
   ctx.beginPath();
-  ctx.arc(64, 64, 56, 0, Math.PI * 2);
+  ctx.arc(64, 64, 55, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = "#ffffff";
-  ctx.lineWidth = 4;
+  ctx.strokeStyle = AXIS_LABEL_FG;
+  ctx.lineWidth = 5;
   ctx.stroke();
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = AXIS_LABEL_FG;
   ctx.font = "bold 60px Consolas, monospace";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -136,7 +172,9 @@ export function buildAxisGridMesh(axis: AxisGrid): THREE.Group {
   // asi que 0.3 m -> 0.045 de pantalla (~45 px en 1000).
   const spriteMat = new THREE.SpriteMaterial({ map: tex, depthTest: false, sizeAttenuation: false });
   const sprite = new THREE.Sprite(spriteMat);
-  sprite.position.set(...axis.end);
+  // Al final del VUELO, no en el extremo del eje: ahi esta el borde de la
+  // planta y la burbuja caia justo encima de las columnas de esquina.
+  sprite.position.copy(b);
   // 0.028 = 2.8 % de la altura del viewport, ~28 px en una pantalla de 1000.
   // Con 0.045 (45 px) las burbujas de ejes contiguos se tocaban entre si.
   sprite.scale.set(0.028, 0.028, 1);
@@ -149,13 +187,21 @@ export function buildAxisGridMesh(axis: AxisGrid): THREE.Group {
  * Construye un mesh para un nivel (línea horizontal larga + label "N+0.00").
  * El nivel se dibuja extendido en X (de -extent a +extent) a la cota Z dada.
  */
-export function buildLevelMesh(lvl: Level, extent: number = 20): THREE.Group {
+export function buildLevelMesh(
+  lvl: Level,
+  extent: number | [number, number] = 20,
+): THREE.Group {
   const g = new THREE.Group();
   g.name = `level-${lvl.label}`;
-  // Línea dashed horizontal a la cota Z
+  // El nivel abarca el RANGO EN X DEL MODELO, no un +-extent centrado en el
+  // origen. Una estructura se dibuja creciendo desde (0,0) hacia +X, asi que
+  // una linea simetrica se pasa de largo por el lado negativo y se queda corta
+  // por el positivo — y la etiqueta, colgada de ese extremo, acababa a veinte
+  // metros del modelo, detras del panel de Settings.
+  const [x0, x1] = Array.isArray(extent) ? extent : [-extent, extent];
   const lineGeo = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(-extent, 0, lvl.z),
-    new THREE.Vector3(extent, 0, lvl.z),
+    new THREE.Vector3(x0, 0, lvl.z),
+    new THREE.Vector3(x1, 0, lvl.z),
   ]);
   const lineMat = new THREE.LineDashedMaterial({
     color: LEVEL_COLOR, transparent: true, opacity: 0.7,
@@ -168,12 +214,14 @@ export function buildLevelMesh(lvl: Level, extent: number = 20): THREE.Group {
   const canvas = document.createElement("canvas");
   canvas.width = 256; canvas.height = 64;
   const ctx = canvas.getContext("2d")!;
+  // Mismo criterio que la burbuja de eje: fondo oscuro, borde y texto del
+  // color del nivel. El rectangulo azul relleno tapaba lo que hubiera detras.
   ctx.fillStyle = LEVEL_LABEL_BG;
   ctx.fillRect(0, 0, 256, 64);
-  ctx.strokeStyle = "#ffffff";
+  ctx.strokeStyle = LEVEL_LABEL_FG;
   ctx.lineWidth = 3;
   ctx.strokeRect(2, 2, 252, 60);
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = LEVEL_LABEL_FG;
   ctx.font = "bold 36px Consolas, monospace";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -184,7 +232,14 @@ export function buildLevelMesh(lvl: Level, extent: number = 20): THREE.Group {
   // 4:1 (256x64 px), asi que la escala mantiene esa proporcion.
   const spriteMat = new THREE.SpriteMaterial({ map: tex, depthTest: false, sizeAttenuation: false });
   const sprite = new THREE.Sprite(spriteMat);
-  sprite.position.set(extent + 1, 0, lvl.z);
+  // A la IZQUIERDA del origen, no a la derecha. Una estructura se dibuja
+  // creciendo hacia +X, asi que en x = extent+1 la etiqueta caia justo encima
+  // del modelo y las cinco de un edificio de 4 pisos se apilaban en el centro
+  // de la pantalla (cli/shots/ctl_ribbon/frame_07.png). Del lado negativo
+  // quedan fuera del dibujo, que es donde va la cota de niveles en un alzado.
+  // Pegada al arranque de la linea y por fuera: es donde va la cota de niveles
+  // en un alzado.
+  sprite.position.set(x0 - 1.2, 0, lvl.z);
   // ~80x20 px. Con 0.16 (160 px de ancho) las cinco etiquetas de un edificio
   // de 4 pisos se apilaban una encima de otra y tapaban el centro del modelo.
   sprite.scale.set(0.08, 0.02, 1);

@@ -425,7 +425,17 @@ export function addCadPanel(opts: CadPanelOptions): { fCad: any } {
         o.material?.map?.dispose?.();
       });
     }
-    for (const lv of levelList) levelGroup.add(buildLevelMesh(lv));
+    // El ancho de la línea de nivel se saca de los EJES, no de un 20 fijo: la
+    // cota de niveles tiene que abarcar la planta que hay, ni quedarse corta ni
+    // irse veinte metros fuera de la pantalla (las etiquetas acababan detrás
+    // del panel de Settings).
+    let x0 = Infinity, x1 = -Infinity;
+    for (const a of axisList) {
+      x0 = Math.min(x0, a.start[0], a.end[0]);
+      x1 = Math.max(x1, a.start[0], a.end[0]);
+    }
+    if (!isFinite(x0) || x1 - x0 < 1) { x0 = 0; x1 = 12; }
+    for (const lv of levelList) levelGroup.add(buildLevelMesh(lv, [x0, x1]));
     updateAxisLabelScales();
     getRender()?.();
   };
