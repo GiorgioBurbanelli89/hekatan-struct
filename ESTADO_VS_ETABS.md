@@ -205,6 +205,52 @@ versión que pase el patch test, no la ingenua.
 ⚠️ **Descartado midiendo**: κ (arriba **y** abajo), α del drilling, el espesor,
 y la conexión genérica con vigas. Y **no** es el MITC4: está bien implementado.
 
+### 🏛️ CUATRO PROGRAMAS sobre la MISMA celda (2026-08-18)
+
+Un solo árbitro puede estar equivocado — el caso 6 lo demostró. Así que se le
+preguntó a cuatro. Celda 1×1×0.20, nudos 1 y 2 empotrados, 3 y 4 con las
+**traslaciones sujetas** y los giros libres: con `w` sujeto, **girar es cortante
+puro** (γ = ∂w/∂x − βx = −βx), que es justo lo que separa un Mindlin de un
+Kirchhoff.
+
+**Flexibilidad del nudo 3, 1 kN·m en cada giro** (`celda_cuatro_programas.py`):
+
+| programa · elemento | RX | RY | RZ drilling |
+|---|---|---|---|
+| ETABS 22 · Shell-Thin | 6.2702e-05 | 6.2702e-05 | 1.2552e-05 |
+| OpenSees · `ShellDKGQ` | **6.2702e-05** | **6.2702e-05** | 9.3506e-06 |
+| Hekatan · Thin (MZC) | **6.2702e-05** | **6.2702e-05** | 1.3091e-04 |
+| | | | |
+| ETABS 22 · Shell-Thick | 2.1267e-05 | 3.8896e-05 | 1.2552e-05 |
+| Abaqus 2017 · `S4` | 2.6460e-05 | 4.7251e-05 | 4.5818e-05 |
+| Abaqus 2017 · `S4R` | 3.0936e-05 | 6.5887e-05 | 4.5818e-05 |
+| OpenSees · `ShellMITC4` | **9.6384e-06** | 4.6616e-05 | 6.5455e-06 |
+| Hekatan · Thick (MITC4) | **9.7541e-06** | 5.1586e-05 | 1.3091e-04 |
+
+**1 · El banco es correcto.** Hekatan (MZC) y OpenSees (`ShellDKGQ`) dan
+**6.270178e-05 los dos, a SIETE cifras**, y ETABS Shell-Thin lo mismo. Cuando
+dos elementos son el mismo, esto lo enseña.
+
+**2 · Mi MITC4 NO tiene un bug.** Casa con `ShellMITC4` de OpenSees —que ES la
+implementación de referencia de Dvorkin-Bathe— al **1.20 %** en RX.
+
+**3 · Y sin embargo ETABS, Abaqus `S4` y Abaqus `S4R` dan RX entre 2.1e-5 y
+3.1e-5: de 2.2 a 3.2 veces MÁS FLEXIBLE que cualquier MITC4.** Los tres van
+juntos y **el MITC4 es el que se sale**.
+
+> **El Shell-Thick de ETABS no es un MITC4. Y el `S4` de Abaqus tampoco.**
+> Eso explica el 11.28 % sin necesidad de ningún bug: se están comparando dos
+> elementos distintos.
+
+**4 · El drilling es el número más desviado de toda la tabla.** Cada programa se
+inventa el suyo (Abaqus 4.58e-5 · ETABS 1.26e-5 · OpenSees 6.5e-6) y el de
+Hekatan es **1.31e-04: entre 2.9× y 20× más flexible que todos**. Y es el mismo
+en Thin y en Thick, así que no depende del tipo de cáscara.
+
+Reproducir: `python shell_una_celda.py 1|2` · `python celda_flex_opensees.py` ·
+`abaqus job=celda_S4` en `_abq_celda/` · `node celda_flex_hk.mjs thick x.json
+giros` · `python celda_cuatro_programas.py`.
+
 ## 2. Lo que TODAVÍA no
 
 | capa | qué se midió | modelo · árbitro | medido | por qué / qué falta |
