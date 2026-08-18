@@ -231,10 +231,19 @@ Naming canonical para validación cruzada hekatan-struct-lineal ↔ ETABS / SAP2
 - Mesh, sections, loads, releases, supports parsed from text format
 - Round-trip implementation: `examples/src/workspace/main.ts` (handlers) + `examples/src/new-blank/newBlank.ts` (consumer)
 
-**Exports (Hekatan → file):**
-- E2K full export (compatible with ETABS 22+)
-- S2K full export
-- F2K (SAFE) — foundation models with Winkler springs + reactions
+**Exports (Hekatan → file) — round-trip measured 2026-08-18:**
+
+| format | target | round-trip closure | notes |
+|---|---|---|---|
+| **E2K** | ETABS 22 | **0.000 %** — 372/378 nodes, ΣRz exact | must be written in **N and MM**: the E2K parser has **no `UNITS` token** (confirmed in `ETABS.dll` ~0x03490e00) and always reads SAPFire base units. Moments are **N·mm (×1e6)**, not N·m |
+| **S2K** | SAP2000 24 | **0.000 %** — 378/378 nodes | `Shape=General`, not `Rectangular`: with a parametric shape SAP **recomputes I22 and J** from t3/t2 and discards what you wrote |
+| **F2K** | SAFE 20 | ⏳ open — 6.8 % mean | the area spring is written half-defined: `SpringOption`, `SoilProfile` and `EndLengthRatio` are missing (found by reflection on `SAFEv1.dll`) |
+
+⚠️ **Both E2K and S2K used to fail the same way, silently**: a *parametric* section
+shape makes ETABS/SAP recompute the section properties from D/B (or t3/t2) and
+throw away the A/I/J actually written. Always emit `General` when the model
+carries real A/I33/I22. And write the **real shear areas** (`AS2`/`AS3`) plus the
+**local axis angle** — those two alone were worth 20 % on the warehouse model.
 
 **Cross-validation pipeline** (Windows + PowerShell + CSI OAPI):
 - `Benchmark_Placa/safe_debug_zapata.ps1` — diagnostic tool that opens .FDB in SAFE, runs analysis, extracts settlement + Mxx via OAPI
@@ -243,6 +252,13 @@ Naming canonical para validación cruzada hekatan-struct-lineal ↔ ETABS / SAP2
 - ETABS validation: ratio = 1.0000 for frames + modal, 0.99–1.003 for shells (full table at `/validation/python-etabs-verificado/`)
 
 **Known issue:** SAFE OAPI `File.OpenFile(.f2k)` returns `ret=0` but model is empty. **Workaround**: open .f2k in SAFE GUI manually → File → Save As → .FDB → OAPI reads .FDB correctly. Documented in `Benchmark_Placa/REPORTE_SAFE_F2K_BUG.md`.
+
+**More SAFE 20 OAPI dead ends (measured 2026-08-18, do not retry):**
+- `cFile` has **no** `ExportToSAFEFile`; `Save` with a `.f2k` extension returns 0 and writes nothing. To see the model SAFE actually solved, read its **`.LOG`**.
+- `GetAvailableTables()` and `cAreaObj.GetElm()` **hang the process** — it had to be killed twice.
+- These do answer: `PointObj.GetNameList/GetRestraint/GetCoordCartesian`, `PropAreaSpring.GetNameList/GetAreaSpringProp`.
+- `strings` finds nothing in SAFE's DLLs (they are .NET — literals live in the metadata heap). Load them with `clr` and **inspect by reflection** instead.
+- SAP2000 twin: `File.Save("x.s2k")` returns 0 and leaves the text in **`x.$2k`** (with `$`, like ETABS's `.$et`).
 
 **Build & deploy in PowerShell** (Windows native, no MSYS):
 ```powershell
@@ -376,7 +392,7 @@ Every example exports an `ExampleDef` with:
 | `utils/getLocalStiffnessMatrix.cpp` | K_local 12×12 (Timoshenko) + Q4 shell |
 | `utils/getTransformationMatrix.cpp` | T matrix (3D rotation) |
 | `utils/getGlobalStiffnessMatrix.cpp` | Assembly with rigid offsets + releases |
-| `utils/shellQ4.cpp` | Shell Q4: membrane (Wilson incompatible modes) + Mindlin plate + drilling DOF — **= ETABS Shell-Thick (DSE Wilson Ch10)** |
+| `utils/shellQ4.cpp` | Shell Q4: membrane (Wilson incompatible modes) + Mindlin plate + drilling DOF — **= ETABS Shell-Thick (DSE Wilson Ch10)**. ⚠️ **too stiff on a coarse mesh — see below** |
 | `utils/shellThin.cpp` | **NUEVO: Shell Q4 Kirchhoff** = ETABS Shell-Thin (DKE Wilson Ch10), MZC plate bending puro, libre de shear locking. Validated <1.5% vs ETABS Mesa Torsión |
 | `plate_q4/kirchhoff_q4.cpp` | Dedicated Mindlin / Kirchhoff plate solver (legacy, separate API) |
 
@@ -386,13 +402,51 @@ Every example exports an `ExampleDef` with:
 |------|-------------|
 | `hekatan-fem/src/planeQ4.ts` | Q4 plane-stress element (`planeQ4Solve`): 2 DOFs/node, 2×2 Gauss, LU dense with partial pivoting, stress recovery (σxx, σyy, τxy, von Mises, principal) |
 
+### Shell status vs ETABS (measured 2026-08-18)
+
+Three load steps — **A** plate alone, **B** plate + edge beams, **C** 3D frame —
+each against ETABS with the identical mesh in the same run
+(`edificios-slab/banco_shell.py`):
+
+| type | A | B | C | worst | |
+|---|---|---|---|---|---|
+| **Thin** (Kirchhoff, MZC) | 0.72 % | 0.93 % | 0.54 % | **0.93 %** | ✅ closed |
+| **Membrane** (Q6 Wilson) | 0.06 % | 0.85 % | 0.00 % | **0.85 %** | ✅ closed |
+| **Thick** (Mindlin, MITC4) | 1.42 % | **11.28 %** | 6.97 % | **11.28 %** | ❌ open |
+
+**`Thick` is too stiff on a coarse mesh**, and the cause is *not* what it looks
+like. The arbiter needs no other program: **a Mindlin plate must always be at
+least as flexible as a Kirchhoff one — shear can only soften**, so `Thick/Thin`
+must be ≥ 1. And it separates the causes on its own: if it degrades as the plate
+gets **thinner**, it is shear; if it does not depend on thickness, it is not.
+`python edificios-slab/thick_por_que_rigido.py`:
+
+| t/a | 2×2 | 4×4 | 8×8 | 12×12 |
+|---|---|---|---|---|
+| 0.0100 | **0.1485** | 0.7862 | 0.9349 | 0.9698 |
+| 0.0010 | **0.0002** | **0.7401** | **0.9189** | **0.9595** |
+
+- **2×2 only: genuine shear locking.** The ratio collapses to 0.0002 as the
+  plate thins — thickness-driven, which is the signature.
+- **4×4 and finer: not shear.** The ratio *pins* at 0.7401 / 0.9189 / 0.9595 and
+  does not move with κ ×1000 (which removes shear from the element entirely,
+  `Gs → ∞`) nor with `alpha_drill` ×40.
+
+Real meshes are 4×4 and 8×8, so the 11.28 % / 2.68 % measured against ETABS live
+in the second regime: what is left over is the **bending interpolation** of the
+Mindlin Q4. Next candidate: enrich **bending** with incompatible modes on the
+rotations, the same way the membrane already does with Wilson's Q6 — **do not
+touch the MITC4** (its tying scheme checks out term by term).
+Regression: `hekatan-struct-py/tests/test_placa_con_vigas.py`.
+
 ### Import/Export
 
-| Format | Import | Export | Software |
-|--------|:---:|:---:|----------|
-| E2K | ✅ | ✅ | ETABS |
-| S2K | ✅ | ✅ | SAP2000 |
-| IFC | ✅ | — | Revit, ArchiCAD |
+| Format | Import | Export | Software | round-trip |
+|--------|:---:|:---:|----------|---|
+| E2K | ✅ | ✅ | ETABS | **0.000 %** |
+| S2K | ✅ | ✅ | SAP2000 | **0.000 %** |
+| F2K | ✅ | ✅ | SAFE | ⏳ 6.8 % |
+| IFC | ✅ | — | Revit, ArchiCAD | — |
 | OpenSeesPy | ✅ | ✅ | OpenSees |
 | OpenSees Tcl | ✅ | ✅ | OpenSees |
 
