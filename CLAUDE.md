@@ -425,6 +425,32 @@ GIT_AUTHOR_NAME="..." GIT_AUTHOR_EMAIL="..." \
     --message "..."
 ```
 
+### Cómo COMPROBAR que el deploy lleva el arreglo
+
+Que `gh-pages` diga «Published» no prueba nada. Tres pasos, y el 2 es el que
+vale:
+
+```bash
+# 1. la página carga y no revienta (mira el PNG, no solo el JSON)
+node cli/check_deploy.mjs          # → cli/shots/deploy_publico.png, pageerror: 0
+
+# 2. el chunk de PRODUCCION es el mismo binario que el build local
+curl -s https://giorgioburbanelli89.github.io/hekatan-struct-lineal/assets/e2kExporter-<hash>.js -o /tmp/e2k.js
+cmp /tmp/e2k.js website/src/examples/assets/e2kExporter-<hash>.js   # tiene que ser IDENTICO
+
+# 3. y subir tambien main, que es OTRA cosa que el deploy
+git push hekatan-struct main
+```
+
+⚠️ **`gh-pages` NO sube `main`.** El 2026-08-18 `main` llevaba **35 commits sin
+subir** mientras el deploy iba al día: el sitio público estaba nuevo y el código
+de GitHub viejo.
+
+⚠️ **`raw.githubusercontent.com` cachea ~5 min**, así que después de un push
+devuelve el README viejo y parece que no subió. Para comprobar de verdad:
+`curl -s https://api.github.com/repos/GiorgioBurbanelli89/hekatan-struct-lineal/commits/main`
+y comparar el SHA con `git log -1`.
+
 `vite.config.ts` tiene un workaround para `DEPLOY_BASE` en Git-Bash de Windows:
 ```ts
 base: (() => {
