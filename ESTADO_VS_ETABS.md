@@ -80,14 +80,20 @@ escalón B (`banco_shell.py B --malla=N`):
 |---|---|---|---|
 | 2×2 | 1.17 % | **57.73 %** | 2.46 % |
 | 4×4 | 0.93 % | **11.28 %** | 0.85 % |
-| 8×8 | — | **0.02 %** | — |
+| 8×8 | 0.15 % | **2.68 %** | 0.08 % |
+
+⚠️ **El 8×8 hay que sacarlo del BANCO, no del calibrador.** `calibrar_shell.py`
+pone `NX = NY = 8` pero compara contra el ETABS guardado en `banco_shell.json`,
+que se generó con **4×4**: mide Hekatan de 8×8 contra ETABS de 4×4 y daba un
+0.02 % que no significa nada. El dato bueno es el del banco, que corre ETABS
+con la misma malla en la misma pasada.
 
 Lo que lo delata no es el porcentaje, es el **signo del error**:
 
 ```
 malla 2x2   Hekatan -4.96e-4   ETABS -1.173e-3   -> Hekatan 2.4x MAS RIGIDO
 malla 4x4   Hekatan -1.134e-3  ETABS -1.278e-3   -> 1.13x
-malla 8x8   practicamente iguales
+malla 8x8   Hekatan -1.279e-3  ETABS -1.314e-3   -> 1.03x
 ```
 
 **Hekatan sale rígido de más y el exceso se va al refinar**: eso es bloqueo por
