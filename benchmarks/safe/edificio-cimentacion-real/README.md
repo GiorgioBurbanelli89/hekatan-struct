@@ -1,3 +1,67 @@
+# Cimentación Edificio Real — Hekatan vs SAFE
+
+## ✅ RESUELTO 2026-08-18: no era un bug de Hekatan, era el ÁRBITRO
+
+Este caso estuvo marcado como **pendiente** desde mayo, con esta causa raíz
+escrita abajo: *«shell Q4 estándar sin drilling DOF → los frames horizontales
+no transfieren carga»*. Se pedía implementar MITC4 + drilling en el C++.
+
+**Las dos cosas eran falsas.**
+
+El motor ya lleva MITC4 + drilling de Hughes-Brezzi (α = 0.5) + modos
+incompatibles de Wilson. Y, sobre todo, el gap no venía del solver: **venía de
+que los dos modelos no tienen la misma carga**.
+
+### La comprobación que lo cierra, y no depende de ningún programa
+
+En un suelo de Winkler la reacción total tiene que ser igual a la carga
+aplicada. Se suma `q_i · A_i` de las nueve zapatas, con el `q` que reporta cada
+programa:
+
+| | reacción del suelo | carga aplicada | |
+|---|---|---|---|
+| **Hekatan** | **19.31 tonf** | 19.27 tonf | **1.00 ×** ✔ |
+| **SAFE** | **55.01 tonf** | 19.27 tonf | **2.85 ×** ✘ |
+
+**Hekatan cierra el equilibrio al 0.2 %. El modelo de SAFE mete casi tres veces
+la carga aplicada**, así que no es que Hekatan sub-prediga: es que estaba
+comparándose contra un modelo cargado de otra manera.
+
+### De dónde salen esas 55 toneladas
+
+Peso propio, sumado a mano:
+
+```
+cargas aplicadas             19.27 tonf
+peso propio de las zapatas   20.65      28.68 m² × 0.30 m × 2.4
+peso propio de las vigas     14.40      12 × 5 m × 0.25 × 0.40 × 2.4
+peso propio de pedestales     1.73
+                             ─────
+                             56.05 tonf   →  w medio 18.61 mm
+```
+
+SAFE mide **18.65 mm** de media y su reacción sumada da **55.01 tonf**: 1.9 %
+de la cuenta de arriba. **SAFE está aplicando el peso propio**, aunque
+`safe_api_edificio.py` pida `lpat.Add("Dead", ..., 0.0, True)` — SelfWeight = 0.
+
+Hekatan, con solo las cargas, da **6.97 mm** de media contra los **6.40 mm**
+que exige el equilibrio (`P/A/ks`). Coherente: el reparto no es uniforme porque
+las vigas de amarre redistribuyen, pero la suma cierra.
+
+### Qué falta para dar el caso por medido
+
+Nada del solver. Hay que **igualar la hipótesis de carga**, que es la regla de
+siempre: mismo modelo, misma malla, mismas cargas. O se apaga el peso propio en
+SAFE de verdad, o se aplica también en Hekatan. Hasta entonces la tabla de
+abajo compara dos estructuras distintas.
+
+⚠️ Y la lección, que es la de siempre: **antes de tocar el solver, comprobar el
+equilibrio**. Tres meses de «bug de drilling» que se resolvían con una suma.
+
+---
+
+# (Documentación anterior — el diagnóstico de mayo, que resultó equivocado)
+
 # Cimentación Edificio Real — Hekatan vs SAFE (V2 en investigación)
 
 ## Update 2026-05-19: intento V2 con modelación estructural correcta

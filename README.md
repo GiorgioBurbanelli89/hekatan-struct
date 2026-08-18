@@ -462,13 +462,31 @@ End-to-end framework that runs Hekatan `plateQ4Solve` and SAFE 20 (vía `SAFEv1.
 | 3 | [Zapata combinada 4×2×0.40m, 2 cols alineadas](./benchmarks/safe/zapata-combinada/) | 16×8 (128 Q4) | 2 | −3.8458 mm | −3.8490 mm | **+0.08%** |
 | 4 | [Zapata conectada 5×1m, t variable (0.40/0.20)](./benchmarks/safe/zapata-conectada/) | 20×4 (80 Q4) | 2 | −8.9003 mm | −8.898 mm | **−0.07%** |
 | 5 | [Viga de cimentación 8×1×0.50m, 4 cols alineadas](./benchmarks/safe/viga-cimentacion/) | 32×4 (128 Q4) | 4 | −5.1093 mm | −5.1100 mm | **+0.01%¹** |
-| 6 | [Edificio real 9 zap + 12 vigas amarre](./benchmarks/safe/edificio-cimentacion-real/) | 144 Q4 + 12 frames | 9 | −17.82 mm (col 3) | −27.12 mm | **pendiente¹** |
+| 6 | [Edificio real 9 zap + 12 vigas amarre](./benchmarks/safe/edificio-cimentacion-real/) | 144 Q4 + 12 frames | 9 | −16.33 mm (col 3) | −27.12 mm | **no comparable²** |
 
-**Casos 1-5 (plate-only): promedio Δ máx 0.14%, todos <0.33%.** Caso 6
-(shell+frame mixto) identifica límite del solver Q4 actual (sin drilling
-DOF → frames horizontales no transfieren carga). Ver el
-[README del caso 6](./benchmarks/safe/edificio-cimentacion-real/README.md)
-con análisis de causa raíz y workaround propuesto. Documentación API SAFE (con 8 gotchas críticos, incluyendo el bug silencioso de `SubModulus` que produce gap del 38% si se usa `SetAreaSpringProp(U3=ks)` ingenuamente): [`benchmarks/safe/README.md`](./benchmarks/safe/README.md).
+**Casos 1-5 (plate-only): promedio Δ máx 0.14%, todos <0.33%.**
+
+² **Caso 6 — resuelto el 2026-08-18, y NO era del solver.** Estuvo tres meses
+marcado como «límite del Q4 sin drilling DOF». El motor ya lleva MITC4 +
+drilling de Hughes-Brezzi + modos de Wilson, y el gap no venía de ahí: **los
+dos modelos no tienen la misma carga**. En un suelo de Winkler la reacción
+total tiene que igualar a la carga aplicada, y sumando `q·A` de las nueve
+zapatas:
+
+| | reacción del suelo | carga aplicada | |
+|---|---|---|---|
+| Hekatan | **19.31 tonf** | 19.27 tonf | **1.00 ×** ✔ |
+| SAFE | **55.01 tonf** | 19.27 tonf | **2.85 ×** ✘ |
+
+Hekatan cierra el equilibrio al **0.2 %**; el modelo de SAFE mete casi tres
+veces la carga. Esas 55 t son el **peso propio** (zapatas 20.65 + vigas 14.40 +
+pedestales 1.73 + cargas 19.27 = 56.05 t, o sea 1.9 % de lo medido), que SAFE
+aplica aunque el script pida `SelfWeight = 0`. Para dar el caso por medido hay
+que igualar la hipótesis de carga, no tocar el solver. Detalle en el
+[README del caso 6](./benchmarks/safe/edificio-cimentacion-real/README.md).
+
+⚠️ La lección: **antes de tocar el solver, comprobar el equilibrio**. Tres meses
+de «bug de drilling» que se cerraban con una suma. Documentación API SAFE (con 8 gotchas críticos, incluyendo el bug silencioso de `SubModulus` que produce gap del 38% si se usa `SetAreaSpringProp(U3=ks)` ingenuamente): [`benchmarks/safe/README.md`](./benchmarks/safe/README.md).
 
 ¹ **Nota caso 5**: el modelo workspace `?t=safe-bench-viga-cimentacion` evolucionó al modelo compuesto realista (zapata corrida shell + viga frame + 4 pedestales frames), distinto al benchmark original de losa 8×1×0.50m pura. El benchmark `Δ +0.01%` se preserva en `/benchmarks/safe/viga-cimentacion/` (CLI standalone) y dejó de aplicar al workspace que muestra el modelo de viga de cimentación realista.
 
