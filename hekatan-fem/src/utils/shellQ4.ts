@@ -349,10 +349,49 @@ export function getLocalStiffnessMatrixShellQ4(
   }
 
   // Bending → K
+  //
+  // ⚠️ CAMBIO DE BASE OBLIGATORIO: `getBendingK` está escrita con las
+  // PENDIENTES del campo de flechas
+  //     βx = ∂w/∂x        βy = ∂w/∂y
+  // pero los GDL 3 y 4 de un nudo son GIROS ALREDEDOR de los ejes:
+  //     θx = ∂w/∂y = βy           θy = −∂w/∂x = −βx
+  //
+  // o sea (w, βx, βy) = T · (w, θx, θy) con T = [[1,0,0],[0,0,−1],[0,1,0]].
+  //
+  // Dentro de una placa AISLADA no se nota —es un cambio de base y todos sus
+  // elementos lo comparten, por eso la placa sola casaba contra ETABS y contra
+  // Navier—, pero en cuanto una VIGA comparte nudo con la losa los giros dejan
+  // de significar lo mismo y la unión sale rígida. Medido: con vigas, la placa
+  // Thick salía MÁS RÍGIDA que la Thin (razón 0.53) cuando el cortante solo
+  // puede ablandar, y no convergía al refinar.
+  //
+  // El motor de Python (`shell_q4_motor.py`, `_T_BEN`) ya lo hace, y con él
+  // casa con `ShellMITC4` de OpenSees a 11 cifras. Sin esto, el bloque de
+  // flexión de aquí es EXACTAMENTE el suyo sin girar (verificado a 1.1e-16).
   const benDof = [2, 3, 4, 8, 9, 10, 14, 15, 16, 20, 21, 22]; // w,θx,θy for each node
+  const Tg = [[1, 0, 0], [0, 0, -1], [0, 1, 0]];              // por nudo
+  const Kbg = zeros(12, 12);
+  for (let a = 0; a < 12; a++) {
+    for (let b = 0; b < 12; b++) {
+      // Kbg = Tᵀ·Kb·T, con T bloque-diagonal 3×3 por nudo
+      let acc = 0;
+      const na = (a / 3) | 0, ia = a % 3;
+      const nb = (b / 3) | 0, ib = b % 3;
+      for (let p = 0; p < 3; p++) {
+        const tap = Tg[p][ia];
+        if (tap === 0) continue;
+        for (let q = 0; q < 3; q++) {
+          const tbq = Tg[q][ib];
+          if (tbq === 0) continue;
+          acc += tap * Kb[na * 3 + p][nb * 3 + q] * tbq;
+        }
+      }
+      Kbg[a][b] = acc;
+    }
+  }
   for (let i = 0; i < 12; i++) {
     for (let j = 0; j < 12; j++) {
-      K[benDof[i]][benDof[j]] += Kb[i][j];
+      K[benDof[i]][benDof[j]] += Kbg[i][j];
     }
   }
 
