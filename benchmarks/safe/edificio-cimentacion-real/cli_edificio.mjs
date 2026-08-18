@@ -160,7 +160,13 @@ for (const col of COLUMNS) {
 //   peso zapatas    rho * t * A_tributaria   en cada nudo del pano
 //   peso vigas      rho * A * L / 2          a cada extremo
 //   peso pedestal   rho * A * h / 2          idem
+// `--sw` = todo el peso propio. `--sw=zap` = solo el de las zapatas, para
+// poder AISLAR de donde viene la diferencia: el peso de una viga de 5 m son
+// 1.2 tonf, y a una zapata de esquina —donde llegan dos— le caen 1.2 tonf de
+// vigas contra 0.67 de carga aplicada. Si el reparto de ese peso no es el
+// mismo que el de SAFE, la esquina se lleva todo el error.
 const CON_SW = !!argMap.sw;
+const SW_SOLO_ZAPATAS = String(argMap.sw) === "zap";
 if (CON_SW) {
   const rho = P_GLOBAL.rho_kNm3;
   // Areas calculadas aqui: `A_p` y `A_v` se declaran mas abajo y esto correria
@@ -189,12 +195,13 @@ if (CON_SW) {
   }
   // Pedestales y vigas: la mitad del peso a cada nudo extremo.
   for (const col of COLUMNS) {
+    if (SW_SOLO_ZAPATAS) break;
     const z = zapataNodes.get(col.id);
     const P = rho * areaPed * P_GLOBAL.h_ped;
     suma(z.center_idx, -P / 2); suma(z.top_idx, -P / 2);
     wPed += P;
   }
-  for (const [ia, ib] of BEAMS) {
+  for (const [ia, ib] of (SW_SOLO_ZAPATAS ? [] : BEAMS)) {
     const za = zapataNodes.get(ia), zb = zapataNodes.get(ib);
     const ca = COLUMNS.find(c => c.id === ia), cb = COLUMNS.find(c => c.id === ib);
     const L = Math.hypot(cb.x - ca.x, cb.y - ca.y);

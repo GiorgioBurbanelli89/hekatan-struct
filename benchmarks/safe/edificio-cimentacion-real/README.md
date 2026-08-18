@@ -133,6 +133,46 @@ el `.f2k` es del archivo, no del modelo que se resolvió por API.
 está en el solver.** Malla, apoyos y reparto del suelo. Comparar sus
 asentamientos mide eso, no el elemento Q4.
 
+### Igualada la estructura: qué se movió y qué no
+
+Se probó a igualar cada diferencia, una por una, midiendo cada vez:
+
+| se iguala | error medio | conclusión |
+|---|---|---|
+| nada (como estaba) | **67.0 %** | |
+| **+ peso propio** (`--sw`) | **6.8 %** | era esto |
+| + malla 2×2 como SAFE (`--nLocal=2`) | 6.8 % | **no era la malla** |
+| + malla 8×8 (`--nLocal=8`) | 6.8 % | ya había convergido |
+| solo peso de zapatas (`--sw=zap`) | 26.9 % | **SAFE sí incluye vigas y pedestales** |
+
+Malla probada en 2×2, 4×4 y 8×8: el resultado no se mueve ni una décima. Y
+quitar el peso de vigas y pedestales empeora, así que en SAFE están.
+
+### Lo que queda: no es magnitud, es REPARTO
+
+El 6.8 % que sobra **no es ruido: depende del papel de cada zapata**.
+
+| rol | n | error medio |
+|---|---|---|
+| **esquina** | 4 | **+13.2 %** (+19.7 +8.8 +13.1 +11.3) |
+| medio-borde | 4 | **+1.2 %** (+1.1 +2.0 +0.5 +1.1) |
+| centro | 1 | **−4.0 %** |
+
+**Hekatan baja más que SAFE en las esquinas y menos en el centro.** Los
+medio-bordes cierran al 1 %. Eso no es un error de magnitud —si lo fuera, sería
+parejo— sino de **reparto**: en SAFE las vigas de amarre se llevan más carga de
+las esquinas hacia el centro que aquí.
+
+Y encaja con la única diferencia de modelo que sigue viva: **SAFE tiene 82
+nudos con apoyo y Hekatan ninguno**. El suelo entra de dos maneras distintas, y
+donde más se nota es donde menos vigas llegan — la esquina, con dos, frente al
+centro con cuatro.
+
+**Lo siguiente**, y en este orden: averiguar qué restringe SAFE en esos 82
+nudos. Si son los anclajes de sus 144 elementos LINK (la forma en que SAFE
+implementa un muelle de área) no cambian nada y habría que mirar la rigidez de
+la viga de amarre; si son otra cosa, ahí está el reparto.
+
 ### Lo que queda, que es de otro orden
 
 Los **medio-bordes cierran al 0.5–2 %**; lo que se desvía son las **esquinas**
