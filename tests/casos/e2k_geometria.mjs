@@ -104,12 +104,22 @@ export function generar(id) {
 function leerE2k(txt) {
   const L = txt.split(/\r?\n/);
 
+  // El fichero esta escrito EN LAS UNIDADES DEL HEADER (hoy N y MM: el parser
+  // del e2k de ETABS no lee UNITS y asume N/MM, medido en el binario). Aqui se
+  // lee el header y se pasa TODO a m y kN, que es en lo que esta el modelo. Si
+  // el exportador cambia de unidades, esta lectura lo sigue sola.
+  const uni = txt.match(/^\s*UNITS\s+"([^"]+)"\s+"([^"]+)"/m);
+  const FUERZA = { N: 1e-3, KN: 1, KGF: 9.80665e-3, TONF: 9.80665, KIP: 4.4482216 };
+  const LONG = { MM: 1e-3, CM: 1e-2, M: 1, IN: 0.0254, FT: 0.3048 };
+  const cF = FUERZA[(uni ? uni[1] : "KN").toUpperCase()] ?? 1;
+  const cL = LONG[(uni ? uni[2] : "M").toUpperCase()] ?? 1;
+
   const stories = [];
   for (const l of L) {
     let m = l.match(/^\s*STORY\s+"([^"]+)"\s+HEIGHT\s+([\d.eE+-]+)/);
-    if (m) { stories.push({ n: m[1], h: +m[2] }); continue; }
+    if (m) { stories.push({ n: m[1], h: +m[2] * cL }); continue; }
     m = l.match(/^\s*STORY\s+"([^"]+)"\s+ELEV\s+([\d.eE+-]+)/);
-    if (m) stories.push({ n: m[1], elev: +m[2] });
+    if (m) stories.push({ n: m[1], elev: +m[2] * cL });
   }
   stories.reverse();                       // el bloque va de arriba abajo
   const zStory = new Map();
@@ -124,7 +134,7 @@ function leerE2k(txt) {
   const P = new Map();
   for (const l of L) {
     const m = l.match(/^\s*POINT\s+"([^"]+)"\s+([\d.eE+-]+)\s+([\d.eE+-]+)\s*([\d.eE+-]+)?/);
-    if (m) P.set(m[1], { x: +m[2], y: +m[3], dz: m[4] ? +m[4] : 0 });
+    if (m) P.set(m[1], { x: +m[2] * cL, y: +m[3] * cL, dz: m[4] ? +m[4] * cL : 0 });
   }
 
   const LN = new Map();
@@ -156,9 +166,7 @@ function leerE2k(txt) {
     const m = l.match(/^\s*POINTLOAD\b.*\bFZ\s+(-?[\d.eE+-]+)/);
     if (m) { sumaFZ += +m[1]; nCargas++; }
   }
-  // El e2k va en Tonf y el modelo en kN.
-  const enTonf = /UNITS\s+"Tonf"/i.test(txt);
-  return { barras, nApoyos, nCargas, sumaFZ: sumaFZ * (enTonf ? 9.80665 : 1) };
+  return { barras, nApoyos, nCargas, sumaFZ: sumaFZ * cF };
 }
 
 export const nombre = "e2k-geometria";
@@ -183,7 +191,11 @@ export async function correr() {
   const mod = await empaquetar(FUENTE, "e2k-geometria");
   const filas = [];
   const apoyosMal = [], cargasMal = [];
-  const k = (p) => p.map((v) => v.toFixed(3)).join(",");
+  // Clave a 0.1 mm, redondeando ANTES de formatear: el e2k viene en mm y al
+  // pasarlo a m sale 7.537500000000001 donde el modelo tiene 7.5375 exacto.
+  // Con `toFixed(3)` a pelo esos dos caen en milimetros distintos (7.537 vs
+  // 7.538) y 96 extremos buenos del galpon salian "sueltos".
+  const k = (p) => p.map((v) => (Math.round(v * 1e4) / 1e4).toFixed(4)).join(",");
 
   for (const caso of CASOS) {
     let pExtremos = 0, pCobertura = 0, det1 = "", det2 = "";
@@ -204,12 +216,17 @@ export async function correr() {
 
       // A) extremos sobre un nudo del modelo
       let extOk = 0;
+      const huerfanos = [];
       for (const [A, B] of leidas) {
-        if (nudos.has(k(A))) extOk++;
-        if (nudos.has(k(B))) extOk++;
+        for (const P of [A, B]) {
+          if (nudos.has(k(P))) extOk++;
+          else if (huerfanos.length < 3) huerfanos.push(k(P));
+        }
       }
       pExtremos = leidas.length ? (100 * extOk) / (2 * leidas.length) : 0;
       det1 = `${extOk}/${2 * leidas.length} extremos · ${caso.nota}`;
+      // Si falla, decir DONDE: un extremo suelto sin coordenada no se depura.
+      if (huerfanos.length) det1 += ` · sueltos: ${huerfanos.join(" | ")}`;
 
       // B) cada barra del modelo, dentro de alguna LINE
       const barras = elements.filter((e) => e.length === 2);
