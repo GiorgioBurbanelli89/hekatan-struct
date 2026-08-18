@@ -69,6 +69,10 @@ class ElementInputs:
     polar_moments_of_inertia:  dict[int, float] = field(default_factory=dict)
     shear_areas_y:             dict[int, float] = field(default_factory=dict)
     shear_areas_z:             dict[int, float] = field(default_factory=dict)
+    # "local axis angle" de CSI, en GRADOS: gira el par (eje2, eje3) sobre el eje 1
+    local_angles:              dict[int, float] = field(default_factory=dict)
+    # carga repartida sobre la barra en EJES GLOBALES, kN/m: (wx, wy, wz)
+    frame_loads:               dict[int, tuple[float, float, float]] = field(default_factory=dict)
     rigid_offsets:             dict[int, tuple[float, float]] = field(default_factory=dict)
     moment_releases:           dict[int, list[bool]] = field(default_factory=dict)
     partial_fixity_springs:    dict[int, list[float]] = field(default_factory=dict)

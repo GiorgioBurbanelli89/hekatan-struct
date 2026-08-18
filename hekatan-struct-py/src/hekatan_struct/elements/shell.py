@@ -1,13 +1,58 @@
 """Shell Q4 element — Mindlin-Reissner bending + plane stress membrane.
 
 24 DOFs per element: [Ux, Uy, Uz, Rx, Ry, Rz] × 4 nodes.
-Asume slab horizontal en plano XY (z=const). Coordenadas locales = globales.
+
+La K se arma SIEMPRE en el plano del paño y luego se gira a globales
+(`shell_q4_local_axes` + `shell_q4_T`), igual que `shellQ4.ts`. Antes se
+tomaban las coordenadas X e Y globales tal cual, o sea que el paño tenía que
+ser horizontal: un MURO (plano XZ) se proyectaba a una línea, el jacobiano
+salía cero y la matriz, basura. Con la triada local vale cualquier plano —
+muro, rampa, faldón de cubierta.
 
 Membrana: plane stress 2D (Ux, Uy) — 2 DOFs efectivos/nodo, 8 total.
-Bending: Mindlin-Reissner (Uz, Rx, Ry) — 3 DOFs/nodo, 12 total + shear locking factor.
+Bending: Mindlin-Reissner (Uz, Rx, Ry) — 3 DOFs/nodo, 12 total + SRI.
 Drilling Rz: penalty k_drill = 1e-6 × max K_diag (anti-singular).
+
+⚠️ El drilling NO es el del motor TS, que usa Hughes-Brezzi completo (acopla
+θz con u,v, α = 0.5) en vez de un penalty en la diagonal. Medido en
+`test_oraculo_shells.py`: los dos motores NO dan lo mismo en membrana.
 """
 import numpy as np
+
+
+def shell_q4_local_axes(nodes3d: np.ndarray):
+    """Triada local del paño y coordenadas de sus 4 nudos en ese plano.
+
+    Igual que `getLocalAxes` de shellQ4.ts:
+      localZ = (n2 − n0) × (n3 − n1)   normal por las diagonales
+      localX = n0 → n1                 normalizado
+      localY = localZ × localX
+    Las coordenadas locales van referidas al CENTROIDE. No cambia la K (el
+    jacobiano solo ve diferencias) pero mantiene los números pequeños.
+
+    Devuelve (R, xy) con R de 3×3 —sus FILAS son los ejes locales en globales,
+    o sea R lleva de global a local— y xy de 4×2.
+    """
+    p = np.asarray(nodes3d, dtype=float)
+    nrm = np.cross(p[2] - p[0], p[3] - p[1])
+    n = np.linalg.norm(nrm)
+    if n < 1e-14:
+        raise ValueError("Q4 degenerado: las diagonales son paralelas")
+    lz = nrm / n
+    e01 = p[1] - p[0]
+    lx = e01 / np.linalg.norm(e01)
+    ly = np.cross(lz, lx)
+    R = np.vstack([lx, ly, lz])
+    d = p - p.mean(axis=0)
+    return R, np.column_stack([d @ lx, d @ ly])
+
+
+def shell_q4_T(R: np.ndarray) -> np.ndarray:
+    """24×24 diagonal por bloques con R: lleva del marco global al local."""
+    T = np.zeros((24, 24))
+    for b in range(8):          # 4 nudos × (traslaciones + giros)
+        T[3*b:3*b+3, 3*b:3*b+3] = R
+    return T
 
 
 GAUSS_2x2 = [

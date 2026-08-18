@@ -312,8 +312,15 @@ function exportFromScratch(input: ExportE2kInput): string {
   /** Carga nodal que de verdad se va a escribir, ya descontada la del area. */
   const cargaPropia = (nodeIdx: number, load: readonly number[]): [number, number, number] =>
     [load[0], load[1], load[2] - (hayAreaLoads ? (deArea?.get(nodeIdx) ?? 0) : 0)];
-  const force = units?.force || "Tonf";
-  const length = units?.length || "m";
+  // ⚠️ N y MM SIEMPRE. El lector del e2k de ETABS **no tiene token de
+  // unidades** — comprobado en el binario (ETABS.dll ~0x03490e00: sus palabras
+  // clave son LINE/COLUMN/BEAM/BRACE/$ CONTROLS/TITLE1/TITLE2/PREFERENCE, y
+  // UNITS no esta) y comprobado midiendo (con "Tonf", "KN" y "KN"/"M" el
+  // resultado es identico). Lee todo en las unidades base de SAPFire, N y mm.
+  // Escribir en tonf-m hacia que ETABS leyera A con factor 1e-6, E con x102 y
+  // las cargas con 1e-3: de 4078.45 kN llegaban 0.42.
+  const force = "N";
+  const length = "MM";
   const lines: string[] = [];
   const rd = (v: number) => Math.round(v * 10000) / 10000;
   /**
@@ -339,20 +346,39 @@ function exportFromScratch(input: ExportE2kInput): string {
   // any consistent system as long as numbers + UNITS header agree.
   // 1 tonf = 9.80665 kN  (force unit)
   // 1 m    = 1 m         (length unaltered, all SI variants use meters)
-  const forceFactor = (() => {
-    const f = (force || "Tonf").toLowerCase();
-    if (f === "tonf" || f === "tonf-f") return 1 / 9.80665;     // kN → tonf
-    if (f === "kn"   || f === "kn-f")   return 1;               // kN → kN
-    if (f === "kgf"  || f === "kg")     return 1 / 0.00980665;  // kN → kgf
-    if (f === "kip"  || f === "kips")   return 1 / 4.44822;     // kN → kip
-    return 1;
-  })();
+  const forceFactor = 1000;              // kN → N
+  const lengthFactor = 1000;             // m  → mm
+  /** longitud: metros del modelo → milimetros del fichero */
+  const cL = (m: number) => m * lengthFactor;
   // Force conversion (loads, reactions, point loads)
   const cF  = (kN: number) => kN * forceFactor;
+  // ⚠️ LAS CARGAS NODALES VAN EN NEWTONS, SIEMPRE.
+  //
+  // El comentario de arriba decia que "ETABS acepta cualquier sistema
+  // consistente mientras los numeros y el header UNITS concuerden". **Es
+  // falso, y esta medido**: con `UNITS "Tonf" "m"` y `FZ -0.1736`, ETABS
+  // importa `-0.00017357 kN`, o sea lee el numero como NEWTONS y lo pasa a kN
+  // dividiendo por 1000. Con `UNITS "KN"` hace exactamente lo mismo: ignora el
+  // header para las cargas. Las LONGITUDES si respetan el header (el modelo
+  // sale bien colocado), solo las fuerzas no.
+  //
+  // Consecuencia sin esto: de los 4078.45 kN del galpon llegaban **0.42 kN** y
+  // el modelo reimportado resolvia con la deformada en cero, sin un solo aviso.
+  // Y encaja con lo que exporta el propio ETABS, que escribe `UNITS "N" "MM"`
+  // y `FX 100000` para una carga de 100 kN.
+  const cFN = (kN: number) => kN * forceFactor;
+  // ⚠️ Un MOMENTO no es una fuerza: es fuerza x longitud. Con el fichero en
+  // N y mm, kN·m -> N·mm son 1e6, no 1e3. Escribiendolo con el factor de
+  // fuerza los momentos de empotramiento entran MIL VECES pequeños, o sea
+  // como si no estuvieran — y son justo lo que distingue una viga continua de
+  // un reparto nodal.
+  const cMN = (kNm: number) => kNm * forceFactor * lengthFactor;
   // Stress conversion (E, fy): kN/m² → tonf/m² = same factor as force
-  const cE  = (kN_m2: number) => kN_m2 * forceFactor;
+  // tension: kN/m2 → N/mm2  (x1000 de fuerza / 1e6 de area)
+  const cE  = (kN_m2: number) => kN_m2 * forceFactor / (lengthFactor ** 2);
   // Volume weight: kN/m³ → tonf/m³ = same factor as force (length cancels)
-  const cWV = (kN_m3: number) => kN_m3 * forceFactor;
+  // peso por volumen: kN/m3 → N/mm3
+  const cWV = (kN_m3: number) => kN_m3 * forceFactor / (lengthFactor ** 3);
 
   // Header reconocido por ETABS 22.x. PROGRAM debe decir "ETABS" exactamente
   // o ETABS rechaza el archivo con "May not be a valid ETABS X.X.X text file".
@@ -463,7 +489,7 @@ function exportFromScratch(input: ExportE2kInput): string {
 
   lines.push(`$ STORIES - IN SEQUENCE FROM TOP`);
   for (let i = sortedZ.length - 1; i >= 1; i--) {
-    lines.push(`  STORY "${storyNames[i]}"  HEIGHT ${rd(sortedZ[i] - sortedZ[i - 1])} MASTERSTORY "Yes"  `);
+    lines.push(`  STORY "${storyNames[i]}"  HEIGHT ${rd(cL(sortedZ[i] - sortedZ[i - 1]))} MASTERSTORY "Yes"  `);
   }
   if (sortedZ.length > 0) lines.push(`  STORY "Base"  ELEV ${sortedZ[0]} `);
   lines.push(``);
@@ -525,13 +551,13 @@ function exportFromScratch(input: ExportE2kInput): string {
     const alpha = isSteel ? 1.17e-5 : 1.0e-5;
 
     if (isSteel) {
-      lines.push(`  MATERIAL  "${name}"    TYPE "Steel"    GRADE "Grade 50"    WEIGHTPERVOLUME ${rd(wpv_out)}`);
+      lines.push(`  MATERIAL  "${name}"    TYPE "Steel"    GRADE "Grade 50"    WEIGHTPERVOLUME ${rp(wpv_out)}`);
       lines.push(`  MATERIAL  "${name}"    SYMTYPE "Isotropic"  E ${rd(E_out)}  U ${nu}  A ${alpha}`);
       // FY/FU típicos A572Gr50 en tonf/m² (35,153 / 45,699)
       const fy_kN = 345e3, fu_kN = 450e3;
       lines.push(`  MATERIAL  "${name}"  FY ${rd(cE(fy_kN))}  FU ${rd(cE(fu_kN))}  FYE ${rd(cE(fy_kN*1.1))}  FUE ${rd(cE(fu_kN*1.1))}`);
     } else {
-      lines.push(`  MATERIAL  "${name}"    TYPE "Concrete"    WEIGHTPERVOLUME ${rd(wpv_out)}`);
+      lines.push(`  MATERIAL  "${name}"    TYPE "Concrete"    WEIGHTPERVOLUME ${rp(wpv_out)}`);
       lines.push(`  MATERIAL  "${name}"    SYMTYPE "Isotropic"  E ${rd(E_out)}  U ${nu}  A ${alpha}`);
       // f'c típico 24 MPa en tonf/m² (≈ 2,448)
       const fc_kN = 24e3;
@@ -677,8 +703,20 @@ function exportFromScratch(input: ExportE2kInput): string {
     //   "Steel Channel"         → C
     //   "Steel Angle"           → L
     //   "Filled Steel Tube"     → CFT (D B TF + FILLMATERIAL)
+    // ⚠️ SIEMPRE "General" cuando el modelo trae A / I33 / I22.
+    //
+    // Con una forma PARAMETRICA ("Concrete Rectangular", "Steel I/Wide
+    // Flange"...) ETABS **recalcula** las propiedades desde D/B/TF/TW y tira
+    // las que van escritas. Y el D/B que se emite es un rectangulo
+    // EQUIVALENTE, asi que el modelo importado tiene otra seccion: medido en
+    // el galpon, A 0.0121408 contra la real 0.00978997, y la flecha se iba de
+    // -28.378 a -8.278. Lo mismo pasaba en el s2k con `Shape=Rectangular`.
+    //
+    // La forma real solo importa para el DISEÑO y para dibujar; la rigidez la
+    // mandan A, I33, I22 y J, y esas las tenemos exactas.
+    const tieneProps = A > 0 && I33 > 0 && I22 > 0;
     let etabsShape: string;
-    if (stype === "general")    etabsShape = "General";
+    if (stype === "general" || tieneProps) etabsShape = "General";
     else if (stype === "I")     etabsShape = "Steel I/Wide Flange";
     else if (stype === "HSS")   etabsShape = "Steel Tube";
     else if (stype === "CFT")   etabsShape = "Filled Steel Tube";
@@ -690,25 +728,30 @@ function exportFromScratch(input: ExportE2kInput): string {
     else                        etabsShape = "Concrete Rectangular";  // ← FIX: rect sólido siempre
 
     let line = `  FRAMESECTION  "${secName}"  MATERIAL "${matName}"  SHAPE "${etabsShape}"`;
-    if (stype === "general") {
+    if (etabsShape === "General") {
       // AS2/AS3: si el modelo no da area de cortante, se usa la de ETABS por
       // defecto para rectangulo (5/6·A). No inventa rigidez de flexion.
-      const as2 = elementInputs.shearAreasY?.get(i) || A * 5 / 6;
-      const as3 = elementInputs.shearAreasZ?.get(i) || A * 5 / 6;
-      line += `  D ${rd(h)} B ${rd(b)} AREA ${rp(A)} AS2 ${rp(as2)} AS3 ${rp(as3)}`
-            + ` I33 ${rp(I33)} I22 ${rp(I22)} TORSION ${rp(J || I33 + I22)}`
-            + ` S33POS ${rp(2 * I33 / h)} S33NEG ${rp(2 * I33 / h)}`
-            + ` S22POS ${rp(2 * I22 / b)} S22NEG ${rp(2 * I22 / b)}`
-            + ` Z33 ${rp(2 * I33 / h)} Z22 ${rp(2 * I22 / b)}`
-            + ` R33 ${rp(Math.sqrt(I33 / A))} R22 ${rp(Math.sqrt(I22 / A))} `;
+      // As2 resiste V2 (plano 1-2, el de I33) -> shearAreasZ
+      // As3 resiste V3 (plano 1-3, el de I22) -> shearAreasY
+      // Estaban CRUZADAS: en un perfil I, As2 (el alma) es varias veces As3.
+      const as2 = elementInputs.shearAreasZ?.get(i) || A * 5 / 6;
+      const as3 = elementInputs.shearAreasY?.get(i) || A * 5 / 6;
+      line += `  D ${rd(cL(h))} B ${rd(cL(b))} AREA ${rp(A*1e6)} AS2 ${rp(as2*1e6)} AS3 ${rp(as3*1e6)}`
+            // inercias: m4 -> mm4 (1e12)
+            + ` I33 ${rp(I33*1e12)} I22 ${rp(I22*1e12)} TORSION ${rp((J || I33 + I22)*1e12)}`
+            // modulos: m3 -> mm3 (1e9).  radios de giro: m -> mm (1e3)
+            + ` S33POS ${rp(2 * I33 / h * 1e9)} S33NEG ${rp(2 * I33 / h * 1e9)}`
+            + ` S22POS ${rp(2 * I22 / b * 1e9)} S22NEG ${rp(2 * I22 / b * 1e9)}`
+            + ` Z33 ${rp(2 * I33 / h * 1e9)} Z22 ${rp(2 * I22 / b * 1e9)}`
+            + ` R33 ${rp(Math.sqrt(I33 / A) * 1e3)} R22 ${rp(Math.sqrt(I22 / A) * 1e3)} `;
       lines.push(line);
       return;
     }
-    if (h) line += `  D ${rd(h)}`;
-    if (b) line += `  B ${rd(b)}`;
-    if (d && !h) line += `  D ${rd(d)}`;
-    if (tfw) line += `  TF ${rd(tfw)}`;
-    if (tww) line += `  TW ${rd(tww)}`;
+    if (h) line += `  D ${rd(cL(h))}`;
+    if (b) line += `  B ${rd(cL(b))}`;
+    if (d && !h) line += `  D ${rd(cL(d))}`;
+    if (tfw) line += `  TF ${rd(cL(tfw))}`;
+    if (tww) line += `  TW ${rd(cL(tww))}`;
     lines.push(line);
   });
   lines.push(``);
@@ -730,8 +773,9 @@ function exportFromScratch(input: ExportE2kInput): string {
   lines.push(`$ POINT COORDINATES`);
   for (const [key, ptName] of xyToPoint) {
     const [x, y, dz] = key.split(",").map(Number);
-    lines.push(dz ? `  POINT "${ptName}"  ${x} ${y} ${dz} `
-                  : `  POINT "${ptName}"  ${x} ${y} `);
+    // las claves van en METROS (son claves internas); al fichero, en mm
+    lines.push(dz ? `  POINT "${ptName}"  ${rd(cL(x))} ${rd(cL(y))} ${rd(cL(dz))} `
+                  : `  POINT "${ptName}"  ${rd(cL(x))} ${rd(cL(y))} `);
   }
   lines.push(``);
 
@@ -789,7 +833,7 @@ function exportFromScratch(input: ExportE2kInput): string {
     // hekatan guarda offset [dy, dz] del centroide; si es (0,0) → centroid (10).
     const ip = elementInputs.insertionPoints?.get(i);
     if (ip && (Math.abs(ip[0]) > 1e-9 || Math.abs(ip[1]) > 1e-9)) {
-      parts.push(`LATEROFFSET ${rd(ip[0])} TRANSOFFSET ${rd(ip[1])}`);
+      parts.push(`LATEROFFSET ${rd(cL(ip[0]))} TRANSOFFSET ${rd(cL(ip[1]))}`);
     }
 
     // End Length Offsets — rigidOffsets [offsetI, offsetJ] como factores 0-1
@@ -1098,14 +1142,14 @@ function exportFromScratch(input: ExportE2kInput): string {
       lines.push(`  SHELLPROP  "${DECK_SEC}"  PROPTYPE  "Deck"  DECKTYPE "Filled"  CONCMATERIAL "${defaultShellMat}"  DECKMATERIAL "${defaultShellMat}"  DECKSLABDEPTH ${rp(t_slab * 65 / 120)} DECKRIBDEPTH ${rp(t_slab * 55 / 120)} DECKRIBWIDTHTOP ${rp(t_slab * 150 / 120)} DECKRIBWIDTHBOTTOM ${rp(t_slab * 100 / 120)} DECKRIBSPACING ${rp(t_slab * 200 / 120)} DECKSHEARTHICKNESS ${rp(t_slab * 0.76 / 120)} DECKUNITWEIGHT ${rp(cF(0.11012))} SHEARSTUDDIAM ${rp(t_slab * 19 / 120)} SHEARSTUDHEIGHT ${rp(t_slab * 100 / 120)} SHEARSTUDFU 400 `);
     } else {
       lines.push(`$ SLAB PROPERTIES`);
-      lines.push(`  SHELLPROP  "Losa"  PROPTYPE  "Slab"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "ShellThin"  SLABTYPE "Slab"  SLABTHICKNESS ${rd(t_slab)} `);
+      lines.push(`  SHELLPROP  "Losa"  PROPTYPE  "Slab"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "ShellThin"  SLABTYPE "Slab"  SLABTHICKNESS ${rd(cL(t_slab))} `);
     }
     lines.push(``);
   }
   if (areaElements.some(a => a.isWall)) {
     lines.push(`$ WALL PROPERTIES`);
     const t_wall = elementInputs.thicknesses?.values().next().value ?? 0.2;
-    lines.push(`  SHELLPROP  "Muro"  PROPTYPE  "Wall"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "ShellThick"  WALLTHICKNESS ${rd(t_wall)} `);
+    lines.push(`  SHELLPROP  "Muro"  PROPTYPE  "Wall"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "ShellThick"  WALLTHICKNESS ${rd(cL(t_wall))} `);
     lines.push(``);
   }
 
@@ -1199,51 +1243,60 @@ function exportFromScratch(input: ExportE2kInput): string {
       : (pats.find(p => p.type === "Dead")?.name ?? pats[0].name);
 
   // ── POINT OBJECT LOADS ─────────────────────────────────────────────
+  //
+  // ⚠️ UNA SOLA linea POINTLOAD por nudo, con las SEIS componentes.
+  //
+  // Antes se emitia una linea por componente no nula (FX, FY, los momentos, y
+  // FZ aparte), o sea hasta CUATRO lineas para el mismo nudo. ETABS al importar
+  // se queda con UNA y descarta las demas: de los 4078.45 kN del galpon
+  // llegaban **0.42 kN**, y el modelo reimportado resolvia con la deformada
+  // practicamente en cero sin dar ningun error. Medido: 198 de 252 nudos
+  // llevaban mas de una POINTLOAD.
+  //
+  // El formato sale de un e2k real de ETABS:
+  //   POINTLOAD "3" "Level_1" LC "Dead" TYPE "FORCE" FX 0 FY 0 FZ -20 MX 0 MY 0 MZ 0
+  //
+  // Los MOMENTOS no son opcionales: una carga repartida sobre barra
+  // (`frameload`) se convierte a fuerzas Y momentos de empotramiento, y son los
+  // momentos los que distinguen una viga continua de un reparto nodal —
+  // omitirlos manda 16 % menos carga al apoyo interior de un vano ancho.
   const userLoadLines: string[] = [];
+  const acumulado = new Map<number, number[]>();
+  const meter = (nodeIdx: number, v: number[]) => {
+    const a = acumulado.get(nodeIdx) ?? [0, 0, 0, 0, 0, 0];
+    for (let k = 0; k < 6; k++) a[k] += v[k] ?? 0;
+    acumulado.set(nodeIdx, a);
+  };
+
+  // FZ: en modo "auto" se omite porque se da por hecho que ESA carga vertical
+  // ES el peso propio y ETABS ya lo mete por `SELFWEIGHT 1`. En "manual" se
+  // emite. Y SIEMPRE que las cargas NO vayan al patron del peso propio: si van
+  // a Live (que lleva SELFWEIGHT 0), omitir la FZ deja el caso sin una sola
+  // carga y ETABS lo resuelve con todo a 0.000.
+  const esPatronDePesoPropio = patronGravedad
+    === (pats.find(p => p.type === "Dead")?.name ?? pats[0].name);
+  const emitirFz = weightMode === "manual" || !esPatronDePesoPropio;
+
   if (nodeInputs.loads && nodeInputs.loads.size > 0) {
     nodeInputs.loads.forEach((load, nodeIdx) => {
       const [fx, fy, fz] = cargaPropia(nodeIdx, load);
-      const ps = nodeToPS(nodeIdx);
-      if (Math.abs(fx) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX ${rp(cF(fx))}  FY 0  FZ 0`);
-      if (Math.abs(fy) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX 0  FY ${rp(cF(fy))}  FZ 0`);
-      // ── MOMENTOS ────────────────────────────────────────────────────
-      // Sin esto el e2k exportado NO reproduce el modelo. Una carga REPARTIDA
-      // sobre barra (`frameload` del CLI) se convierte a fuerzas Y MOMENTOS de
-      // empotramiento, y los momentos son justo lo que distingue una viga
-      // continua de un reparto nodal: omitirlos manda 16 % menos carga al apoyo
-      // interior de un vano ancho y 23 % mas al extremo.
-      // El formato sale de un e2k real:
-      //   POINTLOAD "3" "Level_1" LC "Dead" TYPE "FORCE" FX 0 FY 0 FZ -20 MX 0 MY 0 MZ 0
-      // Las coordenadas se escriben siempre en metros, asi que el momento
-      // (fuerza x longitud) convierte con el mismo factor que la fuerza.
-      const mx = load[3] ?? 0, my = load[4] ?? 0, mz = load[5] ?? 0;
-      if (Math.abs(mx) > 1e-10 || Math.abs(my) > 1e-10 || Math.abs(mz) > 1e-10) {
-        userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX 0  FY 0  FZ 0  MX ${rp(cF(mx))}  MY ${rp(cF(my))}  MZ ${rp(cF(mz))}`);
-      }
-      // FZ: en modo "auto" se omite porque se da por hecho que ESA carga
-      // vertical ES el peso propio, y ETABS ya lo mete por `SELFWEIGHT 1`.
-      // En modo "manual" se emite explicitamente.
-      //
-      // ⚠️ Y SIEMPRE que las cargas NO vayan al patron del peso propio. Si se
-      // mandan a Live, la excusa desaparece: Live lleva `SELFWEIGHT 0`, asi que
-      // omitir la FZ deja el caso Live sin una sola carga y ETABS lo resuelve
-      // con los desplazamientos en 0.000. Era lo que pasaba.
-      const esPatronDePesoPropio = patronGravedad
-        === (pats.find(p => p.type === "Dead")?.name ?? pats[0].name);
-      if ((weightMode === "manual" || !esPatronDePesoPropio) && Math.abs(fz) > 1e-10) {
-        userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"  FX 0  FY 0  FZ ${rp(cF(fz))}`);
-      }
+      meter(nodeIdx, [fx, fy, emitirFz ? fz : 0,
+                      load[3] ?? 0, load[4] ?? 0, load[5] ?? 0]);
     });
   }
   if ((nodeInputs as any).moments && (nodeInputs as any).moments.size > 0) {
     (nodeInputs as any).moments.forEach((m: number[], nodeIdx: number) => {
-      const [mx, my, mz] = m;
-      const ps = nodeToPS(nodeIdx);
-      if (Math.abs(mx) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "${patronGravedad}"  MX ${rp(cF(mx))}  MY 0  MZ 0`);
-      if (Math.abs(my) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "${patronGravedad}"  MX 0  MY ${rp(cF(my))}  MZ 0`);
-      if (Math.abs(mz) > 1e-10) userLoadLines.push(`  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "MOMENT"  LC "${patronGravedad}"  MX 0  MY 0  MZ ${rp(cF(mz))}`);
+      meter(nodeIdx, [0, 0, 0, m[0] ?? 0, m[1] ?? 0, m[2] ?? 0]);
     });
   }
+  acumulado.forEach((v, nodeIdx) => {
+    if (v.every(x => Math.abs(x) <= 1e-10)) return;
+    const ps = nodeToPS(nodeIdx);
+    userLoadLines.push(
+      `  POINTLOAD  "${ps.pt}"  "${ps.story}"  TYPE "FORCE"  LC "${patronGravedad}"` +
+      `  FX ${rp(cFN(v[0]))}  FY ${rp(cFN(v[1]))}  FZ ${rp(cFN(v[2]))}` +
+      `  MX ${rp(cMN(v[3]))}  MY ${rp(cMN(v[4]))}  MZ ${rp(cMN(v[5]))}`);
+  });
   if (userLoadLines.length > 0) {
     lines.push(`$ POINT OBJECT LOADS`);
     userLoadLines.forEach(l => lines.push(l));

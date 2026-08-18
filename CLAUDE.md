@@ -245,6 +245,47 @@ Desde JS: `masaEnsamblada()` en `tests/lib/wasm.mjs`. Test de regresión:
 galpón). **No** rehacer la cuenta en JavaScript para "comprobar": eso mide una
 copia, y así se estuvo mirando meses una masa que no era la del solver.
 
+## El motor de Python (`hekatan-struct-py`) — el árbitro rápido
+
+Mismo solver de barras que el TS/C++, en Python puro. **No es una maqueta: el
+2026-08-17 reproduce el galpón (378 nudos, 723 barras) al `0.000 %` en los 378
+nudos.** Sirve para iterar sin recompilar WASM: se cambia una línea y se vuelve
+a medir en menos de un segundo.
+
+```python
+from hekatan_struct.heks import leer_heks, resolver_heks
+m = leer_heks("galpon_bodega.heks")     # el MISMO texto que come cliModeler.ts
+res = resolver_heks(m)
+```
+
+Lee el `.heks` a propósito, en vez de rearmar el modelo en Python: si no, lo
+que se compara son dos modelos parecidos, no dos motores.
+
+Lo que tiene, y que hasta el 17-ago **no** tenía (era Euler-Bernoulli pelado):
+
+| | dónde |
+|---|---|
+| cortante de Timoshenko con `as` (5/6·A por defecto, como ETABS) | `elements/frame.py` |
+| `ang` — local axis angle de CSI | `frame_local_axes_csi(..., angle_deg)` |
+| `frameload` → fuerzas **y momentos** de empotramiento | `frame_fixed_end_loads` |
+| end releases por condensación estática | `frame_releases_condense` |
+| apoyos por **eliminación**, no penalty | `deform()` |
+| camino disperso (CSR) a partir de 3000 GDL | `deform(..., sparse=True)` |
+
+Guiado por **SAP IV** (`SAP-IV-estudio/`, el último eslabón con fuente abierta
+del linaje que acaba en SAPFire): `beam.for` para el término de cortante
+(`φ = 12EI/(G·As·L²)`, que con As→∞ degenera exacto en Euler-Bernoulli),
+`bound.for`+`sesol.for` para numerar con 0 los GDL restringidos, `addstf.for`
+para el ensamble.
+
+⚠️ **Trampa del `.heks`**: el 6º token de `frame` es **I22** (plano 1-3) y el 7º
+es **I33** (plano 1-2, el del canto), aunque el comentario los llame `Iz Iy`. Y
+en `as ID As2 As3`, **As2 va con I33**. Cambiarlo cruza las inercias.
+
+⚠️ `awatif-py/` es OTRO paquete (el fork original). Los tests que hacen
+`from awatif import ...` **no** prueban este motor; los de éste importan
+`hekatan_struct`. `pytest tests` → 13/13.
+
 ## Suite de regresión: `npm test`
 
 ```
