@@ -6,12 +6,40 @@ Hekatan Struct Lineal started as a fork of [awatif v2.0.0](https://github.com/ma
 
 🌐 **Live:** [https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/](https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/)
 
+## Validation status
+
+Every number below is measured against **another program** — same model, same
+mesh node by node, rigid offsets zeroed — never against a hand calculation.
+Full detail in [`ESTADO_VS_ETABS.md`](./ESTADO_VS_ETABS.md).
+
+| layer | arbiter | closure | |
+|---|---|---|---|
+| **Frames** (1 → n DOF) | closed-form solution | **0.063 %** worst of 6 steps | ✅ |
+| **Frames** — full warehouse, 378 nodes | ETABS 22 | **0.000 %** on all 378 | ✅ |
+| **Modal** (Paz & Leigh 6.3) | ETABS 22 | **0.00 %** on 6 modes, subspace path | ✅ |
+| **Shell-Thin** (Kirchhoff) | ETABS 22, 3 load steps | **0.93 %** worst | ✅ |
+| **Shell-Membrane** | ETABS 22, 3 load steps | **0.85 %** worst | ✅ |
+| **Shell-Thick** (Mindlin) | ETABS 22, 3 load steps | 11.28 % at 4×4 · 2.68 % at 8×8 | ❌ [open](#shell-status-vs-etabs-measured-2026-08-18) |
+| **E2K export** → ETABS 22 | round-trip re-import | **0.000 %** — 372/378 nodes | ✅ |
+| **S2K export** → SAP2000 24 | round-trip re-import | **0.000 %** — 378/378 nodes | ✅ |
+| **F2K export** → SAFE 20 | round-trip re-import | 6.8 % mean | ⏳ open |
+| **Assembled mass** | ETABS `AssembledJointMass` | **0.002 %** | ✅ |
+
+Regression suite: **`npm test` → 143/143**, plus **57 passed / 2 xfailed** in the
+Python engine (`hekatan-struct-py`), which reproduces the TS/C++ solver at
+`1e-9` and is used as the fast arbiter.
+
+⚠️ **Known limitation — `Shell-Thick` on a coarse mesh.** Use **8 or more
+divisions per bay**; at 2×2 it is far too stiff. `Thin` and `Membrane` are
+unaffected. The cause is measured and it is *not* the shear formulation — see
+[Shell status](#shell-status-vs-etabs-measured-2026-08-18).
+
 Jump directly to any example with `?t=<id>` (122 examples total). The most relevant grouped by category:
 
 **Plates & Shells**
 - [`?t=plane`](https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/?t=plane) — Plane Q4 cantilever wall (plane stress) w/ Wilson incompatible modes
 - [`?t=plate-thin`](https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/?t=plate-thin) — Kirchhoff thin plate (BFS Q4, 16-DOF)
-- [`?t=plate-thick`](https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/?t=plate-thick) — Mindlin-Reissner (MITC4)
+- [`?t=plate-thick`](https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/?t=plate-thick) — Mindlin-Reissner (MITC4) — ⚠️ needs a fine mesh, [see status](#validation-status)
 - [`?t=plate-thick-validacion`](https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/?t=plate-thick-validacion) — MITC4 validation vs SAP 2000
 - [`?t=plate-q4`](https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/?t=plate-q4) — Generic Q4 plate solver
 - [`?t=triangular-plate`](https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/?t=triangular-plate) — DKT triangular plate element
