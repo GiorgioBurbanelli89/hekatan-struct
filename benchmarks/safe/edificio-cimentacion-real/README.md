@@ -75,6 +75,35 @@ npx tsx ./cli_edificio.mjs --sw --json=hek_sw.json
 Y la reacción del suelo, que era 2.85× la carga, ahora coincide: SAFE
 **55.01 tonf** contra Hekatan **56.84**, un 3.3 %.
 
+### El .f2k dice lo que pasa: `comparar_f2k.py`
+
+La pregunta no es si Hekatan se parece a SAFE, sino si **el archivo que Hekatan
+manda a SAFE describe la misma estructura que Hekatan resuelve por dentro**. Si
+no, el error mide dos modelos, no el solver. Es el mismo metodo que
+`cli/comparar_e2k_etabs.mjs` usa con el `.e2k` de ETABS.
+
+```bash
+python comparar_f2k.py
+```
+
+Lo que sale del `.f2k` que exporta Hekatan:
+
+| | en el f2k | en `cli_edificio.mjs` |
+|---|---|---|
+| **peso propio** | `Self Weight Multiplier=1` — **lo pide** | solo con `--sw` |
+| **pedestales** | **ninguno**: las vigas arrancan de los puntos cargados | 9, de 0.50 m (1.73 t) |
+| **zapatas** | 18 objetos de área, que SAFE **auto-malla** | malla explícita 4×4 → 144 Q4 |
+| ks del suelo | `Subgrade Modulus = 105.03` | 105.0 ✔ |
+| cargas | 9 nudos, ΣFZ = −19.269 t | idénticas ✔ |
+
+**Ahí está el origen de todo.** El f2k pide el peso propio, así que SAFE lo
+aplica al abrirlo; el solver de Hekatan no lo aplicaba. No era que Hekatan
+sub-predijera: es que el propio archivo de Hekatan le pedía a SAFE una carga
+que Hekatan no se aplicaba a sí mismo.
+
+Y quedan dos diferencias más de modelo, no de solver: los **pedestales**, que
+el f2k no lleva, y el **mallado**, explícito aquí y automático allí.
+
 ### Lo que queda, que es de otro orden
 
 Los **medio-bordes cierran al 0.5–2 %**; lo que se desvía son las **esquinas**
