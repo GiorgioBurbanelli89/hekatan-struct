@@ -48,6 +48,36 @@ Hekatan, cuando eran los 78.6876 m de viga que ETABS no pesa.
 | **Unidades de la masa** | `c = √(E/ρ)` de cada ejemplo con modal | 39 ejemplos · velocidad de onda del material + voladizo Euler-Bernoulli | los 39 dentro de **1500–8000 m/s**; el voladizo de acero cierra al **1.5 %** | `node tests/run.mjs unidades` |
 | **UI — botón «Correr modal + animar»** | ¿el modelo se mueve de verdad? | bundle de deploy · Test M — Dual | **sí**: 8/8 frames distintos, panel con Modo 1/24, 2.0726 Hz, T = 0.4825 s, Ux 84 % | `node cli/shot_modal_anim.mjs local` |
 
+### Cáscara: los TRES tipos, en los TRES escalones (2026-08-18)
+
+`edificios-slab/banco_shell.py A B C` — se sube un escalón cada vez y solo se
+pasa al siguiente cuando el anterior cierra:
+
+```
+A  solo AREA          placa sola, sin una barra
+B  AREA + FRAMES      la misma placa con vigas de borde
+C  3D                 pórtico con losa
+```
+
+| tipo | A (solo área) | B (+ vigas) | C (3D) | peor | |
+|---|---|---|---|---|---|
+| **Thin** (Kirchhoff) | 0.72 % | 0.93 % | 0.54 % | **0.93 %** | ✅ **cerrado** |
+| **Membrane** | 0.06 % | 0.85 % | 0.00 % | **0.85 %** | ✅ **cerrado** |
+| **Thick** (Mindlin) | 1.42 % | **11.28 %** | 6.97 % | **11.28 %** | ❌ abierto |
+
+**Thin y Membrane cierran por debajo del 1 % en los tres escalones.** Con malla
+fina (445 elementos) bajan a 0.037 % y 0.00016 %.
+
+⚠️ El −2.00 % de `thin` contra **Navier** que aparece más arriba no contradice
+esto: Navier es la solución de **Kirchhoff sin cortante**, y ningún
+cuadrilátero de 4 nodos converge a ella. Contra **ETABS**, que es el mismo tipo
+de elemento, `thin` cierra.
+
+**Y el patrón de `Thick` dice dónde mirar**: 1.42 % con la placa sola, y
+**11.28 % en cuanto entran las vigas**. No es la malla —refinando no se mueve—
+sino que **falla al conectar el shell con frames**. Es el acoplamiento, no el
+elemento aislado.
+
 ## 2. Lo que TODAVÍA no
 
 | capa | qué se midió | modelo · árbitro | medido | por qué / qué falta |
