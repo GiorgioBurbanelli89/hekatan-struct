@@ -104,6 +104,35 @@ que Hekatan no se aplicaba a sí mismo.
 Y quedan dos diferencias más de modelo, no de solver: los **pedestales**, que
 el f2k no lleva, y el **mallado**, explícito aquí y automático allí.
 
+### El LOG de SAFE remata la cuestión: NO es la misma estructura
+
+SAFE 20 no deja exportar un `.f2k` por la API (`cFile` no tiene
+`ExportToSAFEFile`, y `Save` con extensión `.f2k` devuelve 0 y no escribe), y
+`GetAvailableTables` cuelga el proceso. Pero no hacía falta: **SAFE deja
+escrito el modelo que resolvió** en `Edificio_Cimentacion_via_API.LOG`.
+
+| | SAFE (su LOG) | Hekatan | |
+|---|---|---|---|
+| nudos | 171 | 234 | |
+| **con apoyo (restraints)** | **82** | **0** | Hekatan no pone apoyos: solo muelles |
+| **shells Q4 de zapata** | **36** | **144** | **4 por zapata frente a 16** |
+| frames | **21** | **21** | ✔ igual: 12 vigas + 9 pedestales |
+| links / muelles Winkler | 144 | 225 | reparto distinto del suelo |
+| patrones de carga | 3 | 1 | |
+
+**SAFE malló las zapatas 2 × 2 y Hekatan 4 × 4.** Y, sobre todo, **SAFE tiene
+82 nudos con apoyo** donde Hekatan no tiene ninguno: el suelo entra de dos
+maneras distintas —muelles en Hekatan, y en SAFE muelles *más* restricciones—,
+que es exactamente lo que cambia cuánto baja cada zapata.
+
+Lo único que coincide de verdad es el número de barras (21 = 12 vigas + 9
+pedestales), así que los pedestales sí llegaron: la diferencia que se veía en
+el `.f2k` es del archivo, no del modelo que se resolvió por API.
+
+**Conclusión: los dos modelos no son el mismo, y ninguna de las diferencias
+está en el solver.** Malla, apoyos y reparto del suelo. Comparar sus
+asentamientos mide eso, no el elemento Q4.
+
 ### Lo que queda, que es de otro orden
 
 Los **medio-bordes cierran al 0.5–2 %**; lo que se desvía son las **esquinas**
