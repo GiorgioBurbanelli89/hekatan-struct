@@ -3483,11 +3483,22 @@ export function drawing({
     const tool = ((window as any).__hekatanCadState?.get?.() as any)?.tool ?? "select";
     if (tool !== "select" && tool !== "none" && tool) return;
     if (ev.button !== 0) return;  // solo botón izquierdo
-    // Rect-select OPT-IN: el flag lo setea el panel CAD sólo cuando
-    // el usuario hace click explícito en "🖱 Seleccionar". El estado
-    // default tool="select" NO activa rect-drag → en móvil un drag
-    // hace orbit de cámara, no un rectángulo de selección verde.
-    if (!(window as any).__hekatanRectSelectExplicit) return;
+    // ── La ventana de seleccion NO exige apretar "Seleccionar" antes ─────────
+    //
+    // Era opt-in: hasta que no se pulsaba el boton, arrastrar orbitaba la
+    // camara y no seleccionaba nada. Pero en AutoCAD —y en cualquier CAD—
+    // arrastrar sobre el vacio SIEMPRE abre la ventana de seleccion: no hay
+    // que activar nada. Sin eso la respuesta a «no puedo seleccionar
+    // arrastrando» es «primero aprieta este boton», que no es una respuesta.
+    //
+    // El opt-in existia por el MOVIL, donde un arrastre tiene que orbitar. Eso
+    // ya lo cubre la guarda de `pointerType === "touch"` de aqui abajo, que es
+    // la condicion de verdad; el flag sobraba en raton.
+    //
+    // Se sigue respetando el flag para el caso contrario: si alguien lo pone a
+    // false a proposito (el modo apoyo/carga del ribbon lo hace, porque alli el
+    // arrastre no debe abrir una ventana), no se activa.
+    if ((window as any).__hekatanRectSelectExplicit === false) return;
     // Mouse-only: en touch (pointerType === "touch") no activamos
     // rect-drag aunque el usuario haya elegido Seleccionar — en mobile
     // el drag-to-select es contra-intuitivo (esperan orbit). Para

@@ -1,0 +1,31 @@
+== pageerror ==
+
+== consola ==
+[log] [NewBlank] Lienzo vacío — usá el folder 📐 Herramientas CAD para dibujar.
+[log] [menu] clic derecho sobre el modelo -> Assign estilo ETABS
+[log] [Calculados] [object Object]
+[warn] [.WebGL-0x613402d82c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[warn] [.WebGL-0x613402d82c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[warn] [.WebGL-0x613402d82c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[warn] [.WebGL-0x613402d82c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+[log] [Vista ↔ CAD] preset=iso, workPlane=xy
+[log] [AI] Ollama no detectado → default a Gemini Flash
+[error] Failed to load resource: net::ERR_ADDRESS_INVALID
+[error] Failed to load resource: net::ERR_ADDRESS_INVALID
+[log] [Vista ↔ CAD] preset=plan, workPlane=xy
+[log] [CAD] Tool activo: line — ／ Línea — click 2 puntos. Tipear: 5 (DDE) | 5,3,2 (abs) | @5,3,2 (rel) | @5<45 (polar) | @5<45<30 (esférico) | Enter
+[log] [NewBlank] mode=3D | nodes=1 elem=0 cols=0 vigas=0 shells=0 apoyos=0 cargas=0 springs=0
+[log] [CAD] Tool activo: polyline — ⌒ Polilínea — click sucesivos. Tipear: 5 | 5,3 | @5,3 | @5<45. Right-click para terminar.
+[log] [NewBlank] mode=3D | nodes=2 elem=1 cols=0 vigas=1 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=3 elem=2 cols=0 vigas=2 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=4 elem=3 cols=0 vigas=3 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=4 elem=3 cols=0 vigas=3 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=5 elem=4 cols=0 vigas=4 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=5 elem=4 cols=0 vigas=4 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=6 elem=5 cols=0 vigas=5 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=6 elem=5 cols=0 vigas=5 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=7 elem=6 cols=0 vigas=6 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=7 elem=6 cols=0 vigas=6 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=8 elem=7 cols=0 vigas=7 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=8 elem=7 cols=0 vigas=7 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=8 elem=7 cols=0 vigas=7 shells=0 apoyos=0 cargas=0 springs=0

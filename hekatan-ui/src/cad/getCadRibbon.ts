@@ -284,6 +284,77 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
   cajaG.append(filaG, rotG);
   barra.appendChild(cajaG);
 
+  // ── EN ALTURA: lo que permite trabajar en 3D sin cambiar de vista ─────────
+  //
+  // El plano de trabajo decide donde cae el clic, asi que sin esto hay que ir
+  // saltando de planta a alzado para cada cosa. Las dos piezas existian —la
+  // cota Z en el Tweakpane y `__hekatanReplicateSelection` sin boton— pero lo
+  // que no se ve, no se usa.
+  //
+  //   Cota Z    : sigue dibujando en planta, pero a otra altura.
+  //   Subir     : copia lo dibujado a los pisos de arriba, como el
+  //               "Replicate Linear" de ETABS. Es lo que convierte una planta
+  //               en un edificio sin volver a dibujarla.
+  const cajaZ = document.createElement("div");
+  cajaZ.style.cssText = "display:flex;flex-direction:column;align-items:center;padding:0 7px;";
+  const filaZ = document.createElement("div");
+  filaZ.style.cssText = "display:flex;gap:3px;align-items:center;";
+  const campoZ = (val: string, ancho: string, ayuda: string) => {
+    const i = document.createElement("input");
+    i.type = "text"; i.value = val; i.title = ayuda;
+    i.style.cssText = `width:${ancho};height:26px;background:#0a1622;border:1px solid #1e3a4a;` +
+      "border-radius:5px;color:#cdeefb;font:12px Consolas,monospace;text-align:center;outline:none;";
+    return i;
+  };
+  const inCotaZ = campoZ("0", "48px", "Cota Z del plano de planta, en metros");
+  const inAltPiso = campoZ("3", "44px", "Altura de piso para subir la planta, en metros");
+  const inNumPisos = campoZ("3", "36px", "Cuantos pisos subir");
+  const ponerZ = () => {
+    const z = parseFloat(inCotaZ.value);
+    if (!isFinite(z)) { inCotaZ.value = "0"; return; }
+    const st = (window as any).__hekatanCadState?.get?.();
+    if (st) st.workZ = z;
+    hooks.setPlane("xy");
+    hooks.setView("plan");
+    decir(`Plano de planta a la cota Z = ${z.toFixed(2)} m. Lo que dibujes cae ahi.`);
+    refrescar();
+  };
+  inCotaZ.addEventListener("change", ponerZ);
+  inCotaZ.addEventListener("keydown", (e) => { if (e.key === "Enter") ponerZ(); });
+  const bSubir = document.createElement("button");
+  bSubir.type = "button";
+  bSubir.textContent = "⇈ Subir";
+  bSubir.title = "Copia lo dibujado a los pisos de arriba (Replicate Linear de ETABS)";
+  bSubir.style.cssText = "height:26px;padding:0 9px;cursor:pointer;background:#0e7490;" +
+    "border:1px solid #22d3ee;border-radius:6px;color:#ecfeff;font:600 11px inherit;";
+  bSubir.addEventListener("click", () => {
+    const h = parseFloat(inAltPiso.value), n = Math.max(1, Math.round(parseFloat(inNumPisos.value) || 1));
+    if (!isFinite(h) || h === 0) { decir("La altura de piso tiene que ser un numero distinto de 0."); return; }
+    const w = window as any;
+    const sel: Set<string> | undefined = w.__hekatanSelection;
+    if (!sel) { decir("No se puede replicar: no hay seleccion disponible."); return; }
+    // Sin nada seleccionado se sube TODO, que es lo que se quiere el 90 % de
+    // las veces: "esta planta, a los pisos de arriba".
+    if (sel.size === 0) {
+      (w.__hekatanDrawingPoints?.val ?? []).forEach((_: any, i: number) => sel.add("pt:" + i));
+      (w.__hekatanDrawingPolylines?.val ?? []).forEach((_: any, i: number) => sel.add("poly:" + i));
+    }
+    const hechas = w.__hekatanReplicateSelection?.(0, 0, h, n) ?? 0;
+    sel.clear();
+    try { w.__hekatanRefreshSelection?.(); } catch {}
+    try { w.__hekatanRebuild?.(); } catch {}
+    decir(`${hechas} copia${hechas === 1 ? "" : "s"} cada ${h} m. Ya hay ${n + 1} plantas.`);
+  });
+  filaZ.append(inCotaZ, bSubir, inAltPiso, document.createTextNode("×"), inNumPisos);
+  const rotZ = document.createElement("div");
+  rotZ.textContent = "Cota Z · subir alt × nº";
+  rotZ.style.cssText = "font-size:9px;color:#64748b;margin-top:2px;letter-spacing:.4px";
+  cajaZ.append(filaZ, rotZ);
+  barra.appendChild(cajaZ);
+  const sepZ = document.createElement("div");
+  sepZ.style.cssText = "width:1px;background:#1e3a4a;margin:4px 0;";
+  barra.appendChild(sepZ);
+
   // Cuanta carga pone el boton Carga. Sin la casilla habria que adivinar el
   // valor o irse al panel: la carga es un NUMERO, no un gesto.
   const cajaC = document.createElement("div");
@@ -508,7 +579,14 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
     const h = TECLA.get(k);
     if (h) { e.preventDefault(); usar(h); setTimeout(limpiarCmd, 0); return; }
     if (k === "g") { e.preventDefault(); lanzarGrid(); setTimeout(limpiarCmd, 0); return; }
-    const v = ["1", "2", "3", "4"].indexOf(k);
+    // ⚠️ Los DIGITOS no se capturan si el foco esta en la caja de comandos,
+    // aunque este vacia. Alli un digito es el principio de una COORDENADA:
+    // al escribir `4,0,6` el "4" cambiaba la vista a 3D y se lo comia, asi
+    // que el punto acababa cayendo en el plano de trabajo y se perdia la Z.
+    // Las letras si se capturan (una letra sola ES el comando, como AutoCAD);
+    // los numeros, nunca.
+    const enCmd = (e.target as HTMLElement | null)?.id === CMD;
+    const v = enCmd ? -1 : ["1", "2", "3", "4"].indexOf(k);
     if (v >= 0) {
       e.preventDefault(); VISTAS[v][3](); decir(`Vista: ${VISTAS[v][1]}`);
       setTimeout(limpiarCmd, 0); return;

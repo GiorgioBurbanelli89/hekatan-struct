@@ -1,0 +1,9 @@
+ok  Rejilla (boton)  +100 nudos, +80 tramos
+ok  Línea  +3 nudos, +2 tramos, +0 areas
+ok  Polilínea  +3 nudos, +2 tramos, +0 areas
+ok  Rectáng.  +4 nudos, +4 tramos, +0 areas
+ok  Círculo  +12 nudos, +12 tramos, +0 areas
+ok  Arco  +13 nudos, +12 tramos, +0 areas
+ok  Losa  +4 nudos, +4 tramos, +1 areas
+ok  Columna  +2 nudos, +1 tramos, +0 areas
+ok  Muro  +4 nudos, +4 tramos, +1 areas

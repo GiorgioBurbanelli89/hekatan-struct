@@ -118,6 +118,41 @@ anota("un clic sobre una BARRA la selecciona", s2.n > 0,
       `${s2.n} seleccionados · ${JSON.stringify(s2.ids)}`);
 await foto();
 
+// ── SELECCION POR VENTANA, en los DOS sentidos (como AutoCAD) ──────────────
+// Izquierda -> derecha = VENTANA: entra solo lo que queda ENTERO dentro.
+// Derecha -> izquierda = CAPTURA: basta con TOCARLO.
+const arrastrar = async (x0, y0, x1, y1) => {
+  await pag.keyboard.press("Escape");
+  await new Promise((r) => setTimeout(r, 400));
+  await pag.mouse.move(cv.x + cv.w * x0, cv.y + cv.h * y0);
+  await pag.mouse.down();
+  // En varios pasos: con un solo salto el `pointermove` no llega a marcar el
+  // arrastre como activo y se queda en un clic suelto.
+  for (let i = 1; i <= 6; i++) {
+    await pag.mouse.move(cv.x + cv.w * (x0 + (x1 - x0) * i / 6),
+                         cv.y + cv.h * (y0 + (y1 - y0) * i / 6));
+    await new Promise((r) => setTimeout(r, 90));
+  }
+  await pag.mouse.up();
+  await new Promise((r) => setTimeout(r, 600));
+  return (await sel()).n;
+};
+{
+  // A PROPOSITO no se aprieta "Selec." antes: arrastrar sobre el vacio tiene
+  // que abrir la ventana de seleccion sin activar nada, como en AutoCAD.
+  // El portico ocupa x 0.40..0.60, y 0.40..0.62. Una ventana que lo envuelve
+  // entero de izquierda a derecha tiene que cogerlo todo.
+  const nVent = await arrastrar(0.30, 0.32, 0.72, 0.72);
+  anota("ventana izquierda->derecha (envolviendo el portico)", nVent > 0,
+        `${nVent} seleccionados`);
+  await foto();
+  // Y una captura de derecha a izquierda que solo TOCA una columna.
+  const nCap = await arrastrar(0.50, 0.50, 0.35, 0.55);
+  anota("captura derecha->izquierda (solo tocando)", nCap > 0,
+        `${nCap} seleccionados`);
+  await foto();
+}
+
 // ── MODIFICAR: el panel de propiedades NO debe tapar el lienzo ni el ribbon.
 // El fallo era ese: se abria centrado arriba, tapaba el modelo Y los botones,
 // y el clic siguiente caia en el panel en vez de en el lienzo. Parecia que la

@@ -1,0 +1,32 @@
+== pageerror ==
+
+== consola ==
+[log] [NewBlank] Lienzo vacío — usá el folder 📐 Herramientas CAD para dibujar.
+[log] [menu] clic derecho sobre el modelo -> Assign estilo ETABS
+[log] [Calculados] [object Object]
+[warn] [.WebGL-0x102c02b4e600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[warn] [.WebGL-0x102c02b4e600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[warn] [.WebGL-0x102c02b4e600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
+[warn] [.WebGL-0x102c02b4e600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
+[log] [Vista ↔ CAD] preset=iso, workPlane=xy
+[log] [AI] Ollama no detectado → default a Gemini Flash
+[error] Failed to load resource: net::ERR_ADDRESS_INVALID
+[error] Failed to load resource: net::ERR_ADDRESS_INVALID
+[log] [NewBlank] mode=3D | nodes=100 elem=80 cols=80 vigas=0 shells=0 apoyos=0 cargas=0 springs=0
+[log] [Rejilla] 5 ejes de letra x 4 de número, 5 niveles, 80 tramos de columna
+[log] [NewBlank] mode=3D | nodes=100 elem=80 cols=80 vigas=0 shells=0 apoyos=0 cargas=0 springs=0
+[log] [Vista ↔ CAD] preset=elevX, workPlane=xz
+[log] [Vista ↔ CAD] preset=plan, workPlane=xy
+[log] [NewBlank] mode=3D | nodes=100 elem=80 cols=80 vigas=0 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=100 elem=80 cols=80 vigas=0 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=100 elem=80 cols=80 vigas=0 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=100 elem=80 cols=80 vigas=0 shells=0 apoyos=0 cargas=0 springs=0
+[log] [Vista ↔ CAD] preset=iso, workPlane=xy
+[log] [Vista ↔ CAD] preset=plan, workPlane=xy
+[log] [NewBlank] mode=3D | nodes=100 elem=80 cols=80 vigas=0 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=101 elem=80 cols=80 vigas=0 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=102 elem=81 cols=80 vigas=1 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=102 elem=81 cols=80 vigas=1 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=103 elem=82 cols=80 vigas=2 shells=0 apoyos=0 cargas=0 springs=0
+[log] [NewBlank] mode=3D | nodes=103 elem=82 cols=80 vigas=2 shells=0 apoyos=0 cargas=0 springs=0
+[log] [Vista ↔ CAD] preset=iso, workPlane=xy
