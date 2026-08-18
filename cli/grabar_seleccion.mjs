@@ -236,6 +236,39 @@ await enLienzo(0.30, 0.55);                    // clic 2
 }
 await esperar(2600);
 
+await pag.keyboard.press("Escape");
+await esperar(800);
+
+// ── UN NUDO SUELTO: tiene que verse la esfera ───────────────────────────────
+// La esfera del nudo se crea con radio 0.025 m y escala 1: sobre un portico de
+// 6 m es invisible. Se escalaba solo al ORBITAR, asi que al seleccionar no se
+// resaltaba nada hasta mover la camara.
+await decir("Un clic sobre un NUDO: tiene que resaltarse la esfera");
+await esperar(700);
+await enLienzo(0.38, 0.38);
+{
+  const n = await cuantos();
+  await decir(`Nudo seleccionado → ${n} item, la esfera cian se ve al instante`);
+}
+await esperar(2400);
+
+// ── Y varios nudos con la ventana ───────────────────────────────────────────
+await pag.keyboard.press("Escape");
+await esperar(700);
+await decir("Ventana sobre los DOS nudos de arriba");
+await enLienzo(0.30, 0.30);
+await moverViendo(0.70, 0.46);
+await enLienzo(0.70, 0.46);
+{
+  const d = await pag.evaluate(() => {
+    const s = window.__hekatanSelection;
+    const ids = s ? [...s] : [];
+    return { n: ids.length, nudos: ids.filter((i) => i.startsWith("pt:")).length };
+  });
+  await decir(`${d.nudos} nudos resaltados de ${d.n} elementos`);
+}
+await esperar(2600);
+
 const fin = await pag.evaluate(() => {
   const st = window.__hekatanStates;
   const ni = st?.nodeInputs?.val ?? {};

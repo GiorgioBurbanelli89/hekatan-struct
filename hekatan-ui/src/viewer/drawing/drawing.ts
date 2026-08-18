@@ -1150,6 +1150,17 @@ export function drawing({
     // verificamos para evitar TDZ).
     const upd = (window as any).__hekatanRefreshPropsPane as (() => void) | undefined;
     if (upd) upd();
+    // ── Los NUDOS seleccionados hay que escalarlos AL CREARLOS ───────────────
+    //
+    // La esfera del nudo se crea con radio 0.025 m y escala 1. Sobre un portico
+    // de 6 m eso son dos centimetros y medio: invisible. El tamano aparente lo
+    // arregla `updateSelectionPtScale`, pero solo se llamaba desde el evento
+    // "change" de los controles, o sea AL ORBITAR. Resultado: seleccionabas un
+    // nudo y no se resaltaba nada hasta que movias la camara — y para entonces
+    // ya habias dado por hecho que no funcionaba.
+    //
+    // Se llama por window porque la funcion se declara mas abajo.
+    try { (window as any).__hekatanUpdateSelectionPtScale?.(); } catch {}
     viewerRender();
   };
   (window as any).__hekatanRefreshSelection = refreshSelectionGroup;
@@ -2061,7 +2072,11 @@ export function drawing({
     selectionGroup.children.forEach((child) => {
       if (!(child as any).__isSelectionPt) return;
       const m = child as THREE.Mesh;
-      m.scale.setScalar(markerScreenScale(m.position));
+      // x1.8 respecto al marcador de hover: un nudo SELECCIONADO tiene que
+      // cantar. Con el mismo tamano que el resto de marcadores quedaba un
+      // punto de ~8 px que sobre las lineas blancas del modelo no se
+      // distinguia de un nudo cualquiera.
+      m.scale.setScalar(markerScreenScale(m.position) * 1.8);
     });
   };
   (window as any).__hekatanUpdateSelectionPtScale = updateSelectionPtScale;
