@@ -151,6 +151,63 @@ for (const col of COLUMNS) {
   ]);
 }
 
+// ── PESO PROPIO (opcional: --sw) ────────────────────────────────────
+// Sin esto la comparacion contra SAFE no significa nada: SAFE lo aplica —lo
+// dice la suma de sus reacciones, 55.01 tonf contra 19.27 de carga— aunque el
+// script pida `lpat.Add("Dead", ..., 0.0, True)`. Comparar con y sin peso
+// propio es comparar dos estructuras distintas.
+//
+//   peso zapatas    rho * t * A_tributaria   en cada nudo del pano
+//   peso vigas      rho * A * L / 2          a cada extremo
+//   peso pedestal   rho * A * h / 2          idem
+const CON_SW = !!argMap.sw;
+if (CON_SW) {
+  const rho = P_GLOBAL.rho_kNm3;
+  // Areas calculadas aqui: `A_p` y `A_v` se declaran mas abajo y esto correria
+  // en su zona muerta.
+  const areaPed = P_GLOBAL.ped_side * P_GLOBAL.ped_side;
+  const areaVig = P_GLOBAL.viga_b * P_GLOBAL.viga_h;
+  const suma = (idx, fz) => {
+    const cur = loads.get(idx) ?? [0, 0, 0, 0, 0, 0];
+    cur[2] += fz;
+    loads.set(idx, cur);
+  };
+  let wZap = 0, wVig = 0, wPed = 0;
+  // Zapatas: mismo reparto por area tributaria que los muelles Winkler.
+  for (const col of COLUMNS) {
+    const z = zapataNodes.get(col.id);
+    // `nLocal` es global (numero de divisiones por lado de zapata).
+    const dx = col.Lz / nLocal, dy = col.Bz / nLocal;
+    for (let j = 0; j <= nLocal; ++j)
+      for (let i = 0; i <= nLocal; ++i) {
+        const onI = (i === 0 || i === nLocal), onJ = (j === 0 || j === nLocal);
+        const f = onI && onJ ? 0.25 : (onI || onJ ? 0.5 : 1.0);
+        const P = rho * P_GLOBAL.tz * dx * dy * f;
+        suma(z.grid_start + j * (nLocal + 1) + i, -P);
+        wZap += P;
+      }
+  }
+  // Pedestales y vigas: la mitad del peso a cada nudo extremo.
+  for (const col of COLUMNS) {
+    const z = zapataNodes.get(col.id);
+    const P = rho * areaPed * P_GLOBAL.h_ped;
+    suma(z.center_idx, -P / 2); suma(z.top_idx, -P / 2);
+    wPed += P;
+  }
+  for (const [ia, ib] of BEAMS) {
+    const za = zapataNodes.get(ia), zb = zapataNodes.get(ib);
+    const ca = COLUMNS.find(c => c.id === ia), cb = COLUMNS.find(c => c.id === ib);
+    const L = Math.hypot(cb.x - ca.x, cb.y - ca.y);
+    const P = rho * areaVig * L;
+    suma(za.top_idx, -P / 2); suma(zb.top_idx, -P / 2);
+    wVig += P;
+  }
+  const t = 1 / TONF_TO_KN;
+  console.log(`-> PESO PROPIO aplicado: zapatas ${(wZap*t).toFixed(2)} + ` +
+              `vigas ${(wVig*t).toFixed(2)} + pedestales ${(wPed*t).toFixed(2)} = ` +
+              `${((wZap+wVig+wPed)*t).toFixed(2)} tonf`);
+}
+
 // ── Element inputs: shells (Q4) + frames (12 vigas) ─────────────────
 // Shells: thickness + E + nu (para Mindlin Q4 en deform())
 // Frames: A + Iz + Iy + G + J + E

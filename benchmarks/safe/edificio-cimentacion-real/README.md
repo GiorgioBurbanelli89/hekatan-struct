@@ -48,12 +48,47 @@ Hekatan, con solo las cargas, da **6.97 mm** de media contra los **6.40 mm**
 que exige el equilibrio (`P/A/ks`). Coherente: el reparto no es uniforme porque
 las vigas de amarre redistribuyen, pero la suma cierra.
 
-### Qué falta para dar el caso por medido
+### Comprobado: al igualar la carga, el gap se cae solo
 
-Nada del solver. Hay que **igualar la hipótesis de carga**, que es la regla de
-siempre: mismo modelo, misma malla, mismas cargas. O se apaga el peso propio en
-SAFE de verdad, o se aplica también en Hekatan. Hasta entonces la tabla de
-abajo compara dos estructuras distintas.
+Se añadió el peso propio a Hekatan (`cli_edificio.mjs --sw`, repartido igual
+que los muelles Winkler: `rho·t·A_trib` en cada nudo del paño, y la mitad del
+peso de cada viga y pedestal a cada extremo):
+
+```bash
+npx tsx ./cli_edificio.mjs --sw --json=hek_sw.json
+```
+
+| col | rol | SAFE | sin peso propio | | con peso propio | |
+|---|---|---|---|---|---|---|
+| 1 | esquina | −11.574 | −0.684 | −94.1 % | −13.851 | **+19.7 %** |
+| 2 | medio-borde | −17.705 | −5.777 | −67.4 % | −17.899 | **+1.1 %** |
+| 3 | esquina | −27.119 | −16.326 | −39.8 % | −29.493 | **+8.8 %** |
+| 4 | medio-borde | −13.433 | −1.580 | −88.2 % | −13.702 | **+2.0 %** |
+| 5 | centro | −19.583 | −5.614 | −71.3 % | −18.795 | **−4.0 %** |
+| 6 | medio-borde | −22.015 | −10.012 | −54.5 % | −22.135 | **+0.5 %** |
+| 7 | esquina | −14.548 | −3.294 | −77.4 % | −16.460 | **+13.1 %** |
+| 8 | medio-borde | −17.718 | −5.789 | −67.3 % | −17.912 | **+1.1 %** |
+| 9 | esquina | −24.118 | −13.680 | −43.3 % | −26.846 | **+11.3 %** |
+
+**error medio 67.0 % → 6.8 %** · máximo 94.1 % → 19.7 %
+
+Y la reacción del suelo, que era 2.85× la carga, ahora coincide: SAFE
+**55.01 tonf** contra Hekatan **56.84**, un 3.3 %.
+
+### Lo que queda, que es de otro orden
+
+Los **medio-bordes cierran al 0.5–2 %**; lo que se desvía son las **esquinas**
+(19.7 / 13.1 / 11.3 %), que son las zapatas pequeñas — 1.3 × 1.3 m.
+
+**No es la malla**, y está medido: refinando de 4 × 4 a 8 × 8 por zapata
+(`--nLocal=8`) el resultado no se mueve —13.851 → 13.835 mm en la col 1,
+26.846 → 26.866 en la col 9, o sea milésimas— así que la solución ya había
+convergido. Queda como sospechosa la única hipótesis que sigue sin estar
+igualada: **cómo reparte SAFE el peso propio de la zapata** frente al reparto
+por área tributaria que se usa aquí. En una zapata de 1.3 m con carga
+excéntrica (M = 2.29 tonf·m sobre 0.67 tonf de axil) el borde manda, y ahí un
+reparto distinto se nota; en una de 2.2 m se diluye — que es justo lo que
+enseña la tabla.
 
 ⚠️ Y la lección, que es la de siempre: **antes de tocar el solver, comprobar el
 equilibrio**. Tres meses de «bug de drilling» que se resolvían con una suma.
