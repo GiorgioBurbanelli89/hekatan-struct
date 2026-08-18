@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * GRABACION del modelado completo, con el cursor moviendose DE VERDAD.
+ * Dibujar en 3D CON COMANDOS: la letra elige la herramienta y las coordenadas
  *
  * La diferencia con los arneses anteriores: alli el cursor SALTABA de un sitio
  * al siguiente porque solo se capturaba un fotograma por paso. Aqui el
@@ -11,7 +11,7 @@
  * Y no llama a ninguna funcion interna para modelar: aprieta botones y hace
  * clics. Lo que se ve es lo que hay.
  *
- *   node cli/grabar_modelado.mjs
+ *   node cli/grabar_3d_con_comandos.mjs
  */
 import puppeteer from "puppeteer";
 import { mkdirSync, readFileSync, existsSync, statSync, rmSync } from "fs";
@@ -246,5 +246,5 @@ try {
   execFileSync("ffmpeg", ["-y", "-framerate", "11", "-i", join(FR, "f_%04d.png"),
     "-vf", "scale=1000:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse",
     join(OUT, "tresd_comandos.gif")], { stdio: "pipe" });
-  console.log(`GIF -> cli/shots/modelado.gif  (${nf} fotogramas a 11 fps)`);
+  console.log(`GIF -> cli/shots/tresd_comandos.gif  (${nf} fotogramas a 11 fps)`);
 } catch (e) { console.log("sin GIF:", String(e).slice(0, 140)); }
