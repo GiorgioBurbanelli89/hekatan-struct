@@ -2950,13 +2950,23 @@ export function drawing({
     const raw = localStorage.getItem(PROPS_POS_KEY);
     if (raw) savedPos = JSON.parse(raw);
   } catch {}
+  // ── El panel de propiedades va AL LADO, no en medio ───────────────────────
+  //
+  // Estaba en `left:50%; top:8px`, o sea centrado arriba: al seleccionar un
+  // nudo se abria justo encima del ribbon Y del modelo. Y como es un panel
+  // solido, el siguiente clic caia en el en vez de en el lienzo, asi que
+  // despues de seleccionar una vez ya no se podia seleccionar nada mas —
+  // parecia que la seleccion estaba rota y solo estaba tapada.
+  //
+  // Ahora arranca en el lateral izquierdo, por debajo de Settings. Sigue
+  // siendo arrastrable y la posicion se guarda.
   propsContainer.style.cssText = [
     "position:fixed",
-    savedPos ? `left:${savedPos.left}px` : "left:50%",
-    savedPos ? `top:${savedPos.top}px` : "top:8px",
-    savedPos ? "transform:none" : "transform:translateX(-50%)",
-    "width:min(320px, calc(100vw - 32px))",
-    "max-height:60vh",
+    savedPos ? `left:${savedPos.left}px` : "left:14px",
+    savedPos ? `top:${savedPos.top}px` : "top:452px",
+    "transform:none",
+    "width:min(300px, calc(100vw - 32px))",
+    "max-height:calc(100vh - 560px)",
     "overflow-y:auto",
     "z-index:201",
     "box-shadow:0 6px 24px rgba(0,0,0,0.45)",

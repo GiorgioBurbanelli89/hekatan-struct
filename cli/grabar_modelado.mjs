@@ -145,14 +145,21 @@ const esperar = async (ms) => {
 // portico y no sobre la rejilla entera porque las columnas de la rejilla se
 // quedarian sin apoyo y la matriz sale singular igual: un modelo a medias no
 // se resuelve por muchos nudos que tenga.
-await decir("1 · A planta, que es donde se dibuja");
+// ⚠️ En ALZADO, no en planta. Un portico tiene las columnas en ALTURA, y la
+// altura es Z. Dibujandolo en planta (X-Y) sale tumbado en el suelo: parece un
+// portico en la pantalla pero es un marco horizontal, y las "columnas" no
+// suben. El plano de trabajo decide en que plano cae el clic, asi que hay que
+// elegirlo ANTES de dibujar.
+await decir("1 · Al alzado (X-Z): un portico sube en Z, no en planta");
 await foto(); await foto();
-await boton("Planta");
+await boton("Frente");
 await esperar(1500);
 
 // Portico: dos columnas y un dintel, encadenando con la herramienta Linea.
 await decir("2 · Linea: cada clic encadena con el anterior");
 await boton("Línea");
+// En pantalla, el alzado tiene X a la derecha y Z hacia arriba: los "pies" van
+// abajo y los nudos de cabeza arriba.
 const P = { pieIzq: [0.40, 0.62], topIzq: [0.40, 0.40],
             topDer: [0.60, 0.40], pieDer: [0.60, 0.62] };
 for (const k of ["pieIzq", "topIzq", "topDer", "pieDer"]) await enLienzo(...P[k]);
@@ -186,7 +193,12 @@ const fin = await pag.evaluate(() => {
   const g = (k) => { const v = window[k]; return v && v.val ? v.val : []; };
   const pls = g("__hekatanDrawingPolylines");
   const d = st?.deformOutputs?.val;
-  return { nudos: g("__hekatanDrawingPoints").length,
+  const pts = g("__hekatanDrawingPoints");
+  // Un portico DE VERDAD tiene sus nudos a cotas Z distintas.
+  const zs = pts.map((p) => +p[2].toFixed(2));
+  return { cotasZ: [...new Set(zs)].sort((a, b) => a - b),
+           alturaZ: zs.length ? +(Math.max(...zs) - Math.min(...zs)).toFixed(2) : 0,
+           nudos: pts.length,
            tramos: pls.reduce((s, p) => s + Math.max(0, p.length - 1), 0),
            apoyos: ni.supports ? ni.supports.size : 0,
            cargas: ni.loads ? ni.loads.size : 0,
