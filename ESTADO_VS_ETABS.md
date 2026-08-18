@@ -73,10 +73,36 @@ esto: Navier es la solución de **Kirchhoff sin cortante**, y ningún
 cuadrilátero de 4 nodos converge a ella. Contra **ETABS**, que es el mismo tipo
 de elemento, `thin` cierra.
 
-**Y el patrón de `Thick` dice dónde mirar**: 1.42 % con la placa sola, y
-**11.28 % en cuanto entran las vigas**. No es la malla —refinando no se mueve—
-sino que **falla al conectar el shell con frames**. Es el acoplamiento, no el
-elemento aislado.
+**Y `Thick` SÍ es la malla: es SHEAR LOCKING.** Barriendo la malla en el
+escalón B (`banco_shell.py B --malla=N`):
+
+| malla | Thin | **Thick** | Membrane |
+|---|---|---|---|
+| 2×2 | 1.17 % | **57.73 %** | 2.46 % |
+| 4×4 | 0.93 % | **11.28 %** | 0.85 % |
+| 8×8 | — | **0.02 %** | — |
+
+Lo que lo delata no es el porcentaje, es el **signo del error**:
+
+```
+malla 2x2   Hekatan -4.96e-4   ETABS -1.173e-3   -> Hekatan 2.4x MAS RIGIDO
+malla 4x4   Hekatan -1.134e-3  ETABS -1.278e-3   -> 1.13x
+malla 8x8   practicamente iguales
+```
+
+**Hekatan sale rígido de más y el exceso se va al refinar**: eso es bloqueo por
+cortante de manual. Y encaja con quién lo sufre: `Thin` no lo tiene —no lleva
+cortante— y `Membrane` tampoco. Solo `Thick`, que es el único con deformación
+por cortante transversal. Con la viga de borde es peor que sin ella (5.40 %
+frente a 57.73 % en 2×2) porque la viga mete momento justo en ese grado.
+
+**No es κ**, y está medido: barriendo κ de 5/6 a 5.0 (`calibrar_shell.py`)
+ningún valor cierra los tres escalones a la vez — A empeora cuando B mejora, y
+el mejor deja un 2.10 % de peor caso. La regla del propio calibrador: *un
+número que solo arregla un caso es un parche.*
+
+Así que el candidato es **la formulación del cortante**: el MITC4 está puesto
+para evitar el locking y aquí no lo está evitando del todo con malla gruesa.
 
 ## 2. Lo que TODAVÍA no
 
