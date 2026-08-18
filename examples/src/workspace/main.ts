@@ -216,11 +216,26 @@ const objects3D: State<THREE.Object3D[]> = van.state([]);
 const DRAW_PTS_KEY = "hk_drawingPoints";
 const DRAW_POLYS_KEY = "hk_drawingPolylines";
 const DRAW_AREAS_KEY = "hk_drawingAreas";
+/**
+ * Recupera el dibujo en curso — de `sessionStorage`, NO de `localStorage`.
+ *
+ * Antes se guardaba en localStorage y se restauraba en CADA carga, sin avisar.
+ * Consecuencia: «Archivo nuevo (lienzo CAD)» se abria con un dibujo dentro —el
+ * de la ultima vez, de otro dia y de otra prueba— y encima a medio hacer.
+ * Un archivo nuevo es nuevo.
+ *
+ * Con sessionStorage se conserva lo importante y desaparece lo que estorbaba:
+ *   · recargar la pestana (F5, o un cambio de parametro) NO pierde el trabajo;
+ *   · abrir una pestana nueva, o volver otro dia, da el lienzo VACIO.
+ *
+ * El respaldo en localStorage se sigue escribiendo, para poder ofrecer
+ * «recuperar el ultimo dibujo» sin imponerlo (ver el aviso mas abajo).
+ */
 const loadDrawState = (): { pts: [number,number,number][]; polys: number[][]; areas: number[] } => {
   try {
-    const ptsRaw = localStorage.getItem(DRAW_PTS_KEY);
-    const polysRaw = localStorage.getItem(DRAW_POLYS_KEY);
-    const areasRaw = localStorage.getItem(DRAW_AREAS_KEY);
+    const ptsRaw = sessionStorage.getItem(DRAW_PTS_KEY);
+    const polysRaw = sessionStorage.getItem(DRAW_POLYS_KEY);
+    const areasRaw = sessionStorage.getItem(DRAW_AREAS_KEY);
     if (ptsRaw && polysRaw) {
       const pts = JSON.parse(ptsRaw) as [number,number,number][];
       const polys = JSON.parse(polysRaw) as number[][];
@@ -252,11 +267,72 @@ const drawingAuxPoints: State<number[][]> = van.state([]);
 // Persist on every change
 van.derive(() => {
   try {
-    localStorage.setItem(DRAW_PTS_KEY, JSON.stringify(drawingPoints.val));
-    localStorage.setItem(DRAW_POLYS_KEY, JSON.stringify(drawingPolylines.val));
-    localStorage.setItem(DRAW_AREAS_KEY, JSON.stringify(drawingAreas.val));
+    const pts = JSON.stringify(drawingPoints.val);
+    const polys = JSON.stringify(drawingPolylines.val);
+    const areas = JSON.stringify(drawingAreas.val);
+    // La sesion es la que se restaura sola: sobrevive a un F5, no a cerrar.
+    sessionStorage.setItem(DRAW_PTS_KEY, pts);
+    sessionStorage.setItem(DRAW_POLYS_KEY, polys);
+    sessionStorage.setItem(DRAW_AREAS_KEY, areas);
+    // Y un respaldo que dura, para poder OFRECER recuperarlo. Solo si hay algo:
+    // guardar el lienzo vacio borraria el trabajo del dia anterior.
+    if (drawingPoints.val.length > 0) {
+      localStorage.setItem(DRAW_PTS_KEY, pts);
+      localStorage.setItem(DRAW_POLYS_KEY, polys);
+      localStorage.setItem(DRAW_AREAS_KEY, areas);
+    }
   } catch {}
 });
+/**
+ * Si el lienzo arranca vacio pero hay un dibujo guardado de otra sesion, se
+ * OFRECE recuperarlo. No se impone: imponerlo es justo lo que hacia que
+ * «Archivo nuevo» abriera con el modelo de la ultima vez.
+ */
+function ofrecerRecuperar(): void {
+  if (drawingPoints.rawVal.length > 0) return;            // ya hay algo dibujado
+  let pts: [number, number, number][] = [], polys: number[][] = [], areas: number[] = [];
+  try {
+    const p = localStorage.getItem(DRAW_PTS_KEY), q = localStorage.getItem(DRAW_POLYS_KEY);
+    if (!p || !q) return;
+    pts = JSON.parse(p); polys = JSON.parse(q);
+    areas = JSON.parse(localStorage.getItem(DRAW_AREAS_KEY) || "[]");
+  } catch { return; }
+  if (!pts.length) return;
+
+  const av = document.createElement("div");
+  av.style.cssText = [
+    "position:fixed", "bottom:96px", "left:50%", "transform:translateX(-50%)",
+    "z-index:99990", "display:flex", "align-items:center", "gap:10px",
+    "padding:8px 14px", "background:rgba(15,23,42,.96)",
+    "border:1px solid #f59e0b", "border-radius:9px", "color:#fcd34d",
+    "font:12px Consolas,monospace", "box-shadow:0 6px 20px rgba(0,0,0,.5)",
+  ].join(";") + ";";
+  const cerrar = () => av.remove();
+  av.innerHTML = `<span>Hay un dibujo guardado de antes (${pts.length} nudos).</span>`;
+  const bSi = document.createElement("button");
+  bSi.textContent = "Recuperarlo";
+  bSi.style.cssText = "cursor:pointer;padding:3px 10px;border-radius:5px;border:1px solid #f59e0b;" +
+    "background:#78350f;color:#fde68a;font:600 11px inherit";
+  bSi.onclick = () => {
+    drawingPoints.val = pts; drawingPolylines.val = polys; drawingAreas.val = areas;
+    (window as any).__hekatanRebuild?.();
+    (window as any).__hekatanAutoFit?.();
+    cerrar();
+  };
+  const bNo = document.createElement("button");
+  bNo.textContent = "Empezar en blanco";
+  bNo.style.cssText = "cursor:pointer;padding:3px 10px;border-radius:5px;border:1px solid #334155;" +
+    "background:transparent;color:#94a3b8;font:11px inherit";
+  bNo.onclick = () => {
+    try { localStorage.removeItem(DRAW_PTS_KEY); localStorage.removeItem(DRAW_POLYS_KEY);
+          localStorage.removeItem(DRAW_AREAS_KEY); } catch {}
+    cerrar();
+  };
+  av.append(bSi, bNo);
+  document.body.appendChild(av);
+  setTimeout(() => { if (av.isConnected) cerrar(); }, 15000);
+}
+
 // Grid centrado en el origen mundial (convención CAD).
 const drawingGridTarget: State<{ position: [number,number,number]; rotation: [number,number,number] }> =
   van.state({ position: [0, 0, 0], rotation: [0, 0, 0] });
@@ -582,6 +658,9 @@ function loadExample(ex: ExampleDef) {
   autoFitCamera();
   buildParamsPane();
   mountCaseResultsInSettings();   // "Case results" (Dead/Live/Modal) junto a Frame/Shell results
+  // Si el lienzo esta vacio pero hay un dibujo guardado de otra sesion, se
+  // ofrece recuperarlo (no se impone: ver `ofrecerRecuperar`).
+  try { setTimeout(ofrecerRecuperar, 1200); } catch {}
 }
 
 /**

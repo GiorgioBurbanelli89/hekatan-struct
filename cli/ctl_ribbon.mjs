@@ -94,6 +94,14 @@ anota("Esc cierra la guia",
 // La barra tiene que decir SIEMPRE contra que plano y a que cota se dibuja.
 const ref = await pag.evaluate(() => document.getElementById("hk-ribbon-estado")?.textContent || "");
 anota("la barra dice el plano y la cota", /PLANTA|ALZADO/.test(ref) && /cota Z/.test(ref), ref.slice(0, 60));
+// Un ARCHIVO NUEVO abre vacio. El dibujo se guardaba en localStorage y se
+// restauraba en cada carga sin avisar, asi que «Archivo nuevo (lienzo CAD)»
+// aparecia con el modelo de la ultima vez, de otro dia y a medio hacer.
+{
+  const m = await modelo();
+  anota("un archivo nuevo abre con el lienzo VACIO",
+        m.nudos === 0 && m.tramos === 0, `${m.nudos} nudos, ${m.tramos} tramos`);
+}
 await foto("El ribbon: una FILA pegada al lienzo, con la letra del atajo");
 
 // ── 1) La rejilla desde la propia barra ─────────────────────────────────────
