@@ -159,15 +159,34 @@ def _razon_limite_delgado(n, t=0.006):
         T = prev
 
 
-def test_lo_que_sobra_no_es_kappa_ni_el_drilling():
-    """El exceso de rigidez a malla gruesa NO viene del cortante.
+def test_subir_kappa_no_dice_nada_la_atadura_ya_esta_saturada():
+    """Subir κ no mueve el resultado — y eso NO significa lo que parece.
 
-    Con κ ×1000 el cortante ya no existe en el elemento (Gs → ∞ no admite
-    deformación por cortante). Si el error sobrevive sin cortante, no es del
-    cortante — y sobrevive idéntico. Igual con el drilling.
+    ⚠️ Aquí hubo un razonamiento inválido: *«κ ×1000 no mueve el número, luego
+    no es el cortante»*. Es falso. **Subir κ no puede decir nada cuando la
+    atadura ya está saturada**: los 4 modos que el MITC4 ata ya son
+    prácticamente rígidos (autovalores ~1e4·D contra ~0.5·D de los útiles), y
+    hacerlos más rígidos no cambia la solución.
 
-    Este test existe para que nadie vuelva a barrer κ buscando aquí: ya se
-    barrió de 5/6 a 5.0 contra ETABS y a ×1000 contra el límite delgado.
+    Lo que sí informa es BAJAR κ, y ahí el número se mueve muchísimo
+    (κ ×1e-4 → razón 1.0997 en 4×4). Pero eso tampoco es un arreglo: ablanda
+    quitando la atadura.
+
+    El diagnóstico bueno salió de instrumentar el elemento
+    (`edificios-slab/thick_depuracion_dinamica.py`):
+
+        · el MITC4 está BIEN: flexión x², y² y torsión xy dan cortante CERO
+          exacto — el patch test pasa.
+        · el bloque de cortante tiene rango EXACTAMENTE 4 y escala como 1/t².
+        · en la solución real a 4×4 el cortante se lleva el **0.005 %** de la
+          energía: no pelea contra la atadura, vive dentro de ella.
+        · lo que sobra son los **4 modos que faltan**: 5 útiles contra los 9
+          del MZC.
+
+    Y a 2×2 sí hay locking de verdad: ahí el cortante se lleva el **99.95 %**.
+
+    Este test deja clavada la invariancia para que nadie vuelva a barrer κ
+    hacia arriba creyendo que mide algo.
     """
     import hekatan_struct.elements.shell_q4_motor as Q
 

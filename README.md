@@ -454,17 +454,32 @@ gets **thinner**, it is shear; if it does not depend on thickness, it is not.
 | 0.0100 | **0.1485** | 0.7862 | 0.9349 | 0.9698 |
 | 0.0010 | **0.0002** | **0.7401** | **0.9189** | **0.9595** |
 
-- **2×2 only: genuine shear locking.** The ratio collapses to 0.0002 as the
-  plate thins — thickness-driven, which is the signature.
-- **4×4 and finer: not shear.** The ratio *pins* at 0.7401 / 0.9189 / 0.9595 and
-  does not move with κ ×1000 (which removes shear from the element entirely,
-  `Gs → ∞`) nor with `alpha_drill` ×40.
+⚠️ Raising κ says **nothing** here — once the constraint is saturated, making it
+stiffer changes nothing. Lowering it does move the number (κ ×1e-4 → 1.0997 at
+4×4), but that is not a fix: it softens by removing the constraint.
 
-Real meshes are 4×4 and 8×8, so the 11.28 % / 2.68 % measured against ETABS live
-in the second regime: what is left over is the **bending interpolation** of the
-Mindlin Q4. Next candidate: enrich **bending** with incompatible modes on the
-rotations, the same way the membrane already does with Wilson's Q6 — **do not
-touch the MITC4** (its tying scheme checks out term by term).
+The element was then instrumented from the inside
+(`edificios-slab/thick_depuracion_dinamica.py`) and that settles it:
+
+| measurement | result |
+|---|---|
+| patch test — bending x², y² and **twist xy** | shear energy **exactly 0** → the MITC4 is correctly implemented |
+| shear block, isolated | rank **exactly 4**, scaling as **1/t²** |
+| element spectrum, thin limit | Mindlin+MITC4: 3 rigid + **5 usable** + 4 tied · MZC: 3 rigid + **9 usable** |
+| energy split in the real solve, 2×2 | **99.95 % shear** → the solution fights the constraint: real locking |
+| energy split, 4×4 and 8×8 | **0.005 % shear** → it no longer fights; it lives inside the tied space |
+
+**Two different things, and they were being conflated.** At 2×2 it is genuine
+shear locking. At 4×4 and finer it is not: what is left over is the **four
+missing modes** — a full-integration Mindlin Q4 would tie 8 constraints and
+leave 1 usable mode; MITC4 ties 4 and leaves 5; a Kirchhoff MZC has 9. Real
+meshes are 4×4 and 8×8, so the 11.28 % / 2.68 % against ETABS is **the price of
+MITC4's four constraints, not an implementation error** — meaning ETABS's
+Shell-Thick is *not* a plain MITC4 Q4.
+
+Already tried, and not a drop-in: adding Wilson incompatible modes to the
+**rotations** (4 internal DOFs, statically condensed) raises usable modes from
+5 to 7, but overshoots — the two softest drop to 0.319 against MZC's 0.465.
 Regression: `hekatan-struct-py/tests/test_placa_con_vigas.py`.
 
 ### Import/Export

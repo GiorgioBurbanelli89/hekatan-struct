@@ -104,9 +104,9 @@ ningún valor cierra los tres escalones a la vez — A empeora cuando B mejora, 
 el mejor deja un 2.10 % de peor caso. La regla del propio calibrador: *un
 número que solo arregla un caso es un parche.*
 
-### Y tampoco es el cortante — medido SIN ETABS
+### El árbitro que no necesita ETABS: `Thick/Thin` ≥ 1
 
-Aquí **me corrijo**: escribí «shear locking» y solo la mitad lo es. El árbitro
+El árbitro
 no necesita otro programa, basta la termodinámica del elemento: **una placa de
 Mindlin tiene que salir siempre igual o más flexible que una de Kirchhoff — el
 cortante solo puede ablandar.** Así que la razón `Thick/Thin` tiene que ser
@@ -129,27 +129,81 @@ Y el barrido que lo cierra, en el límite delgado con vigas:
 | `alpha_drill` de 0.01 a 20 | **0.7401** | **0.9189** |
 | **κ ×10, ×100, ×1000** | **0.7401** | **0.9188** |
 
-**Dos regímenes distintos, y hay que separarlos:**
+⚠️ **Y aquí hubo un razonamiento INVÁLIDO que hay que tirar**: *«κ ×1000 no
+mueve el número, luego no es el cortante»*. **Subir κ no puede decir nada
+cuando la atadura ya está saturada.** Al bloqueo hay que quitarle rigidez, no
+ponerle más. Bajando κ el número **sí** se mueve, y muchísimo:
 
-1. **n = 2 con vigas: eso SÍ es shear locking.** La razón se hunde a **0.0002**
-   al adelgazar — la placa sale ~5000× más rígida. Depende del espesor, que es
-   la firma del locking.
-2. **n ≥ 4: NO es el cortante.** La razón se **clava** (0.7401 / 0.9189 /
-   0.9595) y **no se mueve** al adelgazar, ni con `alpha_drill` ×40, ni con
-   **κ ×1000** — y con κ ×1000 el cortante ya no existe en el elemento (Gs → ∞
-   no admite deformación por cortante). Si el error sobrevive sin cortante,
-   **no es del cortante.**
+| κ | n=4 | n=8 |
+|---|---|---|
+| ×1e-6 | 34.20 | 44.34 |
+| **×1e-4** | **1.0997** | 1.3776 |
+| ×1e-2 | 0.7438 | 0.9237 |
+| ×1 | 0.7401 | 0.9189 |
+| ×1000 | 0.7401 | 0.9188 |
 
-Y las mallas que se usan de verdad son 4×4 y 8×8, o sea el régimen 2: el
-**11.28 %** y el **2.68 %** medidos contra ETABS caen ahí. Lo que sobra es la
-**interpolación de FLEXIÓN** del Q4 de Mindlin, que a malla gruesa es mucho más
-rígida que la del MZC no conforme (= `Thin`, que cierra contra ETABS al 0.93 %).
-O sea: **el `Thick` de ETABS no es un Q4 de Mindlin pelado** — converge casi
-como su `Thin`, y el nuestro no.
+(Bajar κ tampoco arregla nada: ablanda **quitando** la atadura.)
 
-El candidato pasa a ser **enriquecer la flexión** (modos incompatibles sobre los
-giros, como el Q6 que ya lleva la membrana), no tocar el MITC4.
-⚠️ **Descartado a mano**: κ, α del drilling y el espesor. No volver ahí.
+### La depuración dinámica, que sí lo resuelve
+
+`python edificios-slab/thick_depuracion_dinamica.py` instrumenta el elemento por
+dentro en vez de mirarlo desde fuera. Cuatro medidas:
+
+**1 · El MITC4 está BIEN.** Patch test con los campos de placa exactos:
+
+| campo | E_cortante/D | E_flexión/D |
+|---|---|---|
+| flexión x² | **0.00** | 0.8767 |
+| flexión y² | **0.00** | 0.8767 |
+| **torsión xy** | **0.00** | 0.6244 |
+| girar sin flechar | 62500 | 0 |
+
+Los tres campos de placa dan **cero exacto** — no hay bug en los puntos de
+atadura. El cuarto tiene cortante y **debe** tenerlo: es físico.
+
+**2 · El bloque de cortante tiene rango EXACTAMENTE 4** y escala como **1/t²**
+(156 → 15625 → 173611 para t = 0.20 / 0.02 / 0.006).
+
+**3 · Espectro del elemento en el límite delgado:**
+
+| | rígidos | **útiles** | bloqueados |
+|---|---|---|---|
+| Mindlin + MITC4 | 3 | **5** | 4 |
+| MZC Kirchhoff | 3 | **9** | 0 |
+
+Un Mindlin Q4 con integración **completa** ataría 2 componentes × 4 puntos de
+Gauss = 8 → 12−3−8 = **1** modo útil: el locking bruto. El MITC4 baja las
+ataduras a 4 → **5**. Funciona, pero le quedan **cuatro modos menos que al MZC**.
+
+**4 · Reparto de energía en la solución REAL** (placa + vigas):
+
+| malla | t/a = 0.0333 | t/a = 0.001 |
+|---|---|---|
+| **2×2** | 4.4 % cortante | **99.95 % cortante** |
+| 4×4 | 3.7 % | **0.005 %** |
+| 8×8 | 3.2 % | **0.005 %** |
+
+### Son DOS cosas distintas, y antes las junté en una
+
+- **2×2: locking real.** El cortante se lleva el **99.95 %** de la energía: la
+  solución **pelea** contra la atadura y no puede. Por eso la razón se hunde a
+  0.0002.
+- **4×4 y más fino: ya no pelea** (0.005 %). La solución **vive dentro** del
+  espacio atado, y lo que sobra **no es energía de cortante: son los 4 modos que
+  faltan** — 5 útiles contra 9.
+
+Y las mallas que se usan de verdad son 4×4 y 8×8, o sea el segundo caso: el
+**11.28 %** y el **2.68 %** contra ETABS son **el precio de las 4 ataduras del
+MITC4**, no un error de implementación. O sea: **el `Thick` de ETABS no es un Q4
+de Mindlin con MITC4 a secas** — converge casi como su `Thin`, y el nuestro no.
+
+**Probado ya, y no vale tal cual:** añadir modos incompatibles de Wilson a los
+**giros** (4 internos, condensados) sube de **5 a 7** modos útiles, pero se pasa
+de blando — los dos más suaves caen a 0.319 contra 0.465 del MZC. Hace falta la
+versión que pase el patch test, no la ingenua.
+
+⚠️ **Descartado midiendo**: κ (arriba **y** abajo), α del drilling, el espesor,
+y la conexión genérica con vigas. Y **no** es el MITC4: está bien implementado.
 
 ## 2. Lo que TODAVÍA no
 
