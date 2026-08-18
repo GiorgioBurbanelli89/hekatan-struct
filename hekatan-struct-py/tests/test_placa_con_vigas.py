@@ -139,3 +139,67 @@ def test_converge_al_refinar_con_vigas():
     assert razones[0] < razones[1] < razones[2], razones
     assert razones[-1] > 0.99, (
         "con vigas, malla 12x12: Thick/Thin = %.4f, no converge" % razones[-1])
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Lo que queda ABIERTO a malla gruesa, y de qué NO depende (2026-08-18)
+# ═══════════════════════════════════════════════════════════════════════════
+def _razon_limite_delgado(n, t=0.006):
+    """Razón Thick/Thin con la placa casi sin espesor (t/a = 0.001).
+
+    En el límite delgado el cortante desaparece del problema físico, así que
+    Mindlin TIENE que dar lo mismo que Kirchhoff. Lo que sobre ahí no es del
+    cortante: es de la interpolación de flexión.
+    """
+    global T
+    prev, T = T, t
+    try:
+        return _flecha(n, True, False) / _flecha(n, True, True)
+    finally:
+        T = prev
+
+
+def test_lo_que_sobra_no_es_kappa_ni_el_drilling():
+    """El exceso de rigidez a malla gruesa NO viene del cortante.
+
+    Con κ ×1000 el cortante ya no existe en el elemento (Gs → ∞ no admite
+    deformación por cortante). Si el error sobrevive sin cortante, no es del
+    cortante — y sobrevive idéntico. Igual con el drilling.
+
+    Este test existe para que nadie vuelva a barrer κ buscando aquí: ya se
+    barrió de 5/6 a 5.0 contra ETABS y a ×1000 contra el límite delgado.
+    """
+    import hekatan_struct.elements.shell_q4_motor as Q
+
+    base = _razon_limite_delgado(4)
+    assert base < 0.80, base          # el hueco está ahí, ~0.740
+
+    k0, a0 = Q.KAPPA, Q.ALPHA_DRILL
+    try:
+        Q.KAPPA = 5.0 / 6.0 * 1000
+        sin_cortante = _razon_limite_delgado(4)
+        Q.KAPPA = k0
+        Q.ALPHA_DRILL = 20.0
+        sin_drilling = _razon_limite_delgado(4)
+    finally:
+        Q.KAPPA, Q.ALPHA_DRILL = k0, a0
+
+    assert abs(sin_cortante - base) < 1e-3, (
+        "kappa x1000 movio la razon de %.4f a %.4f: entonces SI seria el "
+        "cortante y hay que revisar esta conclusion" % (base, sin_cortante))
+    assert abs(sin_drilling - base) < 1e-3, (
+        "alpha_drill x40 movio la razon de %.4f a %.4f" % (base, sin_drilling))
+
+
+@pytest.mark.xfail(strict=False, reason=(
+    "ABIERTO 2026-08-18: la flexion del Q4 de Mindlin es demasiado rigida a "
+    "malla gruesa. Thick/Thin = 0.740 (4x4) y 0.919 (8x8) en el limite "
+    "delgado, donde tiene que ser 1.000. No es kappa ni el drilling (ver el "
+    "test de arriba): es la interpolacion de flexion, que necesita el mismo "
+    "enriquecimiento por modos incompatibles que ya lleva la membrana. "
+    "Contra ETABS son el 11.28 % (4x4) y el 2.68 % (8x8) del banco."))
+@pytest.mark.parametrize("n", [4, 8])
+def test_malla_gruesa_con_vigas_todavia_no_cierra(n):
+    r = _razon_limite_delgado(n)
+    assert r > 0.99, "malla %dx%d: Thick/Thin = %.4f en el limite delgado" % (
+        n, n, r)

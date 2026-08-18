@@ -73,7 +73,7 @@ esto: Navier es la solución de **Kirchhoff sin cortante**, y ningún
 cuadrilátero de 4 nodos converge a ella. Contra **ETABS**, que es el mismo tipo
 de elemento, `thin` cierra.
 
-**Y `Thick` SÍ es la malla: es SHEAR LOCKING.** Barriendo la malla en el
+**Y `Thick` SÍ es la malla.** Barriendo la malla en el
 escalón B (`banco_shell.py B --malla=N`):
 
 | malla | Thin | **Thick** | Membrane |
@@ -96,19 +96,60 @@ malla 4x4   Hekatan -1.134e-3  ETABS -1.278e-3   -> 1.13x
 malla 8x8   Hekatan -1.279e-3  ETABS -1.314e-3   -> 1.03x
 ```
 
-**Hekatan sale rígido de más y el exceso se va al refinar**: eso es bloqueo por
-cortante de manual. Y encaja con quién lo sufre: `Thin` no lo tiene —no lleva
-cortante— y `Membrane` tampoco. Solo `Thick`, que es el único con deformación
-por cortante transversal. Con la viga de borde es peor que sin ella (5.40 %
-frente a 57.73 % en 2×2) porque la viga mete momento justo en ese grado.
+**Hekatan sale rígido de más y el exceso se va al refinar.** Solo lo sufre
+`Thick`, el único con deformación por cortante transversal.
 
 **No es κ**, y está medido: barriendo κ de 5/6 a 5.0 (`calibrar_shell.py`)
 ningún valor cierra los tres escalones a la vez — A empeora cuando B mejora, y
 el mejor deja un 2.10 % de peor caso. La regla del propio calibrador: *un
 número que solo arregla un caso es un parche.*
 
-Así que el candidato es **la formulación del cortante**: el MITC4 está puesto
-para evitar el locking y aquí no lo está evitando del todo con malla gruesa.
+### Y tampoco es el cortante — medido SIN ETABS
+
+Aquí **me corrijo**: escribí «shear locking» y solo la mitad lo es. El árbitro
+no necesita otro programa, basta la termodinámica del elemento: **una placa de
+Mindlin tiene que salir siempre igual o más flexible que una de Kirchhoff — el
+cortante solo puede ablandar.** Así que la razón `Thick/Thin` tiene que ser
+≥ 1, y si baja hay error sin nada que discutir.
+`python edificios-slab/thick_por_que_rigido.py`:
+
+| t/a | n=2 | n=4 | n=8 | n=12 |
+|---|---|---|---|---|
+| 0.1000 | 0.5668 | 0.9498 | 1.0939 | 1.1216 |
+| 0.0333 | 0.6481 | 0.8677 | 0.9741 | 0.9976 |
+| 0.0100 | **0.1485** | 0.7862 | 0.9349 | 0.9698 |
+| 0.0033 | **0.0071** | 0.7427 | 0.9200 | 0.9603 |
+| 0.0010 | **0.0002** | **0.7401** | **0.9189** | **0.9595** |
+
+Y el barrido que lo cierra, en el límite delgado con vigas:
+
+| variante | n=4 | n=8 |
+|---|---|---|
+| tal cual | 0.7401 | 0.9189 |
+| `alpha_drill` de 0.01 a 20 | **0.7401** | **0.9189** |
+| **κ ×10, ×100, ×1000** | **0.7401** | **0.9188** |
+
+**Dos regímenes distintos, y hay que separarlos:**
+
+1. **n = 2 con vigas: eso SÍ es shear locking.** La razón se hunde a **0.0002**
+   al adelgazar — la placa sale ~5000× más rígida. Depende del espesor, que es
+   la firma del locking.
+2. **n ≥ 4: NO es el cortante.** La razón se **clava** (0.7401 / 0.9189 /
+   0.9595) y **no se mueve** al adelgazar, ni con `alpha_drill` ×40, ni con
+   **κ ×1000** — y con κ ×1000 el cortante ya no existe en el elemento (Gs → ∞
+   no admite deformación por cortante). Si el error sobrevive sin cortante,
+   **no es del cortante.**
+
+Y las mallas que se usan de verdad son 4×4 y 8×8, o sea el régimen 2: el
+**11.28 %** y el **2.68 %** medidos contra ETABS caen ahí. Lo que sobra es la
+**interpolación de FLEXIÓN** del Q4 de Mindlin, que a malla gruesa es mucho más
+rígida que la del MZC no conforme (= `Thin`, que cierra contra ETABS al 0.93 %).
+O sea: **el `Thick` de ETABS no es un Q4 de Mindlin pelado** — converge casi
+como su `Thin`, y el nuestro no.
+
+El candidato pasa a ser **enriquecer la flexión** (modos incompatibles sobre los
+giros, como el Q6 que ya lleva la membrana), no tocar el MITC4.
+⚠️ **Descartado a mano**: κ, α del drilling y el espesor. No volver ahí.
 
 ## 2. Lo que TODAVÍA no
 
