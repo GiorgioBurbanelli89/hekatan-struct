@@ -138,17 +138,50 @@ const arrastrar = async (x0, y0, x1, y1) => {
   return (await sel()).n;
 };
 {
-  // A PROPOSITO no se aprieta "Selec." antes: arrastrar sobre el vacio tiene
-  // que abrir la ventana de seleccion sin activar nada, como en AutoCAD.
+  // ── MANTENER PULSADO NO DEBE SELECCIONAR ─────────────────────────────────
+  // Arrastrar con el boton apretado es ORBITAR. Si ademas seleccionara, un
+  // gesto para girar el modelo cambiaria la seleccion sin querer.
+  await pag.keyboard.press("Escape");
+  await new Promise((r) => setTimeout(r, 400));
+  await pag.mouse.move(cv.x + cv.w * 0.28, cv.y + cv.h * 0.30);
+  await pag.mouse.down();
+  for (let i = 1; i <= 6; i++) {
+    await pag.mouse.move(cv.x + cv.w * (0.28 + 0.44 * i / 6),
+                         cv.y + cv.h * (0.30 + 0.42 * i / 6));
+    await new Promise((r) => setTimeout(r, 90));
+  }
+  await pag.mouse.up();
+  await new Promise((r) => setTimeout(r, 700));
+  const arrastrando = (await sel()).n;
+  anota("mantener pulsado NO selecciona (eso es orbitar)", arrastrando === 0,
+        `${arrastrando} seleccionados`);
+}
+
+// ── CLIC-CLIC: eso SI selecciona ────────────────────────────────────────────
+const clicClic = async (x0, y0, x1, y1) => {
+  await pag.keyboard.press("Escape");
+  await new Promise((r) => setTimeout(r, 400));
+  await clic(x0, y0);                       // clic 1: esquina
+  // El raton se mueve LIBRE, sin nada pulsado.
+  for (let i = 1; i <= 4; i++) {
+    await pag.mouse.move(cv.x + cv.w * (x0 + (x1 - x0) * i / 4),
+                         cv.y + cv.h * (y0 + (y1 - y0) * i / 4));
+    await new Promise((r) => setTimeout(r, 110));
+  }
+  await clic(x1, y1);                       // clic 2: cierra
+  await new Promise((r) => setTimeout(r, 500));
+  return (await sel()).n;
+};
+{
   // El portico ocupa x 0.40..0.60, y 0.40..0.62. Una ventana que lo envuelve
   // entero de izquierda a derecha tiene que cogerlo todo.
-  const nVent = await arrastrar(0.30, 0.32, 0.72, 0.72);
-  anota("ventana izquierda->derecha (envolviendo el portico)", nVent > 0,
+  const nVent = await clicClic(0.30, 0.32, 0.72, 0.72);
+  anota("clic-clic izquierda->derecha SI selecciona (ventana)", nVent > 0,
         `${nVent} seleccionados`);
   await foto();
   // Y una captura de derecha a izquierda que solo TOCA una columna.
-  const nCap = await arrastrar(0.50, 0.50, 0.35, 0.55);
-  anota("captura derecha->izquierda (solo tocando)", nCap > 0,
+  const nCap = await clicClic(0.50, 0.50, 0.35, 0.55);
+  anota("clic-clic derecha->izquierda SI selecciona (captura)", nCap > 0,
         `${nCap} seleccionados`);
   await foto();
 }

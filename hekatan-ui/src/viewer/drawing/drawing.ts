@@ -3522,7 +3522,20 @@ export function drawing({
     // el drag-to-select es contra-intuitivo (esperan orbit). Para
     // selección puntual, el usuario toca un nodo/línea (click handler).
     if (ev.pointerType === "touch") return;
-    dragStart = { x: ev.clientX, y: ev.clientY };
+    // ── MANTENER PULSADO NO SELECCIONA ───────────────────────────────────────
+    //
+    // La seleccion por ventana es CLIC-CLIC: un clic marca la esquina, el raton
+    // se mueve libre y otro clic cierra. Arrastrar con el boton apretado es
+    // ORBITAR la camara, y punto.
+    //
+    // Estaban los dos modos a la vez y se pisaban: al arrastrar para girar el
+    // modelo se abria una ventana de seleccion, y al soltar seleccionaba lo que
+    // hubiera dentro. Dos gestos parecidos con resultados distintos, y el que
+    // sale sin querer es el que rompe el trabajo.
+    //
+    // `dragStart` se deja a null: el `pointermove` y el `pointerup` de abajo
+    // salen solos, y los controles de camara se quedan con el arrastre.
+    dragStart = null;
     dragActive = false;
   });
   rendererElm.addEventListener("pointermove", (ev: PointerEvent) => {
