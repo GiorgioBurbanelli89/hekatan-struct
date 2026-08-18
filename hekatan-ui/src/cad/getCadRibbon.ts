@@ -160,7 +160,14 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
   const decir = (txt: string) => { prompt = txt; refrescar(); };
   // El plano y la cota cambian desde el Tweakpane y desde las teclas 1/2/3,
   // que no pasan por aquí: se relee en vez de intentar enterarse de cada sitio.
-  setInterval(refrescar, 600);
+  setInterval(() => {
+    refrescar();
+    // Y se repinta el boton encendido: la herramienta tambien la sueltan Esc y
+    // la caja de comandos, que no pasan por aqui. Sin esto el boton "Linea"
+    // seguia iluminado despues de pulsar Esc, o sea que la barra decia que
+    // estabas dibujando cuando ya podias seleccionar.
+    pintarActivo();
+  }, 600);
 
   // ── Apoyo y carga: se aplican al nudo que se clique ───────────────────────
   //
@@ -196,12 +203,16 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
     if (h.id === "apoyo" || h.id === "carga") {
       modoAplicar = h.id as "apoyo" | "carga";
       hooks.setTool("select");
-      (window as any).__hekatanRectSelectExplicit = false;
+      // En apoyo/carga el arrastre NO debe abrir una ventana de seleccion: se
+      // va nudo a nudo. Es el unico caso que la bloquea, y se marca con su
+      // nombre para no confundirlo con el estado normal.
+      (window as any).__hekatanBloquearVentana = true;
       pintarActivo();
       decir(`${h.nombre} — ${h.ayuda}`);
       return;
     }
     modoAplicar = null;
+    (window as any).__hekatanBloquearVentana = false;
     hooks.setTool(h.id);
     pintarActivo();
     decir(`${h.nombre} — ${h.ayuda}`);

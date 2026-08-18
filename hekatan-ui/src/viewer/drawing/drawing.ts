@@ -3495,10 +3495,13 @@ export function drawing({
     // ya lo cubre la guarda de `pointerType === "touch"` de aqui abajo, que es
     // la condicion de verdad; el flag sobraba en raton.
     //
-    // Se sigue respetando el flag para el caso contrario: si alguien lo pone a
-    // false a proposito (el modo apoyo/carga del ribbon lo hace, porque alli el
-    // arrastre no debe abrir una ventana), no se activa.
-    if ((window as any).__hekatanRectSelectExplicit === false) return;
+    // ⚠️ NO se mira `__hekatanRectSelectExplicit`. Ese flag lo pone el sistema
+    // a false al elegir CUALQUIER herramienta de dibujo, no el usuario a
+    // proposito: despues de dibujar una linea se quedaba en false para
+    // siempre, y el arrastre no pintaba ni el rectangulo. El unico caso en que
+    // hay que bloquear la ventana es el modo apoyo/carga del ribbon, y ese se
+    // marca aparte y con su nombre.
+    if ((window as any).__hekatanBloquearVentana) return;
     // Mouse-only: en touch (pointerType === "touch") no activamos
     // rect-drag aunque el usuario haya elegido Seleccionar — en mobile
     // el drag-to-select es contra-intuitivo (esperan orbit). Para
@@ -3832,7 +3835,23 @@ export function drawing({
     let hadSel = false;
     if (selection.size) { selection.clear(); refreshSelectionGroup(); hadSel = true; }
     finalizeDraw();
-    updateStatus(hadSel ? "⎋ Selección cancelada" : "⎋ Acción cancelada");
+    // ── Esc SUELTA la herramienta, como en AutoCAD ───────────────────────────
+    //
+    // La herramienta se quedaba pegada: se dibujaba una linea, se pulsaba Esc
+    // para terminarla, y el tool seguia siendo "line". Como la ventana de
+    // seleccion solo arranca con el tool en "select", arrastrar despues de
+    // dibujar no seleccionaba NI PINTABA EL RECTANGULO — parecia que la
+    // seleccion por ventana no existiera.
+    //
+    // En AutoCAD, Esc termina el comando y te deja sin comando: a partir de
+    // ahi, arrastrar sobre el vacio abre la ventana de seleccion. Para dibujar
+    // otra linea se vuelve a pulsar L, que es un tecleo.
+    try {
+      const st = (window as any).__hekatanCadState;
+      const t = st?.get?.()?.tool;
+      if (t && t !== "select") st?.setTool?.("select");
+    } catch {}
+    updateStatus(hadSel ? "⎋ Selección cancelada" : "⎋ Sin herramienta — arrastrá para seleccionar");
     viewerRender();
   };
   (window as any).__hekatanEscapeCancel = escapeCancel;
