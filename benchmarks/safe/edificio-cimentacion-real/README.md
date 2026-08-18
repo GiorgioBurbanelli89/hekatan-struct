@@ -173,6 +173,51 @@ nudos. Si son los anclajes de sus 144 elementos LINK (la forma en que SAFE
 implementa un muelle de área) no cambian nada y habría que mirar la rigidez de
 la viga de amarre; si son otra cosa, ahí está el reparto.
 
+### Lo que dice el binario de SAFE
+
+Los literales de las DLL de SAFE **no salen con `strings`**: son .NET y los
+guardan en el heap de metadatos (`CSI.SAPFire.SAFE.dll` da 0 coincidencias de
+«spring» en ASCII y en UTF-16). Pero no hace falta descompilar: la propia
+`SAFEv1.dll` se puede **inspeccionar por reflexión**, que es leer el binario.
+
+```bash
+python reflexion_safe.py
+```
+
+Y ahí aparece la firma que importa:
+
+```
+cPropAreaSpring.GetAreaSpringProp(Name, U1, U2, U3,
+                                  NonlinearOption3,
+                                  SpringOption,        <-- no está en el f2k
+                                  SoilProfile,         <-- no está en el f2k
+                                  EndLengthRatio)      <-- no está en el f2k
+```
+
+**Un muelle de área de SAFE tiene tres parámetros más de los que el `.f2k` de
+Hekatan escribe.** El f2k solo pone `Subgrade Modulus` y `Nonlinear Option`:
+
+```
+Name=ASpr1  Subgrade Modulus=105.03  Nonlinear Option=Compression Only
+```
+
+Así que SAFE rellena `SpringOption`, `SoilProfile` y **`EndLengthRatio`** con
+sus valores por defecto, que Hekatan no conoce ni reproduce. Y
+`EndLengthRatio` es precisamente un parámetro de **reparto en los bordes** —
+que es donde está la discrepancia: las esquinas, las zapatas con más borde en
+proporción a su área.
+
+Es la hipótesis que queda viva, y ahora tiene nombre.
+
+⚠️ **Tres callejones sin salida, para no repetirlos:**
+- `cFile` **no tiene `ExportToSAFEFile`**, y `Save` con extensión `.f2k`
+  devuelve 0 y no escribe nada: SAFE 20 no deja sacar su `.f2k` por API.
+- `DatabaseTables.GetAvailableTables()` **cuelga el proceso** de SAFE.
+- `cAreaObj.GetElm()` **también lo cuelga**. Las dos veces hubo que matarlo con
+  `Stop-Process`.
+- Lo que sí responde rápido: `PointObj.GetNameList`, `GetRestraint`,
+  `GetCoordCartesian` y `PropAreaSpring.GetNameList`.
+
 ### Lo que queda, que es de otro orden
 
 Los **medio-bordes cierran al 0.5–2 %**; lo que se desvía son las **esquinas**

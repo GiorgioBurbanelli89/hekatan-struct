@@ -270,7 +270,27 @@ for (let i = beamElemStart; i < elements.length; ++i) {
   torsionalConstants.set(i, J_v);
 }
 
-const nodeInputs = { supports: new Map(), loads };
+// ── EL APOYO EN EL PLANO, como SAFE ───────────────────────────────────────
+// Los muelles Winkler solo sujetan en Uz (`dof: 2`), asi que la cimentacion
+// entera es un MECANISMO en Ux, Uy y Rz: nada impide que se traslade o gire en
+// planta. Y las cargas traen MX y MY, que acoplan con esos grados.
+//
+// SAFE lo resuelve con UN apoyo: preguntado nudo a nudo con
+// `PointObj.GetRestraint` (restraints_safe.py), su modelo tiene un unico punto
+// restringido —`PBase_5`, el del centro, en (5, 5, 0)— con el patron
+// `Ux Uy - - - Rz`. Solo el plano; el vertical lo deja al suelo.
+//
+// Los «82 WITH RESTRAINTS» del .LOG no son apoyos del usuario: son los nudos
+// internos del mallado y los anclajes de los 144 elementos LINK con los que
+// SAFE implementa un muelle de area.
+const supports = new Map();
+if (!argMap["sin-apoyo-plano"]) {
+  const centro = COLUMNS.find(c => c.x === 5 && c.y === 5) ?? COLUMNS[4];
+  const zc = zapataNodes.get(centro.id);
+  //            Ux    Uy    Uz     Rx     Ry     Rz
+  supports.set(zc.top_idx, [true, true, false, false, false, true]);
+}
+const nodeInputs = { supports, loads };
 const elementInputs = {
   elasticities, poissonsRatios, thicknesses,
   areas, momentsOfInertiaZ, momentsOfInertiaY,
