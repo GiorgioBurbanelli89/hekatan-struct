@@ -27,6 +27,26 @@
  * el de ETABS y el de las columnas ~1.33×. Con la inercia en su casilla, todo
  * cierra < 1 % salvo la torsión (J Saint-Venant vs ETABS, ~4 %).
  */
+/**
+ * ⚠️ LA TORSIÓN (T) NO ES LA J — hipótesis descartada el 19-ago-2026.
+ *
+ * T es el único campo que se sale (2.1 % medio, 3.7 % máx) mientras los demás
+ * cierran por debajo del 0.8 %. La bitácora lo venía atribuyendo desde agosto a
+ * «J de Saint-Venant vs ETABS», o sea a que cada uno usara una J distinta.
+ *
+ * Medido preguntándoselo a ETABS (`PropFrame.GetSectProps` sobre secciones
+ * rectangulares) y comparándolo con la J de Roark que usa Hekatan:
+ *
+ *     sección       J de ETABS    J de Roark    ETABS/Roark
+ *     0.30 x 0.50   0.00282175    0.00281737      1.0016
+ *     0.40 x 0.40   0.00360667    0.00360533      1.0004
+ *     0.25 x 0.80   0.00335130    0.00334701      1.0013
+ *     0.20 x 1.00   0.00233407    0.00233071      1.0014
+ *
+ * Coinciden al 0.1 %. Con esa diferencia no salen 3.7 puntos: **la J no es la
+ * causa** y hay que buscar en otro sitio (reparto de la torsión entre barras,
+ * o cómo la cáscara le entrega el giro a la viga).
+ */
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { readFileSync } from "node:fs";
