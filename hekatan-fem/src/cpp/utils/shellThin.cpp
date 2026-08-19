@@ -61,6 +61,13 @@ Eigen::MatrixXd getMembraneK(const double x[4], const double y[4],
                              double E, double nu, double t,
                              const double *mod);
 
+// La membrana ITW 1990 (12x12: u, v y el drilling JUNTOS). Misma razon: una
+// sola copia, en shellQ4.cpp.
+Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
+                               double E, double nu, double t,
+                               const double *mod, double gammaFac, int nGauss,
+                               bool taylorBurbuja);
+
 // ─── MZC Kirchhoff Plate Bending (12×12) — el corazón Shell-Thin ────────────
 // DOFs por nodo: [w, θx, θy] donde θx = ∂w/∂y, θy = -∂w/∂x
 // Asume Q4 rectangular alineado con XY locales.
@@ -298,7 +305,20 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
            std::fabs(dmod[5]) < 1e-9)
         : (std::fabs(bFactor) < 1e-9);
 
-    Eigen::MatrixXd Km = getMembraneK(x, y, E, nu, t, dmod);   // 8×8
+    // Mismo dispatcher que shellQ4.cpp: con ITW (3 o 4) la membrana y el
+    // drilling salen de la MISMA 12x12 y no hay penalizacion que pegar aparte.
+    int drillingType = getMapValST(elementInputs.drillingTypes, index, 3);
+    double drillScale = getMapValST(elementInputs.drillingPenaltyScales, index,
+                                    (drillingType >= 3 && drillingType <= 5) ? 0.4 : 0.05);
+    const bool usaITW = (drillingType >= 3 && drillingType <= 5);
+    const int  ngITW  = (drillingType == 4) ? 2 : 3;
+    const bool taylorITW = (drillingType == 5);
+
+    Eigen::MatrixXd Km   = usaITW ? Eigen::MatrixXd::Zero(8, 8)
+                                  : getMembraneK(x, y, E, nu, t, dmod);   // 8×8
+    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW)
+                                  : Eigen::MatrixXd::Zero(12, 12);        // 12×12
+    Kitw *= mFactor;
     Eigen::MatrixXd Kb = sinFlexion
         ? Eigen::MatrixXd::Zero(12, 12)
         : getBendingK_DKE(x, y, E, nu, t, dmod);   // 12×12 DKE (= ETABS/SAFE ShellThin, validado vs ETABS en Python)
@@ -307,10 +327,16 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
 
     // Ensamblar en 24×24 (orden DOFs: [u, v, w, θx, θy, θz] por nodo)
     Eigen::MatrixXd K = Eigen::MatrixXd::Zero(24, 24);
+    const int gdlM[3] = {0, 1, 5};      // u, v, theta_z dentro del nudo
     for (int ni = 0; ni < 4; ni++) for (int nj = 0; nj < 4; nj++) {
-        // Membrane: u=6i+0, v=6i+1
+        // Membrane: u=6i+0, v=6i+1  (con ITW van tambien los theta_z)
+        if (usaITW) {
+            for (int di = 0; di < 3; di++) for (int dj = 0; dj < 3; dj++)
+                K(ni*6 + gdlM[di], nj*6 + gdlM[dj]) = Kitw(ni*3 + di, nj*3 + dj);
+        } else {
         for (int di = 0; di < 2; di++) for (int dj = 0; dj < 2; dj++) {
             K(ni*6 + di, nj*6 + dj) = Km(ni*2 + di, nj*2 + dj);
+        }
         }
         // Bending: w=6i+2, θx=6i+3, θy=6i+4
         for (int di = 0; di < 3; di++) for (int dj = 0; dj < 3; dj++) {
@@ -322,16 +348,16 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
     //   0 = penalty 1e-6 legacy
     //   1 = PyNite weak (min(diagRot)/1000)
     //   2 = Hughes-Brezzi 1989 / Ibrahimbegovic-Taylor-Wilson 1990  [DEFAULT]
-    int drillingType = getMapValST(elementInputs.drillingTypes, index, 2);
+    // (drillingType y drillScale ya se leyeron arriba)
     // 0.05, el MISMO defecto que shellQ4.cpp (ver el comentario largo de alli).
     // Cuando solo se bajo en shellQ4, el caso `membrana-thin-thick` lo canto en
     // el acto: Shell-Thin daba 5.3728 mm y Shell-Thick 5.9139 en el MISMO muro
     // cargado en su plano, cuando en ETABS thin/thick solo cambia la FLEXION y
     // la membrana es identica. Dos ficheros con la misma constante escrita a
     // mano en cada uno: si se toca, se tocan los dos.
-    double drillScale = getMapValST(elementInputs.drillingPenaltyScales, index, 0.05);
-
-    if (drillingType == 2) {
+    if (usaITW) {
+        // ya esta dentro de Kitw
+    } else if (drillingType == 2) {
         K += mFactor * getDrillingK_HughesBrezzi(x, y, E, nu, t, drillScale);
     } else if (drillingType == 1) {
         double minRot = 1e18;

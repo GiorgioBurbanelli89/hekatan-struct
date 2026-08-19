@@ -203,6 +203,237 @@ Eigen::MatrixXd getMembraneK(const double x[4], const double y[4],
     return Km;
 }
 
+// ─── Membrana ITW 1990: Ibrahimbegovic, Taylor & Wilson ────────────────────
+//     "A robust quadrilateral membrane finite element with drilling degrees of
+//      freedom", Int. J. Numer. Methods Eng. 30, 445-457 (1990).
+//
+// Devuelve 12x12 con los GDL [u0,v0,tz0, u1,v1,tz1, u2,v2,tz2, u3,v3,tz3]:
+// membrana Y drilling JUNTOS, no la membrana por un lado y una penalizacion
+// pegada por el otro. Esa es la diferencia de fondo con lo que habia.
+//
+// Por que se cambio: el paper trae un PATCH TEST DE ORDEN SUPERIOR (Tabla I)
+// — viga a flexion pura, 6 elementos, malla regular — cuya respuesta es
+// EXACTA, no aproximada: flecha 1.5 y giro 0.6. Medido el 19-ago-2026 con la
+// misma malla nudo a nudo:
+//
+//     ETABS 22    -1.500000   -0.600000     exacto
+//     SAP2000 24  -1.500000   -0.600000     exacto
+//     Hekatan     -1.474538   -0.561967     -1.70 % y -6.34 %
+//
+// Que el error del GIRO fuera casi cuatro veces el de la flecha es la firma de
+// que lo mal formulado era el drilling. Y refinando no se arreglaba (nx=12
+// seguia en -1.4935 / -0.5830): no converge al exacto, o sea que no era malla.
+//
+// La formulacion (numeros de ecuacion del paper):
+//   (19) u = SUM N_I u_I + SUM NS_I (l_JK/8)(psi_K - psi_J) n_JK + NB9 du9
+//        interpolacion tipo Allman + UNA burbuja jerarquica por direccion,
+//        NB9 = (1-r^2)(1-s^2), que se condensa estaticamente.
+//   (28) G_I = la parte de B que multiplica al giro.
+//   (31) b_I = <-1/2 N_I,y ; 1/2 N_I,x>     residuo skew(grad u) - psi
+//   (32) g_I = (los terminos de lado)/16 - N_I
+//   (33) K = INT [B G]^T C [B G] dOmega     con Gauss 3x3
+//   (38) P = gamma INT {b;g}<b;g> dOmega    con UN SOLO PUNTO (el centro)
+//   (39) [K + P] a = f                      <- la D-type, que es la que se usa
+//
+// Integrar K completo (3x3) y sumarle P de un punto quita los modos de energia
+// nula sin necesitar ningun control de reloj de arena.
+//
+// gamma: el paper usa gamma = mu (modulo de cortante) y avisa de que la
+// formulacion es INSENSIBLE a ese valor en varios ordenes de magnitud (su
+// Tabla V: de gamma/mu = 0.001 a 1000 cambia la QUINTA cifra). Aqui el defecto
+// es 0.4*mu porque eso es lo que se MIDIO de ETABS: reconstruida su matriz de
+// membrana 12x12 entera por flexibilidad (galpon-bodega-electoral/
+// celda_membrana12.py) y ajustando gamma por minimos cuadrados sale 0.400
+// EXACTO, en las 10 geometrias y con 0, 2 o 4 modos incompatibles.
+// NO es `static`: shellThin.cpp la usa tambien. La membrana TIENE que ser
+// la misma en Shell-Thin y Shell-Thick — en ETABS thin/thick solo cambia la
+// flexion. El caso `membrana-thin-thick` de la suite lo vigila.
+Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
+                                      double E, double nu, double t,
+                                      const double *mod, double gammaFac,
+                                      int nGauss, bool taylorBurbuja)
+{
+    double factor = E / (1.0 - nu * nu);
+    Eigen::Matrix3d Dm;
+    Dm << factor,       factor * nu, 0,
+          factor * nu,  factor,      0,
+          0,            0,           factor * (1 - nu) / 2.0;
+    if (mod) {
+        double f11 = mod[0], f22 = mod[1], f12 = mod[2];
+        Dm(0, 0) *= f11;
+        Dm(1, 1) *= f22;
+        Dm(2, 2) *= f12;
+        double c = std::sqrt(std::max(0.0, f11 * f22));
+        Dm(0, 1) *= c;  Dm(1, 0) *= c;
+    }
+    Dm *= t;                       // el espesor va DENTRO de D, como en el .cpd
+
+    // Coeficientes de lado de Allman: (l_JK/8)*n_JK con n = (dy, -dx)/l
+    //   => (l/8)*n1 = dy/8 ,  (l/8)*n2 = -dx/8
+    const int sig[4] = {1, 2, 3, 0};      // lado I -> I+1
+    const int ant[4] = {3, 0, 1, 2};      // lado anterior (I-1 -> I)
+    double cx[4], cy[4];
+    for (int i = 0; i < 4; i++) {
+        cx[i] =  (y[sig[i]] - y[i]) / 8.0;
+        cy[i] = -(x[sig[i]] - x[i]) / 8.0;
+    }
+
+    // El paper integra K con Gauss 3x3 (seccion 4). Pero para la CASCARA avisa
+    // de que hay que evitar el bloqueo de membrana, y el .cpd del hemisferio lo
+    // resuelve con la membrana ITW a 2x2 (integracion reducida). Medido: en el
+    // hemisferio pinzado el 3x3 se queda en -37 % pase lo que pase con gamma
+    // (o sea que NO es la penalizacion, es la parte constitutiva), y el 2x2 lo
+    // suelta. Por eso el numero de puntos es un parametro y no una constante.
+    static const double g3[3] = {-0.7745966692414834, 0.0, 0.7745966692414834};
+    static const double w3[3] = { 5.0 / 9.0, 8.0 / 9.0, 5.0 / 9.0 };
+    static const double g2[2] = {-GP2, GP2};
+    static const double w2[2] = { 1.0, 1.0 };
+    const double *gg = (nGauss == 2) ? g2 : g3;
+    const double *wg = (nGauss == 2) ? w2 : w3;
+
+    // Jacobiano del CENTRO, para la modificacion de Taylor 1976 sobre la
+    // burbuja: evaluar sus derivadas con J0 constante fuerza INT(B_burbuja) = 0
+    // y es lo que el paper llama "the modification suggested by Taylor",
+    // necesaria -dice- para que la membrana no bloquee en la cascara.
+    double Jinv0[2][2], dJ0c;
+    {
+        double N0[4], dN0dxi[4], dN0deta[4];
+        shapeFunctionsQ4(0.0, 0.0, N0, dN0dxi, dN0deta);
+        dJ0c = std::abs(jacobian2D(x, y, dN0dxi, dN0deta, Jinv0));
+    }
+
+    Eigen::MatrixXd K14 = Eigen::MatrixXd::Zero(14, 14);   // 12 nodales + 2 burbuja
+    // lo que se guarda del punto central para armar P
+    double c_dNx[4] = {0,0,0,0}, c_dNy[4] = {0,0,0,0};
+    double c_gt2[4] = {0,0,0,0}, c_gt3[4] = {0,0,0,0}, c_N[4] = {0,0,0,0};
+    double c_dNBx = 0, c_dNBy = 0, c_dJ = 0;
+
+    for (int ig = 0; ig < nGauss; ig++) {
+        for (int jg = 0; jg < nGauss; jg++) {
+            double rr = gg[ig], ss = gg[jg], ww = wg[ig] * wg[jg];
+
+            double N[4], dNdxi[4], dNdeta[4];
+            shapeFunctionsQ4(rr, ss, N, dNdxi, dNdeta);
+            double Jinv[2][2];
+            double dJ = jacobian2D(x, y, dNdxi, dNdeta, Jinv);
+
+            double dNx[4], dNy[4];
+            for (int i = 0; i < 4; i++) {
+                dNx[i] = Jinv[0][0] * dNdxi[i] + Jinv[0][1] * dNdeta[i];
+                dNy[i] = Jinv[1][0] * dNdxi[i] + Jinv[1][1] * dNdeta[i];
+            }
+
+            // Derivadas naturales de las funciones serendipity de lado,
+            // ecs. (22)-(23) del paper (ya con el 1/2 dentro).
+            double nsr[4] = { -rr * (1 - ss),
+                               0.5 * (1 - ss * ss),
+                              -rr * (1 + ss),
+                              -0.5 * (1 - ss * ss) };
+            double nss[4] = { -0.5 * (1 - rr * rr),
+                              -ss * (1 + rr),
+                               0.5 * (1 - rr * rr),
+                              -ss * (1 - rr) };
+            double NSx[4], NSy[4];
+            for (int i = 0; i < 4; i++) {
+                NSx[i] = Jinv[0][0] * nsr[i] + Jinv[0][1] * nss[i];
+                NSy[i] = Jinv[1][0] * nsr[i] + Jinv[1][1] * nss[i];
+            }
+
+            // Burbuja jerarquica NB9 = (1-r^2)(1-s^2), ec. (24)
+            double nbr = -2.0 * rr * (1 - ss * ss);
+            double nbs = -2.0 * ss * (1 - rr * rr);
+            double dNBx, dNBy;
+            if (taylorBurbuja) {
+                double f = dJ0c / std::abs(dJ);
+                dNBx = (Jinv0[0][0] * nbr + Jinv0[0][1] * nbs) * f;
+                dNBy = (Jinv0[1][0] * nbr + Jinv0[1][1] * nbs) * f;
+            } else {
+                dNBx = Jinv[0][0] * nbr + Jinv[0][1] * nbs;
+                dNBy = Jinv[1][0] * nbr + Jinv[1][1] * nbs;
+            }
+
+            // G_I, ec. (28): cada nudo participa en SUS DOS lados, con signo
+            // contrario (en uno entra como psi_J y en el otro como psi_K).
+            double gt1[4], gt2[4], gt3[4], gt4[4];
+            for (int i = 0; i < 4; i++) {
+                int p = ant[i];
+                gt1[i] = NSx[p] * cx[p] - NSx[i] * cx[i];
+                gt2[i] = NSy[p] * cx[p] - NSy[i] * cx[i];
+                gt3[i] = NSx[p] * cy[p] - NSx[i] * cy[i];
+                gt4[i] = NSy[p] * cy[p] - NSy[i] * cy[i];
+            }
+
+            Eigen::MatrixXd B = Eigen::MatrixXd::Zero(3, 14);
+            for (int i = 0; i < 4; i++) {
+                B(0, 3*i)     = dNx[i];
+                B(1, 3*i + 1) = dNy[i];
+                B(2, 3*i)     = dNy[i];
+                B(2, 3*i + 1) = dNx[i];
+                B(0, 3*i + 2) = gt1[i];
+                B(1, 3*i + 2) = gt4[i];
+                B(2, 3*i + 2) = gt2[i] + gt3[i];
+            }
+            B(0, 12) = dNBx;  B(2, 12) = dNBy;
+            B(1, 13) = dNBy;  B(2, 13) = dNBx;
+
+            K14 += (ww * std::abs(dJ)) * (B.transpose() * Dm * B);
+
+            if (nGauss == 3 && ig == 1 && jg == 1) {   // el centro ya es punto de Gauss
+                for (int i = 0; i < 4; i++) {
+                    c_dNx[i] = dNx[i]; c_dNy[i] = dNy[i];
+                    c_gt2[i] = gt2[i]; c_gt3[i] = gt3[i]; c_N[i] = N[i];
+                }
+                c_dNBx = dNBx; c_dNBy = dNBy; c_dJ = std::abs(dJ);
+            }
+        }
+    }
+
+    if (nGauss == 2) {
+        // Con 2x2 el centro NO es punto de Gauss, asi que P se evalua aparte:
+        // la penalizacion del paper es de UN punto y ese punto es (0,0).
+        double N0[4], dN0dxi[4], dN0deta[4], Ji0[2][2];
+        shapeFunctionsQ4(0.0, 0.0, N0, dN0dxi, dN0deta);
+        c_dJ = std::abs(jacobian2D(x, y, dN0dxi, dN0deta, Ji0));
+        double nsr0[4] = { 0.0, 0.5, 0.0, -0.5 };
+        double nss0[4] = { -0.5, 0.0, 0.5, 0.0 };
+        double NSx0[4], NSy0[4];
+        for (int i = 0; i < 4; i++) {
+            c_dNx[i] = Ji0[0][0] * dN0dxi[i] + Ji0[0][1] * dN0deta[i];
+            c_dNy[i] = Ji0[1][0] * dN0dxi[i] + Ji0[1][1] * dN0deta[i];
+            c_N[i]   = N0[i];
+            NSx0[i]  = Ji0[0][0] * nsr0[i] + Ji0[0][1] * nss0[i];
+            NSy0[i]  = Ji0[1][0] * nsr0[i] + Ji0[1][1] * nss0[i];
+        }
+        for (int i = 0; i < 4; i++) {
+            int p = ant[i];
+            c_gt2[i] = NSy0[p] * cx[p] - NSy0[i] * cx[i];
+            c_gt3[i] = NSx0[p] * cy[p] - NSx0[i] * cy[i];
+        }
+        c_dNBx = 0.0; c_dNBy = 0.0;      // dNB/dr = dNB/ds = 0 en el centro
+    }
+
+    // P, ec. (38), integrada con UN SOLO PUNTO: gamma * Omega * res*res^T,
+    // con Omega = 4*dJ0 (el area) y res = <b ; g> de las ecs. (31)-(32).
+    double mu = E / (2.0 * (1.0 + nu));
+    double gamma = gammaFac * mu;
+    Eigen::VectorXd res = Eigen::VectorXd::Zero(14);
+    for (int i = 0; i < 4; i++) {
+        res(3*i)     = -0.5 * c_dNy[i];
+        res(3*i + 1) =  0.5 * c_dNx[i];
+        res(3*i + 2) =  0.5 * (c_gt3[i] - c_gt2[i]) - c_N[i];
+    }
+    res(12) = -0.5 * c_dNBy;
+    res(13) =  0.5 * c_dNBx;
+    K14 += (gamma * t * 4.0 * c_dJ) * (res * res.transpose());
+
+    // Condensacion estatica de la burbuja (los 2 GDL internos)
+    Eigen::MatrixXd Kuu = K14.topLeftCorner(12, 12);
+    Eigen::MatrixXd Kab = K14.topRightCorner(12, 2);
+    Eigen::Matrix2d  Kbb = K14.bottomRightCorner(2, 2);
+    if (std::abs(Kbb.determinant()) < 1e-30) return Kuu;
+    return Kuu - Kab * Kbb.inverse() * Kab.transpose();
+}
+
 // ─── Plate bending stiffness (Mindlin-Reissner Q4): 12×12 ──────────────────
 // DOFs per node: w, θx, θy
 // Bending: 2×2 Gauss + INCOMPATIBLE MODES Wilson 1971 (4 DOFs internos sobre
@@ -988,7 +1219,42 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
         sinFlexion = (std::fabs(bFactor) < 1e-9);
     }
 
-    Eigen::MatrixXd Km = getMembraneK(x, y, E, nu, t, dmod);   // 8×8
+    // ── que membrana se arma ─────────────────────────────────────────────
+    //   3 = ITW 1990 (membrana + drilling JUNTOS, 12x12)   [DEFECTO]
+    //   2 = Q4 con modos incompatibles + penalizacion Hughes-Brezzi aparte
+    //   1 / 0 = legacy (muelle debil / penalizacion 1e-6)
+    // Se lee aqui arriba porque el 3 NO usa getMembraneK: sustituye la
+    // membrana entera, no le pega un termino encima.
+    int drillingType = getMapVal(elementInputs.drillingTypes, index, 3);
+    // Con drillingType 3 este numero es gamma/mu del paper (defecto 0.4, que es
+    // lo medido de ETABS). Con el 2 es el alpha de Hughes-Brezzi (defecto 0.05).
+    double drillScale = getMapVal(elementInputs.drillingPenaltyScales, index,
+                                  (drillingType >= 3 && drillingType <= 5) ? 0.4 : 0.05);
+    const bool usaITW = (drillingType >= 3 && drillingType <= 5);
+    // 3 = ITW con Gauss 3x3, que es lo que pide el paper   [DEFECTO]
+    // 4 = ITW con Gauss 2x2 (integracion reducida)  -- NO USAR, ver abajo
+    // 5 = ITW 3x3 con la burbuja a la Taylor (J0 del centro)
+    //
+    // El 2x2 parecia la solucion: en el hemisferio pinzado de MacNeal-Harder
+    // pasaba de -37.4 % a -4.9 % y el patch test seguia exacto. Pero CONTANDO
+    // LOS MODOS NULOS del elemento aislado salen CUATRO en vez de tres: hay un
+    // mecanismo. O sea que no desbloqueaba, se rompia. El paper ya lo dice: hay
+    // que integrar K completo y sumarle P de un punto, y asi "the spurious zero
+    // energy modes are prevented; and no additional devices are needed".
+    //
+    //     gauss 2x2  ->  modos nulos = 4   (deberian ser 3)
+    //     gauss 3x3  ->  modos nulos = 3   OK
+    //
+    // Tampoco valen los 4 modos incompatibles de Wilson en lugar de la burbuja
+    // (o ademas de ella): con ellos el patch test de orden superior da un giro
+    // de -0.98 en vez de 0.6 y el elemento se queda con 5 modos nulos.
+    const int  ngITW  = (drillingType == 4) ? 2 : 3;
+    const bool taylorITW = (drillingType == 5);
+
+    Eigen::MatrixXd Km   = usaITW ? Eigen::MatrixXd::Zero(8, 8)
+                                  : getMembraneK(x, y, E, nu, t, dmod);   // 8×8
+    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW)
+                                  : Eigen::MatrixXd::Zero(12, 12);        // 12×12
     #if HK_BENDING_FORMULATION == 2
         Eigen::MatrixXd Kb = getBendingK_DSE_FULL(x, y, E, nu, t);  // 12×12 (Wilson DSE Cap 8 completo, Variant C)
     #elif HK_BENDING_FORMULATION == 1
@@ -998,14 +1264,25 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
         ? Eigen::MatrixXd::Zero(12, 12)
         : getBendingK(x, y, E, nu, t, dmod);     // 12×12 (MITC4 + Wilson α, Variant A)
     #endif
-    Km *= mFactor;
-    Kb *= bFactor;
+    Km   *= mFactor;
+    Kitw *= mFactor;
+    Kb   *= bFactor;
 
     // Assemble into 24×24
     // DOFs per node: [u, v, w, θx, θy, θz] = indices [0,1,2,3,4,5]
     Eigen::MatrixXd K = Eigen::MatrixXd::Zero(24, 24);
 
     // Membrane: u=6i+0, v=6i+1 ← Km indices 2i, 2i+1
+    // Con ITW no hay "membrana" y "drilling" por separado: la 12×12 trae
+    // [u, v, theta_z] por nudo y se coloca de una vez.
+    if (usaITW) {
+        const int gdl[3] = {0, 1, 5};          // u, v, theta_z dentro del nudo
+        for (int ni = 0; ni < 4; ni++)
+            for (int nj = 0; nj < 4; nj++)
+                for (int di = 0; di < 3; di++)
+                    for (int dj = 0; dj < 3; dj++)
+                        K(ni*6 + gdl[di], nj*6 + gdl[dj]) = Kitw(ni*3 + di, nj*3 + dj);
+    } else {
     for (int ni = 0; ni < 4; ni++) {
         for (int nj = 0; nj < 4; nj++) {
             for (int di = 0; di < 2; di++) {
@@ -1014,6 +1291,7 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
                 }
             }
         }
+    }
     }
 
     // Bending: w=6i+2, θx=6i+3, θy=6i+4 ← Kb indices 3i, 3i+1, 3i+2
@@ -1031,7 +1309,7 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     //   0 = penalty 1e-6 legacy (drilling efectivamente desacoplado)
     //   1 = PyNite weak spring (k = min(diagRot)/1000)
     //   2 = Hughes-Brezzi 1989 / Ibrahimbegovic-Taylor-Wilson 1990  [DEFAULT]
-    int drillingType = getMapVal(elementInputs.drillingTypes, index, 2);
+    // (drillingType y drillScale ya se leyeron arriba)
     // Por defecto 0.05, NO 1.0.
     //
     // El penalty vale gamma = G*t*scale. Con scale = 1.0 el drilling deja de
@@ -1052,9 +1330,9 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     //
     // 0.05 deja el theta_z sujeto (que es para lo que esta) sin contaminar el
     // resultado: queda a menos de 0.2 % del elemento sin drilling.
-    double drillScale = getMapVal(elementInputs.drillingPenaltyScales, index, 0.05);
-
-    if (drillingType == 2) {
+    if (usaITW) {
+        // ya esta dentro de Kitw: no hay nada que pegar encima.
+    } else if (drillingType == 2) {
         // Hughes-Brezzi: penalty acoplado al residual θz - 0.5(∂v/∂x - ∂u/∂y)
         // Escalar por mFactor para consistencia con membrana (si membrane=0 → drill=0)
         K += mFactor * getDrillingK_HughesBrezzi(x, y, E, nu, t, drillScale);

@@ -215,6 +215,66 @@ Por qué importa, medido en el galpón (1120 barras, misma malla de ETABS):
 ⚠️ `ang` **ya no es alias de `shellang`**. Lo fue; al añadirse para barras, el
 `case` de shell quedó inalcanzable. El ángulo de cáscara es `shellang`.
 
+## La membrana: elemento ITW 1990 (drilling)
+
+Desde el **19-ago-2026** la membrana de la cáscara es el elemento de
+Ibrahimbegović, Taylor & Wilson (1990), IJNME 30:445-457 — el giro normal entra
+en el **campo de desplazamientos** (interpolación de Allman por los lados +
+burbuja `(1-r²)(1-s²)` condensada), no como una penalización pegada aparte.
+
+```
+(33) K = ∫ [B G]ᵀ C [B G] dΩ    con Gauss 3×3
+(38) P = γ ∫ {b;g}⟨b;g⟩ dΩ      con UN SOLO PUNTO (el centro)
+(39) [K + P] a = f
+```
+
+Vive en `getMembraneITW` (`shellQ4.cpp`, usada también por `shellThin.cpp`) y en
+`hekatan_struct/elements/membrane_itw.py`. Se elige con
+`elementInputs.drillingTypes`: **3 = ITW (defecto)**, 2 = Q4 con modos
+incompatibles + Hughes-Brezzi (lo de antes), 1/0 = legacy.
+`drillingPenaltyScales` pasa a ser **γ/μ** (defecto **0.4**).
+
+**Por qué γ = 0.4·μ y no 1.0 como el paper**: reconstruida la matriz 12×12 de
+membrana de ETABS entera por flexibilidad (`celda_membrana12.py`, sin tocar el
+binario) y ajustada γ por mínimos cuadrados sale **0.400 exacto**, en las 10
+geometrías y con 0, 2 o 4 modos incompatibles. Da igual: el paper avisa —y se
+comprueba— de que la formulación es **insensible a γ**.
+
+### Lo que ganó y lo que costó
+
+| | antes (HB 0.05) | ahora (ITW) | ETABS/SAP | exacto |
+|---|---|---|---|---|
+| patch test flecha | −1.70 % | **0.000 %** | 0.000 % | 1.5 |
+| patch test **giro** | −6.34 % | **0.000 %** | 0.000 % | 0.6 |
+| cantilever corto | 0.181 % | 0.126 % | −0.31 % | 0.3553 |
+| `drilling-dof` vs ETABS | +11.46 % | **+5.45 %** | — | — |
+| Cook en C | 0.459 % | 0.962 % | −1.29 % | 23.91 |
+| mezanine, axil P | 0.30/1.15 | 0.62/3.47 | — | — |
+| hemisferio 8×8 | −3.6 % | **−37.4 %** | −0.26 % (SAP) | 0.094 |
+
+### Tres cosas que NO hay que volver a probar
+
+1. **Gauss 2×2 en el ITW.** Desbloquea el hemisferio (−37 % → −5 %) pero el
+   elemento se queda con **4 modos de energía nula**: es un mecanismo, no una
+   mejora. `modos_nulos()` en `membrane_itw.py` lo mide.
+2. **Los 4 modos incompatibles de Wilson** en lugar de (o además de) la burbuja:
+   el patch test da un giro de −0.98 en vez de 0.6 y salen 5 modos nulos.
+3. **La modificación de Taylor sobre la burbuja** (J₀ del centro): no desbloquea
+   nada (−37.38 % contra −37.40 %).
+
+### El hemisferio: bloqueo, no bug
+
+En cáscara **curva** el ITW bloquea en malla gruesa. No está roto — **converge**:
+
+```
+4x4 −89.8 %   8x8 −37.4 %   12x12 −11.1 %   16x16 −4.2 %
+```
+
+Es el *membrane locking* del que avisa el propio paper (§4). Su receta
+—"modificación de Taylor + regla de 8 puntos"— no se ha conseguido reproducir.
+Para una cúpula en malla gruesa, hoy conviene `drillingTypes = 2`.
+
+
 ## Masa torsional: Ip vs J
 
 La masa consistente usa `Ip = Iy + Iz` (momento polar de inercia) para DOFs torsionales, NO `J` (constante de Saint-Venant). OpenSees tiene un bug conocido donde usa J en vez de Ip — causa ~3% de error en modos torsionales.

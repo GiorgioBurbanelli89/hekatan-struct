@@ -25,6 +25,9 @@ import math
 
 import numpy as np
 
+from .membrane_itw import k_membrana_itw
+
+
 # Parametros de la formulacion. Se dejan como variables de modulo para poder
 # BARRERLOS contra ETABS: el binario no dice que valores usa, asi que se
 # identifican midiendo (ver edificios-slab/calibrar_shell.py).
@@ -50,6 +53,11 @@ KAPPA = 5.0 / 6.0      # factor de correccion de cortante de Mindlin
 # Razones 1 : 0.595 : 0.002 contra las de Hughes-Brezzi 1 : 0.333 : 0.028. Es
 # otra FORMA, no otro numero: ningun alpha reproduce los tres a la vez.
 ALPHA_DRILL = 0.05     # Hughes-Brezzi (1989), escala calibrada
+
+# gamma/mu del elemento ITW 1990 (el defecto del motor desde el 19-ago-2026).
+# 0.4 no es del paper (que usa 1.0): es lo MEDIDO de ETABS reconstruyendo su
+# matriz 12x12 de membrana por flexibilidad. Ver `membrane_itw.py`.
+GAMMA_ITW = 0.4
 
 # ⚠️ AQUI LOS DOS MOTORES DE HEKATAN NO DICEN LO MISMO.
 #   `shellQ4.ts`  — modos incompatibles de Wilson SOLO en la membrana.
@@ -289,7 +297,8 @@ for _n in range(4):
 
 def shell_q4_motor(coords_xy, E, nu, t, *, alpha_drilling=None,
                    giros_del_ts=False, solo_membrana=False,
-                   mod_membrana=1.0, mod_flexion=1.0, mod_dir=None):
+                   mod_membrana=1.0, mod_flexion=1.0, mod_dir=None,
+                   tipo_drilling=3):
     """K local 24×24 del Q4 del motor. `coords_xy` = (4,2) EN EL PLANO del paño.
 
     `giros_del_ts=True` reproduce el convenio de giros de `shellQ4.ts` tal cual
@@ -332,7 +341,17 @@ def shell_q4_motor(coords_xy, E, nu, t, *, alpha_drilling=None,
     else:
         sin_flexion = abs(fb) < 1e-9
 
-    K[np.ix_(DOF_MEM, DOF_MEM)] += fm * _k_membrana(x, y, E, nu, t, mod_dir)
+    # tipo_drilling 3 = membrana ITW 1990 (membrana y drilling en la MISMA
+    # 12x12, sin penalizacion pegada aparte). Es el defecto, igual que en
+    # `shellQ4.cpp`. El 2 es el camino anterior: Q4 con modos incompatibles de
+    # Wilson + penalizacion Hughes-Brezzi, y se conserva porque en cascara
+    # CURVA el ITW bloquea en malla gruesa (ver membrane_itw.py).
+    if tipo_drilling == 3:
+        K[np.ix_(DOF_DRI, DOF_DRI)] += fm * k_membrana_itw(
+            [(x[i], y[i]) for i in range(4)], E, nu, t, gamma_fac=GAMMA_ITW,
+            mod_dir=mod_dir)
+    else:
+        K[np.ix_(DOF_MEM, DOF_MEM)] += fm * _k_membrana(x, y, E, nu, t, mod_dir)
     if not solo_membrana and not sin_flexion:
         k_ben = _k_flexion(x, y, E, nu, t, mod=mod_dir)
         if not giros_del_ts:
@@ -342,5 +361,6 @@ def shell_q4_motor(coords_xy, E, nu, t, *, alpha_drilling=None,
     # `shellQ4.cpp` (`K += mFactor * getDrillingK_HughesBrezzi(...)`): si la
     # membrana no existe, su θz tampoco tiene que aportar rigidez. Solo se nota
     # con el `shellmod` ESCALAR — con los direccionales mFactor vale 1.
-    K[np.ix_(DOF_DRI, DOF_DRI)] += fm * _k_drilling(x, y, G, t, al)
+    if tipo_drilling != 3:
+        K[np.ix_(DOF_DRI, DOF_DRI)] += fm * _k_drilling(x, y, G, t, al)
     return K
