@@ -16,6 +16,7 @@ el `.heks`. No se rearma nada en Python.
 Se salta solo si no hay Node, node_modules o `deform.wasm`.
 """
 import json
+import math
 import subprocess
 import sys
 from pathlib import Path
@@ -307,3 +308,28 @@ def test_mass_y_diaph_se_avisan_aparte(tmp_path):
                for e in m.errores), m.errores
     assert any(e.startswith("comandos NO montados") and "zzz" in e and
                "mass" not in e for e in m.errores), m.errores
+
+
+def test_q4_colapsado_no_revienta_pero_no_es_un_elemento(tmp_path):
+    """Un TRIÁNGULO escrito como Q4 con el 4º nudo repetido.
+
+    En el punto de atadura del borde colapsado el jacobiano es EXACTAMENTE
+    cero. `jacobian2D` de `shellQ4.cpp` lo topa a 1e-15 y sigue; Python no lo
+    topaba y lanzaba `ZeroDivisionError` con `riochico.heks` (8 así de 563).
+
+    ⚠️ Topar NO es resolver: dividir por 1e-15 amplifica el ruido de coma
+    flotante por 1e15, así que los dos motores caen en ruidos DISTINTOS. Medido
+    en riochico: con las 8 degeneradas dentro, peor nudo 2.57 %; quitándolas,
+    0.016 % y mediana 6.5e-5 %. O sea que el 2.57 % no es un fallo del port —
+    es que un Q4 colapsado no es un elemento definido en ninguno de los dos.
+    Para un triángulo, el elemento es el de 3 nudos.
+    """
+    heks = tmp_path / "colapsado.heks"
+    heks.write_text(BR.join([
+        "node 1 0 0 0", "node 2 2 0 0", "node 3 1 2 0",
+        "shell 1 1 2 3 3 0.20 2.4e7",
+        "areaload 1 -5",
+        "support 1 fixed", "support 2 fixed"]) + BR, encoding="utf-8")
+    m = leer_heks(str(heks))
+    res = resolver_heks(m)          # lo que se exige es que NO reviente
+    assert all(math.isfinite(v) for d in res.deformations.values() for v in d)

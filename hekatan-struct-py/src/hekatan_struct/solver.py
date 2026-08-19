@@ -348,10 +348,20 @@ def deform(
     # `deform.cpp`. Van dentro de `node_inputs`, no como argumento suelto: si
     # no, el modal no puede verlos por mucho que el .heks los traiga (la
     # cimentación del RIOCHICO se apoya en 612 muelles de balasto).
-    for n_idx, dof_local, k in node_inputs.springs:
-        g = 6 * n_idx + dof_local
-        if 0 <= g < n_total:
-            K_orig[g, g] += k
+    if node_inputs.springs:
+        kd = np.zeros(n_total)
+        for n_idx, dof_local, k in node_inputs.springs:
+            g = 6 * n_idx + dof_local
+            if 0 <= g < n_total:
+                kd[g] += k
+        if disperso:
+            # De golpe y como diagonal: `K[g, g] += k` uno a uno sobre una CSR
+            # cambia la estructura de dispersion 612 veces (los muelles de
+            # balasto del RIOCHICO) y scipy avisa de que eso es carisimo.
+            from scipy.sparse import diags
+            K_orig = (K_orig + diags(kd)).tocsr()
+        else:
+            K_orig[np.arange(n_total), np.arange(n_total)] += kd
 
     fixed = np.zeros(n_total, dtype=bool)
     for node_idx, restraints in node_inputs.supports.items():
