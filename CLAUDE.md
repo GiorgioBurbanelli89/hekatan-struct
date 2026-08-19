@@ -282,9 +282,31 @@ para el ensamble.
 es **I33** (plano 1-2, el del canto), aunque el comentario los llame `Iz Iy`. Y
 en `as ID As2 As3`, **As2 va con I33**. Cambiarlo cruza las inercias.
 
+**Cáscaras (19-ago):** `heks.py` monta ya `shell`, `areaload` (vector nodal
+consistente `∫N_i·q·dA`, Gauss 2x2 con jacobiano real), `shellmod` escalar y
+direccional y `shellang`. Medido contra el **WASM** por `cliModeler`: **10
+modelos al 0.0000 %**, hasta 1175 cáscaras / 1289 nudos
+(`hekatan-struct-py/tests/test_heks_shells.py`). Fuera todavía: `shelltype
+thin`, `spring`, `mass`, `diaph` — se cuentan en `ModeloHeks.ignorados` y
+avisan, no se callan.
+
+⚠️ **`shellQ4.ts` y `shellQ4.cpp` NO coinciden en la flexión de placa**: los
+modos incompatibles de Wilson están solo en la membrana del `.ts` y también en
+la flexión del `.cpp`. Manda el `.cpp`, que es el que se compila a WASM y da los
+números del producto (`index.ts` exporta `deformCpp`). Vale 1.8 % en una losa
+4x4. Arbitrado con Navier, que no es ninguno de los dos: en malla gruesa el que
+lleva los modos está 3 veces más cerca, y al refinar convergen. En Python es
+`BENDING_MODOS_INCOMPATIBLES` (True = el C++), con un test de paridad contra
+CADA motor — el del C++ por `tests/oraculo_wasm.mjs`.
+
+⚠️ Un GDL **sin rigidez ninguna** (diagonal y columna a cero) hay que sacarlo
+del sistema y dejarlo en 0: es el `getZerosIndices` de `deform.cpp`. Con él
+dentro no falla ese GDL, falla el modelo entero — `galpon_lc.heks` daba NaN en
+los 609 nudos por 9 GDL huérfanos de 3 nudos que solo tocan zinc sin flexión.
+
 ⚠️ `awatif-py/` es OTRO paquete (el fork original). Los tests que hacen
 `from awatif import ...` **no** prueban este motor; los de éste importan
-`hekatan_struct`. `pytest tests` → 13/13.
+`hekatan_struct`. `pytest tests` → **69 pasan**, 1 skip, 2 xfail.
 
 ## Suite de regresión: `npm test`
 
