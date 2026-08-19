@@ -1,0 +1,51 @@
+{
+  "_meta": {
+    "generated_utc": "2026-05-21T05:48:01.688776Z"
+  },
+  "exercise": "Guerra Ej.6 - Zapata Unida con Viga Amarre",
+  "model_path": "C:\\CSi_SAFE_API_Example\\guerra_ej6.fdb",
+  "inputs": {
+    "Z1_L": 2.38,
+    "Z1_B": 3.0,
+    "Col1_pos": [
+      0.25,
+      1.5
+    ],
+    "Z2_L": 2.45,
+    "Z2_B": 2.45,
+    "Col2_pos": [
+      5.244999999999999,
+      1.5
+    ],
+    "L_viga": 1.64,
+    "Bxh_viga": [
+      0.45,
+      0.95
+    ],
+    "h_zapata": 0.55,
+    "fc_kgcm2": 210,
+    "ks_tm3": 3820,
+    "P_D_C1": 70.0,
+    "P_L_C1": 40.0,
+    "P_D_C2": 89.0,
+    "P_L_C2": 51.0
+  },
+  "results_safe": {
+    "servicio": {
+      "sigma_max_tm2": 23.765,
+      "sigma_min_tm2": 14.446,
+      "n_rows": 1723
+    },
+    "ultimo": {
+      "sigma_max_tm2": 35.863,
+      "sigma_min_tm2": 21.802,
+      "n_rows": 1723
+    }
+  },
+  "manual_libro": {
+    "sigma_max_zapata1_tm2": 26.179,
+    "sigma_min_zapata1_tm2": 15.386,
+    "sigma_zapata2_avg_tm2": 16.734,
+    "_note": "Libro Fig.180 pag.119"
+  }
+}

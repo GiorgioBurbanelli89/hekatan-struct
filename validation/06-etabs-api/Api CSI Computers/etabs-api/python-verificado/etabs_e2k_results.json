@@ -1,0 +1,16 @@
+{
+  "rigid": {
+    "label": "RIGID DIAPHRAGM",
+    "T": [],
+    "UX": [],
+    "UY": [],
+    "RZ": []
+  },
+  "semi": {
+    "label": "SEMI-RIGID DIAPHRAGM (\u2248 Membrane)",
+    "T": [],
+    "UX": [],
+    "UY": [],
+    "RZ": []
+  }
+}

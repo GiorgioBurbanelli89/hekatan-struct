@@ -1,0 +1,72 @@
+"Plate Thin — Placa SS, carga uniforme [Calcpad Symbolic]
+"════════════════════════════════════════════════════════════
+"
+"Verificación cruzada del solver FEM de placa delgada (Kirchhoff/Mindlin
+"con integración selectiva) contra MATLAB R2017a y HekatanLab Web.
+"
+"Caso: 1×1×0.05, E=30000, ν=0.2, q=1, SS en los 4 bordes
+"────────────────────────────────────────────────────────────
+
+"### 1. Parámetros
+W = 1.0                                   'm — ancho de la placa
+H = 1.0                                   'm — alto
+t = 0.05                                  'm — espesor (t/a = 0.05 → delgada)
+E = 30000                                 'unidades consistentes
+nu = 0.2
+q = 1.0
+
+"### 2. Rigidez a flexión (Kirchhoff)
+D = E*t^3/(12*(1 - nu^2))
+"D — rigidez a flexión:" D
+
+"### 3. Solución analítica de Navier (Timoshenko, a/b=1)
+"Para placa SS cuadrada con carga uniforme:
+"  w_max = α · q · a⁴ / D    con α = 0.00406
+alpha_ref = 0.00406
+w_navier = alpha_ref*q*W^4/D
+"w_Navier:" w_navier
+
+"### 4. Convergencia FEM con refinamiento de malla
+"Vector de tamaños de malla y vector de α_FEM correspondientes.
+"Los α_FEM provienen de corridas previas en HekatanLab/MATLAB R2017a.
+n_mesh = vector(3)
+n_mesh.1 = 4
+n_mesh.2 = 8
+n_mesh.3 = 16
+
+alpha_fem = vector(3)
+alpha_fem.1 = 0.00446
+alpha_fem.2 = 0.00415
+alpha_fem.3 = 0.00408
+
+"### 5. Loop de convergencia: error porcentual vs Navier
+err = vector(3)
+w_fem = vector(3)
+#for k = 1 : 3
+	w_fem.k = alpha_fem.k*q*W^4/D
+	err.k = (alpha_fem.k/alpha_ref - 1)*100
+#loop
+'w_FEM por malla:' w_fem
+'α_FEM por malla:' alpha_fem
+'Error [%] vs Navier:' err
+
+"### 6. Tabla de paridad multi-entorno (malla 4×4)
+"────────────────────────────────────────────────────
+"  Entorno              w_max          α_FEM     Δ vs HekatanLab
+"────────────────────────────────────────────────────
+"  Navier analítica     1.247232e-2    0.00406   —
+"  MATLAB R2017a        1.371347e-2    0.00446   0.00%
+"  HekatanLab Web       1.371347e-2    0.00446   0.00%
+"  ETABS 18             pendiente      —         —
+"  SAP2000 v23          pendiente      —         —
+"  SAFE 2016            pendiente      —         —
+"  Calcpad Symbolic     (este script)  —         —
+"────────────────────────────────────────────────────
+
+"### 7. Conclusión
+"La paridad MATLAB ↔ HekatanLab es EXACTA (bit-a-bit a 7 sig.fig.).
+"El error vs Navier se reduce con malla más fina (loop de §5):
+"  4×4   → ~+9.9% del método FEM (capturado por err.1)
+"  8×8   → ~+2.2%                  (err.2)
+"  16×16 → ~+0.5%                  (err.3)
+"Para ingeniería práctica, malla 8×8 (<2.5%) es aceptable; 16×16 excelente.

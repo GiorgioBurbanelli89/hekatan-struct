@@ -1,0 +1,24 @@
+======================================================================
+  BARRA AXIAL 1D — validacion hekatan vs ETABS
+======================================================================
+  E2K   : C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\validacion\Etabs\barra_axial\barra_axial.e2k
+  EDB   : C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\validacion\Etabs\barra_axial\barra_axial.EDB
+  Log   : C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\validacion\Etabs\barra_axial\barra_axial_log.txt
+
+[1] Conectando a ETABS...
+    [..] Lanzando ETABS 22 con CreateObject(ETABS_EXE) + ApplicationStart...
+    [WARN] CreateObject(path) fallo: (-2146233077, None, ('No se pudo instalar un puerto IPC: El sistema no puede encontrar el archivo especificado.\r\n ', 'mscorlib', None, 0, None))
+    [..] Fallback: CreateObjectProgID ...
+    [OK] ETABS lanzado (via ProgID)
+
+[2] Abriendo E2K...
+
+[FATAL] COMError: (-2146233077, None, ('No se pudo escribir en un puerto IPC : Se está cerrando la canalización.\r\n', 'mscorlib', None, 0, None))
+Traceback (most recent call last):
+  File "C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\validacion\Etabs\barra_axial\run_barra_axial.py", line 168, in <module>
+    main()
+  File "C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\validacion\Etabs\barra_axial\run_barra_axial.py", line 77, in main
+    SapModel.SetPresentUnits(6)  # 6 = kN_m_C
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ctypes.COMError: (-2146233077, None, ('No se pudo escribir en un puerto IPC : Se está cerrando la canalización.\r\n', 'mscorlib', None, 0, None))
+

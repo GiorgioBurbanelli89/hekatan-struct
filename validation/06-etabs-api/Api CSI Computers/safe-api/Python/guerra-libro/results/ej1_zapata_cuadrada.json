@@ -1,0 +1,43 @@
+{
+  "_meta": {
+    "generated_utc": "2026-05-20T16:22:51.586827Z",
+    "tool": "SAFE 20 via Python API (CSI.SAFE.API.ETABSObject)",
+    "script": "ej1_zapata_cuadrada.py",
+    "safe_version": "20"
+  },
+  "exercise": "Guerra MDI Ej.1 - Zapata Aislada Cuadrada",
+  "build_method": "BUILD_FROM_API",
+  "model_path": "C:\\CSi_SAFE_API_Example\\guerra_ej1.fdb",
+  "inputs": {
+    "B_m": 3.45,
+    "L_m": 3.45,
+    "h_m": 0.45,
+    "col_size_m": 0.45,
+    "fc_kgcm2": 280,
+    "E_tm2": 2359381.3,
+    "nu": 0.2,
+    "gamma_c_tm3": 2.4,
+    "ks_tm3": 2920,
+    "P_dead_tonf": 91.0,
+    "M_dead_tonfm": 12.0,
+    "P_live_tonf": 30.0,
+    "M_live_tonfm": 5.0,
+    "combo_servicio": "1.0*Dead + 1.0*Live",
+    "combo_ultimo": "1.4*Dead + 1.7*Live"
+  },
+  "results_safe": {
+    "sigma_max_servicio_tm2": 12.94,
+    "sigma_min_servicio_tm2": 8.204,
+    "uz_max_abs_m": -0.004389,
+    "n_soil_rows": 144,
+    "n_disp_rows": 20,
+    "n_slab_rows": 0
+  },
+  "manual_libro_pag_19": {
+    "sigma_max_tm2": 13.94,
+    "sigma_min_tm2": 8.28
+  },
+  "safe_libro_pag_36": {
+    "sigma_max_servicio_tm2": 13.163
+  }
+}

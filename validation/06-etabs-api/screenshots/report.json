@@ -1,0 +1,268 @@
+[
+  {
+    "id": "barra-axial",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\barra-axial.png"
+  },
+  {
+    "id": "truss-gen",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\truss-gen.png"
+  },
+  {
+    "id": "portico-2d",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\portico-2d.png"
+  },
+  {
+    "id": "tower-3d",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\tower-3d.png"
+  },
+  {
+    "id": "galpon",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\galpon.png"
+  },
+  {
+    "id": "columna-cft",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\columna-cft.png"
+  },
+  {
+    "id": "conexion-rbs",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\conexion-rbs.png"
+  },
+  {
+    "id": "conexion-bfp",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\conexion-bfp.png"
+  },
+  {
+    "id": "conexion-end-plate",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\conexion-end-plate.png"
+  },
+  {
+    "id": "placa-base",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\placa-base.png"
+  },
+  {
+    "id": "edificio-aporticado",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\edificio-aporticado.png"
+  },
+  {
+    "id": "edificio-comparativa-fem",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\edificio-comparativa-fem.png"
+  },
+  {
+    "id": "edificio-hormigon",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\edificio-hormigon.png"
+  },
+  {
+    "id": "edificio-acero-v2",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\edificio-acero-v2.png"
+  },
+  {
+    "id": "edificio-mixto",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\edificio-mixto.png"
+  },
+  {
+    "id": "edificio-muros",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [
+      "Warning: Zero length element detected in getLocalStiffnessMatrixFrame. Returning zero matrix.",
+      "Warning: Zero length element detected in getTransformationMatrixFrame. Returning 12x12 zero matrix.",
+      "Warning: Zero length element detected in getLocalStiffnessMatrixFrame. Returning zero matrix."
+    ],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\edificio-muros.png"
+  },
+  {
+    "id": "edificio-dual",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [
+      "Warning: Kaa singular en getMembraneK, fallback a Q4 estandar.",
+      "Warning: Kaa singular en getBendingK_DSE_FULL, fallback a Kuu.",
+      "Warning: Kaa singular en getMembraneK, fallback a Q4 estandar."
+    ],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\edificio-dual.png"
+  },
+  {
+    "id": "edificio-con-losa",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\edificio-con-losa.png"
+  },
+  {
+    "id": "edificio-con-muros",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\edificio-con-muros.png"
+  },
+  {
+    "id": "edif-acero",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [
+      "Error: Matrix decomposition failed during solve."
+    ],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\edif-acero.png"
+  },
+  {
+    "id": "mezanine",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\mezanine.png"
+  },
+  {
+    "id": "plate-thin",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\plate-thin.png"
+  },
+  {
+    "id": "plate-thick",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\plate-thick.png"
+  },
+  {
+    "id": "triangular-plate",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\triangular-plate.png"
+  },
+  {
+    "id": "membrana-pstress",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\membrana-pstress.png"
+  },
+  {
+    "id": "membrana-csi",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\membrana-csi.png"
+  },
+  {
+    "id": "plane",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\plane.png"
+  },
+  {
+    "id": "shell-thin",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\shell-thin.png"
+  },
+  {
+    "id": "shell-thick",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\shell-thick.png"
+  },
+  {
+    "id": "zapata-aislada",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\zapata-aislada.png"
+  },
+  {
+    "id": "zapata-aislada-validacion",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\zapata-aislada-validacion.png"
+  },
+  {
+    "id": "zapata-viga-amarre",
+    "status": "OK",
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [],
+    "screenshot": "validation\\screenshots\\zapata-viga-amarre.png"
+  }
+]
