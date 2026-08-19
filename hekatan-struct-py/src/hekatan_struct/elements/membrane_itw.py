@@ -179,7 +179,8 @@ def k_membrana_itw(pts, E: float, nu: float, t: float,
                    gamma_fac: float = 0.4, n_gauss: int = 3,
                    con_burbuja: bool = True, con_penal: bool = True,
                    mod_dir=None, regla: str = "gauss",
-                   w_alpha: float = 0.99) -> np.ndarray:
+                   w_alpha: float = 0.99, penal_full: bool = False) -> np.ndarray:
+    # NOTA sobre `penal_full`: ver el aviso al final del docstring. NO USAR.
     """Rigidez 12x12 del elemento, GDL `[u0,v0,tz0, u1,v1,tz1, ...]`.
 
     `pts` son los cuatro `(x, y)` EN EL PLANO DEL ELEMENTO, antihorarios.
@@ -191,6 +192,20 @@ def k_membrana_itw(pts, E: float, nu: float, t: float,
     * `"itw8"` — la regla de ocho puntos del **ITW 1991**, ec. (30), que es la
       que cita el manual de CSI. `w_alpha` es su unico parametro; el paper solo
       dice *«close to 1»*. Ver `puntos_itw8`.
+
+    ⚠️ `penal_full=True` NO VALE — se deja solo para que no se vuelva a probar.
+    El paper de 1991 dice que la penalizacion del drilling se integra ENTERA
+    (*«unreduced integration is retained on the penalty part»*), y asi escrita
+    aqui el elemento se queda con CUATRO modos nulos y el patch test da un giro
+    de **1.8375** en vez de 0.6. Medido el 19-ago-2026.
+
+    Por que falla: el residuo de aqui esta escrito con el giro ABSOLUTO de nudo,
+    y el del 1991 va con **incrementos** — Wilson lo dice en su cap. 9, ec.
+    (9.12), donde el termino es `theta_0 - SUM N_i * DELTA-theta_i` y avisa de
+    que al sumar el rango uno *«el giro de nudo se convierte en absoluto»*. O
+    sea que integrar entera la penalizacion exige ANTES cambiar que significa el
+    grado de libertad. Integrarla entera sin ese cambio no es la receta del
+    paper: es otra cosa que ademas rompe el elemento.
     """
     X4 = np.asarray([p[0] for p in pts], float)
     Y4 = np.asarray([p[1] for p in pts], float)
@@ -243,7 +258,7 @@ def k_membrana_itw(pts, E: float, nu: float, t: float,
                           dNBx=(dNBx if con_burbuja else 0.0),
                           dNBy=(dNBy if con_burbuja else 0.0))
 
-    if con_penal:
+    if con_penal and not penal_full:
         if not centro:                    # con 2x2 el centro no es punto de Gauss
             dr, ds, Ji, dJ = _jacobiano(0.0, 0.0, X4, Y4)
             nsr, nss = _serendipity(0.0, 0.0)

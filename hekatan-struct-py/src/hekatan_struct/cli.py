@@ -71,6 +71,29 @@ def cmd_modos(a):
     return 0 if n == 3 else 1
 
 
+def cmd_hemisferio(a):
+    """El hemisferio pinzado, que es EL test de bloqueo de membrana.
+
+    Se itera aqui y no en la ventana porque lo unico que hace falta es un
+    numero: el desplazamiento del punto de carga contra 0.094.
+    """
+    from .benchmarks_shell3d import hemisferio_pinzado, REF_MACNEAL_HARDER, TABLA_II_1991
+    kw = {}
+    if a.regla == "itw8":
+        kw = dict(regla="itw8", con_burbuja=False, w_alpha=a.wa)
+    elif a.regla == "gauss2":
+        kw = dict(n_gauss=2)
+    if a.gamma is not None:
+        kw["gamma_fac"] = a.gamma
+    print("malla   Hekatan      vs 0.094    paper 1991")
+    for n in a.mallas:
+        v = hemisferio_pinzado(n, **kw)
+        ref = TABLA_II_1991.get(n)
+        print("%2dx%-2d  %10.6f  %+8.2f %%   %s"
+              % (n, n, v, (v / REF_MACNEAL_HARDER - 1) * 100,
+                 ("%.6f" % ref) if ref else "-"))
+
+
 def cmd_banco(a):
     from .benchmarks_itw import REF, test_i_patch, test_ii_cantilever, test_iii_cook
     f, g = test_i_patch(6)
@@ -116,6 +139,15 @@ def main(argv=None):
 
     q = sub.add_parser("banco", help="los tests del paper ITW 1990")
     q.set_defaults(fn=cmd_banco)
+
+    q = sub.add_parser("hemisferio", help="hemisferio pinzado (bloqueo de membrana)")
+    q.add_argument("--regla", default="gauss", choices=("gauss", "gauss2", "itw8"),
+                   help="gauss = ITW 1990 (defecto) · itw8 = la regla de 8 puntos del ITW 1991")
+    q.add_argument("--wa", type=float, default=0.99, help="W_alpha de la ec. (30)")
+    q.add_argument("--gamma", type=float, default=None, help="gamma/mu")
+    q.add_argument("--mallas", type=int, nargs="+", default=[4, 8],
+                   help="tamanos de malla n x n")
+    q.set_defaults(fn=cmd_hemisferio)
 
     a = p.parse_args(argv)
     return a.fn(a) or 0
