@@ -39,11 +39,36 @@ Etabs Powershell/*_results.json
 *.Y05
 *.Y06
 
-# ─── INVESTIGACIÓN / VALIDACIÓN (NO publicar) ──────────────────────────────
-# Carpeta de investigación personal (252 MB). Contiene material propietario de
-# CSI (.chm, .EDB, .FDB) que NO debe ir a un repo público MIT. Se mantiene local
-# (y/o en repo privado separado). Excluida del público por decisión 21-jun-2026.
-validacion/
+# ─── VALIDACIÓN ───────────────────────────────────────────────────────────
+# `validacion/` estuvo EXCLUIDA entera desde el 21-jun-2026 «por material
+# propietario de CSI (.chm, .EDB, .FDB)». Revisado el 19-ago-2026: la regla
+# estaba aplicada AL REVÉS.
+#
+#   validacion/        excluida  →  tenía 0 binarios de CSI y 0 .chm
+#   benchmarks/        publicada →  6 binarios CSI
+#   Benchmark_Placa/   publicada → 20 binarios CSI
+#
+# O sea: lo que se escondía no tenía nada que esconder, y lo que sí lo tenía
+# estaba publicado. Ahora todo vive en `validation/`, que SÍ se publica —
+# es la validación del solver y es lo que da confianza al que lo usa— y se
+# excluye por EXTENSIÓN solo lo que de verdad no debe ir:
+#   · la ayuda de CSI (.chm), que es documentación con copyright;
+#   · los temporales del solver (.Y*, .K_*, .OUT, .LOG, .msh, .ico), que son
+#     regenerables y ocupaban 782 archivos, 241 de ellos versionados.
+*.chm
+validation/**/*.Y
+validation/**/*.Y[0-9]*
+validation/**/*.Y_
+validation/**/*.Y$$
+validation/**/*.K_*
+validation/**/*.F_*
+validation/**/*.T_*
+validation/**/*.D_*
+validation/**/*.msh
+validation/**/*.ico
+validation/**/*.$sf
+validation/**/*.$et
+validation/**/*.$2k
 
 # Copia duplicada del paquete hekatan-fem dentro de cli/ (con su node_modules)
 cli/hekatan-fem/
@@ -80,6 +105,6 @@ assets/*.js
 # ─── Modelos de ETABS ───────────────────────────────────────────────────
 # Los .e2k SÍ se versionan (texto, se ve el diff, formato de intercambio).
 # Los .edb NO: son binarios, git no los puede diferenciar y se regeneran en un
-# minuto desde el .e2k con `e2k_a_edb.py`. Ver modelos-etabs/LEEME.md.
-modelos-etabs/edb/**
-!modelos-etabs/edb/.gitignore
+# minuto desde el .e2k con `e2k_a_edb.py`. Ver validation/modelos/LEEME.md.
+validation/modelos/edb/**
+!validation/modelos/edb/.gitignore

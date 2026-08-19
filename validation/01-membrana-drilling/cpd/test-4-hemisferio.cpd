@@ -1,0 +1,476 @@
+"Test IV — Cáscara hemisférica pinchada (membrana ITW + placa MITC4), forma didáctica
+#include mlplot.cpd
+'Hemisferio con hueco de 18° cargado por 2 fuerzas opuestas en el ecuador (pinched). Benchmark
+'clásico de cáscaras (MacNeal-Harder). El elemento plano de cáscara combina la MEMBRANA ITW de los
+'Test I–III (u, v, θ_z) con la PLACA de flexión MITC4 (w, θ_x, θ_y) → 6 GDL por nudo, con un marco
+'local por faceta y transformación a ejes globales (Ibrahimbegovic-Wilson 1991). Convención: altura = Z.
+'Referencia (desplazamiento radial bajo la carga) -'δ_ref = 0.094
+"1. Datos de entrada
+'Radio de la esfera -'R = 10
+'Módulo de elasticidad -'E = 68250000
+'Coeficiente de Poisson -'ν = 0.3
+'Espesor (cáscara delgada) -'t = 0.04
+'Malla del cuarto de esfera (por simetría) -'n_x = 8' × 'n_y = 8
+"2. Formulación del elemento de cáscara plano
+'Cada faceta Q4 tiene su marco local (e_1, e_2, normal n). En ese plano se calculan:
+'· la rigidez de MEMBRANA K_m (12×12) con el elemento ITW con drilling (integración reducida 2×2),
+'· la rigidez de FLEXIÓN K_b (12×12) con la placa MITC4 (Mindlin, amarre de cortante Dvorkin-Bathe).
+'Se combinan en la matriz de cáscara de 24×24 (6 GDL/nudo) y se rota a globales: K_e = Tᵀ·K_e,local·T.
+'Matriz constitutiva de membrana D_m (tensión plana, ×t):
+Dm = E/(1 - ν^2)*[1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]*t
+'Matriz constitutiva de flexión D_b = E·t³/(12(1−ν²))·[…]:
+Db = E*t^3/(12*(1 - ν^2))*[1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]
+#hide
+'--- malla 3D (grados) ---
+n_j = (n_x + 1)*(n_y + 1)
+x3 = vector(n_j)
+y3 = vector(n_j)
+z3 = vector(n_j)
+#for jj = 0 : n_y
+	#for ii = 0 : n_x
+		k = jj*(n_x + 1) + ii + 1
+		phi = ii/n_x*90
+		pol = 18 + jj/n_y*72
+		x3.k = R*sin(pol)*cos(phi)
+		y3.k = R*sin(pol)*sin(phi)
+		z3.k = R*cos(pol)
+	#loop
+#loop
+n_e = n_x*n_y
+e_j = matrix(n_e; 4)
+#for jj = 0 : n_y - 1
+	#for ii = 0 : n_x - 1
+		e = jj*n_x + ii + 1
+		e_j.(e; 1) = jj*(n_x + 1) + ii + 1
+		e_j.(e; 2) = jj*(n_x + 1) + ii + 2
+		e_j.(e; 3) = (jj + 1)*(n_x + 1) + ii + 2
+		e_j.(e; 4) = (jj + 1)*(n_x + 1) + ii + 1
+	#loop
+#loop
+'--- constitutivas ---
+c_m = E/(1 - ν^2)
+Dm = c_m*[1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]*t
+G = E/(2*(1 + ν))
+γ = G
+D0 = E*t^3/(12*(1 - ν^2))
+Db = D0*[1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]
+Ds = (5/6)*G*t*[1; 0 | 0; 1]
+g2 = 1/sqrt(3)
+gp = [-g2; -g2 | g2; -g2 | g2; g2 | -g2; g2]
+r_n(i) = take(i; -1; 1; 1; -1)
+s_n(i) = take(i; -1; -1; 1; 1)
+n_g = 6*n_j
+K = symmetric(n_g)
+'================= LOOP DE ELEMENTOS =================
+#for e = 1 : n_e
+	q1 = e_j.(e; 1)
+	q2 = e_j.(e; 2)
+	q3 = e_j.(e; 3)
+	q4 = e_j.(e; 4)
+	'--- marco local: o, e1, n, e2 ---
+	ox = x3.q1
+	oy = y3.q1
+	oz = z3.q1
+	a1x = x3.q2 - ox
+	a1y = y3.q2 - oy
+	a1z = z3.q2 - oz
+	La = sqrt(a1x^2 + a1y^2 + a1z^2)
+	e1x = a1x/La
+	e1y = a1y/La
+	e1z = a1z/La
+	b4x = x3.q4 - ox
+	b4y = y3.q4 - oy
+	b4z = z3.q4 - oz
+	nnx = a1y*b4z - a1z*b4y
+	nny = a1z*b4x - a1x*b4z
+	nnz = a1x*b4y - a1y*b4x
+	Ln = sqrt(nnx^2 + nny^2 + nnz^2)
+	nx = nnx/Ln
+	ny = nny/Ln
+	nz = nnz/Ln
+	e2x = ny*e1z - nz*e1y
+	e2y = nz*e1x - nx*e1z
+	e2z = nx*e1y - ny*e1x
+	Rm = [e1x; e1y; e1z | e2x; e2y; e2z | nx; ny; nz]
+	'--- coords locales 2D ---
+	X4 = vector(4)
+	Y4 = vector(4)
+	#for i = 1 : 4
+		qi = e_j.(e; i)
+		dxg = x3.qi - ox
+		dyg = y3.qi - oy
+		dzg = z3.qi - oz
+		X4.i = dxg*e1x + dyg*e1y + dzg*e1z
+		Y4.i = dxg*e2x + dyg*e2y + dzg*e2z
+	#loop
+	'========== MEMBRANA ITW (reducida 2x2) ==========
+	cx_e = vector(4)
+	cy_e = vector(4)
+	#for ed = 1 : 4
+		kc = take(ed; 2; 3; 4; 1)
+		cx_e.ed = (Y4.kc - Y4.ed)/8
+		cy_e.ed = -(X4.kc - X4.ed)/8
+	#loop
+	K14 = matrix(14; 14)
+	#for ig = 1 : 4
+		rr = gp.(ig; 1)
+		ss = gp.(ig; 2)
+		dr = vector(4)
+		ds = vector(4)
+		#for ii = 1 : 4
+			dr.ii = 0.25*r_n(ii)*(1 + s_n(ii)*ss)
+			ds.ii = 0.25*s_n(ii)*(1 + r_n(ii)*rr)
+		#loop
+		J11 = $Sum{dr.kk*X4.kk @ kk = 1 : 4}
+		J12 = $Sum{dr.kk*Y4.kk @ kk = 1 : 4}
+		J21 = $Sum{ds.kk*X4.kk @ kk = 1 : 4}
+		J22 = $Sum{ds.kk*Y4.kk @ kk = 1 : 4}
+		dJ = J11*J22 - J12*J21
+		Ji11 = J22/dJ
+		Ji12 = -J12/dJ
+		Ji21 = -J21/dJ
+		Ji22 = J11/dJ
+		dNx = vector(4)
+		dNy = vector(4)
+		NSx = vector(4)
+		NSy = vector(4)
+		#for ii = 1 : 4
+			dNx.ii = Ji11*dr.ii + Ji12*ds.ii
+			dNy.ii = Ji21*dr.ii + Ji22*ds.ii
+			nsr = 0.5*take(ii; -2*rr*(1 - ss); 1 - ss^2; -2*rr*(1 + ss); -(1 - ss^2))
+			nss = 0.5*take(ii; -(1 - rr^2); -2*ss*(1 + rr); 1 - rr^2; -2*ss*(1 - rr))
+			NSx.ii = Ji11*nsr + Ji12*nss
+			NSy.ii = Ji21*nsr + Ji22*nss
+		#loop
+		nbr = -2*rr*(1 - ss^2)
+		nbs = -2*ss*(1 - rr^2)
+		dNBx = Ji11*nbr + Ji12*nbs
+		dNBy = Ji21*nbr + Ji22*nbs
+		gt1 = vector(4)
+		gt2 = vector(4)
+		gt3 = vector(4)
+		gt4 = vector(4)
+		#for ii = 1 : 4
+			ep = take(ii; 4; 1; 2; 3)
+			gt1.ii = NSx.ep*cx_e.ep - NSx.ii*cx_e.ii
+			gt2.ii = NSy.ep*cx_e.ep - NSy.ii*cx_e.ii
+			gt3.ii = NSx.ep*cy_e.ep - NSx.ii*cy_e.ii
+			gt4.ii = NSy.ep*cy_e.ep - NSy.ii*cy_e.ii
+		#loop
+		Bm = [ _
+		dNx.1; 0; gt1.1; dNx.2; 0; gt1.2; dNx.3; 0; gt1.3; dNx.4; 0; gt1.4; dNBx; 0 | _
+		0; dNy.1; gt4.1; 0; dNy.2; gt4.2; 0; dNy.3; gt4.3; 0; dNy.4; gt4.4; 0; dNBy | _
+		dNy.1; dNx.1; gt2.1 + gt3.1; dNy.2; dNx.2; gt2.2 + gt3.2; dNy.3; dNx.3; gt2.3 + gt3.3; dNy.4; dNx.4; gt2.4 + gt3.4; dNBy; dNBx]
+		K14 = K14 + dJ*transp(Bm)*Dm*Bm
+	#loop
+	'res0 + penalización drilling en (0,0)
+	dr0 = vector(4)
+	ds0 = vector(4)
+	NN0 = vector(4)
+	#for ii = 1 : 4
+		dr0.ii = 0.25*r_n(ii)
+		ds0.ii = 0.25*s_n(ii)
+		NN0.ii = 0.25
+	#loop
+	JA = $Sum{dr0.kk*X4.kk @ kk = 1 : 4}
+	JB = $Sum{dr0.kk*Y4.kk @ kk = 1 : 4}
+	JC = $Sum{ds0.kk*X4.kk @ kk = 1 : 4}
+	JD = $Sum{ds0.kk*Y4.kk @ kk = 1 : 4}
+	dJ0 = JA*JD - JB*JC
+	Q11 = JD/dJ0
+	Q12 = -JB/dJ0
+	Q21 = -JC/dJ0
+	Q22 = JA/dJ0
+	dNx0 = vector(4)
+	dNy0 = vector(4)
+	NSx0 = vector(4)
+	NSy0 = vector(4)
+	#for ii = 1 : 4
+		dNx0.ii = Q11*dr0.ii + Q12*ds0.ii
+		dNy0.ii = Q21*dr0.ii + Q22*ds0.ii
+		nsr0 = 0.5*take(ii; 0; 1; 0; -1)
+		nss0 = 0.5*take(ii; -1; 0; 1; 0)
+		NSx0.ii = Q11*nsr0 + Q12*nss0
+		NSy0.ii = Q21*nsr0 + Q22*nss0
+	#loop
+	gt20 = vector(4)
+	gt30 = vector(4)
+	#for ii = 1 : 4
+		ep = take(ii; 4; 1; 2; 3)
+		gt20.ii = NSy0.ep*cx_e.ep - NSy0.ii*cx_e.ii
+		gt30.ii = NSx0.ep*cy_e.ep - NSx0.ii*cy_e.ii
+	#loop
+	res0 = vector(14)
+	#for ii = 1 : 4
+		res0.(3*ii - 2) = -0.5*dNy0.ii
+		res0.(3*ii - 1) = 0.5*dNx0.ii
+		res0.(3*ii) = 0.5*(gt30.ii - gt20.ii) - NN0.ii
+	#loop
+	res0.13 = 0
+	res0.14 = 0
+	Ppen = matrix(14; 14)
+	$Repeat{$Repeat{Ppen.(ap; bp) = res0.ap*res0.bp @ bp = 1 : 14} @ ap = 1 : 14}
+	K14 = K14 + γ*t*4*dJ0*Ppen
+	Kbb = submatrix(K14; 13; 14; 13; 14)
+	Kab = submatrix(K14; 1; 12; 13; 14)
+	Kuu = submatrix(K14; 1; 12; 1; 12)
+	Km = Kuu - Kab*inverse(Kbb)*transp(Kab)
+	'========== PLACA MITC4 ==========
+	x = X4
+	y = Y4
+	'jac en (0,0)
+	dx00 = [-0.25; 0.25; 0.25; -0.25]
+	de00 = [-0.25; -0.25; 0.25; 0.25]
+	JA0 = $Sum{dx00.kk*x.kk @ kk = 1 : 4}
+	JB0 = $Sum{dx00.kk*y.kk @ kk = 1 : 4}
+	JC0 = $Sum{de00.kk*x.kk @ kk = 1 : 4}
+	JD0 = $Sum{de00.kk*y.kk @ kk = 1 : 4}
+	dJ00 = JA0*JD0 - JB0*JC0
+	I011 = JD0/dJ00
+	I012 = -JB0/dJ00
+	I021 = -JC0/dJ00
+	I022 = JA0/dJ00
+	Kuu2 = matrix(12; 12)
+	Kua = matrix(12; 4)
+	Kaa = matrix(4; 4)
+	#for kg = 1 : 4
+		xi = gp.(kg; 1)
+		et = gp.(kg; 2)
+		dxk = vector(4)
+		dek = vector(4)
+		#for i = 1 : 4
+			dxk.i = 0.25*r_n(i)*(1 + s_n(i)*et)
+			dek.i = 0.25*s_n(i)*(1 + r_n(i)*xi)
+		#loop
+		jA = $Sum{dxk.kk*x.kk @ kk = 1 : 4}
+		jB = $Sum{dxk.kk*y.kk @ kk = 1 : 4}
+		jC = $Sum{dek.kk*x.kk @ kk = 1 : 4}
+		jD = $Sum{dek.kk*y.kk @ kk = 1 : 4}
+		dJk = jA*jD - jB*jC
+		i11 = jD/dJk
+		i12 = -jB/dJk
+		i21 = -jC/dJk
+		i22 = jA/dJk
+		Bb = matrix(3; 12)
+		#for i = 1 : 4
+			ddx = i11*dxk.i + i12*dek.i
+			ddy = i21*dxk.i + i22*dek.i
+			Bb.(1; 3*i) = -ddx
+			Bb.(2; 3*i - 1) = ddy
+			Bb.(3; 3*i - 1) = ddx
+			Bb.(3; 3*i) = -ddy
+		#loop
+		d5x = I011*(-2*xi)
+		d5y = I021*(-2*xi)
+		d6x = I012*(-2*et)
+		d6y = I022*(-2*et)
+		Ba = [0; 0; -d5x; -d6x | d5y; d6y; 0; 0 | d5x; d6x; -d5y; -d6y]
+		Kuu2 = Kuu2 + abs(dJk)*transp(Bb)*Db*Bb
+		Kua = Kua + abs(dJk)*transp(Bb)*Db*Ba
+		Kaa = Kaa + abs(dJk)*transp(Ba)*Db*Ba
+	#loop
+	'cortante MITC4: puntos de amarre A(0,-1) C(0,1) Bd(-1,0) D(1,0)
+	BsA = matrix(2; 12)
+	BsC = matrix(2; 12)
+	BsBd = matrix(2; 12)
+	BsD = matrix(2; 12)
+	#for tp = 1 : 4
+		xp = take(tp; 0; 0; -1; 1)
+		ep = take(tp; -1; 1; 0; 0)
+		Np = vector(4)
+		dxp = vector(4)
+		dep = vector(4)
+		#for i = 1 : 4
+			Np.i = 0.25*(1 + r_n(i)*xp)*(1 + s_n(i)*ep)
+			dxp.i = 0.25*r_n(i)*(1 + s_n(i)*ep)
+			dep.i = 0.25*s_n(i)*(1 + r_n(i)*xp)
+		#loop
+		pA = $Sum{dxp.kk*x.kk @ kk = 1 : 4}
+		pB = $Sum{dxp.kk*y.kk @ kk = 1 : 4}
+		pC = $Sum{dep.kk*x.kk @ kk = 1 : 4}
+		pD = $Sum{dep.kk*y.kk @ kk = 1 : 4}
+		pdJ = pA*pD - pB*pC
+		p11 = pD/pdJ
+		p12 = -pB/pdJ
+		p21 = -pC/pdJ
+		p22 = pA/pdJ
+		Bsp = matrix(2; 12)
+		#for i = 1 : 4
+			ddx = p11*dxp.i + p12*dep.i
+			ddy = p21*dxp.i + p22*dep.i
+			Bsp.(1; 3*i - 2) = ddx
+			Bsp.(1; 3*i) = Np.i
+			Bsp.(2; 3*i - 2) = ddy
+			Bsp.(2; 3*i - 1) = -Np.i
+		#loop
+		#if tp ≡ 1
+			BsA = Bsp
+		#end if
+		#if tp ≡ 2
+			BsC = Bsp
+		#end if
+		#if tp ≡ 3
+			BsBd = Bsp
+		#end if
+		#if tp ≡ 4
+			BsD = Bsp
+		#end if
+	#loop
+	#for kg = 1 : 4
+		xi = gp.(kg; 1)
+		et = gp.(kg; 2)
+		dxk = vector(4)
+		dek = vector(4)
+		#for i = 1 : 4
+			dxk.i = 0.25*r_n(i)*(1 + s_n(i)*et)
+			dek.i = 0.25*s_n(i)*(1 + r_n(i)*xi)
+		#loop
+		jA = $Sum{dxk.kk*x.kk @ kk = 1 : 4}
+		jB = $Sum{dxk.kk*y.kk @ kk = 1 : 4}
+		jC = $Sum{dek.kk*x.kk @ kk = 1 : 4}
+		jD = $Sum{dek.kk*y.kk @ kk = 1 : 4}
+		dJk = jA*jD - jB*jC
+		Bs = matrix(2; 12)
+		#for cc = 1 : 12
+			Bs.(1; cc) = 0.5*(1 - et)*BsA.(1; cc) + 0.5*(1 + et)*BsC.(1; cc)
+			Bs.(2; cc) = 0.5*(1 - xi)*BsBd.(2; cc) + 0.5*(1 + xi)*BsD.(2; cc)
+		#loop
+		Kuu2 = Kuu2 + abs(dJk)*transp(Bs)*Ds*Bs
+	#loop
+	Kb = Kuu2 - Kua*inverse(Kaa)*transp(Kua)
+	'========== ENSAMBLAR 24x24 + TRANSFORM ==========
+	K24 = matrix(24; 24)
+	mi = [1; 2; 6]
+	bi = [3; 4; 5]
+	#for I = 1 : 4
+		#for Jx = 1 : 4
+			#for a = 1 : 3
+				#for b = 1 : 3
+					ra = 6*(I - 1) + mi.a
+					ca = 6*(Jx - 1) + mi.b
+					K24.(ra; ca) = K24.(ra; ca) + Km.(3*(I - 1) + a; 3*(Jx - 1) + b)
+					rb = 6*(I - 1) + bi.a
+					cb = 6*(Jx - 1) + bi.b
+					K24.(rb; cb) = K24.(rb; cb) + Kb.(3*(I - 1) + a; 3*(Jx - 1) + b)
+				#loop
+			#loop
+		#loop
+	#loop
+	Tt = matrix(24; 24)
+	#for I = 1 : 4
+		#for a = 1 : 3
+			#for b = 1 : 3
+				Tt.(6*(I - 1) + a; 6*(I - 1) + b) = Rm.(a; b)
+				Tt.(6*(I - 1) + 3 + a; 6*(I - 1) + 3 + b) = Rm.(a; b)
+			#loop
+		#loop
+	#loop
+	Ke = transp(Tt)*K24*Tt
+	'--- ensamblaje global (6 GDL/nudo) ---
+	#for i = 1 : 4
+		#for j = 1 : 4
+			j1 = e_j.(e; i)
+			j2 = e_j.(e; j)
+			#if j2 ≥ j1
+				i1 = 6*(j1 - 1) + 1
+				i2 = 6*(j2 - 1) + 1
+				kij = submatrix(Ke; 6*(i - 1) + 1; 6*i; 6*(j - 1) + 1; 6*j)
+				add(kij; K; i1; i2)
+			#end if
+		#loop
+	#loop
+#loop
+'================= ESTABILIZAR DRILLING + APOYOS (simetría) + CARGA =================
+'estabilizar drilling puro (diagonal ~ 0): dmx del K ENSAMBLADO, ANTES de la penalización
+dmx = 0
+#for ii = 1 : n_g
+	#if K.(ii; ii) > dmx
+		dmx = K.(ii; ii)
+	#end if
+#loop
+#for ii = 1 : n_g
+	#if K.(ii; ii) < 0.000000001*dmx
+		K.(ii; ii) = K.(ii; ii) + 0.001*dmx
+	#end if
+#loop
+k_s = 10^15
+#for jj = 0 : n_y
+	n0 = jj*(n_x + 1) + 0 + 1
+	nL = jj*(n_x + 1) + n_x + 1
+	d = 6*(n0 - 1)
+	K.(d + 2; d + 2) = K.(d + 2; d + 2) + k_s
+	K.(d + 4; d + 4) = K.(d + 4; d + 4) + k_s
+	K.(d + 6; d + 6) = K.(d + 6; d + 6) + k_s
+	dL = 6*(nL - 1)
+	K.(dL + 1; dL + 1) = K.(dL + 1; dL + 1) + k_s
+	K.(dL + 5; dL + 5) = K.(dL + 5; dL + 5) + k_s
+	K.(dL + 6; dL + 6) = K.(dL + 6; dL + 6) + k_s
+#loop
+F = vector(n_g)
+nP1 = n_y*(n_x + 1) + 0 + 1
+nP2 = n_y*(n_x + 1) + n_x + 1
+F.(6*(nP1 - 1) + 1) = 1
+F.(6*(nP2 - 1) + 2) = -1
+Z = lsolve(K; F)
+tip = abs(Z.(6*(nP1 - 1) + 1))
+ux_j = vector(n_j)
+uy_j = vector(n_j)
+uz_j = vector(n_j)
+um_j = vector(n_j)
+#for j = 1 : n_j
+	ux_j.j = Z.(6*(j - 1) + 1)
+	uy_j.j = Z.(6*(j - 1) + 2)
+	uz_j.j = Z.(6*(j - 1) + 3)
+	um_j.j = sqrt(ux_j.j^2 + uy_j.j^2 + uz_j.j^2)
+#loop
+umax = max(um_j)
+amp = 0.25*R/umax
+dx3 = vector(n_j)
+dy3 = vector(n_j)
+dz3 = vector(n_j)
+#for j = 1 : n_j
+	dx3.j = x3.j + amp*ux_j.j
+	dy3.j = y3.j + amp*uy_j.j
+	dz3.j = z3.j + amp*uz_j.j
+#loop
+dxmin = min(dx3)
+dxmax = max(dx3)
+dymin = min(dy3)
+dymax = max(dy3)
+dzmin = min(dz3)
+dzmax = max(dz3)
+WW = 620
+HH = 560
+#show
+"3. Solución y validación
+'Desplazamiento radial bajo la carga -'δ_tip = tip
+'Referencia MacNeal-Harder -'δ_ref = 0.094'  →  error = 'e_r = (tip - 0.094)/0.094*100'%
+'Convergencia del mismo elemento: 4×4 → 0.031, 8×8 → 0.089, 16×16 → 0.093 (la cáscara con hueco converge lento).
+'Validación cruzada: Calcpad = MATLAB = Python (8×8 = 0.0894) — mismo elemento ITW+MITC4.
+"4. Cáscara deformada en 3D (color = |u|, jet_r) — rota con el mouse; pasa el cursor para ver |u| en cada nudo
+#val
+figure3$(test4; WW; HH)
+view3$(35; 20)
+axis3$(dxmin; dxmax; dymin; dymax; dzmin; dzmax)
+cartesian3$(dxmin; dxmax; dymin; dymax; dzmin; dzmax; 4; 4)
+#for e = 1 : n_e
+	#hide
+	q1 = e_j.(e; 1)
+	q2 = e_j.(e; 2)
+	q3 = e_j.(e; 3)
+	q4 = e_j.(e; 4)
+	t1 = um_j.q1/umax
+	t2 = um_j.q2/umax
+	t3 = um_j.q3/umax
+	t4 = um_j.q4/umax
+	#show
+	fill3$(dx3.q1; dy3.q1; dz3.q1; dx3.q2; dy3.q2; dz3.q2; dx3.q3; dy3.q3; dz3.q3; dx3.q4; dy3.q4; dz3.q4; t1; t2; t3; t4)
+#loop
+datatip3$(|u|)
+#for j = 1 : n_j
+	datapoint3d$(dx3.j; dy3.j; dz3.j; um_j.j)
+#loop
+render3$
+endfig$
+colorbar3$(0; umax; HH)
+#equ

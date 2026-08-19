@@ -1,7 +1,0 @@
- SAPFire results-database version:           74
- Type    Result      File                  Records
- Resp    Displ       .Y00                        1                 40320
- Resp    React       .Y04                        1                 40320
- Resp    JFJoint     .Y01                        1                 40320
- Resp    JFLink      .Y02                        1                123648
- Resp    JFSpring    .Y03                        1                 40320

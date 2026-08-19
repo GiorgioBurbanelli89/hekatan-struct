@@ -31,8 +31,8 @@ import { fileURLToPath } from "node:url";
 import { empaquetar, R } from "../tests/lib/bundle.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const CARPETA = process.argv[2] || join(__dirname, "..", "modelos-etabs", "etabs-json");
-const INFORME = process.argv[3] || join(__dirname, "..", "modelos-etabs", "COMPARACION_ETABS.md");
+const CARPETA = process.argv[2] || join(__dirname, "..", "validation/modelos", "etabs-json");
+const INFORME = process.argv[3] || join(__dirname, "..", "validation/modelos", "COMPARACION_ETABS.md");
 
 const TOL_COORD = 2e-3;      // m
 const TOL_REL = 1e-3;        // 0.1 % en secciones y cargas

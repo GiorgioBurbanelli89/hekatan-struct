@@ -11,8 +11,14 @@ import { fileURLToPath, pathToFileURL } from "url";
 import { dirname, join } from "path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const wasmPath = join(__dirname, "hekatan-fem", "src", "cpp", "built", "deform.wasm");
-const jsPath = join(__dirname, "hekatan-fem", "src", "cpp", "built", "deform.js");
+// ⚠️ `..` a proposito: el WASM es el del PAQUETE, no una copia dentro de cli/.
+// Habia una copia duplicada en `cli/hekatan-fem/` (ignorada por git) y el CLI
+// cargaba ESA. Hoy 19-ago-2026 daban el mismo binario byte a byte, pero por
+// sincronizacion a mano: en cuanto se recompile el paquete y no se copie, el
+// CLI resuelve con un motor VIEJO y no avisa. El caso `cli-igual-que-wasm` de
+// la suite vigila que no vuelva a pasar.
+const wasmPath = join(__dirname, "..", "hekatan-fem", "src", "cpp", "built", "deform.wasm");
+const jsPath = join(__dirname, "..", "hekatan-fem", "src", "cpp", "built", "deform.js");
 const createModule = (await import(pathToFileURL(jsPath).href)).default;
 const mod = await createModule({ wasmBinary: readFileSync(wasmPath) });
 

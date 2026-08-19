@@ -17,12 +17,19 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { fileURLToPath, pathToFileURL } from "url";
 import { dirname, join } from "path";
+import { motor } from "./lib/motor.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ── Load WASM ──────────────────────────────────────────────────────
-const wasmPath = join(__dirname, "hekatan-fem", "src", "cpp", "built", "deform.wasm");
-const jsPath = join(__dirname, "hekatan-fem", "src", "cpp", "built", "deform.js");
+// ⚠️ `..` a proposito: el WASM es el del PAQUETE, no una copia dentro de cli/.
+// Habia una copia duplicada en `cli/hekatan-fem/` (ignorada por git) y el CLI
+// cargaba ESA. Hoy 19-ago-2026 daban el mismo binario byte a byte, pero por
+// sincronizacion a mano: en cuanto se recompile el paquete y no se copie, el
+// CLI resuelve con un motor VIEJO y no avisa. El caso `cli-igual-que-wasm` de
+// la suite vigila que no vuelva a pasar.
+const wasmPath = join(__dirname, "..", "hekatan-fem", "src", "cpp", "built", "deform.wasm");
+const jsPath = join(__dirname, "..", "hekatan-fem", "src", "cpp", "built", "deform.js");
 const createModule = (await import(pathToFileURL(jsPath).href)).default;
 const mod = await createModule({ wasmBinary: readFileSync(wasmPath) });
 
@@ -43,177 +50,27 @@ function processInput(inputMap) {
 }
 
 // ── Static Analysis (deform) ────────────────────────────────────────
-function runDeform(nodes, elements, nodeInputs, elementInputs) {
-  const gc = [];
-
-  const nodesPtr = allocate(nodes.flat(), Float64Array, mod.HEAPF64); gc.push(nodesPtr);
-  const elementIndices = elements.flat();
-  const elementsPtr = allocate(elementIndices, Uint32Array, mod.HEAPU32); gc.push(elementsPtr);
-  const elementSizes = elements.map(e => e.length);
-  const elementSizesPtr = allocate(elementSizes, Uint32Array, mod.HEAPU32); gc.push(elementSizesPtr);
-
-  // Supports
-  const supportKeys = nodeInputs.supports ? Array.from(nodeInputs.supports.keys()) : [];
-  const supportValues = nodeInputs.supports
-    ? Array.from(nodeInputs.supports.values()).flat().map(b => b ? 1 : 0) : [];
-  const supportKeysPtr = allocate(supportKeys, Uint32Array, mod.HEAPU32); gc.push(supportKeysPtr);
-  const supportValuesPtr = allocate(supportValues, Uint8Array, mod.HEAPU8); gc.push(supportValuesPtr);
-
-  // Loads
-  const loadKeys = nodeInputs.loads ? Array.from(nodeInputs.loads.keys()) : [];
-  const loadValues = nodeInputs.loads ? Array.from(nodeInputs.loads.values()).flat() : [];
-  const loadKeysPtr = allocate(loadKeys, Uint32Array, mod.HEAPU32); gc.push(loadKeysPtr);
-  const loadValuesPtr = allocate(loadValues, Float64Array, mod.HEAPF64); gc.push(loadValuesPtr);
-
-  // Element inputs
-  const ei = elementInputs;
-  const E = processInput(ei.elasticities); gc.push(...E.gc);
-  const A = processInput(ei.areas); gc.push(...A.gc);
-  const Iz = processInput(ei.momentsOfInertiaZ); gc.push(...Iz.gc);
-  const Iy = processInput(ei.momentsOfInertiaY); gc.push(...Iy.gc);
-  const G = processInput(ei.shearModuli); gc.push(...G.gc);
-  const J = processInput(ei.torsionalConstants); gc.push(...J.gc);
-  // Extra inputs required by _deform signature (thickness, poisson, elasticitiesOrthogonal)
-  const thick = processInput(ei.thicknesses || new Map()); gc.push(...thick.gc);
-  const poiss = processInput(ei.poissonsRatios || new Map()); gc.push(...poiss.gc);
-  const eOrtho = processInput(ei.elasticitiesOrthogonal || new Map()); gc.push(...eOrtho.gc);
-
-  // Output pointers
-  const deformPtrOut = mod._malloc(4); gc.push(deformPtrOut);
-  const deformSizeOut = mod._malloc(4); gc.push(deformSizeOut);
-  const reactPtrOut = mod._malloc(4); gc.push(reactPtrOut);
-  const reactSizeOut = mod._malloc(4); gc.push(reactSizeOut);
-
-  mod._deform(
-    nodesPtr, nodes.length,
-    elementsPtr, elementIndices.length,
-    elementSizesPtr, elements.length,
-    supportKeysPtr, supportValuesPtr, supportKeys.length,
-    loadKeysPtr, loadValuesPtr, loadKeys.length,
-    E.keysPtr, E.valuesPtr, E.size,
-    A.keysPtr, A.valuesPtr, A.size,
-    Iz.keysPtr, Iz.valuesPtr, Iz.size,
-    Iy.keysPtr, Iy.valuesPtr, Iy.size,
-    G.keysPtr, G.valuesPtr, G.size,
-    J.keysPtr, J.valuesPtr, J.size,
-    thick.keysPtr, thick.valuesPtr, thick.size,
-    poiss.keysPtr, poiss.valuesPtr, poiss.size,
-    eOrtho.keysPtr, eOrtho.valuesPtr, eOrtho.size,
-    deformPtrOut, deformSizeOut,
-    reactPtrOut, reactSizeOut
-  );
-
-  const dPtr = mod.HEAPU32[deformPtrOut / 4];
-  const dSize = mod.HEAPU32[deformSizeOut / 4];
-  const rPtr = mod.HEAPU32[reactPtrOut / 4];
-  const rSize = mod.HEAPU32[reactSizeOut / 4];
-
-  // Output format: [nodeIndex, v0, v1, v2, v3, v4, v5, nodeIndex, ...] stride=7
-  const deformations = new Map();
-  if (dSize > 0 && dPtr) {
-    const flat = new Float64Array(mod.HEAPF64.buffer, dPtr, dSize);
-    for (let i = 0; i < dSize; i += 7) {
-      const idx = flat[i];
-      deformations.set(idx, Array.from(flat.slice(i + 1, i + 7)));
-    }
-    gc.push(dPtr);
-  }
-
-  const reactions = new Map();
-  if (rSize > 0 && rPtr) {
-    const flat = new Float64Array(mod.HEAPF64.buffer, rPtr, rSize);
-    for (let i = 0; i < rSize; i += 7) {
-      const idx = flat[i];
-      reactions.set(idx, Array.from(flat.slice(i + 1, i + 7)));
-    }
-    gc.push(rPtr);
-  }
-
-  gc.forEach(ptr => mod._free(ptr));
-  return { deformations, reactions };
+async function runDeform(nodes, elements, nodeInputs, elementInputs) {
+  // ⚠️ Esto armaba los punteros de `_deform` A MANO. La firma de `_deform` ha
+  // ido creciendo (areas de cortante, muelles, formulacion de placa, tipo de
+  // drilling, modificadores, releases) y el CLI se quedo parado: el C++ pide
+  // 111 parametros y aqui se pasaban 43. Cualquier `node cli.mjs frame ...`
+  // reventaba con `memory access out of bounds`, y no lo cazaba nada porque
+  // ningun test ejecutaba el CLI.
+  //
+  // Ahora entra por LA MISMA PUERTA que la app: `deform` de hekatan-fem. Asi
+  // el CLI y el motor no pueden dar numeros distintos, que es justo lo que se
+  // le pide a un CLI.
+  const { deform } = await motor();
+  return deform(nodes, elements, nodeInputs, elementInputs);
 }
 
 // ── Modal Analysis ──────────────────────────────────────────────────
-function runModal(nodes, elements, nodeInputs, elementInputs, numModes = 6) {
-  const gc = [];
-
-  const nodesPtr = allocate(nodes.flat(), Float64Array, mod.HEAPF64); gc.push(nodesPtr);
-  const elementIndices = elements.flat();
-  const elementsPtr = allocate(elementIndices, Uint32Array, mod.HEAPU32); gc.push(elementsPtr);
-  const elementSizes = elements.map(e => e.length);
-  const elementSizesPtr = allocate(elementSizes, Uint32Array, mod.HEAPU32); gc.push(elementSizesPtr);
-
-  const supportKeys = nodeInputs.supports ? Array.from(nodeInputs.supports.keys()) : [];
-  const supportValues = nodeInputs.supports
-    ? Array.from(nodeInputs.supports.values()).flat().map(b => b ? 1 : 0) : [];
-  const supportKeysPtr = allocate(supportKeys, Uint32Array, mod.HEAPU32); gc.push(supportKeysPtr);
-  const supportValuesPtr = allocate(supportValues, Uint8Array, mod.HEAPU8); gc.push(supportValuesPtr);
-
-  const ei = elementInputs;
-  const E = processInput(ei.elasticities); gc.push(...E.gc);
-  const A = processInput(ei.areas); gc.push(...A.gc);
-  const Iz = processInput(ei.momentsOfInertiaZ); gc.push(...Iz.gc);
-  const Iy = processInput(ei.momentsOfInertiaY); gc.push(...Iy.gc);
-  const G = processInput(ei.shearModuli); gc.push(...G.gc);
-  const J = processInput(ei.torsionalConstants); gc.push(...J.gc);
-  const rho = processInput(ei.densities); gc.push(...rho.gc);
-
-  const freqPtrOut = mod._malloc(4); gc.push(freqPtrOut);
-  const numFreqOut = mod._malloc(4); gc.push(numFreqOut);
-  const modesPtrOut = mod._malloc(4); gc.push(modesPtrOut);
-  const modesRowsOut = mod._malloc(4); gc.push(modesRowsOut);
-  const modesColsOut = mod._malloc(4); gc.push(modesColsOut);
-  const massPtrOut = mod._malloc(4); gc.push(massPtrOut);
-  const massRowsOut = mod._malloc(4); gc.push(massRowsOut);
-  const massColsOut = mod._malloc(4); gc.push(massColsOut);
-
-  mod._modal(
-    nodesPtr, nodes.length,
-    elementsPtr, elementIndices.length,
-    elementSizesPtr, elements.length,
-    supportKeysPtr, supportValuesPtr, supportKeys.length,
-    E.keysPtr, E.valuesPtr, E.size,
-    A.keysPtr, A.valuesPtr, A.size,
-    Iz.keysPtr, Iz.valuesPtr, Iz.size,
-    Iy.keysPtr, Iy.valuesPtr, Iy.size,
-    G.keysPtr, G.valuesPtr, G.size,
-    J.keysPtr, J.valuesPtr, J.size,
-    rho.keysPtr, rho.valuesPtr, rho.size,
-    numModes,
-    freqPtrOut, numFreqOut,
-    modesPtrOut, modesRowsOut, modesColsOut,
-    massPtrOut, massRowsOut, massColsOut
-  );
-
-  const freqPtr = mod.HEAPU32[freqPtrOut / 4];
-  const nFreq = mod.HEAPU32[numFreqOut / 4];
-  const modesPtr = mod.HEAPU32[modesPtrOut / 4];
-  const nRows = mod.HEAPU32[modesRowsOut / 4];
-  const nCols = mod.HEAPU32[modesColsOut / 4];
-  const massPtr = mod.HEAPU32[massPtrOut / 4];
-  const massRows = mod.HEAPU32[massRowsOut / 4];
-  const massCols = mod.HEAPU32[massColsOut / 4];
-
-  let frequencies = [], modeShapes = [], massParticipation = [];
-  if (nFreq > 0 && freqPtr) {
-    frequencies = Array.from(new Float64Array(mod.HEAPF64.buffer, freqPtr, nFreq));
-    gc.push(freqPtr);
-  }
-  if (nRows > 0 && nCols > 0 && modesPtr) {
-    const flat = new Float64Array(mod.HEAPF64.buffer, modesPtr, nRows * nCols);
-    for (let i = 0; i < nRows; i++)
-      modeShapes.push(Array.from(flat.slice(i * nCols, (i + 1) * nCols)));
-    gc.push(modesPtr);
-  }
-  if (massRows > 0 && massCols > 0 && massPtr) {
-    const flat = new Float64Array(mod.HEAPF64.buffer, massPtr, massRows * massCols);
-    for (let i = 0; i < massRows; i++)
-      massParticipation.push(Array.from(flat.slice(i * massCols, (i + 1) * massCols)));
-    gc.push(massPtr);
-  }
-
-  gc.forEach(ptr => mod._free(ptr));
-  return { frequencies, modeShapes, massParticipation };
+async function runModal(nodes, elements, nodeInputs, elementInputs, numModes = 6) {
+  // Lo mismo que runDeform: se armaban los punteros de `_modal` a mano y la
+  // firma se habia movido. Ahora va por el paquete.
+  const { modalAnalysis } = await motor();
+  return modalAnalysis(nodes, elements, nodeInputs, elementInputs, numModes);
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -452,7 +309,7 @@ function parseArgs(args) {
   return { params, doStatic, doModal, jsonOut };
 }
 
-function main() {
+async function main() {
   const args = process.argv.slice(2);
 
   if (args.length === 0 || args[0] === "help") {
@@ -520,7 +377,7 @@ Ejemplos:
 
   if (doStatic) {
     const ts = performance.now();
-    const staticResult = runDeform(model.nodes, model.elements, model.nodeInputs, model.elementInputs);
+    const staticResult = await runDeform(model.nodes, model.elements, model.nodeInputs, model.elementInputs);
     const staticTime = performance.now() - ts;
     printStatic(staticResult, model.nodes, model.nodeInputs);
     console.log(`  Tiempo: ${(staticTime).toFixed(1)} ms`);
@@ -538,7 +395,7 @@ Ejemplos:
   if (doModal) {
     const numModes = params.modes || 6;
     const tm = performance.now();
-    const modalResult = runModal(model.nodes, model.elements, model.nodeInputs, model.elementInputs, numModes);
+    const modalResult = await runModal(model.nodes, model.elements, model.nodeInputs, model.elementInputs, numModes);
     const modalTime = performance.now() - tm;
     printModal(modalResult);
     console.log(`  Tiempo: ${(modalTime).toFixed(1)} ms`);

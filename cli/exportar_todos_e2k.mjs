@@ -5,14 +5,14 @@
  *
  *   node cli/exportar_todos_e2k.mjs [carpeta-destino]
  *
- * Por defecto escribe en `modelos-etabs/e2k/`. Las carpetas van sin emojis y
+ * Por defecto escribe en `validation/modelos/e2k/`. Las carpetas van sin emojis y
  * en minusculas (`1-frames/1-gdl-axial/galpon.e2k`): el arbol se mantiene, pero
  * un nombre de carpeta con emoji da guerra en Windows, en git y al copiarlo a
  * otra maquina.
  *
  * Solo los .e2k, que son TEXTO: se ve el diff y es el formato de intercambio
  * que documenta CSI. Los .edb son binarios, pesan y no se pueden diferenciar,
- * asi que su carpeta va ignorada en git (ver modelos-etabs/edb/LEEME.md).
+ * asi que su carpeta va ignorada en git (ver validation/modelos/edb/LEEME.md).
  *
  * Los ejemplos `legacy` del upstream no tienen `build()` y no se pueden
  * exportar: se listan al final para que quede dicho, no callado.
@@ -23,7 +23,7 @@ import { fileURLToPath } from "node:url";
 import { empaquetar, R } from "../tests/lib/bundle.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DESTINO = process.argv[2] || join(__dirname, "..", "modelos-etabs", "e2k");
+const DESTINO = process.argv[2] || join(__dirname, "..", "validation/modelos", "e2k");
 
 /** "2️⃣ Shells · 🧰 Cimentaciones" -> ["2-shells", "cimentaciones"] */
 function carpetasDe(cat) {

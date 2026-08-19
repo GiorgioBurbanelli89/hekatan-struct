@@ -43,7 +43,7 @@ export function exportar(id, over) {
 }
 `;
 const m = await empaquetar(FUENTE, "itw-export2");
-const DIR = "modelos-etabs/e2k/9-itw";
+const DIR = "validation/modelos/e2k/9-itw";
 mkdirSync(DIR, { recursive: true });
 const CASOS = [["itw-patch-test",{nx:6}],["itw-cantilever",{nx:16,ny:4}],["itw-cook",{n:8}],["itw-hemisferio",{n:8}]];
 const res = {};

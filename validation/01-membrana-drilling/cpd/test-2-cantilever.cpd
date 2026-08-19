@@ -1,0 +1,305 @@
+"Test II — Voladizo corto a cortante (elemento ITW-1990 con drilling), forma didáctica
+#include mlplot.cpd
+'Voladizo corto cargado a cortante puro en el extremo. Mide la respuesta a flexión/cortante
+'del elemento de membrana con drilling de Ibrahimbegovic-Taylor-Wilson (1990).
+'Referencia (flecha del extremo) -'δ_ref = 0.3553
+'Convención (ETABS/SAP): X = ancho/largo, Z = altura (peralte), Y = normal al plano (sale del plano).
+'Por eso los GDL por nudo son u_x, u_z y el drilling θ_y (giro sobre la normal Y).
+"1. Datos de entrada
+'Módulo de elasticidad -'E = 30000
+'Coeficiente de Poisson -'ν = 0.25
+'Espesor -'t = 1
+'Carga cortante total (hacia abajo, en el extremo) -'V = 40
+'Geometría: voladizo 'L = 48' (X) × 'H = 12' (Z, peralte)
+"2. Malla de elementos finitos
+'Divisiones -'n_a = 8' × 'n_b = 3
+'Número de elementos -'n_e = n_a*n_b
+'Grados de libertad por nudo (u_x, u_z, θ_y) -'n = 3
+'Número de nudos -'n_j = (n_a + 1)*(n_b + 1)
+#hide
+x_j = vector(n_j)
+z_j = vector(n_j)
+#for j_b = 0 : n_b
+	#for i_a = 0 : n_a
+		k = j_b*(n_a + 1) + i_a + 1
+		x_j.k = i_a*L/n_a
+		z_j.k = j_b*H/n_b
+	#loop
+#loop
+e_j = matrix(n_e; 4)
+#for j_b = 0 : n_b - 1
+	#for i_a = 0 : n_a - 1
+		e = j_b*n_a + i_a + 1
+		e_j.(e; 1) = j_b*(n_a + 1) + i_a + 1
+		e_j.(e; 2) = j_b*(n_a + 1) + i_a + 2
+		e_j.(e; 3) = (j_b + 1)*(n_a + 1) + i_a + 2
+		e_j.(e; 4) = (j_b + 1)*(n_a + 1) + i_a + 1
+	#loop
+#loop
+#show
+'Coordenadas x (ancho) de los nudos:
+transp(x_j)
+'Coordenadas z (altura) de los nudos:
+transp(z_j)
+'Conectividad de los elementos (4 nudos por fila):
+e_j
+"3. Formulación del elemento ITW
+'Funciones de forma bilineales (coordenadas naturales r, s ∈ [−1, 1]); el nudo i tiene signos:
+r_n(i) = take(i; -1; 1; 1; -1)
+s_n(i) = take(i; -1; -1; 1; 1)
+N(i; r; s) = 0.25*(1 + r_n(i)*r)*(1 + s_n(i)*s)
+'Derivadas naturales:
+N_r(i; r; s) = 0.25*r_n(i)*(1 + s_n(i)*s)
+N_s(i; r; s) = 0.25*s_n(i)*(1 + r_n(i)*r)
+'El Jacobiano J transforma derivadas naturales → físicas (aquí los elementos son rectángulos).
+'Drilling de Allman: el giro θ_y (sobre la normal Y) se acopla por las funciones de arista NS;
+'le da al elemento la rigidez rotacional que un Q4 clásico no tiene.
+NS_r(e; r; s) = 0.5*take(e; -2*r*(1 - s); 1 - s^2; -2*r*(1 + s); -(1 - s^2))
+NS_s(e; r; s) = 0.5*take(e; -(1 - r^2); -2*s*(1 + r); 1 - r^2; -2*s*(1 - r))
+'Más dos modos burbuja internos (se condensan al final).
+'Matriz constitutiva (tensión plana, CON espesor t):
+D = E*t/(1 - ν^2)*[1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]
+'Integración de Gauss 3×3 y penalización de drilling γ = G:
+g_p = [-sqrt(3/5); 0; sqrt(3/5)]
+g_w = [5/9; 8/9; 5/9]
+γ = E/(2*(1 + ν))
+'Por cada elemento: K_14 = Σ Bᵀ·D·B·det(J)·w + γ·t·4·det(J₀)·(res₀·res₀ᵀ), luego se condensan
+'los 2 modos burbuja → K_e (12×12). Misma formulación del paper ITW-1990.
+#hide
+n_g = n*n_j
+K = symmetric(n_g)
+#for e = 1 : n_e
+	q_1 = e_j.(e; 1)
+	q_2 = e_j.(e; 2)
+	q_3 = e_j.(e; 3)
+	q_4 = e_j.(e; 4)
+	X4 = [x_j.q_1; x_j.q_2; x_j.q_3; x_j.q_4]
+	Y4 = [z_j.q_1; z_j.q_2; z_j.q_3; z_j.q_4]
+	cx_e = vector(4)
+	cy_e = vector(4)
+	#for ed = 1 : 4
+		kc = take(ed; 2; 3; 4; 1)
+		cx_e.ed = (Y4.kc - Y4.ed)/8
+		cy_e.ed = -(X4.kc - X4.ed)/8
+	#loop
+	K14 = matrix(14; 14)
+	dJ0 = 0
+	#for i_g = 1 : 3
+		#for j_g = 1 : 3
+			rr = g_p.i_g
+			ss = g_p.j_g
+			ww = g_w.i_g*g_w.j_g
+			dr = vector(4)
+			ds = vector(4)
+			NN = vector(4)
+			#for ii = 1 : 4
+				dr.ii = N_r(ii; rr; ss)
+				ds.ii = N_s(ii; rr; ss)
+				NN.ii = N(ii; rr; ss)
+			#loop
+			J11 = $Sum{dr.kk*X4.kk @ kk = 1 : 4}
+			J12 = $Sum{dr.kk*Y4.kk @ kk = 1 : 4}
+			J21 = $Sum{ds.kk*X4.kk @ kk = 1 : 4}
+			J22 = $Sum{ds.kk*Y4.kk @ kk = 1 : 4}
+			dJ = J11*J22 - J12*J21
+			Ji11 = J22/dJ
+			Ji12 = -J12/dJ
+			Ji21 = -J21/dJ
+			Ji22 = J11/dJ
+			dNx = vector(4)
+			dNy = vector(4)
+			NSx = vector(4)
+			NSy = vector(4)
+			#for ii = 1 : 4
+				dNx.ii = Ji11*dr.ii + Ji12*ds.ii
+				dNy.ii = Ji21*dr.ii + Ji22*ds.ii
+				nsr = NS_r(ii; rr; ss)
+				nss = NS_s(ii; rr; ss)
+				NSx.ii = Ji11*nsr + Ji12*nss
+				NSy.ii = Ji21*nsr + Ji22*nss
+			#loop
+			nbr = -2*rr*(1 - ss^2)
+			nbs = -2*ss*(1 - rr^2)
+			dNBx = Ji11*nbr + Ji12*nbs
+			dNBy = Ji21*nbr + Ji22*nbs
+			gt1 = vector(4)
+			gt2 = vector(4)
+			gt3 = vector(4)
+			gt4 = vector(4)
+			#for ii = 1 : 4
+				ep = take(ii; 4; 1; 2; 3)
+				gt1.ii = NSx.ep*cx_e.ep - NSx.ii*cx_e.ii
+				gt2.ii = NSy.ep*cx_e.ep - NSy.ii*cx_e.ii
+				gt3.ii = NSx.ep*cy_e.ep - NSx.ii*cy_e.ii
+				gt4.ii = NSy.ep*cy_e.ep - NSy.ii*cy_e.ii
+			#loop
+			Bm = [ _
+			dNx.1; 0; gt1.1; dNx.2; 0; gt1.2; dNx.3; 0; gt1.3; dNx.4; 0; gt1.4; dNBx; 0 | _
+			0; dNy.1; gt4.1; 0; dNy.2; gt4.2; 0; dNy.3; gt4.3; 0; dNy.4; gt4.4; 0; dNBy | _
+			dNy.1; dNx.1; gt2.1 + gt3.1; dNy.2; dNx.2; gt2.2 + gt3.2; dNy.3; dNx.3; gt2.3 + gt3.3; dNy.4; dNx.4; gt2.4 + gt3.4; dNBy; dNBx]
+			K14 = K14 + ww*dJ*transp(Bm)*D*Bm
+			#if i_g ≡ 2
+				#if j_g ≡ 2
+					Bm0 = Bm
+					dNx0 = dNx
+					dNy0 = dNy
+					gt20 = gt2
+					gt30 = gt3
+					NN0 = NN
+					dNBx0 = dNBx
+					dNBy0 = dNBy
+					dJ0 = dJ
+				#end if
+			#end if
+		#loop
+	#loop
+	res0 = vector(14)
+	#for ii = 1 : 4
+		res0.(3*ii - 2) = -0.5*dNy0.ii
+		res0.(3*ii - 1) = 0.5*dNx0.ii
+		res0.(3*ii) = 0.5*(gt30.ii - gt20.ii) - NN0.ii
+	#loop
+	res0.13 = -0.5*dNBy0
+	res0.14 = 0.5*dNBx0
+	P_pen = matrix(14; 14)
+	$Repeat{$Repeat{P_pen.(a_p; b_p) = res0.a_p*res0.b_p @ b_p = 1 : 14} @ a_p = 1 : 14}
+	K14 = K14 + γ*t*4*dJ0*P_pen
+	Kbb = submatrix(K14; 13; 14; 13; 14)
+	Kab = submatrix(K14; 1; 12; 13; 14)
+	Kba = submatrix(K14; 13; 14; 1; 12)
+	Kuu = submatrix(K14; 1; 12; 1; 12)
+	det_b = Kbb.(1; 1)*Kbb.(2; 2) - Kbb.(1; 2)*Kbb.(2; 1)
+	Kbb_inv = [Kbb.(2; 2); -Kbb.(1; 2) | -Kbb.(2; 1); Kbb.(1; 1)]/det_b
+	K_e = Kuu - Kab*Kbb_inv*Kba
+	#if e ≡ 1
+		Bc1 = Bm0
+		Ke1 = K_e
+	#end if
+	#for i = 1 : 4
+		#for j = 1 : 4
+			j_1 = e_j.(e; i)
+			j_2 = e_j.(e; j)
+			#if j_2 ≥ j_1
+				i_1 = n*(j_1 - 1) + 1
+				i_2 = n*(j_2 - 1) + 1
+				k_ij = submatrix(K_e; n*(i - 1) + 1; n*i; n*(j - 1) + 1; n*j)
+				add(k_ij; K; i_1; i_2)
+			#end if
+		#loop
+	#loop
+#loop
+#show
+"3b. Matrices del elemento finito (ejemplo: elemento 1)
+'<b>Matriz constitutiva D</b> — tensión plana (3×3); relaciona tensiones y deformaciones:
+D
+'<b>Matriz deformación–desplazamiento B</b> en el centro del elemento 1 (3 × 14 GDL: 12 nodales u_x, u_z, θ_y + 2 burbuja):
+Bc1
+'La rigidez del elemento se obtiene integrando Bᵀ·D·B sobre el dominio natural (numéricamente, Gauss 3×3) y sumando la penalización de drilling γ:
+#noc
+K_e = $Area{$Area{Bᵀ*D*B*detJ @ ξ = -1 : 1} @ η = -1 : 1} + γ*t*4*detJ_0*r_0*r_0ᵀ
+#equ
+'Luego se condensan estáticamente los 2 modos burbuja (GDL 13 y 14) → K_e queda 12×12:
+#noc
+K_e = K_uu - K_ub*K_bb^-1*K_bu
+#equ
+'<b>Matriz de rigidez del elemento 1</b>, condensada (12×12):
+Ke1
+"4. Apoyos y carga
+'Apoyo: borde izquierdo (x = 0) empotrado — fijos u_x, u_z y el giro θ_y.
+'Carga: cortante V (hacia abajo) repartido (trapezoidal) sobre u_z en el extremo (x = L).
+#hide
+k_s = 10^12
+#for j = 1 : n_j
+	#if x_j.j ≡ 0
+		d = n*(j - 1)
+		K.(d + 1; d + 1) = K.(d + 1; d + 1) + k_s
+		K.(d + 2; d + 2) = K.(d + 2; d + 2) + k_s
+		K.(d + 3; d + 3) = K.(d + 3; d + 3) + k_s
+	#end if
+#loop
+F = vector(n_g)
+#for j = 1 : n_j
+	#if x_j.j ≡ L
+		d = n*(j - 1) + 2
+		w_l = 1/n_b
+		#if z_j.j ≡ 0
+			w_l = 1/(2*n_b)
+		#end if
+		#if z_j.j ≡ H
+			w_l = 1/(2*n_b)
+		#end if
+		F.d = F.d - V*w_l
+	#end if
+#loop
+#show
+"5. Solución del sistema  K · Z = F
+'Tras ensamblar todos los elementos y aplicar los apoyos, K es 'n_g'×'n_g'. Esquina superior 6×6 (el 10¹² en la diagonal = apoyo por penalización del nudo 1 en x = 0):
+submatrix(K; 1; 6; 1; 6)
+#hide
+Z = clsolve(K; F)
+ux_j = vector(n_j)
+uz_j = vector(n_j)
+um_j = vector(n_j)
+#for j = 1 : n_j
+	ux_j.j = Z.(n*(j - 1) + 1)
+	uz_j.j = Z.(n*(j - 1) + 2)
+	um_j.j = sqrt(ux_j.j^2 + uz_j.j^2)
+#loop
+umax = max(um_j)
+jtip = 1
+d_min = 10^9
+#for j = 1 : n_j
+	#if x_j.j ≡ L
+		d_d = abs(z_j.j - H/2)
+		#if d_d < d_min
+			d_min = d_d
+			jtip = j
+		#end if
+	#end if
+#loop
+amp = 0.18*sqrt(L^2 + H^2)/umax
+dx_j = vector(n_j)
+dz_j = vector(n_j)
+#for j = 1 : n_j
+	dx_j.j = x_j.j + amp*ux_j.j
+	dz_j.j = z_j.j + amp*uz_j.j
+#loop
+dxmin = min(dx_j)
+dxmax = max(dx_j)
+dzmin = min(dz_j)
+dzmax = max(dz_j)
+ybox = (dxmax - dxmin)*0.16
+WW = 620
+HH = 360
+#show
+"6. Resultados
+'Flecha del extremo (media altura) -'δ_tip = abs(uz_j.jtip)
+'Referencia del test -'δ_ref = 0.3553'  →  error = 'e_r = (δ_tip - δ_ref)/δ_ref*100'%
+'Validación cruzada: Calcpad = MATLAB (0.3524) = Python (0.352386) — el mismo elemento ITW.
+"7. Malla deformada en 3D (color = |u|, jet_r) — plano X-Z, Y = normal; rotar con el mouse
+#val
+figure3$(test2; WW; HH)
+view3$(20; 10)
+axis3$(dxmin; dxmax; -ybox; ybox; dzmin; dzmax)
+cartesian3$(dxmin; dxmax; -ybox; ybox; dzmin; dzmax; 4; 3)
+#for e = 1 : n_e
+	#hide
+	q1 = e_j.(e; 1)
+	q2 = e_j.(e; 2)
+	q3 = e_j.(e; 3)
+	q4 = e_j.(e; 4)
+	t1 = um_j.q1/umax
+		t2 = um_j.q2/umax
+		t3 = um_j.q3/umax
+		t4 = um_j.q4/umax
+	#show
+	fill3$(dx_j.q1; 0; dz_j.q1; dx_j.q2; 0; dz_j.q2; dx_j.q3; 0; dz_j.q3; dx_j.q4; 0; dz_j.q4; t1; t2; t3; t4)
+#loop
+datatip3$(|u|)
+#for j = 1 : n_j
+	datapoint3$(dx_j.j; dz_j.j; um_j.j)
+#loop
+render3$
+endfig$
+colorbar3$(0; umax; HH)
+#equ

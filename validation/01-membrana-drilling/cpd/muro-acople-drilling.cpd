@@ -1,0 +1,308 @@
+"Muros de corte acoplados (ITW drilling) - 2 muros + viga de acople; el momento entra por rz
+#include mlplot.cpd
+'Dos muros de corte (membrana ITW) unidos por una VIGA DE ACOPLE. La viga mete su momento a
+'cada muro por el GDL drilling (rz) -> acopla los muros y reduce la deriva (vs muro aislado).
+'Muros: E = 'E = 24850000', ν = 'ν = 0.20', t = 't = 0.25', c/u 'W = 2' x 'H = 4' m, gap = 'gap = 1.5', malla 'n_x = 3' x 'n_z = 6
+'Viga: Eb = 'E_b = 24850000', seccion 'b_b = 0.25' x 'h_b = 0.8', 'N_B = 4' elem | Cargas: lateral 'FLAT = 100' + gravedad 'GRAV = 200
+n = 3
+A_b = b_b*h_b
+I_b = b_b*h_b^3/12
+#hide
+'--- malla: 2 muros (pilas) + nudos intermedios de la viga ---
+n_pp = (n_x + 1)*(n_z + 1)
+n_j = 2*n_pp + N_B - 1
+x_j = vector(n_j)
+y_j = vector(n_j)
+#for pp = 1 : 2
+	x0 = (pp - 1)*(W + gap)
+	#for j_b = 0 : n_z
+		#for i_a = 0 : n_x
+			k = (pp - 1)*n_pp + j_b*(n_x + 1) + i_a + 1
+			x_j.k = x0 + i_a*W/n_x
+			y_j.k = j_b*H/n_z
+		#loop
+	#loop
+#loop
+#for ib = 1 : N_B - 1
+	k = 2*n_pp + ib
+	x_j.k = W + gap*ib/N_B
+	y_j.k = H
+#loop
+'--- conectividad muros (Q4) ---
+n_ew = 2*n_x*n_z
+e_j = matrix(n_ew; 4)
+#for pp = 1 : 2
+	#for j_b = 0 : n_z - 1
+		#for i_a = 0 : n_x - 1
+			e = (pp - 1)*n_x*n_z + j_b*n_x + i_a + 1
+			bs = (pp - 1)*n_pp
+			e_j.(e; 1) = bs + j_b*(n_x + 1) + i_a + 1
+			e_j.(e; 2) = bs + j_b*(n_x + 1) + i_a + 2
+			e_j.(e; 3) = bs + (j_b + 1)*(n_x + 1) + i_a + 2
+			e_j.(e; 4) = bs + (j_b + 1)*(n_x + 1) + i_a + 1
+		#loop
+	#loop
+#loop
+'--- lista de nudos de la viga de acople (pilar1 sup-der -> pilar2 sup-izq) ---
+nL = n_pp
+nR = n_pp + n_z*(n_x + 1) + 1
+b_n = vector(N_B + 1)
+b_n.1 = nL
+#for ib = 1 : N_B - 1
+	b_n.(ib + 1) = 2*n_pp + ib
+#loop
+b_n.(N_B + 1) = nR
+'--- constitutiva (CON espesor t) + Gauss + funciones naturales ---
+r_n(i) = take(i; -1; 1; 1; -1)
+s_n(i) = take(i; -1; -1; 1; 1)
+D = E*t/(1 - ν^2)*[1; ν; 0 | ν; 1; 0 | 0; 0; (1 - ν)/2]
+g_p = [-sqrt(3/5); 0; sqrt(3/5)]
+g_w = [5/9; 8/9; 5/9]
+γ = E/(2*(1 + ν))
+n_g = n*n_j
+K = symmetric(n_g)
+'--- ENSAMBLAJE muros: K_e isoparametrico (Jacobiano completo) por elemento ---
+#for e = 1 : n_ew
+	q_1 = e_j.(e; 1)
+	q_2 = e_j.(e; 2)
+	q_3 = e_j.(e; 3)
+	q_4 = e_j.(e; 4)
+	X4 = [x_j.q_1; x_j.q_2; x_j.q_3; x_j.q_4]
+	Y4 = [y_j.q_1; y_j.q_2; y_j.q_3; y_j.q_4]
+	cx_e = vector(4)
+	cy_e = vector(4)
+	#for ed = 1 : 4
+		kc = take(ed; 2; 3; 4; 1)
+		cx_e.ed = (Y4.kc - Y4.ed)/8
+		cy_e.ed = -(X4.kc - X4.ed)/8
+	#loop
+	K14 = matrix(14; 14)
+	dJ0 = 0
+	#for i_g = 1 : 3
+		#for j_g = 1 : 3
+			rr = g_p.i_g
+			ss = g_p.j_g
+			ww = g_w.i_g*g_w.j_g
+			dr = vector(4)
+			ds = vector(4)
+			NN = vector(4)
+			#for ii = 1 : 4
+				dr.ii = 0.25*r_n(ii)*(1 + s_n(ii)*ss)
+				ds.ii = 0.25*s_n(ii)*(1 + r_n(ii)*rr)
+				NN.ii = 0.25*(1 + r_n(ii)*rr)*(1 + s_n(ii)*ss)
+			#loop
+			J11 = $Sum{dr.kk*X4.kk @ kk = 1 : 4}
+			J12 = $Sum{dr.kk*Y4.kk @ kk = 1 : 4}
+			J21 = $Sum{ds.kk*X4.kk @ kk = 1 : 4}
+			J22 = $Sum{ds.kk*Y4.kk @ kk = 1 : 4}
+			dJ = J11*J22 - J12*J21
+			Ji11 = J22/dJ
+			Ji12 = -J12/dJ
+			Ji21 = -J21/dJ
+			Ji22 = J11/dJ
+			dNx = vector(4)
+			dNy = vector(4)
+			NSx = vector(4)
+			NSy = vector(4)
+			#for ii = 1 : 4
+				dNx.ii = Ji11*dr.ii + Ji12*ds.ii
+				dNy.ii = Ji21*dr.ii + Ji22*ds.ii
+				nsr = 0.5*take(ii; -2*rr*(1 - ss); 1 - ss^2; -2*rr*(1 + ss); -(1 - ss^2))
+				nss = 0.5*take(ii; -(1 - rr^2); -2*ss*(1 + rr); 1 - rr^2; -2*ss*(1 - rr))
+				NSx.ii = Ji11*nsr + Ji12*nss
+				NSy.ii = Ji21*nsr + Ji22*nss
+			#loop
+			nbr = -2*rr*(1 - ss^2)
+			nbs = -2*ss*(1 - rr^2)
+			dNBx = Ji11*nbr + Ji12*nbs
+			dNBy = Ji21*nbr + Ji22*nbs
+			gt1 = vector(4)
+			gt2 = vector(4)
+			gt3 = vector(4)
+			gt4 = vector(4)
+			#for ii = 1 : 4
+				ep = take(ii; 4; 1; 2; 3)
+				gt1.ii = NSx.ep*cx_e.ep - NSx.ii*cx_e.ii
+				gt2.ii = NSy.ep*cx_e.ep - NSy.ii*cx_e.ii
+				gt3.ii = NSx.ep*cy_e.ep - NSx.ii*cy_e.ii
+				gt4.ii = NSy.ep*cy_e.ep - NSy.ii*cy_e.ii
+			#loop
+			Bm = [ _
+			dNx.1; 0; gt1.1; dNx.2; 0; gt1.2; dNx.3; 0; gt1.3; dNx.4; 0; gt1.4; dNBx; 0 | _
+			0; dNy.1; gt4.1; 0; dNy.2; gt4.2; 0; dNy.3; gt4.3; 0; dNy.4; gt4.4; 0; dNBy | _
+			dNy.1; dNx.1; gt2.1 + gt3.1; dNy.2; dNx.2; gt2.2 + gt3.2; dNy.3; dNx.3; gt2.3 + gt3.3; dNy.4; dNx.4; gt2.4 + gt3.4; dNBy; dNBx]
+			K14 = K14 + ww*dJ*transp(Bm)*D*Bm
+			#if i_g ≡ 2
+				#if j_g ≡ 2
+					dNx0 = dNx
+					dNy0 = dNy
+					gt20 = gt2
+					gt30 = gt3
+					NN0 = NN
+					dNBx0 = dNBx
+					dNBy0 = dNBy
+					dJ0 = dJ
+				#end if
+			#end if
+		#loop
+	#loop
+	res0 = vector(14)
+	#for ii = 1 : 4
+		res0.(3*ii - 2) = -0.5*dNy0.ii
+		res0.(3*ii - 1) = 0.5*dNx0.ii
+		res0.(3*ii) = 0.5*(gt30.ii - gt20.ii) - NN0.ii
+	#loop
+	res0.13 = -0.5*dNBy0
+	res0.14 = 0.5*dNBx0
+	P_pen = matrix(14; 14)
+	$Repeat{$Repeat{P_pen.(a_p; b_p) = res0.a_p*res0.b_p @ b_p = 1 : 14} @ a_p = 1 : 14}
+	K14 = K14 + γ*t*4*dJ0*P_pen
+	Kbb = submatrix(K14; 13; 14; 13; 14)
+	Kab = submatrix(K14; 1; 12; 13; 14)
+	Kba = submatrix(K14; 13; 14; 1; 12)
+	Kuu = submatrix(K14; 1; 12; 1; 12)
+	det_b = Kbb.(1; 1)*Kbb.(2; 2) - Kbb.(1; 2)*Kbb.(2; 1)
+	Kbb_inv = [Kbb.(2; 2); -Kbb.(1; 2) | -Kbb.(2; 1); Kbb.(1; 1)]/det_b
+	K_e = Kuu - Kab*Kbb_inv*Kba
+	#for i = 1 : 4
+		#for j = 1 : 4
+			j_1 = e_j.(e; i)
+			j_2 = e_j.(e; j)
+			#if j_2 ≥ j_1
+				i_1 = n*(j_1 - 1) + 1
+				i_2 = n*(j_2 - 1) + 1
+				k_ij = submatrix(K_e; n*(i - 1) + 1; n*i; n*(j - 1) + 1; n*j)
+				add(k_ij; K; i_1; i_2)
+			#end if
+		#loop
+	#loop
+#loop
+'--- ENSAMBLAJE viga de acople (frame 2D) ---
+#for ib = 1 : N_B
+	p_1 = b_n.ib
+	p_2 = b_n.(ib + 1)
+	dxb = x_j.p_2 - x_j.p_1
+	dyb = y_j.p_2 - y_j.p_1
+	Le = sqrt(dxb^2 + dyb^2)
+	cb = dxb/Le
+	sb = dyb/Le
+	EA = E_b*A_b/Le
+	EIz = E_b*I_b
+	kl = [ _
+	EA; 0; 0; -EA; 0; 0 | _
+	0; 12*EIz/Le^3; 6*EIz/Le^2; 0; -12*EIz/Le^3; 6*EIz/Le^2 | _
+	0; 6*EIz/Le^2; 4*EIz/Le; 0; -6*EIz/Le^2; 2*EIz/Le | _
+	-EA; 0; 0; EA; 0; 0 | _
+	0; -12*EIz/Le^3; -6*EIz/Le^2; 0; 12*EIz/Le^3; -6*EIz/Le^2 | _
+	0; 6*EIz/Le^2; 2*EIz/Le; 0; -6*EIz/Le^2; 4*EIz/Le]
+	Tb = [ _
+	cb; sb; 0; 0; 0; 0 | _
+	-sb; cb; 0; 0; 0; 0 | _
+	0; 0; 1; 0; 0; 0 | _
+	0; 0; 0; cb; sb; 0 | _
+	0; 0; 0; -sb; cb; 0 | _
+	0; 0; 0; 0; 0; 1]
+	K_b = transp(Tb)*kl*Tb
+	#for i = 1 : 2
+		#for j = 1 : 2
+			j_1 = take(i; p_1; p_2)
+			j_2 = take(j; p_1; p_2)
+			#if j_2 ≥ j_1
+				i_1 = n*(j_1 - 1) + 1
+				i_2 = n*(j_2 - 1) + 1
+				k_ij = submatrix(K_b; n*(i - 1) + 1; n*i; n*(j - 1) + 1; n*j)
+				add(k_ij; K; i_1; i_2)
+			#end if
+		#loop
+	#loop
+#loop
+'--- apoyos: base de cada pilar (y=0) empotrada ---
+k_s = 10^12
+#for j = 1 : n_j
+	#if y_j.j ≡ 0
+		d = n*(j - 1)
+		K.(d + 1; d + 1) = K.(d + 1; d + 1) + k_s
+		K.(d + 2; d + 2) = K.(d + 2; d + 2) + k_s
+		K.(d + 3; d + 3) = K.(d + 3; d + 3) + k_s
+	#end if
+#loop
+'--- cargas en los tops de los pilares (lateral +x, gravedad -y) ---
+n_tops = 2*(n_x + 1)
+F = vector(n_g)
+#for j = 1 : n_j
+	#if y_j.j ≡ H
+		#if j ≤ 2*n_pp
+			d = n*(j - 1)
+			F.(d + 1) = F.(d + 1) + FLAT/n_tops
+			F.(d + 2) = F.(d + 2) - GRAV/n_tops
+		#end if
+	#end if
+#loop
+Z = clsolve(K; F)
+'--- desplazamientos ---
+ux_j = vector(n_j)
+uy_j = vector(n_j)
+um_j = vector(n_j)
+#for j = 1 : n_j
+	ux_j.j = Z.(n*(j - 1) + 1)
+	uy_j.j = Z.(n*(j - 1) + 2)
+	um_j.j = sqrt(ux_j.j^2 + uy_j.j^2)
+#loop
+umax = max(um_j)
+'--- deriva = ux máximo en los tops de los pilares ---
+deriva = 0
+#for j = 1 : n_j
+	#if y_j.j ≡ H
+		#if j ≤ 2*n_pp
+			#if ux_j.j > deriva
+				deriva = ux_j.j
+			#end if
+		#end if
+	#end if
+#loop
+amp = 0.18*sqrt((2*W + gap)^2 + H^2)/umax
+dx_j = vector(n_j)
+dy_j = vector(n_j)
+#for j = 1 : n_j
+	dx_j.j = x_j.j + amp*ux_j.j
+	dy_j.j = y_j.j + amp*uy_j.j
+#loop
+dxmin = min(dx_j)
+dxmax = max(dx_j)
+dymin = min(dy_j)
+dymax = max(dy_j)
+WW = 600
+HH = 480
+#show
+'Deriva (ux máx en el tope) -'Δ = deriva'  (MATLAB con acople = 2.81e-4; muro aislado = 6.27e-4)
+'El acople baja la deriva: la viga conecta los 2 muros vía el GDL drilling.
+'Apoyo en la base de cada muro = EMPOTRADO (fijos ux, uy y el giro rz)
+"Muros acoplados (color |u|, jet_r) + viga de acople + apoyos empotrados (factor 'amp')
+#val
+figure$(muroacople; WW; HH)
+axis$(dxmin; dxmax; dymin; dymax)
+grid$(6; 5)
+#for e = 1 : n_ew
+	#hide
+	q1 = e_j.(e; 1)
+	q2 = e_j.(e; 2)
+	q3 = e_j.(e; 3)
+	q4 = e_j.(e; 4)
+	te = (um_j.q1 + um_j.q2 + um_j.q3 + um_j.q4)/(4*umax)
+	#show
+	patch$(dx_j.q1; dy_j.q1; dx_j.q2; dy_j.q2; dx_j.q3; dy_j.q3; dx_j.q4; dy_j.q4; te)
+#loop
+#for ib = 1 : N_B
+	#hide
+	p_1 = b_n.ib
+	p_2 = b_n.(ib + 1)
+	#show
+	plot$(dx_j.p_1; dy_j.p_1; dx_j.p_2; dy_j.p_2; #cc0000)
+#loop
+fixed$(0; 0; W)
+fixed$(W + gap; 0; 2*W + gap)
+xlabel$(x ancho m)
+ylabel$(z altura m)
+colorbar$(0; umax)
+endfig$
+#equ
