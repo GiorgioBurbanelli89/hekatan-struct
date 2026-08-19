@@ -314,9 +314,14 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
     //
     // con 3 modos nulos y el patch test EXACTO en las dos.
     //
-    // Y de aqui sale el numero del binario de CSI: alpha(W_a = 1) = 9^(-1/4)
-    // = 0.5773502691896258, identico al ultimo bit a la constante que
-    // CsiGo2.dll carga ocho veces. NO era un punto de Gauss 2x2.
+    // OJO: se llego a escribir aqui que alpha(W_a=1) = 9^(-1/4) = 1/raiz(3)
+    // "demuestra" que CSI usa esta regla, porque CsiGo2.dll carga ese numero.
+    // ES FALSO, y se deja escrito para que no vuelva: la funcion donde vive esa
+    // constante tiene TRES coordenadas naturales y escribe 24 huecos de
+    // funciones de forma — es un HEXAEDRO de 8 nudos, no el shell, y su 0.125
+    // es el 1/8 de N = 1/8 (1+-r)(1+-s)(1+-t). Un numero compatible con dos
+    // explicaciones no confirma ninguna. Lo que sostiene a esta regla es lo
+    // MEDIDO: 3 modos nulos, patch test exacto y el hemisferio de -34 % a -4 %.
     double qr[9], qs[9], qw[9];
     int nq = 0;
     if (wAlpha > 0.0) {
@@ -1396,10 +1401,14 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     //     a la vez las tres cosas que cumple ETABS:
     //         3 modos nulos · patch test EXACTO (1.500000/0.600000) · Gauss 2x2
     //
-    //     El binario lo respalda: en CsiGo2.dll se carga 1/sqrt(3) OCHO veces y
-    //     sqrt(3/5), 5/9 y 8/9 NUNCA — SAPFire solo integra a 4 puntos, tal como
-    //     escribe Wilson en su cap. 9. Y el 0.125 (el l/8 de Allman) aparece
-    //     3 veces en cada zona de integracion.
+    //     ⚠️ AQUI DECIA que el binario lo respalda, porque CsiGo2.dll carga
+    //     1/sqrt(3) ocho veces y nunca sqrt(3/5). RETIRADO el 19-ago-2026: la
+    //     funcion donde viven esas cargas tiene TRES coordenadas naturales y
+    //     escribe 24 huecos de funciones de forma — es un HEXAEDRO de 8 nudos,
+    //     no el shell. Su 1/sqrt(3) es Gauss 2x2x2 del solido y su 0.125 es el
+    //     1/8 de N = 1/8 (1+-r)(1+-s)(1+-t), no el l/8 de Allman. La zona del
+    //     shell en el binario esta todavia SIN localizar.
+    //     Lo que sigue en pie es lo medido contra los bancos.
     //
     //     Medido contra los bancos:
     //                        patch    cantilever  Cook   drilling-dof  hemisferio

@@ -88,10 +88,14 @@ def puntos_itw8(w_alpha: float = 0.99):
     curva) SIN dejar el elemento con cuatro modos de energia nula, que es
     exactamente donde encallo la via del 2x2 puro.
 
-    Y esta es la regla que usa CSI: con `W_alpha = 1` sale
-    `alpha = 9^(-1/4) = 0.5773502691896258`, los mismos 16 digitos de la
-    constante que `CsiGo2.dll` carga ocho veces. Ese numero NO era un punto de
-    Gauss 2x2 — era esta alpha.
+    ⚠️ Lo que NO hay que repetir: se afirmo que esta regla queda "probada por
+    el binario" porque `alpha(W_alpha=1) = 9^(-1/4) = 1/raiz(3)` y `CsiGo2.dll`
+    carga ese numero. La cuenta es correcta pero la prueba no: la funcion donde
+    vive esa constante tiene TRES coordenadas naturales y escribe 24 huecos de
+    funciones de forma — es un HEXAEDRO de 8 nudos, no el shell, y su 0.125 es
+    el 1/8 de `N = 1/8 (1+-r)(1+-s)(1+-t)`. Un numero que encaja con dos
+    explicaciones no confirma ninguna. Esta regla se sostiene por lo MEDIDO:
+    3 modos nulos, patch test exacto y el hemisferio de -34 % a -4 %.
 
     Las dos condiciones se comprueban solas: la regla integra exacto `1`
     (suma de pesos = 4 = area del cuadrado patron), `r^2` y `r^2 s^2`.

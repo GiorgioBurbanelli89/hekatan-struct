@@ -56,14 +56,23 @@ displacement:
 
 Two findings, both from primary sources rather than guesswork:
 
-**The `1/√3` in CSI's binary is not 2×2 Gauss.** `CsiGo2.dll` loads
-`0.5773502691896258` eight times in the shell code and never loads `√(3/5)`.
-That reads as "2×2 quadrature", but it is the `α` of the **eight-point rule** in
-eq. (30) of ITW 1991, evaluated at `W_α → 1`, because `α = 1/(9W_α)^{1/4}` and
-`9^{-1/4} = 1/√3` to the last bit. The paper is explicit about why that rule
-exists: it *"has a similar effect … as the 2×2 Gaussian quadrature **but does not
-produce a rank-deficient matrix**"*. Genuine 2×2 leaves the element with **four**
-zero-energy modes — a mechanism.
+**The eight-point rule of ITW 1991, eq. (30).** `W_α + W_β = 1`,
+`α = 1/(9W_α)^{1/4}`, `β = ((2/3 − 2W_α α²)/W_β)^{1/2}`: four points at
+`(±α, ±α)` plus four at `(±β, 0)`, `(0, ±β)`. The paper is explicit about why it
+exists — it *"has a similar effect … as the 2×2 Gaussian quadrature **but does
+not produce a rank-deficient matrix**"*. That matters because genuine 2×2 leaves
+the element with **four** zero-energy modes, a mechanism, while this rule keeps
+three (measured). It is what takes the pinched hemisphere from −34 % to −4 %.
+
+⚠️ A **retracted claim**, kept here on purpose: this was briefly reported as
+"proven by the binary", on the grounds that `CsiGo2.dll` loads
+`0.5773502691896258` and `α(W_α = 1) = 9^{-1/4} = 1/√3`. The arithmetic is right
+but the evidence is not: the function those loads live in has **three** natural
+coordinates and writes **24** shape-function slots — it is an 8-node
+**hexahedral solid**, not the shell, and its `0.125` is the `1/8` of
+`N = ⅛(1±r)(1±s)(1±t)`. A constant compatible with two explanations proves
+neither. Everything else in this section stands on its own footing: measurements
+against ETABS's reconstructed matrix, and CSI's own published bibliography.
 
 **The missing piece was a projection, and it is only in the source code.**
 Reconstructing ETABS's full 12×12 membrane matrix by flexibility (10 geometries)
