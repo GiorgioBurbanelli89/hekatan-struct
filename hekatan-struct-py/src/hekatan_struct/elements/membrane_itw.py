@@ -66,6 +66,57 @@ _SIG = np.array([1, 2, 3, 0])
 _ANT = np.array([3, 0, 1, 2])
 
 
+def puntos_itw8(w_alpha: float = 0.99):
+    """La regla de OCHO puntos del ITW **1991**, ec. (30). Devuelve [(r, s, w)].
+
+    Ibrahimbegovic & Wilson, *A unified formulation for triangular and
+    quadrilateral flat shell finite elements with six nodal degrees of freedom*,
+    Comm. Appl. Num. Meth. **7**, 1-9 (1991). Extraido en
+    `registros/itw_1991/ITW_1991.md`.
+
+    Cuatro puntos en `(+-alpha, +-alpha)` con peso `W_alpha` y cuatro en
+    `(+-beta, 0)` y `(0, +-beta)` con peso `W_beta`::
+
+        W_a + W_b = 1
+        alpha = 1/(9 W_a)^(1/4)
+        beta  = ((2/3 - 2 W_a alpha^2) / W_b)^(1/2)
+
+    Por que existe, en palabras del paper: *«For W_alpha close to 1, the
+    eight-point rule has a similar effect of sampling optimal stress points as
+    the 2x2 Gaussian quadrature **but does not produce a rank-deficient
+    matrix**»*. O sea: da el efecto de 2x2 (que es lo que desbloquea la cascara
+    curva) SIN dejar el elemento con cuatro modos de energia nula, que es
+    exactamente donde encallo la via del 2x2 puro.
+
+    Y esta es la regla que usa CSI: con `W_alpha = 1` sale
+    `alpha = 9^(-1/4) = 0.5773502691896258`, los mismos 16 digitos de la
+    constante que `CsiGo2.dll` carga ocho veces. Ese numero NO era un punto de
+    Gauss 2x2 — era esta alpha.
+
+    Las dos condiciones se comprueban solas: la regla integra exacto `1`
+    (suma de pesos = 4 = area del cuadrado patron), `r^2` y `r^2 s^2`.
+    """
+    if not 0.0 < w_alpha <= 1.0:
+        raise ValueError("W_alpha tiene que estar en (0, 1]")
+    wb = 1.0 - w_alpha
+    al = 1.0 / (9.0 * w_alpha) ** 0.25
+    pts = [(sr * al, ss * al, w_alpha) for sr in (-1, 1) for ss in (-1, 1)]
+    if wb > 0.0:
+        be = ((2.0 / 3.0 - 2.0 * w_alpha * al * al) / wb) ** 0.5
+        pts += [(-be, 0.0, wb), (be, 0.0, wb), (0.0, -be, wb), (0.0, be, wb)]
+    return pts
+
+
+def _puntos(regla: str, n_gauss: int, w_alpha: float):
+    """[(r, s, w)] de la regla pedida, y si el CENTRO es punto de integracion."""
+    if regla == "itw8":
+        return puntos_itw8(w_alpha), False
+    gp, gw = (_G2, _W2) if n_gauss == 2 else (_G3, _W3)
+    pts = [(gp[i], gp[j], gw[i] * gw[j])
+           for i in range(n_gauss) for j in range(n_gauss)]
+    return pts, n_gauss == 3
+
+
 def _constitutiva(E: float, nu: float, t: float, mod_dir=None) -> np.ndarray:
     """D de tension plana, con el ESPESOR dentro (como en el .cpd).
 
@@ -127,64 +178,70 @@ def _serendipity(rr: float, ss: float):
 def k_membrana_itw(pts, E: float, nu: float, t: float,
                    gamma_fac: float = 0.4, n_gauss: int = 3,
                    con_burbuja: bool = True, con_penal: bool = True,
-                   mod_dir=None) -> np.ndarray:
+                   mod_dir=None, regla: str = "gauss",
+                   w_alpha: float = 0.99) -> np.ndarray:
     """Rigidez 12x12 del elemento, GDL `[u0,v0,tz0, u1,v1,tz1, ...]`.
 
     `pts` son los cuatro `(x, y)` EN EL PLANO DEL ELEMENTO, antihorarios.
     `gamma_fac` es `gamma/mu`; el defecto 0.4 es lo medido de ETABS.
+
+    `regla` elige QUE PAPER se integra:
+
+    * `"gauss"` (defecto) — Gauss `n_gauss` x `n_gauss`, el **ITW 1990**.
+    * `"itw8"` — la regla de ocho puntos del **ITW 1991**, ec. (30), que es la
+      que cita el manual de CSI. `w_alpha` es su unico parametro; el paper solo
+      dice *«close to 1»*. Ver `puntos_itw8`.
     """
     X4 = np.asarray([p[0] for p in pts], float)
     Y4 = np.asarray([p[1] for p in pts], float)
     D = _constitutiva(E, nu, t, mod_dir)
     cx, cy = _lados(X4, Y4)
 
-    gp, gw = (_G2, _W2) if n_gauss == 2 else (_G3, _W3)
+    cuadratura, hay_centro = _puntos(regla, n_gauss, w_alpha)
     n = 14 if con_burbuja else 12
     K = np.zeros((n, n))
     centro = {}
 
-    for ig in range(n_gauss):
-        for jg in range(n_gauss):
-            rr, ss, ww = gp[ig], gp[jg], gw[ig] * gw[jg]
-            dr, ds, Ji, dJ = _jacobiano(rr, ss, X4, Y4)
-            NN = 0.25 * (1.0 + R_N * rr) * (1.0 + S_N * ss)
-            dNx = Ji[0, 0] * dr + Ji[0, 1] * ds
-            dNy = Ji[1, 0] * dr + Ji[1, 1] * ds
+    for rr, ss, ww in cuadratura:
+        dr, ds, Ji, dJ = _jacobiano(rr, ss, X4, Y4)
+        NN = 0.25 * (1.0 + R_N * rr) * (1.0 + S_N * ss)
+        dNx = Ji[0, 0] * dr + Ji[0, 1] * ds
+        dNy = Ji[1, 0] * dr + Ji[1, 1] * ds
 
-            nsr, nss = _serendipity(rr, ss)
-            NSx = Ji[0, 0] * nsr + Ji[0, 1] * nss
-            NSy = Ji[1, 0] * nsr + Ji[1, 1] * nss
+        nsr, nss = _serendipity(rr, ss)
+        NSx = Ji[0, 0] * nsr + Ji[0, 1] * nss
+        NSy = Ji[1, 0] * nsr + Ji[1, 1] * nss
 
-            # G_I, ec. (28): cada nudo entra en SUS DOS lados con signo opuesto
-            # (en uno es psi_J y en el otro psi_K).
-            gt1 = NSx[_ANT] * cx[_ANT] - NSx * cx
-            gt2 = NSy[_ANT] * cx[_ANT] - NSy * cx
-            gt3 = NSx[_ANT] * cy[_ANT] - NSx * cy
-            gt4 = NSy[_ANT] * cy[_ANT] - NSy * cy
+        # G_I, ec. (28): cada nudo entra en SUS DOS lados con signo opuesto
+        # (en uno es psi_J y en el otro psi_K).
+        gt1 = NSx[_ANT] * cx[_ANT] - NSx * cx
+        gt2 = NSy[_ANT] * cx[_ANT] - NSy * cx
+        gt3 = NSx[_ANT] * cy[_ANT] - NSx * cy
+        gt4 = NSy[_ANT] * cy[_ANT] - NSy * cy
 
-            B = np.zeros((3, n))
-            for i in range(4):
-                B[0, 3 * i] = dNx[i]
-                B[1, 3 * i + 1] = dNy[i]
-                B[2, 3 * i] = dNy[i]
-                B[2, 3 * i + 1] = dNx[i]
-                B[0, 3 * i + 2] = gt1[i]
-                B[1, 3 * i + 2] = gt4[i]
-                B[2, 3 * i + 2] = gt2[i] + gt3[i]
-            if con_burbuja:
-                nbr = -2.0 * rr * (1.0 - ss ** 2)     # NB9 = (1-r^2)(1-s^2)
-                nbs = -2.0 * ss * (1.0 - rr ** 2)
-                dNBx = Ji[0, 0] * nbr + Ji[0, 1] * nbs
-                dNBy = Ji[1, 0] * nbr + Ji[1, 1] * nbs
-                B[0, 12] = dNBx; B[2, 12] = dNBy
-                B[1, 13] = dNBy; B[2, 13] = dNBx
+        B = np.zeros((3, n))
+        for i in range(4):
+            B[0, 3 * i] = dNx[i]
+            B[1, 3 * i + 1] = dNy[i]
+            B[2, 3 * i] = dNy[i]
+            B[2, 3 * i + 1] = dNx[i]
+            B[0, 3 * i + 2] = gt1[i]
+            B[1, 3 * i + 2] = gt4[i]
+            B[2, 3 * i + 2] = gt2[i] + gt3[i]
+        if con_burbuja:
+            nbr = -2.0 * rr * (1.0 - ss ** 2)     # NB9 = (1-r^2)(1-s^2)
+            nbs = -2.0 * ss * (1.0 - rr ** 2)
+            dNBx = Ji[0, 0] * nbr + Ji[0, 1] * nbs
+            dNBy = Ji[1, 0] * nbr + Ji[1, 1] * nbs
+            B[0, 12] = dNBx; B[2, 12] = dNBy
+            B[1, 13] = dNBy; B[2, 13] = dNBx
 
-            K += ww * abs(dJ) * (B.T @ D @ B)
+        K += ww * abs(dJ) * (B.T @ D @ B)
 
-            if n_gauss == 3 and ig == 1 and jg == 1:
-                centro = dict(dNx=dNx, dNy=dNy, gt2=gt2, gt3=gt3, NN=NN, dJ=abs(dJ),
-                              dNBx=(dNBx if con_burbuja else 0.0),
-                              dNBy=(dNBy if con_burbuja else 0.0))
+        if hay_centro and rr == 0.0 and ss == 0.0:
+            centro = dict(dNx=dNx, dNy=dNy, gt2=gt2, gt3=gt3, NN=NN, dJ=abs(dJ),
+                          dNBx=(dNBx if con_burbuja else 0.0),
+                          dNBy=(dNBy if con_burbuja else 0.0))
 
     if con_penal:
         if not centro:                    # con 2x2 el centro no es punto de Gauss
