@@ -252,7 +252,7 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
                                       double E, double nu, double t,
                                       const double *mod, double gammaFac,
                                       int nGauss, bool taylorBurbuja,
-                                      double khg)
+                                      double khg, double wAlpha)
 {
     double factor = E / (1.0 - nu * nu);
     Eigen::Matrix3d Dm;
@@ -292,6 +292,57 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
     const double *gg = (nGauss == 2) ? g2 : g3;
     const double *wg = (nGauss == 2) ? w2 : w3;
 
+    // ── La cuadratura, como una lista de (r, s, w) ────────────────────────
+    // Con `wAlpha > 0` se usa la regla de OCHO PUNTOS del ITW **1991**, ec.
+    // (30) — el paper que cita el manual de CSI, no el de 1990:
+    //
+    //     W_a + W_b = 1;  alpha = 1/(9 W_a)^(1/4);
+    //     beta = ((2/3 - 2 W_a alpha^2) / W_b)^(1/2)
+    //
+    // cuatro puntos en (+-alpha, +-alpha) con peso W_a y cuatro en (+-beta, 0)
+    // y (0, +-beta) con peso W_b. El paper: «For W_a close to 1, the eight-point
+    // rule has a similar effect of sampling optimal stress points as the 2x2
+    // Gaussian quadrature BUT DOES NOT PRODUCE A RANK-DEFICIENT MATRIX».
+    //
+    // Ahi esta la salida del callejon del 2x2: el 2x2 desbloquea la cascara
+    // curva pero deja CUATRO modos de energia nula (un mecanismo). Medido en
+    // Python (`benchmarks_shell3d.py`), hemisferio pinzado contra 0.094:
+    //
+    //     malla      ITW 1990 (3x3)      regla de 8 (W_a = 0.99)
+    //      8x8         -34.07 %                -4.07 %
+    //     12x12        -10.10 %                -0.85 %
+    //
+    // con 3 modos nulos y el patch test EXACTO en las dos.
+    //
+    // Y de aqui sale el numero del binario de CSI: alpha(W_a = 1) = 9^(-1/4)
+    // = 0.5773502691896258, identico al ultimo bit a la constante que
+    // CsiGo2.dll carga ocho veces. NO era un punto de Gauss 2x2.
+    double qr[9], qs[9], qw[9];
+    int nq = 0;
+    if (wAlpha > 0.0) {
+        const double wb = 1.0 - wAlpha;
+        const double al = 1.0 / std::pow(9.0 * wAlpha, 0.25);
+        for (int i = 0; i < 4; i++) {
+            qr[nq] = (i < 2 ? -al : al);
+            qs[nq] = ((i % 2) ? al : -al);
+            qw[nq] = wAlpha;
+            nq++;
+        }
+        if (wb > 0.0) {
+            const double be = std::sqrt((2.0 / 3.0 - 2.0 * wAlpha * al * al) / wb);
+            const double br[4] = {-be, be, 0.0, 0.0};
+            const double bs[4] = {0.0, 0.0, -be, be};
+            for (int i = 0; i < 4; i++) { qr[nq] = br[i]; qs[nq] = bs[i]; qw[nq] = wb; nq++; }
+        }
+    } else {
+        for (int ig = 0; ig < nGauss; ig++)
+            for (int jg = 0; jg < nGauss; jg++) {
+                qr[nq] = gg[ig]; qs[nq] = gg[jg]; qw[nq] = wg[ig] * wg[jg]; nq++;
+            }
+    }
+    // El centro solo es punto de integracion con Gauss 3x3.
+    const bool hayCentro = (wAlpha <= 0.0 && nGauss == 3);
+
     // Jacobiano del CENTRO, para la modificacion de Taylor 1976 sobre la
     // burbuja: evaluar sus derivadas con J0 constante fuerza INT(B_burbuja) = 0
     // y es lo que el paper llama "the modification suggested by Taylor",
@@ -309,9 +360,9 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
     double c_gt2[4] = {0,0,0,0}, c_gt3[4] = {0,0,0,0}, c_N[4] = {0,0,0,0};
     double c_dNBx = 0, c_dNBy = 0, c_dJ = 0;
 
-    for (int ig = 0; ig < nGauss; ig++) {
-        for (int jg = 0; jg < nGauss; jg++) {
-            double rr = gg[ig], ss = gg[jg], ww = wg[ig] * wg[jg];
+    for (int iq = 0; iq < nq; iq++) {
+        {
+            double rr = qr[iq], ss = qs[iq], ww = qw[iq];
 
             double N[4], dNdxi[4], dNdeta[4];
             shapeFunctionsQ4(rr, ss, N, dNdxi, dNdeta);
@@ -374,12 +425,22 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
                 B(1, 3*i + 2) = gt4[i];
                 B(2, 3*i + 2) = gt2[i] + gt3[i];
             }
-            B(0, 12) = dNBx;  B(2, 12) = dNBy;
-            B(1, 13) = dNBy;  B(2, 13) = dNBx;
+            // El ITW **1991** NO lleva burbuja: su ec. (6) es Allman a secas.
+            // La burbuja `(1-r^2)(1-s^2)` es del paper de 1990 (su ec. 24), y
+            // ahi hace falta porque se integra a 3x3; con la regla de ocho
+            // puntos sobra. Dejandola puesta el C++ se separaba un 2-16 % del
+            // Python en la matriz — medido con `kelem_native.exe`.
+            // Con estas dos columnas a cero, `Kbb` es singular y la
+            // condensacion de mas abajo devuelve `Kuu` tal cual: la 12x12 sin
+            // burbuja, que es lo que toca.
+            if (wAlpha <= 0.0) {
+                B(0, 12) = dNBx;  B(2, 12) = dNBy;
+                B(1, 13) = dNBy;  B(2, 13) = dNBx;
+            }
 
             K14 += (ww * std::abs(dJ)) * (B.transpose() * Dm * B);
 
-            if (nGauss == 3 && ig == 1 && jg == 1) {   // el centro ya es punto de Gauss
+            if (hayCentro && rr == 0.0 && ss == 0.0) {   // el centro ya es punto de Gauss
                 for (int i = 0; i < 4; i++) {
                     c_dNx[i] = dNx[i]; c_dNy[i] = dNy[i];
                     c_gt2[i] = gt2[i]; c_gt3[i] = gt3[i]; c_N[i] = N[i];
@@ -389,8 +450,8 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
         }
     }
 
-    if (nGauss == 2) {
-        // Con 2x2 el centro NO es punto de Gauss, asi que P se evalua aparte:
+    if (!hayCentro) {
+        // Si el centro NO es punto de la cuadratura, P se evalua aparte:
         // la penalizacion del paper es de UN punto y ese punto es (0,0).
         double N0[4], dN0dxi[4], dN0deta[4], Ji0[2][2];
         shapeFunctionsQ4(0.0, 0.0, N0, dN0dxi, dN0deta);
@@ -425,6 +486,7 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
     }
     res(12) = -0.5 * c_dNBy;
     res(13) =  0.5 * c_dNBx;
+    if (wAlpha > 0.0) { res(12) = 0.0; res(13) = 0.0; }   // sin burbuja: sin sus GDL
     K14 += (gamma * t * 4.0 * c_dJ) * (res * res.transpose());
 
     // ── Estabilizacion del reloj de arena ──────────────────────────────────
@@ -1255,8 +1317,8 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     // Con drillingType 3 este numero es gamma/mu del paper (defecto 0.4, que es
     // lo medido de ETABS). Con el 2 es el alpha de Hughes-Brezzi (defecto 0.05).
     double drillScale = getMapVal(elementInputs.drillingPenaltyScales, index,
-                                  (drillingType == 6) ? 0.4 : (drillingType >= 3 && drillingType <= 5) ? 0.4 : 0.05);
-    const bool usaITW = (drillingType >= 3 && drillingType <= 6);
+                                  (drillingType >= 3 && drillingType <= 7) ? 0.4 : 0.05);
+    const bool usaITW = (drillingType >= 3 && drillingType <= 7);
     // 3 = ITW con Gauss 3x3, que es lo que pide el paper   [DEFECTO]
     // 4 = ITW con Gauss 2x2 (integracion reducida)  -- NO USAR, ver abajo
     // 5 = ITW 3x3 con la burbuja a la Taylor (J0 del centro)
@@ -1298,10 +1360,41 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     const int  ngITW  = (drillingType == 4 || drillingType == 6) ? 2 : 3;
     const double khgITW = (drillingType == 6) ? 2.0e-4 : 0.0;
     const bool taylorITW = (drillingType == 5);
+    //  7 = ITW **1991**: la regla de OCHO puntos de su ec. (30). Es el paper
+    //      que cita el manual de CSI (el 1990 no). `wAlpha > 0` la activa y
+    //      manda sobre `ngITW`. Medido en Python contra el hemisferio de
+    //      MacNeal & Harder (0.094), que es EL test de bloqueo de membrana:
+    //
+    //          malla     ITW 1990 (3x3)    ITW 1991 (8 puntos)
+    //           8x8        -34.07 %             -4.07 %
+    //          12x12       -10.10 %             -0.85 %
+    //
+    //      y sin perder nada: 3 modos de energia nula y patch test EXACTO en
+    //      las dos. Es lo que el 2x2 prometia sin poder cumplir — el 2x2 baja
+    //      el hemisferio pero deja el elemento con CUATRO modos nulos.
+    //
+    //      EL CUADRO ENTERO, medido el 19-ago-2026 con el WASM recompilado:
+    //
+    //        tipo  patch   hemi 8x8   drilling vs ETABS   mezanine P (med/max)
+    //          2   -6.34%    -3.6%         +11.46%             0.30/1.15
+    //          3   EXACTO   -34.07%         +5.45%             0.62/3.47   <- DEFECTO
+    //          6   EXACTO    -5.2%          +7.14%             1.07/12.46
+    //          7   EXACTO    -4.07%         +6.46%             0.86/8.27
+    //
+    //      El 7 DOMINA al 6 en las tres columnas, asi que sustituye al 6 como
+    //      la opcion para cascara curva. Pero NO domina al 3: gana mucho en el
+    //      hemisferio (-34 % a -4 %) y pierde en el axil de las barras del
+    //      mezanine (3.47 % a 8.27 %) y un punto en el drilling. Los otros
+    //      cinco campos del mezanine (V2, V3, T, M2, M3) no se mueven.
+    //
+    //      Por eso el defecto sigue siendo el 3: el compromiso no ha
+    //      desaparecido, solo ha mejorado el otro lado de la balanza. Cascara
+    //      curva -> 7. Losa con vigas -> 3.
+    const double waITW = (drillingType == 7) ? 0.99 : 0.0;
 
     Eigen::MatrixXd Km   = usaITW ? Eigen::MatrixXd::Zero(8, 8)
                                   : getMembraneK(x, y, E, nu, t, dmod);   // 8×8
-    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW, khgITW)
+    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW, khgITW, waITW)
                                   : Eigen::MatrixXd::Zero(12, 12);        // 12×12
     #if HK_BENDING_FORMULATION == 2
         Eigen::MatrixXd Kb = getBendingK_DSE_FULL(x, y, E, nu, t);  // 12×12 (Wilson DSE Cap 8 completo, Variant C)

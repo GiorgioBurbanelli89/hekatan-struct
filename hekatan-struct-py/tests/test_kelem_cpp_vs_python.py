@@ -39,6 +39,9 @@ GEOMETRIAS = [
 ]
 
 
+ITW8 = dict(regla="itw8", con_burbuja=False, w_alpha=0.99)
+
+
 def _k_nativa(pts, E, nu, t, tipo_drill=3, gamma=0.4):
     args = [EXE]
     for (x, y) in pts:
@@ -90,3 +93,35 @@ def test_el_tipo_de_drilling_del_cli_manda():
     itw = _k_nativa(pts, 2.2e7, 0.2, 0.20, tipo_drill=3)
     hb = _k_nativa(pts, 2.2e7, 0.2, 0.20, tipo_drill=2)
     assert np.linalg.norm(itw - hb) > 1e-6 * np.linalg.norm(itw)
+
+
+@pytest.mark.skipif(not os.path.exists(EXE), reason="falta kelem_native.exe")
+@pytest.mark.parametrize("nombre,pts", GEOMETRIAS)
+def test_la_regla_de_ocho_puntos_del_1991_es_la_misma_en_cpp_y_en_python(nombre, pts):
+    """`drillingTypes = 7` — el ITW 1991, con su regla de ocho puntos.
+
+    Es el que baja el hemisferio pinzado de -34 % a -4 % en malla 8x8. Este
+    test existe porque al portarlo al C++ la matriz se separaba del Python
+    entre un 2 % y un 16 %: el C++ seguia metiendo la BURBUJA, que es del paper
+    de 1990 y en el de 1991 no existe. Un desplazamiento no lo habria dicho;
+    la matriz si.
+    """
+    E, nu, t = 2.2e7, 0.2, 0.20
+    Kc = _k_nativa(pts, E, nu, t, tipo_drill=7)[np.ix_(GDL_MEMBRANA, GDL_MEMBRANA)]
+    Kp = k_membrana_itw(pts, E, nu, t, gamma_fac=0.4, **ITW8)
+    rel = np.linalg.norm(Kc - Kp) / np.linalg.norm(Kp)
+    assert rel < 1e-10, f"{nombre}: C++ y Python difieren {rel*100:.3e} %"
+
+
+@pytest.mark.skipif(not os.path.exists(EXE), reason="falta kelem_native.exe")
+@pytest.mark.parametrize("nombre,pts", GEOMETRIAS)
+def test_el_tipo_7_sale_del_cpp_con_tres_modos_nulos(nombre, pts):
+    """Medido sobre la matriz que escupe el BINARIO, no sobre la de Python.
+
+    Que Python tenga 3 modos no prueba que el C++ tambien: son dos
+    implementaciones. Y con 4 el elemento seria un mecanismo.
+    """
+    K = _k_nativa(pts, 2.2e7, 0.2, 0.20, tipo_drill=7)[np.ix_(GDL_MEMBRANA, GDL_MEMBRANA)]
+    w = np.sort(np.abs(np.linalg.eigvalsh(K)))
+    n = int((w < 1e-9 * w.max()).sum())
+    assert n == 3, f"{nombre}: {n} modos de energia nula, deberian ser 3"

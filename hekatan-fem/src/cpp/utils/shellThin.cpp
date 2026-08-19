@@ -66,7 +66,7 @@ Eigen::MatrixXd getMembraneK(const double x[4], const double y[4],
 Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
                                double E, double nu, double t,
                                const double *mod, double gammaFac, int nGauss,
-                               bool taylorBurbuja, double khg);
+                               bool taylorBurbuja, double khg, double wAlpha);
 
 // ─── MZC Kirchhoff Plate Bending (12×12) — el corazón Shell-Thin ────────────
 // DOFs por nodo: [w, θx, θy] donde θx = ∂w/∂y, θy = -∂w/∂x
@@ -309,15 +309,46 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
     // drilling salen de la MISMA 12x12 y no hay penalizacion que pegar aparte.
     int drillingType = getMapValST(elementInputs.drillingTypes, index, 3);
     double drillScale = getMapValST(elementInputs.drillingPenaltyScales, index,
-                                    (drillingType == 6) ? 0.4 : (drillingType >= 3 && drillingType <= 5) ? 0.4 : 0.05);
-    const bool usaITW = (drillingType >= 3 && drillingType <= 6);
+                                    (drillingType >= 3 && drillingType <= 7) ? 0.4 : 0.05);
+    const bool usaITW = (drillingType >= 3 && drillingType <= 7);
     const int  ngITW  = (drillingType == 4 || drillingType == 6) ? 2 : 3;
     const double khgITW = (drillingType == 6) ? 2.0e-4 : 0.0;
     const bool taylorITW = (drillingType == 5);
+    //  7 = ITW **1991**: la regla de OCHO puntos de su ec. (30). Es el paper
+    //      que cita el manual de CSI (el 1990 no). `wAlpha > 0` la activa y
+    //      manda sobre `ngITW`. Medido en Python contra el hemisferio de
+    //      MacNeal & Harder (0.094), que es EL test de bloqueo de membrana:
+    //
+    //          malla     ITW 1990 (3x3)    ITW 1991 (8 puntos)
+    //           8x8        -34.07 %             -4.07 %
+    //          12x12       -10.10 %             -0.85 %
+    //
+    //      y sin perder nada: 3 modos de energia nula y patch test EXACTO en
+    //      las dos. Es lo que el 2x2 prometia sin poder cumplir — el 2x2 baja
+    //      el hemisferio pero deja el elemento con CUATRO modos nulos.
+    //
+    //      EL CUADRO ENTERO, medido el 19-ago-2026 con el WASM recompilado:
+    //
+    //        tipo  patch   hemi 8x8   drilling vs ETABS   mezanine P (med/max)
+    //          2   -6.34%    -3.6%         +11.46%             0.30/1.15
+    //          3   EXACTO   -34.07%         +5.45%             0.62/3.47   <- DEFECTO
+    //          6   EXACTO    -5.2%          +7.14%             1.07/12.46
+    //          7   EXACTO    -4.07%         +6.46%             0.86/8.27
+    //
+    //      El 7 DOMINA al 6 en las tres columnas, asi que sustituye al 6 como
+    //      la opcion para cascara curva. Pero NO domina al 3: gana mucho en el
+    //      hemisferio (-34 % a -4 %) y pierde en el axil de las barras del
+    //      mezanine (3.47 % a 8.27 %) y un punto en el drilling. Los otros
+    //      cinco campos del mezanine (V2, V3, T, M2, M3) no se mueven.
+    //
+    //      Por eso el defecto sigue siendo el 3: el compromiso no ha
+    //      desaparecido, solo ha mejorado el otro lado de la balanza. Cascara
+    //      curva -> 7. Losa con vigas -> 3.
+    const double waITW = (drillingType == 7) ? 0.99 : 0.0;
 
     Eigen::MatrixXd Km   = usaITW ? Eigen::MatrixXd::Zero(8, 8)
                                   : getMembraneK(x, y, E, nu, t, dmod);   // 8×8
-    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW, khgITW)
+    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW, khgITW, waITW)
                                   : Eigen::MatrixXd::Zero(12, 12);        // 12×12
     Kitw *= mFactor;
     Eigen::MatrixXd Kb = sinFlexion
