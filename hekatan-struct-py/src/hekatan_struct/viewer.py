@@ -319,6 +319,7 @@ class View:
         show_axes: bool = True,
         show_grid: bool = True,
         section_render: str = "auto",  # "auto" → boxes si section_shapes existen, sino lines
+        off_screen: Optional[bool] = None,  # True = sin ventana (PNG desde terminal)
     ):
         if not HAS_PYVISTA:
             raise ImportError(
@@ -333,7 +334,10 @@ class View:
         self._node_inputs: Optional[NodeInputs] = None
         self._sliders: list[dict] = []
 
-        self.plotter = pv.Plotter(window_size=(1280, 800))
+        # off_screen=None deja decidir a pyvista (ventana si hay pantalla). Con
+        # True no se abre ventana y `screenshot()` puede capturar: sin esto
+        # pyvista contesta "Nothing to screenshot - call .show first".
+        self.plotter = pv.Plotter(window_size=(1280, 800), off_screen=off_screen)
         self.plotter.set_background(background)
         if show_axes:
             self.plotter.add_axes(line_width=3)
@@ -514,8 +518,16 @@ class View:
             self.plotter.show(auto_close=auto_close)
 
     def screenshot(self, path: str, *, off_screen: bool = True) -> str:
-        """Headless screenshot — útil para tests."""
+        """Headless screenshot — útil para tests.
+
+        El `off_screen` se IGNORABA: el plotter se creaba siempre en modo
+        ventana y pyvista contestaba "Nothing to screenshot - call .show first
+        or use the off_screen argument". Ahora, si el plotter no es off_screen,
+        se renderiza una vez con `show(auto_close=False)` antes de capturar.
+        """
         self.plotter.view_isometric()
+        if off_screen and not self.plotter.off_screen:
+            self.plotter.show(auto_close=False)
         self.plotter.screenshot(path)
         return path
 
