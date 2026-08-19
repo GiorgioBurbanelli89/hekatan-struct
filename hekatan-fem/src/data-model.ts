@@ -110,6 +110,18 @@ export type ElementInputs = {
    * Para Mesa Torsión (slab delgado t/L=0.017) usar 1 → matchea ETABS Shell-Thin
    * dentro de < 1.5% en V/M/T (validado vs hekatan-struct-py).
    */
+  /**
+   * Tipo de cascara, con los MISMOS numeros que la OAPI de CSI:
+   *   0 = Shell-Thick (Mindlin)   [defecto]
+   *   1 = Shell-Thin  (Kirchhoff)
+   *   2 = MEMBRANA (sin flexion)
+   *
+   * No es solo para el solver: los exportadores .e2k y .s2k lo escriben tal
+   * cual lo escriben ETABS y SAP —`MODELINGTYPE "Membrane"` y `Type=Membrane`—
+   * porque si no, el mismo modelo daba 1.500000 por la OAPI y 1.491651 al
+   * pasar por el fichero, y la comparacion no medía el exportador: medía dos
+   * elementos distintos.
+   */
   plateFormulations?: Map<number, number>;
   /** Drilling DOF (rotación θz normal al shell) por elemento:
    *   0 = penalty 1e-6 legacy (drilling efectivamente desacoplado — usar para

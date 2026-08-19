@@ -547,7 +547,21 @@ function exportFromScratch(input: ExportE2kInput): string {
     const wpv_kN = wpvByE.get(E_kNm2) ?? (isSteel ? 76.97 : 24.0);
     const E_out  = cE(E_kNm2);
     const wpv_out = cWV(wpv_kN);
-    const nu = isSteel ? 0.3 : 0.2;
+    // ⚠️ El Poisson iba FIJO (0.3 acero / 0.2 hormigon), sin mirar el modelo.
+    // Con un modelo de nu = 0 el .e2k salia con U 0.2 y ETABS daba 1.491651
+    // donde el mismo modelo montado por la OAPI da 1.500000 exacto. Ese 0.5 %
+    // parecia del exportador de geometria o del tipo de cascara: era el
+    // MATERIAL. Ahora se toma el declarado (poissonsRatios, que es donde lo
+    // ponen las cascaras) y solo se cae al tipico si no hay ninguno.
+    const nuDecl = (() => {
+      const pr = (input.elementInputs as any).poissonsRatios as Map<number, number> | undefined;
+      if (!pr) return undefined;
+      for (const [idx, v] of pr) {
+        if ((input.elementInputs.elasticities?.get(idx) ?? 0) === E_kNm2) return v;
+      }
+      return undefined;
+    })();
+    const nu = nuDecl !== undefined ? nuDecl : (isSteel ? 0.3 : 0.2);
     const alpha = isSteel ? 1.17e-5 : 1.0e-5;
 
     if (isSteel) {
@@ -1149,7 +1163,16 @@ function exportFromScratch(input: ExportE2kInput): string {
   if (areaElements.some(a => a.isWall)) {
     lines.push(`$ WALL PROPERTIES`);
     const t_wall = elementInputs.thicknesses?.values().next().value ?? 0.2;
-    lines.push(`  SHELLPROP  "Muro"  PROPTYPE  "Wall"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "ShellThick"  WALLTHICKNESS ${rd(cL(t_wall))} `);
+    // MODELINGTYPE tal cual lo escribe ETABS: "ShellThin" | "ShellThick" |
+    // "Membrane". Antes iba "ShellThick" FIJO, sin mirar el modelo, y por eso
+    // el mismo caso daba 1.500000 montado por la OAPI (con Membrana) y
+    // 1.491651 al pasar por el .e2k — la comparacion no medía el exportador,
+    // medía dos elementos. Verificado pidiendole a ETABS que exportara su
+    // propio .e2k de cada tipo (galpon-bodega-electoral/tipos_cascara_export.py).
+    const fMuro = [...(((input.elementInputs as any).plateFormulations as Map<number, number> | undefined) ?? new Map())].length
+      ? (((input.elementInputs as any).plateFormulations as Map<number, number>).values().next().value ?? 0) : 0;
+    const modelingMuro = fMuro === 2 ? "Membrane" : fMuro === 1 ? "ShellThin" : "ShellThick";
+    lines.push(`  SHELLPROP  "Muro"  PROPTYPE  "Wall"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "${modelingMuro}"  WALLTHICKNESS ${rd(cL(t_wall))} `);
     lines.push(``);
   }
 

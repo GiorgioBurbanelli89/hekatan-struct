@@ -77,6 +77,26 @@ export function exportS2k(input: S2kExportInput): string {
 
   // ── Separate frames and shells ──
   const frameIdx: number[] = [];
+  /**
+   * Clave e identidad del material de un elemento. Una sola funcion para que
+   * las tres partes del fichero (barras, cascaras y la tabla de materiales)
+   * nombren el material IGUAL — si no, el .s2k referencia un material que no
+   * existe y SAP lo sustituye en silencio por el suyo por defecto.
+   *
+   * El Poisson sale de `poissonsRatios` (que es donde lo ponen las cascaras) y
+   * solo se deduce de `shearModuli` cuando no esta declarado (las barras).
+   */
+  const matDe = (i: number) => {
+    const E = elementInputs.elasticities?.get(i) || 0;
+    const nuDecl = elementInputs.poissonsRatios?.get(i);
+    const Gdecl = elementInputs.shearModuli?.get(i) || 0;
+    const nu = nuDecl !== undefined ? nuDecl
+             : (E > 0 && Gdecl > 0 ? Math.max(0, Math.min(0.5, E / (2 * Gdecl) - 1)) : 0.2);
+    const G = Gdecl > 0 ? Gdecl : (E > 0 ? E / (2 * (1 + nu)) : 0);
+    const rho = elementInputs.densities?.get(i) || 0;
+    return { E, nu, G, rho, key: `MAT_${Math.round(E)}_n${nu.toFixed(4)}` };
+  };
+
   const shellIdx: number[] = [];
   elements.forEach((el, i) => {
     if (el.length === 2) frameIdx.push(i);
@@ -123,7 +143,7 @@ export function exportS2k(input: S2kExportInput): string {
     const Iy = elementInputs.momentsOfInertiaY?.get(i) || 0;
     const J = elementInputs.torsionalConstants?.get(i) || 0;
     const E = elementInputs.elasticities?.get(i) || 0;
-    const matKey = `MAT_${Math.round(E)}`;
+    const matKey = matDe(i).key;
     // ⚠️ Las AREAS DE CORTANTE entran en la CLAVE de la seccion. Dos perfiles
     // con la misma A e Iz pero distinta alma NO son la misma seccion, y si se
     // funden se pierde el dato que mas ablanda.
@@ -205,15 +225,18 @@ export function exportS2k(input: S2kExportInput): string {
   const layeredSec = input.layeredSection;
 
   // ── Collect unique shell sections (homogeneo) ──
-  const shellSecs = new Map<string, { t: number; matKey: string }>();
+  // La FORMULACION entra en la clave: dos paños del mismo espesor pero uno
+  // membrana y otro cáscara son DOS secciones distintas para SAP, no una.
+  const shellSecs = new Map<string, { t: number; matKey: string; formulacion: number }>();
   const elemToShellSec = new Map<number, string>();
   if (!isLayered) {
     for (const i of shellIdx) {
       const t = elementInputs.thicknesses?.get(i) || 0.1;
       const E = elementInputs.elasticities?.get(i) || 0;
-      const matKey = `MAT_${Math.round(E)}`;
-      const key = `t${t.toPrecision(6)}`;
-      if (!shellSecs.has(key)) shellSecs.set(key, { t, matKey });
+      const matKey = matDe(i).key;
+      const formulacion = (elementInputs as any).plateFormulations?.get(i) ?? 0;
+      const key = `t${t.toPrecision(6)}_f${formulacion}`;
+      if (!shellSecs.has(key)) shellSecs.set(key, { t, matKey, formulacion });
       const secIdx = [...shellSecs.keys()].indexOf(key) + 1;
       elemToShellSec.set(i, `SSEC${secIdx}`);
     }
@@ -237,7 +260,14 @@ export function exportS2k(input: S2kExportInput): string {
       let idx = 0;
       for (const [, sec] of shellSecs) {
         idx++;
-        push(`   Section=SSEC${idx}   Material=${sec.matKey}   MatAngle=0   AreaType=Shell   Type=ShellThin   DrillDOF=Yes   Thickness=${fmt(sec.t)}   BendThick=${fmt(sec.t)}   Color=Cyan`);
+        // ⚠️ `Shell-Thin` con GUION, y el tipo el que tenga el modelo. Antes iba
+        // `Type=ShellThin` fijo (sin guion y sin mirar el modelo). SAP escribe
+        // `Shell-Thin` / `Shell-Thick` / `Membrane` — verificado pidiendole a
+        // SAP que exportara su propio .s2k de cada tipo
+        // (galpon-bodega-electoral/tipos_cascara_export.py).
+        const tipoS2k = sec.formulacion === 2 ? "Membrane"
+                      : sec.formulacion === 1 ? "Shell-Thin" : "Shell-Thick";
+        push(`   Section=SSEC${idx}   Material=${sec.matKey}   MatAngle=0   AreaType=Shell   Type=${tipoS2k}   DrillDOF=Yes   Thickness=${fmt(sec.t)}   BendThick=${fmt(sec.t)}   Color=Cyan`);
       }
     }
     blank();
@@ -342,11 +372,13 @@ export function exportS2k(input: S2kExportInput): string {
   // ── Collect unique materials ──
   const matSet = new Map<string, { E: number; nu: number; G: number; rho: number }>();
   for (let i = 0; i < elements.length; i++) {
-    const E = elementInputs.elasticities?.get(i) || 0;
-    const G = elementInputs.shearModuli?.get(i) || 0;
-    const nu = E > 0 && G > 0 ? Math.max(0, Math.min(0.5, E / (2 * G) - 1)) : 0.2;
-    const rho = elementInputs.densities?.get(i) || 0;
-    const key = `MAT_${Math.round(E)}`;
+    // ⚠️ El Poisson se leia SOLO deduciendolo de `shearModuli`, y ese mapa lo
+    // llenan las BARRAS, no las cascaras. Para un modelo de cascaras el `nu`
+    // real (`poissonsRatios`) se ignoraba y salia el 0.2 por defecto. No es
+    // cosmetico: en el patch test del ITW, con nu = 0, SAP daba 1.491651 en
+    // vez de 1.500000 — y ese 0.5 % parecia del exportador de geometria o del
+    // tipo de cascara, cuando era el MATERIAL. Ahora manda el declarado.
+    const { E, nu, G, rho, key } = matDe(i);
     if (!matSet.has(key)) matSet.set(key, { E, nu, G, rho });
   }
 

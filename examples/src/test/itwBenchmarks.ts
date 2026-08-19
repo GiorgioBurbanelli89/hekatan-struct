@@ -62,16 +62,26 @@ function fijar(sup: Map<number, Sup>, id: number, gdl: number[]) {
   sup.set(id, a);
 }
 
-function inputsMembrana(nElem: number, t: number, E: number, nu: number) {
+/**
+ * `formulacion` va con los MISMOS numeros de la OAPI de CSI: 0 = Shell-Thick,
+ * 1 = Shell-Thin, 2 = Membrana. No es cosmetico: los exportadores .e2k y .s2k
+ * lo escriben tal cual (`MODELINGTYPE "Membrane"` / `Type=Membrane`), y sin eso
+ * el mismo modelo daba 1.500000 montado por la OAPI y 1.491651 al pasar por el
+ * fichero — o sea que se comparaban dos elementos, no dos caminos.
+ */
+function inputsMembrana(nElem: number, t: number, E: number, nu: number,
+                        formulacion = 2) {
   const thicknesses = new Map<number, number>();
   const elasticities = new Map<number, number>();
   const poissonsRatios = new Map<number, number>();
   const densities = new Map<number, number>();
+  const plateFormulations = new Map<number, number>();
   for (let e = 0; e < nElem; e++) {
     thicknesses.set(e, t); elasticities.set(e, E);
     poissonsRatios.set(e, nu); densities.set(e, 0);
+    plateFormulations.set(e, formulacion);
   }
-  return { thicknesses, elasticities, poissonsRatios, densities };
+  return { thicknesses, elasticities, poissonsRatios, densities, plateFormulations };
 }
 
 const RES = {
@@ -312,7 +322,11 @@ export const itwHemisferio: ExampleDef = {
     states.nodes.val = nodes;
     states.elements.val = elements;
     states.nodeInputs.val = { supports, loads };
-    states.elementInputs.val = inputsMembrana(elements.length, p.t, p.E, p.nu);
+    // El hemisferio SI es cascara: membrana + flexion. Va con Shell-THICK
+    // (formulacion 0), no Thin, aunque el paper use DKQ: medido, nuestra
+    // flexion DKE da -44.14 % aqui y el MITC4 -37.40 %. Es un dato sobre
+    // NUESTRA placa, no sobre el elemento del paper.
+    states.elementInputs.val = inputsMembrana(elements.length, p.t, p.E, p.nu, 0);
     try {
       states.deformOutputs.val = deform(nodes, elements, { supports, loads }, states.elementInputs.val);
       states.analyzeOutputs.val = analyze(nodes, elements, states.elementInputs.val, states.deformOutputs.val);

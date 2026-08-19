@@ -1,4 +1,4 @@
-$ File   "Hekatan_export.e2k"  saved 8/19/2026  0:19:02 in ETABS 22.6.0
+$ File   "Hekatan_export.e2k"  saved 8/19/2026  10:47:00 in ETABS 22.6.0
 
 $ PROGRAM INFORMATION
   PROGRAM  "ETABS"  VERSION "22.6.0"  
@@ -30,7 +30,7 @@ $ DIAPHRAGM NAMES
 
 $ MATERIAL PROPERTIES
   MATERIAL  "Conc_1"    TYPE "Concrete"    WEIGHTPERVOLUME 0
-  MATERIAL  "Conc_1"    SYMTYPE "Isotropic"  E 0.1  U 0.2  A 0.00001
+  MATERIAL  "Conc_1"    SYMTYPE "Isotropic"  E 0.1  U 0  A 0.00001
   MATERIAL  "Conc_1"    FC 24
 
 $ FRAME SECTIONS
@@ -65,7 +65,7 @@ $ POINT ASSIGNS
 $ LINE ASSIGNS
 
 $ WALL PROPERTIES
-  SHELLPROP  "Muro"  PROPTYPE  "Wall"  MATERIAL "Conc_1"  MODELINGTYPE "ShellThick"  WALLTHICKNESS 1000 
+  SHELLPROP  "Muro"  PROPTYPE  "Wall"  MATERIAL "Conc_1"  MODELINGTYPE "Membrane"  WALLTHICKNESS 1000 
 
 $ AREA CONNECTIVITIES
   AREA "W1"  PANEL  4  "1"  "2"  "2"  "1"  1  1  0  0  

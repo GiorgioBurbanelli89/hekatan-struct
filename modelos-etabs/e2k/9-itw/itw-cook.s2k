@@ -142,7 +142,7 @@ TABLE:  "AREA SECTION ASSIGNMENTS"
    Area=64   Section=SSEC1   MatProp=Default
  
 TABLE:  "AREA SECTION PROPERTIES"
-   Section=SSEC1   Material=MAT_1   MatAngle=0   AreaType=Shell   Type=ShellThin   DrillDOF=Yes   Thickness=1   BendThick=1   Color=Cyan
+   Section=SSEC1   Material=MAT_1_n0.3333   MatAngle=0   AreaType=Shell   Type=Membrane   DrillDOF=Yes   Thickness=1   BendThick=1   Color=Cyan
  
 TABLE:  "JOINT COORDINATES"
    Joint=1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=0   SpecialJt=No
@@ -331,13 +331,13 @@ TABLE:  "JOINT LOADS - FORCE"
    Joint=81   LoadPat=DEAD   CoordSys=GLOBAL   F1=0   F2=0   F3=0.0625   M1=0   M2=0   M3=0
  
 TABLE:  "MATERIAL PROPERTIES 01 - GENERAL"
-   Material=MAT_1   Type=Concrete   SymType=Isotropic   TempDepend=No   Color=Green
+   Material=MAT_1_n0.3333   Type=Concrete   SymType=Isotropic   TempDepend=No   Color=Green
  
 TABLE:  "MATERIAL PROPERTIES 02 - BASIC MECHANICAL PROPERTIES"
-   Material=MAT_1   UnitWeight=0   UnitMass=0   E1=1   G12=0   U12=0.2   A1=9.9E-06
+   Material=MAT_1_n0.3333   UnitWeight=0   UnitMass=0   E1=1   G12=0.375   U12=0.3333333333   A1=9.9E-06
  
 TABLE:  "MATERIAL PROPERTIES 03B - CONCRETE DATA"
-   Material=MAT_1   Fc=27579   eFc=27579   LtWtConc=No   SSCurveOpt=Mander   SSHysType=Takeda   SFc=0.00222   SCap=0.005   FinalSlope=-0.1   FAngle=0   DAngle=0
+   Material=MAT_1_n0.3333   Fc=27579   eFc=27579   LtWtConc=No   SSCurveOpt=Mander   SSHysType=Takeda   SFc=0.00222   SCap=0.005   FinalSlope=-0.1   FAngle=0   DAngle=0
  
 TABLE:  "PROGRAM CONTROL"
    ProgramName=SAP2000   Version=24.1.0   CurrUnits="KN, M, C"   SteelCode="AISC 360-16"   ConcCode="ACI 318-19"   AlumCode="AA 2015"   ColdCode=AISI-16   RegenHinge=Yes
