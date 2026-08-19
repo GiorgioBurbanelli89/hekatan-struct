@@ -282,13 +282,21 @@ para el ensamble.
 es **I33** (plano 1-2, el del canto), aunque el comentario los llame `Iz Iy`. Y
 en `as ID As2 As3`, **As2 va con I33**. Cambiarlo cruza las inercias.
 
-**Cáscaras (19-ago):** `heks.py` monta ya `shell`, `areaload` (vector nodal
-consistente `∫N_i·q·dA`, Gauss 2x2 con jacobiano real), `shellmod` escalar y
-direccional y `shellang`. Medido contra el **WASM** por `cliModeler`: **10
-modelos al 0.0000 %**, hasta 1175 cáscaras / 1289 nudos
-(`hekatan-struct-py/tests/test_heks_shells.py`). Fuera todavía: `shelltype
-thin`, `spring`, `mass`, `diaph` — se cuentan en `ModeloHeks.ignorados` y
-avisan, no se callan.
+**Cáscaras y muelles (19-ago):** `heks.py` monta ya `shell`, `areaload` (vector
+nodal consistente `∫N_i·q·dA`, Gauss 2x2 con jacobiano real), `shellmod` escalar
+y direccional, `shellang`, **`shelltype thin`** (Kirchhoff **DKE** de Batoz &
+Tahar — `elements/plate_dke.py`, NO el MZC) y **`spring`** (Winkler nodal, en
+`NodeInputs.springs` para que el modal pueda verlos). Medido contra el **WASM**
+por `cliModeler`: **10 modelos al 0.0000 %**, y el **RIOCHICO entero** (1303
+nudos, 2066 elementos, 612 muelles, 322 releases) al 100 % dentro del 1 % en
+1.2 s (`hekatan-struct-py/tests/test_heks_shells.py`). Fuera y avisando aparte:
+`mass` y `diaph` — `deform.cpp` tampoco los mira, solo `modalCpp`, así que el
+estático sin ellos está BIEN.
+
+⚠️ Un **triángulo escrito como Q4 colapsado** (4º nudo repetido) no es un
+elemento definido: el jacobiano del borde colapsado es cero, `jacobian2D` lo
+topa a 1e-15 y cada motor cae en un ruido distinto. En riochico esas 8 cáscaras
+valían el peor nudo 2.57 %; sin ellas, 0.016 %.
 
 ⚠️ **`shellQ4.ts` y `shellQ4.cpp` NO coinciden en la flexión de placa**: los
 modos incompatibles de Wilson están solo en la membrana del `.ts` y también en
