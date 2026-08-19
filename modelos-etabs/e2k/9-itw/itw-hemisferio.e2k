@@ -1,4 +1,4 @@
-$ File   "Hekatan_export.e2k"  saved 8/19/2026  10:47:00 in ETABS 22.6.0
+$ File   "Hekatan_export.e2k"  saved 8/19/2026  11:06:13 in ETABS 22.6.0
 
 $ PROGRAM INFORMATION
   PROGRAM  "ETABS"  VERSION "22.6.0"  
@@ -6,7 +6,6 @@ $ PROGRAM INFORMATION
 $ CONTROLS
   UNITS  "N"  "MM"  "C"  
   TITLE1  "Hekatan Struct Lineal export"  
-  TITLE2  "ITW IV hemisferio pinzado 18 grados"  
   PREFERENCE  MERGETOL 0.001
   RLLF  METHOD "ASCE7-10"  USEDEFAULTMIN "YES"  
 
@@ -332,30 +331,30 @@ $ AREA CONNECTIVITIES
   AREA "F38"  FLOOR  4  "42"  "43"  "52"  "51"  0  0  0  0  
   AREA "F39"  FLOOR  4  "43"  "44"  "53"  "52"  0  0  0  0  
   AREA "F40"  FLOOR  4  "44"  "45"  "54"  "53"  0  0  0  0  
-  AREA "W41"  PANEL  4  "56"  "55"  "55"  "56"  1  1  0  0  
-  AREA "W42"  PANEL  4  "57"  "56"  "56"  "57"  1  1  0  0  
-  AREA "W43"  PANEL  4  "58"  "57"  "57"  "58"  1  1  0  0  
-  AREA "W44"  PANEL  4  "59"  "58"  "58"  "59"  1  1  0  0  
-  AREA "W45"  PANEL  4  "60"  "59"  "59"  "60"  1  1  0  0  
-  AREA "W46"  PANEL  4  "61"  "60"  "60"  "61"  1  1  0  0  
-  AREA "W47"  PANEL  4  "62"  "61"  "61"  "62"  1  1  0  0  
-  AREA "W48"  PANEL  4  "63"  "62"  "62"  "63"  1  1  0  0  
-  AREA "W49"  PANEL  4  "65"  "64"  "64"  "65"  1  1  0  0  
-  AREA "W50"  PANEL  4  "66"  "65"  "65"  "66"  1  1  0  0  
-  AREA "W51"  PANEL  4  "67"  "66"  "66"  "67"  1  1  0  0  
-  AREA "W52"  PANEL  4  "68"  "67"  "67"  "68"  1  1  0  0  
-  AREA "W53"  PANEL  4  "69"  "68"  "68"  "69"  1  1  0  0  
-  AREA "W54"  PANEL  4  "70"  "69"  "69"  "70"  1  1  0  0  
-  AREA "W55"  PANEL  4  "71"  "70"  "70"  "71"  1  1  0  0  
-  AREA "W56"  PANEL  4  "72"  "71"  "71"  "72"  1  1  0  0  
-  AREA "W57"  PANEL  4  "74"  "73"  "73"  "74"  1  1  0  0  
-  AREA "W58"  PANEL  4  "75"  "74"  "74"  "75"  1  1  0  0  
-  AREA "W59"  PANEL  4  "76"  "75"  "75"  "76"  1  1  0  0  
-  AREA "W60"  PANEL  4  "77"  "76"  "76"  "77"  1  1  0  0  
-  AREA "W61"  PANEL  4  "78"  "77"  "77"  "78"  1  1  0  0  
-  AREA "W62"  PANEL  4  "79"  "78"  "78"  "79"  1  1  0  0  
-  AREA "W63"  PANEL  4  "80"  "79"  "79"  "80"  1  1  0  0  
-  AREA "W64"  PANEL  4  "81"  "80"  "80"  "81"  1  1  0  0  
+  AREA "W41"  PANEL  4  "46"  "47"  "56"  "55"  0  0  1  1  
+  AREA "W42"  PANEL  4  "47"  "48"  "57"  "56"  0  0  1  1  
+  AREA "W43"  PANEL  4  "48"  "49"  "58"  "57"  0  0  1  1  
+  AREA "W44"  PANEL  4  "49"  "50"  "59"  "58"  0  0  1  1  
+  AREA "W45"  PANEL  4  "50"  "51"  "60"  "59"  0  0  1  1  
+  AREA "W46"  PANEL  4  "51"  "52"  "61"  "60"  0  0  1  1  
+  AREA "W47"  PANEL  4  "52"  "53"  "62"  "61"  0  0  1  1  
+  AREA "W48"  PANEL  4  "53"  "54"  "63"  "62"  0  0  1  1  
+  AREA "W49"  PANEL  4  "55"  "56"  "65"  "64"  0  0  1  1  
+  AREA "W50"  PANEL  4  "56"  "57"  "66"  "65"  0  0  1  1  
+  AREA "W51"  PANEL  4  "57"  "58"  "67"  "66"  0  0  1  1  
+  AREA "W52"  PANEL  4  "58"  "59"  "68"  "67"  0  0  1  1  
+  AREA "W53"  PANEL  4  "59"  "60"  "69"  "68"  0  0  1  1  
+  AREA "W54"  PANEL  4  "60"  "61"  "70"  "69"  0  0  1  1  
+  AREA "W55"  PANEL  4  "61"  "62"  "71"  "70"  0  0  1  1  
+  AREA "W56"  PANEL  4  "62"  "63"  "72"  "71"  0  0  1  1  
+  AREA "W57"  PANEL  4  "64"  "65"  "74"  "73"  0  0  1  1  
+  AREA "W58"  PANEL  4  "65"  "66"  "75"  "74"  0  0  1  1  
+  AREA "W59"  PANEL  4  "66"  "67"  "76"  "75"  0  0  1  1  
+  AREA "W60"  PANEL  4  "67"  "68"  "77"  "76"  0  0  1  1  
+  AREA "W61"  PANEL  4  "68"  "69"  "78"  "77"  0  0  1  1  
+  AREA "W62"  PANEL  4  "69"  "70"  "79"  "78"  0  0  1  1  
+  AREA "W63"  PANEL  4  "70"  "71"  "80"  "79"  0  0  1  1  
+  AREA "W64"  PANEL  4  "71"  "72"  "81"  "80"  0  0  1  1  
 
 $ AREA ASSIGNS
   AREAASSIGN  "F1"  "Level_8"  SECTION "Losa"  OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "TOP"  TRANSFORMSTIFFNESSFOROFFSETS "No"  

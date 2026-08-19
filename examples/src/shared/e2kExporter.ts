@@ -460,8 +460,21 @@ function exportFromScratch(input: ExportE2kInput): string {
     }
     sortedZ = fus;
   }
-  // siempre la mas baja (la base) y la mas alta (para que nada quede huerfano)
-  if (!sortedZ.length) sortedZ = todasZ.slice();
+  // Si NO hay ninguna planta real (una malla que no es un edificio: la membrana
+  // de Cook, una cascara 3D, un talud), NO se pone una planta por cada cota.
+  // Se pone UNA sola y todo cuelga de ella con su descenso — que es
+  // exactamente lo que hace ETABS. Comprobado pidiendole a ETABS que exportara
+  // su propio e2k del mismo modelo (galpon-bodega-electoral/e2k_de_etabs.py):
+  //
+  //     ETABS    81 POINT, cada uno con su DESCENSO, todos a "Story1"
+  //     Hekatan   9 POINT sin descenso, repartidos en 44 "Level_i"
+  //
+  // Con 9 puntos y 44 plantas, ETABS al reimportar coloca cada punto en la
+  // elevacion de SU planta; como el punto es el mismo para toda la columna,
+  // salian 168 nudos y 36 areas en vez de 81 y 64: OTRO modelo. El fallback de
+  // "si no hay plantas, que TODAS las cotas sean planta" era justo lo contrario
+  // de lo que hay que hacer.
+  if (!sortedZ.length) sortedZ = [todasZ[0], todasZ[todasZ.length - 1]];
   if (sortedZ[0] !== todasZ[0]) sortedZ.unshift(todasZ[0]);
   if (sortedZ[sortedZ.length - 1] !== todasZ[todasZ.length - 1])
     sortedZ.push(todasZ[todasZ.length - 1]);
@@ -1186,7 +1199,30 @@ function exportFromScratch(input: ExportE2kInput): string {
       // Get plan points for 4 nodes
       const ps = el.map(ni => nodeToPS(ni));
       if (isWall) {
-        // PANEL: pt1 pt2 pt2 pt1 nStories nStories 0 0
+        // PANEL de muro: pt1 pt2 pt2 pt1 con salto de planta 1 1 0 0. Es la
+        // forma de ETABS para un pano vertical que sube de una planta a la
+        // siguiente: DOS puntos en planta y dos plantas.
+        //
+        // ⚠️ Pero eso solo vale si el pano ES eso. Cuando los cuatro nudos
+        // caen en la misma planta con descensos distintos (la membrana de
+        // Cook, una cascara 3D), ETABS escribe los CUATRO puntos distintos y
+        // el salto de planta de cada uno:
+        //
+        //     ETABS    AREA "W1" PANEL 4 "1" "2" "11" "10"  1 0 0 0
+        //     Hekatan  AREA "W1" PANEL 4 "1" "2" "2"  "1"   1 1 0 0
+        //
+        // Con la forma de muro, ETABS al reimportar Cook daba 125 nudos y 36
+        // areas en vez de 81 y 64. Comprobado pidiendole a ETABS su propio e2k
+        // del mismo modelo (galpon-bodega-electoral/e2k_de_etabs.py).
+        const idxPl = (st: string) => storyNames.indexOf(st);
+        const cuatroDistintos = new Set(ps.map(q => q.pt)).size === 4;
+        if (cuatroDistintos) {
+          const iTop = Math.max(...ps.map(q => idxPl(q.story)));
+          const salto = ps.map(q => iTop - idxPl(q.story));
+          lines.push(`  AREA "${aName}"  ${aType}  4  "${ps[0].pt}"  "${ps[1].pt}"  "${ps[2].pt}"  "${ps[3].pt}"  ${salto.join("  ")}  `);
+          aaEntries.push(`  AREAASSIGN  "${aName}"  "${storyNames[iTop]}"  SECTION "Muro"  OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "MIDDLE"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
+          return;
+        }
         // Use bottom-left and bottom-right points (Z-up: n[2] = elevation)
         const bot0 = nodes[el[0]][2] <= nodes[el[2]][2] ? 0 : 2;
         const bot1 = nodes[el[1]][2] <= nodes[el[3]][2] ? 1 : 3;

@@ -1,4 +1,4 @@
-$ File   "Hekatan_export.e2k"  saved 8/19/2026  10:47:00 in ETABS 22.6.0
+$ File   "Hekatan_export.e2k"  saved 8/19/2026  11:06:13 in ETABS 22.6.0
 
 $ PROGRAM INFORMATION
   PROGRAM  "ETABS"  VERSION "22.6.0"  
@@ -6,7 +6,6 @@ $ PROGRAM INFORMATION
 $ CONTROLS
   UNITS  "N"  "MM"  "C"  
   TITLE1  "Hekatan Struct Lineal export"  
-  TITLE2  "ITW II cantilever corto"  
   PREFERENCE  MERGETOL 0.001
   RLLF  METHOD "ASCE7-10"  USEDEFAULTMIN "YES"  
 
