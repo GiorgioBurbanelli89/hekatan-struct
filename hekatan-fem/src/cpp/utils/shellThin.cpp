@@ -66,7 +66,8 @@ Eigen::MatrixXd getMembraneK(const double x[4], const double y[4],
 Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
                                double E, double nu, double t,
                                const double *mod, double gammaFac, int nGauss,
-                               bool taylorBurbuja, double khg, double wAlpha);
+                               bool taylorBurbuja, double khg, double wAlpha,
+                               bool proyDrill);
 
 // ─── MZC Kirchhoff Plate Bending (12×12) — el corazón Shell-Thin ────────────
 // DOFs por nodo: [w, θx, θy] donde θx = ∂w/∂y, θy = -∂w/∂x
@@ -309,8 +310,8 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
     // drilling salen de la MISMA 12x12 y no hay penalizacion que pegar aparte.
     int drillingType = getMapValST(elementInputs.drillingTypes, index, 3);
     double drillScale = getMapValST(elementInputs.drillingPenaltyScales, index,
-                                    (drillingType >= 3 && drillingType <= 7) ? 0.4 : 0.05);
-    const bool usaITW = (drillingType >= 3 && drillingType <= 7);
+                                    (drillingType >= 3 && drillingType <= 9) ? 0.4 : 0.05);
+    const bool usaITW = (drillingType >= 3 && drillingType <= 9);
     const int  ngITW  = (drillingType == 4 || drillingType == 6) ? 2 : 3;
     const double khgITW = (drillingType == 6) ? 2.0e-4 : 0.0;
     const bool taylorITW = (drillingType == 5);
@@ -344,11 +345,13 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
     //      Por eso el defecto sigue siendo el 3: el compromiso no ha
     //      desaparecido, solo ha mejorado el otro lado de la balanza. Cascara
     //      curva -> 7. Losa con vigas -> 3.
-    const double waITW = (drillingType == 7) ? 0.99 : 0.0;
+    const double waITW = (drillingType == 7 || drillingType == 9) ? 0.99 : 0.0;
+    //  8 = FEAP/Taylor: Gauss 3x3 + proyeccion del drilling (ver shellQ4.cpp).
+    const bool proyITW = (drillingType == 8 || drillingType == 9);
 
     Eigen::MatrixXd Km   = usaITW ? Eigen::MatrixXd::Zero(8, 8)
                                   : getMembraneK(x, y, E, nu, t, dmod);   // 8×8
-    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW, khgITW, waITW)
+    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW, khgITW, waITW, proyITW)
                                   : Eigen::MatrixXd::Zero(12, 12);        // 12×12
     Kitw *= mFactor;
     Eigen::MatrixXd Kb = sinFlexion

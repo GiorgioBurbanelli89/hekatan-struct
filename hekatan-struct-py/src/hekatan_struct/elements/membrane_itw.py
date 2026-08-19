@@ -179,7 +179,8 @@ def k_membrana_itw(pts, E: float, nu: float, t: float,
                    gamma_fac: float = 0.4, n_gauss: int = 3,
                    con_burbuja: bool = True, con_penal: bool = True,
                    mod_dir=None, regla: str = "gauss",
-                   w_alpha: float = 0.99, penal_full: bool = False) -> np.ndarray:
+                   w_alpha: float = 0.99, penal_full: bool = False,
+                   proyectar_drilling: bool = False) -> np.ndarray:
     # NOTA sobre `penal_full`: ver el aviso al final del docstring. NO USAR.
     """Rigidez 12x12 del elemento, GDL `[u0,v0,tz0, u1,v1,tz1, ...]`.
 
@@ -213,6 +214,46 @@ def k_membrana_itw(pts, E: float, nu: float, t: float,
     cx, cy = _lados(X4, Y4)
 
     cuadratura, hay_centro = _puntos(regla, n_gauss, w_alpha)
+
+    # ── Proyeccion de las funciones del drilling (la via de FEAP) ─────────
+    # Es lo que hace el elemento de shell de Robert Taylor en FEAP
+    # (`elements/shells/shell3d.f`, subrutina `shl3di`), que es la
+    # implementacion del propio autor de Taylor & Simo (1985) — la OTRA
+    # referencia que cita el manual de CSI junto al ITW 1991.
+    #
+    # En su codigo, `shp1` y `shp2` son justo estas columnas de B (se ve en
+    # que multiplican `vl(6,j)`, el GDL 6 = el drilling), y hace:
+    #
+    #     gshp1(i,j) = SUM_l shp1(i,j,l)*dvl(l)      <- la integral
+    #     shp1(i,j,l) = shp1(i,j,l) - gshp1(i,j)/dv  <- restarle la MEDIA
+    #
+    # O sea: obliga a que INT B_theta dOmega = 0 — el drilling deja de
+    # producir deformacion media. Es un B-bar aplicado solo a la parte del
+    # giro, y ataca justo donde esta la diferencia medida contra ETABS:
+    # los bloques K_utheta (223-434 %) y K_thetatheta (81-206 %), no la
+    # membrana pura, que ya coincide al 0.00 %.
+    #
+    # Cambiar la CUADRATURA no puede arreglar eso porque no cambia la forma
+    # de esos bloques. Esto si.
+    medias = None
+    if proyectar_drilling:
+        acum = np.zeros((3, 4))
+        area = 0.0
+        for rr, ss, ww in cuadratura:
+            dr_, ds_, Ji_, dJ_ = _jacobiano(rr, ss, X4, Y4)
+            nsr_, nss_ = _serendipity(rr, ss)
+            NSx_ = Ji_[0, 0] * nsr_ + Ji_[0, 1] * nss_
+            NSy_ = Ji_[1, 0] * nsr_ + Ji_[1, 1] * nss_
+            g1 = NSx_[_ANT] * cx[_ANT] - NSx_ * cx
+            g2 = NSy_[_ANT] * cx[_ANT] - NSy_ * cx
+            g3_ = NSx_[_ANT] * cy[_ANT] - NSx_ * cy
+            g4 = NSy_[_ANT] * cy[_ANT] - NSy_ * cy
+            w = ww * abs(dJ_)
+            acum[0] += g1 * w
+            acum[1] += g4 * w
+            acum[2] += (g2 + g3_) * w
+            area += w
+        medias = acum / area
     n = 14 if con_burbuja else 12
     K = np.zeros((n, n))
     centro = {}
@@ -240,9 +281,14 @@ def k_membrana_itw(pts, E: float, nu: float, t: float,
             B[1, 3 * i + 1] = dNy[i]
             B[2, 3 * i] = dNy[i]
             B[2, 3 * i + 1] = dNx[i]
-            B[0, 3 * i + 2] = gt1[i]
-            B[1, 3 * i + 2] = gt4[i]
-            B[2, 3 * i + 2] = gt2[i] + gt3[i]
+            if medias is None:
+                B[0, 3 * i + 2] = gt1[i]
+                B[1, 3 * i + 2] = gt4[i]
+                B[2, 3 * i + 2] = gt2[i] + gt3[i]
+            else:
+                B[0, 3 * i + 2] = gt1[i] - medias[0, i]
+                B[1, 3 * i + 2] = gt4[i] - medias[1, i]
+                B[2, 3 * i + 2] = gt2[i] + gt3[i] - medias[2, i]
         if con_burbuja:
             nbr = -2.0 * rr * (1.0 - ss ** 2)     # NB9 = (1-r^2)(1-s^2)
             nbs = -2.0 * ss * (1.0 - rr ** 2)

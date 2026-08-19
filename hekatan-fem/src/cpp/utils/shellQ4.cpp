@@ -252,7 +252,7 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
                                       double E, double nu, double t,
                                       const double *mod, double gammaFac,
                                       int nGauss, bool taylorBurbuja,
-                                      double khg, double wAlpha)
+                                      double khg, double wAlpha, bool proyDrill)
 {
     double factor = E / (1.0 - nu * nu);
     Eigen::Matrix3d Dm;
@@ -343,6 +343,61 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
     // El centro solo es punto de integracion con Gauss 3x3.
     const bool hayCentro = (wAlpha <= 0.0 && nGauss == 3);
 
+    // ── Proyeccion de las funciones del drilling (la via de FEAP) ─────────
+    // Lo que hace el shell de Robert Taylor en FEAP (`elements/shells/
+    // shell3d.f`, subrutina `shl3di`) — la implementacion del PROPIO AUTOR de
+    // Taylor & Simo (1985), la otra referencia que cita el manual de CSI
+    // junto al ITW 1991. En su codigo:
+    //
+    //     gshp1(i,j) = SUM_l shp1(i,j,l)*dvl(l)      <- la integral
+    //     shp1(i,j,l) = shp1(i,j,l) - gshp1(i,j)/dv  <- restarle la MEDIA
+    //
+    // y sus `shp1`/`shp2` son exactamente estas columnas de B (se ve en que
+    // multiplican `vl(6,j)`, el GDL 6 = el drilling). Obliga a que
+    // INT B_theta dOmega = 0: el giro deja de producir deformacion media.
+    //
+    // POR QUE IMPORTA, medido contra la matriz 12x12 de ETABS reconstruida por
+    // flexibilidad (`galpon-bodega-electoral/memb12.json`, 10 geometrias):
+    //
+    //     formulacion            K_uu    K_utheta  K_thetatheta   12x12
+    //     ITW 1990 (3x3)         1.16 %   328.12 %   212.45 %    15.97 %
+    //     ITW 1991 (regla de 8)  6.77 %   333.53 %   177.98 %    17.84 %
+    //     PROYECCION + 3x3       1.16 %     9.28 %    39.69 %     1.42 %
+    //
+    // Cambiar la CUADRATURA no podia arreglarlo porque no cambia la FORMA de
+    // esos bloques; esto si. Y el minimo vuelve a caer en gamma/mu = 0.40
+    // exacto, que ya habia salido por minimos cuadrados con otra formulacion:
+    // el mismo numero por dos caminos independientes.
+    double mg1[4] = {0,0,0,0}, mg4[4] = {0,0,0,0}, mg23[4] = {0,0,0,0};
+    if (proyDrill) {
+        double areaQ = 0.0;
+        for (int iq = 0; iq < nq; iq++) {
+            double rr = qr[iq], ss = qs[iq], ww = qw[iq];
+            double Nq[4], dNr[4], dNe[4], Jv[2][2];
+            shapeFunctionsQ4(rr, ss, Nq, dNr, dNe);
+            double dJq = jacobian2D(x, y, dNr, dNe, Jv);
+            double nsr[4] = { -rr * (1 - ss),  0.5 * (1 - ss * ss),
+                              -rr * (1 + ss), -0.5 * (1 - ss * ss) };
+            double nss[4] = { -0.5 * (1 - rr * rr), -ss * (1 + rr),
+                               0.5 * (1 - rr * rr), -ss * (1 - rr) };
+            double Sx[4], Sy[4];
+            for (int i = 0; i < 4; i++) {
+                Sx[i] = Jv[0][0] * nsr[i] + Jv[0][1] * nss[i];
+                Sy[i] = Jv[1][0] * nsr[i] + Jv[1][1] * nss[i];
+            }
+            double w = ww * std::abs(dJq);
+            for (int i = 0; i < 4; i++) {
+                int pp = ant[i];
+                mg1[i]  += (Sx[pp] * cx[pp] - Sx[i] * cx[i]) * w;
+                mg4[i]  += (Sy[pp] * cy[pp] - Sy[i] * cy[i]) * w;
+                mg23[i] += ((Sy[pp] * cx[pp] - Sy[i] * cx[i])
+                          + (Sx[pp] * cy[pp] - Sx[i] * cy[i])) * w;
+            }
+            areaQ += w;
+        }
+        for (int i = 0; i < 4; i++) { mg1[i] /= areaQ; mg4[i] /= areaQ; mg23[i] /= areaQ; }
+    }
+
     // Jacobiano del CENTRO, para la modificacion de Taylor 1976 sobre la
     // burbuja: evaluar sus derivadas con J0 constante fuerza INT(B_burbuja) = 0
     // y es lo que el paper llama "the modification suggested by Taylor",
@@ -421,9 +476,9 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
                 B(1, 3*i + 1) = dNy[i];
                 B(2, 3*i)     = dNy[i];
                 B(2, 3*i + 1) = dNx[i];
-                B(0, 3*i + 2) = gt1[i];
-                B(1, 3*i + 2) = gt4[i];
-                B(2, 3*i + 2) = gt2[i] + gt3[i];
+                B(0, 3*i + 2) = gt1[i] - mg1[i];
+                B(1, 3*i + 2) = gt4[i] - mg4[i];
+                B(2, 3*i + 2) = gt2[i] + gt3[i] - mg23[i];
             }
             // El ITW **1991** NO lleva burbuja: su ec. (6) es Allman a secas.
             // La burbuja `(1-r^2)(1-s^2)` es del paper de 1990 (su ec. 24), y
@@ -1317,8 +1372,8 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     // Con drillingType 3 este numero es gamma/mu del paper (defecto 0.4, que es
     // lo medido de ETABS). Con el 2 es el alpha de Hughes-Brezzi (defecto 0.05).
     double drillScale = getMapVal(elementInputs.drillingPenaltyScales, index,
-                                  (drillingType >= 3 && drillingType <= 7) ? 0.4 : 0.05);
-    const bool usaITW = (drillingType >= 3 && drillingType <= 7);
+                                  (drillingType >= 3 && drillingType <= 9) ? 0.4 : 0.05);
+    const bool usaITW = (drillingType >= 3 && drillingType <= 9);
     // 3 = ITW con Gauss 3x3, que es lo que pide el paper   [DEFECTO]
     // 4 = ITW con Gauss 2x2 (integracion reducida)  -- NO USAR, ver abajo
     // 5 = ITW 3x3 con la burbuja a la Taylor (J0 del centro)
@@ -1390,11 +1445,15 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     //      Por eso el defecto sigue siendo el 3: el compromiso no ha
     //      desaparecido, solo ha mejorado el otro lado de la balanza. Cascara
     //      curva -> 7. Losa con vigas -> 3.
-    const double waITW = (drillingType == 7) ? 0.99 : 0.0;
+    const double waITW = (drillingType == 7 || drillingType == 9) ? 0.99 : 0.0;
+    //  8 = la via de FEAP/Taylor: Gauss 3x3 + PROYECCION del drilling. Es la
+    //      que reproduce la matriz 12x12 medida de ETABS al 1.42 % (contra el
+    //      15.97 % del tipo 3). Ver el comentario de `proyDrill` mas abajo.
+    const bool proyITW = (drillingType == 8 || drillingType == 9);
 
     Eigen::MatrixXd Km   = usaITW ? Eigen::MatrixXd::Zero(8, 8)
                                   : getMembraneK(x, y, E, nu, t, dmod);   // 8×8
-    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW, khgITW, waITW)
+    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW, khgITW, waITW, proyITW)
                                   : Eigen::MatrixXd::Zero(12, 12);        // 12×12
     #if HK_BENDING_FORMULATION == 2
         Eigen::MatrixXd Kb = getBendingK_DSE_FULL(x, y, E, nu, t);  // 12×12 (Wilson DSE Cap 8 completo, Variant C)
