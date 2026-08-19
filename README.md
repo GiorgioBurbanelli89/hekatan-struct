@@ -25,9 +25,61 @@ Full detail in [`ESTADO_VS_ETABS.md`](./ESTADO_VS_ETABS.md).
 | **F2K export** → SAFE 20 | round-trip re-import | 6.8 % mean | ⏳ open |
 | **Assembled mass** | ETABS `AssembledJointMass` | **0.002 %** | ✅ |
 
-Regression suite: **`npm test` → 143/143**, plus **57 passed / 2 xfailed** in the
-Python engine (`hekatan-struct-py`), which reproduces the TS/C++ solver at
-`1e-9` and is used as the fast arbiter.
+Regression suite: **`npm test` → 165/165**, plus **123 passed** in the Python
+engine (`hekatan-struct-py`), which reproduces the TS/C++ solver at `1e-9` and is
+used as the fast arbiter.
+
+### The membrane element and its drilling DOF
+
+The rotation about the shell normal ("drilling") is the one place where Hekatan
+still differs measurably from ETABS, and it has its own section because the
+answer turned out to be a **published formulation we were not using**.
+
+CSI's own manual names its sources (§10.1.1 of the *Analysis Reference Manual*,
+plus the bibliography): **Ibrahimbegović & Wilson (1991)**, **Taylor & Simo
+(1985)** and **Batoz & Tahar (1982)** — the last one being the DKQ we already
+had. Notably absent: Allman, Hughes, and Bathe/Dvorkin, i.e. **the homogeneous
+shell carries no MITC4**.
+
+`elementInputs.drillingTypes` selects the formulation. All of them pass the
+higher-order patch test **exactly** (1.500000 / 0.600000) and have exactly
+**3 zero-energy modes** — both checked on the matrix the binary emits, not on a
+displacement:
+
+| type | ETABS 12×12 matrix | drilling vs ETABS | pinched hemisphere 8×8 | mezzanine axial |
+|---|---|---|---|---|
+| 2 — Hughes-Brezzi (legacy) | — | +11.46 % | −3.6 % | 0.30 / 1.15 |
+| **3 — ITW 1990** (current default) | 15.97 % | +5.45 % | −34.07 % | 0.62 / 3.47 |
+| 7 — ITW 1991, eight-point rule | 17.84 % | +6.46 % | −4.07 % | 0.86 / 8.27 |
+| **8 — drilling projection** | **1.42 %** | **+3.09 %** | −33.26 % | **0.30 / 1.15** |
+| 9 — projection + eight-point | 7.41 % | +7.65 % | **−0.50 %** | **0.30 / 1.15** |
+
+Two findings, both from primary sources rather than guesswork:
+
+**The `1/√3` in CSI's binary is not 2×2 Gauss.** `CsiGo2.dll` loads
+`0.5773502691896258` eight times in the shell code and never loads `√(3/5)`.
+That reads as "2×2 quadrature", but it is the `α` of the **eight-point rule** in
+eq. (30) of ITW 1991, evaluated at `W_α → 1`, because `α = 1/(9W_α)^{1/4}` and
+`9^{-1/4} = 1/√3` to the last bit. The paper is explicit about why that rule
+exists: it *"has a similar effect … as the 2×2 Gaussian quadrature **but does not
+produce a rank-deficient matrix**"*. Genuine 2×2 leaves the element with **four**
+zero-energy modes — a mechanism.
+
+**The missing piece was a projection, and it is only in the source code.**
+Reconstructing ETABS's full 12×12 membrane matrix by flexibility (10 geometries)
+showed the pure-membrane block `K_uu` matching at **0.00 %** while `K_uθ` was off
+by 223–434 %: a different *shape*, not a different constant — so no choice of
+quadrature or penalty could fix it. **FEAP** (Robert Taylor's own program, BSD-3)
+resolves it in `elements/shells/shell3d.f`: it integrates the drilling shape
+functions over the element and **subtracts their mean**, forcing `∫ B_θ dΩ = 0`.
+That single change takes `K_uθ` from 328 % to **9.28 %** and the whole 12×12 from
+16 % to **1.42 %** — and the least-squares fit for `γ` lands on **0.40·μ**, the
+same value already measured by an independent route.
+
+Type **8 wins or ties type 3 in every column**, so it is the natural next
+default; type **9** is the one for doubly-curved shells. Sources extracted under
+[`registros/itw_1991/`](../registros/itw_1991/) (equations in LaTeX + page
+scans).
 
 ⚠️ **Known limitation — `Shell-Thick` on a coarse mesh.** Use **8 or more
 divisions per bay**; at 2×2 it is far too stiff. `Thin` and `Membrane` are
@@ -420,7 +472,7 @@ Every example exports an `ExampleDef` with:
 | `utils/getLocalStiffnessMatrix.cpp` | K_local 12×12 (Timoshenko) + Q4 shell |
 | `utils/getTransformationMatrix.cpp` | T matrix (3D rotation) |
 | `utils/getGlobalStiffnessMatrix.cpp` | Assembly with rigid offsets + releases |
-| `utils/shellQ4.cpp` | Shell Q4: membrane (Wilson incompatible modes) + Mindlin plate + drilling DOF — **= ETABS Shell-Thick (DSE Wilson Ch10)**. ⚠️ **too stiff on a coarse mesh — see below** |
+| `utils/shellQ4.cpp` | Shell Q4: membrane + Mindlin plate + drilling DOF — **= ETABS Shell-Thick**. Holds every drilling formulation (`drillingTypes` 2/3/7/8/9, see [above](#the-membrane-element-and-its-drilling-dof)). ⚠️ **too stiff on a coarse mesh — see below** |
 | `utils/shellThin.cpp` | **NUEVO: Shell Q4 Kirchhoff** = ETABS Shell-Thin (DKE Wilson Ch10), MZC plate bending puro, libre de shear locking. Validated <1.5% vs ETABS Mesa Torsión |
 | `plate_q4/kirchhoff_q4.cpp` | Dedicated Mindlin / Kirchhoff plate solver (legacy, separate API) |
 
