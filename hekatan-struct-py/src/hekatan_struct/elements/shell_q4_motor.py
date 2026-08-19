@@ -78,9 +78,20 @@ def _formas(xi, eta):
 
 
 def _jac(dxi, det, x, y):
+    """Jacobiano 2x2 y derivadas de las N respecto a x, y.
+
+    ⚠️ El `dJ` se limita por abajo a 1e-15, igual que `jacobian2D` de
+    `shellQ4.cpp`. No es cosmética: un TRIÁNGULO se escribe como Q4 colapsado
+    (el 4º nudo repetido) y en el punto de atadura del borde colapsado el
+    jacobiano es EXACTAMENTE cero. `riochico.heks` trae 8 así, y sin el tope
+    Python lanzaba `ZeroDivisionError` mientras el motor resolvía los 1303
+    nudos. El tope hay que copiarlo, no elegirlo: cambia el número.
+    """
     J11 = float(dxi @ x); J12 = float(dxi @ y)
     J21 = float(det @ x); J22 = float(det @ y)
     dJ = J11 * J22 - J12 * J21
+    if abs(dJ) < 1e-15:
+        dJ = 1e-15
     inv = 1.0 / dJ
     dNdx = inv * (J22 * dxi - J12 * det)
     dNdy = inv * (-J21 * dxi + J11 * det)
@@ -327,5 +338,9 @@ def shell_q4_motor(coords_xy, E, nu, t, *, alpha_drilling=None,
         if not giros_del_ts:
             k_ben = _T_BEN.T @ k_ben @ _T_BEN
         K[np.ix_(DOF_BEN, DOF_BEN)] += fb * k_ben
-    K[np.ix_(DOF_DRI, DOF_DRI)] += _k_drilling(x, y, G, t, al)
+    # El drilling va escalado por el modificador de MEMBRANA, como en
+    # `shellQ4.cpp` (`K += mFactor * getDrillingK_HughesBrezzi(...)`): si la
+    # membrana no existe, su θz tampoco tiene que aportar rigidez. Solo se nota
+    # con el `shellmod` ESCALAR — con los direccionales mFactor vale 1.
+    K[np.ix_(DOF_DRI, DOF_DRI)] += fm * _k_drilling(x, y, G, t, al)
     return K

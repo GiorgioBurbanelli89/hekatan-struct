@@ -291,9 +291,16 @@ export function exportS2k(input: S2kExportInput): string {
   blank();
 
   // ── JOINT LOADS - FORCE ──
-  if (nodeInputs.forces && nodeInputs.forces.size > 0) {
+  // ⚠️ Esto leia `nodeInputs.forces`, que NO EXISTE en el modelo de datos: el
+  // campo es `loads` (ver hekatan-fem/src/data-model.ts). Como el objeto era
+  // `undefined`, el `if` nunca entraba y el .s2k salia SIN NINGUNA carga nodal
+  // — y SAP no protesta: abre el modelo, resuelve y da todo cero. No se habia
+  // notado porque el galpon, que es con lo que se valido el exportador, carga
+  // por `frameload` y no tiene ni una fuerza nodal.
+  const cargasNodales = nodeInputs.loads;
+  if (cargasNodales && cargasNodales.size > 0) {
     push(`TABLE:  "JOINT LOADS - FORCE"`);
-    for (const [idx, force] of nodeInputs.forces) {
+    for (const [idx, force] of cargasNodales) {
       if (!force.some(v => Math.abs(v) > 1e-12)) continue;
       push(`   Joint=${idx + 1}   LoadPat=DEAD   CoordSys=GLOBAL   F1=${fmt(force[0])}   F2=${fmt(force[1])}   F3=${fmt(force[2])}   M1=${fmt(force[3])}   M2=${fmt(force[4])}   M3=${fmt(force[5])}`);
     }

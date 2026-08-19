@@ -21,6 +21,8 @@ Comandos soportados (los que usa el galpón):
     areaload ID q                (kN/m2 sobre la cáscara, + hacia +z)
     shellmod ID mem bend | ID F11 F22 F12 M11 M22 M12 V13 V23
     shellang ID grados           (se guarda; el solver NO lo usa, ni éste ni el TS)
+    shelltype ID thin|thick      (thin = Kirchhoff DKE, thick = Mindlin MITC4)
+    spring ID uz|ux|...|0..5 k   (muelle nodal de Winkler, kN/m)
     areaobj ID n1 n2 n3 n4 desde hasta      (agrupa celdas; solo trazabilidad)
     solve / reset                (se ignoran: aquí se resuelve al llamar)
 
@@ -63,6 +65,16 @@ class ModeloHeks:
     ignorados: dict[str, int] = field(default_factory=dict)
 
 
+# Comandos que el estático NO usa y el motor TS/C++ tampoco: `deform.cpp` no
+# los mira, solo `modalCpp`. Se cuentan igual, pero se avisan aparte.
+_SOLO_MODAL = {"mass", "diaph", "diaphragm"}
+
+# Igual que `DOF_NAMES` de `cliModeler.ts`: el muelle se puede pedir por el
+# nombre del desplazamiento o por el de la fuerza.
+_DOF_NOMBRE = {"ux": 0, "uy": 1, "uz": 2, "rx": 3, "ry": 4, "rz": 5,
+               "fx": 0, "fy": 1, "fz": 2, "mx": 3, "my": 4, "mz": 5}
+
+
 def _support_flags(spec: str) -> tuple[bool, bool, bool, bool, bool, bool]:
     s = spec.strip().lower().replace(" ", "")
     if s in ("fixed", "empotrado", "fix"):
@@ -93,6 +105,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
     smod_dir: dict[int, list[float]] = {}          # shellmod direccional (8)
     sang: dict[int, float] = {}
     stipo: dict[int, int] = {}             # shelltype: 1 = thin, 0 = thick
+    muelles: list[tuple[int, int, float]] = []   # (ID de nudo, GDL, k)
     errores: list[str] = []
     ignorados: dict[str, int] = {}
 
@@ -196,6 +209,14 @@ def leer_heks(ruta: str) -> ModeloHeks:
                         stipo[int(t[1])] = 0
                     else:
                         errores.append(f"shelltype {t[1]}: se esperaba thin o thick")
+                elif cmd == "spring":
+                    # spring nodoID uz 15000   — GDL por nombre o por número
+                    nom = t[2].lower() if len(t) > 2 else "uz"
+                    dof = _DOF_NOMBRE.get(nom)
+                    if dof is None:
+                        dof = int(nom) if nom.isdigit() and int(nom) < 6 else 2
+                    muelles.append((int(t[1]), dof,
+                                    float(t[3]) if len(t) > 3 else 1000.0))
                 elif cmd == "areaobj":
                     continue        # agrupa celdas para el exportador, no da rigidez
                 elif cmd in ("solve", "reset"):
@@ -272,6 +293,8 @@ def leer_heks(ruta: str) -> ModeloHeks:
             ei.bending_modifiers[k] = smod[sh["id"]][1]
         if sh["id"] in sang:
             ei.shell_angles[k] = sang[sh["id"]]
+        if sh["id"] in stipo:
+            ei.plate_formulations[k] = stipo[sh["id"]]
 
     for nid, flags in sup.items():
         if nid in idx_de:
@@ -324,21 +347,36 @@ def leer_heks(ruta: str) -> ModeloHeks:
     huerfanas_q = set(q_area) - {sh["id"] for sh in shells}
     if huerfanas_q:
         m.errores.append(f"areaload sin cáscara: {sorted(huerfanas_q)[:10]}")
-    if stipo:
-        # `shelltype` existe en el .heks y en el motor TS/C++ (plateFormulations
-        # -> Kirchhoff Shell-Thin), pero el shell de Python es Mindlin/MITC4 y
-        # no tiene ese camino. Callarlo sería dar por buena otra teoría.
-        m.errores.append(
-            f"shelltype declarado en {len(stipo)} cáscaras y NO aplicado: "
-            "el shell de Python es Mindlin (Thick)"
-        )
+    huerfanos_muelle = []
+    for nid, dof, kk in muelles:
+        if nid in idx_de:
+            ni.springs.append((idx_de[nid], dof, kk))
+        else:
+            huerfanos_muelle.append(nid)
+    if huerfanos_muelle:
+        m.errores.append(f"spring sin nudo: {sorted(set(huerfanos_muelle))[:10]}")
+
+    huerfanos_tipo = set(stipo) - {sh["id"] for sh in shells}
+    if huerfanos_tipo:
+        m.errores.append(f"shelltype sin cáscara: {sorted(huerfanos_tipo)[:10]}")
 
     huerfanas = set(fl) - {f["id"] for f in frames}
     if huerfanas:
         m.errores.append(f"frameload sin barra: {sorted(huerfanas)[:10]}")
     if ignorados:
-        detalle = ", ".join(f"{k}x{v}" for k, v in sorted(ignorados.items()))
-        m.errores.append(f"comandos NO montados: {detalle}")
+        # `mass` y `diaph` no entran en el estático NI en el motor TS/C++
+        # (`deform.cpp` no los mira; solo `modalCpp`). Decirlo aparte, porque
+        # meterlos en la misma lista que un hueco de verdad haría dudar de un
+        # resultado que está bien.
+        modal = {k: v for k, v in ignorados.items() if k in _SOLO_MODAL}
+        resto = {k: v for k, v in ignorados.items() if k not in _SOLO_MODAL}
+        if resto:
+            detalle = ", ".join(f"{k}x{v}" for k, v in sorted(resto.items()))
+            m.errores.append(f"comandos NO montados: {detalle}")
+        if modal:
+            detalle = ", ".join(f"{k}x{v}" for k, v in sorted(modal.items()))
+            m.errores.append(
+                f"solo para el modal, no afectan a este cálculo: {detalle}")
     if not ni.loads and not ei.frame_loads:
         m.errores.append("modelo SIN carga: la deformada va a salir 0")
     return m

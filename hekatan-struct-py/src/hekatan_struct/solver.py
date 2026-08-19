@@ -21,6 +21,7 @@ from .elements.frame import (
 )
 from .elements.shell import shell_q4_stiffness, shell_q4_local_axes, shell_q4_T
 from .elements.shell_q4_motor import shell_q4_motor
+from .elements.shell_thin import shell_thin_motor
 from .elements.plate_mzc import mzc_plate_stiffness, mzc_to_shell_q4_24
 
 # Global flag — usar MZC Kirchhoff (= ETABS Shell-Thin) en vez de Mindlin Q4
@@ -119,12 +120,19 @@ def _shell_k_global(
                                    include_membrane=True, include_bending=False)
         k_loc = k_loc + mzc_to_shell_q4_24(mzc_plate_stiffness(xy, E, nu, t))
     elif USE_Q4_MOTOR:
-        k_loc = shell_q4_motor(
+        # Dispatch Thin/Thick por elemento, igual que
+        # `getLocalStiffnessMatrix.cpp`: plate_formulations == 1 -> Kirchhoff.
+        motor = (shell_thin_motor
+                 if element_inputs.plate_formulations.get(idx) == 1
+                 else shell_q4_motor)
+        extra = {} if motor is shell_thin_motor else {
+            "solo_membrana": USE_SOLO_MEMBRANA}
+        k_loc = motor(
             xy, E, nu, t,
-            solo_membrana=USE_SOLO_MEMBRANA,
             mod_membrana=element_inputs.membrane_modifiers.get(idx, 1.0),
             mod_flexion=element_inputs.bending_modifiers.get(idx, 1.0),
             mod_dir=element_inputs.shell_modifiers.get(idx),
+            **extra,
         )
     else:
         k_loc = shell_q4_stiffness(xy, E, nu, t)
@@ -335,6 +343,15 @@ def deform(
     K_orig = (_assemble_K_sparse(nodes, elements, element_inputs) if disperso
               else _assemble_K(nodes, elements, element_inputs))
     F_orig = _assemble_F(nodes, node_inputs, elements, element_inputs)
+
+    # Muelles nodales, a la diagonal y ANTES de tocar apoyos — es lo que hace
+    # `deform.cpp`. Van dentro de `node_inputs`, no como argumento suelto: si
+    # no, el modal no puede verlos por mucho que el .heks los traiga (la
+    # cimentación del RIOCHICO se apoya en 612 muelles de balasto).
+    for n_idx, dof_local, k in node_inputs.springs:
+        g = 6 * n_idx + dof_local
+        if 0 <= g < n_total:
+            K_orig[g, g] += k
 
     fixed = np.zeros(n_total, dtype=bool)
     for node_idx, restraints in node_inputs.supports.items():

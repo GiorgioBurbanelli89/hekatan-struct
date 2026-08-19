@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from hekatan_struct.heks import leer_heks, resolver_heks  # noqa: E402
 
+BR = chr(10)          # salto de línea, para no pelear con el escapado
 AQUI = Path(__file__).resolve().parent
 RAIZ = AQUI.parents[1]                      # .../hekatan-struct
 DATOS = RAIZ / "tests" / "datos"
@@ -118,3 +119,191 @@ def test_carga_de_area_reparte_q_por_el_area_exacta(tmp_path):
     m = leer_heks(str(heks))
     total = sum(v[2] for v in m.node_inputs.loads.values())
     assert abs(total - (-5 * 9.0)) < 1e-9, f"ΣFz = {total}, se esperaba -45"
+
+
+def _losa_heks(destino: Path, tipo: str | None, shellmod: str | None = None,
+               nx: int = 6, ny: int = 4, Lx: float = 6.0, Ly: float = 4.0) -> Path:
+    """Losa rectangular apoyada en el contorno con carga de área."""
+    lin, ids, k = [], {}, 1
+    for j in range(ny + 1):
+        for i in range(nx + 1):
+            ids[(i, j)] = k
+            lin.append(f"node {k} {i * Lx / nx:.6f} {j * Ly / ny:.6f} 0")
+            k += 1
+    sid = 1
+    for j in range(ny):
+        for i in range(nx):
+            lin.append("shell %d %d %d %d %d 0.15 2.4e7" % (
+                sid, ids[(i, j)], ids[(i + 1, j)], ids[(i + 1, j + 1)], ids[(i, j + 1)]))
+            sid += 1
+    for s in range(1, sid):
+        if tipo:
+            lin.append(f"shelltype {s} {tipo}")
+        if shellmod:
+            lin.append(f"shellmod {s} {shellmod}")
+        lin.append(f"areaload {s} -8.0")
+    lin += [f"support {ids[(i, j)]} 111000"
+            for j in range(ny + 1) for i in range(nx + 1)
+            if i in (0, nx) or j in (0, ny)]
+    destino.write_text("\n".join(lin + ["solve"]) + "\n", encoding="utf-8")
+    return destino
+
+
+def _comparar_con_motor(heks: Path, tmp_path: Path):
+    ref = _motor_ts(heks, tmp_path / "ref.json")
+    m = leer_heks(str(heks))
+    assert not m.errores, m.errores
+    assert len(m.elements) == ref["nElements"]
+    res = resolver_heks(m)
+    n = len(m.nodes)
+    uz_ref = [ref["deformations"][str(i)][2] for i in range(n)]
+    uz_py = [res.deformations[i][2] for i in range(n)]
+    mx = max(abs(v) for v in uz_ref) or 1e-12
+    peor = max(abs(a - b) / mx * 100 for a, b in zip(uz_py, uz_ref))
+    return min(uz_ref), min(uz_py), peor
+
+
+@pytest.mark.parametrize("tipo", ["thin", "thick", None])
+def test_shelltype_thin_y_thick_clonan_al_motor(tipo, tmp_path):
+    """`shelltype thin` = Kirchhoff DKE · `thick` (y el defecto) = Mindlin MITC4.
+
+    Sin este dispatch, una losa que en ETABS es Shell-Thin entraba por el
+    defecto de Hekatan y salía MÁS RÍGIDA — 4 % menos de flecha en el peldaño 2
+    de la escalera. El Python la leía y avisaba de que no la aplicaba; ahora la
+    aplica.
+    """
+    heks = _losa_heks(tmp_path / f"losa_{tipo}.heks", tipo)
+    ref, py, peor = _comparar_con_motor(heks, tmp_path)
+    print("\n  losa 6x4 %-6s  Uz C++ %9.5f mm   PY %9.5f mm   peor %.2e %%"
+          % (tipo or "(def)", ref * 1000, py * 1000, peor))
+    assert peor < 1e-6
+
+
+def test_thin_y_thick_NO_dan_lo_mismo(tmp_path):
+    """Y que no sea un dispatch de adorno: los dos caminos tienen que separarse.
+
+    Un test que solo compara contra el motor pasaría igual si el `shelltype` no
+    llegara a ningún sitio y las dos losas cayeran en Mindlin — porque el motor
+    también las resolvería con Mindlin. Hay que exigir que se SEPAREN.
+    """
+    a = leer_heks(str(_losa_heks(tmp_path / "a.heks", "thin")))
+    b = leer_heks(str(_losa_heks(tmp_path / "b.heks", "thick")))
+    assert set(a.element_inputs.plate_formulations.values()) == {1}
+    assert set(b.element_inputs.plate_formulations.values()) == {0}
+    ua = min(d[2] for d in resolver_heks(a).deformations.values())
+    ub = min(d[2] for d in resolver_heks(b).deformations.values())
+    assert abs(ua - ub) / abs(ub) > 1e-3, (
+        "thin y thick dan lo mismo (%.6e vs %.6e): el shelltype no llega al "
+        "elemento" % (ua, ub))
+
+
+def test_shellmod_escalar_tambien_escala_el_drilling(tmp_path):
+    """`K += mFactor · drilling`, como `shellQ4.cpp`. El Python no lo escalaba.
+
+    No lo cazaba ningún modelo del repo porque todos traen `shellmod`
+    DIRECCIONAL, y con direccionales el C++ pone mFactor = 1: la diferencia solo
+    aparece con la forma escalar.
+
+    ⚠️ Y tiene que ser un MURO cargado EN SU PLANO. Sobre una losa plana con
+    carga vertical el test pasa igual sin el arreglo, porque nada excita θz:
+    medido, 5.6e-12 % con y sin. Aquí, sin el arreglo, 0.26 %.
+    """
+    nx, nz, Lx, Lz = 2, 6, 2.0, 6.0
+    lin, ids, k = [], {}, 1
+    for j in range(nz + 1):
+        for i in range(nx + 1):
+            ids[(i, j)] = k
+            lin.append(f"node {k} {i * Lx / nx:.6f} 0 {j * Lz / nz:.6f}")
+            k += 1
+    sid = 1
+    for j in range(nz):
+        for i in range(nx):
+            lin.append("shell %d %d %d %d %d 0.20 2.4e7" % (
+                sid, ids[(i, j)], ids[(i + 1, j)], ids[(i + 1, j + 1)], ids[(i, j + 1)]))
+            lin.append(f"shellmod {sid} 0.35 0.70")
+            sid += 1
+    lin += [f"support {ids[(i, 0)]} fixed" for i in range(nx + 1)]
+    lin += [f"load {ids[(i, nz)]} 50 0 0 0 0 0" for i in range(nx + 1)]
+    heks = tmp_path / "muro_mod.heks"
+    heks.write_text(BR.join(lin + ["solve"]) + BR, encoding="utf-8")
+
+    ref = _motor_ts(heks, tmp_path / "ref.json")
+    m = leer_heks(str(heks))
+    res = resolver_heks(m)
+    n = len(m.nodes)
+    ux_ref = [ref["deformations"][str(i)][0] for i in range(n)]
+    ux_py = [res.deformations[i][0] for i in range(n)]
+    mx = max(abs(v) for v in ux_ref)
+    peor = max(abs(a - b) / mx * 100 for a, b in zip(ux_py, ux_ref))
+    print(BR + "  muro en su plano, shellmod 0.35 0.70   Ux C++ %8.5f mm"
+          "   PY %8.5f mm   peor %.2e %%"
+          % (max(ux_ref) * 1000, max(ux_py) * 1000, peor))
+    assert peor < 1e-6
+
+
+def test_muelles_winkler_clonan_al_motor(tmp_path):
+    """`spring nodo uz k` — Winkler nodal. Es `K(g,g) += k` en `deform.cpp`.
+
+    Losa sobre 25 muelles de balasto con carga central. Se comprueba lo de
+    siempre en este orden: primero la BÁSCULA (la suma de fuerzas de muelle
+    tiene que dar la carga), después el nudo a nudo.
+    """
+    n, L, ks = 4, 3.0, 30000.0
+    lin, ids, k = [], {}, 1
+    for j in range(n + 1):
+        for i in range(n + 1):
+            ids[(i, j)] = k
+            lin.append(f"node {k} {i * L / n:.6f} {j * L / n:.6f} 0")
+            k += 1
+    sid = 1
+    for j in range(n):
+        for i in range(n):
+            lin.append("shell %d %d %d %d %d 0.30 2.4e7" % (
+                sid, ids[(i, j)], ids[(i + 1, j)], ids[(i + 1, j + 1)], ids[(i, j + 1)]))
+            sid += 1
+    A = (L / n) ** 2
+    for j in range(n + 1):
+        for i in range(n + 1):
+            f = (0.5 if i in (0, n) else 1.0) * (0.5 if j in (0, n) else 1.0)
+            lin.append(f"spring {ids[(i, j)]} uz {ks * A * f:.4f}")
+    # Sin sujetar el plano la losa flota lateralmente: los muelles son solo uz.
+    lin += [f"support {ids[(0, 0)]} 110000", f"support {ids[(n, 0)]} 010000",
+            f"load {ids[(n // 2, n // 2)]} 0 0 -500 0 0 0"]
+    heks = tmp_path / "zapata.heks"
+    heks.write_text(BR.join(lin + ["solve"]) + BR, encoding="utf-8")
+
+    ref = _motor_ts(heks, tmp_path / "ref.json")
+    m = leer_heks(str(heks))
+    assert not m.errores, m.errores
+    assert len(m.node_inputs.springs) == (n + 1) ** 2
+    res = resolver_heks(m)
+
+    uz_py = [res.deformations[i][2] for i in range(len(m.nodes))]
+    suma = sum(kk * uz_py[i] for i, d, kk in m.node_inputs.springs if d == 2)
+    assert abs(suma - (-500.0)) < 1e-6, f"la báscula no cierra: {suma} kN"
+
+    uz_ref = [ref["deformations"][str(i)][2] for i in range(len(m.nodes))]
+    mx = max(abs(v) for v in uz_ref)
+    peor = max(abs(a - b) / mx * 100 for a, b in zip(uz_py, uz_ref))
+    print(BR + "  zapata sobre 25 muelles   Uz C++ %9.6f mm   PY %9.6f mm   peor %.2e %%"
+          % (min(uz_ref) * 1000, min(uz_py) * 1000, peor))
+    assert peor < 1e-6
+
+
+def test_mass_y_diaph_se_avisan_aparte(tmp_path):
+    """`mass` y `diaph` NO entran en el estático — ni aquí ni en `deform.cpp`.
+
+    Meterlos en la misma lista que un hueco de verdad haría dudar de un
+    resultado que está bien. Van en su propio aviso.
+    """
+    heks = tmp_path / "d.heks"
+    heks.write_text(BR.join([
+        "node 1 0 0 0", "node 2 3 0 0",
+        "frame 1 1 2 2e8 0.01 1e-4 1e-4 1e-5",
+        "support 1 fixed", "load 2 0 0 -5 0 0 0",
+        "diaph 2 1", "mass 2 1.5", "zzz 1 2"]) + BR, encoding="utf-8")
+    m = leer_heks(str(heks))
+    assert any("solo para el modal" in e and "diaph" in e and "mass" in e
+               for e in m.errores), m.errores
+    assert any(e.startswith("comandos NO montados") and "zzz" in e and
+               "mass" not in e for e in m.errores), m.errores

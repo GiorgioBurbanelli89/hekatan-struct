@@ -1,0 +1,90 @@
+File ITW I patch test viga flexion pura.$2k was saved on m/d/yy at h:mm:ss
+ 
+TABLE:  "ACTIVE DEGREES OF FREEDOM"
+   UX=Yes   UY=Yes   UZ=Yes   RX=Yes   RY=Yes   RZ=Yes
+ 
+TABLE:  "CONNECTIVITY - AREA"
+   Area=1   NumJoints=4   Joint1=1   Joint2=2   Joint3=9   Joint4=8
+   Area=2   NumJoints=4   Joint1=2   Joint2=3   Joint3=10   Joint4=9
+   Area=3   NumJoints=4   Joint1=3   Joint2=4   Joint3=11   Joint4=10
+   Area=4   NumJoints=4   Joint1=4   Joint2=5   Joint3=12   Joint4=11
+   Area=5   NumJoints=4   Joint1=5   Joint2=6   Joint3=13   Joint4=12
+   Area=6   NumJoints=4   Joint1=6   Joint2=7   Joint3=14   Joint4=13
+ 
+TABLE:  "COORDINATE SYSTEMS"
+   Name=GLOBAL   Type=Cartesian   X=0   Y=0   Z=0   AboutZ=0   AboutY=0   AboutX=0
+ 
+TABLE:  "DATABASE FORMAT TYPES"
+   UnitsCurr=Yes   OverrideE=No
+ 
+TABLE:  "AREA SECTION ASSIGNMENTS"
+   Area=1   Section=SSEC1   MatProp=Default
+   Area=2   Section=SSEC1   MatProp=Default
+   Area=3   Section=SSEC1   MatProp=Default
+   Area=4   Section=SSEC1   MatProp=Default
+   Area=5   Section=SSEC1   MatProp=Default
+   Area=6   Section=SSEC1   MatProp=Default
+ 
+TABLE:  "AREA SECTION PROPERTIES"
+   Section=SSEC1   Material=MAT_100   MatAngle=0   AreaType=Shell   Type=ShellThin   DrillDOF=Yes   Thickness=1   BendThick=1   Color=Cyan
+ 
+TABLE:  "JOINT COORDINATES"
+   Joint=1   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=0   SpecialJt=No
+   Joint=2   CoordSys=GLOBAL   CoordType=Cartesian   XorR=1.666666667   Y=0   Z=0   SpecialJt=No
+   Joint=3   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3.333333333   Y=0   Z=0   SpecialJt=No
+   Joint=4   CoordSys=GLOBAL   CoordType=Cartesian   XorR=5   Y=0   Z=0   SpecialJt=No
+   Joint=5   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6.666666667   Y=0   Z=0   SpecialJt=No
+   Joint=6   CoordSys=GLOBAL   CoordType=Cartesian   XorR=8.333333333   Y=0   Z=0   SpecialJt=No
+   Joint=7   CoordSys=GLOBAL   CoordType=Cartesian   XorR=10   Y=0   Z=0   SpecialJt=No
+   Joint=8   CoordSys=GLOBAL   CoordType=Cartesian   XorR=0   Y=0   Z=1   SpecialJt=No
+   Joint=9   CoordSys=GLOBAL   CoordType=Cartesian   XorR=1.666666667   Y=0   Z=1   SpecialJt=No
+   Joint=10   CoordSys=GLOBAL   CoordType=Cartesian   XorR=3.333333333   Y=0   Z=1   SpecialJt=No
+   Joint=11   CoordSys=GLOBAL   CoordType=Cartesian   XorR=5   Y=0   Z=1   SpecialJt=No
+   Joint=12   CoordSys=GLOBAL   CoordType=Cartesian   XorR=6.666666667   Y=0   Z=1   SpecialJt=No
+   Joint=13   CoordSys=GLOBAL   CoordType=Cartesian   XorR=8.333333333   Y=0   Z=1   SpecialJt=No
+   Joint=14   CoordSys=GLOBAL   CoordType=Cartesian   XorR=10   Y=0   Z=1   SpecialJt=No
+ 
+TABLE:  "JOINT RESTRAINT ASSIGNMENTS"
+   Joint=1   U1=Yes   U2=Yes   U3=Yes   R1=Yes   R2=No   R3=Yes
+   Joint=2   U1=No   U2=Yes   U3=No   R1=Yes   R2=No   R3=Yes
+   Joint=3   U1=No   U2=Yes   U3=No   R1=Yes   R2=No   R3=Yes
+   Joint=4   U1=No   U2=Yes   U3=No   R1=Yes   R2=No   R3=Yes
+   Joint=5   U1=No   U2=Yes   U3=No   R1=Yes   R2=No   R3=Yes
+   Joint=6   U1=No   U2=Yes   U3=No   R1=Yes   R2=No   R3=Yes
+   Joint=7   U1=No   U2=Yes   U3=Yes   R1=Yes   R2=No   R3=Yes
+   Joint=8   U1=No   U2=Yes   U3=No   R1=Yes   R2=No   R3=Yes
+   Joint=9   U1=No   U2=Yes   U3=No   R1=Yes   R2=No   R3=Yes
+   Joint=10   U1=No   U2=Yes   U3=No   R1=Yes   R2=No   R3=Yes
+   Joint=11   U1=No   U2=Yes   U3=No   R1=Yes   R2=No   R3=Yes
+   Joint=12   U1=No   U2=Yes   U3=No   R1=Yes   R2=No   R3=Yes
+   Joint=13   U1=No   U2=Yes   U3=No   R1=Yes   R2=No   R3=Yes
+   Joint=14   U1=No   U2=Yes   U3=No   R1=Yes   R2=No   R3=Yes
+ 
+TABLE:  "LOAD PATTERN DEFINITIONS"
+   LoadPat=DEAD   DesignType=Dead   SelfWtMult=0
+ 
+TABLE:  "LOAD CASE DEFINITIONS"
+   Case=DEAD   Type=LinStatic   InitialCond=Zero   DesTypeOpt="Prog Det"   DesignType=Dead   DesActOpt="Prog Det"   DesignAct=Non-Composite   AutoType=None   RunCase=Yes
+ 
+TABLE:  "CASE - STATIC 1 - LOAD ASSIGNMENTS"
+   Case=DEAD   LoadType="Load pattern"   LoadName=DEAD   LoadSF=1
+ 
+TABLE:  "JOINT LOADS - FORCE"
+   Joint=8   LoadPat=DEAD   CoordSys=GLOBAL   F1=1   F2=0   F3=0   M1=0   M2=0   M3=0
+   Joint=1   LoadPat=DEAD   CoordSys=GLOBAL   F1=-1   F2=0   F3=0   M1=0   M2=0   M3=0
+   Joint=14   LoadPat=DEAD   CoordSys=GLOBAL   F1=-1   F2=0   F3=0   M1=0   M2=0   M3=0
+   Joint=7   LoadPat=DEAD   CoordSys=GLOBAL   F1=1   F2=0   F3=0   M1=0   M2=0   M3=0
+ 
+TABLE:  "MATERIAL PROPERTIES 01 - GENERAL"
+   Material=MAT_100   Type=Concrete   SymType=Isotropic   TempDepend=No   Color=Green
+ 
+TABLE:  "MATERIAL PROPERTIES 02 - BASIC MECHANICAL PROPERTIES"
+   Material=MAT_100   UnitWeight=0   UnitMass=0   E1=100   G12=0   U12=0.2   A1=9.9E-06
+ 
+TABLE:  "MATERIAL PROPERTIES 03B - CONCRETE DATA"
+   Material=MAT_100   Fc=27579   eFc=27579   LtWtConc=No   SSCurveOpt=Mander   SSHysType=Takeda   SFc=0.00222   SCap=0.005   FinalSlope=-0.1   FAngle=0   DAngle=0
+ 
+TABLE:  "PROGRAM CONTROL"
+   ProgramName=SAP2000   Version=24.1.0   CurrUnits="KN, M, C"   SteelCode="AISC 360-16"   ConcCode="ACI 318-19"   AlumCode="AA 2015"   ColdCode=AISI-16   RegenHinge=Yes
+ 
+END TABLE DATA

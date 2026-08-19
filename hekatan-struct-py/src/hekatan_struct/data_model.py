@@ -51,6 +51,9 @@ NodeLoad     = tuple[float, float, float, float, float, float]  # [Fx, Fy, Fz, M
 class NodeInputs:
     supports: dict[int, SupportFlags] = field(default_factory=dict)
     loads:    dict[int, NodeLoad]     = field(default_factory=dict)
+    # Muelles nodales (Winkler): (índice de nudo, GDL 0..5, k). Espejo del
+    # `springsList` del JS, que en el C++ es `K.coeffRef(gdof, gdof) += k`.
+    springs:  list[tuple[int, int, float]] = field(default_factory=list)
 
 
 # ─── ElementInputs (mirrors awatif v2) ─────────────────────────────────────
@@ -87,6 +90,9 @@ class ElementInputs:
     # Ángulo del eje local 1 del shell (`shellang`). Se guarda por trazabilidad
     # y para exportar: el solver —ni éste ni el TS/C++— lo usa hoy.
     shell_angles:              dict[int, float] = field(default_factory=dict)
+    # ShellType de ETABS por elemento: 1 = Shell-Thin (Kirchhoff DKE),
+    # 0 / ausente = Shell-Thick (Mindlin MITC4, el defecto de Hekatan).
+    plate_formulations:        dict[int, int] = field(default_factory=dict)
 
 
 # ─── Outputs ────────────────────────────────────────────────────────────────
