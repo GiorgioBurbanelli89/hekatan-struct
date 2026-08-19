@@ -66,7 +66,7 @@ Eigen::MatrixXd getMembraneK(const double x[4], const double y[4],
 Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
                                double E, double nu, double t,
                                const double *mod, double gammaFac, int nGauss,
-                               bool taylorBurbuja);
+                               bool taylorBurbuja, double khg);
 
 // ─── MZC Kirchhoff Plate Bending (12×12) — el corazón Shell-Thin ────────────
 // DOFs por nodo: [w, θx, θy] donde θx = ∂w/∂y, θy = -∂w/∂x
@@ -309,14 +309,15 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
     // drilling salen de la MISMA 12x12 y no hay penalizacion que pegar aparte.
     int drillingType = getMapValST(elementInputs.drillingTypes, index, 3);
     double drillScale = getMapValST(elementInputs.drillingPenaltyScales, index,
-                                    (drillingType >= 3 && drillingType <= 5) ? 0.4 : 0.05);
-    const bool usaITW = (drillingType >= 3 && drillingType <= 5);
-    const int  ngITW  = (drillingType == 4) ? 2 : 3;
+                                    (drillingType == 6) ? 0.4 : (drillingType >= 3 && drillingType <= 5) ? 0.4 : 0.05);
+    const bool usaITW = (drillingType >= 3 && drillingType <= 6);
+    const int  ngITW  = (drillingType == 4 || drillingType == 6) ? 2 : 3;
+    const double khgITW = (drillingType == 6) ? 2.0e-4 : 0.0;
     const bool taylorITW = (drillingType == 5);
 
     Eigen::MatrixXd Km   = usaITW ? Eigen::MatrixXd::Zero(8, 8)
                                   : getMembraneK(x, y, E, nu, t, dmod);   // 8×8
-    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW)
+    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW, khgITW)
                                   : Eigen::MatrixXd::Zero(12, 12);        // 12×12
     Kitw *= mFactor;
     Eigen::MatrixXd Kb = sinFlexion

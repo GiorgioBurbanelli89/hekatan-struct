@@ -251,7 +251,8 @@ Eigen::MatrixXd getMembraneK(const double x[4], const double y[4],
 Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
                                       double E, double nu, double t,
                                       const double *mod, double gammaFac,
-                                      int nGauss, bool taylorBurbuja)
+                                      int nGauss, bool taylorBurbuja,
+                                      double khg)
 {
     double factor = E / (1.0 - nu * nu);
     Eigen::Matrix3d Dm;
@@ -425,6 +426,31 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
     res(12) = -0.5 * c_dNBy;
     res(13) =  0.5 * c_dNBx;
     K14 += (gamma * t * 4.0 * c_dJ) * (res * res.transpose());
+
+    // ── Estabilizacion del reloj de arena ──────────────────────────────────
+    // Con Gauss 2x2 la interpolacion de Allman deja un mecanismo: el elemento
+    // sale con CUATRO modos de energia nula en vez de tres, y el que sobra es
+    // el modo [+,-,+,-] de los theta (el reloj de arena).
+    //
+    // ETABS lo tiene medido: reconstruida su matriz 12x12, ese modo vale
+    // 1/5000 * G*t*A — pequenisimo, justo lo justo para quitar el mecanismo sin
+    // rigidizar nada. O sea que NO es rigidez: es estabilizacion.
+    //
+    // Con esto, el elemento cumple a la vez las tres cosas que cumple ETABS:
+    // 3 modos nulos, patch test EXACTO (1.500000 / 0.600000) y Gauss 2x2 — que
+    // es el unico orden que aparece en el binario (1/sqrt(3) se carga 8 veces;
+    // sqrt(3/5), 5/9 y 8/9 NO se cargan nunca).
+    if (khg > 0.0) {
+        double A = 0.0;                       // area del cuadrilatero
+        for (int i = 0; i < 4; i++) {
+            int j = (i + 1) % 4;
+            A += x[i] * y[j] - x[j] * y[i];
+        }
+        A = std::abs(A) / 2.0;
+        Eigen::VectorXd hg = Eigen::VectorXd::Zero(14);
+        for (int i = 0; i < 4; i++) hg(3*i + 2) = (i % 2 == 0) ? 1.0 : -1.0;
+        K14 += (khg * mu * t * A / 4.0) * (hg * hg.transpose());
+    }
 
     // Condensacion estatica de la burbuja (los 2 GDL internos)
     Eigen::MatrixXd Kuu = K14.topLeftCorner(12, 12);
@@ -1229,8 +1255,8 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     // Con drillingType 3 este numero es gamma/mu del paper (defecto 0.4, que es
     // lo medido de ETABS). Con el 2 es el alpha de Hughes-Brezzi (defecto 0.05).
     double drillScale = getMapVal(elementInputs.drillingPenaltyScales, index,
-                                  (drillingType >= 3 && drillingType <= 5) ? 0.4 : 0.05);
-    const bool usaITW = (drillingType >= 3 && drillingType <= 5);
+                                  (drillingType == 6) ? 0.4 : (drillingType >= 3 && drillingType <= 5) ? 0.4 : 0.05);
+    const bool usaITW = (drillingType >= 3 && drillingType <= 6);
     // 3 = ITW con Gauss 3x3, que es lo que pide el paper   [DEFECTO]
     // 4 = ITW con Gauss 2x2 (integracion reducida)  -- NO USAR, ver abajo
     // 5 = ITW 3x3 con la burbuja a la Taylor (J0 del centro)
@@ -1248,12 +1274,34 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     // Tampoco valen los 4 modos incompatibles de Wilson en lugar de la burbuja
     // (o ademas de ella): con ellos el patch test de orden superior da un giro
     // de -0.98 en vez de 0.6 y el elemento se queda con 5 modos nulos.
-    const int  ngITW  = (drillingType == 4) ? 2 : 3;
+    // 6 = COMO EL DE CSI, deducido del binario: Allman + Gauss 2x2 + rango uno
+    //     de Wilson + estabilizacion del reloj de arena. Es el unico que cumple
+    //     a la vez las tres cosas que cumple ETABS:
+    //         3 modos nulos · patch test EXACTO (1.500000/0.600000) · Gauss 2x2
+    //
+    //     El binario lo respalda: en CsiGo2.dll se carga 1/sqrt(3) OCHO veces y
+    //     sqrt(3/5), 5/9 y 8/9 NUNCA — SAPFire solo integra a 4 puntos, tal como
+    //     escribe Wilson en su cap. 9. Y el 0.125 (el l/8 de Allman) aparece
+    //     3 veces en cada zona de integracion.
+    //
+    //     Medido contra los bancos:
+    //                        patch    cantilever  Cook   drilling-dof  hemisferio
+    //       HB (el viejo)   -1.7/-6.3%   0.18%    0.46%     11.46%       -3.6%
+    //       ITW 3x3 (hoy)    EXACTO      0.13%    0.96%      5.45%      -37.4%
+    //       CSI-like 2x2     EXACTO      0.05%    0.83%      7.14%       -5.2%
+    //
+    //     ⚖️ NO es defecto todavia porque hay un COMPROMISO sin decidir: el 2x2
+    //     arregla el hemisferio (de -37 % a -5 %, y en 16x16 de -4.2 % a -0.85 %)
+    //     pero empeora el AXIL de las barras del mezanine (de 3.5 % a 12.5 % en
+    //     el peor, aunque los momentos siguen al 0.01 %). Cambiar el defecto es
+    //     una decision de producto: cascara curva contra losa con vigas.
+    const int  ngITW  = (drillingType == 4 || drillingType == 6) ? 2 : 3;
+    const double khgITW = (drillingType == 6) ? 2.0e-4 : 0.0;
     const bool taylorITW = (drillingType == 5);
 
     Eigen::MatrixXd Km   = usaITW ? Eigen::MatrixXd::Zero(8, 8)
                                   : getMembraneK(x, y, E, nu, t, dmod);   // 8×8
-    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW)
+    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW, khgITW)
                                   : Eigen::MatrixXd::Zero(12, 12);        // 12×12
     #if HK_BENDING_FORMULATION == 2
         Eigen::MatrixXd Kb = getBendingK_DSE_FULL(x, y, E, nu, t);  // 12×12 (Wilson DSE Cap 8 completo, Variant C)
