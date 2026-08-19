@@ -26,6 +26,7 @@ from hekatan_struct.viewer import (
     _deformed_polylines_collection,
     _frames_to_lines,
     _load_arrows,
+    _shells_to_quads,
     _support_glyphs,
 )
 
@@ -47,6 +48,8 @@ def _resumen(modelo: ModeloHeks, salida, ruta: str, seg: float, escala: float) -
     """Báscula primero: si ΣR no cierra con la carga, la deformada no significa nada."""
     uz = [d[2] for d in salida.deformations.values()]
     flecha = min(uz) if uz else 0.0
+    n_barras = sum(1 for c in modelo.elements if len(c) == 2)
+    n_shells = sum(1 for c in modelo.elements if len(c) == 4)
     n_ang = len(modelo.element_inputs.local_angles or {})
     wl = modelo.element_inputs.frame_loads or {}
     n_wl = len(wl)
@@ -63,7 +66,7 @@ def _resumen(modelo: ModeloHeks, salida, ruta: str, seg: float, escala: float) -
     cierre = abs(carga_z + reac_z) / abs(reac_z) * 100 if reac_z else 0.0
     return (
         f"{os.path.basename(ruta)}\n"
-        f"{len(modelo.nodes)} nudos · {len(modelo.elements)} barras\n"
+        f"{len(modelo.nodes)} nudos · {n_barras} barras · {n_shells} cáscaras\n"
         f"ang {n_ang} · frameload {n_wl}\n"
         f"\n"
         f"flecha Uz  = {flecha * 1000:.3f} mm\n"
@@ -162,6 +165,13 @@ class VentanaHeks(QtWidgets.QMainWindow):
         und = _frames_to_lines(m.nodes, m.elements)
         if und:
             self._actores["und"] = self.plotter.add_mesh(und, color="#1f3a93", line_width=2)
+
+        cas = _shells_to_quads(m.nodes, m.elements)
+        if cas:
+            self._actores["shells"] = self.plotter.add_mesh(
+                cas, color="#7f8c8d", opacity=0.25, show_edges=True,
+                edge_color="#34495e",
+            )
 
         if self.chk_apoyos.isChecked():
             sup = _support_glyphs(m.nodes, m.node_inputs, size=span * 0.02)

@@ -119,8 +119,13 @@ def _shell_k_global(
                                    include_membrane=True, include_bending=False)
         k_loc = k_loc + mzc_to_shell_q4_24(mzc_plate_stiffness(xy, E, nu, t))
     elif USE_Q4_MOTOR:
-        k_loc = shell_q4_motor(xy, E, nu, t,
-                               solo_membrana=USE_SOLO_MEMBRANA)
+        k_loc = shell_q4_motor(
+            xy, E, nu, t,
+            solo_membrana=USE_SOLO_MEMBRANA,
+            mod_membrana=element_inputs.membrane_modifiers.get(idx, 1.0),
+            mod_flexion=element_inputs.bending_modifiers.get(idx, 1.0),
+            mod_dir=element_inputs.shell_modifiers.get(idx),
+        )
     else:
         k_loc = shell_q4_stiffness(xy, E, nu, t)
     T = shell_q4_T(R)              # global -> local
@@ -265,6 +270,36 @@ def _apply_supports_penalty(
     return K, F
 
 
+def _con_rigidez(K, gdl: np.ndarray, tol: float = 1e-12) -> np.ndarray:
+    """Máscara de los GDL que SÍ tienen rigidez. Port de `getZerosIndices`.
+
+    Un GDL con la diagonal a cero **y la columna entera a cero** no está en
+    ninguna matriz de elemento: su ecuación es `0 = F`. Dejarlo dentro hace
+    singular al sistema entero — no falla ese GDL, fallan los 609 nudos. Se
+    saca y se queda en 0, que es lo que hace `deform.cpp` antes de factorizar.
+
+    ⚠️ Las dos condiciones, no solo la diagonal: un GDL con diagonal nula pero
+    columna no nula SÍ participa (aparece acoplado) y sacarlo sería empotrarlo.
+    """
+    if gdl.size == 0:
+        return np.zeros(0, dtype=bool)
+    if hasattr(K, "tocsc"):
+        Kc = K.tocsc()
+        diag = np.abs(Kc.diagonal()[gdl])
+        col = np.zeros(gdl.size, dtype=bool)
+        sospechosos = np.where(diag < tol)[0]
+        for i in sospechosos:
+            c = Kc[:, gdl[i]]
+            col[i] = c.nnz == 0 or np.abs(c.data).max() < tol
+    else:
+        diag = np.abs(np.asarray(K)[gdl, gdl])
+        col = np.zeros(gdl.size, dtype=bool)
+        sospechosos = np.where(diag < tol)[0]
+        for i in sospechosos:
+            col[i] = np.abs(np.asarray(K)[:, gdl[i]]).max() < tol
+    return ~((diag < tol) & col)
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # Public API
 # ═══════════════════════════════════════════════════════════════════════════
@@ -287,6 +322,13 @@ def deform(
     ve). El penalty de 1e15·k_max mete un número enorme en la diagonal y se come
     los dígitos significativos de la fila; con eliminación el sistema resuelto es
     exactamente el de los GDL libres.
+
+    Y además se sacan los GDL **sin rigidez ninguna** (diagonal y columna a
+    cero), que se quedan en 0. Es el `getZerosIndices` de `deform.cpp`, y sin
+    él el sistema es singular: en `galpon_lc.heks` hay 3 nudos que solo tocan
+    cáscaras de zinc declaradas SIN flexión (`shellmod ... 0 0 0 ...`), así que
+    sus w, θx y θy no aparecen en ninguna K y el solver devolvía NaN en los
+    609 nudos por 9 GDL huérfanos.
     """
     n_total = 6 * len(nodes)
     disperso = sparse if sparse is not None else n_total > 3000
@@ -300,6 +342,19 @@ def deform(
             if r:
                 fixed[6 * node_idx + dof_local] = True
     free = np.where(~fixed)[0]
+    con_k = _con_rigidez(K_orig, free)
+    # Un GDL sin rigidez se queda en 0, como en `deform.cpp`. Pero si ADEMAS
+    # lleva carga, esa carga no va a ninguna parte: quitarlo la borraria del
+    # modelo sin decirlo, y el resto saldria con numeros de aspecto normal.
+    huerfanos_cargados = free[~con_k][np.abs(F_orig[free[~con_k]]) > 1e-12]
+    if huerfanos_cargados.size:
+        n0 = huerfanos_cargados[0]
+        raise np.linalg.LinAlgError(
+            f"{huerfanos_cargados.size} GDL sin rigidez llevan carga "
+            f"(p.ej. nudo {n0 // 6}, componente {n0 % 6}): la estructura es un "
+            "mecanismo por ahi y esa carga no la equilibra nada"
+        )
+    free = free[con_k]
 
     U = np.zeros(n_total)
     if free.size:

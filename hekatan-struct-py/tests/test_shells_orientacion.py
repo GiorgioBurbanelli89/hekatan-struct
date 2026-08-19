@@ -140,33 +140,26 @@ def test_triada_local_es_ortonormal_y_dextrogira():
 # ═══════════════════════════════════════════════════════════════════════════
 # 2. Paridad con el TS — medida, no supuesta
 # ═══════════════════════════════════════════════════════════════════════════
-def _oraculo(caso):
+def _oraculo(caso, motor="ts"):
+    """`motor="ts"` = shellQ4.ts · `motor="wasm"` = el C++ compilado (el producto).
+
+    Hacen falta los dos: NO dicen lo mismo en la flexion de placa.
+    """
     if not (RAIZ / "node_modules" / "esbuild").exists():
         pytest.skip("faltan los node_modules de hekatan-struct")
     import tempfile
+    guion = "oraculo_ts.mjs" if motor == "ts" else "oraculo_wasm.mjs"
     with tempfile.TemporaryDirectory() as td:
         ent, sal = Path(td) / "c.json", Path(td) / "s.json"
         ent.write_text(json.dumps({"c": caso}), encoding="utf-8")
-        r = subprocess.run(["node", str(AQUI / "oraculo_ts.mjs"), str(ent), str(sal)],
+        r = subprocess.run(["node", str(AQUI / guion), str(ent), str(sal)],
                            capture_output=True, text=True, cwd=str(RAIZ))
         if r.returncode != 0:
-            pytest.skip("oraculo TS no disponible: %s" % (r.stderr or "")[:300])
+            pytest.skip("oraculo %s no disponible: %s" % (motor, (r.stderr or "")[:300]))
         return json.loads(sal.read_text(encoding="utf-8"))["c"]
 
 
-def test_shell_q4_python_es_el_del_ts():
-    """El Q4 de Python ES el del motor. Antes no lo era; ahora se exige.
-
-    Se porto `shellQ4.ts` entero a `elements/shell_q4_motor.py`, con las tres
-    piezas que faltaban:
-      · membrana Q6 con modos incompatibles de Wilson + condensacion estatica
-        (sin ellos el paño no puede flectar en su plano: es el locking que
-        hacia salir el MURO rigidisimo),
-      · cortante MITC4 con los cuatro puntos de atadura, en vez de integracion
-        reducida de 1 punto,
-      · drilling de Hughes-Brezzi (α = 0.5), que ACOPLA θz con u,v, en vez de
-        un penalty suelto en la diagonal.
-    """
+def _caso_losa():
     nx, ny = 4, 4
     nodes, elements, idx = _malla(nx, ny, 6.0, 4.0, lambda u, v: (u, v, 0.0))
     sup = {idx[(i, j)]: [True] * 6 for i in range(nx + 1) for j in range(ny + 1)
@@ -177,8 +170,6 @@ def test_shell_q4_python_es_el_del_ts():
                 elasticities={k: E for k in range(len(elements))},
                 poissonsRatios={k: NU for k in range(len(elements))},
                 thicknesses={k: T for k in range(len(elements))})
-    ts = _oraculo(caso)
-
     ei = ElementInputs()
     for k in range(len(elements)):
         ei.elasticities[k] = E
@@ -186,12 +177,60 @@ def test_shell_q4_python_es_el_del_ts():
         ei.thicknesses[k] = T
     ni = NodeInputs(supports={k: tuple(v) for k, v in sup.items()},
                     loads={centro: (0, 0, -100, 0, 0, 0)})
-    py = deform(nodes, elements, ni, ei).deformations[centro][2]
-    ts_uz = ts["deformations"][str(centro)][2]
+    return nodes, elements, caso, ni, ei, centro
 
+
+def _flecha_python(nodes, elements, ni, ei, centro, modos_incompat):
+    from hekatan_struct.elements import shell_q4_motor as SQ
+    antes = SQ.BENDING_MODOS_INCOMPATIBLES
+    SQ.BENDING_MODOS_INCOMPATIBLES = modos_incompat
+    try:
+        return deform(nodes, elements, ni, ei).deformations[centro][2]
+    finally:
+        SQ.BENDING_MODOS_INCOMPATIBLES = antes
+
+
+def test_shell_q4_python_es_el_del_ts():
+    """Con `BENDING_MODOS_INCOMPATIBLES = False`, Python ES `shellQ4.ts`, exacto.
+
+    Se porto `shellQ4.ts` entero a `elements/shell_q4_motor.py`:
+      · membrana Q6 con modos incompatibles de Wilson + condensacion estatica
+        (sin ellos el paño no puede flectar en su plano: es el locking que
+        hacia salir el MURO rigidisimo),
+      · cortante MITC4 con los cuatro puntos de atadura, en vez de integracion
+        reducida de 1 punto,
+      · drilling de Hughes-Brezzi, que ACOPLA θz con u,v, en vez de un penalty
+        suelto en la diagonal.
+    """
+    nodes, elements, caso, ni, ei, centro = _caso_losa()
+    ts_uz = _oraculo(caso, "ts")["deformations"][str(centro)][2]
+    py = _flecha_python(nodes, elements, ni, ei, centro, False)
     dif = abs(py - ts_uz) / abs(ts_uz)
-    print("\n  losa 4x4, flecha en el centro:  Python %.6e   TS %.6e   dif %.2e"
+    print("\n  losa 4x4 vs shellQ4.ts:   Python %.6e   TS %.6e   dif %.2e"
           % (py, ts_uz, dif))
     assert dif < 1e-10, (
-        "el Q4 de Python se separo del motor: Python %.9e vs TS %.9e "
+        "el Q4 de Python se separo de shellQ4.ts: Python %.9e vs TS %.9e "
         "(dif %.2e)" % (py, ts_uz, dif))
+
+
+def test_shell_q4_por_defecto_es_el_del_CPP():
+    """Y por defecto es el del C++/WASM, que es el motor del PRODUCTO.
+
+    ⚠️ Los dos motores de Hekatan NO coinciden en la flexion de placa:
+    `shellQ4.ts` mete los modos incompatibles de Wilson solo en la membrana y
+    `shellQ4.cpp` tambien en la flexion. Medido en esta misma losa 4x4: 1.8 %.
+    El arbitro de Python sigue al C++ porque es el que se compila a WASM y da
+    los numeros que ve el usuario — y porque en el barrido contra Navier de una
+    placa simplemente apoyada con carga repartida, la malla gruesa 4x4 cierra a
+    −0.67 % con los modos y a −1.86 % sin ellos (al refinar convergen a lo
+    mismo, que es la firma de unos modos incompatibles bien puestos).
+    """
+    nodes, elements, caso, ni, ei, centro = _caso_losa()
+    cpp_uz = _oraculo(caso, "wasm")["deformations"][str(centro)][2]
+    py = _flecha_python(nodes, elements, ni, ei, centro, True)
+    dif = abs(py - cpp_uz) / abs(cpp_uz)
+    print("\n  losa 4x4 vs shellQ4.cpp:  Python %.6e   C++ %.6e   dif %.2e"
+          % (py, cpp_uz, dif))
+    assert dif < 1e-6, (
+        "el Q4 de Python se separo del C++: Python %.9e vs C++ %.9e "
+        "(dif %.2e)" % (py, cpp_uz, dif))

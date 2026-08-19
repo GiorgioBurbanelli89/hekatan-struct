@@ -17,11 +17,20 @@ Comandos soportados (los que usa el galpón):
     ang ID grados                (local axis angle CSI)
     as  ID As2 As3               (áreas de cortante, m2)
     release ID <12 bits> | pin fix
+    shell ID n1 n2 n3 n4 t E [q] [rho]      (cáscara Q4; q = carga de superficie)
+    areaload ID q                (kN/m2 sobre la cáscara, + hacia +z)
+    shellmod ID mem bend | ID F11 F22 F12 M11 M22 M12 V13 V23
+    shellang ID grados           (se guarda; el solver NO lo usa, ni éste ni el TS)
+    areaobj ID n1 n2 n3 n4 desde hasta      (agrupa celdas; solo trazabilidad)
     solve / reset                (se ignoran: aquí se resuelve al llamar)
 
 ⚠️ El orden de los tokens de `frame` NO es el que sugiere el nombre: el 6º es
 I22 (plano 1-3, V3/M2) y el 7º es I33 (plano 1-2, V2/M3 — el del CANTO). Es como
 lo lee `cliModeler.ts`; cambiarlo aquí cruzaría las inercias.
+
+⚠️ Lo que el lector NO monta queda CONTADO en `ModeloHeks.ignorados` y avisa
+por `errores`. Un modelo que no se lee entero da flecha 0 y báscula perfecta
+(0 = 0): el silencio se leería como "se leyó bien".
 """
 from __future__ import annotations
 
@@ -42,11 +51,15 @@ class ModeloHeks:
     node_id: list[int] = field(default_factory=list)
     frame_id: list[int] = field(default_factory=list)
     frame_sec: list[str] = field(default_factory=list)
+    shell_id: list[int] = field(default_factory=list)
+    # índice interno de cada cáscara dentro de `elements`
+    shell_idx: dict[int, int] = field(default_factory=dict)
     errores: list[str] = field(default_factory=list)
-    # comandos que el lector NO monta (cáscaras, areaload, muelles…). Antes se
-    # saltaban en silencio: el mezanine, que carga por `areaload`, salía con 0
-    # nudos cargados, flecha 0.000 mm y un cierre de báscula perfecto. Un
-    # modelo que no se lee entero tiene que DECIRLO.
+    # comandos que el lector NO monta (hoy: `spring`, `mass`, `diaph`, y
+    # cualquiera que se añada al .heks). Antes se saltaban en silencio: el
+    # mezanine, que carga por `areaload` sobre 90 cáscaras, salía con 0 nudos
+    # cargados, flecha 0.000 mm y un cierre de báscula perfecto — porque 0 = 0.
+    # Un modelo que no se lee entero tiene que DECIRLO.
     ignorados: dict[str, int] = field(default_factory=dict)
 
 
@@ -74,6 +87,12 @@ def leer_heks(ruta: str) -> ModeloHeks:
     angs: dict[int, float] = {}
     ashear: dict[int, tuple[float, float]] = {}
     rels: dict[int, list[bool]] = {}
+    shells: list[dict] = []
+    q_area: dict[int, float] = {}          # carga de superficie por shell ID
+    smod: dict[int, tuple[float, float]] = {}      # shellmod escalar
+    smod_dir: dict[int, list[float]] = {}          # shellmod direccional (8)
+    sang: dict[int, float] = {}
+    stipo: dict[int, int] = {}             # shelltype: 1 = thin, 0 = thick
     errores: list[str] = []
     ignorados: dict[str, int] = {}
 
@@ -83,6 +102,15 @@ def leer_heks(ruta: str) -> ModeloHeks:
             if not t or t[0].startswith("#"):
                 continue
             cmd = t[0].lower()
+            # Comentario INLINE. `cliModeler.ts` no lo quita: cada `parseFloat`
+            # de un token opcional le sale NaN y el `isFinite` lo descarta. Aqui
+            # se corta la linea, que da lo mismo y no revienta — sin esto, un
+            # `shell ... 2.17e7   # SHELL-LOSA` tiraba ValueError y las 1175
+            # cascaras de losas_maciza se quedaban FUERA del modelo.
+            # `frame` se queda con la linea entera: de ahi saca el nombre de la
+            # seccion, que necesita el exportador.
+            if cmd not in ("frame", "beam", "column", "f") and "#" in t:
+                t = t[:t.index("#")]
             try:
                 if cmd == "node" or cmd == "n":
                     nodos[int(t[1])] = (float(t[2]), float(t[3]), float(t[4]))
@@ -134,6 +162,42 @@ def leer_heks(ruta: str) -> ModeloHeks:
                         if len(pal) > 1 and pal[1] == "pin":
                             r[10] = r[11] = True
                         rels[int(t[1])] = r
+                elif cmd in ("shell", "plate", "s"):
+                    # shell ID n1 n2 n3 n4 t E [q] [rho]
+                    sid = int(t[1])
+                    pts = [int(t[2]), int(t[3]), int(t[4]), int(t[5])]
+                    esp = float(t[6]) if len(t) > 6 else 0.20
+                    Esh = float(t[7]) if len(t) > 7 else 25e6
+                    # token 8: carga de superficie del propio shell.
+                    # token 9: densidad — el DECK colaborante pesa menos que
+                    # una losa maciza del mismo canto (loseta + nervios).
+                    if len(t) > 8:
+                        qv = float(t[8])
+                        if qv != 0:
+                            q_area[sid] = qv
+                    rho_sh = float(t[9]) if len(t) > 9 else 2.45
+                    shells.append(dict(id=sid, pts=pts, t=esp, E=Esh, rho=rho_sh))
+                elif cmd in ("areaload", "qarea"):
+                    q_area[int(t[1])] = float(t[2])
+                elif cmd == "shellmod":
+                    sid = int(t[1])
+                    vals = [float(v) for v in t[2:]]
+                    if len(vals) >= 8:
+                        smod_dir[sid] = vals[:8]
+                    elif len(vals) >= 2:
+                        smod[sid] = (vals[0], vals[1])
+                elif cmd == "shellang":
+                    sang[int(t[1])] = float(t[2])
+                elif cmd in ("shelltype", "plateform"):
+                    q = t[2].lower() if len(t) > 2 else ""
+                    if q in ("thin", "delgada", "kirchhoff", "1"):
+                        stipo[int(t[1])] = 1
+                    elif q in ("thick", "gruesa", "mindlin", "0"):
+                        stipo[int(t[1])] = 0
+                    else:
+                        errores.append(f"shelltype {t[1]}: se esperaba thin o thick")
+                elif cmd == "areaobj":
+                    continue        # agrupa celdas para el exportador, no da rigidez
                 elif cmd in ("solve", "reset"):
                     continue        # no aportan modelo: no son un hueco
                 else:
@@ -178,12 +242,96 @@ def leer_heks(ruta: str) -> ModeloHeks:
         if f["id"] in fl:
             ei.frame_loads[k] = fl[f["id"]]
 
+    # ── CÁSCARAS ────────────────────────────────────────────────────────
+    # Van DESPUÉS de las barras, como en `cliModeler.ts`: el índice interno de
+    # un elemento es su posición en `elements`, y si el orden no es el mismo
+    # los dos motores no están numerando lo mismo.
+    for sh in shells:
+        if any(p not in idx_de for p in sh["pts"]):
+            m.errores.append(f"shell {sh['id']}: algún nodo inexistente")
+            continue
+        k = len(m.elements)
+        m.elements.append([idx_de[p] for p in sh["pts"]])
+        m.shell_id.append(sh["id"])
+        m.shell_idx[sh["id"]] = k
+        ei.elasticities[k] = sh["E"]
+        ei.shear_moduli[k] = sh["E"] / (2 * 1.2)   # nu = 0.2, como cliModeler
+        ei.poissons_ratios[k] = 0.2
+        ei.thicknesses[k] = sh["t"]
+        ei.densities[k] = sh["rho"]
+        if sh["id"] in smod_dir:
+            d = smod_dir[sh["id"]]
+            ei.shell_modifiers[k] = d
+            # Y ADEMÁS el par escalar equivalente, que es lo único que mira el
+            # modal: si aquí no se pone, el estático arma el deck con flexión 0
+            # y el modal con flexión 1 — dos rigideces para el MISMO modelo.
+            ei.membrane_modifiers[k] = (d[0] + d[1]) / 2
+            ei.bending_modifiers[k] = (d[3] + d[4]) / 2
+        elif sh["id"] in smod:
+            ei.membrane_modifiers[k] = smod[sh["id"]][0]
+            ei.bending_modifiers[k] = smod[sh["id"]][1]
+        if sh["id"] in sang:
+            ei.shell_angles[k] = sang[sh["id"]]
+
     for nid, flags in sup.items():
         if nid in idx_de:
             ni.supports[idx_de[nid]] = flags
     for nid, v in cargas.items():
         if nid in idx_de:
             ni.loads[idx_de[nid]] = tuple(v)  # type: ignore[assignment]
+
+    # ── CARGA DE SUPERFICIE -> vector de fuerzas nodales CONSISTENTE ────────
+    # Una carga de área entra al FEM por un único camino: f_i = ∫ N_i·q·dA. No
+    # hay otro, así que calcularlo aquí da lo MISMO que hacerlo dentro del
+    # kernel: es la definición, no un atajo. Port de `cliModeler.ts`.
+    #
+    # Se integra con Gauss 2x2 y el jacobiano REAL (el módulo del producto
+    # vectorial de las tangentes, que vale para un paño en cualquier plano, no
+    # solo horizontal). En un rectángulo sale q·A/4 en cada nudo; en un
+    # cuadrilátero deformado NO, y ahí está la diferencia con repartir el área
+    # entre cuatro.
+    g2 = 1.0 / math.sqrt(3.0)
+    gauss = ((-g2, -g2), (g2, -g2), (g2, g2), (-g2, g2))
+    for sh in shells:
+        q = q_area.get(sh["id"])
+        if not q:
+            continue
+        if any(p not in idx_de for p in sh["pts"]):
+            continue                       # ya avisado al montar la cáscara
+        idx4 = [idx_de[p] for p in sh["pts"]]
+        P = [m.nodes[i] for i in idx4]
+        f = [0.0, 0.0, 0.0, 0.0]
+        for xi, eta in gauss:
+            N = (0.25 * (1 - xi) * (1 - eta), 0.25 * (1 + xi) * (1 - eta),
+                 0.25 * (1 + xi) * (1 + eta), 0.25 * (1 - xi) * (1 + eta))
+            dNx = (-0.25 * (1 - eta), 0.25 * (1 - eta),
+                   0.25 * (1 + eta), -0.25 * (1 + eta))
+            dNe = (-0.25 * (1 - xi), -0.25 * (1 + xi),
+                   0.25 * (1 + xi), 0.25 * (1 - xi))
+            a = [sum(dNx[i] * P[i][c] for i in range(4)) for c in range(3)]
+            b = [sum(dNe[i] * P[i][c] for i in range(4)) for c in range(3)]
+            cr = (a[1] * b[2] - a[2] * b[1],
+                  a[2] * b[0] - a[0] * b[2],
+                  a[0] * b[1] - a[1] * b[0])
+            detJ = math.sqrt(cr[0] ** 2 + cr[1] ** 2 + cr[2] ** 2)  # dA real
+            for i in range(4):
+                f[i] += N[i] * q * detJ
+        for i, k in enumerate(idx4):
+            prev = list(ni.loads.get(k, (0.0,) * 6))
+            prev[2] += f[i]                                        # Fz
+            ni.loads[k] = tuple(prev)  # type: ignore[assignment]
+
+    huerfanas_q = set(q_area) - {sh["id"] for sh in shells}
+    if huerfanas_q:
+        m.errores.append(f"areaload sin cáscara: {sorted(huerfanas_q)[:10]}")
+    if stipo:
+        # `shelltype` existe en el .heks y en el motor TS/C++ (plateFormulations
+        # -> Kirchhoff Shell-Thin), pero el shell de Python es Mindlin/MITC4 y
+        # no tiene ese camino. Callarlo sería dar por buena otra teoría.
+        m.errores.append(
+            f"shelltype declarado en {len(stipo)} cáscaras y NO aplicado: "
+            "el shell de Python es Mindlin (Thick)"
+        )
 
     huerfanas = set(fl) - {f["id"] for f in frames}
     if huerfanas:

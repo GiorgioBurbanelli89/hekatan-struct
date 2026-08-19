@@ -21,6 +21,8 @@ queda corto en las tres, y por eso salia demasiado rigido:
 
 Orden de GDL: [u, v, w, θx, θy, θz] × 4 nudos = 24.
 """
+import math
+
 import numpy as np
 
 # Parametros de la formulacion. Se dejan como variables de modulo para poder
@@ -49,6 +51,15 @@ KAPPA = 5.0 / 6.0      # factor de correccion de cortante de Mindlin
 # otra FORMA, no otro numero: ningun alpha reproduce los tres a la vez.
 ALPHA_DRILL = 0.05     # Hughes-Brezzi (1989), escala calibrada
 
+# ⚠️ AQUI LOS DOS MOTORES DE HEKATAN NO DICEN LO MISMO.
+#   `shellQ4.ts`  — modos incompatibles de Wilson SOLO en la membrana.
+#   `shellQ4.cpp` — tambien en la FLEXION (Kuu/Kua/Kaa y condensacion).
+# El .ts es el oraculo de los tests de paridad; el .cpp es el que se compila a
+# WASM y da los numeros del producto. Sobre las losas de 1175 cascaras la
+# diferencia es 0.06 % de mediana y 0.61 % de cola; en una losa 4x4 con carga
+# puntual, 1.8 %. Se deja conmutable para poder medir contra los dos.
+BENDING_MODOS_INCOMPATIBLES = True   # True = como el C++/WASM (el producto)
+
 GP = 1.0 / np.sqrt(3.0)
 GAUSS = [(-GP, -GP), (GP, -GP), (GP, GP), (-GP, GP)]
 
@@ -76,8 +87,17 @@ def _jac(dxi, det, x, y):
     return dNdx, dNdy, dJ, (J11, J12, J21, J22)
 
 
-def _k_membrana(x, y, E, nu, t):
-    """Q6: 8 GDL externos + 4 modos incompatibles, condensados."""
+def _k_membrana(x, y, E, nu, t, mod=None):
+    """Q6: 8 GDL externos + 4 modos incompatibles, condensados.
+
+    `mod` = los 8 modificadores direccionales del `shellmod` de CSI. De ellos
+    la membrana usa F11, F22, F12 (los tres primeros). Se aplican sobre la
+    matriz CONSTITUTIVA, que es donde los aplica ETABS, no sobre la K ya
+    ensamblada: multiplicar la K entera es todo-o-nada y no deja dejar un paño
+    rígido en 11 y blando en 22, que es justo lo que hace a un deck ser deck.
+    El término cruzado va con la media geométrica para que D siga siendo
+    simétrica y semidefinida positiva. Port de `getMembraneK` (shellQ4.cpp).
+    """
     f = E * t / (1 - nu * nu)
     K = np.zeros((12, 12))
     _, d0xi, d0et = _formas(0.0, 0.0)
@@ -107,6 +127,14 @@ def _k_membrana(x, y, E, nu, t):
 
         D = f * np.array([[1.0, nu, 0.0], [nu, 1.0, 0.0],
                           [0.0, 0.0, (1 - nu) / 2]])
+        if mod is not None:
+            f11, f22, f12 = mod[0], mod[1], mod[2]
+            c = math.sqrt(max(0.0, f11 * f22))
+            D[0, 0] *= f11
+            D[1, 1] *= f22
+            D[2, 2] *= f12
+            D[0, 1] *= c
+            D[1, 0] *= c
         K += B.T @ D @ B * abs(dJ)
 
     Kee, Kei = K[:8, :8], K[:8, 8:]
@@ -117,14 +145,37 @@ def _k_membrana(x, y, E, nu, t):
         return Kee
 
 
-def _k_flexion(x, y, E, nu, t, kappa=None):
-    """Mindlin + MITC4. GDL por nudo: [w, θx, θy]."""
+def _k_flexion(x, y, E, nu, t, kappa=None, mod=None):
+    """Mindlin + MITC4. GDL por nudo: [w, θx, θy].
+
+    `mod`: M11, M22, M12 (índices 3,4,5) van sobre la flexión y V13, V23
+    (6,7) sobre el cortante transversal. Un deck lleva M22 chico: no rigidiza
+    cruzado al nervio. Port de `getBendingK` (shellQ4.cpp).
+    """
     D0 = E * t ** 3 / (12 * (1 - nu * nu))
     Db = D0 * np.array([[1.0, nu, 0.0], [nu, 1.0, 0.0],
                         [0.0, 0.0, (1 - nu) / 2]])
     k_ = KAPPA if kappa is None else kappa
     Gs = k_ * E / (2 * (1 + nu)) * t
-    K = np.zeros((12, 12))
+    Gs_x = Gs_y = Gs
+    if mod is not None:
+        m11, m22, m12 = mod[3], mod[4], mod[5]
+        c = math.sqrt(max(0.0, m11 * m22))
+        Db[0, 0] *= m11
+        Db[1, 1] *= m22
+        Db[2, 2] *= m12
+        Db[0, 1] *= c
+        Db[1, 0] *= c
+        Gs_x = Gs * mod[6]
+        Gs_y = Gs * mod[7]
+    Kuu = np.zeros((12, 12))
+    Kua = np.zeros((12, 4))
+    Kaa = np.zeros((4, 4))
+
+    # Jacobiano del CENTRO para los modos incompatibles (Taylor 1976)
+    _, d0xi, d0et = _formas(0.0, 0.0)
+    _, _, dJ0, (J011, J012, J021, J022) = _jac(d0xi, d0et, x, y)
+    inv0 = 1.0 / dJ0
 
     # B del cortante en los 4 puntos de atadura: A(0,-1) C(0,1) B(-1,0) D(1,0)
     Bs_ty = []
@@ -148,15 +199,44 @@ def _k_flexion(x, y, E, nu, t, kappa=None):
             Bb[1, 3 * i + 2] = dNdy[i]
             Bb[2, 3 * i + 1] = dNdy[i]
             Bb[2, 3 * i + 2] = dNdx[i]
-        K += Bb.T @ Db @ Bb * abs(dJ)
+
+        # Modos incompatibles de Wilson TAMBIEN en flexion: los giros llevan
+        # α·N5 y α·N6 (N5 = 1−ξ², N6 = 1−η²), derivados con el jacobiano del
+        # CENTRO. Sin ellos el Q4 de placa sale mas rigido que el del C++ —
+        # medido sobre las losas de 1175 cascaras: mediana 0.06 %, cola 0.61 %.
+        # α1,α2 sobre βx · α3,α4 sobre βy (aqui los GDL son PENDIENTES; el C++
+        # los escribe sobre θx/θy, que es la misma cosa con otro nombre y otro
+        # signo — el signo de α da igual, se condensa).
+        dN5dx = inv0 * J022 * (-2 * xi)
+        dN5dy = inv0 * (-J021) * (-2 * xi)
+        dN6dx = inv0 * (-J012) * (-2 * eta)
+        dN6dy = inv0 * J011 * (-2 * eta)
+        Ba = np.zeros((3, 4))
+        Ba[0, 0], Ba[0, 1] = dN5dx, dN6dx          # κxx = ∂βx/∂x
+        Ba[1, 2], Ba[1, 3] = dN5dy, dN6dy          # κyy = ∂βy/∂y
+        Ba[2, 0], Ba[2, 1] = dN5dy, dN6dy          # κxy = ∂βx/∂y + ∂βy/∂x
+        Ba[2, 2], Ba[2, 3] = dN5dx, dN6dx
+
+        w = abs(dJ)
+        Kuu += Bb.T @ Db @ Bb * w
+        Kua += Bb.T @ Db @ Ba * w
+        Kaa += Ba.T @ Db @ Ba * w
 
         wA, wC = 0.5 * (1 - eta), 0.5 * (1 + eta)
         wB, wD = 0.5 * (1 - xi), 0.5 * (1 + xi)
         Bm = np.zeros((2, 12))
         Bm[0] = wA * Bs_ty[0][0] + wC * Bs_ty[1][0]      # γxz desde A y C
         Bm[1] = wB * Bs_ty[2][1] + wD * Bs_ty[3][1]      # γyz desde B y D
-        K += Gs * (np.outer(Bm[0], Bm[0]) + np.outer(Bm[1], Bm[1])) * abs(dJ)
-    return K
+        Kuu += (Gs_x * np.outer(Bm[0], Bm[0])
+                + Gs_y * np.outer(Bm[1], Bm[1])) * w
+
+    # Condensacion estatica. Kaa solo lleva flexion: los modos α actuan sobre
+    # los giros, no sobre w, asi que no aportan al cortante.
+    if not BENDING_MODOS_INCOMPATIBLES:
+        return Kuu                   # el camino de `shellQ4.ts`
+    if abs(np.linalg.det(Kaa)) > 1e-20:
+        return Kuu - Kua @ np.linalg.inv(Kaa) @ Kua.T
+    return Kuu                       # Kaa singular: Q4 estandar, como el C++
 
 
 def _k_drilling(x, y, G, t, alpha=0.5):
@@ -197,7 +277,8 @@ for _n in range(4):
 
 
 def shell_q4_motor(coords_xy, E, nu, t, *, alpha_drilling=None,
-                   giros_del_ts=False, solo_membrana=False):
+                   giros_del_ts=False, solo_membrana=False,
+                   mod_membrana=1.0, mod_flexion=1.0, mod_dir=None):
     """K local 24×24 del Q4 del motor. `coords_xy` = (4,2) EN EL PLANO del paño.
 
     `giros_del_ts=True` reproduce el convenio de giros de `shellQ4.ts` tal cual
@@ -211,6 +292,17 @@ def shell_q4_motor(coords_xy, E, nu, t, *, alpha_drilling=None,
     daba 7.09 % contra ETABS en TODOS los nudos por igual — la firma de una
     rigidez de mas repartida por toda la planta, no de un elemento mal
     integrado.
+
+    Modificadores de propiedad de CSI (Manual §10.7):
+      `mod_membrana` / `mod_flexion` — el par ESCALAR (`shellmod ID mem bend`).
+      `mod_dir` — los OCHO direccionales (F11 F22 F12 M11 M22 M12 V13 V23).
+    Si hay direccionales MANDAN ELLOS y los escalares quedan en 1.0; si no, se
+    multiplicaria dos veces. Igual que `shellQ4.cpp`.
+
+    ⚠️ Flexión nula NO se arma y se multiplica por cero: se OMITE. Con Db = 0
+    la matriz de modos incompatibles sale singular y el elemento se cae a un Q4
+    estándar, que es justo lo contrario de la membrana que se pedía. ETABS
+    hace esto mismo: un deck es ShellType Membrane y la flexión no existe.
     """
     K = np.zeros((24, 24))
     if E == 0 or t == 0:
@@ -220,11 +312,20 @@ def shell_q4_motor(coords_xy, E, nu, t, *, alpha_drilling=None,
     G = E / (2 * (1 + nu))
 
     al = ALPHA_DRILL if alpha_drilling is None else alpha_drilling
-    K[np.ix_(DOF_MEM, DOF_MEM)] += _k_membrana(x, y, E, nu, t)
-    if not solo_membrana:
-        k_ben = _k_flexion(x, y, E, nu, t)
+
+    fm, fb = float(mod_membrana), float(mod_flexion)
+    if mod_dir is not None:
+        mod_dir = [float(v) for v in mod_dir]
+        fm = fb = 1.0
+        sin_flexion = all(abs(mod_dir[k]) < 1e-9 for k in (3, 4, 5))
+    else:
+        sin_flexion = abs(fb) < 1e-9
+
+    K[np.ix_(DOF_MEM, DOF_MEM)] += fm * _k_membrana(x, y, E, nu, t, mod_dir)
+    if not solo_membrana and not sin_flexion:
+        k_ben = _k_flexion(x, y, E, nu, t, mod=mod_dir)
         if not giros_del_ts:
             k_ben = _T_BEN.T @ k_ben @ _T_BEN
-        K[np.ix_(DOF_BEN, DOF_BEN)] += k_ben
+        K[np.ix_(DOF_BEN, DOF_BEN)] += fb * k_ben
     K[np.ix_(DOF_DRI, DOF_DRI)] += _k_drilling(x, y, G, t, al)
     return K

@@ -265,26 +265,50 @@ def test_esfuerzos_con_brazo_rigido_el_ts_rompe_equilibrio(ts):
           "vs TS %.4f" % (v2_py, v2_ts))
 
 
-def test_mecanismo_python_avisa_el_ts_no():
-    """Un mecanismo: Python revienta con "Singular matrix", el TS devuelve numeros.
+def test_gdl_sin_rigidez_se_queda_en_cero_como_el_cpp():
+    """La barra del nudo 4 se articula EN ESE extremo: sus giros quedan sueltos.
 
-    Caso: la barra que llega al nudo 4 se articula EN ESE extremo (M2J y M3J).
-    El nudo 4 no tiene ninguna otra barra, así que sus giros se quedan sin nada
-    que los sujete: la K es singular y la estructura, un mecanismo.
+    El nudo 4 no tiene otra barra, así que θx y θz no aparecen en ninguna K de
+    elemento (medido: diagonal y columna exactamente a cero) y su ecuación es
+    `0 = 0`. θy SÍ tiene rigidez y no se toca. `deform.cpp` los SACA del sistema
+    (`getZerosIndices`) y los deja en 0 — no es un mecanismo peligroso, es un
+    GDL desconectado, y con él dentro la matriz entera sale singular y se
+    pierden los otros nudos.
 
-    `deform.ts` resuelve con `lusolve` de mathjs, que NO comprueba el
-    condicionamiento y devuelve una deformada cualquiera sin avisar. El camino
-    de Python usa `numpy.linalg.solve`, que lanza `LinAlgError`. Es preferible
-    fallar: un mecanismo que sale con numeros se firma.
+    Antes Python lo dejaba dentro y reventaba con `LinAlgError`, que parecía
+    prudente pero era otra cosa: no avisaba de un mecanismo, es que no sabía
+    quitar un GDL huérfano. Con 3 nudos así, `galpon_lc.heks` devolvía NaN en
+    los 609.
     """
     nodes, elements = _portico()
     caso = _base(nodes, elements,
                  supports={0: [True] * 6, 3: [True] * 6},
                  loads={2: [0, 0, -25, 0, 0, 0], 4: [0, 0, -12, 0, 0, 0]},
                  momentReleases={3: [False, False, False, False, True, True]})
-    import numpy as np
     nds, els, ni, ei = a_python(caso)
-    with pytest.raises(np.linalg.LinAlgError):
+    out = deform(nds, els, ni, ei)
+    d4 = out.deformations[4]
+    assert math.isfinite(d4[2]) and d4[2] < 0, "el nudo 4 tiene que bajar"
+    assert d4[3] == 0.0 and d4[5] == 0.0, "los giros sueltos (θx, θz) se quedan en 0"
+    assert d4[4] != 0.0, "θy sí tiene rigidez: no se puede haber quitado"
+
+
+def test_gdl_sin_rigidez_CON_carga_si_revienta():
+    """Y si el GDL huérfano lleva CARGA, esa carga no la equilibra nada.
+
+    Quitarlo la borraría del modelo sin decirlo y el resto saldría con números
+    de aspecto normal — la misma familia de fallo que un lector que se come
+    comandos en silencio. Aquí sí hay que parar.
+    """
+    import numpy as np
+    nodes, elements = _portico()
+    caso = _base(nodes, elements,
+                 supports={0: [True] * 6, 3: [True] * 6},
+                 # MZ en el nudo 4, justo el giro que quedó suelto
+                 loads={2: [0, 0, -25, 0, 0, 0], 4: [0, 0, -12, 0, 0, 7.5]},
+                 momentReleases={3: [False, False, False, False, True, True]})
+    nds, els, ni, ei = a_python(caso)
+    with pytest.raises(np.linalg.LinAlgError, match="sin rigidez"):
         deform(nds, els, ni, ei)
 
 

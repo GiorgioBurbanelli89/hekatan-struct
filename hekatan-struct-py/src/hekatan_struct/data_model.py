@@ -78,6 +78,15 @@ class ElementInputs:
     partial_fixity_springs:    dict[int, list[float]] = field(default_factory=dict)
     insertion_points:          dict[int, tuple[float, float]] = field(default_factory=dict)
     section_shapes:            dict[int, SectionShape] = field(default_factory=dict)
+    # Modificadores de propiedad del shell (CSI Manual §10.7). El par escalar
+    # (`shellmod ID mem bend`) y los OCHO direccionales
+    # (F11 F22 F12 M11 M22 M12 V13 V23). Si hay direccionales mandan ellos.
+    membrane_modifiers:        dict[int, float] = field(default_factory=dict)
+    bending_modifiers:         dict[int, float] = field(default_factory=dict)
+    shell_modifiers:           dict[int, list[float]] = field(default_factory=dict)
+    # Ángulo del eje local 1 del shell (`shellang`). Se guarda por trazabilidad
+    # y para exportar: el solver —ni éste ni el TS/C++— lo usa hoy.
+    shell_angles:              dict[int, float] = field(default_factory=dict)
 
 
 # ─── Outputs ────────────────────────────────────────────────────────────────
