@@ -50,29 +50,28 @@ const JSON_BANCO = join(AQUI, "..", "..", "validation", "03-cascaras-muros",
 const FORM = { Thick: 0, Thin: 1, Membrane: 2 };
 
 /**
- * Límite por tipo, en % contra ETABS 22. Son LOS MEDIDOS HOY con el WASM, que
- * es el motor del producto. Y hay una deuda escrita en ellos:
+ * Límite por tipo, en % contra ETABS 22, con el WASM (el motor del producto).
+ * Medido el 19-ago-2026 con la malla y las secciones de la referencia:
  *
- *   |          | WASM (producto) | Python   | ETABS       |
- *   |----------|-----------------|----------|-------------|
- *   | Membrane |  0.745 %        |  0.745 % |  1.855e-5   |
- *   | Thin     |  6.67 %         |  0.15 %  | -1.3139e-3  |
- *   | Thick    |  9.23 %         |  2.63 %  | -1.3139e-3  |
+ *   | Membrane | 0.745 % |
+ *   | Thin     | 0.025 % |
+ *   | Thick    | 2.627 % |
  *
- * La MEMBRANA está alineada entre los dos motores y cierra contra ETABS. La
- * FLEXIÓN no: el motor de Python usa MZC para Shell-Thin y su propia Mindlin
- * para Shell-Thick, y el WASM usa DKE y MITC4. Son placas distintas, y contra
- * ETABS gana la de Python.
+ * Los tres coinciden con el motor de Python, así que el escalón B está cerrado.
+ * El 2.6 % de Shell-Thick es conocido y viene de que ETABS no usa un MITC4
+ * (ver `reference_shell_thick_shear_locking`); no es de este banco.
  *
- * Que el WASM falle 6.7 % aquí y solo 0.74 % en `losas-tipos` (una losa sola)
- * apunta a que lo que se rompe es el ACOPLAMIENTO barra-cáscara, que es
- * justamente lo que este escalón añade sobre el A.
+ * ⚠️ Estos números costaron TRES diagnósticos falsos seguidos, todos por montar
+ * mal el modelo, no por el solver:
+ *   1. comparar 4×4 contra una referencia de 8×8  → «regresión» de −7 %;
+ *   2. leer el Ux del modelo de FLEXIÓN en el caso Membrane → salía 0;
+ *   3. recalcular la J como momento POLAR en vez de SAINT-VENANT (1.51× en la
+ *      viga 0.30x0.50) → «el WASM no acopla barra con cáscara», 6.6 %.
  *
- * ⚠️ Estos límites son la foto de hoy, no el objetivo. El objetivo es 1-2 %, y
- * el motor de Python ya lo cumple. Cuando se arregle la flexión del WASM hay que
- * BAJARLOS, nunca subirlos.
+ * De ahí que el JSON traiga la malla Y las secciones ya calculadas: lo que no se
+ * recalcula aquí, no se puede equivocar aquí.
  */
-const LIMITE = { Membrane: 1.5, Thin: 7.5, Thick: 10.0 };
+const LIMITE = { Membrane: 1.5, Thin: 0.5, Thick: 3.5 };
 
 export const nombre = "banco-shell-escalon-b";
 export const descripcion =
@@ -92,7 +91,12 @@ export async function correr() {
     crudo: false,
   }];
 
-  const secDe = (b, h) => ({ A: b*h, I22: h*b**3/12, I33: b*h**3/12, J: b*h**3/12 + h*b**3/12 });
+  // ⚠️ Las secciones vienen YA CALCULADAS en el JSON, no se recalculan aquí.
+  // Recalcularlas fue el tercer fallo del día: el banco usa la J de
+  // SAINT-VENANT (Roark para rectángulo) y aquí se puso el momento POLAR, que
+  // en la viga 0.30x0.50 sale 1.51 veces mayor. Eso rigidiza la torsión de las
+  // vigas y bajaba la flecha un 6.6 % — que se interpretó como «el WASM no
+  // acopla bien barra con cáscara». No era el motor: era el modelo mal montado.
 
   for (const tipo of ["Membrane", "Thin", "Thick"]) {
     // ⚠️ El caso Membrane NO es el mismo modelo con otra propiedad: lleva la
@@ -109,7 +113,7 @@ export async function correr() {
     // sin `orientations`: el banco de Python tampoco las fija, y forzar
     // [0,0,1] en una columna VERTICAL es degenerado (fue el segundo fallo).
     c.barras.forEach((_, k) => {
-      const s = secDe(...(c.sec[k] === "COL" ? m.COL : m.VIG));
+      const s = m.secciones[c.sec[k]];
       el.set(k, m.E); po.set(k, m.nu); sm.set(k, m.E/(2*(1+m.nu))); de.set(k, 0);
       ar.set(k, s.A); iy.set(k, s.I22); iz.set(k, s.I33); tc.set(k, s.J);
     });
