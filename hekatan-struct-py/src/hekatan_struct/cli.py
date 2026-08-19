@@ -1,0 +1,125 @@
+# -*- coding: utf-8 -*-
+"""CLI de Hekatan Struct en Python — SOLO NÚMEROS.
+
+Sin ventanas, sin gráficos, sin PNG: escribe números por stdout y ya. La idea es
+poder poner los tres motores uno al lado del otro con un `diff`:
+
+    cli/native/kelem_native.exe 0 0 0 1 0 0 1 1 0 0 1 0 2.2e7 0.2 0.20   > k_cpp.txt
+    python -m hekatan_struct.cli kelem 0 0 1 0 1 1 0 1 --E 2.2e7 --nu 0.2 --t 0.20 > k_py.txt
+    node cli/cli.mjs ...                                                  (el del WASM)
+
+Por qué hace falta el de Python: es donde se itera. Cambiar una formulación en
+C++ cuesta compilar; en Python se cambia y se mide en un segundo. Pero una
+iteración en Python solo vale si el C++ dice lo mismo, y eso solo se sabe
+comparando **la matriz**, no un desplazamiento — un desplazamiento es la matriz
+ya mezclada con apoyos y cargas: si sale mal, no dice dónde.
+
+Subcomandos
+-----------
+    kelem    la matriz de rigidez de UN elemento (12x12 de membrana+drilling)
+    placa    la K 12x12 de flexión (DKQ)
+    banco    los tests del paper ITW 1990, en una tabla
+    modos    los modos de energía nula de un elemento
+
+Ejemplos
+--------
+    python -m hekatan_struct.cli kelem 0 0  1 0  1 1  0 1
+    python -m hekatan_struct.cli kelem 0 0  2 0  1.5 1  0.25 1 --gamma 0.4
+    python -m hekatan_struct.cli banco
+    python -m hekatan_struct.cli modos 0 0  1 0  1 1  0 1 --gauss 2
+"""
+from __future__ import annotations
+
+import argparse
+import sys
+
+import numpy as np
+
+
+def _pts(vals):
+    """8 números sueltos -> 4 puntos (x, y)."""
+    if len(vals) != 8:
+        raise SystemExit("hacen falta 8 números: x0 y0 x1 y1 x2 y2 x3 y3")
+    return [(vals[0], vals[1]), (vals[2], vals[3]),
+            (vals[4], vals[5]), (vals[6], vals[7])]
+
+
+def _imprime(K, fmt="%.12e"):
+    """Una fila por línea, como el kelem_native.exe — para poder hacer diff."""
+    for fila in K:
+        print(" ".join(fmt % v for v in fila))
+
+
+def cmd_kelem(a):
+    from .elements.membrane_itw import k_membrana_itw
+    K = k_membrana_itw(_pts(a.puntos), a.E, a.nu, a.t,
+                       gamma_fac=a.gamma, n_gauss=a.gauss)
+    _imprime(K)
+
+
+def cmd_placa(a):
+    from .elements.plate_dkq import k_placa_dkq
+    _imprime(k_placa_dkq(_pts(a.puntos), a.E, a.nu, a.t))
+
+
+def cmd_modos(a):
+    from .elements.membrane_itw import modos_nulos
+    n = modos_nulos(_pts(a.puntos), a.E, a.nu, a.t,
+                    gamma_fac=a.gamma, n_gauss=a.gauss)
+    print(n)
+    # 3 son los sólidos rígidos; más de 3 es un mecanismo y el elemento no vale
+    return 0 if n == 3 else 1
+
+
+def cmd_banco(a):
+    from .benchmarks_itw import REF, test_i_patch, test_ii_cantilever, test_iii_cook
+    f, g = test_i_patch(6)
+    print("test               medido        referencia    error")
+    print("I  flecha       %12.6f  %12.6f  %+8.3f %%"
+          % (f, REF["patch_flecha"], (f / REF["patch_flecha"] - 1) * 100))
+    print("I  giro         %12.6f  %12.6f  %+8.3f %%"
+          % (g, REF["patch_giro"], (g / REF["patch_giro"] - 1) * 100))
+    v = test_ii_cantilever(16, 4)
+    print("II cantilever   %12.6f  %12.6f  %+8.3f %%"
+          % (v, REF["cantilever"], (v / REF["cantilever"] - 1) * 100))
+    c = test_iii_cook(16)
+    print("III Cook 16x16  %12.6f  %12.6f  %+8.3f %%"
+          % (c, REF["cook"], (c / REF["cook"] - 1) * 100))
+
+
+def main(argv=None):
+    p = argparse.ArgumentParser(
+        prog="hekatan_struct.cli",
+        description="CLI numérico de Hekatan Struct (sin gráficos)")
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    def comunes(q, con_gamma=True):
+        q.add_argument("puntos", type=float, nargs=8,
+                       help="x0 y0 x1 y1 x2 y2 x3 y3 (antihorarios)")
+        q.add_argument("--E", type=float, default=2.2e7)
+        q.add_argument("--nu", type=float, default=0.2)
+        q.add_argument("--t", type=float, default=0.20)
+        if con_gamma:
+            q.add_argument("--gamma", type=float, default=0.4,
+                           help="gamma/mu del ITW (0.4 = lo medido de ETABS)")
+            q.add_argument("--gauss", type=int, default=3, choices=(2, 3),
+                           help="puntos de Gauss por lado (el paper usa 3)")
+
+    q = sub.add_parser("kelem", help="K 12x12 de membrana + drilling (ITW 1990)")
+    comunes(q); q.set_defaults(fn=cmd_kelem)
+
+    q = sub.add_parser("placa", help="K 12x12 de flexión (DKQ, Batoz 1982)")
+    comunes(q, con_gamma=False); q.set_defaults(fn=cmd_placa)
+
+    q = sub.add_parser("modos", help="modos de energía nula (deben ser 3)")
+    comunes(q); q.set_defaults(fn=cmd_modos)
+
+    q = sub.add_parser("banco", help="los tests del paper ITW 1990")
+    q.set_defaults(fn=cmd_banco)
+
+    a = p.parse_args(argv)
+    return a.fn(a) or 0
+
+
+if __name__ == "__main__":               # pragma: no cover
+    sys.exit(main())
