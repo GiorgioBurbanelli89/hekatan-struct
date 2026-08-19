@@ -27,7 +27,27 @@ import numpy as np
 # BARRERLOS contra ETABS: el binario no dice que valores usa, asi que se
 # identifican midiendo (ver edificios-slab/calibrar_shell.py).
 KAPPA = 5.0 / 6.0      # factor de correccion de cortante de Mindlin
-ALPHA_DRILL = 0.5      # Hughes-Brezzi (1989)
+
+# ⚠️ 0.05, NO 0.5 — el mismo que `shellQ4.cpp` (drillingPenaltyScales, 0.05).
+# Los dos motores estaban en DESACUERDO por un factor 10 exacto: la celda de
+# 1 m daba Rz = 1.309091e-05 en Python y 1.309091e-04 en el C++/WASM, mismos
+# digitos y el exponente corrido.
+#
+# Manda el C++ porque su valor esta MEDIDO, no elegido: en el muro en voladizo
+# de 4 cascaras, escala 1.00 daba -11.63 % contra la viga de Timoshenko, 0.49
+# (~el de ETABS) -7.07 % y 0.05 se queda a menos de 0.2 % del elemento sin
+# drilling. Contra ETABS por OAPI, la membrana cierra al +0.81 % con 0.05.
+#
+# Y la literatura lo respalda: Ibrahimbegovic-Taylor-Wilson (1990, IJNME 30:445)
+# toman gamma = G y dicen que la formulacion es INSENSIBLE a gamma; trabajo
+# posterior encuentra que gamma/G entre 1/10000 y 1 da soluciones MAS precisas.
+#
+# ⚠️ Y ojo: ETABS NO usa un escalar de Hughes-Brezzi. Medida su matriz theta_z
+# 4x4 (edificios-slab / galpon-bodega-electoral/celda_drill4.py), sus
+# autovalores son 1/10 (giro uniforme), 5/84 doble, y 1/5000 (modo alternado).
+# Razones 1 : 0.595 : 0.002 contra las de Hughes-Brezzi 1 : 0.333 : 0.028. Es
+# otra FORMA, no otro numero: ningun alpha reproduce los tres a la vez.
+ALPHA_DRILL = 0.05     # Hughes-Brezzi (1989), escala calibrada
 
 GP = 1.0 / np.sqrt(3.0)
 GAUSS = [(-GP, -GP), (GP, -GP), (GP, GP), (-GP, GP)]
