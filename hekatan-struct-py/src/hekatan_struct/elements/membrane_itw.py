@@ -180,7 +180,9 @@ def k_membrana_itw(pts, E: float, nu: float, t: float,
                    con_burbuja: bool = True, con_penal: bool = True,
                    mod_dir=None, regla: str = "gauss",
                    w_alpha: float = 0.99, penal_full: bool = False,
-                   proyectar_drilling: bool = False) -> np.ndarray:
+                   proyectar_drilling: bool = False,
+                   penal_integrada: bool = False,
+                   theta_relativo: bool = False) -> np.ndarray:
     # NOTA sobre `penal_full`: ver el aviso al final del docstring. NO USAR.
     """Rigidez 12x12 del elemento, GDL `[u0,v0,tz0, u1,v1,tz1, ...]`.
 
@@ -193,6 +195,27 @@ def k_membrana_itw(pts, E: float, nu: float, t: float,
     * `"itw8"` — la regla de ocho puntos del **ITW 1991**, ec. (30), que es la
       que cita el manual de CSI. `w_alpha` es su unico parametro; el paper solo
       dice *«close to 1»*. Ver `puntos_itw8`.
+
+    `proyectar_drilling` es la via de **FEAP** (el programa de Robert Taylor):
+    a las columnas de `B` del giro se les resta su MEDIA sobre el elemento, o
+    sea `INT B_theta dOmega = 0`. Es lo que cierra la matriz contra ETABS —
+    `K_utheta` del 328 % al 9.28 % y la 12x12 entera del 16 % al **1.42 %**.
+
+    ⚠️ **Dos cosas mas que NO valen**, medidas el 19-ago-2026 contra la matriz
+    12x12 de ETABS, y que se quedan aqui solo para no volver a probarlas:
+
+    * `penal_integrada=True` — integrar el residuo de la penalizacion sobre el
+      elemento en vez de evaluarlo en el centro, que es como lo arma FEAP
+      («Compute Hughes/Brezzi rotation matrix»). Da **exactamente lo mismo**
+      (`K_thetatheta` 39.70 % contra 39.69 %): el residuo es casi constante en
+      el elemento, asi que da igual como se integre. No es la explicacion del
+      resto de `K_thetatheta`.
+
+    * `theta_relativo=True` — los giros como INCREMENTOS, que es lo que escribe
+      Wilson en su cap. 9 ec. (9.12) (`d = theta_0 - SUM N_i DELTA-theta_i`) y
+      la unica pieza de su capitulo que faltaba. **Empeora**: `K_utheta` sube de
+      9.28 % a 70.37 % y `K_thetatheta` de 39.69 % a 91.16 %. O sea que el
+      `DELTA` de Wilson no significa restar la media de los cuatro giros.
 
     ⚠️ `penal_full=True` NO VALE — se deja solo para que no se vuelva a probar.
     El paper de 1991 dice que la penalizacion del drilling se integra ENTERA
@@ -257,6 +280,8 @@ def k_membrana_itw(pts, E: float, nu: float, t: float,
     n = 14 if con_burbuja else 12
     K = np.zeros((n, n))
     centro = {}
+    res_int = np.zeros(n)
+    area_int = 0.0
 
     for rr, ss, ww in cuadratura:
         dr, ds, Ji, dJ = _jacobiano(rr, ss, X4, Y4)
@@ -299,12 +324,40 @@ def k_membrana_itw(pts, E: float, nu: float, t: float,
 
         K += ww * abs(dJ) * (B.T @ D @ B)
 
+        if penal_integrada:
+            # Asi lo arma FEAP (`shell3d.f`, «Compute Hughes/Brezzi rotation
+            # matrix»): NO evalua el residuo en el centro y lo multiplica por el
+            # area — lo INTEGRA sobre el elemento y divide por el area al hacer
+            # el rango uno:
+            #
+            #     gg(1,j) = gg(1,j) - shp(2,j,l)*dvl(l)     <- integrando
+            #     ggv     = pen*d(27)*thk*ctan(1)/dv        <- entre el volumen
+            #     s(i,j)  = s(i,j) + ggv*gg(i)*gg(j)        <- rango uno
+            #
+            # Con jacobiano constante las dos formas coinciden (ahi
+            # `INT res = A*res_centro`). En un elemento DISTORSIONADO no.
+            rs = np.zeros(n)
+            gt2p = NSy[_ANT] * cx[_ANT] - NSy * cx
+            gt3p = NSx[_ANT] * cy[_ANT] - NSx * cy
+            for i in range(4):
+                rs[3 * i] = -0.5 * dNy[i]
+                rs[3 * i + 1] = 0.5 * dNx[i]
+                rs[3 * i + 2] = 0.5 * (gt3p[i] - gt2p[i]) - NN[i]
+            if con_burbuja:
+                rs[12] = -0.5 * dNBy
+                rs[13] = 0.5 * dNBx
+            res_int += rs * (ww * abs(dJ))
+            area_int += ww * abs(dJ)
+
         if hay_centro and rr == 0.0 and ss == 0.0:
             centro = dict(dNx=dNx, dNy=dNy, gt2=gt2, gt3=gt3, NN=NN, dJ=abs(dJ),
                           dNBx=(dNBx if con_burbuja else 0.0),
                           dNBy=(dNBy if con_burbuja else 0.0))
 
-    if con_penal and not penal_full:
+    if con_penal and penal_integrada:
+        mu = E / (2.0 * (1.0 + nu))
+        K = K + (gamma_fac * mu) * t / area_int * np.outer(res_int, res_int)
+    elif con_penal and not penal_full:
         if not centro:                    # con 2x2 el centro no es punto de Gauss
             dr, ds, Ji, dJ = _jacobiano(0.0, 0.0, X4, Y4)
             nsr, nss = _serendipity(0.0, 0.0)
@@ -322,7 +375,14 @@ def k_membrana_itw(pts, E: float, nu: float, t: float,
         for i in range(4):
             res[3 * i] = -0.5 * g["dNy"][i]
             res[3 * i + 1] = 0.5 * g["dNx"][i]
-            res[3 * i + 2] = 0.5 * (g["gt3"][i] - g["gt2"][i]) - g["NN"][i]
+            # Wilson, cap. 9 ec. (9.12): el termino es
+            #     d = theta_0 - SUM N_i * DELTA-theta_i
+            # con DELTA-theta = giros RELATIVOS, no absolutos. Y avisa de que al
+            # sumar el rango uno «el giro de nudo se convierte en absoluto».
+            # Como SUM N_i = 1, poner el giro relativo equivale a restar la
+            # media: SUM N_i (theta_i - media) = SUM N_i theta_i - media.
+            res[3 * i + 2] = (0.5 * (g["gt3"][i] - g["gt2"][i])
+                              - (g["NN"][i] - 0.25 if theta_relativo else g["NN"][i]))
         if con_burbuja:
             res[12] = -0.5 * g["dNBy"]
             res[13] = 0.5 * g["dNBx"]
