@@ -6,7 +6,7 @@ Web app que corre en localhost:8080 con UI vuetify (look awatif v2 web):
   - Update en tiempo real
 
 Run:
-    pip install awatif-py[sliders]
+    pip install -e ".[sliders]"
     python examples/04_cantilever_trame_web.py
     # Abrir http://localhost:8080
 """
@@ -15,8 +15,8 @@ from trame.app import get_server
 from trame.ui.vuetify3 import SinglePageWithDrawerLayout
 from trame.widgets import vuetify3 as v3, vtk as vtk_widgets
 
-from awatif import deform, NodeInputs, ElementInputs
-from awatif.viewer import _frames_to_lines, _support_glyphs, _load_arrows
+from hekatan_struct import deform, NodeInputs, ElementInputs
+from hekatan_struct.viewer import _frames_to_lines, _support_glyphs, _load_arrows
 import pyvista as pv
 
 
@@ -99,7 +99,7 @@ def _on_change(**kwargs):
 
 
 with SinglePageWithDrawerLayout(server) as layout:
-    layout.title.set_text("awatif-py — Cantilever Interactive")
+    layout.title.set_text("Hekatan Struct Python — Cantilever")
     with layout.drawer as drawer:
         drawer.width = 360
         with v3.VContainer():

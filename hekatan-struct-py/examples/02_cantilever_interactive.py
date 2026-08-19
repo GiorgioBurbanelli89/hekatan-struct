@@ -12,8 +12,8 @@ Sliders:
 Run:
     python examples/02_cantilever_interactive.py
 """
-from awatif import deform, NodeInputs, ElementInputs
-from awatif.viewer import View
+from hekatan_struct import deform, NodeInputs, ElementInputs
+from hekatan_struct.viewer import View
 
 
 # Estado mutable (mutado por callbacks de sliders)

@@ -43,6 +43,11 @@ class ModeloHeks:
     frame_id: list[int] = field(default_factory=list)
     frame_sec: list[str] = field(default_factory=list)
     errores: list[str] = field(default_factory=list)
+    # comandos que el lector NO monta (cáscaras, areaload, muelles…). Antes se
+    # saltaban en silencio: el mezanine, que carga por `areaload`, salía con 0
+    # nudos cargados, flecha 0.000 mm y un cierre de báscula perfecto. Un
+    # modelo que no se lee entero tiene que DECIRLO.
+    ignorados: dict[str, int] = field(default_factory=dict)
 
 
 def _support_flags(spec: str) -> tuple[bool, bool, bool, bool, bool, bool]:
@@ -70,6 +75,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
     ashear: dict[int, tuple[float, float]] = {}
     rels: dict[int, list[bool]] = {}
     errores: list[str] = []
+    ignorados: dict[str, int] = {}
 
     with open(ruta, encoding="utf-8", errors="replace") as fh:
         for linea in fh:
@@ -128,13 +134,16 @@ def leer_heks(ruta: str) -> ModeloHeks:
                         if len(pal) > 1 and pal[1] == "pin":
                             r[10] = r[11] = True
                         rels[int(t[1])] = r
-                elif cmd in ("solve", "reset", "shelltype", "spring",
-                             "shell", "areaload", "shellang", "mass", "diaph"):
-                    continue
+                elif cmd in ("solve", "reset"):
+                    continue        # no aportan modelo: no son un hueco
+                else:
+                    # shell, areaload, shellang, shellmod, spring, mass, diaph…
+                    # y cualquier comando futuro: se cuentan, no se callan.
+                    ignorados[cmd] = ignorados.get(cmd, 0) + 1
             except (IndexError, ValueError) as e:
                 errores.append(f"{linea.strip()!r}: {e}")
 
-    m = ModeloHeks(errores=errores)
+    m = ModeloHeks(errores=errores, ignorados=ignorados)
     ids = sorted(nodos)                       # mismo orden que cliModeler.ts
     idx_de = {nid: k for k, nid in enumerate(ids)}
     m.node_id = ids
@@ -179,6 +188,11 @@ def leer_heks(ruta: str) -> ModeloHeks:
     huerfanas = set(fl) - {f["id"] for f in frames}
     if huerfanas:
         m.errores.append(f"frameload sin barra: {sorted(huerfanas)[:10]}")
+    if ignorados:
+        detalle = ", ".join(f"{k}x{v}" for k, v in sorted(ignorados.items()))
+        m.errores.append(f"comandos NO montados: {detalle}")
+    if not ni.loads and not ei.frame_loads:
+        m.errores.append("modelo SIN carga: la deformada va a salir 0")
     return m
 
 

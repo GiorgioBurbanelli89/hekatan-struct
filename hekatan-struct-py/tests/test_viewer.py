@@ -8,8 +8,8 @@ import pytest
 pv = pytest.importorskip("pyvista")
 pv.OFF_SCREEN = True
 
-from awatif import deform, NodeInputs, ElementInputs
-from awatif.viewer import View
+from hekatan_struct import deform, NodeInputs, ElementInputs
+from hekatan_struct.viewer import View
 
 
 def test_view_creates_and_renders(tmp_path):

@@ -1,7 +1,7 @@
 """Viga simplemente apoyada con carga puntual centro — PL³/48EI, M_max = PL/4."""
 import numpy as np
 import pytest
-from awatif import deform, analyze, NodeInputs, ElementInputs
+from hekatan_struct import deform, analyze, NodeInputs, ElementInputs
 
 
 L = 6.0
@@ -43,13 +43,28 @@ def beam_inputs():
 
 
 def test_midspan_deflection(beam_inputs):
+    """δ = PL³/48EI + PL/(4·G·As) — el segundo término NO es tolerancia.
+
+    El motor de Hekatan es Timoshenko (como ETABS): sin dar `as`, supone
+    `As = 5/6·A`. Contra la fórmula de Euler-Bernoulli pelada salía un 2.17 %
+    de "error" que es exactamente el cortante — y que crece al acortar el vano.
+    El árbitro correcto es la fórmula con los dos términos, y ahí cierra al
+    0.0 %.
+    """
     nodes, elements, ni, ei = beam_inputs
     res = deform(nodes, elements, ni, ei)
     I = B * H**3 / 12
-    delta_expected = P * L**3 / (48 * E * I)
+    As = (5.0 / 6.0) * (B * H)          # el default del motor, el de ETABS
+    delta_flexion = P * L**3 / (48 * E * I)
+    delta_cortante = P * L / (4 * G * As)
+    delta_expected = delta_flexion + delta_cortante
     Uz_mid = abs(res.deformations[1][2])
     rel_err = abs(Uz_mid - delta_expected) / delta_expected
-    assert rel_err < 0.02, f"δ_mid={Uz_mid*1000:.3f}mm vs expected={delta_expected*1000:.3f}mm, err={rel_err*100:.2f}%"
+    assert rel_err < 1e-3, (
+        f"δ_mid={Uz_mid*1000:.4f}mm vs Timoshenko={delta_expected*1000:.4f}mm "
+        f"(flexión {delta_flexion*1000:.4f} + cortante {delta_cortante*1000:.4f}), "
+        f"err={rel_err*100:.3f}%"
+    )
 
 
 def test_max_moment(beam_inputs):

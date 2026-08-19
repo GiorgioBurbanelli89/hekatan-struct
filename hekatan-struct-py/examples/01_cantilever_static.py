@@ -6,8 +6,8 @@ Calcula deform + analyze, abre la ventana 3D PyVista con deformada visible.
 Run:
     python examples/01_cantilever_static.py
 """
-from awatif import deform, analyze, NodeInputs, ElementInputs
-from awatif.viewer import View
+from hekatan_struct import deform, analyze, NodeInputs, ElementInputs
+from hekatan_struct.viewer import View
 
 
 # ─── Geometría ──────────────────────────────────────────────────────────────

@@ -1,10 +1,10 @@
 """Cantilever vertical bajo carga lateral — PL³/3EI clásico.
 
-API espejo awatif v2: raw nodes/elements/nodeInputs/elementInputs sin Model builder.
+API espejo awatif v2 (misma firma): raw nodes/elements/nodeInputs/elementInputs sin Model builder.
 """
 import numpy as np
 import pytest
-from awatif import deform, analyze, NodeInputs, ElementInputs
+from hekatan_struct import deform, analyze, NodeInputs, ElementInputs
 
 
 L = 4.0

@@ -6,7 +6,7 @@ App de escritorio Qt5 con:
   - Update en tiempo real al mover sliders
 
 Run:
-    pip install awatif-py[viewer] pyvistaqt PyQt5
+    pip install -e ".[viewer]" pyvistaqt PyQt5
     python examples/03_cantilever_qt.py
 """
 import sys
@@ -14,8 +14,8 @@ from PyQt5 import QtWidgets, QtCore
 from pyvistaqt import QtInteractor
 import numpy as np
 
-from awatif import deform, NodeInputs, ElementInputs, SectionShape
-from awatif.viewer import (
+from hekatan_struct import deform, NodeInputs, ElementInputs, SectionShape
+from hekatan_struct.viewer import (
     _frames_to_lines, _support_glyphs, _load_arrows,
     _deformed_polylines_collection,
 )
@@ -48,7 +48,7 @@ def build_and_solve():
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("awatif-py — Cantilever Interactive (Qt + PyVista)")
+        self.setWindowTitle("Hekatan Struct Python — Cantilever (Qt + PyVista)")
         self.resize(1400, 900)
 
         # Central widget: 3D viewer
