@@ -260,6 +260,19 @@ extern "C++" Eigen::MatrixXd getLocalStiffnessMatrixShellQ4_DKMQ(
         k24(mapBend(i), mapBend(j)) = k12(i, j);
 
     // ── Drilling DOF dispatcher según drillingTypes (default 2 = HB) ──────
+    //
+    // ⚠️ ESTE FICHERO SE QUEDÓ ATRÁS. El 19-ago-2026 la membrana pasó al
+    // elemento ITW 1990 en `shellQ4.cpp`, en `shellThin.cpp`, en `shellQ4.ts` y
+    // en el motor de Python. Aquí NO: sigue con Hughes-Brezzi y además con
+    // `drillScale = 1.0`, que es el peor valor medido (con 1.0 el drilling deja
+    // de ser un truco para quitar la singularidad de θz y BLOQUEA la membrana:
+    // −11.63 % contra Timoshenko en el muro en voladizo).
+    //
+    // No se ha tocado porque NADIE LLAMA a este elemento: `getLocalStiffnessMatrix`
+    // no lo referencia y no hay ningún test que lo ejecute. O sea que hoy es
+    // código muerto. Pero si alguien lo activa, dará OTROS NÚMEROS que el resto
+    // del motor, y sin avisar. Antes de usarlo: pasarlo a `getMembraneITW` igual
+    // que shellThin.cpp, y meterlo en la suite.
     //   0 = penalty 1e-6 legacy
     //   1 = PyNite weak spring  (k = min(diagRot bend)/1000)  [legacy DKMQ]
     //   2 = Hughes-Brezzi 1989 / Ibrahimbegovic-Taylor-Wilson 1990 [DEFAULT]
