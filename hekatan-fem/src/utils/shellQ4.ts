@@ -217,6 +217,156 @@ function getDrillingK(x: number[], y: number[], G: number, t: number, alpha: num
   return Kd;
 }
 
+
+/**
+ * Membrana ITW 1990 — Ibrahimbegovic, Taylor & Wilson, IJNME 30:445-457.
+ *
+ * Devuelve 12×12 con los GDL [u0,v0,θz0, u1,v1,θz1, u2,v2,θz2, u3,v3,θz3]:
+ * membrana Y drilling JUNTOS. El giro entra en el CAMPO DE DESPLAZAMIENTOS
+ * (interpolación de Allman por los lados + burbuja (1-r²)(1-s²) condensada),
+ * no como una penalización pegada por fuera.
+ *
+ *   (33) K = ∫ [B G]ᵀ C [B G] dΩ    con Gauss 3×3
+ *   (38) P = γ ∫ {b;g}⟨b;g⟩ dΩ      con UN SOLO PUNTO (el centro)
+ *   (39) [K + P] a = f
+ *
+ * Es la MISMA formulación que `getMembraneITW` de `shellQ4.cpp` — este fichero
+ * y aquel tienen que dar el mismo número. Hasta el 19-ago-2026 no lo daban: el
+ * TS se había quedado con Hughes-Brezzi (α = 0.5) mientras el C++ ya llevaba
+ * ITW, y en el patch test de orden superior salía −1.279129 contra −1.500000.
+ *
+ * γ = gammaFac·μ, con gammaFac = 0.4 por defecto: NO es lo del paper (que usa
+ * 1.0) sino lo MEDIDO de ETABS reconstruyendo su matriz 12×12 de membrana por
+ * flexibilidad. Da lo mismo de todas formas — la formulación es insensible a γ.
+ */
+function getMembraneITW(
+  x: number[], y: number[], E: number, nu: number, t: number, gammaFac: number,
+): number[][] {
+  const f = E * t / (1 - nu * nu);           // el espesor va DENTRO de D
+  const D = [[f, f * nu, 0], [f * nu, f, 0], [0, 0, f * (1 - nu) / 2]];
+
+  // Coeficientes de lado de Allman: (l_JK/8)·n_JK con n = (dy, −dx)/l
+  const sig = [1, 2, 3, 0], ant = [3, 0, 1, 2];
+  const cx: number[] = [], cy: number[] = [];
+  for (let i = 0; i < 4; i++) {
+    cx.push((y[sig[i]] - y[i]) / 8);
+    cy.push(-(x[sig[i]] - x[i]) / 8);
+  }
+
+  const g3 = [-Math.sqrt(3 / 5), 0, Math.sqrt(3 / 5)];
+  const w3 = [5 / 9, 8 / 9, 5 / 9];
+  const K14 = zeros(14, 14);
+  let cN: number[] = [], cdNx: number[] = [], cdNy: number[] = [];
+  let cgt2: number[] = [], cgt3: number[] = [];
+  let cdNBx = 0, cdNBy = 0, cdJ = 0;
+
+  for (let ig = 0; ig < 3; ig++) {
+    for (let jg = 0; jg < 3; jg++) {
+      const rr = g3[ig], ss = g3[jg], ww = w3[ig] * w3[jg];
+      const { N, dNdxi, dNdeta } = shapeFunctionsQ4(rr, ss);
+
+      // Jacobiano e inverso, a mano: hacen falta también para NS y la burbuja
+      let J11 = 0, J12 = 0, J21 = 0, J22 = 0;
+      for (let i = 0; i < 4; i++) {
+        J11 += dNdxi[i] * x[i];  J12 += dNdxi[i] * y[i];
+        J21 += dNdeta[i] * x[i]; J22 += dNdeta[i] * y[i];
+      }
+      const dJ = J11 * J22 - J12 * J21;
+      const Ji11 = J22 / dJ, Ji12 = -J12 / dJ, Ji21 = -J21 / dJ, Ji22 = J11 / dJ;
+
+      const dNx: number[] = [], dNy: number[] = [];
+      for (let i = 0; i < 4; i++) {
+        dNx.push(Ji11 * dNdxi[i] + Ji12 * dNdeta[i]);
+        dNy.push(Ji21 * dNdxi[i] + Ji22 * dNdeta[i]);
+      }
+
+      // Funciones serendipity de lado, ecs. (22)-(23), con el ½ ya dentro
+      const nsr = [-rr * (1 - ss), 0.5 * (1 - ss * ss), -rr * (1 + ss), -0.5 * (1 - ss * ss)];
+      const nss = [-0.5 * (1 - rr * rr), -ss * (1 + rr), 0.5 * (1 - rr * rr), -ss * (1 - rr)];
+      const NSx: number[] = [], NSy: number[] = [];
+      for (let i = 0; i < 4; i++) {
+        NSx.push(Ji11 * nsr[i] + Ji12 * nss[i]);
+        NSy.push(Ji21 * nsr[i] + Ji22 * nss[i]);
+      }
+
+      // Burbuja jerárquica NB9 = (1−r²)(1−s²), ec. (24)
+      const nbr = -2 * rr * (1 - ss * ss), nbs = -2 * ss * (1 - rr * rr);
+      const dNBx = Ji11 * nbr + Ji12 * nbs;
+      const dNBy = Ji21 * nbr + Ji22 * nbs;
+
+      // G_I, ec. (28): cada nudo entra en SUS DOS lados con signo opuesto
+      const gt1: number[] = [], gt2: number[] = [], gt3: number[] = [], gt4: number[] = [];
+      for (let i = 0; i < 4; i++) {
+        const p = ant[i];
+        gt1.push(NSx[p] * cx[p] - NSx[i] * cx[i]);
+        gt2.push(NSy[p] * cx[p] - NSy[i] * cx[i]);
+        gt3.push(NSx[p] * cy[p] - NSx[i] * cy[i]);
+        gt4.push(NSy[p] * cy[p] - NSy[i] * cy[i]);
+      }
+
+      const B = zeros(3, 14);
+      for (let i = 0; i < 4; i++) {
+        B[0][3 * i] = dNx[i];
+        B[1][3 * i + 1] = dNy[i];
+        B[2][3 * i] = dNy[i];
+        B[2][3 * i + 1] = dNx[i];
+        B[0][3 * i + 2] = gt1[i];
+        B[1][3 * i + 2] = gt4[i];
+        B[2][3 * i + 2] = gt2[i] + gt3[i];
+      }
+      B[0][12] = dNBx; B[2][12] = dNBy;
+      B[1][13] = dNBy; B[2][13] = dNBx;
+
+      const w = ww * Math.abs(dJ);
+      for (let a = 0; a < 14; a++) {
+        for (let b = 0; b < 14; b++) {
+          let s = 0;
+          for (let r = 0; r < 3; r++)
+            for (let c = 0; c < 3; c++) s += B[r][a] * D[r][c] * B[c][b];
+          K14[a][b] += w * s;
+        }
+      }
+
+      if (ig === 1 && jg === 1) {              // el centro ya es punto de Gauss
+        cN = N.slice(); cdNx = dNx.slice(); cdNy = dNy.slice();
+        cgt2 = gt2.slice(); cgt3 = gt3.slice();
+        cdNBx = dNBx; cdNBy = dNBy; cdJ = Math.abs(dJ);
+      }
+    }
+  }
+
+  // P, ec. (38), de UN SOLO PUNTO: γ·Ω·res·resᵀ, con Ω = 4·dJ0 (el área)
+  const mu = E / (2 * (1 + nu));
+  const res = new Array(14).fill(0);
+  for (let i = 0; i < 4; i++) {
+    res[3 * i] = -0.5 * cdNy[i];
+    res[3 * i + 1] = 0.5 * cdNx[i];
+    res[3 * i + 2] = 0.5 * (cgt3[i] - cgt2[i]) - cN[i];
+  }
+  res[12] = -0.5 * cdNBy;
+  res[13] = 0.5 * cdNBx;
+  const kp = gammaFac * mu * t * 4 * cdJ;
+  for (let a = 0; a < 14; a++)
+    for (let b = 0; b < 14; b++) K14[a][b] += kp * res[a] * res[b];
+
+  // Condensación estática de la burbuja (los 2 GDL internos)
+  const Kbb = [[K14[12][12], K14[12][13]], [K14[13][12], K14[13][13]]];
+  const det = Kbb[0][0] * Kbb[1][1] - Kbb[0][1] * Kbb[1][0];
+  const K = zeros(12, 12);
+  for (let a = 0; a < 12; a++) for (let b = 0; b < 12; b++) K[a][b] = K14[a][b];
+  if (Math.abs(det) < 1e-30) return K;
+  const inv = [[Kbb[1][1] / det, -Kbb[0][1] / det], [-Kbb[1][0] / det, Kbb[0][0] / det]];
+  for (let a = 0; a < 12; a++) {
+    for (let b = 0; b < 12; b++) {
+      let s = 0;
+      for (let p = 0; p < 2; p++)
+        for (let q = 0; q < 2; q++) s += K14[a][12 + p] * inv[p][q] * K14[12 + q][b];
+      K[a][b] -= s;
+    }
+  }
+  return K;
+}
+
 /** 12x12 bending + shear stiffness (Mindlin-Reissner + MITC4) */
 function getBendingK(x: number[], y: number[], E: number, nu: number, t: number): number[][] {
   const Kb = zeros(12, 12);
@@ -320,7 +470,6 @@ export function getLocalStiffnessMatrixShellQ4(
   const y = localCoords.map(c => c[1]);
 
   // Membrane (8x8) and Bending+Shear (12x12)
-  const Km = getMembraneK(x, y, E, nu, t);
   const Kb = getBendingK(x, y, E, nu, t);
 
   // Drilling stiffness — Hughes & Brezzi (1989) / Ibrahimbegovic & Wilson (1991)
@@ -328,9 +477,13 @@ export function getLocalStiffnessMatrixShellQ4(
   // where Nd relates θz to in-plane displacements via the skew-symmetric gradient
   // Nd[i] = 0.5 * (∂N[i]/∂x_local2 - ∂N[i]/∂x_local1) for each node
   // This couples θz with u,v — not just diagonal stabilization
-  const G = E / (2 * (1 + nu));
-  const alpha = 0.5; // Hughes-Brezzi (1989) standard value; ETABS uses similar formulation
-  const Kd = getDrillingK(x, y, G, t, alpha);
+  // ⚠️ Esto era Hughes-Brezzi con alpha = 0.5, y NO coincidia con el C++ (que
+  // usaba 0.05 y desde el 19-ago-2026 usa ITW). Medido en los 4 tests del paper:
+  // el patch test de orden superior daba -1.279129 por el TS contra -1.500000
+  // por el WASM, un 14.7 % de diferencia entre los dos motores del MISMO repo.
+  // Ahora los dos llevan el ITW y dan el mismo numero.
+  const GAMMA_ITW = 0.4;   // gamma/mu, lo medido de ETABS (ver shellQ4.cpp)
+  const Kitw = getMembraneITW(x, y, E, nu, t, GAMMA_ITW);
 
   // Assemble 24x24
   // DOF mapping per node i:
@@ -340,13 +493,8 @@ export function getLocalStiffnessMatrixShellQ4(
   // Drilling Kd uses [u0,v0,θz0,u1,v1,θz1,u2,v2,θz2,u3,v3,θz3]
   const K = zeros(24, 24);
 
-  // Membrane → K
-  const memDof = [0, 1, 6, 7, 12, 13, 18, 19]; // u,v for each node
-  for (let i = 0; i < 8; i++) {
-    for (let j = 0; j < 8; j++) {
-      K[memDof[i]][memDof[j]] += Km[i][j];
-    }
-  }
+  // Membrane → K: NO se ensambla aparte. Con ITW la membrana y el drilling son
+  // la MISMA matriz de 12x12 y se coloca abajo, en `drillDof`.
 
   // Bending → K
   //
@@ -395,11 +543,12 @@ export function getLocalStiffnessMatrixShellQ4(
     }
   }
 
-  // Drilling → K (couples u, v, θz)
+  // Membrana + drilling → K. Con ITW van JUNTOS: la 12x12 trae [u, v, θz] por
+  // nudo, asi que este bloque sustituye al de membrana, no se suma encima.
   const drillDof = [0, 1, 5, 6, 7, 11, 12, 13, 17, 18, 19, 23]; // u,v,θz per node
   for (let i = 0; i < 12; i++) {
     for (let j = 0; j < 12; j++) {
-      K[drillDof[i]][drillDof[j]] += Kd[i][j];
+      K[drillDof[i]][drillDof[j]] += Kitw[i][j];
     }
   }
 
