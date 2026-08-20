@@ -54,3 +54,75 @@ comprobación de que la descomposición está bien hecha: si cambiara, el
 2. Probar también el volumétrico a **1 punto**, que es la SRI clásica.
 3. Medirlo en los bancos del producto (drilling-dof, mezanine, escalón B).
 4. Portarlo al C++ como un `drillingTypes` nuevo y recompilar el WASM.
+
+### Variantes probadas y DESCARTADAS, con su medida
+
+**Volumétrico a 1 punto (la SRI clásica).** Mucho peor: **22.9 %** contra ETABS
+y **+23.7 %** en el cantilever. El elemento se queda demasiado blando. El punto
+óptimo es **2×2**, no menos.
+
+| | completa | vol. 2×2 | vol. 1 punto |
+|---|---|---|---|
+| matriz vs ETABS | 1.417 % | **0.878 %** | 22.875 % |
+| cantilever | −0.366 % | −0.317 % | **+23.703 %** |
+
+---
+
+## 2 · El reloj de arena residual — **descartado, y por qué importa**
+
+Tras la SRI queda un **0.878 %** que sigue siendo **rango 3** y sigue teniendo
+forma de reloj de arena. Pero ahora **baja al subir ν** (1.065 % en ν=0 →
+0.639 % en ν=0.45), al revés que antes: la SRI se llevó justo la parte que crecía
+con ν, que es la comprobación de que atacaba lo que decía atacar.
+
+Y sus coeficientes ya **no dependen del material**: los cinco cuadrados con ν de
+0 a 0.45 dan exactamente `c_uu = c_vv = −0.00463` y `c_θθ = −0.00551` (en
+unidades de `G·t·A`). Dependen solo de la geometría.
+
+**Y generaliza**: aplicando los coeficientes ajustados **en el cuadrado** a las
+diez geometrías, el error baja de **0.878 % a 0.519 %** en todas. Eso descarta el
+sobreajuste… pero no lo hace correcto:
+
+| | patch test | modos nulos |
+|---|---|---|
+| hoy (tipo 8) | 1.500000 / 0.600000 | 3 |
+| + SRI | **1.500000 / 0.600000** | 3 |
+| + SRI + reloj de arena | **1.625429 / 0.650172** ✘ | **2** ✘ |
+
+**Rompe el patch test** y, en una geometría, deja el elemento con **dos** modos
+de energía nula en vez de tres — o sea que pierde un movimiento de sólido rígido.
+Los coeficientes son negativos y le quitan rigidez hasta volver la matriz
+indefinida.
+
+**La lección**: bajar el error contra una referencia no basta. Un término que
+mejora el ajuste y rompe una propiedad exacta del elemento **está mal**, por
+mucho que generalice.
+
+---
+
+## 3 · ¿Estamos en el suelo de la medida? — **no**
+
+Antes de seguir persiguiendo el 0.878 %, conviene saber si la referencia da para
+tanto. La matriz de ETABS se reconstruyó **invirtiendo una 9×9 de
+desplazamientos**, y eso amplifica errores. Dos propiedades son exactas en
+cualquier `K` correcta, así que lo que se desvíen **mide el ruido**:
+
+| | las 10 geometrías |
+|---|---|
+| asimetría `‖K − Kᵀ‖/‖K‖` | **0.00e+00** |
+| sólido rígido `‖K·R‖/‖K‖` | **~6e-16** |
+
+**Cero ruido.** La referencia es exacta a precisión de máquina, así que el
+0.878 % que queda **es real** y hay margen para seguir. Lo que no vale es el
+reloj de arena.
+
+---
+
+## Recorrido, en una tabla
+
+| paso | contra la matriz de ETABS |
+|---|---|
+| ITW 1990 (de donde se partía) | **15.97 %** |
+| + proyección del drilling (FEAP) | **1.42 %** |
+| + integración selectiva del volumétrico | **0.878 %** |
+| ~~+ reloj de arena~~ | ~~0.519 %~~ — rompe el patch test |
