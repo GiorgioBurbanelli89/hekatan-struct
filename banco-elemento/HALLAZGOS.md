@@ -126,3 +126,57 @@ reloj de arena.
 | + proyección del drilling (FEAP) | **1.42 %** |
 | + integración selectiva del volumétrico | **0.878 %** |
 | ~~+ reloj de arena~~ | ~~0.519 %~~ — rompe el patch test |
+
+
+---
+
+## 4 · ⚠️ CORRECCIÓN al apartado 1: el 0.878 % **no era el número real**
+
+Al llevar la SRI **dentro** del elemento en C++ (`drillingTypes = 10`), no
+reprodujo el 0.878 % de la referencia de Python, sino **1.194 %**. Y el C++ es el
+que tiene razón.
+
+**Por qué.** La referencia del apartado 1 montaba la SRI con **tres llamadas**:
+
+```
+K_SRI = K(E/(1+ν),0)|completa + K(E,ν)|reducida − K(E/(1+ν),0)|reducida
+```
+
+Eso vale mientras todo sea **lineal en D**… y la **condensación de la burbuja no
+lo es**:
+
+$$\mathbf K=\mathbf K_{uu}-\mathbf K_{ab}\,\mathbf K_{bb}^{-1}\,\mathbf K_{ab}^{T}$$
+
+Cada llamada condensa **su propia** burbuja con **su propia** rigidez parcial, y
+sumar tres matrices ya condensadas no es lo mismo que sumar y condensar **una
+vez**. La burbuja es un grado de libertad **interno del elemento**: hay que
+acumular toda su rigidez y condensarla al final, que es lo que hace el C++.
+
+La huella lo confirma: en `ν = 0` las dos coinciden a `3.8e-14` —sin término
+volumétrico solo hay una llamada, así que no hay nada mal que condensar— y la
+diferencia **crece con ν** (2e-3 en ν=0.10, 8.9e-3 en ν=0.45), justo con el peso
+del trozo que se estaba separando.
+
+**El número bueno es 1.194 %**, no 0.878 %.
+
+### Y con el número bueno, la SRI no compensa
+
+| | tipo 8 (defecto) | tipo 10 (+ SRI) |
+|---|---|---|
+| matriz 12×12 de ETABS | 1.417 % | **1.194 %** |
+| drilling-dof vs ETABS | **+3.09 %** | +3.48 % |
+| mezanine, axil | 0.30 / 1.15 | 0.30 / 1.15 |
+| patch test | exacto | exacto (idéntico al último decimal) |
+| modos de energía nula | 3 | 3 |
+
+Gana 0.22 puntos en la matriz y pierde 0.39 en el drilling. **No domina, y la
+ganancia es pequeña**: el defecto se queda en el **8**. El tipo 10 queda
+implementado y disponible.
+
+### La lección de método
+Montar una formulación **combinando llamadas** vale para explorar rápido —y aquí
+sirvió, señaló la pista correcta— pero **solo si todos los pasos son lineales**.
+Con una condensación estática por medio, la exploración da un número optimista
+que se cae al implementarlo de verdad. La comprobación barata: mirar si el caso
+degenerado (aquí `ν = 0`) coincide, y si la diferencia **crece con lo que se
+está separando**.

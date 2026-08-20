@@ -252,7 +252,7 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
                                       double E, double nu, double t,
                                       const double *mod, double gammaFac,
                                       int nGauss, bool taylorBurbuja,
-                                      double khg, double wAlpha, bool proyDrill)
+                                      double khg, double wAlpha, bool proyDrill, int sriVol)
 {
     double factor = E / (1.0 - nu * nu);
     Eigen::Matrix3d Dm;
@@ -268,6 +268,46 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
         Dm(0, 1) *= c;  Dm(1, 0) *= c;
     }
     Dm *= t;                       // el espesor va DENTRO de D, como en el .cpd
+
+    // ── INTEGRACION SELECTIVA del termino volumetrico (`sriVol` > 0) ──────
+    // La constitutiva de tension plana se parte en dos trozos con significado
+    // fisico distinto:
+    //
+    //     D = lambda* A  +  2 mu B        lambda* = E nu/(1-nu^2),  2mu = E/(1+nu)
+    //         volumetrico   desviador
+    //
+    // El desviador resiste el cambio de FORMA; el volumetrico, el cambio de
+    // AREA. El que ata el elemento es el volumetrico, y ata mas cuanto mayor es
+    // nu: vale el 0 % del desviador con nu = 0, el 25 % con nu = 0.2 y el 82 %
+    // con nu = 0.45. Integrandolo con MENOS puntos se relaja justo donde
+    // sobra-rigidiza, y el desviador se queda exacto.
+    //
+    // Medido contra la matriz 12x12 de ETABS (10 geometrias):
+    //
+    //     completa   1.417 %      volumetrico a 2x2   0.878 %
+    //     nu = 0.45  2.081 %                          0.639 %
+    //     nu = 0     1.065 %                          1.065 %  <- NO cambia
+    //
+    // Que el caso nu = 0 no se mueva es la comprobacion de que la separacion
+    // esta bien hecha: sin nu no hay termino volumetrico que reducir. Y el
+    // patch test sigue EXACTO (1.500000 / 0.600000) con 3 modos nulos.
+    //
+    // Ojo: a UN punto es mucho peor (22.9 % contra ETABS, +23.7 % en el
+    // cantilever). El optimo es 2x2, no menos.
+    Eigen::Matrix3d Ddev = Eigen::Matrix3d::Zero(), Dvol = Eigen::Matrix3d::Zero();
+    if (sriVol > 0) {
+        double f2 = E / (1.0 + nu);
+        Ddev << f2, 0, 0,
+                0, f2, 0,
+                0,  0, f2 / 2.0;
+        if (mod) {                       // los modificadores van a las DOS partes
+            Ddev(0, 0) *= mod[0];
+            Ddev(1, 1) *= mod[1];
+            Ddev(2, 2) *= mod[2];
+        }
+        Ddev *= t;
+        Dvol = Dm - Ddev;                // el cortante queda ENTERO en el desviador
+    }
 
     // Coeficientes de lado de Allman: (l_JK/8)*n_JK con n = (dy, -dx)/l
     //   => (l/8)*n1 = dy/8 ,  (l/8)*n2 = -dx/8
@@ -498,7 +538,7 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
                 B(1, 13) = dNBy;  B(2, 13) = dNBx;
             }
 
-            K14 += (ww * std::abs(dJ)) * (B.transpose() * Dm * B);
+            K14 += (ww * std::abs(dJ)) * (B.transpose() * (sriVol > 0 ? Ddev : Dm) * B);
 
             if (hayCentro && rr == 0.0 && ss == 0.0) {   // el centro ya es punto de Gauss
                 for (int i = 0; i < 4; i++) {
@@ -506,6 +546,64 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
                     c_gt2[i] = gt2[i]; c_gt3[i] = gt3[i]; c_N[i] = N[i];
                 }
                 c_dNBx = dNBx; c_dNBy = dNBy; c_dJ = std::abs(dJ);
+            }
+        }
+    }
+
+    // ── Segundo barrido: el VOLUMETRICO, con la cuadratura reducida ──────
+    // Va aparte porque necesita OTRA cuadratura que el desviador, y en el mismo
+    // bucle no caben las dos. Solo entran las columnas de B — la burbuja, la
+    // penalizacion y el reloj de arena se hacen una sola vez, mas abajo.
+    if (sriVol > 0) {
+        static const double gr2[2] = {-GP2, GP2};
+        for (int ir = 0; ir < sriVol; ir++) {
+            for (int is = 0; is < sriVol; is++) {
+                double rr = (sriVol == 2) ? gr2[ir] : 0.0;
+                double ss = (sriVol == 2) ? gr2[is] : 0.0;
+                double ww = (sriVol == 2) ? 1.0 : 4.0;
+
+                double N[4], dNdxi[4], dNdeta[4], Jinv[2][2];
+                shapeFunctionsQ4(rr, ss, N, dNdxi, dNdeta);
+                double dJ = jacobian2D(x, y, dNdxi, dNdeta, Jinv);
+                double dNx[4], dNy[4];
+                for (int i = 0; i < 4; i++) {
+                    dNx[i] = Jinv[0][0] * dNdxi[i] + Jinv[0][1] * dNdeta[i];
+                    dNy[i] = Jinv[1][0] * dNdxi[i] + Jinv[1][1] * dNdeta[i];
+                }
+                double nsr[4] = { -rr * (1 - ss),  0.5 * (1 - ss * ss),
+                                  -rr * (1 + ss), -0.5 * (1 - ss * ss) };
+                double nss[4] = { -0.5 * (1 - rr * rr), -ss * (1 + rr),
+                                   0.5 * (1 - rr * rr), -ss * (1 - rr) };
+                double NSx[4], NSy[4];
+                for (int i = 0; i < 4; i++) {
+                    NSx[i] = Jinv[0][0] * nsr[i] + Jinv[0][1] * nss[i];
+                    NSy[i] = Jinv[1][0] * nsr[i] + Jinv[1][1] * nss[i];
+                }
+                double nbr = -2.0 * rr * (1 - ss * ss);
+                double nbs = -2.0 * ss * (1 - rr * rr);
+                double dNBx = Jinv[0][0] * nbr + Jinv[0][1] * nbs;
+                double dNBy = Jinv[1][0] * nbr + Jinv[1][1] * nbs;
+
+                Eigen::MatrixXd B = Eigen::MatrixXd::Zero(3, 14);
+                for (int i = 0; i < 4; i++) {
+                    int p = ant[i];
+                    double g1 = NSx[p] * cx[p] - NSx[i] * cx[i];
+                    double g2 = NSy[p] * cx[p] - NSy[i] * cx[i];
+                    double g3 = NSx[p] * cy[p] - NSx[i] * cy[i];
+                    double g4 = NSy[p] * cy[p] - NSy[i] * cy[i];
+                    B(0, 3*i)     = dNx[i];
+                    B(1, 3*i + 1) = dNy[i];
+                    B(2, 3*i)     = dNy[i];
+                    B(2, 3*i + 1) = dNx[i];
+                    B(0, 3*i + 2) = g1 - mg1[i];
+                    B(1, 3*i + 2) = g4 - mg4[i];
+                    B(2, 3*i + 2) = g2 + g3 - mg23[i];
+                }
+                if (wAlpha <= 0.0) {
+                    B(0, 12) = dNBx;  B(2, 12) = dNBy;
+                    B(1, 13) = dNBy;  B(2, 13) = dNBx;
+                }
+                K14 += (ww * std::abs(dJ)) * (B.transpose() * Dvol * B);
             }
         }
     }
@@ -1398,8 +1496,8 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     // Con drillingType 3 este numero es gamma/mu del paper (defecto 0.4, que es
     // lo medido de ETABS). Con el 2 es el alpha de Hughes-Brezzi (defecto 0.05).
     double drillScale = getMapVal(elementInputs.drillingPenaltyScales, index,
-                                  (drillingType >= 3 && drillingType <= 9) ? 0.4 : 0.05);
-    const bool usaITW = (drillingType >= 3 && drillingType <= 9);
+                                  (drillingType >= 3 && drillingType <= 10) ? 0.4 : 0.05);
+    const bool usaITW = (drillingType >= 3 && drillingType <= 10);
     // 3 = ITW con Gauss 3x3, que es lo que pide el paper   [DEFECTO]
     // 4 = ITW con Gauss 2x2 (integracion reducida)  -- NO USAR, ver abajo
     // 5 = ITW 3x3 con la burbuja a la Taylor (J0 del centro)
@@ -1479,11 +1577,15 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     //  8 = la via de FEAP/Taylor: Gauss 3x3 + PROYECCION del drilling. Es la
     //      que reproduce la matriz 12x12 medida de ETABS al 1.42 % (contra el
     //      15.97 % del tipo 3). Ver el comentario de `proyDrill` mas abajo.
-    const bool proyITW = (drillingType == 8 || drillingType == 9);
+    const bool proyITW = (drillingType == 8 || drillingType == 9 || drillingType == 10);
+    // 10 = proyeccion + INTEGRACION SELECTIVA del volumetrico a 2x2.
+    //      Baja la matriz de ETABS de 1.42 % a 0.878 % sin tocar el patch
+    //      test (1.500000/0.600000) ni los 3 modos nulos.
+    const int sriITW = (drillingType == 10) ? 2 : 0;
 
     Eigen::MatrixXd Km   = usaITW ? Eigen::MatrixXd::Zero(8, 8)
                                   : getMembraneK(x, y, E, nu, t, dmod);   // 8×8
-    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW, khgITW, waITW, proyITW)
+    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW, khgITW, waITW, proyITW, sriITW)
                                   : Eigen::MatrixXd::Zero(12, 12);        // 12×12
     #if HK_BENDING_FORMULATION == 2
         Eigen::MatrixXd Kb = getBendingK_DSE_FULL(x, y, E, nu, t);  // 12×12 (Wilson DSE Cap 8 completo, Variant C)
