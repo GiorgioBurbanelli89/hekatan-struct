@@ -114,3 +114,54 @@ def test_w_alpha_fuera_de_rango_falla_en_vez_de_dar_numeros_raros():
     for malo in (0.0, -0.1, 1.5):
         with pytest.raises(ValueError):
             puntos_itw8(malo)
+
+
+# Un cuadrilatero GENERAL: ningun par de lados paralelo. Ninguna de las cuatro
+# geometrias del banco de paridad lo es (cuadrado, rectangulo, paralelogramo y
+# un trapecio con los lados de arriba y abajo paralelos), y esa laguna hizo que
+# una comparacion en ejes distintos pasara meses sin cantar.
+QUAD_GENERAL = [(0, 0), (1.0, 0), (0.8, 0.9), (0.15, 1.0)]
+
+
+def _triada_como_el_cpp(pts):
+    """La triada de `getLocalStiffnessMatrixShellQ4`: el eje X es la MEDIA de
+    dos lados, `(p1-p0) + (p2-p3)`, no un lado suelto."""
+    P = np.array([(x, y, 0.0) for x, y in pts])
+    lx = (P[1] - P[0]) + (P[2] - P[3]); lx /= np.linalg.norm(lx)
+    lz = np.cross(P[2] - P[0], P[3] - P[1]); lz /= np.linalg.norm(lz)
+    ly = np.cross(lz, lx); ly /= np.linalg.norm(ly)
+    lx = np.cross(ly, lz); lx /= np.linalg.norm(lx)
+    return P, lx, ly
+
+
+@pytest.mark.parametrize("tipo", [3, 7, 8, 9])
+def test_el_elemento_es_invariante_a_los_ejes_locales(tipo):
+    """La misma K, calculada en ejes locales y girada, tiene que dar la de globales.
+
+    No es un detalle: si NO fuera invariante, elegir los ejes locales de una
+    forma u otra cambiaria el resultado fisico, y como el C++ los elige distinto
+    que las coordenadas globales (media de dos lados contra un lado), dos mallas
+    identicas numeradas al reves darian estructuras distintas.
+
+    Ademas es el test que le faltaba al banco de paridad: con cuadrado,
+    rectangulo, paralelogramo o trapecio de lados paralelos los dos sistemas
+    COINCIDEN, asi que la propiedad no se estaba comprobando en ninguna parte.
+    """
+    from hekatan_struct.elements.membrane_itw import k_membrana_itw, kwargs_drilling
+    E, nu, t = 2.2e7, 0.2, 0.20
+    pts = QUAD_GENERAL
+    P, lx, ly = _triada_como_el_cpp(pts)
+    assert abs(np.cross((P[1] - P[0])[:2], (P[2] - P[3])[:2])) > 1e-6, \
+        "esta geometria tiene lados paralelos: no prueba lo que dice"
+
+    c = P.mean(axis=0)
+    locales = [((p - c) @ lx, (p - c) @ ly) for p in P]
+    K_loc = k_membrana_itw([tuple(q) for q in locales], E, nu, t, **kwargs_drilling(tipo))
+    K_glo = k_membrana_itw(pts, E, nu, t, **kwargs_drilling(tipo))
+
+    T = np.zeros((12, 12))                       # local -> global
+    for i in range(4):
+        T[3 * i:3 * i + 2, 3 * i:3 * i + 2] = [[lx[0], -lx[1]], [lx[1], lx[0]]]
+        T[3 * i + 2, 3 * i + 2] = 1.0
+    rel = np.linalg.norm(T @ K_loc @ T.T - K_glo) / np.linalg.norm(K_glo)
+    assert rel < 1e-12, f"tipo {tipo}: no es invariante a los ejes, {rel*100:.2e} %"

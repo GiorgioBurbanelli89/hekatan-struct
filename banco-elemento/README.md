@@ -76,48 +76,66 @@ lo que permitió ver que `K_uu` coincidía al 0.00 % mientras `K_uθ` se iba al
 
 ---
 
-## ⚠️ HALLAZGO ABIERTO (19-ago-2026, primer uso del banco)
+## La primera falsa alarma del banco, y por qué se queda escrita
 
-**El C++ y el Python NO dan la misma membrana en un cuadrilátero sin lados
-paralelos.** Lo destapó `python probar.py --proyeccion --cpp` a la primera.
+Nada más estrenarlo, `probar.py --proyeccion --cpp` cantó un **5.4 %** entre C++
+y Python en una geometría, cuando las otras nueve daban `1e-13`. Parecía un bug
+gordo del elemento. **No lo era, y la persecución vale más que el resultado.**
 
-Geometría que falla, la del caso `trapecio` de `memb12.json`:
+### Cómo se cazó
 
-```
-[(0, 0), (1.0, 0), (0.8, 0.9), (0.15, 1.0)]     ← NINGÚN par de lados paralelo
-```
+**1 · Deformar el cuadrado hacia el que falla, poco a poco.** Cuesta 0.4 s y
+parte el problema en dos:
 
-| | C++ vs Python |
+| deformación | C++ vs Python |
 |---|---|
-| las otras 9 geometrías de `memb12` | **1e-13** ✔ |
-| ésta | **5.4e-02** ✘ |
+| 0.00 (cuadrado) | 1.2e-13 |
+| 0.10 | 4.5e-03 |
+| 0.50 | 2.4e-02 |
+| 1.00 | 5.3e-02 |
 
-### Lo que ya está descartado, medido
+**Continuo, sin saltos.** Un salto habría sido una rama de código, un `if`;
+continuo es **una fórmula distinta que depende de la geometría**.
 
-| hipótesis | medida |
+**2 · Bisecar el elemento.** Falla igual en los tipos 3, 7, 8 y 9 → no son las
+formulaciones nuevas. Falla sin burbuja → no es la burbuja. `K_θθ` coincide al
+**0.000 %** → no es el drilling. Queda la membrana pura, que es un Q4 de toda la
+vida: eso *no puede* diferir… salvo que las coordenadas no sean las mismas.
+
+**3 · Leer cómo el C++ construye sus ejes locales**, que era el único sitio que
+quedaba:
+
+```cpp
+Eigen::Vector3d v01 = p1 - p0, v32 = p2 - p3;
+Eigen::Vector3d localX = (v01 + v32);      // ← la MEDIA de dos lados
+```
+
+y el Python usa **`p1 − p0`** a secas. En un cuadrado, un rectángulo, un
+paralelogramo o un trapecio con los lados de arriba y abajo paralelos, esos dos
+vectores **son paralelos** y la media apunta igual. En un cuadrilátero
+**general** no: aquí se separaban **3.47°**.
+
+### El veredicto
+
+| comparación | resultado |
 |---|---|
-| es de las formulaciones nuevas | **no**: falla igual en los tipos 3, 7, 8 y 9 |
-| es la burbuja | **no**: 5.245 % sin burbuja (tipos 7 y 9) contra 5.357 % con ella |
-| es el drilling | **no**: `K_θθ` coincide al **0.000 %** |
-| es el jacobiano degenerado | **no**: los 9 puntos con el mismo signo, `min/max = 0.65` |
-| es `jacobian2D` del C++ | **no**: línea a línea es el mismo que el de Python |
-| es la tríada local del shell 3D | **no**: con `z = 0`, `localX = n0→n1 = (1,0,0)` y `localZ = (0,0,1)`, o sea que las coordenadas locales son las globales |
+| Python en globales contra C++ en **sus** ejes | 5.3e-02 ✘ |
+| Python **con las coordenadas del C++** contra C++ | **1.7e-13** ✔ |
+| K en ejes locales **girada** a globales, contra K en globales | **3.8e-16** ✔ |
 
-**Está en la membrana pura**: el peor término es `K[0,6]` — nudo 0 con nudo 2,
-los dos en `u`. Razón C++/Python = **0.9413**.
+Lo tercero es lo que importa: **la formulación es invariante a los ejes
+locales**. El elemento está sano; lo que estaba mal era **comparar dos matrices
+escritas en sistemas de referencia distintos**.
 
-### Por qué no lo cazaba nada
-El test `test_kelem_cpp_vs_python.py` usa **otro** trapecio,
-`[(0,0),(2,0),(1.5,1),(0.25,1)]`, que **sí tiene** los lados superior e inferior
-paralelos — y ése cuadra a `1.6e-13`. Las cuatro geometrías del test son
-cuadrado, rectángulo, paralelogramo y ese trapecio: **ninguna es un
-cuadrilátero general**.
+Arreglado en `medir.py`: `k_del_cpp` devuelve la K **girada a globales** por
+defecto, así el error no se puede repetir.
 
-### Lo primero que hay que hacer
-Meter esta geometría en `GEOMETRIAS` de `test_kelem_cpp_vs_python.py`, para que
-el fallo quede fijado antes de tocarlo. Un bug sin test se arregla dos veces.
+### Las dos lecciones
 
-### Por qué importa
-Los `1.42 %` contra ETABS están medidos **en Python**. Si el C++ difiere de
-Python en cuadriláteros generales, la cifra del **producto** no es esa — y las
-mallas reales están llenas de cuadriláteros generales.
+- **Con cuadrado, rectángulo, paralelogramo y trapecio de lados paralelos, los
+  ejes del C++ y los globales coinciden.** Ésas son justo las cuatro geometrías
+  del test de paridad, así que la comparación llevaba meses funcionando **por
+  casualidad**. Un banco de geometrías sin un cuadrilátero general no prueba lo
+  que cree probar.
+- **Antes de acusar al código, comprobar que las dos cosas comparadas son
+  comparables.** Aquí eran la misma matriz en dos sistemas de referencia.

@@ -120,11 +120,51 @@ def ajustar_hourglass(R):
     return dict(zip(et, c)), R - sum(x * m for x, m in zip(c, M))
 
 
-def k_del_cpp(pts, E, nu, t, tipo, gamma=0.4):
-    """La 12x12 que escupe `kelem_native.exe`, para atar Python y C++.
+def triada_cpp(pts):
+    """La tríada local tal como la define `getLocalStiffnessMatrixShellQ4`.
 
-    Si esto y `k_nuestra` no coinciden a 1e-10, cualquier conclusión sacada aquí
-    NO vale para el producto: son dos elementos distintos.
+    ⚠️ El eje X local del C++ es la **media de dos lados**, no un lado:
+
+        localX = (p1 − p0) + (p2 − p3)
+
+    En un cuadrado, un rectángulo, un paralelogramo o un trapecio con los lados
+    de arriba y de abajo paralelos, esos dos vectores **son paralelos** y la
+    media apunta igual que `p1 − p0`. En un cuadrilátero **general** no, y ahí
+    los ejes del C++ y los globales se separan (3.47° en el caso de `memb12`).
+    """
+    P = np.array([(x, y, 0.0) for x, y in pts])
+    lx = (P[1] - P[0]) + (P[2] - P[3]); lx /= np.linalg.norm(lx)
+    lz = np.cross(P[2] - P[0], P[3] - P[1]); lz /= np.linalg.norm(lz)
+    ly = np.cross(lz, lx); ly /= np.linalg.norm(ly)
+    lx = np.cross(ly, lz); lx /= np.linalg.norm(lx)
+    return lx, ly
+
+
+def rot12(cos_a, sin_a):
+    """Gira los GDL `[u, v, θz]` de los 4 nudos. El giro normal no rota."""
+    T = np.zeros((12, 12))
+    for i in range(4):
+        T[3 * i:3 * i + 2, 3 * i:3 * i + 2] = [[cos_a, -sin_a], [sin_a, cos_a]]
+        T[3 * i + 2, 3 * i + 2] = 1.0
+    return T
+
+
+def k_del_cpp(pts, E, nu, t, tipo, gamma=0.4, en_globales=True):
+    """La 12x12 de `kelem_native.exe`, **girada a ejes globales** por defecto.
+
+    Si esto y `k_nuestra` no coinciden a 1e-10, o son dos elementos distintos o
+    se están comparando en ejes distintos.
+
+    ⚠️ Y lo segundo ya pasó, el 19-ago-2026, en el estreno de este banco: el C++
+    devuelve la K en **sus** ejes locales y aquí se comparaba contra la de Python
+    en **globales**. Con cuadrado, rectángulo, paralelogramo y trapecio de lados
+    paralelos los dos sistemas coinciden, así que la comparación funcionaba por
+    casualidad; con un cuadrilátero general cantó un **5.4 %** que no existía.
+
+    Se comprobó además que la formulación **es invariante** a los ejes locales
+    (`3.8e-16` girando una en la otra), o sea que el elemento está sano y el
+    fallo era de la comparación. Por eso `en_globales=True` es el defecto: hace
+    imposible repetir el error.
     """
     exe = os.path.join(RAIZ, "hekatan-struct", "cli", "native", "kelem_native.exe")
     if not os.path.exists(exe):
@@ -137,7 +177,12 @@ def k_del_cpp(pts, E, nu, t, tipo, gamma=0.4):
     if r.returncode:
         raise RuntimeError(r.stderr[:300])
     K24 = np.array([[float(v) for v in l.split()] for l in r.stdout.strip().splitlines()])
-    return K24[np.ix_(GDL24, GDL24)]
+    K = K24[np.ix_(GDL24, GDL24)]
+    if en_globales:
+        lx, _ = triada_cpp(pts)
+        T = rot12(lx[0], lx[1])          # local -> global
+        K = T @ K @ T.T
+    return K
 
 
 def modos_nulos(K, tol=1e-9):
