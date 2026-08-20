@@ -390,3 +390,112 @@ def resolver_heks(m: ModeloHeks):
 def esfuerzos_heks(m: ModeloHeks, res):
     """`analyze` sobre un modelo ya leído."""
     return analyze(m.nodes, m.elements, m.element_inputs, res)
+
+
+def escribir_heks(m: ModeloHeks, ruta: str | None = None) -> str:
+    """El camino de vuelta: un `ModeloHeks` -> el texto `.heks`.
+
+    Para qué, si ya hay lector: para tener un SEGUNDO camino hasta ETABS. El
+    `.heks` lo lee `cliModeler` y de ahí sale el `.e2k` con `exportE2k`; o sea
+    que escribiendo el modelo se puede montar el mismo caso en ETABS **por
+    fichero**, sin tocar la OAPI. Y falta hace: en un solo día la OAPI dio nueve
+    fallos MUDOS (métodos que no existen, firmas que revientan desde dentro de
+    comtypes, un `RunAnalysis` que corre sin guardar y devuelve cero filas).
+    Con dos caminos independientes, si los dos dan el mismo número la medida es
+    sólida; si no, el montaje estaba mal y no el programa.
+
+    Lo que escribe: `node`, `frame` (+ `ang`, `as`, `release`, `frameload`),
+    `shell` (+ `shellmod`, `shellang`, `shelltype`), `support`, `load`,
+    `spring`. O sea todo lo que el lector monta — lo que no monta tampoco se
+    inventa aquí.
+
+    ⚠️ El 6º token de `frame` es **I22** y el 7º **I33**, y en `as` va **As2**
+    primero. Escribirlos al revés no da error: da otra estructura.
+    """
+    ei, ni = m.element_inputs, m.node_inputs
+    L = ["# escrito por hekatan_struct.heks.escribir_heks",
+         "# node ID X Y Z"]
+    ids_n = m.node_id if len(m.node_id) == len(m.nodes) else list(
+        range(1, len(m.nodes) + 1))
+    for i, p in enumerate(m.nodes):
+        L.append("node %d %.6f %.6f %.6f" % (ids_n[i], p[0], p[1], p[2]))
+
+    L.append("# frame ID nI nJ E A I22 I33 J nu rho")
+    n_frame = 0
+    ids_f = {}
+    for k, c in enumerate(m.elements):
+        if len(c) != 2:
+            continue
+        n_frame += 1
+        fid = m.frame_id[n_frame - 1] if len(m.frame_id) >= n_frame else n_frame
+        ids_f[k] = fid
+        nu = ei.poissons_ratios.get(k, 0.2)
+        sec = (m.frame_sec[n_frame - 1]
+               if len(m.frame_sec) >= n_frame else "")
+        L.append("frame %d %d %d %.6g %.8g %.8g %.8g %.8g %.4g %.6g%s"
+                 % (fid, ids_n[c[0]], ids_n[c[1]], ei.elasticities.get(k, 25e6),
+                    ei.areas.get(k, 0.0), ei.moments_of_inertia_y.get(k, 0.0),
+                    ei.moments_of_inertia_z.get(k, 0.0),
+                    ei.torsional_constants.get(k, 0.0), nu,
+                    ei.densities.get(k, 2.45),
+                    ("   # " + sec) if sec else ""))
+    for k, fid in ids_f.items():
+        if k in ei.local_angles:
+            L.append("ang %d %.6g" % (fid, ei.local_angles[k]))
+    for k, fid in ids_f.items():
+        if k in ei.shear_areas_z or k in ei.shear_areas_y:
+            L.append("as %d %.8g %.8g"
+                     % (fid, ei.shear_areas_z.get(k, 0.0),
+                        ei.shear_areas_y.get(k, 0.0)))
+    for k, fid in ids_f.items():
+        if k in ei.moment_releases:
+            L.append("release %d %s"
+                     % (fid, " ".join("1" if b else "0"
+                                      for b in ei.moment_releases[k])))
+    for k, fid in ids_f.items():
+        if k in ei.frame_loads:
+            w = ei.frame_loads[k]
+            L.append("frameload %d %.8g %.8g %.8g" % (fid, w[0], w[1], w[2]))
+
+    n_sh = 0
+    ids_s = {}
+    for k, c in enumerate(m.elements):
+        if len(c) != 4:
+            continue
+        n_sh += 1
+        sid = m.shell_id[n_sh - 1] if len(m.shell_id) >= n_sh else n_sh
+        ids_s[k] = sid
+        if n_sh == 1:
+            L.append("# shell ID n1 n2 n3 n4 t E [q] [rho]")
+        L.append("shell %d %d %d %d %d %.8g %.6g"
+                 % (sid, ids_n[c[0]], ids_n[c[1]], ids_n[c[2]], ids_n[c[3]],
+                    ei.thicknesses.get(k, 0.20), ei.elasticities.get(k, 25e6)))
+    for k, sid in ids_s.items():
+        d = ei.shell_modifiers.get(k)
+        if d:
+            L.append("shellmod %d %s" % (sid, " ".join("%.6g" % v for v in d)))
+        elif k in ei.membrane_modifiers or k in ei.bending_modifiers:
+            L.append("shellmod %d %.6g %.6g"
+                     % (sid, ei.membrane_modifiers.get(k, 1.0),
+                        ei.bending_modifiers.get(k, 1.0)))
+        if k in ei.shell_angles:
+            L.append("shellang %d %.6g" % (sid, ei.shell_angles[k]))
+        if k in ei.plate_formulations:
+            L.append("shelltype %d %s"
+                     % (sid, "thin" if ei.plate_formulations[k] == 1 else "thick"))
+
+    for i, fl in sorted(ni.supports.items()):
+        L.append("support %d %s" % (ids_n[i], "".join("1" if f else "0"
+                                                      for f in fl)))
+    for i, v in sorted(ni.loads.items()):
+        L.append("load %d %.8g %.8g %.8g %.8g %.8g %.8g"
+                 % (ids_n[i], v[0], v[1], v[2], v[3], v[4], v[5]))
+    _DOF = ("ux", "uy", "uz", "rx", "ry", "rz")
+    for i, d, kk in ni.springs:
+        L.append("spring %d %s %.8g" % (ids_n[i], _DOF[d], kk))
+    L.append("solve")
+    texto = "\n".join(L) + "\n"
+    if ruta:
+        with open(ruta, "w", encoding="utf-8") as fh:
+            fh.write(texto)
+    return texto

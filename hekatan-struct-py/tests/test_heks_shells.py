@@ -333,3 +333,46 @@ def test_q4_colapsado_no_revienta_pero_no_es_un_elemento(tmp_path):
     m = leer_heks(str(heks))
     res = resolver_heks(m)          # lo que se exige es que NO reviente
     assert all(math.isfinite(v) for d in res.deformations.values() for v in d)
+
+
+@pytest.mark.parametrize("caso", ["mezanine_em_grav", "tcl_roundtrip",
+                                  "losas_maciza_thin", "galpon_lc"])
+def test_escribir_heks_ida_y_vuelta(caso, tmp_path):
+    """`escribir_heks` -> `leer_heks` tiene que dar EL MISMO modelo.
+
+    Para qué sirve el escritor: es el segundo camino hasta ETABS. El `.heks` lo
+    lee `cliModeler` y de ahí sale el `.e2k`, así que escribiendo el modelo se
+    monta el mismo caso en ETABS POR FICHERO, sin tocar la OAPI — que en un
+    solo día dio nueve fallos mudos.
+
+    Lo que se exige no es que el texto sea igual, sino que el MODELO lo sea:
+    mismo número de nudos y elementos, y la misma deformada.
+    """
+    from hekatan_struct.heks import escribir_heks
+
+    ruta = DATOS / f"{caso}.heks"
+    if not ruta.exists():
+        pytest.skip(f"no está {ruta}")
+    a = leer_heks(str(ruta))
+    escribir_heks(a, str(tmp_path / "vuelta.heks"))
+    b = leer_heks(str(tmp_path / "vuelta.heks"))
+
+    assert len(b.nodes) == len(a.nodes), "se perdieron nudos al escribir"
+    assert len(b.elements) == len(a.elements), "se perdieron elementos"
+    assert len(b.node_inputs.supports) == len(a.node_inputs.supports)
+    assert len(b.node_inputs.loads) == len(a.node_inputs.loads)
+    assert len(b.node_inputs.springs) == len(a.node_inputs.springs)
+    ea, eb = a.element_inputs, b.element_inputs
+    for campo in ("local_angles", "shear_areas_y", "shear_areas_z",
+                  "frame_loads", "moment_releases", "shell_modifiers",
+                  "shell_angles", "plate_formulations", "thicknesses"):
+        assert len(getattr(eb, campo)) == len(getattr(ea, campo)), campo
+
+    ra, rb = resolver_heks(a), resolver_heks(b)
+    ua = [ra.deformations[i][2] for i in range(len(a.nodes))]
+    ub = [rb.deformations[i][2] for i in range(len(b.nodes))]
+    mx = max(abs(v) for v in ua) or 1e-12
+    peor = max(abs(x - y) / mx * 100 for x, y in zip(ua, ub))
+    print(BR + "  %-20s %5d nudos %5d elem   Uz %9.4f mm   ida y vuelta %.2e %%"
+          % (caso, len(a.nodes), len(a.elements), min(ua) * 1000, peor))
+    assert peor < 1e-5
