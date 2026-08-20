@@ -29,6 +29,8 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     int index);
 
 // Shell Thin (4-node) MZC Kirchhoff = ETABS Shell-Thin (DKE Wilson Ch10) — shellThin.cpp
+Eigen::MatrixXd getLocalStiffnessMatrixShellQ4_DKMQ(
+    const std::vector<Node> &nodes, const ElementInputs &elementInputs, int index);
 Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
     const std::vector<Node> &nodes,
     const ElementInputs &elementInputs,
@@ -132,12 +134,25 @@ Eigen::MatrixXd getLocalStiffnessMatrix(
         auto itT = elementInputs.thicknesses.find(elementIndex);
         if (itT != elementInputs.thicknesses.end() && itT->second > 1e-12)
         {
-            // Dispatch entre Shell-Thick (Mindlin) y Shell-Thin (Kirchhoff MZC)
-            // según plateFormulations[idx]: 0=Mindlin, 1=Kirchhoff Shell-Thin
+            // Dispatch de la formulacion de placa, segun plateFormulations[idx]:
+            //   0 = Mindlin con MITC4   (Shell-Thick)
+            //   1 = Kirchhoff MZC       (Shell-Thin)
+            //   3 = DKMQ de Katili      (Discrete Kirchhoff-Mindlin)
+            //
+            // El 3 estaba COMPILADO pero desenchufado desde que se porto: el
+            // dispatcher solo miraba el 1. Se conecta el 19-ago-2026 para poder
+            // medirlo contra el Shell-Thick de ETABS, que no es un MITC4 —lo
+            // dicen cuatro programas sobre la misma celda— y al que le faltan
+            // MODOS, no puntos de integracion. El DKMQ tiene justo eso: cuatro
+            // GDL de lado que se condensan.
             auto itPF = elementInputs.plateFormulations.find(elementIndex);
             if (itPF != elementInputs.plateFormulations.end() && itPF->second == 1)
             {
                 return getLocalStiffnessMatrixShellThin(elementNodes, elementInputs, elementIndex);
+            }
+            if (itPF != elementInputs.plateFormulations.end() && itPF->second == 3)
+            {
+                return getLocalStiffnessMatrixShellQ4_DKMQ(elementNodes, elementInputs, elementIndex);
             }
             return getLocalStiffnessMatrixShellQ4(elementNodes, elementInputs, elementIndex);
         }
