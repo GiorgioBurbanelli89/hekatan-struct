@@ -54,6 +54,11 @@ class ModeloHeks:
     frame_id: list[int] = field(default_factory=list)
     frame_sec: list[str] = field(default_factory=list)
     shell_id: list[int] = field(default_factory=list)
+    # q de superficie de cada cáscara, en kN/m2. El lector la reparte a los
+    # cuatro nudos y el solver ya no la necesita, pero el EXPORTADOR sí: ETABS
+    # la escribe como `AREALOAD` sobre el objeto, y si se exporta ya repartida
+    # queda clavada en los nudos y deja de redistribuirse al cambiar la malla.
+    shell_load: dict[int, float] = field(default_factory=dict)
     # índice interno de cada cáscara dentro de `elements`
     shell_idx: dict[int, int] = field(default_factory=dict)
     errores: list[str] = field(default_factory=list)
@@ -295,6 +300,8 @@ def leer_heks(ruta: str) -> ModeloHeks:
             ei.shell_angles[k] = sang[sh["id"]]
         if sh["id"] in stipo:
             ei.plate_formulations[k] = stipo[sh["id"]]
+        if sh["id"] in q_area:
+            m.shell_load[k] = q_area[sh["id"]]
 
     for nid, flags in sup.items():
         if nid in idx_de:
@@ -470,6 +477,8 @@ def escribir_heks(m: ModeloHeks, ruta: str | None = None) -> str:
         L.append("shell %d %d %d %d %d %.8g %.6g"
                  % (sid, ids_n[c[0]], ids_n[c[1]], ids_n[c[2]], ids_n[c[3]],
                     ei.thicknesses.get(k, 0.20), ei.elasticities.get(k, 25e6)))
+        if k in m.shell_load:
+            L.append("areaload %d %.8g" % (sid, m.shell_load[k]))
     for k, sid in ids_s.items():
         d = ei.shell_modifiers.get(k)
         if d:
