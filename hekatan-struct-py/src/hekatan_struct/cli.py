@@ -50,11 +50,24 @@ def _imprime(K, fmt="%.12e"):
         print(" ".join(fmt % v for v in fila))
 
 
+def _kw(a):
+    """Los argumentos comunes -> los del elemento.
+
+    `--formulacion` es lo que elige QUE PAPER se esta ejecutando, y es el unico
+    argumento que de verdad cambia el resultado contra ETABS.
+    """
+    kw = dict(gamma_fac=a.gamma, n_gauss=a.gauss)
+    f = getattr(a, "formulacion", "itw1990")
+    if f in ("itw1991", "proy1991"):
+        kw.update(regla="itw8", con_burbuja=False, w_alpha=a.wa)
+    if f in ("proyeccion", "proy1991"):
+        kw["proyectar_drilling"] = True
+    return kw
+
+
 def cmd_kelem(a):
     from .elements.membrane_itw import k_membrana_itw
-    K = k_membrana_itw(_pts(a.puntos), a.E, a.nu, a.t,
-                       gamma_fac=a.gamma, n_gauss=a.gauss)
-    _imprime(K)
+    _imprime(k_membrana_itw(_pts(a.puntos), a.E, a.nu, a.t, **_kw(a)))
 
 
 def cmd_placa(a):
@@ -64,8 +77,7 @@ def cmd_placa(a):
 
 def cmd_modos(a):
     from .elements.membrane_itw import modos_nulos
-    n = modos_nulos(_pts(a.puntos), a.E, a.nu, a.t,
-                    gamma_fac=a.gamma, n_gauss=a.gauss)
+    n = modos_nulos(_pts(a.puntos), a.E, a.nu, a.t, **_kw(a))
     print(n)
     # 3 son los sólidos rígidos; más de 3 es un mecanismo y el elemento no vale
     return 0 if n == 3 else 1
@@ -126,7 +138,16 @@ def main(argv=None):
             q.add_argument("--gamma", type=float, default=0.4,
                            help="gamma/mu del ITW (0.4 = lo medido de ETABS)")
             q.add_argument("--gauss", type=int, default=3, choices=(2, 3),
-                           help="puntos de Gauss por lado (el paper usa 3)")
+                           help="puntos de Gauss por lado (el ITW 1990 usa 3)")
+            q.add_argument("--formulacion", default="itw1990",
+                           choices=("itw1990", "itw1991", "proyeccion", "proy1991"),
+                           help="itw1990 = Allman + burbuja, Gauss 3x3 (defecto) | "
+                                "itw1991 = la regla de OCHO puntos, ec. (30) | "
+                                "proyeccion = + la proyeccion del drilling de FEAP "
+                                "(la que cierra la matriz de ETABS al 1.42 %) | "
+                                "proy1991 = las dos (la mejor en cascara curva)")
+            q.add_argument("--wa", type=float, default=0.99,
+                           help="W_alpha de la ec. (30) del ITW 1991")
 
     q = sub.add_parser("kelem", help="K 12x12 de membrana + drilling (ITW 1990)")
     comunes(q); q.set_defaults(fn=cmd_kelem)

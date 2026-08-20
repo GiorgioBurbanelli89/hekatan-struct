@@ -20,7 +20,24 @@
 //     cli/native/kelem_native.exe  x0 y0 z0  x1 y1 z1  x2 y2 z2  x3 y3 z3 \
 //                                  E nu t  [tipoDrilling] [gammaFac] [tipoPlaca]
 //
-//     tipoDrilling : 3 = ITW 1990 (defecto) · 2 = Hughes-Brezzi · 1/0 = legacy
+//     tipoDrilling : la formulacion del giro normal. Todas pasan el patch
+//                    test EXACTO (1.500000 / 0.600000) y tienen 3 modos de
+//                    energia nula; lo que cambia es contra que cierran:
+//
+//                      tipo  matriz 12x12   drilling    hemisferio  mezanine
+//                            de ETABS       vs ETABS       8x8       axil
+//                        2       —          +11.46 %      -3.6 %   0.30/1.15
+//                        3     15.97 %       +5.45 %     -34.07 %  0.62/3.47  (defecto)
+//                        7     17.84 %       +6.46 %      -4.07 %  0.86/8.27
+//                        8      1.42 %       +3.09 %     -33.26 %  0.30/1.15
+//                        9      7.41 %       +7.65 %      -0.50 %  0.30/1.15
+//
+//                      2 = Hughes-Brezzi (el viejo, NO pasa el patch test)
+//                      3 = ITW 1990 (Allman + burbuja, Gauss 3x3)
+//                      7 = ITW 1991: la regla de OCHO puntos, ec. (30)
+//                      8 = + PROYECCION del drilling (la via de FEAP/Taylor)
+//                      9 = proyeccion + regla de ocho
+//                      1/0 = legacy
 //     gammaFac     : gamma/mu del ITW (defecto 0.4, lo medido de ETABS)
 //     tipoPlaca    : 0 = Shell-Thick (Mindlin, defecto) · 1 = Shell-Thin
 //
