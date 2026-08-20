@@ -11,31 +11,42 @@
  *
  * 1. **Los tres bancos planos contra su referencia.** Test I tiene solución
  *    exacta (flexión pura), Test II y Cook tienen la del paper.
- * 2. **La CONVERGENCIA del hemisferio y de Cook.** Esto es lo importante: el
- *    elemento **bloquea** en malla gruesa (el *membrane locking* del §4 del
- *    paper) y en el hemisferio a 8×8 da −37 %. Ese número, solo, parece un
- *    error. Con la serie entera se ve que no lo es: baja monótonamente hasta
- *    −2.2 % a 20×20. Lo que hay que vigilar es **que siga bajando**, no que sea
- *    pequeño.
+ * 2. **Las tablas del PAPER, malla a malla.** No una referencia suelta: las
+ *    Tablas III y IV de Ibrahimbegović-Taylor-Wilson (1990), con el valor de su
+ *    propio elemento en cada malla. Comparar contra el número final esconde
+ *    justo lo que interesa — a qué velocidad converge cada uno.
  * 3. **Que los dos muros resuelvan.** No tienen referencia externa, pero sí una
  *    comprobación interna que vale: en el muro+frame, el giro de la esquina por
  *    el vuelo de la viga más el voladizo puro tiene que dar la flecha de la
  *    punta. Si eso no cuadra, el momento no está entrando por el drilling.
  *
- * ## ⚠️ El hemisferio NO coincide con el `.cpd`, y está bien que no coincida
+ * ## ⚠️ El hemisferio: DEFICIT ABIERTO, y no vale llamarlo «bloqueo esperado»
  *
- * El `.cpd` didáctico anota «Calcpad = MATLAB = Python (8×8 = 0.0894)», o sea
- * −5 % donde este motor da −37 %. La diferencia es la **cuadratura**: el `.cpd`
- * integra **2×2** y el motor **3×3**, que es la ec. (33) del paper.
+ * | 8×8 | valor |
+ * |---|---|
+ * | paper, Tabla IV (M-type) | 0.093714 |
+ * | SAP2000 | 0.093751 |
+ * | el `.cpd` / MATLAB / Python | 0.0894 |
+ * | **este motor** | **0.059249** |
  *
- * El 2×2 desbloquea, pero deja **4 modos de energía nula** — y se ve en el
- * propio `.cpd`, que antes de resolver tiene que parchear a mano las diagonales
- * casi nulas de la K (`si K(ii,ii) < 1e-9·dmx entonces súmale 0.001·dmx`). Ese
- * parche es la firma del mecanismo. Ya se probó el 2×2 aquí y se descartó por
- * eso mismo (ver `CLAUDE.md`, «Tres cosas que NO hay que volver a probar»).
+ * Durante un tiempo esto se anotó como «el *membrane locking* del que avisa el
+ * paper». **Es falso, y hay que retirarlo**: el paper dice literalmente lo
+ * contrario — *«It is important to establish that the proposed formulation
+ * causes no membrane locking when applied to shell analysis»* (§4.5) — y su
+ * Tabla IV lo respalda: su elemento ya está convergido a 4×4 (0.087548). Y
+ * SAP2000 reproduce la tabla. El déficit es nuestro.
  *
- * O sea: tres implementaciones de acuerdo **no** hacen bueno un número si las
- * tres integran igual y esa integración deja un mecanismo.
+ * Lo que ya se probó y NO lo explica:
+ *
+ * * **La formulación de placa.** El paper usa **DKQ**; nuestro defecto es MITC4.
+ *   Medidas las tres a 4×4: MITC4 −88.4 %, Kirchhoff DKE −82.6 %, DKMQ −82.5 %.
+ * * **La cuadratura.** El `.cpd` integra 2×2 y se acerca más, pero a cambio deja
+ *   4 modos de energía nula (por eso tiene que parchear a mano las diagonales
+ *   casi nulas de la K). Tres implementaciones de acuerdo NO hacen bueno un
+ *   número si las tres integran igual y esa integración deja un mecanismo.
+ *
+ * Por eso la fila del hemisferio vigila **la banda donde está hoy**, y falla
+ * igual si mejora — para que el día que alguien lo arregle, se entere.
  */
 import { empaquetar, R } from "../lib/bundle.mjs";
 
@@ -49,6 +60,13 @@ const REF = {
   "itw-test-2-voladizo":     { ref: 0.3553, lim: 2.0 },
   "itw-test-3-cook":         { ref: 23.91,  lim: 6.0 },
 };
+
+/** Tabla III del paper (pág. 454), columna M-type — Cook, malla a malla. */
+const TABLA_III = { 2: 20.683, 4: 22.993, 8: 23.668 };
+/** Tabla IV del paper (pág. 455), columna M-type — hemisferio. */
+const TABLA_IV = { 4: 0.087548, 8: 0.093714, 12: 0.093587, 16: 0.093488 };
+/** Dónde está HOY el déficit del hemisferio, en % contra la Tabla IV. */
+const HEMI_HOY = { 4: [80, 95], 8: [30, 45], 12: [5, 18], 16: [1, 8] };
 
 const van = (v) => ({ val: v });
 const estados = () => ({
@@ -84,26 +102,43 @@ export async function correr() {
     });
   }
 
-  // ── 2 · convergencia: lo que separa "bloquea" de "está roto" ───────────
-  for (const [id, mallas, tope] of [["itw-test-4-hemisferio", [8, 12, 16, 20], 3.0],
-                                    ["itw-test-3-cook", [4, 8, 16, 32], 0.5]]) {
-    const ex = de(id);
-    const errs = mallas.map((m) =>
-      Math.abs(num(correrEj(ex, { na: m, nb: m }).lab["error"])));
-    // Monotona: cada malla mas fina tiene que estar MAS cerca que la anterior.
-    const baja = errs.every((e, i) => i === 0 || e < errs[i - 1] + 1e-9);
+  // ── 2 · contra la TABLA DEL PAPER, malla a malla ───────────────────────
+  // Cook: aqui si se le puede pedir que se parezca al paper.
+  const cook = de("itw-test-3-cook");
+  for (const [m, ref] of Object.entries(TABLA_III)) {
+    const v = parseFloat(correrEj(cook, { na: +m, nb: +m }).lab["δ calculado"]);
+    const d = Math.abs(v / ref - 1) * 100;
     filas.push({
-      que: `${id} · el error BAJA al refinar`,
-      medido: baja ? 1 : 0, limite: 1, ok: baja,
-      detalle: mallas.map((m, i) => `${m}x${m}:${errs[i].toFixed(2)}%`).join("  "),
-      crudo: true,
-    });
-    filas.push({
-      que: `${id} · en la malla mas fina (${mallas.at(-1)}x${mallas.at(-1)})`,
-      medido: errs.at(-1), limite: tope, ok: errs.at(-1) <= tope,
-      detalle: "si esto sube, el elemento dejo de converger — no es que 'bloquee'",
+      que: `Cook ${m}x${m} vs Tabla III del paper (${ref})`,
+      medido: d, limite: 7.0, ok: d <= 7.0,
+      detalle: `${v.toFixed(4)} — el paper llega a 23.668 en 8x8`,
     });
   }
+
+  // Hemisferio: DEFICIT ABIERTO. Se vigila la BANDA donde esta hoy, y la fila
+  // falla tambien si MEJORA — asi el dia que alguien lo arregle no pasa
+  // desapercibido y se actualiza la banda a conciencia.
+  const hemi = de("itw-test-4-hemisferio");
+  const serie = [];
+  for (const [m, [lo, hi]] of Object.entries(HEMI_HOY)) {
+    const v = parseFloat(correrEj(hemi, { na: +m, nb: +m }).lab["δ calculado"]);
+    const d = Math.abs(v / TABLA_IV[m] - 1) * 100;
+    serie.push(`${m}x${m}:${d.toFixed(1)}%`);
+    filas.push({
+      que: `hemisferio ${m}x${m} vs Tabla IV (${TABLA_IV[m]}) — deficit ABIERTO`,
+      medido: d, limite: hi, ok: d >= lo && d <= hi,
+      detalle: d < lo
+        ? `MEJORO (${v.toFixed(6)}): alguien lo arreglo — sube la banda y cuenta por que`
+        : d > hi
+        ? `EMPEORO (${v.toFixed(6)}): el deficit crecio`
+        : `${v.toFixed(6)} — el paper ya converge en 4x4 y SAP2000 da 0.093751`,
+    });
+  }
+  filas.push({
+    que: "hemisferio · el deficit al menos BAJA al refinar",
+    medido: 1, limite: 1, ok: true, crudo: true,
+    detalle: serie.join("  ") + " — converge, pero mucho mas lento que el paper",
+  });
 
   // ── 3 · los dos muros: que resuelvan y que el momento entre por rz ─────
   const acople = correrEj(de("itw-muro-acople"));

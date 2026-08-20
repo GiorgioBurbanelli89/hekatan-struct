@@ -262,17 +262,41 @@ comprueba— de que la formulación es **insensible a γ**.
 3. **La modificación de Taylor sobre la burbuja** (J₀ del centro): no desbloquea
    nada (−37.38 % contra −37.40 %).
 
-### El hemisferio: bloqueo, no bug
+### El hemisferio: DÉFICIT ABIERTO (⚠️ antes decía "bloqueo, no bug" — era falso)
 
-En cáscara **curva** el ITW bloquea en malla gruesa. No está roto — **converge**:
+En cáscara **curva** el elemento se queda muy corto en malla gruesa. Converge,
+pero **mucho más lento que el del paper**. Leída la **Tabla IV** del paper
+(pág. 455, columna M-type) el 2026-08-20:
 
-```
-4x4 −89.8 %   8x8 −37.4 %   12x12 −11.1 %   16x16 −4.2 %
-```
+| malla | paper (M-type) | SAP2000 | este motor |
+|---|---|---|---|
+| 4×4 | 0.087548 | — | 0.010114 (**−88.4 %**) |
+| 8×8 | 0.093714 | 0.093751 | 0.059249 (**−36.8 %**) |
+| 12×12 | 0.093587 | — | 0.083555 (−10.7 %) |
+| 16×16 | 0.093488 | — | 0.089954 (−3.8 %) |
 
-Es el *membrane locking* del que avisa el propio paper (§4). Su receta
-—"modificación de Taylor + regla de 8 puntos"— no se ha conseguido reproducir.
-Para una cúpula en malla gruesa, hoy conviene `drillingTypes = 2`.
+**El elemento del paper ya está convergido a 4×4.** Y SAP2000 reproduce la tabla.
+
+⚠️ Aquí decía que era *«el membrane locking del que avisa el propio paper (§4)»*.
+**Es falso y hay que no repetirlo**: el paper dice literalmente lo contrario —
+*«It is important to establish that the proposed formulation causes **no membrane
+locking** when applied to shell analysis»* (§4.5)— y su tabla lo respalda. El
+déficit es NUESTRO y está abierto.
+
+Lo que ya se probó y **no** lo explica:
+
+* **La formulación de placa.** El paper combina la membrana con una **DKQ**
+  (§4.5); nuestro defecto es MITC4. Medidas las tres a 4×4: MITC4 −88.4 %,
+  Kirchhoff DKE −82.6 %, DKMQ −82.5 %. Ninguna se acerca.
+* **La cuadratura.** El `.cpd` didáctico (`calcpad-ceinci-lab/`) integra **2×2**
+  y saca 0.0894 a 8×8 —más cerca del paper que nosotros— pero deja 4 modos de
+  energía nula, y por eso tiene que parchear a mano las diagonales casi nulas de
+  la K. Tres implementaciones de acuerdo (Calcpad = MATLAB = Python) **no** hacen
+  bueno un número si las tres integran igual y esa integración deja un mecanismo.
+
+Vigilado en `tests/casos/itw_seis_casos.mjs`, que compara contra la Tabla IV
+malla a malla y **falla también si mejora**, para que el arreglo no pase
+desapercibido. Para una cúpula en malla gruesa, hoy conviene `drillingTypes = 2`.
 
 
 ## Masa torsional: Ip vs J

@@ -296,35 +296,38 @@ export const itwTest3: ExampleDef = {
  *
  * Referencia **0.094**.
  *
- * ⚠️ **Aquí el elemento BLOQUEA en malla gruesa, y no está roto: converge.**
- * Es el *membrane locking* del que avisa el propio paper (§4). Medido con este
- * mismo motor (2026-08-20):
+ * ## ⚠️ Aquí NO damos lo que da el paper, y hay que decirlo
  *
- * | malla | δ | error |
- * |---|---|---|
- * | 4×4 | 1.0114e−2 | −89.24 % |
- * | 8×8 | 5.9249e−2 | −36.97 % |
- * | 12×12 | 8.3555e−2 | −11.11 % |
- * | 16×16 | 8.9954e−2 | −4.30 % |
- * | 20×20 | 9.1924e−2 | −2.21 % |
+ * La **Tabla IV del paper** (pág. 455) con su propio elemento, contra lo que da
+ * este motor:
  *
- * ## Y ojo con comparar esto contra el `.cpd`: NO dan lo mismo, y se sabe por qué
+ * | malla | paper (M-type) | SAP2000 | este motor | dif. |
+ * |---|---|---|---|---|
+ * | 4×4 | 0.087548 | — | 0.010114 | **−88.4 %** |
+ * | 8×8 | 0.093714 | 0.093751 | 0.059249 | **−36.8 %** |
+ * | 12×12 | 0.093587 | — | 0.083555 | −10.7 % |
+ * | 16×16 | 0.093488 | — | 0.089954 | −3.8 % |
  *
- * El `.cpd` didáctico anota «Calcpad = MATLAB = Python (8×8 = 0.0894)», o sea
- * −5 % donde este motor da −37 %. **No es que uno esté mal: integran distinto.**
+ * El elemento del paper **ya está convergido a 4×4**. El nuestro necesita 16×16
+ * para llegar al −3.8 %.
  *
- * * El `.cpd` usa **Gauss 2×2** (su `gp` tiene 4 puntos).
- * * Este motor usa **Gauss 3×3**, que es la ec. (33) del paper.
+ * **Y no vale llamarlo «bloqueo esperado».** El paper dice literalmente lo
+ * contrario: *«It is important to establish that the proposed formulation causes
+ * **no membrane locking** when applied to shell analysis»* (§4.5). Y SAP2000
+ * reproduce la tabla del paper. O sea que el déficit es NUESTRO, y está abierto.
  *
- * El 2×2 desbloquea el hemisferio, pero deja el elemento con **4 modos de
- * energía nula** — y eso se ve en el propio `.cpd`: antes de resolver tiene que
- * **parchear a mano las diagonales casi nulas** de la K
- * (`si K(ii,ii) < 1e-9·dmx entonces súmale 0.001·dmx`). Ese parche es la firma
- * del mecanismo. Un elemento con modos de energía nula da buen número en este
- * banco y puede dar cualquier cosa en un modelo de verdad.
+ * Lo que ya se probó y **no** lo explica:
  *
- * Así que aquí manda el 3×3: peor número en malla gruesa, elemento sano, y
- * converge. Que es exactamente el compromiso que describe el paper.
+ * * **La formulación de placa.** El paper combina la membrana con una **DKQ**;
+ *   nuestro defecto es MITC4. Medido con las tres (MITC4, Kirchhoff DKE y DKMQ):
+ *   a 4×4 dan −88.4 %, −82.6 % y −82.5 %. Ninguna se acerca.
+ * * **La cuadratura.** El `.cpd` didáctico integra 2×2 y saca 0.0894 a 8×8
+ *   —más cerca del paper que nosotros— pero a cambio deja 4 modos de energía
+ *   nula, y por eso tiene que parchear a mano las diagonales casi nulas de la K
+ *   (`si K(ii,ii) < 1e-9·dmx entonces súmale 0.001·dmx`). Ese parche es la firma
+ *   del mecanismo, así que tampoco es la respuesta.
+ *
+ * Se deja el caso en el deploy **con el número que da**, no con el que gustaría.
  */
 export const itwTest4: ExampleDef = {
   id: "itw-test-4-hemisferio",
@@ -382,9 +385,9 @@ export const itwTest4: ExampleDef = {
   computedLabels(p, states) {
     const na = Math.round(p.na), nb = Math.round(p.nb);
     return { ...fila(Math.abs(u(states, nb * (na + 1) + 0, 0)), 0.094),
-             "ojo": "bloquea en malla gruesa y CONVERGE: sube las divisiones",
-             "16×16 da": "−4.3 % · 20×20 da −2.2 %",
-             "vs el .cpd": "el .cpd integra 2×2 y da −5 %, pero con 4 modos nulos" };
+             "⚠️ paper (Tabla IV)": "4×4 = 0.087548 · 8×8 = 0.093714",
+             "⚠️ SAP2000 8×8": "0.093751",
+             "estado": "DEFICIT ABIERTO nuestro: el paper NO bloquea aquí" };
   },
 };
 

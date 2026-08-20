@@ -1147,6 +1147,16 @@ function rebuild() {
 (window as any).__hekatanRebuild = rebuild;
 (window as any).__hekatanAutoFit = autoFitCamera;
 
+// Y los PARÁMETROS vivos, para poder barrer un ejemplo desde fuera:
+//     window.__hekatanParams().na = 16;  window.__hekatanRebuild();
+// Hace falta para capturar series (la convergencia de un banco, un barrido de
+// espesor) sin tocar el solver por dentro: así lo que se mide es lo mismo que
+// vería el usuario moviendo el slider. Lo usa `cli/gif_itw_convergencia.mjs`.
+// Se devuelve el objeto vivo, no una copia — mutarlo y llamar a `rebuild()` es
+// justo el camino que sigue Tweakpane.
+(window as any).__hekatanParams = () => currentParams;
+(window as any).__hekatanExample = () => currentExample?.id ?? null;
+
 // ── Auto re-fit camera al cambiar de tamaño (mobile rotation) ──
 // El #viewer cambia de tamaño con CSS media queries (ej. en mobile
 // portrait el canvas pasa a 50vh) — el ResizeObserver del viewer
