@@ -3011,6 +3011,13 @@ function buildParamsPane() {
   ];
   const ALL = "Todas";
   const ALL_BENCHMARKS = "🏁 Benchmarks · TODOS";   // pseudo-categoría que muestra los 12 benchmarks juntos
+  // Lo mismo para la familia ITW. Los seis casos del elemento con drilling son
+  // UNA cosa para quien los estudia, pero el árbol los parte en dos porque lo
+  // manda el TIPO DE ELEMENTO: los cuatro tests son membrana pura (Shells) y
+  // los dos muros llevan viga (Mixtos). Las dos hojas se llaman igual y el
+  // desplegable trunca el texto, así que entrando por una parecía que faltaban
+  // cuatro ejemplos. Esta pseudo-categoría los junta sin romper el árbol.
+  const ALL_ITW = "🌀 Drilling ITW · TODOS";
   // Mostrar las sub-categorías de Benchmarks con INDENTACIÓN visual (sub-folders):
   //   🏁 Benchmarks (TODOS)         ← header del grupo (todos los benchmarks juntos)
   //     ▸ 1️⃣ Frames                 ← sub-folder
@@ -3053,6 +3060,8 @@ function buildParamsPane() {
   // Los benchmarks ya no son un cajón del árbol (están repartidos por tipo de
   // elemento), pero siguen siendo un filtro útil: se listan por su FLAG.
   catOptions[`🏁 Benchmarks (todos: ${examplesRegistry.filter((e) => e.benchmark).length})`] = ALL_BENCHMARKS;
+  const nITW = examplesRegistry.filter((e) => e.category?.includes("🌀 Drilling ITW")).length;
+  if (nITW) catOptions[`🌀 Drilling ITW (todos: ${nITW})`] = ALL_ITW;
 
   const selectorObj = { category: currentExample.category, id: currentExample.id };
 
@@ -3094,6 +3103,7 @@ function buildParamsPane() {
           if (cat === ALL_BENCHMARKS || cat === "🏁 Benchmarks (TODOS los 12)") {
             return e.category?.startsWith("🏁 Benchmarks");
           }
+          if (cat === ALL_ITW) return !!e.category?.includes("🌀 Drilling ITW");
           return matchesCategory(e.category, cat);
         })
         .map((e) => [`${e.benchmark ? "🏁 " : ""}${e.name}`, e.id])
@@ -3435,7 +3445,15 @@ function buildParamsPane() {
     if (new URLSearchParams(location.search).get("ribbon") !== "0"
         && !document.getElementById("hk-ribbon")) {
       const host = (viewerElm.parentElement ?? viewerElm) as HTMLElement;
+      // Plegada por defecto SI se entra a un ejemplo (`?t=<id>`), abierta si se
+      // entra al lienzo en blanco. En un ejemplo ya resuelto se viene a mirar y
+      // la barra tapa el modelo; en blanco es lo único que dice qué hacer.
+      // El usuario manda por encima de esto: su elección se recuerda.
+      const _t = new URLSearchParams(location.search).get("t");
+      const enBlanco = !_t || _t === "new-blank" || _t === "cad-draw"
+                    || _t === "cad-editor" || _t === "inicio";
       addCadRibbon(host, {
+        plegadoPorDefecto: !enBlanco,
         setTool: (t) => {
           try { (window as any).__hekatanCadState?.setTool?.(t); } catch {}
           try { (window as any).__hekatanCadResetPending?.(); } catch {}

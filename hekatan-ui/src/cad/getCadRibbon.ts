@@ -45,6 +45,18 @@ export interface RibbonHooks {
   finish?: () => void;
   undo?: () => void;
   clear?: () => void;
+  /**
+   * Si la barra arranca PLEGADA (solo el botón «✏ Dibujar»).
+   *
+   * El workspace lo pone a `true` cuando lo cargado es un ejemplo ya resuelto:
+   * ahí se viene a MIRAR, y la barra —que ocupa dos filas— se come el tercio de
+   * arriba del lienzo. En el lienzo en blanco va a `false`, porque ahí es lo
+   * único de la pantalla que dice qué hacer.
+   *
+   * ⚠️ Es solo el DEFECTO. Si el usuario ya plegó o desplegó alguna vez, manda
+   * su elección (guardada en `localStorage`).
+   */
+  plegadoPorDefecto?: boolean;
 }
 
 interface Herr {
@@ -517,6 +529,70 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
   ].join(";") + ";";
   estado.textContent = "Teclea una letra o elige arriba — L línea · P polilínea · R rectángulo · K columna · G rejilla";
 
+  // ── PLEGAR el ribbon ──────────────────────────────────────────────────────
+  //
+  // Jorge: *"ese menu que esta arriba debe tener algo para minimizarlo y solo
+  // quede un boton ya que me ocupa la pantalla, y en ejemplos preferible que
+  // quede minimizado"*.
+  //
+  // La barra ocupa dos filas y se come el tercio de arriba del lienzo. Eso está
+  // bien cuando se viene a DIBUJAR —es lo único de la pantalla que dice qué
+  // hacer— y estorba cuando se viene a MIRAR un ejemplo ya resuelto, que es el
+  // caso de casi todo el catálogo.
+  //
+  // Así que: se pliega a un solo botón, y el estado se recuerda. El defecto lo
+  // decide `plegadoPorDefecto`, que el workspace pone a `true` cuando lo que se
+  // ha cargado es un ejemplo (ver `addCadRibbon(..., { plegadoPorDefecto })`).
+  const LS = "hekatan.ribbon.plegado";
+  const bPlegar = document.createElement("button");
+  bPlegar.type = "button";
+  bPlegar.title = "Plegar la barra (Ctrl+`)";
+  bPlegar.textContent = "▴";
+  bPlegar.style.cssText = "width:26px;height:26px;margin-left:4px;cursor:pointer;" +
+    "background:transparent;border:1px solid #475569;border-radius:6px;color:#94a3b8;" +
+    "font:600 13px inherit;align-self:center;";
+  barra.appendChild(bPlegar);
+
+  // El botón que queda cuando está plegada. Va en el MISMO sitio que la barra,
+  // para que abrir y cerrar no mueva nada de lo que hay debajo.
+  const bAbrir = document.createElement("button");
+  bAbrir.type = "button";
+  bAbrir.id = "hk-ribbon-abrir";
+  bAbrir.title = "Abrir la barra de dibujo (Ctrl+`)";
+  bAbrir.textContent = "✏ Dibujar";
+  bAbrir.style.cssText = [
+    "position:absolute", "top:8px", "left:50%", "transform:translateX(-50%)",
+    "z-index:60", "display:none", "cursor:pointer",
+    "padding:5px 12px", "border-radius:10px",
+    "background:rgba(15,23,42,.94)", "border:1px solid #1e3a4a",
+    "color:#cbd5e1", "font:600 12px system-ui,-apple-system,Segoe UI,sans-serif",
+    "box-shadow:0 6px 20px rgba(0,0,0,.45)", "backdrop-filter:blur(6px)",
+  ].join(";") + ";";
+
+  let plegado = false;
+  function plegar(v: boolean, recordar = true) {
+    plegado = v;
+    barra.style.display = v ? "none" : "flex";
+    bAbrir.style.display = v ? "block" : "none";
+    // La barra de estado y la guía sólo tienen sentido con la barra abierta:
+    // plegado no hay herramienta a la vista a la que se refieran.
+    estado.style.display = v ? "none" : "block";
+    if (v) verGuia(false);
+    if (recordar) { try { localStorage.setItem(LS, v ? "1" : "0"); } catch {} }
+  }
+  bPlegar.addEventListener("click", () => plegar(true));
+  bAbrir.addEventListener("click", () => plegar(false));
+  // Ctrl+` — el mismo atajo en los dos sentidos, que es como se espera de un
+  // panel que se pliega.
+  window.addEventListener("keydown", (e) => {
+    if (!e.ctrlKey || e.key !== "`") return;
+    const t = e.target as HTMLElement | null;
+    if (t && /^(INPUT|TEXTAREA)$/.test(t.tagName)) return;
+    e.preventDefault();
+    plegar(!plegado);
+  });
+
+
   // El motor selecciona DESPUES de procesar el clic, asi que se mira un
   // instante mas tarde. 120 ms basta y no se nota.
   host.addEventListener("click", (e) => {
@@ -528,13 +604,30 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
 
   if (getComputedStyle(host).position === "static") host.style.position = "relative";
   host.appendChild(barra);
+  host.appendChild(bAbrir);
   host.appendChild(estado);
   host.appendChild(guia);
+
+  // El defecto lo manda quien monta (el workspace: plegada en ejemplos, abierta
+  // en el lienzo en blanco). Si el usuario ya eligió alguna vez, MANDA ÉL.
+  let inicial = hooks.plegadoPorDefecto ?? false;
+  try {
+    const g = localStorage.getItem(LS);
+    if (g !== null) inicial = g === "1";
+  } catch {}
+  plegar(inicial, false);
   // Se abre sola la PRIMERA vez y nunca mas: quien entra por primera vez no
   // sabe ni que existe la tecla ?, y quien ya la leyo no quiere volver a
   // cerrarla en cada carga.
+  //
+  // ⚠️ Pero NO si la barra arranca plegada. La guia es una tarjeta grande que
+  // tapa el lienzo entero, y con la barra plegada ni siquiera se ve a que se
+  // refiere: se entra a mirar un ejemplo ya resuelto y lo primero que aparece
+  // es un panel de como dibujar, encima del modelo. Eso ya hizo dar por roto un
+  // ejemplo que estaba perfecto (`guerra-ej1`: el PNG salia vacio y era la guia
+  // tapando el visor).
   try {
-    if (!localStorage.getItem("hk_guia_vista")) {
+    if (!plegado && !localStorage.getItem("hk_guia_vista")) {
       verGuia(true);
       localStorage.setItem("hk_guia_vista", "1");
     }

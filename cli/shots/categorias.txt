@@ -5,7 +5,7 @@ Todas
 ▸ 🎯 3 GDL Pórtico plano
 ▸ 🎯 6 GDL Espacial
 ▸ 🎯 n GDL Sistemas
-2️⃣ Shells (todos: 46)
+2️⃣ Shells (todos: 44)
 ▸ 🧱 Placas
 ▸ 🕸 Membranas
 ▸ 🌀 Drilling ITW
@@ -14,11 +14,13 @@ Todas
 ▸ 🧰 Cimentaciones
 ▸ 🔩 Conexiones
 3️⃣ Sólidos
-4️⃣ Mixtos (todos: 34)
+4️⃣ Mixtos (todos: 36)
 ▸ 🏢 Edificios
 ▸ 🧰 Cimentaciones (4️⃣)
 ▸ 🔀 Losas con vigas
 ▸ 🌉 Puentes e icónicos
+▸ 🌀 Drilling ITW (4️⃣)
 🧪 Utilidades
 🗄 Legacy
 🏁 Benchmarks (todos: 59)
+🌀 Drilling ITW (todos: 6)

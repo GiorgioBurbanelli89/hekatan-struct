@@ -1,3 +1,2 @@
 itw-muro-acople                        encendida   errores JS: 0
-itw-muro-frame                         encendida   errores JS: 0
-itw-test-4-hemisferio                  encendida   errores JS: 0
+itw-test-3-cook                        encendida   errores JS: 0
