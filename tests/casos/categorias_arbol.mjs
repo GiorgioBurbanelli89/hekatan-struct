@@ -24,11 +24,14 @@ const RAICES = ["1️⃣ Frames", "2️⃣ Shells", "3️⃣ Sólidos", "4️⃣
 const HOJAS = {
   "1️⃣ Frames": ["🎯 1 GDL Axial", "🎯 2 GDL Flexión", "🎯 3 GDL Pórtico plano",
                  "🎯 6 GDL Espacial", "🎯 n GDL Sistemas"],
-  "2️⃣ Shells": ["🧱 Placas", "🕸 Membranas", "🐚 Cáscaras", "🥞 Layered",
-                 "🧰 Cimentaciones", "🔩 Conexiones"],
+  // 🌀 Drilling ITW sale en las DOS raices a proposito: los cuatro TESTS son
+  // membrana pura (Shells) y los dos MUROS llevan viga, o sea barras + cascaras
+  // (Mixtos). El caso de abajo cuenta los elementos y no deja mentir.
+  "2️⃣ Shells": ["🧱 Placas", "🕸 Membranas", "🌀 Drilling ITW", "🐚 Cáscaras",
+                 "🥞 Layered", "🧰 Cimentaciones", "🔩 Conexiones"],
   "3️⃣ Sólidos": [],
   "4️⃣ Mixtos": ["🏢 Edificios", "🧰 Cimentaciones", "🔩 Conexiones",
-                 "🔀 Losas con vigas", "🌉 Puentes e icónicos"],
+                 "🔀 Losas con vigas", "🌉 Puentes e icónicos", "🌀 Drilling ITW"],
   "🧪 Utilidades": [],
   "🗄 Legacy": [],
 };

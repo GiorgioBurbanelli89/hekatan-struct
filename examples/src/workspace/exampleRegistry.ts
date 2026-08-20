@@ -347,6 +347,9 @@ import { edificioFrameNec } from "../edificio-frame-nec/edificioFrameNec";
 import { newBlank } from "../new-blank/newBlank";
 // 🎓 Test M — edificio paramétrico (pórticos / +losa / dual) con sísmico NEC-15 + selector NEC/ASCE
 import { testMPortico, testMLosa, testMDual } from "../test-m/testM";
+// Los seis casos del elemento ITW-1990 (membrana con drilling), traidos de
+// `calcpad-ceinci-lab/*.cpd`. Ver la cabecera de `itwTests.ts`.
+import { itwTodos } from "../itw/itwTests";
 // Legacy del upstream awatif (rebrandeados, abren standalone)
 import {
   legacyAwatifExamples,
@@ -356,6 +359,10 @@ import {
 } from "./legacyAwatif";
 
 export const examplesRegistry: ExampleDef[] = [
+  // 🌀 DRILLING ITW — los seis casos del elemento de Ibrahimbegovic,
+  // Taylor & Wilson (1990). Los cuatro tests miden la formulacion contra
+  // su referencia; los dos muros ensenan PARA QUE sirve el drilling.
+  ...itwTodos,
   // 🎓 TEST M — modelos de los objetivos específicos de la tesis de maestría
   testMDual,              // Dual (pórtico+losa+muros) — sísmico NEC-15 completo + selector NEC/ASCE
   testMPortico,           // Solo pórticos (sin losa)

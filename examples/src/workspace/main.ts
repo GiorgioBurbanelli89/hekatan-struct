@@ -2980,6 +2980,7 @@ function buildParamsPane() {
     "1️⃣ Frames · 🎯 n GDL Sistemas",
     "2️⃣ Shells · 🧱 Placas",
     "2️⃣ Shells · 🕸 Membranas",
+    "2️⃣ Shells · 🌀 Drilling ITW",
     "2️⃣ Shells · 🐚 Cáscaras",
     "2️⃣ Shells · 🥞 Layered",
     "2️⃣ Shells · 🧰 Cimentaciones",
@@ -2990,6 +2991,7 @@ function buildParamsPane() {
     "4️⃣ Mixtos · 🔩 Conexiones",
     "4️⃣ Mixtos · 🔀 Losas con vigas",
     "4️⃣ Mixtos · 🌉 Puentes e icónicos",
+    "4️⃣ Mixtos · 🌀 Drilling ITW",
     "🧪 Utilidades",
     "🗄 Legacy",
   ];
