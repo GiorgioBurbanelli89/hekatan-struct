@@ -12,6 +12,7 @@
  */
 import * as THREE from "three";
 import { plateQ4Solve } from "hekatan-fem";
+import { cargaColumnaConsistente } from "../shared/cargaColumnaConsistente";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import safeRef from "./safe-reference.json";
 
@@ -133,11 +134,21 @@ export const guerraEj2ZapataRectangular: ExampleDef = {
         colNodesArr.push(n);
       }
     }
-    const P_per_node = P_kN / colNodesArr.length;
+    // ⚠️ El reparto A PARTES IGUALES no es el vector consistente: los nudos del
+    // BORDE de la huella reciben menos que los de dentro. Medido contra
+    // `∫N_i·q·dA` en la zapata validada contra SAP2000: **0.100 %**. Poco, pero
+    // es gratis quitarlo, y asi las zapatas meten la carga como la meten SAFE,
+    // SAP2000 y el propio `.heks`.
+    // El MOMENTO se sigue repartiendo a partes iguales: llevarlo a presion
+    // lineal sobre la huella es otro cambio, no esta medido, y estos ejemplos
+    // estan calibrados contra el libro de Guerra.
+    const cargaP = cargaColumnaConsistente(nodes, elements, P_kN, cx, cy,
+                                           p.col_x, p.col_y);
     const M_per_node = M_kNm / colNodesArr.length;
-    const columnLoads: Array<{ node: number; dof: number; value: number }> = [];
+    const columnLoads: Array<{ node: number; dof: number; value: number }> = [
+      ...cargaP.pointLoads,
+    ];
     for (const n of colNodesArr) {
-      columnLoads.push({ node: n, dof: 0, value: -P_per_node });
       columnLoads.push({ node: n, dof: 1, value: M_per_node });
     }
     const pointLoads = [...columnLoads, ...selfWeightLoads];

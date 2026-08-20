@@ -1,1 +1,4 @@
-galpon                                 encendida   errores JS: 0
+guerra-ej1-zapata-cuadrada             encendida   errores JS: 0
+guerra-ej2-zapata-rectangular-sismo    encendida   errores JS: 0
+guerra-ej3-zapata-rectangular-eccentricidad-grande encendida   errores JS: 0
+safe-bench-zapata-comparativa          encendida   errores JS: 0

@@ -17,6 +17,7 @@
  * en paralelo para que el usuario vea las diferencias.
  */
 import { plateQ4Solve, type PlateQ4Output } from "hekatan-fem";
+import { cargaColumnaConsistente } from "../shared/cargaColumnaConsistente";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 const TONF_TO_KN = 9.80665;
@@ -50,16 +51,28 @@ function runModel(
   Lz: number, Bz: number, tz: number,
   E_kNm2: number, nu: number,
   ks_kNm3: number, P_kN: number,
-  nx: number, ny: number,
+  nx: number, ny: number, col_size: number,
 ): ModelResult {
   const { nxn, nyn, dx, dy, nodes, elements } = buildMesh(Lz, Bz, nx, ny);
   const springs: Array<{ node: number; dof: number; k: number }> = [];
   const bcs: Array<{ node: number; dof: number; value: number }> = [];
 
-  // Common: carga puntual en centro
   const ic = Math.floor(nx / 2), jc = Math.floor(ny / 2);
   const centerNode = jc * nxn + ic;
-  const pointLoads = [{ node: centerNode, dof: 0, value: -P_kN }];
+
+  // ⚠️ Antes esto era `[{ node: centerNode, value: -P_kN }]`: TODA la carga de
+  // la columna en UN nudo. Y una carga puntual sobre una placa es una
+  // **singularidad**: la flecha bajo el punto no converge, CRECE al refinar la
+  // malla. O sea que el `w_max` que compara los 5 modelos no era un resultado
+  // sino un artefacto del tamaño de celda — y encima cambiaba al mover `nx`.
+  // Medido contra la integral consistente en la zapata validada contra SAP2000
+  // (1.50×1.50, t=0.40, P=100 tonf, ks=2000, malla 10×10): **0.472 %** ya en
+  // malla gruesa, y subiendo.
+  // Ahora la columna entra como presión sobre su huella, integrada contra las
+  // funciones de forma — que es lo que hacen SAFE, SAP2000 y el propio `.heks`.
+  const carga = cargaColumnaConsistente(nodes, elements, P_kN,
+                                        Lz / 2, Bz / 2, col_size);
+  const pointLoads = carga.pointLoads;
 
   // ── Springs según modelo ─────────────────────────────────────────
   const addNodalSpring = (nodeIdx: number, A_trib: number, includeHorizontal: boolean, includeTorsion: boolean) => {
@@ -195,6 +208,8 @@ export const safeBenchComparativa: ExampleDef = {
     E_suelo_kPa: { default: 25000, min: 1000, max: 500000, step: 1000, label: "E suelo (kPa) — Vesic" },
     nu_suelo: { default: 0.30, min: 0.1, max: 0.45, step: 0.05, label: "ν suelo — Vesic" },
     P_tonf: { default: 20, min: 1, max: 100, step: 1, label: "P central (tonf)" },
+    col_size: { default: 0.30, min: 0.15, max: 1.0, step: 0.05,
+                label: "lado de la columna (m)" },
     nx: { default: 12, min: 6, max: 24, step: 2, label: "nx mesh" },
     ny: { default: 12, min: 6, max: 24, step: 2, label: "ny mesh" },
   },
@@ -203,6 +218,7 @@ export const safeBenchComparativa: ExampleDef = {
     const q_adm_kN = p.q_adm_tonf * TONF_TO_KN;
     const P_kN = p.P_tonf * TONF_TO_KN;
     const nx = Math.round(p.nx), ny = Math.round(p.ny);
+    const col_size = p.col_size;
     const E_kNm2 = 24855e3;   // concreto 4000 psi
     const nu = 0.20;
 
@@ -218,11 +234,11 @@ export const safeBenchComparativa: ExampleDef = {
     const ks_Vesic = 0.65 * ratio * Es / (B * (1 - nus * nus));
 
     // Correr los 5 modelos en paralelo
-    const r0 = runModel(0, Lz, Bz, tz, E_kNm2, nu, ks_Bowles, P_kN, nx, ny);
-    const r1 = runModel(1, Lz, Bz, tz, E_kNm2, nu, ks_Bowles, P_kN, nx, ny);
-    const r2 = runModel(2, Lz, Bz, tz, E_kNm2, nu, ks_Bowles, P_kN, nx, ny);
-    const r3 = runModel(3, Lz, Bz, tz, E_kNm2, nu, ks_Vesic, P_kN, nx, ny);
-    const r4 = runModel(4, Lz, Bz, tz, E_kNm2, nu, ks_Bowles, P_kN, nx, ny);
+    const r0 = runModel(0, Lz, Bz, tz, E_kNm2, nu, ks_Bowles, P_kN, nx, ny, col_size);
+    const r1 = runModel(1, Lz, Bz, tz, E_kNm2, nu, ks_Bowles, P_kN, nx, ny, col_size);
+    const r2 = runModel(2, Lz, Bz, tz, E_kNm2, nu, ks_Bowles, P_kN, nx, ny, col_size);
+    const r3 = runModel(3, Lz, Bz, tz, E_kNm2, nu, ks_Vesic, P_kN, nx, ny, col_size);
+    const r4 = runModel(4, Lz, Bz, tz, E_kNm2, nu, ks_Bowles, P_kN, nx, ny, col_size);
 
     // Cargas equivalentes para empotrada (no tiene springs → no aplica q_max)
     const fmt = (v: number, d = 2) => Number.isFinite(v) ? v.toFixed(d) : "—";
@@ -272,8 +288,9 @@ export const safeBenchComparativa: ExampleDef = {
     const ks_used = modelId === 3 ? ks_Vesic : ks_Bowles;
     const P_kN = p.P_tonf * TONF_TO_KN;
     const nx = Math.round(p.nx), ny = Math.round(p.ny);
+    const col_size = p.col_size;
 
-    const r = runModel(modelId, Lz, Bz, tz, E_kNm2, nu, ks_used, P_kN, nx, ny);
+    const r = runModel(modelId, Lz, Bz, tz, E_kNm2, nu, ks_used, P_kN, nx, ny, col_size);
 
     // Populate states
     const { nodes, elements } = buildMesh(Lz, Bz, nx, ny);
