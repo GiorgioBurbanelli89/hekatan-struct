@@ -1373,7 +1373,28 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     //   1 / 0 = legacy (muelle debil / penalizacion 1e-6)
     // Se lee aqui arriba porque el 3 NO usa getMembraneK: sustituye la
     // membrana entera, no le pega un termino encima.
-    int drillingType = getMapVal(elementInputs.drillingTypes, index, 3);
+    // ── El DEFECTO: tipo 8, la proyeccion del drilling ───────────────────
+    // Cambiado de 3 a 8 el 19-ago-2026, y no por gusto: el 8 gana o EMPATA al 3
+    // en todas las columnas medidas. Es la primera opcion que no obliga a
+    // elegir.
+    //
+    //   medida                        tipo 3      tipo 8
+    //   matriz 12x12 de ETABS         15.97 %      1.42 %
+    //   drilling-dof contra ETABS     +5.45 %     +3.09 %
+    //   mezanine, axil (medio/max)   0.62/3.47   0.30/1.15
+    //   hemisferio 8x8               -34.07 %    -33.26 %
+    //   patch test                    EXACTO      EXACTO
+    //   modos de energia nula            3           3
+    //
+    // Y sobre todo: el termino que anade ETABS se AISLO de su matriz medida
+    // (restarle la nuestra sin penalizacion y mirar el autovector dominante).
+    // Sale `theta_nodal - theta_solido_rigido` —el rango uno de Wilson, ecs.
+    // (9.11)-(9.13)— con `k0 = 0.4*G` EXACTO en 9 de 10 geometrias y alineacion
+    // 1.0000 contra nuestro residuo: no es parecido, es el MISMO vector.
+    //
+    // Para cascara doblemente curva sigue siendo mejor el 9 (hemisferio 8x8 a
+    // -0.50 %); se pide por `elementInputs.drillingTypes`.
+    int drillingType = getMapVal(elementInputs.drillingTypes, index, 8);
     // Con drillingType 3 este numero es gamma/mu del paper (defecto 0.4, que es
     // lo medido de ETABS). Con el 2 es el alpha de Hughes-Brezzi (defecto 0.05).
     double drillScale = getMapVal(elementInputs.drillingPenaltyScales, index,

@@ -71,7 +71,10 @@ const FORM = { Thick: 0, Thin: 1, Membrane: 2 };
  * De ahí que el JSON traiga la malla Y las secciones ya calculadas: lo que no se
  * recalcula aquí, no se puede equivocar aquí.
  */
-const LIMITE = { Membrane: 1.5, Thin: 0.5, Thick: 3.5 };
+// Membrane bajado de 1.5 % a 0.5 % el 19-ago-2026 con el defecto en el
+// `drillingTypes = 8`: pasa de 0.745 % a 0.283 %. Thin y Thick no se mueven
+// (0.025 % y 2.627 %), porque el drilling no los toca.
+const LIMITE = { Membrane: 0.5, Thin: 0.5, Thick: 3.5 };
 
 export const nombre = "banco-shell-escalon-b";
 export const descripcion =

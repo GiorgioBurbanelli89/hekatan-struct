@@ -49,10 +49,16 @@ displacement:
 | type | ETABS 12×12 matrix | drilling vs ETABS | pinched hemisphere 8×8 | mezzanine axial |
 |---|---|---|---|---|
 | 2 — Hughes-Brezzi (legacy) | — | +11.46 % | −3.6 % | 0.30 / 1.15 |
-| **3 — ITW 1990** (current default) | 15.97 % | +5.45 % | −34.07 % | 0.62 / 3.47 |
+| 3 — ITW 1990 | 15.97 % | +5.45 % | −34.07 % | 0.62 / 3.47 |
 | 7 — ITW 1991, eight-point rule | 17.84 % | +6.46 % | −4.07 % | 0.86 / 8.27 |
-| **8 — drilling projection** | **1.42 %** | **+3.09 %** | −33.26 % | **0.30 / 1.15** |
+| **8 — drilling projection** ← **default** | **1.42 %** | **+3.09 %** | −33.26 % | **0.30 / 1.15** |
 | 9 — projection + eight-point | 7.41 % | +7.65 % | **−0.50 %** | **0.30 / 1.15** |
+
+Type 8 became the default on 2026-08-19: it wins or ties type 3 in **every**
+column, which had not happened with any previous candidate — every earlier one
+traded curved-shell accuracy against slab-with-beams accuracy. Type **9** stays
+available for doubly-curved shells, where it reproduces the paper's hemisphere
+(−0.50 % at 8×8 against the published −0.32 %).
 
 Two findings, both from primary sources rather than guesswork:
 
@@ -74,7 +80,24 @@ coordinates and writes **24** shape-function slots — it is an 8-node
 neither. Everything else in this section stands on its own footing: measurements
 against ETABS's reconstructed matrix, and CSI's own published bibliography.
 
-**The missing piece was a projection, and it is only in the source code.**
+**ETABS's drilling term, isolated and measured — no binary needed.** Subtract
+from ETABS's reconstructed matrix our own **without** the penalty, and look at
+what is left. Its dominant eigenvector, on a unit square, is
+
+```
+u : [ 1,  1, -1, -1]     ← rigid-body rotation
+v : [-1,  1,  1, -1]     ← rigid-body rotation
+θ : [-1, -1, -1, -1]     ← all four rotations equal
+```
+
+which is `θ_nodal − θ_rigid-body`: **Wilson's rank-one penalty**, eqs.
+(9.11)-(9.13) of his chapter 9. Scaling it gives `k₀ = 0.4·G` **exactly** in 9 of
+10 geometries, with **1.0000** alignment against our own residual — the same
+vector, not a similar one. Two days of disassembly had failed at this; half an
+hour of subtracting matrices did it. The lesson is recorded: when a measurement
+of the real system exists, exhaust it before opening a disassembler.
+
+**And the missing piece was a projection, only present in source code.**
 Reconstructing ETABS's full 12×12 membrane matrix by flexibility (10 geometries)
 showed the pure-membrane block `K_uu` matching at **0.00 %** while `K_uθ` was off
 by 223–434 %: a different *shape*, not a different constant — so no choice of

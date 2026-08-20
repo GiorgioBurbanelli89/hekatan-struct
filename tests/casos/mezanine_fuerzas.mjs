@@ -49,7 +49,15 @@ const LIMITES = {
   // 1.5 / 0.6), asi que ETABS hace las dos cosas a la vez y todavia no se sabe
   // como. Mientras no se sepa, se prefiere la formulacion que SI pasa el patch
   // test, y este limite lo paga.
-  P:  [0.80, 4.00],
+  // P bajado de [0.80, 4.00] a [0.40, 1.50] el 19-ago-2026 con el defecto en el
+  // `drillingTypes = 8`: sale 0.302/1.148, mejor incluso que el Hughes-Brezzi
+  // viejo (0.30/1.15) y sin perder el patch test, que aquel no pasaba.
+  //
+  //     Hughes-Brezzi 0.05   P 0.30 / 1.15   (pero patch test -6.34 %)
+  //     ITW 1990 3x3         P 0.62 / 3.47
+  //     ITW 2x2              P 1.07 / 12.48  (descartado: mete un mecanismo)
+  //     PROYECCION (hoy)     P 0.30 / 1.15   <- y patch test EXACTO
+  P:  [0.40, 1.50],
   V2: [2.10, 3.10],
   V3: [0.05, 0.55],
   T:  [0.55, 3.20],

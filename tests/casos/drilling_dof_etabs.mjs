@@ -28,7 +28,14 @@
 import { empaquetar, R } from "../lib/bundle.mjs";
 
 const ETABS_UX = 5.359904e-4;   // m, ETABS 22.6.0, caso Dead
-const LIMITE = 15;              // %
+// Bajado de 15 % a 4 % el 19-ago-2026, al pasar el defecto al `drillingTypes = 8`
+// (la proyeccion del drilling). Hoy sale 3.086 %.
+//
+// El limite estaba HOLGADO a proposito mientras no se sabia como bajar el error
+// (venia de +11.46 % con Hughes-Brezzi y +5.45 % con el ITW 1990). Ahora que se
+// sabe, dejarlo en 15 % seria peor que no tenerlo: una regresion al 10 % pasaria
+// en verde. Un limite solo vigila si esta cerca de lo medido.
+const LIMITE = 4;               // %
 
 const FUENTE = `
 const g = globalThis; g.window = g;
