@@ -50,18 +50,31 @@ def _imprime(K, fmt="%.12e"):
         print(" ".join(fmt % v for v in fila))
 
 
+# El nombre bonito de cada formulacion y el `drillingTypes` que le corresponde
+# en los DOS motores. Hablar por numero es lo que evita que el CLI y el C++ se
+# separen: el numero es el que viaja en `elementInputs`.
+FORMULACIONES = {"itw1990": 3, "itw1991": 7, "proyeccion": 8, "proy1991": 9}
+
+
 def _kw(a):
     """Los argumentos comunes -> los del elemento.
 
     `--formulacion` es lo que elige QUE PAPER se esta ejecutando, y es el unico
     argumento que de verdad cambia el resultado contra ETABS.
+
+    ⚠️ Los parametros NO se arman aqui: se piden a `kwargs_drilling`, la unica
+    tabla. Cuando se armaban aqui a mano, al cambiar el defecto del elemento a
+    la proyeccion, `--formulacion itw1990` habria pasado a ejecutar la
+    proyeccion por lo bajo — el CLI diciendo 1990 y calculando otra cosa.
     """
-    kw = dict(gamma_fac=a.gamma, n_gauss=a.gauss)
-    f = getattr(a, "formulacion", "itw1990")
-    if f in ("itw1991", "proy1991"):
-        kw.update(regla="itw8", con_burbuja=False, w_alpha=a.wa)
-    if f in ("proyeccion", "proy1991"):
-        kw["proyectar_drilling"] = True
+    from .elements.membrane_itw import kwargs_drilling
+    f = getattr(a, "formulacion", "proyeccion")
+    kw = kwargs_drilling(FORMULACIONES[f])
+    kw.update(gamma_fac=a.gamma)
+    if a.gauss != 3:                 # solo si se pide a mano; el defecto es 3
+        kw["n_gauss"] = a.gauss
+    if kw.get("regla") == "itw8":
+        kw["w_alpha"] = a.wa
     return kw
 
 
@@ -139,13 +152,14 @@ def main(argv=None):
                            help="gamma/mu del ITW (0.4 = lo medido de ETABS)")
             q.add_argument("--gauss", type=int, default=3, choices=(2, 3),
                            help="puntos de Gauss por lado (el ITW 1990 usa 3)")
-            q.add_argument("--formulacion", default="itw1990",
+            q.add_argument("--formulacion", default="proyeccion",
                            choices=("itw1990", "itw1991", "proyeccion", "proy1991"),
-                           help="itw1990 = Allman + burbuja, Gauss 3x3 (defecto) | "
-                                "itw1991 = la regla de OCHO puntos, ec. (30) | "
-                                "proyeccion = + la proyeccion del drilling de FEAP "
-                                "(la que cierra la matriz de ETABS al 1.42 %) | "
-                                "proy1991 = las dos (la mejor en cascara curva)")
+                           help="proyeccion = drillingTypes 8, Gauss 3x3 + la "
+                                "proyeccion de FEAP; el DEFECTO, y el que cierra "
+                                "la matriz de ETABS al 1.42 % | "
+                                "itw1990 = tipo 3, Allman + burbuja | "
+                                "itw1991 = tipo 7, la regla de OCHO puntos, ec. (30) | "
+                                "proy1991 = tipo 9, las dos (la mejor en cascara curva)")
             q.add_argument("--wa", type=float, default=0.99,
                            help="W_alpha de la ec. (30) del ITW 1991")
 

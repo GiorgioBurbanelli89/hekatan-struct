@@ -179,12 +179,67 @@ def _serendipity(rr: float, ss: float):
     return nsr, nss
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# UNA SOLA TABLA tipo -> parametros
+# ═══════════════════════════════════════════════════════════════════════════
+# `drillingTypes` es un numero que viaja en `elementInputs` y que leen los DOS
+# motores. En `shellQ4.cpp` cada tipo se traduce a cuatro banderas sueltas
+# (`ngITW`, `taylorITW`, `khgITW`, `waITW`, `proyITW`) escritas a mano. Si aqui
+# se traduce tambien a mano, los dos se separan en cuanto alguien toca uno —
+# que es exactamente lo que paso el 19-ago: el C++ movio su defecto al 8 y el
+# Python se quedo en el 3, dando numeros distintos sin un solo aviso.
+#
+# Aqui la traduccion esta en UN sitio. Lo que consuma un tipo (el elemento de
+# cascara, el CLI, un test) pide `kwargs_drilling(tipo)` y no interpreta nada.
+_DRILLING = {
+    # 3 = ITW 1990: Allman + burbuja, Gauss 3x3. Fue el defecto hasta el 19-ago
+    3: dict(regla="gauss", n_gauss=3, con_burbuja=True, proyectar_drilling=False),
+    # 4 = el mismo con Gauss 2x2. NO USAR: deja CUATRO modos nulos (mecanismo)
+    4: dict(regla="gauss", n_gauss=2, con_burbuja=True, proyectar_drilling=False),
+    # 7 = ITW 1991: la regla de OCHO puntos de su ec. (30), SIN burbuja (el
+    #     paper de 1991 no la tiene). Es el que cita el manual de CSI
+    7: dict(regla="itw8", n_gauss=3, con_burbuja=False, w_alpha=0.99,
+            proyectar_drilling=False),
+    # 8 = la via de FEAP/Taylor: Gauss 3x3 + PROYECCION del drilling.  DEFECTO
+    #     Reproduce la 12x12 medida de ETABS al 1.42 % (el 3 daba 15.97 %)
+    8: dict(regla="gauss", n_gauss=3, con_burbuja=True, proyectar_drilling=True),
+    # 9 = las dos cosas. La mejor en cascara CURVA (hemisferio 8x8: -0.50 %)
+    9: dict(regla="itw8", n_gauss=3, con_burbuja=False, w_alpha=0.99,
+            proyectar_drilling=True),
+}
+
+# El defecto, y en un solo sitio. Es el mismo numero que
+# `getMapVal(elementInputs.drillingTypes, index, 8)` de `shellQ4.cpp`.
+TIPO_DRILLING_DEFECTO = 8
+
+# Los tipos que van por el elemento ITW (los otros son el Q4 clasico con la
+# penalizacion pegada aparte). Mismo rango que `usaITW` en el C++.
+TIPOS_ITW = (3, 4, 5, 6, 7, 8, 9)
+
+
+def kwargs_drilling(tipo: int) -> dict:
+    """Los parametros de `k_membrana_itw` que corresponden a un `drillingTypes`.
+
+    ⚠️ Los tipos **5** (burbuja a la Taylor) y **6** (estabilizacion hourglass)
+    existen en el C++ y NO estan portados: se pide el 5 o el 6 y salta un error
+    en vez de devolver el 3 por lo bajo. Devolver otra formulacion callando es
+    justo lo que hizo falta un dia entero para descubrir.
+    """
+    if tipo not in _DRILLING:
+        raise ValueError(
+            f"drillingTypes = {tipo} no esta portado a Python "
+            f"(hay {sorted(_DRILLING)}); en el C++ el 5 es la burbuja de Taylor "
+            "y el 6 la estabilizacion hourglass"
+        )
+    return dict(_DRILLING[tipo])
+
+
 def k_membrana_itw(pts, E: float, nu: float, t: float,
                    gamma_fac: float = 0.4, n_gauss: int = 3,
                    con_burbuja: bool = True, con_penal: bool = True,
                    mod_dir=None, regla: str = "gauss",
                    w_alpha: float = 0.99, penal_full: bool = False,
-                   proyectar_drilling: bool = False,
+                   proyectar_drilling: bool = True,
                    penal_integrada: bool = False,
                    theta_relativo: bool = False) -> np.ndarray:
     # NOTA sobre `penal_full`: ver el aviso al final del docstring. NO USAR.
@@ -192,6 +247,11 @@ def k_membrana_itw(pts, E: float, nu: float, t: float,
 
     `pts` son los cuatro `(x, y)` EN EL PLANO DEL ELEMENTO, antihorarios.
     `gamma_fac` es `gamma/mu`; el defecto 0.4 es lo medido de ETABS.
+
+    ⚠️ **El defecto es el `drillingTypes = 8`** — Gauss 3x3 CON la proyeccion.
+    Es el mismo defecto que `shellQ4.cpp`, y por eso `proyectar_drilling` vale
+    `True` de fabrica desde el 19-ago-2026. Para el 1990 puro hay que pedirlo
+    (`proyectar_drilling=False`), o mejor: `**kwargs_drilling(3)`.
 
     `regla` elige QUE PAPER se integra:
 

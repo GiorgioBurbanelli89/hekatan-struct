@@ -25,7 +25,12 @@ import math
 
 import numpy as np
 
-from .membrane_itw import k_membrana_itw
+from .membrane_itw import (
+    TIPO_DRILLING_DEFECTO,
+    TIPOS_ITW,
+    k_membrana_itw,
+    kwargs_drilling,
+)
 
 
 # Parametros de la formulacion. Se dejan como variables de modulo para poder
@@ -298,7 +303,7 @@ for _n in range(4):
 def shell_q4_motor(coords_xy, E, nu, t, *, alpha_drilling=None,
                    giros_del_ts=False, solo_membrana=False,
                    mod_membrana=1.0, mod_flexion=1.0, mod_dir=None,
-                   tipo_drilling=3):
+                   tipo_drilling=TIPO_DRILLING_DEFECTO):
     """K local 24×24 del Q4 del motor. `coords_xy` = (4,2) EN EL PLANO del paño.
 
     `giros_del_ts=True` reproduce el convenio de giros de `shellQ4.ts` tal cual
@@ -341,15 +346,25 @@ def shell_q4_motor(coords_xy, E, nu, t, *, alpha_drilling=None,
     else:
         sin_flexion = abs(fb) < 1e-9
 
-    # tipo_drilling 3 = membrana ITW 1990 (membrana y drilling en la MISMA
-    # 12x12, sin penalizacion pegada aparte). Es el defecto, igual que en
-    # `shellQ4.cpp`. El 2 es el camino anterior: Q4 con modos incompatibles de
-    # Wilson + penalizacion Hughes-Brezzi, y se conserva porque en cascara
+    # Los tipos 3..9 van por el elemento ITW, que trae membrana y drilling en la
+    # MISMA 12x12 (`[u, v, theta_z]` por nudo) y no lleva penalizacion pegada
+    # aparte. El defecto es el **8**: Gauss 3x3 + la PROYECCION de FEAP, el
+    # mismo numero que `getMapVal(elementInputs.drillingTypes, index, 8)` de
+    # `shellQ4.cpp`.
+    #
+    # ⚠️ Hasta el 19-ago aqui ponia `if tipo_drilling == 3` y el comentario
+    # decia «es el defecto, igual que en shellQ4.cpp». Dejo de ser verdad en
+    # cuanto el C++ movio el suyo, y los dos motores estuvieron dando numeros
+    # distintos sin un solo aviso. Por eso el tipo ya no se interpreta aqui:
+    # se pregunta a `kwargs_drilling`, que es la unica tabla.
+    #
+    # El 2 (y el 0 y el 1) son el camino anterior: Q4 con modos incompatibles
+    # de Wilson + penalizacion Hughes-Brezzi. Se conserva porque en cascara
     # CURVA el ITW bloquea en malla gruesa (ver membrane_itw.py).
-    if tipo_drilling == 3:
+    if tipo_drilling in TIPOS_ITW:
         K[np.ix_(DOF_DRI, DOF_DRI)] += fm * k_membrana_itw(
             [(x[i], y[i]) for i in range(4)], E, nu, t, gamma_fac=GAMMA_ITW,
-            mod_dir=mod_dir)
+            mod_dir=mod_dir, **kwargs_drilling(tipo_drilling))
     else:
         K[np.ix_(DOF_MEM, DOF_MEM)] += fm * _k_membrana(x, y, E, nu, t, mod_dir)
     if not solo_membrana and not sin_flexion:
@@ -361,6 +376,6 @@ def shell_q4_motor(coords_xy, E, nu, t, *, alpha_drilling=None,
     # `shellQ4.cpp` (`K += mFactor * getDrillingK_HughesBrezzi(...)`): si la
     # membrana no existe, su θz tampoco tiene que aportar rigidez. Solo se nota
     # con el `shellmod` ESCALAR — con los direccionales mFactor vale 1.
-    if tipo_drilling != 3:
+    if tipo_drilling not in TIPOS_ITW:
         K[np.ix_(DOF_DRI, DOF_DRI)] += fm * _k_drilling(x, y, G, t, al)
     return K

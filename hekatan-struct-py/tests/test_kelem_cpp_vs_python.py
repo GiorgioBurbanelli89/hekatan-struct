@@ -23,7 +23,11 @@ import subprocess
 import numpy as np
 import pytest
 
-from hekatan_struct.elements.membrane_itw import k_membrana_itw
+from hekatan_struct.elements.membrane_itw import (
+    TIPO_DRILLING_DEFECTO,
+    k_membrana_itw,
+    kwargs_drilling,
+)
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 EXE = os.path.abspath(os.path.join(AQUI, "..", "..", "cli", "native", "kelem_native.exe"))
@@ -58,12 +62,54 @@ def _k_nativa(pts, E, nu, t, tipo_drill=3, gamma=0.4):
                     reason="falta cli/native/kelem_native.exe (bash cli/native/build_kelem_native.sh)")
 @pytest.mark.parametrize("nombre,pts", GEOMETRIAS)
 def test_membrana_cpp_nativo_igual_que_python(nombre, pts):
-    """El bloque [u, v, theta_z] tiene que coincidir hasta el ruido de coma flotante."""
+    """El tipo 3 (ITW 1990). Se PIDE explicitamente, ya no es el defecto.
+
+    Hasta el 19-ago los dos lados llamaban sin argumentos y coincidian porque
+    los dos tenian el 3 de fabrica. Cuando el C++ movio su defecto al 8, este
+    test seguia comparando 3 contra 3 sin enterarse de que el producto ya no
+    calculaba eso. El tipo se escribe en los dos lados, siempre.
+    """
     E, nu, t = 2.2e7, 0.2, 0.20
-    Kc = _k_nativa(pts, E, nu, t)[np.ix_(GDL_MEMBRANA, GDL_MEMBRANA)]
-    Kp = k_membrana_itw(pts, E, nu, t, gamma_fac=0.4)
+    Kc = _k_nativa(pts, E, nu, t, tipo_drill=3)[np.ix_(GDL_MEMBRANA, GDL_MEMBRANA)]
+    Kp = k_membrana_itw(pts, E, nu, t, gamma_fac=0.4, **kwargs_drilling(3))
     rel = np.linalg.norm(Kc - Kp) / np.linalg.norm(Kp)
     assert rel < 1e-10, f"{nombre}: C++ y Python difieren {rel*100:.3e} %"
+
+
+@pytest.mark.skipif(not os.path.exists(EXE), reason="falta kelem_native.exe")
+@pytest.mark.parametrize("tipo", [3, 7, 8, 9])
+@pytest.mark.parametrize("nombre,pts", GEOMETRIAS)
+def test_los_cuatro_tipos_de_drilling_coinciden_termino_a_termino(tipo, nombre, pts):
+    """Los 4 tipos portados, cada uno contra el binario. 16 comparaciones.
+
+    Uno solo no basta: el 19-ago el Python reproducia el 3 al 1e-14 y aun asi
+    daba numeros distintos del producto, porque el producto ya iba por el 8.
+    Fijar los CUATRO es lo que hace imposible volver a desincronizarse por un
+    lado sin que salte.
+    """
+    E, nu, t = 2.2e7, 0.2, 0.20
+    Kc = _k_nativa(pts, E, nu, t, tipo_drill=tipo)[np.ix_(GDL_MEMBRANA, GDL_MEMBRANA)]
+    Kp = k_membrana_itw(pts, E, nu, t, gamma_fac=0.4, **kwargs_drilling(tipo))
+    rel = np.linalg.norm(Kc - Kp) / np.linalg.norm(Kp)
+    assert rel < 1e-10, f"tipo {tipo} / {nombre}: difieren {rel*100:.3e} %"
+
+
+@pytest.mark.skipif(not os.path.exists(EXE), reason="falta kelem_native.exe")
+def test_el_defecto_de_python_es_el_defecto_del_cpp():
+    """El defecto SIN argumentos de los dos lados tiene que dar lo mismo.
+
+    Es el test que faltaba. Los tests por tipo pasaban todos y aun asi los dos
+    motores daban numeros distintos: nadie comparaba lo que sale cuando NO se
+    pide nada, que es como los llama el 99 % del codigo.
+    """
+    assert TIPO_DRILLING_DEFECTO == 8, "el defecto del C++ es 8 (shellQ4.cpp)"
+    E, nu, t = 2.2e7, 0.2, 0.20
+    pts = [(0, 0), (2, 0), (1.5, 1), (0.25, 1)]
+    Kc = _k_nativa(pts, E, nu, t, tipo_drill=TIPO_DRILLING_DEFECTO)
+    Kc = Kc[np.ix_(GDL_MEMBRANA, GDL_MEMBRANA)]
+    Kp = k_membrana_itw(pts, E, nu, t, gamma_fac=0.4)      # SIN argumentos
+    rel = np.linalg.norm(Kc - Kp) / np.linalg.norm(Kp)
+    assert rel < 1e-10, f"el defecto de Python no es el del C++: {rel*100:.3e} %"
 
 
 @pytest.mark.skipif(not os.path.exists(EXE), reason="falta kelem_native.exe")
@@ -108,7 +154,7 @@ def test_la_regla_de_ocho_puntos_del_1991_es_la_misma_en_cpp_y_en_python(nombre,
     """
     E, nu, t = 2.2e7, 0.2, 0.20
     Kc = _k_nativa(pts, E, nu, t, tipo_drill=7)[np.ix_(GDL_MEMBRANA, GDL_MEMBRANA)]
-    Kp = k_membrana_itw(pts, E, nu, t, gamma_fac=0.4, **ITW8)
+    Kp = k_membrana_itw(pts, E, nu, t, gamma_fac=0.4, **kwargs_drilling(7))
     rel = np.linalg.norm(Kc - Kp) / np.linalg.norm(Kp)
     assert rel < 1e-10, f"{nombre}: C++ y Python difieren {rel*100:.3e} %"
 
