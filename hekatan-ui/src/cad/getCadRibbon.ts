@@ -582,6 +582,17 @@ export function addCadRibbon(host: HTMLElement, hooks: RibbonHooks): HTMLElement
   }
   bPlegar.addEventListener("click", () => plegar(true));
   bAbrir.addEventListener("click", () => plegar(false));
+
+  // El workspace cambia de ejemplo por el DESPLEGABLE, sin tocar la URL. Asi
+  // que el defecto no puede decidirse una sola vez al montar mirando
+  // `?t=`: hay que poder re-decidirlo en cada carga. Esto es lo que llama.
+  //   window.__hekatanRibbonDefecto(true)   -> plegada, salvo que el usuario ya
+  //                                            haya elegido lo contrario
+  (window as any).__hekatanRibbonDefecto = (v: boolean) => {
+    try { if (localStorage.getItem(LS) !== null) return; } catch {}
+    plegar(!!v, false);
+  };
+  (window as any).__hekatanRibbonPlegar = (v: boolean) => plegar(!!v);
   // Ctrl+` — el mismo atajo en los dos sentidos, que es como se espera de un
   // panel que se pliega.
   window.addEventListener("keydown", (e) => {

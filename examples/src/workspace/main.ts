@@ -450,6 +450,11 @@ function captureFolderExpandedState() {
 
 function loadExample(ex: ExampleDef) {
   currentExample = ex;
+  // La barra de dibujo se pliega o se abre segun QUE se acaba de cargar. Va
+  // aqui y no en el montaje porque el selector cambia de ejemplo sin tocar la
+  // URL: decidirlo una sola vez al arrancar dejaba la barra abierta para
+  // siempre en cuanto se entraba por `/workspace/` a secas.
+  try { (window as any).__hekatanRibbonDefecto?.(ribbonPlegadaPara(ex.id)); } catch {}
   // Nuevo ejemplo cargado: permitir auto-fit inicial.
   userCameraInteracted = false;
   // Reset estado de folders (cada ejemplo tiene su propio layout).
@@ -1140,6 +1145,23 @@ function rebuild() {
     }
   }
   currentPane?.refresh();
+}
+
+/**
+ * ¿La barra de dibujo arranca PLEGADA con este ejemplo?
+ *
+ * Plegada en todo lo que sea un modelo ya resuelto —que es casi el catálogo
+ * entero— y abierta solo en los lienzos donde se viene a DIBUJAR, porque ahí la
+ * barra es lo único de la pantalla que dice qué hacer.
+ *
+ * ⚠️ Se llama en CADA carga de ejemplo, no una vez al arrancar. El selector
+ * cambia de ejemplo **sin tocar la URL**, así que decidirlo mirando `?t=` deja
+ * la barra abierta para siempre en cuanto se entra por `/workspace/` a secas y
+ * luego se elige del desplegable — que es justo como se entra normalmente.
+ */
+function ribbonPlegadaPara(id?: string | null): boolean {
+  const dibujar = ["new-blank", "cad-draw", "cad-editor", "inicio", "drawing"];
+  return !!id && !dibujar.includes(id);
 }
 
 // Expose rebuild + autoFitCamera al window para test/debug via DOM
@@ -3445,15 +3467,8 @@ function buildParamsPane() {
     if (new URLSearchParams(location.search).get("ribbon") !== "0"
         && !document.getElementById("hk-ribbon")) {
       const host = (viewerElm.parentElement ?? viewerElm) as HTMLElement;
-      // Plegada por defecto SI se entra a un ejemplo (`?t=<id>`), abierta si se
-      // entra al lienzo en blanco. En un ejemplo ya resuelto se viene a mirar y
-      // la barra tapa el modelo; en blanco es lo único que dice qué hacer.
-      // El usuario manda por encima de esto: su elección se recuerda.
-      const _t = new URLSearchParams(location.search).get("t");
-      const enBlanco = !_t || _t === "new-blank" || _t === "cad-draw"
-                    || _t === "cad-editor" || _t === "inicio";
       addCadRibbon(host, {
-        plegadoPorDefecto: !enBlanco,
+        plegadoPorDefecto: ribbonPlegadaPara(currentExample?.id),
         setTool: (t) => {
           try { (window as any).__hekatanCadState?.setTool?.(t); } catch {}
           try { (window as any).__hekatanCadResetPending?.(); } catch {}
