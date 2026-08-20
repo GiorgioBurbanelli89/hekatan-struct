@@ -14,7 +14,7 @@ let __tla = Promise.all([
     sigma_min_servicio_tm2: 9.901
   }, le = {
     manual_libro: ae
-  }, u = 9.80665, ce = 1 / u;
+  }, M = 9.80665, ce = 1 / M;
   function G(t, a, d, s) {
     const l = new ee(s, s, d), _ = new ne(new oe(l), new te({
       color: 11579568,
@@ -182,24 +182,24 @@ let __tla = Promise.all([
       }
     },
     build(t, a) {
-      const d = t.L, s = t.B, l = t.h, _ = Math.round(t.nx), M = Math.round(t.ny), c = _ + 1, x = M + 1, r = d / _, m = s / M, p = (t.P_dead_c1 + t.P_live_c1) * u, S = (t.M_dead_c1 + t.M_live_c1) * u, $ = (t.P_dead_c2 + t.P_live_c2) * u, K = (t.M_dead_c2 + t.M_live_c2) * u, k = t.ks_tm3 * u, C = 14100 * Math.sqrt(t.fc_kgcm2) * 98.0665, E = 0.2, b = [];
+      const d = t.L, s = t.B, l = t.h, _ = Math.round(t.nx), r = Math.round(t.ny), c = _ + 1, x = r + 1, f = d / _, m = s / r, p = (t.P_dead_c1 + t.P_live_c1) * M, S = (t.M_dead_c1 + t.M_live_c1) * M, $ = (t.P_dead_c2 + t.P_live_c2) * M, K = (t.M_dead_c2 + t.M_live_c2) * M, k = t.ks_tm3 * M, C = 14100 * Math.sqrt(t.fc_kgcm2) * 98.0665, E = 0.2, b = [];
       for (let e = 0; e < x; ++e) for (let n = 0; n < c; ++n) b.push([
-        n * r,
+        n * f,
         e * m
       ]);
-      const f = [];
-      for (let e = 0; e < M; ++e) for (let n = 0; n < _; ++n) {
+      const u = [];
+      for (let e = 0; e < r; ++e) for (let n = 0; n < _; ++n) {
         const o = e * c + n;
-        f.push([
+        u.push([
           o,
           o + 1,
           o + c + 1,
           o + c
         ]);
       }
-      const Z = 2.4 * u * l, y = [], I = [];
+      const Z = 2.4 * M * l, y = [], I = [];
       for (let e = 0; e < x; ++e) for (let n = 0; n < c; ++n) {
-        const o = n === 0 || n === c - 1, i = e === 0 || e === x - 1, v = o && i ? 0.25 : o || i ? 0.5 : 1, X = r * m * v, g = e * c + n;
+        const o = n === 0 || n === c - 1, i = e === 0 || e === x - 1, v = o && i ? 0.25 : o || i ? 0.5 : 1, X = f * m * v, g = e * c + n;
         if (y.push({
           node: g,
           dof: 0,
@@ -209,7 +209,7 @@ let __tla = Promise.all([
           dof: 0,
           value: -Z * X
         }), o && i) {
-          const Y = 1e-6 * k * r * m;
+          const Y = 1e-6 * k * f * m;
           y.push({
             node: g,
             dof: 1,
@@ -257,12 +257,12 @@ let __tla = Promise.all([
         theoryType: 0,
         bcType: "none",
         nodes: b,
-        elements: f,
+        elements: u,
         bcs: [],
         pointLoads: V,
         springs: y
       }), B = /* @__PURE__ */ new Map(), F = /* @__PURE__ */ new Map(), O = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map(), A = /* @__PURE__ */ new Map();
-      f.forEach((e, n) => {
+      u.forEach((e, n) => {
         B.set(n, e.map((v) => -Math.abs(k * N.nodeResults[v].w)));
         const o = N.elementResults[n];
         F.set(n, [
@@ -294,7 +294,7 @@ let __tla = Promise.all([
         e[1],
         0
       ]);
-      a.nodes.val = W, a.elements.val = f;
+      a.nodes.val = W, a.elements.val = u;
       const z = /* @__PURE__ */ new Map(), U = [
         2,
         3,
@@ -315,15 +315,15 @@ let __tla = Promise.all([
         supports: /* @__PURE__ */ new Map(),
         loads: z
       }, a.elementInputs.val = {
-        elasticities: new Map(f.map((e, n) => [
+        elasticities: new Map(u.map((e, n) => [
           n,
           C
         ])),
-        poissonsRatios: new Map(f.map((e, n) => [
+        poissonsRatios: new Map(u.map((e, n) => [
           n,
           E
         ])),
-        thicknesses: new Map(f.map((e, n) => [
+        thicknesses: new Map(u.map((e, n) => [
           n,
           l
         ]))
@@ -353,18 +353,18 @@ let __tla = Promise.all([
       var _a, _b;
       const d = a.analyzeOutputs.val.pressure;
       let s = -1 / 0, l = 1 / 0;
-      if (d) for (const r of d.values()) for (const m of r) {
+      if (d) for (const f of d.values()) for (const m of f) {
         const p = Math.abs(m) * ce;
         p > s && (s = p), p < l && (l = p);
       }
       s === -1 / 0 && (s = 0, l = 0);
-      const _ = le, M = (_a = _ == null ? void 0 : _.manual_libro) == null ? void 0 : _a.sigma_max_servicio_tm2, c = (_b = _ == null ? void 0 : _.manual_libro) == null ? void 0 : _b.sigma_min_servicio_tm2, x = (r, m) => m === void 0 || m === 0 ? "\u2014" : `${((r - m) / m * 100).toFixed(2)} %`;
+      const _ = le, r = (_a = _ == null ? void 0 : _.manual_libro) == null ? void 0 : _a.sigma_max_servicio_tm2, c = (_b = _ == null ? void 0 : _.manual_libro) == null ? void 0 : _b.sigma_min_servicio_tm2, x = (f, m) => m === void 0 || m === 0 ? "\u2014" : `${((f - m) / m * 100).toFixed(2)} %`;
       return {
         "\u{1F4CA} \u03C3_max Hekatan": `${s.toFixed(3)} t/m\xB2`,
         "\u{1F4CA} \u03C3_min Hekatan": `${l.toFixed(3)} t/m\xB2`,
-        "\u{1F4D8} \u03C3_max libro p.76": `${M.toFixed(3)} t/m\xB2`,
-        "\u{1F4D8} \u03C3_min libro p.76": `${c.toFixed(3)} t/m\xB2`,
-        "\u0394 \u03C3_max vs libro": x(s, M),
+        "\u{1F4D8} \u03C3_max libro p.76": r ? `${r.toFixed(3)} t/m\xB2` : "\u2014",
+        "\u{1F4D8} \u03C3_min libro p.76": c ? `${c.toFixed(3)} t/m\xB2` : "\u2014",
+        "\u0394 \u03C3_max vs libro": x(s, r),
         "\u0394 \u03C3_min vs libro": x(l, c)
       };
     }

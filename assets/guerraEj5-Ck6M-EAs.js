@@ -187,11 +187,11 @@ let __tla = Promise.all([
       }
     },
     build(t, c) {
-      const i = t.L, s = t.B1, m = t.B2, _ = Math.max(s, m), M = t.h, p = Math.round(t.nx), x = Math.round(t.ny), a = p + 1, C = x + 1, b = i / p, y = _ / x, K = (t.P_D_C1 + t.P_L_C1) * d, q = (t.M_D_C1 + t.M_L_C1) * d, H = (t.P_D_C2 + t.P_L_C2) * d, $ = (t.M_D_C2 + t.M_L_C2) * d, w = t.ks_tm3 * d, B = 14100 * Math.sqrt(t.fc_kgcm2) * 98.0665, E = 0.2, J = (e) => (s + (m - s) * (e / i)) / 2, Q = (e, n) => {
+      const i = t.L, s = t.B1, m = t.B2, _ = Math.max(s, m), r = t.h, p = Math.round(t.nx), x = Math.round(t.ny), a = p + 1, C = x + 1, b = i / p, y = _ / x, K = (t.P_D_C1 + t.P_L_C1) * d, q = (t.M_D_C1 + t.M_L_C1) * d, H = (t.P_D_C2 + t.P_L_C2) * d, $ = (t.M_D_C2 + t.M_L_C2) * d, w = t.ks_tm3 * d, B = 14100 * Math.sqrt(t.fc_kgcm2) * 98.0665, E = 0.2, J = (e) => (s + (m - s) * (e / i)) / 2, Q = (e, n) => {
         const o = J(e), l = _ / 2;
         return Math.abs(n - l) <= o + 1e-6;
-      }, r = [];
-      for (let e = 0; e < C; ++e) for (let n = 0; n < a; ++n) r.push([
+      }, u = [];
+      for (let e = 0; e < C; ++e) for (let n = 0; n < a; ++n) u.push([
         n * b,
         e * y
       ]);
@@ -205,7 +205,7 @@ let __tla = Promise.all([
           o + a
         ]);
       }
-      const U = 2.4 * d * M, g = [], T = [];
+      const U = 2.4 * d * r, g = [], T = [];
       for (let e = 0; e < C; ++e) for (let n = 0; n < a; ++n) {
         const o = n === 0 || n === a - 1, l = e === 0 || e === C - 1, h = o && l ? 0.25 : o || l ? 0.5 : 1, Y = b * y * h, v = e * a + n, ne = n * b, oe = e * y, G = Q(ne, oe), te = G ? w * Y : 0;
         if (g.push({
@@ -231,19 +231,19 @@ let __tla = Promise.all([
       }
       const P = _ / 2, j = (e) => {
         const n = [];
-        for (let o = 0; o < r.length; o++) {
-          const l = r[o][0], h = r[o][1];
+        for (let o = 0; o < u.length; o++) {
+          const l = u[o][0], h = u[o][1];
           Math.abs(l - e) <= t.col_size / 2 + 1e-6 && Math.abs(h - P) <= t.col_size / 2 + 1e-6 && n.push(o);
         }
         return n;
-      }, L = j(t.col1_x), k = j(t.col2_x), u = [];
+      }, L = j(t.col1_x), k = j(t.col2_x), M = [];
       if (L.length > 0) {
         const e = K / L.length, n = q / L.length;
-        for (const o of L) u.push({
+        for (const o of L) M.push({
           node: o,
           dof: 0,
           value: -e
-        }), u.push({
+        }), M.push({
           node: o,
           dof: 1,
           value: n
@@ -251,26 +251,26 @@ let __tla = Promise.all([
       }
       if (k.length > 0) {
         const e = H / k.length, n = $ / k.length;
-        for (const o of k) u.push({
+        for (const o of k) M.push({
           node: o,
           dof: 0,
           value: -e
-        }), u.push({
+        }), M.push({
           node: o,
           dof: 1,
           value: n
         });
       }
       const V = [
-        ...u,
+        ...M,
         ...T
       ], D = me({
         E: B,
         nu: E,
-        thickness: M,
+        thickness: r,
         theoryType: 0,
         bcType: "none",
-        nodes: r,
+        nodes: u,
         elements: f,
         bcs: [],
         pointLoads: V,
@@ -303,7 +303,7 @@ let __tla = Promise.all([
           l
         ]);
       });
-      const W = r.map((e) => [
+      const W = u.map((e) => [
         e[0],
         e[1],
         0
@@ -314,7 +314,7 @@ let __tla = Promise.all([
         3,
         4
       ];
-      for (const e of u) {
+      for (const e of M) {
         const n = N.get(e.node) ?? [
           0,
           0,
@@ -339,7 +339,7 @@ let __tla = Promise.all([
         ])),
         thicknesses: new Map(f.map((e, n) => [
           n,
-          M
+          r
         ]))
       };
       const X = /* @__PURE__ */ new Map();
@@ -372,11 +372,11 @@ let __tla = Promise.all([
         a > s && (s = a), a < m && (m = a);
       }
       s === -1 / 0 && (s = 0, m = 0);
-      const M = (_a = _e == null ? void 0 : _e.manual_libro) == null ? void 0 : _a.sigma_uniforme_tm2;
+      const r = (_a = _e == null ? void 0 : _e.manual_libro) == null ? void 0 : _a.sigma_uniforme_tm2;
       return {
         "\u{1F4CA} \u03C3_max Hekatan": `${s.toFixed(3)} t/m\xB2`,
         "\u{1F4CA} \u03C3_min Hekatan": `${m.toFixed(3)} t/m\xB2`,
-        "\u{1F4D8} \u03C3 uniforme libro p.95": `${M.toFixed(2)} t/m\xB2`,
+        "\u{1F4D8} \u03C3 uniforme libro p.95": r ? `${r.toFixed(2)} t/m\xB2` : "\u2014",
         "\u26A0\uFE0F Trapezoidal": "Geometria aproximada con mesh rect + mask"
       };
     }

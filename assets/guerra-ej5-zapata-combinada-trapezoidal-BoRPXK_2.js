@@ -1,11 +1,10 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { g as r, __tla as __tla_0 } from "./guerraEj2-CrTy8RcF.js";
-import { r as m, __tla as __tla_1 } from "./runExampleStandalone-lxM3Pfq0.js";
+import { g as r, __tla as __tla_0 } from "./guerraEj5-Ck6M-EAs.js";
+import { r as o, __tla as __tla_1 } from "./runExampleStandalone-lxM3Pfq0.js";
 import "./theme-Co6w-pfC.js";
 import { __tla as __tla_2 } from "./didacticCpp-Bg32IAmg.js";
 import { __tla as __tla_3 } from "./deform-CGfcN_JQ.js";
 import "./preload-helper-V2P8TQsQ.js";
-import "./cargaColumnaConsistente-DPcPMAlx.js";
 import "./tweakpane-BXg6ZhiP.js";
 import "./getViewer-Cldwtr0C.js";
 import "./Text-2W5davkr.js";
@@ -38,5 +37,5 @@ Promise.all([
     }
   })()
 ]).then(async () => {
-  m(r);
+  o(r);
 });

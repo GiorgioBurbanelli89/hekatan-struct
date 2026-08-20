@@ -20,13 +20,13 @@ let __tla = Promise.all([
   }, ae = {
     manual_libro: te
   }, b = 9.80665, se = 1 / b;
-  function le(o, a, i, s, l) {
-    const m = new V(s, l, i), r = new W(new U(m), new ee({
+  function le(o, a, r, s, l) {
+    const m = new V(s, l, r), i = new W(new U(m), new ee({
       color: 11579568,
       linewidth: 2
     }));
-    return r.position.set(o, a, i / 2), [
-      r
+    return i.position.set(o, a, r / 2), [
+      i
     ];
   }
   _e = {
@@ -174,7 +174,7 @@ let __tla = Promise.all([
       }
     },
     build(o, a) {
-      const i = o.L, s = o.B, l = o.h, m = Math.round(o.nx), r = Math.round(o.ny), c = m + 1, M = r + 1, x = i / m, p = s / r, h = Math.round(o.combo);
+      const r = o.L, s = o.B, l = o.h, m = Math.round(o.nx), i = Math.round(o.ny), c = m + 1, M = i + 1, x = r / m, p = s / i, h = Math.round(o.combo);
       let d, L;
       h === 1 ? (d = o.P_dead + o.P_live + o.P_sismo, L = o.M_dead + o.M_live + o.M_sismo) : (d = o.P_dead + o.P_live, L = o.M_dead + o.M_live);
       const $ = d * b, G = L * b, v = o.ks_tm3 * b, z = 14100 * Math.sqrt(o.fc_kgcm2) * 98.0665, j = 0.2, f = [];
@@ -183,7 +183,7 @@ let __tla = Promise.all([
         e * p
       ]);
       const _ = [];
-      for (let e = 0; e < r; ++e) for (let n = 0; n < m; ++n) {
+      for (let e = 0; e < i; ++e) for (let n = 0; n < m; ++n) {
         const t = e * c + n;
         _.push([
           t,
@@ -216,7 +216,7 @@ let __tla = Promise.all([
           });
         }
       }
-      const k = i / 2, w = s / 2, D = [];
+      const k = r / 2, w = s / 2, D = [];
       for (let e = 0; e < f.length; e++) {
         const n = f[e][0], t = f[e][1];
         Math.abs(n - k) <= o.col_x / 2 + 1e-6 && Math.abs(t - w) <= o.col_y / 2 + 1e-6 && D.push(e);
@@ -333,21 +333,21 @@ let __tla = Promise.all([
     },
     computedLabels(o, a) {
       var _a, _b, _c, _d, _e2;
-      const i = a.analyzeOutputs.val.pressure;
+      const r = a.analyzeOutputs.val.pressure;
       let s = -1 / 0, l = 1 / 0;
-      if (i) for (const p of i.values()) for (const h of p) {
+      if (r) for (const p of r.values()) for (const h of p) {
         const d = Math.abs(h) * se;
         d > s && (s = d), d < l && (l = d);
       }
       s === -1 / 0 && (s = 0, l = 0);
-      const m = ae, r = (_b = (_a = m == null ? void 0 : m.manual_libro) == null ? void 0 : _a.iteration_1) == null ? void 0 : _b.sigma_max_tm2, c = (_c = m == null ? void 0 : m.manual_libro) == null ? void 0 : _c.e_DL_m, M = (_d = m == null ? void 0 : m.manual_libro) == null ? void 0 : _d.e_DLS_m, x = (_e2 = m == null ? void 0 : m.manual_libro) == null ? void 0 : _e2.L_sobre_6_m;
+      const m = ae, i = (_b = (_a = m == null ? void 0 : m.manual_libro) == null ? void 0 : _a.iteration_1) == null ? void 0 : _b.sigma_max_tm2, c = (_c = m == null ? void 0 : m.manual_libro) == null ? void 0 : _c.e_DL_m, M = (_d = m == null ? void 0 : m.manual_libro) == null ? void 0 : _d.e_DLS_m, x = (_e2 = m == null ? void 0 : m.manual_libro) == null ? void 0 : _e2.L_sobre_6_m;
       return {
         "\u{1F4CA} \u03C3_max Hekatan": `${s.toFixed(3)} t/m\xB2`,
         "\u{1F4CA} \u03C3_min Hekatan": `${l.toFixed(3)} t/m\xB2`,
-        "\u{1F4D8} \u03C3_max iter1 (libro)": `${r.toFixed(2)} t/m\xB2 (L=3.90)`,
-        "\u{1F4D8} e (D+L) libro": `${c.toFixed(3)} m`,
-        "\u{1F4D8} e (D+L+S) libro": `${M.toFixed(3)} m`,
-        "\u{1F4D8} L/6": `${x.toFixed(3)} m`,
+        "\u{1F4D8} \u03C3_max iter1 (libro)": i ? `${i.toFixed(2)} t/m\xB2 (L=3.90)` : "\u2014",
+        "\u{1F4D8} e (D+L) libro": c ? `${c.toFixed(3)} m` : "\u2014",
+        "\u{1F4D8} e (D+L+S) libro": M ? `${M.toFixed(3)} m` : "\u2014",
+        "\u{1F4D8} L/6": x ? `${x.toFixed(3)} m` : "\u2014",
         "\u26A0\uFE0F Excentricidad": "e > L/6 \u2192 zona de despegue (libro pag.43)"
       };
     }
