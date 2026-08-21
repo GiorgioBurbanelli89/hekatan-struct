@@ -2477,31 +2477,28 @@ function showMenu() {
   //
   // Asi que aqui igual: las plantillas primero, como SUB-CATEGORIAS, y el
   // lienzo en blanco como una mas de ellas para quien de verdad quiera dibujar.
-  const PLANTILLAS: Array<[string, number | null]> = [
-    ["▦ Portico plano (2D)", 0],
-    ["🏗 Portico 3D", 1],
-    ["🧱 Portico + losa (aporte de losa)", 2],
-    ["⬚ Solo rejilla (nudos + columnas)", 3],
-    ["▭ Losa plana sobre columnas", 4],
-    ["▣ Losa con vigas de borde", 5],
-    ["📄 Lienzo en blanco (dibujar a mano)", null],
-  ];
+  // ⚠️ La lista NO se escribe aquí. Se saca de las opciones de la propia
+  // plantilla (`params.tipo.options`), porque tenerla dos veces es tenerla mal:
+  // se añadieron «dual» y «arriostrado» al desplegable del ejemplo y el menú
+  // siguió enseñando seis. Lo cazó una captura, no el compilador — dos listas
+  // paralelas no dan error, solo dejan de coincidir.
+  const exPlantilla = examplesRegistry.find((e) => e.id === "plantillas");
+  const opciones: Record<string, number> =
+    ((exPlantilla?.params as any)?.tipo?.options) ?? {};
   const fNuevo = pane.addFolder({ title: "📐 Nuevo modelo · Plantillas", expanded: true });
-  for (const [titulo, tipo] of PLANTILLAS) {
+  for (const [titulo, tipo] of Object.entries(opciones)) {
     fNuevo.addButton({ title: titulo }).on("click", () => {
-      if (tipo === null) {
-        const ex = examplesRegistry.find((e) => e.id === "new-blank");
-        if (ex) loadExample(ex);
-        return;
-      }
-      const ex = examplesRegistry.find((e) => e.id === "plantillas");
-      if (!ex) return;
-      // El tipo elegido viaja como defecto para que la plantilla arranque ya
-      // en esa tipologia; el usuario la sigue pudiendo cambiar desde el panel.
-      (ex.params as any).tipo.default = tipo;
-      loadExample(ex);
+      if (!exPlantilla) return;
+      // El tipo elegido viaja como defecto para que la plantilla arranque ya en
+      // esa tipología; el usuario la sigue pudiendo cambiar desde el panel.
+      (exPlantilla.params as any).tipo.default = tipo;
+      loadExample(exPlantilla);
     });
   }
+  fNuevo.addButton({ title: "📄 Lienzo en blanco (dibujar a mano)" }).on("click", () => {
+    const ex = examplesRegistry.find((e) => e.id === "new-blank");
+    if (ex) loadExample(ex);
+  });
   fMenu.addButton({ title: "📂 Archivo existente" }).on("click", () => {
     const ex = examplesRegistry.find((e) => e.id === "csi-importer");
     if (ex) loadExample(ex);

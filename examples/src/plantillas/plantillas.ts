@@ -360,11 +360,21 @@ export const plantillas: ExampleDef = {
     nodes.forEach((pt, i) => {
       if (Math.abs(pt[2]) < 1e-9) supports.set(i, [true, true, true, true, true, true]);
     });
-    // El pórtico plano vive en el plano X-Z: sin atar el fuera-de-plano el
-    // sistema es singular, y el fallo saldría como NaN y no como aviso.
-    if (tipo === T_PORTICO_2D)
-      for (let n = 0; n < nodes.length; n++)
-        if (!supports.has(n)) supports.set(n, [false, true, false, true, false, true]);
+    // ⚠️ Aquí el pórtico plano llevaba una atadura fuera-de-plano en TODOS los
+    // nudos, puesta «por si acaso» contra una singularidad. Sobraba y encima
+    // engañaba: el visor dibuja un marcador de apoyo por cada nudo restringido,
+    // así que el pórtico salía con un triángulo azul en cada junta y parecía
+    // apoyado entero. Lo cazó Jorge mirando la pantalla — *«¿qué es ese
+    // triángulo? ya hay nodos blancos, ¿qué es eso?»*.
+    //
+    // No hacía falta: las barras son vigas 3D con rigidez en los seis GDL y las
+    // bases están empotradas, así que el pórtico no se cae fuera de su plano.
+    // Medido: 35/35 nudos con apoyo -> 7/35, y la flecha sale IDÉNTICA
+    // (3.2266 mm) sin un solo NaN.
+    //
+    // La regla: una atadura «por si acaso» no es gratis. Cambia lo que el
+    // usuario ve y, si de verdad hiciera falta, taparía el fallo en vez de
+    // enseñarlo.
 
     // ── Cargas: la de piso, repartida donde toque ───────────────────────────
     const loads = new Map<number, [number, number, number, number, number, number]>();
