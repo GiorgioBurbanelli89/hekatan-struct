@@ -366,9 +366,16 @@ export const itwTest4: ExampleDef = {
     // Simetría, no empotramiento: el borde φ=0 está en el plano X-Z (se fija uy,
     // rx, rz) y el borde φ=90° en el plano Y-Z (se fija ux, ry, rz). El hueco de
     // 18° y el ecuador quedan LIBRES — la cáscara solo se sujeta por simetría.
+    // ⚠️ Aquí se metía una entrada con los seis GDL en `false` para TODOS los
+    // nudos. No restringe nada —el solver la ignora— pero **crea la entrada**, y
+    // el visor dibuja un marcador de apoyo por cada nudo que aparezca en el
+    // mapa: la cáscara salía con un triángulo en cada nudo y parecía sujeta
+    // entera. Un apoyo ficticio que no cambia un número y sí cambia lo que el
+    // usuario cree que está mirando.
+    //
+    // Solo van al mapa los nudos que de verdad se restringen: los dos bordes de
+    // simetría.
     const supports = new Map<number, Sup>();
-    for (let n = 0; n < nodes.length; n++)
-      supports.set(n, [false, false, false, false, false, false]);
     for (let j = 0; j <= nb; j++) {
       supports.set(j * (na + 1) + 0,  [false, true, false, true, false, true]);
       supports.set(j * (na + 1) + na, [true, false, false, false, true, true]);

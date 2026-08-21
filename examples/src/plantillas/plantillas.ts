@@ -140,19 +140,40 @@ const PARAMS = {
   bdiag: { default: 0.15, min: 0.05, max: 0.4, step: 0.01, label: "diagonal, lado (m)", folder: "🔩 Secciones" },
   fc: { default: 240, min: 180, max: 500, step: 10, label: "f'c (kg/cm²)", folder: "🔩 Secciones" },
   q: { default: 5.0, min: 0, max: 20, step: 0.5, label: "carga de piso (kN/m²)", folder: "⬇ Cargas" },
-  // ⚠️ Sin subdividir, cada vano es UN elemento y no hay nudo en el centro: la
-  // «flecha máxima» que se lee es solo el acortamiento de las columnas, y la
-  // losa parece no aportar nada. Con 2 divisiones ya hay centro de vano y la
-  // comparación pórtico/pórtico+losa mide lo que se quiere medir.
-  div: { default: 2, min: 1, max: 6, step: 1, label: "divisiones por vano", folder: "📐 Rejilla (planta)" },
+  // ── El mallado, como lo hace ETABS ───────────────────────────────────────
+  //
+  // Leído de las propias cadenas de ayuda de `ETABS.exe`:
+  //
+  //   «Determines how the floor is meshed. Default behavior is auto COOKIE CUT
+  //    at beams and walls if membrane, auto rectangle mesh if shell/plate.»
+  //   «Indicates if the elements that are cookie cut are to be further meshed
+  //    to a MAX ELEMENT SIZE.»
+  //
+  // O sea DOS etapas: (1) cortar la losa por cada línea de viga y de muro, y
+  // (2) volver a mallar cada trozo hasta un tamaño máximo. Aquí los ejes SON las
+  // líneas de viga, así que la etapa 1 sale sola; esta caja es la etapa 2, y va
+  // en METROS como en ETABS (`SetAutoMesh` con `MeshType = 3 · MaxSize`), no en
+  // «divisiones por vano».
+  //
+  // ⚠️ No es un detalle de precisión: con 2 divisiones en un vano de 6 m salen
+  // elementos de 3 metros y la losa se deforma a saltos — se ve en pantalla
+  // antes que en ningún número. Por defecto 0.5 m, que es lo que usa la
+  // referencia de ETABS de `test-m-dual` (`FLOOR_MESH = 0.5`).
+  ms: { default: 0.5, min: 0.15, max: 3, step: 0.05,
+        label: "malla máx. (m) — como ETABS", folder: "📐 Rejilla (planta)" },
 };
 
 export const plantillas: ExampleDef = {
   id: "plantillas",
   name: "📐 Plantillas — nuevo modelo (pórtico 2D / 3D / con losa)",
   category: "🧪 Utilidades",
-  defaultShellResult: "vonMises",
-  availableShellResults: ["vonMises", "bendingXX", "bendingYY", "displacementZ"],
+  // El color por defecto es el DESPLAZAMIENTO, no von Mises. En una losa el von
+  // Mises sale moteado de por sí —tiene picos en las líneas de viga y en el
+  // centro de cada paño— y se lee como si la deformada estuviera mal. Con el
+  // desplazamiento se ven los paños hundiéndose entre vigas, que es lo que hay
+  // que ver al abrir una plantilla.
+  defaultShellResult: "displacementZ",
+  availableShellResults: ["displacementZ", "bendingXX", "bendingYY", "vonMises"],
   hasModal: true,
   params: PARAMS,
 
@@ -183,17 +204,64 @@ export const plantillas: ExampleDef = {
       out.push(v[v.length - 1]); esEje.push(true);
       return { c: out, eje: esEje };
     };
-    const D = Math.max(1, Math.round(p.div));
+    // Etapa 2 de ETABS: cada vano se parte en tantos trozos como haga falta
+    // para que ninguno pase del tamaño máximo. Se toma el vano más corto para
+    // que la malla sea uniforme y los nudos de vanos contiguos coincidan — si
+    // cada vano se partiera por su cuenta, dos vanos distintos no compartirían
+    // nudo en la línea que los separa y la losa quedaría cosida a medias.
+    const luzMin = Math.min(
+      ...X.slice(1).map((v, i) => v - X[i]),
+      ...(Y.length > 1 ? Y.slice(1).map((v, i) => v - Y[i]) : [Infinity]));
+    const D = Math.max(1, Math.min(24, Math.ceil(luzMin / Math.max(0.05, p.ms))));
     const fx = finos(X, D);
     const fy = Y.length > 1 ? finos(Y, D) : { c: [0], eje: [true] };
     const XF = fx.c, YF = fy.c;
 
     // ── Nudos: la malla fina repetida en cada nivel ─────────────────────────
+    //
+    // ⚠️ SIN LOSA solo se crean los nudos que van a tener algo colgando: los de
+    // las líneas de eje (por donde corren vigas y columnas). Antes se creaba la
+    // malla entera siempre, así que un «Pórtico 3D» salía con 6845 nudos y 1216
+    // elementos — más de cinco mil nudos HUÉRFANOS, sin un solo elemento que los
+    // tocara. No dan error (el solver saca los GDL sin rigidez), pero se dibujan,
+    // engordan el modelo y falsean cualquier cuenta que mire «nudos».
+    const hayLosaAqui = conLosa && YF.length > 1;
+    /**
+     * ¿Va a colgar algo de este nudo? Es lo único que decide si existe.
+     *
+     *  · un **cruce de ejes** siempre: ahí nace una columna;
+     *  · un nudo de una **línea de eje** solo por encima de la base, y solo si
+     *    hay vigas: es un tramo de viga;
+     *  · cualquier otro solo si hay **losa** que lo sujete, y tampoco en la base.
+     *
+     * En la BASE solo viven los cruces. Antes se creaba la malla fina completa
+     * en todos los niveles, así que la planta de cimentación entera —1353 nudos
+     * en «Pórtico + losa»— se quedaba sin un solo elemento.
+     */
+    // ⚠️ Los MUROS y las DIAGONALES arrancan en la base, así que sus nudos
+    // tienen que existir tambien en k = 0 aunque no sean cruce de ejes. Sin
+    // esto, `N(i, j, 0)` devolvía `undefined` para los nudos intermedios del
+    // muro, el elemento salía con un nudo inexistente y `analyze` reventaba en
+    // `computeQ4ShellStresses` — el `deform` en cambio seguía y daba un número.
+    const hastaMuro = Math.min(D, XF.length - 1);
+    const enMuro = (i: number, j: number) =>
+      (conMuros || conDiagonales)
+      && (j === 0 || j === YF.length - 1) && i <= hastaMuro;
+    const vive = (i: number, j: number, k: number) => {
+      const cruce = fx.eje[i] && fy.eje[j];
+      if (cruce) return true;
+      if (enMuro(i, j)) return true;                   // muro o diagonal: hasta abajo
+      if (k === 0) return false;                       // la base: solo columnas
+      if (hayLosaAqui) return true;                    // la losa sujeta todo
+      if (conVigas && (fx.eje[i] || fy.eje[j])) return true;   // tramo de viga
+      return false;
+    };
     const nodes: Node[] = [];
     const idx = new Map<string, number>();
     for (let k = 0; k < Z.length; k++)
       for (let j = 0; j < YF.length; j++)
         for (let i = 0; i < XF.length; i++) {
+          if (!vive(i, j, k)) continue;
           idx.set(`${i},${j},${k}`, nodes.length);
           nodes.push([XF[i], YF[j], Z[k]]);
         }
@@ -382,6 +450,14 @@ export const plantillas: ExampleDef = {
       const c = loads.get(n) ?? [0, 0, 0, 0, 0, 0] as any;
       c[2] -= fz; loads.set(n, c);
     };
+    // ⚠️ Mandato: la suma de lo aplicado tiene que ser `q · A_planta · nº pisos`,
+    // salga por donde salga. Antes no cuadraba y nadie lo veía:
+    //   · con vigas y sin losa se cargaban las de X y las de Y, CADA UNA con
+    //     medio ancho tributario — y eso no es una partición del área: sale un
+    //     33 % de más;
+    //   · «solo rejilla» repartía `q·sx·sy/4` por nudo sin mirar si el nudo era
+    //     de esquina, de borde o interior: un 56 % de MENOS.
+    // Ahora se reparte PAÑO a PAÑO, que es lo único que garantiza el total.
     if (p.q > 0) {
       if (conLosa) {
         // Sobre la losa, el vector consistente del Q4: q·A/4 por esquina.
@@ -393,20 +469,61 @@ export const plantillas: ExampleDef = {
           for (const n of elements[e] as unknown as number[]) addZ(n, p.q * a * b / 4);
         });
       } else if (conVigas) {
-        // Sin losa la carga entra por las vigas, con su ancho tributario.
-        clase.forEach((c, e) => {
-          if (c !== "viga") return;
-          const [a, b] = elements[e] as unknown as number[];
-          const L = Math.hypot(nodes[b][0] - nodes[a][0], nodes[b][1] - nodes[a][1]);
-          const trib = tipo === T_PORTICO_2D ? p.sy : p.sy / 2;
-          addZ(a, p.q * trib * L / 2); addZ(b, p.q * trib * L / 2);
-        });
+        // Sin losa, cada PAÑO reparte su carga entre las cuatro vigas que lo
+        // rodean —la mitad a las dos de X y la mitad a las dos de Y— y dentro de
+        // cada viga se extiende por sus tramos. Así el total es exactamente
+        // `q · A_paño` y no depende de cuántas veces se subdivida.
+        const ejeX: number[] = [], ejeY: number[] = [];
+        XF.forEach((_, i) => { if (fx.eje[i]) ejeX.push(i); });
+        YF.forEach((_, j) => { if (fy.eje[j]) ejeY.push(j); });
+        const enTramo = (a: number, b: number, k: number, fila: number, dirX: boolean, F: number) => {
+          // reparto uniforme sobre los sub-nudos del tramo (media a cada extremo
+          // de cada trocito, o sea trapecio de nudos: extremos F/2n, interiores F/n)
+          const n = b - a;
+          for (let t = a; t < b; t++) {
+            const n1 = dirX ? N(t, fila, k) : N(fila, t, k);
+            const n2 = dirX ? N(t + 1, fila, k) : N(fila, t + 1, k);
+            addZ(n1, F / n / 2); addZ(n2, F / n / 2);
+          }
+        };
+        const pisos2 = Z.length - 1;
+        if (tipo !== T_PORTICO_2D)
+        for (let k = 1; k <= pisos2; k++)
+          for (let jj = 0; jj < ejeY.length - 1; jj++)
+            for (let ii = 0; ii < ejeX.length - 1; ii++) {
+              const i0 = ejeX[ii], i1 = ejeX[ii + 1], j0 = ejeY[jj], j1 = ejeY[jj + 1];
+              const A = (XF[i1] - XF[i0]) * (YF[j1] - YF[j0]);
+              const F = p.q * A;                       // lo que pesa el paño
+              enTramo(i0, i1, k, j0, true, F / 4);     // viga X de abajo
+              enTramo(i0, i1, k, j1, true, F / 4);     // viga X de arriba
+              enTramo(j0, j1, k, i0, false, F / 4);    // viga Y de la izquierda
+              enTramo(j0, j1, k, i1, false, F / 4);    // viga Y de la derecha
+            }
+        // El pórtico plano no tiene paños: es una sola fila de vanos, y su ancho
+        // tributario es el de la crujía que representa.
+        if (tipo === T_PORTICO_2D)
+          for (let k = 1; k <= pisos2; k++)
+            for (let ii = 0; ii < ejeX.length - 1; ii++) {
+              const i0 = ejeX[ii], i1 = ejeX[ii + 1];
+              enTramo(i0, i1, k, 0, true, p.q * (XF[i1] - XF[i0]) * p.sy);
+            }
       } else {
         // Solo rejilla: no hay dónde meterla más que en los nudos de cada nivel.
+        // Solo rejilla: no hay vigas ni losa, así que la carga del paño va a sus
+        // cuatro esquinas. Un nudo interior recibe cuarto de los cuatro paños
+        // que toca (= un paño entero) y uno de esquina solo un cuarto — que es
+        // justo su área tributaria, y el total vuelve a ser `q·A`.
+        const ejeX: number[] = [], ejeY: number[] = [];
+        XF.forEach((_, i) => { if (fx.eje[i]) ejeX.push(i); });
+        YF.forEach((_, j) => { if (fy.eje[j]) ejeY.push(j); });
         for (let k = 1; k < Z.length; k++)
-          for (let j = 0; j < YF.length; j++)
-            for (let i = 0; i < XF.length; i++)
-              if (fx.eje[i] && fy.eje[j]) addZ(N(i, j, k), p.q * p.sx * p.sy / 4);
+          for (let jj = 0; jj < ejeY.length - 1; jj++)
+            for (let ii = 0; ii < ejeX.length - 1; ii++) {
+              const i0 = ejeX[ii], i1 = ejeX[ii + 1], j0 = ejeY[jj], j1 = ejeY[jj + 1];
+              const F = p.q * (XF[i1] - XF[i0]) * (YF[j1] - YF[j0]) / 4;
+              addZ(N(i0, j0, k), F); addZ(N(i1, j0, k), F);
+              addZ(N(i1, j1, k), F); addZ(N(i0, j1, k), F);
+            }
       }
     }
 
@@ -482,6 +599,14 @@ export const plantillas: ExampleDef = {
       "altura total (m)": ult(Z).toFixed(2),
       "flecha máx. (mm)": (peor * 1000).toFixed(3),
       "material": Math.round(p.material) === 1 ? "acero (tubo + perfil I)" : "hormigón",
+      "malla": (() => {
+        const XX = ejes((p as any).ejesX, p.nx, p.sx);
+        const YY = ejes((p as any).ejesY, p.ny, p.sy);
+        const luz = Math.min(...XX.slice(1).map((v, i) => v - XX[i]),
+                             ...YY.slice(1).map((v, i) => v - YY[i]));
+        const d = Math.max(1, Math.min(24, Math.ceil(luz / Math.max(0.05, p.ms))));
+        return `${d} div/vano · elemento ${(luz / d).toFixed(2)} m (tope ${p.ms} m)`;
+      })(),
       "para comparar": "cambia solo la Plantilla y mira cuánto aporta la losa / los muros",
     };
   },
