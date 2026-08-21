@@ -244,13 +244,25 @@ export const plantillas: ExampleDef = {
     // muro, el elemento salía con un nudo inexistente y `analyze` reventaba en
     // `computeQ4ShellStresses` — el `deform` en cambio seguía y daba un número.
     const hastaMuro = Math.min(D, XF.length - 1);
-    const enMuro = (i: number, j: number) =>
-      (conMuros || conDiagonales)
-      && (j === 0 || j === YF.length - 1) && i <= hastaMuro;
+    const medioD = D % 2 === 0 ? D / 2 : -1;
+    // ⚠️ El MURO ocupa toda la banda, así que necesita todos sus nudos. Las
+    // DIAGONALES en cambio solo tocan tres columnas —los dos extremos del vano y
+    // el centro de la viga—, y mantener viva la banda entera dejaba 22 nudos
+    // huérfanos en el arriostrado. Cada uno pide lo suyo, ni más ni menos.
+    const enMuro = (i: number, j: number, k: number) => {
+      if (j !== 0 && j !== YF.length - 1) return false;
+      if (conMuros) return i <= hastaMuro;                // el muro ocupa la banda entera
+      if (!conDiagonales) return false;
+      // La V invertida arranca en las ESQUINAS de abajo y sube al centro de la
+      // viga de arriba: el nudo del centro solo hace falta de la primera planta
+      // para arriba. Mantenerlo vivo en la base dejaba 2 huérfanos.
+      if (i === 0 || i === hastaMuro) return true;
+      return medioD > 0 && i === medioD && k > 0;
+    };
     const vive = (i: number, j: number, k: number) => {
       const cruce = fx.eje[i] && fy.eje[j];
       if (cruce) return true;
-      if (enMuro(i, j)) return true;                   // muro o diagonal: hasta abajo
+      if (enMuro(i, j, k)) return true;                // muro o diagonal: hasta abajo
       if (k === 0) return false;                       // la base: solo columnas
       if (hayLosaAqui) return true;                    // la losa sujeta todo
       if (conVigas && (fx.eje[i] || fy.eje[j])) return true;   // tramo de viga
