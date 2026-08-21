@@ -350,6 +350,9 @@ import { testMPortico, testMLosa, testMDual } from "../test-m/testM";
 // Los seis casos del elemento ITW-1990 (membrana con drilling), traidos de
 // `calcpad-ceinci-lab/*.cpd`. Ver la cabecera de `itwTests.ts`.
 import { itwTodos } from "../itw/itwTests";
+// La PLANTILLA: no es un ejemplo cerrado, es el punto de partida de un modelo
+// nuevo. La abre el boton "Nuevo modelo" de la portada.
+import { plantillas } from "../plantillas/plantillas";
 // Legacy del upstream awatif (rebrandeados, abren standalone)
 import {
   legacyAwatifExamples,
@@ -359,6 +362,7 @@ import {
 } from "./legacyAwatif";
 
 export const examplesRegistry: ExampleDef[] = [
+  plantillas,             // 📐 Nuevo modelo → Plantillas
   // 🌀 DRILLING ITW — los seis casos del elemento de Ibrahimbegovic,
   // Taylor & Wilson (1990). Los cuatro tests miden la formulacion contra
   // su referencia; los dos muros ensenan PARA QUE sirve el drilling.

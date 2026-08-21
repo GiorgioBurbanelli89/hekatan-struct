@@ -2467,10 +2467,41 @@ function showMenu() {
   const pane = new Pane({ container: paneHost, title: "Hekatan Struct" });
   paneActual = pane;
   const fMenu = pane.addFolder({ title: "¿Con qué vas a trabajar?", expanded: true });
-  fMenu.addButton({ title: "📐 Nuevo archivo" }).on("click", () => {
-    const ex = examplesRegistry.find((e) => e.id === "new-blank");
-    if (ex) loadExample(ex);
-  });
+  // ── NUEVO MODELO → PLANTILLAS ────────────────────────────────────────────
+  //
+  // Antes esto abria el lienzo en blanco. Pero empezar un modelo desde cero en
+  // un lienzo 3D vacio es lo mas caro que hay: hay que dibujar la rejilla, subir
+  // los pisos, poner columnas, vigas, apoyos y cargas antes de ver un solo
+  // numero. ETABS no hace eso — abre `New Model Quick Templates` y te da la
+  // tipologia ya montada.
+  //
+  // Asi que aqui igual: las plantillas primero, como SUB-CATEGORIAS, y el
+  // lienzo en blanco como una mas de ellas para quien de verdad quiera dibujar.
+  const PLANTILLAS: Array<[string, number | null]> = [
+    ["▦ Portico plano (2D)", 0],
+    ["🏗 Portico 3D", 1],
+    ["🧱 Portico + losa (aporte de losa)", 2],
+    ["⬚ Solo rejilla (nudos + columnas)", 3],
+    ["▭ Losa plana sobre columnas", 4],
+    ["▣ Losa con vigas de borde", 5],
+    ["📄 Lienzo en blanco (dibujar a mano)", null],
+  ];
+  const fNuevo = pane.addFolder({ title: "📐 Nuevo modelo · Plantillas", expanded: true });
+  for (const [titulo, tipo] of PLANTILLAS) {
+    fNuevo.addButton({ title: titulo }).on("click", () => {
+      if (tipo === null) {
+        const ex = examplesRegistry.find((e) => e.id === "new-blank");
+        if (ex) loadExample(ex);
+        return;
+      }
+      const ex = examplesRegistry.find((e) => e.id === "plantillas");
+      if (!ex) return;
+      // El tipo elegido viaja como defecto para que la plantilla arranque ya
+      // en esa tipologia; el usuario la sigue pudiendo cambiar desde el panel.
+      (ex.params as any).tipo.default = tipo;
+      loadExample(ex);
+    });
+  }
   fMenu.addButton({ title: "📂 Archivo existente" }).on("click", () => {
     const ex = examplesRegistry.find((e) => e.id === "csi-importer");
     if (ex) loadExample(ex);
