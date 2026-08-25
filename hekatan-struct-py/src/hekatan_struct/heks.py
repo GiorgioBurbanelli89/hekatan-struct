@@ -104,6 +104,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
     angs: dict[int, float] = {}
     ashear: dict[int, tuple[float, float]] = {}
     rels: dict[int, list[bool]] = {}
+    endoffs: dict[int, tuple[float, float, float]] = {}   # (offI, offJ, rz)
     shells: list[dict] = []
     q_area: dict[int, float] = {}          # carga de superficie por shell ID
     smod: dict[int, tuple[float, float]] = {}      # shellmod escalar
@@ -168,6 +169,13 @@ def leer_heks(ruta: str) -> ModeloHeks:
                     angs[int(t[1])] = float(t[2])
                 elif cmd == "as":
                     ashear[int(t[1])] = (float(t[2]), float(t[3]))
+                elif cmd in ("endoffset", "offset", "lengthoff"):
+                    # endoffset ID offI offJ [rz]   — el END LENGTH OFFSET de CSI.
+                    # `rz` es el rigid-zone factor (0-1); ETABS trae 0 por
+                    # defecto, y con 0 el offset NO rigidiza: solo descuenta el
+                    # peso propio de las vigas y mueve la estacion de esfuerzos.
+                    endoffs[int(t[1])] = (float(t[2]), float(t[3]),
+                                          float(t[4]) if len(t) > 4 else 0.0)
                 elif cmd == "release":
                     if len(t) >= 3 and set("".join(t[2:])) <= {"0", "1"}:
                         bits = "".join(t[2:])
@@ -265,6 +273,8 @@ def leer_heks(ruta: str) -> ModeloHeks:
             ei.shear_areas_y[k] = As3   # As3 -> V3, va con I22 (=moments_y)
         if f["id"] in rels:
             ei.moment_releases[k] = rels[f["id"]]
+        if f["id"] in endoffs:
+            ei.end_offsets[k] = endoffs[f["id"]]
         if f["id"] in fl:
             ei.frame_loads[k] = fl[f["id"]]
 
@@ -412,7 +422,7 @@ def escribir_heks(m: ModeloHeks, ruta: str | None = None) -> str:
     sólida; si no, el montaje estaba mal y no el programa.
 
     Lo que escribe: `node`, `frame` (+ `ang`, `as`, `release`, `frameload`),
-    `shell` (+ `shellmod`, `shellang`, `shelltype`), `support`, `load`,
+    `endoffset`, `shell` (+ `shellmod`, `shellang`, `shelltype`), `support`, `load`,
     `spring`. O sea todo lo que el lector monta — lo que no monta tampoco se
     inventa aquí.
 
@@ -454,6 +464,9 @@ def escribir_heks(m: ModeloHeks, ruta: str | None = None) -> str:
             L.append("as %d %.8g %.8g"
                      % (fid, ei.shear_areas_z.get(k, 0.0),
                         ei.shear_areas_y.get(k, 0.0)))
+    for k, fid in ids_f.items():
+        if k in ei.end_offsets:
+            L.append("endoffset %d %.6g %.6g %.4g" % ((fid,) + tuple(ei.end_offsets[k])))
     for k, fid in ids_f.items():
         if k in ei.moment_releases:
             L.append("release %d %s"

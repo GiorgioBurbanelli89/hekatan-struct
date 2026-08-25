@@ -24,6 +24,13 @@ export function getLocalStiffnessMatrix(
     // Apply releases via static condensation
     const rel = elementInputs?.momentReleases?.get(index);
     if (rel) K = applyReleases(K, rel);
+    // El brazo rigido del end length offset, en LOCAL (que es donde va: sobre
+    // la K global solo coincide si la barra esta alineada con los ejes).
+    const eo = elementInputs?.endOffsets?.get(index);
+    if (eo && eo[2] > 0 && (eo[0] > 0 || eo[1] > 0)) {
+      const R = buildEndOffsetMatrix(eo[2] * eo[0], eo[2] * eo[1]);
+      K = matMulT12local(R, K, R);
+    }
     return K;
   }
 
@@ -137,6 +144,41 @@ function invertSmall(M: number[][]): number[][] | null {
   return aug.map(row => row.slice(n));
 }
 
+/**
+ * Brazo rigido de un END LENGTH OFFSET de CSI: u_extremo_flexible = R * u_nudo.
+ * El brazo va hacia ADENTRO (esta contenido en la luz L), al reves que el de
+ * awatif (`buildRigidOffsetMatrix`, que alarga la barra).
+ *   extremo I (a +lrI del nudo I):  u2 = u2 + lrI*r3 ,  u3 = u3 - lrI*r2
+ *   extremo J (a -lrJ del nudo J):  u2 = u2 - lrJ*r3 ,  u3 = u3 + lrJ*r2
+ */
+function buildEndOffsetMatrix(lrI: number, lrJ: number): number[][] {
+  const R: number[][] = Array.from({ length: 12 }, (_, i) =>
+    Array.from({ length: 12 }, (_, j) => (i === j ? 1 : 0))
+  );
+  if (Math.abs(lrI) > 1e-12) { R[1][5] = lrI; R[2][4] = -lrI; }
+  if (Math.abs(lrJ) > 1e-12) { R[7][11] = -lrJ; R[8][10] = lrJ; }
+  return R;
+}
+
+// R^T * K * R para matrices 12x12
+function matMulT12local(Rt: number[][], K: number[][], R: number[][]): number[][] {
+  const tmp: number[][] = Array.from({ length: 12 }, () => Array(12).fill(0));
+  for (let i = 0; i < 12; i++)
+    for (let j = 0; j < 12; j++) {
+      let s = 0;
+      for (let k = 0; k < 12; k++) s += Rt[k][i] * K[k][j];
+      tmp[i][j] = s;
+    }
+  const out: number[][] = Array.from({ length: 12 }, () => Array(12).fill(0));
+  for (let i = 0; i < 12; i++)
+    for (let j = 0; j < 12; j++) {
+      let s = 0;
+      for (let k = 0; k < 12; k++) s += tmp[i][k] * R[k][j];
+      out[i][j] = s;
+    }
+  return out;
+}
+
 function getLocalStiffnessMatrixFrame(
   nodes: Node[],
   elementInputs: ElementInputs,
@@ -150,6 +192,16 @@ function getLocalStiffnessMatrixFrame(
   const J = elementInputs?.torsionalConstants?.get(index) ?? 0;
   const L = norm(subtract(nodes[0], nodes[1])) as number;
 
+  // END LENGTH OFFSETS de CSI. La ley, medida contra ETABS 22.6.0 al 0.005 %
+  // (registro `2026-08-25_ley_end_length_offset.md`):
+  //   Lf = L - rz*(offI + offJ)   -> flexion y cortante
+  //   axil EA/L y torsion GJ/L    -> con la L COMPLETA (literal del binario:
+  //   "The rigid zones never affect axial and torsional deformations")
+  // Con rz = 0 —las 723 barras del galpon— Lf = L y no cambia nada.
+  const eo = elementInputs?.endOffsets?.get(index);
+  const Lf = eo && eo[2] > 0 ? L - eo[2] * (eo[0] + eo[1]) : L;
+  if (Lf <= 1e-9) throw new Error(`end offsets se comen la barra ${index}`);
+
   // Timoshenko shear deformation parameter φ
   // φ = 12EI / (G·As·L²) — when As > 0 (Timoshenko)
   // Default: As = 5/6·A for rectangular sections (like ETABS default)
@@ -159,8 +211,8 @@ function getLocalStiffnessMatrixFrame(
   if (AsY === 0 && AsZ === 0 && A > 0 && G > 0) {
     AsY = AsZ = (5 / 6) * A; // rectangular default, same as ETABS
   }
-  const phiZ = (AsZ > 0 && G > 0) ? (12 * E * Iz) / (G * AsZ * L ** 2) : 0;
-  const phiY = (AsY > 0 && G > 0) ? (12 * E * Iy) / (G * AsY * L ** 2) : 0;
+  const phiZ = (AsZ > 0 && G > 0) ? (12 * E * Iz) / (G * AsZ * Lf ** 2) : 0;
+  const phiY = (AsY > 0 && G > 0) ? (12 * E * Iy) / (G * AsY * Lf ** 2) : 0;
 
   const EA = (E * A) / L;
   const GJ = (G * J) / L;
@@ -170,15 +222,15 @@ function getLocalStiffnessMatrixFrame(
   // b = 6EI/L²  · 1/(1+φ)       → coupling
   // k = 4EI/L   · (1+φ/4)/(1+φ) → bending (diagonal)
   // a = 2EI/L   · (1-φ/2)/(1+φ) → bending (off-diagonal)
-  const tz = (12 * E * Iz / L ** 3) / (1 + phiZ);
-  const bz = (6 * E * Iz / L ** 2) / (1 + phiZ);
-  const kz = (4 * E * Iz / L) * (1 + phiZ / 4) / (1 + phiZ);
-  const az = (2 * E * Iz / L) * (1 - phiZ / 2) / (1 + phiZ);
+  const tz = (12 * E * Iz / Lf ** 3) / (1 + phiZ);
+  const bz = (6 * E * Iz / Lf ** 2) / (1 + phiZ);
+  const kz = (4 * E * Iz / Lf) * (1 + phiZ / 4) / (1 + phiZ);
+  const az = (2 * E * Iz / Lf) * (1 - phiZ / 2) / (1 + phiZ);
 
-  const ty = (12 * E * Iy / L ** 3) / (1 + phiY);
-  const by = (6 * E * Iy / L ** 2) / (1 + phiY);
-  const ky = (4 * E * Iy / L) * (1 + phiY / 4) / (1 + phiY);
-  const ay = (2 * E * Iy / L) * (1 - phiY / 2) / (1 + phiY);
+  const ty = (12 * E * Iy / Lf ** 3) / (1 + phiY);
+  const by = (6 * E * Iy / Lf ** 2) / (1 + phiY);
+  const ky = (4 * E * Iy / Lf) * (1 + phiY / 4) / (1 + phiY);
+  const ay = (2 * E * Iy / Lf) * (1 - phiY / 2) / (1 + phiY);
 
   return [
     [ EA,  0,    0,    0,    0,    0,   -EA,  0,    0,    0,    0,    0  ],

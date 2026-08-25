@@ -129,6 +129,24 @@ def casos():
                                   loads={1: [0, 0, -10, 0, 0, 0]},
                                   rigidOffsets={0: [0.10, 0.15]},
                                   analyze=True)
+    # 8. END LENGTH OFFSETS de CSI (`endOffsets`), que NO son los de awatif: el
+    #    brazo va DENTRO de la luz. Aqui los dos motores tienen que coincidir
+    #    tambien en barra OBLICUA, porque el TS ya lo aplica sobre la K LOCAL.
+    c["endoffset_voladizo_rz1"] = _base([[0, 0, 0], [6, 0, 0]], [[0, 1]],
+                                        supports={0: [True] * 6},
+                                        loads={1: [0, 0, -10, 0, 0, 0]},
+                                        endOffsets={0: [1.0, 0.0, 1.0]},
+                                        analyze=True)
+    c["endoffset_rz0_no_toca"] = _base([[0, 0, 0], [6, 0, 0]], [[0, 1]],
+                                       supports={0: [True] * 6},
+                                       loads={1: [0, 0, -10, 0, 0, 0]},
+                                       endOffsets={0: [1.0, 1.0, 0.0]},
+                                       analyze=True)
+    c["endoffset_oblicua"] = _base([[0, 0, 0], [4, 3, 2]], [[0, 1]],
+                                   supports={0: [True] * 6},
+                                   loads={1: [3, -5, -10, 0, 0, 0]},
+                                   endOffsets={0: [0.4, 0.25, 0.6]},
+                                   analyze=True)
     return c
 
 
@@ -146,6 +164,7 @@ _CAMPO = {
     "momentReleases": "moment_releases",
     "partialFixitySprings": "partial_fixity_springs",
     "rigidOffsets": "rigid_offsets",
+    "endOffsets": "end_offsets",
 }
 
 
@@ -225,11 +244,20 @@ def test_esfuerzos_de_barra_iguales_al_ts(ts, nombre):
     pares = [("normals", ana.normals), ("shearsY", ana.shears_y),
              ("shearsZ", ana.shears_z), ("torsions", ana.torsions),
              ("bendingsY", ana.bendings_y), ("bendingsZ", ana.bendings_z)]
+    # Escala del CASO: el mayor esfuerzo de cualquier campo. Un campo que es
+    # todo ceros numéricos (la torsión de una barra que no torsiona) no se puede
+    # comparar consigo mismo: 1e-15 contra 1e-15 da el 100 % y no dice nada.
+    esc_caso = max(
+        (abs(v) for campo, _ in pares
+         for fila in (ts[nombre].get(campo) or {}).values() for v in fila),
+        default=1.0) or 1.0
     for campo, mio in pares:
         esperado = ts[nombre].get(campo)
         if not esperado:
             continue
         esc = max(abs(v) for fila in esperado.values() for v in fila) or 1.0
+        if esc < 1e-9 * esc_caso:
+            continue
         for i, fila in esperado.items():
             for k in range(2):
                 assert abs(mio[int(i)][k] - fila[k]) / esc < 1e-9, \

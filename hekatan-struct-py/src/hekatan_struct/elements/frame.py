@@ -182,6 +182,135 @@ def frame_rigid_offset_matrix(o_i: float, o_j: float) -> np.ndarray:
     return R
 
 
+def frame_moment_at_offset_face(m_nudo: float, v: float, off: float) -> float:
+    """Traslada un momento del NUDO a la cara interior del offset, como ETABS.
+
+    Del binario: *"ETABS outputs forces at the inside face of end offsets along
+    the length of the member"* y *"No output forces are produced within the end
+    offset"*. Y medido (`ref_end_offsets_etabs.json`): con off = 1.00 m en el
+    empotrado de un voladizo de 6 m con P = 10 kN, la primera estación es
+    `ObjSta = 1.000` y el momento ahí es **−50**, no `P·L = 60` — **también con
+    RZ = 0**, que es cuando el offset ni siquiera rigidiza.
+
+        M_cara = M_nudo − V · off
+
+    Comparar el momento de Hekatan en el nudo contra el de ETABS sin esto es
+    comparar dos puntos distintos de la misma barra. En el galpón hay 586
+    extremos con offset y el mayor es de 0.60 m.
+    """
+    return m_nudo - v * off
+
+
+def frame_design_orientation_csi(p_i, p_j, umbral_grados: float = 20.0) -> str:
+    """La *design orientation* de CSI: "Beam" | "Brace" | "Column".
+
+    Medido en ETABS 22.6.0 (`galpon-bodega-electoral/_umbral_angulo_exacto.py`,
+    barrido de 10° a 25° en pasos de 0.25°): hasta **19.75° → Beam**, desde
+    **20.00° → Brace**. El corte está en los **20° exactos**, el mismo número
+    que el de losa→muro. Vertical (90°) → Column.
+
+    Hace falta para el peso propio: sólo las **vigas** pesan por su luz libre.
+    """
+    d = np.asarray(p_j, dtype=float) - np.asarray(p_i, dtype=float)
+    dh = float(np.hypot(d[0], d[1]))
+    if dh < 1e-9:
+        return "Column"
+    ang = np.degrees(np.arctan2(abs(d[2]), dh))
+    return "Beam" if ang < umbral_grados else "Brace"
+
+
+def frame_self_weight_length(p_i, p_j, off_i: float = 0.0, off_j: float = 0.0,
+                             self_wt_opt: str = "auto") -> float:
+    """Longitud con la que ETABS pesa la barra. `SelfWtOpt` del binario.
+
+    `Auto` (el defecto de las 723 barras del galpón) = **el programa decide**:
+    la **viga** pesa por su **luz libre** `L − (off_i + off_j)` —con el offset
+    ENTERO, no `RZ·off`— y **columna y diagonal por la longitud completa**.
+
+    Medido en `galpon_bodega.EDB` sobre la sección `2L-40-CAJON`, que sale en
+    las tres familias (tabla `Material List by Section Property`, kN/m):
+
+        Beam   w = 0.04531      Column w = 0.04741      Brace w = 0.04741
+
+    y `W_beam / w_column = 28.762 m` = la luz libre exacta (28.7629). En el
+    pórtico mínimo la razón es `5.60/6.00 = 0.933333` para la viga y
+    `1.000000` para la columna (`test_offsets_masa.py`).
+    """
+    L = float(np.linalg.norm(np.asarray(p_j, float) - np.asarray(p_i, float)))
+    opt = (self_wt_opt or "auto").lower()
+    if opt in ("full", "full length", "fulllength"):
+        return L
+    if opt in ("clear", "clear length", "clearlength"):
+        return max(L - off_i - off_j, 0.0)
+    if frame_design_orientation_csi(p_i, p_j) == "Beam":
+        return max(L - off_i - off_j, 0.0)
+    return L
+
+
+def frame_end_offset_matrix(lr_i: float, lr_j: float) -> np.ndarray:
+    """Brazo rígido de un *end length offset* de CSI: u_flexible = R · u_nudo.
+
+    ⚠️ NO es `frame_rigid_offset_matrix`. Aquella es la de awatif: el brazo sale
+    hacia AFUERA y ALARGA la barra. El de CSI va hacia ADENTRO — el brazo está
+    contenido en la luz `L`, y lo que se acorta es el tramo flexible:
+
+        extremo I (a +lr_i del nudo I):  u2 = u2_I + lr_i·r3     u3 = u3_I − lr_i·r2
+        extremo J (a −lr_j del nudo J):  u2 = u2_J − lr_j·r3     u3 = u3_J + lr_j·r2
+
+    Medido contra ETABS (`ref_end_offsets_etabs.json`, caso "J"): con el offset
+    en el extremo libre de un voladizo, RZ = 1 da 0.0115147 m y esta R lo
+    reproduce; con el signo al revés saldría 0.0117 y pico.
+    """
+    R = np.eye(12)
+    if abs(lr_i) > 1e-12:
+        R[1, 5] = lr_i
+        R[2, 4] = -lr_i
+    if abs(lr_j) > 1e-12:
+        R[7, 11] = -lr_j
+        R[8, 10] = lr_j
+    return R
+
+
+def frame_stiffness_end_offsets(E: float, G: float, A: float, Iz_loc: float,
+                                Iy_loc: float, J: float, L: float,
+                                off_i: float, off_j: float, rz: float,
+                                As_z: float = 0.0, As_y: float = 0.0,
+                                shear_deformation: bool = True
+                                ) -> tuple[np.ndarray, float, float, float]:
+    """K local (12×12) de una barra con *end length offsets* de CSI. → (k, lr_i, lr_j, Lf)
+
+    La ley, sacada del binario y medida al 0.005 % (registro
+    `2026-08-25_ley_end_length_offset.md`):
+
+        lr = RZ · off              tramo REALMENTE rígido, el de fuera
+        Lf = L − RZ·(off_i+off_j)  longitud flexible
+        flexión y cortante  → con Lf
+        axil EA/L y torsión GJ/L → con la L COMPLETA
+
+    La última línea es literal del binario: *"The rigid zones of the end offsets
+    never affect axial and torsional deformations. The full element length is
+    always assumed to be flexible for those deformations."* Con RZ = 0 —el
+    defecto de ETABS— esto devuelve exactamente la barra de siempre.
+    """
+    lr_i = rz * off_i
+    lr_j = rz * off_j
+    Lf = L - lr_i - lr_j
+    if Lf <= 1e-9:
+        raise ValueError(
+            f"end offsets se comen la barra: L={L}, off=({off_i},{off_j}), rz={rz}")
+    k = frame_stiffness_local(E, G, A, Iz_loc, Iy_loc, J, Lf,
+                              As_z=As_z, As_y=As_y,
+                              shear_deformation=shear_deformation)
+    # axil y torsión: la L completa, no Lf
+    EA_L = E * A / L
+    k[0, 0] = k[6, 6] = EA_L
+    k[0, 6] = k[6, 0] = -EA_L
+    GJ_L = G * J / L
+    k[3, 3] = k[9, 9] = GJ_L
+    k[3, 9] = k[9, 3] = -GJ_L
+    return k, lr_i, lr_j, Lf
+
+
 def frame_fixed_end_loads(p_i, p_j, w_global) -> tuple[np.ndarray, np.ndarray]:
     """Carga repartida global w (kN/m) → fuerzas de empotramiento nodales.
 

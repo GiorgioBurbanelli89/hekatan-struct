@@ -18,6 +18,8 @@ from .elements.frame import (
     frame_local_axes_csi, frame_stiffness_local, frame_T, rigid_arm_transform,
     frame_releases_condense, frame_fixed_end_loads,
     frame_partial_fixity, frame_rigid_offset_matrix,
+    frame_stiffness_end_offsets, frame_end_offset_matrix,
+    frame_self_weight_length,
 )
 from .elements.shell import shell_q4_stiffness, shell_q4_local_axes, shell_q4_T
 from .elements.shell_q4_motor import shell_q4_motor
@@ -75,7 +77,15 @@ def _frame_k_local_T(
     J = element_inputs.torsional_constants[idx]
     As_z = element_inputs.shear_areas_z.get(idx, 0.0)
     As_y = element_inputs.shear_areas_y.get(idx, 0.0)
-    k_loc = frame_stiffness_local(E, G, A, Iz, Iy, J, L, As_z=As_z, As_y=As_y)
+    # END LENGTH OFFSETS de CSI (`endoffset` del .heks). Con rz = 0 —el defecto
+    # de ETABS— `frame_stiffness_end_offsets` devuelve la barra de siempre.
+    eo = element_inputs.end_offsets.get(idx)
+    if eo and (eo[0] > 0 or eo[1] > 0) and eo[2] > 0:
+        k_loc, lr_i, lr_j, _Lf = frame_stiffness_end_offsets(
+            E, G, A, Iz, Iy, J, L, eo[0], eo[1], eo[2], As_z=As_z, As_y=As_y)
+    else:
+        k_loc = frame_stiffness_local(E, G, A, Iz, Iy, J, L, As_z=As_z, As_y=As_y)
+        lr_i = lr_j = 0.0
     # Orden del motor TS: muelles -> releases. Al reves, la condensacion del
     # release se traga el muelle.
     spr = element_inputs.partial_fixity_springs.get(idx)
@@ -84,6 +94,12 @@ def _frame_k_local_T(
     rel = element_inputs.moment_releases.get(idx)
     if rel:
         k_loc = frame_releases_condense(k_loc, rel)
+    # El brazo rígido del end length offset: los extremos flexibles cuelgan de
+    # los nudos. Va DESPUÉS de releases, como en ETABS: el release está en el
+    # extremo del tramo flexible, no en el nudo.
+    if lr_i > 0 or lr_j > 0:
+        Reo = frame_end_offset_matrix(lr_i, lr_j)
+        k_loc = Reo.T @ k_loc @ Reo
     # Brazos rigidos: factores (0-1) de la longitud, uno por extremo.
     off = element_inputs.rigid_offsets.get(idx)
     if off and (off[0] > 0 or off[1] > 0):
@@ -244,7 +260,11 @@ def _assemble_M_lumped(
             i, j = conn
             p_i = np.asarray(nodes[i], dtype=float)
             p_j = np.asarray(nodes[j], dtype=float)
-            L = np.linalg.norm(p_j - p_i)
+            # ETABS pesa la VIGA por su luz libre (offset entero, sin RZ) y la
+            # columna/diagonal por la longitud completa. Sin offsets, L.
+            eo = element_inputs.end_offsets.get(idx)
+            L = (frame_self_weight_length(p_i, p_j, eo[0], eo[1]) if eo
+                 else float(np.linalg.norm(p_j - p_i)))
             A = element_inputs.areas[idx]
             m_total = A * L * rho
             for dof in [6*i, 6*i+1, 6*i+2, 6*j, 6*j+1, 6*j+2]:

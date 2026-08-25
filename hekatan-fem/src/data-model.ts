@@ -84,6 +84,11 @@ export type ElementInputs = {
    *  wL^2/12 = 41.67. Los desplazamientos si eran exactos. */
   frameLoads?: Map<number, [number, number, number]>;
   rigidOffsets?: Map<number, [number, number]>; // [offsetI, offsetJ] rigid zone factors (0-1) at each end
+  // END LENGTH OFFSETS de CSI: [offI, offJ, rigidZoneFactor] — longitudes en
+  // unidades del modelo y factor 0-1. NO es `rigidOffsets` (el de awatif, que
+  // ALARGA la barra): aqui el brazo va DENTRO de la luz y lo que se acorta es
+  // el tramo flexible. Con rz = 0 —el defecto de ETABS— no cambia la rigidez.
+  endOffsets?: Map<number, [number, number, number]>;
   /**
    * Angulo de eje local de barra, en GRADOS, alrededor del eje 1 — el "local
    * axis angle" de CSI (`FrameObj.SetLocalAxes` de ETABS). Ausente = 0.

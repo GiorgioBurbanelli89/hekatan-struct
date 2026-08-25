@@ -2,6 +2,8 @@
 from __future__ import annotations
 from typing import Sequence
 import numpy as np
+
+from .elements.frame import frame_self_weight_length
 from .data_model import (
     Node, Element, NodeInputs, ElementInputs, SectionShape,
     AnalyzeOutputs,
@@ -49,7 +51,10 @@ def apply_selfweight(
             i, j = conn
             p_i = np.asarray(nodes[i], dtype=float)
             p_j = np.asarray(nodes[j], dtype=float)
-            L = float(np.linalg.norm(p_j - p_i))
+            # Luz libre para las VIGAS con end length offset (regla de ETABS).
+            eo = element_inputs.end_offsets.get(idx)
+            L = (frame_self_weight_length(p_i, p_j, eo[0], eo[1]) if eo
+                 else float(np.linalg.norm(p_j - p_i)))
             A = element_inputs.areas.get(idx, 0)
             W = A * L * gamma * sw_multiplier
             add_load(i, -W / 2)

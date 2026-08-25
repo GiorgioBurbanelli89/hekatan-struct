@@ -93,6 +93,7 @@ interface ParsedModel {
    *  programas CSI usan el area real, asi que Hekatan salia sistematicamente
    *  MAS RIGIDO, hasta un 14 % nudo a nudo en el galpon. */
   frameShearAreas: Map<number, [number, number]>;
+  frameEndOffsets: Map<number, [number, number, number]>;   // [offI, offJ, rigidZone]
   /** End releases por barra: 12 banderas [U1 U2 U3 R1 R2 R3]_I + _J, el orden
    *  de ETABS. Una bandera en true libera ese grado LOCAL por condensacion
    *  estatica. Ver el comando `release`. */
@@ -179,6 +180,7 @@ export function parseCliCommands(text: string): ParsedModel {
     shellAngles: new Map(),
     frameAngles: new Map(),
     frameShearAreas: new Map(),
+    frameEndOffsets: new Map(),
     frameReleases: new Map(),
     areaObjs: [],
     supports: new Map(),
@@ -377,6 +379,27 @@ export function parseCliCommands(text: string): ParsedModel {
             for (let i = 0; i < 12; i++) v[i] = bits[i] === "1";
           }
           if (v.some(Boolean)) m.frameReleases.set(fid, v);
+          break;
+        }
+        // ── END LENGTH OFFSETS de CSI: `endoffset <frameID> <offI> <offJ> [rz]` ──
+        // `rz` es el rigid-zone factor (0-1). ETABS lo trae en 0 por defecto, y
+        // con 0 el brazo NO rigidiza: solo descuenta el peso propio de las
+        // VIGAS (luz libre) y mueve la estacion de reporte de los esfuerzos.
+        //
+        //   endoffset 17 0.20 0.20        (brazos de 20 cm, flexibles)
+        //   endoffset 17 0.20 0.20 1.0    (y rigidos de verdad)
+        case "endoffset":
+        case "offset":
+        case "lengthoff": {
+          const fid = parseInt(tokens[1], 10);
+          const oI = parseFloat(tokens[2] ?? "0");
+          const oJ = parseFloat(tokens[3] ?? "0");
+          const rz = parseFloat(tokens[4] ?? "0");
+          if (!isFinite(fid) || !isFinite(oI) || !isFinite(oJ)) {
+            m.errors.push(`endoffset: se esperaba "endoffset frameID offI offJ [rz]"`);
+            break;
+          }
+          m.frameEndOffsets.set(fid, [oI, oJ, isFinite(rz) ? rz : 0]);
           break;
         }
         case "ang":
@@ -638,6 +661,7 @@ export const cliModeler: ExampleDef = {
     const sectionShapes = new Map<number, any>();
     const localAngles = new Map<number, number>();
     const momentReleases = new Map<number, boolean[]>();
+    const endOffsets = new Map<number, [number, number, number]>();
     // 0 = Mindlin (defecto del C++), 1 = Kirchhoff Shell-Thin
     const plateFormulations = new Map<number, number>();
     // Carga de vano por ELEMENTO (globales). No la usa el solver —esa carga
@@ -681,6 +705,8 @@ export const cliModeler: ExampleDef = {
       if (angF !== undefined && isFinite(angF)) localAngles.set(eIdx, angF);
       const relF = m.frameReleases.get(f.id);
       if (relF) momentReleases.set(eIdx, relF);
+      const eoF = m.frameEndOffsets.get(f.id);
+      if (eoF) endOffsets.set(eIdx, eoF);
       const wF = m.frameLoads.get(f.id);
       if (wF) frameLoadsElem.set(eIdx, wF);
       const asF = m.frameShearAreas.get(f.id);
@@ -892,7 +918,7 @@ export const cliModeler: ExampleDef = {
       torsionalConstants: J, densities, poissonsRatios: poissons, thicknesses,
       membraneModifiers, bendingModifiers, shellModifiers,
       shellSurfaceLoads, shellAngles, cargaDeArea, cantos, anchos, sectionShapes, localAngles,
-      shearAreasY, shearAreasZ, momentReleases, plateFormulations,
+      shearAreasY, shearAreasZ, momentReleases, endOffsets, plateFormulations,
       frameLoads: frameLoadsElem,
       areaObjects: m.areaObjs.map(o => ({
         nodes: o.pts.map(id => idToIdx.get(id)).filter(i => i !== undefined) as number[],

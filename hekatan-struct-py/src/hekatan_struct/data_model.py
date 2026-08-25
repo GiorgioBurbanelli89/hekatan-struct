@@ -77,6 +77,12 @@ class ElementInputs:
     # carga repartida sobre la barra en EJES GLOBALES, kN/m: (wx, wy, wz)
     frame_loads:               dict[int, tuple[float, float, float]] = field(default_factory=dict)
     rigid_offsets:             dict[int, tuple[float, float]] = field(default_factory=dict)
+    # END LENGTH OFFSETS de CSI: (off_I, off_J, rigid_zone_factor) en metros y
+    # factor 0-1. NO es `rigid_offsets` (el de awatif, que ALARGA la barra):
+    # aquí el brazo va DENTRO de la luz y lo que se acorta es el tramo flexible.
+    # Con rz = 0 —el defecto de ETABS— no cambia la rigidez: sólo el peso propio
+    # de las vigas y la estación de reporte de esfuerzos.
+    end_offsets:               dict[int, tuple[float, float, float]] = field(default_factory=dict)
     moment_releases:           dict[int, list[bool]] = field(default_factory=dict)
     partial_fixity_springs:    dict[int, list[float]] = field(default_factory=dict)
     insertion_points:          dict[int, tuple[float, float]] = field(default_factory=dict)

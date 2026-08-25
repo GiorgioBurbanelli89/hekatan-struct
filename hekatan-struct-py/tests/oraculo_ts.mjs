@@ -52,7 +52,7 @@ for (const [nombre, c] of Object.entries(casos)) {
                    "momentsOfInertiaY", "torsionalConstants", "poissonsRatios",
                    "densities", "shearAreasY", "shearAreasZ", "localAngles",
                    "thicknesses", "momentReleases", "partialFixitySprings",
-                   "rigidOffsets", "insertionPoints"]) {
+                   "rigidOffsets", "endOffsets", "insertionPoints"]) {
     if (c[k]) elementInputs[k] = mapa(c[k]);
   }
   const out = deform(c.nodes, c.elements, nodeInputs, elementInputs);
