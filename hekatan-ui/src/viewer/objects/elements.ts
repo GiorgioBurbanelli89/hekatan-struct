@@ -364,13 +364,19 @@ export function elements(
   // siguen visibles. Util para ver lineas frame detras de un shell.
   // CRITICO: leemos `.val` PRIMERO (registra dependencia reactiva) y solo
   // despues chequeamos si hay geometria. Sino la derive nunca re-corre.
+  //
+  // Cuando el colormap de resultados (shell/solid) está activo, las caras
+  // sólidas de color uniforme TAPAN la gradiente. Se ocultan automáticamente
+  // para que el colormap sea visible. Los wireframe edges y nodos siguen.
   van.derive(() => {
     if (!settings.faces) return;
-    const facesOn = settings.faces.val;  // <- registra dependencia reactiva
+    const facesOn = settings.faces.val;
+    const shellOn = (settings.shellResults?.val ?? "none") !== "none";
+    const solidOn = (settings.solidResults?.val ?? "none") !== "none";
+    const resultsActive = shellOn || solidOn;
     if (shellMesh.geometry.attributes.position) {
-      shellMesh.visible = facesOn;
+      shellMesh.visible = facesOn && !resultsActive;
     } else if (!facesOn) {
-      // Aunque no haya geometria todavia, marcar invisible para cuando llegue
       shellMesh.visible = false;
     }
   });
