@@ -46,7 +46,15 @@ if ($SetFolder) {
 
 $defaultFolder = Get-DefaultFolder
 if (-not $defaultFolder) {
-    $defaultFolder = 'C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\hekatan-struct\ScreenShoot'
+    # Fallback portable: si el script vive dentro del repo, usa <hekatan-struct>\ScreenShoot.
+    # Si no (otra maquina / otro usuario), usa Imagenes\HekatanSnip.
+    $scriptDir = Split-Path $MyInvocation.MyCommand.Path -Parent
+    $repoShots = Join-Path $scriptDir '..\..\ScreenShoot'
+    if (Test-Path $repoShots) {
+        $defaultFolder = (Resolve-Path $repoShots).Path
+    } else {
+        $defaultFolder = Join-Path ([Environment]::GetFolderPath('MyPictures')) 'HekatanSnip'
+    }
     if (-not (Test-Path $defaultFolder)) { New-Item -ItemType Directory -Path $defaultFolder -Force | Out-Null }
     $cfg = @{ defaultFolder = $defaultFolder } | ConvertTo-Json
     Set-Content -Path $ConfigPath -Value $cfg -Encoding UTF8
