@@ -61,6 +61,10 @@ class ModeloHeks:
     shell_load: dict[int, float] = field(default_factory=dict)
     # índice interno de cada cáscara dentro de `elements`
     shell_idx: dict[int, int] = field(default_factory=dict)
+    # multiplicador de PESO PROPIO del comando `selfweight` (0 = no se aplica).
+    # Es el patrón `Dead` de ETABS: el acero de las barras y el peso de las
+    # cáscaras. Con `endoffset`, las VIGAS pesan por su luz libre.
+    selfweight: float = 0.0
     errores: list[str] = field(default_factory=list)
     # comandos que el lector NO monta (hoy: `spring`, `mass`, `diaph`, y
     # cualquiera que se añada al .heks). Antes se saltaban en silencio: el
@@ -105,6 +109,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
     ashear: dict[int, tuple[float, float]] = {}
     rels: dict[int, list[bool]] = {}
     endoffs: dict[int, tuple[float, float, float]] = {}   # (offI, offJ, rz)
+    sw_mult = [0.0]                        # multiplicador de peso propio
     shells: list[dict] = []
     q_area: dict[int, float] = {}          # carga de superficie por shell ID
     smod: dict[int, tuple[float, float]] = {}      # shellmod escalar
@@ -169,6 +174,14 @@ def leer_heks(ruta: str) -> ModeloHeks:
                     angs[int(t[1])] = float(t[2])
                 elif cmd == "as":
                     ashear[int(t[1])] = (float(t[2]), float(t[3]))
+                elif cmd in ("selfweight", "peso", "sw"):
+                    # selfweight [mult]  — el PESO PROPIO, como el patrón `Dead`
+                    # de ETABS (selfweight x 1). Hekatan no lo aplicaba nunca en
+                    # el estático: había que meterlo a mano en las cargas, y en
+                    # el galpón simplemente NO estaba (faltaban 385.5 kN de
+                    # acero + la losa). Con esto el .heks puede traer el caso
+                    # Dead de verdad.
+                    sw_mult[0] = float(t[1]) if len(t) > 1 else 1.0
                 elif cmd in ("endoffset", "offset", "lengthoff"):
                     # endoffset ID offI offJ [rz]   — el END LENGTH OFFSET de CSI.
                     # `rz` es el rigid-zone factor (0-1); ETABS trae 0 por
@@ -394,6 +407,14 @@ def leer_heks(ruta: str) -> ModeloHeks:
             detalle = ", ".join(f"{k}x{v}" for k, v in sorted(modal.items()))
             m.errores.append(
                 f"solo para el modal, no afectan a este cálculo: {detalle}")
+    # PESO PROPIO (`selfweight`). Se aplica al final, cuando ya están montados
+    # los elementos: barras por su LUZ LIBRE si tienen `endoffset` (regla de
+    # ETABS) y cáscaras por su área. Va a `node_inputs.loads`, o sea que se
+    # suma a las cargas del fichero como un patrón `Dead` más.
+    if sw_mult[0]:
+        from .extensions import apply_selfweight
+        apply_selfweight(m.nodes, m.elements, ei, ni, sw_multiplier=sw_mult[0])
+        m.selfweight = sw_mult[0]
     if not ni.loads and not ei.frame_loads:
         m.errores.append("modelo SIN carga: la deformada va a salir 0")
     return m
@@ -464,6 +485,8 @@ def escribir_heks(m: ModeloHeks, ruta: str | None = None) -> str:
             L.append("as %d %.8g %.8g"
                      % (fid, ei.shear_areas_z.get(k, 0.0),
                         ei.shear_areas_y.get(k, 0.0)))
+    if getattr(m, "selfweight", 0.0):
+        L.append("selfweight %.4g" % m.selfweight)
     for k, fid in ids_f.items():
         if k in ei.end_offsets:
             L.append("endoffset %d %.6g %.6g %.4g" % ((fid,) + tuple(ei.end_offsets[k])))

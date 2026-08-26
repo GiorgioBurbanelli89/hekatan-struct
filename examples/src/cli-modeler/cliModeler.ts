@@ -94,6 +94,7 @@ interface ParsedModel {
    *  MAS RIGIDO, hasta un 14 % nudo a nudo en el galpon. */
   frameShearAreas: Map<number, [number, number]>;
   frameEndOffsets: Map<number, [number, number, number]>;   // [offI, offJ, rigidZone]
+  selfWeight: number;                    // multiplicador de peso propio (`selfweight`)
   /** End releases por barra: 12 banderas [U1 U2 U3 R1 R2 R3]_I + _J, el orden
    *  de ETABS. Una bandera en true libera ese grado LOCAL por condensacion
    *  estatica. Ver el comando `release`. */
@@ -181,6 +182,7 @@ export function parseCliCommands(text: string): ParsedModel {
     frameAngles: new Map(),
     frameShearAreas: new Map(),
     frameEndOffsets: new Map(),
+    selfWeight: 0,
     frameReleases: new Map(),
     areaObjs: [],
     supports: new Map(),
@@ -379,6 +381,18 @@ export function parseCliCommands(text: string): ParsedModel {
             for (let i = 0; i < 12; i++) v[i] = bits[i] === "1";
           }
           if (v.some(Boolean)) m.frameReleases.set(fid, v);
+          break;
+        }
+        // ── PESO PROPIO: `selfweight [mult]` ──
+        // El patron `Dead` de ETABS (selfweight x 1). Hekatan NUNCA lo aplicaba
+        // en el estatico: habia que meterlo a mano en las cargas, y en el
+        // galpon directamente no estaba (faltaban 385.5 kN de acero mas la
+        // losa). Las VIGAS con `endoffset` pesan por su LUZ LIBRE, como ETABS.
+        case "selfweight":
+        case "peso":
+        case "sw": {
+          const v = parseFloat(tokens[1] ?? "1");
+          m.selfWeight = isFinite(v) ? v : 1;
           break;
         }
         // ── END LENGTH OFFSETS de CSI: `endoffset <frameID> <offI> <offJ> [rz]` ──
@@ -852,6 +866,49 @@ export const cliModeler: ExampleDef = {
         // saliera como POINTLOAD quedaria contada DOS VECES.
         cargaDeArea.set(k, (cargaDeArea.get(k) ?? 0) + f[i]);
       }
+    }
+    // PESO PROPIO. Igual que `apply_selfweight` del motor de Python: barras
+    // rho*A*L*g repartido a medias, cascaras rho*t*A/4 a cada esquina. La barra
+    // con `endoffset` pesa por su luz libre si es VIGA (< 20 grados con la
+    // horizontal); columna y diagonal por la longitud entera.
+    if (m.selfWeight) {
+      const G = 9.80665;
+      const addFz = (k: number, fz: number) => {
+        const prev = loads.get(k) ?? [0, 0, 0, 0, 0, 0];
+        prev[2] += fz;
+        loads.set(k, prev as [number,number,number,number,number,number]);
+      };
+      elements.forEach((e, i) => {
+        const rho = densities.get(i) ?? 0;
+        if (!rho) return;
+        if (e.length === 2) {
+          const A = areas.get(i) ?? 0;
+          const p0 = nodes[e[0]], p1 = nodes[e[1]];
+          const d = [p1[0]-p0[0], p1[1]-p0[1], p1[2]-p0[2]];
+          let L = Math.hypot(d[0], d[1], d[2]);
+          const eo = endOffsets.get(i);
+          if (eo) {
+            const dh = Math.hypot(d[0], d[1]);
+            const esViga = dh > 1e-9 &&
+              Math.abs(Math.atan2(Math.abs(d[2]), dh)) * 180 / Math.PI < 20;
+            if (esViga) L = Math.max(L - eo[0] - eo[1], 0);
+          }
+          const W = A * L * rho * G * m.selfWeight;
+          addFz(e[0], -W / 2); addFz(e[1], -W / 2);
+        } else if (e.length === 4) {
+          const t = thicknesses.get(i) ?? 0;
+          const P = e.map(n => nodes[n]);
+          let area2 = 0;
+          for (let k = 1; k < 3; k++) {
+            const u = [P[k][0]-P[0][0], P[k][1]-P[0][1], P[k][2]-P[0][2]];
+            const v = [P[k+1][0]-P[0][0], P[k+1][1]-P[0][1], P[k+1][2]-P[0][2]];
+            const cr = [u[1]*v[2]-u[2]*v[1], u[2]*v[0]-u[0]*v[2], u[0]*v[1]-u[1]*v[0]];
+            area2 += Math.hypot(cr[0], cr[1], cr[2]) / 2;
+          }
+          const W = area2 * t * rho * G * m.selfWeight;
+          for (const n of e) addFz(n, -W / 4);
+        }
+      });
     }
     const springsList: Array<{node:number; dof:number; k:number}> = [];
     for (const sp of m.springs) {
