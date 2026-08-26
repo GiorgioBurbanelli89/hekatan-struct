@@ -510,9 +510,16 @@ def escribir_heks(m: ModeloHeks, ruta: str | None = None) -> str:
         ids_s[k] = sid
         if n_sh == 1:
             L.append("# shell ID n1 n2 n3 n4 t E [q] [rho]")
-        L.append("shell %d %d %d %d %d %.8g %.6g"
+        # Los tokens 8 y 9 son `q` y `rho`. La DENSIDAD hay que escribirla
+        # siempre que se conozca: si se omite, el lector pone 2.45 por defecto
+        # y una cáscara que se metió con densidad 0 —o con la equivalente de un
+        # deck nervado— vuelve a leerse con otro peso.
+        rho_sh = ei.densities.get(k)
+        L.append("shell %d %d %d %d %d %.8g %.6g%s"
                  % (sid, ids_n[c[0]], ids_n[c[1]], ids_n[c[2]], ids_n[c[3]],
-                    ei.thicknesses.get(k, 0.20), ei.elasticities.get(k, 25e6)))
+                    ei.thicknesses.get(k, 0.20), ei.elasticities.get(k, 25e6),
+                    ("" if rho_sh is None
+                     else " %.8g %.6g" % (m.shell_load.get(k, 0.0), rho_sh))))
         if k in m.shell_load:
             L.append("areaload %d %.8g" % (sid, m.shell_load[k]))
     for k, sid in ids_s.items():

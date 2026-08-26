@@ -270,9 +270,10 @@ def _assemble_M_lumped(
             for dof in [6*i, 6*i+1, 6*i+2, 6*j, 6*j+1, 6*j+2]:
                 M[dof] += m_total / 2
         elif _is_shell(conn):
-            coords_xy = np.array([nodes[n_idx][:2] for n_idx in conn])
-            x, y = coords_xy[:, 0], coords_xy[:, 1]
-            area = 0.5 * abs((x[0]-x[2]) * (y[1]-y[3]) - (x[1]-x[3]) * (y[0]-y[2]))
+            # área REAL (no la proyección en planta): un techo inclinado tiene
+            # la masa de su chapa, no la de su sombra.
+            from .extensions import _area_q4
+            area = _area_q4([nodes[n_idx] for n_idx in conn])
             t = element_inputs.thicknesses[idx]
             m_total = area * t * rho
             for n_idx in conn:

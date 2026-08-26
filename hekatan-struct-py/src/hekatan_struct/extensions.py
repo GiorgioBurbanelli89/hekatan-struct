@@ -16,6 +16,14 @@ G_GRAV = 9.80665  # m/s²
 # ═══════════════════════════════════════════════════════════════════════════
 # Selfweight automation (CSI mass source pattern Dead SW=1)
 # ═══════════════════════════════════════════════════════════════════════════
+def _area_q4(P) -> float:
+    """Área REAL de un cuadrilátero en 3D: los dos triángulos (0,1,2) y (0,2,3)."""
+    Q = [np.asarray(p, dtype=float) for p in P]
+    a = np.linalg.norm(np.cross(Q[1] - Q[0], Q[2] - Q[0])) / 2.0
+    b = np.linalg.norm(np.cross(Q[2] - Q[0], Q[3] - Q[0])) / 2.0
+    return float(a + b)
+
+
 def apply_selfweight(
     nodes: Sequence[Node],
     elements: Sequence[Element],
@@ -60,9 +68,10 @@ def apply_selfweight(
             add_load(i, -W / 2)
             add_load(j, -W / 2)
         elif len(conn) == 4:
-            coords = np.array([nodes[k][:2] for k in conn])
-            x, y = coords[:, 0], coords[:, 1]
-            area = 0.5 * abs((x[0]-x[2]) * (y[1]-y[3]) - (x[1]-x[3]) * (y[0]-y[2]))
+            # ⚠️ el área es la REAL, no la proyectada en planta: una cubierta
+            # inclinada pesa por la chapa que tiene, no por su sombra. Con la
+            # proyección, el techo del galpón (9.8°) pesaba un 1.5 % de menos.
+            area = _area_q4([nodes[k] for k in conn])
             t = element_inputs.thicknesses.get(idx, 0)
             W = area * t * gamma * sw_multiplier
             for n_idx in conn:
