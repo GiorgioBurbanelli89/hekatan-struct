@@ -186,6 +186,24 @@ const PARAMS = {
   // referencia de ETABS de `test-m-dual` (`FLOOR_MESH = 0.5`).
   ms: { default: 0.5, min: 0.15, max: 3, step: 0.05,
         label: "malla máx. (m) — como ETABS", folder: "📐 Rejilla (planta)" },
+
+  // ── La malla DEL MODAL, aparte ───────────────────────────────────────────
+  //
+  // El modal no necesita la malla fina: la piden la flecha de la losa y los
+  // esfuerzos. Medido (2026-08-26, plantilla dual, 4 pisos):
+  //
+  //   malla   GDL      estático   T1       T2       T3
+  //   0.50 m  33 084   1082 ms    0.6800   0.2151   0.1828
+  //   1.00 m   8 820    291 ms    0.6803   0.2152   0.1828
+  //   2.00 m   2 520    112 ms    0.6803   0.2151   0.1824
+  //
+  // Y por esta misma `runModal`, con el modal entero: **1714 ms con 0.5 m
+  // contra 516 ms con 1.0 m** — 3.3 veces, y los periodos no se mueven de la
+  // cuarta cifra (la masa Uy queda en 88.0 % en las tres). Se remalla a 1 m
+  // por su cuenta, sin tocar el modelo que se ve ni el estático. Ponerlo igual
+  // que `ms` desactiva el remallado y usa el modelo tal cual.
+  msModal: { default: 1.0, min: 0.15, max: 3, step: 0.05,
+             label: "malla del modal (m)", folder: "📐 Rejilla (planta)" },
 };
 
 export const plantillas: ExampleDef = {
@@ -576,6 +594,9 @@ export const plantillas: ExampleDef = {
     };
     states.objects3D.val = [];
 
+    // `__soloModelo`: lo usa `runModal` para armar la malla gruesa del modal sin
+    // pagar el estático otra vez (con malla 0.5 son ~1.1 s tirados a la basura).
+    if ((p as any).__soloModelo) return;
     try {
       states.deformOutputs.val = deform(nodes, elements, states.nodeInputs.val,
                                         states.elementInputs.val);
@@ -598,8 +619,27 @@ export const plantillas: ExampleDef = {
    * específico las frecuencias saldrían √9.81 = 3.13 veces mal.
    */
   runModal(p, states, modalPanel) {
-    const nodes = states.nodes.val, elements = states.elements.val;
-    const ni = states.nodeInputs.val, ei = states.elementInputs.val;
+    let nodes = states.nodes.val, elements = states.elements.val;
+    let ni = states.nodeInputs.val, ei = states.elementInputs.val;
+    // El modal se remalla a `msModal` (ver la nota del parámetro): con la malla
+    // de dibujo tarda 13 veces más y devuelve los mismos periodos.
+    const msM = (p as any).msModal ?? p.ms;
+    let remallado = false;
+    if (Math.abs(msM - p.ms) > 1e-9) {
+      try {
+        const st: any = { nodes: { val: [] }, elements: { val: [] }, nodeInputs: { val: {} },
+                          elementInputs: { val: {} }, deformOutputs: { val: {} },
+                          analyzeOutputs: { val: {} }, objects3D: { val: [] } };
+        const mudo: any = { render() {}, clear() {}, show() {}, hide() {} };
+        (plantillas.build as any)({ ...p, ms: msM, __soloModelo: true }, st, mudo);
+        if (st.nodes.val.length && st.elements.val.length) {
+          nodes = st.nodes.val; elements = st.elements.val;
+          ni = st.nodeInputs.val; ei = st.elementInputs.val; remallado = true;
+        }
+      } catch (e: any) {
+        console.warn("[Plantillas] no pude remallar para el modal, sigo con el modelo de pantalla:", e?.message);
+      }
+    }
     if (!nodes?.length || !elements?.length || !ni?.supports?.size || !ei?.densities?.size) return;
     try {
       // Masa solo lateral (el `INCLUDEVERTICALMASS "No"` del mass source de
@@ -612,7 +652,8 @@ export const plantillas: ExampleDef = {
       modalPanel.render(out, {
         title: `Plantilla · ${NOM[Math.round(p.tipo)] ?? ""}`,
         properties: [
-          `${nodes.length} nudos · ${elements.length} elementos`,
+          `${nodes.length} nudos · ${elements.length} elementos` +
+            (remallado ? `  ·  malla del modal ${msM} m (la de pantalla es ${p.ms} m)` : ""),
           `T₁ = ${T1.toFixed(4)} s   (f₁ = ${out.frequencies?.[0]?.toFixed(4)} Hz)`,
           "Compará T₁ entre «Pórtico 3D» y «Pórtico + losa»: ahí se ve el aporte",
         ],
