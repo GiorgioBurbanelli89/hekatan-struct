@@ -182,9 +182,26 @@ const PARAMS = {
   //
   // ⚠️ No es un detalle de precisión: con 2 divisiones en un vano de 6 m salen
   // elementos de 3 metros y la losa se deforma a saltos — se ve en pantalla
-  // antes que en ningún número. Por defecto 0.5 m, que es lo que usa la
-  // referencia de ETABS de `test-m-dual` (`FLOOR_MESH = 0.5`).
-  ms: { default: 0.5, min: 0.15, max: 3, step: 0.05,
+  // antes que en ningún número.
+  //
+  // **El defecto es 1.25 m porque ES el de ETABS**, medido y luego leído del
+  // propio programa (2026-08-27). Antes era 0.5 m —el que usa `test-m-dual`—
+  // que son 6.25 veces más elementos por paño que los que arma ETABS.
+  //
+  // Medido: se le pasó a ETABS 22 un e2k con UN área por paño y
+  // `OBJMESHTYPE "DEFAULT"`, y se contó lo que él malló solo:
+  //   paño 6 m → 5×5 (1.200 m) · paño 5 m → 4×4 (1.250 m) · paño 4 m → 4×4 (1.000 m)
+  // Las tres acotan el máximo a [1.25, 1.333). Y leyendo su propia tabla
+  // `Analysis Options - Automatic Mesh Settings for Floors` por la OAPI:
+  //   MeshOpt = General · **MaxMeshSize = 1.25** (y lo mismo para muros).
+  // De paso: los muros RECTOS ETABS no los malla ("Default: No Meshing for
+  // Straight Walls", de las cadenas de ETABS.dll).
+  //
+  // Lo que cuesta y lo que se gana (plantilla dual, 4 pisos):
+  //   0.50 m  5514 nudos  1079 ms  flecha −2.9081 mm
+  //   1.25 m  1048 nudos   115 ms  flecha −2.8549 mm  (−1.83 %)
+  // 9 veces más rápido; los PERIODOS no se mueven de la cuarta cifra.
+  ms: { default: 1.25, min: 0.15, max: 3, step: 0.05,
         label: "malla máx. (m) — como ETABS", folder: "📐 Rejilla (planta)" },
 
   // ── La malla DEL MODAL, aparte ───────────────────────────────────────────
@@ -202,7 +219,7 @@ const PARAMS = {
   // cuarta cifra (la masa Uy queda en 88.0 % en las tres). Se remalla a 1 m
   // por su cuenta, sin tocar el modelo que se ve ni el estático. Ponerlo igual
   // que `ms` desactiva el remallado y usa el modelo tal cual.
-  msModal: { default: 1.0, min: 0.15, max: 3, step: 0.05,
+  msModal: { default: 1.25, min: 0.15, max: 3, step: 0.05,
              label: "malla del modal (m)", folder: "📐 Rejilla (planta)" },
 };
 
