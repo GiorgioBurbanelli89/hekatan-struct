@@ -1134,6 +1134,34 @@ function exportFromScratch(input: ExportE2kInput): string {
   const DECK_SEC = "DECK";
   let esMembrana = false;
   const areaLoadRefs: { name: string; story: string; idx: number }[] = [];
+  /**
+   * `MODELINGTYPE` de un tipo de cascara, leido del elemento que toca.
+   *
+   * ⚠️ Antes esto miraba `plateFormulations.values().next().value` — LA PRIMERA
+   * del mapa — asi que si la losa y el muro llevaban formulacion distinta, el
+   * muro heredaba la de la losa. Ahora se busca un elemento de ese tipo.
+   *   1 = ShellThin (Kirchhoff) · 2 = Membrane · resto = ShellThick (MITC4)
+   */
+  const modelingDe = (wall: boolean): string => {
+    const pf = (input.elementInputs as any).plateFormulations as Map<number, number> | undefined;
+    const a = areaElements.find(x => x.isWall === wall);
+    const v = pf && a ? pf.get(a.idx) : undefined;
+    return v === 2 ? "Membrane" : v === 1 ? "ShellThin" : "ShellThick";
+  };
+  /**
+   * Espesor de un tipo de cascara, del elemento que toca.
+   *
+   * ⚠️ Igual que arriba, esto era `thicknesses.values().next().value` — EL
+   * PRIMERO del mapa. En un modelo con losa y muro de distinto espesor, el
+   * muro se llevaba el de la losa: la plantilla dual (losa 0.20 / muro 0.25)
+   * exportaba `WALLTHICKNESS 200`, o sea muros un 20 % mas delgados de los que
+   * Hekatan analiza, y ETABS resolvia otro edificio. Medido el 2026-08-26.
+   */
+  const espesorDe = (wall: boolean, porDefecto: number): number => {
+    const th = input.elementInputs.thicknesses;
+    const a = areaElements.find(x => x.isWall === wall);
+    return (a ? th?.get(a.idx) : undefined) ?? th?.values().next().value ?? porDefecto;
+  };
   if (areaElements.some(a => !a.isWall)) {
     // .LOSA o DECK? Se decide por el modificador de FLEXION: si es ~0 el area
     // es una MEMBRANA, y en ETABS eso es un DECK, no una losa. Exportarlo
@@ -1152,7 +1180,7 @@ function exportFromScratch(input: ExportE2kInput): string {
       }
       return false;
     })();
-    const t_slab = elementInputs.thicknesses?.values().next().value ?? 0.15;
+    const t_slab = espesorDe(false, 0.15);
     if (esMembrana) {
       // Tokens copiados del e2k que escribe ETABS para el mismo modelo. No son
       // los de una losa con otro nombre: llevan el prefijo DECK y describen el
@@ -1169,22 +1197,20 @@ function exportFromScratch(input: ExportE2kInput): string {
       lines.push(`  SHELLPROP  "${DECK_SEC}"  PROPTYPE  "Deck"  DECKTYPE "Filled"  CONCMATERIAL "${defaultShellMat}"  DECKMATERIAL "${defaultShellMat}"  DECKSLABDEPTH ${rp(t_slab * 65 / 120)} DECKRIBDEPTH ${rp(t_slab * 55 / 120)} DECKRIBWIDTHTOP ${rp(t_slab * 150 / 120)} DECKRIBWIDTHBOTTOM ${rp(t_slab * 100 / 120)} DECKRIBSPACING ${rp(t_slab * 200 / 120)} DECKSHEARTHICKNESS ${rp(t_slab * 0.76 / 120)} DECKUNITWEIGHT ${rp(cF(0.11012))} SHEARSTUDDIAM ${rp(t_slab * 19 / 120)} SHEARSTUDHEIGHT ${rp(t_slab * 100 / 120)} SHEARSTUDFU 400 `);
     } else {
       lines.push(`$ SLAB PROPERTIES`);
-      lines.push(`  SHELLPROP  "Losa"  PROPTYPE  "Slab"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "ShellThin"  SLABTYPE "Slab"  SLABTHICKNESS ${rd(cL(t_slab))} `);
+      lines.push(`  SHELLPROP  "Losa"  PROPTYPE  "Slab"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "${modelingDe(false)}"  SLABTYPE "Slab"  SLABTHICKNESS ${rd(cL(t_slab))} `);
     }
     lines.push(``);
   }
   if (areaElements.some(a => a.isWall)) {
     lines.push(`$ WALL PROPERTIES`);
-    const t_wall = elementInputs.thicknesses?.values().next().value ?? 0.2;
+    const t_wall = espesorDe(true, 0.2);
     // MODELINGTYPE tal cual lo escribe ETABS: "ShellThin" | "ShellThick" |
     // "Membrane". Antes iba "ShellThick" FIJO, sin mirar el modelo, y por eso
     // el mismo caso daba 1.500000 montado por la OAPI (con Membrana) y
     // 1.491651 al pasar por el .e2k — la comparacion no medía el exportador,
     // medía dos elementos. Verificado pidiendole a ETABS que exportara su
     // propio .e2k de cada tipo (galpon-bodega-electoral/tipos_cascara_export.py).
-    const fMuro = [...(((input.elementInputs as any).plateFormulations as Map<number, number> | undefined) ?? new Map())].length
-      ? (((input.elementInputs as any).plateFormulations as Map<number, number>).values().next().value ?? 0) : 0;
-    const modelingMuro = fMuro === 2 ? "Membrane" : fMuro === 1 ? "ShellThin" : "ShellThick";
+    const modelingMuro = modelingDe(true);
     lines.push(`  SHELLPROP  "Muro"  PROPTYPE  "Wall"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "${modelingMuro}"  WALLTHICKNESS ${rd(cL(t_wall))} `);
     lines.push(``);
   }

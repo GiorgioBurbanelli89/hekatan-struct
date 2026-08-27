@@ -43,11 +43,12 @@ g.matchMedia = () => ({ matches:false, addEventListener(){}, addListener(){} });
 const { examplesRegistry } = await import("${R}/examples/src/workspace/exampleRegistry");
 const { exportE2k } = await import("${R}/examples/src/shared/e2kExporter");
 
-export function generar(id) {
+export function generar(id, over) {
   const ex = examplesRegistry.find((e) => e.id === id);
   if (!ex) throw new Error("no existe el ejemplo '" + id + "'");
   if (typeof ex.build !== "function") throw new Error("'" + id + "' es legacy standalone: no tiene build()");
   const p = {}; for (const [k, d] of Object.entries(ex.params || {})) p[k] = d.default;
+  Object.assign(p, over || {});
   const st = { nodes:{val:[]}, elements:{val:[]}, nodeInputs:{val:{}}, elementInputs:{val:{}},
                deformOutputs:{val:{}}, analyzeOutputs:{val:{}}, objects3D:{val:[]} };
   ex.build(p, st, { render(){}, clear(){}, show(){}, hide(){} });
@@ -57,6 +58,10 @@ export function generar(id) {
   return { e2k, nNodos: st.nodes.val.length, nElem: st.elements.val.length };
 }`, "exportar-e2k");
 
-const { e2k, nNodos, nElem } = mod.generar(id);
+// overrides opcionales:  node cli/exportar_e2k.mjs plantillas out.e2k tipo=6 tmuro=0.25
+const over = Object.fromEntries(process.argv.slice(4).map(a => {
+  const [k, v] = a.split("="); return [k, isNaN(Number(v)) ? v : Number(v)];
+}));
+const { e2k, nNodos, nElem } = mod.generar(id, over);
 writeFileSync(salida, e2k, "utf-8");
 console.log(`${id}: ${nNodos} nudos · ${nElem} elementos → ${salida}`);

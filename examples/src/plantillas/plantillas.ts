@@ -138,6 +138,31 @@ const PARAMS = {
   tlosa: { default: 0.20, min: 0.08, max: 0.6, step: 0.01, label: "losa, espesor (m)", folder: "🔩 Secciones" },
   tmuro: { default: 0.25, min: 0.15, max: 0.6, step: 0.05, label: "muro, espesor (m)", folder: "🔩 Secciones" },
   bdiag: { default: 0.15, min: 0.05, max: 0.4, step: 0.01, label: "diagonal, lado (m)", folder: "🔩 Secciones" },
+
+  // ── Formulación de la cáscara — el «Shell Thin / Shell Thick» de ETABS ────
+  //
+  // Se elige aquí, como en ETABS, y va tanto al ANÁLISIS como al `.e2k` que se
+  // exporta (`e2kExporter` ya traduce este mismo número a `MODELINGTYPE`).
+  // El despachador del motor (`getLocalStiffnessMatrix.cpp`) entiende:
+  //   1 = Kirchhoff MZC (Shell-Thin) · 0 = Mindlin MITC4 (Shell-Thick)
+  //
+  // ⚠️ El defecto es THIN a propósito, y está MEDIDO (2026-08-26, plantilla
+  // dual de 4 pisos exportada a e2k y corrida en ETABS 22 con `etabs-cli`):
+  // con Thin en los muros el modal cierra en **−0.19 %** contra ETABS
+  // (T₁ 0.6903 vs 0.6916) y la masa Uy en 88.7 % vs 88.59 %. Con el MITC4
+  // salía **−7.3 %**, porque sobre-rigidiza fuera del plano en paneles
+  // alargados (0.5 × 3.5 m). En el propio ETABS, Thin y Thick del muro dan lo
+  // mismo (0.1 %) — su «Shell-Thick» no es un MITC4.
+  formLosa: {
+    default: 1,
+    options: { "Shell-Thin (Kirchhoff)": 1, "Shell-Thick (Mindlin MITC4)": 0 },
+    label: "losa, formulación", folder: "🔩 Secciones",
+  },
+  formMuro: {
+    default: 1,
+    options: { "Shell-Thin (Kirchhoff)": 1, "Shell-Thick (Mindlin MITC4)": 0 },
+    label: "muro, formulación", folder: "🔩 Secciones",
+  },
   fc: { default: 240, min: 180, max: 500, step: 10, label: "f'c (kg/cm²)", folder: "🔩 Secciones" },
   q: { default: 5.0, min: 0, max: 20, step: 0.5, label: "carga de piso (kN/m²)", folder: "⬇ Cargas" },
   // ── El mallado, como lo hace ETABS ───────────────────────────────────────
@@ -397,7 +422,8 @@ export const plantillas: ExampleDef = {
     const elasticities = m<number>(), poissonsRatios = m<number>(), shearModuli = m<number>(),
       densities = m<number>(), areas = m<number>(), momentsOfInertiaY = m<number>(),
       momentsOfInertiaZ = m<number>(), torsionalConstants = m<number>(),
-      thicknesses = m<number>(), shearAreasY = m<number>(), shearAreasZ = m<number>();
+      thicknesses = m<number>(), shearAreasY = m<number>(), shearAreasZ = m<number>(),
+      plateFormulations = m<number>();
     // La losa y los muros son de HORMIGÓN aunque el pórtico sea de acero: eso es
     // un edificio mixto de verdad, no un edificio de chapa.
     const Eh = 15100 * Math.sqrt(p.fc) * 98.0665, NUh = 0.20, RHOh = 24 / G;
@@ -406,6 +432,7 @@ export const plantillas: ExampleDef = {
         elasticities.set(e, Eh); poissonsRatios.set(e, NUh);
         shearModuli.set(e, Eh / (2 * (1 + NUh))); densities.set(e, RHOh);
         thicknesses.set(e, c === "muro" ? p.tmuro : p.tlosa);
+        plateFormulations.set(e, c === "muro" ? p.formMuro : p.formLosa);
         return;
       }
       elasticities.set(e, E); poissonsRatios.set(e, NU);
@@ -545,7 +572,7 @@ export const plantillas: ExampleDef = {
     states.elementInputs.val = {
       elasticities, poissonsRatios, shearModuli, densities, areas,
       momentsOfInertiaY, momentsOfInertiaZ, torsionalConstants,
-      thicknesses, shearAreasY, shearAreasZ,
+      thicknesses, shearAreasY, shearAreasZ, plateFormulations,
     };
     states.objects3D.val = [];
 
