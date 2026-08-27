@@ -206,6 +206,34 @@ const PARAMS = {
              label: "malla del modal (m)", folder: "📐 Rejilla (planta)" },
 };
 
+// ── Cuánto va a tardar, ANTES de tardarlo ────────────────────────────────────
+//
+// Las mismas curvas medidas que usa `test-m` (testM.ts:244) — el solver corre en
+// el HILO PRINCIPAL, así que mientras calcula la pestaña no responde. El ejemplo
+// avisaba y dejaba cancelar; la plantilla no, y por eso "se colgaba" sin decir
+// nada. Umbral más bajo que el de test-m (20 s) porque aquí se cambia de
+// plantilla con un clic y no hay «Correr» de por medio.
+const segDeform = (dof: number) => 3.77e-10 * Math.pow(dof, 2.05);
+const segModal = (dof: number) => 2.07e-11 * Math.pow(dof, 2.5);
+const SEG_CONFIRMAR = 5;
+
+/** Pregunta si vale la pena seguir. `true` = seguir. Sin `confirm` (Node), sigue. */
+function confirmarSiTarda(dof: number, seg: number, nudos: number, malla: number,
+                          que: string): boolean {
+  if (seg <= SEG_CONFIRMAR || typeof confirm !== "function") return true;
+  return confirm(
+    `Modelo grande: ${dof.toLocaleString()} grados de libertad ` +
+    `(${nudos.toLocaleString()} nudos, malla ${malla} m).
+
+` +
+    `${que} va a tardar ~${Math.round(seg)} s y la página queda sin responder ` +
+    `mientras calcula (el solver corre en el hilo principal).
+
+` +
+    `¿Continuar? — Subir «malla máx. (m)» o bajar pisos/líneas lo hace mucho más rápido.`
+  );
+}
+
 export const plantillas: ExampleDef = {
   id: "plantillas",
   name: "📐 Plantillas — nuevo modelo (pórtico 2D / 3D / con losa)",
@@ -597,6 +625,25 @@ export const plantillas: ExampleDef = {
     // `__soloModelo`: lo usa `runModal` para armar la malla gruesa del modal sin
     // pagar el estático otra vez (con malla 0.5 son ~1.1 s tirados a la basura).
     if ((p as any).__soloModelo) return;
+    // ── Una puerta, no dos ───────────────────────────────────────────────────
+    //
+    // `rebuild()` del workspace (main.ts:1082) llama SIEMPRE a este `build()` y
+    // DESPUÉS, si el caso activo es Modal, a `runModal()`. O sea: mover un slider
+    // con el modal puesto pagaba el estático entero (~1.5 s con 33 000 GDL) para
+    // tirarlo a la basura, porque lo que se muestra es el modo. El estático se
+    // recupera solo al volver a un caso "Linear Static", que dispara otro rebuild.
+    const caso = (globalThis as any).__hekatanActiveCase;
+    if (typeof caso === "string" && caso.startsWith("Modal")) {
+      console.info("[Plantillas] caso Modal activo: me salto el estático (lo resuelve runModal).");
+      return;
+    }
+    // El modelo ya está armado (cuesta ~11 ms); lo caro es resolverlo (~99 %).
+    // Si va a doler, se avisa y se puede cancelar: el modelo queda dibujado.
+    const dofE = nodes.length * 6;
+    if (!confirmarSiTarda(dofE, segDeform(dofE), nodes.length, p.ms, "El análisis estático")) {
+      console.info("[Plantillas] estático cancelado:", dofE, "GDL. El modelo queda dibujado.");
+      return;
+    }
     try {
       states.deformOutputs.val = deform(nodes, elements, states.nodeInputs.val,
                                         states.elementInputs.val);
@@ -641,6 +688,14 @@ export const plantillas: ExampleDef = {
       }
     }
     if (!nodes?.length || !elements?.length || !ni?.supports?.size || !ei?.densities?.size) return;
+    const dofM = nodes.length * 6;
+    if (!confirmarSiTarda(dofM, segModal(dofM), nodes.length, msM, "El modal")) {
+      try {
+        modalPanel.render({ frequencies: [], modeShapes: [], massParticipation: [] },
+          { title: "Plantilla", properties: [`Modal cancelado: ${dofM.toLocaleString()} GDL con malla ${msM} m. Subí «malla del modal (m)» o bajá pisos/líneas.`] });
+      } catch { /* el panel puede no estar montado */ }
+      return;
+    }
     try {
       // Masa solo lateral (el `INCLUDEVERTICALMASS "No"` del mass source de
       // ETABS): sin eso los modos verticales roban cupos y ΣUx/ΣUy no llegan.
