@@ -195,6 +195,22 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
     originalNodes = (trueOriginalNodes.length > 0 ? trueOriginalNodes : mesh.nodes.rawVal).map((n) => [...n] as Node);
     const nNodes = originalNodes.length;
 
+    // ── El modo tiene que ser de ESTA malla ──────────────────────────────────
+    //
+    // Se indexa `shape[i*6]` sobre los nudos MOSTRADOS. Si el modo se calculó
+    // con otra malla (p. ej. el modal remallado grueso mientras la pantalla
+    // sigue fina), los índices que sobran leen `undefined`, el `|| 0` los deja
+    // quietos y la animación sale MENTIROSA en vez de rota: como la numeración
+    // va por niveles, **solo se mueven los primeros pisos**. Pasó de verdad.
+    // Mejor no animar y decirlo, que animar algo que no es el modo.
+    const nModo = Math.floor(shape.length / 6);
+    if (nModo !== nNodes) {
+      console.warn(`[animateMode] el modo es de otra malla: ${nModo} nudos contra ` +
+        `${nNodes} en pantalla. No animo (saldrían quietos los pisos de arriba). ` +
+        `Corré el modal sobre la misma malla que se muestra.`);
+      return;
+    }
+
     // Amplitud = scalePct% del diagonal del modelo / maxDisp del modo
     let xMin = Infinity, yMin = Infinity, zMin = Infinity;
     let xMax = -Infinity, yMax = -Infinity, zMax = -Infinity;

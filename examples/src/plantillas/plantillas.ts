@@ -691,14 +691,18 @@ export const plantillas: ExampleDef = {
     let remallado = false;
     if (Math.abs(msM - p.ms) > 1e-9) {
       try {
-        const st: any = { nodes: { val: [] }, elements: { val: [] }, nodeInputs: { val: {} },
-                          elementInputs: { val: {} }, deformOutputs: { val: {} },
-                          analyzeOutputs: { val: {} }, objects3D: { val: [] } };
+        // ⚠️ En el `states` REAL, no en uno aparte. `animateMode` deforma la
+        // malla MOSTRADA indexando `shape[i*6]`: si el modo viene de otra malla,
+        // los nudos que sobran leen `undefined`, el `|| 0` los deja quietos y —
+        // como la numeración va por niveles — **solo se mueven los primeros
+        // pisos**. Es lo que pasó al meter `msModal`, y lo que ya avisaba el
+        // comentario de `runModalEdificio` en testM.ts. La malla fina vuelve
+        // sola al elegir un caso "Linear Static", que dispara otro rebuild.
         const mudo: any = { render() {}, clear() {}, show() {}, hide() {} };
-        (plantillas.build as any)({ ...p, ms: msM, __soloModelo: true }, st, mudo);
-        if (st.nodes.val.length && st.elements.val.length) {
-          nodes = st.nodes.val; elements = st.elements.val;
-          ni = st.nodeInputs.val; ei = st.elementInputs.val; remallado = true;
+        (plantillas.build as any)({ ...p, ms: msM, __soloModelo: true }, states, mudo);
+        if (states.nodes.val.length && states.elements.val.length) {
+          nodes = states.nodes.val; elements = states.elements.val;
+          ni = states.nodeInputs.val; ei = states.elementInputs.val; remallado = true;
         }
       } catch (e: any) {
         console.warn("[Plantillas] no pude remallar para el modal, sigo con el modelo de pantalla:", e?.message);
