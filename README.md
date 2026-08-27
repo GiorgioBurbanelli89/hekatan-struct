@@ -348,7 +348,7 @@ Naming canonical para validación cruzada hekatan-struct-lineal ↔ ETABS / SAP2
 | format | target | round-trip closure | notes |
 |---|---|---|---|
 | **E2K** | ETABS 22 | **0.000 %** — 372/378 nodes, ΣRz exact | must be written in **N and MM**: the E2K parser has **no `UNITS` token** (confirmed in `ETABS.dll` ~0x03490e00) and always reads SAPFire base units. Moments are **N·mm (×1e6)**, not N·m |
-| **S2K** | SAP2000 24 | **0.000 %** — 378/378 nodes | `Shape=General`, not `Rectangular`: with a parametric shape SAP **recomputes I22 and J** from t3/t2 and discards what you wrote |
+| **S2K** | SAP2000 24 | **0.000 %** — 378/378 nodes; re-measured 2026-08-27 on the 8 templates: reaction **and** deflection at 0.000 % in all 8 | `Shape=General`, not `Rectangular`: with a parametric shape SAP **recomputes I22 and J** from t3/t2 and discards what you wrote. And `CurrUnits` must say **KN, m** — see below |
 | **F2K** | SAFE 20 | ⏳ open — 6.8 % mean | the area spring is written half-defined: `SpringOption`, `SoilProfile` and `EndLengthRatio` are missing (found by reflection on `SAFEv1.dll`) |
 
 ⚠️ **Both E2K and S2K used to fail the same way, silently**: a *parametric* section
@@ -378,6 +378,23 @@ Modal error against ETABS 22, before → after the mass-source fix:
 
 Both are guarded by regression cases: `tests/casos/e2k_mass_source.mjs` and
 `tests/casos/e2k_shell_props.mjs`.
+
+⚠️ **The `.s2k` used to lie about its own units.** `units.force` only set the
+`CurrUnits` label in PROGRAM CONTROL — it converted **nothing**: loads, modulus
+and densities are all written straight from the model, which works in **kN and
+m**. Exporting with `units: {force: "Tonf"}` produced a file that contradicts
+itself, and SAP2000 does the right thing with it: it reads tonnes.
+
+Measured 2026-08-27 on the 8 templates: a 6480 kN model wrote `ΣF3 = -6480`
+under `CurrUnits="Tonf, m, C"`, and SAP2000 returned **ΣRz = 63547.09 kN** —
+6480 × 9.80665. The solver was fine; the file was wrong.
+
+⚠️ **And the deflections came out right anyway**, which is what made it
+invisible: `E1` carries the same mismatch, so the factor cancels in `u = F/K`
+and displacements closed to 4 decimals against Hekatan. Only **forces and
+reactions** were off, by exactly g. With the label fixed, SAP2000 closes at
+**0.000 %** on all 8 templates in reaction *and* deflection. Guarded by
+`tests/casos/s2k_unidades.mjs`.
 
 ⚠️ **Never compare T1 against T1.** A plane frame has its first mode **out of
 plane** (ETABS: mode 1 = 77 % UY), so "mode 1" can be a different mode in each

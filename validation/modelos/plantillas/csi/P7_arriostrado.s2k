@@ -2094,6 +2094,6 @@ TABLE:  "MATERIAL PROPERTIES 03B - CONCRETE DATA"
    Material=MAT_22940519_n0.2000   Fc=27579   eFc=27579   LtWtConc=No   SSCurveOpt=Mander   SSHysType=Takeda   SFc=0.00222   SCap=0.005   FinalSlope=-0.1   FAngle=0   DAngle=0
  
 TABLE:  "PROGRAM CONTROL"
-   ProgramName=SAP2000   Version=24.1.0   CurrUnits="Tonf, m, C"   SteelCode="AISC 360-16"   ConcCode="ACI 318-19"   AlumCode="AA 2015"   ColdCode=AISI-16   RegenHinge=Yes
+   ProgramName=SAP2000   Version=24.1.0   CurrUnits="KN, m, C"   SteelCode="AISC 360-16"   ConcCode="ACI 318-19"   AlumCode="AA 2015"   ColdCode=AISI-16   RegenHinge=Yes
  
 END TABLE DATA

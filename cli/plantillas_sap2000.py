@@ -67,7 +67,19 @@ for i, f in enumerate(trabajos, 1):
         if sm.File.OpenFile(src) != 0:
             estado = "FALLA abrir"
         else:
+            # ⚠️ Fijar las unidades DESPUES de abrir Y COMPROBARLAS. Cada
+            # `OpenFile` restaura las del fichero, y en un bucle la llamada se
+            # colaba de forma alterna: los modelos pares se leian en las
+            # unidades del fichero y los impares en kN. Salian dos columnas de
+            # numeros que se diferenciaban en 9.80665 sin motivo aparente.
             sm.SetPresentUnits(6)
+            u = sm.GetPresentUnits()
+            if u != 6:
+                sm.SetPresentUnits(6)
+                u = sm.GetPresentUnits()
+            D["unidades"] = u
+            if u != 6:
+                estado = "AVISO: unidades %s, no kN_m_C" % u
             if sm.File.Save(sdb) != 0:
                 estado = "aviso: no guardo el sdb"
 

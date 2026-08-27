@@ -59,7 +59,32 @@ export interface S2kExportInput {
 
 export function exportS2k(input: S2kExportInput): string {
   const { nodes, elements, nodeInputs, elementInputs } = input;
-  const units = input.units || { force: "KN", length: "m" };
+  // ⚠️ `units.force` SOLO pone la etiqueta `CurrUnits` del bloque PROGRAM
+  // CONTROL — no convierte NADA. Ni las cargas, ni el módulo, ni las densidades:
+  // todos los valores se escriben tal cual salen del modelo, que trabaja en
+  // **kN y m**. Declarar "Tonf" ahí escribía un fichero que se contradice a sí
+  // mismo, y SAP2000 hace lo correcto con él: lo lee como toneladas.
+  //
+  // Medido el 2026-08-27 con las 8 plantillas (`cli/plantillas_sap2000.py`):
+  // el modelo tiene 6480 kN, el `.s2k` escribía `ΣF3 = -6480` bajo
+  // `CurrUnits="Tonf, m, C"`, y SAP2000 devolvía **ΣRz = 63547.09 kN** — que es
+  // 6480 × 9.80665, o sea 6480 **toneladas**. El solver de SAP estaba bien: el
+  // fichero estaba mal.
+  //
+  // ⚠️ Y las FLECHAS salían BIEN igualmente, lo que lo hacía invisible: el
+  // módulo `E1` viaja con el mismo desajuste, así que en `u = F/K` el factor se
+  // cancela y los desplazamientos cierran a 4 decimales con Hekatan. Lo único
+  // que se iba eran las FUERZAS y las REACCIONES, ×9.80665.
+  //
+  // El arreglo es etiquetar lo que de verdad se escribe. Convertir los valores
+  // sería lo otro, pero hay que convertir TODAS las magnitudes a la vez
+  // (fuerza, momento kN·m, E kN/m², peso específico kN/m³…) y basta con que
+  // falte una para volver a un fichero incoherente sin avisar.
+  const units = { force: "KN", length: "m" };
+  if (input.units && (input.units.force !== "KN" || input.units.length !== "m"))
+    console.warn(`[s2k] el modelo va en kN·m y el exportador NO convierte: se ` +
+      `declara CurrUnits="KN, m, C" y se ignora "${input.units.force}, ${input.units.length}". ` +
+      `Etiquetarlo de otra forma hace que SAP2000 lea las fuerzas escaladas.`);
   const title = input.title || "Awatif Model";
   const L: string[] = [];
 
