@@ -104,6 +104,10 @@ export interface ExportE2kInput {
      *  tenga su MODALCASE y ETABS/SAP corran el mismo modal que Hekatan en Settings. */
     modal?: { ritz?: boolean; nModes?: number };
   };
+  /** Nº de modos del caso `Modal` que se escribe en el e2k. Por defecto 12, los
+   *  mismos que devuelve `_modal`: con menos, los modos altos de ETABS no se
+   *  calculan y no hay contra que comparar los del motor. */
+  modalModes?: number;
 }
 
 /**
@@ -1162,6 +1166,64 @@ function exportFromScratch(input: ExportE2kInput): string {
     const a = areaElements.find(x => x.isWall === wall);
     return (a ? th?.get(a.idx) : undefined) ?? th?.values().next().value ?? porDefecto;
   };
+  // ── Los MODIFICADORES de cascara ────────────────────────────────────
+  //
+  // ETABS los escribe como una SEGUNDA linea `SHELLPROP` con el MISMO nombre,
+  // solo con los factores, y **omite los que valen 1**. Copiado de un e2k
+  // escrito por el propio ETABS (`galpon-bodega-electoral/ref_riochico.e2k`):
+  //
+  //   SHELLPROP "LOSA DE 30CM"  PROPTYPE "Slab" ... SLABTHICKNESS 0.3
+  //   SHELLPROP "LOSA DE 30CM"  F11MOD 0.25 F22MOD 0.25 ... V13MOD 0.25 V23MOD 0.25
+  //   SHELLPROP "LOSA DE ESCALERA"  M11MOD 0.25 M22MOD 0.25 M12MOD 0.25
+  //
+  // ⚠️ Esto NO se exportaba. El modelo podia llevar una losa fisurada al 25 %
+  // (`shellmod`) y el `.e2k` se la mandaba a ETABS INTACTA, sin avisar: dos
+  // rigideces distintas para el mismo modelo, y la diferencia aparecia luego en
+  // los periodos sin saber de donde salia.
+  //
+  // El orden de `shellModifiers` ES el de ETABS: F11 F22 F12 M11 M22 M12 V13
+  // V23 (`shellQ4.cpp` lee dmod[3..5] como la flexion). Los escalares
+  // `membraneModifiers` / `bendingModifiers` son el caso isotropo del mismo
+  // vector, y se traducen a el.
+  const MOD_NOMBRES = ["F11MOD", "F22MOD", "F12MOD", "M11MOD", "M22MOD",
+                       "M12MOD", "V13MOD", "V23MOD"];
+  const modsDe = (idx: number): number[] | null => {
+    const dmods = (elementInputs as any).shellModifiers as Map<number, number[]> | undefined;
+    const d = dmods?.get(idx);
+    if (d && d.length >= 8) return d.slice(0, 8);
+    const mm = (elementInputs as any).membraneModifiers as Map<number, number> | undefined;
+    const bm = (elementInputs as any).bendingModifiers as Map<number, number> | undefined;
+    const m = mm?.get(idx), b = bm?.get(idx);
+    if (m === undefined && b === undefined) return null;
+    const mv = m ?? 1, bv = b ?? 1;
+    return [mv, mv, mv, bv, bv, bv, bv, bv];
+  };
+  /**
+   * La linea de modificadores de una propiedad, o "" si no hace falta.
+   * Si dentro del grupo hay elementos con modificadores DISTINTOS no se puede
+   * decir en una propiedad: se avisa y se emite el del primero, que es lo unico
+   * que se puede hacer sin partir la propiedad en varias.
+   */
+  const lineaMods = (nombre: string, esMuro: boolean): string => {
+    const delGrupo = areaElements.filter(a => a.isWall === esMuro);
+    const vistos = new Map<string, number[]>();
+    for (const a of delGrupo) {
+      const m = modsDe(a.idx) ?? [1, 1, 1, 1, 1, 1, 1, 1];
+      vistos.set(m.map(v => rd(v)).join(","), m);
+    }
+    if (vistos.size === 0) return "";
+    if (vistos.size > 1)
+      console.warn(`[e2k] "${nombre}": ${vistos.size} juegos de modificadores distintos ` +
+        `en la misma propiedad. ETABS los guarda POR PROPIEDAD, asi que se exporta el ` +
+        `primero y los demas se pierden.`);
+    const m = vistos.values().next().value as number[];
+    const partes = MOD_NOMBRES
+      .map((n, i) => (Math.abs(m[i] - 1) > 1e-9 ? `${n} ${rd(m[i])}` : ""))
+      .filter(Boolean);
+    if (!partes.length) return "";              // todos a 1: ETABS los omite
+    return `  SHELLPROP  "${nombre}"  ${partes.join(" ")} `;
+  };
+
   if (areaElements.some(a => !a.isWall)) {
     // .LOSA o DECK? Se decide por el modificador de FLEXION: si es ~0 el area
     // es una MEMBRANA, y en ETABS eso es un DECK, no una losa. Exportarlo
@@ -1199,6 +1261,8 @@ function exportFromScratch(input: ExportE2kInput): string {
       lines.push(`$ SLAB PROPERTIES`);
       lines.push(`  SHELLPROP  "Losa"  PROPTYPE  "Slab"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "${modelingDe(false)}"  SLABTYPE "Slab"  SLABTHICKNESS ${rd(cL(t_slab))} `);
     }
+    const modLosa = lineaMods(esMembrana ? DECK_SEC : "Losa", false);
+    if (modLosa) lines.push(modLosa);
     lines.push(``);
   }
   if (areaElements.some(a => a.isWall)) {
@@ -1212,6 +1276,8 @@ function exportFromScratch(input: ExportE2kInput): string {
     // propio .e2k de cada tipo (galpon-bodega-electoral/tipos_cascara_export.py).
     const modelingMuro = modelingDe(true);
     lines.push(`  SHELLPROP  "Muro"  PROPTYPE  "Wall"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "${modelingMuro}"  WALLTHICKNESS ${rd(cL(t_wall))} `);
+    const modMuro = lineaMods("Muro", true);
+    if (modMuro) lines.push(modMuro);
     lines.push(``);
   }
 
@@ -1429,12 +1495,36 @@ function exportFromScratch(input: ExportE2kInput): string {
   lines.push(``);
 
   // ── MASS SOURCE ─────────────────────────────────────────────────────
-  // Define cómo ETABS computa la masa para modal/THA. INCLUDELOADS "Yes"
-  // + MASSSOURCELOAD "Dead" 1 → masa = peso propio (SELFWEIGHT) × 1g.
-  // LUMPATSTORIES "Yes" agrupa la masa al nivel del rigid diaphragm.
+  //
+  // De dónde saca ETABS la MASA para el modal. Y **depende de `weightMode`**,
+  // porque los dos modos ponen el peso propio en sitios distintos:
+  //
+  //   "auto"   → SELFWEIGHT 1: el peso propio ES el patrón Dead.
+  //              masa = las CARGAS del patrón Dead = γ·V/g. Correcto.
+  //   "manual" → SELFWEIGHT 0: el peso propio NO está en ninguna carga; las
+  //              POINTLOAD que se emiten son las cargas IMPUESTAS del modelo.
+  //              Pedir la masa "de las cargas" ahí da la masa de la sobrecarga
+  //              y TIRA la del material.
+  //
+  // ⚠️ Esto estaba fijo en `INCLUDELOADS "Yes"` para los dos modos, y en
+  // "manual" mandaba a ETABS un edificio con OTRA masa. Medido el 2026-08-27
+  // con las 8 plantillas (`cli/plantillas_vs_csi.mjs`): el estático cerraba al
+  // 0.000 % y el modal se iba de **−72 % a +21 %** — imposible de leer, porque
+  // no eran dos solvers discrepando sino dos masas distintas. El caso peor era
+  // `solo-rejilla` (T₁ 0.81 s contra 2.91 s): ahí no hay losa ni vigas, o sea
+  // casi nada de material, y la carga impuesta es toda la masa.
+  //
+  // En "manual" se pide `INCLUDEELEMENTS "Yes"` / `INCLUDELOADS "No"`, que es
+  // justo lo que hace el motor: `getGlobalMassMatrix.cpp` pesa los elementos
+  // por `densities` (MASA, t/m³) y no mira las cargas.
+  //
+  // Lo demás sigue igual y a propósito, porque el motor lo replica paso a paso
+  // en `ensamblarMasa()` (modal.cpp): sólo masa LATERAL
+  // (`INCLUDEVERTICALMASS "No"`) y agrupada por piso (`LUMPATSTORIES "Yes"`).
+  const masaDeElementos = weightMode === "manual";
   lines.push(`$ MASS SOURCE`);
-  lines.push(`  MASSSOURCE  "MsSrc1"    INCLUDEELEMENTS "No"    INCLUDEADDEDMASS "No"    INCLUDELOADS "Yes"    INCLUDEMOVE "No"    INCLUDELATERALMASS "Yes"    INCLUDEVERTICALMASS "No"    LUMPATSTORIES "Yes"    ISDEFAULT "Yes"  `);
-  lines.push(`  MASSSOURCELOAD  "MsSrc1"  "Dead"  1 `);
+  lines.push(`  MASSSOURCE  "MsSrc1"    INCLUDEELEMENTS "${masaDeElementos ? "Yes" : "No"}"    INCLUDEADDEDMASS "No"    INCLUDELOADS "${masaDeElementos ? "No" : "Yes"}"    INCLUDEMOVE "No"    INCLUDELATERALMASS "Yes"    INCLUDEVERTICALMASS "No"    LUMPATSTORIES "Yes"    ISDEFAULT "Yes"  `);
+  if (!masaDeElementos) lines.push(`  MASSSOURCELOAD  "MsSrc1"  "Dead"  1 `);
   lines.push(``);
 
   // ── LOAD CASES (Linear Static) ─────────────────────────────────────
@@ -1451,13 +1541,22 @@ function exportFromScratch(input: ExportE2kInput): string {
       lines.push(`  LOADCASE "${lc.name}"  LOADPAT  "${pp.pattern}"  SF ${pp.scaleFactor} `);
     }
   }
-  // Caso modal estándar (LTH para análisis dinámico) - opcional pero útil
-  // Modal-Eigen caso (default razonable: 3 modos suficientes para validar
-  // f₁/f₂/f₃ — ETABS reduce automáticamente a la cantidad de mass DOFs
-  // disponibles si el modelo tiene menos masa que modos pedidos).
-  // Para análisis sísmico real, el usuario subiría a 12+ con Ritz.
+  // Caso modal estándar (Modal-Eigen).
+  //
+  // ⚠️ Eran **3 modos**, con el argumento de que bastan para validar f₁/f₂/f₃.
+  // No bastan: el motor devuelve 12 y los modos se emparejan por PARTICIPACIÓN
+  // de masa, no por número de orden — un edificio con muros tiene el modo de
+  // torsión por debajo del cuarto, y con 3 modos ETABS ni lo calcula, así que
+  // ese modo se queda sin pareja y no se puede comparar. Medido el 2026-08-27
+  // en las 8 plantillas: al plantilla dual le faltaba el modo 2 y a
+  // `solo-rejilla` dos de los tres (`cli/plantillas_vs_csi.mjs`).
+  //
+  // 12 es lo que pide un modal serio y lo que devuelve `_modal` por defecto.
+  // No cuesta: ETABS reduce solo a la cantidad de GDL con masa disponibles si
+  // el modelo tiene menos.
+  const nModosModal = input.modalModes ?? 12;
   lines.push(`  LOADCASE "Modal"  TYPE  "Modal - Eigen"  INITCOND  "PRESET"  `);
-  lines.push(`  LOADCASE "Modal"  MAXMODES 3  MINMODES 1  EIGENSHIFTFREQ 0  EIGENCUTOFFFREQ 0  EIGENTOL 1E-09  ALLOWAUTOFREQSHIFT "Yes"  `);
+  lines.push(`  LOADCASE "Modal"  MAXMODES ${nModosModal}  MINMODES 1  EIGENSHIFTFREQ 0  EIGENCUTOFFFREQ 0  EIGENTOL 1E-09  ALLOWAUTOFREQSHIFT "Yes"  `);
   lines.push(``);
 
   // ── LOAD COMBINATIONS ──────────────────────────────────────────────

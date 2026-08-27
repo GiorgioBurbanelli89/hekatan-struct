@@ -931,6 +931,14 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
     membraneXY = "membraneXY",
     tranverseShearX = "tranverseShearX",
     tranverseShearY = "tranverseShearY",
+    // Los principales y el cortante maximo: derivados (circulo de Mohr) de los
+    // tres de arriba. Estaban en el desplegable y no en este enum, o sea que
+    // `resultMapper[field]` salia undefined y el campo se pintaba todo igual.
+    membranePrincipalMax = "membranePrincipalMax",
+    membranePrincipalMin = "membranePrincipalMin",
+    bendingPrincipalMax = "bendingPrincipalMax",
+    bendingPrincipalMin = "bendingPrincipalMin",
+    transverseShearMax = "transverseShearMax",
     vonMises = "vonMises",
     pressure = "pressure",
     displacementX = "displacementX",
@@ -978,6 +986,48 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
     mapResultToNodes(mesh.analyzeOutputs?.val?.vonMises, nodeVonMises);
     mapResultToNodes((mesh.analyzeOutputs?.val as any)?.pressure, nodePressure);
 
+    // ── Los PRINCIPALES y el cortante máximo ────────────────────────────
+    //
+    // FMax/FMin, MMax/MMin y VMax estaban en el desplegable **y en ningún
+    // sitio más**: no los calculaba nadie y no estaban en `resultMapper`, así
+    // que el viewer leía `undefined`, pintaba todo de un color y la barra
+    // decía `0 .. 0`. Cinco opciones muertas, sin aviso. Encontrado el
+    // 2026-08-27 barriendo los 17 campos de las plantillas
+    // (`cli/shot_plantillas_colormap.mjs`).
+    //
+    // No hace falta tocar el solver: son el círculo de Mohr de campos que YA
+    // vienen calculados, la misma definición que usa CSI.
+    //
+    //   F_max,min = (F11+F22)/2 ± √( ((F11−F22)/2)² + F12² )
+    //   M_max,min = igual, con M11 M22 M12
+    //   V_max     = √( V13² + V23² )
+    //
+    // Se derivan aquí, sobre los valores YA repartidos a nudos, y no en
+    // `analyze()`, porque son función puntual de los otros tres: hacerlo en el
+    // motor obligaría a recalcular y a mantener tres mapas más en el WASM para
+    // no añadir ni un dato nuevo.
+    const nodeMembranePMax = new Map<number, number[]>();
+    const nodeMembranePMin = new Map<number, number[]>();
+    const nodeBendingPMax = new Map<number, number[]>();
+    const nodeBendingPMin = new Map<number, number[]>();
+    const nodeShearMax = new Map<number, number[]>();
+    const mohr = (xx: Map<number, number[]>, yy: Map<number, number[]>,
+                  xy: Map<number, number[]>,
+                  aMax: Map<number, number[]>, aMin: Map<number, number[]>) => {
+      xx.forEach((v, n) => {
+        const a = v[0] ?? 0, b = yy.get(n)?.[0] ?? 0, c = xy.get(n)?.[0] ?? 0;
+        const med = (a + b) / 2;
+        const rad = Math.hypot((a - b) / 2, c);
+        aMax.set(n, [med + rad]);
+        aMin.set(n, [med - rad]);
+      });
+    };
+    mohr(nodeMembraneXX, nodeMembraneYY, nodeMembraneXY, nodeMembranePMax, nodeMembranePMin);
+    mohr(nodeBendingXX, nodeBendingYY, nodeBendingXY, nodeBendingPMax, nodeBendingPMin);
+    nodeShearX.forEach((v, n) => {
+      nodeShearMax.set(n, [Math.hypot(v[0] ?? 0, nodeShearY.get(n)?.[0] ?? 0)]);
+    });
+
     // Override POR CAMPO: colorMapRanges[field] define rango fijo sólo para ese shell result.
     // Campos no listados → auto-escala (bendingXX, vonMises, etc. conservan su gradiente natural).
     // Si solidResults está activo, lookup va por el solidField (vonMises, σxx, etc.).
@@ -998,6 +1048,11 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
       [ResultType.membraneXY]: [nodeMembraneXY, 0],
       [ResultType.tranverseShearX]: [nodeShearX, 0],
       [ResultType.tranverseShearY]: [nodeShearY, 0],
+      [ResultType.membranePrincipalMax]: [nodeMembranePMax, 0],
+      [ResultType.membranePrincipalMin]: [nodeMembranePMin, 0],
+      [ResultType.bendingPrincipalMax]: [nodeBendingPMax, 0],
+      [ResultType.bendingPrincipalMin]: [nodeBendingPMin, 0],
+      [ResultType.transverseShearMax]: [nodeShearMax, 0],
       [ResultType.vonMises]: [nodeVonMises, 0],
       [ResultType.pressure]: [nodePressure, 0],
       [ResultType.displacementX]: [mesh.deformOutputs?.val?.deformations, 0],
@@ -1015,10 +1070,16 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
     const fUnit = colorMapForceUnit.val;
     const dUnit = colorMapDispUnit.val;
     const isDisp = field === "displacementX" || field === "displacementY" || field === "displacementZ";
-    const isBending = field === "bendingXX" || field === "bendingYY" || field === "bendingXY";
-    const isMembrane = field === "membraneXX" || field === "membraneYY" || field === "membraneXY";
+    // Los principales llevan la unidad de SU familia: MMax/MMin son momentos y
+    // FMax/FMin fuerzas de membrana. Dejarlos fuera de estas listas los pintaba
+    // sin unidad y sin convertir al sistema elegido en "Unidades".
+    const isBending = field === "bendingXX" || field === "bendingYY" || field === "bendingXY" ||
+                      field === "bendingPrincipalMax" || field === "bendingPrincipalMin";
+    const isMembrane = field === "membraneXX" || field === "membraneYY" || field === "membraneXY" ||
+                       field === "membranePrincipalMax" || field === "membranePrincipalMin";
     const isStress = field === "vonMises" || field === "pressure";
-    const isShear = field === "tranverseShearX" || field === "tranverseShearY";
+    const isShear = field === "tranverseShearX" || field === "tranverseShearY" ||
+                    field === "transverseShearMax";
 
     // ── Solid Results override ──
     // Cuando un ejemplo usa elementos H8 sólidos, el dropdown "Solid results"

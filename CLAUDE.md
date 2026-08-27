@@ -623,6 +623,65 @@ git clone https://github.com/GiorgioBurbanelli89/hekatan-struct-lineal.git
 cd hekatan-struct-lineal && npm install && npm run dev:examples
 ```
 
+## Las 8 plantillas contra ETABS, capa por capa
+
+`examples/src/plantillas/plantillas.ts` no es un ejemplo: es un ExampleDef con
+un parámetro `tipo` que monta OCHO tipologías. Por eso `comparar_e2k_etabs.mjs`
+no le servía — saca el id del NOMBRE del fichero y reconstruye con los
+parámetros por defecto, así que las ocho le salían la misma.
+
+```bash
+# 1. exportar las 8 (.e2k + .s2k del mismo modelo, en la misma llamada)
+for t in 0 1 2 3 4 5 6 7; do node cli/exportar_csi.mjs plantillas out/P$t tipo=$t; done
+# 2. el lado de Hekatan
+node cli/plantillas_hekatan.mjs
+# 3. el lado de ETABS 22 (una sola pasada: abrir ETABS es lo caro)
+python cli/plantillas_etabs.py
+# 4. el careo -> validation/modelos/plantillas/COMPARACION.md
+node cli/plantillas_vs_csi.mjs
+```
+
+**Las capas, y el orden importa** — cada una solo tiene sentido si la anterior
+cuadra: modelo → propiedad de cáscara → **masa** → estático → modos → fuerzas.
+La masa va ANTES que los modos: el periodo va con la raíz de la masa, así que
+con masas distintas los periodos TIENEN que salir distintos y compararlos no
+informa de nada.
+
+⚠️ **Nunca comparar T1 con T1.** Un pórtico plano tiene su primer modo FUERA del
+plano (ETABS: modo 1 = 77 % UY). Se emparejan por **participación de masa**
+(coseno del vector `[UX UY UZ RX RY RZ]` > 0.7).
+
+⚠️ **Una LINE del `.e2k` puede ser una columna entera de 4 pisos**: el
+exportador junta los tramos y ETABS la vuelve a partir. Sus estaciones van de 0
+a la longitud TOTAL, y coger «la primera y la última» compara la columna
+completa contra un tramo. Los cortes se leen de la lista: ETABS **repite** la
+estación donde acaba un elemento y empieza el siguiente (`…3.5, 3.5…`).
+
+## El colormap de cáscara: 17 campos y una barra
+
+`node cli/shot_plantillas_colormap.mjs [campo ...]` captura los 17 campos ×
+las 4 plantillas con área, y anota el rango de la barra. **Hay que MIRAR los
+PNG**: un colormap roto no se ve en ningún JSON — los números salen bien igual.
+
+Tres trampas, las tres pagadas el 2026-08-27:
+
+- **`s.shellResults = "bendingXX"` no hace nada.** Cada ajuste del viewer es un
+  `State` de van.js: va `.val`. Asignando el string se REEMPLAZA el State, la
+  reactividad se rompe y la vista se queda como estaba, sin error. Salieron
+  tres capturas «de tres campos» que eran la misma imagen. Hay gancho:
+  `window.__hekatanSettings()`.
+- **Contar colores del canvas no mide nada.** Un canvas WebGL sin
+  `preserveDrawingBuffer` sale NEGRO al copiarlo con `drawImage`: el conteo daba
+  `1` pasara lo que pasara.
+- **`elementFromPoint` no dice si la barra está tapada.** `#legend` lleva
+  `pointer-events: none`, así que devuelve SIEMPRE lo de debajo. Se cruzan los
+  **rectángulos** contra `#parameters`/`#settings` y sus z-index.
+
+`FMax/FMin`, `MMax/MMin` y `VMax` son **derivados** (círculo de Mohr) de los
+tres campos de su familia, calculados en `getViewer.ts` sobre los valores ya
+repartidos a nudos — no en `analyze()`: son función puntual de los otros tres y
+meterlos en el WASM sería mantener tres mapas más sin añadir un dato nuevo.
+
 ## Gotchas
 
 - **NO usar `tasklist` sin `| head`** — output enorme, crashea

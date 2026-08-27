@@ -22,7 +22,31 @@
     #0000ff
   );
   position: absolute;
-  right: 100px;
+  /* ⚠️ A la IZQUIERDA del pane de parametros, no encima ni debajo.
+   *
+   * `#parameters` es `right: 8px; width: 300px; z-index: 3`, o sea que ocupa
+   * la franja right 8–308 y va POR DELANTE de la barra (z-index 2). Con
+   * `right: 100px` la barra caia justo ahi dentro y quedaba TAPADA: existia en
+   * el DOM, medía 20×450 px y `getBoundingClientRect()` decia que era visible
+   * — pero en pantalla no se veia nada. Encontrado el 2026-08-27 capturando el
+   * colormap de las plantillas (`cli/shot_plantillas_colormap.mjs`): el
+   * degradado pintaba bien sobre losas y muros y la barra no aparecia.
+   *
+   * Subirle el z-index NO es el arreglo: la pondria encima de los controles
+   * del pane. Hay que APARTARLA, contando tambien los numeros, que se dibujan
+   * a la DERECHA de la barra y ocupan otros ~55 px.
+   *
+   * Ya estaba resuelto para movil (los dos media queries de abajo) pero no
+   * para escritorio, donde el pane mide lo mismo. */
+  --pane-w: 308px; /* #parameters: right 8px + width 300px */
+  /* Lo que ocupan los numeros, que se dibujan a la DERECHA de la barra
+   * (`.marker p` va a `left: 15px` de un marker con `margin-left: 20px`).
+   * ⚠️ No basta con el ancho de "89": un momento sale como "-0.00234" y en
+   * Courier New 14px son ~8.4 px por caracter → 15 + 9·8.4 ≈ 91. Con 62 px la
+   * barra se veia pero los numeros quedaban CORTADOS contra el pane, y se leia
+   * "0." y "-0". */
+  --legend-num-w: 96px;
+  right: calc(var(--pane-w) + var(--legend-num-w));
   bottom: 25vh;
   z-index: 2; /* On top of the viewer */
   /* La barra es puramente informativa: NO debe hacer NADA con el dedo/mouse.
@@ -68,6 +92,8 @@
     --legend-h: 24vh;
     --legend-font: 11px;
     width: 14px;
+    /* En movil portrait los panes van arriba, no a la derecha: aqui la franja
+       de la derecha esta libre y la barra vuelve al borde. */
     right: 72px;
     bottom: 22vh;
   }

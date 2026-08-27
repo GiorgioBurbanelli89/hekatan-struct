@@ -357,6 +357,33 @@ throw away the A/I/J actually written. Always emit `General` when the model
 carries real A/I33/I22. And write the **real shear areas** (`AS2`/`AS3`) plus the
 **local axis angle** — those two alone were worth 20 % on the warehouse model.
 
+**Two more silent failures, found 2026-08-27** running the 8 *Plantillas* through
+ETABS 22 (`cli/plantillas_etabs.py` → `cli/plantillas_vs_csi.mjs`). The static
+side closed at **0.000 %** while the modal was off by up to 72 % — because they
+were not two solvers disagreeing, they were **two different buildings**:
+
+| what was wrong | why it mattered | now |
+|---|---|---|
+| `$ MASS SOURCE` was hard-coded to `INCLUDELOADS "Yes"` for both weight modes | in `weightMode: "manual"` the self weight is **not** in any load (`SELFWEIGHT 0`), so ETABS took the mass of the *imposed load* and dropped the material's | it follows `weightMode`: `manual` → `INCLUDEELEMENTS "Yes"` / `INCLUDELOADS "No"`, which is what `getGlobalMassMatrix.cpp` does |
+| shell **modifiers** were never exported | a slab cracked to 25 % (`shellmod`) reached ETABS **intact**, without a warning | second `SHELLPROP` line with the same name, format copied from an ETABS-written `.e2k`; ETABS reads all 8 back exactly (`PropArea.GetModifiers`, 0 deviations) |
+
+Modal error against ETABS 22, before → after the mass-source fix:
+
+| template | before | after |
+|---|---|---|
+| 3D frame | −36.02 % | **+0.59 %** |
+| frame + slab | +17.04 % | **+0.16 %** |
+| slab + edge beams | +9.94 % | **+0.56 %** |
+| dual (walls) | +21.35 % | **+0.26 %** |
+
+Both are guarded by regression cases: `tests/casos/e2k_mass_source.mjs` and
+`tests/casos/e2k_shell_props.mjs`.
+
+⚠️ **Never compare T1 against T1.** A plane frame has its first mode **out of
+plane** (ETABS: mode 1 = 77 % UY), so "mode 1" can be a different mode in each
+program. `cli/plantillas_vs_csi.mjs` pairs them by **mass participation**
+(cosine of `[UX UY UZ RX RY RZ]` > 0.7).
+
 **Cross-validation pipeline** (Windows + PowerShell + CSI OAPI):
 - `Benchmark_Placa/safe_debug_zapata.ps1` — diagnostic tool that opens .FDB in SAFE, runs analysis, extracts settlement + Mxx via OAPI
 - `Benchmark_Placa/safe_extract_zapata.py` — Python OAPI version with SetRunCaseFlag + post-import joint count
@@ -411,6 +438,7 @@ npx gh-pages --dist website/src/examples `
 | Moment releases | ❌ | ✅ Static condensation |
 | **Unified Tweakpane workspace** | ❌ | ✅ Hub at `?t=<id>` loads any example; draggable + position persisted |
 | **Reactive unit system** | ❌ | ✅ kN/tonf/kip × mm/cm/m/in; sliders + colormap legend + values cascade |
+| **Shell colormap — 17 fields** | ❌ | ✅ F11/F22/F12, **FMax/FMin**, FVM, V13/V23, **VMax**, M11/M22/M12, **MMax/MMin**, Ux/Uy/Uz — CSI naming |
 | **Dynamic slider ranges** | ❌ | ✅ Folder "📏 Rangos": user can extend min/max of load sliders in-session |
 | Import E2K (ETABS) | ❌ | ✅ |
 | Import S2K (SAP2000) | ❌ | ✅ |

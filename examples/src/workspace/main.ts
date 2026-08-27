@@ -1179,6 +1179,15 @@ function ribbonPlegadaPara(id?: string | null): boolean {
 (window as any).__hekatanParams = () => currentParams;
 (window as any).__hekatanExample = () => currentExample?.id ?? null;
 
+// Y los SETTINGS vivos del viewer (los de su panel "Settings"): es por donde se
+// enciende la deformada o se elige el campo del colormap desde fuera.
+//     window.__hekatanSettings().shellResults = "bendingXX";
+// Sin esto habia que ir a buscar `__settings` trepando por los padres del
+// canvas — que funciona hasta que cambia el arbol del DOM y entonces el script
+// devuelve `undefined` sin decir por que. Lo usa
+// `cli/shot_plantillas_colormap.mjs`.
+(window as any).__hekatanSettings = () => (viewerElm as any).__settings;
+
 // ── Auto re-fit camera al cambiar de tamaño (mobile rotation) ──
 // El #viewer cambia de tamaño con CSS media queries (ej. en mobile
 // portrait el canvas pasa a 50vh) — el ResizeObserver del viewer
