@@ -8406,7 +8406,7 @@ El an\xE1lisis va a tardar ~${Math.round(d)} s y la p\xE1gina queda sin responde
       folder: "\u2B07 Cargas"
     },
     ms: {
-      default: 0.5,
+      default: 1.25,
       min: 0.15,
       max: 3,
       step: 0.05,
@@ -8414,7 +8414,7 @@ El an\xE1lisis va a tardar ~${Math.round(d)} s y la p\xE1gina queda sin responde
       folder: "\u{1F4D0} Rejilla (planta)"
     },
     msModal: {
-      default: 1,
+      default: 1.25,
       min: 0.15,
       max: 3,
       step: 0.05,
