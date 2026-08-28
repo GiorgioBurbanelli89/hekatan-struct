@@ -67,6 +67,8 @@ export type Settings = {
   elementsIndexes: State<boolean>;
   orientations: State<boolean>;
   sections: State<boolean>;
+  /** Vista EXTRUIDA: barras con su seccion real y cascaras con su espesor. */
+  extruded: State<boolean>;
   /** Toggle independiente para los chips de texto "30x50" / "40x40" que se dibujan
    *  sobre las secciones celestes. Si false, las formas siguen visibles pero los
    *  textos se ocultan. Solo aplica si `sections` también es true. */
@@ -127,6 +129,7 @@ export type SettingsObj = {
   elementsIndexes?: boolean;
   orientations?: boolean;
   sections?: boolean;
+  extruded?: boolean;
   sectionLabels?: boolean;
   secColumns?: boolean;
   secBeams?: boolean;
@@ -533,6 +536,9 @@ export function getDefaultSettings(settingsObj: SettingsObj): Settings {
     elementsIndexes: van.state(settingsObj?.elementsIndexes ?? false),
     orientations: van.state(settingsObj?.orientations ?? false),
     sections: van.state(settingsObj?.sections ?? true),
+    // Apagada por defecto: una extrusion por barra cuesta memoria y en un
+    // modelo grande se nota. Se enciende cuando se quiere MIRAR la seccion.
+    extruded: van.state((settingsObj as any)?.extruded ?? false),
     sectionLabels: van.state(settingsObj?.sectionLabels ?? true),
     secColumns: van.state(settingsObj?.secColumns ?? true),
     secBeams: van.state(settingsObj?.secBeams ?? true),

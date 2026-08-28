@@ -1,0 +1,38 @@
+[
+ {
+  "tipo": 1,
+  "nombre": "portico-3d",
+  "campo": "extruido",
+  "etiqueta": "extruido",
+  "activo": "extruido",
+  "estado": "visible",
+  "unidad": "0.00",
+  "min": "-2.28",
+  "max": "-0.285",
+  "plano": false
+ },
+ {
+  "tipo": 6,
+  "nombre": "dual-muros",
+  "campo": "extruido",
+  "etiqueta": "extruido",
+  "activo": "extruido",
+  "estado": "visible",
+  "unidad": "0.00",
+  "min": "-2.85",
+  "max": "-0.357",
+  "plano": false
+ },
+ {
+  "tipo": 7,
+  "nombre": "arriostrado",
+  "campo": "extruido",
+  "etiqueta": "extruido",
+  "activo": "extruido",
+  "estado": "visible",
+  "unidad": "0.00",
+  "min": "-2.28",
+  "max": "-0.285",
+  "plano": false
+ }
+]
