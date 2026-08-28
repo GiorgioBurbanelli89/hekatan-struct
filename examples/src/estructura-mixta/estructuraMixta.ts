@@ -31,8 +31,9 @@
  *
  * ## ⚖️ EL VEREDICTO: el modelo es inestable EN ETABS TAMBIÉN
  *
- * Esto no es una interpretación, es lo que escribe ETABS en su propio log de
- * análisis (`validation/modelos/riochico/etabs_analisis.log`, copiado del EDB):
+ * Esto no es una interpretación, es lo que escribe ETABS en su propio log al
+ * analizarlo. Y está comprobado sobre el `.EDB` **ORIGINAL**, no sobre la copia
+ * de trabajo (`validation/modelos/riochico/etabs_analisis_ORIGINAL.log`):
  *
  *     TOTAL NUMBER OF EQUILIBRIUM EQUATIONS     =        7380
  *     * * * W A R N I N G * * *

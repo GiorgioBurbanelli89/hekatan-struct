@@ -33,7 +33,14 @@ def main() -> int:
     if len(sys.argv) < 3:
         print(__doc__)
         return 2
-    edb = os.path.abspath(sys.argv[1])
+    # OJO: ruta de WINDOWS, siempre. Desde Git-Bash llega como /c/Users/... y
+    # `abspath` la convierte en C:\c\Users\..., que no existe. ETABS abre
+    # entonces un dialogo modal «Error in performing miOpen» y el script se
+    # queda colgado esperando para siempre, sin decir por que.
+    crudo = sys.argv[1].replace('/', os.sep)
+    if len(crudo) > 2 and crudo[0] == os.sep and crudo[2] == os.sep:
+        crudo = crudo[1] + ':' + crudo[2:]
+    edb = os.path.abspath(crudo)
     salida = os.path.abspath(sys.argv[2])
     if not os.path.exists(edb):
         print("no encuentro " + edb)
