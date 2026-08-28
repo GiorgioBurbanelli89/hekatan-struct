@@ -306,6 +306,7 @@ import { benchmarkPaz10_7 } from "../benchmark-paz-10-7/benchmarkPaz10_7";
 import { benchmarkPaz11_1 } from "../benchmark-paz-11-1/benchmarkPaz11_1";
 import { benchmarkPaz12_1 } from "../benchmark-paz-12-1/benchmarkPaz12_1";
 import { benchmarkPaz13_1 } from "../benchmark-paz-13-1/benchmarkPaz13_1";
+import { muroLargueros } from "../muro-largueros/muroLargueros";
 import { estructuraMixta } from "../estructura-mixta/estructuraMixta";
 import { mesaTorsion } from "../mesa-torsion/mesaTorsion";
 import { shellThick } from "../shell-thick/shellThick";
@@ -513,6 +514,11 @@ export const examplesRegistry: ExampleDef[] = [
   // `SOLO_IMPORTACION` de `salud_ejemplos` con su motivo medido (116 trozos que
   // no llegan a ningun apoyo). El panel lo dice tambien, para que nadie lo
   // confunda con un ejemplo roto.
+  // Muro cortante con huecos grandes por el modelo de LARGUEROS: barras que
+  // solo trabajan a axil (donde ira la varilla) y paneles que solo llevan
+  // cortante. Las dos condiciones salen de lo que ya hay —releases de momento
+  // y modificadores de cascara F11=F22=0, F12=1—, sin elementos nuevos.
+  muroLargueros,
   estructuraMixta,
   // Falta: coser el modelo (releases, muelles de pilote, links) y que el
   // exportador reparta bien deck y losa por grupo.

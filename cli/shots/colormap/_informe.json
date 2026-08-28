@@ -1,0 +1,218 @@
+[
+ {
+  "id": "zapata-aislada",
+  "campo": "pressure",
+  "nAreas": 100,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": -10.6,
+  "max": -7.14,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "zapata-viga-amarre",
+  "campo": "pressure",
+  "nAreas": 128,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": -12,
+  "max": -9.93,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "safe-bench-losa-cimentacion",
+  "campo": "pressure",
+  "nAreas": 192,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": -3.17,
+  "max": -1.4,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "safe-bench-viga-cimentacion",
+  "campo": "pressure",
+  "nAreas": 128,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": -12.4,
+  "max": -5.57,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "safe-bench-zapata-combinada",
+  "campo": "pressure",
+  "nAreas": 128,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": -7.69,
+  "max": -7.23,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "safe-bench-zapata-conectada",
+  "campo": "pressure",
+  "nAreas": 80,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": -9.17,
+  "max": -7.25,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "safe-bench-zapata-comparativa",
+  "campo": "pressure",
+  "nAreas": 144,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": -8.9,
+  "max": -8.88,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "guerra-ej1-zapata-cuadrada",
+  "campo": "pressure",
+  "nAreas": 256,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": -13.2,
+  "max": -7.28,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "guerra-ej2-zapata-rectangular-sismo",
+  "campo": "pressure",
+  "nAreas": 288,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": -14.7,
+  "max": -0.0523,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "guerra-ej3-zapata-rectangular-eccentricidad-grande",
+  "campo": "pressure",
+  "nAreas": 288,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": -18.6,
+  "max": -0.0922,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "guerra-ej4-zapata-combinada-rectangular",
+  "campo": "pressure",
+  "nAreas": 300,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": -23.5,
+  "max": -7.55,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "guerra-ej5-zapata-combinada-trapezoidal",
+  "campo": "pressure",
+  "nAreas": 336,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": -24.1,
+  "max": -22.5,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ }
+]

@@ -46,7 +46,10 @@ const srv = createServer((q, r) => {
   r.writeHead(200, { "content-type": MIME[extname(f)] || "application/octet-stream" });
   r.end(readFileSync(f));
 });
-await new Promise((r) => srv.listen(4712, r));
+// El puerto se puede cambiar: si queda un barrido anterior vivo, 4712 esta
+// ocupado y el script muere sin decir por que.
+const PUERTO = +(process.env.PUERTO || 4712);
+await new Promise((r) => srv.listen(PUERTO, r));
 
 const nav = await puppeteer.launch({ headless: "new",
   args: ["--no-sandbox", "--disable-setuid-sandbox",
@@ -55,7 +58,7 @@ const pag = await nav.newPage();
 await pag.setViewport({ width: 1500, height: 950 });
 
 // La lista sale del propio workspace: asi no hay una copia que se quede vieja.
-await pag.goto(`http://localhost:4712${BASE}workspace/?t=plantillas`,
+await pag.goto(`http://localhost:${PUERTO}${BASE}workspace/?t=plantillas`,
                { waitUntil: "networkidle2", timeout: 120000 });
 await new Promise((r) => setTimeout(r, 6000));
 const todos = await pag.evaluate(() => (window.__hekatanExamples ?? []).map((e) => e.id));
@@ -77,7 +80,7 @@ for (const id of IDS) {
   if (process.env.REANUDAR && yaHecho.has(id)) { console.log(id.padEnd(30) + "(ya capturado)"); continue; }
   let fila;
   try {
-    await pag.goto(`http://localhost:4712${BASE}workspace/?t=${id}`,
+    await pag.goto(`http://localhost:${PUERTO}${BASE}workspace/?t=${id}`,
                    { waitUntil: "networkidle2", timeout: 120000 });
     await new Promise((r) => setTimeout(r, 3200));
     fila = await pag.evaluate(() => {
