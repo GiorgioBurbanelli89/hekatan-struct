@@ -35,7 +35,7 @@ export interface E2kModel {
   sectionShapes: Map<number, SectionShape>;
   /**  = las que hay en el fichero ·  = las que llegaron
    *  a ser elementos. Si no coinciden, algo se perdio por el camino. */
-  info: { nNodes: number; nFrames: number; nAreas: number; nAreasMontadas?: number; title: string };
+  info: { nNodes: number; nFrames: number; nAreas: number; nAreasMontadas?: number; nSDCompuestas?: number; nSDLeidas?: number; title: string };
   /** Raw text blocks from original e2k for round-trip export */
   rawSections?: Map<string, string[]>;
 }
@@ -69,6 +69,21 @@ export function parseE2k(text: string): E2kModel {
   const shellProps = new Map<string, {
     t: number; material: string; modeling: string; mods?: number[];
   }>();
+  /**
+   * SECTION DESIGNER: una seccion DIBUJADA, hecha de varias piezas.
+   *
+   * Su `FRAMESECTION` no trae ni una cota — solo `SHAPE "SD Section"` — y las
+   * piezas viven en `$ SECTION DESIGNER SECTIONS`, cada una con su forma, su
+   * MATERIAL y su posicion `XC`/`YC`. Sin leerlas, esas barras entraban con
+   * area e inercia CERO: sin rigidez, y la matriz salia singular. En el modelo
+   * real de `estructura-mixta` son 54 barras — entre ellas la que lleva la
+   * MADERA (`DOBLE C_250X50X5mm+MADERA`, cuatro piezas: dos C de acero y dos
+   * rectangulos, uno de ellos de otro material).
+   */
+  const sdShapes = new Map<string, Array<{
+    shapeType: string; material: string;
+    D: number; B: number; TF: number; TW: number; XC: number; YC: number;
+  }>>();
   const restraints = new Map<string, string[]>(); // pointName+story → restrained DOFs
   const lineAssigns = new Map<string, { story: string; section: string; rigidZone: number; releases: string[]; angle: number }>(); // lineName+story → assignment
   const frameLoads: { line: string; story: string; type: string; dir: string; lc: string; val: number }[] = [];
@@ -170,6 +185,16 @@ export function parseE2k(text: string): E2kModel {
         if (i2M) sec.modI2 = parseFloat(i2M[1]);
         const i3M = line.match(/I3MOD\s+([\d.eE+-]+)/);
         if (i3M) sec.modI3 = parseFloat(i3M[1]);
+        // ⚠️ Un perfil CONFORMADO EN FRIO no trae `TF`/`TW`: trae un espesor
+        // unico `T` y el labio `LIP`. Se leia solo TF/TW, salian 0, y el area
+        // y las inercias tambien — la barra entraba en el modelo SIN RIGIDEZ y
+        // la matriz salia singular. Medido en el modelo real de
+        // `estructura-mixta` (2026-08-28): `TR_100X400X4mm` es
+        // `D 0.4 B 0.1 T 0.004 LIP 0.195`.
+        const tM = line.match(/\bT\s+([\d.eE+-]+)/);
+        if (tM && !sec.TF && !sec.TW) { sec.TF = parseFloat(tM[1]); sec.TW = parseFloat(tM[1]); }
+        const lipM = line.match(/\bLIP\s+([\d.eE+-]+)/);
+        if (lipM) (sec as any).LIP = parseFloat(lipM[1]);
       }
     }
 
@@ -241,6 +266,25 @@ export function parseE2k(text: string): E2kModel {
           .filter(Boolean).map(Number).filter(v => Number.isFinite(v)));
         areaConns.push({ name: am[1], tipo: am[2] || "FLOOR", pts,
                          dz: dz.length === pts.length ? dz : pts.map(() => 0) });
+      }
+    }
+
+    // ── SECTION DESIGNER: las piezas de una seccion dibujada ──
+    // La primera linea de cada seccion es la cabecera (`TYPE "FRAME"
+    // NUMSHAPES n`) y no lleva `SHAPETYPE`: se salta sola.
+    if (line.startsWith("SDSECTION")) {
+      const nm = line.match(/SDSECTION\s+"([^"]+)"/)?.[1];
+      const st = line.match(/SHAPETYPE\s+"([^"]+)"/)?.[1];
+      if (nm && st) {
+        const num = (re: RegExp) => { const m = line.match(re); return m ? parseFloat(m[1]) : 0; };
+        if (!sdShapes.has(nm)) sdShapes.set(nm, []);
+        sdShapes.get(nm)!.push({
+          shapeType: st,
+          material: line.match(/MATERIAL\s+"([^"]+)"/)?.[1] ?? "",
+          D: num(/\bD\s+([\d.eE+-]+)/), B: num(/\bB\s+([\d.eE+-]+)/),
+          TF: num(/\bTF\s+([\d.eE+-]+)/), TW: num(/\bTW\s+([\d.eE+-]+)/),
+          XC: num(/\bXC\s+(-?[\d.eE+-]+)/), YC: num(/\bYC\s+(-?[\d.eE+-]+)/),
+        });
       }
     }
 
@@ -469,6 +513,7 @@ export function parseE2k(text: string): E2kModel {
   const momentsOfInertiaY = new Map<number, number>();
   const torsionalConstants = new Map<number, number>();
   const sectionShapes = new Map<number, SectionShape>();
+  let sdCompuestas = 0;
 
   for (const [elemIdx, secName] of elementSections) {
     const sec = frameSections.get(secName);
@@ -483,8 +528,65 @@ export function parseE2k(text: string): E2kModel {
     const D = sec.D, B = sec.B, tf = sec.TF, tw = sec.TW;
     let A = 0, Iz = 0, Iy = 0, J = 0, AsY = 0, AsZ = 0;
     let shapeType: SectionShape["type"] = "rect";
+    // ⚠️ Bandera, NO `break`: esto vive dentro de un `for...of` sobre TODAS las
+    // secciones, asi que un `break` no saltaria el switch — cortaria el bucle
+    // entero y dejaria sin propiedades a todas las barras siguientes.
+    let compuesta = false;
 
-    switch (sec.shape) {
+    // ── SECTION DESIGNER: la seccion se COMPONE de sus piezas ───────────
+    //
+    // Cada pieza aporta su area y su inercia trasladadas al centro de la
+    // seccion (Steiner), y ponderadas por su modulo: una pieza de madera y una
+    // de acero en la misma seccion no cuentan igual. Es la SECCION
+    // TRANSFORMADA de toda la vida, con el material de la `FRAMESECTION` de
+    // referencia:  n_i = E_i / E_ref.
+    //
+    // Sin esto esas barras entraban con A = I = 0, o sea SIN RIGIDEZ, y la
+    // matriz salia singular. 54 barras del modelo real de `estructura-mixta`.
+    const piezas = sdShapes.get(secName);
+    if (sec.shape === "SD Section" && piezas?.length) {
+      const Eref = mat?.E || materials.get(sec.material)?.E || 0;
+      const propsPieza = (q: typeof piezas[0]) => {
+        const { D: d, B: b, TF: tf2, TW: tw2 } = q;
+        switch ((q.shapeType || "").toUpperCase()) {
+          case "STEEL ANGLE": {
+            const a2 = (d + b - tf2) * tf2;
+            return { A: a2, Iz: a2 * d * d / 12, Iy: a2 * b * b / 12 };
+          }
+          case "STEEL CHANNEL":
+            return { A: 2 * b * tf2 + (d - 2 * tf2) * tw2,
+                     Iz: (tw2 * d ** 3 + 2 * b * tf2 * (d - tf2) ** 2) / 12,
+                     Iy: (2 * tf2 * b ** 3 + (d - 2 * tf2) * tw2 ** 3) / 12 };
+          default:      // CONCRETE RECTANGULAR y cualquier otra: rectangulo
+            return { A: d * b, Iz: b * d ** 3 / 12, Iy: d * b ** 3 / 12 };
+        }
+      };
+      // 1) centroide de la seccion transformada
+      let sA = 0, sAx = 0, sAy = 0;
+      const cal = piezas.map(q => {
+        const pr = propsPieza(q);
+        const Ei = materials.get(q.material)?.E || Eref;
+        const n = Eref > 0 ? Ei / Eref : 1;
+        sA += n * pr.A; sAx += n * pr.A * q.XC; sAy += n * pr.A * q.YC;
+        return { q, pr, n };
+      });
+      if (sA > 0) {
+        const xg = sAx / sA, yg = sAy / sA;
+        let Izs = 0, Iys = 0, Js = 0;
+        for (const { q, pr, n } of cal) {
+          Izs += n * (pr.Iz + pr.A * (q.YC - yg) ** 2);
+          Iys += n * (pr.Iy + pr.A * (q.XC - xg) ** 2);
+          Js += n * (pr.Iz + pr.Iy) * 0.1;   // aproximacion: no es Saint-Venant
+        }
+        A = sA; Iz = Izs; Iy = Iys; J = Js;
+        AsY = AsZ = 5 / 6 * A;
+        shapeType = "rect";
+        compuesta = true;
+        sdCompuestas++;
+      }
+    }
+
+    if (!compuesta) switch (sec.shape) {
       case "Concrete Rectangular":
         A = D * B;
         Iz = B * D ** 3 / 12;
@@ -818,6 +920,10 @@ export function parseE2k(text: string): E2kModel {
       nFrames: elements.length - areaNames.length,
       nAreas: areaConns.length,
       nAreasMontadas: areaNames.length,
+      // Cuantas secciones del Section Designer se compusieron. Si el modelo
+      // trae `SD Section` y esto sale 0, esas barras entran SIN RIGIDEZ.
+      nSDCompuestas: sdCompuestas,
+      nSDLeidas: sdShapes.size,
       title,
     },
     rawSections,

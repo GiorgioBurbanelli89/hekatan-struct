@@ -1250,16 +1250,34 @@ function exportFromScratch(input: ExportE2kInput): string {
     const m = modsDe(ae.idx);
     return `${ae.isWall ? "W" : "F"}|${t ?? "-"}|${pf ?? "-"}|${m ? m.map(v => rd(v)).join(",") : "-"}`;
   };
-  const grupos = new Map<string, { nombre: string; isWall: boolean; t?: number; pf?: number }>();
-  let nLosa = 0, nMuro = 0;
+  /**
+   * .Este area es una MEMBRANA? Se decide por el modificador de FLEXION del
+   * PROPIO elemento: si es ~0 no aporta rigidez fuera del plano, y en ETABS eso
+   * es un DECK, no una losa.
+   *
+   * ⚠️ Esto se miraba una sola vez para TODAS las areas: bastaba que UNA fuera
+   * membrana para que el fichero entero saliera como deck. En un modelo mixto
+   * de verdad —deck en una planta y losa maciza en otra— las losas se perdian:
+   * `estructura-mixta` salia con [0.1, 0.105, 0.3] y volvia con un solo
+   * espesor. Ahora se decide POR GRUPO.
+   */
+  const esMembranaDe = (idx: number): boolean => {
+    const d = modsDe(idx);
+    if (d) return Math.abs(d[3]) < 1e-9 && Math.abs(d[4]) < 1e-9;
+    return false;
+  };
+  const grupos = new Map<string, { nombre: string; isWall: boolean; mem: boolean;
+                                   t?: number; pf?: number }>();
+  let nLosa = 0, nMuro = 0, nDeck = 0;
   for (const ae of areaElements) {
     const k = claveDe(ae);
     if (grupos.has(k)) continue;
     const isWall = ae.isWall;
-    const n = isWall ? ++nMuro : ++nLosa;
+    const mem = !isWall && esMembranaDe(ae.idx);
+    const n = isWall ? ++nMuro : (mem ? ++nDeck : ++nLosa);
     grupos.set(k, {
-      nombre: (isWall ? "Muro" : "Losa") + (n === 1 ? "" : String(n)),
-      isWall, t: thAll?.get(ae.idx), pf: pfAll?.get(ae.idx),
+      nombre: (isWall ? "Muro" : mem ? DECK_SEC : "Losa") + (n === 1 ? "" : String(n)),
+      isWall, mem, t: thAll?.get(ae.idx), pf: pfAll?.get(ae.idx),
     });
   }
   /** El nombre de la propiedad que le toca a este elemento. */
@@ -1313,7 +1331,13 @@ function exportFromScratch(input: ExportE2kInput): string {
       // El DECKUNITWEIGHT es el peso de la lamina (0.11 kN/m2), convertido:
       // estaba copiado tal cual del e2k de ETABS, que va en N/mm.
       lines.push(`$ DECK PROPERTIES`);
-      lines.push(`  SHELLPROP  "${DECK_SEC}"  PROPTYPE  "Deck"  DECKTYPE "Filled"  CONCMATERIAL "${defaultShellMat}"  DECKMATERIAL "${defaultShellMat}"  DECKSLABDEPTH ${rp(t_slab * 65 / 120)} DECKRIBDEPTH ${rp(t_slab * 55 / 120)} DECKRIBWIDTHTOP ${rp(t_slab * 150 / 120)} DECKRIBWIDTHBOTTOM ${rp(t_slab * 100 / 120)} DECKRIBSPACING ${rp(t_slab * 200 / 120)} DECKSHEARTHICKNESS ${rp(t_slab * 0.76 / 120)} DECKUNITWEIGHT ${rp(cF(0.11012))} SHEARSTUDDIAM ${rp(t_slab * 19 / 120)} SHEARSTUDHEIGHT ${rp(t_slab * 100 / 120)} SHEARSTUDFU 400 `);
+      // ⚠️ Las cotas del deck van por `cL`, como cualquier otra longitud del
+      // fichero. Iban con `rp()` a secas, o sea EN METROS mientras el resto del
+      // `.e2k` va en milimetros: un deck de 12 cm se escribia como
+      // `DECKSLABDEPTH 0.065` y al releerlo salia de 0.065 MM. Lo caza el test
+      // `e2k-areas-roundtrip` — el espesor volvia como 0.000105 m.
+      const dk = (v: number) => rp(cL(v));
+      lines.push(`  SHELLPROP  "${DECK_SEC}"  PROPTYPE  "Deck"  DECKTYPE "Filled"  CONCMATERIAL "${defaultShellMat}"  DECKMATERIAL "${defaultShellMat}"  DECKSLABDEPTH ${dk(t_slab * 65 / 120)} DECKRIBDEPTH ${dk(t_slab * 55 / 120)} DECKRIBWIDTHTOP ${dk(t_slab * 150 / 120)} DECKRIBWIDTHBOTTOM ${dk(t_slab * 100 / 120)} DECKRIBSPACING ${dk(t_slab * 200 / 120)} DECKSHEARTHICKNESS ${dk(t_slab * 0.76 / 120)} DECKUNITWEIGHT ${rp(cF(0.11012))} SHEARSTUDDIAM ${dk(t_slab * 19 / 120)} SHEARSTUDHEIGHT ${dk(t_slab * 100 / 120)} SHEARSTUDFU 400 `);
     } else {
       lines.push(`$ SLAB PROPERTIES`);
       lines.push(`  SHELLPROP  "Losa"  PROPTYPE  "Slab"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "${modelingDe(false)}"  SLABTYPE "Slab"  SLABTHICKNESS ${rd(cL(t_slab))} `);
@@ -1344,8 +1368,14 @@ function exportFromScratch(input: ExportE2kInput): string {
     lines.push(`$ OTRAS SECCIONES DE CASCARA`);
     for (const [k, g] of extra) {
       const t = g.t ?? (g.isWall ? 0.2 : 0.15);
+      const dk2 = (v: number) => rp(cL(v));
       lines.push(g.isWall
         ? `  SHELLPROP  "${g.nombre}"  PROPTYPE  "Wall"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "${modelingDeGrupo(g.pf)}"  WALLTHICKNESS ${rd(cL(t))} `
+        : g.mem
+        // Un DECK no es una losa con otro nombre: ETABS lo deja en ShellType 3
+        // (Membrane) le pidas lo que le pidas, y sus cotas describen el perfil
+        // de la lamina. El espesor `t` es el TOTAL = capa + nervio.
+        ? `  SHELLPROP  "${g.nombre}"  PROPTYPE  "Deck"  DECKTYPE "Filled"  CONCMATERIAL "${defaultShellMat}"  DECKMATERIAL "${defaultShellMat}"  DECKSLABDEPTH ${dk2(t * 65 / 120)} DECKRIBDEPTH ${dk2(t * 55 / 120)} DECKRIBWIDTHTOP ${dk2(t * 150 / 120)} DECKRIBWIDTHBOTTOM ${dk2(t * 100 / 120)} DECKRIBSPACING ${dk2(t * 200 / 120)} DECKSHEARTHICKNESS ${dk2(t * 0.76 / 120)} DECKUNITWEIGHT ${rp(cF(0.11012))} SHEARSTUDDIAM ${dk2(t * 19 / 120)} SHEARSTUDHEIGHT ${dk2(t * 100 / 120)} SHEARSTUDFU 400 `
         : `  SHELLPROP  "${g.nombre}"  PROPTYPE  "Slab"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "${modelingDeGrupo(g.pf)}"  SLABTYPE "Slab"  SLABTHICKNESS ${rd(cL(t))} `);
       const lm = lineaModsGrupo(g.nombre, k);
       if (lm) lines.push(lm);

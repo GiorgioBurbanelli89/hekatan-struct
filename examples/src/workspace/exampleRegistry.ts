@@ -503,6 +503,18 @@ export const examplesRegistry: ExampleDef[] = [
   benchmark3way,           // Shell+Frame DOF mismatch (Area + Frame)
   benchmarkCft,            // CFT cols + I-beams + losa (Area + Frame composite)
   mesaTorsion,             // 🌀 Mesa de torsión (validación ETABS — Gabriela/Seproinca 2020)
+  // ⏳ `estructuraMixta` — un encargo REAL anonimizado (786 nudos, 746 barras,
+  // 76 areas, 15 materiales, 90 secciones, con CFT, conformado en frio y
+  // MADERA), leido de su `.e2k` con `parseE2k`. El fichero, el ExampleDef y su
+  // `modelo.ts` ya estan en `examples/src/estructura-mixta/`.
+  //
+  // NO se registra todavia, y el motivo es que la suite lo dice: rompe dos
+  // comprobaciones de `salud_ejemplos` —no resuelve (la matriz sale singular) y
+  // deja 195 nudos colgando de un solo elemento— porque el modelo importado no
+  // queda cosido. Meterlo asi obligaria a declararlo exento de la salud que se
+  // le exige a todos los demas, que es tapar el agujero en vez de cerrarlo.
+  // Falta: coser el modelo (releases, muelles de pilote, links) y que el
+  // exportador reparta bien deck y losa por grupo.
 
   // ── Legacy upstream awatif (resto que no son benchmarks) ────
   ...legacyAwatifExamples.filter(e =>
