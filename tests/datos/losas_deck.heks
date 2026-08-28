@@ -1,4 +1,5 @@
 # Galpon bodega de paquetes electorales - 2 plantas 26.63 x 14.74 m
+# CASO DE CARGA: SERVICIO
 # Portoviejo (Manabi). Acero A36 / A500 Gr.B.
 # Generado por galpon-bodega-electoral/a_heks.py desde el DWG.
 # Unidades: kN, m.  E = 2e+08 kN/m2
@@ -655,123 +656,123 @@ as 247 0.000984022 0.00152628
 #     e ignora que la vigueta es CONTINUA sobre las
 #     principales (medido: 16 % de menos en el apoyo interior
 #     del vano ancho y 23 % de mas en el extremo).
-frameload 25 0 0 -4.67325
-frameload 28 0 0 -9.3465
-frameload 118 0 0 -4.76852
-frameload 119 0 0 -4.76852
-frameload 141 0 0 -5.11764
-frameload 140 0 0 -5.11764
-frameload 175 0 0 -0.349121
-frameload 174 0 0 -0.349121
-frameload 39 0 0 -9.3465
-frameload 123 0 0 -4.76852
-frameload 124 0 0 -4.76852
-frameload 142 0 0 -5.11764
-frameload 176 0 0 -0.349121
-frameload 50 0 0 -9.3465
-frameload 128 0 0 -4.76852
-frameload 129 0 0 -4.76852
-frameload 143 0 0 -5.11764
-frameload 177 0 0 -0.349121
-frameload 61 0 0 -9.73385
-frameload 133 0 0 -4.76852
-frameload 134 0 0 -4.76852
-frameload 144 0 0 -5.11764
-frameload 178 0 0 -0.349121
-frameload 72 0 0 -5.0606
-frameload 139 0 0 -4.76852
-frameload 149 0 0 -5.11764
-frameload 84 0 0 -5.3287
-frameload 116 0 0 -4.76852
-frameload 179 0 0 -4.5956
-frameload 156 0 0 -1.44667
-frameload 181 0 0 -1.44667
-frameload 182 0 0 -9.53751
-frameload 183 0 0 -9.53751
-frameload 184 0 0 -9.53751
-frameload 185 0 0 -9.53751
-frameload 186 0 0 -9.53751
-frameload 187 0 0 -9.53751
-frameload 188 0 0 -9.53751
-frameload 189 0 0 -9.53751
-frameload 190 0 0 -9.53751
-frameload 191 0 0 -9.53751
-frameload 192 0 0 -9.53751
-frameload 193 0 0 -9.53751
-frameload 194 0 0 -9.53751
-frameload 195 0 0 -9.53751
-frameload 196 0 0 -9.53751
-frameload 197 0 0 -9.53751
-frameload 198 0 0 -9.53751
-frameload 199 0 0 -9.53751
-frameload 200 0 0 -9.53751
-frameload 201 0 0 -9.53751
-frameload 202 0 0 -9.53751
-frameload 203 0 0 -9.53751
-frameload 204 0 0 -9.53751
-frameload 205 0 0 -9.53751
-frameload 206 0 0 -9.53751
-frameload 207 0 0 -9.53751
-frameload 208 0 0 -9.53751
-frameload 209 0 0 -9.53751
-frameload 210 0 0 -9.53751
-frameload 211 0 0 -9.53751
-frameload 212 0 0 -9.53751
-frameload 213 0 0 -9.53751
-frameload 214 0 0 -9.53751
-frameload 215 0 0 -9.53751
-frameload 216 0 0 -9.53751
-frameload 217 0 0 -9.53751
-frameload 218 0 0 -9.53751
-frameload 219 0 0 -9.53751
-frameload 220 0 0 -9.53751
-frameload 221 0 0 -9.53751
-frameload 222 0 0 -9.3465
-frameload 223 0 0 -9.3465
-frameload 224 0 0 -9.3465
-frameload 117 0 0 -4.76852
-frameload 225 0 0 -9.3465
-frameload 226 0 0 -9.3465
-frameload 120 0 0 -4.76852
-frameload 227 0 0 -9.3465
-frameload 121 0 0 -4.76852
-frameload 228 0 0 -9.3465
-frameload 122 0 0 -4.76852
-frameload 229 0 0 -9.3465
-frameload 230 0 0 -9.3465
-frameload 125 0 0 -4.76852
-frameload 231 0 0 -9.3465
-frameload 126 0 0 -4.76852
-frameload 232 0 0 -9.3465
-frameload 127 0 0 -4.76852
-frameload 233 0 0 -9.3465
-frameload 234 0 0 -9.3465
-frameload 130 0 0 -4.76852
-frameload 235 0 0 -9.3465
-frameload 131 0 0 -4.76852
-frameload 236 0 0 -9.3465
-frameload 132 0 0 -4.76852
-frameload 237 0 0 -9.3465
-frameload 238 0 0 -10.1217
-frameload 135 0 0 -4.76852
-frameload 239 0 0 -10.1217
-frameload 136 0 0 -4.76852
-frameload 240 0 0 -10.1212
-frameload 137 0 0 -4.76852
-frameload 241 0 0 -10.1217
-frameload 138 0 0 -4.76852
-frameload 242 0 0 -10.1217
-frameload 243 0 0 -7.47919
-frameload 145 0 0 -5.11764
-frameload 244 0 0 -10.0256
-frameload 146 0 0 -5.11764
-frameload 245 0 0 -10.0251
-frameload 147 0 0 -5.11764
-frameload 246 0 0 -10.0256
-frameload 148 0 0 -5.11764
-frameload 247 0 0 -10.0256
-frameload 83 0 0 -5.0606
-#     total repartido = -3033.4 kN  en 116 barras
+frameload 25 0 0 -4.4622
+frameload 28 0 0 -8.9244
+frameload 118 0 0 -4.55317
+frameload 119 0 0 -4.55317
+frameload 141 0 0 -4.88652
+frameload 140 0 0 -4.88652
+frameload 175 0 0 -0.333354
+frameload 174 0 0 -0.333354
+frameload 39 0 0 -8.9244
+frameload 123 0 0 -4.55317
+frameload 124 0 0 -4.55317
+frameload 142 0 0 -4.88652
+frameload 176 0 0 -0.333354
+frameload 50 0 0 -8.9244
+frameload 128 0 0 -4.55317
+frameload 129 0 0 -4.55317
+frameload 143 0 0 -4.88652
+frameload 177 0 0 -0.333354
+frameload 61 0 0 -9.29425
+frameload 133 0 0 -4.55317
+frameload 134 0 0 -4.55317
+frameload 144 0 0 -4.88652
+frameload 178 0 0 -0.333354
+frameload 72 0 0 -4.83205
+frameload 139 0 0 -4.55317
+frameload 149 0 0 -4.88652
+frameload 84 0 0 -5.08805
+frameload 116 0 0 -4.55317
+frameload 179 0 0 -4.38805
+frameload 156 0 0 -1.38133
+frameload 181 0 0 -1.38133
+frameload 182 0 0 -9.10679
+frameload 183 0 0 -9.10679
+frameload 184 0 0 -9.10679
+frameload 185 0 0 -9.10679
+frameload 186 0 0 -9.10679
+frameload 187 0 0 -9.10679
+frameload 188 0 0 -9.10679
+frameload 189 0 0 -9.10679
+frameload 190 0 0 -9.10679
+frameload 191 0 0 -9.10679
+frameload 192 0 0 -9.10679
+frameload 193 0 0 -9.10679
+frameload 194 0 0 -9.10679
+frameload 195 0 0 -9.10679
+frameload 196 0 0 -9.10679
+frameload 197 0 0 -9.10679
+frameload 198 0 0 -9.10679
+frameload 199 0 0 -9.10679
+frameload 200 0 0 -9.10679
+frameload 201 0 0 -9.10679
+frameload 202 0 0 -9.10679
+frameload 203 0 0 -9.10679
+frameload 204 0 0 -9.10679
+frameload 205 0 0 -9.10679
+frameload 206 0 0 -9.10679
+frameload 207 0 0 -9.10679
+frameload 208 0 0 -9.10679
+frameload 209 0 0 -9.10679
+frameload 210 0 0 -9.10679
+frameload 211 0 0 -9.10679
+frameload 212 0 0 -9.10679
+frameload 213 0 0 -9.10679
+frameload 214 0 0 -9.10679
+frameload 215 0 0 -9.10679
+frameload 216 0 0 -9.10679
+frameload 217 0 0 -9.10679
+frameload 218 0 0 -9.10679
+frameload 219 0 0 -9.10679
+frameload 220 0 0 -9.10679
+frameload 221 0 0 -9.10679
+frameload 222 0 0 -8.9244
+frameload 223 0 0 -8.9244
+frameload 224 0 0 -8.9244
+frameload 117 0 0 -4.55317
+frameload 225 0 0 -8.9244
+frameload 226 0 0 -8.9244
+frameload 120 0 0 -4.55317
+frameload 227 0 0 -8.9244
+frameload 121 0 0 -4.55317
+frameload 228 0 0 -8.9244
+frameload 122 0 0 -4.55317
+frameload 229 0 0 -8.9244
+frameload 230 0 0 -8.9244
+frameload 125 0 0 -4.55317
+frameload 231 0 0 -8.9244
+frameload 126 0 0 -4.55317
+frameload 232 0 0 -8.9244
+frameload 127 0 0 -4.55317
+frameload 233 0 0 -8.9244
+frameload 234 0 0 -8.9244
+frameload 130 0 0 -4.55317
+frameload 235 0 0 -8.9244
+frameload 131 0 0 -4.55317
+frameload 236 0 0 -8.9244
+frameload 132 0 0 -4.55317
+frameload 237 0 0 -8.9244
+frameload 238 0 0 -9.66455
+frameload 135 0 0 -4.55317
+frameload 239 0 0 -9.66455
+frameload 136 0 0 -4.55317
+frameload 240 0 0 -9.6641
+frameload 137 0 0 -4.55317
+frameload 241 0 0 -9.66455
+frameload 138 0 0 -4.55317
+frameload 242 0 0 -9.66455
+frameload 243 0 0 -7.14142
+frameload 145 0 0 -4.88652
+frameload 244 0 0 -9.57282
+frameload 146 0 0 -4.88652
+frameload 245 0 0 -9.57238
+frameload 147 0 0 -4.88652
+frameload 246 0 0 -9.57282
+frameload 148 0 0 -4.88652
+frameload 247 0 0 -9.57282
+frameload 83 0 0 -4.83205
+#     total repartido = -2896.4 kN  en 116 barras
 
 # --- apoyos (empotrados en la base)
 support 1 fixed
@@ -800,7 +801,12 @@ support 23 fixed
 support 24 fixed
 
 # --- carga de SUPERFICIE: areaload shellID q   (kN/m2, +z arriba)
-#     entrepiso y rampa 9.30 kN/m2   cubierta 1.10 kN/m2
+#     entrepiso y rampa 6.00 kN/m2   cubierta 0.70 kN/m2
 #     carga total por area = 0.0 kN
 
+
+# --- PESO PROPIO: lo calcula el motor (rho x A x L), como el
+#     patron `Dead` de ETABS con selfweight x 1. Las VIGAS con
+#     `endoffset` pesan por su luz libre.
+selfweight 1
 solve

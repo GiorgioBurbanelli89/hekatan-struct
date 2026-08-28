@@ -1,4 +1,5 @@
 # Galpon bodega de paquetes electorales - 2 plantas 26.63 x 14.74 m
+# CASO DE CARGA: SERVICIO
 # Portoviejo (Manabi). Acero A36 / A500 Gr.B.
 # Generado por galpon-bodega-electoral/a_heks.py desde el DWG.
 # Unidades: kN, m.  E = 2e+08 kN/m2
@@ -5384,6 +5385,1185 @@ shellmod 1173 1 1 1 1 1 1 1 1   # SHELL-LOSA
 shellmod 1174 1 1 1 1 1 1 1 1   # SHELL-LOSA
 shellmod 1175 1 1 1 1 1 1 1 1   # SHELL-LOSA
 
+# --- formulacion de placa: shelltype ID thin|thick
+#     Es el ShellType de ETABS. Sin esto, thin y thick dan
+#     EXACTAMENTE lo mismo (los dos caen en el defecto).
+shelltype 1 thin
+shelltype 2 thin
+shelltype 3 thin
+shelltype 4 thin
+shelltype 5 thin
+shelltype 6 thin
+shelltype 7 thin
+shelltype 8 thin
+shelltype 9 thin
+shelltype 10 thin
+shelltype 11 thin
+shelltype 12 thin
+shelltype 13 thin
+shelltype 14 thin
+shelltype 15 thin
+shelltype 16 thin
+shelltype 17 thin
+shelltype 18 thin
+shelltype 19 thin
+shelltype 20 thin
+shelltype 21 thin
+shelltype 22 thin
+shelltype 23 thin
+shelltype 24 thin
+shelltype 25 thin
+shelltype 26 thin
+shelltype 27 thin
+shelltype 28 thin
+shelltype 29 thin
+shelltype 30 thin
+shelltype 31 thin
+shelltype 32 thin
+shelltype 33 thin
+shelltype 34 thin
+shelltype 35 thin
+shelltype 36 thin
+shelltype 37 thin
+shelltype 38 thin
+shelltype 39 thin
+shelltype 40 thin
+shelltype 41 thin
+shelltype 42 thin
+shelltype 43 thin
+shelltype 44 thin
+shelltype 45 thin
+shelltype 46 thin
+shelltype 47 thin
+shelltype 48 thin
+shelltype 49 thin
+shelltype 50 thin
+shelltype 51 thin
+shelltype 52 thin
+shelltype 53 thin
+shelltype 54 thin
+shelltype 55 thin
+shelltype 56 thin
+shelltype 57 thin
+shelltype 58 thin
+shelltype 59 thin
+shelltype 60 thin
+shelltype 61 thin
+shelltype 62 thin
+shelltype 63 thin
+shelltype 64 thin
+shelltype 65 thin
+shelltype 66 thin
+shelltype 67 thin
+shelltype 68 thin
+shelltype 69 thin
+shelltype 70 thin
+shelltype 71 thin
+shelltype 72 thin
+shelltype 73 thin
+shelltype 74 thin
+shelltype 75 thin
+shelltype 76 thin
+shelltype 77 thin
+shelltype 78 thin
+shelltype 79 thin
+shelltype 80 thin
+shelltype 81 thin
+shelltype 82 thin
+shelltype 83 thin
+shelltype 84 thin
+shelltype 85 thin
+shelltype 86 thin
+shelltype 87 thin
+shelltype 88 thin
+shelltype 89 thin
+shelltype 90 thin
+shelltype 91 thin
+shelltype 92 thin
+shelltype 93 thin
+shelltype 94 thin
+shelltype 95 thin
+shelltype 96 thin
+shelltype 97 thin
+shelltype 98 thin
+shelltype 99 thin
+shelltype 100 thin
+shelltype 101 thin
+shelltype 102 thin
+shelltype 103 thin
+shelltype 104 thin
+shelltype 105 thin
+shelltype 106 thin
+shelltype 107 thin
+shelltype 108 thin
+shelltype 109 thin
+shelltype 110 thin
+shelltype 111 thin
+shelltype 112 thin
+shelltype 113 thin
+shelltype 114 thin
+shelltype 115 thin
+shelltype 116 thin
+shelltype 117 thin
+shelltype 118 thin
+shelltype 119 thin
+shelltype 120 thin
+shelltype 121 thin
+shelltype 122 thin
+shelltype 123 thin
+shelltype 124 thin
+shelltype 125 thin
+shelltype 126 thin
+shelltype 127 thin
+shelltype 128 thin
+shelltype 129 thin
+shelltype 130 thin
+shelltype 131 thin
+shelltype 132 thin
+shelltype 133 thin
+shelltype 134 thin
+shelltype 135 thin
+shelltype 136 thin
+shelltype 137 thin
+shelltype 138 thin
+shelltype 139 thin
+shelltype 140 thin
+shelltype 141 thin
+shelltype 142 thin
+shelltype 143 thin
+shelltype 144 thin
+shelltype 145 thin
+shelltype 146 thin
+shelltype 147 thin
+shelltype 148 thin
+shelltype 149 thin
+shelltype 150 thin
+shelltype 151 thin
+shelltype 152 thin
+shelltype 153 thin
+shelltype 154 thin
+shelltype 155 thin
+shelltype 156 thin
+shelltype 157 thin
+shelltype 158 thin
+shelltype 159 thin
+shelltype 160 thin
+shelltype 161 thin
+shelltype 162 thin
+shelltype 163 thin
+shelltype 164 thin
+shelltype 165 thin
+shelltype 166 thin
+shelltype 167 thin
+shelltype 168 thin
+shelltype 169 thin
+shelltype 170 thin
+shelltype 171 thin
+shelltype 172 thin
+shelltype 173 thin
+shelltype 174 thin
+shelltype 175 thin
+shelltype 176 thin
+shelltype 177 thin
+shelltype 178 thin
+shelltype 179 thin
+shelltype 180 thin
+shelltype 181 thin
+shelltype 182 thin
+shelltype 183 thin
+shelltype 184 thin
+shelltype 185 thin
+shelltype 186 thin
+shelltype 187 thin
+shelltype 188 thin
+shelltype 189 thin
+shelltype 190 thin
+shelltype 191 thin
+shelltype 192 thin
+shelltype 193 thin
+shelltype 194 thin
+shelltype 195 thin
+shelltype 196 thin
+shelltype 197 thin
+shelltype 198 thin
+shelltype 199 thin
+shelltype 200 thin
+shelltype 201 thin
+shelltype 202 thin
+shelltype 203 thin
+shelltype 204 thin
+shelltype 205 thin
+shelltype 206 thin
+shelltype 207 thin
+shelltype 208 thin
+shelltype 209 thin
+shelltype 210 thin
+shelltype 211 thin
+shelltype 212 thin
+shelltype 213 thin
+shelltype 214 thin
+shelltype 215 thin
+shelltype 216 thin
+shelltype 217 thin
+shelltype 218 thin
+shelltype 219 thin
+shelltype 220 thin
+shelltype 221 thin
+shelltype 222 thin
+shelltype 223 thin
+shelltype 224 thin
+shelltype 225 thin
+shelltype 226 thin
+shelltype 227 thin
+shelltype 228 thin
+shelltype 229 thin
+shelltype 230 thin
+shelltype 231 thin
+shelltype 232 thin
+shelltype 233 thin
+shelltype 234 thin
+shelltype 235 thin
+shelltype 236 thin
+shelltype 237 thin
+shelltype 238 thin
+shelltype 239 thin
+shelltype 240 thin
+shelltype 241 thin
+shelltype 242 thin
+shelltype 243 thin
+shelltype 244 thin
+shelltype 245 thin
+shelltype 246 thin
+shelltype 247 thin
+shelltype 248 thin
+shelltype 249 thin
+shelltype 250 thin
+shelltype 251 thin
+shelltype 252 thin
+shelltype 253 thin
+shelltype 254 thin
+shelltype 255 thin
+shelltype 256 thin
+shelltype 257 thin
+shelltype 258 thin
+shelltype 259 thin
+shelltype 260 thin
+shelltype 261 thin
+shelltype 262 thin
+shelltype 263 thin
+shelltype 264 thin
+shelltype 265 thin
+shelltype 266 thin
+shelltype 267 thin
+shelltype 268 thin
+shelltype 269 thin
+shelltype 270 thin
+shelltype 271 thin
+shelltype 272 thin
+shelltype 273 thin
+shelltype 274 thin
+shelltype 275 thin
+shelltype 276 thin
+shelltype 277 thin
+shelltype 278 thin
+shelltype 279 thin
+shelltype 280 thin
+shelltype 281 thin
+shelltype 282 thin
+shelltype 283 thin
+shelltype 284 thin
+shelltype 285 thin
+shelltype 286 thin
+shelltype 287 thin
+shelltype 288 thin
+shelltype 289 thin
+shelltype 290 thin
+shelltype 291 thin
+shelltype 292 thin
+shelltype 293 thin
+shelltype 294 thin
+shelltype 295 thin
+shelltype 296 thin
+shelltype 297 thin
+shelltype 298 thin
+shelltype 299 thin
+shelltype 300 thin
+shelltype 301 thin
+shelltype 302 thin
+shelltype 303 thin
+shelltype 304 thin
+shelltype 305 thin
+shelltype 306 thin
+shelltype 307 thin
+shelltype 308 thin
+shelltype 309 thin
+shelltype 310 thin
+shelltype 311 thin
+shelltype 312 thin
+shelltype 313 thin
+shelltype 314 thin
+shelltype 315 thin
+shelltype 316 thin
+shelltype 317 thin
+shelltype 318 thin
+shelltype 319 thin
+shelltype 320 thin
+shelltype 321 thin
+shelltype 322 thin
+shelltype 323 thin
+shelltype 324 thin
+shelltype 325 thin
+shelltype 326 thin
+shelltype 327 thin
+shelltype 328 thin
+shelltype 329 thin
+shelltype 330 thin
+shelltype 331 thin
+shelltype 332 thin
+shelltype 333 thin
+shelltype 334 thin
+shelltype 335 thin
+shelltype 336 thin
+shelltype 337 thin
+shelltype 338 thin
+shelltype 339 thin
+shelltype 340 thin
+shelltype 341 thin
+shelltype 342 thin
+shelltype 343 thin
+shelltype 344 thin
+shelltype 345 thin
+shelltype 346 thin
+shelltype 347 thin
+shelltype 348 thin
+shelltype 349 thin
+shelltype 350 thin
+shelltype 351 thin
+shelltype 352 thin
+shelltype 353 thin
+shelltype 354 thin
+shelltype 355 thin
+shelltype 356 thin
+shelltype 357 thin
+shelltype 358 thin
+shelltype 359 thin
+shelltype 360 thin
+shelltype 361 thin
+shelltype 362 thin
+shelltype 363 thin
+shelltype 364 thin
+shelltype 365 thin
+shelltype 366 thin
+shelltype 367 thin
+shelltype 368 thin
+shelltype 369 thin
+shelltype 370 thin
+shelltype 371 thin
+shelltype 372 thin
+shelltype 373 thin
+shelltype 374 thin
+shelltype 375 thin
+shelltype 376 thin
+shelltype 377 thin
+shelltype 378 thin
+shelltype 379 thin
+shelltype 380 thin
+shelltype 381 thin
+shelltype 382 thin
+shelltype 383 thin
+shelltype 384 thin
+shelltype 385 thin
+shelltype 386 thin
+shelltype 387 thin
+shelltype 388 thin
+shelltype 389 thin
+shelltype 390 thin
+shelltype 391 thin
+shelltype 392 thin
+shelltype 393 thin
+shelltype 394 thin
+shelltype 395 thin
+shelltype 396 thin
+shelltype 397 thin
+shelltype 398 thin
+shelltype 399 thin
+shelltype 400 thin
+shelltype 401 thin
+shelltype 402 thin
+shelltype 403 thin
+shelltype 404 thin
+shelltype 405 thin
+shelltype 406 thin
+shelltype 407 thin
+shelltype 408 thin
+shelltype 409 thin
+shelltype 410 thin
+shelltype 411 thin
+shelltype 412 thin
+shelltype 413 thin
+shelltype 414 thin
+shelltype 415 thin
+shelltype 416 thin
+shelltype 417 thin
+shelltype 418 thin
+shelltype 419 thin
+shelltype 420 thin
+shelltype 421 thin
+shelltype 422 thin
+shelltype 423 thin
+shelltype 424 thin
+shelltype 425 thin
+shelltype 426 thin
+shelltype 427 thin
+shelltype 428 thin
+shelltype 429 thin
+shelltype 430 thin
+shelltype 431 thin
+shelltype 432 thin
+shelltype 433 thin
+shelltype 434 thin
+shelltype 435 thin
+shelltype 436 thin
+shelltype 437 thin
+shelltype 438 thin
+shelltype 439 thin
+shelltype 440 thin
+shelltype 441 thin
+shelltype 442 thin
+shelltype 443 thin
+shelltype 444 thin
+shelltype 445 thin
+shelltype 446 thin
+shelltype 447 thin
+shelltype 448 thin
+shelltype 449 thin
+shelltype 450 thin
+shelltype 451 thin
+shelltype 452 thin
+shelltype 453 thin
+shelltype 454 thin
+shelltype 455 thin
+shelltype 456 thin
+shelltype 457 thin
+shelltype 458 thin
+shelltype 459 thin
+shelltype 460 thin
+shelltype 461 thin
+shelltype 462 thin
+shelltype 463 thin
+shelltype 464 thin
+shelltype 465 thin
+shelltype 466 thin
+shelltype 467 thin
+shelltype 468 thin
+shelltype 469 thin
+shelltype 470 thin
+shelltype 471 thin
+shelltype 472 thin
+shelltype 473 thin
+shelltype 474 thin
+shelltype 475 thin
+shelltype 476 thin
+shelltype 477 thin
+shelltype 478 thin
+shelltype 479 thin
+shelltype 480 thin
+shelltype 481 thin
+shelltype 482 thin
+shelltype 483 thin
+shelltype 484 thin
+shelltype 485 thin
+shelltype 486 thin
+shelltype 487 thin
+shelltype 488 thin
+shelltype 489 thin
+shelltype 490 thin
+shelltype 491 thin
+shelltype 492 thin
+shelltype 493 thin
+shelltype 494 thin
+shelltype 495 thin
+shelltype 496 thin
+shelltype 497 thin
+shelltype 498 thin
+shelltype 499 thin
+shelltype 500 thin
+shelltype 501 thin
+shelltype 502 thin
+shelltype 503 thin
+shelltype 504 thin
+shelltype 505 thin
+shelltype 506 thin
+shelltype 507 thin
+shelltype 508 thin
+shelltype 509 thin
+shelltype 510 thin
+shelltype 511 thin
+shelltype 512 thin
+shelltype 513 thin
+shelltype 514 thin
+shelltype 515 thin
+shelltype 516 thin
+shelltype 517 thin
+shelltype 518 thin
+shelltype 519 thin
+shelltype 520 thin
+shelltype 521 thin
+shelltype 522 thin
+shelltype 523 thin
+shelltype 524 thin
+shelltype 525 thin
+shelltype 526 thin
+shelltype 527 thin
+shelltype 528 thin
+shelltype 529 thin
+shelltype 530 thin
+shelltype 531 thin
+shelltype 532 thin
+shelltype 533 thin
+shelltype 534 thin
+shelltype 535 thin
+shelltype 536 thin
+shelltype 537 thin
+shelltype 538 thin
+shelltype 539 thin
+shelltype 540 thin
+shelltype 541 thin
+shelltype 542 thin
+shelltype 543 thin
+shelltype 544 thin
+shelltype 545 thin
+shelltype 546 thin
+shelltype 547 thin
+shelltype 548 thin
+shelltype 549 thin
+shelltype 550 thin
+shelltype 551 thin
+shelltype 552 thin
+shelltype 553 thin
+shelltype 554 thin
+shelltype 555 thin
+shelltype 556 thin
+shelltype 557 thin
+shelltype 558 thin
+shelltype 559 thin
+shelltype 560 thin
+shelltype 561 thin
+shelltype 562 thin
+shelltype 563 thin
+shelltype 564 thin
+shelltype 565 thin
+shelltype 566 thin
+shelltype 567 thin
+shelltype 568 thin
+shelltype 569 thin
+shelltype 570 thin
+shelltype 571 thin
+shelltype 572 thin
+shelltype 573 thin
+shelltype 574 thin
+shelltype 575 thin
+shelltype 576 thin
+shelltype 577 thin
+shelltype 578 thin
+shelltype 579 thin
+shelltype 580 thin
+shelltype 581 thin
+shelltype 582 thin
+shelltype 583 thin
+shelltype 584 thin
+shelltype 585 thin
+shelltype 586 thin
+shelltype 587 thin
+shelltype 588 thin
+shelltype 589 thin
+shelltype 590 thin
+shelltype 591 thin
+shelltype 592 thin
+shelltype 593 thin
+shelltype 594 thin
+shelltype 595 thin
+shelltype 596 thin
+shelltype 597 thin
+shelltype 598 thin
+shelltype 599 thin
+shelltype 600 thin
+shelltype 601 thin
+shelltype 602 thin
+shelltype 603 thin
+shelltype 604 thin
+shelltype 605 thin
+shelltype 606 thin
+shelltype 607 thin
+shelltype 608 thin
+shelltype 609 thin
+shelltype 610 thin
+shelltype 611 thin
+shelltype 612 thin
+shelltype 613 thin
+shelltype 614 thin
+shelltype 615 thin
+shelltype 616 thin
+shelltype 617 thin
+shelltype 618 thin
+shelltype 619 thin
+shelltype 620 thin
+shelltype 621 thin
+shelltype 622 thin
+shelltype 623 thin
+shelltype 624 thin
+shelltype 625 thin
+shelltype 626 thin
+shelltype 627 thin
+shelltype 628 thin
+shelltype 629 thin
+shelltype 630 thin
+shelltype 631 thin
+shelltype 632 thin
+shelltype 633 thin
+shelltype 634 thin
+shelltype 635 thin
+shelltype 636 thin
+shelltype 637 thin
+shelltype 638 thin
+shelltype 639 thin
+shelltype 640 thin
+shelltype 641 thin
+shelltype 642 thin
+shelltype 643 thin
+shelltype 644 thin
+shelltype 645 thin
+shelltype 646 thin
+shelltype 647 thin
+shelltype 648 thin
+shelltype 649 thin
+shelltype 650 thin
+shelltype 651 thin
+shelltype 652 thin
+shelltype 653 thin
+shelltype 654 thin
+shelltype 655 thin
+shelltype 656 thin
+shelltype 657 thin
+shelltype 658 thin
+shelltype 659 thin
+shelltype 660 thin
+shelltype 661 thin
+shelltype 662 thin
+shelltype 663 thin
+shelltype 664 thin
+shelltype 665 thin
+shelltype 666 thin
+shelltype 667 thin
+shelltype 668 thin
+shelltype 669 thin
+shelltype 670 thin
+shelltype 671 thin
+shelltype 672 thin
+shelltype 673 thin
+shelltype 674 thin
+shelltype 675 thin
+shelltype 676 thin
+shelltype 677 thin
+shelltype 678 thin
+shelltype 679 thin
+shelltype 680 thin
+shelltype 681 thin
+shelltype 682 thin
+shelltype 683 thin
+shelltype 684 thin
+shelltype 685 thin
+shelltype 686 thin
+shelltype 687 thin
+shelltype 688 thin
+shelltype 689 thin
+shelltype 690 thin
+shelltype 691 thin
+shelltype 692 thin
+shelltype 693 thin
+shelltype 694 thin
+shelltype 695 thin
+shelltype 696 thin
+shelltype 697 thin
+shelltype 698 thin
+shelltype 699 thin
+shelltype 700 thin
+shelltype 701 thin
+shelltype 702 thin
+shelltype 703 thin
+shelltype 704 thin
+shelltype 705 thin
+shelltype 706 thin
+shelltype 707 thin
+shelltype 708 thin
+shelltype 709 thin
+shelltype 710 thin
+shelltype 711 thin
+shelltype 712 thin
+shelltype 713 thin
+shelltype 714 thin
+shelltype 715 thin
+shelltype 716 thin
+shelltype 717 thin
+shelltype 718 thin
+shelltype 719 thin
+shelltype 720 thin
+shelltype 721 thin
+shelltype 722 thin
+shelltype 723 thin
+shelltype 724 thin
+shelltype 725 thin
+shelltype 726 thin
+shelltype 727 thin
+shelltype 728 thin
+shelltype 729 thin
+shelltype 730 thin
+shelltype 731 thin
+shelltype 732 thin
+shelltype 733 thin
+shelltype 734 thin
+shelltype 735 thin
+shelltype 736 thin
+shelltype 737 thin
+shelltype 738 thin
+shelltype 739 thin
+shelltype 740 thin
+shelltype 741 thin
+shelltype 742 thin
+shelltype 743 thin
+shelltype 744 thin
+shelltype 745 thin
+shelltype 746 thin
+shelltype 747 thin
+shelltype 748 thin
+shelltype 749 thin
+shelltype 750 thin
+shelltype 751 thin
+shelltype 752 thin
+shelltype 753 thin
+shelltype 754 thin
+shelltype 755 thin
+shelltype 756 thin
+shelltype 757 thin
+shelltype 758 thin
+shelltype 759 thin
+shelltype 760 thin
+shelltype 761 thin
+shelltype 762 thin
+shelltype 763 thin
+shelltype 764 thin
+shelltype 765 thin
+shelltype 766 thin
+shelltype 767 thin
+shelltype 768 thin
+shelltype 769 thin
+shelltype 770 thin
+shelltype 771 thin
+shelltype 772 thin
+shelltype 773 thin
+shelltype 774 thin
+shelltype 775 thin
+shelltype 776 thin
+shelltype 777 thin
+shelltype 778 thin
+shelltype 779 thin
+shelltype 780 thin
+shelltype 781 thin
+shelltype 782 thin
+shelltype 783 thin
+shelltype 784 thin
+shelltype 785 thin
+shelltype 786 thin
+shelltype 787 thin
+shelltype 788 thin
+shelltype 789 thin
+shelltype 790 thin
+shelltype 791 thin
+shelltype 792 thin
+shelltype 793 thin
+shelltype 794 thin
+shelltype 795 thin
+shelltype 796 thin
+shelltype 797 thin
+shelltype 798 thin
+shelltype 799 thin
+shelltype 800 thin
+shelltype 801 thin
+shelltype 802 thin
+shelltype 803 thin
+shelltype 804 thin
+shelltype 805 thin
+shelltype 806 thin
+shelltype 807 thin
+shelltype 808 thin
+shelltype 809 thin
+shelltype 810 thin
+shelltype 811 thin
+shelltype 812 thin
+shelltype 813 thin
+shelltype 814 thin
+shelltype 815 thin
+shelltype 816 thin
+shelltype 817 thin
+shelltype 818 thin
+shelltype 819 thin
+shelltype 820 thin
+shelltype 821 thin
+shelltype 822 thin
+shelltype 823 thin
+shelltype 824 thin
+shelltype 825 thin
+shelltype 826 thin
+shelltype 827 thin
+shelltype 828 thin
+shelltype 829 thin
+shelltype 830 thin
+shelltype 831 thin
+shelltype 832 thin
+shelltype 833 thin
+shelltype 834 thin
+shelltype 835 thin
+shelltype 836 thin
+shelltype 837 thin
+shelltype 838 thin
+shelltype 839 thin
+shelltype 840 thin
+shelltype 841 thin
+shelltype 842 thin
+shelltype 843 thin
+shelltype 844 thin
+shelltype 845 thin
+shelltype 846 thin
+shelltype 847 thin
+shelltype 848 thin
+shelltype 849 thin
+shelltype 850 thin
+shelltype 851 thin
+shelltype 852 thin
+shelltype 853 thin
+shelltype 854 thin
+shelltype 855 thin
+shelltype 856 thin
+shelltype 857 thin
+shelltype 858 thin
+shelltype 859 thin
+shelltype 860 thin
+shelltype 861 thin
+shelltype 862 thin
+shelltype 863 thin
+shelltype 864 thin
+shelltype 865 thin
+shelltype 866 thin
+shelltype 867 thin
+shelltype 868 thin
+shelltype 869 thin
+shelltype 870 thin
+shelltype 871 thin
+shelltype 872 thin
+shelltype 873 thin
+shelltype 874 thin
+shelltype 875 thin
+shelltype 876 thin
+shelltype 877 thin
+shelltype 878 thin
+shelltype 879 thin
+shelltype 880 thin
+shelltype 881 thin
+shelltype 882 thin
+shelltype 883 thin
+shelltype 884 thin
+shelltype 885 thin
+shelltype 886 thin
+shelltype 887 thin
+shelltype 888 thin
+shelltype 889 thin
+shelltype 890 thin
+shelltype 891 thin
+shelltype 892 thin
+shelltype 893 thin
+shelltype 894 thin
+shelltype 895 thin
+shelltype 896 thin
+shelltype 897 thin
+shelltype 898 thin
+shelltype 899 thin
+shelltype 900 thin
+shelltype 901 thin
+shelltype 902 thin
+shelltype 903 thin
+shelltype 904 thin
+shelltype 905 thin
+shelltype 906 thin
+shelltype 907 thin
+shelltype 908 thin
+shelltype 909 thin
+shelltype 910 thin
+shelltype 911 thin
+shelltype 912 thin
+shelltype 913 thin
+shelltype 914 thin
+shelltype 915 thin
+shelltype 916 thin
+shelltype 917 thin
+shelltype 918 thin
+shelltype 919 thin
+shelltype 920 thin
+shelltype 921 thin
+shelltype 922 thin
+shelltype 923 thin
+shelltype 924 thin
+shelltype 925 thin
+shelltype 926 thin
+shelltype 927 thin
+shelltype 928 thin
+shelltype 929 thin
+shelltype 930 thin
+shelltype 931 thin
+shelltype 932 thin
+shelltype 933 thin
+shelltype 934 thin
+shelltype 935 thin
+shelltype 936 thin
+shelltype 937 thin
+shelltype 938 thin
+shelltype 939 thin
+shelltype 940 thin
+shelltype 941 thin
+shelltype 942 thin
+shelltype 943 thin
+shelltype 944 thin
+shelltype 945 thin
+shelltype 946 thin
+shelltype 947 thin
+shelltype 948 thin
+shelltype 949 thin
+shelltype 950 thin
+shelltype 951 thin
+shelltype 952 thin
+shelltype 953 thin
+shelltype 954 thin
+shelltype 955 thin
+shelltype 956 thin
+shelltype 957 thin
+shelltype 958 thin
+shelltype 959 thin
+shelltype 960 thin
+shelltype 961 thin
+shelltype 962 thin
+shelltype 963 thin
+shelltype 964 thin
+shelltype 965 thin
+shelltype 966 thin
+shelltype 967 thin
+shelltype 968 thin
+shelltype 969 thin
+shelltype 970 thin
+shelltype 971 thin
+shelltype 972 thin
+shelltype 973 thin
+shelltype 974 thin
+shelltype 975 thin
+shelltype 976 thin
+shelltype 977 thin
+shelltype 978 thin
+shelltype 979 thin
+shelltype 980 thin
+shelltype 981 thin
+shelltype 982 thin
+shelltype 983 thin
+shelltype 984 thin
+shelltype 985 thin
+shelltype 986 thin
+shelltype 987 thin
+shelltype 988 thin
+shelltype 989 thin
+shelltype 990 thin
+shelltype 991 thin
+shelltype 992 thin
+shelltype 993 thin
+shelltype 994 thin
+shelltype 995 thin
+shelltype 996 thin
+shelltype 997 thin
+shelltype 998 thin
+shelltype 999 thin
+shelltype 1000 thin
+shelltype 1001 thin
+shelltype 1002 thin
+shelltype 1003 thin
+shelltype 1004 thin
+shelltype 1005 thin
+shelltype 1006 thin
+shelltype 1007 thin
+shelltype 1008 thin
+shelltype 1009 thin
+shelltype 1010 thin
+shelltype 1011 thin
+shelltype 1012 thin
+shelltype 1013 thin
+shelltype 1014 thin
+shelltype 1015 thin
+shelltype 1016 thin
+shelltype 1017 thin
+shelltype 1018 thin
+shelltype 1019 thin
+shelltype 1020 thin
+shelltype 1021 thin
+shelltype 1022 thin
+shelltype 1023 thin
+shelltype 1024 thin
+shelltype 1025 thin
+shelltype 1026 thin
+shelltype 1027 thin
+shelltype 1028 thin
+shelltype 1029 thin
+shelltype 1030 thin
+shelltype 1031 thin
+shelltype 1032 thin
+shelltype 1033 thin
+shelltype 1034 thin
+shelltype 1035 thin
+shelltype 1036 thin
+shelltype 1037 thin
+shelltype 1038 thin
+shelltype 1039 thin
+shelltype 1040 thin
+shelltype 1041 thin
+shelltype 1042 thin
+shelltype 1043 thin
+shelltype 1044 thin
+shelltype 1045 thin
+shelltype 1046 thin
+shelltype 1047 thin
+shelltype 1048 thin
+shelltype 1049 thin
+shelltype 1050 thin
+shelltype 1051 thin
+shelltype 1052 thin
+shelltype 1053 thin
+shelltype 1054 thin
+shelltype 1055 thin
+shelltype 1056 thin
+shelltype 1057 thin
+shelltype 1058 thin
+shelltype 1059 thin
+shelltype 1060 thin
+shelltype 1061 thin
+shelltype 1062 thin
+shelltype 1063 thin
+shelltype 1064 thin
+shelltype 1065 thin
+shelltype 1066 thin
+shelltype 1067 thin
+shelltype 1068 thin
+shelltype 1069 thin
+shelltype 1070 thin
+shelltype 1071 thin
+shelltype 1072 thin
+shelltype 1073 thin
+shelltype 1074 thin
+shelltype 1075 thin
+shelltype 1076 thin
+shelltype 1077 thin
+shelltype 1078 thin
+shelltype 1079 thin
+shelltype 1080 thin
+shelltype 1081 thin
+shelltype 1082 thin
+shelltype 1083 thin
+shelltype 1084 thin
+shelltype 1085 thin
+shelltype 1086 thin
+shelltype 1087 thin
+shelltype 1088 thin
+shelltype 1089 thin
+shelltype 1090 thin
+shelltype 1091 thin
+shelltype 1092 thin
+shelltype 1093 thin
+shelltype 1094 thin
+shelltype 1095 thin
+shelltype 1096 thin
+shelltype 1097 thin
+shelltype 1098 thin
+shelltype 1099 thin
+shelltype 1100 thin
+shelltype 1101 thin
+shelltype 1102 thin
+shelltype 1103 thin
+shelltype 1104 thin
+shelltype 1105 thin
+shelltype 1106 thin
+shelltype 1107 thin
+shelltype 1108 thin
+shelltype 1109 thin
+shelltype 1110 thin
+shelltype 1111 thin
+shelltype 1112 thin
+shelltype 1113 thin
+shelltype 1114 thin
+shelltype 1115 thin
+shelltype 1116 thin
+shelltype 1117 thin
+shelltype 1118 thin
+shelltype 1119 thin
+shelltype 1120 thin
+shelltype 1121 thin
+shelltype 1122 thin
+shelltype 1123 thin
+shelltype 1124 thin
+shelltype 1125 thin
+shelltype 1126 thin
+shelltype 1127 thin
+shelltype 1128 thin
+shelltype 1129 thin
+shelltype 1130 thin
+shelltype 1131 thin
+shelltype 1132 thin
+shelltype 1133 thin
+shelltype 1134 thin
+shelltype 1135 thin
+shelltype 1136 thin
+shelltype 1137 thin
+shelltype 1138 thin
+shelltype 1139 thin
+shelltype 1140 thin
+shelltype 1141 thin
+shelltype 1142 thin
+shelltype 1143 thin
+shelltype 1144 thin
+shelltype 1145 thin
+shelltype 1146 thin
+shelltype 1147 thin
+shelltype 1148 thin
+shelltype 1149 thin
+shelltype 1150 thin
+shelltype 1151 thin
+shelltype 1152 thin
+shelltype 1153 thin
+shelltype 1154 thin
+shelltype 1155 thin
+shelltype 1156 thin
+shelltype 1157 thin
+shelltype 1158 thin
+shelltype 1159 thin
+shelltype 1160 thin
+shelltype 1161 thin
+shelltype 1162 thin
+shelltype 1163 thin
+shelltype 1164 thin
+shelltype 1165 thin
+shelltype 1166 thin
+shelltype 1167 thin
+shelltype 1168 thin
+shelltype 1169 thin
+shelltype 1170 thin
+shelltype 1171 thin
+shelltype 1172 thin
+shelltype 1173 thin
+shelltype 1174 thin
+shelltype 1175 thin
+
 # --- apoyos (empotrados en la base)
 support 1 fixed
 support 2 fixed
@@ -5411,1182 +6591,1187 @@ support 23 fixed
 support 24 fixed
 
 # --- carga de SUPERFICIE: areaload shellID q   (kN/m2, +z arriba)
-#     entrepiso y rampa 9.30 kN/m2   cubierta 1.10 kN/m2
-areaload 1 -9.3   # SHELL-LOSA
-areaload 2 -9.3   # SHELL-LOSA
-areaload 3 -9.3   # SHELL-LOSA
-areaload 4 -9.3   # SHELL-LOSA
-areaload 5 -9.3   # SHELL-LOSA
-areaload 6 -9.3   # SHELL-LOSA
-areaload 7 -9.3   # SHELL-LOSA
-areaload 8 -9.3   # SHELL-LOSA
-areaload 9 -9.3   # SHELL-LOSA
-areaload 10 -9.3   # SHELL-LOSA
-areaload 11 -9.3   # SHELL-LOSA
-areaload 12 -9.3   # SHELL-LOSA
-areaload 13 -9.3   # SHELL-LOSA
-areaload 14 -9.3   # SHELL-LOSA
-areaload 15 -9.3   # SHELL-LOSA
-areaload 16 -9.3   # SHELL-LOSA
-areaload 17 -9.3   # SHELL-LOSA
-areaload 18 -9.3   # SHELL-LOSA
-areaload 19 -9.3   # SHELL-LOSA
-areaload 20 -9.3   # SHELL-LOSA
-areaload 21 -9.3   # SHELL-LOSA
-areaload 22 -9.3   # SHELL-LOSA
-areaload 23 -9.3   # SHELL-LOSA
-areaload 24 -9.3   # SHELL-LOSA
-areaload 25 -9.3   # SHELL-LOSA
-areaload 26 -9.3   # SHELL-LOSA
-areaload 27 -9.3   # SHELL-LOSA
-areaload 28 -9.3   # SHELL-LOSA
-areaload 29 -9.3   # SHELL-LOSA
-areaload 30 -9.3   # SHELL-LOSA
-areaload 31 -9.3   # SHELL-LOSA
-areaload 32 -9.3   # SHELL-LOSA
-areaload 33 -9.3   # SHELL-LOSA
-areaload 34 -9.3   # SHELL-LOSA
-areaload 35 -9.3   # SHELL-LOSA
-areaload 36 -9.3   # SHELL-LOSA
-areaload 37 -9.3   # SHELL-LOSA
-areaload 38 -9.3   # SHELL-LOSA
-areaload 39 -9.3   # SHELL-LOSA
-areaload 40 -9.3   # SHELL-LOSA
-areaload 41 -9.3   # SHELL-LOSA
-areaload 42 -9.3   # SHELL-LOSA
-areaload 43 -9.3   # SHELL-LOSA
-areaload 44 -9.3   # SHELL-LOSA
-areaload 45 -9.3   # SHELL-LOSA
-areaload 46 -9.3   # SHELL-LOSA
-areaload 47 -9.3   # SHELL-LOSA
-areaload 48 -9.3   # SHELL-LOSA
-areaload 49 -9.3   # SHELL-LOSA
-areaload 50 -9.3   # SHELL-LOSA
-areaload 51 -9.3   # SHELL-LOSA
-areaload 52 -9.3   # SHELL-LOSA
-areaload 53 -9.3   # SHELL-LOSA
-areaload 54 -9.3   # SHELL-LOSA
-areaload 55 -9.3   # SHELL-LOSA
-areaload 56 -9.3   # SHELL-LOSA
-areaload 57 -9.3   # SHELL-LOSA
-areaload 58 -9.3   # SHELL-LOSA
-areaload 59 -9.3   # SHELL-LOSA
-areaload 60 -9.3   # SHELL-LOSA
-areaload 61 -9.3   # SHELL-LOSA
-areaload 62 -9.3   # SHELL-LOSA
-areaload 63 -9.3   # SHELL-LOSA
-areaload 64 -9.3   # SHELL-LOSA
-areaload 65 -9.3   # SHELL-LOSA
-areaload 66 -9.3   # SHELL-LOSA
-areaload 67 -9.3   # SHELL-LOSA
-areaload 68 -9.3   # SHELL-LOSA
-areaload 69 -9.3   # SHELL-LOSA
-areaload 70 -9.3   # SHELL-LOSA
-areaload 71 -9.3   # SHELL-LOSA
-areaload 72 -9.3   # SHELL-LOSA
-areaload 73 -9.3   # SHELL-LOSA
-areaload 74 -9.3   # SHELL-LOSA
-areaload 75 -9.3   # SHELL-LOSA
-areaload 76 -9.3   # SHELL-LOSA
-areaload 77 -9.3   # SHELL-LOSA
-areaload 78 -9.3   # SHELL-LOSA
-areaload 79 -9.3   # SHELL-LOSA
-areaload 80 -9.3   # SHELL-LOSA
-areaload 81 -9.3   # SHELL-LOSA
-areaload 82 -9.3   # SHELL-LOSA
-areaload 83 -9.3   # SHELL-LOSA
-areaload 84 -9.3   # SHELL-LOSA
-areaload 85 -9.3   # SHELL-LOSA
-areaload 86 -9.3   # SHELL-LOSA
-areaload 87 -9.3   # SHELL-LOSA
-areaload 88 -9.3   # SHELL-LOSA
-areaload 89 -9.3   # SHELL-LOSA
-areaload 90 -9.3   # SHELL-LOSA
-areaload 91 -9.3   # SHELL-LOSA
-areaload 92 -9.3   # SHELL-LOSA
-areaload 93 -9.3   # SHELL-LOSA
-areaload 94 -9.3   # SHELL-LOSA
-areaload 95 -9.3   # SHELL-LOSA
-areaload 96 -9.3   # SHELL-LOSA
-areaload 97 -9.3   # SHELL-LOSA
-areaload 98 -9.3   # SHELL-LOSA
-areaload 99 -9.3   # SHELL-LOSA
-areaload 100 -9.3   # SHELL-LOSA
-areaload 101 -9.3   # SHELL-LOSA
-areaload 102 -9.3   # SHELL-LOSA
-areaload 103 -9.3   # SHELL-LOSA
-areaload 104 -9.3   # SHELL-LOSA
-areaload 105 -9.3   # SHELL-LOSA
-areaload 106 -9.3   # SHELL-LOSA
-areaload 107 -9.3   # SHELL-LOSA
-areaload 108 -9.3   # SHELL-LOSA
-areaload 109 -9.3   # SHELL-LOSA
-areaload 110 -9.3   # SHELL-LOSA
-areaload 111 -9.3   # SHELL-LOSA
-areaload 112 -9.3   # SHELL-LOSA
-areaload 113 -9.3   # SHELL-LOSA
-areaload 114 -9.3   # SHELL-LOSA
-areaload 115 -9.3   # SHELL-LOSA
-areaload 116 -9.3   # SHELL-LOSA
-areaload 117 -9.3   # SHELL-LOSA
-areaload 118 -9.3   # SHELL-LOSA
-areaload 119 -9.3   # SHELL-LOSA
-areaload 120 -9.3   # SHELL-LOSA
-areaload 121 -9.3   # SHELL-LOSA
-areaload 122 -9.3   # SHELL-LOSA
-areaload 123 -9.3   # SHELL-LOSA
-areaload 124 -9.3   # SHELL-LOSA
-areaload 125 -9.3   # SHELL-LOSA
-areaload 126 -9.3   # SHELL-LOSA
-areaload 127 -9.3   # SHELL-LOSA
-areaload 128 -9.3   # SHELL-LOSA
-areaload 129 -9.3   # SHELL-LOSA
-areaload 130 -9.3   # SHELL-LOSA
-areaload 131 -9.3   # SHELL-LOSA
-areaload 132 -9.3   # SHELL-LOSA
-areaload 133 -9.3   # SHELL-LOSA
-areaload 134 -9.3   # SHELL-LOSA
-areaload 135 -9.3   # SHELL-LOSA
-areaload 136 -9.3   # SHELL-LOSA
-areaload 137 -9.3   # SHELL-LOSA
-areaload 138 -9.3   # SHELL-LOSA
-areaload 139 -9.3   # SHELL-LOSA
-areaload 140 -9.3   # SHELL-LOSA
-areaload 141 -9.3   # SHELL-LOSA
-areaload 142 -9.3   # SHELL-LOSA
-areaload 143 -9.3   # SHELL-LOSA
-areaload 144 -9.3   # SHELL-LOSA
-areaload 145 -9.3   # SHELL-LOSA
-areaload 146 -9.3   # SHELL-LOSA
-areaload 147 -9.3   # SHELL-LOSA
-areaload 148 -9.3   # SHELL-LOSA
-areaload 149 -9.3   # SHELL-LOSA
-areaload 150 -9.3   # SHELL-LOSA
-areaload 151 -9.3   # SHELL-LOSA
-areaload 152 -9.3   # SHELL-LOSA
-areaload 153 -9.3   # SHELL-LOSA
-areaload 154 -9.3   # SHELL-LOSA
-areaload 155 -9.3   # SHELL-LOSA
-areaload 156 -9.3   # SHELL-LOSA
-areaload 157 -9.3   # SHELL-LOSA
-areaload 158 -9.3   # SHELL-LOSA
-areaload 159 -9.3   # SHELL-LOSA
-areaload 160 -9.3   # SHELL-LOSA
-areaload 161 -9.3   # SHELL-LOSA
-areaload 162 -9.3   # SHELL-LOSA
-areaload 163 -9.3   # SHELL-LOSA
-areaload 164 -9.3   # SHELL-LOSA
-areaload 165 -9.3   # SHELL-LOSA
-areaload 166 -9.3   # SHELL-LOSA
-areaload 167 -9.3   # SHELL-LOSA
-areaload 168 -9.3   # SHELL-LOSA
-areaload 169 -9.3   # SHELL-LOSA
-areaload 170 -9.3   # SHELL-LOSA
-areaload 171 -9.3   # SHELL-LOSA
-areaload 172 -9.3   # SHELL-LOSA
-areaload 173 -9.3   # SHELL-LOSA
-areaload 174 -9.3   # SHELL-LOSA
-areaload 175 -9.3   # SHELL-LOSA
-areaload 176 -9.3   # SHELL-LOSA
-areaload 177 -9.3   # SHELL-LOSA
-areaload 178 -9.3   # SHELL-LOSA
-areaload 179 -9.3   # SHELL-LOSA
-areaload 180 -9.3   # SHELL-LOSA
-areaload 181 -9.3   # SHELL-LOSA
-areaload 182 -9.3   # SHELL-LOSA
-areaload 183 -9.3   # SHELL-LOSA
-areaload 184 -9.3   # SHELL-LOSA
-areaload 185 -9.3   # SHELL-LOSA
-areaload 186 -9.3   # SHELL-LOSA
-areaload 187 -9.3   # SHELL-LOSA
-areaload 188 -9.3   # SHELL-LOSA
-areaload 189 -9.3   # SHELL-LOSA
-areaload 190 -9.3   # SHELL-LOSA
-areaload 191 -9.3   # SHELL-LOSA
-areaload 192 -9.3   # SHELL-LOSA
-areaload 193 -9.3   # SHELL-LOSA
-areaload 194 -9.3   # SHELL-LOSA
-areaload 195 -9.3   # SHELL-LOSA
-areaload 196 -9.3   # SHELL-LOSA
-areaload 197 -9.3   # SHELL-LOSA
-areaload 198 -9.3   # SHELL-LOSA
-areaload 199 -9.3   # SHELL-LOSA
-areaload 200 -9.3   # SHELL-LOSA
-areaload 201 -9.3   # SHELL-LOSA
-areaload 202 -9.3   # SHELL-LOSA
-areaload 203 -9.3   # SHELL-LOSA
-areaload 204 -9.3   # SHELL-LOSA
-areaload 205 -9.3   # SHELL-LOSA
-areaload 206 -9.3   # SHELL-LOSA
-areaload 207 -9.3   # SHELL-LOSA
-areaload 208 -9.3   # SHELL-LOSA
-areaload 209 -9.3   # SHELL-LOSA
-areaload 210 -9.3   # SHELL-LOSA
-areaload 211 -9.3   # SHELL-LOSA
-areaload 212 -9.3   # SHELL-LOSA
-areaload 213 -9.3   # SHELL-LOSA
-areaload 214 -9.3   # SHELL-LOSA
-areaload 215 -9.3   # SHELL-LOSA
-areaload 216 -9.3   # SHELL-LOSA
-areaload 217 -9.3   # SHELL-LOSA
-areaload 218 -9.3   # SHELL-LOSA
-areaload 219 -9.3   # SHELL-LOSA
-areaload 220 -9.3   # SHELL-LOSA
-areaload 221 -9.3   # SHELL-LOSA
-areaload 222 -9.3   # SHELL-LOSA
-areaload 223 -9.3   # SHELL-LOSA
-areaload 224 -9.3   # SHELL-LOSA
-areaload 225 -9.3   # SHELL-LOSA
-areaload 226 -9.3   # SHELL-LOSA
-areaload 227 -9.3   # SHELL-LOSA
-areaload 228 -9.3   # SHELL-LOSA
-areaload 229 -9.3   # SHELL-LOSA
-areaload 230 -9.3   # SHELL-LOSA
-areaload 231 -9.3   # SHELL-LOSA
-areaload 232 -9.3   # SHELL-LOSA
-areaload 233 -9.3   # SHELL-LOSA
-areaload 234 -9.3   # SHELL-LOSA
-areaload 235 -9.3   # SHELL-LOSA
-areaload 236 -9.3   # SHELL-LOSA
-areaload 237 -9.3   # SHELL-LOSA
-areaload 238 -9.3   # SHELL-LOSA
-areaload 239 -9.3   # SHELL-LOSA
-areaload 240 -9.3   # SHELL-LOSA
-areaload 241 -9.3   # SHELL-LOSA
-areaload 242 -9.3   # SHELL-LOSA
-areaload 243 -9.3   # SHELL-LOSA
-areaload 244 -9.3   # SHELL-LOSA
-areaload 245 -9.3   # SHELL-LOSA
-areaload 246 -9.3   # SHELL-LOSA
-areaload 247 -9.3   # SHELL-LOSA
-areaload 248 -9.3   # SHELL-LOSA
-areaload 249 -9.3   # SHELL-LOSA
-areaload 250 -9.3   # SHELL-LOSA
-areaload 251 -9.3   # SHELL-LOSA
-areaload 252 -9.3   # SHELL-LOSA
-areaload 253 -9.3   # SHELL-LOSA
-areaload 254 -9.3   # SHELL-LOSA
-areaload 255 -9.3   # SHELL-LOSA
-areaload 256 -9.3   # SHELL-LOSA
-areaload 257 -9.3   # SHELL-LOSA
-areaload 258 -9.3   # SHELL-LOSA
-areaload 259 -9.3   # SHELL-LOSA
-areaload 260 -9.3   # SHELL-LOSA
-areaload 261 -9.3   # SHELL-LOSA
-areaload 262 -9.3   # SHELL-LOSA
-areaload 263 -9.3   # SHELL-LOSA
-areaload 264 -9.3   # SHELL-LOSA
-areaload 265 -9.3   # SHELL-LOSA
-areaload 266 -9.3   # SHELL-LOSA
-areaload 267 -9.3   # SHELL-LOSA
-areaload 268 -9.3   # SHELL-LOSA
-areaload 269 -9.3   # SHELL-LOSA
-areaload 270 -9.3   # SHELL-LOSA
-areaload 271 -9.3   # SHELL-LOSA
-areaload 272 -9.3   # SHELL-LOSA
-areaload 273 -9.3   # SHELL-LOSA
-areaload 274 -9.3   # SHELL-LOSA
-areaload 275 -9.3   # SHELL-LOSA
-areaload 276 -9.3   # SHELL-LOSA
-areaload 277 -9.3   # SHELL-LOSA
-areaload 278 -9.3   # SHELL-LOSA
-areaload 279 -9.3   # SHELL-LOSA
-areaload 280 -9.3   # SHELL-LOSA
-areaload 281 -9.3   # SHELL-LOSA
-areaload 282 -9.3   # SHELL-LOSA
-areaload 283 -9.3   # SHELL-LOSA
-areaload 284 -9.3   # SHELL-LOSA
-areaload 285 -9.3   # SHELL-LOSA
-areaload 286 -9.3   # SHELL-LOSA
-areaload 287 -9.3   # SHELL-LOSA
-areaload 288 -9.3   # SHELL-LOSA
-areaload 289 -9.3   # SHELL-LOSA
-areaload 290 -9.3   # SHELL-LOSA
-areaload 291 -9.3   # SHELL-LOSA
-areaload 292 -9.3   # SHELL-LOSA
-areaload 293 -9.3   # SHELL-LOSA
-areaload 294 -9.3   # SHELL-LOSA
-areaload 295 -9.3   # SHELL-LOSA
-areaload 296 -9.3   # SHELL-LOSA
-areaload 297 -9.3   # SHELL-LOSA
-areaload 298 -9.3   # SHELL-LOSA
-areaload 299 -9.3   # SHELL-LOSA
-areaload 300 -9.3   # SHELL-LOSA
-areaload 301 -9.3   # SHELL-LOSA
-areaload 302 -9.3   # SHELL-LOSA
-areaload 303 -9.3   # SHELL-LOSA
-areaload 304 -9.3   # SHELL-LOSA
-areaload 305 -9.3   # SHELL-LOSA
-areaload 306 -9.3   # SHELL-LOSA
-areaload 307 -9.3   # SHELL-LOSA
-areaload 308 -9.3   # SHELL-LOSA
-areaload 309 -9.3   # SHELL-LOSA
-areaload 310 -9.3   # SHELL-LOSA
-areaload 311 -9.3   # SHELL-LOSA
-areaload 312 -9.3   # SHELL-LOSA
-areaload 313 -9.3   # SHELL-LOSA
-areaload 314 -9.3   # SHELL-LOSA
-areaload 315 -9.3   # SHELL-LOSA
-areaload 316 -9.3   # SHELL-LOSA
-areaload 317 -9.3   # SHELL-LOSA
-areaload 318 -9.3   # SHELL-LOSA
-areaload 319 -9.3   # SHELL-LOSA
-areaload 320 -9.3   # SHELL-LOSA
-areaload 321 -9.3   # SHELL-LOSA
-areaload 322 -9.3   # SHELL-LOSA
-areaload 323 -9.3   # SHELL-LOSA
-areaload 324 -9.3   # SHELL-LOSA
-areaload 325 -9.3   # SHELL-LOSA
-areaload 326 -9.3   # SHELL-LOSA
-areaload 327 -9.3   # SHELL-LOSA
-areaload 328 -9.3   # SHELL-LOSA
-areaload 329 -9.3   # SHELL-LOSA
-areaload 330 -9.3   # SHELL-LOSA
-areaload 331 -9.3   # SHELL-LOSA
-areaload 332 -9.3   # SHELL-LOSA
-areaload 333 -9.3   # SHELL-LOSA
-areaload 334 -9.3   # SHELL-LOSA
-areaload 335 -9.3   # SHELL-LOSA
-areaload 336 -9.3   # SHELL-LOSA
-areaload 337 -9.3   # SHELL-LOSA
-areaload 338 -9.3   # SHELL-LOSA
-areaload 339 -9.3   # SHELL-LOSA
-areaload 340 -9.3   # SHELL-LOSA
-areaload 341 -9.3   # SHELL-LOSA
-areaload 342 -9.3   # SHELL-LOSA
-areaload 343 -9.3   # SHELL-LOSA
-areaload 344 -9.3   # SHELL-LOSA
-areaload 345 -9.3   # SHELL-LOSA
-areaload 346 -9.3   # SHELL-LOSA
-areaload 347 -9.3   # SHELL-LOSA
-areaload 348 -9.3   # SHELL-LOSA
-areaload 349 -9.3   # SHELL-LOSA
-areaload 350 -9.3   # SHELL-LOSA
-areaload 351 -9.3   # SHELL-LOSA
-areaload 352 -9.3   # SHELL-LOSA
-areaload 353 -9.3   # SHELL-LOSA
-areaload 354 -9.3   # SHELL-LOSA
-areaload 355 -9.3   # SHELL-LOSA
-areaload 356 -9.3   # SHELL-LOSA
-areaload 357 -9.3   # SHELL-LOSA
-areaload 358 -9.3   # SHELL-LOSA
-areaload 359 -9.3   # SHELL-LOSA
-areaload 360 -9.3   # SHELL-LOSA
-areaload 361 -9.3   # SHELL-LOSA
-areaload 362 -9.3   # SHELL-LOSA
-areaload 363 -9.3   # SHELL-LOSA
-areaload 364 -9.3   # SHELL-LOSA
-areaload 365 -9.3   # SHELL-LOSA
-areaload 366 -9.3   # SHELL-LOSA
-areaload 367 -9.3   # SHELL-LOSA
-areaload 368 -9.3   # SHELL-LOSA
-areaload 369 -9.3   # SHELL-LOSA
-areaload 370 -9.3   # SHELL-LOSA
-areaload 371 -9.3   # SHELL-LOSA
-areaload 372 -9.3   # SHELL-LOSA
-areaload 373 -9.3   # SHELL-LOSA
-areaload 374 -9.3   # SHELL-LOSA
-areaload 375 -9.3   # SHELL-LOSA
-areaload 376 -9.3   # SHELL-LOSA
-areaload 377 -9.3   # SHELL-LOSA
-areaload 378 -9.3   # SHELL-LOSA
-areaload 379 -9.3   # SHELL-LOSA
-areaload 380 -9.3   # SHELL-LOSA
-areaload 381 -9.3   # SHELL-LOSA
-areaload 382 -9.3   # SHELL-LOSA
-areaload 383 -9.3   # SHELL-LOSA
-areaload 384 -9.3   # SHELL-LOSA
-areaload 385 -9.3   # SHELL-LOSA
-areaload 386 -9.3   # SHELL-LOSA
-areaload 387 -9.3   # SHELL-LOSA
-areaload 388 -9.3   # SHELL-LOSA
-areaload 389 -9.3   # SHELL-LOSA
-areaload 390 -9.3   # SHELL-LOSA
-areaload 391 -9.3   # SHELL-LOSA
-areaload 392 -9.3   # SHELL-LOSA
-areaload 393 -9.3   # SHELL-LOSA
-areaload 394 -9.3   # SHELL-LOSA
-areaload 395 -9.3   # SHELL-LOSA
-areaload 396 -9.3   # SHELL-LOSA
-areaload 397 -9.3   # SHELL-LOSA
-areaload 398 -9.3   # SHELL-LOSA
-areaload 399 -9.3   # SHELL-LOSA
-areaload 400 -9.3   # SHELL-LOSA
-areaload 401 -9.3   # SHELL-LOSA
-areaload 402 -9.3   # SHELL-LOSA
-areaload 403 -9.3   # SHELL-LOSA
-areaload 404 -9.3   # SHELL-LOSA
-areaload 405 -9.3   # SHELL-LOSA
-areaload 406 -9.3   # SHELL-LOSA
-areaload 407 -9.3   # SHELL-LOSA
-areaload 408 -9.3   # SHELL-LOSA
-areaload 409 -9.3   # SHELL-LOSA
-areaload 410 -9.3   # SHELL-LOSA
-areaload 411 -9.3   # SHELL-LOSA
-areaload 412 -9.3   # SHELL-LOSA
-areaload 413 -9.3   # SHELL-LOSA
-areaload 414 -9.3   # SHELL-LOSA
-areaload 415 -9.3   # SHELL-LOSA
-areaload 416 -9.3   # SHELL-LOSA
-areaload 417 -9.3   # SHELL-LOSA
-areaload 418 -9.3   # SHELL-LOSA
-areaload 419 -9.3   # SHELL-LOSA
-areaload 420 -9.3   # SHELL-LOSA
-areaload 421 -9.3   # SHELL-LOSA
-areaload 422 -9.3   # SHELL-LOSA
-areaload 423 -9.3   # SHELL-LOSA
-areaload 424 -9.3   # SHELL-LOSA
-areaload 425 -9.3   # SHELL-LOSA
-areaload 426 -9.3   # SHELL-LOSA
-areaload 427 -9.3   # SHELL-LOSA
-areaload 428 -9.3   # SHELL-LOSA
-areaload 429 -9.3   # SHELL-LOSA
-areaload 430 -9.3   # SHELL-LOSA
-areaload 431 -9.3   # SHELL-LOSA
-areaload 432 -9.3   # SHELL-LOSA
-areaload 433 -9.3   # SHELL-LOSA
-areaload 434 -9.3   # SHELL-LOSA
-areaload 435 -9.3   # SHELL-LOSA
-areaload 436 -9.3   # SHELL-LOSA
-areaload 437 -9.3   # SHELL-LOSA
-areaload 438 -9.3   # SHELL-LOSA
-areaload 439 -9.3   # SHELL-LOSA
-areaload 440 -9.3   # SHELL-LOSA
-areaload 441 -9.3   # SHELL-LOSA
-areaload 442 -9.3   # SHELL-LOSA
-areaload 443 -9.3   # SHELL-LOSA
-areaload 444 -9.3   # SHELL-LOSA
-areaload 445 -9.3   # SHELL-LOSA
-areaload 446 -9.3   # SHELL-LOSA
-areaload 447 -9.3   # SHELL-LOSA
-areaload 448 -9.3   # SHELL-LOSA
-areaload 449 -9.3   # SHELL-LOSA
-areaload 450 -9.3   # SHELL-LOSA
-areaload 451 -9.3   # SHELL-LOSA
-areaload 452 -9.3   # SHELL-LOSA
-areaload 453 -9.3   # SHELL-LOSA
-areaload 454 -9.3   # SHELL-LOSA
-areaload 455 -9.3   # SHELL-LOSA
-areaload 456 -9.3   # SHELL-LOSA
-areaload 457 -9.3   # SHELL-LOSA
-areaload 458 -9.3   # SHELL-LOSA
-areaload 459 -9.3   # SHELL-LOSA
-areaload 460 -9.3   # SHELL-LOSA
-areaload 461 -9.3   # SHELL-LOSA
-areaload 462 -9.3   # SHELL-LOSA
-areaload 463 -9.3   # SHELL-LOSA
-areaload 464 -9.3   # SHELL-LOSA
-areaload 465 -9.3   # SHELL-LOSA
-areaload 466 -9.3   # SHELL-LOSA
-areaload 467 -9.3   # SHELL-LOSA
-areaload 468 -9.3   # SHELL-LOSA
-areaload 469 -9.3   # SHELL-LOSA
-areaload 470 -9.3   # SHELL-LOSA
-areaload 471 -9.3   # SHELL-LOSA
-areaload 472 -9.3   # SHELL-LOSA
-areaload 473 -9.3   # SHELL-LOSA
-areaload 474 -9.3   # SHELL-LOSA
-areaload 475 -9.3   # SHELL-LOSA
-areaload 476 -9.3   # SHELL-LOSA
-areaload 477 -9.3   # SHELL-LOSA
-areaload 478 -9.3   # SHELL-LOSA
-areaload 479 -9.3   # SHELL-LOSA
-areaload 480 -9.3   # SHELL-LOSA
-areaload 481 -9.3   # SHELL-LOSA
-areaload 482 -9.3   # SHELL-LOSA
-areaload 483 -9.3   # SHELL-LOSA
-areaload 484 -9.3   # SHELL-LOSA
-areaload 485 -9.3   # SHELL-LOSA
-areaload 486 -9.3   # SHELL-LOSA
-areaload 487 -9.3   # SHELL-LOSA
-areaload 488 -9.3   # SHELL-LOSA
-areaload 489 -9.3   # SHELL-LOSA
-areaload 490 -9.3   # SHELL-LOSA
-areaload 491 -9.3   # SHELL-LOSA
-areaload 492 -9.3   # SHELL-LOSA
-areaload 493 -9.3   # SHELL-LOSA
-areaload 494 -9.3   # SHELL-LOSA
-areaload 495 -9.3   # SHELL-LOSA
-areaload 496 -9.3   # SHELL-LOSA
-areaload 497 -9.3   # SHELL-LOSA
-areaload 498 -9.3   # SHELL-LOSA
-areaload 499 -9.3   # SHELL-LOSA
-areaload 500 -9.3   # SHELL-LOSA
-areaload 501 -9.3   # SHELL-LOSA
-areaload 502 -9.3   # SHELL-LOSA
-areaload 503 -9.3   # SHELL-LOSA
-areaload 504 -9.3   # SHELL-LOSA
-areaload 505 -9.3   # SHELL-LOSA
-areaload 506 -9.3   # SHELL-LOSA
-areaload 507 -9.3   # SHELL-LOSA
-areaload 508 -9.3   # SHELL-LOSA
-areaload 509 -9.3   # SHELL-LOSA
-areaload 510 -9.3   # SHELL-LOSA
-areaload 511 -9.3   # SHELL-LOSA
-areaload 512 -9.3   # SHELL-LOSA
-areaload 513 -9.3   # SHELL-LOSA
-areaload 514 -9.3   # SHELL-LOSA
-areaload 515 -9.3   # SHELL-LOSA
-areaload 516 -9.3   # SHELL-LOSA
-areaload 517 -9.3   # SHELL-LOSA
-areaload 518 -9.3   # SHELL-LOSA
-areaload 519 -9.3   # SHELL-LOSA
-areaload 520 -9.3   # SHELL-LOSA
-areaload 521 -9.3   # SHELL-LOSA
-areaload 522 -9.3   # SHELL-LOSA
-areaload 523 -9.3   # SHELL-LOSA
-areaload 524 -9.3   # SHELL-LOSA
-areaload 525 -9.3   # SHELL-LOSA
-areaload 526 -9.3   # SHELL-LOSA
-areaload 527 -9.3   # SHELL-LOSA
-areaload 528 -9.3   # SHELL-LOSA
-areaload 529 -9.3   # SHELL-LOSA
-areaload 530 -9.3   # SHELL-LOSA
-areaload 531 -9.3   # SHELL-LOSA
-areaload 532 -9.3   # SHELL-LOSA
-areaload 533 -9.3   # SHELL-LOSA
-areaload 534 -9.3   # SHELL-LOSA
-areaload 535 -9.3   # SHELL-LOSA
-areaload 536 -9.3   # SHELL-LOSA
-areaload 537 -9.3   # SHELL-LOSA
-areaload 538 -9.3   # SHELL-LOSA
-areaload 539 -9.3   # SHELL-LOSA
-areaload 540 -9.3   # SHELL-LOSA
-areaload 541 -9.3   # SHELL-LOSA
-areaload 542 -9.3   # SHELL-LOSA
-areaload 543 -9.3   # SHELL-LOSA
-areaload 544 -9.3   # SHELL-LOSA
-areaload 545 -9.3   # SHELL-LOSA
-areaload 546 -9.3   # SHELL-LOSA
-areaload 547 -9.3   # SHELL-LOSA
-areaload 548 -9.3   # SHELL-LOSA
-areaload 549 -9.3   # SHELL-LOSA
-areaload 550 -9.3   # SHELL-LOSA
-areaload 551 -9.3   # SHELL-LOSA
-areaload 552 -9.3   # SHELL-LOSA
-areaload 553 -9.3   # SHELL-LOSA
-areaload 554 -9.3   # SHELL-LOSA
-areaload 555 -9.3   # SHELL-LOSA
-areaload 556 -9.3   # SHELL-LOSA
-areaload 557 -9.3   # SHELL-LOSA
-areaload 558 -9.3   # SHELL-LOSA
-areaload 559 -9.3   # SHELL-LOSA
-areaload 560 -9.3   # SHELL-LOSA
-areaload 561 -9.3   # SHELL-LOSA
-areaload 562 -9.3   # SHELL-LOSA
-areaload 563 -9.3   # SHELL-LOSA
-areaload 564 -9.3   # SHELL-LOSA
-areaload 565 -9.3   # SHELL-LOSA
-areaload 566 -9.3   # SHELL-LOSA
-areaload 567 -9.3   # SHELL-LOSA
-areaload 568 -9.3   # SHELL-LOSA
-areaload 569 -9.3   # SHELL-LOSA
-areaload 570 -9.3   # SHELL-LOSA
-areaload 571 -9.3   # SHELL-LOSA
-areaload 572 -9.3   # SHELL-LOSA
-areaload 573 -9.3   # SHELL-LOSA
-areaload 574 -9.3   # SHELL-LOSA
-areaload 575 -9.3   # SHELL-LOSA
-areaload 576 -9.3   # SHELL-LOSA
-areaload 577 -9.3   # SHELL-LOSA
-areaload 578 -9.3   # SHELL-LOSA
-areaload 579 -9.3   # SHELL-LOSA
-areaload 580 -9.3   # SHELL-LOSA
-areaload 581 -9.3   # SHELL-LOSA
-areaload 582 -9.3   # SHELL-LOSA
-areaload 583 -9.3   # SHELL-LOSA
-areaload 584 -9.3   # SHELL-LOSA
-areaload 585 -9.3   # SHELL-LOSA
-areaload 586 -9.3   # SHELL-LOSA
-areaload 587 -9.3   # SHELL-LOSA
-areaload 588 -9.3   # SHELL-LOSA
-areaload 589 -9.3   # SHELL-LOSA
-areaload 590 -9.3   # SHELL-LOSA
-areaload 591 -9.3   # SHELL-LOSA
-areaload 592 -9.3   # SHELL-LOSA
-areaload 593 -9.3   # SHELL-LOSA
-areaload 594 -9.3   # SHELL-LOSA
-areaload 595 -9.3   # SHELL-LOSA
-areaload 596 -9.3   # SHELL-LOSA
-areaload 597 -9.3   # SHELL-LOSA
-areaload 598 -9.3   # SHELL-LOSA
-areaload 599 -9.3   # SHELL-LOSA
-areaload 600 -9.3   # SHELL-LOSA
-areaload 601 -9.3   # SHELL-LOSA
-areaload 602 -9.3   # SHELL-LOSA
-areaload 603 -9.3   # SHELL-LOSA
-areaload 604 -9.3   # SHELL-LOSA
-areaload 605 -9.3   # SHELL-LOSA
-areaload 606 -9.3   # SHELL-LOSA
-areaload 607 -9.3   # SHELL-LOSA
-areaload 608 -9.3   # SHELL-LOSA
-areaload 609 -9.3   # SHELL-LOSA
-areaload 610 -9.3   # SHELL-LOSA
-areaload 611 -9.3   # SHELL-LOSA
-areaload 612 -9.3   # SHELL-LOSA
-areaload 613 -9.3   # SHELL-LOSA
-areaload 614 -9.3   # SHELL-LOSA
-areaload 615 -9.3   # SHELL-LOSA
-areaload 616 -9.3   # SHELL-LOSA
-areaload 617 -9.3   # SHELL-LOSA
-areaload 618 -9.3   # SHELL-LOSA
-areaload 619 -9.3   # SHELL-LOSA
-areaload 620 -9.3   # SHELL-LOSA
-areaload 621 -9.3   # SHELL-LOSA
-areaload 622 -9.3   # SHELL-LOSA
-areaload 623 -9.3   # SHELL-LOSA
-areaload 624 -9.3   # SHELL-LOSA
-areaload 625 -9.3   # SHELL-LOSA
-areaload 626 -9.3   # SHELL-LOSA
-areaload 627 -9.3   # SHELL-LOSA
-areaload 628 -9.3   # SHELL-LOSA
-areaload 629 -9.3   # SHELL-LOSA
-areaload 630 -9.3   # SHELL-LOSA
-areaload 631 -9.3   # SHELL-LOSA
-areaload 632 -9.3   # SHELL-LOSA
-areaload 633 -9.3   # SHELL-LOSA
-areaload 634 -9.3   # SHELL-LOSA
-areaload 635 -9.3   # SHELL-LOSA
-areaload 636 -9.3   # SHELL-LOSA
-areaload 637 -9.3   # SHELL-LOSA
-areaload 638 -9.3   # SHELL-LOSA
-areaload 639 -9.3   # SHELL-LOSA
-areaload 640 -9.3   # SHELL-LOSA
-areaload 641 -9.3   # SHELL-LOSA
-areaload 642 -9.3   # SHELL-LOSA
-areaload 643 -9.3   # SHELL-LOSA
-areaload 644 -9.3   # SHELL-LOSA
-areaload 645 -9.3   # SHELL-LOSA
-areaload 646 -9.3   # SHELL-LOSA
-areaload 647 -9.3   # SHELL-LOSA
-areaload 648 -9.3   # SHELL-LOSA
-areaload 649 -9.3   # SHELL-LOSA
-areaload 650 -9.3   # SHELL-LOSA
-areaload 651 -9.3   # SHELL-LOSA
-areaload 652 -9.3   # SHELL-LOSA
-areaload 653 -9.3   # SHELL-LOSA
-areaload 654 -9.3   # SHELL-LOSA
-areaload 655 -9.3   # SHELL-LOSA
-areaload 656 -9.3   # SHELL-LOSA
-areaload 657 -9.3   # SHELL-LOSA
-areaload 658 -9.3   # SHELL-LOSA
-areaload 659 -9.3   # SHELL-LOSA
-areaload 660 -9.3   # SHELL-LOSA
-areaload 661 -9.3   # SHELL-LOSA
-areaload 662 -9.3   # SHELL-LOSA
-areaload 663 -9.3   # SHELL-LOSA
-areaload 664 -9.3   # SHELL-LOSA
-areaload 665 -9.3   # SHELL-LOSA
-areaload 666 -9.3   # SHELL-LOSA
-areaload 667 -9.3   # SHELL-LOSA
-areaload 668 -9.3   # SHELL-LOSA
-areaload 669 -9.3   # SHELL-LOSA
-areaload 670 -9.3   # SHELL-LOSA
-areaload 671 -9.3   # SHELL-LOSA
-areaload 672 -9.3   # SHELL-LOSA
-areaload 673 -9.3   # SHELL-LOSA
-areaload 674 -9.3   # SHELL-LOSA
-areaload 675 -9.3   # SHELL-LOSA
-areaload 676 -9.3   # SHELL-LOSA
-areaload 677 -9.3   # SHELL-LOSA
-areaload 678 -9.3   # SHELL-LOSA
-areaload 679 -9.3   # SHELL-LOSA
-areaload 680 -9.3   # SHELL-LOSA
-areaload 681 -9.3   # SHELL-LOSA
-areaload 682 -9.3   # SHELL-LOSA
-areaload 683 -9.3   # SHELL-LOSA
-areaload 684 -9.3   # SHELL-LOSA
-areaload 685 -9.3   # SHELL-LOSA
-areaload 686 -9.3   # SHELL-LOSA
-areaload 687 -9.3   # SHELL-LOSA
-areaload 688 -9.3   # SHELL-LOSA
-areaload 689 -9.3   # SHELL-LOSA
-areaload 690 -9.3   # SHELL-LOSA
-areaload 691 -9.3   # SHELL-LOSA
-areaload 692 -9.3   # SHELL-LOSA
-areaload 693 -9.3   # SHELL-LOSA
-areaload 694 -9.3   # SHELL-LOSA
-areaload 695 -9.3   # SHELL-LOSA
-areaload 696 -9.3   # SHELL-LOSA
-areaload 697 -9.3   # SHELL-LOSA
-areaload 698 -9.3   # SHELL-LOSA
-areaload 699 -9.3   # SHELL-LOSA
-areaload 700 -9.3   # SHELL-LOSA
-areaload 701 -9.3   # SHELL-LOSA
-areaload 702 -9.3   # SHELL-LOSA
-areaload 703 -9.3   # SHELL-LOSA
-areaload 704 -9.3   # SHELL-LOSA
-areaload 705 -9.3   # SHELL-LOSA
-areaload 706 -9.3   # SHELL-LOSA
-areaload 707 -9.3   # SHELL-LOSA
-areaload 708 -9.3   # SHELL-LOSA
-areaload 709 -9.3   # SHELL-LOSA
-areaload 710 -9.3   # SHELL-LOSA
-areaload 711 -9.3   # SHELL-LOSA
-areaload 712 -9.3   # SHELL-LOSA
-areaload 713 -9.3   # SHELL-LOSA
-areaload 714 -9.3   # SHELL-LOSA
-areaload 715 -9.3   # SHELL-LOSA
-areaload 716 -9.3   # SHELL-LOSA
-areaload 717 -9.3   # SHELL-LOSA
-areaload 718 -9.3   # SHELL-LOSA
-areaload 719 -9.3   # SHELL-LOSA
-areaload 720 -9.3   # SHELL-LOSA
-areaload 721 -9.3   # SHELL-LOSA
-areaload 722 -9.3   # SHELL-LOSA
-areaload 723 -9.3   # SHELL-LOSA
-areaload 724 -9.3   # SHELL-LOSA
-areaload 725 -9.3   # SHELL-LOSA
-areaload 726 -9.3   # SHELL-LOSA
-areaload 727 -9.3   # SHELL-LOSA
-areaload 728 -9.3   # SHELL-LOSA
-areaload 729 -9.3   # SHELL-LOSA
-areaload 730 -9.3   # SHELL-LOSA
-areaload 731 -9.3   # SHELL-LOSA
-areaload 732 -9.3   # SHELL-LOSA
-areaload 733 -9.3   # SHELL-LOSA
-areaload 734 -9.3   # SHELL-LOSA
-areaload 735 -9.3   # SHELL-LOSA
-areaload 736 -9.3   # SHELL-LOSA
-areaload 737 -9.3   # SHELL-LOSA
-areaload 738 -9.3   # SHELL-LOSA
-areaload 739 -9.3   # SHELL-LOSA
-areaload 740 -9.3   # SHELL-LOSA
-areaload 741 -9.3   # SHELL-LOSA
-areaload 742 -9.3   # SHELL-LOSA
-areaload 743 -9.3   # SHELL-LOSA
-areaload 744 -9.3   # SHELL-LOSA
-areaload 745 -9.3   # SHELL-LOSA
-areaload 746 -9.3   # SHELL-LOSA
-areaload 747 -9.3   # SHELL-LOSA
-areaload 748 -9.3   # SHELL-LOSA
-areaload 749 -9.3   # SHELL-LOSA
-areaload 750 -9.3   # SHELL-LOSA
-areaload 751 -9.3   # SHELL-LOSA
-areaload 752 -9.3   # SHELL-LOSA
-areaload 753 -9.3   # SHELL-LOSA
-areaload 754 -9.3   # SHELL-LOSA
-areaload 755 -9.3   # SHELL-LOSA
-areaload 756 -9.3   # SHELL-LOSA
-areaload 757 -9.3   # SHELL-LOSA
-areaload 758 -9.3   # SHELL-LOSA
-areaload 759 -9.3   # SHELL-LOSA
-areaload 760 -9.3   # SHELL-LOSA
-areaload 761 -9.3   # SHELL-LOSA
-areaload 762 -9.3   # SHELL-LOSA
-areaload 763 -9.3   # SHELL-LOSA
-areaload 764 -9.3   # SHELL-LOSA
-areaload 765 -9.3   # SHELL-LOSA
-areaload 766 -9.3   # SHELL-LOSA
-areaload 767 -9.3   # SHELL-LOSA
-areaload 768 -9.3   # SHELL-LOSA
-areaload 769 -9.3   # SHELL-LOSA
-areaload 770 -9.3   # SHELL-LOSA
-areaload 771 -9.3   # SHELL-LOSA
-areaload 772 -9.3   # SHELL-LOSA
-areaload 773 -9.3   # SHELL-LOSA
-areaload 774 -9.3   # SHELL-LOSA
-areaload 775 -9.3   # SHELL-LOSA
-areaload 776 -9.3   # SHELL-LOSA
-areaload 777 -9.3   # SHELL-LOSA
-areaload 778 -9.3   # SHELL-LOSA
-areaload 779 -9.3   # SHELL-LOSA
-areaload 780 -9.3   # SHELL-LOSA
-areaload 781 -9.3   # SHELL-LOSA
-areaload 782 -9.3   # SHELL-LOSA
-areaload 783 -9.3   # SHELL-LOSA
-areaload 784 -9.3   # SHELL-LOSA
-areaload 785 -9.3   # SHELL-LOSA
-areaload 786 -9.3   # SHELL-LOSA
-areaload 787 -9.3   # SHELL-LOSA
-areaload 788 -9.3   # SHELL-LOSA
-areaload 789 -9.3   # SHELL-LOSA
-areaload 790 -9.3   # SHELL-LOSA
-areaload 791 -9.3   # SHELL-LOSA
-areaload 792 -9.3   # SHELL-LOSA
-areaload 793 -9.3   # SHELL-LOSA
-areaload 794 -9.3   # SHELL-LOSA
-areaload 795 -9.3   # SHELL-LOSA
-areaload 796 -9.3   # SHELL-LOSA
-areaload 797 -9.3   # SHELL-LOSA
-areaload 798 -9.3   # SHELL-LOSA
-areaload 799 -9.3   # SHELL-LOSA
-areaload 800 -9.3   # SHELL-LOSA
-areaload 801 -9.3   # SHELL-LOSA
-areaload 802 -9.3   # SHELL-LOSA
-areaload 803 -9.3   # SHELL-LOSA
-areaload 804 -9.3   # SHELL-LOSA
-areaload 805 -9.3   # SHELL-LOSA
-areaload 806 -9.3   # SHELL-LOSA
-areaload 807 -9.3   # SHELL-LOSA
-areaload 808 -9.3   # SHELL-LOSA
-areaload 809 -9.3   # SHELL-LOSA
-areaload 810 -9.3   # SHELL-LOSA
-areaload 811 -9.3   # SHELL-LOSA
-areaload 812 -9.3   # SHELL-LOSA
-areaload 813 -9.3   # SHELL-LOSA
-areaload 814 -9.3   # SHELL-LOSA
-areaload 815 -9.3   # SHELL-LOSA
-areaload 816 -9.3   # SHELL-LOSA
-areaload 817 -9.3   # SHELL-LOSA
-areaload 818 -9.3   # SHELL-LOSA
-areaload 819 -9.3   # SHELL-LOSA
-areaload 820 -9.3   # SHELL-LOSA
-areaload 821 -9.3   # SHELL-LOSA
-areaload 822 -9.3   # SHELL-LOSA
-areaload 823 -9.3   # SHELL-LOSA
-areaload 824 -9.3   # SHELL-LOSA
-areaload 825 -9.3   # SHELL-LOSA
-areaload 826 -9.3   # SHELL-LOSA
-areaload 827 -9.3   # SHELL-LOSA
-areaload 828 -9.3   # SHELL-LOSA
-areaload 829 -9.3   # SHELL-LOSA
-areaload 830 -9.3   # SHELL-LOSA
-areaload 831 -9.3   # SHELL-LOSA
-areaload 832 -9.3   # SHELL-LOSA
-areaload 833 -9.3   # SHELL-LOSA
-areaload 834 -9.3   # SHELL-LOSA
-areaload 835 -9.3   # SHELL-LOSA
-areaload 836 -9.3   # SHELL-LOSA
-areaload 837 -9.3   # SHELL-LOSA
-areaload 838 -9.3   # SHELL-LOSA
-areaload 839 -9.3   # SHELL-LOSA
-areaload 840 -9.3   # SHELL-LOSA
-areaload 841 -9.3   # SHELL-LOSA
-areaload 842 -9.3   # SHELL-LOSA
-areaload 843 -9.3   # SHELL-LOSA
-areaload 844 -9.3   # SHELL-LOSA
-areaload 845 -9.3   # SHELL-LOSA
-areaload 846 -9.3   # SHELL-LOSA
-areaload 847 -9.3   # SHELL-LOSA
-areaload 848 -9.3   # SHELL-LOSA
-areaload 849 -9.3   # SHELL-LOSA
-areaload 850 -9.3   # SHELL-LOSA
-areaload 851 -9.3   # SHELL-LOSA
-areaload 852 -9.3   # SHELL-LOSA
-areaload 853 -9.3   # SHELL-LOSA
-areaload 854 -9.3   # SHELL-LOSA
-areaload 855 -9.3   # SHELL-LOSA
-areaload 856 -9.3   # SHELL-LOSA
-areaload 857 -9.3   # SHELL-LOSA
-areaload 858 -9.3   # SHELL-LOSA
-areaload 859 -9.3   # SHELL-LOSA
-areaload 860 -9.3   # SHELL-LOSA
-areaload 861 -9.3   # SHELL-LOSA
-areaload 862 -9.3   # SHELL-LOSA
-areaload 863 -9.3   # SHELL-LOSA
-areaload 864 -9.3   # SHELL-LOSA
-areaload 865 -9.3   # SHELL-LOSA
-areaload 866 -9.3   # SHELL-LOSA
-areaload 867 -9.3   # SHELL-LOSA
-areaload 868 -9.3   # SHELL-LOSA
-areaload 869 -9.3   # SHELL-LOSA
-areaload 870 -9.3   # SHELL-LOSA
-areaload 871 -9.3   # SHELL-LOSA
-areaload 872 -9.3   # SHELL-LOSA
-areaload 873 -9.3   # SHELL-LOSA
-areaload 874 -9.3   # SHELL-LOSA
-areaload 875 -9.3   # SHELL-LOSA
-areaload 876 -9.3   # SHELL-LOSA
-areaload 877 -9.3   # SHELL-LOSA
-areaload 878 -9.3   # SHELL-LOSA
-areaload 879 -9.3   # SHELL-LOSA
-areaload 880 -9.3   # SHELL-LOSA
-areaload 881 -9.3   # SHELL-LOSA
-areaload 882 -9.3   # SHELL-LOSA
-areaload 883 -9.3   # SHELL-LOSA
-areaload 884 -9.3   # SHELL-LOSA
-areaload 885 -9.3   # SHELL-LOSA
-areaload 886 -9.3   # SHELL-LOSA
-areaload 887 -9.3   # SHELL-LOSA
-areaload 888 -9.3   # SHELL-LOSA
-areaload 889 -9.3   # SHELL-LOSA
-areaload 890 -9.3   # SHELL-LOSA
-areaload 891 -9.3   # SHELL-LOSA
-areaload 892 -9.3   # SHELL-LOSA
-areaload 893 -9.3   # SHELL-LOSA
-areaload 894 -9.3   # SHELL-LOSA
-areaload 895 -9.3   # SHELL-LOSA
-areaload 896 -9.3   # SHELL-LOSA
-areaload 897 -9.3   # SHELL-LOSA
-areaload 898 -9.3   # SHELL-LOSA
-areaload 899 -9.3   # SHELL-LOSA
-areaload 900 -9.3   # SHELL-LOSA
-areaload 901 -9.3   # SHELL-LOSA
-areaload 902 -9.3   # SHELL-LOSA
-areaload 903 -9.3   # SHELL-LOSA
-areaload 904 -9.3   # SHELL-LOSA
-areaload 905 -9.3   # SHELL-LOSA
-areaload 906 -9.3   # SHELL-LOSA
-areaload 907 -9.3   # SHELL-LOSA
-areaload 908 -9.3   # SHELL-LOSA
-areaload 909 -9.3   # SHELL-LOSA
-areaload 910 -9.3   # SHELL-LOSA
-areaload 911 -9.3   # SHELL-LOSA
-areaload 912 -9.3   # SHELL-LOSA
-areaload 913 -9.3   # SHELL-LOSA
-areaload 914 -9.3   # SHELL-LOSA
-areaload 915 -9.3   # SHELL-LOSA
-areaload 916 -9.3   # SHELL-LOSA
-areaload 917 -9.3   # SHELL-LOSA
-areaload 918 -9.3   # SHELL-LOSA
-areaload 919 -9.3   # SHELL-LOSA
-areaload 920 -9.3   # SHELL-LOSA
-areaload 921 -9.3   # SHELL-LOSA
-areaload 922 -9.3   # SHELL-LOSA
-areaload 923 -9.3   # SHELL-LOSA
-areaload 924 -9.3   # SHELL-LOSA
-areaload 925 -9.3   # SHELL-LOSA
-areaload 926 -9.3   # SHELL-LOSA
-areaload 927 -9.3   # SHELL-LOSA
-areaload 928 -9.3   # SHELL-LOSA
-areaload 929 -9.3   # SHELL-LOSA
-areaload 930 -9.3   # SHELL-LOSA
-areaload 931 -9.3   # SHELL-LOSA
-areaload 932 -9.3   # SHELL-LOSA
-areaload 933 -9.3   # SHELL-LOSA
-areaload 934 -9.3   # SHELL-LOSA
-areaload 935 -9.3   # SHELL-LOSA
-areaload 936 -9.3   # SHELL-LOSA
-areaload 937 -9.3   # SHELL-LOSA
-areaload 938 -9.3   # SHELL-LOSA
-areaload 939 -9.3   # SHELL-LOSA
-areaload 940 -9.3   # SHELL-LOSA
-areaload 941 -9.3   # SHELL-LOSA
-areaload 942 -9.3   # SHELL-LOSA
-areaload 943 -9.3   # SHELL-LOSA
-areaload 944 -9.3   # SHELL-LOSA
-areaload 945 -9.3   # SHELL-LOSA
-areaload 946 -9.3   # SHELL-LOSA
-areaload 947 -9.3   # SHELL-LOSA
-areaload 948 -9.3   # SHELL-LOSA
-areaload 949 -9.3   # SHELL-LOSA
-areaload 950 -9.3   # SHELL-LOSA
-areaload 951 -9.3   # SHELL-LOSA
-areaload 952 -9.3   # SHELL-LOSA
-areaload 953 -9.3   # SHELL-LOSA
-areaload 954 -9.3   # SHELL-LOSA
-areaload 955 -9.3   # SHELL-LOSA
-areaload 956 -9.3   # SHELL-LOSA
-areaload 957 -9.3   # SHELL-LOSA
-areaload 958 -9.3   # SHELL-LOSA
-areaload 959 -9.3   # SHELL-LOSA
-areaload 960 -9.3   # SHELL-LOSA
-areaload 961 -9.3   # SHELL-LOSA
-areaload 962 -9.3   # SHELL-LOSA
-areaload 963 -9.3   # SHELL-LOSA
-areaload 964 -9.3   # SHELL-LOSA
-areaload 965 -9.3   # SHELL-LOSA
-areaload 966 -9.3   # SHELL-LOSA
-areaload 967 -9.3   # SHELL-LOSA
-areaload 968 -9.3   # SHELL-LOSA
-areaload 969 -9.3   # SHELL-LOSA
-areaload 970 -9.3   # SHELL-LOSA
-areaload 971 -9.3   # SHELL-LOSA
-areaload 972 -9.3   # SHELL-LOSA
-areaload 973 -9.3   # SHELL-LOSA
-areaload 974 -9.3   # SHELL-LOSA
-areaload 975 -9.3   # SHELL-LOSA
-areaload 976 -9.3   # SHELL-LOSA
-areaload 977 -9.3   # SHELL-LOSA
-areaload 978 -9.3   # SHELL-LOSA
-areaload 979 -9.3   # SHELL-LOSA
-areaload 980 -9.3   # SHELL-LOSA
-areaload 981 -9.3   # SHELL-LOSA
-areaload 982 -9.3   # SHELL-LOSA
-areaload 983 -9.3   # SHELL-LOSA
-areaload 984 -9.3   # SHELL-LOSA
-areaload 985 -9.3   # SHELL-LOSA
-areaload 986 -9.3   # SHELL-LOSA
-areaload 987 -9.3   # SHELL-LOSA
-areaload 988 -9.3   # SHELL-LOSA
-areaload 989 -9.3   # SHELL-LOSA
-areaload 990 -9.3   # SHELL-LOSA
-areaload 991 -9.3   # SHELL-LOSA
-areaload 992 -9.3   # SHELL-LOSA
-areaload 993 -9.3   # SHELL-LOSA
-areaload 994 -9.3   # SHELL-LOSA
-areaload 995 -9.3   # SHELL-LOSA
-areaload 996 -9.3   # SHELL-LOSA
-areaload 997 -9.3   # SHELL-LOSA
-areaload 998 -9.3   # SHELL-LOSA
-areaload 999 -9.3   # SHELL-LOSA
-areaload 1000 -9.3   # SHELL-LOSA
-areaload 1001 -9.3   # SHELL-LOSA
-areaload 1002 -9.3   # SHELL-LOSA
-areaload 1003 -9.3   # SHELL-LOSA
-areaload 1004 -9.3   # SHELL-LOSA
-areaload 1005 -9.3   # SHELL-LOSA
-areaload 1006 -9.3   # SHELL-LOSA
-areaload 1007 -9.3   # SHELL-LOSA
-areaload 1008 -9.3   # SHELL-LOSA
-areaload 1009 -9.3   # SHELL-LOSA
-areaload 1010 -9.3   # SHELL-LOSA
-areaload 1011 -9.3   # SHELL-LOSA
-areaload 1012 -9.3   # SHELL-LOSA
-areaload 1013 -9.3   # SHELL-LOSA
-areaload 1014 -9.3   # SHELL-LOSA
-areaload 1015 -9.3   # SHELL-LOSA
-areaload 1016 -9.3   # SHELL-LOSA
-areaload 1017 -9.3   # SHELL-LOSA
-areaload 1018 -9.3   # SHELL-LOSA
-areaload 1019 -9.3   # SHELL-LOSA
-areaload 1020 -9.3   # SHELL-LOSA
-areaload 1021 -9.3   # SHELL-LOSA
-areaload 1022 -9.3   # SHELL-LOSA
-areaload 1023 -9.3   # SHELL-LOSA
-areaload 1024 -9.3   # SHELL-LOSA
-areaload 1025 -9.3   # SHELL-LOSA
-areaload 1026 -9.3   # SHELL-LOSA
-areaload 1027 -9.3   # SHELL-LOSA
-areaload 1028 -9.3   # SHELL-LOSA
-areaload 1029 -9.3   # SHELL-LOSA
-areaload 1030 -9.3   # SHELL-LOSA
-areaload 1031 -9.3   # SHELL-LOSA
-areaload 1032 -9.3   # SHELL-LOSA
-areaload 1033 -9.3   # SHELL-LOSA
-areaload 1034 -9.3   # SHELL-LOSA
-areaload 1035 -9.3   # SHELL-LOSA
-areaload 1036 -9.3   # SHELL-LOSA
-areaload 1037 -9.3   # SHELL-LOSA
-areaload 1038 -9.3   # SHELL-LOSA
-areaload 1039 -9.3   # SHELL-LOSA
-areaload 1040 -9.3   # SHELL-LOSA
-areaload 1041 -9.3   # SHELL-LOSA
-areaload 1042 -9.3   # SHELL-LOSA
-areaload 1043 -9.3   # SHELL-LOSA
-areaload 1044 -9.3   # SHELL-LOSA
-areaload 1045 -9.3   # SHELL-LOSA
-areaload 1046 -9.3   # SHELL-LOSA
-areaload 1047 -9.3   # SHELL-LOSA
-areaload 1048 -9.3   # SHELL-LOSA
-areaload 1049 -9.3   # SHELL-LOSA
-areaload 1050 -9.3   # SHELL-LOSA
-areaload 1051 -9.3   # SHELL-LOSA
-areaload 1052 -9.3   # SHELL-LOSA
-areaload 1053 -9.3   # SHELL-LOSA
-areaload 1054 -9.3   # SHELL-LOSA
-areaload 1055 -9.3   # SHELL-LOSA
-areaload 1056 -9.3   # SHELL-LOSA
-areaload 1057 -9.3   # SHELL-LOSA
-areaload 1058 -9.3   # SHELL-LOSA
-areaload 1059 -9.3   # SHELL-LOSA
-areaload 1060 -9.3   # SHELL-LOSA
-areaload 1061 -9.3   # SHELL-LOSA
-areaload 1062 -9.3   # SHELL-LOSA
-areaload 1063 -9.3   # SHELL-LOSA
-areaload 1064 -9.3   # SHELL-LOSA
-areaload 1065 -9.3   # SHELL-LOSA
-areaload 1066 -9.3   # SHELL-LOSA
-areaload 1067 -9.3   # SHELL-LOSA
-areaload 1068 -9.3   # SHELL-LOSA
-areaload 1069 -9.3   # SHELL-LOSA
-areaload 1070 -9.3   # SHELL-LOSA
-areaload 1071 -9.3   # SHELL-LOSA
-areaload 1072 -9.3   # SHELL-LOSA
-areaload 1073 -9.3   # SHELL-LOSA
-areaload 1074 -9.3   # SHELL-LOSA
-areaload 1075 -9.3   # SHELL-LOSA
-areaload 1076 -9.3   # SHELL-LOSA
-areaload 1077 -9.3   # SHELL-LOSA
-areaload 1078 -9.3   # SHELL-LOSA
-areaload 1079 -9.3   # SHELL-LOSA
-areaload 1080 -9.3   # SHELL-LOSA
-areaload 1081 -9.3   # SHELL-LOSA
-areaload 1082 -9.3   # SHELL-LOSA
-areaload 1083 -9.3   # SHELL-LOSA
-areaload 1084 -9.3   # SHELL-LOSA
-areaload 1085 -9.3   # SHELL-LOSA
-areaload 1086 -9.3   # SHELL-LOSA
-areaload 1087 -9.3   # SHELL-LOSA
-areaload 1088 -9.3   # SHELL-LOSA
-areaload 1089 -9.3   # SHELL-LOSA
-areaload 1090 -9.3   # SHELL-LOSA
-areaload 1091 -9.3   # SHELL-LOSA
-areaload 1092 -9.3   # SHELL-LOSA
-areaload 1093 -9.3   # SHELL-LOSA
-areaload 1094 -9.3   # SHELL-LOSA
-areaload 1095 -9.3   # SHELL-LOSA
-areaload 1096 -9.3   # SHELL-LOSA
-areaload 1097 -9.3   # SHELL-LOSA
-areaload 1098 -9.3   # SHELL-LOSA
-areaload 1099 -9.3   # SHELL-LOSA
-areaload 1100 -9.3   # SHELL-LOSA
-areaload 1101 -9.3   # SHELL-LOSA
-areaload 1102 -9.3   # SHELL-LOSA
-areaload 1103 -9.3   # SHELL-LOSA
-areaload 1104 -9.3   # SHELL-LOSA
-areaload 1105 -9.3   # SHELL-LOSA
-areaload 1106 -9.3   # SHELL-LOSA
-areaload 1107 -9.3   # SHELL-LOSA
-areaload 1108 -9.3   # SHELL-LOSA
-areaload 1109 -9.3   # SHELL-LOSA
-areaload 1110 -9.3   # SHELL-LOSA
-areaload 1111 -9.3   # SHELL-LOSA
-areaload 1112 -9.3   # SHELL-LOSA
-areaload 1113 -9.3   # SHELL-LOSA
-areaload 1114 -9.3   # SHELL-LOSA
-areaload 1115 -9.3   # SHELL-LOSA
-areaload 1116 -9.3   # SHELL-LOSA
-areaload 1117 -9.3   # SHELL-LOSA
-areaload 1118 -9.3   # SHELL-LOSA
-areaload 1119 -9.3   # SHELL-LOSA
-areaload 1120 -9.3   # SHELL-LOSA
-areaload 1121 -9.3   # SHELL-LOSA
-areaload 1122 -9.3   # SHELL-LOSA
-areaload 1123 -9.3   # SHELL-LOSA
-areaload 1124 -9.3   # SHELL-LOSA
-areaload 1125 -9.3   # SHELL-LOSA
-areaload 1126 -9.3   # SHELL-LOSA
-areaload 1127 -9.3   # SHELL-LOSA
-areaload 1128 -9.3   # SHELL-LOSA
-areaload 1129 -9.3   # SHELL-LOSA
-areaload 1130 -9.3   # SHELL-LOSA
-areaload 1131 -9.3   # SHELL-LOSA
-areaload 1132 -9.3   # SHELL-LOSA
-areaload 1133 -9.3   # SHELL-LOSA
-areaload 1134 -9.3   # SHELL-LOSA
-areaload 1135 -9.3   # SHELL-LOSA
-areaload 1136 -9.3   # SHELL-LOSA
-areaload 1137 -9.3   # SHELL-LOSA
-areaload 1138 -9.3   # SHELL-LOSA
-areaload 1139 -9.3   # SHELL-LOSA
-areaload 1140 -9.3   # SHELL-LOSA
-areaload 1141 -9.3   # SHELL-LOSA
-areaload 1142 -9.3   # SHELL-LOSA
-areaload 1143 -9.3   # SHELL-LOSA
-areaload 1144 -9.3   # SHELL-LOSA
-areaload 1145 -9.3   # SHELL-LOSA
-areaload 1146 -9.3   # SHELL-LOSA
-areaload 1147 -9.3   # SHELL-LOSA
-areaload 1148 -9.3   # SHELL-LOSA
-areaload 1149 -9.3   # SHELL-LOSA
-areaload 1150 -9.3   # SHELL-LOSA
-areaload 1151 -9.3   # SHELL-LOSA
-areaload 1152 -9.3   # SHELL-LOSA
-areaload 1153 -9.3   # SHELL-LOSA
-areaload 1154 -9.3   # SHELL-LOSA
-areaload 1155 -9.3   # SHELL-LOSA
-areaload 1156 -9.3   # SHELL-LOSA
-areaload 1157 -9.3   # SHELL-LOSA
-areaload 1158 -9.3   # SHELL-LOSA
-areaload 1159 -9.3   # SHELL-LOSA
-areaload 1160 -9.3   # SHELL-LOSA
-areaload 1161 -9.3   # SHELL-LOSA
-areaload 1162 -9.3   # SHELL-LOSA
-areaload 1163 -9.3   # SHELL-LOSA
-areaload 1164 -9.3   # SHELL-LOSA
-areaload 1165 -9.3   # SHELL-LOSA
-areaload 1166 -9.3   # SHELL-LOSA
-areaload 1167 -9.3   # SHELL-LOSA
-areaload 1168 -9.3   # SHELL-LOSA
-areaload 1169 -9.3   # SHELL-LOSA
-areaload 1170 -9.3   # SHELL-LOSA
-areaload 1171 -9.3   # SHELL-LOSA
-areaload 1172 -9.3   # SHELL-LOSA
-areaload 1173 -9.3   # SHELL-LOSA
-areaload 1174 -9.3   # SHELL-LOSA
-areaload 1175 -9.3   # SHELL-LOSA
-#     carga total por area = -3033.4 kN
+#     entrepiso y rampa 6.00 kN/m2   cubierta 0.70 kN/m2
+areaload 1 -6   # SHELL-LOSA
+areaload 2 -6   # SHELL-LOSA
+areaload 3 -6   # SHELL-LOSA
+areaload 4 -6   # SHELL-LOSA
+areaload 5 -6   # SHELL-LOSA
+areaload 6 -6   # SHELL-LOSA
+areaload 7 -6   # SHELL-LOSA
+areaload 8 -6   # SHELL-LOSA
+areaload 9 -6   # SHELL-LOSA
+areaload 10 -6   # SHELL-LOSA
+areaload 11 -6   # SHELL-LOSA
+areaload 12 -6   # SHELL-LOSA
+areaload 13 -6   # SHELL-LOSA
+areaload 14 -6   # SHELL-LOSA
+areaload 15 -6   # SHELL-LOSA
+areaload 16 -6   # SHELL-LOSA
+areaload 17 -6   # SHELL-LOSA
+areaload 18 -6   # SHELL-LOSA
+areaload 19 -6   # SHELL-LOSA
+areaload 20 -6   # SHELL-LOSA
+areaload 21 -6   # SHELL-LOSA
+areaload 22 -6   # SHELL-LOSA
+areaload 23 -6   # SHELL-LOSA
+areaload 24 -6   # SHELL-LOSA
+areaload 25 -6   # SHELL-LOSA
+areaload 26 -6   # SHELL-LOSA
+areaload 27 -6   # SHELL-LOSA
+areaload 28 -6   # SHELL-LOSA
+areaload 29 -6   # SHELL-LOSA
+areaload 30 -6   # SHELL-LOSA
+areaload 31 -6   # SHELL-LOSA
+areaload 32 -6   # SHELL-LOSA
+areaload 33 -6   # SHELL-LOSA
+areaload 34 -6   # SHELL-LOSA
+areaload 35 -6   # SHELL-LOSA
+areaload 36 -6   # SHELL-LOSA
+areaload 37 -6   # SHELL-LOSA
+areaload 38 -6   # SHELL-LOSA
+areaload 39 -6   # SHELL-LOSA
+areaload 40 -6   # SHELL-LOSA
+areaload 41 -6   # SHELL-LOSA
+areaload 42 -6   # SHELL-LOSA
+areaload 43 -6   # SHELL-LOSA
+areaload 44 -6   # SHELL-LOSA
+areaload 45 -6   # SHELL-LOSA
+areaload 46 -6   # SHELL-LOSA
+areaload 47 -6   # SHELL-LOSA
+areaload 48 -6   # SHELL-LOSA
+areaload 49 -6   # SHELL-LOSA
+areaload 50 -6   # SHELL-LOSA
+areaload 51 -6   # SHELL-LOSA
+areaload 52 -6   # SHELL-LOSA
+areaload 53 -6   # SHELL-LOSA
+areaload 54 -6   # SHELL-LOSA
+areaload 55 -6   # SHELL-LOSA
+areaload 56 -6   # SHELL-LOSA
+areaload 57 -6   # SHELL-LOSA
+areaload 58 -6   # SHELL-LOSA
+areaload 59 -6   # SHELL-LOSA
+areaload 60 -6   # SHELL-LOSA
+areaload 61 -6   # SHELL-LOSA
+areaload 62 -6   # SHELL-LOSA
+areaload 63 -6   # SHELL-LOSA
+areaload 64 -6   # SHELL-LOSA
+areaload 65 -6   # SHELL-LOSA
+areaload 66 -6   # SHELL-LOSA
+areaload 67 -6   # SHELL-LOSA
+areaload 68 -6   # SHELL-LOSA
+areaload 69 -6   # SHELL-LOSA
+areaload 70 -6   # SHELL-LOSA
+areaload 71 -6   # SHELL-LOSA
+areaload 72 -6   # SHELL-LOSA
+areaload 73 -6   # SHELL-LOSA
+areaload 74 -6   # SHELL-LOSA
+areaload 75 -6   # SHELL-LOSA
+areaload 76 -6   # SHELL-LOSA
+areaload 77 -6   # SHELL-LOSA
+areaload 78 -6   # SHELL-LOSA
+areaload 79 -6   # SHELL-LOSA
+areaload 80 -6   # SHELL-LOSA
+areaload 81 -6   # SHELL-LOSA
+areaload 82 -6   # SHELL-LOSA
+areaload 83 -6   # SHELL-LOSA
+areaload 84 -6   # SHELL-LOSA
+areaload 85 -6   # SHELL-LOSA
+areaload 86 -6   # SHELL-LOSA
+areaload 87 -6   # SHELL-LOSA
+areaload 88 -6   # SHELL-LOSA
+areaload 89 -6   # SHELL-LOSA
+areaload 90 -6   # SHELL-LOSA
+areaload 91 -6   # SHELL-LOSA
+areaload 92 -6   # SHELL-LOSA
+areaload 93 -6   # SHELL-LOSA
+areaload 94 -6   # SHELL-LOSA
+areaload 95 -6   # SHELL-LOSA
+areaload 96 -6   # SHELL-LOSA
+areaload 97 -6   # SHELL-LOSA
+areaload 98 -6   # SHELL-LOSA
+areaload 99 -6   # SHELL-LOSA
+areaload 100 -6   # SHELL-LOSA
+areaload 101 -6   # SHELL-LOSA
+areaload 102 -6   # SHELL-LOSA
+areaload 103 -6   # SHELL-LOSA
+areaload 104 -6   # SHELL-LOSA
+areaload 105 -6   # SHELL-LOSA
+areaload 106 -6   # SHELL-LOSA
+areaload 107 -6   # SHELL-LOSA
+areaload 108 -6   # SHELL-LOSA
+areaload 109 -6   # SHELL-LOSA
+areaload 110 -6   # SHELL-LOSA
+areaload 111 -6   # SHELL-LOSA
+areaload 112 -6   # SHELL-LOSA
+areaload 113 -6   # SHELL-LOSA
+areaload 114 -6   # SHELL-LOSA
+areaload 115 -6   # SHELL-LOSA
+areaload 116 -6   # SHELL-LOSA
+areaload 117 -6   # SHELL-LOSA
+areaload 118 -6   # SHELL-LOSA
+areaload 119 -6   # SHELL-LOSA
+areaload 120 -6   # SHELL-LOSA
+areaload 121 -6   # SHELL-LOSA
+areaload 122 -6   # SHELL-LOSA
+areaload 123 -6   # SHELL-LOSA
+areaload 124 -6   # SHELL-LOSA
+areaload 125 -6   # SHELL-LOSA
+areaload 126 -6   # SHELL-LOSA
+areaload 127 -6   # SHELL-LOSA
+areaload 128 -6   # SHELL-LOSA
+areaload 129 -6   # SHELL-LOSA
+areaload 130 -6   # SHELL-LOSA
+areaload 131 -6   # SHELL-LOSA
+areaload 132 -6   # SHELL-LOSA
+areaload 133 -6   # SHELL-LOSA
+areaload 134 -6   # SHELL-LOSA
+areaload 135 -6   # SHELL-LOSA
+areaload 136 -6   # SHELL-LOSA
+areaload 137 -6   # SHELL-LOSA
+areaload 138 -6   # SHELL-LOSA
+areaload 139 -6   # SHELL-LOSA
+areaload 140 -6   # SHELL-LOSA
+areaload 141 -6   # SHELL-LOSA
+areaload 142 -6   # SHELL-LOSA
+areaload 143 -6   # SHELL-LOSA
+areaload 144 -6   # SHELL-LOSA
+areaload 145 -6   # SHELL-LOSA
+areaload 146 -6   # SHELL-LOSA
+areaload 147 -6   # SHELL-LOSA
+areaload 148 -6   # SHELL-LOSA
+areaload 149 -6   # SHELL-LOSA
+areaload 150 -6   # SHELL-LOSA
+areaload 151 -6   # SHELL-LOSA
+areaload 152 -6   # SHELL-LOSA
+areaload 153 -6   # SHELL-LOSA
+areaload 154 -6   # SHELL-LOSA
+areaload 155 -6   # SHELL-LOSA
+areaload 156 -6   # SHELL-LOSA
+areaload 157 -6   # SHELL-LOSA
+areaload 158 -6   # SHELL-LOSA
+areaload 159 -6   # SHELL-LOSA
+areaload 160 -6   # SHELL-LOSA
+areaload 161 -6   # SHELL-LOSA
+areaload 162 -6   # SHELL-LOSA
+areaload 163 -6   # SHELL-LOSA
+areaload 164 -6   # SHELL-LOSA
+areaload 165 -6   # SHELL-LOSA
+areaload 166 -6   # SHELL-LOSA
+areaload 167 -6   # SHELL-LOSA
+areaload 168 -6   # SHELL-LOSA
+areaload 169 -6   # SHELL-LOSA
+areaload 170 -6   # SHELL-LOSA
+areaload 171 -6   # SHELL-LOSA
+areaload 172 -6   # SHELL-LOSA
+areaload 173 -6   # SHELL-LOSA
+areaload 174 -6   # SHELL-LOSA
+areaload 175 -6   # SHELL-LOSA
+areaload 176 -6   # SHELL-LOSA
+areaload 177 -6   # SHELL-LOSA
+areaload 178 -6   # SHELL-LOSA
+areaload 179 -6   # SHELL-LOSA
+areaload 180 -6   # SHELL-LOSA
+areaload 181 -6   # SHELL-LOSA
+areaload 182 -6   # SHELL-LOSA
+areaload 183 -6   # SHELL-LOSA
+areaload 184 -6   # SHELL-LOSA
+areaload 185 -6   # SHELL-LOSA
+areaload 186 -6   # SHELL-LOSA
+areaload 187 -6   # SHELL-LOSA
+areaload 188 -6   # SHELL-LOSA
+areaload 189 -6   # SHELL-LOSA
+areaload 190 -6   # SHELL-LOSA
+areaload 191 -6   # SHELL-LOSA
+areaload 192 -6   # SHELL-LOSA
+areaload 193 -6   # SHELL-LOSA
+areaload 194 -6   # SHELL-LOSA
+areaload 195 -6   # SHELL-LOSA
+areaload 196 -6   # SHELL-LOSA
+areaload 197 -6   # SHELL-LOSA
+areaload 198 -6   # SHELL-LOSA
+areaload 199 -6   # SHELL-LOSA
+areaload 200 -6   # SHELL-LOSA
+areaload 201 -6   # SHELL-LOSA
+areaload 202 -6   # SHELL-LOSA
+areaload 203 -6   # SHELL-LOSA
+areaload 204 -6   # SHELL-LOSA
+areaload 205 -6   # SHELL-LOSA
+areaload 206 -6   # SHELL-LOSA
+areaload 207 -6   # SHELL-LOSA
+areaload 208 -6   # SHELL-LOSA
+areaload 209 -6   # SHELL-LOSA
+areaload 210 -6   # SHELL-LOSA
+areaload 211 -6   # SHELL-LOSA
+areaload 212 -6   # SHELL-LOSA
+areaload 213 -6   # SHELL-LOSA
+areaload 214 -6   # SHELL-LOSA
+areaload 215 -6   # SHELL-LOSA
+areaload 216 -6   # SHELL-LOSA
+areaload 217 -6   # SHELL-LOSA
+areaload 218 -6   # SHELL-LOSA
+areaload 219 -6   # SHELL-LOSA
+areaload 220 -6   # SHELL-LOSA
+areaload 221 -6   # SHELL-LOSA
+areaload 222 -6   # SHELL-LOSA
+areaload 223 -6   # SHELL-LOSA
+areaload 224 -6   # SHELL-LOSA
+areaload 225 -6   # SHELL-LOSA
+areaload 226 -6   # SHELL-LOSA
+areaload 227 -6   # SHELL-LOSA
+areaload 228 -6   # SHELL-LOSA
+areaload 229 -6   # SHELL-LOSA
+areaload 230 -6   # SHELL-LOSA
+areaload 231 -6   # SHELL-LOSA
+areaload 232 -6   # SHELL-LOSA
+areaload 233 -6   # SHELL-LOSA
+areaload 234 -6   # SHELL-LOSA
+areaload 235 -6   # SHELL-LOSA
+areaload 236 -6   # SHELL-LOSA
+areaload 237 -6   # SHELL-LOSA
+areaload 238 -6   # SHELL-LOSA
+areaload 239 -6   # SHELL-LOSA
+areaload 240 -6   # SHELL-LOSA
+areaload 241 -6   # SHELL-LOSA
+areaload 242 -6   # SHELL-LOSA
+areaload 243 -6   # SHELL-LOSA
+areaload 244 -6   # SHELL-LOSA
+areaload 245 -6   # SHELL-LOSA
+areaload 246 -6   # SHELL-LOSA
+areaload 247 -6   # SHELL-LOSA
+areaload 248 -6   # SHELL-LOSA
+areaload 249 -6   # SHELL-LOSA
+areaload 250 -6   # SHELL-LOSA
+areaload 251 -6   # SHELL-LOSA
+areaload 252 -6   # SHELL-LOSA
+areaload 253 -6   # SHELL-LOSA
+areaload 254 -6   # SHELL-LOSA
+areaload 255 -6   # SHELL-LOSA
+areaload 256 -6   # SHELL-LOSA
+areaload 257 -6   # SHELL-LOSA
+areaload 258 -6   # SHELL-LOSA
+areaload 259 -6   # SHELL-LOSA
+areaload 260 -6   # SHELL-LOSA
+areaload 261 -6   # SHELL-LOSA
+areaload 262 -6   # SHELL-LOSA
+areaload 263 -6   # SHELL-LOSA
+areaload 264 -6   # SHELL-LOSA
+areaload 265 -6   # SHELL-LOSA
+areaload 266 -6   # SHELL-LOSA
+areaload 267 -6   # SHELL-LOSA
+areaload 268 -6   # SHELL-LOSA
+areaload 269 -6   # SHELL-LOSA
+areaload 270 -6   # SHELL-LOSA
+areaload 271 -6   # SHELL-LOSA
+areaload 272 -6   # SHELL-LOSA
+areaload 273 -6   # SHELL-LOSA
+areaload 274 -6   # SHELL-LOSA
+areaload 275 -6   # SHELL-LOSA
+areaload 276 -6   # SHELL-LOSA
+areaload 277 -6   # SHELL-LOSA
+areaload 278 -6   # SHELL-LOSA
+areaload 279 -6   # SHELL-LOSA
+areaload 280 -6   # SHELL-LOSA
+areaload 281 -6   # SHELL-LOSA
+areaload 282 -6   # SHELL-LOSA
+areaload 283 -6   # SHELL-LOSA
+areaload 284 -6   # SHELL-LOSA
+areaload 285 -6   # SHELL-LOSA
+areaload 286 -6   # SHELL-LOSA
+areaload 287 -6   # SHELL-LOSA
+areaload 288 -6   # SHELL-LOSA
+areaload 289 -6   # SHELL-LOSA
+areaload 290 -6   # SHELL-LOSA
+areaload 291 -6   # SHELL-LOSA
+areaload 292 -6   # SHELL-LOSA
+areaload 293 -6   # SHELL-LOSA
+areaload 294 -6   # SHELL-LOSA
+areaload 295 -6   # SHELL-LOSA
+areaload 296 -6   # SHELL-LOSA
+areaload 297 -6   # SHELL-LOSA
+areaload 298 -6   # SHELL-LOSA
+areaload 299 -6   # SHELL-LOSA
+areaload 300 -6   # SHELL-LOSA
+areaload 301 -6   # SHELL-LOSA
+areaload 302 -6   # SHELL-LOSA
+areaload 303 -6   # SHELL-LOSA
+areaload 304 -6   # SHELL-LOSA
+areaload 305 -6   # SHELL-LOSA
+areaload 306 -6   # SHELL-LOSA
+areaload 307 -6   # SHELL-LOSA
+areaload 308 -6   # SHELL-LOSA
+areaload 309 -6   # SHELL-LOSA
+areaload 310 -6   # SHELL-LOSA
+areaload 311 -6   # SHELL-LOSA
+areaload 312 -6   # SHELL-LOSA
+areaload 313 -6   # SHELL-LOSA
+areaload 314 -6   # SHELL-LOSA
+areaload 315 -6   # SHELL-LOSA
+areaload 316 -6   # SHELL-LOSA
+areaload 317 -6   # SHELL-LOSA
+areaload 318 -6   # SHELL-LOSA
+areaload 319 -6   # SHELL-LOSA
+areaload 320 -6   # SHELL-LOSA
+areaload 321 -6   # SHELL-LOSA
+areaload 322 -6   # SHELL-LOSA
+areaload 323 -6   # SHELL-LOSA
+areaload 324 -6   # SHELL-LOSA
+areaload 325 -6   # SHELL-LOSA
+areaload 326 -6   # SHELL-LOSA
+areaload 327 -6   # SHELL-LOSA
+areaload 328 -6   # SHELL-LOSA
+areaload 329 -6   # SHELL-LOSA
+areaload 330 -6   # SHELL-LOSA
+areaload 331 -6   # SHELL-LOSA
+areaload 332 -6   # SHELL-LOSA
+areaload 333 -6   # SHELL-LOSA
+areaload 334 -6   # SHELL-LOSA
+areaload 335 -6   # SHELL-LOSA
+areaload 336 -6   # SHELL-LOSA
+areaload 337 -6   # SHELL-LOSA
+areaload 338 -6   # SHELL-LOSA
+areaload 339 -6   # SHELL-LOSA
+areaload 340 -6   # SHELL-LOSA
+areaload 341 -6   # SHELL-LOSA
+areaload 342 -6   # SHELL-LOSA
+areaload 343 -6   # SHELL-LOSA
+areaload 344 -6   # SHELL-LOSA
+areaload 345 -6   # SHELL-LOSA
+areaload 346 -6   # SHELL-LOSA
+areaload 347 -6   # SHELL-LOSA
+areaload 348 -6   # SHELL-LOSA
+areaload 349 -6   # SHELL-LOSA
+areaload 350 -6   # SHELL-LOSA
+areaload 351 -6   # SHELL-LOSA
+areaload 352 -6   # SHELL-LOSA
+areaload 353 -6   # SHELL-LOSA
+areaload 354 -6   # SHELL-LOSA
+areaload 355 -6   # SHELL-LOSA
+areaload 356 -6   # SHELL-LOSA
+areaload 357 -6   # SHELL-LOSA
+areaload 358 -6   # SHELL-LOSA
+areaload 359 -6   # SHELL-LOSA
+areaload 360 -6   # SHELL-LOSA
+areaload 361 -6   # SHELL-LOSA
+areaload 362 -6   # SHELL-LOSA
+areaload 363 -6   # SHELL-LOSA
+areaload 364 -6   # SHELL-LOSA
+areaload 365 -6   # SHELL-LOSA
+areaload 366 -6   # SHELL-LOSA
+areaload 367 -6   # SHELL-LOSA
+areaload 368 -6   # SHELL-LOSA
+areaload 369 -6   # SHELL-LOSA
+areaload 370 -6   # SHELL-LOSA
+areaload 371 -6   # SHELL-LOSA
+areaload 372 -6   # SHELL-LOSA
+areaload 373 -6   # SHELL-LOSA
+areaload 374 -6   # SHELL-LOSA
+areaload 375 -6   # SHELL-LOSA
+areaload 376 -6   # SHELL-LOSA
+areaload 377 -6   # SHELL-LOSA
+areaload 378 -6   # SHELL-LOSA
+areaload 379 -6   # SHELL-LOSA
+areaload 380 -6   # SHELL-LOSA
+areaload 381 -6   # SHELL-LOSA
+areaload 382 -6   # SHELL-LOSA
+areaload 383 -6   # SHELL-LOSA
+areaload 384 -6   # SHELL-LOSA
+areaload 385 -6   # SHELL-LOSA
+areaload 386 -6   # SHELL-LOSA
+areaload 387 -6   # SHELL-LOSA
+areaload 388 -6   # SHELL-LOSA
+areaload 389 -6   # SHELL-LOSA
+areaload 390 -6   # SHELL-LOSA
+areaload 391 -6   # SHELL-LOSA
+areaload 392 -6   # SHELL-LOSA
+areaload 393 -6   # SHELL-LOSA
+areaload 394 -6   # SHELL-LOSA
+areaload 395 -6   # SHELL-LOSA
+areaload 396 -6   # SHELL-LOSA
+areaload 397 -6   # SHELL-LOSA
+areaload 398 -6   # SHELL-LOSA
+areaload 399 -6   # SHELL-LOSA
+areaload 400 -6   # SHELL-LOSA
+areaload 401 -6   # SHELL-LOSA
+areaload 402 -6   # SHELL-LOSA
+areaload 403 -6   # SHELL-LOSA
+areaload 404 -6   # SHELL-LOSA
+areaload 405 -6   # SHELL-LOSA
+areaload 406 -6   # SHELL-LOSA
+areaload 407 -6   # SHELL-LOSA
+areaload 408 -6   # SHELL-LOSA
+areaload 409 -6   # SHELL-LOSA
+areaload 410 -6   # SHELL-LOSA
+areaload 411 -6   # SHELL-LOSA
+areaload 412 -6   # SHELL-LOSA
+areaload 413 -6   # SHELL-LOSA
+areaload 414 -6   # SHELL-LOSA
+areaload 415 -6   # SHELL-LOSA
+areaload 416 -6   # SHELL-LOSA
+areaload 417 -6   # SHELL-LOSA
+areaload 418 -6   # SHELL-LOSA
+areaload 419 -6   # SHELL-LOSA
+areaload 420 -6   # SHELL-LOSA
+areaload 421 -6   # SHELL-LOSA
+areaload 422 -6   # SHELL-LOSA
+areaload 423 -6   # SHELL-LOSA
+areaload 424 -6   # SHELL-LOSA
+areaload 425 -6   # SHELL-LOSA
+areaload 426 -6   # SHELL-LOSA
+areaload 427 -6   # SHELL-LOSA
+areaload 428 -6   # SHELL-LOSA
+areaload 429 -6   # SHELL-LOSA
+areaload 430 -6   # SHELL-LOSA
+areaload 431 -6   # SHELL-LOSA
+areaload 432 -6   # SHELL-LOSA
+areaload 433 -6   # SHELL-LOSA
+areaload 434 -6   # SHELL-LOSA
+areaload 435 -6   # SHELL-LOSA
+areaload 436 -6   # SHELL-LOSA
+areaload 437 -6   # SHELL-LOSA
+areaload 438 -6   # SHELL-LOSA
+areaload 439 -6   # SHELL-LOSA
+areaload 440 -6   # SHELL-LOSA
+areaload 441 -6   # SHELL-LOSA
+areaload 442 -6   # SHELL-LOSA
+areaload 443 -6   # SHELL-LOSA
+areaload 444 -6   # SHELL-LOSA
+areaload 445 -6   # SHELL-LOSA
+areaload 446 -6   # SHELL-LOSA
+areaload 447 -6   # SHELL-LOSA
+areaload 448 -6   # SHELL-LOSA
+areaload 449 -6   # SHELL-LOSA
+areaload 450 -6   # SHELL-LOSA
+areaload 451 -6   # SHELL-LOSA
+areaload 452 -6   # SHELL-LOSA
+areaload 453 -6   # SHELL-LOSA
+areaload 454 -6   # SHELL-LOSA
+areaload 455 -6   # SHELL-LOSA
+areaload 456 -6   # SHELL-LOSA
+areaload 457 -6   # SHELL-LOSA
+areaload 458 -6   # SHELL-LOSA
+areaload 459 -6   # SHELL-LOSA
+areaload 460 -6   # SHELL-LOSA
+areaload 461 -6   # SHELL-LOSA
+areaload 462 -6   # SHELL-LOSA
+areaload 463 -6   # SHELL-LOSA
+areaload 464 -6   # SHELL-LOSA
+areaload 465 -6   # SHELL-LOSA
+areaload 466 -6   # SHELL-LOSA
+areaload 467 -6   # SHELL-LOSA
+areaload 468 -6   # SHELL-LOSA
+areaload 469 -6   # SHELL-LOSA
+areaload 470 -6   # SHELL-LOSA
+areaload 471 -6   # SHELL-LOSA
+areaload 472 -6   # SHELL-LOSA
+areaload 473 -6   # SHELL-LOSA
+areaload 474 -6   # SHELL-LOSA
+areaload 475 -6   # SHELL-LOSA
+areaload 476 -6   # SHELL-LOSA
+areaload 477 -6   # SHELL-LOSA
+areaload 478 -6   # SHELL-LOSA
+areaload 479 -6   # SHELL-LOSA
+areaload 480 -6   # SHELL-LOSA
+areaload 481 -6   # SHELL-LOSA
+areaload 482 -6   # SHELL-LOSA
+areaload 483 -6   # SHELL-LOSA
+areaload 484 -6   # SHELL-LOSA
+areaload 485 -6   # SHELL-LOSA
+areaload 486 -6   # SHELL-LOSA
+areaload 487 -6   # SHELL-LOSA
+areaload 488 -6   # SHELL-LOSA
+areaload 489 -6   # SHELL-LOSA
+areaload 490 -6   # SHELL-LOSA
+areaload 491 -6   # SHELL-LOSA
+areaload 492 -6   # SHELL-LOSA
+areaload 493 -6   # SHELL-LOSA
+areaload 494 -6   # SHELL-LOSA
+areaload 495 -6   # SHELL-LOSA
+areaload 496 -6   # SHELL-LOSA
+areaload 497 -6   # SHELL-LOSA
+areaload 498 -6   # SHELL-LOSA
+areaload 499 -6   # SHELL-LOSA
+areaload 500 -6   # SHELL-LOSA
+areaload 501 -6   # SHELL-LOSA
+areaload 502 -6   # SHELL-LOSA
+areaload 503 -6   # SHELL-LOSA
+areaload 504 -6   # SHELL-LOSA
+areaload 505 -6   # SHELL-LOSA
+areaload 506 -6   # SHELL-LOSA
+areaload 507 -6   # SHELL-LOSA
+areaload 508 -6   # SHELL-LOSA
+areaload 509 -6   # SHELL-LOSA
+areaload 510 -6   # SHELL-LOSA
+areaload 511 -6   # SHELL-LOSA
+areaload 512 -6   # SHELL-LOSA
+areaload 513 -6   # SHELL-LOSA
+areaload 514 -6   # SHELL-LOSA
+areaload 515 -6   # SHELL-LOSA
+areaload 516 -6   # SHELL-LOSA
+areaload 517 -6   # SHELL-LOSA
+areaload 518 -6   # SHELL-LOSA
+areaload 519 -6   # SHELL-LOSA
+areaload 520 -6   # SHELL-LOSA
+areaload 521 -6   # SHELL-LOSA
+areaload 522 -6   # SHELL-LOSA
+areaload 523 -6   # SHELL-LOSA
+areaload 524 -6   # SHELL-LOSA
+areaload 525 -6   # SHELL-LOSA
+areaload 526 -6   # SHELL-LOSA
+areaload 527 -6   # SHELL-LOSA
+areaload 528 -6   # SHELL-LOSA
+areaload 529 -6   # SHELL-LOSA
+areaload 530 -6   # SHELL-LOSA
+areaload 531 -6   # SHELL-LOSA
+areaload 532 -6   # SHELL-LOSA
+areaload 533 -6   # SHELL-LOSA
+areaload 534 -6   # SHELL-LOSA
+areaload 535 -6   # SHELL-LOSA
+areaload 536 -6   # SHELL-LOSA
+areaload 537 -6   # SHELL-LOSA
+areaload 538 -6   # SHELL-LOSA
+areaload 539 -6   # SHELL-LOSA
+areaload 540 -6   # SHELL-LOSA
+areaload 541 -6   # SHELL-LOSA
+areaload 542 -6   # SHELL-LOSA
+areaload 543 -6   # SHELL-LOSA
+areaload 544 -6   # SHELL-LOSA
+areaload 545 -6   # SHELL-LOSA
+areaload 546 -6   # SHELL-LOSA
+areaload 547 -6   # SHELL-LOSA
+areaload 548 -6   # SHELL-LOSA
+areaload 549 -6   # SHELL-LOSA
+areaload 550 -6   # SHELL-LOSA
+areaload 551 -6   # SHELL-LOSA
+areaload 552 -6   # SHELL-LOSA
+areaload 553 -6   # SHELL-LOSA
+areaload 554 -6   # SHELL-LOSA
+areaload 555 -6   # SHELL-LOSA
+areaload 556 -6   # SHELL-LOSA
+areaload 557 -6   # SHELL-LOSA
+areaload 558 -6   # SHELL-LOSA
+areaload 559 -6   # SHELL-LOSA
+areaload 560 -6   # SHELL-LOSA
+areaload 561 -6   # SHELL-LOSA
+areaload 562 -6   # SHELL-LOSA
+areaload 563 -6   # SHELL-LOSA
+areaload 564 -6   # SHELL-LOSA
+areaload 565 -6   # SHELL-LOSA
+areaload 566 -6   # SHELL-LOSA
+areaload 567 -6   # SHELL-LOSA
+areaload 568 -6   # SHELL-LOSA
+areaload 569 -6   # SHELL-LOSA
+areaload 570 -6   # SHELL-LOSA
+areaload 571 -6   # SHELL-LOSA
+areaload 572 -6   # SHELL-LOSA
+areaload 573 -6   # SHELL-LOSA
+areaload 574 -6   # SHELL-LOSA
+areaload 575 -6   # SHELL-LOSA
+areaload 576 -6   # SHELL-LOSA
+areaload 577 -6   # SHELL-LOSA
+areaload 578 -6   # SHELL-LOSA
+areaload 579 -6   # SHELL-LOSA
+areaload 580 -6   # SHELL-LOSA
+areaload 581 -6   # SHELL-LOSA
+areaload 582 -6   # SHELL-LOSA
+areaload 583 -6   # SHELL-LOSA
+areaload 584 -6   # SHELL-LOSA
+areaload 585 -6   # SHELL-LOSA
+areaload 586 -6   # SHELL-LOSA
+areaload 587 -6   # SHELL-LOSA
+areaload 588 -6   # SHELL-LOSA
+areaload 589 -6   # SHELL-LOSA
+areaload 590 -6   # SHELL-LOSA
+areaload 591 -6   # SHELL-LOSA
+areaload 592 -6   # SHELL-LOSA
+areaload 593 -6   # SHELL-LOSA
+areaload 594 -6   # SHELL-LOSA
+areaload 595 -6   # SHELL-LOSA
+areaload 596 -6   # SHELL-LOSA
+areaload 597 -6   # SHELL-LOSA
+areaload 598 -6   # SHELL-LOSA
+areaload 599 -6   # SHELL-LOSA
+areaload 600 -6   # SHELL-LOSA
+areaload 601 -6   # SHELL-LOSA
+areaload 602 -6   # SHELL-LOSA
+areaload 603 -6   # SHELL-LOSA
+areaload 604 -6   # SHELL-LOSA
+areaload 605 -6   # SHELL-LOSA
+areaload 606 -6   # SHELL-LOSA
+areaload 607 -6   # SHELL-LOSA
+areaload 608 -6   # SHELL-LOSA
+areaload 609 -6   # SHELL-LOSA
+areaload 610 -6   # SHELL-LOSA
+areaload 611 -6   # SHELL-LOSA
+areaload 612 -6   # SHELL-LOSA
+areaload 613 -6   # SHELL-LOSA
+areaload 614 -6   # SHELL-LOSA
+areaload 615 -6   # SHELL-LOSA
+areaload 616 -6   # SHELL-LOSA
+areaload 617 -6   # SHELL-LOSA
+areaload 618 -6   # SHELL-LOSA
+areaload 619 -6   # SHELL-LOSA
+areaload 620 -6   # SHELL-LOSA
+areaload 621 -6   # SHELL-LOSA
+areaload 622 -6   # SHELL-LOSA
+areaload 623 -6   # SHELL-LOSA
+areaload 624 -6   # SHELL-LOSA
+areaload 625 -6   # SHELL-LOSA
+areaload 626 -6   # SHELL-LOSA
+areaload 627 -6   # SHELL-LOSA
+areaload 628 -6   # SHELL-LOSA
+areaload 629 -6   # SHELL-LOSA
+areaload 630 -6   # SHELL-LOSA
+areaload 631 -6   # SHELL-LOSA
+areaload 632 -6   # SHELL-LOSA
+areaload 633 -6   # SHELL-LOSA
+areaload 634 -6   # SHELL-LOSA
+areaload 635 -6   # SHELL-LOSA
+areaload 636 -6   # SHELL-LOSA
+areaload 637 -6   # SHELL-LOSA
+areaload 638 -6   # SHELL-LOSA
+areaload 639 -6   # SHELL-LOSA
+areaload 640 -6   # SHELL-LOSA
+areaload 641 -6   # SHELL-LOSA
+areaload 642 -6   # SHELL-LOSA
+areaload 643 -6   # SHELL-LOSA
+areaload 644 -6   # SHELL-LOSA
+areaload 645 -6   # SHELL-LOSA
+areaload 646 -6   # SHELL-LOSA
+areaload 647 -6   # SHELL-LOSA
+areaload 648 -6   # SHELL-LOSA
+areaload 649 -6   # SHELL-LOSA
+areaload 650 -6   # SHELL-LOSA
+areaload 651 -6   # SHELL-LOSA
+areaload 652 -6   # SHELL-LOSA
+areaload 653 -6   # SHELL-LOSA
+areaload 654 -6   # SHELL-LOSA
+areaload 655 -6   # SHELL-LOSA
+areaload 656 -6   # SHELL-LOSA
+areaload 657 -6   # SHELL-LOSA
+areaload 658 -6   # SHELL-LOSA
+areaload 659 -6   # SHELL-LOSA
+areaload 660 -6   # SHELL-LOSA
+areaload 661 -6   # SHELL-LOSA
+areaload 662 -6   # SHELL-LOSA
+areaload 663 -6   # SHELL-LOSA
+areaload 664 -6   # SHELL-LOSA
+areaload 665 -6   # SHELL-LOSA
+areaload 666 -6   # SHELL-LOSA
+areaload 667 -6   # SHELL-LOSA
+areaload 668 -6   # SHELL-LOSA
+areaload 669 -6   # SHELL-LOSA
+areaload 670 -6   # SHELL-LOSA
+areaload 671 -6   # SHELL-LOSA
+areaload 672 -6   # SHELL-LOSA
+areaload 673 -6   # SHELL-LOSA
+areaload 674 -6   # SHELL-LOSA
+areaload 675 -6   # SHELL-LOSA
+areaload 676 -6   # SHELL-LOSA
+areaload 677 -6   # SHELL-LOSA
+areaload 678 -6   # SHELL-LOSA
+areaload 679 -6   # SHELL-LOSA
+areaload 680 -6   # SHELL-LOSA
+areaload 681 -6   # SHELL-LOSA
+areaload 682 -6   # SHELL-LOSA
+areaload 683 -6   # SHELL-LOSA
+areaload 684 -6   # SHELL-LOSA
+areaload 685 -6   # SHELL-LOSA
+areaload 686 -6   # SHELL-LOSA
+areaload 687 -6   # SHELL-LOSA
+areaload 688 -6   # SHELL-LOSA
+areaload 689 -6   # SHELL-LOSA
+areaload 690 -6   # SHELL-LOSA
+areaload 691 -6   # SHELL-LOSA
+areaload 692 -6   # SHELL-LOSA
+areaload 693 -6   # SHELL-LOSA
+areaload 694 -6   # SHELL-LOSA
+areaload 695 -6   # SHELL-LOSA
+areaload 696 -6   # SHELL-LOSA
+areaload 697 -6   # SHELL-LOSA
+areaload 698 -6   # SHELL-LOSA
+areaload 699 -6   # SHELL-LOSA
+areaload 700 -6   # SHELL-LOSA
+areaload 701 -6   # SHELL-LOSA
+areaload 702 -6   # SHELL-LOSA
+areaload 703 -6   # SHELL-LOSA
+areaload 704 -6   # SHELL-LOSA
+areaload 705 -6   # SHELL-LOSA
+areaload 706 -6   # SHELL-LOSA
+areaload 707 -6   # SHELL-LOSA
+areaload 708 -6   # SHELL-LOSA
+areaload 709 -6   # SHELL-LOSA
+areaload 710 -6   # SHELL-LOSA
+areaload 711 -6   # SHELL-LOSA
+areaload 712 -6   # SHELL-LOSA
+areaload 713 -6   # SHELL-LOSA
+areaload 714 -6   # SHELL-LOSA
+areaload 715 -6   # SHELL-LOSA
+areaload 716 -6   # SHELL-LOSA
+areaload 717 -6   # SHELL-LOSA
+areaload 718 -6   # SHELL-LOSA
+areaload 719 -6   # SHELL-LOSA
+areaload 720 -6   # SHELL-LOSA
+areaload 721 -6   # SHELL-LOSA
+areaload 722 -6   # SHELL-LOSA
+areaload 723 -6   # SHELL-LOSA
+areaload 724 -6   # SHELL-LOSA
+areaload 725 -6   # SHELL-LOSA
+areaload 726 -6   # SHELL-LOSA
+areaload 727 -6   # SHELL-LOSA
+areaload 728 -6   # SHELL-LOSA
+areaload 729 -6   # SHELL-LOSA
+areaload 730 -6   # SHELL-LOSA
+areaload 731 -6   # SHELL-LOSA
+areaload 732 -6   # SHELL-LOSA
+areaload 733 -6   # SHELL-LOSA
+areaload 734 -6   # SHELL-LOSA
+areaload 735 -6   # SHELL-LOSA
+areaload 736 -6   # SHELL-LOSA
+areaload 737 -6   # SHELL-LOSA
+areaload 738 -6   # SHELL-LOSA
+areaload 739 -6   # SHELL-LOSA
+areaload 740 -6   # SHELL-LOSA
+areaload 741 -6   # SHELL-LOSA
+areaload 742 -6   # SHELL-LOSA
+areaload 743 -6   # SHELL-LOSA
+areaload 744 -6   # SHELL-LOSA
+areaload 745 -6   # SHELL-LOSA
+areaload 746 -6   # SHELL-LOSA
+areaload 747 -6   # SHELL-LOSA
+areaload 748 -6   # SHELL-LOSA
+areaload 749 -6   # SHELL-LOSA
+areaload 750 -6   # SHELL-LOSA
+areaload 751 -6   # SHELL-LOSA
+areaload 752 -6   # SHELL-LOSA
+areaload 753 -6   # SHELL-LOSA
+areaload 754 -6   # SHELL-LOSA
+areaload 755 -6   # SHELL-LOSA
+areaload 756 -6   # SHELL-LOSA
+areaload 757 -6   # SHELL-LOSA
+areaload 758 -6   # SHELL-LOSA
+areaload 759 -6   # SHELL-LOSA
+areaload 760 -6   # SHELL-LOSA
+areaload 761 -6   # SHELL-LOSA
+areaload 762 -6   # SHELL-LOSA
+areaload 763 -6   # SHELL-LOSA
+areaload 764 -6   # SHELL-LOSA
+areaload 765 -6   # SHELL-LOSA
+areaload 766 -6   # SHELL-LOSA
+areaload 767 -6   # SHELL-LOSA
+areaload 768 -6   # SHELL-LOSA
+areaload 769 -6   # SHELL-LOSA
+areaload 770 -6   # SHELL-LOSA
+areaload 771 -6   # SHELL-LOSA
+areaload 772 -6   # SHELL-LOSA
+areaload 773 -6   # SHELL-LOSA
+areaload 774 -6   # SHELL-LOSA
+areaload 775 -6   # SHELL-LOSA
+areaload 776 -6   # SHELL-LOSA
+areaload 777 -6   # SHELL-LOSA
+areaload 778 -6   # SHELL-LOSA
+areaload 779 -6   # SHELL-LOSA
+areaload 780 -6   # SHELL-LOSA
+areaload 781 -6   # SHELL-LOSA
+areaload 782 -6   # SHELL-LOSA
+areaload 783 -6   # SHELL-LOSA
+areaload 784 -6   # SHELL-LOSA
+areaload 785 -6   # SHELL-LOSA
+areaload 786 -6   # SHELL-LOSA
+areaload 787 -6   # SHELL-LOSA
+areaload 788 -6   # SHELL-LOSA
+areaload 789 -6   # SHELL-LOSA
+areaload 790 -6   # SHELL-LOSA
+areaload 791 -6   # SHELL-LOSA
+areaload 792 -6   # SHELL-LOSA
+areaload 793 -6   # SHELL-LOSA
+areaload 794 -6   # SHELL-LOSA
+areaload 795 -6   # SHELL-LOSA
+areaload 796 -6   # SHELL-LOSA
+areaload 797 -6   # SHELL-LOSA
+areaload 798 -6   # SHELL-LOSA
+areaload 799 -6   # SHELL-LOSA
+areaload 800 -6   # SHELL-LOSA
+areaload 801 -6   # SHELL-LOSA
+areaload 802 -6   # SHELL-LOSA
+areaload 803 -6   # SHELL-LOSA
+areaload 804 -6   # SHELL-LOSA
+areaload 805 -6   # SHELL-LOSA
+areaload 806 -6   # SHELL-LOSA
+areaload 807 -6   # SHELL-LOSA
+areaload 808 -6   # SHELL-LOSA
+areaload 809 -6   # SHELL-LOSA
+areaload 810 -6   # SHELL-LOSA
+areaload 811 -6   # SHELL-LOSA
+areaload 812 -6   # SHELL-LOSA
+areaload 813 -6   # SHELL-LOSA
+areaload 814 -6   # SHELL-LOSA
+areaload 815 -6   # SHELL-LOSA
+areaload 816 -6   # SHELL-LOSA
+areaload 817 -6   # SHELL-LOSA
+areaload 818 -6   # SHELL-LOSA
+areaload 819 -6   # SHELL-LOSA
+areaload 820 -6   # SHELL-LOSA
+areaload 821 -6   # SHELL-LOSA
+areaload 822 -6   # SHELL-LOSA
+areaload 823 -6   # SHELL-LOSA
+areaload 824 -6   # SHELL-LOSA
+areaload 825 -6   # SHELL-LOSA
+areaload 826 -6   # SHELL-LOSA
+areaload 827 -6   # SHELL-LOSA
+areaload 828 -6   # SHELL-LOSA
+areaload 829 -6   # SHELL-LOSA
+areaload 830 -6   # SHELL-LOSA
+areaload 831 -6   # SHELL-LOSA
+areaload 832 -6   # SHELL-LOSA
+areaload 833 -6   # SHELL-LOSA
+areaload 834 -6   # SHELL-LOSA
+areaload 835 -6   # SHELL-LOSA
+areaload 836 -6   # SHELL-LOSA
+areaload 837 -6   # SHELL-LOSA
+areaload 838 -6   # SHELL-LOSA
+areaload 839 -6   # SHELL-LOSA
+areaload 840 -6   # SHELL-LOSA
+areaload 841 -6   # SHELL-LOSA
+areaload 842 -6   # SHELL-LOSA
+areaload 843 -6   # SHELL-LOSA
+areaload 844 -6   # SHELL-LOSA
+areaload 845 -6   # SHELL-LOSA
+areaload 846 -6   # SHELL-LOSA
+areaload 847 -6   # SHELL-LOSA
+areaload 848 -6   # SHELL-LOSA
+areaload 849 -6   # SHELL-LOSA
+areaload 850 -6   # SHELL-LOSA
+areaload 851 -6   # SHELL-LOSA
+areaload 852 -6   # SHELL-LOSA
+areaload 853 -6   # SHELL-LOSA
+areaload 854 -6   # SHELL-LOSA
+areaload 855 -6   # SHELL-LOSA
+areaload 856 -6   # SHELL-LOSA
+areaload 857 -6   # SHELL-LOSA
+areaload 858 -6   # SHELL-LOSA
+areaload 859 -6   # SHELL-LOSA
+areaload 860 -6   # SHELL-LOSA
+areaload 861 -6   # SHELL-LOSA
+areaload 862 -6   # SHELL-LOSA
+areaload 863 -6   # SHELL-LOSA
+areaload 864 -6   # SHELL-LOSA
+areaload 865 -6   # SHELL-LOSA
+areaload 866 -6   # SHELL-LOSA
+areaload 867 -6   # SHELL-LOSA
+areaload 868 -6   # SHELL-LOSA
+areaload 869 -6   # SHELL-LOSA
+areaload 870 -6   # SHELL-LOSA
+areaload 871 -6   # SHELL-LOSA
+areaload 872 -6   # SHELL-LOSA
+areaload 873 -6   # SHELL-LOSA
+areaload 874 -6   # SHELL-LOSA
+areaload 875 -6   # SHELL-LOSA
+areaload 876 -6   # SHELL-LOSA
+areaload 877 -6   # SHELL-LOSA
+areaload 878 -6   # SHELL-LOSA
+areaload 879 -6   # SHELL-LOSA
+areaload 880 -6   # SHELL-LOSA
+areaload 881 -6   # SHELL-LOSA
+areaload 882 -6   # SHELL-LOSA
+areaload 883 -6   # SHELL-LOSA
+areaload 884 -6   # SHELL-LOSA
+areaload 885 -6   # SHELL-LOSA
+areaload 886 -6   # SHELL-LOSA
+areaload 887 -6   # SHELL-LOSA
+areaload 888 -6   # SHELL-LOSA
+areaload 889 -6   # SHELL-LOSA
+areaload 890 -6   # SHELL-LOSA
+areaload 891 -6   # SHELL-LOSA
+areaload 892 -6   # SHELL-LOSA
+areaload 893 -6   # SHELL-LOSA
+areaload 894 -6   # SHELL-LOSA
+areaload 895 -6   # SHELL-LOSA
+areaload 896 -6   # SHELL-LOSA
+areaload 897 -6   # SHELL-LOSA
+areaload 898 -6   # SHELL-LOSA
+areaload 899 -6   # SHELL-LOSA
+areaload 900 -6   # SHELL-LOSA
+areaload 901 -6   # SHELL-LOSA
+areaload 902 -6   # SHELL-LOSA
+areaload 903 -6   # SHELL-LOSA
+areaload 904 -6   # SHELL-LOSA
+areaload 905 -6   # SHELL-LOSA
+areaload 906 -6   # SHELL-LOSA
+areaload 907 -6   # SHELL-LOSA
+areaload 908 -6   # SHELL-LOSA
+areaload 909 -6   # SHELL-LOSA
+areaload 910 -6   # SHELL-LOSA
+areaload 911 -6   # SHELL-LOSA
+areaload 912 -6   # SHELL-LOSA
+areaload 913 -6   # SHELL-LOSA
+areaload 914 -6   # SHELL-LOSA
+areaload 915 -6   # SHELL-LOSA
+areaload 916 -6   # SHELL-LOSA
+areaload 917 -6   # SHELL-LOSA
+areaload 918 -6   # SHELL-LOSA
+areaload 919 -6   # SHELL-LOSA
+areaload 920 -6   # SHELL-LOSA
+areaload 921 -6   # SHELL-LOSA
+areaload 922 -6   # SHELL-LOSA
+areaload 923 -6   # SHELL-LOSA
+areaload 924 -6   # SHELL-LOSA
+areaload 925 -6   # SHELL-LOSA
+areaload 926 -6   # SHELL-LOSA
+areaload 927 -6   # SHELL-LOSA
+areaload 928 -6   # SHELL-LOSA
+areaload 929 -6   # SHELL-LOSA
+areaload 930 -6   # SHELL-LOSA
+areaload 931 -6   # SHELL-LOSA
+areaload 932 -6   # SHELL-LOSA
+areaload 933 -6   # SHELL-LOSA
+areaload 934 -6   # SHELL-LOSA
+areaload 935 -6   # SHELL-LOSA
+areaload 936 -6   # SHELL-LOSA
+areaload 937 -6   # SHELL-LOSA
+areaload 938 -6   # SHELL-LOSA
+areaload 939 -6   # SHELL-LOSA
+areaload 940 -6   # SHELL-LOSA
+areaload 941 -6   # SHELL-LOSA
+areaload 942 -6   # SHELL-LOSA
+areaload 943 -6   # SHELL-LOSA
+areaload 944 -6   # SHELL-LOSA
+areaload 945 -6   # SHELL-LOSA
+areaload 946 -6   # SHELL-LOSA
+areaload 947 -6   # SHELL-LOSA
+areaload 948 -6   # SHELL-LOSA
+areaload 949 -6   # SHELL-LOSA
+areaload 950 -6   # SHELL-LOSA
+areaload 951 -6   # SHELL-LOSA
+areaload 952 -6   # SHELL-LOSA
+areaload 953 -6   # SHELL-LOSA
+areaload 954 -6   # SHELL-LOSA
+areaload 955 -6   # SHELL-LOSA
+areaload 956 -6   # SHELL-LOSA
+areaload 957 -6   # SHELL-LOSA
+areaload 958 -6   # SHELL-LOSA
+areaload 959 -6   # SHELL-LOSA
+areaload 960 -6   # SHELL-LOSA
+areaload 961 -6   # SHELL-LOSA
+areaload 962 -6   # SHELL-LOSA
+areaload 963 -6   # SHELL-LOSA
+areaload 964 -6   # SHELL-LOSA
+areaload 965 -6   # SHELL-LOSA
+areaload 966 -6   # SHELL-LOSA
+areaload 967 -6   # SHELL-LOSA
+areaload 968 -6   # SHELL-LOSA
+areaload 969 -6   # SHELL-LOSA
+areaload 970 -6   # SHELL-LOSA
+areaload 971 -6   # SHELL-LOSA
+areaload 972 -6   # SHELL-LOSA
+areaload 973 -6   # SHELL-LOSA
+areaload 974 -6   # SHELL-LOSA
+areaload 975 -6   # SHELL-LOSA
+areaload 976 -6   # SHELL-LOSA
+areaload 977 -6   # SHELL-LOSA
+areaload 978 -6   # SHELL-LOSA
+areaload 979 -6   # SHELL-LOSA
+areaload 980 -6   # SHELL-LOSA
+areaload 981 -6   # SHELL-LOSA
+areaload 982 -6   # SHELL-LOSA
+areaload 983 -6   # SHELL-LOSA
+areaload 984 -6   # SHELL-LOSA
+areaload 985 -6   # SHELL-LOSA
+areaload 986 -6   # SHELL-LOSA
+areaload 987 -6   # SHELL-LOSA
+areaload 988 -6   # SHELL-LOSA
+areaload 989 -6   # SHELL-LOSA
+areaload 990 -6   # SHELL-LOSA
+areaload 991 -6   # SHELL-LOSA
+areaload 992 -6   # SHELL-LOSA
+areaload 993 -6   # SHELL-LOSA
+areaload 994 -6   # SHELL-LOSA
+areaload 995 -6   # SHELL-LOSA
+areaload 996 -6   # SHELL-LOSA
+areaload 997 -6   # SHELL-LOSA
+areaload 998 -6   # SHELL-LOSA
+areaload 999 -6   # SHELL-LOSA
+areaload 1000 -6   # SHELL-LOSA
+areaload 1001 -6   # SHELL-LOSA
+areaload 1002 -6   # SHELL-LOSA
+areaload 1003 -6   # SHELL-LOSA
+areaload 1004 -6   # SHELL-LOSA
+areaload 1005 -6   # SHELL-LOSA
+areaload 1006 -6   # SHELL-LOSA
+areaload 1007 -6   # SHELL-LOSA
+areaload 1008 -6   # SHELL-LOSA
+areaload 1009 -6   # SHELL-LOSA
+areaload 1010 -6   # SHELL-LOSA
+areaload 1011 -6   # SHELL-LOSA
+areaload 1012 -6   # SHELL-LOSA
+areaload 1013 -6   # SHELL-LOSA
+areaload 1014 -6   # SHELL-LOSA
+areaload 1015 -6   # SHELL-LOSA
+areaload 1016 -6   # SHELL-LOSA
+areaload 1017 -6   # SHELL-LOSA
+areaload 1018 -6   # SHELL-LOSA
+areaload 1019 -6   # SHELL-LOSA
+areaload 1020 -6   # SHELL-LOSA
+areaload 1021 -6   # SHELL-LOSA
+areaload 1022 -6   # SHELL-LOSA
+areaload 1023 -6   # SHELL-LOSA
+areaload 1024 -6   # SHELL-LOSA
+areaload 1025 -6   # SHELL-LOSA
+areaload 1026 -6   # SHELL-LOSA
+areaload 1027 -6   # SHELL-LOSA
+areaload 1028 -6   # SHELL-LOSA
+areaload 1029 -6   # SHELL-LOSA
+areaload 1030 -6   # SHELL-LOSA
+areaload 1031 -6   # SHELL-LOSA
+areaload 1032 -6   # SHELL-LOSA
+areaload 1033 -6   # SHELL-LOSA
+areaload 1034 -6   # SHELL-LOSA
+areaload 1035 -6   # SHELL-LOSA
+areaload 1036 -6   # SHELL-LOSA
+areaload 1037 -6   # SHELL-LOSA
+areaload 1038 -6   # SHELL-LOSA
+areaload 1039 -6   # SHELL-LOSA
+areaload 1040 -6   # SHELL-LOSA
+areaload 1041 -6   # SHELL-LOSA
+areaload 1042 -6   # SHELL-LOSA
+areaload 1043 -6   # SHELL-LOSA
+areaload 1044 -6   # SHELL-LOSA
+areaload 1045 -6   # SHELL-LOSA
+areaload 1046 -6   # SHELL-LOSA
+areaload 1047 -6   # SHELL-LOSA
+areaload 1048 -6   # SHELL-LOSA
+areaload 1049 -6   # SHELL-LOSA
+areaload 1050 -6   # SHELL-LOSA
+areaload 1051 -6   # SHELL-LOSA
+areaload 1052 -6   # SHELL-LOSA
+areaload 1053 -6   # SHELL-LOSA
+areaload 1054 -6   # SHELL-LOSA
+areaload 1055 -6   # SHELL-LOSA
+areaload 1056 -6   # SHELL-LOSA
+areaload 1057 -6   # SHELL-LOSA
+areaload 1058 -6   # SHELL-LOSA
+areaload 1059 -6   # SHELL-LOSA
+areaload 1060 -6   # SHELL-LOSA
+areaload 1061 -6   # SHELL-LOSA
+areaload 1062 -6   # SHELL-LOSA
+areaload 1063 -6   # SHELL-LOSA
+areaload 1064 -6   # SHELL-LOSA
+areaload 1065 -6   # SHELL-LOSA
+areaload 1066 -6   # SHELL-LOSA
+areaload 1067 -6   # SHELL-LOSA
+areaload 1068 -6   # SHELL-LOSA
+areaload 1069 -6   # SHELL-LOSA
+areaload 1070 -6   # SHELL-LOSA
+areaload 1071 -6   # SHELL-LOSA
+areaload 1072 -6   # SHELL-LOSA
+areaload 1073 -6   # SHELL-LOSA
+areaload 1074 -6   # SHELL-LOSA
+areaload 1075 -6   # SHELL-LOSA
+areaload 1076 -6   # SHELL-LOSA
+areaload 1077 -6   # SHELL-LOSA
+areaload 1078 -6   # SHELL-LOSA
+areaload 1079 -6   # SHELL-LOSA
+areaload 1080 -6   # SHELL-LOSA
+areaload 1081 -6   # SHELL-LOSA
+areaload 1082 -6   # SHELL-LOSA
+areaload 1083 -6   # SHELL-LOSA
+areaload 1084 -6   # SHELL-LOSA
+areaload 1085 -6   # SHELL-LOSA
+areaload 1086 -6   # SHELL-LOSA
+areaload 1087 -6   # SHELL-LOSA
+areaload 1088 -6   # SHELL-LOSA
+areaload 1089 -6   # SHELL-LOSA
+areaload 1090 -6   # SHELL-LOSA
+areaload 1091 -6   # SHELL-LOSA
+areaload 1092 -6   # SHELL-LOSA
+areaload 1093 -6   # SHELL-LOSA
+areaload 1094 -6   # SHELL-LOSA
+areaload 1095 -6   # SHELL-LOSA
+areaload 1096 -6   # SHELL-LOSA
+areaload 1097 -6   # SHELL-LOSA
+areaload 1098 -6   # SHELL-LOSA
+areaload 1099 -6   # SHELL-LOSA
+areaload 1100 -6   # SHELL-LOSA
+areaload 1101 -6   # SHELL-LOSA
+areaload 1102 -6   # SHELL-LOSA
+areaload 1103 -6   # SHELL-LOSA
+areaload 1104 -6   # SHELL-LOSA
+areaload 1105 -6   # SHELL-LOSA
+areaload 1106 -6   # SHELL-LOSA
+areaload 1107 -6   # SHELL-LOSA
+areaload 1108 -6   # SHELL-LOSA
+areaload 1109 -6   # SHELL-LOSA
+areaload 1110 -6   # SHELL-LOSA
+areaload 1111 -6   # SHELL-LOSA
+areaload 1112 -6   # SHELL-LOSA
+areaload 1113 -6   # SHELL-LOSA
+areaload 1114 -6   # SHELL-LOSA
+areaload 1115 -6   # SHELL-LOSA
+areaload 1116 -6   # SHELL-LOSA
+areaload 1117 -6   # SHELL-LOSA
+areaload 1118 -6   # SHELL-LOSA
+areaload 1119 -6   # SHELL-LOSA
+areaload 1120 -6   # SHELL-LOSA
+areaload 1121 -6   # SHELL-LOSA
+areaload 1122 -6   # SHELL-LOSA
+areaload 1123 -6   # SHELL-LOSA
+areaload 1124 -6   # SHELL-LOSA
+areaload 1125 -6   # SHELL-LOSA
+areaload 1126 -6   # SHELL-LOSA
+areaload 1127 -6   # SHELL-LOSA
+areaload 1128 -6   # SHELL-LOSA
+areaload 1129 -6   # SHELL-LOSA
+areaload 1130 -6   # SHELL-LOSA
+areaload 1131 -6   # SHELL-LOSA
+areaload 1132 -6   # SHELL-LOSA
+areaload 1133 -6   # SHELL-LOSA
+areaload 1134 -6   # SHELL-LOSA
+areaload 1135 -6   # SHELL-LOSA
+areaload 1136 -6   # SHELL-LOSA
+areaload 1137 -6   # SHELL-LOSA
+areaload 1138 -6   # SHELL-LOSA
+areaload 1139 -6   # SHELL-LOSA
+areaload 1140 -6   # SHELL-LOSA
+areaload 1141 -6   # SHELL-LOSA
+areaload 1142 -6   # SHELL-LOSA
+areaload 1143 -6   # SHELL-LOSA
+areaload 1144 -6   # SHELL-LOSA
+areaload 1145 -6   # SHELL-LOSA
+areaload 1146 -6   # SHELL-LOSA
+areaload 1147 -6   # SHELL-LOSA
+areaload 1148 -6   # SHELL-LOSA
+areaload 1149 -6   # SHELL-LOSA
+areaload 1150 -6   # SHELL-LOSA
+areaload 1151 -6   # SHELL-LOSA
+areaload 1152 -6   # SHELL-LOSA
+areaload 1153 -6   # SHELL-LOSA
+areaload 1154 -6   # SHELL-LOSA
+areaload 1155 -6   # SHELL-LOSA
+areaload 1156 -6   # SHELL-LOSA
+areaload 1157 -6   # SHELL-LOSA
+areaload 1158 -6   # SHELL-LOSA
+areaload 1159 -6   # SHELL-LOSA
+areaload 1160 -6   # SHELL-LOSA
+areaload 1161 -6   # SHELL-LOSA
+areaload 1162 -6   # SHELL-LOSA
+areaload 1163 -6   # SHELL-LOSA
+areaload 1164 -6   # SHELL-LOSA
+areaload 1165 -6   # SHELL-LOSA
+areaload 1166 -6   # SHELL-LOSA
+areaload 1167 -6   # SHELL-LOSA
+areaload 1168 -6   # SHELL-LOSA
+areaload 1169 -6   # SHELL-LOSA
+areaload 1170 -6   # SHELL-LOSA
+areaload 1171 -6   # SHELL-LOSA
+areaload 1172 -6   # SHELL-LOSA
+areaload 1173 -6   # SHELL-LOSA
+areaload 1174 -6   # SHELL-LOSA
+areaload 1175 -6   # SHELL-LOSA
+#     carga total por area = -1957.0 kN
 
+
+# --- PESO PROPIO: lo calcula el motor (rho x A x L), como el
+#     patron `Dead` de ETABS con selfweight x 1. Las VIGAS con
+#     `endoffset` pesan por su luz libre.
+selfweight 1
 solve
