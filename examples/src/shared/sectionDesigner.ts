@@ -198,14 +198,26 @@ export function propsPoligono(p: Punto2D[]) {
   };
 }
 
-/** Coloca un polígono: espejo, giro y traslación, en ese orden. */
+/**
+ * Coloca un polígono: espejo, giro y traslación, en ese orden.
+ *
+ * ⚠️ Un ESPEJO invierte el sentido de giro del polígono, y con Green el sentido
+ * ES el signo del área: una pieza reflejada salía con área NEGATIVA y **restaba**
+ * en vez de sumar. La sección `DOBLE C + MADERA` del modelo real —dos canales,
+ * uno de ellos con `MIRROR2`— daba 11.88 cm² y una inercia I22 **negativa**, que
+ * no existe. Lo destapó el DIBUJO: la geometría se veía bien y los números no
+ * cuadraban, que es justo para lo que sirve mirarlo.
+ *
+ * Se devuelve el recorrido al revés para dejarlo como estaba.
+ */
 function colocar(p: Punto2D[], pieza: PiezaSD): Punto2D[] {
   const a = rad(pieza.rot ?? 0), c = Math.cos(a), s = Math.sin(a);
   const mx = pieza.mirror ? -1 : 1;
-  return p.map(([x0, y0]) => {
+  const q = p.map(([x0, y0]) => {
     const x = x0 * mx;
     return [x * c - y0 * s + (pieza.xc ?? 0), x * s + y0 * c + (pieza.yc ?? 0)] as Punto2D;
   });
+  return pieza.mirror ? q.reverse() : q;
 }
 
 /**
@@ -296,4 +308,151 @@ export function formaDesdeE2k(
       // deja la barra SIN RIGIDEZ y hace singular la matriz sin decir nada.
       return d > 0 && b > 0 ? { tipo: "rect", d, b } : null;
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// EL DIBUJO
+//
+// Una sección compuesta hay que VERLA. Los números dicen si el área sale, no
+// si la pieza está donde se quería: un canal girado 90° o un espejo puesto al
+// revés dan un área correcta y una sección que no es la del plano. Eso solo se
+// caza mirándola.
+//
+// Se dibuja en SVG y no en canvas a propósito: es texto, así que el mismo
+// dibujo sirve en el navegador, en un informe y en una captura de prueba sin
+// montar un lienzo ni un contexto gráfico.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface OpcionesDibujo {
+  ancho?: number;          // px
+  alto?: number;
+  margen?: number;
+  /** Colorear cada pieza según su material (por su E). */
+  porMaterial?: boolean;
+  /** Marcar el centroide y los ejes principales. */
+  ejes?: boolean;
+  /** Cuántas piezas dibujar (para animar la composición). */
+  hasta?: number;
+  fondo?: string;
+  titulo?: string;
+  /**
+   * Material al que se TRANSFORMA la sección. Con varios materiales el área y
+   * las inercias dependen de a cuál se refieran, así que el dibujo lo dice: sin
+   * eso, el mismo pilote pone 1407.8 cm² o 147.8 segun se mire desde el
+   * hormigon o desde el acero, y las dos son ciertas.
+   */
+  Eref?: number;
+  /** Nombre del material de referencia, para la etiqueta. */
+  refNombre?: string;
+}
+
+/** Paleta estable: el mismo E siempre del mismo color, en el orden que aparece. */
+function colorDe(E: number | undefined, mapa: Map<number, string>): string {
+  const PAL = ["#4da3ff", "#ffb84d", "#7ddc7d", "#ff7d7d", "#c79bff", "#4ddbd0"];
+  const k = E ?? 0;
+  if (!mapa.has(k)) mapa.set(k, PAL[mapa.size % PAL.length]);
+  return mapa.get(k)!;
+}
+
+/**
+ * La sección en SVG: cada pieza con su color, el contorno, el centroide y los
+ * ejes por él. `hasta` permite dibujar solo las N primeras — que es lo que hace
+ * falta para animar cómo se compone.
+ */
+export function dibujarSVG(piezas: PiezaSD[], o: OpcionesDibujo = {}): string {
+  const W = o.ancho ?? 460, H = o.alto ?? 460, M = o.margen ?? 34;
+  const nDib = o.hasta ?? piezas.length;
+  const visibles = piezas.slice(0, nDib);
+
+  // Contornos ya colocados, para dibujar y para encuadrar.
+  const dibujos: Array<{ pts: Punto2D[]; E?: number; hueco: boolean }> = [];
+  const rebars: Array<{ x: number; y: number; r: number; E?: number }> = [];
+  for (const pz of visibles) {
+    if (pz.forma.tipo === "rebar") {
+      rebars.push({ x: pz.xc ?? 0, y: pz.yc ?? 0,
+                    r: Math.sqrt(pz.forma.area / Math.PI), E: pz.E });
+      continue;
+    }
+    const a = rad(pz.rot ?? 0), c = Math.cos(a), s = Math.sin(a);
+    const mx = pz.mirror ? -1 : 1;
+    // La MISMA transformación que `colocar`, espejo incluido: si el dibujo y el
+    // cálculo no colocan igual, el dibujo deja de servir para comprobar.
+    const mueve = (p: Punto2D[]) => {
+      const q = p.map(([x0, y0]) => {
+        const x = x0 * mx;
+        return [x * c - y0 * s + (pz.xc ?? 0), x * s + y0 * c + (pz.yc ?? 0)] as Punto2D;
+      });
+      return pz.mirror ? q.reverse() : q;
+    };
+    dibujos.push({ pts: mueve(exterior(pz.forma)), E: pz.E, hueco: false });
+    for (const h of huecos(pz.forma)) dibujos.push({ pts: mueve(h), E: pz.E, hueco: true });
+  }
+
+  // Encuadre: SIEMPRE el de TODAS las piezas, no solo las visibles. Si el
+  // encuadre cambiara al añadir una, una animación saldría dando saltos.
+  const todos: Punto2D[] = [];
+  for (const pz of piezas) {
+    if (pz.forma.tipo === "rebar") { todos.push([pz.xc ?? 0, pz.yc ?? 0]); continue; }
+    const a = rad(pz.rot ?? 0), c = Math.cos(a), s = Math.sin(a);
+    const mx = pz.mirror ? -1 : 1;
+    for (const [x0, y0] of exterior(pz.forma)) {
+      const x = x0 * mx;
+      todos.push([x * c - y0 * s + (pz.xc ?? 0), x * s + y0 * c + (pz.yc ?? 0)]);
+    }
+  }
+  if (!todos.length) return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"></svg>`;
+  const xs = todos.map(p => p[0]), ys = todos.map(p => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const k = Math.min((W - 2 * M) / Math.max(x1 - x0, 1e-9),
+                     (H - 2 * M) / Math.max(y1 - y0, 1e-9));
+  // Y hacia ARRIBA, como en una sección de verdad: en SVG crece hacia abajo.
+  const px = (x: number) => M + (x - x0) * k + ((W - 2 * M) - (x1 - x0) * k) / 2;
+  const py = (y: number) => H - M - (y - y0) * k - ((H - 2 * M) - (y1 - y0) * k) / 2;
+
+  const mapaCol = new Map<number, string>();
+  const Eref = o.Eref ?? piezas.find(p => p.E)?.E ?? 1;
+  const P = propiedadesSD(visibles.length ? visibles : piezas, Eref);
+  const out: string[] = [];
+  out.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`);
+  out.push(`<rect width="${W}" height="${H}" fill="${o.fondo ?? "#11151c"}"/>`);
+
+  for (const d of dibujos) {
+    const pts = d.pts.map(([x, y]) => `${px(x).toFixed(2)},${py(y).toFixed(2)}`).join(" ");
+    // Un hueco se pinta del color del fondo: se ve el vacío, que es lo que es.
+    const relleno = d.hueco ? (o.fondo ?? "#11151c")
+                            : (o.porMaterial === false ? "#4da3ff" : colorDe(d.E, mapaCol));
+    out.push(`<polygon points="${pts}" fill="${relleno}" fill-opacity="${d.hueco ? 1 : 0.75}" ` +
+             `stroke="#e6edf3" stroke-width="1.1"/>`);
+  }
+  for (const r of rebars) {
+    out.push(`<circle cx="${px(r.x).toFixed(2)}" cy="${py(r.y).toFixed(2)}" ` +
+             `r="${Math.max(2.2, r.r * k).toFixed(2)}" fill="#ff5b5b" stroke="#e6edf3" stroke-width="0.8"/>`);
+  }
+
+  if (o.ejes !== false && Math.abs(P.A) > 1e-15) {
+    const cx = px(P.cx), cy = py(P.cy);
+    out.push(`<line x1="${M}" y1="${cy.toFixed(2)}" x2="${W - M}" y2="${cy.toFixed(2)}" ` +
+             `stroke="#ffd166" stroke-width="0.9" stroke-dasharray="6 4"/>`);
+    out.push(`<line x1="${cx.toFixed(2)}" y1="${M}" x2="${cx.toFixed(2)}" y2="${H - M}" ` +
+             `stroke="#ffd166" stroke-width="0.9" stroke-dasharray="6 4"/>`);
+    out.push(`<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="3.4" fill="#ffd166"/>`);
+  }
+
+  const t = (txt: string, y: number, col = "#e6edf3", size = 12) =>
+    `<text x="10" y="${y}" fill="${col}" font-family="Consolas,monospace" font-size="${size}">${txt}</text>`;
+  if (o.titulo) out.push(t(o.titulo, 18, "#e6edf3", 13));
+  const mats = new Set(piezas.map(q => q.E ?? 0));
+  const nota = mats.size > 1
+    ? `  (transformada a ${o.refNombre ?? `E = ${Eref.toExponential(2)}`})` : "";
+  out.push(t(`A = ${(P.A * 1e4).toFixed(1)} cm²${nota}`, H - 40, "#9fb3c8"));
+  out.push(t(`I33 = ${P.Iz.toExponential(3)} m⁴   I22 = ${P.Iy.toExponential(3)} m⁴`, H - 24, "#9fb3c8"));
+  out.push(t(`${visibles.length}/${piezas.length} piezas`, H - 8, "#6b7f95"));
+  out.push(`</svg>`);
+  return out.join("\n");
+}
+
+/** Un SVG por paso, para animar cómo se compone la sección pieza a pieza. */
+export function fotogramasSVG(piezas: PiezaSD[], o: OpcionesDibujo = {}): string[] {
+  return piezas.map((_, i) => dibujarSVG(piezas, { ...o, hasta: i + 1 }));
 }
