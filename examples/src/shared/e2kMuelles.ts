@@ -50,6 +50,17 @@ export interface InformeMuelles {
   deArea: number;
   nudosConMuelle: number;
   sinDefinicion: string[];
+  /**
+   * Propiedades de muelle DEFINIDAS en el fichero y que no usa nadie.
+   *
+   * No es una curiosidad: en el edificio real hay siete `POINTSPRING`
+   * declarados —«BALASTO H X-X», «BALASTO H Y-Y», los tres «SPRINK», los dos
+   * «RESORTE SOTANO»— y **ninguno se asigna**. Los que sí se usan, `BALASTO V`
+   * y `RESORTE EN VIGAS`, son los dos **solo verticales**. O sea que en el
+   * `.e2k` la cimentación no tiene NADA que la sujete en horizontal, y de ahí
+   * sale un mecanismo que no es del lector sino del modelo.
+   */
+  definidasSinUsar: string[];
 }
 
 /** Los tres ejes locales de una barra, en la tríada de CSI (filas 1, 2, 3). */
@@ -93,6 +104,7 @@ export function muellesDelModelo(m: E2kModel): {
 } {
   const inf: InformeMuelles = {
     dePunto: 0, deLinea: 0, deArea: 0, nudosConMuelle: 0, sinDefinicion: [],
+    definidasSinUsar: [],
   };
   const defs = m.springProps;
   if (!defs || defs.size === 0) return { muelles: [], informe: inf };
@@ -183,5 +195,10 @@ export function muellesDelModelo(m: E2kModel): {
   }
   inf.nudosConMuelle = nudos.size;
   inf.sinDefinicion = [...falta];
+  const usadas = new Set<string>([
+    ...[...(nodeSpr ?? new Map())].map(([, v]) => v as string),
+    ...[...(elemSpr ?? new Map())].map(([, v]) => v as string),
+  ]);
+  inf.definidasSinUsar = [...defs.keys()].filter((k) => !usadas.has(k));
   return { muelles, informe: inf };
 }

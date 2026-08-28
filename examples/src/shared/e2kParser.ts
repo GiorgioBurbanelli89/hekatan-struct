@@ -146,6 +146,8 @@ export function parseE2k(text: string): E2kModel {
   const springProps = new Map<string, { tipo: "point" | "line" | "area"; k: number[] }>();
   /** `nombreDeNudo@planta` → nombre de la propiedad de muelle asignada. */
   const pointSprings = new Map<string, string>();
+  /** Todo joint que el fichero declara con un `POINTASSIGN`, tenga o no apoyo. */
+  const puntosDeclarados = new Set<string>();
   const frameLoads: { line: string; story: string; type: string; dir: string; lc: string; val: number }[] = [];
   const grids: E2kGrid[] = [];
   const planosRef: E2kPlanoRef[] = [];
@@ -276,6 +278,13 @@ export function parseE2k(text: string): E2kModel {
     if (currentSection === "POINT ASSIGNS") {
       const rm = line.match(/POINTASSIGN\s+"([^"]+)"\s+"([^"]+)".*RESTRAINT\s+"([^"]+)"/);
       if (rm) restraints.set(`${rm[1]}@${rm[2]}`, rm[3].split(/\s+/));
+      // TODO `POINTASSIGN` declara un JOINT, traiga o no un RESTRAINT. La
+      // mayoria dicen solo `USERJOINT "Yes"`: son puntos que el proyectista
+      // puso a mano y que ETABS tiene en su modelo aunque ningun elemento los
+      // nombre todavia. Sin leerlos faltaban 12 de los 787 joints del edificio
+      // real — y no por un fallo de geometria, sino porque no existian.
+      const pj = line.match(/POINTASSIGN\s+"([^"]+)"\s+"([^"]+)"/);
+      if (pj) puntosDeclarados.add(`${pj[1]}@${pj[2]}`);
       const pm = line.match(/POINTASSIGN\s+"([^"]+)"\s+"([^"]+)".*SPRINGPROP\s+"([^"]+)"/);
       if (pm) pointSprings.set(`${pm[1]}@${pm[2]}`, pm[3]);
     }
@@ -514,6 +523,11 @@ export function parseE2k(text: string): E2kModel {
   for (const [key] of restraints) {
     allNodeKeys.add(key);
   }
+  // Y de TODOS los `POINTASSIGN`. Algunos no los toca ningun elemento; se
+  // quedan huerfanos y el propio solver los aparta antes de resolver, pero
+  // TIENEN que existir: son joints del modelo de ETABS, y sin ellos la
+  // comparacion nudo a nudo miente por 12.
+  for (const key of puntosDeclarados) allNodeKeys.add(key);
 
   // ── Nudos de las AREAS ──
   // Cada punto del area vive en la planta del assign MAS su salto `dz`. Las

@@ -40,6 +40,16 @@ export function leer(t, coser) {
 const etabs = JSON.parse(readFileSync(fJson, "utf-8"));
 const oraculo = Object.entries(etabs.nodos).map(([n, v]) => ({ n, p: [v.x, v.y, v.z] }));
 
+// ⚠️ No todos los joints de ETABS son parte de la estructura. En este modelo,
+// 55 de los 787 no los toca NI un frame NI un area: son puntos que el
+// proyectista dibujo y de los que luego borro el elemento. ETABS los guarda; no
+// aportan nada al analisis, y dos de ellos ni siquiera estan en el `.e2k` (el
+// fichero tiene 605 POINT). Por eso la cifra que vale no es «785 de 787» sino
+// cuantos de los que TIENEN elemento se recuperan.
+const conElemento = new Set();
+for (const e of etabs.frames ?? []) { conElemento.add(String(e.node_i)); conElemento.add(String(e.node_j)); }
+for (const e of etabs.areas ?? []) for (const n of (e.nodes ?? [])) conElemento.add(String(n));
+
 const TOL = 1e-3;
 function comparar(titulo, nodes) {
   const clave = (p) => `${Math.round(p[0] / TOL)}|${Math.round(p[1] / TOL)}|${Math.round(p[2] / TOL)}`;
@@ -63,11 +73,16 @@ function comparar(titulo, nodes) {
   console.log(`  nudos          Hekatan ${String(nodes.length).padStart(5)}   ETABS ${String(oraculo.length).padStart(5)}`);
   console.log(`  COINCIDEN      ${String(oraculo.length - faltan.length).padStart(5)} de ${oraculo.length}` +
     `   (${(100 * (oraculo.length - faltan.length) / oraculo.length).toFixed(1)} %)`);
-  console.log(`  faltan         ${String(faltan.length).padStart(5)}   de ellos ${cerca} tienen un nudo a menos de 0.5 m`);
+  const faltanUtiles = faltan.filter((o) => conElemento.has(o.n));
+  const nUtiles = oraculo.filter((o) => conElemento.has(o.n)).length;
+  console.log(`  de los que ETABS USA  ${String(nUtiles - faltanUtiles.length).padStart(5)} de ${nUtiles}` +
+    `   (${(100 * (nUtiles - faltanUtiles.length) / nUtiles).toFixed(2)} %)   <- la cifra que vale`);
+  console.log(`  faltan         ${String(faltan.length).padStart(5)}   ` +
+    `(${faltanUtiles.length} con elemento · ${faltan.length - faltanUtiles.length} huerfanos de ETABS)`);
   console.log(`  sobran         ${String(sobran.length).padStart(5)}`);
   if (faltan.length) {
     console.log(`  ejemplos que faltan (joint de ETABS -> x y z):`);
-    for (const o of faltan.slice(0, 6))
+    for (const o of faltan.slice(0, 40))
       console.log(`    ${o.n.padEnd(6)} ${o.p.map((v) => v.toFixed(3).padStart(8)).join(" ")}`);
   }
   return { faltan: faltan.length, sobran: sobran.length };

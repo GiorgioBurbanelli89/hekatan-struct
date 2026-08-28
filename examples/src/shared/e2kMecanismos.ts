@@ -216,8 +216,28 @@ export function buscarMecanismos(m: E2kModel): InformeMecanismos {
       let hallados = 0;
       for (let k = 0; k < 3; k++)
         if (M[k][k] < may * 1e-9) { libres.push(base + k); hallados++; }
-      // Rango perdido y ningun eje suelto = el mecanismo va en oblicuo.
-      if (hallados === 0) oblicuo = true;
+
+      // ── El caso OBLICUO ──
+      //
+      // Falta rango pero ningun eje global esta suelto del todo: la direccion
+      // libre no es X, Y ni Z. Pasa en un nudo donde dos barras llegan con los
+      // momentos liberados justo en la cara que lo toca —una rotula de verdad—
+      // y ninguna de las dos es paralela a un eje.
+      //
+      // Se coartan los `3 - rango` ejes globales con MENOS rigidez. No es
+      // exacto: el eje global no es la direccion libre, asi que se coarta un
+      // poco de mas. Pero la alternativa es que la matriz salga singular y no
+      // haya resultado ninguno, y el error queda acotado —es un nudo, y ademas
+      // se CUENTA aparte (`oblicuos`) para que se sepa cuantos hay. Con uno
+      // solo, como en el edificio real, no se mide en ningun sitio.
+      if (hallados < 3 - rango) {
+        const orden = [0, 1, 2].sort((a, b) => M[a][a] - M[b][b]);
+        for (const k of orden) {
+          if (hallados >= 3 - rango) break;
+          if (libres.includes(base + k)) continue;
+          libres.push(base + k); hallados++; oblicuo = true;
+        }
+      }
     }
     if (!libres.length && !oblicuo) continue;
     if (libres.some((k) => k < 3) || rangos[0] < 3) inf.sueltosTraslacion++;

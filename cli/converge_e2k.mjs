@@ -67,7 +67,19 @@ function filtrar(m, quedarse) {
   return { ...m, elements: els, elementInputs: ei };
 }
 
-function correr(m, conMuelles) {
+function correr(m, conMuelles, coartar) {
+  // ⚠️ Coartar va SIEMPRE justo antes de resolver, no una vez al principio.
+  // Quitar elementos (una familia, la cubierta, los tirantes) deja GDL sueltos
+  // NUEVOS: si se coarto antes del filtro, esos pasos arrastran un mecanismo
+  // que ha creado el propio filtro y el resultado no dice nada del modelo.
+  if (coartar) {
+    const ni = {};
+    for (const [k, v] of Object.entries(m.nodeInputs))
+      ni[k] = v instanceof Map ? new Map([...v].map(([a, b]) =>
+        [a, Array.isArray(b) ? b.slice() : b])) : v;
+    m = { ...m, nodeInputs: ni };
+    coartarGdlSueltos(m);
+  }
   const l = limpiar(m.nodes, m.elements, m.nodeInputs, m.elementInputs);
   let muelles = [];
   if (conMuelles) muelles = muellesDelModelo(m).muelles
@@ -134,16 +146,16 @@ export function escalera(texto) {
   out.push([("+ gdl sueltos (" + infG.coartados + ")"), correr(m, true)]);
 
   const sf = sinFlotantes(m);
-  out.push([("sin flotantes (-" + sf.quitados + ")"), correr(sf.m, true)]);
+  out.push([("sin flotantes (-" + sf.quitados + ")"), correr(sf.m, true, true)]);
 
   // Los BRAZOS RIGIDOS. Al partir una barra, cada trozo hereda el brazo de la
   // barra ENTERA: si el brazo es mas largo que el trozo, la longitud efectiva
   // sale negativa y la matriz local es basura.
   const sinRZ = { ...m, elementInputs: { ...m.elementInputs, rigidOffsets: new Map() } };
-  out.push(["sin brazos rigidos", correr(sinRZ, true)]);
+  out.push(["sin brazos rigidos", correr(sinRZ, true, true)]);
 
   const sinRel = { ...m, elementInputs: { ...m.elementInputs, momentReleases: new Map() } };
-  out.push(["sin releases", correr(sinRel, true)]);
+  out.push(["sin releases", correr(sinRel, true, true)]);
 
   // Los TIRANTES: barras finisimas, biarticuladas y solo-traccion
   // (LIMITCOMPRESSION 0 en el .e2k). Su rigidez a flexion es de 1e-2 kN/m
@@ -156,11 +168,19 @@ export function escalera(texto) {
     if (A !== undefined && A < 2e-4) flojas.add(i);   // menos de 2 cm2
   });
   out.push([("sin tirantes (-" + flojas.size + ")"),
-            correr(filtrar(m, (el, i) => !flojas.has(i)), true)]);
+            correr(filtrar(m, (el, i) => !flojas.has(i)), true, true)]);
 
-  out.push(["solo barras", correr(filtrar(m, (el) => el.length === 2), true)]);
-  out.push(["solo cascaras", correr(filtrar(m, (el) => el.length > 2), true)]);
-  out.push(["barras sin releases", correr(filtrar(sinRel, (el) => el.length === 2), true)]);
+  // SIN LA CUBIERTA. El modo del mecanismo (cli/modo_mecanismo.mjs) sale todo
+  // en N+13.00m: una parrilla de correas con los momentos liberados y sin un
+  // area ni un diafragma que la ate. Si quitandola el resto da flechas
+  // creibles, queda demostrado que el problema es la cubierta y no el lector.
+  const zTope = Math.max(...m.nodes.map(n => n[2])) - 0.5;
+  out.push(["sin la cubierta",
+    correr(filtrar(m, (el) => !el.some(n => m.nodes[n][2] > zTope)), true, true)]);
+
+  out.push(["solo barras", correr(filtrar(m, (el) => el.length === 2), true, true)]);
+  out.push(["solo cascaras", correr(filtrar(m, (el) => el.length > 2), true, true)]);
+  out.push(["barras sin releases", correr(filtrar(sinRel, (el) => el.length === 2), true, true)]);
   return out;
 }`, "converge");
 

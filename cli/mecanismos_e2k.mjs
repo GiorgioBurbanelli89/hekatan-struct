@@ -44,8 +44,21 @@ export function mirar(t) {
   // Y los GDL sueltos, por tipo.
   const cuenta = [0,0,0,0,0,0];
   for (const x of cosido.lista) for (const k of x.libres) cuenta[k]++;
+  // Los que quedan DESPUES de coartar: esos son los de verdad. Y si son
+  // oblicuos, hay que ver que barras tocan, porque los supports van por ejes
+  // globales y no se pueden coartar sin cambiar el resultado.
+  const quedan = tras.lista.map(x => {
+    const toca = [];
+    m.elements.forEach((el, i) => {
+      if (!el.includes(x.nudo)) return;
+      const r = m.elementInputs.momentReleases?.get(i);
+      toca.push({ nombre: m.elementNames?.[i], tipo: el.length > 2 ? "AREA" : m.elementTypes?.[i],
+        rel: r ? r.map((v,k)=> v ? ["PI","V2I","V3I","TI","M2I","M3I","PJ","V2J","V3J","TJ","M2J","M3J"][k] : "").filter(Boolean).join(" ") : "" });
+    });
+    return { ...x, coord: m.nodes[x.nudo], toca };
+  });
   return { crudo, cosido, tras, coartados: infC.coartados, oblicuos: infC.oblicuos,
-           porTipo: [...porTipo], cuenta, muestra: cosido.lista.slice(0, 10) };
+           quedan, porTipo: [...porTipo], cuenta, muestra: cosido.lista.slice(0, 10) };
 }`, "mecanismos");
 
 const GDL = ["UX", "UY", "UZ", "RX", "RY", "RZ"];
@@ -66,4 +79,15 @@ for (const f of process.argv.slice(2)) {
       r.porTipo.map(([k, v]) => `${v} ${k}`).join(" · "));
   for (const x of r.muestra)
     console.log(`    ${String(x.nombre).padEnd(24)} libres: ${x.libres.map(k => GDL[k]).join(" ")}`);
+  if (r.quedan?.length) {
+    console.log(`
+  LO QUE QUEDA tras coartar (${r.quedan.length}) — esto es lo que rompe:`);
+    for (const x of r.quedan.slice(0, 6)) {
+      console.log(`    ${String(x.nombre).padEnd(22)} (${x.coord.map(v=>v.toFixed(3)).join(", ")})  ` +
+        `rangoT=${x.rangoT} rangoG=${x.rangoG}` + (x.oblicuo ? "  OBLICUO" : "") +
+        `  libres: ${x.libres.map(k => GDL[k]).join(" ") || "(ninguno por eje)"}`);
+      for (const t of x.toca)
+        console.log(`        toca ${String(t.nombre).padEnd(12)} ${String(t.tipo).padEnd(8)} ${t.rel}`);
+    }
+  }
 }

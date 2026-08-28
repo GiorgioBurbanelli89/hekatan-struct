@@ -81,13 +81,25 @@ export function bisecar(t) {
   // acusaria a esa barra de un mecanismo que ha creado ella misma.
   coserModelo(m, undefined, { sinCruces: true });
 
-  // Grupos: primero las cascaras, luego COLUMN/BRACE por planta, luego BEAM.
-  const planta = (i) => m.elementStories?.[i] ?? "?";
+  // ── Los grupos, DE ABAJO ARRIBA ──
+  //
+  // Antes iban por familia (cascaras, luego pilares, luego vigas) y eso hacia
+  // que la escalera mintiera: en este edificio la estructura NO se sujeta por
+  // apoyos —solo 27, y 25 de ellos sobre nudos que no toca nada— sino por el
+  // BALASTO de las vigas y losas de cimentacion. Metiendo los pilares antes que
+  // esas vigas, los pilares quedan colgando y la biseccion acusa al primero que
+  // entre. Construyendo de abajo arriba, cada cosa se apoya en lo anterior,
+  // que es como se levanta un edificio de verdad.
+  const cota = (i) => Math.min(...m.elements[i].map((n) => m.nodes[n][2]));
+  const zs = m.elements.map((_, i) => cota(i));
+  const zMin = Math.min(...zs), zMax = Math.max(...zs);
+  const BANDAS = 8;
+  const paso = (zMax - zMin) / BANDAS || 1;
   const grupos = new Map();
   m.elements.forEach((el, i) => {
-    const tipo = el.length > 2 ? "0 cascaras"
-      : (m.elementTypes?.[i] === "BEAM" ? "2 vigas " : "1 pilares");
-    const k = tipo + " " + (el.length > 2 ? "" : planta(i));
+    const b = Math.min(BANDAS - 1, Math.floor((zs[i] - zMin) / paso));
+    const k = String(b) + " z " + (zMin + b * paso).toFixed(2) + ".." +
+              (zMin + (b + 1) * paso).toFixed(2) + " m";
     if (!grupos.has(k)) grupos.set(k, []);
     grupos.get(k).push(i);
   });
@@ -97,21 +109,27 @@ export function bisecar(t) {
   const acum = [];
   for (const k of claves) {
     acum.push(...grupos.get(k));
+    // SIN coartar y CON coartar. Si coartando deja de resolver, el que estorba
+    // es el coartado — o sea yo, no el modelo. Hay que poder distinguirlo.
+    const crudo = resolver(subModelo(m, acum.slice()));
     const sub = subModelo(m, acum.slice());
     const inf = coartarGdlSueltos(sub);
     const r = resolver(sub);
     salida.push({ grupo: k, nGrupo: grupos.get(k).length, nAcum: acum.length,
                   coartados: inf.coartados, sueltosT: inf.sueltosTraslacion,
-                  sueltosG: inf.sueltosGiro, ...r });
+                  sueltosG: inf.sueltosGiro, crudoOk: crudo.n > 0, crudoUz: crudo.uz, ...r });
   }
   // ── Y DENTRO del primer grupo que rompe: biseccion binaria ──
   //
   // El grupo entero dice «aqui esta»; la biseccion dice CUAL. Se parte el grupo
   // en dos y se prueba con la primera mitad sobre lo que ya resolvia; si rompe,
   // esta ahi; si no, esta en la otra. En log2(n) pasos queda un elemento.
+  // Puede romper YA en el primer grupo: entonces la base es vacia y se biseca
+  // el grupo entero. Antes se exigia iRompe > 0 y con eso el caso mas
+  // interesante —que falle la cimentacion— se quedaba sin diagnosticar.
   const iRompe = salida.findIndex((x) => !x.n);
   const detalle = [];
-  if (iRompe > 0) {
+  if (iRompe >= 0) {
     const base = [];
     for (let k = 0; k < iRompe; k++) base.push(...grupos.get(claves[k]));
     let cand = grupos.get(claves[iRompe]).slice();
@@ -134,15 +152,17 @@ export function bisecar(t) {
 
 for (const f of process.argv.slice(2)) {
   console.log(`\n── ${basename(f)} ${"─".repeat(52)}`);
-  console.log("grupo que se anade         +elems  total  nudos  coartados  .resuelve?   Uz [mm]");
+  console.log("grupo que se anade         +elems  total  nudos  coartados  crudo?  .coartado?  Uz [mm]");
   console.log("-".repeat(92));
   const { salida, detalle } = mod.bisecar(readFileSync(f, "utf-8"));
   for (const r of salida) {
     console.log(
       r.grupo.padEnd(26) + String(r.nGrupo).padStart(7) + String(r.nAcum).padStart(7) +
       String(r.nudos).padStart(7) + String(r.coartados).padStart(11) + "   " +
+      (r.crudoOk ? "si" : "NO").padEnd(8) +
       (r.n ? "si" : "NO").padEnd(11) +
-      (r.n ? (r.uz * 1000).toExponential(3) : (r.err || "-")));
+      (r.n ? (r.uz * 1000).toExponential(3)
+           : (r.crudoOk ? "(sin coartar: " + (r.crudoUz*1000).toExponential(2) + ")" : (r.err || "-"))));
   }
   if (detalle?.length) {
     const fin = detalle[detalle.length - 1];
