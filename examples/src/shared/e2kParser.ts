@@ -149,6 +149,25 @@ export function parseE2k(text: string): E2kModel {
   /** Todo joint que el fichero declara con un `POINTASSIGN`, tenga o no apoyo. */
   const puntosDeclarados = new Set<string>();
   const frameLoads: { line: string; story: string; type: string; dir: string; lc: string; val: number }[] = [];
+  /**
+   * Las cargas de LOSA. Son la mayor parte de la carga de un edificio y no se
+   * leian: el modelo real entraba con 48 kN en total cuando sus losas llevan
+   * cientos de kgf/m2. Con esa carga los desplazamientos no significan nada.
+   *
+   * ETABS las escribe de DOS maneras y hay que leer las dos:
+   *
+   *     AREALOAD "F16" "N+7.10m" TYPE "UNIFF" DIR "GRAV" LC "SCP" FVAL 200
+   *     AREALOAD "F1"  "N+3.65m" TYPE "UNIFLOADSET" "CARGAS DE OFICINAS"
+   *
+   * La segunda no lleva valor: apunta a un JUEGO con nombre, declarado aparte,
+   * que puede traer varios patrones a la vez.
+   *
+   *     SHELLUNIFORMLOADSET "CARGA DE CUBIERTA" LOADPAT "SCP" VALUE 30
+   *     SHELLUNIFORMLOADSET "CARGA DE CUBIERTA" LOADPAT "CV"  VALUE 70
+   */
+  const areaLoads: { area: string; story: string; tipo: string; dir: string;
+                     lc: string; val: number; set?: string }[] = [];
+  const loadSets = new Map<string, { lc: string; val: number }[]>();
   const grids: E2kGrid[] = [];
   const planosRef: E2kPlanoRef[] = [];
   let title = "";
@@ -354,6 +373,29 @@ export function parseE2k(text: string): E2kModel {
           line: flm[1], story: flm[2], type: flm[3], dir: flm[4],
           lc: flm[5], val: parseFloat(flm[6]),
         });
+      }
+    }
+
+    // ── SHELL UNIFORM LOAD SETS ──
+    // Los juegos de carga con nombre a los que apunta un AREALOAD UNIFLOADSET.
+    {
+      const sm = line.match(/SHELLUNIFORMLOADSET\s+"([^"]+)"\s+LOADPAT\s+"([^"]+)"\s+VALUE\s+([-\d.eE+]+)/);
+      if (sm) {
+        if (!loadSets.has(sm[1])) loadSets.set(sm[1], []);
+        loadSets.get(sm[1])!.push({ lc: sm[2], val: parseFloat(sm[3]) });
+      }
+    }
+
+    // ── SHELL OBJECT LOADS ──
+    if (currentSection === "SHELL OBJECT LOADS") {
+      const au = line.match(/AREALOAD\s+"([^"]+)"\s+"([^"]+)"\s+TYPE\s+"UNIFF"\s+DIR\s+"([^"]+)"\s+LC\s+"([^"]+)"\s+FVAL\s+([-\d.eE+]+)/);
+      if (au) {
+        areaLoads.push({ area: au[1], story: au[2], tipo: "UNIFF", dir: au[3],
+                         lc: au[4], val: parseFloat(au[5]) });
+      } else {
+        const as2 = line.match(/AREALOAD\s+"([^"]+)"\s+"([^"]+)"\s+TYPE\s+"UNIFLOADSET"\s+"([^"]+)"/);
+        if (as2) areaLoads.push({ area: as2[1], story: as2[2], tipo: "UNIFLOADSET",
+                                  dir: "GRAV", lc: "", val: 0, set: as2[3] });
       }
     }
 
@@ -972,6 +1014,72 @@ export function parseE2k(text: string): E2kModel {
       if (sp.mods || esMembrana) shellModifiers.set(ei, m);
     }
   }
+  // ⚠️ ESTE BLOQUE VA AQUI Y NO ARRIBA. Las areas se montan mas abajo que
+  // las cargas de barra, asi que puesto junto a ellas el `areaLookup` sale
+  // VACIO y las 66 cargas de losa se pierden — sin error: el modelo entra con
+  // 48 kN cuando sus losas llevan cientos de kgf/m2, y los desplazamientos no
+  // significan nada.
+  // ── Las cargas de LOSA, repartidas a los nudos del area ──
+  //
+  // Para un Q4 con carga uniforme, el vector nodal consistente ∫N_i·q·dA da
+  // EXACTAMENTE q·A/4 en cada nudo — no hace falta integrar por Gauss para
+  // este caso, y decirlo asi evita una funcion que aparenta mas precision de
+  // la que hay. Para el T3 es q·A/3.
+  //
+  // ⚠️ Se suman TODOS los patrones de gravedad (SCP + CV + ...), que es la
+  // carga de SERVICIO. Es lo mismo que ya hacia con las cargas de barra, y hay
+  // que saberlo: no es una combinacion mayorada.
+  const areaLookup = new Map<string, number>();
+  for (let k = 0; k < elementNames.length; k++)
+    if ((elements[k] as unknown as number[]).length > 2)
+      areaLookup.set(`${elementNames[k]}@${elementStoriesArr[k]}`, k);
+
+  let cargaAreaTotal = 0, sinArea = 0, sinValor = 0, aplicadas = 0;
+  for (const al of areaLoads) {
+    const ei2 = areaLookup.get(`${al.area}@${al.story}`) ?? areaLookup.get(`${al.area}@`);
+    const idx = ei2 !== undefined ? ei2 : [...areaLookup].find(([k]) => k.startsWith(al.area + "@"))?.[1];
+    if (idx === undefined) { sinArea++; continue; }
+    const el = elements[idx] as unknown as number[];
+    const p = el.map((n) => nodes[n]).filter(Boolean) as number[][];
+    if (p.length < 3) continue;
+    // Area del poligono por el modulo del doble producto vectorial acumulado.
+    let nx = 0, ny = 0, nz = 0;
+    for (let k = 0; k < p.length; k++) {
+      const a = p[k], b = p[(k + 1) % p.length];
+      nx += a[1] * b[2] - a[2] * b[1];
+      ny += a[2] * b[0] - a[0] * b[2];
+      nz += a[0] * b[1] - a[1] * b[0];
+    }
+    const A = Math.hypot(nx, ny, nz) / 2;
+    if (!(A > 0)) continue;
+
+    // El valor: directo, o el del juego con nombre (que puede traer varios).
+    const trozos = al.tipo === "UNIFLOADSET"
+      ? (loadSets.get(al.set ?? "") ?? [])
+      : [{ lc: al.lc, val: al.val }];
+    let q = 0;
+    for (const t of trozos) q += t.val;
+    if (!q) { sinValor++; continue; }
+    aplicadas++;
+
+    const F = q * A / p.length;
+    cargaAreaTotal += q * A;
+    let fx = 0, fy = 0, fz = 0;
+    if (al.dir === "GRAV" || al.dir === "GRAVITY" || al.dir === "Z") fz = -F;
+    else if (al.dir === "X") fx = F;
+    else if (al.dir === "Y") fy = F;
+    for (const n of el) {
+      const prev = loads.get(n) || [0, 0, 0, 0, 0, 0] as [number, number, number, number, number, number];
+      prev[0] += fx; prev[1] += fy; prev[2] += fz;
+      loads.set(n, prev);
+    }
+  }
+  if (areaLoads.length)
+    console.info(`[e2kParser] cargas de losa: ${aplicadas} aplicadas · ${sinArea} sin area que las lleve · ` +
+      `${sinValor} sin valor · total ${cargaAreaTotal.toFixed(0)} (unidades del fichero) · ` +
+      `${loadSets.size} juegos con nombre`);
+
+
   const nPerdidas = perdidas.sinAssign + perdidas.sinNudo + perdidas.colapsada + perdidas.poligono;
   if (nPerdidas) {
     const por = [
