@@ -36,7 +36,11 @@ export interface E2kModel {
   sectionShapes: Map<number, SectionShape>;
   /**  = las que hay en el fichero ·  = las que llegaron
    *  a ser elementos. Si no coinciden, algo se perdio por el camino. */
-  info: { nNodes: number; nFrames: number; nAreas: number; nAreasMontadas?: number; nSDCompuestas?: number; nSDLeidas?: number; title: string };
+  info: { nNodes: number; nFrames: number; nAreas: number; nAreasMontadas?: number;
+          nSDCompuestas?: number; nSDLeidas?: number;
+          /** Trozos del modelo que no llegan a ningun apoyo (ver `piezasFlotantes`). */
+          nPiezasFlotantes?: number; nNudosFlotantes?: number;
+          title: string };
   /** Raw text blocks from original e2k for round-trip export */
   rawSections?: Map<string, string[]>;
 }
@@ -863,6 +867,16 @@ export function parseE2k(text: string): E2kModel {
     }
   }
 
+  // El mismo aviso que con las areas: si algo se pierde, que lo DIGA. Un trozo
+  // flotante no se ve en el dibujo y hace singular la matriz entera.
+  {
+    const fl = piezasFlotantes(elements, supports);
+    if (fl.nPiezasFlotantes)
+      console.warn(`[e2kParser] ${fl.nPiezasFlotantes} trozos (${fl.nNudosFlotantes} nudos) ` +
+        `no llegan a ningun apoyo: la matriz sale SINGULAR y el modelo no resuelve. ` +
+        `En ETABS los sujetan links, muelles de pilote o diafragmas, que este lector aun no importa.`);
+  }
+
   return {
     units,
     stories: stories.reverse(), // bottom to top
@@ -898,6 +912,7 @@ export function parseE2k(text: string): E2kModel {
     sectionShapes,
     grids,
     info: {
+      ...piezasFlotantes(elements, supports),
       nNodes: nodes.length,
       nFrames: elements.length - areaNames.length,
       nAreas: areaConns.length,
@@ -910,4 +925,47 @@ export function parseE2k(text: string): E2kModel {
     },
     rawSections,
   };
+}
+
+
+/**
+ * Los TROZOS del modelo que no llegan a ningún apoyo.
+ *
+ * Un trozo suelto flota: sus 6 GDL por nudo no los sujeta nadie, la K sale
+ * singular y el solver devuelve cero desplazamientos — y la geometría no lo
+ * delata, porque el dibujo se ve entero. Es lo que le pasa al modelo grande de
+ * ETABS importado: la planta baja sola resuelve (0 trozos flotantes) y al
+ * añadir la siguiente aparecen 47 trozos de 110 nudos y deja de resolver.
+ *
+ * La causa de fondo no es el grafo: en ETABS esos trozos SÍ están sujetos, pero
+ * por cosas que este lector todavía no importa (links, muelles de pilote,
+ * diafragmas). Contarlos es lo que convierte «no resuelve» en «faltan estos
+ * 110 nudos por sujetar», que ya es un problema con nombre.
+ */
+export function piezasFlotantes(
+  elements: number[][],
+  supports?: Map<number, boolean[]>,
+): { nPiezasFlotantes: number; nNudosFlotantes: number } {
+  const ady = new Map<number, number[]>();
+  for (const el of elements)
+    for (const a of el) for (const b of el)
+      if (a !== b) { if (!ady.has(a)) ady.set(a, []); ady.get(a)!.push(b); }
+  const usado = new Set<number>();
+  for (const el of elements) for (const n of el) usado.add(n);
+  const apoyo = new Set<number>([...(supports ?? new Map())].map(([k]) => k));
+
+  const visto = new Set<number>();
+  let nPiezasFlotantes = 0, nNudosFlotantes = 0;
+  for (const s of usado) {
+    if (visto.has(s)) continue;
+    const pila = [s], comp: number[] = [];
+    visto.add(s);
+    while (pila.length) {
+      const v = pila.pop()!;
+      comp.push(v);
+      for (const w of ady.get(v) ?? []) if (!visto.has(w)) { visto.add(w); pila.push(w); }
+    }
+    if (!comp.some((n) => apoyo.has(n))) { nPiezasFlotantes++; nNudosFlotantes += comp.length; }
+  }
+  return { nPiezasFlotantes, nNudosFlotantes };
 }
