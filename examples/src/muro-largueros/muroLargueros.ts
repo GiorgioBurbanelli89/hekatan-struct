@@ -70,10 +70,13 @@ interface Hueco { c0: number; c1: number; f0: number; f1: number }
 export const muroLargueros: ExampleDef = {
   id: "muro-largueros",
   name: "🧱 Muro cortante con huecos — modelo de largueros",
-  category: "2️⃣ Elementos Area · 🧱 Muros",
+  // Es un modelo de BARRAS: 94 barras y cero cascaras. Que trate un muro no
+  // lo hace de la categoria de areas — la suite compara lo declarado con lo
+  // MEDIDO y lo caza sola.
+  category: "1️⃣ Frames · 🎯 n GDL Sistemas",
   // Todo es barra: lo que se mira es el AXIL, que es lo que dice si esa linea
   // va a traccion o a compresion — y cuanta varilla hace falta.
-  defaultFrameResult: "normal",
+  defaultFrameResult: "contour:normals",
   params: {
     L:  { default: 12, min: 4, max: 30, step: 0.5, label: "ancho del muro (m)", folder: "📐 Geometría" },
     H:  { default: 9,  min: 3, max: 24, step: 0.5, label: "alto del muro (m)",  folder: "📐 Geometría" },

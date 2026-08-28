@@ -59,6 +59,14 @@ const NUDOS_MIN = 12;
  * Si uno se cae de la lista es que ya no lo necesita: quitarlo de aquí.
  */
 const PERMITIDOS = {
+  // El muro de LARGUEROS es un modelo PLANO y ademas TODO axil: ni el larguero
+  // ni la diagonal dan rigidez de giro, y la inercia es del orden de 1e-12. Los
+  // tres giros y la traslacion fuera del plano no los sujeta NADIE, asi que sus
+  // GDL tienen fuerza nula y su valor lo decidiria el redondeo. Atarlos es lo
+  // que hace `getZerosIndices` en el solver; dejarlos sueltos es una matriz
+  // singular. Las traslaciones del plano solo estan atadas en la base.
+  "muro-largueros": "modelo plano y todo axil: nadie sujeta los giros ni el fuera-de-plano",
+
   // Los tres bancos ITW VIEJOS (`examples/src/test/itwBenchmarks.ts`, otro
   // fichero que el de la categoria Drilling ITW). Son membranas PLANAS: el
   // fuera-de-plano no tiene rigidez propia y dejarlo suelto deja el sistema mal

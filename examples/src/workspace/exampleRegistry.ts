@@ -243,6 +243,15 @@ export interface ExampleDef {
   /** Shell colormap por defecto para este ejemplo (e.g. "bendingXX", "pressure"). */
   defaultShellResult?: string;
   /**
+   * Resultado de BARRA por defecto (e.g. "normal", "shearY", "bendingZ").
+   *
+   * Hace falta para los ejemplos que no tienen ni una cascara: sin esto el
+   * visor abre con un campo de cascara y la barra de color sale entera a CERO,
+   * que es peor que no salir — parece un resultado nulo y es que no hay a que
+   * aplicarlo. Le paso al muro de largueros, que son 94 barras y 0 cascaras.
+   */
+  defaultFrameResult?: string;
+  /**
    * Lista explícita de opciones de Shell results que aplican a este ejemplo.
    * El dropdown filtra el resto. Si no se declara, se muestran todas.
    * Ej: placas flexión → ["bendingXX", "bendingYY", "bendingXY", "displacementZ"]

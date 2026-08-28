@@ -648,9 +648,12 @@ function loadExample(ex: ExampleDef) {
     const s = (viewerElm as any).__settings;
     if (s?.displayScale) s.displayScale.val = -6;
   }
-  if (ex.defaultShellResult) {
+  if (ex.defaultShellResult || ex.defaultFrameResult) {
     const s = (viewerElm as any).__settings;
-    if (s?.shellResults) s.shellResults.val = ex.defaultShellResult;
+    if (s?.shellResults) s.shellResults.val = ex.defaultShellResult ?? "none";
+    // Un ejemplo SIN cascaras tiene que poder abrir con un campo de BARRA: si
+    // no, la barra de color sale a cero y parece un resultado nulo.
+    if (s?.frameResults && ex.defaultFrameResult) s.frameResults.val = ex.defaultFrameResult;
     // Encender Loads y Supports por default para que el usuario vea la condición del modelo.
     if (s?.loads) s.loads.val = true;
     if (s?.supports) s.supports.val = true;
