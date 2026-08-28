@@ -306,6 +306,7 @@ import { benchmarkPaz10_7 } from "../benchmark-paz-10-7/benchmarkPaz10_7";
 import { benchmarkPaz11_1 } from "../benchmark-paz-11-1/benchmarkPaz11_1";
 import { benchmarkPaz12_1 } from "../benchmark-paz-12-1/benchmarkPaz12_1";
 import { benchmarkPaz13_1 } from "../benchmark-paz-13-1/benchmarkPaz13_1";
+import { estructuraMixta } from "../estructura-mixta/estructuraMixta";
 import { mesaTorsion } from "../mesa-torsion/mesaTorsion";
 import { shellThick } from "../shell-thick/shellThick";
 import { layeredShell } from "../layered-shell/layeredShell";
@@ -503,16 +504,16 @@ export const examplesRegistry: ExampleDef[] = [
   benchmark3way,           // Shell+Frame DOF mismatch (Area + Frame)
   benchmarkCft,            // CFT cols + I-beams + losa (Area + Frame composite)
   mesaTorsion,             // 🌀 Mesa de torsión (validación ETABS — Gabriela/Seproinca 2020)
-  // ⏳ `estructuraMixta` — un encargo REAL anonimizado (786 nudos, 746 barras,
-  // 76 areas, 15 materiales, 90 secciones, con CFT, conformado en frio y
-  // MADERA), leido de su `.e2k` con `parseE2k`. El fichero, el ExampleDef y su
-  // `modelo.ts` ya estan en `examples/src/estructura-mixta/`.
+  // Un encargo REAL anonimizado (786 nudos, 746 barras, 76 areas, 15
+  // materiales, 90 secciones, con CFT, conformado en frio y MADERA), leido de
+  // su `.e2k` con el MISMO `parseE2k` del boton «Importar E2K»: si el lector se
+  // rompe, este ejemplo deja de salir.
   //
-  // NO se registra todavia, y el motivo es que la suite lo dice: rompe dos
-  // comprobaciones de `salud_ejemplos` —no resuelve (la matriz sale singular) y
-  // deja 195 nudos colgando de un solo elemento— porque el modelo importado no
-  // queda cosido. Meterlo asi obligaria a declararlo exento de la salud que se
-  // le exige a todos los demas, que es tapar el agujero en vez de cerrarlo.
+  // Entra ENTERO y se ve; el analisis NO cierra, y esta declarado como tal en
+  // `SOLO_IMPORTACION` de `salud_ejemplos` con su motivo medido (116 trozos que
+  // no llegan a ningun apoyo). El panel lo dice tambien, para que nadie lo
+  // confunda con un ejemplo roto.
+  estructuraMixta,
   // Falta: coser el modelo (releases, muelles de pilote, links) y que el
   // exportador reparta bien deck y losa por grupo.
 

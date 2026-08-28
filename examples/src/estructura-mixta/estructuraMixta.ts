@@ -29,10 +29,17 @@
  *
  * ## Lo que NO entra, y por qué
  *
- * **No resuelve, y no es un descuido**: es un ejemplo de IMPORTACIÓN. El
- * estático sale singular porque el modelo importado no queda del todo cosido
- * —311 nudos tocan una sola barra— y eso está anotado como abierto. Lo que sí
- * demuestra es que el fichero entra ENTERO, que es lo que se quería probar.
+ * **No resuelve, y ya se sabe por qué** (medido el 2026-08-28 troceando el
+ * modelo planta a planta y luego por familia de elemento): **116 trozos, 326
+ * nudos, no llegan a NINGÚN apoyo**. Un trozo suelto flota — sus 6 GDL por nudo
+ * no los sujeta nadie— y la matriz sale singular. La planta baja sola, que no
+ * tiene ninguno, sí resuelve.
+ *
+ * No es un fallo del solver: **en ETABS esos trozos sí están sujetos**, por
+ * links, muelles de pilote y diafragmas, que este lector todavía no importa.
+ * Ésa es exactamente la lista de lo que falta, y está a la vista en el panel
+ * («📊 Lo que trae el fichero» → *trozos sin apoyo*), no escondida en un
+ * comentario. Lo que este ejemplo sí demuestra es que el fichero entra ENTERO.
  *
  * De sus 79 áreas se montan 76. Una es un **polígono de seis lados**, que ETABS
  * admite y `hekatan-fem` no (tiene Q4 y T3); triangularla a ciegas daría
@@ -42,7 +49,7 @@
  */
 import { deform, analyze, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
-import { parseE2k } from "../shared/e2kParser";
+import { parseE2k, piezasFlotantes } from "../shared/e2kParser";
 // El `.e2k` va embebido como texto (ver `modelo.ts`): es el modelo, no un dato
 // de entrada. Está
 // recortado a los bloques que definen la ESTRUCTURA (se le quitaron los de
@@ -79,6 +86,24 @@ export const estructuraMixta: ExampleDef = {
     // simplemente no hay desplazamientos que pintar.
     resolver: { default: 0, options: { "Solo el modelo": 0, "Intentar resolver": 1 },
                 label: "análisis", folder: "⬇ Cargas" },
+  },
+  // Lo que trae el fichero, y lo que le falta, en el propio panel. Un ejemplo
+  // que no resuelve y no dice por qué es un ejemplo que engaña.
+  computedLabels(_p, states) {
+    const els = (states.elements?.val ?? []) as Element[];
+    const nds = (states.nodes?.val ?? []) as Node[];
+    const nB = els.filter((e) => e.length === 2).length;
+    const sup = (states.nodeInputs?.val as any)?.supports;
+    const fl = piezasFlotantes(els as unknown as number[][], sup);
+    const zs = nds.map((n) => n[2]);
+    return {
+      "nudos · barras · cáscaras": `${nds.length} · ${nB} · ${els.length - nB}`,
+      "cotas": nds.length ? `${Math.min(...zs).toFixed(2)} a ${Math.max(...zs).toFixed(2)} m` : "—",
+      "⚠ trozos sin apoyo": fl.nPiezasFlotantes
+        ? `${fl.nPiezasFlotantes} trozos · ${fl.nNudosFlotantes} nudos → K singular`
+        : "ninguno",
+      "por qué": "en ETABS los sujetan links / muelles de pilote / diafragmas",
+    };
   },
   build(p, states) {
     const m = parseE2k(modeloE2k);

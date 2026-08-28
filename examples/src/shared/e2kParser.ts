@@ -36,6 +36,8 @@ export interface E2kModel {
   sectionShapes: Map<number, SectionShape>;
   /**  = las que hay en el fichero ·  = las que llegaron
    *  a ser elementos. Si no coinciden, algo se perdio por el camino. */
+  /** Las propiedades de muelle del fichero, por nombre. Ver `e2kMuelles.ts`. */
+  springProps: Map<string, { tipo: "point" | "line" | "area"; k: number[] }>;
   info: { nNodes: number; nFrames: number; nAreas: number; nAreasMontadas?: number;
           nSDCompuestas?: number; nSDLeidas?: number;
           /** Trozos del modelo que no llegan a ningun apoyo (ver `piezasFlotantes`). */
@@ -53,7 +55,18 @@ export function parseE2k(text: string): E2kModel {
   const stories: E2kModel["stories"] = [];
   const materials: E2kModel["materials"] = new Map();
   const frameSections: E2kModel["frameSections"] = new Map();
-  const pointCoords = new Map<string, [number, number]>(); // name → [x, y] (plan coords)
+  /**
+   * name → [x, y, dz] en planta. El TERCER numero de un `POINT` es la CAIDA de
+   * ese punto por debajo de la cota de su planta, y hasta el 2026-08-28 se
+   * ignoraba.
+   *
+   *     POINT "227"  12.325 4.064 3.288
+   *
+   * No daba error: colocaba el punto a la cota de la planta y la barra que
+   * nacia ahi se quedaba flotando, porque los demas nudos SI estaban donde
+   * tocaba. En el edificio real lo llevan 398 de sus 605 puntos.
+   */
+  const pointCoords = new Map<string, [number, number, number]>();
   const lineConns: { name: string; type: string; pt1: string; pt2: string; nStories: number }[] = [];
   // ── LAS AREAS ────────────────────────────────────────────────────────
   // `areaConns` guardaba los puntos y NO SE USABA para nada mas que contar
@@ -69,7 +82,7 @@ export function parseE2k(text: string): E2kModel {
   // PANEL de muro —dos puntos en planta y dos plantas, `1 1 0 0`— de un FLOOR,
   // que los lleva todos a 0.
   const areaConns: { name: string; tipo: string; pts: string[]; dz: number[] }[] = [];
-  const areaAssigns = new Map<string, { story: string; section: string }>();
+  const areaAssigns = new Map<string, { story: string; section: string; spring?: string }>();
   /** SHELLPROP: espesor (m), material, tipo de cascara y los 8 modificadores. */
   const shellProps = new Map<string, {
     t: number; material: string; modeling: string; mods?: number[];
@@ -90,7 +103,26 @@ export function parseE2k(text: string): E2kModel {
     D: number; B: number; TF: number; TW: number; XC: number; YC: number;
   }>>();
   const restraints = new Map<string, string[]>(); // pointName+story → restrained DOFs
-  const lineAssigns = new Map<string, { story: string; section: string; rigidZone: number; releases: string[]; angle: number }>(); // lineName+story → assignment
+  const lineAssigns = new Map<string, { story: string; section: string; rigidZone: number; releases: string[]; angle: number; spring?: string; mallaEnCruces?: boolean }>(); // lineName+story → assignment
+  /**
+   * Los MUELLES. ETABS los declara como propiedades con nombre y luego los
+   * asigna con `SPRINGPROP "..."`. Sin ellos, una cimentación sobre Winkler no
+   * llega a ningún apoyo y la matriz sale singular — es lo que le pasaba al
+   * edificio real: 45 de sus nudos de cota −1.00 m los sujeta el terreno, no un
+   * empotramiento.
+   *
+   * Las unidades salen del propio fichero (aquí, KGF/M):
+   *   POINTSPRING  → fuerza/longitud            (kgf/m)
+   *   LINESPRING   → fuerza/longitud POR metro  (kgf/m/m)
+   *   AREASPRING   → fuerza/longitud POR m²     (kgf/m/m²)
+   *
+   * ⚠️ `NONLINEAROPT "Compression Only"` se lee y se IGNORA: esto es un
+   * programa lineal, así que el muelle trabaja también a tracción. Es lo que
+   * hace ETABS en un caso lineal, y por eso comparan; en no lineal no.
+   */
+  const springProps = new Map<string, { tipo: "point" | "line" | "area"; k: number[] }>();
+  /** `nombreDeNudo@planta` → nombre de la propiedad de muelle asignada. */
+  const pointSprings = new Map<string, string>();
   const frameLoads: { line: string; story: string; type: string; dir: string; lc: string; val: number }[] = [];
   const grids: E2kGrid[] = [];
   let title = "";
@@ -205,8 +237,9 @@ export function parseE2k(text: string): E2kModel {
 
     // ── POINT COORDINATES ──
     if (currentSection === "POINT COORDINATES") {
-      const pm = line.match(/POINT\s+"([^"]+)"\s+([-\d.eE+]+)\s+([-\d.eE+]+)/);
-      if (pm) pointCoords.set(pm[1], [parseFloat(pm[2]), parseFloat(pm[3])]);
+      const pm = line.match(/POINT\s+"([^"]+)"\s+([-\d.eE+]+)\s+([-\d.eE+]+)(?:\s+([-\d.eE+]+))?/);
+      if (pm) pointCoords.set(pm[1],
+        [parseFloat(pm[2]), parseFloat(pm[3]), parseFloat(pm[4] ?? "0") || 0]);
     }
 
     // ── LINE CONNECTIVITIES ──
@@ -219,6 +252,29 @@ export function parseE2k(text: string): E2kModel {
     if (currentSection === "POINT ASSIGNS") {
       const rm = line.match(/POINTASSIGN\s+"([^"]+)"\s+"([^"]+)".*RESTRAINT\s+"([^"]+)"/);
       if (rm) restraints.set(`${rm[1]}@${rm[2]}`, rm[3].split(/\s+/));
+      const pm = line.match(/POINTASSIGN\s+"([^"]+)"\s+"([^"]+)".*SPRINGPROP\s+"([^"]+)"/);
+      if (pm) pointSprings.set(`${pm[1]}@${pm[2]}`, pm[3]);
+    }
+
+    // ── MUELLES: las propiedades, vengan de la seccion que vengan ──
+    // Van FUERA de los `if (currentSection === ...)` a proposito: cada tipo
+    // esta en su propio bloque del fichero, y la regex ya es especifica.
+    {
+      const spm = line.match(/(POINTSPRING|LINESPRING|AREASPRING)\s+"([^"]+)"/);
+      if (spm) {
+        const tipo = spm[1] === "POINTSPRING" ? "point"
+                   : spm[1] === "LINESPRING" ? "line" : "area";
+        const k = springProps.get(spm[2])?.k ?? [0, 0, 0, 0, 0, 0];
+        // UX/UY/UZ en los de punto (GLOBALES); U1/U2/U3 en los de linea y area
+        // (LOCALES del elemento). R* para los de giro.
+        const gdl: Record<string, number> = { UX: 0, UY: 1, UZ: 2, U1: 0, U2: 1, U3: 2,
+                                              RX: 3, RY: 4, RZ: 5, R1: 3, R2: 4, R3: 5 };
+        for (const mm of line.matchAll(/(UX|UY|UZ|U1|U2|U3|RX|RY|RZ|R1|R2|R3)\s+([\d.eE+-]+)/g)) {
+          const i = gdl[mm[1]];
+          if (i !== undefined) k[i] = parseFloat(mm[2]);
+        }
+        springProps.set(spm[2], { tipo, k });
+      }
     }
 
     // ── LINE ASSIGNS ──
@@ -234,6 +290,12 @@ export function parseE2k(text: string): E2kModel {
         if (relm) entry.releases = relm[1].split(/\s+/);
         const angm = line.match(/ANG\s+([-\d.eE+]+)/);
         if (angm) entry.angle = parseFloat(angm[1]);
+        const spr = line.match(/SPRINGPROP\s+"([^"]+)"/);
+        if (spr) entry.spring = spr[1];
+        // `MESHATINTERSECTIONS "YES"` es la orden de ETABS de crear un nudo
+        // donde esta barra cruza a otra. Sin leerla, las vigas secundarias
+        // entran enteras y quedan flotando (ver `e2kCoser`).
+        entry.mallaEnCruces = /MESHATINTERSECTIONS\s+"?YES/i.test(line);
         lineAssigns.set(`${lam[1]}@${lam[2]}`, entry);
       }
     }
@@ -296,7 +358,8 @@ export function parseE2k(text: string): E2kModel {
     // ── AREA ASSIGNS: que SECCION lleva cada area, y en que planta ──
     if (currentSection === "AREA ASSIGNS") {
       const aa = line.match(/AREAASSIGN\s+"([^"]+)"\s+"([^"]+)"\s+SECTION\s+"([^"]+)"/);
-      if (aa) areaAssigns.set(aa[1], { story: aa[2], section: aa[3] });
+      if (aa) areaAssigns.set(aa[1], { story: aa[2], section: aa[3],
+        spring: line.match(/SPRINGPROP\s+"([^"]+)"/)?.[1] });
     }
 
     // ── SHELLPROP: las propiedades de losa, muro y deck ──
@@ -389,6 +452,21 @@ export function parseE2k(text: string): E2kModel {
         const nSt = Math.max(lc.nStories, 1);
         const bottomIdx = Math.min(storyIdx + nSt, stories.length - 1);
         allNodeKeys.add(nodeKey(lc.pt1, stories[bottomIdx].name));
+        // ── Y las plantas de en medio ──
+        //
+        // Una `LINE ... COLUMN` puede ser una columna entera de cuatro pisos
+        // (`nStories 4`). ETABS NO la analiza asi: la parte en cada planta que
+        // atraviesa y pone un joint. Traerla de una pieza deja sin existir los
+        // nudos donde acometen las vigas de esos pisos, y ahi es donde se
+        // quedaban trozos del modelo flotando.
+        //
+        // ⚠️ Esto se hace SOLO con las columnas y solo por los pisos que el
+        // propio fichero dice que atraviesan (`nStories`). No se corta por
+        // «todas las plantas todo lo que suba»: un arco o una cascara curva
+        // atraviesan cotas de planta sin que eso sea una union, y cortarlos ahi
+        // estropea el modelo en vez de arreglarlo. ETABS tampoco lo hace.
+        for (let k = storyIdx + 1; k < bottomIdx; k++)
+          allNodeKeys.add(nodeKey(lc.pt1, stories[k].name));
       } else {
         // BEAM: both nodes at this story's elevation
         allNodeKeys.add(nodeKey(lc.pt1, story));
@@ -433,15 +511,20 @@ export function parseE2k(text: string): E2kModel {
     });
   }
 
+  /** Nudo → nombre de la propiedad de muelle de PUNTO. */
+  const nodeSprings = new Map<number, string>();
   // Create nodes — deduplicate by (point, story) key
   for (const nk of allNodeKeys) {
     const [pt, story] = nk.split("@");
     const xy = pointCoords.get(pt);
     const elev = storyElevs.get(story);
     if (xy === undefined || elev === undefined) continue;
-    nodes.push([xy[0], xy[1], elev]);
+    // La caida del punto se RESTA de la cota de su planta.
+    nodes.push([xy[0], xy[1], elev - (xy[2] ?? 0)]);
     nodeNames.push(nk);
     nodeNameToIdx.set(nk, nodes.length - 1);
+    const ps = pointSprings.get(nk);
+    if (ps) nodeSprings.set(nodes.length - 1, ps);
   }
 
   // ── Build elements ──
@@ -450,6 +533,18 @@ export function parseE2k(text: string): E2kModel {
   const elementTypes: string[] = [];
   const elementStoriesArr: string[] = [];
   const elementSections = new Map<number, string>();
+  /**
+   * Elemento → nombre de la propiedad de muelle asignada (`SPRINGPROP`).
+   *
+   * Se guarda el NOMBRE y no la rigidez ya repartida a nudos a proposito: un
+   * muelle de linea vale «tanto por metro» y un muelle de area «tanto por m²»,
+   * asi que el reparto depende de la LONGITUD o el AREA del elemento — y esos
+   * cambian cuando se cose el modelo (`e2kCoser` parte las barras). Repartirlo
+   * aqui daria muelles de la geometria vieja.
+   */
+  const springAssigns = new Map<number, string>();
+  /** Elemento → lleva `MESHATINTERSECTIONS "YES"`. Lo usa `e2kCoser`. */
+  const mallaEnCruces = new Map<number, boolean>();
   // Declarados ANTES del loop: el loop los puebla (rigidZone/releases). Estaban
   // más abajo y daban TDZ "Cannot access 'rigidOffsets' before initialization"
   // al parsear cualquier e2k con brazos rígidos o liberaciones (ej. BARRIO CENTRAL).
@@ -463,47 +558,66 @@ export function parseE2k(text: string): E2kModel {
       const storyIdx = stories.findIndex(s => s.name === story);
       if (storyIdx < 0) continue;
 
-      let n1key: string, n2key: string;
+      // ── La CADENA de nudos de este objeto, de abajo arriba ──
+      //
+      // Una viga son dos nudos. Una columna con `nStories 4` **no es una
+      // barra**: ETABS la parte en cada planta que atraviesa y pone un joint,
+      // que es donde acometen las vigas de esos pisos. Traerla entera dejaba
+      // esos nudos sin existir y el modelo con trozos flotando.
+      //
+      // ⚠️ Solo las COLUMNAS, y solo por los pisos que el fichero dice
+      // (`nStories`). Aqui NO se corta «por todas las plantas todo lo que
+      // suba»: un arco o una cascara curva atraviesan cotas de planta sin que
+      // eso sea una union, y partirlos ahi ESTROPEA el modelo. ETABS tampoco
+      // lo hace: sus niveles auxiliares no cortan lo que no es de planta.
+      const cadenaKeys: string[] = [];
       if (lc.type === "COLUMN" || lc.type === "BRACE") {
-        // Top at this story, bottom at nStories below
         const nSt = Math.max(lc.nStories, 1);
         const bottomIdx = Math.min(storyIdx + nSt, stories.length - 1);
-        n1key = nodeKey(lc.pt1, stories[bottomIdx].name); // bottom
-        n2key = nodeKey(lc.pt2, story);                    // top
+        // `stories` va de arriba abajo: del indice grande (abajo) al pequeño.
+        for (let k = bottomIdx; k > storyIdx; k--)
+          cadenaKeys.push(nodeKey(lc.pt1, stories[k].name));
+        cadenaKeys.push(nodeKey(lc.pt2, story));            // el de arriba
       } else {
-        // BEAM: both at this story level
-        n1key = nodeKey(lc.pt1, story);
-        n2key = nodeKey(lc.pt2, story);
+        cadenaKeys.push(nodeKey(lc.pt1, story), nodeKey(lc.pt2, story));
       }
+      // Los nudos que no existan (no todas las plantas tienen ese punto) se
+      // saltan: la cadena se cierra por los que si estan.
+      const cadena = cadenaKeys.map((k) => nodeNameToIdx.get(k))
+                               .filter((v): v is number => v !== undefined);
+      if (cadena.length < 2) continue;
 
-      const i1 = nodeNameToIdx.get(n1key);
-      const i2 = nodeNameToIdx.get(n2key);
-      if (i1 === undefined || i2 === undefined || i1 === i2) continue;
-
-      const elemIdx = elements.length;
-      elements.push([i1, i2]);
-      elementNames.push(lc.name);
-      elementTypes.push(lc.type);
-      elementStoriesArr.push(story);
-      elementSections.set(elemIdx, la.section);
-
-      // Store rigid zone factor for this element
-      if (la.rigidZone > 0) {
-        rigidOffsets.set(elemIdx, [la.rigidZone, la.rigidZone]);
-      }
-      // Store releases (12-flag: FxI,FyI,FzI,TI,M2I,M3I, FxJ,FyJ,FzJ,TJ,M2J,M3J)
-      if (la.releases.length > 0) {
-        const rel: boolean[] = new Array(12).fill(false);
-        // ETABS release names → 12-flag index
-        const releaseMap: Record<string, number> = {
-          "PI": 0,  "V2I": 1,  "V3I": 2,  "TI": 3,  "M2I": 4,  "M3I": 5,
-          "PJ": 6,  "V2J": 7,  "V3J": 8,  "TJ": 9,  "M2J": 10, "M3J": 11,
-        };
-        for (const r of la.releases) {
-          const idx = releaseMap[r];
-          if (idx !== undefined) rel[idx] = true;
+      const releaseMap: Record<string, number> = {
+        "PI": 0,  "V2I": 1,  "V3I": 2,  "TI": 3,  "M2I": 4,  "M3I": 5,
+        "PJ": 6,  "V2J": 7,  "V3J": 8,  "TJ": 9,  "M2J": 10, "M3J": 11,
+      };
+      for (let t = 0; t < cadena.length - 1; t++) {
+        const i1 = cadena[t], i2 = cadena[t + 1];
+        if (i1 === i2) continue;
+        const elemIdx = elements.length;
+        elements.push([i1, i2]);
+        elementNames.push(cadena.length > 2 ? `${lc.name}-${t + 1}` : lc.name);
+        elementTypes.push(lc.type);
+        elementStoriesArr.push(story);
+        elementSections.set(elemIdx, la.section);
+        if (la.spring) springAssigns.set(elemIdx, la.spring);
+        if (la.mallaEnCruces) mallaEnCruces.set(elemIdx, true);
+        if (la.rigidZone > 0) rigidOffsets.set(elemIdx, [la.rigidZone, la.rigidZone]);
+        // Releases (12: FxI,FyI,FzI,TI,M2I,M3I, FxJ,FyJ,FzJ,TJ,M2J,M3J).
+        // ⚠️ El de la cara I va SOLO en el primer tramo y el de la J SOLO en el
+        // ultimo: copiarlos a los tres tramos de una columna de cuatro pisos
+        // serian dos rotulas internas de mas, o sea un mecanismo.
+        if (la.releases.length > 0) {
+          const rel: boolean[] = new Array(12).fill(false);
+          for (const r of la.releases) {
+            const idx = releaseMap[r];
+            if (idx === undefined) continue;
+            if (idx < 6 && t !== 0) continue;
+            if (idx >= 6 && t !== cadena.length - 2) continue;
+            rel[idx] = true;
+          }
+          if (rel.some(Boolean)) momentReleases.set(elemIdx, rel);
         }
-        momentReleases.set(elemIdx, rel);
       }
     }
   }
@@ -792,6 +906,7 @@ export function parseE2k(text: string): E2kModel {
     elementTypes.push(ac.tipo);
     elementStoriesArr.push(aa.story);
     areaNames.push(ac.name);
+    if (aa.spring) springAssigns.set(ei, aa.spring);
 
     const sp = shellProps.get(aa.section);
     if (sp) {
@@ -843,7 +958,7 @@ export function parseE2k(text: string): E2kModel {
       if (!m) return;
       for (const [i, v] of m) m.set(i, v * k);
     };
-    for (const n of nodes) { n[0] *= L; n[1] *= L; n[2] *= L; }
+    for (const n of nodes) { n[0] *= L; n[1] *= L; n[2] *= L; }   // la caida ya va dentro de z
     for (const s of stories) { s.height *= L; s.elev *= L; }
     for (const g of grids) g.coord *= L;
     esc(thicknesses, L);
@@ -857,6 +972,17 @@ export function parseE2k(text: string): E2kModel {
     // Cargas: las fuerzas en F y los momentos en F*L, en el mismo vector.
     for (const [i, v] of loads) {
       loads.set(i, v.map((x, k) => x * (k < 3 ? F : F * L)) as typeof v);
+    }
+    // Los MUELLES. Cada tipo lleva su potencia de la longitud, porque cada uno
+    // vale una cosa distinta:
+    //   punto  F/L        (kgf/m)     -> * F / L
+    //   linea  F/L por L  (kgf/m/m)   -> * F / L^2
+    //   area   F/L por L2 (kgf/m/m2)  -> * F / L^3
+    // Y los tres de GIRO van en F*L/rad, o sea * F * L.
+    for (const [, sp] of springProps) {
+      const pot = sp.tipo === "point" ? 1 : sp.tipo === "line" ? 2 : 3;
+      for (let i = 0; i < 6; i++)
+        sp.k[i] *= i < 3 ? F / L ** pot : F * L / L ** (pot - 1);
     }
     // Las cotas de la seccion dibujada tambien son longitudes.
     for (const [, sh] of sectionShapes) {
@@ -890,7 +1016,7 @@ export function parseE2k(text: string): E2kModel {
     elementTypes: elementTypes,
     elementStories: elementStoriesArr,
     elementSections,
-    nodeInputs: { supports, loads },
+    nodeInputs: { supports, loads, springNames: nodeSprings },
     elementInputs: {
       elasticities,
       shearModuli,
@@ -908,9 +1034,12 @@ export function parseE2k(text: string): E2kModel {
       poissonsRatios,
       plateFormulations,
       shellModifiers,
+      springNames: springAssigns,
+      mallaEnCruces,
     },
     sectionShapes,
     grids,
+    springProps,
     info: {
       ...piezasFlotantes(elements, supports),
       nNodes: nodes.length,
