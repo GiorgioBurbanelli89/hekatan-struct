@@ -47,6 +47,8 @@ export interface InformeCosido {
   trozosNuevos: number;
   /** Cruces que se dejaron sin tocar (distinta cota, o sin el flag). */
   crucesSinNudo: number;
+  /** Nudos de cruce que acabaron unidos a MENOS de dos elementos: mecanismo. */
+  crucesColgados: number;
   piezasFlotantesAntes: number;
   piezasFlotantesDespues: number;
 }
@@ -91,9 +93,23 @@ function flotantes(elements: number[][], supports?: Map<number, unknown>): numbe
  * Cose el modelo: funde nudos coincidentes y parte las barras por los nudos
  * que caen encima. Modifica el modelo y devuelve el informe.
  */
-export function coserModelo(m: E2kModel, tol = TOL_FUSION): InformeCosido {
+export interface OpcionesCosido {
+  /**
+   * No crear los nudos de cruce (`MESHATINTERSECTIONS`).
+   *
+   * Es para BISECAR, no para calcular: un nudo de cruce necesita las DOS barras
+   * que lo cruzan, asi que en un subconjunto donde solo esta una queda colgando
+   * y la biseccion acusa a esa barra de un mecanismo que ha creado la propia
+   * biseccion. Con esto el subconjunto es honrado.
+   */
+  sinCruces?: boolean;
+}
+
+export function coserModelo(m: E2kModel, tol = TOL_FUSION,
+                            opciones: OpcionesCosido = {}): InformeCosido {
   const inf: InformeCosido = {
-    nudosFundidos: 0, nudosDeCruce: 0, barrasPartidas: 0, trozosNuevos: 0, crucesSinNudo: 0,
+    nudosFundidos: 0, nudosDeCruce: 0, barrasPartidas: 0, trozosNuevos: 0,
+    crucesSinNudo: 0, crucesColgados: 0,
     piezasFlotantesAntes: flotantes(
       m.elements as unknown as number[][], (m.nodeInputs as any).supports),
     piezasFlotantesDespues: 0,
@@ -160,6 +176,7 @@ export function coserModelo(m: E2kModel, tol = TOL_FUSION): InformeCosido {
     const N = m.nodes as unknown as number[][];
     const elems = m.elements as unknown as number[][];
     const flag = (m.elementInputs as any).mallaEnCruces as Map<number, boolean> | undefined;
+    if (opciones.sinCruces) { inf.nudosDeCruce = 0; }
     const idxBar: number[] = [];
     elems.forEach((el, i) => { if (el.length === 2) idxBar.push(i); });
     const clave = (x: number, y: number, z: number) =>
@@ -178,7 +195,7 @@ export function coserModelo(m: E2kModel, tol = TOL_FUSION): InformeCosido {
     // lo que se mide es la distancia minima entre los segmentos. Si es menor
     // que la tolerancia, se tocan de verdad — que es lo que ETABS malla. Una
     // viga que pasa POR ENCIMA de otra tiene esa distancia grande y no se toca.
-    for (let a = 0; a < idxBar.length; a++) {
+    for (let a = 0; opciones.sinCruces ? false : a < idxBar.length; a++) {
       for (let b = a + 1; b < idxBar.length; b++) {
         const ea = elems[idxBar[a]], eb = elems[idxBar[b]];
         if (ea.some((x) => eb.includes(x))) continue;
@@ -198,11 +215,17 @@ export function coserModelo(m: E2kModel, tol = TOL_FUSION): InformeCosido {
         const p1 = [P[0] + sc * u[0], P[1] + sc * u[1], P[2] + sc * u[2]];
         const p2 = [R[0] + tc * v[0], R[1] + tc * v[1], R[2] + tc * v[2]];
         if (Math.hypot(p1[0] - p2[0], p1[1] - p2[1], p1[2] - p2[2]) > tol) continue;
-        const k = clave(p1[0], p1[1], p1[2]);
+        // ⚠️ EL PUNTO MEDIO de los dos, no el de una. Las dos rectas casi nunca
+        // se cortan exacto: cogiendo `p1` el nudo queda ENCIMA de la barra `a` y
+        // a casi `tol` de la `b`, asi que el paso de partir lo acepta en una y
+        // lo rechaza en la otra — y queda un nudo colgado de una sola barra,
+        // que es un mecanismo. Con el medio, las dos lo tienen a tol/2.
+        const pm = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2, (p1[2] + p2[2]) / 2];
+        const k = clave(pm[0], pm[1], pm[2]);
         if (hay.has(k) || nuevos.has(k)) continue;
         // Sin el flag NO se toca: se cuenta y se deja.
         if (flag && !(flag.get(idxBar[a]) && flag.get(idxBar[b]))) { inf.crucesSinNudo++; continue; }
-        nuevos.set(k, p1);
+        nuevos.set(k, pm);
       }
     }
     for (const [, p] of nuevos) {
@@ -259,6 +282,11 @@ export function coserModelo(m: E2kModel, tol = TOL_FUSION): InformeCosido {
     if (inf.barrasPartidas) {
       const nombresViejos = m.elementNames;
       const tiposViejos = m.elementTypes;
+      // ⚠️ Y las PLANTAS. Se quedaban sin reindexar, asi que todo trozo nuevo
+      // salia con planta `undefined` — y cualquier herramienta que agrupe por
+      // planta (la biseccion, un filtro del visor) los mete en un cajon «?»
+      // que no existe. No daba error: daba un grupo fantasma.
+      const plantasViejas = m.elementStories;
       for (const clave of Object.keys(ei)) {
         const viejo = ei[clave];
         if (!(viejo instanceof Map)) continue;
@@ -291,6 +319,7 @@ export function coserModelo(m: E2kModel, tol = TOL_FUSION): InformeCosido {
         });
       }
       if (tiposViejos) m.elementTypes = origen.map((o) => tiposViejos[o]);
+      if (plantasViejas) m.elementStories = origen.map((o) => plantasViejas[o]);
     }
   }
 

@@ -478,8 +478,14 @@ export function parseE2k(text: string): E2kModel {
         // Top node at this story's elevation
         allNodeKeys.add(nodeKey(lc.pt2, story));
         // Bottom node at nStories levels below this story
-        const nSt = Math.max(lc.nStories, 1);
-        const bottomIdx = Math.min(storyIdx + nSt, stories.length - 1);
+        // ⚠️ `nStories 0` significa LAS DOS CARAS EN LA MISMA PLANTA, no «una
+        // por debajo». Aqui habia un `Math.max(nStories, 1)` que forzaba a
+        // bajar un piso entero: la diagonal `D15` acababa en z = -1.83 cuando
+        // ETABS la tiene en 1.62 (comprobado joint a joint por OAPI), su nudo
+        // inferior no lo compartia nadie y el modelo entero salia SINGULAR por
+        // ella. Lo llevan 16 BRACE y 3 COLUMN del edificio real; la diferencia
+        // de cota entre las dos caras ya la pone la CAIDA de cada punto.
+        const bottomIdx = Math.min(storyIdx + lc.nStories, stories.length - 1);
         allNodeKeys.add(nodeKey(lc.pt1, stories[bottomIdx].name));
         // ── Y las plantas de en medio ──
         //
@@ -601,8 +607,8 @@ export function parseE2k(text: string): E2kModel {
       // lo hace: sus niveles auxiliares no cortan lo que no es de planta.
       const cadenaKeys: string[] = [];
       if (lc.type === "COLUMN" || lc.type === "BRACE") {
-        const nSt = Math.max(lc.nStories, 1);
-        const bottomIdx = Math.min(storyIdx + nSt, stories.length - 1);
+        // `nStories 0` = las dos caras en la misma planta (ver arriba).
+        const bottomIdx = Math.min(storyIdx + lc.nStories, stories.length - 1);
         // `stories` va de arriba abajo: del indice grande (abajo) al pequeño.
         for (let k = bottomIdx; k > storyIdx; k--)
           cadenaKeys.push(nodeKey(lc.pt1, stories[k].name));
@@ -998,7 +1004,16 @@ export function parseE2k(text: string): E2kModel {
     esc(torsionalConstants, L ** 4);
     esc(elasticities, F / (L * L)); esc(shearModuli, F / (L * L));
     esc(densities, F / (L ** 3));
-    esc(rigidOffsets as Map<number, number>, L);
+    // ⚠️ `rigidOffsets` es un Map de PARES `[i, j]`, no de numeros. El
+    // `as Map<number, number>` que habia aqui callaba al compilador y `esc`
+    // hacia `[0.3, 0.3] * 1` = **NaN**. 317 barras del edificio real entraban
+    // con el brazo rigido en NaN, y UN solo NaN envenena la factorizacion
+    // entera: el solver decia «Matrix decomposition failed» y no habia forma de
+    // saber por que, porque la geometria estaba bien.
+    //
+    // Solo pasaba con ficheros que NO van en kN-m: en kN-m este bloque entero
+    // no se ejecuta. Por eso las plantillas y el galpon nunca lo vieron.
+    for (const [i, par] of rigidOffsets) rigidOffsets.set(i, [par[0] * L, par[1] * L]);
     // Cargas: las fuerzas en F y los momentos en F*L, en el mismo vector.
     for (const [i, v] of loads) {
       loads.set(i, v.map((x, k) => x * (k < 3 ? F : F * L)) as typeof v);
@@ -1025,6 +1040,12 @@ export function parseE2k(text: string): E2kModel {
 
   // El mismo aviso que con las areas: si algo se pierde, que lo DIGA. Un trozo
   // flotante no se ve en el dibujo y hace singular la matriz entera.
+  //
+  // Y lo mismo con los MECANISMOS, que son peores porque el modelo si resuelve:
+  // `deform` elimina los GDL sin rigidez y les pone 0 —igual que ETABS—, asi
+  // que si la carga cae en uno de ellos se pierde EN SILENCIO. Medido en una
+  // viga con rotulas en cada tramo: 9 de 9 nudos a cero, sin un aviso
+  // (`tests/casos/frame_releases.mjs`).
   {
     const fl = piezasFlotantes(elements, supports);
     if (fl.nPiezasFlotantes)
