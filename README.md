@@ -21,6 +21,7 @@ Full detail in [`ESTADO_VS_ETABS.md`](./ESTADO_VS_ETABS.md).
 | **Shell-Membrane** | ETABS 22, 3 load steps | **0.85 %** worst | ✅ |
 | **Shell-Thick** (Mindlin) | ETABS 22, 3 load steps | 11.28 % at 4×4 · 2.68 % at 8×8 | ❌ [open](#shell-status-vs-etabs-measured-2026-08-18) |
 | **E2K export** → ETABS 22 | round-trip re-import | **0.000 %** — 372/378 nodes | ✅ |
+| **E2K areas round-trip** | Hekatan → ETABS → Hekatan | **58/58** examples keep their shells | ✅ |
 | **S2K export** → SAP2000 24 | round-trip re-import | **0.000 %** — 378/378 nodes | ✅ |
 | **F2K export** → SAFE 20 | round-trip re-import | 6.8 % mean | ⏳ open |
 | **Assembled mass** | ETABS `AssembledJointMass` | **0.002 %** | ✅ |
@@ -337,7 +338,16 @@ Naming canonical para validación cruzada hekatan-struct-lineal ↔ ETABS / SAP2
 ## 🔌 SAP2000 / ETABS / SAFE integration (PowerShell)
 
 **Imports (file → Hekatan):**
-- E2K (ETABS) — **NEW**: any benchmark workspace now has 📥 Importar E2K button (in ETABS folder). Click → pick file → auto-redirect to `?t=new-blank` with the imported model loaded as drawing geometry. Round-trip: export from a benchmark, modify externally, import back.
+- E2K (ETABS) — any benchmark workspace has a 📥 Importar E2K button (in ETABS folder). Click → pick file → auto-redirect to `?t=new-blank` with the imported model loaded as drawing geometry. Round-trip: export from a benchmark, modify externally, import back.
+  - **Fixed 2026-08-28 — the importer used to drop every AREA.** `parseE2k` read the
+    `AREA CONNECTIVITIES` block and only *counted* it (`info.nAreas`): a `.e2k` written
+    with 900 slabs came back with **zero shells** — no thickness, no shell type, no
+    modifiers, and no warning. It now builds them from `AREA CONNECTIVITIES` +
+    `AREA ASSIGNS` + `SHELLPROP` (across `SLAB`, `WALL` and `DECK PROPERTIES`).
+  - **And it converted no units.** A `.e2k` is written in **N and mm**, so an imported
+    model came in a thousand times too big (X from 0 to 18000 for an 18 m frame,
+    thicknesses of 200, E in N/mm²). Every quantity is now converted to kN·m with its
+    own power — inertia in L⁴, modulus in F/L², a moment in F·L.
 - S2K (SAP2000) — same flow with 📥 Importar S2K in SAP folder
 - F2K (SAFE) — for foundation benchmarks via `📥 Importar F2K cimentación COMPLETA` in Cimentación folder
 - Mesh, sections, loads, releases, supports parsed from text format
@@ -395,6 +405,41 @@ and displacements closed to 4 decimals against Hekatan. Only **forces and
 reactions** were off, by exactly g. With the label fixed, SAP2000 closes at
 **0.000 %** on all 8 templates in reaction *and* deflection. Guarded by
 `tests/casos/s2k_unidades.mjs`.
+
+### Areas: what was silently wrong until 2026-08-28
+
+Measured with the full loop **Hekatan → .e2k → ETABS → .e2k → Hekatan** over
+**all 58 registry examples that carry areas** (`cli/roundtrip_areas.mjs`, then
+`cli/roundtrip_areas_etabs.py`). Not a sample: a slab is declared in many ways
+— Q4, triangle, wall PANEL, deck, membrane, with modifiers — and one that
+doesn't survive is enough to leave a hole.
+
+| what was wrong | what it did | now |
+|---|---|---|
+| one `SHELLPROP "Losa"` and one `"Muro"`, with the **first** element's thickness | a model with several shells lost all but one: `placa-base` went out as `[0.014, 0.022, 0.025]` and came back `[0.022, 0.025]` | one property per distinct shell (wall/slab, thickness, formulation, modifiers) |
+| **triangles were not collected** (`el.length === 4`) | `triangular-plate` exported its 128 shells as **zero areas** | `AREA ... 3 "p1" "p2" "p3" 0 0 0` |
+| every `FLOOR` written with story jumps `0 0 0 0` | the four nodes landed on the **same story**, so the element came out **flat** | real jumps per node, assigned to the topmost story |
+
+That last one is why a **curved shell** did not survive. Measured on the R = 10 m
+hemisphere:
+
+| | before | after |
+|---|---|---|
+| nodes (model has 81) | 131 | **86** |
+| radius | 9.4884 … **10.7448** | 9.0891 … **10.0001** |
+| nodes on the sphere | 82 of 131 | **81 of 86** |
+| areas | — | **64 of 64** |
+
+Flat floors are unaffected: all their nodes share a story, so the jump is 0 and
+nothing changes.
+
+⚠️ **A `POINT` carries a third number** — a drop in mm below its story
+elevation. That is what allows elevations that are not stories, and the exporter
+already uses it: a level is only declared for an elevation shared by ≥3 nodes,
+everything else hangs from the one above with its drop. The hemisphere failed
+*despite* that, because each of its rings has 9 nodes and became a legitimate
+story — the bug was in the area, which ignored which story each of its nodes
+belonged to.
 
 ⚠️ **Never compare T1 against T1.** A plane frame has its first mode **out of
 plane** (ETABS: mode 1 = 77 % UY), so "mode 1" can be a different mode in each
@@ -457,7 +502,7 @@ npx gh-pages --dist website/src/examples `
 | **Reactive unit system** | ❌ | ✅ kN/tonf/kip × mm/cm/m/in; sliders + colormap legend + values cascade |
 | **Shell colormap — 17 fields** | ❌ | ✅ F11/F22/F12, **FMax/FMin**, FVM, V13/V23, **VMax**, M11/M22/M12, **MMax/MMin**, Ux/Uy/Uz — CSI naming |
 | **Dynamic slider ranges** | ❌ | ✅ Folder "📏 Rangos": user can extend min/max of load sliders in-session |
-| Import E2K (ETABS) | ❌ | ✅ |
+| Import E2K (ETABS) | ❌ | ✅ frames **and areas** — thickness, shell type, modifiers; units converted to kN·m |
 | Import S2K (SAP2000) | ❌ | ✅ |
 | Import IFC (Revit/ArchiCAD) | ❌ | ✅ web-ifc WASM |
 | Export E2K / S2K | ❌ | ✅ |

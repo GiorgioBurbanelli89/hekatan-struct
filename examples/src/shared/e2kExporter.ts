@@ -1395,22 +1395,42 @@ function exportFromScratch(input: ExportE2kInput): string {
         const topStory = ps[bot0 === 0 ? 2 : 0].story;
         aaEntries.push(`  AREAASSIGN  "${aName}"  "${topStory}"  SECTION "${secDe(ae)}"  OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "MIDDLE"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
       } else {
-        // FLOOR: pt1 pt2 pt3 pt4 0 0 0 0  —  y con 3 puntos, un triangulo.
-        // El contador y el numero de saltos siguen al numero de puntos: un
-        // `3` con cuatro saltos deja a ETABS leyendo basura.
+        // FLOOR: pt1 pt2 pt3 pt4 + el salto de planta de cada punto — y con 3
+        // puntos, un triangulo. El contador y el numero de saltos siguen al
+        // numero de puntos: un `3` con cuatro saltos deja a ETABS leyendo
+        // basura.
+        //
+        // ⚠️ Los saltos iban a `0 0 0 0` FIJO, o sea que los cuatro nudos
+        // acababan en la MISMA planta y el area salia PLANA. En un edificio da
+        // igual —una losa es horizontal— pero una CASCARA CURVA se aplasta:
+        // medido el 2026-08-28 con el hemisferio de R = 10 m, sus 40 FLOOR
+        // salian con `0 0 0 0` y ETABS lo devolvia con los radios entre
+        // **9.4884 y 10.7448** (7 % fuera de la esfera), 131 nudos en vez de 81
+        // y solo 82 sobre la superficie.
+        //
+        // Se cuenta igual que en el muro de cuatro puntos distintos: se asigna
+        // a la planta MAS ALTA de los nudos y cada punto lleva cuantas plantas
+        // baja. `storyNames` va de abajo arriba (Base primero), asi que el
+        // indice mayor es la cota mayor y `iTop - idx` sale positivo hacia
+        // abajo — que es el criterio de ETABS (medido con el muro W901).
         const n = ps.length;
+        const idxPl2 = (st: string) => storyNames.indexOf(st);
+        const iTop2 = Math.max(...ps.map(q => idxPl2(q.story)));
+        const salto2 = ps.map(q => iTop2 - idxPl2(q.story));
+        const storyArea = storyNames[iTop2] ?? ps[0].story;
         lines.push(`  AREA "${aName}"  ${aType}  ${n}  ` +
           ps.map(q => `"${q.pt}"`).join("  ") + "  " +
-          ps.map(() => "0").join("  ") + "  ");
+          salto2.join("  ") + "  ");
         // Un deck se asigna por su propio nombre de seccion y con ANG: el eje
         // local decide A QUIEN le entrega la carga (salva perpendicular a las
         // secundarias). Sin el ANG la reparte al reves. Y no lleva DIAPH ni
         // ADDRESTRAINT "Yes" — asi lo escribe ETABS.
         const ang = angDeObjeto.get(ae.idx) ?? shellAngles?.get(ae.idx);
+        // La planta del assign es la de REFERENCIA de los saltos: la mas alta.
         aaEntries.push(esMembrana
-          ? `  AREAASSIGN  "${aName}"  "${ps[0].story}"  SECTION "${DECK_SEC}"  ANG ${rd(ang ?? 0)} OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "No"  CARDINALPOINT "MIDDLE"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `
-          : `  AREAASSIGN  "${aName}"  "${ps[0].story}"  SECTION "${secDe(ae)}" ${usarDiafragma ? ` DIAPH  "D1" ` : ""} OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "TOP"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
-        areaLoadRefs.push({ name: aName, story: ps[0].story, idx: ae.idx });
+          ? `  AREAASSIGN  "${aName}"  "${storyArea}"  SECTION "${DECK_SEC}"  ANG ${rd(ang ?? 0)} OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "No"  CARDINALPOINT "MIDDLE"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `
+          : `  AREAASSIGN  "${aName}"  "${storyArea}"  SECTION "${secDe(ae)}" ${usarDiafragma ? ` DIAPH  "D1" ` : ""} OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "TOP"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
+        areaLoadRefs.push({ name: aName, story: storyArea, idx: ae.idx });
       }
     });
     lines.push(``);

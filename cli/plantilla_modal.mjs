@@ -47,7 +47,9 @@ export function armar(tipo, over) {
     ei: Object.fromEntries(Object.entries(ei).map(([k, v]) => [k, M(v)])), params: p };
 }`, "plantilla-modal");
 
+const __t0 = performance.now();
 const d = mod0.armar(tipo, over);
+const __tBuild = performance.now() - __t0;
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const wasmPath = join(__dirname, "..", "hekatan-fem", "src", "cpp", "built", "deform.wasm");
 const jsPath = join(__dirname, "..", "hekatan-fem", "src", "cpp", "built", "deform.js");
@@ -71,6 +73,7 @@ const el = P(ei.elasticities), ar = P(ei.areas), mz = P(ei.momentsOfInertiaZ), m
 const relVp = alloc([], Uint8Array, mod.HEAPU8); gc.push(relVp);
 const O = () => { const p = mod._malloc(4); gc.push(p); return p; };
 const fo = O(), nfo = O(), moo = O(), mro = O(), mco = O(), mao = O(), maro = O(), maco = O();
+const __t1 = performance.now();
 mod._modal(nP, nodes.length, eP, eI.length, eS, elements.length, sKp, sVp, sK.length,
   el.kp, el.vp, el.size, ar.kp, ar.vp, ar.size, mz.kp, mz.vp, mz.size, my.kp, my.vp, my.size,
   sh.kp, sh.vp, sh.size, to.kp, to.vp, to.size, de.kp, de.vp, de.size,
@@ -80,12 +83,14 @@ mod._modal(nP, nodes.length, eP, eI.length, eS, elements.length, sKp, sVp, sK.le
   rel.kp, relVp, 0, nm.kp, nm.vp, nm.size, 1, dia.kp, dia.vp, dia.size,
   alloc([0], Float64Array, mod.HEAPF64), 0, 12, 1, 0,
   fo, nfo, moo, mro, mco, mao, maro, maco);
+const __tModal = performance.now() - __t1;
 const fp = mod.HEAPU32[fo / 4], nf = mod.HEAPU32[nfo / 4];
 const mp = mod.HEAPU32[mao / 4], mr = mod.HEAPU32[maro / 4], mc = mod.HEAPU32[maco / 4];
 const f = nf > 0 && fp ? Array.from(new Float64Array(mod.HEAPF64.buffer, fp, nf)) : [];
 const part = [];
 if (mr > 0 && mc > 0 && mp) { const a = new Float64Array(mod.HEAPF64.buffer, mp, mr * mc);
   for (let i = 0; i < mr; i++) part.push(Array.from(a.slice(i * mc, (i + 1) * mc))); }
+console.log("  build+estatico " + __tBuild.toFixed(0) + " ms   ·   modal " + __tModal.toFixed(0) + " ms   ·   " + (nodes.length * 6) + " GDL");
 console.log("plantilla tipo=" + tipo + "  formLosa=" + d.params.formLosa + "  formMuro=" + d.params.formMuro +
   "   (" + nodes.length + " nudos, " + elements.length + " elementos)");
 console.log(" modo    T[s]      Ux%     Uy%     Rz%");
