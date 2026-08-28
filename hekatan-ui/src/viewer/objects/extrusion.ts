@@ -23,19 +23,17 @@ import { getTransformationMatrixBeam } from "./utils/getTransformationMatrixBeam
  *
  * ## Los ejes
  *
- * ⏳ ESTADO: escrito y compila, pero **NO se ha visto funcionar**. Encendiendo
- * `extruded` en el visor, el modelo se sigue dibujando en líneas
- * (`cli/shot_extrusion.mjs`, capturas en `cli/shots/extrusion/`). Falta
- * averiguar por qué: los candidatos son que `structure.elementInputs` no llegue
- * con ese nombre desde `getViewer`, o que el `van.derive` no se vuelva a
- * disparar al cambiar el ajuste. NO está terminado y no hay que darlo por
- * bueno hasta ver una barra extruida en un PNG.
+ * La sección se dibuja en el plano local 2-3 y se barre a lo largo del eje 1,
+ * con la tríada de CSI (eje 1 = i→j, eje 2 = en el plano vertical hacia arriba,
+ * eje 3 = 1×2): si la extrusión usara otra, enseñaría una viga tumbada donde el
+ * modelo tiene una de canto — y eso es justo lo que hay que ver de un vistazo.
  *
- * La sección se dibuja en el plano local 2-3 y se barre a lo largo del eje 1.
- * La tríada es la de CSI (eje 1 = i→j, eje 2 = en el plano vertical hacia
- * arriba, eje 3 = 1×2), la misma que usa el solver: si la extrusión usara otra,
- * enseñaría una viga tumbada donde el modelo tiene una de canto — y eso es
- * justo lo que hay que poder ver de un vistazo.
+ * ⚠️ `getTransformationMatrixBeam` devuelve un **`THREE.Matrix4`**, no una
+ * matriz de filas: `T[2][0]` no es un error de números, es `undefined`. Y lo
+ * peor es que reventaba DENTRO del `van.derive`, que se traga la excepción: no
+ * salía nada en consola, no había `pageerror`, y el modelo simplemente seguía
+ * dibujado con líneas. Se usa igual que en `sections.ts` — sección en el plano
+ * x=0, eje de la barra en +X — y esa es la referencia a mirar, no la memoria.
  */
 
 /** Contorno y huecos de una sección, en el plano local (3, 2) y en metros. */
@@ -44,46 +42,106 @@ export interface ContornoSeccion {
   huecos?: Array<Array<[number, number]>>;
 }
 
-/** El contorno de las formas del catálogo. Devuelve null si no se sabe dibujar. */
+/**
+ * El contorno de una `SectionShape`. Devuelve null si no se sabe dibujar.
+ *
+ * ⚠️ Los nombres de los campos son los de `hekatan-fem/data-model.ts`, y hay
+ * que mirarlos ahí y no suponerlos: el canto es **`h`**, no `d` — `d` es el
+ * DIAMETRO y solo lo usan `circ` y `pipe`. Y los tipos son
+ * `rect · circ · I · HSS · CFT · L · 2L · C · 2C · T · pipe · coldC`, no los
+ * nombres del Section Designer. Con los nombres inventados no fallaba nada:
+ * simplemente no se dibujaba una sola barra, que es peor.
+ */
 export function contornoDeSeccion(sh: any): ContornoSeccion | null {
   if (!sh) return null;
   const t = sh.type as string;
-  const rect = (b: number, d: number): Array<[number, number]> =>
-    [[-b / 2, -d / 2], [b / 2, -d / 2], [b / 2, d / 2], [-b / 2, d / 2]];
-  if (t === "rect" && sh.b && sh.h) return { contorno: rect(sh.b, sh.h) };
-  if (t === "circ" && sh.d) {
-    const r = sh.d / 2, p: Array<[number, number]> = [];
-    for (let i = 0; i < 24; i++) {
-      const a = (2 * Math.PI * i) / 24;
-      p.push([r * Math.cos(a), r * Math.sin(a)]);
+  const P = (x: number, y: number): [number, number] => [x, y];
+  const rect = (b: number, h: number): Array<[number, number]> =>
+    [P(-b / 2, -h / 2), P(b / 2, -h / 2), P(b / 2, h / 2), P(-b / 2, h / 2)];
+  const circ = (dia: number, n = 24): Array<[number, number]> => {
+    const r = dia / 2, p: Array<[number, number]> = [];
+    for (let i = 0; i < n; i++) {
+      const a = (2 * Math.PI * i) / n;
+      p.push(P(r * Math.cos(a), r * Math.sin(a)));
     }
-    return { contorno: p };
-  }
-  if ((t === "I" || t === "C" || t === "coldC" || t === "2C") && sh.d && sh.b) {
-    const d = sh.d, b = sh.b, tf = sh.tf ?? d / 20, tw = sh.tw ?? b / 20;
-    const a = (b - tw) / 2;
-    if (t === "I") {
+    return p;
+  };
+  const b = sh.b ?? 0, h = sh.h ?? 0, dia = sh.d ?? 0;
+  // Espesores: `t` es el uniforme (L y conformada); `tw`/`tf` los del perfil.
+  const tw = sh.tw ?? sh.t ?? 0, tf = sh.tf ?? sh.t ?? 0;
+
+  switch (t) {
+    case "rect":
+      return b && h ? { contorno: rect(b, h) } : null;
+    case "circ":
+      return dia ? { contorno: circ(dia) } : null;
+    case "pipe":
+      return dia && tw ? { contorno: circ(dia), huecos: [circ(dia - 2 * tw).reverse()] } : null;
+    case "HSS":
+      // Tubo rectangular: el hueco al revés, para que reste.
+      return b && h && tw ? { contorno: rect(b, h),
+        huecos: [rect(b - 2 * tw, h - 2 * (tf || tw)).reverse()] } : null;
+    case "CFT":
+      // Relleno de hormigón: por fuera es el mismo tubo, y macizo — se dibuja
+      // lleno a propósito, que es lo que se ve en obra.
+      return b && h ? { contorno: rect(b, h) } : null;
+    case "I":
+      if (!(b && h && tw && tf)) return null;
       return { contorno: [
-        [-b / 2, -d / 2], [b / 2, -d / 2], [b / 2, -d / 2 + tf], [tw / 2, -d / 2 + tf],
-        [tw / 2, d / 2 - tf], [b / 2, d / 2 - tf], [b / 2, d / 2], [-b / 2, d / 2],
-        [-b / 2, d / 2 - tf], [-tw / 2, d / 2 - tf], [-tw / 2, -d / 2 + tf], [-b / 2, -d / 2 + tf],
+        P(-b / 2, -h / 2), P(b / 2, -h / 2), P(b / 2, -h / 2 + tf), P(tw / 2, -h / 2 + tf),
+        P(tw / 2, h / 2 - tf), P(b / 2, h / 2 - tf), P(b / 2, h / 2), P(-b / 2, h / 2),
+        P(-b / 2, h / 2 - tf), P(-tw / 2, h / 2 - tf), P(-tw / 2, -h / 2 + tf), P(-b / 2, -h / 2 + tf),
       ] };
-    }
-    // C / conformada: el alma a la izquierda y las dos alas a la derecha.
-    return { contorno: [
-      [-b / 2, -d / 2], [b / 2, -d / 2], [b / 2, -d / 2 + tf], [-b / 2 + tw, -d / 2 + tf],
-      [-b / 2 + tw, d / 2 - tf], [b / 2, d / 2 - tf], [b / 2, d / 2], [-b / 2, d / 2],
-    ] };
+    case "C":
+    case "2C":
+    case "coldC":
+      if (!(b && h && tw && tf)) return null;
+      // El alma a la izquierda y las dos alas a la derecha.
+      return { contorno: [
+        P(-b / 2, -h / 2), P(b / 2, -h / 2), P(b / 2, -h / 2 + tf), P(-b / 2 + tw, -h / 2 + tf),
+        P(-b / 2 + tw, h / 2 - tf), P(b / 2, h / 2 - tf), P(b / 2, h / 2), P(-b / 2, h / 2),
+      ] };
+    case "T":
+      if (!(b && h && tw && tf)) return null;
+      return { contorno: [
+        P(-tw / 2, -h / 2), P(tw / 2, -h / 2), P(tw / 2, h / 2 - tf), P(b / 2, h / 2 - tf),
+        P(b / 2, h / 2), P(-b / 2, h / 2), P(-b / 2, h / 2 - tf), P(-tw / 2, h / 2 - tf),
+      ] };
+    case "L":
+    case "2L":
+      if (!(b && h && tw)) return null;
+      return { contorno: [
+        P(-b / 2, -h / 2), P(b / 2, -h / 2), P(b / 2, -h / 2 + tw), P(-b / 2 + tw, -h / 2 + tw),
+        P(-b / 2 + tw, h / 2), P(-b / 2, h / 2),
+      ] };
+    default:
+      // Cotas sin tipo conocido: el rectángulo que las envuelve. Y si no hay ni
+      // cotas, NADA — dibujar una sección inventada es peor que no dibujarla.
+      return b && h ? { contorno: rect(b, h) } : (dia ? { contorno: circ(dia) } : null);
   }
-  if (t === "tube" && sh.b && sh.d) {
-    const tf = sh.tf ?? sh.d / 20, tw = sh.tw ?? sh.b / 20;
-    return { contorno: rect(sh.b, sh.d),
-             huecos: [rect(sh.b - 2 * tw, sh.d - 2 * tf)] };
-  }
-  // Sin contorno conocido, el rectángulo que la envuelve — pero solo si hay
-  // cotas. Inventar una sección donde no se sabe nada seria enseñar algo falso.
-  if (sh.b && sh.h) return { contorno: rect(sh.b, sh.h) };
-  return null;
+}
+
+/**
+ * Cuando el ejemplo NO declara la forma: el **rectángulo equivalente** que sale
+ * de A, I22 e I33, que sí están siempre porque son lo que come el solver.
+ *
+ *     b·h = A            (misma área → mismo peso y mismo axil)
+ *     h/b = √(I33/I22)   (misma esbeltez → se ve por dónde flecta)
+ *
+ * No es la sección real y no se hace pasar por ella: se dibuja en OTRO color.
+ * Pero tampoco es un invento — sale de la rigidez que el modelo está usando de
+ * verdad, y enseña lo único que importa de un vistazo: una viga de canto se ve
+ * de canto y una tumbada, tumbada. Hoy solo 10 de los ~58 ejemplos declaran
+ * `sectionShapes`; sin esto, en los otros 48 la vista extruida no dibuja nada.
+ */
+export function rectanguloEquivalente(
+  A?: number, I22?: number, I33?: number,
+): ContornoSeccion | null {
+  if (!A || A <= 0 || !I22 || !I33 || I22 <= 0 || I33 <= 0) return null;
+  const r = Math.sqrt(Math.sqrt(I33 / I22));   // h/b
+  const b = Math.sqrt(A / r), h = A / b;
+  if (!isFinite(b) || !isFinite(h) || b <= 0 || h <= 0) return null;
+  return { contorno: [[-b / 2, -h / 2], [b / 2, -h / 2], [b / 2, h / 2], [-b / 2, h / 2]] };
 }
 
 /** Un `THREE.Shape` con sus huecos, listo para extruir. */
@@ -112,52 +170,83 @@ export function extrusion(
   derivedNodes: State<Node[]>,
 ): THREE.Group {
   const group = new THREE.Group();
+  // Con nombre para poder CONTARLO desde fuera: sin eso se cuentan las mallas
+  // de toda la escena (los nudos son esferas) y siempre sale un numero grande
+  // que no dice si se extruyo algo.
+  group.name = "extrusion";
   const matBarra = new THREE.MeshLambertMaterial({
     color: 0x7fb3ff, transparent: true, opacity: 0.92, side: THREE.DoubleSide });
+  // Otro color a propósito para el rectángulo equivalente: quien lo mire tiene
+  // que poder distinguir «esta es la sección» de «esta es la equivalente».
+  const matEquiv = new THREE.MeshLambertMaterial({
+    color: 0xc0a060, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
   const matShell = new THREE.MeshLambertMaterial({
     color: 0xb0bec5, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
 
+  // ⚠️ Luces PROPIAS. La escena solo las pone si el ejemplo trae `solids`, asi
+  // que sin esto un material Lambert sale NEGRO: se extruye bien y parece que
+  // no se extruyo nada. Cuelgan del grupo a proposito — con `visible = false`
+  // three ni las recorre, asi que se apagan con la vista.
+  const luces = new THREE.Group();
+  luces.add(new THREE.AmbientLight(0xffffff, 0.55));
+  const l1 = new THREE.DirectionalLight(0xffffff, 0.75); l1.position.set(30, 25, 40);
+  const l2 = new THREE.DirectionalLight(0xffffff, 0.35); l2.position.set(-25, -20, 15);
+  luces.add(l1, l2);
+
+  let corridas = 0;
   van.derive(() => {
     const on = settings.extruded?.val ?? false;
+    (globalThis as any).__extrusionDebug = { corridas: ++corridas, on };
     group.visible = on;
     // Fuera lo anterior: una malla extruida por barra se acumula rápido y en un
     // modelo de mil barras eso es memoria que no se suelta.
     for (const h of [...group.children]) {
+      if (h === luces) continue;
       group.remove(h);
       (h as THREE.Mesh).geometry?.dispose?.();
     }
+    if (!group.children.includes(luces)) group.add(luces);
     if (!on) return;
 
-    const nodes = derivedNodes.val;
-    const elements = structure.elements.val;
+    const nodes = derivedNodes.val ?? [];
+    const elements = structure.elements?.val ?? [];
     const ei: any = structure.elementInputs?.val ?? {};
     const formas: Map<number, any> = ei.sectionShapes ?? new Map();
     const espesores: Map<number, number> = ei.thicknesses ?? new Map();
 
+    let fallo = "";
+    try {
     elements.forEach((el: number[], i: number) => {
       // ── BARRAS: el contorno barrido a lo largo del eje 1 ──
       if (el.length === 2) {
-        const c = contornoDeSeccion(formas.get(i));
-        if (!c) return;                       // sin contorno no se inventa nada
+        let c = contornoDeSeccion(formas.get(i));
+        let real = true;
+        if (!c) {
+          c = rectanguloEquivalente(ei.areas?.get(i),
+            ei.momentsOfInertiaY?.get(i), ei.momentsOfInertiaZ?.get(i));
+          real = false;
+        }
+        if (!c) return;                       // sin datos no se inventa nada
         const n1 = nodes[el[0]], n2 = nodes[el[1]];
         if (!n1 || !n2) return;
         const L = Math.hypot(n2[0] - n1[0], n2[1] - n1[1], n2[2] - n1[2]);
         if (L < 1e-9) return;
         const geo = new THREE.ExtrudeGeometry(aShape(c), {
           depth: L, bevelEnabled: false, curveSegments: 4 });
-        // ExtrudeGeometry crece en +Z local; hay que llevar ese +Z al eje 1 de
-        // la barra con la MISMA tríada del solver.
-        const T = getTransformationMatrixBeam(n1, n2);
-        const m = new THREE.Matrix4();
-        // filas de T: e1, e2, e3 (CSI). Las columnas de la matriz de Three son
-        // los ejes locales x,y,z → x=e3, y=e2, z=e1 para que +Z caiga en e1.
-        m.set(
-          T[2][0], T[1][0], T[0][0], n1[0],
-          T[2][1], T[1][1], T[0][1], n1[1],
-          T[2][2], T[1][2], T[0][2], n1[2],
-          0, 0, 0, 1);
-        const mesh = new THREE.Mesh(geo, matBarra);
-        mesh.applyMatrix4(m);
+        // `ExtrudeGeometry` crece en +Z y dibuja la seccion en (x, y). La
+        // matriz de la barra —la MISMA que usa `sections.ts`— espera lo otro:
+        // la seccion en el plano x=0 y el eje de la barra en +X. Se arregla con
+        // la permutacion ciclica x→y→z→x, que lleva el +Z de la extrusion al
+        // +X de la barra y de paso pone b en el eje local 2 y h en el 3, igual
+        // que `makeRect` de sections.
+        geo.applyMatrix4(new THREE.Matrix4().set(
+          0, 0, 1, 0,
+          1, 0, 0, 0,
+          0, 1, 0, 0,
+          0, 0, 0, 1));
+        const mesh = new THREE.Mesh(geo, real ? matBarra : matEquiv);
+        mesh.position.set(n1[0], n1[1], n1[2]);
+        mesh.rotation.setFromRotationMatrix(getTransformationMatrixBeam(n1, n2));
         group.add(mesh);
         return;
       }
@@ -197,6 +286,10 @@ export function extrusion(
         group.add(new THREE.Mesh(geo, matShell));
       }
     });
+    } catch (e: any) { fallo = String(e?.message ?? e); }
+    (globalThis as any).__extrusionDebug = {
+      corridas, on, fallo, nElementos: elements.length, nFormas: formas.size,
+      nEspesores: espesores.size, mallas: group.children.length - 1 };
   });
 
   return group;

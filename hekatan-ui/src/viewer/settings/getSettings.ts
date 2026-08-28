@@ -322,6 +322,11 @@ export function getSettings(
     verFolder.addBinding(settings.sections, "val", {
       label: "Sections",
     });
+    // La vista EXTRUIDA (secciones barridas y cascaras con espesor). Va aqui y
+    // no solo por consola: un ajuste sin mando no lo usa nadie.
+    verFolder.addBinding(settings.extruded, "val", {
+      label: "Extruido (3D)",
+    });
     verFolder.addBinding(settings.sectionLabels, "val", {
       label: "  Sec. Labels (30x50)",
     });

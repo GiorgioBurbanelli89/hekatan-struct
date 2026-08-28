@@ -449,6 +449,11 @@ export function getViewer({
     settings.frameResults.val;
     settings.shellResults.val;
     settings.solidResults?.val;  // re-render al cambiar Solid results (H8 sólidos)
+    // ⚠️ Sin esta línea, encender la vista EXTRUIDA construye las mallas y no
+    // repinta: la escena se queda como estaba y parece que no hace nada. Este
+    // `van.derive` es la lista de ajustes que disparan un render, y un ajuste
+    // nuevo que no esté aquí es invisible por mucho que su objeto funcione.
+    settings.extruded?.val;
 
     setTimeout(viewerRender); // setTimeout to ensure render is called after all updates are done in that event tick
   });

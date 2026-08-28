@@ -93,6 +93,28 @@ export function seccionDe(p: Record<string, number>, prefijo = "sec"): SectionPr
   }
 }
 
+/**
+ * La MISMA sección, pero como `SectionShape` para el visor (`elementInputs.
+ * sectionShapes`), que es lo que necesitan el dibujo de secciones y la vista
+ * EXTRUIDA para saber qué polígono barrer.
+ *
+ * Va aquí y no en cada ejemplo a propósito: el ejemplo ya eligió la forma y sus
+ * cotas en `paramsSeccion`, y volver a escribirlas en otro sitio es la manera
+ * de que un día digan cosas distintas — el solver una sección y el dibujo otra.
+ */
+export function formaSeccionDe(p: Record<string, number>, prefijo = "sec"): any {
+  const mm = (v: number) => (v ?? 0) / 1000;
+  const h = mm(p[`${prefijo}H`]), b = mm(p[`${prefijo}B`]);
+  const tf = mm(p[`${prefijo}Tf`]), tw = mm(p[`${prefijo}Tw`]);
+  const t = mm(p[`${prefijo}T`]), d = mm(p[`${prefijo}D`]);
+  switch (Math.round(p[`${prefijo}Forma`] ?? 0)) {
+    case FORMAS["Rectangular maciza"]: return { type: "rect", b, h };
+    case FORMAS["Tubo rectangular"]:   return { type: "HSS", b, h, tw: t, tf: t };
+    case FORMAS["Circular maciza"]:    return { type: "circ", d };
+    default:                           return { type: "I", b, h, tf, tw };
+  }
+}
+
 /** Nombre legible de la sección, para el título del panel o del modal. */
 export function nombreSeccion(p: Record<string, number>, prefijo = "sec"): string {
   const n = (v: number) => (v ?? 0).toFixed(v % 1 ? 1 : 0);

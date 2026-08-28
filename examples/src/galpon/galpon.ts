@@ -4,7 +4,7 @@
  */
 import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
-import { paramsSeccion, seccionDe, etiquetasSeccion, nombreSeccion, toLocalInertia, FORMAS }
+import { paramsSeccion, seccionDe, formaSeccionDe, etiquetasSeccion, nombreSeccion, toLocalInertia, FORMAS }
   from "../shared/paramsSeccion";
 
 const Es = 200e6, nu_s = 0.3, Gs = Es / (2 * (1 + nu_s));
@@ -127,10 +127,15 @@ export const galpon: ExampleDef = {
     const J = new Map<number, number>();
     const densities = new Map<number, number>();
     const poissons = new Map<number, number>();
+    // La FORMA, para el visor: sin esto la vista extruida no tiene poligono que
+    // barrer y el galpon se sigue viendo con lineas.
+    const forma = formaSeccionDe(p);
+    const sectionShapes = new Map<number, any>();
     for (let i = 0; i < elements.length; i++) {
       elasticities.set(i, Es); shearModuli.set(i, Gs); poissons.set(i, nu_s);
       densities.set(i, rho_s);
       areas.set(i, A); I33.set(i, moiZ); I22.set(i, moiY); J.set(i, sec.J);
+      sectionShapes.set(i, forma);
     }
 
     states.nodes.val = nodes;
@@ -139,7 +144,7 @@ export const galpon: ExampleDef = {
     states.elementInputs.val = {
       elasticities, shearModuli, areas,
       momentsOfInertiaY: I22, momentsOfInertiaZ: I33, torsionalConstants: J,
-      densities, poissonsRatios: poissons,
+      densities, poissonsRatios: poissons, sectionShapes,
     };
     const deformOut = deform(nodes, elements, states.nodeInputs.val, states.elementInputs.val);
     states.deformOutputs.val = deformOut;
