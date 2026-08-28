@@ -9,6 +9,7 @@
  *   FRAME OBJECT LOADS
  */
 import type { Node, Element, NodeInputs, ElementInputs, SectionShape } from "hekatan-fem";
+import { propiedadesSD, formaDesdeE2k, type PiezaSD } from "./sectionDesigner";
 
 export interface E2kGrid {
   label: string;   // "A", "B", "1", "2", etc.
@@ -545,44 +546,25 @@ export function parseE2k(text: string): E2kModel {
     // matriz salia singular. 54 barras del modelo real de `estructura-mixta`.
     const piezas = sdShapes.get(secName);
     if (sec.shape === "SD Section" && piezas?.length) {
+      // Se delega en `sectionDesigner`, que es el modulo compartido: las mismas
+      // cuentas valen para leer un `.e2k` y para una seccion dibujada a mano.
+      // Antes habia aqui una version casera que solo sabia de tres formas.
       const Eref = mat?.E || materials.get(sec.material)?.E || 0;
-      const propsPieza = (q: typeof piezas[0]) => {
-        const { D: d, B: b, TF: tf2, TW: tw2 } = q;
-        switch ((q.shapeType || "").toUpperCase()) {
-          case "STEEL ANGLE": {
-            const a2 = (d + b - tf2) * tf2;
-            return { A: a2, Iz: a2 * d * d / 12, Iy: a2 * b * b / 12 };
-          }
-          case "STEEL CHANNEL":
-            return { A: 2 * b * tf2 + (d - 2 * tf2) * tw2,
-                     Iz: (tw2 * d ** 3 + 2 * b * tf2 * (d - tf2) ** 2) / 12,
-                     Iy: (2 * tf2 * b ** 3 + (d - 2 * tf2) * tw2 ** 3) / 12 };
-          default:      // CONCRETE RECTANGULAR y cualquier otra: rectangulo
-            return { A: d * b, Iz: b * d ** 3 / 12, Iy: d * b ** 3 / 12 };
+      const lista: PiezaSD[] = [];
+      for (const q of piezas) {
+        const forma = formaDesdeE2k(q.shapeType, q.D, q.B, q.TF, q.TW);
+        if (!forma) continue;
+        lista.push({ forma, xc: q.XC, yc: q.YC, E: materials.get(q.material)?.E || Eref });
+      }
+      if (lista.length) {
+        const pr = propiedadesSD(lista, Eref);
+        if (pr.A > 0) {
+          A = pr.A; Iz = pr.Iz; Iy = pr.Iy; J = pr.J;
+          AsY = pr.As2; AsZ = pr.As3;
+          shapeType = "rect";
+          compuesta = true;
+          sdCompuestas++;
         }
-      };
-      // 1) centroide de la seccion transformada
-      let sA = 0, sAx = 0, sAy = 0;
-      const cal = piezas.map(q => {
-        const pr = propsPieza(q);
-        const Ei = materials.get(q.material)?.E || Eref;
-        const n = Eref > 0 ? Ei / Eref : 1;
-        sA += n * pr.A; sAx += n * pr.A * q.XC; sAy += n * pr.A * q.YC;
-        return { q, pr, n };
-      });
-      if (sA > 0) {
-        const xg = sAx / sA, yg = sAy / sA;
-        let Izs = 0, Iys = 0, Js = 0;
-        for (const { q, pr, n } of cal) {
-          Izs += n * (pr.Iz + pr.A * (q.YC - yg) ** 2);
-          Iys += n * (pr.Iy + pr.A * (q.XC - xg) ** 2);
-          Js += n * (pr.Iz + pr.Iy) * 0.1;   // aproximacion: no es Saint-Venant
-        }
-        A = sA; Iz = Izs; Iy = Iys; J = Js;
-        AsY = AsZ = 5 / 6 * A;
-        shapeType = "rect";
-        compuesta = true;
-        sdCompuestas++;
       }
     }
 
