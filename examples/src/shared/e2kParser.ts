@@ -17,10 +17,33 @@ export interface E2kGrid {
   coord: number;
 }
 
+/**
+ * Un NIVEL AUXILIAR de ETABS. En el `.e2k` es `REFERENCEPLANE ... Z <z>` y va
+ * dentro de `$ GRIDS`, **no** dentro de `$ STORIES`. La gramatica esta sacada
+ * del binario (`ETABS.dll`, la tabla de tokens del e2k):
+ *
+ *     GRIDSYSTEM  TOWER  CARTESIAN CYLINDRICAL ... TOPSTORY BOTTOMSTORY
+ *     GENGRID  LABEL  X1 Y1 X2 Y2  VISIBLE  BUBBLELOC
+ *     REFERENCEPLANE   Z
+ *     REFERENCEPOINT   X  Y
+ *     GRID  DIR  COORD
+ *
+ * Y esa es la respuesta a por que **no cortan nada**: son entidades de
+ * REJILLA, ayudas de dibujo, igual que una linea de ejes. Lo unico que parte un
+ * elemento es una PLANTA de verdad, y solo a las columnas que la atraviesan
+ * (`nStories`). Un arco o una cascara curva pasan por la cota de una planta sin
+ * que eso sea una union, y partirlos ahi estropea el modelo.
+ */
+export interface E2kPlanoRef {
+  z: number;
+}
+
 export interface E2kModel {
   units: { force: string; length: string };
   stories: { name: string; height: number; elev: number }[];
   grids: E2kGrid[];
+  /** Los niveles AUXILIARES (`REFERENCEPLANE`). Se dibujan; NO cortan nada. */
+  planosRef: E2kPlanoRef[];
   materials: Map<string, { type: string; E: number; G: number; nu: number; fy?: number; fc?: number; density?: number }>;
   frameSections: Map<string, { material: string; shape: string; D: number; B: number; TF: number; TW: number; R?: number; fillMaterial?: string; modI2?: number; modI3?: number }>;
   nodes: Node[];
@@ -125,6 +148,7 @@ export function parseE2k(text: string): E2kModel {
   const pointSprings = new Map<string, string>();
   const frameLoads: { line: string; story: string; type: string; dir: string; lc: string; val: number }[] = [];
   const grids: E2kGrid[] = [];
+  const planosRef: E2kPlanoRef[] = [];
   let title = "";
 
   let currentSection = "";
@@ -306,6 +330,11 @@ export function parseE2k(text: string): E2kModel {
       if (gm) {
         grids.push({ label: gm[1], dir: gm[2] as "X" | "Y", coord: parseFloat(gm[3]) });
       }
+      // Los NIVELES AUXILIARES. Se leen para poder dibujarlos, y punto: no
+      // entran en `stories` a proposito, porque lo que esta en `stories` es lo
+      // que parte las columnas.
+      const rp = line.match(/^\s*REFERENCEPLANE\s.*\sZ\s+([-\d.eE+]+)/);
+      if (rp) planosRef.push({ z: parseFloat(rp[1]) });
     }
 
     // ── FRAME OBJECT LOADS ──
@@ -961,6 +990,7 @@ export function parseE2k(text: string): E2kModel {
     for (const n of nodes) { n[0] *= L; n[1] *= L; n[2] *= L; }   // la caida ya va dentro de z
     for (const s of stories) { s.height *= L; s.elev *= L; }
     for (const g of grids) g.coord *= L;
+    for (const r of planosRef) r.z *= L;
     esc(thicknesses, L);
     esc(areas, L * L);
     esc(shearAreasY, L * L); esc(shearAreasZ, L * L);
@@ -1039,6 +1069,7 @@ export function parseE2k(text: string): E2kModel {
     },
     sectionShapes,
     grids,
+    planosRef,
     springProps,
     info: {
       ...piezasFlotantes(elements, supports),
