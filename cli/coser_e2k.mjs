@@ -20,6 +20,7 @@ g.addEventListener = () => {}; g.matchMedia = () => ({ matches:false, addEventLi
 const { parseE2k } = await import("${R}/examples/src/shared/e2kParser");
 const { coserModelo } = await import("${R}/examples/src/shared/e2kCoser");
 const { muellesDelModelo } = await import("${R}/examples/src/shared/e2kMuelles");
+const { coartarGirosSueltos } = await import("${R}/examples/src/shared/e2kGirosSueltos");
 const { deform } = await import("${R}/hekatan-fem/src/index");
 
 function resolver(m, conMuelles) {
@@ -63,8 +64,10 @@ function quedan(m) {
   const usado = new Set(); for (const el of m.elements) for (const n of el) usado.add(n);
   // Un nudo con MUELLE tambien esta sujeto: contar solo los apoyos daba 38
   // trozos donde de verdad hay menos: la cimentacion la sostiene el terreno.
-  const apoyo = new Set([...(m.nodeInputs.supports ?? new Map())].map(([k])=>k));
-  for (const s of muellesDelModelo(m).muelles) apoyo.add(s.node);
+  const apoyo = new Set();
+  for (const [k,v] of (m.nodeInputs.supports ?? new Map()))
+    if (v[0] || v[1] || v[2]) apoyo.add(k);
+  for (const s of muellesDelModelo(m).muelles) if (s.dof < 3) apoyo.add(s.node);
   const visto = new Set(); const flot = [];
   for (const s of usado) { if (visto.has(s)) continue;
     const pila=[s], c=[]; visto.add(s);
@@ -96,9 +99,12 @@ function sinFlotantes(m) {
   const une=(a,b)=>{ if(!ady.has(a)) ady.set(a,[]); ady.get(a).push(b); };
   for (const el of m.elements) for (const a of el) for (const b of el) if(a!==b) une(a,b);
   const usado = new Set(); for (const el of m.elements) for (const n of el) usado.add(n);
-  const anclado = new Set([...(m.nodeInputs.supports ?? new Map())].map(([k])=>k));
-  // Un nudo con MUELLE tambien esta sujeto: es lo que sostiene la cimentacion.
-  for (const s of muellesDelModelo(m).muelles) anclado.add(s.node);
+  // Solo cuentan las TRASLACIONES: un nudo con los giros coartados sigue
+  // pudiendo trasladarse, asi que su trozo sigue flotando.
+  const anclado = new Set();
+  for (const [k,v] of (m.nodeInputs.supports ?? new Map()))
+    if (v[0] || v[1] || v[2]) anclado.add(k);
+  for (const s of muellesDelModelo(m).muelles) if (s.dof < 3) anclado.add(s.node);
   const visto = new Set(); const fuera = new Set();
   for (const s of usado) { if (visto.has(s)) continue;
     const pila=[s], c=[]; visto.add(s);
@@ -122,6 +128,10 @@ export function probar(t) {
   const m = parseE2k(t);
   const inf = coserModelo(m);
   const despues = resolver(m, true);
+  // Los giros que no sujeta nadie: se coartan. Un GDL sin rigidez tiene fuerza
+  // nula, asi que fijarlo no cambia nada del resto y quita el mecanismo.
+  const infG = coartarGirosSueltos(m);
+  const conGiros = resolver(m, true);
   const podado = sinFlotantes(m);
   const limpio = resolver(podado, true);
   limpio.quitados = podado.quitados;
@@ -130,11 +140,11 @@ export function probar(t) {
   // desplazamientos de 1e15. Quitarlos no arregla nada — DICE si son eso.
   const sinRel = { ...podado, elementInputs: { ...podado.elementInputs, momentReleases: new Map() } };
   const sr = resolver(sinRel, true);
-  return { inf, antes, despues, limpio, sinRel: sr, restan: quedan(m) };
+  return { inf, antes, despues, conGiros, infG, limpio, sinRel: sr, restan: quedan(m) };
 }`, "coser-cli");
 
 for (const f of process.argv.slice(2)) {
-  const { inf, antes, despues, limpio, sinRel, restan } = mod.probar(readFileSync(f, "utf-8"));
+  const { inf, antes, despues, conGiros, infG, limpio, sinRel, restan } = mod.probar(readFileSync(f, "utf-8"));
   console.log(`\n── ${f.split(/[\\/]/).pop()} ${"─".repeat(40)}`);
   console.log(`  nudos fundidos ....... ${inf.nudosFundidos}`);
   console.log(`  barras partidas ...... ${inf.barrasPartidas}  (+${inf.trozosNuevos} trozos)`);
@@ -147,6 +157,9 @@ for (const f of process.argv.slice(2)) {
             : `no resuelve  ${r.err}`);
   console.log(fila("ANTES", antes));
   console.log(fila("COSIDO", despues));
+  console.log(`  giros sin rigidez .... ${infG.nudos} nudos · ${infG.gdl} GDL coartados ` +
+    `(${infG.barrasSinGiro} tramos con los momentos liberados en las dos caras)`);
+  console.log(fila("+ GIROS", conGiros));
   console.log(fila("SIN SUELTOS", limpio) + `   (${limpio.quitados} nudos fuera)`);
   console.log(fila("  y sin releases", sinRel));
   if (despues.infM)

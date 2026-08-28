@@ -891,9 +891,11 @@ export const colorMapUnit: State<string> = van.state("");
 export const colorMapForceUnit: State<"kN" | "tonf" | "kip"> = van.state("kN");
 /**
  * Unidad de desplazamiento seleccionada globalmente. Afecta displacementX/Y/Z del colormap.
- * Valores soportados para ingeniería estructural: "mm" | "cm" | "m" | "in".
+ * Valores soportados: "mm" | "cm" | "m" | "in" | "ft" — los mismos que
+ * `units.ts` del workspace. El PIE tiene que estar: el sistema imperial de CSI
+ * es `Kip, ft, F`, y sin `ft` en la tabla la conversion da NaN.
  */
-export const colorMapDispUnit: State<"mm" | "cm" | "m" | "in"> = van.state("mm");
+export const colorMapDispUnit: State<"mm" | "cm" | "m" | "in" | "ft"> = van.state("mm");
 
 /**
  * Unidad de TENSIÓN/STRESS para resultados sólidos (σxx, τxy, vonMises, ...).
@@ -907,7 +909,7 @@ export const colorMapStressUnit: State<StressUnit> = van.state("kN/m²");
 // Factores de conversión (mismos que units.ts del workspace, duplicados acá
 // porque hekatan-ui es un paquete independiente y no debe importar de examples/).
 const FORCE_FACTORS = { kN: 1, tonf: 9.80665, kip: 4.4482216 };
-const DISP_FACTORS = { mm: 1000, cm: 100, m: 1, in: 39.3700787402 };
+const DISP_FACTORS = { mm: 1000, cm: 100, m: 1, in: 39.3700787402, ft: 3.280839895 };
 
 // Stress conversion: 1 kN/m² × STRESS_FACTORS[unit] = valor en `unit`
 //   1 kN/m² = 1 kPa

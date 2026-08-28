@@ -1187,6 +1187,10 @@ function ribbonPlegadaPara(id?: string | null): boolean {
 // devuelve `undefined` sin decir por que. Lo usa
 // `cli/shot_plantillas_colormap.mjs`.
 (window as any).__hekatanSettings = () => (viewerElm as any).__settings;
+// La lista de ejemplos, para que los barridos de la CLI no lleven una copia
+// que se queda vieja en cuanto se anade uno.
+(window as any).__hekatanExamples = examplesRegistry.map(
+  (e) => ({ id: e.id, name: e.name, category: e.category }));
 
 // ── Auto re-fit camera al cambiar de tamaño (mobile rotation) ──
 // El #viewer cambia de tamaño con CSS media queries (ej. en mobile

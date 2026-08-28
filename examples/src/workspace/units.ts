@@ -15,7 +15,12 @@
 import van, { State } from "vanjs-core";
 
 export type ForceUnit = "kN" | "tonf" | "kip";
-export type DispUnit = "mm" | "cm" | "m" | "in";
+// ⚠️ El PIE tiene que estar aqui. El preset «U.S. Imperial» ponia
+// `lengthStructure: "ft" as DispUnit` —un cast, o sea callar al compilador— y
+// `dispFactors` no lo tenia: cualquier cuenta con esa longitud daba **NaN**. No
+// se veia porque el momento estaba en una tabla a mano; en cuanto se deriva de
+// fuerza x longitud, como hace CSI, sale.
+export type DispUnit = "mm" | "cm" | "m" | "in" | "ft";
 
 // Defaults: tonf y mm (preferencia del usuario para cimentaciones/concreto).
 // Se persisten en localStorage; al cambiar via Tweakpane se actualizan.
@@ -55,17 +60,38 @@ export function fromKn(valKn: number, unit?: ForceUnit): number {
 }
 
 // ── Conversión de MOMENTO ─────────────────────────────────────────
-// SI base: kN·m. kip·ft ≈ 1.3558179 kN·m
-export const momentFactors: Record<ForceUnit, number> = {
-  kN: 1,               // kN·m
-  tonf: 9.80665,       // tonf·m → kN·m (mismo factor que fuerza × m)
-  kip: 1.3558179,      // kip·ft → kN·m
-};
+//
+// ⚠️ EN CSI EL MOMENTO NO ES UNA UNIDAD APARTE: es FUERZA × LONGITUD del
+// sistema. Sus sistemas se llaman literalmente `<Fuerza>, <Longitud>, <Temp>`
+// —`Kip, in, F` · `Kip, ft, F` · `KN, m, C` · `N, mm, C`— y el momento sale de
+// los dos primeros. Sacado del binario (`ETABS.dll`), no de memoria.
+//
+// Antes esto era una tabla a mano: `kip → 1.3558179` (kip·ft) pasara lo que
+// pasara con la longitud. Coincide con ETABS mientras el usuario no toque la
+// longitud, y deja de coincidir en cuanto la cambia — `Kip, in, F` da kip·in,
+// que es DOCE veces distinto. Ahora se deriva, que es lo unico que garantiza
+// que la conversion siga siendo la de ETABS, SAP2000 y SAFE en cualquier
+// combinacion.
+//
+// La longitud que manda es `lengthStructureUnit` (la del modelo), no
+// `dispUnit`: `dispUnit` es solo la de las FLECHAS, y en CSI un sistema tiene
+// una sola longitud.
+
+/** Metros que vale 1 unidad de la longitud del sistema. */
+export function metrosDeLongitud(u?: DispUnit): number {
+  return 1 / dispFactors[u ?? lengthStructureUnit.val];
+}
+
+/** kN·m que vale 1 unidad de momento del sistema actual (F x L). */
+export function factorMomento(f?: ForceUnit, l?: DispUnit): number {
+  return forceFactors[f ?? forceUnit.val] * metrosDeLongitud(l);
+}
+
 export function toKnm(valUI: number, unit?: ForceUnit): number {
-  return valUI * momentFactors[unit ?? forceUnit.val];
+  return valUI * factorMomento(unit);
 }
 export function fromKnm(valKnm: number, unit?: ForceUnit): number {
-  return valKnm / momentFactors[unit ?? forceUnit.val];
+  return valKnm / factorMomento(unit);
 }
 
 // ── Conversión de DESPLAZAMIENTO ──────────────────────────────────
@@ -75,7 +101,8 @@ export const dispFactors: Record<DispUnit, number> = {
   mm: 1000,          // 1 m = 1000 mm
   cm: 100,           // 1 m = 100 cm
   m: 1,              // 1 m = 1 m (base)
-  in: 39.3700787402, // 1 m = 39.3700787 in
+  in: 39.3700787402, // 1 in = 0.0254 m exacto
+  ft: 3.280839895,   // 1 ft = 0.3048 m exacto
 };
 
 /** Convierte m → unidad UI */
@@ -97,9 +124,19 @@ export function formatForce(valKn: number, digits = 2): string {
   return `${fromKn(valKn, u).toFixed(digits)} ${u}`;
 }
 export function formatMoment(valKnm: number, digits = 2): string {
-  const u = forceUnit.val;
-  const label = u === "kip" ? "kip·ft" : `${u}·m`;
-  return `${fromKnm(valKnm, u).toFixed(digits)} ${label}`;
+  return `${fromKnm(valKnm).toFixed(digits)} ${etiquetaMomento()}`;
+}
+
+/** «tonf·m», «kip·in»… — la del SISTEMA, fuerza × longitud, como en CSI. */
+export function etiquetaMomento(): string {
+  return `${forceUnit.val}·${lengthStructureUnit.val}`;
+}
+
+/** El nombre CSI del sistema actual: «Tonf, m, C», «Kip, in, F»… */
+export function sistemaCSI(): string {
+  const f = { kN: "KN", tonf: "Tonf", kip: "Kip" }[forceUnit.val];
+  const t = forceUnit.val === "kip" ? "F" : "C";
+  return `${f}, ${lengthStructureUnit.val}, ${t}`;
 }
 export function formatStress(valKnPm2: number, digits = 2): string {
   const u = stressUnit.val;
@@ -125,7 +162,7 @@ export function forceUnitSuffix(): string {
 }
 /** Sufijo momento actual: "(kN·m)", "(tonf·m)", "(kip·ft)" */
 export function momentUnitSuffix(): string {
-  return forceUnit.val === "kip" ? "(kip·ft)" : `(${forceUnit.val}·m)`;
+  return `(${etiquetaMomento()})`;
 }
 /** Sufijo desplazamiento actual */
 export function dispUnitSuffix(): string {
@@ -141,7 +178,7 @@ export function dispUnitSuffix(): string {
 export function stripUnitSuffix(label: string): string {
   return label
     .replace(/\s*\((kN|tonf|kip)(·m|·ft)?\)\s*$/i, "")
-    .replace(/\s*\((mm|cm|m|in|µm|um)\)\s*$/i, "")
+    .replace(/\s*\((mm|cm|m|in|ft|µm|um)\)\s*$/i, "")
     .trim();
 }
 
@@ -262,7 +299,7 @@ export const UNITS_PRESETS: Record<Exclude<UnitsPresetName, "Custom">, UnitsPres
   // Imperial U.S. (AISC, ACI 318 imperial)
   "U.S. Imperial": {
     force: "kip",    disp: "in",   stress: "ksi",     subgrade: "kip/ft³",
-    stiffTrans: "kip/in", lengthSection: "in", lengthStructure: "ft" as DispUnit,
+    stiffTrans: "kip/in", lengthSection: "in", lengthStructure: "ft",
   },
 };
 
