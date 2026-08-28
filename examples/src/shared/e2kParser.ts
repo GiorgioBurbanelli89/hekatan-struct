@@ -33,7 +33,9 @@ export interface E2kModel {
   nodeInputs: NodeInputs;
   elementInputs: ElementInputs;
   sectionShapes: Map<number, SectionShape>;
-  info: { nNodes: number; nFrames: number; nAreas: number; title: string };
+  /**  = las que hay en el fichero ·  = las que llegaron
+   *  a ser elementos. Si no coinciden, algo se perdio por el camino. */
+  info: { nNodes: number; nFrames: number; nAreas: number; nAreasMontadas?: number; title: string };
   /** Raw text blocks from original e2k for round-trip export */
   rawSections?: Map<string, string[]>;
 }
@@ -48,7 +50,25 @@ export function parseE2k(text: string): E2kModel {
   const frameSections: E2kModel["frameSections"] = new Map();
   const pointCoords = new Map<string, [number, number]>(); // name → [x, y] (plan coords)
   const lineConns: { name: string; type: string; pt1: string; pt2: string; nStories: number }[] = [];
-  const areaConns: { name: string; pts: string[]; nStories: number }[] = [];
+  // ── LAS AREAS ────────────────────────────────────────────────────────
+  // `areaConns` guardaba los puntos y NO SE USABA para nada mas que contar
+  // (`info.nAreas`): el `.e2k` se escribia con sus 900 losas, el parser las
+  // VEIA, y al releerlo salian CERO shells — sin espesor, sin tipo de cascara,
+  // sin modificadores y sin un solo aviso. El ciclo
+  // Hekatan → .e2k → ETABS → .e2k → Hekatan perdia la losa entera y lo unico
+  // que se notaba era un modelo mas flojo. Medido el 2026-08-28 con las 4
+  // plantillas que llevan area (`cli/roundtrip_areas.mjs`).
+  //
+  // `dz` son los numeros del final de cada linea AREA: el SALTO DE PLANTA de
+  // cada punto (0 = la del assign, 1 = una arriba). Es lo que distingue un
+  // PANEL de muro —dos puntos en planta y dos plantas, `1 1 0 0`— de un FLOOR,
+  // que los lleva todos a 0.
+  const areaConns: { name: string; tipo: string; pts: string[]; dz: number[] }[] = [];
+  const areaAssigns = new Map<string, { story: string; section: string }>();
+  /** SHELLPROP: espesor (m), material, tipo de cascara y los 8 modificadores. */
+  const shellProps = new Map<string, {
+    t: number; material: string; modeling: string; mods?: number[];
+  }>();
   const restraints = new Map<string, string[]>(); // pointName+story → restrained DOFs
   const lineAssigns = new Map<string, { story: string; section: string; rigidZone: number; releases: string[]; angle: number }>(); // lineName+story → assignment
   const frameLoads: { line: string; story: string; type: string; dir: string; lc: string; val: number }[] = [];
@@ -215,7 +235,56 @@ export function parseE2k(text: string): E2kModel {
       const am = line.match(/AREA\s+"([^"]+)"\s+(?:([A-Za-z]\w*)\s+)?\d+\s+(.+)/);
       if (am) {
         const pts = am[3].match(/"([^"]+)"/g)?.map(s => s.replace(/"/g, "")) || [];
-        areaConns.push({ name: am[1], pts, nStories: 0 });
+        // Lo que queda DESPUES de las comillas son los saltos de planta, uno
+        // por punto y en el mismo orden.
+        const dz = (am[3].replace(/"[^"]*"/g, " ").trim().split(/\s+/)
+          .filter(Boolean).map(Number).filter(v => Number.isFinite(v)));
+        areaConns.push({ name: am[1], tipo: am[2] || "FLOOR", pts,
+                         dz: dz.length === pts.length ? dz : pts.map(() => 0) });
+      }
+    }
+
+    // ── AREA ASSIGNS: que SECCION lleva cada area, y en que planta ──
+    if (currentSection === "AREA ASSIGNS") {
+      const aa = line.match(/AREAASSIGN\s+"([^"]+)"\s+"([^"]+)"\s+SECTION\s+"([^"]+)"/);
+      if (aa) areaAssigns.set(aa[1], { story: aa[2], section: aa[3] });
+    }
+
+    // ── SHELLPROP: las propiedades de losa, muro y deck ──
+    // Van en bloques distintos segun el tipo (`$ SLAB PROPERTIES`,
+    // `$ WALL PROPERTIES`, `$ DECK PROPERTIES`), asi que se mira la LINEA, no
+    // la seccion. Y ETABS escribe DOS lineas con el mismo nombre: la de la
+    // propiedad y otra solo con los modificadores, que omite los que valen 1.
+    if (line.startsWith("SHELLPROP")) {
+      const nm = line.match(/SHELLPROP\s+"([^"]+)"/)?.[1];
+      if (nm) {
+        const num = (re: RegExp) => {
+          const m = line.match(re); return m ? parseFloat(m[1]) : undefined;
+        };
+        const esp = num(/SLABTHICKNESS\s+([\d.eE+-]+)/) ??
+                    num(/WALLTHICKNESS\s+([\d.eE+-]+)/) ??
+                    // Un DECK relleno: el espesor TOTAL es la capa sobre el
+                    // nervio mas el nervio (asi lo escribe el exportador).
+                    ((num(/DECKSLABDEPTH\s+([\d.eE+-]+)/) ?? 0) +
+                     (num(/DECKRIBDEPTH\s+([\d.eE+-]+)/) ?? 0) || undefined);
+        const MODS = ["F11MOD", "F22MOD", "F12MOD", "M11MOD", "M22MOD",
+                      "M12MOD", "V13MOD", "V23MOD"];
+        const leidos = MODS.map(k => num(new RegExp(k + "\\s+([\\d.eE+-]+)")));
+        const prev = shellProps.get(nm);
+        if (leidos.some(v => v !== undefined)) {
+          // Linea de modificadores: completa la propiedad ya leida.
+          const mods = leidos.map(v => v ?? 1);
+          shellProps.set(nm, { t: prev?.t ?? 0, material: prev?.material ?? "",
+                               modeling: prev?.modeling ?? "ShellThin", mods });
+        } else if (esp !== undefined) {
+          shellProps.set(nm, {
+            t: esp, mods: prev?.mods,
+            material: line.match(/MATERIAL\s+"([^"]+)"/)?.[1] ??
+                      line.match(/CONCMATERIAL\s+"([^"]+)"/)?.[1] ?? "",
+            modeling: line.match(/MODELINGTYPE\s+"([^"]+)"/)?.[1] ??
+                      (/PROPTYPE\s+"Deck"/.test(line) ? "Membrane" : "ShellThin"),
+          });
+        }
       }
     }
   }
@@ -282,6 +351,37 @@ export function parseE2k(text: string): E2kModel {
   // Also from restraints
   for (const [key] of restraints) {
     allNodeKeys.add(key);
+  }
+
+  // ── Nudos de las AREAS ──
+  // Cada punto del area vive en la planta del assign MAS su salto `dz`. Las
+  // plantas van de arriba abajo en el fichero, asi que subir una planta es
+  // RESTAR uno al indice.
+  //
+  // `dz` cuenta plantas HACIA ABAJO desde la del AREAASSIGN. MEDIDO, no
+  // supuesto: el `.e2k` trae
+  //     AREA "W901" PANEL 4 "1" "2" "2" "1"  1 1 0 0
+  //     AREAASSIGN "W901" "Level_1"            (Level_1 esta en Z = 3.5)
+  // y ETABS coloca ese muro entre **Z = 0.0 y 3.5**, o sea que los puntos con
+  // `dz = 1` caen en la Base — una planta por DEBAJO.
+  //
+  // Como `stories` viene de arriba abajo, bajar es SUMAR al indice. Con el
+  // signo cambiado los 10 muros de la ultima planta se salian del array y se
+  // perdian, y los otros 30 se montaban una planta MAS ARRIBA de donde van.
+  const storyDe = (story: string, dz: number) => {
+    const i = stories.findIndex(s => s.name === story);
+    if (i < 0) return undefined;
+    const j = i + (dz || 0);
+    if (j < 0 || j > stories.length - 1) return undefined;   // fuera del edificio
+    return stories[j].name;
+  };
+  for (const ac of areaConns) {
+    const aa = areaAssigns.get(ac.name);
+    if (!aa) continue;
+    ac.pts.forEach((pt, k) => {
+      const st = storyDe(aa.story, ac.dz[k] ?? 0);
+      if (st) allNodeKeys.add(nodeKey(pt, st));
+    });
   }
 
   // Create nodes — deduplicate by (point, story) key
@@ -560,6 +660,110 @@ export function parseE2k(text: string): E2kModel {
     if (mat?.density) densities.set(elemIdx, mat.density);
   }
 
+  // ── ELEMENTOS DE AREA ────────────────────────────────────────────────
+  // Se montan al final, DESPUES de las barras, para no tocar la numeracion
+  // que ya usan `elementSections` y compania.
+  //
+  // `MODELINGTYPE` de ETABS → `plateFormulations` del motor:
+  //   ShellThin  → 1  Kirchhoff        ShellThick → 0  Mindlin MITC4
+  //   Membrane   → 0  y ademas se anulan los modificadores de FLEXION, que es
+  //                lo que hace que no aporte rigidez fuera del plano. Un
+  //                `Membrane` que entre como placa seria otra estructura.
+  const thicknesses = new Map<number, number>();
+  const poissonsRatios = new Map<number, number>();
+  const plateFormulations = new Map<number, number>();
+  const shellModifiers = new Map<number, number[]>();
+  const areaNames: string[] = [];
+  let nAreasSinResolver = 0;
+  for (const ac of areaConns) {
+    const aa = areaAssigns.get(ac.name);
+    if (!aa) { nAreasSinResolver++; continue; }
+    const idx = ac.pts.map((pt, k) => {
+      const st = storyDe(aa.story, ac.dz[k] ?? 0);
+      return st === undefined ? undefined : nodeNameToIdx.get(nodeKey(pt, st));
+    });
+    // Un area con un nudo sin resolver no es media area: es ninguna.
+    if (idx.some(v => v === undefined)) { nAreasSinResolver++; continue; }
+    // Un PANEL de muro se escribe con el punto repetido (pt1 pt2 pt2 pt1) y el
+    // salto de planta 1 1 0 0: al resolverlo salen 4 nudos DISTINTOS. Si aun
+    // asi quedan repetidos, el Q4 esta colapsado y no es un elemento definido.
+    const unicos = [...new Set(idx as number[])];
+    if (unicos.length < 3) { nAreasSinResolver++; continue; }
+    const nodosArea = (unicos.length === 3 ? unicos : (idx as number[]).slice(0, 4));
+    const ei = elements.length;
+    elements.push(nodosArea as unknown as Element);
+    elementNames.push(ac.name);
+    elementTypes.push(ac.tipo);
+    elementStoriesArr.push(aa.story);
+    areaNames.push(ac.name);
+
+    const sp = shellProps.get(aa.section);
+    if (sp) {
+      thicknesses.set(ei, sp.t);
+      const mat = materials.get(sp.material);
+      if (mat?.E) elasticities.set(ei, mat.E);
+      if (mat?.G) shearModuli.set(ei, mat.G);
+      if (mat?.nu !== undefined) poissonsRatios.set(ei, mat.nu);
+      if (mat?.density) densities.set(ei, mat.density);
+      const esMembrana = /membrane/i.test(sp.modeling);
+      plateFormulations.set(ei, /thick/i.test(sp.modeling) || esMembrana ? 0 : 1);
+      const m = sp.mods ? sp.mods.slice(0, 8) : [1, 1, 1, 1, 1, 1, 1, 1];
+      if (esMembrana) { m[3] = 0; m[4] = 0; m[5] = 0; m[6] = 0; m[7] = 0; }
+      if (sp.mods || esMembrana) shellModifiers.set(ei, m);
+    }
+  }
+  if (nAreasSinResolver) {
+    console.warn(`[e2kParser] ${nAreasSinResolver} de ${areaConns.length} areas no se ` +
+      `pudieron montar (sin AREAASSIGN, sin planta o con nudos repetidos). ` +
+      `Se pierden: el modelo sale mas flojo y sin avisar en la geometria.`);
+  }
+
+  // ── A LAS UNIDADES DEL MOTOR: kN y m ─────────────────────────────────
+  //
+  // ⚠️ El parser NO convertia NADA: devolvia los numeros tal cual venian del
+  // fichero. Y un `.e2k` va en **N y MM** (ETABS ignora el header UNITS y
+  // siempre escribe en sus unidades base), asi que un modelo importado entraba
+  // con las cotas MIL VECES mas grandes: X de 0 a 18000 donde el modelo tiene
+  // 18 m, espesores de 200, y el modulo en N/mm2. Medido el 2026-08-28
+  // (`cli/roundtrip_areas.mjs`). No daba error: daba otro edificio.
+  //
+  // Cada magnitud lleva su potencia: una inercia va en L^4 y un modulo en
+  // F/L^2. Convertir solo las coordenadas seria peor que no convertir nada —
+  // quedaria un modelo con la geometria en metros y las secciones en mm.
+  const FL: Record<string, number> = { MM: 1e-3, CM: 1e-2, M: 1, IN: 0.0254, FT: 0.3048 };
+  const FF: Record<string, number> = { N: 1e-3, KN: 1, KGF: 9.80665e-3, TONF: 9.80665,
+                                       LB: 4.44822e-3, KIP: 4.44822 };
+  const L = FL[(units.length || "M").toUpperCase()] ?? 1;
+  const F = FF[(units.force || "KN").toUpperCase()] ?? 1;
+  if (L !== 1 || F !== 1) {
+    const esc = (m: Map<number, number> | undefined, k: number) => {
+      if (!m) return;
+      for (const [i, v] of m) m.set(i, v * k);
+    };
+    for (const n of nodes) { n[0] *= L; n[1] *= L; n[2] *= L; }
+    for (const s of stories) { s.height *= L; s.elev *= L; }
+    for (const g of grids) g.coord *= L;
+    esc(thicknesses, L);
+    esc(areas, L * L);
+    esc(shearAreasY, L * L); esc(shearAreasZ, L * L);
+    esc(momentsOfInertiaY, L ** 4); esc(momentsOfInertiaZ, L ** 4);
+    esc(torsionalConstants, L ** 4);
+    esc(elasticities, F / (L * L)); esc(shearModuli, F / (L * L));
+    esc(densities, F / (L ** 3));
+    esc(rigidOffsets as Map<number, number>, L);
+    // Cargas: las fuerzas en F y los momentos en F*L, en el mismo vector.
+    for (const [i, v] of loads) {
+      loads.set(i, v.map((x, k) => x * (k < 3 ? F : F * L)) as typeof v);
+    }
+    // Las cotas de la seccion dibujada tambien son longitudes.
+    for (const [, sh] of sectionShapes) {
+      for (const k of ["d", "b", "tf", "tw", "D", "B", "TF", "TW"]) {
+        const o = sh as unknown as Record<string, number>;
+        if (typeof o[k] === "number") o[k] *= L;
+      }
+    }
+  }
+
   return {
     units,
     stories: stories.reverse(), // bottom to top
@@ -587,13 +791,18 @@ export function parseE2k(text: string): E2kModel {
       momentReleases,
       densities,
       sectionShapes,
+      thicknesses,
+      poissonsRatios,
+      plateFormulations,
+      shellModifiers,
     },
     sectionShapes,
     grids,
     info: {
       nNodes: nodes.length,
-      nFrames: elements.length,
+      nFrames: elements.length - areaNames.length,
       nAreas: areaConns.length,
+      nAreasMontadas: areaNames.length,
       title,
     },
     rawSections,

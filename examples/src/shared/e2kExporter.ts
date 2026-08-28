@@ -1104,7 +1104,11 @@ function exportFromScratch(input: ExportE2kInput): string {
   const angDeObjeto = new Map<number, number>();
   areaObjects?.forEach(o => o.cells.forEach(c => celdaDeObjeto.add(c)));
   elements.forEach((el, i) => {
-    if (el.length === 4) {
+    // ⚠️ Los TRIANGULOS entran tambien. Antes la condicion era
+    // `el.length === 4` a secas y una malla triangular se exportaba con CERO
+    // areas: `triangular-plate` escribia sus 128 shells como nada, sin un
+    // aviso. ETABS admite `AREA "F1" FLOOR 3 "p1" "p2" "p3" 0 0 0`.
+    if (el.length === 4 || el.length === 3) {
       // Determine if wall (vertical) or slab (horizontal) by normal direction.
       // Hekatan-Struct uses Z-up: normal vertical (high |nz|) → SLAB (floor);
       // normal mostly horizontal (low |nz|) → WALL (panel).
@@ -1224,6 +1228,59 @@ function exportFromScratch(input: ExportE2kInput): string {
     return `  SHELLPROP  "${nombre}"  ${partes.join(" ")} `;
   };
 
+  // ── UNA PROPIEDAD POR CADA CASCARA DISTINTA ─────────────────────────
+  //
+  // ⚠️ El exportador escribia UNA sola `SHELLPROP "Losa"` y UNA `"Muro"`, con
+  // el espesor del PRIMER elemento de cada tipo. En un modelo con varias
+  // cascaras distintas —una conexion con ala de 12 mm, alma de 18 y placa de
+  // 25— todas salian con el mismo espesor y las demas se perdian. Medido el
+  // 2026-08-28 con el ciclo completo (`cli/roundtrip_areas.mjs`): de 58
+  // ejemplos con area, 5 volvian con menos espesores de los que salieron
+  // (`placa-base` [0.014, 0.022, 0.025] volvia como [0.022, 0.025]).
+  //
+  // Se agrupa por lo que DEFINE la cascara —muro o losa, espesor, formulacion
+  // y modificadores— y sale una propiedad por grupo. El primero conserva el
+  // nombre de siempre ("Losa" / "Muro") para no mover lo ya validado contra
+  // ETABS; los demas van numerados.
+  const thAll = input.elementInputs.thicknesses;
+  const pfAll = (input.elementInputs as any).plateFormulations as Map<number, number> | undefined;
+  const claveDe = (ae: { idx: number; isWall: boolean }) => {
+    const t = thAll?.get(ae.idx);
+    const pf = pfAll?.get(ae.idx);
+    const m = modsDe(ae.idx);
+    return `${ae.isWall ? "W" : "F"}|${t ?? "-"}|${pf ?? "-"}|${m ? m.map(v => rd(v)).join(",") : "-"}`;
+  };
+  const grupos = new Map<string, { nombre: string; isWall: boolean; t?: number; pf?: number }>();
+  let nLosa = 0, nMuro = 0;
+  for (const ae of areaElements) {
+    const k = claveDe(ae);
+    if (grupos.has(k)) continue;
+    const isWall = ae.isWall;
+    const n = isWall ? ++nMuro : ++nLosa;
+    grupos.set(k, {
+      nombre: (isWall ? "Muro" : "Losa") + (n === 1 ? "" : String(n)),
+      isWall, t: thAll?.get(ae.idx), pf: pfAll?.get(ae.idx),
+    });
+  }
+  /** El nombre de la propiedad que le toca a este elemento. */
+  const secDe = (ae: { idx: number; isWall: boolean }) =>
+    grupos.get(claveDe(ae))?.nombre ?? (ae.isWall ? "Muro" : "Losa");
+  const modelingDeGrupo = (pf?: number) =>
+    pf === 2 ? "Membrane" : pf === 1 ? "ShellThin" : "ShellThick";
+  /** Los MOD de un grupo, leidos de su primer elemento. */
+  const lineaModsGrupo = (nombre: string, k: string): string => {
+    const ae = areaElements.find(a => claveDe(a) === k);
+    const m = ae ? (modsDe(ae.idx) ?? null) : null;
+    if (!m) return "";
+    const partes = MOD_NOMBRES
+      .map((n, i) => (Math.abs(m[i] - 1) > 1e-9 ? `${n} ${rd(m[i])}` : ""))
+      .filter(Boolean);
+    return partes.length ? `  SHELLPROP  "${nombre}"  ${partes.join(" ")} ` : "";
+  };
+  // Los grupos EXTRA (del segundo en adelante) se emiten aparte; el primero de
+  // cada tipo sigue por el camino de siempre, mas abajo.
+  const extra = [...grupos.entries()].filter(([, g]) => /\d$/.test(g.nombre));
+
   if (areaElements.some(a => !a.isWall)) {
     // .LOSA o DECK? Se decide por el modificador de FLEXION: si es ~0 el area
     // es una MEMBRANA, y en ETABS eso es un DECK, no una losa. Exportarlo
@@ -1281,6 +1338,21 @@ function exportFromScratch(input: ExportE2kInput): string {
     lines.push(``);
   }
 
+  // Y las cascaras que NO son la primera de su tipo: cada una con su espesor y
+  // su formulacion. Sin esto se perdian todas menos una.
+  if (extra.length) {
+    lines.push(`$ OTRAS SECCIONES DE CASCARA`);
+    for (const [k, g] of extra) {
+      const t = g.t ?? (g.isWall ? 0.2 : 0.15);
+      lines.push(g.isWall
+        ? `  SHELLPROP  "${g.nombre}"  PROPTYPE  "Wall"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "${modelingDeGrupo(g.pf)}"  WALLTHICKNESS ${rd(cL(t))} `
+        : `  SHELLPROP  "${g.nombre}"  PROPTYPE  "Slab"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "${modelingDeGrupo(g.pf)}"  SLABTYPE "Slab"  SLABTHICKNESS ${rd(cL(t))} `);
+      const lm = lineaModsGrupo(g.nombre, k);
+      if (lm) lines.push(lm);
+    }
+    lines.push(``);
+  }
+
   if (areaElements.length > 0) {
     lines.push(`$ AREA CONNECTIVITIES`);
     const aaEntries: string[] = [];
@@ -1312,7 +1384,7 @@ function exportFromScratch(input: ExportE2kInput): string {
           const iTop = Math.max(...ps.map(q => idxPl(q.story)));
           const salto = ps.map(q => iTop - idxPl(q.story));
           lines.push(`  AREA "${aName}"  ${aType}  4  "${ps[0].pt}"  "${ps[1].pt}"  "${ps[2].pt}"  "${ps[3].pt}"  ${salto.join("  ")}  `);
-          aaEntries.push(`  AREAASSIGN  "${aName}"  "${storyNames[iTop]}"  SECTION "Muro"  OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "MIDDLE"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
+          aaEntries.push(`  AREAASSIGN  "${aName}"  "${storyNames[iTop]}"  SECTION "${secDe(ae)}"  OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "MIDDLE"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
           return;
         }
         // Use bottom-left and bottom-right points (Z-up: n[2] = elevation)
@@ -1321,10 +1393,15 @@ function exportFromScratch(input: ExportE2kInput): string {
         lines.push(`  AREA "${aName}"  ${aType}  4  "${ps[bot0].pt}"  "${ps[bot1].pt}"  "${ps[bot1].pt}"  "${ps[bot0].pt}"  1  1  0  0  `);
         // Assign at story of top nodes
         const topStory = ps[bot0 === 0 ? 2 : 0].story;
-        aaEntries.push(`  AREAASSIGN  "${aName}"  "${topStory}"  SECTION "Muro"  OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "MIDDLE"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
+        aaEntries.push(`  AREAASSIGN  "${aName}"  "${topStory}"  SECTION "${secDe(ae)}"  OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "MIDDLE"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
       } else {
-        // FLOOR: pt1 pt2 pt3 pt4 0 0 0 0
-        lines.push(`  AREA "${aName}"  ${aType}  4  "${ps[0].pt}"  "${ps[1].pt}"  "${ps[2].pt}"  "${ps[3].pt}"  0  0  0  0  `);
+        // FLOOR: pt1 pt2 pt3 pt4 0 0 0 0  —  y con 3 puntos, un triangulo.
+        // El contador y el numero de saltos siguen al numero de puntos: un
+        // `3` con cuatro saltos deja a ETABS leyendo basura.
+        const n = ps.length;
+        lines.push(`  AREA "${aName}"  ${aType}  ${n}  ` +
+          ps.map(q => `"${q.pt}"`).join("  ") + "  " +
+          ps.map(() => "0").join("  ") + "  ");
         // Un deck se asigna por su propio nombre de seccion y con ANG: el eje
         // local decide A QUIEN le entrega la carga (salva perpendicular a las
         // secundarias). Sin el ANG la reparte al reves. Y no lleva DIAPH ni
@@ -1332,7 +1409,7 @@ function exportFromScratch(input: ExportE2kInput): string {
         const ang = angDeObjeto.get(ae.idx) ?? shellAngles?.get(ae.idx);
         aaEntries.push(esMembrana
           ? `  AREAASSIGN  "${aName}"  "${ps[0].story}"  SECTION "${DECK_SEC}"  ANG ${rd(ang ?? 0)} OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "No"  CARDINALPOINT "MIDDLE"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `
-          : `  AREAASSIGN  "${aName}"  "${ps[0].story}"  SECTION "Losa" ${usarDiafragma ? ` DIAPH  "D1" ` : ""} OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "TOP"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
+          : `  AREAASSIGN  "${aName}"  "${ps[0].story}"  SECTION "${secDe(ae)}" ${usarDiafragma ? ` DIAPH  "D1" ` : ""} OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "TOP"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
         areaLoadRefs.push({ name: aName, story: ps[0].story, idx: ae.idx });
       }
     });
