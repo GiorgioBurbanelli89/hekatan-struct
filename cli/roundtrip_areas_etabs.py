@@ -24,7 +24,10 @@ import comtypes.client
 import comtypes.gen.ETABSv1 as E
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
-BASE = os.path.abspath(os.path.join(AQUI, "..", "validation", "modelos", "roundtrip"))
+# La carpeta se puede pasar por argumento: el galpon vive en otra
+# (`validation/modelos/galpon-ciclo`) porque no sale del registry.
+BASE = os.path.abspath(sys.argv[1] if len(sys.argv) > 1
+                       else os.path.join(AQUI, "..", "validation", "modelos", "roundtrip"))
 EDB = os.path.join(BASE, "edb")
 os.makedirs(EDB, exist_ok=True)
 

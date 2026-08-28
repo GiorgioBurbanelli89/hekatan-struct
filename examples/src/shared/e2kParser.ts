@@ -674,21 +674,29 @@ export function parseE2k(text: string): E2kModel {
   const plateFormulations = new Map<number, number>();
   const shellModifiers = new Map<number, number[]>();
   const areaNames: string[] = [];
-  let nAreasSinResolver = 0;
+  // Se cuenta POR CAUSA: «2 de 79 no se montaron» no dice si falta un dato, si
+  // el fichero esta mal o si el motor no tiene ese elemento — y son cosas
+  // distintas. En el modelo real de Rio Chico la causa era una sola area de
+  // SEIS lados, que no es un fallo de nadie: hekatan-fem tiene Q4 y T3.
+  const perdidas = { sinAssign: 0, sinNudo: 0, colapsada: 0, poligono: 0 };
   for (const ac of areaConns) {
     const aa = areaAssigns.get(ac.name);
-    if (!aa) { nAreasSinResolver++; continue; }
+    if (!aa) { perdidas.sinAssign++; continue; }
+    // Poligonos de mas de 4 lados: ETABS los admite, el motor no. Habria que
+    // triangularlos, y triangular a ciegas un poligono no convexo da elementos
+    // volteados — mejor decirlo que inventarlo.
+    if (ac.pts.length > 4) { perdidas.poligono++; continue; }
     const idx = ac.pts.map((pt, k) => {
       const st = storyDe(aa.story, ac.dz[k] ?? 0);
       return st === undefined ? undefined : nodeNameToIdx.get(nodeKey(pt, st));
     });
     // Un area con un nudo sin resolver no es media area: es ninguna.
-    if (idx.some(v => v === undefined)) { nAreasSinResolver++; continue; }
+    if (idx.some(v => v === undefined)) { perdidas.sinNudo++; continue; }
     // Un PANEL de muro se escribe con el punto repetido (pt1 pt2 pt2 pt1) y el
     // salto de planta 1 1 0 0: al resolverlo salen 4 nudos DISTINTOS. Si aun
     // asi quedan repetidos, el Q4 esta colapsado y no es un elemento definido.
     const unicos = [...new Set(idx as number[])];
-    if (unicos.length < 3) { nAreasSinResolver++; continue; }
+    if (unicos.length < 3) { perdidas.colapsada++; continue; }
     const nodosArea = (unicos.length === 3 ? unicos : (idx as number[]).slice(0, 4));
     const ei = elements.length;
     elements.push(nodosArea as unknown as Element);
@@ -712,10 +720,17 @@ export function parseE2k(text: string): E2kModel {
       if (sp.mods || esMembrana) shellModifiers.set(ei, m);
     }
   }
-  if (nAreasSinResolver) {
-    console.warn(`[e2kParser] ${nAreasSinResolver} de ${areaConns.length} areas no se ` +
-      `pudieron montar (sin AREAASSIGN, sin planta o con nudos repetidos). ` +
-      `Se pierden: el modelo sale mas flojo y sin avisar en la geometria.`);
+  const nPerdidas = perdidas.sinAssign + perdidas.sinNudo + perdidas.colapsada + perdidas.poligono;
+  if (nPerdidas) {
+    const por = [
+      perdidas.poligono && `${perdidas.poligono} son POLIGONOS de mas de 4 lados ` +
+        `(ETABS los admite, hekatan-fem tiene Q4 y T3: habria que triangularlos)`,
+      perdidas.sinAssign && `${perdidas.sinAssign} sin AREAASSIGN`,
+      perdidas.sinNudo && `${perdidas.sinNudo} con algun nudo que no resuelve a planta`,
+      perdidas.colapsada && `${perdidas.colapsada} colapsadas (menos de 3 nudos distintos)`,
+    ].filter(Boolean).join(" · ");
+    console.warn(`[e2kParser] ${nPerdidas} de ${areaConns.length} areas no se montaron: ${por}. ` +
+      `Se pierden, y el modelo sale mas flojo sin que la geometria lo delate.`);
   }
 
   // ── A LAS UNIDADES DEL MOTOR: kN y m ─────────────────────────────────
