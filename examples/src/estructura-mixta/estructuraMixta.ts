@@ -29,9 +29,35 @@
  *
  * ## Lo que NO entra, y por qué
  *
- * **No resuelve, y ya se sabe por qué** (medido el 2026-08-28 troceando el
- * modelo planta a planta y luego por familia de elemento): **116 trozos, 326
- * nudos, no llegan a NINGÚN apoyo**. Un trozo suelto flota — sus 6 GDL por nudo
+ * ## ⚖️ EL VEREDICTO: el modelo es inestable EN ETABS TAMBIÉN
+ *
+ * Esto no es una interpretación, es lo que escribe ETABS en su propio log de
+ * análisis (`validation/modelos/riochico/etabs_analisis.log`, copiado del EDB):
+ *
+ *     TOTAL NUMBER OF EQUILIBRIUM EQUATIONS     =        7380
+ *     * * * W A R N I N G * * *
+ *     THE STRUCTURE IS UNSTABLE OR ILL-CONDITIONED !!
+ *     CHECK THE STRUCTURE CAREFULLY FOR:
+ *      - INADEQUATE SUPPORT CONDITIONS, OR
+ *      - ONE OR MORE INTERNAL MECHANISMS, OR
+ *      ...
+ *
+ * Y la OAPI lo confirma pieza a pieza (`cli/muelles_etabs.py` sobre el `.EDB`):
+ * de los 787 joints, **CERO tienen muelle de punto**, y las siete propiedades
+ * que darían sujeción horizontal —«BALASTO H X-X», «BALASTO H Y-Y», los tres
+ * «SPRINK», los dos «RESORTE SOTANO»— están **definidas y sin asignar**. Los
+ * dos que sí se usan, `RESORTE EN VIGAS` (51 barras) y `BALASTO V` (12 áreas),
+ * son los dos **verticales**.
+ *
+ * O sea: la cimentación de este edificio no tiene nada que la sujete en
+ * horizontal, ni aquí ni en ETABS. **El importador no tiene la culpa y no hay
+ * nada que arreglarle**: reproduce fielmente lo que el fichero dice.
+ *
+ * ## No resuelve, y ya se sabe por qué (medido troceando el modelo planta a
+ * planta y luego por familia de elemento). Con el lector ya arreglado quedan
+ * **9 nudos** sin llegar a un apoyo, y el mecanismo de verdad lo saca
+ * `cli/modo_mecanismo.mjs` por regularización: apartando **216 nudos** el
+ * modelo **resuelve sin regularizar**, con `Uz = -83.28 mm`. Un trozo suelto flota — sus 6 GDL por nudo
  * no los sujeta nadie— y la matriz sale singular. La planta baja sola, que no
  * tiene ninguno, sí resuelve.
  *
@@ -50,6 +76,9 @@
 import { deform, analyze, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import { parseE2k, piezasFlotantes } from "../shared/e2kParser";
+import { coserModelo } from "../shared/e2kCoser";
+import { muellesDelModelo } from "../shared/e2kMuelles";
+import { buscarMecanismos, coartarGdlSueltos } from "../shared/e2kMecanismos";
 // El `.e2k` va embebido como texto (ver `modelo.ts`): es el modelo, no un dato
 // de entrada. Está
 // recortado a los bloques que definen la ESTRUCTURA (se le quitaron los de
@@ -108,8 +137,22 @@ export const estructuraMixta: ExampleDef = {
   build(p, states) {
     const m = parseE2k(modeloE2k);
 
+    // ── COSER ──
+    //
+    // El `.e2k` describe los OBJETOS que dibujo el proyectista, no la malla que
+    // ETABS resuelve: sus 746 lineas traen `AUTOMESH "YES"` y
+    // `MESHATINTERSECTIONS "YES"`. Sin coser, el modelo se ve entero y no
+    // resuelve. Aqui se funden los nudos coincidentes, se crea el nudo de los
+    // cruces y se parte cada barra por los nudos que le caen encima.
+    const cosido = coserModelo(m);
+    // Y los GDL que no sujeta nadie: se coartan, que es lo que hace el solver
+    // (y ETABS), solo que con tolerancia RELATIVA en vez de la absoluta que se
+    // le cuela a `getZerosIndices`.
+    const mec = coartarGdlSueltos(m);
+
     // El parser ya devuelve todo en kN y m — el fichero va en KGF/M y la
     // conversión es suya, no de aquí.
+    const muelles = muellesDelModelo(m);
     const nodes = m.nodes as Node[];
     const elements = m.elements as Element[];
     const ni: any = { ...m.nodeInputs };
@@ -130,6 +173,16 @@ export const estructuraMixta: ExampleDef = {
     const nBarras = elements.filter(e => e.length === 2).length;
     const nShells = elements.length - nBarras;
     const zs = nodes.map(n => n[2]);
+    console.info(
+      `[Estructura mixta] cosido: ${cosido.nudosFundidos} nudos fundidos · ` +
+      `${cosido.nudosDeCruce} nudos de cruce · ${cosido.barrasPartidas} barras partidas ` +
+      `(+${cosido.trozosNuevos} trozos) · ${mec.coartados} GDL sin rigidez coartados · ` +
+      `${muelles.muelles.length} muelles en ${muelles.informe.nudosConMuelle} nudos`);
+    if (muelles.informe.definidasSinUsar.length)
+      console.warn(`[Estructura mixta] ⚠️ el .e2k DEFINE y no ASIGNA estos muelles: ` +
+        `${muelles.informe.definidasSinUsar.join(", ")}. Los dos que sí asigna son ` +
+        `verticales, así que la cimentación no tiene sujeción horizontal — y de ahí ` +
+        `sale el mecanismo. No es del lector: es lo que trae el fichero.`);
     console.info(
       `[Estructura mixta] ${nodes.length} nudos · ${nBarras} barras · ${nShells} cáscaras · ` +
       `cotas ${Math.min(...zs).toFixed(2)} a ${Math.max(...zs).toFixed(2)} m · ` +
@@ -182,7 +235,11 @@ export const estructuraMixta: ExampleDef = {
     const nod = states.nodes.val as Node[];
     const ele = states.elements.val as Element[];
     try {
-      states.deformOutputs.val = deform(nod, ele, states.nodeInputs.val, ei);
+      // Los muelles van de 5º argumento y se renumeran como los nudos.
+      const spr = muelles.muelles
+        .map((s2) => ({ ...s2, node: (states.nodes.val as Node[]).indexOf(m.nodes[s2.node] as Node) }))
+        .filter((s2) => s2.node >= 0);
+      states.deformOutputs.val = deform(nod, ele, states.nodeInputs.val, ei, spr);
       states.analyzeOutputs.val = analyze(nod, ele, ei, states.deformOutputs.val);
       const d = states.deformOutputs.val.deformations;
       if (!d || d.size === 0) {
