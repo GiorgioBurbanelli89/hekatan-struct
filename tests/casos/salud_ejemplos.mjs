@@ -62,7 +62,33 @@ const EXENTOS_EQUILIBRIO = new Set([
  *  barra el extremo libre es legítimo. Se exige en los modelos con malla. */
 const MINIMO_PARA_EXIGIR_CONEXION = 50;   // nudos
 
+/**
+ * Ejemplos cuyo DEFAULT no analiza, con los parámetros con los que SÍ hay que
+ * medirlos. No es una exención: al revés, es medir de verdad lo que el ejemplo
+ * hace cuando se le pide el análisis. Sin esto el barrido leía un modelo sin
+ * resolver y decía «0 desplazamientos», que es lo que el ejemplo anuncia.
+ */
+const PARAMS_PARA_MEDIR = {
+  // Su default es «Solo el modelo» a propósito: está aquí para demostrar la
+  // IMPORTACIÓN de un `.e2k` real. Se mide sin cimentación (empotrado en z=0),
+  // que es el análisis que cierra el equilibrio exacto; el de balasto lleva
+  // muelles Winkler y su reacción no está en `reactions` (ver EXENTOS_EQUILIBRIO).
+  "estructura-mixta": { resolver: 1, cimentacion: 1 },
+};
+
+/**
+ * Nudos colgando ADMITIDOS, con el número medido. No es para tapar: es un
+ * modelo REAL cuya cubierta no está unida —231 uniones que se quedan a un palmo,
+ * siete vigas planas a z=12.80 sobre correas en pendiente— y ETABS también lo
+ * declara UNSTABLE en su propio log. El límite está justo por encima de lo
+ * medido para que un empeoramiento SALTE.
+ */
+const COLGADOS_ADMITIDOS = {
+  "estructura-mixta": 40,   // medido 36 (29-ago-2026), con el análisis encendido
+};
+
 const FUENTE = `
+const MEDIR_CON = ${JSON.stringify(PARAMS_PARA_MEDIR)};
 const g = globalThis; g.window = g;
 const ctx2d = () => new Proxy({ font:"", measureText:()=>({width:10}),
   createLinearGradient:()=>({addColorStop(){}}), getImageData:()=>({data:new Uint8ClampedArray(4)}) },
@@ -84,6 +110,7 @@ export function barrer() {
   for (const ex of examplesRegistry) {
     if (typeof ex.build !== "function") continue;
     const p = {}; for (const [k,d] of Object.entries(ex.params||{})) p[k] = d.default;
+    Object.assign(p, MEDIR_CON[ex.id] || {});
     const estado = (ini) => { let v = ini;
       return { get val(){return v}, set val(x){v=x}, get rawVal(){return v}, set rawVal(x){v=x} }; };
     const st = { nodes: estado([]), elements: estado([]), nodeInputs: estado({}),
@@ -193,7 +220,8 @@ export async function correr() {
   // cimentacion parece colgado cuando lo sostiene el suelo en toda su
   // longitud. Es la misma lista y el mismo motivo que en el equilibrio.
   const colgados = E.filter((e) => e.nNodos >= MINIMO_PARA_EXIGIR_CONEXION &&
-                                   e.soloUno && !EXENTOS_EQUILIBRIO.has(e.id))
+                                   e.soloUno && !EXENTOS_EQUILIBRIO.has(e.id) &&
+                                   e.soloUno > (COLGADOS_ADMITIDOS[e.id] ?? 0))
     .map((e) => `${e.id} (${e.soloUno})`);
   filas.push({
     que: "sin nudos colgando de un solo elemento",

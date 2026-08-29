@@ -181,21 +181,43 @@ export async function correr() {
     crudo: true,
   });
 
-  // ── 4 · la malla de ETABS de verdad afina el resultado ────────────────────
+  // ── 4 · el tamano de malla sigue mandando, y el elemento CONVERGE ─────────
+  //
+  // ⚠️ Esto exigia que la malla fina cambiara la flecha MAS DE UN 20 %, y era
+  // cierto cuando la plantilla venia con Shell-Thick: el MITC4 a 3 m se queda
+  // corto. El default paso a Shell-Thin (Kirchhoff), que no bloquea a
+  // cortante, y con el la malla gruesa ya acierta. Medido hoy (29-ago-2026)
+  // sobre la MISMA plantilla y la misma malla, cambiando solo `formLosa`:
+  //
+  //   malla   shells   Thin (el default)   Thick (MITC4)
+  //   3.00 m     144       2.7884 mm         1.6432 mm   <- el 1.643 de la tabla de arriba
+  //   1.25 m     900       2.8493 mm         2.6865 mm
+  //   0.50 m    5184       2.8876 mm         2.8691 mm
+  //
+  // O sea que la tabla del encabezado no medía la malla: medía el elemento. Lo
+  // que hay que vigilar aqui es lo otro, que es lo que puede romperse sin
+  // avisar: que `ms` siga MALLANDO (si se desconecta, los elementos no cambian)
+  // y que el resultado este CONVERGIDO (se mueve poco, pero no exactamente
+  // nada). Que el MITC4 necesite malla fina lo mide `shell-thick`.
   const grueso = barrer(3.0);
   const fino = r;
   const losa = (v) => v.find((x) => /losa \(aporte/i.test(x.nombre));
   const g = losa(grueso), f = losa(fino);
   if (g && f) {
+    const veces = f.elements / g.elements;
+    filas.push({
+      que: "`ms` sigue mallando: de 3 m a la malla de ETABS hay 10 veces mas elementos",
+      medido: `${g.elements} -> ${f.elements} (x${veces.toFixed(0)})`,
+      limite: "x10 o mas", ok: veces >= 10, crudo: true,
+      detalle: "si esto se pusiera a x1 seria que el parametro dejo de llegar al mallador",
+    });
     const gana = Math.abs(f.flecha / g.flecha - 1) * 100;
     filas.push({
-      // Si esto se pusiera a cero seria que el tamano de malla dejo de tener
-      // efecto — o sea que se desconecto, no que el modelo mejoro.
-      que: "la malla de ETABS (0.5 m) cambia el resultado frente a 3 m",
-      medido: gana, limite: 200, ok: gana > 20,
+      que: "y el elemento CONVERGE: la malla fina apenas mueve la flecha, pero la mueve",
+      medido: gana, limite: 6, ok: gana > 0.2 && gana <= 6,
       detalle: `3.0 m -> ${g.flecha.toFixed(3)} mm · ${MS} m -> ${f.flecha.toFixed(3)} mm`
-             + ` (${gana.toFixed(0)} % mas). Con 3 m el elemento mide 3 m: la losa`
-             + " se deforma a saltos y la flecha sale corta.",
+             + ` (${gana.toFixed(2)} % mas). Por debajo de 0.2 % seria que la malla no`
+             + " llega al resultado; por encima de 6 % que el elemento dejo de converger.",
       crudo: true,
     });
   }
