@@ -1192,6 +1192,22 @@ function ribbonPlegadaPara(id?: string | null): boolean {
 (window as any).__hekatanSettings = () => (viewerElm as any).__settings;
 // La lista de ejemplos, para que los barridos de la CLI no lleven una copia
 // que se queda vieja en cuanto se anade uno.
+/**
+ * Poner un parametro y reconstruir, DESDE FUERA.
+ *
+ * Es para que los barridos de la CLI midan lo que ve el usuario y no lo que
+ * monta el propio script: sin esto un CLI se arma su modelo a mano, sale un
+ * numero, y no hay forma de saber si la APP da el mismo. Paso justo eso con el
+ * modelo real —el CLI decia -10.75 mm y la app CERO—, y no se vio hasta que se
+ * midio la app de verdad.
+ */
+(window as any).__hekatanSetParam = (clave: string, valor: number) => {
+  currentParams[clave] = valor;
+  rebuild();
+  return currentParams[clave];
+};
+(window as any).__hekatanGetParams = () => ({ ...currentParams });
+
 (window as any).__hekatanExamples = examplesRegistry.map(
   (e) => ({ id: e.id, name: e.name, category: e.category }));
 

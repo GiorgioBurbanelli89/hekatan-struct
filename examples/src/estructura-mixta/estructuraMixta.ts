@@ -77,9 +77,8 @@
 import { deform, analyze, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import { parseE2k, piezasFlotantes } from "../shared/e2kParser";
-import { coserModelo } from "../shared/e2kCoser";
 import { muellesDelModelo } from "../shared/e2kMuelles";
-import { buscarMecanismos, coartarGdlSueltos } from "../shared/e2kMecanismos";
+import { prepararAnalisis, reaccionVertical } from "../shared/e2kAnalisis";
 // El `.e2k` va embebido como texto (ver `modelo.ts`): es el modelo, no un dato
 // de entrada. Está
 // recortado a los bloques que definen la ESTRUCTURA (se le quitaron los de
@@ -98,6 +97,11 @@ export const estructuraMixta: ExampleDef = {
     // ofrece es CÓMO mirarlo, y un factor para escalar sus cargas.
     fCarga: { default: 1.0, min: 0, max: 2, step: 0.05,
               label: "factor de carga", folder: "⬇ Cargas" },
+    // El MODELO: con su cimentacion sobre balasto, o cortado por z = 0 y
+    // empotrado ahi, que es lo que monta un calculista para mirar la
+    // superestructura sin modelar el terreno.
+    cimentacion: { default: 0, options: { "Con cimentación (balasto)": 0, "Sin cimentación (empotrado en z=0)": 1 },
+                   label: "cimentación", folder: "⬇ Cargas" },
     // ⚠️ Por defecto NO se resuelve, y es a proposito.
     //
     // Este ejemplo esta aqui para demostrar la IMPORTACION: que un `.e2k` real
@@ -129,6 +133,15 @@ export const estructuraMixta: ExampleDef = {
     return {
       "nudos · barras · cáscaras": `${nds.length} · ${nB} · ${els.length - nB}`,
       "cotas": nds.length ? `${Math.min(...zs).toFixed(2)} a ${Math.max(...zs).toFixed(2)} m` : "—",
+      "resultado": (() => {
+        const i = (states as any).__informeMixta;
+        return i ? `Uz ${(i.uz * 1000).toFixed(2)} mm · equilibrio ${i.dif.toFixed(2)} %`
+                 : "pon «Intentar resolver»";
+      })(),
+      "apartado para resolver": (() => {
+        const i = (states as any).__informeMixta;
+        return i ? `${i.podados} nudos sueltos + ${i.deMecanismos} de mecanismos` : "—";
+      })(),
       "⚠ trozos sin apoyo": fl.nPiezasFlotantes
         ? `${fl.nPiezasFlotantes} trozos · ${fl.nNudosFlotantes} nudos → K singular`
         : "ninguno",
@@ -138,19 +151,10 @@ export const estructuraMixta: ExampleDef = {
   build(p, states) {
     const m = parseE2k(modeloE2k);
 
-    // ── COSER ──
-    //
-    // El `.e2k` describe los OBJETOS que dibujo el proyectista, no la malla que
-    // ETABS resuelve: sus 746 lineas traen `AUTOMESH "YES"` y
-    // `MESHATINTERSECTIONS "YES"`. Sin coser, el modelo se ve entero y no
-    // resuelve. Aqui se funden los nudos coincidentes, se crea el nudo de los
-    // cruces y se parte cada barra por los nudos que le caen encima.
-    const cosido = coserModelo(m);
-    // Y los GDL que no sujeta nadie: se coartan, que es lo que hace el solver
-    // (y ETABS), solo que con tolerancia RELATIVA en vez de la absoluta que se
-    // le cuela a `getZerosIndices`.
-    const mec = coartarGdlSueltos(m);
-
+    // El COSIDO, los MUELLES y el resto de la tuberia van dentro de
+    // `prepararAnalisis` (ver mas abajo). Aqui solo se monta lo que hay que
+    // DIBUJAR — que es el modelo entero, con sus trozos sueltos incluidos:
+    // esconderlos seria enganar sobre lo que trae el fichero.
     // El parser ya devuelve todo en kN y m — el fichero va en KGF/M y la
     // conversión es suya, no de aquí.
     const muelles = muellesDelModelo(m);
@@ -174,11 +178,6 @@ export const estructuraMixta: ExampleDef = {
     const nBarras = elements.filter(e => e.length === 2).length;
     const nShells = elements.length - nBarras;
     const zs = nodes.map(n => n[2]);
-    console.info(
-      `[Estructura mixta] cosido: ${cosido.nudosFundidos} nudos fundidos · ` +
-      `${cosido.nudosDeCruce} nudos de cruce · ${cosido.barrasPartidas} barras partidas ` +
-      `(+${cosido.trozosNuevos} trozos) · ${mec.coartados} GDL sin rigidez coartados · ` +
-      `${muelles.muelles.length} muelles en ${muelles.informe.nudosConMuelle} nudos`);
     if (muelles.informe.definidasSinUsar.length)
       console.warn(`[Estructura mixta] ⚠️ el .e2k DEFINE y no ASIGNA estos muelles: ` +
         `${muelles.informe.definidasSinUsar.join(", ")}. Los dos que sí asigna son ` +
@@ -192,61 +191,51 @@ export const estructuraMixta: ExampleDef = {
 
     if (!p.resolver) return;
 
-    // ── Fuera los nudos HUERFANOS antes de resolver ──────────────────────
+    // ── EL ANALISIS, por la MISMA tuberia que usa el CLI ──
     //
-    // Un modelo real trae nudos que no tocan ningún elemento: puntos de la
-    // rejilla, esquinas de un área que no se pudo montar, restos de una
-    // edición. En ETABS no molestan; aquí son **6 GDL sin una sola rigidez**
-    // cada uno, y la matriz sale singular — `LDLT failed (K may not be
-    // positive definite)` y ni un desplazamiento. Este modelo trae 25.
-    //
-    // Se quitan y se renumera. Se hace AQUÍ y no en el parser a propósito: el
-    // parser debe devolver lo que el fichero dice, huérfanos incluidos, porque
-    // para DIBUJAR el modelo importado esos puntos existen.
-    const usado = new Set<number>();
-    for (const el of elements) for (const n of el) usado.add(n);
-    const huerfanos = nodes.length - usado.size;
-    if (huerfanos > 0) {
-      const viejoANuevo = new Map<number, number>();
-      const nodos2: Node[] = [];
-      nodes.forEach((n, i) => {
-        if (!usado.has(i)) return;
-        viejoANuevo.set(i, nodos2.length);
-        nodos2.push(n);
-      });
-      const elems2 = elements.map(el => el.map(i => viejoANuevo.get(i)!) as unknown as Element);
-      const remapMapa = (m: unknown) => {
-        if (!(m instanceof Map)) return m;
-        const out = new Map();
-        for (const [i, v] of m) {
-          const j = viejoANuevo.get(i as number);
-          if (j !== undefined) out.set(j, v);
-        }
-        return out;
-      };
-      ni.supports = remapMapa(ni.supports);
-      ni.loads = remapMapa(ni.loads);
-      states.nodes.val = nodos2;
-      states.elements.val = elems2;
-      states.nodeInputs.val = ni;
-      console.info(`[Estructura mixta] ${huerfanos} nudos sin ningún elemento: fuera ` +
-        `(cada uno son 6 GDL sin rigidez y la matriz saldría singular).`);
-    }
+    // `prepararAnalisis` hace los cinco pasos —coser, muelles, coartar, podar
+    // los trozos sueltos y apartar los mecanismos— y devuelve el modelo listo.
+    // Va aqui y no escrito a mano a proposito: cuando esto vivia dos veces, el
+    // CLI daba -10.75 mm y la app CERO, y entonces no se puede decir «Hekatan
+    // da esto» porque depende de por donde entres.
+    const { listo, informe } = prepararAnalisis(
+      m,
+      { cortarBajo: p.cimentacion ? 0 : undefined, podar: true, vueltasMecanismo: 6 },
+      deform as any,
+    );
 
-    const nod = states.nodes.val as Node[];
-    const ele = states.elements.val as Element[];
+    states.nodes.val = listo.nodes as unknown as Node[];
+    states.elements.val = listo.elements as unknown as Element[];
+    states.nodeInputs.val = listo.nodeInputs as any;
+    states.elementInputs.val = listo.elementInputs as any;
+
     try {
-      // Los muelles van de 5º argumento y se renumeran como los nudos.
-      const spr = muelles.muelles
-        .map((s2) => ({ ...s2, node: (states.nodes.val as Node[]).indexOf(m.nodes[s2.node] as Node) }))
-        .filter((s2) => s2.node >= 0);
-      states.deformOutputs.val = deform(nod, ele, states.nodeInputs.val, ei, spr);
-      states.analyzeOutputs.val = analyze(nod, ele, ei, states.deformOutputs.val);
-      const d = states.deformOutputs.val.deformations;
-      if (!d || d.size === 0) {
-        console.warn("[Estructura mixta] el solver devolvió 0 desplazamientos: " +
-          "queda alguna parte sin sujetar. El modelo se ve igual.");
-      }
+      const d = deform(listo.nodes as any, listo.elements as any,
+                       listo.nodeInputs as any, listo.elementInputs as any,
+                       listo.muelles as any);
+      states.deformOutputs.val = d;
+      states.analyzeOutputs.val = analyze(listo.nodes as any, listo.elements as any,
+                                          listo.elementInputs as any, d);
+      const r = reaccionVertical(d, listo.muelles);
+      const total = r.apoyos + r.muelles;
+      const dif = Math.abs(total + informe.cargaZ);
+      const esc = Math.max(Math.abs(total), Math.abs(informe.cargaZ), 1e-9);
+      let uz = 0;
+      for (const [, v] of (d?.deformations ?? [])) if (Math.abs(v[2]) > Math.abs(uz)) uz = v[2];
+      console.info(
+        `[Estructura mixta] ${p.cimentacion ? "SIN" : "CON"} cimentación · ` +
+        `${informe.nudos} nudos · ${informe.barras} barras · ${informe.shells} cáscaras · ` +
+        `${informe.apoyos} apoyos · ${informe.muelles} muelles` +
+        (informe.empotrados ? ` · ${informe.empotrados} empotrados en z=0` : ""));
+      console.info(
+        `[Estructura mixta] apartados: ${informe.podados} nudos de trozos sueltos + ` +
+        `${informe.deMecanismos} de mecanismos (${informe.vueltas} vueltas) · ` +
+        `Uz máx ${(uz * 1000).toFixed(2)} mm`);
+      console.info(
+        `[Estructura mixta] equilibrio: carga ${informe.cargaZ.toFixed(1)} kN = ` +
+        `apoyos ${r.apoyos.toFixed(1)} + muelles ${r.muelles.toFixed(1)} = ${total.toFixed(1)} kN · ` +
+        `dif ${(100 * dif / esc).toFixed(2)} %`);
+      (states as any).__informeMixta = { ...informe, uz, ...r, dif: 100 * dif / esc };
     } catch (e) {
       console.error("[Estructura mixta] el solver no cerró:", e);
     }
