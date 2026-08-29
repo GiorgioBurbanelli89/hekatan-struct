@@ -198,9 +198,23 @@ function getLocalStiffnessMatrixFrame(
   //   axil EA/L y torsion GJ/L    -> con la L COMPLETA (literal del binario:
   //   "The rigid zones never affect axial and torsional deformations")
   // Con rz = 0 —las 723 barras del galpon— Lf = L y no cambia nada.
+  // ⚠️ Una barra de LONGITUD CERO no es un problema de offsets, y el mensaje
+  // decia que si: `edificio-muros` moria con «end offsets se comen la barra
+  // 2578» y esa barra no tenia ni un offset — medía cero porque el nudo
+  // maestro del diafragma caia justo encima de un nudo del piso. Y ademas el
+  // C++ (`getLocalStiffnessMatrix.cpp`, el que usa `deform`) SI la tolera:
+  // avisa y devuelve la matriz nula. Dos motores, el mismo modelo y distinta
+  // respuesta — el estatico resolvia y `analyze` reventaba.
+  if (L < 1e-12) {
+    console.warn(`[hekatan-fem] barra ${index} de longitud CERO: matriz nula ` +
+      `(no aporta rigidez). Mismo criterio que getLocalStiffnessMatrix.cpp.`);
+    return Array.from({ length: 12 }, () => new Array(12).fill(0));
+  }
   const eo = elementInputs?.endOffsets?.get(index);
   const Lf = eo && eo[2] > 0 ? L - eo[2] * (eo[0] + eo[1]) : L;
-  if (Lf <= 1e-9) throw new Error(`end offsets se comen la barra ${index}`);
+  if (Lf <= 1e-9)
+    throw new Error(`end offsets se comen la barra ${index}: L = ${L.toFixed(4)} m, ` +
+      `rz = ${eo![2]}, offsets ${eo![0]} y ${eo![1]} -> Lf = ${Lf.toFixed(4)} m`);
 
   // Timoshenko shear deformation parameter φ
   // φ = 12EI / (G·As·L²) — when As > 0 (Timoshenko)

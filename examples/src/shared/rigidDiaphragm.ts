@@ -128,7 +128,23 @@ export function addRigidDiaphragms(
     masterNodes.push({ idx: masterIdx, z, x: xm, y: ym });
 
     // Link: master → cada slave (frame element con alta rigidez)
+    //
+    // ⚠️ Menos el slave que CAE ENCIMA del master. El master va al centroide
+    // del piso, y en una planta simetrica con un numero par de vanos hay un
+    // nudo justo ahi: el link salia de longitud CERO, que no es un elemento —
+    // no tiene direccion y su matriz es nula. `edificio-muros` (6 pisos, uno
+    // por piso) moria por eso, y el mensaje culpaba a unos offsets que no
+    // existian. Ese nudo no queda suelto: lo sujetan sus propias vigas, y ES
+    // el centro del diafragma, o sea el punto que no se mueve respecto al
+    // master.
     for (const s of slaves) {
+      const dx = nodes[s][0] - xm, dy = nodes[s][1] - ym;
+      if (Math.hypot(dx, dy) < tol) {
+        console.info(`[diafragma] z = ${z}: el nudo ${s} cae sobre el master ` +
+          `(${xm.toFixed(3)}, ${ym.toFixed(3)}): sin link, un elemento de ` +
+          `longitud cero no ata nada.`);
+        continue;
+      }
       rigidLinks.push([masterIdx, s]);
       const eIdx = nextElemIdx + rigidLinks.length - 1;   // caller ajusta con offset real
       linkProps.areas.set(eIdx, A_link);
