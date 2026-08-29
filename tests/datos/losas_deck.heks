@@ -422,6 +422,90 @@ frame 245 153 154 2e+08 0.00252 1.33525e-06 1.73498e-05 4.11831e-08 0.3 7.95107 
 frame 246 155 156 2e+08 0.00252 1.33525e-06 1.73498e-05 4.11831e-08 0.3 7.95107   # VA-200
 frame 247 157 158 2e+08 0.00252 1.33525e-06 1.73498e-05 4.11831e-08 0.3 7.95107   # VA-200
 
+# --- end length offsets (los de ETABS, Auto, rz = 0):
+#     la VIGA no pesa el tramo dentro del brazo; la columna si
+endoffset 1 0 0.25 0   # ETABS: Auto
+endoffset 2 0 0.25 0   # ETABS: Auto
+endoffset 3 0 0.25 0   # ETABS: Auto
+endoffset 4 0 0.25 0   # ETABS: Auto
+endoffset 5 0 0.25 0   # ETABS: Auto
+endoffset 6 0 0.25 0   # ETABS: Auto
+endoffset 7 0 0.25 0   # ETABS: Auto
+endoffset 8 0 0.25 0   # ETABS: Auto
+endoffset 9 0 0.25 0   # ETABS: Auto
+endoffset 10 0 0.25 0   # ETABS: Auto
+endoffset 11 0 0.25 0   # ETABS: Auto
+endoffset 12 0 0.25 0   # ETABS: Auto
+endoffset 13 0 0.25 0   # ETABS: Auto
+endoffset 14 0 0.25 0   # ETABS: Auto
+endoffset 15 0 0.25 0   # ETABS: Auto
+endoffset 16 0 0.25 0   # ETABS: Auto
+endoffset 17 0 0.25 0   # ETABS: Auto
+endoffset 18 0 0.25 0   # ETABS: Auto
+endoffset 19 0 0.25 0   # ETABS: Auto
+endoffset 20 0 0.25 0   # ETABS: Auto
+endoffset 21 0 0.25 0   # ETABS: Auto
+endoffset 22 0 0.25 0   # ETABS: Auto
+endoffset 23 0 0.25 0   # ETABS: Auto
+endoffset 24 0 0.25 0   # ETABS: Auto
+endoffset 25 0.075 0.075 0   # ETABS: Auto
+endoffset 26 0.075 0.075 0   # ETABS: Auto
+endoffset 27 0.075 0.075 0   # ETABS: Auto
+endoffset 28 0.075 0.075 0   # ETABS: Auto
+endoffset 29 0.075 0 0   # ETABS: Auto
+endoffset 37 0 0.075 0   # ETABS: Auto
+endoffset 38 0.075 0 0   # ETABS: Auto
+endoffset 39 0.075 0.075 0   # ETABS: Auto
+endoffset 40 0.075 0 0   # ETABS: Auto
+endoffset 48 0 0.075 0   # ETABS: Auto
+endoffset 49 0.075 0 0   # ETABS: Auto
+endoffset 50 0.075 0.075 0   # ETABS: Auto
+endoffset 51 0.075 0 0   # ETABS: Auto
+endoffset 59 0 0.075 0   # ETABS: Auto
+endoffset 60 0.075 0 0   # ETABS: Auto
+endoffset 61 0.075 0.075 0   # ETABS: Auto
+endoffset 62 0.075 0 0   # ETABS: Auto
+endoffset 70 0 0.075 0   # ETABS: Auto
+endoffset 71 0.075 0 0   # ETABS: Auto
+endoffset 72 0.075 0.075 0   # ETABS: Auto
+endoffset 73 0.075 0 0   # ETABS: Auto
+endoffset 81 0 0.075 0   # ETABS: Auto
+endoffset 82 0.075 0 0   # ETABS: Auto
+endoffset 84 0 0.075 0   # ETABS: Auto
+endoffset 85 0.075 0 0   # ETABS: Auto
+endoffset 89 0 0.075 0   # ETABS: Auto
+endoffset 90 0.075 0 0   # ETABS: Auto
+endoffset 94 0 0.075 0   # ETABS: Auto
+endoffset 95 0.075 0 0   # ETABS: Auto
+endoffset 99 0 0.075 0   # ETABS: Auto
+endoffset 100 0.075 0 0   # ETABS: Auto
+endoffset 104 0 0.075 0   # ETABS: Auto
+endoffset 105 0.075 0 0   # ETABS: Auto
+endoffset 110 0 0.075 0   # ETABS: Auto
+endoffset 111 0.075 0 0   # ETABS: Auto
+endoffset 118 0 0.075 0   # ETABS: Auto
+endoffset 119 0.075 0 0   # ETABS: Auto
+endoffset 123 0 0.075 0   # ETABS: Auto
+endoffset 124 0.075 0 0   # ETABS: Auto
+endoffset 128 0 0.075 0   # ETABS: Auto
+endoffset 129 0.075 0 0   # ETABS: Auto
+endoffset 133 0 0.075 0   # ETABS: Auto
+endoffset 134 0.075 0 0   # ETABS: Auto
+endoffset 139 0 0.075 0   # ETABS: Auto
+endoffset 140 0 0.075 0   # ETABS: Auto
+endoffset 141 0.075 0.075 0   # ETABS: Auto
+endoffset 142 0.075 0.075 0   # ETABS: Auto
+endoffset 143 0.075 0.075 0   # ETABS: Auto
+endoffset 144 0.075 0 0   # ETABS: Auto
+endoffset 149 0 0.075 0   # ETABS: Auto
+endoffset 150 0.075 0 0   # ETABS: Auto
+endoffset 151 0 0.075 0   # ETABS: Auto
+endoffset 152 0.075 0.075 0   # ETABS: Auto
+endoffset 153 0.075 0.075 0   # ETABS: Auto
+endoffset 154 0.075 0.075 0   # ETABS: Auto
+endoffset 155 0.075 0 0   # ETABS: Auto
+endoffset 162 0 0.075 0   # ETABS: Auto
+
 # --- areas de cortante: as ID As2 As3 (m2)
 as 25 0.00124179 0.00167079
 as 26 0.00124179 0.00167079
@@ -682,11 +766,10 @@ frameload 178 0 0 -0.350814
 frameload 72 0 0 -5.08515
 frameload 139 0 0 -4.79166
 frameload 149 0 0 -5.14247
-frameload 84 0 0 -5.35456
+frameload 84 0 0 -5.08515
 frameload 116 0 0 -4.79166
 frameload 179 0 0 -4.61789
-frameload 156 0 0 -1.45369
-frameload 181 0 0 -1.45369
+frameload 181 0 0 -4.61789
 frameload 182 0 0 -9.58378
 frameload 183 0 0 -9.58378
 frameload 184 0 0 -9.58378
@@ -762,17 +845,18 @@ frameload 137 0 0 -4.79166
 frameload 241 0 0 -10.1708
 frameload 138 0 0 -4.79166
 frameload 242 0 0 -10.1708
-frameload 243 0 0 -7.51548
+frameload 243 0 0 -9.38981
 frameload 145 0 0 -5.14247
-frameload 244 0 0 -10.0742
+frameload 244 0 0 -9.84196
 frameload 146 0 0 -5.14247
-frameload 245 0 0 -10.0738
+frameload 245 0 0 -9.84151
 frameload 147 0 0 -5.14247
-frameload 246 0 0 -10.0742
+frameload 246 0 0 -9.84196
 frameload 148 0 0 -5.14247
-frameload 247 0 0 -10.0742
+frameload 247 0 0 -9.84196
 frameload 83 0 0 -5.08515
-#     total repartido = -3048.1 kN  en 116 barras
+frameload 180 0 0 -4.61789
+#     total repartido = -3053.3 kN  en 116 barras
 
 # --- apoyos (empotrados en la base)
 support 1 fixed
