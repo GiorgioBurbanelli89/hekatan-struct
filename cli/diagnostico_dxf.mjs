@@ -59,7 +59,38 @@ export function generar(t) {
   const mecanismo = new Set();
   for (const n of usado) if (!quedan.has(n) && !sueltos.has(n)) mecanismo.add(n);
 
-  return { dxf: diagnosticoDxf(m, { sueltos, mecanismo, conMuelle }),
+  // ── Las uniones que se quedaron a un palmo ──
+  //
+  // Una barra que pasa a 16 cm de un nudo y no lo toca es una union que no
+  // existe, y el dibujo parece correcto. Se busca por barra contra todos los
+  // nudos: si la distancia esta entre la tolerancia de cosido y medio metro,
+  // es sospechosa — mas cerca ya lo habria cosido, y mas lejos no pretendia
+  // tocarse.
+  const casiUnidas = [];
+  const N2 = m.nodes;
+  m.elements.forEach((el, i) => {
+    if (el.length !== 2) return;
+    const a = N2[el[0]], b = N2[el[1]];
+    if (!a || !b) return;
+    const d = [b[0]-a[0], b[1]-a[1], b[2]-a[2]];
+    const L2 = d[0]**2 + d[1]**2 + d[2]**2;
+    if (L2 < 1e-9) return;
+    for (let k = 0; k < N2.length; k++) {
+      if (k === el[0] || k === el[1]) continue;
+      const p = N2[k], w = [p[0]-a[0], p[1]-a[1], p[2]-a[2]];
+      const s2 = (w[0]*d[0] + w[1]*d[1] + w[2]*d[2]) / L2;
+      if (s2 <= 0.02 || s2 >= 0.98) continue;
+      const q = [a[0]+s2*d[0], a[1]+s2*d[1], a[2]+s2*d[2]];
+      const dist = Math.hypot(p[0]-q[0], p[1]-q[1], p[2]-q[2]);
+      if (dist > 0.01 && dist < 0.5)
+        casiUnidas.push({ a, b, p, d: dist, nombre: m.elementNames?.[i] });
+    }
+  });
+
+  return { dxf: diagnosticoDxf(m, { sueltos, mecanismo, conMuelle, casiUnidas }),
+           nCasi: casiUnidas.length,
+           casiPeores: [...casiUnidas].sort((x,y)=>x.d-y.d).slice(0,6)
+             .map(c => ({ nombre: c.nombre, d: +c.d.toFixed(3) })),
            nSueltos: sueltos.size, nMecanismo: mecanismo.size,
            nMuelles: conMuelle.size, informe,
            nEjes: (m.grids ?? []).length, nPlantas: (m.stories ?? []).length };
@@ -78,6 +109,9 @@ console.log(`\n── ${basename(f)} ──`);
 console.log(`  ${r.nEjes} ejes · ${r.nPlantas} plantas · ${r.nMuelles} nudos con muelle`);
 console.log(`  capa SUELTOS   ${String(r.nSueltos).padStart(5)} nudos  (trozos que no llegan a ningun apoyo)`);
 console.log(`  capa MECANISMO ${String(r.nMecanismo).padStart(5)} nudos  (siguen sin sujecion aun estando conectados)`);
+console.log(`  capa CASI_UNIDAS ${String(r.nCasi).padStart(3)} casos  (una barra pasa a un palmo de un nudo y NO lo toca)`);
+for (const c of r.casiPeores)
+  console.log(`      ${String(c.nombre).padEnd(12)} se queda a ${(c.d*100).toFixed(0)} cm`);
 console.log(`  y lo que queda resuelve con ${r.informe.nudos} nudos y ${r.informe.barras} barras`);
 console.log(`\n-> ${salida}`);
 console.log(`   abrelo, apaga la capa MODELO y deja EJES + SUELTOS: ahi esta el problema.`);

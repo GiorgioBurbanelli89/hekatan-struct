@@ -15,6 +15,18 @@
  *   MUELLES     un círculo en cada nudo con balasto
  *   SUELTOS     ⚠️ las barras de los trozos que no llegan a ningún apoyo
  *   MECANISMO   ⚠️ los nudos del modo de mecanismo
+ *   CASI_UNIDAS ⚠️ donde una barra pasa a un palmo de un nudo SIN tocarlo.
+ *
+ * ⚠️ Antes de acusar al importador de las CASI_UNIDAS: `CARDINALPT` (el punto
+ * de inserción, 529 barras del modelo real lo llevan y el lector NO lo lee) es
+ * un offset INTERNO del elemento y **no mueve los joints**. Y los joints de
+ * este modelo coinciden **732 de 732 con los de ETABS por OAPI**. O sea que la
+ * geometría de nudos es la buena y las uniones que faltan faltan de verdad.
+ *                  Es el error mas dificil de ver y el que mas duele: el
+ *                  dibujo parece bien y la union no existe. En el edificio
+ *                  real son las 7 vigas de cubierta que estan a cota PLANA
+ *                  12.80 mientras las correas bajan en pendiente y quedan
+ *                  entre 16 y 60 cm por debajo.
  *
  * Se escribe **DXF R12 en ASCII** a propósito: es el que abre absolutamente
  * todo, sin tablas de objetos ni handles. Un DXF moderno tiene más cosas y más
@@ -32,7 +44,16 @@ const COLOR = {
   MUELLES: 2,     // amarillo
   SUELTOS: 1,     // ROJO
   MECANISMO: 30,  // naranja
+  CASI_UNIDAS: 6, // magenta
 } as const;
+
+export interface CasiUnida {
+  /** Los dos extremos de la barra. */
+  a: number[]; b: number[];
+  /** El nudo que pasa cerca y no toca, y a cuánto. */
+  p: number[]; d: number;
+  nombre?: string;
+}
 
 export interface DatosDiagnostico {
   /** Nudos de los trozos que no llegan a ningún apoyo. */
@@ -41,6 +62,8 @@ export interface DatosDiagnostico {
   mecanismo?: Set<number> | number[];
   /** Nudos con muelle. */
   conMuelle?: Set<number> | number[];
+  /** Uniones que se quedaron a un palmo. */
+  casiUnidas?: CasiUnida[];
 }
 
 function g(codigo: number, valor: string | number): string {
@@ -179,6 +202,25 @@ export function diagnosticoDxf(
       [p[0] - escala, p[1] - escala, p[2]], [p[0] + escala, p[1] + escala, p[2]]);
     s += linea("MECANISMO", COLOR.MECANISMO,
       [p[0] - escala, p[1] + escala, p[2]], [p[0] + escala, p[1] - escala, p[2]]);
+  }
+
+  // ── las uniones que NO se hicieron ──
+  //
+  // Se dibuja la barra en magenta y un segmento desde el nudo hasta ella con
+  // la distancia escrita al lado. Asi se ve de un vistazo cuanto falta: 16 cm
+  // es un error de modelado, 2 mm seria una tolerancia.
+  for (const c of datos.casiUnidas ?? []) {
+    s += linea("CASI_UNIDAS", COLOR.CASI_UNIDAS, c.a, c.b);
+    // el pie de perpendicular, para ver a que altura pasa
+    const d = [c.b[0] - c.a[0], c.b[1] - c.a[1], c.b[2] - c.a[2]];
+    const L2 = d[0] ** 2 + d[1] ** 2 + d[2] ** 2 || 1;
+    const w = [c.p[0] - c.a[0], c.p[1] - c.a[1], c.p[2] - c.a[2]];
+    const t = (w[0] * d[0] + w[1] * d[1] + w[2] * d[2]) / L2;
+    const q = [c.a[0] + t * d[0], c.a[1] + t * d[1], c.a[2] + t * d[2]];
+    s += linea("CASI_UNIDAS", COLOR.CASI_UNIDAS, c.p, q);
+    s += texto("CASI_UNIDAS", COLOR.CASI_UNIDAS,
+      [(c.p[0] + q[0]) / 2, (c.p[1] + q[1]) / 2, (c.p[2] + q[2]) / 2],
+      0.22, `${(c.d * 100).toFixed(0)} cm`);
   }
 
   s += g(0, "ENDSEC") + g(0, "EOF");
