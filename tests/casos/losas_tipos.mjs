@@ -116,30 +116,35 @@ export async function correr() {
     // La carga TIENE que ser la misma: si no, la flecha no compara solvers,
     // compara cuanta carga se perdio por el camino.
     //
-    // El limite es el 0.5 % del principio: el desfase que habia (0.49-0.61 % en
-    // los seis) era un fallo, no una tolerancia. Eran DOS, y los dos de peso
-    // propio (29-ago-2026):
+    // TOLERANCIA 0.02 %, o sea CERO. Una carga muerta no es elementos finitos:
+    // es una SUMA de rho x volumen, y o sale igual o hay un modelo distinto en
+    // cada lado. Lo que quedaba (0.08-0.6 %) eran CUATRO fallos, ninguno a la
+    // vista, y los cuatro se cerraron el 29-ago-2026:
     //
-    //  1. `a_etabs.py` definia el hormigon con su E y su Poisson pero NO con su
-    //     peso, asi que ETABS se quedaba con SU defecto —23.56312 kN/m3, o sea
-    //     150 lb/ft3, imperial— mientras `a_heks.py` usa 24.0. Los dos
-    //     programas modelaban hormigones distintos. Se caza partiendo el caso
-    //     Dead: con gamma = 23.56312 el peso de BARRAS sale igual en los tres
-    //     tipos de losa (127.86 / 127.86 / 127.85 kN), que es la prueba de que
-    //     ese es el valor y no otro.
+    //  1. ETABS pone END LENGTH OFFSETS automaticos y NO pesa el tramo de barra
+    //     que cae dentro del brazo. Hekatan no tiene offsets: hay que anularlos
+    //     (`SetEndLengthOffset(nm, False, 0,0,0)`), 1.214 kN de 129.004.
     //
-    //  2. Y el deck contaba su lamina como los 0.11012 kN/m2 del exportador,
-    //     cuando ETABS le pone `UnitWeight = 0.0` y pesa la CHAPA por su
-    //     espesor (0.76 mm de acero).
+    //  2. El hormigon de ETABS pesaba 23.56312 kN/m3 —150 lb/ft3, imperial—
+    //     porque `SetMaterial` + `SetMPIsotropic` no fijan el peso.
     //
-    //     caso     Hekatan     ETABS      dif        despues
-    //     DEAD     1069.40   1050.05   +19.35 kN     +2.5 kN
-    //     SDL       277.24    277.24     0.00        igual
-    //     LIVE     1957.01   1957.01     0.00        igual
+    //  3. Y habia un SEGUNDO hormigon, `4000Psi`, que ETABS crea por su cuenta
+    //     y que usa el DECK: `SetDeckFilled` reemplaza el material que le das en
+    //     `SetDeck`. Hay que fijar el peso de TODOS los hormigones del modelo.
     //
-    // Lo que queda (~0.08 %) es `g`: ETABS deriva el peso de la masa con
-    // 9.80665 y `a_heks.py` divide por 9.81.
-    const TOL_RZ = 0.5;
+    //  4. En Hekatan el shell caia al rho por defecto del motor (2.45 t/m3, que
+    //     pesa 24.0263) en vez de la densidad del modelo, y el .heks lo escribia
+    //     con 6 cifras (0.0013 kN).
+    //
+    // Y la LEY DEL PESO DEL DECK, sacada del programa CORRIENDO (6 medidas,
+    // variando un parametro cada vez, ajuste sin residuo):
+    //
+    //   W [kN/m2] = gamma_c x (Slab + Rib x (wTop+wBot)/2 / Spacing) + 0.11012
+    //
+    // La lamina se cobra como 0.11012 kN/m2 FIJOS y no por su espesor: poner
+    // `ShearThickness` a cero o al doble no mueve el peso ni un gramo. Y usa el
+    // ancho MEDIO del nervio — (0.10, 0.10) y (0.15, 0.05) pesan lo mismo.
+    const TOL_RZ = 0.02;
     const dRz = Math.abs((sumRz - R.base.FZ) / R.base.FZ) * 100;
     filas.push({
       que: `${id} — carga total`,
