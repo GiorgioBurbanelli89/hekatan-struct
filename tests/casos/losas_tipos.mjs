@@ -116,23 +116,30 @@ export async function correr() {
     // La carga TIENE que ser la misma: si no, la flecha no compara solvers,
     // compara cuanta carga se perdio por el camino.
     //
-    // El limite es 0.7 % y no 0.5 % por un desfase MEDIDO y acotado, que no es
-    // del tipo de losa —sale igual en los seis— sino del PESO PROPIO. Caso por
-    // caso, el mismo modelo (29-ago-2026, maciza_thin):
+    // El limite es el 0.5 % del principio: el desfase que habia (0.49-0.61 % en
+    // los seis) era un fallo, no una tolerancia. Eran DOS, y los dos de peso
+    // propio (29-ago-2026):
     //
-    //     caso     Hekatan     ETABS      dif
-    //     DEAD     1069.40   1050.05   +19.35 kN
-    //     SDL       277.24    277.24     0.00
-    //     LIVE     1957.01   1957.01     0.00
-    //     LROOF       0.00      0.00     0.00
+    //  1. `a_etabs.py` definia el hormigon con su E y su Poisson pero NO con su
+    //     peso, asi que ETABS se quedaba con SU defecto —23.56312 kN/m3, o sea
+    //     150 lb/ft3, imperial— mientras `a_heks.py` usa 24.0. Los dos
+    //     programas modelaban hormigones distintos. Se caza partiendo el caso
+    //     Dead: con gamma = 23.56312 el peso de BARRAS sale igual en los tres
+    //     tipos de losa (127.86 / 127.86 / 127.85 kN), que es la prueba de que
+    //     ese es el valor y no otro.
     //
-    // Las cargas APLICADAS cuadran al centimo. El exceso escala con el espesor
-    // que pesa (thin +19.35 · waffle +20.31 · deck +15.37), o sea equivale a
-    // ~6.7 m2 de losa de mas en el peso propio: un 2 % del area. Falta cazar de
-    // donde sale ese 2 %; mientras tanto el test sigue vigilando lo suyo, que
-    // es que no se pierda carga POR EL TIPO DE LOSA — lo que cazo aqui fue del
-    // 8 % al 55 %, no del 0.6 %.
-    const TOL_RZ = 0.7;
+    //  2. Y el deck contaba su lamina como los 0.11012 kN/m2 del exportador,
+    //     cuando ETABS le pone `UnitWeight = 0.0` y pesa la CHAPA por su
+    //     espesor (0.76 mm de acero).
+    //
+    //     caso     Hekatan     ETABS      dif        despues
+    //     DEAD     1069.40   1050.05   +19.35 kN     +2.5 kN
+    //     SDL       277.24    277.24     0.00        igual
+    //     LIVE     1957.01   1957.01     0.00        igual
+    //
+    // Lo que queda (~0.08 %) es `g`: ETABS deriva el peso de la masa con
+    // 9.80665 y `a_heks.py` divide por 9.81.
+    const TOL_RZ = 0.5;
     const dRz = Math.abs((sumRz - R.base.FZ) / R.base.FZ) * 100;
     filas.push({
       que: `${id} — carga total`,
