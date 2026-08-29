@@ -1,0 +1,256 @@
+{
+ "programa": "safe",
+ "version": "20.3.0",
+ "materiales_de_serie": {
+  "4000Psi": {
+   "peso_kN_m3": 23.563122,
+   "masa": 2.40277
+  },
+  "A615Gr60": {
+   "peso_kN_m3": 76.972864,
+   "masa": 7.849047
+  },
+  "A416Gr270": {
+   "peso_kN_m3": 76.972864,
+   "masa": 7.849047
+  },
+  "A992Fy50": {
+   "peso_kN_m3": 76.972864,
+   "masa": 7.849047
+  }
+ },
+ "secciones_de_serie": [
+  "W14X500",
+  "W14X455",
+  "W14X426",
+  "W14X398",
+  "W14X370",
+  "W14X342",
+  "W14X311",
+  "W14X283",
+  "W14X257",
+  "W14X233",
+  "W14X211",
+  "W14X193",
+  "W14X176",
+  "W14X159",
+  "W14X145",
+  "W14X132",
+  "W12X210",
+  "W12X190",
+  "W12X170",
+  "W12X152",
+  "W12X136",
+  "W12X120",
+  "W12X106",
+  "W12X96",
+  "W14X120",
+  "W14X109",
+  "W14X99",
+  "W14X90",
+  "W14X68",
+  "W14X61",
+  "W14X53",
+  "W14X48",
+  "W14X43",
+  "W12X87",
+  "W12X79",
+  "W12X72",
+  "W12X65",
+  "W12X58",
+  "W12X53",
+  "W12X50",
+  "W12X45",
+  "W12X40",
+  "W10X112",
+  "W10X100",
+  "W10X88",
+  "W10X77",
+  "W10X68",
+  "W10X60",
+  "W10X54",
+  "W10X49",
+  "W10X45",
+  "W10X39",
+  "W10X33",
+  "W8X67",
+  "W8X58",
+  "W8X48",
+  "W8X40",
+  "W8X35",
+  "W8X31",
+  "A-LatCol",
+  "W36X182",
+  "W36X170",
+  "W36X160",
+  "W36X150",
+  "W33X152",
+  "W33X141",
+  "W33X130",
+  "W30X132",
+  "W30X124",
+  "W30X116",
+  "W30X108",
+  "W27X129",
+  "W27X114",
+  "W27X102",
+  "W27X94",
+  "W24X94",
+  "W24X84",
+  "W24X76",
+  "W24X62",
+  "W21X68",
+  "W21X62",
+  "W21X57",
+  "W21X55",
+  "W18X60",
+  "W18X55",
+  "W18X50",
+  "W36X135",
+  "W33X118",
+  "W30X99",
+  "W30X90",
+  "W24X55",
+  "W21X50",
+  "W18X46",
+  "W18X40",
+  "W18X35",
+  "A-LatBm",
+  "W14X82",
+  "W14X74",
+  "A-GravCol",
+  "W27X84",
+  "W24X68",
+  "W21X44",
+  "W16X36",
+  "W16X31",
+  "W16X26",
+  "W14X38",
+  "W14X34",
+  "W14X30",
+  "W12X30",
+  "W12X26",
+  "A-GravBm",
+  "W14X26",
+  "W14X22",
+  "W12X22",
+  "W12X19",
+  "W12X16",
+  "W12X14",
+  "W10X19",
+  "W10X17",
+  "W10X15",
+  "W10X12",
+  "A-CompBm",
+  "SteelCol",
+  "SteelBm",
+  "ConcCol",
+  "ConcBm"
+ ],
+ "areas_de_serie": [
+  "Slab1",
+  "Deck1",
+  "Wall1",
+  "Plank1"
+ ],
+ "patrones_de_carga": [
+  "Dead",
+  "Live"
+ ],
+ "casos_de_carga": [
+  "Dead",
+  "Live"
+ ],
+ "combos": [],
+ "diafragmas": [
+  "D1"
+ ],
+ "barra": {
+  "columna": {
+   "releases": [
+    [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ],
+    [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ]
+   ],
+   "end_length_offset": [
+    "auto",
+    0.0,
+    0.0,
+    0.0
+   ],
+   "modificadores": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "insertion_point": "[10, False, False, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), 'Local', 0]",
+   "angulo_eje_local": "[0.0, False, 0]",
+   "output_stations": "[2, 0.0, 3, False, False, 0]"
+  },
+  "viga": {
+   "releases": [
+    [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ],
+    [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ]
+   ],
+   "end_length_offset": [
+    "auto",
+    0.0,
+    0.0,
+    0.0
+   ],
+   "modificadores": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "insertion_point": "[10, False, False, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), 'Local', 0]",
+   "angulo_eje_local": "[0.0, False, 0]",
+   "output_stations": "[1, 0.5, 0, False, False, 0]"
+  }
+ },
+ "area": {
+  "modificadores": [],
+  "propiedad": "['', 1]",
+  "auto_mesh": "ERROR: GetAutoMesh",
+  "edge_constraint": "[False, 1]",
+  "angulo_eje_local": "[0.0, False, 1]"
+ },
+ "mass_source": "[1, 0, (None,), (0.0,), 0]"
+}

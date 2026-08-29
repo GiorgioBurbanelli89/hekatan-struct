@@ -1,0 +1,106 @@
+{
+ "programa": "sap2000",
+ "version": "24.1.0",
+ "materiales_de_serie": {
+  "A992Fy50": {
+   "peso_kN_m3": 76.972864,
+   "masa": 7.849047
+  },
+  "4000Psi": {
+   "peso_kN_m3": 23.563122,
+   "masa": 2.40277
+  }
+ },
+ "secciones_de_serie": [],
+ "areas_de_serie": [],
+ "patrones_de_carga": [
+  "DEAD"
+ ],
+ "casos_de_carga": [
+  "DEAD",
+  "MODAL"
+ ],
+ "combos": [],
+ "diafragmas": "ERROR: Diaphragm",
+ "barra": {
+  "columna": {
+   "releases": [
+    [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ],
+    [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ]
+   ],
+   "end_length_offset": [
+    "manual",
+    0.0,
+    0.0,
+    0.0
+   ],
+   "modificadores": [],
+   "insertion_point": "[10, False, True, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), 'Local', 0]",
+   "angulo_eje_local": "[0.0, False, 0]",
+   "output_stations": "[2, 0.0, 3, False, False, 0]"
+  },
+  "viga": {
+   "releases": [
+    [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ],
+    [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ]
+   ],
+   "end_length_offset": [
+    "manual",
+    0.0,
+    0.0,
+    0.0
+   ],
+   "modificadores": [],
+   "insertion_point": "[10, False, True, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), 'Local', 0]",
+   "angulo_eje_local": "[0.0, False, 0]",
+   "output_stations": "[1, 0.5, 0, False, False, 0]"
+  }
+ },
+ "area": {
+  "modificadores": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ],
+  "propiedad": "['None', 0]",
+  "auto_mesh": "[0, 0, 0, 0.0, 0.0, False, False, False, 0.0, 0.0, False, False, False, False, None, False, 0.0, 0]",
+  "edge_constraint": "[False, 0]",
+  "angulo_eje_local": "[0.0, False, 0]"
+ },
+ "mass_source": "[1, 0, (None,), (0.0,), 0]"
+}

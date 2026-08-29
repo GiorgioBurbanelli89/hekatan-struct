@@ -1,0 +1,141 @@
+{
+ "programa": "etabs",
+ "version": "22.6.0",
+ "materiales_de_serie": {
+  "A992Fy50": {
+   "peso_kN_m3": 76.972864,
+   "masa": 7.849047
+  },
+  "4000Psi": {
+   "peso_kN_m3": 23.563122,
+   "masa": 2.40277
+  },
+  "A615Gr60": {
+   "peso_kN_m3": 76.972864,
+   "masa": 7.849047
+  },
+  "A416Gr270": {
+   "peso_kN_m3": 76.972864,
+   "masa": 7.849047
+  }
+ },
+ "secciones_de_serie": [],
+ "areas_de_serie": [
+  "Slab1",
+  "Deck1",
+  "Wall1",
+  "Plank1"
+ ],
+ "patrones_de_carga": [
+  "Dead",
+  "Live"
+ ],
+ "casos_de_carga": [
+  "Dead",
+  "Live",
+  "Modal"
+ ],
+ "combos": [],
+ "diafragmas": [
+  "D1"
+ ],
+ "barra": {
+  "columna": {
+   "releases": [
+    [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ],
+    [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ]
+   ],
+   "end_length_offset": [
+    "auto",
+    0.0,
+    0.0,
+    0.0
+   ],
+   "modificadores": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "insertion_point": "[10, False, False, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), 'Local', 0]",
+   "angulo_eje_local": "[0.0, False, 0]",
+   "output_stations": "[2, 0.0, 3, False, False, 0]"
+  },
+  "viga": {
+   "releases": [
+    [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ],
+    [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ]
+   ],
+   "end_length_offset": [
+    "auto",
+    0.0,
+    0.0,
+    0.0
+   ],
+   "modificadores": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+   ],
+   "insertion_point": "[10, False, False, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), 'Local', 0]",
+   "angulo_eje_local": "[0.0, False, 0]",
+   "output_stations": "[1, 0.5, 0, False, False, 0]"
+  }
+ },
+ "area": {
+  "modificadores": [
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ],
+  "propiedad": "['None', 0]",
+  "auto_mesh": "ERROR: GetAutoMesh",
+  "edge_constraint": "[True, 0]",
+  "angulo_eje_local": "[0.0, False, 0]"
+ },
+ "mass_source": "[1, 0, (None,), (0.0,), 0]"
+}
