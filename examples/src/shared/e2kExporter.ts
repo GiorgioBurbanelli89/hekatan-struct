@@ -1295,9 +1295,20 @@ function exportFromScratch(input: ExportE2kInput): string {
       .filter(Boolean);
     return partes.length ? `  SHELLPROP  "${nombre}"  ${partes.join(" ")} ` : "";
   };
-  // Los grupos EXTRA (del segundo en adelante) se emiten aparte; el primero de
-  // cada tipo sigue por el camino de siempre, mas abajo.
-  const extra = [...grupos.entries()].filter(([, g]) => /\d$/.test(g.nombre));
+  // Los grupos EXTRA se emiten aparte; por el camino de siempre sale UNO por
+  // tipo: el del PRIMER area no-muro y el del primer muro.
+  //
+  // ⚠️ Esto miraba el NOMBRE (`/\d$/`, o sea «del segundo en adelante»), y en un
+  // modelo con losa maciza Y deck a la vez los dos grupos se llaman sin
+  // numero —"Losa" y "DECK"— pero arriba solo se emite uno. El otro no salia
+  // por ningun lado: `estructura-mixta` exportaba [0.1, 0.105, 0.3] y volvia
+  // con un solo espesor. Ahora se marca la CLAVE de lo que ya se emitio.
+  const primeroNoMuro = areaElements.find(a => !a.isWall);
+  const primerMuro = areaElements.find(a => a.isWall);
+  const yaEmitidas = new Set<string>();
+  if (primeroNoMuro) yaEmitidas.add(claveDe(primeroNoMuro));
+  if (primerMuro) yaEmitidas.add(claveDe(primerMuro));
+  const extra = [...grupos.entries()].filter(([k]) => !yaEmitidas.has(k));
 
   if (areaElements.some(a => !a.isWall)) {
     // .LOSA o DECK? Se decide por el modificador de FLEXION: si es ~0 el area
@@ -1305,18 +1316,11 @@ function exportFromScratch(input: ExportE2kInput): string {
     // siempre como `Slab` hacia que al reimportar volviera con flexion — o
     // sea, lo contrario de lo que el modelo dice. Y ETABS es tajante: un deck
     // queda en ShellType 3 (Membrane) le pidas lo que le pidas (medido).
-    const bmods = (elementInputs as any).bendingModifiers as Map<number, number> | undefined;
-    const dmods = (elementInputs as any).shellModifiers as Map<number, number[]> | undefined;
-    esMembrana = (() => {
-      for (const a of areaElements) {
-        if (a.isWall) continue;
-        const d = dmods?.get(a.idx);
-        if (d && Math.abs(d[3]) < 1e-9 && Math.abs(d[4]) < 1e-9) return true;
-        const b = bmods?.get(a.idx);
-        if (b !== undefined && Math.abs(b) < 1e-9) return true;
-      }
-      return false;
-    })();
+    // ⚠️ Esto era «alguna area es membrana», y con eso bastaba UNA para que la
+    // propiedad de arriba saliera como DECK — llevandose el espesor de la
+    // primera losa, que no es deck. Se mira la que de verdad se emite aqui: la
+    // PRIMERA no-muro. Las demas van cada una por su grupo.
+    esMembrana = !!primeroNoMuro && esMembranaDe(primeroNoMuro.idx);
     const t_slab = espesorDe(false, 0.15);
     if (esMembrana) {
       // Tokens copiados del e2k que escribe ETABS para el mismo modelo. No son
@@ -1457,8 +1461,12 @@ function exportFromScratch(input: ExportE2kInput): string {
         // ADDRESTRAINT "Yes" — asi lo escribe ETABS.
         const ang = angDeObjeto.get(ae.idx) ?? shellAngles?.get(ae.idx);
         // La planta del assign es la de REFERENCIA de los saltos: la mas alta.
-        aaEntries.push(esMembrana
-          ? `  AREAASSIGN  "${aName}"  "${storyArea}"  SECTION "${DECK_SEC}"  ANG ${rd(ang ?? 0)} OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "No"  CARDINALPOINT "MIDDLE"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `
+        // ⚠️ Iba `SECTION "${DECK_SEC}"` FIJO y la rama la elegia la bandera
+        // GLOBAL: en un modelo mixto las 76 areas se asignaban a "DECK",
+        // incluidas las losas macizas, y los demas grupos quedaban escritos y
+        // sin usar. Se decide POR ELEMENTO y se asigna SU grupo.
+        aaEntries.push(esMembranaDe(ae.idx)
+          ? `  AREAASSIGN  "${aName}"  "${storyArea}"  SECTION "${secDe(ae)}"  ANG ${rd(ang ?? 0)} OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "No"  CARDINALPOINT "MIDDLE"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `
           : `  AREAASSIGN  "${aName}"  "${storyArea}"  SECTION "${secDe(ae)}" ${usarDiafragma ? ` DIAPH  "D1" ` : ""} OBJMESHTYPE "DEFAULT"  ADDRESTRAINT "Yes"  CARDINALPOINT "TOP"  TRANSFORMSTIFFNESSFOROFFSETS "No"  `);
         areaLoadRefs.push({ name: aName, story: storyArea, idx: ae.idx });
       }
