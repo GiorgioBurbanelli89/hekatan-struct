@@ -36,9 +36,17 @@ TIPOS = ["deck", "maciza_mem", "maciza_thin", "maciza_thick",
 
 
 def edb_de(tipo):
-    """El .EDB del mezanine con esa losa. `deck` es el nombre sin sufijo."""
-    n = "parte_mezanine.EDB" if tipo == "deck" else "parte_mezanine_%s.EDB" % tipo
-    return os.path.join(GALPON, n)
+    """El .EDB del mezanine con esa losa.
+
+    ⚠️ El `deck` tiene DOS nombres posibles y no son el mismo fichero:
+    `a_etabs.py --losa deck` escribe `parte_mezanine_deck.EDB`, y aqui se leia
+    `parte_mezanine.EDB` — el de cuando el deck se corria sin `--losa`. El
+    29-ago eso hizo que la referencia del deck saliera IDENTICA a la de agosto y
+    pareciera que ETABS no habia cambiado. Se usa el del tipo si existe."""
+    con_tipo = os.path.join(GALPON, "parte_mezanine_%s.EDB" % tipo)
+    if os.path.exists(con_tipo):
+        return con_tipo
+    return os.path.join(GALPON, "parte_mezanine.EDB")
 
 
 def avisos_del_log(ruta_edb):
@@ -55,10 +63,33 @@ def avisos_del_log(ruta_edb):
             "inestable": "UNSTABLE" in t}
 
 
+def seleccionar_salida(sm):
+    """El caso que se compara: la COMBINACION `SERVICIO` (Dead+SDL+Live+Lroof),
+    que es la que arma `a_heks.py` por defecto (`CASO=SERVICIO`).
+
+    ⚠️ Antes se pedia el caso `GRAV`, que dejo de existir el 28-ago-2026 cuando
+    las cargas se separaron en Dead / SDL / Live / Lroof. Y ETABS NO se queja:
+    devuelve cero resultados con todos los casos en OK. Medido el 29-ago:
+
+        estado: Modal=OK, Dead=OK, Live=OK, SDL=OK, Lroof=OK, ...
+        ETABS  Uz max = 0.00 mm  en el nudo
+        ETABS  Suma Rz = 0.0 kN
+
+    Un caso que no existe se pide igual que uno que si, y la diferencia solo se
+    ve en el resultado. Se cae a `GRAV` para poder leer los .EDB antiguos."""
+    sm.Results.Setup.DeselectAllCasesAndCombosForOutput()
+    try:
+        if sm.Results.Setup.SetComboSelectedForOutput("SERVICIO") == 0:
+            return "SERVICIO"
+    except Exception:
+        pass
+    sm.Results.Setup.SetCaseSelectedForOutput("GRAV")
+    return "GRAV"
+
+
 def volcar(sm, tipo):
     out = {"tipo": tipo, "unidades": {"fuerza": "kN", "long": "m"}}
-    sm.Results.Setup.DeselectAllCasesAndCombosForOutput()
-    sm.Results.Setup.SetCaseSelectedForOutput("GRAV")
+    out["caso"] = seleccionar_salida(sm)
 
     # ── desplazamiento de CADA nudo ──
     _, pes, _ = sm.PointElm.GetNameList()
