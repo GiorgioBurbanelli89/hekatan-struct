@@ -79,8 +79,24 @@ el `.e2k` no: no era el exportador, era el programa rellenando.
 | **`.s2k`** (SAP2000) | tabla `FRAME OFFSET ALONG LENGTH ASSIGNMENTS` | ✅ **nueva** — no se escribía, y SAP2000 no los pone solo. Formato leído de su propia tabla `Frame Offset Along Length Assignments`: `Frame,Type,LengthI,LengthJ,RigidFactor`, con `Type = User` |
 | **`.f2k`** (SAFE, cimentaciones) | — | ⏳ SAFE los pone **auto** (medido). Falta comprobarlo con vigas de cimentación: en un modelo vacío no expone la tabla (38 tablas, ninguna de offsets de frame) |
 
-### Y lo mismo vale para el resto de defaults
+### `edge constraint` — medido: en este modelo NO cambia nada
 
-`edge constraint` es **True en ETABS y False en SAP2000**: un modelo que dependa
-de que los bordes de las áreas aten los nudos se comporta distinto en los dos, y
-el fichero no lo dice.
+Es **True en ETABS y False en SAP2000**, así que parecía un frente abierto. Se
+midió con `cli/edge_constraint_efecto.py`: mismo `.EDB`, se apaga en las 3 áreas,
+se reanaliza y se compara.
+
+```
+CON edge constraint     SumaRz  3474.392 kN   Uz  -31.431 mm
+SIN edge constraint     SumaRz  3474.392 kN   Uz  -31.431 mm
+diferencia:  carga 0.0000 %   flecha 0.0000 %
+```
+
+**Cero.** Y el motivo importa más que el número: el edge constraint solo actúa
+cuando los nudos del borde de un área **no coinciden** con lo que tiene al lado.
+Aquí la malla está cosida (cookie cut) y todos coinciden, así que no hay nada que
+atar.
+
+O sea: **Hekatan puede no tenerlo mientras cosa la malla** — por construcción
+hace su trabajo. Donde haría falta es en un modelo con mallas que no casen, y ahí
+Hekatan tampoco lo resolvería: los nudos sueltos se verían con
+`cli/chequeo_conexion.py`, que es el camino que ya se usa.
