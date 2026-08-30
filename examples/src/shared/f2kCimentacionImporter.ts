@@ -72,12 +72,18 @@ function detectUnits(text: string): { ksUnitFactor: number; momentToKnm: number;
     const parts = m[1].split(",").map((s) => s.trim().toLowerCase());
     const f = parts[0];
     const L = parts[1];
-    if (f === "tonf" || f === "kn" || f === "kip" || f === "lb" || f === "n") {
-      unitForce = (f === "kn" ? "kN" : f) as any;
-    }
-    if (L === "m" || L === "mm" || L === "cm" || L === "ft" || L === "in") {
-      unitLength = L as any;
-    }
+    // ⚠️ Las claves de FORCE_TO_KN llevan mayusculas ("kN", "N") y aqui `f`
+    // viene en minusculas. Antes se traducia solo "kn"->"kN" y **"n" se
+    // quedaba como "n"**: FORCE_TO_KN["n"] es undefined y el ks salia NaN.
+    // Pasa con todo .f2k que devuelve SAFE, porque lo escribe en "N, mm, C".
+    const K_FUERZA: Record<string, keyof typeof FORCE_TO_KN> = {
+      tonf: "tonf", kn: "kN", kip: "kip", lb: "lb", n: "N",
+    };
+    const K_LONG: Record<string, keyof typeof LENGTH_TO_M> = {
+      m: "m", mm: "mm", cm: "cm", ft: "ft", in: "in",
+    };
+    if (K_FUERZA[f]) unitForce = K_FUERZA[f];
+    if (K_LONG[L]) unitLength = K_LONG[L];
   }
   const FORCE_TO_KN_ = FORCE_TO_KN[unitForce];
   const LENGTH_TO_M_ = LENGTH_TO_M[unitLength];
