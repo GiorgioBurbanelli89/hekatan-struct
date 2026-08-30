@@ -867,11 +867,23 @@ function exportFromScratch(input: ExportE2kInput): string {
       parts.push(`LATEROFFSET ${rd(cL(ip[0]))} TRANSOFFSET ${rd(cL(ip[1]))}`);
     }
 
-    // End Length Offsets — rigidOffsets [offsetI, offsetJ] como factores 0-1
-    // RIGIDZONE es el factor (típico 0.5); LENGTHOFFI/J son las longitudes absolutas
+    // End Length Offsets. LENGTHOFFI/J son las longitudes absolutas y RIGIDZONE
+    // el factor de zona rigida.
+    //
+    // ⚠️ RIGIDZONE iba 0.5 FIJO, y el defecto de ETABS es **0** — medido en su
+    // propia tabla («Frame Assignments - End Length Offsets»): las 247 barras
+    // del mezanine salen con `Rigid Factor = 0`. La diferencia no es cosmetica:
+    // con rz = 0 el brazo NO rigidiza (`Lf = L - rz*(offI+offJ)` da Lf = L) y
+    // solo quita peso; con 0.5 acorta la barra media zona rigida y el modelo se
+    // vuelve mas rigido. Ahora se escribe el rz que traiga el modelo —el
+    // tercer valor de `endOffsets`, que `a_heks.py` pone a 0 como ETABS— y 0 si
+    // no trae ninguno.
     const off = elementInputs.rigidOffsets?.get(i);
-    if (off && (Math.abs(off[0]) > 1e-9 || Math.abs(off[1]) > 1e-9)) {
-      parts.push(`LENGTHOFFI ${rd(off[0])} LENGTHOFFJ ${rd(off[1])} RIGIDZONE 0.5`);
+    const eof = (elementInputs as any).endOffsets?.get(i) as number[] | undefined;
+    const offL = eof ? [eof[0], eof[1]] : off;
+    const rz = eof && eof.length > 2 ? eof[2] : (off ? 0 : 0);
+    if (offL && (Math.abs(offL[0]) > 1e-9 || Math.abs(offL[1]) > 1e-9)) {
+      parts.push(`LENGTHOFFI ${rd(offL[0])} LENGTHOFFJ ${rd(offL[1])} RIGIDZONE ${rd(rz)}`);
     }
 
     return parts.length > 0 ? ` ${parts.join(" ")} ` : "";

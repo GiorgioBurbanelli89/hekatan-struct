@@ -245,6 +245,47 @@ export function exportS2k(input: S2kExportInput): string {
     }
   }
 
+  // ── END LENGTH OFFSETS ───────────────────────────────────────────────────
+  //
+  // ⚠️ Esto NO se escribia, y en SAP2000 hay que escribirlo: **SAP no pone
+  // brazos rigidos por defecto y ETABS si**. Medido con `cli/defaults_csi.py`
+  // sobre los tres programas —una barra recien dibujada—:
+  //
+  //     ajuste                 ETABS 22.6   SAP2000 24.1   SAFE 20
+  //     end length offset      AUTO         manual (0,0)   AUTO
+  //     edge constraint        True         False          -
+  //
+  // O sea que el mismo modelo exportado a los dos programas NO era la misma
+  // estructura: ETABS le ponia los brazos por su cuenta (y no pesaba el tramo
+  // de viga que cae dentro) y SAP2000 no. De ahi que el .s2k cerrara el peso y
+  // el .e2k no.
+  //
+  // El formato es el que escribe el propio SAP2000, leido de su tabla «Frame
+  // Offset Along Length Assignments»:
+  //
+  //     Frame,Type,LengthI,LengthJ,RigidFactor
+  //     VIGA,User,0.075,0.075,0
+  //
+  // `Type = User` porque los da el modelo, no los deduce SAP de la
+  // conectividad. Y `RigidFactor` es el rz del modelo — 0 en Hekatan, como el
+  // defecto de ETABS: con 0 el brazo no rigidiza, solo quita peso.
+  {
+    const eo = (elementInputs as any).endOffsets as Map<number, number[]> | undefined;
+    const conOff = frameIdx.filter((i) => {
+      const v = eo?.get(i);
+      return !!v && (Math.abs(v[0]) > 1e-9 || Math.abs(v[1]) > 1e-9);
+    });
+    if (conOff.length > 0) {
+      push(`TABLE:  "FRAME OFFSET ALONG LENGTH ASSIGNMENTS"`);
+      for (const i of conOff) {
+        const v = eo!.get(i)!;
+        push(`   Frame=${i + 1}   Type=User   LengthI=${fmt(v[0])}   ` +
+             `LengthJ=${fmt(v[1])}   RigidFactor=${fmt(v.length > 2 ? v[2] : 0)}`);
+      }
+      blank();
+    }
+  }
+
   // ── LAYERED SHELL: si se provee, todos los shells usan la misma seccion ──
   const isLayered = !!input.layeredSection && shellIdx.length > 0;
   const layeredSec = input.layeredSection;

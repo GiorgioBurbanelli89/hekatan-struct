@@ -53,3 +53,34 @@ Los materiales de serie, en los tres, con el peso IMPERIAL:
 | **edge constraint** | ⏳ Hekatan cose la malla (cookie cut) y los nudos coinciden, que es equivalente **en este modelo**; falta comprobarlo donde NO coincidan |
 | **output stations** (viga cada 0.5 m) | ⏳ Hekatan reporta en los extremos: al comparar fuerzas hay que mirar la ESTACIÓN, no solo el valor |
 | insertion point / cardinal point | ⏳ Hekatan trabaja con el eje; el descentrado real no se modela |
+
+---
+
+## LA REGLA: cada exportador, los defaults de SU programa
+
+Esto es lo que estaba detrás del problema de exportación. **El mismo modelo
+exportado a los tres programas no era la misma estructura**, porque cada uno
+rellena por su cuenta lo que el fichero no dice:
+
+| | ETABS | SAP2000 | SAFE |
+|---|---|---|---|
+| brazos rígidos | los pone **auto** | **no pone** | los pone **auto** |
+| y ¿pesa el tramo del brazo? | **no** (en vigas) | — | por comprobar |
+
+O sea que un `.e2k` sin offsets llega a ETABS **con** offsets, y el mismo modelo
+en `.s2k` llega a SAP2000 **sin** ellos. De ahí que el `.s2k` cerrara el peso y
+el `.e2k` no: no era el exportador, era el programa rellenando.
+
+### Lo que hace ahora cada exportador
+
+| | qué escribe | estado |
+|---|---|---|
+| **`.e2k`** (ETABS) | `LENGTHOFFI/J` + `RIGIDZONE` con el **rz del modelo** | ✅ arreglado — iba `RIGIDZONE 0.5` FIJO, y el defecto de ETABS es **0** (medido en sus 247 barras). Con 0.5 el brazo rigidiza; con 0 solo quita peso |
+| **`.s2k`** (SAP2000) | tabla `FRAME OFFSET ALONG LENGTH ASSIGNMENTS` | ✅ **nueva** — no se escribía, y SAP2000 no los pone solo. Formato leído de su propia tabla `Frame Offset Along Length Assignments`: `Frame,Type,LengthI,LengthJ,RigidFactor`, con `Type = User` |
+| **`.f2k`** (SAFE, cimentaciones) | — | ⏳ SAFE los pone **auto** (medido). Falta comprobarlo con vigas de cimentación: en un modelo vacío no expone la tabla (38 tablas, ninguna de offsets de frame) |
+
+### Y lo mismo vale para el resto de defaults
+
+`edge constraint` es **True en ETABS y False en SAP2000**: un modelo que dependa
+de que los bordes de las áreas aten los nudos se comporta distinto en los dos, y
+el fichero no lo dice.
