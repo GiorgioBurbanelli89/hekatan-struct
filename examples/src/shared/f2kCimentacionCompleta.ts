@@ -408,10 +408,13 @@ export function exportEdificioCimentacionF2k(data: F2kCimentacionData): string {
     // `Cover Top/Bottom` son REQUERIDOS por SAFE 20.3. Sin ellos la sección
     // se descarta al importar (error "Error reading field; record skipped") y
     // la asignación de viga cae a sección default (warning posterior).
-    // Cover default 6.35cm (2.5") — típico de cimentación expuesta al suelo.
+    // Defaults MEDIDOS en SAFE 20.3 corriendo (secciones de serie ConcBm /
+    // ConcCol tras NewBlank): Cover Top/Bot = 0.06 m, Notional Size Type =
+    // Auto con factor 1, rebar longitudinal y de cortante = A615Gr60.
+    // No son valores "tipicos": son los que pone SAFE si no le dices nada.
     L.push(`TABLE:  "FRAME SECTION PROPERTY DEFINITIONS - CONCRETE RECTANGULAR"`);
     for (const [key, dim] of sectionsCreated) {
-      L.push(`   Name=VAmarre_${key}   Material=4000Psi   "From File?"=No   Depth=${fmt(dim.h)}   Width=${fmt(dim.b)}   "Rigid Zone?"=No   "Notional Size Type"=User   "Notional User Size"=0.1   "Section Type"=Beam   "Longitudinal Rebar Material"=A615Gr60   "Shear Rebar Material"=A615Gr60   "Flange Dimension Option"="Analysis Property"   "Cover Top"=0.0635   "Cover Bottom"=0.0635   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=${guid()}`);
+      L.push(`   Name=VAmarre_${key}   Material=4000Psi   "From File?"=No   Depth=${fmt(dim.h)}   Width=${fmt(dim.b)}   "Rigid Zone?"=No   "Notional Size Type"=Auto   "Notional Auto Factor"=1   "Section Type"=Beam   "Longitudinal Rebar Material"=A615Gr60   "Shear Rebar Material"=A615Gr60   "Flange Dimension Option"="Analysis Property"   "Cover Top"=0.06   "Cover Bottom"=0.06   "Area Modifier"=1   "As2 Modifier"=1   "As3 Modifier"=1   "J Modifier"=1   "I22 Modifier"=1   "I33 Modifier"=1   "Mass Modifier"=1   "Weight Modifier"=1   Color=Magenta   GUID=${guid()}`);
     }
     L.push(` `);
 
