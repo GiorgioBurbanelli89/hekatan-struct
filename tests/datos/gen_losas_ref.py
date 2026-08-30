@@ -134,20 +134,25 @@ def volcar(sm, tipo):
             break
         if not r[0]:
             continue
-        # ⚠️ El CENTROIDE del area, que faltaba: sin el, los shells se guardaban
-        # solo por NOMBRE y no se podian emparejar con los de Hekatan (los dos
-        # programas numeran distinto). Es la unica forma de comparar F11, M11 y
-        # los cortantes transversales elemento a elemento.
-        try:
-            pr = sm.AreaObj.GetPoints(nm, 0, [])
-            cs = [sm.PointObj.GetCoordCartesian(q, 0., 0., 0.)[:3] for q in pr[1]]
-            cx = sum(c[0] for c in cs) / len(cs)
-            cy = sum(c[1] for c in cs) / len(cs)
-            cz = sum(c[2] for c in cs) / len(cs)
-        except Exception:
-            cx = cy = cz = None
+        # ⚠️ LA COORDENADA DEL NUDO, no la del objeto de area.
+        #
+        # `AreaForceShell` devuelve un registro POR NUDO de cada elemento
+        # mallado, y el nudo viene en el propio resultado (`PointElm`, r[3]).
+        # Guardando el centroide del OBJETO salian 1360 registros con solo 3
+        # centroides distintos —uno por pano— y al emparejar contra Hekatan
+        # varios elementos de ETABS caian sobre el mismo de Hekatan: el mismo
+        # valor 1204.23 comparado contra -20.03, 22.25, 40.11... Los % que salian
+        # de ahi no median nada.
+        #
+        # Hekatan tambien da un valor por nudo del shell (array de 4), asi que
+        # la comparacion honesta es NUDO A NUDO.
         for k in range(r[0]):
-            sh.append({"area": nm, "cx": cx, "cy": cy, "cz": cz,
+            try:
+                c = sm.PointElm.GetCoordCartesian(str(r[3][k]), 0., 0., 0.)
+                cx, cy, cz = float(c[0]), float(c[1]), float(c[2])
+            except Exception:
+                cx = cy = cz = None
+            sh.append({"area": nm, "nudo": str(r[3][k]), "cx": cx, "cy": cy, "cz": cz,
                        "F11": float(r[7][k]), "F22": float(r[8][k]),
                        "F12": float(r[9][k]), "M11": float(r[14][k]),
                        "M22": float(r[15][k]), "M12": float(r[16][k]),
