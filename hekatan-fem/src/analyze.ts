@@ -433,6 +433,30 @@ function computeQ4ShellStresses(
   const Mxy = Db[2][2]*kappaXY;
 
   // --- Transverse shear (Mindlin) ---
+  //
+  // ⚠️ OJO: ESTO SOLO VALE EN MINDLIN, Y HOY SE USA TAMBIEN EN KIRCHHOFF.
+  //
+  // `Q = Ds x gamma` es la ley constitutiva de Mindlin. En KIRCHHOFF el gamma
+  // es CERO por definicion —lo dice el comentario de abajo—, asi que lo que
+  // queda es RUIDO NUMERICO, y multiplicado por Ds = 5/6 x G x t (1.39e6 en una
+  // placa de 20 cm) sale disparado.
+  //
+  // Medido el 30-ago-2026 con la placa 4x4 apoyada, t = 0.20, q = -10, que
+  // tiene solucion analitica:
+  //
+  //     M11 centro    6.767   contra 7.66 de Navier      OK (malla 8x8)
+  //     V13 borde   798.091   contra 13.52 teorico       x59
+  //
+  // Y por eso Hekatan da casi lo MISMO en thin y en thick (10388 y 10196),
+  // mientras ETABS los distingue: 154.7 en Shell-Thin contra 48.6 en
+  // Shell-Thick. Esa es su firma — en Thin, donde no hay gamma, ETABS saca el
+  // cortante por EQUILIBRIO:
+  //
+  //     Qx = dMx/dx + dMxy/dy      Qy = dMy/dy + dMxy/dx
+  //
+  // Mientras esto no se arregle, `tranverseShearX/Y` NO es comparable con el
+  // V13/V23 de ETABS ni sirve para dimensionar a cortante. Los momentos si:
+  // estan validados contra Navier al 2 % (`placa-momentos-navier`).
   // shellQ4.cpp: γxz = dw/dx - θx_solver, donde θx_solver = -d[3]
   // → γxz = dw/dx - (-d[3]) = dw/dx + d[3]
   // En thin plate ideal: γxz = 0 → d[3] = -dw/dx ✓
