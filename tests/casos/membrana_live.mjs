@@ -42,15 +42,23 @@ import { compararFuerzas, CAMPOS } from "../lib/comparar.mjs";
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const DATOS = join(AQUI, "..", "datos");
 
-// [err medio, err max] admitidos, en % del pico de ETABS. Lo MEDIDO el
-// 29-ago-2026, con margen: 0.221/3.790 (V2) y 0.240/3.034 (M3).
+// [err medio, err max] admitidos, en % del pico de ETABS.
+//
+// ⚠️ RECALIBRADO el 30-ago-2026: el modelo cambio. Al arreglar el troceo (las
+// viguetas y las columnas de la rampa, y los empotramientos donde cada parte se
+// apoya en la otra) el mezanine paso de 247 a 237 barras, y ETABS dejo de
+// declararlo inestable. Los limites de antes eran de otro modelo.
+//
+// Lo MEDIDO ahora, con margen:
+//     T  0.570 / 27.18      V2 0.635 /  6.53      M3 0.767 / 10.04
+//     M2 0.950 / 39.07      V3 1.148 / 52.71      P  1.629 / 12.31
 const LIMITES = {
-  P:  [3.00, 14.00],
-  V2: [0.50,  5.00],
-  V3: [3.00, 14.00],
-  T:  [2.00, 45.00],
-  M2: [1.20,  9.00],
-  M3: [0.50,  4.00],
+  P:  [2.20,  16.00],
+  V2: [0.85,   9.00],
+  V3: [1.60,  65.00],
+  T:  [0.85,  35.00],
+  M2: [1.30,  50.00],
+  M3: [1.10,  13.00],
 };
 
 export const nombre = "membrana-live";
@@ -65,7 +73,7 @@ export async function correr() {
 
   const filas = [{
     que: "barras emparejadas",
-    medido: r.emparejadas, limite: 247, ok: r.emparejadas === 247,
+    medido: r.emparejadas, limite: 237, ok: r.emparejadas === 237,
     detalle: `${r.emparejadas} de ${r.nStruct} (Hekatan) y ${r.nEtabs} (ETABS)`,
     crudo: true,
   }];

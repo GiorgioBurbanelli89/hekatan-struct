@@ -35,18 +35,21 @@ const DATOS = join(AQUI, "..", "datos");
 
 // [err medio, err max] admitidos, en % del pico de ETABS. Lo MEDIDO el
 // 29-ago-2026 con margen. V3 y M2 apretados: son los que miden el reparto.
+// ⚠️ RECALIBRADO el 30-ago-2026 con el modelo troceado bien (404 barras, antes
+// 395). Medido: V3 0.161/5.40 · T 0.255/12.21 · M2 1.081/27.36 · M3 1.426/31.10
+// · V2 2.505/55.00 · P 10.282/199.59.
 const LIMITES = {
-  P:  [11.00, 200.00],
-  V2: [ 6.00, 100.00],
-  V3: [ 0.40,   5.00],
-  T:  [ 2.50,  60.00],
-  M2: [ 1.00,  30.00],
-  M3: [ 3.50,  75.00],
+  P:  [13.00, 260.00],
+  V2: [ 3.50,  72.00],
+  V3: [ 0.25,   7.50],
+  T:  [ 0.40,  17.00],
+  M2: [ 1.50,  36.00],
+  M3: [ 2.00,  41.00],
 };
 
 export const nombre = "cubierta-lroof";
 export const descripcion =
-  "el zinc con la carga de cubierta: 395 barras contra ETABS (el reparto a las correas)";
+  "el zinc con la carga de cubierta: 404 barras contra ETABS (el reparto a las correas)";
 
 export async function correr() {
   const modelo = await resolverHeks(join(DATOS, "cubierta_lroof.heks"));
@@ -56,7 +59,7 @@ export async function correr() {
 
   const filas = [{
     que: "barras emparejadas",
-    medido: r.emparejadas, limite: 395, ok: r.emparejadas === 395,
+    medido: r.emparejadas, limite: 404, ok: r.emparejadas === 404,
     detalle: `${r.emparejadas} de ${r.nStruct} (Hekatan) y ${r.nEtabs} (ETABS)`,
     crudo: true,
   }];

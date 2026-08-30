@@ -188,6 +188,76 @@ export function analyze(
   const { nodeToCentroidNodesMap, nodeToCentroidElementIndiciesMap } =
     getCentroidsMaps(nodes, elements);
 
+  // ── CORTANTE TRANSVERSAL POR EQUILIBRIO, en las placas KIRCHHOFF ─────────
+  //
+  // En Kirchhoff el gamma transversal es CERO por definicion, asi que
+  // `Q = Ds x gamma` solo devuelve ruido numerico amplificado por Ds = 5/6·G·t
+  // (medido: x59 contra la solucion de Navier). El cortante hay que sacarlo del
+  // EQUILIBRIO de la placa, que es lo que hace ETABS en Shell-Thin — y por eso
+  // su V13 cambia con la formulacion (154.7 en Thin contra 48.6 en Thick) con
+  // los momentos casi iguales:
+  //
+  //     Qx = dMx/dx + dMxy/dy        Qy = dMy/dy + dMxy/dx
+  //
+  // ⚠️ El gradiente NO se puede sacar dentro del elemento: en un Q4 bilineal las
+  // segundas derivadas puras son cero. Se reconstruye a nivel de MALLA, por
+  // minimos cuadrados con los centros de los elementos VECINOS (los que
+  // comparten una arista, o sea dos nudos). Es la reconstruccion de gradiente
+  // de toda la vida, y aguanta mallas irregulares.
+  {
+    const esK = (i: number) =>
+      ((elementInputs as any)?.plateFormulations?.get(i) ?? 0) === 1;
+    const centro = new Map<number, number[]>();
+    const nodosDe = new Map<number, number[]>();
+    elements.forEach((e, i) => {
+      if (e.length !== 4) return;
+      const P = (e as number[]).map((n) => nodes[n]);
+      centro.set(i, [0, 1, 2].map((k) => P.reduce((sm, q) => sm + q[k], 0) / 4));
+      nodosDe.set(i, e as number[]);
+    });
+    if ([...nodosDe.keys()].some(esK)) {
+      const elemsDeNudo = new Map<number, number[]>();
+      for (const [i, ns] of nodosDe) {
+        for (const n of ns) {
+          const a = elemsDeNudo.get(n) ?? [];
+          a.push(i);
+          elemsDeNudo.set(n, a);
+        }
+      }
+      for (const [i, ns] of nodosDe) {
+        if (!esK(i)) continue;
+        const comparte = new Map<number, number>();
+        for (const n of ns) {
+          for (const j of elemsDeNudo.get(n) ?? []) {
+            if (j !== i) comparte.set(j, (comparte.get(j) ?? 0) + 1);
+          }
+        }
+        const vec = [...comparte].filter(([, c]) => c >= 2).map(([j]) => j);
+        if (vec.length < 2) continue;          // sin vecinos suficientes, se deja
+        const ci = centro.get(i)!;
+        const grad = (campo: Map<number, number>): [number, number] => {
+          let a11 = 0, a12 = 0, a22 = 0, b1 = 0, b2 = 0;
+          const Vi = campo.get(i) ?? 0;
+          for (const j of vec) {
+            const cj = centro.get(j)!;
+            const dx = cj[0] - ci[0], dy = cj[1] - ci[1];
+            const dV = (campo.get(j) ?? 0) - Vi;
+            a11 += dx * dx; a12 += dx * dy; a22 += dy * dy;
+            b1 += dx * dV;  b2 += dy * dV;
+          }
+          const det = a11 * a22 - a12 * a12;
+          if (Math.abs(det) < 1e-12) return [0, 0];
+          return [(b1 * a22 - b2 * a12) / det, (a11 * b2 - a12 * b1) / det];
+        };
+        const gMx = grad(analyzeOutputsElements.bendingXX);
+        const gMy = grad(analyzeOutputsElements.bendingYY);
+        const gMxy = grad(analyzeOutputsElements.bendingXY);
+        analyzeOutputsElements.tranverseShearX.set(i, gMx[0] + gMxy[1]);
+        analyzeOutputsElements.tranverseShearY.set(i, gMy[1] + gMxy[0]);
+      }
+    }
+  }
+
   elements.forEach((element, elementIndex) => {
     if (element.length !== 3 && element.length !== 4) return;
     const nNodes = element.length;
