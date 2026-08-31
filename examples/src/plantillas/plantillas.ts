@@ -122,6 +122,10 @@ const PARAMS = {
   pisos: { default: 4, min: 1, max: 20, step: 1, label: "nº de pisos", folder: "🏢 Pisos" },
   h: { default: 3.0, min: 2, max: 6, step: 0.1, label: "altura típica (m)", folder: "🏢 Pisos" },
   h1: { default: 3.5, min: 2, max: 8, step: 0.1, label: "altura 1er piso (m)", folder: "🏢 Pisos" },
+  // ── Volado ───────────────────────────────────────────────────────────────
+  // La losa se pasa `volado` metros del ultimo eje POR LOS CUATRO LADOS, y ahi
+  // NO hay columna: es un voladizo de verdad, no un vano mas. 0 = sin volado.
+  volado: { default: 0, min: 0, max: 3, step: 0.25, label: "volado perimetral (m)", folder: "🏢 Pisos" },
 
   // ── Material ─────────────────────────────────────────────────────────────
   material: {
@@ -153,9 +157,16 @@ const PARAMS = {
   // salía **−7.3 %**, porque sobre-rigidiza fuera del plano en paneles
   // alargados (0.5 × 3.5 m). En el propio ETABS, Thin y Thick del muro dan lo
   // mismo (0.1 %) — su «Shell-Thick» no es un MITC4.
+  // Los MISMOS numeros que la OAPI de CSI: 0 Thick · 1 Thin · 2 Membrana.
+  // «Membrana» es la losa que NO toma flexion: solo reparte su carga a las
+  // vigas, como el deck o la maciza declarada membrana en ETABS.
   formLosa: {
     default: 1,
-    options: { "Shell-Thin (Kirchhoff)": 1, "Shell-Thick (Mindlin MITC4)": 0 },
+    options: {
+      "Shell-Thin (Kirchhoff)": 1,
+      "Shell-Thick (Mindlin MITC4)": 0,
+      "Membrana (sin flexión)": 2,
+    },
     label: "losa, formulación", folder: "🔩 Secciones",
   },
   formMuro: {
@@ -282,15 +293,21 @@ export const plantillas: ExampleDef = {
     // Los EJES son donde van las columnas; entre eje y eje se meten `div-1`
     // nudos más para que las vigas y la losa tengan puntos intermedios. Sin eso
     // no hay centro de vano y la flecha que se lee no es la del vano.
-    const finos = (v: number[], d: number) => {
-      const out: number[] = [], esEje: boolean[] = [];
+    const finos = (v: number[], d: number, vol?: boolean[]) => {
+      const out: number[] = [], esEje: boolean[] = [], esVol: boolean[] = [];
       for (let i = 0; i < v.length - 1; i++)
         for (let s = 0; s < d; s++) {
           out.push(v[i] + (v[i + 1] - v[i]) * s / d);
           esEje.push(s === 0);
+          // ⚠️ el nudo s=0 ES el eje v[i], asi que mira SOLO su extremo. Con
+          // `vol[i] || vol[i+1]` el ULTIMO eje real quedaba marcado de volado
+          // por ser vecino del tramo volado, y se quedaba sin columna: 16 -> 9.
+          // Los intermedios (s>0) si estan dentro del tramo, y ahi vale el OR.
+          esVol.push(!!(vol && (s === 0 ? vol[i] : (vol[i] || vol[i + 1]))));
         }
       out.push(v[v.length - 1]); esEje.push(true);
-      return { c: out, eje: esEje };
+      esVol.push(!!(vol && vol[v.length - 1]));
+      return { c: out, eje: esEje, vol: esVol };
     };
     // Etapa 2 de ETABS: cada vano se parte en tantos trozos como haga falta
     // para que ninguno pase del tamaño máximo. Se toma el vano más corto para
@@ -301,8 +318,22 @@ export const plantillas: ExampleDef = {
       ...X.slice(1).map((v, i) => v - X[i]),
       ...(Y.length > 1 ? Y.slice(1).map((v, i) => v - Y[i]) : [Infinity]));
     const D = Math.max(1, Math.min(24, Math.ceil(luzMin / Math.max(0.05, p.ms))));
-    const fx = finos(X, D);
-    const fy = Y.length > 1 ? finos(Y, D) : { c: [0], eje: [true] };
+    // ── El volado ───────────────────────────────────────────────────────────
+    // Se añade un eje mas a cada lado, a `vol` metros, y se marca como DE
+    // VOLADO para que ahi no se plante columna. La luz minima se calculo ANTES
+    // con los ejes de verdad: si no, un volado de 0.5 m re-mallaria el edificio
+    // entero a 0.5 y se irian los tiempos y la comparacion.
+    const vol = conLosa ? Math.max(0, (p as any).volado || 0) : 0;
+    const hayVol = vol > 1e-6;
+    const ampl = (v: number[]) => hayVol ? [v[0] - vol, ...v, ult(v) + vol] : v;
+    const marca = (v: number[]) => hayVol
+      ? [true, ...v.map(() => false), true] : v.map(() => false);
+    const XV = ampl(X), volX = marca(X);
+    const YV = Y.length > 1 ? ampl(Y) : Y;
+    const volY = Y.length > 1 ? marca(Y) : Y.map(() => false);
+    const fx = finos(XV, D, volX);
+    const fy = YV.length > 1 ? finos(YV, D, volY)
+                             : { c: [0], eje: [true], vol: [false] };
     const XF = fx.c, YF = fy.c;
 
     // ── Nudos: la malla fina repetida en cada nivel ─────────────────────────
@@ -377,7 +408,9 @@ export const plantillas: ExampleDef = {
     for (let k = 0; k < Z.length - 1; k++)
       for (let j = 0; j < YF.length; j++)
         for (let i = 0; i < XF.length; i++)
-          if (fx.eje[i] && fy.eje[j]) push([N(i, j, k), N(i, j, k + 1)], "col");
+          // ⚠️ en el volado NO hay columna: por eso es un voladizo
+          if (fx.eje[i] && fy.eje[j] && !fx.vol[i] && !fy.vol[j])
+            push([N(i, j, k), N(i, j, k + 1)], "col");
 
     // ── Vigas: en los niveles por encima de la base ─────────────────────────
     // En «losa con vigas de borde» solo van las del perímetro; ese es justo el
