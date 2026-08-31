@@ -371,12 +371,28 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
     //         beta = ((2/3 - 2 W_a alpha^2)/W_b)^(1/2)
     //     no estan localizadas en ninguno de los dos papeles que tenemos.
     //
-    // El candidato que falta es el OTRO ITW de 1991: **IJNME 31:1393-1414,
-    // «Thick shell and solid finite elements with independent rotation
-    // fields»** — 21 paginas, si da para una ec. (30). Es ademas la ref. [15]
-    // de Ibrahimbegovic (1993), citada alli para «an explicit enforcement of
-    // the constant shear strain». Mientras no se tenga, esta atribucion queda
-    // ABIERTA; lo medido (que la regla funciona) no depende de ella.
+    // RESUELTO el 31-ago-2026 con el IJNME **31**:1393-1414 ya en la mano
+    // (`registros/papers_shell_csi/itw1991_thick_IJNME31`). Su §3.1 dice:
+    //
+    //   «The parts of the element stiffness matrix K^e and H^e in (50) and (55)
+    //    are computed using a **14-point quadrature, given by Irons**. The
+    //    matrix P^e in (55) is integrated by **2x2x2** Gaussian quadrature...
+    //    six parameters for skew Q are used in the mixed-type formulation
+    //    versus **8-point integration rule on the penalty term** in
+    //    displacement-type formulation.»
+    //
+    // O sea: esa regla de 8 puntos es la de la PENALIZACION DE UN SOLIDO, no la
+    // del shell; y la cuadratura de 14 puntos es de Irons, «Quadrature rules for
+    // **BRICK** based finite elements», IJNME 3, 293-294 (1971) — hexaedros.
+    //
+    // Y encaja con lo que ya se vio en el binario en agosto: la funcion de
+    // `CsiGo2.dll` donde viven esas constantes tiene TRES coordenadas naturales
+    // y 24 huecos de funciones de forma — un hexaedro de 8 nudos, no el shell.
+    // Las dos vias, la documental y la del binario, dicen lo mismo.
+    //
+    // Conclusion: **esta regla no viene de ningun paper del SHELL**. Se deja
+    // porque esta MEDIDA (hemisferio 8x8: -34 % -> -4 %), pero como eleccion
+    // numerica propia, no como «lo que hace CSI».
     //
     //     W_a + W_b = 1;  alpha = 1/(9 W_a)^(1/4);
     //     beta = ((2/3 - 2 W_a alpha^2) / W_b)^(1/2)
@@ -1686,9 +1702,10 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     const bool taylorITW = (drillingType == 5);
     //  7 = la regla de OCHO puntos.
     //      ⚠️ Ponia «ITW 1991, ec. (30), el paper que cita el manual de CSI» y
-    //      eso NO se sostiene: el CANM 7:1-9 llega solo a la ec. (28). De donde
-    //      sale la regla queda SIN IDENTIFICAR — ver la nota larga en
-    //      `getMembraneITW`. El candidato es IJNME 31:1393-1414. `wAlpha > 0` la activa y
+    //      eso NO se sostiene: el CANM 7:1-9 llega solo a la ec. (28). La regla
+    //      de 8 puntos del IJNME 31 es de la penalizacion de un SOLIDO (y la de
+    //      14 puntos, de Irons, para BRICKS) — no del shell. Ver la nota larga
+    //      en `getMembraneITW`. Se usa porque esta MEDIDA, no por atribucion. `wAlpha > 0` la activa y
     //      manda sobre `ngITW`. Medido en Python contra el hemisferio de
     //      MacNeal & Harder (0.094), que es EL test de bloqueo de membrana:
     //
