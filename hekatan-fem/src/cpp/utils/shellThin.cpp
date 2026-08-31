@@ -67,7 +67,7 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
                                double E, double nu, double t,
                                const double *mod, double gammaFac, int nGauss,
                                bool taylorBurbuja, double khg, double wAlpha,
-                               bool proyDrill, int sriVol);
+                               bool proyDrill, int sriVol, bool k0Wilson);
 
 // ─── MZC Kirchhoff Plate Bending (12×12) — el corazón Shell-Thin ────────────
 // DOFs por nodo: [w, θx, θy] donde θx = ∂w/∂y, θy = -∂w/∂x
@@ -376,7 +376,7 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
 
     Eigen::MatrixXd Km   = usaITW ? Eigen::MatrixXd::Zero(8, 8)
                                   : getMembraneK(x, y, E, nu, t, dmod);   // 8×8
-    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW, khgITW, waITW, proyITW, sriITW)
+    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW, khgITW, waITW, proyITW, sriITW, false)
                                   : Eigen::MatrixXd::Zero(12, 12);        // 12×12
     Kitw *= mFactor;
     Eigen::MatrixXd Kb = sinFlexion

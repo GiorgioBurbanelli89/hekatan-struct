@@ -77,10 +77,21 @@ function mallaXZ(L: number, H: number, na: number, nb: number) {
 }
 
 /** Propiedades de cáscara iguales en todos los elementos. */
-function props(elements: Element[], t: number, E: number, nu: number) {
+function props(elements: Element[], t: number, E: number, nu: number,
+               drill?: number) {
   const m = <T,>(v: T) => new Map<number, T>(elements.map((_, i) => [i, v]));
-  return { thicknesses: m(t), elasticities: m(E), poissonsRatios: m(nu),
-           densities: m(0) };
+  const o: any = { thicknesses: m(t), elasticities: m(E), poissonsRatios: m(nu),
+                   densities: m(0) };
+  // `drill` = variante de la membrana con drilling. Se expone para poder
+  // barrerlas desde el propio ejemplo, que es como se compara contra la Tabla
+  // IV del paper. 0 = el defecto del motor.
+  //   3  ITW 1990 con Gauss 3x3   (el defecto de hoy)
+  //   4  Gauss 2x2 SIN K0         (desbloquea, pero deja modos nulos)
+  //   8  proyeccion del drilling (via FEAP/Taylor)
+  //  10  proyeccion + SRI del volumetrico
+  //  11  **la receta de Wilson**: Gauss 2x2 + K0 de rango uno (k0 = 0.025 G)
+  if (drill) o.drillingTypes = m(Math.round(drill));
+  return o;
 }
 
 /**
@@ -162,7 +173,7 @@ export const itwTest1: ExampleDef = {
     for (let j = 0; j <= nb; j++)
       loads.set(idx(na, j), [0, 0, 0, 0, p.M / (nb + 1), 0]);
     resolver(states, nodes, elements, supports, loads,
-             props(elements, p.t, p.E, p.nu));
+             props(elements, p.t, p.E, p.nu, (p as any).drill));
   },
   computedLabels(p, states) {
     const na = Math.round(p.na), nb = Math.round(p.nb);
@@ -213,7 +224,7 @@ export const itwTest2: ExampleDef = {
       loads.set(idx(na, j), [0, 0, -f, 0, 0, 0]);
     }
     resolver(states, nodes, elements, supports, loads,
-             props(elements, p.t, p.E, p.nu));
+             props(elements, p.t, p.E, p.nu, (p as any).drill));
   },
   computedLabels(p, states) {
     const na = Math.round(p.na), nb = Math.round(p.nb);
@@ -275,7 +286,7 @@ export const itwTest3: ExampleDef = {
       loads.set(j * (na + 1) + na, [0, 0, f, 0, 0, 0]);   // hacia ARRIBA
     }
     resolver(states, nodes, elements, supports, loads,
-             props(elements, p.t, p.E, p.nu));
+             props(elements, p.t, p.E, p.nu, (p as any).drill));
   },
   computedLabels(p, states) {
     const na = Math.round(p.na), nb = Math.round(p.nb);
@@ -344,6 +355,7 @@ export const itwTest4: ExampleDef = {
     P:  { default: 1,        min: 0.1, max: 10,   step: 0.1,  label: "P (pinza)" },
     na: { default: 8,        min: 2,   max: 24,   step: 1,    label: "divisiones φ" },
     nb: { default: 8,        min: 2,   max: 24,   step: 1,    label: "divisiones polar" },
+    drill: { default: 0, min: 0, max: 11, step: 1, label: "variante drilling (0=defecto, 11=Wilson)" },
   },
   build(p, states) {
     const na = Math.round(p.na), nb = Math.round(p.nb);
@@ -387,7 +399,7 @@ export const itwTest4: ExampleDef = {
       [eq + na, [0, -p.P, 0, 0, 0, 0]],
     ]);
     resolver(states, nodes, elements, supports, loads,
-             props(elements, p.t, p.E, p.nu));
+             props(elements, p.t, p.E, p.nu, (p as any).drill));
   },
   computedLabels(p, states) {
     const na = Math.round(p.na), nb = Math.round(p.nb);
@@ -486,7 +498,7 @@ export const muroAcopleITW: ExampleDef = {
                   [p.FLAT / tops, 0, -p.GRAV / tops, 0, 0, 0]);
 
     const A = p.b_b * p.h_b, I = p.b_b * Math.pow(p.h_b, 3) / 12;
-    const ei: any = props(elements.slice(0, nShell), p.t, p.E, p.nu);
+    const ei: any = props(elements.slice(0, nShell), p.t, p.E, p.nu, (p as any).drill);
     // Los frames van DESPUÉS de las cáscaras en el mismo array, así que sus
     // propiedades se meten en los índices que les tocan.
     ei.areas = new Map<number, number>();
@@ -583,7 +595,7 @@ export const muroFrameITW: ExampleDef = {
     const loads = new Map<number, Car>([[punta, [0, 0, -p.P_v, 0, 0, 0]]]);
 
     const A = p.b_b * p.h_b, I = p.b_b * Math.pow(p.h_b, 3) / 12;
-    const ei: any = props(elements.slice(0, nShell), p.t, p.E, p.nu);
+    const ei: any = props(elements.slice(0, nShell), p.t, p.E, p.nu, (p as any).drill);
     ei.areas = new Map<number, number>();
     ei.momentsOfInertiaY = new Map<number, number>();
     ei.momentsOfInertiaZ = new Map<number, number>();

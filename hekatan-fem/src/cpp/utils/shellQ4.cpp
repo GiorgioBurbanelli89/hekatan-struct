@@ -252,7 +252,8 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
                                       double E, double nu, double t,
                                       const double *mod, double gammaFac,
                                       int nGauss, bool taylorBurbuja,
-                                      double khg, double wAlpha, bool proyDrill, int sriVol)
+                                      double khg, double wAlpha, bool proyDrill, int sriVol,
+                                      bool k0Wilson)
 {
     double factor = E / (1.0 - nu * nu);
     Eigen::Matrix3d Dm;
@@ -670,6 +671,45 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
         Eigen::VectorXd hg = Eigen::VectorXd::Zero(14);
         for (int i = 0; i < 4; i++) hg(3*i + 2) = (i % 2 == 0) ? 1.0 : -1.0;
         K14 += (khg * mu * t * A / 4.0) * (hg * hg.transpose());
+    }
+
+    // ─── K0 de WILSON (cap. 9, ecs. 9.11-9.14) ────────────────────────────
+    //
+    // Con integracion de CUATRO PUNTOS (2x2) la matriz se queda con UN modo de
+    // energia cero ademas de los tres de solido rigido: «rotaciones iguales en
+    // todos los nodos y cero desplazamientos en nodos intermedios». Wilson lo
+    // elimina anadiendo una matriz de RANGO UNO, no subiendo la cuadratura:
+    //
+    //   (9.11)  theta_0 = 1/2 (du_x/dy - du_y/dx) = b0 . u      en el CENTRO
+    //   (9.12)  theta_barra = theta_0 - SUM Ni(0,0) theta_i = b0_barra . u
+    //   (9.13)  K0 = INT b0_barra^T k0 b0_barra dV
+    //              = k0 * Vol * b0_barra^T b0_barra    (UN punto)
+    //   (9.14)  k0 = 0.025 * D33          (D33 = modulo de cortante G)
+    //
+    // Ni(0,0) = 1/4 en el Q4, asi que el termino de rotacion es -1/4 en los
+    // cuatro nudos. `Vol = A * t`.
+    if (k0Wilson) {
+        double N0[4], dN0dxi[4], dN0deta[4], Jinv0k[2][2];
+        shapeFunctionsQ4(0.0, 0.0, N0, dN0dxi, dN0deta);
+        double dJ0k = std::abs(jacobian2D(x, y, dN0dxi, dN0deta, Jinv0k));
+        // area del cuadrilatero por la formula del poligono
+        double Ak = 0.0;
+        for (int i = 0; i < 4; i++) {
+            int j = (i + 1) % 4;
+            Ak += x[i] * y[j] - x[j] * y[i];
+        }
+        Ak = std::abs(Ak) / 2.0;
+        Eigen::VectorXd b0 = Eigen::VectorXd::Zero(14);
+        for (int i = 0; i < 4; i++) {
+            double dNx = Jinv0k[0][0] * dN0dxi[i] + Jinv0k[0][1] * dN0deta[i];
+            double dNy = Jinv0k[1][0] * dN0dxi[i] + Jinv0k[1][1] * dN0deta[i];
+            b0(3 * i + 0) =  0.5 * dNy;      // + 1/2 du_x/dy
+            b0(3 * i + 1) = -0.5 * dNx;      // - 1/2 du_y/dx
+            b0(3 * i + 2) = -N0[i];          // - SUM Ni(0,0) theta_i
+        }
+        (void)dJ0k;
+        double k0 = 0.025 * mu;              // (9.14) mu es G
+        K14 += (k0 * Ak * t) * (b0 * b0.transpose());
     }
 
     // Condensacion estatica de la burbuja (los 2 GDL internos)
@@ -1497,7 +1537,10 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     // lo medido de ETABS). Con el 2 es el alpha de Hughes-Brezzi (defecto 0.05).
     double drillScale = getMapVal(elementInputs.drillingPenaltyScales, index,
                                   (drillingType >= 3 && drillingType <= 10) ? 0.4 : 0.05);
-    const bool usaITW = (drillingType >= 3 && drillingType <= 10);
+    // ⚠️ el 11 (receta de Wilson) TAMBIEN es ITW: si el rango se queda en 10 se
+    // cae a la membrana vieja y el tipo no hace nada — daba el mismo numero que
+    // el 3 y parecia que K0 no servia.
+    const bool usaITW = (drillingType >= 3 && drillingType <= 11);
     // 3 = ITW con Gauss 3x3, que es lo que pide el paper   [DEFECTO]
     // 4 = ITW con Gauss 2x2 (integracion reducida)  -- NO USAR, ver abajo
     // 5 = ITW 3x3 con la burbuja a la Taylor (J0 del centro)
@@ -1540,7 +1583,20 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     //     pero empeora el AXIL de las barras del mezanine (de 3.5 % a 12.5 % en
     //     el peor, aunque los momentos siguen al 0.01 %). Cambiar el defecto es
     //     una decision de producto: cascara curva contra losa con vigas.
-    const int  ngITW  = (drillingType == 4 || drillingType == 6) ? 2 : 3;
+    // 11 = LA RECETA DE WILSON (cap. 9 de su libro, que dice explicitamente que
+    //      es «el elemento que se utiliza en la actualidad en SAP2000»):
+    //      integracion de CUATRO PUNTOS (2x2) + una matriz de RANGO UNO K0 que
+    //      elimina el unico modo de energia cero que deja el 2x2.
+    //          (9.11) theta_0 = 1/2 (du_x/dy - du_y/dx) = b0 . u
+    //          (9.12) theta_barra = theta_0 - SUM Ni(0,0) theta_i
+    //          (9.13) K0 = k0 * Vol * b0_barra^T b0_barra   (UN punto)
+    //          (9.14) k0 = 0.025 * G
+    //      Ya se habia medido que el 2x2 solo desbloquea el hemisferio
+    //      (-37 % -> -5 %) pero deja modos nulos, y se descarto por mecanismo:
+    //      faltaba K0.
+    const int  ngITW  = (drillingType == 4 || drillingType == 6
+                         || drillingType == 11) ? 2 : 3;
+    const bool k0Wilson = (drillingType == 11);
     const double khgITW = (drillingType == 6) ? 2.0e-4 : 0.0;
     const bool taylorITW = (drillingType == 5);
     //  7 = ITW **1991**: la regla de OCHO puntos de su ec. (30). Es el paper
@@ -1585,7 +1641,7 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
 
     Eigen::MatrixXd Km   = usaITW ? Eigen::MatrixXd::Zero(8, 8)
                                   : getMembraneK(x, y, E, nu, t, dmod);   // 8×8
-    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW, khgITW, waITW, proyITW, sriITW)
+    Eigen::MatrixXd Kitw = usaITW ? getMembraneITW(x, y, E, nu, t, dmod, drillScale, ngITW, taylorITW, khgITW, waITW, proyITW, sriITW, k0Wilson)
                                   : Eigen::MatrixXd::Zero(12, 12);        // 12×12
     #if HK_BENDING_FORMULATION == 2
         Eigen::MatrixXd Kb = getBendingK_DSE_FULL(x, y, E, nu, t);  // 12×12 (Wilson DSE Cap 8 completo, Variant C)
