@@ -106,14 +106,23 @@ delataba el bounding box del DKE, con 23–44 %.
 **La ley en t** (`t³`, Kirchhoff puro sin cortante): `‖K/t³‖ = 4.94151e+07`
 igual en t=0.20 y t=0.02, y K coincide a 1.2e-15 en los dos.
 
-### Lo único del Thin que NO está verificado
+### El último hueco del Thin — CERRADO el 31-ago-2026
 
-El reparto del término cruzado cuando **M11 y M22 suben A LA VEZ**. En
-`plateDKQ.h` se puso `D0·ν·sqrt(m11·m22)` **por suposición**; medido en nuestro
-motor, con `m11=m22=2` el cruzado **no** es lineal (0.69 % de desviación
-respecto a la suma), lo cual es coherente con esa raíz — pero **falta la corrida
-de ETABS con las dos subidas a la vez** para saber si su reparto es el mismo.
-Candidatas: `sqrt(m11·m22)=1.414`, `(m11+m22)/2=1.5`, `m11=2`, `1`.
+Faltaba el reparto del término cruzado cuando **M11 y M22 suben A LA VEZ**. En
+`plateDKQ.h` estaba puesto `D0·ν·sqrt(m11·m22)` **por suposición**, y las
+candidatas eran `sqrt(m11·m22)=1.414`, `(m11+m22)/2=1.5`, `m11=2` y `1`.
+
+Medido con `celda_flexion12_piezas_thick.py` (caso `thinM1122`):
+
+    ETABS    ||K(2,2,1) − K(1,1,1)||  =  364874
+    Hekatan                            =  364874
+    dif = 0.0000 %
+
+**La suposición era correcta.** Con eso el Shell-Thin no tiene ningún hueco.
+
+Y de paso valida el método: `||K(2,2,1)−K(1,1,1) − (A11+A22)||` da **1.4653 %**
+en ETABS y **1.4653 %** en Hekatan — el mismo número, que es el peso del término
+cruzado `D0·ν`.
 
 ## RESULTADO 2 — el Shell-Thick sigue abierto, pero la pieza ya está localizada
 
