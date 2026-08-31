@@ -69,6 +69,8 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
                                bool taylorBurbuja, double khg, double wAlpha,
                                bool proyDrill, int sriVol, bool k0Wilson);
 
+#include "plateDKQ.h"
+
 // ─── MZC Kirchhoff Plate Bending (12×12) — el corazón Shell-Thin ────────────
 // DOFs por nodo: [w, θx, θy] donde θx = ∂w/∂y, θy = -∂w/∂x
 // Asume Q4 rectangular alineado con XY locales.
@@ -381,7 +383,7 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellThin(
     Kitw *= mFactor;
     Eigen::MatrixXd Kb = sinFlexion
         ? Eigen::MatrixXd::Zero(12, 12)
-        : getBendingK_DKE(x, y, E, nu, t, dmod);   // 12×12 DKE (= ETABS/SAFE ShellThin, validado vs ETABS en Python)
+        : getBendingK_DKQ_mod(x, y, E, nu, t, dmod);  // 12×12 DKQ con jacobiano real
     Km *= mFactor;
     Kb *= bFactor;
 

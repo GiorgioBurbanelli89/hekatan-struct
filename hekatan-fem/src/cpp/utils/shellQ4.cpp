@@ -646,7 +646,11 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
     res(12) = -0.5 * c_dNBy;
     res(13) =  0.5 * c_dNBx;
     if (wAlpha > 0.0) { res(12) = 0.0; res(13) = 0.0; }   // sin burbuja: sin sus GDL
-    K14 += (gamma * t * 4.0 * c_dJ) * (res * res.transpose());
+    // ⚠️ Wilson usa su K0 EN LUGAR de esta penalizacion, no ademas. Sumando las
+    // dos, el drilling queda coartado dos veces y la cascara sale rigidisima:
+    // 99 % de error en el hemisferio, medido. Con `k0Wilson` se salta P.
+    if (!k0Wilson)
+        K14 += (gamma * t * 4.0 * c_dJ) * (res * res.transpose());
 
     // ── Estabilizacion del reloj de arena ──────────────────────────────────
     // Con Gauss 2x2 la interpolacion de Allman deja un mecanismo: el elemento
