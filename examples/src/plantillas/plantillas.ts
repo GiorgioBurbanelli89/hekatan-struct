@@ -87,6 +87,37 @@ function ejes(txt: unknown, n: number, s: number): number[] {
 const ult = (v: number[]) => (v.length ? v[v.length - 1] : 0);
 
 /** Los niveles, contando que el primer piso puede tener otra altura. */
+/**
+ * Modificadores de una losa NERVADA respecto a la maciza de su canto total.
+ * Portado de `galpon-bodega-electoral/a_heks.py`, donde ya esta validado
+ * contra ETABS. La cascara se declara con el canto total `h`, asi que su
+ * inercia es h^3/12 por metro — muy superior a la real, porque entre nervio y
+ * nervio solo hay loseta. El modificador es la razon de inercias, sacada de la
+ * seccion T equivalente por metro.
+ *
+ * Devuelve los 8 en el orden del .e2k: F11 F22 F12 · M11 M22 M12 · V13 V23.
+ */
+function modsNervada(h: number, tLoseta: number, bNervio: number,
+                     sep: number, dosDirecciones: boolean): number[] {
+  const b = bNervio / sep;                 // ancho de alma por metro
+  const ha = h - tLoseta;                  // altura del alma
+  const A1 = tLoseta * 1.0, y1 = h - tLoseta / 2;
+  const A2 = ha * b, y2 = ha / 2;
+  const yg = (A1 * y1 + A2 * y2) / (A1 + A2);
+  const I = tLoseta ** 3 / 12 + A1 * (y1 - yg) ** 2
+          + b * ha ** 3 / 12 + A2 * (y2 - yg) ** 2;
+  const f = I / (h ** 3 / 12);
+  // en la direccion SIN nervio solo trabaja la loseta
+  const fCruz = dosDirecciones ? f : (tLoseta ** 3 / 12) / (h ** 3 / 12);
+  // ⚠️ El CORTANTE TRANSVERSAL no se escala con la razon de inercias: lo toman
+  // las almas, y su area es del orden de la placa maciza. Escalarlo dejaba la
+  // losa artificialmente blanda (nervada: -231 mm contra los -46 de ETABS).
+  // La TORSION va con la MEDIA GEOMETRICA de las dos flexiones (Huber): poner
+  // el minimo le quita toda la rigidez a torsion, y en una nervada los nervios
+  // y la loseta forman celdas que si torsionan.
+  return [1, 1, 1, f, fCruz, Math.sqrt(f * fCruz), 1, 1];
+}
+
 function niveles(txt: unknown, pisos: number, h: number, h1: number): number[] {
   const dado = ordenadas(txt);
   if (dado) return dado[0] === 0 ? dado : [0, ...dado];
@@ -126,6 +157,10 @@ const PARAMS = {
   // La losa se pasa `volado` metros del ultimo eje POR LOS CUATRO LADOS, y ahi
   // NO hay columna: es un voladizo de verdad, no un vano mas. 0 = sin volado.
   volado: { default: 0, min: 0, max: 3, step: 0.25, label: "volado perimetral (m)", folder: "🏢 Pisos" },
+  // Solo se usan si la losa es Nervada o Waffle
+  tLoseta: { default: 0.05, min: 0.03, max: 0.15, step: 0.01, label: "nervada: loseta (m)", folder: "🔩 Secciones" },
+  bNervio: { default: 0.10, min: 0.05, max: 0.30, step: 0.01, label: "nervada: ancho nervio (m)", folder: "🔩 Secciones" },
+  sNervio: { default: 0.60, min: 0.30, max: 1.50, step: 0.05, label: "nervada: separación (m)", folder: "🔩 Secciones" },
 
   // ── Material ─────────────────────────────────────────────────────────────
   material: {
@@ -176,6 +211,11 @@ const PARAMS = {
       // modificador de MEMBRANA a 0, que es justo «sin membrana».
       "Plate-Thin (flexión pura)": 40,
       "Plate-Thick (flexión pura)": 41,
+      // Ortotropas: la cascara se declara con el CANTO TOTAL y se le baja la
+      // inercia con modificadores DIRECCIONALES. La nervada solo en el sentido
+      // del nervio; la waffle en los dos.
+      "Nervada (1 dirección)": 50,
+      "Waffle (2 direcciones)": 51,
     },
     label: "losa, formulación", folder: "🔩 Secciones",
   },
@@ -530,6 +570,7 @@ export const plantillas: ExampleDef = {
       momentsOfInertiaZ = m<number>(), torsionalConstants = m<number>(),
       thicknesses = m<number>(), shearAreasY = m<number>(), shearAreasZ = m<number>(),
       plateFormulations = m<number>(), membraneModifiers = m<number>();
+    const shellModifiers = new Map<number, number[]>();
     // La losa y los muros son de HORMIGÓN aunque el pórtico sea de acero: eso es
     // un edificio mixto de verdad, no un edificio de chapa.
     const Eh = 15100 * Math.sqrt(p.fc) * 98.0665, NUh = 0.20, RHOh = 24 / G;
@@ -544,8 +585,17 @@ export const plantillas: ExampleDef = {
         // reciba solo los valores que conoce (0/1/2/3).
         const fRaw = c === "muro" ? p.formMuro : p.formLosa;
         const esPlate = fRaw === 40 || fRaw === 41;
-        plateFormulations.set(e, esPlate ? (fRaw === 40 ? 1 : 0) : fRaw);
+        const esNerv = fRaw === 50 || fRaw === 51;
+        // Nervada / waffle son una cascara THIN normal con modificadores
+        // DIRECCIONALES: el canto total manda la rigidez y los modificadores
+        // la bajan a la real. (El peso lo lleva la densidad, aparte.)
+        plateFormulations.set(e, esPlate ? (fRaw === 40 ? 1 : 0)
+                               : esNerv ? 1 : fRaw);
         if (esPlate) membraneModifiers.set(e, 0);
+        if (esNerv) {
+          shellModifiers.set(e, modsNervada(p.tlosa, p.tLoseta, p.bNervio,
+                                            p.sNervio, fRaw === 51));
+        }
         return;
       }
       elasticities.set(e, E); poissonsRatios.set(e, NU);
@@ -686,7 +736,7 @@ export const plantillas: ExampleDef = {
       elasticities, poissonsRatios, shearModuli, densities, areas,
       momentsOfInertiaY, momentsOfInertiaZ, torsionalConstants,
       thicknesses, shearAreasY, shearAreasZ, plateFormulations,
-      membraneModifiers,
+      membraneModifiers, shellModifiers,
     };
     states.objects3D.val = [];
 

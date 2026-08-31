@@ -161,6 +161,23 @@ export type ElementInputs = {
    */
   membraneModifiers?: Map<number, number>;
   bendingModifiers?: Map<number, number>;
+  /**
+   * Property modifiers DIRECCIONALES por elemento, en el orden del .e2k:
+   *
+   *   [0..2] F11MOD F22MOD F12MOD   membrana
+   *   [3..5] M11MOD M22MOD M12MOD   flexion
+   *   [6..7] V13MOD V23MOD          cortante transversal
+   *
+   * Es lo que define una losa NERVADA o un DECK: rigido en el sentido del
+   * nervio (M11 ~ 1) y blando cruzado (M22 ~ 0). Con un escalar no se puede
+   * expresar — o se multiplica todo o nada, y poniendo 0 la matriz sale
+   * singular. Si un elemento esta en este mapa, MANDAN estos y los escalares
+   * de arriba quedan en 1.0.
+   *
+   * Ya estaba en el C++ (`shellModifiers`) y `deformCpp.ts` ya lo pasaba al
+   * WASM; faltaba declararlo aqui.
+   */
+  shellModifiers?: Map<number, number[]>;
 };
 
 export type DeformOutputs = {
