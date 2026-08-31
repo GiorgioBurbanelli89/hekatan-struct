@@ -352,8 +352,31 @@ Eigen::MatrixXd getMembraneITW(const double x[4], const double y[4],
     const double *wg = (nGauss == 2) ? w2 : w3;
 
     // ── La cuadratura, como una lista de (r, s, w) ────────────────────────
-    // Con `wAlpha > 0` se usa la regla de OCHO PUNTOS del ITW **1991**, ec.
-    // (30) — el paper que cita el manual de CSI, no el de 1990:
+    // Con `wAlpha > 0` se usa la regla de OCHO PUNTOS, ec. (30).
+    //
+    // ⚠️ DE DONDE SALE ESTA REGLA: SIN IDENTIFICAR (revisado el 31-ago-2026).
+    //
+    // Aqui ponia «del ITW **1991**, ec. (30) — el paper que cita el manual de
+    // CSI». Eso NO se sostiene: el paper que cita CSI es el CANM **7**:1-9, y
+    // **llega solo a la ec. (28)** (comprobado sobre el texto extraido en
+    // `registros/itw_1991/`; son nueve paginas, no da para una (30)).
+    //
+    // Lo que SI esta verificado:
+    //   · el ITW **1990** (IJNME 30:445-457) menciona «the 8-point integration
+    //     rule on K' is used», pero en su seccion 4 (NUMERICAL EVALUATION), como
+    //     nota de COMO corrieron el hemisferio — no le da numero de ecuacion, y
+    //     ahi mismo remite a una modificacion de Taylor [19].
+    //   · asi que estas formulas
+    //         W_a + W_b = 1;  alpha = 1/(9 W_a)^(1/4);
+    //         beta = ((2/3 - 2 W_a alpha^2)/W_b)^(1/2)
+    //     no estan localizadas en ninguno de los dos papeles que tenemos.
+    //
+    // El candidato que falta es el OTRO ITW de 1991: **IJNME 31:1393-1414,
+    // «Thick shell and solid finite elements with independent rotation
+    // fields»** — 21 paginas, si da para una ec. (30). Es ademas la ref. [15]
+    // de Ibrahimbegovic (1993), citada alli para «an explicit enforcement of
+    // the constant shear strain». Mientras no se tenga, esta atribucion queda
+    // ABIERTA; lo medido (que la regla funciona) no depende de ella.
     //
     //     W_a + W_b = 1;  alpha = 1/(9 W_a)^(1/4);
     //     beta = ((2/3 - 2 W_a alpha^2) / W_b)^(1/2)
@@ -1661,8 +1684,11 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     const bool k0Wilson = (drillingType == 11);
     const double khgITW = (drillingType == 6) ? 2.0e-4 : 0.0;
     const bool taylorITW = (drillingType == 5);
-    //  7 = ITW **1991**: la regla de OCHO puntos de su ec. (30). Es el paper
-    //      que cita el manual de CSI (el 1990 no). `wAlpha > 0` la activa y
+    //  7 = la regla de OCHO puntos.
+    //      ⚠️ Ponia «ITW 1991, ec. (30), el paper que cita el manual de CSI» y
+    //      eso NO se sostiene: el CANM 7:1-9 llega solo a la ec. (28). De donde
+    //      sale la regla queda SIN IDENTIFICAR — ver la nota larga en
+    //      `getMembraneITW`. El candidato es IJNME 31:1393-1414. `wAlpha > 0` la activa y
     //      manda sobre `ngITW`. Medido en Python contra el hemisferio de
     //      MacNeal & Harder (0.094), que es EL test de bloqueo de membrana:
     //
