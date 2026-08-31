@@ -143,6 +143,24 @@ export type ElementInputs = {
    */
   drillingTypes?: Map<number, number>;
   drillingPenaltyScales?: Map<number, number>;
+  /**
+   * Property modifiers de cascara, estilo ETABS
+   * (Assign -> Area -> Stiffness Modifiers). Multiplican la rigidez de
+   * MEMBRANA y de FLEXION del shell. Por defecto 1.0.
+   *
+   * Ya los usaban `shellQ4.cpp` y `shellThin.cpp`, y `deformCpp.ts` ya los
+   * pasa al WASM, pero **no estaban declarados aqui**, asi que solo se podian
+   * poner con un `as any`. Hacen falta para:
+   *
+   *   - **pure-plate**: `membraneModifiers = 0` deja la FLEXION sola. Es lo
+   *     que SAP2000 llama Plate-Thin / Plate-Thick, y lo que el manual de CSI
+   *     describe como «pure-plate behavior» (§10.1.1).
+   *   - **deck / nervada / waffle**: una losa nervada no es una placa maciza
+   *     de su canto total; sin poder bajarle la rigidez en una direccion sale
+   *     rigida de mas.
+   */
+  membraneModifiers?: Map<number, number>;
+  bendingModifiers?: Map<number, number>;
 };
 
 export type DeformOutputs = {

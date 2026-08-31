@@ -331,9 +331,28 @@ export function exportS2k(input: S2kExportInput): string {
         // `Shell-Thin` / `Shell-Thick` / `Membrane` — verificado pidiendole a
         // SAP que exportara su propio .s2k de cada tipo
         // (galpon-bodega-electoral/tipos_cascara_export.py).
+        // ⚠️ SAP2000 tiene MAS tipos que ETABS: ademas de Shell-Thin/Thick y
+        // Membrane, tiene **Plate-Thin** y **Plate-Thick**. La diferencia:
+        //
+        //   Membrane   solo membrana, sin flexion
+        //   Plate      solo FLEXION, sin membrana y sin drilling
+        //   Shell      flexion + membrana
+        //
+        // `Plate` sirve para AISLAR la placa: comparando contra Plate-Thin se
+        // mide la formulacion de flexion sola, sin que la membrana ni el
+        // drilling contaminen. ETABS no lo tiene, asi que esto solo vale para
+        // el .s2k.
+        //
+        // El motor de Hekatan siempre monta shell (flexion + membrana); estos
+        // dos valores cambian solo lo que se le PIDE a SAP2000, y por eso el
+        // solver los trata como su Thin/Thick equivalente.
         const tipoS2k = sec.formulacion === 2 ? "Membrane"
+                      : sec.formulacion === 3 ? "Plate-Thin"
+                      : sec.formulacion === 4 ? "Plate-Thick"
                       : sec.formulacion === 1 ? "Shell-Thin" : "Shell-Thick";
-        push(`   Section=SSEC${idx}   Material=${sec.matKey}   MatAngle=0   AreaType=Shell   Type=${tipoS2k}   DrillDOF=Yes   Thickness=${fmt(sec.t)}   BendThick=${fmt(sec.t)}   Color=Cyan`);
+        // en Plate no hay grado de libertad de drilling: no hay membrana
+        const drill = (sec.formulacion === 3 || sec.formulacion === 4) ? "No" : "Yes";
+        push(`   Section=SSEC${idx}   Material=${sec.matKey}   MatAngle=0   AreaType=Shell   Type=${tipoS2k}   DrillDOF=${drill}   Thickness=${fmt(sec.t)}   BendThick=${fmt(sec.t)}   Color=Cyan`);
       }
     }
     blank();

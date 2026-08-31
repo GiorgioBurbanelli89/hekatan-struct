@@ -166,6 +166,16 @@ const PARAMS = {
       "Shell-Thin (Kirchhoff)": 1,
       "Shell-Thick (Mindlin MITC4)": 0,
       "Membrana (sin flexión)": 2,
+      // PLATE = flexion PURA, sin membrana. En SAP2000 es un tipo propio
+      // (Plate-Thin / Plate-Thick); ETABS no lo expone en su GUI, pero el
+      // motor de CSI si lo tiene: su manual dice «you can choose to model
+      // pure-membrane, pure-plate, or full-shell behavior» (§10.1.1).
+      //
+      // ⚠️ 3 NO se puede usar: en el C++ ya significa DKMQ de Katili.
+      // 40/41 no chocan con nada y en `build` se traducen a Thin/Thick + el
+      // modificador de MEMBRANA a 0, que es justo «sin membrana».
+      "Plate-Thin (flexión pura)": 40,
+      "Plate-Thick (flexión pura)": 41,
     },
     label: "losa, formulación", folder: "🔩 Secciones",
   },
@@ -519,7 +529,7 @@ export const plantillas: ExampleDef = {
       densities = m<number>(), areas = m<number>(), momentsOfInertiaY = m<number>(),
       momentsOfInertiaZ = m<number>(), torsionalConstants = m<number>(),
       thicknesses = m<number>(), shearAreasY = m<number>(), shearAreasZ = m<number>(),
-      plateFormulations = m<number>();
+      plateFormulations = m<number>(), membraneModifiers = m<number>();
     // La losa y los muros son de HORMIGÓN aunque el pórtico sea de acero: eso es
     // un edificio mixto de verdad, no un edificio de chapa.
     const Eh = 15100 * Math.sqrt(p.fc) * 98.0665, NUh = 0.20, RHOh = 24 / G;
@@ -528,7 +538,14 @@ export const plantillas: ExampleDef = {
         elasticities.set(e, Eh); poissonsRatios.set(e, NUh);
         shearModuli.set(e, Eh / (2 * (1 + NUh))); densities.set(e, RHOh);
         thicknesses.set(e, c === "muro" ? p.tmuro : p.tlosa);
-        plateFormulations.set(e, c === "muro" ? p.formMuro : p.formLosa);
+        // PLATE (40/41) = flexion pura. No es una formulacion nueva del motor:
+        // es Thin/Thick con la MEMBRANA a cero, que es lo que significa
+        // «pure-plate» en el manual de CSI. Se traduce aqui para que el C++
+        // reciba solo los valores que conoce (0/1/2/3).
+        const fRaw = c === "muro" ? p.formMuro : p.formLosa;
+        const esPlate = fRaw === 40 || fRaw === 41;
+        plateFormulations.set(e, esPlate ? (fRaw === 40 ? 1 : 0) : fRaw);
+        if (esPlate) membraneModifiers.set(e, 0);
         return;
       }
       elasticities.set(e, E); poissonsRatios.set(e, NU);
@@ -669,6 +686,7 @@ export const plantillas: ExampleDef = {
       elasticities, poissonsRatios, shearModuli, densities, areas,
       momentsOfInertiaY, momentsOfInertiaZ, torsionalConstants,
       thicknesses, shearAreasY, shearAreasZ, plateFormulations,
+      membraneModifiers,
     };
     states.objects3D.val = [];
 
