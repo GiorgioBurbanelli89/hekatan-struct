@@ -105,3 +105,66 @@ La **rigidez de rango 4** que hay que sumarle al DSE. Su ley con ν está medida
 (`λ/D = 363.636 + 181.818·(1−ν)/2`, con `b = a/2` exacto y residuo `2e-5`) y es
 constante en `t`; falta su ley con la **geometría**, que en el trapecio ya no es
 `φ` puro (alineación 0.746 frente a 1.000 en el cuadrado).
+
+---
+
+# La pista de Ibrahimbegović (1993) y hasta dónde llegó
+
+El paper está en ScienceDirect (de pago), pero **su abstract es explícito**:
+
+> «...two quadrilateral plate elements applicable in the analysis of both thick
+> and thin plates, based on Reissner-Mindlin plate theory and an **enhanced
+> displacement interpolation**, which enables the consistent loading vector to
+> be constructed. **The constraint on the constant shear strain is enforced
+> explicitly**, thus eliminating the shear locking phenomena.»
+
+Y la literatura que lo cita lo describe así:
+
+> «The element incorporates **assumed shear strains** and **incompatible bending
+> modes** as main ingredients for efficiency.»
+
+Eso encaja con todo lo medido, y explica por qué el DSE solo no llegaba:
+
+* **condensar ABLANDA** (`K11 − K12·K22⁻¹·K12ᵀ`), así que ni el DSE ni más GDL
+  internos podían dar los modos altos de ETABS;
+* pero una **RESTRICCIÓN impuesta explícitamente SUMA** una matriz semidefinida
+  positiva — que es exactamente la forma del residuo medido (semidefinido
+  positivo, rango 4).
+
+## Lo probado (`dse_constraint.py`, `mix_final.py`)
+
+Penalizando la parte **no constante** del cortante:
+
+    K += alpha · G·t · ∫ (γ − γ_media)ᵀ (γ − γ_media) dA
+
+| | resultado |
+|---|---|
+| con el cortante del DSE (8.9) | sube `0.9124 → 1.0000` (uno de los `1.0000` de ETABS), pero **no toca los altos** |
+| con el cortante MITC4 | **sí sube los altos**: `156.25 → 1031` con α=10, y hay un α≈3.9 que da el `455` |
+
+**Pero no cierra**: al subir los altos, los `13.6712 ×2` de ETABS desaparecen, y
+`‖dK‖` empeora (104.6 % es el mejor, con α=0.5).
+
+    a= 0.00   0.500 0.500 0.888 1.000 1.000  10.417  93.862 156.250 156.250
+    a= 3.00   0.500 0.500 0.889 1.000 1.000  41.667 156.250 156.250 375.111
+    a= 6.00   0.500 0.500 0.889 1.000 1.000  72.917 156.250 156.250 656.361
+    ETABS     0.888 0.999 0.999 1.000 1.000  13.671  13.671  91.953 455.454
+
+**ETABS tiene a la vez los `13.67` (que salen del acoplamiento `2/3` del DSE) y
+los `91.95 / 455.45` (que salen de la restricción).** Ninguna combinación
+probada da las dos cosas.
+
+## Marcador
+
+    MITC4 (lo que usa hoy el motor)      4/45 modos <1 %   ||dK|| 101 %
+    + c·phi                              2/45              69.6 %
+    + reloj de arena (3 constantes)      8/45              69.4 %
+    DSE de Wilson                        7/45              ~96 %
+    DSE + restriccion de cortante        3/9 (cuadrado)   104.6 %
+
+## Lo que falta
+
+**El paper de Ibrahimbegović 1993** (CMAME 110, 195-209, DOI
+`10.1016/0045-7825(93)90160-Y`). Es la única fuente que dice **cómo** se combinan
+las dos piezas —la interpolación enriquecida y la restricción explícita— sin que
+una rompa a la otra. Todo lo demás ya está medido y acotado.
