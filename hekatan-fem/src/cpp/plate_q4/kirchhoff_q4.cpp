@@ -268,7 +268,7 @@ static Eigen::Matrix<double, 2, 12> shearB(
  * Compute standard Bs at a given (ξ, η) point using element node coordinates.
  * Helper for MITC4 tying.
  */
-static Eigen::Matrix<double, 2, 12> shearBat(
+static Eigen::Matrix<double, 2, 12> shearBatCov(
     const std::array<Node2D, 4>& nodes,
     double xi, double eta)
 {
@@ -280,7 +280,17 @@ static Eigen::Matrix<double, 2, 12> shearBat(
     jacobian(nodes, dN, Jinv);
     double dNdx[4][2];
     physicalDerivs(dN, Jinv, dNdx);
-    return shearB(N, dNdx);
+    // al COVARIANTE: gamma_cov = J · gamma_cart, con J el jacobiano DIRECTO
+    double J[2][2] = {{0, 0}, {0, 0}};
+    for (int i = 0; i < 4; i++) {
+        J[0][0] += dN[i][0] * nodes[i].x;
+        J[0][1] += dN[i][0] * nodes[i].y;
+        J[1][0] += dN[i][1] * nodes[i].x;
+        J[1][1] += dN[i][1] * nodes[i].y;
+    }
+    Eigen::Matrix2d Jm;
+    Jm << J[0][0], J[0][1], J[1][0], J[1][1];
+    return Jm * shearB(N, dNdx);
 }
 
 /**
@@ -293,8 +303,16 @@ static Eigen::Matrix<double, 2, 12> shearBat(
  *   B = (-1, 0), D = (+1, 0)  → γ_yz sampled here, interpolated in ξ
  *
  * Interpolation:
- *   γ_xz(ξ,η) = ½(1-η)·γ_xz^A + ½(1+η)·γ_xz^C
- *   γ_yz(ξ,η) = ½(1-ξ)·γ_yz^B + ½(1+ξ)·γ_yz^D
+ *   γ_ξ(ξ,η) = ½(1-η)·γ_ξ^A + ½(1+η)·γ_ξ^C
+ *   γ_η(ξ,η) = ½(1-ξ)·γ_η^B + ½(1+ξ)·γ_η^D
+ *
+ * ⚠️ Lo que se interpola son las componentes COVARIANTES (sobre los ejes
+ * naturales ξ, η), no las cartesianas. Solo al final se vuelve al cartesiano
+ * con el J^-1 del punto de Gauss. En un RECTANGULO J es el mismo en los cuatro
+ * puntos de atadura, entra y sale del promedio y da igual — por eso la version
+ * cartesiana cerraba en rectangulo. Distorsionado NO: medido con un campo de
+ * Kirchhoff EXACTO (donde γ tiene que ser 0) en los 5 elementos del patch test
+ * 2-001 de SAP2000 salia γ_espurio/pendiente = 0.47 a 2.88.
  *
  * Reference: Dvorkin & Bathe, Eng. Comp. 1(1):77-88, 1984
  */
@@ -302,17 +320,25 @@ static Eigen::Matrix<double, 2, 12> shearBmitc4(
     const std::array<Node2D, 4>& nodes,
     double xi, double eta)
 {
-    auto Bs_A = shearBat(nodes, 0.0, -1.0);  // A = (0, -1)
-    auto Bs_C = shearBat(nodes, 0.0, +1.0);  // C = (0, +1)
-    auto Bs_B = shearBat(nodes, -1.0, 0.0);  // B = (-1, 0)
-    auto Bs_D = shearBat(nodes, +1.0, 0.0);  // D = (+1, 0)
+    auto Bs_A = shearBatCov(nodes, 0.0, -1.0);  // A = (0, -1)
+    auto Bs_C = shearBatCov(nodes, 0.0, +1.0);  // C = (0, +1)
+    auto Bs_B = shearBatCov(nodes, -1.0, 0.0);  // B = (-1, 0)
+    auto Bs_D = shearBatCov(nodes, +1.0, 0.0);  // D = (+1, 0)
 
-    Eigen::Matrix<double, 2, 12> Bs = Eigen::Matrix<double, 2, 12>::Zero();
-    // γ_xz: interpolate A→C in η
-    Bs.row(0) = 0.5 * (1.0 - eta) * Bs_A.row(0) + 0.5 * (1.0 + eta) * Bs_C.row(0);
-    // γ_yz: interpolate B→D in ξ
-    Bs.row(1) = 0.5 * (1.0 - xi)  * Bs_B.row(1) + 0.5 * (1.0 + xi)  * Bs_D.row(1);
-    return Bs;
+    Eigen::Matrix<double, 2, 12> Bcov = Eigen::Matrix<double, 2, 12>::Zero();
+    // γ_ξ: se interpola A→C en η
+    Bcov.row(0) = 0.5 * (1.0 - eta) * Bs_A.row(0) + 0.5 * (1.0 + eta) * Bs_C.row(0);
+    // γ_η: se interpola B→D en ξ
+    Bcov.row(1) = 0.5 * (1.0 - xi)  * Bs_B.row(1) + 0.5 * (1.0 + xi)  * Bs_D.row(1);
+
+    // y de vuelta al cartesiano con el J^-1 de ESTE punto
+    double dN[4][2];
+    shapeFunctionDerivs(xi, eta, dN);
+    double Jinv[2][2];
+    jacobian(nodes, dN, Jinv);
+    Eigen::Matrix2d JinvM;
+    JinvM << Jinv[0][0], Jinv[0][1], Jinv[1][0], Jinv[1][1];
+    return JinvM * Bcov;
 }
 
 // ── Element Stiffness Matrix ───────────────────────────────────────

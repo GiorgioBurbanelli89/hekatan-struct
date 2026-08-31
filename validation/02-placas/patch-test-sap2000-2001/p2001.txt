@@ -1,0 +1,203 @@
+                                                          Software Verification
+
+                                                          PROGRAM NAME:  SAP2000
+                                                          REVISION NO.:  0
+
+EXAMPLE 2-001
+
+SHELL ­ PATCH TEST WITH PRESCRIBED DISPLACEMENTS
+
+PROBLEM DESCRIPTION
+                  In this example a rectangular plate with irregularly shaped elements is subjected
+                  to prescribed displacements at the edges that theoretically impose a constant
+                  stress field over the model. The geometry, properties and loading are as
+                  described in MacNeal and Harder 1985. The membrane and plate bending stress
+                  components resulting from the prescribed displacements are compared with hand
+                  calculated results.
+
+                  Joints 1, 2, 7 and 8 are restrained for translation in the X, Y and Z directions and
+                  for rotation about the X and Y axes. No joint restraint is specified about the Z
+                  axis. The prescribed displacements are applied to the restrained degrees of
+                  freedom of those joints.
+
+                  The shell section is modeled using full shell behavior; that is, both membrane
+                  and plate bending behavior. Separate models are used to test the thin-plate and
+                  thick-plate options. Because the model is flat, that is, all in one plane, there is no
+                  coupling between the membrane and the plate bending behavior.
+
+GEOMETRY AND PROPERTIES
+
+                           0.24"                             Joint Coordinates (inches)
+
+   2                                            8         Joint X        Y               Z
+
+                           4                              1  0           0               0
+
+                        4         6                       2  0           0.12            0
+
+          1                             5          0.12"  3  0.04 0.02                   0
+
+                           3                              4  0.08 0.08                   0
+
+Y                                    5                    5  0.18 0.03                   0
+
+   Z1        3             2                    7         6  0.16 0.08                   0
+
+             1 - Joint number                             7  0.24        0               0
+             1 - Area object number
+       X                                                  8  0.24 0.12                   0
+
+Material Properties     Section Properties                Load Cases
+  E = 1,000,000 lb/in2    Thickness = 0.001 in
+   = 0.25                                                   1 - Membrane: Ux and Uy
+                                                            2 - Plate Bending: Uz, Rx and Ry
+
+                                                                         EXAMPLE 2-001 - 1
+                                                       Software Verification
+
+                                                       PROGRAM NAME:         SAP2000
+                                                       REVISION NO.:         0
+
+LOADING
+
+         Separate load cases are provided to test membrane behavior and plate bending
+         behavior.
+
+         Membrane Behavior
+
+         The loading for membrane behavior is provided in the form of prescribed edge
+         displacements Ux and Uy, which are imposed on joints 1, 2, 7 and 8. Those
+         displacements are defined by the following equations.
+
+                   x+ y                      y+ x
+                       2                         2
+            Ux  =  1000   ,           Uy  =  1000
+
+         The following table shows the applied displacements calculated from the
+         preceding equations for each of the edge joints. These displacements are applied
+         in a load case named Membrane.
+
+                   X             Y               Ux              Uy
+
+         Joint     (in)          (in)            (in)            (in)
+
+         1         0               0             0               0
+
+         2         0             0.12        0.00006             0.00012
+
+         7         0.24            0         0.00024             0.00012
+
+         8         0.24          0.12        0.00030             0.00024
+
+         Plate Bending Behavior
+
+         The loading for plate bending behavior is provided in the form of prescribed edge
+         displacements Uz, Rx and Ry, which are imposed on joints 1, 2, 7 and 8. Those
+         displacements and rotations are defined by the following equations.
+
+                   x 2 + xy + y 2                      y+ x                  -x- y
+            U z = 2000 ,                                   2                      2
+                                             Rx  =     1000   ,        Ry =  1000
+
+                                                                             EXAMPLE 2-001 - 2
+                             Software Verification
+
+                             PROGRAM NAME:  SAP2000
+                             REVISION NO.:  0
+
+The following table shows the applied displacements calculated from the
+preceding equations for each of the edge joints. These displacements and
+rotations are applied in a load case named PlBend.
+
+   X        Y         Uz        Rx             Ry
+
+Joint (in)  (in)       (in)    (rad)           (rad)
+
+1  0        0          0         0              0
+
+2  0        0.12  0.0000072  0.00012        -0.00006
+
+7  0.24     0     0.0000288  0.00012        -0.00024
+
+8  0.24 0.12      0.0000504  0.00024        -0.00030
+
+TECHNICAL FEATURES OF SAP2000 TESTED
+                   Membrane analysis using shell elements
+                   Plate bending analysis using shell elements
+                       Thin-plate option
+                       Thick-plate option
+                   Joint displacement loading
+
+RESULTS COMPARISON
+                  The independent membrane results are based on Equation 2 on page 6 in
+                  Timoshenko and Goodier 1951. The independent plate bending results are based
+                  on Equation 3 on page 5 and Equations 101 and 102 on page 81 of Timoshenko
+                  and Woinowsky-Krieger 1959. Additional independent results are published in
+                  MacNeal and Harder 1985.
+
+                                            EXAMPLE 2-001 - 3
+                              Software Verification
+
+                              PROGRAM NAME:  SAP2000
+                              REVISION NO.:  0
+
+Thin Plate Option
+
+  Load       Stress     SAP2000 Independent   Percent
+  Case    Component                          Difference
+Membrane                1333  1333
+            xx lb/in2                             0%
+  PlBend    yy lb/in2   1333  1333                0%
+            xy lb/in2                             0%
+          Mxx lb-in/in  400   400                 0%
+                                                  0%
+          Myy lb-in/in  1.111E-07 1.111E-07       0%
+
+          Mxy lb-in/in  1.111E-07 1.111E-07
+
+                        3.333E-08 3.333E-08
+
+Thick Plate Option
+
+  Load       Stress     SAP2000 Independent   Percent
+  Case    Component                          Difference
+Membrane                1333  1333
+            xx lb/in2                             0%
+  PlBend    yy lb/in2   1333  1333                0%
+            xy lb/in2                             0%
+          Mxx lb-in/in  400   400                 0%
+                                                  0%
+          Myy lb-in/in  1.111E-07 1.111E-07       0%
+
+          Mxy lb-in/in  1.111E-07 1.111E-07
+
+                        0.333E-07 0.333E-07
+
+COMPUTER FILES: Example 2-001-thick, Example 2-001-thin
+
+CONCLUSION
+                  The SAP2000 results show an exact comparison with the independent results for
+                  both the thin plate option and the thick plate option.
+
+                                             EXAMPLE 2-001 - 4
+                  Software Verification
+
+                  PROGRAM NAME:  SAP2000
+                  REVISION NO.:  0
+
+HAND CALCULATION
+
+                                 EXAMPLE 2-001 - 5
+Software Verification
+
+PROGRAM NAME:  SAP2000
+REVISION NO.:  0
+
+               EXAMPLE 2-001 - 6
+Software Verification
+
+PROGRAM NAME:  SAP2000
+REVISION NO.:  0
+
+               EXAMPLE 2-001 - 7
+

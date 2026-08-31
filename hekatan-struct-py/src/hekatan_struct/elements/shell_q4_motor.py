@@ -202,21 +202,33 @@ def _k_flexion(x, y, E, nu, t, kappa=None, mod=None):
     inv0 = 1.0 / dJ0
 
     # B del cortante en los 4 puntos de atadura: A(0,-1) C(0,1) B(-1,0) D(1,0)
+    #
+    # ⚠️ COVARIANTE, no cartesiano. El MITC4 de Dvorkin & Bathe (1984) interpola
+    # las componentes gamma_xi / gamma_eta —las de los ejes NATURALES— y solo al
+    # final vuelve al cartesiano con el J^-1 del punto de Gauss:
+    #     gamma_cov  = J · gamma_cart      (J directo, en el punto de atadura)
+    #     gamma_cart = J^-1 · gamma_cov    (en el punto de Gauss)
+    # En un RECTANGULO J es el mismo en los cuatro puntos de atadura, entra y
+    # sale del promedio y da igual — por eso cerraba en rectangulo. Distorsionado
+    # NO: medido con un campo de Kirchhoff EXACTO (donde gamma tiene que ser 0)
+    # en los 5 elementos del patch test 2-001 de SAP2000 salia
+    #     gamma_espurio / pendiente = 0.47 a 2.88
+    # o sea cortante inventado del orden de la propia solucion.
     Bs_ty = []
     for xi_t, eta_t in ((0.0, -1.0), (0.0, 1.0), (-1.0, 0.0), (1.0, 0.0)):
         N, dxi, det = _formas(xi_t, eta_t)
-        dNdx, dNdy, _, _ = _jac(dxi, det, x, y)
+        dNdx, dNdy, _, (t11, t12, t21, t22) = _jac(dxi, det, x, y)
         Bs = np.zeros((2, 12))
         for i in range(4):
             Bs[0, 3 * i] = dNdx[i]
             Bs[0, 3 * i + 1] = -N[i]
             Bs[1, 3 * i] = dNdy[i]
             Bs[1, 3 * i + 2] = -N[i]
-        Bs_ty.append(Bs)
+        Bs_ty.append(np.array([[t11, t12], [t21, t22]]) @ Bs)   # → covariante
 
     for xi, eta in GAUSS:
         N, dxi, det = _formas(xi, eta)
-        dNdx, dNdy, dJ, _ = _jac(dxi, det, x, y)
+        dNdx, dNdy, dJ, (g11, g12, g21, g22) = _jac(dxi, det, x, y)
         Bb = np.zeros((3, 12))
         for i in range(4):
             Bb[0, 3 * i + 1] = dNdx[i]
@@ -240,6 +252,13 @@ def _k_flexion(x, y, E, nu, t, kappa=None, mod=None):
         Ba[1, 2], Ba[1, 3] = dN5dy, dN6dy          # κyy = ∂βy/∂y
         Ba[2, 0], Ba[2, 1] = dN5dy, dN6dy          # κxy = ∂βx/∂y + ∂βy/∂x
         Ba[2, 2], Ba[2, 3] = dN5dx, dN6dx
+        # La OTRA mitad de Taylor 1976. Son DOS cosas, no una: derivar con J0
+        # **y** escalar por dJ0/dJ. Faltaba la segunda, y sin ella
+        #     ∫ Ba dA ≠ 0
+        # que es la condicion del patch test de curvatura constante. En un
+        # rectangulo dJ = dJ0 y el factor vale 1 — invisible. Medido en el
+        # patch test 2-001 de SAP2000: ||∫Ba dA||/A pasa de 9.3-23.6 a 2e-16.
+        Ba *= dJ0 / dJ
 
         w = abs(dJ)
         Kuu += Bb.T @ Db @ Bb * w
@@ -248,9 +267,12 @@ def _k_flexion(x, y, E, nu, t, kappa=None, mod=None):
 
         wA, wC = 0.5 * (1 - eta), 0.5 * (1 + eta)
         wB, wD = 0.5 * (1 - xi), 0.5 * (1 + xi)
-        Bm = np.zeros((2, 12))
-        Bm[0] = wA * Bs_ty[0][0] + wC * Bs_ty[1][0]      # γxz desde A y C
-        Bm[1] = wB * Bs_ty[2][1] + wD * Bs_ty[3][1]      # γyz desde B y D
+        Bcov = np.zeros((2, 12))
+        Bcov[0] = wA * Bs_ty[0][0] + wC * Bs_ty[1][0]    # γ_ξ desde A y C
+        Bcov[1] = wB * Bs_ty[2][1] + wD * Bs_ty[3][1]    # γ_η desde B y D
+        # y de vuelta al cartesiano con el J^-1 de ESTE punto de Gauss
+        Jinv = np.array([[g22, -g12], [-g21, g11]]) / dJ
+        Bm = Jinv @ Bcov
         Kuu += (Gs_x * np.outer(Bm[0], Bm[0])
                 + Gs_y * np.outer(Bm[1], Bm[1])) * w
 

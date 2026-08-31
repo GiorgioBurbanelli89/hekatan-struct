@@ -66,6 +66,24 @@ static double jacobian2D(const double x[4], const double y[4],
     return detJ;
 }
 
+// Jacobiano DIRECTO J = [[dx/dxi, dy/dxi], [dx/deta, dy/deta]].
+// Hace falta para el MITC4 de verdad: el cortante se interpola en las
+// componentes COVARIANTES (gamma_xi, gamma_eta), y para pasar del cartesiano
+// al covariante se multiplica por J, no por su inversa.
+static double jacobianDirect2D(const double x[4], const double y[4],
+                               const double dNdxi[4], const double dNdeta[4],
+                               double J[2][2])
+{
+    J[0][0] = J[0][1] = J[1][0] = J[1][1] = 0.0;
+    for (int i = 0; i < 4; i++) {
+        J[0][0] += dNdxi[i]  * x[i];
+        J[0][1] += dNdxi[i]  * y[i];
+        J[1][0] += dNdeta[i] * x[i];
+        J[1][1] += dNdeta[i] * y[i];
+    }
+    return J[0][0] * J[1][1] - J[0][1] * J[1][0];
+}
+
 // ─── 2×2 Gauss points ──────────────────────────────────────────────────────
 static const double GP2  =  0.5773502691896258; // 1/sqrt(3)
 static const double gp2x2[4][2] = {
@@ -776,10 +794,11 @@ static Eigen::MatrixXd getBendingK(const double x[4], const double y[4],
 
     // Taylor 1976: J₀ del centro para mapear derivadas de N₅, N₆
     double Jinv0[2][2];
+    double detJ0 = 1.0;
     {
         double N0[4], dN0dxi[4], dN0deta[4];
         shapeFunctionsQ4(0.0, 0.0, N0, dN0dxi, dN0deta);
-        jacobian2D(x, y, dN0dxi, dN0deta, Jinv0);
+        detJ0 = jacobian2D(x, y, dN0dxi, dN0deta, Jinv0);
     }
 
     // Acumuladores K extendido: K_uu (12×12), K_uα (12×4), K_αα (4×4)
@@ -832,6 +851,18 @@ static Eigen::MatrixXd getBendingK(const double x[4], const double y[4],
         double dN6dx0 = Jinv0[0][0] * dN6dxi + Jinv0[0][1] * dN6deta;
         double dN6dy0 = Jinv0[1][0] * dN6dxi + Jinv0[1][1] * dN6deta;
 
+        // ── La OTRA mitad de Taylor 1976: el factor detJ0/detJ ──────────────
+        // Taylor, Beresford & Wilson (1976) son DOS cosas, no una: evaluar las
+        // derivadas de los modos incompatibles con J0 **y** escalarlas por
+        // detJ0/detJ(xi,eta). Faltaba la segunda, y sin ella
+        //     ∫ Ba dA  ≠  0
+        // que es justo la condicion del patch test de curvatura constante.
+        // En un RECTANGULO detJ es constante e igual a detJ0, el factor vale 1
+        // y no se nota — por eso llevaba aqui sin verse. Medido en el patch
+        // test 2-001 de SAP2000 (MacNeal & Harder 1985, elementos irregulares):
+        //     sin el factor:  ||∫Ba dA||/A = 9.3 a 23.6
+        //     con el factor:  ||∫Ba dA||/A = 2e-16
+        const double taylor = detJ0 / detJ;
         Eigen::MatrixXd Ba = Eigen::MatrixXd::Zero(3, 4);
         // κxx = -∂θy/∂x → α3·(-∂N5/∂x) + α4·(-∂N6/∂x)
         Ba(0, 2) = -dN5dx0;
@@ -845,6 +876,7 @@ static Eigen::MatrixXd getBendingK(const double x[4], const double y[4],
         Ba(2, 1) = +dN6dx0;
         Ba(2, 2) = -dN5dy0;
         Ba(2, 3) = -dN6dy0;
+        Ba *= taylor;
 
         double w = std::abs(detJ);
         Kuu += Bb.transpose() * Db * Bb * w;
@@ -859,11 +891,30 @@ static Eigen::MatrixXd getBendingK(const double x[4], const double y[4],
     // γyz: sampled at B,D → interpolated in ξ
 
     // Helper: compute shear B at a point (same as shearBat in kirchhoff_q4)
-    auto shearBat = [&](double xi_pt, double eta_pt) -> Eigen::MatrixXd {
+    // ⚠️ COVARIANTE, no cartesiano. El MITC4 de Dvorkin & Bathe (1984) interpola
+    // las componentes gamma_xi / gamma_eta —las que van sobre los ejes
+    // NATURALES— y solo al final las devuelve al cartesiano con el jacobiano
+    // del punto de Gauss:
+    //     gamma_cov = J · gamma_cart          (J directo, en el punto de atadura)
+    //     gamma_cov(xi,eta) = interpolacion lineal entre A-C y entre B-D
+    //     gamma_cart        = J^-1 · gamma_cov   (en el punto de Gauss)
+    // Antes se interpolaban directamente las filas CARTESIANAS. En un
+    // rectangulo J es constante, entra y sale del promedio y da lo mismo — por
+    // eso cerraba en rectangulo. En cuanto el elemento se distorsiona, J
+    // cambia de un punto de atadura a otro y el promedio deja de valer:
+    // medido con un campo de Kirchhoff EXACTO (donde gamma tiene que ser 0)
+    // en los 5 elementos del patch test 2-001 de SAP2000, salia
+    //     gamma_espurio / pendiente = 0.47 a 2.88
+    // o sea cortante inventado del orden de la propia solucion. Es el mismo
+    // patron que el bounding box del DKE: invisible en rectangulo, del 100 % en
+    // cuanto hay malla real.
+    auto shearBatCov = [&](double xi_pt, double eta_pt) -> Eigen::MatrixXd {
         double Np[4], dNp_dxi[4], dNp_deta[4];
         shapeFunctionsQ4(xi_pt, eta_pt, Np, dNp_dxi, dNp_deta);
         double Jp[2][2];
         jacobian2D(x, y, dNp_dxi, dNp_deta, Jp);
+        double Jd[2][2];
+        jacobianDirect2D(x, y, dNp_dxi, dNp_deta, Jd);
         // Convencion DOFs GLOBAL (consistente con bending B arriba):
         //   βx_Mindlin = -θy_global → γxz = ∂w/∂x - βx = ∂w/∂x + θy = ∂w/∂x + DOF 2
         //   βy_Mindlin = +θx_global → γyz = ∂w/∂y - βy = ∂w/∂y - θx = ∂w/∂y - DOF 1
@@ -876,14 +927,17 @@ static Eigen::MatrixXd getBendingK(const double x[4], const double y[4],
             Bsp(1, 3*i)     = +dNdy_p;  // γyz: +∂w/∂y
             Bsp(1, 3*i + 1) = -Np[i];   // γyz: -θx_global  (DOF 1)
         }
-        return Bsp;
+        // al covariante: gamma_cov = J · gamma_cart
+        Eigen::MatrixXd Jm(2, 2);
+        Jm << Jd[0][0], Jd[0][1], Jd[1][0], Jd[1][1];
+        return Jm * Bsp;
     };
 
-    // Pre-compute Bs at the 4 tying points
-    auto Bs_A = shearBat(0.0, -1.0);  // A = (0, -1)
-    auto Bs_C = shearBat(0.0, +1.0);  // C = (0, +1)
-    auto Bs_B = shearBat(-1.0, 0.0);  // B = (-1, 0)
-    auto Bs_D = shearBat(+1.0, 0.0);  // D = (+1, 0)
+    // Pre-compute Bs COVARIANTE at the 4 tying points
+    auto Bs_A = shearBatCov(0.0, -1.0);  // A = (0, -1)
+    auto Bs_C = shearBatCov(0.0, +1.0);  // C = (0, +1)
+    auto Bs_B = shearBatCov(-1.0, 0.0);  // B = (-1, 0)
+    auto Bs_D = shearBatCov(+1.0, 0.0);  // D = (+1, 0)
 
     // Integrate shear with 2×2 Gauss using MITC4 interpolated Bs
     for (int gp = 0; gp < 4; gp++) {
@@ -897,11 +951,15 @@ static Eigen::MatrixXd getBendingK(const double x[4], const double y[4],
         double detJ_gp = jacobian2D(x, y, dN_gp_dxi, dN_gp_deta, Jinv_gp);
 
         // MITC4 interpolation (Dvorkin & Bathe):
-        Eigen::MatrixXd Bs_mitc = Eigen::MatrixXd::Zero(2, 12);
-        // γxz (row 0): interpolate A→C in η
-        Bs_mitc.row(0) = 0.5*(1.0 - eta)*Bs_A.row(0) + 0.5*(1.0 + eta)*Bs_C.row(0);
-        // γyz (row 1): interpolate B→D in ξ
-        Bs_mitc.row(1) = 0.5*(1.0 - xi)*Bs_B.row(1) + 0.5*(1.0 + xi)*Bs_D.row(1);
+        Eigen::MatrixXd Bs_cov = Eigen::MatrixXd::Zero(2, 12);
+        // γ_ξ (fila 0): se interpola A→C en η
+        Bs_cov.row(0) = 0.5*(1.0 - eta)*Bs_A.row(0) + 0.5*(1.0 + eta)*Bs_C.row(0);
+        // γ_η (fila 1): se interpola B→D en ξ
+        Bs_cov.row(1) = 0.5*(1.0 - xi)*Bs_B.row(1) + 0.5*(1.0 + xi)*Bs_D.row(1);
+        // y de vuelta al cartesiano con el J^-1 de ESTE punto de Gauss
+        Eigen::MatrixXd JinvM(2, 2);
+        JinvM << Jinv_gp[0][0], Jinv_gp[0][1], Jinv_gp[1][0], Jinv_gp[1][1];
+        Eigen::MatrixXd Bs_mitc = JinvM * Bs_cov;
 
         Kuu += Bs_mitc.transpose() * Ds * Bs_mitc * std::abs(detJ_gp);
     }

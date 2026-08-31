@@ -36,7 +36,7 @@ function shapeFunctionsQ4(xi: number, eta: number) {
 function jacobian2D(
   dNdxi: number[], dNdeta: number[],
   x: number[], y: number[]
-): { dNdx: number[]; dNdy: number[]; detJ: number } {
+): { dNdx: number[]; dNdy: number[]; detJ: number; J: [number, number, number, number] } {
   let J11 = 0, J12 = 0, J21 = 0, J22 = 0;
   for (let i = 0; i < 4; i++) {
     J11 += dNdxi[i] * x[i];
@@ -53,7 +53,7 @@ function jacobian2D(
     dNdx.push(invDet * ( J22 * dNdxi[i] - J12 * dNdeta[i]));
     dNdy.push(invDet * (-J21 * dNdxi[i] + J11 * dNdeta[i]));
   }
-  return { dNdx, dNdy, detJ };
+  return { dNdx, dNdy, detJ, J: [J11, J12, J21, J22] };
 }
 
 /**
@@ -387,10 +387,21 @@ function getBendingK(x: number[], y: number[], E: number, nu: number, t: number)
     { xi:  1, eta: 0 }, // D
   ];
 
-  const BsTying: number[][][] = []; // [4][2][12]
+  // ⚠️ COVARIANTE, no cartesiano. El MITC4 de Dvorkin & Bathe (1984) interpola
+  // las componentes γ_ξ / γ_η —las de los ejes NATURALES— y solo al final
+  // vuelve al cartesiano con el J⁻¹ del punto de Gauss:
+  //     γ_cov  = J · γ_cart      (J directo, en el punto de atadura)
+  //     γ_cart = J⁻¹ · γ_cov     (en el punto de Gauss)
+  // En un RECTANGULO J es el mismo en los cuatro puntos de atadura, entra y
+  // sale del promedio y da igual — por eso cerraba en rectangulo. Distorsionado
+  // NO: medido con un campo de Kirchhoff EXACTO (donde γ tiene que ser 0) en
+  // los 5 elementos del patch test 2-001 de SAP2000 salia
+  //     γ_espurio / pendiente = 0.47 a 2.88
+  // o sea cortante inventado del orden de la propia solucion.
+  const BsTying: number[][][] = []; // [4][2][12] — ya COVARIANTE
   for (const tp of tyingPts) {
     const { N, dNdxi, dNdeta } = shapeFunctionsQ4(tp.xi, tp.eta);
-    const { dNdx, dNdy, detJ } = jacobian2D(dNdxi, dNdeta, x, y);
+    const { dNdx, dNdy, detJ, J } = jacobian2D(dNdxi, dNdeta, x, y);
     // Bs (2x12): DOFs per node = [w, θx, θy]
     // γxz = ∂w/∂x - θx → row 0
     // γyz = ∂w/∂y - θy → row 1
@@ -401,12 +412,19 @@ function getBendingK(x: number[], y: number[], E: number, nu: number, t: number)
       Bs[1][i * 3]     = dNdy[i];  // ∂w/∂y
       Bs[1][i * 3 + 2] = -N[i];    // -θy
     }
-    BsTying.push(Bs);
+    // γ_cov = J · γ_cart
+    const [j11, j12, j21, j22] = J;
+    const Bcov = zeros(2, 12);
+    for (let j = 0; j < 12; j++) {
+      Bcov[0][j] = j11 * Bs[0][j] + j12 * Bs[1][j];
+      Bcov[1][j] = j21 * Bs[0][j] + j22 * Bs[1][j];
+    }
+    BsTying.push(Bcov);
   }
 
   for (const [xi, eta] of gpCoords) {
     const { N, dNdxi, dNdeta } = shapeFunctionsQ4(xi, eta);
-    const { dNdx, dNdy, detJ } = jacobian2D(dNdxi, dNdeta, x, y);
+    const { dNdx, dNdy, detJ, J: Jg } = jacobian2D(dNdxi, dNdeta, x, y);
 
     // Bending B matrix (3x12): [∂θx/∂x, ∂θy/∂y, ∂θx/∂y + ∂θy/∂x]
     const Bb = zeros(3, 12);
@@ -433,9 +451,14 @@ function getBendingK(x: number[], y: number[], E: number, nu: number, t: number)
     const BsMitc = zeros(2, 12);
     const wA = 0.5 * (1 - eta), wC = 0.5 * (1 + eta);
     const wB = 0.5 * (1 - xi),  wD = 0.5 * (1 + xi);
+    // se interpola en COVARIANTE y se vuelve al cartesiano con el J⁻¹ de aqui
+    const [g11, g12, g21, g22] = Jg;
+    const iD = 1 / detJ;
     for (let j = 0; j < 12; j++) {
-      BsMitc[0][j] = wA * BsTying[0][0][j] + wC * BsTying[1][0][j]; // γxz from A,C
-      BsMitc[1][j] = wB * BsTying[2][1][j] + wD * BsTying[3][1][j]; // γyz from B,D
+      const cxi = wA * BsTying[0][0][j] + wC * BsTying[1][0][j]; // γ_ξ desde A,C
+      const cet = wB * BsTying[2][1][j] + wD * BsTying[3][1][j]; // γ_η desde B,D
+      BsMitc[0][j] = iD * ( g22 * cxi - g12 * cet);
+      BsMitc[1][j] = iD * (-g21 * cxi + g11 * cet);
     }
 
     // Kb_shear += Bs^T * Ds * Bs * detJ

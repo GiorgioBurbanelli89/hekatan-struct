@@ -61,24 +61,24 @@ const TEO = P / (KS * B * B);                 // asiento medio, respuesta cerrad
 const SAP = { thin: -2.233391e-2, thick: -2.240827e-2 };
 
 /**
- * PENDIENTE, con la misma regla que `unidades_masa.mjs`: fuera de limite y
- * MEDIDO, pero arreglarlo no es cambiar un numero.
+ * ✅ CERRADO el 31-ago-2026. Estuvo en PENDIENTE [0.55, 0.85] % mientras la rama
+ * Kirchhoff de `plateQ4Solve` daba 0.69 % de mas que la Thin de `deform`. Se
+ * achacaba a que no son la misma formulacion (DKE de Batoz & Tahar contra un Q4
+ * de Mindlin con SRI) y a que `t/B = 0.267` es placa GRUESA, donde el limite
+ * delgado no aplica.
  *
- * La rama **Kirchhoff de `plateQ4Solve`** (`theoryType: 1`) da 0.69 % de mas que
- * la Thin de `deform`, que es la que clava a SAP2000 al 0.000 %. No son la misma
- * formulacion: `deform` usa la DKE de Batoz & Tahar y `plate_q4/kirchhoff_q4`
- * es un Q4 de Mindlin con integracion reducida selectiva que "en el limite
- * delgado recupera Kirchhoff" — o sea que en `t/B = 0.267`, que es una placa
- * GRUESA, ese limite no aplica y no tiene por que coincidir.
+ * Era otra cosa: el **MITC4 de `plate_q4/kirchhoff_q4.cpp` interpolaba el
+ * cortante CARTESIANO** en vez del covariante. Se destapo con el patch test
+ * 2-001 de SAP2000 (ver `tests/casos/patch_test_sap2000.mjs`). Consecuencia
+ * medida: la matriz del elemento **cambiaba segun por que nudo empezases a
+ * numerar** — 39.7 % entre arrancar en el nudo 0 y en el 1, sobre un CUADRADO.
+ * Por eso movia tambien en malla regular. Arreglado: 9e-17.
  *
- * No se tapa y no urge: **ninguna cimentacion del deploy usa esa rama** — las 8
- * de Guerra y las `safe-bench-*` van todas con `theoryType: 0` (Mindlin), que
- * cierra al 0.011 %. Cerrarlo es trabajo de motor, no de ejemplo.
+ *     antes  0.686 %      ahora  0.259 %
  *
- * La banda de abajo hace que la fila falle **tambien si se arregla**, para que
- * no se quede aqui un numero que ya nadie mira.
+ * La banda se quita y el limite baja al 0.5 % normal.
  */
-const PENDIENTE = { Thin: [0.55, 0.85] };
+const PENDIENTE = {};
 
 export const nombre = "zapata-winkler-sap2000";
 export const descripcion =
