@@ -168,3 +168,60 @@ probada da las dos cosas.
 `10.1016/0045-7825(93)90160-Y`). Es la única fuente que dice **cómo** se combinan
 las dos piezas —la interpolación enriquecida y la restricción explícita— sin que
 una rompa a la otra. Todo lo demás ya está medido y acotado.
+
+---
+
+# Las TRES formulaciones implementadas, y dónde falla cada una
+
+Con los papers en la mano (`registros/papers_shell_csi/`,
+`registros/ibrahimbegovic_1993/`), implementadas las tres candidatas:
+
+| fichero | qué implementa | modos nulos | resultado |
+|---|---|---|---|
+| `ib93.py` (`cubico=False`) | **PQ2** — Ibrahimbegović 1993 §3.1 | 3 ✓ | **idéntico a nuestro MITC4** |
+| `ib93.py` (`cubico=True`) | **PQ3** — §3.2, = el DSE de Wilson | 3 ✓ | 4/9 modos |
+| `itw91.py` | **ITW 1991 IJNME 31** — el que está EN SAP | 1 ✗ | convenciones sin fijar |
+
+    ETABS   0.8878 0.9999 0.9999 1.0000 1.0000 13.6712 13.6712 91.9530 455.4544
+    PQ2     0.5000 0.5000 0.8878 1.0000 1.0000 10.4167 93.8622 156.2500 156.2500
+    PQ3     0.4843 0.5000 0.5000 0.9124 1.0000  1.0000 13.6861 13.6861  13.8580
+
+## Lo verificado
+
+* **PQ3 = DSE**: dan el mismo espectro cifra a cifra. Ibrahimbegović 1993 §3.2 y
+  Wilson cap. 8 **son el mismo elemento**, confirmado numéricamente.
+* **PQ2 = nuestro MITC4** = el **T1 de Hughes & Tezduyar** (lo dice el propio
+  paper: «the proposed shear strain interpolation (3.22) corresponds to the T1
+  plate element of Hughes and Tezduyar»).
+* Ninguno de los dos da los modos altos de ETABS (`91.95`, `455.45`).
+
+## La pieza que faltaba, y de dónde sale
+
+El **Apéndice del IJNME 31** («SHEAR/MEMBRANE LOCKING CORRECTION») da una
+corrección **B-barra sobre el CORTANTE** que no estaba aplicada:
+
+    (90)  gamma = b_I^T w_I + G_I theta_I + gamma_c
+    (91)  G_I theta_I + gamma_c = 0            <- la restriccion
+    (96)  G_bar_I = G_I - (1/Omega) * int G_I dOmega
+
+> «Both G corrections, (89) and (96), are performed by utilizing the **corrected
+> serendipity shape functions**»
+
+Nosotros la aplicábamos **solo a las curvaturas**, nunca al cortante. Y eso
+encaja con el abstract de 1993 («the constraint on the constant shear strain is
+enforced explicitly») y con la forma del residuo medido (semidefinido positivo).
+
+## Dónde está el bloqueo AHORA
+
+`itw91.py` implementa la ec. (80) tal cual, pero **con 1 modo nulo en vez de 3**:
+hay convenciones sin fijar y no se deben adivinar —
+
+* el sentido de `α_IJ` (el lado I→J con J = el **anterior**: ¿se invierte el
+  ángulo del lado, o no?). Con `inv=0` salen dos modos de ETABS (`0.8878` y
+  `1.0000`) pero el elemento tiene **1** modo nulo; con `inv=1` salen los 3 nulos
+  y los valores no.
+* la matriz alternante **`e`** de la ec. (21), que define `β = e·θ` — sin leer.
+* la ec. (71), la interpolación de `w` del thick shell — sin leer.
+
+Las tres están en el PDF (`itw1991_thick_IJNME31_p-*.png`). **Es lectura, no
+tanteo**: ese es el siguiente paso, y no hace falta ninguna fuente más.
