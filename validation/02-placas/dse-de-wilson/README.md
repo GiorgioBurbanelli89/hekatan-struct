@@ -211,6 +211,34 @@ Nosotros la aplicábamos **solo a las curvaturas**, nunca al cortante. Y eso
 encaja con el abstract de 1993 («the constraint on the constant shear strain is
 enforced explicitly») y con la forma del residuo medido (semidefinido positivo).
 
+## El ITW 1991, ya bien construido (`itw91b.py`)
+
+Salía con **1 modo nulo en vez de 3**. La causa era un **error de lectura de la
+ec. (80)**: el PDF parte la línea y el segundo término arranca con `−`, no `+`.
+Y tiene que ser **resta**, porque en la (71) el término jerárquico va con
+`(θ_K − θ_J)`: al reagrupar por nudo, cada `θ_I` aparece con **signos opuestos**
+en sus dos lados. Con suma, un giro constante no se cancela y el elemento pierde
+sólidos rígidos.
+
+Y las convenciones, leídas del PDF y no supuestas:
+
+* **(74)** `n_JK = (cos α_JK ; sin α_JK)` es la **normal saliente** — en la Fig. 2
+  se ve `n₁₂` con símbolo de ángulo recto sobre el lado. Así que `α` es el ángulo
+  de la **normal**, y no hay nada que invertir: la normal saliente **no depende
+  del orden de los nudos**. (El intento anterior usaba el ángulo del **lado**,
+  que sí cambia de signo al invertirlo.)
+* **(75)** `J = I−4; K = mod(I,4)+1` para los de punto medio
+* **(76)** `symm∇β = B_I·e·θ_I`, con `e` alternante — su signo global no afecta
+  a `BᵀDB`, y se comprobó: da lo mismo con `e = ±1`.
+
+Con eso, **3 modos nulos** y:
+
+    ETABS      0.8878 0.9999 0.9999 1.0000 1.0000 13.6712 13.6712 91.9530 455.4544
+    ITW 1991   0.5000 0.5000 0.8880 1.0000 1.0000 10.4170 93.8620 125.0000 125.0000
+
+**3 de 9 modos** bajo el 1 % (`0.8878`, `1.0000` ×2), y el `93.86` a 2 % del
+`91.95`. Sigue sin dar los `13.67 ×2` ni el `455.45`.
+
 ## Dónde está el bloqueo AHORA
 
 `itw91.py` implementa la ec. (80) tal cual, pero **con 1 modo nulo en vez de 3**:
