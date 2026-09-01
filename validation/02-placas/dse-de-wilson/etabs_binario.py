@@ -10,7 +10,7 @@ Desensamblado, no decompilado (el decompilado de Ghidra esta incompleto).
   * jacobiano= bilineal, SOLO con los 4 nudos de esquina
   * 5 deform.= kxx, kyy, kxy, gxz, gyz   (D es 5x5: 3x3 flexion + 2x2 cortante)
   * seccion  = flexion  t^3/12 * w_i*detJ_i ;  cortante  (5/6)*t * w_i*detJ_i
-  * cuadratura = IRONS de 8 puntos (grado 5), NO Gauss:
+  * cuadratura = ITW8 de 8 puntos (grado 5), NO Gauss:
         (+-A,+-A) peso 9/49  con A=sqrt(7/9) ; (0,+-B),(+-B,0) peso 40/49 con B=sqrt(7/15)
   * correccion B-barra: a las 3 filas INTERNAS se les resta la media de las
     3 componentes de FLEXION  (Bint -= sum(B w detJ)/sum(w detJ))
@@ -19,7 +19,7 @@ Desensamblado, no decompilado (el decompilado de Ghidra esta incompleto).
 import numpy as np
 
 A=np.sqrt(7.0/9.0); B=np.sqrt(7.0/15.0)
-IRONS=[(-A,-A,9/49.),(A,-A,9/49.),(A,A,9/49.),(-A,A,9/49.),
+ITW8=[(-A,-A,9/49.),(A,-A,9/49.),(A,A,9/49.),(-A,A,9/49.),
        (0.,-B,40/49.),(B,0.,40/49.),(0.,B,40/49.),(-B,0.,40/49.)]
 G2=1/np.sqrt(3.0)
 GAUSS=[(-G2,-G2,1.),(G2,-G2,1.),(G2,G2,1.),(-G2,G2,1.)]
@@ -33,7 +33,7 @@ def formas(r,s):
     Nb, Nbr, Nbs = 0.0, -2*r*(1-s*s), -2*s*(1-r*r)
     return N,Nr,Ns,Nb,Nbr,Nbs
 
-def K_etabs_placa(pts,E,nu,t,rule=IRONS,bbar=True,condensar=True):
+def K_etabs_placa(pts,E,nu,t,rule=ITW8,bbar=True,condensar=True):
     x=np.array([p[0] for p in pts],float); y=np.array([p[1] for p in pts],float)
     # D 5x5 : 3x3 flexion (tension plana) + 2x2 cortante
     c=E/(1-nu*nu)
@@ -86,14 +86,14 @@ if __name__=="__main__":
         D0=E*t**3/(12*(1-nu*nu))
         Ke=np.array(v["K"]); Ke=(Ke+Ke.T)/2; we=np.sort(np.linalg.eigvalsh(Ke))/D0
         print("\n== %-14s nu=%.2f t=%.2f"%(caso,nu,t))
-        print("   %-4s %13s %13s %9s %13s %9s"%("modo","ETABS","IRONS8","dif","Gauss2x2","dif"))
-        Ki=K_etabs_placa(pts,E,nu,t,IRONS); wi=np.sort(np.linalg.eigvalsh((Ki+Ki.T)/2))/D0
+        print("   %-4s %13s %13s %9s %13s %9s"%("modo","ETABS","ITW88","dif","Gauss2x2","dif"))
+        Ki=K_etabs_placa(pts,E,nu,t,ITW8); wi=np.sort(np.linalg.eigvalsh((Ki+Ki.T)/2))/D0
         Kg=K_etabs_placa(pts,E,nu,t,GAUSS); wg=np.sort(np.linalg.eigvalsh((Kg+Kg.T)/2))/D0
         nok=0
         for i in range(3,12):
             di=abs(wi[i]/we[i]-1)*100; dg=abs(wg[i]/we[i]-1)*100
             nok+= di<=1
             print("   %-4d %13.6f %13.6f %8.3f%% %13.6f %8.3f%% %s"%(i+1,we[i],wi[i],di,wg[i],dg,"OK" if di<=1 else ""))
-        print("   ||dK||  Irons=%.2f %%  Gauss=%.2f %%   (%d/9 <1%%)"%(
+        print("   ||dK||  ITW8=%.2f %%  Gauss=%.2f %%   (%d/9 <1%%)"%(
             np.linalg.norm(Ke-Ki)/np.linalg.norm(Ke)*100,
             np.linalg.norm(Ke-Kg)/np.linalg.norm(Ke)*100,nok))

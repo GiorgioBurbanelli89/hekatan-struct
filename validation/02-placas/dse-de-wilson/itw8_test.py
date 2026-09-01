@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Prueba de la regla de IRONS de 8 puntos que SE LEYO DEL BINARIO de ETABS 19.
+"""Prueba de la regla de ITW8 de 8 puntos que SE LEYO DEL BINARIO de ETABS 19.
 
 Del kernel FUN_180973630 de CsiGo2.dll, rama kTypeThick in {2,4}:
    4 esquinas (+-A,+-A) con peso 9/49,  A = sqrt(7/9)
@@ -12,7 +12,7 @@ import numpy as np
 import dse_wilson as W
 
 A=np.sqrt(7.0/9.0); B=np.sqrt(7.0/15.0)
-IRONS=[(-A,-A,9/49.),(A,-A,9/49.),(A,A,9/49.),(-A,A,9/49.),
+ITW8=[(-A,-A,9/49.),(A,-A,9/49.),(A,A,9/49.),(-A,A,9/49.),
        (0.,-B,40/49.),(B,0.,40/49.),(0.,B,40/49.),(-B,0.,40/49.)]
 G=1/np.sqrt(3)
 GAUSS=[(-G,-G,1.),(G,-G,1.),(G,G,1.),(-G,G,1.)]
@@ -94,13 +94,13 @@ for caso in ("k_thick_nu00","k_thick_cuad","k_thick_rect","k_thick_trape","k_thi
     Ke=np.array(v["K"]); Ke=(Ke+Ke.T)/2
     we=np.sort(np.linalg.eigvalsh(Ke))/D
     Kg=K_DSE_q(pts,E,nu,t,GAUSS,thin); wg=np.sort(np.linalg.eigvalsh((Kg+Kg.T)/2))/D
-    Ki=K_DSE_q(pts,E,nu,t,IRONS,thin); wi=np.sort(np.linalg.eigvalsh((Ki+Ki.T)/2))/D
+    Ki=K_DSE_q(pts,E,nu,t,ITW8,thin); wi=np.sort(np.linalg.eigvalsh((Ki+Ki.T)/2))/D
     print("\n== %-14s nu=%.2f t=%.2f %s" % (caso,nu,t,"THIN" if thin else "THICK"))
-    print("   %-4s %13s %13s %9s %13s %9s"%("modo","ETABS","DSE-Gauss2x2","dif","DSE-IRONS8","dif"))
+    print("   %-4s %13s %13s %9s %13s %9s"%("modo","ETABS","DSE-Gauss2x2","dif","DSE-ITW88","dif"))
     for i in range(3,12):
         dg=abs(wg[i]/we[i]-1)*100 if abs(we[i])>1e-12 else float('nan')
         di=abs(wi[i]/we[i]-1)*100 if abs(we[i])>1e-12 else float('nan')
         print("   %-4d %13.6f %13.6f %8.3f%% %13.6f %8.3f%% %s"%(i+1,we[i],wg[i],dg,wi[i],di,"OK" if di<=1 else ""))
-    print("   ||dK||/||K||  Gauss=%.2f %%   Irons=%.2f %%"%(
+    print("   ||dK||/||K||  Gauss=%.2f %%   ITW8=%.2f %%"%(
         np.linalg.norm(Ke-Kg)/np.linalg.norm(Ke)*100,
         np.linalg.norm(Ke-Ki)/np.linalg.norm(Ke)*100))
