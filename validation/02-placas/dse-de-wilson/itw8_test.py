@@ -85,22 +85,24 @@ def K_DSE_q(pts,E,nu,t,rule,thin=False):
     K11=K[:12,:12]; K12_=K[:12,12:]; K22=K[12:,12:]
     return K11-K12_@np.linalg.inv(K22)@K12_.T
 
-GAL=r"C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\galpon-bodega-electoral"
-kd=json.load(open(os.path.join(GAL,"k_directa.json"),encoding="utf-8"))
-for caso in ("k_thick_nu00","k_thick_cuad","k_thick_rect","k_thick_trape","k_thin_cuad"):
-    v=kd[caso]; E,nu,t,pts=v["E"],v["nu"],v["t"],v["pts"]
-    thin = caso.startswith("k_thin")
-    D=E*t**3/(12*(1-nu*nu))
-    Ke=np.array(v["K"]); Ke=(Ke+Ke.T)/2
-    we=np.sort(np.linalg.eigvalsh(Ke))/D
-    Kg=K_DSE_q(pts,E,nu,t,GAUSS,thin); wg=np.sort(np.linalg.eigvalsh((Kg+Kg.T)/2))/D
-    Ki=K_DSE_q(pts,E,nu,t,ITW8,thin); wi=np.sort(np.linalg.eigvalsh((Ki+Ki.T)/2))/D
-    print("\n== %-14s nu=%.2f t=%.2f %s" % (caso,nu,t,"THIN" if thin else "THICK"))
-    print("   %-4s %13s %13s %9s %13s %9s"%("modo","ETABS","DSE-Gauss2x2","dif","DSE-ITW88","dif"))
-    for i in range(3,12):
-        dg=abs(wg[i]/we[i]-1)*100 if abs(we[i])>1e-12 else float('nan')
-        di=abs(wi[i]/we[i]-1)*100 if abs(we[i])>1e-12 else float('nan')
-        print("   %-4d %13.6f %13.6f %8.3f%% %13.6f %8.3f%% %s"%(i+1,we[i],wg[i],dg,wi[i],di,"OK" if di<=1 else ""))
-    print("   ||dK||/||K||  Gauss=%.2f %%   ITW8=%.2f %%"%(
-        np.linalg.norm(Ke-Kg)/np.linalg.norm(Ke)*100,
-        np.linalg.norm(Ke-Ki)/np.linalg.norm(Ke)*100))
+if __name__=="__main__":
+ GAL=r"C:\Users\j-b-j\Documents\Hekatan Calc 1.0.0\galpon-bodega-electoral"
+ kd=json.load(open(os.path.join(GAL,"k_directa.json"),encoding="utf-8"))
+ for caso in ("k_thick_nu00","k_thick_cuad","k_thick_rect","k_thick_trape","k_thin_cuad"):
+     v=kd[caso]; E,nu,t,pts=v["E"],v["nu"],v["t"],v["pts"]
+     thin = caso.startswith("k_thin")
+     D=E*t**3/(12*(1-nu*nu))
+     Ke=np.array(v["K"]); Ke=(Ke+Ke.T)/2
+     we=np.sort(np.linalg.eigvalsh(Ke))/D
+     Kg=K_DSE_q(pts,E,nu,t,GAUSS,thin); wg=np.sort(np.linalg.eigvalsh((Kg+Kg.T)/2))/D
+     Ki=K_DSE_q(pts,E,nu,t,ITW8,thin); wi=np.sort(np.linalg.eigvalsh((Ki+Ki.T)/2))/D
+     print("\n== %-14s nu=%.2f t=%.2f %s" % (caso,nu,t,"THIN" if thin else "THICK"))
+     print("   %-4s %13s %13s %9s %13s %9s"%("modo","ETABS","DSE-Gauss2x2","dif","DSE-ITW88","dif"))
+     for i in range(3,12):
+         dg=abs(wg[i]/we[i]-1)*100 if abs(we[i])>1e-12 else float('nan')
+         di=abs(wi[i]/we[i]-1)*100 if abs(we[i])>1e-12 else float('nan')
+         print("   %-4d %13.6f %13.6f %8.3f%% %13.6f %8.3f%% %s"%(i+1,we[i],wg[i],dg,wi[i],di,"OK" if di<=1 else ""))
+     print("   ||dK||/||K||  Gauss=%.2f %%   ITW8=%.2f %%"%(
+         np.linalg.norm(Ke-Kg)/np.linalg.norm(Ke)*100,
+         np.linalg.norm(Ke-Ki)/np.linalg.norm(Ke)*100))
+ 
