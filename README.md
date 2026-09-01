@@ -323,8 +323,44 @@ production**, the **DSE only to replicate CSI**. And note the DSE converges
 *from above* — it is too flexible, which is precisely what the missing `k`
 term corrects.
 
+**Every piece of the binary is published — in Wilson's own book.** Reading
+*Three-Dimensional Static and Dynamic Analysis of Structures* end to end
+(423 pages) matched each constant read from the disassembler to an equation:
+
+| read from `CsiGo2.dll` | equation in the book |
+|---|---|
+| `0.125` with the edge Δx, Δy | **(F.7a)** `β₁ = (L/8)(θi−θj)` |
+| `−2/3` | **(F.9)** `γ = (wj−wi)/L − (θi+θj)/2 − (2/3)Δθ` |
+| `κ = 5/6` | **(F.21)**, derived |
+| `9/49`, `40/49`, `√(7/9)`, `√(7/15)` | **(G.18)-(G.20)**, the 8-point rule |
+| subtract `Σ w·detJ·B` over the internal columns | **(6.7)** `B_IC = −(1/V)∫B_I dV` |
+| static condensation | **(6.11)** and **(F.14)** |
+| the **rank-one stiffness** that is missing | **(9.13)-(9.14)** |
+
+Appendix F is the beam element *«to develop constraint equations that can be used
+in the development of a plate bending element»* — the DSE's own foundation. And
+§9.7, on the membrane, states the technique verbatim: *«this **rank one matrix is
+added to the 12 by 12 stiffness matrix**, the zero energy mode is removed»*, with
+
+    K₀ = k₀ · Vol · b̄ᵀb̄        (9.13)
+    k₀ = 0.025 · D₃₃            (9.14)
+
+and the honest footnote: *«**experience** with the solution of a large number of
+problems indicates that this value **is effective**»*.
+
+**So the technique is published; the number is not.** `k₀` is chosen, not derived
+— which is why `k = 181.81` appears in no paper, and why it is absent from the
+binary's constant pool (searched both `.rdata` and the 64-bit immediates, where
+`√(7/9)` had been hiding).
+
 Code: `validation/02-placas/dse-de-wilson/` (`dsq_batoz.py`, `min4_mystran.py`,
-`campeonato.py`, `pruebas_fisicas.py`, `tamiz*.py`).
+`campeonato.py`, `pruebas_fisicas.py`, `dse_mas_phi.py`, `tamiz*.py`,
+`mapa_funcion.py`, `buscar_constantes.py`).
+
+Adding the measured term to the DSE **halves** the Navier error (4.06 % → 2.75 %
+at 8×8) and reproduces ETABS' φ mode to 0.004 % on squares — but not on
+trapezoids, where `k` is not constant with shape. Three of the four rank-4
+residual terms are still open.
 
 ## 📐 CAD Tools (new — NewBlank canvas)
 
