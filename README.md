@@ -266,6 +266,66 @@ All buildings support the **Rigid Diaphragm** toggle (ASCE 7-22 §12.3.1) in the
 - [`?t=tutorials`](https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/?t=tutorials) — Tutorial index
 - [`?t=csi-importer`](https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/?t=csi-importer) — Import E2K / S2K files
 
+### The plate element: identifying CSI's Shell-Thick (2026-09-01)
+
+The membrane section above closed by *reading CSI's own bibliography*. The plate
+side needed more: the manual says "Mindlin/Reissner" and cites no
+implementation. So the element was identified by **measuring the 12×12 cell of a
+single SAP2000 area object** (one area = one element; ETABS auto-meshes past
+1.25 m, SAP2000 does not) and by **reading the binary**.
+
+**Shell-Thin is closed — three independent programs, same nine modes:**
+
+```
+ETABS Shell-Thin    0.4529  0.4529  0.4587  0.8000  0.8000  1.2000  15.0137  15.0137  16.7413
+OpenSees ShellDKGQ  0.4529  0.4529  0.4587  0.8000  0.8000  1.2000  15.0138  15.0138  16.7413
+DKQ (ours)          0.4529  0.4529  0.4587  0.8000  0.8000  1.2000  15.0137  15.0137  16.7413
+```
+
+It is the **DKQ of Batoz & Tahar (1982)**, matching the *whole* matrix at
+`0.000000 %` — not just a deflection.
+
+**Shell-Thick is the DSE of Wilson (ch. 8) = the PQ3 of Ibrahimbegović (1993)**,
+confirmed from `CsiGo2.dll`: the type switch sets **16 DOF = 12 + 4 edge Δθ**
+and loads the **−2/3** factor of the edge equation; the quadrature is the
+8-point rule of ITW 1991 (`9/49`, `40/49`, `√(7/9)`, `√(7/15)`), written
+verbatim in the code.
+
+**What is still missing** is a single term. Measured, not guessed: a **rank-1
+stiffness on one mode** — rotations opening from the centroid (`θx = x−x_c`,
+`θy = y−y_c`, `w = 0`) — split equally across the three bending terms:
+
+    λ_φ / D = k (2 + (1−ν)/2),   k = 181.81
+
+constant over 5 decades of element size (L = 0.5 … 10) and 18 thicknesses
+(t = 0.001 … 0.4), linear in ν to 4 digits. Independent of `E`, `L` and `t`,
+which is why it is a **numerical penalty, not physics**. Candidate source:
+Belytschko, Tsay & Liu, *A stabilization matrix for the bilinear Mindlin plate
+element*, CMAME **29** (1981).
+
+**Element bench.** Six formulations were implemented and measured against the
+same problems — four of them from published sources, one translated from
+MYSTRAN's Fortran, one from OpenSees:
+
+| element | deflection vs Navier (8×8) | thin limit `t = L/10⁴` | zero modes |
+|---|---|---|---|
+| **DSQ** (Batoz-Lardeur 1990) | **−0.001 %** | 0.004060 ✅ | 3 ✅ |
+| **DKMQ** (Katili 1993) | **−0.016 %** | 0.004060 ✅ | 3 ✅ |
+| DKQ (Batoz-Tahar 1982) | −0.058 % | 0.004060 ✅ | 3 ✅ |
+| MIN4 (Tessler-Hughes, from MYSTRAN) | +0.958 % | 0.004097 ✅ | 3 ✅ |
+| DSE / PQ3 (Wilson, = CSI's) | +4.060 % | 0.004223 ⚠️ | 3 ✅ |
+| Mindlin Q4 + bubble | −85.4 % | 0.000000 ❌ | 3 |
+
+(exact = `0.004062`)
+
+Two different answers for two different questions: **DSQ or DKMQ for
+production**, the **DSE only to replicate CSI**. And note the DSE converges
+*from above* — it is too flexible, which is precisely what the missing `k`
+term corrects.
+
+Code: `validation/02-placas/dse-de-wilson/` (`dsq_batoz.py`, `min4_mystran.py`,
+`campeonato.py`, `pruebas_fisicas.py`, `tamiz*.py`).
+
 ## 📐 CAD Tools (new — NewBlank canvas)
 
 [`?t=new-blank`](https://giorgioburbanelli89.github.io/hekatan-struct-lineal/workspace/?t=new-blank) — **Lienzo CAD 2D/3D** for drawing structures from scratch with mouse + Tweakpane controls.

@@ -23,7 +23,7 @@ def dNh(r,s):
     return (np.array([-2*r*(1-s)/2.0, (1-s*s)/2.0, -2*r*(1+s)/2.0, -(1-s*s)/2.0]),
             np.array([-(1-r*r)/2.0, -2*s*(1+r)/2.0, (1-r*r)/2.0, -2*s*(1-r)/2.0]))
 
-def K_DSE(pts, E, nu, t, thin=False):
+def K_DSE(pts, E, nu, t, thin=False, mods=None):
     x=np.array([p[0] for p in pts],float); y=np.array([p[1] for p in pts],float)
     # geometria de los 4 lados: k va de k a (k+1)%4
     ca=np.zeros(4); sa=np.zeros(4); LL=np.zeros(4)
@@ -34,6 +34,9 @@ def K_DSE(pts, E, nu, t, thin=False):
     D0=E*t**3/(12*(1-nu*nu))
     Db=np.array([[D0,nu*D0,0],[nu*D0,D0,0],[0,0,D0*(1-nu)/2]])
     Ds=np.eye(2)*(5*E*t/(12*(1+nu)))          # (8.15): D44=D55=5Eh/(12(1+nu))
+    if mods is not None:                      # TAMIZ: modificadores de SAP2000
+        _m=np.sqrt(np.asarray(mods,float))    # escala la RIGIDEZ del termino
+        Db=np.diag(_m[:3])@Db@np.diag(_m[:3]); Ds=np.diag(_m[3:5])@Ds@np.diag(_m[3:5])
 
     # ── (8.7) el cortante a lo largo de cada lado, como fila de 16 ────────
     #   gamma_k = (1/L)(w_j - w_i) - (sa/2)(tx_i+tx_j) + (ca/2)(ty_i+ty_j)
