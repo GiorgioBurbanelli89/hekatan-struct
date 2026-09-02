@@ -81,7 +81,7 @@ mod._modal(nP, nodes.length, eP, eI.length, eS, elements.length, sKp, sVp, sK.le
   pf.kp, pf.vp, pf.size, dt.kp, dt.vp, dt.size, ds.kp, ds.vp, ds.size,
   sy.kp, sy.vp, sy.size, sz.kp, sz.vp, sz.size, la.kp, la.vp, la.size,
   rel.kp, relVp, 0, nm.kp, nm.vp, nm.size, 1, dia.kp, dia.vp, dia.size,
-  alloc([0], Float64Array, mod.HEAPF64), 0, 12, 1, 0,
+  alloc([0], Float64Array, mod.HEAPF64), 0, 0 /* etabsjoint (union viga-muro de ETABS) apagado */, 12, 1, 0,
   fo, nfo, moo, mro, mco, mao, maro, maco);
 const __tModal = performance.now() - __t1;
 const fp = mod.HEAPU32[fo / 4], nf = mod.HEAPU32[nfo / 4];

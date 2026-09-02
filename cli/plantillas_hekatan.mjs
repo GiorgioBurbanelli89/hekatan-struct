@@ -60,7 +60,8 @@ export function correr(tipo, over) {
   const t0 = Date.now();
   ex.build(p, st, { render(){}, clear(){}, show(){}, hide(){} });
   const ms = Date.now() - t0;
-  const M = m => m ? [...m.entries()] : [];
+  // etabsWallJoint es un booleano, no un Map: se pasa tal cual (antes reventaba con etabsjoint=1)
+  const M = m => (m && typeof m.entries === "function") ? [...m.entries()] : (m ?? []);
   const ei = st.elementInputs.val, ni = st.nodeInputs.val;
 
   let fz = 0; for (const [, v] of (ni.loads ?? [])) fz += v[2] || 0;
@@ -153,7 +154,7 @@ function modal(d, nModos = 12) {
     pf.kp, pf.vp, pf.size, dt.kp, dt.vp, dt.size, ds.kp, ds.vp, ds.size,
     sy.kp, sy.vp, sy.size, sz.kp, sz.vp, sz.size, la.kp, la.vp, la.size,
     rel.kp, relVp, 0, nm.kp, nm.vp, nm.size, 1, dia.kp, dia.vp, dia.size,
-    alloc([0], Float64Array, mod.HEAPF64), 0, nModos, 1, 0,
+    alloc([0], Float64Array, mod.HEAPF64), 0, (ei.etabsWallJoint ? 1 : 0) /* union viga-muro de ETABS */, nModos, 1, 0,
     fo, nfo, moo, mro, mco, mao, maro, maco);
   const msModal = Date.now() - t;
   const fp = mod.HEAPU32[fo / 4], nf = mod.HEAPU32[nfo / 4];

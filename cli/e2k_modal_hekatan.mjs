@@ -50,6 +50,7 @@ function modal(nodes, elements, ni, ei, numModes, lateral, lump = 0, diaphragms 
     nm.kp, nm.vp, nm.size, 1 /* includeElements */,
     dia.kp, dia.vp, dia.size,
     alloc([0], Float64Array, mod.HEAPF64), 0,
+    0 /* etabsjoint: la union viga-muro de ETABS, apagada */,
     numModes, lateral, lump,
     fo, nfo, moo, mro, mco, mao, maro, maco);
   const fp = mod.HEAPU32[fo / 4], nf = mod.HEAPU32[nfo / 4];
