@@ -5,7 +5,7 @@ import { d as Y, m as z, __tla as __tla_0 } from "./didacticCpp-C17Vq98C.js";
 import { g as E } from "./getViewer-CSUEDMoT.js";
 import { g as G } from "./getParameters-D98NSct8.js";
 import { g as A } from "./styles-BcI84iw5.js";
-import { g as R, __tla as __tla_1 } from "./getCad3d-BsyH89kT.js";
+import { g as R, __tla as __tla_1 } from "./getCad3d-B2R8B9HJ.js";
 import { c as k } from "./renderModalTable-BJWFR1R0.js";
 import "./pureFunctionsAny.generated-DeJSBP3k.js";
 import { __tla as __tla_2 } from "./deform-AhCwsviD.js";
@@ -16,7 +16,7 @@ import "./exampleVersion-D1A_5i59.js";
 import { __tla as __tla_3 } from "./getMesh-_M9lDnOs.js";
 import "./__vite-browser-external-D7Ct-6yo.js";
 import "./e2kParser-DS92t7xl.js";
-import "./e2kExporter-D8ZRAYUG.js";
+import "./e2kExporter-CEuC3byq.js";
 import "./cadSections-B7wNjZAz.js";
 Promise.all([
   (() => {
