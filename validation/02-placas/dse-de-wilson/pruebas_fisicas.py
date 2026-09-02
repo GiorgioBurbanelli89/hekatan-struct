@@ -141,3 +141,53 @@ if __name__ == "__main__":
             except Exception:
                 fila.append("%11s" % "error")
         print("  %-22s %s" % (nm, " ".join(fila)))
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  5 · MALLA DISTORSIONADA — ¿cuanto importa de verdad el trapecio?
+#  La malla de la fig. 12 de Katili 2018: los nudos interiores se desplazan y
+#  todos los elementos quedan en trapecio/romboide. Es la prueba que separa
+#  «el elemento falla en la celda» de «el calculo sale mal».
+# ══════════════════════════════════════════════════════════════════════════
+def malla_dist(L, N, d):
+    """igual que `malla` pero moviendo los nudos interiores: d=0 -> regular."""
+    nod = []
+    for j in range(N+1):
+        for i in range(N+1):
+            x, y = i*L/N, j*L/N
+            if 0 < i < N and 0 < j < N:
+                x += d*(L/N)*(1 if (i+j) % 2 == 0 else -1)
+                y += d*(L/N)*(1 if (i*j) % 2 == 0 else -1)
+            nod.append((x, y))
+    ele = []
+    for j in range(N):
+        for i in range(N):
+            n0 = j*(N+1)+i
+            ele.append([n0, n0+1, n0+N+2, n0+N+1])
+    return np.array(nod), ele
+
+
+def resolver_dist(f, L, N, E, nu, t, q, d):
+    nod, ele = malla_dist(L, N, d)
+    nn = len(nod); K = np.zeros((3*nn, 3*nn)); F = np.zeros(3*nn)
+    for e in ele:
+        pts = [tuple(nod[i]) for i in e]
+        Ke = f(pts, E, nu, t)
+        gdl = [3*i+k for i in e for k in range(3)]
+        K[np.ix_(gdl, gdl)] += Ke
+        P = np.asarray(pts, float)
+        d1, d2 = P[2]-P[0], P[3]-P[1]        # area por las DIAGONALES
+        A = 0.5*abs(d1[0]*d2[1] - d1[1]*d2[0])   # np.cross 2D no existe en NumPy 2
+        for i in e:
+            F[3*i] += q*A/4.0
+    fijos = [3*i for i, (x, y) in enumerate(nod)
+             if min(x, y) < 1e-9 or max(x, y) > L-1e-9]
+    libres = [i for i in range(3*nn) if i not in set(fijos)]
+    u = np.zeros(3*nn)
+    u[libres] = np.linalg.solve(K[np.ix_(libres, libres)], F[libres])
+    c = np.argmin([abs(x-L/2)+abs(y-L/2) for x, y in nod])
+    return u[3*c]
+
+
+if __name__ != "__main__":
+    pass

@@ -358,9 +358,66 @@ Code: `validation/02-placas/dse-de-wilson/` (`dsq_batoz.py`, `min4_mystran.py`,
 `mapa_funcion.py`, `buscar_constantes.py`).
 
 Adding the measured term to the DSE **halves** the Navier error (4.06 % → 2.75 %
-at 8×8) and reproduces ETABS' φ mode to 0.004 % on squares — but not on
-trapezoids, where `k` is not constant with shape. Three of the four rank-4
-residual terms are still open.
+at 8×8) and reproduces ETABS' φ mode to 0.004 % on squares.
+
+#### The square cell, closed to 0.0046 % (2026-09-01)
+
+The residual `R = K_ETABS − K_DSE` turned out to have **rank 1-2**, not 4 —
+fitting it with four vectors was over-parameterised and still failed, which meant
+the *vectors* were wrong, not the model. Printing the dominant eigenvector node by
+node settled it: the hourglass term is **not** a penalty on `w` alone (MAC 0.889,
+not 1.000). It carries rotations worth exactly `w/4`. With `ξ,η` the natural
+coordinates and `h = ξ·η`:
+
+| mode | shape | λ/D (E=2.2e7, ν=0, t=0.20) |
+|---|---|---|
+| φ | w=0, θ=(x−xc, y−yc) | **454.542** |
+| hg | w=h, θx=−ξ/4, θy=+η/4 | **83.629** |
+| hg_tx | w=0, θx=h | **0.499867** |
+| hg_ty | w=0, θy=h | **0.499867** |
+
+`K_DSE + Σ λₖ vₖvₖᵀ` against the matrix ETABS itself wrote: residual **0.0046 %**
+(was 8.29 %), `|K_rec − K|/|K| = 0.0045 %`, and eigenvalues 4-8, 11, 12 match to
+**0.0000 %**.
+
+#### Trapezoids: still open, but now diagnosed
+
+The same basis does *not* close on distorted cells (12-96 % out). Both remaining
+hypotheses were tested and both fail: adding a fifth/sixth vector, and letting the
+penalty be `V C Vᵀ` with **C non-diagonal** (the cross terms come out *exactly
+zero* on the square, as symmetry predicts, but only take 96.9 % → 89.0 %).
+
+The decisive measurement is what fraction of the *real* eigenvector lies inside the
+span of the four modes: **1.000** on the square, 0.94-0.99 at `d=0.05`, and
+**0.25-0.61** at `d≥0.30`, degrading smoothly with distortion. That is not the
+signature of a missing additive term — it is the signature of the **base DSE
+formulation itself differing** once the cell is distorted.
+
+#### How much does this matter in a real building?
+
+Measured, not argued (`pruebas_fisicas.resolver_dist`, 8×8 mesh progressively
+skewed; `d` = how far each interior node moves). Centre deflection error vs Navier:
+
+| element | d=0.0 | d=0.1 | d=0.2 | d=0.3 |
+|---|---|---|---|---|
+| DKQ (Shell-Thin) | −0.058 % | −0.355 % | −1.168 % | −2.240 % |
+| DSQ | −0.001 % | −0.299 % | −1.148 % | −2.901 % |
+| **DKMQ (ours)** | −0.016 % | −0.313 % | −1.124 % | **−2.233 %** |
+| MIN4 | 0.958 % | 0.367 % | −2.338 % | −9.677 % |
+| DSE (CSI's) | 4.060 % | 3.731 % | 2.826 % | 1.554 % |
+
+Trapezoids appear in slabs with non-parallel edges, ramps, stair openings and mesh
+transitions. Under the worst skew, DKMQ stays at **−2.2 %** deflection — and
+periods go with the square root of that, so **~1 %**. The 99 % gap being chased is
+between *isolated element* matrices and is dominated by λ_φ ≈ 455·D, a numerical
+penalty, not physics.
+
+⚠️ **MIN4 collapses to −9.7 %** under skew — the only element here that should not
+be used on an irregular mesh.
+
+Code: `quinto_modo.py`, `quien_es_el_quinto.py`, `espectro_resto.py`,
+`los_dos_modos.py`, `modo2_crudo.py`, `reconstruir.py`, `trapecios_v4.py`,
+`ajuste_cruzado.py`, `donde_vive.py`.
 
 ## 📐 CAD Tools (new — NewBlank canvas)
 
