@@ -1262,7 +1262,10 @@ function exportFromScratch(input: ExportE2kInput): string {
     const t = thAll?.get(ae.idx);
     const pf = pfAll?.get(ae.idx);
     const m = modsDe(ae.idx);
-    return `${ae.isWall ? "W" : "F"}|${t ?? "-"}|${pf ?? "-"}|${m ? m.map(v => rd(v)).join(",") : "-"}`;
+    // El MATERIAL tambien separa grupo: el zinc de 0.8 mm (acero) del galpon
+    // salia como "Deck" de hormigon con cotas absurdas (DECKSLABDEPTH 35 m).
+    const E = elementInputs.elasticities?.get(ae.idx);
+    return `${ae.isWall ? "W" : "F"}|${t ?? "-"}|${pf ?? "-"}|${m ? m.map(v => rd(v)).join(",") : "-"}|${E ?? "-"}`;
   };
   /**
    * .Este area es una MEMBRANA? Se decide por el modificador de FLEXION del
@@ -1281,7 +1284,7 @@ function exportFromScratch(input: ExportE2kInput): string {
     return false;
   };
   const grupos = new Map<string, { nombre: string; isWall: boolean; mem: boolean;
-                                   t?: number; pf?: number }>();
+                                   t?: number; pf?: number; mat?: string; acero?: boolean }>();
   let nLosa = 0, nMuro = 0, nDeck = 0;
   for (const ae of areaElements) {
     const k = claveDe(ae);
@@ -1289,9 +1292,12 @@ function exportFromScratch(input: ExportE2kInput): string {
     const isWall = ae.isWall;
     const mem = !isWall && esMembranaDe(ae.idx);
     const n = isWall ? ++nMuro : (mem ? ++nDeck : ++nLosa);
+    const Eae = elementInputs.elasticities?.get(ae.idx);
     grupos.set(k, {
       nombre: (isWall ? "Muro" : mem ? DECK_SEC : "Losa") + (n === 1 ? "" : String(n)),
       isWall, mem, t: thAll?.get(ae.idx), pf: pfAll?.get(ae.idx),
+      mat: (Eae !== undefined ? matNames.get(Eae) : undefined) ?? defaultShellMat,
+      acero: Eae !== undefined ? (matIsSteel.get(Eae) ?? false) : false,
     });
   }
   /** El nombre de la propiedad que le toca a este elemento. */
@@ -1355,6 +1361,13 @@ function exportFromScratch(input: ExportE2kInput): string {
       // `DECKSLABDEPTH 0.065` y al releerlo salia de 0.065 MM. Lo caza el test
       // `e2k-areas-roundtrip` — el espesor volvia como 0.000105 m.
       const dk = (v: number) => rp(cL(v));
+      // Si la PRIMERA membrana es de ACERO (zinc de 0.8 mm, chapa) no es un deck
+      // de hormigon: losa Membrane con su material y su espesor. Con el deck
+      // salia DECKSLABDEPTH 35 m de material Conc_1 y ETABS/Hekatan la leian
+      // como otra cosa (galpon, +0.07 %).
+      const g1 = [...grupos.values()].find(g => g.nombre === DECK_SEC);
+      if (g1?.acero) lines.push(`  SHELLPROP  "${DECK_SEC}"  PROPTYPE  "Slab"  MATERIAL "${g1.mat}"  MODELINGTYPE "Membrane"  SLABTYPE "Slab"  SLABTHICKNESS ${rd(cL(t_slab))} `);
+      else
       lines.push(`  SHELLPROP  "${DECK_SEC}"  PROPTYPE  "Deck"  DECKTYPE "Filled"  CONCMATERIAL "${defaultShellMat}"  DECKMATERIAL "${defaultShellMat}"  DECKSLABDEPTH ${dk(t_slab * 65 / 120)} DECKRIBDEPTH ${dk(t_slab * 55 / 120)} DECKRIBWIDTHTOP ${dk(t_slab * 150 / 120)} DECKRIBWIDTHBOTTOM ${dk(t_slab * 100 / 120)} DECKRIBSPACING ${dk(t_slab * 200 / 120)} DECKSHEARTHICKNESS ${dk(t_slab * 0.76 / 120)} DECKUNITWEIGHT ${rp(cF(0.11012))} SHEARSTUDDIAM ${dk(t_slab * 19 / 120)} SHEARSTUDHEIGHT ${dk(t_slab * 100 / 120)} SHEARSTUDFU 400 `);
     } else {
       lines.push(`$ SLAB PROPERTIES`);
@@ -1388,7 +1401,11 @@ function exportFromScratch(input: ExportE2kInput): string {
       const t = g.t ?? (g.isWall ? 0.2 : 0.15);
       const dk2 = (v: number) => rp(cL(v));
       lines.push(g.isWall
-        ? `  SHELLPROP  "${g.nombre}"  PROPTYPE  "Wall"  MATERIAL "${defaultShellMat}"  MODELINGTYPE "${modelingDeGrupo(g.pf)}"  WALLTHICKNESS ${rd(cL(t))} `
+        ? `  SHELLPROP  "${g.nombre}"  PROPTYPE  "Wall"  MATERIAL "${g.mat ?? defaultShellMat}"  MODELINGTYPE "${modelingDeGrupo(g.pf)}"  WALLTHICKNESS ${rd(cL(t))} `
+        // Una membrana de ACERO (lamina de zinc, chapa) no es un deck de
+        // hormigon: va como losa Membrane con su material y su espesor.
+        : g.mem && g.acero
+        ? `  SHELLPROP  "${g.nombre}"  PROPTYPE  "Slab"  MATERIAL "${g.mat}"  MODELINGTYPE "Membrane"  SLABTYPE "Slab"  SLABTHICKNESS ${rd(cL(t))} `
         : g.mem
         // Un DECK no es una losa con otro nombre: ETABS lo deja en ShellType 3
         // (Membrane) le pidas lo que le pidas, y sus cotas describen el perfil

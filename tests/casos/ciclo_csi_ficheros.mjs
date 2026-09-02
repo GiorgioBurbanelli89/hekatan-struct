@@ -73,7 +73,7 @@ async function ciclo(heks, tag) {
     filas.push({ que: `${etiqueta}: carga total (ΣFz)`, medido: eFz, limite: 1e-6, ok: eFz <= 1e-6,
       detalle: `${fz.toFixed(3)} vs ${fz0.toFixed(3)} kN` });
     // 1e-3 %: el e2k redondea las coordenadas a 0.1 um y eso ya se nota en la 7a cifra.
-    const limUz = (tag === "galpon_lc" && /^e2k/.test(etiqueta0)) ? 0.1 : 1e-3;   // galpon por e2k: +0.07 %, el zinc de 0.8 mm va como Deck de hormigon (pendiente)
+    const limUz = (tag === "galpon_lc" && /^e2k/.test(etiqueta0)) ? 0.01 : 1e-3;   // galpon por e2k: 0.0014 % (redondeo a 0.1 um + 4 nudos de planta)
     filas.push({ que: `${etiqueta}: flecha maxima`, medido: eUz, limite: limUz, ok: eUz <= limUz,
       detalle: `${(uz * 1000).toFixed(6)} vs ${(uz0 * 1000).toFixed(6)} mm` });
     return m;
