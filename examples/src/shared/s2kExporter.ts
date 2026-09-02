@@ -123,8 +123,11 @@ export function exportS2k(input: S2kExportInput): string {
   };
 
   const shellIdx: number[] = [];
+  /** Hexaedros H8 (8 nudos): salen como SOLID de SAP2000. */
+  const solidIdx: number[] = [];
   elements.forEach((el, i) => {
     if (el.length === 2) frameIdx.push(i);
+    else if (el.length === 8) solidIdx.push(i);
     else shellIdx.push(i);
   });
 
@@ -145,6 +148,21 @@ export function exportS2k(input: S2kExportInput): string {
       const el = elements[i];
       const jParts = el.map((n, j) => `Joint${j + 1}=${n + 1}`).join("   ");
       push(`   Area=${i + 1}   NumJoints=${el.length}   ${jParts}`);
+    }
+    blank();
+  }
+
+  // ── CONNECTIVITY - SOLID ──
+  // Orden de nudos de CSI = TENSORIAL (j1 (0,0,0), j2 (1,0,0), j3 (0,1,0), j4 (1,1,0),
+  // j5..j8 arriba); el H8 de Hekatan va antihorario 0-1-2-3 / 4-5-6-7. Se cruzan
+  // 3<->4 y 7<->8: medido el 2-sep-2026 (un cubo con el orden de Hekatan salia
+  // retorcido y las presiones no cargaban nada).
+  if (solidIdx.length > 0) {
+    push(`TABLE:  "CONNECTIVITY - SOLID"`);
+    for (const i of solidIdx) {
+      const e = elements[i];
+      const o = [e[0], e[1], e[3], e[2], e[4], e[5], e[7], e[6]];
+      push(`   Solid=${i + 1}   ${o.map((n, j) => `Joint${j + 1}=${n + 1}`).join("   ")}`);
     }
     blank();
   }
@@ -505,6 +523,27 @@ export function exportS2k(input: S2kExportInput): string {
     // tipo de cascara, cuando era el MATERIAL. Ahora manda el declarado.
     const { E, nu, G, rho, key } = matDe(i);
     if (!matSet.has(key)) matSet.set(key, { E, nu, G, rho });
+  }
+
+  // ── SOLID PROPERTY DEFINITIONS / ASSIGNMENTS ──
+  // Una propiedad por material; InComp = los modos incompatibles de flexion
+  // (Wilson-Taylor), que SAP2000 trae por defecto y el H8 de Hekatan tambien.
+  // `elementInputs.solidIncompatible = false` los apaga en los dos.
+  if (solidIdx.length > 0) {
+    const inc = (elementInputs as any).solidIncompatible === false ? "No" : "Yes";
+    const solidProps = new Map<string, string>();   // matKey -> SolidProp
+    for (const i of solidIdx) {
+      const { E, nu, G, rho, key } = matDe(i);
+      if (!matSet.has(key)) matSet.set(key, { E, nu, G, rho });
+      if (!solidProps.has(key)) solidProps.set(key, `SOL${solidProps.size + 1}`);
+    }
+    push(`TABLE:  "SOLID PROPERTY DEFINITIONS"`);
+    for (const [key, name] of solidProps)
+      push(`   SolidProp=${name}   Material=${key}   MatAngleA=0   MatAngleB=0   MatAngleC=0   InComp=${inc}   Color=Yellow`);
+    blank();
+    push(`TABLE:  "SOLID PROPERTY ASSIGNMENTS"`);
+    for (const i of solidIdx) push(`   Solid=${i + 1}   SolidProp=${solidProps.get(matDe(i).key)}`);
+    blank();
   }
 
   // ── MATERIAL PROPERTIES 01 ──

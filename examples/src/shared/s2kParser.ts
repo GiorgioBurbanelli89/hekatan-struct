@@ -86,6 +86,9 @@ function parseTableFormat(rawLines: string[]): S2kModel {
   const angles = new Map<string, number>();                        // FRAME LOCAL AXES ASSIGNMENTS 1 - TYPICAL
   const areaMods = new Map<string, number[]>();                    // AREA STIFFNESS MODIFIERS
   const frameLoadsRaw = new Map<string, [number, number, number]>(); // FRAME LOADS - DISTRIBUTED
+  const solidConns: { name: string; joints: string[] }[] = [];       // CONNECTIVITY - SOLID (orden tensorial de CSI)
+  const solidProps = new Map<string, { material: string; incomp: boolean }>();
+  const solidAssign = new Map<string, string>();
 
   let currentTable = "";
 
@@ -254,6 +257,26 @@ function parseTableFormat(rawLines: string[]): S2kModel {
         break;
       }
 
+      case "CONNECTIVITY - SOLID": {
+        const name = kv.get("Solid");
+        if (name) {
+          const jts: string[] = [];
+          for (let j = 1; j <= 8; j++) { const jv = kv.get(`Joint${j}`); if (jv) jts.push(jv); }
+          if (jts.length === 8) solidConns.push({ name, joints: jts });
+        }
+        break;
+      }
+      case "SOLID PROPERTY DEFINITIONS": {
+        const name = kv.get("SolidProp");
+        if (name) solidProps.set(name, { material: kv.get("Material") || "", incomp: (kv.get("InComp") || "Yes").toLowerCase().startsWith("y") });
+        break;
+      }
+      case "SOLID PROPERTY ASSIGNMENTS": {
+        const sname = kv.get("Solid"), prop = kv.get("SolidProp");
+        if (sname && prop) solidAssign.set(sname, prop);
+        break;
+      }
+
       case "AREA STIFFNESS MODIFIERS": {
         const area = kv.get("Area");
         if (area) areaMods.set(area, ["f11", "f22", "f12", "m11", "m22", "m12", "v13", "v23"].map(k => kv.has(k) ? parseNum(kv.get(k)) : 1));
@@ -291,7 +314,7 @@ function parseTableFormat(rawLines: string[]): S2kModel {
   }
 
   return buildModel(units, dof, materials, frameSections, shellSections, joints,
-    frameConns, shellConns, restraints, frameSectionAssign, areaSectionAssign, loads, offsets, angles, areaMods, frameLoadsRaw);
+    frameConns, shellConns, restraints, frameSectionAssign, areaSectionAssign, loads, offsets, angles, areaMods, frameLoadsRaw, solidConns, solidProps, solidAssign);
 }
 
 // ═══════════════════════════════════════════
@@ -312,6 +335,9 @@ function parseLegacyFormat(rawLines: string[]): S2kModel {
   const angles = new Map<string, number>();                        // FRAME LOCAL AXES ASSIGNMENTS 1 - TYPICAL
   const areaMods = new Map<string, number[]>();                    // AREA STIFFNESS MODIFIERS
   const frameLoadsRaw = new Map<string, [number, number, number]>(); // FRAME LOADS - DISTRIBUTED
+  const solidConns: { name: string; joints: string[] }[] = [];       // CONNECTIVITY - SOLID (orden tensorial de CSI)
+  const solidProps = new Map<string, { material: string; incomp: boolean }>();
+  const solidAssign = new Map<string, string>();
 
   let currentSection = "";
   let currentMaterial = "";
@@ -407,7 +433,7 @@ function parseLegacyFormat(rawLines: string[]): S2kModel {
   const areaSectionAssign = new Map<string, string>();
 
   return buildModel(units, dof, materials, frameSections, shellSections, joints,
-    frameConns, shellConns, restraints, frameSectionAssign, areaSectionAssign, loads, offsets, angles, areaMods, frameLoadsRaw);
+    frameConns, shellConns, restraints, frameSectionAssign, areaSectionAssign, loads, offsets, angles, areaMods, frameLoadsRaw, solidConns, solidProps, solidAssign);
 }
 
 // ═══════════════════════════════════════════
@@ -430,6 +456,9 @@ function buildModel(
   angles: Map<string, number> = new Map(),
   areaMods: Map<string, number[]> = new Map(),
   frameLoadsRaw: Map<string, [number, number, number]> = new Map(),
+  solidConns: { name: string; joints: string[] }[] = [],
+  solidProps: Map<string, { material: string; incomp: boolean }> = new Map(),
+  solidAssign: Map<string, string> = new Map(),
 ): S2kModel {
   const nodeNames: string[] = [];
   const nodeNameToIdx = new Map<string, number>();
@@ -468,6 +497,17 @@ function buildModel(
     }
   }
   const nShells = elements.length - nFrames;
+  // SOLIDOS: del orden tensorial de CSI (j3 (0,1,0), j4 (1,1,0)) al antihorario del H8
+  const solidElems: number[] = [];
+  for (const sc of solidConns) {
+    const j = sc.joints.map(n => nodeNameToIdx.get(n));
+    if (j.some(x => x === undefined)) continue;
+    const idx = elements.length;
+    elements.push([j[0], j[1], j[3], j[2], j[4], j[5], j[7], j[6]] as unknown as Element);
+    elementNames.push(sc.name); solidElems.push(idx);
+    const prop = solidAssign.get(sc.name);
+    if (prop) elementSections.set(idx, prop);
+  }
 
   // Build ElementInputs
   const ei: ElementInputs = {
@@ -531,6 +571,20 @@ function buildModel(
       }
       ei.densities!.set(i, mat.density || 0);
     }
+  }
+
+  // Material de los solidos, y la bandera de los modos incompatibles
+  if (solidElems.length) {
+    let incompAlguno = false;
+    for (const i of solidElems) {
+      const prop = solidProps.get(elementSections.get(i) || "");
+      const mat = (prop && materials.get(prop.material)) || defaultMat;
+      const E = mat.E || defaultMat.E; const nu = mat.nu || 0.2;
+      ei.elasticities!.set(i, E); ei.poissonsRatios!.set(i, nu); ei.shearModuli!.set(i, mat.G || E / (2 * (1 + nu)));
+      ei.densities!.set(i, (mat as any).density || 0);
+      if (prop?.incomp) incompAlguno = true;
+    }
+    (ei as any).solidIncompatible = incompAlguno;
   }
 
   // NodeInputs
