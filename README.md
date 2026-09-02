@@ -291,8 +291,12 @@ and loads the **−2/3** factor of the edge equation; the quadrature is the
 8-point rule of ITW 1991 (`9/49`, `40/49`, `√(7/9)`, `√(7/15)`), written
 verbatim in the code.
 
-**What is still missing** is a single term. Measured, not guessed: a **rank-1
-stiffness on one mode** — rotations opening from the centroid (`θx = x−x_c`,
+⚠️ *This section originally said a **single** rank-1 term was missing. That was
+wrong and is corrected below: there are **four**, and as of 2026-09-01 all four are
+measured and the square cell closes to `0.0000 %` — see [The square cell, closed](#the-square-cell-closed-2026-09-01).
+The first of the four, and the largest, is:*
+
+A **rank-1 stiffness on one mode** — rotations opening from the centroid (`θx = x−x_c`,
 `θy = y−y_c`, `w = 0`) — split equally across the three bending terms:
 
     λ_φ / D = k (2 + (1−ν)/2),   k = 181.81
@@ -348,10 +352,17 @@ added to the 12 by 12 stiffness matrix**, the zero energy mode is removed»*, wi
 and the honest footnote: *«**experience** with the solution of a large number of
 problems indicates that this value **is effective**»*.
 
-**So the technique is published; the number is not.** `k₀` is chosen, not derived
-— which is why `k = 181.81` appears in no paper, and why it is absent from the
-binary's constant pool (searched both `.rdata` and the 64-bit immediates, where
+**So the technique is published; the numbers mostly are not.** `k₀` is chosen, not
+derived — which is why `k = 181.81` appears in no paper, and why it is absent from
+the binary's constant pool (searched both `.rdata` and the 64-bit immediates, where
 `√(7/9)` had been hiding).
+
+⚠️ **With one exception, found 2026-09-01.** The hourglass term's dependence on
+thickness factorises as `(1 + 1202.64 s²)(1 + 2.400 s²)` with `s = t/L`, and that
+**2.400 is `2/(κ(1−ν))` for `κ = 5/6, ν = 0` — Katili's `φ_k`, eq. (74), exactly**.
+Pinned to the theoretical value the fit still gives `0.0000 %`; left free it
+converges to `2.40000`. So CSI's hourglass term carries the *same* `1/(1+φ)` shear
+factor that DKMQ and MIN4 carry. That one **is** published; `A`, `B` and `k` are not.
 
 Code: `validation/02-placas/dse-de-wilson/` (`dsq_batoz.py`, `min4_mystran.py`,
 `campeonato.py`, `pruebas_fisicas.py`, `dse_mas_phi.py`, `tamiz*.py`,
@@ -360,7 +371,7 @@ Code: `validation/02-placas/dse-de-wilson/` (`dsq_batoz.py`, `min4_mystran.py`,
 Adding the measured term to the DSE **halves** the Navier error (4.06 % → 2.75 %
 at 8×8) and reproduces ETABS' φ mode to 0.004 % on squares.
 
-#### The square cell, closed to 0.0046 % (2026-09-01)
+#### The square cell, closed (2026-09-01)
 
 The residual `R = K_ETABS − K_DSE` turned out to have **rank 1-2**, not 4 —
 fitting it with four vectors was over-parameterised and still failed, which meant
@@ -369,23 +380,52 @@ node settled it: the hourglass term is **not** a penalty on `w` alone (MAC 0.889
 not 1.000). It carries rotations worth exactly `w/4`. With `ξ,η` the natural
 coordinates and `h = ξ·η`:
 
-| mode | shape | λ/D (E=2.2e7, ν=0, t=0.20) |
+| mode | shape | λ/D (E=2.2e7, ν=0, t=0.20, L=1) |
 |---|---|---|
 | φ | w=0, θ=(x−xc, y−yc) | **454.542** |
-| hg | w=h, θx=−ξ/4, θy=+η/4 | **83.629** |
+| hg | w=h/L, θx=−ξ/4, θy=+η/4 | **83.629** |
 | hg_tx | w=0, θx=h | **0.499867** |
 | hg_ty | w=0, θy=h | **0.499867** |
 
-`K_DSE + Σ λₖ vₖvₖᵀ` against the matrix ETABS itself wrote: residual **0.0046 %**
-(was 8.29 %), `|K_rec − K|/|K| = 0.0045 %`, and eigenvalues 4-8, 11, 12 match to
-**0.0000 %**.
+That `1/L` matters and was not there at first. “The rotations are worth `w/4`” only
+holds at `L = 1`, because `w` is a length and rotations are not. Setting `w = L·h`
+made it *worse* (3.1 % → 7.7 %), so the factor was **swept instead of assumed** and
+came out `c = 1/L` **exactly** (2.0, 1.0, 0.5, 0.2, 0.1 for L = 0.5, 1, 2, 5, 10).
+The dimensionally sound statement is `θ = w/(4L)` — rotation = displacement over
+length. With it the unexplained residual is **0.001-0.010 % across all 23 square
+cells at any size**.
+
+Two things were ruled out with evidence along the way: the `L ≠ 1` cells were *not*
+auto-meshed (all 16 have **exactly 3 zero eigenvalues**, so they are genuine single
+elements), and ETABS and our own `K_DSE` are **both self-similar to 0.00000 %**
+(cells with equal `t/L` and different size give the same dimensionless matrix) —
+which is what forced the search onto the normalisation, where the answer was.
+
+**The three closed-form laws**, against all 34 measured square cells:
+
+| term | law | error |
+|---|---|---|
+| `λ_φ/D` | `181.817 · (2.5 − ν/2)` | ±0.18 % |
+| `λ_htx/D = λ_hty/D` | `0.5 · (1 − ν)` | ±0.027 % |
+| `λ_hg/D` | `A/[(1 + B s²)(1 + φ_k)] · (4/L² + 0.5)/4.5` | **0.0000 %** |
+
+with `s = t/L`, `φ_k = 2/(κ(1−ν))·s²`, `A = 4500.90`, `B = 1202.64`. The last factor
+is not physics — it is the artefact of normalising a vector whose direction moves
+with `L` (`|v|² = 4/L² + 0.5`, which is 4.5 at `L=1`).
+
+⚠️ `A` and `B` are measured at **ν = 0 only**: every cell with `ν ≠ 0` is at
+`t = 0.2`, and a single thickness cannot separate the two. A `t × ν` sweep
+(~20 ETABS runs) is the outstanding measurement.
 
 #### Trapezoids: still open, but now diagnosed
 
 The same basis does *not* close on distorted cells (12-96 % out). Both remaining
 hypotheses were tested and both fail: adding a fifth/sixth vector, and letting the
 penalty be `V C Vᵀ` with **C non-diagonal** (the cross terms come out *exactly
-zero* on the square, as symmetry predicts, but only take 96.9 % → 89.0 %).
+zero* on the square, as symmetry predicts, but only take 96.9 % → 89.0 %). Sweeping
+the `1/L` factor freely does not save them either: with the optimal `c` and all
+seven candidate lengths (bottom edge, top edge, mean edge, height, √A, diagonal,
+√detJ₀) the residual stays at 12-96 %.
 
 The decisive measurement is what fraction of the *real* eigenvector lies inside the
 span of the four modes: **1.000** on the square, 0.94-0.99 at `d=0.05`, and
