@@ -357,12 +357,17 @@ derived — which is why `k = 181.81` appears in no paper, and why it is absent 
 the binary's constant pool (searched both `.rdata` and the 64-bit immediates, where
 `√(7/9)` had been hiding).
 
-⚠️ **With one exception, found 2026-09-01.** The hourglass term's dependence on
-thickness factorises as `(1 + 1202.64 s²)(1 + 2.400 s²)` with `s = t/L`, and that
-**2.400 is `2/(κ(1−ν))` for `κ = 5/6, ν = 0` — Katili's `φ_k`, eq. (74), exactly**.
-Pinned to the theoretical value the fit still gives `0.0000 %`; left free it
-converges to `2.40000`. So CSI's hourglass term carries the *same* `1/(1+φ)` shear
-factor that DKMQ and MIN4 carry. That one **is** published; `A`, `B` and `k` are not.
+The hourglass term's dependence on thickness factorises as
+`(1 + B s²)(1 + φ s²)` with `s = t/L`, and at `ν = 0` that second root is `2.400`
+— numerically identical to Katili's `φ_k` (eq. 74) for `κ = 5/6`.
+
+⚠️ **That identification was premature and a `t × ν` sweep the same day disproved
+it.** With 24 cells (`ν` = 0, 0.15, 0.30, 0.45 × six thicknesses) the root divided by
+Katili's `φ_k` comes out **1.000, 1.150, 1.300, 1.450 — exactly `(1 + ν)`**. So the
+true law is `φ = 2(1+ν)/(κ(1−ν))`, not `2/(κ(1−ν))`: it carries one factor of
+`(1+ν)` more than Katili's, and the two agree **only at `ν = 0`**, which is exactly
+where the first sweep lived. Left as a standing note so the conclusion is not drawn
+again. None of these constants is published.
 
 Code: `validation/02-placas/dse-de-wilson/` (`dsq_batoz.py`, `min4_mystran.py`,
 `campeonato.py`, `pruebas_fisicas.py`, `dse_mas_phi.py`, `tamiz*.py`,
@@ -413,9 +418,40 @@ with `s = t/L`, `φ_k = 2/(κ(1−ν))·s²`, `A = 4500.90`, `B = 1202.64`. The 
 is not physics — it is the artefact of normalising a vector whose direction moves
 with `L` (`|v|² = 4/L² + 0.5`, which is 4.5 at `L=1`).
 
-⚠️ `A` and `B` are measured at **ν = 0 only**: every cell with `ν ≠ 0` is at
-`t = 0.2`, and a single thickness cannot separate the two. A `t × ν` sweep
-(~20 ETABS runs) is the outstanding measurement.
+#### `A(ν)` and `B(ν)`, closed by the `t × ν` sweep (24 new ETABS cells)
+
+`A` and `B` were initially measured at `ν = 0` only — every stored cell with
+`ν ≠ 0` sat at `t = 0.2`, and one thickness cannot separate two constants. A sweep
+of `ν × t` = 4 × 6 closed it. Its `ν = 0` row is the **control** and returns
+`A = 4500.9001`, `B = 1202.6400`, `R² = 1.0000000` — the values measured earlier by
+an independent route.
+
+⚠️ The raw sweep came back with the **rotational DOFs scaled by 1000** (the `.K_0`
+wrote moments in kN·mm; the capture script does not pin units). It is detected from
+the matrix itself rather than by comparison: a free element has two rigid-body
+rotation modes in its null space, where `|w|/|θ|` must be the coordinate scale, so
+the power of 1000 is read off the null vector (`escala_rot.py`). Corrected, the
+cell reproduces the stored one to `5·10⁻⁸ %`.
+
+Fitting the full polynomial per `ν` and factorising it — imposing nothing — gives
+`0.00000 %` at all four `ν`, and the three laws read straight off:
+
+| constant | law | worst error |
+|---|---|---|
+| `A(ν)` | `4500.90 − 900.90·ν` | **0.00000 %** (R² = 1.000000000) |
+| `B(ν)` | `(1202.64 − 237.84·ν)/(1−ν)` | 0.00041 % |
+| `φ(ν)` | `2(1+ν)/(κ(1−ν))`, `κ = 5/6` | 0.00127 % |
+
+**The whole square cell in closed form**, checked entry by entry against all
+**55 measured square cells** (`ν` 0→0.45, `L` 0.5→10, `t` 0.001→2.0):
+worst **0.179 %**, typical `0.01 %`. The worst case is `t/L = 2` — an absurdly thick
+plate — and it comes from the `λ_φ` law, whose own error is ±0.18 %.
+Implementation: `validation/02-placas/dse-de-wilson/ley_shellthick.py` (`K_shellthick`).
+
+⚠️ The `z_*` cells in `celda_sap2000.json` are **trapezoids** (0.9/0.1, 0.8/0.2,
+0.7/0.3) and a bounding-box test lets them through, since they also measure 1×1.
+They must be excluded with a real squareness test (equal edges *and* equal
+diagonals) — with one of them in, the "worst case" reads 149 % and means nothing.
 
 #### Trapezoids: still open, but now diagnosed
 
