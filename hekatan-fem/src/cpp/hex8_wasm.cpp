@@ -202,6 +202,95 @@ static void hex8Stiffness(const double nodeCoords[8][3], double E, double nu, do
 
 extern "C" {
 
+// ── MODOS INCOMPATIBLES DE FLEXION (Wilson 1973 con la correccion de Taylor,
+//    Beresford y Wilson 1976). Es el "Incompatible Bending Modes" que SAP2000
+//    trae ACTIVADO por defecto en sus solidos. Medido el 2-sep-2026 sobre el
+//    bloque de suelo de Serquen: el H8 clasico = SAP2000 sin la opcion a 1e-12 %;
+//    con ella SAP da un 5.7 % (malla de 1 m) / 0.8 % (0.5 m) mas de flecha.
+//
+//    Tres modos jerarquicos P1 = 1-xi^2, P2 = 1-eta^2, P3 = 1-zeta^2, cada uno
+//    en las tres direcciones: 9 GDL internos (alpha) que se condensan en el
+//    elemento (K = Kuu - Kua Kaa^-1 Kau). Las derivadas de los P se mapean con
+//    el jacobiano del CENTRO J0 y se escalan por |J0|/|J| (la correccion de
+//    Taylor), que es lo que hace que el elemento pase el patch test en mallas
+//    distorsionadas. En hexaedros rectos J = J0 y no cambia nada.
+static inline void incompatibleB(const double nodeCoords[8][3], int g, double Ba[6][9]) {
+    // J0 en el centro
+    double dN0[3][8], J0[3][3], J0inv[3][3];
+    shapeDerivativesNatural(0.0, 0.0, 0.0, dN0);
+    jacobian(nodeCoords, dN0, J0);
+    const double detJ0 = det3(J0);
+    inv3(J0, J0inv);
+    // J en el punto de Gauss
+    double dNg[3][8], J[3][3];
+    shapeDerivativesNatural(GAUSS[g][0], GAUSS[g][1], GAUSS[g][2], dNg);
+    jacobian(nodeCoords, dNg, J);
+    const double detJ = det3(J);
+    const double esc = detJ0 / detJ;
+    // dP_m/d(nat_d): solo la diagonal, -2*coord_m
+    double dPnat[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+    dPnat[0][0] = -2.0 * GAUSS[g][0];
+    dPnat[1][1] = -2.0 * GAUSS[g][1];
+    dPnat[2][2] = -2.0 * GAUSS[g][2];
+    double dPxyz[3][3];   // [xyz][modo]
+    for (int m = 0; m < 3; m++)
+        for (int d = 0; d < 3; d++)
+            dPxyz[d][m] = esc * (J0inv[d][0] * dPnat[0][m] + J0inv[d][1] * dPnat[1][m] + J0inv[d][2] * dPnat[2][m]);
+    for (int r = 0; r < 6; r++) for (int c = 0; c < 9; c++) Ba[r][c] = 0.0;
+    for (int m = 0; m < 3; m++) {
+        const double px = dPxyz[0][m], py = dPxyz[1][m], pz = dPxyz[2][m];
+        const int c = 3 * m;
+        Ba[0][c + 0] = px;
+        Ba[1][c + 1] = py;
+        Ba[2][c + 2] = pz;
+        Ba[3][c + 0] = py; Ba[3][c + 1] = px;
+        Ba[4][c + 1] = pz; Ba[4][c + 2] = py;
+        Ba[5][c + 0] = pz; Ba[5][c + 2] = px;
+    }
+}
+
+/** K condensada (24x24) con los 9 modos incompatibles, y G = -Kaa^-1 Kau (9x24)
+ *  para recuperar alpha = G u en el elemento. */
+static void hex8StiffnessInc(const double nodeCoords[8][3], double E, double nu, double Ke[24][24], double G[9][24]) {
+    double D[6][6];
+    dMatrix(E, nu, D);
+    Eigen::Matrix<double, 24, 24> Kuu = Eigen::Matrix<double, 24, 24>::Zero();
+    Eigen::Matrix<double, 24, 9>  Kua = Eigen::Matrix<double, 24, 9>::Zero();
+    Eigen::Matrix<double, 9, 9>   Kaa = Eigen::Matrix<double, 9, 9>::Zero();
+    for (int g = 0; g < 8; g++) {
+        const double xi = GAUSS[g][0], eta = GAUSS[g][1], zeta = GAUSS[g][2];
+        double dNnat[3][8];
+        shapeDerivativesNatural(xi, eta, zeta, dNnat);
+        double J[3][3];
+        jacobian(nodeCoords, dNnat, J);
+        const double detJ = det3(J);
+        double Jinv[3][3];
+        inv3(J, Jinv);
+        double dNxyz[3][8];
+        for (int i = 0; i < 8; i++)
+            for (int d = 0; d < 3; d++)
+                dNxyz[d][i] = Jinv[d][0] * dNnat[0][i] + Jinv[d][1] * dNnat[1][i] + Jinv[d][2] * dNnat[2][i];
+        double B[6][24];
+        bMatrix(dNxyz, B);
+        double Ba[6][9];
+        incompatibleB(nodeCoords, g, Ba);
+        Eigen::Matrix<double, 6, 24> Bm;  Eigen::Matrix<double, 6, 9> Bam;  Eigen::Matrix<double, 6, 6> Dm;
+        for (int r = 0; r < 6; r++) {
+            for (int c = 0; c < 24; c++) Bm(r, c) = B[r][c];
+            for (int c = 0; c < 9; c++) Bam(r, c) = Ba[r][c];
+            for (int c = 0; c < 6; c++) Dm(r, c) = D[r][c];
+        }
+        Kuu += Bm.transpose() * Dm * Bm * detJ;
+        Kua += Bm.transpose() * Dm * Bam * detJ;
+        Kaa += Bam.transpose() * Dm * Bam * detJ;
+    }
+    Eigen::Matrix<double, 9, 9> KaaInv = Kaa.inverse();
+    Eigen::Matrix<double, 9, 24> Gm = -KaaInv * Kua.transpose();
+    Eigen::Matrix<double, 24, 24> Kc = Kuu + Kua * Gm;
+    for (int r = 0; r < 24; r++) for (int c = 0; c < 24; c++) Ke[r][c] = Kc(r, c);
+    for (int r = 0; r < 9; r++) for (int c = 0; c < 24; c++) G[r][c] = Gm(r, c);
+}
+
 void hex8_solve(
     // ── Geometry ──
     double* nodes_ptr, int num_nodes,           // [x1,y1,z1, x2,y2,z2, ...] 3*num_nodes
@@ -220,7 +309,10 @@ void hex8_solve(
     double** displacements_out, int* displacements_size_out,
     double** vonmises_out, int* vonmises_size_out,
     double** stresses_out, int* stresses_size_out,
-    double* elapsed_ms_out
+    double* elapsed_ms_out,
+
+    // ── Modos incompatibles de flexion (Wilson-Taylor), 1 = como SAP2000 por defecto ──
+    int incompatible
 )
 {
     using Clock = std::chrono::high_resolution_clock;
@@ -245,7 +337,8 @@ void hex8_solve(
             nc[j][2] = nodes_ptr[3 * elem[j] + 2];
         }
         double Ke[24][24];
-        hex8Stiffness(nc, E, nu, Ke);
+        if (incompatible) { double G[9][24]; hex8StiffnessInc(nc, E, nu, Ke, G); }
+        else hex8Stiffness(nc, E, nu, Ke);
         for (int a = 0; a < 8; a++) {
             for (int b = 0; b < 8; b++) {
                 for (int p = 0; p < 3; p++) {
@@ -365,6 +458,13 @@ void hex8_solve(
             ueElem[3 * j + 1] = u(3 * elem[j] + 1);
             ueElem[3 * j + 2] = u(3 * elem[j] + 2);
         }
+        // alpha de los modos incompatibles: alpha = G u (recuperados por elemento)
+        double alpha[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+        if (incompatible) {
+            double KeTmp[24][24], G[9][24];
+            hex8StiffnessInc(nc, E, nu, KeTmp, G);
+            for (int r = 0; r < 9; r++) for (int c = 0; c < 24; c++) alpha[r] += G[r][c] * ueElem[c];
+        }
         for (int g = 0; g < 8; g++) {
             const double xi = GAUSS[g][0], eta = GAUSS[g][1], zeta = GAUSS[g][2];
             double dNnat[3][8];
@@ -381,10 +481,15 @@ void hex8_solve(
             }
             double B[6][24];
             bMatrix(dNxyz, B);
-            // ε = B · u
+            // ε = B · u  (+ Ba · alpha con los modos incompatibles)
             double eps[6] = {0, 0, 0, 0, 0, 0};
             for (int r = 0; r < 6; r++) {
                 for (int c = 0; c < 24; c++) eps[r] += B[r][c] * ueElem[c];
+            }
+            if (incompatible) {
+                double Ba[6][9];
+                incompatibleB(nc, g, Ba);
+                for (int r = 0; r < 6; r++) for (int c = 0; c < 9; c++) eps[r] += Ba[r][c] * alpha[c];
             }
             // σ = D · ε
             double sig[6] = {0, 0, 0, 0, 0, 0};

@@ -31,6 +31,13 @@ export interface Hex8SolveInput {
   supports: Map<number, [boolean, boolean, boolean]>;
   /** Map node → [Fx, Fy, Fz] in kN */
   loads: Map<number, [number, number, number]>;
+  /**
+   * Modos incompatibles de flexion (Wilson-Taylor), 9 GDL internos condensados.
+   * Es el "Incompatible Bending Modes" que SAP2000 trae ACTIVADO por defecto en
+   * sus solidos, y por eso es el defecto aqui. `false` = H8 clasico (= SAP2000
+   * con la opcion apagada a 1e-12 %, medido en el bloque de suelo de Serquen).
+   */
+  incompatible?: boolean;
 }
 
 export interface Hex8SolveOutput {
@@ -116,6 +123,7 @@ export function hex8Solve(input: Hex8SolveInput): Hex8SolveOutput {
     vmPtrOut, vmSizeOut,
     stPtrOut, stSizeOut,
     elapsedPtrOut,
+    input.incompatible === false ? 0 : 1,
   );
 
   // ── Leer output pointers ──

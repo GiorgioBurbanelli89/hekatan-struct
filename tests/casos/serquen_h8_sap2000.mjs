@@ -36,19 +36,29 @@ export async function correr() {
     if (Math.abs(cx) < AX / 2 && Math.abs(cy) < AY / 2)
       for (const n of [id(i, j, nz), id(i + 1, j, nz), id(i + 1, j + 1, nz), id(i, j + 1, nz)]) { const f = loads.get(n) ?? [0, 0, 0]; f[2] += Q * dx * dy / 4; loads.set(n, f); }
   }
-  const r = mod.hex8Solve({ nodes, elements, E, nu, supports, loads });
   const k = (x, y, z) => `${x.toFixed(3)}|${y.toFixed(3)}|${z.toFixed(3)}`;
-  const sap = new Map(S.nudos.map((n) => [k(n.x, n.y, n.z), n.u]));
-  let mx = 0, peor = 0, uzMin = 0, uzSap = 0, comunes = 0;
-  for (let n = 0; n < nodes.length; n++) { const u = r.displacements.get(n) ?? [0, 0, 0]; mx = Math.max(mx, Math.abs(u[2])); if (u[2] < uzMin) uzMin = u[2]; }
-  for (const n of S.nudos) if (n.u[2] < uzSap) uzSap = n.u[2];
-  for (let n = 0; n < nodes.length; n++) {
-    const u = r.displacements.get(n) ?? [0, 0, 0]; const s = sap.get(k(nodes[n][0], nodes[n][1], nodes[n][2])); if (!s) continue; comunes++;
-    for (let c = 0; c < 3; c++) peor = Math.max(peor, Math.abs(u[c] - s[c]) / mx * 100);
+  const carear = (r, SS) => {
+    const sap = new Map(SS.nudos.map((n) => [k(n.x, n.y, n.z), n.u]));
+    let mx = 0, peor = 0, uzMin = 0, uzSap = 0, comunes = 0;
+    for (let n = 0; n < nodes.length; n++) { const u = r.displacements.get(n) ?? [0, 0, 0]; mx = Math.max(mx, Math.abs(u[2])); if (u[2] < uzMin) uzMin = u[2]; }
+    for (const n of SS.nudos) if (n.u[2] < uzSap) uzSap = n.u[2];
+    for (let n = 0; n < nodes.length; n++) {
+      const u = r.displacements.get(n) ?? [0, 0, 0]; const s = sap.get(k(nodes[n][0], nodes[n][1], nodes[n][2])); if (!s) continue; comunes++;
+      for (let c = 0; c < 3; c++) peor = Math.max(peor, Math.abs(u[c] - s[c]) / mx * 100);
+    }
+    return { peor, uzMin, uzSap, comunes };
+  };
+  const filas = [];
+  const a = carear(mod.hex8Solve({ nodes, elements, E, nu, supports, loads, incompatible: false }), S);
+  filas.push({ que: "nudos emparejados por coordenadas", crudo: true, medido: String(a.comunes), limite: String(nodes.length), ok: a.comunes === nodes.length, detalle: "SAP2000 y Hekatan con la misma malla" });
+  filas.push({ que: "H8 clasico: Uz, Ux, Uy nudo a nudo vs SAP2000 SIN modos incompatibles", medido: a.peor, limite: 1e-6, ok: a.peor <= 1e-6,
+    detalle: `Uz min ${(a.uzMin * 1000).toFixed(4)} vs ${(a.uzSap * 1000).toFixed(4)} mm; ${S.nudos.length} nudos de SAP` });
+  const refI = join(AQUI, "..", "datos", "serquen_sap_20_inc.json");
+  if (existsSync(refI)) {
+    const SI = JSON.parse(readFileSync(refI, "utf-8"));
+    const b = carear(mod.hex8Solve({ nodes, elements, E, nu, supports, loads }), SI);   // el defecto = modos incompatibles, como SAP
+    filas.push({ que: "H8 con modos incompatibles (Wilson-Taylor, el defecto): nudo a nudo vs SAP2000 CON su defecto", medido: b.peor, limite: 1e-6, ok: b.peor <= 1e-6,
+      detalle: `Uz min ${(b.uzMin * 1000).toFixed(4)} vs ${(b.uzSap * 1000).toFixed(4)} mm` });
   }
-  return [
-    { que: "nudos emparejados por coordenadas", crudo: true, medido: String(comunes), limite: String(nodes.length), ok: comunes === nodes.length, detalle: "SAP2000 y Hekatan con la misma malla" },
-    { que: "Uz, Ux, Uy nudo a nudo vs SAP2000 (sin modos incompatibles)", medido: peor, limite: 1e-6, ok: peor <= 1e-6,
-      detalle: `Uz min ${(uzMin * 1000).toFixed(4)} vs ${(uzSap * 1000).toFixed(4)} mm; ${S.nudos.length} nudos de SAP` },
-  ];
+  return filas;
 }
