@@ -313,9 +313,80 @@ function exportFromScratch(input: ExportE2kInput): string {
   // plan-points que no van a llevar nada) como POINT OBJECT LOADS.
   const deArea = (elementInputs as any).cargaDeArea as Map<number, number> | undefined;
   const hayAreaLoads = !!(shellLoads && shellLoads.size > 0);
-  /** Carga nodal que de verdad se va a escribir, ya descontada la del area. */
-  const cargaPropia = (nodeIdx: number, load: readonly number[]): [number, number, number] =>
-    [load[0], load[1], load[2] - (hayAreaLoads ? (deArea?.get(nodeIdx) ?? 0) : 0)];
+  // ── Modo AUTO EXACTO (modelos del .heks): el modelador ya repartio a los
+  // nudos las cargas de barra (w*L/2 y L^2/12*(t x w)) y el peso propio
+  // (rho*A*L/2, luz libre en vigas; rho*t*A/4 en cascaras). En "auto" ETABS
+  // calcula esas dos por su cuenta (LINELOAD + SELFWEIGHT), asi que hay que
+  // DESCONTARLAS de las nodales o van dos veces. Se recalculan aqui con las
+  // MISMAS formulas del cliModeler (galpon: 4078.448 kN exactos).
+  const swDecl = (elementInputs as any).selfWeight as number | undefined;
+  const fLoadsAll = (elementInputs as any).frameLoads as Map<number, [number, number, number]> | undefined;
+  const modoExacto = (input.weightMode ?? "auto") === "auto" && swDecl !== undefined;
+  const restaExtra = new Map<number, number[]>();
+  const restar = (n: number, v: number[]) => {
+    const a = restaExtra.get(n) ?? [0, 0, 0, 0, 0, 0];
+    restaExtra.set(n, a.map((x, k) => x + v[k]));
+  };
+  /** Barras cuya carga repartida va como LINELOAD (no las de una cadena de columnas). */
+  const conLineLoad = new Set<number>();
+  if (modoExacto) {
+    if (fLoadsAll) for (const [idx, w] of fLoadsAll) {
+      const el = elements[idx]; if (!el || el.length !== 2) continue;
+      const a = nodes[el[0]], b = nodes[el[1]];
+      const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]]; const L = Math.hypot(d[0], d[1], d[2]);
+      if (L < 1e-9) continue;
+      const t = [d[0] / L, d[1] / L, d[2] / L], c = L * L / 12;
+      const txw = [t[1] * w[2] - t[2] * w[1], t[2] * w[0] - t[0] * w[2], t[0] * w[1] - t[1] * w[0]];
+      restar(el[0], [w[0] * L / 2, w[1] * L / 2, w[2] * L / 2, c * txw[0], c * txw[1], c * txw[2]]);
+      restar(el[1], [w[0] * L / 2, w[1] * L / 2, w[2] * L / 2, -c * txw[0], -c * txw[1], -c * txw[2]]);
+      conLineLoad.add(idx);
+    }
+    if (swDecl && swDecl > 0) {
+      const G = 9.80665;
+      const eoAll = (elementInputs as any).endOffsets as Map<number, number[]> | undefined;
+      elements.forEach((e, i) => {
+        const rho = elementInputs.densities?.get(i) ?? 0;
+        if (!rho) return;
+        if (e.length === 2) {
+          const A = elementInputs.areas?.get(i) ?? 0;
+          const p0 = nodes[e[0]], p1 = nodes[e[1]];
+          const d = [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]];
+          let L = Math.hypot(d[0], d[1], d[2]);
+          const eo = eoAll?.get(i);
+          if (eo) {
+            const dh = Math.hypot(d[0], d[1]);
+            const esViga = dh > 1e-9 && Math.abs(Math.atan2(Math.abs(d[2]), dh)) * 180 / Math.PI < 20;
+            if (esViga) L = Math.max(L - eo[0] - eo[1], 0);
+          }
+          const W = A * L * rho * G * swDecl;
+          restar(e[0], [0, 0, -W / 2, 0, 0, 0]); restar(e[1], [0, 0, -W / 2, 0, 0, 0]);
+        } else if (e.length === 4) {
+          const t = elementInputs.thicknesses?.get(i) ?? 0;
+          const P = e.map(n => nodes[n]);
+          let nx = 0, ny = 0, nz = 0;
+          for (let k = 0; k < 4; k++) {
+            const a = P[k], b = P[(k + 1) % 4];
+            nx += a[1] * b[2] - a[2] * b[1]; ny += a[2] * b[0] - a[0] * b[2]; nz += a[0] * b[1] - a[1] * b[0];
+          }
+          const Ar = Math.hypot(nx, ny, nz) / 2;
+          const W = t * Ar * rho * G * swDecl;
+          for (const n of e) restar(n, [0, 0, -W / 4, 0, 0, 0]);
+        }
+      });
+    }
+  }
+  /** Carga nodal que de verdad se va a escribir, ya descontada la del area
+   *  (y, en modo auto exacto, la de barra y el peso propio). */
+  const cargaPropia = (nodeIdx: number, load: readonly number[]): [number, number, number] => {
+    const r = restaExtra.get(nodeIdx);
+    return [load[0] - (r?.[0] ?? 0), load[1] - (r?.[1] ?? 0),
+            load[2] - (hayAreaLoads ? (deArea?.get(nodeIdx) ?? 0) : 0) - (r?.[2] ?? 0)];
+  };
+  /** Momentos nodales que de verdad se escriben (descontado el empotramiento de LINELOAD). */
+  const momentoPropio = (nodeIdx: number, load: readonly number[]): [number, number, number] => {
+    const r = restaExtra.get(nodeIdx);
+    return [(load[3] ?? 0) - (r?.[3] ?? 0), (load[4] ?? 0) - (r?.[4] ?? 0), (load[5] ?? 0) - (r?.[5] ?? 0)];
+  };
   // ⚠️ N y MM SIEMPRE. El lector del e2k de ETABS **no tiene token de
   // unidades** — comprobado en el binario (ETABS.dll ~0x03490e00: sus palabras
   // clave son LINE/COLUMN/BEAM/BRACE/$ CONTROLS/TITLE1/TITLE2/PREFERENCE, y
@@ -527,41 +598,41 @@ function exportFromScratch(input: ExportE2kInput): string {
   //   E <  100,000,000 kN/m²            → CONCRETE (hormigón ~25 GPa)
   // Auto-emit weight per volume + Poisson + thermal coeff for each.
   lines.push(`$ MATERIAL PROPERTIES`);
-  const uniqueE = new Set<number>();
-  elementInputs.elasticities?.forEach(v => uniqueE.add(v));
-  const matNames = new Map<number, string>();
-  const matIsSteel = new Map<number, boolean>();
+  // Un material por (E, PESO), no solo por E: el CFT del galpon (acero relleno,
+  // 13.24 t/m3) y sus vigas (7.95 t/m3) tienen el mismo E; con un material por E
+  // ETABS pesaba las columnas como acero y la carga muerta salia -0.99 %
+  // (medido 2-sep-2026, modo auto). La clave es `${E}|${w kN/m3}`.
+  const G_KN_PER_KG = 9.80665e-3;  // kg/m3 -> kN/m3
+  const wpvDe = (elemIdx: number): number | undefined => {
+    const rho = elementInputs.densities?.get(elemIdx);
+    if (rho === undefined) return undefined;
+    // Heuristica de unidad: > 100 -> kg/m3 (acero 7850); si no, t/m3
+    return rho > 100 ? rho * G_KN_PER_KG : rho * 9.80665;
+  };
+  const matKeyDe = (elemIdx: number): string => {
+    const E = elementInputs.elasticities?.get(elemIdx) ?? 0;
+    const w = wpvDe(elemIdx);
+    return `${E}|${w === undefined ? "-" : w.toFixed(4)}`;
+  };
+  const uniqueE = new Set<string>();
+  elementInputs.elasticities?.forEach((_v, i) => uniqueE.add(matKeyDe(i)));
+  const matNames = new Map<string, string>();
+  const matIsSteel = new Map<string, boolean>();
   let miStl = 0, miCnc = 0;
   // Buscar densidad real por valor de E (densities está en kg/m³ → kN/m³ × g)
   // Si hekatan provee densidades por elemento, usamos la moda para el material
   // que comparte ese E. Si no hay densidades, fallback a defaults estándar.
-  const G_KN_PER_KG = 9.80665e-3;  // kg/m³ → kN/m³
-  const wpvByE = new Map<number, number>();
-  if (elementInputs.densities && elementInputs.densities.size > 0) {
-    const densitiesByE = new Map<number, number[]>();
-    elementInputs.densities.forEach((rho, elemIdx) => {
-      const E = elementInputs.elasticities?.get(elemIdx);
-      if (E === undefined) return;
-      if (!densitiesByE.has(E)) densitiesByE.set(E, []);
-      densitiesByE.get(E)!.push(rho);
-    });
-    densitiesByE.forEach((arr, E) => {
-      // Promedio (todos los elementos del mismo E suelen compartir ρ)
-      const avg = arr.reduce((s, v) => s + v, 0) / arr.length;
-      // Heurística unidad: si avg > 100 → asumir kg/m³ (steel ≈ 7850), si < 100 → t/m³
-      const wpv = avg > 100 ? avg * G_KN_PER_KG : avg * 9.80665;
-      wpvByE.set(E, wpv);
-    });
-  }
-  for (const E_kNm2 of uniqueE) {
+  for (const matKey of uniqueE) {
+    const E_kNm2 = parseFloat(matKey.split("|")[0]);
+    const wKey = matKey.split("|")[1];
     const isSteel = E_kNm2 >= 1e8;  // >= 100 GPa
     const name = isSteel ? `Steel_${++miStl}` : `Conc_${++miCnc}`;
-    matNames.set(E_kNm2, name);
-    matIsSteel.set(E_kNm2, isSteel);
+    matNames.set(matKey, name);
+    matIsSteel.set(matKey, isSteel);
 
-    // Weight per volume — usar densidad real de hekatan si está disponible;
-    // si no, fallback a defaults estándar (steel ≈ 76.97, concrete ≈ 24.0 kN/m³)
-    const wpv_kN = wpvByE.get(E_kNm2) ?? (isSteel ? 76.97 : 24.0);
+    // Weight per volume: la densidad real del modelo si la hay; si no,
+    // defaults (steel ~ 76.97, concrete ~ 24.0 kN/m3)
+    const wpv_kN = wKey !== "-" ? parseFloat(wKey) : (isSteel ? 76.97 : 24.0);
     const E_out  = cE(E_kNm2);
     const wpv_out = cWV(wpv_kN);
     // ⚠️ El Poisson iba FIJO (0.3 acero / 0.2 hormigon), sin mirar el modelo.
@@ -574,7 +645,7 @@ function exportFromScratch(input: ExportE2kInput): string {
       const pr = (input.elementInputs as any).poissonsRatios as Map<number, number> | undefined;
       if (!pr) return undefined;
       for (const [idx, v] of pr) {
-        if ((input.elementInputs.elasticities?.get(idx) ?? 0) === E_kNm2) return v;
+        if (matKeyDe(idx) === matKey) return v;
       }
       return undefined;
     })();
@@ -626,8 +697,8 @@ function exportFromScratch(input: ExportE2kInput): string {
     if (el.length !== 2) return;
     const shape = elementInputs.sectionShapes?.get(i);
     const E_kNm2 = elementInputs.elasticities?.get(i) ?? 0;
-    const matName = matNames.get(E_kNm2) || "Conc_1";
-    const isSteel = matIsSteel.get(E_kNm2) ?? (E_kNm2 >= 1e8);
+    const matName = matNames.get(matKeyDe(i)) || "Conc_1";
+    const isSteel = matIsSteel.get(matKeyDe(i)) ?? (E_kNm2 >= 1e8);
 
     const A      = elementInputs.areas?.get(i) ?? 0;
     // Ejes locales en convencion CSI: momentsOfInertiaZ ES I33 y la Y es I22.
@@ -993,10 +1064,13 @@ function exportFromScratch(input: ExportE2kInput): string {
    * objeto (la del LINEASSIGN) y el PRIMERO baja `nStories` plantas. Asi que
    * basta con dar los dos puntos de verdad y contar el salto entre sus plantas.
    */
+  /** elemento -> {nombre de LINE, planta}; solo las barras sueltas (no cadenas). */
+  const lineaDe = new Map<number, { name: string; story: string }>();
   const emitirLinea = (eName: string, tipo: string, botNode: number, topNode: number,
-                       secName: string, extras: string, minNumSta: number) => {
+                       secName: string, extras: string, minNumSta: number, elemIdx?: number) => {
     const psTop = nodeToPS(topNode);
     const psBot = nodeToPS(botNode);
+    if (elemIdx !== undefined) lineaDe.set(elemIdx, { name: eName, story: psTop.story });
     const salto = idxDe(psTop.story) - idxDe(psBot.story);
     if (salto <= 0) {
       // Los dos extremos cuelgan de la MISMA planta (cada uno con su descenso):
@@ -1039,7 +1113,7 @@ function exportFromScratch(input: ExportE2kInput): string {
     // Un BEAM cuyos extremos caen en plantas DISTINTAS no es un beam para el
     // e2k (un beam vive dentro de una planta): sale como BRACE con su salto, y
     // `emitirLinea` lo devuelve a BEAM si al final los dos cuelgan de la misma.
-    emitirLinea(`E${i + 1}`, type === "BEAM" ? "BRACE" : type, bot, top, secName, extras, 3);
+    emitirLinea(`E${i + 1}`, type === "BEAM" ? "BRACE" : type, bot, top, secName, extras, 3, i);
   });
   lines.push(``);
 
@@ -1144,7 +1218,7 @@ function exportFromScratch(input: ExportE2kInput): string {
   // Material default para shells: el primer Concrete que aparezca; si solo
   // hay acero (raro en losas), usa el primer steel.
   const defaultShellMat = (() => {
-    for (const [E, isStl] of matIsSteel) if (!isStl) return matNames.get(E);
+    for (const [k, isStl] of matIsSteel) if (!isStl) return matNames.get(k);
     return matNames.values().next().value || "Conc_1";
   })();
 
@@ -1264,8 +1338,7 @@ function exportFromScratch(input: ExportE2kInput): string {
     const m = modsDe(ae.idx);
     // El MATERIAL tambien separa grupo: el zinc de 0.8 mm (acero) del galpon
     // salia como "Deck" de hormigon con cotas absurdas (DECKSLABDEPTH 35 m).
-    const E = elementInputs.elasticities?.get(ae.idx);
-    return `${ae.isWall ? "W" : "F"}|${t ?? "-"}|${pf ?? "-"}|${m ? m.map(v => rd(v)).join(",") : "-"}|${E ?? "-"}`;
+    return `${ae.isWall ? "W" : "F"}|${t ?? "-"}|${pf ?? "-"}|${m ? m.map(v => rd(v)).join(",") : "-"}|${matKeyDe(ae.idx)}`;
   };
   /**
    * .Este area es una MEMBRANA? Se decide por el modificador de FLEXION del
@@ -1292,12 +1365,12 @@ function exportFromScratch(input: ExportE2kInput): string {
     const isWall = ae.isWall;
     const mem = !isWall && esMembranaDe(ae.idx);
     const n = isWall ? ++nMuro : (mem ? ++nDeck : ++nLosa);
-    const Eae = elementInputs.elasticities?.get(ae.idx);
+    const kae = matKeyDe(ae.idx);
     grupos.set(k, {
       nombre: (isWall ? "Muro" : mem ? DECK_SEC : "Losa") + (n === 1 ? "" : String(n)),
       isWall, mem, t: thAll?.get(ae.idx), pf: pfAll?.get(ae.idx),
-      mat: (Eae !== undefined ? matNames.get(Eae) : undefined) ?? defaultShellMat,
-      acero: Eae !== undefined ? (matIsSteel.get(Eae) ?? false) : false,
+      mat: matNames.get(kae) ?? defaultShellMat,
+      acero: matIsSteel.get(kae) ?? false,
     });
   }
   /** El nombre de la propiedad que le toca a este elemento. */
@@ -1518,7 +1591,7 @@ function exportFromScratch(input: ExportE2kInput): string {
   //     Requiere que POINTASSIGN registre el plan-point en cada story con carga
   //     (ya emitido arriba). El formato POINTLOAD usa sintaxis `LC "${patronGravedad}"`
   //     después de TYPE para mayor compatibilidad con ETABS.
-  const selfWt = weightMode === "manual" ? 0 : 1;
+  const selfWt = weightMode === "manual" ? 0 : (swDecl ?? 1);
   lines.push(`$ LOAD PATTERNS`);
   const pats = input.loadPatterns?.length
     ? input.loadPatterns
@@ -1537,7 +1610,7 @@ function exportFromScratch(input: ExportE2kInput): string {
     // peso "manual", que lo emite como cargas nodales) lo apaga.
     let sw: number;
     if (lp.type === "Dead") {
-      sw = weightMode === "manual" ? 0 : (lp.selfWeightMultiplier ?? 1);
+      sw = weightMode === "manual" ? 0 : (lp.selfWeightMultiplier ?? swDecl ?? 1);
     } else {
       sw = 0;
       if ((lp.selfWeightMultiplier ?? 0) !== 0) {
@@ -1592,13 +1665,13 @@ function exportFromScratch(input: ExportE2kInput): string {
   // carga y ETABS lo resuelve con todo a 0.000.
   const esPatronDePesoPropio = patronGravedad
     === (pats.find(p => p.type === "Dead")?.name ?? pats[0].name);
-  const emitirFz = weightMode === "manual" || !esPatronDePesoPropio;
+  const emitirFz = weightMode === "manual" || !esPatronDePesoPropio || modoExacto;
 
   if (nodeInputs.loads && nodeInputs.loads.size > 0) {
     nodeInputs.loads.forEach((load, nodeIdx) => {
       const [fx, fy, fz] = cargaPropia(nodeIdx, load);
-      meter(nodeIdx, [fx, fy, emitirFz ? fz : 0,
-                      load[3] ?? 0, load[4] ?? 0, load[5] ?? 0]);
+      const [mx, my, mz] = momentoPropio(nodeIdx, load);
+      meter(nodeIdx, [fx, fy, emitirFz ? fz : 0, mx, my, mz]);
     });
   }
   if ((nodeInputs as any).moments && (nodeInputs as any).moments.size > 0) {
@@ -1618,6 +1691,24 @@ function exportFromScratch(input: ExportE2kInput): string {
     lines.push(`$ POINT OBJECT LOADS`);
     userLoadLines.forEach(l => lines.push(l));
     lines.push(``);
+  }
+
+  // ── FRAME OBJECT LOADS (modo auto exacto): la carga repartida de cada barra
+  // tal cual la escribe ETABS: LINELOAD "E12" "Story1" TYPE "UNIFF" DIR "GRAV"
+  // LC "Dead" FVAL w  (N/mm; GRAV positivo hacia abajo). Una barra que quedo
+  // dentro de una cadena de columnas no tiene LINE propia: su carga se queda
+  // repartida en los nudos (no se desconto arriba).
+  if (modoExacto && conLineLoad.size > 0) {
+    const ll: string[] = [];
+    for (const idx of conLineLoad) {
+      const w = fLoadsAll!.get(idx)!; const ln = lineaDe.get(idx);
+      if (!ln) continue;
+      const cw = (v: number) => rp(cF(v) / lengthFactor);   // kN/m -> N/mm
+      if (Math.abs(w[2]) > 1e-12) ll.push(`  LINELOAD  "${ln.name}"  "${ln.story}"  TYPE "UNIFF"  DIR "${w[2] < 0 ? "GRAV" : "Z"}"  LC "${patronGravedad}"  FVAL ${cw(Math.abs(w[2]))}`);
+      if (Math.abs(w[0]) > 1e-12) ll.push(`  LINELOAD  "${ln.name}"  "${ln.story}"  TYPE "UNIFF"  DIR "X"  LC "${patronGravedad}"  FVAL ${cw(w[0])}`);
+      if (Math.abs(w[1]) > 1e-12) ll.push(`  LINELOAD  "${ln.name}"  "${ln.story}"  TYPE "UNIFF"  DIR "Y"  LC "${patronGravedad}"  FVAL ${cw(w[1])}`);
+    }
+    if (ll.length) { lines.push(`$ FRAME OBJECT LOADS`); ll.forEach(l => lines.push(l)); lines.push(``); }
   }
 
   // ── SHELL OBJECT LOADS ─────────────────────────────────────────────

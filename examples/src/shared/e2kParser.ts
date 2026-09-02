@@ -128,7 +128,7 @@ export function parseE2k(text: string): E2kModel {
     D: number; B: number; TF: number; TW: number; XC: number; YC: number;
   }>>();
   const restraints = new Map<string, string[]>(); // pointName+story → restrained DOFs
-  const lineAssigns = new Map<string, { story: string; section: string; rigidZone: number; releases: string[]; angle: number; spring?: string; mallaEnCruces?: boolean }>(); // lineName+story → assignment
+  const lineAssigns = new Map<string, { story: string; section: string; rigidZone: number; releases: string[]; angle: number; spring?: string; mallaEnCruces?: boolean; offsets?: [number, number] }>(); // lineName+story → assignment
   /**
    * Los MUELLES. ETABS los declara como propiedades con nombre y luego los
    * asigna con `SPRINGPROP "..."`. Sin ellos, una cimentación sobre Winkler no
@@ -175,6 +175,10 @@ export function parseE2k(text: string): E2kModel {
   // modo "manual" del exportador, o cualquier ETABS con cargas puntuales)
   // entraba a Hekatan SIN carga y el ciclo e2k -> Hekatan -> e2k las perdia.
   const pointLoads: { pt: string; story: string; lc: string; v: number[] }[] = [];
+  // LOADPATTERN "Dead" TYPE "Dead" SELFWEIGHT 1 -> el peso propio lo calcula
+  // ETABS. Hasta el 2-sep-2026 el parser lo ignoraba: un e2k en modo "auto"
+  // entraba a Hekatan sin el peso de la estructura (mezanine: 2252 de 3473 kN).
+  let selfWeightMult = 0;
   const grids: E2kGrid[] = [];
   const planosRef: E2kPlanoRef[] = [];
   let title = "";
@@ -355,6 +359,11 @@ export function parseE2k(text: string): E2kModel {
         };
         const rzm = line.match(/RIGIDZONE\s+([\d.eE+-]+)/);
         if (rzm) entry.rigidZone = parseFloat(rzm[1]);
+        // LENGTHOFFI/J: las longitudes del brazo (unidades del fichero). Van a
+        // `endOffsets` [offI, offJ, rz]: con rz = 0 no rigidizan, pero la viga
+        // PESA por su luz libre (ETABS no pesa el brazo rigido).
+        const loi = line.match(/LENGTHOFFI\s+([\d.eE+-]+)/); const loj = line.match(/LENGTHOFFJ\s+([\d.eE+-]+)/);
+        if (loi || loj) entry.offsets = [loi ? parseFloat(loi[1]) : 0, loj ? parseFloat(loj[1]) : 0];
         const relm = line.match(/RELEASE\s+"([^"]+)"/);
         if (relm) entry.releases = relm[1].split(/\s+/);
         const angm = line.match(/ANG\s+([-\d.eE+]+)/);
@@ -401,6 +410,12 @@ export function parseE2k(text: string): E2kModel {
         if (!loadSets.has(sm[1])) loadSets.set(sm[1], []);
         loadSets.get(sm[1])!.push({ lc: sm[2], val: parseFloat(sm[3]) });
       }
+    }
+
+    // ── LOAD PATTERNS: peso propio ──
+    if (currentSection === "LOAD PATTERNS") {
+      const lp = line.match(/LOADPATTERN\s+"([^"]+)"\s+TYPE\s+"([^"]+)"\s+SELFWEIGHT\s+([\d.eE+-]+)/);
+      if (lp && /dead/i.test(lp[2])) selfWeightMult = Math.max(selfWeightMult, parseFloat(lp[3]));
     }
 
     // ── POINT OBJECT LOADS ──
@@ -668,6 +683,7 @@ export function parseE2k(text: string): E2kModel {
   // pero NO se emitia: las 156 barras giradas del galpon (cordones en C,
   // diagonales 2L) entraban sin girar y el modelo importado salia 2x mas rigido.
   const localAngles = new Map<number, number>();
+  const endOffsets = new Map<number, [number, number, number]>();
 
   for (const lc of lineConns) {
     for (const [key, la] of lineAssigns) {
@@ -722,6 +738,7 @@ export function parseE2k(text: string): E2kModel {
         if (la.mallaEnCruces) mallaEnCruces.set(elemIdx, true);
         if (la.rigidZone > 0) rigidOffsets.set(elemIdx, [la.rigidZone, la.rigidZone]);
         if (la.angle) localAngles.set(elemIdx, la.angle);
+        if (la.offsets) endOffsets.set(elemIdx, [la.offsets[0], la.offsets[1], la.rigidZone]);
         // Releases (12: FxI,FyI,FzI,TI,M2I,M3I, FxJ,FyJ,FzJ,TJ,M2J,M3J).
         // ⚠️ El de la cara I va SOLO en el primer tramo y el de la J SOLO en el
         // ultimo: copiarlos a los tres tramos de una columna de cuatro pisos
@@ -958,27 +975,27 @@ export function parseE2k(text: string): E2kModel {
     const L = Math.sqrt((p2[0]-p1[0])**2 + (p2[1]-p1[1])**2 + (p2[2]-p1[2])**2);
     if (L < 1e-10) continue;
 
-    // Equivalent nodal force = w * L / 2 at each node
-    const F = fl.val * L / 2;
+    // La carga repartida w (vector GLOBAL): GRAV/GRAVITY = hacia -Z; X, Y, Z
+    // son los ejes globales tal cual (Z positivo hacia ARRIBA: antes se leia
+    // como -F y una carga hacia arriba entraba hacia abajo).
+    const w: [number, number, number] = [0, 0, 0];
+    if (fl.dir === "GRAV" || fl.dir === "GRAVITY") w[2] = -fl.val;
+    else if (fl.dir === "X") w[0] = fl.val;
+    else if (fl.dir === "Y") w[1] = fl.val;
+    else if (fl.dir === "Z") w[2] = fl.val;
 
-    // Direction: GRAV = -Z, GRAVITY = -Z
-    let fx = 0, fy = 0, fz = 0;
-    if (fl.dir === "GRAV" || fl.dir === "GRAVITY") {
-      fz = -F; // gravity = downward
-    } else if (fl.dir === "X") {
-      fx = F;
-    } else if (fl.dir === "Y") {
-      fy = F;
-    } else if (fl.dir === "Z") {
-      fz = -F;
-    }
-
-    // Accumulate on both nodes
-    for (const ni of [n1, n2]) {
+    // Fuerzas Y MOMENTOS de empotramiento perfecto (la misma formula del
+    // cliModeler y del s2kParser): F = w*L/2, M = +-L^2/12 * (t x w). Sin los
+    // momentos el galpon leido del e2k daba -25.1 mm por -29.05 (13.6 %).
+    const t = [(p2[0]-p1[0]) / L, (p2[1]-p1[1]) / L, (p2[2]-p1[2]) / L], c = L * L / 12;
+    const txw = [t[1] * w[2] - t[2] * w[1], t[2] * w[0] - t[0] * w[2], t[0] * w[1] - t[1] * w[0]];
+    const acum = (ni: number, v: number[]) => {
       const prev = loads.get(ni) || [0, 0, 0, 0, 0, 0] as [number, number, number, number, number, number];
-      prev[0] += fx; prev[1] += fy; prev[2] += fz;
+      for (let k = 0; k < 6; k++) prev[k] += v[k];
       loads.set(ni, prev);
-    }
+    };
+    acum(n1, [w[0] * L / 2, w[1] * L / 2, w[2] * L / 2,  c * txw[0],  c * txw[1],  c * txw[2]]);
+    acum(n2, [w[0] * L / 2, w[1] * L / 2, w[2] * L / 2, -c * txw[0], -c * txw[1], -c * txw[2]]);
   }
 
   // ── Add material densities to element inputs ──
@@ -1187,6 +1204,7 @@ export function parseE2k(text: string): E2kModel {
     // Solo pasaba con ficheros que NO van en kN-m: en kN-m este bloque entero
     // no se ejecuta. Por eso las plantillas y el galpon nunca lo vieron.
     for (const [i, par] of rigidOffsets) rigidOffsets.set(i, [par[0] * L, par[1] * L]);
+    for (const [i, v] of endOffsets) endOffsets.set(i, [v[0] * L, v[1] * L, v[2]]);
     // Cargas: las fuerzas en F y los momentos en F*L, en el mismo vector.
     for (const [i, v] of loads) {
       loads.set(i, v.map((x, k) => x * (k < 3 ? F : F * L)) as typeof v);
@@ -1227,6 +1245,48 @@ export function parseE2k(text: string): E2kModel {
         `En ETABS los sujetan links, muelles de pilote o diafragmas, que este lector aun no importa.`);
   }
 
+  /** El PESO PROPIO (SELFWEIGHT del patron Dead), ya en kN y m: rho*A*L/2 a
+   *  cada extremo de barra y rho*t*A/4 a cada nudo de cascara, hacia -Z. Es lo
+   *  que hace ETABS con el patron y lo que hace `apply_selfweight` en Hekatan. */
+  const conPesoPropio = () => {
+    if (!(selfWeightMult > 0)) return loads;
+    let total = 0;
+    const suma = (n: number, fz: number) => {
+      const prev = loads.get(n) || [0, 0, 0, 0, 0, 0] as [number, number, number, number, number, number];
+      prev[2] += fz; loads.set(n, prev); total += fz;
+    };
+    elements.forEach((el, i) => {
+      const rho = densities.get(i);
+      if (!rho) return;
+      const e = el as unknown as number[];
+      if (e.length === 2) {
+        const A = areas.get(i) ?? 0; const a = nodes[e[0]], b = nodes[e[1]];
+        const off = endOffsets.get(i);
+        // Luz LIBRE solo en las VIGAS (< 20 grados con la horizontal): ETABS no
+        // pesa el tramo dentro del brazo rigido. Columnas y diagonales, entera.
+        // La misma regla del cliModeler y de apply_selfweight.
+        const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2];
+        const dh = Math.hypot(dx, dy);
+        const esViga = dh > 1e-9 && Math.atan2(Math.abs(dz), dh) * 180 / Math.PI < 20;
+        const Lb = Math.max(0, Math.hypot(dx, dy, dz) - (off && esViga ? off[0] + off[1] : 0));
+        const w = rho * A * Lb * selfWeightMult;
+        suma(e[0], -w / 2); suma(e[1], -w / 2);
+      } else if (e.length >= 3) {
+        const t = thicknesses.get(i) ?? 0; const p = e.map(n => nodes[n]);
+        let nx = 0, ny = 0, nz = 0;
+        for (let k = 0; k < p.length; k++) {
+          const a = p[k], b = p[(k + 1) % p.length];
+          nx += a[1] * b[2] - a[2] * b[1]; ny += a[2] * b[0] - a[0] * b[2]; nz += a[0] * b[1] - a[1] * b[0];
+        }
+        const Ar = Math.hypot(nx, ny, nz) / 2;
+        const w = rho * t * Ar * selfWeightMult;
+        for (const n of e) suma(n, -w / e.length);
+      }
+    });
+    console.log(`[e2kParser] peso propio (SELFWEIGHT ${selfWeightMult}): ${total.toFixed(3)} kN repartidos a los nudos`);
+    return loads;
+  };
+
   return {
     units,
     stories: stories.reverse(), // bottom to top
@@ -1240,7 +1300,7 @@ export function parseE2k(text: string): E2kModel {
     elementTypes: elementTypes,
     elementStories: elementStoriesArr,
     elementSections,
-    nodeInputs: { supports, loads, springNames: nodeSprings },
+    nodeInputs: { supports, loads: conPesoPropio(), springNames: nodeSprings },
     elementInputs: {
       elasticities,
       shearModuli,
@@ -1253,6 +1313,7 @@ export function parseE2k(text: string): E2kModel {
       rigidOffsets,
       momentReleases,
       localAngles,
+      endOffsets,
       densities,
       sectionShapes,
       thicknesses,

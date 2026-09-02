@@ -70,7 +70,9 @@ async function ciclo(heks, tag) {
                                    : (m.nodes.length === r.nodes.length && barras === r.elements.filter(e => e.length === 2).length))
           && shells === r.elements.filter(e => e.length === 4).length,
       detalle: /^e2k/.test(etiqueta0) ? "e2k: ETABS parte las columnas en cada planta; se admiten nudos de mas, nunca de menos" : "lo que el parser monta contra lo que salio del .heks" });
-    filas.push({ que: `${etiqueta}: carga total (ΣFz)`, medido: eFz, limite: 1e-6, ok: eFz <= 1e-6,
+    // en "auto" el peso viaja como WEIGHTPERVOLUME con 6 cifras: 1e-4 %
+    const limFz = /auto/.test(etiqueta0) ? 1e-4 : 1e-6;
+    filas.push({ que: `${etiqueta}: carga total (ΣFz)`, medido: eFz, limite: limFz, ok: eFz <= limFz,
       detalle: `${fz.toFixed(3)} vs ${fz0.toFixed(3)} kN` });
     // 1e-3 %: el e2k redondea las coordenadas a 0.1 um y eso ya se nota en la 7a cifra.
     const limUz = (tag === "galpon_lc" && /^e2k/.test(etiqueta0)) ? 0.01 : 1e-3;   // galpon por e2k: 0.0014 % (redondeo a 0.1 um + 4 nudos de planta)
@@ -84,6 +86,11 @@ async function ciclo(heks, tag) {
   const m1 = vuelta("e2k -> Hekatan", e2k, mod.parseE2k);
   const e2k2 = mod.exportE2k({ nodes: m1.nodes, elements: m1.elements, nodeInputs: m1.nodeInputs, elementInputs: m1.elementInputs, title: "ciclo", units: { force: "Tonf", length: "m" }, weightMode: "manual", diaphragm: "none" });
   vuelta("e2k -> Hekatan -> e2k -> Hekatan", e2k2, mod.parseE2k);
+  // e2k AUTO (el defecto del boton): ETABS pesa el mismo, con AREALOAD y
+  // SELFWEIGHT 1. El parser tiene que devolver la MISMA carga que el .heks
+  // (material por E y peso, peso propio con luz libre en vigas).
+  const e2kA = mod.exportE2k({ ...comun, weightMode: "auto", diaphragm: "none" });
+  vuelta("e2k auto -> Hekatan", e2kA, mod.parseE2k);
   const s2k = mod.exportS2k({ ...comun, selfWtMult: 0 });
   const s1 = vuelta("s2k -> Hekatan", s2k, mod.parseS2k);
   const s2k2 = mod.exportS2k({ nodes: s1.nodes, elements: s1.elements, nodeInputs: s1.nodeInputs, elementInputs: s1.elementInputs, title: "ciclo", units: { force: "Tonf", length: "m" }, selfWtMult: 0 });

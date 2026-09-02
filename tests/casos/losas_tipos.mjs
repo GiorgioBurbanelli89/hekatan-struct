@@ -64,7 +64,7 @@ async function correrStruct(tipo) {
   let uzMin = 0, sumRz = 0;
   def.forEach((d) => { if (d[2] < uzMin) uzMin = d[2]; });
   for (const [, v] of r.deformOutputs.reactions ?? []) sumRz += v[2] || 0;
-  return { uzMin, sumRz };
+  return { uzMin, sumRz, def };
 }
 
 export async function correr() {
@@ -108,7 +108,26 @@ export async function correr() {
     }
 
     const uzRef = Math.min(...R.desplazamientos.map((d) => d.uz));
-    const { uzMin, sumRz } = await correrStruct(id);
+    const { uzMin, sumRz, def } = await correrStruct(id);
+
+    // ── MISMA MALLA: ETABS armado por OAPI con los nudos y las cargas nodales
+    // de Hekatan (galpon-bodega-electoral/etabs_modelo.py, 2-sep-2026). Aqui
+    // no hay mallador ni carga de por medio: se comparan dos SOLVERS, nudo a
+    // nudo, y tienen que dar lo mismo hasta el redondeo. Los seis tipos dan
+    // < 3e-7 % del maximo. El banco de arriba (malla automatica de ETABS) mide
+    // ademas como malla y carga ETABS: por eso queda al 1-3 %.
+    const refO = join(DATOS, `losas_ref_oapi_${id}.json`);
+    if (existsSync(refO)) {
+      const O = JSON.parse(readFileSync(refO, "utf-8"));
+      let mx = 0; def.forEach((d) => { mx = Math.max(mx, Math.abs(d[2])); });
+      let peor = 0, n = 0;
+      for (const q of O.nudos) {
+        const d = def.get(q.i); if (!d) continue; n++;
+        peor = Math.max(peor, Math.abs(d[2] - q.uz) / mx * 100);
+      }
+      filas.push({ que: `${id} — misma malla por OAPI, nudo a nudo`, medido: peor, limite: 1e-5, ok: n > 0 && peor <= 1e-5,
+                   detalle: `${n} nudos; ETABS ${(Math.min(...O.nudos.map((q) => q.uz)) * 1000).toFixed(4)} mm vs Hekatan ${(uzMin * 1000).toFixed(4)}` });
+    }
 
     const dif = Math.abs((uzMin - uzRef) / uzRef) * 100;
     filas.push({

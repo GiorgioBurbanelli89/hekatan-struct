@@ -977,6 +977,10 @@ export const cliModeler: ExampleDef = {
       shellSurfaceLoads, shellAngles, cargaDeArea, cantos, anchos, sectionShapes, localAngles,
       shearAreasY, shearAreasZ, momentReleases, endOffsets, plateFormulations,
       frameLoads: frameLoadsElem,
+      // El `selfweight` del .heks, para que el exportador e2k en modo "auto"
+      // escriba SELFWEIGHT con el multiplicador del MODELO (0 si no lo lleva)
+      // y descuente de las cargas nodales lo que ETABS va a calcular solo.
+      selfWeight: m.selfWeight,
       areaObjects: m.areaObjs.map(o => ({
         nodes: o.pts.map(id => idToIdx.get(id)).filter(i => i !== undefined) as number[],
         cells: o.cells.map(id => shellIdxOf.get(id)).filter(i => i !== undefined) as number[],
