@@ -31,6 +31,7 @@
  */
 
 #include <Eigen/Sparse>
+#include <Eigen/IterativeLinearSolvers>
 #include <Eigen/Dense>
 #include <vector>
 #include <array>
@@ -282,17 +283,39 @@ void hex8_solve(
         if (fzz) K.coeffRef(3 * n + 2, 3 * n + 2) += PEN;
     }
 
-    // ── Resolver Ku = F (Cholesky LDLT sparse) ──
-    Eigen::SimplicialLDLT<SpMat> solver;
-    solver.compute(K);
-    if (solver.info() != Eigen::Success) {
-        std::cerr << "hex8_solve: Cholesky decomposition failed" << std::endl;
-        *displacements_size_out = 0;
-        *vonmises_size_out = 0;
-        *stresses_size_out = 0;
-        return;
+    // ── Resolver Ku = F ──
+    // Directo (Cholesky LDLT) hasta ~40k GDL. Mas alla, el relleno de la
+    // factorizacion de un bloque 3D no cabe en el WASM: el bloque de suelo de
+    // Serquen (40x40x20 cubos, 35 301 nudos, 106k GDL) pedia 2.4 GB con el
+    // limite en 2 GB (medido 2-sep-2026). Para esos va gradiente conjugado
+    // con Cholesky incompleto: memoria ~ la de K, y converge a 1e-12 en
+    // unos cientos de iteraciones (K es SPD tras quitar los apoyos).
+    Vec u;
+    const int nDof = static_cast<int>(K.rows());
+    if (nDof <= 40000) {
+        Eigen::SimplicialLDLT<SpMat> solver;
+        solver.compute(K);
+        if (solver.info() != Eigen::Success) {
+            std::cerr << "hex8_solve: Cholesky decomposition failed" << std::endl;
+            *displacements_size_out = 0;
+            *vonmises_size_out = 0;
+            *stresses_size_out = 0;
+            return;
+        }
+        u = solver.solve(F);
+    } else {
+        Eigen::ConjugateGradient<SpMat, Eigen::Lower | Eigen::Upper, Eigen::IncompleteCholesky<double>> cg;
+        cg.setTolerance(1e-12);
+        cg.setMaxIterations(20000);
+        cg.compute(K);
+        if (cg.info() != Eigen::Success) {
+            std::cerr << "hex8_solve: IncompleteCholesky failed" << std::endl;
+            *displacements_size_out = 0; *vonmises_size_out = 0; *stresses_size_out = 0;
+            return;
+        }
+        u = cg.solve(F);
+        std::cerr << "hex8_solve: CG " << cg.iterations() << " iteraciones, error " << cg.error() << std::endl;
     }
-    Vec u = solver.solve(F);
 
     // ── Recovery: stresses + vonMises por elemento (8 Gauss points) ──
     double D[6][6];
