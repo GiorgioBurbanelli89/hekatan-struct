@@ -370,6 +370,7 @@ import {
   legacyBeams,           // Paz 6.3 Space Frame (FRAME 1D)
   solidCubeFEM,          // Cubo H8 (SOLIDO)
   bulboPresionesSuelo,   // Bulbo presiones (COMBINADO area+spring)
+  muroContencionSolido,  // Muro de contencion en solidos H8 (vs SAP2000)
 } from "./legacyAwatif";
 
 export const examplesRegistry: ExampleDef[] = [
@@ -511,6 +512,7 @@ export const examplesRegistry: ExampleDef[] = [
   // ── 4) COMBINADOS — Area + Spring + Frame ─────────────────────
   zapataAisladaValidacion, // Zapata aislada (Area + Winkler springs + Frame)
   bulboPresionesSuelo,     // Bulbo de Presiones — Serquen SF-70
+  muroContencionSolido,    // Muro de contencion en solidos H8 — vs SAP2000 (2-sep-2026)
   benchmark3way,           // Shell+Frame DOF mismatch (Area + Frame)
   benchmarkCft,            // CFT cols + I-beams + losa (Area + Frame composite)
   mesaTorsion,             // 🌀 Mesa de torsión (validación ETABS — Gabriela/Seproinca 2020)
@@ -534,6 +536,6 @@ export const examplesRegistry: ExampleDef[] = [
 
   // ── Legacy upstream awatif (resto que no son benchmarks) ────
   ...legacyAwatifExamples.filter(e =>
-    e.id !== "beams" && e.id !== "solid-cube-fem" && e.id !== "bulbo-presiones-suelo"
+    e.id !== "beams" && e.id !== "solid-cube-fem" && e.id !== "bulbo-presiones-suelo" && e.id !== "muro-contencion-solido"
   ),
 ];

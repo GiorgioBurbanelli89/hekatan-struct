@@ -102,6 +102,7 @@ export const tableroPuente      = legacy("tablero-puente",       "Tablero Puente
 // ─── FEM 3D Sólido H8 (validación cruzada con CalculiX/CodeAster/FEniCS) ───
 export const solidCubeFEM       = legacy("solid-cube-fem",       "Cubo Sólido H8 (validación CalculiX)",          "3️⃣ Sólidos", true);
 export const bulboPresionesSuelo= legacy("bulbo-presiones-suelo","Bulbo de Presiones — Serquen SF-70",            "3️⃣ Sólidos", true);
+export const muroContencionSolido = legacy("muro-contencion-solido","Muro de contención en SÓLIDOS H8 (vs SAP2000)",  "3️⃣ Sólidos", true);
 
 /** Array completo de los 19+11 ejemplos legacy para registrar de un golpe. */
 export const legacyAwatifExamples: ExampleDef[] = [
@@ -153,4 +154,5 @@ export const legacyAwatifExamples: ExampleDef[] = [
   // 🏁 Benchmarks (FEM 3D Sólido validados)
   solidCubeFEM,
   bulboPresionesSuelo,
+  muroContencionSolido,
 ];
