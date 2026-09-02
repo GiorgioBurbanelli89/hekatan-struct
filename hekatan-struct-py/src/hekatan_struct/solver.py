@@ -332,6 +332,97 @@ def _con_rigidez(K, gdl: np.ndarray, tol: float = 1e-12) -> np.ndarray:
 # ═══════════════════════════════════════════════════════════════════════════
 # Public API
 # ═══════════════════════════════════════════════════════════════════════════
+def etabs_wall_joint_penalties(nodes, elements, element_inputs):
+    """Los vectores de la penalizacion viga-muro de ETABS: lista de (c, {gdl: coef}).
+
+    Medido en ETABS 22 (galpon-bodega-electoral/drilling_min*.py, 2-sep-2026):
+    en cada nudo de una cascara VERTICAL (muro) al que llega una barra, y por
+    cada elemento de muro que contiene el nudo, ETABS suma c*v v^T con
+        v = (w_h - w_n) - theta_n * ((p_h - p_n) . e1)
+        c = E*t*(H/L)^3 / 32
+    donde e1 es la arista HORIZONTAL del elemento que sale del nudo (L su
+    longitud), h el nudo vecino por esa arista, H la altura del elemento, w el
+    desplazamiento VERTICAL (en el plano del muro) y theta el giro alrededor de
+    la normal del muro. Es "colgar" el vecino del nudo como solido rigido con un
+    muelle c: ata el drilling al giro de la arista. Reproduce el drilling-dof
+    (2 muros + viga de acople) a 2e-6 % en los 92 nudos. Las losas
+    horizontales NO lo llevan (medido: Delta = 0 con Slab y con Wall).
+    """
+    P = np.asarray(nodes, float)
+    con_barra = set()
+    for e in elements:
+        if len(e) == 2:
+            con_barra.update(e)
+    out = []
+    for k, e in enumerate(elements):
+        if len(e) != 4 or not (set(e) & con_barra):
+            continue
+        Q = P[list(e)]
+        nrm = np.cross(Q[2] - Q[0], Q[3] - Q[1])
+        if np.linalg.norm(nrm) < 1e-12:
+            continue
+        nrm /= np.linalg.norm(nrm)
+        if abs(nrm[2]) > 1e-6:          # no es vertical: no es un muro
+            continue
+        E = element_inputs.elasticities.get(k, 0.0)
+        t = element_inputs.thicknesses.get(k, 0.0)
+        if not E or not t:
+            continue
+        for a, nd in enumerate(e):
+            if nd not in con_barra:
+                continue
+            # vecinos por las dos aristas que salen del nudo
+            prev_, next_ = e[(a - 1) % 4], e[(a + 1) % 4]
+            cand = []
+            for h in (prev_, next_):
+                d = P[h] - P[nd]
+                cand.append((abs(d[2]) / max(np.linalg.norm(d), 1e-12), h))
+            cand.sort()                 # la mas horizontal primero
+            h = cand[0][1]
+            hv = cand[1][1]
+            d = P[h] - P[nd]; L = np.linalg.norm(d)
+            H = np.linalg.norm(P[hv] - P[nd])
+            if L < 1e-12 or H < 1e-12:
+                continue
+            e1 = d / L
+            # e2 = la transversal EN EL PLANO (nrm x e1): el signo del acople
+            # w-theta va con la orientacion de la normal; con +z global a secas
+            # el termino cruzado salia con el signo cambiado (5.578e-4 en vez
+            # de 5.360e-4 en el drilling-dof).
+            e2 = np.cross(nrm, e1)
+            c = E * t * (H / L) ** 3 / 32.0
+            v = {}
+            de1 = float(d @ e1)
+            for comp in range(3):
+                if abs(e2[comp]) > 1e-14:
+                    v[6 * h + comp] = v.get(6 * h + comp, 0.0) + e2[comp]
+                    v[6 * nd + comp] = v.get(6 * nd + comp, 0.0) - e2[comp]
+                if abs(nrm[comp]) > 1e-14:
+                    v[6 * nd + 3 + comp] = v.get(6 * nd + 3 + comp, 0.0) - de1 * nrm[comp]
+            out.append((c, v))
+    return out
+
+
+def _add_etabs_wall_joint(K, nodes, elements, element_inputs, disperso):
+    pen = etabs_wall_joint_penalties(nodes, elements, element_inputs)
+    if not pen:
+        return K
+    if disperso:
+        from scipy.sparse import coo_matrix
+        rows, cols, vals = [], [], []
+        for c, v in pen:
+            idx = list(v); coef = list(v.values())
+            for i, ci in zip(idx, coef):
+                for j, cj in zip(idx, coef):
+                    rows.append(i); cols.append(j); vals.append(c * ci * cj)
+        n = K.shape[0]
+        return (K + coo_matrix((vals, (rows, cols)), shape=(n, n))).tocsr()
+    for c, v in pen:
+        idx = np.array(list(v)); coef = np.array(list(v.values()))
+        K[np.ix_(idx, idx)] += c * np.outer(coef, coef)
+    return K
+
+
 def deform(
     nodes: Sequence[Node],
     elements: Sequence[Element],
@@ -363,6 +454,8 @@ def deform(
     disperso = sparse if sparse is not None else n_total > 3000
     K_orig = (_assemble_K_sparse(nodes, elements, element_inputs) if disperso
               else _assemble_K(nodes, elements, element_inputs))
+    if getattr(element_inputs, "etabs_wall_joint", False):
+        K_orig = _add_etabs_wall_joint(K_orig, nodes, elements, element_inputs, disperso)
     F_orig = _assemble_F(nodes, node_inputs, elements, element_inputs)
 
     # Muelles nodales, a la diagonal y ANTES de tocar apoyos — es lo que hace

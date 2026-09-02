@@ -1,0 +1,248 @@
+# drilling con viga, variante base
+node 1 0 0 0
+node 2 0.5 0 0
+node 3 1 0 0
+node 4 1.5 0 0
+node 5 2 0 0
+node 6 0 0 0.5
+node 7 0.5 0 0.5
+node 8 1 0 0.5
+node 9 1.5 0 0.5
+node 10 2 0 0.5
+node 11 0 0 1
+node 12 0.5 0 1
+node 13 1 0 1
+node 14 1.5 0 1
+node 15 2 0 1
+node 16 0 0 1.5
+node 17 0.5 0 1.5
+node 18 1 0 1.5
+node 19 1.5 0 1.5
+node 20 2 0 1.5
+node 21 0 0 2
+node 22 0.5 0 2
+node 23 1 0 2
+node 24 1.5 0 2
+node 25 2 0 2
+node 26 0 0 2.5
+node 27 0.5 0 2.5
+node 28 1 0 2.5
+node 29 1.5 0 2.5
+node 30 2 0 2.5
+node 31 0 0 3
+node 32 0.5 0 3
+node 33 1 0 3
+node 34 1.5 0 3
+node 35 2 0 3
+node 36 0 0 3.5
+node 37 0.5 0 3.5
+node 38 1 0 3.5
+node 39 1.5 0 3.5
+node 40 2 0 3.5
+node 41 0 0 4
+node 42 0.5 0 4
+node 43 1 0 4
+node 44 1.5 0 4
+node 45 2 0 4
+node 46 3.5 0 0
+node 47 4 0 0
+node 48 4.5 0 0
+node 49 5 0 0
+node 50 5.5 0 0
+node 51 3.5 0 0.5
+node 52 4 0 0.5
+node 53 4.5 0 0.5
+node 54 5 0 0.5
+node 55 5.5 0 0.5
+node 56 3.5 0 1
+node 57 4 0 1
+node 58 4.5 0 1
+node 59 5 0 1
+node 60 5.5 0 1
+node 61 3.5 0 1.5
+node 62 4 0 1.5
+node 63 4.5 0 1.5
+node 64 5 0 1.5
+node 65 5.5 0 1.5
+node 66 3.5 0 2
+node 67 4 0 2
+node 68 4.5 0 2
+node 69 5 0 2
+node 70 5.5 0 2
+node 71 3.5 0 2.5
+node 72 4 0 2.5
+node 73 4.5 0 2.5
+node 74 5 0 2.5
+node 75 5.5 0 2.5
+node 76 3.5 0 3
+node 77 4 0 3
+node 78 4.5 0 3
+node 79 5 0 3
+node 80 5.5 0 3
+node 81 3.5 0 3.5
+node 82 4 0 3.5
+node 83 4.5 0 3.5
+node 84 5 0 3.5
+node 85 5.5 0 3.5
+node 86 3.5 0 4
+node 87 4 0 4
+node 88 4.5 0 4
+node 89 5 0 4
+node 90 5.5 0 4
+node 91 2.5 0 4
+node 92 3 0 4
+shell 1 1 2 7 6 0.25 24850000 0 0
+shelltype 1 thick
+shell 2 2 3 8 7 0.25 24850000 0 0
+shelltype 2 thick
+shell 3 3 4 9 8 0.25 24850000 0 0
+shelltype 3 thick
+shell 4 4 5 10 9 0.25 24850000 0 0
+shelltype 4 thick
+shell 5 6 7 12 11 0.25 24850000 0 0
+shelltype 5 thick
+shell 6 7 8 13 12 0.25 24850000 0 0
+shelltype 6 thick
+shell 7 8 9 14 13 0.25 24850000 0 0
+shelltype 7 thick
+shell 8 9 10 15 14 0.25 24850000 0 0
+shelltype 8 thick
+shell 9 11 12 17 16 0.25 24850000 0 0
+shelltype 9 thick
+shell 10 12 13 18 17 0.25 24850000 0 0
+shelltype 10 thick
+shell 11 13 14 19 18 0.25 24850000 0 0
+shelltype 11 thick
+shell 12 14 15 20 19 0.25 24850000 0 0
+shelltype 12 thick
+shell 13 16 17 22 21 0.25 24850000 0 0
+shelltype 13 thick
+shell 14 17 18 23 22 0.25 24850000 0 0
+shelltype 14 thick
+shell 15 18 19 24 23 0.25 24850000 0 0
+shelltype 15 thick
+shell 16 19 20 25 24 0.25 24850000 0 0
+shelltype 16 thick
+shell 17 21 22 27 26 0.25 24850000 0 0
+shelltype 17 thick
+shell 18 22 23 28 27 0.25 24850000 0 0
+shelltype 18 thick
+shell 19 23 24 29 28 0.25 24850000 0 0
+shelltype 19 thick
+shell 20 24 25 30 29 0.25 24850000 0 0
+shelltype 20 thick
+shell 21 26 27 32 31 0.25 24850000 0 0
+shelltype 21 thick
+shell 22 27 28 33 32 0.25 24850000 0 0
+shelltype 22 thick
+shell 23 28 29 34 33 0.25 24850000 0 0
+shelltype 23 thick
+shell 24 29 30 35 34 0.25 24850000 0 0
+shelltype 24 thick
+shell 25 31 32 37 36 0.25 24850000 0 0
+shelltype 25 thick
+shell 26 32 33 38 37 0.25 24850000 0 0
+shelltype 26 thick
+shell 27 33 34 39 38 0.25 24850000 0 0
+shelltype 27 thick
+shell 28 34 35 40 39 0.25 24850000 0 0
+shelltype 28 thick
+shell 29 36 37 42 41 0.25 24850000 0 0
+shelltype 29 thick
+shell 30 37 38 43 42 0.25 24850000 0 0
+shelltype 30 thick
+shell 31 38 39 44 43 0.25 24850000 0 0
+shelltype 31 thick
+shell 32 39 40 45 44 0.25 24850000 0 0
+shelltype 32 thick
+shell 33 46 47 52 51 0.25 24850000 0 0
+shelltype 33 thick
+shell 34 47 48 53 52 0.25 24850000 0 0
+shelltype 34 thick
+shell 35 48 49 54 53 0.25 24850000 0 0
+shelltype 35 thick
+shell 36 49 50 55 54 0.25 24850000 0 0
+shelltype 36 thick
+shell 37 51 52 57 56 0.25 24850000 0 0
+shelltype 37 thick
+shell 38 52 53 58 57 0.25 24850000 0 0
+shelltype 38 thick
+shell 39 53 54 59 58 0.25 24850000 0 0
+shelltype 39 thick
+shell 40 54 55 60 59 0.25 24850000 0 0
+shelltype 40 thick
+shell 41 56 57 62 61 0.25 24850000 0 0
+shelltype 41 thick
+shell 42 57 58 63 62 0.25 24850000 0 0
+shelltype 42 thick
+shell 43 58 59 64 63 0.25 24850000 0 0
+shelltype 43 thick
+shell 44 59 60 65 64 0.25 24850000 0 0
+shelltype 44 thick
+shell 45 61 62 67 66 0.25 24850000 0 0
+shelltype 45 thick
+shell 46 62 63 68 67 0.25 24850000 0 0
+shelltype 46 thick
+shell 47 63 64 69 68 0.25 24850000 0 0
+shelltype 47 thick
+shell 48 64 65 70 69 0.25 24850000 0 0
+shelltype 48 thick
+shell 49 66 67 72 71 0.25 24850000 0 0
+shelltype 49 thick
+shell 50 67 68 73 72 0.25 24850000 0 0
+shelltype 50 thick
+shell 51 68 69 74 73 0.25 24850000 0 0
+shelltype 51 thick
+shell 52 69 70 75 74 0.25 24850000 0 0
+shelltype 52 thick
+shell 53 71 72 77 76 0.25 24850000 0 0
+shelltype 53 thick
+shell 54 72 73 78 77 0.25 24850000 0 0
+shelltype 54 thick
+shell 55 73 74 79 78 0.25 24850000 0 0
+shelltype 55 thick
+shell 56 74 75 80 79 0.25 24850000 0 0
+shelltype 56 thick
+shell 57 76 77 82 81 0.25 24850000 0 0
+shelltype 57 thick
+shell 58 77 78 83 82 0.25 24850000 0 0
+shelltype 58 thick
+shell 59 78 79 84 83 0.25 24850000 0 0
+shelltype 59 thick
+shell 60 79 80 85 84 0.25 24850000 0 0
+shelltype 60 thick
+shell 61 81 82 87 86 0.25 24850000 0 0
+shelltype 61 thick
+shell 62 82 83 88 87 0.25 24850000 0 0
+shelltype 62 thick
+shell 63 83 84 89 88 0.25 24850000 0 0
+shelltype 63 thick
+shell 64 84 85 90 89 0.25 24850000 0 0
+shelltype 64 thick
+frame 1 45 91 2.485e+07 0.2 0.00104167 0.0106667 0.0117083 0.2 0
+as 1 0.166667 0.166667
+frame 2 91 92 2.485e+07 0.2 0.00104167 0.0106667 0.0117083 0.2 0
+as 2 0.166667 0.166667
+frame 3 92 86 2.485e+07 0.2 0.00104167 0.0106667 0.0117083 0.2 0
+as 3 0.166667 0.166667
+support 1 fixed
+support 2 fixed
+support 3 fixed
+support 4 fixed
+support 5 fixed
+load 41 20 0 0 0 0 0
+load 42 20 0 0 0 0 0
+load 43 20 0 0 0 0 0
+load 44 20 0 0 0 0 0
+load 45 20 0 0 0 0 0
+support 46 fixed
+support 47 fixed
+support 48 fixed
+support 49 fixed
+support 50 fixed
+load 86 20 0 0 0 0 0
+load 87 20 0 0 0 0 0
+load 88 20 0 0 0 0 0
+load 89 20 0 0 0 0 0
+load 90 20 0 0 0 0 0
+solve

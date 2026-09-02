@@ -114,6 +114,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
     rels: dict[int, list[bool]] = {}
     endoffs: dict[int, tuple[float, float, float]] = {}   # (offI, offJ, rz)
     sw_mult = [0.0]                        # multiplicador de peso propio
+    ej_flag = [False]                      # etabsjoint (la union viga-muro de ETABS)
     shells: list[dict] = []
     q_area: dict[int, float] = {}          # carga de superficie por shell ID
     smod: dict[int, tuple[float, float]] = {}      # shellmod escalar
@@ -231,6 +232,9 @@ def leer_heks(ruta: str) -> ModeloHeks:
                         smod[sid] = (vals[0], vals[1])
                 elif cmd == "shellang":
                     sang[int(t[1])] = float(t[2])
+                elif cmd in ("etabsjoint", "etabswalljoint"):
+                    # etabsjoint [0|1] -> la penalizacion viga-muro de ETABS
+                    ej_flag[0] = (len(t) < 2) or (t[1].strip().lower() not in ("0", "no", "off", "false"))
                 elif cmd in ("shelltype", "plateform"):
                     q = t[2].lower() if len(t) > 2 else ""
                     if q in ("thin", "delgada", "kirchhoff", "1"):
@@ -420,6 +424,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
         from .extensions import apply_selfweight
         apply_selfweight(m.nodes, m.elements, ei, ni, sw_multiplier=sw_mult[0])
         m.selfweight = sw_mult[0]
+    ei.etabs_wall_joint = ej_flag[0]
     if not ni.loads and not ei.frame_loads:
         m.errores.append("modelo SIN carga: la deformada va a salir 0")
     return m
@@ -492,6 +497,8 @@ def escribir_heks(m: ModeloHeks, ruta: str | None = None) -> str:
                         ei.shear_areas_y.get(k, 0.0)))
     if getattr(m, "selfweight", 0.0):
         L.append("selfweight %.4g" % m.selfweight)
+    if getattr(ei, "etabs_wall_joint", False):
+        L.append("etabsjoint 1")
     for k, fid in ids_f.items():
         if k in ei.end_offsets:
             L.append("endoffset %d %.6g %.6g %.4g" % ((fid,) + tuple(ei.end_offsets[k])))

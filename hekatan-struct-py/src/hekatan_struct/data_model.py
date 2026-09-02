@@ -99,6 +99,12 @@ class ElementInputs:
     # ShellType de ETABS por elemento: 1 = Shell-Thin (Kirchhoff DKE),
     # 0 / ausente = Shell-Thick (Mindlin MITC4, el defecto de Hekatan).
     plate_formulations:        dict[int, int] = field(default_factory=dict)
+    # La union viga-muro de ETABS (medida el 2-sep-2026, drilling_min*.py): en
+    # cada nudo de un muro (cascara VERTICAL) donde entra una barra, ETABS ata el
+    # giro drilling al giro de la arista horizontal con un muelle
+    #   c*(w_vecino - w_nudo - theta*(x_vecino - x_nudo))^2,  c = E*t*(H/L)^3/32.
+    # `etabsjoint 1` en el .heks. Apagado por defecto: SAP2000 no lo hace.
+    etabs_wall_joint:          bool = False
 
 
 # ─── Outputs ────────────────────────────────────────────────────────────────
