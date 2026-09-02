@@ -151,7 +151,12 @@ def test_el_elemento_es_invariante_a_los_ejes_locales(tipo):
     E, nu, t = 2.2e7, 0.2, 0.20
     pts = QUAD_GENERAL
     P, lx, ly = _triada_como_el_cpp(pts)
-    assert abs(np.cross((P[1] - P[0])[:2], (P[2] - P[3])[:2])) > 1e-6, \
+    # NumPy 2 ELIMINO `np.cross` para vectores de 2 componentes (deprecado desde
+    # 1.25, ValueError desde 2.0). El producto cruzado 2D es un escalar y se
+    # escribe a mano; si no, este assert revienta ANTES de probar nada y el test
+    # sale rojo por la version de numpy y no por el elemento, que esta bien.
+    _u, _v = (P[1] - P[0])[:2], (P[2] - P[3])[:2]
+    assert abs(_u[0]*_v[1] - _u[1]*_v[0]) > 1e-6, \
         "esta geometria tiene lados paralelos: no prueba lo que dice"
 
     c = P.mean(axis=0)
