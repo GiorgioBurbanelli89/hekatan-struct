@@ -10,7 +10,7 @@ export interface S2kModel {
   units: { force: string; length: string };
   dof: string;
   materials: Map<string, { E: number; nu: number; G: number; density?: number; fy?: number }>;
-  frameSections: Map<string, { material: string; shape: string; D: number; B: number; TF: number; TW: number; A: number; Iz: number; Iy: number; J: number }>;
+  frameSections: Map<string, { material: string; shape: string; D: number; B: number; TF: number; TW: number; A: number; Iz: number; Iy: number; J: number; As2?: number; As3?: number }>;
   shellSections: Map<string, { material: string; type: string; thickness: number }>;
   nodes: Node[];
   nodeNames: string[];
@@ -82,6 +82,7 @@ function parseTableFormat(rawLines: string[]): S2kModel {
   const frameSectionAssign = new Map<string, string>(); // frameName → secName
   const areaSectionAssign = new Map<string, string>(); // areaName → secName
   const loads: { joint: string; fx: number; fy: number; fz: number; mx: number; my: number; mz: number }[] = [];
+  const offsets = new Map<string, [number, number, number]>();   // FRAME OFFSET ALONG LENGTH ASSIGNMENTS
 
   let currentTable = "";
 
@@ -153,6 +154,11 @@ function parseTableFormat(rawLines: string[]): S2kModel {
             Iz: parseNum(kv.get("I33")),
             Iy: parseNum(kv.get("I22")),
             J: parseNum(kv.get("TorsConst")),
+            // AS2 -> V2 (con I33) = shearAreasZ · AS3 -> V3 (con I22) = shearAreasY,
+            // el mismo criterio que el exportador. Sin esto el importado se
+            // quedaba con 5/6·A (Timoshenko de defecto) y salia 2 % mas rigido.
+            As2: parseNum(kv.get("AS2")),
+            As3: parseNum(kv.get("AS3")),
           });
         }
         break;
@@ -235,6 +241,12 @@ function parseTableFormat(rawLines: string[]): S2kModel {
         break;
       }
 
+      case "FRAME OFFSET ALONG LENGTH ASSIGNMENTS": {
+        const fr = kv.get("Frame");
+        if (fr) offsets.set(fr, [parseNum(kv.get("LengthI")), parseNum(kv.get("LengthJ")), parseNum(kv.get("RigidFactor"))]);
+        break;
+      }
+
       case "JOINT LOADS - FORCE": {
         const joint = kv.get("Joint");
         if (joint) {
@@ -254,7 +266,7 @@ function parseTableFormat(rawLines: string[]): S2kModel {
   }
 
   return buildModel(units, dof, materials, frameSections, shellSections, joints,
-    frameConns, shellConns, restraints, frameSectionAssign, areaSectionAssign, loads);
+    frameConns, shellConns, restraints, frameSectionAssign, areaSectionAssign, loads, offsets);
 }
 
 // ═══════════════════════════════════════════
@@ -271,6 +283,7 @@ function parseLegacyFormat(rawLines: string[]): S2kModel {
   const shellConns: { name: string; joints: string[] }[] = [];
   const restraints = new Map<string, boolean[]>();
   const loads: { joint: string; fx: number; fy: number; fz: number; mx: number; my: number; mz: number }[] = [];
+  const offsets = new Map<string, [number, number, number]>();   // FRAME OFFSET ALONG LENGTH ASSIGNMENTS
 
   let currentSection = "";
   let currentMaterial = "";
@@ -366,7 +379,7 @@ function parseLegacyFormat(rawLines: string[]): S2kModel {
   const areaSectionAssign = new Map<string, string>();
 
   return buildModel(units, dof, materials, frameSections, shellSections, joints,
-    frameConns, shellConns, restraints, frameSectionAssign, areaSectionAssign, loads);
+    frameConns, shellConns, restraints, frameSectionAssign, areaSectionAssign, loads, offsets);
 }
 
 // ═══════════════════════════════════════════
@@ -385,6 +398,7 @@ function buildModel(
   frameSectionAssign: Map<string, string>,
   areaSectionAssign: Map<string, string>,
   loads: { joint: string; fx: number; fy: number; fz: number; mx: number; my: number; mz: number }[],
+  offsets: Map<string, [number, number, number]> = new Map(),
 ): S2kModel {
   const nodeNames: string[] = [];
   const nodeNameToIdx = new Map<string, number>();
@@ -454,6 +468,10 @@ function buildModel(
       ei.momentsOfInertiaY!.set(i, sec.Iy || sec.D * sec.B ** 3 / 12);
       ei.torsionalConstants!.set(i, sec.J || 0);
       ei.densities!.set(i, mat.density || 0);
+      if (sec.As2) (ei as any).shearAreasZ ??= new Map(), (ei as any).shearAreasZ.set(i, sec.As2);
+      if (sec.As3) (ei as any).shearAreasY ??= new Map(), (ei as any).shearAreasY.set(i, sec.As3);
+      const off = offsets.get(elementNames[i]);
+      if (off) (ei as any).endOffsets ??= new Map(), (ei as any).endOffsets.set(i, off);
       if (sec.shape?.includes("Wide Flange") || sec.shape === "I") {
         sectionShapes.set(i, { type: "I", b: sec.B, h: sec.D, name: secName || "I-section" });
       } else {
@@ -468,12 +486,16 @@ function buildModel(
       ei.shearModuli!.set(i, G);
       ei.thicknesses!.set(i, ssec.thickness);
       ei.poissonsRatios!.set(i, nu);
+      // Shell-Thin -> Kirchhoff (plateFormulations 1); lo demas, Mindlin (0).
+      // Sin esto todo entraba como Thick y el mezanine thin salia 1.1 % distinto.
+      (ei as any).plateFormulations ??= new Map();
+      (ei as any).plateFormulations.set(i, /thin/i.test(ssec.type) ? 1 : 0);
       ei.densities!.set(i, mat.density || 0);
     }
   }
 
   // NodeInputs
-  const ni: NodeInputs = { supports: new Map(), forces: new Map() };
+  const ni: NodeInputs = { supports: new Map(), loads: new Map() };   // `loads`, que es lo que lee el motor (`forces` no existe en NodeInputs: las cargas del s2k se perdian)
   for (const [name, r] of restraints) {
     const idx = nodeNameToIdx.get(name);
     if (idx !== undefined) ni.supports!.set(idx, r as any);
@@ -481,10 +503,10 @@ function buildModel(
   for (const ld of loads) {
     const idx = nodeNameToIdx.get(ld.joint);
     if (idx !== undefined) {
-      const f = ni.forces!.get(idx) || [0, 0, 0, 0, 0, 0] as any;
+      const f = ni.loads!.get(idx) || [0, 0, 0, 0, 0, 0] as any;
       f[0] += ld.fx; f[1] += ld.fy; f[2] += ld.fz;
       f[3] += ld.mx; f[4] += ld.my; f[5] += ld.mz;
-      ni.forces!.set(idx, f);
+      ni.loads!.set(idx, f);
     }
   }
 

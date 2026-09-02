@@ -883,7 +883,9 @@ function exportFromScratch(input: ExportE2kInput): string {
     const offL = eof ? [eof[0], eof[1]] : off;
     const rz = eof && eof.length > 2 ? eof[2] : (off ? 0 : 0);
     if (offL && (Math.abs(offL[0]) > 1e-9 || Math.abs(offL[1]) > 1e-9)) {
-      parts.push(`LENGTHOFFI ${rd(offL[0])} LENGTHOFFJ ${rd(offL[1])} RIGIDZONE ${rd(rz)}`);
+      // ⚠️ En MM, como todo el fichero: iban en metros y ETABS leia 0.25 mm
+      // (medido 2-sep-2026: GetEndLengthOffset devolvia 0.0003 m).
+      parts.push(`LENGTHOFFI ${rd(cL(offL[0]))} LENGTHOFFJ ${rd(cL(offL[1]))} RIGIDZONE ${rd(rz)}`);
     }
 
     return parts.length > 0 ? ` ${parts.join(" ")} ` : "";
@@ -1618,8 +1620,12 @@ function exportFromScratch(input: ExportE2kInput): string {
       // -0.0093 tal cual la levantaria. Medido en re_carga_inclinada_etabs.py.
       const dir = q.dir ?? "GRAV";
       const fval = dir === "GRAV" ? Math.abs(q.value) : q.value;
+      // ⚠️ FVAL es una PRESION: N/mm², no N/m². Con cF a secas (kN → N) el
+      // 6.85 kN/m² del mezanine salia como 6850 y ETABS lo leia como 6850 N/mm²
+      // = 6.85e9 N/m²: ΣRz 2.25e9 kN y la losa a −21 km (medido 2-sep-2026,
+      // csi_ida_vuelta.py). La fuerza se multiplica por 1e3 y el area por 1e6.
       shellLoadLines.push(
-        `  AREALOAD  "${ref.name}"  "${ref.story}"  TYPE "UNIFF"  DIR "${dir}"  LC "${q.pattern ?? patronGravedad}"  FVAL ${rp(cF(fval))}`);
+        `  AREALOAD  "${ref.name}"  "${ref.story}"  TYPE "UNIFF"  DIR "${dir}"  LC "${q.pattern ?? patronGravedad}"  FVAL ${rp(cF(fval) / (lengthFactor * lengthFactor))}`);
     }
     if (shellLoadLines.length > 0) {
       lines.push(`$ SHELL OBJECT LOADS`);

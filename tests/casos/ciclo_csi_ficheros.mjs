@@ -1,0 +1,77 @@
+/**
+ * CICLO POR FICHERO: .heks -> .e2k / .s2k (los exportadores del boton) ->
+ * parseE2k / parseS2k -> el MISMO motor. Si lo que vuelve no es lo que salio,
+ * el exportador o el importador se dejan algo. No abre ETABS ni SAP2000: eso
+ * lo hace `galpon-bodega-electoral/csi_ida_vuelta.py` (2-sep-2026: ETABS y
+ * SAP2000 leyendo estos ficheros dan -31.8676 mm, lo mismo que Hekatan).
+ *
+ * Lo que cazo el 2-sep-2026, todo en el mezanine (1284 nudos, 873 barras, 1175 shells):
+ *   - AREALOAD FVAL en N/m2 en un fichero en N/mm2 (ETABS: losa a -21 km)
+ *   - LENGTHOFFI/J en metros en un fichero en mm
+ *   - parseE2k no leia POINTLOAD (entraba sin carga)
+ *   - parseE2k rehacia SHAPE "General" como rectangulo (A, I, As, J mal)
+ *   - parseS2k dejaba las cargas en `forces`, que el motor no lee
+ *   - parseS2k no leia AS2/AS3, Shell-Thin/Thick ni los end offsets
+ */
+import { readFileSync, writeFileSync, mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { empaquetar, R, cargarFem } from "../lib/bundle.mjs";
+import { resolverHeks } from "../lib/heks.mjs";
+
+const AQUI = dirname(fileURLToPath(import.meta.url));
+export const nombre = "ciclo-csi-ficheros";
+export const descripcion = "heks -> e2k/s2k -> Hekatan: el ciclo por fichero no pierde carga, secciones ni flecha";
+
+export async function correr() {
+  const heks = join(AQUI, "..", "datos", "losas_maciza_thin.heks");
+  const mod = await empaquetar(`
+    export { parseE2k } from "${R}/examples/src/shared/e2kParser";
+    export { parseS2k } from "${R}/examples/src/shared/s2kParser";
+    export { exportE2k } from "${R}/examples/src/shared/e2kExporter";
+    export { exportS2k } from "${R}/examples/src/shared/s2kExporter";
+  `, "ciclo-csi-ficheros");
+  const fem = await cargarFem();
+  const r = await resolverHeks(heks);
+  let uz0 = 0; r.deformOutputs.deformations.forEach(u => { if (u[2] < uz0) uz0 = u[2]; });
+  let fz0 = 0; r.nodeInputs.loads?.forEach(v => fz0 += v[2] || 0);
+  const comun = { nodes: r.nodes, elements: r.elements, nodeInputs: r.nodeInputs, elementInputs: r.elementInputs, title: "ciclo", units: { force: "Tonf", length: "m" } };
+  const dir = mkdtempSync(join(tmpdir(), "hkCiclo-"));
+  const filas = [];
+  const vuelta = (etiqueta, texto, parse) => {
+    const m = parse(texto);
+    let uz = 0, fz = 0;
+    m.nodeInputs.loads?.forEach(v => fz += v[2] || 0);
+    const d = fem.deform(m.nodes, m.elements, m.nodeInputs, m.elementInputs);
+    d.deformations.forEach(u => { if (u[2] < uz) uz = u[2]; });
+    const barras = m.elements.filter(e => e.length === 2).length, shells = m.elements.filter(e => e.length >= 3).length;
+    const eFz = Math.abs(fz / fz0 - 1) * 100, eUz = Math.abs(uz / uz0 - 1) * 100;
+    filas.push({ que: `${etiqueta}: mismos nudos/barras/cascaras`, crudo: true,
+      medido: `${m.nodes.length}/${barras}/${shells}`, limite: `${r.nodes.length}/${r.elements.filter(e => e.length === 2).length}/${r.elements.filter(e => e.length === 4).length}`,
+      ok: m.nodes.length === r.nodes.length && barras === r.elements.filter(e => e.length === 2).length && shells === r.elements.filter(e => e.length === 4).length,
+      detalle: "lo que el parser monta contra lo que salio del .heks" });
+    filas.push({ que: `${etiqueta}: carga total (ΣFz)`, medido: eFz, limite: 1e-6, ok: eFz <= 1e-6,
+      detalle: `${fz.toFixed(3)} vs ${fz0.toFixed(3)} kN` });
+    // 1e-3 %: el e2k redondea las coordenadas a 0.1 um y eso ya se nota en la 7a cifra.
+    filas.push({ que: `${etiqueta}: flecha maxima`, medido: eUz, limite: 1e-3, ok: eUz <= 1e-3,
+      detalle: `${(uz * 1000).toFixed(6)} vs ${(uz0 * 1000).toFixed(6)} mm` });
+    return m;
+  };
+  // e2k manual: TODAS las cargas nodales, peso propio 0 (lo que compara solvers)
+  const e2k = mod.exportE2k({ ...comun, weightMode: "manual", diaphragm: "none" });
+  writeFileSync(join(dir, "m.e2k"), e2k, "utf-8");
+  const m1 = vuelta("e2k -> Hekatan", e2k, mod.parseE2k);
+  const e2k2 = mod.exportE2k({ nodes: m1.nodes, elements: m1.elements, nodeInputs: m1.nodeInputs, elementInputs: m1.elementInputs, title: "ciclo", units: { force: "Tonf", length: "m" }, weightMode: "manual", diaphragm: "none" });
+  vuelta("e2k -> Hekatan -> e2k -> Hekatan", e2k2, mod.parseE2k);
+  const s2k = mod.exportS2k({ ...comun, selfWtMult: 0 });
+  const s1 = vuelta("s2k -> Hekatan", s2k, mod.parseS2k);
+  const s2k2 = mod.exportS2k({ nodes: s1.nodes, elements: s1.elements, nodeInputs: s1.nodeInputs, elementInputs: s1.elementInputs, title: "ciclo", units: { force: "Tonf", length: "m" }, selfWtMult: 0 });
+  vuelta("s2k -> Hekatan -> s2k -> Hekatan", s2k2, mod.parseS2k);
+  // Los offsets y la presion de area, en las unidades del fichero (mm, N/mm2)
+  const off = e2k.match(/LENGTHOFFJ\s+([\d.]+)/)?.[1];
+  filas.push({ que: "e2k: LENGTHOFF en mm (250, no 0.25)", crudo: true, medido: off ?? "no hay", limite: "250", ok: off === "250", detalle: "ETABS lee el e2k en N y mm siempre" });
+  const fval = e2k.match(/FVAL\s+([\d.eE+-]+)/)?.[1];
+  filas.push({ que: "e2k: AREALOAD FVAL en N/mm2 (0.00685, no 6850)", crudo: true, medido: fval ?? "no hay", limite: "0.00685", ok: fval === "0.00685", detalle: "6.85 kN/m2 = 0.00685 N/mm2" });
+  return filas;
+}

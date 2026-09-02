@@ -45,7 +45,9 @@ export interface E2kModel {
   /** Los niveles AUXILIARES (`REFERENCEPLANE`). Se dibujan; NO cortan nada. */
   planosRef: E2kPlanoRef[];
   materials: Map<string, { type: string; E: number; G: number; nu: number; fy?: number; fc?: number; density?: number }>;
-  frameSections: Map<string, { material: string; shape: string; D: number; B: number; TF: number; TW: number; R?: number; fillMaterial?: string; modI2?: number; modI3?: number }>;
+  frameSections: Map<string, { material: string; shape: string; D: number; B: number; TF: number; TW: number; R?: number; fillMaterial?: string; modI2?: number; modI3?: number;
+                               /** SHAPE "General": las propiedades vienen escritas (unidades del fichero). */
+                               AREA?: number; AS2?: number; AS3?: number; I33?: number; I22?: number; TORSION?: number }>;
   nodes: Node[];
   nodeNames: string[];           // e2k point name → index in nodes[]
   nodeNameToIdx: Map<string, number>;
@@ -168,6 +170,11 @@ export function parseE2k(text: string): E2kModel {
   const areaLoads: { area: string; story: string; tipo: string; dir: string;
                      lc: string; val: number; set?: string }[] = [];
   const loadSets = new Map<string, { lc: string; val: number }[]>();
+  // POINTLOAD "pt" "story" TYPE "FORCE" LC "Dead" FX .. FY .. FZ .. MX .. MY .. MZ ..
+  // Hasta el 2-sep-2026 el parser NO las leia: un e2k con cargas nodales (el
+  // modo "manual" del exportador, o cualquier ETABS con cargas puntuales)
+  // entraba a Hekatan SIN carga y el ciclo e2k -> Hekatan -> e2k las perdia.
+  const pointLoads: { pt: string; story: string; lc: string; v: number[] }[] = [];
   const grids: E2kGrid[] = [];
   const planosRef: E2kPlanoRef[] = [];
   let title = "";
@@ -267,6 +274,16 @@ export function parseE2k(text: string): E2kModel {
         if (i2M) sec.modI2 = parseFloat(i2M[1]);
         const i3M = line.match(/I3MOD\s+([\d.eE+-]+)/);
         if (i3M) sec.modI3 = parseFloat(i3M[1]);
+        // SHAPE "General" (lo que escribe Hekatan y lo que ETABS escribe para
+        // Section Designer/CFT): A, As2, As3, I33, I22 y J vienen EN EL FICHERO.
+        // Hasta el 2-sep-2026 se ignoraban y la seccion se rehacia como un
+        // rectangulo D x B: el COL-CFT del galpon entraba con A = 0.0121 en vez
+        // de 0.00979 e I = 6e-5 en vez de 4.8e-5.
+        for (const [k, re] of [["AREA", /\bAREA\s+([\d.eE+-]+)/], ["AS2", /\bAS2\s+([\d.eE+-]+)/], ["AS3", /\bAS3\s+([\d.eE+-]+)/],
+                               ["I33", /\bI33\s+([\d.eE+-]+)/], ["I22", /\bI22\s+([\d.eE+-]+)/], ["TORSION", /\bTORSION\s+([\d.eE+-]+)/]] as const) {
+          const mm = line.match(re);
+          if (mm) (sec as any)[k] = parseFloat(mm[1]);
+        }
         // ⚠️ Un perfil CONFORMADO EN FRIO no trae `TF`/`TW`: trae un espesor
         // unico `T` y el labio `LIP`. Se leia solo TF/TW, salian 0, y el area
         // y las inercias tambien — la barra entraba en el modelo SIN RIGIDEZ y
@@ -384,6 +401,12 @@ export function parseE2k(text: string): E2kModel {
         if (!loadSets.has(sm[1])) loadSets.set(sm[1], []);
         loadSets.get(sm[1])!.push({ lc: sm[2], val: parseFloat(sm[3]) });
       }
+    }
+
+    // ── POINT OBJECT LOADS ──
+    if (currentSection === "POINT OBJECT LOADS") {
+      const pl = line.match(/POINTLOAD\s+"([^"]+)"\s+"([^"]+)"\s+TYPE\s+"FORCE"\s+LC\s+"([^"]+)"\s+FX\s+([-\d.eE+]+)\s+FY\s+([-\d.eE+]+)\s+FZ\s+([-\d.eE+]+)\s+MX\s+([-\d.eE+]+)\s+MY\s+([-\d.eE+]+)\s+MZ\s+([-\d.eE+]+)/);
+      if (pl) pointLoads.push({ pt: pl[1], story: pl[2], lc: pl[3], v: pl.slice(4, 10).map(Number) });
     }
 
     // ── SHELL OBJECT LOADS ──
@@ -850,6 +873,15 @@ export function parseE2k(text: string): E2kModel {
         AsZ = 4 * B * tf * 5/6; // four flanges
         shapeType = "2C";
         break;
+      case "General":
+        if (sec.AREA && sec.AREA > 0) {
+          A = sec.AREA; Iz = sec.I33 ?? 0; Iy = sec.I22 ?? 0; J = sec.TORSION ?? 0;
+          AsZ = sec.AS2 ?? 0;   // AS2 -> V2 (con I33)
+          AsY = sec.AS3 ?? 0;   // AS3 -> V3 (con I22)
+          shapeType = "general";
+          break;
+        }
+        // sin propiedades escritas: cae al rectangulo de abajo
       default:
         if (D > 0 && B > 0) {
           A = D * B; Iz = B * D ** 3 / 12; Iy = D * B ** 3 / 12;
@@ -1033,6 +1065,20 @@ export function parseE2k(text: string): E2kModel {
   for (let k = 0; k < elementNames.length; k++)
     if ((elements[k] as unknown as number[]).length > 2)
       areaLookup.set(`${elementNames[k]}@${elementStoriesArr[k]}`, k);
+
+  // Cargas PUNTUALES: al nudo (punto@planta), en unidades del fichero; la
+  // conversion a kN / kN·m la hace el bloque de unidades de mas abajo junto
+  // con las de area y de barra.
+  let puntualesSinNudo = 0;
+  for (const pl of pointLoads) {
+    const ni = nodeNameToIdx.get(nodeKey(pl.pt, pl.story));
+    if (ni === undefined) { puntualesSinNudo++; continue; }
+    const prev = loads.get(ni) || [0, 0, 0, 0, 0, 0] as [number, number, number, number, number, number];
+    for (let k = 0; k < 6; k++) prev[k] += pl.v[k];
+    loads.set(ni, prev);
+  }
+  if (pointLoads.length)
+    console.log(`[e2kParser] cargas puntuales: ${pointLoads.length - puntualesSinNudo} aplicadas · ${puntualesSinNudo} sin nudo (punto@planta que no existe)`);
 
   let cargaAreaTotal = 0, sinArea = 0, sinValor = 0, aplicadas = 0;
   for (const al of areaLoads) {
