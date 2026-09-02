@@ -264,6 +264,8 @@ export function modalCpp(
     diaph.size,
     springsPtr,
     resortes ? resortes.length : 0,
+    // la union viga-muro de ETABS (`etabsjoint 1`), apagada por defecto
+    (elementInputs as any).etabsWallJoint ? 1 : 0,
     // control
     numModes,
     lateralMass,

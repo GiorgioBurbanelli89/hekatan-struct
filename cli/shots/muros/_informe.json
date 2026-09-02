@@ -1,0 +1,330 @@
+[
+ {
+  "tag": "edificio-dual",
+  "medida": {
+   "muros": 2400,
+   "losas": 4000,
+   "campos": {
+    "membraneXX": {
+     "muros": {
+      "con": 2400,
+      "de": 2400,
+      "nan": 0,
+      "min": -5.63,
+      "max": 0.879
+     },
+     "losas": {
+      "con": 4000,
+      "de": 4000,
+      "nan": 0,
+      "min": -0.659,
+      "max": 2.781
+     }
+    },
+    "membraneYY": {
+     "muros": {
+      "con": 2400,
+      "de": 2400,
+      "nan": 0,
+      "min": -36.55,
+      "max": 1.836
+     },
+     "losas": {
+      "con": 4000,
+      "de": 4000,
+      "nan": 0,
+      "min": -17.14,
+      "max": 3.181
+     }
+    },
+    "membraneXY": {
+     "muros": {
+      "con": 2400,
+      "de": 2400,
+      "nan": 0,
+      "min": -3.6,
+      "max": 2.649
+     },
+     "losas": {
+      "con": 4000,
+      "de": 4000,
+      "nan": 0,
+      "min": -2,
+      "max": 2.51
+     }
+    },
+    "bendingXX": {
+     "muros": {
+      "con": 2400,
+      "de": 2400,
+      "nan": 0,
+      "min": -0.02841,
+      "max": 0.02557
+     },
+     "losas": {
+      "con": 4000,
+      "de": 4000,
+      "nan": 0,
+      "min": -0.01544,
+      "max": 0.01563
+     }
+    },
+    "vonMises": {
+     "muros": {
+      "con": 2400,
+      "de": 2400,
+      "nan": 0,
+      "min": 1.397,
+      "max": 146.8
+     },
+     "losas": {
+      "con": 4000,
+      "de": 4000,
+      "nan": 0,
+      "min": 0.7012,
+      "max": 76.68
+     }
+    }
+   }
+  },
+  "capturas": [
+   {
+    "f": "edificio-dual_membraneXX_iso.png",
+    "legend": "[tonf/m²] 0.284 0.176 0.0692 -0.0380 -0.145 -0.252 -0.360 -0.467 -0.574"
+   },
+   {
+    "f": "edificio-dual_membraneXX_alzadoY.png",
+    "legend": "[tonf/m²] 0.284 0.176 0.0692 -0.0380 -0.145 -0.252 -0.360 -0.467 -0.574"
+   },
+   {
+    "f": "edificio-dual_membraneXX_alzadoX.png",
+    "legend": "[tonf/m²] 0.284 0.176 0.0692 -0.0380 -0.145 -0.252 -0.360 -0.467 -0.574"
+   },
+   {
+    "f": "edificio-dual_membraneYY_iso.png",
+    "legend": "[tonf/m²] 0.324 -0.182 -0.688 -1.19 -1.70 -2.21 -2.71 -3.22 -3.73"
+   },
+   {
+    "f": "edificio-dual_membraneYY_alzadoY.png",
+    "legend": "[tonf/m²] 0.324 -0.182 -0.688 -1.19 -1.70 -2.21 -2.71 -3.22 -3.73"
+   },
+   {
+    "f": "edificio-dual_membraneYY_alzadoX.png",
+    "legend": "[tonf/m²] 0.324 -0.182 -0.688 -1.19 -1.70 -2.21 -2.71 -3.22 -3.73"
+   },
+   {
+    "f": "edificio-dual_membranePrincipalMin_iso.png",
+    "legend": "[tonf/m²] 0.209 -0.283 -0.775 -1.27 -1.76 -2.25 -2.74 -3.23 -3.73"
+   },
+   {
+    "f": "edificio-dual_membranePrincipalMin_alzadoY.png",
+    "legend": "[tonf/m²] 0.209 -0.283 -0.775 -1.27 -1.76 -2.25 -2.74 -3.23 -3.73"
+   },
+   {
+    "f": "edificio-dual_membranePrincipalMin_alzadoX.png",
+    "legend": "[tonf/m²] 0.209 -0.283 -0.775 -1.27 -1.76 -2.25 -2.74 -3.23 -3.73"
+   },
+   {
+    "f": "edificio-dual_bendingXX_iso.png",
+    "legend": "[tonf·m/m] 0.00261 0.00192 0.00123 0.000543 -0.000145 -0.000833 -0.00152 -0.00221 -0.00290"
+   },
+   {
+    "f": "edificio-dual_bendingXX_alzadoY.png",
+    "legend": "[tonf·m/m] 0.00261 0.00192 0.00123 0.000543 -0.000145 -0.000833 -0.00152 -0.00221 -0.00290"
+   },
+   {
+    "f": "edificio-dual_bendingXX_alzadoX.png",
+    "legend": "[tonf·m/m] 0.00261 0.00192 0.00123 0.000543 -0.000145 -0.000833 -0.00152 -0.00221 -0.00290"
+   },
+   {
+    "f": "edificio-dual_vonMises_iso.png",
+    "legend": "[tonf/m²] 15.0 13.1 11.2 9.36 7.49 5.61 3.74 1.87 0.00"
+   },
+   {
+    "f": "edificio-dual_vonMises_alzadoY.png",
+    "legend": "[tonf/m²] 15.0 13.1 11.2 9.36 7.49 5.61 3.74 1.87 0.00"
+   },
+   {
+    "f": "edificio-dual_vonMises_alzadoX.png",
+    "legend": "[tonf/m²] 15.0 13.1 11.2 9.36 7.49 5.61 3.74 1.87 0.00"
+   },
+   {
+    "f": "edificio-dual_displacementZ_iso.png",
+    "legend": "[mm] 0.00464 -0.0107 -0.0261 -0.0415 -0.0569 -0.0722 -0.0876 -0.103 -0.118"
+   },
+   {
+    "f": "edificio-dual_displacementZ_alzadoY.png",
+    "legend": "[mm] 0.00464 -0.0107 -0.0261 -0.0415 -0.0569 -0.0722 -0.0876 -0.103 -0.118"
+   },
+   {
+    "f": "edificio-dual_displacementZ_alzadoX.png",
+    "legend": "[mm] 0.00464 -0.0107 -0.0261 -0.0415 -0.0569 -0.0722 -0.0876 -0.103 -0.118"
+   }
+  ],
+  "errores": []
+ },
+ {
+  "tag": "edificio-con-muros",
+  "medida": {
+   "muros": 1440,
+   "losas": 2400,
+   "campos": {
+    "membraneXX": {
+     "muros": {
+      "con": 1440,
+      "de": 1440,
+      "nan": 0,
+      "min": -9.333,
+      "max": 9.154
+     },
+     "losas": {
+      "con": 2400,
+      "de": 2400,
+      "nan": 0,
+      "min": -1.56,
+      "max": 16.16
+     }
+    },
+    "membraneYY": {
+     "muros": {
+      "con": 1440,
+      "de": 1440,
+      "nan": 0,
+      "min": -63.39,
+      "max": 18.61
+     },
+     "losas": {
+      "con": 2400,
+      "de": 2400,
+      "nan": 0,
+      "min": -26.68,
+      "max": 7.446
+     }
+    },
+    "membraneXY": {
+     "muros": {
+      "con": 1440,
+      "de": 1440,
+      "nan": 0,
+      "min": -4.518,
+      "max": 9.139
+     },
+     "losas": {
+      "con": 2400,
+      "de": 2400,
+      "nan": 0,
+      "min": -9.593,
+      "max": 4.376
+     }
+    },
+    "bendingXX": {
+     "muros": {
+      "con": 1440,
+      "de": 1440,
+      "nan": 0,
+      "min": -0.1637,
+      "max": 0.1136
+     },
+     "losas": {
+      "con": 2400,
+      "de": 2400,
+      "nan": 0,
+      "min": -0.2897,
+      "max": 0.3177
+     }
+    },
+    "vonMises": {
+     "muros": {
+      "con": 1440,
+      "de": 1440,
+      "nan": 0,
+      "min": 5.951,
+      "max": 250.3
+     },
+     "losas": {
+      "con": 2400,
+      "de": 2400,
+      "nan": 0,
+      "min": 1.303,
+      "max": 183.1
+     }
+    }
+   }
+  },
+  "capturas": [
+   {
+    "f": "edificio-con-muros_membraneXX_iso.png",
+    "legend": "[tonf/m²] 1.65 1.32 0.998 0.673 0.348 0.0230 -0.302 -0.627 -0.952"
+   },
+   {
+    "f": "edificio-con-muros_membraneXX_alzadoY.png",
+    "legend": "[tonf/m²] 1.65 1.32 0.998 0.673 0.348 0.0230 -0.302 -0.627 -0.952"
+   },
+   {
+    "f": "edificio-con-muros_membraneXX_alzadoX.png",
+    "legend": "[tonf/m²] 1.65 1.32 0.998 0.673 0.348 0.0230 -0.302 -0.627 -0.952"
+   },
+   {
+    "f": "edificio-con-muros_membraneYY_iso.png",
+    "legend": "[tonf/m²] 1.90 0.852 -0.193 -1.24 -2.28 -3.33 -4.37 -5.42 -6.46"
+   },
+   {
+    "f": "edificio-con-muros_membraneYY_alzadoY.png",
+    "legend": "[tonf/m²] 1.90 0.852 -0.193 -1.24 -2.28 -3.33 -4.37 -5.42 -6.46"
+   },
+   {
+    "f": "edificio-con-muros_membraneYY_alzadoX.png",
+    "legend": "[tonf/m²] 1.90 0.852 -0.193 -1.24 -2.28 -3.33 -4.37 -5.42 -6.46"
+   },
+   {
+    "f": "edificio-con-muros_membranePrincipalMin_iso.png",
+    "legend": "[tonf/m²] 0.231 -0.622 -1.48 -2.33 -3.18 -4.03 -4.89 -5.74 -6.59"
+   },
+   {
+    "f": "edificio-con-muros_membranePrincipalMin_alzadoY.png",
+    "legend": "[tonf/m²] 0.231 -0.622 -1.48 -2.33 -3.18 -4.03 -4.89 -5.74 -6.59"
+   },
+   {
+    "f": "edificio-con-muros_membranePrincipalMin_alzadoX.png",
+    "legend": "[tonf/m²] 0.231 -0.622 -1.48 -2.33 -3.18 -4.03 -4.89 -5.74 -6.59"
+   },
+   {
+    "f": "edificio-con-muros_bendingXX_iso.png",
+    "legend": "[tonf·m/m] 0.0324 0.0247 0.0169 0.00917 0.00143 -0.00632 -0.0141 -0.0218 -0.0295"
+   },
+   {
+    "f": "edificio-con-muros_bendingXX_alzadoY.png",
+    "legend": "[tonf·m/m] 0.0324 0.0247 0.0169 0.00917 0.00143 -0.00632 -0.0141 -0.0218 -0.0295"
+   },
+   {
+    "f": "edificio-con-muros_bendingXX_alzadoX.png",
+    "legend": "[tonf·m/m] 0.0324 0.0247 0.0169 0.00917 0.00143 -0.00632 -0.0141 -0.0218 -0.0295"
+   },
+   {
+    "f": "edificio-con-muros_vonMises_iso.png",
+    "legend": "[tonf/m²] 25.5 22.3 19.1 16.0 12.8 9.57 6.38 3.19 0.00"
+   },
+   {
+    "f": "edificio-con-muros_vonMises_alzadoY.png",
+    "legend": "[tonf/m²] 25.5 22.3 19.1 16.0 12.8 9.57 6.38 3.19 0.00"
+   },
+   {
+    "f": "edificio-con-muros_vonMises_alzadoX.png",
+    "legend": "[tonf/m²] 25.5 22.3 19.1 16.0 12.8 9.57 6.38 3.19 0.00"
+   },
+   {
+    "f": "edificio-con-muros_displacementZ_iso.png",
+    "legend": "[mm] 0.0311 0.0112 -0.00865 -0.0285 -0.0484 -0.0682 -0.0881 -0.108 -0.128"
+   },
+   {
+    "f": "edificio-con-muros_displacementZ_alzadoY.png",
+    "legend": "[mm] 0.0311 0.0112 -0.00865 -0.0285 -0.0484 -0.0682 -0.0881 -0.108 -0.128"
+   },
+   {
+    "f": "edificio-con-muros_displacementZ_alzadoX.png",
+    "legend": "[mm] 0.0311 0.0112 -0.00865 -0.0285 -0.0484 -0.0682 -0.0881 -0.108 -0.128"
+   }
+  ],
+  "errores": []
+ }
+]

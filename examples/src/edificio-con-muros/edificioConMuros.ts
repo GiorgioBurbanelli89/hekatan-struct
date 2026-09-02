@@ -3,10 +3,10 @@
  *
  * Variante de edificio-aporticado con:
  *   - slabOn = ON (losa Q4 por piso)
- *   - bracesMode = 1 (muros perimetrales como arriostramiento)
- *     NOTA: actualmente se modelan como diagonales 1D en el perímetro.
- *     Una versión con Muros Q4 (shell membrana vertical) requiere extender
- *     el build() de edificioAporticado con elementos shell vertical.
+ *   - murosMode = 3: muros de corte de CASCARA (Q4 verticales) en el primer
+ *     vano de las dos fachadas X y de las dos fachadas Y, de la base a la
+ *     cubierta, cosidos a vigas y columnas (2026-09-02). Hasta entonces eran
+ *     diagonales 1D y el colormap de "muros" no tenia nada que pintar.
  *
  * Representa edificio dual — pórtico + muros de corte.
  * Típico en edificios altos (≥6 pisos) NEC-SE-DS.
@@ -19,7 +19,9 @@ const params = { ...baseParams };
 
 // Defaults edificio dual
 params.slabOn     = { ...baseParams.slabOn,     default: 1 };      // losa ON
-params.bracesMode = { ...baseParams.bracesMode, default: 1 };      // perimetrales (proxy de muros)
+params.bracesMode = { ...baseParams.bracesMode, default: 0 };      // sin diagonales: los muros son de verdad
+params.murosMode  = { ...baseParams.murosMode,  default: 3 };      // muros Q4 en X e Y (primer vano, dos fachadas)
+params.tMuro      = { ...baseParams.tMuro,      default: 0.25 };
 params.slabT      = { ...baseParams.slabT,      default: 0.15 };
 // Edificio dual es más rígido — puede tener más pisos por default
 params.nPisos     = { ...baseParams.nPisos,     default: 6 };
@@ -29,7 +31,7 @@ export const edificioConMuros: ExampleDef = {
   name: "Edificio con Muros de corte",
   category: "4️⃣ Mixtos · 🏢 Edificios",
   defaultShellResult: "bendingXX",
-  availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "displacementZ", "vonMises"],
+  availableShellResults: ["bendingXX", "bendingYY", "bendingXY", "membraneXX", "membraneYY", "membranePrincipalMin", "membranePrincipalMax", "displacementZ", "vonMises"],
   hasModal: true,
   params,
   build: edificioAporticado.build,

@@ -758,3 +758,22 @@ meterlos en el WASM sería mantener tres mapas más sin añadir un dato nuevo.
 - `deformScale` se auto-computa en cada `loadExample`/`rebuild` — el usuario puede sobreescribir desde el slider pero se pierde al siguiente rebuild
 - Git-Bash de Windows convierte `/hekatan-struct-lineal/` a ruta absoluta Windows — usar `MSYS_NO_PATHCONV=1` al build
 - El servidor dev corre en **localhost:4600** (no 4640 como el awatif original)
+
+## Edificio aporticado: losa COSIDA a las vigas y muros de CÁSCARA (2-sep-2026)
+
+Dos cosas que `edificioAporticado.build()` no hacía y que heredan `edificio-dual`,
+`edificio-con-muros`, `edif-acero`, `edificio-ladera`…:
+
+- **La losa no tocaba la viga más que en las esquinas.** Los nudos del borde del
+  paño se creaban sin partir la viga que pasa por ahí (`Div. vigas = 1`). Ahora
+  cada nudo de borde llama a `partirBarrasEn` — lo que ETABS hace al mallar la
+  línea con el área — y el trozo nuevo hereda el piso (`elementFloor`).
+- **"Muros" eran diagonales** (`bracesMode = 1`): 0 elementos de muro, nada que
+  pintar en el colormap. Ahora `murosMode` (ninguno / X / Y / X e Y) + `tMuro`
+  monta muros Q4 de hormigón en el primer vano de las dos fachadas, de la base a
+  la cubierta, malla = `slabDisc`, nV múltiplo de `Div. columnas`, base apoyada.
+
+Medirlo sin navegador: `node cli/_medir_muros.mjs edificio-dual` (muros/losas,
+rangos por campo, nudos SIN coser, NaN). Verlo: `node cli/shot_muros.mjs
+edificio-dual` → `cli/shots/muros/` (iso + dos alzados × 6 campos). Con F11/M11
+un muro sale casi uniforme: para verlo, F22 / FMin / von Mises.

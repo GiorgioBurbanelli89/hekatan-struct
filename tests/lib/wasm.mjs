@@ -122,6 +122,7 @@ export async function modal(nodes, elements, nodeInputs, elementInputs, numModes
     nm.kp, nm.vp, nm.size, 1 /* includeElements */,
     dia.kp, dia.vp, dia.size,
     alloc([0], Float64Array, mod.HEAPF64), 0,   // resortes: ninguno
+     0, /* etabsjoint: la union viga-muro de ETABS, apagada */
     numModes, lateral, 0 /* lumpStories */,
     fo, nfo, moo, mro, mco, mao, maro, maco);
 

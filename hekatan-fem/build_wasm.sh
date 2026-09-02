@@ -31,7 +31,7 @@ _slopeStabilitySolver,_slopeAllocDouble,_nonlinear_dynamic,_steel02_test,_cyclic
 _concrete02_test,_hex8_solve"
 
 ARGS="$SRCS -o ./src/cpp/built/deform.js -O3 -s ASSERTIONS -s ALLOW_MEMORY_GROWTH \
--s MAXIMUM_MEMORY=4294967296 -fexceptions -s STACK_SIZE=2097152 -s MODULARIZE -s EXPORT_ES6 \
+-s MAXIMUM_MEMORY=2147483648 -fexceptions -s STACK_SIZE=2097152 -s MODULARIZE -s EXPORT_ES6 \
 -s EXPORTED_FUNCTIONS=$EXPORTS -s EXPORTED_RUNTIME_METHODS=HEAPF64,HEAPU32,HEAPU8 -I ./src/cpp/eigen/"
 
 echo "compilando WASM (esto tarda unos minutos)…"

@@ -1,4 +1,5 @@
 #include "data-model.h"
+#include "utils/etabsWallJoint.h"
 #include <vector>
 #include <map>
 #include <unordered_map>
@@ -428,6 +429,9 @@ extern "C"
         // teniendo solucion, solo que sin sentido.
         double *springs_flat_ptr, int num_springs,
 
+        // La union viga-muro de ETABS (ver utils/etabsWallJoint.h). 0 = apagado.
+        int etabs_wall_joint,
+
         // Control
         int num_modes,   // number of modes to return (0 = all)
         int lateral_mass, // 1 = masa solo lateral Ux,Uy (ETABS INCLUDEVERTICALMASS No)
@@ -497,6 +501,7 @@ extern "C"
             if (nodo < 0 || nodo >= num_nodes || d < 0 || d > 5 || k == 0.0) continue;
             K_global.coeffRef(nodo * 6 + d, nodo * 6 + d) += k;
         }
+        if (etabs_wall_joint) addEtabsWallJoint(K_global, nodes, element_indices, element_sizes, elementInputs);
 
         // La masa se arma en ensamblarMasa() (arriba): los mismos pasos 2a,
         // 2b y 2c de ETABS, ahora en una funcion que tambien puede llamarse

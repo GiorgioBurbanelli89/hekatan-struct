@@ -1,1 +1,238 @@
-[]
+[
+ {
+  "id": "itw-test-1-flexion-pura",
+  "campo": "membraneXX",
+  "nAreas": 20,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": -0.153,
+  "max": 0.153,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "itw-test-2-voladizo",
+  "campo": "vonMises",
+  "nAreas": 24,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": 0,
+  "max": 4.88,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "itw-test-3-cook",
+  "campo": "vonMises",
+  "nAreas": 16,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": 0,
+  "max": 0.0195,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "itw-test-4-hemisferio",
+  "campo": "displacementX",
+  "nAreas": 64,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": 0,
+  "max": 92.6,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "itw-muro-acople",
+  "campo": "vonMises",
+  "nAreas": 36,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": 0,
+  "max": 90.4,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "itw-muro-frame",
+  "campo": "vonMises",
+  "nAreas": 32,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": 0,
+  "max": 197,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "test-m-dual",
+  "campo": "vonMises",
+  "nAreas": 896,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": 0,
+  "max": 9.93,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "test-m-losa",
+  "campo": "vonMises",
+  "nAreas": 784,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": 0,
+  "max": 6.74,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "drilling-dof",
+  "campo": "membraneXX",
+  "nAreas": 64,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": -3.66,
+  "max": 3.66,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "itw-patch-test",
+  "campo": "membraneXX",
+  "nAreas": 6,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": 0,
+  "max": 2.48e-15,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": [
+   "rango ~0 (esperado en un patch test)"
+  ]
+ },
+ {
+  "id": "itw-cantilever",
+  "campo": "membraneXX",
+  "nAreas": 64,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": -5.95,
+  "max": 5.95,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "itw-cook",
+  "campo": "membraneXX",
+  "nAreas": 64,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": -0.0238,
+  "max": 0.0126,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ },
+ {
+  "id": "itw-hemisferio",
+  "campo": "vonMises",
+  "nAreas": 64,
+  "hay": true,
+  "rect": {
+   "x": 1076,
+   "y": 237.5,
+   "w": 20,
+   "h": 475
+  },
+  "nNums": 9,
+  "min": 0,
+  "max": 500,
+  "tapada": 0,
+  "fuera": false,
+  "problemas": []
+ }
+]

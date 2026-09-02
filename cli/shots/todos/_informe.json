@@ -1,0 +1,18 @@
+[
+ {
+  "id": "viga-cim-guerra-ej7-tinv",
+  "ms": 7401,
+  "shell": "displacementZ",
+  "solid": "none",
+  "deformada": true,
+  "errores": []
+ },
+ {
+  "id": "W1_barra_axial",
+  "ms": 7268,
+  "shell": "none",
+  "solid": "none",
+  "deformada": true,
+  "errores": []
+ }
+]

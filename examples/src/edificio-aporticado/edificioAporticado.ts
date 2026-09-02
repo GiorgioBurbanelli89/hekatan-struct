@@ -223,6 +223,11 @@ export const edificioAporticado: ExampleDef = {
     bracesMode: PE("Avanzado", "Diagonales", 0, { "ninguna": 0, "perimetrales": 1, "todas": 2, "solo X": 3, "solo Y": 4 }),
     slabOn:   PE("Avanzado", "Losa",  0, { "Off": 0, "On": 1 }),
     slabT:    P("Avanzado", "t losa (m)", 0.15, 0.08, 0.30, 0.01),
+    // Muros de corte de CASCARA (Q4 verticales): el primer vano, en las dos
+    // fachadas, de la base a la cubierta. Antes "muros" eran las diagonales
+    // perimetrales (bracesMode=1) y el colormap no tenia nada que pintar.
+    murosMode: PE("Avanzado", "Muros de corte (cáscara)", 0, { "ninguno": 0, "en X (fachadas Y)": 1, "en Y (fachadas X)": 2, "en X e Y": 3 }),
+    tMuro:    P("Avanzado", "t muro (m)", 0.25, 0.15, 0.60, 0.05),
     // ── Tipo de losa según ETABS (Property Modifiers en CSI Manual §10.7) ──
     //   Shell completo:  M=1, B=1   (membrana + flexión, default ETABS)
     //   Membrane only:   M=1, B=0   (solo in-plane, suprime modos verticales)
@@ -493,6 +498,45 @@ export const edificioAporticado: ExampleDef = {
       elements.push([prev, nj]);
     };
 
+    /**
+     * Parte en dos cualquier barra que PASE por este nudo sin tenerlo de
+     * extremo.
+     *
+     * Sin esto, la viga secundaria nacía en un nudo NUEVO sobre la viga
+     * principal —(0, 1.67, 3), por ejemplo— y esa viga principal seguía
+     * yendo de esquina a esquina sin enterarse: la secundaria entera quedaba
+     * FLOTANDO, sin tocar nada. Seis grados de libertad de sólido rígido, o
+     * sea matriz SINGULAR. `edif-acero` (que trae `vSecOn` encendido) no
+     * resolvía: 0 deformaciones, ΣRz = 0 y el solver avisando «LDLT failed…
+     * Matrix decomposition failed». Medido: con `vSecOn=0` resolvía y
+     * equilibraba exacto; con las secundarias, 24 nudos tocaban un solo
+     * elemento — los dos extremos de 12 vigas colgadas de la nada.
+     */
+    const partirBarrasEn = (ni: number) => {
+      const P = nodes[ni];
+      for (let e = elements.length - 1; e >= 0; e--) {
+        const el = elements[e];
+        if (el.length !== 2) continue;
+        const [a, b] = el;
+        if (a === ni || b === ni) continue;
+        const A = nodes[a], B = nodes[b];
+        const d = [B[0]-A[0], B[1]-A[1], B[2]-A[2]];
+        const v = [P[0]-A[0], P[1]-A[1], P[2]-A[2]];
+        const L2 = d[0]**2 + d[1]**2 + d[2]**2;
+        if (L2 < 1e-12) continue;
+        const t = (v[0]*d[0] + v[1]*d[1] + v[2]*d[2]) / L2;
+        if (t < 1e-6 || t > 1 - 1e-6) continue;          // el nudo es un extremo
+        if (Math.hypot(v[0]-t*d[0], v[1]-t*d[1], v[2]-t*d[2]) > 1e-6) continue;
+        elements[e] = [a, ni];
+        const nuevo = elements.length;
+        elements.push([ni, b]);
+        // el trozo nuevo es del mismo tipo que el que se partió
+        if (beamIdx.has(e)) beamIdx.add(nuevo);
+        if (colIdx.has(e)) colIdx.add(nuevo);
+        if (elementFloor.has(e)) elementFloor.set(nuevo, elementFloor.get(e)!);
+      }
+    };
+
     // Columnas (floor = iz, donde iz=0 es entre base y piso 1)
     for (let iz = 0; iz < zCoords.length - 1; iz++)
       for (let iy = 0; iy < yCoords.length; iy++)
@@ -514,43 +558,6 @@ export const edificioAporticado: ExampleDef = {
     // Vigas secundarias
     if (p.vSecOn >= 0.5 && p.nVSec >= 1) {
       const nVSec = Math.round(p.nVSec);
-      /**
-       * Parte en dos cualquier barra que PASE por este nudo sin tenerlo de
-       * extremo.
-       *
-       * Sin esto, la viga secundaria nacía en un nudo NUEVO sobre la viga
-       * principal —(0, 1.67, 3), por ejemplo— y esa viga principal seguía
-       * yendo de esquina a esquina sin enterarse: la secundaria entera quedaba
-       * FLOTANDO, sin tocar nada. Seis grados de libertad de sólido rígido, o
-       * sea matriz SINGULAR. `edif-acero` (que trae `vSecOn` encendido) no
-       * resolvía: 0 deformaciones, ΣRz = 0 y el solver avisando «LDLT failed…
-       * Matrix decomposition failed». Medido: con `vSecOn=0` resolvía y
-       * equilibraba exacto; con las secundarias, 24 nudos tocaban un solo
-       * elemento — los dos extremos de 12 vigas colgadas de la nada.
-       */
-      const partirBarrasEn = (ni: number) => {
-        const P = nodes[ni];
-        for (let e = elements.length - 1; e >= 0; e--) {
-          const el = elements[e];
-          if (el.length !== 2) continue;
-          const [a, b] = el;
-          if (a === ni || b === ni) continue;
-          const A = nodes[a], B = nodes[b];
-          const d = [B[0]-A[0], B[1]-A[1], B[2]-A[2]];
-          const v = [P[0]-A[0], P[1]-A[1], P[2]-A[2]];
-          const L2 = d[0]**2 + d[1]**2 + d[2]**2;
-          if (L2 < 1e-12) continue;
-          const t = (v[0]*d[0] + v[1]*d[1] + v[2]*d[2]) / L2;
-          if (t < 1e-6 || t > 1 - 1e-6) continue;          // el nudo es un extremo
-          if (Math.hypot(v[0]-t*d[0], v[1]-t*d[1], v[2]-t*d[2]) > 1e-6) continue;
-          elements[e] = [a, ni];
-          const nuevo = elements.length;
-          elements.push([ni, b]);
-          // el trozo nuevo es del mismo tipo que el que se partió
-          if (beamIdx.has(e)) beamIdx.add(nuevo);
-          if (colIdx.has(e)) colIdx.add(nuevo);
-        }
-      };
       const findOrCreateNode = (x: number, y: number, z: number): number => {
         for (let ni = 0; ni < nodes.length; ni++) {
           if (Math.abs(nodes[ni][0]-x)<1e-6 && Math.abs(nodes[ni][1]-y)<1e-6 && Math.abs(nodes[ni][2]-z)<1e-6) return ni;
@@ -631,15 +638,15 @@ export const edificioAporticado: ExampleDef = {
       }
     }
 
+    const nodeIndex = new Map<string, number>();
+    const nodeKey = (x: number, y: number, z: number) => `${Math.round(x*10000)},${Math.round(y*10000)},${Math.round(z*10000)}`;
+    for (let ni = 0; ni < nodes.length; ni++) nodeIndex.set(nodeKey(nodes[ni][0], nodes[ni][1], nodes[ni][2]), ni);
+    const slabTarget = p.slabDisc > 0 ? p.slabDisc : 0.50;
     // Losas
     if (p.slabOn >= 0.5) {
-      const nodeIndex = new Map<string, number>();
-      const nodeKey = (x: number, y: number, z: number) => `${Math.round(x*10000)},${Math.round(y*10000)},${Math.round(z*10000)}`;
-      for (let ni = 0; ni < nodes.length; ni++) nodeIndex.set(nodeKey(nodes[ni][0], nodes[ni][1], nodes[ni][2]), ni);
       // Discretización ETABS-style: cada paño (bay) se mallado por separado
       // usando el tamaño objetivo que el usuario eligió en "Discretización losa".
       // Paños grandes → más elementos; paños pequeños → menos. Coherente con ETABS.
-      const slabTarget = p.slabDisc > 0 ? p.slabDisc : 0.50;
       for (let iz = 1; iz < zCoords.length; iz++) {
         const z = zCoords[iz];
         for (let bx = 0; bx < xCoords.length - 1; bx++)
@@ -660,6 +667,10 @@ export const edificioAporticado: ExampleDef = {
                 if (found !== undefined) row.push(found);
                 else {
                   const ni = nodes.length; nodes.push([x, y, z]); nodeIndex.set(key, ni); row.push(ni);
+                  // Si el nudo cae en el BORDE del pano esta sobre una viga: hay que
+                  // partirla ahi, como hace ETABS al mallar la linea con el area. Sin
+                  // esto la losa solo tocaba la viga en las esquinas y el borde colgaba.
+                  if (jc === 0 || jc === nSx || jr === 0 || jr === nSy) partirBarrasEn(ni);
                 }
               }
               grid.push(row);
@@ -670,6 +681,59 @@ export const edificioAporticado: ExampleDef = {
                 elements.push([grid[jr][jc], grid[jr][jc+1], grid[jr+1][jc+1], grid[jr+1][jc]]);
               }
           }
+      }
+    }
+
+    // ── Muros de corte de CASCARA (Q4 verticales) ──────────────────────────
+    // Misma disposicion que la plantilla dual: el PRIMER vano (sin contar el
+    // voladizo) en las DOS fachadas, de la base a la cubierta. Malla con el
+    // mismo tamano objetivo que la losa, asi los nudos del borde superior son
+    // los de la losa y los del borde vertical son los de la columna (nV es
+    // multiplo de las divisiones de columna). Cada nudo nuevo parte la barra
+    // que pasa por el (viga o columna): el muro queda cosido al portico.
+    const muroIdx = new Set<number>();
+    const muroBase: number[] = [];
+    const mm = Math.round(p.murosMode ?? 0);
+    if (mm > 0) {
+      const wallsX = mm === 1 || mm === 3, wallsY = mm === 2 || mm === 3;
+      const findOrMake = (x: number, y: number, z: number) => {
+        const key = nodeKey(x, y, z); const found = nodeIndex.get(key);
+        if (found !== undefined) return found;
+        const ni = nodes.length; nodes.push([x, y, z]); nodeIndex.set(key, ni);
+        partirBarrasEn(ni);
+        return ni;
+      };
+      const panel = (x0: number, y0: number, x1: number, y1: number, z0: number, z1: number, nH: number, nV: number) => {
+        const g: number[][] = [];
+        for (let k = 0; k <= nV; k++) {
+          const row: number[] = [];
+          for (let c = 0; c <= nH; c++)
+            row.push(findOrMake(x0 + c / nH * (x1 - x0), y0 + c / nH * (y1 - y0), z0 + k / nV * (z1 - z0)));
+          g.push(row);
+        }
+        for (let k = 0; k < nV; k++)
+          for (let c = 0; c < nH; c++) {
+            muroIdx.add(elements.length);
+            elements.push([g[k][c], g[k][c + 1], g[k + 1][c + 1], g[k + 1][c]]);
+          }
+        if (Math.abs(z0) < 1e-9) muroBase.push(...g[0]);
+      };
+      const ix0 = p.Lvix > 0 ? 1 : 0, iy0 = p.Lviy > 0 ? 1 : 0;
+      const ixL = xCoords.length - 1 - (p.Lvdx > 0 ? 1 : 0), iyL = yCoords.length - 1 - (p.Lvdy > 0 ? 1 : 0);
+      for (let iz = 0; iz < zCoords.length - 1; iz++) {
+        const z0 = zCoords[iz], z1 = zCoords[iz + 1];
+        const nEt = etabsDiscretize(z1 - z0, slabTarget).n;
+        const nV = Math.ceil(nEt / nSubCol) * nSubCol;
+        if (wallsX && ixL > ix0) {
+          const x0 = xCoords[ix0], x1 = xCoords[ix0 + 1];
+          const nH = etabsDiscretize(x1 - x0, slabTarget).n;
+          for (const iy of new Set([iy0, iyL])) panel(x0, yCoords[iy], x1, yCoords[iy], z0, z1, nH, nV);
+        }
+        if (wallsY && iyL > iy0) {
+          const y0 = yCoords[iy0], y1 = yCoords[iy0 + 1];
+          const nH = etabsDiscretize(y1 - y0, slabTarget).n;
+          for (const ix of new Set([ix0, ixL])) panel(xCoords[ix], y0, xCoords[ix], y1, z0, z1, nH, nV);
+        }
       }
     }
 
@@ -685,6 +749,7 @@ export const edificioAporticado: ExampleDef = {
         if (isCantTip(ix, iy)) continue;
         supports.set(nid[`${ix},${iy},0`], [...sDofs]);
       }
+    for (const n of muroBase) supports.set(n, [...sDofs]);   // la base del muro, como las columnas
 
     // ── Loads filtrados por caso de carga seleccionado ──
     // p.loadCase: 0=combinada, 1=vert, 2=CM, 3=CV, 4=Ex, 5=Ey, 6=XY,
@@ -804,6 +869,11 @@ export const edificioAporticado: ExampleDef = {
         bendingModifiers.set(i, bFactor * fSlab_b);
         // Densidad: si Mass Source = Loads, usar ρ equivalente (q/t)
         densities.set(i, rho_slab_equiv);
+      } else if (muroIdx.has(i)) {
+        // hormigon, espesor tMuro, sin modificadores (los de losa NO le tocan)
+        elasticities.set(i, Ec); shearModuli.set(i, Gc); poissons.set(i, nu_c);
+        thicknesses.set(i, p.tMuro ?? 0.25);
+        densities.set(i, useMassFromLoads ? 0 : rho_c);
       } else if (colIdx.has(i)) {
         const cp = colPropsAt(Math.min(floor, 7));
         elasticities.set(i, matColE); shearModuli.set(i, matColG); poissons.set(i, matColNu);
@@ -2026,7 +2096,7 @@ export const edificioAporticado: ExampleDef = {
         title: `Edificio ${nvx}×${nvy} vanos × ${np} pisos · ${nModes} modos`,
         properties: [
           `Material cols=${p.matCol<0.5?'Hormigón':'Acero'} vigas=${p.matViga<0.5?'Hormigón':'Acero'}  f'c=${p.fcConcr} kg/cm²`,
-          `Apoyo: ${['Empotrado','Articulado','Rótula'][Math.round(p.apoyo)]}${p.slabOn>=0.5?` + Losa (lumped: ×${lumpFactor.toFixed(2)} dens cols, ${massSlab.toFixed(0)} kN/g)`:''}${p.bracesMode>0?' + Diagonales':''}`,
+          `Apoyo: ${['Empotrado','Articulado','Rótula'][Math.round(p.apoyo)]}${p.slabOn>=0.5?` + Losa (lumped: ×${lumpFactor.toFixed(2)} dens cols, ${massSlab.toFixed(0)} kN/g)`:''}${p.bracesMode>0?' + Diagonales':''}${(p.murosMode??0)>0?' + Muros Q4':''}`,
           `Estilo ETABS: losas filtradas del modal + masa transferida a columnas (igual que membrane diaphragm en ETABS/SAP)`,
         ],
       });

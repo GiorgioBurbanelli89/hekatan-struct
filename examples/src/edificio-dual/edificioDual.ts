@@ -37,13 +37,15 @@ params.bracesMode = { ...base.bracesMode, default: 2 };  // todas las diagonales
 params.slabT      = { ...base.slabT,      default: 0.12 };
 params.fcConcr    = { ...base.fcConcr,    default: 280 };
 params.nPisos     = { ...base.nPisos,     default: 10 };
+params.murosMode  = { ...base.murosMode,  default: 3 };  // muros Q4 en X e Y (primer vano, dos fachadas)
+params.tMuro      = { ...base.tMuro,      default: 0.25 };
 
 export const edificioDual: ExampleDef = {
   id: "edificio-dual",
   name: "Edificio Dual (Mixto + Muros + Diagonales)",
   category: "4️⃣ Mixtos · 🏢 Edificios",
   defaultShellResult: "bendingXX",
-  availableShellResults: ["bendingXX", "bendingYY", "displacementZ", "vonMises"],
+  availableShellResults: ["bendingXX", "bendingYY", "membraneXX", "membraneYY", "membranePrincipalMin", "membranePrincipalMax", "displacementZ", "vonMises"],
   hasModal: true,
   params,
   build: edificioAporticado.build,
