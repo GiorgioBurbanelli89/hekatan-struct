@@ -291,6 +291,8 @@ export function deformCpp(
     releaseKeysPtr,
     releaseValuesPtr,
     releaseKeys.length,
+    // La union viga-muro de ETABS (`etabsjoint 1` en el .heks); apagada por defecto
+    (elementInputs as any).etabsWallJoint ? 1 : 0,
     // Output pointers
     deformationsDataPtrOutPtr,
     deformationsSizeOutPtr,

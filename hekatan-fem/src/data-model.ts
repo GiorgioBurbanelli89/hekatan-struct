@@ -144,6 +144,13 @@ export type ElementInputs = {
   drillingTypes?: Map<number, number>;
   drillingPenaltyScales?: Map<number, number>;
   /**
+   * La union viga-muro de ETABS (medida el 2-sep-2026): en cada nudo de un muro
+   * donde entra una barra, ETABS ata el giro drilling al giro de la arista
+   * horizontal con c = E·t·(H/L)³/32. `etabsjoint 1` en el .heks. Apagado por
+   * defecto: SAP2000 no lo hace. Ver addEtabsWallJoint en deform.cpp.
+   */
+  etabsWallJoint?: boolean;
+  /**
    * Property modifiers de cascara, estilo ETABS
    * (Assign -> Area -> Stiffness Modifiers). Multiplican la rigidez de
    * MEMBRANA y de FLEXION del shell. Por defecto 1.0.

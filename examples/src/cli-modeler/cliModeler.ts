@@ -95,6 +95,7 @@ interface ParsedModel {
   frameShearAreas: Map<number, [number, number]>;
   frameEndOffsets: Map<number, [number, number, number]>;   // [offI, offJ, rigidZone]
   selfWeight: number;                    // multiplicador de peso propio (`selfweight`)
+  etabsWallJoint: boolean;               // `etabsjoint 1`: la union viga-muro de ETABS
   /** End releases por barra: 12 banderas [U1 U2 U3 R1 R2 R3]_I + _J, el orden
    *  de ETABS. Una bandera en true libera ese grado LOCAL por condensacion
    *  estatica. Ver el comando `release`. */
@@ -183,6 +184,7 @@ export function parseCliCommands(text: string): ParsedModel {
     frameShearAreas: new Map(),
     frameEndOffsets: new Map(),
     selfWeight: 0,
+    etabsWallJoint: false,
     frameReleases: new Map(),
     areaObjs: [],
     supports: new Map(),
@@ -388,6 +390,13 @@ export function parseCliCommands(text: string): ParsedModel {
         // en el estatico: habia que meterlo a mano en las cargas, y en el
         // galpon directamente no estaba (faltaban 385.5 kN de acero mas la
         // losa). Las VIGAS con `endoffset` pesan por su LUZ LIBRE, como ETABS.
+        case "etabsjoint":
+        case "etabswalljoint": {
+          // etabsjoint [0|1] -> la penalizacion viga-muro de ETABS (ver data-model.ts)
+          const v = (tokens[1] ?? "1").toLowerCase();
+          m.etabsWallJoint = !(v === "0" || v === "no" || v === "off" || v === "false");
+          break;
+        }
         case "selfweight":
         case "peso":
         case "sw": {
@@ -981,6 +990,7 @@ export const cliModeler: ExampleDef = {
       // escriba SELFWEIGHT con el multiplicador del MODELO (0 si no lo lleva)
       // y descuente de las cargas nodales lo que ETABS va a calcular solo.
       selfWeight: m.selfWeight,
+      etabsWallJoint: m.etabsWallJoint,
       areaObjects: m.areaObjs.map(o => ({
         nodes: o.pts.map(id => idToIdx.get(id)).filter(i => i !== undefined) as number[],
         cells: o.cells.map(id => shellIdxOf.get(id)).filter(i => i !== undefined) as number[],
