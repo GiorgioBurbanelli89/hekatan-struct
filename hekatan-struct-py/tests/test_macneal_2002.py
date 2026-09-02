@@ -71,10 +71,17 @@ def resolver(malla, caso):
         ei.shear_moduli[k] = E/(2*(1+NU))
         ei.thicknesses[k] = T
         ei.densities[k] = 0.0
-    # empotramiento: nudo 0 (abajo) y 7 (arriba) en x=0.
-    # El PDF deja LIBRE el uz del de arriba para no meter el efecto Poisson.
-    ni.supports[0] = (True, True, True, True, True, True)
-    ni.supports[7] = (True, True, False, True, True, True)
+    # Empotramiento, EXACTAMENTE como lo define el PDF (pag. 1):
+    #   «joint 1 is restrained in the Ux, Uy, Uz and Rz degrees of freedom and
+    #    joint 8 is restrained in the Ux, Uy and Rz»
+    # O sea: Rx y Ry quedan LIBRES en los dos, y Uz libre en el de arriba. No es
+    # un detalle. Con los seis grados sujetos se impide la curvatura ANTICLASTICA
+    # junto al apoyo y la tira pasa de rigidez de viga a rigidez de placa
+    # (EI -> EI/(1-nu^2), un 9 % mas rigida con nu = 0.3), y la flexion fuera del
+    # plano sale un 1.9 % corta sin que el elemento tenga nada malo: con nu = 0
+    # el patch test de curvatura constante da 0.0000 % con UN solo elemento.
+    ni.supports[0] = (True, True, True, False, False, True)   # Ux Uy Uz . . Rz
+    ni.supports[7] = (True, True, False, False, False, True)  # Ux Uy .  . . Rz
     d = {"axial": (0.5, 0, 0), "en_plano": (0, 0, 0.5), "fuera_plano": (0, 0.5, 0)}[caso]
     for n in (6, 13):                                  # los dos nudos de la punta
         ni.loads[n] = (d[0], d[1], d[2], 0.0, 0.0, 0.0)
@@ -123,12 +130,15 @@ def test_axial_exacto(malla):
 
 @pytest.mark.parametrize("malla", list(MALLAS))
 def test_flexion_fuera_del_plano(malla):
-    """Flexion pura. SAP2000 clava 0.0 % en las tres; aqui hoy se pierde
-    1.4-2.6 %, tambien en la malla RECTANGULAR — o sea que no es el trapecio.
-    Es un hueco real y abierto; el limite esta puesto donde estamos hoy para que
-    salte si empeora (y hay que bajarlo cuando se arregle)."""
+    """Flexion pura. SAP2000 clava 0.0 % en las tres; aqui se pierde 0.7-1.6 %.
+
+    Ese resto NO es un defecto del elemento: con nu = 0 el patch test de curvatura
+    constante da **0.0000 % con UN solo elemento** en las dos formulaciones
+    (`patch_flexion.py`). Lo que queda es la curvatura ANTICLASTICA que el apoyo
+    impide localmente, y que se diluye al refinar. La mitad del error que habia
+    antes (1.4-2.6 %) era del montaje: sujetaba Rx y Ry, que el PDF deja libres."""
     v = resolver(malla, "fuera_plano")
-    assert abs(v/INDEP["fuera_plano"] - 1) < 0.030
+    assert abs(v/INDEP["fuera_plano"] - 1) < 0.020
 
 
 def test_trapecio_se_hunde_como_en_sap2000():
