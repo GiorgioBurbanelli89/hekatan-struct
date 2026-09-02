@@ -5,7 +5,7 @@ Este archivo es **el hilo**: se actualiza cada vez que se mide algo contra ETABS
 número de aquí es **medido y reproducible**, no un límite del test ni una cuenta
 a mano. La columna «cómo repetirlo» tiene el comando exacto.
 
-**Última medida: 2026-08-15** · suite `npm test` → **130/130** · WASM y C++
+**Última medida: 2026-09-02** · suite `npm test` → **379/379** · WASM y C++
 nativo idénticos a 13 decimales.
 
 **Regla de oro** para que la comparación signifique algo: mismo modelo, misma
@@ -21,6 +21,27 @@ Hay que preguntárselo al modelo con `FrameObj.GetEndLengthOffset`. Creerle al
 Hekatan, cuando eran los 78.6876 m de viga que ETABS no pesa.
 
 ---
+
+
+## 0. Lo cerrado el 2026-09-02 (lo más reciente arriba)
+
+| capa | qué se midió | árbitro | medido | cómo repetirlo |
+|---|---|---|---|---|
+| **Membrana** (drilling) | K 12×12 de la celda, 9 geometrías | ETABS 22 (`memb12.json`) | **1e-13 %** con `drillingTypes = 12` (ITW + burbuja, 2×2, proyección, γ = 0.4μ, reloj 5e-5: lo leído del kernel) | `python -m pytest hekatan-struct-py/tests/test_itw_1991_regla8.py` |
+| **Placa gruesa** | K 22×22 antes de condensar + ~140 celdas | ETABS/SAP2000 (`.K_0` + `k_directa`) | **1e-12 %**: Shell-Thick de CSI entero (`getBendingK_CSI`, `plate_csi_thick.py`) | `pytest tests/test_csi_thick_cells.py` |
+| **Placa 8×8 thin y thick** | flecha, 5 espesores | ETABS 19 misma malla | **0.000 %** en los 10 | `node tests/run.mjs placa` |
+| **Mezanine, losa maciza** (thin/thick) | Uz de 1284 nudos, misma malla y carga por OAPI | SAP2000 24 y ETABS 22 | **< 1e-6 %** los tres | `python galpon-bodega-electoral/sap_mezanine.py thin` / `etabs_mezanine.py` |
+| **Los 6 tipos de losa** | Uz nudo a nudo, misma malla por OAPI | ETABS 22 | **< 3e-7 %** los seis | `node tests/run.mjs losas-tipos` (filas «misma malla por OAPI») |
+| **Galpón** (609 nudos, 156 `ang`, 214 `frameload`, deck) | Uz nudo a nudo | SAP2000 por OAPI y leyendo el s2k | **0.000 %** (−29.0533 mm) salvo 3 nudos de membrana pura | `python sap_modelo.py galpon_lc_dump.json …` |
+| **Ida y vuelta por fichero** | heks → e2k/s2k → Hekatan → fichero → Hekatan, 2 modelos, 3 modos | el propio .heks | **32/32**, 11 fugas cerradas (unidades, POINTLOAD, General, ANG, modificadores, carga doble, peso propio…) | `node tests/run.mjs ciclo-csi` |
+| **ETABS leyendo el e2k** | mezanine / galpón | ETABS 22 | mezanine **−31.8676 = Hekatan**; galpón −0.2 % y 6 % local: ETABS parte barras en los cruces (`MESHATINTERSECTIONS`) | `python csi_ida_vuelta.py etabs fichero.e2k salida.json` |
+| **Drilling-dof** (2 muros + viga de acople) | Ux, 92 nudos | SAP2000 misma malla | **2.5e-12 %** | `node tests/run.mjs drilling-dof` |
+| **La unión viga-muro de ETABS** | la 3×3 del nudo, con y sin barra | ETABS 22 | ETABS suma **c·(w − w_vecino + L·θ)²**, c = E·t·H³/(32·L³): ata el drilling al giro de la arista. Con esa ley Hekatan = ETABS a **2e-6 %** en los 92 nudos. SAP2000 no lo hace | `python galpon-bodega-electoral/ley_etabs.py` |
+
+Regla nueva, medida: **ETABS automalla y trae asignaciones por defecto** (offsets
+auto, malla en cruces, edge constraint). Para comparar SOLVERS: SAP2000 por OAPI
+con la malla de Hekatan (`sap_modelo.py`), o ETABS por OAPI quitando el
+automallado objeto a objeto (`etabs_modelo.py`).
 
 ## 1. Lo que YA concuerda
 
