@@ -83,6 +83,9 @@ function parseTableFormat(rawLines: string[]): S2kModel {
   const areaSectionAssign = new Map<string, string>(); // areaName → secName
   const loads: { joint: string; fx: number; fy: number; fz: number; mx: number; my: number; mz: number }[] = [];
   const offsets = new Map<string, [number, number, number]>();   // FRAME OFFSET ALONG LENGTH ASSIGNMENTS
+  const angles = new Map<string, number>();                        // FRAME LOCAL AXES ASSIGNMENTS 1 - TYPICAL
+  const areaMods = new Map<string, number[]>();                    // AREA STIFFNESS MODIFIERS
+  const frameLoadsRaw = new Map<string, [number, number, number]>(); // FRAME LOADS - DISTRIBUTED
 
   let currentTable = "";
 
@@ -241,6 +244,28 @@ function parseTableFormat(rawLines: string[]): S2kModel {
         break;
       }
 
+      case "FRAME LOADS - DISTRIBUTED": {
+        // Uniforme, en GLOBALES, de extremo a extremo: lo que escribe el exportador.
+        const fr = kv.get("Frame"); const dir = kv.get("Dir"); const w = parseNum(kv.get("FOverLA"));
+        if (fr && dir && w) {
+          const k = { X: 0, Y: 1, Z: 2 }[dir as "X" | "Y" | "Z"];
+          if (k !== undefined) { const v = frameLoadsRaw.get(fr) ?? [0, 0, 0]; v[k] += w; frameLoadsRaw.set(fr, v); }
+        }
+        break;
+      }
+
+      case "AREA STIFFNESS MODIFIERS": {
+        const area = kv.get("Area");
+        if (area) areaMods.set(area, ["f11", "f22", "f12", "m11", "m22", "m12", "v13", "v23"].map(k => kv.has(k) ? parseNum(kv.get(k)) : 1));
+        break;
+      }
+
+      case "FRAME LOCAL AXES ASSIGNMENTS 1 - TYPICAL": {
+        const fr = kv.get("Frame");
+        if (fr) angles.set(fr, parseNum(kv.get("Angle")));
+        break;
+      }
+
       case "FRAME OFFSET ALONG LENGTH ASSIGNMENTS": {
         const fr = kv.get("Frame");
         if (fr) offsets.set(fr, [parseNum(kv.get("LengthI")), parseNum(kv.get("LengthJ")), parseNum(kv.get("RigidFactor"))]);
@@ -266,7 +291,7 @@ function parseTableFormat(rawLines: string[]): S2kModel {
   }
 
   return buildModel(units, dof, materials, frameSections, shellSections, joints,
-    frameConns, shellConns, restraints, frameSectionAssign, areaSectionAssign, loads, offsets);
+    frameConns, shellConns, restraints, frameSectionAssign, areaSectionAssign, loads, offsets, angles, areaMods, frameLoadsRaw);
 }
 
 // ═══════════════════════════════════════════
@@ -284,6 +309,9 @@ function parseLegacyFormat(rawLines: string[]): S2kModel {
   const restraints = new Map<string, boolean[]>();
   const loads: { joint: string; fx: number; fy: number; fz: number; mx: number; my: number; mz: number }[] = [];
   const offsets = new Map<string, [number, number, number]>();   // FRAME OFFSET ALONG LENGTH ASSIGNMENTS
+  const angles = new Map<string, number>();                        // FRAME LOCAL AXES ASSIGNMENTS 1 - TYPICAL
+  const areaMods = new Map<string, number[]>();                    // AREA STIFFNESS MODIFIERS
+  const frameLoadsRaw = new Map<string, [number, number, number]>(); // FRAME LOADS - DISTRIBUTED
 
   let currentSection = "";
   let currentMaterial = "";
@@ -379,7 +407,7 @@ function parseLegacyFormat(rawLines: string[]): S2kModel {
   const areaSectionAssign = new Map<string, string>();
 
   return buildModel(units, dof, materials, frameSections, shellSections, joints,
-    frameConns, shellConns, restraints, frameSectionAssign, areaSectionAssign, loads, offsets);
+    frameConns, shellConns, restraints, frameSectionAssign, areaSectionAssign, loads, offsets, angles, areaMods, frameLoadsRaw);
 }
 
 // ═══════════════════════════════════════════
@@ -399,6 +427,9 @@ function buildModel(
   areaSectionAssign: Map<string, string>,
   loads: { joint: string; fx: number; fy: number; fz: number; mx: number; my: number; mz: number }[],
   offsets: Map<string, [number, number, number]> = new Map(),
+  angles: Map<string, number> = new Map(),
+  areaMods: Map<string, number[]> = new Map(),
+  frameLoadsRaw: Map<string, [number, number, number]> = new Map(),
 ): S2kModel {
   const nodeNames: string[] = [];
   const nodeNameToIdx = new Map<string, number>();
@@ -472,6 +503,8 @@ function buildModel(
       if (sec.As3) (ei as any).shearAreasY ??= new Map(), (ei as any).shearAreasY.set(i, sec.As3);
       const off = offsets.get(elementNames[i]);
       if (off) (ei as any).endOffsets ??= new Map(), (ei as any).endOffsets.set(i, off);
+      const ang = angles.get(elementNames[i]);
+      if (ang) (ei as any).localAngles ??= new Map(), (ei as any).localAngles.set(i, ang);
       if (sec.shape?.includes("Wide Flange") || sec.shape === "I") {
         sectionShapes.set(i, { type: "I", b: sec.B, h: sec.D, name: secName || "I-section" });
       } else {
@@ -490,6 +523,12 @@ function buildModel(
       // Sin esto todo entraba como Thick y el mezanine thin salia 1.1 % distinto.
       (ei as any).plateFormulations ??= new Map();
       (ei as any).plateFormulations.set(i, /thin/i.test(ssec.type) ? 1 : 0);
+      const am = areaMods.get(elementNames[i]);
+      if (am) {
+        (ei as any).shellModifiers ??= new Map(); (ei as any).shellModifiers.set(i, am);
+        (ei as any).membraneModifiers ??= new Map(); (ei as any).membraneModifiers.set(i, am[0]);
+        (ei as any).bendingModifiers ??= new Map(); (ei as any).bendingModifiers.set(i, am[3]);
+      }
       ei.densities!.set(i, mat.density || 0);
     }
   }
@@ -499,6 +538,22 @@ function buildModel(
   for (const [name, r] of restraints) {
     const idx = nodeNameToIdx.get(name);
     if (idx !== undefined) ni.supports!.set(idx, r as any);
+  }
+  // Cargas de barra: se guardan en `frameLoads` (para re-exportar) y se
+  // reparten a los nudos como hace el cliModeler (w·L/2 y ±L²/12·(t×w)), que
+  // es lo que consume el motor.
+  for (const [fr, w] of frameLoadsRaw) {
+    const i = elementNames.indexOf(fr);
+    if (i < 0 || elements[i].length !== 2) continue;
+    (ei as any).frameLoads ??= new Map(); (ei as any).frameLoads.set(i, w);
+    const a = nodesArr[elements[i][0]], b = nodesArr[elements[i][1]];
+    const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]]; const L = Math.hypot(d[0], d[1], d[2]);
+    if (L < 1e-9) continue;
+    const t = [d[0] / L, d[1] / L, d[2] / L], c = L * L / 12;
+    const txw = [t[1] * w[2] - t[2] * w[1], t[2] * w[0] - t[0] * w[2], t[0] * w[1] - t[1] * w[0]];
+    const suma = (n: number, v: number[]) => { const f = ni.loads!.get(n) || [0, 0, 0, 0, 0, 0] as any; for (let k = 0; k < 6; k++) f[k] += v[k]; ni.loads!.set(n, f); };
+    suma(elements[i][0], [w[0] * L / 2, w[1] * L / 2, w[2] * L / 2, c * txw[0], c * txw[1], c * txw[2]]);
+    suma(elements[i][1], [w[0] * L / 2, w[1] * L / 2, w[2] * L / 2, -c * txw[0], -c * txw[1], -c * txw[2]]);
   }
   for (const ld of loads) {
     const idx = nodeNameToIdx.get(ld.joint);

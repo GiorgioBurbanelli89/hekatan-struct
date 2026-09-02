@@ -317,6 +317,21 @@ export function exportS2k(input: S2kExportInput): string {
     }
     blank();
 
+    // ── AREA STIFFNESS MODIFIERS ── (nombre de tabla medido en el .$2k que SAP2000
+    // escribe al analizar: f11 f22 f12 m11 m22 m12 v13 v23 MassMod WeightMod).
+    // Sin esto el deck del galpon (shellmod 1 1 1 0 0 0 1 1, membrana sin flexion)
+    // entraba a SAP con la flexion entera: el ciclo salia 0.38 % mas rigido.
+    const smods = (elementInputs as any).shellModifiers as Map<number, number[]> | undefined;
+    const conMods = shellIdx.filter(i => { const m = smods?.get(i); return m && m.some(v => Math.abs(v - 1) > 1e-12); });
+    if (conMods.length > 0) {
+      push(`TABLE:  "AREA STIFFNESS MODIFIERS"`);
+      for (const i of conMods) {
+        const m = smods!.get(i)!;
+        push(`   Area=${i + 1}   f11=${fmt(m[0])}   f22=${fmt(m[1])}   f12=${fmt(m[2])}   m11=${fmt(m[3])}   m22=${fmt(m[4])}   m12=${fmt(m[5])}   v13=${fmt(m[6])}   v23=${fmt(m[7])}   MassMod=1   WeightMod=1`);
+      }
+      blank();
+    }
+
     push(`TABLE:  "AREA SECTION PROPERTIES"`);
     if (isLayered) {
       const sec = layeredSec!;
@@ -412,8 +427,33 @@ export function exportS2k(input: S2kExportInput): string {
   // — y SAP no protesta: abre el modelo, resuelve y da todo cero. No se habia
   // notado porque el galpon, que es con lo que se valido el exportador, carga
   // por `frameload` y no tiene ni una fuerza nodal.
-  const cargasNodales = nodeInputs.loads;
-  if (cargasNodales && cargasNodales.size > 0) {
+  // ⚠️ Desde que el cliModeler reparte `frameload` a los nudos (fuerzas w·L/2
+  // y momentos ±L²/12·(t×w)), `nodeInputs.loads` YA las lleva. Como abajo se
+  // escriben ademas como FRAME LOADS - DISTRIBUTED, SAP las contaba DOS veces:
+  // galpon ΣRz 8157 kN por 4078 (medido 2-sep-2026, csi_ida_vuelta.py). Aqui se
+  // descuenta de cada nudo lo que le llego de sus barras cargadas.
+  const fLoadsPre: Map<number, [number, number, number]> | undefined = (elementInputs as any).frameLoads;
+  const cargasNodales = new Map<number, number[]>();
+  nodeInputs.loads?.forEach((v, i) => cargasNodales.set(i, [...v]));
+  if (fLoadsPre && fLoadsPre.size > 0) {
+    const resta = (i: number, v: number[]) => {
+      const a = cargasNodales.get(i) ?? [0, 0, 0, 0, 0, 0];
+      cargasNodales.set(i, a.map((x, k) => x - v[k]));
+    };
+    for (const [idx, w] of fLoadsPre) {
+      const el = elements[idx];
+      if (!el || el.length !== 2) continue;
+      const a = nodes[el[0]], b = nodes[el[1]];
+      const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+      const L = Math.hypot(d[0], d[1], d[2]);
+      if (L < 1e-9) continue;
+      const t = [d[0] / L, d[1] / L, d[2] / L], c = L * L / 12;
+      const txw = [t[1] * w[2] - t[2] * w[1], t[2] * w[0] - t[0] * w[2], t[0] * w[1] - t[1] * w[0]];
+      resta(el[0], [w[0] * L / 2, w[1] * L / 2, w[2] * L / 2, c * txw[0], c * txw[1], c * txw[2]]);
+      resta(el[1], [w[0] * L / 2, w[1] * L / 2, w[2] * L / 2, -c * txw[0], -c * txw[1], -c * txw[2]]);
+    }
+  }
+  if (cargasNodales.size > 0) {
     push(`TABLE:  "JOINT LOADS - FORCE"`);
     for (const [idx, force] of cargasNodales) {
       if (!force.some(v => Math.abs(v) > 1e-12)) continue;

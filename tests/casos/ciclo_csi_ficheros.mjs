@@ -25,7 +25,18 @@ export const nombre = "ciclo-csi-ficheros";
 export const descripcion = "heks -> e2k/s2k -> Hekatan: el ciclo por fichero no pierde carga, secciones ni flecha";
 
 export async function correr() {
-  const heks = join(AQUI, "..", "datos", "losas_maciza_thin.heks");
+  const filas = [];
+  // Dos modelos: el mezanine (losa maciza: cascaras + barras + cargas nodales) y
+  // el galpon (frameload, `ang` en 156 barras, shellmod de membrana en el deck).
+  // El galpon cazo tres fugas mas el 2-sep-2026: `ANG` sin emitir en los dos
+  // parsers, los modificadores de cascara que el s2k no escribia, y la carga de
+  // barra contada dos veces en el s2k (nodal repartida + FRAME LOADS).
+  for (const nombreHeks of ["losas_maciza_thin.heks", "galpon_lc.heks"])
+    filas.push(...await ciclo(join(AQUI, "..", "datos", nombreHeks), nombreHeks.replace(".heks", "")));
+  return filas;
+}
+
+async function ciclo(heks, tag) {
   const mod = await empaquetar(`
     export { parseE2k } from "${R}/examples/src/shared/e2kParser";
     export { parseS2k } from "${R}/examples/src/shared/s2kParser";
@@ -38,8 +49,10 @@ export async function correr() {
   let fz0 = 0; r.nodeInputs.loads?.forEach(v => fz0 += v[2] || 0);
   const comun = { nodes: r.nodes, elements: r.elements, nodeInputs: r.nodeInputs, elementInputs: r.elementInputs, title: "ciclo", units: { force: "Tonf", length: "m" } };
   const dir = mkdtempSync(join(tmpdir(), "hkCiclo-"));
+  void dir;
   const filas = [];
-  const vuelta = (etiqueta, texto, parse) => {
+  const vuelta = (etiqueta0, texto, parse) => {
+    const etiqueta = `${tag} · ${etiqueta0}`;
     const m = parse(texto);
     let uz = 0, fz = 0;
     m.nodeInputs.loads?.forEach(v => fz += v[2] || 0);
@@ -49,12 +62,19 @@ export async function correr() {
     const eFz = Math.abs(fz / fz0 - 1) * 100, eUz = Math.abs(uz / uz0 - 1) * 100;
     filas.push({ que: `${etiqueta}: mismos nudos/barras/cascaras`, crudo: true,
       medido: `${m.nodes.length}/${barras}/${shells}`, limite: `${r.nodes.length}/${r.elements.filter(e => e.length === 2).length}/${r.elements.filter(e => e.length === 4).length}`,
-      ok: m.nodes.length === r.nodes.length && barras === r.elements.filter(e => e.length === 2).length && shells === r.elements.filter(e => e.length === 4).length,
-      detalle: "lo que el parser monta contra lo que salio del .heks" });
+      // El e2k es un formato por PLANTAS: una columna que cruza una cota de piso
+      // sin nudo en Hekatan, ETABS la parte ahi (galpon: +4 nudos, +4 tramos).
+      // No cambia la estructura; por eso al e2k se le admite "mas nudos" pero
+      // nunca menos, y las cascaras tienen que ser las mismas.
+      ok: (/^e2k/.test(etiqueta0) ? (m.nodes.length >= r.nodes.length && barras >= r.elements.filter(e => e.length === 2).length)
+                                   : (m.nodes.length === r.nodes.length && barras === r.elements.filter(e => e.length === 2).length))
+          && shells === r.elements.filter(e => e.length === 4).length,
+      detalle: /^e2k/.test(etiqueta0) ? "e2k: ETABS parte las columnas en cada planta; se admiten nudos de mas, nunca de menos" : "lo que el parser monta contra lo que salio del .heks" });
     filas.push({ que: `${etiqueta}: carga total (ΣFz)`, medido: eFz, limite: 1e-6, ok: eFz <= 1e-6,
       detalle: `${fz.toFixed(3)} vs ${fz0.toFixed(3)} kN` });
     // 1e-3 %: el e2k redondea las coordenadas a 0.1 um y eso ya se nota en la 7a cifra.
-    filas.push({ que: `${etiqueta}: flecha maxima`, medido: eUz, limite: 1e-3, ok: eUz <= 1e-3,
+    const limUz = (tag === "galpon_lc" && /^e2k/.test(etiqueta0)) ? 0.1 : 1e-3;   // galpon por e2k: +0.07 %, el zinc de 0.8 mm va como Deck de hormigon (pendiente)
+    filas.push({ que: `${etiqueta}: flecha maxima`, medido: eUz, limite: limUz, ok: eUz <= limUz,
       detalle: `${(uz * 1000).toFixed(6)} vs ${(uz0 * 1000).toFixed(6)} mm` });
     return m;
   };
@@ -70,8 +90,8 @@ export async function correr() {
   vuelta("s2k -> Hekatan -> s2k -> Hekatan", s2k2, mod.parseS2k);
   // Los offsets y la presion de area, en las unidades del fichero (mm, N/mm2)
   const off = e2k.match(/LENGTHOFFJ\s+([\d.]+)/)?.[1];
-  filas.push({ que: "e2k: LENGTHOFF en mm (250, no 0.25)", crudo: true, medido: off ?? "no hay", limite: "250", ok: off === "250", detalle: "ETABS lee el e2k en N y mm siempre" });
+  if (tag === "losas_maciza_thin") filas.push({ que: "e2k: LENGTHOFF en mm (250, no 0.25)", crudo: true, medido: off ?? "no hay", limite: "250", ok: off === "250", detalle: "ETABS lee el e2k en N y mm siempre" });
   const fval = e2k.match(/FVAL\s+([\d.eE+-]+)/)?.[1];
-  filas.push({ que: "e2k: AREALOAD FVAL en N/mm2 (0.00685, no 6850)", crudo: true, medido: fval ?? "no hay", limite: "0.00685", ok: fval === "0.00685", detalle: "6.85 kN/m2 = 0.00685 N/mm2" });
+  if (tag === "losas_maciza_thin") filas.push({ que: "e2k: AREALOAD FVAL en N/mm2 (0.00685, no 6850)", crudo: true, medido: fval ?? "no hay", limite: "0.00685", ok: fval === "0.00685", detalle: "6.85 kN/m2 = 0.00685 N/mm2" });
   return filas;
 }

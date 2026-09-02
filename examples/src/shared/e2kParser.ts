@@ -664,6 +664,10 @@ export function parseE2k(text: string): E2kModel {
   // al parsear cualquier e2k con brazos rígidos o liberaciones (ej. BARRIO CENTRAL).
   const rigidOffsets = new Map<number, [number, number]>();
   const momentReleases = new Map<number, boolean[]>();
+  // `ANG` de la LINEASSIGN: el local axis angle de CSI. Se leia (entry.angle)
+  // pero NO se emitia: las 156 barras giradas del galpon (cordones en C,
+  // diagonales 2L) entraban sin girar y el modelo importado salia 2x mas rigido.
+  const localAngles = new Map<number, number>();
 
   for (const lc of lineConns) {
     for (const [key, la] of lineAssigns) {
@@ -717,6 +721,7 @@ export function parseE2k(text: string): E2kModel {
         if (la.spring) springAssigns.set(elemIdx, la.spring);
         if (la.mallaEnCruces) mallaEnCruces.set(elemIdx, true);
         if (la.rigidZone > 0) rigidOffsets.set(elemIdx, [la.rigidZone, la.rigidZone]);
+        if (la.angle) localAngles.set(elemIdx, la.angle);
         // Releases (12: FxI,FyI,FzI,TI,M2I,M3I, FxJ,FyJ,FzJ,TJ,M2J,M3J).
         // ⚠️ El de la cara I va SOLO en el primer tramo y el de la J SOLO en el
         // ultimo: copiarlos a los tres tramos de una columna de cuatro pisos
@@ -1247,6 +1252,7 @@ export function parseE2k(text: string): E2kModel {
       shearAreasZ,
       rigidOffsets,
       momentReleases,
+      localAngles,
       densities,
       sectionShapes,
       thicknesses,
