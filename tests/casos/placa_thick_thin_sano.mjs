@@ -48,30 +48,38 @@
  *   más cuanto más gruesa es la placa, que es justo lo que tiene que pasar;
  * - **Thick → Thin** al adelgazar (1.3368 → 0.9983).
  *
- * El 0.17 % que baja de 1 en `t/L = 0.001` es bloqueo residual del MITC4 en una
- * placa mil veces más ancha que gruesa. Por eso el límite es 0.5 % y no 0.
+ * (La tabla de arriba es la del MITC4 de antes.)
  *
- * **Conclusión: nuestro Shell-Thick se comporta como debe.** El 2.627 % del
- * escalón B contra ETABS no sale de la formulación de la placa — hay que
- * buscarlo en otro sitio.
+ * ## Desde el 2-sep-2026: el Shell-Thick es el de CSI, y el árbitro es ETABS
+ *
+ * Con la placa gruesa extraída del binario, la razón Thick/Thin en `t/L = 0.001`
+ * sale **0.99257** — Thick MÁS RÍGIDO que Thin, cosa que "Mindlin ≥ Kirchhoff" no
+ * permite. Medido en ETABS 19 con esta misma malla: **0.99257** también. O sea
+ * que no es un defecto nuestro, es el elemento de CSI (la penalización de la
+ * divergencia del giro le añade rigidez que no se va con el espesor). Por eso
+ * este banco ya no impone la desigualdad: compara Thin y Thick con la flecha de
+ * ETABS en la misma malla, al 0.05 %.
  */
 import { fileURLToPath } from "node:url";
+import { readFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { empaquetar, R } from "../lib/bundle.mjs";
 
 const L = 10, E = 2.2e7, NU = 0.2, Q = 10, N = 8;
-// t/L y el limite de Thick/Thin en cada uno
-const CASOS = [
-  { tL: 0.001, min: 0.995, max: 1.005 },
-  { tL: 0.010, min: 0.995, max: 1.010 },
-  { tL: 0.050, min: 1.000, max: 1.060 },
-  { tL: 0.100, min: 1.050, max: 1.160 },
-  { tL: 0.200, min: 1.250, max: 1.420 },
-];
+// t/L y la flecha del centro que da ETABS 19 con Shell-Thin y Shell-Thick en
+// ESTA misma malla (8x8 explicita, 81 nudos), medida el 2-sep-2026 con
+// `hekatan-csi-debug/placa_ss_thin_thick_etabs.py` (tests/datos/placa_ss_thin_thick_etabs19.json).
+// El arbitro es ETABS, no la hipotesis "Mindlin >= Kirchhoff": el Shell-Thick de
+// CSI (extraido del binario, ver CLAUDE.md) sale un 0.74 % MAS RIGIDO que su Thin
+// en t/L = 0.001 — en ETABS tambien (0.99257), y Hekatan lo reproduce.
+const REF = JSON.parse(readFileSync(new URL("../datos/placa_ss_thin_thick_etabs19.json", import.meta.url)));
+const CASOS = [0.001, 0.01, 0.05, 0.1, 0.2].map((tL) => ({
+  tL, etabsThin: Math.abs(REF[`thin_${tL}`]), etabsThick: Math.abs(REF[`thick_${tL}`]),
+}));
 
 export const nombre = "placa-thick-thin-sano";
 export const descripcion =
-  "Thick >= Thin y ambos contra Navier: el banco que la celda de un elemento no era";
+  "Placa apoyada 8x8: Thin contra Navier, y Thin y Thick contra ETABS 19 en la misma malla";
 
 export async function correr() {
   const { deform } = await empaquetar(
@@ -111,7 +119,7 @@ export async function correr() {
   }
 
   const filas = [];
-  for (const { tL, min, max } of CASOS) {
+  for (const { tL, etabsThin, etabsThick } of CASOS) {
     const t = tL * L;
     const D = E * t ** 3 / (12 * (1 - NU ** 2));
     const navier = 0.00406 * Q * L ** 4 / D;
@@ -124,15 +132,15 @@ export async function correr() {
       ok: Math.abs(wThin / navier - 1) * 100 <= 0.5,
       detalle: `${wThin.toExponential(4)} vs ${navier.toExponential(4)}`,
     });
-    filas.push({
-      // El limite de ARRIBA importa tanto como el de abajo: si Thick se dispara
-      // es que el cortante ablanda de mas, y eso tambien es un error.
-      que: `t/L = ${tL} · Thick/Thin en [${min}, ${max}]`,
-      medido: razon, limite: max, ok: razon >= min && razon <= max,
-      detalle: `${razon.toFixed(4)} — el cortante solo puede ABLANDAR, `
-             + `asi que por debajo de 1 no hay nada que discutir`,
-      crudo: true,
-    });
+    for (const [lab, w, ref] of [["Thin", wThin, etabsThin], ["Thick", wThick, etabsThick]]) {
+      const dif = Math.abs(w / ref - 1) * 100;
+      filas.push({
+        que: `t/L = ${tL} · ${lab} contra ETABS 19 (misma malla)`,
+        medido: dif, limite: 0.05, ok: dif <= 0.05,
+        detalle: `${w.toExponential(6)} vs ${ref.toExponential(6)} — Thick/Thin Hekatan ${razon.toFixed(5)}, `
+               + `ETABS ${(etabsThick / etabsThin).toFixed(5)}`,
+      });
+    }
   }
   return filas;
 }

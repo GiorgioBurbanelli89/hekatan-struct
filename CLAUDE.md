@@ -299,6 +299,40 @@ malla a malla y **falla también si mejora**, para que el arreglo no pase
 desapercibido. Para una cúpula en malla gruesa, hoy conviene `drillingTypes = 2`.
 
 
+## La placa gruesa: Shell-Thick de CSI, extraído del binario (2-sep-2026)
+
+Desde el **2026-09-02** la flexión del `shelltype thick` es la formulación del
+Shell-Thick de ETABS/SAP2000 tal como la calcula `CsiGo2.dll` — medida en vivo
+(monta_B y la K de 22 gdl antes de condensar) y reproducida a **1e-12 %** contra
+la K medida de ~140 celdas (cuadrado, rectángulo, 27 trapecios, cuadriláteros
+irregulares, barridos de t/ν/L y modificadores). Bitácora:
+`registros/2026-09-02_binario_drilling_shellthick.md`.
+
+```
+giros con 9 funciones (4 bilineales + 4 jerárquicas de lado + burbuja), 2 componentes cada una
+curvaturas  kx = θy,x   ky = −θx,y   kxy = θy,y − θx,x
+cortante    4 cortantes de LADO de Wilson (8.7) (jerárquicas con 2/3) → covariante
+            tipo MITC con la parte lineal SIMETRIZADA, m = (b+d)/2 → físico J⁻¹
+penalización 1000·(D11+D22+D33)·∫(θx,x + θy,y)² dA        ← la divergencia del giro
+cuadratura  ITW 1991 de 8 puntos · B-barra en las 10 internas · condensación saltando pivotes nulos
+```
+
+| dónde | qué |
+|---|---|
+| `hekatan-fem/src/cpp/utils/shellQ4.cpp` → `getBendingK_CSI` | el C++/WASM (defecto). `-DHK_BENDING_FORMULATION=3` devuelve el MITC4 de antes |
+| `hekatan-struct-py/.../elements/plate_csi_thick.py` | el espejo en Python. `shell_q4_motor.PLACA_THICK = "csi"` (defecto) / `"mitc4"` |
+| `hekatan-struct-py/tests/test_csi_thick_cells.py` | contra la K medida de ETABS, celda a celda |
+| `validation/02-placas/dse-de-wilson/etabs_thick_full.py` | la fórmula suelta, con la validación masiva |
+
+Lo que NO es: ni MITC4, ni el DSE de Wilson a secas, ni «DSE + un coeficiente».
+El cortante simetrizado deja un mecanismo (φ: θ = (x−xc, y−yc)) y la
+penalización de la divergencia es lo que lo estabiliza — ese es el origen del
+`λ_φ = 455·D` que se persiguió durante semanas. El Shell-Thin sigue siendo el DKQ.
+
+⚠️ El harness `cli/native/kelem_native.exe` imprime la K en ejes LOCALES del
+elemento (`localX = v01 + v32`): en un trapecio no coincide entrada a entrada
+con la K global de ETABS aunque sea la misma (autovalores idénticos).
+
 ## Masa torsional: Ip vs J
 
 La masa consistente usa `Ip = Iy + Iz` (momento polar de inercia) para DOFs torsionales, NO `J` (constante de Saint-Venant). OpenSees tiene un bug conocido donde usa J en vez de Ip — causa ~3% de error en modos torsionales.

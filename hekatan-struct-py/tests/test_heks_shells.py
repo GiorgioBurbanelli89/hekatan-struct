@@ -36,6 +36,7 @@ DATOS = RAIZ / "tests" / "datos"
 _GUION = r"""
 import { writeFileSync } from "node:fs";
 import { resolverHeks } from "file:///%s/tests/lib/heks.mjs";
+
 const r = await resolverHeks(process.argv[2]);
 const d = r.deformOutputs?.val ?? r.deformOutputs;
 const defs = d.deformations instanceof Map
@@ -45,6 +46,21 @@ writeFileSync(process.argv[3], JSON.stringify({
   deformations: Object.fromEntries(defs),
 }));
 """
+
+
+import pytest as _pytest
+import hekatan_struct.elements.shell_q4_motor as _M
+
+
+@_pytest.fixture(autouse=True)
+def _placa_mitc4_como_el_cpp():
+    """Estos tests miden PARIDAD con el C++/WASM. Desde el 2-sep-2026 los dos
+    llevan la placa de CSI (`PLACA_THICK="csi"`, `getBendingK_CSI`). Si hay que
+    comparar contra un WASM viejo (MITC4), aqui se pone "mitc4"."""
+    old = _M.PLACA_THICK
+    _M.PLACA_THICK = "csi"
+    yield
+    _M.PLACA_THICK = old
 
 
 def _motor_ts(ruta_heks: Path, destino: Path):

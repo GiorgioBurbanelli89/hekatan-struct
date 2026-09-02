@@ -12,6 +12,7 @@
 #include "../data-model.h"
 #include <vector>
 #include <cmath>
+#include <algorithm>
 #include <Eigen/Dense>
 #include <iostream>
 
@@ -1522,6 +1523,154 @@ static Eigen::MatrixXd getBendingK_DSE_FULL(const double x[4], const double y[4]
 // 1 = DSE Bathe-Wilson híbrido (DSE-bending + MITC4-shear, Variant B)
 // 2 = DSE Wilson COMPLETO (Cap 8 textbook, edge-discrete shear, Variant C)
 // Cambiar y recompilar para evaluar la formulación deseada.
+
+// ============================================================================
+// SHELL-THICK DE CSI (ETABS / SAP2000) — extraido del binario (2026-09-02)
+// ----------------------------------------------------------------------------
+// Verificado a ~1e-12 % contra la K MEDIDA de ETABS/SAP en ~140 celdas (cuadrado,
+// rectangulo, 27 trapecios, cuadrilateros irregulares, barridos de t/nu/L y
+// modificadores). Bitacora: registros/2026-09-02_binario_drilling_shellthick.md
+// Espejo en Python: hekatan-struct-py/.../elements/plate_csi_thick.py
+//
+//   Giros con 9 funciones (4 bilineales + 4 jerarquicas de lado + burbuja), DOS
+//   componentes cada una; w bilineal. 22 gdl: 12 nodales [w, thx, thy] + 10
+//   internos (8 de lado + 2 de burbuja) que se condensan.
+//   Curvaturas  : kx = thy,x   ky = -thx,y   kxy = thy,y - thx,x
+//   Cortante    : los 4 cortantes de LADO de Wilson (cap.8, ec.8.7), con las
+//                 jerarquicas entrando con 2/3; interpolados en COVARIANTES tipo
+//                 MITC con la parte lineal SIMETRIZADA (m = (b+d)/2); fisico = J^-1 g
+//   Penalizacion: 1000*(D11+D22+D33) * INT (thx,x + thy,y)^2 dA  (divergencia)
+//   Cuadratura  : ITW 1991 de 8 puntos (9/49 y 40/49). B-barra en las 10 internas.
+//   Condensacion: Gauss saltando pivotes nulos (asi trata los modificadores a 0).
+// Convencion de giros: [w, thx_global, thy_global] por nudo, mano derecha (la
+// misma que getBendingK; alli las curvaturas llevan el signo opuesto, K identica).
+// ============================================================================
+static Eigen::MatrixXd getBendingK_CSI(const double x[4], const double y[4],
+                                        double E, double nu, double t,
+                                        const double *mod = nullptr)
+{
+    const double D0 = E * t * t * t / (12.0 * (1.0 - nu * nu));
+    Eigen::Matrix3d Db;
+    Db << D0, D0 * nu, 0,
+          D0 * nu, D0, 0,
+          0, 0, D0 * (1.0 - nu) / 2.0;
+    Eigen::Matrix2d Ds = Eigen::Matrix2d::Identity() * ((5.0 / 6.0) * E * t / (2.0 * (1.0 + nu)));
+    if (mod) {
+        const double sb[3] = { std::sqrt(std::max(0.0, mod[3])), std::sqrt(std::max(0.0, mod[4])), std::sqrt(std::max(0.0, mod[5])) };
+        const double ss[2] = { std::sqrt(std::max(0.0, mod[6])), std::sqrt(std::max(0.0, mod[7])) };
+        for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) Db(i, j) *= sb[i] * sb[j];
+        for (int i = 0; i < 2; i++) for (int j = 0; j < 2; j++) Ds(i, j) *= ss[i] * ss[j];
+    }
+    Eigen::Matrix<double, 5, 5> D = Eigen::Matrix<double, 5, 5>::Zero();
+    D.block<3, 3>(0, 0) = Db;
+    D.block<2, 2>(3, 3) = Ds;
+    const double Dsum = Db.trace();
+    const double PENAL = 1000.0;
+
+    // geometria de los lados: k va del nudo k al k+1
+    double ca[4], sa[4], LL[4];
+    double Lmax = 0.0, Lmin = 1e300;
+    for (int k = 0; k < 4; k++) {
+        const int j = (k + 1) % 4;
+        const double dx = x[j] - x[k], dy = y[j] - y[k], L = std::hypot(dx, dy);
+        LL[k] = L; Lmax = std::max(Lmax, L); Lmin = std::min(Lmin, L);
+        ca[k] = (L > 0) ? dx / L : 1.0; sa[k] = (L > 0) ? dy / L : 0.0;
+    }
+    // Un Q4 COLAPSADO (lado nulo) no es un elemento: la formulacion divide por
+    // L del lado. Se cae al camino viejo, que topa el jacobiano y no revienta.
+    if (Lmin <= 1e-12 * Lmax)
+        return getBendingK(x, y, E, nu, t, mod);
+    // cortante de cada lado (8.7) como fila sobre los 22 gdl
+    Eigen::Matrix<double, 4, 22> Bl = Eigen::Matrix<double, 4, 22>::Zero();
+    for (int k = 0; k < 4; k++) {
+        const int j = (k + 1) % 4;
+        Bl(k, 3 * j) += 1.0 / LL[k];       Bl(k, 3 * k) -= 1.0 / LL[k];
+        Bl(k, 3 * k + 1) -= sa[k] / 2.0;   Bl(k, 3 * j + 1) -= sa[k] / 2.0;
+        Bl(k, 3 * k + 2) += ca[k] / 2.0;   Bl(k, 3 * j + 2) += ca[k] / 2.0;
+        Bl(k, 12 + 2 * k) -= 2.0 / 3.0 * sa[k];
+        Bl(k, 13 + 2 * k) += 2.0 / 3.0 * ca[k];
+    }
+    const Eigen::Matrix<double, 1, 22> gb =  Bl.row(0) * (LL[0] / 2.0);
+    const Eigen::Matrix<double, 1, 22> gt = -Bl.row(2) * (LL[2] / 2.0);
+    const Eigen::Matrix<double, 1, 22> gR =  Bl.row(1) * (LL[1] / 2.0);
+    const Eigen::Matrix<double, 1, 22> gL = -Bl.row(3) * (LL[3] / 2.0);
+    const Eigen::Matrix<double, 1, 22> A0 = (gb + gt) / 2.0, bb = (gt - gb) / 2.0;
+    const Eigen::Matrix<double, 1, 22> C0 = (gL + gR) / 2.0, dd = (gR - gL) / 2.0;
+    const Eigen::Matrix<double, 1, 22> mm = (bb + dd) / 2.0;
+
+    const double qA = std::sqrt(7.0 / 9.0), qB = std::sqrt(7.0 / 15.0);
+    const double qp[8][2] = { {-qA, -qA}, {qA, -qA}, {qA, qA}, {-qA, qA}, {0, -qB}, {qB, 0}, {0, qB}, {-qB, 0} };
+    const double qw[8] = { 9.0 / 49, 9.0 / 49, 9.0 / 49, 9.0 / 49, 40.0 / 49, 40.0 / 49, 40.0 / 49, 40.0 / 49 };
+
+    Eigen::Matrix<double, 5, 22> B[8];
+    Eigen::Matrix<double, 1, 22> v[8];
+    double w[8];
+    double wsum = 0.0;
+    for (int p = 0; p < 8; p++) {
+        const double r = qp[p][0], s = qp[p][1];
+        const double dN4r[4] = { -(1 - s) / 4, (1 - s) / 4, (1 + s) / 4, -(1 + s) / 4 };
+        const double dN4s[4] = { -(1 - r) / 4, -(1 + r) / 4, (1 + r) / 4, (1 - r) / 4 };
+        const double dNhr[4] = { -r * (1 - s), (1 - s * s) / 2, -r * (1 + s), -(1 - s * s) / 2 };
+        const double dNhs[4] = { -(1 - r * r) / 2, -s * (1 + r), (1 - r * r) / 2, -s * (1 - r) };
+        Eigen::Matrix2d J;
+        J << dN4r[0]*x[0]+dN4r[1]*x[1]+dN4r[2]*x[2]+dN4r[3]*x[3], dN4r[0]*y[0]+dN4r[1]*y[1]+dN4r[2]*y[2]+dN4r[3]*y[3],
+             dN4s[0]*x[0]+dN4s[1]*x[1]+dN4s[2]*x[2]+dN4s[3]*x[3], dN4s[0]*y[0]+dN4s[1]*y[1]+dN4s[2]*y[2]+dN4s[3]*y[3];
+        const Eigen::Matrix2d Ji = J.inverse();
+        const double dJ = std::abs(J.determinant());
+        B[p].setZero(); v[p].setZero();
+        auto giro = [&](int col, double a, double b, double fx, double fy) {
+            B[p](0, col) += b * fx;
+            B[p](1, col) -= a * fy;
+            B[p](2, col) += b * fy - a * fx;
+            v[p](col)    += a * fx + b * fy;      // divergencia del campo de giros
+        };
+        for (int i = 0; i < 4; i++) {
+            const double gx = Ji(0, 0) * dN4r[i] + Ji(0, 1) * dN4s[i];
+            const double gy = Ji(1, 0) * dN4r[i] + Ji(1, 1) * dN4s[i];
+            giro(3 * i + 1, 1, 0, gx, gy);
+            giro(3 * i + 2, 0, 1, gx, gy);
+        }
+        for (int k = 0; k < 4; k++) {
+            const double hx = Ji(0, 0) * dNhr[k] + Ji(0, 1) * dNhs[k];
+            const double hy = Ji(1, 0) * dNhr[k] + Ji(1, 1) * dNhs[k];
+            giro(12 + 2 * k, 1, 0, hx, hy);
+            giro(13 + 2 * k, 0, 1, hx, hy);
+        }
+        {
+            const double d9r = -2 * r * (1 - s * s), d9s = -2 * s * (1 - r * r);
+            const double g9x = Ji(0, 0) * d9r + Ji(0, 1) * d9s, g9y = Ji(1, 0) * d9r + Ji(1, 1) * d9s;
+            giro(20, 1, 0, g9x, g9y);
+            giro(21, 0, 1, g9x, g9y);
+        }
+        // cortante covariante simetrizado -> fisico
+        Eigen::Matrix<double, 2, 22> gcov;
+        gcov.row(0) = A0 + mm * s;
+        gcov.row(1) = C0 + mm * r;
+        B[p].block<2, 22>(3, 0) = Ji * gcov;
+        w[p] = qw[p] * dJ; wsum += w[p];
+    }
+    // B-barra: media pesada de las curvaturas de las 10 columnas internas
+    Eigen::Matrix<double, 3, 10> media = Eigen::Matrix<double, 3, 10>::Zero();
+    for (int p = 0; p < 8; p++) media += B[p].block<3, 10>(0, 12) * w[p];
+    media /= wsum;
+    Eigen::Matrix<double, 22, 22> K22 = Eigen::Matrix<double, 22, 22>::Zero();
+    for (int p = 0; p < 8; p++) {
+        B[p].block<3, 10>(0, 12) -= media;
+        K22 += (B[p].transpose() * D * B[p] + PENAL * Dsum * v[p].transpose() * v[p]) * w[p];
+    }
+    // condensacion de los 10 internos: Gauss, saltando pivotes nulos
+    const double esc = K22.cwiseAbs().maxCoeff();
+    for (int i = 12; i < 22; i++) {
+        const double piv = K22(i, i);
+        if (std::abs(piv) <= 1e-14 * esc) continue;
+        const Eigen::Matrix<double, 1, 22> fila = K22.row(i);
+        const Eigen::Matrix<double, 22, 1> col = K22.col(i);
+        K22 -= (col * fila) / piv;
+        K22.row(i).setZero(); K22.col(i).setZero();
+    }
+    return K22.block<12, 12>(0, 0);
+}
+
 #ifndef HK_BENDING_FORMULATION
 #define HK_BENDING_FORMULATION 0
 #endif
@@ -1752,10 +1901,15 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
         Eigen::MatrixXd Kb = getBendingK_DSE_FULL(x, y, E, nu, t);  // 12×12 (Wilson DSE Cap 8 completo, Variant C)
     #elif HK_BENDING_FORMULATION == 1
         Eigen::MatrixXd Kb = getBendingK_DSE(x, y, E, nu, t);       // 12×12 (DSE-bending + MITC4-shear, Variant B)
-    #else
+    #elif HK_BENDING_FORMULATION == 3
         Eigen::MatrixXd Kb = sinFlexion
         ? Eigen::MatrixXd::Zero(12, 12)
-        : getBendingK(x, y, E, nu, t, dmod);     // 12×12 (MITC4 + Wilson α, Variant A)
+        : getBendingK(x, y, E, nu, t, dmod);     // 12×12 (MITC4 + Wilson α, Variant A: lo de antes)
+    #else
+        // 0 (defecto): el Shell-Thick de CSI extraido del binario (2026-09-02)
+        Eigen::MatrixXd Kb = sinFlexion
+        ? Eigen::MatrixXd::Zero(12, 12)
+        : getBendingK_CSI(x, y, E, nu, t, dmod);
     #endif
     Km   *= mFactor;
     Kitw *= mFactor;
