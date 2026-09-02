@@ -407,7 +407,7 @@ npm test                 # todos los casos
 node tests/run.mjs paz   # solo los que lleven "paz" en el nombre
 ```
 
-Sale con **código 1** si algo se pasa de su límite. Hoy: **102/102**.
+Sale con **código 1** si algo se pasa de su límite. Hoy: **335/335** (261 s).
 
 ```
 tests/

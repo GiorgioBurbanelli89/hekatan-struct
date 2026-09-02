@@ -26,7 +26,7 @@ Full detail in [`ESTADO_VS_ETABS.md`](./ESTADO_VS_ETABS.md).
 | **F2K export** → SAFE 20 | round-trip re-import | 6.8 % mean | ⏳ open |
 | **Assembled mass** | ETABS `AssembledJointMass` | **0.002 %** | ✅ |
 
-Regression suite: **`npm test` → 165/165**, plus **123 passed** in the Python
+Regression suite: **`npm test` → 335/335**, plus **123 passed** in the Python
 engine (`hekatan-struct-py`), which reproduces the TS/C++ solver at `1e-9` and is
 used as the fast arbiter.
 
