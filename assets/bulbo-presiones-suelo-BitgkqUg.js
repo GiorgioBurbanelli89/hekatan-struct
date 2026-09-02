@@ -48,23 +48,23 @@ Promise.all([
     nx: {
       value: l.state(12),
       min: 6,
-      max: 24,
+      max: 40,
       step: 2,
-      label: "nx mesh"
+      label: "nx mesh (libro: 40)"
     },
     ny: {
       value: l.state(12),
       min: 6,
-      max: 24,
+      max: 40,
       step: 2,
-      label: "ny mesh"
+      label: "ny mesh (libro: 40)"
     },
     nz: {
       value: l.state(8),
       min: 4,
-      max: 16,
+      max: 20,
       step: 2,
-      label: "nz mesh"
+      label: "nz mesh (libro: 20)"
     },
     Es: {
       value: l.state(2e4),
