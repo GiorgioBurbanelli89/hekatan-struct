@@ -7,7 +7,10 @@
  *   - Mostrar bulbo de tensiones σzz REAL FEM (no Boussinesq analítico)
  *   - Visualización con PLANOS DE CORTE X/Y/Z para ver el bulbo internamente
  *
- * Mallado: nx × ny × nz hex8 elementos (default 20×20×10 = 4000 elem, 4851 nodos).
+ * Mallado: nx × ny × nz hex8 elementos. La del libro (40×40×20 = 32 000 elem, 35 301
+ * nudos, 106k GDL) ya cabe: gradiente conjugado en el WASM desde el 2-sep-2026 (9 s).
+ * Validado contra SAP2000 nudo a nudo a 2.5e-12 % (tests/casos/serquen_h8_sap2000.mjs),
+ * con los modos incompatibles de flexion que SAP trae por defecto.
  * Solver: hex8Solve TS puro (mismo que solid-cube-fem).
  *
  * Replica el ejemplo Calcpad-Symbolic "test_fem_hex8_rect_bulbo.cpd"
@@ -34,9 +37,9 @@ const parameters: Parameters = {
   //   12×12×8 = 1152 elem, 4563 DOFs ≈ 50ms
   //   16×16×10 = 2560 elem, 9251 DOFs ≈ 200ms
   //   20×20×10 = 4000 elem, 13230 DOFs ≈ 600ms (réplica EXACTA Serquen SF-70)
-  nx:  { value: van.state(12),    min: 6,  max: 24,  step: 2,    label: "nx mesh" },
-  ny:  { value: van.state(12),    min: 6,  max: 24,  step: 2,    label: "ny mesh" },
-  nz:  { value: van.state(8),     min: 4,  max: 16,  step: 2,    label: "nz mesh" },
+  nx:  { value: van.state(12),    min: 6,  max: 40,  step: 2,    label: "nx mesh (libro: 40)" },
+  ny:  { value: van.state(12),    min: 6,  max: 40,  step: 2,    label: "ny mesh (libro: 40)" },
+  nz:  { value: van.state(8),     min: 4,  max: 20,  step: 2,    label: "nz mesh (libro: 20)" },
   // Material suelo (kPa = kN/m², w en kN/m² = kPa)
   Es:  { value: van.state(20000), min: 5000, max: 100000, step: 1000, label: "Es suelo (kN/m²)" },
   nu:  { value: van.state(0.42),  min: 0.20, max: 0.49, step: 0.01, label: "ν suelo" },
