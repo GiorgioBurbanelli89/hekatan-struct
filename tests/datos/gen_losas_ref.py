@@ -152,11 +152,28 @@ def volcar(sm, tipo):
                 cx, cy, cz = float(c[0]), float(c[1]), float(c[2])
             except Exception:
                 cx = cy = cz = None
-            sh.append({"area": nm, "nudo": str(r[3][k]), "cx": cx, "cy": cy, "cz": cz,
+            # `r[2]` es el ELEMENTO mallado y `r[3]` el NUDO. Sin el elemento
+            # solo se puede comparar nudo a nudo, y ahi el promedio mezcla
+            # orientaciones locales distintas: M11 daba R2 = 0.22 mientras el
+            # desplazamiento en esos MISMOS nudos daba R2 = 1.0000. Con el
+            # elemento se puede carear elemento a elemento, sin promediar.
+            sh.append({"area": nm, "elm": str(r[2][k]),
+                       "nudo": str(r[3][k]), "cx": cx, "cy": cy, "cz": cz,
                        "F11": float(r[7][k]), "F22": float(r[8][k]),
                        "F12": float(r[9][k]), "M11": float(r[14][k]),
                        "M22": float(r[15][k]), "M12": float(r[16][k]),
-                       "V13": float(r[20][k]), "V23": float(r[21][k])})
+                       "V13": float(r[20][k]), "V23": float(r[21][k]),
+                       # ETABS ya da los PRINCIPALES, que son INVARIANTES: no
+                       # dependen del eje local del elemento. Son lo unico que
+                       # se puede carear entre programas sin que la orientacion
+                       # local de cada elemento contamine la comparacion.
+                       # Indices leidos de la ayuda oficial de la OAPI:
+                       #   7 F11 · 8 F22 · 9 F12 · 10 FMax · 11 FMin · 12 FAngle
+                       #   13 FVM · 14 M11 · 15 M22 · 16 M12 · 17 MMax
+                       #   18 MMin · 19 MAngle · 20 V13 · 21 V23 · 22 VMax
+                       "FMax": float(r[10][k]), "FMin": float(r[11][k]),
+                       "MMax": float(r[17][k]), "MMin": float(r[18][k]),
+                       "VMax": float(r[22][k])})
     out["shells"] = sh
 
     # ── reacciones y su centroide (sirve de centro de masa de la carga) ──

@@ -69,7 +69,10 @@ def test_el_1_sobre_raiz_3_del_binario_es_la_alpha_de_la_ec_30():
 @pytest.mark.parametrize("nombre,pts", GEOMETRIAS)
 def test_ocho_puntos_da_tres_modos_nulos_y_dos_por_dos_da_cuatro(nombre, pts):
     """La promesa del paper, medida: mismo efecto que 2x2 pero sin perder rango."""
-    assert modos_nulos(pts, n_gauss=2) == 4, f"{nombre}: 2x2 deberia ser mecanismo"
+    # 2x2 SIN el reloj de arena es un mecanismo; con el reloj de CSI (khg=2e-4,
+    # el defecto desde el 2-sep-2026) vuelve a 3 modos nulos.
+    assert modos_nulos(pts, n_gauss=2, khg=0.0) == 4, f"{nombre}: 2x2 sin reloj deberia ser mecanismo"
+    assert modos_nulos(pts, n_gauss=2) == 3, f"{nombre}: 2x2 con el reloj de CSI tiene 3 nulos"
     for wa in (0.999, 0.99, 0.95):
         n = modos_nulos(pts, w_alpha=wa, **ITW8)
         assert n == 3, f"{nombre}: con W_alpha={wa} salen {n} modos nulos, no 3"

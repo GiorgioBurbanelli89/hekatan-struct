@@ -1,41 +1,32 @@
 /**
- * DRILLING DOF contra ETABS: 2 muros + viga de acople.
+ * DRILLING DOF: 2 muros + viga de acople, contra SAP2000 (arbitro) y ETABS (informativo).
  *
- * El drilling es el giro NORMAL a la cascara. En una membrana Q4 no existe
- * como grado real: se le pone una rigidez artificial para quitar el modo de
- * energia nula (Wilson, cap. 9, ec. 9.11-9.14). Cuanta ponerle no lo dice
- * ninguna ecuacion — Wilson lo llama literalmente el valor que "la experiencia
- * resolviendo muchos problemas indica que es efectivo".
+ * El drilling es el giro NORMAL a la cascara. Desde el 2-sep-2026 la membrana es
+ * la de CSI extraida del binario (`drillingTypes = 12`: ITW + burbuja, Gauss 2x2,
+ * proyeccion, P centro gamma = 0.4 mu, reloj 5e-5) y la celda 12x12 clava la de
+ * ETABS a 1e-13 %.
  *
- * Este modelo estaba construido a proposito para medirlo (2 machones de muro
- * unidos por una viga de acople: el momento de la viga entra al muro POR el
- * giro en el plano) pero nunca se habia cerrado contra nada. Aqui se cierra.
+ * ARBITRO = SAP2000 24 con la MISMA malla (92 nudos, 64 Shell-Thick, 3 barras),
+ * armado por OAPI desde el volcado de Hekatan, SIN automallado
+ * (`galpon-bodega-electoral/sap_drilling.py`):
  *
- * Referencia: ETABS 22.6.0, importando el .e2k que exporta el propio Hekatan
- * (`galpon-bodega-electoral/drilling_etabs.py`), 92 nudos, caso Dead:
+ *     Ux maximo = 5.802662e-04 m      Hekatan: 5.802662e-04 (peor nudo 2.5e-12 %)
  *
- *     Ux maximo = 5.359904e-04 m
- *
- * ⚠️ El .e2k tiene que ser el NUEVO (N-MM, SHAPE "General", momentos en N*mm).
- * Con el viejo ETABS leia otra estructura y el numero no significaba nada.
- *
- * El limite es HOLGADO (15 %) a proposito: hoy sale +11.5 % y no se sabe aun
- * cual de las tres formulaciones de drilling del repo es la buena
- * (Hughes-Brezzi 0.05 en C++/Python, Allman en el .cpd simbolico, y el rango
- * uno de Wilson que es el que MIDE ETABS). Lo que vigila este caso es que
- * nadie mueva esa rigidez sin darse cuenta.
+ * ETABS 22 da 5.359904e-04 (-7.6 %) con los MISMOS objetos (por e2k y por OAPI,
+ * `etabs_drilling_oapi.py`). No es la celda ni el drilling: los muros SIN viga
+ * dan lo mismo en ETABS y Hekatan (6.016323e-04, y el giro bajo un momento
+ * nodal -8.739795e-04, identicos). Es como ETABS ata la VIGA al muro: en ETABS
+ * el giro del nudo sigue la cuerda del muro (R2 -1.5e-4 vs -2.25e-4) y la viga
+ * lleva 3x el cortante (20.2 vs 6.56 kN). Queda registrado como dato de ETABS,
+ * no como limite: ver registros/2026-09-02_binario_drilling_shellthick.md.
  */
 import { empaquetar, R } from "../lib/bundle.mjs";
 
-const ETABS_UX = 5.359904e-4;   // m, ETABS 22.6.0, caso Dead
-// Bajado de 15 % a 4 % el 19-ago-2026, al pasar el defecto al `drillingTypes = 8`
-// (la proyeccion del drilling). Hoy sale 3.086 %.
-//
-// El limite estaba HOLGADO a proposito mientras no se sabia como bajar el error
-// (venia de +11.46 % con Hughes-Brezzi y +5.45 % con el ITW 1990). Ahora que se
-// sabe, dejarlo en 15 % seria peor que no tenerlo: una regresion al 10 % pasaria
-// en verde. Un limite solo vigila si esta cerca de lo medido.
-const LIMITE = 4;               // %
+const SAP_UX = 5.802662e-4;     // m, SAP2000 24, misma malla, sin automallado (arbitro)
+const ETABS_UX = 5.359904e-4;   // m, ETABS 22.6.0, caso Dead (informativo: ETABS ata la viga distinto)
+// Limite contra SAP2000: es la misma malla y el mismo elemento, asi que solo
+// cabe el redondeo. Antes (19-ago) el limite era 4 % contra ETABS con el tipo 8.
+const LIMITE = 0.01;            // %
 
 const FUENTE = `
 const g = globalThis; g.window = g;
@@ -79,13 +70,18 @@ export const descripcion =
 export async function correr() {
   const mod = await empaquetar(FUENTE, "drilling-dof");
   const r = mod.correrEjemplo("drilling-dof");
-  const err = Math.abs(r.uxMax / ETABS_UX - 1) * 100;
+  const err = Math.abs(r.uxMax / SAP_UX - 1) * 100;
+  const errE = (r.uxMax / ETABS_UX - 1) * 100;
   return [{
-    que: "Ux de la punta contra ETABS 22",
+    que: "Ux de la punta contra SAP2000 (misma malla)",
     medido: err,
     limite: LIMITE,
     ok: err <= LIMITE,
-    detalle: `Hekatan ${r.uxMax.toExponential(6)} m vs ETABS `
-      + `${ETABS_UX.toExponential(6)} m — ${r.nNodos} nudos, ${r.nElem} elementos`,
+    detalle: `Hekatan ${r.uxMax.toExponential(6)} m vs SAP2000 `
+      + `${SAP_UX.toExponential(6)} m — ${r.nNodos} nudos, ${r.nElem} elementos`,
+  }, {
+    que: "…y ETABS 22 se queda a (informativo, ETABS ata la viga distinto)",
+    crudo: true, medido: errE.toFixed(2) + " %", limite: "dato", ok: true,
+    detalle: `ETABS ${ETABS_UX.toExponential(6)} m; muros sin viga identicos, viga con 3x cortante`,
   }];
 }

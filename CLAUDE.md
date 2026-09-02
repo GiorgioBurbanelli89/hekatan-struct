@@ -262,7 +262,21 @@ comprueba— de que la formulación es **insensible a γ**.
 3. **La modificación de Taylor sobre la burbuja** (J₀ del centro): no desbloquea
    nada (−37.38 % contra −37.40 %).
 
-### El hemisferio: DÉFICIT ABIERTO (⚠️ antes decía "bloqueo, no bug" — era falso)
+### El hemisferio: CERRADO el 2-sep-2026 con la membrana de CSI (tipo 12)
+
+| malla | paper (M-type) | SAP2000 | tipo 8 (3×3) | **tipo 12 (2×2 + reloj)** |
+|---|---|---|---|---|
+| 4×4 | 0.087548 | — | 0.010114 (−88 %) | **0.084490 (−3.5 %)** |
+| 8×8 | 0.093714 | 0.093751 | 0.059249 (−37 %) | **0.092718 (−1.1 %)** |
+| 12×12 | 0.093587 | — | 0.083555 (−11 %) | **0.093174 (−0.4 %)** |
+| 16×16 | 0.093488 | — | 0.089954 (−3.8 %) | **0.093325 (−0.2 %)** |
+
+Lo que sigue es la historia de cómo se buscó, y por qué el «Gauss 2×2 = mecanismo»
+de abajo era verdad a medias: con el reloj de arena del θz (`khg = 2e-4`, el 5e-5
+del kernel de CSI) el 2×2 tiene 3 modos nulos y no bloquea. `itw_seis_casos.mjs`
+vigila ahora la banda nueva.
+
+#### (histórico) El hemisferio: DÉFICIT ABIERTO (⚠️ antes decía "bloqueo, no bug" — era falso)
 
 En cáscara **curva** el elemento se queda muy corto en malla gruesa. Converge,
 pero **mucho más lento que el del paper**. Leída la **Tabla IV** del paper
@@ -298,6 +312,25 @@ Vigilado en `tests/casos/itw_seis_casos.mjs`, que compara contra la Tabla IV
 malla a malla y **falla también si mejora**, para que el arreglo no pase
 desapercibido. Para una cúpula en malla gruesa, hoy conviene `drillingTypes = 2`.
 
+
+## La membrana: también es la de CSI desde el 2-sep-2026 (`drillingTypes = 12`)
+
+Con la K de membrana 12×12 MEDIDA en ETABS (`galpon-bodega-electoral/memb12.json`,
+9 geometrías: cuadrados con ν, rectángulos, paralelogramo, trapecio) y lo leído
+del kernel (`registros/2026-09-02_binario_drilling_shellthick.md`), la membrana
+de ETABS resulta ser el ITW **con** estas cuatro cosas juntas:
+
+```
+Allman + burbuja (14 gdl)  ·  Gauss 2×2  ·  proyección FEAP del drilling (B-bar del giro)
+penalización P en el centro con γ = 0.4·μ (el 0.1 del binario × (2·b0)²)
++ reloj de arena del θz:  (khg·μ·t·A/4)·h hᵀ,  h = [+1,−1,+1,−1],  khg = 2e-4  (el 5e-5 del kernel)
+```
+
+Tipo **12** en `shellQ4.cpp` (`getMembraneITW` con `ngITW=2, proyITW, khg=2e-4`) y en
+`membrane_itw.py` (`_DRILLING[12]`, parámetro `khg`). **Es el defecto** en los dos
+(`getMapVal(drillingTypes, index, 12)`, `TIPO_DRILLING_DEFECTO = 12`). Contra la
+12×12 medida: **1e-13 % (Python) / 1e-11 % (C++)** en las 9 geometrías, 3 modos nulos.
+El tipo 8 (3×3 + proyección, 0.88 %) y el 10 se quedan como estaban.
 
 ## La placa gruesa: Shell-Thick de CSI, extraído del binario (2-sep-2026)
 

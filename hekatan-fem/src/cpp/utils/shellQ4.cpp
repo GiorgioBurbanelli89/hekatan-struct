@@ -1782,15 +1782,15 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     //
     // Para cascara doblemente curva sigue siendo mejor el 9 (hemisferio 8x8 a
     // -0.50 %); se pide por `elementInputs.drillingTypes`.
-    int drillingType = getMapVal(elementInputs.drillingTypes, index, 8);
+    int drillingType = getMapVal(elementInputs.drillingTypes, index, 12);   // 12 = la membrana de CSI (2-sep-2026)
     // Con drillingType 3 este numero es gamma/mu del paper (defecto 0.4, que es
     // lo medido de ETABS). Con el 2 es el alpha de Hughes-Brezzi (defecto 0.05).
     double drillScale = getMapVal(elementInputs.drillingPenaltyScales, index,
-                                  (drillingType >= 3 && drillingType <= 10) ? 0.4 : 0.05);
+                                  (drillingType >= 3 && drillingType <= 12) ? 0.4 : 0.05);
     // ⚠️ el 11 (receta de Wilson) TAMBIEN es ITW: si el rango se queda en 10 se
     // cae a la membrana vieja y el tipo no hace nada — daba el mismo numero que
     // el 3 y parecia que K0 no servia.
-    const bool usaITW = (drillingType >= 3 && drillingType <= 11);
+    const bool usaITW = (drillingType >= 3 && drillingType <= 12);
     // 3 = ITW con Gauss 3x3, que es lo que pide el paper   [DEFECTO]
     // 4 = ITW con Gauss 2x2 (integracion reducida)  -- NO USAR, ver abajo
     // 5 = ITW 3x3 con la burbuja a la Taylor (J0 del centro)
@@ -1844,10 +1844,15 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     //      Ya se habia medido que el 2x2 solo desbloquea el hemisferio
     //      (-37 % -> -5 %) pero deja modos nulos, y se descarto por mecanismo:
     //      faltaba K0.
+    // 12 = LA MEMBRANA DE CSI, extraida del binario (2-sep-2026): ITW con burbuja,
+    //      Gauss 2x2, proyeccion FEAP del drilling, penalizacion gamma=0.4*mu en el
+    //      centro y el reloj de arena del theta_z con 5e-5*G*t*A (= khg 2e-4/4).
+    //      Contra la 12x12 MEDIDA de ETABS: 1e-13 % en las 9 geometrias
+    //      (cuadrados con nu, rectangulos, paralelogramo, trapecio). Es el defecto.
     const int  ngITW  = (drillingType == 4 || drillingType == 6
-                         || drillingType == 11) ? 2 : 3;
+                         || drillingType == 11 || drillingType == 12) ? 2 : 3;
     const bool k0Wilson = (drillingType == 11);
-    const double khgITW = (drillingType == 6) ? 2.0e-4 : 0.0;
+    const double khgITW = (drillingType == 6 || drillingType == 12) ? 2.0e-4 : 0.0;
     const bool taylorITW = (drillingType == 5);
     //  7 = la regla de OCHO puntos.
     //      ⚠️ Ponia «ITW 1991, ec. (30), el paper que cita el manual de CSI» y
@@ -1887,7 +1892,7 @@ Eigen::MatrixXd getLocalStiffnessMatrixShellQ4(
     //  8 = la via de FEAP/Taylor: Gauss 3x3 + PROYECCION del drilling. Es la
     //      que reproduce la matriz 12x12 medida de ETABS al 1.42 % (contra el
     //      15.97 % del tipo 3). Ver el comentario de `proyDrill` mas abajo.
-    const bool proyITW = (drillingType == 8 || drillingType == 9 || drillingType == 10);
+    const bool proyITW = (drillingType == 8 || drillingType == 9 || drillingType == 10 || drillingType == 12);
     // 10 = proyeccion + INTEGRACION SELECTIVA del volumetrico a 2x2.
     //      Baja la matriz de ETABS de 1.42 % a 0.878 % sin tocar el patch
     //      test (1.500000/0.600000) ni los 3 modos nulos.

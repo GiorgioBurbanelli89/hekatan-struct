@@ -193,28 +193,34 @@ def _serendipity(rr: float, ss: float):
 # cascara, el CLI, un test) pide `kwargs_drilling(tipo)` y no interpreta nada.
 _DRILLING = {
     # 3 = ITW 1990: Allman + burbuja, Gauss 3x3. Fue el defecto hasta el 19-ago
-    3: dict(regla="gauss", n_gauss=3, con_burbuja=True, proyectar_drilling=False),
+    3: dict(regla="gauss", n_gauss=3, con_burbuja=True, proyectar_drilling=False, khg=0.0),
     # 4 = el mismo con Gauss 2x2. NO USAR: deja CUATRO modos nulos (mecanismo)
-    4: dict(regla="gauss", n_gauss=2, con_burbuja=True, proyectar_drilling=False),
+    4: dict(regla="gauss", n_gauss=2, con_burbuja=True, proyectar_drilling=False, khg=0.0),
     # 7 = ITW 1991: la regla de OCHO puntos de su ec. (30), SIN burbuja (el
     #     paper de 1991 no la tiene). Es el que cita el manual de CSI
     7: dict(regla="itw8", n_gauss=3, con_burbuja=False, w_alpha=0.99,
-            proyectar_drilling=False),
+            proyectar_drilling=False, khg=0.0),
     # 8 = la via de FEAP/Taylor: Gauss 3x3 + PROYECCION del drilling.  DEFECTO
     #     Reproduce la 12x12 medida de ETABS al 1.42 % (el 3 daba 15.97 %)
-    8: dict(regla="gauss", n_gauss=3, con_burbuja=True, proyectar_drilling=True),
+    8: dict(regla="gauss", n_gauss=3, con_burbuja=True, proyectar_drilling=True, khg=0.0),
     # 9 = las dos cosas. La mejor en cascara CURVA (hemisferio 8x8: -0.50 %)
     9: dict(regla="itw8", n_gauss=3, con_burbuja=False, w_alpha=0.99,
-            proyectar_drilling=True),
+            proyectar_drilling=True, khg=0.0),
+    # 12 = LA MEMBRANA DE CSI, extraida del binario (2-sep-2026): ITW con burbuja,
+    #      Gauss 2x2, proyeccion FEAP, penalizacion gamma=0.4*mu en el centro y el
+    #      reloj de arena del theta_z con khg=2e-4 (-> 5e-5*G*t*A*h h'). Contra la
+    #      12x12 MEDIDA de ETABS (memb12.json): 1e-13 % en las 9 geometrias.
+    12: dict(regla="gauss", n_gauss=2, con_burbuja=True, proyectar_drilling=True,
+             khg=2.0e-4),
 }
 
 # El defecto, y en un solo sitio. Es el mismo numero que
 # `getMapVal(elementInputs.drillingTypes, index, 8)` de `shellQ4.cpp`.
-TIPO_DRILLING_DEFECTO = 8
+TIPO_DRILLING_DEFECTO = 12
 
 # Los tipos que van por el elemento ITW (los otros son el Q4 clasico con la
 # penalizacion pegada aparte). Mismo rango que `usaITW` en el C++.
-TIPOS_ITW = (3, 4, 5, 6, 7, 8, 9)
+TIPOS_ITW = (3, 4, 5, 6, 7, 8, 9, 12)
 
 
 def kwargs_drilling(tipo: int) -> dict:
@@ -235,22 +241,24 @@ def kwargs_drilling(tipo: int) -> dict:
 
 
 def k_membrana_itw(pts, E: float, nu: float, t: float,
-                   gamma_fac: float = 0.4, n_gauss: int = 3,
+                   gamma_fac: float = 0.4, n_gauss: int = 2,
                    con_burbuja: bool = True, con_penal: bool = True,
                    mod_dir=None, regla: str = "gauss",
                    w_alpha: float = 0.99, penal_full: bool = False,
                    proyectar_drilling: bool = True,
                    penal_integrada: bool = False,
-                   theta_relativo: bool = False) -> np.ndarray:
+                   theta_relativo: bool = False,
+                   khg: float = 2.0e-4) -> np.ndarray:
     # NOTA sobre `penal_full`: ver el aviso al final del docstring. NO USAR.
     """Rigidez 12x12 del elemento, GDL `[u0,v0,tz0, u1,v1,tz1, ...]`.
 
     `pts` son los cuatro `(x, y)` EN EL PLANO DEL ELEMENTO, antihorarios.
     `gamma_fac` es `gamma/mu`; el defecto 0.4 es lo medido de ETABS.
 
-    ⚠️ **El defecto es el `drillingTypes = 8`** — Gauss 3x3 CON la proyeccion.
-    Es el mismo defecto que `shellQ4.cpp`, y por eso `proyectar_drilling` vale
-    `True` de fabrica desde el 19-ago-2026. Para el 1990 puro hay que pedirlo
+    ⚠️ **El defecto es el `drillingTypes = 12`** (2-sep-2026): Gauss 2x2 CON la
+    proyeccion y el reloj de arena `khg = 2e-4` — la membrana de CSI, medida.
+    Es el mismo defecto que `shellQ4.cpp`. Los argumentos SIN pedir nada tienen
+    que ser los del tipo 12 (lo vigila `test_el_defecto_de_python_es_el_defecto_del_cpp`). Para el 1990 puro hay que pedirlo
     (`proyectar_drilling=False`), o mejor: `**kwargs_drilling(3)`.
 
     `regla` elige QUE PAPER se integra:
@@ -454,6 +462,16 @@ def k_membrana_itw(pts, E: float, nu: float, t: float,
         # Omega = 4*dJ0 (el area); la ec. (38) se integra con UN punto.
         K = K + (gamma_fac * mu) * t * 4.0 * g["dJ"] * np.outer(res, res)
 
+    if khg > 0.0:
+        # reloj de arena del giro normal: (khg*mu*t*A/4) h h', h = [+1,-1,+1,-1]
+        # sobre theta_z. Es lo que el kernel de CSI suma con su constante 5e-5
+        # (= khg/4) y lo que estabiliza el mecanismo que deja Gauss 2x2.
+        mu = E / (2.0 * (1.0 + nu))
+        A = 0.5 * abs((X4[2] - X4[0]) * (Y4[3] - Y4[1]) - (X4[3] - X4[1]) * (Y4[2] - Y4[0]))
+        h = np.zeros(n)
+        for i in range(4):
+            h[3 * i + 2] = 1.0 if i % 2 == 0 else -1.0
+        K = K + (khg * mu * t * A / 4.0) * np.outer(h, h)
     if not con_burbuja:
         return K
     Kuu, Kab, Kbb = K[:12, :12], K[:12, 12:], K[12:, 12:]

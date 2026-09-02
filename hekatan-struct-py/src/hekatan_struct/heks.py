@@ -65,6 +65,10 @@ class ModeloHeks:
     # Es el patrón `Dead` de ETABS: el acero de las barras y el peso de las
     # cáscaras. Con `endoffset`, las VIGAS pesan por su luz libre.
     selfweight: float = 0.0
+    # Los `load` EXPLICITOS del fichero (por indice interno). `ni.loads` lleva
+    # ademas lo que el lector reparte (areaload, selfweight); el ESCRITOR tiene
+    # que sacar solo estos, o al releer la carga se cuenta dos veces.
+    cargas_explicitas: dict[int, tuple] = field(default_factory=dict)
     errores: list[str] = field(default_factory=list)
     # comandos que el lector NO monta (hoy: `spring`, `mass`, `diaph`, y
     # cualquiera que se añada al .heks). Antes se saltaban en silencio: el
@@ -332,6 +336,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
     for nid, v in cargas.items():
         if nid in idx_de:
             ni.loads[idx_de[nid]] = tuple(v)  # type: ignore[assignment]
+            m.cargas_explicitas[idx_de[nid]] = tuple(v)
 
     # ── CARGA DE SUPERFICIE -> vector de fuerzas nodales CONSISTENTE ────────
     # Una carga de área entra al FEM por un único camino: f_i = ∫ N_i·q·dA. No
@@ -519,7 +524,7 @@ def escribir_heks(m: ModeloHeks, ruta: str | None = None) -> str:
                  % (sid, ids_n[c[0]], ids_n[c[1]], ids_n[c[2]], ids_n[c[3]],
                     ei.thicknesses.get(k, 0.20), ei.elasticities.get(k, 25e6),
                     ("" if rho_sh is None
-                     else " %.8g %.6g" % (m.shell_load.get(k, 0.0), rho_sh))))
+                     else " %.8g %.10g" % (m.shell_load.get(k, 0.0), rho_sh))))
         if k in m.shell_load:
             L.append("areaload %d %.8g" % (sid, m.shell_load[k]))
     for k, sid in ids_s.items():
@@ -539,7 +544,13 @@ def escribir_heks(m: ModeloHeks, ruta: str | None = None) -> str:
     for i, fl in sorted(ni.supports.items()):
         L.append("support %d %s" % (ids_n[i], "".join("1" if f else "0"
                                                       for f in fl)))
-    for i, v in sorted(ni.loads.items()):
+    # Solo los `load` explicitos: `ni.loads` ya lleva repartidos `areaload` y
+    # `selfweight`, que se escriben aparte. Escribirlo todo doblaba la carga al
+    # releer (mezanine: 3473 -> 6946 kN). Si el modelo no viene de un fichero
+    # (no hay explicitas) se escriben las nodales tal cual.
+    fuente = m.cargas_explicitas if (m.cargas_explicitas or m.shell_load
+                                      or getattr(m, "selfweight", 0.0)) else ni.loads
+    for i, v in sorted(fuente.items()):
         L.append("load %d %.8g %.8g %.8g %.8g %.8g %.8g"
                  % (ids_n[i], v[0], v[1], v[2], v[3], v[4], v[5]))
     _DOF = ("ux", "uy", "uz", "rx", "ry", "rz")

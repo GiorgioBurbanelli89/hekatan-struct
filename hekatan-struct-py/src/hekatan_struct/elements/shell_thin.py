@@ -20,8 +20,10 @@ escalera, 4 % menos de flecha en los nudos de losa y +1.1 % en el modo 1.
 import numpy as np
 
 from .plate_dke import dke_plate_stiffness
+from .membrane_itw import TIPOS_ITW, TIPO_DRILLING_DEFECTO, k_membrana_itw, kwargs_drilling
 from .shell_q4_motor import (
     ALPHA_DRILL,
+    GAMMA_ITW,
     DOF_BEN,
     DOF_DRI,
     DOF_MEM,
@@ -31,7 +33,8 @@ from .shell_q4_motor import (
 
 
 def shell_thin_motor(coords_xy, E, nu, t, *, alpha_drilling=None,
-                     mod_membrana=1.0, mod_flexion=1.0, mod_dir=None):
+                     mod_membrana=1.0, mod_flexion=1.0, mod_dir=None,
+                     tipo_drilling=TIPO_DRILLING_DEFECTO):
     """K local 24x24 del Shell-Thin. Mismo orden de GDL que el Thick.
 
     `[u, v, w, θx, θy, θz]` x 4 nudos. Los modificadores se leen igual que en
@@ -54,11 +57,21 @@ def shell_thin_motor(coords_xy, E, nu, t, *, alpha_drilling=None,
     else:
         sin_flexion = abs(fb) < 1e-9
 
-    K[np.ix_(DOF_MEM, DOF_MEM)] += fm * _k_membrana(x, y, E, nu, t, mod_dir)
+    # La MISMA membrana que el Thick (`shellThin.cpp` tambien va por
+    # `getMembraneITW` para los tipos 3..12): thin y thick tienen que dar lo
+    # mismo en su plano. Con el 12 es la membrana de CSI (2-sep-2026).
+    usa_itw = tipo_drilling in TIPOS_ITW
+    if usa_itw:
+        K[np.ix_(DOF_DRI, DOF_DRI)] += fm * k_membrana_itw(
+            [(x[i], y[i]) for i in range(4)], E, nu, t, gamma_fac=GAMMA_ITW,
+            mod_dir=mod_dir, **kwargs_drilling(tipo_drilling))
+    else:
+        K[np.ix_(DOF_MEM, DOF_MEM)] += fm * _k_membrana(x, y, E, nu, t, mod_dir)
     if not sin_flexion:
         K[np.ix_(DOF_BEN, DOF_BEN)] += fb * dke_plate_stiffness(
             x, y, E, nu, t, mod_dir)
     # El drilling va escalado por el modificador de MEMBRANA: si la membrana no
     # existe, su θz tampoco tiene que aportar rigidez.
-    K[np.ix_(DOF_DRI, DOF_DRI)] += fm * _k_drilling(x, y, G, t, al)
+    if not usa_itw:
+        K[np.ix_(DOF_DRI, DOF_DRI)] += fm * _k_drilling(x, y, G, t, al)
     return K
