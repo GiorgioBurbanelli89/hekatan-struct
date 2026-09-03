@@ -62,7 +62,10 @@ export function generar(id, over) {
   // parte de estos ensayos, y si el motor de CSI lo mete por su cuenta se
   // comparan dos cargas distintas.
   const e2k = exportE2k({ ...comun, weightMode: "manual" });
-  const s2k = exportS2k({ ...comun, selfWtMult: 0 });
+  // cftas=general en la linea de comandos: columnas CFT como seccion General en el
+  // .s2k (por defecto Section Designer, como el boton de la interfaz). Sin backticks aqui.
+  const cftAs = process.argv.some(a => a.toLowerCase() === "cftas=general") ? "general" : "sd";
+  const s2k = exportS2k({ ...comun, selfWtMult: 0, cftAs });
   return { e2k, s2k, nNodos: st.nodes.val.length, nElem: st.elements.val.length };
 }`, "exportar-e2k");
 

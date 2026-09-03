@@ -55,6 +55,10 @@ export interface S2kExportInput {
   areaLoads?: S2kAreaLoad[];
   /** Multiplicador de peso propio del LoadPat DEAD. Default 1 (SAP convencional). */
   selfWtMult?: number;
+  /** Columnas CFT (tubo relleno) en el .s2k: "sd" = Section Designer (tubo + relleno; SAP
+   *  recalcula A, I, As, J de las formas) [defecto, lo mas parecido al Filled Steel Tube de
+   *  ETABS] · "general" = seccion General con las propiedades que calcula Hekatan (A, I, As, J). */
+  cftAs?: "sd" | "general";
 }
 
 export function exportS2k(input: S2kExportInput): string {
@@ -205,7 +209,7 @@ export function exportS2k(input: S2kExportInput): string {
     const shp = (elementInputs as any).sectionShapes?.get(i);
     let sd: SdCft | undefined;
     const esCftc = shp?.type === "CFT" && shp.d > 0 && shp.tw > 0 && shp.tw < shp.d / 2 && !(shp.b > 0 && shp.h > 0);
-    if (shp?.type === "CFT" && E > 0 && (esCftc || (shp.b > 0 && shp.h > 0 && shp.tw > 0 && shp.tw < Math.min(shp.b, shp.h) / 2))) {
+    if (input.cftAs !== "general" && shp?.type === "CFT" && E > 0 && (esCftc || (shp.b > 0 && shp.h > 0 && shp.tw > 0 && shp.tw < Math.min(shp.b, shp.h) / 2))) {
       const di = esCftc ? shp.d - 2 * shp.tw : 0;
       const bi = esCftc ? 0 : shp.b - 2 * shp.tw, hi = esCftc ? 0 : shp.h - 2 * shp.tw;
       const AsAcero = esCftc ? Math.PI * (shp.d * shp.d - di * di) / 4 : shp.b * shp.h - bi * hi;
@@ -507,6 +511,31 @@ export function exportS2k(input: S2kExportInput): string {
       push(`   Joint=${idx + 1}   U1=${yn(sup[0])}   U2=${yn(sup[1])}   U3=${yn(sup[2])}   R1=${yn(sup[3])}   R2=${yn(sup[4])}   R3=${yn(sup[5])}`);
     }
     blank();
+  }
+
+  // ── CONSTRAINT DEFINITIONS + JOINT CONSTRAINT ASSIGNMENTS (diafragma rigido) ──
+  // `nodeInputs.diaphragms` (nudo -> grupo; grupo NEGATIVO = solo ux, uy). En SAP2000 es
+  // un Diaphragm constraint con eje Z (ata ux, uy, rz). Hasta el 3-sep-2026 el .s2k NO lo
+  // escribia: el mezanine con diafragma salia 1 % mas rigido en Hekatan que en SAP2000 —
+  // y no era el solver, era una restriccion que no viajaba en el fichero.
+  const diafr = (nodeInputs as any).diaphragms as Map<number, number> | undefined;
+  if (diafr && diafr.size > 0) {
+    const grupos = new Map<number, number[]>();
+    for (const [nd, g] of diafr) {
+      const gi = Math.round(g); if (gi === 0) continue;
+      const k = Math.abs(gi);
+      if (!grupos.has(k)) grupos.set(k, []);
+      grupos.get(k)!.push(nd);
+    }
+    const conDos = [...grupos].filter(([, v]) => v.length >= 2);
+    if (conDos.length > 0) {
+      push(`TABLE:  "CONSTRAINT DEFINITIONS - DIAPHRAGM"`);
+      for (const [g] of conDos) push(`   Name=DIAPH${g}   CoordSys=GLOBAL   Axis=Z`);
+      blank();
+      push(`TABLE:  "JOINT CONSTRAINT ASSIGNMENTS"`);
+      for (const [g, nds] of conDos) for (const nd of nds) push(`   Joint=${nd + 1}   Constraint=DIAPH${g}`);
+      blank();
+    }
   }
 
   // ── LOAD PATTERN DEFINITIONS ──

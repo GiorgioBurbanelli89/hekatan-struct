@@ -5212,6 +5212,11 @@ solve`;
   if (currentExample && !isFoundation) {
     const fEtabs = pane.addFolder({ title: "ETABS", expanded: false });
     const fSap   = pane.addFolder({ title: "SAP",   expanded: false });
+    // Columnas CFT al .s2k: SAP2000 no tiene "Filled Steel Tube" (ETABS si). Por defecto
+    // van como Section Designer (lo mas parecido a ETABS: SAP recalcula A, I, As, J de las
+    // formas); "General" escribe las propiedades que calcula Hekatan tal cual.
+    const sapOpts = { cftAs: "sd" as "sd" | "general" };
+    fSap.addBinding(sapOpts, "cftAs", { label: "CFT en SAP", options: { "Section Designer": "sd", "Sección General": "general" } });
     const downloadText = (text: string, filename: string) => {
       const blob = new Blob([text], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
@@ -5340,6 +5345,7 @@ solve`;
           nodeInputs: states.nodeInputs.val,
           elementInputs: states.elementInputs.val,
           title: `${currentExample!.name} — Hekatan export`,
+          cftAs: sapOpts.cftAs,
         });
         const fname = `${currentExample!.id}_${Date.now()}.s2k`;
         downloadText(text, fname);

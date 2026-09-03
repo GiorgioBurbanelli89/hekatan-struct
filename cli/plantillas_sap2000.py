@@ -175,18 +175,22 @@ for i, f in enumerate(trabajos, 1):
                 r = sm.Results.JointDispl("All", 2)
                 n = r[0]
                 por_caso = {}
+                nudos = {}     # desplazamientos por joint del caso DEAD (como plantillas_etabs.py)
                 for k in range(n):
                     c = str(r[3][k])
                     b = por_caso.setdefault(c, {"uzMin": 0.0, "uzNodo": None,
                                                 "uxMax": 0.0, "uxNodo": None})
-                    u1, u3 = r[6][k], r[8][k]
+                    u1, u2, u3 = r[6][k], r[7][k], r[8][k]
                     if u3 < b["uzMin"]:
                         b["uzMin"] = u3
                         b["uzNodo"] = str(r[1][k])
                     if abs(u1) > abs(b["uxMax"]):
                         b["uxMax"] = u1
                         b["uxNodo"] = str(r[1][k])
+                    if c.lower() == "dead":
+                        nudos[str(r[1][k])] = [u1, u2, u3, r[9][k], r[10][k], r[11][k]]
                 D["disp"] = por_caso
+                D["disp_nudos"] = nudos
             except Exception as ex:
                 D["disp_error"] = str(ex)[:80]
 

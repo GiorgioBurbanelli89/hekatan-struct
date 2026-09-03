@@ -3,6 +3,7 @@
  * Organizado en folders: Geometría / Luces / Alturas / Secciones / Apoyo / Cargas / Avanzado.
  */
 import { deform, analyze, modalAnalysis, type Node, type Element } from "hekatan-fem";
+import { cftSectionEc } from "../shared/cadSections";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import { buildEdificioCotas, makeLabel } from "../shared/cotas3D";
 import { etabsDiscretize, DISCRETIZE_OPTIONS } from "../shared/etabsDiscretization";
@@ -71,7 +72,8 @@ export const edificioAporticado: ExampleDef = {
     hP_8:     P("Alturas por piso", "Piso 8 (m)", 0, 0, 6, 0.1),
 
     // ── Secciones globales (fallback si per-piso es 0) ──
-    matCol:   PE("Secciones (global)", "Material columna", 0, { "Hormigón": 0, "Acero W": 1 }),
+    matCol:   PE("Secciones (global)", "Material columna", 0, { "Hormigón": 0, "Acero W": 1, "CFT (tubo relleno)": 2 }),
+    tCft:     P("Secciones (global)", "t pared CFT (m)", 0.010, 0.004, 0.030, 0.001),
     matViga:  PE("Secciones (global)", "Material viga",    0, { "Hormigón": 0, "Acero W": 1 }),
     colShape: PE("Secciones (global)", "Forma columna", 0, { "Rectangular": 0, "Circular": 1 }),
     fcConcr:  P("Secciones (global)", "f'c hormigón (kg/cm²)", 240, 140, 420, 10),
@@ -222,6 +224,9 @@ export const edificioAporticado: ExampleDef = {
     vSecDir:  PE("Avanzado", "Dir secundarias",  0, { "X": 0, "Y": 1 }),
     bracesMode: PE("Avanzado", "Diagonales", 0, { "ninguna": 0, "perimetrales": 1, "todas": 2, "solo X": 3, "solo Y": 4 }),
     slabOn:   PE("Avanzado", "Losa",  0, { "Off": 0, "On": 1 }),
+    // Formulacion de la losa: ETABS la pone Shell-Thin por defecto (y las 8 plantillas
+    // cierran con ETABS en Thin); Thick = el Shell-Thick de CSI.
+    slabForm: PE("Avanzado", "Formulación losa", 1, { "Thin (ETABS)": 1, "Thick": 0 }),
     slabT:    P("Avanzado", "t losa (m)", 0.15, 0.08, 0.30, 0.01),
     // Muros de corte de CASCARA (Q4 verticales): el primer vano, en las dos
     // fachadas, de la base a la cubierta. Antes "muros" eran las diagonales
@@ -803,9 +808,19 @@ export const edificioAporticado: ExampleDef = {
       .map(v => (v > 0 ? v : p.vigaH));
 
     // Helpers per-floor
+    const esCft = Math.round(p.matCol) === 2;
     const colPropsAt = (floor: number) => {
       const b = colB_piso[floor] ?? p.colSize, h = colH_piso[floor] ?? p.colSize;
-      return { A: b*h, Iz: (b*h**3)/12, Iy: (h*b**3)/12, J: 0.14 * Math.pow(Math.min(b,h), 4) };
+      if (esCft) {
+        // Tubo de acero relleno de hormigon: las propiedades de CSI (transformadas al
+        // acero, As de Timoshenko, J de Saint-Venant del compuesto), ver cadSections.
+        const t = Math.min(p.tCft, Math.min(b, h) / 2 - 1e-3);
+        const c = cftSectionEc(b, h, t, Es, nu_s, Ec, nu_c);
+        // c.Iz = flexion sobre el eje z de la seccion (canto h): el mapeo de abajo
+        // es el mismo que el rectangulo (Iz -> b*h^3/12).
+        return { A: c.A, Iz: c.Iz, Iy: c.Iy, J: c.J, As2: c.As2, As3: c.As3, b, h, t };
+      }
+      return { A: b*h, Iz: (b*h**3)/12, Iy: (h*b**3)/12, J: 0.14 * Math.pow(Math.min(b,h), 4) } as any;
     };
     const vigaPropsAt = (floor: number) => {
       const b = vigaB_piso[floor] ?? p.vigaB, h = vigaH_piso[floor] ?? p.vigaH;
@@ -814,7 +829,7 @@ export const edificioAporticado: ExampleDef = {
       return { A: b*h, Iy: (b*h**3)/12, Iz: (h*b**3)/12, J: 0.21 * Math.pow(Math.min(b,h), 3) * Math.max(b,h) };
     };
 
-    const matColE = p.matCol < 0.5 ? Ec : Es;
+    const matColE = p.matCol < 0.5 ? Ec : Es;   // CFT: al acero (seccion transformada)
     const matColG = p.matCol < 0.5 ? Gc : Gs;
     const matColNu = p.matCol < 0.5 ? nu_c : nu_s;
     // La DENSIDAD tambien va por material, no solo E, G y nu. Antes se ponia
@@ -834,6 +849,10 @@ export const edificioAporticado: ExampleDef = {
     const densities = new Map<number, number>();
     const poissons = new Map<number, number>();
     const thicknesses = new Map<number, number>();
+    const shearAreasY = new Map<number, number>();
+    const shearAreasZ = new Map<number, number>();
+    const sectionShapes = new Map<number, any>();
+    const plateFormulations = new Map<number, number>();
     // Property Modifiers según p.slabType (estilo ETABS Assign → Area → Modifiers)
     const membraneModifiers = new Map<number, number>();
     const bendingModifiers = new Map<number, number>();
@@ -867,6 +886,7 @@ export const edificioAporticado: ExampleDef = {
         // Si crackedSections ON: fSlab_b para bending, fSlab_m para membrana
         membraneModifiers.set(i, mFactor * fSlab_m);
         bendingModifiers.set(i, bFactor * fSlab_b);
+        plateFormulations.set(i, Math.round(p.slabForm ?? 1));
         // Densidad: si Mass Source = Loads, usar ρ equivalente (q/t)
         densities.set(i, rho_slab_equiv);
       } else if (muroIdx.has(i)) {
@@ -879,6 +899,11 @@ export const edificioAporticado: ExampleDef = {
         elasticities.set(i, matColE); shearModuli.set(i, matColG); poissons.set(i, matColNu);
         areas.set(i, cp.A);
         Iz.set(i, cp.Iz * fCol_I); Iy.set(i, cp.Iy * fCol_I); J.set(i, cp.J);
+        if (esCft) {
+          // As2 va con I33 (= momentsOfInertiaZ = nuestro Iy del mapeo), As3 con I22
+          shearAreasZ.set(i, cp.As2); shearAreasY.set(i, cp.As3);
+          sectionShapes.set(i, { type: "CFT", b: cp.b, h: cp.h, tw: cp.t, tf: cp.t, fillE: Ec, d: 0 });
+        }
         // Si Mass Source = Loads, density de cols = 0 (la masa va solo en losa)
         densities.set(i, useMassFromLoads ? 0 : matColRho);
       } else {
@@ -918,12 +943,24 @@ export const edificioAporticado: ExampleDef = {
 
     states.nodes.val = nodes;
     states.elements.val = elements;
-    states.nodeInputs.val = { supports, loads };
+    // Diafragma rigido por planta como ETABS (solo si hay losa): ETABS ata los
+    // PUNTOS de la planta (ejes de columna), no la malla de la losa. Un grupo
+    // por nivel (iz). Sin losa no hay diafragma (portico flexible).
+    const diaphragms = new Map<number, number>();
+    if (p.slabOn >= 0.5)
+      for (let iz = 1; iz < zCoords.length; iz++)
+        for (let iy = 0; iy < yCoords.length; iy++)
+          for (let ix = 0; ix < xCoords.length; ix++) {
+            const k = nid[`${ix},${iy},${iz}`];
+            if (k !== undefined) diaphragms.set(k, iz);
+          }
+    states.nodeInputs.val = { supports, loads, ...(diaphragms.size ? { diaphragms } : {}) };
     states.elementInputs.val = {
       elasticities, shearModuli, areas,
       momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy, torsionalConstants: J,
       densities, poissonsRatios: poissons, thicknesses,
-      membraneModifiers, bendingModifiers,
+      membraneModifiers, bendingModifiers, plateFormulations,
+      ...(esCft ? { shearAreasY, shearAreasZ, sectionShapes } : {}),
     } as any;
     const deformOut = deform(nodes, elements, states.nodeInputs.val, states.elementInputs.val);
     states.deformOutputs.val = deformOut;

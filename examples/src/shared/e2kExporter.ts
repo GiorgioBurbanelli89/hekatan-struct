@@ -89,7 +89,7 @@ export interface ExportE2kInput {
    *    original no tiene lo rigidiza lateralmente, asi que el e2k reimportado
    *    daba OTRA estructura.
    */
-  diaphragm?: "auto" | "none";
+  diaphragm?: "auto" | "none" | "d1";
   /** Angulo del eje local 1 de cada shell, en grados. Es lo que decide a que
    *  vigas les entrega la carga un deck de un solo sentido. */
   shellAngles?: Map<number, number>;
@@ -1221,7 +1221,13 @@ function exportFromScratch(input: ExportE2kInput): string {
   });
   // 2. Top joints de chains → asignar DIAPHRAGM D1 (ETABS-idiomatic — la
   //    masa lateral se agrupa por nivel via el rigid diaphragm).
-  const usarDiafragma = (input.diaphragm ?? "auto") !== "none";
+  // "auto" (defecto): D1 SOLO si el modelo de Hekatan lleva diafragmas
+  // (nodeInputs.diaphragms). Antes se ponia siempre, y un modelo flexible en
+  // Hekatan salia atado en ETABS: el borde del deck del mezanine daba 1 % de
+  // diferencia que no era del motor (3-sep-2026). "d1" lo fuerza, "none" lo quita.
+  const hayDiaf = !!(nodeInputs.diaphragms && [...nodeInputs.diaphragms.values()].some(v => v !== 0));
+  const modoDiaf = input.diaphragm ?? "auto";
+  const usarDiafragma = modoDiaf === "d1" || (modoDiaf === "auto" && hayDiaf);
   // ⚠️ Hasta el 3-sep-2026 solo se asignaba D1 al nudo de CORONACION de cada
   // cadena: ETABS tenia diafragma solo en la ultima planta y las de abajo iban
   // flexibles. Medido (dual de 2 plantas, empuje en esquina): la planta 2 casaba

@@ -877,3 +877,30 @@ en el pórtico 3D), las 8 plantillas vs ETABS 22: **masa total 0.000 % y modos 1
 
 `deform.cpp` pasa a gradiente conjugado con Cholesky incompleta (tol 1e-12) a partir de
 150 000 GDL (medido: 164k GDL en 7.4 s y 561 MB); por debajo, LDLT como siempre.
+
+## Galpón real y mezanine CFT contra SAP2000 y ETABS por OAPI (3-sep-2026)
+
+`galpon-bodega-electoral/csi_desde_dump.py sap|etabs dump.json out.json [--membrana|--wall|--nomesh]`
+arma CUALQUIER modelo de Hekatan en SAP2000 o ETABS con la misma malla y las mismas cargas
+nodales (barras General con I33/I22/As2/As3, `ang`, releases; cáscaras con los 8 modificadores;
+diafragmas; muelles). El volcado sale de `tests/lib/dump_heks.mjs` (un .heks) o de
+`cli/dump_ejemplo.mjs <id> out.json [k=v]` (un ejemplo del registry). `cli/ejemplo_vs_csi.mjs`
+compara un ejemplo con el JSON de `plantillas_etabs.py` / `plantillas_sap2000.py` (que ahora
+también escribe `disp_nudos`).
+
+- **Galpón (609 nudos, 1140 barras con `ang`, 116 shells de deck): SAP2000 = Hekatan a 0.001 %**
+  (test `galpon-vs-sap2000-oapi`). Solo barras en ETABS: 0.000 %. Con el deck, ETABS se va
+  4.5–5.6 % porque REMALLA las áreas (1.25 m, cosidas a las barras que cruzan): es otra malla.
+- **Mezanine con columna CFT** (`matCol = 2`, `tCft`): e2k → ETABS `Filled Steel Tube`; s2k →
+  Section Designer (defecto) o `cftAs: "general"` (panel SAP «CFT en SAP», CLI `cftas=general`).
+  SAP2000 SD = General = ETABS (e2k y OAPI): barras 0.03 %, modos 0.02–0.09 %; un nudo interior
+  del deck sin carga queda a 0.38 % igual en los tres (dato abierto).
+- El **.s2k lleva el diafragma** (`CONSTRAINT DEFINITIONS - DIAPHRAGM`): sin él el mezanine
+  salía 1 % más rígido en Hekatan. Y el e2k pone D1 SOLO si el modelo trae diafragmas.
+- `edificioAporticado`: diafragma rígido por planta en los ejes de columna cuando hay losa
+  (como ETABS) y `slabForm` Thin por defecto (Thick opcional).
+
+⚠️ OAPI: `AddByPoint` devuelve tupla (usar el UserName); ETABS ata con `Diaphragm.SetDiaphragm`
++ `PointObj.SetDiaphragm(n, 3, "D1")`, SAP con `ConstraintDef.SetDiaphragm` + `PointObj.SetConstraint`;
+600–800 nudos tardan 5–6 min por programa; los prints de Python se pierden con la salida
+redirigida (el resultado va al JSON). Si SAP2000 «no vuelve», es un diálogo: `taskkill //F //IM SAP2000.exe`.
