@@ -712,7 +712,9 @@ parámetros por defecto, así que las ocho le salían la misma.
 for t in 0 1 2 3 4 5 6 7; do node cli/exportar_csi.mjs plantillas out/P$t tipo=$t; done
 # 2. el lado de Hekatan
 node cli/plantillas_hekatan.mjs
-# 3. el lado de ETABS 22 (una sola pasada: abrir ETABS es lo caro)
+# 3. el lado de ETABS 22 (una sola pasada: abrir ETABS es lo caro). Anula los brazos
+#    rigidos automaticos (RZ=0, invisibles en el e2k): sin eso ETABS pesa 5 % menos
+#    las vigas y los porticos sin losa salen +2.5 % en periodo
 python cli/plantillas_etabs.py
 # 4. el careo -> validation/modelos/plantillas/COMPARACION.md
 node cli/plantillas_vs_csi.mjs
@@ -858,9 +860,11 @@ maestro VIRTUAL en el centro (`utils/rigidDiaphragm.h`; en el modal, en el centr
 flexible = sin `diaph`. ⚠️ Con un nudo real de esquina como maestro el modal perdía el
 acoplamiento ux–rz (solo mira la diagonal de M) y T_x salía ×1.84. `deform.cpp` no lo tenía.
 Plantillas: `diafragma` (0 flexible · **1** solo nudos en eje de columna, como ETABS [defecto] ·
-2 rígido total · 3 total sin muros). Test `node tests/run.mjs diafragma`. Con D1 por planta y
-columnas piso a piso, las 8 plantillas vs ETABS 22: con losa ≤ 0.8 % (rejilla y losa plana
-0.00 %), pórticos sin losa +2.3 … +2.7 % (abierto).
+2 rígido total · 3 total sin muros). Test `node tests/run.mjs diafragma`. Con D1 por planta,
+columnas piso a piso y los brazos rígidos automáticos de ETABS ANULADOS en el batch
+(`plantillas_etabs.py`: ETABS no pesa el tramo de viga dentro de la columna, 3.5 t por planta
+en el pórtico 3D), las 8 plantillas vs ETABS 22: **masa total 0.000 % y modos 1-3 a
+0.00–0.01 % en las ocho** (3-sep-2026).
 
 ### Modelos grandes (3-sep-2026)
 

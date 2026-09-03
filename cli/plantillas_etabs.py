@@ -71,6 +71,13 @@ for i, f in enumerate(trabajos, 1):
             estado = "FALLA abrir"
         else:
             sm.SetPresentUnits(6)
+            # Los brazos rigidos AUTOMATICOS de ETABS (RZ = 0, invisibles en el e2k)
+            # no pesan el tramo de viga que cae dentro de la columna: en los porticos
+            # sin losa eran 3.5 t por planta (5 % de la masa) y +2.5 % en los
+            # periodos. Se anulan para medir la MISMA estructura (regla de la casa:
+            # "offsets = 0", CLAUDE.md), medido el 3-sep-2026.
+            for nm in sm.FrameObj.GetNameList(0, [])[1]:
+                sm.FrameObj.SetEndLengthOffset(nm, False, 0.0, 0.0, 0.0)
             if sm.File.Save(edb) != 0:
                 estado = "aviso: no guardo el EDB"
 
