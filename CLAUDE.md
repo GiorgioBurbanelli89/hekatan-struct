@@ -814,3 +814,10 @@ contra 2.009 de CSI. Con `cft` da 2.0094 (0.006 % SAP, 0.003 % ETABS).
   (~48 y ~32 lados): su A queda 0.3 / 0.6 % por debajo y sus flechas 0.4 / 1.3 % por
   encima de Hekatan. Los dos leen los ficheros de Hekatan y dan exactamente lo suyo.
 - Test `node tests/run.mjs cftc` (11 filas) y `pytest tests/test_cft.py`.
+
+### Sólidos en el `.heks` (3-sep-2026)
+
+`hex ID n1..n8 [E nu rho]` + `incompatible 0/1`. cliModeler los resuelve con `hex8Solve`
+(solo modelos de SOLO sólidos: `deform.cpp` no tiene H8) y Python con `elements/hex8.py`
+(espejo exacto del WASM). El s2k sale con `CONNECTIVITY - SOLID`. Test
+`node tests/run.mjs solidos-heks` (5 filas) y `pytest tests/test_solidos.py`.

@@ -49,6 +49,7 @@
  */
 import * as THREE from "three";
 import { cftSectionEc, cftPipeSectionEc } from "../shared/cadSections";
+import { hex8Solve } from "../solid-cube-fem/h8";
 import { deform, analyze, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
@@ -107,6 +108,10 @@ interface ParsedModel {
    *  arriostramiento). ETABS lo hace por defecto (MESHATINTERSECTIONS "YES"); SAP2000 no.
    *  Por defecto como ETABS (decision de Jorge, 3-sep-2026). */
   meshCross: boolean;
+  /** `hex ID n1..n8 [E nu rho]`: hexaedros H8 (solidos). Se resuelven con hex8Solve
+   *  (Wilson–Taylor por defecto; `incompatible 0` lo quita). */
+  solids: Array<{ id: number; pts: number[]; E: number; nu: number; rho: number }>;
+  solidIncompatible: boolean;
   /** End releases por barra: 12 banderas [U1 U2 U3 R1 R2 R3]_I + _J, el orden
    *  de ETABS. Una bandera en true libera ese grado LOCAL por condensacion
    *  estatica. Ver el comando `release`. */
@@ -198,6 +203,8 @@ export function parseCliCommands(text: string): ParsedModel {
     frameEndOffsets: new Map(),
     selfWeight: 0,
     meshCross: true,
+    solids: [],
+    solidIncompatible: true,
     etabsWallJoint: true,     // por DEFECTO como ETABS (decision de Jorge, 3-sep-2026); `etabsjoint 0` = modo SAP2000
     frameReleases: new Map(),
     areaObjs: [],
@@ -424,6 +431,21 @@ export function parseCliCommands(text: string): ParsedModel {
         // en el estatico: habia que meterlo a mano en las cargas, y en el
         // galpon directamente no estaba (faltaban 385.5 kN de acero mas la
         // losa). Las VIGAS con `endoffset` pesan por su LUZ LIBRE, como ETABS.
+        case "hex":
+        case "solid":
+        case "h8": {
+          // hex <ID> <n1..n8> [E] [nu] [rho]   — orden del H8 de Hekatan (0-3 abajo antihorario, 4-7 arriba)
+          const id = parseInt(tokens[1], 10);
+          const pts = tokens.slice(2, 10).map(x => parseInt(x, 10));
+          if (!isFinite(id) || pts.length !== 8 || pts.some(x => !isFinite(x))) { m.errors.push(`hex ${tokens[1]}: hacen falta 8 nudos`); break; }
+          m.solids.push({ id, pts, E: parseFloat(tokens[10] ?? "25e6"), nu: parseFloat(tokens[11] ?? "0.2"), rho: parseFloat(tokens[12] ?? "2.45") });
+          break;
+        }
+        case "incompatible": {
+          const v = (tokens[1] ?? "1").toLowerCase();
+          m.solidIncompatible = !(v === "0" || v === "no" || v === "off" || v === "false");
+          break;
+        }
         case "meshcross":
         case "meshatintersections": {
           const v = (tokens[1] ?? "1").toLowerCase();
@@ -643,7 +665,7 @@ export function parseCliCommands(text: string): ParsedModel {
         }
         case "reset":
         case "clear":
-          m.nodes.clear(); m.frames.length = 0; m.shells.length = 0;
+          m.nodes.clear(); m.frames.length = 0; m.shells.length = 0; m.solids.length = 0;
           m.supports.clear(); m.loads.clear(); m.frameLoads.clear();
           m.springs.length = 0; m.masses.clear(); m.diaphragms.clear();
           break;
@@ -1039,6 +1061,18 @@ export const cliModeler: ExampleDef = {
       if (idx !== undefined) springsList.push({ node: idx, dof: sp.dof, k: sp.k });
     }
 
+    // ── Solidos H8 (`hex`): 8 nudos, 3 GDL por nudo ────────────────────────
+    const solidIdx: number[] = [];
+    for (const so of m.solids) {
+      const idxs = so.pts.map(id => idToIdx.get(id));
+      if (idxs.some(i => i === undefined)) { m.errors.push(`hex ${so.id}: algun nodo inexistente`); continue; }
+      const eIdx = elements.length;
+      elements.push(idxs as unknown as Element);
+      elasticities.set(eIdx, so.E); poissons.set(eIdx, so.nu);
+      shearModuli.set(eIdx, so.E / (2 * (1 + so.nu))); densities.set(eIdx, so.rho);
+      solidIdx.push(eIdx);
+    }
+
     states.nodes.val = nodes;
     states.elements.val = elements;
     // Los resortes van DENTRO de nodeInputs. Antes `springsList` era una
@@ -1101,6 +1135,7 @@ export const cliModeler: ExampleDef = {
       shearAreasY, shearAreasZ, momentReleases, endOffsets, plateFormulations,
       frameLoads: frameLoadsElem,
       meshAtIntersections: m.meshCross,
+      solidIncompatible: m.solidIncompatible,
       // El `selfweight` del .heks, para que el exportador e2k en modo "auto"
       // escriba SELFWEIGHT con el multiplicador del MODELO (0 si no lo lleva)
       // y descuente de las cargas nodales lo que ETABS va a calcular solo.
@@ -1114,7 +1149,29 @@ export const cliModeler: ExampleDef = {
       })).filter(o => o.nodes.length === 4 && o.cells.length > 0),
     } as any;
 
-    if (m.doSolve && nodes.length && elements.length) {
+    if (m.doSolve && solidIdx.length > 0) {
+      // Los solidos van por hex8Solve (deform.cpp no tiene H8). Mezclar barras o
+      // cascaras con solidos en el mismo modelo todavia no se puede: se avisa.
+      if (solidIdx.length !== elements.length) {
+        m.errors.push(`hay ${solidIdx.length} solidos y ${elements.length - solidIdx.length} barras/cascaras: los solidos solo se resuelven en un modelo de solo solidos (de momento)`);
+      } else {
+        try {
+          const E0 = elasticities.get(solidIdx[0]) ?? 25e6, nu0 = poissons.get(solidIdx[0]) ?? 0.2;
+          if (solidIdx.some(i => Math.abs((elasticities.get(i) ?? E0) - E0) > 1e-9 * E0 || Math.abs((poissons.get(i) ?? nu0) - nu0) > 1e-12))
+            m.errors.push("hex: hex8Solve lleva UN material; los solidos tienen E o nu distintos y se usa el del primero");
+          const sup = new Map<number, [boolean, boolean, boolean]>();
+          for (const [n, v] of states.nodeInputs.val.supports ?? []) sup.set(n, [!!v[0], !!v[1], !!v[2]]);
+          const ld = new Map<number, [number, number, number]>();
+          for (const [n, v] of states.nodeInputs.val.loads ?? []) ld.set(n, [v[0] ?? 0, v[1] ?? 0, v[2] ?? 0]);
+          const r = hex8Solve({ nodes: nodes as any, elements: elements as any, E: E0, nu: nu0, supports: sup, loads: ld, incompatible: m.solidIncompatible });
+          const deformations = new Map<number, number[]>();
+          r.displacements.forEach(([ux, uy, uz], n) => deformations.set(n, [ux, uy, uz, 0, 0, 0]));
+          states.deformOutputs.val = { deformations, reactions: new Map() } as any;
+          states.analyzeOutputs.val = { solidStress: r.stressPerElement, solidVonMises: r.vonMisesPerElement } as any;
+          console.log(`[CLI Modeler] Solve OK — ${elements.length} solidos H8, ${nodes.length} nodos (${r.elapsedMs.toFixed(0)} ms)`);
+        } catch (e: any) { m.errors.push(`hex8Solve: ${e?.message ?? e}`); }
+      }
+    } else if (m.doSolve && nodes.length && elements.length) {
       try {
         states.deformOutputs.val = deform(
           nodes, elements, states.nodeInputs.val, states.elementInputs.val,

@@ -41,6 +41,10 @@ export interface MuroSolidoParams {
   Ka: number;     // coeficiente de empuje activo
   gamma: number;  // peso del relleno (kN/m³)
   q0: number;     // sobrecarga en superficie (kN/m²)
+  /** peso propio del hormigon (kN/m³); 0 = sin peso propio (la validacion contra SAP2000 va sin el) */
+  gammaC?: number;
+  /** 1 = el relleno pesa sobre el TALON: presion gamma·H + q0 en la cara superior de la zapata detras del alzado */
+  relleno?: number;
 }
 
 export interface MuroSolidoMalla {
@@ -52,7 +56,7 @@ export interface MuroSolidoMalla {
   caraTrasera: number[];
   /** nudo de la coronación, en el centro de la longitud y en la cara trasera */
   nudoCoronacion: number;
-  info: { nx: number; ny: number; nz: number; empujeTotal: number };
+  info: { nx: number; ny: number; nz: number; empujeTotal: number; pesoPropio: number; pesoRelleno: number };
 }
 
 const rd = (v: number) => Math.round(v * 1e6) / 1e6;
@@ -91,9 +95,27 @@ export function mallaMuroSolido(p: MuroSolidoParams): MuroSolidoMalla {
       const f = loads.get(id) ?? [0, 0, 0]; f[0] -= F / 4; loads.set(id, f);
     }
   }
+  // peso propio: rho·V a partes iguales entre los 8 nudos de cada hexaedro (lumped, como el HRZ del H8)
+  let pesoPropio = 0;
+  if ((p.gammaC ?? 0) > 0) {
+    const Fe = (p.gammaC ?? 0) * dx * dy * dz;
+    for (const e of elements) { pesoPropio += Fe; for (const id of e) { const f = loads.get(id) ?? [0, 0, 0]; f[2] -= Fe / 8; loads.set(id, f); } }
+  }
+  // el relleno sobre el talon: presion gamma·H + q0 en la cara superior de la zapata, x de (toe+t) a B
+  let pesoRelleno = 0;
+  if ((p.relleno ?? 0) >= 0.5 && kf < nz) {
+    const q = p.gamma * p.H + p.q0;
+    for (let j = 0; j < ny; j++) for (let i = i1; i < nx; i++) {
+      const F = q * dx * dy; pesoRelleno += F;
+      for (const [ii, jj] of [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]] as [number, number][]) {
+        const id = ids.get(`${ii},${jj},${kf}`); if (id === undefined) continue;
+        const f = loads.get(id) ?? [0, 0, 0]; f[2] -= F / 4; loads.set(id, f);
+      }
+    }
+  }
   const jm = Math.round(ny / 2);
   const nudoCoronacion = ids.get(`${i1},${jm},${nz}`)!;
-  return { nodes, elements, supports, loads, caraTrasera: [...caraTrasera], nudoCoronacion, info: { nx, ny, nz, empujeTotal } };
+  return { nodes, elements, supports, loads, caraTrasera: [...caraTrasera], nudoCoronacion, info: { nx, ny, nz, empujeTotal, pesoPropio, pesoRelleno } };
 }
 
 /** Los valores por defecto del ejemplo (los mismos en la página, el volcado y el test). */

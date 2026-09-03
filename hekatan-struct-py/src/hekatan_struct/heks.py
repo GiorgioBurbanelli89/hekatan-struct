@@ -120,6 +120,8 @@ def leer_heks(ruta: str) -> ModeloHeks:
     sw_mult = [0.0]                        # multiplicador de peso propio
     ej_flag = [True]                       # etabsjoint: por DEFECTO como ETABS; `etabsjoint 0` la apaga (modo SAP2000)
     shells: list[dict] = []
+    solidos: list[dict] = []          # `hex ID n1..n8 [E nu rho]`: hexaedros H8
+    inc_flag = [True]                 # `incompatible 0/1`: modos de Wilson–Taylor del H8
     q_area: dict[int, float] = {}          # carga de superficie por shell ID
     smod: dict[int, tuple[float, float]] = {}      # shellmod escalar
     smod_dir: dict[int, list[float]] = {}          # shellmod direccional (8)
@@ -218,6 +220,14 @@ def leer_heks(ruta: str) -> ModeloHeks:
                         if len(pal) > 1 and pal[1] == "pin":
                             r[10] = r[11] = True
                         rels[int(t[1])] = r
+                elif cmd in ("hex", "solid", "h8"):
+                    # hex ID n1 n2 n3 n4 n5 n6 n7 n8 [E] [nu] [rho]  (orden del H8 de Hekatan)
+                    solidos.append(dict(id=int(t[1]), pts=[int(x) for x in t[2:10]],
+                                        E=float(t[10]) if len(t) > 10 else 25e6,
+                                        nu=float(t[11]) if len(t) > 11 else 0.2,
+                                        rho=float(t[12]) if len(t) > 12 else 2.45))
+                elif cmd == "incompatible":
+                    inc_flag[0] = (t[1] if len(t) > 1 else "1").lower() not in ("0", "no", "off", "false")
                 elif cmd in ("shell", "plate", "s"):
                     # shell ID n1 n2 n3 n4 t E [q] [rho]
                     sid = int(t[1])
@@ -415,6 +425,17 @@ def leer_heks(ruta: str) -> ModeloHeks:
             prev[2] += f[i]                                        # Fz
             ni.loads[k] = tuple(prev)  # type: ignore[assignment]
 
+    for so in solidos:
+        if any(p not in idx_de for p in so["pts"]):
+            m.errores.append(f"hex {so['id']}: algún nodo inexistente")
+            continue
+        k = len(m.elements)
+        m.elements.append([idx_de[p] for p in so["pts"]])
+        ei.elasticities[k] = so["E"]
+        ei.poissons_ratios[k] = so["nu"]
+        ei.shear_moduli[k] = so["E"] / (2 * (1 + so["nu"]))
+        ei.densities[k] = so["rho"]
+    ei.solid_incompatible = inc_flag[0]
     huerfanas_q = set(q_area) - {sh["id"] for sh in shells}
     if huerfanas_q:
         m.errores.append(f"areaload sin cáscara: {sorted(huerfanas_q)[:10]}")

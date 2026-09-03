@@ -38,6 +38,8 @@ const parameters: Parameters = {
   Ka:    { value: van.state(D.Ka),    min: 0.2, max: 0.6, step: 0.01, label: "Ka (Rankine)" },
   gamma: { value: van.state(D.gamma), min: 14,  max: 22,  step: 0.5,  label: "γ relleno (kN/m³)" },
   q0:    { value: van.state(D.q0),    min: 0,   max: 50,  step: 1,    label: "sobrecarga q0 (kN/m²)" },
+  gammaC: { value: van.state(24),    min: 0,   max: 26,  step: 1,    label: "peso propio γc (kN/m³, 0 = sin)" },
+  relleno: { value: van.state(1),    min: 0,   max: 1,   step: 1,    label: "relleno sobre el talón (γ·H + q0)" },
   incompatible: { value: van.state(1), min: 0, max: 1, step: 1, label: "modos incompatibles (1 = SAP2000)" },
   campo: { value: van.state(0), min: 0, max: 2, step: 1, label: "color: 0 σxx · 1 σzz · 2 vonMises" },
 };
@@ -56,6 +58,7 @@ van.derive(() => {
     H: parameters.H.value.val, t: parameters.t.value.val, toe: parameters.toe.value.val, heel: parameters.heel.value.val,
     tf: parameters.tf.value.val, L: parameters.L.value.val, ms: parameters.ms.value.val, E: parameters.E.value.val,
     nu: parameters.nu.value.val, Ka: parameters.Ka.value.val, gamma: parameters.gamma.value.val, q0: parameters.q0.value.val,
+    gammaC: parameters.gammaC.value.val, relleno: parameters.relleno.value.val,
   };
   const incompatible = Math.round(parameters.incompatible.value.val) === 1;
   const campo = Math.round(parameters.campo.value.val);

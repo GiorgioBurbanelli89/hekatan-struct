@@ -387,6 +387,12 @@ export function elements(
 // Utils
 function elementToEdges(element: Element): Element[] {
   if (element.length === 2) return [element];
+  if (element.length === 8) {
+    // hexaedro H8: 12 aristas (cara inferior, cara superior, las 4 verticales)
+    const e = element;
+    return [[e[0], e[1]], [e[1], e[2]], [e[2], e[3]], [e[3], e[0]], [e[4], e[5]], [e[5], e[6]], [e[6], e[7]], [e[7], e[4]],
+            [e[0], e[4]], [e[1], e[5]], [e[2], e[6]], [e[3], e[7]]] as Element[];
+  }
 
   const edges: [number, number][] = [];
 

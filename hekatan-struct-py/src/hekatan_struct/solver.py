@@ -51,6 +51,21 @@ def _is_shell(conn: Element) -> bool:
     return len(conn) == 4
 
 
+def _is_solid(conn: Element) -> bool:
+    return len(conn) == 8
+
+
+def _solid_k_dofs(nodes, conn, element_inputs, idx):
+    """K global (24×24) del H8 y sus GDL: solo las 3 traslaciones de cada nudo."""
+    from .elements.hex8 import hex8_stiffness
+    coords = [nodes[i] for i in conn]
+    E = element_inputs.elasticities.get(idx, 0.0)
+    nu = element_inputs.poissons_ratios.get(idx, 0.2)
+    K, _ = hex8_stiffness(coords, E, nu, getattr(element_inputs, "solid_incompatible", True))
+    d = np.concatenate([np.arange(6 * n_idx, 6 * n_idx + 3) for n_idx in conn])
+    return K, d
+
+
 def _frame_k_local_T(
     nodes: Sequence[Node],
     conn: Element,
@@ -172,6 +187,8 @@ def _element_k_dofs(
             k_glob = _shell_k_global(nodes, conn, element_inputs, idx)
             yield k_glob, np.concatenate([np.arange(6*n_idx, 6*n_idx+6)
                                           for n_idx in conn])
+        elif _is_solid(conn):
+            yield _solid_k_dofs(nodes, conn, element_inputs, idx)
 
 
 def _assemble_K_sparse(
@@ -217,6 +234,9 @@ def _assemble_K(
             # MISMO camino que el disperso: en el plano del paño y luego girado
             k_glob = _shell_k_global(nodes, conn, element_inputs, idx)
             d = np.concatenate([np.arange(6*n_idx, 6*n_idx+6) for n_idx in conn])
+            K[np.ix_(d, d)] += k_glob
+        elif _is_solid(conn):
+            k_glob, d = _solid_k_dofs(nodes, conn, element_inputs, idx)
             K[np.ix_(d, d)] += k_glob
     return K
 

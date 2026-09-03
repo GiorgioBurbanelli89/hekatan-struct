@@ -12,7 +12,8 @@ const mod = await empaquetar(`
   export { hex8Solve } from "${R}/examples/src/solid-cube-fem/h8";
   export { mallaMuroSolido, MURO_SOLIDO_DEFAULT } from "${R}/examples/src/muro-contencion-solido/malla";
 `, "muro-solido-dump");
-const p = { ...mod.MURO_SOLIDO_DEFAULT, ...(ms ? { ms } : {}) };
+const over = Object.fromEntries(process.argv.slice(3).filter(a => a.includes("=")).map(a => { const [k, v] = a.split("="); return [k, Number(v)]; }));
+const p = { ...mod.MURO_SOLIDO_DEFAULT, ...(ms && !isNaN(ms) ? { ms } : {}), ...over };
 const m = mod.mallaMuroSolido(p);
 const res = {};
 for (const inc of [false, true]) {

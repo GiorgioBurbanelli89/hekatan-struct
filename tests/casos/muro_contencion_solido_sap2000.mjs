@@ -39,5 +39,22 @@ export async function correr() {
     filas.push({ que: `${tag}: ux, uy, uz nudo a nudo`, medido: peor, limite: 1e-6, ok: mism && peor <= 1e-6,
       detalle: `u_x coronacion ${(uxH * 1000).toFixed(4)} vs ${(uxS * 1000).toFixed(4)} mm; ${m.nodes.length} nudos, ${m.elements.length} hexaedros; empuje ${m.info.empujeTotal.toFixed(2)} kN` });
   }
+  // con PESO PROPIO y RELLENO sobre el talon (la pagina los trae encendidos): SAP2000 por
+  // OAPI con las mismas cargas nodales (muro_solido_pp_dump.json, 3-sep-2026)
+  {
+    const pp = { ...p, gammaC: 24, relleno: 1 }; const m2 = mod.mallaMuroSolido(pp);
+    const ref = join(AQUI, "..", "datos", "muro_solido_pp_sap_inc.json");
+    if (!existsSync(ref)) filas.push({ que: "peso propio + relleno: referencia", crudo: true, medido: "falta", limite: "existe", ok: false, detalle: ref });
+    else {
+      const S = JSON.parse(readFileSync(ref, "utf-8"));
+      const r = mod.hex8Solve({ nodes: m2.nodes, elements: m2.elements, E: pp.E, nu: pp.nu, supports: m2.supports, loads: m2.loads, incompatible: true });
+      let mx = 0; for (let n = 0; n < m2.nodes.length; n++) for (let c = 0; c < 3; c++) mx = Math.max(mx, Math.abs((r.displacements.get(n) ?? [0, 0, 0])[c]));
+      let peor = 0;
+      for (let n = 0; n < m2.nodes.length; n++) { const u = r.displacements.get(n) ?? [0, 0, 0]; for (let c = 0; c < 3; c++) peor = Math.max(peor, Math.abs(u[c] - S.u[n][c]) / mx * 100); }
+      const uxH = (r.displacements.get(m2.nudoCoronacion) ?? [0])[0], uxS = S.u[m2.nudoCoronacion][0];
+      filas.push({ que: "peso propio (24 kN/m3) + relleno sobre el talon: nudo a nudo vs SAP2000", medido: peor, limite: 1e-6, ok: S.nodes.length === m2.nodes.length && peor <= 1e-6,
+        detalle: `u_x coronacion ${(uxH * 1000).toFixed(4)} vs ${(uxS * 1000).toFixed(4)} mm; peso propio ${m2.info.pesoPropio.toFixed(1)} kN, relleno ${m2.info.pesoRelleno.toFixed(1)} kN, empuje ${m2.info.empujeTotal.toFixed(1)} kN` });
+    }
+  }
   return filas;
 }

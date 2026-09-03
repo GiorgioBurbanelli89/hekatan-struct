@@ -105,6 +105,8 @@ class ElementInputs:
     #   c*(w_vecino - w_nudo - theta*(x_vecino - x_nudo))^2,  c = E*t*(H/L)^3/32.
     # `etabsjoint 1` en el .heks. Apagado por defecto: SAP2000 no lo hace.
     etabs_wall_joint:          bool = True    # por defecto como ETABS; `etabsjoint 0` = modo SAP2000
+    # H8: modos incompatibles de Wilson–Taylor (el defecto de SAP2000 y del WASM); `incompatible 0` los quita
+    solid_incompatible:        bool = True
 
 
 # ─── Outputs ────────────────────────────────────────────────────────────────
