@@ -60,6 +60,9 @@ struct ElementInputs
     // Para Mesa Torsión (t/L=0.017, t=0.10m sobre slab 6m) el Mindlin
     // sufre shear locking severo; el MZC Kirchhoff matchea ETABS Shell-Thin <1.5%.
     std::map<int, int> plateFormulations;
+    // Solidos H8 (elementos de 8 nudos): modos incompatibles de Wilson-Taylor,
+    // como SAP2000 por defecto (`incompatible 0` en el .heks los quita).
+    bool solidIncompatible = true;
     // Drilling DOF formulation (per shell element):
     //   0 = penalty 1e-6 (legacy, weak — drilling efectivamente desacoplado)
     //   1 = PyNite weak spring  (k_Rz = min(diag_rot)/1000)

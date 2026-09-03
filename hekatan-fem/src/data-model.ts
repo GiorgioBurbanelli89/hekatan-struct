@@ -151,6 +151,8 @@ export type ElementInputs = {
    * defecto: SAP2000 no lo hace. Ver addEtabsWallJoint en deform.cpp.
    */
   etabsWallJoint?: boolean;
+  /** Solidos H8 (elementos de 8 nudos): modos incompatibles de Wilson-Taylor, como SAP2000 (defecto true). */
+  solidIncompatible?: boolean;
   /**
    * Property modifiers de cascara, estilo ETABS
    * (Assign -> Area -> Stiffness Modifiers). Multiplican la rigidez de

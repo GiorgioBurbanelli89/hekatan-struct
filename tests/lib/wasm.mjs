@@ -71,9 +71,16 @@ export async function modal(nodes, elements, nodeInputs, elementInputs, numModes
   const ei = elementInputs;
   const el = P(ei.elasticities), ar = P(ei.areas), mz = P(ei.momentsOfInertiaZ),
         my = P(ei.momentsOfInertiaY), sh = P(ei.shearModuli), to = P(ei.torsionalConstants),
-        de = P(ei.densities), th = P(), po = P(), mm = P(), bm = P();
-  const pfKp = alloc([], Uint32Array, mod.HEAPU32); gc.push(pfKp);
-  const pfVp = alloc([], Uint32Array, mod.HEAPU32); gc.push(pfVp);
+        de = P(ei.densities),
+        // Cascaras y solidos: espesor, nu y modificadores (hasta el 3-sep-2026 iban
+        // VACIOS — el helper nacio para barras a mano — y una cascara salia con t = 0)
+        th = P(ei.thicknesses), po = P(ei.poissonsRatios), mm = P(ei.membraneModifiers), bm = P(ei.bendingModifiers);
+  // Formulacion de placa por cascara (`shelltype thin/thick`): antes iba vacia y
+  // toda cascara salia Thick en el modal de los tests.
+  const pfKeys = ei.plateFormulations ? [...ei.plateFormulations.keys()] : [];
+  const pfVals = ei.plateFormulations ? [...ei.plateFormulations.values()].map(v => v | 0) : [];
+  const pfKp = alloc(pfKeys, Uint32Array, mod.HEAPU32); gc.push(pfKp);
+  const pfVp = alloc(pfVals, Uint32Array, mod.HEAPU32); gc.push(pfVp);   // 0/1: cabe en Uint32 (HEAP32 no esta exportado)
   // Drilling: tipo (int) y escala (double). Si el modelo no los trae van
   // vacios y el C++ usa el defecto (tipo 2 Hughes-Brezzi, escala 1.0).
   const PI = (m) => {   // como P pero con valores ENTEROS
@@ -114,7 +121,7 @@ export async function modal(nodes, elements, nodeInputs, elementInputs, numModes
     el.kp, el.vp, el.size, ar.kp, ar.vp, ar.size, mz.kp, mz.vp, mz.size, my.kp, my.vp, my.size,
     sh.kp, sh.vp, sh.size, to.kp, to.vp, to.size, de.kp, de.vp, de.size,
     th.kp, th.vp, th.size, po.kp, po.vp, po.size, mm.kp, mm.vp, mm.size, bm.kp, bm.vp, bm.size,
-    pfKp, pfVp, 0,
+    pfKp, pfVp, pfKeys.length,
     dt.kp, dt.vp, dt.size,                      // drilling: tipo
     ds.kp, ds.vp, ds.size,                      // drilling: escala de γ=G·t
     sy.kp, sy.vp, sy.size, sz.kp, sz.vp, sz.size, la.kp, la.vp, la.size,

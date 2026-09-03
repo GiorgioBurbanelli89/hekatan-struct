@@ -835,10 +835,21 @@ contra 2.009 de CSI. Con `cft` da 2.0094 (0.006 % SAP, 0.003 % ETABS).
 
 ### Sólidos en el `.heks` (3-sep-2026)
 
-`hex ID n1..n8 [E nu rho]` + `incompatible 0/1`. cliModeler los resuelve con `hex8Solve`
-(solo modelos de SOLO sólidos: `deform.cpp` no tiene H8) y Python con `elements/hex8.py`
-(espejo exacto del WASM). El s2k sale con `CONNECTIVITY - SOLID`. Test
-`node tests/run.mjs solidos-heks` (5 filas) y `pytest tests/test_solidos.py`.
+`hex ID n1..n8 [E nu rho]` + `incompatible 0/1`. Un modelo de SOLO sólidos va por `hex8Solve`
+(da tensiones y von Mises por elemento); Python con `elements/hex8.py` (espejo exacto del WASM).
+El s2k sale con `CONNECTIVITY - SOLID`. Test `node tests/run.mjs solidos-heks` (5 filas) y
+`pytest tests/test_solidos.py`.
+
+**Mezclados con barras y cáscaras** (3-sep-2026): el H8 vive en `utils/hex8Stiffness.h`
+(header-only; misma formulación que hex8_wasm.cpp) y lo ensambla `getGlobalStiffnessMatrix`,
+el ensamblador común de `deform` y del modal: 3 gdl por nudo dentro de la K de 6, y los giros
+de un nudo que solo toca sólidos los saca `getZerosIndices`. `solidIncompatible` viaja en
+ElementInputs (parámetro nuevo de `deform()`). La masa del H8 en el modal es ρ·V a partes
+iguales en los 8 nudos (C++ y Python). Medido: pedestal en 8 H8 + muro Q4 Thin + columna y
+viga de acero (`tests/datos/mixto_solido_muro_columna.heks`) contra SAP2000 24 con los
+mismos nudos: WASM = Python a 8e-12 %, **peor nudo 0.0065 % del máximo**. Test
+`node tests/run.mjs solidos-mixtos`. ⚠️ Un muro o una columna apoyados SOLO en nudos de
+sólido son un mecanismo (esos nudos no tienen giro): en SAP2000 también, y se cuelga.
 
 ### Diafragma rígido / flexible (3-sep-2026)
 

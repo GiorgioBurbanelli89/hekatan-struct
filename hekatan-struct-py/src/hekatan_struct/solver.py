@@ -299,6 +299,21 @@ def _assemble_M_lumped(
             for n_idx in conn:
                 for dof in [6*n_idx, 6*n_idx+1, 6*n_idx+2]:
                     M[dof] += m_total / 4
+        elif _is_solid(conn):
+            # H8: rho * V (V por Gauss 2x2x2), a partes iguales en los 8 nudos —
+            # lo mismo que getGlobalMassMatrix.cpp desde el 3-sep-2026.
+            from .elements.hex8 import _dN_nat
+            coords = np.asarray([nodes[n_idx] for n_idx in conn], dtype=float)
+            g = 0.5773502691896258
+            V = 0.0
+            for zeta in (-g, g):
+                for eta in (-g, g):
+                    for xi in (-g, g):
+                        V += abs(np.linalg.det(_dN_nat(xi, eta, zeta) @ coords))
+            m_total = V * rho
+            for n_idx in conn:
+                for dof in [6*n_idx, 6*n_idx+1, 6*n_idx+2]:
+                    M[dof] += m_total / 8
     return M
 
 
@@ -678,6 +693,11 @@ def modal_analysis(
     # inercia, asi que su ecuacion es K_ss·u_s + K_sm·u_m = 0 y se despejan.
     #     K_red = K_mm − K_ms · K_ss⁻¹ · K_sm
     libres = [i for i in range(n_total) if i not in restrained]
+    # Un GDL SIN rigidez ninguna (fila y diagonal a cero: los giros de un nudo que
+    # solo toca solidos H8) sale del sistema, como getZerosIndices en modal.cpp;
+    # si no, la condensacion de Guyan se traga una Kss singular.
+    con_rigidez = np.abs(K).sum(axis=1) > 0
+    libres = [i for i in libres if con_rigidez[i]]
     con_masa = [i for i in libres if M_diag[i] > 0]
     sin_masa = [i for i in libres if M_diag[i] <= 0]
 

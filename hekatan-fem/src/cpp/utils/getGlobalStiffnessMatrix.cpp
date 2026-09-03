@@ -1,4 +1,5 @@
 #include "../data-model.h"
+#include "hex8Stiffness.h"
 #include <vector>
 #include <cmath>
 #include <Eigen/Dense>
@@ -35,6 +36,31 @@ Eigen::SparseMatrix<double> getGlobalStiffnessMatrix(
             unsigned int nodeIndex = element_indices[current_element_node_idx + j];
             elmNodes.push_back(nodes[nodeIndex]);
             currentElementIndices.push_back(nodeIndex);
+        }
+
+        // SOLIDO H8: 3 gdl por nudo (ux, uy, uz) en la K de 6 por nudo; los giros
+        // de un nudo que solo toca solidos quedan sin rigidez y los saca
+        // getZerosIndices. Asi barras, cascaras y solidos van en la misma K.
+        if (numElementNodes == 8)
+        {
+            double X[8][3];
+            for (int j = 0; j < 8; j++) for (int d = 0; d < 3; d++) X[j][d] = elmNodes[j][d];
+            const auto itE = elementInputs.elasticities.find(i);
+            const auto itN = elementInputs.poissonsRatios.find(i);
+            const double E8 = itE != elementInputs.elasticities.end() ? itE->second : 0.0;
+            const double nu8 = itN != elementInputs.poissonsRatios.end() ? itN->second : 0.0;
+            const Eigen::Matrix<double, 24, 24> K8 = hk8::stiffness(X, E8, nu8, elementInputs.solidIncompatible);
+            for (int a = 0; a < 8; a++)
+                for (int da = 0; da < 3; da++)
+                    for (int b = 0; b < 8; b++)
+                        for (int db = 0; db < 3; db++)
+                        {
+                            const double v = K8(3 * a + da, 3 * b + db);
+                            if (std::abs(v) > 1e-15)
+                                tripletList.emplace_back(currentElementIndices[a] * 6 + da, currentElementIndices[b] * 6 + db, v);
+                        }
+            current_element_node_idx += numElementNodes;
+            continue;
         }
 
         // Calculate the local stiffness matrix (kLocal) for the element

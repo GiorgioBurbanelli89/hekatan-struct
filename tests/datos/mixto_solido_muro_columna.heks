@@ -1,0 +1,61 @@
+# Modelo MIXTO: pedestal de hormigon en SOLIDOS H8 (1x1x1 m, 2x2x2), un MURO Q4 de 0.2 m
+# apoyado en la cara superior (nudos 19-21), una COLUMNA de acero desde el centro de la
+# cara superior (23) y una VIGA que une la columna (28) con la coronacion del muro (30).
+# Todo en una sola K (deform.cpp con H8 desde el 3-sep-2026). kN, m. Arbitro: SAP2000 24 por OAPI.
+node 1 0.0 0.0 0.0
+node 2 0.5 0.0 0.0
+node 3 1.0 0.0 0.0
+node 4 0.0 0.5 0.0
+node 5 0.5 0.5 0.0
+node 6 1.0 0.5 0.0
+node 7 0.0 1.0 0.0
+node 8 0.5 1.0 0.0
+node 9 1.0 1.0 0.0
+node 10 0.0 0.0 0.5
+node 11 0.5 0.0 0.5
+node 12 1.0 0.0 0.5
+node 13 0.0 0.5 0.5
+node 14 0.5 0.5 0.5
+node 15 1.0 0.5 0.5
+node 16 0.0 1.0 0.5
+node 17 0.5 1.0 0.5
+node 18 1.0 1.0 0.5
+node 19 0.0 0.0 1.0
+node 20 0.5 0.0 1.0
+node 21 1.0 0.0 1.0
+node 22 0.0 0.5 1.0
+node 23 0.5 0.5 1.0
+node 24 1.0 0.5 1.0
+node 25 0.0 1.0 1.0
+node 26 0.5 1.0 1.0
+node 27 1.0 1.0 1.0
+node 28 0.5 0.5 4
+node 29 0 0 3
+node 30 1 0 3
+hex 1 1 2 5 4 10 11 14 13 25e6 0.2 2.45
+hex 2 2 3 6 5 11 12 15 14 25e6 0.2 2.45
+hex 3 4 5 8 7 13 14 17 16 25e6 0.2 2.45
+hex 4 5 6 9 8 14 15 18 17 25e6 0.2 2.45
+hex 5 10 11 14 13 19 20 23 22 25e6 0.2 2.45
+hex 6 11 12 15 14 20 21 24 23 25e6 0.2 2.45
+hex 7 13 14 17 16 22 23 26 25 25e6 0.2 2.45
+hex 8 14 15 18 17 23 24 27 26 25e6 0.2 2.45
+incompatible 1
+shell 200 19 21 30 29 0.2 25e6
+shelltype 200 thin
+frame 100 23 28 200e6 0.01 1e-4 1e-4 2e-6 0.3 7.85
+frame 101 28 30 200e6 0.005 5e-5 5e-5 1e-6 0.3 7.85
+etabsjoint 0
+support 1 fixed
+support 2 fixed
+support 3 fixed
+support 4 fixed
+support 5 fixed
+support 6 fixed
+support 7 fixed
+support 8 fixed
+support 9 fixed
+load 28 10 0 -50 0 0 0
+load 30 0 5 0 0 0 0
+selfweight 0
+solve

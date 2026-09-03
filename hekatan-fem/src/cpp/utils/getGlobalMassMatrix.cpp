@@ -35,6 +35,7 @@
  * reportado por usuarios al comparar con ETABS).
  */
 #include "../data-model.h"
+#include "hex8Stiffness.h"
 #include <vector>
 #include <cmath>
 #include <Eigen/Dense>
@@ -143,6 +144,11 @@ Eigen::SparseMatrix<double> getGlobalMassMatrix(
             if (itT != elementInputs.thicknesses.end()) t = itT->second;
             double A_tri = triangleArea(elmNodes);
             m_total = rho * A_tri * t;
+        } else if (numElementNodes == 8) {
+            // Solido H8: V por Gauss; masa a partes iguales en los 8 nudos
+            double X[8][3];
+            for (int j = 0; j < 8; j++) for (int d = 0; d < 3; d++) X[j][d] = elmNodes[j][d];
+            m_total = rho * hk8::volume(X);
         }
 
         if (m_total <= 0.0) {

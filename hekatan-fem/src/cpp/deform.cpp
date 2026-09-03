@@ -94,6 +94,8 @@ extern "C"
 
         // DIAFRAGMA RIGIDO por nudo (0 = ninguno, 1..n = grupo), ver utils/rigidDiaphragm.h
         int *diaph_keys_ptr, double *diaph_values_ptr, int num_diaph,
+        // Solidos H8: 1 = modos incompatibles (SAP2000), 0 = H8 puro
+        int solid_incompatible,
 
         // --- Output Pointers (to be allocated by C++ and filled) ---
         // These are pointers *to* pointers. C++ allocates memory using malloc
@@ -148,6 +150,7 @@ extern "C"
         elementInputs.momentReleases = parseMapBoolVecFromFlat(release_keys_ptr, release_values_ptr, num_releases, 12);
         elementInputs.drillingTypes = parseMapIntFromFlat(drillType_keys_ptr, drillType_values_ptr, num_drillType);
         elementInputs.drillingPenaltyScales = parseMapFromFlat(drillScale_keys_ptr, drillScale_values_ptr, num_drillScale);
+        elementInputs.solidIncompatible = solid_incompatible != 0;
 
         // --- 2. Core FEA Calculation using Eigen ---
         int dof = num_nodes * 6; // Total degrees of freedom

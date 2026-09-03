@@ -298,6 +298,8 @@ export function deformCpp(
     (elementInputs as any).etabsWallJoint === false ? 0 : 1,   // encendida salvo que se apague: por defecto como ETABS
     // Diafragma rigido (ux, uy, rz atados por planta; ver utils/rigidDiaphragm.h)
     diaph.keysPtr, diaph.valuesPtr, diaph.size,
+    // Solidos H8 (elementos de 8 nudos): modos incompatibles salvo que se apaguen
+    (elementInputs as any).solidIncompatible === false ? 0 : 1,
     // Output pointers
     deformationsDataPtrOutPtr,
     deformationsSizeOutPtr,

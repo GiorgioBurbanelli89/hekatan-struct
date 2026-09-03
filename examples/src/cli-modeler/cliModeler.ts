@@ -1149,12 +1149,11 @@ export const cliModeler: ExampleDef = {
       })).filter(o => o.nodes.length === 4 && o.cells.length > 0),
     } as any;
 
-    if (m.doSolve && solidIdx.length > 0) {
-      // Los solidos van por hex8Solve (deform.cpp no tiene H8). Mezclar barras o
-      // cascaras con solidos en el mismo modelo todavia no se puede: se avisa.
-      if (solidIdx.length !== elements.length) {
-        m.errors.push(`hay ${solidIdx.length} solidos y ${elements.length - solidIdx.length} barras/cascaras: los solidos solo se resuelven en un modelo de solo solidos (de momento)`);
-      } else {
+    if (m.doSolve && solidIdx.length > 0 && solidIdx.length === elements.length) {
+      // Un modelo de SOLO solidos va por hex8Solve (da ademas tensiones y von Mises
+      // por elemento). Si hay barras o cascaras mezcladas, todo va por `deform`,
+      // que desde el 3-sep-2026 ensambla el H8 en la misma K (sin tensiones de solido).
+      {
         try {
           const E0 = elasticities.get(solidIdx[0]) ?? 25e6, nu0 = poissons.get(solidIdx[0]) ?? 0.2;
           if (solidIdx.some(i => Math.abs((elasticities.get(i) ?? E0) - E0) > 1e-9 * E0 || Math.abs((poissons.get(i) ?? nu0) - nu0) > 1e-12))

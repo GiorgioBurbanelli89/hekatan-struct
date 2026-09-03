@@ -320,7 +320,9 @@ def test_mass_y_diaph_se_avisan_aparte(tmp_path):
         "support 1 fixed", "load 2 0 0 -5 0 0 0",
         "diaph 2 1", "mass 2 1.5", "zzz 1 2"]) + BR, encoding="utf-8")
     m = leer_heks(str(heks))
-    assert any("solo para el modal" in e and "diaph" in e and "mass" in e
+    # Desde el 3-sep-2026 `diaph` SI entra en el estatico (rigidDiaphragm.h y
+    # solver._armar_diafragma): solo `mass` queda como aviso aparte.
+    assert any("solo para el modal" in e and "mass" in e and "diaph" not in e
                for e in m.errores), m.errores
     assert any(e.startswith("comandos NO montados") and "zzz" in e and
                "mass" not in e for e in m.errores), m.errores
