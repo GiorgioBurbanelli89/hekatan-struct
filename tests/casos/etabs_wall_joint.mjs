@@ -32,11 +32,12 @@ export async function correr() {
     r.deformOutputs.deformations.forEach((u) => { if (Math.abs(u[0]) > Math.abs(m)) m = u[0]; });
     return m;
   };
-  const sin = await ux(base, "sin.heks");
+  // desde el 3-sep-2026 la union va ENCENDIDA por defecto (decision de Jorge): el modo SAP2000 se pide con `etabsjoint 0`
+  const sin = await ux("etabsjoint 0\n" + base, "sin.heks");
   const con = await ux("etabsjoint 1\n" + base, "con.heks");
   const eS = Math.abs(sin / SAP_UX - 1) * 100, eE = Math.abs(con / ETABS_UX - 1) * 100;
   return [
-    { que: "sin `etabsjoint`: Ux de la punta = SAP2000", medido: eS, limite: 1e-5, ok: eS <= 1e-5,
+    { que: "con `etabsjoint 0` (modo SAP2000): Ux de la punta = SAP2000", medido: eS, limite: 1e-5, ok: eS <= 1e-5,
       detalle: `${sin.toExponential(6)} vs ${SAP_UX.toExponential(6)} m` },
     { que: "con `etabsjoint 1`: Ux de la punta = ETABS 22", medido: eE, limite: 1e-5, ok: eE <= 1e-5,
       detalle: `${con.toExponential(6)} vs ${ETABS_UX.toExponential(6)} m — WASM y Python (test_etabs_wall_joint.py) iguales` },

@@ -72,16 +72,18 @@ export async function correr() {
   const r = mod.correrEjemplo("drilling-dof");
   const err = Math.abs(r.uxMax / SAP_UX - 1) * 100;
   const errE = (r.uxMax / ETABS_UX - 1) * 100;
+  // Desde el 3-sep-2026 la union viga-muro de ETABS va ENCENDIDA por defecto (decision de
+  // Jorge), asi que el ejemplo tal cual reproduce a ETABS; SAP2000 queda como dato.
   return [{
-    que: "Ux de la punta contra SAP2000 (misma malla)",
-    medido: err,
+    que: "Ux de la punta contra ETABS 22 (misma malla, union viga-muro por defecto)",
+    medido: Math.abs(errE),
     limite: LIMITE,
-    ok: err <= LIMITE,
-    detalle: `Hekatan ${r.uxMax.toExponential(6)} m vs SAP2000 `
-      + `${SAP_UX.toExponential(6)} m — ${r.nNodos} nudos, ${r.nElem} elementos`,
+    ok: Math.abs(errE) <= LIMITE,
+    detalle: `Hekatan ${r.uxMax.toExponential(6)} m vs ETABS `
+      + `${ETABS_UX.toExponential(6)} m — ${r.nNodos} nudos, ${r.nElem} elementos`,
   }, {
-    que: "…y ETABS 22 se queda a (informativo, ETABS ata la viga distinto)",
-    crudo: true, medido: errE.toFixed(2) + " %", limite: "dato", ok: true,
-    detalle: `ETABS ${ETABS_UX.toExponential(6)} m; muros sin viga identicos, viga con 3x cortante`,
+    que: "…y SAP2000 se queda a (informativo: sin la union, `etabsjoint 0`, es exacto)",
+    crudo: true, medido: err.toFixed(2) + " %", limite: "dato", ok: true,
+    detalle: `SAP2000 ${SAP_UX.toExponential(6)} m; ver el caso etabs-wall-joint`,
   }];
 }

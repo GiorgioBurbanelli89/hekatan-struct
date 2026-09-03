@@ -9,7 +9,7 @@
  *   FRAME OBJECT LOADS
  */
 import type { Node, Element, NodeInputs, ElementInputs, SectionShape } from "hekatan-fem";
-import { cftSectionEc } from "./cadSections";
+import { cftSectionEc, cftPipeSectionEc } from "./cadSections";
 import { propiedadesSD, formaDesdeE2k, type PiezaSD } from "./sectionDesigner";
 
 export interface E2kGrid {
@@ -46,7 +46,7 @@ export interface E2kModel {
   /** Los niveles AUXILIARES (`REFERENCEPLANE`). Se dibujan; NO cortan nada. */
   planosRef: E2kPlanoRef[];
   materials: Map<string, { type: string; E: number; G: number; nu: number; fy?: number; fc?: number; density?: number }>;
-  frameSections: Map<string, { material: string; shape: string; D: number; B: number; TF: number; TW: number; R?: number; fillMaterial?: string; modI2?: number; modI3?: number;
+  frameSections: Map<string, { material: string; shape: string; D: number; B: number; TF: number; TW: number; T?: number; R?: number; fillMaterial?: string; modI2?: number; modI3?: number;
                                /** SHAPE "General": las propiedades vienen escritas (unidades del fichero). */
                                AREA?: number; AS2?: number; AS3?: number; I33?: number; I22?: number; TORSION?: number }>;
   nodes: Node[];
@@ -785,6 +785,7 @@ export function parseE2k(text: string): E2kModel {
     let A = 0, Iz = 0, Iy = 0, J = 0, AsY = 0, AsZ = 0;
     let shapeType: SectionShape["type"] = "rect";
     let fillE = 0;   // CFT: E del relleno, para que el s2k salga como Section Designer
+    let esPipeRelleno = false;
     // ⚠️ Bandera, NO `break`: esto vive dentro de un `for...of` sobre TODAS las
     // secciones, asi que un `break` no saltaria el switch — cortaria el bucle
     // entero y dejaria sin propiedades a todas las barras siguientes.
@@ -858,6 +859,19 @@ export function parseE2k(text: string): E2kModel {
         AsZ = 2 * B * tw; // two flanges
         shapeType = "HSS";
         break;
+      case "Filled Steel Pipe": {
+        // tubo redondo relleno: A e I exactas del circulo transformado, As Timoshenko,
+        // J = Js + g·Jc. ETABS poligoniza el circulo (32 lados): su A sale 0.6 % menor.
+        const Es = mat?.E || 0;
+        const fill = sec.fillMaterial ? materials.get(sec.fillMaterial) : undefined;
+        const Ef = fill?.E || Es * 0.125;
+        const t = sec.T || tw || tf;
+        const c = cftPipeSectionEc(D, t, Es || 1, mat?.nu ?? 0.3, Ef || 0.125, fill?.nu ?? 0.2);
+        A = c.A; Iz = c.Iz; Iy = c.Iy; J = c.J; AsZ = c.As2; AsY = c.As3;
+        fillE = Ef; esPipeRelleno = true;
+        shapeType = "CFT";
+        break;
+      }
       case "Filled Steel Tube": {
         // Hasta el 2-sep-2026 esto era un RECTANGULO MACIZO de acero (A = D·B con
         // el E del acero: 4 veces el area real) y el As sumaba el hormigon sin
@@ -936,9 +950,9 @@ export function parseE2k(text: string): E2kModel {
     sectionShapes.set(elemIdx, {
       type: shapeType,
       ...(fillE > 0 ? { fillE } : {}),
-      b: B || undefined,
-      h: D || undefined,
-      d: (shapeType === "circ" || shapeType === "pipe") ? D : undefined,
+      b: esPipeRelleno ? undefined : (B || undefined),
+      h: esPipeRelleno ? undefined : (D || undefined),
+      d: (shapeType === "circ" || shapeType === "pipe" || esPipeRelleno) ? D : undefined,   // el tubo redondo relleno va por d
       tw: tw || undefined,
       tf: tf || undefined,
       r: sec.R,

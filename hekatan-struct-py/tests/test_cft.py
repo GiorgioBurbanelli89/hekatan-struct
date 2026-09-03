@@ -47,3 +47,23 @@ def test_columna_cft_vs_sap2000_y_etabs():
     assert pct(u[0], ETABS_FST["ux"]) < 0.3
     assert pct(u[2], SAP_SD["uz"]) < 1e-4
     assert pct(u[0], TS["ux"]) < 1e-5
+
+
+HEKS_C = os.path.join(AQUI, "..", "..", "tests", "datos", "cftc_columna.heks")
+SAP_SD_C = {"ux": 0.003408633428224316, "uz": -8.950863704638641e-05, "A": 0.016758159318442635}
+ETABS_FSP_C = {"ux": 0.00344102397242452}
+TS_C = {"A": 0.0168075206967054, "As2": 0.013814408236855279, "J": 0.00027349396645213764, "ux": 3.396391967e-3}
+
+
+def test_cft_circular_como_ts_y_dentro_de_csi():
+    from hekatan_struct.cft import cftc_props
+    c = cftc_props(0.3, 0.01, 2e8, 0.3, 2.5e7, 0.2)
+    assert pct(c["A"], TS_C["A"]) < 1e-9 and pct(c["As2"], TS_C["As2"]) < 1e-6 and pct(c["J"], TS_C["J"]) < 1e-9
+    assert pct(c["A"], SAP_SD_C["A"]) < 0.5          # SAP poligoniza el circulo (~48 lados)
+    m = leer_heks(HEKS_C)
+    assert m.errores == []
+    res = resolver_heks(m)
+    u = res.deformations[1] if hasattr(res, "deformations") else res["deformations"][1]
+    assert pct(u[0], TS_C["ux"]) < 1e-5
+    assert pct(u[0], SAP_SD_C["ux"]) < 0.5
+    assert pct(u[0], ETABS_FSP_C["ux"]) < 1.5

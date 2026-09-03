@@ -1,0 +1,7 @@
+{
+ "descripcion": "Columna CFT CIRCULAR D=300 t=10, 3 m, empotrada; 10 kN lateral, 100 kN axial. SAP2000 24 (Section Designer: Pipe + Solid Circle) y ETABS 22 (Filled Steel Pipe) medidos el 3-sep-2026 por OAPI (galpon-bodega-electoral/sap_cftc_todo.py, etabs_cftc_2.py). kN, m. Los dos POLIGONIZAN el circulo: SAP ~48 lados (A -0.29 %), ETABS ~32 lados (A -0.64 %).",
+ "exacto":     { "A": 0.0168075206967054, "I33": 0.00013360408157554003, "As2": 0.013814408236855279, "J": 0.00027349396645213764 },
+ "sap2000_sd": { "ux": 0.003408633428224316, "uz": -8.950863704638641e-05, "Area": 0.016758159318442635, "As2": 0.013790351833274572, "J": 0.00026971367423849613, "I33": 0.00013312220008588092 },
+ "etabs_fsp":  { "ux": 0.00344102397242452,  "uz": -8.982180307505275e-05, "Area": 0.016699731564580586, "As2": 0.013323536841796829, "J": 0.0002672582608485689, "I33": 0.0001318970249281865 },
+ "general":    { "ux": 0.0034537749565202026, "uz": -8.924576248143661e-05, "nota": "General con A e I exactas, As = As_acero/2 y J = 2 Is (tubo solo)" }
+}

@@ -178,7 +178,7 @@ export function exportS2k(input: S2kExportInput): string {
   blank();
 
   // ── Collect unique frame sections ──
-  type SdCft = { b: number; h: number; t: number; Ec: number; nuC: number; matFill: string };
+  type SdCft = { b: number; h: number; t: number; Ec: number; nuC: number; matFill: string; D?: number };   // D: tubo REDONDO
   const frameSecs = new Map<string, { A: number; Iz: number; Iy: number; J: number; b: number; h: number; matKey: string; As2: number; As3: number; sd?: SdCft }>();
   // materiales que solo existen por las secciones SD (el relleno de hormigon del CFT)
   const matExtra = new Map<string, { E: number; nu: number; G: number; rho: number }>();
@@ -204,9 +204,12 @@ export function exportS2k(input: S2kExportInput): string {
     // si viene (`fillE`) y si no se deduce del area: n = (A - As) / Ac.
     const shp = (elementInputs as any).sectionShapes?.get(i);
     let sd: SdCft | undefined;
-    if (shp?.type === "CFT" && shp.b > 0 && shp.h > 0 && shp.tw > 0 && shp.tw < Math.min(shp.b, shp.h) / 2 && E > 0) {
-      const bi = shp.b - 2 * shp.tw, hi = shp.h - 2 * shp.tw;
-      const AsAcero = shp.b * shp.h - bi * hi, Ac = bi * hi;
+    const esCftc = shp?.type === "CFT" && shp.d > 0 && shp.tw > 0 && shp.tw < shp.d / 2 && !(shp.b > 0 && shp.h > 0);
+    if (shp?.type === "CFT" && E > 0 && (esCftc || (shp.b > 0 && shp.h > 0 && shp.tw > 0 && shp.tw < Math.min(shp.b, shp.h) / 2))) {
+      const di = esCftc ? shp.d - 2 * shp.tw : 0;
+      const bi = esCftc ? 0 : shp.b - 2 * shp.tw, hi = esCftc ? 0 : shp.h - 2 * shp.tw;
+      const AsAcero = esCftc ? Math.PI * (shp.d * shp.d - di * di) / 4 : shp.b * shp.h - bi * hi;
+      const Ac = esCftc ? Math.PI * di * di / 4 : bi * hi;
       const n = shp.fillE > 0 ? shp.fillE / E : Math.max(0.01, Math.min(1, (A - AsAcero) / Ac));
       const Ec = n * E, nuC = 0.2;
       const matFill = `MAT_${Math.round(Ec)}_n${nuC.toFixed(4)}`;
@@ -214,9 +217,9 @@ export function exportS2k(input: S2kExportInput): string {
       // cada forma. Con rho_relleno = n*rho la masa por metro sale identica.
       const rho = matDe(i).rho;
       if (!matExtra.has(matFill)) matExtra.set(matFill, { E: Ec, nu: nuC, G: Ec / (2 * (1 + nuC)), rho: rho * n });
-      sd = { b: shp.b, h: shp.h, t: shp.tw, Ec, nuC, matFill };
+      sd = esCftc ? { b: shp.d, h: shp.d, t: shp.tw, Ec, nuC, matFill, D: shp.d } : { b: shp.b, h: shp.h, t: shp.tw, Ec, nuC, matFill };
     }
-    const key = `A${A.toPrecision(6)}_Iz${Iz.toPrecision(6)}_s${As2r.toPrecision(6)}_${As3r.toPrecision(6)}${sd ? `_SD${sd.b}x${sd.h}x${sd.t}` : ""}`;
+    const key = `A${A.toPrecision(6)}_Iz${Iz.toPrecision(6)}_s${As2r.toPrecision(6)}_${As3r.toPrecision(6)}${sd ? (sd.D ? `_SDC${sd.D}x${sd.t}` : `_SD${sd.b}x${sd.h}x${sd.t}`) : ""}`;
     if (!frameSecs.has(key)) {
       let h = 0.3, b = 0.3;
       if (A > 0 && Iz > 0) { h = Math.sqrt(12 * Iz / A); b = A / h; }
@@ -286,20 +289,43 @@ export function exportS2k(input: S2kExportInput): string {
     for (const { name } of sdSecs)
       push(`   SectionName=${name}   DesignType="No Check/Design"   DsgnOrChck=Check   IncludeVStr=No   AxisAngle=90   MeshSzAbs=0   MeshSzRel=0.05`);
     blank();
-    push(`TABLE:  "SECTION DESIGNER PROPERTIES 09 - SHAPE BOX/TUBE"`);
-    for (const { sec, name } of sdSecs) {
-      const d = sec.sd!;
-      push(`   SectionName=${name}   ShapeName=TUBO   ShapeType="User Defined"   ShapeMat=${sec.matKey}   ZOrder=1   FillColor=Gray4   XCenter=0   YCenter=0   Height=${fmt(d.h)}   Width=${fmt(d.b)}   FlngThick=${fmt(d.t)}   WebThick=${fmt(d.t)}   Rotation=0 _`);
-      push(`        CoreDim="Program Determined"   BCoreMajor=0   BCoreMinor=0   DCoreMajorPositive=0   DCoreMajorNegative=0   DCoreMinorPositive=0   DCoreMinorNegative=0`);
+    const rect = sdSecs.filter(x => !x.sec.sd!.D), circ = sdSecs.filter(x => x.sec.sd!.D);
+    if (rect.length > 0) {
+      push(`TABLE:  "SECTION DESIGNER PROPERTIES 09 - SHAPE BOX/TUBE"`);
+      for (const { sec, name } of rect) {
+        const d = sec.sd!;
+        push(`   SectionName=${name}   ShapeName=TUBO   ShapeType="User Defined"   ShapeMat=${sec.matKey}   ZOrder=1   FillColor=Gray4   XCenter=0   YCenter=0   Height=${fmt(d.h)}   Width=${fmt(d.b)}   FlngThick=${fmt(d.t)}   WebThick=${fmt(d.t)}   Rotation=0 _`);
+        push(`        CoreDim="Program Determined"   BCoreMajor=0   BCoreMinor=0   DCoreMajorPositive=0   DCoreMajorNegative=0   DCoreMinorPositive=0   DCoreMinorNegative=0`);
+      }
+      blank();
     }
-    blank();
-    push(`TABLE:  "SECTION DESIGNER PROPERTIES 12 - SHAPE SOLID RECTANGLE"`);
-    for (const { sec, name } of sdSecs) {
-      const d = sec.sd!;
-      push(`   SectionName=${name}   ShapeName=RELLENO   ShapeMat=${d.matFill}   ZOrder=2   FillColor=Gray4   XCenter=0   YCenter=0   Height=${fmt(d.h - 2 * d.t)}   Width=${fmt(d.b - 2 * d.t)}   Rotation=0   Reinforcing=No   CoreDim="Program Determined"   BCoreMajor=0   BCoreMinor=0 _`);
-      push(`        DCoreMajorPositive=0   DCoreMajorNegative=0   DCoreMinorPositive=0   DCoreMinorNegative=0`);
+    if (circ.length > 0) {
+      // tablas y campos copiados del .$2k de SAP2000 24 (sap_cft_circ/cftc.$2k)
+      push(`TABLE:  "SECTION DESIGNER PROPERTIES 10 - SHAPE PIPE"`);
+      for (const { sec, name } of circ) {
+        const d = sec.sd!;
+        push(`   SectionName=${name}   ShapeName=TUBO   ShapeType="User Defined"   ShapeMat=${sec.matKey}   ZOrder=1   FillColor=Gray4   XCenter=0   YCenter=0   OuterDiam=${fmt(d.D!)}   WallThick=${fmt(d.t)}   CoreDim="Program Determined"   BCoreMajor=0   BCoreMinor=0 _`);
+        push(`        DCoreMajorPositive=0   DCoreMajorNegative=0   DCoreMinorPositive=0   DCoreMinorNegative=0`);
+      }
+      blank();
     }
-    blank();
+    if (rect.length > 0) {
+      push(`TABLE:  "SECTION DESIGNER PROPERTIES 12 - SHAPE SOLID RECTANGLE"`);
+      for (const { sec, name } of rect) {
+        const d = sec.sd!;
+        push(`   SectionName=${name}   ShapeName=RELLENO   ShapeMat=${d.matFill}   ZOrder=2   FillColor=Gray4   XCenter=0   YCenter=0   Height=${fmt(d.h - 2 * d.t)}   Width=${fmt(d.b - 2 * d.t)}   Rotation=0   Reinforcing=No   CoreDim="Program Determined"   BCoreMajor=0   BCoreMinor=0 _`);
+        push(`        DCoreMajorPositive=0   DCoreMajorNegative=0   DCoreMinorPositive=0   DCoreMinorNegative=0`);
+      }
+      blank();
+    }
+    if (circ.length > 0) {
+      push(`TABLE:  "SECTION DESIGNER PROPERTIES 13 - SHAPE SOLID CIRCLE"`);
+      for (const { sec, name } of circ) {
+        const d = sec.sd!;
+        push(`   SectionName=${name}   ShapeName=RELLENO   ShapeMat=${d.matFill}   ZOrder=2   FillColor=Gray4   XCenter=0   YCenter=0   Diameter=${fmt(d.D! - 2 * d.t)}   Reinforcing=No   CoreDim="Program Determined"   BCoreMajor=0   DCoreMajorPositive=0`);
+      }
+      blank();
+    }
     push(`TABLE:  "SECTION DESIGNER PROPERTIES 30 - FIBER GENERAL"`);
     for (const { name } of sdSecs)
       push(`   SectionName=${name}   NumFibersD2=3   NumFibersD3=3   CoordSys=Cartesian   GridAngle=0   LumpRebar=No   FiberPMM=No   FiberMC=No`);

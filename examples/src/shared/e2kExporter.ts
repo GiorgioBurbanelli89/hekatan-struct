@@ -845,6 +845,11 @@ function exportFromScratch(input: ExportE2kInput): string {
     // Timoshenko y J de Saint-Venant — los mismos que pone `cft` en el .heks
     // (medido 2-sep-2026: 0.003 % en la flecha lateral de la columna de prueba).
     const fillName = fillMatOf.get(i);
+    if (stype === "CFT" && fillName && d > 0 && tww > 0 && !(h > 0 && b > 0)) {
+      // tubo REDONDO relleno: la "Filled Steel Pipe" de ETABS (D y T; ETABS reescribe T)
+      lines.push(`  FRAMESECTION  "${secName}"  MATERIAL "${matName}"  SHAPE "Filled Steel Pipe"  D ${rd(cL(d))} T ${rd(cL(tww))} FILLMATERIAL "${fillName}"`);
+      return;
+    }
     if (stype === "CFT" && fillName && h > 0 && b > 0 && tww > 0) {
       lines.push(`  FRAMESECTION  "${secName}"  MATERIAL "${matName}"  SHAPE "Filled Steel Tube"  D ${rd(cL(h))} B ${rd(cL(b))} TF ${rd(cL(tww))} TW ${rd(cL(tww))} FILLMATERIAL "${fillName}"`);
       return;

@@ -114,10 +114,11 @@ def leer_heks(ruta: str) -> ModeloHeks:
     # `cft ID b h t Ec [nuC]`: tubo de acero relleno; pisa A, I, J y As con las
     # propiedades de CSI (ver cft.py)
     cft_de: dict[int, tuple[float, float, float, float, float]] = {}
+    cftc_de: dict[int, tuple[float, float, float, float]] = {}     # `cftc ID D t Ec [nuC]`: tubo REDONDO relleno
     rels: dict[int, list[bool]] = {}
     endoffs: dict[int, tuple[float, float, float]] = {}   # (offI, offJ, rz)
     sw_mult = [0.0]                        # multiplicador de peso propio
-    ej_flag = [False]                      # etabsjoint (la union viga-muro de ETABS)
+    ej_flag = [True]                       # etabsjoint: por DEFECTO como ETABS; `etabsjoint 0` la apaga (modo SAP2000)
     shells: list[dict] = []
     q_area: dict[int, float] = {}          # carga de superficie por shell ID
     smod: dict[int, tuple[float, float]] = {}      # shellmod escalar
@@ -182,6 +183,10 @@ def leer_heks(ruta: str) -> ModeloHeks:
                     angs[int(t[1])] = float(t[2])
                 elif cmd == "as":
                     ashear[int(t[1])] = (float(t[2]), float(t[3]))
+                elif cmd == "cftc":
+                    cftc_de[int(t[1])] = (float(t[2]), float(t[3]),
+                                          float(t[4]) if len(t) > 4 else 25e6,
+                                          float(t[5]) if len(t) > 5 else 0.2)
                 elif cmd == "cft":
                     cft_de[int(t[1])] = (float(t[2]), float(t[3]), float(t[4]),
                                          float(t[5]) if len(t) > 5 else 25e6,
@@ -299,6 +304,16 @@ def leer_heks(ruta: str) -> ModeloHeks:
             As2, As3 = ashear[f["id"]]
             ei.shear_areas_z[k] = As2   # As2 -> V2, va con I33 (=moments_z)
             ei.shear_areas_y[k] = As3   # As3 -> V3, va con I22 (=moments_y)
+        if f["id"] in cftc_de:
+            from .cft import cftc_props
+            cD, ct, Ec, nuC = cftc_de[f["id"]]
+            c = cftc_props(cD, ct, f["E"], nu, Ec, nuC)
+            ei.areas[k] = c["A"]
+            ei.moments_of_inertia_y[k] = c["I22"]
+            ei.moments_of_inertia_z[k] = c["I33"]
+            ei.torsional_constants[k] = c["J"]
+            ei.shear_areas_z[k] = c["As2"]
+            ei.shear_areas_y[k] = c["As3"]
         if f["id"] in cft_de:
             from .cft import cft_props
             cb, ch, ct, Ec, nuC = cft_de[f["id"]]
@@ -514,8 +529,8 @@ def escribir_heks(m: ModeloHeks, ruta: str | None = None) -> str:
                         ei.shear_areas_y.get(k, 0.0)))
     if getattr(m, "selfweight", 0.0):
         L.append("selfweight %.4g" % m.selfweight)
-    if getattr(ei, "etabs_wall_joint", False):
-        L.append("etabsjoint 1")
+    if not getattr(ei, "etabs_wall_joint", True):
+        L.append("etabsjoint 0")      # el defecto es 1 (como ETABS): solo se escribe el apagado
     for k, fid in ids_f.items():
         if k in ei.end_offsets:
             L.append("endoffset %d %.6g %.6g %.4g" % ((fid,) + tuple(ei.end_offsets[k])))

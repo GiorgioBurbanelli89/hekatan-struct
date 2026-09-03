@@ -32,7 +32,8 @@ def _ux_max(texto):
 
 @pytest.mark.skipif(not HEKS.exists(), reason="falta drilling_dof_muros.heks")
 def test_sin_ley_es_sap2000():
-    ux, m = _ux_max(HEKS.read_text(encoding="utf-8"))
+    # la union va ENCENDIDA por defecto desde el 3-sep-2026: el modo SAP2000 se pide con `etabsjoint 0`
+    ux, m = _ux_max("etabsjoint 0\n" + HEKS.read_text(encoding="utf-8"))
     assert not m.element_inputs.etabs_wall_joint
     assert abs(ux / SAP2000_UX - 1) < 1e-6
 

@@ -104,7 +104,7 @@ class ElementInputs:
     # giro drilling al giro de la arista horizontal con un muelle
     #   c*(w_vecino - w_nudo - theta*(x_vecino - x_nudo))^2,  c = E*t*(H/L)^3/32.
     # `etabsjoint 1` en el .heks. Apagado por defecto: SAP2000 no lo hace.
-    etabs_wall_joint:          bool = False
+    etabs_wall_joint:          bool = True    # por defecto como ETABS; `etabsjoint 0` = modo SAP2000
 
 
 # ─── Outputs ────────────────────────────────────────────────────────────────

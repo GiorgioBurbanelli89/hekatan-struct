@@ -1,0 +1,9 @@
+# Columna CFT CIRCULAR D=300 t=10, 3 m, empotrada. Acero E 2e8 nu 0.3; relleno Ec 2.5e7.
+# 10 kN lateral (X) y 100 kN axial (-Z). Los valores de `frame` los pisa `cftc`.
+node 1 0 0 0
+node 2 0 0 3
+support 1 fixed
+frame 1 1 2 2e8 0.0168 0.0001336 0.0001336 0.00027 0.3 7.85
+cftc 1 0.3 0.01 2.5e7 0.2
+load 2 10 0 -100
+solve

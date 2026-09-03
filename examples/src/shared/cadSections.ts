@@ -79,12 +79,14 @@ export function hollowRectSection(b: number, h: number, t: number): SectionProps
  *  Las formulas de siempre no dan eso: 5/6·A = 0.01783 y 2·t·h + n·5/6·Ac = 0.01417. */
 export function areaCortanteTimoshenko(tramos: Array<{ y0: number; y1: number; w: number }>, nDiv = 4000): number {
   const yMin = Math.min(...tramos.map(t => t.y0)), yMax = Math.max(...tramos.map(t => t.y1));
+  return areaCortanteTimoshenkoW(y => { const tr = tramos.find(t => y >= t.y0 && y < t.y1); return tr ? tr.w : 0; }, yMin, yMax, nDiv);
+}
+
+/** Igual, con el ancho (transformado) dado como FUNCION w(y): sirve para el circulo. */
+export function areaCortanteTimoshenkoW(wDe: (y: number) => number, yMin: number, yMax: number, nDiv = 4000): number {
   const dy = (yMax - yMin) / nDiv;
   const w = new Float64Array(nDiv), yc = new Float64Array(nDiv);
-  for (let i = 0; i < nDiv; i++) {
-    yc[i] = yMin + (i + 0.5) * dy;
-    const tr = tramos.find(t => yc[i] >= t.y0 && yc[i] < t.y1); w[i] = tr ? tr.w : 0;
-  }
+  for (let i = 0; i < nDiv; i++) { yc[i] = yMin + (i + 0.5) * dy; w[i] = Math.max(0, wDe(yc[i])); }
   let A = 0, Sy = 0;
   for (let i = 0; i < nDiv; i++) { A += w[i] * dy; Sy += w[i] * yc[i] * dy; }
   const yg = A > 0 ? Sy / A : 0;
@@ -199,6 +201,24 @@ export function cftSectionEc(
   const As3 = areaCortanteTimoshenko([{ y0: -b / 2, y1: -bi / 2, w: h }, { y0: -bi / 2, y1: bi / 2, w: 2 * t + n * hi }, { y0: bi / 2, y1: b / 2, w: h }]);
   const J = torsionCompuestaRect(b, h, t, Gc / Gs);
   return { A, Iz, Iy, J, Es, Gs, A_steel, A_conc, As2, As3, n, Ec };
+}
+
+/** CFT CIRCULAR (tubo redondo relleno): D exterior, t pared. A e I transformadas
+ *  al acero; As por Timoshenko sobre la seccion transformada (ancho del nucleo
+ *  escalado por n); J EXACTO: en circulos concentricos no hay alabeo, asi que
+ *  J = Js + (Gc/Gs)·Jc — lo mismo que da Saint-Venant. */
+export function cftPipeSectionEc(
+  D: number, t: number, Es: number, nuS: number, Ec: number, nuC: number,
+): SectionProps & { Es: number; Gs: number; A_steel: number; A_conc: number; As2: number; As3: number; n: number; Ec: number } {
+  const n = Ec / Es, d = D - 2 * t, R = D / 2, r = d / 2;
+  const A_steel = Math.PI * (D * D - d * d) / 4, A_conc = Math.PI * d * d / 4;
+  const Is = Math.PI * (D ** 4 - d ** 4) / 64, Ic = Math.PI * d ** 4 / 64;
+  const A = A_steel + n * A_conc, I = Is + n * Ic;
+  const Gs = Es / (2 * (1 + nuS)), Gc = Ec / (2 * (1 + nuC));
+  const w = (y: number) => 2 * Math.sqrt(Math.max(0, R * R - y * y)) - (Math.abs(y) < r ? (1 - n) * 2 * Math.sqrt(Math.max(0, r * r - y * y)) : 0);
+  const As = areaCortanteTimoshenkoW(w, -R, R, 8000);
+  const J = Math.PI * (D ** 4 - d ** 4) / 32 + (Gc / Gs) * Math.PI * d ** 4 / 32;
+  return { A, Iz: I, Iy: I, J, Es, Gs, A_steel, A_conc, As2: As, As3: As, n, Ec };
 }
 
 export function cftSection(

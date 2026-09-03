@@ -48,7 +48,7 @@
  *   solve
  */
 import * as THREE from "three";
-import { cftSectionEc } from "../shared/cadSections";
+import { cftSectionEc, cftPipeSectionEc } from "../shared/cadSections";
 import { deform, analyze, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
@@ -98,6 +98,8 @@ interface ParsedModel {
    *  J y las areas de cortante con lo que usan SAP2000 (Section Designer) y ETABS
    *  (Filled Steel Tube), y marca la forma para que el s2k salga como SD. */
   frameCft: Map<number, { b: number; h: number; t: number; Ec: number; nuC: number }>;
+  /** `cftc ID D t Ec [nuC]`: tubo REDONDO relleno (Filled Steel Pipe de ETABS; Pipe + Solid Circle en el SD de SAP2000) */
+  frameCftc: Map<number, { D: number; t: number; Ec: number; nuC: number }>;
   frameEndOffsets: Map<number, [number, number, number]>;   // [offI, offJ, rigidZone]
   selfWeight: number;                    // multiplicador de peso propio (`selfweight`)
   etabsWallJoint: boolean;               // `etabsjoint 1`: la union viga-muro de ETABS
@@ -188,9 +190,10 @@ export function parseCliCommands(text: string): ParsedModel {
     frameAngles: new Map(),
     frameShearAreas: new Map(),
     frameCft: new Map(),
+    frameCftc: new Map(),
     frameEndOffsets: new Map(),
     selfWeight: 0,
-    etabsWallJoint: false,
+    etabsWallJoint: true,     // por DEFECTO como ETABS (decision de Jorge, 3-sep-2026); `etabsjoint 0` = modo SAP2000
     frameReleases: new Map(),
     areaObjs: [],
     supports: new Map(),
@@ -345,6 +348,16 @@ export function parseCliCommands(text: string): ParsedModel {
         // ── AREAS DE CORTANTE de una barra: `as <frameID> <As2> <As3>` ──
         // As2 resiste V2 (plano 1-2, el de I33) y As3 resiste V3 (plano 1-3,
         // el de I22), como en CSI. En m2. Un valor negativo = Bernoulli puro.
+        case "cftc": {
+          // cftc <frameID> <D> <t> <Ec> [nuC]   (m, kN/m2) — tubo redondo relleno
+          const fid = parseInt(tokens[1], 10);
+          const D = parseFloat(tokens[2] ?? ""), t = parseFloat(tokens[3] ?? "");
+          const Ec = parseFloat(tokens[4] ?? "25e6"), nuC = parseFloat(tokens[5] ?? "0.2");
+          if (isFinite(fid) && D > 0 && t > 0 && t < D / 2 && Ec > 0)
+            m.frameCftc.set(fid, { D, t, Ec, nuC: isFinite(nuC) ? nuC : 0.2 });
+          else m.errors.push(`cftc ${tokens[1]}: hace falta D t (m) y Ec (kN/m2), con t < D/2`);
+          break;
+        }
         case "cft": {
           // cft <frameID> <b> <h> <t> <Ec> [nuC]   (m, kN/m2)
           const fid = parseInt(tokens[1], 10);
@@ -762,6 +775,19 @@ export const cliModeler: ExampleDef = {
         if (f.D !== undefined && isFinite(f.D)) sh.h = f.D;
         if (f.B !== undefined && isFinite(f.B)) sh.b = f.B;
         sectionShapes.set(eIdx, sh);
+      }
+      const cftcF = m.frameCftc.get(f.id);
+      if (cftcF) {
+        // `cftc`: tubo redondo relleno. A e I transformadas exactas, As de Timoshenko
+        // sobre la seccion transformada y J = Js + (Gc/Gs)·Jc (exacto en circulos
+        // concentricos). OJO: SAP2000 (SD) y ETABS (Filled Steel Pipe) POLIGONIZAN
+        // el circulo (48 y 32 lados, medido): su A queda 0.3 / 0.6 % por debajo.
+        const c = cftPipeSectionEc(cftcF.D, cftcF.t, f.E, nu, cftcF.Ec, cftcF.nuC);
+        areas.set(eIdx, c.A); I33.set(eIdx, c.Iz); I22.set(eIdx, c.Iy); J.set(eIdx, c.J);
+        shearAreasZ.set(eIdx, c.As2); shearAreasY.set(eIdx, c.As3);
+        cantos.set(eIdx, cftcF.D); anchos.set(eIdx, cftcF.D);
+        sectionShapes.set(eIdx, { type: "CFT", d: cftcF.D, tw: cftcF.t, fillE: cftcF.Ec,
+          name: f.sec ?? `CFTC ${Math.round(cftcF.D * 1000)}X${Math.round(cftcF.t * 1000)}` });
       }
       const cftF = m.frameCft.get(f.id);
       if (cftF) {

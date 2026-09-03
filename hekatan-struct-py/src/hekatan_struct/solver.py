@@ -454,7 +454,7 @@ def deform(
     disperso = sparse if sparse is not None else n_total > 3000
     K_orig = (_assemble_K_sparse(nodes, elements, element_inputs) if disperso
               else _assemble_K(nodes, elements, element_inputs))
-    if getattr(element_inputs, "etabs_wall_joint", False):
+    if getattr(element_inputs, "etabs_wall_joint", True):
         K_orig = _add_etabs_wall_joint(K_orig, nodes, elements, element_inputs, disperso)
     F_orig = _assemble_F(nodes, node_inputs, elements, element_inputs)
 

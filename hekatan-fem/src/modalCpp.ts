@@ -265,7 +265,7 @@ export function modalCpp(
     springsPtr,
     resortes ? resortes.length : 0,
     // la union viga-muro de ETABS (`etabsjoint 1`), apagada por defecto
-    (elementInputs as any).etabsWallJoint ? 1 : 0,
+    (elementInputs as any).etabsWallJoint === false ? 0 : 1,   // por defecto como ETABS
     // control
     numModes,
     lateralMass,

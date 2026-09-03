@@ -151,7 +151,7 @@ const PARAMS = {
 
   // ── Pisos — el «Story Dimensions» ────────────────────────────────────────
   pisos: { default: 4, min: 1, max: 20, step: 1, label: "nº de pisos", folder: "🏢 Pisos" },
-  etabsjoint: { default: 0, min: 0, max: 1, step: 1, label: "unión viga-muro de ETABS (1 = como ETABS)", folder: "🏢 Pisos" },
+  etabsjoint: { default: 1, min: 0, max: 1, step: 1, label: "unión viga-muro de ETABS (1 = como ETABS, 0 = como SAP2000)", folder: "🏢 Pisos" },
   h: { default: 3.0, min: 2, max: 6, step: 0.1, label: "altura típica (m)", folder: "🏢 Pisos" },
   h1: { default: 3.5, min: 2, max: 8, step: 0.1, label: "altura 1er piso (m)", folder: "🏢 Pisos" },
   // ── Volado ───────────────────────────────────────────────────────────────
@@ -734,7 +734,7 @@ export const plantillas: ExampleDef = {
     states.elements.val = elements;
     states.nodeInputs.val = { supports, loads };
     states.elementInputs.val = {
-      etabsWallJoint: Math.round(p.etabsjoint ?? 0) === 1,
+      etabsWallJoint: Math.round(p.etabsjoint ?? 1) === 1,
       elasticities, poissonsRatios, shearModuli, densities, areas,
       momentsOfInertiaY, momentsOfInertiaZ, torsionalConstants,
       thicknesses, shearAreasY, shearAreasZ, plateFormulations,

@@ -102,3 +102,42 @@ def cft_props(b: float, h: float, t: float, Es: float, nuS: float, Ec: float, nu
     J = torsion_compuesta_rect(b, h, t, Gc / Gs)
     return {"A": A_s + n * A_c, "I33": I33, "I22": I22, "J": J, "As2": As2, "As3": As3, "n": n,
             "A_s": A_s, "A_c": A_c}
+
+
+def area_cortante_timoshenko_w(w_de, y_min: float, y_max: float, n_div: int = 8000) -> float:
+    """Igual que area_cortante_timoshenko, con el ancho transformado como FUNCIÓN w(y)."""
+    dy = (y_max - y_min) / n_div
+    yc = y_min + (np.arange(n_div) + 0.5) * dy
+    w = np.maximum(0.0, w_de(yc))
+    A = (w * dy).sum()
+    yg = (w * yc * dy).sum() / A if A > 0 else 0.0
+    I = (w * (yc - yg) ** 2 * dy).sum()
+    q = np.cumsum((w * (yc - yg) * dy)[::-1])[::-1]
+    mask = w > 0
+    den = (q[mask] ** 2 / w[mask] * dy).sum()
+    return I * I / den if den > 0 else 0.0
+
+
+def cftc_props(D: float, t: float, Es: float, nuS: float, Ec: float, nuC: float) -> dict:
+    """CFT CIRCULAR (tubo redondo relleno). A e I transformadas exactas; As Timoshenko
+    sobre la sección transformada; J = Js + (Gc/Gs)·Jc, exacto en círculos concéntricos.
+    OJO: SAP2000 (SD) y ETABS (Filled Steel Pipe) POLIGONIZAN el círculo (48 y 32
+    lados, medido el 3-sep-2026): su A queda 0.3 / 0.6 % por debajo del exacto."""
+    n = Ec / Es
+    d = D - 2 * t
+    R, r = D / 2, d / 2
+    A_s = math.pi * (D * D - d * d) / 4
+    A_c = math.pi * d * d / 4
+    Is = math.pi * (D ** 4 - d ** 4) / 64
+    Ic = math.pi * d ** 4 / 64
+    Gs, Gc = Es / (2 * (1 + nuS)), Ec / (2 * (1 + nuC))
+
+    def w(y):
+        ext = 2 * np.sqrt(np.maximum(0.0, R * R - y * y))
+        nuc = np.where(np.abs(y) < r, (1 - n) * 2 * np.sqrt(np.maximum(0.0, r * r - y * y)), 0.0)
+        return ext - nuc
+
+    As = area_cortante_timoshenko_w(w, -R, R)
+    J = math.pi * (D ** 4 - d ** 4) / 32 + (Gc / Gs) * math.pi * d ** 4 / 32
+    return {"A": A_s + n * A_c, "I33": Is + n * Ic, "I22": Is + n * Ic, "J": J, "As2": As, "As3": As,
+            "n": n, "A_s": A_s, "A_c": A_c}

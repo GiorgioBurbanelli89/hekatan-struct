@@ -803,3 +803,14 @@ contra 2.009 de CSI. Con `cft` da 2.0094 (0.006 % SAP, 0.003 % ETABS).
 - `.e2k`: `SHAPE "Filled Steel Tube" D B TF TW FILLMATERIAL`. El importador la tenía
   como rectángulo MACIZO de acero (A = D·B) y no escalaba `h` de mm a m: arreglados.
 - Test `node tests/run.mjs cft` (19 filas) y `pytest tests/test_cft.py`.
+
+### CFT circular y el defecto de `etabsjoint` (3-sep-2026)
+
+- **`etabsjoint` va ENCENDIDO por defecto** (decisión de Jorge): Hekatan reproduce a ETABS
+  tal cual; `etabsjoint 0` es el modo SAP2000. Vale para TS, WASM (deform y modal) y Python.
+- **`cftc ID D t Ec [nuC]`**: tubo redondo relleno. A e I exactas, As Timoshenko, J = Js +
+  (Gc/Gs)·Jc. Al s2k va como SD (`SHAPE PIPE` + `SHAPE SOLID CIRCLE`), al e2k como
+  `Filled Steel Pipe D T FILLMATERIAL`. ⚠️ SAP2000 y ETABS **poligonizan el círculo**
+  (~48 y ~32 lados): su A queda 0.3 / 0.6 % por debajo y sus flechas 0.4 / 1.3 % por
+  encima de Hekatan. Los dos leen los ficheros de Hekatan y dan exactamente lo suyo.
+- Test `node tests/run.mjs cftc` (11 filas) y `pytest tests/test_cft.py`.
