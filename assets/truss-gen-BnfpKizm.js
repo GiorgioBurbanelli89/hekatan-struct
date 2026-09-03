@@ -1,13 +1,13 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { b as r, __tla as __tla_0 } from "./barraAxial-yAdmZjSR.js";
+import { t as r, __tla as __tla_0 } from "./trussGen-IC3CxTCN.js";
 import { r as m, __tla as __tla_1 } from "./runExampleStandalone-Ccr2e1l9.js";
 import "./analyze-BFwM3Jvn.js";
 import "./pureFunctionsAny.generated-DeJSBP3k.js";
 import { __tla as __tla_2 } from "./didacticCpp-tPsbfU7x.js";
 import { __tla as __tla_3 } from "./deform-BTnZUOjy.js";
 import "./preload-helper-V2P8TQsQ.js";
-import "./paramsSeccion-DLUkfSk9.js";
-import "./cadSections-B7wNjZAz.js";
+import "./paramsSeccion-Cc5lM26k.js";
+import "./cadSections-et9anjWz.js";
 import "./theme-Co6w-pfC.js";
 import "./tweakpane-BXg6ZhiP.js";
 import "./getViewer-CSUEDMoT.js";

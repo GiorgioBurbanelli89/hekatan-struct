@@ -1,9 +1,10 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { c as d } from "./csiImporter-DjVAdSBd.js";
-import { c as l, __tla as __tla_0 } from "./cliModeler-DEiw7Mni.js";
-import { p as k } from "./e2kParser-DS92t7xl.js";
+import { c as p, __tla as __tla_0 } from "./cliModeler-CDJmsqYb.js";
+import { p as k } from "./e2kParser-BLPix5Zk.js";
 import { r as w, __tla as __tla_1 } from "./runExampleStandalone-Ccr2e1l9.js";
 import "./theme-Co6w-pfC.js";
+import "./cadSections-et9anjWz.js";
 import "./analyze-BFwM3Jvn.js";
 import "./pureFunctionsAny.generated-DeJSBP3k.js";
 import { __tla as __tla_2 } from "./didacticCpp-tPsbfU7x.js";
@@ -57,7 +58,7 @@ Promise.all([
       "pointer-events:none"
     ].join(";"), document.body.appendChild(o), o;
   }
-  function p(s, o) {
+  function l(s, o) {
     var _a, _b;
     const t = k(s), a = {};
     for (const [c, e] of Object.entries(t.elementInputs ?? {})) e instanceof Map && (a[c] = [
@@ -118,7 +119,7 @@ Promise.all([
         const a = (_a = t.target.files) == null ? void 0 : _a[0];
         if (!a) return;
         const r = await a.text();
-        /\.heks$/i.test(a.name) ? window.__hekatanCliScript = r : p(r, a.name), window.location.reload();
+        /\.heks$/i.test(a.name) ? window.__hekatanCliScript = r : l(r, a.name), window.location.reload();
       }, o.click();
     }, document.body.appendChild(s);
   }
@@ -149,7 +150,7 @@ Promise.all([
           cache: "no-store"
         });
         if (!n.ok) throw new Error(`HTTP ${n.status}`);
-        const i = s.split("/").pop() || s, m = p(await n.text(), i);
+        const i = s.split("/").pop() || s, m = l(await n.text(), i);
         a = i, r = `${m.n} nudos \xB7 ${m.e} elementos \xB7 ${m.s} secciones`;
       } catch (n) {
         e.textContent = `No se pudo importar ${s} \u2014 ${(n == null ? void 0 : n.message) ?? n}`, setTimeout(() => e.remove(), 5e3);
@@ -157,7 +158,7 @@ Promise.all([
         setTimeout(() => e.remove(), 300);
       }
     } else if (o) {
-      t = l;
+      t = p;
       const e = u("Cargando modelo\u2026");
       try {
         const n = await fetch(o, {
@@ -176,17 +177,17 @@ Promise.all([
     } else if (sessionStorage.getItem("hekatan.abrir.texto")) {
       const e = sessionStorage.getItem("hekatan.abrir.texto") || "", n = sessionStorage.getItem("hekatan.abrir.nombre") || "archivo";
       if (sessionStorage.removeItem("hekatan.abrir.texto"), sessionStorage.removeItem("hekatan.abrir.nombre"), /\.heks$/i.test(n)) {
-        t = l, window.__hekatanCliScript = e;
+        t = p, window.__hekatanCliScript = e;
         const i = (e.match(/^\s*node\s+/gm) ?? []).length, m = (e.match(/^\s*frame\s+/gm) ?? []).length;
         a = n, r = `${i} nudos \xB7 ${m} barras`;
       } else {
-        const i = p(e, n);
+        const i = l(e, n);
         a = n, r = `${i.n} nudos \xB7 ${i.e} elementos \xB7 ${i.s} secciones`;
       }
     } else if (window.__hekatanImportedModel) {
       const e = window.__hekatanImportedModel;
       a = e.archivo, r = `${((_a = e.nodes) == null ? void 0 : _a.length) ?? 0} nudos \xB7 ${((_b = e.elements) == null ? void 0 : _b.length) ?? 0} elementos`;
-    } else window.__hekatanCliScript ? t = l : b();
+    } else window.__hekatanCliScript ? t = p : b();
     const c = {
       ...t,
       id: "workspace_existent",

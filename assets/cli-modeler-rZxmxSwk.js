@@ -1,6 +1,7 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { c as r, __tla as __tla_0 } from "./cliModeler-DEiw7Mni.js";
+import { c as r, __tla as __tla_0 } from "./cliModeler-CDJmsqYb.js";
 import { r as o, __tla as __tla_1 } from "./runExampleStandalone-Ccr2e1l9.js";
+import "./cadSections-et9anjWz.js";
 import "./analyze-BFwM3Jvn.js";
 import "./pureFunctionsAny.generated-DeJSBP3k.js";
 import { __tla as __tla_2 } from "./didacticCpp-tPsbfU7x.js";

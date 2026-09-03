@@ -1,7 +1,7 @@
 import { a as A } from "./analyze-BFwM3Jvn.js";
 import { m as S, d as _, __tla as __tla_0 } from "./didacticCpp-tPsbfU7x.js";
-import { p as G, F as O, n as $, s as d, e as y } from "./paramsSeccion-DLUkfSk9.js";
-import { t as z } from "./cadSections-B7wNjZAz.js";
+import { p as G, F as O, n as $, s as d, e as y } from "./paramsSeccion-Cc5lM26k.js";
+import { t as z } from "./cadSections-et9anjWz.js";
 let W;
 let __tla = Promise.all([
   (() => {
