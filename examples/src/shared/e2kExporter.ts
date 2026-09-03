@@ -1117,7 +1117,7 @@ function exportFromScratch(input: ExportE2kInput): string {
     } else {
       lines.push(`  LINE  "${eName}"  ${tipo}  "${psBot.pt}"  "${psTop.pt}"  ${salto}`);
     }
-    laEntries.push(`  LINEASSIGN  "${eName}"  "${psTop.story}"  SECTION "${secName}" ${extras} MINNUMSTA ${minNumSta} AUTOMESH "YES"  MESHATINTERSECTIONS "YES"  `);
+    laEntries.push(`  LINEASSIGN  "${eName}"  "${psTop.story}"  SECTION "${secName}" ${extras} MINNUMSTA ${minNumSta} AUTOMESH "YES"  MESHATINTERSECTIONS "${(elementInputs as any).meshAtIntersections === false ? "NO" : "YES"}"  `);
   };
 
   // 1. Chains de columnas — UN solo LINE element por cadena

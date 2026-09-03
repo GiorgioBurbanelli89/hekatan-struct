@@ -103,6 +103,10 @@ interface ParsedModel {
   frameEndOffsets: Map<number, [number, number, number]>;   // [offI, offJ, rigidZone]
   selfWeight: number;                    // multiplicador de peso propio (`selfweight`)
   etabsWallJoint: boolean;               // `etabsjoint 1`: la union viga-muro de ETABS
+  /** `meshcross 0/1`: partir con un nudo las barras que se CRUZAN sin compartirlo (las X de
+   *  arriostramiento). ETABS lo hace por defecto (MESHATINTERSECTIONS "YES"); SAP2000 no.
+   *  Por defecto como ETABS (decision de Jorge, 3-sep-2026). */
+  meshCross: boolean;
   /** End releases por barra: 12 banderas [U1 U2 U3 R1 R2 R3]_I + _J, el orden
    *  de ETABS. Una bandera en true libera ese grado LOCAL por condensacion
    *  estatica. Ver el comando `release`. */
@@ -193,6 +197,7 @@ export function parseCliCommands(text: string): ParsedModel {
     frameCftc: new Map(),
     frameEndOffsets: new Map(),
     selfWeight: 0,
+    meshCross: true,
     etabsWallJoint: true,     // por DEFECTO como ETABS (decision de Jorge, 3-sep-2026); `etabsjoint 0` = modo SAP2000
     frameReleases: new Map(),
     areaObjs: [],
@@ -419,6 +424,12 @@ export function parseCliCommands(text: string): ParsedModel {
         // en el estatico: habia que meterlo a mano en las cargas, y en el
         // galpon directamente no estaba (faltaban 385.5 kN de acero mas la
         // losa). Las VIGAS con `endoffset` pesan por su LUZ LIBRE, como ETABS.
+        case "meshcross":
+        case "meshatintersections": {
+          const v = (tokens[1] ?? "1").toLowerCase();
+          m.meshCross = !(v === "0" || v === "no" || v === "off" || v === "false");
+          break;
+        }
         case "etabsjoint":
         case "etabswalljoint": {
           // etabsjoint [0|1] -> la penalizacion viga-muro de ETABS (ver data-model.ts)
@@ -802,6 +813,55 @@ export const cliModeler: ExampleDef = {
           name: f.sec ?? `CFT ${Math.round(cftF.h * 1000)}X${Math.round(cftF.b * 1000)}X${Math.round(cftF.t * 1000)}` });
       }
     }
+    // ── Cruces de barras SIN nudo comun (las X de arriostramiento) ─────────────
+    // ETABS parte las dos barras en el cruce y les pone un nudo (MESHATINTERSECTIONS
+    // "YES", su defecto); SAP2000 las deja cruzarse sin tocarse. Medido en el galpon
+    // (2-sep-2026): con la misma malla Hekatan = SAP2000 exacto y ETABS -0.2 %, y la
+    // diferencia era esto. Por defecto se hace como ETABS; `meshcross 0` = SAP2000.
+    if (m.meshCross) {
+      const dot = (u: number[], v: number[]) => u[0] * v[0] + u[1] * v[1] + u[2] * v[2];
+      const mapas: Map<number, any>[] = [elasticities, shearModuli, areas, I22, I33, J, densities, poissons,
+        cantos, anchos, localAngles, shearAreasY, shearAreasZ, sectionShapes, frameLoadsElem];
+      const copiar = (de: number, a: number) => { for (const mp of mapas) if (mp.has(de)) mp.set(a, mp.get(de)); };
+      const nudoEn = (p: number[]) => {
+        for (let i = 0; i < nodes.length; i++)
+          if (Math.hypot(nodes[i][0] - p[0], nodes[i][1] - p[1], nodes[i][2] - p[2]) < 1e-6) return i;
+        nodes.push([p[0], p[1], p[2]]); return nodes.length - 1;
+      };
+      const bb = (e: number[]) => { const A = nodes[e[0]], B = nodes[e[1]]; return [Math.min(A[0], B[0]), Math.min(A[1], B[1]), Math.min(A[2], B[2]), Math.max(A[0], B[0]), Math.max(A[1], B[1]), Math.max(A[2], B[2])]; };
+      let nCruces = 0;
+      for (let a = 0; a < elements.length; a++) {
+        if (elements[a].length !== 2) continue;
+        const ba = bb(elements[a]);
+        for (let b = a + 1; b < elements.length; b++) {
+          if (elements[b].length !== 2) continue;
+          const [a0, a1] = elements[a], [b0, b1] = elements[b];
+          if (a0 === b0 || a0 === b1 || a1 === b0 || a1 === b1) continue;
+          const bbB = bb(elements[b]);
+          if (ba[0] > bbB[3] + 1e-6 || bbB[0] > ba[3] + 1e-6 || ba[1] > bbB[4] + 1e-6 || bbB[1] > ba[4] + 1e-6 || ba[2] > bbB[5] + 1e-6 || bbB[2] > ba[5] + 1e-6) continue;
+          const P = nodes[a0], Q = nodes[a1], R = nodes[b0], S = nodes[b1];
+          const d1 = [Q[0] - P[0], Q[1] - P[1], Q[2] - P[2]], d2 = [S[0] - R[0], S[1] - R[1], S[2] - R[2]], r = [P[0] - R[0], P[1] - R[1], P[2] - R[2]];
+          const aa = dot(d1, d1), bd = dot(d1, d2), cc = dot(d2, d2), dd = dot(d1, r), ee = dot(d2, r);
+          const den = aa * cc - bd * bd;
+          if (den < 1e-10 * aa * cc) continue;                       // paralelas
+          const sP = (bd * ee - cc * dd) / den, tP = (aa * ee - bd * dd) / den;
+          if (sP < 1e-6 || sP > 1 - 1e-6 || tP < 1e-6 || tP > 1 - 1e-6) continue;   // el cruce cae fuera de alguna
+          const X = [P[0] + sP * d1[0], P[1] + sP * d1[1], P[2] + sP * d1[2]], Y = [R[0] + tP * d2[0], R[1] + tP * d2[1], R[2] + tP * d2[2]];
+          if (Math.hypot(X[0] - Y[0], X[1] - Y[1], X[2] - Y[2]) > 1e-6) continue;    // se cruzan en planta pero no se tocan
+          const nx = nudoEn(X);
+          for (const e of [a, b]) {
+            const [n0, n1] = elements[e]; const nuevo = elements.length;
+            elements[e] = [n0, nx]; elements.push([nx, n1]); copiar(e, nuevo);
+            const rel = momentReleases.get(e);
+            if (rel) { momentReleases.set(e, [...rel.slice(0, 6), ...Array(6).fill(false)]); momentReleases.set(nuevo, [...Array(6).fill(false), ...rel.slice(6)]); }
+            const eo = endOffsets.get(e);
+            if (eo) { endOffsets.set(e, [eo[0], 0, eo[2]]); endOffsets.set(nuevo, [0, eo[1], eo[2]]); }
+          }
+          nCruces++;
+        }
+      }
+      if (nCruces > 0) console.log(`[CLI Modeler] ${nCruces} cruces de barras partidos con nudo (como ETABS; meshcross 0 lo apaga)`);
+    }
     for (const s of m.shells) {
       const idxs = s.pts.map(id => idToIdx.get(id));
       if (idxs.some(i => i === undefined)) {
@@ -1040,6 +1100,7 @@ export const cliModeler: ExampleDef = {
       shellSurfaceLoads, shellAngles, cargaDeArea, cantos, anchos, sectionShapes, localAngles,
       shearAreasY, shearAreasZ, momentReleases, endOffsets, plateFormulations,
       frameLoads: frameLoadsElem,
+      meshAtIntersections: m.meshCross,
       // El `selfweight` del .heks, para que el exportador e2k en modo "auto"
       // escriba SELFWEIGHT con el multiplicador del MODELO (0 si no lo lleva)
       // y descuente de las cargas nodales lo que ETABS va a calcular solo.

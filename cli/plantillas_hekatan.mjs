@@ -109,8 +109,13 @@ export function correr(tipo, over) {
       mXX: g(a.membraneXX), mYY: g(a.membraneYY), mXY: g(a.membraneXY) });
   });
 
+  // diaf=1: diafragma rigido por planta (todos los nudos de cada cota > 0), como el
+  // D1 que el e2k le asigna a las losas en ETABS (ojo: sin acentos graves aqui, es un template). Sin esto el bench comparaba una losa
+  // FLEXIBLE en el plano contra el diafragma rigido de ETABS.
+  const zs = [...new Set(st.nodes.val.map(n => Math.round(n[2] * 100) / 100))].sort((a, b) => a - b);
+  const diaphragms = over.diaf ? st.nodes.val.map((n, i) => [i, zs.indexOf(Math.round(n[2] * 100) / 100)]).filter(([, k]) => k > 0) : [];
   return { nodes: st.nodes.val, elements: st.elements.val,
-           supports: M(ni.supports),
+           supports: M(ni.supports), diaphragms,
            ei: Object.fromEntries(Object.entries(ei).map(([k, v]) => [k, M(v)])),
            params: p, ms, fz, R6, uzMin, uzNodo, uxMax, uxNodo,
            disp, frames, shells,
@@ -142,7 +147,7 @@ function modal(d, nModos = 12) {
   const el = P(ei.elasticities), ar = P(ei.areas), mz = P(ei.momentsOfInertiaZ), my = P(ei.momentsOfInertiaY),
     sh = P(ei.shearModuli), to = P(ei.torsionalConstants), de = P(ei.densities), th = P(ei.thicknesses),
     po = P(ei.poissonsRatios), mm = P(), bm = P(), pf = PI(ei.plateFormulations), dt = PI(), ds = P(),
-    sy = P(ei.shearAreasY), sz = P(ei.shearAreasZ), la = P(), rel = P(), nm = P(), dia = P();
+    sy = P(ei.shearAreasY), sz = P(ei.shearAreasZ), la = P(), rel = P(), nm = P(), dia = P(d.diaphragms);
   const relVp = alloc([], Uint8Array, mod.HEAPU8); gc.push(relVp);
   const O = () => { const p = mod._malloc(4); gc.push(p); return p; };
   const fo = O(), nfo = O(), moo = O(), mro = O(), mco = O(), mao = O(), maro = O(), maco = O();
