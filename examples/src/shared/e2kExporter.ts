@@ -666,6 +666,30 @@ function exportFromScratch(input: ExportE2kInput): string {
       lines.push(`  MATERIAL  "${name}"    FC ${rd(cE(fc_kN))}`);
     }
   }
+  // El HORMIGON DE RELLENO de las columnas CFT: en ETABS la "Filled Steel Tube"
+  // lleva MATERIAL (el acero) y FILLMATERIAL. Su peso: ETABS suma acero·wpv_s +
+  // relleno·wpv_c; Hekatan pone wpv sobre el area TRANSFORMADA. Con
+  // wpv_c = n·wpv_s la carga muerta por metro sale identica.
+  const fillMatOf = new Map<number, string>();
+  {
+    const fillNames = new Map<string, string>();
+    const shapes = (elementInputs as any).sectionShapes as Map<number, any> | undefined;
+    shapes?.forEach((sh, idx) => {
+      if (sh?.type !== "CFT" || !(sh.fillE > 0)) return;
+      const Es = elementInputs.elasticities?.get(idx) ?? 0; if (!(Es > 0)) return;
+      const n = sh.fillE / Es;
+      const wS = wpvDe(idx) ?? 76.97;
+      const key = `${sh.fillE}|${(n * wS).toFixed(4)}`;
+      let name = fillNames.get(key);
+      if (!name) {
+        name = `ConcFill_${fillNames.size + 1}`; fillNames.set(key, name);
+        lines.push(`  MATERIAL  "${name}"    TYPE "Concrete"    WEIGHTPERVOLUME ${rp(cWV(n * wS))}`);
+        lines.push(`  MATERIAL  "${name}"    SYMTYPE "Isotropic"  E ${rd(cE(sh.fillE))}  U 0.2  A 1.0e-5`);
+        lines.push(`  MATERIAL  "${name}"    FC ${rd(cE(24e3))}`);
+      }
+      fillMatOf.set(idx, name);
+    });
+  }
   lines.push(``);
 
   // ── FRAME SECTIONS ──────────────────────────────────────────────────
@@ -816,6 +840,15 @@ function exportFromScratch(input: ExportE2kInput): string {
     //
     // La forma real solo importa para el DISEÑO y para dibujar; la rigidez la
     // mandan A, I33, I22 y J, y esas las tenemos exactas.
+    // CFT con E del relleno: la "Filled Steel Tube" de ETABS (parametrica, con
+    // FILLMATERIAL), no una General. ETABS le calcula A e I transformadas, As de
+    // Timoshenko y J de Saint-Venant — los mismos que pone `cft` en el .heks
+    // (medido 2-sep-2026: 0.003 % en la flecha lateral de la columna de prueba).
+    const fillName = fillMatOf.get(i);
+    if (stype === "CFT" && fillName && h > 0 && b > 0 && tww > 0) {
+      lines.push(`  FRAMESECTION  "${secName}"  MATERIAL "${matName}"  SHAPE "Filled Steel Tube"  D ${rd(cL(h))} B ${rd(cL(b))} TF ${rd(cL(tww))} TW ${rd(cL(tww))} FILLMATERIAL "${fillName}"`);
+      return;
+    }
     const tieneProps = A > 0 && I33 > 0 && I22 > 0;
     let etabsShape: string;
     if (stype === "general" || tieneProps) etabsShape = "General";

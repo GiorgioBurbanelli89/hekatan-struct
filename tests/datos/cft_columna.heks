@@ -1,0 +1,11 @@
+# Columna CFT 300x300x10 (tubo de acero relleno de hormigon), 3 m, empotrada.
+# Acero E = 2e8 kN/m2, nu 0.3, rho 7.85 t/m3. Relleno Ec = 2.5e7 kN/m2, nu 0.2.
+# 10 kN lateral (X) y 100 kN axial (-Z) en la coronacion.
+# Los valores de `frame` los pisa el comando `cft` (A, I, J, As).
+node 1 0 0 0
+node 2 0 0 3
+support 1 fixed
+frame 1 1 2 2e8 0.0214 0.0002268133 0.0002268133 0.00038 0.3 7.85
+cft 1 0.3 0.3 0.01 2.5e7 0.2
+load 2 10 0 -100
+solve

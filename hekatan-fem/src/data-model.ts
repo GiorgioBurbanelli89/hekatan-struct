@@ -57,6 +57,7 @@ export type SectionShape = {
   lip?: number; // lip length (coldC)
   dis?: number; // separation between shapes (2L/2C)
   name?: string; // profile name e.g. "W14x82", "L50x3", "C100x50x2"
+  fillE?: number; // CFT: E del hormigon de relleno (mismas unidades que E); con el, el s2k sale como Section Designer
 };
 
 export type ElementInputs = {

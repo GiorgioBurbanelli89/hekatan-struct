@@ -73,6 +73,8 @@ function parseTableFormat(rawLines: string[]): S2kModel {
   const units = { force: "KN", length: "m" };
   let dof = "UX,UY,UZ,RX,RY,RZ";
   const materials = new Map<string, { E: number; nu: number; G: number; density?: number; fy?: number }>();
+  const sdBox = new Map<string, { h: number; b: number; t: number; mat: string }>();
+  const sdFill = new Map<string, { mat: string }>();
   const frameSections = new Map<string, { material: string; shape: string; D: number; B: number; TF: number; TW: number; A: number; Iz: number; Iy: number; J: number }>();
   const shellSections = new Map<string, { material: string; type: string; thickness: number }>();
   const joints = new Map<string, [number, number, number]>();
@@ -167,6 +169,19 @@ function parseTableFormat(rawLines: string[]): S2kModel {
             As3: parseNum(kv.get("AS3")),
           });
         }
+        break;
+      }
+
+      case "SECTION DESIGNER PROPERTIES 09 - SHAPE BOX/TUBE": {
+        // El CFT que escribe Hekatan (y cualquier SD con un tubo): la forma vuelve
+        // como CFT para que al re-exportar salga otra vez Section Designer.
+        const sn = kv.get("SectionName");
+        if (sn) sdBox.set(sn, { h: parseNum(kv.get("Height")), b: parseNum(kv.get("Width")), t: parseNum(kv.get("FlngThick")) || parseNum(kv.get("WebThick")), mat: kv.get("ShapeMat") || "" });
+        break;
+      }
+      case "SECTION DESIGNER PROPERTIES 12 - SHAPE SOLID RECTANGLE": {
+        const sn = kv.get("SectionName");
+        if (sn) sdFill.set(sn, { mat: kv.get("ShapeMat") || "" });
         break;
       }
 
@@ -314,7 +329,7 @@ function parseTableFormat(rawLines: string[]): S2kModel {
   }
 
   return buildModel(units, dof, materials, frameSections, shellSections, joints,
-    frameConns, shellConns, restraints, frameSectionAssign, areaSectionAssign, loads, offsets, angles, areaMods, frameLoadsRaw, solidConns, solidProps, solidAssign);
+    frameConns, shellConns, restraints, frameSectionAssign, areaSectionAssign, loads, offsets, angles, areaMods, frameLoadsRaw, solidConns, solidProps, solidAssign, sdBox, sdFill);
 }
 
 // ═══════════════════════════════════════════
@@ -459,6 +474,8 @@ function buildModel(
   solidConns: { name: string; joints: string[] }[] = [],
   solidProps: Map<string, { material: string; incomp: boolean }> = new Map(),
   solidAssign: Map<string, string> = new Map(),
+  sdBox?: Map<string, { h: number; b: number; t: number; mat: string }>,
+  sdFill?: Map<string, { mat: string }>,
 ): S2kModel {
   const nodeNames: string[] = [];
   const nodeNameToIdx = new Map<string, number>();
@@ -549,6 +566,12 @@ function buildModel(
         sectionShapes.set(i, { type: "I", b: sec.B, h: sec.D, name: secName || "I-section" });
       } else {
         sectionShapes.set(i, { type: "rect", b: sec.B, h: sec.D });
+      }
+      const box = secName ? sdBox?.get(secName) : undefined;
+      if (box && box.b > 0 && box.h > 0 && box.t > 0) {
+        const fill = secName ? sdFill?.get(secName) : undefined;
+        const Ef = fill ? (materials.get(fill.mat)?.E || 0) : 0;
+        sectionShapes.set(i, { type: "CFT", b: box.b, h: box.h, tw: box.t, name: secName, ...(Ef > 0 ? { fillE: Ef } : {}) });
       }
     } else if (ssec) {
       const mat = materials.get(ssec.material) || defaultMat;

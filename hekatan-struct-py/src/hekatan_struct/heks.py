@@ -111,6 +111,9 @@ def leer_heks(ruta: str) -> ModeloHeks:
     fl: dict[int, tuple[float, float, float]] = {}
     angs: dict[int, float] = {}
     ashear: dict[int, tuple[float, float]] = {}
+    # `cft ID b h t Ec [nuC]`: tubo de acero relleno; pisa A, I, J y As con las
+    # propiedades de CSI (ver cft.py)
+    cft_de: dict[int, tuple[float, float, float, float, float]] = {}
     rels: dict[int, list[bool]] = {}
     endoffs: dict[int, tuple[float, float, float]] = {}   # (offI, offJ, rz)
     sw_mult = [0.0]                        # multiplicador de peso propio
@@ -179,6 +182,10 @@ def leer_heks(ruta: str) -> ModeloHeks:
                     angs[int(t[1])] = float(t[2])
                 elif cmd == "as":
                     ashear[int(t[1])] = (float(t[2]), float(t[3]))
+                elif cmd == "cft":
+                    cft_de[int(t[1])] = (float(t[2]), float(t[3]), float(t[4]),
+                                         float(t[5]) if len(t) > 5 else 25e6,
+                                         float(t[6]) if len(t) > 6 else 0.2)
                 elif cmd in ("selfweight", "peso", "sw"):
                     # selfweight [mult]  — el PESO PROPIO, como el patrón `Dead`
                     # de ETABS (selfweight x 1). Hekatan no lo aplicaba nunca en
@@ -292,6 +299,16 @@ def leer_heks(ruta: str) -> ModeloHeks:
             As2, As3 = ashear[f["id"]]
             ei.shear_areas_z[k] = As2   # As2 -> V2, va con I33 (=moments_z)
             ei.shear_areas_y[k] = As3   # As3 -> V3, va con I22 (=moments_y)
+        if f["id"] in cft_de:
+            from .cft import cft_props
+            cb, ch, ct, Ec, nuC = cft_de[f["id"]]
+            c = cft_props(cb, ch, ct, f["E"], nu, Ec, nuC)
+            ei.areas[k] = c["A"]
+            ei.moments_of_inertia_y[k] = c["I22"]
+            ei.moments_of_inertia_z[k] = c["I33"]
+            ei.torsional_constants[k] = c["J"]
+            ei.shear_areas_z[k] = c["As2"]
+            ei.shear_areas_y[k] = c["As3"]
         if f["id"] in rels:
             ei.moment_releases[k] = rels[f["id"]]
         if f["id"] in endoffs:

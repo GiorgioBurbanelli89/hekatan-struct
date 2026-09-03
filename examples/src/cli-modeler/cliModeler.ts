@@ -48,6 +48,7 @@
  *   solve
  */
 import * as THREE from "three";
+import { cftSectionEc } from "../shared/cadSections";
 import { deform, analyze, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
@@ -93,6 +94,10 @@ interface ParsedModel {
    *  programas CSI usan el area real, asi que Hekatan salia sistematicamente
    *  MAS RIGIDO, hasta un 14 % nudo a nudo en el galpon. */
   frameShearAreas: Map<number, [number, number]>;
+  /** `cft ID b h t Ec [nuC]`: tubo de acero relleno de hormigon. Pisa A, I22, I33,
+   *  J y las areas de cortante con lo que usan SAP2000 (Section Designer) y ETABS
+   *  (Filled Steel Tube), y marca la forma para que el s2k salga como SD. */
+  frameCft: Map<number, { b: number; h: number; t: number; Ec: number; nuC: number }>;
   frameEndOffsets: Map<number, [number, number, number]>;   // [offI, offJ, rigidZone]
   selfWeight: number;                    // multiplicador de peso propio (`selfweight`)
   etabsWallJoint: boolean;               // `etabsjoint 1`: la union viga-muro de ETABS
@@ -182,6 +187,7 @@ export function parseCliCommands(text: string): ParsedModel {
     shellAngles: new Map(),
     frameAngles: new Map(),
     frameShearAreas: new Map(),
+    frameCft: new Map(),
     frameEndOffsets: new Map(),
     selfWeight: 0,
     etabsWallJoint: false,
@@ -339,6 +345,16 @@ export function parseCliCommands(text: string): ParsedModel {
         // ── AREAS DE CORTANTE de una barra: `as <frameID> <As2> <As3>` ──
         // As2 resiste V2 (plano 1-2, el de I33) y As3 resiste V3 (plano 1-3,
         // el de I22), como en CSI. En m2. Un valor negativo = Bernoulli puro.
+        case "cft": {
+          // cft <frameID> <b> <h> <t> <Ec> [nuC]   (m, kN/m2)
+          const fid = parseInt(tokens[1], 10);
+          const b = parseFloat(tokens[2] ?? ""), h = parseFloat(tokens[3] ?? ""), t = parseFloat(tokens[4] ?? "");
+          const Ec = parseFloat(tokens[5] ?? "25e6"), nuC = parseFloat(tokens[6] ?? "0.2");
+          if (isFinite(fid) && b > 0 && h > 0 && t > 0 && t < Math.min(b, h) / 2 && Ec > 0)
+            m.frameCft.set(fid, { b, h, t, Ec, nuC: isFinite(nuC) ? nuC : 0.2 });
+          else m.errors.push(`cft ${tokens[1]}: hace falta b h t (m) y Ec (kN/m2), con t < min(b,h)/2`);
+          break;
+        }
         case "as":
         case "shearareas": {
           const fid = parseInt(tokens[1], 10);
@@ -746,6 +762,18 @@ export const cliModeler: ExampleDef = {
         if (f.D !== undefined && isFinite(f.D)) sh.h = f.D;
         if (f.B !== undefined && isFinite(f.B)) sh.b = f.B;
         sectionShapes.set(eIdx, sh);
+      }
+      const cftF = m.frameCft.get(f.id);
+      if (cftF) {
+        // `cft`: A e I transformadas al acero, As por Timoshenko sobre la seccion
+        // transformada y J de Saint-Venant del compuesto — lo que usan SAP2000
+        // (Section Designer) y ETABS (Filled Steel Tube). Pisa lo que dijera `frame`.
+        const c = cftSectionEc(cftF.b, cftF.h, cftF.t, f.E, nu, cftF.Ec, cftF.nuC);
+        areas.set(eIdx, c.A); I33.set(eIdx, c.Iz); I22.set(eIdx, c.Iy); J.set(eIdx, c.J);
+        shearAreasZ.set(eIdx, c.As2); shearAreasY.set(eIdx, c.As3);
+        cantos.set(eIdx, cftF.h); anchos.set(eIdx, cftF.b);
+        sectionShapes.set(eIdx, { type: "CFT", b: cftF.b, h: cftF.h, tw: cftF.t, fillE: cftF.Ec,
+          name: f.sec ?? `CFT ${Math.round(cftF.h * 1000)}X${Math.round(cftF.b * 1000)}X${Math.round(cftF.t * 1000)}` });
       }
     }
     for (const s of m.shells) {

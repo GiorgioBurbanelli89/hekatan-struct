@@ -777,3 +777,29 @@ Medirlo sin navegador: `node cli/_medir_muros.mjs edificio-dual` (muros/losas,
 rangos por campo, nudos SIN coser, NaN). Verlo: `node cli/shot_muros.mjs
 edificio-dual` → `cli/shots/muros/` (iso + dos alzados × 6 campos). Con F11/M11
 un muro sale casi uniforme: para verlo, F22 / FMin / von Mises.
+
+## Columna CFT: Section Designer en SAP2000, Filled Steel Tube en ETABS (2-sep-2026)
+
+SAP2000 24 **no tiene** sección paramétrica de tubo relleno (leído del binario: el
+enum `FilledTube` de la OAPI es compartido con ETABS y no prueba nada). Se hace en
+Section Designer, y SAP **recalcula** A, I, As y J de las formas: ignora los que
+lleve la fila `SD Section` del s2k. ETABS sí la tiene ("Filled Steel Tube") y usa
+los mismos números (0.004 % entre los dos). Medido por OAPI, columna 300×300×10:
+
+```
+A, I  = transformadas al acero (exactas)
+As    = Timoshenko sobre la sección transformada: I²/∫Q²/w   (SAP 0.015443, ETABS 0.015399, Hekatan 0.015365)
+J     = Saint-Venant del compuesto (Prandtl con G a trozos)   (SAP 3.802e-4, ETABS 3.795e-4, Hekatan 3.794e-4)
+```
+Ni 5/6·A, ni 2th + n·5/6·Ac, ni Bredt del tubo solo: con esos la columna daba 2.034 mm
+contra 2.009 de CSI. Con `cft` da 2.0094 (0.006 % SAP, 0.003 % ETABS).
+
+- `.heks`: `cft ID b h t Ec [nuC]` — `cadSections.cftSectionEc` (TS) y `cft.py` (Python),
+  mismos dígitos. `torsionCompuestaRect` es Cholesky en banda (el SOR no converge con
+  el contraste de 7×) y malla la pared en celdas ENTERAS (si no, J cae un 20 %).
+- `.s2k`: `Shape="SD Section"` + `SECTION DESIGNER PROPERTIES 01/09/12/30`; el relleno
+  lleva rho = n·rho_acero para que la masa por metro coincida. SAP2000 lee ese s2k y
+  da exactamente su SD (`galpon-bodega-electoral/sap_cft_hekatan_s2k.py`).
+- `.e2k`: `SHAPE "Filled Steel Tube" D B TF TW FILLMATERIAL`. El importador la tenía
+  como rectángulo MACIZO de acero (A = D·B) y no escalaba `h` de mm a m: arreglados.
+- Test `node tests/run.mjs cft` (19 filas) y `pytest tests/test_cft.py`.

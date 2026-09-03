@@ -178,7 +178,10 @@ export function exportS2k(input: S2kExportInput): string {
   blank();
 
   // ── Collect unique frame sections ──
-  const frameSecs = new Map<string, { A: number; Iz: number; Iy: number; J: number; b: number; h: number; matKey: string; As2: number; As3: number }>();
+  type SdCft = { b: number; h: number; t: number; Ec: number; nuC: number; matFill: string };
+  const frameSecs = new Map<string, { A: number; Iz: number; Iy: number; J: number; b: number; h: number; matKey: string; As2: number; As3: number; sd?: SdCft }>();
+  // materiales que solo existen por las secciones SD (el relleno de hormigon del CFT)
+  const matExtra = new Map<string, { E: number; nu: number; G: number; rho: number }>();
   const elemToFrameSec = new Map<number, string>();
   for (const i of frameIdx) {
     const A = elementInputs.areas?.get(i) || 0;
@@ -192,13 +195,34 @@ export function exportS2k(input: S2kExportInput): string {
     // funden se pierde el dato que mas ablanda.
     const As2r = elementInputs.shearAreasZ?.get(i) ?? 0;   // As2 -> V2 (con I33)
     const As3r = elementInputs.shearAreasY?.get(i) ?? 0;   // As3 -> V3 (con I22)
-    const key = `A${A.toPrecision(6)}_Iz${Iz.toPrecision(6)}_s${As2r.toPrecision(6)}_${As3r.toPrecision(6)}`;
+    // CFT (tubo de acero relleno): en SAP2000 NO hay seccion parametrica para eso
+    // (leido del binario, 2-sep-2026): se escribe como SECTION DESIGNER, tubo de
+    // acero + rectangulo de hormigon. SAP2000 recalcula A, I, As y J de las
+    // formas (ignora los que lleve la fila, medido): A e I salen iguales a la
+    // transformada; As y J son los de Timoshenko/Saint-Venant, que es lo que
+    // pone el comando `cft` del .heks. La razon modular sale del E del relleno
+    // si viene (`fillE`) y si no se deduce del area: n = (A - As) / Ac.
+    const shp = (elementInputs as any).sectionShapes?.get(i);
+    let sd: SdCft | undefined;
+    if (shp?.type === "CFT" && shp.b > 0 && shp.h > 0 && shp.tw > 0 && shp.tw < Math.min(shp.b, shp.h) / 2 && E > 0) {
+      const bi = shp.b - 2 * shp.tw, hi = shp.h - 2 * shp.tw;
+      const AsAcero = shp.b * shp.h - bi * hi, Ac = bi * hi;
+      const n = shp.fillE > 0 ? shp.fillE / E : Math.max(0.01, Math.min(1, (A - AsAcero) / Ac));
+      const Ec = n * E, nuC = 0.2;
+      const matFill = `MAT_${Math.round(Ec)}_n${nuC.toFixed(4)}`;
+      // la masa: Hekatan pone rho sobre el area TRANSFORMADA; SAP suma rho_i*A_i de
+      // cada forma. Con rho_relleno = n*rho la masa por metro sale identica.
+      const rho = matDe(i).rho;
+      if (!matExtra.has(matFill)) matExtra.set(matFill, { E: Ec, nu: nuC, G: Ec / (2 * (1 + nuC)), rho: rho * n });
+      sd = { b: shp.b, h: shp.h, t: shp.tw, Ec, nuC, matFill };
+    }
+    const key = `A${A.toPrecision(6)}_Iz${Iz.toPrecision(6)}_s${As2r.toPrecision(6)}_${As3r.toPrecision(6)}${sd ? `_SD${sd.b}x${sd.h}x${sd.t}` : ""}`;
     if (!frameSecs.has(key)) {
       let h = 0.3, b = 0.3;
       if (A > 0 && Iz > 0) { h = Math.sqrt(12 * Iz / A); b = A / h; }
       frameSecs.set(key, { A, Iz, Iy, J, b, h, matKey,
                            As2: As2r > 0 ? As2r : A * 5 / 6,
-                           As3: As3r > 0 ? As3r : A * 5 / 6 });
+                           As3: As3r > 0 ? As3r : A * 5 / 6, sd });
     }
     const secIdx = [...frameSecs.keys()].indexOf(key) + 1;
     elemToFrameSec.set(i, `SEC${secIdx}`);
@@ -239,9 +263,46 @@ export function exportS2k(input: S2kExportInput): string {
       // y la flecha del modelo reimportado se iba un 6.55 %.
       //
       // Con `Shape=General` SAP2000 respeta las ocho propiedades tal cual.
+      if (sec.sd) {
+        // la fila de una seccion SD: SAP2000 la rellena el solo con lo que sale de
+        // las formas (Area, I, AS, J). Se escriben los de Hekatan para que el
+        // fichero sea legible; SAP los pisa (medido en cft_sd_hekatan.s2k).
+        push(`   SectionName=SEC${idx}   Material=${sec.matKey}   Shape="SD Section"   Area=${fmt(sec.A)}   TorsConst=${fmt(sec.J)}   I33=${fmt(sec.Iz)}   I22=${fmt(sec.Iy)}   I23=0   AS2=${fmt(sec.As2)}   AS3=${fmt(sec.As3)} _`);
+        push(`        Color=Cyan   FromFile=No   AMod=1   A2Mod=1   A3Mod=1   JMod=1   I2Mod=1   I3Mod=1   MMod=1   WMod=1`);
+        continue;
+      }
       push(`   SectionName=SEC${idx}   Material=${sec.matKey}   Shape=General   t3=${fmt(sec.h)}   t2=${fmt(sec.b)}   Area=${fmt(sec.A)}   TorsConst=${fmt(sec.J)}   I33=${fmt(sec.Iz)}   I22=${fmt(sec.Iy)}   I23=0   AS2=${fmt(sec.As2)}   AS3=${fmt(sec.As3)} _`);
       push(`        Color=Blue   FromFile=No   AMod=1   A2Mod=1   A3Mod=1   JMod=1   I2Mod=1   I3Mod=1   MMod=1   WMod=1`);
     }
+    blank();
+  }
+
+  // ── SECTION DESIGNER: el CFT como tubo de acero + rectangulo de hormigon ──
+  // Tablas y campos copiados del .$2k que escribe SAP2000 24 al analizar una SD
+  // Section hecha a mano (galpon-bodega-electoral/sap_cft/cft.$2k).
+  const sdSecs = [...frameSecs.values()].map((sec, k) => ({ sec, name: `SEC${k + 1}` })).filter(x => x.sec.sd);
+  if (sdSecs.length > 0) {
+    push(`TABLE:  "SECTION DESIGNER PROPERTIES 01 - GENERAL"`);
+    for (const { name } of sdSecs)
+      push(`   SectionName=${name}   DesignType="No Check/Design"   DsgnOrChck=Check   IncludeVStr=No   AxisAngle=90   MeshSzAbs=0   MeshSzRel=0.05`);
+    blank();
+    push(`TABLE:  "SECTION DESIGNER PROPERTIES 09 - SHAPE BOX/TUBE"`);
+    for (const { sec, name } of sdSecs) {
+      const d = sec.sd!;
+      push(`   SectionName=${name}   ShapeName=TUBO   ShapeType="User Defined"   ShapeMat=${sec.matKey}   ZOrder=1   FillColor=Gray4   XCenter=0   YCenter=0   Height=${fmt(d.h)}   Width=${fmt(d.b)}   FlngThick=${fmt(d.t)}   WebThick=${fmt(d.t)}   Rotation=0 _`);
+      push(`        CoreDim="Program Determined"   BCoreMajor=0   BCoreMinor=0   DCoreMajorPositive=0   DCoreMajorNegative=0   DCoreMinorPositive=0   DCoreMinorNegative=0`);
+    }
+    blank();
+    push(`TABLE:  "SECTION DESIGNER PROPERTIES 12 - SHAPE SOLID RECTANGLE"`);
+    for (const { sec, name } of sdSecs) {
+      const d = sec.sd!;
+      push(`   SectionName=${name}   ShapeName=RELLENO   ShapeMat=${d.matFill}   ZOrder=2   FillColor=Gray4   XCenter=0   YCenter=0   Height=${fmt(d.h - 2 * d.t)}   Width=${fmt(d.b - 2 * d.t)}   Rotation=0   Reinforcing=No   CoreDim="Program Determined"   BCoreMajor=0   BCoreMinor=0 _`);
+      push(`        DCoreMajorPositive=0   DCoreMajorNegative=0   DCoreMinorPositive=0   DCoreMinorNegative=0`);
+    }
+    blank();
+    push(`TABLE:  "SECTION DESIGNER PROPERTIES 30 - FIBER GENERAL"`);
+    for (const { name } of sdSecs)
+      push(`   SectionName=${name}   NumFibersD2=3   NumFibersD3=3   CoordSys=Cartesian   GridAngle=0   LumpRebar=No   FiberPMM=No   FiberMC=No`);
     blank();
   }
 
@@ -545,6 +606,9 @@ export function exportS2k(input: S2kExportInput): string {
     for (const i of solidIdx) push(`   Solid=${i + 1}   SolidProp=${solidProps.get(matDe(i).key)}`);
     blank();
   }
+
+  // el relleno de hormigon de las CFT (Section Designer) es un material mas
+  for (const [k, v] of matExtra) if (!matSet.has(k)) matSet.set(k, v);
 
   // ── MATERIAL PROPERTIES 01 ──
   push(`TABLE:  "MATERIAL PROPERTIES 01 - GENERAL"`);

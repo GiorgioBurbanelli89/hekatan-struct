@@ -9,6 +9,7 @@
  *   FRAME OBJECT LOADS
  */
 import type { Node, Element, NodeInputs, ElementInputs, SectionShape } from "hekatan-fem";
+import { cftSectionEc } from "./cadSections";
 import { propiedadesSD, formaDesdeE2k, type PiezaSD } from "./sectionDesigner";
 
 export interface E2kGrid {
@@ -783,6 +784,7 @@ export function parseE2k(text: string): E2kModel {
     const D = sec.D, B = sec.B, tf = sec.TF, tw = sec.TW;
     let A = 0, Iz = 0, Iy = 0, J = 0, AsY = 0, AsZ = 0;
     let shapeType: SectionShape["type"] = "rect";
+    let fillE = 0;   // CFT: E del relleno, para que el s2k salga como Section Designer
     // ⚠️ Bandera, NO `break`: esto vive dentro de un `for...of` sobre TODAS las
     // secciones, asi que un `break` no saltaria el switch — cortaria el bucle
     // entero y dejaria sin propiedades a todas las barras siguientes.
@@ -856,15 +858,22 @@ export function parseE2k(text: string): E2kModel {
         AsZ = 2 * B * tw; // two flanges
         shapeType = "HSS";
         break;
-      case "Filled Steel Tube":
-        A = D * B;
-        Iz = B * D ** 3 / 12;
-        Iy = D * B ** 3 / 12;
-        J = 2 * tw * (D - tw) * (B - tw) * ((D - tw) * (B - tw)) / ((D - tw) + (B - tw));
-        AsY = 2 * D * tw + 5/6 * (D - 2*tw) * (B - 2*tw); // steel webs + concrete core
-        AsZ = 2 * B * tw + 5/6 * (D - 2*tw) * (B - 2*tw);
+      case "Filled Steel Tube": {
+        // Hasta el 2-sep-2026 esto era un RECTANGULO MACIZO de acero (A = D·B con
+        // el E del acero: 4 veces el area real) y el As sumaba el hormigon sin
+        // transformar. Lo que hace ETABS (medido por OAPI): A e I transformadas al
+        // acero con n = E_relleno/E_acero, As por Timoshenko sobre la seccion
+        // transformada y J de Saint-Venant del compuesto. Es cftSectionEc.
+        const Es = mat?.E || 0;
+        const fill = sec.fillMaterial ? materials.get(sec.fillMaterial) : undefined;
+        const Ef = fill?.E || Es * 0.125;
+        const t = tw || tf;
+        const c = cftSectionEc(B, D, t, Es || 1, mat?.nu ?? 0.3, Ef || 0.125, fill?.nu ?? 0.2);
+        A = c.A; Iz = c.Iz; Iy = c.Iy; J = c.J; AsZ = c.As2; AsY = c.As3;
+        fillE = Ef;
         shapeType = "CFT";
         break;
+      }
       case "Steel Angle": {
         const t = tf || tw;
         A = t * (D + B - t);
@@ -926,6 +935,7 @@ export function parseE2k(text: string): E2kModel {
 
     sectionShapes.set(elemIdx, {
       type: shapeType,
+      ...(fillE > 0 ? { fillE } : {}),
       b: B || undefined,
       h: D || undefined,
       d: (shapeType === "circ" || shapeType === "pipe") ? D : undefined,
@@ -1222,10 +1232,12 @@ export function parseE2k(text: string): E2kModel {
     }
     // Las cotas de la seccion dibujada tambien son longitudes.
     for (const [, sh] of sectionShapes) {
-      for (const k of ["d", "b", "tf", "tw", "D", "B", "TF", "TW"]) {
+      // `h` faltaba en esta lista: la forma salia con b en metros y h en mm.
+      for (const k of ["d", "b", "h", "tf", "tw", "t", "r", "lip", "dis", "D", "B", "TF", "TW"]) {
         const o = sh as unknown as Record<string, number>;
         if (typeof o[k] === "number") o[k] *= L;
       }
+      if (typeof sh.fillE === "number") sh.fillE *= F / (L * L);   // el E del relleno del CFT
     }
   }
 

@@ -1,0 +1,6 @@
+{
+ "descripcion": "Columna CFT 300x300x10, 3 m, empotrada; 10 kN lateral, 100 kN axial. SAP2000 24 (Section Designer: tubo + relleno) y ETABS 22 (Filled Steel Tube) medidos el 2-sep-2026 por OAPI (galpon-bodega-electoral/sap_cft_todo.py, etabs_cft_todo.py). kN, m.",
+ "sap2000_sd":  { "ux": 2.0092648299443946e-3, "uz": -7.009345794392525e-5, "Area": 0.021399999999999995, "As2": 0.01544280234219385, "As3": 0.015442761590892841, "J": 0.0003801876505367077, "I33": 0.00022681333333333335 },
+ "etabs_fst":   { "ux": 2.0093369728673978e-3, "uz": -7.009345794392525e-5, "Area": 0.0214, "As2": 0.015398813503213931, "As3": 0.01539905055405515, "J": 0.0003795127361886323, "I33": 0.0002268133333333333 },
+ "general_2As3": { "ux": 2.034441380729303e-3, "uz": -7.00934579439252e-5, "nota": "Shape=General con As = 2As_acero/3 y J de Bredt: lo mismo en SAP2000 y ETABS" }
+}
