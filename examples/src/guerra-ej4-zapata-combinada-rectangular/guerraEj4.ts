@@ -131,11 +131,11 @@ export const guerraEj4ZapataCombinada: ExampleDef = {
     const M2_pn = M_kNm_c2 / col2Nodes.length;
     for (const n of col1Nodes) {
       columnLoads.push({ node: n, dof: 0, value: -P1_pn });
-      columnLoads.push({ node: n, dof: 1, value: M1_pn });
+      columnLoads.push({ node: n, dof: 2, value: M1_pn });   // My (mano derecha): gradiente a lo largo de X, el M2 de SAFE
     }
     for (const n of col2Nodes) {
       columnLoads.push({ node: n, dof: 0, value: -P2_pn });
-      columnLoads.push({ node: n, dof: 1, value: M2_pn });
+      columnLoads.push({ node: n, dof: 2, value: M2_pn });   // My (mano derecha): gradiente a lo largo de X, el M2 de SAFE
     }
     const pointLoads = [...columnLoads, ...selfWeightLoads];
 

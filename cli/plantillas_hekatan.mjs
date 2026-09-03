@@ -28,7 +28,7 @@ const over = Object.fromEntries(process.argv.slice(3).map((a) => {
 const TIPOS = [
   [0, "portico-2d"], [1, "portico-3d"], [2, "portico-losa"], [3, "solo-rejilla"],
   [4, "losa-plana"], [5, "losa-vigas-borde"], [6, "dual"], [7, "arriostrado"],
-];
+].filter(([t]) => over.solo === undefined || t === over.solo);   // solo=6: una sola tipologia
 
 const mod0 = await empaquetar(`
 const g = globalThis; g.window = g;
@@ -113,7 +113,8 @@ export function correr(tipo, over) {
   // D1 que el e2k le asigna a las losas en ETABS (ojo: sin acentos graves aqui, es un template). Sin esto el bench comparaba una losa
   // FLEXIBLE en el plano contra el diafragma rigido de ETABS.
   const zs = [...new Set(st.nodes.val.map(n => Math.round(n[2] * 100) / 100))].sort((a, b) => a - b);
-  const diaphragms = over.diaf ? st.nodes.val.map((n, i) => [i, zs.indexOf(Math.round(n[2] * 100) / 100)]).filter(([, k]) => k > 0) : [];
+  // sin diaf=1 se pasan los diafragmas de la PROPIA plantilla (parametro diafragma), que es lo que ve el usuario
+  const diaphragms = over.diaf ? st.nodes.val.map((n, i) => [i, zs.indexOf(Math.round(n[2] * 100) / 100)]).filter(([, k]) => k > 0) : M(ni.diaphragms);
   return { nodes: st.nodes.val, elements: st.elements.val,
            supports: M(ni.supports), diaphragms,
            ei: Object.fromEntries(Object.entries(ei).map(([k, v]) => [k, M(v)])),
@@ -159,7 +160,7 @@ function modal(d, nModos = 12) {
     pf.kp, pf.vp, pf.size, dt.kp, dt.vp, dt.size, ds.kp, ds.vp, ds.size,
     sy.kp, sy.vp, sy.size, sz.kp, sz.vp, sz.size, la.kp, la.vp, la.size,
     rel.kp, relVp, 0, nm.kp, nm.vp, nm.size, 1, dia.kp, dia.vp, dia.size,
-    alloc([0], Float64Array, mod.HEAPF64), 0, (ei.etabsWallJoint === false ? 0 : 1) /* union viga-muro de ETABS */, nModos, 1, 0,
+    alloc([0], Float64Array, mod.HEAPF64), 0, (ei.etabsWallJoint === false ? 0 : 1) /* union viga-muro de ETABS */, nModos, 1, (over.lump ?? 0) /* LUMPATSTORIES: lump=1 */,
     fo, nfo, moo, mro, mco, mao, maro, maco);
   const msModal = Date.now() - t;
   const fp = mod.HEAPU32[fo / 4], nf = mod.HEAPU32[nfo / 4];

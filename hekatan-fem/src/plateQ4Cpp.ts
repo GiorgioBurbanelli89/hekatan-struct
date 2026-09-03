@@ -59,6 +59,13 @@ export interface PlateQ4Input {
   nodes?: [number, number][];       // [x, y] per node
   elements?: [number, number, number, number][];  // 4 node indices per element
 
+  // GDL de nudo, MANO DERECHA como el resto del motor: 0 = w (+z), 1 = giro/
+  // momento sobre el eje X, 2 = giro/momento sobre el eje Y. Por dentro el C++
+  // trabaja con las pendientes de Bathe [w, bx, by] (bx = dw/dx, by = dw/dy):
+  // thx = by, thy = -bx, y por tanto la fuerza conjugada de bx es -My y la de
+  // by es +Mx. Hasta el 3-sep-2026 el gdl 1 iba DIRECTO a bx: un «Mx» del
+  // usuario era en realidad -My. Medido en la ej4 de Guerra: 23.47 t/m2 con
+  // el signo cambiado, 28.405 con el bueno = SAFE 28.405 exacto.
   // Boundary conditions (when bcType = "none" or custom mesh)
   bcs?: Array<{ node: number; dof: number; value: number }>;
 
@@ -78,8 +85,10 @@ export interface PlateQ4NodeResult {
   x: number;
   y: number;
   w: number;      // transverse displacement
-  bx: number;     // rotation βx
-  by: number;     // rotation βy
+  bx: number;     // rotation βx (pendiente dw/dx, Bathe)
+  by: number;     // rotation βy (pendiente dw/dy, Bathe)
+  rx: number;     // giro sobre X, mano derecha (= by)
+  ry: number;     // giro sobre Y, mano derecha (= -bx)
 }
 
 export interface PlateQ4ElementResult {
@@ -173,12 +182,15 @@ export function plateQ4Solve(input: PlateQ4Input): PlateQ4Output {
   );
   gc.push(elementsPtr);
 
+  /** gdl mano derecha (0 w, 1 sobre X, 2 sobre Y) -> gdl de Bathe (0 w, 1 bx, 2 by). */
+  const dofBathe = (d: number) => (d === 1 ? 2 : d === 2 ? 1 : d);
+
   // ── BCs ──
   let bcsFlat: number[] = [];
   let numBcs = 0;
   if (input.bcs && input.bcs.length > 0) {
     numBcs = input.bcs.length;
-    bcsFlat = input.bcs.flatMap((bc) => [bc.node, bc.dof, bc.value]);
+    bcsFlat = input.bcs.flatMap((bc) => [bc.node, dofBathe(bc.dof), bc.dof === 2 ? -bc.value : bc.value]);
   }
   const bcsPtr = allocate(
     bcsFlat.length > 0 ? bcsFlat : [0],
@@ -194,8 +206,8 @@ export function plateQ4Solve(input: PlateQ4Input): PlateQ4Output {
     numPointLoads = input.pointLoads.length;
     pointLoadsFlat = input.pointLoads.flatMap((pl) => [
       pl.node,
-      pl.dof,
-      pl.value,
+      dofBathe(pl.dof),
+      pl.dof === 2 ? -pl.value : pl.value,   // My -> -f_bx ; Mx -> +f_by
     ]);
   }
   const pointLoadsPtr = allocate(
@@ -225,7 +237,7 @@ export function plateQ4Solve(input: PlateQ4Input): PlateQ4Output {
   let numSprings = 0;
   if (input.springs && input.springs.length > 0) {
     numSprings = input.springs.length;
-    springsFlat = input.springs.flatMap((sp) => [sp.node, sp.dof, sp.k]);
+    springsFlat = input.springs.flatMap((sp) => [sp.node, dofBathe(sp.dof), sp.k]);
   }
   const springsPtr = allocate(
     springsFlat.length > 0 ? springsFlat : [0],
@@ -312,6 +324,8 @@ export function plateQ4Solve(input: PlateQ4Input): PlateQ4Output {
       w: dispFlat[base + 2],
       bx: dispFlat[base + 3],
       by: dispFlat[base + 4],
+      rx: dispFlat[base + 4],    // giro sobre X (mano derecha) = by
+      ry: -dispFlat[base + 3],   // giro sobre Y (mano derecha) = -bx
     };
     nodeResults.push(nr);
     if (Math.abs(nr.w) > Math.abs(maxW)) maxW = nr.w;

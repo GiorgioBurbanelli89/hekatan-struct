@@ -1130,11 +1130,54 @@ function exportFromScratch(input: ExportE2kInput): string {
   // que el modelo no pidió. Medido: rigidizaba el mezanine un 10 % (-178.2
   // contra -186.9 mm del nativo). Solo se emite si el modelo trae
   // rigidOffsets, y eso ya lo hace buildLineExtras.
+  //
+  // PISO A PISO, como lo escribe ETABS (`LINE "C1" COLUMN "1" "1" 1` una vez y
+  // un LINEASSIGN por planta). Antes salia UN objeto de N pisos (salto N), y
+  // ETABS con LUMPATSTORIES reparte la masa del OBJETO a sus dos extremos: los
+  // pisos intermedios se quedaban SIN masa. Medido el 3-sep-2026 en la
+  // plantilla «solo rejilla» (16 columnas de 4 pisos): ETABS ponia 39.2 t en
+  // la base y 39.2 t en la azotea, encontraba 3 modos y daba T1 = 1.134 s
+  // contra 0.812 de Hekatan. El estatico no lo notaba (ETABS si parte el
+  // objeto en los niveles para la rigidez), la masa si.
+  const lineasEmitidas = new Map<string, string>();   // nombre -> fila LINE
   chains.forEach((ch, ci) => {
     // Extras usa el primer elemento de la cadena (asumimos uniforme)
     const extras = buildLineExtras(ch.elemIndices[0]);
-    emitirLinea(`C${ci + 1}`, ch.type, ch.bottomNodeIdx, ch.topNodeIdx,
-                ch.secName, extras, ch.nSegments);
+    // Grupos por planta: un grupo acaba en el tramo cuyo nudo de arriba cae
+    // exactamente en un nivel (dz = 0). Un nudo intermedio de «Div. columnas»
+    // se queda dentro del grupo y va al MINNUMSTA.
+    const grupos: number[][] = [];
+    let actual: number[] = [];
+    ch.elemIndices.forEach((ei, k) => {
+      actual.push(ei);
+      const [a, b] = elements[ei];
+      const top = nodes[a][2] >= nodes[b][2] ? a : b;
+      if (plantaDe(nodes[top][2]).dz === 0 || k === ch.elemIndices.length - 1) { grupos.push(actual); actual = []; }
+    });
+    grupos.forEach(g => {
+      const [a0, b0] = elements[g[0]];
+      const bot = nodes[a0][2] <= nodes[b0][2] ? a0 : b0;
+      const [a1, b1] = elements[g[g.length - 1]];
+      const top = nodes[a1][2] >= nodes[b1][2] ? a1 : b1;
+      const salto = idxDe(nodeToPS(top).story) - idxDe(nodeToPS(bot).story);
+      // El mismo nombre en todas las plantas (es el mismo objeto de ETABS). Si
+      // un grupo produce OTRA fila LINE (salta distinto numero de plantas, o su
+      // nudo de abajo cuelga de una planta con descenso y sale como BEAM) se
+      // le da nombre propio: dos LINE distintas con el mismo nombre rompian
+      // tower-3d y el galpon (barras sin cubrir en el ciclo e2k).
+      let nombre = `C${ci + 1}`;
+      for (let v = 1; ; v++) {
+        const filas = lines.length;
+        emitirLinea(nombre, ch.type, bot, top, ch.secName, extras, g.length);
+        const fila = lines[filas];
+        const previa = lineasEmitidas.get(nombre);
+        if (previa === undefined) { lineasEmitidas.set(nombre, fila); break; }
+        lines.splice(filas, lines.length - filas);            // la LINE ya estaba
+        if (previa === fila) break;                           // misma fila: solo el LINEASSIGN
+        laEntries.pop();                                      // fila distinta: otro nombre
+        nombre = `C${ci + 1}_${v}`;
+      }
+    });
   });
 
   // 2. Elementos no-chain (beams + columnas sueltas/no-contiguas) — uno por uno
@@ -1179,12 +1222,21 @@ function exportFromScratch(input: ExportE2kInput): string {
   // 2. Top joints de chains → asignar DIAPHRAGM D1 (ETABS-idiomatic — la
   //    masa lateral se agrupa por nivel via el rigid diaphragm).
   const usarDiafragma = (input.diaphragm ?? "auto") !== "none";
+  // ⚠️ Hasta el 3-sep-2026 solo se asignaba D1 al nudo de CORONACION de cada
+  // cadena: ETABS tenia diafragma solo en la ultima planta y las de abajo iban
+  // flexibles. Medido (dual de 2 plantas, empuje en esquina): la planta 2 casaba
+  // con Hekatan al 0.7 % y la planta 1 se iba un 100 %. Ahora va en el nudo de
+  // cada planta por la que pasa la cadena (todos los ejes de columna, cada nivel).
   if (usarDiafragma) chains.forEach(ch => {
-    const psTop = nodeToPS(ch.topNodeIdx);
-    const key = `${psTop.pt}@${psTop.story}`;
-    if (!emittedPointAssigns.has(key) && psTop.story !== "Base") {
-      lines.push(`  POINTASSIGN  "${psTop.pt}"  "${psTop.story}"  DIAPH "D1"  `);
-      emittedPointAssigns.add(key);
+    for (const ei of ch.elemIndices) {
+      const [a, b] = elements[ei];
+      const topIdx = nodes[a][2] >= nodes[b][2] ? a : b;
+      const ps = nodeToPS(topIdx);
+      const key = `${ps.pt}@${ps.story}`;
+      if (!emittedPointAssigns.has(key) && ps.story !== "Base") {
+        lines.push(`  POINTASSIGN  "${ps.pt}"  "${ps.story}"  DIAPH "D1"  `);
+        emittedPointAssigns.add(key);
+      }
     }
   });
   // En Modo Manual, asegurar POINTASSIGN existente para cada nodo con carga

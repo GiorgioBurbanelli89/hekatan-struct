@@ -142,14 +142,18 @@ function leerE2k(txt) {
     const m = l.match(/^\s*LINE\s+"([^"]+)"\s+(COLUMN|BEAM|BRACE)\s+"([^"]+)"\s+"([^"]+)"\s+(\d+)/);
     if (m) LN.set(m[1], { p1: m[3], p2: m[4], salto: +m[5] });
   }
+  // Una LINE se define UNA vez y se asigna en cada planta donde existe (asi
+  // escribe ETABS sus columnas, y asi las exporta Hekatan desde el 3-sep-2026):
+  // cada LINEASSIGN es una barra.
+  const asignaciones = [];
   for (const l of L) {
     const m = l.match(/^\s*LINEASSIGN\s+"([^"]+)"\s+"([^"]+)"/);
-    if (m && LN.has(m[1])) LN.get(m[1]).story = m[2];
+    if (m && LN.has(m[1])) asignaciones.push({ ...LN.get(m[1]), story: m[2] });
   }
 
   const zde = (pid, st) => zStory.get(st) - (P.get(pid)?.dz ?? 0);
   const barras = [];
-  for (const [, b] of LN) {
+  for (const b of asignaciones) {
     const i = orden.indexOf(b.story);
     if (i < 0 || !P.has(b.p1) || !P.has(b.p2)) continue;
     const abajo = orden[Math.max(0, i - b.salto)];

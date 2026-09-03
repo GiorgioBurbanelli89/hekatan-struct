@@ -140,7 +140,7 @@ export const guerraEj3ZapataRectangularEccGrande: ExampleDef = {
       ...cargaP.pointLoads,
     ];
     for (const n of colNodesArr) {
-      columnLoads.push({ node: n, dof: 1, value: M_per_node });
+      columnLoads.push({ node: n, dof: 2, value: M_per_node });   // My (mano derecha): gradiente a lo largo de X, el M2 de SAFE
     }
     const pointLoads = [...columnLoads, ...selfWeightLoads];
 

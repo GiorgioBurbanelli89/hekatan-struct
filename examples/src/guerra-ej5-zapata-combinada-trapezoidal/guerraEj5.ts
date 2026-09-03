@@ -142,7 +142,7 @@ export const guerraEj5ZapataTrapezoidal: ExampleDef = {
       const Mp = M_kNm_c1 / col1Nodes.length;
       for (const n of col1Nodes) {
         columnLoads.push({ node: n, dof: 0, value: -Pp });
-        columnLoads.push({ node: n, dof: 1, value: Mp });
+        columnLoads.push({ node: n, dof: 2, value: Mp });   // My (mano derecha): gradiente a lo largo de X, el M2 de SAFE
       }
     }
     if (col2Nodes.length > 0) {
@@ -150,7 +150,7 @@ export const guerraEj5ZapataTrapezoidal: ExampleDef = {
       const Mp = M_kNm_c2 / col2Nodes.length;
       for (const n of col2Nodes) {
         columnLoads.push({ node: n, dof: 0, value: -Pp });
-        columnLoads.push({ node: n, dof: 1, value: Mp });
+        columnLoads.push({ node: n, dof: 2, value: Mp });   // My (mano derecha): gradiente a lo largo de X, el M2 de SAFE
       }
     }
     const pointLoads = [...columnLoads, ...selfWeightLoads];

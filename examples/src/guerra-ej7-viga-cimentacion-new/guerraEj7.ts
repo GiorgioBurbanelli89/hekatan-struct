@@ -111,7 +111,7 @@ export const guerraEj7VigaCimentacion: ExampleDef = {
       const Mp = c.M / cnodes.length;
       for (const n of cnodes) {
         columnLoads.push({ node: n, dof: 0, value: -Pp });
-        columnLoads.push({ node: n, dof: 1, value: Mp });
+        columnLoads.push({ node: n, dof: 2, value: Mp });   // My (mano derecha): gradiente a lo largo de X, el M2 de SAFE
       }
     }
     const pointLoads = [...columnLoads, ...selfWeightLoads];

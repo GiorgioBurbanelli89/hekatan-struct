@@ -40,12 +40,15 @@ inline DiafragmaT armarDiafragma(const std::vector<std::array<double, 3>> &nodes
     const int dof = 6 * numNodes;
     std::map<int, std::vector<int>> grupos;
     std::vector<int> diaDe(numNodes, -1);
+    std::vector<char> soloTras(numNodes, 0);   // grupo NEGATIVO: ata ux, uy y deja rz libre
     for (const auto &kv : diaph) {
         if (kv.first < 0 || kv.first >= numNodes) continue;
-        const int g = (int)std::llround(kv.second);
-        if (g <= 0) continue;
+        const int gs = (int)std::llround(kv.second);
+        const int g = gs < 0 ? -gs : gs;
+        if (g == 0) continue;
         grupos[g].push_back(kv.first);
         diaDe[kv.first] = g;
+        soloTras[kv.first] = gs < 0 ? 1 : 0;
     }
     for (auto it = grupos.begin(); it != grupos.end();) {
         if (it->second.size() < 2) { for (int i : it->second) diaDe[i] = -1; it = grupos.erase(it); }
@@ -67,7 +70,7 @@ inline DiafragmaT armarDiafragma(const std::vector<std::array<double, 3>> &nodes
     int nred = 0;
     for (int i = 0; i < numNodes; ++i)
         for (int k = 0; k < 6; ++k) {
-            const bool atado = (diaDe[i] > 0) && (k == 0 || k == 1 || k == 5);
+            const bool atado = (diaDe[i] > 0) && (k == 0 || k == 1 || (k == 5 && !soloTras[i]));
             if (!atado) d.colDe[i * 6 + k] = nred++;
         }
     std::map<int, int> colMaestro;

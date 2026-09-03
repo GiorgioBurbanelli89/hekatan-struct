@@ -61,6 +61,41 @@
  */
 
 #include "kirchhoff_q4.h"
+#include "../utils/plateDKQ.h"   // DKQ (Batoz & Tahar), la placa del Shell-Thin
+
+// La placa del Shell-Thick de CSI (utils/shellQ4.cpp), extraida del binario el
+// 2-sep-2026. Es la que usa `deform` para `shelltype thick`; aqui la usa
+// plateQ4Solve para que las zapatas de Guerra y los ejemplos plate-thick den
+// lo mismo que el producto. Medido el 3-sep-2026 en la ej4 de Guerra (zapata
+// combinada 2.6 x 6.7 m): el Q4 de Bathe (integracion selectiva) daba
+// sigma_max 23.46 t/m2 contra 28.40 de SAFE (-17 %); la misma zapata por
+// `deform` con Shell-Thick 29.09 y con Shell-Thin 29.14.
+Eigen::MatrixXd getBendingK_CSI_placa(const double x[4], const double y[4],
+                                      double E, double nu, double t);
+
+namespace plate_q4 {
+/**
+ * K 12x12 en los GDL de plate_q4 [w, bx, by] (Bathe: bx = dw/dx, by = dw/dy en el
+ * limite fino) a partir de la K de CSI/DKQ en [w, thx, thy] (mano derecha):
+ * thx = by, thy = -bx. K_plate = P^T K P con P por nudo = [[1,0,0],[0,0,1],[0,-1,0]].
+ */
+static Eigen::Matrix<double, 12, 12> plateKfromCSI(const std::array<Node2D, 4>& nodes,
+                                                   const Material& mat, double t)
+{
+    double x[4], y[4];
+    for (int i = 0; i < 4; i++) { x[i] = nodes[i].x; y[i] = nodes[i].y; }
+    Eigen::MatrixXd Kc = (mat.theory == PlateTheory::KIRCHHOFF)
+        ? getBendingK_DKQ(x, y, mat.E, mat.nu, t)
+        : getBendingK_CSI_placa(x, y, mat.E, mat.nu, t);
+    Eigen::Matrix<double, 12, 12> P = Eigen::Matrix<double, 12, 12>::Zero();
+    for (int i = 0; i < 4; i++) {
+        P(3 * i, 3 * i) = 1.0;           // w
+        P(3 * i + 1, 3 * i + 2) = 1.0;   // thx = by
+        P(3 * i + 2, 3 * i + 1) = -1.0;  // thy = -bx
+    }
+    return P.transpose() * Kc * P;
+}
+} // namespace plate_q4
 
 namespace plate_q4 {
 
@@ -497,7 +532,10 @@ PlateResult solve(
 
         // Element stiffness — use per-element thickness if provided (layered)
         Eigen::Matrix<double, 12, 12> Ke;
-        if (perElemT) {
+        if (mat.theory == PlateTheory::MINDLIN || mat.theory == PlateTheory::KIRCHHOFF) {
+            // La placa de CSI (Thick) o la DKQ (Thin): las mismas de `deform`.
+            Ke = plateKfromCSI(enodes, mat, perElemT ? thicknesses[e] : mat.t);
+        } else if (perElemT) {
             // Manually compute Ke with per-element thickness
             Ke = Eigen::Matrix<double, 12, 12>::Zero();
             double t_e = thicknesses[e];

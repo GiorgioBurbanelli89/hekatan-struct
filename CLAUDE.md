@@ -104,6 +104,14 @@ plateQ4Solve({ theoryType: 1 })   // Kirchhoff (CPT, thin)
 plateQ4Solve({ theoryType: 2 })   // Plane stress (membrana)
 ```
 
+**GDL de nudo, mano derecha** (3-sep-2026): `pointLoads`/`bcs`/`springs` con `dof` 0 = w,
+1 = sobre X (Mx / θx), 2 = sobre Y (My / θy). Por dentro el C++ usa las pendientes de Bathe
+[w, βx, βy] (βx = ∂w/∂x): θx = βy, θy = −βx, y la fuerza conjugada de βx es **−My**. Hasta
+esa fecha el `dof` 1 iba directo a βx: un «Mx» del usuario era −My — la ej4 de Guerra daba
+23.47 t/m² contra 28.405 de SAFE por eso, y con el signo bueno da 28.405 exacto. El elemento
+es el mismo de `deform`: Shell-Thick de CSI (theoryType 0) y DKQ (1); plateQ4Solve y deform
+dan la misma flecha a todos los dígitos (`zapata-winkler-sap2000`).
+
 Retorna `elementResults[i].Mxx/Myy/Mxy/Qx/Qy` por elemento. El ejemplo debe poblar `analyzeOutputs.bendingXX/YY/XY` (Maps con array per-nodo del Q4) para que el viewer renderice el colormap.
 
 ## Viewer (hekatan-ui)
@@ -517,8 +525,8 @@ Saint-Venant vs ETABS). Por el camino cazó un cruce I22/I33 vivo en
 gravedad 2.78× más flojas, y su M3 salía 0.70× / las columnas 1.33× el de ETABS.
 
 Las zapatas Guerra contra SAFE (réplica nudo a nudo, `validacion/safe-api/safe_node_driver.py`)
-viven en el caso `guerra-vs-safe`: ej1/2/3/8 < 0.25 %, ej5 1.5 %, ej7 3.2 %; **ej4 −17 % abierto**
-(formulación de placa, no malla).
+viven en el caso `guerra-vs-safe`: ej1/2/3/4/8 < 0.25 %, ej7 0.000 %, ej5 0.86 %. El «ej4 −17 %,
+formulación de placa» que estuvo abierto un mes era el SIGNO del momento (ver `plateQ4Solve`).
 
 ## Validación del solver modal contra ETABS 22
 
@@ -720,11 +728,19 @@ informa de nada.
 plano (ETABS: modo 1 = 77 % UY). Se emparejan por **participación de masa**
 (coseno del vector `[UX UY UZ RX RY RZ]` > 0.7).
 
-⚠️ **Una LINE del `.e2k` puede ser una columna entera de 4 pisos**: el
-exportador junta los tramos y ETABS la vuelve a partir. Sus estaciones van de 0
-a la longitud TOTAL, y coger «la primera y la última» compara la columna
-completa contra un tramo. Los cortes se leen de la lista: ETABS **repite** la
-estación donde acaba un elemento y empieza el siguiente (`…3.5, 3.5…`).
+⚠️ **Las columnas van PISO A PISO en el `.e2k`** (desde el 3-sep-2026):
+`LINE "C1" COLUMN "1" "1" 1` una vez y un `LINEASSIGN` por planta, como lo
+escribe ETABS. Antes salía UN objeto de 4 plantas (salto 4) y ETABS con
+`LUMPATSTORIES` reparte la masa del OBJETO a sus dos extremos: los pisos
+intermedios se quedaban sin masa (rejilla: 3 modos, T1 1.134 contra 0.812; con
+el arreglo 0.8116 = 0.8116). El estático no lo notaba porque ETABS sí parte el
+objeto en los niveles para la rigidez. Ojo al leer estaciones: ETABS **repite**
+la estación donde acaba un elemento y empieza el siguiente (`…3.5, 3.5…`).
+
+⚠️ **El diafragma D1 va en TODAS las plantas de cada columna**, no solo en la
+de arriba: con D1 solo en la azotea el dual con muros daba −16 % en los modos
+7-8. Y ETABS pone D1 solo en los POINT (ejes de columna), no en los nudos de la
+malla de la losa: `diafragma=1` de las plantillas hace lo mismo.
 
 ## El colormap de cáscara: 17 campos y una barra
 
@@ -830,7 +846,10 @@ contra 2.009 de CSI. Con `cft` da 2.0094 (0.006 % SAP, 0.003 % ETABS).
 maestro VIRTUAL en el centro (`utils/rigidDiaphragm.h`; en el modal, en el centro de MASA);
 flexible = sin `diaph`. ⚠️ Con un nudo real de esquina como maestro el modal perdía el
 acoplamiento ux–rz (solo mira la diagonal de M) y T_x salía ×1.84. `deform.cpp` no lo tenía.
-Plantillas: `diafragma` (1 por defecto, como el D1 del e2k). Test `node tests/run.mjs diafragma`.
+Plantillas: `diafragma` (0 flexible · **1** solo nudos en eje de columna, como ETABS [defecto] ·
+2 rígido total · 3 total sin muros). Test `node tests/run.mjs diafragma`. Con D1 por planta y
+columnas piso a piso, las 8 plantillas vs ETABS 22: con losa ≤ 0.8 % (rejilla y losa plana
+0.00 %), pórticos sin losa +2.3 … +2.7 % (abierto).
 
 ### Modelos grandes (3-sep-2026)
 

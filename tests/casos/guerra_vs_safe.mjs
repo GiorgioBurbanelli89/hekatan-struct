@@ -5,9 +5,14 @@
  * el mismo peso propio nodal; sigma = ks·|Uz|. Sus sigma_max estan en
  * tests/datos/guerra_safe_nodal.json. Lo que vigila: que la presion maxima de cada
  * ejemplo del workspace siga donde SAFE la puso.
- *   ej1/2/3/8: < 0.5 % · ej5: < 2 % · ej7: < 4 % · ej4 (combinada estrecha): SAFE da
- *   +21 % y NO es de malla (variante fina ej4f: +17 %): formulacion de placa. Queda
- *   como DATO, abierto. ej6 no tiene replica valida en SAFE (sin viga de amarre).
+ *   ej1/2/3/4/7/8: < 0.5 % · ej5: < 1 %. ej6 no tiene replica valida en SAFE (sin
+ *   viga de amarre).
+ *   El «ej4 -17 %, formulacion de placa» que estuvo abierto de ago a sep-2026 era el
+ *   SIGNO del momento: el gdl 1 de plateQ4Solve iba directo a la pendiente bx de
+ *   Bathe, cuya fuerza conjugada es -My, y SAFE recibia +My. Con el mismo signo:
+ *   28.405 = 28.405. Desde el 3-sep-2026 plateQ4Solve es mano derecha (1 = Mx,
+ *   2 = My) y los ejemplos ponen el momento de la columna en My. De paso ej7 paso
+ *   de 3.2 % a 0.000 % y ej5 de 1.5 % a 0.86 %.
  */
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -38,15 +43,14 @@ export function sigmaMax(id) {
 export async function correr() {
   const S = JSON.parse(readFileSync(join(AQUI, "..", "datos", "guerra_safe_nodal.json"), "utf-8"));
   const mod = await empaquetar(FUENTE, "guerra-vs-safe");
-  const limites = { ej1: 0.5, ej2: 0.5, ej3: 0.5, ej5: 2.0, ej7: 4.0, ej8: 0.5 };
+  const limites = { ej1: 0.5, ej2: 0.5, ej3: 0.5, ej4: 0.5, ej5: 1.0, ej7: 0.5, ej8: 0.5 };
   const filas = [];
   for (const k of ["ej1", "ej2", "ej3", "ej4", "ej5", "ej7", "ej8"]) {
     const ref = S[k]; const r = mod.sigmaMax(ref.ej_key);
     if (!r) { filas.push({ que: `${k}: ${ref.ej_key}`, crudo: true, medido: "no existe", limite: "ejemplo", ok: false, detalle: "" }); continue; }
     const d = pct(r.sigma, ref.sigma_max);
     const detalle = `sigma_max ${r.sigma.toFixed(3)} vs SAFE ${ref.sigma_max.toFixed(3)} t/m2 (Hekatan ago-2026: ${ref.hekatan_sigma_max}); ${r.nudos} nudos, ${r.elems} elementos`;
-    if (k === "ej4") filas.push({ que: `${k} combinada rectangular: SAFE +21 % (DATO abierto: formulacion, no malla)`, crudo: true, medido: d.toFixed(2) + " %", limite: "dato", ok: true, detalle });
-    else filas.push({ que: `${k} ${ref.ej_key.replace("guerra-", "")}: sigma_max vs SAFE nudo a nudo`, medido: Math.abs(d), limite: limites[k], ok: Math.abs(d) <= limites[k], detalle });
+    filas.push({ que: `${k} ${ref.ej_key.replace("guerra-", "")}: sigma_max vs SAFE nudo a nudo`, medido: Math.abs(d), limite: limites[k], ok: Math.abs(d) <= limites[k], detalle });
   }
   return filas;
 }

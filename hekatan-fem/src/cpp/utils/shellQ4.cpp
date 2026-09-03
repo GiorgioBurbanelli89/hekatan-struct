@@ -2054,3 +2054,10 @@ Eigen::MatrixXd getTransformationMatrixShellQ4(
 
     return T;
 }
+
+// Para plate_q4 (plateQ4Solve): la placa de CSI a secas, sin modificadores.
+Eigen::MatrixXd getBendingK_CSI_placa(const double x[4], const double y[4],
+                                      double E, double nu, double t)
+{
+    return getBendingK_CSI(x, y, E, nu, t, nullptr);
+}

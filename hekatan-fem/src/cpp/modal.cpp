@@ -541,17 +541,22 @@ extern "C"
         bool hayDiafragma = false;
         const int dofCompleto = dof;
         std::vector<int> colDe;                 // GDL completo -> GDL reducido
+        std::map<int, std::array<double, 2>> centro;   // grupo -> centro de masa del diafragma
+        std::map<int, int> colMaestro;                 // grupo -> columna de ux del maestro virtual
         std::vector<int> diaDe(num_nodes, -1);
+        std::vector<char> soloTras(num_nodes, 0);   // grupo NEGATIVO: ata ux, uy y deja rz libre
         {
             std::map<int, double> diafr =
                 parseMapFromFlat(diaph_keys_ptr, diaph_values_ptr, num_diaph);
             std::map<int, std::vector<int>> grupos;
             for (const auto &kv : diafr) {
                 if (kv.first < 0 || kv.first >= num_nodes) continue;
-                const int g = (int)std::llround(kv.second);
-                if (g <= 0) continue;            // 0 = sin diafragma
+                const int gs = (int)std::llround(kv.second);
+                const int g = gs < 0 ? -gs : gs;
+                if (g == 0) continue;            // 0 = sin diafragma
                 grupos[g].push_back(kv.first);
                 diaDe[kv.first] = g;
+                soloTras[kv.first] = gs < 0 ? 1 : 0;
             }
             // un diafragma de un solo nudo no ata nada
             for (auto it = grupos.begin(); it != grupos.end(); ) {
@@ -571,7 +576,6 @@ extern "C"
                 // portico de 1 planta: T_x 0.348 s con diafragma contra 0.189 s sin
                 // el (y 0.189 con el maestro en el centro). En el centro de masa el
                 // acoplamiento es cero y la diagonal es exacta.
-                std::map<int, std::array<double, 2>> centro;
                 for (const auto &g : grupos) {
                     double sm = 0.0, sx = 0.0, sy = 0.0;
                     for (int i : g.second) {
@@ -589,11 +593,10 @@ extern "C"
                 int nred = 0;
                 for (int i = 0; i < num_nodes; ++i)
                     for (int k = 0; k < 6; ++k) {
-                        const bool atado = (diaDe[i] > 0) && (k == 0 || k == 1 || k == 5);
+                        const bool atado = (diaDe[i] > 0) && (k == 0 || k == 1 || (k == 5 && !soloTras[i]));
                         if (!atado) colDe[i * 6 + k] = nred++;
                     }
-                std::map<int, int> colMaestro;      // grupo -> columna de ux del maestro virtual (uy = +1, rz = +2)
-                for (const auto &g : grupos) { colMaestro[g.first] = nred; nred += 3; }
+                for (const auto &g : grupos) { colMaestro[g.first] = nred; nred += 3; }   // uy = +1, rz = +2
                 std::vector<Eigen::Triplet<double>> tt;
                 tt.reserve(dof * 2);
                 for (int i = 0; i < num_nodes; ++i) {
@@ -1009,6 +1012,18 @@ extern "C"
                 const int c = colDe[d];
                 if (c < 0) continue;
                 for (int j = 0; j < 6; ++j) r_red[j](c) = r_full[j](d);
+            }
+            // Los MAESTROS VIRTUALES llevan la masa de los nudos atados: su vector de
+            // influencia es el del solido rigido evaluado en el centro del diafragma.
+            // Sin esto la participacion salia 0/0/0 con diafragma (medido 3-sep-2026).
+            for (const auto &g : colMaestro) {
+                const int cm = g.second;
+                const double xc = centro[g.first][0], yc = centro[g.first][1];
+                r_red[0](cm + 0) = 1.0;                       // Ux
+                r_red[1](cm + 1) = 1.0;                       // Uy
+                r_red[5](cm + 0) = -(yc - y_cm);              // Rz: ux = -(y - y_cm)
+                r_red[5](cm + 1) = +(xc - x_cm);              //     uy = +(x - x_cm)
+                r_red[5](cm + 2) = 1.0;
             }
             r_full.swap(r_red);
         }

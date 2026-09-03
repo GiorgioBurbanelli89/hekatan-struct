@@ -155,7 +155,11 @@ const PARAMS = {
   // El e2k le asigna el diafragma rígido D1 a las losas, así que ETABS analiza con él:
   // para comparar, Hekatan también (los nudos de cada planta atados en ux, uy, rz a un
   // maestro virtual en el centro de masa). 0 = flexible (la losa mallada, sin atar).
-  diafragma: { default: 1, min: 0, max: 1, step: 1, label: "diafragma (1 = rígido como ETABS, 0 = flexible)", folder: "🏢 Pisos" },
+  // MEDIDO en ETABS 22 (3-sep-2026, dual de 1 planta con empuje en esquina): el D1 del e2k
+  // solo ata los PUNTOS de la planta (los 16 nudos de eje de columna); los 244 nudos de la
+  // malla de losa y los de muro NO se mueven como sólido rígido (rz distinto nudo a nudo).
+  // 1 = como ETABS (ejes de columna) · 2 = rígido total (todos los nudos) · 0 = flexible.
+  diafragma: { default: 1, min: 0, max: 3, step: 1, label: "diafragma (0 flexible · 1 ejes de columna, como ETABS · 2 rígido total · 3 total sin muros)", folder: "🏢 Pisos" },
   h: { default: 3.0, min: 2, max: 6, step: 0.1, label: "altura típica (m)", folder: "🏢 Pisos" },
   h1: { default: 3.5, min: 2, max: 8, step: 0.1, label: "altura 1er piso (m)", folder: "🏢 Pisos" },
   // ── Volado ───────────────────────────────────────────────────────────────
@@ -738,8 +742,20 @@ export const plantillas: ExampleDef = {
     states.elements.val = elements;
     // diafragma rigido por planta (todos los nudos de la cota, tambien los de muros y columnas)
     const diaphragms = new Map<number, number>();
-    if (Math.round((p as any).diafragma ?? 1) === 1) {
-      nodes.forEach((n, i) => { const k = Z.findIndex(z => Math.abs(z - n[2]) < 1e-6); if (k > 0) diaphragms.set(i, k); });
+    const modoDiaf = Math.round((p as any).diafragma ?? 1);
+    if (modoDiaf >= 1) {
+      // nudos de muro: los de los elementos de clase "muro" (variantes 2 y 3 para carear con ETABS)
+      const nudosMuro = new Set<number>();
+      clase.forEach((c, e) => { if (c === "muro") for (const n of elements[e]) nudosMuro.add(n); });
+      // modo 1: solo los nudos de EJE de columna (los "puntos" de ETABS)
+      const enEje = new Set<number>();
+      for (const [key, ni] of idx) { const [i, j, k] = key.split(",").map(Number); if (k > 0 && fx.eje[i] && fy.eje[j]) enEje.add(ni); }
+      nodes.forEach((n, i) => {
+        const k = Z.findIndex(z => Math.abs(z - n[2]) < 1e-6); if (k <= 0) return;
+        if (modoDiaf === 1) { if (enEje.has(i)) diaphragms.set(i, k); return; }
+        if (nudosMuro.has(i) && modoDiaf === 3) return;
+        diaphragms.set(i, k);
+      });
     }
     states.nodeInputs.val = { supports, loads, ...(diaphragms.size ? { diaphragms } : {}) } as any;
     states.elementInputs.val = {
