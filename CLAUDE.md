@@ -851,8 +851,10 @@ de un nudo que solo toca sólidos los saca `getZerosIndices`. `solidIncompatible
 ElementInputs (parámetro nuevo de `deform()`). La masa del H8 en el modal es ρ·V a partes
 iguales en los 8 nudos (C++ y Python). Medido: pedestal en 8 H8 + muro Q4 Thin + columna y
 viga de acero (`tests/datos/mixto_solido_muro_columna.heks`) contra SAP2000 24 con los
-mismos nudos: WASM = Python a 8e-12 %, **peor nudo 0.0065 % del máximo**; modal (6 modos,
-masa ρ·V/8 por nudo) WASM = Python a 3e-7 % y vs SAP2000 dentro del 0.09 %. Las tensiones de
+mismos nudos: WASM = Python a 8e-12 %, **peor nudo 1e-12 % del máximo**; modal (6 modos,
+masa ρ·V/8 por nudo) WASM = Python a 3e-7 % y vs SAP2000 a 2e-10 %. (El 0.0065 % que se midió
+primero era un bug del script de SAP: propiedad de sólido inexistente → hormigón por defecto.)
+Placa Q4 tumbada sobre un bloque de sólidos (25 nudos compartidos): 8e-14 %. Las tensiones de
 los H8 mezclados las da `hex8Stress` (h8.ts → `_hex8_stress`, la misma recuperación de
 hex8Solve) y cliModeler las deja en `analyzeOutputs.solidStress/solidVonMises`. Test
 `node tests/run.mjs solidos-mixtos` (8 filas). ⚠️ Un muro o una columna apoyados SOLO en

@@ -53,7 +53,7 @@ def test_mixto_solido_muro_columna_vs_sap2000():
     d = r.deformations
     umax = max(abs(v) for u in d.values() for v in u[:3])
     peor = max(abs(d[i][c] - sap[str(i + 1)][c]) / umax * 100 for i in d for c in range(3))
-    assert peor < 0.02, peor
+    assert peor < 1e-6, peor
     rx = sum(v[0] for v in r.reactions.values())
     assert abs(rx + 10) < 1e-8
 
@@ -71,4 +71,4 @@ def test_mixto_modal_masa_h8():
     assert max(abs(a / b - 1) for a, b in zip(T, ref)) < 1e-9
     # y SAP2000 24 (MODAL, masa de los elementos): los 6 periodos dentro del 0.15 %
     sap = json.load(open(os.path.join(AQUI, "..", "..", "tests", "datos", "mixto_solido_muro_columna_sap.json")))["T"]
-    assert max(abs(a / b - 1) for a, b in zip(T, sap[:6])) < 1.5e-3
+    assert max(abs(a / b - 1) for a, b in zip(T, sap[:6])) < 1e-8

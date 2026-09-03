@@ -6,7 +6,9 @@
  * muro. Arbitro: SAP2000 24 por OAPI con los MISMOS nudos (solidos con modos
  * incompatibles, shell Thin, barras General con As = 5/6 A), medido el 3-sep-2026:
  * `galpon-bodega-electoral/sap_mixto_heks.py` -> tests/datos/mixto_solido_muro_columna_sap.json.
- * Hekatan (WASM) = Python a 8e-12 %; contra SAP2000 el peor nudo es 0.0065 % del maximo.
+ * Hekatan (WASM) = Python a 8e-12 %; contra SAP2000 el peor nudo es 1e-12 % del maximo.
+ * (El 0.0065 % que se midio primero era un BUG del script de SAP: reutilizaba un nombre de
+ * propiedad de solido que no existia y SAP ponia su hormigon por defecto, E = 24.86e6.)
  */
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -30,11 +32,11 @@ export async function correr() {
   let peor = 0, peorNudo = -1, dentro = 0, n = 0;
   for (const [i, u] of U) {
     const s = sap.u[String(i + 1)]; if (!s) continue;
-    for (let c = 0; c < 3; c++) { const d = Math.abs(u[c] - s[c]) / umax * 100; n++; if (d <= 0.02) dentro++; if (d > peor) { peor = d; peorNudo = i + 1; } }
+    for (let c = 0; c < 3; c++) { const d = Math.abs(u[c] - s[c]) / umax * 100; n++; if (d <= 1e-6) dentro++; if (d > peor) { peor = d; peorNudo = i + 1; } }
   }
-  filas.push({ que: "desplazamientos vs SAP2000, peor nudo (% del maximo)", medido: peor, limite: 0.02, ok: peor <= 0.02, detalle: `nudo ${peorNudo}; ${dentro}/${n} componentes dentro del 0.02 %; u_max ${umax.toExponential(4)} m` });
+  filas.push({ que: "desplazamientos vs SAP2000, peor nudo (% del maximo)", medido: peor, limite: 1e-6, ok: peor <= 1e-6, detalle: `nudo ${peorNudo}; ${dentro}/${n} componentes dentro del 1e-6 %; u_max ${umax.toExponential(4)} m` });
   const u28 = U.get(27), s28 = sap.u["28"];
-  filas.push({ que: "cabeza de la columna (28): ux, uy vs SAP2000", medido: Math.max(Math.abs(u28[0] / s28[0] - 1), Math.abs(u28[1] / s28[1] - 1)) * 100, limite: 0.05, ok: Math.abs(u28[0] / s28[0] - 1) * 100 <= 0.05 && Math.abs(u28[1] / s28[1] - 1) * 100 <= 0.05, detalle: `ux ${u28[0].toExponential(6)} vs ${s28[0].toExponential(6)} · uy ${u28[1].toExponential(6)} vs ${s28[1].toExponential(6)}` });
+  filas.push({ que: "cabeza de la columna (28): ux, uy vs SAP2000", medido: Math.max(Math.abs(u28[0] / s28[0] - 1), Math.abs(u28[1] / s28[1] - 1)) * 100, limite: 1e-6, ok: Math.abs(u28[0] / s28[0] - 1) * 100 <= 1e-6 && Math.abs(u28[1] / s28[1] - 1) * 100 <= 1e-6, detalle: `ux ${u28[0].toExponential(6)} vs ${s28[0].toExponential(6)} · uy ${u28[1].toExponential(6)} vs ${s28[1].toExponential(6)}` });
   const R = m.deformOutputs.reactions; const sum = [0, 0, 0];
   for (const [, r] of R) for (let c = 0; c < 3; c++) sum[c] += r[c];
   const eq = Math.max(Math.abs(sum[0] + 10), Math.abs(sum[1] + 5), Math.abs(sum[2] - 50));
@@ -49,7 +51,7 @@ export async function correr() {
   // ...y contra SAP2000 (MODAL, 6 modos, masa de los elementos: rho por volumen), 3-sep-2026
   if (Array.isArray(sap.T) && sap.T.length >= 6) {
     const peorS = Math.max(...sap.T.slice(0, 6).map((t, i) => Math.abs(Tw[i] / t - 1) * 100));
-    filas.push({ que: "modal (6 modos) vs SAP2000, peor periodo", medido: peorS, limite: 0.15, ok: peorS <= 0.15, detalle: `T1 ${Tw[0]?.toFixed(6)} vs ${sap.T[0].toFixed(6)} s · T6 ${Tw[5]?.toFixed(6)} vs ${sap.T[5].toFixed(6)}` });
+    filas.push({ que: "modal (6 modos) vs SAP2000, peor periodo", medido: peorS, limite: 1e-6, ok: peorS <= 1e-6, detalle: `T1 ${Tw[0]?.toFixed(6)} vs ${sap.T[0].toFixed(6)} s · T6 ${Tw[5]?.toFixed(6)} vs ${sap.T[5].toFixed(6)}` });
   }
   // Tensiones de los solidos mezclados: existen para los 8 hexaedros (8 Gauss x 6) y la
   // recuperacion es la MISMA que hex8Solve — sobre el muro de solidos, hex8Stress con
