@@ -516,7 +516,9 @@ Saint-Venant vs ETABS). Por el camino cazó un cruce I22/I33 vivo en
 `mesaTorsion.ts`: las vigas tenían la inercia FUERTE en I22, flexionaban en
 gravedad 2.78× más flojas, y su M3 salía 0.70× / las columnas 1.33× el de ETABS.
 
-⚠️ Pendiente: las zapatas Guerra contra SAFE.
+Las zapatas Guerra contra SAFE (réplica nudo a nudo, `validacion/safe-api/safe_node_driver.py`)
+viven en el caso `guerra-vs-safe`: ej1/2/3/8 < 0.25 %, ej5 1.5 %, ej7 3.2 %; **ej4 −17 % abierto**
+(formulación de placa, no malla).
 
 ## Validación del solver modal contra ETABS 22
 
@@ -829,3 +831,8 @@ maestro VIRTUAL en el centro (`utils/rigidDiaphragm.h`; en el modal, en el centr
 flexible = sin `diaph`. ⚠️ Con un nudo real de esquina como maestro el modal perdía el
 acoplamiento ux–rz (solo mira la diagonal de M) y T_x salía ×1.84. `deform.cpp` no lo tenía.
 Plantillas: `diafragma` (1 por defecto, como el D1 del e2k). Test `node tests/run.mjs diafragma`.
+
+### Modelos grandes (3-sep-2026)
+
+`deform.cpp` pasa a gradiente conjugado con Cholesky incompleta (tol 1e-12) a partir de
+150 000 GDL (medido: 164k GDL en 7.4 s y 561 MB); por debajo, LDLT como siempre.

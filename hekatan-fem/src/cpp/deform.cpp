@@ -8,6 +8,7 @@
 #include <array>
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
+#include <Eigen/IterativeLinearSolvers>
 #include <iostream>
 #include <stdexcept>
 
@@ -228,6 +229,28 @@ extern "C"
         // fall back to SparseLU so nothing that works today stops working.
         Eigen::VectorXd U_reduced;
         bool solved = false;
+        // Modelos GRANDES (barras + cascaras): la LDLT rellena y se come la memoria del
+        // WASM (2 GB); a partir de 150 000 GDL se resuelve por gradiente conjugado con
+        // Cholesky incompleta, como el H8 (hex8_wasm.cpp, 40 000 GDL). tol 1e-12.
+        if ((int)K_reduced.rows() > 150000)
+        {
+            Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Upper,
+                                     Eigen::IncompleteCholesky<double>> cg;
+            cg.setTolerance(1e-12);
+            cg.setMaxIterations(20000);
+            cg.compute(K_reduced);
+            if (cg.info() == Eigen::Success)
+            {
+                U_reduced = cg.solve(F_reduced);
+                if (cg.info() == Eigen::Success && U_reduced.allFinite())
+                {
+                    solved = true;
+                    std::cout << "deform: CG " << cg.iterations() << " iteraciones, error " << cg.error() << std::endl;
+                }
+            }
+            if (!solved) std::cerr << "Warning: CG no convergio; se intenta LDLT" << std::endl;
+        }
+        if (!solved)
         {
             Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> chol;
             chol.compute(K_reduced);

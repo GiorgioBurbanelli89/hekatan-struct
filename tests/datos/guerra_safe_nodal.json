@@ -1,0 +1,125 @@
+{
+ "ej1": {
+  "sigma_max": 13.262,
+  "sigma_min": 7.275,
+  "n_nodes": 289,
+  "n_elems": 256,
+  "n_loaded": 9,
+  "n_extracted": 289,
+  "run_rc": 0,
+  "ej_key": "guerra-ej1-zapata-cuadrada",
+  "hekatan_sigma_max": 13.255,
+  "delta_vs_hekatan_pct": 0.05,
+  "safe_libro_sigma_max": 13.163
+ },
+ "ej2": {
+  "sigma_max": 14.721,
+  "sigma_min": 0.024,
+  "n_nodes": 323,
+  "n_elems": 288,
+  "n_loaded": 15,
+  "n_extracted": 323,
+  "run_rc": 0,
+  "ej_key": "guerra-ej2-zapata-rectangular-sismo",
+  "hekatan_sigma_max": 14.716,
+  "delta_vs_hekatan_pct": 0.03,
+  "safe_libro_sigma_max": 13.297
+ },
+ "ej3": {
+  "sigma_max": 18.595,
+  "sigma_min": 0.077,
+  "n_nodes": 323,
+  "n_elems": 288,
+  "n_loaded": 15,
+  "n_extracted": 323,
+  "run_rc": 0,
+  "ej_key": "guerra-ej3-zapata-rectangular-eccentricidad-grande",
+  "hekatan_sigma_max": 18.587,
+  "delta_vs_hekatan_pct": 0.04,
+  "safe_libro_sigma_max": 16.547
+ },
+ "ej4": {
+  "sigma_max": 28.405,
+  "sigma_min": 7.01,
+  "n_nodes": 341,
+  "n_elems": 300,
+  "n_loaded": 2,
+  "n_extracted": 341,
+  "run_rc": 0,
+  "ej_key": "guerra-ej4-zapata-combinada-rectangular",
+  "hekatan_sigma_max": 23.458,
+  "delta_vs_hekatan_pct": 21.09,
+  "safe_libro_sigma_max": 17.793
+ },
+ "ej5": {
+  "sigma_max": 24.474,
+  "sigma_min": 22.276,
+  "n_nodes": 375,
+  "n_elems": 240,
+  "n_loaded": 6,
+  "n_extracted": 247,
+  "run_rc": 0,
+  "ej_key": "guerra-ej5-zapata-combinada-trapezoidal",
+  "hekatan_sigma_max": 24.112,
+  "delta_vs_hekatan_pct": 1.5,
+  "safe_libro_sigma_max": 20.0
+ },
+ "ej7": {
+  "sigma_max": 45.602,
+  "sigma_min": 20.807,
+  "n_nodes": 297,
+  "n_elems": 256,
+  "n_loaded": 18,
+  "n_extracted": 297,
+  "run_rc": 0,
+  "ej_key": "guerra-ej7-viga-cimentacion-new",
+  "hekatan_sigma_max": 47.056,
+  "delta_vs_hekatan_pct": -3.09,
+  "safe_libro_sigma_max": 15.07
+ },
+ "ej8": {
+  "sigma_max": 14.77,
+  "sigma_min": 4.217,
+  "n_nodes": 1517,
+  "n_elems": 1440,
+  "n_loaded": 16,
+  "n_extracted": 1517,
+  "run_rc": 0,
+  "ej_key": "guerra-ej8-losa-cimentacion",
+  "hekatan_sigma_max": 14.793,
+  "delta_vs_hekatan_pct": -0.16,
+  "safe_libro_sigma_max": 9.0
+ },
+ "ej6": {
+  "sigma_max": 56.531,
+  "sigma_min": 1.95,
+  "per_plate": {
+   "Z1": {
+    "sigma_max": 56.531,
+    "sigma_min": 1.95
+   },
+   "Z2": {
+    "sigma_max": 25.566,
+    "sigma_min": 23.812
+   }
+  },
+  "run_rc": 0,
+  "ej_key": "guerra-ej6-zapata-unida-viga-amarre",
+  "_nota": "2 placas independientes (sin viga de amarre); aprox de placa plana",
+  "hekatan_sigma_max": 17.3,
+  "delta_vs_hekatan_pct": 226.77,
+  "safe_libro_sigma_max": 24.179
+ },
+ "ej4f": {
+  "sigma_max": 27.513,
+  "sigma_min": 7.396,
+  "n_nodes": 867,
+  "n_elems": 800,
+  "n_loaded": 18,
+  "n_extracted": 867,
+  "run_rc": 0,
+  "ej_key": "guerra-ej4-zapata-combinada-rectangular-fina",
+  "hekatan_sigma_max": 23.458,
+  "delta_vs_hekatan_pct": 17.29
+ }
+}
