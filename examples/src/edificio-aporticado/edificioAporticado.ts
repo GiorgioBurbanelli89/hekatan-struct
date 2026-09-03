@@ -675,7 +675,13 @@ export const edificioAporticado: ExampleDef = {
                   // Si el nudo cae en el BORDE del pano esta sobre una viga: hay que
                   // partirla ahi, como hace ETABS al mallar la linea con el area. Sin
                   // esto la losa solo tocaba la viga en las esquinas y el borde colgaba.
-                  if (jc === 0 || jc === nSx || jr === 0 || jr === nSy) partirBarrasEn(ni);
+                  // TODOS los nudos de la losa parten la barra que pase por ellos, no solo
+                  // los del borde del pano: una viga SECUNDARIA cruza el pano por dentro y
+                  // hasta el 3-sep-2026 la losa pasaba por encima sin tocarla mas que en
+                  // sus nSubViga nudos (CSI cose las barras en los nudos intermedios y por
+                  // eso el mezanine daba 0.38 % en el deck). partirBarrasEn solo actua si
+                  // el nudo cae DENTRO de una barra.
+                  partirBarrasEn(ni);
                 }
               }
               grid.push(row);

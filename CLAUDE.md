@@ -890,11 +890,17 @@ también escribe `disp_nudos`).
 
 - **Galpón (609 nudos, 1140 barras con `ang`, 116 shells de deck): SAP2000 = Hekatan a 0.001 %**
   (test `galpon-vs-sap2000-oapi`). Solo barras en ETABS: 0.000 %. Con el deck, ETABS se va
-  4.5–5.6 % porque REMALLA las áreas (1.25 m, cosidas a las barras que cruzan): es otra malla.
+  4.5–5.6 % y NO es la malla: con `OBJMESHTYPE "NONE"` (`cli/heks_a_csi.mjs … meshtype=NONE`)
+  deja los 609 joints exactos y sigue en 4.4 %. Caso mínimo (1 paño membrana sobre 4 vigas):
+  ETABS Membrane = Hekatan 0.000 %, thick + modificadores 0.24 %, paño inclinado 0.027 %.
+  Abierto, ETABS-específico (SAP2000 clava el mismo modelo). No hay `AreaObj.SetAutoMesh` en
+  la OAPI de ETABS.
 - **Mezanine con columna CFT** (`matCol = 2`, `tCft`): e2k → ETABS `Filled Steel Tube`; s2k →
   Section Designer (defecto) o `cftAs: "general"` (panel SAP «CFT en SAP», CLI `cftas=general`).
-  SAP2000 SD = General = ETABS (e2k y OAPI): barras 0.03 %, modos 0.02–0.09 %; un nudo interior
-  del deck sin carga queda a 0.38 % igual en los tres (dato abierto).
+  **SAP2000 General = Hekatan 0.0000 %** (2415/2415 componentes), Section Designer 0.0095 %
+  (SAP recalcula las propiedades de las formas), **ETABS 0.0008 %**. Test `mezanine-cft-vs-csi`.
+  El 0.38 % que salía antes era de Hekatan: la losa no se cosía a las vigas SECUNDARIAS
+  (solo al borde del paño); ahora `partirBarrasEn` actúa en todos los nudos de losa.
 - El **.s2k lleva el diafragma** (`CONSTRAINT DEFINITIONS - DIAPHRAGM`): sin él el mezanine
   salía 1 % más rígido en Hekatan. Y el e2k pone D1 SOLO si el modelo trae diafragmas.
 - `edificioAporticado`: diafragma rígido por planta en los ejes de columna cuando hay losa
