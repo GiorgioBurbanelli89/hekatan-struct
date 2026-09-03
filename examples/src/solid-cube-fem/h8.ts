@@ -174,3 +174,25 @@ export function hex8Solve(input: Hex8SolveInput): Hex8SolveOutput {
 
   return { displacements, vonMisesPerElement, stressPerElement, elapsedMs };
 }
+
+/**
+ * Tensiones de UN H8 ya resuelto — para los solidos que van MEZCLADOS con barras
+ * y cascaras por `deform` (que no las da). Misma recuperacion que hex8Solve
+ * (`_hex8_stress` del WASM): 8 puntos de Gauss x [sxx, syy, szz, sxy, syz, sxz]
+ * y su von Mises. `u` son los 24 desplazamientos [ux, uy, uz] por nudo.
+ */
+export function hex8Stress(coords: Vec3[], E: number, nu: number, u: number[], incompatible = true):
+  { stress: number[][]; vonMises: number[] } {
+  const gc: number[] = [];
+  const cPtr = allocateF64(coords.flatMap(p => [p[0], p[1], p[2]])); gc.push(cPtr);
+  const uPtr = allocateF64(u); gc.push(uPtr);
+  const sPtr = mod._malloc(48 * 8); gc.push(sPtr);
+  const vPtr = mod._malloc(8 * 8); gc.push(vPtr);
+  mod._hex8_stress(cPtr, E, nu, uPtr, incompatible ? 1 : 0, sPtr, vPtr);
+  const sf = Array.from(new Float64Array(mod.HEAPF64.buffer, sPtr, 48));
+  const vonMises = Array.from(new Float64Array(mod.HEAPF64.buffer, vPtr, 8));
+  const stress: number[][] = [];
+  for (let g = 0; g < 8; g++) stress.push(sf.slice(g * 6, g * 6 + 6));
+  gc.forEach(p => mod._free(p));
+  return { stress, vonMises };
+}

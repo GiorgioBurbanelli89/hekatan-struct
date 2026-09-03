@@ -46,5 +46,33 @@ export async function correr() {
   const Tw = fr.map(f => 1 / f);
   const peorT = Math.max(...Tpy.map((t, i) => Math.abs(Tw[i] / t - 1) * 100));
   filas.push({ que: "modal (6 modos) WASM = Python con la masa del H8", medido: peorT, limite: 1e-5, ok: peorT <= 1e-5, detalle: `T1 ${Tw[0]?.toFixed(6)} s (Python ${Tpy[0].toFixed(6)})` });
+  // ...y contra SAP2000 (MODAL, 6 modos, masa de los elementos: rho por volumen), 3-sep-2026
+  if (Array.isArray(sap.T) && sap.T.length >= 6) {
+    const peorS = Math.max(...sap.T.slice(0, 6).map((t, i) => Math.abs(Tw[i] / t - 1) * 100));
+    filas.push({ que: "modal (6 modos) vs SAP2000, peor periodo", medido: peorS, limite: 0.15, ok: peorS <= 0.15, detalle: `T1 ${Tw[0]?.toFixed(6)} vs ${sap.T[0].toFixed(6)} s · T6 ${Tw[5]?.toFixed(6)} vs ${sap.T[5].toFixed(6)}` });
+  }
+  // Tensiones de los solidos mezclados: existen para los 8 hexaedros (8 Gauss x 6) y la
+  // recuperacion es la MISMA que hex8Solve — sobre el muro de solidos, hex8Stress con
+  // los desplazamientos de hex8Solve reproduce su stressPerElement.
+  const a = m.analyzeOutputs ?? {};
+  const nSt = a.solidStress instanceof Map ? a.solidStress.size : 0;
+  const vmMax = a.solidVonMises instanceof Map ? Math.max(...[...a.solidVonMises.values()].flat()) : NaN;
+  filas.push({ que: "tensiones de los 8 solidos mezclados (solidStress / solidVonMises)", crudo: true, medido: `${nSt} elementos, vm max ${vmMax.toExponential(3)} kPa`, limite: "8 elementos", ok: nSt === 8 && isFinite(vmMax) && vmMax > 0 });
+  const { empaquetar, R: RAIZ } = await import("../lib/bundle.mjs");
+  const mod = await empaquetar(`
+    export { hex8Solve, hex8Stress } from "${RAIZ}/examples/src/solid-cube-fem/h8";
+    export { mallaMuroSolido, MURO_SOLIDO_DEFAULT } from "${RAIZ}/examples/src/muro-contencion-solido/malla";
+  `, "solidos-mixtos-stress");
+  const p = mod.MURO_SOLIDO_DEFAULT, mm = mod.mallaMuroSolido(p);
+  const r = mod.hex8Solve({ nodes: mm.nodes, elements: mm.elements, E: p.E, nu: p.nu, supports: mm.supports, loads: mm.loads, incompatible: true });
+  let peorS = 0;
+  for (const [i, el] of mm.elements.entries()) {
+    const u = el.flatMap(n => r.displacements.get(n));
+    const st = mod.hex8Stress(el.map(n => mm.nodes[n]), p.E, p.nu, u, true);
+    const ref = r.stressPerElement.get(i);
+    const esc = Math.max(...ref.flat().map(Math.abs));
+    for (let g = 0; g < 8; g++) for (let c = 0; c < 6; c++) peorS = Math.max(peorS, Math.abs(st.stress[g][c] - ref[g][c]) / esc * 100);
+  }
+  filas.push({ que: "hex8Stress = stressPerElement de hex8Solve (muro de 330 H8, 8 Gauss x 6)", medido: peorS, limite: 1e-9, ok: peorS <= 1e-9, detalle: `peor ${peorS.toExponential(2)} % del maximo del elemento` });
   return filas;
 }

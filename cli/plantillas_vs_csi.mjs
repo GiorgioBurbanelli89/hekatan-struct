@@ -86,7 +86,7 @@ function peorSeccion(M, J) {
  * cuenta si el parecido es claro. Comparar T1 contra T1 es lo que hacia creer
  * que el portico plano estaba un 11 % mal: su modo 1 va FUERA del plano.
  */
-function emparejarModos(partH, mmE) {
+function emparejarModos(partH, mmE, TH) {
   const vE = (mmE || []).map((m) => [m.UX, m.UY, m.UZ, m.RX, m.RY, m.RZ].map((x) => x || 0));
   const TE = (mmE || []).map((m) => m.T);
   const cos = (a, b) => {
@@ -96,14 +96,23 @@ function emparejarModos(partH, mmE) {
   };
   const usados = new Set();
   return (partH || []).map((p, i) => {
-    let mejor = -1, cual = -1;
+    // Candidatos: coseno > 0.7. Entre ellos manda el PERIODO mas cercano, y un
+    // periodo a mas del doble (o menos de la mitad) no es el mismo modo aunque
+    // el vector de participacion se parezca: dos modos con 20 % en RZ y nada
+    // mas tienen coseno 1.000 y pueden estar a 300 % de periodo (el dual y el
+    // arriostrado, 3-sep-2026).
+    let mejor = -1, cual = -1, dT = Infinity, cosMax = -1;
+    const th = Array.isArray(TH) ? TH[i] : null;
     vE.forEach((q, j) => {
       if (usados.has(j)) return;
       const c = cos(p, q);
-      if (c > mejor) { mejor = c; cual = j; }
+      if (c > cosMax) cosMax = c;
+      if (c <= 0.7) return;
+      const d = (th && TE[j]) ? Math.abs(Math.log(th / TE[j])) : 0;
+      if (d > Math.log(2)) return;
+      if (d < dT || (d === dT && c > mejor)) { dT = d; mejor = c; cual = j; }
     });
-    if (cual >= 0 && mejor > 0.7) usados.add(cual);
-    else cual = -1;
+    if (cual >= 0) usados.add(cual); else mejor = cosMax;   // sin pareja: se muestra el mejor coseno visto
     return { modoH: i + 1, modoE: cual + 1, cos: mejor, TE: cual >= 0 ? TE[cual] : null,
              partE: cual >= 0 ? vE[cual] : null };
   });
@@ -271,7 +280,7 @@ for (const r of filas) {
   };
 
   // ── capa 4: los modos, emparejados por participacion ──
-  r.modos = emparejarModos(H.part, J.modalmass);
+  r.modos = emparejarModos(H.part, J.modalmass, H.T);
   r.modos.forEach((m, i) => { m.TH = H.T[i]; m.dif = m.TE ? (m.TH - m.TE) / m.TE : null; });
 
   // ── capa 5: fuerzas ──

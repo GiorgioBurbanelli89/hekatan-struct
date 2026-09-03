@@ -49,7 +49,7 @@
  */
 import * as THREE from "three";
 import { cftSectionEc, cftPipeSectionEc } from "../shared/cadSections";
-import { hex8Solve } from "../solid-cube-fem/h8";
+import { hex8Solve, hex8Stress } from "../solid-cube-fem/h8";
 import { deform, analyze, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
@@ -1188,6 +1188,24 @@ export const cliModeler: ExampleDef = {
           );
         } catch (e: any) {
           console.warn("[CLI Modeler] analyze:", e?.message ?? e);
+        }
+        // Tensiones de los solidos MEZCLADOS (analyze no sabe de H8): la misma
+        // recuperacion que hex8Solve, elemento a elemento, con sus desplazamientos.
+        if (solidIdx.length > 0) {
+          try {
+            const U = states.deformOutputs.val.deformations;
+            const solidStress = new Map<number, number[][]>(), solidVonMises = new Map<number, number[]>();
+            for (const i of solidIdx) {
+              const el = elements[i];
+              const coords = el.map(n => nodes[n]) as [number, number, number][];
+              const u = el.flatMap(n => { const d = U.get(n) ?? [0, 0, 0]; return [d[0], d[1], d[2]]; });
+              const r = hex8Stress(coords, elasticities.get(i) ?? 25e6, poissons.get(i) ?? 0.2, u, m.solidIncompatible);
+              solidStress.set(i, r.stress); solidVonMises.set(i, r.vonMises);
+            }
+            states.analyzeOutputs.val = { ...(states.analyzeOutputs.val ?? {}), solidStress, solidVonMises } as any;
+          } catch (e: any) {
+            console.warn("[CLI Modeler] tensiones de solidos:", e?.message ?? e);
+          }
         }
         console.log("[CLI Modeler] Solve OK —", elements.length, "elementos,", nodes.length, "nodos");
       } catch (e: any) {

@@ -728,7 +728,9 @@ informa de nada.
 
 ⚠️ **Nunca comparar T1 con T1.** Un pórtico plano tiene su primer modo FUERA del
 plano (ETABS: modo 1 = 77 % UY). Se emparejan por **participación de masa**
-(coseno del vector `[UX UY UZ RX RY RZ]` > 0.7).
+(coseno del vector `[UX UY UZ RX RY RZ]` > 0.7) y, entre los candidatos, por el
+PERIODO más cercano (a más del doble no es el mismo modo): dos modos altos con
+20 % en RZ y nada más tienen coseno 1.000 y estaban a 300 % de periodo.
 
 ⚠️ **Las columnas van PISO A PISO en el `.e2k`** (desde el 3-sep-2026):
 `LINE "C1" COLUMN "1" "1" 1` una vez y un `LINEASSIGN` por planta, como lo
@@ -849,9 +851,12 @@ de un nudo que solo toca sólidos los saca `getZerosIndices`. `solidIncompatible
 ElementInputs (parámetro nuevo de `deform()`). La masa del H8 en el modal es ρ·V a partes
 iguales en los 8 nudos (C++ y Python). Medido: pedestal en 8 H8 + muro Q4 Thin + columna y
 viga de acero (`tests/datos/mixto_solido_muro_columna.heks`) contra SAP2000 24 con los
-mismos nudos: WASM = Python a 8e-12 %, **peor nudo 0.0065 % del máximo**. Test
-`node tests/run.mjs solidos-mixtos`. ⚠️ Un muro o una columna apoyados SOLO en nudos de
-sólido son un mecanismo (esos nudos no tienen giro): en SAP2000 también, y se cuelga.
+mismos nudos: WASM = Python a 8e-12 %, **peor nudo 0.0065 % del máximo**; modal (6 modos,
+masa ρ·V/8 por nudo) WASM = Python a 3e-7 % y vs SAP2000 dentro del 0.09 %. Las tensiones de
+los H8 mezclados las da `hex8Stress` (h8.ts → `_hex8_stress`, la misma recuperación de
+hex8Solve) y cliModeler las deja en `analyzeOutputs.solidStress/solidVonMises`. Test
+`node tests/run.mjs solidos-mixtos` (8 filas). ⚠️ Un muro o una columna apoyados SOLO en
+nudos de sólido son un mecanismo (esos nudos no tienen giro): en SAP2000 también, y se cuelga.
 
 ### Diafragma rígido / flexible (3-sep-2026)
 

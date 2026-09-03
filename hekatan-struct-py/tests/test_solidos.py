@@ -69,3 +69,6 @@ def test_mixto_modal_masa_h8():
     r = modal_analysis(m.nodes, m.elements, m.node_inputs, m.element_inputs, 6)
     T = [1 / fr for fr in r.frequencies[:6]]
     assert max(abs(a / b - 1) for a, b in zip(T, ref)) < 1e-9
+    # y SAP2000 24 (MODAL, masa de los elementos): los 6 periodos dentro del 0.15 %
+    sap = json.load(open(os.path.join(AQUI, "..", "..", "tests", "datos", "mixto_solido_muro_columna_sap.json")))["T"]
+    assert max(abs(a / b - 1) for a, b in zip(T, sap[:6])) < 1.5e-3

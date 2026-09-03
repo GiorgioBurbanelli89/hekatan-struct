@@ -200,6 +200,7 @@ static void hex8Stiffness(const double nodeCoords[8][3], double E, double nu, do
 //  WASM ENTRY POINT
 // ═════════════════════════════════════════════════════════════════════════
 
+
 extern "C" {
 
 // ── MODOS INCOMPATIBLES DE FLEXION (Wilson 1973 con la correccion de Taylor,
@@ -519,3 +520,60 @@ void hex8_solve(
 }
 
 }  // extern "C"
+
+/** Tensiones (6 x 8 Gauss) y von Mises (8) de UN H8 a partir de sus 24 desplazamientos. */
+static void hex8RecoverElement(const double nc[8][3], double E, double nu, const double ueElem[24],
+                               int incompatible, double* stress48, double* vm8) {
+    double D[6][6];
+    dMatrix(E, nu, D);
+    double alpha[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+    if (incompatible) {
+        double KeTmp[24][24], G[9][24];
+        hex8StiffnessInc(nc, E, nu, KeTmp, G);
+        for (int r = 0; r < 9; r++) for (int c = 0; c < 24; c++) alpha[r] += G[r][c] * ueElem[c];
+    }
+    for (int g = 0; g < 8; g++) {
+        const double xi = GAUSS[g][0], eta = GAUSS[g][1], zeta = GAUSS[g][2];
+        double dNnat[3][8];
+        shapeDerivativesNatural(xi, eta, zeta, dNnat);
+        double J[3][3];
+        jacobian(nc, dNnat, J);
+        double Jinv[3][3];
+        inv3(J, Jinv);
+        double dNxyz[3][8];
+        for (int i = 0; i < 8; i++)
+            for (int d = 0; d < 3; d++)
+                dNxyz[d][i] = Jinv[d][0] * dNnat[0][i] + Jinv[d][1] * dNnat[1][i] + Jinv[d][2] * dNnat[2][i];
+        double B[6][24];
+        bMatrix(dNxyz, B);
+        double eps[6] = {0, 0, 0, 0, 0, 0};
+        for (int r = 0; r < 6; r++) for (int c = 0; c < 24; c++) eps[r] += B[r][c] * ueElem[c];
+        if (incompatible) {
+            double Ba[6][9];
+            incompatibleB(nc, g, Ba);
+            for (int r = 0; r < 6; r++) for (int c = 0; c < 9; c++) eps[r] += Ba[r][c] * alpha[c];
+        }
+        double sig[6] = {0, 0, 0, 0, 0, 0};
+        for (int r = 0; r < 6; r++) for (int c = 0; c < 6; c++) sig[r] += D[r][c] * eps[c];
+        const double sxx = sig[0], syy = sig[1], szz = sig[2], sxy = sig[3], syz = sig[4], sxz = sig[5];
+        vm8[g] = std::sqrt(0.5 * ((sxx - syy) * (sxx - syy) + (syy - szz) * (syy - szz) + (szz - sxx) * (szz - sxx))
+                           + 3 * (sxy * sxy + syz * syz + sxz * sxz));
+        for (int k = 0; k < 6; k++) stress48[g * 6 + k] = sig[k];
+    }
+}
+
+extern "C" {
+/**
+ * Tensiones de UN H8 ya resuelto (para los solidos que van MEZCLADOS con barras y
+ * cascaras por `deform`, que no las da). coords24 = 8 nudos x [x,y,z]; u24 = sus
+ * desplazamientos [ux,uy,uz] por nudo; salida: 48 tensiones (8 Gauss x
+ * [sxx,syy,szz,sxy,syz,sxz]) y 8 von Mises. Misma recuperacion que hex8_solve.
+ */
+void hex8_stress(double* coords24, double E, double nu, double* u24, int incompatible,
+                 double* stress48_out, double* vm8_out) {
+    double nc[8][3];
+    for (int j = 0; j < 8; j++) for (int d = 0; d < 3; d++) nc[j][d] = coords24[3 * j + d];
+    hex8RecoverElement(nc, E, nu, u24, incompatible, stress48_out, vm8_out);
+}
+}
+
