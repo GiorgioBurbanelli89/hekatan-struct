@@ -80,7 +80,7 @@ class ModeloHeks:
 
 # Comandos que el estático NO usa y el motor TS/C++ tampoco: `deform.cpp` no
 # los mira, solo `modalCpp`. Se cuentan igual, pero se avisan aparte.
-_SOLO_MODAL = {"mass", "diaph", "diaphragm"}
+_SOLO_MODAL = {"mass"}
 
 # Igual que `DOF_NAMES` de `cliModeler.ts`: el muelle se puede pedir por el
 # nombre del desplazamiento o por el de la fuerza.
@@ -121,6 +121,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
     ej_flag = [True]                       # etabsjoint: por DEFECTO como ETABS; `etabsjoint 0` la apaga (modo SAP2000)
     shells: list[dict] = []
     solidos: list[dict] = []          # `hex ID n1..n8 [E nu rho]`: hexaedros H8
+    diafr: dict[int, int] = {}        # `diaph ID grupo`: diafragma rigido por nudo
     inc_flag = [True]                 # `incompatible 0/1`: modos de Wilson–Taylor del H8
     q_area: dict[int, float] = {}          # carga de superficie por shell ID
     smod: dict[int, tuple[float, float]] = {}      # shellmod escalar
@@ -220,6 +221,9 @@ def leer_heks(ruta: str) -> ModeloHeks:
                         if len(pal) > 1 and pal[1] == "pin":
                             r[10] = r[11] = True
                         rels[int(t[1])] = r
+                elif cmd in ("diaph", "diaphragm"):
+                    # diaph <nodeID> <grupo>  — diafragma rigido (ETABS "Rigid"); 0 lo quita
+                    diafr[int(t[1])] = int(float(t[2])) if len(t) > 2 else 1
                 elif cmd in ("hex", "solid", "h8"):
                     # hex ID n1 n2 n3 n4 n5 n6 n7 n8 [E] [nu] [rho]  (orden del H8 de Hekatan)
                     solidos.append(dict(id=int(t[1]), pts=[int(x) for x in t[2:10]],
@@ -436,6 +440,9 @@ def leer_heks(ruta: str) -> ModeloHeks:
         ei.shear_moduli[k] = so["E"] / (2 * (1 + so["nu"]))
         ei.densities[k] = so["rho"]
     ei.solid_incompatible = inc_flag[0]
+    for nid, g in diafr.items():
+        if nid in idx_de and g > 0:
+            m.node_inputs.diaphragms[idx_de[nid]] = g
     huerfanas_q = set(q_area) - {sh["id"] for sh in shells}
     if huerfanas_q:
         m.errores.append(f"areaload sin cáscara: {sorted(huerfanas_q)[:10]}")

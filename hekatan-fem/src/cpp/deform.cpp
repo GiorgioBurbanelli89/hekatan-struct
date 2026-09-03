@@ -1,5 +1,6 @@
 #include "data-model.h"
 #include "utils/etabsWallJoint.h"
+#include "utils/rigidDiaphragm.h"
 #include <vector>
 #include <map>
 #include <algorithm>
@@ -90,6 +91,9 @@ extern "C"
         // La union viga-muro de ETABS (ver addEtabsWallJoint). 0 = apagado.
         int etabs_wall_joint,
 
+        // DIAFRAGMA RIGIDO por nudo (0 = ninguno, 1..n = grupo), ver utils/rigidDiaphragm.h
+        int *diaph_keys_ptr, double *diaph_values_ptr, int num_diaph,
+
         // --- Output Pointers (to be allocated by C++ and filled) ---
         // These are pointers *to* pointers. C++ allocates memory using malloc
         // and writes the address of the allocated block into these pointers.
@@ -164,7 +168,39 @@ extern "C"
 
         if (etabs_wall_joint) addEtabsWallJoint(K_global, nodes, element_indices, element_sizes, elementInputs);
 
-        std::vector<int> freeIndices = getFreeIndices(nodeInputs, dof);
+        // ── Diafragma rigido: u = T u_red; K y F pasan al espacio reducido ──
+        DiafragmaT dia;
+        {
+            std::map<int, double> diafr = parseMapFromFlat(diaph_keys_ptr, diaph_values_ptr, num_diaph);
+            std::vector<std::array<double, 3>> nodosArr(num_nodes);
+            for (int i = 0; i < num_nodes; ++i) nodosArr[i] = { nodes[i][0], nodes[i][1], nodes[i][2] };
+            dia = armarDiafragma(nodosArr, num_nodes, diafr, std::vector<double>());
+        }
+        const Eigen::SparseMatrix<double> K_completa = K_global;   // para las reacciones
+        const Eigen::VectorXd F_completa = F_global;
+        if (dia.hay) {
+            K_global = (dia.T.transpose() * K_global * dia.T).pruned();
+            F_global = dia.T.transpose() * F_global;
+            dof = dia.dofReducido;
+        }
+
+        std::vector<int> freeIndices;
+        if (dia.hay) {
+            // apoyos: solo los GDL que sobreviven (uno atado a un diafragma no se apoya)
+            std::vector<bool> fijo(dof, false);
+            for (const auto &kv : nodeInputs.supports) {
+                const int i = kv.first;
+                if (i < 0 || i >= num_nodes) continue;
+                for (int k = 0; k < 6 && k < (int)kv.second.size(); ++k) {
+                    if (!kv.second[k]) continue;
+                    const int c = dia.colDe[i * 6 + k];
+                    if (c >= 0) fijo[c] = true;
+                }
+            }
+            for (int c = 0; c < dof; ++c) if (!fijo[c]) freeIndices.push_back(c);
+        } else {
+            freeIndices = getFreeIndices(nodeInputs, dof);
+        }
         std::vector<int> zeroIndices = getZerosIndices(K_global);
 
         std::vector<int> reducedIndices;
@@ -239,9 +275,10 @@ extern "C"
         {
             U_global(reducedIndices[i]) = U_reduced(i);
         }
+        if (dia.hay) U_global = (dia.T * U_global).eval();   // de vuelta a los 6 GDL por nudo
 
-        // Calculate the full reaction force vector: R_global = K_global * U_global
-        Eigen::VectorXd R_global = K_global * U_global;
+        Eigen::VectorXd R_global = K_completa * U_global;
+        F_global = F_completa;
 
         // --- 3. Prepare Output Data Structures ---
         // Collate results into the DeformOutputs structure.

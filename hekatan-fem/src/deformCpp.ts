@@ -206,6 +206,9 @@ export function deformCpp(
   const locAngValuesPtr = allocate(locAngValues, Float64Array, mod.HEAPF64);
   gc.push(locAngValuesPtr);
 
+  // Diafragma rigido por nudo (`diaph` del .heks): nodo -> grupo
+  const diaph = processElementInput((nodeInputs as any).diaphragms);
+
   // 2- Call C++ Function
   mod._deform(
     nodesPtr,
@@ -293,6 +296,8 @@ export function deformCpp(
     releaseKeys.length,
     // La union viga-muro de ETABS (`etabsjoint 1` en el .heks); apagada por defecto
     (elementInputs as any).etabsWallJoint === false ? 0 : 1,   // encendida salvo que se apague: por defecto como ETABS
+    // Diafragma rigido (ux, uy, rz atados por planta; ver utils/rigidDiaphragm.h)
+    diaph.keysPtr, diaph.valuesPtr, diaph.size,
     // Output pointers
     deformationsDataPtrOutPtr,
     deformationsSizeOutPtr,

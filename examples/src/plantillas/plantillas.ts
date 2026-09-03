@@ -152,6 +152,10 @@ const PARAMS = {
   // ── Pisos — el «Story Dimensions» ────────────────────────────────────────
   pisos: { default: 4, min: 1, max: 20, step: 1, label: "nº de pisos", folder: "🏢 Pisos" },
   etabsjoint: { default: 1, min: 0, max: 1, step: 1, label: "unión viga-muro de ETABS (1 = como ETABS, 0 = como SAP2000)", folder: "🏢 Pisos" },
+  // El e2k le asigna el diafragma rígido D1 a las losas, así que ETABS analiza con él:
+  // para comparar, Hekatan también (los nudos de cada planta atados en ux, uy, rz a un
+  // maestro virtual en el centro de masa). 0 = flexible (la losa mallada, sin atar).
+  diafragma: { default: 1, min: 0, max: 1, step: 1, label: "diafragma (1 = rígido como ETABS, 0 = flexible)", folder: "🏢 Pisos" },
   h: { default: 3.0, min: 2, max: 6, step: 0.1, label: "altura típica (m)", folder: "🏢 Pisos" },
   h1: { default: 3.5, min: 2, max: 8, step: 0.1, label: "altura 1er piso (m)", folder: "🏢 Pisos" },
   // ── Volado ───────────────────────────────────────────────────────────────
@@ -732,7 +736,12 @@ export const plantillas: ExampleDef = {
 
     states.nodes.val = nodes;
     states.elements.val = elements;
-    states.nodeInputs.val = { supports, loads };
+    // diafragma rigido por planta (todos los nudos de la cota, tambien los de muros y columnas)
+    const diaphragms = new Map<number, number>();
+    if (Math.round((p as any).diafragma ?? 1) === 1) {
+      nodes.forEach((n, i) => { const k = Z.findIndex(z => Math.abs(z - n[2]) < 1e-6); if (k > 0) diaphragms.set(i, k); });
+    }
+    states.nodeInputs.val = { supports, loads, ...(diaphragms.size ? { diaphragms } : {}) } as any;
     states.elementInputs.val = {
       etabsWallJoint: Math.round(p.etabsjoint ?? 1) === 1,
       elasticities, poissonsRatios, shearModuli, densities, areas,

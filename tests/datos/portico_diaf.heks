@@ -1,0 +1,28 @@
+# Portico de 1 planta (4 columnas 0.4x0.4, vigas, 3 m) con DIAFRAGMA RIGIDO y 10 kN en una esquina.
+# Con el diafragma, ux de los 4 nudos de arriba sigue la cinematica rigida: ux_i = ux_c - (y_i - yc) rz.
+node 1 0 0 0
+node 2 5 0 0
+node 3 5 5 0
+node 4 0 5 0
+node 5 0 0 3
+node 6 5 0 3
+node 7 5 5 3
+node 8 0 5 3
+support 1 fixed
+support 2 fixed
+support 3 fixed
+support 4 fixed
+frame 1 1 5 25e6 0.16 0.0021333333 0.0021333333 3e-4 0.2 2.45
+frame 2 2 6 25e6 0.16 0.0021333333 0.0021333333 3e-4 0.2 2.45
+frame 3 3 7 25e6 0.16 0.0021333333 0.0021333333 3e-4 0.2 2.45
+frame 4 4 8 25e6 0.16 0.0021333333 0.0021333333 3e-4 0.2 2.45
+frame 5 5 6 25e6 0.16 0.0021333333 0.0021333333 3e-4 0.2 2.45
+frame 6 6 7 25e6 0.16 0.0021333333 0.0021333333 3e-4 0.2 2.45
+frame 7 7 8 25e6 0.16 0.0021333333 0.0021333333 3e-4 0.2 2.45
+frame 8 8 5 25e6 0.16 0.0021333333 0.0021333333 3e-4 0.2 2.45
+diaph 5 1
+diaph 6 1
+diaph 7 1
+diaph 8 1
+load 5 10 0 0
+solve

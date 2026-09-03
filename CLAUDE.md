@@ -821,3 +821,11 @@ contra 2.009 de CSI. Con `cft` da 2.0094 (0.006 % SAP, 0.003 % ETABS).
 (solo modelos de SOLO sólidos: `deform.cpp` no tiene H8) y Python con `elements/hex8.py`
 (espejo exacto del WASM). El s2k sale con `CONNECTIVITY - SOLID`. Test
 `node tests/run.mjs solidos-heks` (5 filas) y `pytest tests/test_solidos.py`.
+
+### Diafragma rígido / flexible (3-sep-2026)
+
+`diaph ID grupo` en el `.heks` (`nodeInputs.diaphragms`). Rígido = ux, uy, rz atados a un
+maestro VIRTUAL en el centro (`utils/rigidDiaphragm.h`; en el modal, en el centro de MASA);
+flexible = sin `diaph`. ⚠️ Con un nudo real de esquina como maestro el modal perdía el
+acoplamiento ux–rz (solo mira la diagonal de M) y T_x salía ×1.84. `deform.cpp` no lo tenía.
+Plantillas: `diafragma` (1 por defecto, como el D1 del e2k). Test `node tests/run.mjs diafragma`.

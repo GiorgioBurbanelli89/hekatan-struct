@@ -2,6 +2,7 @@
 #include "utils/etabsWallJoint.h"
 #include <vector>
 #include <map>
+#include <array>
 #include <unordered_map>
 #include <algorithm>
 #include <cmath>
@@ -562,39 +563,55 @@ extern "C"
             if (!grupos.empty())
             {
                 hayDiafragma = true;
-                // GDL que sobreviven: todos menos ux, uy, rz de los esclavos
-                std::vector<int> maestro;         // por grupo, el nudo maestro
-                std::map<int, int> maestroDe;     // grupo -> nudo maestro
-                for (const auto &g : grupos) maestroDe[g.first] = g.second.front();
+                // MAESTRO VIRTUAL en el CENTRO DE MASA de cada diafragma, como ETABS.
+                // Antes el maestro era un nudo real (el primero del grupo, una
+                // esquina): la M reducida lleva entonces el acoplamiento
+                // ux_m-rz_m = -sum(m*dy), que no es cero, y el solver solo mira la
+                // DIAGONAL de M (Md en el subespacio). Medido el 3-sep-2026 en un
+                // portico de 1 planta: T_x 0.348 s con diafragma contra 0.189 s sin
+                // el (y 0.189 con el maestro en el centro). En el centro de masa el
+                // acoplamiento es cero y la diagonal es exacta.
+                std::map<int, std::array<double, 2>> centro;
+                for (const auto &g : grupos) {
+                    double sm = 0.0, sx = 0.0, sy = 0.0;
+                    for (int i : g.second) {
+                        const double mi = std::max(M_global.coeff(i * 6, i * 6), 0.0);
+                        sm += mi; sx += mi * nodes[i][0]; sy += mi * nodes[i][1];
+                    }
+                    if (sm <= 0.0) {
+                        sm = 0.0; sx = 0.0; sy = 0.0;
+                        for (int i : g.second) { sm += 1.0; sx += nodes[i][0]; sy += nodes[i][1]; }
+                    }
+                    centro[g.first] = { sx / sm, sy / sm };
+                }
 
                 colDe.assign(dof, -1);
                 int nred = 0;
                 for (int i = 0; i < num_nodes; ++i)
                     for (int k = 0; k < 6; ++k) {
-                        const bool atado = (diaDe[i] > 0) &&
-                                           (k == 0 || k == 1 || k == 5) &&
-                                           (i != maestroDe[diaDe[i]]);
+                        const bool atado = (diaDe[i] > 0) && (k == 0 || k == 1 || k == 5);
                         if (!atado) colDe[i * 6 + k] = nred++;
                     }
+                std::map<int, int> colMaestro;      // grupo -> columna de ux del maestro virtual (uy = +1, rz = +2)
+                for (const auto &g : grupos) { colMaestro[g.first] = nred; nred += 3; }
                 std::vector<Eigen::Triplet<double>> tt;
                 tt.reserve(dof * 2);
                 for (int i = 0; i < num_nodes; ++i) {
                     const int g = diaDe[i];
-                    const int m = (g > 0) ? maestroDe[g] : -1;
                     for (int k = 0; k < 6; ++k) {
                         const int fila = i * 6 + k;
                         if (colDe[fila] >= 0) { tt.emplace_back(fila, colDe[fila], 1.0); continue; }
-                        // esclavo: se escribe en funcion del maestro
-                        const double dx = nodes[i][0] - nodes[m][0];
-                        const double dy = nodes[i][1] - nodes[m][1];
-                        if (k == 0) {                      // ux = ux_m - dy*rz_m
-                            tt.emplace_back(fila, colDe[m * 6 + 0], 1.0);
-                            tt.emplace_back(fila, colDe[m * 6 + 5], -dy);
-                        } else if (k == 1) {               // uy = uy_m + dx*rz_m
-                            tt.emplace_back(fila, colDe[m * 6 + 1], 1.0);
-                            tt.emplace_back(fila, colDe[m * 6 + 5], dx);
-                        } else {                           // rz = rz_m
-                            tt.emplace_back(fila, colDe[m * 6 + 5], 1.0);
+                        const int cm = colMaestro[g];
+                        const double dx = nodes[i][0] - centro[g][0];
+                        const double dy = nodes[i][1] - centro[g][1];
+                        if (k == 0) {                      // ux = ux_c - dy*rz_c
+                            tt.emplace_back(fila, cm + 0, 1.0);
+                            tt.emplace_back(fila, cm + 2, -dy);
+                        } else if (k == 1) {               // uy = uy_c + dx*rz_c
+                            tt.emplace_back(fila, cm + 1, 1.0);
+                            tt.emplace_back(fila, cm + 2, dx);
+                        } else {                           // rz = rz_c
+                            tt.emplace_back(fila, cm + 2, 1.0);
                         }
                     }
                 }

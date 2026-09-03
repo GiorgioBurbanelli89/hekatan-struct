@@ -48,6 +48,7 @@ function deform(nodes, elements, ni, ei, opt = {}) {
     pf.kp, pf.vp, pf.size, dt.kp, dt.vp, dt.size, ds.kp, ds.vp, ds.size,
     mm.kp, mm.vp, mm.size, bm.kp, bm.vp, bm.size, dm.kp, dm.vp, dm.size,
     la.kp, la.vp, la.size, rel.kp, rel.vp, rel.size,
+    1 /* etabsjoint: por defecto como ETABS */, alloc([], Uint32Array, mod.HEAPU32), alloc([], Float64Array, mod.HEAPF64), 0 /* diafragma: ninguno */,
     dPo, dSo, rPo, rSo);
   const dPtr = mod.HEAPU32[dPo / 4], dSz = mod.HEAPU32[dSo / 4];
   const d = new Map();

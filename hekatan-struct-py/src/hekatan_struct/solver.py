@@ -443,6 +443,50 @@ def _add_etabs_wall_joint(K, nodes, elements, element_inputs, disperso):
     return K
 
 
+def _armar_diafragma(nodes, node_inputs, n_total):
+    """T (n_total x n_red) del diafragma rigido: u = T u_red. Maestro VIRTUAL en el
+    centro (geometrico) de cada grupo, como utils/rigidDiaphragm.h del C++."""
+    from scipy.sparse import coo_matrix
+    grupos: dict[int, list[int]] = {}
+    for nid, g in getattr(node_inputs, "diaphragms", {}).items():
+        if g > 0 and 0 <= nid < len(nodes):
+            grupos.setdefault(g, []).append(nid)
+    grupos = {g: v for g, v in grupos.items() if len(v) >= 2}
+    if not grupos:
+        return None, None
+    dia_de = {}
+    for g, v in grupos.items():
+        for nid in v:
+            dia_de[nid] = g
+    col_de = np.full(n_total, -1, dtype=int)
+    nred = 0
+    for i in range(len(nodes)):
+        for k in range(6):
+            if not (i in dia_de and k in (0, 1, 5)):
+                col_de[6 * i + k] = nred; nred += 1
+    col_m = {}
+    for g in grupos:
+        col_m[g] = nred; nred += 3
+    centro = {g: (float(np.mean([nodes[i][0] for i in v])), float(np.mean([nodes[i][1] for i in v]))) for g, v in grupos.items()}
+    rows, cols, vals = [], [], []
+    for i in range(len(nodes)):
+        g = dia_de.get(i)
+        for k in range(6):
+            fila = 6 * i + k
+            if col_de[fila] >= 0:
+                rows.append(fila); cols.append(col_de[fila]); vals.append(1.0); continue
+            cm = col_m[g]
+            dx = nodes[i][0] - centro[g][0]; dy = nodes[i][1] - centro[g][1]
+            if k == 0:
+                rows += [fila, fila]; cols += [cm, cm + 2]; vals += [1.0, -dy]
+            elif k == 1:
+                rows += [fila, fila]; cols += [cm + 1, cm + 2]; vals += [1.0, dx]
+            else:
+                rows.append(fila); cols.append(cm + 2); vals.append(1.0)
+    T = coo_matrix((vals, (rows, cols)), shape=(n_total, nred)).tocsr()
+    return T, col_de
+
+
 def deform(
     nodes: Sequence[Node],
     elements: Sequence[Element],
@@ -497,11 +541,28 @@ def deform(
         else:
             K_orig[np.arange(n_total), np.arange(n_total)] += kd
 
-    fixed = np.zeros(n_total, dtype=bool)
+    # ── Diafragma rigido: K y F al espacio reducido, u = T u_red ──
+    T_dia, col_de = _armar_diafragma(nodes, node_inputs, n_total)
+    K_full, F_full = K_orig, F_orig
+    if T_dia is not None:
+        from scipy.sparse import csr_matrix
+        Ks = K_orig if disperso else csr_matrix(K_orig)
+        K_orig = (T_dia.T @ Ks @ T_dia).tocsr()
+        if not disperso:
+            K_orig = K_orig.toarray()
+        F_orig = T_dia.T @ F_orig
+        n_red = T_dia.shape[1]
+    else:
+        n_red = n_total
+
+    fixed = np.zeros(n_red, dtype=bool)
     for node_idx, restraints in node_inputs.supports.items():
         for dof_local, r in enumerate(restraints):
             if r:
-                fixed[6 * node_idx + dof_local] = True
+                g = 6 * node_idx + dof_local
+                c = col_de[g] if T_dia is not None else g
+                if c >= 0:
+                    fixed[c] = True
     free = np.where(~fixed)[0]
     con_k = _con_rigidez(K_orig, free)
     # Un GDL sin rigidez se queda en 0, como en `deform.cpp`. Pero si ADEMAS
@@ -517,16 +578,17 @@ def deform(
         )
     free = free[con_k]
 
-    U = np.zeros(n_total)
+    U = np.zeros(n_red)
     if free.size:
         if disperso:
             from scipy.sparse.linalg import spsolve
             U[free] = spsolve(K_orig[free][:, free].tocsc(), F_orig[free])
         else:
             U[free] = np.linalg.solve(K_orig[np.ix_(free, free)], F_orig[free])
+    if T_dia is not None:
+        U = np.asarray(T_dia @ U).ravel()        # de vuelta a los 6 GDL por nudo
 
-    # Reacciones en nodos restringidos
-    R = K_orig @ U - F_orig
+    R = K_full @ U - F_full
     out = DeformOutputs()
     for i in range(len(nodes)):
         out.deformations[i] = tuple(U[6*i:6*i+6])  # type: ignore
