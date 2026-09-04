@@ -1,0 +1,211 @@
+# -*- coding: utf-8 -*-
+"""Cualquier modelo de Hekatan (volcado del .heks: `node tests/lib/dump_heks.mjs m.heks d.json`)
+armado en SAP2000 o ETABS por OAPI con la MISMA malla y las MISMAS cargas nodales (las que
+Hekatan ya repartio: peso propio + areas), sin peso propio de CSI. Compara SOLVERS, no cargas.
+Barras: General (I33=Iz, I22=Iy, AS2=shearAreasZ, AS3=shearAreasY), angulo de eje local,
+releases. Cascaras: Thin/Thick con los 8 modificadores (el deck = membrana). Muelles nodales.
+    python csi_desde_dump.py sap|etabs dump.json salida.json [--membrana] [--wall] [--nomesh] [--noedge | --edge]
+Salida: {"nudos":[{i,x,y,z,u[6]}], "sumRz", "peor": % del maximo vs Hekatan}"""
+import json, os, sys, time, comtypes.client
+sys.stdout.reconfigure(encoding="utf-8")
+PROG, DUMP, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
+D = json.load(open(DUMP)); ei = D["elementInputs"]; ni = D["nodeInputs"]
+# PATRONES SEPARADOS (Jorge, 4-sep): --pat Dead=pp.json --pat SCM=scm.json --pat Live=cv.json --pat Ex=ex.json
+# Misma malla en todos los dumps (la geometria sale del dump base). "Dead" = peso propio que
+# CALCULA CSI (materiales con peso, multiplicador 1, sin cargas nodales); los demas = cargas
+# nodales del dump, sin peso. Cada patron es su propio caso y se compara con SU dump.
+PATS = [(a.split("=")[0], a.split("=")[1]) for a in sys.argv[4:] if "=" in a and not a.startswith("--")]
+TIPO_PAT = {"dead": 1, "sdead": 2, "scm": 2, "live": 3, "viva": 3, "quake": 5, "sismo": 5, "ex": 5, "ey": 5}
+NOTAS = []
+t0 = time.time()
+if PROG == "sap":
+    import comtypes.gen.SAP2000v1 as S
+    h = comtypes.client.CreateObject("SAP2000v1.Helper").QueryInterface(S.cHelper); o = h.CreateObjectProgID("CSI.SAP2000.API.SapObject")
+    o.ApplicationStart(); sm = o.SapModel; sm.InitializeNewModel(6); sm.File.NewBlank(); LP, MODAL = "DEAD", "MODAL"
+else:
+    import comtypes.gen.ETABSv1 as S
+    h = comtypes.client.CreateObject("ETABSv1.Helper").QueryInterface(S.cHelper); o = h.CreateObjectProgID("CSI.ETABS.API.ETABSObject")
+    o.ApplicationStart(); sm = o.SapModel; sm.InitializeNewModel(6); sm.File.NewGridOnly(1, 4.0, 4.0, 2, 2, 1.0, 1.0); LP, MODAL = "Dead", "Modal"
+sm.SetPresentUnits(6)
+mats = {}
+def mat(Ev, nu, rho=0.0):
+    k = (round(Ev, 6), round(nu, 6), round(rho, 6))
+    if k not in mats:
+        nm = "MAT%d" % len(mats); sm.PropMaterial.SetMaterial(nm, 1); sm.PropMaterial.SetMPIsotropic(nm, float(Ev), float(nu), 1e-5)
+        sm.PropMaterial.SetWeightAndMass(nm, 1, float(rho) * 9.80665)   # peso por volumen (kN/m3); G = 9.80665 como Hekatan
+        mats[k] = nm
+    return mats[k]
+g = lambda d, i, v=0.0: d.get(i, v) if isinstance(d, dict) else v
+secs = {}
+def sec(i):
+    A, Iy, Iz, J = ei["areas"][i], ei["momentsOfInertiaY"][i], ei["momentsOfInertiaZ"][i], ei["torsionalConstants"][i]
+    AsY, AsZ = g(ei.get("shearAreasY"), i), g(ei.get("shearAreasZ"), i)
+    if AsY <= 0: AsY = 5.0 / 6.0 * A
+    if AsZ <= 0: AsZ = 5.0 / 6.0 * A
+    Ev, G = ei["elasticities"][i], ei["shearModuli"][i]; nu = Ev / (2 * G) - 1
+    rho = g(ei.get("densities"), i, 0.0)
+    k = (A, Iy, Iz, J, AsY, AsZ, Ev, nu, rho)
+    if k not in secs:
+        nm = "SEC%d" % len(secs); sm.PropFrame.SetGeneral(nm, mat(Ev, nu, rho), 0.3, 0.3, A, AsZ, AsY, J, Iy, Iz, 1, 1, 1, 1, 1, 1); secs[k] = nm
+    return secs[k]
+shells = {}
+MEMBRANA = "--membrana" in sys.argv     # deck (m11=m22=m12=0) como tipo MEMBRANE de CSI, no thick+modificadores
+def shellprop(i):
+    t, Ev, nu = ei["thicknesses"][i], ei["elasticities"][i], ei["poissonsRatios"][i]; rho = g(ei.get("densities"), i, 0.0)
+    tipo = 1 if g(ei.get("plateFormulations"), i, 0) == 1 else 2       # 1 thin, 2 thick
+    m = g(ei.get("shellModifiers"), i, None)
+    if MEMBRANA and m and all(abs(v) < 1e-12 for v in m[3:6]): tipo = 3   # 3 = membrane
+    k = (t, Ev, nu, tipo, rho)
+    if k not in shells:
+        nm = "SH%d" % len(shells)
+        # OJO enum distinto: ETABS eShellType Membrane = 3; en SAP2000 3 es PLATE THIN (sin rigidez de
+        # membrana: el mini lateral salia 19 %). SAP2000: ShellThin 1, ShellThick 2, PlateThin 3,
+        # PlateThick 4, Membrane 5.
+        if PROG == "sap": sm.PropArea.SetShell_1(nm, 5 if tipo == 3 else tipo, True, mat(Ev, nu, rho), 0.0, t, t)
+        elif "--wall" in sys.argv: sm.PropArea.SetWall(nm, 1, tipo, mat(Ev, nu, rho), t)   # objeto WALL (sin semantica de piso)
+        else: sm.PropArea.SetSlab(nm, 0, tipo, mat(Ev, nu, rho), t)
+        shells[k] = nm
+    return shells[k]
+nombres = []
+for i, (x, y, z) in enumerate(D["nodes"]):
+    sm.PointObj.AddCartesian(float(x), float(y), float(z), "", "N%d" % i); nombres.append("N%d" % i)
+print("nudos %d en %.0f s" % (len(nombres), time.time() - t0), flush=True)
+nfr = nsh = nang = nrel = nmod = 0
+for k, el in enumerate(D["elements"]):
+    ks = str(k)
+    if k % 200 == 0: print("  elemento %d/%d, %.0f s" % (k, len(D["elements"]), time.time() - t0), flush=True)
+    if len(el) == 2:
+        nm = "F%d" % k; sm.FrameObj.AddByPoint(nombres[el[0]], nombres[el[1]], "", sec(ks), nm); nfr += 1
+        # ETABS pone end offsets AUTOMATICOS por las dimensiones t3/t2 de la seccion (0.3 m en las
+        # General) y NO PESA esa longitud: mezanine 1x1, Dead 206.04 vs 210.37 kN (-4.33 = 16 extremos
+        # x 0.15 m). RZ = 0 no rigidiza, asi que solo se nota en el peso propio. Se anulan.
+        if PROG == "etabs": sm.FrameObj.SetEndLengthOffset(nm, False, 0.0, 0.0, 0.0)
+        ang = g(ei.get("localAngles"), ks, 0.0)
+        if abs(ang) > 1e-9: sm.FrameObj.SetLocalAxes(nm, float(ang)); nang += 1
+        rel = g(ei.get("momentReleases"), ks, None)
+        if rel and any(rel):
+            sm.FrameObj.SetReleases(nm, [bool(v) for v in rel[:6]], [bool(v) for v in rel[6:12]], [0.0] * 6, [0.0] * 6); nrel += 1
+    elif len(el) in (3, 4):
+        nm = "A%d" % k; sm.AreaObj.AddByPoint(len(el), [nombres[j] for j in el], "", shellprop(ks), nm); nsh += 1
+        if PROG == "etabs" and "--nomesh" in sys.argv:
+            # ETABS remalla las areas por defecto (1.25 m y en los cruces con barras): eso
+            # cambia la malla respecto a Hekatan/SAP. Se intenta apagar por OAPI.
+            try:
+                rr = sm.AreaObj.SetAutoMesh(nm, 0, 1, 1, 0.0, False, False, False, False, False, 0.0, False, "", 0)
+                if k == 0: NOTAS.append("SetAutoMesh -> %s" % str(rr)[:60])
+            except Exception as ex:
+                if k == 0: NOTAS.append("SetAutoMesh no disponible: " + str(ex)[:80])
+        # EDGE CONSTRAINT (la "@LC" de ETABS): ETABS lo trae ENCENDIDO por defecto en toda area y
+        # SAP2000 APAGADO. Cose a los bordes del pano los nudos intermedios que caen sobre ellos
+        # aunque no sean nudos del pano (correas partidas en los porticos, viguetas...). Es la
+        # semantica que separa a los dos programas con la MISMA malla. --noedge lo apaga en
+        # ETABS (ETABS = SAP = Hekatan); --edge lo enciende en SAP (SAP = ETABS).
+        if PROG == "etabs" and "--noedge" in sys.argv:
+            rr = sm.AreaObj.SetEdgeConstraint(nm, False, 0)
+            if k == 0 or nsh == 1: NOTAS.append("SetEdgeConstraint(False) -> %s" % str(rr)[:40])
+        if PROG == "sap" and "--edge" in sys.argv:
+            rr = sm.AreaObj.SetEdgeConstraint(nm, True, 0)
+            if nsh == 1: NOTAS.append("SetEdgeConstraint(True) -> %s" % str(rr)[:40])
+        m = g(ei.get("shellModifiers"), ks, None)
+        if m and any(abs(v - 1) > 1e-12 for v in m[:8]):
+            mm = [float(v) for v in m[:8]]
+            if MEMBRANA and all(abs(v) < 1e-12 for v in mm[3:6]): mm = mm[:3] + [1.0] * 5   # membrana: sin modificadores de placa
+            sm.AreaObj.SetModifiers(nm, mm + [1.0, 1.0]); nmod += 1
+print("%s: %d nudos, %d barras (%d con ang, %d con releases), %d shells (%d con modificadores), %d secciones" % (PROG, len(nombres), nfr, nang, nrel, nsh, nmod, len(secs)), flush=True)
+for i, s_ in ni["supports"].items(): sm.PointObj.SetRestraint(nombres[int(i)], [bool(v) for v in s_])
+# Diafragma rigido por grupo (nodeInputs.diaphragms: nudo -> grupo; negativo = solo ux, uy)
+dia = ni.get("diaphragms") or {}
+grupos = {}
+for i, gnum in dia.items():
+    gi = int(round(float(gnum)))
+    if gi == 0: continue
+    grupos.setdefault(gi, []).append(int(i))
+for gi, nds in grupos.items():
+    if len(nds) < 2: continue
+    nm = "D%d" % abs(gi)
+    if PROG == "sap":
+        sm.ConstraintDef.SetDiaphragm(nm, 3)
+        for i in nds: sm.PointObj.SetConstraint(nombres[i], nm)
+    else:
+        # ETABS: diafragma definido (rigido) y asignado al punto (opcion 3 = definido)
+        sm.Diaphragm.SetDiaphragm(nm, False)
+        for i in nds: sm.PointObj.SetDiaphragm(nombres[i], 3, nm)
+if grupos: print("diafragmas: %d grupos, %d nudos" % (len(grupos), sum(len(v) for v in grupos.values())), flush=True)
+spr = ni.get("springs") or {}
+if isinstance(spr, dict):
+    for i, kk in spr.items():
+        if any(abs(v) > 0 for v in kk): sm.PointObj.SetSpring(nombres[int(i)], [float(v) for v in kk[:6]])
+sm.LoadPatterns.SetSelfWTMultiplier(LP, 0.0)
+CASOS = []   # (nombre del caso en CSI, dump con el que se compara)
+if not PATS:
+    nc = 0; sz = 0.0
+    for i, f in ni["loads"].items():
+        if any(abs(v) > 0 for v in f): sm.PointObj.SetLoadForce(nombres[int(i)], LP, [float(v) for v in f]); nc += 1; sz += f[2]
+    print("cargas nodales %d, sum Fz %.3f, %.0f s" % (nc, sz, time.time() - t0), flush=True)
+    CASOS.append((LP, D))
+for nombre, fn in PATS:
+    Dp = json.load(open(fn)) if fn != DUMP else D
+    if len(Dp["nodes"]) != len(D["nodes"]): raise SystemExit("el dump %s no tiene la misma malla" % fn)
+    tipo = TIPO_PAT.get(nombre.lower(), 8)   # 8 = Other
+    if tipo == 1:
+        nm = LP; sm.LoadPatterns.SetSelfWTMultiplier(LP, 1.0)     # el peso lo calcula CSI
+        print("patron %s: peso propio de CSI (x1), sin cargas nodales" % nm, flush=True)
+    else:
+        nm = nombre; sm.LoadPatterns.Add(nm, tipo, 0.0, True)
+        nc = 0; sz = 0.0
+        for i, f in Dp["nodeInputs"]["loads"].items():
+            if any(abs(v) > 0 for v in f): sm.PointObj.SetLoadForce(nombres[int(i)], nm, [float(v) for v in f]); nc += 1; sz += f[2]
+        print("patron %s: %d cargas nodales, sum Fz %.3f" % (nm, nc, sz), flush=True)
+    CASOS.append((nm, Dp))
+sm.File.Save(os.path.abspath(os.path.splitext(OUT)[0] + (".sdb" if PROG == "sap" else ".EDB")))
+sm.Analyze.SetRunCaseFlag(MODAL, False)
+print("run ->", sm.Analyze.RunAnalysis(), flush=True)
+out = {"prog": PROG, "nudos": [], "notas": NOTAS, "casos": {}}
+def resultados(caso, Dc):
+    sm.Results.Setup.DeselectAllCasesAndCombosForOutput(); sm.Results.Setup.SetCaseSelectedForOutput(caso)
+    res = {"nudos": []}
+    for i, (x, y, z) in enumerate(Dc["nodes"]):
+        r = sm.Results.JointDispl(nombres[i], 0, 0, [], [], [], [], [], [], [], [], [], [], [])
+        if r[0]: res["nudos"].append({"i": i, "x": x, "y": y, "z": z, "u": [float(r[q][0]) for q in (6, 7, 8, 9, 10, 11)]})
+    r = sm.Results.BaseReact(0, [], [], [], [], [], [], [], [], [], 0.0, 0.0, 0.0)
+    res["sumRz"] = float(r[6][0]) if r[0] else None
+    H = Dc.get("deformations") or {}
+    if H:
+        umax = max(abs(v) for u in H.values() for v in u[:3]); peor = 0.0; peorN = -1
+        for n in res["nudos"]:
+            hu = H.get(str(n["i"]))
+            if not hu: continue
+            for c in range(3):
+                d = abs(n["u"][c] - hu[c]) / umax * 100
+                if d > peor: peor, peorN = d, n["i"]
+        res["peor"] = peor; res["peorNudo"] = peorN; res["umax"] = umax
+        print("%s [%s] vs Hekatan: peor nudo %.3e %% del maximo (nudo %d, u_max %.4e), %d nudos, sumRz %s" % (PROG, caso, peor, peorN, umax, len(res["nudos"]), res["sumRz"]), flush=True)
+    return res
+# ── Inspeccion del MODELO DE ANALISIS que genero CSI (malla real) ──
+try:
+    out["joints_analisis"] = int(sm.PointElm.Count())
+    out["frames_analisis"] = int(sm.FrameElm.Count()) if hasattr(sm, "FrameElm") else None
+    out["areas_analisis"] = int(sm.AreaElm.Count()) if hasattr(sm, "AreaElm") else None
+    insp = []
+    for k, el in enumerate(D["elements"]):
+        if len(el) in (3, 4) and len(insp) < 6:
+            r = sm.AreaObj.GetElm("A%d" % k, 0, [])
+            insp.append({"area": k, "elementos": int(r[0]) if r and r[0] is not None else None})
+    out["areas_muestra"] = insp
+    inspf = []
+    for k, el in enumerate(D["elements"]):
+        if len(el) == 2 and len(inspf) < 400:
+            r = sm.FrameObj.GetElm("F%d" % k, 0, [], [], [])
+            n = int(r[0]) if r and r[0] is not None else None
+            if n and n > 1: inspf.append({"barra": k, "elementos": n})
+    out["barras_partidas"] = inspf
+    out["n_barras_partidas"] = len(inspf)
+except Exception as ex:
+    out["inspeccion_error"] = str(ex)[:120]
+for caso, Dc in CASOS:
+    res = resultados(caso, Dc); out["casos"][caso] = res
+primero = out["casos"][CASOS[0][0]]
+for k in ("nudos", "sumRz", "peor", "peorNudo", "umax"):
+    if k in primero: out[k] = primero[k]
+json.dump(out, open(OUT, "w"))
+o.ApplicationExit(False)

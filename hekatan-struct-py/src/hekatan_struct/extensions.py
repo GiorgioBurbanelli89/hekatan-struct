@@ -64,9 +64,22 @@ def apply_selfweight(
             L = (frame_self_weight_length(p_i, p_j, eo[0], eo[1]) if eo
                  else float(np.linalg.norm(p_j - p_i)))
             A = element_inputs.areas.get(idx, 0)
-            W = A * L * gamma * sw_multiplier
-            add_load(i, -W / 2)
-            add_load(j, -W / 2)
+            # CONSISTENTE (fuerzas + momentos de empotramiento), como frame_fixed_end_loads y
+            # como CSI. Solo fuerzas daba 0.66 % contra SAP2000/ETABS con el mismo peso total.
+            d = p_j - p_i
+            L_full = float(np.linalg.norm(d))
+            if L_full < 1e-9:
+                continue
+            t = d / L_full
+            w = np.array([0.0, 0.0, -A * gamma * sw_multiplier])
+            c = L * L / 12.0
+            txw = np.cross(t, w)
+            fi = np.concatenate([w * L / 2.0, c * txw])
+            fj = np.concatenate([w * L / 2.0, -c * txw])
+            prev = node_inputs.loads.get(i, (0, 0, 0, 0, 0, 0))
+            node_inputs.loads[i] = tuple(float(prev[k] + fi[k]) for k in range(6))
+            prev = node_inputs.loads.get(j, (0, 0, 0, 0, 0, 0))
+            node_inputs.loads[j] = tuple(float(prev[k] + fj[k]) for k in range(6))
         elif len(conn) == 4:
             # ⚠️ el área es la REAL, no la proyectada en planta: una cubierta
             # inclinada pesa por la chapa que tiene, no por su sombra. Con la

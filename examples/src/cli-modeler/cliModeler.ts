@@ -1038,8 +1038,21 @@ export const cliModeler: ExampleDef = {
               Math.abs(Math.atan2(Math.abs(d[2]), dh)) * 180 / Math.PI < 20;
             if (esViga) L = Math.max(L - eo[0] - eo[1], 0);
           }
-          const W = A * L * rho * G * m.selfWeight;
-          addFz(e[0], -W / 2); addFz(e[1], -W / 2);
+          // CONSISTENTE, como `frameload` y como CSI: fuerzas w·L/2 Y los momentos de
+          // empotramiento (L²/12)·(t×w). Solo fuerzas daba 0.66 % en los nudos del
+          // mezanine 1x1 contra SAP2000/ETABS con el MISMO peso total (4-sep-2026).
+          const Lfull = Math.hypot(d[0], d[1], d[2]);
+          const wz = -A * rho * G * m.selfWeight;          // kN/m, global -z
+          const t = [d[0] / Lfull, d[1] / Lfull, d[2] / Lfull];
+          const c = L * L / 12;
+          const txw = [t[1] * wz, -t[0] * wz, 0];        // t × (0,0,wz)
+          const acumSW = (k: number, v: number[]) => {
+            const prev = loads.get(k) ?? [0, 0, 0, 0, 0, 0];
+            loads.set(k, [prev[0]+v[0], prev[1]+v[1], prev[2]+v[2], prev[3]+v[3], prev[4]+v[4], prev[5]+v[5]] as
+                      [number,number,number,number,number,number]);
+          };
+          acumSW(e[0], [0, 0, wz * L / 2,  c * txw[0],  c * txw[1], 0]);
+          acumSW(e[1], [0, 0, wz * L / 2, -c * txw[0], -c * txw[1], 0]);
         } else if (e.length === 4) {
           const t = thicknesses.get(i) ?? 0;
           const P = e.map(n => nodes[n]);
