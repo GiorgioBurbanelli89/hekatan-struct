@@ -16,19 +16,50 @@ Full detail in [`ESTADO_VS_ETABS.md`](./ESTADO_VS_ETABS.md).
 |---|---|---|---|
 | **Frames** (1 → n DOF) | closed-form solution | **0.063 %** worst of 6 steps | ✅ |
 | **Frames** — full warehouse, 378 nodes | ETABS 22 | **0.000 %** on all 378 | ✅ |
+| **Frames + deck** — warehouse, 609 nodes, same mesh by OAPI | SAP2000 24 · ETABS 22 (`--noedge`) | **0.001 %** on all nodes with stiffness | ✅ |
 | **Modal** (Paz & Leigh 6.3) | ETABS 22 | **0.00 %** on 6 modes, subspace path | ✅ |
 | **Shell-Thin** (Kirchhoff) | ETABS 22, 3 load steps | **0.93 %** worst | ✅ |
-| **Shell-Membrane** | ETABS 22, 3 load steps | **0.85 %** worst | ✅ |
-| **Shell-Thick** (Mindlin) | ETABS 22, 3 load steps | 11.28 % at 4×4 · 2.68 % at 8×8 | ❌ [open](#shell-status-vs-etabs-measured-2026-08-18) |
+| **Shell-Membrane** (CSI drilling, `drillingTypes = 12`) | ETABS 22, measured 12×12 cell, 9 geometries | **1e-13 %** | ✅ |
+| **Shell-Thick** (CSI formulation read from `CsiGo2.dll`) | ETABS/SAP2000, ~140 measured cells | **1e-12 %** on K · plate 8×8 = ETABS to 7 digits | ✅ [how](#the-plate-element-identifying-csis-shell-thick-2026-09-01) |
+| **Deck / membrane floors** — ETABS semantics (`deck etabs [oneway]`) | ETABS 22 by OAPI and e2k | **0.0000 %** (two-way) · **0.0010 %** (one-way) | ✅ [table](#etabs--sap2000--safe--hekatan-struct-lineal-side-by-side) |
+| **Deck / membrane floors** — no directive (= SAP2000 semantics) | SAP2000 24 by OAPI | **1e-13 %** | ✅ |
+| **Self weight** (Dead, consistent nodal vector) | SAP2000 24 own weight · ETABS 22 own weight | **0.0000 %** · **0.0000 %** (with `deck etabs`) | ✅ |
 | **E2K export** → ETABS 22 | round-trip re-import | **0.000 %** — 372/378 nodes | ✅ |
 | **E2K areas round-trip** | Hekatan → ETABS → Hekatan | **58/58** examples keep their shells | ✅ |
 | **S2K export** → SAP2000 24 | round-trip re-import | **0.000 %** — 378/378 nodes | ✅ |
-| **F2K export** → SAFE 20 | round-trip re-import | 6.8 % mean | ⏳ open |
+| **F2K export** → SAFE 20 | round-trip re-import | 6.8 % mean — SAFE's **area** Winkler vs Hekatan's **nodal** spring is a different model (1.92 % on one footing); with nodal springs SAFE = Hekatan to 1e-9 % | ⏳ open |
 | **Assembled mass** | ETABS `AssembledJointMass` | **0.002 %** | ✅ |
 
-Regression suite: **`npm test` → 335/335**, plus **123 passed** in the Python
+Regression suite: **`npm test` → 499/499**, plus **208 passed** in the Python
 engine (`hekatan-struct-py`), which reproduces the TS/C++ solver at `1e-9` and is
 used as the fast arbiter.
+
+## ETABS · SAP2000 · SAFE · Hekatan Struct Lineal, side by side
+
+Same model, same mesh, same loads. What each program does *on its own* — and what
+Hekatan does, and with which switch. Every cell is measured (2026-09-04/05,
+`tests/casos/deck_edge_constraint_vs_csi.mjs`, `validation/modelos/deck-edge/`).
+
+| | **ETABS 22** | **SAP2000 24** | **SAFE 20** | **Hekatan Struct Lineal** |
+|---|---|---|---|---|
+| Frame element | Timoshenko, CSI local axes, `ang`, releases, end offsets **auto** (t3/t2 of the section) and not weighed | same, end offsets **off** by default | beams as frames | same element; `endoffset` explicit; **auto offsets zeroed** when arbitrating |
+| Shell-Thin | DKQ (Batoz–Tahar) | DKQ | DKQ | DKQ — **0.000000 %** on the 9 modes |
+| Shell-Thick | CSI's own (Wilson DSE / Ibrahimbegović PQ3, 8-point ITW rule) | same | same | **extracted from `CsiGo2.dll`** — 1e-12 % on ~140 cells |
+| Membrane / drilling | ITW + bubble + hourglass, γ = 0.4 μ | same | — | same, `drillingTypes = 12` — 1e-13 % on the 12×12 cell |
+| Floor object connection | connects the panel to **every node it touches**: cookie-cut at crossing beams, edge constraint on nodes lying on an edge (on by default) | **only its 4 nodes** | its own mesher | 4 nodes by default (= SAP2000); `deck etabs` splits the panel at edge nodes (= ETABS) |
+| Membrane self weight / area load | to the **edge beams by tributary area** (bisectors), trapezoidal line loads | to the **4 corners** (consistent) | to the slab mesh | 4 corners by default (= SAP2000, 1e-13 %); `deck etabs` → tributary, Hermite-consistent (= ETABS, 0.0000 %) |
+| One-way load distribution | yes: `ONEWAYLOADDIST` / `Deck` section (span = local axis 1) | **no** | one-way via strips | `deck etabs oneway` (span = local 1 rotated `shellang`) — 0.0010 % vs ETABS e2k |
+| Auto mesh of floors | horizontal membranes/decks: cookie-cut; inclined: none; shells: 1.25 m | none | its own | none; `meshcross` splits crossing frames like ETABS |
+| Beam–wall joint | ETABS penalty | plain | — | `etabsjoint 1` (default) / `0` = SAP2000 |
+| Rigid diaphragm | virtual master, D1 per story | constraint | — | `diaph`, virtual master at the mass center |
+| Winkler | nodal or area springs | nodal | **area** spring by default | nodal (`spring`); area vs nodal = 1.92 % on a footing, not an error |
+| File exchange | `.e2k` in/out, OAPI | `.s2k` in/out, OAPI | `.f2k` in/out, OAPI | all three |
+| **Closure measured** | frames 0.000 %; deck 0.0000 % with `deck etabs`; mass 0.000 % | frames + deck **0.001 %** (609 nodes); mezzanines **1e-13 %** | foundations 0.01–0.29 % (w_max), nodal-spring footing 1e-9 % | — |
+
+Rule of the house: **compare with SAP2000 first** (it only connects what you mesh,
+so it measures the solver), **then with ETABS**, adding ETABS's behaviour to
+Hekatan as a *named switch* that can be turned off (`deck etabs`, `etabsjoint`,
+`meshcross`). Never bend the engine toward ETABS silently.
 
 ### The membrane element and its drilling DOF
 
@@ -453,7 +484,15 @@ Implementation: `validation/02-placas/dse-de-wilson/ley_shellthick.py` (`K_shell
 They must be excluded with a real squareness test (equal edges *and* equal
 diagonals) — with one of them in, the "worst case" reads 149 % and means nothing.
 
-#### Trapezoids: still open, but now diagnosed
+#### Trapezoids: closed on 2026-09-02 (the diagnosis below is history)
+
+*Update 2026-09-02:* the distorted cells closed too, once the Shell-Thick was read
+out of `CsiGo2.dll` instead of being fitted — `getBendingK_CSI` / `plate_csi_thick.py`
+reproduce **27 trapezoids and irregular quads at 1e-12 %** together with the square
+(see [The plate element](#the-plate-element-identifying-csis-shell-thick-2026-09-01)).
+What follows is the diagnosis as it stood on 2026-09-01, kept because it says *why*
+fitting additive terms could never have worked.
+
 
 The same basis does *not* close on distorted cells (12-96 % out). Both remaining
 hypotheses were tested and both fail: adding a fifth/sixth vector, and letting the
@@ -719,9 +758,10 @@ npx gh-pages --dist website/src/examples `
 | Bathe composite time integration (α-dissipative) | ❌ | ✅ TS scaffold `batheStep()` + `newmarkStep()` for ASCE 7-22 §16 RHA |
 | ETABS-style slab discretization (25-50 cm per bay) | ❌ | ✅ `etabsDiscretize2D()` — each bay meshed to target size, like ETABS default |
 | Materials helper (Hormigón/Acero/CFT × Rect/Circ/W/HSS) | ❌ | ✅ `materials.ts` w/ ACI 318-22 Ec=15100√f'c, AISC/A992 steel, composite |
-| Mindlin-Reissner plates | ❌ | ✅ MITC4 shear tying via `plateQ4Solve(theoryType: 0)` |
+| Mindlin-Reissner plates | ❌ | ✅ CSI Shell-Thick formulation (read from `CsiGo2.dll`, 1e-12 % on measured cells) via `plateQ4Solve(theoryType: 0)`; MITC4 kept as build option |
 | Kirchhoff thin plates | ❌ | ✅ `plateQ4Solve(theoryType: 1)` |
-| CSI Shell-Membrane formulation | ❌ | ✅ Membrane Q4 with drilling DOF (`membrana-csi` example) |
+| CSI Shell-Membrane formulation | ❌ | ✅ ITW + bubble + hourglass drilling (`drillingTypes = 12`): 1e-13 % vs ETABS's 12×12 cell |
+| ETABS floor semantics (`deck etabs [oneway]`) | ❌ | ✅ panel split at edge nodes + tributary load transfer to edge beams; off = SAP2000 semantics |
 | Timoshenko beams | ❌ Euler-Bernoulli only | ✅ φ = 12EI/GA_sL² |
 | Shell Q4 incompatible modes | ❌ | ✅ Wilson + drilling DOF |
 | Nonlinear pushover | ❌ | ✅ Newton-Raphson |
@@ -743,7 +783,7 @@ npx gh-pages --dist website/src/examples `
 | ETABS-style releases UI | ❌ | ✅ 6 DOFs × 2 ends + springs |
 | Section assignment dialog | ❌ | ✅ Rect, circular, I-shape, HSS, CFT |
 | Mobile responsive | ❌ | ✅ Hamburger menu |
-| Validated vs ETABS 22.6 | ❌ | ✅ Frames 1.0000, Shells 0.99-1.003 |
+| Validated vs ETABS 22 / SAP2000 24 / SAFE 20 | ❌ | ✅ frames + deck 0.001 %, mezzanines 1e-13 % (SAP) / 0.0000 % (ETABS), foundations 0.01–0.29 % — see [Validation status](#validation-status) |
 
 ## Workspace architecture
 
@@ -833,57 +873,17 @@ Every example exports an `ExampleDef` with:
 |------|-------------|
 | `hekatan-fem/src/planeQ4.ts` | Q4 plane-stress element (`planeQ4Solve`): 2 DOFs/node, 2×2 Gauss, LU dense with partial pivoting, stress recovery (σxx, σyy, τxy, von Mises, principal) |
 
-### Shell status vs ETABS (measured 2026-08-18)
+### Shell status vs ETABS (measured 2026-08-18) — superseded
 
-Three load steps — **A** plate alone, **B** plate + edge beams, **C** 3D frame —
-each against ETABS with the identical mesh in the same run
-(`edificios-slab/banco_shell.py`):
-
-| type | A | B | C | worst | |
-|---|---|---|---|---|---|
-| **Thin** (Kirchhoff, MZC) | 0.72 % | 0.93 % | 0.54 % | **0.93 %** | ✅ closed |
-| **Membrane** (Q6 Wilson) | 0.06 % | 0.85 % | 0.00 % | **0.85 %** | ✅ closed |
-| **Thick** (Mindlin, MITC4) | 1.42 % | **11.28 %** | 6.97 % | **11.28 %** | ❌ open |
-
-**`Thick` is too stiff on a coarse mesh**, and the cause is *not* what it looks
-like. The arbiter needs no other program: **a Mindlin plate must always be at
-least as flexible as a Kirchhoff one — shear can only soften**, so `Thick/Thin`
-must be ≥ 1. And it separates the causes on its own: if it degrades as the plate
-gets **thinner**, it is shear; if it does not depend on thickness, it is not.
-`python edificios-slab/thick_por_que_rigido.py`:
-
-| t/a | 2×2 | 4×4 | 8×8 | 12×12 |
-|---|---|---|---|---|
-| 0.0100 | **0.1485** | 0.7862 | 0.9349 | 0.9698 |
-| 0.0010 | **0.0002** | **0.7401** | **0.9189** | **0.9595** |
-
-⚠️ Raising κ says **nothing** here — once the constraint is saturated, making it
-stiffer changes nothing. Lowering it does move the number (κ ×1e-4 → 1.0997 at
-4×4), but that is not a fix: it softens by removing the constraint.
-
-The element was then instrumented from the inside
-(`edificios-slab/thick_depuracion_dinamica.py`) and that settles it:
-
-| measurement | result |
-|---|---|
-| patch test — bending x², y² and **twist xy** | shear energy **exactly 0** → the MITC4 is correctly implemented |
-| shear block, isolated | rank **exactly 4**, scaling as **1/t²** |
-| element spectrum, thin limit | Mindlin+MITC4: 3 rigid + **5 usable** + 4 tied · MZC: 3 rigid + **9 usable** |
-| energy split in the real solve, 2×2 | **99.95 % shear** → the solution fights the constraint: real locking |
-| energy split, 4×4 and 8×8 | **0.005 % shear** → it no longer fights; it lives inside the tied space |
-
-**Two different things, and they were being conflated.** At 2×2 it is genuine
-shear locking. At 4×4 and finer it is not: what is left over is the **four
-missing modes** — a full-integration Mindlin Q4 would tie 8 constraints and
-leave 1 usable mode; MITC4 ties 4 and leaves 5; a Kirchhoff MZC has 9. Real
-meshes are 4×4 and 8×8, so the 11.28 % / 2.68 % against ETABS is **the price of
-MITC4's four constraints, not an implementation error** — meaning ETABS's
-Shell-Thick is *not* a plain MITC4 Q4.
-
-Already tried, and not a drop-in: adding Wilson incompatible modes to the
-**rotations** (4 internal DOFs, statically condensed) raises usable modes from
-5 to 7, but overshoots — the two softest drop to 0.319 against MZC's 0.465.
-Regression: `hekatan-struct-py/tests/test_placa_con_vigas.py`.
+This section used to carry the 2026-08-18 three-step benchmark (Thin 0.93 %,
+Membrane 0.85 %, **Thick 11.28 % open**) and the diagnosis that MITC4's four
+missing modes were the cause. Both are history: on 2026-09-01/02 the membrane
+was closed by reproducing ETABS's measured 12×12 cell (`drillingTypes = 12`,
+1e-13 %) and the Shell-Thick by reading CSI's own formulation out of
+`CsiGo2.dll` (1e-12 % on ~140 measured cells). See
+[The plate element](#the-plate-element-identifying-csis-shell-thick-2026-09-01)
+and [`ESTADO_VS_ETABS.md`](./ESTADO_VS_ETABS.md). The Python regression
+`hekatan-struct-py/tests/test_csi_thick_cells.py` guards it cell by cell.
 
 ### Import/Export
 
@@ -891,7 +891,7 @@ Regression: `hekatan-struct-py/tests/test_placa_con_vigas.py`.
 |--------|:---:|:---:|----------|---|
 | E2K | ✅ | ✅ | ETABS | **0.000 %** |
 | S2K | ✅ | ✅ | SAP2000 | **0.000 %** |
-| F2K | ✅ | ✅ | SAFE | ⏳ 6.8 % |
+| F2K | ✅ | ✅ | SAFE | ⏳ 6.8 % (area vs nodal Winkler, see above) |
 | IFC | ✅ | — | Revit, ArchiCAD | — |
 | OpenSeesPy | ✅ | ✅ | OpenSees |
 | OpenSees Tcl | ✅ | ✅ | OpenSees |

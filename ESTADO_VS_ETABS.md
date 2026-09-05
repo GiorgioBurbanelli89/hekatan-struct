@@ -5,7 +5,7 @@ Este archivo es **el hilo**: se actualiza cada vez que se mide algo contra ETABS
 número de aquí es **medido y reproducible**, no un límite del test ni una cuenta
 a mano. La columna «cómo repetirlo» tiene el comando exacto.
 
-**Última medida: 2026-09-02** · suite `npm test` → **379/379** · WASM y C++
+**Última medida: 2026-09-05** · suite `npm test` → **499/499** · `pytest` 208 · WASM y C++
 nativo idénticos a 13 decimales.
 
 **Regla de oro** para que la comparación signifique algo: mismo modelo, misma
@@ -23,7 +23,22 @@ Hekatan, cuando eran los 78.6876 m de viga que ETABS no pesa.
 ---
 
 
-## 0. Lo cerrado el 2026-09-02 (lo más reciente arriba)
+## 0a. Lo cerrado el 2026-09-04/05: el deck (lo más reciente arriba)
+
+| capa | qué se midió | árbitro | medido | cómo repetirlo |
+|---|---|---|---|---|
+| **Galpón, misma malla de 4 nudos por paño** | Uz/Ux/Uy de 609 nudos, cargas nodales por OAPI | SAP2000 24 · ETABS 22 con `--noedge` | **0.001 %** los dos. ETABS con su defecto: **4.5 %** lateral = su *edge constraint* (nudos que caen en un borde sin ser del paño) | `python csi_desde_dump.py etabs galpon_lc_dump.json out.json --membrana --noedge` |
+| **Galpón partido en los nudos de borde** | idem, 231 sub-paños, 609 nudos | SAP2000 · ETABS `--noedge` | **3e-4 %** · **2e-5 %** | `node tests/run.mjs galpon-vs-sap2000` |
+| **Mezanine 1×1 → 3×2 de 3 pisos, 4 patrones** (Dead lo pesa CSI, SCM, Viva, Ex) | nudo a nudo por OAPI | SAP2000 · ETABS | SAP **1e-13 %** los 4; ETABS **1e-9 %** SCM/Viva/Ex y Dead 0.0000 % con `deck etabs` | `node tests/run.mjs deck-edge` (43 filas) |
+| **Paño continuo que cruza una viga** | idem | ETABS | ETABS lo **cookie-cut** en la viga: 0.47 % en SCM y 75 % en Dead contra el paño de 4 nudos; `deck etabs` lo reproduce a 0.0000 % | idem |
+| **Peso propio de barra** | Dead | SAP2000 (su propio peso) | **0.0000 %** con el vector consistente (fuerzas + momentos); solo fuerzas daba 0.66–1 % | idem |
+| **Carga de área en membrana** | Live por `SetLoadUniform`, transferencia propia de cada programa | ETABS · SAP2000 | ETABS = `deck etabs` **2.5e-5 %**; SAP = sin directiva **9e-13 %** | `--arealoads Live=sin.json:con.json` |
+| **One-way** | e2k con `ONEWAYLOADDIST "Yes"/"No"`, `ANG 90` | ETABS 22 | Yes = `deck etabs oneway` **0.0010 %**; No = `deck etabs` 0.0010 %; cruzados 0.22 % | `validation/modelos/deck-edge/oneway` |
+| **Brazos rígidos automáticos de ETABS** | Dead del mezanine | ETABS | ETABS **no pesa** los 0.15 m por extremo (4.33 kN de 210): el driver los anula | `SetEndLengthOffset(nm, False, 0,0,0)` |
+
+Dos trampas de la OAPI que costaron una mañana: `eShellType` **3 = Membrane en ETABS, Plate Thin en SAP2000** (Membrane = 5); y si se olvidan los `SetRestraint`, **SAP se cae y ETABS se auto-apoya** en la base y da números sanos pero falsos.
+
+## 0. Lo cerrado el 2026-09-02
 
 | capa | qué se midió | árbitro | medido | cómo repetirlo |
 |---|---|---|---|---|
