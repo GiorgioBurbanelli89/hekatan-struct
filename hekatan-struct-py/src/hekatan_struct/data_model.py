@@ -54,6 +54,9 @@ class NodeInputs:
     # Muelles nodales (Winkler): (índice de nudo, GDL 0..5, k). Espejo del
     # `springsList` del JS, que en el C++ es `K.coeffRef(gdof, gdof) += k`.
     springs:  list[tuple[int, int, float]] = field(default_factory=list)
+    # Muelle de AREA por cascara (SAFE `PropAreaSpring`): ks [kN/m3] -> ks*int N^T N dA sobre uz,
+    # matriz CONSISTENTE que acopla los 4 nudos (no diagonal). Indice de ELEMENTO -> ks.
+    area_springs: dict[int, float] = field(default_factory=dict)
     # Diafragma RIGIDO: nudo -> grupo (0 = ninguno). ux, uy, rz atados a un maestro
     # virtual en el centro del grupo; uz, rx, ry libres (el "Rigid" de ETABS).
     diaphragms: dict[int, int] = field(default_factory=dict)

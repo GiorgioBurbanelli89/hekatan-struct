@@ -26,6 +26,7 @@ Comandos soportados (los que usa el galpón):
     shellang ID grados           (se guarda; el solver NO lo usa, ni éste ni el TS)
     shelltype ID thin|thick      (thin = Kirchhoff DKE, thick = Mindlin MITC4)
     spring ID uz|ux|...|0..5 k   (muelle nodal de Winkler, kN/m)
+    springarea shellID ks        (muelle de AREA, consistente ks*int N^T N dA sobre uz, como SAFE)
     areaobj ID n1 n2 n3 n4 desde hasta      (agrupa celdas; solo trazabilidad)
     solve / reset                (se ignoran: aquí se resuelve al llamar)
 
@@ -134,6 +135,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
     sang: dict[int, float] = {}
     stipo: dict[int, int] = {}             # shelltype: 1 = thin, 0 = thick
     muelles: list[tuple[int, int, float]] = []   # (ID de nudo, GDL, k)
+    muelles_area: dict[int, float] = {}          # `springarea shellID ks`: Winkler de AREA (SAFE)
     errores: list[str] = []
     ignorados: dict[str, int] = {}
 
@@ -263,6 +265,8 @@ def leer_heks(ruta: str) -> ModeloHeks:
                         smod[sid] = (vals[0], vals[1])
                 elif cmd == "shellang":
                     sang[int(t[1])] = float(t[2])
+                elif cmd in ("springarea", "winklerarea"):
+                    muelles_area[int(t[1])] = float(t[2])
                 elif cmd in ("deck", "deckmode"):
                     v = (t[1] if len(t) > 1 else "etabs").lower()
                     de_flag[0] = v in ("etabs", "1", "on", "si")
@@ -462,6 +466,11 @@ def leer_heks(ruta: str) -> ModeloHeks:
     huerfanas_q = set(q_area) - {sh["id"] for sh in shells}
     if huerfanas_q:
         m.errores.append(f"areaload sin cáscara: {sorted(huerfanas_q)[:10]}")
+    for sid, ks in muelles_area.items():
+        if sid in m.shell_idx:
+            ni.area_springs[m.shell_idx[sid]] = ks
+        else:
+            m.errores.append(f"springarea sin cáscara: {sid}")
     huerfanos_muelle = []
     for nid, dof, kk in muelles:
         if nid in idx_de:

@@ -556,6 +556,37 @@ def deform(
         else:
             K_orig[np.arange(n_total), np.arange(n_total)] += kd
 
+    # Muelles de AREA (SAFE): ks * int N^T N dA sobre los uz de los 4 nudos de la cascara.
+    # Gauss 2x2 con el jacobiano real. Es la matriz de masa de una membrana con rho = ks/t:
+    # consistente, acopla los 4 nudos; el nodal (arriba) es su version concentrada.
+    if getattr(node_inputs, "area_springs", None):
+        g2 = 1.0 / np.sqrt(3.0)
+        for idx, ks in node_inputs.area_springs.items():
+            conn = elements[idx]
+            if len(conn) != 4 or ks == 0:
+                continue
+            P = np.array([nodes[n] for n in conn], float)
+            Ke = np.zeros((4, 4))
+            for xi in (-g2, g2):
+                for eta in (-g2, g2):
+                    N = 0.25 * np.array([(1 - xi) * (1 - eta), (1 + xi) * (1 - eta), (1 + xi) * (1 + eta), (1 - xi) * (1 + eta)])
+                    dN_dxi = 0.25 * np.array([-(1 - eta), (1 - eta), (1 + eta), -(1 + eta)])
+                    dN_deta = 0.25 * np.array([-(1 - xi), -(1 + xi), (1 + xi), (1 - xi)])
+                    detJ = np.linalg.norm(np.cross(dN_dxi @ P, dN_deta @ P))
+                    Ke += ks * np.outer(N, N) * detJ
+            gd = [6 * n + 2 for n in conn]
+            if disperso:
+                from scipy.sparse import lil_matrix
+                K_orig = K_orig.tolil()
+                for a in range(4):
+                    for b in range(4):
+                        K_orig[gd[a], gd[b]] += Ke[a, b]
+                K_orig = K_orig.tocsr()
+            else:
+                for a in range(4):
+                    for b in range(4):
+                        K_orig[gd[a], gd[b]] += Ke[a, b]
+
     # ── Diafragma rigido: K y F al espacio reducido, u = T u_red ──
     T_dia, col_de = _armar_diafragma(nodes, node_inputs, n_total)
     K_full, F_full = K_orig, F_orig
