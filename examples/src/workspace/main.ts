@@ -4005,6 +4005,23 @@ function buildParamsPane() {
       const errs = (window as any).__hekatanCliErrors as string[] | undefined;
       if (errs?.length) alert("⚠ Errores:\n" + errs.slice(0, 5).join("\n"));
     });
+    // ── Con quien se compara: SAP2000 o ETABS (regla de Jorge, 4-sep-2026: primero SAP2000,
+    //    que solo conecta lo que se malla; luego ETABS anadiendo SU semantica con nombre).
+    //    ETABS = `deck etabs` (panos membrana cosidos a todo nudo de borde y su peso a las
+    //    vigas por area tributaria) + `etabsjoint 1` (union viga-muro) + `meshcross 1` (las
+    //    barras que se cruzan se parten). SAP2000 = nada de eso.
+    const DIRECTIVAS = /^(deck|deckmode|etabsjoint|etabswalljoint|meshcross|meshatintersections)\b/i;
+    const semObj = { modo: /^\s*deck\s+etabs/m.test(ta.value) ? 1 : 0 };
+    fCli.addBinding(semObj, "modo", {
+      label: "Comparar con",
+      options: { "SAP2000 (sin directivas)": 0, "ETABS (deck etabs · etabsjoint · meshcross)": 1 },
+    }).on("change", (ev) => {
+      const cuerpo = ta.value.split("\n").filter((l) => !DIRECTIVAS.test(l.trim()));
+      const cab = ev.value === 1 ? ["deck etabs", "etabsjoint 1", "meshcross 1"] : ["etabsjoint 0", "meshcross 0"];
+      ta.value = [...cab, ...cuerpo].join("\n");
+      if (liveTimer) clearTimeout(liveTimer);
+      applyCliScript();
+    });
     fCli.addButton({ title: "🗑 Limpiar comandos" }).on("click", () => {
       ta.value = "";
       (window as any).__hekatanCliScript = "";
