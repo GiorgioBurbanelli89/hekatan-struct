@@ -29,21 +29,21 @@ Basado en [awatif v2.0.0](https://github.com/madil4/awatif/tree/v2.0.0) de Moham
 
 Mismo modelo, misma malla, mismas cargas. Lo que cada programa hace por su cuenta y lo que hace Hekatan, con que interruptor. Todo medido (4 y 5-sep-2026, `tests/casos/deck_edge_constraint_vs_csi.mjs`).
 
-| | **ETABS 22** | **SAP2000 24** | **SAFE 20** | **Hekatan Struct Lineal** |
+| qué | **ETABS 22** — qué hace · **Δ vs Hekatan** | **SAP2000 24** — qué hace · **Δ vs Hekatan** | **SAFE 20** — qué hace · **Δ vs Hekatan** | **Hekatan Struct Lineal** — interruptor |
 |---|---|---|---|---|
-| Barra | Timoshenko, ejes CSI, `ang`, releases; brazos rigidos **automaticos** (t3/t2 de la seccion) que ademas no pesa | igual, brazos **apagados** por defecto | vigas como barras | mismo elemento; `endoffset` explicito; al arbitrar se anulan los automaticos de ETABS |
-| Shell-Thin | DKQ | DKQ | DKQ | DKQ, **0.000000 %** en los 9 modos |
-| Shell-Thick | la formulacion propia de CSI (DSE de Wilson / PQ3, 8 puntos ITW) | igual | igual | **extraida de `CsiGo2.dll`**, 1e-12 % en ~140 celdas |
-| Membrana / drilling | ITW + burbuja + reloj, γ = 0.4 μ | igual | -- | igual (`drillingTypes = 12`), 1e-13 % |
-| Conexion del pano de piso | a **todo nudo que toca**: lo corta en la viga que cruza (cookie-cut) y cose los nudos que caen en un borde (edge constraint, encendido por defecto) | **solo sus 4 nudos** | su propio mallador | 4 nudos por defecto (= SAP2000); `deck etabs` lo parte en los nudos de borde (= ETABS) |
-| Peso propio / carga de area de la membrana | a las **vigas de borde por area tributaria** (bisectrices), linea trapezoidal | a las **4 esquinas** (consistente) | a su malla de losa | 4 esquinas por defecto (= SAP2000, 1e-13 %); `deck etabs` tributario con Hermite (= ETABS, 0.0000 %) |
-| Reparto en un sentido | si: `ONEWAYLOADDIST` o seccion `Deck` (vano = eje local 1) | **no** | franjas | `deck etabs oneway` (vano = eje local 1 girado `shellang`), 0.0010 % vs ETABS por e2k |
-| Automallado de pisos | membranas horizontales: cookie-cut; inclinadas: nada; cascaras: 1.25 m | ninguno | el suyo | ninguno; `meshcross` parte las barras que se cruzan como ETABS |
-| Union viga-muro | penalizacion de ETABS | plana | -- | `etabsjoint 1` (defecto) / `0` = SAP2000 |
-| Diafragma rigido | maestro virtual, D1 por planta | constraint | -- | `diaph`, maestro virtual en el centro de masa |
-| Winkler | nodal o de area | nodal | de **area** por defecto | nodal (`spring`); area vs nodal = 1.92 % en una zapata, es otro modelo, no un error |
-| Ficheros | `.e2k`, OAPI | `.s2k`, OAPI | `.f2k`, OAPI | los tres |
-| **Cierre medido** | barras 0.000 %; deck 0.0000 % con `deck etabs`; masa 0.000 % | barras + deck **0.001 %** (609 nudos); mezanines **1e-13 %** | cimentaciones 0.01-0.29 % (w_max); zapata con muelle nodal 1e-9 % | -- |
+| Barras (Timoshenko, ejes CSI, `ang`, releases) | brazos rígidos automáticos que no pesa → se anulan · **0.000 %** (galpón, 609 nudos, solo barras) · modal Paz 6.3 **0.00 %** | brazos apagados · **0.001 %** (galpón + deck) · mezanines **1e-13 %** | vigas como barras · zapata corrida shell + barras **0.01 %** | mismo elemento; `endoffset` explícito |
+| Shell-Thin (DKQ) | **0.000000 %** en los 9 modos de la celda · placa 8×8 **0.000 %** · 6 tipos de losa misma malla **< 3e-7 %** | zapata Shell-Thin **1e-9 %** (10 cifras) | zapata con muelle nodal **1e-9 %** · 5 benchmarks de cimentación **0.01–0.29 %** | `shelltype thin` |
+| Shell-Thick (formulación de CSI) | K de ~140 celdas medidas **1e-12 %** · placa 8×8 = ETABS a **7 cifras** | misma K, **1e-12 %** · mezanine losa maciza misma malla **< 1e-6 %** | — | `shelltype thick` (extraído de `CsiGo2.dll`) |
+| Membrana / drilling (ITW + burbuja + reloj) | celda 12×12, 9 geometrías **1e-13 %** | drilling-dof (2 muros + viga de acople) **2.5e-12 %** | — | `drillingTypes = 12` (defecto) |
+| Conexión del paño de piso | a **todo nudo que toca** (cookie-cut + edge constraint): vs Hekatan por defecto **4.5 %** (galpón) · vs `deck etabs` **0.0000 %** (mezanines) / **2e-5 %** (galpón partido) | **solo sus 4 nudos**: vs Hekatan por defecto **0.001 %** (galpón) · **1e-13 %** (mezanines) | su mallador | defecto = SAP2000; `deck etabs` = ETABS |
+| Peso propio / carga de área de la membrana | a las **vigas de borde por área tributaria**: vs Hekatan a 4 esquinas **0.55–75 %** · vs `deck etabs` Dead **0.0000 %**, carga de área **2.5e-5 %** | a las **4 esquinas**: Dead **0.0000 %** · carga de área **9e-13 %** | a su malla de losa | defecto = SAP2000; `deck etabs` = ETABS |
+| Reparto en un sentido | `ONEWAYLOADDIST` / sección `Deck`: vs `deck etabs oneway` **0.0010 %** (vs bidireccional 0.22 %) · sección `Deck` **0.11 %** | **no existe** | franjas | `deck etabs oneway` |
+| Automallado de pisos | membranas horizontales cookie-cut, cáscaras 1.25 m, inclinadas nada: apagándolo (`OBJMESHTYPE NONE`) quedan **4.4 %** — era el edge constraint, no la malla | ninguno | el suyo | `meshcross` parte los cruces como ETABS |
+| Unión viga-muro | penalización de ETABS (3×3 medida): plantilla dual con muros, modos 1-3 **0.00–0.01 %** | plana: `etabsjoint 0` | — | `etabsjoint 1` (defecto) / `0` |
+| Diafragma rígido | D1 por planta: 8 plantillas, masa **0.000 %**, modos 1-3 **0.00–0.01 %** | constraint: mezanine **0.0000 %** (cuando el .s2k lo lleva) | — | `diaph`, maestro virtual |
+| Winkler | nodal o de área | nodal: zapata **1e-9 %** | de **área** por defecto: **1.92 %** vs nodal en una zapata (otro modelo) · nodal **1e-9 %** | `spring` nodal |
+| Masa ensamblada | `AssembledJointMass` **0.000 %** (609 nudos, por objeto) | — | — | `assembled_joint_mass()` |
+| Ficheros | `.e2k` ida y vuelta **0.000 %** | `.s2k` ida y vuelta **0.000 %** | `.f2k` ida y vuelta **6.8 %** ⏳ (muelle de área) | los tres + driver OAPI |
 
 Regla de la casa: **primero se compara con SAP2000** (solo conecta lo que se malla: mide el solver) y **despues con ETABS**, anadiendo a Hekatan lo que ETABS hace como un interruptor con nombre que se puede apagar (`deck etabs`, `etabsjoint`, `meshcross`). Nunca se tuerce el motor hacia ETABS en silencio.
 

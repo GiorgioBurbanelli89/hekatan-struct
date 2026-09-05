@@ -40,21 +40,21 @@ Same model, same mesh, same loads. What each program does *on its own* — and w
 Hekatan does, and with which switch. Every cell is measured (2026-09-04/05,
 `tests/casos/deck_edge_constraint_vs_csi.mjs`, `validation/modelos/deck-edge/`).
 
-| | **ETABS 22** | **SAP2000 24** | **SAFE 20** | **Hekatan Struct Lineal** |
+| what | **ETABS 22** — what it does · **Δ vs Hekatan** | **SAP2000 24** — what it does · **Δ vs Hekatan** | **SAFE 20** — what it does · **Δ vs Hekatan** | **Hekatan Struct Lineal** — switch |
 |---|---|---|---|---|
-| Frame element | Timoshenko, CSI local axes, `ang`, releases, end offsets **auto** (t3/t2 of the section) and not weighed | same, end offsets **off** by default | beams as frames | same element; `endoffset` explicit; **auto offsets zeroed** when arbitrating |
-| Shell-Thin | DKQ (Batoz–Tahar) | DKQ | DKQ | DKQ — **0.000000 %** on the 9 modes |
-| Shell-Thick | CSI's own (Wilson DSE / Ibrahimbegović PQ3, 8-point ITW rule) | same | same | **extracted from `CsiGo2.dll`** — 1e-12 % on ~140 cells |
-| Membrane / drilling | ITW + bubble + hourglass, γ = 0.4 μ | same | — | same, `drillingTypes = 12` — 1e-13 % on the 12×12 cell |
-| Floor object connection | connects the panel to **every node it touches**: cookie-cut at crossing beams, edge constraint on nodes lying on an edge (on by default) | **only its 4 nodes** | its own mesher | 4 nodes by default (= SAP2000); `deck etabs` splits the panel at edge nodes (= ETABS) |
-| Membrane self weight / area load | to the **edge beams by tributary area** (bisectors), trapezoidal line loads | to the **4 corners** (consistent) | to the slab mesh | 4 corners by default (= SAP2000, 1e-13 %); `deck etabs` → tributary, Hermite-consistent (= ETABS, 0.0000 %) |
-| One-way load distribution | yes: `ONEWAYLOADDIST` / `Deck` section (span = local axis 1) | **no** | one-way via strips | `deck etabs oneway` (span = local 1 rotated `shellang`) — 0.0010 % vs ETABS e2k |
-| Auto mesh of floors | horizontal membranes/decks: cookie-cut; inclined: none; shells: 1.25 m | none | its own | none; `meshcross` splits crossing frames like ETABS |
-| Beam–wall joint | ETABS penalty | plain | — | `etabsjoint 1` (default) / `0` = SAP2000 |
-| Rigid diaphragm | virtual master, D1 per story | constraint | — | `diaph`, virtual master at the mass center |
-| Winkler | nodal or area springs | nodal | **area** spring by default | nodal (`spring`); area vs nodal = 1.92 % on a footing, not an error |
-| File exchange | `.e2k` in/out, OAPI | `.s2k` in/out, OAPI | `.f2k` in/out, OAPI | all three |
-| **Closure measured** | frames 0.000 %; deck 0.0000 % with `deck etabs`; mass 0.000 % | frames + deck **0.001 %** (609 nodes); mezzanines **1e-13 %** | foundations 0.01–0.29 % (w_max), nodal-spring footing 1e-9 % | — |
+| Frames (Timoshenko, CSI axes, `ang`, releases) | auto end offsets, not weighed → zeroed · **0.000 %** (warehouse, 609 nodes, frames only) · modal Paz 6.3 **0.00 %** | end offsets off · **0.001 %** (warehouse + deck) · mezzanines **1e-13 %** | beams as frames · strip footing shell + frames **0.01 %** | same element; `endoffset` explicit |
+| Shell-Thin (DKQ) | **0.000000 %** on the 9 modes of the cell · plate 8×8 **0.000 %** · 6 slab types same mesh **< 3e-7 %** | footing Shell-Thin **1e-9 %** (10 digits) | footing with nodal spring **1e-9 %** · 5 foundation benchmarks **0.01–0.29 %** | `shelltype thin` |
+| Shell-Thick (CSI formulation) | K of ~140 measured cells **1e-12 %** · plate 8×8 = ETABS to **7 digits** | same K, **1e-12 %** · solid slab mezzanine same mesh **< 1e-6 %** | — | `shelltype thick` (read out of `CsiGo2.dll`) |
+| Membrane / drilling (ITW + bubble + hourglass) | 12×12 cell, 9 geometries **1e-13 %** | drilling-dof (2 walls + coupling beam) **2.5e-12 %** | — | `drillingTypes = 12` (default) |
+| Floor-panel connection | connects to **every node it touches** (cookie-cut + edge constraint): vs Hekatan default **4.5 %** (warehouse) · vs `deck etabs` **0.0000 %** (mezzanines) / **2e-5 %** (warehouse, split mesh) | **only its 4 nodes**: vs Hekatan default **0.001 %** (warehouse) · **1e-13 %** (mezzanines) | its own mesher | default = SAP2000; `deck etabs` = ETABS |
+| Membrane self weight / area load | to the **edge beams by tributary area**: vs 4-corner Hekatan **0.55–75 %** · vs `deck etabs` Dead **0.0000 %**, area load **2.5e-5 %** | to the **4 corners**: Dead **0.0000 %** · area load **9e-13 %** | to its slab mesh | default = SAP2000; `deck etabs` = ETABS |
+| One-way distribution | `ONEWAYLOADDIST` / `Deck` section: vs `deck etabs oneway` **0.0010 %** (vs two-way 0.22 %) · `Deck` section **0.11 %** | **does not exist** | strips | `deck etabs oneway` |
+| Auto mesh of floors | horizontal membranes cookie-cut, shells 1.25 m, inclined none: turning it off (`OBJMESHTYPE NONE`) still leaves **4.4 %** — it was the edge constraint, not the mesh | none | its own | `meshcross` splits crossing frames like ETABS |
+| Beam–wall joint | ETABS penalty (3×3 measured): dual template with walls, modes 1-3 **0.00–0.01 %** | plain: `etabsjoint 0` | — | `etabsjoint 1` (default) / `0` |
+| Rigid diaphragm | D1 per story: 8 templates, mass **0.000 %**, modes 1-3 **0.00–0.01 %** | constraint: mezzanine **0.0000 %** (once the .s2k carried it) | — | `diaph`, virtual master |
+| Winkler | nodal or area | nodal: footing **1e-9 %** | **area** by default: **1.92 %** vs nodal on one footing (a different model) · nodal **1e-9 %** | nodal `spring` |
+| Assembled mass | `AssembledJointMass` **0.000 %** (609 nodes, by object) | — | — | `assembled_joint_mass()` |
+| File exchange | `.e2k` round-trip **0.000 %** | `.s2k` round-trip **0.000 %** | `.f2k` round-trip **6.8 %** ⏳ (area spring) | all three + OAPI driver |
 
 Rule of the house: **compare with SAP2000 first** (it only connects what you mesh,
 so it measures the solver), **then with ETABS**, adding ETABS's behaviour to
