@@ -27,23 +27,44 @@ Basado en [awatif v2.0.0](https://github.com/madil4/awatif/tree/v2.0.0) de Moham
 
 ## ETABS · SAP2000 · SAFE · Hekatan Struct Lineal, frente a frente
 
-Mismo modelo, misma malla, mismas cargas. Lo que cada programa hace por su cuenta y lo que hace Hekatan, con que interruptor. Todo medido (4 y 5-sep-2026, `tests/casos/deck_edge_constraint_vs_csi.mjs`).
+Diferencia de cada árbitro con **Hekatan Struct Lineal**, mismo modelo, misma malla nudo a
+nudo, mismas cargas (% del desplazamiento máximo salvo que se diga otra cosa). Hekatan es el
+software; ETABS, SAP2000 y SAFE solo se usan para comprobarlo.
 
-| qué | **ETABS 22** — qué hace · **Δ vs Hekatan** | **SAP2000 24** — qué hace · **Δ vs Hekatan** | **SAFE 20** — qué hace · **Δ vs Hekatan** | **Hekatan Struct Lineal** — interruptor |
-|---|---|---|---|---|
-| Barras (Timoshenko, ejes CSI, `ang`, releases) | brazos rígidos automáticos que no pesa → se anulan · **0.000 %** (galpón, 609 nudos, solo barras) · modal Paz 6.3 **0.00 %** | brazos apagados · **0.001 %** (galpón + deck) · mezanines **1e-13 %** | vigas como barras · zapata corrida shell + barras **0.01 %** | mismo elemento; `endoffset` explícito |
-| Shell-Thin (DKQ) | **0.000000 %** en los 9 modos de la celda · placa 8×8 **0.000 %** · 6 tipos de losa misma malla **< 3e-7 %** | zapata Shell-Thin **1e-9 %** (10 cifras) | zapata con muelle nodal **1e-9 %** · 5 benchmarks de cimentación **0.01–0.29 %** | `shelltype thin` |
-| Shell-Thick (formulación de CSI) | K de ~140 celdas medidas **1e-12 %** · placa 8×8 = ETABS a **7 cifras** | misma K, **1e-12 %** · mezanine losa maciza misma malla **< 1e-6 %** | — | `shelltype thick` (extraído de `CsiGo2.dll`) |
-| Membrana / drilling (ITW + burbuja + reloj) | celda 12×12, 9 geometrías **1e-13 %** | drilling-dof (2 muros + viga de acople) **2.5e-12 %** | — | `drillingTypes = 12` (defecto) |
-| Conexión del paño de piso | a **todo nudo que toca** (cookie-cut + edge constraint): vs Hekatan por defecto **4.5 %** (galpón) · vs `deck etabs` **0.0000 %** (mezanines) / **2e-5 %** (galpón partido) | **solo sus 4 nudos**: vs Hekatan por defecto **0.001 %** (galpón) · **1e-13 %** (mezanines) | su mallador | defecto = SAP2000; `deck etabs` = ETABS |
-| Peso propio / carga de área de la membrana | a las **vigas de borde por área tributaria**: vs Hekatan a 4 esquinas **0.55–75 %** · vs `deck etabs` Dead **0.0000 %**, carga de área **2.5e-5 %** | a las **4 esquinas**: Dead **0.0000 %** · carga de área **9e-13 %** | a su malla de losa | defecto = SAP2000; `deck etabs` = ETABS |
-| Reparto en un sentido | `ONEWAYLOADDIST` / sección `Deck`: vs `deck etabs oneway` **0.0010 %** (vs bidireccional 0.22 %) · sección `Deck` **0.11 %** | **no existe** | franjas | `deck etabs oneway` |
-| Automallado de pisos | membranas horizontales cookie-cut, cáscaras 1.25 m, inclinadas nada: apagándolo (`OBJMESHTYPE NONE`) quedan **4.4 %** — era el edge constraint, no la malla | ninguno | el suyo | `meshcross` parte los cruces como ETABS |
-| Unión viga-muro | penalización de ETABS (3×3 medida): plantilla dual con muros, modos 1-3 **0.00–0.01 %** | plana: `etabsjoint 0` | — | `etabsjoint 1` (defecto) / `0` |
-| Diafragma rígido | D1 por planta: 8 plantillas, masa **0.000 %**, modos 1-3 **0.00–0.01 %** | constraint: mezanine **0.0000 %** (cuando el .s2k lo lleva) | — | `diaph`, maestro virtual |
-| Winkler | nodal o de área | nodal: zapata **1e-9 %** | de **área** por defecto: **1.92 %** vs nodal en una zapata (otro modelo) · nodal **1e-9 %** | `spring` nodal |
-| Masa ensamblada | `AssembledJointMass` **0.000 %** (609 nudos, por objeto) | — | — | `assembled_joint_mass()` |
-| Ficheros | `.e2k` ida y vuelta **0.000 %** | `.s2k` ida y vuelta **0.000 %** | `.f2k` ida y vuelta **6.8 %** ⏳ (muelle de área) | los tres + driver OAPI |
+| qué se compara | interruptor de Hekatan | **SAP2000 24** | **ETABS 22** | **SAFE 20** |
+|---|---|:---:|:---:|:---:|
+| Solo barras — galpón, 609 nudos, `ang` + releases | — | **0.001 %** | **0.000 %** | — |
+| Barras — modal, Paz & Leigh 6.3, 6 modos | — | — | **0.00 %** | — |
+| Barras + deck — galpón, 609 nudos, paños de 4 nudos | — | **0.001 %** | 4.5 % ¹ → **0.001 %** con `--noedge` | — |
+| Barras + deck — galpón, paños partidos en los nudos de borde | `deck etabs` | **3e-4 %** | **2e-5 %** | — |
+| Mezanines 1×1 → 3×2 × 3 pisos — SCM, Viva, Ex | `deck etabs` | **1e-13 %** | **1e-9 %** | — |
+| Mezanines — Dead (cada programa pesa su propio modelo) | `deck etabs` | **0.0000 %** | **0.0000 %** | — |
+| Carga de área sobre membrana — transferencia propia de cada programa | `deck etabs` | **9e-13 %** ² | **2.5e-5 %** | — |
+| Deck en un sentido (`ONEWAYLOADDIST`, `ANG 90`) | `deck etabs oneway` | n/a ³ | **0.0010 %** | — |
+| Shell-Thin (DKQ) — 9 modos de la celda | `shelltype thin` | — | **0.000000 %** | — |
+| Shell-Thin — placa 8×8, 5 espesores | `shelltype thin` | — | **0.000 %** | — |
+| Shell-Thick (formulación de CSI) — K de ~140 celdas medidas | `shelltype thick` | **1e-12 %** | **1e-12 %** | — |
+| Shell-Thick — mezanine losa maciza, 1284 nudos | `shelltype thick` | **< 1e-6 %** | **< 1e-6 %** | — |
+| 6 tipos de losa (deck, membrana, thin, thick, nervada, waffle) | — | — | **< 3e-7 %** | — |
+| Membrana / drilling — celda 12×12, 9 geometrías | `drillingTypes 12` | — | **1e-13 %** | — |
+| Drilling — 2 muros + viga de acople, 92 nudos | — | **2.5e-12 %** | — | — |
+| Unión viga-muro — plantilla dual con muros, modos 1–3 | `etabsjoint 1` | — | **0.00–0.01 %** | — |
+| Diafragma rígido — 8 plantillas, masa · modos 1–3 | `diaph` | **0.0000 %** (mezanine) | **0.000 %** · **0.00–0.01 %** | — |
+| Masa ensamblada — galpón, `AssembledJointMass` | — | — | **0.000 %** | — |
+| Zapata sobre Winkler — Shell-Thin, muelles nodales | `spring` | **1e-9 %** | — | **1e-9 %** |
+| Zapata sobre Winkler — muelle de **área** de SAFE | `spring` | — | — | 1.92 % ⁴ |
+| 5 benchmarks de cimentación (w_max) | — | — | — | **0.01–0.29 %** |
+| Zapata corrida, shell + barras | — | — | — | **0.01 %** |
+| Ida y vuelta por fichero (Hekatan → fichero → programa → Hekatan) | — | `.s2k` **0.000 %** | `.e2k` **0.000 %** | `.f2k` 6.8 % ⏳ ⁴ |
+
+¹ ETABS con sus defectos conecta el paño de piso a todo nudo que cae en sus bordes (edge
+constraint) y lo corta en las vigas que lo cruzan; SAP2000 solo conecta los 4 nudos. Sin el
+interruptor Hekatan se comporta como SAP2000; con `deck etabs`, como ETABS (ver la sección del deck).
+² SAP2000 pone el peso y la carga de área de una membrana en sus 4 esquinas, como Hekatan sin interruptor.
+³ SAP2000 no tiene reparto en un sentido.
+⁴ El Winkler por defecto de SAFE es un muelle de *área*; el de Hekatan (y SAP2000) es nodal. El
+1.92 % es la diferencia entre los dos modelos, no un error; con muelles nodales SAFE cierra a 1e-9 %.
+La ida y vuelta del `.f2k` sigue abierta por lo mismo.
 
 Regla de la casa: **primero se compara con SAP2000** (solo conecta lo que se malla: mide el solver) y **despues con ETABS**, anadiendo a Hekatan lo que ETABS hace como un interruptor con nombre que se puede apagar (`deck etabs`, `etabsjoint`, `meshcross`). Nunca se tuerce el motor hacia ETABS en silencio.
 
