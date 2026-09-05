@@ -2,7 +2,7 @@
 # generado por heks_galpon_desde_malla.py, modo de membrana: loseta
 # 5-sep-2026: `deck etabs` = las membranas (deck, zinc, rampa) partidas en los nudos que caen en
 # sus bordes, como ETABS. Referencia SAP2000 sobre ESA malla (galpon_lc_sap_oapi.json).
-deck etabs
+# (sin `deck etabs`: la malla ORIGINAL de 4 nudos por pano, para medir el edge constraint)
 
 node 1 0 0 0
 node 2 5.025 0 0

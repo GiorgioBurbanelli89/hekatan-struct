@@ -43,5 +43,11 @@ export async function correr() {
     { que: "nudos de BARRA vs SAP2000 (misma malla, OAPI), peor % del maximo", medido: peorBarra, limite: 0.01, ok: peorBarra <= 0.01, detalle: `u_max ${umax.toExponential(4)} m; ${S.nudos.length} nudos` },
     { que: "todos los nudos con rigidez, peor % del maximo", medido: peorTodo, limite: 0.01, ok: peorTodo <= 0.01, detalle: `${dentro}/${n} componentes dentro del 0.01 %; ${huerfanos} nudos huerfanos del deck excluidos (Hekatan = 0)` },
     { que: "suma de reacciones Rz = SAP2000", medido: Math.abs(sumRz / S.sumRz - 1) * 100, limite: 1e-6, ok: Math.abs(sumRz / S.sumRz - 1) * 100 <= 1e-6, detalle: `${sumRz.toFixed(3)} vs ${S.sumRz.toFixed(3)} kN` },
+    // ETABS con el edge constraint APAGADO sobre la misma malla partida (5-sep-2026): el solver
+    // de ETABS tambien es este. Con el edge constraint encendido (su defecto) quedan 1.3 % en los
+    // nudos que caen en UN solo borde: eso es semantica de ETABS, no solver.
+    (() => { const E = JSON.parse(readFileSync(join(AQUI, "..", "datos", "galpon_lc_etabs_noedge_oapi.json"), "utf-8")); const nud = E.casos ? E.casos.Dead.nudos : E.nudos;
+      let peor = 0; for (const q of nud) { if (!enBarra.has(q.i)) continue; const u = U.get(q.i); if (!u) continue; for (let c = 0; c < 3; c++) peor = Math.max(peor, Math.abs(u[c] - q.u[c]) / umax * 100); }
+      return { que: "nudos de BARRA vs ETABS 22 --noedge (misma malla partida, OAPI), peor % del maximo", medido: peor, limite: 0.01, ok: peor <= 0.01, detalle: `${nud.length} nudos` }; })(),
   ];
 }

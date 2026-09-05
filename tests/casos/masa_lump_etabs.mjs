@@ -57,7 +57,10 @@ const enPiso = (z) => PISOS.some((zp) => Math.abs(z - zp) <= TOL_Z);
 
 export async function correr() {
   const filas = [];
-  const modelo = await resolverHeks(join(DATOS, "galpon_lc.heks"));
+  // La referencia de ETABS (AssembledJointMass) es la de los OBJETOS de 4 nudos por pano; desde
+  // el 5-sep-2026 galpon_lc.heks lleva `deck etabs` (panos partidos), asi que aqui va la copia
+  // sin directiva: la bascula mide la masa por objeto, no la malla de analisis.
+  const modelo = await resolverHeks(join(DATOS, "galpon_lc_4nudos.heks"));
   const et = JSON.parse(readFileSync(join(DATOS, "galpon_masa_etabs.json"), "utf-8"));
 
   const masa = await masaEnsamblada(modelo.nodes, modelo.elements, modelo.elementInputs,

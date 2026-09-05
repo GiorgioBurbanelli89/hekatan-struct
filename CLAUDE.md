@@ -858,8 +858,13 @@ SAP2000 y Hekatan solo conectan los 4 nudos y pesan en las 4 esquinas.
   0.0000 %. Y ETABS no pesa sus end offsets automáticos: el driver los anula.
 - `deck etabs oneway`: reparto en UN sentido (el `ONEWAYLOADDIST` de ETABS). Vano = eje local 1
   del paño (borde 0→1 girado `shellang`); la carga va solo a los dos bordes de apoyo. Rectángulo:
-  q·a·b/2 a cada apoyo (`pytest tests/test_deck_etabs.py`). TS = Python a 3e-12. Sin árbitro
-  ETABS todavía: el one-way no se puede poner por OAPI (solo por e2k).
+  q·a·b/2 a cada apoyo (`pytest tests/test_deck_etabs.py`). TS = Python a 3e-12. **Arbitrado
+  con ETABS por e2k** (5-sep-2026, `validation/modelos/deck-edge/oneway`): losa membrana 65 mm
+  con `ANG 90` y `ONEWAYLOADDIST "Yes"` = `deck etabs oneway` a **0.0010 %**; con `"No"` =
+  `deck etabs` a 0.0010 %; cruzados 0.22 %. El `PROPTYPE "Deck"` de ETABS es one-way de fábrica
+  (0.11 %, su membrana sale de la geometría del deck).
+- `tests/datos/galpon_lc.heks` lleva `deck etabs` desde el 5-sep: su referencia SAP2000 es la
+  de la malla partida (3e-4 %) y también se compara con ETABS `--noedge` (2e-5 %).
 - Plantillas (`edificioAporticado` y herederas, `plantillas`): parámetro **Comparar con**
   (ETABS / SAP2000) → `etabsWallJoint`. Sus losas son placas, no deck: el `deck etabs` no aplica.
 - `csi_desde_dump.py … --watchdog N`: relanza el driver si SAP2000 se cuelga (15 min, mata el

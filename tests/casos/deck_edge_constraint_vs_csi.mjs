@@ -60,7 +60,7 @@ export async function correr() {
   const existe = (que, r, minimo, detalle) => filas.push({ que, medido: r.peor, limite: `>= ${minimo}`, ok: r.peor >= minimo, crudo: true, detalle });
 
   // 1. galpon, misma malla de 4 nudos por pano
-  const gal = await hek(join(DATOS, "galpon_lc.heks"));
+  const gal = await hek(join(V, "galpon_lc_4nudos.heks"));   // la malla original de 4 nudos por pano (tests/datos/galpon_lc.heks lleva `deck etabs` desde el 5-sep)
   fila("galpon 609 nudos, misma malla: ETABS con el edge constraint APAGADO (--noedge) = Hekatan", comparar(gal, J("galpon_etabs_noedge.json"), "Dead"), 0.01);
   const zinc = await hek(join(V, "galpon_solozinc.heks"));
   const rz = comparar(zinc, J("galpon_solozinc_etabs_edge.json"), "Dead");
@@ -128,8 +128,26 @@ export async function correr() {
   fila("areaload en ETABS (SetLoadUniform, transferencia de ETABS) = Hekatan `deck etabs`", comparar(await hek(join(V, "mez1_area_DE.heks")), Ra, "Live"), 1e-3);
   const ra = comparar(await hek(join(V, "mez1_area.heks")), Ra, "Live");
   existe("areaload en ETABS contra el reparto a las 4 esquinas (sin directiva) NO cierra", ra, 0.3, `${ra.peor.toFixed(3)} %`);
+  fila("areaload en SAP2000 (SetLoadUniform, transferencia de SAP) = Hekatan SIN directiva (4 esquinas)", comparar(await hek(join(V, "mez1_area.heks")), J("mez1_area_sap.json"), "Live"), 1e-6);
   // 9. `deck etabs oneway`: resuelve, mismo peso total que el bidireccional; TS = Python (pytest test_deck_etabs)
   const ow = await hek(join(V, "mez1_pp_OW.heks"));
   filas.push({ que: "`deck etabs oneway` (vano = eje local 1 girado shellang 90): resuelve con 16 nudos", crudo: true, medido: ow.n, limite: "16", ok: ow.n === 16, detalle: "reparto en un sentido: cada vigueta recibe la mitad de la franja (analitico en pytest)" });
+  // 10. ONE-WAY con ETABS de arbitro, por e2k (la unica via que acepta ONEWAYLOADDIST): losa
+  //     membrana de 65 mm con ANG 90 (vano en Y, apoya en las viguetas), 2 kN/m2. "Yes" =
+  //     `deck etabs oneway`, "No" = `deck etabs` (bidireccional); cruzados dan 0.22 %.
+  const O = join(V, "oneway");
+  const porCoord = (Jx) => { const k4 = (x, y, z) => [x, y, z].map(v => (Math.round(v * 1e4) / 1e4).toFixed(4)).join(","); const mp = new Map(); for (const q of Jx.puntos || []) mp.set(k4(q.x, q.y, q.z), String(q.n)); return { k4, mp, E: Jx.disp_nudos || {} }; };
+  const cmpE2k = async (heks, jsonF) => {
+    const Hk = await resolverHeks(join(O, heks)); const U = Hk.deformOutputs.deformations; const fr = new Set(); for (const e of Hk.elements) if (e.length === 2) { fr.add(e[0]); fr.add(e[1]); }
+    const { k4, mp, E } = porCoord(JSON.parse(readFileSync(join(O, jsonF), "utf-8")));
+    let umax = 0; for (const [, u] of U) umax = Math.max(umax, ...u.slice(0, 3).map(Math.abs));
+    let peor = 0, n = 0;
+    for (let i = 0; i < Hk.nodes.length; i++) { if (!fr.has(i)) continue; const e = E[mp.get(k4(...Hk.nodes[i]))]; const u = U.get(i); if (!e || !u) continue; n++; for (let c = 0; c < 3; c++) peor = Math.max(peor, Math.abs(u[c] - e[c]) / umax * 100); }
+    return { peor, n, umax };
+  };
+  fila("ONE-WAY: ETABS e2k ONEWAYLOADDIST Yes (membrana 65 mm, ANG 90) = Hekatan `deck etabs oneway` (shellang 90)", await cmpE2k("ow_hek.heks", "ow_slabmem.json"), 0.01);
+  fila("dos direcciones: ETABS e2k ONEWAYLOADDIST No = Hekatan `deck etabs`", await cmpE2k("ow_hek2way.heks", "ow_slabmem2way.json"), 0.01);
+  existe("cruzado: ETABS one-way contra Hekatan bidireccional NO cierra (el reparto distingue)", await cmpE2k("ow_hek2way.heks", "ow_slabmem.json"), 0.1, "0.22 % medido");
+  fila("PROPTYPE Deck (Filled) de ETABS vs `deck etabs oneway` (el Deck de ETABS es one-way de fabrica, con su propia rigidez de membrana)", await cmpE2k("ow_hek.heks", "ow.json"), 0.3);
   return filas;
 }
