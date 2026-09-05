@@ -121,5 +121,15 @@ export async function correr() {
   fila("`deck etabs` mezanine 2x1 pano CONTINUO: Dead = ETABS", comparar(await hek(join(V, "mez2x1p1_continuo_pp_DE.heks")), J("mez2x1p1_continuo_etabs.json"), "Dead"), 1e-3);
   fila("`deck etabs` mezanine 3x2 de 3 pisos: Dead = ETABS", comparar(await hek(join(V, "mez3x2p3_vano_pp_DE.heks")), J("mez3x2p3_vano_etabs.json"), "Dead"), 1e-3);
   fila("`deck etabs` galpon: = ETABS --noedge sobre la malla partida (mismos 231 sub-panos que partir_panos_en_nudos.py)", comparar(await hek(join(V, "galpon_lc_DE.heks")), J("galpon_partido_etabs_noedge.json"), "Dead"), 1e-3);
+  // 8. Carga de AREA (`areaload` 2 kN/m2 en los 5 panos): ETABS recibe la carga de area y hace SU
+  //    transferencia (tributaria a las vigas de borde). `deck etabs` la reproduce; el reparto a las
+  //    4 esquinas (SAP2000 / Hekatan sin directiva) no.
+  const Ra = J("mez1_area_etabs.json");
+  fila("areaload en ETABS (SetLoadUniform, transferencia de ETABS) = Hekatan `deck etabs`", comparar(await hek(join(V, "mez1_area_DE.heks")), Ra, "Live"), 1e-3);
+  const ra = comparar(await hek(join(V, "mez1_area.heks")), Ra, "Live");
+  existe("areaload en ETABS contra el reparto a las 4 esquinas (sin directiva) NO cierra", ra, 0.3, `${ra.peor.toFixed(3)} %`);
+  // 9. `deck etabs oneway`: resuelve, mismo peso total que el bidireccional; TS = Python (pytest test_deck_etabs)
+  const ow = await hek(join(V, "mez1_pp_OW.heks"));
+  filas.push({ que: "`deck etabs oneway` (vano = eje local 1 girado shellang 90): resuelve con 16 nudos", crudo: true, medido: ow.n, limite: "16", ok: ow.n === 16, detalle: "reparto en un sentido: cada vigueta recibe la mitad de la franja (analitico en pytest)" });
   return filas;
 }

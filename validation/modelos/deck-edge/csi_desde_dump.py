@@ -4,9 +4,26 @@ armado en SAP2000 o ETABS por OAPI con la MISMA malla y las MISMAS cargas nodale
 Hekatan ya repartio: peso propio + areas), sin peso propio de CSI. Compara SOLVERS, no cargas.
 Barras: General (I33=Iz, I22=Iy, AS2=shearAreasZ, AS3=shearAreasY), angulo de eje local,
 releases. Cascaras: Thin/Thick con los 8 modificadores (el deck = membrana). Muelles nodales.
-    python csi_desde_dump.py sap|etabs dump.json salida.json [--membrana] [--wall] [--nomesh] [--noedge | --edge]
+    python csi_desde_dump.py sap|etabs dump.json salida.json [--membrana] [--wall] [--nomesh] [--noedge | --edge] [--watchdog N]
 Salida: {"nudos":[{i,x,y,z,u[6]}], "sumRz", "peor": % del maximo vs Hekatan}"""
-import json, os, sys, time, comtypes.client
+import json, os, sys, time, subprocess
+# ── WATCHDOG (--watchdog [N]): SAP2000 por OAPI se queda colgado al azar (5 GB, sin volver). El padre
+# relanza este mismo script sin --watchdog con un tope de 15 min, mata SAP2000/ETABS y reintenta N veces.
+if "--watchdog" in sys.argv:
+    i = sys.argv.index("--watchdog"); n = 3
+    if i + 1 < len(sys.argv) and sys.argv[i + 1].isdigit(): n = int(sys.argv[i + 1]); del sys.argv[i + 1]
+    del sys.argv[i]
+    for intento in range(1, n + 1):
+        try:
+            r = subprocess.run([sys.executable] + sys.argv, timeout=900)
+            if r.returncode == 0 and os.path.exists(sys.argv[3]): sys.exit(0)
+            print("watchdog: intento %d fallo (codigo %s)" % (intento, r.returncode), flush=True)
+        except subprocess.TimeoutExpired:
+            print("watchdog: intento %d colgado a los 900 s" % intento, flush=True)
+        for exe in ("SAP2000.exe", "ETABS.exe"): subprocess.run(["taskkill", "/F", "/IM", exe], capture_output=True)
+        time.sleep(3)
+    sys.exit(1)
+import comtypes.client
 sys.stdout.reconfigure(encoding="utf-8")
 PROG, DUMP, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
 D = json.load(open(DUMP)); ei = D["elementInputs"]; ni = D["nodeInputs"]
@@ -14,6 +31,14 @@ D = json.load(open(DUMP)); ei = D["elementInputs"]; ni = D["nodeInputs"]
 # Misma malla en todos los dumps (la geometria sale del dump base). "Dead" = peso propio que
 # CALCULA CSI (materiales con peso, multiplicador 1, sin cargas nodales); los demas = cargas
 # nodales del dump, sin peso. Cada patron es su propio caso y se compara con SU dump.
+# --arealoads PAT=sinDirectiva.json:conDirectiva.json : CSI recibe la carga de AREA de cada shell
+# (SetLoadUniform, global Z) y hace SU transferencia (ETABS: tributaria a las vigas de borde); el
+# caso se compara con el dump de la derecha (Hekatan con `deck etabs`). Mide la transferencia, no
+# el solver.
+AREAL = []
+if "--arealoads" in sys.argv:
+    i = sys.argv.index("--arealoads"); spec = sys.argv[i + 1]; nm_, rest = spec.split("=", 1); f1, f2 = rest.split(":")
+    AREAL.append((nm_, f1, f2)); del sys.argv[i:i + 2]
 PATS = [(a.split("=")[0], a.split("=")[1]) for a in sys.argv[4:] if "=" in a and not a.startswith("--")]
 TIPO_PAT = {"dead": 1, "sdead": 2, "scm": 2, "live": 3, "viva": 3, "quake": 5, "sismo": 5, "ex": 5, "ey": 5}
 NOTAS = []
@@ -143,6 +168,14 @@ if not PATS:
         if any(abs(v) > 0 for v in f): sm.PointObj.SetLoadForce(nombres[int(i)], LP, [float(v) for v in f]); nc += 1; sz += f[2]
     print("cargas nodales %d, sum Fz %.3f, %.0f s" % (nc, sz, time.time() - t0), flush=True)
     CASOS.append((LP, D))
+for nombre, f_cargas, f_cmp in AREAL:
+    Dq = json.load(open(f_cargas)); Dc = json.load(open(f_cmp))
+    sm.LoadPatterns.Add(nombre, 3, 0.0, True); nq = 0; sq = 0.0
+    for ks, q in (Dq["elementInputs"].get("shellSurfaceLoads") or {}).items():
+        if abs(q) < 1e-15: continue
+        sm.AreaObj.SetLoadUniform("A%d" % int(ks), nombre, float(q), 6, True, "Global", 0); nq += 1; sq += q
+    print("patron %s: carga de AREA en %d shells (sum q %.3f kN/m2), transferencia de CSI" % (nombre, nq, sq), flush=True)
+    CASOS.append((nombre, Dc))
 for nombre, fn in PATS:
     Dp = json.load(open(fn)) if fn != DUMP else D
     if len(Dp["nodes"]) != len(D["nodes"]): raise SystemExit("el dump %s no tiene la misma malla" % fn)

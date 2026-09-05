@@ -32,9 +32,11 @@
  *       ancho tributario: el tributario ignora que la viga es CONTINUA sobre
  *       sus apoyos y se equivoca al lado de un vano ancho.
  *   shelltype shellID thin|thick  (ShellType de ETABS: Kirchhoff o Mindlin)
- *   deck etabs                 (los panos MEMBRANA como los pisos de ETABS: se parten en los
+ *   deck etabs [oneway]        (los panos MEMBRANA como los pisos de ETABS: se parten en los
  *                               nudos de sus bordes y su peso/areaload va a las barras de
- *                               borde por area tributaria; sin esto = SAP2000)
+ *                               borde por area tributaria — bidireccional, o en UN sentido
+ *                               con `oneway` (eje local 1 = borde 0->1 girado `shellang`,
+ *                               el ONEWAYLOADDIST de ETABS); sin esto = SAP2000)
  *   spring nodeID dof k        (Winkler nodal, dof: ux/uy/uz/rx/ry/rz)
  *   release frameID <12 bits>  (end releases, orden ETABS: U1 U2 U3 R1 R2 R3
  *                               en el nudo I y los mismos seis en el J)
@@ -119,6 +121,7 @@ interface ParsedModel {
    *  Hermite, no a las 4 esquinas. SAP2000 no hace ninguna de las dos cosas (4-sep-2026:
    *  galpon 4.5 % y mezanine Dead 75 % explicados con esto). */
   deckEtabs: boolean;
+  deckOneWay: boolean;                   // `deck etabs oneway`: reparto en un sentido (eje local 1 del pano)
   deckTributario: Set<number>;           // ids de shell cuya carga ya fue a las barras de borde
   /** `hex ID n1..n8 [E nu rho]`: hexaedros H8 (solidos). Se resuelven con hex8Solve
    *  (Wilson–Taylor por defecto; `incompatible 0` lo quita). */
@@ -216,6 +219,7 @@ export function parseCliCommands(text: string): ParsedModel {
     selfWeight: 0,
     meshCross: true,
     deckEtabs: false,
+    deckOneWay: false,
     deckTributario: new Set(),
     solids: [],
     solidIncompatible: true,
@@ -464,6 +468,7 @@ export function parseCliCommands(text: string): ParsedModel {
         case "deckmode": {
           const v = (tokens[1] ?? "etabs").toLowerCase();
           m.deckEtabs = v === "etabs" || v === "1" || v === "on" || v === "si";
+          m.deckOneWay = tokens.slice(2).some(t => /^(oneway|1way|unidireccional)$/i.test(t));
           break;
         }
         case "meshcross":
@@ -750,11 +755,17 @@ function esMembranaDeck(m: ParsedModel, id: number): boolean {
 
 /** Puntos del pano (rejilla n x n en su plano) asignados al borde mas cercano = regiones
  *  tributarias por bisectrices. Devuelve por borde k (k -> k+1) los puntos 3D y el dA. */
-function muestrasTributarias(P: V3[], n = 200): Array<{ pts: V3[]; dA: number }> {
+function muestrasTributarias(P: V3[], n = 200, spanDir?: V3): Array<{ pts: V3[]; dA: number }> {
   const c: V3 = [0, 1, 2].map(k => (P[0][k] + P[1][k] + P[2][k] + P[3][k]) / 4) as V3;
   let e1 = v3sub(P[1], P[0]); let nrm = v3cross(e1, v3sub(P[3], P[0]));
   nrm = v3scale(nrm, 1 / v3norm(nrm)); e1 = v3scale(e1, 1 / v3norm(e1)); const e2 = v3cross(nrm, e1);
   const Q = P.map(p => [v3dot(v3sub(p, c), e1), v3dot(v3sub(p, c), e2)] as [number, number]);
+  // one-way: solo cuentan los DOS bordes de apoyo (los menos paralelos a la direccion de vano)
+  let candidatos = [0, 1, 2, 3];
+  if (spanDir) {
+    const par = [0, 1, 2, 3].map(i => { const d = v3sub(P[(i + 1) % 4], P[i]); return Math.abs(v3dot(d, spanDir)) / v3norm(d); });
+    candidatos = [0, 1, 2, 3].sort((a, b) => par[a] - par[b]).slice(0, 2);
+  }
   const xs = Q.map(q => q[0]), ys = Q.map(q => q[1]);
   const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
   const out = [0, 1, 2, 3].map(() => ({ pts: [] as V3[], dA: 0 }));
@@ -769,8 +780,8 @@ function muestrasTributarias(P: V3[], n = 200): Array<{ pts: V3[]; dA: number }>
       if (cr >= 0) pos++; else neg++;
     }
     if (pos !== 4 && neg !== 4) continue;
-    let mejor = 0, dmin = Infinity;
-    for (let i = 0; i < 4; i++) {
+    let mejor = candidatos[0], dmin = Infinity;
+    for (const i of candidatos) {
       const A = Q[i], B = Q[(i + 1) % 4]; const dx = B[0]-A[0], dy = B[1]-A[1]; const L2 = dx*dx + dy*dy;
       const t = Math.max(0, Math.min(1, ((x-A[0])*dx + (y-A[1])*dy) / L2));
       const d = Math.hypot(x - (A[0] + t*dx), y - (A[1] + t*dy));
@@ -866,7 +877,14 @@ function aplicarDeckEtabs(m: ParsedModel) {
     const qz = -qsw + qa;                                                         // kN/m2, global z
     if (Math.abs(qz) < 1e-15) continue;
     const p = s.pts.map(P);
-    const regiones = muestrasTributarias(p);
+    let spanDir: V3 | undefined;
+    if (m.deckOneWay) {   // eje local 1 = borde 0->1 girado `shellang` en el plano del pano
+      const e1 = v3sub(p[1], p[0]); let nrm = v3cross(e1, v3sub(p[3], p[0]));
+      nrm = v3scale(nrm, 1 / v3norm(nrm)); const u1 = v3scale(e1, 1 / v3norm(e1)); const u2 = v3cross(nrm, u1);
+      const ang = ((m.shellAngles.get(s.id) ?? 0) * Math.PI) / 180;
+      spanDir = [0, 1, 2].map(k => Math.cos(ang) * u1[k] + Math.sin(ang) * u2[k]) as V3;
+    }
+    const regiones = muestrasTributarias(p, 200, spanDir);
     for (let k = 0; k < 4; k++) {
       const { pts, dA } = regiones[k]; if (!pts.length) continue;
       const a = p[k], b = p[(k + 1) % 4];

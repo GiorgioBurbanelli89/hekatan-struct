@@ -123,6 +123,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
     sw_mult = [0.0]                        # multiplicador de peso propio
     ej_flag = [True]                       # etabsjoint: por DEFECTO como ETABS; `etabsjoint 0` la apaga (modo SAP2000)
     de_flag = [False]                      # `deck etabs`: panos membrana como los pisos de ETABS (ver deck_etabs.py)
+    ow_flag = [False]                      # `deck etabs oneway`: reparto en un sentido (eje local 1)
     shells: list[dict] = []
     solidos: list[dict] = []          # `hex ID n1..n8 [E nu rho]`: hexaedros H8
     diafr: dict[int, int] = {}        # `diaph ID grupo`: diafragma rigido por nudo
@@ -265,6 +266,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
                 elif cmd in ("deck", "deckmode"):
                     v = (t[1] if len(t) > 1 else "etabs").lower()
                     de_flag[0] = v in ("etabs", "1", "on", "si")
+                    ow_flag[0] = any(x.lower() in ("oneway", "1way", "unidireccional") for x in t[2:])
                 elif cmd in ("etabsjoint", "etabswalljoint"):
                     # etabsjoint [0|1] -> la penalizacion viga-muro de ETABS
                     ej_flag[0] = (len(t) < 2) or (t[1].strip().lower() not in ("0", "no", "off", "false"))
@@ -301,7 +303,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
     if de_flag[0]:
         from .deck_etabs import aplicar_deck_etabs
         tribut = aplicar_deck_etabs(nodos, frames, shells, smod_dir, smod, q_area, sang, stipo,
-                                    cargas, sw_mult[0])
+                                    cargas, sw_mult[0], oneway=ow_flag[0])
     m = ModeloHeks(errores=errores, ignorados=ignorados)
     ids = sorted(nodos)                       # mismo orden que cliModeler.ts
     idx_de = {nid: k for k, nid in enumerate(ids)}

@@ -28,7 +28,7 @@ def es_membrana(sid: int, smod_dir: dict[int, list[float]]) -> bool:
     return bool(d) and all(abs(v) < 1e-12 for v in d[3:6])
 
 
-def muestras_tributarias(P: np.ndarray, n: int = 200):
+def muestras_tributarias(P: np.ndarray, n: int = 200, span_dir=None):
     """Por borde k (k -> k+1): (puntos 3D del pano cuya region tributaria es ese borde, dA)."""
     P = np.asarray(P, float); c = P.mean(axis=0)
     e1 = P[1] - P[0]; nrm = np.cross(e1, P[3] - P[0]); nrm /= np.linalg.norm(nrm)
@@ -43,8 +43,14 @@ def muestras_tributarias(P: np.ndarray, n: int = 200):
         cr = (b[0] - a[0]) * (pts[:, 1] - a[1]) - (b[1] - a[1]) * (pts[:, 0] - a[0])
         sgn += (cr >= 0).astype(int)
     pts = pts[(sgn == 4) | (sgn == 0)]
+    candidatos = list(range(4))
+    if span_dir is not None:   # one-way: solo los DOS bordes de apoyo (los menos paralelos al vano)
+        par = [abs(np.dot(P[(i + 1) % 4] - P[i], span_dir)) / np.linalg.norm(P[(i + 1) % 4] - P[i]) for i in range(4)]
+        candidatos = sorted(range(4), key=lambda i: par[i])[:2]
     dists = []
     for i in range(4):
+        if i not in candidatos:
+            dists.append(np.full(len(pts), np.inf)); continue
         a, b = Q[i], Q[(i + 1) % 4]; d = b - a; L2 = float(d @ d)
         t = np.clip(((pts - a) @ d) / L2, 0, 1)
         dists.append(np.linalg.norm(pts - (a + t[:, None] * d), axis=1))
@@ -60,7 +66,7 @@ def muestras_tributarias(P: np.ndarray, n: int = 200):
 
 def aplicar_deck_etabs(nodos: dict, frames: list[dict], shells: list[dict], smod_dir: dict,
                        smod: dict, q_area: dict, sang: dict, stipo: dict, cargas: dict,
-                       sw_mult: float) -> set[int]:
+                       sw_mult: float, oneway: bool = False) -> set[int]:
     """Modifica `shells` (los parte), `cargas` (id -> [6], acumula) y `q_area` (quita las de
     las membranas ya repartidas). Devuelve los IDs de shell cuyo peso ya fue a las barras
     (el peso propio de esos elementos NO debe volver a aplicarse)."""
@@ -146,7 +152,12 @@ def aplicar_deck_etabs(nodos: dict, frames: list[dict], shells: list[dict], smod
         qz = -qsw + qa
         if abs(qz) < 1e-15: continue
         p = [P[i] for i in s["pts"]]
-        for k, (pts, dA) in enumerate(muestras_tributarias(np.array(p))):
+        span_dir = None
+        if oneway:   # eje local 1 = borde 0->1 girado `shellang` en el plano del pano
+            e1 = p[1] - p[0]; nrm = np.cross(e1, p[3] - p[0]); nrm /= np.linalg.norm(nrm)
+            u1 = e1 / np.linalg.norm(e1); u2 = np.cross(nrm, u1); ang = np.radians(sang.get(s["id"], 0.0))
+            span_dir = np.cos(ang) * u1 + np.sin(ang) * u2
+        for k, (pts, dA) in enumerate(muestras_tributarias(np.array(p), 200, span_dir)):
             if not len(pts): continue
             a, b = p[k], p[(k + 1) % 4]
             fr = barras_en(a, b)

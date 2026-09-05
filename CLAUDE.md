@@ -856,6 +856,17 @@ SAP2000 y Hekatan solo conectan los 4 nudos y pesan en las 4 esquinas.
   constraint de ETABS y da lo mismo que SAP.
 - El peso propio de barra ya es CONSISTENTE (fuerzas + momentos wL²/12): SAP Dead = Hekatan
   0.0000 %. Y ETABS no pesa sus end offsets automáticos: el driver los anula.
+- `deck etabs oneway`: reparto en UN sentido (el `ONEWAYLOADDIST` de ETABS). Vano = eje local 1
+  del paño (borde 0→1 girado `shellang`); la carga va solo a los dos bordes de apoyo. Rectángulo:
+  q·a·b/2 a cada apoyo (`pytest tests/test_deck_etabs.py`). TS = Python a 3e-12. Sin árbitro
+  ETABS todavía: el one-way no se puede poner por OAPI (solo por e2k).
+- Plantillas (`edificioAporticado` y herederas, `plantillas`): parámetro **Comparar con**
+  (ETABS / SAP2000) → `etabsWallJoint`. Sus losas son placas, no deck: el `deck etabs` no aplica.
+- `csi_desde_dump.py … --watchdog N`: relanza el driver si SAP2000 se cuelga (15 min, mata el
+  proceso y reintenta N veces). `--arealoads Live=sinDir.json:conDir.json`: CSI recibe la carga
+  de ÁREA (SetLoadUniform) y hace su transferencia; se compara con Hekatan `deck etabs`.
+- `npm run build` necesita heap: `.npmrc` lleva `node-options=--max-old-space-size=8192` (sin
+  eso vite casca con 0xC0000005 al renderizar chunks y deja `website/` vacío).
 
 ### Sólidos en el `.heks` (3-sep-2026)
 

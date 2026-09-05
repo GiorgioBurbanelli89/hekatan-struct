@@ -151,7 +151,7 @@ const PARAMS = {
 
   // ── Pisos — el «Story Dimensions» ────────────────────────────────────────
   pisos: { default: 4, min: 1, max: 20, step: 1, label: "nº de pisos", folder: "🏢 Pisos" },
-  etabsjoint: { default: 1, min: 0, max: 1, step: 1, label: "unión viga-muro de ETABS (1 = como ETABS, 0 = como SAP2000)", folder: "🏢 Pisos" },
+  etabsjoint: { default: 1, min: 0, max: 1, step: 1, label: "Comparar con (1 = ETABS: unión viga-muro de ETABS · 0 = SAP2000)", folder: "🏢 Pisos" },
   // El e2k le asigna el diafragma rígido D1 a las losas, así que ETABS analiza con él:
   // para comparar, Hekatan también (los nudos de cada planta atados en ux, uy, rz a un
   // maestro virtual en el centro de masa). 0 = flexible (la losa mallada, sin atar).

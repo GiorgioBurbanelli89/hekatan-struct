@@ -114,6 +114,10 @@ export const edificioAporticado: ExampleDef = {
 
     // ── Apoyo ──
     apoyo:    PE("Apoyo", "Tipo", 0, { "Empotrado": 0, "Articulado (3 DOFs)": 1, "Rótula completa": 2 }),
+    // Regla de Jorge (4-sep-2026): primero se compara con SAP2000 (solo lo que se malla) y
+    // despues con ETABS anadiendo SU semantica con nombre. Aqui la unica que aplica es la
+    // union viga-muro de ETABS (`etabsWallJoint`); las losas son placas, no deck membrana.
+    comparar: PE("Apoyo", "Comparar con", 1, { "ETABS (unión viga-muro de ETABS)": 1, "SAP2000 (sin semánticas)": 0 }),
 
     // ── Cargas (patrones tipo FEM Studio) ──
     CM:       P("Cargas", "CM (kN/nodo)", -5,   -30, 0,    0.5),
@@ -962,6 +966,7 @@ export const edificioAporticado: ExampleDef = {
           }
     states.nodeInputs.val = { supports, loads, ...(diaphragms.size ? { diaphragms } : {}) };
     states.elementInputs.val = {
+      etabsWallJoint: Math.round((p as any).comparar ?? 1) === 1,
       elasticities, shearModuli, areas,
       momentsOfInertiaY: Iz, momentsOfInertiaZ: Iy, torsionalConstants: J,
       densities, poissonsRatios: poissons, thicknesses,
@@ -1973,6 +1978,7 @@ export const edificioAporticado: ExampleDef = {
             states.elements.val = E2;
             states.nodeInputs.val = { supports: supports2, loads: loads2 };
             states.elementInputs.val = {
+              etabsWallJoint: Math.round((p as any).comparar ?? 1) === 1,
               elasticities: elasticities2,
               shearModuli: shearModuli2,
               areas: areas2,
