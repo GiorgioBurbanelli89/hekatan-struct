@@ -32,6 +32,9 @@
  *       ancho tributario: el tributario ignora que la viga es CONTINUA sobre
  *       sus apoyos y se equivoca al lado de un vano ancho.
  *   shelltype shellID thin|thick  (ShellType de ETABS: Kirchhoff o Mindlin)
+ *   deck etabs                 (los panos MEMBRANA como los pisos de ETABS: se parten en los
+ *                               nudos de sus bordes y su peso/areaload va a las barras de
+ *                               borde por area tributaria; sin esto = SAP2000)
  *   spring nodeID dof k        (Winkler nodal, dof: ux/uy/uz/rx/ry/rz)
  *   release frameID <12 bits>  (end releases, orden ETABS: U1 U2 U3 R1 R2 R3
  *                               en el nudo I y los mismos seis en el J)
@@ -108,6 +111,15 @@ interface ParsedModel {
    *  arriostramiento). ETABS lo hace por defecto (MESHATINTERSECTIONS "YES"); SAP2000 no.
    *  Por defecto como ETABS (decision de Jorge, 3-sep-2026). */
   meshCross: boolean;
+  /** `deck etabs`: los panos MEMBRANA (shellmod m11=m22=m12=0) se tratan como los pisos
+   *  membrana/deck de ETABS: (1) se PARTEN en los nudos que caen sobre dos bordes opuestos
+   *  (correas/viguetas partidas en los porticos, vigas que cruzan el pano) — es el cookie-cut
+   *  y el edge constraint de ETABS; (2) su peso propio y su `areaload` van a las BARRAS DE
+   *  BORDE por area tributaria (bisectrices a 45 grados) como vector nodal consistente de
+   *  Hermite, no a las 4 esquinas. SAP2000 no hace ninguna de las dos cosas (4-sep-2026:
+   *  galpon 4.5 % y mezanine Dead 75 % explicados con esto). */
+  deckEtabs: boolean;
+  deckTributario: Set<number>;           // ids de shell cuya carga ya fue a las barras de borde
   /** `hex ID n1..n8 [E nu rho]`: hexaedros H8 (solidos). Se resuelven con hex8Solve
    *  (Wilson–Taylor por defecto; `incompatible 0` lo quita). */
   solids: Array<{ id: number; pts: number[]; E: number; nu: number; rho: number }>;
@@ -203,6 +215,8 @@ export function parseCliCommands(text: string): ParsedModel {
     frameEndOffsets: new Map(),
     selfWeight: 0,
     meshCross: true,
+    deckEtabs: false,
+    deckTributario: new Set(),
     solids: [],
     solidIncompatible: true,
     etabsWallJoint: true,     // por DEFECTO como ETABS (decision de Jorge, 3-sep-2026); `etabsjoint 0` = modo SAP2000
@@ -444,6 +458,12 @@ export function parseCliCommands(text: string): ParsedModel {
         case "incompatible": {
           const v = (tokens[1] ?? "1").toLowerCase();
           m.solidIncompatible = !(v === "0" || v === "no" || v === "off" || v === "false");
+          break;
+        }
+        case "deck":
+        case "deckmode": {
+          const v = (tokens[1] ?? "etabs").toLowerCase();
+          m.deckEtabs = v === "etabs" || v === "1" || v === "on" || v === "si";
           break;
         }
         case "meshcross":
@@ -705,6 +725,184 @@ load 3  10  0  -50  0  0  0
 solve
 `;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// `deck etabs` — el deck como lo entiende ETABS (4-sep-2026)
+//
+// Con la MISMA malla, ETABS y SAP2000 daban distinto en el galpon (4.5 %) y en un mezanine
+// (Dead 75 %). No era el elemento: ETABS conecta el pano de piso a TODO nudo que toca (edge
+// constraint en los inclinados, cookie-cut en la viga que cruza un piso horizontal) y lleva
+// el peso de la membrana a las vigas de borde por area tributaria. SAP2000 y Hekatan solo
+// conectan los 4 nudos y pesan en las 4 esquinas. Esta funcion hace lo de ETABS sobre el
+// modelo parseado, antes de armar el FEM. Medido: galpon partido ETABS 2e-5 %, mezanines
+// Dead 0.003-0.005 %.
+// ─────────────────────────────────────────────────────────────────────────────
+type V3 = [number, number, number];
+const v3sub = (a: V3, b: V3): V3 => [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+const v3dot = (a: V3, b: V3) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+const v3cross = (a: V3, b: V3): V3 => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+const v3norm = (a: V3) => Math.hypot(a[0], a[1], a[2]);
+const v3scale = (a: V3, k: number): V3 => [a[0]*k, a[1]*k, a[2]*k];
+
+function esMembranaDeck(m: ParsedModel, id: number): boolean {
+  const d = m.shellModsDir.get(id);
+  return !!d && Math.abs(d[3]) < 1e-12 && Math.abs(d[4]) < 1e-12 && Math.abs(d[5]) < 1e-12;
+}
+
+/** Puntos del pano (rejilla n x n en su plano) asignados al borde mas cercano = regiones
+ *  tributarias por bisectrices. Devuelve por borde k (k -> k+1) los puntos 3D y el dA. */
+function muestrasTributarias(P: V3[], n = 200): Array<{ pts: V3[]; dA: number }> {
+  const c: V3 = [0, 1, 2].map(k => (P[0][k] + P[1][k] + P[2][k] + P[3][k]) / 4) as V3;
+  let e1 = v3sub(P[1], P[0]); let nrm = v3cross(e1, v3sub(P[3], P[0]));
+  nrm = v3scale(nrm, 1 / v3norm(nrm)); e1 = v3scale(e1, 1 / v3norm(e1)); const e2 = v3cross(nrm, e1);
+  const Q = P.map(p => [v3dot(v3sub(p, c), e1), v3dot(v3sub(p, c), e2)] as [number, number]);
+  const xs = Q.map(q => q[0]), ys = Q.map(q => q[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const out = [0, 1, 2, 3].map(() => ({ pts: [] as V3[], dA: 0 }));
+  let total = 0;
+  for (let a = 0; a < n; a++) for (let b = 0; b < n; b++) {
+    const x = x0 + (x1 - x0) * (a + 0.5) / n, y = y0 + (y1 - y0) * (b + 0.5) / n;
+    // dentro del cuadrilatero convexo: mismo signo del producto cruzado en los 4 bordes
+    let pos = 0, neg = 0;
+    for (let i = 0; i < 4; i++) {
+      const A = Q[i], B = Q[(i + 1) % 4];
+      const cr = (B[0]-A[0]) * (y - A[1]) - (B[1]-A[1]) * (x - A[0]);
+      if (cr >= 0) pos++; else neg++;
+    }
+    if (pos !== 4 && neg !== 4) continue;
+    let mejor = 0, dmin = Infinity;
+    for (let i = 0; i < 4; i++) {
+      const A = Q[i], B = Q[(i + 1) % 4]; const dx = B[0]-A[0], dy = B[1]-A[1]; const L2 = dx*dx + dy*dy;
+      const t = Math.max(0, Math.min(1, ((x-A[0])*dx + (y-A[1])*dy) / L2));
+      const d = Math.hypot(x - (A[0] + t*dx), y - (A[1] + t*dy));
+      if (d < dmin) { dmin = d; mejor = i; }
+    }
+    out[mejor].pts.push([c[0] + x*e1[0] + y*e2[0], c[1] + x*e1[1] + y*e2[1], c[2] + x*e1[2] + y*e2[2]]);
+    total++;
+  }
+  const area = 0.5 * v3norm(v3cross(v3sub(P[2], P[0]), v3sub(P[3], P[1])));
+  for (const o of out) o.dA = total ? area / total : 0;
+  return out;
+}
+
+function aplicarDeckEtabs(m: ParsedModel) {
+  const TOL = 1e-4;
+  const P = (id: number) => m.nodes.get(id) as V3;
+  const ids = [...m.nodes.keys()];
+  /** posiciones s en (0,1) de los nudos (no del pano) que caen sobre el segmento a-b */
+  const sobreBorde = (a: V3, b: V3, excl: number[]): number[] => {
+    const d = v3sub(b, a); const L = v3norm(d); const t = v3scale(d, 1 / L); const out: number[] = [];
+    for (const id of ids) {
+      if (excl.includes(id)) continue;
+      const v = v3sub(P(id), a); const s = v3dot(v, t);
+      if (s > 1e-6 && s < L - 1e-6 && v3norm(v3sub(v, v3scale(t, s))) < TOL) out.push(s / L);
+    }
+    return out.sort((x, y) => x - y);
+  };
+  const comunes = (a: number[], b: number[]) => {
+    const out: number[] = [];
+    for (const v of a) if (b.some(w => Math.abs(v - w) < 1e-5) && !out.some(u => Math.abs(v - u) < 1e-5)) out.push(v);
+    return out;
+  };
+  const nudoEn = (p: V3): number | undefined => {
+    for (const id of ids) if (v3norm(v3sub(P(id), p)) < TOL) return id;
+    return undefined;
+  };
+  // ── 1) partir los panos membrana en las posiciones comunes a dos bordes opuestos ──
+  let nextId = m.shells.reduce((mx, s) => Math.max(mx, s.id), 0) + 1;
+  const nuevos: typeof m.shells = [];
+  const hereda = (de: number, a: number) => {
+    const d = m.shellModsDir.get(de); if (d) m.shellModsDir.set(a, [...d]);
+    const mm = m.shellMods.get(de); if (mm) m.shellMods.set(a, [...mm] as [number, number]);
+    const q = m.shellLoads.get(de); if (q !== undefined) m.shellLoads.set(a, q);
+    const ty = m.shellTypes.get(de); if (ty !== undefined) m.shellTypes.set(a, ty);
+    const an = m.shellAngles.get(de); if (an !== undefined) m.shellAngles.set(a, an);
+  };
+  for (const s of m.shells) {
+    if (!esMembranaDeck(m, s.id) || s.pts.length !== 4 || s.pts.some(id => !m.nodes.has(id))) { nuevos.push(s); continue; }
+    const p = s.pts.map(P);
+    const s0 = sobreBorde(p[0], p[1], s.pts), s2 = sobreBorde(p[2], p[3], s.pts).map(v => 1 - v);
+    const t1 = sobreBorde(p[1], p[2], s.pts), t3 = sobreBorde(p[3], p[0], s.pts).map(v => 1 - v);
+    let S = [0, ...comunes(s0, s2), 1], T = [0, ...comunes(t1, t3), 1];
+    if (S.length === 2 && T.length === 2) { nuevos.push(s); continue; }
+    const bil = (u: number, v: number): V3 => [0, 1, 2].map(k =>
+      (1-u)*(1-v)*p[0][k] + u*(1-v)*p[1][k] + u*v*p[2][k] + (1-u)*v*p[3][k]) as V3;
+    // los puntos interiores de la rejilla tienen que EXISTIR (no se inventan nudos flotando en
+    // la membrana: sin rigidez fuera del plano se disparan). Si falta alguno, se parte solo en
+    // la direccion con mas cortes.
+    let G = T.map(v => S.map(u => nudoEn(bil(u, v))));
+    if (G.some(f => f.some(x => x === undefined))) {
+      if (S.length >= T.length) T = [0, 1]; else S = [0, 1];
+      G = T.map(v => S.map(u => nudoEn(bil(u, v))));
+      if (G.some(f => f.some(x => x === undefined))) { nuevos.push(s); continue; }
+    }
+    let primero = true;
+    for (let a = 0; a < T.length - 1; a++) for (let b = 0; b < S.length - 1; b++) {
+      const q = [G[a][b]!, G[a][b+1]!, G[a+1][b+1]!, G[a+1][b]!];
+      const id = primero ? s.id : nextId++;
+      if (!primero) hereda(s.id, id);
+      primero = false;
+      nuevos.push({ id, pts: q, t: s.t, E: s.E, rho: s.rho });
+    }
+  }
+  m.shells = nuevos;
+  // ── 2) peso propio y areaload de las membranas -> barras de borde, tributario, Hermite ──
+  const G0 = 9.80665;
+  const acum = (id: number, v: number[]) => {
+    const a = m.loads.get(id) ?? [0, 0, 0, 0, 0, 0];
+    m.loads.set(id, [a[0]+v[0], a[1]+v[1], a[2]+v[2], a[3]+v[3], a[4]+v[4], a[5]+v[5]] as [number,number,number,number,number,number]);
+  };
+  const barrasEn = (a: V3, b: V3) => {
+    const d = v3sub(b, a); const L = v3norm(d); const t = v3scale(d, 1 / L);
+    return m.frames.filter(f => [f.nI, f.nJ].every(id => {
+      const pt = m.nodes.get(id); if (!pt) return false;
+      const v = v3sub(pt, a); const s = v3dot(v, t);
+      return s > -TOL && s < L + TOL && v3norm(v3sub(v, v3scale(t, s))) < TOL;
+    }));
+  };
+  for (const s of m.shells) {
+    if (!esMembranaDeck(m, s.id) || s.pts.length !== 4) continue;
+    const qsw = m.selfWeight ? (s.rho ?? 2.45) * s.t * G0 * m.selfWeight : 0;   // hacia abajo (magnitud)
+    const qa = m.shellLoads.get(s.id) ?? 0;                                       // +z
+    const qz = -qsw + qa;                                                         // kN/m2, global z
+    if (Math.abs(qz) < 1e-15) continue;
+    const p = s.pts.map(P);
+    const regiones = muestrasTributarias(p);
+    for (let k = 0; k < 4; k++) {
+      const { pts, dA } = regiones[k]; if (!pts.length) continue;
+      const a = p[k], b = p[(k + 1) % 4];
+      const fr = barrasEn(a, b);
+      if (!fr.length) {   // borde sin viga: a sus dos esquinas a medias (fuerza sola)
+        const W = qz * dA * pts.length;
+        acum(s.pts[k], [0, 0, W / 2, 0, 0, 0]); acum(s.pts[(k + 1) % 4], [0, 0, W / 2, 0, 0, 0]);
+        continue;
+      }
+      const d = v3sub(b, a); const Lb = v3norm(d); const tb = v3scale(d, 1 / Lb);
+      const sPts = pts.map(q => v3dot(v3sub(q, a), tb));
+      for (const f of fr) {
+        const pi = P(f.nI), pj = P(f.nJ);
+        const si = v3dot(v3sub(pi, a), tb), sj = v3dot(v3sub(pj, a), tb);
+        const lo = Math.min(si, sj), hi = Math.max(si, sj); const L = hi - lo;
+        if (L < 1e-9) continue;
+        const ultimo = hi >= Lb - 1e-6;
+        const tv = v3scale(v3sub(pj, pi), 1 / L); const txw = v3cross(tv, [0, 0, 1]);
+        let F1 = 0, M1 = 0, F3 = 0, M4 = 0;
+        for (const sv of sPts) {
+          if (sv < lo - 1e-9 || (ultimo ? sv > hi + 1e-9 : sv >= hi - 1e-9)) continue;
+          let x = sv - lo; if (si > sj) x = L - x;   // desde el nudo I de la barra
+          const xi = x / L;
+          F1 += 1 - 3*xi*xi + 2*xi*xi*xi;  M1 += L * (xi - 2*xi*xi + xi*xi*xi);
+          F3 += 3*xi*xi - 2*xi*xi*xi;      M4 += L * (-xi*xi + xi*xi*xi);
+        }
+        const dP = qz * dA;
+        acum(f.nI, [0, 0, dP * F1, txw[0] * dP * M1, txw[1] * dP * M1, txw[2] * dP * M1]);
+        acum(f.nJ, [0, 0, dP * F3, txw[0] * dP * M4, txw[1] * dP * M4, txw[2] * dP * M4]);
+      }
+    }
+    m.deckTributario.add(s.id);
+    m.shellLoads.delete(s.id);   // ya esta en m.loads: que el e2k no la escriba dos veces
+  }
+}
+
 export const cliModeler: ExampleDef = {
   id: "cli-modeler",
   name: "CLI Modeler (comandos)",
@@ -717,6 +915,7 @@ export const cliModeler: ExampleDef = {
     const script = (window as any).__hekatanCliScript ?? DEFAULT_SCRIPT;
     (window as any).__hekatanCliLastScript = script;
     const m = parseCliCommands(script);
+    if (m.deckEtabs) aplicarDeckEtabs(m);
 
     // Ordenar nodos por ID y asignar índices internos
     const idToIdx = new Map<number, number>();
@@ -979,6 +1178,7 @@ export const cliModeler: ExampleDef = {
     for (const s of m.shells) {
       const q = m.shellLoads.get(s.id);
       if (!q) continue;
+      if (m.deckTributario.has(s.id)) continue;   // `deck etabs`: ya fue a las barras de borde
       const idx = s.pts.map((p) => idToIdx.get(p));
       if (idx.some((i) => i === undefined)) {
         m.errors.push(`areaload ${s.id}: algun nodo inexistente`);
@@ -1018,6 +1218,8 @@ export const cliModeler: ExampleDef = {
     // horizontal); columna y diagonal por la longitud entera.
     if (m.selfWeight) {
       const G = 9.80665;
+      const swSkip = new Set<number>();   // `deck etabs`: membranas cuyo peso ya fue a las barras
+      for (const [sid, eIdx] of shellIdxOf) if (m.deckTributario.has(sid)) swSkip.add(eIdx);
       const addFz = (k: number, fz: number) => {
         const prev = loads.get(k) ?? [0, 0, 0, 0, 0, 0];
         prev[2] += fz;
@@ -1026,6 +1228,7 @@ export const cliModeler: ExampleDef = {
       elements.forEach((e, i) => {
         const rho = densities.get(i) ?? 0;
         if (!rho) return;
+        if (swSkip.has(i)) return;
         if (e.length === 2) {
           const A = areas.get(i) ?? 0;
           const p0 = nodes[e[0]], p1 = nodes[e[1]];

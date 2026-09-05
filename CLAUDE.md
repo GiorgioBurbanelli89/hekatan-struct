@@ -837,6 +837,26 @@ contra 2.009 de CSI. Con `cft` da 2.0094 (0.006 % SAP, 0.003 % ETABS).
   encima de Hekatan. Los dos leen los ficheros de Hekatan y dan exactamente lo suyo.
 - Test `node tests/run.mjs cftc` (11 filas) y `pytest tests/test_cft.py`.
 
+### `deck etabs`: el deck como lo entiende ETABS (4-sep-2026)
+
+Con la MISMA malla, ETABS y SAP2000 daban distinto en el galpón (4.5 %) y en un mezanine
+(Dead 75 %). No era el elemento membrana ni la malla: ETABS **conecta el paño de piso a todo
+nudo que toca** (edge constraint en los inclinados, cookie-cut en la viga que cruza un piso
+horizontal) y **lleva el peso de la membrana a las vigas de borde por área tributaria**.
+SAP2000 y Hekatan solo conectan los 4 nudos y pesan en las 4 esquinas.
+
+- `deck etabs` en el `.heks` (TS `aplicarDeckEtabs` en cliModeler.ts y Python
+  `deck_etabs.py`, iguales a 1e-11): parte los paños MEMBRANA (`shellmod … 0 0 0 …`) en las
+  posiciones comunes a dos bordes opuestos (sin inventar nudos) y manda su peso propio y su
+  `areaload` a las barras de borde como vector consistente de Hermite (tributario por
+  bisectrices, muestreo 200×200). Sin la directiva = SAP2000.
+- Medido (test `deck-edge-constraint-vs-csi`, 31 filas, `validation/modelos/deck-edge`):
+  galpón partido ETABS 2e-5 %; mezanines 1×1 → 3×2 de 3 pisos, Dead/SCM/Viva/Ex a 1e-9 %;
+  SAP2000 = Hekatan sin directiva (1e-13). En el driver OAPI `--noedge` apaga el edge
+  constraint de ETABS y da lo mismo que SAP.
+- El peso propio de barra ya es CONSISTENTE (fuerzas + momentos wL²/12): SAP Dead = Hekatan
+  0.0000 %. Y ETABS no pesa sus end offsets automáticos: el driver los anula.
+
 ### Sólidos en el `.heks` (3-sep-2026)
 
 `hex ID n1..n8 [E nu rho]` + `incompatible 0/1`. Un modelo de SOLO sólidos va por `hex8Solve`
@@ -893,8 +913,10 @@ también escribe `disp_nudos`).
   4.5–5.6 % y NO es la malla: con `OBJMESHTYPE "NONE"` (`cli/heks_a_csi.mjs … meshtype=NONE`)
   deja los 609 joints exactos y sigue en 4.4 %. Caso mínimo (1 paño membrana sobre 4 vigas):
   ETABS Membrane = Hekatan 0.000 %, thick + modificadores 0.24 %, paño inclinado 0.027 %.
-  Abierto, ETABS-específico (SAP2000 clava el mismo modelo). No hay `AreaObj.SetAutoMesh` en
-  la OAPI de ETABS.
+  **CERRADO el 4-sep-2026**: era el edge constraint de ETABS (+ cookie-cut en pisos
+  horizontales), no la malla ni el elemento — ver `deck etabs` más arriba. `--noedge` en el
+  driver lo apaga y ETABS = SAP = Hekatan; `--pat Nombre=dump.json` arma patrones separados
+  (Dead = peso propio de CSI, SCM, Live, Ex); los end offsets automáticos de ETABS se anulan.
 - **Mezanine con columna CFT** (`matCol = 2`, `tCft`): e2k → ETABS `Filled Steel Tube`; s2k →
   Section Designer (defecto) o `cftAs: "general"` (panel SAP «CFT en SAP», CLI `cftas=general`).
   **SAP2000 General = Hekatan 0.0000 %** (2415/2415 componentes), Section Designer 0.0095 %

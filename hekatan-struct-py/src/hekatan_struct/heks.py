@@ -19,6 +19,9 @@ Comandos soportados (los que usa el galpón):
     release ID <12 bits> | pin fix
     shell ID n1 n2 n3 n4 t E [q] [rho]      (cáscara Q4; q = carga de superficie)
     areaload ID q                (kN/m2 sobre la cáscara, + hacia +z)
+    deck etabs                   (panos MEMBRANA como los pisos de ETABS: se parten en sus
+                                  nudos de borde y su peso/areaload va a las barras de borde
+                                  por area tributaria; sin esto = SAP2000)
     shellmod ID mem bend | ID F11 F22 F12 M11 M22 M12 V13 V23
     shellang ID grados           (se guarda; el solver NO lo usa, ni éste ni el TS)
     shelltype ID thin|thick      (thin = Kirchhoff DKE, thick = Mindlin MITC4)
@@ -119,6 +122,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
     endoffs: dict[int, tuple[float, float, float]] = {}   # (offI, offJ, rz)
     sw_mult = [0.0]                        # multiplicador de peso propio
     ej_flag = [True]                       # etabsjoint: por DEFECTO como ETABS; `etabsjoint 0` la apaga (modo SAP2000)
+    de_flag = [False]                      # `deck etabs`: panos membrana como los pisos de ETABS (ver deck_etabs.py)
     shells: list[dict] = []
     solidos: list[dict] = []          # `hex ID n1..n8 [E nu rho]`: hexaedros H8
     diafr: dict[int, int] = {}        # `diaph ID grupo`: diafragma rigido por nudo
@@ -258,6 +262,9 @@ def leer_heks(ruta: str) -> ModeloHeks:
                         smod[sid] = (vals[0], vals[1])
                 elif cmd == "shellang":
                     sang[int(t[1])] = float(t[2])
+                elif cmd in ("deck", "deckmode"):
+                    v = (t[1] if len(t) > 1 else "etabs").lower()
+                    de_flag[0] = v in ("etabs", "1", "on", "si")
                 elif cmd in ("etabsjoint", "etabswalljoint"):
                     # etabsjoint [0|1] -> la penalizacion viga-muro de ETABS
                     ej_flag[0] = (len(t) < 2) or (t[1].strip().lower() not in ("0", "no", "off", "false"))
@@ -288,6 +295,13 @@ def leer_heks(ruta: str) -> ModeloHeks:
             except (IndexError, ValueError) as e:
                 errores.append(f"{linea.strip()!r}: {e}")
 
+    # `deck etabs`: partir los panos membrana en sus nudos de borde y llevar su peso/areaload
+    # a las barras de borde por area tributaria (lo que hace ETABS). Antes de montar nada.
+    tribut: set[int] = set()
+    if de_flag[0]:
+        from .deck_etabs import aplicar_deck_etabs
+        tribut = aplicar_deck_etabs(nodos, frames, shells, smod_dir, smod, q_area, sang, stipo,
+                                    cargas, sw_mult[0])
     m = ModeloHeks(errores=errores, ignorados=ignorados)
     ids = sorted(nodos)                       # mismo orden que cliModeler.ts
     idx_de = {nid: k for k, nid in enumerate(ids)}
@@ -482,7 +496,8 @@ def leer_heks(ruta: str) -> ModeloHeks:
     # suma a las cargas del fichero como un patrón `Dead` más.
     if sw_mult[0]:
         from .extensions import apply_selfweight
-        apply_selfweight(m.nodes, m.elements, ei, ni, sw_multiplier=sw_mult[0])
+        apply_selfweight(m.nodes, m.elements, ei, ni, sw_multiplier=sw_mult[0],
+                         skip_elements={m.shell_idx[sid] for sid in tribut if sid in m.shell_idx})
         m.selfweight = sw_mult[0]
     ei.etabs_wall_joint = ej_flag[0]
     if not ni.loads and not ei.frame_loads:

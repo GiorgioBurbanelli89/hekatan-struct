@@ -32,6 +32,7 @@ def apply_selfweight(
     sw_multiplier: float = 1.0,
     *,
     gamma_per_element: dict[int, float] | None = None,
+    skip_elements: set[int] | None = None,
 ) -> None:
     """Aplica selfweight lumped a nodos vía in-place mutation de node_inputs.loads.
 
@@ -54,6 +55,8 @@ def apply_selfweight(
             rho = element_inputs.densities.get(idx, 0)
             gamma = rho * G_GRAV
         if gamma == 0:
+            continue
+        if skip_elements and idx in skip_elements:   # `deck etabs`: ya fue a las barras de borde
             continue
         if len(conn) == 2:
             i, j = conn

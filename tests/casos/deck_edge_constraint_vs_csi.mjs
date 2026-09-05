@@ -103,5 +103,23 @@ export async function correr() {
     fila(`mezanine ${que} por vano, ETABS: Ex = Hekatan`, comparar(await hek(join(V, `${m}_ex.heks`)), R, "Ex"), 1e-6);
     fila(`mezanine ${que} por vano, ETABS: Dead = Hekatan con el peso del deck en lineas`, comparar(await hek(join(V, `${m}_ppL.heks`)), R, "Dead"), 0.3);
   }
+  // 6. SAP2000 en el 2x1 por vano (cuando no se colgo): igual que Hekatan en los 4 patrones
+  const Rs = J("mez2x1p1_vano_sap.json");
+  fila("mezanine 2x1 por vano, SAP2000: SCM = Hekatan", comparar(v.scm, Rs, "SCM"), 1e-6);
+  fila("mezanine 2x1 por vano, SAP2000: Dead = peso propio CONSISTENTE de Hekatan", comparar(await hek(join(V, "mez2x1p1_vano_pp.heks")), Rs, "DEAD"), 1e-4);
+  const Rs3 = J("mez3x1p2_vano_sap.json");
+  fila("mezanine 3x1 de 2 pisos por vano, SAP2000: SCM = Hekatan", comparar(await hek(join(V, "mez3x1p2_vano_scm.heks")), Rs3, "SCM"), 1e-6);
+  fila("mezanine 3x1 de 2 pisos por vano, SAP2000: Dead = peso propio CONSISTENTE de Hekatan", comparar(await hek(join(V, "mez3x1p2_vano_pp.heks")), Rs3, "DEAD"), 1e-4);
+  const Rs4 = J("mez3x2p3_vano_sap.json");
+  fila("mezanine 3x2 de 3 pisos por vano, SAP2000: SCM = Hekatan", comparar(await hek(join(V, "mez3x2p3_vano_scm.heks")), Rs4, "SCM"), 1e-6);
+  fila("mezanine 3x2 de 3 pisos por vano, SAP2000: Dead = peso propio CONSISTENTE de Hekatan", comparar(await hek(join(V, "mez3x2p3_vano_pp.heks")), Rs4, "DEAD"), 1e-4);
+  // 7. La directiva `deck etabs` del motor (TS y Python iguales a 1e-11): parte los panos en sus
+  //    nudos de borde y lleva el peso de la membrana a las barras de borde (tributario exacto,
+  //    Hermite). Con ella Hekatan reproduce a ETABS SIN tocar el .heks a mano.
+  fila("`deck etabs` mezanine 1x1: Dead = ETABS", comparar(await hek(join(V, "mez1_pp_DE.heks")), J("mez1_etabs.json"), "Dead"), 1e-3);
+  fila("`deck etabs` mezanine 2x1 pano CONTINUO: SCM = ETABS (el motor lo corta en la viga como ETABS)", comparar(await hek(join(V, "mez2x1p1_continuo_scm_DE.heks")), J("mez2x1p1_continuo_etabs.json"), "SCM"), 1e-3);
+  fila("`deck etabs` mezanine 2x1 pano CONTINUO: Dead = ETABS", comparar(await hek(join(V, "mez2x1p1_continuo_pp_DE.heks")), J("mez2x1p1_continuo_etabs.json"), "Dead"), 1e-3);
+  fila("`deck etabs` mezanine 3x2 de 3 pisos: Dead = ETABS", comparar(await hek(join(V, "mez3x2p3_vano_pp_DE.heks")), J("mez3x2p3_vano_etabs.json"), "Dead"), 1e-3);
+  fila("`deck etabs` galpon: = ETABS --noedge sobre la malla partida (mismos 231 sub-panos que partir_panos_en_nudos.py)", comparar(await hek(join(V, "galpon_lc_DE.heks")), J("galpon_partido_etabs_noedge.json"), "Dead"), 1e-3);
   return filas;
 }
