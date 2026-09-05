@@ -1,6 +1,6 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
 import { c as d } from "./csiImporter-DjVAdSBd.js";
-import { c as p, __tla as __tla_0 } from "./cliModeler-BvRCId-x.js";
+import { c as p, __tla as __tla_0 } from "./cliModeler-BX3W_GA1.js";
 import { p as k } from "./e2kParser-CocS9ijk.js";
 import { r as w, __tla as __tla_1 } from "./runExampleStandalone-BoOyxNQW.js";
 import "./theme-Co6w-pfC.js";
