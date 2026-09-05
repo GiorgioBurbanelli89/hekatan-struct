@@ -1,5 +1,5 @@
-import { e as i, __tla as __tla_0 } from "./edificioAporticado-CosgyQnT.js";
-let d;
+import { e as i, __tla as __tla_0 } from "./edificioAporticado-DEG7vrlm.js";
+let l;
 let __tla = Promise.all([
   (() => {
     try {
@@ -17,6 +17,10 @@ let __tla = Promise.all([
   };
   e.matViga = {
     ...a.matViga,
+    default: 1
+  };
+  e.colShape = {
+    ...a.colShape,
     default: 0
   };
   e.slabOn = {
@@ -25,27 +29,19 @@ let __tla = Promise.all([
   };
   e.bracesMode = {
     ...a.bracesMode,
-    default: 1
+    default: 0
   };
   e.slabT = {
     ...a.slabT,
-    default: 0.15
+    default: 0.12
   };
   e.fcConcr = {
     ...a.fcConcr,
     default: 280
   };
-  e.nPisos = {
-    ...a.nPisos,
-    default: 6
-  };
-  e.diafragmaRigido = {
-    ...a.diafragmaRigido,
-    default: 1
-  };
-  d = {
-    id: "edificio-muros",
-    name: "Edificio con Muros de Corte (Hormig\xF3n)",
+  l = {
+    id: "edificio-mixto",
+    name: "Edificio Mixto (Col Hormig\xF3n + Viga Acero)",
     category: "4\uFE0F\u20E3 Mixtos \xB7 \u{1F3E2} Edificios",
     defaultShellResult: "bendingXX",
     availableShellResults: [
@@ -64,5 +60,5 @@ let __tla = Promise.all([
 });
 export {
   __tla,
-  d as e
+  l as e
 };

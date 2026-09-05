@@ -1,5 +1,5 @@
-import { e as l, __tla as __tla_0 } from "./edificioAporticado-CosgyQnT.js";
-let o;
+import { e as i, __tla as __tla_0 } from "./edificioAporticado-DEG7vrlm.js";
+let l;
 let __tla = Promise.all([
   (() => {
     try {
@@ -8,7 +8,7 @@ let __tla = Promise.all([
     }
   })()
 ]).then(async () => {
-  const a = l.params, e = {
+  const a = i.params, e = {
     ...a
   };
   e.matCol = {
@@ -17,7 +17,7 @@ let __tla = Promise.all([
   };
   e.matViga = {
     ...a.matViga,
-    default: 1
+    default: 0
   };
   e.colShape = {
     ...a.colShape,
@@ -29,52 +29,37 @@ let __tla = Promise.all([
   };
   e.bracesMode = {
     ...a.bracesMode,
-    default: 2
+    default: 0
   };
   e.slabT = {
     ...a.slabT,
-    default: 0.12
+    default: 0.15
   };
   e.fcConcr = {
     ...a.fcConcr,
-    default: 280
+    default: 240
   };
-  e.nPisos = {
-    ...a.nPisos,
-    default: 10
-  };
-  e.murosMode = {
-    ...a.murosMode,
-    default: 3
-  };
-  e.tMuro = {
-    ...a.tMuro,
-    default: 0.25
-  };
-  o = {
-    id: "edificio-dual",
-    name: "Edificio Dual (Mixto + Muros + Diagonales)",
+  l = {
+    id: "edificio-hormigon",
+    name: "Edificio Hormig\xF3n (puro)",
     category: "4\uFE0F\u20E3 Mixtos \xB7 \u{1F3E2} Edificios",
     defaultShellResult: "bendingXX",
     availableShellResults: [
       "bendingXX",
       "bendingYY",
-      "membraneXX",
-      "membraneYY",
-      "membranePrincipalMin",
-      "membranePrincipalMax",
+      "bendingXY",
       "displacementZ",
       "vonMises"
     ],
     hasModal: true,
     params: e,
-    build: l.build,
-    runModal: l.runModal,
-    computedLabels: l.computedLabels,
-    dynamicParams: l.dynamicParams
+    build: i.build,
+    runModal: i.runModal,
+    computedLabels: i.computedLabels,
+    dynamicParams: i.dynamicParams
   };
 });
 export {
   __tla,
-  o as e
+  l as e
 };

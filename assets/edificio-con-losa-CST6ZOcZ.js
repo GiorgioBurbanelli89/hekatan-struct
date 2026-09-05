@@ -1,13 +1,14 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { c as r, __tla as __tla_0 } from "./cliModeler-BX3W_GA1.js";
-import { r as o, __tla as __tla_1 } from "./runExampleStandalone-BoOyxNQW.js";
-import "./cadSections-DVtTZU6U.js";
-import { __tla as __tla_2 } from "./h8-B8y-PzF9.js";
-import { __tla as __tla_3 } from "./deform-ZnZ8PQ4z.js";
-import "./preload-helper-V2P8TQsQ.js";
+import { e as o, __tla as __tla_0 } from "./edificioConLosa-TW9UlfcZ.js";
+import { r, __tla as __tla_1 } from "./runExampleStandalone-BoOyxNQW.js";
+import { __tla as __tla_2 } from "./edificioAporticado-DEG7vrlm.js";
 import "./analyze-BFwM3Jvn.js";
 import "./pureFunctionsAny.generated-DeJSBP3k.js";
-import { __tla as __tla_4 } from "./didacticCpp-DaEmtxPu.js";
+import { __tla as __tla_3 } from "./didacticCpp-DaEmtxPu.js";
+import { __tla as __tla_4 } from "./deform-ZnZ8PQ4z.js";
+import "./preload-helper-V2P8TQsQ.js";
+import "./cadSections-DVtTZU6U.js";
+import "./cotas3D-BRJLBeVj.js";
 import "./theme-Co6w-pfC.js";
 import "./tweakpane-BXg6ZhiP.js";
 import "./getViewer-BdHmVTj2.js";
@@ -47,5 +48,5 @@ Promise.all([
     }
   })()
 ]).then(async () => {
-  o(r);
+  r(o);
 });
