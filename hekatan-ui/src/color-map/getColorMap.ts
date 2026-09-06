@@ -56,6 +56,11 @@ const PALETTES: Record<string, [number, number, number, number][]> = {
 };
 /** Paleta activa (seleccionable desde Settings). Por defecto la de SAFE (cimentaciones). */
 export const colorMapPalette: State<string> = van.state("safe");
+/** De qué elementos sale el RANGO del colormap: "auto" = todas las cáscaras, "muros" = solo las
+ *  verticales, "losas" = solo las horizontales. Con un rango global, un muro que trabaja a 10 kN/m²
+ *  al lado de otro a 110 sale entero en la banda de abajo y "no se ve su colormap" (Jorge, 6-sep-2026):
+ *  el número es correcto, la escala no le sirve. Con "muros" cada familia se mira con su propia escala. */
+export const colorMapScope: State<string> = van.state("auto");
 
 /** Lookup en la palette ACTIVA interpolando linealmente entre stops. */
 function sap2000Color(t: number): [number, number, number] {

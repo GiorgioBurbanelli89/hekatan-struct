@@ -28,6 +28,7 @@ import { setupHover } from "./objects/hover";
 
 import "./styles.css";
 import { getLegend } from "../color-map/getLegend";
+import { colorMapScope, robustRange } from "../color-map/getColorMap";
 import { getTheme, onThemeChange, ThemeColors } from "../theme";
 
 export interface ViewerContext3D {
@@ -638,7 +639,10 @@ export function getViewer({
       const solidActive = (settings.solidResults?.val ?? "none") !== "none";
       const colorMapActive = shellActive || solidActive;
       const frameContourActive = settings.frameResults.val.startsWith("contour:");
-      legend.hidden = !colorMapActive;
+      // Sin ningún valor finito (modelo sin cáscaras, o vacío) la barra salía con nueve "0":
+      // se esconde hasta que haya algo que pintar.
+      const hayValores = colorMapValues.val.some((v) => Number.isFinite(v));
+      legend.hidden = !colorMapActive || !hayValores;
       shellResultsObj.visible = colorMapActive;
       frameLegend.hidden = !frameContourActive;
     });
@@ -1141,6 +1145,7 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
     fixedColorMapRange.val = (Array.isArray(r) && r.length === 2)
       ? [r[0] * scale, r[1] * scale]
       : null;
+    const scopeSel = colorMapScope.val;   // dependencia: cambiar el selector recalcula
 
     // ── Solid Results PRIMARY: cuando solidField está activo (no "none"),
     // usar la data sólida en lugar de la shell. Los campos sólidos se
@@ -1162,6 +1167,20 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
       values.push(raw * scale);
     });
 
+    // ── Rango por familia (Settings → "Rango colormap") ──
+    // Solo si el ejemplo no fija su propio rango. Clasifica cada Q4 por su plano (los 4 nudos con la
+    // misma z = losa; la misma x o y = muro) y saca el rango robusto de los nudos de esa familia.
+    if (!fixedColorMapRange.val && scopeSel !== "auto") {
+      const N = mesh.nodes.val, sel = new Set<number>();
+      const same = (e: number[], c: number) => { const v = N[e[0]]?.[c]; return e.every((i) => Math.abs((N[i]?.[c] ?? NaN) - v) < 1e-6); };
+      for (const e of mesh.elements.val) {
+        if (e.length !== 4) continue;
+        const losa = same(e, 2), muro = !losa && (same(e, 0) || same(e, 1));
+        if ((scopeSel === "losas" && losa) || (scopeSel === "muros" && muro)) for (const i of e) sel.add(i);
+      }
+      const sub: number[] = []; for (const i of sel) { const v = values[i]; if (Number.isFinite(v)) sub.push(v); }
+      if (sub.length) fixedColorMapRange.val = robustRange(sub);
+    }
     colorMapValues.val = values;
   });
 

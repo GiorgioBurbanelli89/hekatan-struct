@@ -1,7 +1,7 @@
 import van, { State } from "vanjs-core";
 import { Pane } from "tweakpane";
 import { Mesh } from "hekatan-fem";
-import { colorMapPalette } from "../../color-map/getColorMap";
+import { colorMapPalette, colorMapScope } from "../../color-map/getColorMap";
 
 import "./styles.css";
 
@@ -428,6 +428,11 @@ export function getSettings(
         "Viridis": "viridis",
       },
       label: "🎨 Paleta colores",
+    });
+    // Rango del colormap por familia: un muro flojo junto a otro fuerte se ve solo con SU escala.
+    outputs.addBinding(colorMapScope, "val", {
+      options: { "todas las cáscaras": "auto", "solo muros": "muros", "solo losas": "losas" },
+      label: "📐 Rango colormap",
     });
 
     // Solid results (elementos H8 sólidos: columna+viga, cubos, etc.)

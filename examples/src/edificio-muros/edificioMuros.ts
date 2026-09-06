@@ -37,7 +37,9 @@ export const edificioMuros: ExampleDef = {
   id: "edificio-muros",
   name: "Edificio con Muros de Corte (Hormigón)",
   category: "4️⃣ Mixtos · 🏢 Edificios",
-  defaultShellResult: "bendingXX",
+  // F22 (tensión vertical de membrana): el campo con el que se LEE un muro de corte. Con M11 los muros
+  // salían uniformes y "sin colormap" (Jorge, 6-sep-2026).
+  defaultShellResult: "membraneYY",
   availableShellResults: ["bendingXX", "bendingYY", "displacementZ", "vonMises"],
   hasModal: true,
   params,

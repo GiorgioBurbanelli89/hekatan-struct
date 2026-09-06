@@ -77,6 +77,10 @@
   margin: 0px;
   font-family: "Courier New";
   font-weight: 500;
+  /* Sin esto el texto se partía/recortaba en "3.52e+" (le faltaba el exponente) y en "-0.000":
+     el <p> absoluto heredaba un ancho de 10 px del marker. Una sola línea, ancho libre. */
+  white-space: nowrap;
+  min-width: 9ch;
 }
 
 /* ───────────────────── Móvil portrait ─────────────────────

@@ -232,8 +232,17 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
     const mScale = maxDisp > 1e-12 ? (extent * scalePct / 100) / maxDisp : 1;
 
     const t0 = performance.now();
+    // Cada frame reescribe mesh.nodes.val y el visor rehace TODOS sus objetos (líneas, puntos,
+    // colormap…): medido en el deploy con un dual de 6605 nudos, 50-80 ms por frame, o sea un
+    // "long task" continuo y la interfaz a tirones ("se cuelga", Jorge 6-sep-2026). Con muchos
+    // nudos se baja el ritmo a 10-15 fps: la animación sigue viéndose y el hilo respira.
+    const minDt = nNodes > 4000 ? 100 : nNodes > 1500 ? 66 : 0;
+    let lastFrame = -Infinity;
     const tick = () => {
-      const t = (performance.now() - t0) / 1000;
+      const now = performance.now();
+      if (now - lastFrame < minDt) { rafId = requestAnimationFrame(tick); return; }
+      lastFrame = now;
+      const t = (now - t0) / 1000;
       const amp = Math.sin(2 * Math.PI * visFreq * t) * mScale;
       const newNodes: Node[] = new Array(nNodes);
       for (let i = 0; i < nNodes; i++) {
