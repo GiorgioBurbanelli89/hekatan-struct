@@ -17,6 +17,7 @@
  * en paralelo para que el usuario vea las diferencias.
  */
 import { plateQ4Solve, type PlateQ4Output } from "hekatan-fem";
+import { f2kDelPlateQ4 } from "../shared/f2kPlateQ4";
 import { cargaColumnaConsistente } from "../shared/cargaColumnaConsistente";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
@@ -161,6 +162,7 @@ function runModel(
     q_avg_kNm2: q_avg,
     uniformidad,
     output,
+    springs, pointLoads,   // para «Exportar F2K» (SAFE): el modelo que resolvio el solver
   };
 }
 
@@ -297,7 +299,9 @@ export const safeBenchComparativa: ExampleDef = {
     const N3D: [number, number, number][] = nodes.map(n => [n[0], n[1], 0]);
     states.nodes.val = N3D;
     states.elements.val = elements as unknown as number[][];
-    states.nodeInputs.val = { supports: new Map(), loads: new Map() };
+    states.nodeInputs.val = { supports: new Map(), loads: new Map(),
+      // Para «Exportar F2K» (SAFE): muelles y cargas del SOLVER en la convencion de 6 gdl.
+      ...f2kDelPlateQ4(r.springs, r.pointLoads) } as any;
     states.elementInputs.val = {
       elasticities: new Map(elements.map((_, i) => [i, E_kNm2])),
       poissonsRatios: new Map(elements.map((_, i) => [i, nu])),

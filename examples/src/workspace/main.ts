@@ -93,6 +93,7 @@ import {
 import { attachLoadPatternsPanel, loadPersistedLoadPatterns } from "./loadPatternsPanel";
 import { downloadZapataF2k } from "../zapata-aislada/f2kExporter";
 import { parseZapataF2k } from "../zapata-aislada/f2kImporter";
+import { exportF2k as exportF2kModelo } from "../shared/f2kExporter";
 import { exportEdificioCimentacionF2k, downloadEdificioCimentacionF2k } from "../shared/f2kCimentacionCompleta";
 // Expose F2K builder a window para test/debug via DOM
 (window as any).__hekatanExportF2kCim = exportEdificioCimentacionF2k;
@@ -4273,8 +4274,37 @@ solve`;
           console.log(`✅ F2K exportado vía exportF2k custom del ejemplo`);
           return;
         }
-        // 2) Fallback: zapata simple (zapata-aislada y guerra-ej1/ej2/ej3 que
-        //    son una sola zapata con params Lz/Bz/tz/bc).
+        // 2) El ejemplo dejo sus muelles en nodeInputs.springs (Guerra ej1-8, safe-bench-*,
+        //    viga-cim-*): se exporta el MODELO (nudos, cascaras, barras, muelles, cargas del
+        //    solver) con el mismo exportador que usa `heks_a_csi.mjs`. Hasta el 6-sep-2026
+        //    caian en el fallback de abajo, que lee `Lz`/`P_simple` (nombres de zapata-aislada),
+        //    y salian como zapata 1.5x1.5x0.30 SIN carga (medido en el deploy con puppeteer).
+        const niAny = states.nodeInputs.val as any;
+        if (currentExample?.id !== "zapata-aislada" && Array.isArray(niAny?.springs) && niAny.springs.length) {
+          const text = exportF2kModelo({
+            nodes: states.nodes.val, elements: states.elements.val,
+            nodeInputs: states.nodeInputs.val, elementInputs: states.elementInputs.val,
+            title: currentExample!.id,
+          });
+          const fname = `${currentExample!.id}_${Date.now()}.f2k`;
+          const blob = new Blob([text], { type: "text/plain" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url; a.download = fname;
+          document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+          const nMuelles = new Set(niAny.springs.map((sp: any) => sp.node)).size;
+          const cargas: Map<number, number[]> = niAny.loadsSolver ?? states.nodeInputs.val.loads ?? new Map();
+          const nCargas = [...cargas.values()].filter((f) => f.some((v) => Math.abs(v) > 1e-12)).length;
+          console.log(`✅ F2K exportado desde el modelo: ${states.nodes.val.length} nudos, ${states.elements.val.length} elementos, ${nMuelles} nudos con muelle, ${nCargas} nudos cargados → ${fname}`);
+          alert(`F2K descargado (modelo completo).
+
+${states.nodes.val.length} nudos · ${states.elements.val.length} elementos
+${nMuelles} nudos con muelle Winkler · ${nCargas} nudos cargados
+
+Impórtalo en SAFE 20.x: File → Import → SAFE .f2k Text File`);
+          return;
+        }
+        // 3) Fallback: zapata simple (zapata-aislada, params Lz/Bz/tz/bc, useSimple/P_simple).
         // Calcular ks en kN/m³ desde params actuales
         const ks_factor = p.ks_factor ?? 10.5;
         const q_adm_tonf = p.q_adm ?? 20;

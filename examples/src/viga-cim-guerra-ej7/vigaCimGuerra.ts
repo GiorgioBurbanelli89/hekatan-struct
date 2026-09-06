@@ -240,7 +240,7 @@ export const vigaCimGuerraEj7: ExampleDef = {
       torsionalConstants.set(i, J_p);
     }
 
-    const nodeInputs = { supports: new Map(), loads };
+    const nodeInputs = { supports: new Map(), loads, springs };   // springs tambien al .f2k (SAFE)
     const elementInputs = {
       elasticities, poissonsRatios, thicknesses,
       areas, momentsOfInertiaZ, momentsOfInertiaY,

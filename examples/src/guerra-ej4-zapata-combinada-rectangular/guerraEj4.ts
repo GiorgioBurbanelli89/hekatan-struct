@@ -10,6 +10,7 @@
  */
 import * as THREE from "three";
 import { plateQ4Solve } from "hekatan-fem";
+import { f2kDelPlateQ4 } from "../shared/f2kPlateQ4";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import safeRef from "./safe-reference.json";
 
@@ -170,7 +171,9 @@ export const guerraEj4ZapataCombinada: ExampleDef = {
       c[dofToViewer[cl.dof] ?? 2] += cl.value;
       viewerLoads.set(cl.node, c);
     }
-    states.nodeInputs.val = { supports: new Map(), loads: viewerLoads };
+    states.nodeInputs.val = { supports: new Map(), loads: viewerLoads,
+      // Para «Exportar F2K» (SAFE): muelles y cargas del SOLVER en la convencion de 6 gdl.
+      ...f2kDelPlateQ4(springs, pointLoads) } as any;
     states.elementInputs.val = {
       elasticities: new Map(elements.map((_, i) => [i, E_kNm2])),
       poissonsRatios: new Map(elements.map((_, i) => [i, nu])),

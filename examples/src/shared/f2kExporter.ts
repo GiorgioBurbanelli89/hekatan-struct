@@ -269,7 +269,9 @@ export function exportF2k(input: F2kExportInput): string {
     for (const [i, nm] of [...springPropDeNudo].sort((a, b) => a[0] - b[0])) push(`   UniqueName=${i + 1}   SpringProp=${nm}`);
     fin();
   }
-  const loads = nodeInputs.loads;
+  // Los ejemplos de placa Q4 dejan en `loadsSolver` las cargas que recibio el solver (columna +
+  // peso propio); `loads` son solo las de visualizacion. Ver shared/f2kPlateQ4.ts.
+  const loads = (nodeInputs as any).loadsSolver ?? nodeInputs.loads;
   if (loads && loads.size) {
     tabla("JOINT LOADS ASSIGNMENTS - FORCE");
     for (const [i, f] of [...loads].sort((a, b) => a[0] - b[0])) {

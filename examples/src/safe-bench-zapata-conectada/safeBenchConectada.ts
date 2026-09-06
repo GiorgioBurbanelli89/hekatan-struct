@@ -3,6 +3,7 @@
  * Caso 4 — paridad -0.25%. Extremos t=0.40m (zapatas), centro t=0.20m (viga).
  */
 import { plateQ4Solve } from "hekatan-fem";
+import { f2kDelPlateQ4 } from "../shared/f2kPlateQ4";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 
 const TONF_TO_KN = 9.80665;
@@ -90,7 +91,9 @@ export const safeBenchConectada: ExampleDef = {
     const N3D: [number, number, number][] = nodes.map(n => [n[0], n[1], 0]);
     states.nodes.val = N3D;
     states.elements.val = elements as unknown as number[][];
-    states.nodeInputs.val = { supports: new Map(), loads: new Map() };
+    states.nodeInputs.val = { supports: new Map(), loads: new Map(),
+      // Para «Exportar F2K» (SAFE): muelles y cargas del SOLVER en la convencion de 6 gdl.
+      ...f2kDelPlateQ4(springs, pointLoads) } as any;
     states.elementInputs.val = {
       elasticities: new Map(elements.map((_, i) => [i, E_kNm2])),
       poissonsRatios: new Map(elements.map((_, i) => [i, nu])),
