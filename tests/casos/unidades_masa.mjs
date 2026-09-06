@@ -48,13 +48,17 @@ const EXENTOS = {
  *
  * 1) [ARREGLADO] Los edificios daban al acero la densidad del hormigon.
  *
- * 2) Los `benchmark-paz-*` con modal: convierten a kg/m3 (`rho_kgm3`) y lo
- *    pasan con E en kN/m2, o sea 1000x. Pero corregir eso NO los cierra contra
- *    el libro: Paz 11.1 dice f1 = 4.02 Hz y el ejemplo da 0.0858; ni siquiera
- *    multiplicando por 31.62 (=2.71 Hz) llega, porque el libro usa masa
- *    CONSISTENTE (M_local 156 / 22L / 4L^2) y el motor usa lumped, y ademas el
- *    ejemplo se inventa `Iz = 0.3*I` y `J = 0.05*I`. Cerrarlos es un trabajo
- *    aparte y con arbitro: el libro.
+ * 2) [CERRADO 6-sep-2026 en 10-7 y 11-1; 7-1, 9-3, 12-1, 13-1 sin tocar] Los `benchmark-paz-*`
+ *    pasaban rho en kg/m3 con E en kN/m2 (1000x): ya va en t/m3. Y no cerraban contra el
+ *    libro por TRES cosas mas, todas medidas: (a) el 11.1 llevaba m = 0.078 y el libro usa
+ *    m*L/420 = 1 -> m = 4.2 lb*s2/in2 (su M local sale sin factor, p.300); (b) el motor normal es
+ *    LUMPED (rho*A*L/2 por extremo, como CSI) y el libro es masa CONSISTENTE: hay que llamar a
+ *    `modalAnalysisPaz` (156/22L/4L2); (c) el portico es PLANO: sin restringir el fuera de plano
+ *    salen modos de Iz. Con eso: 11.1 = 4.010/4.869/10.323 Hz (libro 4.02/4.97/10.33) y 10.7 =
+ *    7.192/19.864/39.061 (Programa 13 rehecho: 7.231/20.089/39.856). Lo que queda es EXACTAMENTE
+ *    la deformacion por cortante del motor Paz (Timoshenko, As = 5/6 A, phi = 0.06 y 0.043):
+ *    con phi el Python da los mismos digitos. El libro es Euler. Siguen en PENDIENTES porque
+ *    su masa es academica (rho = 22 442 t/m3 en 11.1): c = sqrt(E/rho) nunca va a caer en rango.
  */
 const PENDIENTES = [
   // (1) ARREGLADO: los cinco edificios daban al acero la densidad del hormigon.

@@ -18,7 +18,7 @@
  *    ω₂ = 31.24 rad/s  →  f₂ = 4.97 Hz
  *    ω₃ = 64.90 rad/s  →  f₃ = 10.33 Hz
  */
-import { modalAnalysis } from "hekatan-fem";
+import { modalAnalysisPaz } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import {
   buildSpaceFrameModel,
@@ -53,7 +53,9 @@ export const benchmarkPaz11_1: ExampleDef = {
     I_in4: { default: 33.33, min: 10, max: 200, step: 0.5, label: "I barra (in⁴)", folder: "Sección" },
     E_psi: { default: 30e6, min: 25e6, max: 35e6, step: 0.5e6, label: "E (psi)", folder: "Material" },
     G_psi: { default: 12e6, min: 10e6, max: 14e6, step: 0.5e6, label: "G (psi)", folder: "Material" },
-    mbar: { default: 0.078, min: 0.01, max: 1.0, step: 0.001, label: "m̄ (lb·s²/in/in)", folder: "Masa" },
+    // m̄ = 4.2 lb·s²/in²: la M local del libro (p.300) es [140, 156, 2200, 40 000, ...] SIN factor,
+    // o sea m̄·L/420 = 1 con L = 100. (Hasta el 6-sep-2026 iba 0.078: 54 veces menos masa.)
+    mbar: { default: 4.2, min: 0.01, max: 10.0, step: 0.001, label: "m̄ (lb·s²/in/in)", folder: "Masa" },
     exportE2k: { default: 0, boolean: true, label: "📤 Exportar a ETABS .e2k", folder: "Exportar" },
   },
   hasModal: true,
@@ -88,7 +90,11 @@ export const benchmarkPaz11_1: ExampleDef = {
   runModal(p, states, modalPanel) {
     if (!states.nodes.val.length) return;
     try {
-      const out = modalAnalysis(
+      // Masa CONSISTENTE (156 / 22L / 4L², la del libro): `modalAnalysisPaz`. El `modalAnalysis`
+      // normal es lumped (ρAL/2 por extremo, como CSI) y da 3.43 / 7.86 Hz: no es un error, es
+      // otra masa. Lo que queda (4.010 / 4.869 / 10.323 vs 4.02 / 4.97 / 10.33) es la deformación
+      // por cortante del motor (As = 5/6·A, φ = 0.06): el libro es Euler. Medido en Python el 6-sep-2026.
+      const out = modalAnalysisPaz(
         states.nodes.val, states.elements.val,
         states.nodeInputs.val, states.elementInputs.val, 6,
       );
@@ -118,7 +124,8 @@ function paramsToSF(p: Record<string, number>) {
   const I_m4 = PAZ_UTILS.in4_to_m4(p.I_in4);
   const w_per_length_lbin = p.mbar * 386.088;
   const mass_per_length_kgm = w_per_length_lbin * 175.13 / 9.80665;
-  const rho_kgm3 = mass_per_length_kgm / A_m2;
+  // E va en kN/m², así que la masa va en t (kN·s²/m): ρ en t/m³, no en kg/m³ (era 1000× hasta el 6-sep-2026)
+  const rho_tm3 = mass_per_length_kgm / A_m2 / 1000;
 
   // Geometría: nodo 1 (origen) - nodo 2 inclinado 45° - nodo 3 horizontal
   // Elemento 1: 1→2 inclinado, Elemento 2: 2→3 horizontal
@@ -132,11 +139,13 @@ function paramsToSF(p: Record<string, number>) {
   const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
   supports.set(0, [true, true, true, true, true, true]);
   supports.set(2, [true, true, true, true, true, true]);
+  // Pórtico PLANO (3 GDL: ux, uz, ry): el nudo libre no sale del plano XZ
+  supports.set(1, [false, true, false, true, false, true]);
 
   const sec = {
-    A: A_m2, Iy: I_m4, Iz: I_m4 * 0.3,
+    A: A_m2, Iy: I_m4, Iz: I_m4,
     J: I_m4 * 0.05, E: E_kNm2, G: G_kNm2,
-    rho: rho_kgm3,
+    rho: rho_tm3,
     label: `Paz 11.1 frame elem (A=${p.A_in2}in², I=${p.I_in4}in⁴)`,
     e2kName: "FRAME_PAZ11_1",
     e2kShape: "Steel I/Wide Flange",

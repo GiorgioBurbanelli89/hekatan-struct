@@ -19,7 +19,7 @@
  *
  *  Validación: modal + Newmark-β contra resultados del libro (Programa 13).
  */
-import { modalAnalysis, deform, analyze, type Node, type Element } from "hekatan-fem";
+import { modalAnalysisPaz, deform, analyze, type Node, type Element } from "hekatan-fem";
 import type { ExampleDef } from "../workspace/exampleRegistry";
 import { downloadTextFile, PAZ_UTILS, emitE2kHeader, emitE2kFooter, emitSteelMaterial, emitFrameSection, fmtNum } from "../shared/pazFrameE2k";
 import { getSharedChartPanel } from "../shared/chartPanel";
@@ -92,7 +92,8 @@ export const benchmarkPaz10_7: ExampleDef = {
     const w_per_length_lbin = p.mbar * 386.088;  // lb/in
     const w_per_length_Nm = w_per_length_lbin * 175.13;
     const mass_per_length_kgm = w_per_length_Nm / 9.80665;  // kg/m
-    const rho_kgm3 = mass_per_length_kgm / A_m2;
+    // E va en kN/m²: la masa va en t (kN·s²/m), ρ en t/m³ (era kg/m³ = 1000× hasta el 6-sep-2026)
+    const rho_tm3 = mass_per_length_kgm / A_m2 / 1000;
 
     // ── Construir modelo Hekatan ──
     const nodes: Node[] = [];
@@ -103,6 +104,8 @@ export const benchmarkPaz10_7: ExampleDef = {
     const supports = new Map<number, [boolean, boolean, boolean, boolean, boolean, boolean]>();
     supports.set(0, [true, true, true, true, true, true]);
     supports.set(nElem, [true, true, true, true, true, true]);
+    // Viga PLANA del libro (2 GDL por nudo: w y θy): los nudos interiores no se mueven en x ni salen del plano XZ
+    for (let i = 1; i < nElem; i++) supports.set(i, [true, true, false, true, false, true]);
 
     const loads = new Map<number, [number, number, number, number, number, number]>();
     // Carga estática F en el centro (para visualizar deformada)
@@ -127,7 +130,7 @@ export const benchmarkPaz10_7: ExampleDef = {
       J.set(e, I_m4 * 2);
       sAY.set(e, A_m2 * 0.85);
       sAZ.set(e, A_m2 * 0.85);
-      dens.set(e, rho_kgm3);
+      dens.set(e, rho_tm3);
       sLab.set(e, `Beam Paz 10.7  I=${p.I_in4} in⁴`);
       matT.set(e, "Acero");
       sInfo.set(e, {
@@ -222,7 +225,10 @@ export const benchmarkPaz10_7: ExampleDef = {
   runModal(p, states, modalPanel) {
     if (!states.nodes.val.length) return;
     try {
-      const out = modalAnalysis(
+      // Masa CONSISTENTE (BeamConsMass del Programa 13 del libro): `modalAnalysisPaz`. Con 4 elementos el
+      // libro da f = 7.231 / 20.089 / 39.856 Hz (Programa 13 rehecho en Python el 6-sep-2026); el lumped
+      // del `modalAnalysis` normal da 7.208 / 19.124 / 31.437 (sin inercia rotacional).
+      const out = modalAnalysisPaz(
         states.nodes.val, states.elements.val,
         states.nodeInputs.val, states.elementInputs.val, 4,
       );
