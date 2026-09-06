@@ -1,12 +1,11 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { s as r, __tla as __tla_0 } from "./safeBenchViga-C9dOGMLz.js";
-import { r as m, __tla as __tla_1 } from "./runExampleStandalone-Ct42eAEl.js";
-import "./theme-Co6w-pfC.js";
-import "./analyze-BFwM3Jvn.js";
-import "./pureFunctionsAny.generated-DeJSBP3k.js";
+import { s as o, __tla as __tla_0 } from "./safeBenchConectada-CnQsqBO1.js";
+import { r, __tla as __tla_1 } from "./runExampleStandalone-Ct42eAEl.js";
 import { __tla as __tla_2 } from "./didacticCpp-DaEmtxPu.js";
 import { __tla as __tla_3 } from "./deform-ZnZ8PQ4z.js";
 import "./preload-helper-V2P8TQsQ.js";
+import "./f2kPlateQ4-BZ9dGpgS.js";
+import "./theme-Co6w-pfC.js";
 import "./tweakpane-BXg6ZhiP.js";
 import "./getViewer-DOa6CATo.js";
 import "./Text-2W5davkr.js";
@@ -39,5 +38,5 @@ Promise.all([
     }
   })()
 ]).then(async () => {
-  m(r);
+  r(o);
 });

@@ -1,5 +1,6 @@
-import { p as P, __tla as __tla_0 } from "./didacticCpp-DaEmtxPu.js";
-let D;
+import { p as D, __tla as __tla_0 } from "./didacticCpp-DaEmtxPu.js";
+import { f as O } from "./f2kPlateQ4-BZ9dGpgS.js";
+let Z;
 let __tla = Promise.all([
   (() => {
     try {
@@ -10,7 +11,7 @@ let __tla = Promise.all([
 ]).then(async () => {
   let T;
   T = 9.80665;
-  D = {
+  Z = {
     id: "safe-bench-zapata-conectada",
     name: "SAFE Benchmark \xB7 Zapata Conectada 5\xD71m t variable (\u0394 -0.25%)",
     category: "2\uFE0F\u20E3 Shells \xB7 \u{1F9F0} Cimentaciones",
@@ -97,9 +98,9 @@ let __tla = Promise.all([
       }
     },
     build(o, l) {
-      const f = o.Lz, x = o.Bz, k = o.t_zap, j = o.t_vig, m = o.Lzap, M = o.ks_tonfm3 * T, w = o.P_tonf * T, y = Math.round(o.nx), h = Math.round(o.ny), c = y + 1, b = h + 1, r = f / y, v = x / h, p = [];
+      const u = o.Lz, x = o.Bz, _ = o.t_zap, j = o.t_vig, r = o.Lzap, M = o.ks_tonfm3 * T, w = o.P_tonf * T, y = Math.round(o.nx), h = Math.round(o.ny), c = y + 1, b = h + 1, i = u / y, v = x / h, p = [];
       for (let a = 0; a < b; ++a) for (let e = 0; e < c; ++e) p.push([
-        e * r,
+        e * i,
         a * v
       ]);
       const d = [], g = [];
@@ -111,83 +112,84 @@ let __tla = Promise.all([
           n + c + 1,
           n + c
         ]);
-        const t = (e + 0.5) * r, s = t < m || t > f - m;
-        g.push(s ? k : j);
+        const t = (e + 0.5) * i, s = t < r || t > u - r;
+        g.push(s ? _ : j);
       }
-      const i = [];
+      const m = [];
       for (let a = 0; a < b; ++a) for (let e = 0; e < c; ++e) {
-        const n = e === 0 || e === c - 1, t = a === 0 || a === b - 1, s = n && t ? 0.25 : n || t ? 0.5 : 1, u = r * v * s, _ = a * c + e;
-        if (i.push({
-          node: _,
+        const n = e === 0 || e === c - 1, t = a === 0 || a === b - 1, s = n && t ? 0.25 : n || t ? 0.5 : 1, f = i * v * s, z = a * c + e;
+        if (m.push({
+          node: z,
           dof: 0,
-          k: M * u
+          k: M * f
         }), n && t) {
-          const I = 1e-6 * M * r * v;
-          i.push({
-            node: _,
+          const P = 1e-6 * M * i * v;
+          m.push({
+            node: z,
             dof: 1,
-            k: I
-          }), i.push({
-            node: _,
+            k: P
+          }), m.push({
+            node: z,
             dof: 2,
-            k: I
+            k: P
           });
         }
       }
       const L = (a, e) => {
         let n = -1, t = 1 / 0;
         for (let s = 0; s < p.length; ++s) {
-          const u = (p[s][0] - a) ** 2 + (p[s][1] - e) ** 2;
-          u < t && (t = u, n = s);
+          const f = (p[s][0] - a) ** 2 + (p[s][1] - e) ** 2;
+          f < t && (t = f, n = s);
         }
         return n;
-      }, A = [
+      }, E = [
         {
-          node: L(m / 2, x / 2),
+          node: L(r / 2, x / 2),
           dof: 0,
           value: -w
         },
         {
-          node: L(f - m / 2, x / 2),
+          node: L(u - r / 2, x / 2),
           dof: 0,
           value: -w
         }
-      ], E = 24855e3, S = 0.2, z = P({
-        E,
-        nu: S,
-        thickness: k,
+      ], S = 24855e3, R = 0.2, k = D({
+        E: S,
+        nu: R,
+        thickness: _,
         theoryType: 0,
         bcType: "none",
         nodes: p,
         elements: d,
         bcs: [],
-        pointLoads: A,
-        springs: i,
+        pointLoads: E,
+        springs: m,
         thicknesses: g
-      }), O = p.map((a) => [
+      }), A = p.map((a) => [
         a[0],
         a[1],
         0
       ]);
-      l.nodes.val = O, l.elements.val = d, l.nodeInputs.val = {
+      l.nodes.val = A, l.elements.val = d, l.nodeInputs.val = {
         supports: /* @__PURE__ */ new Map(),
-        loads: /* @__PURE__ */ new Map()
+        loads: /* @__PURE__ */ new Map(),
+        ...O(m, E)
       }, l.elementInputs.val = {
         elasticities: new Map(d.map((a, e) => [
           e,
-          E
+          S
         ])),
         poissonsRatios: new Map(d.map((a, e) => [
           e,
-          S
+          R
         ])),
         thicknesses: new Map(d.map((a, e) => [
           e,
           g[e]
         ]))
       };
-      const R = /* @__PURE__ */ new Map();
-      z.nodeResults.forEach((a, e) => R.set(e, [
+      const B = /* @__PURE__ */ new Map();
+      k.nodeResults.forEach((a, e) => B.set(e, [
         0,
         0,
         a.w,
@@ -195,47 +197,47 @@ let __tla = Promise.all([
         a.by,
         0
       ])), l.deformOutputs.val = {
-        deformations: R,
+        deformations: B,
         reactions: /* @__PURE__ */ new Map()
       };
-      const B = /* @__PURE__ */ new Map(), N = /* @__PURE__ */ new Map(), X = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), C = /* @__PURE__ */ new Map();
+      const N = /* @__PURE__ */ new Map(), X = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), C = /* @__PURE__ */ new Map(), I = /* @__PURE__ */ new Map();
       d.forEach((a, e) => {
-        B.set(e, a.map((s) => M * z.nodeResults[s].w));
-        const n = z.elementResults[e];
-        N.set(e, [
+        N.set(e, a.map((s) => M * k.nodeResults[s].w));
+        const n = k.elementResults[e];
+        X.set(e, [
           n.Mxx,
           n.Mxx,
           n.Mxx,
           n.Mxx
-        ]), X.set(e, [
+        ]), Y.set(e, [
           n.Myy,
           n.Myy,
           n.Myy,
           n.Myy
-        ]), Y.set(e, [
+        ]), C.set(e, [
           n.Mxy,
           n.Mxy,
           n.Mxy,
           n.Mxy
         ]);
         const t = Math.sqrt(n.Mxx ** 2 + n.Myy ** 2 - n.Mxx * n.Myy + 3 * n.Mxy ** 2);
-        C.set(e, [
+        I.set(e, [
           t,
           t,
           t,
           t
         ]);
       }), l.analyzeOutputs.val = {
-        pressure: B,
-        bendingXX: N,
-        bendingYY: X,
-        bendingXY: Y,
-        vonMises: C
+        pressure: N,
+        bendingXX: X,
+        bendingYY: Y,
+        bendingXY: C,
+        vonMises: I
       }, l.objects3D.val = [];
     }
   };
 });
 export {
   __tla,
-  D as s
+  Z as s
 };

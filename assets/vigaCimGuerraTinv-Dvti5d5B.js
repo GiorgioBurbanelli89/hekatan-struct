@@ -33,8 +33,8 @@ let __tla = Promise.all([
     ];
   }
   function Y(t, a, s, o) {
-    const n = t * a, l = s * o, m = n + l, f = a / 2, c = a + o / 2, u = (n * f + l * c) / m, p = t * a ** 3 / 12, r = s * o ** 3 / 12, M = p + n * (u - f) ** 2 + r + l * (u - c) ** 2, x = a * t ** 3 / 12 + o * s ** 3 / 12, h = (P, d) => {
-      const g = Math.max(P, d) / 2, v = Math.min(P, d) / 2;
+    const n = t * a, l = s * o, m = n + l, f = a / 2, c = a + o / 2, u = (n * f + l * c) / m, p = t * a ** 3 / 12, r = s * o ** 3 / 12, M = p + n * (u - f) ** 2 + r + l * (u - c) ** 2, x = a * t ** 3 / 12 + o * s ** 3 / 12, h = (w, d) => {
+      const g = Math.max(w, d) / 2, v = Math.min(w, d) / 2;
       return g * v ** 3 * (16 / 3 - 3.36 * (v / g) * (1 - (v / g) ** 4 / 12));
     }, L = h(t, a) + h(s, o);
     return {
@@ -269,7 +269,7 @@ let __tla = Promise.all([
         t.P2,
         t.P3,
         t.P4
-      ].map((e) => e * q), P = [
+      ].map((e) => e * q), w = [
         t.M1,
         t.M2,
         t.M3,
@@ -301,20 +301,20 @@ let __tla = Promise.all([
         e,
         J[i]
       ]));
-      const w = [];
+      const P = [];
       for (let e = 0; e < r; ++e) {
         const i = e === 0 || e === r - 1 ? M / 2 : M, y = o * i;
-        if (w.push({
+        if (P.push({
           node: e,
           dof: 2,
           k: u * y
         }), e === 0 || e === r - 1) {
           const _ = 1e-6 * u * o * M;
-          w.push({
+          P.push({
             node: e,
             dof: 3,
             k: _
-          }), w.push({
+          }), P.push({
             node: e,
             dof: 5,
             k: _
@@ -328,7 +328,7 @@ let __tla = Promise.all([
           0,
           -L[i],
           0,
-          P[i],
+          w[i],
           0
         ]);
       });
@@ -337,7 +337,8 @@ let __tla = Promise.all([
       for (let e = V; e < b.length; ++e) C.set(e, A), D.set(e, T), F.set(e, $), k.set(e, H), z.set(e, H), S.set(e, Z), E.set(e, ee);
       const K = {
         supports: /* @__PURE__ */ new Map(),
-        loads: W
+        loads: W,
+        springs: P
       }, N = {
         elasticities: C,
         poissonsRatios: D,
@@ -349,7 +350,7 @@ let __tla = Promise.all([
       };
       a.nodes.val = d, a.elements.val = b, a.nodeInputs.val = K, a.elementInputs.val = N;
       try {
-        const e = ae(d, b, K, N, w);
+        const e = ae(d, b, K, N, P);
         a.deformOutputs.val = e;
         const i = te(d, b, N, e);
         a.analyzeOutputs.val = i;

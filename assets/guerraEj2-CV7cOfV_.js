@@ -1,7 +1,8 @@
 import { b as V, L as W, E as U, a as ee } from "./theme-Co6w-pfC.js";
-import { p as ne, __tla as __tla_0 } from "./didacticCpp-DaEmtxPu.js";
-import { c as oe } from "./cargaColumnaConsistente-DPcPMAlx.js";
-let _e;
+import { p as oe, __tla as __tla_0 } from "./didacticCpp-DaEmtxPu.js";
+import { f as ne } from "./f2kPlateQ4-BZ9dGpgS.js";
+import { c as te } from "./cargaColumnaConsistente-DPcPMAlx.js";
+let fe;
 let __tla = Promise.all([
   (() => {
     try {
@@ -10,26 +11,26 @@ let __tla = Promise.all([
     }
   })()
 ]).then(async () => {
-  const te = {
+  const ae = {
     e_DL_m: 0.79,
     e_DLS_m: 0.84,
     L_sobre_6_m: 0.65,
     iteration_1: {
       sigma_max_tm2: 21.07
     }
-  }, ae = {
-    manual_libro: te
-  }, b = 9.80665, se = 1 / b;
-  function le(o, a, r, s, l) {
+  }, se = {
+    manual_libro: ae
+  }, g = 9.80665, le = 1 / g;
+  function me(n, a, r, s, l) {
     const m = new V(s, l, r), i = new W(new U(m), new ee({
       color: 11579568,
       linewidth: 2
     }));
-    return i.position.set(o, a, r / 2), [
+    return i.position.set(n, a, r / 2), [
       i
     ];
   }
-  _e = {
+  fe = {
     id: "guerra-ej2-zapata-rectangular-sismo",
     name: "Ej.2 \xB7 Zapata Rectangular + Sismo (4.60\xD74.00\xD70.55)",
     category: "2\uFE0F\u20E3 Shells \xB7 \u{1F9F0} Cimentaciones",
@@ -173,18 +174,18 @@ let __tla = Promise.all([
         label: "Hcol viz (m)"
       }
     },
-    build(o, a) {
-      const r = o.L, s = o.B, l = o.h, m = Math.round(o.nx), i = Math.round(o.ny), c = m + 1, M = i + 1, x = r / m, p = s / i, h = Math.round(o.combo);
+    build(n, a) {
+      const r = n.L, s = n.B, l = n.h, m = Math.round(n.nx), i = Math.round(n.ny), c = m + 1, M = i + 1, x = r / m, p = s / i, h = Math.round(n.combo);
       let d, L;
-      h === 1 ? (d = o.P_dead + o.P_live + o.P_sismo, L = o.M_dead + o.M_live + o.M_sismo) : (d = o.P_dead + o.P_live, L = o.M_dead + o.M_live);
-      const $ = d * b, G = L * b, v = o.ks_tm3 * b, z = 14100 * Math.sqrt(o.fc_kgcm2) * 98.0665, j = 0.2, f = [];
-      for (let e = 0; e < M; ++e) for (let n = 0; n < c; ++n) f.push([
-        n * x,
+      h === 1 ? (d = n.P_dead + n.P_live + n.P_sismo, L = n.M_dead + n.M_live + n.M_sismo) : (d = n.P_dead + n.P_live, L = n.M_dead + n.M_live);
+      const G = d * g, K = L * g, v = n.ks_tm3 * g, z = 14100 * Math.sqrt(n.fc_kgcm2) * 98.0665, j = 0.2, f = [];
+      for (let e = 0; e < M; ++e) for (let o = 0; o < c; ++o) f.push([
+        o * x,
         e * p
       ]);
       const _ = [];
-      for (let e = 0; e < i; ++e) for (let n = 0; n < m; ++n) {
-        const t = e * c + n;
+      for (let e = 0; e < i; ++e) for (let o = 0; o < m; ++o) {
+        const t = e * c + o;
         _.push([
           t,
           t + 1,
@@ -192,47 +193,47 @@ let __tla = Promise.all([
           t + c
         ]);
       }
-      const K = 2.4 * b * l, g = [], C = [];
-      for (let e = 0; e < M; ++e) for (let n = 0; n < c; ++n) {
-        const t = n === 0 || n === c - 1, u = e === 0 || e === M - 1, N = t && u ? 0.25 : t || u ? 0.5 : 1, X = x * p * N, y = e * c + n;
-        if (g.push({
+      const Z = 2.4 * g * l, b = [], C = [];
+      for (let e = 0; e < M; ++e) for (let o = 0; o < c; ++o) {
+        const t = o === 0 || o === c - 1, u = e === 0 || e === M - 1, N = t && u ? 0.25 : t || u ? 0.5 : 1, Y = x * p * N, y = e * c + o;
+        if (b.push({
           node: y,
           dof: 0,
-          k: v * X
+          k: v * Y
         }), C.push({
           node: y,
           dof: 0,
-          value: -K * X
+          value: -Z * Y
         }), t && u) {
-          const Y = 1e-6 * v * x * p;
-          g.push({
+          const $ = 1e-6 * v * x * p;
+          b.push({
             node: y,
             dof: 1,
-            k: Y
-          }), g.push({
+            k: $
+          }), b.push({
             node: y,
             dof: 2,
-            k: Y
+            k: $
           });
         }
       }
       const k = r / 2, w = s / 2, D = [];
       for (let e = 0; e < f.length; e++) {
-        const n = f[e][0], t = f[e][1];
-        Math.abs(n - k) <= o.col_x / 2 + 1e-6 && Math.abs(t - w) <= o.col_y / 2 + 1e-6 && D.push(e);
+        const o = f[e][0], t = f[e][1];
+        Math.abs(o - k) <= n.col_x / 2 + 1e-6 && Math.abs(t - w) <= n.col_y / 2 + 1e-6 && D.push(e);
       }
-      const Z = oe(f, _, $, k, w, o.col_x, o.col_y), q = G / D.length, E = [
-        ...Z.pointLoads
+      const q = te(f, _, G, k, w, n.col_x, n.col_y), H = K / D.length, P = [
+        ...q.pointLoads
       ];
-      for (const e of D) E.push({
+      for (const e of D) P.push({
         node: e,
         dof: 2,
-        value: q
+        value: H
       });
-      const H = [
-        ...E,
+      const F = [
+        ...P,
         ...C
-      ], P = ne({
+      ], E = oe({
         E: z,
         nu: j,
         thickness: l,
@@ -241,30 +242,30 @@ let __tla = Promise.all([
         nodes: f,
         elements: _,
         bcs: [],
-        pointLoads: H,
-        springs: g
-      }), F = /* @__PURE__ */ new Map(), I = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map(), B = /* @__PURE__ */ new Map(), O = /* @__PURE__ */ new Map();
-      _.forEach((e, n) => {
-        F.set(n, e.map((N) => -Math.abs(v * P.nodeResults[N].w)));
-        const t = P.elementResults[n];
-        I.set(n, [
+        pointLoads: F,
+        springs: b
+      }), I = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map(), B = /* @__PURE__ */ new Map(), O = /* @__PURE__ */ new Map(), T = /* @__PURE__ */ new Map();
+      _.forEach((e, o) => {
+        I.set(o, e.map((N) => -Math.abs(v * E.nodeResults[N].w)));
+        const t = E.elementResults[o];
+        R.set(o, [
           t.Mxx,
           t.Mxx,
           t.Mxx,
           t.Mxx
-        ]), R.set(n, [
+        ]), B.set(o, [
           t.Myy,
           t.Myy,
           t.Myy,
           t.Myy
-        ]), B.set(n, [
+        ]), O.set(o, [
           t.Mxy,
           t.Mxy,
           t.Mxy,
           t.Mxy
         ]);
         const u = Math.sqrt(t.Mxx ** 2 + t.Myy ** 2 - t.Mxx * t.Myy + 3 * t.Mxy ** 2);
-        O.set(n, [
+        T.set(o, [
           u,
           u,
           u,
@@ -282,8 +283,8 @@ let __tla = Promise.all([
         3,
         4
       ];
-      for (const e of E) {
-        const n = S.get(e.node) ?? [
+      for (const e of P) {
+        const o = S.get(e.node) ?? [
           0,
           0,
           0,
@@ -291,27 +292,28 @@ let __tla = Promise.all([
           0,
           0
         ];
-        n[Q[e.dof] ?? 2] += e.value, S.set(e.node, n);
+        o[Q[e.dof] ?? 2] += e.value, S.set(e.node, o);
       }
       a.nodeInputs.val = {
         supports: /* @__PURE__ */ new Map(),
-        loads: S
+        loads: S,
+        ...ne(b, F)
       }, a.elementInputs.val = {
-        elasticities: new Map(_.map((e, n) => [
-          n,
+        elasticities: new Map(_.map((e, o) => [
+          o,
           z
         ])),
-        poissonsRatios: new Map(_.map((e, n) => [
-          n,
+        poissonsRatios: new Map(_.map((e, o) => [
+          o,
           j
         ])),
-        thicknesses: new Map(_.map((e, n) => [
-          n,
+        thicknesses: new Map(_.map((e, o) => [
+          o,
           l
         ]))
       };
-      const T = /* @__PURE__ */ new Map();
-      P.nodeResults.forEach((e, n) => T.set(n, [
+      const A = /* @__PURE__ */ new Map();
+      E.nodeResults.forEach((e, o) => A.set(o, [
         0,
         0,
         e.w,
@@ -319,28 +321,28 @@ let __tla = Promise.all([
         e.by,
         0
       ])), a.deformOutputs.val = {
-        deformations: T,
+        deformations: A,
         reactions: /* @__PURE__ */ new Map()
       }, a.analyzeOutputs.val = {
-        pressure: F,
-        bendingXX: I,
-        bendingYY: R,
-        bendingXY: B,
-        vonMises: O
+        pressure: I,
+        bendingXX: R,
+        bendingYY: B,
+        bendingXY: O,
+        vonMises: T
       };
-      const A = [];
-      A.push(...le(k, w, o.h_col, o.col_x, o.col_y)), a.objects3D.val = A;
+      const X = [];
+      X.push(...me(k, w, n.h_col, n.col_x, n.col_y)), a.objects3D.val = X;
     },
-    computedLabels(o, a) {
-      var _a, _b, _c, _d, _e2;
+    computedLabels(n, a) {
+      var _a, _b, _c, _d, _e;
       const r = a.analyzeOutputs.val.pressure;
       let s = -1 / 0, l = 1 / 0;
       if (r) for (const p of r.values()) for (const h of p) {
-        const d = Math.abs(h) * se;
+        const d = Math.abs(h) * le;
         d > s && (s = d), d < l && (l = d);
       }
       s === -1 / 0 && (s = 0, l = 0);
-      const m = ae, i = (_b = (_a = m == null ? void 0 : m.manual_libro) == null ? void 0 : _a.iteration_1) == null ? void 0 : _b.sigma_max_tm2, c = (_c = m == null ? void 0 : m.manual_libro) == null ? void 0 : _c.e_DL_m, M = (_d = m == null ? void 0 : m.manual_libro) == null ? void 0 : _d.e_DLS_m, x = (_e2 = m == null ? void 0 : m.manual_libro) == null ? void 0 : _e2.L_sobre_6_m;
+      const m = se, i = (_b = (_a = m == null ? void 0 : m.manual_libro) == null ? void 0 : _a.iteration_1) == null ? void 0 : _b.sigma_max_tm2, c = (_c = m == null ? void 0 : m.manual_libro) == null ? void 0 : _c.e_DL_m, M = (_d = m == null ? void 0 : m.manual_libro) == null ? void 0 : _d.e_DLS_m, x = (_e = m == null ? void 0 : m.manual_libro) == null ? void 0 : _e.L_sobre_6_m;
       return {
         "\u{1F4CA} \u03C3_max Hekatan": `${s.toFixed(3)} t/m\xB2`,
         "\u{1F4CA} \u03C3_min Hekatan": `${l.toFixed(3)} t/m\xB2`,
@@ -355,5 +357,5 @@ let __tla = Promise.all([
 });
 export {
   __tla,
-  _e as g
+  fe as g
 };

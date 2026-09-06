@@ -1,6 +1,7 @@
 import { b as se, L as ae, E as le, a as ce } from "./theme-Co6w-pfC.js";
 import { p as me, __tla as __tla_0 } from "./didacticCpp-DaEmtxPu.js";
-let pe;
+import { f as ie } from "./f2kPlateQ4-BZ9dGpgS.js";
+let he;
 let __tla = Promise.all([
   (() => {
     try {
@@ -9,12 +10,12 @@ let __tla = Promise.all([
     }
   })()
 ]).then(async () => {
-  const ie = {
+  const _e = {
     sigma_uniforme_tm2: 19.96
-  }, _e = {
-    manual_libro: ie
-  }, d = 9.80665, fe = 1 / d;
-  function Z(t, c, i, s) {
+  }, fe = {
+    manual_libro: _e
+  }, d = 9.80665, de = 1 / d;
+  function K(t, c, i, s) {
     const m = new se(s, s, i), _ = new ae(new le(m), new ce({
       color: 11579568,
       linewidth: 2
@@ -23,7 +24,7 @@ let __tla = Promise.all([
       _
     ];
   }
-  pe = {
+  he = {
     id: "guerra-ej5-zapata-combinada-trapezoidal",
     name: "Ej.5 \xB7 Zapata Trapezoidal (L=5, B1=3.75\u2192B2=1.60)",
     category: "2\uFE0F\u20E3 Shells \xB7 \u{1F9F0} Cimentaciones",
@@ -187,16 +188,16 @@ let __tla = Promise.all([
       }
     },
     build(t, c) {
-      const i = t.L, s = t.B1, m = t.B2, _ = Math.max(s, m), r = t.h, p = Math.round(t.nx), x = Math.round(t.ny), a = p + 1, C = x + 1, b = i / p, y = _ / x, K = (t.P_D_C1 + t.P_L_C1) * d, q = (t.M_D_C1 + t.M_L_C1) * d, H = (t.P_D_C2 + t.P_L_C2) * d, $ = (t.M_D_C2 + t.M_L_C2) * d, w = t.ks_tm3 * d, B = 14100 * Math.sqrt(t.fc_kgcm2) * 98.0665, E = 0.2, J = (e) => (s + (m - s) * (e / i)) / 2, Q = (e, n) => {
-        const o = J(e), l = _ / 2;
+      const i = t.L, s = t.B1, m = t.B2, _ = Math.max(s, m), r = t.h, M = Math.round(t.nx), x = Math.round(t.ny), a = M + 1, C = x + 1, y = i / M, g = _ / x, q = (t.P_D_C1 + t.P_L_C1) * d, H = (t.M_D_C1 + t.M_L_C1) * d, $ = (t.P_D_C2 + t.P_L_C2) * d, J = (t.M_D_C2 + t.M_L_C2) * d, w = t.ks_tm3 * d, B = 14100 * Math.sqrt(t.fc_kgcm2) * 98.0665, E = 0.2, Q = (e) => (s + (m - s) * (e / i)) / 2, U = (e, n) => {
+        const o = Q(e), l = _ / 2;
         return Math.abs(n - l) <= o + 1e-6;
       }, u = [];
       for (let e = 0; e < C; ++e) for (let n = 0; n < a; ++n) u.push([
-        n * b,
-        e * y
+        n * y,
+        e * g
       ]);
       const f = [];
-      for (let e = 0; e < x; ++e) for (let n = 0; n < p; ++n) {
+      for (let e = 0; e < x; ++e) for (let n = 0; n < M; ++n) {
         const o = e * a + n;
         f.push([
           o,
@@ -205,64 +206,64 @@ let __tla = Promise.all([
           o + a
         ]);
       }
-      const U = 2.4 * d * r, g = [], T = [];
+      const V = 2.4 * d * r, h = [], T = [];
       for (let e = 0; e < C; ++e) for (let n = 0; n < a; ++n) {
-        const o = n === 0 || n === a - 1, l = e === 0 || e === C - 1, h = o && l ? 0.25 : o || l ? 0.5 : 1, Y = b * y * h, v = e * a + n, ne = n * b, oe = e * y, G = Q(ne, oe), te = G ? w * Y : 0;
-        if (g.push({
+        const o = n === 0 || n === a - 1, l = e === 0 || e === C - 1, b = o && l ? 0.25 : o || l ? 0.5 : 1, G = y * g * b, v = e * a + n, ne = n * y, oe = e * g, S = U(ne, oe), te = S ? w * G : 0;
+        if (h.push({
           node: v,
           dof: 0,
           k: Math.max(te, 1e-6)
-        }), G && T.push({
+        }), S && T.push({
           node: v,
           dof: 0,
-          value: -U * Y
+          value: -V * G
         }), o && l) {
-          const S = 1e-6 * w * b * y;
-          g.push({
+          const Z = 1e-6 * w * y * g;
+          h.push({
             node: v,
             dof: 1,
-            k: S
-          }), g.push({
+            k: Z
+          }), h.push({
             node: v,
             dof: 2,
-            k: S
+            k: Z
           });
         }
       }
       const P = _ / 2, j = (e) => {
         const n = [];
         for (let o = 0; o < u.length; o++) {
-          const l = u[o][0], h = u[o][1];
-          Math.abs(l - e) <= t.col_size / 2 + 1e-6 && Math.abs(h - P) <= t.col_size / 2 + 1e-6 && n.push(o);
+          const l = u[o][0], b = u[o][1];
+          Math.abs(l - e) <= t.col_size / 2 + 1e-6 && Math.abs(b - P) <= t.col_size / 2 + 1e-6 && n.push(o);
         }
         return n;
-      }, L = j(t.col1_x), k = j(t.col2_x), M = [];
+      }, L = j(t.col1_x), k = j(t.col2_x), p = [];
       if (L.length > 0) {
-        const e = K / L.length, n = q / L.length;
-        for (const o of L) M.push({
+        const e = q / L.length, n = H / L.length;
+        for (const o of L) p.push({
           node: o,
           dof: 0,
           value: -e
-        }), M.push({
+        }), p.push({
           node: o,
           dof: 2,
           value: n
         });
       }
       if (k.length > 0) {
-        const e = H / k.length, n = $ / k.length;
-        for (const o of k) M.push({
+        const e = $ / k.length, n = J / k.length;
+        for (const o of k) p.push({
           node: o,
           dof: 0,
           value: -e
-        }), M.push({
+        }), p.push({
           node: o,
           dof: 2,
           value: n
         });
       }
-      const V = [
-        ...M,
+      const I = [
+        ...p,
         ...T
       ], D = me({
         E: B,
@@ -273,30 +274,30 @@ let __tla = Promise.all([
         nodes: u,
         elements: f,
         bcs: [],
-        pointLoads: V,
-        springs: g
-      }), I = /* @__PURE__ */ new Map(), O = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map(), A = /* @__PURE__ */ new Map(), F = /* @__PURE__ */ new Map();
+        pointLoads: I,
+        springs: h
+      }), O = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map(), A = /* @__PURE__ */ new Map(), F = /* @__PURE__ */ new Map(), X = /* @__PURE__ */ new Map();
       f.forEach((e, n) => {
-        I.set(n, e.map((h) => -Math.abs(w * D.nodeResults[h].w)));
+        O.set(n, e.map((b) => -Math.abs(w * D.nodeResults[b].w)));
         const o = D.elementResults[n];
-        O.set(n, [
+        R.set(n, [
           o.Mxx,
           o.Mxx,
           o.Mxx,
           o.Mxx
-        ]), R.set(n, [
+        ]), A.set(n, [
           o.Myy,
           o.Myy,
           o.Myy,
           o.Myy
-        ]), A.set(n, [
+        ]), F.set(n, [
           o.Mxy,
           o.Mxy,
           o.Mxy,
           o.Mxy
         ]);
         const l = Math.sqrt(o.Mxx ** 2 + o.Myy ** 2 - o.Mxx * o.Myy + 3 * o.Mxy ** 2);
-        F.set(n, [
+        X.set(n, [
           l,
           l,
           l,
@@ -314,7 +315,7 @@ let __tla = Promise.all([
         3,
         4
       ];
-      for (const e of M) {
+      for (const e of p) {
         const n = N.get(e.node) ?? [
           0,
           0,
@@ -327,7 +328,8 @@ let __tla = Promise.all([
       }
       c.nodeInputs.val = {
         supports: /* @__PURE__ */ new Map(),
-        loads: N
+        loads: N,
+        ...ie(h, I)
       }, c.elementInputs.val = {
         elasticities: new Map(f.map((e, n) => [
           n,
@@ -342,8 +344,8 @@ let __tla = Promise.all([
           r
         ]))
       };
-      const X = /* @__PURE__ */ new Map();
-      D.nodeResults.forEach((e, n) => X.set(n, [
+      const Y = /* @__PURE__ */ new Map();
+      D.nodeResults.forEach((e, n) => Y.set(n, [
         0,
         0,
         e.w,
@@ -351,28 +353,28 @@ let __tla = Promise.all([
         e.by,
         0
       ])), c.deformOutputs.val = {
-        deformations: X,
+        deformations: Y,
         reactions: /* @__PURE__ */ new Map()
       }, c.analyzeOutputs.val = {
-        pressure: I,
-        bendingXX: O,
-        bendingYY: R,
-        bendingXY: A,
-        vonMises: F
+        pressure: O,
+        bendingXX: R,
+        bendingYY: A,
+        bendingXY: F,
+        vonMises: X
       };
       const z = [];
-      z.push(...Z(t.col1_x, P, t.h_col, t.col_size)), z.push(...Z(t.col2_x, P, t.h_col, t.col_size)), c.objects3D.val = z;
+      z.push(...K(t.col1_x, P, t.h_col, t.col_size)), z.push(...K(t.col2_x, P, t.h_col, t.col_size)), c.objects3D.val = z;
     },
     computedLabels(t, c) {
       var _a;
       const i = c.analyzeOutputs.val.pressure;
       let s = -1 / 0, m = 1 / 0;
-      if (i) for (const p of i.values()) for (const x of p) {
-        const a = Math.abs(x) * fe;
+      if (i) for (const M of i.values()) for (const x of M) {
+        const a = Math.abs(x) * de;
         a > s && (s = a), a < m && (m = a);
       }
       s === -1 / 0 && (s = 0, m = 0);
-      const r = (_a = _e == null ? void 0 : _e.manual_libro) == null ? void 0 : _a.sigma_uniforme_tm2;
+      const r = (_a = fe == null ? void 0 : fe.manual_libro) == null ? void 0 : _a.sigma_uniforme_tm2;
       return {
         "\u{1F4CA} \u03C3_max Hekatan": `${s.toFixed(3)} t/m\xB2`,
         "\u{1F4CA} \u03C3_min Hekatan": `${m.toFixed(3)} t/m\xB2`,
@@ -384,5 +386,5 @@ let __tla = Promise.all([
 });
 export {
   __tla,
-  pe as g
+  he as g
 };

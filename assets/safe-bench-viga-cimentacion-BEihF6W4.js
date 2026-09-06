@@ -1,5 +1,5 @@
 import "./modulepreload-polyfill-B5Qt9EMX.js";
-import { v as r, __tla as __tla_0 } from "./vigaCimGuerra-Dzjh-Ij3.js";
+import { s as r, __tla as __tla_0 } from "./safeBenchViga-C3xX2qEc.js";
 import { r as m, __tla as __tla_1 } from "./runExampleStandalone-Ct42eAEl.js";
 import "./theme-Co6w-pfC.js";
 import "./analyze-BFwM3Jvn.js";

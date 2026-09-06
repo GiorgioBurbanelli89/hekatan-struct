@@ -99,27 +99,27 @@ let __tla = Promise.all([
       }
     },
     build(a, m) {
-      const x = a.Lz, f = a.Bz, T = a.tz, _ = a.ks_tonfm3 * H, D = a.P_tonf * H, k = Math.round(a.nx), M = Math.round(a.ny), l = k + 1, u = M + 1, z = x / k, g = f / M, J = a.h_ped, h = a.b_ped, Z = [
+      const x = a.Lz, u = a.Bz, T = a.tz, _ = a.ks_tonfm3 * H, D = a.P_tonf * H, k = Math.round(a.nx), M = Math.round(a.ny), l = k + 1, h = M + 1, z = x / k, g = u / M, J = a.h_ped, b = a.b_ped, Z = [
         x / 4,
         3 * x / 4
       ], q = [
-        f / 4,
-        f / 2,
-        3 * f / 4
+        u / 4,
+        u / 2,
+        3 * u / 4
       ], w = [];
       for (const e of Z) for (const n of q) w.push([
         e,
         n
       ]);
       const c = [];
-      for (let e = 0; e < u; ++e) for (let n = 0; n < l; ++n) c.push([
+      for (let e = 0; e < h; ++e) for (let n = 0; n < l; ++n) c.push([
         n * z,
         e * g,
         0
       ]);
       const G = (e, n) => {
         let t = -1, s = 1 / 0;
-        for (let o = 0; o < l * u; ++o) {
+        for (let o = 0; o < l * h; ++o) {
           const d = (c[o][0] - e) ** 2 + (c[o][1] - n) ** 2;
           d < s && (s = d, t = o);
         }
@@ -143,23 +143,23 @@ let __tla = Promise.all([
         e,
         B[n]
       ]));
-      const b = [];
-      for (let e = 0; e < u; ++e) for (let n = 0; n < l; ++n) {
-        const t = n === 0 || n === l - 1, s = e === 0 || e === u - 1, o = t && s ? 0.25 : t || s ? 0.5 : 1, d = z * g * o, i = e * l + n;
-        if (b.push({
-          node: i,
+      const i = [];
+      for (let e = 0; e < h; ++e) for (let n = 0; n < l; ++n) {
+        const t = n === 0 || n === l - 1, s = e === 0 || e === h - 1, o = t && s ? 0.25 : t || s ? 0.5 : 1, d = z * g * o, p = e * l + n;
+        if (i.push({
+          node: p,
           dof: 2,
           k: _ * d
         }), t && s) {
-          const p = 1e-6 * _ * z * g;
-          b.push({
-            node: i,
+          const f = 1e-6 * _ * z * g;
+          i.push({
+            node: p,
             dof: 3,
-            k: p
-          }), b.push({
-            node: i,
+            k: f
+          }), i.push({
+            node: p,
             dof: 4,
-            k: p
+            k: f
           });
         }
       }
@@ -172,12 +172,13 @@ let __tla = Promise.all([
         0,
         0
       ]));
-      const v = 24855e3, I = 0.2, U = v / (2 * (1 + I)), W = h * h, N = h ** 4 / 12, Q = 0.141 * h ** 4, E = /* @__PURE__ */ new Map(), P = /* @__PURE__ */ new Map(), O = /* @__PURE__ */ new Map(), A = /* @__PURE__ */ new Map(), C = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), F = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map();
+      const v = 24855e3, I = 0.2, U = v / (2 * (1 + I)), W = b * b, N = b ** 4 / 12, Q = 0.141 * b ** 4, E = /* @__PURE__ */ new Map(), P = /* @__PURE__ */ new Map(), O = /* @__PURE__ */ new Map(), A = /* @__PURE__ */ new Map(), C = /* @__PURE__ */ new Map(), Y = /* @__PURE__ */ new Map(), F = /* @__PURE__ */ new Map(), R = /* @__PURE__ */ new Map();
       for (let e = L; e < y; ++e) E.set(e, v), P.set(e, I), O.set(e, T);
       for (let e = y; e < r.length; ++e) E.set(e, v), P.set(e, I), A.set(e, W), C.set(e, N), Y.set(e, N), F.set(e, U), R.set(e, Q);
       const X = {
         supports: /* @__PURE__ */ new Map(),
-        loads: S
+        loads: S,
+        springs: i
       }, j = {
         elasticities: E,
         poissonsRatios: P,
@@ -190,16 +191,16 @@ let __tla = Promise.all([
       };
       m.nodes.val = c, m.elements.val = r, m.nodeInputs.val = X, m.elementInputs.val = j;
       try {
-        const e = $(c, r, X, j, b);
+        const e = $(c, r, X, j, i);
         m.deformOutputs.val = e;
         const n = V(c, r, j, e), t = /* @__PURE__ */ new Map();
         for (let s = L; s < y; ++s) {
           const o = r[s];
           if (o.length !== 4) continue;
-          const d = o.map((i) => {
+          const d = o.map((p) => {
             var _a;
-            const p = (_a = e.deformations) == null ? void 0 : _a.get(i);
-            return p ? _ * p[2] : 0;
+            const f = (_a = e.deformations) == null ? void 0 : _a.get(p);
+            return f ? _ * f[2] : 0;
           });
           t.set(s, d);
         }
