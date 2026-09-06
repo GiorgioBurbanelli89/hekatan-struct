@@ -6987,7 +6987,12 @@ document.body.appendChild(modalPanel.div);
     const hit = hits[0];
     // Obtener el ÍNDICE del elemento Q4 a partir del face index
     const faceIdx = hit.faceIndex ?? 0;
-    const elemIdx = Math.floor(faceIdx / 2);
+    // `faceIdx / 2` solo vale si TODOS los elementos son Q4 y estan todos en la malla. Las barras
+    // no ponen triangulos y un T3 pone uno: en el dual (barras + losas + muros intercalados) el
+    // tooltip atribuia la cara a otro elemento (Jorge, 6-sep-2026: cursor en la azotea, «Nodo 420»
+    // del piso 2). Las mallas guardan el mapa cara -> elemento en userData.faceToElem.
+    const faceMap = (hit.object as any)?.userData?.faceToElem as number[] | undefined;
+    const elemIdx = faceMap && faceIdx < faceMap.length ? faceMap[faceIdx] : Math.floor(faceIdx / 2);
     // VALIDACIÓN: el elemIdx debe corresponder a un shell REAL del modelo.
     // Si está fuera del rango o el elemento no es shell (length 3 o 4 nodos),
     // ocultar el tooltip — evita "Shell #206 nodos: [?]" cuando el raycaster
@@ -7020,7 +7025,40 @@ document.body.appendChild(modalPanel.div);
     // mapa isoparamétrica x(ξ,η) = Σ N_i(ξ,η)·x_i.
     let valInterp = safeValues[0], xi = 0, eta = 0;
     let closestCorner = 0;
-    if (elNodes?.length === 4 && hit.point) {
+    // ── Punto EXACTO por baricentricas sobre el triangulo pintado (6-sep-2026) ──
+    // hit.face.{a,b,c} son los vertices del triangulo que toco el raycaster en la geometria que se
+    // DIBUJA (deformada y escalada). Con las baricentricas del punto en ese triangulo salen: el punto
+    // SIN deformar (sum w_i X_i), la esquina mas cercana (max w_i) y el valor del campo tal como lo
+    // pinta el shader (lineal en el triangulo). Vale igual en muros: el Newton de abajo en (x, y)
+    // tiene jacobiano nulo en un plano vertical y daba xi, eta basura; y comparaba el punto
+    // deformado con nudos sin deformar (el tooltip decia z=12.06 en una azotea a 12.5).
+    let bary: { w: number[]; corners: number[]; punto: [number, number, number] } | null = null;
+    const faceLocal = (hit.object as any)?.userData?.faceLocal as number[] | undefined;
+    if (hit.face && faceMap && faceLocal && elNodes && hit.point) {
+      const posAttr = (hit.object as THREE.Mesh).geometry.attributes.position as THREE.BufferAttribute;
+      const V = [hit.face.a, hit.face.b, hit.face.c].map((k) => new THREE.Vector3().fromBufferAttribute(posAttr, k).applyMatrix4(hit.object.matrixWorld));
+      const areaOf = (p: THREE.Vector3, q: THREE.Vector3, r: THREE.Vector3) => q.clone().sub(p).cross(r.clone().sub(p)).length();
+      const A = areaOf(V[0], V[1], V[2]);
+      if (A > 1e-18) {
+        const w = [areaOf(hit.point, V[1], V[2]) / A, areaOf(V[0], hit.point, V[2]) / A, areaOf(V[0], V[1], hit.point) / A];
+        const sw = w[0] + w[1] + w[2]; w[0] /= sw; w[1] /= sw; w[2] /= sw;
+        const local = faceLocal[faceIdx] ?? 0;
+        const corners = elNodes.length === 4 ? (local === 0 ? [0, 1, 2] : [0, 2, 3]) : [0, 1, 2];
+        const X = corners.map((c) => nds[elNodes[c]]);
+        if (X.every(Boolean)) {
+          const punto = [0, 1, 2].map((k) => w[0] * X[0][k] + w[1] * X[1][k] + w[2] * X[2][k]) as [number, number, number];
+          bary = { w, corners, punto };
+        }
+      }
+    }
+    if (bary) {
+      const NAT = elNodes!.length === 4 ? [[-1, -1], [1, -1], [1, 1], [-1, 1]] : [[0, 0], [1, 0], [0, 1]];
+      const b = bary;
+      xi = b.corners.reduce((s, c, i) => s + b.w[i] * NAT[c][0], 0);
+      eta = b.corners.reduce((s, c, i) => s + b.w[i] * NAT[c][1], 0);
+      valInterp = b.corners.reduce((s, c, i) => s + b.w[i] * (safeValues[c] ?? 0), 0);
+      closestCorner = b.corners[b.w.indexOf(Math.max(...b.w))];
+    } else if (elNodes?.length === 4 && hit.point) {
       const corners = elNodes.map(ni => nds[ni]) as [number,number,number][];
       // Funciones de forma N_i(ξ, η) para Q4
       const N = (xi: number, eta: number) => [
@@ -7064,9 +7102,11 @@ document.body.appendChild(modalPanel.div);
     const lbl = FIELD_LABELS[field] ?? field;
     const kind = FIELD_KIND[field] ?? "force_per_area";
     const [valConv, unit] = formatValue(kind, valInterp);
-    const xPos = hit.point?.x?.toFixed(2) ?? '?';
-    const yPos = hit.point?.y?.toFixed(2) ?? '?';
-    const zPos = hit.point?.z?.toFixed(2) ?? '?';
+    // Punto sin deformar si hay baricentricas; si no, el del raycaster (deformado).
+    const P = bary?.punto ?? (hit.point ? [hit.point.x, hit.point.y, hit.point.z] : null);
+    const xPos = P ? P[0].toFixed(2) : '?';
+    const yPos = P ? P[1].toFixed(2) : '?';
+    const zPos = P ? P[2].toFixed(2) : '?';
 
     // ── INFO DE SECCIÓN del shell (lee elementInputs.sectionInfo) ──
     const ei = (window as any).__hekatanElementInputs ?? (ctx as any)?.mesh?.elementInputs?.rawVal;
@@ -7096,7 +7136,9 @@ document.body.appendChild(modalPanel.div);
       // Encontrar el nodo más cercano al punto cursor (en world coords)
       let bestNode = -1;
       let bestDist = Infinity;
-      for (const ni of elem) {
+      // Con baricentricas, la esquina de mayor peso ES el nudo mas cercano (sin mezclar deformado y sin deformar).
+      if (bary && elem[closestCorner] !== undefined) bestNode = elem[closestCorner];
+      for (const ni of (bestNode >= 0 ? [] : elem)) {
         const n = nodes.val[ni];
         if (!n || !hit.point) continue;
         const dx = n[0] - hit.point.x;

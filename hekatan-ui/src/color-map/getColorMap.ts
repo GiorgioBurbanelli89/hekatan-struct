@@ -206,17 +206,26 @@ export function getColorMap(
     );
     // Triangulate Q4/Q3 → triangles
     const triIndices: number[] = [];
-    for (const e of elements.val) {
+    // Que elemento es cada triangulo (faceIndex del raycaster -> indice en elements). Las barras
+    // no ponen triangulos y un T3 pone uno solo: `faceIndex / 2` NO es el elemento (6-sep-2026:
+    // en el dual el hover decia «Nodo 420» de un piso intermedio con el cursor en la azotea).
+    const faceToElem: number[] = [];
+    const faceLocal: number[] = [];   // 0 = triangulo [0,1,2] del elemento, 1 = [0,2,3]
+    elements.val.forEach((e, ei) => {
       if (e.length === 3) {
         triIndices.push(e[0], e[1], e[2]);
+        faceToElem.push(ei); faceLocal.push(0);
       } else if (e.length === 4) {
         triIndices.push(e[0], e[1], e[2]);
         triIndices.push(e[0], e[2], e[3]);
+        faceToElem.push(ei, ei); faceLocal.push(0, 1);
       }
-    }
+    });
     colorMap.geometry.setIndex(
       new THREE.Uint32BufferAttribute(triIndices, 1)
     );
+    colorMap.userData.faceToElem = faceToElem;
+    colorMap.userData.faceLocal = faceLocal;
 
     // Min/max ignorando NaN
     const validValues = values.val.filter((v) => Number.isFinite(v));

@@ -302,12 +302,17 @@ export function elements(
     // que pasan el filtro de tipo (Zapata/Losa).
     const faceVerts: number[] = [];
     const faceColors: number[] = [];
+    // Que elemento es cada triangulo (para el hover): aqui ademas se saltan los ocultos.
+    const faceToElem: number[] = [];
+    const faceLocal: number[] = [];   // 0 = triangulo [0,1,2], 1 = [0,2,3]
 
-    for (const e of elems) {
+    for (let ei = 0; ei < elems.length; ei++) {
+      const e = elems[ei];
       if (!showElement(e)) continue;
       if (e.length === 3) {
         const [a, b, c] = e;
         if (nodes[a] && nodes[b] && nodes[c]) {
+          faceToElem.push(ei); faceLocal.push(0);
           faceVerts.push(...nodes[a], ...nodes[b], ...nodes[c]);
           const col = colorByType ? COLOR_TRI : triColor;
           for (let v = 0; v < 3; v++) faceColors.push(col.r, col.g, col.b);
@@ -324,10 +329,13 @@ export function elements(
           }
           faceVerts.push(...nodes[a], ...nodes[b], ...nodes[c]);
           faceVerts.push(...nodes[a], ...nodes[c], ...nodes[d]);
+          faceToElem.push(ei, ei); faceLocal.push(0, 1);
           for (let v = 0; v < 6; v++) faceColors.push(col.r, col.g, col.b);
         }
       }
     }
+    shellMesh.userData.faceToElem = faceToElem;
+    shellMesh.userData.faceLocal = faceLocal;
     if (faceVerts.length > 0) {
       shellMesh.geometry.dispose();
       shellMesh.geometry = new THREE.BufferGeometry();
