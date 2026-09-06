@@ -16,6 +16,12 @@ import sys, math
 base = sys.argv[1]; nx, ny = int(sys.argv[2]), int(sys.argv[3]); Lx, Ly = float(sys.argv[4]), float(sys.argv[5])
 npisos, h = int(sys.argv[6]), float(sys.argv[7])
 opt = dict(a.split("=") for a in sys.argv[8:]); s = float(opt.get("s", 1.0)); pano = opt.get("pano", "vano")
+# vig=corto (defecto): las viguetas corren por el LADO CORTO del vano (regla de la losa en una
+# direccion, Jorge 5-sep-2026); vig=x las deja en X como antes; vig=y las fuerza en Y. Se genera
+# siempre con viguetas en X y, si toca Y, se INTERCAMBIAN x<->y al escribir (Ex sigue en +x global).
+vig = opt.get("vig", "corto").lower()
+SWAP = (vig == "y") or (vig == "corto" and Lx > Ly)
+if SWAP: nx, ny, Lx, Ly = ny, nx, Ly, Lx
 T_DECK, E_DECK, MASA_DECK = 0.065, 24855600.0, 0.25          # t/m2 (loseta + nervios), como el galpon
 RHO_DECK = MASA_DECK / T_DECK
 COL = "25e6 0.16 0.0021333333 0.0021333333 3e-4 0.2 2.45"       # 0.4x0.4 hormigon (E A Iy Iz J nu rho)
@@ -51,8 +57,8 @@ for p in range(npisos + 1):
                 for i in range(nx): shells.append((node(ejesX[i], a, z), node(ejesX[i + 1], a, z), node(ejesX[i + 1], b, z), node(ejesX[i], b, z)))
         tops[p] = [node(x, y, z) for x in ejesX for y in ejesY]
 def escribir(suf, selfw, q, ex):
-    L = ["# mezanine %dx%d vanos, %d pisos, Lx %.2f Ly %.2f h %.2f, viguetas cada %.2f, pano=%s, patron %s" % (nx, ny, npisos, Lx, Ly, h, s, pano, suf)]
-    for (x, y, z), i in sorted(nodes.items(), key=lambda kv: kv[1]): L.append("node %d %g %g %g" % (i, x, y, z))
+    L = ["# mezanine %dx%d vanos, %d pisos, Lx %.2f Ly %.2f h %.2f, viguetas en %s cada %.2f, pano=%s, patron %s" % (((ny, nx, npisos, Ly, Lx) if SWAP else (nx, ny, npisos, Lx, Ly)) + (h, "Y (lado corto)" if SWAP else "X", s, pano, suf))]
+    for (x, y, z), i in sorted(nodes.items(), key=lambda kv: kv[1]): L.append("node %d %g %g %g" % ((i, y, x, z) if SWAP else (i, x, y, z)))
     for (x, y, z), i in nodes.items():
         if z == 0: L.append("support %d fixed" % i)
     for k, (a, b, sec) in enumerate(frames, 1): L.append("frame %d %d %d %s" % (k, a, b, sec))
@@ -71,7 +77,7 @@ def escribir(suf, selfw, q, ex):
             L.append("frameload %d 0 0 %g" % (k, -q * w))
     if ex:
         for p in range(1, npisos + 1):
-            for i in tops[p]: L.append("load %d %g 0 0" % (i, ex / len(tops[p])))
+            for i in tops[p]: L.append(("load %d 0 %g 0" if SWAP else "load %d %g 0 0") % (i, ex / len(tops[p])))   # Ex en +x GLOBAL tambien con el intercambio
     L.append("solve"); open(base + "_" + suf + ".heks", "w").write("\n".join(L) + "\n")
 escribir("pp", True, 0, 0); escribir("scm", False, Q_SCM, 0); escribir("cv", False, Q_CV, 0); escribir("ex", False, 0, EX)
-print("%s: %d nudos, %d barras, %d panos (%s); y de viguetas: %s" % (base, len(nodes), len(frames), len(shells), pano, ys))
+print("%s: %d nudos, %d barras, %d panos (%s); viguetas en %s, posiciones: %s" % (base, len(nodes), len(frames), len(shells), pano, "Y (lado corto)" if SWAP else "X", ys))

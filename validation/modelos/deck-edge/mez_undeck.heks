@@ -1,0 +1,71 @@
+# Mezanine 1 vano 6 x 5 m, h 3.5 m, con 5 VIGUETAS en Y (el LADO CORTO) cada 1.00 m en x.
+# Regla de la losa en una direccion (Jorge, 5-sep-2026): la vigueta corre por el lado
+# corto (5 m) y la losa salva la luz corta entre viguetas (1.00 m). Hasta el 5-sep las
+# viguetas iban en x (6 m, el lado largo).
+# El deck es UN SOLO PANO de 4 nudos (las 4 esquinas del forjado) que cruza
+# las cinco viguetas SIN discretizar. Carga de area 2 kN/m2 en el pano.
+#
+# Sirve para MEDIR lo que hace cada programa con esa area sin dividir:
+#   . SAP2000  -> la fuerza se reparte a los nudos DEL ELEMENTO (CSI 10.14)
+#   . ETABS    -> discretiza / transfiere a las vigas que lo soportan
+# Lo que se mira es el MOMENTO en las viguetas: si no reciben carga, es cero.
+
+node 1 0 0 0
+node 2 0 0 3.5
+node 3 0 5 0
+node 4 0 5 3.5
+node 5 6 0 0
+node 6 6 0 3.5
+node 7 6 5 0
+node 8 6 5 3.5
+node 9 1 0 3.5
+node 10 2 0 3.5
+node 11 3 0 3.5
+node 12 4 0 3.5
+node 13 5 0 3.5
+node 14 1 5 3.5
+node 15 2 5 3.5
+node 16 3 5 3.5
+node 17 4 5 3.5
+node 18 5 5 3.5
+
+support 1 fixed
+support 3 fixed
+support 5 fixed
+support 7 fixed
+
+# columnas 0.4x0.4
+frame 1 1 2 25e6 0.16 0.0021333333 0.0021333333 3e-4 0.2 2.45
+frame 2 3 4 25e6 0.16 0.0021333333 0.0021333333 3e-4 0.2 2.45
+frame 3 5 6 25e6 0.16 0.0021333333 0.0021333333 3e-4 0.2 2.45
+frame 4 7 8 25e6 0.16 0.0021333333 0.0021333333 3e-4 0.2 2.45
+
+# vigas principales en x (los dos bordes, y = 0 e y = 5), partidas en los nudos de vigueta
+frame 5 2 9 25e6 0.15 0.0011250 0.0028125 2.6e-3 0.2 2.45
+frame 6 9 10 25e6 0.15 0.0011250 0.0028125 2.6e-3 0.2 2.45
+frame 7 10 11 25e6 0.15 0.0011250 0.0028125 2.6e-3 0.2 2.45
+frame 8 11 12 25e6 0.15 0.0011250 0.0028125 2.6e-3 0.2 2.45
+frame 9 12 13 25e6 0.15 0.0011250 0.0028125 2.6e-3 0.2 2.45
+frame 10 13 6 25e6 0.15 0.0011250 0.0028125 2.6e-3 0.2 2.45
+frame 11 4 14 25e6 0.15 0.0011250 0.0028125 2.6e-3 0.2 2.45
+frame 12 14 15 25e6 0.15 0.0011250 0.0028125 2.6e-3 0.2 2.45
+frame 13 15 16 25e6 0.15 0.0011250 0.0028125 2.6e-3 0.2 2.45
+frame 14 16 17 25e6 0.15 0.0011250 0.0028125 2.6e-3 0.2 2.45
+frame 15 17 18 25e6 0.15 0.0011250 0.0028125 2.6e-3 0.2 2.45
+frame 16 18 8 25e6 0.15 0.0011250 0.0028125 2.6e-3 0.2 2.45
+
+# vigas principales en y (los dos porticos)
+frame 17 2 4 25e6 0.15 0.0011250 0.0028125 2.6e-3 0.2 2.45
+frame 18 6 8 25e6 0.15 0.0011250 0.0028125 2.6e-3 0.2 2.45
+
+# LAS CINCO VIGUETAS: IPE160, de borde a borde por el lado corto (5 m), cada 1.00 m
+frame 19 9 14 2e8 0.00201 6.83e-7 8.69e-6 3.6e-8 0.3 7.85
+frame 20 10 15 2e8 0.00201 6.83e-7 8.69e-6 3.6e-8 0.3 7.85
+frame 21 11 16 2e8 0.00201 6.83e-7 8.69e-6 3.6e-8 0.3 7.85
+frame 22 12 17 2e8 0.00201 6.83e-7 8.69e-6 3.6e-8 0.3 7.85
+frame 23 13 18 2e8 0.00201 6.83e-7 8.69e-6 3.6e-8 0.3 7.85
+
+# EL DECK: un unico pano de 4 nudos, membrana de 65 mm, que cruza las viguetas
+shell 1 2 6 8 4 24855600 0.2 0.065 3.846
+shellmod 1 1 1 1 0 0 0 1 1
+areaload 1 -2.0
