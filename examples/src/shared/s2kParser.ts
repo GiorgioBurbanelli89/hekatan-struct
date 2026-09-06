@@ -81,6 +81,7 @@ function parseTableFormat(rawLines: string[]): S2kModel {
   const frameConns: { name: string; j1: string; j2: string }[] = [];
   const shellConns: { name: string; joints: string[] }[] = [];
   const restraints = new Map<string, boolean[]>();
+  const jointSprings = new Map<string, number[]>();   // JOINT SPRING ASSIGNMENTS 1 - UNCOUPLED
   const frameSectionAssign = new Map<string, string>(); // frameName → secName
   const areaSectionAssign = new Map<string, string>(); // areaName → secName
   const loads: { joint: string; fx: number; fy: number; fz: number; mx: number; my: number; mz: number }[] = [];
@@ -258,6 +259,12 @@ function parseTableFormat(rawLines: string[]): S2kModel {
         break;
       }
 
+      case "JOINT SPRING ASSIGNMENTS 1 - UNCOUPLED": {
+        const name = kv.get("Joint");
+        if (name) jointSprings.set(name, ["U1", "U2", "U3", "R1", "R2", "R3"].map(c => parseFloat(kv.get(c) ?? "0") || 0));
+        break;
+      }
+
       case "FRAME SECTION ASSIGNMENTS": {
         const frame = kv.get("Frame");
         const sec = kv.get("AnalSect");
@@ -339,7 +346,7 @@ function parseTableFormat(rawLines: string[]): S2kModel {
   }
 
   return buildModel(units, dof, materials, frameSections, shellSections, joints,
-    frameConns, shellConns, restraints, frameSectionAssign, areaSectionAssign, loads, offsets, angles, areaMods, frameLoadsRaw, solidConns, solidProps, solidAssign, sdBox, sdFill);
+    frameConns, shellConns, restraints, frameSectionAssign, areaSectionAssign, loads, offsets, angles, areaMods, frameLoadsRaw, solidConns, solidProps, solidAssign, sdBox, sdFill, jointSprings);
 }
 
 // ═══════════════════════════════════════════
@@ -486,6 +493,7 @@ function buildModel(
   solidAssign: Map<string, string> = new Map(),
   sdBox?: Map<string, { h: number; b: number; t: number; mat: string; D?: number }>,
   sdFill?: Map<string, { mat: string }>,
+  jointSprings: Map<string, number[]> = new Map(),
 ): S2kModel {
   const nodeNames: string[] = [];
   const nodeNameToIdx = new Map<string, number>();
@@ -626,6 +634,16 @@ function buildModel(
   for (const [name, r] of restraints) {
     const idx = nodeNameToIdx.get(name);
     if (idx !== undefined) ni.supports!.set(idx, r as any);
+  }
+  // Muelles nodales (Winkler): a `springs`, que es lo que lee el motor.
+  {
+    const spr: Array<{ node: number; dof: number; k: number }> = [];
+    for (const [name, v] of jointSprings) {
+      const idx = nodeNameToIdx.get(name);
+      if (idx === undefined) continue;
+      v.forEach((k, dof) => { if (k > 0) spr.push({ node: idx, dof, k }); });
+    }
+    if (spr.length) (ni as any).springs = spr;
   }
   // Cargas de barra: se guardan en `frameLoads` (para re-exportar) y se
   // reparten a los nudos como hace el cliModeler (w·L/2 y ±L²/12·(t×w)), que

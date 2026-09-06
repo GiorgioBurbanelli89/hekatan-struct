@@ -579,7 +579,8 @@ function exportFromScratch(input: ExportE2kInput): string {
   for (let i = sortedZ.length - 1; i >= 1; i--) {
     lines.push(`  STORY "${storyNames[i]}"  HEIGHT ${rd(cL(sortedZ[i] - sortedZ[i - 1]))} MASTERSTORY "Yes"  `);
   }
-  if (sortedZ.length > 0) lines.push(`  STORY "Base"  ELEV ${sortedZ[0]} `);
+  // ELEV va en las unidades del fichero (mm) como HEIGHT: sin cL() la base de la cimentacion a -0.5 m salia a -0.5 mm (medido 5-sep-2026: ETABS devolvia las cotas 0.4995 m mas arriba).
+  if (sortedZ.length > 0) lines.push(`  STORY "Base"  ELEV ${rd(cL(sortedZ[0]))} `);
   lines.push(``);
 
   // DIAPHRAGM siempre — para ETABS-idiomatic export. Usado para asignar a
@@ -910,6 +911,40 @@ function exportFromScratch(input: ExportE2kInput): string {
     const key = `${rd(n[0])},${rd(n[1])},${dz}`;
     if (!xyToPoint.has(key)) xyToPoint.set(key, `${++ptIdx}`);
   });
+  // ── MUELLES NODALES (Winkler) ─────────────────────────────────────
+  // Hasta el 5-sep-2026 el e2k NO llevaba los muelles: una cimentacion sobre
+  // Winkler llegaba a ETABS sin ningun apoyo (o con solo el nudo de arriba) y
+  // ETABS la auto-apoyaba o daba mecanismo. Gramatica leida de un e2k real
+  // (`estructura-mixta/modelo.e2k`):
+  //   POINTSPRING "nombre" NONLINEARSPECOPTION "LINKS" UX kx UY ky UZ kz RX .. RY .. RZ ..
+  //   POINTASSIGN "pt" "story" ... SPRINGPROP "nombre"
+  // Unidades del fichero: N y mm. kN/m -> N/mm es el MISMO numero (x1000/1000);
+  // kN·m/rad -> N·mm/rad es x1e6.
+  const springDeNudo = new Map<number, string>();
+  const springProps: string[] = [];
+  {
+    const kNudo = new Map<number, number[]>();
+    for (const sp of (nodeInputs as any).springs ?? []) {
+      if (!(sp.k > 0)) continue;
+      const v = kNudo.get(sp.node) ?? [0, 0, 0, 0, 0, 0];
+      v[sp.dof] += sp.k; kNudo.set(sp.node, v);
+    }
+    const nombrePorK = new Map<string, string>();
+    for (const [ni, v] of kNudo) {
+      const enFichero = v.map((k, i) => i < 3 ? k * forceFactor / lengthFactor : k * forceFactor * lengthFactor);
+      const key = enFichero.map(k => +k.toPrecision(12)).join("|");   // precision completa: rd() a 4 decimales perdia 108.7936 -> 108.794
+      let nm = nombrePorK.get(key);
+      if (!nm) {
+        nm = `SPR${nombrePorK.size + 1}`; nombrePorK.set(key, nm);
+        const L6 = ["UX", "UY", "UZ", "RX", "RY", "RZ"];
+        const trozos = enFichero.map((k, i) => `${L6[i]}  ${+k.toPrecision(12)}`);
+        springProps.push(`  POINTSPRING  "${nm}"  NONLINEARSPECOPTION  "LINKS"  ${trozos.join(" ")} `);
+      }
+      springDeNudo.set(ni, nm);
+    }
+    if (springProps.length) { lines.push(`$ POINT SPRING PROPERTIES`); springProps.forEach(l => lines.push(l)); lines.push(``); }
+  }
+
   lines.push(`$ POINT COORDINATES`);
   for (const [key, ptName] of xyToPoint) {
     const [x, y, dz] = key.split(",").map(Number);
@@ -1215,10 +1250,18 @@ function exportFromScratch(input: ExportE2kInput): string {
     if (dofs.length > 0) {
       const ps = nodeToPS(nodeIdx);
       const diaphClause = ps.story === "Base" ? ` DIAPH "DISCONNECTED" ` : "";
-      lines.push(`  POINTASSIGN  "${ps.pt}"  "${ps.story}"  RESTRAINT "${dofs.join(" ")}" ${diaphClause} `);
+      const sprClause = springDeNudo.has(nodeIdx) ? ` SPRINGPROP "${springDeNudo.get(nodeIdx)}" ` : "";
+      lines.push(`  POINTASSIGN  "${ps.pt}"  "${ps.story}"  RESTRAINT "${dofs.join(" ")}" ${diaphClause}${sprClause} `);
       emittedPointAssigns.add(`${ps.pt}@${ps.story}`);
     }
   });
+  // 1b. Muelles en nudos SIN restraint (los de una zapata sobre Winkler).
+  for (const [nodeIdx, nm] of springDeNudo) {
+    const ps = nodeToPS(nodeIdx);
+    if (emittedPointAssigns.has(`${ps.pt}@${ps.story}`)) continue;
+    lines.push(`  POINTASSIGN  "${ps.pt}"  "${ps.story}"  SPRINGPROP "${nm}" `);
+    emittedPointAssigns.add(`${ps.pt}@${ps.story}`);
+  }
   // 2. Top joints de chains → asignar DIAPHRAGM D1 (ETABS-idiomatic — la
   //    masa lateral se agrupa por nivel via el rigid diaphragm).
   // "auto" (defecto): D1 SOLO si el modelo de Hekatan lleva diafragmas

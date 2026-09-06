@@ -31,7 +31,10 @@ export async function correr() {
   // El galpon cazo tres fugas mas el 2-sep-2026: `ANG` sin emitir en los dos
   // parsers, los modificadores de cascara que el s2k no escribia, y la carga de
   // barra contada dos veces en el s2k (nodal repartida + FRAME LOADS).
-  for (const nombreHeks of ["losas_maciza_thin.heks", "galpon_lc.heks"])
+  // Y la cimentacion real (9 zapatas + 12 vigas de amarre sobre 225 muelles nodales de
+  // Winkler): hasta el 5-sep-2026 ni el e2k ni el s2k llevaban los muelles, y el modelo
+  // llegaba a ETABS/SAP2000 sin apoyo.
+  for (const nombreHeks of ["losas_maciza_thin.heks", "galpon_lc.heks", "cimentacion_9zapatas.heks"])
     filas.push(...await ciclo(join(AQUI, "..", "datos", nombreHeks), nombreHeks.replace(".heks", "")));
   return filas;
 }
@@ -56,7 +59,7 @@ async function ciclo(heks, tag) {
     const m = parse(texto);
     let uz = 0, fz = 0;
     m.nodeInputs.loads?.forEach(v => fz += v[2] || 0);
-    const d = fem.deform(m.nodes, m.elements, m.nodeInputs, m.elementInputs);
+    const d = fem.deform(m.nodes, m.elements, m.nodeInputs, m.elementInputs, m.nodeInputs.springs);   // los muelles van aparte, como en el cliModeler
     d.deformations.forEach(u => { if (u[2] < uz) uz = u[2]; });
     const barras = m.elements.filter(e => e.length === 2).length, shells = m.elements.filter(e => e.length >= 3).length;
     const eFz = Math.abs(fz / fz0 - 1) * 100, eUz = Math.abs(uz / uz0 - 1) * 100;
@@ -75,6 +78,13 @@ async function ciclo(heks, tag) {
     filas.push({ que: `${etiqueta}: carga total (ΣFz)`, medido: eFz, limite: limFz, ok: eFz <= limFz,
       detalle: `${fz.toFixed(3)} vs ${fz0.toFixed(3)} kN` });
     // 1e-3 %: el e2k redondea las coordenadas a 0.1 um y eso ya se nota en la 7a cifra.
+    const kSpr = (arr) => (arr ?? []).reduce((acc, sp) => acc + sp.k, 0);
+    const k0 = kSpr(r.nodeInputs.springs), k1 = kSpr(m.nodeInputs.springs);
+    if (k0 > 0) {
+      const eK = Math.abs(k1 / k0 - 1) * 100;
+      filas.push({ que: `${etiqueta}: muelles nodales (Σk)`, medido: eK, limite: 1e-6, ok: eK <= 1e-6,
+        detalle: `${k1.toFixed(4)} vs ${k0.toFixed(4)} kN/m en ${(m.nodeInputs.springs ?? []).length}/${r.nodeInputs.springs.length} muelles` });
+    }
     const limUz = (tag === "galpon_lc" && /^e2k/.test(etiqueta0)) ? 0.01 : 1e-3;   // galpon por e2k: 0.0014 % (redondeo a 0.1 um + 4 nudos de planta)
     filas.push({ que: `${etiqueta}: flecha maxima`, medido: eUz, limite: limUz, ok: eUz <= limUz,
       detalle: `${(uz * 1000).toFixed(6)} vs ${(uz0 * 1000).toFixed(6)} mm` });

@@ -23,10 +23,13 @@ Hekatan, cuando eran los 78.6876 m de viga que ETABS no pesa.
 ---
 
 
-## 0a. Lo cerrado el 2026-09-04/05: el deck (lo más reciente arriba)
+## 0a. Lo cerrado el 2026-09-04/05: el deck y los ficheros con muelles (lo más reciente arriba)
 
 | capa | qué se midió | árbitro | medido | cómo repetirlo |
 |---|---|---|---|---|
+| **Cimentación por FICHERO** (9 zapatas + 9 pedestales + 12 vigas, 234 nudos, 225 muelles nodales) | Uz nudo a nudo del `.s2k` y del `.e2k` que escribe Hekatan, abiertos por cada programa | SAP2000 24 · ETABS 22 | **1.2e-8 %** · **1.4e-8 %** (Uz min −32.479141 mm los tres). Hasta el 5-sep los dos exportadores TIRABAN los muelles: el modelo llegaba sin apoyo | `node cli/heks_a_csi.mjs tests/datos/cimentacion_9zapatas.heks salida` → `python galpon-bodega-electoral/csi_ida_vuelta.py sap salida.s2k out.json` (o `etabs salida.e2k`) |
+| **Muelles en la ida y vuelta** | Σk y flecha tras heks → e2k/s2k → Hekatan | el propio .heks | **0.000 %** (225/225 muelles) | `node tests/run.mjs ciclo-csi-ficheros` (52/52) |
+| **Cota de la base en el e2k** | `STORY "Base" ELEV` | ETABS 22 | iba en metros dentro de un fichero en mm (−0.5 en vez de −500): ETABS devolvía las cotas 0.4995 m más arriba. Arreglado | idem |
 | **Galpón, misma malla de 4 nudos por paño** | Uz/Ux/Uy de 609 nudos, cargas nodales por OAPI | SAP2000 24 · ETABS 22 con `--noedge` | **0.001 %** los dos. ETABS con su defecto: **4.5 %** lateral = su *edge constraint* (nudos que caen en un borde sin ser del paño) | `python csi_desde_dump.py etabs galpon_lc_dump.json out.json --membrana --noedge` |
 | **Galpón partido en los nudos de borde** | idem, 231 sub-paños, 609 nudos | SAP2000 · ETABS `--noedge` | **3e-4 %** · **2e-5 %** | `node tests/run.mjs galpon-vs-sap2000` |
 | **Mezanine 1×1 → 3×2 de 3 pisos, 4 patrones** (Dead lo pesa CSI, SCM, Viva, Ex) | nudo a nudo por OAPI | SAP2000 · ETABS | SAP **1e-13 %** los 4; ETABS **1e-9 %** SCM/Viva/Ex y Dead 0.0000 % con `deck etabs` | `node tests/run.mjs deck-edge` (43 filas) |

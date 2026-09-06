@@ -1213,6 +1213,11 @@ export function parseE2k(text: string): E2kModel {
     for (const r of planosRef) r.z *= L;
     esc(thicknesses, L);
     esc(areas, L * L);
+    // Muelles: punto F/L (giros F·L); linea F/L por L; area F/L por L².
+    for (const d of springProps.values()) {
+      const fT = d.tipo === "point" ? F / L : d.tipo === "line" ? F / (L * L) : F / (L * L * L);
+      for (let i = 0; i < 6; i++) d.k[i] *= i < 3 ? fT : (d.tipo === "point" ? F * L : F);
+    }
     esc(shearAreasY, L * L); esc(shearAreasZ, L * L);
     esc(momentsOfInertiaY, L ** 4); esc(momentsOfInertiaZ, L ** 4);
     esc(torsionalConstants, L ** 4);
@@ -1313,6 +1318,15 @@ export function parseE2k(text: string): E2kModel {
     return loads;
   };
 
+  const springsDePunto = () => {
+    const out: Array<{ node: number; dof: number; k: number }> = [];
+    for (const [nd, nm] of nodeSprings) {
+      const d = springProps.get(nm);
+      if (!d || d.tipo !== "point") continue;
+      d.k.forEach((k, dof) => { if (k > 0) out.push({ node: nd, dof, k }); });
+    }
+    return out.length ? out : undefined;
+  };
   return {
     units,
     stories: stories.reverse(), // bottom to top
@@ -1326,7 +1340,10 @@ export function parseE2k(text: string): E2kModel {
     elementTypes: elementTypes,
     elementStories: elementStoriesArr,
     elementSections,
-    nodeInputs: { supports, loads: conPesoPropio(), springNames: nodeSprings },
+    // Los muelles de PUNTO van ya como `springs` (lo que lee el motor); los de
+    // linea/area siguen necesitando `muellesDelModelo` (dependen de la malla).
+    nodeInputs: { supports, loads: conPesoPropio(), springNames: nodeSprings,
+                  springs: springsDePunto() },
     elementInputs: {
       elasticities,
       shearModuli,

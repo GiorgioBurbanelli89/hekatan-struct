@@ -513,6 +513,25 @@ export function exportS2k(input: S2kExportInput): string {
     blank();
   }
 
+  // ── JOINT SPRING ASSIGNMENTS 1 - UNCOUPLED (muelles nodales, Winkler) ──
+  // Columnas leidas de SAP2000 24 por OAPI (`DatabaseTables.GetTableForDisplayArray`):
+  // Joint, CoordSys, U1, U2, U3, R1, R2, R3. Hasta el 5-sep-2026 el .s2k no los
+  // escribia y una zapata sobre Winkler llegaba a SAP2000 sin apoyo (inestable).
+  {
+    const kNudo = new Map<number, number[]>();
+    for (const sp of (nodeInputs as any).springs ?? []) {
+      if (!(sp.k > 0)) continue;
+      const v = kNudo.get(sp.node) ?? [0, 0, 0, 0, 0, 0];
+      v[sp.dof] += sp.k; kNudo.set(sp.node, v);
+    }
+    if (kNudo.size > 0) {
+      push(`TABLE:  "JOINT SPRING ASSIGNMENTS 1 - UNCOUPLED"`);
+      for (const [idx, v] of [...kNudo].sort((a, b) => a[0] - b[0]))
+        push(`   Joint=${idx + 1}   CoordSys=Global   U1=${fmt(v[0])}   U2=${fmt(v[1])}   U3=${fmt(v[2])}   R1=${fmt(v[3])}   R2=${fmt(v[4])}   R3=${fmt(v[5])}`);
+      blank();
+    }
+  }
+
   // ── CONSTRAINT DEFINITIONS + JOINT CONSTRAINT ASSIGNMENTS (diafragma rigido) ──
   // `nodeInputs.diaphragms` (nudo -> grupo; grupo NEGATIVO = solo ux, uy). En SAP2000 es
   // un Diaphragm constraint con eje Z (ata ux, uy, rz). Hasta el 3-sep-2026 el .s2k NO lo
