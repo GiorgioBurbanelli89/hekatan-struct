@@ -431,7 +431,9 @@ export function getSettings(
     });
     // Rango del colormap por familia: un muro flojo junto a otro fuerte se ve solo con SU escala.
     outputs.addBinding(colorMapScope, "val", {
-      options: { "todas las cáscaras": "auto", "solo muros": "muros", "solo losas": "losas" },
+      // "muros X" = los del plano x = cte (se extienden en Y); "muros Y" = plano y = cte. En el dual
+      // el muro y = 0 trabaja a 5 kN/m² y el x = L a 30: ni con "solo muros" se ve el flojo.
+      options: { "todas las cáscaras": "auto", "solo muros": "muros", "muros X (plano x=cte)": "murosX", "muros Y (plano y=cte)": "murosY", "solo losas": "losas" },
       label: "📐 Rango colormap",
     });
 

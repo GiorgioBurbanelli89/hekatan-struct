@@ -1175,8 +1175,9 @@ function getColorMapValues(mesh: Mesh, settings: Settings): State<number[]> {
       const same = (e: number[], c: number) => { const v = N[e[0]]?.[c]; return e.every((i) => Math.abs((N[i]?.[c] ?? NaN) - v) < 1e-6); };
       for (const e of mesh.elements.val) {
         if (e.length !== 4) continue;
-        const losa = same(e, 2), muro = !losa && (same(e, 0) || same(e, 1));
-        if ((scopeSel === "losas" && losa) || (scopeSel === "muros" && muro)) for (const i of e) sel.add(i);
+        const losa = same(e, 2), muroX = !losa && same(e, 0), muroY = !losa && same(e, 1), muro = muroX || muroY;
+        const entra = scopeSel === "losas" ? losa : scopeSel === "muros" ? muro : scopeSel === "murosX" ? muroX : scopeSel === "murosY" ? muroY : false;
+        if (entra) for (const i of e) sel.add(i);
       }
       const sub: number[] = []; for (const i of sel) { const v = values[i]; if (Number.isFinite(v)) sub.push(v); }
       if (sub.length) fixedColorMapRange.val = robustRange(sub);

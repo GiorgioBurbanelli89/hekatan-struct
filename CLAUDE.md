@@ -616,6 +616,35 @@ GIT_AUTHOR_NAME="..." GIT_AUTHOR_EMAIL="..." \
     --message "..."
 ```
 
+### Verificar el deploy PÚBLICO plantilla a plantilla (6-sep-2026)
+
+El equivalente al `--ctl` del WPF, pero contra la URL de GitHub Pages con puppeteer. Lo que ve
+Jorge en el navegador se reproduce aquí, no en local:
+
+```bash
+node cli/check_deploy_bugs.mjs edificio-dual test-m-dual   # pageerror + console.error + PNG por id
+node cli/check_deploy_bugs.mjs $(cat cli/shots/deploy/_ids.txt)   # barrido entero (140 ids, ~35 min)
+node cli/check_deploy_modal_hang.mjs edificio-dual 1        # corre el modal, sube pisos/vanos, mide si responde
+node cli/check_deploy_longtasks.mjs edificio-dual           # cuánto BLOQUEA el hilo cada paso (longtask API)
+node cli/check_deploy_colormap_scope.mjs                    # rango por familia, leyenda sin recortes, leyenda oculta
+```
+
+Los PNG van a `cli/shots/deploy/`; `_hoja_NN.png` son hojas de contacto 4×4 (PIL) para MIRARLAS: un
+JSON con `pageerror: 0` no dice nada de un muro sin colormap ni de una cámara fuera de cuadro.
+Sondeos finos (`cli/_deploy_*.mjs`): `_deploy_muro_scalar` (histograma del atributo `scalar` por cara),
+`_deploy_pixel` (píxel renderizado contra el color que toca por paleta), `_deploy_ray` (qué triángulo
+pinta un píxel), `_deploy_nan`. ⚠️ Tras cambiar `shellResults.val` hay que esperar un tick antes de
+leer `geometry.attributes.scalar`: van.derive corre después y se lee el campo ANTERIOR.
+
+Lo que salió de ahí (todo medido): el modal se recalculaba en cada tick de arrastre y dos veces al
+soltar (→ `__liveDrag` + `pause()` del animador); la animación reescribe `mesh.nodes` a 50-80 ms por
+frame en 6600 nudos (→ 10-15 fps si > 1500/4000 nudos); el rango del colormap es global y un muro a
+10 kN/m² junto a otro a 110 sale entero magenta (→ Settings «Rango colormap»: todas / muros / muros X /
+muros Y / losas, y F22 por defecto en plantillas con muros); leyenda recortada (`white-space: nowrap`)
+y con nueve «0» sin valores (oculta); el panel de IA sondeaba `localhost:11434` en cada regeneración
+(cacheado, solo en localhost); `legacy("diagrid")`/`("pergola")` pisaban el id del ejemplo paramétrico
+(→ `<id>-awatif`). Abierto: `estructura-mixta` deja 35 nudos sueltos y `deform` vacío (NaN en el visor).
+
 ### Cómo COMPROBAR que el deploy lleva el arreglo
 
 Que `gh-pages` diga «Published» no prueba nada. Tres pasos, y el 2 es el que
