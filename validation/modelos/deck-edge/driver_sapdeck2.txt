@@ -1,0 +1,10 @@
+nudos 18 en 191 s
+  elemento 0/24, 191 s
+sap: 18 nudos, 23 barras (0 con ang, 0 con releases), 1 shells (1 con modificadores), 3 secciones
+cargas nodales 4, sum Fz -60.000, 192 s
+sapdeck: SetAutoMesh -> 0, GetAutoMesh MeshType=4, SetLoadUniformToFrame(two way) -> 0
+patron Deck: carga de AREA en 1 shells (sum q -2.000 kN/m2), transferencia de CSI (sapdeck: cookie-cut + uniform to frame two way)
+run -> 0
+sap [DEAD] vs Hekatan: peor nudo 6.583e-13 % del maximo (nudo 16, u_max 1.3125e-05), 18 nudos, sumRz 60.0
+sap [Deck] vs Hekatan: peor nudo 1.244e-03 % del maximo (nudo 5, u_max 5.3652e-04), 18 nudos, sumRz 60.00000000000012
+PROGRAMA ABIERTO (--abierto): sap

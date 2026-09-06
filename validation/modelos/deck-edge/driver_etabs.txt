@@ -1,0 +1,9 @@
+nudos 18 en 17 s
+  elemento 0/24, 17 s
+etabs: 18 nudos, 23 barras (0 con ang, 0 con releases), 1 shells (1 con modificadores), 3 secciones
+cargas nodales 4, sum Fz -60.000, 17 s
+patron Deck: carga de AREA en 1 shells (sum q -2.000 kN/m2), transferencia de CSI
+run -> 0
+etabs [Dead] vs Hekatan: peor nudo 8.519e-13 % del maximo (nudo 15, u_max 1.3125e-05), 18 nudos, sumRz 60.0
+etabs [Deck] vs Hekatan: peor nudo 1.244e-03 % del maximo (nudo 5, u_max 5.3652e-04), 18 nudos, sumRz 59.99999999999994
+PROGRAMA ABIERTO (--abierto): etabs

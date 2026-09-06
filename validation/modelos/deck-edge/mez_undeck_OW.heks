@@ -70,4 +70,7 @@ shell 1 2 6 8 4 0.065 24855600 0 3.846
 shellmod 1 1 1 1 0 0 0 1 1
 areaload 1 -2.0
 
+# UN sentido (ONEWAYLOADDIST de ETABS): vano = eje local 1 del pano = X (1 m entre viguetas) -> todo a las viguetas
+deck etabs oneway
+
 solve

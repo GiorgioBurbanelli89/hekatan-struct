@@ -149,5 +149,15 @@ export async function correr() {
   fila("dos direcciones: ETABS e2k ONEWAYLOADDIST No = Hekatan `deck etabs`", await cmpE2k("ow_hek2way.heks", "ow_slabmem2way.json"), 0.01);
   existe("cruzado: ETABS one-way contra Hekatan bidireccional NO cierra (el reparto distingue)", await cmpE2k("ow_hek2way.heks", "ow_slabmem.json"), 0.1, "0.22 % medido");
   fila("PROPTYPE Deck (Filled) de ETABS vs `deck etabs oneway` (el Deck de ETABS es one-way de fabrica, con su propia rigidez de membrana)", await cmpE2k("ow_hek.heks", "ow.json"), 0.3);
+  // 11. Mezanine con las viguetas por el LADO CORTO (mez_undeck, 5-6 sep-2026): UN pano de 4 nudos que
+  //     cruza 5 viguetas, areaload 2 kN/m2 (60 kN). ETABS lo corta en las viguetas y reparte trapecial
+  //     (vigueta 1.80, borde Y 0.90, borde X 0.50 kN/m). SAP2000 de fabrica lo manda a las 4 esquinas;
+  //     con SUS herramientas (auto-mesh cookie-cut MeshType 4 + "Uniform to Frame", `--sapdeck` del
+  //     driver) hace lo mismo que ETABS: two-way = `deck etabs`, one-way = `deck etabs oneway`.
+  fila("viguetas lado corto: ETABS areaload (corta el pano + trapecial) = Hekatan `deck etabs`", comparar(await hek(join(V, "mez_undeck_DE.heks")), J("mez_undeck_etabs.json"), "Deck"), 0.01);
+  fila("viguetas lado corto: ETABS patron base (las 4 cargas nodales del dump, sin directiva) = Hekatan sin directiva", comparar(await hek(join(V, "mez_undeck.heks")), J("mez_undeck_etabs.json"), "Dead"), 1e-6);
+  fila("viguetas lado corto: SAP2000 `--sapdeck twoway` (cookie-cut + Uniform to Frame) = Hekatan `deck etabs`", comparar(await hek(join(V, "mez_undeck_DE.heks")), J("mez_undeck_sapdeck2.json"), "Deck"), 0.01);
+  fila("viguetas lado corto: SAP2000 `--sapdeck oneway` = Hekatan `deck etabs oneway` (todo a las viguetas: 2.0 / 1.0 / 0 kN/m)", comparar(await hek(join(V, "mez_undeck_OW.heks")), J("mez_undeck_sapdeck1.json"), "Deck"), 0.01);
+  fila("viguetas lado corto: SAP2000 SIN sapdeck (4 esquinas) = Hekatan sin directiva", comparar(await hek(join(V, "mez_undeck.heks")), J("mez_undeck_sap.json"), "Deck"), 1e-6);
   return filas;
 }

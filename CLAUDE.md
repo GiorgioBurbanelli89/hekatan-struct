@@ -867,6 +867,12 @@ SAP2000 y Hekatan solo conectan los 4 nudos y pesan en las 4 esquinas.
   de la malla partida (3e-4 %) y también se compara con ETABS `--noedge` (2e-5 %).
 - Plantillas (`edificioAporticado` y herederas, `plantillas`): parámetro **Comparar con**
   (ETABS / SAP2000) → `etabsWallJoint`. Sus losas son placas, no deck: el `deck etabs` no aplica.
+- `csi_desde_dump.py sap … --sapdeck [oneway|twoway]` (6-sep-2026): SAP2000 con SUS herramientas hace lo
+  que ETABS hace de fábrica: auto-mesh cookie-cut (MeshType 4) en las líneas que cruzan el paño +
+  `SetLoadUniformToFrame` (tributaria). Medido en `validation/modelos/deck-edge/mez_undeck` (5 viguetas
+  por el lado corto, un paño de 4 nudos, 60 kN): two-way = ETABS = Hekatan `deck etabs` (1.8/0.9/0.5
+  kN/m, flechas 1.2e-3 %); one-way (2.0/1.0/0) = `deck etabs oneway`. Sin `--sapdeck`, SAP manda los
+  60 kN a las 4 esquinas = Hekatan sin directiva. Sintaxis `.heks`: `shell id n1..n4 t E nu rho` (t primero).
 - `csi_desde_dump.py … --watchdog N`: relanza el driver si SAP2000 se cuelga (15 min, mata el
   proceso y reintenta N veces). `--arealoads Live=sinDir.json:conDir.json`: CSI recibe la carga
   de ÁREA (SetLoadUniform) y hace su transferencia; se compara con Hekatan `deck etabs`.

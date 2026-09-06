@@ -4,7 +4,7 @@ armado en SAP2000 o ETABS por OAPI con la MISMA malla y las MISMAS cargas nodale
 Hekatan ya repartio: peso propio + areas), sin peso propio de CSI. Compara SOLVERS, no cargas.
 Barras: General (I33=Iz, I22=Iy, AS2=shearAreasZ, AS3=shearAreasY), angulo de eje local,
 releases. Cascaras: Thin/Thick con los 8 modificadores (el deck = membrana). Muelles nodales.
-    python csi_desde_dump.py sap|etabs dump.json salida.json [--membrana] [--wall] [--nomesh] [--noedge | --edge] [--watchdog N]
+    python csi_desde_dump.py sap|etabs dump.json salida.json [--membrana] [--wall] [--nomesh] [--noedge | --edge] [--sapdeck] [--watchdog N]
 Salida: {"nudos":[{i,x,y,z,u[6]}], "sumRz", "peor": % del maximo vs Hekatan}"""
 import json, os, sys, time, subprocess
 # ── WATCHDOG (--watchdog [N]): SAP2000 por OAPI se queda colgado al azar (5 GB, sin volver). El padre
@@ -171,10 +171,32 @@ if not PATS:
 for nombre, f_cargas, f_cmp in AREAL:
     Dq = json.load(open(f_cargas)); Dc = json.load(open(f_cmp))
     sm.LoadPatterns.Add(nombre, 3, 0.0, True); nq = 0; sq = 0.0
+    # --sapdeck (6-sep-2026, Jorge: "que SAP2000 funcione igual que el deck en ETABS"): el area de
+    # SAP2000 sin partir lleva la carga a sus 4 nudos (CSI 10.14). Para que baje a las viguetas como
+    # en ETABS se hace con SUS herramientas: (1) auto-mesh "cookie cut" en las lineas que cruzan el
+    # pano (MeshType 4: la franja entre viguetas queda como sub-area con las viguetas de borde) y
+    # (2) la carga como "Uniform (Shell) to Frame" en DOS direcciones (DistType 2: tributaria
+    # trapecial, lo mismo que hace ETABS). Firmas leidas de la type library (19 y 8 argumentos).
+    # --sapdeck [oneway|twoway]: Jorge (6-sep) -> ONE WAY: reparte a las viguetas o a las principales
+    # segun el eje local 1 del area (el vano de la losa va a lo largo del local 1; la carga cae en las
+    # barras paralelas al local 2). El `shellang` del .heks gira ese eje (AreaObj.SetLocalAxes).
+    SAPDECK = PROG == "sap" and "--sapdeck" in sys.argv
+    SAPDIST = 2 if (SAPDECK and "twoway" in [a.lower() for a in sys.argv]) else 1
     for ks, q in (Dq["elementInputs"].get("shellSurfaceLoads") or {}).items():
         if abs(q) < 1e-15: continue
-        sm.AreaObj.SetLoadUniform("A%d" % int(ks), nombre, float(q), 6, True, "Global", 0); nq += 1; sq += q
-    print("patron %s: carga de AREA en %d shells (sum q %.3f kN/m2), transferencia de CSI" % (nombre, nq, sq), flush=True)
+        nmA = "A%d" % int(ks)
+        if SAPDECK:
+            r1 = sm.AreaObj.SetAutoMesh(nmA, 4, 2, 2, 0.0, 0.0, False, False, False, 0.0, 0.0, False, False, False, False, "ALL", False, 0.0, 0)
+            angA = g(Dq["elementInputs"].get("shellAngles"), int(ks), 0.0) if isinstance(Dq["elementInputs"].get("shellAngles"), dict) else 0.0
+            if abs(angA) > 1e-9: sm.AreaObj.SetLocalAxes(nmA, float(angA))
+            r2 = sm.AreaObj.SetLoadUniformToFrame(nmA, nombre, float(q), 6, SAPDIST, True, "Global", 0)
+            if nq == 0:
+                g = sm.AreaObj.GetAutoMesh(nmA, 0, 0, 0, 0.0, 0.0, False, False, False, 0.0, 0.0, False, False, False, False, "", False, 0.0)
+                NOTAS.append("sapdeck: SetAutoMesh -> %s, GetAutoMesh MeshType=%s, SetLoadUniformToFrame(%s) -> %s" % (r1, g[0], "one way" if SAPDIST == 1 else "two way", r2)); print(NOTAS[-1], flush=True)
+        else:
+            sm.AreaObj.SetLoadUniform(nmA, nombre, float(q), 6, True, "Global", 0)
+        nq += 1; sq += q
+    print("patron %s: carga de AREA en %d shells (sum q %.3f kN/m2), transferencia de CSI%s" % (nombre, nq, sq, " (sapdeck: cookie-cut + uniform to frame %s)" % ("ONE way" if SAPDIST == 1 else "two way") if SAPDECK else ""), flush=True)
     CASOS.append((nombre, Dc))
 for nombre, fn in PATS:
     Dp = json.load(open(fn)) if fn != DUMP else D
@@ -241,4 +263,11 @@ primero = out["casos"][CASOS[0][0]]
 for k in ("nudos", "sumRz", "peor", "peorNudo", "umax"):
     if k in primero: out[k] = primero[k]
 json.dump(out, open(OUT, "w"))
-o.ApplicationExit(False)
+# --abierto: NO cerrar el programa. Sirve para mirar el modelo por dentro
+# (que malla hizo, que carga transfirio a cada barra) despues de medirlo.
+if "--abierto" in sys.argv:
+    try: sm.View.RefreshView(0, False)
+    except Exception: pass
+    print("PROGRAMA ABIERTO (--abierto): %s" % PROG, flush=True)
+else:
+    o.ApplicationExit(False)
