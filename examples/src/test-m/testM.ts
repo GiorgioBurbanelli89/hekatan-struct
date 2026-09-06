@@ -597,6 +597,9 @@ export const testMLosa: ExampleDef = {
 export const testMDual: ExampleDef = {
   id: "test-m-dual", name: "🎓 Test M — Dual (pórtico + losa + muros)", category: "4️⃣ Mixtos · 🏢 Edificios",
   params: { ...BASE }, dynamicParams: dynParams, hasModal: true, ...shellRes, ...e2kSeismicCfg,
+  // El muro 1 vive en x = 0 (así está arbitrado contra ETABS): la iso por defecto lo dejaba a la
+  // ESPALDA de la cámara y "no se veía el colormap de los muros" (Jorge, 6-sep-2026).
+  viewFrom: [-1, -1, 1],
   build(p, states) { buildEdificio(p, states, { slab: true, walls: true }); },
   runModal(_p, states, modalPanel) { runModalEdificio(_p, states, modalPanel, "Test M — Dual (pórtico+losa+muros)", { slab: true, walls: true }); },
 };

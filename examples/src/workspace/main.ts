@@ -693,6 +693,8 @@ let __modalTableShown = false;           // el panel/tabla modal solo se muestra
 // dimensiones nuevas y la tabla solo se actualiza. Se apaga únicamente al elegir un caso
 // no-modal (estático/combo), que es cuando el usuario realmente pidió otra cosa.
 let __modalActivo = false;
+/** true mientras el usuario ARRASTRA un slider (ev.last === false): rebuild() salta el modal. */
+let __liveDrag = false;
 let __spectrumShown = false;             // el espectro de diseño solo se muestra si el usuario lo activa
 let __lastSpectrumHtml = "";             // último SVG del espectro NEC (para el panel separado)
 let __spectrumPanel: HTMLDivElement | null = null;
@@ -984,7 +986,8 @@ function autoFitCamera() {
   // Cámara perspectiva → reposicionar isométrica (comportamiento original)
   const dist = 2.2 * extent;
   const k = dist / Math.sqrt(3);
-  camera.position.set(cx + k, cy - k, cz + k);
+  const vf = currentExample?.viewFrom ?? [1, -1, 1];   // octante de la iso (ver ExampleDef.viewFrom)
+  camera.position.set(cx + Math.sign(vf[0] || 1) * k, cy + Math.sign(vf[1] || -1) * k, cz + Math.sign(vf[2] || 1) * k);
   camera.up.set(0, 0, 1);
   if ((camera as any).isPerspectiveCamera) {
     (camera as THREE.PerspectiveCamera).near = extent * 0.001;
@@ -1100,17 +1103,32 @@ function rebuild() {
     // del caso es frágil). isPlaying() es el disparador robusto.
     let modalPlaying = false;
     try { modalPlaying = !!modalAnimator?.isPlaying?.(); } catch {}
+    // Durante el ARRASTRE de un slider (ev.last === false) NO se recalcula el modal: con un dual de
+    // 8 pisos son segundos de WASM síncrono por cada tick del ratón → la página se "cuelga"
+    // (6-sep-2026, deploy público). El modal se recalcula al soltar (ev.last === true).
+    if (__liveDrag) {
+      modalPlaying = false;
+      // Y si estaba animando, se PAUSA sin restaurar: sus nodos originales son del modelo de antes
+      // del arrastre (otro número de nudos) y restaurarlos encima del nuevo corrompe la geometría.
+      try { if (modalAnimator?.isPlaying?.()) modalAnimator.pause(); } catch {}
+    }
     // __modalActivo se mantiene aunque el modal no haya devuelto modos o la animación
     // esté pausada → el modal sigue "puesto" y acompaña a los sliders.
-    if ((isModalCase || modalPlaying || __modalActivo) && currentExample.runModal) {
+    if (!__liveDrag && (isModalCase || modalPlaying || __modalActivo) && currentExample.runModal) {
       // Re-correr el modal Y re-animar con el MODELO NUEVO. Antes esto llamaba al
       // `modalPanel` pelado, que actualiza la tabla pero NO el animador → al mover
       // un slider la animación se quedaba con el modo viejo. Ruteamos por
       // `__hekatanRunModalAnimate` (= captureModalPanel → setResults+play), que
       // re-snapshotea los nodos rehechos y re-anima el modo 1. Fallback al pelado.
+      // Diferido a la siguiente vuelta del event loop: así el modelo estático nuevo se PINTA antes
+      // de que el modal bloquee el hilo, y el usuario ve que algo pasó en vez de una pantalla congelada.
       const animate = (window as any).__hekatanRunModalAnimate;
-      if (typeof animate === "function") animate();
-      else currentExample.runModal(toSIParams(), states, modalPanel);
+      const ex = currentExample;
+      window.setTimeout(() => {
+        if (ex !== currentExample) return;   // cambió de ejemplo mientras tanto
+        if (typeof animate === "function") animate();
+        else ex.runModal!(toSIParams(), states, modalPanel);
+      }, 0);
       // Solo mostrar el panel/tabla si el usuario activó "Mostrar tabla" (Settings).
       modalPanel.div.style.display = __modalTableShown ? "block" : "none";
     } else if (!__modalTableShown) {
@@ -5713,18 +5731,19 @@ solve`;
         // / pierda foco a mitad del arrastre.
         if (p.regenOnChange) {
           if (ev?.last === false) {
+            __liveDrag = true;
             scheduleRebuild();   // live calc sin tocar el pane
           } else {
+            __liveDrag = false;
             // Si el modal estaba animando, recordarlo: buildParamsPane() recrea el
             // animador (lo dispone) → la animación se perdería al cambiar N° de
             // muros/pisos/vanos. Tras regenerar + rebuild, la re-lanzamos.
-            const wasPlaying = (() => { try { return !!modalAnimator?.isPlaying?.(); } catch { return false; } })();
-            window.setTimeout(() => {
-              buildParamsPane(); rebuild();
-              if (wasPlaying) { const a = (window as any).__hekatanRunModalAnimate; if (typeof a === "function") setTimeout(a, 0); }
-            }, 80);
+            // rebuild() ya re-corre y re-anima el modal por su dispatcher (__modalActivo): aquí NO se
+            // vuelve a lanzar — hasta el 6-sep-2026 se lanzaba dos veces por cada suelta del slider.
+            window.setTimeout(() => { buildParamsPane(); rebuild(); }, 80);
           }
         } else {
+          __liveDrag = ev?.last === false;
           scheduleRebuild();
         }
       });

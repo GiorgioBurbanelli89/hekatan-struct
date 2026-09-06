@@ -1,6 +1,6 @@
 import van, { State } from "vanjs-core";
 import { fixedColorMapRange, colorMapUnit } from "../viewer/getViewer";
-import { colorMapPalette, legendGradientCss } from "./getColorMap";
+import { colorMapPalette, legendGradientCss, robustRange } from "./getColorMap";
 
 import "./styles.css";
 
@@ -73,12 +73,20 @@ function getMarkerValue(values: number[], ratio: number) {
   // Si hay override fijo (ej. zapata: [0, 1.5×q_adm]), usarlo para el legend también
   const rng = fixedColorMapRange.val;
   if (rng) {
-    return (rng[0] + ratio * (rng[1] - rng[0])).toPrecision(3);
+    return fmtLegend(rng[0] + ratio * (rng[1] - rng[0]));
   }
   const valid = values.filter((v) => Number.isFinite(v));
   if (valid.length === 0) return "0";
-  let vMin = Math.min(...valid);
-  const vMax = Math.max(...valid);
-  if (vMin >= 0 && vMax > 0) vMin = 0;
-  return (vMin + ratio * (vMax - vMin)).toPrecision(3);
+  const [vMin, vMax] = robustRange(valid);   // el MISMO rango que pinta la malla (getColorMap)
+  return fmtLegend(vMin + ratio * (vMax - vMin));
+}
+
+/** 3 cifras, pero CORTO: `-0.000123` (9 caracteres) se salía de la columna y en pantalla se leía
+ *  `-0.000` en todos los marcadores (muros en tonf·m/m, 6-sep-2026). Fuera de [1e-3, 1e5) va en
+ *  notación científica: `-1.23e-4`. */
+function fmtLegend(v: number): string {
+  if (!Number.isFinite(v)) return "—";
+  if (v === 0) return "0";
+  const a = Math.abs(v);
+  return (a < 1e-3 || a >= 1e5) ? v.toExponential(2) : v.toPrecision(3);
 }

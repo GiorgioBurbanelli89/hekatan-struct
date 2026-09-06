@@ -241,6 +241,9 @@ export interface ExampleDef {
     hiddenIf?: (params: Record<string, number>) => boolean;                // oculta dinámicamente
   }>;
   /** Shell colormap por defecto para este ejemplo (e.g. "bendingXX", "pressure"). */
+  /** Desde qué octante mira la cámara isométrica (signos de x, y, z). Defecto [+1, −1, +1]: ve las caras
+   *  x = máx e y = 0. Un ejemplo cuyo muro vive en x = 0 (test-m-dual) pone [−1, −1, +1] para que se VEA. */
+  viewFrom?: [number, number, number];
   defaultShellResult?: string;
   /**
    * Resultado de BARRA por defecto (e.g. "normal", "shearY", "bendingZ").

@@ -106,6 +106,22 @@ export function legendGradientCss(): string {
   return `linear-gradient(${stops.join(",")})`;
 }
 
+/** Rango del colormap ROBUSTO: percentiles 1 y 99 de los valores finitos, no el min/max crudo.
+ *  Con el min/max crudo, un pico en la base de un muro (vonMises 126 en un nudo de esquina contra
+ *  5-20 en el resto) dejaba el 90 % del edificio en la banda de abajo de la paleta y el muro "sin
+ *  colormap" (Jorge, deploy público, 6-sep-2026). Lo que queda fuera se satura al color del extremo,
+ *  como el contour de ETABS/SAFE cuando se le fija el rango. Si todo es positivo, el mínimo es 0. */
+export function robustRange(valid: number[]): [number, number] {
+  if (!valid.length) return [0, 1];
+  const s = [...valid].sort((a, b) => a - b);
+  const q = (f: number) => s[Math.min(s.length - 1, Math.max(0, Math.round(f * (s.length - 1))))];
+  let vMin = s.length >= 20 ? q(0.01) : s[0];
+  let vMax = s.length >= 20 ? q(0.99) : s[s.length - 1];
+  if (vMin >= 0 && vMax > 0) vMin = 0;
+  if (vMax <= 0 && vMin < 0) vMax = 0;
+  return [vMin, vMax];
+}
+
 export function getColorMap(
   nodes: State<Node[]>,
   elements: State<Element[]>,
@@ -206,9 +222,7 @@ export function getColorMap(
       vMin = rng[0];
       vMax = rng[1];
     } else {
-      vMax = validValues.length ? Math.max(...validValues) : 1;
-      vMin = validValues.length ? Math.min(...validValues) : 0;
-      if (vMin >= 0 && vMax > 0) vMin = 0;
+      [vMin, vMax] = robustRange(validValues);
     }
     if (vMax === vMin) {
       const eps = Math.max(Math.abs(vMax) * 1e-6, 1e-9);

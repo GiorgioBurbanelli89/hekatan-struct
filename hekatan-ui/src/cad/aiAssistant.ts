@@ -146,7 +146,20 @@ export async function listOllamaModels(): Promise<string[]> {
 }
 
 // Helper: detecta si Ollama está corriendo (más liviano que listOllamaModels)
-export async function isOllamaRunning(): Promise<boolean> {
+// Cacheado: el panel de IA se reconstruye en CADA regeneración del pane (pisos, vanos…) y
+// volvía a pedir http://localhost:11434/api/tags cada vez. En el deploy público (GitHub Pages)
+// eso es un ERR_CONNECTION_REFUSED en consola por cada slider. Se pregunta UNA vez por página
+// y, fuera de localhost, ni se pregunta (Ollama solo puede estar en la máquina del usuario y el
+// navegador bloquea el mixed-content http desde https igualmente).
+let __ollamaProbe: Promise<boolean> | null = null;
+export function isOllamaRunning(): Promise<boolean> {
+  if (__ollamaProbe) return __ollamaProbe;
+  const host = typeof location !== "undefined" ? location.hostname : "";
+  const local = host === "localhost" || host === "127.0.0.1" || host === "" || location.protocol === "file:";
+  __ollamaProbe = local ? isOllamaRunningNow() : Promise.resolve(false);
+  return __ollamaProbe;
+}
+async function isOllamaRunningNow(): Promise<boolean> {
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 1000);

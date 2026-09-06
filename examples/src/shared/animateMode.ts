@@ -76,6 +76,9 @@ export interface ModalAnimator {
   stop(): void;
   /** True si la animación está corriendo */
   isPlaying(): boolean;
+  /** Corta el RAF SIN restaurar nodos: para cuando el modelo ya se REGENERÓ debajo (arrastre de un
+   *  slider) y los originales guardados ya no son de este modelo. */
+  pause(): void;
   /** Número actual de modos disponibles */
   modeCount(): number;
   /** Modo actualmente seleccionado (0-indexed) */
@@ -300,6 +303,7 @@ export function createModalAnimator(cfg: ModalAnimatorConfig): ModalAnimator {
       fireStatus();
     },
     isPlaying() { return rafId !== 0; },
+    pause() { if (rafId) { cancelAnimationFrame(rafId); rafId = 0; } fireStatus(); },
     modeCount() { return results?.frequencies?.length ?? 0; },
     currentMode() { return mode; },
     currentFreq() { return results?.frequencies?.[mode] ?? 0; },
