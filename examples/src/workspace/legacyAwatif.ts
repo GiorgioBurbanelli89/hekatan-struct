@@ -72,8 +72,11 @@ export const iconicCableBridge  = legacy("cable-stayed-bridge",  "Puente Atirant
 export const iconicTwistedTower = legacy("twisted-tower",        "Torre Retorcida",             "4️⃣ Mixtos · 🌉 Puentes e icónicos");
 export const iconicBurjKhalifa  = legacy("burj-khalifa",         "Burj Khalifa style",          "4️⃣ Mixtos · 🌉 Puentes e icónicos");
 export const iconicSydneyOpera  = legacy("sydney-opera",         "Sydney Opera House",          "2️⃣ Shells · 🐚 Cáscaras");
-export const iconicDiagrid      = legacy("diagrid-awatif",       "Diagrid (Gherkin) style",     "4️⃣ Mixtos · 🌉 Puentes e icónicos");
-export const iconicPergola      = legacy("pergola-awatif",              "Pérgola de acero",            "4️⃣ Mixtos · 🌉 Puentes e icónicos");
+// ⚠️ "diagrid" y "pergola" también existen paramétricos en shared/moreExamples.ts (18 ejemplos que NO
+// están en el registry). Se probó renombrar estos stubs a <id>-awatif (6-sep-2026) y `?t=diagrid` quedó
+// en blanco: hasta que se registre moreExamples, los ids se quedan aquí.
+export const iconicDiagrid      = legacy("diagrid",              "Diagrid (Gherkin) style",     "4️⃣ Mixtos · 🌉 Puentes e icónicos");
+export const iconicPergola      = legacy("pergola",              "Pérgola de acero",            "4️⃣ Mixtos · 🌉 Puentes e icónicos");
 
 // ─── Demos FEM Q4 (validación contra OpenSees/SAP/ETABS) ────────────
 export const demoShearWallQ4    = legacy("shear-wall-q4",        "Muro de Corte Q4",            "2️⃣ Shells · 🕸 Membranas");
