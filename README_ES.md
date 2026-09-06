@@ -55,7 +55,8 @@ software; ETABS, SAP2000 y SAFE solo se usan para comprobarlo.
 | Zapata sobre Winkler — muelle de **área** de SAFE | `spring` | — | — | 1.92 % ⁴ |
 | 5 benchmarks de cimentación (w_max) | — | — | — | **0.01–0.29 %** |
 | Zapata corrida, shell + barras | — | — | — | **0.01 %** |
-| Ida y vuelta por fichero (Hekatan → fichero → programa → Hekatan) | — | `.s2k` **0.000 %** | `.e2k` **0.000 %** | `.f2k` 6.8 % ⏳ ⁴ |
+| Ida y vuelta por fichero (Hekatan → fichero → programa → Hekatan) | — | `.s2k` **0.000 %** | `.e2k` **0.000 %** | — |
+| Cimentación real leída del fichero — 9 zapatas, pedestales, vigas de amarre, 225 muelles nodales | `spring` | `.s2k` **1.2e-8 %** | `.e2k` **1.4e-8 %** | `.f2k` **1.5e-3 %** ⁵ |
 
 ¹ ETABS con sus defectos conecta el paño de piso a todo nudo que cae en sus bordes (edge
 constraint) y lo corta en las vigas que lo cruzan; SAP2000 solo conecta los 4 nudos. Sin el
@@ -64,7 +65,7 @@ interruptor Hekatan se comporta como SAP2000; con `deck etabs`, como ETABS (ver 
 ³ SAP2000 no tiene reparto en un sentido.
 ⁴ El Winkler por defecto de SAFE es un muelle de *área*; el de Hekatan (y SAP2000) es nodal. El
 1.92 % es la diferencia entre los dos modelos, no un error; con muelles nodales SAFE cierra a 1e-9 %.
-La ida y vuelta del `.f2k` sigue abierta por lo mismo.
+⁵ SAFE imprime los desplazamientos con 6 decimales en m (0.0005 mm sobre 32 mm): ese es el 1.5e-3 %, no el solver. Cuatro leyes de SAFE medidas por el camino (`f2kExporter.ts`): una tabla `COLUMN OBJECT CONNECTIVITY` le hace tirar todas las losas y vigas; las tablas quieren el *nombre* del campo (`"Stiffness UZ"`), con la clave se queda callado en 200 kN/m; una sección de hormigón sin material de armadura se rechaza entera; y SAFE analiza las vigas con **0.1·J**, así que el fichero lleva 10·J.
 
 Regla de la casa: **primero se compara con SAP2000** (solo conecta lo que se malla: mide el solver) y **despues con ETABS**, anadiendo a Hekatan lo que ETABS hace como un interruptor con nombre que se puede apagar (`deck etabs`, `etabsjoint`, `meshcross`). Nunca se tuerce el motor hacia ETABS en silencio.
 

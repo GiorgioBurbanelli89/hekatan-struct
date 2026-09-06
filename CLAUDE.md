@@ -914,6 +914,29 @@ en el pórtico 3D), las 8 plantillas vs ETABS 22: **masa total 0.000 % y modos 1
 `deform.cpp` pasa a gradiente conjugado con Cholesky incompleta (tol 1e-12) a partir de
 150 000 GDL (medido: 164k GDL en 7.4 s y 561 MB); por debajo, LDLT como siempre.
 
+## Los TRES ficheros de CSI desde el mismo `.heks` (5-sep-2026)
+
+`node cli/heks_a_csi.mjs modelo.heks salida` escribe `salida.e2k` (ETABS), `salida.s2k`
+(SAP2000) y `salida.f2k` (SAFE) del MISMO modelo, muelles nodales incluidos. Arbitrado con
+la cimentación real (`tests/datos/cimentacion_9zapatas.heks`: 9 zapatas Thick 4×4, 9
+pedestales, 12 vigas de amarre, 225 muelles): SAP2000 1.2e-8 %, ETABS 1.4e-8 %, SAFE 1.5e-3 %
+(su resolución de impresión). Test `node tests/run.mjs cimentacion-vs-csi` (14 filas).
+
+- e2k: `$ POINT SPRING PROPERTIES` + `SPRINGPROP` en el `POINTASSIGN` (N/mm: kN/m es el
+  mismo número). s2k: `JOINT SPRING ASSIGNMENTS 1 - UNCOUPLED` (columnas leídas de SAP2000
+  por OAPI). Los parsers los devuelven a `nodeInputs.springs`; `deform` los recibe APARTE
+  (5º argumento), no dentro de `nodeInputs`.
+- `STORY "Base" ELEV` va en mm como HEIGHT: en metros ETABS subía las cotas 0.4995 m.
+- f2k (`examples/src/shared/f2kExporter.ts`): SAFE no abre un `.f2k` (`OpenFile` deja el
+  modelo vacío); se importa por tablas con `csi-cli/safe-cli/cli/csi_cli.py --engine safe
+  --open modelo.f2k`. Cuatro leyes MEDIDAS (20 importaciones): ① una tabla `COLUMN OBJECT
+  CONNECTIVITY` borra losas y vigas sin una línea de log → las verticales van como BEAM;
+  ② los campos van por NOMBRE (`"Stiffness UZ"`, `"Rigid Factor"`), con la clave SAFE calla
+  y deja su defecto (200 kN/m en los 9 muelles); ③ una sección de hormigón sin
+  `"Longitudinal Rebar Material"` válido se rechaza entera; ④ SAFE analiza las vigas con
+  **0.1·J** (Hekatan con J×0.1 reproduce sus giros a 4 cifras) → `jFactor` = 10 por defecto.
+  Nombres de campo: `DatabaseTables.GetAllFieldsInTable` (clave, nombre, unidades).
+
 ## Galpón real y mezanine CFT contra SAP2000 y ETABS por OAPI (3-sep-2026)
 
 `galpon-bodega-electoral/csi_desde_dump.py sap|etabs dump.json out.json [--membrana|--wall|--nomesh]`

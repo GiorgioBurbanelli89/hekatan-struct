@@ -27,7 +27,7 @@ Full detail in [`ESTADO_VS_ETABS.md`](./ESTADO_VS_ETABS.md).
 | **E2K export** → ETABS 22 | round-trip re-import | **0.000 %** — 372/378 nodes | ✅ |
 | **E2K areas round-trip** | Hekatan → ETABS → Hekatan | **58/58** examples keep their shells | ✅ |
 | **S2K export** → SAP2000 24 | round-trip re-import | **0.000 %** — 378/378 nodes | ✅ |
-| **F2K export** → SAFE 20 | round-trip re-import | 6.8 % mean — SAFE's **area** Winkler vs Hekatan's **nodal** spring is a different model (1.92 % on one footing); with nodal springs SAFE = Hekatan to 1e-9 % | ⏳ open |
+| **F2K export** → SAFE 20 | real foundation (9 footings + pedestals + tie beams, 225 nodal springs) read from the `.f2k` | **1.5e-3 %** (SAFE prints U to 0.0005 mm); same `.heks` → `.s2k` SAP2000 1.2e-8 %, `.e2k` ETABS 1.4e-8 % | ✅ closed 2026-09-05 |
 | **Assembled mass** | ETABS `AssembledJointMass` | **0.002 %** | ✅ |
 
 Regression suite: **`npm test` → 499/499**, plus **208 passed** in the Python
@@ -64,7 +64,8 @@ software; ETABS, SAP2000 and SAFE are only used to check it.
 | Footing on Winkler — SAFE's **area** spring | `spring` | — | — | 1.92 % ⁴ |
 | 5 foundation benchmarks (w_max) | — | — | — | **0.01–0.29 %** |
 | Strip footing, shell + frames | — | — | — | **0.01 %** |
-| File round-trip (Hekatan → file → program → Hekatan) | — | `.s2k` **0.000 %** | `.e2k` **0.000 %** | `.f2k` 6.8 % ⏳ ⁴ |
+| File round-trip (Hekatan → file → program → Hekatan) | — | `.s2k` **0.000 %** | `.e2k` **0.000 %** | — |
+| Real foundation read from the file — 9 footings, pedestals, tie beams, 225 nodal springs | `spring` | `.s2k` **1.2e-8 %** | `.e2k` **1.4e-8 %** | `.f2k` **1.5e-3 %** ⁵ |
 
 ¹ ETABS with its defaults connects a floor panel to every node lying on its edges (edge
 constraint) and cuts it at crossing beams; SAP2000 only connects the 4 nodes. Without the
@@ -73,7 +74,7 @@ switch Hekatan behaves like SAP2000; with `deck etabs` like ETABS (see the deck 
 ³ SAP2000 has no one-way load distribution.
 ⁴ SAFE's default Winkler is an *area* spring; Hekatan's (and SAP2000's) is nodal. The 1.92 % is
 the difference between the two models, not an error; with nodal springs SAFE closes to 1e-9 %.
-The `.f2k` round-trip stays open for the same reason.
+⁵ SAFE prints displacements with 6 decimals in m (0.0005 mm on 32 mm): that is the 1.5e-3 %, not the solver. Four SAFE laws measured on the way (`f2kExporter.ts`): a `COLUMN OBJECT CONNECTIVITY` table makes SAFE drop every slab and beam; tables want field *names* (`"Stiffness UZ"`), with keys it silently keeps 200 kN/m; a concrete section without a rebar material is rejected whole; and SAFE analyses beams with **0.1·J**, so the file carries 10·J.
 
 Rule of the house: **compare with SAP2000 first** (it only connects what you mesh,
 so it measures the solver), **then with ETABS**, adding ETABS's behaviour to
@@ -646,7 +647,7 @@ Naming canonical para validación cruzada hekatan-struct-lineal ↔ ETABS / SAP2
 |---|---|---|---|
 | **E2K** | ETABS 22 | **0.000 %** — 372/378 nodes, ΣRz exact | must be written in **N and MM**: the E2K parser has **no `UNITS` token** (confirmed in `ETABS.dll` ~0x03490e00) and always reads SAPFire base units. Moments are **N·mm (×1e6)**, not N·m |
 | **S2K** | SAP2000 24 | **0.000 %** — 378/378 nodes; re-measured 2026-08-27 on the 8 templates: reaction **and** deflection at 0.000 % in all 8 | `Shape=General`, not `Rectangular`: with a parametric shape SAP **recomputes I22 and J** from t3/t2 and discards what you wrote. And `CurrUnits` must say **KN, m** — see below |
-| **F2K** | SAFE 20 | ⏳ open — 6.8 % mean | the area spring is written half-defined: `SpringOption`, `SoilProfile` and `EndLengthRatio` are missing (found by reflection on `SAFEv1.dll`) |
+| **F2K** | SAFE 20 | ✅ 1.5e-3 % (2026-09-05) | generic `f2kExporter.ts` from the same model as e2k/s2k: point springs, restraints, General sections, Thin/Thick slabs; imported by tables (`csi_cli.py --engine safe --open`) |
 
 ⚠️ **Both E2K and S2K used to fail the same way, silently**: a *parametric* section
 shape makes ETABS/SAP recompute the section properties from D/B (or t3/t2) and
@@ -910,7 +911,7 @@ and [`ESTADO_VS_ETABS.md`](./ESTADO_VS_ETABS.md). The Python regression
 |--------|:---:|:---:|----------|---|
 | E2K | ✅ | ✅ | ETABS | **0.000 %** |
 | S2K | ✅ | ✅ | SAP2000 | **0.000 %** |
-| F2K | ✅ | ✅ | SAFE | ⏳ 6.8 % (area vs nodal Winkler, see above) |
+| F2K | ✅ | ✅ | SAFE | ✅ 1.5e-3 % (real foundation, nodal Winkler) |
 | IFC | ✅ | — | Revit, ArchiCAD | — |
 | OpenSeesPy | ✅ | ✅ | OpenSees |
 | OpenSees Tcl | ✅ | ✅ | OpenSees |
