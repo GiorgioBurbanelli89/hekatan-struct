@@ -627,6 +627,8 @@ node cli/check_deploy_bugs.mjs $(cat cli/shots/deploy/_ids.txt)   # barrido ente
 node cli/check_deploy_modal_hang.mjs edificio-dual 1        # corre el modal, sube pisos/vanos, mide si responde
 node cli/check_deploy_longtasks.mjs edificio-dual           # cuánto BLOQUEA el hilo cada paso (longtask API)
 node cli/check_deploy_colormap_scope.mjs                    # rango por familia, leyenda sin recortes, leyenda oculta
+node cli/check_deploy_csi.mjs edificio-dual guerra-ej1-zapata-cuadrada   # pulsa Exportar E2K/S2K/F2K, captura el blob, cuenta tablas
+node cli/f2k_desde_ejemplo.mjs guerra-ej1-zapata-cuadrada  # el mismo F2K sin navegador (nudos, losas, muelles, cargas, ΣFz)
 ```
 
 Los PNG van a `cli/shots/deploy/`; `_hoja_NN.png` son hojas de contacto 4×4 (PIL) para MIRARLAS: un
