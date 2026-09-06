@@ -1,0 +1,175 @@
+# mini m3
+node 1 -0.65 -0.65 -0.5
+node 2 -0.325 -0.65 -0.5
+node 3 0 -0.65 -0.5
+node 4 0.325 -0.65 -0.5
+node 5 0.65 -0.65 -0.5
+node 6 -0.65 -0.325 -0.5
+node 7 -0.325 -0.325 -0.5
+node 8 0 -0.325 -0.5
+node 9 0.325 -0.325 -0.5
+node 10 0.65 -0.325 -0.5
+node 11 -0.65 0 -0.5
+node 12 -0.325 0 -0.5
+node 13 0 0 -0.5
+node 14 0.325 0 -0.5
+node 15 0.65 0 -0.5
+node 16 -0.65 0.325 -0.5
+node 17 -0.325 0.325 -0.5
+node 18 0 0.325 -0.5
+node 19 0.325 0.325 -0.5
+node 20 0.65 0.325 -0.5
+node 21 -0.65 0.65 -0.5
+node 22 -0.325 0.65 -0.5
+node 23 0 0.65 -0.5
+node 24 0.325 0.65 -0.5
+node 25 0.65 0.65 -0.5
+node 26 0 0 0
+node 27 3.9 -1.1 -0.5
+node 28 4.45 -1.1 -0.5
+node 29 5 -1.1 -0.5
+node 30 5.55 -1.1 -0.5
+node 31 6.1 -1.1 -0.5
+node 32 3.9 -0.55 -0.5
+node 33 4.45 -0.55 -0.5
+node 34 5 -0.55 -0.5
+node 35 5.55 -0.55 -0.5
+node 36 6.1 -0.55 -0.5
+node 37 3.9 0 -0.5
+node 38 4.45 0 -0.5
+node 39 5 0 -0.5
+node 40 5.55 0 -0.5
+node 41 6.1 0 -0.5
+node 42 3.9 0.55 -0.5
+node 43 4.45 0.55 -0.5
+node 44 5 0.55 -0.5
+node 45 5.55 0.55 -0.5
+node 46 6.1 0.55 -0.5
+node 47 3.9 1.1 -0.5
+node 48 4.45 1.1 -0.5
+node 49 5 1.1 -0.5
+node 50 5.55 1.1 -0.5
+node 51 6.1 1.1 -0.5
+node 52 5 0 0
+support 26 1 1 0 0 0 1
+frame 1 13 26 2.4855e+07 0.16 0.00213333 0.00213333 0.00360533 0.2 2.44732
+frame 2 39 52 2.4855e+07 0.16 0.00213333 0.00213333 0.00360533 0.2 2.44732
+frame 3 26 52 2.4855e+07 0.1 0.000520833 0.00133333 0.00127345 0.2 2.44732
+shell 1 1 2 7 6 0.3 2.4855e+07 0 2.44732
+shelltype 1 thick
+shell 2 2 3 8 7 0.3 2.4855e+07 0 2.44732
+shelltype 2 thick
+shell 3 3 4 9 8 0.3 2.4855e+07 0 2.44732
+shelltype 3 thick
+shell 4 4 5 10 9 0.3 2.4855e+07 0 2.44732
+shelltype 4 thick
+shell 5 6 7 12 11 0.3 2.4855e+07 0 2.44732
+shelltype 5 thick
+shell 6 7 8 13 12 0.3 2.4855e+07 0 2.44732
+shelltype 6 thick
+shell 7 8 9 14 13 0.3 2.4855e+07 0 2.44732
+shelltype 7 thick
+shell 8 9 10 15 14 0.3 2.4855e+07 0 2.44732
+shelltype 8 thick
+shell 9 11 12 17 16 0.3 2.4855e+07 0 2.44732
+shelltype 9 thick
+shell 10 12 13 18 17 0.3 2.4855e+07 0 2.44732
+shelltype 10 thick
+shell 11 13 14 19 18 0.3 2.4855e+07 0 2.44732
+shelltype 11 thick
+shell 12 14 15 20 19 0.3 2.4855e+07 0 2.44732
+shelltype 12 thick
+shell 13 16 17 22 21 0.3 2.4855e+07 0 2.44732
+shelltype 13 thick
+shell 14 17 18 23 22 0.3 2.4855e+07 0 2.44732
+shelltype 14 thick
+shell 15 18 19 24 23 0.3 2.4855e+07 0 2.44732
+shelltype 15 thick
+shell 16 19 20 25 24 0.3 2.4855e+07 0 2.44732
+shelltype 16 thick
+shell 17 27 28 33 32 0.3 2.4855e+07 0 2.44732
+shelltype 17 thick
+shell 18 28 29 34 33 0.3 2.4855e+07 0 2.44732
+shelltype 18 thick
+shell 19 29 30 35 34 0.3 2.4855e+07 0 2.44732
+shelltype 19 thick
+shell 20 30 31 36 35 0.3 2.4855e+07 0 2.44732
+shelltype 20 thick
+shell 21 32 33 38 37 0.3 2.4855e+07 0 2.44732
+shelltype 21 thick
+shell 22 33 34 39 38 0.3 2.4855e+07 0 2.44732
+shelltype 22 thick
+shell 23 34 35 40 39 0.3 2.4855e+07 0 2.44732
+shelltype 23 thick
+shell 24 35 36 41 40 0.3 2.4855e+07 0 2.44732
+shelltype 24 thick
+shell 25 37 38 43 42 0.3 2.4855e+07 0 2.44732
+shelltype 25 thick
+shell 26 38 39 44 43 0.3 2.4855e+07 0 2.44732
+shelltype 26 thick
+shell 27 39 40 45 44 0.3 2.4855e+07 0 2.44732
+shelltype 27 thick
+shell 28 40 41 46 45 0.3 2.4855e+07 0 2.44732
+shelltype 28 thick
+shell 29 42 43 48 47 0.3 2.4855e+07 0 2.44732
+shelltype 29 thick
+shell 30 43 44 49 48 0.3 2.4855e+07 0 2.44732
+shelltype 30 thick
+shell 31 44 45 50 49 0.3 2.4855e+07 0 2.44732
+shelltype 31 thick
+shell 32 45 46 51 50 0.3 2.4855e+07 0 2.44732
+shelltype 32 thick
+spring 1 uz 27.1984
+spring 2 uz 54.3969
+spring 3 uz 54.3969
+spring 4 uz 54.3969
+spring 5 uz 27.1984
+spring 6 uz 54.3969
+spring 7 uz 108.794
+spring 8 uz 108.794
+spring 9 uz 108.794
+spring 10 uz 54.3969
+spring 11 uz 54.3969
+spring 12 uz 108.794
+spring 13 uz 108.794
+spring 14 uz 108.794
+spring 15 uz 54.3969
+spring 16 uz 54.3969
+spring 17 uz 108.794
+spring 18 uz 108.794
+spring 19 uz 108.794
+spring 20 uz 54.3969
+spring 21 uz 27.1984
+spring 22 uz 54.3969
+spring 23 uz 54.3969
+spring 24 uz 54.3969
+spring 25 uz 27.1984
+spring 27 uz 77.8938
+spring 28 uz 155.788
+spring 29 uz 155.788
+spring 30 uz 155.788
+spring 31 uz 77.8938
+spring 32 uz 155.788
+spring 33 uz 311.575
+spring 34 uz 311.575
+spring 35 uz 311.575
+spring 36 uz 155.788
+spring 37 uz 155.788
+spring 38 uz 311.575
+spring 39 uz 311.575
+spring 40 uz 311.575
+spring 41 uz 155.788
+spring 42 uz 155.788
+spring 43 uz 311.575
+spring 44 uz 311.575
+spring 45 uz 311.575
+spring 46 uz 155.788
+spring 47 uz 77.8938
+spring 48 uz 155.788
+spring 49 uz 155.788
+spring 50 uz 155.788
+spring 51 uz 77.8938
+load 26 0 0 -100 8 22 0
+load 52 0 0 -200 0 25 0
+selfweight 1
+solve

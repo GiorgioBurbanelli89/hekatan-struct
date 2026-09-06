@@ -13,7 +13,7 @@ const overrides: Record<string, number> = {
   matCol:  1, matViga: 1,    // acero W
   colSize: 0.25,
   vigaB:   0.20, vigaH: 0.40,
-  vSecOn:  1, nVSec: 3, vSecDir: 1,   // secundarias en Y (dir corta)
+  vSecOn:  1, nVSec: 3, vSecDir: 2,   // secundarias por el lado corto de cada vano (Auto): aqui Y, 5 m
   slabOn:  1, slabT: 0.08,            // deck + concreto
   nSubViga: 3,                         // mesh fino para losa
 };

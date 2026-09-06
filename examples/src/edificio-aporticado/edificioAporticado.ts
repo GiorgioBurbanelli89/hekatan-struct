@@ -95,7 +95,7 @@ export const edificioAporticado: ExampleDef = {
 
     // ── Vigas Secundarias (FEM Studio: folder Vigas Secundarias) ──
     vigSecActivar:   { ...PE("Vigas Secundarias", "Activar", 0, { "No": 0, "Sí": 1 }), regenOnChange: true },
-    vigSecDir:       PE("Vigas Secundarias", "Corren en", 0, { "X (entre ejes Y)": 0, "Y (entre ejes X)": 1 }),
+    vigSecDir:       PE("Vigas Secundarias", "Corren en", 2, { "Auto (lado corto)": 2, "X (entre ejes Y)": 0, "Y (entre ejes X)": 1 }),
     vigSecCantidad:  P("Vigas Secundarias", "Cantidad/vano", 2, 1, 5, 1),
     vigSecB:         P("Vigas Secundarias", "b sec (m)", 0.20, 0.10, 0.40, 0.05),
     vigSecH:         P("Vigas Secundarias", "h sec (m)", 0.30, 0.20, 0.60, 0.05),
@@ -225,7 +225,7 @@ export const edificioAporticado: ExampleDef = {
     nSubCol:  P("Avanzado", "Div. columnas", 1, 1, 4, 1),
     vSecOn:   PE("Avanzado", "Vigas secundarias",  0, { "Off": 0, "On": 1 }),
     nVSec:    P("Avanzado", "N° vigas sec. por vano", 2, 1, 5, 1),
-    vSecDir:  PE("Avanzado", "Dir secundarias",  0, { "X": 0, "Y": 1 }),
+    vSecDir:  PE("Avanzado", "Dir secundarias",  2, { "Auto (lado corto)": 2, "X": 0, "Y": 1 }),
     bracesMode: PE("Avanzado", "Diagonales", 0, { "ninguna": 0, "perimetrales": 1, "todas": 2, "solo X": 3, "solo Y": 4 }),
     slabOn:   PE("Avanzado", "Losa",  0, { "Off": 0, "On": 1 }),
     // Formulacion de la losa: ETABS la pone Shell-Thin por defecto (y las 8 plantillas
@@ -575,34 +575,29 @@ export const edificioAporticado: ExampleDef = {
         partirBarrasEn(idx);      // que la viga principal se entere
         return idx;
       };
-      const dir = p.vSecDir < 0.5 ? 'x' : 'y';
+      // La REGLA de la losa en una direccion (Jorge, 5-sep-2026): la viga secundaria
+      // corre por el LADO CORTO del vano, y la losa apoya en ellas salvando la luz
+      // corta. Antes la direccion era una sola para todo el edificio ("X" por
+      // defecto), asi que con vanos de 6 x 5 las secundarias salian de 6 m y la
+      // losa trabajaba en el sentido largo. Ahora cada vano decide solo (Auto):
+      // dir 'x' (la viga va de eje X a eje X, mide svX) si svX <= svY; si no, 'y'.
+      // "X" e "Y" siguen forzando una direccion para todos los vanos.
+      const dirDe = (bx: number, by: number): 'x' | 'y' => {
+        if (p.vSecDir < 0.5) return 'x';
+        if (p.vSecDir < 1.5) return 'y';
+        return (xCoords[bx + 1] - xCoords[bx]) <= (yCoords[by + 1] - yCoords[by]) ? 'x' : 'y';
+      };
       for (let iz = 1; iz < zCoords.length; iz++) {
-        if (dir === 'x') {
+        for (let bx = 0; bx < xCoords.length - 1; bx++) {
           for (let by = 0; by < yCoords.length - 1; by++) {
-            const y0 = yCoords[by], y1 = yCoords[by + 1];
+            const x0 = xCoords[bx], x1 = xCoords[bx + 1], y0 = yCoords[by], y1 = yCoords[by + 1];
             for (let k = 1; k <= nVSec; k++) {
-              const ySec = y0 + k/(nVSec + 1) * (y1 - y0);
-              const secNodes: number[] = [];
-              for (let ix = 0; ix < xCoords.length; ix++)
-                secNodes.push(findOrCreateNode(xCoords[ix], ySec, zCoords[iz]));
-              for (let ix = 0; ix < xCoords.length - 1; ix++) {
-                beamIdx.add(elements.length);
-                elements.push([secNodes[ix], secNodes[ix + 1]]);
-              }
-            }
-          }
-        } else {
-          for (let bx = 0; bx < xCoords.length - 1; bx++) {
-            const x0 = xCoords[bx], x1 = xCoords[bx + 1];
-            for (let k = 1; k <= nVSec; k++) {
-              const xSec = x0 + k/(nVSec + 1) * (x1 - x0);
-              const secNodes: number[] = [];
-              for (let iy = 0; iy < yCoords.length; iy++)
-                secNodes.push(findOrCreateNode(xSec, yCoords[iy], zCoords[iz]));
-              for (let iy = 0; iy < yCoords.length - 1; iy++) {
-                beamIdx.add(elements.length);
-                elements.push([secNodes[iy], secNodes[iy + 1]]);
-              }
+              const f = k / (nVSec + 1);
+              const [a, b] = dirDe(bx, by) === 'x'
+                ? [findOrCreateNode(x0, y0 + f * (y1 - y0), zCoords[iz]), findOrCreateNode(x1, y0 + f * (y1 - y0), zCoords[iz])]
+                : [findOrCreateNode(x0 + f * (x1 - x0), y0, zCoords[iz]), findOrCreateNode(x0 + f * (x1 - x0), y1, zCoords[iz])];
+              beamIdx.add(elements.length);
+              elements.push([a, b]);
             }
           }
         }

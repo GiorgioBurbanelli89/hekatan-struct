@@ -125,6 +125,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
     ej_flag = [True]                       # etabsjoint: por DEFECTO como ETABS; `etabsjoint 0` la apaga (modo SAP2000)
     de_flag = [False]                      # `deck etabs`: panos membrana como los pisos de ETABS (ver deck_etabs.py)
     ow_flag = [False]                      # `deck etabs oneway`: reparto en un sentido (eje local 1)
+    tf = [1.0]                             # `torsion safe` (=0.1) o `torsion <f>`: SAFE analiza las vigas con 0.1*J (medido 5-sep-2026)
     shells: list[dict] = []
     solidos: list[dict] = []          # `hex ID n1..n8 [E nu rho]`: hexaedros H8
     diafr: dict[int, int] = {}        # `diaph ID grupo`: diafragma rigido por nudo
@@ -271,6 +272,9 @@ def leer_heks(ruta: str) -> ModeloHeks:
                     v = (t[1] if len(t) > 1 else "etabs").lower()
                     de_flag[0] = v in ("etabs", "1", "on", "si")
                     ow_flag[0] = any(x.lower() in ("oneway", "1way", "unidireccional") for x in t[2:])
+                elif cmd in ("torsion", "jmod"):
+                    v = (t[1] if len(t) > 1 else "safe").lower()
+                    tf[0] = 0.1 if v == "safe" else float(v)
                 elif cmd in ("etabsjoint", "etabswalljoint"):
                     # etabsjoint [0|1] -> la penalizacion viga-muro de ETABS
                     ej_flag[0] = (len(t) < 2) or (t[1].strip().lower() not in ("0", "no", "off", "false"))
@@ -330,7 +334,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
         ei.areas[k] = f["A"]
         ei.moments_of_inertia_y[k] = f["I22"]    # token 6 -> I22 (plano 1-3)
         ei.moments_of_inertia_z[k] = f["I33"]    # token 7 -> I33 (plano 1-2)
-        ei.torsional_constants[k] = f["J"]
+        ei.torsional_constants[k] = f["J"] * tf[0]
         ei.densities[k] = f["rho"]
         if f["id"] in angs:
             ei.local_angles[k] = angs[f["id"]]
@@ -345,7 +349,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
             ei.areas[k] = c["A"]
             ei.moments_of_inertia_y[k] = c["I22"]
             ei.moments_of_inertia_z[k] = c["I33"]
-            ei.torsional_constants[k] = c["J"]
+            ei.torsional_constants[k] = c["J"] * tf[0]
             ei.shear_areas_z[k] = c["As2"]
             ei.shear_areas_y[k] = c["As3"]
         if f["id"] in cft_de:
@@ -355,7 +359,7 @@ def leer_heks(ruta: str) -> ModeloHeks:
             ei.areas[k] = c["A"]
             ei.moments_of_inertia_y[k] = c["I22"]
             ei.moments_of_inertia_z[k] = c["I33"]
-            ei.torsional_constants[k] = c["J"]
+            ei.torsional_constants[k] = c["J"] * tf[0]
             ei.shear_areas_z[k] = c["As2"]
             ei.shear_areas_y[k] = c["As3"]
         if f["id"] in rels:

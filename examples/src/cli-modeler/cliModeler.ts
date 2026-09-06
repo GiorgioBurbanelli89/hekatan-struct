@@ -122,6 +122,10 @@ interface ParsedModel {
    *  galpon 4.5 % y mezanine Dead 75 % explicados con esto). */
   deckEtabs: boolean;
   deckOneWay: boolean;                   // `deck etabs oneway`: reparto en un sentido (eje local 1 del pano)
+  /** `torsion safe` (= 0.1) o `torsion <factor>`: multiplica la J de TODAS las barras. SAFE 20
+   *  analiza las vigas con 0.1·J (medido el 5-sep-2026: Hekatan con J×0.1 = giros de SAFE a
+   *  4 cifras). Con la directiva, Hekatan reproduce a SAFE; sin ella = SAP2000/ETABS. */
+  torsionFactor: number;
   deckTributario: Set<number>;           // ids de shell cuya carga ya fue a las barras de borde
   /** `hex ID n1..n8 [E nu rho]`: hexaedros H8 (solidos). Se resuelven con hex8Solve
    *  (Wilson–Taylor por defecto; `incompatible 0` lo quita). */
@@ -220,6 +224,7 @@ export function parseCliCommands(text: string): ParsedModel {
     meshCross: true,
     deckEtabs: false,
     deckOneWay: false,
+    torsionFactor: 1,
     deckTributario: new Set(),
     solids: [],
     solidIncompatible: true,
@@ -462,6 +467,13 @@ export function parseCliCommands(text: string): ParsedModel {
         case "incompatible": {
           const v = (tokens[1] ?? "1").toLowerCase();
           m.solidIncompatible = !(v === "0" || v === "no" || v === "off" || v === "false");
+          break;
+        }
+        case "torsion":
+        case "jmod": {
+          const v = (tokens[1] ?? "safe").toLowerCase();
+          const f = v === "safe" ? 0.1 : parseFloat(v);
+          m.torsionFactor = isFinite(f) && f > 0 ? f : 1;
           break;
         }
         case "deck":
@@ -1363,7 +1375,8 @@ export const cliModeler: ExampleDef = {
       // Antes era al reves, y por eso el mapeo aqui esta cruzado respecto a la
       // version anterior: el token del .heks no cambio, cambio el motor.
       momentsOfInertiaY: I22, momentsOfInertiaZ: I33,
-      torsionalConstants: J, densities, poissonsRatios: poissons, thicknesses,
+      torsionalConstants: m.torsionFactor !== 1 ? new Map([...J].map(([k, v]) => [k, v * m.torsionFactor])) : J,   // `torsion safe`
+      densities, poissonsRatios: poissons, thicknesses,
       membraneModifiers, bendingModifiers, shellModifiers,
       shellSurfaceLoads, shellAngles, cargaDeArea, cantos, anchos, sectionShapes, localAngles,
       shearAreasY, shearAreasZ, momentReleases, endOffsets, plateFormulations,

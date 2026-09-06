@@ -936,6 +936,14 @@ pedestales, 12 vigas de amarre, 225 muelles): SAP2000 1.2e-8 %, ETABS 1.4e-8 %, 
   `"Longitudinal Rebar Material"` válido se rechaza entera; ④ SAFE analiza las vigas con
   **0.1·J** (Hekatan con J×0.1 reproduce sus giros a 4 cifras) → `jFactor` = 10 por defecto.
   Nombres de campo: `DatabaseTables.GetAllFieldsInTable` (clave, nombre, unidades).
+- **`torsion safe`** en el `.heks` (TS y Python): la J de todas las barras ×0.1, o sea la
+  semántica de SAFE con nombre (como `deck etabs`). `torsion <f>` acepta otro factor. Test
+  `node tests/run.mjs torsion-safe`: Hekatan con la directiva = SAFE leyendo el f2k con J
+  tal cual (Uz 3e-3 %, giros 0.1 %); sin ella, el giro de la viga es UN TERCIO del de SAFE.
+- **Vigas secundarias por el LADO CORTO de cada vano** (`vSecDir = Auto`, defecto desde el
+  5-sep-2026): es la regla de la losa en una dirección. Antes la dirección era una para
+  todo el edificio (X): con vanos 6×5 las secundarias salían de 6 m. Cada vano decide solo
+  (svX ≤ svY → corren en X). `node tests/run.mjs vigas-secundarias` (vanos desiguales incluidos).
 
 ## Galpón real y mezanine CFT contra SAP2000 y ETABS por OAPI (3-sep-2026)
 

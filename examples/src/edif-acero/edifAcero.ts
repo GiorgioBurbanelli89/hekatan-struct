@@ -15,7 +15,7 @@ const overrides: Record<string, number> = {
   vigaH:   0.45, // canto W típica
   vSecOn:  1,    // vigas secundarias ON
   nVSec:   2,
-  vSecDir: 0,    // en X
+  vSecDir: 2,    // Auto: por el lado corto de cada vano (5 x 5 aqui: X)
   slabOn:  1,    // losa colaborante (deck)
   slabT:   0.08, // 8 cm losa colaborante
 };
